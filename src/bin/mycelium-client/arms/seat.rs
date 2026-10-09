@@ -65,52 +65,46 @@ fn pages() -> u64 {
     SeatHold::patience()
 }
 
-impl SeatArm {
-    /// `--seat <domain-hex> <seat-id>`, or no arm.
-    pub(crate) fn of_args(args: &[String], key: ed25519_dalek::SigningKey) -> Result<Option<SeatArm>, String> {
+/// ONE MIND, MANY SEATS (barren-realms, 2026-10-09: one key powering the
+/// ancients' and progenitors' 24 seats, each its own player). The seats share
+/// the mind's one key, so they share one mailbox: it is read ONCE a stroke and
+/// each piece goes to the seat it names (domain and seat are on every piece).
+/// Each seat keeps its own take, its own tasks answered, its own standing
+/// call, and makes at most one call a stroke.
+pub(crate) struct SeatArms {
+    arms: Vec<SeatArm>,
+    key: ed25519_dalek::SigningKey,
+    /// The last sequence read from the shared box.
+    after: u64,
+}
+
+impl SeatArms {
+    /// `--seat <domain-hex> <seat-id>[,<seat-id>…]`, or no arm.
+    pub(crate) fn of_args(args: &[String], key: ed25519_dalek::SigningKey) -> Result<Option<SeatArms>, String> {
         let Some(at) = args.iter().position(|a| a == "--seat") else { return Ok(None) };
         let (Some(d), Some(s)) = (args.get(at + 1), args.get(at + 2)) else {
-            return Err("--seat takes <domain-hex> <seat-id>".to_string());
+            return Err("--seat takes <domain-hex> <seat-id>[,<seat-id>…]".to_string());
         };
         let domain = mycelium::court::identity::parse_hex32(d).ok_or_else(|| format!("--seat: {d} is not a 32-byte hex domain"))?;
-        let seat = s.parse::<u32>().map_err(|e| format!("--seat: {s} is not a seat id: {e}"))?;
-        Ok(Some(SeatArm {
-            domain,
-            seat,
-            key,
-            hold: SeatHold::default(),
-            after: 0,
-            percepts: 0,
-            calls: 0,
-            memo: mycelium::transducer::family::ExtractMemo::new(),
-            answered: mycelium::network::nerve::Keyed::new(),
-            standing: None,
-        }))
+        let mut arms = Vec::new();
+        for one in s.split(',') {
+            let seat = one.trim().parse::<u32>().map_err(|e| format!("--seat: {one} is not a seat id: {e}"))?;
+            if !arms.iter().any(|a: &SeatArm| a.seat == seat) {
+                arms.push(SeatArm::new(domain, seat, key.clone()));
+            }
+        }
+        Ok(Some(SeatArms { arms, key, after: 0 }))
     }
 
-    /// ONE STROKE AT THE SEAT: take it (again, where it was lost or went
-    /// unanswered a full aperture cycle); read the mail; perceive each
-    /// percept and make the mind's call; mark each outcome.
+    /// ONE STROKE AT EVERY SEAT: each seat takes (again, where lost); the
+    /// shared box is read to its end once; each piece goes to its seat; then
+    /// each seat answers its tasks and makes its one call.
     pub(crate) fn stroke(&mut self, entity: &mut Entity, tag: &str, stop: &AtomicBool) {
-        let was_posted = self.hold.posted;
-        if self.hold.stroke() {
-            if was_posted {
-                eprintln!("[{tag}] seat {} take let go: no TAKEN within an aperture cycle of {} strokes — taken again", self.seat, SeatHold::patience());
-            }
-            match entity.relay().take(self.domain, self.seat, &self.key) {
-                Ok(Ok(seq)) => {
-                    self.hold.take_posted();
-                    eprintln!("[{tag}] seat {} take posted (seq {seq})", self.seat);
-                }
-                Ok(Err(why)) => eprintln!("[{tag}] seat {} take refused: {why:?}", self.seat),
-                Err(e) => eprintln!("[{tag}] seat {} take unsent: {e}", self.seat),
-            }
-            return;
+        for arm in &mut self.arms {
+            arm.take_step(entity, tag);
         }
-        // The box read to its end, page by page; every piece perceived, the
-        // tasks gathered, and ONE call made at the latest beat after.
-        let mut beats = 0u64;
-        let mut tasks: Vec<[u8; 32]> = Vec::new();
+        let mut beats = vec![0u64; self.arms.len()];
+        let mut tasks: Vec<Vec<[u8; 32]>> = vec![Vec::new(); self.arms.len()];
         for _ in 0..pages() {
             let mail = match entity.relay().mail(&self.key, self.after) {
                 Ok(Ok(m)) => m,
@@ -130,16 +124,64 @@ impl SeatArm {
                 if stop.load(Ordering::SeqCst) {
                     return;
                 }
-                self.read_piece(entity, tag, piece, &mut beats, &mut tasks);
+                let (domain, seat, seq) = match &piece {
+                    MindMail::Taken(q, t) => (t.domain, t.seat, *q),
+                    MindMail::Percept(q, p) => (p.domain, p.seat, *q),
+                    MindMail::Outcome(q, o) => (o.domain, o.seat, *q),
+                };
+                self.after = seq;
+                // A piece for a seat this mind does not sit is read past.
+                let Some(i) = self.arms.iter().position(|a| a.domain == domain && a.seat == seat) else { continue };
+                if let (Some(arm), Some(b), Some(t)) = (self.arms.get_mut(i), beats.get_mut(i), tasks.get_mut(i)) {
+                    arm.read_piece(entity, tag, piece, b, t);
+                }
             }
         }
-        for id in tasks {
-            if !self.answered.contains(&id) {
-                self.solve_before(entity, tag, &id);
+        for ((arm, b), t) in self.arms.iter_mut().zip(beats).zip(tasks) {
+            for id in t {
+                if !arm.answered.contains(&id) {
+                    arm.solve_before(entity, tag, &id);
+                }
+            }
+            if b > 0 {
+                arm.beat(entity, tag);
             }
         }
-        if beats > 0 {
-            self.beat(entity, tag);
+    }
+}
+
+impl SeatArm {
+    fn new(domain: [u8; 32], seat: u32, key: ed25519_dalek::SigningKey) -> SeatArm {
+        SeatArm {
+            domain,
+            seat,
+            key,
+            hold: SeatHold::default(),
+            after: 0,
+            percepts: 0,
+            calls: 0,
+            memo: mycelium::transducer::family::ExtractMemo::new(),
+            answered: mycelium::network::nerve::Keyed::new(),
+            standing: None,
+        }
+    }
+
+    /// THE SEAT TAKEN (again, where it was lost or went unanswered a full
+    /// aperture cycle of strokes).
+    fn take_step(&mut self, entity: &mut Entity, tag: &str) {
+        let was_posted = self.hold.posted;
+        if self.hold.stroke() {
+            if was_posted {
+                eprintln!("[{tag}] seat {} take let go: no TAKEN within an aperture cycle of {} strokes — taken again", self.seat, SeatHold::patience());
+            }
+            match entity.relay().take(self.domain, self.seat, &self.key) {
+                Ok(Ok(seq)) => {
+                    self.hold.take_posted();
+                    eprintln!("[{tag}] seat {} take posted (seq {seq})", self.seat);
+                }
+                Ok(Err(why)) => eprintln!("[{tag}] seat {} take refused: {why:?}", self.seat),
+                Err(e) => eprintln!("[{tag}] seat {} take unsent: {e}", self.seat),
+            }
         }
     }
 
