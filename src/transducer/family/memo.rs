@@ -158,9 +158,16 @@ pub fn rule_replays_family(
 /// after the mind has learned, is a miss and re-extracts. Nothing is
 /// evicted by recency or by a bound — there is one slot, and what is in it
 /// is what was last read (rule 4: nothing chosen by a scalar).
+///
+/// 78.158a U3 — THE MEMO HOLDS A RULE, NEVER ITS ABSENCE. It held the
+/// extraction's `None` too (a family with no frame ratio, a derivation
+/// `derive_against` could not measure): held, it stood for that family
+/// until the atlas root moved, so the family was never read again at that
+/// root (rule 11 — an unread value is not a reading). A `None` now leaves
+/// the slot as it was, and the next asking reads the family.
 #[derive(Default)]
 pub struct ExtractMemo {
-    held: Option<(Vec<u8>, crate::transducer::address::Address, Option<crate::transducer::sentence::SentenceRule>)>,
+    held: Option<(Vec<u8>, crate::transducer::address::Address, crate::transducer::sentence::SentenceRule)>,
 }
 
 impl ExtractMemo {
@@ -185,7 +192,7 @@ impl ExtractMemo {
     }
 
     /// The rule this memo holds for `fam` at `atlas_root`, or `None`.
-    fn get(&self, fam: &[u8], atlas_root: &crate::transducer::address::Address) -> Option<&Option<crate::transducer::sentence::SentenceRule>> {
+    fn get(&self, fam: &[u8], atlas_root: &crate::transducer::address::Address) -> Option<&crate::transducer::sentence::SentenceRule> {
         match &self.held {
             Some((f, g, r)) if f == fam && g == atlas_root => Some(r),
             _ => None,
@@ -210,7 +217,7 @@ pub fn extract_rule_cached(
     frames: Option<&super::perceive::Frames>,
 ) -> Option<crate::transducer::sentence::SentenceRule> {
     if let Some(rule) = cache.get(fam, &atlas_root) {
-        return rule.clone();
+        return Some(rule.clone());
     }
     // Missed, and a stroke spent before the extraction starts has no answer
     // for this family (rule 11).
@@ -223,6 +230,9 @@ pub fn extract_rule_cached(
         Some(frames) => super::extract::extract_rule_on(family, frames, crystal, budget),
         None => super::extract::extract_rule_with(family, crystal, budget),
     };
-    cache.held = Some((fam.to_vec(), atlas_root, rule.clone()));
+    // Only a rule is held (78.158a U3): a `None` replaces nothing.
+    if let Some(r) = &rule {
+        cache.held = Some((fam.to_vec(), atlas_root, r.clone()));
+    }
     rule
 }

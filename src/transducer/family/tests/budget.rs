@@ -143,3 +143,33 @@ fn a_partial_extraction_is_cached_and_advances_when_the_language_moves() {
         "and with a budget that reaches the end, the demand is discharged"
     );
 }
+
+/// 78.158a U3 — THE MEMO HOLDS NO `None`. An extraction that answers
+/// `None` was held as the family's answer until the atlas root moved, so the
+/// next asking at that root answered `None` again without reading. Now a
+/// `None` replaces nothing: the memo does not answer for the family, so it
+/// is read again on the next asking, and the rule held for the last family
+/// stays.
+///
+/// The fixture's `None` is the family's own (two pairs in two frame
+/// ratios, `family_ratio`). A stroke spent inside the extraction no longer
+/// reaches `None` at all — an extraction cut off keeps what it measured
+/// (the L8w test above) — so the spent-then-full shape 78.158 names has no
+/// fixture; the invariant it rests on is this one.
+#[test]
+fn an_extraction_that_answers_none_is_never_held_for_its_family() {
+    let root = crate::transducer::address::Address::new(vec![3u8]);
+    let ph = &mut crate::physics::Physics::default();
+    let one = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
+    let ratioless = vec![(grid(&["1"]), grid(&["2"])), (grid(&["1"]), grid(&["22", "22"]))];
+    let mut cache = ExtractMemo::new();
+    assert!(extract_rule_cached(&mut cache, b"one", &one, root.clone(), &mut ph.stroke_n(1 << 20), &NoCrystal, None).is_some());
+    assert!(cache.holds(b"one", &root), "the rule is held");
+    let mut first = ph.stroke_n(1 << 20);
+    assert!(extract_rule_cached(&mut cache, b"two", &ratioless, root.clone(), &mut first, &NoCrystal, None).is_none());
+    assert!(!cache.holds(b"two", &root), "its None is not held for it");
+    assert!(cache.holds(b"one", &root), "and the last family's rule stands");
+    let mut again = ph.stroke_n(1 << 20);
+    assert!(extract_rule_cached(&mut cache, b"two", &ratioless, root.clone(), &mut again, &NoCrystal, None).is_none());
+    assert!(again.remaining() < 1 << 20, "asked again, the family is read again, never answered by the memo");
+}

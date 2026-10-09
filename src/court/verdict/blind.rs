@@ -109,16 +109,28 @@ fn replay_word<'r>(
 /// after. A stroke that moves nothing is a unit no stroke holds — or a
 /// process asked to stop (`physics::halt`) — refused by name
 /// (`REFUSE_UNREAD`) rather than looped on.
+///
+/// 78.158a U2 — THE CALLER'S STROKE IS HONOURED, NOT DRAINED. It was read
+/// nowhere (`let _ = budget;`), each round a default stroke: a caller that
+/// granted a family-sized stroke (`extraction_spend`) had its replay
+/// refused UNREAD on a unit its own stroke would have read. Each round is
+/// now as wide as the caller's stroke where it grants more than a default
+/// one, and a default stroke otherwise; the caller's token is still left
+/// as it stood (the reads it makes after are its own).
 pub(crate) fn to_completion(
     spoken: &Element,
     budget: &mut crate::physics::Budget,
     run: &mut dyn FnMut(&mut crate::physics::Budget, &mut ReplayCursor) -> Replayed,
 ) -> Option<Refusal> {
-    let _ = budget;
+    let default = crate::physics::Physics::default().stroke().remaining();
+    let width = match budget.remaining() > default {
+        true => budget.remaining(),
+        false => default,
+    };
     let mut cursor = ReplayCursor::default();
     loop {
         let before = cursor.progress();
-        let mut own = crate::physics::Physics::default().stroke();
+        let mut own = crate::physics::Physics::default().stroke_n(width);
         match run(&mut own, &mut cursor) {
             Replayed::Clean => return None,
             Replayed::Refused(r) => return Some(r),

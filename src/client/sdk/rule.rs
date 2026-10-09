@@ -107,6 +107,17 @@ pub enum NoRule {
     NotASentence,
     /// The judge's replay refused it, with its reason, coordinate and kind.
     Refused(crate::verdict::Refusal),
+    /// 78.158a U2 — UNJUDGED, NEVER REFUTED: the replay at home holds a unit
+    /// no stroke it ran on could read (`verdict::REFUSE_UNREAD`, kind N).
+    /// Nothing was ruled: the solve goes to the court, whose replay resumes
+    /// on its cursor and answers `SOLVE_UNREAD` until it rules.
+    Unread,
+    /// 78.158a, 78.157 §3a — CITES UNHELD: the rule cites a word the
+    /// resolver given does not hold — at home, a word no court admitted
+    /// (`Epigenome::court_word`). The court resolves only the words it
+    /// holds, so a home pass on such a citation would be a pass the court
+    /// cannot give. Its own outcome, by the cited address; never a pass.
+    CitesUnheld(Vec<u8>),
     /// 78.143 — a clause is not stated on a pair of the family, by name: a
     /// tie its order does not name, a coordinate that is not exact, no
     /// single body where one is asked, a cell landing between cells.
@@ -453,13 +464,38 @@ pub fn crossing(rule: &Element, train: &[(Grid, Grid)], crystal: &dyn Crystal) -
 /// WHAT THE JUDGE WOULD SAY, by the judge's own steps (`judge_solve`): no
 /// pair to replay against is no verdict; the decoder reads the word's form
 /// from its address (`Held::of`, which runs `from_element_form`) or it is
-/// not a rule; then `verdict::blind_replay_at` on the pairs, its cited
-/// forms resolved by `resolve`, spoken through `crystal`.
+/// not a rule; every word it cites resolves by `resolve` or it CITES
+/// UNHELD; then `verdict::blind_replay_at` on the pairs, its cited forms
+/// resolved by `resolve`, spoken through `crystal`. A replay no stroke
+/// could read is `Unread` — unjudged, never refuted (78.158a U2).
 pub fn would_judge(
     rule: &Element,
     family: &[(Grid, Grid)],
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
     crystal: &dyn Crystal,
+) -> Result<(), NoRule> {
+    would_judge_with(rule, family, resolve, crystal, &mut crate::physics::Physics::default().stroke())
+}
+
+/// [`would_judge`] on the caller's stroke: the replay's rounds are as wide
+/// as the caller's stroke where it grants more than a default one
+/// (`verdict::blind`'s `to_completion`), and the caller's stroke is left as
+/// it stood.
+///
+/// 78.157 §3a — THE HOME CHECK ON COURT WORDS. Every citation the rule
+/// carries (`receipts().cited_addresses()`: the cover's and the
+/// derivations') is asked of `resolve` before the replay. The replay itself
+/// defers a derivation citation its cover does not hold (the syllabus
+/// serves it), so a rule citing a word only this mind holds read clean at
+/// home and was refused or deferred at the court; asked here, it is
+/// `CitesUnheld` by its address. A client resolves through the court's
+/// words alone (`Epigenome::court_word`).
+pub fn would_judge_with(
+    rule: &Element,
+    family: &[(Grid, Grid)],
+    resolve: &dyn Fn(&[u8]) -> Option<Form>,
+    crystal: &dyn Crystal,
+    budget: &mut crate::physics::Budget,
 ) -> Result<(), NoRule> {
     if family.is_empty() {
         return Err(NoRule::NotASentence);
@@ -467,9 +503,24 @@ pub fn would_judge(
     if element::Held::of(rule.clone()).form().is_none() {
         return Err(NoRule::NotASentence);
     }
-    let mut budget = crate::physics::Physics::default().stroke();
-    match crate::verdict::blind_replay_at(rule, resolve, Some(family), crystal, &mut budget) {
-        Some(refusal) => Err(NoRule::Refused(refusal)),
+    if let Some(unheld) = rule.receipts().cited_addresses().into_iter().find(|a| resolve(a.as_bytes()).is_none()) {
+        return Err(NoRule::CitesUnheld(unheld.as_bytes().to_vec()));
+    }
+    match crate::verdict::blind_replay_at(rule, resolve, Some(family), crystal, budget) {
+        Some(refusal) => Err(NoRule::of_refusal(refusal)),
         None => Ok(()),
+    }
+}
+
+impl NoRule {
+    /// A HOME REPLAY'S REFUSAL, read: `REFUSE_UNREAD` is no reading of the
+    /// word (kind N) and is `Unread`, which a client submits; every other
+    /// refusal is the judge's, `Refused` with its reason, coordinate and
+    /// kind.
+    pub fn of_refusal(refusal: crate::verdict::Refusal) -> NoRule {
+        match refusal.reason == crate::verdict::REFUSE_UNREAD {
+            true => NoRule::Unread,
+            false => NoRule::Refused(refusal),
+        }
     }
 }

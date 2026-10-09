@@ -102,6 +102,18 @@ impl Epigenome {
         self.admitted_at.get(addr).copied()
     }
 
+    /// 78.158a, 78.157 §3a — A COURT-STAMPED WORD: the held word at `addr`
+    /// where a court admitted it (its stamp filed, `admitted_at`), and none
+    /// otherwise — never a dialect word, never a word learned with no stamp.
+    /// The resolver a home check replays through, so a rule passes at home
+    /// only on citations the court holds (`rule::would_judge_with`).
+    pub fn court_word(&self, addr: &[u8]) -> Option<&crate::transducer::element::Held> {
+        match self.admitted_at.contains(addr) {
+            true => self.word_at(addr),
+            false => None,
+        }
+    }
+
     /// FOR TESTS: every resident word filed at one court stamp, as a
     /// syllabus page carrying them would file them.
     #[cfg(test)]
