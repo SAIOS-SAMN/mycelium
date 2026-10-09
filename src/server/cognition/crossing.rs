@@ -16,10 +16,10 @@
 //! (`uplink::CONNECTION_TAX`), paid from the reserve to this court's
 //! RECYCLED POOL, from which a closer's POUW is paid first (`mint_to`).
 
-use super::atlas::{mouth_id, record_key};
+use super::atlas::record_key;
 use super::challenge::window_end;
 use super::Kernel;
-use crate::anastome::dialogue::atlas::{HeldRecord, MapRecord};
+use crate::anastome::dialogue::atlas::MapRecord;
 use crate::anastome::dialogue::crossing::{CrossRefusal, Crossed, Edge, Gas, Side, SignedTraverse};
 use crate::anastome::dialogue::uplink::{Child, TaxRefusal, TierFold, CONNECTION_TAX};
 use crate::anastome::dialogue::wallet::{SignedStake, StakeRefusal};
@@ -63,15 +63,6 @@ impl Kernel {
         Some(price)
     }
 
-    /// The record a mouth's side holds on its universe's map.
-    fn mouth_record(&self, domain: &[u8; 32], mouth: &[u8; 32], side: u8) -> Option<(HeldRecord, u64)> {
-        let held = self.atlas.records.get(&record_key(domain, &mouth_id(domain, mouth, side)))?.clone();
-        match held.record {
-            MapRecord::Mouth { freshness, .. } => Some((held, freshness)),
-            MapRecord::Segment { .. } => None,
-        }
-    }
-
     /// A claim drawn on `staker`'s stake for `fee`, its parts to this court,
     /// held to the window from the act at `r`. `None` where it cannot be held.
     fn draw_claim(&mut self, staker: [u8; 32], id: &[u8; 32], fee: [u64; 4], r: &KStepReceipt) -> Option<()> {
@@ -87,7 +78,8 @@ impl Kernel {
     }
 
     /// 78.154 — A TRAVERSE: the payer's signature; both universes founded
-    /// and the mouth an open tube with A on the side named; the crossing's
+    /// and the mouth an open tube with A on the side named (or a LOCAL
+    /// THROAT on A's map, both its ends in A, so B is A); the crossing's
     /// point final; every point at one origin; BOTH MOUTHS MAPPED, each at
     /// the point cited and not above the crossing's; each universe's LATEST
     /// entry cited, within ITS OWN mouth's `N` advances of the crossing's
@@ -113,7 +105,9 @@ impl Kernel {
             1 => 0,
             _ => return refuse(R::NoMouth),
         };
-        let (Some((_, da)), Some((_, to))) = (self.mouth_side(&t.mouth, t.side), self.mouth_side(&t.mouth, other)) else { return refuse(R::NoMouth) };
+        // A mouth pair's sides stand in their tiers' universes; a local
+        // throat's both stand in A's.
+        let (Some(da), Some(to)) = (self.place_domain(&t.from, &(t.mouth, t.side)), self.place_domain(&t.from, &(t.mouth, other))) else { return refuse(R::NoMouth) };
         if da != t.from {
             return refuse(R::NoMouth);
         }
@@ -128,8 +122,9 @@ impl Kernel {
         }
         let mut freshness = [0u64; 2];
         for (i, (domain, side, point, who)) in [(t.from, t.side, &t.point_a, Side::A), (to, other, &t.point_b, Side::B)].into_iter().enumerate() {
-            let Some((held, n)) = self.mouth_record(&domain, &t.mouth, side) else { return refuse(R::Unmapped(who)) };
-            if held.point != *point || point.h > t.at.h {
+            let Some(mapped) = self.mapped_place(&domain, &(t.mouth, side)) else { return refuse(R::Unmapped(who)) };
+            let n = mapped.freshness;
+            if mapped.held.point != *point || point.h > t.at.h {
                 return refuse(R::MapPoint(who));
             }
             if let Some(f) = freshness.get_mut(i) {

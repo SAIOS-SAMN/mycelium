@@ -389,9 +389,30 @@ impl Segment {
     }
 }
 
-/// A MAPPED PLACE: a 78.128 mouth pair by its id, and its side (0 the
-/// offering end, 1 the accepting end).
+/// A MAPPED PLACE: a 78.128 mouth pair by its id, or a LOCAL THROAT by its
+/// derived mouth id (`local_throat_id`), and its side (0 and 1 its two ends;
+/// a mouth pair's 0 the offering end, 1 the accepting end).
 pub type Place = ([u8; 32], u8);
+
+const LOCAL_THROAT: &str = "mycelium local throat v1";
+
+/// 78.154 — A LOCAL THROAT'S MOUTH ID, derived and never posted:
+/// `derive_key("mycelium local throat v1", domain ‖ throat key)`.
+pub fn local_throat_id(domain: &[u8; 32], throat: &[u8; 32]) -> [u8; 32] {
+    let mut m = domain.to_vec();
+    m.extend_from_slice(throat);
+    blake3::derive_key(LOCAL_THROAT, &m)
+}
+
+/// The id a local throat's record is held under, from its derived mouth id:
+/// the citation hash of `"map record" ‖ domain ‖ [2] ‖ local id`.
+pub fn local_record_id(domain: &[u8; 32], local: &[u8; 32]) -> [u8; 32] {
+    let mut b = b"map record".to_vec();
+    b.extend_from_slice(domain);
+    b.push(2);
+    b.extend_from_slice(local);
+    crate::chronometry::payload_hash(&b)
+}
 
 /// 78.154 — ONE MAP RECORD. A MOUTH: the mouth pair and its side in this
 /// universe, and its FRESHNESS bound `N` (78.156 §4: how many final-point
@@ -399,11 +420,17 @@ pub type Place = ([u8; 32], u8);
 /// stand). Its place in the universe's own space is read off the mouth's
 /// tube (78.140), never restated. A SEGMENT: its kind, its two places, its
 /// span in geometrized megaparsecs exact, and — a throat — its keeper (the
-/// road toll itself is in-universe, never here).
+/// road toll itself is in-universe, never here). A LOCAL THROAT: an
+/// in-universe throat (a progenitor tube, core to galaxy, a long haul) —
+/// its throat key, its keeper (the progenitor line's key, carried inline),
+/// its two ends' FRAMES and its `N`; both ends stand in the posting
+/// universe, each place read off its frame in the universe's declared
+/// geometry. No 78.128 act and no court bond: the map record is all of it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MapRecord {
     Mouth { place: Place, freshness: u64 },
     Segment { kind: Segment, a: Place, b: Place, span: (u64, u64), keeper: Option<[u8; 32]> },
+    LocalThroat { throat: [u8; 32], keeper: [u8; 32], frames: (crate::transducer::cga::Mv, crate::transducer::cga::Mv), freshness: u64 },
 }
 
 fn put_place(out: &mut Vec<u8>, (m, side): &Place) {
@@ -438,6 +465,24 @@ impl MapRecord {
                     }
                 }
             }
+            MapRecord::LocalThroat { throat, keeper, frames, freshness } => {
+                out.push(2);
+                out.extend_from_slice(throat);
+                out.extend_from_slice(keeper);
+                frames.0.to_bytes(out);
+                frames.1.to_bytes(out);
+                out.extend_from_slice(&freshness.to_le_bytes());
+            }
+        }
+    }
+
+    /// A local throat's two ends read off its frames in `space`; `None`
+    /// for any other record, or where a frame is no motion of that space.
+    pub fn local_places(&self, space: &crate::anastome::dialogue::universe::Geometry) -> Option<(crate::transducer::cga::Mv, crate::transducer::cga::Mv)> {
+        use crate::anastome::dialogue::tube::place_in;
+        match self {
+            MapRecord::LocalThroat { frames: (f0, f1), .. } => Some((place_in(space, f0)?, place_in(space, f1)?)),
+            MapRecord::Mouth { .. } | MapRecord::Segment { .. } => None,
         }
     }
 
@@ -455,13 +500,20 @@ impl MapRecord {
                 };
                 MapRecord::Segment { kind, a, b: bb, span, keeper }
             }
+            2 => {
+                let (throat, keeper) = (key32(b, p)?, key32(b, p)?);
+                let f0 = crate::transducer::cga::Mv::from_bytes(b, p)?;
+                let f1 = crate::transducer::cga::Mv::from_bytes(b, p)?;
+                MapRecord::LocalThroat { throat, keeper, frames: (f0, f1), freshness: u64_at(b, p)? }
+            }
             _ => return None,
         })
     }
 
     /// THE RECORD'S ID: its universe, and a mouth by its place, a segment by
-    /// its kind and its two places — what a later act supersedes, and what
-    /// a route names (one throat mapped by both universes is two records).
+    /// its kind and its two places, a local throat by its derived mouth id
+    /// (`local_record_id`) — what a later act supersedes, and what a route
+    /// names (one throat mapped by both universes is two records).
     pub fn id(&self, domain: &[u8; 32]) -> [u8; 32] {
         let mut b = b"map record".to_vec();
         b.extend_from_slice(domain);
@@ -476,6 +528,7 @@ impl MapRecord {
                 put_place(&mut b, a);
                 put_place(&mut b, bb);
             }
+            MapRecord::LocalThroat { throat, .. } => return local_record_id(domain, &local_throat_id(domain, throat)),
         }
         crate::chronometry::payload_hash(&b)
     }
@@ -517,7 +570,9 @@ pub struct SignedMap {
 
 /// `[ACT_DOMAIN][domain 32][0x80 0x00][14][point 84][record][nonce 32][sig
 /// 64]`; a record `[0][mouth 32][side u8][N u64 LE]` or `[1][kind u8][mouth
-/// 32][side u8][mouth 32][side u8][span n u64][span d u64][0 | 1 keeper 32]`.
+/// 32][side u8][mouth 32][side u8][span n u64][span d u64][0 | 1 keeper 32]`
+/// or a local throat `[2][throat key 32][keeper 32][frame_0 Mv][frame_1
+/// Mv][N u64 LE]`.
 pub fn encode_map(s: &SignedMap) -> Vec<u8> {
     let mut out = head(&s.act.domain, KIND_MAP);
     s.act.point.put(&mut out);
@@ -566,10 +621,17 @@ pub enum MapRefusal {
     Behind,
     /// 13 — the court's line could not take it.
     LineRefused,
+    /// 14 — a local throat's frame is zero or no versor.
+    NotVersor,
+    /// 15 — a local throat in a universe that declared no geometry.
+    NoGeometry,
+    /// 16 — a local throat's end does not read a place in its universe's
+    /// geometry (its frame no motion of that space).
+    Unplaced,
 }
 
 impl MapRefusal {
-    const ALL: [MapRefusal; 11] = [
+    const ALL: [MapRefusal; 14] = [
         MapRefusal::NotReserve,
         MapRefusal::UnknownDomain,
         MapRefusal::NotFinal,
@@ -581,6 +643,9 @@ impl MapRefusal {
         MapRefusal::Keeper,
         MapRefusal::Behind,
         MapRefusal::LineRefused,
+        MapRefusal::NotVersor,
+        MapRefusal::NoGeometry,
+        MapRefusal::Unplaced,
     ];
 
     pub fn code(self) -> u8 {
@@ -596,6 +661,9 @@ impl MapRefusal {
             MapRefusal::Keeper => 11,
             MapRefusal::Behind => 12,
             MapRefusal::LineRefused => 13,
+            MapRefusal::NotVersor => 14,
+            MapRefusal::NoGeometry => 15,
+            MapRefusal::Unplaced => 16,
         }
     }
 
@@ -661,29 +729,34 @@ impl HeldRecord {
     }
 }
 
-/// ONE RECORD AS READ: the record held and — a mouth — its exact place in
-/// its universe's own space, derived from the mouth's tube at the read
-/// (78.140: a point of the curved space or of the torus's fundamental
-/// domain), never stored beside it.
+/// ONE RECORD AS READ: the record held and its exact places in its
+/// universe's own space, derived at the read and never stored beside it — a
+/// mouth's one place off its tube (78.140: a point of the curved space or of
+/// the torus's fundamental domain), a local throat's two ends off its
+/// frames in the universe's declared geometry (side 0, then side 1); none
+/// for a segment, or where a place does not read.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MapEntry {
     pub held: HeldRecord,
-    pub place: Option<crate::transducer::cga::Mv>,
+    pub places: Vec<crate::transducer::cga::Mv>,
 }
 
 /// A UNIVERSE'S MAP as read: every record, by its id's order — `[count]
-/// [(held record, 0 | 1 place) …]`.
+/// [(held record, n u8, place × n) …]`, `n` at most 2 (0 or 1 is the v1
+/// writing exactly).
 pub fn encode_map_reading(records: &[MapEntry]) -> Vec<u8> {
     let mut out = Vec::new();
     crate::transducer::address::put_key_count(&mut out, records.len());
     for r in records {
         r.held.put(&mut out);
-        match &r.place {
-            None => out.push(0),
-            Some(m) => {
-                out.push(1);
-                m.to_bytes(&mut out);
-            }
+        let n = match r.places.len() {
+            0 => 0u8,
+            1 => 1,
+            _ => 2,
+        };
+        out.push(n);
+        for m in r.places.iter().take(usize::from(n)) {
+            m.to_bytes(&mut out);
         }
     }
     out
@@ -694,12 +767,12 @@ pub fn decode_map_reading(b: &[u8]) -> Option<Vec<MapEntry>> {
     let all = (0..crate::transducer::address::take_key_count(b, &mut p)?)
         .map(|_| {
             let held = HeldRecord::take(b, &mut p)?;
-            let place = match byte(b, &mut p)? {
-                0 => None,
-                1 => Some(crate::transducer::cga::Mv::from_bytes(b, &mut p)?),
-                _ => return None,
-            };
-            Some(MapEntry { held, place })
+            let n = byte(b, &mut p)?;
+            if n > 2 {
+                return None;
+            }
+            let places = (0..n).map(|_| crate::transducer::cga::Mv::from_bytes(b, &mut p)).collect::<Option<Vec<_>>>()?;
+            Some(MapEntry { held, places })
         })
         .collect::<Option<Vec<_>>>()?;
     (p == b.len()).then_some(all)

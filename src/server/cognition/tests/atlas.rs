@@ -6,12 +6,13 @@
 // the payer's stake and paid whole to the court; the reserve's connection
 // tax fills the recycled pool, which pays a closer's POUW before any mint.
 
-use crate::anastome::dialogue::atlas::{LedgerEntry, LedgerRefusal, Ledgered, MapAct, MapRecord, MapRefusal, Mapped, Segment};
+use crate::anastome::dialogue::atlas::{local_record_id, local_throat_id, LedgerEntry, LedgerRefusal, Ledgered, MapAct, MapRecord, MapRefusal, Mapped, Segment};
 use crate::anastome::dialogue::crossing::{CrossRefusal, Crossed, Declaration, Gas, Side, Traverse};
 use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
 use crate::anastome::dialogue::handoff::{Handed, Handoff, Mouth, State, Tube};
 use crate::anastome::dialogue::uplink::{TaxRefusal, TierFold, Uplinked, CONNECTION_TAX};
-use crate::anastome::dialogue::universe::Geometry;
+use crate::anastome::dialogue::universe::{Geometry, Metric, Stated, Statement};
+use crate::transducer::cga::Mv;
 use crate::anastome::dialogue::wallet::{StakeAct, StakeRefusal};
 use crate::chronometry::tuniversal::{Origin, TPoint};
 use crate::chronometry::ActKind;
@@ -152,7 +153,7 @@ fn map_then_traverse_end_to_end() {
     assert_ne!(ta, tb, "one throat mapped by both universes is two records");
     let read = k.map_reading(&domain(4));
     assert_eq!(read.len(), 2, "a mouth and a throat");
-    assert!(read.iter().any(|r| r.place.is_some()), "the mouth's place read off its tube");
+    assert!(read.iter().any(|r| r.places.len() == 1), "the mouth's place read off its tube");
     assert!(matches!(commit(&mut k, 4, 100, 12, 12, Vec::new()), Ledgered::Sealed { .. }));
     assert!(matches!(commit(&mut k, 5, 7, 12, 12, Vec::new()), Ledgered::Sealed { .. }));
     let payer = key(60);
@@ -377,5 +378,129 @@ fn a_stake_draws_claims_and_unstakes_only_once_they_settle() {
     assert_eq!(left, [4, 4, 2, 3 - units]);
     assert_eq!(stake(&mut k, &payer, left, true, 3), Ok([0; 4]), "unstaked once every claim settled");
     assert_eq!(k.treasury.balance_mu(&vk(&payer)), left);
+    assert!(k.treasury.audit().is_ok());
+}
+
+fn q(v: i64) -> num_rational::BigRational {
+    num_rational::BigRational::from_integer(v.into())
+}
+
+/// A slide by `(x, y)` in the torus's plane: a motion of flat space.
+fn slide(x: i64, y: i64) -> Mv {
+    crate::transducer::cga::translator_at(&[q(x), q(y), q(0)])
+}
+
+/// Domain 4's universe a flat torus of periods 30 and 20.
+fn torus_for_4(k: &mut Kernel) {
+    let space = Geometry::Torus { periods: vec![(30, 1), (20, 1)], metric: Metric::L1 };
+    assert!(matches!(k.state(&Statement { domain: domain(4), stated: Stated::Geometry(space) }.sign(&reserve(4))), Founded::Stated { .. }));
+}
+
+/// A local throat of domain 4 by the progenitor line `keeper`, its ends
+/// slid to `(32, −17)` and `(5, 4)`.
+fn local(keeper: [u8; 32], freshness: u64) -> MapRecord {
+    MapRecord::LocalThroat { throat: [42; 32], keeper, frames: (slide(32, -17), slide(5, 4)), freshness }
+}
+
+/// A LOCAL THROAT MAPS WITHOUT A MOUTH PAIR: refused in a universe that
+/// declared no geometry, with a frame zero or no versor, with an end that is
+/// no motion of the torus, or signed by the founder; mapped, its id the
+/// derived one and each end's place read exactly — `(32, −17)` modulo
+/// `(30, 20)` is `(2, 3)` — and both ends mapped places of the universe: a
+/// throat between them kept by its keeper (another keeper refused), a road
+/// from one of them.
+#[test]
+fn a_local_throat_maps_and_reads_its_ends_exactly() {
+    use crate::transducer::cga::{base_vector, dilator};
+    let (mut k, m, _) = founded();
+    let line = [77; 32];
+    assert_eq!(map(&mut k, 4, 10, local(line, 3)), Mapped::Refused(MapRefusal::NoGeometry), "no declared geometry: no place reads");
+    torus_for_4(&mut k);
+    let mixed = Mv::scalar(q(1)).add(&base_vector(&[q(1), q(0)]));
+    for bad in [Mv::zero(), mixed] {
+        let record = MapRecord::LocalThroat { throat: [42; 32], keeper: line, frames: (slide(1, 1), bad), freshness: 3 };
+        assert_eq!(map(&mut k, 4, 10, record), Mapped::Refused(MapRefusal::NotVersor));
+    }
+    for off in [crate::transducer::cga::translator_at(&[q(0), q(0), q(1)]), dilator(&q(2))] {
+        let record = MapRecord::LocalThroat { throat: [42; 32], keeper: line, frames: (off, slide(5, 4)), freshness: 3 };
+        assert_eq!(map(&mut k, 4, 10, record), Mapped::Refused(MapRefusal::Unplaced), "no motion of the torus");
+    }
+    let founder = MapAct { domain: domain(4), point: fp(10), record: local(line, 3), nonce: [1; 32] }.sign(&key(4));
+    assert_eq!(k.map(&founder, Some(fp(10))), Mapped::Refused(MapRefusal::NotReserve));
+    let Mapped::Sealed { record, .. } = map(&mut k, 4, 10, local(line, 3)) else { panic!("mapped") };
+    let mut material = domain(4).to_vec();
+    material.extend_from_slice(&[42; 32]);
+    let lid = blake3::derive_key("mycelium local throat v1", &material);
+    assert_eq!(local_throat_id(&domain(4), &[42; 32]), lid, "the derived mouth id");
+    assert_eq!(record, local_record_id(&domain(4), &lid));
+    let read = k.map_reading(&domain(4));
+    let entry = read.iter().find(|e| matches!(e.held.record, MapRecord::LocalThroat { .. })).expect("read");
+    let [p0, p1] = entry.places.as_slice() else { panic!("both ends") };
+    assert!(p0.sub(&base_vector(&[q(2), q(3)])).is_zero(), "(32, −17) modulo (30, 20), exactly");
+    assert!(p1.sub(&base_vector(&[q(5), q(4)])).is_zero());
+    let own = |keeper: [u8; 32]| MapRecord::Segment { kind: Segment::Throat, a: (lid, 0), b: (lid, 1), span: (3, 2), keeper: Some(keeper) };
+    assert_eq!(map(&mut k, 4, 11, own([7; 32])), Mapped::Refused(MapRefusal::Keeper));
+    assert!(matches!(map(&mut k, 4, 11, own(line)), Mapped::Sealed { .. }), "its throat, kept by its keeper");
+    assert!(matches!(map(&mut k, 4, 11, mouth(m, 0, 3)), Mapped::Sealed { .. }));
+    let road = MapRecord::Segment { kind: Segment::Tube, a: (lid, 1), b: (m, 0), span: (1, 1), keeper: None };
+    assert!(matches!(map(&mut k, 4, 12, road), Mapped::Sealed { .. }), "a road from a local throat's end");
+    assert_eq!(map(&mut k, 5, 12, MapRecord::Segment { kind: Segment::Tube, a: (lid, 0), b: (m, 1), span: (1, 1), keeper: None }), Mapped::Refused(MapRefusal::Unmapped), "another universe's");
+}
+
+/// A TRAVERSE OVER A LOCAL THROAT, END TO END: both ends in domain 4, so B
+/// is A; its freshness the record's N; the gas S 3/2 (its throat segment), G
+/// and H as declared, T 0 (one record, one mapped point); the fee `[1, 2, 0,
+/// 3]` claimed and paid whole at the window, nothing minted; the edge
+/// pending, then applied in A's next entry at 101 against 100: residual 1.
+#[test]
+fn a_traverse_over_a_local_throat_end_to_end() {
+    let (mut k, _, _) = founded();
+    torus_for_4(&mut k);
+    let line = [77; 32];
+    assert!(matches!(map(&mut k, 4, 10, local(line, 3)), Mapped::Sealed { .. }));
+    let lid = local_throat_id(&domain(4), &[42; 32]);
+    let seg = MapRecord::Segment { kind: Segment::Throat, a: (lid, 0), b: (lid, 1), span: (3, 2), keeper: Some(line) };
+    let Mapped::Sealed { record: seg, .. } = map(&mut k, 4, 10, seg) else { panic!("its throat") };
+    let Ledgered::Sealed { entry, .. } = commit(&mut k, 4, 100, 12, 12, Vec::new()) else { panic!("committed") };
+    let payer = key(60);
+    fund(&mut k, vk(&payer), [10, 10, 10, 10]);
+    assert_eq!(stake(&mut k, &payer, [10, 10, 10, 10], false, 1), Ok([10, 10, 10, 10]));
+    let court = k.identity;
+    let (court_before, minted_before) = (k.treasury.balance_mu(&court), k.treasury.minted());
+    let mut t = Traverse {
+        from: domain(4),
+        payer: vk(&payer),
+        mouth: lid,
+        side: 0,
+        at: fp(14),
+        point_a: fp(10),
+        point_b: fp(10),
+        entry_a: entry,
+        u_a: 100,
+        entry_b: entry,
+        u_b: 100,
+        route: vec![seg],
+        debit: None,
+        credit: None,
+        nonce: [1; 32],
+    };
+    let lanes = [5, 2, 0, 3];
+    t.debit = Some(Declaration { lanes, sig: reserve(4).sign(&t.debit_bytes(&lanes)).to_bytes() });
+    t.credit = Some(Declaration { lanes, sig: reserve(4).sign(&t.credit_bytes(&lanes)).to_bytes() });
+    let unmapped = Traverse { mouth: local_throat_id(&domain(4), &[43; 32]), ..t.clone() };
+    assert_eq!(k.traverse(&unmapped.sign(&payer), Some(fp(14))), Crossed::Refused(CrossRefusal::NoMouth), "a throat key never mapped");
+    let Crossed::Sealed { crossing, gas, fee, h, .. } = k.traverse(&t.sign(&payer), Some(fp(14))) else { panic!("crossed") };
+    assert_eq!(gas, Gas { s: (3, 2), g: 2, t: 0, h: 3 });
+    assert_eq!(fee, [1, 2, 0, 3], "⌊3/2⌋ on S");
+    assert_eq!(k.claims_on(&vk(&payer)), Some([1, 2, 0, 3]));
+    let edge = k.crossing_edge(&crossing).expect("the edge");
+    assert_eq!((edge.from, edge.to, edge.u_entry, edge.residual()), (domain(4), domain(4), 100, None), "pending, into its own universe");
+    pass(&mut k, h + CHALLENGE_WINDOW);
+    k.settle_windows();
+    let paid: [u64; 4] = std::array::from_fn(|l| k.treasury.balance_mu(&court)[l] - court_before[l]);
+    assert_eq!(paid, [1, 2, 0, 3], "paid whole to the court keeping the map");
+    assert_eq!(k.treasury.minted(), minted_before, "never a mint");
+    assert!(matches!(commit(&mut k, 4, 101, 14, 14, vec![(crossing, 101)]), Ledgered::Sealed { .. }));
+    assert_eq!(k.crossing_edge(&crossing).and_then(|e| e.residual()), Some(1), "applied at 101 against 100");
     assert!(k.treasury.audit().is_ok());
 }

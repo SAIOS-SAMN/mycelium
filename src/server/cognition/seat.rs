@@ -93,6 +93,37 @@ pub struct SeatRelay {
     /// relay sequence its last exempt read stood at. Held only while the box
     /// is, so it is bounded by the boxes.
     exempt_at: Keyed<u64>,
+    /// THE POSTS SINCE BOOT, per domain with a sitting reserve here: filed
+    /// by kind, refused by reason (`observe::Relay`). Bounded by the domains
+    /// founded.
+    posts: Keyed<([u64; 6], [u64; 3])>,
+    /// Posts naming a domain with no reserve here, and seat frames that did
+    /// not read far enough to name one: each one count.
+    unknown: u64,
+    unread: u64,
+}
+
+/// A post's kind, in `observe::POST_KINDS` order.
+fn kind_of(p: &Post) -> usize {
+    match p {
+        Post::Seats(_) => 0,
+        Post::Take(_) => 1,
+        Post::Taken(_) => 2,
+        Post::Percept(_) => 3,
+        Post::Call(_) => 4,
+        Post::Outcome(_) => 5,
+    }
+}
+
+/// A refusal's place in `observe::POST_REFUSALS`; `None` for UnknownDomain,
+/// which names no counted domain.
+fn reason_of(r: Refusal) -> Option<usize> {
+    match r {
+        Refusal::Unsigned => Some(0),
+        Refusal::NotTheHouse => Some(1),
+        Refusal::Malformed => Some(2),
+        Refusal::UnknownDomain => None,
+    }
 }
 
 /// 78.146 — THE RELAY ON ITS OWN LOCK, so a door can serve a mind's read
@@ -143,6 +174,17 @@ impl SharedRelay {
 
     pub fn dropped(&self) -> u64 {
         self.lock().dropped
+    }
+
+    /// A seat frame that did not read far enough to name a domain.
+    pub fn note_unread(&self) {
+        let mut r = self.lock();
+        r.unread = r.unread.wrapping_add(1);
+    }
+
+    /// 78.145 — THE RELAY'S READING for the observer, read on its own lock.
+    pub fn reading(&self) -> crate::observe::Relay {
+        self.lock().reading()
     }
 
     /// 78.146 — A MIND'S READ, EXEMPT FROM THE DOOR'S DEFERRAL: reading one's
@@ -227,24 +269,79 @@ impl SeatRelay {
         let key = box_key(if to_house { TO_HOUSE } else { TO_MIND }, who);
         self.mail.get(&key).map_or(0, |b| b.bytes)
     }
+
+    /// One post counted against its domain: filed under its kind, or
+    /// refused for its reason.
+    fn count(&mut self, domain: &[u8; 32], filed: Option<usize>, refused: Option<usize>) {
+        if !self.posts.contains(domain) {
+            self.posts.insert(domain, ([0; 6], [0; 3]));
+        }
+        let Some((f, r)) = self.posts.get_mut(domain) else { return };
+        if let Some(n) = filed.and_then(|i| f.get_mut(i)) {
+            *n = n.wrapping_add(1);
+        }
+        if let Some(n) = refused.and_then(|i| r.get_mut(i)) {
+            *n = n.wrapping_add(1);
+        }
+    }
+
+    /// 78.145 — THE RELAY'S READING: its standing, what it holds, and each
+    /// counted domain's posts.
+    pub fn reading(&self) -> crate::observe::Relay {
+        let as_u64 = |n: usize| match u64::try_from(n) {
+            Ok(v) => v,
+            Err(_) => u64::MAX,
+        };
+        let (listings, boxes, pieces) = self.census();
+        let bytes: usize = self.mail.scoped().map(|(_, b)| b.bytes).sum();
+        let domains = self
+            .posts
+            .scoped()
+            .filter_map(|(k, (filed, refused))| Some(crate::observe::RelayPosts { domain: k.as_slice().try_into().ok()?, filed: *filed, refused: *refused }))
+            .collect();
+        crate::observe::Relay {
+            epoch: self.epoch,
+            seq: self.seq,
+            listings: as_u64(listings),
+            boxes: as_u64(boxes),
+            pieces: as_u64(pieces),
+            bytes: as_u64(bytes),
+            dropped: self.dropped,
+            unknown: self.unknown,
+            unread: self.unread,
+            domains,
+        }
+    }
 }
 
 impl super::Kernel {
     /// 78.145 — A SEAT POST: checked for its signer, then held (a listing)
     /// or filed for its addressee (a take or a call to the domain's house; a
     /// taken, percept or outcome to the mind it names). Answered by the
-    /// sequence it was given, or the refusal by name.
+    /// sequence it was given, or the refusal by name — and counted on the
+    /// relay's reading either way.
     pub fn seat_post(&mut self, s: &SignedPost) -> Result<u64, Refusal> {
         let domain = s.post.domain();
-        let house = self.reserve_of(&domain).ok_or(Refusal::UnknownDomain)?;
-        match s.post.signer() {
-            Signer::House if !s.signed_by(&house) => return Err(Refusal::NotTheHouse),
-            Signer::Mind(m) if !s.signed_by(&m) => return Err(Refusal::Unsigned),
-            _ => {}
-        }
-        let body = s.body().ok_or(Refusal::Malformed)?;
+        let Some(house) = self.reserve_of(&domain) else {
+            let mut relay = self.seats.lock();
+            relay.unknown = relay.unknown.wrapping_add(1);
+            return Err(Refusal::UnknownDomain);
+        };
+        let checked = match s.post.signer() {
+            Signer::House if !s.signed_by(&house) => Err(Refusal::NotTheHouse),
+            Signer::Mind(m) if !s.signed_by(&m) => Err(Refusal::Unsigned),
+            _ => s.body().ok_or(Refusal::Malformed),
+        };
         let mut guard = self.seats.lock();
         let relay = &mut *guard;
+        let body = match checked {
+            Ok(body) => body,
+            Err(why) => {
+                relay.count(&domain, None, reason_of(why));
+                return Err(why);
+            }
+        };
+        relay.count(&domain, Some(kind_of(&s.post)), None);
         relay.seq += 1;
         let seq = relay.seq;
         let sub = s.post.sub();

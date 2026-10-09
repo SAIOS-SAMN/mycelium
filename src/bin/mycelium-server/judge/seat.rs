@@ -67,7 +67,11 @@ pub(crate) fn serve_listing(stream: &mut TcpStream, frame: &Frame, door: &Door) 
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(request) = decode_seat_request(&frame.body) else { return };
     let body = match request {
-        Err(why) => encode_post_reply(Err(why)),
+        Err(why) => {
+            // A frame that names no domain: counted on the relay's reading.
+            door.seat_relay.note_unread();
+            encode_post_reply(Err(why))
+        }
         Ok(SeatRequest::ReadListing(..)) => {
             serve_listing(stream, frame, door);
             return;

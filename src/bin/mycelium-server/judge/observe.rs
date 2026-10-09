@@ -108,6 +108,10 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             // exchange, the back-fill and the adjudication keep.
             observe::replace(own, Reading::Replication(observe::replication()));
             observe::replace(own, Reading::Adjudication(observe::adjudication()));
+            // 78.145 — the seat relay, read on its own lock (never the
+            // kernel's): its standing and each domain's posts filed and
+            // refused since boot.
+            observe::replace(own, Reading::Relay(Box::new(door.seat_relay.reading())));
             // The body's share of the frame, exact, as `rows` reads it.
             let Some(budget) = mycelium::network::wire::frame_budget().checked_sub(64) else {
                 return;
