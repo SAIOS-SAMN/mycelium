@@ -22,6 +22,7 @@ mod persist;
 mod published;
 mod syllabus;
 mod transport;
+mod tshelf;
 mod wallet;
 mod why;
 #[cfg(test)]

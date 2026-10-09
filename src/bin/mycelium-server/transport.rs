@@ -34,7 +34,8 @@ pub(crate) fn answer(s: &mut TcpStream, frame: Frame) {
 /// after the asker closed can still land in the socket's buffer and read as
 /// written, so `unwritten` counts the misses the wire refused, not all.
 pub(crate) fn answer_written(s: &mut TcpStream, frame: Frame) -> bool {
-    match frame.encode() {
+    // 78.152 TU-7: every reply carries this door's final point.
+    match frame.encode_at(crate::tshelf::final_point().as_ref()) {
         Some(bytes) => s.write_all(&bytes).is_ok(),
         None => {
             eprintln!(
@@ -50,14 +51,14 @@ pub(crate) fn read_frame(s: &mut TcpStream) -> Option<Frame> {
     let mut head = [0u8; 5];
     s.read_exact(&mut head).ok()?;
     let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-    if len > mycelium::network::wire::BODY_BUDGET {
+    if len > mycelium::network::wire::BODY_BUDGET + mycelium::chronometry::tuniversal::TPoint::LEN {
         // REFUSED BY NAME, NOT DROPPED (78.125): the frame names a body past
         // the wire's one budget. Its body is never read — a length is no
         // licence to allocate — but the act is answered refused before the
         // connection closes.
         // A lane byte that names no lane is answered on the spatial lane.
-        let lane = match mycelium::network::wire::Stratum::from_u8(head[0]) {
-            Some(l) => l,
+        let lane = match mycelium::network::wire::read_lane(head[0]) {
+            Some((l, _)) => l,
             None => mycelium::network::wire::Stratum::Spatial,
         };
         let refused = mycelium::cognition::Outcome::Refused(mycelium::verdict::REFUSE_MALFORMED);
@@ -68,7 +69,11 @@ pub(crate) fn read_frame(s: &mut TcpStream) -> Option<Frame> {
     let mut buf = vec![0u8; 5 + len];
     buf[..5].copy_from_slice(&head);
     s.read_exact(&mut buf[5..]).ok()?;
-    Frame::decode(&buf).map(|(f, _)| f)
+    // 78.152 TU-7: the point the speaker carried is heard at the door as the
+    // frame is read, beside the published reading and outside the kernel.
+    let (frame, point, _) = Frame::decode_at(&buf)?;
+    crate::tshelf::heard_at_door(point);
+    Some(frame)
 }
 
 /// THE DEFERRAL FRAME, read on a hypha-to-hypha reply (23.8, I36): a full
@@ -138,7 +143,8 @@ pub(crate) fn tell_peer_within(addr: &str, body: Vec<u8>, rtt_hint: u64) -> Opti
     // so the READ is budgeted instead: non-blocking, one spend per attempt,
     // refused when the transport's own deadline is spent.
     let frame = Frame { lane: mycelium::network::wire::Stratum::Spatial, body };
-    s.write_all(&frame.encode()?).ok()?;
+    // 78.152 TU-7: a court's act to a peer carries its door's final point.
+    s.write_all(&frame.encode_at(crate::tshelf::final_point().as_ref())?).ok()?;
     s.set_nonblocking(true).ok()?;
     // A deadline the ledger cannot count does not end the read; an
     // unmeasured one has no deadline to spend either.
@@ -157,12 +163,17 @@ pub(crate) fn tell_peer_within(addr: &str, body: Vec<u8>, rtt_hint: u64) -> Opti
     // refusing a peer that had merely not been scheduled. The body's read
     // is the frame's length, not the transport, and is not in the measure.
     let rtt = read_budgeted(&mut s, &mut head, stall)?;
+    let (_, pointed) = mycelium::network::wire::read_lane(head[0])?;
     let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-    if len > mycelium::network::wire::BODY_BUDGET {
+    if len > mycelium::network::wire::BODY_BUDGET + mycelium::chronometry::tuniversal::TPoint::LEN {
         return None;
     }
     let mut reply = vec![0u8; len];
     read_budgeted(&mut s, &mut reply, stall)?;
+    // The peer door's final point leaves the body: a claim of that door, read
+    // as heard here — this court's final point is its own keepers' quorum.
+    let (reply, point) = mycelium::network::wire::split_point(reply, pointed)?;
+    crate::tshelf::shelf().heard_at_door(point);
     Some((reply, rtt))
 }
 

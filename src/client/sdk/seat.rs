@@ -269,8 +269,12 @@ impl super::Session {
         self.seat_post(&Post::Taken(t).sign(house).ok_or_else(unwritten)?)
     }
 
-    /// THE HOUSE PERCEIVES FOR A SEATED MIND.
+    /// THE HOUSE PERCEIVES FOR A SEATED MIND. 78.152 TU-7: a percept the
+    /// house left unstamped is stamped with this session's last final point
+    /// (`Session::tuniversal`) before it is signed; one the house stamped
+    /// itself keeps its own.
     pub fn post_percept(&self, house: &SigningKey, p: Percept) -> io::Result<Result<u64, Refusal>> {
+        let p = Percept { point: p.point.or(self.tuniversal()), ..p };
         self.seat_post(&Post::Percept(p).sign(house).ok_or_else(unwritten)?)
     }
 

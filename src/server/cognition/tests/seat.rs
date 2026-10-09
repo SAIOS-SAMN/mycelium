@@ -89,7 +89,7 @@ fn a_house_and_a_mind_speak_through_the_relay() {
     assert_eq!(k.seat_post(&Post::Taken(taken.clone()).sign(&mind()).expect("writes")), Err(Refusal::NotTheHouse));
     k.seat_post(&Post::Taken(taken.clone()).sign(&house()).expect("writes")).expect("relayed");
     let counsel = Record::Counsel { fn_id: 3, args: vec![Arg::Count(2)], worth: Arg::Q { num: 1, den: 2 }, cost: Arg::Q { num: 1, den: 3 } };
-    let percept = Percept { domain: d, seat: 7, mind: m, local_time: Arg::Q { num: 12, den: 1 }, seq: 1, records: vec![counsel] };
+    let percept = Percept { domain: d, seat: 7, mind: m, local_time: Arg::Q { num: 12, den: 1 }, seq: 1, records: vec![counsel], point: None };
     k.seat_post(&Post::Percept(percept.clone()).sign(&house()).expect("writes")).expect("relayed");
     // Another mind's percept is not this mind's mail.
     let theirs = Percept { mind: vk(&other()), ..percept.clone() };
@@ -133,7 +133,7 @@ fn a_minds_read_is_exempt_once_per_window() {
     let d = vk(&domain());
     let m = vk(&mind());
     let relay = k.seat_relay();
-    let percept = |seq| Percept { domain: d, seat: 7, mind: m, local_time: Arg::Q { num: 1, den: 1 }, seq, records: Vec::new() };
+    let percept = |seq| Percept { domain: d, seat: 7, mind: m, local_time: Arg::Q { num: 1, den: 1 }, seq, records: Vec::new(), point: None };
     assert_eq!(relay.exempt_read(&ReadMail::sign(&mind(), 0, [0; 32])), None, "no box, nothing exempt");
     let first = k.seat_post(&Post::Percept(percept(1)).sign(&house()).expect("writes")).expect("relayed");
     let served = relay.exempt_read(&ReadMail::sign(&mind(), 0, [1; 32])).expect("exempt").expect("signed");
@@ -163,7 +163,7 @@ fn a_mailbox_keeps_its_bound() {
     let records: Vec<Record> = (0..250).map(|i| Record::Plain { kind: i, args: (0..30).map(|j| Arg::Key([j; 32])).collect() }).collect();
     let mut posted = 0u64;
     for seq in 0..20 {
-        let p = Percept { domain: d, seat: 7, mind: m, local_time: Arg::Count(seq), seq, records: records.clone() };
+        let p = Percept { domain: d, seat: 7, mind: m, local_time: Arg::Count(seq), seq, records: records.clone(), point: None };
         k.seat_post(&Post::Percept(p).sign(&house()).expect("writes")).expect("relayed");
         posted += 1;
         assert!(k.seats.held_bytes(false, &m) <= mail_bound(), "the box never passes its bound");

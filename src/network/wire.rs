@@ -90,17 +90,63 @@ pub struct Frame {
     pub body: Vec<u8>,
 }
 
+/// 78.152 TU-7 — THE LANE BYTE OF A FRAME THAT CARRIES A POINT: the lane's
+/// own byte with this bit set, and the frame's last `TPoint::LEN` bytes are
+/// the last FINAL point its speaker read. WIRE-CHANGE: a decoder older than
+/// 78.152 reads no lane in the byte and refuses the frame whole.
+pub const POINTED: u8 = 0x80;
+
+/// A lane byte read: the lane, and whether the frame carries a point.
+pub fn read_lane(byte: u8) -> Option<(Stratum, bool)> {
+    Some((Stratum::from_u8(byte & !POINTED)?, byte & POINTED != 0))
+}
+
+/// A FRAME'S BODY AND ITS POINT: where the lane byte said the frame carries
+/// one, the body's last `TPoint::LEN` bytes are the point and leave the body.
+/// `None` where a pointed body is shorter than a point.
+pub fn split_point(
+    mut body: Vec<u8>,
+    pointed: bool,
+) -> Option<(Vec<u8>, Option<crate::chronometry::tuniversal::TPoint>)> {
+    if !pointed {
+        return Some((body, None));
+    }
+    let at = body.len().checked_sub(crate::chronometry::tuniversal::TPoint::LEN)?;
+    let mut p = at;
+    let point = crate::chronometry::tuniversal::TPoint::take(&body, &mut p)?;
+    body.truncate(at);
+    Some((body, Some(point)))
+}
+
 impl Frame {
     /// `[lane:1][len:4 LE][body]`. `None` if the body exceeds the MTU budget.
     pub fn encode(&self) -> Option<Vec<u8>> {
+        self.encode_at(None)
+    }
+
+    /// 78.152 TU-7 — the frame carrying the last final point its speaker
+    /// read: `[lane | POINTED][len:4 LE][body][point]`, the length counting
+    /// the point; with none, `encode`'s frame. `None` if the body exceeds the
+    /// MTU budget.
+    pub fn encode_at(&self, point: Option<&crate::chronometry::tuniversal::TPoint>) -> Option<Vec<u8>> {
         if self.body.len() > BODY_BUDGET {
             return None;
         }
-        let mut out = Vec::with_capacity(5 + self.body.len());
-        out.push(self.lane.as_u8());
-        #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — a constant: the body length is at most BODY_BUDGET = 768 · 1024, refused above it three lines up")]
-        out.extend_from_slice(&(self.body.len() as u32).to_le_bytes());
+        let extra = match point {
+            Some(_) => crate::chronometry::tuniversal::TPoint::LEN,
+            None => 0,
+        };
+        let len = u32::try_from(self.body.len().checked_add(extra)?).ok()?;
+        let mut out = Vec::with_capacity(5 + self.body.len() + extra);
+        out.push(match point {
+            Some(_) => self.lane.as_u8() | POINTED,
+            None => self.lane.as_u8(),
+        });
+        out.extend_from_slice(&len.to_le_bytes());
         out.extend_from_slice(&self.body);
+        if let Some(p) = point {
+            p.put(&mut out);
+        }
         // LD1: the frame's bytes, by the act its body opens with.
         if let Some(tag) = crate::anastome::dialogue::act_tag(&self.body) {
             crate::observe::note_frame(tag, out.len() as u64);
@@ -110,16 +156,24 @@ impl Frame {
 
     /// Decode one frame from the head of `bytes`; returns `(frame, bytes_read)`.
     /// `None` on a bad lane tag, a length over budget, or a truncated buffer.
+    /// A point the frame carries is read and set aside (`decode_at`).
     pub fn decode(bytes: &[u8]) -> Option<(Frame, usize)> {
-        if bytes.len() < 5 {
+        Self::decode_at(bytes).map(|(f, _, n)| (f, n))
+    }
+
+    /// One frame from the head of `bytes`, with the point it carries.
+    pub fn decode_at(bytes: &[u8]) -> Option<(Frame, Option<crate::chronometry::tuniversal::TPoint>, usize)> {
+        // The lane byte is the frame's own first coordinate (rule 15: a wire
+        // tag's offset is content).
+        let (&tag, _) = bytes.split_first()?;
+        let (lane, pointed) = read_lane(tag)?;
+        let len = u32::from_le_bytes(bytes.get(1..5)?.try_into().ok()?) as usize;
+        if len > BODY_BUDGET.checked_add(crate::chronometry::tuniversal::TPoint::LEN)? {
             return None;
         }
-        let lane = Stratum::from_u8(bytes[0])?;
-        let len = u32::from_le_bytes([bytes[1], bytes[2], bytes[3], bytes[4]]) as usize;
-        if len > BODY_BUDGET || bytes.len() < 5 + len {
-            return None;
-        }
-        Some((Frame { lane, body: bytes[5..5 + len].to_vec() }, 5 + len))
+        let body = bytes.get(5..5 + len)?.to_vec();
+        let (body, point) = split_point(body, pointed)?;
+        Some((Frame { lane, body }, point, 5 + len))
     }
 }
 
@@ -171,5 +225,20 @@ mod tests {
         ];
         let round = demultiplex(&multiplex(&fs).unwrap()).unwrap();
         assert_eq!(fs, round, "all four lanes remain distinct and ordered");
+    }
+
+    /// 78.152 TU-7 — a frame carries its speaker's last final point behind
+    /// its body, read back exactly; an older decoder's lane read refuses it.
+    #[test]
+    fn a_frame_carries_the_last_final_point() {
+        use crate::chronometry::tuniversal::{Origin, TPoint};
+        let point = TPoint { origin: Origin { genesis: [7; 32], epoch: 146 }, h: 40_961, lanes: [3, 0, 9, 1], k: 812 };
+        let f = Frame { lane: Stratum::Temporal, body: vec![0x53, 1, 2] };
+        let bytes = f.encode_at(Some(&point)).unwrap();
+        assert_eq!(Stratum::from_u8(bytes[0]), None, "a pre-78.152 lane read refuses the pointed frame");
+        let (g, at, n) = Frame::decode_at(&bytes).unwrap();
+        assert_eq!((g, at, n), (f.clone(), Some(point), 5 + 3 + TPoint::LEN));
+        let (h, none, _) = Frame::decode_at(&f.encode().unwrap()).unwrap();
+        assert_eq!((h, none), (f, None), "a frame with no point reads with none");
     }
 }
