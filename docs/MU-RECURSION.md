@@ -859,6 +859,34 @@ is decided here, and binds the slice (S1–S4):
    ALPHABET.md and the ~37 other mentions of "the seventeen" read through
    1.1 as amended; S2 marks ALPHABET.md superseded at its head.
 
+### The operator's ruling on refused solves as held questions, 2026-10-09 (agreed; the coordinator's relay)
+
+A REFUSED SOLVE of a court task becomes a CV2 QUESTION the court holds and
+offers to other perspectives — chapter 74 extended explicitly to the paying
+path. Order: after U5–U7 and the question-visibility gap (1,140 demands
+stood, one demand listing ever served in a quote page), then CV4. Guards,
+binding:
+1. The refusing mind receives the refusal's KIND only (U1); the locus and
+   the shape of the failure go only into the held question — the court is
+   no hot/cold oracle. (U11, "the solve refusal carries its locus on the wire
+   to the solver", is WITHDRAWN by this guard.)
+2. Withheld outputs never leave the court: the held question carries the
+   locus and the failed shape with the withheld hues removed (the C
+   cocycle's hue byte stripped). Law 8: the court offers the question and
+   never composes an answer.
+3. A held question is offered only to a DIFFERENT perspective — never back
+   to the refuser, nor to minds seated for the same house.
+4. A closure is a derivation the court replays like any solve and it cites
+   what it used. μ is never paid for a refusal; the refuser is paid only as
+   a cited generator when another's closure cites its receipt (POWC), and the
+   closer is paid the closure (CV4's economics — the quote arm's are
+   inverted today: closer pays discoverer, asker nothing).
+5. Held questions lapse by the existing escrow and ZeroFlux rules.
+Carrier: the refusal (reason, at, obstruction) is in hand at the door's
+solve verdict and dropped there; it is kept for the held question with the
+pair index and ρ_rem the replay already computes — never sent to the
+refuser.
+
 ### The operator's ruling on the servers as educators, 2026-10-09
 
 > "the mycelium-servers are supposed to be educators, they were supposed to be and have syllabus configured in them for distribution."
