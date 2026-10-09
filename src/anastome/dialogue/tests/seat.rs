@@ -39,8 +39,14 @@ fn golden_call() -> SignedPost {
 fn golden_percept() -> SignedPost {
     let m = mind().verifying_key().to_bytes();
     let counsel = Record::Counsel { fn_id: 3, args: call_args(), worth: Arg::Q { num: 1, den: 2 }, cost: Arg::Q { num: 1, den: 3 } };
-    let p = Percept { domain: DOMAIN, seat: SEAT, mind: m, local_time: Arg::Q { num: 12, den: 1 }, seq: 1, records: vec![counsel] };
+    let p = Percept { domain: DOMAIN, seat: SEAT, mind: m, local_time: Arg::Q { num: 12, den: 1 }, seq: 1, records: vec![counsel], point: Some(golden_point()) };
     Post::Percept(p).sign(&house()).expect("writes")
+}
+
+/// 78.152 — the final point the golden percept is stamped at.
+fn golden_point() -> crate::chronometry::tuniversal::TPoint {
+    use crate::chronometry::tuniversal::{Origin, TPoint};
+    TPoint { origin: Origin { genesis: [6; 32], epoch: 146 }, h: 40_961, lanes: [5, 0, 2, 1], k: 812 }
 }
 
 /// The frame read back as the post it carries, or a failure naming why.
@@ -78,6 +84,7 @@ fn the_fixed_acts_decode_to_their_values_and_verify() {
     let Post::Percept(p) = &percept.post else { panic!("a percept: {:?}", percept.post) };
     assert_eq!((p.domain, p.seat, p.mind, p.seq), (DOMAIN, SEAT, m, 1));
     assert_eq!(p.local_time, Arg::Q { num: 12, den: 1 });
+    assert_eq!(p.point, Some(golden_point()), "the house's final point, exactly, signed with the percept");
     assert_eq!(
         p.records,
         vec![Record::Counsel { fn_id: 3, args: call_args(), worth: Arg::Q { num: 1, den: 2 }, cost: Arg::Q { num: 1, den: 3 } }],
@@ -122,6 +129,7 @@ fn every_seat_post_reads_back_whole() {
         local_time: big(),
         seq: 9,
         records: vec![Record::Plain { kind: 2, args: vec![Arg::Count(40), Arg::Flag(true), Arg::Mv(crate::transducer::cga::Mv::scalar(num_rational::BigRational::from_integer(BigInt::from(3u8))))] }],
+        point: None,
     };
     round_trip(&Post::Percept(plain).sign(&house()).expect("writes"));
     round_trip(&golden_call());
@@ -191,7 +199,7 @@ fn a_bytes_argument_crosses_whole() {
 fn a_bytes_percept_decodes_to_its_values_and_verifies() {
     let m = mind().verifying_key().to_bytes();
     let record = Record::Plain { kind: 4, args: vec![Arg::Bytes(vec![0xA5; 5])] };
-    let p = Percept { domain: DOMAIN, seat: SEAT, mind: m, local_time: Arg::Q { num: 12, den: 1 }, seq: 2, records: vec![record.clone()] };
+    let p = Percept { domain: DOMAIN, seat: SEAT, mind: m, local_time: Arg::Q { num: 12, den: 1 }, seq: 2, records: vec![record.clone()], point: None };
     let s = Post::Percept(p).sign(&house()).expect("writes");
     let back = decoded(&encode_post(&s).expect("writes"));
     let Post::Percept(read) = &back.post else { panic!("a percept: {:?}", back.post) };

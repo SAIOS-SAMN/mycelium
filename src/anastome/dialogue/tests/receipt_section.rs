@@ -22,8 +22,18 @@ fn the_receipt_section_is_found_after_a_full_digest_frame() {
     let room = [11u64, 12, 13, 14];
     let cover_roots = [[1u8; 32], [2; 32], [3; 32], [4; 32]];
     let ruled_root = [5u8; 32];
-    let vk = [6u8; 32];
     let sig = [7u8; 64];
+    // 78.152 — the keeper ring the digest carries: two readings of the
+    // digest's own key, parent-linked.
+    let keeper = ed25519_dalek::SigningKey::from_bytes(&[6; 32]);
+    let vk = keeper.verifying_key().to_bytes();
+    let origin = crate::chronometry::tuniversal::Origin { genesis: [8; 32], epoch: 2 };
+    let mut keepers = crate::chronometry::tuniversal::Keepers::new(origin, vk);
+    for (h, s) in [(4u64, 1u64), (5, 3)] {
+        keepers.read_own(&keeper, crate::chronometry::tuniversal::Tick { h, lanes: [s, 0, 0, 0], k: h }).expect("writes");
+    }
+    let ring = keepers.own_ring();
+    assert_eq!(ring.len(), 2);
 
     let mut chain = crate::chronometry::ReceiptChain::with_vk(vk);
     let head = chain.append(crate::chronometry::ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
@@ -47,7 +57,7 @@ fn the_receipt_section_is_found_after_a_full_digest_frame() {
     // digest, and the receipt section on the end.
     let mut body = encode_digests_reply(&digests).expect("the digests fit their fields");
     body.extend(
-        encode_cover_digest(&room, &cover_roots, &ruled_root, &vk, "127.0.0.1:7500", &sig)
+        encode_cover_digest(&room, &cover_roots, &ruled_root, &vk, "127.0.0.1:7500", &ring, &sig)
             .expect("the digest fits its lengths"),
     );
     let bare = body.len();
@@ -59,6 +69,9 @@ fn the_receipt_section_is_found_after_a_full_digest_frame() {
         (room, cover_roots, ruled_root, vk, sig)
     );
     assert_eq!(d.bind, "127.0.0.1:7500");
+    assert_eq!(d.ring, ring, "the keeper ring, reading for reading");
+    let mut other = crate::chronometry::tuniversal::Keepers::new(origin, [1; 32]);
+    assert_eq!(other.admit(d.vk, d.ring), Ok(crate::chronometry::tuniversal::Admitted::Anchored), "and it verifies where it lands");
     assert_eq!(
         cover_digest_end(&body),
         Some(bare),
@@ -85,7 +98,7 @@ fn the_receipt_section_is_found_after_a_full_digest_frame() {
 
     // The unframed shape: one reading now, since the fields ahead of the
     // bind are fixed-width and no chart count stands at the head.
-    let mut lone = encode_cover_digest(&room, &cover_roots, &ruled_root, &vk, "127.0.0.1:7500", &sig)
+    let mut lone = encode_cover_digest(&room, &cover_roots, &ruled_root, &vk, "127.0.0.1:7500", &[], &sig)
         .expect("the digest fits its lengths");
     lone.extend(encode_receipt_section(&prefix, &rsig, &head).expect("frames"));
     let alone = decode_cover_digest(&lone).expect("the roots-only digest has one reading");

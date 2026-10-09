@@ -28,6 +28,11 @@
 //! answered `[count u16]` then `(seq u64, sub u8, len u32, fields‖sig)…`, or
 //! a two-byte refusal `[0][reason ≥ 1]` — a mail reply of two bytes is
 //! `[0][0]`, none held).
+//!
+//! v1.3 (78.152 TU-7, WIRE-CHANGE): a PERCEPT's fields end in the house's
+//! last final TUniversal point, `[0]` or `[1][TPoint 84]`, signed with them;
+//! every frame on the seat surface carries its speaker's last final point
+//! behind its body (`network::wire::POINTED`).
 
 use super::*;
 use crate::transducer::cga::Mv;
@@ -307,7 +312,9 @@ pub enum Record {
 }
 
 /// WHAT THE HOUSE LETS A SEATED MIND PERCEIVE, at the house's local time and
-/// its own sequence.
+/// its own sequence — and (78.152 TU-7) at the last FINAL TUniversal point
+/// the house read, which it signs with the percept: its proper time and the
+/// universe's one clock side by side, neither read as the other.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Percept {
     pub domain: [u8; 32],
@@ -316,6 +323,10 @@ pub struct Percept {
     pub local_time: Arg,
     pub seq: u64,
     pub records: Vec<Record>,
+    /// The house's last final point (`Session::tuniversal`), `None` before
+    /// it read one. WIRE-CHANGE (seat v1.3): `[0]` or `[1][TPoint]` after
+    /// the records, signed with them.
+    pub point: Option<crate::chronometry::tuniversal::TPoint>,
 }
 
 /// A SEATED MIND CALLS one of its seat's functions.
@@ -467,6 +478,13 @@ impl Post {
                         }
                     }
                 }
+                match &t.point {
+                    None => out.push(0),
+                    Some(p) => {
+                        out.push(1);
+                        p.put(out);
+                    }
+                }
             }
             Post::Call(c) => {
                 head(out, &c.domain, c.seat, &c.mind);
@@ -543,7 +561,12 @@ impl Post {
                         Record::Plain { kind, args: take_args(b, p)? }
                     });
                 }
-                Post::Percept(Percept { domain, seat, mind, local_time, seq, records })
+                let point = match u8_at(b, p)? {
+                    0 => None,
+                    1 => Some(crate::chronometry::tuniversal::TPoint::take(b, p)?),
+                    _ => return None,
+                };
+                Post::Percept(Percept { domain, seat, mind, local_time, seq, records, point })
             }
             SUB_CALL => {
                 let (domain, seat, mind) = head(b, p)?;

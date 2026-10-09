@@ -176,7 +176,8 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // the first cut of this ended `.unwrap_or_else(|| vec![lane, 0,0,0,0])`,
     // a hand-built frame for the case where a five-byte frame fails to
     // encode, which is the shape rule 11 refuses.
-    let full = dialogue::encode_offer_reply(&answered).and_then(|body| Frame { lane: frame.lane, body }.encode());
+    let full = dialogue::encode_offer_reply(&answered)
+        .and_then(|body| Frame { lane: frame.lane, body }.encode_at(crate::tshelf::final_point().as_ref()));
     match full {
         Some(bytes) => {
             let _ = s.write_all(&bytes);

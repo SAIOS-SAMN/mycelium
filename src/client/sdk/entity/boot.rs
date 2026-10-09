@@ -105,6 +105,14 @@ impl Entity {
         self.height.get()
     }
 
+    /// 78.152 TU-7 — THE LAST FINAL TUNIVERSAL POINT this mind's session
+    /// read (`Session::tuniversal`): what every act it speaks carries, and
+    /// what it stamps a percept or a publication with. `None` before the
+    /// first door reply that carried one.
+    pub fn tuniversal(&self) -> Option<crate::chronometry::tuniversal::TPoint> {
+        self.session.tuniversal()
+    }
+
     /// THIS MIND'S OWN K (78.49, 78.23): the orbits it has closed, one per
     /// stroke in which it acted. The mind's clock is its own motion — no
     /// receipt of the mind's exists; the ledger is the court's (law 8).

@@ -40,6 +40,10 @@ pub struct Session {
     pub(crate) rtt: RefCell<crate::network::nerve::Keyed<u64>>,
     /// Last aperture of RTTs per address, in strokes; the floor is the min of this window.
     pub(crate) rtt_window: RefCell<crate::network::nerve::Keyed<Vec<u64>>>,
+    /// 78.152 TU-7 — THE LAST FINAL POINT this session read: carried behind
+    /// every act it speaks, raised by every door reply that carries a later
+    /// one. `None` before the first.
+    pub(crate) final_point: std::cell::Cell<Option<crate::chronometry::tuniversal::TPoint>>,
 }
 
 impl Session {
@@ -67,6 +71,26 @@ impl Session {
             addrs: RefCell::new(crate::network::nerve::Keyed::new()),
             rtt: RefCell::new(crate::network::nerve::Keyed::new()),
             rtt_window: RefCell::new(crate::network::nerve::Keyed::new()),
+            final_point: std::cell::Cell::new(None),
+        }
+    }
+
+    /// 78.152 TU-7 — THE TUNIVERSAL READ: the last FINAL point this session
+    /// read off a hypha's door — `origin/h:S:G:T:H:K`, final on two keepers'
+    /// verified readings (TU-3) — or `None` before the first. No ask is
+    /// spoken: every door reply carries the door's final point, and this is
+    /// the greatest read. A kernel drives its clock by it and stamps what it
+    /// publishes with it (`TPoint::print`); its own step clock stays its own.
+    pub fn tuniversal(&self) -> Option<crate::chronometry::tuniversal::TPoint> {
+        self.final_point.get()
+    }
+
+    /// A point read off a door reply: held where it advances on the one held.
+    pub(crate) fn hear_point(&self, point: Option<crate::chronometry::tuniversal::TPoint>) {
+        if let Some(p) = point {
+            if p.advances(self.final_point.get().as_ref()) {
+                self.final_point.set(Some(p));
+            }
         }
     }
 
@@ -207,6 +231,9 @@ impl Session {
             vk,
             bind: addr,
             sig,
+            // The keeper ring is the courts' (78.152): a voice reads the
+            // final point off its door's replies, never off one keeper.
+            ring: _,
         }) = crate::anastome::dialogue::decode_cover_digest(body)
         else {
             return false;
@@ -611,7 +638,16 @@ impl Session {
         // A body past the wire's one budget is refused here, by name, before
         // a byte is sent (78.125): a large publication is streamed in parts.
         let len = frame.body.len();
-        let bytes = frame.encode().ok_or_else(|| {
+        // 78.152 TU-7: every act carries the last final point this session
+        // read — and before it has read one, the zero point, which says only
+        // "this speaker reads points": the door answers a pointed speaker with
+        // its own point and an unpointed one (a kernel before 78.152) as it
+        // always did, so a session that never pointed would never learn one.
+        let carried = match self.final_point.get() {
+            Some(p) => p,
+            None => crate::chronometry::tuniversal::TPoint::default(),
+        };
+        let bytes = frame.encode_at(Some(&carried)).ok_or_else(|| {
             io::Error::new(io::ErrorKind::InvalidData, format!("act body {len} bytes is over the wire budget of {} bytes", crate::network::wire::BODY_BUDGET))
         })?;
         // A SEALING ACT IS NEVER SENT TWICE (78.125, the coordinator's
@@ -623,7 +659,7 @@ impl Session {
         if let Some(s) = pool.get_mut(addr.as_bytes()) {
             match s.write_all(&bytes) {
                 Ok(()) => {
-                    let read = Self::read_reply(s);
+                    let read = self.read_reply(s);
                     if read.is_err() {
                         pool.remove(addr.as_bytes());
                     }
@@ -647,7 +683,7 @@ impl Session {
             }
         };
         let _ = s.set_nodelay(true);
-        let body = match Self::roundtrip(&mut s, &bytes) {
+        let body = match self.roundtrip(&mut s, &bytes) {
             Ok(b) => b,
             Err(e) => {
                 self.rtt_timeout(addr);
@@ -658,21 +694,29 @@ impl Session {
         Ok(body)
     }
 
-    pub(crate) fn roundtrip(s: &mut TcpStream, bytes: &[u8]) -> io::Result<Vec<u8>> {
+    pub(crate) fn roundtrip(&self, s: &mut TcpStream, bytes: &[u8]) -> io::Result<Vec<u8>> {
         s.write_all(bytes)?;
-        Self::read_reply(s)
+        self.read_reply(s)
     }
 
-    /// One reply frame's body, read whole.
-    fn read_reply(s: &mut TcpStream) -> io::Result<Vec<u8>> {
+    /// One reply frame's body, read whole; the door's final point it carries
+    /// (78.152 TU-7) is heard and leaves the body.
+    fn read_reply(&self, s: &mut TcpStream) -> io::Result<Vec<u8>> {
         let mut head = [0u8; 5];
         s.read_exact(&mut head)?;
+        let Some((_, pointed)) = crate::network::wire::read_lane(head[0]) else {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "a reply frame names no lane"));
+        };
         let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-        if len > crate::network::wire::BODY_BUDGET {
+        if len > crate::network::wire::BODY_BUDGET + crate::chronometry::tuniversal::TPoint::LEN {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "frame too large"));
         }
         let mut body = vec![0u8; len];
         s.read_exact(&mut body)?;
+        let Some((body, point)) = crate::network::wire::split_point(body, pointed) else {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "a pointed reply is shorter than its point"));
+        };
+        self.hear_point(point);
         Ok(body)
     }
 }

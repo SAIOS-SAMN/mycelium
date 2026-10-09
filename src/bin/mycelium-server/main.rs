@@ -22,6 +22,7 @@ mod persist;
 mod published;
 mod syllabus;
 mod transport;
+mod tshelf;
 mod wallet;
 mod why;
 #[cfg(test)]
@@ -548,6 +549,8 @@ fn main() {
     #[expect(clippy::cast_possible_truncation, reason = "site 4 — reserve_max, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
     let (nerve_tx, nerve_rx) = std::sync::mpsc::sync_channel::<(String, Vec<u8>)>(mycelium::physics::reserve_max() as usize);
     exchange::spawn_nerve(mesh.clone(), nerve_rx);
+    // 78.152 TU-7: the lock watchdog, paced by the final point's advances.
+    held::spawn_watchdog();
     // The roots this book already holds settled are announced to the nerve
     // at boot, so a family proven here is re-spoken on every peer's book.
     // A poisoned registry lock is no reading of the book; no root is

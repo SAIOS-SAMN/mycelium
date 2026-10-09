@@ -8,6 +8,7 @@ pub mod chain;
 pub mod era;
 pub mod pack;
 pub mod receipt;
+pub mod tuniversal;
 
 pub use chain::*;
 pub use era::*;

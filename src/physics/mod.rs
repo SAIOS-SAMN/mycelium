@@ -190,8 +190,12 @@ static CALIBRATED_STROKE_FLOOR: std::sync::OnceLock<std::time::Duration> = std::
 /// understands (the stroke-duration ruling, 2026-09-11; PH1): the smallest
 /// quantity that lets a scheduler place another thread — THIS HOST'S
 /// scheduler tick, read from the kernel it runs (`CONFIG_HZ`), or, where the
-/// host does not say, the shortest wait its kernel actually grants, measured.
-/// It is a host measurement, taken once, never a number of milliseconds.
+/// host does not say, the least wait asked, which the kernel rounds to its
+/// own timer (78.152: nothing timed). Read once, never a number of
+/// milliseconds. 78.152: THIS IS THE ONE SCHEDULER FLOOR in the tree — the
+/// bound of a park on no work (the court's exchange, the transport's poll,
+/// a mind's idle stroke), told to the OS scheduler and read by no one; every
+/// bound on work is counted in strokes or in final-point advances.
 /// It is a FLOOR, not a pace: the pace is the stroke and the measured
 /// transport (law 9), and it is told to the scheduler and never read as a
 /// measurement of anything else.
@@ -216,30 +220,16 @@ fn scheduler_hz() -> Option<u32> {
     (hz > 0).then_some(hz)
 }
 
-/// THE SHORTEST WAIT THIS KERNEL GRANTS: a wait of one nanosecond, asked
-/// once per stroke of a reserve's ratio, and the least of what it took —
-/// the kernel rounds every wait up to its own timer, which is the quantity
-/// a park needs.
+/// THE SHORTEST WAIT THIS KERNEL GRANTS: one nanosecond ASKED, which the
+/// kernel rounds up to its own timer — the quantity a park needs — so no
+/// wait is measured here at all (78.152: the `Instant` calibration that
+/// timed the grant is retired; the scheduler applies its own floor).
 #[expect(
     clippy::disallowed_types,
-    reason = "PH1 — a host measurement of the kernel's wait granularity, read once at calibration; never a reading of time in the engine"
+    reason = "law 9, 78.152 — the least wait asked of the scheduler, in its own units; nothing is measured and no reading is taken"
 )]
 fn shortest_granted_wait() -> std::time::Duration {
-    let ask = std::time::Duration::from_nanos(1);
-    let mut least: Option<std::time::Duration> = None;
-    for _ in 0..STROKES_PER_RESERVE {
-        let at = std::time::Instant::now();
-        std::thread::sleep(ask);
-        let took = at.elapsed();
-        least = Some(match least {
-            Some(l) if l <= took => l,
-            _ => took,
-        });
-    }
-    match least {
-        Some(l) => l,
-        None => ask,
-    }
+    std::time::Duration::from_nanos(1)
 }
 
 /// How long an idle stroke parks: the measured transport where one has

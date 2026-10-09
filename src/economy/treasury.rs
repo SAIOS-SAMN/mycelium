@@ -531,6 +531,15 @@ impl Treasury {
         self.burned = burned;
     }
 
+    /// 78.152 TU-1 — WHAT THIS LEDGER ISSUED, per lane, cumulative: genesis,
+    /// mint and the epoch rows that stand for them across a fold — the
+    /// discharge it booked as mint on the genesis it stood on. It only rises
+    /// (a burn leaves supply, never issuance), and a fold keeps it exactly.
+    /// `None` where it passed its carrier (rule 11).
+    pub fn issued(&self) -> Option<[u64; 4]> {
+        self.issued
+    }
+
     /// EARNED supply alone: the mint rows, without the genesis allocations
     /// §6 keeps separable from them. "Nothing was minted" is a claim about
     /// verified work and must not be read off `supply()`, which includes

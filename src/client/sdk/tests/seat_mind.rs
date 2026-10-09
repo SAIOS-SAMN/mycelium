@@ -41,7 +41,7 @@ fn mind() -> SigningKey {
 }
 
 fn percept(seq: u64, local_time: Arg, records: Vec<Record>) -> Percept {
-    Percept { domain: vk(&domain()), seat: 7, mind: vk(&mind()), local_time, seq, records }
+    Percept { domain: vk(&domain()), seat: 7, mind: vk(&mind()), local_time, seq, records, point: None }
 }
 
 /// A SLIDE AND A SCALE ARE MOTIONS OF THE QUANTITY'S LINE: each carries the

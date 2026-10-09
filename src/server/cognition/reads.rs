@@ -35,6 +35,41 @@ impl Kernel {
         self.chain.head().map(|r| crate::chronometry::CoreStamp::of(&r))
     }
 
+    /// 78.152 TU-1 — THIS COURT'S KEEPER TICK: its head's height, its
+    /// cumulative issuance per lane (`Treasury::issued`, the one exact
+    /// carrier of measured change booked), and `K`, the orbits it closed.
+    /// `None` before its first act, or where the issuance passed its
+    /// carrier.
+    pub fn keeper_tick(&self) -> Option<crate::chronometry::tuniversal::Tick> {
+        let at = self.chain.head_stamp()?;
+        let lanes = self.treasury.issued()?;
+        Some(crate::chronometry::tuniversal::Tick { h: at.h, lanes, k: self.chain.next_step_index() })
+    }
+
+    /// 78.152 TU-6 PINPOINT — every receipt this court holds at a final
+    /// point's tick: the mesh at that tick as this ledger holds it. Empty
+    /// where the tick is folded or never held.
+    pub fn pinpoint(&self, p: &crate::chronometry::tuniversal::TPoint) -> Vec<crate::chronometry::KStepReceipt> {
+        self.chain.at_tick(p.h)
+    }
+
+    /// 78.152 TU-6 UNPACK — a final point's coordinates by name, and the
+    /// frame each receipt at its tick measured, per lane.
+    pub fn unpack(
+        &self,
+        p: &crate::chronometry::tuniversal::TPoint,
+    ) -> (crate::chronometry::tuniversal::ops::Unpacked, Vec<(crate::chronometry::Stamp, [u64; 4])>) {
+        (p.unpack(), self.chain.at_tick(p.h).into_iter().map(|r| (r.stamp, r.mu)).collect())
+    }
+
+    /// 78.152 TU-6 UNROLL — this court's own hot line from its root up to a
+    /// final point's tick, in line order, at most `n`: the era replay from a
+    /// root to the point. The folded eras before the root are replayed by
+    /// `ACT_RECEIPTS` (its replay arm) and are not read here.
+    pub fn unroll(&self, p: &crate::chronometry::tuniversal::TPoint, n: usize) -> Vec<crate::chronometry::KStepReceipt> {
+        self.chain.own().take_while(|r| r.stamp.h <= p.h).take(n).collect()
+    }
+
     /// A snapshot taken at `at` was written whole. Called only after the
     /// write lands, so a write that failed records nothing.
     pub fn note_persisted(&mut self, at: (u64, u64)) {
