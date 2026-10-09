@@ -344,6 +344,34 @@ on the stake at the court's read price (emergent, never a published
 rate), and an unstake releases only after every claim drawn on it settles.
 A progenitor's in-universe wormhole haul pays the same gas.
 
+### 7.2 Dissipation recycles (78.154a, the operator, 2026-10-09)
+
+Nothing lands nowhere (Concordance 1.3): demurrage is not destruction. What a
+universe's stored μ dissipates SPLITS IN TWO, exactly, lane by lane:
+
+- THE VALUE RETURNS TO THE HYPHA as the CONNECTION TAX — the rent a universe
+  pays for its tube connection to the hypha and for everything in it that
+  keeps time on TUniversal (1.11): every connection, and every in-universe
+  reliance on the clock. The kernel computes its dissipation per lane at its
+  own physics' rate and declares it on its tier fold (78.119) as a FLOW to
+  the hypha, paid from its domain reserve (78.127) — a transfer to the
+  courts, never a mint and never a burn.
+- THE MATTER STAYS IN THE UNIVERSE as INVERSE-μ (μ̄): the dissipated mass,
+  with no μ value, held where it dissipated — a vault, a currency's backing,
+  a remote wormhole, a progenitor network. Its properties are the storing
+  universe's: read off that universe's laws, its curvature and its field at
+  the place it lies (the field law's quantum radiation, strongest near cores
+  and discs), carried with the universe's origin and the coordinate it
+  dissipated at. A kernel's physics may recycle μ̄ as matter (a star absorbs
+  it, a core condenses it); μ̄ never becomes μ again except by work a court
+  judges.
+
+THE RECYCLED POOL: each court holds the connection tax it receives. A
+closer's POUW is paid FIRST from that pool, and only what the pool cannot
+cover is minted. Supply then grows only as far as judged work outruns what
+the universes return; the void takes nothing. (Burns that remain: slash and
+retirement, both already acts.)
+
 ## 8. Policy ratios
 
 There are no monetary constants. The quantities that behave like policy are
