@@ -86,6 +86,13 @@ impl Published {
         }
     }
 
+    /// 78.154 — READ-LEDGER answered off this reading, as
+    /// `Kernel::ledger_page` answers it: the entries after `u`, as many as
+    /// fit one frame.
+    pub fn ledger_page(&self, domain: &[u8; 32], after: u64) -> crate::anastome::dialogue::atlas::LedgerPage {
+        crate::cognition::atlas::Atlas::page(self.ledgers.get(domain), after, crate::cognition::atlas::ledger_budget())
+    }
+
     /// The core clock at this reading's head (`Kernel::core_stamp`).
     pub fn clock(&self) -> Option<&CoreStamp> {
         self.clock.as_ref()

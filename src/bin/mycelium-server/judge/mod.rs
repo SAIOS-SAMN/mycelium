@@ -51,10 +51,13 @@ pub(crate) fn serve_published(stream: &mut TcpStream, frame: &Frame, door: &Door
             receipts::judge(stream, frame, door);
             true
         }
-        Some(Action::Wallet) => {
+        // 78.154 (4) — a stake act is a write: it reaches the kernel.
+        Some(Action::Wallet) if mycelium::anastome::dialogue::wallet::decode_wallet(&frame.body).is_some() => {
             wallet::judge(stream, frame, door);
             true
         }
+        // 78.154 — READ-LEDGER off the reading; every other domain act writes.
+        Some(Action::Domain) => domain::serve_ledger(stream, frame, door),
         Some(Action::Laws) => {
             let clock = matches!(mycelium::physics::laws::codec::decode_laws_request(&frame.body), Some(mycelium::physics::laws::codec::LawsRequest::Clock));
             if clock {

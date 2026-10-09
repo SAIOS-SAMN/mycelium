@@ -188,6 +188,7 @@ impl Kernel {
             reserves,
             origins,
             universes,
+            atlas,
             seats,
         } = self;
         let mut c = crate::observe::Carriers { k: chain.head_k(), held: Vec::new() };
@@ -222,6 +223,14 @@ impl Kernel {
         c.count("origins", origins.len());
         // 78.139 — the universes' statements.
         c.count("universes", universes.len());
+        // 78.154 — the atlas: ledger entries, map records, crossings' edges,
+        // the final points held, the claims on stakes, the stake acts spent.
+        c.count("atlas.entries", atlas.ledgers.scoped().map(|(_, e)| e.len()).sum());
+        c.count("atlas.records", atlas.records.len());
+        c.count("atlas.edges", atlas.edges.len());
+        c.count("atlas.ladder", atlas.ladder.len());
+        c.count("atlas.claims", atlas.claims.len());
+        c.count("atlas.spent", atlas.spent.len());
         c.count("basis", basis.len());
         c.count("by_action", by_action.len());
         c.count("by_footprint", nested(by_footprint));

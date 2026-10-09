@@ -229,6 +229,16 @@ fn check_home(home: &Path) -> ! {
             }
         }
     }
+    match mycelium::chronometry::tuniversal::record::read(&tshelf::record_path(home)) {
+        mycelium::chronometry::tuniversal::Recorded::None => println!("  keeper: no record — this keeper has not signed here"),
+        mycelium::chronometry::tuniversal::Recorded::Last(r) => {
+            println!("  keeper: last signed h {} at epoch {}; the next reading signs above it", r.reading.tick.h, r.origin.epoch);
+        }
+        mycelium::chronometry::tuniversal::Recorded::Unreadable(why) => {
+            println!("  keeper: UNREADABLE ({why}) — the boot refuses");
+            refuses = true;
+        }
+    }
     match refuses {
         true => {
             println!("{name}: THIS HOME WILL NOT BOOT on this build");
@@ -412,6 +422,15 @@ fn main() {
             eprintln!("[{tag}] no ledger at {state_path}: a fresh court");
         }
         Err(e) => refuse_boot(&tag, &format!("the ledger at {state_path} is unreadable: {e}")),
+    }
+    // 78.152 (persisted) — THE KEEPER'S LAST SIGNED READING, read before the
+    // court can sign: a restarted keeper signs only above it and names it as
+    // its next reading's parent. A record that does not read refuses the
+    // boot — a floor this court cannot read is one it could sign under.
+    match tshelf::bind_home(&home) {
+        Ok(Some(r)) => eprintln!("[{tag}] keeper record: last signed h {} at epoch {}", r.reading.tick.h, r.origin.epoch),
+        Ok(None) => eprintln!("[{tag}] keeper record: none — this keeper has not signed here"),
+        Err(why) => refuse_boot(&tag, &why),
     }
     eprintln!("[{tag}] hypha identity vk {}…", mycelium::court::identity::hex32(&vk));
     let genesis = Genesis {

@@ -8,7 +8,7 @@
 //! No word belongs to two vocabularies.
 
 /// The lexicon's version: an amendment raises it.
-pub const LEXICON_VERSION: u8 = 4;
+pub const LEXICON_VERSION: u8 = 5;
 
 /// WHICH VOCABULARY A TERM BELONGS TO.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -50,7 +50,7 @@ const fn t(name: &'static str, vocabulary: Vocabulary, meaning: &'static str) ->
 use Vocabulary::{Civic, Network, Physical};
 
 /// EVERY TERM, by vocabulary, in `MU-LEXICON.md`'s order.
-pub const TERMS: [Term; 45] = [
+pub const TERMS: [Term; 48] = [
     t("Universe", Physical, "everything that shares one origin: one seed, one law set, one clock"),
     t("Cluster", Physical, "galaxies bound together by gravity"),
     t("Galaxy", Physical, "a disc and halo of stars"),
@@ -96,4 +96,7 @@ pub const TERMS: [Term; 45] = [
     t("House", Network, "a domain's sitting reserve speaking for its game: it lists the seats and answers the minds in them"),
     t("Seat surface", Network, "the hypha's signed relay between a house and the minds that take its seats; it judges nothing in-game"),
     t("Task citation", Network, "a task's name on every wire: 32 bytes, the citation of its registry content address, which stays court-side"),
+    t("Sub-origin", Network, "a sub-universe of a domain's universe, named by its 32-byte citation; with the domain and the seat id it names a seat"),
+    t("Relay epoch", Network, "a value the seat relay draws when it is made, changed by every hypha restart, so a reader tells a restart from progress"),
+    t("Axis coordinate", Network, "a universe's own time u, its committed cycle, carried on a percept beside the house's final point"),
 ];

@@ -125,9 +125,8 @@ impl Treasury {
     /// THE JOURNAL IS NOT IN LINE ORDER: a release is written at its
     /// escrow's place, after rows standing later (`pending_fold_stands`), so
     /// the rows below a head need not be a prefix of it, and a bisection
-    /// would read short where one stands out of line (`rows_span` bisects;
-    /// its reading is owed). The walk stays a count over the journal; the
-    /// page alone is copied.
+    /// would read short where one stands out of line. The walk stays a
+    /// count over the journal; the page alone is copied.
     pub fn rows_below_page(&self, head: Place, skip: usize, n: usize) -> (u64, Vec<Entry>) {
         let below = || self.entries.iter().filter(|e| e.stands_at() < Some(head));
         let page = below().skip(skip).take(n).cloned().collect();
@@ -137,24 +136,17 @@ impl Treasury {
     /// The rows standing at `from` or later and written before the act at
     /// `upto`, in journal order: what `ACT_ROWS` serves a witness. `from`
     /// is the root the prefix stands on, `None` from the journal's start.
-    /// THE JOURNAL IS IN LINE ORDER, so the span is a run of it and not a
-    /// filter over the whole of it. This cloned every matching row out of
-    /// an append-only ledger on every `ACT_ROWS` page — O(journal) for a
-    /// page of a few rows, per witness, per fold (law 3: the anchor's stamp
-    /// is the coordinate that orders them).
+    ///
+    /// 78.153b — A FILTER, NEVER A RUN. This bisected for `from` and broke at
+    /// the first row standing at `upto` or later, which reads the span only
+    /// where the journal is in line order; it is not (a release is written
+    /// at its escrow's place, after rows standing later — `rows_below_page`),
+    /// so a row out of line was dropped or a row past `upto` taken. Its one
+    /// caller is `propose_fold`'s diagnostic, which compares the span's nets
+    /// with the proposal's: read short, it named a difference that was not
+    /// there. Every row is weighed now, exactly.
     pub fn rows_span(&self, from: Option<Place>, upto: Place) -> Vec<Entry> {
-        let at = self.entries.partition_point(|e| e.stands_at() < from);
-        let Some(run) = self.entries.get(at..) else {
-            return Vec::new();
-        };
-        let mut out = Vec::new();
-        for e in run {
-            if e.stands_at() >= Some(upto) {
-                break;
-            }
-            out.push(e.clone());
-        }
-        out
+        self.entries.iter().filter(|e| e.stands_at() >= from && e.stands_at() < Some(upto)).cloned().collect()
     }
 
     /// `nets_of` over the rows written before the act at `head`, with the

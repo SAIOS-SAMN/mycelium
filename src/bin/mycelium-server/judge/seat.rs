@@ -7,9 +7,18 @@
 
 use crate::door::Door;
 use crate::transport::answer;
-use mycelium::anastome::dialogue::seat::{decode_seat_request, encode_mail_reply, encode_post_reply, SeatRequest};
+use mycelium::anastome::dialogue::seat::{decode_seat_request, encode_mail_reply, encode_mail_reply_standing, encode_post_reply, MailRead, ReadMail, Refusal, SeatRequest};
 use mycelium::network::wire::Frame;
 use std::net::TcpStream;
+
+/// A READ'S REPLY in the layout its sub-kind asked: v1.4's (sub-kind 8) with
+/// the relay's epoch and last sequence, v1.3's (7) the pieces alone.
+fn mail_reply(r: &ReadMail, read: Result<MailRead, Refusal>) -> Option<Vec<u8>> {
+    match r.standing {
+        Some(_) => encode_mail_reply_standing(read.as_ref().map_err(|why| *why)),
+        None => encode_mail_reply(read.as_ref().map(|m| m.mail.as_slice()).map_err(|why| *why)),
+    }
+}
 
 /// 78.146 — A MIND'S READ, SERVED WHERE THE DOOR WOULD DEFER IT: a full
 /// worker pool answers every act with the door's deficit, and reading one's
@@ -37,17 +46,18 @@ pub(crate) fn serve_exempt(stream: &mut TcpStream, frame: &Frame, door: &Door) -
     }
     let Some(Ok(SeatRequest::ReadMail(r))) = decode_seat_request(&frame.body) else { return false };
     let Some(mail) = door.seat_relay.exempt_read(&r) else { return false };
-    let Some(body) = encode_mail_reply(mail.as_deref().map_err(|why| *why)) else { return false };
+    let Some(body) = mail_reply(&r, mail) else { return false };
     answer(stream, Frame { lane: frame.lane, body });
     true
 }
 
 /// 78.151 — A SEAT LISTING, read on the relay's own lock: relay state, never
 /// the court's, so no kernel is taken. `false` where the frame is no listing.
+/// v1.4: at the sub-origin it names, where it names one.
 pub(crate) fn serve_listing(stream: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
-    let Some(Ok(SeatRequest::ReadListing(domain))) = decode_seat_request(&frame.body) else { return false };
+    let Some(Ok(SeatRequest::ReadListing(domain, sub_origin))) = decode_seat_request(&frame.body) else { return false };
     // A domain with no listing is answered with none: an empty body.
-    match door.seat_relay.listing(&domain) {
+    match door.seat_relay.listing(&domain, sub_origin.as_ref()) {
         Some(body) => answer(stream, Frame { lane: frame.lane, body }),
         None => answer(stream, Frame { lane: frame.lane, body: Vec::new() }),
     }
@@ -58,7 +68,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(request) = decode_seat_request(&frame.body) else { return };
     let body = match request {
         Err(why) => encode_post_reply(Err(why)),
-        Ok(SeatRequest::ReadListing(_)) => {
+        Ok(SeatRequest::ReadListing(..)) => {
             serve_listing(stream, frame, door);
             return;
         }
@@ -69,7 +79,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         Ok(SeatRequest::ReadMail(r)) => match crate::held::held!(door.kernel) {
             Ok(mut h) => {
                 let mail = h.run(|k, _| k.seat_mail(&r));
-                let Some(b) = encode_mail_reply(mail.as_deref().map_err(|why| *why)) else { return };
+                let Some(b) = mail_reply(&r, mail) else { return };
                 b
             }
             Err(_) => return,

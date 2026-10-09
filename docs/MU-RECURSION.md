@@ -26197,7 +26197,8 @@ no number said which point the mesh stood at. Ruled, as law:
    and a restarted keeper must never re-sign a height it signed before its
    restart (an equivocation) — persist its last signed reading, or hold a
    restarted keeper silent until a peer's final point passes its last
-   height before it signs again.
+   height before it signs again. MET by 78.152c (the last signed reading
+   persisted).
 4. **TU-4 DISAGREEMENT IS A RESIDUAL.** Two keepers' readings at one tick
    differing on a lane leave the exact difference `to − from` per lane as a
    1-cochain on the keeper triangle; its holonomy round a → b → c (key
@@ -26327,6 +26328,39 @@ relay's 0x53 the first), by the operator's word. Proved:
 `tests::tick::a_reading_is_signed_with_no_digest_and_a_pushed_ring_is_heard_off_the_kernel`
 (a reading due with no digest; a known peer's ring heard, a stranger's
 refused; the held book's hold count unmoved).
+
+**78.152c — the keeper persisted (2026-10-09, the coordinator's edge; TU-3's
+OWED).** A restarted keeper held no readings, so it could sign a height it
+had signed before its restart — two readings at one tick under one key, an
+equivocation. Now each court's LAST SIGNED READING is kept in its home
+beside the ledger, the file `keeper` (`chronometry::tuniversal::record`),
+written durably before the reading is held or can leave on a ring
+(`Keepers::read_own_kept`: tmp, synced, renamed, the directory synced —
+`replace_durably`); a reading whose record did not land is not signed. The
+record, exact bytes: `MYKR`, version `u16` LE = 1, the origin's genesis (32)
+and epoch (`u32` LE), the keeper's key (32), the reading's hash (32, the
+citation its successor names as parent), then the reading as the ring
+carries it (tick `h`, the four lanes and `K` as `u64` LE, parent 32, cites
+`[n u8]` then `(keeper 32, reading 32, h u64)`, signature 64). It reads back
+only whole, at this magic and version, its reading signed by its keeper at
+its origin and hashing to its hash. The boot reads it before the court can
+sign (`tshelf::bind_home`): none is a keeper that never signed here; a
+record that does not read REFUSES THE BOOT (a floor it cannot read is one
+it could sign under), and `--check` reports it. When the keepers are begun
+at an origin, a record of that origin and this court's key is RESUMED as the
+own line's newest (`Keepers::resume`), so the next reading rises above its
+tick — nothing at or below it is signed, measure moved or not — and names
+it as parent: a peer holding the line EXTENDS it (`Admitted::Extended`),
+never re-anchors, and a peer that missed it takes it from the ring, which
+carries it. A record of another origin (a recut) is not resumed: the new
+universe's line starts afresh. TU-3 "Undecided (iii)" is answered by this.
+LAYOUT-CHANGE: a new file in the home; nothing existing changed. Proved
+(`chronometry::tuniversal::tests::a_keeper_restarted_from_its_record_never_signs_at_or_below_its_last`):
+the record reads back by value, on disk too; cut, lengthened, altered or of
+another version it is none or refused; a reading not kept is not held; a
+keeper restarted from its record signs nothing at heights 9, 10, 11 below
+its last 11, signs 13 naming the record's hash as parent, and a peer holding
+the line admits it as `Extended(1)`; a late peer `Extended(2)`.
 
 ### 78.153 Replays metered and resumable (2026-10-09, the lock audit's fix list, option (A))
 
@@ -26536,6 +26570,284 @@ move is shared; the fold re-derived off the shelf is the kernel's verdict,
 bonded and not; a page of the rows below every head is the whole prefix
 paged; the class records on a stroke of one read reach the asker round the
 nerve; a touched word is the word a rebuild gives.
+
+### Seat wire v1.4 (2026-10-09; lexicon 5, WIRE-CHANGE; 78.155 §5c(b), 78.156 §6 items 1–2)
+
+**Why.** (1) barren-realms kept a mail cursor of 1582 past a restarted
+relay's sequence, and every read returned the whole box: the READ-MAIL reply
+did not say whether the relay had restarted. (2) Netstratum's substrata need
+a seat named under a sub-universe of a domain. (3) 78.156: a percept carries
+the world's own time `u` beside the house's TPoint, and the mind reads its
+seat's sub-instance at (TPoint, u).
+
+**The codec, for the kernels** (`anastome::dialogue::seat`; integers LE):
+
+1. **SEATS SCOPED TO A SUB-ORIGIN.** A seat is named by (domain, sub-origin,
+   seat id); the sub-origin is 32 bytes, the sub-universe's citation,
+   optional — absent, the domain's own universe. A post naming one is
+   written under its sub-kind with the SCOPED bit, `sub | 0x80` (0x80 SEATS,
+   0x81 TAKE, 0x82 TAKEN, 0x83 PERCEPT, 0x84 CALL, 0x85 OUTCOME), the
+   sub-origin immediately after the domain: `[domain 32][sub_origin
+   32][seat u32][mind 32]…` for TAKE, TAKEN, PERCEPT, CALL and OUTCOME, and
+   `[domain 32][sub_origin 32][epoch u64][n u16] SEAT…` for SEATS; every
+   other field as v1.3. The sub byte is signed (`b"mycelium seat v1" ‖ [sub]
+   ‖ [fields]`), so the scope is bound to the signature, and a CALL's
+   reference cites it. A post with no sub-origin is written exactly as v1.3
+   — one writing per value. A mail piece keeps its sub byte, scoped or not.
+   READ-LISTING scoped is `[0x53][0x86][domain 32][sub_origin 32]`, answered
+   the SEATS body (fields ‖ sig) held for that (domain, sub-origin), read
+   under 0x80. The relay keys listings by (domain, sub-origin)
+   (`[0][domain]` or `[1][domain][sub_origin]`); mail is filed as before (a
+   take or call to the domain's house, the rest to the mind named).
+2. **READ-MAIL AT THE RELAY'S STANDING, sub-kind 8.** `[0x53][8][reader
+   32][after u64][epoch u64][nonce 32][sig 64]`, signed over `b"mycelium
+   seat v1" ‖ [8] ‖ reader ‖ after ‖ epoch ‖ nonce`; `epoch` is the relay
+   epoch the reader's `after` was read under, 0 where it holds none. Answered
+   `[1][relay_epoch u64][relay_seq u64][count u16]` then `(seq u64, sub u8,
+   len u32, fields‖sig)…`, or the refusal `[0][reason ≥ 1]`. The RELAY EPOCH
+   is drawn from the OS's randomness when the relay is made (never 0; no
+   clock), so every hypha restart changes it; `relay_seq` is the last
+   sequence issued. The relay honours `after` only under its own epoch and
+   at or below its sequence (`ReadMail::after_on`); otherwise the box is read
+   from the start and nothing is acknowledged. A reader stores the epoch with
+   its cursor and resets the cursor where the epoch changed or the cursor
+   passes the sequence (`MailRead::cursor`) — a restart, never progress.
+   Sub-kind 7 is answered as before (`[count u16]…`); the mail bound is now
+   the frame budget less the v1.4 head (19 bytes), which covers v1.3's.
+3. **A PERCEPT'S AXIS COORDINATE `u`.** The percept's `local_time` is the
+   universe's axis coordinate `u` (78.156): the world's committed cycle,
+   FREE of TUniversal, carried beside the house's `point`. No byte changed.
+   The seat mind locates its sub-instance at (TPoint, u) per percept
+   (`SeatMind::located`) and reads its EXPERIENCED DILATION between two
+   located percepts of one origin (`SeatMind::dilation`,
+   `Entity::seat_dilation`): `du` (exact rational), `dh` (the final point's
+   tick advance) and `du/dh` exact, unread where the final point stood
+   (`dh = 0`); across two origins nothing is read. The reading rides the
+   voice's `seat perceived … | dilation du … dh … du/dh …` line. A reading,
+   never an error: the world keeps its own pace.
+
+**The SDK and the voice.** `SeatName { domain, sub_origin, seat }` names a
+seat; `Session::take`, `call` take it, `list_seats(domain, sub_origin)`,
+`read_mail`/`mail`/`house_mail(key, after, epoch)` read at the standing.
+`mycelium-client --seat <domain-hex>[/<sub-origin-hex>] <seat-id>[,…]`; the
+arm keeps the relay epoch beside its cursor and says so where the relay
+restarted under it.
+
+**Lexicon 5:** Sub-origin, Relay epoch, Axis coordinate (`MU-LEXICON.md`).
+LAYOUT-CHANGE: none (the relay is volatile). Proved, by decoded values and
+signatures, never hex goldens (Concordance 1.4):
+`dialogue::tests::seat::v14_scoped_posts_decode_to_their_values_and_verify`,
+`dialogue::tests::seat::v14_the_mail_reply_carries_the_relays_standing`,
+`cognition::tests::seat::the_relay_keys_seats_by_sub_origin_and_tells_its_epoch`,
+`sdk::tests::seat_mind::a_seats_experienced_dilation_is_read_exactly`, with
+the v1.3 tests unchanged in substance.
+
+### 78.154 Gas, the map, the ledger and the connection tax (2026-10-09, the operator's rulings in MU-ECONOMY §7.1–7.2; the coordinator's wire and refinements; 78.156)
+
+**Ruled** (MU-ECONOMY §7.1, §7.2 — read there whole). μ is the GAS of
+traversal; TWO CHARGES NEVER MERGED — the MAP FEE (μ, to the courts keeping
+the map) and the ROAD TOLL (in-universe money, booked by the kernels, never
+here); every wormhole traversal needs coordinates from the hypha, so
+TRAVERSE is a coordinate retrieval and mapping act, never a transport; THE
+MAP is kept per universe, posted by its DOMAIN RESERVE; dissipation recycles
+— the CONNECTION TAX returns to the hypha, inverse-μ stays in the universe
+(the kernels'), and a closer's POUW is paid from the RECYCLED POOL first.
+Built as follows (`anastome::dialogue::{atlas, crossing, commitment}`,
+`cognition::{atlas, crossing}`).
+
+**Sub-kinds.** ACT_DOMAIN's 8–11 are the universe's statements (78.139/140:
+GEOMETRY, BASKET, JOIN, READ-UNIVERSE) and are live, so the LEDGER proposed
+as 8 and READ-LEDGER as 9 take the next free numbers: **LEDGER 12,
+READ-LEDGER 13, MAP 14, READ-MAP 15, TRAVERSE 16** — otherwise the bytes are
+the ruled bytes. Every act is under `[0x3E][domain 32][0x80 0x00][kind]`.
+
+1. **LEDGER (12)** — `[u u64 LE][commitment 32][events 32][cited final
+   TPoint 84][parent entry 32][nonce 32][sig 64]`, signed by the domain's
+   SITTING RESERVE over `"mycelium domain ledger v1" ‖ domain ‖ u ‖
+   commitment ‖ events ‖ point ‖ parent ‖ nonce`. One chain per universe:
+   `parent` is the head entry's hash (the citation hash of its signed
+   bytes), zero first. Reply `[1][entry hash 32][sealed h u64 LE][court's
+   final TPoint 84]` or `[0][reason]`: 1 not the reserve (another key of the
+   domain signed, or it has none), 2 unknown domain, 3 parent not the head
+   (a fork), 4 `u` not above the head's, 5 the cited point not final in
+   this court's view or above it, 6 the signature no key of the domain's;
+   added: 7 the point below the head entry's (h only rises), 8 an applied
+   crossing not pending into this universe (below), 9 the line refused.
+   The court CHAINS AND SEALS and never judges the state (Concordance 1.13):
+   both digests are stored, neither is checked here — reconstructing the
+   parent and its events against the root is the universe's and the
+   auditors' work. Sealed as `Cite::Stated { domain, kind 12, entry hash }`.
+   **READ-LEDGER (13)** `[after u u64 LE]` → `[more u8][count][entry …]`,
+   each `[u][commitment][events][point][parent][nonce][applied][hash 32]
+   [sealed h][court's point 84][0 | 1 Δu u64 Δh u64]`, as many as fit one
+   frame, served off the 78.151 published reading (the door's shelf), never
+   the kernel.
+2. **THE COMMITMENT** (the coordinator's rules, fixed network-wide;
+   `commitment::commitment`, `prove`, `verify_inclusion`,
+   `verify_absence`): a SPARSE MERKLE TREE over the universe's canonical
+   records, each a key — the entity's coordinate path within its universe,
+   at most `u16::MAX` bytes (refused past it, never widened) — and its exact
+   values in the ARG encoding. Path = the citation hash (blake3) of the key,
+   256 bits, most significant first, bit 0 the left child. Leaf =
+   `derive_key("mycelium ledger leaf v1", key_len u16 LE ‖ key ‖
+   put_args(values))` at depth 256 of its path, no short-cut. An empty
+   subtree is 32 zero bytes at every level; inner node = zero where both
+   children are zero, else `derive_key("mycelium ledger node v1", left ‖
+   right)`. No records: 32 zeros. A key twice (or two keys on one path):
+   refused. Computed as a sparse fold, 256 nodes per record; a proof is the
+   256 siblings from the root down the key's path, folding the leaf
+   (inclusion) or zero (absence) to the root. Each kernel names its own
+   record set; the form is shared. **THE EVENTS DIGEST**
+   (`commitment::events_digest`; Concordance 1.13: inputs are stored as
+   events at `(TPoint, u)`): the input events since the parent entry in the
+   order applied, never sorted; leaf = `derive_key("mycelium ledger event
+   v1", TPoint 84 ‖ u u64 LE ‖ key_len u16 LE ‖ key ‖ put_args(values))`;
+   paired left to right with the node rule, an odd node carried up
+   unchanged; one event is its leaf; none is zero.
+3. **MAP (14)** — `[point 84][record][nonce 32][sig 64]`, signed by the
+   sitting reserve over `"mycelium domain map v1" ‖ domain ‖ point ‖ record
+   ‖ nonce`, the point final in this court's view. A MOUTH record `[0][mouth
+   32][side u8][N u64 LE]`: an open TUBE (78.134) whose `side` (0 the
+   offering end, 1 the accepting end) stands in this universe, and its
+   FRESHNESS bound `N` (78.156 §4); its place in the universe's own space is
+   read off the tube at the read (78.140), never restated. A SEGMENT
+   `[1][kind u8: 0 tube, 1 core, 2 throat][mouth 32][side][mouth 32][side]
+   [span n u64][span d u64][0 | 1 keeper 32]`: a road (tube, core) between
+   two mapped places of this universe, no keeper; a THROAT between one
+   mouth's two sides, its own side mapped, its keeper the mouth's keeper;
+   every span a positive exact rational in geometrized Mpc. A record's id
+   is the citation hash of `"map record" ‖ domain ‖` its place (a mouth) or
+   its kind and places (a segment) — one throat mapped by both universes is
+   two records, so a route naming both counts each span once — held by
+   `domain ‖ id` at the point it was mapped and superseded only by a later act;
+   a wormhole is untraversable until its reserve maps it. Reply `[1][record
+   id 32][sealed h][court's final TPoint 84]` or `[0][reason]` (1, 2, 5, 6
+   as the ledger's; 7 no open tube, 8 the side not this universe's, 9 an end
+   unmapped, 10 malformed, 11 the keeper, 12 behind the last mapping, 13 the
+   line). **READ-MAP (15)** → every record and, a mouth, its derived place.
+4. **TRAVERSE (16)** — a sub-kind of ACT_DOMAIN, not of the 78.128 handoff
+   family: the handoff family's TRAVERSE carries matter through the court,
+   and the crossing happens in its own universe, never through the hypha;
+   what is bought here is the map. `[payer 32][mouth 32][side u8][at 84]
+   [point_a 84][point_b 84][entry_a 32][u_a u64][entry_b 32][u_b u64][route
+   count][segment id 32 …][0 | 1 debit lanes 4×u64 sig 64][0 | 1 credit …]
+   [nonce 32][sig 64]`, the frame's domain the SENDING universe A at `side`,
+   B the mouth's other side; signed by the payer over `"mycelium traverse
+   v1" ‖ core ‖ declarations`. The CROSSING's hash is over its coordinates
+   (`"mycelium crossing v1" ‖ core`, declarations excluded). Admitted only
+   where: the payer signed; both universes are founded and the mouth an open
+   tube with A at `side`; `at` final in this court's view; every point at
+   one origin; BOTH MOUTHS MAPPED (else `[4][side]`), each cited at the
+   point it was mapped and not above `at`; each universe's LATEST entry
+   cited; and — the coordinator's (2) — EACH side's latest entry within ITS
+   OWN mouth's `N` final-point advances of `at` (else NOT YET AT h, `[8]
+   [side]`: commit and ask again, never a slash). **Two-sided
+   declarations** (the coordinator's (1)): where matter crosses, A's reserve
+   signs a DEBIT (`"mycelium crossing debit v1" ‖ crossing ‖ lanes`) and B's
+   a CREDIT (`"…credit v1"`), per lane S, G, T, H (inverse-μ counted on the
+   lanes as declared); one alone is `[10]` ONE-SIDED, a signature not its
+   reserve's `[12][side]`, unequal on a lane `[11]` MISMATCHED — so no
+   universe mints matter at a throat; the court checks two signatures and an
+   equality and reads neither book. Other reasons: 1 unsigned, 2 unknown
+   domain, 3 no mouth, 5 not final, 6 map point, 7 not latest, 9 a route
+   segment on neither map, 13 the stake short, 14 two origins, 15 past a
+   carrier, 16 the line, 17 crossed already. Reply `[1][crossing 32][h]
+   [court's point 84][S n][S d][G][T][H][price 4×u64][fee 4×u64]`.
+5. **THE MAP FEE.** Gas per lane, exact, never collapsed: **S** the route's
+   spatial span, the sum of its segments' spans (an exact rational, Mpc);
+   **G** the value terms — the G both reserves declared crossing; **T** the
+   TUniversal distance between the two mouths' cited final points, in ticks
+   (`|h_b − h_a|`); **H** the information carried, as declared. Priced at
+   the court's READ PRICE per lane — one μ a unit of gas at rest, and the
+   court's pressure on the lane above it (`yield_surface`: the reserve's
+   deficit and the entropic excess; emergent, never a published rate) —
+   `⌊gas · price⌋`, floored, never against the payer. Drawn from the payer's
+   STAKE as a CLAIM, held for the act's window `W` (the toll's precedent,
+   78.133) and then paid WHOLE to the court keeping the route's map: a
+   transfer, never a mint, no burn.
+6. **THE RECONCILIATION EDGE** (78.156 §5; the coordinator's (3)): each
+   crossing records `(u_a, u_entry)` — B's cited latest entry — and
+   `u_applied`, where B transduced what crossed, which arrives COMMITTED in
+   B's NEXT ledger entry as an APPLIED list — `[count][(crossing 32,
+   u_applied u64 LE) …]`, appended after the signature and inside the
+   signed bytes only where it is not empty, so an entry with none is the
+   ruled bytes exactly (chosen over a separate APPLIED sub-kind: the
+   application is part of what the entry commits). Until it arrives the
+   edge reads PENDING, never a disagreement; then its RESIDUAL is
+   `u_applied − u_entry`, exact and kept. An applied crossing is admitted
+   once, into its own receiver, at or below the entry's `u`.
+7. **FRESHNESS AND DILATION** (78.156 §2, §4). The judge reads the door's
+   quorum-final point (78.152 TU-7) off the shelf before the kernel and
+   hands it in; every point handed in is held on the court's LADDER. A
+   point is FINAL IN THIS COURT'S VIEW where it stands at the door's final
+   point's origin at or below its tick and agrees with any point the ladder
+   holds at that tick. The ADVANCES between two points are the ladder's
+   points above the first's tick and at or below the second's; the ladder is
+   let go below every universe's latest entry. The DILATION of each entry
+   segment is `Δu/Δh` exact and reduced (none for the first, none where `h`
+   did not move), served on every READ-LEDGER entry and as
+   `Kernel::dilations`.
+8. **STAKE / UNSTAKE** (`ACT_WALLET`, `[who 32][1 stake | 2 unstake][mu
+   4×u64][nonce 32][sig 64]`, signed over `"mycelium stake v1" ‖ kind ‖ who
+   ‖ mu ‖ nonce`; reply `[1][stake 4×u64]` or `[0][1 unsigned | 2 short | 3
+   claimed | 4 nothing | 5 spent]`): μ moved between the balance and the
+   stake — the treasury's own Stake and Unstake rows; non-decaying escrow for
+   traversal and coordinate retrieval. A TRAVERSE's fee and a COORDINATE
+   RETRIEVAL (`Kernel::retrieve`, TU-6 pinpoint: one unit of information per
+   receipt read, on H, at the read price) each draw a claim; an unstake is
+   refused while any claim drawn on the stake stands, admitted once every
+   one settled. A stake act's nonce is spent once per party.
+9. **THE CONNECTION TAX** (78.154a): a FLOW KIND on the reserve's tier fold
+   (78.119) — a DECLARED row under the reserved coordinate
+   `CONNECTION_TAX` (`b"mycelium flow: connection tax v1"`), on the existing
+   lanes S, G, T, H exactly as dissipated (no new lane), a sink on every lane
+   it moves (it stands in the fold's continuity as any declared sink). When
+   the fold is admitted the court pays it from the domain's reserve into its
+   own RECYCLED POOL (`economy::RECYCLED`, held by the court): a transfer,
+   never a mint, never a burn. Refused whole (`Uplinked::Tax`, reply `[10]
+   [code][lane]`): a lane that is a source, the reserve short, a carried line
+   declaring it (the tax is the reserve's alone). **THE RECYCLED POOL**: a
+   closer's POUW — every mint carrying `Arm::Pouw` — is paid from the pool
+   FIRST, as a transfer carrying the arm, and only the remainder is minted;
+   supply grows only as far as judged work outruns what the universes
+   return. Inverse-μ is in-universe, the kernels': nothing of it is held
+   here.
+
+**Persisted** on the court's own node (`LEAF_ATLAS`): the ledger chains, the
+map, the edges, the ladder, the claims and the spent stake nonces.
+
+**Undecided by the ruled text, decided here and open to the coordinator:**
+the read price's unit at rest (one μ per unit of gas); G and H read from
+the declarations (zero on a pure coordinate retrieval); T as the tick
+distance between the two mouths' mapped points; a route's segments not
+required to be connected or to include the throat; the fee paid whole to
+this court (every record here is sealed here — a multi-court split is not
+built); the claim held for `W`; the ladder fed only by the final points the
+judge hands in at domain acts, so a crossing's advances count the points
+this court saw (a point the shelf passed through between acts is not
+counted, which errs toward admitting); a falsified fold's connection tax is
+not refunded; carried lines may not declare the tax; the observer reads the
+dilation on the ledger read and the carriers' counts, no `Reading` of its
+own yet.
+
+Proved (`anastome::dialogue::tests::{commitment, atlas}`,
+`cognition::tests::atlas`): the commitment's root is its records, never
+their order; a record deleted restores the earlier root exactly; one
+record's root is its leaf folded up its path against zero; empty is zero, a
+key twice and a key past its wall refused; inclusion and absence proofs
+verify and wrong ones fail; the events digest keeps its order, three events
+`node(node(l0, l1), l2)`; every act and reply reads back as the exact values
+it was written from, its signature verifying, an entry with no applied
+crossings the ruled bytes exactly; MAP then TRAVERSE end to end with gas
+`S 11/4, G 2, T 2, H 3`, fee `[2, 2, 2, 3]` claimed on the stake and paid
+whole to the court at the window, nothing minted, the edge pending then its
+residual 2; an unmapped mouth refused, side by side; a stale entry NOT YET AT
+h, each side by its own `N`; one-sided, forged and mismatched declarations
+refused; the ledger's fork, `u` not ascending, a point not final or behind,
+the founder's and a stranger's signature refused, the dilation `1/5` and an
+unmeasured segment, across a restart; the connection tax into the pool and
+a solve's POUW paid from it first, only the remainder minted, the audit
+holding; a stake's claims gating its unstake until they settle.
 
 ### 80.1 The blueprint reconciled (2026-09-24)
 

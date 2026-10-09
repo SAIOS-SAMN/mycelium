@@ -96,6 +96,134 @@ pub fn encode_wallet_reply(a: &Account) -> Vec<u8> {
     out
 }
 
+/// 78.154 (4) — STAKE OR UNSTAKE: μ moved between a party's balance and its
+/// STAKE — non-decaying escrow for traversal and coordinate retrieval, the
+/// treasury's own Stake and Unstake rows. An unstake is admitted only once
+/// every claim drawn on the stake has settled.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StakeAct {
+    pub who: [u8; 32],
+    pub unstake: bool,
+    pub mu: [u64; 4],
+    pub nonce: [u8; 32],
+}
+
+const STAKE: &[u8] = b"mycelium stake v1";
+const KIND_STAKE: u8 = 1;
+const KIND_UNSTAKE: u8 = 2;
+
+impl StakeAct {
+    fn kind(&self) -> u8 {
+        match self.unstake {
+            false => KIND_STAKE,
+            true => KIND_UNSTAKE,
+        }
+    }
+
+    /// `"mycelium stake v1" ‖ kind ‖ who ‖ mu ‖ nonce`.
+    pub fn signed_bytes(&self) -> Vec<u8> {
+        let mut out = STAKE.to_vec();
+        out.push(self.kind());
+        out.extend_from_slice(&self.who);
+        put_lanes(&mut out, &self.mu);
+        out.extend_from_slice(&self.nonce);
+        out
+    }
+
+    pub fn sign(self, key: &ed25519_dalek::SigningKey) -> SignedStake {
+        use ed25519_dalek::Signer;
+        let sig = key.sign(&self.signed_bytes()).to_bytes();
+        SignedStake { act: self, sig }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SignedStake {
+    pub act: StakeAct,
+    pub sig: [u8; 64],
+}
+
+/// `[ACT_WALLET][who 32][1 stake | 2 unstake][mu 4×u64][nonce 32][sig 64]`.
+pub fn encode_stake(s: &SignedStake) -> Vec<u8> {
+    let mut out = encode_wallet(&s.act.who);
+    out.push(s.act.kind());
+    put_lanes(&mut out, &s.act.mu);
+    out.extend_from_slice(&s.act.nonce);
+    out.extend_from_slice(&s.sig);
+    out
+}
+
+pub fn decode_stake(body: &[u8]) -> Option<SignedStake> {
+    if !act_is(body, ACT_WALLET) {
+        return None;
+    }
+    let who: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    let unstake = match *body.get(33)? {
+        KIND_STAKE => false,
+        KIND_UNSTAKE => true,
+        _ => return None,
+    };
+    let mut p = 34usize;
+    let mu = take_lanes(body, &mut p)?;
+    let nonce: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
+    let sig: [u8; 64] = body.get(p + 32..p + 96)?.try_into().ok()?;
+    (p + 96 == body.len()).then_some(SignedStake { act: StakeAct { who, unstake, mu, nonce }, sig })
+}
+
+/// WHY A STAKE ACT DID NOT MOVE.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StakeRefusal {
+    /// 1 — the party's signature does not verify.
+    Unsigned,
+    /// 2 — the balance (a stake) or the stake (an unstake) lacks it, on a lane.
+    Short,
+    /// 3 — a claim drawn on the stake has not settled.
+    Claimed,
+    /// 4 — zero on every lane.
+    Nothing,
+    /// 5 — the nonce was used by this party already: a resend moves nothing.
+    Spent,
+}
+
+impl StakeRefusal {
+    fn code(self) -> u8 {
+        match self {
+            StakeRefusal::Unsigned => 1,
+            StakeRefusal::Short => 2,
+            StakeRefusal::Claimed => 3,
+            StakeRefusal::Nothing => 4,
+            StakeRefusal::Spent => 5,
+        }
+    }
+}
+
+/// `[1][stake now 4×u64]` or `[0][reason]`.
+pub fn encode_stake_reply(r: &Result<[u64; 4], StakeRefusal>) -> Vec<u8> {
+    match r {
+        Ok(stake) => {
+            let mut out = vec![1];
+            put_lanes(&mut out, stake);
+            out
+        }
+        Err(why) => vec![0, why.code()],
+    }
+}
+
+pub fn decode_stake_reply(b: &[u8]) -> Option<Result<[u64; 4], StakeRefusal>> {
+    match b {
+        [0, code] => {
+            let all = [StakeRefusal::Unsigned, StakeRefusal::Short, StakeRefusal::Claimed, StakeRefusal::Nothing, StakeRefusal::Spent];
+            Some(Err(all.into_iter().find(|r| r.code() == *code)?))
+        }
+        [1, rest @ ..] => {
+            let mut p = 0;
+            let stake = take_lanes(rest, &mut p)?;
+            (p == rest.len()).then_some(Ok(stake))
+        }
+        _ => None,
+    }
+}
+
 /// The account, read whole or not at all.
 pub fn decode_wallet_reply(body: &[u8]) -> Option<Account> {
     if !act_is(body, ACT_WALLET) {

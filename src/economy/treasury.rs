@@ -767,11 +767,22 @@ impl Treasury {
         if mu.iter().all(|&x| x == 0) {
             return [0; 4];
         }
-        // The credit first: a balance with no room mints nothing (STD1).
-        if !self.credit(who, mu) {
-            return [0; 4];
+        // 78.154a — A CLOSER'S POUW IS PAID FIRST FROM THE RECYCLED POOL:
+        // what the universes returned as connection tax pays the closure,
+        // and only what the pool cannot cover is minted.
+        let pooled = match arm {
+            Some(Arm::Pouw) => self.draw_pool(who, mu, anchor, arm),
+            _ => [0; 4],
+        };
+        let rest: [u64; 4] = std::array::from_fn(|l| mu[l] - pooled[l]);
+        if rest.iter().all(|&x| x == 0) {
+            return pooled;
         }
-        self.write(Entry { kind: Kind::Mint, who, mu, at: anchor.0, receipt: anchor.1, arm });
+        // The credit first: a balance with no room mints nothing (STD1).
+        if !self.credit(who, rest) {
+            return pooled;
+        }
+        self.write(Entry { kind: Kind::Mint, who, mu: rest, at: anchor.0, receipt: anchor.1, arm });
         mu
     }
 

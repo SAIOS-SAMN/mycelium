@@ -1,4 +1,4 @@
-# MU-LEXICON — the shared vocabulary (version 4)
+# MU-LEXICON — the shared vocabulary (version 5)
 
 **Status: canonical** (78.122, 2026-10-07). The operator: "we need all of our systems to be aligned, and the
 server to define this terminology so that all future connections can use the same shared terminology: wormholes,
@@ -72,6 +72,9 @@ neither renames nor claims them.
 | **Keeper** | (78.152 TU-1) One of the three hyphae a, b, c, a distinct court and key, keeping TUniversal: its READING is its head's height `h`, its court's cumulative issuance per lane `S:G:T:H`, and `K`, the orbits it closed, signed and linked to its previous reading by hash, citing the last reading it verified from each other keeper. |
 | **Final point** | (78.152 TU-3) A keeper's point held by two distinct keepers' verified readings — its own signature and another's citation. The final TUniversal is the greatest one in a court's view, never averaged; with two keepers down it does not advance. |
 | **TPoint** | (78.152 TU-5) A final point as a typed coordinate: `origin/h:S:G:T:H:K`, the origin the genesis hash and epoch, the six fields exact integers written in 16 lowercase hex digits each (`TPoint::print`, `TPoint::parse`). What every act, percept and mail carries (`Session::tuniversal`). |
+| **Sub-origin** | (version 5, 78.155 §5c, seat wire v1.4) A sub-universe of a domain's universe — netstratum's substratum — named by its 32-byte citation. A seat is named by (domain, sub-origin, seat id), the sub-origin absent for the domain's own universe; a post naming one is written under its sub-kind with the SCOPED bit (`0x80`), the sub-origin after the domain. |
+| **Relay epoch** | (version 5, seat wire v1.4) A value the seat relay draws when it is made (never 0), so every hypha restart changes it. A READ-MAIL at sub-kind 8 names the epoch its cursor was read under and is answered with the relay's epoch and last sequence: a cursor of another epoch, or past the sequence, is a restart and acknowledges nothing — never progress. |
+| **Axis coordinate** | (version 5, 78.156) A universe's own time `u`, its committed cycle, FREE of TUniversal: a percept's `local_time`, carried beside the house's final point. A seated mind's sub-instance is located at (TPoint, u); the ratio of their advances is its experienced dilation, a reading, never an error. |
 
 ### 3.1 The fold lanes (version 2, 78.123 B)
 

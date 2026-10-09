@@ -95,6 +95,9 @@ fn a_page_of_the_rows_below_is_the_whole_prefix_paged() {
     for r in &after {
         let head = r.stamp.place();
         let below = k.treasury.rows_below(head);
+        // `rows_span` from the journal's start is the rows below, whatever
+        // order the journal holds them in.
+        assert_eq!(k.treasury.rows_span(None, head), below, "head {head:?}");
         for skip in 0..=below.len() + 1 {
             for n in [0, 1, 2, usize::MAX] {
                 let (total, page) = k.treasury.rows_below_page(head, skip, n);

@@ -108,7 +108,7 @@ impl Kernel {
                 b,
                 pos,
                 COURT_TRIE,
-                &[LEAF_HEAD, LEAF_ROOT, LEAF_LINE, LEAF_DOMAINS, LEAF_LEDGERS, LEAF_CHALLENGES, LEAF_HANDOFFS, LEAF_ROOTS],
+                &[LEAF_HEAD, LEAF_ROOT, LEAF_LINE, LEAF_DOMAINS, LEAF_LEDGERS, LEAF_CHALLENGES, LEAF_HANDOFFS, LEAF_ROOTS, LEAF_ATLAS],
             )?;
             let nodes: Vec<(Vec<u8>, crate::snapshot::Leaves)> =
                 court.scoped().map(|(k, l)| (k, l.clone())).collect();
@@ -179,6 +179,10 @@ impl Kernel {
                     kernel.root_proofs.insert(proof.signer, proof);
                 }
                 kernel.proofs_mark = crate::chronometry::next_mark();
+            }
+            // 78.154 — the atlas; a home written before 78.154 carries none.
+            if let Some(v) = leaf(leaves, LEAF_ATLAS) {
+                kernel.atlas = whole(v, super::super::atlas::Atlas::take)?;
             }
             // THE LINE THIS SNAPSHOT STANDS ON: in it, with the root it was
             // folded to; or on disk, held already, which must hold the stamp
