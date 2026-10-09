@@ -60,13 +60,22 @@ fn a_ledger_entry_reads_back_and_verifies() {
     assert_eq!(decode_ledger_page([6; 32], &encode_ledger_page(&page)), Some(page));
 }
 
-/// A MAP ACT — a mouth, a throat — and the map as read come back whole.
+/// A MAP ACT — a mouth, a throat, a local throat — and the map as read come
+/// back whole; a local throat's frames read back as the exact versors they
+/// were, its wire `[2][throat 32][keeper 32][frame_0][frame_1][N]`, and its
+/// id the one derived from its throat key.
 #[test]
 fn a_map_act_and_the_map_read_back() {
+    use crate::anastome::dialogue::atlas::{local_record_id, local_throat_id};
+    use crate::transducer::cga::{base_vector, translator_at, Mv};
+    let n = |v: i64| num_rational::BigRational::from_integer(v.into());
+    let (f0, f1) = (translator_at(&[n(32), n(-17), n(0)]), translator_at(&[n(5), n(4), n(0)]));
+    let local = MapRecord::LocalThroat { throat: [4; 32], keeper: [2; 32], frames: (f0.clone(), f1.clone()), freshness: 6 };
     let records = [
         MapRecord::Mouth { place: ([3; 32], 1), freshness: 8 },
         MapRecord::Segment { kind: Segment::Throat, a: ([3; 32], 0), b: ([3; 32], 1), span: (11, 4), keeper: Some([2; 32]) },
         MapRecord::Segment { kind: Segment::Tube, a: ([3; 32], 0), b: ([5; 32], 1), span: (1, 1), keeper: None },
+        local.clone(),
     ];
     for record in records.clone() {
         let act = MapAct { domain: [6; 32], point: at(4), record, nonce: [1; 32] };
@@ -75,13 +84,39 @@ fn a_map_act_and_the_map_read_back() {
         assert_eq!(back.act, act);
         assert!(verifies(&key(31), &back.act.signed_bytes(), &back.sig));
     }
+    // The local throat's frames decode coefficient for coefficient, not
+    // only projectively.
+    let mut body = Vec::new();
+    local.put(&mut body);
+    let mut p = 0;
+    let Some(MapRecord::LocalThroat { throat, keeper, frames: (b0, b1), freshness }) = MapRecord::take(&body, &mut p) else { panic!("a local throat") };
+    assert_eq!((throat, keeper, freshness, p), ([4; 32], [2; 32], 6, body.len()));
+    assert!(b0.sub(&f0).is_zero() && b1.sub(&f1).is_zero(), "the frames exactly");
+    let mut material = [6u8; 32].to_vec();
+    material.extend_from_slice(&[4; 32]);
+    let lid = blake3::derive_key("mycelium local throat v1", &material);
+    assert_eq!(local_throat_id(&[6; 32], &[4; 32]), lid);
+    assert_eq!(local.id(&[6; 32]), local_record_id(&[6; 32], &lid), "held under its derived mouth id");
     assert_eq!(decode_domain_request(&encode_map_read([6; 32])), Some(DomainRequest::ReadMap([6; 32])));
-    let reading: Vec<MapEntry> = records
-        .iter()
-        .map(|r| MapEntry { held: HeldRecord { record: r.clone(), point: at(3), sealed: 9 }, place: None })
-        .collect();
-    assert_eq!(decode_map_reading(&encode_map_reading(&reading)), Some(reading));
-    for r in [Mapped::Sealed { record: [1; 32], h: 4, point: at(4) }, Mapped::Refused(MapRefusal::Keeper), Mapped::Refused(MapRefusal::Behind)] {
+    let places = |r: &MapRecord| match r {
+        MapRecord::Mouth { .. } => vec![base_vector(&[n(1), n(2)])],
+        MapRecord::LocalThroat { .. } => vec![base_vector(&[n(2), n(3)]), base_vector(&[n(5), n(4)])],
+        MapRecord::Segment { .. } => Vec::<Mv>::new(),
+    };
+    let reading: Vec<MapEntry> = records.iter().map(|r| MapEntry { held: HeldRecord { record: r.clone(), point: at(3), sealed: 9 }, places: places(r) }).collect();
+    let back = decode_map_reading(&encode_map_reading(&reading)).expect("reads back");
+    assert_eq!(back, reading);
+    for (b, r) in back.iter().zip(&reading) {
+        assert!(b.places.iter().zip(&r.places).all(|(x, y)| x.sub(y).is_zero()), "each place exactly");
+    }
+    for r in [
+        Mapped::Sealed { record: [1; 32], h: 4, point: at(4) },
+        Mapped::Refused(MapRefusal::Keeper),
+        Mapped::Refused(MapRefusal::Behind),
+        Mapped::Refused(MapRefusal::NotVersor),
+        Mapped::Refused(MapRefusal::NoGeometry),
+        Mapped::Refused(MapRefusal::Unplaced),
+    ] {
         assert_eq!(decode_map_reply(&encode_map_reply(&r)), Some(r.clone()));
     }
 }

@@ -26642,6 +26642,24 @@ signatures, never hex goldens (Concordance 1.4):
 `sdk::tests::seat_mind::a_seats_experienced_dilation_is_read_exactly`, with
 the v1.3 tests unchanged in substance.
 
+**Seat relay reading** (2026-10-09; diagnostics are typed, never grepped).
+The relay is read on the observer as its own `Reading::Relay` (tag 20,
+`--reading relay`; `observe::Relay`), published at every observer question
+off the relay's own lock, never the kernel's: its epoch and last sequence,
+the listings, boxes and pieces it holds and their reply bytes, the pieces
+dropped at the bound; per domain WITH A SITTING RESERVE here (so bounded by
+the domains founded), the posts FILED since boot by kind (SEATS, TAKE, TAKEN,
+PERCEPT, CALL, OUTCOME) and REFUSED by reason (Unsigned, NotTheHouse,
+Malformed); and two counts apart — posts naming a domain with no reserve
+(UnknownDomain, which names no counted domain) and seat frames that did not
+read far enough to name one. Volatile, as the relay is. A house whose posts
+are all refused reads `filed seats 0 … · refused … not-the-house N` on our
+side. The console prints `relay epoch <hex> seq S · listings L boxes B
+pieces P bytes Y dropped D · unknown-domain U unread R`, then one line per
+domain `domain <8 hex>… filed seats a take b taken c percept d call e
+outcome f · refused unsigned g not-the-house h malformed i`. Proved:
+`cognition::tests::seat::the_relay_reading_counts_posts_filed_and_refused`.
+
 ### 78.154 Gas, the map, the ledger and the connection tax (2026-10-09, the operator's rulings in MU-ECONOMY §7.1–7.2; the coordinator's wire and refinements; 78.156)
 
 **Ruled** (MU-ECONOMY §7.1, §7.2 — read there whole). μ is the GAS of
@@ -26848,6 +26866,40 @@ the founder's and a stranger's signature refused, the dilation `1/5` and an
 unmeasured segment, across a restart; the connection tax into the pool and
 a solve's POUW paid from it first, only the remainder minted, the audit
 holding; a stake's claims gating its unstake until they settle.
+
+**LOCAL THROAT** (MAP record kind 2; decided 2026-10-09, Concordance 5.9).
+In-universe throats — a universe's own progenitor tubes, core to galaxy,
+long hauls — need hypha coordinates but are no 78.128 mouth pairs. The
+record `[2][throat key 32][keeper 32][frame_0 Mv][frame_1 Mv][N u64 LE]`
+(each frame in `Mv`'s own `to_bytes` writing) is posted under MAP (14) as
+any record, by the domain's sitting reserve at a final point. Its MOUTH ID
+is derived, never posted: `blake3::derive_key("mycelium local throat v1",
+domain ‖ throat key)`; sides 0 and 1 are its two ends, both in the posting
+universe; its record id is the citation hash of `"map record" ‖ domain ‖
+[2] ‖ local id`. Admitted where each frame is a versor (`cga::is_versor`,
+not zero; else 14 NOT VERSOR), the universe declared its GEOMETRY (78.139;
+else 15 NO GEOMETRY), and each end's PLACE reads exactly off its frame in
+that geometry (`tube::place_in`, as a tube's places; else 16 UNPLACED). The
+keeper is the progenitor line's key carried inline (no tier check, 4.1); no
+court bond, no 78.128 act. Once mapped, `(local id, side)` is a mapped PLACE
+for every downstream use: Tube/Core segment endpoints, a Throat segment
+between its two sides (keeper = its keeper), READ-MAP and TRAVERSE naming it
+as the mouth (B is then A; freshness by its `N`; T from the final points as
+for any mouth). Atlas and crossing ask ONE reading for both kinds
+(`Kernel::mapped_place`: the place `(id, side)` on a universe's map → its
+place, keeper, `N` and held record). **READ-MAP** now writes each record's
+places as `[n u8][Mv × n]`, `n ≤ 2` — a mouth one, a local throat its two
+ends (side 0, then 1), a segment none; `n` 0 or 1 is the v1 writing exactly.
+Proved: `cognition::tests::atlas::a_local_throat_maps_and_reads_its_ends_exactly`
+(its derived id; READ-MAP's places `(2, 3)` — `(32, −17)` modulo `(30, 20)`
+— and `(5, 4)` exactly; no geometry, a zero and a mixed-parity frame, a
+frame off the torus and a dilation, the founder's signature each refused; its
+throat kept by its keeper, a road from its end),
+`cognition::tests::atlas::a_traverse_over_a_local_throat_end_to_end` (gas
+`S 3/2, G 2, T 0, H 3`, fee `[1, 2, 0, 3]` paid whole at the window, nothing
+minted, the edge pending then residual 1),
+`dialogue::tests::atlas::a_map_act_and_the_map_read_back` (the record and its
+frames back exactly, signatures verifying).
 
 ### 80.1 The blueprint reconciled (2026-09-24)
 

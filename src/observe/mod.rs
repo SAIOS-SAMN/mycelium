@@ -19,6 +19,7 @@ mod economy;
 mod fleet;
 mod learning;
 mod reading;
+mod relay;
 mod senses;
 mod store;
 #[cfg(test)]
@@ -34,6 +35,7 @@ pub use economy::*;
 pub use fleet::*;
 pub use learning::*;
 pub use reading::*;
+pub use relay::*;
 pub use senses::*;
 pub use store::*;
 pub use tuniversal::*;

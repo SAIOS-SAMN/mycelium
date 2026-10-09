@@ -41,11 +41,14 @@ pub const TAG_ECONOMY: u8 = 16;
 pub const TAG_SENSES: u8 = 17;
 pub const TAG_ACTS: u8 = 18;
 pub const TAG_CARRIERS: u8 = 19;
+/// 78.145 — the seat relay's standing and its posts filed and refused.
+pub const TAG_RELAY: u8 = 20;
 
 /// CQ1 — EVERY READING'S NAME, by its tag: the ONE statement the console's
 /// `--reading NAME` is read against (law 12).
-pub const READING_NAMES: [(&str, u8); 19] = [
+pub const READING_NAMES: [(&str, u8); 20] = [
     ("carriers", TAG_CARRIERS),
+    ("relay", TAG_RELAY),
     ("clock", TAG_CLOCK),
     ("economy", TAG_ECONOMY),
     ("senses", TAG_SENSES),
@@ -957,6 +960,9 @@ pub enum Reading {
     Acts(Box<super::Acts>),
     /// 78.64 H1 — what each of a court's carriers holds, at its `K`.
     Carriers(Box<super::Carriers>),
+    /// 78.145 — the seat relay: its standing, and per domain the posts it
+    /// filed by kind and refused by reason since boot.
+    Relay(Box<super::Relay>),
 }
 
 impl Reading {
@@ -981,6 +987,7 @@ impl Reading {
             Reading::Senses(_) => TAG_SENSES,
             Reading::Acts(_) => TAG_ACTS,
             Reading::Carriers(_) => TAG_CARRIERS,
+            Reading::Relay(_) => TAG_RELAY,
         }
     }
 
@@ -1023,6 +1030,8 @@ impl Reading {
             (Reading::Acts(a), Reading::Acts(b)) => *a = b.clone(),
             // A census is read whole at its `K`; the later stands.
             (Reading::Carriers(a), Reading::Carriers(b)) => *a = b.clone(),
+            // The relay is read whole at the question; the later stands.
+            (Reading::Relay(a), Reading::Relay(b)) => *a = b.clone(),
             _ => return false,
         }
         true
@@ -1076,6 +1085,7 @@ impl Reading {
                 Some(())
             }
             Reading::Carriers(r) => r.put(out),
+            Reading::Relay(r) => r.put(out),
         }
     }
 
@@ -1102,6 +1112,7 @@ impl Reading {
             TAG_SENSES => Some(Reading::Senses(Box::new(super::Senses::take(b, p)?))),
             TAG_ACTS => Some(Reading::Acts(Box::new(super::Acts::take(b, p)?))),
             TAG_CARRIERS => Some(Reading::Carriers(Box::new(super::Carriers::take(b, p)?))),
+            TAG_RELAY => Some(Reading::Relay(Box::new(super::Relay::take(b, p)?))),
             _ => None,
         }
     }

@@ -15,7 +15,8 @@
 
 use super::Kernel;
 use crate::anastome::dialogue::atlas::{
-    dilation, HeldEntry, HeldRecord, LedgerPage, LedgerRefusal, Ledgered, MapEntry, MapRecord, MapRefusal, Mapped, Segment, SignedLedger, SignedMap, KIND_LEDGER, KIND_MAP,
+    dilation, local_record_id, local_throat_id, HeldEntry, HeldRecord, LedgerPage, LedgerRefusal, Ledgered, MapEntry, MapRecord, MapRefusal, Mapped, Place, Segment, SignedLedger, SignedMap,
+    KIND_LEDGER, KIND_MAP,
 };
 use crate::anastome::dialogue::crossing::Edge;
 use crate::chronometry::tuniversal::TPoint;
@@ -103,6 +104,18 @@ pub(crate) fn record_key(domain: &[u8; 32], id: &[u8; 32]) -> Vec<u8> {
 /// The id a mouth's record is held under on its universe's map.
 pub(crate) fn mouth_id(domain: &[u8; 32], mouth: &[u8; 32], side: u8) -> [u8; 32] {
     MapRecord::Mouth { place: (*mouth, side), freshness: 0 }.id(domain)
+}
+
+/// 78.154 — A MAPPED PLACE, ONE READING FOR BOTH KINDS (a 78.128 mouth's
+/// side, a local throat's end) on the map of the universe it is asked of:
+/// its exact place in that universe's space where it reads, the keeper of
+/// its throat, its freshness `N`, and the record held (its mapped point).
+#[derive(Clone, Debug)]
+pub(crate) struct MappedPlace {
+    pub(crate) place: Option<crate::transducer::cga::Mv>,
+    pub(crate) keeper: [u8; 32],
+    pub(crate) freshness: u64,
+    pub(crate) held: HeldRecord,
 }
 
 impl Atlas {
@@ -390,11 +403,61 @@ impl Kernel {
         Some((held.mouth.clone(), *self.tier_domain.get(&tier)?))
     }
 
+    /// A LOCAL THROAT `local` (its derived mouth id) on `domain`'s map, as
+    /// held.
+    pub(crate) fn local_throat(&self, domain: &[u8; 32], local: &[u8; 32]) -> Option<&HeldRecord> {
+        let held = self.atlas.records.get(&record_key(domain, &local_record_id(domain, local)))?;
+        match held.record {
+            MapRecord::LocalThroat { .. } => Some(held),
+            MapRecord::Mouth { .. } | MapRecord::Segment { .. } => None,
+        }
+    }
+
+    /// 78.154 — THE MAPPED PLACE `(id, side)` on `domain`'s map, either kind:
+    /// a mouth pair's side mapped there (its place off the tube, its keeper
+    /// the mouth's), or a local throat's end (its place off its frame in the
+    /// universe's declared geometry, its keeper inline). `None` where it is
+    /// not mapped there.
+    pub(crate) fn mapped_place(&self, domain: &[u8; 32], (id, side): &Place) -> Option<MappedPlace> {
+        if *side > 1 {
+            return None;
+        }
+        if let Some(held) = self.atlas.records.get(&record_key(domain, &mouth_id(domain, id, *side))) {
+            let MapRecord::Mouth { freshness, .. } = held.record else { return None };
+            let mouth = &self.handoffs.mouths.get(id)?.mouth;
+            let place = mouth.places().map(|(f, t)| match side {
+                0 => f,
+                _ => t,
+            });
+            return Some(MappedPlace { place, keeper: mouth.keeper, freshness, held: held.clone() });
+        }
+        let held = self.local_throat(domain, id)?;
+        let MapRecord::LocalThroat { keeper, freshness, .. } = held.record else { return None };
+        let place = self.geometry_of(domain).and_then(|g| held.record.local_places(g)).map(|(p0, p1)| match side {
+            0 => p0,
+            _ => p1,
+        });
+        Some(MappedPlace { place, keeper, freshness, held: held.clone() })
+    }
+
+    /// THE UNIVERSE A PLACE STANDS IN: a mouth pair's side by its tier's
+    /// domain (an open tube), else a local throat of `local_to`'s map — whose
+    /// two ends both stand in it.
+    pub(crate) fn place_domain(&self, local_to: &[u8; 32], (id, side): &Place) -> Option<[u8; 32]> {
+        match self.mouth_side(id, *side) {
+            Some((_, d)) => Some(d),
+            None => (*side <= 1 && self.local_throat(local_to, id).is_some()).then_some(*local_to),
+        }
+    }
+
     /// 78.154 — A MAP RECORD POSTED by the universe's sitting reserve at a
     /// final point: a MOUTH of an open tube on its side in this universe;
     /// a road (tube, core) between two of its mapped places, no keeper; a
     /// THROAT between one mouth's two sides, its own side mapped, its keeper
-    /// the mouth's. Superseded only by a later act on the same id.
+    /// the mouth's; a LOCAL THROAT, each frame a versor whose place reads in
+    /// the universe's declared geometry (its two ends then mapped places of
+    /// this universe, a throat segment between them kept by its keeper).
+    /// Superseded only by a later act on the same id.
     pub fn map(&mut self, s: &SignedMap, fin: Option<TPoint>) -> Mapped {
         use MapRefusal as R;
         let refuse = Mapped::Refused;
@@ -410,7 +473,7 @@ impl Kernel {
         if !self.final_in_view(&a.point, fin) {
             return refuse(R::NotFinal);
         }
-        let mapped = |k: &Kernel, place: &([u8; 32], u8)| k.atlas.records.contains(&record_key(&a.domain, &mouth_id(&a.domain, &place.0, place.1)));
+        let mapped = |k: &Kernel, place: &Place| k.mapped_place(&a.domain, place).is_some();
         match &a.record {
             MapRecord::Mouth { place, .. } => {
                 if place.1 > 1 {
@@ -421,11 +484,27 @@ impl Kernel {
                     return refuse(R::NotThisSide);
                 }
             }
+            MapRecord::LocalThroat { frames: (f0, f1), .. } => {
+                if [f0, f1].iter().any(|f| f.is_zero() || !crate::transducer::cga::is_versor(f)) {
+                    return refuse(R::NotVersor);
+                }
+                let Some(space) = self.geometry_of(&a.domain) else { return refuse(R::NoGeometry) };
+                if a.record.local_places(space).is_none() {
+                    return refuse(R::Unplaced);
+                }
+            }
             MapRecord::Segment { kind, a: x, b: y, span, keeper } => {
                 if !crate::anastome::dialogue::universe::positive(*span) || x.1 > 1 || y.1 > 1 || x == y {
                     return refuse(R::Malformed);
                 }
                 match kind {
+                    // A local throat's own throat: its two ends, both of this
+                    // universe and mapped with it, its keeper the record's.
+                    Segment::Throat if x.0 == y.0 && self.local_throat(&a.domain, &x.0).is_some() => {
+                        if self.mapped_place(&a.domain, x).map(|m| m.keeper) != *keeper {
+                            return refuse(R::Keeper);
+                        }
+                    }
                     Segment::Throat => {
                         if x.0 != y.0 {
                             return refuse(R::Unmapped);
@@ -468,19 +547,26 @@ impl Kernel {
     }
 
     /// 78.154 — A UNIVERSE'S MAP as read: every record, each mouth with its
-    /// place in the universe's own space read off its tube. Sealing nothing.
+    /// place in the universe's own space read off its tube, each local
+    /// throat with its two ends' places read off its frames — every place
+    /// through the one mapped-place reading. Sealing nothing.
     pub fn map_reading(&self, domain: &[u8; 32]) -> Vec<MapEntry> {
         let Some(fiber) = self.atlas.records.fiber_at(domain) else { return Vec::new() };
+        let place = |p: &Place| self.mapped_place(domain, p).and_then(|m| m.place);
         fiber
             .map(|(_, held)| {
-                let place = match &held.record {
-                    MapRecord::Mouth { place: (m, side), .. } => self.handoffs.mouths.get(m).and_then(|h| h.mouth.places()).map(|(f, t)| match side {
-                        0 => f,
-                        _ => t,
-                    }),
-                    MapRecord::Segment { .. } => None,
+                let places = match &held.record {
+                    MapRecord::Mouth { place: p, .. } => place(p).into_iter().collect(),
+                    MapRecord::LocalThroat { throat, .. } => {
+                        let local = local_throat_id(domain, throat);
+                        match (place(&(local, 0)), place(&(local, 1))) {
+                            (Some(p0), Some(p1)) => vec![p0, p1],
+                            _ => Vec::new(),
+                        }
+                    }
+                    MapRecord::Segment { .. } => Vec::new(),
                 };
-                MapEntry { held: held.clone(), place }
+                MapEntry { held: held.clone(), places }
             })
             .collect()
     }

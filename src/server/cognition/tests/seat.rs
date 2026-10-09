@@ -208,6 +208,44 @@ fn the_relay_keys_seats_by_sub_origin_and_tells_its_epoch() {
     assert_ne!(founded().seat_relay().standing().0, epoch);
 }
 
+/// THE RELAY'S READING COUNTS EVERY POST: per domain with a reserve, filed
+/// by kind and refused by reason; a domain with no reserve and a frame that
+/// names none each counted apart; the standing — epoch, sequence, listings,
+/// boxes, pieces and their bytes — as the relay holds it; and the reading
+/// reads back whole through the observer's codec.
+#[test]
+fn the_relay_reading_counts_posts_filed_and_refused() {
+    use crate::observe::{Reading, RelayPosts};
+    let mut k = founded();
+    let d = vk(&domain());
+    let m = vk(&mind());
+    let relay = k.seat_relay();
+    for signer in [tier(), mind()] {
+        assert_eq!(k.seat_post(&Post::Seats(seats(1)).sign(&signer).expect("writes")), Err(Refusal::NotTheHouse));
+    }
+    k.seat_post(&Post::Seats(seats(1)).sign(&house()).expect("writes")).expect("listed");
+    let take = Take { domain: d, sub_origin: None, seat: 7, mind: m, nonce: [2; 32] };
+    assert_eq!(k.seat_post(&Post::Take(take.clone()).sign(&other()).expect("writes")), Err(Refusal::Unsigned));
+    k.seat_post(&Post::Take(take).sign(&mind()).expect("writes")).expect("relayed");
+    let percept = Percept { domain: d, sub_origin: None, seat: 7, mind: m, local_time: Arg::Q { num: 1, den: 1 }, seq: 1, records: Vec::new(), point: None };
+    let last = k.seat_post(&Post::Percept(percept).sign(&house()).expect("writes")).expect("relayed");
+    let stranger = Seats { domain: [77; 32], ..seats(1) };
+    assert_eq!(k.seat_post(&Post::Seats(stranger).sign(&house()).expect("writes")), Err(Refusal::UnknownDomain));
+    relay.note_unread();
+    let r = relay.reading();
+    assert_eq!(r.domains, vec![RelayPosts { domain: d, filed: [1, 1, 0, 1, 0, 0], refused: [1, 2, 0] }], "seats, take, percept filed; unsigned 1, not-the-house 2");
+    assert_eq!((r.unknown, r.unread), (1, 1), "the stranger and the unread frame, each apart");
+    assert_eq!((r.epoch, r.seq), relay.standing());
+    assert_eq!(r.seq, last, "three posts filed, three sequences");
+    assert_eq!((r.listings, r.boxes, r.pieces, r.dropped), (1, 2, 2, 0), "the listing; the house's box (the take) and the mind's (the percept)");
+    let bytes = k.seats.held_bytes(true, &d) + k.seats.held_bytes(false, &m);
+    assert_eq!(r.bytes, bytes as u64);
+    let mut out = Vec::new();
+    let reading = Reading::Relay(Box::new(r));
+    reading.put(&mut out).expect("writes");
+    assert_eq!(Reading::take(&out, &mut 0), Some(reading), "the observer's codec reads it back whole");
+}
+
 /// THE BOUND HOLDS: a mind never reading its mail holds at most a frame's
 /// worth of it, the oldest dropped and counted, and one read carries the
 /// whole box.
