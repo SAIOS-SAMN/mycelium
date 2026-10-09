@@ -461,6 +461,12 @@ pub struct SeatMind {
     /// 78.148 — what each call, a function AT ITS ARGUMENTS, was seen to do
     /// (`own::call_key`).
     pub(crate) own: Keyed<Experience>,
+    /// COUNSEL-ONLY FUNCTIONS: every function a house has ever counselled.
+    /// The mind never explores one of them on its own — it calls it only as
+    /// counselled, or on what its experience of the counselled calls shows
+    /// (barren-realms, 2026-10-09: `handle` closes every throat a line holds,
+    /// `forge` spends ~1e21 J; a blind upward probe of either is a real act).
+    pub(crate) counselled: Vec<u16>,
 }
 
 impl SeatMind {
@@ -475,6 +481,7 @@ impl SeatMind {
             pending: None,
             repertoire: Vec::new(),
             own: Keyed::new(),
+            counselled: Vec::new(),
         }
     }
 
@@ -524,6 +531,9 @@ impl SeatMind {
             match r {
                 Record::Counsel { fn_id, args, worth, cost } => {
                     self.counsel.push(Counsel { fn_id: *fn_id, args: args.clone(), worth: worth.clone(), cost: cost.clone() });
+                    if !self.counselled.contains(fn_id) {
+                        self.counselled.push(*fn_id);
+                    }
                     let a = args.clone();
                     self.with_experience(*fn_id, |e| e.args = Some(a));
                 }

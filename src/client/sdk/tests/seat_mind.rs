@@ -572,3 +572,20 @@ fn a_versor_series_changes_by_its_exact_carrier() {
     assert_eq!(steady.orbit(), Some(Return::Orbit { period: 1, span: Some(q(1, 1)) }), "a steady carrier is an orbit, not a standstill");
     assert_eq!(m.series(&at(22)).expect("held").orbit(), Some(Return::Fixed), "a held versor is carried by one: fixed");
 }
+
+/// A FUNCTION A HOUSE COUNSELLED IS NEVER PROBED BLIND (barren-realms,
+/// 2026-10-09: `handle` closes every throat; `forge` spends real energy).
+/// Counselled once, on a later beat with no counsel the mind explores only
+/// its other functions.
+#[test]
+fn a_counselled_function_is_never_explored_blind() {
+    let mut m = SeatMind::new(vk(&domain()), 7);
+    m.perceive_listing(&[SeatFn { id: 13, tags: vec![TAG_COUNT] }, SeatFn { id: 2, tags: vec![TAG_COUNT] }]);
+    let counsel = Record::Counsel { fn_id: 13, args: vec![Arg::Count(1)], worth: Arg::Count(1), cost: Arg::Count(0) };
+    m.perceive(&percept(1, Arg::Count(1), vec![counsel]));
+    m.perceive(&percept(2, Arg::Count(2), vec![]));
+    match m.decide() {
+        Decision::Call(c) => assert_eq!(c.fn_id, 2, "the uncounselled function is explored, never fn 13: {c:?}"),
+        other => panic!("a call: {other}"),
+    }
+}
