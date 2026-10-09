@@ -335,7 +335,7 @@ it is the economy's sink.
 the route WHOLE, each its own segments — a transfer, never a mint, and no
 burn (demurrage in-universe is the sink). Gas is measured by the route,
 exactly, lane by lane, never collapsed: S the spatial span (geometrized
-Mpc, Concordance 1.8), G the mouth tolls and value terms, T the TUniversal
+Mpc, Concordance 1.8), G the value terms of the mapping, T the TUniversal
 distance between the points (final points only — a coordinate not yet
 final is refused as not yet at h, never priced on a guess), H the
 information carried. μ STAKED on a hypha is escrow for intelligence
@@ -343,6 +343,15 @@ traversal and coordinate retrieval, with no demurrage; a retrieval draws
 on the stake at the court's read price (emergent, never a published
 rate), and an unstake releases only after every claim drawn on it settles.
 A progenitor's in-universe wormhole haul pays the same gas.
+
+TWO CHARGES, NEVER MERGED (the operator, 2026-10-09; Concordance 5.8). The
+MAP FEE is μ, the coordinates' gas, paid to the courts that keep the map
+(this section). The ROAD TOLL (Concordance 5.4) is paid to a tube's keeper
+and its progenitor builders, in the civilization's OWN money, booked
+in-universe by the kernels — never on the hypha and never by TRAVERSE.
+Progenitors hold their toll shares as their own, and gain μ from them and
+from haul contracts with the ancients; local money becomes μ only through an
+ancients' reserve (Concordance 5.3).
 
 EVERY WORMHOLE TRAVERSAL NEEDS COORDINATES FROM THE HYPHA (the operator,
 2026-10-09, corrected the same day; Concordance 5.9). Time is coordinates
@@ -352,8 +361,8 @@ own universe, never through the hypha. What the traverser obtains from the
 hypha, and pays for, is the FINAL TUniversal point of each mouth on that
 map (origin/h:S:G:T:H:K, 2-of-3 quorum, 78.152). TRAVERSE is therefore a
 COORDINATE RETRIEVAL AND MAPPING act citing both mouths' final points, not
-a transport: it costs the route's gas per lane (§7.1) plus the mouth's toll
-(lane G; 78.128 between domains), paid to the courts. It holds between
+a transport: it costs the MAP FEE — the route's gas per lane (§7.1), paid
+to the courts that keep the map — and nothing else. It holds between
 domains and within one universe alike (a progenitor network, a core-to-rim
 haul in xylarium). A mouth not yet final on the map is refused as not yet
 at h; a crossing made without coordinates from the map is one the mesh
@@ -365,7 +374,8 @@ universe, by its ORIGIN (genesis, epoch) —
   that universe's own space (78.140: a point of its curved space or torus,
   exact), and the FINAL TPoint at which it was last mapped;
 - SEGMENT: a tube, core or throat between two mapped places, with its span
-  in the court unit (geometrized Mpc) and, for a mouth, its keeper and toll;
+  in the court unit (geometrized Mpc) and, for a mouth, its keeper (the
+  road toll itself is not kept on the hypha: below);
 - WHO MAPS: the universe's DOMAIN RESERVE posts its mouths and segments as
   signed MAP acts, and the court seals each at a final point (the
   coordinator, under Concordance 4.1, 3.2, 7.1). Mapping is the reserve's
