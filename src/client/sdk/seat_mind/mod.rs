@@ -43,11 +43,13 @@
 //! along an orbit, 78.43), and the period's span in the house's local time is
 //! read off the two beats, never assumed.
 //!
-//! BOUNDED AS THE RELAY IS (a sink keeps its bound): a series holds what one
-//! frame could carry of its values as they write (`frame_budget`), the oldest
-//! dropped and counted past it. OWED, named: a bound on how many series a
-//! seat holds (the house's record locators, which a game may churn), and the
-//! hand-over of a recognised orbit to the contemplation as a form.
+//! BOUNDED AS THE RELAY IS (a sink keeps its bound): a SEAT holds what one
+//! frame could carry of its values as they write (`frame_budget`), shared
+//! among its series, each series' oldest dropped and counted past its share;
+//! changes and carriers are derived where read, never held (Concordance
+//! 1.13). OWED, named: a series whose locator the house stops sending keeps
+//! its last share until the seat sheds it, and the hand-over of a recognised
+//! orbit to the contemplation as a form.
 
 mod choice;
 mod own;
@@ -204,17 +206,38 @@ impl std::fmt::Display for Locator {
 }
 
 /// ONE OBSERVATION of a series: the house's percept sequence it stood at,
-/// the house's local time there (where it is a quantity), the value, and —
-/// for a quantity seen at the beat before too — the change that carried it.
+/// the house's local time there (where it is a quantity), and the value.
+/// Its change from the beat before — a quantity's `Change`, a versor's
+/// carrier — is DERIVED where it is read (`Series::changes`,
+/// `Series::carriers`), never held (Concordance 1.13: a change held two flow
+/// points of the Cl(4,1) algebra each, and grew a seat mind by hundreds of
+/// megabytes, 2026-10-09).
 #[derive(Clone, Debug)]
 pub struct Seen {
     pub beat: u64,
     pub at: Option<Q>,
     pub value: Arg,
-    pub change: Option<Change>,
-    /// 78.148 — for a versor seen at the beat before too, the versor that
-    /// carried it there (`carrier`); none where either is no versor.
-    pub carrier: Option<Mv>,
+}
+
+/// ONE STEP OF A QUANTITY SERIES, as its change compares: the difference
+/// (the slide's parameter) and, where both values stand on one side of zero,
+/// the ratio (the scale's). Two changes are one exactly where these are, and
+/// one period's slides compose to the identity exactly where its differences
+/// sum to zero — slides on the null flow compose by addition (`Change`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct Step {
+    delta: Q,
+    ratio: Option<Q>,
+}
+
+impl Step {
+    fn between(from: &Q, to: &Q) -> Step {
+        let ratio = match from.is_zero() || to.is_zero() || from.is_negative() != to.is_negative() {
+            true => None,
+            false => Some(to / from),
+        };
+        Step { delta: to - from, ratio }
+    }
 }
 
 /// HOW A SERIES RETURNS.
@@ -267,26 +290,44 @@ impl Series {
         self.seen.back()
     }
 
-    /// Observe `value` at `beat`: its change from the beat before where both
-    /// are quantities, then held within the frame's budget.
-    fn observe(&mut self, beat: u64, at: Option<Q>, value: Arg) {
-        let prev = self.seen.back().filter(|prev| prev.beat.checked_add(1) == Some(beat));
-        let change = match (prev, quantity(&value)) {
-            (Some(prev), Some(now)) => quantity(&prev.value).and_then(|before| Change::between(&before, &now)),
-            _ => None,
-        };
-        let carried = match (prev.map(|p| &p.value), &value) {
-            (Some(Arg::Mv(before)), Arg::Mv(now)) => carrier(before, now),
-            _ => None,
-        };
+    /// Observe `value` at `beat`, held within `bound` bytes of values as they
+    /// write — the seat's frame budget shared among its series
+    /// (`SeatMind::perceive`) — the oldest dropped and counted past it.
+    fn observe(&mut self, beat: u64, at: Option<Q>, value: Arg, bound: usize) {
         self.held_bytes += written(&value);
-        self.seen.push_back(Seen { beat, at, value, change, carrier: carried });
-        while self.held_bytes > crate::network::wire::frame_budget() && self.seen.len() > 1 {
+        self.seen.push_back(Seen { beat, at, value });
+        while self.held_bytes > bound && self.seen.len() > 1 {
             if let Some(old) = self.seen.pop_front() {
                 self.held_bytes -= written(&old.value);
                 self.dropped += 1;
             }
         }
+    }
+
+    /// Each consecutive pair of observations one beat apart, oldest first.
+    fn consecutive(&self) -> impl Iterator<Item = (&Seen, &Seen)> {
+        self.seen.iter().zip(self.seen.iter().skip(1)).filter(|(a, b)| a.beat.checked_add(1) == Some(b.beat))
+    }
+
+    /// THE QUANTITY'S CHANGES, derived: for each two consecutive beats whose
+    /// values are both quantities, the motions of its line carrying one onto
+    /// the other, oldest first.
+    pub fn changes(&self) -> Vec<Change> {
+        self.consecutive()
+            .filter_map(|(a, b)| Change::between(&quantity(&a.value)?, &quantity(&b.value)?))
+            .collect()
+    }
+
+    /// 78.148 — THE VERSOR'S CARRIERS, derived: for each two consecutive
+    /// beats whose values are both multivectors, the versor carrying one onto
+    /// the other where it is exact (`carrier`), oldest first.
+    pub fn carriers(&self) -> Vec<Mv> {
+        self.consecutive()
+            .filter_map(|(a, b)| match (&a.value, &b.value) {
+                (Arg::Mv(x), Arg::Mv(y)) => carrier(x, y),
+                _ => None,
+            })
+            .collect()
     }
 
     /// THE SERIES' RETURN, read on its contiguous tail: the least period whose
@@ -301,16 +342,26 @@ impl Series {
             start -= 1;
         }
         let run = all.get(start..)?;
-        let quantities = run.iter().all(|s| quantity(&s.value).is_some());
-        // 78.148 — a versor series whose every change was carried exactly.
-        let carriers: Vec<&Mv> = run.iter().skip(1).filter_map(|s| s.carrier.as_ref()).collect();
-        let versors = run.iter().all(|s| matches!(s.value, Arg::Mv(_))) && carriers.len() == run.len().checked_sub(1)?;
-        let period = match (quantities, versors) {
-            (true, _) => {
-                let changes: Vec<&Change> = run.iter().skip(1).filter_map(|s| s.change.as_ref()).collect();
-                (changes.len() == run.len().checked_sub(1)?).then(|| periodic_changes(&changes)).flatten()?
+        let quantities: Option<Vec<Q>> = run.iter().map(|s| quantity(&s.value)).collect();
+        // 78.148 — a versor series whose every change is carried exactly.
+        let carriers: Option<Vec<Mv>> = match run.iter().all(|s| matches!(s.value, Arg::Mv(_))) {
+            true => run
+                .iter()
+                .zip(run.iter().skip(1))
+                .map(|(a, b)| match (&a.value, &b.value) {
+                    (Arg::Mv(x), Arg::Mv(y)) => carrier(x, y),
+                    _ => None,
+                })
+                .collect(),
+            false => None,
+        };
+        let period = match (quantities, carriers) {
+            (Some(qs), _) => {
+                let steps: Vec<Step> = qs.iter().zip(qs.iter().skip(1)).map(|(a, b)| Step::between(a, b)).collect();
+                periodic_steps(&steps)?
             }
-            (false, true) => {
+            (None, Some(carriers)) => {
+                let carriers: Vec<&Mv> = carriers.iter().collect();
                 let p = periodic_carriers(&carriers)?;
                 // A steady carrier that moves the value is an orbit of
                 // period one; only the carrier one is standing still.
@@ -320,7 +371,7 @@ impl Series {
                 }
                 p
             }
-            (false, false) => {
+            (None, None) => {
                 let values: Vec<&Arg> = run.iter().map(|s| &s.value).collect();
                 periodic_values(&values)?
             }
@@ -355,23 +406,14 @@ fn periodic_carriers(carriers: &[&Mv]) -> Option<usize> {
 }
 
 /// The least `p` whose last `2p` changes repeat with period `p` and whose
-/// last period's slides compose back to the identity.
-fn periodic_changes(changes: &[&Change]) -> Option<usize> {
-    let n = changes.len();
+/// last period's slides compose back to the identity: its differences sum
+/// to zero.
+fn periodic_steps(steps: &[Step]) -> Option<usize> {
+    let n = steps.len();
     (1..=n / 2).find(|&p| {
-        let tail = &changes[n - 2 * p..];
+        let tail = &steps[n - 2 * p..];
         let repeats = (0..p).all(|i| tail.get(i) == tail.get(i + p));
-        repeats
-            && tail
-                .get(p..)
-                .and_then(|one| {
-                    one.iter().try_fold(None::<FlowPoint>, |acc, c| match acc {
-                        None => Some(Some(c.slide.clone())),
-                        Some(a) => a.then(&c.slide).map(Some),
-                    })
-                })
-                .flatten()
-                .is_some_and(|composed| composed.returned())
+        repeats && tail.get(p..).is_some_and(|one| one.iter().fold(Q::zero(), |acc, s| acc + &s.delta).is_zero())
     })
 }
 
@@ -655,8 +697,11 @@ impl SeatMind {
                         if self.series.get(&key).is_none() {
                             self.series.insert(&key, Series::default());
                         }
+                        // THE SEAT'S BOUND: what one frame could carry of its
+                        // values, shared among the series it holds.
+                        let bound = crate::network::wire::frame_budget() / self.series.len().max(1);
                         if let Some(s) = self.series.get_mut(&key) {
-                            s.observe(p.seq, at.clone(), a.clone());
+                            s.observe(p.seq, at.clone(), a.clone(), bound);
                         }
                     }
                 }

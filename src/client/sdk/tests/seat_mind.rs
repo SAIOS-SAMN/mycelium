@@ -44,6 +44,43 @@ fn percept(seq: u64, local_time: Arg, records: Vec<Record>) -> Percept {
     Percept { domain: vk(&domain()), sub_origin: None, seat: 7, mind: vk(&mind()), local_time, seq, records, point: None }
 }
 
+/// A SEAT KEEPS ITS BOUND (a sink keeps its bound; the 2026-10-09 growth of
+/// the xylarium seat minds to 400 MB): whatever a house sends, the values a
+/// seat holds across all its series write within one frame, each series'
+/// oldest dropped and counted, and a series still reads its orbit on what it
+/// holds.
+#[test]
+fn a_seat_holds_one_frame_of_values_across_its_series() {
+    let mut m = SeatMind::new(vk(&domain()), 7);
+    // Many series of wide quantities, each value some hundreds of bytes as it
+    // writes: the seat's frame, shared among them, holds a few beats of each.
+    let wide = BigInt::from(3u8).pow(2_000);
+    // A hundred series share the frame: about nineteen values each, enough
+    // to read a period of three (seven beats) and fewer than the forty sent.
+    let kinds = 100u16;
+    let beats = 40u64;
+    for beat in 1..=beats {
+        let records = (0..kinds)
+            .map(|k| Record::Plain {
+                kind: k,
+                args: vec![Arg::BigQ { num: &wide + BigInt::from(beat % 3 + u64::from(k)), den: num_bigint::BigUint::from(1u8) }],
+            })
+            .collect();
+        m.perceive(&percept(beat, Arg::Q { num: beat as i64, den: 1 }, records));
+    }
+    let mut held = 0usize;
+    for (_, s) in m.every_series() {
+        assert!(s.dropped > 0, "past the seat's share the oldest are dropped, and counted");
+        for seen in s.seen() {
+            let mut out = Vec::new();
+            seen.value.put(&mut out).expect("written");
+            held += out.len();
+        }
+        assert_eq!(s.orbit().map(|r| r.period()), Some(3), "the orbit is read on what is held");
+    }
+    assert!(held <= crate::network::wire::frame_budget(), "one frame across the seat: {held}");
+}
+
 /// 78.156 — THE SUB-INSTANCE LOCATED AT (TPoint, u), ITS DILATION EXACT:
 /// between two located percepts the world's axis advance against the final
 /// point's tick advance, `du/dh` as an exact rational; a final point that
@@ -146,7 +183,7 @@ fn records_are_held_as_series_and_read_back() {
     }
     // The quantity's changes: each a slide by 3/2, composing to the whole run.
     let s = m.series(&at(5, vec![unit], 0, 1)).expect("held");
-    let changes: Vec<&Change> = s.seen().filter_map(|x| x.change.as_ref()).collect();
+    let changes: Vec<Change> = s.changes();
     assert_eq!(changes.len(), 3);
     assert!(changes.iter().all(|c| c.delta() == Some(q(3, 2))));
     let composed = changes.iter().skip(1).try_fold(changes[0].slide.clone(), |a, c| a.then(&c.slide)).expect("one flow");
@@ -599,11 +636,13 @@ fn a_versor_series_changes_by_its_exact_carrier() {
     let at = |kind| Locator { kind, keys: vec![], occurrence: 0, position: 0 };
     let bell = m.series(&at(20)).expect("held");
     assert_eq!(bell.orbit(), Some(Return::Orbit { period: 2, span: Some(q(2, 1)) }), "the pulse returns every two beats");
-    let carried: Vec<&Mv> = bell.seen().filter_map(|s| s.carrier.as_ref()).collect();
+    let carried: Vec<Mv> = bell.carriers();
     assert_eq!(carried.len(), 5);
     assert!(carried.iter().all(|c| c.sub(&e2.geo(&e1)).is_zero() || c.sub(&e1.geo(&e2)).is_zero()));
     let steady = m.series(&at(21)).expect("held");
-    assert!(steady.seen().skip(1).all(|s| s.carrier.as_ref().is_some_and(|c| c.sub(&r).is_zero())), "each power carried by the motion itself");
+    let powers = steady.carriers();
+    assert_eq!(powers.len(), steady.seen().count() - 1, "every power carried");
+    assert!(powers.iter().all(|c| c.sub(&r).is_zero()), "each power carried by the motion itself");
     assert_eq!(steady.orbit(), Some(Return::Orbit { period: 1, span: Some(q(1, 1)) }), "a steady carrier is an orbit, not a standstill");
     assert_eq!(m.series(&at(22)).expect("held").orbit(), Some(Return::Fixed), "a held versor is carried by one: fixed");
 }
