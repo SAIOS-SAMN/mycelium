@@ -366,6 +366,12 @@ universe, by its ORIGIN (genesis, epoch) —
   exact), and the FINAL TPoint at which it was last mapped;
 - SEGMENT: a tube, core or throat between two mapped places, with its span
   in the court unit (geometrized Mpc) and, for a mouth, its keeper and toll;
+- WHO MAPS: the universe's DOMAIN RESERVE posts its mouths and segments as
+  signed MAP acts, and the court seals each at a final point (the
+  coordinator, under Concordance 4.1, 3.2, 7.1). Mapping is the reserve's
+  authorisation: a wormhole is untraversable on the mesh until its reserve
+  maps it, and a progenitor's new tube reaches the map only through its
+  universe's reserve;
 - each record written by an act sealed at a final point and superseded only
   by a later act; a TRAVERSE reads the map at the final point it cites, so
   the coordinates it buys are the ones the quorum agreed at that time.
