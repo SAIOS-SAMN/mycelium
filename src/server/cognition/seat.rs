@@ -78,6 +78,13 @@ impl SharedRelay {
         self.lock().census()
     }
 
+    /// 78.145, 78.151 — A DOMAIN'S LATEST SEATS (fields ‖ sig), or none,
+    /// read on the relay's own lock: a listing is relay state, never the
+    /// court's, so its read takes no kernel.
+    pub fn listing(&self, domain: &[u8; 32]) -> Option<Vec<u8>> {
+        self.lock().listings.get(domain).map(|(_, b)| b.clone())
+    }
+
     pub fn held_bytes(&self, to_house: bool, who: &[u8; 32]) -> usize {
         self.lock().held_bytes(to_house, who)
     }
@@ -208,7 +215,7 @@ impl super::Kernel {
 
     /// 78.145 — A DOMAIN'S LATEST SEATS (fields ‖ sig), or none.
     pub fn seat_listing(&self, domain: &[u8; 32]) -> Option<Vec<u8>> {
-        self.seats.lock().listings.get(domain).map(|(_, b)| b.clone())
+        self.seats.listing(domain)
     }
 
     /// 78.146 — the relay on its own lock, for a door's exempt read.

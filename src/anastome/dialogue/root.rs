@@ -93,11 +93,17 @@ pub fn encode_fold_root_reply(proof: &RootProof) -> Option<Vec<u8>> {
 /// An `ACT_RECEIPTS` reply read back: a root answer by its mark, a page
 /// otherwise, whole or refused.
 pub fn decode_receipts_answer(body: &[u8]) -> Option<ReceiptsAnswer> {
+    decode_receipts_answer_at(body).map(|(answer, _)| answer)
+}
+
+/// The answer read back with the height it was answered at, where the door
+/// wrote one behind it (78.151), whole or refused.
+pub fn decode_receipts_answer_at(body: &[u8]) -> Option<(ReceiptsAnswer, Option<u64>)> {
     let mark = u32::from_le_bytes(body.get(0..4)?.try_into().ok()?);
     if mark != ROOT_MARK {
-        return decode_receipts_reply(body).map(ReceiptsAnswer::Page);
+        return decode_receipts_reply_at(body).map(|(page, h)| (ReceiptsAnswer::Page(page), h));
     }
     let mut p = 4usize;
     let proof = RootProof::take(body, &mut p)?;
-    (p == body.len()).then(|| ReceiptsAnswer::Root(Box::new(proof)))
+    Some((ReceiptsAnswer::Root(Box::new(proof)), take_reading_height(body, p)?))
 }

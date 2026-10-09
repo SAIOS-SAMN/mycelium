@@ -26065,6 +26065,84 @@ connection docketed alone (a translation, an entity's residual word)
 escrows and is paid nothing; a voice's room and the reserve no longer draw
 on 𝒯 for a word's span.
 
+### 78.151 Reads from a snapshot (2026-10-09, the coordinator's conditions on the one-kernel-lock saturation)
+
+**Measured** (R3a, 2026-10-09 03:00): every door saturated on the one
+`Arc<Mutex<Kernel>>` — the court loop, the corpus intake, receipt serving,
+the exchange and the fold judge — and every read a mind or a peer asked
+waited behind them: hypha b answered no wallet read, nobody admitted b's
+line, peers deferred b's asks.
+
+**Ruled.** The door serves reads from a published reading; only writes
+take the kernel.
+
+1. **Published whole.** The court stroke, under the kernel it already holds
+   (`exchange.rs`, beside `answer_standing`), publishes a `Published`
+   (`cognition::published`, `Kernel::publish`) and swaps it onto the door's
+   shelf (`published.rs`, an `Arc<RwLock<Arc<Published>>>`): the write lock
+   is held for one pointer's swap, the read lock for one pointer's clone, so
+   no reader sees a reading half-written. Boot publishes the first reading
+   before the door opens. At most one publication per stroke, none where
+   nothing moved (the head, a line's or an era's tally, the proofs' mark, a
+   moved account, the cold segment's path).
+2. **What it holds.** Each signer's hot line and the root it stands on
+   here; each signer's eras (root place, first place, the span of its
+   payload in the cold segment, or the payload where it was never filed)
+   and the segment's path, so an era replay reads the disk with no kernel;
+   the root proofs; every account (balance, bond, holds) in 256 shards by
+   the party's first key byte; the core clock; the head it stands at.
+3. **Shared, not copied.** A line or a signer's eras is held as RUNS —
+   immutable runs behind shared pointers, merged while the newer is at least
+   as long as the one before, so a member is copied again once per merge.
+   A piece whose tally did not move is shared with the last reading; a line
+   none of whose nodes left and whose new nodes all stand past the last
+   reading's end (`LineTally`: filed, left, a process-wide mark;
+   `ReceiptChain::line_tally`, `Kernel::era_tallies`) is extended by what
+   grew; anything else is read again whole. The treasury names each party
+   whose account moved (`Treasury::take_touched`, fed by every row written
+   and every credit and debit); only those parties' shards are copied.
+4. **Every read carries the height.** A wallet's account carries the head
+   it stands at (`Account::at`, no wire change); the clock is its own
+   stamp; **WIRE-CHANGE**: an `ACT_RECEIPTS` answer — page or root — carries
+   the reading's height behind it, eight bytes (`put_reading_height`,
+   `decode_receipts_answer_at`); a reader of an older door reads no height,
+   and an older reader refuses the new tail, so the fleet takes it at one
+   recut. A range the reading does not yet reach is answered short — empty
+   where it reaches none of it — at its height, never by falling through to
+   the kernel. **A writer reading its own write lags it by at most one court
+   stroke**: an act sealed between strokes is read at the next publication.
+5. **The reads moved** — answered where the frame is read
+   (`judge::serve_published`), behind no worker the kernel holds:
+   `ACT_RECEIPTS` (catch-up pages, root proofs, era replays, one reader of a
+   page over the court and the reading: `court::era::LineHolder`,
+   `line_page`, `serve_receipts`); `ACT_WALLET`; the laws' clock; a seat
+   READ-LISTING (relay state, read on the relay's own lock,
+   `SharedRelay::listing`). **Still on the kernel**: the stratum fetch
+   (`serve_ruled` pays, draws and notes per word as it reads, so the read
+   and its payment are one walk — split in a follow-up); the digests
+   (`ruled_digests_for`), the cover page, the evidence read, rows, why, the
+   domain, challenge and handoff reads (each answered under the act family
+   that writes the same carriers, and `durable` after it); the syllabus
+   page (it pays). Writes stay on the kernel: admit, judge, solve, seat
+   posts and mail, folds, intake, offers.
+6. **The cost is read.** Each publication counts what it copied, exactly
+   (law 9, no clock), on the serving reading (`Court::serve`): `publishes`,
+   `published receipts`, `published eras`, `published accounts`,
+   `published keys`, `published bytes` (the receipts' and eras' tapes),
+   `most copied one publish` (a level), `publish count passed`; and the
+   door's side, `reads off published`, `empty off published`. The first
+   publication copies the whole hot ledger once; a stroke that sealed one
+   act and its close copies those two.
+
+Proved (`cognition::tests::published`): the reading answers a catch-up
+below the root with the root, from the root with the hot line and an era
+replay with the archive, exactly as the kernel; a reading lags until the
+next publication, answers past its head empty at its height, publishes
+nothing where nothing moved, and copies only the two receipts a stroke
+grew; a peer's line admitted in pieces is published as held; a wallet off
+the reading is the kernel's at the publication and moves at the next; the
+height rides behind a receipts answer and an older answer reads with none.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

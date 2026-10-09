@@ -254,7 +254,7 @@ static SERVE: [AtomicU64; super::SERVE_AXES.len()] = [const { AtomicU64::new(0) 
 /// One serving count, by its axis: added for a count, raised for the level.
 pub fn note_serve(axis: super::ServeAxis, n: u64) {
     match axis {
-        super::ServeAxis::MostEras => {
+        super::ServeAxis::MostEras | super::ServeAxis::MostPublished => {
             SERVE[axis as usize].fetch_max(n, Ordering::Relaxed);
         }
         _ => {

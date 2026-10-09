@@ -60,7 +60,7 @@ fn publish_standing(k: &mycelium::cognition::Kernel, mesh: &crate::exchange::Mes
     if let Some(m) = Memory::now(court.k) {
         observe::publish(own, Reading::Memory(m));
     }
-    observe::replace(own, Reading::Court(court));
+    observe::replace(own, Reading::Court(Box::new(court)));
 }
 
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {

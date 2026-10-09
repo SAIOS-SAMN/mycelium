@@ -20,6 +20,9 @@ use std::sync::{Arc, Mutex};
 pub(crate) struct Door {
     /// 78.146 — the seat relay on its own lock (`judge::seat::serve_exempt`).
     pub(crate) seat_relay: mycelium::cognition::seat::SharedRelay,
+    /// 78.151 — the court's published reading, which the door's reads
+    /// answer off without the kernel (`judge::serve_published`).
+    pub(crate) published: crate::published::Shelf,
     pub(crate) kernel: Arc<Mutex<Kernel>>,
     pub(crate) mesh: Mesh,
     pub(crate) router: Arc<Mutex<Router>>,

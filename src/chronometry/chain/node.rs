@@ -121,7 +121,8 @@ impl ReceiptChain {
                 }
             }
         }
-        self.lines.remove(&Stamp::line_key(&at.vk, at.place()));
+        let left = self.lines.remove(&Stamp::line_key(&at.vk, at.place())).is_some();
+        self.tally(&at.vk, false, left);
         self.placed.remove(&key);
         self.nodes.remove(&key);
         Some(r)

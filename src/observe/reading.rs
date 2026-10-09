@@ -492,7 +492,12 @@ pub struct Court {
 /// the root ("served root"); the cold archive answers only an era replay
 /// ("replays"); a catch-up below a root this court holds no proof of is
 /// answered hot alone ("unproved root").
-pub const SERVE_AXES: [&str; 10] = [
+/// 78.151: the reading the court stroke publishes for the door — each
+/// publication, the receipts, eras, accounts and per-signer keys it copied
+/// and their bytes, the most entries one publication copied (a level), a
+/// publication whose count passed its carrier; the reads answered off it,
+/// and the pages it answered empty (a range it did not yet reach).
+pub const SERVE_AXES: [&str; 20] = [
     "pages",
     "hot only",
     "cold",
@@ -503,6 +508,16 @@ pub const SERVE_AXES: [&str; 10] = [
     "served root",
     "replays",
     "unproved root",
+    "publishes",
+    "published receipts",
+    "published eras",
+    "published accounts",
+    "published keys",
+    "published bytes",
+    "most copied one publish",
+    "publish count passed",
+    "reads off published",
+    "empty off published",
 ];
 
 /// Where each serving count is written on [`SERVE_AXES`].
@@ -519,6 +534,17 @@ pub enum ServeAxis {
     ServedRoot = 7,
     Replays = 8,
     UnprovedRoot = 9,
+    Publishes = 10,
+    PublishedReceipts = 11,
+    PublishedEras = 12,
+    PublishedAccounts = 13,
+    PublishedKeys = 14,
+    PublishedBytes = 15,
+    /// A LEVEL: raised to the most entries one publication copied.
+    MostPublished = 16,
+    PublishPassed = 17,
+    ReadsPublished = 18,
+    EmptyPublished = 19,
 }
 
 /// The catch-up paths of [`Court::catchup`].
@@ -894,7 +920,7 @@ pub enum Reading {
     Planes(Planes),
     Loss(Loss),
     Memory(Memory),
-    Court(Court),
+    Court(Box<Court>),
     Replication(Replication),
     Adjudication(Adjudication),
     /// LC1 — the learning curve of one mind (78.1).
@@ -1054,7 +1080,7 @@ impl Reading {
             TAG_PLANES => Some(Reading::Planes(Planes::take(b, p)?)),
             TAG_LOSS => Some(Reading::Loss(Loss::take(b, p)?)),
             TAG_MEMORY => Some(Reading::Memory(Memory::take(b, p)?)),
-            TAG_COURT => Some(Reading::Court(Court::take(b, p)?)),
+            TAG_COURT => Some(Reading::Court(Box::new(Court::take(b, p)?))),
             TAG_REPLICATION => Some(Reading::Replication(Replication::take(b, p)?)),
             TAG_ADJUDICATION => Some(Reading::Adjudication(Adjudication::take(b, p)?)),
             TAG_LEARNING => Some(Reading::Learning(super::Learning::take(b, p)?)),

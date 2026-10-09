@@ -101,6 +101,13 @@ pub struct Kernel {
     /// roots it adopted — what a catch-up opening below a root is answered
     /// with. Persisted (`LEAF_ROOTS`).
     pub(crate) root_proofs: crate::network::nerve::Keyed<crate::anastome::dialogue::RootProof>,
+    /// 78.151 — THE MARK OF THE LAST PROOF FILED (`chronometry::next_mark`),
+    /// so a publisher re-reads `root_proofs` only where one was filed.
+    pub(crate) proofs_mark: u64,
+    /// 78.151 — `signer → LineTally` over `archive`: the eras each signer
+    /// holds there and the mark of its last filing, so a publisher re-reads
+    /// a signer's eras only where one was filed.
+    pub(crate) era_tallies: crate::network::nerve::Keyed<crate::chronometry::LineTally>,
     /// The fold awaiting a witness (47.3): the reading proposed on the
     /// syntropic circuit, carried to a bonded peer by the exchange, sealed
     /// only on both signatures.
@@ -760,6 +767,16 @@ impl Kernel {
         all.sort_by_key(|e| (e.root.at, e.signer, e.root.hash));
         all.dedup_by(|a, b| a.root.at == b.root.at && a.root.hash == b.root.hash && a.signer == b.signer);
         self.archive = all;
+        self.era_tallies = crate::network::nerve::Keyed::new();
+        for e in &self.archive {
+            let mut t = match self.era_tallies.get(&e.signer) {
+                Some(t) => *t,
+                None => crate::chronometry::LineTally::default(),
+            };
+            t.filed += 1;
+            t.mark = crate::chronometry::next_mark();
+            self.era_tallies.insert(e.signer, t);
+        }
         if held > 0 {
             eprintln!("  eras: {held} held from the segment");
         }
@@ -778,7 +795,16 @@ impl Kernel {
             return true;
         }
         let seat = self.archive.partition_point(|e| e.root.at < era.root.at);
+        let signer = era.signer;
         self.archive.insert(seat, era);
+        let mut t = match self.era_tallies.get(&signer) {
+            Some(t) => *t,
+            None => crate::chronometry::LineTally::default(),
+        };
+        // One era per filing: the archive's length is its count's bound.
+        t.filed += 1;
+        t.mark = crate::chronometry::next_mark();
+        self.era_tallies.insert(signer, t);
         false
     }
 
@@ -844,13 +870,7 @@ impl Kernel {
         let Some(at) = era.at else {
             return Some(era.receipts.clone());
         };
-        use std::os::unix::fs::FileExt;
-        let file = std::fs::File::open(self.eras_path.as_ref()?).ok()?;
-        let mut bytes = vec![0u8; usize::try_from(at.len).ok()?];
-        file.read_exact_at(&mut bytes, at.offset).ok()?;
-        let mut p = 0usize;
-        let page = crate::chronometry::Era::read_payload(&bytes, &mut p)?;
-        (p == bytes.len()).then_some(page)
+        read_era(self.eras_path.as_ref()?, at)
     }
 
     pub fn genesis_cover(&self) -> Option<[u64; 4]> {
@@ -1136,4 +1156,16 @@ impl Kernel {
         self.lane_cap = Some(cap);
     }
 
+}
+/// A FILED ERA'S RECEIPTS, read from its own span of the cold segment at
+/// `path` — what a court reads with its kernel and a published reading
+/// reads without it (78.151). `None` where the span does not read whole.
+pub(crate) fn read_era(path: &std::path::Path, at: crate::chronometry::Filed) -> Option<Vec<crate::chronometry::KStepReceipt>> {
+    use std::os::unix::fs::FileExt;
+    let file = std::fs::File::open(path).ok()?;
+    let mut bytes = vec![0u8; usize::try_from(at.len).ok()?];
+    file.read_exact_at(&mut bytes, at.offset).ok()?;
+    let mut p = 0usize;
+    let page = crate::chronometry::Era::read_payload(&bytes, &mut p)?;
+    (p == bytes.len()).then_some(page)
 }

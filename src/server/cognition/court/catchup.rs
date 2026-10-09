@@ -12,6 +12,7 @@
 
 use crate::anastome::dialogue::{ReceiptSection, ReceiptsAnswer, RootProof};
 use crate::chronometry::{Era, Place};
+use crate::cognition::court::era::{line_page, LineHolder};
 use crate::cognition::court::fold::FoldDone;
 use crate::cognition::Kernel;
 use crate::observe::{note_replication, note_serve, rep, ServeAxis};
@@ -52,6 +53,7 @@ impl Kernel {
         let later = self.root_proofs.get(&proof.signer).is_none_or(|held| held.root.at < proof.root.at);
         if later {
             self.root_proofs.insert(proof.signer, proof);
+            self.proofs_mark = crate::chronometry::next_mark();
             self.mark_persist();
         }
     }
@@ -132,31 +134,37 @@ impl Kernel {
         budget: usize,
         bytes: usize,
     ) -> ReceiptsAnswer {
-        if replay {
-            note_serve(ServeAxis::Replays, 1);
-            return ReceiptsAnswer::Page(self.receipts_page(signer, after, upto, budget, bytes));
-        }
-        let below = |root: Place| after.is_none_or(|a| a < root);
-        if let Some(proof) = self.root_proofs.get(signer).filter(|p| below(p.root.at)) {
-            note_serve(ServeAxis::Pages, 1);
-            note_serve(ServeAxis::ServedRoot, 1);
-            return ReceiptsAnswer::Root(Box::new(proof.clone()));
-        }
-        let standing = match *signer == self.identity {
-            true => self.chain.root().map(|r| r.at),
-            false => self.chain.peer_root(signer),
-        };
-        // A ROOT WITH NO PROOF HELD IS PAGED FROM THE ARCHIVE. Answered off the
-        // hot line alone, the page opened past the root and linked to no
-        // asker's head below it: refused as a gap, admitted 0, on every pair
-        // of the fleet (2026-10-09) — every root it held was sealed before
-        // proofs were kept (78.147), and none has sealed since under load.
-        // The archive links the page to the asker's head until a proved fold
-        // takes over the door.
-        let unproved = standing.is_some_and(below);
-        if unproved {
-            note_serve(ServeAxis::UnprovedRoot, 1);
-        }
-        ReceiptsAnswer::Page(self.line_page(signer, after, upto, budget, bytes, unproved))
+        serve_receipts(self, signer, after, upto, replay, budget, bytes)
     }
+}
+
+/// THE SERVING DOOR OF `ACT_RECEIPTS` over any holder of the line: the
+/// court under its kernel, or the reading it published (78.151).
+pub(crate) fn serve_receipts(
+    holder: &impl LineHolder,
+    signer: &[u8; 32],
+    after: Option<Place>,
+    upto: Place,
+    replay: bool,
+    budget: usize,
+    bytes: usize,
+) -> ReceiptsAnswer {
+    if replay {
+        note_serve(ServeAxis::Replays, 1);
+        return ReceiptsAnswer::Page(line_page(holder, signer, after, upto, budget, bytes, true));
+    }
+    let below = |root: Place| after.is_none_or(|a| a < root);
+    if let Some(proof) = holder.proof_of(signer).filter(|p| below(p.root.at)) {
+        note_serve(ServeAxis::Pages, 1);
+        note_serve(ServeAxis::ServedRoot, 1);
+        return ReceiptsAnswer::Root(Box::new(proof.clone()));
+    }
+    // A ROOT WITH NO PROOF HELD IS PAGED FROM THE ARCHIVE, which links the
+    // page to the asker's head below it until a proved fold takes over the
+    // door (78.147).
+    let unproved = holder.standing(signer).is_some_and(below);
+    if unproved {
+        note_serve(ServeAxis::UnprovedRoot, 1);
+    }
+    ReceiptsAnswer::Page(line_page(holder, signer, after, upto, budget, bytes, unproved))
 }

@@ -194,7 +194,25 @@ pub struct Treasury {
     /// released sum that did not add up. Never saturated; read on the
     /// economy reading. Volatile: a count of this process's refusals.
     pub(crate) overflowed: u64,
+    /// 78.151 — THE PARTIES WHOSE ACCOUNT MOVED since a publisher last took
+    /// them (`take_touched`): every row written, every credit and debit
+    /// names its party here. A treasury built fresh or read off disk says
+    /// EVERY party moved. Volatile.
+    pub(crate) touched: Touched,
 }
+
+/// 78.151 — which accounts a publisher reads again: every one, or the
+/// parties named.
+#[derive(Debug, Clone, Default)]
+pub enum Touched {
+    #[default]
+    Every,
+    Parties(crate::network::nerve::Keyed<()>),
+}
+
+/// One party's account at its court: balance, bond and holds, per lane;
+/// `None` where its holds pass their carrier (rule 11).
+pub type Holdings = Option<([u64; 4], [u64; 4], [u64; 4])>;
 
 /// Written out rather than derived: `#[derive(Default)]` gives the folded
 /// supply `None`, and a fresh ledger has issued and burned NOTHING, which
@@ -213,6 +231,7 @@ impl Default for Treasury {
             balances: crate::network::nerve::Keyed::new(),
             held: crate::network::nerve::Keyed::new(),
             overflowed: 0,
+            touched: Touched::Every,
         }
     }
 }
@@ -239,6 +258,7 @@ impl Treasury {
         match self.credited(&who, mu) {
             Some(b) => {
                 self.balances.insert(who, b);
+                self.touch(&who);
                 true
             }
             None => {
@@ -265,7 +285,64 @@ impl Treasury {
             return short;
         }
         self.balances.insert(who, std::array::from_fn(|l| b[l] - mu[l]));
+        self.touch(&who);
         short
+    }
+
+    /// 78.151 — `who`'s account moved: named for the next publisher.
+    fn touch(&mut self, who: &[u8; 32]) {
+        if let Touched::Parties(p) = &mut self.touched {
+            p.insert(who, ());
+        }
+    }
+
+    /// 78.151 — THE PARTIES WHOSE ACCOUNT MOVED since the last take, taken:
+    /// what follows is named afresh.
+    pub(crate) fn take_touched(&mut self) -> Touched {
+        std::mem::replace(&mut self.touched, Touched::Parties(crate::network::nerve::Keyed::new()))
+    }
+
+    /// 78.151 — EVERY PARTY THE CARRIERS NAME: a balance, a stake or a hold
+    /// of its own.
+    pub(crate) fn parties(&self) -> crate::network::nerve::Keyed<()> {
+        let mut out = crate::network::nerve::Keyed::new();
+        crate::snapshot::persist(&self.balances, |who, _| {
+            out.insert(who, ());
+        });
+        crate::snapshot::persist(&self.stakes, |who, _| {
+            out.insert(who, ());
+        });
+        crate::snapshot::persist(&self.held, |_, h| {
+            out.insert(h.payer, ());
+        });
+        out
+    }
+
+    /// 78.151 — THE ACCOUNTS OF `parties`, read as `account` reads one, the
+    /// holds summed over ONE walk of the held carrier for all of them.
+    pub(crate) fn accounts_of(&self, parties: &crate::network::nerve::Keyed<()>) -> Vec<([u8; 32], Holdings)> {
+        let mut held: crate::network::nerve::Keyed<Option<[u64; 4]>> = crate::network::nerve::Keyed::new();
+        crate::snapshot::persist(&self.held, |_, h| {
+            if !parties.contains(&h.payer) {
+                return;
+            }
+            let sum = match held.get(&h.payer) {
+                Some(s) => s.and_then(|t| crate::core::lanes::lanes_add(t, h.mu)),
+                None => Some(h.mu),
+            };
+            held.insert(h.payer, sum);
+        });
+        parties
+            .scoped()
+            .filter_map(|(k, _)| <[u8; 32]>::try_from(k.as_slice()).ok())
+            .map(|who| {
+                let holds = match held.get(&who) {
+                    Some(s) => *s,
+                    None => Some([0; 4]),
+                };
+                (who, holds.map(|h| (self.balance_of(&who), self.staked(&who), h)))
+            })
+            .collect()
     }
 
     /// ENROLL an identity with an operator-chosen per-lane bond. Tops up
@@ -411,6 +488,7 @@ impl Treasury {
     /// ledger can still answer "was anyone slashed?" apart from "what was
     /// burned?".
     pub(crate) fn write(&mut self, e: Entry) {
+        self.touch(&e.who);
         let into = match e.kind.issues() {
             Some(true) => &mut self.issued,
             Some(false) => &mut self.burned,

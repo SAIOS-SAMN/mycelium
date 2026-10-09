@@ -294,6 +294,32 @@ pub fn encode_receipts_reply(receipts: &[crate::chronometry::KStepReceipt], budg
 /// The page read back whole, or refused: a reply that does not parse to
 /// its end is not a shorter page (rule 11).
 pub fn decode_receipts_reply(body: &[u8]) -> Option<Vec<crate::chronometry::KStepReceipt>> {
+    decode_receipts_reply_at(body).map(|(page, _)| page)
+}
+
+/// 78.151 (WIRE-CHANGE) — THE HEIGHT A READ WAS ANSWERED AT: a door that
+/// serves a read off its published reading writes that reading's height
+/// behind the answer, eight bytes, so the asker knows how fresh it is.
+pub const READING_HEIGHT_LEN: usize = 8;
+
+/// The published reading's height, written behind a read's answer.
+pub fn put_reading_height(out: &mut Vec<u8>, height: u64) {
+    out.extend_from_slice(&height.to_le_bytes());
+}
+
+/// What stands behind an answer that ends at `end`: nothing (a door that
+/// writes no height), or the height, whole — anything else refuses.
+pub(crate) fn take_reading_height(body: &[u8], end: usize) -> Option<Option<u64>> {
+    match body.len().checked_sub(end)? {
+        0 => Some(None),
+        READING_HEIGHT_LEN => Some(Some(u64::from_le_bytes(body.get(end..)?.try_into().ok()?))),
+        _ => None,
+    }
+}
+
+/// The page read back whole with the height it was answered at, if the
+/// door wrote one (78.151), or refused.
+pub fn decode_receipts_reply_at(body: &[u8]) -> Option<(Vec<crate::chronometry::KStepReceipt>, Option<u64>)> {
     let n = u32::from_le_bytes(body.get(0..4)?.try_into().ok()?) as usize;
     let mut p = 4usize;
     if n > body.len().checked_sub(p)? / crate::chronometry::KStepReceipt::MIN_TAPE {
@@ -303,5 +329,5 @@ pub fn decode_receipts_reply(body: &[u8]) -> Option<Vec<crate::chronometry::KSte
     for _ in 0..n {
         out.push(crate::chronometry::KStepReceipt::read(body, &mut p)?);
     }
-    (p == body.len()).then_some(out)
+    Some((out, take_reading_height(body, p)?))
 }

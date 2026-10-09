@@ -36,6 +36,39 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 static REFUSE_COUNT: AtomicU64 = AtomicU64::new(0);
 
+/// 78.151 — THE READS THAT TAKE NO KERNEL, answered where the frame is read:
+/// a page of a line or a fold root (`ACT_RECEIPTS`), an account
+/// (`ACT_WALLET`) and the core clock (`ACT_LAWS` clock), off the court's
+/// published reading; a seat listing, off the relay's own lock. None waits
+/// behind a worker the kernel holds. `false` where the frame is none of
+/// them: the caller judges it as before.
+pub(crate) fn serve_published(stream: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
+    let tag = dialogue::act_tag(&frame.body);
+    let served = match tag.and_then(Action::of_tag) {
+        Some(Action::Receipts) => {
+            receipts::judge(stream, frame, door);
+            true
+        }
+        Some(Action::Wallet) => {
+            wallet::judge(stream, frame, door);
+            true
+        }
+        Some(Action::Laws) => {
+            let clock = matches!(mycelium::physics::laws::codec::decode_laws_request(&frame.body), Some(mycelium::physics::laws::codec::LawsRequest::Clock));
+            if clock {
+                laws::judge(stream, frame, door);
+            }
+            clock
+        }
+        Some(Action::Seat) => seat::serve_listing(stream, frame, door),
+        _ => false,
+    };
+    if let (true, Some(t)) = (served, tag) {
+        mycelium::observe::note_served(t);
+    }
+    served
+}
+
 pub(crate) fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
     if serve_control(stream, &frame, door) {
         return;

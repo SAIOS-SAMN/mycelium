@@ -59,6 +59,31 @@ pub struct ReceiptChain {
     /// WHAT THE LINE ON DISK DOES NOT YET CARRY (`line`): the nodes filed
     /// and the nodes that left since it was last written.
     journal: line::Journal,
+    /// 78.151 — `vk → LineTally`: each signer's line, how many nodes it
+    /// holds and the mark of its last change, so a published reading of
+    /// the line is re-read only where the line moved.
+    tallies: Keyed<LineTally>,
+}
+
+/// 78.151 — ONE SIGNER'S LINE AS A PUBLISHER READS IT: the nodes filed new
+/// on it and the nodes that left it, each counted since the carrier was
+/// built, and the MARK of its last change — drawn from one process-wide
+/// count, so no two changes of any line, on any chain, carry the same mark.
+/// Between two readings, a line none of whose nodes left and whose new
+/// nodes all stand past the first reading's end grew only at its end.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct LineTally {
+    pub filed: u64,
+    pub left: u64,
+    pub mark: u64,
+}
+
+/// The process-wide count a line's mark is drawn from.
+static MARKS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// A fresh mark: one past every mark drawn before it in this process.
+pub fn next_mark() -> u64 {
+    MARKS.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1
 }
 
 mod line;
@@ -289,11 +314,50 @@ impl ReceiptChain {
 
     /// File one node's stamp on its signer's line, raising the line's top.
     fn file_on_line(&mut self, at: &Stamp) {
-        self.lines.insert(Stamp::line_key(&at.vk, at.place()), at.h);
+        let new = self.lines.insert(Stamp::line_key(&at.vk, at.place()), at.h).is_none();
         let top = raise(self.tops.get(&at.vk).copied(), at.place());
         if let Some(top) = top {
             self.tops.insert(at.vk, top);
         }
+        self.tally(&at.vk, new, false);
+    }
+
+    /// 78.151 — A LINE MOVED: a node filed new on it or a node gone from
+    /// it, counted, and the line marked. A count past 2⁶⁴ is not counted
+    /// further; the mark still moves.
+    fn tally(&mut self, vk: &[u8; 32], filed: bool, left: bool) {
+        let mut t = match self.tallies.get(vk) {
+            Some(t) => *t,
+            None => LineTally::default(),
+        };
+        if filed {
+            if let Some(n) = t.filed.checked_add(1) {
+                t.filed = n;
+            }
+        }
+        if left {
+            if let Some(n) = t.left.checked_add(1) {
+                t.left = n;
+            }
+        }
+        t.mark = next_mark();
+        self.tallies.insert(vk, t);
+    }
+
+    /// 78.151 — a signer's line as a publisher reads it; the default (no
+    /// node, no mark) where the line was never filed.
+    pub fn line_tally(&self, vk: &[u8; 32]) -> LineTally {
+        match self.tallies.get(vk) {
+            Some(t) => *t,
+            None => LineTally::default(),
+        }
+    }
+
+    /// 78.151 — every signer whose fold root this chain holds, read by a
+    /// publisher beside `signers`: a root stands where no node of its line
+    /// may be held.
+    pub fn rooted_signers(&self) -> Vec<[u8; 32]> {
+        self.peer_roots.scoped().filter_map(|(k, _)| <[u8; 32]>::try_from(k.as_slice()).ok()).collect()
     }
 
     /// THE HEAD RECEIPT: this chain's own last.
@@ -461,7 +525,9 @@ impl ReceiptChain {
             operators,
             operator_at: _,
             journal: _,
+            tallies,
         } = self;
+        c.count("chain.tallies", tallies.len());
         c.count("chain.nodes", nodes.len());
         c.count("chain.lines", lines.len());
         c.count("chain.tops", tops.len());

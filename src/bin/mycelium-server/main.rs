@@ -19,6 +19,7 @@ mod judge;
 mod ledger;
 mod offer;
 mod persist;
+mod published;
 mod syllabus;
 mod transport;
 mod wallet;
@@ -628,12 +629,21 @@ fn main() {
     let reflex_rx = Arc::new(Mutex::new(reflex_rx));
     // 78.146 — the seat relay on its own lock, taken once the kernel is
     // restored: a mind's exempt read is served without the kernel's lock.
-    let Ok(seat_relay) = crate::held::held!(kernel).map(|k| k.seat_relay()) else {
+    // 78.151 — and the court's first published reading, which the door's
+    // reads answer off until the court stroke publishes the next.
+    let Ok((seat_relay, first)) = crate::held::held!(kernel).map(|mut k| (k.seat_relay(), k.publish(None))) else {
         eprintln!("the kernel's lock was poisoned before the door opened");
         return;
     };
+    let Some(first) = first else {
+        eprintln!("the court's first reading did not publish");
+        return;
+    };
+    published::note_cost(&first);
+    let shelf = published::Shelf::new(first);
     let door = Door {
         seat_relay,
+        published: shelf.clone(),
         kernel: Arc::clone(&kernel),
         mesh: mesh.clone(),
         router: Arc::clone(&router),
@@ -649,6 +659,7 @@ fn main() {
     };
     Exchange {
         kernel: Arc::clone(&kernel),
+        published: shelf,
         mesh: mesh.clone(),
         join: join_peers.clone(),
         gen_home: home.clone(),
@@ -702,6 +713,10 @@ fn main() {
             if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_OBSERVE) {
                 judge::observe::judge(&mut stream, &frame, &door);
                 mycelium::observe::note_served(mycelium::anastome::dialogue::ACT_OBSERVE);
+                continue;
+            }
+            // 78.151 — a read that takes no kernel is answered here.
+            if judge::serve_published(&mut stream, &frame, &door) {
                 continue;
             }
             if let Err(e) = work_tx.try_send((stream, frame)) {
@@ -762,6 +777,10 @@ fn main() {
                 if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_OBSERVE) {
                     judge::observe::judge(&mut stream, &frame, &door);
                     mycelium::observe::note_served(mycelium::anastome::dialogue::ACT_OBSERVE);
+                    continue;
+                }
+                // 78.151 — a read that takes no kernel is answered here.
+                if judge::serve_published(&mut stream, &frame, &door) {
                     continue;
                 }
                 // 78.146 — a mind's own read is served, once per window.

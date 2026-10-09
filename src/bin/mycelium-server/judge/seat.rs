@@ -26,15 +26,8 @@ pub(crate) fn serve_exempt(stream: &mut TcpStream, frame: &Frame, door: &Door) -
     if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_TASK) {
         return crate::door::serve_control(stream, frame, door);
     }
-    // A WALLET READ spends nothing and moves nothing (78.93 B1), and a
-    // house reconciles its reserve by it; deferred, the ancients' banks were
-    // never credited and no ledger could be read before the recut
-    // (2026-10-09). Served here, waiting its turn on the kernel (the court
-    // loop and the intake let waiters in, `held::yield_to_waiters`).
-    if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_WALLET) {
-        crate::judge::wallet::judge(stream, frame, door);
-        return true;
-    }
+    // A wallet read and a seat listing are answered off the published
+    // reading before this (`judge::serve_published`, 78.151).
     // A SEAT POST (TAKE, CALL) is a mind's one act at its seat: deferred
     // after every restart, minds read their percepts and never held their
     // seats again (2026-10-09). Served here the same way, in its turn.
@@ -49,23 +42,36 @@ pub(crate) fn serve_exempt(stream: &mut TcpStream, frame: &Frame, door: &Door) -
     true
 }
 
+/// 78.151 — A SEAT LISTING, read on the relay's own lock: relay state, never
+/// the court's, so no kernel is taken. `false` where the frame is no listing.
+pub(crate) fn serve_listing(stream: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
+    let Some(Ok(SeatRequest::ReadListing(domain))) = decode_seat_request(&frame.body) else { return false };
+    // A domain with no listing is answered with none: an empty body.
+    match door.seat_relay.listing(&domain) {
+        Some(body) => answer(stream, Frame { lane: frame.lane, body }),
+        None => answer(stream, Frame { lane: frame.lane, body: Vec::new() }),
+    }
+    true
+}
+
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(request) = decode_seat_request(&frame.body) else { return };
     let body = match request {
         Err(why) => encode_post_reply(Err(why)),
-        Ok(request) => match crate::held::held!(door.kernel) {
-            Ok(mut k) => match request {
-                SeatRequest::Post(s) => encode_post_reply(k.seat_post(&s)),
-                SeatRequest::ReadListing(domain) => match k.seat_listing(&domain) {
-                    Some(b) => b,
-                    None => Vec::new(),
-                },
-                SeatRequest::ReadMail(r) => {
-                    let mail = k.seat_mail(&r);
-                    let Some(b) = encode_mail_reply(mail.as_deref().map_err(|why| *why)) else { return };
-                    b
-                }
-            },
+        Ok(SeatRequest::ReadListing(_)) => {
+            serve_listing(stream, frame, door);
+            return;
+        }
+        Ok(SeatRequest::Post(s)) => match crate::held::held!(door.kernel) {
+            Ok(mut k) => encode_post_reply(k.seat_post(&s)),
+            Err(_) => return,
+        },
+        Ok(SeatRequest::ReadMail(r)) => match crate::held::held!(door.kernel) {
+            Ok(mut k) => {
+                let mail = k.seat_mail(&r);
+                let Some(b) = encode_mail_reply(mail.as_deref().map_err(|why| *why)) else { return };
+                b
+            }
             Err(_) => return,
         },
     };

@@ -228,6 +228,8 @@ pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: std::sync::mpsc::Receiver<(Strin
 /// clones at the call site.
 pub(crate) struct Exchange {
     pub kernel: Arc<Mutex<Kernel>>,
+    /// 78.151 — the shelf the court stroke publishes the door's reading to.
+    pub published: crate::published::Shelf,
     pub mesh: Mesh,
     pub join: Vec<String>,
     pub gen_home: PathBuf,
@@ -267,6 +269,7 @@ impl Exchange {
     fn run(self) {
         let Exchange {
             kernel,
+            published,
             mesh,
             join,
             gen_home,
@@ -306,6 +309,9 @@ impl Exchange {
                 // A question the observer left while this stroke held the
                 // kernel is answered under the lock already held.
                 crate::judge::observe::answer_standing(&k, &mesh, mesh.vk);
+                // 78.151 — the door's reading, published whole under the
+                // lock the stroke already holds.
+                published.publish(&mut k);
                 // The words the stroke moved onto the docket — a rewrite, the
                 // citers a slash re-docketed — are offered by it.
                 let offers = k.take_offers();

@@ -263,6 +263,7 @@ impl Treasury {
             balances,
             held,
             overflowed: 0,
+            touched: super::treasury::Touched::Every,
             // Folded from the rows, since they arrived off disk and not
             // through `write`. This is the one O(journal) pass.
             issued: None,

@@ -178,6 +178,7 @@ impl Kernel {
                 for proof in whole(v, Kernel::take_root_proofs)? {
                     kernel.root_proofs.insert(proof.signer, proof);
                 }
+                kernel.proofs_mark = crate::chronometry::next_mark();
             }
             // THE LINE THIS SNAPSHOT STANDS ON: in it, with the root it was
             // folded to; or on disk, held already, which must hold the stamp
