@@ -27,10 +27,41 @@ struct Book {
     /// Which hold this is: every take of the kernel numbered in turn, so two
     /// readings of one hold are told from two holds of one site.
     hold: u64,
+    /// 78.152 TU-7 — the final-point advances the door's shelf had counted
+    /// when this hold was taken: a hold is measured in TUniversal, never in
+    /// seconds.
+    advances_at: u64,
     sites: Vec<Site>,
 }
 
-static BOOK: Mutex<Book> = Mutex::new(Book { holder: None, hold: 0, sites: Vec::new() });
+static BOOK: Mutex<Book> = Mutex::new(Book { holder: None, hold: 0, advances_at: 0, sites: Vec::new() });
+
+/// 78.152 TU-7 — THE LOCK WATCHDOG: a thread of its own that wakes on each
+/// advance of the door's final point and reads the held book and the shelf,
+/// never the kernel. A hold standing across an aperture
+/// (`physics::aperture_cycle`) of final-point advances is named once, with
+/// the step it stands in and how many advances it spans. A court whose
+/// final point does not move (two keepers down) wakes it never: time does
+/// not advance, and no hold is measured against it.
+pub(crate) fn spawn_watchdog() {
+    std::thread::spawn(|| {
+        let shelf = crate::tshelf::shelf();
+        let span = u64::from(mycelium::physics::aperture_cycle());
+        let mut named: Option<u64> = None;
+        let mut seen = shelf.advances();
+        loop {
+            seen = shelf.wait_advance(seen);
+            let Some((site, hold, at)) = BOOK.lock().ok().and_then(|b| b.holder.map(|h| (h, b.hold, b.advances_at))) else {
+                continue;
+            };
+            let Some(spans) = seen.checked_sub(at) else { continue };
+            if spans >= span && named != Some(hold) {
+                named = Some(hold);
+                eprintln!("  kernel lock held {site} (hold {hold}, step {}) across {spans} final-point advances", stepping());
+            }
+        }
+    });
+}
 
 /// THE HOLD STANDING NOW: its site and its number, or none. Read without the
 /// kernel (the observer's door), so a court whose kernel one thread holds
@@ -145,6 +176,7 @@ pub(crate) fn lock<'a>(m: &'a Mutex<Kernel>, at: &'static str) -> Result<Held<'a
     };
     if let Ok(mut b) = BOOK.lock() {
         b.holder = Some(at);
+        b.advances_at = crate::tshelf::shelf().advances();
         // A hold numbered past 2⁶⁴ takes is not numbered again; the site
         // still names it.
         if let Some(n) = b.hold.checked_add(1) {

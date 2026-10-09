@@ -231,6 +231,9 @@ impl Session {
             vk,
             bind: addr,
             sig,
+            // The keeper ring is the courts' (78.152): a voice reads the
+            // final point off its door's replies, never off one keeper.
+            ring: _,
         }) = crate::anastome::dialogue::decode_cover_digest(body)
         else {
             return false;

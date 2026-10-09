@@ -602,6 +602,10 @@ pub struct CoverDigest {
     pub vk: [u8; 32],
     /// Where to reach it.
     pub bind: String,
+    /// 78.152 TU-2 — ITS KEEPER RING: its newest TUniversal readings, oldest
+    /// first, each signed by `vk` on its own and parent-linked (the digest
+    /// now carries the signer's point, which 45.2's digest never did).
+    pub ring: Vec<crate::chronometry::tuniversal::TickReading>,
     /// The signature over the prefix `cover_signed_prefix` builds.
     pub sig: [u8; 64],
 }

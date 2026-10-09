@@ -80,14 +80,16 @@ impl TShelf {
             match p.advances(h.final_point.as_ref()) {
                 true => {
                     h.final_point = Some(p);
+                    // Counted under the lock a waiter tests it under, so no
+                    // wake is lost between its test and its wait. One per
+                    // advance in one process: a u64 is not passed.
+                    self.advances.fetch_add(1, Ordering::AcqRel);
                     true
                 }
                 false => false,
             }
         };
         if raised {
-            // One per advance in one process: a u64 is not passed.
-            self.advances.fetch_add(1, Ordering::AcqRel);
             self.moved.notify_all();
         }
         raised
@@ -114,6 +116,18 @@ impl TShelf {
         self.moved.notify_all();
     }
 
+    /// WAIT FOR THE NEXT ADVANCE past `seen` advances, with no bound at all:
+    /// a watchdog's pace is the clock it watches (TU-7). Answers the count.
+    pub fn wait_advance(&self, seen: u64) -> u64 {
+        let guard = match self.held.lock() {
+            Ok(h) => h,
+            Err(e) => e.into_inner(),
+        };
+        // The guard is released on waking; the count is read without it.
+        drop(self.moved.wait_while(guard, |_| self.advances() <= seen));
+        self.advances()
+    }
+
     /// PARK UNTIL SOMETHING MOVED SINCE `seen` — the final point advanced or
     /// an act arrived — bounded by `floor`, the one scheduler floor
     /// (`physics::stroke_floor`, 78.152): the wait ends on the first motion;
@@ -129,8 +143,11 @@ impl TShelf {
             Err(e) => e.into_inner(),
         };
         let moved = |h: &Held| h.acts != seen.acts || self.advances() != seen.advances;
-        if !moved(&guard) {
-            let _ = self.moved.wait_timeout_while(guard, floor, |h| !moved(h));
+        // Released before the shelf is read again: on waking, or at once
+        // where something already moved.
+        match moved(&guard) {
+            true => drop(guard),
+            false => drop(self.moved.wait_timeout_while(guard, floor, |h| !moved(h))),
         }
         self.seen()
     }

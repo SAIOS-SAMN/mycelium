@@ -93,10 +93,12 @@ pub(crate) fn sign_position(
 
 pub(crate) fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> {
     let (charts, room) = rebuild_own_cover(kernel, mesh);
-    let ruled_root = match crate::held::held!(kernel) {
-        Ok(mut k) => k.ruled_root(),
+    // 78.152 TU-1: the court's keeper tick is read in the same hold.
+    let (ruled_root, tick) = match crate::held::held!(kernel) {
+        Ok(mut k) => (k.ruled_root(), k.keeper_tick()),
         Err(_) => return Vec::new(),
     };
+    let ring = crate::tshelf::own_ring(mesh, tick);
     // A poisoned cover lock is no reading of the cover; this hypha signs
     // no digest against one (§2.4, rule 11).
     let Ok(mut cover) = mesh.cover.lock() else {
@@ -118,7 +120,7 @@ pub(crate) fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> 
     // refusal, named.
     let _ = charts;
     let Some(mut out) =
-        dialogue::encode_cover_digest(&room, &cover_roots, &ruled_root, &mesh.vk, &mesh.bind, &sig)
+        dialogue::encode_cover_digest(&room, &cover_roots, &ruled_root, &mesh.vk, &mesh.bind, &ring, &sig)
     else {
         eprintln!(
             "  cover digest refused: the bind does not fit its length, {} bytes",
@@ -353,7 +355,7 @@ pub(crate) fn admit_peer_digest(
     body: &[u8],
     router: &Mutex<Router>,
 ) -> Result<(), NoDigest> {
-    let Some(dialogue::CoverDigest { room, cover_roots, ruled_root, vk, bind: addr, sig }) =
+    let Some(dialogue::CoverDigest { room, cover_roots, ruled_root, vk, bind: addr, ring, sig }) =
         dialogue::decode_cover_digest(body)
     else {
         return Err(NoDigest::Unreadable);
@@ -362,6 +364,11 @@ pub(crate) fn admit_peer_digest(
     if !mycelium::court::identity::verify(&vk, &prefix, &sig) {
         return Err(NoDigest::Signature);
     }
+    // 78.152 TU-2: the signer's keeper ring, verified on admission —
+    // signature, parent chain, cites — and the door's final point raised
+    // where the quorum moved it (TU-3). Each reading is signed on its own,
+    // so the ring stands apart from the digest's signature.
+    crate::tshelf::hear_ring(mesh, vk, ring);
     // The digest names the peer's room, its address and its ROOTS. Its
     // charts are read by page when those roots move (`admit_peer_cover`),
     // so nothing here retracts a cover this reading cannot replace.

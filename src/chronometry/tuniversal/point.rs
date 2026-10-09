@@ -4,7 +4,7 @@
 
 /// A UNIVERSE'S ORIGIN (45.5): the chain hash of its mesh's first receipt and
 /// the epoch it was cut at. Two points of two origins are never compared.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub struct Origin {
     pub genesis: [u8; 32],
     pub epoch: u32,
@@ -13,8 +13,9 @@ pub struct Origin {
 /// THE POINT (TU-5): a keeper's reading as it stands final — the tick `h`
 /// (the keeper court's head height), the court's cumulative measured change
 /// per lane `S:G:T:H`, and `K`, the orbits it closed — at its origin. Exact
-/// integers, no rounding, no average (TU-3).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+/// integers, no rounding, no average (TU-3). Ordered as its coordinates are
+/// written — origin, tick, lanes, `K` — a canonical key, never a measure.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub struct TPoint {
     pub origin: Origin,
     pub h: u64,

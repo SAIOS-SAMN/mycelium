@@ -6,8 +6,16 @@
 //! never averaged (TU-4); the final point is written `origin/h:S:G:T:H:K`
 //! (TU-5) and read by every act (TU-7).
 
+pub mod keepers;
+pub mod ops;
 pub mod point;
+pub mod reading;
 pub mod shelf;
 
+#[cfg(test)]
+mod tests;
+
+pub use keepers::{Admitted, Edge, Keepers, Refused, Residual};
 pub use point::{Origin, TPoint};
+pub use reading::{Cited, Tick, TickReading};
 pub use shelf::{Seen, TShelf};

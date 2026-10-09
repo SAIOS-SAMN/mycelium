@@ -168,8 +168,14 @@ pub fn cover_signed_prefix(cover_roots: &[[u8; 32]; 4], ruled_root: &[u8; 32], r
     out
 }
 
-/// Tail of a digest reply: THE ROOTS, room, vk, bind, sig — and no charts.
-/// `[room 4·u64][cover_roots 4·32][ruled_root 32][vk 32][alen u8][addr][sig 64]`
+/// Tail of a digest reply: THE ROOTS, room, vk, bind, the keeper ring, sig —
+/// and no charts.
+/// `[room 4·u64][cover_roots 4·32][ruled_root 32][vk 32][alen u8][addr][ring][sig 64]`
+///
+/// 78.152 TU-2, WIRE-CHANGE: `[ring]` is `[n u8]` then `n` TUniversal
+/// readings of `vk` (`chronometry::tuniversal::reading::put_ring`), each
+/// signed on its own; a decoder older than 78.152 reads the ring's bytes as
+/// the signature and refuses the digest.
 ///
 /// A DIGEST IS ROOTS, AND A COVER IS A PAGE (A4, owed since Stage 8c). The
 /// digest carried the whole chart list, so its size was the cover's size:
@@ -188,6 +194,7 @@ pub fn encode_cover_digest(
     ruled_root: &[u8; 32],
     vk: &[u8; 32],
     addr: &str,
+    ring: &[crate::chronometry::tuniversal::TickReading],
     sig: &[u8; 64],
 ) -> Option<Vec<u8>> {
     let mut out = Vec::new();
@@ -203,6 +210,7 @@ pub fn encode_cover_digest(
     // a digest signed over a truncated address names a door that is not
     // this one, and every peer that dialled it would be dialling nothing.
     crate::transducer::address::put_u8_bytes(&mut out, addr.as_bytes())?;
+    crate::chronometry::tuniversal::reading::put_ring(&mut out, ring)?;
     out.extend_from_slice(sig);
     Some(out)
 }
@@ -231,9 +239,10 @@ pub(crate) fn cover_digest_at(body: &[u8], at: usize) -> Option<(CoverDigest, us
     p += 1;
     let addr = String::from_utf8(body.get(p..p + alen)?.to_vec()).ok()?;
     p += alen;
+    let ring = crate::chronometry::tuniversal::reading::take_ring(vk, body, &mut p)?;
     let sig: [u8; 64] = body.get(p..p + 64)?.try_into().ok()?;
     p += 64;
-    Some((CoverDigest { room, cover_roots, ruled_root, vk, bind: addr, sig }, p))
+    Some((CoverDigest { room, cover_roots, ruled_root, vk, bind: addr, ring, sig }, p))
 }
 
 /// Offset one past a stratum-digest reply at the head of `body`, if the

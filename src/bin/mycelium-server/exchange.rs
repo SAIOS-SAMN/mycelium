@@ -299,6 +299,9 @@ impl Exchange {
         // The orbits this court sealed since the ledger was last persisted.
         let mut sealed_since_persist = 0u64;
         let mut idle = 0u64;
+        // 78.152: what the door's shelf had moved when this cycle last
+        // parked or worked — a park waits for motion past it.
+        let mut park_seen = crate::tshelf::shelf().seen();
         let mut last_tally = AdmissionTally::default();
         let mut last_cover: Option<[[u8; 32]; 4]> = None;
         loop {
@@ -945,9 +948,15 @@ impl Exchange {
                 // The same tick, and the same ruling: no peer was due, so
                 // this cycle did nothing and must cost the processor
                 // something rather than a decrement.
+                // 78.152: THE PARK ENDS ON THE FIRST MOTION — an advance of
+                // the final point, or an act read at the door — and is
+                // bounded by the one scheduler floor (`stroke_floor`), told
+                // to the scheduler and read by no one.
                 idle += 1;
-                std::thread::sleep(mycelium::physics::idle_park(None));
+                let shelf = crate::tshelf::shelf();
+                let _ = shelf.park(park_seen, mycelium::physics::stroke_floor());
             }
+            park_seen = crate::tshelf::shelf().seen();
             // Written when the READING CHANGES, not every cycle. As
             // first shipped this fired on any silence and logged 17,588
             // lines in 35 minutes on one hypha: it found the deadlock
