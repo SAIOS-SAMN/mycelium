@@ -269,7 +269,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                         // 78.153 — not judged yet: the court's stroke ran out
                         // before the replay ruled; asked again, it resumes.
                         mycelium::cognition::SolveVerdict::Unread => (
-                            dialogue::SOLVE_NOTHING,
+                            dialogue::SOLVE_UNREAD,
                             [0; 4],
                             Some(refused(
                                 "not judged yet: the court's stroke ran out before the replay ruled; ask again and it resumes",
