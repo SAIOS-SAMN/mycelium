@@ -23,6 +23,7 @@ mod senses;
 mod store;
 #[cfg(test)]
 mod tests;
+mod tuniversal;
 
 pub use carriage::*;
 pub use carriers::*;
@@ -35,6 +36,7 @@ pub use learning::*;
 pub use reading::*;
 pub use senses::*;
 pub use store::*;
+pub use tuniversal::*;
 
 /// THE STEP A LONG HOLD STANDS IN, named by the code that takes it (the
 /// court stroke's own steps): read by the server's observer door when one
