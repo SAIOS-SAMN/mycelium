@@ -185,7 +185,8 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
             i += 2;
             continue;
         }
-        // 78.145 — `--seat <domain-hex> <seat-id>`, read by the seat arm.
+        // 78.145 — `--seat <domain-hex>[/<sub-origin-hex>] <seat-id>`, read
+        // by the seat arm (the sub-origin v1.4's).
         if args[i] == "--seat" {
             i += 3;
             continue;

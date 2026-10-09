@@ -10,6 +10,7 @@ pub mod keepers;
 pub mod ops;
 pub mod point;
 pub mod reading;
+pub mod record;
 pub mod shelf;
 
 #[cfg(test)]
@@ -18,4 +19,5 @@ mod tests;
 pub use keepers::{Admitted, Edge, Keepers, Refused, Residual};
 pub use point::{Origin, TPoint};
 pub use reading::{Cited, Tick, TickReading};
+pub use record::{LastSigned, Recorded};
 pub use shelf::{Seen, TShelf};

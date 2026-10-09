@@ -31,7 +31,7 @@ fn call_args() -> Vec<Arg> {
 /// Key [5;32]]`, call nonce `[3;32]`.
 fn golden_call() -> SignedPost {
     let m = mind().verifying_key().to_bytes();
-    Post::Call(Call { domain: DOMAIN, seat: SEAT, mind: m, nonce: [3; 32], fn_id: 3, args: call_args() }).sign(&mind()).expect("writes")
+    Post::Call(Call { domain: DOMAIN, sub_origin: None, seat: SEAT, mind: m, nonce: [3; 32], fn_id: 3, args: call_args() }).sign(&mind()).expect("writes")
 }
 
 /// The golden PERCEPT: the house, at local time Q 12/1 and seq 1, counsels
@@ -39,7 +39,7 @@ fn golden_call() -> SignedPost {
 fn golden_percept() -> SignedPost {
     let m = mind().verifying_key().to_bytes();
     let counsel = Record::Counsel { fn_id: 3, args: call_args(), worth: Arg::Q { num: 1, den: 2 }, cost: Arg::Q { num: 1, den: 3 } };
-    let p = Percept { domain: DOMAIN, seat: SEAT, mind: m, local_time: Arg::Q { num: 12, den: 1 }, seq: 1, records: vec![counsel], point: Some(golden_point()) };
+    let p = Percept { domain: DOMAIN, sub_origin: None, seat: SEAT, mind: m, local_time: Arg::Q { num: 12, den: 1 }, seq: 1, records: vec![counsel], point: Some(golden_point()) };
     Post::Percept(p).sign(&house()).expect("writes")
 }
 
@@ -111,6 +111,7 @@ fn every_seat_post_reads_back_whole() {
     let m = mind().verifying_key().to_bytes();
     let seats = Seats {
         domain: DOMAIN,
+        sub_origin: None,
         epoch: 4,
         seats: vec![
             Seat { seat: SEAT, role: Role::Steward, on: [6; 32], beat: Arg::Q { num: 1, den: 60 }, fns: vec![SeatFn { id: 3, tags: vec![0, 5, 1] }] },
@@ -119,11 +120,12 @@ fn every_seat_post_reads_back_whole() {
         ],
     };
     round_trip(&Post::Seats(seats).sign(&house()).expect("writes"));
-    round_trip(&Post::Take(Take { domain: DOMAIN, seat: SEAT, mind: m, nonce: [4; 32] }).sign(&mind()).expect("writes"));
-    round_trip(&Post::Taken(Taken { domain: DOMAIN, seat: SEAT, mind: m, ok: false, reason: 513 }).sign(&house()).expect("writes"));
+    round_trip(&Post::Take(Take { domain: DOMAIN, sub_origin: None, seat: SEAT, mind: m, nonce: [4; 32] }).sign(&mind()).expect("writes"));
+    round_trip(&Post::Taken(Taken { domain: DOMAIN, sub_origin: None, seat: SEAT, mind: m, ok: false, reason: 513 }).sign(&house()).expect("writes"));
     round_trip(&golden_percept());
     let plain = Percept {
         domain: DOMAIN,
+        sub_origin: None,
         seat: SEAT,
         mind: m,
         local_time: big(),
@@ -134,10 +136,10 @@ fn every_seat_post_reads_back_whole() {
     round_trip(&Post::Percept(plain).sign(&house()).expect("writes"));
     round_trip(&golden_call());
     let call_ref = golden_call().reference().expect("writes");
-    round_trip(&Post::Outcome(Outcome { domain: DOMAIN, seat: SEAT, mind: m, call: call_ref, applied: true, reason: 0, deed: [8; 32] }).sign(&house()).expect("writes"));
+    round_trip(&Post::Outcome(Outcome { domain: DOMAIN, sub_origin: None, seat: SEAT, mind: m, call: call_ref, applied: true, reason: 0, deed: [8; 32] }).sign(&house()).expect("writes"));
     // Reads.
-    let listing = encode_read_listing(&DOMAIN);
-    assert_eq!(decode_seat_request(&listing), Some(Ok(SeatRequest::ReadListing(DOMAIN))));
+    let listing = encode_read_listing(&DOMAIN, None);
+    assert_eq!(decode_seat_request(&listing), Some(Ok(SeatRequest::ReadListing(DOMAIN, None))));
     let r = ReadMail::sign(&mind(), 17, [5; 32]);
     assert!(r.verified());
     assert_eq!(decode_seat_request(&encode_read_mail(&r)), Some(Ok(SeatRequest::ReadMail(r.clone()))));
@@ -199,7 +201,7 @@ fn a_bytes_argument_crosses_whole() {
 fn a_bytes_percept_decodes_to_its_values_and_verifies() {
     let m = mind().verifying_key().to_bytes();
     let record = Record::Plain { kind: 4, args: vec![Arg::Bytes(vec![0xA5; 5])] };
-    let p = Percept { domain: DOMAIN, seat: SEAT, mind: m, local_time: Arg::Q { num: 12, den: 1 }, seq: 2, records: vec![record.clone()], point: None };
+    let p = Percept { domain: DOMAIN, sub_origin: None, seat: SEAT, mind: m, local_time: Arg::Q { num: 12, den: 1 }, seq: 2, records: vec![record.clone()], point: None };
     let s = Post::Percept(p).sign(&house()).expect("writes");
     let back = decoded(&encode_post(&s).expect("writes"));
     let Post::Percept(read) = &back.post else { panic!("a percept: {:?}", back.post) };
@@ -226,5 +228,102 @@ fn the_replies_read_back() {
     let read = decode_mail_reply(&reply).expect("reads").expect("mail");
     assert_eq!(read, mail);
     assert_eq!(read[0].post(), Some(call));
-    assert_eq!(decode_listing_reply(&[]), Some(None));
+    assert_eq!(decode_listing_reply(&[], None), Some(None));
+}
+
+const SUB: [u8; 32] = [0x5c; 32];
+
+/// SEAT-WIRE v1.4 CONFORMANCE BY DECODED VALUES AND SIGNATURE (Concordance
+/// 1.4): every post scoped to the sub-origin `[0x5c;32]` — seeds [1;32] the
+/// house and [2;32] the mind, domain [9;32], seat 7 — is written under its
+/// sub-kind with the SCOPED bit (0x80), decodes into exactly its values with
+/// the sub-origin, and verifies under its signer; the same post unscoped is
+/// v1.3's, unchanged; the scope is signed (the bit flipped does not verify);
+/// a scoped listing read names its sub-origin and a listing of another scope
+/// is not read as it.
+#[test]
+fn v14_scoped_posts_decode_to_their_values_and_verify() {
+    let m = mind().verifying_key().to_bytes();
+    let h = house().verifying_key().to_bytes();
+    let posts = [
+        (Post::Seats(Seats { domain: DOMAIN, sub_origin: Some(SUB), epoch: 4, seats: vec![Seat { seat: SEAT, role: Role::Steward, on: [6; 32], beat: Arg::Q { num: 1, den: 60 }, fns: vec![SeatFn { id: 3, tags: vec![0, 5] }] }] }), house(), h),
+        (Post::Take(Take { domain: DOMAIN, sub_origin: Some(SUB), seat: SEAT, mind: m, nonce: [4; 32] }), mind(), m),
+        (Post::Taken(Taken { domain: DOMAIN, sub_origin: Some(SUB), seat: SEAT, mind: m, ok: true, reason: 0 }), house(), h),
+        (Post::Percept(Percept { domain: DOMAIN, sub_origin: Some(SUB), seat: SEAT, mind: m, local_time: Arg::Q { num: 7, den: 3 }, seq: 2, records: Vec::new(), point: Some(golden_point()) }), house(), h),
+        (Post::Call(Call { domain: DOMAIN, sub_origin: Some(SUB), seat: SEAT, mind: m, nonce: [3; 32], fn_id: 3, args: call_args() }), mind(), m),
+        (Post::Outcome(Outcome { domain: DOMAIN, sub_origin: Some(SUB), seat: SEAT, mind: m, call: [7; 32], applied: false, reason: REASON_NOT_APPLIED, deed: [0; 32] }), house(), h),
+    ];
+    for (i, (post, key, signer)) in posts.into_iter().enumerate() {
+        let s = post.clone().sign(&key).expect("writes");
+        let frame = encode_post(&s).expect("writes");
+        assert_eq!(frame.get(1).copied(), u8::try_from(i).ok().map(|k| k | SCOPED), "sub-kind {i} with the SCOPED bit");
+        let back = decoded(&frame);
+        assert_eq!(back.post, post, "decodes to exactly its values");
+        assert_eq!(back.post.sub_origin(), Some(SUB));
+        assert!(back.signed_by(&signer), "verifies under its signer");
+        round_trip(&s);
+        // The scope is signed: the same fields under the unscoped sub-kind
+        // are a different post (they do not even read whole).
+        let mut flipped = frame.clone();
+        if let Some(b) = flipped.get_mut(1) {
+            *b &= !SCOPED;
+        }
+        let refused = match decode_seat_request(&flipped) {
+            Some(Ok(SeatRequest::Post(p))) => !p.signed_by(&signer),
+            _ => true,
+        };
+        assert!(refused, "sub-kind {i}: the scope is bound to the signature");
+    }
+    // Unscoped, a post is v1.3's: no SCOPED bit, no sub-origin bytes.
+    let plain = golden_call();
+    let frame = encode_post(&plain).expect("writes");
+    assert_eq!(frame.get(1).copied(), Some(SUB_CALL));
+    assert_eq!(decoded(&frame).post.sub_origin(), None);
+    // A scoped listing read, and its reply read only at its scope.
+    let ask = encode_read_listing(&DOMAIN, Some(&SUB));
+    assert_eq!(ask.get(1).copied(), Some(SUB_READ_LISTING | SCOPED));
+    assert_eq!(decode_seat_request(&ask), Some(Ok(SeatRequest::ReadListing(DOMAIN, Some(SUB)))));
+    let listing = Post::Seats(Seats { domain: DOMAIN, sub_origin: Some(SUB), epoch: 1, seats: Vec::new() }).sign(&house()).expect("writes");
+    let body = listing.body().expect("writes");
+    assert_eq!(decode_listing_reply(&body, Some(&SUB)), Some(Some(listing)));
+    assert_eq!(decode_listing_reply(&body, Some(&[1; 32])), None, "another scope's listing is not read as this one");
+}
+
+/// SEAT-WIRE v1.4 — READ-MAIL AT THE RELAY'S STANDING (sub-kind 8): the read
+/// `[reader][after][epoch][nonce][sig]` reads back whole and verifies under
+/// its sub-kind; its reply `[1][epoch][seq][count]…` decodes to exactly the
+/// relay's epoch, last sequence and pieces; the refusal is `[0][reason]`;
+/// sub-kind 7 is answered as before.
+#[test]
+fn v14_the_mail_reply_carries_the_relays_standing() {
+    let r = ReadMail::sign_standing(&mind(), 17, 0xfeed_beef, [5; 32]);
+    assert!(r.verified());
+    let frame = encode_read_mail(&r);
+    assert_eq!(frame.get(1).copied(), Some(SUB_READ_MAIL_STANDING));
+    assert_eq!(frame.len(), 2 + 32 + 8 + 8 + 32 + 64);
+    assert_eq!(decode_seat_request(&frame), Some(Ok(SeatRequest::ReadMail(r.clone()))));
+    assert_eq!(r.standing, Some(0xfeed_beef));
+    let mut short = frame.clone();
+    short.pop();
+    assert_eq!(decode_seat_request(&short), Some(Err(Refusal::Malformed)));
+    // The relay honours `after` only under its own epoch and below its seq.
+    assert_eq!((r.after_on(0xfeed_beef, 40), r.after_on(1, 40), r.after_on(0xfeed_beef, 16)), (17, 0, 0));
+    let call = golden_call();
+    let read = MailRead { epoch: 0x0123_4567_89ab_cdef, seq: 41, mail: vec![Mail { seq: 40, sub: SUB_CALL, body: call.body().expect("writes") }] };
+    let reply = encode_mail_reply_standing(Ok(&read)).expect("writes");
+    assert_eq!(reply.get(..1), Some(&[1u8][..]), "served: the reply's lead byte");
+    let back = decode_mail_reply_standing(&reply).expect("reads").expect("served");
+    assert_eq!(back, read, "the relay's epoch, last sequence and pieces, exactly");
+    assert_eq!(back.mail.iter().map(Mail::post).collect::<Vec<_>>(), vec![Some(call)]);
+    let empty = MailRead { epoch: 9, seq: 0, mail: Vec::new() };
+    assert_eq!(decode_mail_reply_standing(&encode_mail_reply_standing(Ok(&empty)).expect("writes")), Some(Ok(empty)));
+    for why in [Refusal::Unsigned, Refusal::Malformed] {
+        assert_eq!(decode_mail_reply_standing(&encode_mail_reply_standing(Err(why)).expect("writes")), Some(Err(why)));
+    }
+    let mut long = reply.clone();
+    long.push(0);
+    assert_eq!(decode_mail_reply_standing(&long), None, "a byte past the reply is none");
+    // Sub-kind 7 stands as v1.3's.
+    let old = ReadMail::sign(&mind(), 17, [5; 32]);
+    assert_eq!((encode_read_mail(&old).get(1).copied(), old.standing), (Some(SUB_READ_MAIL), None));
 }

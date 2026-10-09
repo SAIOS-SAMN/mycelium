@@ -26197,7 +26197,8 @@ no number said which point the mesh stood at. Ruled, as law:
    and a restarted keeper must never re-sign a height it signed before its
    restart (an equivocation) — persist its last signed reading, or hold a
    restarted keeper silent until a peer's final point passes its last
-   height before it signs again.
+   height before it signs again. MET by 78.152c (the last signed reading
+   persisted).
 4. **TU-4 DISAGREEMENT IS A RESIDUAL.** Two keepers' readings at one tick
    differing on a lane leave the exact difference `to − from` per lane as a
    1-cochain on the keeper triangle; its holonomy round a → b → c (key
@@ -26328,6 +26329,39 @@ relay's 0x53 the first), by the operator's word. Proved:
 (a reading due with no digest; a known peer's ring heard, a stranger's
 refused; the held book's hold count unmoved).
 
+**78.152c — the keeper persisted (2026-10-09, the coordinator's edge; TU-3's
+OWED).** A restarted keeper held no readings, so it could sign a height it
+had signed before its restart — two readings at one tick under one key, an
+equivocation. Now each court's LAST SIGNED READING is kept in its home
+beside the ledger, the file `keeper` (`chronometry::tuniversal::record`),
+written durably before the reading is held or can leave on a ring
+(`Keepers::read_own_kept`: tmp, synced, renamed, the directory synced —
+`replace_durably`); a reading whose record did not land is not signed. The
+record, exact bytes: `MYKR`, version `u16` LE = 1, the origin's genesis (32)
+and epoch (`u32` LE), the keeper's key (32), the reading's hash (32, the
+citation its successor names as parent), then the reading as the ring
+carries it (tick `h`, the four lanes and `K` as `u64` LE, parent 32, cites
+`[n u8]` then `(keeper 32, reading 32, h u64)`, signature 64). It reads back
+only whole, at this magic and version, its reading signed by its keeper at
+its origin and hashing to its hash. The boot reads it before the court can
+sign (`tshelf::bind_home`): none is a keeper that never signed here; a
+record that does not read REFUSES THE BOOT (a floor it cannot read is one
+it could sign under), and `--check` reports it. When the keepers are begun
+at an origin, a record of that origin and this court's key is RESUMED as the
+own line's newest (`Keepers::resume`), so the next reading rises above its
+tick — nothing at or below it is signed, measure moved or not — and names
+it as parent: a peer holding the line EXTENDS it (`Admitted::Extended`),
+never re-anchors, and a peer that missed it takes it from the ring, which
+carries it. A record of another origin (a recut) is not resumed: the new
+universe's line starts afresh. TU-3 "Undecided (iii)" is answered by this.
+LAYOUT-CHANGE: a new file in the home; nothing existing changed. Proved
+(`chronometry::tuniversal::tests::a_keeper_restarted_from_its_record_never_signs_at_or_below_its_last`):
+the record reads back by value, on disk too; cut, lengthened, altered or of
+another version it is none or refused; a reading not kept is not held; a
+keeper restarted from its record signs nothing at heights 9, 10, 11 below
+its last 11, signs 13 naming the record's hash as parent, and a peer holding
+the line admits it as `Extended(1)`; a late peer `Extended(2)`.
+
 ### 78.153 Replays metered and resumable (2026-10-09, the lock audit's fix list, option (A))
 
 **Measured** (docs/LOCK-AUDIT.md): no path under the kernel lock was
@@ -26434,6 +26468,77 @@ stroke could not finish and still slashes a form that does not close its
 family; a solve is Unread then judged at one price; a mutual citation
 ends and is refused by name; the seek yields exactly the keys after `from`
 and visits fewer nodes than the walk.
+
+### Seat wire v1.4 (2026-10-09; lexicon 5, WIRE-CHANGE; 78.155 §5c(b), 78.156 §6 items 1–2)
+
+**Why.** (1) barren-realms kept a mail cursor of 1582 past a restarted
+relay's sequence, and every read returned the whole box: the READ-MAIL reply
+did not say whether the relay had restarted. (2) Netstratum's substrata need
+a seat named under a sub-universe of a domain. (3) 78.156: a percept carries
+the world's own time `u` beside the house's TPoint, and the mind reads its
+seat's sub-instance at (TPoint, u).
+
+**The codec, for the kernels** (`anastome::dialogue::seat`; integers LE):
+
+1. **SEATS SCOPED TO A SUB-ORIGIN.** A seat is named by (domain, sub-origin,
+   seat id); the sub-origin is 32 bytes, the sub-universe's citation,
+   optional — absent, the domain's own universe. A post naming one is
+   written under its sub-kind with the SCOPED bit, `sub | 0x80` (0x80 SEATS,
+   0x81 TAKE, 0x82 TAKEN, 0x83 PERCEPT, 0x84 CALL, 0x85 OUTCOME), the
+   sub-origin immediately after the domain: `[domain 32][sub_origin
+   32][seat u32][mind 32]…` for TAKE, TAKEN, PERCEPT, CALL and OUTCOME, and
+   `[domain 32][sub_origin 32][epoch u64][n u16] SEAT…` for SEATS; every
+   other field as v1.3. The sub byte is signed (`b"mycelium seat v1" ‖ [sub]
+   ‖ [fields]`), so the scope is bound to the signature, and a CALL's
+   reference cites it. A post with no sub-origin is written exactly as v1.3
+   — one writing per value. A mail piece keeps its sub byte, scoped or not.
+   READ-LISTING scoped is `[0x53][0x86][domain 32][sub_origin 32]`, answered
+   the SEATS body (fields ‖ sig) held for that (domain, sub-origin), read
+   under 0x80. The relay keys listings by (domain, sub-origin)
+   (`[0][domain]` or `[1][domain][sub_origin]`); mail is filed as before (a
+   take or call to the domain's house, the rest to the mind named).
+2. **READ-MAIL AT THE RELAY'S STANDING, sub-kind 8.** `[0x53][8][reader
+   32][after u64][epoch u64][nonce 32][sig 64]`, signed over `b"mycelium
+   seat v1" ‖ [8] ‖ reader ‖ after ‖ epoch ‖ nonce`; `epoch` is the relay
+   epoch the reader's `after` was read under, 0 where it holds none. Answered
+   `[1][relay_epoch u64][relay_seq u64][count u16]` then `(seq u64, sub u8,
+   len u32, fields‖sig)…`, or the refusal `[0][reason ≥ 1]`. The RELAY EPOCH
+   is drawn from the OS's randomness when the relay is made (never 0; no
+   clock), so every hypha restart changes it; `relay_seq` is the last
+   sequence issued. The relay honours `after` only under its own epoch and
+   at or below its sequence (`ReadMail::after_on`); otherwise the box is read
+   from the start and nothing is acknowledged. A reader stores the epoch with
+   its cursor and resets the cursor where the epoch changed or the cursor
+   passes the sequence (`MailRead::cursor`) — a restart, never progress.
+   Sub-kind 7 is answered as before (`[count u16]…`); the mail bound is now
+   the frame budget less the v1.4 head (19 bytes), which covers v1.3's.
+3. **A PERCEPT'S AXIS COORDINATE `u`.** The percept's `local_time` is the
+   universe's axis coordinate `u` (78.156): the world's committed cycle,
+   FREE of TUniversal, carried beside the house's `point`. No byte changed.
+   The seat mind locates its sub-instance at (TPoint, u) per percept
+   (`SeatMind::located`) and reads its EXPERIENCED DILATION between two
+   located percepts of one origin (`SeatMind::dilation`,
+   `Entity::seat_dilation`): `du` (exact rational), `dh` (the final point's
+   tick advance) and `du/dh` exact, unread where the final point stood
+   (`dh = 0`); across two origins nothing is read. The reading rides the
+   voice's `seat perceived … | dilation du … dh … du/dh …` line. A reading,
+   never an error: the world keeps its own pace.
+
+**The SDK and the voice.** `SeatName { domain, sub_origin, seat }` names a
+seat; `Session::take`, `call` take it, `list_seats(domain, sub_origin)`,
+`read_mail`/`mail`/`house_mail(key, after, epoch)` read at the standing.
+`mycelium-client --seat <domain-hex>[/<sub-origin-hex>] <seat-id>[,…]`; the
+arm keeps the relay epoch beside its cursor and says so where the relay
+restarted under it.
+
+**Lexicon 5:** Sub-origin, Relay epoch, Axis coordinate (`MU-LEXICON.md`).
+LAYOUT-CHANGE: none (the relay is volatile). Proved, by decoded values and
+signatures, never hex goldens (Concordance 1.4):
+`dialogue::tests::seat::v14_scoped_posts_decode_to_their_values_and_verify`,
+`dialogue::tests::seat::v14_the_mail_reply_carries_the_relays_standing`,
+`cognition::tests::seat::the_relay_keys_seats_by_sub_origin_and_tells_its_epoch`,
+`sdk::tests::seat_mind::a_seats_experienced_dilation_is_read_exactly`, with
+the v1.3 tests unchanged in substance.
 
 ### 80.1 The blueprint reconciled (2026-09-24)
 

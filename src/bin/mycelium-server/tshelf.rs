@@ -10,7 +10,7 @@
 //! at all.
 
 use crate::Mesh;
-use mycelium::chronometry::tuniversal::{Admitted, Keepers, Origin, Refused, Residual, TPoint, TShelf, Tick, TickReading};
+use mycelium::chronometry::tuniversal::{record, Admitted, Keepers, LastSigned, Origin, Recorded, Refused, Residual, TPoint, TShelf, Tick, TickReading};
 use mycelium::observe;
 use std::sync::{LazyLock, Mutex};
 
@@ -29,6 +29,59 @@ static SEEN: Mutex<(Vec<observe::KeeperSeen>, Residual)> =
 
 /// Refusals of peers' rings, counted, said at powers of two.
 static REFUSED: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// 78.152 (persisted) — THE HOME'S KEEPER RECORD: its path, and the last
+/// reading this court signed as read at boot, resumed when the keepers are
+/// begun at its origin. Unbound (no home), readings are signed unkept.
+static RECORD: Mutex<Option<(std::path::PathBuf, Option<LastSigned>)>> = Mutex::new(None);
+
+/// The keeper record's file in a home, beside the ledger.
+pub(crate) fn record_path(home: &std::path::Path) -> std::path::PathBuf {
+    home.join("keeper")
+}
+
+/// 78.152 (persisted) — THE BOOT READS THE KEEPER RECORD: none is a keeper
+/// that never signed here; a record that does not read is refused, for a
+/// floor this court cannot read is one it could sign under (an
+/// equivocation). Answers the record read.
+pub(crate) fn bind_home(home: &std::path::Path) -> Result<Option<LastSigned>, String> {
+    let path = record_path(home);
+    let last = match record::read(&path) {
+        Recorded::None => None,
+        Recorded::Last(r) => Some(*r),
+        Recorded::Unreadable(why) => return Err(format!("the keeper record at {} is unreadable: {why}", path.display())),
+    };
+    match RECORD.lock() {
+        Ok(mut g) => *g = Some((path, last.clone())),
+        Err(p) => *p.into_inner() = Some((path, last.clone())),
+    }
+    Ok(last)
+}
+
+/// The record read at boot, where it stands at `origin`.
+fn recorded_at(origin: Origin) -> Option<LastSigned> {
+    let g = match RECORD.lock() {
+        Ok(g) => g,
+        Err(p) => p.into_inner(),
+    };
+    g.as_ref()?.1.clone().filter(|r| r.origin == origin)
+}
+
+/// A new reading kept in the home's record before it is held: whether it
+/// landed. No home bound keeps nothing and refuses nothing.
+fn keep(rec: &LastSigned) -> bool {
+    let mut g = match RECORD.lock() {
+        Ok(g) => g,
+        Err(p) => p.into_inner(),
+    };
+    let Some((path, last)) = g.as_mut() else { return true };
+    let landed = record::write(path, rec);
+    match landed {
+        true => *last = Some(rec.clone()),
+        false => eprintln!("  court tuniversal reading at h {} not kept: the keeper record did not land; it is not signed", rec.reading.tick.h),
+    }
+    landed
+}
 
 /// The door's shelf.
 pub(crate) fn shelf() -> &'static TShelf {
@@ -59,7 +112,16 @@ fn with_keepers<R>(mesh: &Mesh, origin: Origin, f: impl FnOnce(&mut Keepers, &mu
         Err(p) => p.into_inner(),
     };
     if g.as_ref().is_none_or(|(k, _)| k.origin() != origin) {
-        *g = Some((Keepers::new(origin, mesh.vk), Residual::default()));
+        let mut k = Keepers::new(origin, mesh.vk);
+        // 78.152 (persisted): the last reading signed before a restart is
+        // this line's newest, so nothing is signed at or below it.
+        if let Some(rec) = recorded_at(origin) {
+            match k.resume(&rec) {
+                true => eprintln!("  court tuniversal keeper resumed above h {}", rec.reading.tick.h),
+                false => eprintln!("  court tuniversal keeper record at h {} not resumed: not this court's at this origin", rec.reading.tick.h),
+            }
+        }
+        *g = Some((k, Residual::default()));
     }
     let (k, r) = g.as_mut()?;
     let out = f(k, r);
@@ -94,7 +156,7 @@ pub(crate) fn own_ring(mesh: &Mesh, tick: Option<Tick>) -> Vec<TickReading> {
     // No keepers held is no ring: nothing is read off it.
     with_keepers(mesh, origin, |k, _| {
         if let Some(t) = tick {
-            if k.read_own(&mesh.sk, t).is_none() {
+            if k.read_own_kept(&mesh.sk, t, keep).is_none() {
                 eprintln!("  court tuniversal reading refused: its cites pass their count");
             }
         }
@@ -114,7 +176,7 @@ pub(crate) fn own_ring(mesh: &Mesh, tick: Option<Tick>) -> Vec<TickReading> {
 pub(crate) fn sign_tick(mesh: &Mesh, tick: Option<Tick>) -> Option<Vec<TickReading>> {
     let t = tick?;
     let origin = origin(mesh)?;
-    with_keepers(mesh, origin, |k, _| match k.read_own(&mesh.sk, t) {
+    with_keepers(mesh, origin, |k, _| match k.read_own_kept(&mesh.sk, t, keep) {
         Some(true) => Some(k.own_ring()),
         Some(false) => None,
         None => {
