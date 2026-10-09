@@ -60,7 +60,9 @@ say "wiping persisted carriers"
 for h in "${HYPHAE[@]}"; do
   rm -f "$ROOT/$h/ledger" "$ROOT/$h/ledger.tmp" "$ROOT/$h/ledger.registry" \
         "$ROOT/$h/corpora/registry" "$ROOT/$h/corpora/registry.tmp" \
-        "$ROOT/$h/eras" "$ROOT/$h/line" "$ROOT/$h/line.tmp"
+        "$ROOT/$h/eras" "$ROOT/$h/line" "$ROOT/$h/line.tmp" \
+        "$ROOT/$h/corpora/cursor" "$ROOT/$h/corpora/cursor.tmp" \
+        "$ROOT/$h/keeper" "$ROOT/$h/keeper.tmp"
 done
 for v in "${VOICES[@]}"; do
   rm -f "$ROOT/$v/genome" "$ROOT/$v/genome.tmp"
