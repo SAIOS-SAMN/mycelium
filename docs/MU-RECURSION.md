@@ -27412,6 +27412,52 @@ Owed and named:
   `Unread` there too, and the court rules it only on a stroke that moves.
   The honoured budget is what removes the false refusal at home.
 
+### 78.153c The verdict made readable; the dispatch cursor kept (2026-10-09, the coordinator's order)
+
+**Measured**: 66 solves filed by minds, 0 paid, and no typed reading said
+why. The court counted its verdicts by NAME on `JUDGED`, and `count` drops a
+name the table lacks: every 78.149 NO WORK fell there; UNREAD (78.153) was
+not counted; the door's refusals before judging (unsigned, an inner seat,
+no such task, no rule) reached no counter at all. A mind filed
+`SOLVE_UNREAD` under "refused N" and kept only sums. The acts reading was
+published only for a question left, and answered off the last publication,
+so a hypha a ship had just restarted answered `--reading acts` with
+nothing. The registry's dispatch cursor persisted only in the snapshot,
+written on a first closure: every restart of a book nothing closed
+re-dispatched its head (client@3 pulled 75 times over 22 tasks).
+
+**Ruled.**
+
+1. **A verdict is typed.** `observe::Judged`, one variant per slot of
+   `JUDGED` by an exhaustive match: a verdict without a slot does not
+   compile. `JUDGED` gains `no work`, `unread`, `unsigned`, `not an
+   ancient`, `no such task`, `no rule carried` (appended; the first ten
+   stand). `SolveVerdict::judged` names each verdict's slot (`Solved` is
+   counted where it is paid); the door counts its pre-judge refusals on the
+   same hold its seat check takes (`Kernel::note_judged`).
+2. **The standing is published at the first court stroke after boot**,
+   asked or not (`answer_standing(.., first)`), so every hypha's first
+   question finds its acts.
+3. **A mind keeps its verdicts by the reply's code** (`SolveTally::by_code`,
+   `SOLVE_CODES`: nothing, floor, bounty, unread, an unknown code last),
+   refusals by kind, UNREAD apart (`unread`, and `solving: unread` on the
+   senses) — never a refusal. Its `K` line carries `SolveTally::line`; each
+   verdict is said once: `solve verdict · task <head 4 bytes>… · code
+   <name> (<code>) · kind <P|D|C|I|N|?|none> · <reason>`.
+4. **The dispatch cursor has its own record**, `corpora/cursor` =
+   `CURS [cursor u32][tasks u32]` (12 bytes), written tmp + rename once a
+   page of dispatches (`aperture_cycle`) and beside every snapshot, restored
+   at boot after the whole corpus registered; a record of another book (task
+   count) or layout is refused whole and the snapshot's cursor stands.
+
+Proved: `observe::tests::every_judged_verdict_is_one_slot_of_the_table`,
+`observe::tests::a_minds_verdicts_are_kept_by_code_and_said_one_line_each`,
+`cognition::tests::solve::a_no_work_verdict_is_counted_under_no_work`,
+`cognition::tests::resume::a_solve_not_judged_on_its_stroke_is_unread_and_resumed`
+(unread counted once per unread asking, exactly),
+`registry::tests::the_dispatch_cursor_survives_a_restart_with_nothing_closed`,
+the server's `tests::standing::every_court_serves_its_acts_from_its_first_stroke_unasked`.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

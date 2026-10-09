@@ -38,6 +38,10 @@ pub struct TaskRegistry {
     by_citation: Keyed<usize>,
     /// Dispatch cursor (rotates so pull requests spread across the book).
     cursor: usize,
+    /// 78.153c — dispatches since the cursor's record was last taken
+    /// (`cursor_due`): the record is written once a page of them, never per
+    /// task.
+    dispatched: u64,
     /// Cover-change cursor: a budgeted walk re-homes by the cover trie.
     cover_cursor: usize,
     /// First-time intake cursor: walks the manifest once, then stops.
@@ -110,6 +114,7 @@ impl TaskRegistry {
             by_id: Keyed::new(),
             by_citation: Keyed::new(),
             cursor: 0,
+            dispatched: 0,
             cover_cursor: 0,
             intake_cursor: 0,
             intake_done: false,
@@ -236,6 +241,11 @@ impl TaskRegistry {
             let i = (self.cursor + k) % n;
             if self.tasks[i].2 == TaskState::Unsolved {
                 self.cursor = (i + 1) % n;
+                // One dispatch, toward the cursor's next record; a u64
+                // counts one per pull and cannot pass its carrier.
+                if let Some(d) = self.dispatched.checked_add(1) {
+                    self.dispatched = d;
+                }
                 let (id, task, _) = &self.tasks[i];
                 return Some((id.clone(), task));
             }
@@ -328,6 +338,51 @@ impl TaskRegistry {
             }
         }
         restored
+    }
+
+    /// 78.153c — THE DISPATCH CURSOR'S RECORD: `CURS [cursor u32][tasks
+    /// u32]`, 12 bytes, kept beside the snapshot (`corpora/cursor`). The
+    /// snapshot carries the cursor too, but it is written only on a first
+    /// closure, so a book nothing closed re-dispatched its head after every
+    /// restart (client@3 pulled 75 times over 22 tasks, 2026-10-09). `None`
+    /// where a count passes its field.
+    pub fn cursor_record(&self) -> Option<[u8; 12]> {
+        let mut out = [0u8; 12];
+        out[..4].copy_from_slice(b"CURS");
+        out[4..8].copy_from_slice(&u32::try_from(self.cursor).ok()?.to_le_bytes());
+        out[8..].copy_from_slice(&u32::try_from(self.tasks.len()).ok()?.to_le_bytes());
+        Some(out)
+    }
+
+    /// The cursor's record where a PAGE of dispatches (`page`) has passed
+    /// since it was last taken, and the count begun again; `None` before.
+    /// The caller writes it (tmp + rename): one write a page, never one a
+    /// task.
+    pub fn cursor_due(&mut self, page: u64) -> Option<[u8; 12]> {
+        if self.dispatched < page.max(1) {
+            return None;
+        }
+        let record = self.cursor_record()?;
+        self.dispatched = 0;
+        Some(record)
+    }
+
+    /// RESTORE the dispatch cursor from its record (call after the corpus
+    /// registered). A record of another book — another task count — names
+    /// other positions and is refused whole, as is any other layout: `false`,
+    /// and the cursor stands where it was.
+    pub fn restore_cursor(&mut self, bytes: &[u8]) -> bool {
+        let word = |at: usize| bytes.get(at..at + 4).and_then(|b| <[u8; 4]>::try_from(b).ok()).map(u32::from_le_bytes);
+        if bytes.len() != 12 || bytes.get(..4) != Some(b"CURS") {
+            return false;
+        }
+        let (Some(cursor), Some(n)) = (word(4), word(8)) else { return false };
+        let (Ok(cursor), Ok(n)) = (usize::try_from(cursor), usize::try_from(n)) else { return false };
+        if n != self.tasks.len() || cursor >= n {
+            return false;
+        }
+        self.cursor = cursor;
+        true
     }
 
     /// IS THIS TASK STILL OPEN — would a closure now be its first? `None`
@@ -426,6 +481,59 @@ mod tests {
         assert_eq!(d1, id);
         assert_eq!(reg.close(&id), Some(Closure::First));
         assert!(reg.dispatch().is_none(), "a settled book dispatches nothing");
+    }
+
+    /// 78.153c — THE DISPATCH CURSOR SURVIVES A RESTART WITH NOTHING CLOSED:
+    /// its record is due once a page of dispatches passed, and a registry
+    /// re-registered from the corpus and restored from it dispatches the task
+    /// after the last one served, never the head. A record of another book is
+    /// refused whole.
+    #[test]
+    fn the_dispatch_cursor_survives_a_restart_with_nothing_closed() {
+        let other = Task {
+            train: vec![(vec![vec![3, 0], vec![0, 0]], vec![vec![0, 3], vec![0, 0]])],
+            test: vec![(vec![vec![0, 0], vec![3, 0]], vec![vec![0, 0], vec![0, 3]])],
+        };
+        let third = Task {
+            train: vec![(vec![vec![4, 4, 0]], vec![vec![0, 4, 4]])],
+            test: vec![(vec![vec![0, 4, 4]], vec![vec![4, 4, 0]])],
+        };
+        let book = || {
+            let mut reg = TaskRegistry::new();
+            let ids: Vec<Address> = [toy_task(), other.clone(), third.clone()]
+                .into_iter()
+                .map(|t| reg.register(t).expect("a grid pair's chain is A5's"))
+                .collect();
+            (reg, ids)
+        };
+        let (mut reg, ids) = book();
+        assert_eq!(ids.len(), 3);
+        assert_eq!(reg.dispatch().map(|(id, _)| id), Some(ids[0].clone()));
+        assert_eq!(reg.cursor_due(2), None, "one dispatch is not a page of two");
+        assert_eq!(reg.dispatch().map(|(id, _)| id), Some(ids[1].clone()));
+        let record = reg.cursor_due(2).expect("a page of two dispatches passed");
+        assert_eq!(&record[..4], b"CURS");
+        assert_eq!(record[4..8], 2u32.to_le_bytes(), "the cursor stands on the third task");
+        assert_eq!(record[8..], 3u32.to_le_bytes(), "of a book of three");
+        assert_eq!(reg.cursor_due(2), None, "the count begins again");
+        assert!(reg.snapshot().is_some() && reg.settled_ids().is_empty(), "nothing closed");
+
+        // THE RESTART: the corpus re-registered, the record restored.
+        let (mut reborn, _) = book();
+        assert!(reborn.restore_cursor(&record), "the record restores");
+        assert_eq!(reborn.dispatch().map(|(id, _)| id), Some(ids[2].clone()), "the next task, not the head");
+        let (mut fresh, _) = book();
+        assert_eq!(fresh.dispatch().map(|(id, _)| id), Some(ids[0].clone()), "with no record, the head");
+
+        // ANOTHER BOOK'S RECORD, OR ANOTHER LAYOUT, RESTORES NOTHING.
+        let mut small = TaskRegistry::new();
+        small.register(toy_task());
+        assert!(!small.restore_cursor(&record), "a book of one is not a book of three");
+        assert!(!small.restore_cursor(&record[..8]), "a short record is refused whole");
+        let mut wrong = record;
+        wrong[0] = b'X';
+        let (mut again, _) = book();
+        assert!(!again.restore_cursor(&wrong), "another layout is refused");
     }
 
     /// First-time intake walks the manifest once under a budget; further

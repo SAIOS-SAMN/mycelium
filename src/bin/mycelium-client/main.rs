@@ -463,7 +463,7 @@ fn main() {
             // pushed below; only a stroke that moved a lane is lined.
             if moved != [false; 4] {
                 eprintln!(
-                    "[{tag}] [{}] K {own_k} book {book_k} | genome {} | dialect {} | ideas {} | {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed {} census {:?} reserve {:?} carriers {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} (reanchor {reanchored} condense {condensed}) discordance {} boundary {:?} axes {}",
+                    "[{tag}] [{}] K {own_k} book {book_k} | genome {} | dialect {} | ideas {} | {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed {} census {:?} reserve {:?} carriers {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} | {} | refined {refined} (reanchor {reanchored} condense {condensed}) discordance {} boundary {:?} axes {}",
                     mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                     entity.epigenome.genome_len(),
                     entity.dialect_len(),
@@ -481,6 +481,8 @@ fn main() {
                     entity.reserve(),
                     carrier_line(&entity),
                     entity.impedance(),
+                    // 78.153c — the court's verdicts by code and kind.
+                    entity.solves().line(),
                     match entity.discordance() {
                         Some(strata) => strata.to_string(),
                         None => "unmeasured".to_string(),

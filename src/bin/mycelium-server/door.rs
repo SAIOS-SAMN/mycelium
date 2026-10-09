@@ -159,6 +159,13 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                         break;
                     }
                 }
+                // 78.153c — THE CURSOR KEPT: once a page of dispatches (the
+                // aperture, the court's own persist pace) its record is
+                // written beside the snapshot, so a restart continues the
+                // corpus instead of re-serving its head.
+                if let Some(record) = reg.cursor_due(u64::from(mycelium::physics::aperture_cycle())) {
+                    write_beside(&door.state_path, "cursor", &record);
+                }
                 body
             }
             (None, Some((_, cite))) => {
@@ -219,30 +226,54 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // The operator (2026-10-08): the hypha serves anyone; a universe founded
         // here speaks only through its ancients — an inner tier of a founded
         // domain that is not its sitting reserve is refused (`may_solve`).
-        let ancient = crate::held::held!(door.kernel).ok().is_some_and(|mut h| h.run(|k, _| k.may_solve(&svoice)));
-        let (code, mu, refusal, stamp) = match (open, rule.as_ref()) {
-            // 78.141 — the court pays the voice a solve names: unsigned, it
-            // names no payee, and nothing is judged or paid.
-            _ if !signed => (
-                dialogue::SOLVE_NOTHING,
-                [0; 4],
-                Some(refused("unsigned: a solve names its payee by its voice's signature", mycelium::transducer::sentence::ObstructionKind::I)),
-                None,
-            ),
-            _ if !ancient => (
-                dialogue::SOLVE_NOTHING,
-                [0; 4],
-                Some(refused("an inner seat of a founded universe: it speaks to the hypha only through its ancients' house", mycelium::transducer::sentence::ObstructionKind::I)),
-                None,
-            ),
-            (None, _) => (dialogue::SOLVE_NOTHING, [0; 4], Some(refused("no such task on this book", mycelium::transducer::sentence::ObstructionKind::I)), None),
-            (Some(_), None) => (
+        // 78.153c — THE DOOR'S REFUSALS BEFORE ANY JUDGING, each counted on
+        // its slot of the court's acts under the one hold the seat's check
+        // already takes: 66 solves filed and none paid read as no verdict
+        // at all where every one of them stopped here.
+        use mycelium::observe::Judged;
+        let rule_carried = rule.is_some();
+        let pre: Option<Judged> = match crate::held::held!(door.kernel) {
+            Ok(mut h) => h.run(|k, _| {
+                let pre = match open {
+                    // 78.141 — the court pays the voice a solve names:
+                    // unsigned, it names no payee, and nothing is judged.
+                    _ if !signed => Some(Judged::Unsigned),
+                    _ if !k.may_solve(&svoice) => Some(Judged::NotAncient),
+                    None => Some(Judged::NoSuchTask),
+                    Some(_) if !rule_carried => Some(Judged::NoRuleCarried),
+                    Some(_) => None,
+                };
+                if let Some(j) = pre {
+                    k.note_judged(j);
+                }
+                pre
+            }),
+            // A poisoned kernel reads no seat: refused as the inner seat it
+            // cannot rule out, and counted nowhere (no court to count on).
+            Err(_) => Some(Judged::NotAncient),
+        };
+        let (code, mu, refusal, stamp) = match (pre, open, rule.as_ref()) {
+            (Some(pre), _, _) => {
+                let reason = match pre {
+                    Judged::Unsigned => "unsigned: a solve names its payee by its voice's signature",
+                    Judged::NotAncient => "an inner seat of a founded universe: it speaks to the hypha only through its ancients' house",
+                    Judged::NoSuchTask => "no such task on this book",
+                    _ => "a solve carries its rule: a raster is no proof of a motion",
+                };
+                (dialogue::SOLVE_NOTHING, [0; 4], Some(refused(reason, mycelium::transducer::sentence::ObstructionKind::I)), None)
+            }
+            // `pre` read these two already (it names them above); the
+            // pattern says so to the compiler, by the same reasons.
+            (None, None, _) => {
+                (dialogue::SOLVE_NOTHING, [0; 4], Some(refused("no such task on this book", mycelium::transducer::sentence::ObstructionKind::I)), None)
+            }
+            (None, Some(_), None) => (
                 dialogue::SOLVE_NOTHING,
                 [0; 4],
                 Some(refused("a solve carries its rule: a raster is no proof of a motion", mycelium::transducer::sentence::ObstructionKind::I)),
                 None,
             ),
-            (Some(first), Some(rule)) => {
+            (None, Some(first), Some(rule)) => {
                 let (verdict, offers) = {
                     let Ok(mut h) = crate::held::held!(door.kernel) else { return true };
                     // OWED (78.153b): the solve's replay mints its own stroke
@@ -301,19 +332,14 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             // payment, so none is lost between the two.
             if let Ok(mut reg) = door.registry.lock() {
                 if reg.close(&tid) == Some(mycelium::registry::Closure::First) {
-                        // A state path with no parent writes beside the
-                        // working directory, which is where it already is.
-                        let dir = match std::path::Path::new(&door.state_path).parent() {
-                            Some(p) => p.join("corpora"),
-                            None => std::path::PathBuf::from("corpora"),
-                        };
-                        if let Some(snap) = reg.snapshot() {
-                            let _ = std::fs::create_dir_all(&dir);
-                            let tmp = dir.join("registry.tmp");
-                            if std::fs::write(&tmp, &snap).is_ok() {
-                                let _ = std::fs::rename(&tmp, dir.join("registry"));
-                            }
-                        }
+                    if let Some(snap) = reg.snapshot() {
+                        write_beside(&door.state_path, "registry", &snap);
+                    }
+                    // The cursor's record with it, so the record is never
+                    // older than the snapshot's own cursor.
+                    if let Some(record) = reg.cursor_record() {
+                        write_beside(&door.state_path, "cursor", &record);
+                    }
                 }
             }
             // THE ROOT, AT THE HEIGHT THE SOLVE WAS PAID: a new solver is
@@ -536,6 +562,23 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         return true;
     }
     false
+}
+
+/// ONE RECORD OF THE CORPUS BOOK WRITTEN WHOLE beside the state: `corpora/
+/// <name>` by a tmp file and a rename, so a reader at boot finds the last
+/// record or the one before it, never a torn one. A state path with no
+/// parent writes beside the working directory, which is where it already
+/// is. A write that fails leaves the last record standing.
+pub(crate) fn write_beside(state_path: &str, name: &str, bytes: &[u8]) {
+    let dir = match std::path::Path::new(state_path).parent() {
+        Some(p) => p.join("corpora"),
+        None => std::path::PathBuf::from("corpora"),
+    };
+    let _ = std::fs::create_dir_all(&dir);
+    let tmp = dir.join(format!("{name}.tmp"));
+    if std::fs::write(&tmp, bytes).is_ok() {
+        let _ = std::fs::rename(&tmp, dir.join(name));
+    }
 }
 
 /// ROOT CONSILIENT: every voice's syllabus cursor returns to the start, so

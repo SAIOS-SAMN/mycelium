@@ -849,7 +849,7 @@ fn the_senses_and_the_acts_travel_whole() {
     senses.hearing = [6, 7, 8];
     senses.language = [9, 10, 11, 12, 13, 29];
     senses.understanding = [14, 15, 16, 17, 38];
-    senses.solving = [18, 19, 20, 21, 26, 27, 28];
+    senses.solving = [18, 19, 20, 21, 26, 27, 28, 58];
     senses.paid = [22, 23, 24, 25];
     let acts = Acts {
         k: 9,
@@ -859,7 +859,7 @@ fn the_senses_and_the_acts_travel_whole() {
         refused: [13, 0, 1, 0],
         syllabus: [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26],
         fetch: [21, 22, 39, 49, 40, 41, 42, 43, 44, 45, 46, 47, 48],
-        judged: [23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
+        judged: [23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 59, 60, 61, 62, 63, 64],
         paid: [33, 34, 35, 36],
         colours: 37,
         colours_derived: 38,
@@ -872,6 +872,7 @@ fn the_senses_and_the_acts_travel_whole() {
     assert_eq!(senses.read("hearing", "words admitted"), Some(8), "read by its own name");
     assert_eq!(senses.read("solving", "refused"), Some(20));
     assert_eq!(senses.read("solving", "refuted at home"), Some(27));
+    assert_eq!(senses.read("solving", "unread"), Some(58), "78.153c — unread, apart from refused");
     assert_eq!(senses.read("sight", "no such"), None, "a name the table does not hold reads nothing");
 }
 
@@ -936,7 +937,71 @@ fn every_counted_name_is_its_table_s() {
             "refused ?",
             "not a rule",
             "unverifiable",
+            "no work",
+            "unread",
+            "unsigned",
+            "not an ancient",
+            "no such task",
+            "no rule carried",
         ],
+    );
+}
+
+/// 78.153c — EVERY VERDICT THE COURT OR ITS DOOR COUNTS HAS ITS OWN SLOT:
+/// `Judged::slot` is a bijection onto `JUDGED`, in its order, and a verdict
+/// counted lands exactly there — so no name is dropped as "no work" was.
+#[test]
+fn every_judged_verdict_is_one_slot_of_the_table() {
+    let mut seen = [false; JUDGED.len()];
+    for (i, j) in Judged::ALL.iter().enumerate() {
+        assert_eq!(j.slot(), i, "{j:?} sits in the table's order");
+        assert_eq!(j.name(), JUDGED[i], "{j:?} reads by the table's name");
+        assert!(!seen[i], "{j:?} shares no slot");
+        seen[i] = true;
+        let mut tally = ActsTally::default();
+        tally.judge(*j);
+        let mut want = [0u64; JUDGED.len()];
+        want[i] = 1;
+        assert_eq!(tally.judged, want, "{j:?} counted on its slot alone");
+    }
+    assert!(seen.iter().all(|&s| s), "every slot has its verdict");
+    assert_eq!(Judged::NoWork.name(), "no work");
+    assert_eq!(Judged::Unread.name(), "unread");
+}
+
+/// 78.153c — A MIND'S VERDICTS BY THE REPLY'S CODE: unread is a retry and
+/// never a refusal, a refusal is counted by its kind, a code this build does
+/// not know is counted last; and each verdict says itself in one line.
+#[test]
+fn a_minds_verdicts_are_kept_by_code_and_said_one_line_each() {
+    use crate::anastome::dialogue::{SolveRefusal, SOLVE_BOUNTY, SOLVE_NOTHING, SOLVE_UNREAD};
+    let unread = SolveRefusal { reason: b"not judged yet".to_vec(), kind: 4 };
+    let no_work = SolveRefusal { reason: b"no work".to_vec(), kind: 4 };
+    let unsigned = SolveRefusal { reason: b"unsigned".to_vec(), kind: 3 };
+    let mut t = SolveTally::default();
+    t.note(SOLVE_UNREAD, &[0; 4], Some(&unread));
+    t.note(SOLVE_UNREAD, &[0; 4], Some(&unread));
+    t.note(SOLVE_NOTHING, &[0; 4], Some(&no_work));
+    t.note(SOLVE_NOTHING, &[0; 4], Some(&unsigned));
+    t.note(SOLVE_BOUNTY, &[1, 0, 2, 0], None);
+    t.note(9, &[0; 4], None);
+    assert_eq!(t.by_code, [2, 0, 1, 2, 1], "nothing 2, floor 0, bounty 1, unread 2, unknown 1");
+    assert_eq!(t.unread, 2, "unread apart");
+    assert_eq!(t.refused, [0, 0, 0, 1, 1, 0, 0], "the two refusals by kind, I and N; no unread among them");
+    assert_eq!((t.first, t.unruled, t.paid), (1, 1, [1, 0, 2, 0]));
+    assert_eq!(
+        t.line(),
+        "solves nothing 2 floor 0 bounty 1 unread 2 unknown 1 · refused (P D C I N ? x) [0, 0, 0, 1, 1, 0, 0] unruled 1 · kept home unminted 0 refuted 0 withheld 0"
+    );
+    let task = [0xab; 32];
+    assert_eq!(
+        SolveTally::verdict_line(&task, SOLVE_UNREAD, Some(&unread)),
+        "solve verdict · task abababab… · code unread (3) · kind N · not judged yet"
+    );
+    assert_eq!(SolveTally::verdict_line(&task, SOLVE_BOUNTY, None), "solve verdict · task abababab… · code bounty (2) · kind none");
+    assert_eq!(
+        SolveTally::verdict_line(&task, 7, Some(&SolveRefusal { reason: Vec::new(), kind: 9 })),
+        "solve verdict · task abababab… · code unknown code (7) · kind unknown kind · "
     );
 }
 
