@@ -19,7 +19,8 @@ fn a_spoken_sentence_is_bound_to_its_tasks_family_and_mints() {
     assert_eq!(speak_pair(&mut home, &a, &b, [1; 32]), Outcome::GermPending);
     let addr = home.provisional.scoped().next().expect("docketed").0.clone();
     assert!(home.family_of(&addr).is_some_and(|f| f.len() == 1), "the task's pair is the sentence's family");
-    home.court_stroke();
+    // 78.153: every stroke the docket's replay takes.
+    home.court_settle();
     assert!(home.ruled_contains(&addr), "the stroke replays the sentence on its pair and rules it");
     let spoken = home.provisional.get(&addr).cloned().expect("provisional until a witness");
     let mut cover = crate::network::nerve::Cover::new();
@@ -47,7 +48,8 @@ fn the_court_lists_each_demand_vertex_and_rules_the_closed_sub_complex() {
     assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
     assert_eq!(k.demands_listed(), 1, "one demand vertex listed under the sentence");
     assert_eq!(k.provisional.len(), 1, "one sentence on the docket, never one listing per demand");
-    k.court_stroke();
+    // 78.153: every stroke the docket's replay takes.
+    k.court_settle();
     assert_eq!(k.court_slashed, 0, "the declared remainder does not refuse the sentence");
     let addr = k.provisional.scoped().next().expect("still docketed").0.clone();
     assert!(k.ruled_contains(&addr), "the closed sub-complex is ruled");

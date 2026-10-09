@@ -244,7 +244,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             (Some(first), Some(rule)) => {
                 let (verdict, offers) = {
                     let Ok(mut k) = crate::held::held!(door.kernel) else { return true };
-                    let verdict = match k.judge_solve(rule, &withheld) {
+                    let verdict = match k.judge_solve_on_stroke(rule, &withheld) {
                         mycelium::cognition::SolveVerdict::Solved { pay } => {
                             // The court names a task by its citation (wire v1.2).
                             let paid = k.pay_solve(&cite, svoice, rule, pay, first);
@@ -264,6 +264,17 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                             dialogue::SOLVE_NOTHING,
                             [0; 4],
                             Some(refused("the rule discharges no work on the withheld pairs: nothing is closed or paid", mycelium::transducer::sentence::ObstructionKind::N)),
+                            None,
+                        ),
+                        // 78.153 — not judged yet: the court's stroke ran out
+                        // before the replay ruled; asked again, it resumes.
+                        mycelium::cognition::SolveVerdict::Unread => (
+                            dialogue::SOLVE_UNREAD,
+                            [0; 4],
+                            Some(refused(
+                                "not judged yet: the court's stroke ran out before the replay ruled; ask again and it resumes",
+                                mycelium::transducer::sentence::ObstructionKind::N,
+                            )),
                             None,
                         ),
                         mycelium::cognition::SolveVerdict::Unverifiable => (

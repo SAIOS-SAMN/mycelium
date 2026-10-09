@@ -57,7 +57,8 @@ fn court(id: u8, task: &Address, family: Vec<TrainPair>) -> Kernel {
 /// frame out.
 fn hear(k: &mut Kernel, frame: &[u8]) -> Vec<u8> {
     let act = dialogue::decode_speech(frame).expect("the frame decodes");
-    match k.hear_frame(&act) {
+    // 78.153: a stroke that holds the frame's replays.
+    match k.hear_frame_on(&act, &mut crate::physics::Physics::default().stroke_n(1 << 20)) {
         Ok(adjudicated) => {
             dialogue::encode_speech_reply(&adjudicated).expect("the reply fits its count")
         }
@@ -79,7 +80,8 @@ fn the_court_verifies_a_contraction_before_it_replays_the_sentence() {
     let mut k = court(1, &task, f_1);
     let voice = [5u8; 32];
     // Each speech frame is its own act: its root, one stroke.
-    let mut frame = k.stroke();
+    // 78.153: a stroke that holds the frame's replays.
+    let mut frame = crate::physics::Physics::default().stroke_n(1 << 20);
     let first = k.hear_speech(voice, task.as_bytes(), &[(s.clone(), None)], &mut frame).expect("heard");
     let [Adjudication::Refused { kind, at, receipt }] = first.as_slice() else {
         panic!("the second word does not carry its body on the court's family, got {first:?}");
@@ -100,7 +102,8 @@ fn the_court_verifies_a_contraction_before_it_replays_the_sentence() {
     // A FORGED CITATION: another sentence citing the receipt is not the
     // contraction at the coordinate.
     let other = sentence_over(&[(digits(&["11"]), digits(&["22"]))]);
-    let mut frame = k.stroke();
+    // 78.153: a stroke that holds the frame's replays.
+    let mut frame = crate::physics::Physics::default().stroke_n(1 << 20);
     let forged = k
         .hear_speech(voice, task.as_bytes(), &[(other.clone(), Some(certificate.clone()))], &mut frame)
         .expect("heard");
@@ -111,7 +114,8 @@ fn the_court_verifies_a_contraction_before_it_replays_the_sentence() {
     // THE HONEST ONE is verified and then replayed as a sentence: what the
     // court finds next is the sentence's own business, never the
     // contraction's.
-    let mut frame = k.stroke();
+    // 78.153: a stroke that holds the frame's replays.
+    let mut frame = crate::physics::Physics::default().stroke_n(1 << 20);
     let second = k
         .hear_speech(voice, task.as_bytes(), &[(contracted, Some(certificate))], &mut frame)
         .expect("heard");

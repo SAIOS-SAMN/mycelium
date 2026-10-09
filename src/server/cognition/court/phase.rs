@@ -170,6 +170,38 @@ impl Kernel {
         CoverReading { strata, sections }
     }
 
+    /// 78.153 — [`Kernel::cover_reading`] on a stroke: one read per ruled
+    /// stratum visited (its COUNT, never its members' addresses) and per
+    /// chart's complex. `None` where the stroke ran out first.
+    pub(crate) fn cover_reading_on(&self, budget: &mut crate::physics::Budget) -> Option<CoverReading> {
+        let mut strata = Keyed::new();
+        for (inv, members) in self.ruled.strata_counted(budget)? {
+            strata.insert(inv.key(), members);
+        }
+        let mut sections = Keyed::new();
+        for (key, cx) in self.complexes.scoped() {
+            if !budget.spend() {
+                return None;
+            }
+            sections.insert(&key, cx.sections.len());
+        }
+        Some(CoverReading { strata, sections })
+    }
+
+    /// 78.153 — [`Kernel::adjoined`] on a stroke: one read per ruled word.
+    pub(crate) fn adjoined_on(&self, budget: &mut crate::physics::Budget) -> Option<u64> {
+        let mut n = 0u64;
+        for (addr, ()) in self.ruled_addrs.scoped() {
+            if !budget.spend() {
+                return None;
+            }
+            if let Some(h) = self.held_word(&addr) {
+                n = n.checked_add(h.generators_opened())?;
+            }
+        }
+        Some(n)
+    }
+
     /// The phase over the window since the last reading (45.9), written
     /// once per window — the court stroke takes it when the docket circuit
     /// count crosses a multiple of `aperture_cycle()` (R7); the reading
@@ -191,8 +223,27 @@ impl Kernel {
     ///
     /// The mark still advances on an empty window: the next reading covers
     /// from here, not from the last one that happened to be non-empty.
+    ///
+    /// 78.153 — ON A STROKE OF ITS OWN (hypha c held the kernel in
+    /// `court stroke: phase` on 2026-10-09: the reading cloned every ruled
+    /// stratum's member addresses and walked the whole window). Every input
+    /// of the reading spends a read: each stratum and chart read at the end,
+    /// each receipt of the window, each ruled word asked for what it opened.
+    /// Where the stroke runs out the reading is NOT TAKEN — the mark stays,
+    /// so the next reading covers the window from it, exactly — and `false`
+    /// is answered: a phase is a reading, nothing gates on it, and a reading
+    /// half-taken is not one.
     pub(crate) fn read_phase(&mut self) -> bool {
-        let now = self.cover_reading();
+        let mut budget = self.physics.stroke();
+        self.read_phase_on(&mut budget)
+    }
+
+    /// [`Kernel::read_phase`] on the stroke handed in.
+    pub(crate) fn read_phase_on(&mut self, budget: &mut crate::physics::Budget) -> bool {
+        let Some(now) = self.cover_reading_on(budget) else {
+            self.phase_unread += 1;
+            return false;
+        };
         // THE WINDOW IS A PLACE RANGE ON THIS COURT'S LINE (78.24): the
         // marks are the head's place, which a fold does not renumber, and
         // the window is the line strictly after one mark up to the next,
@@ -202,11 +253,27 @@ impl Kernel {
         if let Some((m0, at_h0)) = self.phase_mark.take() {
             if let (Some(m1), true) = (mark, m0 < mark) {
                 let vk = self.chain.vk();
-                let window: Vec<KStepReceipt> = self.chain.line_between(&vk, m0, m1, usize::MAX);
+                // One read a receipt: the window is asked for one more than
+                // the stroke holds, and a window that fills it is unread.
+                let room = budget.remaining();
+                let window: Vec<KStepReceipt> = match room.checked_add(1) {
+                    Some(n) => self.chain.line_between(&vk, m0, m1, n),
+                    None => Vec::new(),
+                };
+                let paid = window.len() <= room && window.iter().all(|_| budget.spend());
+                let adjoined = match paid {
+                    true => self.adjoined_on(budget),
+                    false => None,
+                };
+                let Some(adjoined) = adjoined else {
+                    self.phase_mark = Some((m0, at_h0));
+                    self.phase_unread += 1;
+                    return false;
+                };
                 let h0 = m0.and_then(|m| self.chain.at_place(m)).map_or(0, |r| r.stamp.h);
                 let h1 = self.chain.head_height();
                 let mut phase = phase_over(&window, &at_h0, &now, h0, h1);
-                phase.adjoined_by_closure = self.adjoined();
+                phase.adjoined_by_closure = adjoined;
                 // PH5 — the window handed to the observer, its one carrier;
                 // the court keeps no phase (78.17) and prints none (C3).
                 crate::observe::note_phase(crate::observe::Phase {

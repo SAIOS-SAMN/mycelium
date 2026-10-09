@@ -88,6 +88,9 @@ impl Entity {
             dialogue::SOLVE_BOUNTY | dialogue::SOLVE_FLOOR => {
                 self.solve_refused.remove(id);
             }
+            // 78.153 — not judged yet: a retry, never remembered as refused;
+            // the same rule is sent again and the court's replay resumes.
+            dialogue::SOLVE_UNREAD => {}
             _ => {
                 self.solve_refused.insert(id, addr.as_bytes().to_vec());
             }

@@ -186,6 +186,9 @@ pub struct DeflationRead {
     pub pay: [u64; 4],
     pub remainders: Vec<crate::transducer::germinate::ResidualGerm>,
     pub unresolved: Vec<crate::transducer::address::Address>,
+    /// 78.153 — cited forms reached again while being spoken: a cycle of
+    /// citations, which no speech completes (`Speech::cycled`).
+    pub cycled: Vec<crate::transducer::address::Address>,
 }
 
 /// [`form_deflation_at`]'s one computation, whole.
@@ -196,48 +199,105 @@ pub fn form_deflation_read(
     placement: &crate::transducer::alphabet::Word,
 ) -> DeflationRead {
     let mut unresolved: Vec<crate::transducer::address::Address> = Vec::new();
+    let mut cycled: Vec<crate::transducer::address::Address> = Vec::new();
     if family.is_empty() {
-        return DeflationRead { pay: [0; 4], remainders: Vec::new(), unresolved };
+        return DeflationRead { pay: [0; 4], remainders: Vec::new(), unresolved, cycled };
     }
     let mut pay = [0u64; 4];
     let mut remainders = Vec::with_capacity(family.len());
     for (pi, (x, y)) in family.iter().enumerate() {
-        // The exact cochain where the pair refines on K_lcm; the raw residual
-        // of the two grids where it does not. Both are measured on the pair.
-        let before_chain = match crate::transducer::family::refine::refine_delta(x, y) {
-            Some(chain) => chain,
-            None => residual_of(Some(x), y),
-        };
         let spoken = apply_form_on(form, x, placement, crystal, Some(pi));
         if let Some(s) = spoken.as_ref() {
             unresolved.extend(s.unresolved.iter().cloned());
+            cycled.extend(s.cycled.iter().cloned());
         }
-
-        // A speech that does not fit its own frame lays down no grid, so the
-        // residual is measured against what the form actually said: nothing.
-        let grid = spoken.as_ref().and_then(|s| s.grid());
-        let after_chain = residual_of(grid.as_ref(), y);
-        let before_mu = element::measure_lanes(&before_chain);
-        let after_mu = element::measure_lanes(&after_chain);
-        // S9.5 — THE PAY GATE IS CLOSURE. A pair pays when the form CLOSES
-        // it: the remainder is empty and what the pair demanded is what the
-        // form spoke. Under 50.5 (Y3), a sentence with demand vertices is
-        // valid, never closed: its closed sub-complex pays for the deflation
-        // its closed words achieved: `deflation_of(lane_moves(after, before))`.
-        let closed =
-            crate::economy::deflation_of(&crate::economy::lane_moves(&after_mu, &before_mu));
-        if after_chain.is_empty() || form.demand_vertices().next().is_some() {
-            for (p, d) in pay.iter_mut().zip(&closed) {
-                #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a deflation is at most its pair's resident measure, and their sum cannot pass u64")]
-                let next = p.saturating_add(*d);
-                *p = next;
-            }
+        let (closed, after_chain) = pair_measure(form, x, y, spoken.as_ref());
+        for (p, d) in pay.iter_mut().zip(&closed) {
+            #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a deflation is at most its pair's resident measure, and their sum cannot pass u64")]
+            let next = p.saturating_add(*d);
+            *p = next;
         }
         remainders.push(after_chain);
     }
     unresolved.sort_unstable();
     unresolved.dedup();
-    DeflationRead { pay, remainders, unresolved }
+    cycled.sort_unstable();
+    cycled.dedup();
+    DeflationRead { pay, remainders, unresolved, cycled }
+}
+
+/// ONE PAIR OF THE DEFLATION, from the speech already taken on it: what the
+/// pair pays (zero where the gate below withholds it) and its remainder.
+fn pair_measure(
+    form: &Form,
+    x: &Grid,
+    y: &Grid,
+    spoken: Option<&Speech>,
+) -> ([u64; 4], crate::transducer::germinate::ResidualGerm) {
+    // The exact cochain where the pair refines on K_lcm; the raw residual
+    // of the two grids where it does not. Both are measured on the pair.
+    let before_chain = match crate::transducer::family::refine::refine_delta(x, y) {
+        Some(chain) => chain,
+        None => residual_of(Some(x), y),
+    };
+    // A speech that does not fit its own frame lays down no grid, so the
+    // residual is measured against what the form actually said: nothing.
+    let grid = spoken.and_then(|s| s.grid());
+    let after_chain = residual_of(grid.as_ref(), y);
+    let before_mu = element::measure_lanes(&before_chain);
+    let after_mu = element::measure_lanes(&after_chain);
+    // S9.5 — THE PAY GATE IS CLOSURE. A pair pays when the form CLOSES
+    // it: the remainder is empty and what the pair demanded is what the
+    // form spoke. Under 50.5 (Y3), a sentence with demand vertices is
+    // valid, never closed: its closed sub-complex pays for the deflation
+    // its closed words achieved: `deflation_of(lane_moves(after, before))`.
+    let closed = crate::economy::deflation_of(&crate::economy::lane_moves(&after_mu, &before_mu));
+    match after_chain.is_empty() || form.demand_vertices().next().is_some() {
+        true => (closed, after_chain),
+        false => ([0; 4], after_chain),
+    }
+}
+
+/// 78.153 — ONE PAIR OF THE DEFLATION ON A STROKE: what the court's replay
+/// reads of pair `pi` (its remainder, and the citations unresolved or
+/// cycled there), or `Spent` where the stroke ran out inside the speech.
+/// One read for the pair, and one per cited form its speech speaks afresh
+/// (`apply_form_metered`).
+pub(crate) enum PairRead {
+    Read {
+        remainder: crate::transducer::germinate::ResidualGerm,
+        unresolved: Vec<crate::transducer::address::Address>,
+        cycled: Vec<crate::transducer::address::Address>,
+    },
+    Spent,
+}
+
+pub(crate) fn deflation_pair_metered(
+    form: &Form,
+    family: &[(Grid, Grid)],
+    pi: usize,
+    crystal: &dyn Crystal,
+    placement: &crate::transducer::alphabet::Word,
+    budget: &mut crate::physics::Budget,
+    bodies: Option<Vec<Body>>,
+) -> PairRead {
+    let Some((x, y)) = family.get(pi) else {
+        return PairRead::Read { remainder: Vec::new(), unresolved: Vec::new(), cycled: Vec::new() };
+    };
+    if !budget.spend() {
+        return PairRead::Spent;
+    }
+    let spoken = match apply_form_metered(form, x, placement, crystal, Some(pi), budget, bodies) {
+        Spoken::Spent => return PairRead::Spent,
+        Spoken::Unfit => None,
+        Spoken::Said(s) => Some(s),
+    };
+    let (unresolved, cycled) = match spoken.as_ref() {
+        Some(s) => (s.unresolved.clone(), s.cycled.clone()),
+        None => (Vec::new(), Vec::new()),
+    };
+    let (_, remainder) = pair_measure(form, x, y, spoken.as_ref());
+    PairRead::Read { remainder, unresolved, cycled }
 }
 
 /// Mint the family's sentence: μ⃗ = [S, G, 0, H] of the closed cochain.
@@ -297,6 +357,10 @@ fn mint_or_refuse(
     // the sites it would speak are not the form's silence.
     let here = crate::transducer::alphabet::Word::identity();
     let spoken = form_deflation_read(&rule.form, family, crystal, &here);
+    // 78.153 — a cycle of citations is no composition: no speech of it ends.
+    if !spoken.cycled.is_empty() {
+        return Err(Refused::CitationsDoNotCompose);
+    }
     if !spoken.unresolved.is_empty() {
         return Err(Refused::CitedNotHeld);
     }
@@ -318,6 +382,9 @@ fn mint_or_refuse(
     )
     .ok_or(Refused::MintAddressUndecoded)?;
     let read = form_deflation_read(&held, family, crystal, &here);
+    if !read.cycled.is_empty() {
+        return Err(Refused::CitationsDoNotCompose);
+    }
     if !read.unresolved.is_empty() {
         return Err(Refused::CitedNotHeld);
     }

@@ -198,6 +198,25 @@ pub struct Kernel {
     pub(crate) court_fed_index: crate::network::nerve::Keyed<usize>,
     pub(crate) court_upheld: u64,
     pub(crate) court_slashed: u64,
+    /// 78.153 — replays the court's stroke ran out on (`Replayed::Unread`):
+    /// not ruled that stroke, resumed the next. Since boot.
+    pub(crate) court_unread: u64,
+    /// 78.153 — replays a whole stroke moved no further: one unit of them
+    /// costs more reads than a stroke grants. The docket passes over such a
+    /// word for the circuit rather than stand on it. Since boot.
+    pub(crate) court_stalled: u64,
+    /// 78.153 — WHERE EACH REPLAY STOPPED (option (A), resumable replays):
+    /// by the word's address and the task whose family it is replayed on,
+    /// the phase cursor the next stroke resumes from. VOLATILE: never
+    /// persisted, so a restart starts every replay over; a binding that
+    /// changes a family drops the cursors it could invalidate.
+    pub(crate) replay_cursors: crate::network::nerve::Keyed<crate::verdict::ReplayCursor>,
+    /// 78.153 — forms ruled whose waiting citers' re-hearing was unread on
+    /// the ruling's stroke: the court stroke hears them again. VOLATILE.
+    pub(crate) rehear_due: crate::network::nerve::Keyed<()>,
+    /// 78.153 — phase readings a stroke could not pay for (the mark kept,
+    /// the window read whole at the next). Since boot.
+    pub(crate) phase_unread: u64,
     /// Demand vertices this court has listed under a sentence (50.5, L7):
     /// a wire read of the `court demand listed` lines, never branched on.
     pub(crate) court_demands_listed: u64,

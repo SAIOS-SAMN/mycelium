@@ -627,6 +627,12 @@ pub struct CoverDigest {
 pub const SOLVE_BOUNTY: u8 = 2;
 pub const SOLVE_FLOOR: u8 = 1;
 pub const SOLVE_NOTHING: u8 = 0;
+/// 78.153 — NOT JUDGED YET: the court's stroke ran out before the replay
+/// ruled; asked again, the replay resumes where it stopped. A RETRY, never a
+/// refusal — distinct from SOLVE_NOTHING, which since 78.149 is final ("no
+/// work"): a house re-files on this code and drops on that one (the
+/// coordinator, 2026-10-09).
+pub const SOLVE_UNREAD: u8 = 3;
 
 /// One link of a centered coboundary chain: `(row, col, before, after)`.
 pub type Link = (i64, i64, u8, u8);

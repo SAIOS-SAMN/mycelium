@@ -62,18 +62,46 @@ pub(crate) const FAIL_GAUGE_AMBIGUOUS: &str = "the gauge names two images for on
 /// not of the vertex or the face asking about them.
 pub(crate) struct Frame<'a> {
     pub(crate) y: &'a Grid,
-    pub(crate) bodies: Vec<Body>,
-    pub(crate) images: Vec<Body>,
+    pub(crate) bodies: &'a [Body],
+    pub(crate) images: &'a [Body],
     /// Chart key → the bodies standing on that chart, by index.
     by_chart: Keyed<Vec<usize>>,
     /// Base site → the image standing on it, by index.
     image_at: Keyed<usize>,
 }
 
+/// 78.153 — ONE PAIR AS THE SENSOR READ IT: the bodies of `x` and the
+/// images of `y`. Perceived ONCE PER REPLAY, one read each, and held on the
+/// replay's cursor across strokes (`ReplayCursor::frames`): the clauses, the
+/// bodies and the edges of every resumed stroke read these, and the sensor
+/// reads each grid once whatever the strokes the replay takes.
+#[derive(Clone, Debug)]
+pub struct Perceived {
+    pub(crate) bodies: Vec<Body>,
+    pub(crate) images: Vec<Body>,
+}
+
+impl Perceived {
+    pub(crate) fn of(x: &Grid, y: &Grid) -> Perceived {
+        Perceived { bodies: perceive(x), images: perceive(y) }
+    }
+}
+
+/// Every pair of the family perceived, unmetered: the readers off a court's
+/// lock (the mint's own body check, the tests).
+pub(crate) fn perceive_family(family: &[(Grid, Grid)]) -> Vec<Perceived> {
+    family.iter().map(|(x, y)| Perceived::of(x, y)).collect()
+}
+
+/// The frames over pairs already perceived: their indexes, built from the
+/// bodies (no sensor read).
+pub(crate) fn frames_over<'a>(family: &'a [(Grid, Grid)], perceived: &'a [Perceived]) -> Vec<Frame<'a>> {
+    family.iter().zip(perceived).map(|((_, y), p)| Frame::over(p, y)).collect()
+}
+
 impl<'a> Frame<'a> {
-    pub(crate) fn of(x: &Grid, y: &'a Grid) -> Frame<'a> {
-        let bodies = perceive(x);
-        let images = perceive(y);
+    pub(crate) fn over(p: &'a Perceived, y: &'a Grid) -> Frame<'a> {
+        let (bodies, images) = (p.bodies.as_slice(), p.images.as_slice());
         let mut by_chart: Keyed<Vec<usize>> = Keyed::new();
         for (i, b) in bodies.iter().enumerate() {
             let k = b.moduli.key();
@@ -105,11 +133,6 @@ impl<'a> Frame<'a> {
     pub(crate) fn image_at(&self, site: &crate::transducer::base::Site) -> Option<&Body> {
         self.images.get(*self.image_at.get(&site.key())?)
     }
-}
-
-/// The family's frames, each perceived once, in the family's own order.
-pub(crate) fn frames_of(family: &[(Grid, Grid)]) -> Vec<Frame<'_>> {
-    family.iter().map(|(x, y)| Frame::of(x, y)).collect()
 }
 
 /// A section's site, written out: the key a landed compartment is filed under.
@@ -209,7 +232,7 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &Frame<'_>, frame: u64
     // what this asks about — two members whose images meet in one image body
     // cover it between them, and asking per member would call that coverage
     // a part.
-    for image in &here.images {
+    for image in here.images {
         let landed_on = |l: &Compartment| on_grid(&l.site).is_some_and(|(r, c)| landed.contains(&site_key(r, c)));
         let touched = image.compartments.iter().any(landed_on);
         if touched && !image.compartments.iter().all(landed_on) {
@@ -287,8 +310,28 @@ fn same_frame(a: &crate::transducer::base::Site, b: &crate::transducer::base::Si
 /// only — and the claim is a keyed read of its members' frames at the frame's
 /// own coordinate (AT1), never a walk of a list.
 pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option<Refusal> {
-    let frames = frames_of(family);
-    for (vertex, v) in f.vertices.entries() {
+    let perceived = perceive_family(family);
+    match vertices_carry_frames_from(f, family, &perceived, &mut Meter::Free, 0) {
+        Err(Halt::Refused(r)) => Some(r),
+        // Unmetered, nothing is spent.
+        Err(Halt::Spent(_)) | Ok(()) => None,
+    }
+}
+
+/// 78.153 — [`vertices_carry_frames`] on a meter over the pairs already
+/// perceived, from the `from`-th vertex of the form's own order: one read
+/// per (vertex, claimed frame) checked, and one per coverage read of a
+/// part-reached image. `Halt::Spent(i)` names the vertex the next stroke
+/// resumes at.
+pub(crate) fn vertices_carry_frames_from(
+    f: &Form,
+    family: &[(Grid, Grid)],
+    perceived: &[Perceived],
+    meter: &mut Meter<'_>,
+    from: usize,
+) -> Step {
+    let frames = frames_over(family, perceived);
+    for (i, (vertex, v)) in f.vertices.entries().enumerate().skip(from) {
         let Vertex::Word { .. } = v else {
             continue;
         };
@@ -306,8 +349,16 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
             if !v.claims_frame(frame) {
                 continue;
             }
+            if !meter.spend() {
+                return Err(Halt::Spent(i));
+            }
             if let Carried::Fails(why, chart) = vertex_carries_frame(v, at, frame) {
                 if why == FAIL_PART {
+                    // The coverage read walks the form's carriages over the
+                    // frame's images: one read of its own.
+                    if !meter.spend() {
+                        return Err(Halt::Spent(i));
+                    }
                     let uncovered = at.images.iter().any(|image| {
                         if image.moduli == chart {
                             !form_covers_compartments(f, frame, at, &image.compartments)
@@ -330,15 +381,15 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
                     _ => None,
                 };
                 let key = chart.key();
-                return Some(Refusal::closure(
+                return Err(Halt::Refused(Refusal::closure(
                     REFUSE_VERTEX_BODY,
                     sentence::At::vertex(vertex.clone(), chart.clone()),
                     sentence::Content::Holonomy { versor: versor.as_ref(), chart: Some(key.as_bytes()), proof: why },
-                ));
+                )));
             }
         }
     }
-    None
+    Ok(())
 }
 
 /// The body of `y` the image of `body`'s anchor compartment falls in, under
@@ -400,7 +451,7 @@ fn motor_carries(
     y: &crate::network::nerve::coord::MemberAt,
     motor: &Versor,
     budget: &mut crate::physics::Budget,
-) -> Option<Refusal> {
+) -> Result<Option<Refusal>, Unbounded> {
     use crate::transducer::base::FRAME_AXIS;
     let at = |k: u64| usize::try_from(k).ok().and_then(|i| frames.get(i));
     let placed = |fiber: &[&Body], k: i64| -> Option<Vec<crate::transducer::base::Site>> {
@@ -420,27 +471,32 @@ fn motor_carries(
     })();
     let at_vertex = || sentence::At::vertex(x.vertex.clone(), x.chart.clone());
     let Some((sources, targets)) = fibres else {
-        return Some(Refusal { reason: REFUSE_EDGE, at: at_vertex(), obstruction: sentence::ClosureObstruction::Integrity });
+        return Ok(Some(Refusal { reason: REFUSE_EDGE, at: at_vertex(), obstruction: sentence::ClosureObstruction::Integrity }));
     };
     let carried: Option<Vec<_>> = sources.iter().map(|s| element::carry_site(motor, s)).collect();
     if let Some(mut carried) = carried {
         carried.sort_unstable();
         carried.dedup();
         if carried == targets {
-            return None;
+            return Ok(None);
         }
     }
     // THE TRANSPORT TAKEN, and the claim's deviation from it (`Δ = V·M̃`).
     // The coset's canonical representative (50.2 step 1), where one carries.
-    let deviation = crate::transducer::blade::versor_between(
+    // 78.153 — A SPENT STROKE IS NO DEVIATION: the refusal's kind is read
+    // off `Δ`, and a stroke spent before the coset was read has read no
+    // kind, so the edge is unread rather than refused as P.
+    let deviation = match crate::transducer::blade::versor_between(
         &crate::transducer::blade::shape_of(&sources),
         &crate::transducer::blade::shape_of(&targets),
         budget,
-    )
-    .ok()
-    .map(|taken| taken.geo(&motor.reverse()));
+    ) {
+        Ok(taken) => Some(taken.geo(&motor.reverse())),
+        Err(crate::transducer::blade::NoPose::Unbounded) => return Err(Unbounded),
+        Err(_) => None,
+    };
     let key = x.chart.key();
-    Some(Refusal::closure(
+    Ok(Some(Refusal::closure(
         REFUSE_EDGE,
         at_vertex(),
         sentence::Content::Holonomy {
@@ -448,24 +504,54 @@ fn motor_carries(
             chart: Some(key.as_bytes()),
             proof: "the member's fibre does not move rigidly between the two frames: no versor carries it",
         },
-    ))
+    )))
 }
 
 /// AN OVERLAP STANDS AT ONE FRAME (AT1, Q2): its edge is re-derived at the
 /// frame its two charts name, read by coordinate. A frame-axis overlap joins
 /// two frames and carries the motor its member's body took between them,
 /// not a union edge; it is not re-measured here.
+#[cfg(test)]
 pub(crate) fn edges_rederive_frames(
     f: &Form,
     family: &[(Grid, Grid)],
     budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
+    let perceived = perceive_family(family);
+    match edges_rederive_frames_from(f, family, &perceived, budget, 0) {
+        Ok(()) => None,
+        Err(Halt::Refused(r)) => Some(r),
+        // 78.153 — a spent stroke rules nothing; this reader answers with a
+        // refusal at all only for its test callers, by the unread name.
+        Err(Halt::Spent(_)) => Some(Refusal::new(
+            REFUSE_UNREAD,
+            sentence::At::Tape(crate::transducer::address::Address::from(Vec::new())),
+        )),
+    }
+}
+
+/// 78.153 — [`edges_rederive_frames`] on the stroke over the pairs already
+/// perceived, from the `from`-th face of the form's own order: one read per
+/// face, beside the reads `versor_between` draws. A spent stroke anywhere —
+/// `NoPose::Unbounded` included — is `Halt::Spent` at the face it stopped
+/// at, NEVER `REFUSE_EDGE` (defect 1 of the lock audit: it slashed a good
+/// word on a spent stroke).
+pub(crate) fn edges_rederive_frames_from(
+    f: &Form,
+    family: &[(Grid, Grid)],
+    perceived: &[Perceived],
+    budget: &mut crate::physics::Budget,
+    from: usize,
+) -> Step {
     use crate::network::nerve::coord::ChartAt;
-    let frames = frames_of(family);
-    for (o, face) in f.faces.entries() {
+    let frames = frames_over(family, perceived);
+    for (i, (o, face)) in f.faces.entries().enumerate().skip(from) {
         let (ChartAt::At(x), ChartAt::At(y)) = (&o.from, &o.to) else {
             continue;
         };
+        if !budget.spend() {
+            return Err(Halt::Spent(i));
+        }
         if x.frame != y.frame {
             // A FRAME-AXIS OVERLAP IS VERIFIED BY APPLYING ITS MOTOR (AT1 A1,
             // law 8): the member's body at the leaving frame, carried by the
@@ -473,8 +559,10 @@ pub(crate) fn edges_rederive_frames(
             // frame, on the court's own copy of the family. The court APPLIES
             // and never solves — a court that measures versors is thinking.
             if face.producer == crate::transducer::sentence::Producer::Motor {
-                if let Some(refusal) = motor_carries(&frames, x, y, &face.place.carriage, budget) {
-                    return Some(refusal);
+                match motor_carries(&frames, x, y, &face.place.carriage, budget) {
+                    Ok(None) => {}
+                    Ok(Some(refusal)) => return Err(Halt::Refused(refusal)),
+                    Err(Unbounded) => return Err(Halt::Spent(i)),
                 }
             }
             continue;
@@ -514,12 +602,12 @@ pub(crate) fn edges_rederive_frames(
         };
         let (ci, cj) = (&mi.carriage, &mj.carriage);
         let Some(expected) = element::conformal_of(&edge.word, &edge.carriage) else {
-            return Some(refused(false_claim));
+            return Err(Halt::Refused(refused(false_claim)));
         };
         let (Some(v_i), Some(v_j)) =
             (element::conformal_of_rotor(&ri, ci), element::conformal_of_rotor(&rj, cj))
         else {
-            return Some(refused(none("a vertex's rotor and carriage lift to no versor")));
+            return Err(Halt::Refused(refused(none("a vertex's rotor and carriage lift to no versor"))));
         };
         // THE OVERLAP'S OWN FRAME, by its coordinate: a frame of the family
         // the court replays against, or none it can ask.
@@ -530,25 +618,32 @@ pub(crate) fn edges_rederive_frames(
                 continue;
             };
             let (Some(bi), Some(bj)) = (image_body(a_i, &v_i, at), image_body(a_j, &v_j, at)) else {
-                return Some(refused(none("a body carries to no body of the image")));
+                return Err(Halt::Refused(refused(none("a body carries to no body of the image"))));
             };
-            let Ok(v_ij) = crate::transducer::blade::versor_between(
+            // DEFECT 1 (lock audit): `NoPose::Unbounded` is the stroke spent
+            // before every candidate was read — no pose was refused, so it is
+            // the face the next stroke resumes at, never `REFUSE_EDGE`.
+            let v_ij = match crate::transducer::blade::versor_between(
                 &union_shape(a_i, a_j),
                 &union_shape(bi, bj),
                 budget,
-            ) else {
-                return Some(refused(none("no versor carries the union onto its image")));
+            ) {
+                Ok(v) => v,
+                Err(crate::transducer::blade::NoPose::Unbounded) => return Err(Halt::Spent(i)),
+                Err(_) => {
+                    return Err(Halt::Refused(refused(none("no versor carries the union onto its image"))));
+                }
             };
             // `ṽᵢ vᵢⱼ`, compared as a ray (78.32(1)).
             if !crate::transducer::cga::is_versor(&v_i) {
-                return Some(refused(none("the vertex's versor has no inverse")));
+                return Err(Halt::Refused(refused(none("the vertex's versor has no inverse"))));
             }
             if !element::same_versor(&v_i.reverse().geo(&v_ij), &expected) {
-                return Some(refused(false_claim));
+                return Err(Halt::Refused(refused(false_claim)));
             }
         }
     }
-    None
+    Ok(())
 }
 
 /// 23.1 step 7 as ruled (50.5): a remainder link stands only where a demand

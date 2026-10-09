@@ -7,11 +7,15 @@
 pub mod blind;
 pub mod body;
 pub mod replay;
+pub mod resume;
 pub mod ruling;
 pub mod selection;
+pub mod terrain;
 
 pub use blind::*;
 pub use replay::*;
+pub use resume::*;
+pub(crate) use terrain::*;
 pub use ruling::*;
 pub use selection::*;
 
@@ -149,6 +153,16 @@ pub const REFUSE_RULE_INEXACT: &str = "a predicate reads a coordinate that is no
 pub const REFUSE_RULE_NOT_ONE: &str = "a crop or a copy's template selects no single body";
 pub const REFUSE_RULE_OFF_LATTICE: &str = "a carried or copied cell lands off the lattice";
 pub const REFUSE_RULE_STILL: &str = "a created line names no ray";
+/// 78.153, defect 4 of the lock audit — A CYCLE OF CITATIONS: a cited form
+/// reached again while it is still being spoken. The nerve admits mutual
+/// citation (a posetal height forbade every 2-simplex), and no speech of a
+/// cycle ends, so the form says nothing the court can close on a pair: I.
+pub const REFUSE_CITATION_CYCLE: &str = "a cited form cites back into its own speech";
+/// 78.153 — A REPLAY NO STROKE HOLDS: an off-lock reader ran the replay
+/// over fresh strokes and one moved its cursor nowhere — a single unit of it
+/// costs more reads than a stroke grants. Not a reading of the word: N.
+/// A court under its lock never answers this; it answers `Replayed::Unread`.
+pub const REFUSE_UNREAD: &str = "the replay holds a unit no stroke can read";
 
 /// A REFUSAL WITH ITS COORDINATE (50.9): the reason of 34.1 and where in
 /// the sentence the court found it, as content.
@@ -185,6 +199,8 @@ pub fn ruled_obstruction(reason: &'static str) -> sentence::ClosureObstruction {
         REFUSE_RULE_TIE | REFUSE_RULE_INEXACT | REFUSE_RULE_NOT_ONE | REFUSE_RULE_OFF_LATTICE | REFUSE_RULE_STILL => {
             O::Integrity
         }
+        REFUSE_CITATION_CYCLE => O::Integrity,
+        REFUSE_UNREAD => O::NoQuestion,
         REFUSE_ROOM | REFUSE_WITNESS_ROOM | REFUSE_WITNESS_DEPENDENT | REFUSE_FOLD_OPEN | REFUSE_FOLD_INEXACT => {
             O::Integrity
         }

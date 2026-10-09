@@ -230,15 +230,20 @@ pub(crate) fn witness_vantage(
         Some(form) => dialogue::Witnessed::Reached { vk: me, form },
         None => refused("the word's record passes a length its field writes"),
     };
+    // 78.153 — A REPLAY THE OFFER'S STROKE COULD NOT FINISH has re-derived
+    // nothing and refused nothing: the witness answers UNMEASURED, and the
+    // home's next offer resumes the replay where this one stopped.
     if k.heard_contains(word.address().as_bytes()) {
         return match k.court_replay(&word, budget) {
-            Some(why) => refused(why),
-            None => reached(&word),
+            mycelium::verdict::Replayed::Refused(r) => refused(r.reason),
+            mycelium::verdict::Replayed::Clean => reached(&word),
+            mycelium::verdict::Replayed::Unread => dialogue::Witnessed::Unmeasured { vk: me },
         };
     }
-    match k.glue_fetched(word.clone(), home, me, cover, budget) {
-        Glue::Slashed(why) => refused(why),
-        Glue::Admitted | Glue::Attached | Glue::Dialect | Glue::Held => reached(&word),
+    match k.glue_fetched_ruled(word.clone(), home, me, cover, budget) {
+        Some(Glue::Slashed(why)) => refused(why),
+        Some(Glue::Admitted | Glue::Attached | Glue::Dialect | Glue::Held) => reached(&word),
+        None => dialogue::Witnessed::Unmeasured { vk: me },
     }
 }
 

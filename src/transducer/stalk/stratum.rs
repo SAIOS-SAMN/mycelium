@@ -127,6 +127,33 @@ impl Stratum {
         }
     }
 
+    /// 78.153 — every populated stratum with HOW MANY words it holds, and
+    /// not the words: one read per stratum visited. False where the stroke
+    /// ran out first; what was read is then not a reading of the cover.
+    pub(crate) fn strata_counted(
+        &self,
+        path: &mut Vec<ChartAxis>,
+        out: &mut Vec<(Invariant, usize)>,
+        spend: &mut dyn FnMut() -> bool,
+    ) -> bool {
+        if !spend() {
+            return false;
+        }
+        if !self.members.is_empty() {
+            out.push((Invariant(path.clone()), self.members.len()));
+        }
+        for (k, s) in self.branches.scoped() {
+            let Some(a) = axis_of(&k) else { continue };
+            path.push(a);
+            let read = s.strata_counted(path, out, spend);
+            path.pop();
+            if !read {
+                return false;
+            }
+        }
+        true
+    }
+
     pub(crate) fn child_axes(&self, axes: &[ChartAxis]) -> Vec<ChartAxis> {
         match axes.split_first() {
             None => {

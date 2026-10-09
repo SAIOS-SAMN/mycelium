@@ -339,4 +339,7 @@ pub enum Adoption {
     /// The word does not replay from its own evidence — not ratifiable
     /// speech; the reason names the failed axis.
     Refused(&'static str),
+    /// 78.153 — the stroke ran out before the replay ruled: not adopted now,
+    /// not refused.
+    Unread,
 }

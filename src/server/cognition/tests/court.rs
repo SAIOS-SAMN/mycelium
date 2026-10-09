@@ -314,7 +314,8 @@ let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 assert_eq!(speak_pair(&mut home, &a, &b, [1; 32]), Outcome::GermPending);
 let addr = home.provisional.scoped().next().unwrap().0.clone();
-home.court_stroke();
+// 78.153: every stroke the docket's replay takes.
+home.court_settle();
 assert!(home.provisional.contains(&addr), "still provisional until the second organ");
 // 47.3: a witness is a second VANTAGE with room, not merely a second
 // key. An unbonded peer has none and does not converge the object.
@@ -354,7 +355,8 @@ refusing.docket_connection(&word, [1; 32]);
 refusing.speech_task.insert(&addr, Address::from_bytes(task));
 assert!(refusing.provisional.contains(&addr), "docketed");
 let at = refusing.admitted_at(&addr).expect("the docket admitted it at an act");
-refusing.court_stroke();
+// 78.153: every stroke the replay takes; a spent stroke slashes nothing.
+refusing.court_settle();
 assert_eq!(refusing.court_slashed, 1, "the stroke refuses the form on the family it does not close");
 assert!(!refusing.provisional.contains(&addr), "and it leaves the docket");
 assert!(!refusing.ruled_contains(&addr), "never ruled");
@@ -371,7 +373,7 @@ let mut ruling = Kernel::new();
 ruling.bind_task_family(task, one_pair);
 ruling.docket_connection(&word, [1; 32]);
 ruling.speech_task.insert(&addr, Address::from_bytes(task));
-ruling.court_stroke();
+ruling.court_settle();
 assert_eq!(ruling.court_slashed, 0, "the form closes every pair of the family it is bound to");
 assert!(ruling.ruled_contains(&addr), "and the stroke rules it");
 }
@@ -687,7 +689,8 @@ fn a_court_sections_what_it_ruled_itself_and_not_what_a_peer_sent() {
         own.own_section(&inv).is_none(),
         "a provisional is not yet a section: the court has not ruled it"
     );
-    own.court_stroke();
+    // 78.153: every stroke the docket's replay takes.
+    own.court_settle();
     let mine = own
         .own_section(&inv)
         .expect("the stroke ruled it, so this court holds it at its own vantage");

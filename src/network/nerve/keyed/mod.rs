@@ -25,4 +25,5 @@ pub use walks::*;
 mod tests {
     mod atlas;
     mod ondisk;
+    mod seek;
 }

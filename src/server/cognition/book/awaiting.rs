@@ -112,6 +112,12 @@ impl Kernel {
         let Some(waiting) = self.awaiting.remove(form) else {
             return;
         };
+        // 78.153 — A RE-HEARING ITS STROKE COULD NOT REPLAY is deferred on
+        // no lane: it was not heard, so it waits again under the same form
+        // and the court stroke hears it again (`rehear_due`), its replay
+        // resumed where it stopped. Dropped, the citer was lost for good:
+        // the form it waited on is ruled and nothing would wake it.
+        let mut unread = Vec::new();
         for (voice, task, s) in waiting {
             // Through `adjudicate_one`, not `hear_sentence`. A re-hearing
             // is an adjudication like any other: a refusal on it must be
@@ -120,7 +126,23 @@ impl Kernel {
             // and the refusal exists only in a log line. Dropping the
             // outcome here made the second hearing the one hearing whose
             // verdict nobody kept.
-            let _ = self.adjudicate_one(voice, task.as_bytes(), &s, None, budget);
+            if let Err([0, 0, 0, 0]) = self.adjudicate_one(voice, task.as_bytes(), &s, None, budget) {
+                unread.push((voice, task, s));
+            }
+        }
+        if !unread.is_empty() {
+            self.awaiting.insert(form, unread);
+            self.rehear_due.insert(form, ());
+        }
+    }
+
+    /// 78.153 — ONE FORM WHOSE RE-HEARING WAS UNREAD, heard again on the
+    /// court's stroke: the first in key order, one read to find it.
+    pub(crate) fn rehear_one_due(&mut self, budget: &mut crate::physics::Budget) {
+        let next = self.rehear_due.cursor(None, budget).next().map(|(k, _)| k);
+        if let Some(form) = next {
+            self.rehear_due.remove(&form);
+            self.rehear_awaiting(&form, budget);
         }
     }
 

@@ -328,6 +328,7 @@ fn a_speech_whose_site_is_outside_its_frame_refuses_the_grid() {
     use crate::transducer::family::Speech;
     let fits = Speech {
         unresolved: Vec::new(),
+        cycled: Vec::new(),
         frame: (3, 3),
         painted: vec![(2, 2, 5)],
         remainder: Vec::new(),

@@ -12,6 +12,7 @@ mod coordinates;
 mod cells;
 mod census;
 mod cover;
+mod cycle;
 mod deflation;
 mod derivation;
 mod extraction;

@@ -778,6 +778,14 @@ impl Kernel {
         crate::transducer::family::Crystal::by_address(self, addr).map(|(_, f)| f.into_owned())
     }
 
+    /// 78.153 — [`Kernel::resolve_form`] BORROWED where the court holds the
+    /// form decoded (an installed word): the replay reads a cited form and
+    /// keeps nothing, so it clones nothing. A cavity word is still decoded
+    /// from its address at the read.
+    pub fn resolve_form_ref(&self, addr: &[u8]) -> Option<std::borrow::Cow<'_, crate::transducer::sentence::Form>> {
+        crate::transducer::family::Crystal::by_address(self, addr).map(|(_, f)| f)
+    }
+
     /// THE DOCKET (Step 5): every provisional word, exported for the court's
     /// blind replay + confluence audit — (element, attesting voices, escrowed μ⃗).
     pub fn dockets(&self) -> Vec<Docketed> {

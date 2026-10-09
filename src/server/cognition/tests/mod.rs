@@ -32,6 +32,7 @@ mod published;
 mod receiver;
 mod relator;
 mod remainders;
+mod resume;
 mod room;
 mod ruling;
 mod solve;

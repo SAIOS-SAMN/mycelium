@@ -33,7 +33,8 @@ fn the_court_says_why_an_act_stands_with_the_speakers_reasons() {
     let mut k = Kernel::new();
     k.bind_identity([1; 32]);
     k.bind_task_family(&task, fam);
-    let mut frame = k.stroke();
+    // 78.153: a stroke that holds the frame's replays.
+    let mut frame = crate::physics::Physics::default().stroke_n(1 << 20);
     let heard = k.hear_speech([5; 32], task.as_bytes(), &[(s.clone(), None)], &mut frame).expect("heard");
     assert!(matches!(heard.as_slice(), [Adjudication::Stood { .. } | Adjudication::Ratified { .. }]), "{heard:?}");
     let at = k.admitted_at(s.address().as_bytes()).expect("an act admitted the sentence");
@@ -78,7 +79,8 @@ fn a_refusal_is_an_act_on_the_ledger_and_says_why() {
     let mut k = Kernel::new();
     k.bind_identity([2; 32]);
     k.bind_task_family(&task, court_fam);
-    let mut frame = k.stroke();
+    // 78.153: a stroke that holds the frame's replays.
+    let mut frame = crate::physics::Physics::default().stroke_n(1 << 20);
     let heard = k.hear_speech([6; 32], task.as_bytes(), &[(s.clone(), None)], &mut frame).expect("heard");
     let [Adjudication::Refused { kind, receipt, .. }] = heard.as_slice() else { panic!("refused: {heard:?}") };
     let head = k.chain.head().expect("the refusal is an act");

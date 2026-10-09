@@ -659,10 +659,18 @@ impl Kernel {
     pub fn glue_local(&mut self) {
         let words: Vec<Element> = self.provisional.scoped().map(|(_, e)| e.clone()).collect();
         let mut cover = crate::network::nerve::Cover::new();
-        // The fixture's act: its root, one stroke.
-        let mut budget = self.physics.stroke();
+        // The fixture's act: its root, one stroke a word — fetched again, as
+        // the exchange fetches it again, while its replay is unread and moved
+        // on (78.153).
         for w in words {
-            let _ = self.glue_fetched(w, [2; 32], [1; 32], &mut cover, &mut budget);
+            loop {
+                let before = self.court_replay_progress(&w);
+                let mut budget = self.physics.stroke();
+                match self.glue_fetched_ruled(w.clone(), [2; 32], [1; 32], &mut cover, &mut budget) {
+                    None if self.court_replay_progress(&w) != before => {}
+                    _ => break,
+                }
+            }
         }
     }
 

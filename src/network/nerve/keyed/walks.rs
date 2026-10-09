@@ -131,7 +131,9 @@ impl<'a, V, C: Coordinate> Iterator for Cursor<'a, V, C> {
                 continue;
             };
             match (&self.from, self.wrapped) {
-                // Before the wrap: the keys after `from` only.
+                // Before the wrap: the keys after `from` only. The walk begins
+                // past `from` by seeking (`Keyed::after`, 78.153), so this
+                // arm stands as the guard of that reading and drops nothing.
                 (Some(f), false) if &k[..] <= f.as_slice() => continue,
                 // After it: the keys skipped, up to and including `from` —
                 // the walk ends where it began.

@@ -140,7 +140,86 @@ pub fn apply_form_on(
     crystal: &dyn Crystal,
     pair: Option<usize>,
 ) -> Option<Speech> {
-    speak_on_scene(f, x, &Scene::of(x), placement, crystal, pair)
+    speak_on_scene(f, x, &Scene::of(x), placement, crystal, pair, &mut Speaking::free())
+}
+
+/// 78.153 — THE SAME SPEECH ON A STROKE: one read per cited form spoken
+/// afresh on the scene (a citation read back from the scene's memo costs
+/// nothing more). `Spoken::Spent` where the stroke ran out first: nothing
+/// was said, and a caller reads that as unread, never as a speech.
+/// `bodies` is `x` as the sensor already read it, where the caller holds
+/// that perception (the court's replay cursor); `None` perceives `x` here.
+pub(crate) fn apply_form_metered(
+    f: &Form,
+    x: &Grid,
+    placement: &crate::transducer::alphabet::Word,
+    crystal: &dyn Crystal,
+    pair: Option<usize>,
+    budget: &mut crate::physics::Budget,
+    bodies: Option<Vec<Body>>,
+) -> Spoken {
+    let scene = match bodies {
+        Some(b) => Scene::of_bodies(b),
+        None => Scene::of(x),
+    };
+    let mut ctx = Speaking::metered(budget);
+    let said = speak_on_scene(f, x, &scene, placement, crystal, pair, &mut ctx);
+    match (said, ctx.spent) {
+        (_, true) => Spoken::Spent,
+        (Some(s), false) => Spoken::Said(s),
+        (None, false) => Spoken::Unfit,
+    }
+}
+
+/// What a metered speech came to (78.153).
+pub(crate) enum Spoken {
+    Said(Speech),
+    /// The speech does not fit its own frame (`speak_on_scene`'s `None`).
+    Unfit,
+    /// The stroke was spent before the speech ended: nothing was said.
+    Spent,
+}
+
+/// 78.153 — WHAT A SPEECH CARRIES DOWN ITS CITATIONS: the cited forms on
+/// the speaking stack, and the stroke it spends where it is metered.
+///
+/// THE STACK IS THE CYCLE GUARD (defect 4 of the lock audit). Mutual
+/// citation is admitted by the nerve (`replay_form_on`'s citation reading:
+/// a posetal height forbade every 2-simplex), and speaking it recursed
+/// without end: `A` cites `B`, `B` cites `A`, and each speech spoke the
+/// other before its own memo entry was written. A citation already on the
+/// stack is therefore a fact about the speech, named in `Speech::cycled` by
+/// the cited address, and the court refuses it as
+/// [`crate::verdict::REFUSE_CITATION_CYCLE`] — never a stack overflow.
+pub(crate) struct Speaking<'b> {
+    stack: Vec<crate::transducer::address::Address>,
+    budget: Option<&'b mut crate::physics::Budget>,
+    spent: bool,
+}
+
+impl<'b> Speaking<'b> {
+    /// Unmetered: the voice's own speech and every reader that is not under
+    /// a court's lock.
+    pub(crate) fn free() -> Speaking<'static> {
+        Speaking { stack: Vec::new(), budget: None, spent: false }
+    }
+
+    pub(crate) fn metered(budget: &'b mut crate::physics::Budget) -> Speaking<'b> {
+        Speaking { stack: Vec::new(), budget: Some(budget), spent: false }
+    }
+
+    /// One read, where the speech is metered; false once the stroke is
+    /// spent, and the speech then says nothing.
+    fn spend(&mut self) -> bool {
+        let Some(b) = self.budget.as_deref_mut() else {
+            return true;
+        };
+        if b.spend() {
+            return true;
+        }
+        self.spent = true;
+        false
+    }
 }
 
 /// THE SCENE A FORM IS SPOKEN ONTO, PERCEIVED ONCE (law 12): the grid's
@@ -168,12 +247,23 @@ pub(crate) struct Scene {
 }
 
 /// What one citation spoke on this scene: its painted sites, its remainder,
-/// and the citations inside it this crystal could not resolve.
-type Cited = (Vec<Painted>, Vec<Painted>, Vec<crate::transducer::address::Address>);
+/// the citations inside it this crystal could not resolve, and those it
+/// reached back onto its own speaking stack (78.153).
+type Cited = (
+    Vec<Painted>,
+    Vec<Painted>,
+    Vec<crate::transducer::address::Address>,
+    Vec<crate::transducer::address::Address>,
+);
 
 impl Scene {
     pub(crate) fn of(x: &Grid) -> Scene {
-        let bodies = perceive(x);
+        Scene::of_bodies(perceive(x))
+    }
+
+    /// The scene over bodies already perceived (78.153): the same scene
+    /// `of` builds, without the sensor reading the grid again.
+    pub(crate) fn of_bodies(bodies: Vec<Body>) -> Scene {
         let mut atlas = crate::transducer::stalk::Stalks::default();
         for (i, body) in bodies.iter().enumerate() {
             atlas.admit(&body.moduli, (i as u64).to_le_bytes());
@@ -202,6 +292,7 @@ fn speak_on_scene(
     placement: &crate::transducer::alphabet::Word,
     crystal: &dyn Crystal,
     pair: Option<usize>,
+    ctx: &mut Speaking<'_>,
 ) -> Option<Speech> {
     let fx = frame_of(x);
     let mut fy = output_frame(fx, f.ratio);
@@ -210,6 +301,7 @@ fn speak_on_scene(
     let mut remainder: Vec<Painted> = Vec::new();
     let mut unspoken: Vec<crate::network::nerve::coord::VertexAt> = Vec::new();
     let mut unresolved: Vec<crate::transducer::address::Address> = Vec::new();
+    let mut cycled: Vec<crate::transducer::address::Address> = Vec::new();
     let mut unfolded = false;
     for (vi, v) in f.vertices.entries() {
         match v {
@@ -306,10 +398,18 @@ fn speak_on_scene(
                     // 578 times onto the same grid; what comes back is the
                     // same painted set every time, because nothing in the
                     // citation varies.
-                    if let Some((p, r, u)) = scene.spoken.borrow().get(&key) {
+                    if let Some((p, r, u, c)) = scene.spoken.borrow().get(&key) {
                         painted.extend_from_slice(p);
                         remainder.extend_from_slice(r);
                         unresolved.extend_from_slice(u);
+                        cycled.extend_from_slice(c);
+                        continue;
+                    }
+                    // 78.153 — A CITATION ALREADY BEING SPOKEN is a cycle of
+                    // the cover, named by the cited address: speaking it again
+                    // would never end (`Speaking`).
+                    if ctx.stack.contains(&edge.target) {
+                        cycled.push(edge.target.clone());
                         continue;
                     }
                     // A CITATION THIS CRYSTAL DOES NOT HOLD is a fact about the
@@ -321,14 +421,23 @@ fn speak_on_scene(
                         unresolved.push(edge.target.clone());
                         continue;
                     };
-                    let sp = speak_on_scene(&s, x, scene, &composed, crystal, None)?;
-                    scene
-                        .spoken
-                        .borrow_mut()
-                        .insert(&key, (sp.painted.clone(), sp.remainder.clone(), sp.unresolved.clone()));
+                    // 78.153 — ONE READ PER CITED FORM SPOKEN AFRESH, where
+                    // the speech is metered; a spent stroke says nothing.
+                    if !ctx.spend() {
+                        return None;
+                    }
+                    ctx.stack.push(edge.target.clone());
+                    let sp = speak_on_scene(&s, x, scene, &composed, crystal, None, ctx);
+                    ctx.stack.pop();
+                    let sp = sp?;
+                    scene.spoken.borrow_mut().insert(
+                        &key,
+                        (sp.painted.clone(), sp.remainder.clone(), sp.unresolved.clone(), sp.cycled.clone()),
+                    );
                     painted.extend(sp.painted);
                     remainder.extend(sp.remainder);
                     unresolved.extend(sp.unresolved);
+                    cycled.extend(sp.cycled);
                 }
                 // A BOUNDARY WITH NO INCIDENCE IS UNSPOKEN, NOT SILENT
                 // (rule 11). The form states a citation and nothing told it
@@ -453,12 +562,15 @@ fn speak_on_scene(
     painted.dedup();
     unresolved.sort_unstable();
     unresolved.dedup();
+    cycled.sort_unstable();
+    cycled.dedup();
     Some(Speech {
         frame: fy,
         painted,
         remainder,
         unspoken,
         unresolved,
+        cycled,
     })
 }
 
@@ -475,6 +587,9 @@ pub struct Speech {
     /// The cited forms, by address, the speaking crystal does not hold: the
     /// sites they would have spoken are not the form's silence.
     pub unresolved: Vec<crate::transducer::address::Address>,
+    /// 78.153 — the cited forms this speech reached while they were still
+    /// being spoken: a cycle of citations, which no speech completes.
+    pub cycled: Vec<crate::transducer::address::Address>,
 }
 
 impl Speech {
@@ -492,7 +607,7 @@ impl Speech {
     pub fn grid(&self) -> Option<Grid> {
         // A speech missing a citation is not the form's whole speech, and no
         // grid stands for it; the measure reads the citation by name.
-        if !self.unresolved.is_empty() {
+        if !self.unresolved.is_empty() || !self.cycled.is_empty() {
             return None;
         }
         let mut out: Grid = vec![vec![0u8; self.frame.1]; self.frame.0];

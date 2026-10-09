@@ -11,6 +11,14 @@ use super::*;
 /// another refuses as unruled, because nothing here can resolve the
 /// citation. Hyphae replay through `blind_replay_with` and their ruled
 /// cover.
+///
+/// 78.153 — THE OFF-LOCK READERS. `blind_replay`, `blind_replay_with`,
+/// `blind_replay_on` and `blind_replay_at` keep their answer (`None` clean,
+/// a refusal otherwise) for the voice and every reader outside a court's
+/// lock: the replay is metered and resumable, and these run it to the end
+/// over as many strokes as it takes ([`to_completion`]). A court under its
+/// lock replays through [`replay_resume`], which answers `Unread` where its
+/// one stroke ran out and never refuses for it.
 pub fn blind_replay(spoken: &Element, budget: &mut crate::physics::Budget) -> Option<&'static str> {
     blind_replay_with(spoken, &|_| None, budget)
 }
@@ -23,7 +31,9 @@ pub fn blind_replay_on(
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<&'static str> {
-    blind_replay_on_inner(spoken, resolve, family, crystal, budget)
+    let owned = |a: &[u8]| resolve(a).map(std::borrow::Cow::Owned);
+    to_completion(spoken, budget, &mut |b, cursor| replay_word(spoken, &owned, family, crystal, b, cursor, false))
+        .map(|r| r.reason)
 }
 
 /// The same replay, refusing WITH THE COORDINATE (50.9): a sentence is
@@ -36,10 +46,132 @@ pub fn blind_replay_at(
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
-    if spoken.is_sentence() && !spoken.is_rewrite() && !spoken.is_connection() {
-        return replay_form_at(spoken, resolve, family, crystal, budget);
+    let owned = |a: &[u8]| resolve(a).map(std::borrow::Cow::Owned);
+    to_completion(spoken, budget, &mut |b, cursor| replay_word(spoken, &owned, family, crystal, b, cursor, true))
+}
+
+/// 78.153 — THE COURT'S REPLAY ON ITS ONE STROKE, resumed from `cursor`:
+/// `Clean`, `Refused` with its coordinate, or `Unread` — the stroke ran out
+/// first, the cursor holds where, and nothing was ruled. `at` selects
+/// [`blind_replay_at`]'s reading (a sentence straight to its form replay)
+/// over [`blind_replay_on`]'s (the word's own checks first).
+pub fn replay_resume<'r>(
+    spoken: &Element,
+    resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
+    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
+    cursor: &mut ReplayCursor,
+    at: bool,
+) -> Replayed {
+    replay_word(spoken, resolve, family, crystal, budget, cursor, at)
+}
+
+fn replay_word<'r>(
+    spoken: &Element,
+    resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
+    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
+    cursor: &mut ReplayCursor,
+    at: bool,
+) -> Replayed {
+    let tape = |reason: Option<&'static str>| match reason {
+        None => Replayed::Clean,
+        Some(r) => Replayed::Refused(Refusal::of_tape(r, spoken)),
+    };
+    if at && spoken.is_sentence() && !spoken.is_rewrite() && !spoken.is_connection() {
+        return replay_form_resume(spoken, resolve, family, crystal, budget, cursor);
     }
-    blind_replay_on_inner(spoken, resolve, family, crystal, budget).map(|reason| Refusal::of_tape(reason, spoken))
+    if let Some(decided) = word_prelude(spoken) {
+        return tape(decided);
+    }
+    if spoken.is_sentence() {
+        // The version byte selects the replayer: a v3 tape is a form and
+        // is replayed through the cover; a v2 tape is refused.
+        //
+        // S9.4 — WHAT CERTIFIES IS CLOSURE. `replay_form_resume` is the
+        // certificate: the orbits return, every face re-derives, the
+        // certificates are re-read, and with a family the form closes it. A
+        // sentence is not refused here for carrying a zero magnitude,
+        // which is not a defect in the word — μ⃗ is a COST, not a score, and
+        // a word that costs nothing to say still says it. The economy
+        // prices a zero deflation at zero without the court refusing it.
+        return replay_form_resume(spoken, resolve, family, crystal, budget, cursor);
+    }
+    tape(word_rest(spoken))
+}
+
+/// 78.153 — A REPLAY RUN TO ITS END off a court's lock, on strokes of its
+/// own while each one moves the cursor. The caller's stroke is left as it
+/// stood: the replay drew from it only inside `versor_between` before it was
+/// metered, and draining it now would starve the reads the caller makes
+/// after. A stroke that moves nothing is a unit no stroke holds — or a
+/// process asked to stop (`physics::halt`) — refused by name
+/// (`REFUSE_UNREAD`) rather than looped on.
+pub(crate) fn to_completion(
+    spoken: &Element,
+    budget: &mut crate::physics::Budget,
+    run: &mut dyn FnMut(&mut crate::physics::Budget, &mut ReplayCursor) -> Replayed,
+) -> Option<Refusal> {
+    let _ = budget;
+    let mut cursor = ReplayCursor::default();
+    loop {
+        let before = cursor.progress();
+        let mut own = crate::physics::Physics::default().stroke();
+        match run(&mut own, &mut cursor) {
+            Replayed::Clean => return None,
+            Replayed::Refused(r) => return Some(r),
+            Replayed::Unread if cursor.progress() == before => {
+                return Some(Refusal::of_tape(REFUSE_UNREAD, spoken));
+            }
+            Replayed::Unread => {}
+        }
+    }
+}
+
+/// The word's own checks before a sentence is replayed: `Some(answer)` where
+/// they decide it, `None` where the word goes on.
+fn word_prelude(spoken: &Element) -> Option<Option<&'static str>> {
+    // 78.53 — A COLOUR WORD moves no body and carries no chain: its action
+    // is its fibre relation alone, and what it must be is unitary on the
+    // fibre and its reservoir — a partial injection, or a merge whose
+    // distinctions it records in e_∅ (`is_fibre_relation`, 78.58). Its
+    // evidence against a family is re-derived
+    // where it is heard (`adjudicate_one`), never replayed as a chain.
+    if spoken.is_colour_word() {
+        return Some(match spoken.letters().is_some_and(|l| crate::transducer::element::is_fibre_relation(&l.sigma)) {
+            true => None,
+            false => Some("colour word's relation is not unitary on the fibre and its reservoir"),
+        });
+    }
+    // A CONNECTION is a word with two components: the group component (an
+    // invertible motion and gauge on the spatial fibre) and the remainder
+    // chain. Its chain part re-derives like any germ's; its group part is
+    // verified by inversion — a connection the court cannot invert cannot
+    // glue and is false speech. Its magnitude carries the volume it speaks
+    // across its family on top of the chain's own measure, so it is bounded
+    // below by the chain, never equal to it.
+    //
+    // THE ALPHABET IS THE LAW OF SPEECH: a connection is a word only when
+    // its motion is spelled in the seventeen letters and the tape
+    // re-derives the block the fibre holds. A tape that disagrees with its
+    // fibre is false speech; a connection without a tape was never a word.
+    if spoken.is_connection() {
+        match spoken.letters_rederive() {
+            None => return Some(Some("connection has no letters — not a word of the alphabet")),
+            Some(false) => return Some(Some("motion does not re-derive from its letters")),
+            Some(true) => {}
+        }
+    }
+    if spoken.is_rewrite() {
+        return Some(crate::transducer::rewrite::replay(spoken));
+    }
+    None
+}
+
+fn word_rest(spoken: &Element) -> Option<&'static str> {
+    word_rest_checks(spoken, spoken.sub(), spoken.is_connection())
 }
 
 /// Deterministic re-derivation of a spoken word from its own evidence
@@ -56,70 +188,16 @@ pub fn blind_replay_with(
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
     budget: &mut crate::physics::Budget,
 ) -> Option<&'static str> {
-    blind_replay_on_inner(spoken, resolve, None, &crate::transducer::family::NoCrystal, budget)
+    blind_replay_on(spoken, resolve, None, &crate::transducer::family::NoCrystal, budget)
 }
 
+/// The rest of a word that is not a sentence: a translation, a chain, an
+/// opened axis, a connection's remainder, and its torsion witnessed.
 #[expect(
     clippy::disallowed_methods,
     reason = "rule 4 — a chain's min corner is its extent, content: the court checks the chain is framed to its own origin"
 )]
-pub(crate) fn blind_replay_on_inner(
-    spoken: &Element,
-    resolve: &dyn Fn(&[u8]) -> Option<Form>,
-    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
-    crystal: &dyn crate::transducer::family::Crystal,
-    budget: &mut crate::physics::Budget,
-) -> Option<&'static str> {
-    let chain = spoken.sub();
-    // 78.53 — A COLOUR WORD moves no body and carries no chain: its action
-    // is its fibre relation alone, and what it must be is unitary on the
-    // fibre and its reservoir — a partial injection, or a merge whose
-    // distinctions it records in e_∅ (`is_fibre_relation`, 78.58). Its
-    // evidence against a family is re-derived
-    // where it is heard (`adjudicate_one`), never replayed as a chain.
-    if spoken.is_colour_word() {
-        return match spoken.letters().is_some_and(|l| crate::transducer::element::is_fibre_relation(&l.sigma)) {
-            true => None,
-            false => Some("colour word's relation is not unitary on the fibre and its reservoir"),
-        };
-    }
-    // A CONNECTION is a word with two components: the group component (an
-    // invertible motion and gauge on the spatial fibre) and the remainder
-    // chain. Its chain part re-derives like any germ's; its group part is
-    // verified by inversion — a connection the court cannot invert cannot
-    // glue and is false speech. Its magnitude carries the volume it speaks
-    // across its family on top of the chain's own measure, so it is bounded
-    // below by the chain, never equal to it.
-    let connection = spoken.is_connection();
-    // THE ALPHABET IS THE LAW OF SPEECH: a connection is a word only when
-    // its motion is spelled in the seventeen letters and the tape
-    // re-derives the block the fibre holds. A tape that disagrees with its
-    // fibre is false speech; a connection without a tape was never a word.
-    if connection {
-        match spoken.letters_rederive() {
-            None => return Some("connection has no letters — not a word of the alphabet"),
-            Some(false) => return Some("motion does not re-derive from its letters"),
-            Some(true) => {}
-        }
-    }
-    if spoken.is_rewrite() {
-        return crate::transducer::rewrite::replay(spoken);
-    }
-    if spoken.is_sentence() {
-        // The version byte selects the replayer: a v3 tape is a form and
-        // is replayed through the cover; a v2 tape is refused.
-        if let Some(reason) = replay_form_with(spoken, resolve, family, crystal, budget) {
-            return Some(reason);
-        }
-        // S9.4 — WHAT CERTIFIES IS CLOSURE. `replay_form_with` above is the
-        // certificate: the orbits return, every face re-derives, the
-        // certificates are re-read, and with a family the form closes it. A
-        // sentence is not refused here for carrying a zero magnitude,
-        // which is not a defect in the word — μ⃗ is a COST, not a score, and
-        // a word that costs nothing to say still says it. The economy
-        // prices a zero deflation at zero without the court refusing it.
-        return None;
-    }
+fn word_rest_checks(spoken: &Element, chain: &[(i64, i64, u8, u8)], connection: bool) -> Option<&'static str> {
     if spoken.is_translation() {
         match spoken.letters_rederive() {
             None => return Some("translation has no letters — not a word of the alphabet"),

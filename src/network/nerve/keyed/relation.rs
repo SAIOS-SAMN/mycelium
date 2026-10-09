@@ -514,6 +514,65 @@ impl<V, C: Coordinate> Keyed<V, C> {
         Fiber { stack, prefix: Vec::new() }
     }
 
+    /// 78.153 — THE KEYS STRICTLY AFTER `from`, in key order, reached by
+    /// following `from`'s own bits: a subtree wholly after it is taken
+    /// whole, one wholly before it is never entered, and only the one path
+    /// `from` names is walked — O(bits) to begin, never a walk of the keys
+    /// before it.
+    ///
+    /// A subtree's keys share its representative's bits up to the branch
+    /// bit. Where `from` first differs from them below that bit, the whole
+    /// subtree is on one side: after, where `from` ended there (it is a
+    /// prefix of each) or holds a 0 where they hold a 1; before, otherwise.
+    /// Where `from` agrees through the branch bit, the branch's own key
+    /// (exactly that long) is a prefix of `from` and not after it; `from`'s
+    /// next bit picks the child to follow, and a 1-side sibling of a 0 step
+    /// is wholly after.
+    pub(crate) fn after(&self, from: &[u8]) -> Fiber<'_, V> {
+        // Taken in descent order: each subtree taken lies before every one
+        // taken above it, so the last taken is the least, and the fiber's
+        // stack yields from its top.
+        let mut taken: Vec<&Node<V>> = Vec::new();
+        let from_bits = Node::<V>::bits(from);
+        let mut node = self.root.as_deref();
+        while let Some(n) = node {
+            node = None;
+            match n {
+                Node::Leaf(k, _) => {
+                    if &k[..] > from {
+                        taken.push(n);
+                    }
+                }
+                Node::Branch { bit, children, .. } => match first_difference(n.representative(), from) {
+                    Some(d) if d < *bit => {
+                        let ended = from_bits.is_some_and(|b| b <= d);
+                        if ended || key_bit(n.representative(), d) == 1 {
+                            taken.push(n);
+                        }
+                    }
+                    _ if from_bits == Some(*bit) => {
+                        if let Some(c) = children[1].as_deref() {
+                            taken.push(c);
+                        }
+                        if let Some(c) = children[0].as_deref() {
+                            taken.push(c);
+                        }
+                    }
+                    _ => match key_bit(from, *bit) {
+                        0 => {
+                            if let Some(c) = children[1].as_deref() {
+                                taken.push(c);
+                            }
+                            node = children[0].as_deref();
+                        }
+                        _ => node = children[1].as_deref(),
+                    },
+                },
+            }
+        }
+        Fiber { stack: taken, prefix: Vec::new() }
+    }
+
     /// The node every key carrying `prefix` hangs under, by following the
     /// prefix's own bits. `None` where no key carries it — an empty fiber,
     /// which is the reading of absence and not an empty walk of the trie.
@@ -611,7 +670,15 @@ impl<V, C: Coordinate> Keyed<V, C> {
             // is the Budget in its signature, not a prefix: that is what
             // makes a carrier larger than one stroke legible across strokes
             // instead of walked at once (rule 10).
-            fiber: self.scoped(),
+            //
+            // 78.153 — IT BEGINS AT `from` BY SEEKING (lock audit, row 1b):
+            // it walked every key at or before `from` and dropped them, free
+            // of the budget, on every stroke — the whole docket prefix, under
+            // the kernel's lock. The walk now starts on `from`'s own path.
+            fiber: match from.as_deref() {
+                Some(f) => self.after(f),
+                None => self.scoped(),
+            },
             budget,
             last: from.clone(),
             from,
