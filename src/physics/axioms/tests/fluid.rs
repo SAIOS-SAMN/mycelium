@@ -133,6 +133,28 @@ fn a_carried_registry_keeps_its_windings_and_helicity() {
     assert_eq!((tubes.links(), screwed.links()), (0, 0), "self-linking is no reconnection: no two tubes link");
 }
 
+/// 78.153b — THE HELICITY ON A STROKE: one read per tube's row; a stroke
+/// that reads every row answers the helicity exactly, one short answers
+/// `None` — unread, never the partial sum.
+#[test]
+fn the_helicity_on_a_stroke_is_whole_or_unread() {
+    let mut b = stroke();
+    let mut tubes = TubeRegistry::new();
+    for x in [1, 2, 3] {
+        let line = translator(x, 0);
+        let g = crate::transducer::cayley::bivector_of(&line).expect("on the chart");
+        for flux in null_fluxes(&line, &mut b).expect("reads") {
+            tubes.admit(&flux, &g, 1).expect("a ray");
+        }
+    }
+    let rows = tubes.len();
+    assert!(rows > 0, "a tube to pair with itself");
+    let mut whole = crate::physics::Physics::default().stroke_n(rows);
+    assert_eq!(tubes.helicity_on(&mut whole), Some(tubes.helicity()), "every row read: the helicity exactly");
+    let mut short = crate::physics::Physics::default().stroke_n(rows - 1);
+    assert_eq!(tubes.helicity_on(&mut short), None, "a row unread: the helicity unread");
+}
+
 /// F5 — NO LATTICE ON THE SPHERE: a turn about a centre away from the origin
 /// moves the origin along a chord, and is still a turn — 𝒽, never 𝒯. A
 /// pure translation is 𝒯.

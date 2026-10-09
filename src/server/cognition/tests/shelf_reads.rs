@@ -146,9 +146,14 @@ fn a_touched_word_is_the_word_a_rebuild_gives() {
     let keys = |l: &Language| l.words.scoped().map(|(a, _)| a).collect::<Vec<_>>();
     assert_eq!(keys(&touched), keys(&rebuilt));
     for a in keys(&rebuilt) {
-        assert!(
-            std::sync::Arc::ptr_eq(&touched.words.get(&a).expect("held").held, &rebuilt.words.get(&a).expect("held").held),
-            "the word at each address is the basis's own"
+        assert_eq!(
+            touched.word_at(&a).and_then(|w| w.to_bytes()),
+            rebuilt.word_at(&a).and_then(|w| w.to_bytes()),
+            "the word at each address is the one a rebuild gives"
         );
     }
+    assert!(
+        std::sync::Arc::ptr_eq(&touched.words.get(&addr).expect("held").held, k.basis.get(&addr).expect("held")),
+        "the touched address holds the basis's own Arc"
+    );
 }

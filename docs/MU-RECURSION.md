@@ -26480,9 +26480,11 @@ could publish.
      the line to the head unpacked whole.
    - *ACT_FOLD* (row 11): the witness re-derives off the shelf
      (`Published::verify_fold`, `verify_prefix` shared with the kernel).
-   - *ACT_ROWS* (row 17): a page is sliced off the journal's prefix
-     (`Treasury::rows_below_page`, bisection — the journal is in line
-     order), O(log journal + page), never the prefix cloned per page.
+   - *ACT_ROWS* (row 17): only the page is cloned
+     (`Treasury::rows_below_page`), never every row below the head per
+     page; the count over the journal stays — THE JOURNAL IS NOT IN LINE
+     ORDER (a release stands at its escrow's place), so no bisection finds
+     the rows below a head (`rows_span` bisects; its reading is owed).
    - *after persist* (row 13): `nerve_census` reads one complex per read and
      says how many it read; the helicity is read one tube's row per read and
      is `unread` where the stroke runs out, never a partial sum.

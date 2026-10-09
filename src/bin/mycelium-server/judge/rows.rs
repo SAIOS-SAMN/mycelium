@@ -14,8 +14,8 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         return;
     };
     let at_most = budget / mycelium::economy::Entry::TAPE;
-    // 78.153b — a page sliced off the journal's prefix (`rows_below_page`),
-    // O(log journal + page) under the kernel, never the prefix cloned whole.
+    // 78.153b — the page alone cloned (`rows_below_page`); the count over the
+    // journal stays under the kernel (owed: the journal is not in line order).
     let (total, rows) = match crate::held::held!(door.kernel) {
         Ok(mut h) => h.run(|k, _| k.rows_range(&req.signer, req.from, req.upto, req.cursor, at_most)),
         Err(_) => return,

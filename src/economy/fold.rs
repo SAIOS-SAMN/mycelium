@@ -119,18 +119,19 @@ impl Treasury {
 
     /// 78.153b — ONE PAGE OF THE ROWS BELOW `head`, and how many stand
     /// there: the rows [`Treasury::rows_below`] answers, from the `skip`th,
-    /// at most `n`. THE JOURNAL IS IN LINE ORDER (`rows_span`), so the rows
-    /// below `head` are its prefix up to the first row standing at `head` or
-    /// later, found by bisection, and the page is a slice of it — O(log
-    /// journal + page), where `ACT_ROWS` cloned the whole prefix for every
-    /// page of it (O(N²/page) over a fetch, the lock audit's row 17).
+    /// at most `n` — only the page cloned, where `ACT_ROWS` cloned every row
+    /// below the head for every page of them (the lock audit, row 17).
+    ///
+    /// THE JOURNAL IS NOT IN LINE ORDER: a release is written at its
+    /// escrow's place, after rows standing later (`pending_fold_stands`), so
+    /// the rows below a head need not be a prefix of it, and a bisection
+    /// would read short where one stands out of line (`rows_span` bisects;
+    /// its reading is owed). The walk stays a count over the journal; the
+    /// page alone is copied.
     pub fn rows_below_page(&self, head: Place, skip: usize, n: usize) -> (u64, Vec<Entry>) {
-        let end = self.entries.partition_point(|e| e.stands_at() < Some(head));
-        let page = match self.entries.get(..end).and_then(|below| below.get(skip..)) {
-            Some(rest) => rest.iter().take(n).cloned().collect(),
-            None => Vec::new(),
-        };
-        (end as u64, page)
+        let below = || self.entries.iter().filter(|e| e.stands_at() < Some(head));
+        let page = below().skip(skip).take(n).cloned().collect();
+        (below().count() as u64, page)
     }
 
     /// The rows standing at `from` or later and written before the act at

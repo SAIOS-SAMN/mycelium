@@ -43,8 +43,9 @@ fn a_spent_stroke_ends_metered_work_unread() {
     let mut h = held!(kernel).expect("the kernel");
     h.run(|k, reads| {
         while reads.spend() {}
-        let (_, _, _, _, helicity) = k.tube_reading_on(reads);
-        assert_eq!(helicity, None, "the helicity unread, not a partial sum");
+        // No tube is held: no row to read, the helicity exactly zero.
+        let (tubes, _, _, _, helicity) = k.tube_reading_on(reads);
+        assert_eq!((tubes, helicity), (0, Some(num_rational::BigRational::from_integer(0.into()))));
         let (census, read) = k.nerve_census(reads);
         assert_eq!((census.len(), read), (0, 0), "no complex read on a spent stroke");
         let remote: Vec<crate::transducer::sheaf::StratumDigest> = (1..4u64)

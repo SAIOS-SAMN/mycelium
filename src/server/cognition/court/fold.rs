@@ -329,8 +329,8 @@ impl Kernel {
         // proposed after another was refused by every witness as not
         // conserving: "rows fetched 0 … parties ours 0 proposed 8" (hypha b,
         // epoch 115). A fold compacts the journal, so the set stays small.
-        // 78.153b — a page sliced off the journal's prefix (`rows_below_page`),
-        // never the whole prefix cloned for every page of it. The span's rows
+        // 78.153b — the page alone cloned (`rows_below_page`), never every
+        // row below the head for every page of them. The span's rows
         // are the mesh's count, `u64` on the wire. A cursor past every `usize`
         // is past every row this node holds: the page is empty, and the total
         // says so.
