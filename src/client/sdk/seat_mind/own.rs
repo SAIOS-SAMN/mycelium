@@ -290,6 +290,10 @@ impl SeatMind {
     /// THE MIND'S OWN CALL, no counsel given (the module's rule).
     pub(crate) fn own_call(&self) -> Decision {
         for o in &self.repertoire {
+            // A function a house has counselled is never probed blind.
+            if self.counselled.contains(&o.id) {
+                continue;
+            }
             if let Some((at, args)) = o.untried() {
                 return Decision::Call(Choice { fn_id: o.id, args, followed: false, why: Why::Exploring { at, bounds: o.bounds() } });
             }
