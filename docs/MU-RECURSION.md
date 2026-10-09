@@ -26189,6 +26189,15 @@ no number said which point the mesh stood at. Ruled, as law:
    held so it never runs back. NEVER AVERAGED: where two keepers' final
    points stand at one tick and differ, that tick goes to the residual and
    the final point is the greatest tick at which the finals agree.
+   A STRICT MAJORITY OF THE KEEPER SET (the coordinator, 2026-10-09): two
+   of three, three of four, three of five — the keeper and enough others
+   citing the point; two of four could finalise two conflicting points, a
+   majority cannot. One keeper alone finalises nothing.
+   OWED (the coordinator, same day): a keeper's readings are not persisted,
+   and a restarted keeper must never re-sign a height it signed before its
+   restart (an equivocation) — persist its last signed reading, or hold a
+   restarted keeper silent until a peer's final point passes its last
+   height before it signs again.
 4. **TU-4 DISAGREEMENT IS A RESIDUAL.** Two keepers' readings at one tick
    differing on a lane leave the exact difference `to − from` per lane as a
    1-cochain on the keeper triangle; its holonomy round a → b → c (key
