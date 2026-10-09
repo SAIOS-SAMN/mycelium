@@ -26901,6 +26901,112 @@ minted, the edge pending then residual 1),
 `dialogue::tests::atlas::a_map_act_and_the_map_read_back` (the record and its
 frames back exactly, signatures verifying).
 
+### 78.158a The solve paths wired (U1–U4), the home check on court words, sit-all
+
+Built on track/ancients from docs/proposals/78.158 (units U1–U4), 78.157 §3a,
+and the council's growth (barren-realms: one seat per world). WIRING ONLY:
+no module and no type is new; reduction, never search.
+
+1. **U1: every refusal on the solve paths is named.** The mint's refusal is
+   read by ONE line maker, `family::mint_refusal_line(why, form)`:
+   `mint refused (<arm>): <proof> [<kind>] demands [<kind>, …]`. The arm is
+   `family::mint_arm` (carry, demands, citation, integrity or other). It
+   moved from the client binary, and nothing in it changed. The demand
+   kinds are the refused form's, in its own vertex order (`Demand::label`).
+   The speech path's line keeps its prefix and gains the kinds:
+   `form withheld: family F mint refused (…): … [N] demands [creation]`. The
+   solve paths mint by `mint_sentence_why`, never by `mint_sentence`:
+   - the task arm reads `family F solve unminted: the span is unmeasurable`
+     or `family F solve unminted: mint refused (…) …`;
+   - the seat arm reads `seat task F no call: no sentence minted: the span
+     is unmeasurable` or `… no sentence minted: mint refused (…) …`.
+
+   Proved: `family::tests::deflation::a_mint_refusal_names_its_arm_proof_kind_and_the_forms_demand_kinds`.
+2. **U2: UNREAD at home is unjudged, never refuted.** `rule::would_judge`
+   is now `would_judge_with` on the caller's stroke; `would_judge` keeps
+   its signature, because the houses vendor the sdk. It answers
+   `NoRule::Unread` for `REFUSE_UNREAD` (`NoRule::of_refusal`), told apart
+   from the judge's `Refused`. Both solve paths submit on `Unread`:
+   - `Entity::solve_task` goes on to `submit_solve_rule`;
+   - the seat posts with the line `seat task F unjudged at home: <REFUSE_UNREAD>
+     — posted for the court to resume`.
+
+   The court resumes the replay on its cursor and answers `SOLVE_UNREAD`,
+   which `solve_task` already does not remember as refused. The budget
+   `to_completion` ignored (`blind.rs`, `let _ = budget;`) is now
+   **honoured, never drained**. Each round is as wide as the caller's stroke
+   where that grants more than a default stroke, and a default stroke
+   otherwise. The caller's token is left as it stood.
+   Proved:
+   - `verdict::tests::resume::an_off_lock_reader_reads_each_round_on_the_callers_wider_stroke`;
+   - `client::sdk::tests::rule::a_home_replay_no_stroke_reads_is_unjudged_and_the_court_rules_the_word`.
+3. **U3: the extract memo holds no `None`.** `ExtractMemo` holds a rule
+   only. A `None` leaves the slot as it was (the last family's rule stands),
+   so the next asking reads the family again instead of being answered
+   `None` by the memo until the root moved. Proved:
+   `family::tests::budget::an_extraction_that_answers_none_is_never_held_for_its_family`.
+   It uses a family's own `None`, two pairs in two frame ratios. 78.158's
+   "a spent budget, then a full one, gives Some" has no fixture: a stroke
+   spent inside the extraction keeps what it measured (L8w) and answers a
+   partial rule, never `None`. A sweep of strokes 1 to 4096 found none.
+4. **U4: the seat's solve is the mind's own call.** The relay's
+   `reference` is kept, and the arm calls
+   `with_seat_mind(.., |m| m.called(FN_SOLVE, args, reference))`. The
+   outcome then reads against fn 1, never `fn None`. The task is
+   `answered` only on an APPLIED outcome; until then it is in flight
+   (`solving`, by reference and rule address). The in-flight set empties
+   when the take is posted again.
+   - A refused solve is remembered with its rule address and atlas root
+     (`refused`). Its line is `seat task F solve refused (reason R):
+     answered again when the rule's address changes`.
+   - The task is not extracted again until the root moves, and not posted
+     again while the address stands. Each case has its own `withheld again`
+     no-call line. This is `Entity::solve_refused`'s rule on the task path.
+   - Applied, the line is `seat task F solve applied: answered`.
+
+   Proved: `client::sdk::tests::solve::a_seats_solve_outcome_reads_learned_against_fn_one`.
+5. **78.157 §3a: the home check resolves court-stamped words only.**
+   `Epigenome::court_word` is the held word where `admitted_at` files a
+   court's stamp, and `None` for a dialect word or one learned with no
+   stamp. Both home checks resolve through it (`solve_task` and the seat
+   arm, which read `working_word` before).
+   - `would_judge_with` asks every citation the rule carries
+     (`receipts().cited_addresses()`: the cover's and the derivations') of
+     the resolver BEFORE the replay. The replay itself defers a derivation
+     citation its cover lacks, which would have read clean at home.
+   - An unheld citation is its own outcome, `NoRule::CitesUnheld(address)`,
+     never a pass. The task path keeps it home with
+     `solve kept home: the rule cites A no court admitted (cites unheld)`,
+     not counted as refuted. The seat's line is `seat task F no call: cites
+     unheld: …`.
+
+   Proved: `client::sdk::tests::rule::a_rule_citing_a_word_no_court_admitted_is_not_judged_clean_at_home`.
+6. **Sit-all.** `--seat <domain>[/<sub>] all` sits every seat the domain's
+   latest listing offers (`seat::listed_seats`). The seats sat are read
+   against it (`seat::reseat`): a seat new to the listing is taken (a new
+   arm), and a seat gone from it is let go (its arm dropped, its mail read
+   past). The listing is read:
+   - at the first stroke;
+   - when an arm's listing read (after a take, or NO SUCH FUNCTION) names
+     another epoch;
+   - at every full aperture cycle of strokes (`SeatHold::patience`, a
+     stroke count). A house that adds a world posts nothing else a seated
+     mind reads.
+
+   The arm's line is `seat all: listing epoch E offers N seats — sitting M,
+   taken [..], let go [..]`. Explicit id lists are unchanged. Proved:
+   `client::sdk::tests::solve::a_listing_of_n_seats_sits_n_and_a_relisting_adds_and_drops`.
+
+Owed and named:
+- The client's SolveTally has no CITES UNHELD counter. `observe/learning.rs`
+  is another agent's this round, so the outcome is a line only.
+- U2's end-to-end fixture (a family whose replay outruns one default
+  stroke, UNREAD at home and ruled by `judge_solve`) does not exist as
+  78.158 states it. A unit no default stroke reads also stalls the court's
+  stroke, which is the same `spend_unit`. So `judge_solve` answers
+  `Unread` there too, and the court rules it only on a stroke that moves.
+  The honoured budget is what removes the false refusal at home.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

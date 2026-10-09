@@ -159,6 +159,29 @@ pub fn seat_fns(listing: &SignedPost, seat: u32) -> Option<(u64, Vec<SeatFn>)> {
     Some((seats.epoch, mine.fns.clone()))
 }
 
+/// 78.158a SIT-ALL — EVERY SEAT A LISTING OFFERS, in the house's own
+/// listing order, with the listing's epoch. `None` where the post is no
+/// SEATS.
+pub fn listed_seats(listing: &SignedPost) -> Option<(u64, Vec<u32>)> {
+    let Post::Seats(seats) = &listing.post else { return None };
+    let mut ids: Vec<u32> = Vec::new();
+    for s in &seats.seats {
+        if !ids.contains(&s.seat) {
+            ids.push(s.seat);
+        }
+    }
+    Some((seats.epoch, ids))
+}
+
+/// 78.158a SIT-ALL — A LISTING READ AGAINST THE SEATS SAT: the seats it
+/// offers that are not sat (to take, in the listing's order) and the seats
+/// sat that it no longer offers (to let go, in the order they were sat).
+pub fn reseat(sat: &[u32], listed: &[u32]) -> (Vec<u32>, Vec<u32>) {
+    let take = listed.iter().filter(|s| !sat.contains(s)).copied().collect();
+    let let_go = sat.iter().filter(|s| !listed.contains(s)).copied().collect();
+    (take, let_go)
+}
+
 /// A SEAT'S COORDINATES, as (domain, sub-origin, seat) name it (v1.4):
 /// `[0][domain][seat BE]` in the domain's own universe, `[1][domain][sub
 /// origin][seat BE]` in a sub-universe of it.

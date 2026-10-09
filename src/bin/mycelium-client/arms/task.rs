@@ -121,14 +121,25 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
             // An unmeasurable span mints nothing, and a solve with no rule
             // is not sent (`solve_task`): the voice sends only a rule its
             // own train does not refute, and not one the court refused.
-            let spoken = entity.span_of(&rule.form).and_then(|d| {
-                mycelium::transducer::family::mint_sentence(
-                    rule,
-                    &train,
-                    &entity.epigenome,
-                    d.span(),
-                )
-            });
+            // 78.158a U1 — what was not minted says why: the span unmeasured,
+            // or the mint's refusal named whole with the form's demand kinds.
+            let spoken = match entity.span_of(&rule.form) {
+                None => {
+                    eprintln!("[{tag}] family {} solve unminted: the span is unmeasurable", crate::speak::fam_id(&tid));
+                    None
+                }
+                Some(d) => match mycelium::transducer::family::mint_sentence_why(rule, &train, &entity.epigenome, d.span()) {
+                    Ok(w) => Some(w),
+                    Err(why) => {
+                        eprintln!(
+                            "[{tag}] family {} solve unminted: {}",
+                            crate::speak::fam_id(&tid),
+                            mycelium::transducer::family::mint_refusal_line(why, &rule.form)
+                        );
+                        None
+                    }
+                },
+            };
             if let Some((code, _mu)) = entity.solve_task(&tid, &train, &outs, spoken.as_ref(), &mut extract_budget) {
                 c.projected += 1;
                 match code {

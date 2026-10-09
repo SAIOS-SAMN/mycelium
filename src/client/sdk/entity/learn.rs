@@ -40,7 +40,11 @@ impl Entity {
     ///   proof of a motion, and the court refuses it by construction;
     /// - a rule its own train refutes is not sent (REFUTED AT HOME);
     /// - a rule the court already refused for this task is not sent again
-    ///   until this voice's rule for it changes (WITHHELD AGAIN).
+    ///   until this voice's rule for it changes (WITHHELD AGAIN);
+    /// - a rule citing a word no court admitted is kept home, by name (CITES
+    ///   UNHELD, 78.157 §3a);
+    /// - a replay no stroke here could read is SENT: unjudged at home is
+    ///   not refuted, and the court resumes it (78.158a U2).
     ///
     /// On the fleet (epoch 106) each voice sent ~600 solves the court
     /// refused, the same rules round after round, with none of these read.
@@ -75,10 +79,26 @@ impl Entity {
             self.solves.withheld_again += 1;
             return None;
         }
-        let resolve = |a: &[u8]| self.epigenome.working_word(a).and_then(|e| e.form().cloned());
-        if crate::verdict::blind_replay_at(rule, &resolve, Some(train), &self.epigenome, budget).is_some() {
-            self.solves.refuted += 1;
-            return None;
+        // 78.158a — THE HOME CHECK, the judge's own (`rule::would_judge_with`)
+        // on this call's stroke, its citations resolved through the
+        // COURT-STAMPED words alone (78.157 §3a): a dialect word or one
+        // learned with no stamp is not a citation the court holds.
+        let resolve = |a: &[u8]| self.epigenome.court_word(a).and_then(|e| e.form().cloned());
+        match crate::client::sdk::rule::would_judge_with(rule, train, &resolve, &self.epigenome, budget) {
+            Ok(()) => {}
+            // U2 — UNJUDGED, NEVER REFUTED: the court's replay resumes it on
+            // its cursor and answers SOLVE_UNREAD until it rules.
+            Err(crate::client::sdk::rule::NoRule::Unread) => {}
+            // A citation no court admitted: its own outcome, not refuted —
+            // the rule waits for the court to hold the word it cites.
+            Err(crate::client::sdk::rule::NoRule::CitesUnheld(a)) => {
+                eprintln!("  solve kept home: the rule cites {} no court admitted (cites unheld)", hex_prefix(&a));
+                return None;
+            }
+            Err(_) => {
+                self.solves.refuted += 1;
+                return None;
+            }
         }
         let verdict = self.submit_solve_rule(id, outputs, Some(rule)).ok()?;
         // A refusal is remembered against the rule it refused, one per
@@ -495,4 +515,11 @@ impl Entity {
     pub fn take_learned_mu(&mut self) -> [u64; 4] {
         std::mem::take(&mut self.learned_mu)
     }
+}
+
+/// An address as the journal prints it: the first six bytes of its whole
+/// digest (`payload_hash`), as the client's `fam_id` labels a task — a
+/// label to read the line by, never a key (78.113).
+fn hex_prefix(addr: &[u8]) -> String {
+    crate::chronometry::payload_hash(addr).iter().take(6).map(|b| format!("{b:02x}")).collect::<String>() + "…"
 }

@@ -235,3 +235,67 @@ fn an_extracted_rule_judged_on_one_withheld_pair_is_not_refused_for_a_training_f
     );
     assert_solved(&crossed, &withheld, "the crossed rule");
 }
+
+/// 78.158a U2 — UNREAD AT HOME IS UNJUDGED, NEVER REFUTED. A home replay's
+/// `REFUSE_UNREAD` (a unit no stroke it ran on reads) is `NoRule::Unread`,
+/// told apart from every refusal of the judge's; the solve it stands for is
+/// the court's to rule, and the court's `judge_solve` — resuming its replay
+/// on its own strokes by its cursor — rules the same word.
+#[test]
+fn a_home_replay_no_stroke_reads_is_unjudged_and_the_court_rules_the_word() {
+    let train = vec![
+        (grid(&["1100", "0000"]), grid(&["0022", "0000"])),
+        (grid(&["0000", "1100"]), grid(&["0000", "0022"])),
+    ];
+    let rule = crate::transducer::family::extract_rule(&train, &mut crate::physics::Physics::default().stroke_n(1 << 20))
+        .expect("the family extracts");
+    let spoken = crate::transducer::family::mint_sentence(&rule, &train, &NoCrystal, 0).expect("and mints");
+    let crossed = crate::client::sdk::rule::crossing(&spoken, &train, &NoCrystal).expect("the rule crosses");
+    let unread = crate::verdict::Refusal::of_tape(crate::verdict::REFUSE_UNREAD, &crossed);
+    assert!(matches!(NoRule::of_refusal(unread), NoRule::Unread), "unread is unjudged");
+    let refused = crate::verdict::Refusal::of_tape(crate::verdict::REFUSE_NOT_A_SENTENCE, &crossed);
+    assert!(matches!(NoRule::of_refusal(refused), NoRule::Refused(r) if r.reason == crate::verdict::REFUSE_NOT_A_SENTENCE));
+    let withheld = vec![(grid(&["1100", "0000"]), grid(&["0022", "0000"]))];
+    let mut k = Kernel::new();
+    assert!(matches!(k.judge_solve(&crossed, &withheld), SolveVerdict::Solved { .. }), "the court rules the word");
+}
+
+/// 78.157 §3a — THE HOME CHECK RESOLVES COURT-STAMPED WORDS ONLY. A rule
+/// that cites a word this mind stood in its dialect (no court admitted it)
+/// is CITES UNHELD at home, by the cited address — never a pass; once a
+/// court's stamp files the same word, the citation resolves and the home
+/// check goes on to the replay.
+#[test]
+fn a_rule_citing_a_word_no_court_admitted_is_not_judged_clean_at_home() {
+    use crate::client::sdk::Epigenome;
+    use crate::transducer::family::{cipher_form, sentence_measure};
+    let family = vec![
+        (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
+        (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
+    ];
+    let held = cipher_form(&family[0].0, &family[0].1);
+    let mag = sentence_measure(&held, &family[..1], &NoCrystal, 0).expect("the body is spoken");
+    let cited = crate::transducer::sentence::as_element_form(&held, mag).expect("a tape");
+    let mut dialect = Epigenome::new();
+    dialect.stand_dialect_at(cited.clone(), 1, 1).expect("stood");
+    let rule = crate::transducer::family::extract_rule_with(&family, &dialect, &mut super::common::budget())
+        .expect("the family extracts");
+    let spoken = crate::transducer::family::mint_sentence_why(&rule, &family, &dialect, 0).expect("and mints");
+    assert!(
+        spoken.receipts().cited_addresses().iter().any(|a| *a == cited.address()),
+        "the word cites the form the mind stood"
+    );
+    let court_words = |a: &[u8]| dialect.court_word(a).and_then(|w| w.form().cloned());
+    let home = would_judge(&spoken, &family, &court_words, &dialect);
+    assert!(
+        matches!(&home, Err(NoRule::CitesUnheld(a)) if a.as_slice() == cited.address().as_bytes()),
+        "a dialect word is no citation the court holds: {home:?}"
+    );
+    // The same word, admitted at a court's stamp: the citation resolves.
+    let mut admitted = Epigenome::new();
+    admitted.learn(&cited.to_bytes().expect("the record writes"), &mut super::common::budget()).expect("learned");
+    admitted.admit_all_at(crate::chronometry::Stamp::new(1, [7; 32], crate::chronometry::Place::GENESIS));
+    let court_words = |a: &[u8]| admitted.court_word(a).and_then(|w| w.form().cloned());
+    let home = would_judge(&spoken, &family, &court_words, &admitted);
+    assert!(!matches!(home, Err(NoRule::CitesUnheld(_))), "a court-stamped word resolves: {home:?}");
+}

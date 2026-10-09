@@ -31,6 +31,14 @@
 //! sequence) is read again from the start, never taken for progress. Each
 //! percept's (TPoint, u) locates the seat's sub-instance, and its experienced
 //! dilation rides the perceived line.
+//!
+//! 78.158a — SIT-ALL: `--seat <domain-hex>[/<sub-origin-hex>] all` sits every
+//! seat the domain's latest listing offers, read again when a listing names
+//! another epoch and at every full aperture cycle of strokes; a seat new to
+//! the listing is taken, one gone from it is let go. And the SOLVE is the
+//! mind's own call: its reference kept, the mind told it called, the task
+//! answered only on an applied outcome, a refused rule not posted again
+//! until its address changes; its mint refusal and its home check named.
 
 use mycelium::anastome::dialogue::seat::{Arg, MailRead, Record};
 use mycelium::client::sdk::seat::{seat_fns, MindMail, MindRead, SeatHold, SeatName};
@@ -54,8 +62,18 @@ pub(crate) struct SeatArm {
     memo: mycelium::transducer::family::ExtractMemo,
     /// The tasks this seat has answered, by citation: a house repeats a task
     /// in every percept while it stands before the seat, and it is answered
-    /// once.
+    /// once. 78.158a U4 — answered is an APPLIED outcome, never a post.
     answered: mycelium::network::nerve::Keyed<()>,
+    /// 78.158a U4 — THE SOLVES IN FLIGHT, by task citation: the call's
+    /// reference (what the house's outcome names) and the rule's address. A
+    /// task in flight is not posted again until its outcome comes, or the
+    /// take is posted again (the calls of a lost take are answered by none).
+    solving: mycelium::network::nerve::Keyed<([u8; 32], Vec<u8>)>,
+    /// 78.158a U4 — THE SOLVES THE HOUSE REFUSED, by task citation: the
+    /// refused rule's address and the atlas root it was extracted at. The
+    /// same rule is not posted again; it is answered again when the rule's
+    /// address changes, as `Entity::solve_refused` keeps the task path's.
+    refused: mycelium::network::nerve::Keyed<(mycelium::transducer::address::Address, Vec<u8>)>,
     /// THE STANDING CALL: the last call posted, as (fn, its arguments in
     /// the seat codec's own canonical form), and whether its outcome came
     /// back applied. A decision equal to a standing applied call is not
@@ -87,15 +105,29 @@ pub(crate) struct SeatArms {
     /// v1.4 — the relay's epoch the cursor was read under: another epoch is
     /// a restarted relay, and the cursor is read again from the start.
     epoch: Option<u64>,
+    /// 78.158a SIT-ALL — `--seat <domain>[/<sub>] all`: the domain (and
+    /// sub-origin) whose every listed seat this mind sits; `None` for an
+    /// explicit id list.
+    all: Option<([u8; 32], Option<[u8; 32]>)>,
+    /// The listing's epoch the seats sat were read from, and whether a
+    /// listing read since names another (the seats are read again).
+    listed: Option<u64>,
+    relist: bool,
+    /// The strokes since the listing was last read for the seats: read
+    /// again at a full aperture cycle (`SeatHold::patience`, a stroke count,
+    /// never a clock), since a held seat reads its listing only after a take
+    /// and a house that adds a world posts nothing else a mind reads.
+    unlisted: u64,
 }
 
 impl SeatArms {
-    /// `--seat <domain-hex>[/<sub-origin-hex>] <seat-id>[,<seat-id>…]`, or no
-    /// arm.
+    /// `--seat <domain-hex>[/<sub-origin-hex>] <seat-id>[,<seat-id>…]`, or
+    /// `--seat <domain-hex>[/<sub-origin-hex>] all` (78.158a: every seat the
+    /// domain's latest listing offers), or no arm.
     pub(crate) fn of_args(args: &[String], key: ed25519_dalek::SigningKey) -> Result<Option<SeatArms>, String> {
         let Some(at) = args.iter().position(|a| a == "--seat") else { return Ok(None) };
         let (Some(d), Some(s)) = (args.get(at + 1), args.get(at + 2)) else {
-            return Err("--seat takes <domain-hex>[/<sub-origin-hex>] <seat-id>[,<seat-id>…]".to_string());
+            return Err("--seat takes <domain-hex>[/<sub-origin-hex>] <seat-id>[,<seat-id>…] | all".to_string());
         };
         let (d, sub) = match d.split_once('/') {
             Some((d, sub)) => (d, Some(sub)),
@@ -107,19 +139,80 @@ impl SeatArms {
             None => None,
         };
         let mut arms = Vec::new();
+        if s == "all" {
+            return Ok(Some(SeatArms { arms, key, after: 0, epoch: None, all: Some((domain, sub_origin)), listed: None, relist: true, unlisted: 0 }));
+        }
         for one in s.split(',') {
             let seat = one.trim().parse::<u32>().map_err(|e| format!("--seat: {one} is not a seat id: {e}"))?;
             if !arms.iter().any(|a: &SeatArm| a.at.seat == seat) {
                 arms.push(SeatArm::new(SeatName { domain, sub_origin, seat }, key.clone()));
             }
         }
-        Ok(Some(SeatArms { arms, key, after: 0, epoch: None }))
+        Ok(Some(SeatArms { arms, key, after: 0, epoch: None, all: None, listed: None, relist: false, unlisted: 0 }))
+    }
+
+    /// 78.158a SIT-ALL — THE SEATS SAT, READ FROM THE LISTING: every seat
+    /// the domain's latest listing offers is sat (a new arm, which takes it
+    /// this stroke), and every seat sat that the listing no longer offers is
+    /// let go (its arm dropped: its mail is read past). Read at the first
+    /// stroke, when a listing an arm read since names another epoch, and at
+    /// every full aperture cycle of strokes. One typed line where the
+    /// listing's epoch or the seats sat change.
+    fn sit_listing(&mut self, entity: &mut Entity, tag: &str) {
+        let Some((domain, sub_origin)) = self.all else { return };
+        self.unlisted = 0;
+        let listing = match entity.relay().list_seats(domain, sub_origin) {
+            Ok(Some(s)) => s,
+            Ok(None) => {
+                if self.relist {
+                    eprintln!("[{tag}] seat all: no listing held for the domain — read again next stroke");
+                }
+                self.relist = false;
+                return;
+            }
+            Err(e) => {
+                if self.relist {
+                    eprintln!("[{tag}] seat all: listing unread: {e} — read again next stroke");
+                }
+                self.relist = false;
+                return;
+            }
+        };
+        self.relist = false;
+        let Some((epoch, listed)) = mycelium::client::sdk::seat::listed_seats(&listing) else {
+            return eprintln!("[{tag}] seat all: the listing is no SEATS");
+        };
+        let sat: Vec<u32> = self.arms.iter().map(|a| a.at.seat).collect();
+        let (take, let_go) = mycelium::client::sdk::seat::reseat(&sat, &listed);
+        self.arms.retain(|a| !let_go.contains(&a.at.seat));
+        for seat in &take {
+            self.arms.push(SeatArm::new(SeatName { domain, sub_origin, seat: *seat }, self.key.clone()));
+        }
+        if self.listed != Some(epoch) || !take.is_empty() || !let_go.is_empty() {
+            eprintln!(
+                "[{tag}] seat all: listing epoch {epoch} offers {} seats — sitting {}, taken {take:?}, let go {let_go:?}",
+                listed.len(),
+                self.arms.len()
+            );
+        }
+        self.listed = Some(epoch);
     }
 
     /// ONE STROKE AT EVERY SEAT: each seat takes (again, where lost); the
     /// shared box is read to its end once; each piece goes to its seat; then
     /// each seat answers its tasks and makes its one call.
     pub(crate) fn stroke(&mut self, entity: &mut Entity, tag: &str, stop: &AtomicBool) {
+        // 78.158a SIT-ALL — the seats read from the listing first: at the
+        // first stroke, when a listing read since names another epoch, and
+        // at a full aperture cycle of strokes.
+        if self.all.is_some() {
+            if let Some(n) = self.unlisted.checked_add(1) {
+                self.unlisted = n;
+            }
+            if self.relist || self.unlisted >= SeatHold::patience() {
+                self.sit_listing(entity, tag);
+            }
+        }
         for arm in &mut self.arms {
             arm.take_step(entity, tag);
         }
@@ -166,14 +259,20 @@ impl SeatArms {
                 self.after = seq;
                 // A piece for a seat this mind does not sit is read past.
                 let Some(i) = self.arms.iter().position(|a| a.at == at) else { continue };
-                if let (Some(arm), Some(b), Some(t)) = (self.arms.get_mut(i), beats.get_mut(i), tasks.get_mut(i)) {
-                    arm.read_piece(entity, tag, piece, b, t);
+                let seen = match (self.arms.get_mut(i), beats.get_mut(i), tasks.get_mut(i)) {
+                    (Some(arm), Some(b), Some(t)) => arm.read_piece(entity, tag, piece, b, t),
+                    _ => None,
+                };
+                // 78.158a SIT-ALL — a listing an arm read at another epoch
+                // than the seats were sat from: the seats are read again.
+                if self.all.is_some() && seen.is_some() && seen != self.listed {
+                    self.relist = true;
                 }
             }
         }
         for ((arm, b), t) in self.arms.iter_mut().zip(beats).zip(tasks) {
             for id in t {
-                if !arm.answered.contains(&id) {
+                if !arm.answered.contains(&id) && !arm.solving.contains(&id) {
                     arm.solve_before(entity, tag, &id);
                 }
             }
@@ -195,6 +294,8 @@ impl SeatArm {
             calls: 0,
             memo: mycelium::transducer::family::ExtractMemo::new(),
             answered: mycelium::network::nerve::Keyed::new(),
+            solving: mycelium::network::nerve::Keyed::new(),
+            refused: mycelium::network::nerve::Keyed::new(),
             standing: None,
         }
     }
@@ -207,6 +308,9 @@ impl SeatArm {
             if was_posted {
                 eprintln!("[{tag}] seat {} take let go: no TAKEN within an aperture cycle of {} strokes — taken again", self.at.seat, SeatHold::patience());
             }
+            // The calls of a take let go are answered by none: their solves
+            // are no longer in flight (78.158a U4).
+            self.solving = mycelium::network::nerve::Keyed::new();
             match entity.relay().take(self.at, &self.key) {
                 Ok(Ok(seq)) => {
                     self.hold.take_posted();
@@ -220,17 +324,18 @@ impl SeatArm {
 
     /// ONE PIECE OF MAIL READ: a TAKEN marks the hold, a PERCEPT is perceived
     /// (its tasks gathered, its beat counted), an OUTCOME marks its call.
-    fn read_piece(&mut self, entity: &mut Entity, tag: &str, piece: MindMail, beats: &mut u64, tasks: &mut Vec<[u8; 32]>) {
+    /// Returns the epoch of a listing it read (78.158a sit-all).
+    fn read_piece(&mut self, entity: &mut Entity, tag: &str, piece: MindMail, beats: &mut u64, tasks: &mut Vec<[u8; 32]>) -> Option<u64> {
         {
             match piece {
                 MindMail::Taken(seq, t) => {
                     self.after = seq;
                     eprintln!("[{tag}] seat {} taken {} (reason {})", t.seat, t.ok, t.reason);
                     if (SeatName { domain: t.domain, sub_origin: t.sub_origin, seat: t.seat }) != self.at {
-                        return;
+                        return None;
                     }
                     match self.hold.taken(t.ok) {
-                        true => self.read_listing(entity, tag),
+                        true => return self.read_listing(entity, tag),
                         false => eprintln!("[{tag}] seat {} take let go: TAKEN refused (reason {}) — taken again next stroke", self.at.seat, t.reason),
                     }
                 }
@@ -265,34 +370,67 @@ impl SeatArm {
                         "[{tag}] seat outcome applied {} reason {} for fn {answered:?} | percepts {} calls {}",
                         o.applied, o.reason, self.percepts, self.calls
                     );
+                    // 78.158a U4 — A SOLVE'S OUTCOME: applied, the task is
+                    // answered; refused, the rule is remembered against it
+                    // and the task is answered again when the rule changes.
+                    let solved = self.solving.scoped().find(|(_, (r, _))| *r == o.call).map(|(k, (_, a))| (k, a.clone()));
+                    if let Some((id, addr)) = solved {
+                        let _ = self.solving.remove(&id);
+                        match o.applied {
+                            true => {
+                                self.answered.insert(&id, ());
+                                let _ = self.refused.remove(&id);
+                                eprintln!("[{tag}] seat task {} solve applied: answered", crate::speak::fam_id(&id));
+                            }
+                            false => {
+                                self.refused.insert(&id, (entity.epigenome.atlas_root(), addr));
+                                eprintln!(
+                                    "[{tag}] seat task {} solve refused (reason {}): answered again when the rule's address changes",
+                                    crate::speak::fam_id(&id),
+                                    o.reason
+                                );
+                            }
+                        }
+                    }
                     // 78.148 — a refusal is information: the seat lost, or
                     // the listing moved.
                     let held = self.hold.held;
                     if self.hold.outcome(o.applied, o.reason) {
-                        self.read_listing(entity, tag);
+                        return self.read_listing(entity, tag);
                     } else if held && !self.hold.held {
                         eprintln!("[{tag}] seat {} take let go: a call refused NOT THE HOLDER — taken again next stroke", self.at.seat);
                     }
                 }
             }
         }
+        None
     }
 
     /// 78.148 — THE LISTING PERCEIVED: the domain's latest SEATS read, and
     /// this seat's functions — id and argument tags — handed to the mind as
-    /// its repertoire. One typed line.
-    fn read_listing(&mut self, entity: &mut Entity, tag: &str) {
+    /// its repertoire. One typed line. Returns the listing's epoch where it
+    /// was read and is SEATS (78.158a: a listing naming no seat here is still
+    /// an epoch read — the seat may be gone from it).
+    fn read_listing(&mut self, entity: &mut Entity, tag: &str) -> Option<u64> {
         let listing = match entity.relay().list_seats(self.at.domain, self.at.sub_origin) {
             Ok(Some(s)) => s,
-            Ok(None) => return eprintln!("[{tag}] seat listing: none held for the domain"),
-            Err(e) => return eprintln!("[{tag}] seat listing unread: {e}"),
+            Ok(None) => {
+                eprintln!("[{tag}] seat listing: none held for the domain");
+                return None;
+            }
+            Err(e) => {
+                eprintln!("[{tag}] seat listing unread: {e}");
+                return None;
+            }
         };
         let Some((epoch, fns)) = seat_fns(&listing, self.at.seat) else {
-            return eprintln!("[{tag}] seat listing names no seat {}", self.at.seat);
+            eprintln!("[{tag}] seat listing names no seat {}", self.at.seat);
+            return mycelium::client::sdk::seat::listed_seats(&listing).map(|(e, _)| e);
         };
         entity.with_seat_mind(self.at, |m| m.perceive_listing(&fns));
         let named: Vec<(u16, &[u8])> = fns.iter().map(|f| (f.id, f.tags.as_slice())).collect();
         eprintln!("[{tag}] seat {} listing perceived at epoch {epoch}: fns (id, arg tags) {named:?}", self.at.seat);
+        Some(epoch)
     }
 
     /// THE MIND'S CALL AT THIS BEAT, where the seat is held: decided, posted,
@@ -346,6 +484,12 @@ impl SeatArm {
             Err(e) => return no_call(&format!("the task was not fetched: {e}")),
         };
         let gen = entity.epigenome.atlas_root();
+        // 78.158a U4 — a rule the house refused for this task, at the atlas
+        // root it was extracted at, is not extracted again until the
+        // language moves; then the rule's address is read against it below.
+        if self.refused.get(id).is_some_and(|(root, _)| *root == gen) {
+            return no_call("withheld again: the house refused this task's rule and the language has not moved");
+        }
         let frames = match self.memo.holds(id, &gen) {
             true => mycelium::transducer::family::Frames::new(),
             false => mycelium::transducer::family::perceive_family(&train),
@@ -360,16 +504,37 @@ impl SeatArm {
             .map(|x| mycelium::transducer::family::speak_rule(&rule, x, &entity.epigenome).filter(|s| s.remainder.is_empty()).and_then(|s| s.grid()))
             .collect();
         let Some(outs) = outs else { return no_call("a test is not spoken whole by the rule") };
-        let Some(minted) = entity.span_of(&rule.form).and_then(|d| mycelium::transducer::family::mint_sentence(&rule, &train, &entity.epigenome, d.span())) else {
-            return no_call("no sentence minted (an unmeasured span, or the mint refused)");
+        // 78.158a U1 — what is not minted says why: the span unmeasured, or
+        // the mint's refusal named whole with the form's demand kinds.
+        let Some(deliberation) = entity.span_of(&rule.form) else {
+            return no_call("no sentence minted: the span is unmeasurable");
+        };
+        let minted = match mycelium::transducer::family::mint_sentence_why(&rule, &train, &entity.epigenome, deliberation.span()) {
+            Ok(w) => w,
+            Err(why) => return no_call(&format!("no sentence minted: {}", mycelium::transducer::family::mint_refusal_line(why, &rule.form))),
         };
         let crossed = match mycelium::sdk::rule::crossing(&minted, &train, &entity.epigenome) {
             Ok(e) => e,
             Err(why) => return no_call(&format!("the rule does not cross: {why:?}")),
         };
-        let resolve = |a: &[u8]| entity.epigenome.working_word(a).and_then(|e| e.form().cloned());
-        if let Err(why) = mycelium::sdk::rule::would_judge(&crossed, &train, &resolve, &entity.epigenome) {
-            return no_call(&format!("refuted at home: {why:?}"));
+        if self.refused.get(id).is_some_and(|(_, addr)| addr.as_slice() == crossed.address().as_bytes()) {
+            return no_call("withheld again: the house refused this rule for the task, and its address has not changed");
+        }
+        // 78.157 §3a — the home check resolves the COURT-STAMPED words only,
+        // on this solve's stroke; 78.158a U2 — unread at home is unjudged,
+        // and the solve goes to the court, which resumes it.
+        let resolve = |a: &[u8]| entity.epigenome.court_word(a).and_then(|e| e.form().cloned());
+        match mycelium::sdk::rule::would_judge_with(&crossed, &train, &resolve, &entity.epigenome, &mut budget) {
+            Ok(()) => {}
+            Err(mycelium::sdk::rule::NoRule::Unread) => eprintln!(
+                "[{tag}] seat task {} unjudged at home: {} — posted for the court to resume",
+                crate::speak::fam_id(id),
+                mycelium::verdict::REFUSE_UNREAD
+            ),
+            Err(mycelium::sdk::rule::NoRule::CitesUnheld(a)) => {
+                return no_call(&format!("cites unheld: the rule cites {} no court admitted", crate::speak::fam_id(&a)));
+            }
+            Err(why) => return no_call(&format!("refuted at home: {why:?}")),
         }
         let shapes = |g: &mycelium::arc::Grid| match g.as_slice() {
             [row, ..] => (g.len(), row.len()),
@@ -388,10 +553,14 @@ impl SeatArm {
             [] => Vec::new(),
         };
         let Some(args) = solve_args(&crossed, &outs, &steps) else { return no_call("the rule's tape or the outputs pass their carrier") };
-        match entity.relay().call(self.at, &self.key, FN_SOLVE, args) {
-            Ok((Ok(seq), _)) => {
+        // 78.158a U4 — THE SOLVE IS THE MIND'S OWN CALL: its reference kept,
+        // the mind told it called (so the outcome reads against fn 1, never
+        // `fn None`), and the task in flight until the outcome answers it.
+        match entity.relay().call(self.at, &self.key, FN_SOLVE, args.clone()) {
+            Ok((Ok(seq), reference)) => {
                 self.calls += 1;
-                self.answered.insert(id, ());
+                entity.with_seat_mind(self.at, |m| m.called(FN_SOLVE, args, reference));
+                self.solving.insert(id, (reference, crossed.address().as_bytes().to_vec()));
                 eprintln!("[{tag}] seat task {} call fn {FN_SOLVE} posted (seq {seq}): {} outputs, steps {steps:?}", crate::speak::fam_id(id), outs.len());
             }
             Ok((Err(why), _)) => eprintln!("[{tag}] seat task call refused: {why:?}"),

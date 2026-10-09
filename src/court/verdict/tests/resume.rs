@@ -157,6 +157,32 @@ fn an_edge_on_a_spent_stroke_is_spent_never_refused() {
     assert!(rule.form.vertices.entries().any(|(_, v)| matches!(v, Vertex::Word { .. })));
 }
 
+/// 78.158a U2 — THE CALLER'S STROKE IS HONOURED, NEVER DRAINED. A replay
+/// whose one unit costs one read more than a default stroke grants is
+/// UNREAD on a caller's stroke no wider than a default one — refused by
+/// name, kind N, no reading of the word — and read whole on a caller's
+/// stroke as wide as the unit, which is left as it stood.
+#[test]
+fn an_off_lock_reader_reads_each_round_on_the_callers_wider_stroke() {
+    use crate::transducer::sentence::ObstructionKind;
+    let (_, e) = good();
+    let unit = usize::try_from(crate::physics::spend_unit()).expect("a stroke's reads fit a usize") + 1;
+    let mut run = |b: &mut crate::physics::Budget, _: &mut ReplayCursor| {
+        for _ in 0..unit {
+            if !b.spend() {
+                return Replayed::Unread;
+            }
+        }
+        Replayed::Clean
+    };
+    let unread = crate::verdict::blind::to_completion(&e, &mut stroke(1), &mut run);
+    assert_eq!(unread.as_ref().map(|r| r.reason), Some(REFUSE_UNREAD), "no default stroke reads the unit");
+    assert_eq!(unread.map(|r| r.obstruction.kind()), Some(ObstructionKind::N), "and that is no reading of the word");
+    let mut wide = stroke(unit);
+    assert_eq!(crate::verdict::blind::to_completion(&e, &mut wide, &mut run), None, "the caller's stroke reads it");
+    assert_eq!(wide.remaining(), unit, "and is left as it stood");
+}
+
 /// THE OFF-LOCK READERS keep their answer: run to the end over fresh
 /// strokes, `blind_replay_at` on the caller's stroke of one read is the
 /// whole replay's verdict.

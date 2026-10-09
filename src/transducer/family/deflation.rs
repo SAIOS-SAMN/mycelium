@@ -337,6 +337,35 @@ pub fn mint_sentence_why(
     mint_or_refuse(rule, family, crystal).map_err(crate::transducer::sentence::Refused::noted)
 }
 
+/// THE MINT'S REFUSAL BY ARM (78.67): a vertex that does not carry its
+/// family is `carry`; links the form's demands do not account for are
+/// `demands`; a citation this mind does not hold is `citation`; a form
+/// with nothing acting, no tape or an address that does not decode is
+/// `integrity`. Exhaustive over the refusals the mint returns; any other is
+/// named `other` rather than folded into one of these.
+pub fn mint_arm(why: crate::transducer::sentence::Refused) -> &'static str {
+    use crate::transducer::sentence::Refused;
+    match why {
+        Refused::MintVertexNotCarried(_) => "carry",
+        Refused::MintLinksWithoutDemand | Refused::MintLinksUndeclared => "demands",
+        Refused::CitedNotHeld | Refused::CitedSealed | Refused::OwedToEveryCourt => "citation",
+        Refused::MintNothingActs | Refused::MintNoTape | Refused::MintAddressUndecoded => "integrity",
+        _ => "other",
+    }
+}
+
+/// 78.158a U1 — THE MINT'S REFUSAL NAMED WHOLE, on every path that mints:
+/// its arm, its proof, its kind (78.9), and the KINDS OF THE DEMANDS the
+/// refused form carries, in the form's own vertex order (`demand_vertices`,
+/// each by `Demand::label`) — `[]` where it carries none. The solve paths
+/// read "unmeasured span, or the mint refused" and the speech path named
+/// the arm alone, so 456 refusals of "nothing in the form acts" could not
+/// say that every vertex was a demand, nor which.
+pub fn mint_refusal_line(why: crate::transducer::sentence::Refused, form: &crate::transducer::sentence::Form) -> String {
+    let kinds: Vec<&'static str> = form.demand_vertices().map(|(_, kind, _, _)| kind.label()).collect();
+    format!("mint refused ({}): {} [{:?}] demands [{}]", mint_arm(why), why.proof(), why.kind(), kinds.join(", "))
+}
+
 fn mint_or_refuse(
     rule: &crate::transducer::sentence::SentenceRule,
     family: &[(Grid, Grid)],
