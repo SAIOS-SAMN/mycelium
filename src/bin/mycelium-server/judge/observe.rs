@@ -80,7 +80,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             static LAST: std::sync::Mutex<u64> = std::sync::Mutex::new(0);
             if let (Some((at, hold)), Ok(mut last)) = (crate::held::holding(), LAST.lock()) {
                 if *last == hold {
-                    eprintln!("  kernel lock {at} still held across two observer questions (hold {hold})");
+                    eprintln!("  kernel lock {at} still held across two observer questions (hold {hold}, step {})", crate::held::stepping());
                 }
                 *last = hold;
             }

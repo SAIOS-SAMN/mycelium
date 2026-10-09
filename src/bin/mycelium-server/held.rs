@@ -42,6 +42,26 @@ pub(crate) fn holding() -> Option<(&'static str, u64)> {
     b.holder.map(|h| (h, b.hold))
 }
 
+/// THE STEP A LONG HOLD STANDS IN: a site that does several things under
+/// one hold names each as it enters it, so a hold that stands across the
+/// observer's questions says which step it stands in (hypha a, 2026-10-09:
+/// the court loop held 20+ minutes, the site alone could not say whether in
+/// the stroke or in the publish).
+static STEP: Mutex<&'static str> = Mutex::new("");
+
+pub(crate) fn step(name: &'static str) {
+    if let Ok(mut s) = STEP.lock() {
+        *s = name;
+    }
+}
+
+pub(crate) fn stepping() -> &'static str {
+    match STEP.lock() {
+        Ok(s) => *s,
+        Err(_) => "",
+    }
+}
+
 /// Threads blocked on the kernel through `held!` right now, and how many
 /// such waits have been served since boot.
 static WAITING: AtomicU64 = AtomicU64::new(0);

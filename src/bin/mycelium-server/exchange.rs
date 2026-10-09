@@ -305,13 +305,17 @@ impl Exchange {
             std::thread::yield_now();
             crate::held::yield_to_waiters();
             if let Ok(mut k) = crate::held::held!(kernel) {
+                crate::held::step("court stroke");
                 k.court_stroke();
                 // A question the observer left while this stroke held the
                 // kernel is answered under the lock already held.
+                crate::held::step("answer standing");
                 crate::judge::observe::answer_standing(&k, &mesh, mesh.vk);
                 // 78.151 — the door's reading, published whole under the
                 // lock the stroke already holds.
+                crate::held::step("publish");
                 published.publish(&mut k);
+                crate::held::step("offers");
                 // The words the stroke moved onto the docket — a rewrite, the
                 // citers a slash re-docketed — are offered by it.
                 let offers = k.take_offers();
