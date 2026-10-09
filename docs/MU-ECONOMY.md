@@ -344,18 +344,31 @@ on the stake at the court's read price (emergent, never a published
 rate), and an unstake releases only after every claim drawn on it settles.
 A progenitor's in-universe wormhole haul pays the same gas.
 
-EVERY WORMHOLE IS COORDINATED ON TUNIVERSAL WITH THE HYPHA (the operator,
-2026-10-09). A wormhole joins two places that no light path joins, so its
-two mouths can agree only on the one clock: no crossing is made without a
-TRAVERSE act on the hypha that cites a FINAL TUniversal point at each mouth
-(origin/h:S:G:T:H:K, 2-of-3 quorum, 78.152). Between domains this is the
-mouth traversal of 78.128 (kind 9), its keeper's toll on lane G; WITHIN one
-universe — a progenitor network, a core-to-rim haul in xylarium — it is the
-same act, never a kernel's private shortcut. So every wormhole traversal
-costs μ: the route's gas per lane (§7.1) plus the mouth's toll, paid to the
-courts. A crossing whose mouths' points are not final is refused as not yet
-at h; a kernel that moves matter through a wormhole without the act has
-moved it nowhere the mesh recognises.
+EVERY WORMHOLE TRAVERSAL NEEDS COORDINATES FROM THE HYPHA (the operator,
+2026-10-09, corrected the same day; Concordance 5.9). Time is coordinates
+on a map, and the hypha makes the MAPS that lay the universes out on the
+TUniversal clock. The CROSSING — matter, a ship, a fleet — happens in its
+own universe, never through the hypha. What the traverser obtains from the
+hypha, and pays for, is the FINAL TUniversal point of each mouth on that
+map (origin/h:S:G:T:H:K, 2-of-3 quorum, 78.152). TRAVERSE is therefore a
+COORDINATE RETRIEVAL AND MAPPING act citing both mouths' final points, not
+a transport: it costs the route's gas per lane (§7.1) plus the mouth's toll
+(lane G; 78.128 between domains), paid to the courts. It holds between
+domains and within one universe alike (a progenitor network, a core-to-rim
+haul in xylarium). A mouth not yet final on the map is refused as not yet
+at h; a crossing made without coordinates from the map is one the mesh
+cannot place.
+
+THE MAP (the records 78.154 keeps, per universe, on the hypha): for each
+universe, by its ORIGIN (genesis, epoch) —
+- MOUTH: the mouth's identity (78.128's mouth pair and side), its place in
+  that universe's own space (78.140: a point of its curved space or torus,
+  exact), and the FINAL TPoint at which it was last mapped;
+- SEGMENT: a tube, core or throat between two mapped places, with its span
+  in the court unit (geometrized Mpc) and, for a mouth, its keeper and toll;
+- each record written by an act sealed at a final point and superseded only
+  by a later act; a TRAVERSE reads the map at the final point it cites, so
+  the coordinates it buys are the ones the quorum agreed at that time.
 
 ### 7.2 Dissipation recycles (78.154a, the operator, 2026-10-09)
 
