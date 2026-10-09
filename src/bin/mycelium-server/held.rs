@@ -73,6 +73,13 @@ pub(crate) fn holding() -> Option<(&'static str, u64)> {
     b.holder.map(|h| (h, b.hold))
 }
 
+/// Every take of the kernel through `held!` since boot: the book's hold
+/// number. A path that takes no kernel leaves it where it stood (78.152b).
+#[cfg(test)]
+pub(crate) fn holds() -> u64 {
+    BOOK.lock().map_or(0, |b| b.hold)
+}
+
 /// THE STEP A LONG HOLD STANDS IN: a site that does several things under
 /// one hold names each as it enters it, so a hold that stands across the
 /// observer's questions says which step it stands in (hypha a, 2026-10-09:

@@ -183,7 +183,11 @@ pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: std::sync::mpsc::Receiver<(Strin
         // lines in one aperture on the fleet of 2026-09-09.
         let mut deferred: mycelium::network::nerve::Keyed<u64> = mycelium::network::nerve::Keyed::new();
         let aperture = u64::from(mycelium::physics::aperture_cycle());
+        // 78.152b: pushed rings refused by a peer, counted, said at powers of
+        // two; a heard ring is the steady state and says nothing.
+        let mut ticks_refused = 0u64;
         for (addr, body) in nerve_rx {
+            let tick = dialogue::act_is(&body, dialogue::ACT_TICK);
             match tell_peer(&addr, body) {
                 Some((reply, dt)) => {
                     note_rtt_ok(&mesh_nerve, addr.as_bytes(), dt);
@@ -204,6 +208,15 @@ pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: std::sync::mpsc::Receiver<(Strin
                         }
                         continue;
                     }
+                    if tick {
+                        if reply.as_slice() != [dialogue::TICK_HEARD] {
+                            ticks_refused = ticks_refused.checked_add(1).map_or(ticks_refused, |n| n);
+                            if ticks_refused.is_power_of_two() {
+                                eprintln!("  nerve → {addr}: tick refused ({ticks_refused})");
+                            }
+                        }
+                        continue;
+                    }
                     match dialogue::decode_root_reply(&reply) {
                         Some((held, at)) => eprintln!(
                             "  nerve → {addr}: root delivered at {} ({})",
@@ -215,7 +228,11 @@ pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: std::sync::mpsc::Receiver<(Strin
                 }
                 None => {
                     note_rtt_timeout(&mesh_nerve, addr.as_bytes());
-                    eprintln!("  nerve → {addr}: no answer");
+                    // A silent keeper is read on the residual and the final
+                    // point, not one line per pushed ring.
+                    if !tick {
+                        eprintln!("  nerve → {addr}: no answer");
+                    }
                 }
             }
         }
@@ -240,6 +257,44 @@ pub(crate) struct Exchange {
     pub state_path: String,
     pub syllabus: Arc<Mutex<Syllabus>>,
     pub genesis_held: bool,
+    /// 78.152b — the nerve this court's keeper pushes its ring on.
+    pub nerve: std::sync::mpsc::SyncSender<(String, Vec<u8>)>,
+}
+
+/// THE PEER COURTS A CYCLE SPEAKS TO: the configured peers and every door a
+/// signed digest named, this court's own excepted — one entry per hypha.
+fn peer_doors(mesh: &Mesh, join: &[String]) -> Keyed<String> {
+    let mut dests: Keyed<String> = Keyed::new();
+    for p in join {
+        if p != &mesh.bind {
+            dests.insert(p.as_bytes(), p.clone());
+        }
+    }
+    if let Ok(a) = mesh.addrs.lock() {
+        // The peers this court knows, which is what a cycle's
+        // destinations are: one entry per hypha, bounded by the
+        // mesh and not by anything that grows with use.
+        for (_, addr) in a.scoped() {
+            if addr != &mesh.bind {
+                dests.insert(addr.as_bytes(), addr.clone());
+            }
+        }
+    }
+    dests
+}
+
+/// 78.152b — THE KEEPER'S RING PUSHED: where the court loop signed a reading,
+/// its ring is queued as `ACT_TICK` to every peer court on the nerve, never
+/// blocking (`try_send`: a full nerve drops it, and the next reading's ring
+/// carries it again, as the digest still does). Called with no kernel held.
+fn push_tick(mesh: &Mesh, join: &[String], nerve: &std::sync::mpsc::SyncSender<(String, Vec<u8>)>, ring: &[mycelium::chronometry::tuniversal::TickReading]) {
+    let Some(body) = dialogue::encode_tick(&mesh.vk, ring) else {
+        eprintln!("  court tuniversal tick refused: a reading cannot be written");
+        return;
+    };
+    for (_, addr) in peer_doors(mesh, join).scoped() {
+        let _ = nerve.try_send((addr.clone(), body.clone()));
+    }
 }
 
 impl Exchange {
@@ -280,7 +335,11 @@ impl Exchange {
             state_path,
             syllabus,
             genesis_held,
+            nerve,
         } = self;
+        // 78.152b: the tick the court loop last handed the keepers, at the
+        // origin then held — a stroke where neither moved asks them nothing.
+        let mut last_tick: (Option<mycelium::chronometry::tuniversal::Tick>, Option<Origin>) = (None, None);
         let genesis_written =
             std::sync::Arc::new(std::sync::atomic::AtomicBool::new(genesis_held));
         let mut last_organs = (usize::MAX, usize::MAX);
@@ -326,9 +385,24 @@ impl Exchange {
                 // 23.8, S13.4: the door's deficit, read under the kernel and
                 // handed to the listener's deferral without it.
                 let deficit = k.physics().reserve_deficit();
+                // 78.152b TU-1: the keeper's tick — head h, lanes, K — read
+                // once per stroke under the lock already held.
+                let tick = k.keeper_tick();
                 drop(k);
                 if let Ok(mut d) = mesh.deficit.lock() {
                     *d = deficit;
+                }
+                // 78.152b: SIGNED IN THE COURT LOOP, the kernel dropped, so a
+                // reading is signed whenever it is due — no digest ask needed
+                // — and its ring pushed to every peer court on the nerve.
+                // Asked again where the tick moved or an origin was adopted
+                // since: a reading verifies only at an origin.
+                let at = (tick, mesh.origin.lock().ok().and_then(|o| *o));
+                if at.0.is_some() && at != last_tick {
+                    last_tick = at;
+                    if let Some(ring) = crate::tshelf::sign_tick(&mesh, tick) {
+                        push_tick(&mesh, &join, &nerve, &ring);
+                    }
                 }
                 if let Ok(mut sy) = syllabus.lock() {
                     syllabus_admit(&mut sy, seed);
@@ -480,22 +554,7 @@ impl Exchange {
                 Ok(k) => k.k_step(),
                 Err(_) => continue,
             };
-            let mut dests: mycelium::network::nerve::Keyed<String> = mycelium::network::nerve::Keyed::new();
-            for p in &join {
-                if p != &mesh.bind {
-                    dests.insert(p.as_bytes(), p.clone());
-                }
-            }
-            if let Ok(a) = mesh.addrs.lock() {
-                // The peers this court knows, which is what a cycle's
-                // destinations are: one entry per hypha, bounded by the
-                // mesh and not by anything that grows with use.
-                for (_, addr) in a.scoped() {
-                    if addr != &mesh.bind {
-                        dests.insert(addr.as_bytes(), addr.clone());
-                    }
-                }
-            }
+            let dests = peer_doors(&mesh, &join);
             cycles += 1;
             if cycles.is_power_of_two() {
                 eprintln!("  court exchange cycle {cycles} idle {idle}");

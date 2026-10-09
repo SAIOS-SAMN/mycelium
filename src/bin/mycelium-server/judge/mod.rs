@@ -21,6 +21,7 @@ pub(crate) mod uplink;
 pub(crate) mod challenge;
 pub(crate) mod handoff;
 pub(crate) mod seat;
+pub(crate) mod tick;
 pub(crate) mod wallet;
 pub(crate) mod domain;
 pub(crate) mod why;
@@ -39,9 +40,10 @@ static REFUSE_COUNT: AtomicU64 = AtomicU64::new(0);
 /// 78.151 — THE READS THAT TAKE NO KERNEL, answered where the frame is read:
 /// a page of a line or a fold root (`ACT_RECEIPTS`), an account
 /// (`ACT_WALLET`) and the core clock (`ACT_LAWS` clock), off the court's
-/// published reading; a seat listing, off the relay's own lock. None waits
-/// behind a worker the kernel holds. `false` where the frame is none of
-/// them: the caller judges it as before.
+/// published reading; a seat listing, off the relay's own lock; and
+/// (78.152b) a peer keeper's pushed ring (`ACT_TICK`), off the keepers' own
+/// lock. None waits behind a worker the kernel holds. `false` where the
+/// frame is none of them: the caller judges it as before.
 pub(crate) fn serve_published(stream: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
     let tag = dialogue::act_tag(&frame.body);
     let served = match tag.and_then(Action::of_tag) {
@@ -61,6 +63,10 @@ pub(crate) fn serve_published(stream: &mut TcpStream, frame: &Frame, door: &Door
             clock
         }
         Some(Action::Seat) => seat::serve_listing(stream, frame, door),
+        Some(Action::Tick) => {
+            tick::judge(stream, frame, door);
+            true
+        }
         _ => false,
     };
     if let (true, Some(t)) = (served, tag) {
@@ -113,6 +119,9 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         Action::Challenge => challenge::judge(stream, &frame, door),
         Action::Handoff => handoff::judge(stream, &frame, door),
         Action::Seat => seat::judge(stream, &frame, door),
+        // Answered where the frame is read (`serve_published`); here only
+        // where a caller judged it unread.
+        Action::Tick => tick::judge(stream, &frame, door),
         // The door's control actions (`serve_control`) answered above; any
         // other action has no judge here and is not answered.
         _ => {}

@@ -170,6 +170,17 @@ pub const ACT_FETCH: u8 = Action::Fetch.byte();
 pub const ACT_COVER: u8 = Action::Cover.byte();
 pub const ACT_OFFER: u8 = Action::Offer.byte();
 pub const ACT_INSTALLED: u8 = Action::Installed.byte();
+/// 78.152b — A KEEPER'S RING PUSHED, court to court:
+/// `[ACT_TICK][keeper vk 32][ring]`, the ring in the cover digest's own codec
+/// (`chronometry::tuniversal::reading::put_ring`). Sent on the nerve when the
+/// keeper signs a reading in its court loop; heard at the door off the kernel.
+/// Reply: one byte, `TICK_HEARD` or `TICK_REFUSED`. WIRE-CHANGE.
+pub const ACT_TICK: u8 = Action::Tick.byte();
+/// The ring was admitted, or held already.
+pub const TICK_HEARD: u8 = 1;
+/// The frame did not read whole, its keeper is no known peer court, or a
+/// reading of the ring was refused (`tuniversal::Refused`).
+pub const TICK_REFUSED: u8 = 0;
 /// AN EQUIVOCATION PROOF (47.4, `XSEPTUM.md` §5.5): any node presents two
 /// receipt sections it holds under one key at one K with two chain
 /// hashes, and the court burns the signer's bond. The one xSEPTUM act

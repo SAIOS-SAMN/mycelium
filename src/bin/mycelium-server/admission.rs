@@ -367,8 +367,10 @@ pub(crate) fn admit_peer_digest(
     // 78.152 TU-2: the signer's keeper ring, verified on admission —
     // signature, parent chain, cites — and the door's final point raised
     // where the quorum moved it (TU-3). Each reading is signed on its own,
-    // so the ring stands apart from the digest's signature.
-    crate::tshelf::hear_ring(mesh, vk, ring);
+    // so the ring stands apart from the digest's signature. 78.152b: the
+    // ring also travels on its own act (`ACT_TICK`); this one stays beside
+    // it, and its outcome is counted and journalled where it is heard.
+    let _ = crate::tshelf::hear_ring(mesh, vk, ring);
     // The digest names the peer's room, its address and its ROOTS. Its
     // charts are read by page when those roots move (`admit_peer_cover`),
     // so nothing here retracts a cover this reading cannot replace.
