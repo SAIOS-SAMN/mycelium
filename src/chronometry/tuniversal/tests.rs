@@ -237,7 +237,8 @@ fn with_four_keepers_a_point_needs_three() {
     // c hears a and cites it: a, b, c are three of four.
     assert_eq!(hear(&mut ks, 2, 0), Ok(Admitted::Anchored));
     assert!(ks[2].read_own(&keys[2], tick(14, [1, 0, 6, 0], 2)).expect("writes"));
-    assert_eq!(hear(&mut ks, 0, 2), Ok(Admitted::Anchored));
+    // a already holds c's line: the new reading extends it.
+    assert!(matches!(hear(&mut ks, 0, 2), Ok(Admitted::Extended(_))), "c's line grows by its new reading");
     let a10 = TPoint { origin: ORIGIN, h: 10, lanes: [4, 0, 0, 0], k: 1 };
     assert_eq!(ks[0].final_of(&vk(&keys[0])), Some(a10), "three of four is a majority");
 }
