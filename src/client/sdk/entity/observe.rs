@@ -98,7 +98,7 @@ impl Entity {
                 self.discordance as u64,
                 self.colour_derived,
             ],
-            solving: [s.first, s.again, s.refused.iter().sum(), s.unruled, s.unminted, s.refuted, s.withheld_again],
+            solving: [s.first, s.again, s.refused.iter().sum(), s.unruled, s.unminted, s.refuted, s.withheld_again, s.unread],
             paid: s.paid,
             carriers: [
                 c.len() as u64,

@@ -2,6 +2,7 @@
 
 mod deferral;
 mod pacing;
+mod standing;
 mod strokes;
 mod tick;
 mod wire;

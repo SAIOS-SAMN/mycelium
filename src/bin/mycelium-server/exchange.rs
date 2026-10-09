@@ -399,6 +399,9 @@ impl Exchange {
         let mut park_seen = crate::tshelf::shelf().seen();
         let mut last_tally = AdmissionTally::default();
         let mut last_cover: Option<[[u8; 32]; 4]> = None;
+        // 78.153c — whether this court's standing (its acts among it) has
+        // been published since boot.
+        let mut standing_published = false;
         loop {
             std::thread::yield_now();
             crate::held::yield_to_waiters();
@@ -410,7 +413,11 @@ impl Exchange {
                     // A question the observer left while this stroke held the
                     // kernel is answered under the lock already held.
                     crate::held::step("answer standing");
-                    crate::judge::observe::answer_standing(k, &mesh, mesh.vk);
+                    // 78.153c — the first stroke after boot publishes it
+                    // unasked, so the first question finds it.
+                    if crate::judge::observe::answer_standing(k, &mesh, mesh.vk, !standing_published) {
+                        standing_published = true;
+                    }
                     // 78.151 — the door's reading, published whole under the
                     // lock the stroke already holds.
                     crate::held::step("publish");

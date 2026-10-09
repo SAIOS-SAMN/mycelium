@@ -133,11 +133,23 @@ impl Reasons {
 /// (P, D, C, I, N, unclassified — 78.9, in the reader's own order; an
 /// unknown kind in the last place), and UNRULED (no verdict decoded); and
 /// what the solves were paid, per lane.
+///
+/// 78.153c — and BY THE REPLY'S CODE, each code its own count (`by_code`, in
+/// [`SOLVE_CODES`]' order, a code this build does not know last), and
+/// UNREAD apart (`SOLVE_UNREAD`, a retry the court asks for, never a
+/// refusal: 66 solves filed and none paid on 2026-10-09 read as "refused N"
+/// with nothing to say which).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct SolveTally {
     pub first: u64,
     pub again: u64,
+    /// `SOLVE_NOTHING` with its refusal, by the refusal's kind
+    /// ([`SOLVE_KINDS`]).
     pub refused: [u64; 7],
+    /// `SOLVE_UNREAD`: not judged yet — asked again, the court resumes.
+    pub unread: u64,
+    /// Every verdict by the reply's code ([`SOLVE_CODES`]).
+    pub by_code: [u64; 5],
     pub unruled: u64,
     pub paid: [u64; 4],
     /// Solves not sent, by why (`Entity::solve_task`): no rule minted; a
@@ -147,13 +159,37 @@ pub struct SolveTally {
     pub withheld_again: u64,
 }
 
+/// 78.153c — THE SOLVE REPLY'S CODES BY NAME, in the wire's own order
+/// (`SOLVE_NOTHING` 0, `SOLVE_FLOOR` 1, `SOLVE_BOUNTY` 2, `SOLVE_UNREAD` 3),
+/// and a code this build does not know last.
+pub const SOLVE_CODES: [&str; 5] = ["nothing", "floor", "bounty", "unread", "unknown code"];
+
+/// A refusal's kind by name, in the byte's order on the wire
+/// (`ObstructionKind::ALL`: P D C I N, unclassified `?`), and a kind byte
+/// this build does not know last.
+pub const SOLVE_KINDS: [&str; 7] = ["P", "D", "C", "I", "N", "?", "unknown kind"];
+
+/// The name a code is read by.
+pub fn solve_code_name(code: u8) -> &'static str {
+    match SOLVE_CODES.get(usize::from(code)) {
+        Some(n) => n,
+        None => "unknown code",
+    }
+}
+
 impl SolveTally {
     /// One verdict, folded in.
     pub fn note(&mut self, code: u8, mu: &[u64; 4], refusal: Option<&crate::anastome::dialogue::SolveRefusal>) {
-        use crate::anastome::dialogue::{SOLVE_BOUNTY, SOLVE_FLOOR};
+        use crate::anastome::dialogue::{SOLVE_BOUNTY, SOLVE_FLOOR, SOLVE_UNREAD};
+        let at = usize::from(code).min(self.by_code.len() - 1);
+        if let Some(slot) = self.by_code.get_mut(at) {
+            *slot += 1;
+        }
         match (code, refusal) {
             (SOLVE_BOUNTY, _) => self.first += 1,
             (SOLVE_FLOOR, _) => self.again += 1,
+            // A retry, never a refusal, whatever reason rides with it.
+            (SOLVE_UNREAD, _) => self.unread += 1,
             (_, Some(r)) => {
                 let place = usize::from(r.kind).min(self.refused.len() - 1);
                 if let Some(slot) = self.refused.get_mut(place) {
@@ -167,6 +203,34 @@ impl SolveTally {
         if let Some(total) = crate::core::lanes::lanes_add(self.paid, *mu) {
             self.paid = total;
         }
+    }
+
+    /// 78.153c — ONE VERDICT, AS ONE LINE: the task by its citation's head,
+    /// the code by name and number, the refusal's kind by name (`none`
+    /// where the reply carried no refusal) and its reason as the court
+    /// wrote it.
+    pub fn verdict_line(task: &[u8; 32], code: u8, refusal: Option<&crate::anastome::dialogue::SolveRefusal>) -> String {
+        let head: String = task.iter().take(4).map(|b| format!("{b:02x}")).collect();
+        let (kind, reason) = match refusal {
+            Some(r) => {
+                let kind = match SOLVE_KINDS.get(usize::from(r.kind)) {
+                    Some(k) => *k,
+                    None => "unknown kind",
+                };
+                (kind, format!(" · {}", String::from_utf8_lossy(&r.reason)))
+            }
+            None => ("none", String::new()),
+        };
+        format!("solve verdict · task {head}… · code {} ({code}) · kind {kind}{reason}", solve_code_name(code))
+    }
+
+    /// The tally by code, for the mind's `K` line.
+    pub fn line(&self) -> String {
+        let [nothing, floor, bounty, unread, unknown] = self.by_code;
+        format!(
+            "solves nothing {nothing} floor {floor} bounty {bounty} unread {unread} unknown {unknown} · refused (P D C I N ? x) {:?} unruled {} · kept home unminted {} refuted {} withheld {}",
+            self.refused, self.unruled, self.unminted, self.refuted, self.withheld_again
+        )
     }
 }
 

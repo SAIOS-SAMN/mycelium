@@ -114,8 +114,15 @@ fn a_solve_not_judged_on_its_stroke_is_unread_and_resumed() {
             }
         }
     };
-    let (pay, asked) = solve(&mut Kernel::new());
+    let mut first = Kernel::new();
+    let (pay, asked) = solve(&mut first);
     let (again, asked_again) = solve(&mut Kernel::new());
     assert!(pay.iter().any(|&m| m > 0), "the rule discharges its pair: {pay:?}");
     assert_eq!((pay, asked), (again, asked_again), "one verdict, one price, one number of strokes");
+    // 78.153c — EVERY UNREAD ASKING IS COUNTED, under "unread": the askings
+    // before the judging one, exactly; the solved one is counted where it is
+    // paid, so nothing else is.
+    let judged = first.acts_reading().judged;
+    assert_eq!(judged[crate::observe::Judged::Unread.slot()], asked - 1, "each unread asking, counted");
+    assert_eq!(judged.iter().sum::<u64>(), asked - 1, "and nothing else");
 }

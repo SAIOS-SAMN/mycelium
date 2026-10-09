@@ -162,6 +162,33 @@ fn the_first_closure_mints_the_discharge_and_a_closure_again_pays_nothing() {
     assert_eq!(k.treasury.balance_mu(&voice), pay, "and the balance stands");
 }
 
+/// 78.153c — A NO-WORK VERDICT IS COUNTED, under "no work": a rule replayed
+/// clean on a withheld pair it has nothing to do on discharges nothing, and
+/// the court's acts say so — the slot the table lacked, where every 78.149
+/// no-work verdict was dropped. A refusal and an unverifiable solve each
+/// land on their own slot beside it.
+#[test]
+fn a_no_work_verdict_is_counted_under_no_work() {
+    use crate::observe::{Judged, JUDGED};
+    let mut k = Kernel::new();
+    let rule = rule_over(&carried());
+    let idle = vec![(digits(&["0000000"]), digits(&["0000000"]))];
+    let verdict = k.judge_solve(&rule, &idle);
+    assert!(matches!(verdict, SolveVerdict::NoWork), "nothing to carry, nothing discharged: {verdict:?}");
+    assert!(matches!(k.judge_solve(&rule, &recoloured()), SolveVerdict::Refused(_)));
+    assert!(matches!(k.judge_solve(&rule, &[]), SolveVerdict::Unverifiable));
+    let judged = k.acts_reading().judged;
+    let at = |name: &str| JUDGED.iter().position(|n| *n == name).expect("a slot of the table");
+    assert_eq!(judged[at("no work")], 1, "the no-work verdict, counted");
+    assert_eq!(judged[Judged::NoWork.slot()], 1);
+    assert_eq!(judged[at("unverifiable")], 1);
+    // `judge_solve` asks again while the host's stroke runs out before the
+    // replay rules; each such asking is counted "unread", the rest exactly.
+    let unread = judged[Judged::Unread.slot()];
+    assert_eq!(judged.iter().sum::<u64>() - unread, 3, "three verdicts, three counts: none dropped");
+    assert!(k.acts_reading().lines()[3].contains("no work 1"), "and the console's line names it");
+}
+
 /// NO WORK, NO ACT (the operator, 2026-10-08: never give μ away for the
 /// possibility of falsification): a solve paid nothing releases no escrow,
 /// mints nothing, dockets and offers nothing — the zero is read before any

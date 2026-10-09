@@ -56,9 +56,10 @@ pub const HEARING: [&str; 3] = ["pages", "words heard", "words admitted"];
 pub const LANGUAGE: [&str; 6] = ["dialect", "genome", "installed", "closing", "adjoined by closure", "colour words"];
 /// What a mind UNDERSTOOD.
 pub const UNDERSTANDING: [&str; 5] = ["derivable", "glued", "obstructed", "discordant strata", "colour derived"];
-/// What a mind's solves came to (the actions' physics).
-pub const SOLVING: [&str; 7] =
-    ["first closures", "closures again", "refused", "unruled", "unminted", "refuted at home", "withheld again"];
+/// What a mind's solves came to (the actions' physics). 78.153c — "unread"
+/// is the court's `SOLVE_UNREAD`, a retry: it was filed under "refused".
+pub const SOLVING: [&str; 8] =
+    ["first closures", "closures again", "refused", "unruled", "unminted", "refuted at home", "withheld again", "unread"];
 /// THE GROWING THAT GROW — the leak signals: sizes at one `K`.
 pub const GROWING: [&str; 9] = [
     "bubbles",
@@ -183,8 +184,13 @@ pub const PROVISIONAL: [&str; 8] = [
     "witness refused",
     "witness unmeasured",
 ];
-/// What a court's solves came to: by verdict, refusals by kind (P D C I N ?).
-pub const JUDGED: [&str; 10] = [
+/// What a court's solves came to: by verdict, refusals by kind (P D C I N ?),
+/// and (78.153c) the verdicts 78.149 and 78.153 added — NO WORK (a clean
+/// replay that discharged nothing) and UNREAD (a stroke that ran out before
+/// the replay ruled) — and the door's refusals before any judging: unsigned,
+/// an inner seat that is not an ancient, no such task, no rule carried.
+/// Named through [`Judged`], so no verdict has a name the table lacks.
+pub const JUDGED: [&str; 16] = [
     "first closures",
     "closures again",
     "refused P",
@@ -195,7 +201,92 @@ pub const JUDGED: [&str; 10] = [
     "refused ?",
     "not a rule",
     "unverifiable",
+    "no work",
+    "unread",
+    "unsigned",
+    "not an ancient",
+    "no such task",
+    "no rule carried",
 ];
+
+/// 78.153c — ONE SOLVE VERDICT, AS THE COURT COUNTS IT: each variant is one
+/// slot of [`JUDGED`] by an exhaustive match, so a verdict the table has no
+/// slot for does not compile, where a name it did not hold was dropped
+/// (every 78.149 "no work" was, until 78.153c).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Judged {
+    FirstClosure,
+    ClosureAgain,
+    Refused(crate::transducer::sentence::ObstructionKind),
+    NotARule,
+    Unverifiable,
+    NoWork,
+    Unread,
+    /// The door's, before judging: the solve names no payee.
+    Unsigned,
+    /// The door's: an inner seat of a founded universe (`may_solve`).
+    NotAncient,
+    /// The door's: the citation names no task on this book.
+    NoSuchTask,
+    /// The door's: the solve carried no rule (or one that did not parse).
+    NoRuleCarried,
+}
+
+impl Judged {
+    /// Every verdict, one per slot, in [`JUDGED`]'s order.
+    pub const ALL: [Judged; JUDGED.len()] = {
+        use crate::transducer::sentence::ObstructionKind as K;
+        [
+            Judged::FirstClosure,
+            Judged::ClosureAgain,
+            Judged::Refused(K::P),
+            Judged::Refused(K::D),
+            Judged::Refused(K::C),
+            Judged::Refused(K::I),
+            Judged::Refused(K::N),
+            Judged::Refused(K::Unclassified),
+            Judged::NotARule,
+            Judged::Unverifiable,
+            Judged::NoWork,
+            Judged::Unread,
+            Judged::Unsigned,
+            Judged::NotAncient,
+            Judged::NoSuchTask,
+            Judged::NoRuleCarried,
+        ]
+    };
+
+    /// Its slot in [`JUDGED`].
+    pub const fn slot(self) -> usize {
+        use crate::transducer::sentence::ObstructionKind as K;
+        match self {
+            Judged::FirstClosure => 0,
+            Judged::ClosureAgain => 1,
+            Judged::Refused(K::P) => 2,
+            Judged::Refused(K::D) => 3,
+            Judged::Refused(K::C) => 4,
+            Judged::Refused(K::I) => 5,
+            Judged::Refused(K::N) => 6,
+            Judged::Refused(K::Unclassified) => 7,
+            Judged::NotARule => 8,
+            Judged::Unverifiable => 9,
+            Judged::NoWork => 10,
+            Judged::Unread => 11,
+            Judged::Unsigned => 12,
+            Judged::NotAncient => 13,
+            Judged::NoSuchTask => 14,
+            Judged::NoRuleCarried => 15,
+        }
+    }
+
+    /// Its name, the table's own.
+    pub fn name(self) -> &'static str {
+        match JUDGED.get(self.slot()) {
+            Some(n) => n,
+            None => "an unslotted verdict",
+        }
+    }
+}
 
 /// ONE COURT'S ACTS AND ITS METABOLISM.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -516,9 +607,22 @@ pub struct ActsTally {
     pub provisional: [u64; PROVISIONAL.len()],
 }
 
+impl ActsTally {
+    /// 78.153c — ONE VERDICT COUNTED on its slot: a [`Judged`] always has
+    /// one (the tests pin `slot` against [`JUDGED`]), so none is dropped.
+    pub fn judge(&mut self, verdict: Judged) {
+        if let Some(slot) = self.judged.get_mut(verdict.slot()) {
+            *slot += 1;
+        }
+    }
+}
+
 /// COUNT ONE EVENT on a named counter of a table — the name is the table's
 /// own, so a producer and every reader name one slot (law 12). A name the
-/// table does not hold counts nothing; the tests pin every name used.
+/// table does not hold counts nothing; the tests pin every name used. A
+/// table whose producers can name an unheld slot is counted through a typed
+/// verdict instead (78.153c: the court's "no work" fell there unseen, so the
+/// court's solves count through [`Judged`]).
 pub fn count<const N: usize>(slots: &mut [u64; N], names: &[&str; N], name: &str) {
     if let Some((slot, _)) = slots.iter_mut().zip(names).find(|(_, n)| **n == name) {
         *slot += 1;

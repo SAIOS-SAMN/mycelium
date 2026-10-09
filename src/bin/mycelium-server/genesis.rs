@@ -166,6 +166,21 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
             corpus_dir.display(),
         );
     }
+    // 78.153c — THE DISPATCH CURSOR, restored from its own record once the
+    // whole book is registered (`door::write_beside`, a page of dispatches
+    // at a time): the snapshot's cursor was written only on a first closure,
+    // so every restart of a book nothing closed re-served its head.
+    match (std::fs::read(home.join("corpora").join("cursor")), registry.lock()) {
+        (Ok(record), Ok(mut reg)) => {
+            let restored = reg.restore_cursor(&record);
+            eprintln!(
+                "[{tag}] dispatch cursor {}",
+                if restored { "restored from its record" } else { "record refused: another book or layout; the snapshot's cursor stands" }
+            );
+        }
+        (Err(_), _) => eprintln!("[{tag}] dispatch cursor: no record; the snapshot's cursor stands"),
+        (_, Err(_)) => eprintln!("[{tag}] dispatch cursor not restored: the registry lock is poisoned"),
+    }
 }
 {
     // Boot, before the door opens.

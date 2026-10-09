@@ -98,6 +98,12 @@ impl Entity {
         Some(verdict)
     }
 
+    /// 78.153c — WHAT THIS VOICE'S SOLVES CAME TO, by the court's reply
+    /// code and the refusal's kind, read for its `K` line.
+    pub fn solves(&self) -> &crate::observe::SolveTally {
+        &self.solves
+    }
+
     /// SUBMIT A SOLVE: the sentence that spoke the outputs, with them. The
     /// court replays the RULE on its withheld pairs and pays what it
     /// discharges (the actions' physics): (SOLVE_BOUNTY, μ⃗) on the task's
@@ -137,9 +143,12 @@ impl Entity {
         // replay's reason and kind — folded into this voice's tally. A
         // receipt that does not decode says nothing was solved and nothing
         // was paid, which is what the solve earned, counted unruled.
+        // 78.153c — and SAYS it, one typed line per verdict: the task, the
+        // code by name, the refusal's kind and reason.
         Ok(match dialogue::decode_solve_verdict(&body) {
             Some((code, mu, refusal)) => {
                 self.solves.note(code, &mu, refusal.as_ref());
+                eprintln!("  {}", crate::observe::SolveTally::verdict_line(id, code, refusal.as_ref()));
                 (code, mu)
             }
             None => {

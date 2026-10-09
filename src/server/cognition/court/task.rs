@@ -31,6 +31,24 @@ pub enum SolveVerdict {
     Unread,
 }
 
+impl SolveVerdict {
+    /// 78.153c — THE SLOT THIS VERDICT IS COUNTED ON where it is read: every
+    /// verdict but `Solved`, which is counted first or again where it is
+    /// paid (`pay_solve`). `Unread` is counted too — each asking the stroke
+    /// ran out on — beside `court_unread`.
+    pub fn judged(&self) -> Option<crate::observe::Judged> {
+        use crate::observe::Judged;
+        match self {
+            SolveVerdict::Solved { .. } => None,
+            SolveVerdict::Refused(r) => Some(Judged::Refused(r.obstruction.kind())),
+            SolveVerdict::NotARule => Some(Judged::NotARule),
+            SolveVerdict::Unverifiable => Some(Judged::Unverifiable),
+            SolveVerdict::NoWork => Some(Judged::NoWork),
+            SolveVerdict::Unread => Some(Judged::Unread),
+        }
+    }
+}
+
 impl Kernel {
     pub fn bind_listing_task(&mut self, listing: impl AsRef<[u8]>, task: impl AsRef<[u8]>) {
         let listing = Address::from_bytes(listing);
@@ -95,32 +113,23 @@ impl Kernel {
     /// the rule and the withheld pairs, so the same solve asked again
     /// resumes.
     pub fn judge_solve_on_stroke(&mut self, rule: &Element, withheld: &crate::transducer::family::Family) -> SolveVerdict {
-        use crate::observe::{count, JUDGED};
         let verdict = self.judge_solve_read(rule, withheld);
         // THE ACT, COUNTED WHERE IT HAPPENED: the verdict, a refusal by kind
-        // (78.9, `ObstructionKind::ALL`'s order). A solved verdict is
-        // counted first or again where it is paid (`pay_solve`).
-        let name = match &verdict {
-            SolveVerdict::Solved { .. } => None,
-            SolveVerdict::Refused(r) => Some(match r.obstruction.kind() {
-                crate::transducer::sentence::ObstructionKind::P => "refused P",
-                crate::transducer::sentence::ObstructionKind::D => "refused D",
-                crate::transducer::sentence::ObstructionKind::C => "refused C",
-                crate::transducer::sentence::ObstructionKind::I => "refused I",
-                crate::transducer::sentence::ObstructionKind::N => "refused N",
-                crate::transducer::sentence::ObstructionKind::Unclassified => "refused ?",
-            }),
-            SolveVerdict::NotARule => Some("not a rule"),
-            SolveVerdict::Unverifiable => Some("unverifiable"),
-            SolveVerdict::NoWork => Some("no work"),
-            // Not judged: no act happened to count; the replays the court's
-            // stroke ran out on are `court_unread`.
-            SolveVerdict::Unread => None,
-        };
-        if let Some(name) = name {
-            count(&mut self.acts.judged, &JUDGED, name);
+        // (78.9, `ObstructionKind::ALL`'s order), each on its typed slot
+        // (78.153c: "no work" was a name the table lacked, and dropped). A
+        // solved verdict is counted first or again where it is paid
+        // (`pay_solve`).
+        if let Some(j) = verdict.judged() {
+            self.acts.judge(j);
         }
         verdict
+    }
+
+    /// 78.153c — A VERDICT THE DOOR GAVE BEFORE ANY JUDGING (unsigned, not
+    /// an ancient, no such task, no rule carried), counted on its slot of
+    /// this court's acts.
+    pub fn note_judged(&mut self, verdict: crate::observe::Judged) {
+        self.acts.judge(verdict);
     }
 
     fn judge_solve_read(&mut self, rule: &Element, withheld: &crate::transducer::family::Family) -> SolveVerdict {
@@ -206,8 +215,7 @@ impl Kernel {
             // escrow held; nothing above the discharge is minted.
             let _ = self.treasury.release_discharged(addr.as_bytes(), pay, settled);
         }
-        let name = if first { "first closures" } else { "closures again" };
-        crate::observe::count(&mut self.acts.judged, &crate::observe::JUDGED, name);
+        self.acts.judge(if first { crate::observe::Judged::FirstClosure } else { crate::observe::Judged::ClosureAgain });
         if !first || pay.iter().all(|&x| x == 0) {
             return [0; 4];
         }

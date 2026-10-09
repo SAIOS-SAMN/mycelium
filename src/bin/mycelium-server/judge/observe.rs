@@ -13,10 +13,18 @@ static STANDING_ASKED: std::sync::atomic::AtomicBool = std::sync::atomic::Atomic
 
 /// The court stroke's side: where the observer left a question, the
 /// standing is published under the lock the stroke already holds.
-pub(crate) fn answer_standing(k: &mycelium::cognition::Kernel, mesh: &crate::exchange::Mesh, id: [u8; 32]) {
-    if STANDING_ASKED.swap(false, std::sync::atomic::Ordering::Relaxed) {
+///
+/// 78.153c — AND AT THE FIRST STROKE AFTER BOOT (`first`), asked or not.
+/// The standing was published only for a question left, and the console's
+/// one question is answered off the LAST publication: every hypha a ship
+/// had just restarted answered `--reading acts` with nothing (b and c,
+/// 2026-10-09) until a second question came. Answers whether it published.
+pub(crate) fn answer_standing(k: &mycelium::cognition::Kernel, mesh: &crate::exchange::Mesh, id: [u8; 32], first: bool) -> bool {
+    let asked = STANDING_ASKED.swap(false, std::sync::atomic::Ordering::Relaxed);
+    if asked || first {
         publish_standing(k, mesh, Source::Court(id));
     }
+    asked || first
 }
 
 /// THE COURT'S OWN STANDING, read off the kernel: what it holds, the
