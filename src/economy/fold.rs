@@ -117,6 +117,22 @@ impl Treasury {
         self.entries.iter().filter(|e| e.stands_at() < Some(head)).cloned().collect()
     }
 
+    /// 78.153b — ONE PAGE OF THE ROWS BELOW `head`, and how many stand
+    /// there: the rows [`Treasury::rows_below`] answers, from the `skip`th,
+    /// at most `n`. THE JOURNAL IS IN LINE ORDER (`rows_span`), so the rows
+    /// below `head` are its prefix up to the first row standing at `head` or
+    /// later, found by bisection, and the page is a slice of it — O(log
+    /// journal + page), where `ACT_ROWS` cloned the whole prefix for every
+    /// page of it (O(N²/page) over a fetch, the lock audit's row 17).
+    pub fn rows_below_page(&self, head: Place, skip: usize, n: usize) -> (u64, Vec<Entry>) {
+        let end = self.entries.partition_point(|e| e.stands_at() < Some(head));
+        let page = match self.entries.get(..end).and_then(|below| below.get(skip..)) {
+            Some(rest) => rest.iter().take(n).cloned().collect(),
+            None => Vec::new(),
+        };
+        (end as u64, page)
+    }
+
     /// The rows standing at `from` or later and written before the act at
     /// `upto`, in journal order: what `ACT_ROWS` serves a witness. `from`
     /// is the root the prefix stands on, `None` from the journal's start.

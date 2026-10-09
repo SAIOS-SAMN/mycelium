@@ -326,7 +326,7 @@ fn a_pressured_word_is_witnessed_and_ruled_and_its_citer_is_upheld() {
     // A bonded second vantage re-derives the word; the ruling closes its orbit.
     let witness = [2u8; 32];
     k.enroll(witness, [12, 3, 0, 20]);
-    k.witness_rederived(&w, witness, word.clone());
+    k.witness_rederived_fresh(&w, witness, word.clone());
     // 78.153: a re-hearing its ruling's stroke could not replay is heard
     // again on the court's strokes.
     k.court_settle();
@@ -336,7 +336,7 @@ fn a_pressured_word_is_witnessed_and_ruled_and_its_citer_is_upheld() {
     // The citer, heard, stands: its own admission offered it, and a second
     // vantage rules it.
     assert!(k.take_offers().iter().any(|(a, _)| *a == citer.address()), "the citer's admission offered it");
-    k.witness_rederived(&citer.address(), witness, citer.clone());
+    k.witness_rederived_fresh(&citer.address(), witness, citer.clone());
     assert!(k.ruled_contains(citer.address().as_bytes()), "D → upheld");
 }
 

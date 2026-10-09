@@ -168,13 +168,15 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
     }
 }
 {
-    let Ok(mut k) = crate::held::held!(kernel) else {
+    // Boot, before the door opens.
+    let Ok(mut h) = crate::held::held!(kernel) else {
         eprintln!("[{tag}] kernel lock poisoned; no bond staked");
         return;
     };
+    h.run(|k, _| {
     if cover_measured {
         k.set_genesis_cover(cover);
-        bond_genesis(&mut k, vk, cover, genesis, tag);
+        bond_genesis(k, vk, cover, genesis, tag);
     } else if k.treasury().bond_of(&vk).is_none() {
         eprintln!("[{tag}] unbonded; the corpus did not measure a cover");
     }
@@ -184,6 +186,7 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
         "[{tag}] room {room:?} = bond {bond:?} − occupancy {:?}",
         k.occupancy()
     );
+    });
 }
 }
 

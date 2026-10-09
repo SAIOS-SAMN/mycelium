@@ -14,23 +14,30 @@ use std::net::TcpStream;
 
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(request) = decode_challenge_request(&frame.body) else { return };
+    // The reads stay on the kernel (78.153b): finality, obstructions, tolls
+    // and line heads are not on the shelf yet, and the domain acts are 78.154's.
     let body = match crate::held::held!(door.kernel) {
-        Ok(mut k) => match request {
-            ChallengeRequest::Signed(c) => encode_challenge_reply(&k.challenge(&c)),
-            ChallengeRequest::Finality(fold) => encode_finality_reading(&FinalityReading {
-                finality: k.finality(&fold),
-                bonded: k.fold_bonded(&fold),
-                toll_held: k.fold_holds_toll(&fold),
-            }),
-            ChallengeRequest::Obstructions(domain) => encode_obstructions_reply(&k.open_obstructions(&domain)),
-            ChallengeRequest::LineHead(tier) => {
-                let (head, at) = k.line_head(&tier);
-                // 78.133 — the μ held toward it in toll escrow; a sum past its
-                // carrier is answered with nothing, never an invented value.
-                let Some(held) = k.toll_held_for(&tier) else { return };
-                encode_line_head_reply(&LineHead { head, at, held })
-            }
-        },
+        Ok(mut h) => {
+            let body = h.run(|k, _| match request {
+                ChallengeRequest::Signed(c) => Some(encode_challenge_reply(&k.challenge(&c))),
+                ChallengeRequest::Finality(fold) => Some(encode_finality_reading(&FinalityReading {
+                    finality: k.finality(&fold),
+                    bonded: k.fold_bonded(&fold),
+                    toll_held: k.fold_holds_toll(&fold),
+                })),
+                ChallengeRequest::Obstructions(domain) => Some(encode_obstructions_reply(&k.open_obstructions(&domain))),
+                ChallengeRequest::LineHead(tier) => {
+                    let (head, at) = k.line_head(&tier);
+                    // 78.133 — the μ held toward it in toll escrow; a sum past
+                    // its carrier is answered with nothing, never an invented
+                    // value.
+                    let held = k.toll_held_for(&tier)?;
+                    Some(encode_line_head_reply(&LineHead { head, at, held }))
+                }
+            });
+            let Some(body) = body else { return };
+            body
+        }
         Err(_) => return,
     };
     // 78.137 — acknowledged only once durable.

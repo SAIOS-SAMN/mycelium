@@ -374,15 +374,17 @@ fn main() {
     // its own order, and are held before the snapshot is restored against
     // them.
     {
-        let Ok(mut k) = crate::held::held!(kernel) else { refuse_boot(&tag, "kernel lock poisoned at the line") };
-        if let Err(why) = k.bind_line(home.join("line")).and_then(|()| k.bind_eras(home.join("eras"))) {
+        // Boot: one thread, before the door opens (bounded per hold).
+        let Ok(mut h) = crate::held::held!(kernel) else { refuse_boot(&tag, "kernel lock poisoned at the line") };
+        if let Err(why) = h.run(|k, _| k.bind_line(home.join("line")).and_then(|()| k.bind_eras(home.join("eras")))) {
             refuse_boot(&tag, &format!("{why}. `--check` on this home reports the same reading."));
         }
     }
     match std::fs::read(&state_path) {
         Ok(bytes) => {
-            let Ok(mut k) = crate::held::held!(kernel) else { refuse_boot(&tag, "kernel lock poisoned at restore") };
-            if !k.restore(&bytes) {
+            let Ok(mut h) = crate::held::held!(kernel) else { refuse_boot(&tag, "kernel lock poisoned at restore") };
+            let (restored, basis, entries) = h.run(|k, _| (k.restore(&bytes), k.basis_len(), k.treasury_entry_count()));
+            if !restored {
                 // A REFUSAL THAT NAMES THE ROAD. This named the fault and
                 // stopped, leaving the operator to work out whether a
                 // ledger written by an older build is expected to refuse
@@ -403,9 +405,7 @@ fn main() {
                 );
             }
             eprintln!(
-                "[{tag}] ledger MYC7: {} ruled sentences, treasury entries {}, book derived at intake",
-                k.basis_len(),
-                k.treasury_entry_count()
+                "[{tag}] ledger MYC7: {basis} ruled sentences, treasury entries {entries}, book derived at intake"
             );
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
@@ -421,7 +421,8 @@ fn main() {
     {
         let mut live: Vec<[u8; 32]> = genesis.hypha.iter().map(|(who, _)| *who).collect();
         live.extend(genesis.voice.iter().map(|(who, _)| *who));
-        let Ok(mut k) = crate::held::held!(kernel) else { refuse_boot(&tag, "kernel lock poisoned at genesis") };
+        let Ok(mut h) = crate::held::held!(kernel) else { refuse_boot(&tag, "kernel lock poisoned at genesis") };
+        h.run(|k, _| {
         for (who, mu) in k.bind_live(&live) {
             eprintln!(
                 "[{tag}] bond outside the live genesis burned {:02x}{:02x}… {mu:?}",
@@ -438,6 +439,7 @@ fn main() {
                 eprintln!("[{tag}] genesis voice {:02x}{:02x}… allocated {paid:?}", who[0], who[1]);
             }
         }
+        });
     }
 
     let (early_listener, addr) = if let Some(bound) = mesh_rec.bind.clone() {
@@ -483,7 +485,11 @@ fn main() {
     if let Ok(mut r) = router.lock() {
         r.insert(vk, addr.clone());
     }
-    rebuild_own_cover(&kernel, &mesh);
+    // 78.153b — the own cover is admitted off a published reading; at boot,
+    // before the door's shelf stands, one read of the kernel published here.
+    if let Some(boot) = crate::held::held!(kernel).ok().and_then(|mut h| h.run(|k, _| k.publish(None))) {
+        rebuild_own_cover(&boot, &mesh);
+    }
     for p in &join_peers {
         if p == &addr {
             continue;
@@ -527,8 +533,9 @@ fn main() {
         served: Keyed::new(),
     }));
     {
+        // Boot, before any other thread takes the kernel.
         let seed = match crate::held::held!(kernel) {
-            Ok(k) => k.syllabus_seed(),
+            Ok(mut h) => h.run(|k, _| k.syllabus_seed()),
             Err(_) => refuse_boot(&tag, "kernel lock poisoned at syllabus seed"),
         };
         let Ok(mut sy) = syllabus.lock() else { refuse_boot(&tag, "syllabus lock poisoned at seed") };
@@ -597,12 +604,12 @@ fn main() {
                         // volume; the two readings are taken or the line
                         // is not written.
                         let (Ok(before), Ok(())) =
-                            (crate::held::held!(kernel).map(|k| k.volume()), Ok::<(), ()>(()))
+                            (crate::held::held!(kernel).map(|mut h| h.run(|k, _| k.volume())), Ok::<(), ()>(()))
                         else {
                             continue;
                         };
                         let _ = mycelium::synthesis::adopt(&kernel, ratifier, &word);
-                        let Ok(after) = crate::held::held!(kernel).map(|k| k.volume()) else {
+                        let Ok(after) = crate::held::held!(kernel).map(|mut h| h.run(|k, _| k.volume())) else {
                             continue;
                         };
                         if after != before {
@@ -634,7 +641,7 @@ fn main() {
     // restored: a mind's exempt read is served without the kernel's lock.
     // 78.151 — and the court's first published reading, which the door's
     // reads answer off until the court stroke publishes the next.
-    let Ok((seat_relay, first)) = crate::held::held!(kernel).map(|mut k| (k.seat_relay(), k.publish(None))) else {
+    let Ok((seat_relay, first)) = crate::held::held!(kernel).map(|mut h| h.run(|k, _| (k.seat_relay(), k.publish(None)))) else {
         eprintln!("the kernel's lock was poisoned before the door opened");
         return;
     };

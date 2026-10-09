@@ -14,8 +14,10 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         return;
     };
     let at_most = budget / mycelium::economy::Entry::TAPE;
+    // 78.153b — a page sliced off the journal's prefix (`rows_below_page`),
+    // O(log journal + page) under the kernel, never the prefix cloned whole.
     let (total, rows) = match crate::held::held!(door.kernel) {
-        Ok(k) => k.rows_range(&req.signer, req.from, req.upto, req.cursor, at_most),
+        Ok(mut h) => h.run(|k, _| k.rows_range(&req.signer, req.from, req.upto, req.cursor, at_most)),
         Err(_) => return,
     };
     let Some(body) = dialogue::encode_rows_reply(total, &rows, budget) else {

@@ -11,7 +11,7 @@ use std::net::TcpStream;
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(request) = decode_domain_request(&frame.body) else { return };
     let body = match crate::held::held!(door.kernel) {
-        Ok(mut k) => match request {
+        Ok(mut h) => h.run(|k, _| match request {
             DomainRequest::Genesis(domain) => encode_domain_reply(&k.admit_domain(&domain)),
             DomainRequest::Reserve(r) => encode_domain_reply(&k.designate_reserve(&r)),
             DomainRequest::ReadReserve(domain) => mycelium::anastome::dialogue::domain::encode_reserve_reading(&k.reserve_reading(&domain)),
@@ -21,7 +21,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             DomainRequest::ReadOrigin(domain) => mycelium::anastome::dialogue::domain::encode_origin_reading(k.origin_of(&domain).as_ref()),
             DomainRequest::State(s) => encode_domain_reply(&k.state(&s)),
             DomainRequest::ReadUniverse(domain) => mycelium::anastome::dialogue::universe::encode_universe_reading(&k.universe_reading(&domain)),
-        },
+        }),
         Err(_) => return,
     };
     // 78.137 — acknowledged only once durable.

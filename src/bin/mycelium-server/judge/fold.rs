@@ -78,13 +78,11 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         return;
     };
     let proposal = mycelium::cognition::Proposal { after: p.after, root: p.root, epochs: p.epochs.clone() };
-    let verdict = match crate::held::held!(door.kernel) {
-        Ok(k) => k.verify_fold(home, &proposal, &receipts, &rows),
-        Err(_) => {
-            say(s, dialogue::FoldWitness::Unmeasured { vk: me });
-            return;
-        }
-    };
+    // 78.153b — re-derived off the published reading: the witness's bond is
+    // the shelf's, the rest is what the home sent; the hash of every fetched
+    // receipt and the nets of every row no longer run under the kernel (the
+    // lock audit, row 11).
+    let verdict = door.published.take().verify_fold(home, &proposal, &receipts, &rows);
     if let Err(why) = verdict {
         // PHASE 1 DIAGNOSTIC — the witness's side of a fold that does not
         // conserve: what it fetched against what the home proposed.
@@ -134,8 +132,9 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // 78.147: the era is held with its root's proof — the home's signed
     // position verified above and this witness's own — so this court, the
     // root's second holder, answers a catch-up below it with it.
-    if let Ok(mut k) = crate::held::held!(door.kernel) {
-        k.hold_era_proved(mycelium::chronometry::Era {
+    // OWED (78.153b): the era frame and its disk append stay under the kernel.
+    if let Ok(mut h) = crate::held::held!(door.kernel) {
+        h.run(|k, _| k.hold_era_proved(mycelium::chronometry::Era {
             root: p.root,
             signer: home,
             witness: me,
@@ -148,7 +147,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
             count: receipts.len() as u64,
             at: None,
             receipts,
-        }, &p.section, &section);
+        }, &p.section, &section));
     }
     eprintln!(
         "  court fold witnessed {:02x}{:02x}… co-signed {:02x}{:02x}…",

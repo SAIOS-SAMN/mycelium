@@ -26435,6 +26435,106 @@ family; a solve is Unread then judged at one price; a mutual citation
 ends and is refused by name; the seek yields exactly the keys after `from`
 and visits fewer nodes than the walk.
 
+### 78.153b The lock guard and the shelf reads (2026-10-09, the lock audit's fix list items 1 and 2)
+
+**Measured** (docs/LOCK-AUDIT.md): the guard `held!` returned dereferenced
+to `Kernel`, so any call under the kernel lock was one keystroke from an
+unmetered walk; the library's synthesis thread and back-fill took the raw
+lock, uncounted; and the door read under the kernel what the court stroke
+could publish.
+
+**Ruled.**
+
+1. **The guard is the library's** (`server::held`): the book, the waits
+   served and the hold's site, one for the binary and the library — the
+   synthesis thread (`probe`, `quote`, `consolidate`, `adopt`) and the
+   back-fill (`chase`, `hear`, `prove_folded`, `adopt`) now take the kernel
+   through it and are counted. The binary keeps its face on it (`held.rs`:
+   the watchdog on the door's shelf, the `held!` its sites write).
+2. **A hold is taken with its ONE stroke.** `Held` no longer dereferences:
+   `held!` mints the court's stroke at the take, and the only way in is
+   `Held::run(|k: &mut Kernel, reads: &mut Budget| …)`; `into_stroke` lets
+   go of the kernel and hands the stroke on whole (`Budget::hand_over`, the
+   same reads carried on, never a share) — an offer round, a fold round, a
+   catch-up's pages, an adoption. `Kernel::stroke` is the crate's: a binary
+   cannot mint a second stroke under a hold. An input-sized entry point the
+   binary reaches takes `&mut Budget` (below); a constant one stays a plain
+   method, and a site that calls one says so.
+3. **The unmetered hold is named.** `Budget::spend` counts each read granted
+   on its thread (`physics::spent_here`); a hold that read nothing while an
+   aperture (`aperture_cycle`) of waiters blocked on it is written
+   `unmetered hold <site> (hold, step) read nothing and blocked N` when it
+   lets go.
+4. **The audit's unbounded rows, closed** (worst observed first):
+   - *ACT_FETCH* (row 3, ≥32 min): `serve_ruled_on` reads what it serves a
+     peer on the hold's stroke (never a stroke minted per page) and an
+     empty chart's seed off the shelf; `class_records_on` reads one complex
+     per read, and over the whole nerve resumes per asker past the chart its
+     last reading stopped at (`class_cursor`), round once.
+   - *homes_here / intake* (row 10, blocked 2048): the court's room is read
+     off the shelf; `use_credit` no longer walks every discovered word per
+     listing under the kernel.
+   - *orbit()* (row 8): the rows below a fold head are read once per
+     proposal (three journal-prefix clones were); `fold_head` finds the
+     first close past the page lazily (`ReceiptChain::first_between`), never
+     the line to the head unpacked whole.
+   - *ACT_FOLD* (row 11): the witness re-derives off the shelf
+     (`Published::verify_fold`, `verify_prefix` shared with the kernel).
+   - *ACT_ROWS* (row 17): a page is sliced off the journal's prefix
+     (`Treasury::rows_below_page`, bisection — the journal is in line
+     order), O(log journal + page), never the prefix cloned per page.
+   - *after persist* (row 13): `nerve_census` reads one complex per read and
+     says how many it read; the helicity is read one tube's row per read and
+     is `unread` where the stroke runs out, never a partial sum.
+   - *the digest path* (row 7): `confirm_peer_holds_on` spends one read per
+     stratum and resumes past the stratum the peer's last digest reached
+     (`confirm_cursor`); the installed language's digests are read off its
+     snapshot with no kernel held; the have-lists spend one read per
+     stratum, resumed per peer (`have_lists`).
+   - *per fetched word* (row 4): `touch_at` replaces the one word in the
+     language snapshot at its own ordinal (a rebuild walked the whole basis,
+     twice per glued word); the glue and the filing spend the hold's stroke.
+   - *the back-fill* (row 22): `admit_backfill` spends one read per receipt
+     of a page; a spent stroke keeps what it admitted.
+   Every spent stroke ends as `Unread`, a deferral, a shorter page or a
+   resumed cursor — never a wrong answer.
+5. **The shelf carries the court's own reads** (`Published::own`): its cover
+   charts (copied where `own_cover_gen` moved), its room and bond, its voice,
+   the ruled cover — root, digests, syllabus seed, read in one pass where
+   `ruled_gen` moved — and its head receipt. Off it: the cover page
+   (`ACT_COVER`), the digest's own cover and ruled root, the ruled digests
+   to the court's voice, the syllabus seed (door, court loop, fetch),
+   `homes_here`, and the fold witness. A read off it lags the kernel by at
+   most one court stroke (78.151).
+
+**Stays on the kernel, and why.** The signed position (`sign_position`):
+a position is the head AT SIGNING, and the shelf's may stand a stroke
+behind; one node unpacked. The keeper tick (78.152, TUniversal's). The rows
+of `ACT_ROWS`: the journal is not on the shelf; bounded now. Challenge,
+handoff and domain reads: the domain acts are 78.154's. `why`: stamp→word
+and its Reasons are not on the shelf.
+
+**Owed.** Metered inside but not yet on the hold's stroke: the hearing
+(`hear_frame`, row 9), the solve (`judge_solve_on_stroke`), the witness's
+offer replay; unmetered still: the snapshot (row 12), `carry_chart` per
+cover page (row 5), `recall_cited` (row 15), `refine` clones (row 19), the
+court's own credit walk once per publication (a memo sealed at a generation,
+`room.rs`), `serve_ruled`'s fiber walk (keyed reads bounded by the stratum)
+and its writing out of a word before its deferral, `settle_windows` at a
+close, the publication's walk of every signer (row 1c). Clippy lints on the
+whole-carrier walks (fix list item 1's third bullet) are not written.
+
+Proved (`server::held::tests`, `cognition::tests::shelf_reads`): a hold is
+taken with one stroke, a metered read spends it on the holding thread's
+count and the stroke goes on whole; a spent stroke ends the helicity unread,
+the census at no complex and the confirmation at no stratum; the
+confirmation resumes past the stratum it reached and rounds once; the
+court's own reads off the shelf equal the kernel's, a cover that did not
+move is shared; the fold re-derived off the shelf is the kernel's verdict,
+bonded and not; a page of the rows below every head is the whole prefix
+paged; the class records on a stroke of one read reach the asker round the
+nerve; a touched word is the word a rebuild gives.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

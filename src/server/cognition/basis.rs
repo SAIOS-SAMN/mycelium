@@ -391,6 +391,8 @@ impl Kernel {
     /// `sign_cover_digest`; it was being computed once per ruling.
     pub(crate) fn refresh_ruled_root(&mut self) {
         self.ruled_root_due = true;
+        // 78.153b: the shelf reads the ruled cover again where this moved.
+        self.ruled_gen = self.ruled_gen.wrapping_add(1);
     }
 
     /// The root over the ruled cover, measured if the cover has moved
@@ -398,14 +400,21 @@ impl Kernel {
     pub(crate) fn measure_ruled_root(&mut self) -> [u8; 32] {
         if self.ruled_root_due {
             let digests = crate::transducer::sheaf::digests(&self.ruled);
-            let mut buf = Vec::new();
-            for d in &digests {
-                crate::transducer::address::put_key_bytes(&mut buf, &d.root);
-            }
-            self.ruled_root = crate::chronometry::payload_hash(&buf);
+            self.ruled_root = root_over(&digests);
             self.ruled_root_due = false;
         }
         self.ruled_root
+    }
+
+    /// 78.153b — THE RULED COVER AS THE SHELF CARRIES IT, read in one pass:
+    /// its digests (what `ruled_digests` answers), the root over them (what
+    /// `ruled_root` answers, measured here and kept), and its addresses
+    /// coarsest chart first (what `syllabus_seed` answers).
+    pub(crate) fn ruled_reading(&mut self) -> ([u8; 32], Vec<crate::transducer::sheaf::StratumDigest>, Vec<Vec<u8>>) {
+        let digests = crate::transducer::sheaf::digests(&self.ruled);
+        self.ruled_root = root_over(&digests);
+        self.ruled_root_due = false;
+        (self.ruled_root, digests, self.syllabus_seed())
     }
 
     /// Place a word on the basis with no syntropic stroke: restore and the
@@ -900,4 +909,14 @@ impl Kernel {
         }
     }
 
+}
+
+/// The root over the ruled cover's digests: their roots written in order,
+/// hashed as one payload.
+fn root_over(digests: &[crate::transducer::sheaf::StratumDigest]) -> [u8; 32] {
+    let mut buf = Vec::new();
+    for d in digests {
+        crate::transducer::address::put_key_bytes(&mut buf, &d.root);
+    }
+    crate::chronometry::payload_hash(&buf)
 }

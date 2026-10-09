@@ -194,6 +194,7 @@ impl Kernel {
         // Off the docket and the cover its open charts stood on.
         self.open.remove(addr);
         self.own_cover.retract_hypha(addr);
+        self.own_cover_gen = self.own_cover_gen.wrapping_add(1);
         self.listing_atlas.remove(addr);
         self.tension.remove(addr);
         self.forget_spoken(addr);

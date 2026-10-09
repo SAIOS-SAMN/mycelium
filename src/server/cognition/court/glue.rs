@@ -484,15 +484,46 @@ impl Kernel {
     /// the same stratum, by one root (`sheaf::stratum_root`) — evidence the
     /// peer glued it; and every heard address under that chart whose
     /// recorded root is not the peer's is re-opened.
-    pub fn confirm_peer_holds(&mut self, remote: &[crate::transducer::sheaf::StratumDigest], peer: [u8; 32]) {
+    #[cfg(test)]
+    pub(crate) fn confirm_peer_holds(&mut self, remote: &[crate::transducer::sheaf::StratumDigest], peer: [u8; 32]) {
         let mut budget = self.physics.stroke();
-        // index: the peer's digest charts; members from ruled fiber
-        for d in remote {
+        self.confirm_peer_holds_on(remote, peer, &mut budget);
+    }
+
+    /// [`Kernel::confirm_peer_holds`] ON THE HOLD'S STROKE (78.153b): one read
+    /// per stratum the peer named, before its ruled fiber is read and rooted.
+    /// A stroke spent ends the confirmation at the stratum it reached, and
+    /// the peer's next digest resumes PAST it (`confirm_cursor`, by peer,
+    /// volatile), wrapping once round — so every stratum is confirmed in
+    /// turn, none starved behind a prefix one stroke cannot pass, and a
+    /// stratum not yet reached is unconfirmed, never refused.
+    pub fn confirm_peer_holds_on(
+        &mut self,
+        remote: &[crate::transducer::sheaf::StratumDigest],
+        peer: [u8; 32],
+        budget: &mut crate::physics::Budget,
+    ) {
+        let from = match self.confirm_cursor.get(&peer) {
+            Some(past) => remote.iter().position(|d| d.inv.key().as_bytes() > past.as_slice()),
+            None => Some(0),
+        };
+        let from = match from {
+            Some(p) => p,
+            None => 0,
+        };
+        let (reached, rest) = remote.split_at(from);
+        // index: the peer's digest charts, from the cursor round once; members
+        // from ruled fiber
+        for d in rest.iter().chain(reached) {
+            if !budget.spend() {
+                return;
+            }
+            self.confirm_cursor.insert(peer, d.inv.key().as_bytes().to_vec());
             let members = self.ruled.fiber(&d.inv);
             if crate::transducer::sheaf::stratum_root(&members) == d.root {
                 let held: Vec<Vec<u8>> = members.into_iter().filter(|a| self.provisional.contains(a)).collect();
                 for addr in held {
-                    self.home_install(&addr, peer, &mut budget);
+                    self.home_install(&addr, peer, budget);
                 }
             }
             let drop: Vec<Vec<u8>> = match self.heard_at.get(d.inv.key().as_bytes()) {
@@ -507,6 +538,8 @@ impl Kernel {
                 self.heard_forget(&addr);
             }
         }
+        // Round once: the next digest starts from the first stratum.
+        self.confirm_cursor.remove(&peer);
     }
 
     /// Deflation a form may mint: its DISCHARGE on the bound family
@@ -551,7 +584,20 @@ impl Kernel {
     /// back the form it reached: 47.3's second vantage. On convergence to the
     /// same vertex (M1) the home installs; on a genuine difference the offer
     /// stands answered and uninstalled (`REFUSE_MV_INEXACT`, 13.9 step 8).
-    pub fn witness_rederived(&mut self, object: &crate::transducer::address::Address, witness: [u8; 32], reached: Element) {
+    #[cfg(test)]
+    pub(crate) fn witness_rederived_fresh(&mut self, object: &crate::transducer::address::Address, witness: [u8; 32], reached: Element) {
+        let mut budget = self.physics.stroke();
+        self.witness_rederived(object, witness, reached, &mut budget);
+    }
+
+    /// The install on the hold's stroke (78.153b), never a stroke minted here.
+    pub fn witness_rederived(
+        &mut self,
+        object: &crate::transducer::address::Address,
+        witness: [u8; 32],
+        reached: Element,
+        budget: &mut crate::physics::Budget,
+    ) {
         if !self.provisional.contains(object) {
             return;
         }
@@ -560,8 +606,7 @@ impl Kernel {
         match self.converge_witness(object, witness, reached, k, ht) {
             crate::court::convergence::Converged::Witnessed { witness, .. } => {
                 self.note_provisional("witness reached: installed");
-                let mut budget = self.physics.stroke();
-                self.home_install(object, witness, &mut budget);
+                self.home_install(object, witness, budget);
             }
             crate::court::convergence::Converged::Inexact { .. } => self.note_provisional("witness reached: inexact"),
             crate::court::convergence::Converged::AwaitingWitness => self.note_provisional("witness reached: awaiting a vantage"),
@@ -577,15 +622,27 @@ impl Kernel {
     /// A peer's have-list naming a ruled provisional is weaker evidence than
     /// a witness's re-derivation: a claim about an address, against which
     /// this court can compare only the form it holds itself.
-    pub fn confirm_peer_holds_addrs(&mut self, have: &[crate::transducer::address::Address], peer: [u8; 32]) {
+    #[cfg(test)]
+    pub(crate) fn confirm_peer_holds_addrs(&mut self, have: &[crate::transducer::address::Address], peer: [u8; 32]) {
         let mut budget = self.physics.stroke();
+        self.confirm_peer_holds_addrs_on(have, peer, &mut budget);
+    }
+
+    /// [`Kernel::confirm_peer_holds_addrs`] ON THE HOLD'S STROKE (78.153b):
+    /// one read per provisional the page names, before it is converged. A
+    /// stroke spent leaves the rest provisional — awaiting a vantage, as an
+    /// unanswered offer leaves it — never refused.
+    pub fn confirm_peer_holds_addrs_on(&mut self, have: &[crate::transducer::address::Address], peer: [u8; 32], budget: &mut crate::physics::Budget) {
         // index: the peer's have-list
         let held: Vec<&Address> = have.iter().filter(|h| self.provisional.contains(h) && self.ruled_contains(h)).collect();
         for h in held {
+            if !budget.spend() {
+                return;
+            }
             let Some(mine) = self.provisional.get(h).cloned() else { continue };
             let (k, ht) = (self.k_step(), self.height());
             match self.converge_witness(h, peer, mine, k, ht) {
-                crate::court::convergence::Converged::Witnessed { witness, .. } => self.home_install(h, witness, &mut budget),
+                crate::court::convergence::Converged::Witnessed { witness, .. } => self.home_install(h, witness, budget),
                 crate::court::convergence::Converged::Inexact { .. } | crate::court::convergence::Converged::AwaitingWitness => {}
             }
         }
@@ -622,18 +679,30 @@ impl Kernel {
     /// complexes: what each degree holds, and each cell's motion by its
     /// modes — under one observer's stroke of its own (never the court's
     /// reserve); a cell past it is unread by name.
-    pub fn nerve_census(&self) -> Vec<crate::transducer::cech::DegreeCensus> {
+    ///
+    /// 78.153b — ON THE HOLD'S STROKE: one read per chart's complex walked,
+    /// beside the reads its cells' modes spend (`Complex::census`); where
+    /// the stroke runs out the walk ends, and the reading says how many
+    /// complexes it read of how many stand — a census of those, never one
+    /// standing for the whole nerve. It walked every complex under the
+    /// kernel after each persist on a stroke of a default reserve (the lock
+    /// audit, row 13).
+    pub fn nerve_census(&self, reads: &mut crate::physics::Budget) -> (Vec<crate::transducer::cech::DegreeCensus>, usize) {
         let mut out: Vec<crate::transducer::cech::DegreeCensus> = Vec::new();
-        let mut budget = crate::physics::Physics::default().stroke();
+        let mut read = 0usize;
         for (_, cx) in self.complexes.scoped() {
-            for (d, c) in cx.census(&mut budget).iter().enumerate() {
+            if !reads.spend() {
+                break;
+            }
+            read += 1;
+            for (d, c) in cx.census(reads).iter().enumerate() {
                 if out.len() <= d {
                     out.resize(d + 1, crate::transducer::cech::DegreeCensus::default());
                 }
                 out[d].add(c);
             }
         }
-        out
+        (out, read)
     }
 
     /// 78.74 — every seal this court's complexes made, summed off the

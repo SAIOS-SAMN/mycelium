@@ -17,7 +17,7 @@ use std::sync::Mutex;
 pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
     // A proposal whose rows moved beneath it is dropped before it is
     // carried again (`pending_fold_stands`).
-    let Some(p) = crate::held::held!(kernel).ok().and_then(|mut k| k.pending_fold_stands().then(|| k.fold_proposal().cloned()).flatten()) else {
+    let Some(p) = crate::held::held!(kernel).ok().and_then(|mut h| h.run(|k, _| k.pending_fold_stands().then(|| k.fold_proposal().cloned()).flatten())) else {
         return;
     };
     let Some(section) = crate::admission::sign_position(kernel, mesh, &mycelium::transducer::stalk::Invariant::default(), &p.root.hash) else { return };
@@ -37,7 +37,8 @@ pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
             .collect(),
         _ => return,
     };
-    let Some(mut budget) = crate::held::held!(kernel).ok().map(|mut k| k.stroke()) else { return };
+    // The round's stroke: a hold's, handed on whole (78.153b).
+    let Some(mut budget) = crate::held::held!(kernel).ok().map(|h| h.into_stroke()) else { return };
     for (vk, dest) in witnesses {
         if !budget.spend() {
             break;
@@ -64,10 +65,10 @@ pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
         }
         match dialogue::decode_fold_reply(&reply) {
             Some(dialogue::FoldWitness::CoSigned { section: w }) => {
-                let Ok(mut k) = crate::held::held!(kernel) else { return };
+                let Ok(mut h) = crate::held::held!(kernel) else { return };
                 // 78.147: the root is kept with both signed positions, what a
                 // catch-up below it is answered with.
-                match k.commit_fold_proved(&section, &w) {
+                match h.run(|k, _| k.commit_fold_proved(&section, &w)) {
                     Ok(_) => {
                         observe::note_fold(FoldOutcome::Folded);
                         return;
@@ -90,8 +91,8 @@ pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
                 // A witness that re-derived other nets: the proposal is not
                 // carried again as it stood.
                 if why == mycelium::verdict::REFUSE_FOLD_INEXACT.as_bytes() {
-                    if let Ok(mut k) = crate::held::held!(kernel) {
-                        k.drop_fold_proposal();
+                    if let Ok(mut h) = crate::held::held!(kernel) {
+                        h.run(|k, _| k.drop_fold_proposal());
                     }
                     return;
                 }

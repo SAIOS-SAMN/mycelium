@@ -7,6 +7,7 @@
 //! ruled 2026-09-10); a voice speaks sentences, heard by `perceive_speech`.
 
 use crate::arc::Grid;
+use crate::server::held::held;
 
 /// The family's measured frame ratio — perception, identical across pairs
 /// or refused (never rounded), measured on the common refinement.
@@ -33,8 +34,9 @@ pub fn probe(
     cites: &[crate::anastome::dialogue::CiteWire],
 ) -> crate::anastome::dialogue::ProbeReading {
     use crate::anastome::dialogue::ProbeReading;
-    let Ok(mut g) = k.lock() else { return ProbeReading::nothing() };
-    let view = g.market_open();
+    // 78.153b — every take through the counted guard (`server::held`).
+    let Ok(mut g) = held!(k) else { return ProbeReading::nothing() };
+    let view = g.run(|k, _| k.market_open());
     drop(g);
     // A TARGET MAY NAME ONE DEMAND VERTEX of the listing (L8q). The
     // listing it stands on is what the book is asked for; the settlement
@@ -49,27 +51,29 @@ pub fn probe(
     // The utterance is verified as spoken — its operators against the
     // listing — never against this hypha's copies of the words.
     let residual = crate::transducer::sentence::verify_utterance(cites, listing.sub());
-    let Ok(mut g) = k.lock() else { return ProbeReading::nothing() };
-    // A SECTION is the hypha's reading, never the speaker's flag: a cite
-    // whose body carries an assignment the cited word does not hold. The
-    // wire's `u32::MAX` sentinel said so on the speaker's word and is gone
-    // with the gauge field (law 12, rule 11).
-    let section = cites.iter().any(|c| {
-        g.basis.get(&c.addr).is_some_and(|w| {
-            !crate::transducer::sentence::holds_assignment(w, &crate::transducer::sentence::body_assignment(&c.body))
-        })
-    });
-    // The court replays the settlement on the chains it is handed, so the
-    // measure spoken here is the chain's own, not the listing's fibre.
-    let before = crate::transducer::element::measure_lanes(listing.sub());
-    let settled = g.settle_probe(voice, target, residual, cites, section);
-    if settled.moved() {
-        g.puncture_from(cites); // the fiber deepens on what was verified
-        // The settlement goes to the court with the utterance that made it,
-        // for the court to replay and measure itself.
-        g.record_settlement(crate::transducer::address::Address::from(target), listing.sub().to_vec(), voice, cites, before, settled.remaining);
-    }
-    settled
+    let Ok(mut g) = held!(k) else { return ProbeReading::nothing() };
+    g.run(|g, _| {
+        // A SECTION is the hypha's reading, never the speaker's flag: a cite
+        // whose body carries an assignment the cited word does not hold. The
+        // wire's `u32::MAX` sentinel said so on the speaker's word and is gone
+        // with the gauge field (law 12, rule 11).
+        let section = cites.iter().any(|c| {
+            g.basis.get(&c.addr).is_some_and(|w| {
+                !crate::transducer::sentence::holds_assignment(w, &crate::transducer::sentence::body_assignment(&c.body))
+            })
+        });
+        // The court replays the settlement on the chains it is handed, so the
+        // measure spoken here is the chain's own, not the listing's fibre.
+        let before = crate::transducer::element::measure_lanes(listing.sub());
+        let settled = g.settle_probe(voice, target, residual, cites, section);
+        if settled.moved() {
+            g.puncture_from(cites); // the fiber deepens on what was verified
+            // The settlement goes to the court with the utterance that made it,
+            // for the court to replay and measure itself.
+            g.record_settlement(crate::transducer::address::Address::from(target), listing.sub().to_vec(), voice, cites, before, settled.remaining);
+        }
+        settled
+    })
 }
 
 /// WHAT A QUOTE READS OFF THE LOCK.
@@ -96,12 +100,14 @@ pub fn quote(
     voice: [u8; 32],
     charts: &[crate::transducer::stalk::Invariant],
 ) -> Option<Quoted> {
-    let view = k.lock().ok()?.market_open();
+    // 78.153b — the view under one counted hold; its stroke, handed on whole,
+    // measures the rank off the lock where the view holds none.
+    let mut g = held!(k).ok()?;
+    let view = g.run(|k, _| k.market_open());
+    let mut budget = g.into_stroke();
     let rank = match view.closure {
         Some(c) => c,
         None => {
-            // One stroke of this court's own metabolism (`Kernel::stroke`).
-            let mut budget = k.lock().ok()?.stroke();
             let measured = crate::cognition::rank_over(
                 &view.language,
                 &view.pending,
@@ -110,7 +116,7 @@ pub fn quote(
                 &view.chart_listings,
                 &mut budget,
             );
-            k.lock().ok()?.seal_closure(view.gens, measured)
+            held!(k).ok()?.run(|k, _| k.seal_closure(view.gens, measured))
         }
     };
     let budget = crate::network::wire::frame_budget() - 34;
@@ -124,8 +130,7 @@ pub fn quote(
         eprintln!("  quote refused: the yield surface passes its carrier");
         return None;
     };
-    let (surface, priced) = {
-        let g = k.lock().ok()?;
+    let (surface, priced) = held!(k).ok()?.run(|g, _| {
         crate::cognition::quote_incidence(
             &crate::cognition::BookView {
                 pending: &view.pending,
@@ -142,7 +147,7 @@ pub fn quote(
                 voice: &voice,
             },
         )
-    };
+    });
     let cohesion = crate::cognition::cohesion_over(&rank);
     Some(Quoted {
         surface,
@@ -158,8 +163,8 @@ pub fn quote(
 /// over a basis snapshot with no lock held, and only the retirement
 /// re-locks. Returns the cards retired.
 pub fn consolidate(k: &std::sync::Mutex<crate::cognition::Kernel>) -> usize {
-    let Ok(mut g) = k.lock() else { return 0 };
-    g.consolidate_stroke();
+    let Ok(mut g) = held!(k) else { return 0 };
+    g.run(|k, _| k.consolidate_stroke());
     0
 }
 
@@ -172,9 +177,9 @@ pub fn adopt(
     word: &crate::transducer::element::Element,
 ) -> crate::cognition::Adoption {
     use crate::cognition::Adoption;
-    // One stroke of this court's own metabolism (`Kernel::stroke`) reads the
-    // replay and the derivability below.
-    let Ok(mut budget) = k.lock().map(|mut g| g.stroke()) else {
+    // One stroke of this court's own metabolism — the first hold's, handed on
+    // whole (78.153b) — reads the replay and the derivability below.
+    let Ok(mut g) = held!(k) else {
         return Adoption::Refused("kernel unavailable");
     };
     // A form cites ruled forms and is bound to a family: its replay reads
@@ -184,26 +189,37 @@ pub fn adopt(
     // 78.153 — the replay on the one stroke: unread is not adopted now and
     // not refused; the next adoption resumes it (the kernel's cursor) where
     // the word replays under the lock, or starts it over where it is pure.
-    let replayed = if word.is_sentence() {
-        let Ok(mut g) = k.lock() else { return Adoption::Refused("kernel unavailable") };
-        g.court_replay(word, &mut budget)
-    } else {
-        let mut cursor = crate::verdict::ReplayCursor::default();
-        crate::verdict::replay_resume(word, &|_| None, None, &crate::transducer::family::NoCrystal, &mut budget, &mut cursor, false)
+    let (replayed, mut budget) = match word.is_sentence() {
+        true => {
+            let replayed = g.run(|k, reads| k.court_replay(word, reads));
+            (replayed, g.into_stroke())
+        }
+        false => {
+            let mut budget = g.into_stroke();
+            let mut cursor = crate::verdict::ReplayCursor::default();
+            let replayed = crate::verdict::replay_resume(word, &|_| None, None, &crate::transducer::family::NoCrystal, &mut budget, &mut cursor, false);
+            (replayed, budget)
+        }
     };
     match replayed {
         crate::verdict::Replayed::Refused(r) => return Adoption::Refused(r.reason),
         crate::verdict::Replayed::Unread => return Adoption::Unread,
         crate::verdict::Replayed::Clean => {}
     }
-    let Ok(mut g) = k.lock() else { return Adoption::Refused("kernel unavailable") };
-    if g.word_at(&word.address()).is_some() {
+    let Ok(mut g) = held!(k) else { return Adoption::Refused("kernel unavailable") };
+    // The install spends the adoption's stroke, carried in; this hold's own
+    // stroke goes unspent.
+    let held = g.run(|g, _| match g.word_at(&word.address()).is_some() {
         // Held at this address: the arriving placement's fibre merges
         // (Known or Enriched — the install door decides).
-        return g.install_adopted(word, ratifier, &mut budget);
-    }
-    let language = g.language();
+        true => Err(g.install_adopted(word, ratifier, &mut budget)),
+        false => Ok(g.language()),
+    });
     drop(g);
+    let language = match held {
+        Ok(l) => l,
+        Err(adopted) => return adopted,
+    };
     // Derivability on the snapshot: a word the language already composes
     // is not installed twice.
     let sub = word.substance();
@@ -218,8 +234,8 @@ pub fn adopt(
     if let ([], [], [_, ..]) = (sentence.residual.as_slice(), sentence.punctures.as_slice(), sentence.cites.as_slice()) {
         return Adoption::Derivable;
     }
-    let Ok(mut g) = k.lock() else { return Adoption::Refused("kernel unavailable") };
-    g.install_adopted(word, ratifier, &mut budget)
+    let Ok(mut g) = held!(k) else { return Adoption::Refused("kernel unavailable") };
+    g.run(|g, _| g.install_adopted(word, ratifier, &mut budget))
 }
 
 #[cfg(test)]

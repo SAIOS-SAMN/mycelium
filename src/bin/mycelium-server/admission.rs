@@ -7,23 +7,22 @@
 
 use crate::Mesh;
 use mycelium::anastome::dialogue;
-use mycelium::cognition::Kernel;
+use mycelium::cognition::{Kernel, Published};
 use mycelium::network::nerve::Router;
 use std::sync::Mutex;
 
-pub(crate) fn rebuild_own_cover(kernel: &Mutex<Kernel>, mesh: &Mesh) -> (Vec<(u8, mycelium::transducer::stalk::Invariant)>, [u64; 4]) {
+/// THIS HYPHA'S OWN COVER AND ROOM onto the mesh, read off the published
+/// reading (78.153b): its charts and its room as the court stroke last
+/// published them, never the kernel — `lane_room`'s credit walk and the
+/// cover trie's walk ran under the kernel on every exchange cycle and every
+/// digest asked. The room it admitted, `[0; 4]` where none reads.
+pub(crate) fn rebuild_own_cover(read: &Published, mesh: &Mesh) -> [u64; 4] {
     // A room that cannot be read is a broken count, and this hypha admits
-    // no cover against one — as a poisoned lock admits none.
-    let (charts, room) = match crate::held::held!(kernel) {
-        Ok(k) => match k.lane_room() {
-            Some(r) => (k.own_cover_charts(), r),
-            None => return (Vec::new(), [0; 4]),
-        },
-        Err(_) => return (Vec::new(), [0; 4]),
-    };
+    // no cover against one.
+    let Some(room) = read.lane_room() else { return [0; 4] };
     if let Ok(mut c) = mesh.cover.lock() {
         c.retract_hypha(&mesh.vk);
-        for (lane, inv) in &charts {
+        for (lane, inv) in read.own_cover_charts() {
             c.admit(*lane, inv, mesh.vk);
         }
     }
@@ -33,7 +32,7 @@ pub(crate) fn rebuild_own_cover(kernel: &Mutex<Kernel>, mesh: &Mesh) -> (Vec<(u8
     if let Ok(mut a) = mesh.addrs.lock() {
         a.insert(mesh.vk, mesh.bind.clone());
     }
-    (charts, room)
+    room
 }
 
 /// 47.1: THIS HYPHA'S SIGNED POSITION FOR ONE PAYLOAD — the prefix carrying
@@ -68,9 +67,10 @@ pub(crate) fn sign_position(
     payload: &[u8],
 ) -> Option<dialogue::ReceiptSection> {
     let (genesis, epoch) = mesh.origin.lock().ok().and_then(|o| *o)?;
-    let k = crate::held::held!(kernel).ok()?;
-    let head = k.chain().head()?;
-    drop(k);
+    // Read on the kernel, constant in what it holds (one node unpacked):
+    // a signed position is the court's head AT SIGNING, so it stays off the
+    // shelf, whose head may stand one stroke behind (78.153b).
+    let head = crate::held::held!(kernel).ok()?.run(|k, _| k.chain().head())?;
     let prefix = mycelium::court::admission::SignedPrefix {
         genesis,
         epoch,
@@ -91,11 +91,14 @@ pub(crate) fn sign_position(
     Some(dialogue::ReceiptSection { prefix, sig, receipt: head })
 }
 
-pub(crate) fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> {
-    let (charts, room) = rebuild_own_cover(kernel, mesh);
-    // 78.152 TU-1: the court's keeper tick is read in the same hold.
-    let (ruled_root, tick) = match crate::held::held!(kernel) {
-        Ok(mut k) => (k.ruled_root(), k.keeper_tick()),
+pub(crate) fn sign_cover_digest(kernel: &Mutex<Kernel>, shelf: &crate::published::Shelf, mesh: &Mesh) -> Vec<u8> {
+    // 78.153b — the cover, the room and the ruled root off the published
+    // reading; the keeper tick (78.152 TU-1) alone is read on the kernel.
+    let read = shelf.take();
+    let room = rebuild_own_cover(&read, mesh);
+    let ruled_root = read.ruled_root();
+    let tick = match crate::held::held!(kernel) {
+        Ok(mut h) => h.run(|k, _| k.keeper_tick()),
         Err(_) => return Vec::new(),
     };
     let ring = crate::tshelf::own_ring(mesh, tick);
@@ -118,7 +121,6 @@ pub(crate) fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> 
     // whose roots moved asks for them by page (`ACT_COVER`) — so the only
     // variable field left is the bind, and that is a configuration
     // refusal, named.
-    let _ = charts;
     let Some(mut out) =
         dialogue::encode_cover_digest(&room, &cover_roots, &ruled_root, &mesh.vk, &mesh.bind, &ring, &sig)
     else {
@@ -221,8 +223,10 @@ pub(crate) fn admit_peer_receipt(
         .ok()
         .and_then(|o| *o)
         .ok_or(NoAdmission::NoOrigin)?;
-    let mut k = crate::held::held!(kernel).map_err(|_| NoAdmission::Malformed)?;
-    Ok(k.admit_receipt(origin, verified, &receipt))
+    let mut h = crate::held::held!(kernel).map_err(|_| NoAdmission::Malformed)?;
+    // OWED (78.153b): `recall_cited` reads a whole era per missing parent
+    // (the lock audit, row 15), unmetered.
+    Ok(h.run(|k, _| k.admit_receipt(origin, verified, &receipt)))
 }
 
 /// One exchange cycle's admission tally, written with the 34.2 organ line.

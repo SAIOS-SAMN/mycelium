@@ -567,7 +567,7 @@ fn a_mind_constructs_what_it_could_not_spell_and_after_adjunction_reads_it_deriv
     assert_eq!(addr, far_addr, "two vantages, one address");
     let cover = home.genesis_cover().expect("a measured cover");
     home.enroll(WITNESS, cover);
-    home.witness_rederived(&Address::from(addr.clone()), WITNESS, reached);
+    home.witness_rederived_fresh(&Address::from(addr.clone()), WITNESS, reached);
     assert!(basis_holds(&home, &addr), "the second vantage re-derived it and the court adjoined it");
 
     // 5. TAUGHT BACK — and the same class, through the same reader, flips.
@@ -656,7 +656,7 @@ fn a_letter_is_docketed_on_one_vantage_and_installed_on_two() {
     // delegation closure lands.
     let cover = home.genesis_cover().expect("a measured cover");
     home.enroll(WITNESS, cover);
-    home.witness_rederived(&crate::transducer::address::Address::from(addr.clone()), WITNESS, reached);
+    home.witness_rederived_fresh(&crate::transducer::address::Address::from(addr.clone()), WITNESS, reached);
 
     assert!(
         basis_holds(&home, &addr),

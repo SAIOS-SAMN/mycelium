@@ -6,5 +6,6 @@
 
 pub mod backfill;
 pub mod cognition;
+pub mod held;
 pub mod registry;
 pub mod synthesis;

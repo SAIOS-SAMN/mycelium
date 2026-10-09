@@ -268,6 +268,25 @@ impl TubeRegistry {
         h
     }
 
+    /// 78.153b — THE HELICITY ON A STROKE: one read per tube whose pairings
+    /// are summed (each row `a` against every `b ≥ a`, `O(tubes)` products).
+    /// `None` where the stroke runs out first — the helicity UNREAD, never
+    /// a partial sum standing for it.
+    pub fn helicity_on(&self, reads: &mut crate::physics::Budget) -> Option<BigRational> {
+        let held: Vec<&Tube> = self.tubes.scoped().map(|(_, t)| t).collect();
+        let mut h = BigRational::zero();
+        for (i, a) in held.iter().enumerate() {
+            if !reads.spend() {
+                return None;
+            }
+            for b in held.iter().skip(i) {
+                let pair = a.generator.geo(&b.generator).scalar_part();
+                h += pair * BigRational::from_integer(&a.net * &b.net);
+            }
+        }
+        Some(h)
+    }
+
     /// 78.71 (4) — THE LINKS: the pairs of distinct tubes whose field lines
     /// link (`⟨G_a G_b⟩₀ ≠ 0`) while both carry net flux. Helicity moves
     /// whenever flux is injected into a linked tube; the links move only when

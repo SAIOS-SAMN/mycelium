@@ -63,12 +63,12 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             return;
         }
         Ok(SeatRequest::Post(s)) => match crate::held::held!(door.kernel) {
-            Ok(mut k) => encode_post_reply(k.seat_post(&s)),
+            Ok(mut h) => encode_post_reply(h.run(|k, _| k.seat_post(&s))),
             Err(_) => return,
         },
         Ok(SeatRequest::ReadMail(r)) => match crate::held::held!(door.kernel) {
-            Ok(mut k) => {
-                let mail = k.seat_mail(&r);
+            Ok(mut h) => {
+                let mail = h.run(|k, _| k.seat_mail(&r));
                 let Some(b) = encode_mail_reply(mail.as_deref().map_err(|why| *why)) else { return };
                 b
             }

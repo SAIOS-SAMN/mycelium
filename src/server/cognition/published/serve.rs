@@ -90,4 +90,50 @@ impl Published {
     pub fn clock(&self) -> Option<&CoreStamp> {
         self.clock.as_ref()
     }
+
+    /// 78.153b — `Kernel::own_cover_charts` as published.
+    pub fn own_cover_charts(&self) -> &[(u8, crate::transducer::stalk::Invariant)] {
+        &self.own.cover
+    }
+
+    /// 78.153b — `Kernel::lane_room` as published.
+    pub fn lane_room(&self) -> Option<[u64; 4]> {
+        self.own.room
+    }
+
+    /// 78.153b — `Kernel::ruled_root` as published.
+    pub fn ruled_root(&self) -> [u8; 32] {
+        self.own.ruled.root
+    }
+
+    /// 78.153b — `Kernel::ruled_digests_for` as published: the ruled cover's
+    /// digests to the court's own voice, none to any other asker.
+    pub fn ruled_digests_for(&self, voice: &[u8; 32]) -> Option<&[crate::transducer::sheaf::StratumDigest]> {
+        (self.own.voice.as_ref() == Some(voice)).then_some(self.own.ruled.digests.as_slice())
+    }
+
+    /// 78.153b — `Kernel::syllabus_seed` as published: the ruled addresses,
+    /// coarsest chart first.
+    pub fn syllabus_seed(&self) -> &[Vec<u8>] {
+        &self.own.ruled.seed
+    }
+
+    /// 78.153b — the court's head receipt (`ReceiptChain::head`) as
+    /// published: the receipt at [`Published::head`].
+    pub fn head_receipt(&self) -> Option<&KStepReceipt> {
+        self.own.head_receipt.as_ref()
+    }
+
+    /// 78.153b — `Kernel::verify_fold` answered off this reading: the bond it
+    /// asks of the witness is the published one; the re-derivation reads
+    /// only what the home sent.
+    pub fn verify_fold(
+        &self,
+        home: [u8; 32],
+        p: &crate::cognition::Proposal,
+        receipts: &[KStepReceipt],
+        rows: &[crate::economy::Entry],
+    ) -> Result<(), &'static str> {
+        crate::cognition::court::fold::verify_prefix(self.own.bonded, home, p, receipts, rows)
+    }
 }

@@ -300,6 +300,21 @@ impl ReceiptChain {
         self.line_stamps(vk, after, upto, n).iter().filter_map(|at| self.node(at)).collect()
     }
 
+    /// 78.153b — THE FIRST NODE `pred` HOLDS OF on a signer's line strictly
+    /// after `after` up to and including `upto`, in line order: the nodes
+    /// unpacked one at a time until it is met, never the span read whole
+    /// first ([`ReceiptChain::line_between`]'s nodes, the first that holds).
+    pub fn first_between(&self, vk: &[u8; 32], after: Option<Place>, upto: Place, pred: impl Fn(&KStepReceipt) -> bool) -> Option<KStepReceipt> {
+        let line = self.lines.fiber_at(vk)?;
+        line.filter_map(|(key, &h)| {
+            let mut p = 32usize;
+            let at = Place::take_canonical(&key, &mut p)?;
+            (after.is_none_or(|a| a < at) && at <= upto).then_some(Stamp::new(h, *vk, at))
+        })
+        .filter_map(|at| self.node(&at))
+        .find(|r| pred(r))
+    }
+
     /// A SIGNER'S HEAD as this ledger holds it: the node at the greatest
     /// place on its line.
     pub fn line_head(&self, vk: &[u8; 32]) -> Option<KStepReceipt> {

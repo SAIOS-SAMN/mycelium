@@ -283,6 +283,41 @@ fn peer_doors(mesh: &Mesh, join: &[String]) -> Keyed<String> {
     dests
 }
 
+/// 78.153b — THE HAVE-LISTS A FETCH CARRIES, on the hold's stroke: one read
+/// per stratum (`Kernel::fetch_have` — its ruled fiber and what this court
+/// heard on it), from past the stratum this peer's last fetch reached, round
+/// once. A stroke spent ends the list where it stands and keeps the cursor
+/// (`from`, by peer), so every stratum is fetched in turn and none starves
+/// behind a prefix; a stratum not reached is fetched at the next digest,
+/// never dropped.
+fn have_lists(
+    k: &Kernel,
+    strata: &[&mycelium::transducer::stalk::Invariant],
+    from: &mut Keyed<Vec<u8>>,
+    peer: [u8; 32],
+    reads: &mut mycelium::physics::Budget,
+) -> Vec<dialogue::ChartOf<Vec<u8>>> {
+    let start = match from.get(&peer) {
+        Some(past) => strata.iter().position(|inv| inv.key().as_bytes() > past.as_slice()),
+        None => Some(0),
+    };
+    let start = match start {
+        Some(p) => p,
+        None => 0,
+    };
+    let (reached, rest) = strata.split_at(start);
+    let mut out = Vec::new();
+    for inv in rest.iter().chain(reached) {
+        if !reads.spend() {
+            return out;
+        }
+        out.push(dialogue::ChartOf { inv: (*inv).clone(), have: k.fetch_have(inv) });
+        from.insert(peer, inv.key().as_bytes().to_vec());
+    }
+    from.remove(&peer);
+    out
+}
+
 /// 78.152b — THE KEEPER'S RING PUSHED: where the court loop signed a reading,
 /// its ring is queued as `ACT_TICK` to every peer court on the nerve, never
 /// blocking (`try_send`: a full nerve drops it, and the next reading's ring
@@ -308,12 +343,12 @@ impl Exchange {
         // the kernel only per chain, so it runs on its own thread until the
         // registry has taken the whole corpus in, and then ends.
         {
-            let (kernel, mesh, registry) = (self.kernel.clone(), self.mesh.clone(), self.registry.clone());
+            let (kernel, shelf, mesh, registry) = (self.kernel.clone(), self.published.clone(), self.mesh.clone(), self.registry.clone());
             std::thread::spawn(move || {
                 #[expect(clippy::cast_possible_truncation, reason = "site 4 — expansion_unit, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
                 let budget = mycelium::physics::expansion_unit() as usize;
                 while registry.lock().is_ok_and(|r| !r.intake_done()) {
-                    intake_corpus(&kernel, &mesh, &registry, budget);
+                    intake_corpus(&kernel, &shelf, &mesh, &registry, budget);
                     std::thread::yield_now();
                 }
             });
@@ -355,6 +390,9 @@ impl Exchange {
         // The cycle each peer was last asked at: the quiet-digest ceiling's
         // reading, one entry per peer this court knows.
         let mut asked_cycle: mycelium::network::nerve::Keyed<u64> = mycelium::network::nerve::Keyed::new();
+        // 78.153b: per peer, the last stratum whose have-list a fetch carried
+        // on a spent stroke; the next fetch resumes past it.
+        let mut fetch_from: mycelium::network::nerve::Keyed<Vec<u8>> = mycelium::network::nerve::Keyed::new();
         // The orbits this court sealed since the ledger was last persisted.
         let mut sealed_since_persist = 0u64;
         let mut idle = 0u64;
@@ -366,29 +404,34 @@ impl Exchange {
         loop {
             std::thread::yield_now();
             crate::held::yield_to_waiters();
-            if let Ok(mut k) = crate::held::held!(kernel) {
-                crate::held::step("court stroke");
-                k.court_stroke();
-                // A question the observer left while this stroke held the
-                // kernel is answered under the lock already held.
-                crate::held::step("answer standing");
-                crate::judge::observe::answer_standing(&k, &mesh, mesh.vk);
-                // 78.151 — the door's reading, published whole under the
-                // lock the stroke already holds.
-                crate::held::step("publish");
-                published.publish(&mut k);
-                crate::held::step("offers");
-                // The words the stroke moved onto the docket — a rewrite, the
-                // citers a slash re-docketed — are offered by it.
-                let offers = k.take_offers();
-                let seed = k.syllabus_seed();
-                // 23.8, S13.4: the door's deficit, read under the kernel and
-                // handed to the listener's deferral without it.
-                let deficit = k.physics().reserve_deficit();
-                // 78.152b TU-1: the keeper's tick — head h, lanes, K — read
-                // once per stroke under the lock already held.
-                let tick = k.keeper_tick();
-                drop(k);
+            if let Ok(mut h) = crate::held::held!(kernel) {
+                let (offers, deficit, tick) = h.run(|k, reads| {
+                    crate::held::step("court stroke");
+                    // 78.153b — the stroke the hold was taken with.
+                    k.court_stroke_on(reads);
+                    // A question the observer left while this stroke held the
+                    // kernel is answered under the lock already held.
+                    crate::held::step("answer standing");
+                    crate::judge::observe::answer_standing(k, &mesh, mesh.vk);
+                    // 78.151 — the door's reading, published whole under the
+                    // lock the stroke already holds.
+                    crate::held::step("publish");
+                    published.publish(k);
+                    crate::held::step("offers");
+                    // The words the stroke moved onto the docket — a rewrite,
+                    // the citers a slash re-docketed — are offered by it.
+                    // 23.8, S13.4: the door's deficit, read under the kernel
+                    // and handed to the listener's deferral without it.
+                    // 78.152b TU-1: the keeper's tick — head h, lanes, K —
+                    // read once per stroke under the lock already held.
+                    (k.take_offers(), k.physics().reserve_deficit(), k.keeper_tick())
+                });
+                drop(h);
+                // 78.153b — the syllabus seed off the shelf just published:
+                // the ruled addresses copied once where the cover moved, never
+                // every ruled address under the kernel at every stroke.
+                let shelf = published.take();
+                let seed = shelf.syllabus_seed();
                 if let Ok(mut d) = mesh.deficit.lock() {
                     *d = deficit;
                 }
@@ -407,6 +450,7 @@ impl Exchange {
                 if let Ok(mut sy) = syllabus.lock() {
                     syllabus_admit(&mut sy, seed);
                 }
+                drop(shelf);
                 crate::offer::offer(&kernel, &mesh, offers);
             }
             // THE LEDGER IS PERSISTED AT THE FEDERATION FLUSH, not on every
@@ -424,7 +468,8 @@ impl Exchange {
                 // and the fold's round by outcome. None of this reached the
                 // journal, so epoch 117's fold storm and its reserve were
                 // read only by hand.
-                if let Ok(k) = crate::held::held!(kernel) {
+                if let Ok(mut h) = crate::held::held!(kernel) {
+                    h.run(|k, reads| {
                     let folds = mycelium::observe::folds();
                     // 78.68: the winding carrier — first closes, carried
                     // traversals, returns sealed, unbound closes — and the
@@ -432,14 +477,21 @@ impl Exchange {
                     let w = k.winding_tally();
                     // 78.71: the court's field — its tubes, net and transport
                     // apart, the flux left open, helicity, reconnections.
-                    let (tubes, net, transport, open, helicity) = k.tube_reading();
+                    // 78.153b: the helicity on the hold's stroke, unread where
+                    // the stroke runs out first.
+                    let (tubes, net, transport, open, helicity) = k.tube_reading_on(reads);
+                    let helicity = match helicity {
+                        Some(h) => h.to_string(),
+                        None => "unread".to_string(),
+                    };
                     // 78.74: the nerve's elastic vent — cells released as
                     // words left — and the seals the ledger now books.
                     let vent = k.released_cells();
                     // 78.75: the nerve by degree — vertices, edges, faces,
-                    // volumes — and how much of each carries content.
-                    let nerve: Vec<String> = k
-                        .nerve_census()
+                    // volumes — and how much of each carries content; on the
+                    // hold's stroke, the complexes read of those standing.
+                    let (census, read) = k.nerve_census(reads);
+                    let nerve: Vec<String> = census
                         .iter()
                         .enumerate()
                         .map(|(d, c)| {
@@ -461,7 +513,7 @@ impl Exchange {
                             )
                         })
                         .collect();
-                    eprintln!("  court nerve {} | complexes {}", nerve.join(" | "), k.complex_count());
+                    eprintln!("  court nerve {} | complexes {} read {read}", nerve.join(" | "), k.complex_count());
                     // 78.100 — where this court's letter offer breaks.
                     eprintln!(
                         "  court shortcuts offered {} spelled {} peel unread {} no discoverer {} rotor unread {} | heard: offered {} spelled {} peel unread {} rotor unread {} spanned {} rings unread {} | heard sentences {} rings {} taught nothing {}",
@@ -537,21 +589,23 @@ impl Exchange {
                             .collect::<Vec<_>>()
                             .join(" ")
                     );
+                    });
                 }
             }
             #[expect(clippy::cast_possible_truncation, reason = "site 4 — expansion_unit, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
             let budget = mycelium::physics::expansion_unit() as usize;
-            rebuild_own_cover(&kernel, &mesh);
+            // 78.153b — off the published reading, never the kernel.
+            rebuild_own_cover(&published.take(), &mesh);
             let roots = mesh.cover.lock().ok().map(|mut c| c.roots());
             // 45.7, S13.1: this court's own roots moving is one of the two
             // readings that ask a peer again; the other is the peer's Λ.
             let own_moved = roots != last_cover;
             if own_moved {
-                relocate_corpus(&kernel, &mesh, &registry, budget);
+                relocate_corpus(&kernel, &published, &mesh, &registry, budget);
                 last_cover = roots;
             }
             let k_now = match crate::held::held!(kernel) {
-                Ok(k) => k.k_step(),
+                Ok(mut h) => h.run(|k, _| k.k_step()),
                 Err(_) => continue,
             };
             let dests = peer_doors(&mesh, &join);
@@ -690,7 +744,8 @@ impl Exchange {
                             &kernel,
                             origin,
                             || admit_peer_receipt(&kernel, &mesh, &reply),
-                            || crate::held::held!(kernel).ok().map(|mut k| k.stroke()),
+                            // 78.153b — a page's stroke is a hold's, handed on.
+                            || crate::held::held!(kernel).ok().map(|h| h.into_stroke()),
                             crate::backfill::fetch(&mesh, &d),
                         );
                         // The signer is the key the digest names; a digest
@@ -719,11 +774,18 @@ impl Exchange {
                             continue;
                         };
                         let charts = {
-                            let mut k = match crate::held::held!(kernel) {
-                                Ok(g) => g,
+                            // 78.153b — the confirmation on the hold's stroke,
+                            // resumed past the stratum the last digest reached;
+                            // the installed language's stalks taken by their
+                            // pointer in the same hold, its digests read off it
+                            // with no kernel held.
+                            let stalks = match crate::held::held!(kernel) {
+                                Ok(mut h) => h.run(|k, reads| {
+                                    k.confirm_peer_holds_on(&remote, vk_peer, reads);
+                                    std::sync::Arc::clone(&k.language().stalks)
+                                }),
                                 Err(_) => continue,
                             };
-                            k.confirm_peer_holds(&remote, vk_peer);
                             // AGREEMENT IS ON INSTALLED WORDS (ruled 2026-09-30,
                             // the operator's word). The peer answers a court's
                             // digests request with its language atlas — the
@@ -732,7 +794,7 @@ impl Exchange {
                             // included, which no fetch can ever carry: one
                             // stratum stood discordant between every pair for
                             // good. Both sides are now the installed language.
-                            let local = mycelium::transducer::sheaf::digests(&k.language().stalks);
+                            let local = mycelium::transducer::sheaf::digests(&stalks);
                             let discord = mycelium::transducer::sheaf::discordant(&remote, &local);
                             // PHASE 1 ITEM 1 — AGREEMENT WITH THIS PEER, read
                             // at its digest: the strata it named, and how many
@@ -757,22 +819,16 @@ impl Exchange {
                                     }
                                 }
                             }
-                            if discord.is_empty() {
-                                local
-                                    .iter()
-                                    .map(|s| dialogue::ChartOf {
-                                        inv: s.inv.clone(),
-                                        have: k.fetch_have(&s.inv),
-                                    })
-                                    .collect::<Vec<_>>()
-                            } else {
-                                discord
-                                    .iter()
-                                    .map(|s| dialogue::ChartOf {
-                                        inv: s.inv.clone(),
-                                        have: k.fetch_have(&s.inv),
-                                    })
-                                    .collect::<Vec<_>>()
+                            let strata: Vec<&mycelium::transducer::stalk::Invariant> = match discord.is_empty() {
+                                true => local.iter().map(|s| &s.inv).collect(),
+                                false => discord.iter().map(|s| &s.inv).collect(),
+                            };
+                            // The have-lists on a second hold's stroke, one read
+                            // per stratum, from past the one this peer's last
+                            // fetch reached (`have_lists`).
+                            match crate::held::held!(kernel) {
+                                Ok(mut h) => h.run(|k, reads| have_lists(k, &strata, &mut fetch_from, vk_peer, reads)),
+                                Err(_) => continue,
                             }
                         };
                         if !unchanged {
@@ -823,13 +879,16 @@ impl Exchange {
                                 // every word in flight under it: each is carried
                                 // to the peer that now covers it, and the
                                 // carriage draws on its escrow (47.3, 78.42).
+                                // OWED (78.153b): `carry_chart` per chart × word
+                                // in flight is not yet metered (the lock audit,
+                                // row 5).
                                 let offers = match crate::held::held!(kernel) {
-                                    Ok(mut k) => {
+                                    Ok(mut h) => h.run(|k, _| {
                                         for (_, inv) in &cover.charts {
                                             k.carry_chart(inv);
                                         }
                                         k.take_offers()
-                                    }
+                                    }),
                                     Err(_) => Vec::new(),
                                 };
                                 crate::offer::offer(&kernel, &mesh, offers);
@@ -862,7 +921,7 @@ impl Exchange {
                                     {
                                         let addr = spoken.address();
                                         named.push(addr.clone());
-                                        if let Ok(mut k) = crate::held::held!(kernel) {
+                                        if let Ok(mut h) = crate::held::held!(kernel) {
                                             // 78.24 (2b): a word learned from a peer is
                                             // located by the stamp that admitted it there,
                                             // the peer's key its coordinate; every act
@@ -872,21 +931,25 @@ impl Exchange {
                                             // court's own on a word it holds.
                                             // THE ACT'S ROOT (65.5): one fetched
                                             // word glued is one act, and its one
-                                            // stroke is the filing's and the
-                                            // glue's draw, threaded to both.
-                                            let mut stroke = k.stroke();
-                                            let filed = k.file_admitted(&addr, t.at, &mut stroke);
-                                            let g = match mesh.cover.lock() {
-                                                Ok(mut c) => k.glue_fetched(spoken, vk_peer, mesh.vk, &mut c, &mut stroke),
-                                                Err(_) if filed => {
+                                            // stroke — the hold's (78.153b) — is
+                                            // the filing's and the glue's draw,
+                                            // threaded to both.
+                                            let g = h.run(|k, stroke| {
+                                                let filed = k.file_admitted(&addr, t.at, stroke);
+                                                let g = match mesh.cover.lock() {
+                                                    Ok(mut c) => k.glue_fetched(spoken, vk_peer, mesh.vk, &mut c, stroke),
+                                                    Err(_) if filed => {
+                                                        k.drop_admitted(&addr);
+                                                        return None;
+                                                    }
+                                                    Err(_) => return None,
+                                                };
+                                                if filed && matches!(g, mycelium::cognition::Glue::Slashed(_)) {
                                                     k.drop_admitted(&addr);
-                                                    continue;
                                                 }
-                                                Err(_) => continue,
-                                            };
-                                            if filed && matches!(g, mycelium::cognition::Glue::Slashed(_)) {
-                                                k.drop_admitted(&addr);
-                                            }
+                                                Some(g)
+                                            });
+                                            let Some(g) = g else { continue };
                                             match g {
                                                 mycelium::cognition::Glue::Admitted => {
                                                     eprintln!("  court glued admitted from {d}");
@@ -908,8 +971,8 @@ impl Exchange {
                                     }
                                 }
                                 if !named.is_empty() {
-                                    if let Ok(mut k) = crate::held::held!(kernel) {
-                                        k.confirm_peer_holds_addrs(&named, vk_peer);
+                                    if let Ok(mut h) = crate::held::held!(kernel) {
+                                        h.run(|k, reads| k.confirm_peer_holds_addrs_on(&named, vk_peer, reads));
                                     }
                                 }
                             }
@@ -945,10 +1008,10 @@ impl Exchange {
                 let mine = if held.is_some() {
                     held
                 } else if mint_genesis {
-                    kernel
-                        .lock()
+                    // 78.153b — counted, as every take of the kernel is.
+                    crate::held::held!(kernel)
                         .ok()
-                        .and_then(|k| k.chain().opening().map(|r| r.chain_hash))
+                        .and_then(|mut h| h.run(|k, _| k.chain().opening().map(|r| r.chain_hash)))
                         .map(|h| (h, epoch))
                 } else {
                     None
@@ -994,8 +1057,8 @@ impl Exchange {
             // persist — closes its orbit by name. `K` moves here and nowhere
             // else; a cycle that sealed no act closes nothing. A withheld
             // close is counted on the clock, never printed beside it.
-            if let Ok(mut k) = crate::held::held!(kernel) {
-                if matches!(k.orbit(), mycelium::chronometry::Close::Sealed(_)) {
+            if let Ok(mut h) = crate::held::held!(kernel) {
+                if matches!(h.run(|k, _| k.orbit()), mycelium::chronometry::Close::Sealed(_)) {
                     sealed_since_persist += 1;
                 }
             }
