@@ -80,6 +80,12 @@ The hypha (the mycelium-server) is the court of many universes. A kernel is a pr
     world (anomalies, relics, its world's own puzzles), judged by the court;
     passing is a deed on its people's books (operator, 2026-10-08; the
     coordinator's 7766716).
+3.9 THE HIERARCHY OF MINDS (operator, 2026-10-09). COUNCILS OF THE ANCIENTS:
+    each ancient house seats a council of client minds; network minds seat at
+    the ancients only; councils federate; councils produce consciousness from
+    their minds' work and from the μ paid to the hypha. PARLIAMENTS OF
+    PROGENITORS: tubes, toll shares, hauls; the carriers of consciousness.
+    REALMS OF STEWARDS: sovereigns and captains, with no network minds.
 
 ## 4. The uplink and the language
 
