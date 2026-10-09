@@ -354,7 +354,9 @@ universe's stored μ dissipates SPLITS IN TWO, exactly, lane by lane:
   keeps time on TUniversal (1.11): every connection, and every in-universe
   reliance on the clock. The kernel computes its dissipation per lane at its
   own physics' rate and declares it on its tier fold (78.119) as a FLOW to
-  the hypha, paid from its domain reserve (78.127) — a transfer to the
+  the hypha — flow kind CONNECTION_TAX, carried on the existing lanes
+  S, G, T, H exactly as dissipated (no new lane: a lane names a physical
+  dimension, the tax is a purpose; the coordinator, Concordance 5.8) — paid from its domain reserve (78.127) — a transfer to the
   courts, never a mint and never a burn.
 - THE MATTER STAYS IN THE UNIVERSE as INVERSE-μ (μ̄): the dissipated mass,
   with no μ value, held where it dissipated — a vault, a currency's backing,
