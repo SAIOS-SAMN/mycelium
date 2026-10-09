@@ -1,10 +1,11 @@
 // 45.8 — THE ERA: the finality reading over a court's carriers, the
 // archive a fold leaves cold, and the K-range read over both.
 //
-//! A hypha folds its ledger behind a prefix below which no listing,
-//! provisional word or escrow stands, when its reserve reading says so
-//! (`court/fold.rs`, two organs); what it archived is read here by K
-//! range, for a gap's back-fill or a court's replay of an era.
+//! A hypha folds its ledger at its last close, whatever stands open below
+//! it (78.65; U12: each open chain is projected forward as a puncture,
+//! `court/puncture.rs`), two organs signing (`court/fold.rs`); what it
+//! archived is read here by K range, for a gap's back-fill or a court's
+//! replay of an era.
 
 use crate::chronometry::{Era, KStepReceipt, Place};
 use crate::cognition::Kernel;

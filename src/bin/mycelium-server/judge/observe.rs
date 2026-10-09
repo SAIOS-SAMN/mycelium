@@ -54,6 +54,7 @@ fn publish_standing(k: &mycelium::cognition::Kernel, mesh: &crate::exchange::Mes
         folds: observe::folds(),
         catchup: observe::catchups(),
         serve: observe::serves(),
+        punctures: observe::punctures(),
         // 78.152 — the door's quorum-final point, the keepers and the
         // residual, read off the shelf (a leaf lock) outside the kernel.
         tuniversal: crate::tshelf::standing(),

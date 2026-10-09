@@ -20049,7 +20049,22 @@ many-fingered time its boundary operator respects the causal arrow
   route (70 as amended).
 - Owed with the build (the coordinator's slice, §0.1): the algebra test
   that an open escrow is projected as a puncture while the era root
-  closes.
+  closes. *Built (S4, 2026-10-09):* `court/puncture.rs` — `commit_fold`
+  projects, before the prefix leaves the line, every open chain that opened
+  on this line in the prefix: an escrow (opened at its anchor) and a listing
+  on the open book (opened at its admitting act), each a `Puncture { chain,
+  word: the admitting stamp, opened, lanes }` (`chronometry/era.rs`, a fixed
+  tape); the era records those it projected first (descriptor `punctured`,
+  the run before the payload in the cold segment, now `MYE3`; `MYE2` is
+  refused by name, no migration) and counts the chains carried from earlier
+  eras (`carried`); open carriers no stamp cites are counted (`uncited`),
+  never dropped. `settle_puncture` settles exactly the escrow its citation
+  names (`REFUSE_PUNCTURE_CLOSED` otherwise), sealing a `Settled` act and
+  releasing at it; a demand's puncture closes by its ruling
+  (`REFUSE_PUNCTURE_RULED`). A witness's copy of the era holds no punctures:
+  the carriers are off the ledger and not re-derived there. Read on the
+  observer as `punctures` (`PUNCTURE_AXES`). Tested:
+  `era::an_open_escrow_and_demand_are_projected_as_punctures_and_the_era_root_closes`.
 
 ### 78.66 One reserve, drawn by what moved; the fold paced by least action (ruled 2026-10-02, the operator's word: "wire PHY1 and PH1 first", "all of it, voice included")
 

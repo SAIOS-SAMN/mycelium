@@ -455,3 +455,109 @@ fn a_fold_passes_an_open_listing_word_and_escrow_and_each_closes_after_it() {
     k.commit_fold([3; 64], &co_sign("w", p2.root.hash)).expect("sealed");
     assert!(k.treasury().audit().is_ok());
 }
+
+/// U12 (78.65 as amended) — δ_causal, THE GATE: a fold with an open escrow and
+/// an unresolved demand (the word listed on the open book) waits for neither
+/// and refuses on neither. Its era root closes; the closed rows are integrated
+/// into it (the epoch rows stand at the root, the ledger conserves) and the
+/// folded acts stay citable cold by their coordinates; the escrow and the
+/// demand are each projected onto the new surface as a puncture the era
+/// records — cited by the word's admitting stamp, opened on this line, carrying
+/// its lanes — read back from the cold segment as written. A later fold
+/// carries them and writes them again nowhere. Settled in the new era, the
+/// escrow's puncture pays exactly the escrow's lanes and supply rises by
+/// exactly that (conservation); settled twice it refuses, and a demand's
+/// puncture closes by its ruling, never a payment. A segment of the old
+/// layout refuses by name.
+#[test]
+fn an_open_escrow_and_demand_are_projected_as_punctures_and_the_era_root_closes() {
+    use crate::chronometry::{Chain, Puncture};
+    use crate::verdict::{REFUSE_PUNCTURE_CLOSED, REFUSE_PUNCTURE_RULED};
+    // The fixture's bonded identity, which the escrow names.
+    let home = [0x11; 32];
+    let path = std::env::temp_dir().join(format!("mycelium-punctures-{}-{}", std::process::id(), line!()));
+    let _ = std::fs::remove_file(&path);
+    let mut k = Kernel::new();
+    k.bind_identity(home);
+    k.bind_eras(path.clone()).expect("a new segment binds");
+    let a = vec![(0, 0, 1u8), (0, 1, 1)];
+    let b = vec![(0, 0, 2u8), (0, 1, 2)];
+    assert_eq!(super::common::speak_pair(&mut k, &a, &b, [7; 32]), Outcome::GermPending);
+    let word: Vec<u8> = k.provisional.scoped().map(|(a, _)| a).next().expect("a provisional word");
+    let admitted = k.admitted_at(&word).expect("the word stands at its admitting act");
+    assert!(k.pending.contains(&word), "the unresolved demand: the word is listed on the open book");
+    // THE OPEN ESCROW, written fresh at a known claim, at the act it stands at.
+    let _ = k.treasury.revoke_award(&word, crate::economy::escrow::Revocation::Drop);
+    let claim = [3, 0, 1, 0];
+    let escrowed_at = k.anchor();
+    k.treasury.escrow_award(&crate::transducer::address::Address::from(word.clone()), vec![home], claim, escrowed_at);
+    k.append_step(ActKind::List, [1; 32], [2; 32]);
+    k.orbit();
+    let supply = k.treasury().audit().expect("conserves before the fold");
+
+    // THE FOLD: nothing open stalls it, and the root closes.
+    let p = k.propose_fold().expect("the open escrow and demand pin nothing");
+    let done = k.commit_fold([3; 64], &co_sign("w", p.root.hash)).expect("the era root closes with both open");
+    assert_eq!(k.chain().root(), Some(p.root), "the line stands on the closed root");
+    assert_eq!((done.punctured, done.carried, done.uncited), (2, 0, 0), "two punctures projected, none carried, none uncited");
+    // The closed cycles integrated: the epoch rows stand at the root and the
+    // ledger conserves; the folded act is cold, read by its coordinates.
+    assert!(
+        k.treasury().entries().iter().filter(|e| e.kind == crate::economy::Kind::Epoch).all(|e| e.stands_at() == Some(p.root.at)),
+        "the epoch rows stand at the era root"
+    );
+    assert_eq!(k.treasury().audit(), Ok(supply), "the fold moves no supply");
+    assert!(k.chain().node(&admitted).is_none(), "the admitting act left the hot line");
+    let cold = k.why(crate::anastome::dialogue::why::WhyAsk::Of(admitted)).expect("integrated, never discarded: citable cold");
+    assert_eq!(cold.at, admitted);
+
+    // THE PUNCTURES, as the era records them and as they stand live.
+    let escrow = Puncture { chain: Chain::Escrow, word: admitted, opened: escrowed_at.0.place(), lanes: claim };
+    let magnitude = k.pending.get(&word).expect("still listed").magnitude();
+    let demand = Puncture { chain: Chain::Demand, word: admitted, opened: admitted.place(), lanes: magnitude };
+    let era = k.archive()[0].clone();
+    assert!(era.at.is_some() && era.punctures.is_empty(), "filed: the run is in the segment, off the heap");
+    assert_eq!((era.punctured, era.carried), (2, 0));
+    // One word, read at its stamp: its escrow, then its listing.
+    let recorded = k.era_punctures(&era).expect("the run reads back from the segment");
+    assert_eq!(recorded, vec![escrow, demand], "each open chain projected by its citation, opening and lanes");
+    assert_eq!(k.punctures(), vec![escrow, demand], "live on the new surface");
+    assert_eq!(k.treasury().escrow_of(&word).map(|e| e.mu), Some(claim), "the escrow is still open, untouched");
+    let mut back = Kernel::new();
+    back.bind_eras(path.clone()).expect("the segment binds again");
+    assert_eq!(back.archive(), k.archive(), "the descriptor names its punctures");
+    assert_eq!(back.era_punctures(&back.archive()[0]).map(|r| r.len()), Some(2), "and the run is read cold");
+
+    // A LATER FOLD CARRIES THEM, writing them again nowhere. Flux reaches the
+    // word in each orbit, so no whole orbit passes it silent (78.37 (3)).
+    k.append_step(ActKind::List, [1; 32], [2; 32]);
+    k.note_flux(&word, claim);
+    k.orbit();
+    let p2 = k.propose_fold().expect("the line folds again");
+    let done2 = k.commit_fold([3; 64], &co_sign("w", p2.root.hash)).expect("sealed");
+    assert_eq!((done2.punctured, done2.carried), (0, 2), "both carried across the second fold");
+
+    // SETTLED IN THE NEW ERA: exactly the escrow's lanes, conserving.
+    let before = k.treasury().audit().expect("conserves");
+    let paid = k.settle_puncture(&escrow, [9, 9, 9, 9]).expect("the puncture settles");
+    assert_eq!(paid, claim, "it pays exactly the escrow's lanes");
+    let after = k.treasury().audit().expect("conserves after the settlement");
+    assert_eq!(after, std::array::from_fn(|l| before[l] + claim[l]), "supply rose by exactly what was paid");
+    assert!(k.treasury().escrow_of(&word).is_none(), "the escrow closed");
+    assert_eq!(k.settle_puncture(&escrow, [9; 4]), Err(REFUSE_PUNCTURE_CLOSED), "settled once, never twice");
+    assert_eq!(k.settle_puncture(&demand, [9; 4]), Err(REFUSE_PUNCTURE_RULED), "a demand closes by its ruling");
+    assert_eq!(k.punctures(), vec![demand], "the demand stands open alone");
+    k.note_flux(&word, claim);
+    k.orbit();
+    let p3 = k.propose_fold().expect("the line folds a third time");
+    let done3 = k.commit_fold([3; 64], &co_sign("w", p3.root.hash)).expect("sealed");
+    assert_eq!((done3.punctured, done3.carried), (0, 1), "only the open demand is carried");
+
+    // THE OLD RECORD REFUSES BY NAME: the era record moved (no migration).
+    let old = std::env::temp_dir().join(format!("mycelium-punctures-old-{}-{}", std::process::id(), line!()));
+    std::fs::write(&old, b"MYE2 an era with no punctures").expect("a fixture segment");
+    let refused = Kernel::new().bind_eras(old.clone()).expect_err("the pre-U12 segment refuses");
+    assert!(refused.contains("MYE2"), "named: {refused}");
+    let _ = std::fs::remove_file(&old);
+    let _ = std::fs::remove_file(&path);
+}

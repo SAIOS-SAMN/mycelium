@@ -128,6 +128,13 @@ pub const REFUSE_FOLD_IDLE: &str = "fold prefix carries no work";
 /// would cut nothing the physics names. Replaces 78.67 (B)'s byte
 /// break-even.
 pub const REFUSE_FOLD_NO_TRANSITION: &str = "fold prefix holds no generator admitted, no return and no rank step";
+/// U12 (78.65 as amended): a puncture is settled by its citation — the word
+/// its stamp admitted — and only while the chain it names is the chain open
+/// there; a demand's puncture closes by its ruling or its lapse, never by a
+/// payment.
+pub const REFUSE_PUNCTURE_UNCITED: &str = "puncture cites no word this court holds";
+pub const REFUSE_PUNCTURE_CLOSED: &str = "puncture's chain is no longer the one open at its citation";
+pub const REFUSE_PUNCTURE_RULED: &str = "a demand's puncture closes by its ruling, not by a payment";
 pub const REFUSE_DEMAND_UNTYPED: &str = "demand vertex names no kind";
 pub const REFUSE_EDGE: &str = "edge transport is neither in the stabilizer nor the exchange nor a remainder edge";
 /// 50.6, 34.1 (L7): a tape with no vertex that acts is a chain, refused
@@ -205,6 +212,7 @@ pub fn ruled_obstruction(reason: &'static str) -> sentence::ClosureObstruction {
             O::Integrity
         }
         REFUSE_FOLD_IDLE | REFUSE_FOLD_NO_TRANSITION => O::Integrity,
+        REFUSE_PUNCTURE_UNCITED | REFUSE_PUNCTURE_CLOSED | REFUSE_PUNCTURE_RULED => O::Integrity,
         REFUSE_ORIGIN | REFUSE_RECEIPT | REFUSE_RECEIPT_STALE | REFUSE_EQUIVOCATION | REFUSE_NOT_EQUIVOCATION
         | REFUSE_SIGNATURE | REFUSE_MV_INEXACT => O::Integrity,
         REFUSE_GLUED_UNRULED => O::Dialect { coset: Vec::new(), chart: None },

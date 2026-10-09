@@ -145,8 +145,14 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
             // so it stands without the payload it is about to shed (45.8).
             first,
             count: receipts.len() as u64,
+            // U12: the punctures are the home's projection of its own open
+            // carriers (escrows, listings), off the ledger and not re-derived
+            // here: the witness holds the prefix it co-signed, and none.
+            carried: 0,
+            punctured: 0,
             at: None,
             receipts,
+            punctures: Vec::new(),
         }, &p.section, &section));
     }
     eprintln!(
