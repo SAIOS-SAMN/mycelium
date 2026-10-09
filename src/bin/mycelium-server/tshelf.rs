@@ -5,11 +5,12 @@
 //
 //! THE KEEPERS (TU-1..4) are held here too, under their own lock, never
 //! nested with the kernel's: the court's tick is read under the kernel by the
-//! digest's signer and handed in after; a peer's ring is admitted with no
-//! kernel at all.
+//! court loop (78.152b) and the digest's signer and handed in after; a peer's
+//! ring — on its digest or pushed as `ACT_TICK` — is admitted with no kernel
+//! at all.
 
 use crate::Mesh;
-use mycelium::chronometry::tuniversal::{Admitted, Keepers, Origin, Residual, TPoint, TShelf, Tick, TickReading};
+use mycelium::chronometry::tuniversal::{Admitted, Keepers, Origin, Refused, Residual, TPoint, TShelf, Tick, TickReading};
 use mycelium::observe;
 use std::sync::{LazyLock, Mutex};
 
@@ -104,13 +105,66 @@ pub(crate) fn own_ring(mesh: &Mesh, tick: Option<Tick>) -> Vec<TickReading> {
     .collect()
 }
 
-/// A PEER'S RING HEARD ON ITS DIGEST (TU-2): admitted, a refusal counted by
-/// name, the final point raised (TU-3), and the residual (TU-4) written to
-/// the journal where it moved.
-pub(crate) fn hear_ring(mesh: &Mesh, vk: [u8; 32], ring: Vec<TickReading>) {
-    let Some(origin) = origin(mesh) else { return };
-    let _ = with_keepers(mesh, origin, |k, last| {
-        match k.admit(vk, ring) {
+/// 78.152b — THE COURT LOOP SIGNS ITS OWN READING: the tick read once per
+/// stroke under the kernel the loop already holds, handed in here after the
+/// kernel is dropped, and a reading signed wherever it is due — whether or
+/// not any peer asked for a digest. Answers this court's ring where a
+/// reading was newly signed (the ring the nerve pushes as `ACT_TICK`), and
+/// `None` where nothing was due, no origin is adopted, or no tick was read.
+pub(crate) fn sign_tick(mesh: &Mesh, tick: Option<Tick>) -> Option<Vec<TickReading>> {
+    let t = tick?;
+    let origin = origin(mesh)?;
+    with_keepers(mesh, origin, |k, _| match k.read_own(&mesh.sk, t) {
+        Some(true) => Some(k.own_ring()),
+        Some(false) => None,
+        None => {
+            eprintln!("  court tuniversal reading refused: its cites pass their count");
+            None
+        }
+    })
+    .flatten()
+}
+
+/// 78.152b — WHY A PUSHED TICK WAS NOT HEARD.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum TickRefused {
+    /// The frame does not read whole as `ACT_TICK`.
+    Unreadable,
+    /// Its keeper is no peer court this mesh knows (one whose signed digest
+    /// named its key and door), or is this court itself.
+    Stranger,
+    /// This court has adopted no origin: no reading verifies here yet.
+    NoOrigin,
+    /// The ring did not admit (TU-2), by name.
+    Ring(Refused),
+}
+
+/// 78.152b — A KEEPER'S RING PUSHED AS `ACT_TICK`, HEARD AT THE DOOR WITH NO
+/// KERNEL: read whole, its keeper a known peer court, then admitted exactly
+/// as a digest's ring is (`hear_ring`). It takes the mesh's peer table, the
+/// origin and the keepers' own lock, one at a time, and never the kernel —
+/// it is not handed one.
+pub(crate) fn hear_tick(mesh: &Mesh, body: &[u8]) -> Result<Admitted, TickRefused> {
+    let (vk, ring) = mycelium::anastome::dialogue::decode_tick(body).ok_or(TickRefused::Unreadable)?;
+    let known = vk != mesh.vk && mesh.addrs.lock().is_ok_and(|a| a.contains(&vk));
+    if !known {
+        return Err(TickRefused::Stranger);
+    }
+    match hear_ring(mesh, vk, ring) {
+        None => Err(TickRefused::NoOrigin),
+        Some(r) => r.map_err(TickRefused::Ring),
+    }
+}
+
+/// A PEER'S RING HEARD — on its digest or pushed as `ACT_TICK` (TU-2):
+/// admitted, a refusal counted by name, the final point raised (TU-3), and
+/// the residual (TU-4) written to the journal where it moved. `None` before
+/// an origin is adopted.
+pub(crate) fn hear_ring(mesh: &Mesh, vk: [u8; 32], ring: Vec<TickReading>) -> Option<Result<Admitted, Refused>> {
+    let origin = origin(mesh)?;
+    with_keepers(mesh, origin, |k, last| {
+        let out = k.admit(vk, ring);
+        match out {
             Ok(Admitted::Anchored) => eprintln!("  court tuniversal keeper {:02x}{:02x}… anchored", vk[0], vk[1]),
             Ok(Admitted::Extended(_) | Admitted::Stale) => {}
             Err(why) => {
@@ -133,5 +187,6 @@ pub(crate) fn hear_ring(mesh: &Mesh, vk: [u8; 32], ring: Vec<TickReading>) {
             );
             *last = now;
         }
-    });
+        out
+    })
 }

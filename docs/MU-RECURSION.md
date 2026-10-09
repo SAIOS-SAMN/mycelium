@@ -26299,6 +26299,35 @@ carries its speaker's final point and an older lane read refuses it;
 verifies where it lands; `dialogue::tests::seat` — the percept's point
 decodes exactly and verifies under the house.
 
+**78.152b — TUniversal never waits on a court's load (2026-10-09, the
+operator's priority).** Measured on the fleet: rings travelled only on the
+cover digest, and a peer whose worker pool was full deferred most digest
+asks (a asked 199, deferred 159), so peers' views of a keeper went stale
+and the final point stopped; worse, a keeper signed only while building its
+own digest, so under load nothing was signed. Now: (1) SIGNED IN THE COURT
+LOOP — the stroke reads `Kernel::keeper_tick` under the lock it already
+holds, and after dropping the kernel hands it to the keepers
+(`tshelf::sign_tick`), so a reading is signed whenever it is due, with no
+digest asked. (2) RINGS TRAVEL ON THEIR OWN ACT — `ACT_TICK` (`0x23`,
+`Action::Tick`, `Kind::Exchange`, sealed by nothing; **WIRE-CHANGE**, court
+to court only) is `[ACT_TICK][keeper vk 32][ring]`, the ring in the digest's
+own codec (`put_ring`/`take_ring`), read whole. A newly signed reading's
+ring is queued to every peer court on the nerve (`try_send`, never from the
+door, never under the kernel). (3) HEARD OFF THE KERNEL — the door answers
+it where the frame is read, before the work queue and on the overflow path
+(`judge::serve_published` → `judge::tick`), through `tshelf::hear_tick`,
+which takes the mesh's peer table, the origin and the keepers' own lock and
+is never handed the kernel; a keeper that no signed digest named (or this
+court's own) is refused; the answer is one byte, `TICK_HEARD` or
+`TICK_REFUSED`. The digest still carries the ring beside it. The byte is
+the second exception to 78.126's "the next act is a sub-kind" (the seat
+relay's 0x53 the first), by the operator's word. Proved:
+`chronometry::tuniversal::tests::a_ring_pushed_as_act_tick_is_admitted_as_from_a_digest`
+(one codec, one outcome, one final point); the server's
+`tests::tick::a_reading_is_signed_with_no_digest_and_a_pushed_ring_is_heard_off_the_kernel`
+(a reading due with no digest; a known peer's ring heard, a stranger's
+refused; the held book's hold count unmoved).
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

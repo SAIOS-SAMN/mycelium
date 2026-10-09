@@ -108,6 +108,13 @@ pub enum Action {
     Installed,
     Equivocation,
     Fold,
+    /// 78.152b — A KEEPER'S RING PUSHED: court to court, the keeper's newest
+    /// TUniversal readings on their own act, heard at the door off the
+    /// kernel, so the mesh's clock never waits on a court's load. Its byte
+    /// 0x23 stands beside the cover, offer and install (the operator's word,
+    /// 2026-10-09: a free byte, WIRE-CHANGE, court to court only). Seals
+    /// nothing.
+    Tick,
     // What a court seals of itself.
     Attest,
     List,
@@ -138,9 +145,11 @@ pub enum Action {
 /// Every action, in coordinate order. 0x0A and 0x0F stand unassigned (0x0F
 /// was the retired genesis page, 2026-09-29) and RESERVED (78.126): the wire's
 /// bytes below the court's range are spent, so the next act is a sub-kind
-/// under an existing one, never a new byte. 78.145's seat relay is the one
-/// exception, at 0x53 past the court's acts, by the wire the kernels agreed.
-pub const ACTIONS: [Action; 56] = [
+/// under an existing one, never a new byte. 78.145's seat relay is one
+/// exception, at 0x53 past the court's acts, by the wire the kernels agreed;
+/// 78.152b's keeper tick the other, at 0x23 among the courts' exchanges, by
+/// the operator's word.
+pub const ACTIONS: [Action; 57] = [
     Action::Percept,
     Action::Gossip,
     Action::Demand,
@@ -166,6 +175,7 @@ pub const ACTIONS: [Action; 56] = [
     Action::Cover,
     Action::Offer,
     Action::Installed,
+    Action::Tick,
     Action::Equivocation,
     Action::Receipts,
     Action::Fold,
@@ -231,6 +241,7 @@ impl Action {
             Action::Cover => 0x20,
             Action::Offer => 0x21,
             Action::Installed => 0x22,
+            Action::Tick => 0x23,
             Action::Equivocation => 0x35,
             Action::Receipts => 0x36,
             Action::Fold => 0x37,
@@ -312,7 +323,8 @@ impl Action {
             | Action::Offer
             | Action::Installed
             | Action::Equivocation
-            | Action::Fold => Kind::Exchange,
+            | Action::Fold
+            | Action::Tick => Kind::Exchange,
             Action::Attest
             | Action::List
             | Action::Install
@@ -425,6 +437,7 @@ impl Action {
             Action::Installed => b"installed",
             Action::Equivocation => b"equivocation",
             Action::Fold => b"fold",
+            Action::Tick => b"tick",
             Action::Attest => b"attest",
             Action::List => b"list",
             Action::Install => b"install",

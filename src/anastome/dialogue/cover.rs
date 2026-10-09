@@ -1,5 +1,5 @@
-// ACT_PEERS, ACT_ROOT, ACT_DIGESTS, ACT_COVER — how two courts find each
-// other and read what the other holds.
+// ACT_PEERS, ACT_ROOT, ACT_DIGESTS, ACT_COVER, ACT_TICK — how two courts
+// find each other, read what the other holds, and hear its keeper's ring.
 //
 //! The cover digest is the signed statement of where a court stands, and
 //! its frame is parsed WHOLE: `whole_cover_digest` accepts the one reading
@@ -298,6 +298,30 @@ pub fn decode_cover_digest(body: &[u8]) -> Option<CoverDigest> {
 /// come from, so no length is computed twice.
 pub fn cover_digest_end(body: &[u8]) -> Option<usize> {
     whole_cover_digest(body).map(|(_, e)| e)
+}
+
+/// 78.152b — A KEEPER'S RING ON ITS OWN ACT: `[ACT_TICK][keeper vk 32][ring]`,
+/// the ring written by the digest's own writer (`put_ring`), so a ring pushed
+/// and a ring carried on a digest are one carrier (law 12). `None` where a
+/// reading cannot be written.
+pub fn encode_tick(keeper: &[u8; 32], ring: &[crate::chronometry::tuniversal::TickReading]) -> Option<Vec<u8>> {
+    let mut out = vec![ACT_TICK];
+    out.extend_from_slice(keeper);
+    crate::chronometry::tuniversal::reading::put_ring(&mut out, ring)?;
+    Some(out)
+}
+
+/// The keeper and its ring, read WHOLE by the digest's own reader
+/// (`take_ring`): a byte left over is no tick (rule 11). Each reading is
+/// verified on admission, never here.
+pub fn decode_tick(body: &[u8]) -> Option<([u8; 32], Vec<crate::chronometry::tuniversal::TickReading>)> {
+    if !act_is(body, ACT_TICK) {
+        return None;
+    }
+    let keeper: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    let mut p = 33usize;
+    let ring = crate::chronometry::tuniversal::reading::take_ring(keeper, body, &mut p)?;
+    (p == body.len()).then_some((keeper, ring))
 }
 
 /// THE ASK FOR A PEER'S COVER, from a cursor:

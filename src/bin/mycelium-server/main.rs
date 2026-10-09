@@ -673,6 +673,7 @@ fn main() {
         state_path: state_path.clone(),
         syllabus: Arc::clone(&syllabus),
         genesis_held: mesh_rec.genesis.is_some(),
+        nerve: nerve_tx.clone(),
     }
     .spawn();
     // ACTS SERVED, counted per kind. This wrote one line per act and one

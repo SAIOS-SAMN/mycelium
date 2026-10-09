@@ -212,6 +212,44 @@ fn reset_branch_and_superpose_cite_the_point() {
     assert_eq!(p.unpack().hh, 2);
 }
 
+/// 78.152b — A RING PUSHED AS `ACT_TICK` IS THE RING A DIGEST CARRIES: one
+/// codec, read back whole, and admitted with the same outcome and the same
+/// final point as the digest's; a byte past the ring is no tick.
+#[test]
+fn a_ring_pushed_as_act_tick_is_admitted_as_from_a_digest() {
+    use crate::anastome::dialogue as d;
+    let mut m = Mesh::new();
+    m.read(0, tick(10, [4, 0, 0, 0], 1));
+    m.read(0, tick(11, [5, 0, 0, 0], 2));
+    assert_eq!(m.hear(1, 0), Ok(Admitted::Anchored));
+    m.read(1, tick(12, [0, 5, 0, 0], 3));
+    let (a, b) = (vk(&m.keys[0]), vk(&m.keys[1]));
+    let ring = m.courts[1].own_ring();
+    // On a digest, as `sign_cover_digest` writes it.
+    let digest = d::encode_cover_digest(&[0; 4], &[[0; 32]; 4], &[0; 32], &b, "127.0.0.1:1", &ring, &[0; 64]).expect("a digest writes");
+    let from_digest = d::decode_cover_digest(&digest).expect("reads whole").ring;
+    // On its own act.
+    let frame = d::encode_tick(&b, &ring).expect("a tick writes");
+    assert_eq!(d::act_tag(&frame), Some(d::ACT_TICK));
+    let (keeper, pushed) = d::decode_tick(&frame).expect("reads whole");
+    assert_eq!((keeper, &pushed), (b, &ring), "the keeper and its ring, exactly");
+    assert_eq!(pushed, from_digest, "one codec");
+    // Two courts that knew a, one hearing b's digest, one b's tick.
+    let mut by_digest = Keepers::new(ORIGIN, vk(&m.keys[2]));
+    let mut by_tick = by_digest.clone();
+    for k in [&mut by_digest, &mut by_tick] {
+        assert_eq!(k.admit(a, m.courts[0].own_ring()), Ok(Admitted::Anchored));
+    }
+    assert_eq!(by_digest.admit(b, from_digest), by_tick.admit(keeper, pushed), "one outcome");
+    assert_eq!(by_digest.final_point(), by_tick.final_point());
+    assert_eq!(by_tick.final_point(), Some(TPoint { origin: ORIGIN, h: 11, lanes: [5, 0, 0, 0], k: 2 }), "b cites a's 11");
+    // A byte past the ring, or a frame cut short, is no tick.
+    let mut long = frame.clone();
+    long.push(0);
+    assert_eq!(d::decode_tick(&long), None);
+    assert_eq!(d::decode_tick(&frame[..frame.len() - 1]), None);
+}
+
 /// A STRICT MAJORITY OF THE KEEPER SET (the coordinator, 2026-10-09): with
 /// four keepers a point needs three — its own keeper and two others citing
 /// it. One citer, enough at three keepers, finalises nothing at four.

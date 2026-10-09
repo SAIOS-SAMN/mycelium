@@ -21,6 +21,8 @@ fn every_action_holds_one_coordinate() {
     // 0x3F is the challenge's (78.125), 0x07 the handoff's (78.126), 0x53
     // the seat relay's (78.145); 0x0A and 0x0F are reserved.
     assert_eq!(Action::of_tag(0x53), Some(Action::Seat), "the relay is asked on the wire");
+    assert_eq!(Action::of_tag(0x23), Some(Action::Tick), "a keeper's ring is pushed on the wire (78.152b)");
+    assert!(!Action::Tick.sealed(), "and seals nothing");
     for unassigned in [0x0Au8, 0x0F, 0x54, 0xFF] {
         assert_eq!(Action::of(unassigned), None);
     }
@@ -68,6 +70,7 @@ fn the_wire_spells_the_table() {
         (d::ACT_WHY, Action::Why, Kind::Observation),
         (d::ACT_WALLET, Action::Wallet, Kind::Observation),
         (d::ACT_SEAT, Action::Seat, Kind::Relay),
+        (d::ACT_TICK, Action::Tick, Kind::Exchange),
         (d::ACT_PERCEPT, Action::Percept, Kind::Retired),
         (d::ACT_TEACH, Action::Teach, Kind::Retired),
         (d::ACT_DOCKET, Action::Docket, Kind::Retired),
