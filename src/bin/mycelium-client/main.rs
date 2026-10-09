@@ -229,7 +229,7 @@ fn main() {
     let tag = voice.name().to_string();
     // 78.145 — the seat arm, where `--seat` names one: taken by this voice's
     // own key.
-    let mut seat_arm = match crate::arms::seat::SeatArm::of_args(&args, voice_key.sk.clone()) {
+    let mut seat_arm = match crate::arms::seat::SeatArms::of_args(&args, voice_key.sk.clone()) {
         Ok(a) => a,
         Err(e) => {
             eprintln!("mycelium-client {e}");
