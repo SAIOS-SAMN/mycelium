@@ -27,16 +27,24 @@ impl Entity {
             self.epigenome.asked_root = Some(root);
         }
         // THE RESIDUES: word vertices whose derivation cites nothing and whose
-        // whole motion moves something.
-        let motions: Vec<crate::transducer::cga::Mv> = form
-            .vertices
-            .scoped()
-            .filter_map(|(_, v)| match v {
-                Vertex::Word { derivation, .. } if derivation.is_spelled() => vertex_motion(v),
-                _ => None,
-            })
-            .filter(|m| !is_still(m))
-            .collect();
+        // whole motion moves something — each stop counted by name.
+        let note = |h: &mut [u64; crate::observe::HEARING.len()], name: &str| {
+            crate::observe::count(h, &crate::observe::HEARING, name)
+        };
+        note(&mut self.hearing, "presentation: forms");
+        let mut motions: Vec<crate::transducer::cga::Mv> = Vec::new();
+        for (_, v) in form.vertices.scoped() {
+            let Vertex::Word { derivation, .. } = v else { continue };
+            note(&mut self.hearing, "presentation: vertices");
+            if !derivation.is_spelled() {
+                note(&mut self.hearing, "presentation: citing");
+                continue;
+            }
+            match vertex_motion(v).filter(|m| !is_still(m)) {
+                Some(m) => motions.push(m),
+                None => note(&mut self.hearing, "presentation: still"),
+            }
+        }
         let voice = self.session.kernel().voice();
         let mut budget = self.physics.stroke();
         let mut composed = 0usize;

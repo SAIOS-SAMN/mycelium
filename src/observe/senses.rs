@@ -54,8 +54,20 @@ pub const REASONS: [&str; 9] = [
 /// 78.160 P2 — and the presentation it asked its court for: the motions it
 /// asked about, the words taught for them, and the motions the court's
 /// citations compose to exactly.
-pub const HEARING: [&str; 6] =
-    ["pages", "words heard", "words admitted", "presentation: asked", "presentation: words", "presentation: composes"];
+pub const HEARING: [&str; 10] = [
+    "pages",
+    "words heard",
+    "words admitted",
+    "presentation: asked",
+    "presentation: words",
+    "presentation: composes",
+    // Where the ask stops: forms put to it, word vertices read, vertices
+    // already citing, motions that move nothing.
+    "presentation: forms",
+    "presentation: vertices",
+    "presentation: citing",
+    "presentation: still",
+];
 /// What a mind holds as LANGUAGE.
 pub const LANGUAGE: [&str; 6] = ["dialect", "genome", "installed", "closing", "adjoined by closure", "colour words"];
 /// What a mind UNDERSTOOD.
