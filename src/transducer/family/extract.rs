@@ -130,6 +130,59 @@ pub fn extract_rule_on(
             }
         }
     }
+    // 37.7 (78.158 U7) — A DEMAND IS ASKED OF THE HELD LANGUAGE TOO. The pass
+    // above reads word vertices only, so a vertex standing as a demand was
+    // never offered the words this mind holds on its chart — its adjoined
+    // letters and the court's ruled words alike — and a form that was all
+    // demands minted nothing: "nothing in the form acts", 456 of 570 mint
+    // refusals on the fleet (epoch 146). The same reading as above, on the
+    // demand's own chart at the Frame's placement: a closed form that
+    // reproduces the whole family is glued and the demands it answers on
+    // that chart are retracted. Nothing is searched for — the crystal answers
+    // at the chart, as it answers every class.
+    let mut by_demand: Keyed<(Invariant, Vec<coord::VertexAt>)> = Keyed::new();
+    for (at, _, chart, _) in form.demand_vertices() {
+        let ck = chart.key();
+        match by_demand.get_mut(ck.as_bytes()) {
+            Some((_, ats)) => ats.push(at),
+            None => {
+                by_demand.insert(ck.as_bytes(), (chart.clone(), vec![at]));
+            }
+        }
+    }
+    let frame = crate::transducer::alphabet::Word::identity();
+    let mut frame_key = Vec::new();
+    frame.put_canonical(&mut frame_key);
+    for (_, (moduli, ats)) in by_demand.scoped() {
+        if !budget.spend() {
+            return finish(form, scale, &unreached_pairs);
+        }
+        let held = crystal.on_body(moduli);
+        for (e, s, _st) in &held {
+            if !s.is_closed() {
+                continue;
+            }
+            let mut key = e.address().as_bytes().to_vec();
+            crate::transducer::address::put_key_bytes(&mut key, &frame_key);
+            let reproduces = match spoken.get(&key) {
+                Some(&r) => r,
+                None => {
+                    let r = family.iter().all(|(x, y)| {
+                        crystal.speak_form(s, x, &frame).is_some_and(|sp| painted_within_grid(&sp.painted, y))
+                    });
+                    spoken.insert(&key, r);
+                    r
+                }
+            };
+            if reproduces {
+                let _ = form.glue_append(s, e.address(), frame.clone(), e.magnitude());
+                for at in ats {
+                    retract.put(at, ());
+                }
+                break;
+            }
+        }
+    }
     // ONCE, AFTER THE PASS. `retract_vertices` rebuilds the cycle basis and
     // reindexes at its end, so a pass that retracted anything needs no
     // second read; a pass that cited without retracting still appended
