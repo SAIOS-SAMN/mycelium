@@ -99,6 +99,11 @@ pub trait Crystal {
     fn on_act(&self, _act: &[u8]) -> Vec<(&Element, &Form, Standing)> {
         Vec::new()
     }
+    /// The held word vertices acting at one coordinate (`act_key`), as
+    /// (form, vertex): what a vertex acting exactly so is cited by.
+    fn acted(&self, _act: &[u8]) -> Vec<(crate::transducer::address::Address, crate::transducer::address::Address)> {
+        Vec::new()
+    }
     /// Keyed read of a crystallized form by address. No scan, AND NO CLONE
     /// (Z2 item 2, rule 17): a reader hands back the stratum it holds, and
     /// a caller that resolves one citation 578 times must not pay a form

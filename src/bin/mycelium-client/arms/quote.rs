@@ -279,34 +279,33 @@ if !occluded
 }
 }
 
-/// DOES THIS HELD FORM REPRODUCE THE DEMAND'S LINKS (50.5, 21 step 3)?
-///
-/// The demand carries the bodies it stands for as `(row, col, before,
-/// after)` (50.5), which is a scene and its image in one carrier. The form
-/// is spoken on the BEFORE side and what it says must lie in the AFTER
-/// side — `painted_within_grid`, exactly the test extraction's step 3
-/// uses to decide a glue, so a voice answering a demand and a mind gluing
-/// a form apply one reading.
-///
-/// BOTH GRIDS ARE FRAMED FROM ONE MIN-CORNER by `scene_of_chain`, which is
-/// 50.6 seam 1's own reader and already says why: "both at the chain's own
-/// min-corner, so the motion between them is the chain's and never an
-/// artefact of two origins". Framing each side separately would let a
-/// before-side with no painted site in row 0 slide against its after-side.
-///
-/// The placement is the IDENTITY: a cited form speaks in its own frame
-/// (L14), which is what `apply_form` places by.
+/// DOES THIS HELD FORM ANSWER THE DEMAND (50.5, L8q) — THE COURT'S OWN
+/// READING (`Kernel::settle_demand`): the demand's bodies framed as a scene
+/// at their own corner (`scene_at_of_chain`), the form spoken on it at the
+/// identity placement (L14), and every link's AFTER colour said at its own
+/// site. A form whose painting merely lies within the after side leaves
+/// links unsaid, and the court reads that as a residual, not a closure.
 fn reproduces(
     epi: &mycelium::sdk::Epigenome,
     f: &mycelium::transducer::sentence::Form,
     links: &[(i64, i64, u8, u8)],
 ) -> bool {
-    let Some((before, after)) = mycelium::transducer::family::scene_of_chain(links) else {
+    let Some(((r0, c0), scene, _)) = mycelium::transducer::family::scene_at_of_chain(links) else {
         return false;
     };
     let placement = mycelium::transducer::alphabet::Word::identity();
-    mycelium::transducer::family::Crystal::speak_form(epi, f, &before, &placement)
-        .is_some_and(|sp| {
-            mycelium::transducer::family::painted_within_grid(&sp.painted, &after)
-        })
+    let Some(sp) = mycelium::transducer::family::Crystal::speak_form(epi, f, &scene, &placement) else {
+        return false;
+    };
+    let Some(spoken) = sp.grid() else {
+        return false;
+    };
+    let at = |x: i64| usize::try_from(x).ok();
+    links.iter().all(|&(r, c, _, a)| {
+        at(r - r0)
+            .and_then(|dr| spoken.get(dr))
+            .and_then(|row| row.get(at(c - c0)?))
+            .copied()
+            == Some(a)
+    })
 }

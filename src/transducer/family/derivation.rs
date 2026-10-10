@@ -702,6 +702,32 @@ pub(crate) fn motion_citation(
     None
 }
 
+/// A WORD IS CITED BY WHAT IT DOES: the held word vertex whose member acts
+/// on the same chart with the same whole Cl(4,1) motion and the same hue
+/// map (`act_key`, one keyed read) — the court's terminal (`by_action`:
+/// the substance IS an installed generator) read per vertex. It is the one
+/// reading a still vertex has, its whole action being its colour. Exactly
+/// one held vertex acting so is cited; several is a multiplicity and no
+/// choice is made among them (rule 4), none is no citation.
+pub(crate) fn act_citation(
+    crystal: &dyn crate::transducer::family::Crystal,
+    chart: &crate::transducer::stalk::Invariant,
+    rotor: &crate::transducer::alphabet::Rotor,
+    carriage: &Versor,
+    gauge: &[(u8, u8)],
+) -> Option<crate::transducer::alphabet::Derivation> {
+    use crate::transducer::alphabet::{Derivation, Word};
+    let key = crate::transducer::sentence::presentation::act_key(chart, rotor, carriage, gauge)?;
+    let [(form, vertex)] = crystal.acted(&key).try_into().ok()?;
+    let (_, f) = crystal.by_address(form.as_bytes())?;
+    let g = crate::transducer::sentence::word_at_vertex(&f, vertex.as_bytes())?;
+    if !g.rotor().projective_eq(rotor) {
+        return None;
+    }
+    note_derivation(MATCHED, 1);
+    Some(Derivation::compose(&[(form, vertex, 1, g)], Word::identity()))
+}
+
 /// 78.160 P3 — A MOTION THE COURT DECONSTRUCTED FOR THIS MIND IS SAID
 /// THROUGH WHAT IT CITED. The vertex's whole motion (its carriage composed
 /// with its rotor's base action, Cl(4,1)) is looked up among the answers the

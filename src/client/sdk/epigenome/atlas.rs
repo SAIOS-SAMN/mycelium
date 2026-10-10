@@ -132,8 +132,9 @@ impl Epigenome {
         for chart in body_charts_of(e) {
             self.by_moduli.nested_insert(chart.key(), &addr, ());
         }
-        for key in act_keys_of(e) {
-            self.by_act.nested_insert(key, &addr, ());
+        for (key, vertex) in act_keys_of(e) {
+            let at = crate::transducer::sentence::generator_key(&addr, &vertex);
+            self.by_act.nested_insert(key, at, (addr.clone(), vertex));
         }
         // 1.8: the form's word vertices are the generators it contributes
         // to this mind's presentation.
@@ -152,10 +153,10 @@ impl Epigenome {
                 bucket.remove(&addr);
             }
         }
-        for key in act_keys_of(e) {
+        for (key, vertex) in act_keys_of(e) {
             let empty = match self.by_act.get_mut(&key) {
                 Some(bucket) => {
-                    bucket.remove(&addr);
+                    bucket.remove(&crate::transducer::sentence::generator_key(&addr, &vertex));
                     bucket.is_empty()
                 }
                 None => false,
@@ -217,19 +218,20 @@ pub(crate) fn body_charts_of(e: &Held) -> Vec<crate::transducer::stalk::Invarian
 }
 
 /// What every member of a closed sentence's word vertices does, as the
-/// coordinates the glue asks at (`presentation::act_key`).
-pub(crate) fn act_keys_of(e: &Held) -> Vec<Vec<u8>> {
+/// coordinates the glue asks at (`presentation::act_key`), each with the
+/// word vertex whose member acts so.
+pub(crate) fn act_keys_of(e: &Held) -> Vec<(Vec<u8>, crate::transducer::address::Address)> {
     let Some(f) = e.form().filter(|f| f.is_closed()) else {
         return Vec::new();
     };
     let mut keys = Vec::new();
     for (_, v) in f.vertices.scoped() {
-        let crate::transducer::sentence::Vertex::Word { derivation, acts, .. } = v else { continue };
+        let crate::transducer::sentence::Vertex::Word { address, derivation, acts, .. } = v else { continue };
         for (_, a) in acts.scoped() {
             if let Some(k) =
                 crate::transducer::sentence::presentation::act_key(&a.chart, &derivation.rotor(), &a.carriage, &a.gauge)
             {
-                keys.push(k);
+                keys.push((k, address.clone()));
             }
         }
     }

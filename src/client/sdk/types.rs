@@ -495,9 +495,13 @@ pub struct Epigenome {
     /// persisted: a restore hears each word again as it admits it.
     pub(crate) ear: crate::transducer::sentence::presentation::Presentation,
     /// 21 step 3 — CLOSED FORMS BY WHAT THEIR MEMBERS DO: `act_key` (chart,
-    /// whole motion, hue map) → the addresses of held forms with a member
-    /// acting exactly so; filled and emptied beside `by_moduli`.
-    pub(crate) by_act: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
+    /// whole motion, hue map) → each held word vertex with a member acting
+    /// exactly so, by its `generator_key`, as (form, vertex); filled and
+    /// emptied beside `by_moduli`.
+    #[allow(clippy::type_complexity)]
+    pub(crate) by_act: crate::network::nerve::Keyed<
+        crate::network::nerve::Keyed<(crate::transducer::address::Address, crate::transducer::address::Address)>,
+    >,
 }
 
 /// THE ENTITY — a kernel identity with its genome/epigenome, conversing through

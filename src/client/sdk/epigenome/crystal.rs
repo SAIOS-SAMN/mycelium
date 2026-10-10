@@ -84,7 +84,13 @@ impl crate::transducer::family::Crystal for Epigenome {
         let Some(bucket) = self.by_act.get(act) else {
             return Vec::new();
         };
-        bucket
+        // One form per form: two of its vertices acting alike are one form
+        // to speak.
+        let mut forms: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        for (_, (form, _)) in bucket.scoped() {
+            forms.insert(form.as_bytes(), ());
+        }
+        forms
             .scoped()
             .filter_map(|(a, ())| {
                 let st = self.standing_of(&a)?;
@@ -92,6 +98,22 @@ impl crate::transducer::family::Crystal for Epigenome {
                 let f = held.form()?;
                 Some((held.element(), f, st))
             })
+            .collect()
+    }
+
+    /// THE WORD VERTICES ACTING AT ONE COORDINATE, as (form, vertex): the
+    /// act a still vertex is cited by (its colour word).
+    fn acted(
+        &self,
+        act: &[u8],
+    ) -> Vec<(crate::transducer::address::Address, crate::transducer::address::Address)> {
+        let Some(bucket) = self.by_act.get(act) else {
+            return Vec::new();
+        };
+        bucket
+            .scoped()
+            .filter(|(_, (form, _))| self.standing_of(form.as_bytes()).is_some())
+            .map(|(_, at)| at.clone())
             .collect()
     }
 
