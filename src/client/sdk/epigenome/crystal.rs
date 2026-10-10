@@ -73,6 +73,28 @@ impl crate::transducer::family::Crystal for Epigenome {
             .collect()
     }
 
+    fn on_act(
+        &self,
+        act: &[u8],
+    ) -> Vec<(
+        &Element,
+        &crate::transducer::sentence::Form,
+        crate::transducer::stalk::Standing,
+    )> {
+        let Some(bucket) = self.by_act.get(act) else {
+            return Vec::new();
+        };
+        bucket
+            .scoped()
+            .filter_map(|(a, ())| {
+                let st = self.standing_of(&a)?;
+                let held = self.working_word(&a)?;
+                let f = held.form()?;
+                Some((held.element(), f, st))
+            })
+            .collect()
+    }
+
     fn speak_form(
         &self,
         f: &crate::transducer::sentence::Form,

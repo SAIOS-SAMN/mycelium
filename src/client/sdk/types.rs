@@ -494,6 +494,10 @@ pub struct Epigenome {
     /// motion is deconstructed over with no court asked. Derived, never
     /// persisted: a restore hears each word again as it admits it.
     pub(crate) ear: crate::transducer::sentence::presentation::Presentation,
+    /// 21 step 3 — CLOSED FORMS BY WHAT THEIR MEMBERS DO: `act_key` (chart,
+    /// whole motion, hue map) → the addresses of held forms with a member
+    /// acting exactly so; filled and emptied beside `by_moduli`.
+    pub(crate) by_act: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
 }
 
 /// THE ENTITY — a kernel identity with its genome/epigenome, conversing through

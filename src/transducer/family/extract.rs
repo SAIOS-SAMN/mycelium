@@ -51,24 +51,23 @@ pub fn extract_rule_on(
     trace::trace("extract/3 glue", trace::Wrote::Nothing, Some(budget));
     let measured = trace::carriage_of(&form);
     // 3. Glue: the placement is the vertex's own word from the Frame; the
-    // crystal is asked at every chart the class acts on (21 step 3).
-    //
-    // THE CLASSES BY THE CHART THEY ACT ON, in chart-key order, which is
-    // content: the crystal is asked once per chart, and every class
-    // standing on that chart reads the one answer.
-    let mut by_chart: Keyed<(Invariant, Vec<(TransportClass, crate::transducer::alphabet::Word)>)> =
-        Keyed::new();
+    // crystal is asked at the COORDINATE OF WHAT EACH MEMBER DOES — its chart,
+    // its whole Cl(4,1) motion and its hue map (`act_key`, A21) — one keyed
+    // read, and only the held forms acting exactly so are spoken over the
+    // family (21 step 3, rule 17: the key is written, the held language is
+    // never walked).
+    let mut asks: Vec<(Vec<u8>, TransportClass, crate::transducer::alphabet::Word)> = Vec::new();
     for (_, v) in form.vertices.scoped() {
-        let (Some(tc), Some(acts), Some(placement)) = (transport_class(v), v.acts(), v.word_in(&form.vertices))
+        let (Some(tc), Some(acts), Some(placement), Vertex::Word { derivation, .. }) =
+            (transport_class(v), v.acts(), v.word_in(&form.vertices), v)
         else {
             continue;
         };
-        for (ck, a) in acts.scoped() {
-            match by_chart.get_mut(&ck) {
-                Some((_, on)) => on.push((tc.clone(), placement.clone())),
-                None => {
-                    by_chart.insert(&ck, (a.chart.clone(), vec![(tc.clone(), placement.clone())]));
-                }
+        for (_, a) in acts.scoped() {
+            if let Some(k) =
+                crate::transducer::sentence::presentation::act_key(&a.chart, &derivation.rotor(), &a.carriage, &a.gauge)
+            {
+                asks.push((k, tc.clone(), placement.clone()));
             }
         }
     }
@@ -88,17 +87,18 @@ pub fn extract_rule_on(
     // reaches them in, so the set is the pass's and the rebuild is taken
     // once after it.
     let mut retract: Keyed<(), coord::VertexAt> = Keyed::new();
-    for (_, (moduli, classes)) in by_chart.scoped() {
-        let held = crystal.on_body(moduli);
-        for (tc, placement) in classes {
-            if !budget.spend() {
-                return finish(form, scale, &unreached_pairs);
-            }
+    for (act, tc, placement) in &asks {
+        let held = crystal.on_act(act);
+        {
             let mut placement_key = Vec::new();
             placement.put_canonical(&mut placement_key);
             for (e, s, _st) in &held {
                 if !s.is_closed() {
                     continue;
+                }
+                // One read per held form spoken over the family.
+                if !budget.spend() {
+                    return finish(form, scale, &unreached_pairs);
                 }
                 let mut key = e.address().as_bytes().to_vec();
                 crate::transducer::address::put_key_bytes(&mut key, &placement_key);
@@ -130,66 +130,9 @@ pub fn extract_rule_on(
             }
         }
     }
-    // 37.7 (78.158 U7) — A DEMAND IS ASKED OF THE HELD LANGUAGE TOO. The pass
-    // above reads word vertices only, so a vertex standing as a demand was
-    // never offered the words this mind holds on its chart — its adjoined
-    // letters and the court's ruled words alike — and a form that was all
-    // demands minted nothing: "nothing in the form acts", 456 of 570 mint
-    // refusals on the fleet (epoch 146). The same reading as above, on the
-    // demand's own chart at the Frame's placement: a closed form that
-    // reproduces the whole family is glued and the demands it answers on
-    // that chart are retracted. Nothing is searched for — the crystal answers
-    // at the chart, as it answers every class.
-    let mut by_demand: Keyed<(Invariant, Vec<coord::VertexAt>)> = Keyed::new();
-    for (at, _, chart, _) in form.demand_vertices() {
-        let ck = chart.key();
-        match by_demand.get_mut(ck.as_bytes()) {
-            Some((_, ats)) => ats.push(at),
-            None => {
-                by_demand.insert(ck.as_bytes(), (chart.clone(), vec![at]));
-            }
-        }
-    }
-    let frame = crate::transducer::alphabet::Word::identity();
-    let mut frame_key = Vec::new();
-    frame.put_canonical(&mut frame_key);
-    for (_, (moduli, ats)) in by_demand.scoped() {
-        if !budget.spend() {
-            return finish(form, scale, &unreached_pairs);
-        }
-        let held = crystal.on_body(moduli);
-        for (e, s, _st) in &held {
-            if !s.is_closed() {
-                continue;
-            }
-            let mut key = e.address().as_bytes().to_vec();
-            crate::transducer::address::put_key_bytes(&mut key, &frame_key);
-            let reproduces = match spoken.get(&key) {
-                Some(&r) => r,
-                None => {
-                    // It must SAY something on every pair: a form that paints
-                    // nothing — a letter, which stands at no frame — is
-                    // within any grid vacuously, and glued it made a form
-                    // that "acts" and changed nothing, which the court
-                    // refused as leaving its remainder.
-                    let r = family.iter().all(|(x, y)| {
-                        crystal
-                            .speak_form(s, x, &frame)
-                            .is_some_and(|sp| !sp.painted.is_empty() && painted_within_grid(&sp.painted, y))
-                    });
-                    spoken.insert(&key, r);
-                    r
-                }
-            };
-            if reproduces {
-                let _ = form.glue_append(s, e.address(), frame.clone(), e.magnitude());
-                for at in ats {
-                    retract.put(at, ());
-                }
-                break;
-            }
-        }
-    }
+    // A DEMAND IS NOT SEARCHED FOR IN THE HELD LANGUAGE: a deformation is
+    // answered by its motion in `derive_against` (the ear first), and a
+    // source or a creation, which has no motion, stays the demand it is.
     // ONCE, AFTER THE PASS. `retract_vertices` rebuilds the cycle basis and
     // reindexes at its end, so a pass that retracted anything needs no
     // second read; a pass that cited without retracting still appended

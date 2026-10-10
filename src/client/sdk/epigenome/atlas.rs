@@ -132,6 +132,9 @@ impl Epigenome {
         for chart in body_charts_of(e) {
             self.by_moduli.nested_insert(chart.key(), &addr, ());
         }
+        for key in act_keys_of(e) {
+            self.by_act.nested_insert(key, &addr, ());
+        }
         // 1.8: the form's word vertices are the generators it contributes
         // to this mind's presentation.
         if let Some(f) = e.form().cloned() {
@@ -147,6 +150,18 @@ impl Epigenome {
         for chart in body_charts_of(e) {
             if let Some(bucket) = self.by_moduli.get_mut(chart.key().as_bytes()) {
                 bucket.remove(&addr);
+            }
+        }
+        for key in act_keys_of(e) {
+            let empty = match self.by_act.get_mut(&key) {
+                Some(bucket) => {
+                    bucket.remove(&addr);
+                    bucket.is_empty()
+                }
+                None => false,
+            };
+            if empty {
+                self.by_act.remove(&key);
             }
         }
         if let Some(f) = e.form() {
@@ -199,6 +214,26 @@ pub(crate) fn body_charts_of(e: &Held) -> Vec<crate::transducer::stalk::Invarian
         }
     }
     charts
+}
+
+/// What every member of a closed sentence's word vertices does, as the
+/// coordinates the glue asks at (`presentation::act_key`).
+pub(crate) fn act_keys_of(e: &Held) -> Vec<Vec<u8>> {
+    let Some(f) = e.form().filter(|f| f.is_closed()) else {
+        return Vec::new();
+    };
+    let mut keys = Vec::new();
+    for (_, v) in f.vertices.scoped() {
+        let crate::transducer::sentence::Vertex::Word { derivation, acts, .. } = v else { continue };
+        for (_, a) in acts.scoped() {
+            if let Some(k) =
+                crate::transducer::sentence::presentation::act_key(&a.chart, &derivation.rotor(), &a.carriage, &a.gauge)
+            {
+                keys.push(k);
+            }
+        }
+    }
+    keys
 }
 
 impl Epigenome {

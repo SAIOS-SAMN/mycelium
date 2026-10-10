@@ -57,6 +57,26 @@ pub fn vertex_motion(v: &Vertex) -> Option<Mv> {
     crate::transducer::element::conformal_of_rotor(&derivation.rotor(), &a.carriage)
 }
 
+/// THE COORDINATE OF WHAT ONE MEMBER DOES (A21): the chart it acts on, its
+/// whole motion's canonical ray (its carriage composed with its rotor's base
+/// action) and its hue map, each length-prefixed — the key a held form is
+/// filed at and a vertex asks at, so a glue is one keyed read. `None` where
+/// the rotor has no base action.
+pub fn act_key(
+    chart: &crate::transducer::stalk::Invariant,
+    rotor: &crate::transducer::alphabet::Rotor,
+    carriage: &Mv,
+    gauge: &[(u8, u8)],
+) -> Option<Vec<u8>> {
+    let motion = crate::transducer::element::conformal_of_rotor(rotor, carriage)?;
+    let mut k = Vec::new();
+    crate::transducer::address::put_key_bytes(&mut k, chart.key().as_bytes());
+    crate::transducer::address::put_key_bytes(&mut k, &motion_key(&motion)?);
+    let hues: Vec<u8> = gauge.iter().flat_map(|&(a, b)| [a, b]).collect();
+    crate::transducer::address::put_key_bytes(&mut k, &hues);
+    Some(k)
+}
+
 /// Whether a motion is the identity ray.
 pub fn is_still(m: &Mv) -> bool {
     m.projective_eq(&Mv::scalar(BigRational::from_integer(1.into())))

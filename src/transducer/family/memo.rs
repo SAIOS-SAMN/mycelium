@@ -173,7 +173,10 @@ fn deformation_answer(
     let car = carriage_with_core(&a, &b, budget)?;
     let f = element::conformal_factors(&car.v).ok()?;
     let rotor = element::rotor_of_factors(&f).ok()?;
-    let derivation = match motion_citation(crystal, budget, &rotor, &car.v, &car.sigma) {
+    // The ear first: what the mind heard that composes to the core motion.
+    let derivation = match presented_citation(crystal, &rotor, &f.carriage())
+        .or_else(|| motion_citation(crystal, budget, &rotor, &car.v, &car.sigma))
+    {
         Some(d) => d,
         None => factor_versor(crystal, budget, &car.v, &car.sigma)?.ok()?,
     };

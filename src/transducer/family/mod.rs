@@ -93,6 +93,12 @@ pub trait Crystal {
     /// that meet only at the empty root, so one reader cannot answer both.
     fn on_body(&self, chart: &Invariant) -> Vec<(&Element, &Form, Standing)>;
     fn speak_form(&self, f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Option<Speech>;
+    /// 21 step 3 — THE CLOSED FORMS ACTING AT ONE COORDINATE: a member's chart,
+    /// whole motion and hue map (`presentation::act_key`), one keyed read. A
+    /// crystal that never glues (the court, the cipher) holds none.
+    fn on_act(&self, _act: &[u8]) -> Vec<(&Element, &Form, Standing)> {
+        Vec::new()
+    }
     /// Keyed read of a crystallized form by address. No scan, AND NO CLONE
     /// (Z2 item 2, rule 17): a reader hands back the stratum it holds, and
     /// a caller that resolves one citation 578 times must not pay a form
