@@ -264,6 +264,7 @@ impl Treasury {
             held,
             overflowed: 0,
             touched: super::treasury::Touched::Every,
+            journal_mark: 0,
             // Folded from the rows, since they arrived off disk and not
             // through `write`. This is the one O(journal) pass.
             issued: None,

@@ -14,12 +14,12 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         return;
     };
     let at_most = budget / mycelium::economy::Entry::TAPE;
-    // 78.153b — the page alone cloned (`rows_below_page`); the count over the
-    // journal stays under the kernel (owed: the journal is not in line order).
-    let (total, rows) = match crate::held::held!(door.kernel) {
-        Ok(mut h) => h.run(|k, _| k.rows_range(&req.signer, req.from, req.upto, req.cursor, at_most)),
-        Err(_) => return,
-    };
+    // 78.153b — answered off the published reading, never under the kernel:
+    // a witness's fetch waited on the kernel behind a busy door, was
+    // deferred, and the fold went unmeasured (217–284 an hour per court,
+    // epoch 147). The reading carries the journal at the head the receipts
+    // were published at, so a witness's two fetches read one standing.
+    let (total, rows) = door.published.take().rows_range(&req.signer, req.from, req.upto, req.cursor, at_most);
     let Some(body) = dialogue::encode_rows_reply(total, &rows, budget) else {
         eprintln!("  rows reply refused: the page's count passes its u32");
         return;

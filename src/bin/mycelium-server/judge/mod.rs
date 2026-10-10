@@ -51,6 +51,11 @@ pub(crate) fn serve_published(stream: &mut TcpStream, frame: &Frame, door: &Door
             receipts::judge(stream, frame, door);
             true
         }
+        // 78.153b — a fold witness's journal page, off the reading.
+        Some(Action::Rows) => {
+            rows::judge(stream, frame, door);
+            true
+        }
         // 78.154 (4) — a stake act is a write: it reaches the kernel.
         Some(Action::Wallet) if mycelium::anastome::dialogue::wallet::decode_wallet(&frame.body).is_some() => {
             wallet::judge(stream, frame, door);

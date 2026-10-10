@@ -348,26 +348,42 @@ impl Kernel {
         cursor: u64,
         budget: usize,
     ) -> (u64, Vec<Entry>) {
-        if *signer != self.identity || from.is_some_and(|f| f >= upto) {
-            return (0, Vec::new());
-        }
-        // THE ROWS THE FOLD NETS OVER, and nothing else: the proposer's
-        // epochs are the nets of every row below its root — the last fold's
-        // epoch rows and all since — so the witness is served exactly that
-        // set. The span from `from` left the epoch rows out, and a fold
-        // proposed after another was refused by every witness as not
-        // conserving: "rows fetched 0 … parties ours 0 proposed 8" (hypha b,
-        // epoch 115). A fold compacts the journal, so the set stays small.
-        // 78.153b — the page alone cloned (`rows_below_page`), never every
-        // row below the head for every page of them. The span's rows
-        // are the mesh's count, `u64` on the wire. A cursor past every `usize`
-        // is past every row this node holds: the page is empty, and the total
-        // says so.
-        let Ok(skip) = usize::try_from(cursor) else {
-            return (self.treasury.rows_below_page(upto, 0, 0).0, Vec::new());
-        };
-        self.treasury.rows_below_page(upto, skip, budget)
+        rows_range_of(&self.identity, self.treasury.entries(), signer, from, upto, cursor, budget)
     }
+}
+
+/// THE ROWS READ over a journal held by the court `identity` — the one
+/// reading the kernel (`Kernel::rows_range`) and the published reading
+/// (`Published::rows_range`, which the door answers `ACT_ROWS` with, off
+/// the kernel) share.
+pub(crate) fn rows_range_of(
+    identity: &[u8; 32],
+    entries: &[Entry],
+    signer: &[u8; 32],
+    from: Option<Place>,
+    upto: Place,
+    cursor: u64,
+    budget: usize,
+) -> (u64, Vec<Entry>) {
+    if signer != identity || from.is_some_and(|f| f >= upto) {
+        return (0, Vec::new());
+    }
+    // THE ROWS THE FOLD NETS OVER, and nothing else: the proposer's
+    // epochs are the nets of every row below its root — the last fold's
+    // epoch rows and all since — so the witness is served exactly that
+    // set. The span from `from` left the epoch rows out, and a fold
+    // proposed after another was refused by every witness as not
+    // conserving: "rows fetched 0 … parties ours 0 proposed 8" (hypha b,
+    // epoch 115). A fold compacts the journal, so the set stays small.
+    // 78.153b — the page alone cloned (`rows_below_page_of`), never every
+    // row below the head for every page of them. The span's rows
+    // are the mesh's count, `u64` on the wire. A cursor past every `usize`
+    // is past every row this node holds: the page is empty, and the total
+    // says so.
+    let Ok(skip) = usize::try_from(cursor) else {
+        return (crate::economy::fold::rows_below_page_of(entries, upto, 0, 0).0, Vec::new());
+    };
+    crate::economy::fold::rows_below_page_of(entries, upto, skip, budget)
 }
 
 /// THE WITNESS'S RE-DERIVATION, read off what the home sent and whether

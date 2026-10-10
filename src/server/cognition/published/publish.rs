@@ -124,6 +124,11 @@ pub struct Published {
     /// atlas until it grows, and the atlas's mark it was read at.
     pub(crate) ledgers: Keyed<Arc<Vec<crate::anastome::dialogue::atlas::HeldEntry>>>,
     pub(crate) atlas_mark: u64,
+    /// 78.153b — the treasury's journal, shared with the last reading where
+    /// its mark stands: a witness's `ACT_ROWS` is answered off it, never
+    /// under the kernel (a fold compacts the journal, so it stays small).
+    pub(crate) journal: Arc<Vec<crate::economy::Entry>>,
+    pub(crate) journal_mark: u64,
     pub(crate) cost: PublishCost,
     /// 78.153b — THE COURT'S OWN READS (`Own`): its cover, room, bond, ruled
     /// cover and head receipt, read off the shelf by the door and the
@@ -226,6 +231,15 @@ impl Kernel {
                 self.atlas.ledgers.clone()
             }
         };
+        // 78.153b — the journal: shared where no row moved since.
+        let journal = match prev {
+            Some(p) if p.journal_mark == self.treasury.journal_mark() => Arc::clone(&p.journal),
+            _ => {
+                moved = true;
+                cost.keys(self.treasury.entries().len() as u64);
+                Arc::new(self.treasury.entries().to_vec())
+            }
+        };
         let eras_path = match prev.and_then(|p| p.eras_path.clone()) {
             Some(held) if Some(&*held) == self.eras_path.as_deref() => Some(held),
             _ => {
@@ -250,6 +264,8 @@ impl Kernel {
             accounts,
             ledgers,
             atlas_mark: self.atlas.mark,
+            journal,
+            journal_mark: self.treasury.journal_mark(),
             cost,
             own,
         })

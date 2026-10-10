@@ -199,6 +199,11 @@ pub struct Treasury {
     /// names its party here. A treasury built fresh or read off disk says
     /// EVERY party moved. Volatile.
     pub(crate) touched: Touched,
+    /// 78.153b — THE JOURNAL'S MARK: moved by every write, fold and rebind of
+    /// `entries`, so a publisher shares the journal it read where the mark
+    /// stands and reads it again where it moved (the witness's `ACT_ROWS`,
+    /// answered off the published reading). Volatile.
+    pub(crate) journal_mark: u64,
 }
 
 /// 78.151 — which accounts a publisher reads again: every one, or the
@@ -232,6 +237,7 @@ impl Default for Treasury {
             held: crate::network::nerve::Keyed::new(),
             overflowed: 0,
             touched: Touched::Every,
+            journal_mark: 0,
         }
     }
 }
@@ -489,6 +495,7 @@ impl Treasury {
     /// burned?".
     pub(crate) fn write(&mut self, e: Entry) {
         self.touch(&e.who);
+        self.journal_moved();
         let into = match e.kind.issues() {
             Some(true) => &mut self.issued,
             Some(false) => &mut self.burned,
@@ -563,6 +570,7 @@ impl Treasury {
     /// (the empty hash) stand at the new one. Nothing else moves: a row at
     /// an act stands at that act.
     pub fn rebind_origin(&mut self, from: crate::chronometry::Stamp, to: crate::chronometry::Stamp) {
+        self.journal_moved();
         for e in self.entries.iter_mut() {
             if e.at == from && e.receipt == [0; 32] {
                 e.at = to;
@@ -831,6 +839,20 @@ impl Treasury {
 
     pub fn entries(&self) -> &[Entry] {
         &self.entries
+    }
+
+    /// 78.153b — the journal's mark (`journal_mark`).
+    pub fn journal_mark(&self) -> u64 {
+        self.journal_mark
+    }
+
+    /// The journal moved: its mark steps. A mark past its `u64` starts again
+    /// at zero — a reading published that far back is long replaced.
+    pub(crate) fn journal_moved(&mut self) {
+        self.journal_mark = match self.journal_mark.checked_add(1) {
+            Some(m) => m,
+            None => 0,
+        };
     }
 
     pub fn entry_count(&self) -> usize {

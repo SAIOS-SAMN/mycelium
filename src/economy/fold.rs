@@ -109,6 +109,15 @@ pub fn nets_read(rows: &[Entry]) -> Result<Nets, Inexact> {
     Ok(Nets { rows: out, total })
 }
 
+/// ONE PAGE OF A JOURNAL'S ENTRIES BELOW `head`, and how many stand there —
+/// the one reading `Treasury::rows_below_page` and the published reading
+/// (`Published::rows_range`, 78.153b) both answer a witness with.
+pub fn rows_below_page_of(entries: &[Entry], head: Place, skip: usize, n: usize) -> (u64, Vec<Entry>) {
+    let below = || entries.iter().filter(|e| e.stands_at() < Some(head));
+    let page = below().skip(skip).take(n).cloned().collect();
+    (below().count() as u64, page)
+}
+
 impl Treasury {
     /// The rows written before the act at `head`, in journal order: the
     /// prefix a fold at `head` re-expresses and a witness fetches
@@ -128,9 +137,7 @@ impl Treasury {
     /// would read short where one stands out of line. The walk stays a
     /// count over the journal; the page alone is copied.
     pub fn rows_below_page(&self, head: Place, skip: usize, n: usize) -> (u64, Vec<Entry>) {
-        let below = || self.entries.iter().filter(|e| e.stands_at() < Some(head));
-        let page = below().skip(skip).take(n).cloned().collect();
-        (below().count() as u64, page)
+        rows_below_page_of(&self.entries, head, skip, n)
     }
 
     /// The rows standing at `from` or later and written before the act at
@@ -182,6 +189,7 @@ impl Treasury {
         let rest = before.iter().filter(|e| e.stands_at() >= Some(head)).cloned();
         self.entries = epochs;
         self.entries.extend(rest);
+        self.journal_moved();
         self.refold_supply();
         if self.audit().is_err() {
             self.entries = before;
