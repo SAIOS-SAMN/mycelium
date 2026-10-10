@@ -727,6 +727,8 @@ impl Kernel {
                 let mut ix = std::mem::take(&mut self.generators);
                 crate::transducer::sentence::admit_generators(&mut ix, &a, &f);
                 self.generators = ix;
+                // 78.160 P1 — and under the holes its motions wind about.
+                self.presentation.file_form(&a, &f, budget);
             }
             self.ruled_addrs.insert(addr, ());
             self.refresh_ruled_root();

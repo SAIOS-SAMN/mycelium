@@ -47,6 +47,12 @@ pub(crate) fn digests(stream: &mut TcpStream, frame: &Frame, door: &Door) {
 /// The stratum fetch: the ruled words of the charts a peer named, up to
 /// the frame budget, with the class records behind them (A19).
 pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
+    // 78.160 P1 — a mind's residue asked of the presentation rides the
+    // fetch's act under its own marker.
+    if let Some((pvoice, motion)) = dialogue::decode_presentation_request(&frame.body) {
+        present(stream, frame, door, pvoice, &motion);
+        return;
+    }
     let kernel = &door.kernel;
     let Some((fvoice, charts)) = dialogue::decode_fetch(&frame.body) else { return };
     // The body's share of the frame, exact.
@@ -124,4 +130,19 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     }
     let reply = Frame { lane: frame.lane, body };
     answer(stream, reply);
+}
+
+/// 78.160 P1 — THE PRESENTATION ASKED BY A RESIDUE: the motion deconstructed
+/// over this court's presentation on the hold's stroke, and the words that
+/// deconstruct it the asker lacks, within the frame's body budget.
+fn present(stream: &mut TcpStream, frame: &Frame, door: &Door, voice: [u8; 32], motion: &mycelium::transducer::cga::Mv) {
+    let Some(budget) = mycelium::network::wire::frame_budget().checked_sub(64) else { return };
+    let Ok(mut h) = crate::held::held!(&door.kernel) else { return };
+    let presented = h.run(|k, reads| k.present(voice, motion, budget, reads));
+    drop(h);
+    let Some(body) = dialogue::encode_presentation_reply(&presented.words, &presented.answer) else {
+        eprintln!("  presentation refused: a count or an address passes the field that carries it");
+        return;
+    };
+    answer(stream, Frame { lane: frame.lane, body });
 }

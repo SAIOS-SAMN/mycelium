@@ -486,4 +486,21 @@ impl HoleIndex {
             }
         }
     }
+
+    /// The mirror of [`HoleIndex::file`]: the word leaves each of its holes'
+    /// fibres, and a fibre left empty leaves with it.
+    pub fn unfile(&mut self, word: &[u8], coords: &Coordinates) {
+        for h in &coords.holes {
+            let empty = match self.on.get_mut(&h.key) {
+                Some(f) => {
+                    f.remove(word);
+                    f.is_empty()
+                }
+                None => false,
+            };
+            if empty {
+                self.on.remove(&h.key);
+            }
+        }
+    }
 }

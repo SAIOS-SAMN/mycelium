@@ -155,6 +155,7 @@ impl Kernel {
             genesis_cover: _,
             drawers,
             generators,
+            presentation,
             awaiting,
             discovered_by,
             attestors,
@@ -240,6 +241,7 @@ impl Kernel {
         c.count("ruled", ruled.len());
         c.count("axis_index", axis_index.scoped().map(|(_, a)| nested(a)).sum());
         c.count("generators", nested(generators));
+        c.count("presentation", presentation.len());
         c.count("replay_memo", nested(replay_memo));
         c.count("cited_by", nested(cited_by));
         c.count("book", book.1.len());

@@ -8,6 +8,7 @@ pub mod callus;
 pub mod contract;
 pub mod learn;
 pub mod observe;
+pub mod present;
 pub mod quote;
 pub mod syntropy;
 pub mod think;

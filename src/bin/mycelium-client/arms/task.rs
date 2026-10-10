@@ -100,6 +100,15 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
         }
     }
     if let Some(rule) = extracted.as_ref() {
+        // 78.160 P2 — THE PRESSURE ASKS: every motion the form could not cite
+        // is put to the court, and the words that deconstruct it are learned;
+        // the language moved, the next extraction of the family cites them.
+        if !occluded {
+            let composed = entity.ask_presentation(&rule.form);
+            if composed > 0 {
+                eprintln!("[{tag}] presentation: {composed} motions deconstructed by the court");
+            }
+        }
         if let Some(mag) = speak_form(entity, tag, rule, &train, &frames, &tid, &mut extract_budget) {
             StrokeOutcome::add(&mut outcome.uttered, &mag);
         }

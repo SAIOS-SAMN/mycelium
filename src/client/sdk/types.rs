@@ -478,6 +478,16 @@ pub struct Epigenome {
     /// volatile, never a stamp — a remainder is ANSWERED on the record only
     /// by a court's seal. The receptor and the open read skip both.
     pub(crate) refilled: crate::network::nerve::Keyed<crate::transducer::address::Address>,
+    /// 78.160 P2 — WHAT ITS COURT ANSWERED IT, by the motion's canonical key
+    /// (`presentation::motion_key`): the generators whose powers compose to
+    /// the motion exactly — minerals, volatile, never persisted. One entry per
+    /// motion asked and answered whole. OWED: its bound beside the genome's.
+    pub(crate) presented: crate::network::nerve::Keyed<Vec<(crate::transducer::address::Address, crate::transducer::address::Address, i64)>>,
+    /// The motions asked of the court in this language — cleared when the
+    /// atlas root it was asked at moves, so a motion is asked again once the
+    /// mind holds more than it did (`asked_root`).
+    pub(crate) asked: crate::network::nerve::Keyed<()>,
+    pub(crate) asked_root: Option<crate::transducer::address::Address>,
 }
 
 /// THE ENTITY — a kernel identity with its genome/epigenome, conversing through
@@ -531,7 +541,7 @@ pub struct Entity {
     pub(crate) said_at: Option<crate::chronometry::Stamp>,
     /// What this voice heard: pages, words heard, words admitted
     /// (`observe::HEARING`).
-    pub(crate) hearing: [u64; 3],
+    pub(crate) hearing: [u64; crate::observe::HEARING.len()],
     /// Rotating cursor for the bundle synthesis engine (reanchor / condense).
     /// Where the bundle circuit stood, as a coordinate — the same reading as
     /// [`refine_cursor`], and for the same reason: `% genome.len()` is a

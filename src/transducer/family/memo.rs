@@ -45,8 +45,11 @@ pub(crate) fn derive_against(
                 // 78.68 ROW 8 — a word that turns nothing is asked of the
                 // held words by its motion first: a slide or a dilation the
                 // mind holds a letter for is cited, never spelled anew.
+                // 78.160 P3 — and first by what its court deconstructed the
+                // whole motion into, re-derived here.
                 let by_motion = match (derivation.is_spelled(), &carriage) {
-                    (true, Some(c)) => motion_citation(crystal, budget, &derivation.rotor(), c, &gauge),
+                    (true, Some(c)) => presented_citation(crystal, &derivation.rotor(), c)
+                        .or_else(|| motion_citation(crystal, budget, &derivation.rotor(), c, &gauge)),
                     _ => None,
                 };
                 *derivation = match by_motion {

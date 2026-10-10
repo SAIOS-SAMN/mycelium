@@ -702,6 +702,44 @@ pub(crate) fn motion_citation(
     None
 }
 
+/// 78.160 P3 — A MOTION THE COURT DECONSTRUCTED FOR THIS MIND IS SAID
+/// THROUGH WHAT IT CITED. The vertex's whole motion (its carriage composed
+/// with its rotor's base action, Cl(4,1)) is looked up among the answers the
+/// mind's court gave it (`Crystal::presented`); each cited generator is
+/// resolved through the mind's own crystal, and the citation stands only where
+/// this mind re-derives it: the powers of the cited motions multiply to the
+/// vertex's motion exactly, and the cited rotors to its rotor. The court's
+/// answer is a mineral; this re-derivation is what makes it the mind's.
+pub(crate) fn presented_citation(
+    crystal: &dyn crate::transducer::family::Crystal,
+    rotor: &crate::transducer::alphabet::Rotor,
+    carriage: &Versor,
+) -> Option<crate::transducer::alphabet::Derivation> {
+    use crate::transducer::sentence::presentation::{motion_power, vertex_motion};
+    let motion = crate::transducer::element::conformal_of_rotor(rotor, carriage)?;
+    let cites = crystal.presented(&motion)?;
+    let mut by_motion = Versor::scalar(num_rational::BigRational::from_integer(1.into()));
+    let mut by_rotor = crate::transducer::alphabet::Rotor::identity();
+    let mut generators = Vec::with_capacity(cites.len());
+    for (form, vertex, e) in &cites {
+        let (_, f) = crystal.by_address(form.as_bytes())?;
+        let v = crate::transducer::sentence::vertex_cited(&f, vertex.as_bytes())?;
+        let Vertex::Word { derivation, .. } = v else { return None };
+        by_motion = by_motion.geo(&motion_power(&vertex_motion(v)?, *e));
+        by_rotor = by_rotor.geo(&crate::transducer::alphabet::rotor_power(&derivation.rotor(), *e)?);
+        generators.push((form.clone(), vertex.clone(), *e));
+    }
+    if !by_motion.projective_eq(&motion) || !by_rotor.projective_eq(rotor) {
+        return None;
+    }
+    note_derivation(PRESENTED, 1);
+    Some(crate::transducer::alphabet::Derivation::factored(
+        generators,
+        crate::transducer::alphabet::Word::identity(),
+        rotor.clone(),
+    ))
+}
+
 /// 78.95 — WHAT EACH WORD VERTEX'S DERIVATION CAME TO against the mind's own
 /// language, in [`DERIVATION`]'s order: asked; the target the identity; a
 /// target on no lane; lanes occupied and nothing held at their meet; the
@@ -711,7 +749,7 @@ pub(crate) fn motion_citation(
 /// through the ring of adjoined primes. The instrument the language
 /// diagnosis reads (78.95): which of the reasons a mind speaks only in
 /// letters holds.
-pub const DERIVATION: [&str; 13] = [
+pub const DERIVATION: [&str; 14] = [
     "asked",
     "identity",
     "no lane",
@@ -725,6 +763,8 @@ pub const DERIVATION: [&str; 13] = [
     "replay refused",
     "unmeasured",
     "cited through the ring",
+    // 78.160 P3 — a motion said through the generators its court cited.
+    "cited from the presentation",
 ];
 
 const ASKED: usize = 0;
@@ -740,6 +780,7 @@ const OFF_PLANE: usize = 9;
 const REPLAY_REFUSED: usize = 10;
 const UNMEASURED: usize = 11;
 const RING_CITED: usize = 12;
+const PRESENTED: usize = 13;
 
 static DERIVATIONS: [std::sync::atomic::AtomicU64; DERIVATION.len()] =
     [const { std::sync::atomic::AtomicU64::new(0) }; DERIVATION.len()];

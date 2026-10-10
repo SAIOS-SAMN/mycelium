@@ -98,6 +98,15 @@ impl crate::transducer::family::Crystal for Epigenome {
         crate::transducer::sentence::on_axis_of(&self.axis_index, chart, axis)
     }
 
+    /// 78.160 P3 — what this mind's court answered it for `motion`.
+    fn presented(
+        &self,
+        motion: &crate::transducer::cga::Mv,
+    ) -> Option<Vec<(crate::transducer::address::Address, crate::transducer::address::Address, i64)>> {
+        let key = crate::transducer::sentence::presentation::motion_key(motion)?;
+        self.presented.get(&key).cloned()
+    }
+
     /// 1.8: THE PRESENTATION THIS MIND SPEAKS FROM on a versor's chart.
     /// The generator index is keyed by `versor_chart` — `[0,
     /// class_axes…]` — so a peeled key is a byte prefix and the read is

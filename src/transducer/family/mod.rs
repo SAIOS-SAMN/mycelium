@@ -149,6 +149,17 @@ pub trait Crystal {
         }
     }
 
+    /// 78.160 P3 — WHAT A COURT ANSWERED THIS MIND FOR A MOTION: the
+    /// generators, each `(form, vertex, exponent)`, whose powers the court
+    /// read composing to the motion exactly. `None` where no court has, or
+    /// for a crystal that asks no court (the court itself, the cipher).
+    fn presented(
+        &self,
+        _motion: &crate::transducer::cga::Mv,
+    ) -> Option<Vec<(crate::transducer::address::Address, crate::transducer::address::Address, i64)>> {
+        None
+    }
+
     /// 42.6 AS AMENDED, L12 — THE PRESENTATION AT THE MEET OF THE LANES A
     /// TARGET OCCUPIES. `occupied` is one entry per lane the target carries
     /// content on, with that lane's own chart (`lane_charts_of`).

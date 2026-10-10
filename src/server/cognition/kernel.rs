@@ -546,6 +546,12 @@ pub struct Kernel {
     /// which is where a presentation's generators live since a ruled word
     /// became a form (L5). Filled beside the axis index in `ruled_admit`.
     pub(crate) generators: crate::transducer::sentence::GeneratorIndex,
+    /// 78.160 P1 — THE PRESENTATION BY HOLES: the ruled forms' word vertices
+    /// filed under the holes their whole Cl(4,1) motions wind about, what a
+    /// mind's residue is deconstructed over (`Kernel::present`). Filled beside
+    /// `generators` in `ruled_admit`, emptied in `basis_remove`, re-derived at
+    /// restore (law 12); never persisted.
+    pub(crate) presentation: crate::transducer::sentence::presentation::Presentation,
     /// 21 step 3, 50.2 step 2 — SENTENCES AWAITING A CITED FORM. Keyed by
     /// the cited address this court has not ruled; each entry is the
     /// voice that spoke, the task it was bound to, and the tape. A voice

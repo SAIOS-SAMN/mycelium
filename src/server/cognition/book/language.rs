@@ -24,6 +24,10 @@ impl Kernel {
         self.release_vantages(&inv, addr);
         let words = crate::transducer::sentence::acting_of_element(&held);
         crate::transducer::sentence::retract_words(&mut self.axis_index, &inv, &words);
+        // 78.160 P1 — and the holes its generators stood on.
+        if let Some(f) = crate::transducer::sentence::from_element_form(&held) {
+            self.presentation.unfile_form(&crate::transducer::address::Address::from(addr.to_vec()), &f);
+        }
         self.forget_discoverer(addr);
         std::sync::Arc::make_mut(&mut self.stalks).remove(addr);
         self.ruled.remove(addr);

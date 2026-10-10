@@ -652,6 +652,20 @@ impl Kernel {
                 }
             }
         }
+        self.refill_presentation();
+    }
+
+    /// 78.160 P1 — THE PRESENTATION RE-DERIVED from the ruled words the basis
+    /// holds, through the same filing `ruled_admit` makes: one stroke a word,
+    /// minted here at the restore's root (65.5).
+    pub(crate) fn refill_presentation(&mut self) {
+        let mut pres = crate::transducer::sentence::presentation::Presentation::default();
+        for (a, ()) in self.ruled_addrs.scoped() {
+            let Some(f) = self.basis.get(&a).and_then(|w| w.form()) else { continue };
+            let mut budget = self.physics.stroke();
+            pres.file_form(&Address::from(a.clone()), f, &mut budget);
+        }
+        self.presentation = pres;
     }
 
     /// A FIXTURE, NOT AN ORGAN: identity-glue every provisional as if an

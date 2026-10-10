@@ -59,7 +59,7 @@ impl Entity {
             reasons: crate::transducer::sentence::ReasonsTally::default(),
             said: None,
             said_at: None,
-            hearing: [0; 3],
+            hearing: [0; crate::observe::HEARING.len()],
             bundle_cursor: None,
             taught_up: crate::network::nerve::Keyed::new(),
             taught_at: crate::network::nerve::Keyed::new(),

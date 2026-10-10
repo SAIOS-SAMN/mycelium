@@ -51,7 +51,11 @@ pub const REASONS: [&str; 9] = [
     "cells unsaid",
 ];
 /// What a mind HEARD from its court.
-pub const HEARING: [&str; 3] = ["pages", "words heard", "words admitted"];
+/// 78.160 P2 — and the presentation it asked its court for: the motions it
+/// asked about, the words taught for them, and the motions the court's
+/// citations compose to exactly.
+pub const HEARING: [&str; 6] =
+    ["pages", "words heard", "words admitted", "presentation: asked", "presentation: words", "presentation: composes"];
 /// What a mind holds as LANGUAGE.
 pub const LANGUAGE: [&str; 6] = ["dialect", "genome", "installed", "closing", "adjoined by closure", "colour words"];
 /// What a mind UNDERSTOOD.
@@ -151,7 +155,7 @@ pub const SYLLABUS: [&str; 13] = [
 /// and the bytes served whole against the bytes the refracted ones would
 /// take as (held, Γ) — the anchor's address and the transport's word,
 /// carriage and gauge, each by its own codec.
-pub const FETCH: [&str; 13] = [
+pub const FETCH: [&str; 19] = [
     "served to courts",
     "served to voices",
     // 78.100 — the fetch paid by who asks: a peer court's from the serving
@@ -167,6 +171,16 @@ pub const FETCH: [&str; 13] = [
     "bytes served",
     "bytes refracted, whole",
     "bytes refracted, as (held, Γ)",
+    // 78.160 P1 — a mind's residue deconstructed over this court's
+    // presentation: asked, its coordinates unread, the generators cited, the
+    // asks whose cited powers compose to the motion exactly, the words taught
+    // for it, and the learners too short to be taught one.
+    "presentation: asked",
+    "presentation: unread",
+    "presentation: generators cited",
+    "presentation: composes",
+    "presentation: words served",
+    "presentation: learner short",
 ];
 /// 78.102, 47.3 — THE ROAD A PROVISIONAL WORD TAKES TO THE GENOME, where it
 /// stops: a letter docketed from a sentence heard (heard again, the voice
