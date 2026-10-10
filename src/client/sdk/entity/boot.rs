@@ -82,6 +82,8 @@ impl Entity {
             owed: Vec::new(),
             owed_tries: crate::network::nerve::Keyed::new(),
             unheard: crate::network::nerve::Keyed::new(),
+            unread_solves: crate::network::nerve::Keyed::new(),
+            unread_after: Vec::new(),
             seats: crate::network::nerve::Keyed::new(),
         }
     }

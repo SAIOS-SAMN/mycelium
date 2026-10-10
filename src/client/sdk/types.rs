@@ -634,6 +634,16 @@ pub struct Entity {
     /// again each stroke until a court stands or ratifies it, or seals it;
     /// at most an aperture of them (`physics::aperture_cycle`).
     pub(crate) unheard: crate::network::nerve::Keyed<Element>,
+    /// 78.153 — THE SOLVES THE COURT HAS NOT JUDGED YET (`SOLVE_UNREAD`), by
+    /// task: the rule and the outputs, asked again each stroke until the
+    /// court rules, its replay resuming where its stroke ran out. Without it
+    /// the task arm moved to the next task and the solve was never asked
+    /// again: 38 of 41 verdicts on the fleet were "unread" (2026-10-10). At
+    /// most an aperture of them (`physics::aperture_cycle`).
+    pub(crate) unread_solves: crate::network::nerve::Keyed<(Element, Vec<Grid>)>,
+    /// The task coordinate the last unread solve was asked again at: the
+    /// next asking takes the least after it, so every one is asked in turn.
+    pub(crate) unread_after: Vec<u8>,
     /// 78.146 — THE SEATS THIS MIND SITS IN A GAME, by domain ‖ seat: what
     /// it perceives there and what its calls were seen to do (volatile, the
     /// mind's own, never persisted).

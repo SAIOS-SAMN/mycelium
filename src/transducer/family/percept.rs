@@ -441,7 +441,7 @@ pub(super) fn family_percept(
             // misses every section — and this `continue` then skipped every
             // Word vertex, leaving a form in which nothing acts.
             let prefix = crate::transducer::sentence::Acting::chart_prefix(c);
-            let Some(acting) = acts
+            let Some(mut acting) = acts
                 .scoped()
                 .find(|(k, _)| k.starts_with(&prefix))
                 .map(|(_, a)| a.clone())
@@ -454,6 +454,16 @@ pub(super) fn family_percept(
             // frame's, and a frame whose map differs is a frame the member
             // is not claimed on — its placement varies (move 6).
             let mut claimed: Vec<&Quotient> = Vec::new();
+            // THE MEMBER'S GAUGE IS THE MAP OF EVERY FRAME IT CLAIMS. Two
+            // frames agree where neither sends a hue two ways, and a hue one
+            // frame never saw is no disagreement; but a gauge read alone is a
+            // partial map whose absence is the IDENTITY (`hue_of`), so the
+            // least frame's map read at a frame that moved a hue the least
+            // frame never held sent it nowhere, and the court refused the
+            // vertex ("a lamina lands on the wrong hue", 6 of 8 carry
+            // refusals on the fleet, 2026-10-10). The claimed frames' maps are
+            // merged as they agree, and that union is the member's gauge.
+            let mut merged = crate::transducer::sentence::hue_table(&acting.gauge);
             for q in rep {
                 if let Some(hk) = crate::transducer::sentence::hue_section_key_of(&rotor, &q.car.sigma) {
                     hue_maps.insert(hk, q.car.sigma.clone());
@@ -462,7 +472,20 @@ pub(super) fn family_percept(
                     varying.place_varies.put(&tc.key(), ());
                     continue;
                 }
+                merged = match (merged, crate::transducer::sentence::hue_table(&q.car.sigma)) {
+                    (Some(m), Some(t)) => match crate::transducer::sentence::hue_agreement(&m, &t) {
+                        crate::transducer::sentence::HueAgreement::Agreed(out) => Some(*out),
+                        // Two claimed frames that disagree with each other
+                        // (each agreeing with the least frame's) are not one
+                        // map: the member keeps the least frame's.
+                        _ => None,
+                    },
+                    _ => None,
+                };
                 claimed.push(q);
+            }
+            if let Some(m) = merged {
+                acting.gauge = crate::transducer::sentence::hue_listing(&m);
             }
             let class_key = tc.key().encode();
             let chart_key = c.key();

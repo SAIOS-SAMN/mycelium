@@ -360,6 +360,9 @@ fn main() {
             // stroke, never only on a short or idle one.
             if !stroke.stopping() {
                 stroke.entity.take_docketed_demands();
+                // 78.153 — the solves the court has not judged are asked
+                // again, and its replay resumes.
+                stroke.entity.resubmit_unread_solves();
             }
             let a3 = allocated();
             // THE SYNTROPIC PHASE on any lane short of one expansion (S10's

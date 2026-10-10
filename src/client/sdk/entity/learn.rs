@@ -104,18 +104,53 @@ impl Entity {
         // A refusal is remembered against the rule it refused, one per
         // task: the carrier is bounded by the tasks, and a new rule for the
         // task replaces it.
-        match verdict.0 {
+        self.file_verdict(id, rule, outputs, verdict.0);
+        Some(verdict)
+    }
+
+    /// The verdict filed: a closure clears the task, a refusal is remembered
+    /// against its rule, and an UNREAD solve is kept to be asked again (78.153:
+    /// the court's replay resumes where its stroke ran out).
+    fn file_verdict(&mut self, id: &[u8; 32], rule: &Element, outputs: &[Grid], code: u8) {
+        match code {
             dialogue::SOLVE_BOUNTY | dialogue::SOLVE_FLOOR => {
                 self.solve_refused.remove(id);
+                self.unread_solves.remove(id);
             }
-            // 78.153 — not judged yet: a retry, never remembered as refused;
-            // the same rule is sent again and the court's replay resumes.
-            dialogue::SOLVE_UNREAD => {}
+            dialogue::SOLVE_UNREAD => {
+                if self.unread_solves.contains(id) || self.unread_solves.len() < crate::physics::aperture_cycle() as usize {
+                    self.unread_solves.insert(id, (rule.clone(), outputs.to_vec()));
+                }
+            }
             _ => {
-                self.solve_refused.insert(id, addr.as_bytes().to_vec());
+                self.solve_refused.insert(id, rule.address().as_bytes().to_vec());
+                self.unread_solves.remove(id);
             }
         }
-        Some(verdict)
+    }
+
+    /// 78.153 — ASK AGAIN WHAT THE COURT HAS NOT JUDGED: ONE unread solve a
+    /// stroke, until each is ruled — each asking costs the court a stroke of
+    /// its own, so a mind's backlog never floods the door. The one asked is
+    /// the least by task coordinate after the last asked (`unread_after`), so
+    /// every unread solve is asked in turn.
+    pub fn resubmit_unread_solves(&mut self) {
+        let next = match self.unread_solves.after(&self.unread_after).next() {
+            Some((k, v)) => Some((k, v.clone())),
+            None => self.unread_solves.scoped().next().map(|(k, v)| (k, v.clone())),
+        };
+        if let Some((k, (rule, outputs))) = next {
+            self.unread_after = k.clone();
+            let Ok(id) = <[u8; 32]>::try_from(k.as_slice()) else {
+                self.unread_solves.remove(&k);
+                return;
+            };
+            match self.submit_solve_rule(&id, &outputs, Some(&rule)) {
+                Ok((code, _)) => self.file_verdict(&id, &rule, &outputs, code),
+                // The court is not reachable this stroke: still unread.
+                Err(_) => {}
+            }
+        }
     }
 
     /// 78.153c — WHAT THIS VOICE'S SOLVES CAME TO, by the court's reply
