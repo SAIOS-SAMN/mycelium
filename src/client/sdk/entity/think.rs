@@ -141,9 +141,10 @@ impl Entity {
         // and no held letter spells is adjoined in its local dialect at once,
         // as the pivot's unspellable rotor is (`adjoin_letters`, 37.7): its
         // own letters now spell it, D3 cites it, words climb on it. Volatile,
-        // the mind's own, lapsed on its own clock; never handed mind to mind
-        // (law 8). What it offers the mesh is the sentence above; whether the
-        // mesh holds it too is the court's to verify.
+        // the mind's own, lapsed on its own clock; said to other minds as
+        // chatter, which they re-derive and agree or differ on (78.161), never
+        // taken into their genomes. What it offers the mesh is the sentence
+        // above; whether the mesh holds it too is the court's to verify.
         // 78.109 C1 — through the one road a residue takes: constructed,
         // certified, then adjoined.
         for residue in &ineffable {

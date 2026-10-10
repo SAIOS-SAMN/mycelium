@@ -416,6 +416,19 @@ cover is minted. Supply then grows only as far as judged work outruns what
 the universes return; the void takes nothing. (Burns that remain: slash and
 retirement, both already acts.)
 
+### 7.3 μ by union (78.161, the operator, 2026-10-10)
+
+μ is distributed to the minds that AGREED on a language through conversation,
+never by one voice's ratified dominance. Minds say their dialect to each
+other; a hearer re-derives each word on its own perception, lane by lane, and
+a word two minds re-derive coherently is agreed and goes to the court. The
+court pays as it already pays (§3.2, 26 as ruled 2026-09-10): an installed
+sentence's mint is split across the discoverers of the ruled forms it cites,
+each its own form's verified deflation on the citer's family, lane by lane —
+so a mind whose agreed words other minds cite in closing sentences is paid at
+each closure. OWED after the server freeze: the agreed word's own install
+split across the minds whose AGREE attestations it carries.
+
 ## 8. Policy ratios
 
 There are no monetary constants. The quantities that behave like policy are

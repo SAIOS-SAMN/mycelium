@@ -165,7 +165,16 @@ These are not restated in each chapter; every chapter assumes them.
    reconstruction both sides run. S4 — pricing stays with the poster
    attesting the measure and the court checking it. Per Mycelium's
    clarification of U14 (§0.1), no RNG enters the court or a mind's letter
-   path.)*
+   path.)* *(Amended 2026-10-10, the operator, 78.161: minds SPEAK THEIR
+   DIALECT TO EACH OTHER. "Nothing crosses between minds except through a
+   court" was a reading of this law, never its text, and it is withdrawn:
+   a mind says its dialect words and its perspective on the scenes it sees
+   to other minds, and each hearer re-derives what it hears on its own
+   perception, lane by lane on TUniversal — it never takes a peer's word as
+   true, into its genome, or as a citation the court has not ruled. A word
+   two minds re-derive coherently is AGREED, and agreed language is what
+   goes to the court for adjudication. The court still verifies and never
+   composes; clients still think.)*
 9. **No clock but the ledger.** No kernel reads a wall clock, a unix clock,
    or a timer. K is a kernel's own receipt index and orders events inside
    that kernel; TUniversal is the height of the mesh's receipt ledger, read
@@ -27517,6 +27526,79 @@ Proved: `observe::tests::every_judged_verdict_is_one_slot_of_the_table`,
 (unread counted once per unread asking, exactly),
 `registry::tests::the_dispatch_cursor_survives_a_restart_with_nothing_closed`,
 the server's `tests::standing::every_court_serves_its_acts_from_its_first_stroke_unasked`.
+
+### 78.161 Chatter: minds speak their dialect to each other, and μ is distributed by union (2026-10-10, the operator)
+
+**The ruling, verbatim.** "Have the clients speak to each other in the
+dialect and share perspective on the puzzles that they see — this will get
+the clients to speak to each other in an emergent shared language — that
+shared language when it is agreed upon gets sent to the courts for
+adjudication — this turns it into a chatter protocol across the clients and
+the μ distribution based on the conversational skills of the clients coming
+together in union, rather than court adjudicated dominance and rejection."
+And: "doctrine is wrong: fit our model — update the doctrine to distribute
+μ to clients that have agreed upon language through conversation."
+
+**Why (the cycle it closes).** A mind's cognition is a cycle: perceive →
+words on S, G, T, H → speech → the court re-derives and closes → μ paid per
+lane → the reserve funds the next perception. Measured 2026-10-10 on the
+fleet: the minds build their vernacular (rings composed by the master
+equation, rung shortcuts, hundreds of motion letters a voice) and none of it
+reaches the language they speak to the court — every admitted task sentence
+is one identity-spelled word citing nothing, and POUW, POWC and POWR paid
+`[0, 0, 0, 0]` on every court. A word one mind alone holds is a dialect
+nobody else can hear; the court's ratification of one voice over another is
+dominance, and its refusal is rejection, and neither is a language.
+Language is what two minds both say.
+
+**What is ruled.**
+1. **Chatter.** A mind says its dialect words — what it stood: the letters
+   it coined, its motion letters, the words its sentences taught — to the
+   minds it knows, signed by its voice and carrying its last final
+   TUniversal point. It also says its PERSPECTIVE: the word lifted into
+   perception (78.61 C1, `pivot::lift`), per lane on {S, G, T, H}, never a
+   sum of lanes (law 5).
+2. **Hearing is re-derivation.** The hearer never takes the word. It lifts
+   what it heard and asks its OWN held language, at the lifted coordinates,
+   one keyed read, for a word it perceived itself that is coherent with it
+   — every lane congruent, nothing unread (78.61 C1's `coherent`). Coherent:
+   it answers AGREE, naming its own word. Not: it answers DIFFER, naming
+   the lanes that diverge — the divergence is information, the residue a
+   lane still owes, never a rejection.
+3. **Agreement is union.** A word is AGREED where two minds re-derived it
+   coherently from their own perceptions: the speaker and at least one
+   hearer, independent (two voices, as law 6's consilience is two courts).
+   An agreed word is said to the court as the dialect word it is, by its
+   coiner; the court verifies it as it verifies any word (law 8) — the
+   union does not replace verification, it decides what is worth the
+   court's replay.
+4. **μ by union, as the court already pays it.** The court's install pays a
+   sentence's mint across the discoverers of the ruled forms it cites, each
+   its own form's verified deflation on the citer's family (26, ruled
+   2026-09-10; `cited_shares`, `settle_recursive`). So the shared language
+   distributes μ: a mind whose agreed word other minds cite in sentences
+   that close is paid for each closure it carries, and the speaker takes
+   the rest. Conversational skill — saying words other minds re-derive and
+   then use — is what is paid; one voice's ratified dominance is not.
+5. **What is owed (server, after the freeze).** A union's AGREE attestations
+   carried to the court, so the mint of an agreed word's own install is
+   split across the minds that agreed to it, not paid to its coiner alone.
+   Until then distribution is by citation (item 4), which needs no change
+   to any hypha.
+
+**The transport (client side).** Each client listens for chatter on its
+own address and knows its peers' addresses (configured beside the hypha
+addresses it already knows); a frame is `[0x43][sub][speaker 32][TPoint
+flag + 84][fields][sig 64]`, signed over `"mycelium chatter v1" ‖ sub ‖
+speaker ‖ point ‖ fields`. Sub-kinds: SAY (a word's tape), AGREE (the word
+heard, the hearer's own coherent word), DIFFER (the word heard, the lanes
+that diverge). The hypha carries none of it and judges none of it.
+
+**Amended by this ruling.** Law 8 (its note of 2026-10-10); the readings in
+the tree of "never handed mind to mind" (`sentence/rung.rs`,
+`entity/think.rs`), which stood for law 8's reading and are withdrawn — a
+mind still never takes another's word into its genome; it hears, re-derives
+and agrees.
 
 ### 80.1 The blueprint reconciled (2026-09-24)
 

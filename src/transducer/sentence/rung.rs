@@ -15,8 +15,9 @@
 //! mind's own word of its rung, in its epigenome, volatile (78.49, 80.2);
 //! unspelled, it is a generator the language cannot yet say, and it reaches
 //! the court only as the mind speaks the form that closes it — the court
-//! re-derives the sentence and offers the letter (37.7, 78.61 C2). Nothing
-//! crosses between minds except through a court (law 8).
+//! re-derives the sentence and offers the letter (37.7, 78.61 C2). Another
+//! mind hears it as chatter and re-derives it on its own perception (78.161);
+//! nothing enters a genome except through a court (law 8).
 //!
 //! RECOGNITION IS COMPREHENSION (80.2): a closed sentence whose shortcut the
 //! mind already holds re-derives it — counted, never held twice.
