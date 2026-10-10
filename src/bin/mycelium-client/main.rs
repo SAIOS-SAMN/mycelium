@@ -262,6 +262,17 @@ fn main() {
     );
     entity.set_height(height);
     entity.discover();
+    // 78.161 — the chatter: this mind listens for other minds and files its
+    // address at the fleet's rendezvous, beside the homes.
+    let rendezvous = match home.parent() {
+        Some(p) => p.join("chatter"),
+        None => PathBuf::from("chatter"),
+    };
+    match entity.open_chatter(&rendezvous) {
+        Ok(addr) => eprintln!("[{tag}] chatter at {addr}, rendezvous {}", rendezvous.display()),
+        Err(e) => eprintln!("[{tag}] chatter not opened: {e}"),
+    }
+    let mut chat_said = None;
     let pending = pending_feed(&home);
     eprintln!(
         "[{tag}] mycelium-client → {bootstrap}; genome {} words{}",
@@ -354,6 +365,18 @@ fn main() {
             if let Some(arm) = seat_arm.as_mut() {
                 if !stroke.stopping() {
                     arm.stroke(stroke.entity, &tag, &stop);
+                }
+            }
+            // 78.161 — what the other minds said since the last stroke, heard
+            // and answered.
+            if !stroke.stopping() {
+                let mut budget = stroke.entity.stroke();
+                stroke.entity.chatter_stroke(&mut budget);
+                if let Some(t) = stroke.entity.chat_tally() {
+                    if chat_said != Some(t) {
+                        eprintln!("[{tag}] {}", t.line());
+                        chat_said = Some(t);
+                    }
                 }
             }
             // 37.7 — the docketed demands are taken and constructed on every

@@ -822,6 +822,11 @@ impl Entity {
             self.remember_spoken(e);
             return;
         }
+        // 78.161 item 3 — a letter goes to the court once another mind
+        // agreed to it; until then it stands in the dialect and is said.
+        if self.hold_for_union(e) {
+            return;
+        }
         // Spoken, refused on the wire, or withheld on a transport error: the
         // court's reply is the record (its refusal code, its docket).
         let _ = self.speak(std::slice::from_ref(e), budget);

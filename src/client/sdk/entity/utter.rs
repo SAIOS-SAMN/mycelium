@@ -305,6 +305,8 @@ impl Entity {
             self.epigenome.stand_dialect_at(e.clone(), k, tu);
             if !taught {
                 codes[i] = 0xff; // asked about on the wire below
+                // 78.161 — and said to the minds this one chatters with.
+                self.say(e);
             }
         }
         codes

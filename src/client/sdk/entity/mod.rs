@@ -5,6 +5,7 @@
 
 pub mod boot;
 pub mod callus;
+pub mod chatter;
 pub mod contract;
 pub mod learn;
 pub mod observe;

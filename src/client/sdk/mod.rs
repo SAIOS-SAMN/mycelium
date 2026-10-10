@@ -8,6 +8,7 @@ mod entity;
 mod epigenome;
 pub mod aperture;
 pub mod certified;
+pub mod chatter;
 pub mod physics;
 pub mod guest;
 pub mod kernel;
