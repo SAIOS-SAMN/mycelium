@@ -627,6 +627,13 @@ pub struct Entity {
     /// most once per court this mind knows and then waits for the family
     /// to come round again. Cleared when the citer is admitted or sealed.
     pub(crate) owed_tries: crate::network::nerve::Keyed<usize>,
+    /// 37.7 — WHAT THIS MIND SPOKE AND NO COURT HAS TAUGHT YET, by address:
+    /// a letter or crystallized idea a court deferred stands in the dialect,
+    /// and the guard that kept it from being spoken twice kept it from ever
+    /// being spoken again (courts deferred 211/126/442 acts, epoch 146). Said
+    /// again each stroke until a court stands or ratifies it, or seals it;
+    /// at most an aperture of them (`physics::aperture_cycle`).
+    pub(crate) unheard: crate::network::nerve::Keyed<Element>,
     /// 78.146 — THE SEATS THIS MIND SITS IN A GAME, by domain ‖ seat: what
     /// it perceives there and what its calls were seen to do (volatile, the
     /// mind's own, never persisted).

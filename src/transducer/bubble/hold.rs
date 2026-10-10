@@ -7,7 +7,7 @@
 //! (Z4a's `HELD_BYTES`).
 
 use super::*;
-use super::contemplation::{candidates_over, live_bytes, mark, HELD_BYTES};
+use super::contemplation::{live_bytes, mark, rotor_of_transport, transport_over, HELD_BYTES};
 use crate::network::nerve::Keyed;
 use crate::transducer::element;
 use crate::transducer::sentence::{Form, Vertex};
@@ -211,8 +211,28 @@ impl Contemplation {
                 // reading `ring_answer` makes in `family/memo.rs`).
                 Vertex::Demand { chart, bodies, .. } => {
                     cover.insert(chart.key(), ());
-                    for (rk, r) in candidates_over(bodies.as_slice(), budget).scoped() {
-                        candidates.nested_insert(chart.key(), rk, r.clone());
+                    let transport = transport_over(bodies.as_slice(), budget);
+                    let rotor = transport.as_ref().and_then(rotor_of_transport);
+                    if let Some(r) = rotor.as_ref() {
+                        candidates.nested_insert(chart.key(), r.key(), r.clone());
+                    }
+                    // 37.7 — THE DEMAND'S WHOLE TRANSPORT GOES ON THE DOCKET,
+                    // its residue the remainder a held word would have to
+                    // carry. Only its rotation reached the candidates, and
+                    // nothing was docketed: a form that was all demands
+                    // ("nothing in the form acts", 456 refusals on the fleet,
+                    // epoch 146) never reached the demand taker, so its
+                    // remainder never became a letter. Its class is its
+                    // rotation's — the identity's where the transport turns
+                    // nothing (a slide, a dilation: the motion letter).
+                    if let Some(v) = transport.as_ref() {
+                        let word = match rotor {
+                            Some(r) => crate::transducer::alphabet::Word::formed(r),
+                            None => crate::transducer::alphabet::Word::identity(),
+                        };
+                        if let Some(class) = crate::transducer::sentence::ClassVector::of_word(&word) {
+                            self.docket_demand(&class, std::slice::from_ref(chart), Some(v));
+                        }
                     }
                 }
                 _ => {}

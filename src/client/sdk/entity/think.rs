@@ -230,7 +230,7 @@ impl Entity {
                 Some(e) => {
                     note_construction_outcome("adjoined as motion letters");
                     self.contemplation.own_letter(residue);
-                    if self.epigenome.standing_of(e.address().as_bytes()).is_none() {
+                    if !self.already_taught(&e) {
                         self.stand_crystallized(&e, budget);
                     }
                 }
@@ -257,6 +257,17 @@ impl Entity {
                 None => crate::transducer::cga::note_construction_outcome("residues absent"),
             }
         }
+    }
+
+    /// 37.7 — THE DOCKET TAKEN ON EVERY STROKE, on the stroke's own budget:
+    /// a demand docketed is taken and constructed where it stands, not only
+    /// on a short or idle stroke (`expand_ideas`). A mind on the fleet
+    /// docketed 471 demands and took 1 (epoch 146): its reserve never fell
+    /// short, so the syntropic phase that alone took them never ran.
+    pub fn take_docketed_demands(&mut self) {
+        let mut budget = self.physics.stroke();
+        self.take_demands(&mut budget);
+        self.speak_unheard(&mut budget);
     }
 
     /// 78.52 — TRANSCRIPTION, AGAINST THIS MIND'S OWN LETTERS (78.47 (i)). A
@@ -790,7 +801,10 @@ impl Entity {
             let Some(e) = crate::transducer::sentence::generator_form(rotor, chart, &[]) else {
                 continue;
             };
-            if self.epigenome.standing_of(e.address().as_bytes()).is_some() {
+            // Standing in this mind's own dialect is not being heard: only a
+            // court's standing or ratifying (`already_taught`) ends the
+            // utterance; a deferred letter is said again.
+            if self.already_taught(&e) {
                 continue;
             }
             self.stand_crystallized(&e, budget);
@@ -801,13 +815,37 @@ impl Entity {
     /// (25.2, 24.3): the same vertex already stood or taught is a use, not
     /// a second utterance.
     fn stand_crystallized(&mut self, e: &Element, budget: &mut crate::physics::Budget) {
+        let addr = e.address();
         if self.already_taught(e) {
+            self.unheard.remove(addr.as_bytes());
             self.remember_spoken(e);
             return;
         }
         // Spoken, refused on the wire, or withheld on a transport error: the
         // court's reply is the record (its refusal code, its docket).
         let _ = self.speak(std::slice::from_ref(e), budget);
+        // 37.7 — what no court taught on this utterance (deferred, unread,
+        // unreachable) is said again on a later stroke; a refusal seals it
+        // and it leaves.
+        let sealed = self.sealed.get(addr.as_bytes()).is_some();
+        if self.already_taught(e) || sealed {
+            self.unheard.remove(addr.as_bytes());
+        } else if self.unheard.contains(addr.as_bytes()) || self.unheard.len() < crate::physics::aperture_cycle() as usize {
+            self.unheard.insert(addr.as_bytes(), e.clone());
+        }
+    }
+
+    /// 37.7 — SAY AGAIN WHAT NO COURT TAUGHT: every word this mind spoke that
+    /// no court has stood, ratified or sealed is spoken once more, within the
+    /// stroke's budget.
+    fn speak_unheard(&mut self, budget: &mut crate::physics::Budget) {
+        let pending: Vec<Element> = self.unheard.scoped().map(|(_, e)| e.clone()).collect();
+        for e in pending {
+            if !budget.spend() {
+                return;
+            }
+            self.stand_crystallized(&e, budget);
+        }
     }
 
     /// PIVOT ON A WORD: read by_chart at the word's chart and peels, fill

@@ -91,9 +91,14 @@ impl Held {
         f.vertices
             .scoped()
             .filter(|(_, v)| match v {
+                // An adjoined generator counts whatever its rotor: a motion
+                // letter's rotor is the identity, which the seventeen spell,
+                // so the spelling test alone never counted one (3 737 motion
+                // letters on the fleet, none opened, epoch 146).
                 crate::transducer::sentence::Vertex::Word { address, derivation, .. } => {
                     env.cite_for(address.as_bytes()).is_none()
-                        && !matches!(crate::transducer::alphabet::factor_rotor(&derivation.rotor()), Some(Ok(_)))
+                        && (derivation.is_adjoined()
+                            || !matches!(crate::transducer::alphabet::factor_rotor(&derivation.rotor()), Some(Ok(_))))
                 }
                 _ => false,
             })

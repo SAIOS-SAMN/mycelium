@@ -257,12 +257,21 @@ pub struct Contemplation {
 /// (16.16 step 6) — which is 37.7's object and is the candidate that
 /// matters. Every other outcome names no rotor and contributes none:
 /// nothing is stood in for a transport that was not measured (rule 11).
-pub(crate) fn candidates_over(bodies: &[Link], budget: &mut crate::physics::Budget) -> Keyed<Rotor> {
-    let mut out: Keyed<Rotor> = Keyed::new();
+pub(crate) fn rotor_of_transport(v: &crate::transducer::cga::Mv) -> Option<Rotor> {
+    match crate::transducer::family::peel_versor(v) {
+        Some(Ok(w)) => Some(w.rotor()),
+        Some(Err(crate::transducer::sentence::Demand::Standing { rotor, .. })) => Some(*rotor),
+        _ => None,
+    }
+}
+
+/// THE TRANSPORT A DEMAND'S BODIES RE-DERIVE (`carriage_with_core`), whole:
+/// the versor between its two sides, never stored beside them (law 12).
+pub(crate) fn transport_over(bodies: &[Link], budget: &mut crate::physics::Budget) -> Option<crate::transducer::cga::Mv> {
     let before: Vec<Link> = bodies.iter().copied().filter(|c| c.2 != 0).collect();
     let after: Vec<Link> = bodies.iter().copied().filter(|c| c.3 != 0).collect();
     if before.is_empty() || after.is_empty() {
-        return out;
+        return None;
     }
     let lift = |links: &[Link]| {
         crate::transducer::family::body_of(
@@ -273,18 +282,9 @@ pub(crate) fn candidates_over(bodies: &[Link], budget: &mut crate::physics::Budg
         )
     };
     let (Some(a), Some(b)) = (lift(&before), lift(&after)) else {
-        return out;
+        return None;
     };
-    let Some(car) = crate::transducer::family::carriage_with_core(&a, &b, budget) else {
-        return out;
-    };
-    let rotor = match crate::transducer::family::peel_versor(&car.v) {
-        Some(Ok(w)) => w.rotor(),
-        Some(Err(crate::transducer::sentence::Demand::Standing { rotor, .. })) => *rotor,
-        _ => return out,
-    };
-    out.insert(rotor.key(), rotor);
-    out
+    crate::transducer::family::carriage_with_core(&a, &b, budget).map(|car| car.v)
 }
 
 impl Contemplation {

@@ -79,6 +79,14 @@ impl Derivation {
         Derivation { generators: Vec::new(), residue: Word::identity(), composed: Some(Box::new(rotor)) }
     }
 
+    /// Whether this is AN ADJOINED GENERATOR (`Derivation::adjoined`): it
+    /// cites nothing and carries its rotor in the rotor field — the identity
+    /// rotor included, a motion letter's (78.68 row 8), whose whole action is
+    /// on its vertex's carriage.
+    pub fn is_adjoined(&self) -> bool {
+        self.generators.is_empty() && self.composed.is_some()
+    }
+
     /// A word factored through held generators. `composed` is the rotor
     /// the speaker's composition reached; the court re-derives it from
     /// the citations and refuses a disagreement. An empty citation list

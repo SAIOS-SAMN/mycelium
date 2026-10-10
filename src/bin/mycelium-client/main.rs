@@ -356,6 +356,11 @@ fn main() {
                     arm.stroke(stroke.entity, &tag, &stop);
                 }
             }
+            // 37.7 — the docketed demands are taken and constructed on every
+            // stroke, never only on a short or idle one.
+            if !stroke.stopping() {
+                stroke.entity.take_docketed_demands();
+            }
             let a3 = allocated();
             // THE SYNTROPIC PHASE on any lane short of one expansion (S10's
             // reading, S13.2), or on a stroke whose arms moved nothing — the
