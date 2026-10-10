@@ -507,17 +507,6 @@ impl Kernel {
                 continue;
             };
             let whereabouts = (LEAF_PAYLOAD, payload);
-            // U12: the carried count, the projected count and the run.
-            if u64::try_from(era.punctures.len()).ok() != Some(era.punctured) {
-                refused.eras += 1;
-                continue;
-            }
-            let mut punctures = Vec::new();
-            punctures.extend_from_slice(&era.carried.to_le_bytes());
-            punctures.extend_from_slice(&era.punctured.to_le_bytes());
-            for p in &era.punctures {
-                p.write(&mut punctures);
-            }
             nodes.insert(
                 key,
                 vec![
@@ -529,7 +518,6 @@ impl Kernel {
                     (LEAF_FIRST, first),
                     (LEAF_COUNT, era.count.to_le_bytes().to_vec()),
                     whereabouts,
-                    (LEAF_PUNCTURES, punctures),
                 ],
             );
         }

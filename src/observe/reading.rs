@@ -487,12 +487,6 @@ pub struct Court {
     /// whether the answer was WRITTEN, or found the asker gone (a page that
     /// missed the asker's wait). The asking side is `catchup`.
     pub serve: [u64; SERVE_AXES.len()],
-    /// U12 (78.65 as amended) — THE PUNCTURES THE FOLDS PROJECTED, on
-    /// [`PUNCTURE_AXES`], cumulative: escrows and demands projected first
-    /// by a fold, open chains carried across a later fold, open carriers no
-    /// stamp cites (named, never dropped), punctures settled, settlements
-    /// refused.
-    pub punctures: [u64; PUNCTURE_AXES.len()],
     /// 78.152 — THE DOOR'S QUORUM-FINAL TUNIVERSAL POINT, its advances, the
     /// keepers as this court holds them and the residual (TU-3, TU-4, TU-7),
     /// read off the shelf and the keepers outside the kernel.
@@ -582,21 +576,6 @@ pub enum CatchupOutcome {
     Empty = 4,
 }
 
-/// THE AXES OF [`Court::punctures`], in its writing's order (U12).
-pub const PUNCTURE_AXES: [&str; 6] =
-    ["escrows projected", "demands projected", "carried", "uncited", "settled", "settle refused"];
-
-/// Where each puncture count is written on [`PUNCTURE_AXES`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PunctureAxis {
-    Escrows = 0,
-    Demands = 1,
-    Carried = 2,
-    Uncited = 3,
-    Settled = 4,
-    SettleRefused = 5,
-}
-
 /// THE AXES OF [`Court::folds`], in its writing's order.
 pub const FOLD_OUTCOMES: [&str; 8] =
     ["proposed", "open", "inexact", "folded", "refused", "unmeasured", "idle", "no-transition"];
@@ -642,9 +621,6 @@ impl Court {
         for n in self.serve {
             put_u64(out, n);
         }
-        for n in self.punctures {
-            put_u64(out, n);
-        }
         self.tuniversal.put(out)
     }
 
@@ -674,10 +650,6 @@ impl Court {
         for n in &mut serve {
             *n = take_u64(b, p)?;
         }
-        let mut punctures = [0u64; PUNCTURE_AXES.len()];
-        for n in &mut punctures {
-            *n = take_u64(b, p)?;
-        }
         let tuniversal = super::TStanding::take(b, p)?;
         Some(Court {
             k,
@@ -693,7 +665,6 @@ impl Court {
             folds,
             catchup,
             serve,
-            punctures,
             tuniversal,
         })
     }

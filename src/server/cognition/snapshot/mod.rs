@@ -101,9 +101,6 @@ pub const LEAF_IDENTITIES: u8 = 5;
 pub const LEAF_FIRST: u8 = 6;
 pub const LEAF_COUNT: u8 = 7;
 pub const LEAF_PAYLOAD: u8 = 8;
-/// U12 — the open chains the era carried (`u64`), the punctures it projected
-/// (`u64`), and their run; required, so an era written before U12 refuses.
-pub const LEAF_PUNCTURES: u8 = 9;
 
 /// The complexes, each keyed by its own key; its node's one leaf is the
 /// complex's own tries (`Complex::put_tries`): sections, simplices and

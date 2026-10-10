@@ -65,8 +65,6 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         catchup: [[16, 17, 18, 19, 20], [21, 22, 23, 24, 25]],
         // The serving side of a catch-up page, each axis in its own slot.
         serve: [26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45],
-        // U12 — the punctures by axis, each in its own slot.
-        punctures: [46, 47, 48, 49, 50, 51],
         // 78.152 — nothing final yet travels as nothing final.
         tuniversal: TStanding::default(),
     };

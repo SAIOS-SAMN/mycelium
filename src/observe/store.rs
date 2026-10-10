@@ -234,19 +234,6 @@ pub fn folds() -> [u64; super::FOLD_OUTCOMES.len()] {
     std::array::from_fn(|i| FOLDS[i].load(Ordering::Relaxed))
 }
 
-/// U12 — THE PUNCTURES BY AXIS, on [`super::PUNCTURE_AXES`] (`Court::punctures`).
-static PUNCTURES: [AtomicU64; super::PUNCTURE_AXES.len()] = [const { AtomicU64::new(0) }; super::PUNCTURE_AXES.len()];
-
-/// `n` more on one puncture axis.
-pub fn note_puncture(axis: super::PunctureAxis, n: u64) {
-    PUNCTURES[axis as usize].fetch_add(n, Ordering::Relaxed);
-}
-
-/// The puncture counts this process has counted.
-pub fn punctures() -> [u64; super::PUNCTURE_AXES.len()] {
-    std::array::from_fn(|i| PUNCTURES[i].load(Ordering::Relaxed))
-}
-
 /// PHASE 1 — the catch-up pages by path and outcome (`Court::catchup`).
 static CATCHUP: [[AtomicU64; super::CATCHUP_OUTCOMES.len()]; super::CATCHUP_PATHS.len()] =
     [const { [const { AtomicU64::new(0) }; super::CATCHUP_OUTCOMES.len()] }; super::CATCHUP_PATHS.len()];

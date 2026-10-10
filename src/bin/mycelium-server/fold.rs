@@ -69,13 +69,8 @@ pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
                 // 78.147: the root is kept with both signed positions, what a
                 // catch-up below it is answered with.
                 match h.run(|k, _| k.commit_fold_proved(&section, &w)) {
-                    Ok(done) => {
+                    Ok(_) => {
                         observe::note_fold(FoldOutcome::Folded);
-                        // U12: what δ_causal projected onto the new surface.
-                        eprintln!(
-                            "  court fold sealed at {:?}: punctures {} carried {} uncited {}",
-                            done.last, done.punctured, done.carried, done.uncited
-                        );
                         return;
                     }
                     Err(why) => {
