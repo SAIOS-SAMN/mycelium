@@ -154,8 +154,9 @@ pub enum Refused {
     /// The mint: nothing in the form acts — no question stands (N).
     MintNothingActs,
     /// The mint: a vertex does not carry its family, at the kind the court's
-    /// own reader gave that refusal.
-    MintVertexNotCarried(ObstructionKind),
+    /// own reader gave that refusal, and the fault it failed by (the
+    /// court's `FAIL_*`: which carry check, of the bodies, hues and frames).
+    MintVertexNotCarried(ObstructionKind, &'static str),
     /// The mint: links remain and the form declares no demand — its own
     /// claim does not account for what it read (I).
     MintLinksWithoutDemand,
@@ -208,7 +209,7 @@ impl Refused {
     pub fn kind(self) -> ObstructionKind {
         use ObstructionKind::{C, I, N};
         match self {
-            Refused::MintVertexNotCarried(k) | Refused::RotorMintsNoGenerator(k) => k,
+            Refused::MintVertexNotCarried(k, _) | Refused::RotorMintsNoGenerator(k) => k,
             Refused::MintNothingActs | Refused::TrialNoQuestion => N,
             Refused::TrialNotDischarged
             | Refused::TrialPathsDisagree
@@ -233,7 +234,8 @@ impl Refused {
     pub fn proof(self) -> &'static str {
         match self {
             Refused::MintNothingActs => "nothing in the form acts",
-            Refused::MintVertexNotCarried(_) => "a vertex does not carry its family",
+            // The fault itself: which carry check the vertex failed.
+            Refused::MintVertexNotCarried(_, why) => why,
             Refused::MintLinksWithoutDemand => "links remain and the form declares no demand",
             Refused::MintLinksUndeclared => "links undeclared by the form's demands",
             Refused::MintNoTape => "the form has no tape at its measure",

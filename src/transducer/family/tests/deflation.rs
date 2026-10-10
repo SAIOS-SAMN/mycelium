@@ -271,7 +271,10 @@ fn a_mint_refusal_names_its_arm_proof_kind_and_the_forms_demand_kinds() {
     assert_eq!(why, Refused::MintNothingActs);
     assert_eq!(mint_refusal_line(why, &f), "mint refused (integrity): nothing in the form acts [N] demands [creation]");
     for (r, line) in [
-        (Refused::MintVertexNotCarried(ObstructionKind::C), "mint refused (carry): a vertex does not carry its family [C] demands [creation]"),
+        (
+            Refused::MintVertexNotCarried(ObstructionKind::C, "a lamina lands on the wrong hue"),
+            "mint refused (carry): a lamina lands on the wrong hue [C] demands [creation]",
+        ),
         (Refused::MintLinksWithoutDemand, "mint refused (demands): links remain and the form declares no demand [I] demands [creation]"),
         (Refused::MintLinksUndeclared, "mint refused (demands): links undeclared by the form's demands [I] demands [creation]"),
         (Refused::CitedNotHeld, "mint refused (citation): the cited form is not held here [I] demands [creation]"),

@@ -346,7 +346,7 @@ pub fn mint_sentence_why(
 pub fn mint_arm(why: crate::transducer::sentence::Refused) -> &'static str {
     use crate::transducer::sentence::Refused;
     match why {
-        Refused::MintVertexNotCarried(_) => "carry",
+        Refused::MintVertexNotCarried(..) => "carry",
         Refused::MintLinksWithoutDemand | Refused::MintLinksUndeclared => "demands",
         Refused::CitedNotHeld | Refused::CitedSealed | Refused::OwedToEveryCourt => "citation",
         Refused::MintNothingActs | Refused::MintNoTape | Refused::MintAddressUndecoded => "integrity",
@@ -378,8 +378,8 @@ fn mint_or_refuse(
     if !rule.form.acts() {
         return Err(Refused::MintNothingActs);
     }
-    if let Some(r) = crate::court::verdict::body::vertices_carry_frames(&rule.form, family) {
-        return Err(Refused::MintVertexNotCarried(r.obstruction.kind()));
+    if let Some((r, why)) = crate::court::verdict::body::vertices_carry_frames(&rule.form, family) {
+        return Err(Refused::MintVertexNotCarried(r.obstruction.kind(), why));
     }
     // 50.5 — what the form leaves unspoken on this family is its demand. A
     // citation this mind's crystal does not hold leaves nothing to declare:

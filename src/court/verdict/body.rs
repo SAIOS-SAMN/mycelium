@@ -309,10 +309,17 @@ fn same_frame(a: &crate::transducer::base::Site, b: &crate::transducer::base::Si
 /// stands along the whole of `e₃` unless it is a section of some frames
 /// only — and the claim is a keyed read of its members' frames at the frame's
 /// own coordinate (AT1), never a walk of a list.
-pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option<Refusal> {
+pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option<(Refusal, &'static str)> {
     let perceived = perceive_family(family);
-    match vertices_carry_frames_from(f, family, &perceived, &mut Meter::Free, 0) {
-        Err(Halt::Refused(r)) => Some(r),
+    let mut why = None;
+    match carry_frames_from(f, family, &perceived, &mut Meter::Free, 0, &mut why) {
+        // The fault the vertex failed by rides out with the refusal: the
+        // mint names it (which check failed), where the obstruction's kind
+        // alone does not say.
+        Err(Halt::Refused(r)) => match why {
+            Some(w) => Some((r, w)),
+            None => Some((r, r_proof_unread())),
+        },
         // Unmetered, nothing is spent.
         Err(Halt::Spent(_)) | Ok(()) => None,
     }
@@ -329,6 +336,25 @@ pub(crate) fn vertices_carry_frames_from(
     perceived: &[Perceived],
     meter: &mut Meter<'_>,
     from: usize,
+) -> Step {
+    carry_frames_from(f, family, perceived, meter, from, &mut None)
+}
+
+/// A refusal whose fault was not written: never reached, since every
+/// refusal below writes its fault first.
+fn r_proof_unread() -> &'static str {
+    "the fault was not read"
+}
+
+/// [`vertices_carry_frames_from`], writing the fault a refused vertex failed
+/// by into `why` — the one reader both the replay and the mint read.
+fn carry_frames_from(
+    f: &Form,
+    family: &[(Grid, Grid)],
+    perceived: &[Perceived],
+    meter: &mut Meter<'_>,
+    from: usize,
+    why_out: &mut Option<&'static str>,
 ) -> Step {
     let frames = frames_over(family, perceived);
     for (i, (vertex, v)) in f.vertices.entries().enumerate().skip(from) {
@@ -381,6 +407,7 @@ pub(crate) fn vertices_carry_frames_from(
                     _ => None,
                 };
                 let key = chart.key();
+                *why_out = Some(why);
                 return Err(Halt::Refused(Refusal::closure(
                     REFUSE_VERTEX_BODY,
                     sentence::At::vertex(vertex.clone(), chart.clone()),
