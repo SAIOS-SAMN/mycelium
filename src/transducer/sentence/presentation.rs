@@ -124,6 +124,38 @@ impl Presentation {
         filed
     }
 
+    /// 78.160 — THE EAR: a form HEARD, each word vertex's motion perceived by
+    /// its own modes on a stroke sized by what those modes need
+    /// (`cga::modes_need`, 78.111 C1b) — never by a stroke sized for
+    /// something else — and filed under its holes. What the ear cannot read
+    /// (no base action, a motion past its carrier) is not filed.
+    pub fn hear_form(&mut self, form: &Address, f: &Form) -> usize {
+        let mut heard = 0usize;
+        for (_, v) in f.vertices.scoped() {
+            let Vertex::Word { address, .. } = v else { continue };
+            let Some(motion) = vertex_motion(v).filter(|m| !is_still(m)) else { continue };
+            let Some(need) = crate::transducer::cga::modes_need(&motion) else { continue };
+            let mut budget = crate::physics::Physics::default().stroke_n(need);
+            let Ok(coords) = Coordinates::of(&motion, &mut budget) else { continue };
+            if coords.holes.is_empty() {
+                continue;
+            }
+            let key = super::generator_key(form, address);
+            self.holes.file(&key, &coords);
+            self.held.insert(&key, Generator { form: form.clone(), vertex: address.clone(), motion, coords });
+            heard += 1;
+        }
+        heard
+    }
+
+    /// [`Presentation::deconstruct`] on the stroke the motion's own modes
+    /// need — what the ear reads a heard motion against.
+    pub fn deconstruct_sized(&self, motion: &Mv) -> Option<Deconstructed> {
+        let need = crate::transducer::cga::modes_need(motion)?;
+        let mut budget = crate::physics::Physics::default().stroke_n(need);
+        self.deconstruct(motion, &mut budget).ok()
+    }
+
     /// The mirror of [`Presentation::file_form`], vertex for vertex.
     pub fn unfile_form(&mut self, form: &Address, f: &Form) {
         for (_, v) in f.vertices.scoped() {

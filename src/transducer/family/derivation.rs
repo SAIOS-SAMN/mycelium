@@ -717,7 +717,9 @@ pub(crate) fn presented_citation(
 ) -> Option<crate::transducer::alphabet::Derivation> {
     use crate::transducer::sentence::presentation::{motion_power, vertex_motion};
     let motion = crate::transducer::element::conformal_of_rotor(rotor, carriage)?;
-    let cites = crystal.presented(&motion)?;
+    // What the ear heard first — the mind's own language, no court asked —
+    // then what its court answered it.
+    let cites = crystal.heard(&motion).or_else(|| crystal.presented(&motion))?;
     let mut by_motion = Versor::scalar(num_rational::BigRational::from_integer(1.into()));
     let mut by_rotor = crate::transducer::alphabet::Rotor::identity();
     let mut generators = Vec::with_capacity(cites.len());

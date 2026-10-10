@@ -30,6 +30,9 @@ impl Epigenome {
         self.drop_remainders(addr);
         self.axis_retract(&word.held);
         self.moduli_retract(&word.held);
+        if let Some(f) = word.held.form() {
+            self.ear.unfile_form(&gone, f);
+        }
         // The recollections that spelled themselves with this word were
         // spellings in the old vocabulary and dissolve with it.
         let drop: Vec<Vec<u8>> = self
@@ -465,6 +468,11 @@ impl Epigenome {
         self.atlas.admit(&crate::transducer::stalk::invariant_of(&held), at.clone());
         self.axis_admit(&held);
         self.moduli_admit(&held);
+        // 78.160 — THE EAR HEARS IT: the word's motions perceived by their
+        // holes and windings.
+        if let Some(f) = held.form() {
+            self.ear.hear_form(&at, f);
+        }
         #[expect(clippy::disallowed_methods, reason = "rule 11 — one per resident word admitted: a count of what this process holds cannot pass a 64-bit usize")]
         let n = self.atlas_len.saturating_add(1);
         self.atlas_len = n;

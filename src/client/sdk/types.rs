@@ -488,6 +488,12 @@ pub struct Epigenome {
     /// mind holds more than it did (`asked_root`).
     pub(crate) asked: crate::network::nerve::Keyed<()>,
     pub(crate) asked_root: Option<crate::transducer::address::Address>,
+    /// 78.160 — THE EAR: every genome word this mind took in, heard by the
+    /// holes its word vertices' whole motions wind about (`hear_form`), filed
+    /// where it is admitted and unfiled where it retires — the language a
+    /// motion is deconstructed over with no court asked. Derived, never
+    /// persisted: a restore hears each word again as it admits it.
+    pub(crate) ear: crate::transducer::sentence::presentation::Presentation,
 }
 
 /// THE ENTITY — a kernel identity with its genome/epigenome, conversing through

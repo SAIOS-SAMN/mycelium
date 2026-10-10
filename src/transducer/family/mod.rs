@@ -160,6 +160,17 @@ pub trait Crystal {
         None
     }
 
+    /// 78.160 — WHAT THIS MIND'S EAR HEARD THAT SAYS A MOTION: the motion
+    /// deconstructed over the words it heard, where the cited powers compose
+    /// to it exactly. `None` for a crystal with no ear (the court, the
+    /// cipher), or where the ear holds no deconstruction of it.
+    fn heard(
+        &self,
+        _motion: &crate::transducer::cga::Mv,
+    ) -> Option<Vec<(crate::transducer::address::Address, crate::transducer::address::Address, i64)>> {
+        None
+    }
+
     /// 42.6 AS AMENDED, L12 — THE PRESENTATION AT THE MEET OF THE LANES A
     /// TARGET OCCUPIES. `occupied` is one entry per lane the target carries
     /// content on, with that lane's own chart (`lane_charts_of`).

@@ -53,6 +53,11 @@ impl Entity {
             if self.epigenome.asked.contains(&key) || self.epigenome.presented.contains(&key) {
                 continue;
             }
+            // What the ear already deconstructs is said from the mind's own
+            // language: no court is asked for it.
+            if crate::transducer::family::Crystal::heard(&self.epigenome, &m).is_some() {
+                continue;
+            }
             self.epigenome.asked.insert(&key, ());
             crate::observe::count(&mut self.hearing, &crate::observe::HEARING, "presentation: asked");
             let ask = dialogue::encode_presentation_request(&voice, &m);

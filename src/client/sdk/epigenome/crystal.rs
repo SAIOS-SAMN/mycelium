@@ -107,6 +107,14 @@ impl crate::transducer::family::Crystal for Epigenome {
         self.presented.get(&key).cloned()
     }
 
+    /// 78.160 — what this mind's ear heard that composes to `motion`.
+    fn heard(
+        &self,
+        motion: &crate::transducer::cga::Mv,
+    ) -> Option<Vec<(crate::transducer::address::Address, crate::transducer::address::Address, i64)>> {
+        self.ear.deconstruct_sized(motion).filter(|d| d.composes).map(|d| d.cites)
+    }
+
     /// 1.8: THE PRESENTATION THIS MIND SPEAKS FROM on a versor's chart.
     /// The generator index is keyed by `versor_chart` — `[0,
     /// class_axes…]` — so a peeled key is a byte prefix and the read is
