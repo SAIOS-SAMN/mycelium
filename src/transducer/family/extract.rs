@@ -167,8 +167,15 @@ pub fn extract_rule_on(
             let reproduces = match spoken.get(&key) {
                 Some(&r) => r,
                 None => {
+                    // It must SAY something on every pair: a form that paints
+                    // nothing — a letter, which stands at no frame — is
+                    // within any grid vacuously, and glued it made a form
+                    // that "acts" and changed nothing, which the court
+                    // refused as leaving its remainder.
                     let r = family.iter().all(|(x, y)| {
-                        crystal.speak_form(s, x, &frame).is_some_and(|sp| painted_within_grid(&sp.painted, y))
+                        crystal
+                            .speak_form(s, x, &frame)
+                            .is_some_and(|sp| !sp.painted.is_empty() && painted_within_grid(&sp.painted, y))
                     });
                     spoken.insert(&key, r);
                     r

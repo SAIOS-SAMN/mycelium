@@ -70,12 +70,22 @@ impl Kernel {
     pub fn bind_task_family(&mut self, task: impl AsRef<[u8]>, train: Vec<crate::transducer::family::TrainPair>) {
         if !train.is_empty() {
             // 78.153 — a family that changes under a replay's cursor would
-            // resume a replay on pairs it did not start on: every cursor goes
-            // (they are volatile, and each replay starts over). A first
-            // binding is a change too: a replay begun with no family passed
-            // the family's phases unread.
+            // resume a replay on pairs it did not start on: THAT TASK'S cursors
+            // go (`replay_key` ends with the task). A first binding is a
+            // change too: a replay begun with no family passed the family's
+            // phases unread. Every other cursor stands — a solve's is keyed by
+            // its rule and the withheld pairs it was given, never by a task's
+            // binding. Dropping them all on each task listed restarted every
+            // resumed solve from nothing, and the court answered UNREAD for
+            // ever: 30 of 36 solve verdicts on the fleet (2026-10-10).
             if self.task_family.get(task.as_ref()) != Some(&train) {
-                self.replay_cursors = crate::network::nerve::Keyed::new();
+                let mut tail = Vec::new();
+                crate::transducer::address::put_key_bytes(&mut tail, task.as_ref());
+                let stale: Vec<Vec<u8>> =
+                    self.replay_cursors.scoped().map(|(k, _)| k).filter(|k| k.ends_with(&tail)).collect();
+                for k in stale {
+                    self.replay_cursors.remove(&k);
+                }
             }
             self.task_family.insert(task, train);
         }
