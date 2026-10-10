@@ -8,7 +8,7 @@
 //! and the mind absorbs the words as it absorbs a syllabus page, at their
 //! admitting stamps. A citation whose powers the court read composing to the
 //! motion is kept as a mineral (`Epigenome::presented`) and becomes the
-//! mind's own only where its derivation re-derives it (`presented_citation`).
+//! mind's own only where its derivation re-derives it (`heard_citation`).
 //! A motion is asked once per language: the asks clear when the atlas root
 //! moves, so the mind asks again once it holds more.
 
@@ -53,9 +53,9 @@ impl Entity {
             if self.epigenome.asked.contains(&key) || self.epigenome.presented.contains(&key) {
                 continue;
             }
-            // What the ear already deconstructs is said from the mind's own
-            // language: no court is asked for it.
-            if crate::transducer::family::Crystal::heard(&self.epigenome, &m).is_some() {
+            // What the mind's own ruled words already say is said from them:
+            // no court is asked for it.
+            if crate::transducer::family::Crystal::read_word(&self.epigenome, &m, &[]).is_some_and(|r| r.composes) {
                 continue;
             }
             self.epigenome.asked.insert(&key, ());

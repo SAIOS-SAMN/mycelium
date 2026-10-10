@@ -471,7 +471,7 @@ impl Epigenome {
         // 78.160 — THE EAR HEARS IT: the word's motions perceived by their
         // holes and windings.
         if let Some(f) = held.form() {
-            self.ear.hear_form(&at, f);
+            self.ear.hear_form(&at, f, true);
         }
         #[expect(clippy::disallowed_methods, reason = "rule 11 — one per resident word admitted: a count of what this process holds cannot pass a 64-bit usize")]
         let n = self.atlas_len.saturating_add(1);

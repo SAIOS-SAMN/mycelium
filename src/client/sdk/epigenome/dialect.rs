@@ -62,6 +62,9 @@ impl Epigenome {
             }
         };
         self.moduli_retract(&shed);
+        if let Some(f) = shed.form() {
+            self.ear.unfile_form(&shed.address(), f);
+        }
         // THE MIRROR OF THE ADMISSION, CHART FOR CHART. `stand_dialect_at`
         // admits through `axis_admit`, which for a sentence files each Word
         // vertex's word under every chart that vertex ACTS on. This retracted
@@ -119,6 +122,10 @@ impl Epigenome {
         let sentence = crate::transducer::element::Held::of(sentence);
         self.axis_admit(&sentence);
         self.moduli_admit(&sentence);
+        // 78.161 — the ear hears the mind's own words too, as its dialect.
+        if let Some(f) = sentence.form() {
+            self.ear.hear_form(&addr, f, false);
+        }
         // RM1 — its remainders, by where they were perceived.
         self.file_remainders(&addr, sentence.element());
         self.dialect.insert(

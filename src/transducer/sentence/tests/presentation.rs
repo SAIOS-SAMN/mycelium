@@ -45,6 +45,41 @@ fn a_held_slide_cites_a_longer_slide_on_its_hole_and_composes_to_it() {
 }
 
 #[test]
+fn a_slide_is_read_on_the_null_lane_and_a_held_slide_re_derives_its_cube() {
+    use crate::transducer::sentence::presentation::LANE_T;
+    let one = (vec![vec![1u8, 0, 0, 0, 0, 0, 0]], vec![vec![0u8, 1, 0, 0, 0, 0, 0]]);
+    let three = (vec![vec![1u8, 0, 0, 0, 0, 0, 0]], vec![vec![0u8, 0, 0, 1, 0, 0, 0]]);
+    let held = crate::transducer::family::cipher_form(&one.0, &one.1);
+    let mut p = Presentation::default();
+    let form = Address::from(vec![5u8; 8]);
+    assert!(p.hear_form(&form, &held, false) > 0, "the dialect's slide is heard");
+    let target = motions(&three.0, &three.1);
+    let [m] = target.as_slice() else { panic!("one moving vertex in the longer slide") };
+    let r = p.read_word(m, &[], false).expect("the slide reads");
+    assert!(r.composes, "the held slide cubed re-derives the longer one: different mathematics, one word");
+    assert_eq!(r.residue, [0; 4]);
+    assert!(r.cites.iter().all(|c| c.2 == LANE_T && c.3 == 3), "cited on the null lane at the count ratio, read {:?}", r.cites);
+    // A court replays only what it ruled: the dialect's slide is not cited
+    // where only ruled words may be, and the slide's hole is then residue on T.
+    let ruled = p.read_word(m, &[], true).expect("the slide reads");
+    assert!(!ruled.composes && ruled.cites.is_empty());
+    assert!(ruled.residue[LANE_T] > 0);
+}
+
+#[test]
+fn a_hue_cycle_and_its_powers_stand_on_one_mode_and_its_order_returns_it() {
+    use crate::transducer::sentence::presentation::{gauge_modes, gauge_power, GaugeMode};
+    let cycle = vec![(1u8, 2u8), (2, 3), (3, 1)];
+    let modes = gauge_modes(&cycle).expect("a cycle is a map");
+    assert_eq!(modes, vec![GaugeMode::Cycle(vec![1, 2, 3])]);
+    let squared = gauge_power(&cycle, 2);
+    assert_eq!(gauge_modes(&squared).expect("its square is a map"), vec![GaugeMode::Cycle(vec![1, 3, 2])], "the square turns the same hues the other way");
+    assert!(gauge_power(&cycle, 3).is_empty(), "the cycle's order returns every hue");
+    // A merge is a move on a path, not a cycle.
+    assert_eq!(gauge_modes(&[(4, 0)]).expect("a merge is a map"), vec![GaugeMode::Move(4, 0)]);
+}
+
+#[test]
 fn a_motion_on_a_hole_nothing_holds_is_residue_and_composes_to_nothing() {
     let across = (vec![vec![1u8, 0, 0, 0, 0]], vec![vec![0u8, 1, 0, 0, 0]]);
     let down = (vec![vec![1u8], vec![0], vec![0], vec![0]], vec![vec![0u8], vec![0], vec![1], vec![0]]);

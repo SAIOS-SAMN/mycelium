@@ -38,21 +38,15 @@ pub(crate) fn derive_against(
             // against is the representative member's: one member today, and
             // D7b decides what a multi-member vertex spells against.
             Vertex::Word { derivation, acts, .. } => {
-                let (gauge, carriage, chart) = match acts.scoped().next() {
-                    Some((_, a)) => (a.gauge.clone(), Some(a.carriage.as_ref().clone()), Some(a.chart.clone())),
-                    None => (Vec::new(), None, None),
+                let (gauge, carriage) = match acts.scoped().next() {
+                    Some((_, a)) => (a.gauge.clone(), Some(a.carriage.as_ref().clone())),
+                    None => (Vec::new(), None),
                 };
-                // A word is cited first by what it does — chart, whole
-                // motion, hue map — the one reading a still (recolouring)
-                // vertex has. 78.68 ROW 8 — a word that turns nothing is
-                // then asked of the held words by its motion: a slide or a
-                // dilation the mind holds a letter for is cited, never
-                // spelled anew. 78.160 P3 — and by what its court
-                // deconstructed the whole motion into, re-derived here.
-                let by_motion = match (derivation.is_spelled(), &carriage, &chart) {
-                    (true, Some(c), Some(chart)) => act_citation(crystal, chart, &derivation.rotor(), c, &gauge)
-                        .or_else(|| presented_citation(crystal, &derivation.rotor(), c))
-                        .or_else(|| motion_citation(crystal, budget, &derivation.rotor(), c, &gauge)),
+                // 78.161 — a word is said through the words the mind holds:
+                // its whole motion and its hue map read over them lane by
+                // lane, re-derived exactly, or what its court answered it.
+                let by_motion = match (derivation.is_spelled(), &carriage) {
+                    (true, Some(c)) => heard_citation(crystal, &derivation.rotor(), c, &gauge),
                     _ => None,
                 };
                 *derivation = match by_motion {
@@ -154,7 +148,7 @@ fn ring_answer(
 /// 78.68 ROW 8 — A DEFORMATION ANSWERED BY A HELD LETTER: the transport
 /// between the demand's two sides through the homeomorphic core
 /// (`carriage_with_core`, re-derived from the bodies, law 12), cited by its
-/// motion where it turns nothing (`motion_citation`) and divided by the
+/// motion and hue map over the held words (`heard_citation`) and divided by the
 /// ring where it turns (`factor_versor`) — and only a derivation that cites
 /// a held word answers: a bare spelling pairs bodies the mind never said.
 fn deformation_answer(
@@ -176,10 +170,8 @@ fn deformation_answer(
     let car = carriage_with_core(&a, &b, budget)?;
     let f = element::conformal_factors(&car.v).ok()?;
     let rotor = element::rotor_of_factors(&f).ok()?;
-    // The ear first: what the mind heard that composes to the core motion.
-    let derivation = match presented_citation(crystal, &rotor, &f.carriage())
-        .or_else(|| motion_citation(crystal, budget, &rotor, &car.v, &car.sigma))
-    {
+    // What the mind holds that says the core motion and its hue map.
+    let derivation = match heard_citation(crystal, &rotor, &f.carriage(), &car.sigma) {
         Some(d) => d,
         None => factor_versor(crystal, budget, &car.v, &car.sigma)?.ok()?,
     };

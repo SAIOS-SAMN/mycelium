@@ -5,12 +5,15 @@
 //! THE WIRE. A frame is `[0x43][sub u8][speaker 32][point: 0 | 1 TPoint
 //! 84][fields][sig 64]`, the signature ed25519 over `"mycelium chatter v1" ‖
 //! sub ‖ speaker ‖ point ‖ fields`. Sub-kinds:
-//! - SAY `[len u32 LE][tape]`: a word this mind stood, its tape whole;
-//! - AGREE `[word: len u16 LE, bytes][own: len u16 LE, bytes]`: the word
-//!   heard, and the hearer's own word coherent with it on every lane;
-//! - DIFFER `[word: len u16 LE, bytes][lanes u8]`: the word heard, and the
-//!   lanes `S, G, T, H` (bits 0–3) on which the hearer holds nothing it
-//!   perceived alike.
+//! - SAY `[said: len u16, bytes][count u16]` then per word `[vertex: len u16,
+//!   bytes][motion Mv][gauge: count u8, (from, to)…]`: what this mind stood,
+//!   each word by its whole Cl(4,1) motion and its hue map — the mathematics
+//!   a hearer re-derives, never a tape it would compare;
+//! - HEARD `[said: len u16, bytes][count u16]` then per word `[vertex: len
+//!   u16, bytes][composes u8][residue S, G, T, H: u64 LE each][cites count
+//!   u16]` and per citation `[form: len u16, bytes][vertex: len u16,
+//!   bytes][lane u8][exponent i64 LE]`: how the hearer said each word in its
+//!   own language, lane by lane, and what it could not.
 //!
 //! THE TRANSPORT. Each mind listens on its own address and posts every frame
 //! it hears into its inbox, drained by the mind on its stroke. A frame is
@@ -20,25 +23,43 @@
 //! minds on other hosts.
 
 use crate::chronometry::tuniversal::TPoint;
+use crate::transducer::cga::Mv;
 use std::io::{self, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
 
 pub const TAG: u8 = 0x43;
 pub const SAY: u8 = 0;
-pub const AGREE: u8 = 1;
-pub const DIFFER: u8 = 2;
+pub const HEARD: u8 = 1;
 const SIGNED: &[u8] = b"mycelium chatter v1";
+
+/// ONE WORD SAID: the vertex it is in the speaker's form, its whole motion,
+/// its hue map.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Spoken {
+    pub vertex: Vec<u8>,
+    pub motion: Mv,
+    pub gauge: Vec<(u8, u8)>,
+}
+
+/// ONE WORD HEARD, as the hearer said it in its own language: whether its
+/// citations re-derive the word exactly, the residue per lane `S, G, T, H`,
+/// and each citation — the hearer's form and vertex, the lane, the exponent.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HeardWord {
+    pub vertex: Vec<u8>,
+    pub composes: bool,
+    pub residue: [u64; 4],
+    pub cites: Vec<(Vec<u8>, Vec<u8>, u8, i64)>,
+}
 
 /// WHAT A FRAME SAYS.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Said {
-    /// A word the speaker stood, its tape whole.
-    Say { tape: Vec<u8> },
-    /// The word heard, and the hearer's own word coherent with it.
-    Agree { word: Vec<u8>, own: Vec<u8> },
-    /// The word heard, and the lanes the hearer holds nothing alike on.
-    Differ { word: Vec<u8>, lanes: u8 },
+    /// What the speaker stood (`said`, its address), word by word.
+    Say { said: Vec<u8>, words: Vec<Spoken> },
+    /// What the hearer re-derived of something said, word by word.
+    Heard { said: Vec<u8>, words: Vec<HeardWord> },
 }
 
 /// ONE FRAME: who said it, at which final point, and what.
@@ -62,12 +83,28 @@ fn take_short(b: &[u8], p: &mut usize) -> Option<Vec<u8>> {
     Some(out)
 }
 
+fn put_count(out: &mut Vec<u8>, n: usize) -> Option<()> {
+    out.extend_from_slice(&u16::try_from(n).ok()?.to_le_bytes());
+    Some(())
+}
+
+fn take_count(b: &[u8], p: &mut usize) -> Option<usize> {
+    let n = usize::from(u16::from_le_bytes(b.get(*p..*p + 2)?.try_into().ok()?));
+    *p += 2;
+    Some(n)
+}
+
+fn take_u64(b: &[u8], p: &mut usize) -> Option<u64> {
+    let x = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+    *p += 8;
+    Some(x)
+}
+
 impl Chatter {
     fn sub(&self) -> u8 {
         match self.said {
             Said::Say { .. } => SAY,
-            Said::Agree { .. } => AGREE,
-            Said::Differ { .. } => DIFFER,
+            Said::Heard { .. } => HEARD,
         }
     }
 
@@ -84,17 +121,36 @@ impl Chatter {
             None => out.push(0),
         }
         match &self.said {
-            Said::Say { tape } => {
-                out.extend_from_slice(&u32::try_from(tape.len()).ok()?.to_le_bytes());
-                out.extend_from_slice(tape);
+            Said::Say { said, words } => {
+                put_short(&mut out, said)?;
+                put_count(&mut out, words.len())?;
+                for w in words {
+                    put_short(&mut out, &w.vertex)?;
+                    w.motion.to_bytes(&mut out);
+                    out.push(u8::try_from(w.gauge.len()).ok()?);
+                    for &(a, b) in &w.gauge {
+                        out.push(a);
+                        out.push(b);
+                    }
+                }
             }
-            Said::Agree { word, own } => {
-                put_short(&mut out, word)?;
-                put_short(&mut out, own)?;
-            }
-            Said::Differ { word, lanes } => {
-                put_short(&mut out, word)?;
-                out.push(*lanes);
+            Said::Heard { said, words } => {
+                put_short(&mut out, said)?;
+                put_count(&mut out, words.len())?;
+                for w in words {
+                    put_short(&mut out, &w.vertex)?;
+                    out.push(u8::from(w.composes));
+                    for r in w.residue {
+                        out.extend_from_slice(&r.to_le_bytes());
+                    }
+                    put_count(&mut out, w.cites.len())?;
+                    for (form, vertex, lane, e) in &w.cites {
+                        put_short(&mut out, form)?;
+                        put_short(&mut out, vertex)?;
+                        out.push(*lane);
+                        out.extend_from_slice(&e.to_le_bytes());
+                    }
+                }
             }
         }
         Some(out)
@@ -143,21 +199,50 @@ impl Chatter {
         };
         let said = match sub {
             SAY => {
-                let n = usize::try_from(u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?)).ok()?;
-                let tape = body.get(p + 4..p + 4 + n)?.to_vec();
-                p += 4 + n;
-                Said::Say { tape }
+                let said = take_short(body, &mut p)?;
+                let n = take_count(body, &mut p)?;
+                let mut words = Vec::new();
+                for _ in 0..n {
+                    let vertex = take_short(body, &mut p)?;
+                    let motion = Mv::from_bytes(body, &mut p)?;
+                    let k = usize::from(*body.get(p)?);
+                    p += 1;
+                    let mut gauge = Vec::with_capacity(k);
+                    for _ in 0..k {
+                        gauge.push((*body.get(p)?, *body.get(p + 1)?));
+                        p += 2;
+                    }
+                    words.push(Spoken { vertex, motion, gauge });
+                }
+                Said::Say { said, words }
             }
-            AGREE => {
-                let word = take_short(body, &mut p)?;
-                let own = take_short(body, &mut p)?;
-                Said::Agree { word, own }
-            }
-            DIFFER => {
-                let word = take_short(body, &mut p)?;
-                let lanes = *body.get(p)?;
-                p += 1;
-                Said::Differ { word, lanes }
+            HEARD => {
+                let said = take_short(body, &mut p)?;
+                let n = take_count(body, &mut p)?;
+                let mut words = Vec::new();
+                for _ in 0..n {
+                    let vertex = take_short(body, &mut p)?;
+                    let composes = match *body.get(p)? {
+                        0 => false,
+                        1 => true,
+                        _ => return None,
+                    };
+                    p += 1;
+                    let residue = [take_u64(body, &mut p)?, take_u64(body, &mut p)?, take_u64(body, &mut p)?, take_u64(body, &mut p)?];
+                    let m = take_count(body, &mut p)?;
+                    let mut cites = Vec::new();
+                    for _ in 0..m {
+                        let form = take_short(body, &mut p)?;
+                        let v = take_short(body, &mut p)?;
+                        let lane = *body.get(p)?;
+                        p += 1;
+                        let e = i64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
+                        p += 8;
+                        cites.push((form, v, lane, e));
+                    }
+                    words.push(HeardWord { vertex, composes, residue, cites });
+                }
+                Said::Heard { said, words }
             }
             _ => return None,
         };
@@ -301,10 +386,13 @@ mod tests {
         let k = key(7);
         let speaker = k.verifying_key().to_bytes();
         let point = TPoint { h: 9, lanes: [1, 2, 3, 4], k: 5, ..TPoint::default() };
+        let one = Mv::scalar(num_rational::BigRational::from_integer(1.into()));
         for said in [
-            Said::Say { tape: vec![1, 2, 3] },
-            Said::Agree { word: vec![4; 40], own: vec![5; 41] },
-            Said::Differ { word: vec![6; 10], lanes: 0b1010 },
+            Said::Say { said: vec![1, 2, 3], words: vec![Spoken { vertex: vec![4; 40], motion: one.clone(), gauge: vec![(1, 2), (2, 1)] }] },
+            Said::Heard {
+                said: vec![6; 10],
+                words: vec![HeardWord { vertex: vec![4; 40], composes: true, residue: [0, 1, 0, 2], cites: vec![(vec![7; 33], vec![8; 34], 1, -3)] }],
+            },
         ] {
             let c = Chatter { speaker, point: Some(point), said };
             let f = c.sign(&k).expect("signed");
@@ -315,7 +403,7 @@ mod tests {
             assert_eq!(Chatter::open(&forged), None, "a changed byte does not verify");
         }
         // Signed by another key than the speaker it names: refused at signing.
-        let c = Chatter { speaker, point: None, said: Said::Say { tape: vec![] } };
+        let c = Chatter { speaker, point: None, said: Said::Say { said: vec![], words: vec![] } };
         assert_eq!(c.sign(&key(8)), None);
     }
 
@@ -323,7 +411,7 @@ mod tests {
     fn a_frame_sent_to_a_post_is_heard_there() {
         let post = Post::open("127.0.0.1:0").expect("listen");
         let k = key(3);
-        let c = Chatter { speaker: k.verifying_key().to_bytes(), point: None, said: Said::Say { tape: vec![9; 100] } };
+        let c = Chatter { speaker: k.verifying_key().to_bytes(), point: None, said: Said::Say { said: vec![9; 100], words: vec![] } };
         send(post.addr(), &c.sign(&k).expect("signed")).expect("sent");
         let mut heard = Vec::new();
         for _ in 0..200 {

@@ -1,38 +1,37 @@
-// 78.161 — THE MIND'S CHATTER: it says what it stands to other minds, hears
-// what they say, re-derives each word on its own perception lane by lane, and
-// answers AGREE or DIFFER; a word another mind agreed to is agreed language,
-// and only agreed letters go to the court.
+// 78.161 — THE MIND'S CHATTER: it says what it stands to other minds, word by
+// word as each word's whole motion and hue map; a hearer says each word again
+// in its own language and answers with that derivation; a word another mind
+// re-derives is where the two meet, and only agreed letters go to the court.
 //
-//! A heard word is never taken: it is lifted (78.61 C1) and asked of this
-//! mind's own held language at the lifted coordinates, one keyed read
-//! (`Epigenome::by_perception`). Coherent on every lane, the mind names its own
-//! word; otherwise it names the lanes it holds nothing alike on
-//! (`Epigenome::by_lane`). Nothing heard enters the genome or the dialect.
+//! Hearing is comprehension (1.7): a heard word is read over everything the
+//! hearer holds, its genome and its dialect, lane by lane
+//! (`Presentation::read_word`), and re-derived exactly or not at all. Two
+//! minds reach one word by different derivations (1.5); nothing is compared
+//! as bytes, and nothing heard enters the genome or the dialect.
 
-use crate::client::sdk::chatter::{self, Chatter, Said};
+use crate::client::sdk::chatter::{self, Chatter, HeardWord, Said, Spoken};
 use crate::client::sdk::*;
 use crate::network::nerve::Keyed;
 
 /// WHAT THE MIND'S CHATTER CAME TO, cumulative.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ChatTally {
-    /// Words said, and frames sent (a word to every peer).
+    /// Things said (each with its words), and frames sent and not sent.
     pub said: u64,
     pub sent: u64,
-    /// Frames that did not reach a peer.
     pub unsent: u64,
-    /// Words heard; of them, agreed to and differed on; heard words this mind
-    /// could not perceive (no form, nothing lifted, or unread).
+    /// Words heard; of them, re-derived whole in this mind's language, cited
+    /// in part, and not read at all.
     pub heard: u64,
-    pub agreed_to: u64,
-    pub differed_on: u64,
-    pub unperceived: u64,
-    /// Agreements and divergences this mind's own words received.
-    pub agreements: u64,
-    pub divergences: u64,
-    /// This mind's words that became agreed language, and of them the letters
-    /// that then went to the court.
-    pub agreed_words: u64,
+    pub rederived: u64,
+    pub partial: u64,
+    pub unread: u64,
+    /// This mind's words another mind re-derived, and those it did not.
+    pub met: u64,
+    pub unmet: u64,
+    /// This mind's things another mind re-derived word for word — agreed
+    /// language — and of them the letters that then went to the court.
+    pub agreed: u64,
     pub to_court: u64,
     /// Frames that did not open (unsigned, malformed, another tag).
     pub refused: u64,
@@ -41,35 +40,46 @@ pub struct ChatTally {
 impl ChatTally {
     pub fn line(&self) -> String {
         format!(
-            "chatter: said {} (sent {}, unsent {}) · heard {} (agreed {}, differed {}, unperceived {}) · received agree {} differ {} · agreed words {} · to court {} · refused {}",
-            self.said,
-            self.sent,
-            self.unsent,
-            self.heard,
-            self.agreed_to,
-            self.differed_on,
-            self.unperceived,
-            self.agreements,
-            self.divergences,
-            self.agreed_words,
-            self.to_court,
-            self.refused
+            "chatter: said {} (sent {}, unsent {}) · heard words {} (re-derived {}, in part {}, unread {}) · own words met {} unmet {} · agreed {} · to court {} · refused {}",
+            self.said, self.sent, self.unsent, self.heard, self.rederived, self.partial, self.unread, self.met, self.unmet, self.agreed, self.to_court, self.refused
         )
     }
 }
 
+/// ONE THING THIS MIND SAID: how many words it has, and per mind that answered,
+/// how many of them that mind re-derived.
+struct Union {
+    words: u64,
+    by: Keyed<u64>,
+}
+
 /// THE MIND'S CHATTER: its post, where its peers are found, and the union
-/// each of its words has reached.
+/// each thing it said has reached.
 pub struct Chat {
     post: chatter::Post,
     dir: std::path::PathBuf,
-    /// Each of this mind's words said, by address → the minds that agreed to
-    /// it (their voice → their own coherent word).
-    union: Keyed<Keyed<Vec<u8>>>,
+    union: Keyed<Union>,
     /// Letters stood and said, waiting for a union before the court hears
     /// them (78.161 item 3), by address.
     waiting: Keyed<crate::transducer::element::Element>,
     pub tally: ChatTally,
+}
+
+/// THE WORDS OF A FORM, each as its whole motion and its hue map.
+fn spoken_of(f: &crate::transducer::sentence::Form) -> Vec<Spoken> {
+    use crate::transducer::sentence::presentation::vertex_motion;
+    use crate::transducer::sentence::Vertex;
+    let mut out = Vec::new();
+    for (_, v) in f.vertices.scoped() {
+        let Vertex::Word { address, acts, .. } = v else { continue };
+        let Some(motion) = vertex_motion(v) else { continue };
+        let gauge = match acts.scoped().next() {
+            Some((_, a)) => a.gauge.clone(),
+            None => Vec::new(),
+        };
+        out.push(Spoken { vertex: address.as_bytes().to_vec(), motion, gauge });
+    }
+    out
 }
 
 impl Entity {
@@ -110,28 +120,31 @@ impl Entity {
         }
     }
 
-    /// SAY A WORD THIS MIND STOOD to every mind it knows.
+    /// SAY WHAT THIS MIND STOOD to every mind it knows: its words, each as
+    /// its whole motion and its hue map. Said once; its union is then read.
     pub(crate) fn say(&mut self, e: &crate::transducer::element::Element) {
-        if self.chat.is_none() {
+        let addr = e.address();
+        if self.chat.as_ref().is_none_or(|c| c.union.contains(addr.as_bytes())) {
             return;
         }
-        // A word already said is not said again: its union is being read.
-        if self.chat.as_ref().is_some_and(|c| c.union.contains(e.address().as_bytes())) {
+        let Some(f) = crate::transducer::sentence::from_element_form(e) else { return };
+        let words = spoken_of(&f);
+        if words.is_empty() {
             return;
         }
-        let Some(tape) = e.to_bytes() else { return };
-        let Some(frame) = self.chatter_frame(Said::Say { tape }) else { return };
+        let n = words.len() as u64;
+        let Some(frame) = self.chatter_frame(Said::Say { said: addr.as_bytes().to_vec(), words }) else { return };
         if let Some(chat) = self.chat.as_mut() {
             chat.tally.said += 1;
-            chat.union.insert(e.address(), Keyed::new());
+            chat.union.insert(&addr, Union { words: n, by: Keyed::new() });
         }
         self.chatter_send(&frame, None);
     }
 
     /// 78.161 item 3 — A LETTER WAITS FOR ITS UNION. Where this mind chatters
     /// and has peers, a letter it coined stands in its dialect and is said to
-    /// them, and the court hears it once another mind agreed. `false` where
-    /// there is no chatter or no peer: the caller speaks it as before.
+    /// them, and the court hears it once another mind re-derived it. `false`
+    /// where there is no chatter or no peer: the caller speaks it as before.
     pub(crate) fn hold_for_union(&mut self, e: &crate::transducer::element::Element) -> bool {
         let voice = self.session.kernel().voice();
         let has_peers = self.chat.as_ref().is_some_and(|c| !chatter::peers(&c.dir, &voice).is_empty());
@@ -151,9 +164,6 @@ impl Entity {
     }
 
     /// THE CHATTER STROKE: every frame heard since the last, one spend each.
-    /// A word is re-derived and answered; an answer to this mind's own word is
-    /// filed on its union, and a waiting letter another mind agreed to goes
-    /// to the court.
     pub fn chatter_stroke(&mut self, budget: &mut crate::physics::Budget) {
         let Some(frames) = self.chat.as_ref().map(|c| c.post.take()) else { return };
         let voice = self.session.kernel().voice();
@@ -171,85 +181,78 @@ impl Entity {
                 continue;
             }
             match c.said {
-                Said::Say { tape } => self.hear_word(&c.speaker, &tape),
-                Said::Agree { word, own } => self.agreed(&c.speaker, &word, own, budget),
-                Said::Differ { .. } => {
-                    if let Some(chat) = self.chat.as_mut() {
-                        chat.tally.divergences += 1;
-                    }
-                }
+                Said::Say { said, words } => self.hear_said(&c.speaker, said, &words),
+                Said::Heard { said, words } => self.heard_back(&c.speaker, &said, &words, budget),
             }
         }
     }
 
-    /// A WORD HEARD, RE-DERIVED: lifted and asked of this mind's own held
-    /// language. The answer goes to the speaker at the rendezvous.
-    fn hear_word(&mut self, speaker: &[u8; 32], tape: &[u8]) {
-        let mut pos = 0usize;
-        let heard = crate::transducer::element::Element::from_bytes(tape, &mut pos)
-            .map(crate::transducer::element::Held::of);
-        let keys = heard.as_ref().and_then(|h| h.form()).and_then(crate::client::sdk::epigenome::atlas::perception_keys);
-        let Some(chat) = self.chat.as_mut() else { return };
-        chat.tally.heard += 1;
-        let (Some(heard), Some((whole, lanes))) = (heard, keys) else {
-            chat.tally.unperceived += 1;
-            return;
-        };
-        let word = heard.address().as_bytes().to_vec();
-        // Coherent on every lane: the least of this mind's own words perceived
-        // so — content order (rule 15), any one of them is the agreement.
-        let own: Option<Vec<u8>> = self
-            .epigenome
-            .by_perception
-            .get(&whole)
-            .and_then(|bucket| bucket.scoped().map(|(a, ())| a.to_vec()).next());
-        let said = match own {
-            Some(own) => {
-                chat.tally.agreed_to += 1;
-                Said::Agree { word, own }
-            }
-            None => {
-                chat.tally.differed_on += 1;
-                let mut bits = 0u8;
-                for (l, k) in lanes.iter().enumerate() {
-                    let held = match (k, self.epigenome.by_lane.get(l)) {
-                        (Some(k), Some(ix)) => ix.get(k).is_some(),
-                        (None, _) => true,
-                        _ => false,
-                    };
-                    if !held {
-                        bits |= 1 << l;
+    /// WHAT ANOTHER MIND SAID, SAID AGAIN IN THIS ONE'S LANGUAGE: each word
+    /// read over all this mind holds, lane by lane, and the derivation sent
+    /// back to the speaker.
+    fn hear_said(&mut self, speaker: &[u8; 32], said: Vec<u8>, words: &[Spoken]) {
+        let mut out = Vec::with_capacity(words.len());
+        let mut t = ChatTally::default();
+        for w in words {
+            t.heard += 1;
+            match self.epigenome.ear.read_word(&w.motion, &w.gauge, false) {
+                Some(r) => {
+                    match (r.composes, r.cites.is_empty()) {
+                        (true, _) => t.rederived += 1,
+                        (false, false) => t.partial += 1,
+                        (false, true) => {}
                     }
+                    out.push(HeardWord {
+                        vertex: w.vertex.clone(),
+                        composes: r.composes,
+                        residue: r.residue,
+                        cites: r
+                            .cites
+                            .into_iter()
+                            .filter_map(|(f, v, l, e)| Some((f.into_vec(), v.into_vec(), u8::try_from(l).ok()?, e)))
+                            .collect(),
+                    });
                 }
-                Said::Differ { word, lanes: bits }
+                None => {
+                    t.unread += 1;
+                    out.push(HeardWord { vertex: w.vertex.clone(), composes: false, residue: [0; 4], cites: Vec::new() });
+                }
             }
-        };
+        }
+        let Some(chat) = self.chat.as_mut() else { return };
+        chat.tally.heard += t.heard;
+        chat.tally.rederived += t.rederived;
+        chat.tally.partial += t.partial;
+        chat.tally.unread += t.unread;
         let to = chatter::peer_of(&chat.dir, speaker);
-        let Some(frame) = self.chatter_frame(said) else { return };
+        let Some(frame) = self.chatter_frame(Said::Heard { said, words: out }) else { return };
         if let Some(to) = to {
             self.chatter_send(&frame, Some(&to));
         }
     }
 
-    /// ANOTHER MIND AGREED TO A WORD OF THIS MIND'S: filed on its union. The
-    /// first agreement makes it agreed language, and a letter waiting for its
-    /// union goes to the court.
-    fn agreed(&mut self, who: &[u8; 32], word: &[u8], own: Vec<u8>, budget: &mut crate::physics::Budget) {
+    /// ANOTHER MIND SAID BACK WHAT IT RE-DERIVED of something this one said:
+    /// every word it re-derived is a word the two minds meet on. Once one mind
+    /// has re-derived every word of it, it is agreed language, and a letter
+    /// waiting for its union goes to the court.
+    fn heard_back(&mut self, who: &[u8; 32], said: &[u8], words: &[HeardWord], budget: &mut crate::physics::Budget) {
         let Some(chat) = self.chat.as_mut() else { return };
-        chat.tally.agreements += 1;
-        let first = match chat.union.get_mut(word) {
-            Some(u) => {
-                let first = u.is_empty();
-                u.insert(who, own);
-                first
-            }
-            None => return,
+        let met = words.iter().filter(|w| w.composes).count() as u64;
+        chat.tally.met += met;
+        chat.tally.unmet += words.len() as u64 - met;
+        let Some(u) = chat.union.get_mut(said) else { return };
+        let before = u.by.scoped().any(|(_, &n)| n >= u.words);
+        let n = match u.by.get(who) {
+            Some(&held) => held.max(met),
+            None => met,
         };
-        if !first {
+        u.by.insert(who, n);
+        let agreed = n >= u.words;
+        if before || !agreed {
             return;
         }
-        chat.tally.agreed_words += 1;
-        let Some(letter) = chat.waiting.remove(word) else { return };
+        chat.tally.agreed += 1;
+        let Some(letter) = chat.waiting.remove(said) else { return };
         chat.tally.to_court += 1;
         let _ = self.speak(std::slice::from_ref(&letter), budget);
     }

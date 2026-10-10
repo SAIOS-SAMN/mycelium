@@ -99,11 +99,6 @@ pub trait Crystal {
     fn on_act(&self, _act: &[u8]) -> Vec<(&Element, &Form, Standing)> {
         Vec::new()
     }
-    /// The held word vertices acting at one coordinate (`act_key`), as
-    /// (form, vertex): what a vertex acting exactly so is cited by.
-    fn acted(&self, _act: &[u8]) -> Vec<(crate::transducer::address::Address, crate::transducer::address::Address)> {
-        Vec::new()
-    }
     /// Keyed read of a crystallized form by address. No scan, AND NO CLONE
     /// (Z2 item 2, rule 17): a reader hands back the stratum it holds, and
     /// a caller that resolves one citation 578 times must not pay a form
@@ -171,14 +166,15 @@ pub trait Crystal {
         None
     }
 
-    /// 78.160 — WHAT THIS MIND'S EAR HEARD THAT SAYS A MOTION: the motion
-    /// deconstructed over the words it heard, where the cited powers compose
-    /// to it exactly. `None` for a crystal with no ear (the court, the
-    /// cipher), or where the ear holds no deconstruction of it.
-    fn heard(
+    /// 78.161 — A WORD READ OVER THE RULED WORDS THIS MIND HOLDS, lane by lane
+    /// (`presentation::Reading`): its whole motion and its hue map, each mode
+    /// cited where a ruled word stands on it at an exponent. `None` for a
+    /// crystal with no ear (the court, the cipher).
+    fn read_word(
         &self,
         _motion: &crate::transducer::cga::Mv,
-    ) -> Option<Vec<(crate::transducer::address::Address, crate::transducer::address::Address, i64)>> {
+        _gauge: &[(u8, u8)],
+    ) -> Option<crate::transducer::sentence::presentation::Reading> {
         None
     }
 

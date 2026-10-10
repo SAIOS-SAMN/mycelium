@@ -17,22 +17,173 @@ use crate::transducer::cga::Mv;
 use num_rational::BigRational;
 
 /// ONE GENERATOR OF THE PRESENTATION: the form and the word vertex inside it,
-/// the vertex's whole motion, and that motion's coordinates.
+/// the vertex's whole motion and that motion's coordinates, its hue map, and
+/// whether a court ruled it (the genome) or the mind stands it (its dialect).
 #[derive(Clone, Debug)]
 pub struct Generator {
     pub form: Address,
     pub vertex: Address,
     pub motion: Mv,
     pub coords: Coordinates,
+    pub gauge: Vec<(u8, u8)>,
+    pub ruled: bool,
 }
 
-/// THE HELD GENERATORS BY THE HOLES THEY STAND ON, keyed by
-/// [`super::generator_key`] — the same key the lane covers file a generator
-/// under, so one generator is one entry whatever reaches it.
+/// THE HELD GENERATORS BY THE HOLES THEY STAND ON, and by the modes of their
+/// hue maps, keyed by [`super::generator_key`] — the same key the lane covers
+/// file a generator under, so one generator is one entry whatever reaches it.
 #[derive(Default)]
 pub struct Presentation {
     holes: HoleIndex,
+    gauges: Keyed<Keyed<()>>,
     held: Keyed<Generator>,
+}
+
+/// THE LANES A WORD IS READ ON (law 5): `S` the boosts and dilations, `G` the
+/// hue map, `T` the null slides, `H` the turns — a mode by its kind, never a
+/// sum of lanes.
+pub const LANE_S: usize = 0;
+pub const LANE_G: usize = 1;
+pub const LANE_T: usize = 2;
+pub const LANE_H: usize = 3;
+
+/// The lane a mode of a motion stands on, by its kind (78.71 F5).
+pub fn lane_of(kind: crate::network::nerve::coord::BivectorKind) -> Option<usize> {
+    use crate::network::nerve::coord::BivectorKind;
+    match kind {
+        BivectorKind::Elliptic => Some(LANE_H),
+        BivectorKind::Hyperbolic => Some(LANE_S),
+        BivectorKind::Parabolic => Some(LANE_T),
+        BivectorKind::Trivial => None,
+    }
+}
+
+/// ONE MODE OF A HUE MAP: a cycle it closes, its hues in the order the map
+/// carries them from the least; or one hue carried along a path that does not
+/// close (a merge, a hue sent to the void).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum GaugeMode {
+    Cycle(Vec<u8>),
+    Move(u8, u8),
+}
+
+impl GaugeMode {
+    /// THE MODE'S KEY: a cycle by the hues it stands on, in hue order (its
+    /// support, where any power of it stands too); a move by itself.
+    fn key(&self) -> Vec<u8> {
+        match self {
+            GaugeMode::Cycle(hues) => {
+                let mut k = vec![1u8];
+                let mut support = hues.clone();
+                support.sort_unstable();
+                k.extend(support);
+                k
+            }
+            GaugeMode::Move(a, b) => vec![0u8, *a, *b],
+        }
+    }
+}
+
+/// THE MODES OF A HUE MAP, each once: every cycle it closes and every move on
+/// a path that does not close. `None` where the listing sends a hue two ways —
+/// no map (rule 11). Each hue is followed at most around its own cycle, the
+/// palette's ten (a boundary, rule 10).
+pub fn gauge_modes(g: &[(u8, u8)]) -> Option<Vec<GaugeMode>> {
+    let t = super::hue_table(g)?;
+    let image = |h: u8| t.get(usize::from(h)).copied().flatten();
+    let mut out: Keyed<GaugeMode> = Keyed::new();
+    for &(from, to) in g {
+        if from == to {
+            continue;
+        }
+        // Around from's orbit under the map, until it returns or leaves.
+        let mut cycle = vec![from];
+        let mut at = to;
+        let mut closes = false;
+        while cycle.len() <= t.len() {
+            if at == from {
+                closes = true;
+                break;
+            }
+            cycle.push(at);
+            match image(at) {
+                Some(next) if next != at => at = next,
+                _ => break,
+            }
+        }
+        let mode = match closes {
+            true => {
+                let least = cycle.iter().copied().fold(u8::MAX, u8::min);
+                let start = cycle.iter().position(|&h| h == least)?;
+                cycle.rotate_left(start);
+                GaugeMode::Cycle(cycle)
+            }
+            false => GaugeMode::Move(from, to),
+        };
+        out.insert(mode.key(), mode);
+    }
+    Some(out.scoped().map(|(_, m)| m.clone()).collect())
+}
+
+/// THE EXPONENT `e` WITH `mode = held^e` ON ONE GAUGE MODE: a cycle on the
+/// same hues is a power of another exactly where the target carries the held
+/// cycle's least hue `e` steps along it and every hue alike; a move only as
+/// itself. Read along the cycle, its own length (a boundary).
+fn gauge_exponent(mode: &GaugeMode, held: &GaugeMode) -> Option<i64> {
+    match (mode, held) {
+        (GaugeMode::Move(a, b), GaugeMode::Move(c, d)) => (a == c && b == d).then_some(1),
+        (GaugeMode::Cycle(m), GaugeMode::Cycle(h)) => {
+            let n = h.len();
+            if m.len() != n || n < 2 {
+                return None;
+            }
+            let pos = |x: u8| h.iter().position(|&y| y == x);
+            // Where the target carries h[0], read off its own listing order.
+            let i0 = pos(m[0])?;
+            let to = m.get(1).copied()?;
+            let e = (pos(to)? + n - i0) % n;
+            if e == 0 {
+                return None;
+            }
+            let ok = (0..n).all(|i| {
+                let from = m[i];
+                let next = m[(i + 1) % n];
+                pos(from).is_some_and(|p| h[(p + e) % n] == next)
+            });
+            ok.then(|| i64::try_from(e).ok()).flatten()
+        }
+        _ => None,
+    }
+}
+
+/// A HUE MAP RAISED TO `e`: composed with itself `e` times (its inverse for a
+/// negative `e`) — at most its own order, the palette's ten.
+pub fn gauge_power(g: &[(u8, u8)], e: i64) -> Vec<(u8, u8)> {
+    let base = match e < 0 {
+        true => super::transport::gauge_invert(g),
+        false => g.to_vec(),
+    };
+    let mut out: Vec<(u8, u8)> = Vec::new();
+    for _ in 0..e.unsigned_abs() {
+        out = super::transport::compose_gauge(&base, &out);
+    }
+    out
+}
+
+/// 78.161 — A WORD READ OVER WHAT IS HELD, LANE BY LANE: each mode of its
+/// whole motion and each mode of its hue map cited to a held generator that
+/// stands on it, at an exponent, on the lane the mode belongs to; what no held
+/// generator reaches is that lane's residue. It COMPOSES where nothing is left
+/// on any lane and the citations' powers multiply back to the word exactly —
+/// the motion projectively (1.5), the hue map as a map. Two minds meet where
+/// one re-derives the other's word: the same word reached by different
+/// mathematics.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Reading {
+    /// Each citation: the form, the word vertex in it, the lane, the exponent.
+    pub cites: Vec<(Address, Address, usize, i64)>,
+    pub residue: [u64; 4],
+    pub composes: bool,
 }
 
 /// A MOTION DECONSTRUCTED OVER A PRESENTATION: the generators cited, each
@@ -130,42 +281,137 @@ impl Presentation {
     pub fn file_form(&mut self, form: &Address, f: &Form, budget: &mut crate::physics::Budget) -> usize {
         let mut filed = 0usize;
         for (_, v) in f.vertices.scoped() {
-            let Vertex::Word { address, .. } = v else { continue };
-            let Some(motion) = vertex_motion(v).filter(|m| !is_still(m)) else { continue };
-            let Ok(coords) = Coordinates::of(&motion, budget) else { continue };
-            if coords.holes.is_empty() {
-                continue;
-            }
-            let key = super::generator_key(form, address);
-            self.holes.file(&key, &coords);
-            self.held.insert(&key, Generator { form: form.clone(), vertex: address.clone(), motion, coords });
-            filed += 1;
+            let Some(motion) = vertex_motion(v) else { continue };
+            let coords = match is_still(&motion) {
+                true => Coordinates { holes: Vec::new() },
+                false => match Coordinates::of(&motion, budget) {
+                    Ok(c) => c,
+                    Err(_) => continue,
+                },
+            };
+            filed += usize::from(self.file_vertex(form, v, motion, coords, true));
         }
         filed
+    }
+
+    /// FILE ONE WORD VERTEX under the holes its motion winds about and the
+    /// modes of its hue map. A vertex that moves nothing and recolours nothing
+    /// has nothing to be read by and is not filed.
+    fn file_vertex(&mut self, form: &Address, v: &Vertex, motion: Mv, coords: Coordinates, ruled: bool) -> bool {
+        let Vertex::Word { address, acts, .. } = v else { return false };
+        let gauge = match acts.scoped().next() {
+            Some((_, a)) => a.gauge.clone(),
+            None => Vec::new(),
+        };
+        // A listing that is no map has no modes to be read by (rule 11).
+        let Some(modes) = gauge_modes(&gauge) else { return false };
+        if coords.holes.is_empty() && modes.is_empty() {
+            return false;
+        }
+        let key = super::generator_key(form, address);
+        self.holes.file(&key, &coords);
+        for m in &modes {
+            self.gauges.nested_insert(m.key(), &key, ());
+        }
+        self.held.insert(&key, Generator { form: form.clone(), vertex: address.clone(), motion, coords, gauge, ruled });
+        true
     }
 
     /// 78.160 — THE EAR: a form HEARD, each word vertex's motion perceived by
     /// its own modes on a stroke sized by what those modes need
     /// (`cga::modes_need`, 78.111 C1b) — never by a stroke sized for
-    /// something else — and filed under its holes. What the ear cannot read
-    /// (no base action, a motion past its carrier) is not filed.
-    pub fn hear_form(&mut self, form: &Address, f: &Form) -> usize {
+    /// something else — and filed under its holes and its hue map's modes;
+    /// `ruled` where a court ruled the form, else the mind's dialect. What the
+    /// ear cannot read (no base action, a motion past its carrier) is not
+    /// filed.
+    pub fn hear_form(&mut self, form: &Address, f: &Form, ruled: bool) -> usize {
         let mut heard = 0usize;
         for (_, v) in f.vertices.scoped() {
-            let Vertex::Word { address, .. } = v else { continue };
-            let Some(motion) = vertex_motion(v).filter(|m| !is_still(m)) else { continue };
-            let Some(need) = crate::transducer::cga::modes_need(&motion) else { continue };
-            let mut budget = crate::physics::Physics::default().stroke_n(need);
-            let Ok(coords) = Coordinates::of(&motion, &mut budget) else { continue };
-            if coords.holes.is_empty() {
-                continue;
-            }
-            let key = super::generator_key(form, address);
-            self.holes.file(&key, &coords);
-            self.held.insert(&key, Generator { form: form.clone(), vertex: address.clone(), motion, coords });
-            heard += 1;
+            let Some(motion) = vertex_motion(v) else { continue };
+            let coords = match is_still(&motion) {
+                true => Coordinates { holes: Vec::new() },
+                false => {
+                    let Some(need) = crate::transducer::cga::modes_need(&motion) else { continue };
+                    let mut budget = crate::physics::Physics::default().stroke_n(need);
+                    match Coordinates::of(&motion, &mut budget) {
+                        Ok(c) => c,
+                        Err(_) => continue,
+                    }
+                }
+            };
+            heard += usize::from(self.file_vertex(form, v, motion, coords, ruled));
         }
         heard
+    }
+
+    /// 78.161 — READ A WORD OVER WHAT IS HELD, LANE BY LANE ([`Reading`]): its
+    /// whole motion hole by hole (each hole on the lane its kind names), its
+    /// hue map mode by mode (on `G`), over every generator held, or only the
+    /// ruled ones where `ruled_only` (what a court can replay). The motion's
+    /// modes are read on the stroke they need. `None` where the motion's modes
+    /// do not read, or its hue listing is no map (rule 11).
+    pub fn read_word(&self, motion: &Mv, gauge: &[(u8, u8)], ruled_only: bool) -> Option<Reading> {
+        let eligible = |g: &Generator| g.ruled || !ruled_only;
+        let mut out = Reading::default();
+        let one = || Mv::scalar(BigRational::from_integer(1.into()));
+        // THE MOTION, hole by hole.
+        let mut motion_ok = true;
+        if !is_still(motion) {
+            let need = crate::transducer::cga::modes_need(motion)?;
+            let mut budget = crate::physics::Physics::default().stroke_n(need);
+            let coords = Coordinates::of(motion, &mut budget).ok()?;
+            let d = self.holes.deconstruct(&coords, |k| self.held.get(k).filter(|g| eligible(g)).map(|g| &g.coords));
+            let lane_at = |hole: &[u8]| coords.holes.iter().find(|h| h.key == hole).and_then(|h| lane_of(h.kind));
+            for h in &d.residue {
+                if let Some(l) = lane_of(h.kind) {
+                    out.residue[l] += 1;
+                }
+            }
+            // One citation per held generator at one exponent; the same
+            // generator at two exponents on two holes is no one power of it.
+            let mut cited: Vec<(Vec<u8>, i64)> = Vec::new();
+            for c in &d.cites {
+                match cited.iter().find(|(w, _)| *w == c.word) {
+                    Some((_, e)) if *e == c.exponent => continue,
+                    Some(_) => motion_ok = false,
+                    None => cited.push((c.word.clone(), c.exponent)),
+                }
+                let (Some(g), Some(l)) = (self.held.get(&c.word), lane_at(&c.hole)) else { continue };
+                out.cites.push((g.form.clone(), g.vertex.clone(), l, c.exponent));
+            }
+            let composed = cited
+                .iter()
+                .filter_map(|(k, e)| self.held.get(k).map(|g| motion_power(&g.motion, *e)))
+                .fold(one(), |acc, p| acc.geo(&p));
+            motion_ok = motion_ok && composed.projective_eq(motion);
+        }
+        // THE HUE MAP, mode by mode.
+        let modes = gauge_modes(gauge)?;
+        let mut composed_gauge: Vec<(u8, u8)> = Vec::new();
+        let mut gauge_cited: Vec<Vec<u8>> = Vec::new();
+        for m in &modes {
+            let hit = self.gauges.get(&m.key()).and_then(|fibre| {
+                fibre.scoped().find_map(|(k, ())| {
+                    let g = self.held.get(&k).filter(|g| eligible(g))?;
+                    let held_modes = gauge_modes(&g.gauge)?;
+                    let e = held_modes.iter().find(|h| h.key() == m.key()).and_then(|h| gauge_exponent(m, h))?;
+                    Some((k, g, e))
+                })
+            });
+            match hit {
+                Some((k, g, e)) => {
+                    if !gauge_cited.contains(&k) {
+                        composed_gauge = super::transport::compose_gauge(&gauge_power(&g.gauge, e), &composed_gauge);
+                        gauge_cited.push(k);
+                    }
+                    out.cites.push((g.form.clone(), g.vertex.clone(), LANE_G, e));
+                }
+                None => out.residue[LANE_G] += 1,
+            }
+        }
+        let gauge_ok = super::transport::gauge_eq(&composed_gauge, gauge);
+        out.composes = out.residue.iter().all(|&r| r == 0) && !out.cites.is_empty() && motion_ok && gauge_ok;
+        Some(out)
     }
 
     /// [`Presentation::deconstruct`] on the stroke the motion's own modes
@@ -183,6 +429,20 @@ impl Presentation {
             let key = super::generator_key(form, address);
             if let Some(g) = self.held.remove(&key) {
                 self.holes.unfile(&key, &g.coords);
+                // A generator was filed only where its listing is a map.
+                for m in gauge_modes(&g.gauge).into_iter().flatten() {
+                    let mk = m.key();
+                    let empty = match self.gauges.get_mut(&mk) {
+                        Some(f) => {
+                            f.remove(&key);
+                            f.is_empty()
+                        }
+                        None => false,
+                    };
+                    if empty {
+                        self.gauges.remove(&mk);
+                    }
+                }
             }
         }
     }

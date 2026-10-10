@@ -135,17 +135,7 @@ impl Epigenome {
         for (key, vertex) in act_keys_of(e) {
             let at = crate::transducer::sentence::generator_key(&addr, &vertex);
             self.by_act.nested_insert(key, at, (addr.clone(), vertex));
-        }
-        // 78.161 — and by what it is perceived as, whole and lane by lane.
-        if let Some((whole, lanes)) = e.form().and_then(perception_keys) {
-            self.by_perception.nested_insert(whole, &addr, ());
-            for (l, k) in lanes.into_iter().enumerate() {
-                if let (Some(k), Some(ix)) = (k, self.by_lane.get_mut(l)) {
-                    ix.nested_insert(k, &addr, ());
-                }
-            }
-        }
-        // 1.8: the form's word vertices are the generators it contributes
+        }        // 1.8: the form's word vertices are the generators it contributes
         // to this mind's presentation.
         if let Some(f) = e.form().cloned() {
             crate::transducer::sentence::admit_generators(&mut self.generators, &addr, &f);
@@ -172,14 +162,6 @@ impl Epigenome {
             };
             if empty {
                 self.by_act.remove(&key);
-            }
-        }
-        if let Some((whole, lanes)) = e.form().and_then(perception_keys) {
-            unfile(&mut self.by_perception, &whole, addr.as_bytes());
-            for (l, k) in lanes.into_iter().enumerate() {
-                if let (Some(k), Some(ix)) = (k, self.by_lane.get_mut(l)) {
-                    unfile(ix, &k, addr.as_bytes());
-                }
             }
         }
         if let Some(f) = e.form() {
@@ -232,54 +214,6 @@ pub(crate) fn body_charts_of(e: &Held) -> Vec<crate::transducer::stalk::Invarian
         }
     }
     charts
-}
-
-/// Remove one address from a keyed bucket, and the bucket where it empties.
-fn unfile(ix: &mut crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>, key: &[u8], addr: &[u8]) {
-    let empty = match ix.get_mut(key) {
-        Some(bucket) => {
-            bucket.remove(addr);
-            bucket.is_empty()
-        }
-        None => false,
-    };
-    if empty {
-        ix.remove(key);
-    }
-}
-
-/// 78.161 — WHAT A FORM IS PERCEIVED AS (78.61 C1, `pivot::lift`): each lane's
-/// invariants written out with their multiplicities, in the lane's key order,
-/// and the four together. A lane that perceived nothing has no key; a form
-/// whose lift left anything unread, or perceived nothing at all, has none —
-/// an unread reading is not a coordinate (rule 11). The lift's own stroke is
-/// sized for the form's modes and spent here, at the admission.
-pub(crate) fn perception_keys(f: &crate::transducer::sentence::Form) -> Option<(Vec<u8>, [Option<Vec<u8>>; 4])> {
-    let mut budget = crate::physics::Physics::default().stroke();
-    let p = crate::transducer::sentence::lift(f, &mut budget);
-    if p.unread != 0 || p.lanes.iter().all(|l| l.is_empty()) {
-        return None;
-    }
-    let lanes: [Option<Vec<u8>>; 4] = std::array::from_fn(|l| {
-        let lane = &p.lanes[l];
-        if lane.is_empty() {
-            return None;
-        }
-        let mut k = vec![u8::try_from(l).ok()?];
-        for (inv, n) in lane.scoped() {
-            crate::transducer::address::put_key_bytes(&mut k, &inv);
-            k.extend_from_slice(&n.to_le_bytes());
-        }
-        Some(k)
-    });
-    let mut whole = Vec::new();
-    for l in &lanes {
-        match l {
-            Some(k) => crate::transducer::address::put_key_bytes(&mut whole, k),
-            None => whole.push(0),
-        }
-    }
-    Some((whole, lanes))
 }
 
 /// What every member of a closed sentence's word vertices does, as the

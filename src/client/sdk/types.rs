@@ -502,14 +502,6 @@ pub struct Epigenome {
     pub(crate) by_act: crate::network::nerve::Keyed<
         crate::network::nerve::Keyed<(crate::transducer::address::Address, crate::transducer::address::Address)>,
     >,
-    /// 78.161 — EVERY HELD WORD BY WHAT IT IS PERCEIVED AS (78.61 C1,
-    /// `pivot::lift`): the four lanes' invariants together → the addresses
-    /// perceived so. A word heard from another mind is coherent with a held
-    /// one exactly where its lift reads the same key: one keyed read.
-    pub(crate) by_perception: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
-    /// The same, one carrier per lane {S, G, T, H} (law 5): the lane's own
-    /// invariants → the addresses perceived so on that lane.
-    pub(crate) by_lane: [crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>; 4],
 }
 
 /// THE ENTITY — a kernel identity with its genome/epigenome, conversing through

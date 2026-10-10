@@ -101,21 +101,6 @@ impl crate::transducer::family::Crystal for Epigenome {
             .collect()
     }
 
-    /// THE WORD VERTICES ACTING AT ONE COORDINATE, as (form, vertex): the
-    /// act a still vertex is cited by (its colour word).
-    fn acted(
-        &self,
-        act: &[u8],
-    ) -> Vec<(crate::transducer::address::Address, crate::transducer::address::Address)> {
-        let Some(bucket) = self.by_act.get(act) else {
-            return Vec::new();
-        };
-        bucket
-            .scoped()
-            .filter(|(_, (form, _))| self.standing_of(form.as_bytes()).is_some())
-            .map(|(_, at)| at.clone())
-            .collect()
-    }
 
     fn speak_form(
         &self,
@@ -151,12 +136,13 @@ impl crate::transducer::family::Crystal for Epigenome {
         self.presented.get(&key).cloned()
     }
 
-    /// 78.160 — what this mind's ear heard that composes to `motion`.
-    fn heard(
+    /// 78.161 — a word read over the ruled words this mind's ear holds.
+    fn read_word(
         &self,
         motion: &crate::transducer::cga::Mv,
-    ) -> Option<Vec<(crate::transducer::address::Address, crate::transducer::address::Address, i64)>> {
-        self.ear.deconstruct_sized(motion).filter(|d| d.composes).map(|d| d.cites)
+        gauge: &[(u8, u8)],
+    ) -> Option<crate::transducer::sentence::presentation::Reading> {
+        self.ear.read_word(motion, gauge, true)
     }
 
     /// 1.8: THE PRESENTATION THIS MIND SPEAKS FROM on a versor's chart.
