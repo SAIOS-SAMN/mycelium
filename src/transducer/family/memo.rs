@@ -80,6 +80,19 @@ pub(crate) fn derive_against(
                     v = word;
                 }
             }
+            // 78.68 ROW 8 — A DEFORMATION THE MIND HOLDS A LETTER FOR IS SAID.
+            // The bodies a surgery relates (`carriage_with_core`, the transport
+            // the docket constructed the letter from) are asked of the held
+            // words: a letter that carries them — by its motion, or a rotor
+            // the ring divides — makes the demand a word citing it. Only
+            // a held letter answers; nothing is paired that the mind has not
+            // already said (epoch 147: "nothing in the form acts" on forms all
+            // deformations while 84–97 a voice were answered by own letters).
+            Vertex::Demand { kind: crate::transducer::sentence::Demand::TopologicalDeformation { .. }, .. } => {
+                if let Some(word) = deformation_answer(crystal, budget, &v) {
+                    v = word;
+                }
+            }
             _ => {}
         }
         let Some(at) = v.at() else { continue };
@@ -129,6 +142,41 @@ fn ring_answer(
     // recolours exactly where `sigma` is not the identity, so the `𝒢` lane
     // is occupied or not by what was measured (L12).
     let derivation = factor_versor(crystal, budget, &car.v, &car.sigma)?.ok()?;
+    word_vertex_with(&a, &b, &car, derivation)
+}
+
+/// 78.68 ROW 8 — A DEFORMATION ANSWERED BY A HELD LETTER: the transport
+/// between the demand's two sides through the homeomorphic core
+/// (`carriage_with_core`, re-derived from the bodies, law 12), cited by its
+/// motion where it turns nothing (`motion_citation`) and divided by the
+/// ring where it turns (`factor_versor`) — and only a derivation that cites
+/// a held word answers: a bare spelling pairs bodies the mind never said.
+fn deformation_answer(
+    crystal: &dyn Crystal,
+    budget: &mut crate::physics::Budget,
+    v: &Vertex,
+) -> Option<Vertex> {
+    let Vertex::Demand { bodies, .. } = v else {
+        return None;
+    };
+    let before: Vec<Compartment> =
+        bodies.iter().filter(|c| c.2 != 0).map(|c| Compartment::from((c.0, c.1, 0, c.2))).collect();
+    let after: Vec<Compartment> =
+        bodies.iter().filter(|c| c.3 != 0).map(|c| Compartment::from((c.0, c.1, 0, c.3))).collect();
+    if before.is_empty() || after.is_empty() {
+        return None;
+    }
+    let (a, b) = (body_of(before)?, body_of(after)?);
+    let car = carriage_with_core(&a, &b, budget)?;
+    let f = element::conformal_factors(&car.v).ok()?;
+    let rotor = element::rotor_of_factors(&f).ok()?;
+    let derivation = match motion_citation(crystal, budget, &rotor, &car.v, &car.sigma) {
+        Some(d) => d,
+        None => factor_versor(crystal, budget, &car.v, &car.sigma)?.ok()?,
+    };
+    if derivation.is_spelled() {
+        return None;
+    }
     word_vertex_with(&a, &b, &car, derivation)
 }
 
