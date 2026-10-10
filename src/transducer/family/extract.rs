@@ -169,7 +169,7 @@ pub fn extract_rule_on(
                 None => {
                     let r = family.iter().all(|(x, y)| {
                         crystal.speak_form(s, x, &frame).is_some_and(|sp| painted_within_grid(&sp.painted, y))
-                    });
+                    }) && carries_by_the_court(s, family);
                     spoken.insert(&key, r);
                     r
                 }
@@ -220,6 +220,18 @@ pub fn extract_rule_on(
     // for a solve to choose and the orbits a form holds are its content.
     trace::trace("extract/8 finish", trace::Wrote::Nothing, Some(budget));
     finish(form, scale, &unreached_pairs)
+}
+
+/// ONE MATHEMATICS FOR THE DEMAND GLUE AND THE MINT (78.157): a held form
+/// glued at the Frame's placement is glued only where it carries the family
+/// by the court's own reader — the reader the mint refuses by ("a vertex
+/// does not carry its family"). At the Frame's placement the glued vertex IS
+/// the held form's, so the two read one object. The paint test alone accepts
+/// a form whose cells match the output where it paints, while its gauge,
+/// applied to this family's bodies, lands a lamina on the wrong hue (6 of 8
+/// carry refusals on the fleet named exactly that, 11:24).
+fn carries_by_the_court(s: &Form, family: &[(Grid, Grid)]) -> bool {
+    crate::court::verdict::body::vertices_carry_frames(s, family).is_none()
 }
 
 /// Extract the invariant cochain of a family.
