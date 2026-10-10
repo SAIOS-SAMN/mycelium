@@ -38,11 +38,21 @@ pub(crate) fn derive_against(
             // against is the representative member's: one member today, and
             // D7b decides what a multi-member vertex spells against.
             Vertex::Word { derivation, acts, .. } => {
-                let gauge = match acts.scoped().next() {
-                    Some((_, a)) => a.gauge.clone(),
-                    None => Vec::new(),
+                let (gauge, carriage) = match acts.scoped().next() {
+                    Some((_, a)) => (a.gauge.clone(), Some(a.carriage.as_ref().clone())),
+                    None => (Vec::new(), None),
                 };
-                *derivation = derivation_of_spelled(crystal, budget, &*derivation, &gauge)?;
+                // 78.68 ROW 8 — a word that turns nothing is asked of the
+                // held words by its motion first: a slide or a dilation the
+                // mind holds a letter for is cited, never spelled anew.
+                let by_motion = match (derivation.is_spelled(), &carriage) {
+                    (true, Some(c)) => motion_citation(crystal, budget, &derivation.rotor(), c, &gauge),
+                    _ => None,
+                };
+                *derivation = match by_motion {
+                    Some(d) => d,
+                    None => derivation_of_spelled(crystal, budget, &*derivation, &gauge)?,
+                };
             }
             // 37.7 AT THE SECOND STEP. A demand the peel typed is not
             // final: the peel spells with the seventeen alone, and this

@@ -641,6 +641,67 @@ fn derivation_of(
     Some(derived)
 }
 
+/// 78.68 ROW 8 — A WORD THAT TURNS NOTHING IS CITED BY ITS MOTION. A vertex
+/// whose rotor is the identity carries its whole action on its carriage (a
+/// slide, a dilation about a point), and `derivation_of` answers it
+/// "spelled" at once: 117 of 143 vertices on the fleet (epoch 147), while
+/// the mind held 129–183 motion letters it could never cite. Here the
+/// carriage is read as the target: the generators this mind holds at the
+/// meet of the placement and dilation lanes it occupies (`motion_lanes_of`,
+/// the same reader that filed them), each held member's carriage against
+/// the target's — equal, the word cites it; equal reversed, it cites it at
+/// `−1`. Compared as conformal factors (`T·K·D`), exact. `None` where the
+/// rotor turns, the carriage is the identity, or no held word carries it.
+pub(crate) fn motion_citation(
+    crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
+    rotor: &crate::transducer::alphabet::Rotor,
+    carriage: &Versor,
+    gauge: &[(u8, u8)],
+) -> Option<crate::transducer::alphabet::Derivation> {
+    use crate::transducer::alphabet::{Derivation, Word};
+    if !rotor.is_identity() {
+        return None;
+    }
+    let canon = |c: &Versor| crate::transducer::element::conformal_factors(c).ok().map(|f| f.carriage());
+    let target = canon(carriage)?;
+    if crate::transducer::element::same_versor(&target, &crate::transducer::element::identity_versor()) {
+        return None;
+    }
+    let spelled = Derivation::spelled(Word::identity());
+    let mut occupied = crate::transducer::sentence::motion_lanes_of(&spelled, carriage, gauge);
+    // A target that recolours occupies `𝒢` too, and only a word that
+    // recolours alike reaches it (the meet, never the union).
+    let hue = crate::transducer::sentence::CycleType::of(gauge);
+    if let Some(cv) = crate::transducer::sentence::ClassVector::of_rotor(rotor, carriage.clone(), hue) {
+        occupied.extend(crate::transducer::sentence::lane_chart(&cv, 1).map(|c| (1, c)));
+    }
+    if occupied.is_empty() {
+        return None;
+    }
+    let target_rev = canon(&carriage.reverse());
+    for (form, vertex, g) in crystal.generators_at_meet(&occupied, budget) {
+        if !g.rotor().is_identity() {
+            continue;
+        }
+        let Some((_, held)) = crystal.by_address(form.as_bytes()) else { continue };
+        let Some(Vertex::Word { acts, .. }) = crate::transducer::sentence::vertex_cited(&held, vertex.as_bytes()) else {
+            continue;
+        };
+        for (_, a) in acts.scoped() {
+            let Some(c) = canon(&a.carriage) else { continue };
+            let e = match (c.projective_eq(&target), target_rev.as_ref().is_some_and(|r| c.projective_eq(r))) {
+                (true, _) => 1,
+                (false, true) => -1,
+                (false, false) => continue,
+            };
+            note_derivation(MATCHED, 1);
+            return Some(Derivation::compose(&[(form.clone(), vertex.clone(), e, g.clone())], Word::identity()));
+        }
+    }
+    None
+}
+
 /// 78.95 — WHAT EACH WORD VERTEX'S DERIVATION CAME TO against the mind's own
 /// language, in [`DERIVATION`]'s order: asked; the target the identity; a
 /// target on no lane; lanes occupied and nothing held at their meet; the

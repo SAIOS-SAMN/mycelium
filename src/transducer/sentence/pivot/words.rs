@@ -424,8 +424,38 @@ pub fn admit_generators_by_lane(
                 let Some(cover) = index.get_mut(lane) else { continue };
                 cover.nested_insert(chart.key(), address, form.clone());
             }
+            for (lane, chart) in motion_lanes_of(derivation, &a.carriage, &a.gauge) {
+                let Some(cover) = index.get_mut(lane) else { continue };
+                cover.nested_insert(chart.key(), address, form.clone());
+            }
         }
     }
+}
+
+/// 78.68 ROW 8 — WHERE A WORD'S MOTION FILES IT: the placement (`𝒯`) and
+/// dilation (`𝒮`) lanes its member's carriage occupies. A motion letter's
+/// rotor is the identity and its whole motion is the carriage, so
+/// `class_of_vertex` — the rotor's reading — files it nowhere and no target
+/// could cite it. Filed BESIDE the rotor's lanes, never in place of them:
+/// the holonomic and gauge covers stay exactly as `class_of_vertex` reads
+/// them. Empty where the carriage occupies neither lane or its class does
+/// not read.
+pub fn motion_lanes_of(
+    d: &crate::transducer::alphabet::Derivation,
+    carriage: &crate::transducer::element::Versor,
+    gauge: &[(u8, u8)],
+) -> Vec<(usize, stalk::Invariant)> {
+    let Some(cv) = crate::transducer::sentence::ClassVector::of_rotor(
+        &d.rotor(),
+        carriage.clone(),
+        crate::transducer::sentence::CycleType::of(gauge),
+    ) else {
+        return Vec::new();
+    };
+    [Axis::Dilation.lane(), Axis::Placement.lane()]
+        .into_iter()
+        .filter_map(|lane| lane_chart(&cv, lane).map(|c| (lane, c)))
+        .collect()
 }
 
 /// Empty what `admit_generators_by_lane` filled.
@@ -445,6 +475,12 @@ pub fn retract_generators_by_lane(
                 continue;
             };
             for (lane, chart) in lane_charts_of(&cv, &derivation.rotor()) {
+                let Some(cover) = index.get_mut(lane) else { continue };
+                if let Some(bucket) = cover.get_mut(chart.key().as_bytes()) {
+                    bucket.remove(address);
+                }
+            }
+            for (lane, chart) in motion_lanes_of(derivation, &a.carriage, &a.gauge) {
                 let Some(cover) = index.get_mut(lane) else { continue };
                 if let Some(bucket) = cover.get_mut(chart.key().as_bytes()) {
                     bucket.remove(address);
