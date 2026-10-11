@@ -179,11 +179,6 @@ pub fn derive_carrying_all(footprint: &[(i64, i64)], scene: &[(i64, i64, u8)]) -
     ranked.sort_by_key(|a| (a.0, a.1.clone()));
     let mut out: Vec<Sel> = ranked.into_iter().map(|(_, _, t)| t).collect();
     out.dedup();
-    // AT1 (r4) — the anchor's sort-and-cut, counted at its site with what
-    // it dropped.
-    if out.len() > 32 {
-        crate::transducer::sentence::form::atlas::note_anchor_cut(out.len() - 32);
-    }
     out.truncate(32);
     out
 }

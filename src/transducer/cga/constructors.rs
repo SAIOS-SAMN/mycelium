@@ -267,63 +267,6 @@ impl Constructed {
     }
 }
 
-/// 78.109 C1 — WHAT A MIND'S CONSTRUCTIONS CAME TO: the residues it took (a
-/// docketed demand's, or a taught word no held letter spells), the ones that
-/// carried none, the constructed, the refused by why, the adjoined as the
-/// mind's own letters, and the constructed with no rotation to adjoin (a
-/// residue whose motion is no turn — row 8's evidence). 78.111: the modes'
-/// refusal by its cause (a value in an extension of ℚ, a defective part, the
-/// stroke spent), and each demand the pivot dockets with no residue by why
-/// its circuit composed none — unread, a held coset's several routes, or a
-/// crossing whose transport did not read. 78.68 row 8: the residues with no
-/// rotation stood as the mind's MOTION letters (a carriage letter, its rotor
-/// the identity), and the cell incoherences answered by a letter the mind
-/// already holds instead of demanded again.
-pub const CONSTRUCTIONS: [&str; 16] = [
-    "residues taken",
-    "residues absent",
-    "constructed",
-    "refused: no versor or none",
-    "refused: modes irrational",
-    "refused: null step",
-    "refused: does not compose",
-    "adjoined as letters",
-    "constructed, no rotation to adjoin",
-    "refused: modes defective",
-    "refused: stroke spent",
-    "docketed without residue: circuit unread",
-    "docketed without residue: held coset",
-    "docketed without residue: transport unread",
-    "adjoined as motion letters",
-    "demands answered by an own letter",
-];
-
-static CONSTRUCTION_TALLY: [std::sync::atomic::AtomicU64; 16] = [const { std::sync::atomic::AtomicU64::new(0) }; 16];
-
-/// One construction outcome, counted by its [`CONSTRUCTIONS`] name.
-pub fn note_construction_outcome(name: &str) {
-    if let Some(i) = CONSTRUCTIONS.iter().position(|n| *n == name) {
-        let _ = CONSTRUCTION_TALLY[i].fetch_update(std::sync::atomic::Ordering::Relaxed, std::sync::atomic::Ordering::Relaxed, |n| n.checked_add(1));
-    }
-}
-
-/// The [`CONSTRUCTIONS`] row since the process began.
-pub fn construction_outcomes() -> [u64; 16] {
-    std::array::from_fn(|i| CONSTRUCTION_TALLY[i].load(std::sync::atomic::Ordering::Relaxed))
-}
-
-/// The [`CONSTRUCTIONS`] name a refusal is counted under.
-pub fn refusal_name(why: &NotConstructed) -> &'static str {
-    match why {
-        NotConstructed::NotVersor | NotConstructed::NoResidue => "refused: no versor or none",
-        NotConstructed::Undecomposed(super::Undecomposed::Irrational(_)) => "refused: modes irrational",
-        NotConstructed::Undecomposed(super::Undecomposed::Defective) => "refused: modes defective",
-        NotConstructed::Undecomposed(super::Undecomposed::Unbounded(_)) => "refused: stroke spent",
-        NotConstructed::NullStep { .. } => "refused: null step",
-        NotConstructed::DoesNotCompose | NotConstructed::MeetOffLocus { .. } => "refused: does not compose",
-    }
-}
-
 /// 78.47(1) — A RESIDUE SPELLED AS CONSTRUCTORS AROUND ITS CONGRUENCE
 /// FACTORS, under the stroke's budget: each mode (MR1) by
 /// [`reflections_of`] in the algebra's metric; each mode CERTIFIED by its

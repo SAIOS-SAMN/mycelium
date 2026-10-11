@@ -4,8 +4,7 @@
 //! A body is a maximal hue-blind connected region on the three coordinates
 //! of the base; its hues are the gauge it carries (70.4). `word_or_demand`
 //! reads the versor that carries one body onto
-//! another and the chain of hue transitions it leaves; `sensor_reads`
-//! counts what the sensor was asked for.
+//! another and the chain of hue transitions it leaves.
 
 use super::*;
 use crate::transducer::base::{Site, FRAME_AXIS};
@@ -122,17 +121,9 @@ pub struct Body {
 /// they carry — sorted. `None` where the moduli are not read at the
 /// support's `n` (the topology past `n = 3` is 38.2's, BQ4): no chart is
 /// invented for a body the harmonics cannot hear.
-///
-/// EVERY REFUSAL IS COUNTED HERE, at the one producer of a body, on
-/// [`take_unheard`] (audit N-3): a caller that passes over a refused body
-/// passes over a counted one, whichever caller it is.
 pub fn body_of(comp: Vec<Compartment>) -> Option<Body> {
     let shape = blade::shape_of(&sites_of(&comp));
-    let Some(axes) = blade::moduli(&shape.blade) else {
-        UNHEARD.with(|c| c.set(c.get() + 1));
-        return None;
-    };
-    let moduli = Invariant(axes);
+    let moduli = Invariant(blade::moduli(&shape.blade)?);
     let mut compartments = comp;
     compartments.sort_unstable();
     compartments.dedup();
@@ -147,46 +138,9 @@ pub(crate) fn sites_of(compartments: &[Compartment]) -> Vec<Site> {
     s
 }
 
-thread_local! {
-    static SENSOR_READS: Cell<u64> = const { Cell::new(0) };
-    static UNHEARD: Cell<u64> = const { Cell::new(0) };
-    static SECTIONLESS: Cell<u64> = const { Cell::new(0) };
-}
-
-/// Components whose moduli are not read at their `n` (`body_of`'s
-/// refusal), wherever `body_of` was asked, since the last take. Zero while
-/// intake reads `n = 3`; the line that says so where it is not (BQ4).
-pub fn take_unheard() -> u64 {
-    UNHEARD.with(|c| c.replace(0))
-}
-
-/// Sites asked for their section that have none — a base with fewer than
-/// the two grid axes ([`on_grid`]'s refusal) — since the last take. Every
-/// caller that leaves such a compartment out of a chain leaves a counted one.
-pub fn take_sectionless() -> u64 {
-    SECTIONLESS.with(|c| c.replace(0))
-}
-
-/// The bodies of a perceiver's components; a refused one is counted by
-/// [`body_of`] itself.
+/// The bodies of a perceiver's components; a refused one is left out.
 fn bodies_of(compartments: &[Compartment]) -> Vec<Body> {
     blade::components(compartments).into_iter().filter_map(body_of).collect()
-}
-
-/// Grid sites visited by [`perceive`] since the last reset.
-#[cfg(test)]
-pub fn sensor_reads() -> u64 {
-    SENSOR_READS.with(|c| c.get())
-}
-
-#[cfg(test)]
-pub(crate) fn reset_sensor_reads() {
-    SENSOR_READS.with(|c| c.set(0));
-}
-
-#[expect(clippy::disallowed_methods, reason = "rule 11 — one per event in one process: a u64 cannot pass 2⁶⁴ events before the process ends")]
-pub(crate) fn note_sensor_read() {
-    SENSOR_READS.with(|c| c.set(c.get().saturating_add(1)));
 }
 
 /// Perceive one scene: its bodies, each a maximal hue-blind 4-connected
@@ -213,7 +167,6 @@ pub fn perceive_at(grid: &Grid, k: i64) -> Vec<Body> {
     let mut compartments: Vec<Compartment> = Vec::new();
     for (r, row) in grid.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
-            note_sensor_read();
             if h != 0 {
                 compartments.push(Compartment::from((r as i64, c as i64, k, h)));
             }
@@ -246,7 +199,6 @@ pub fn perceive_frames(grids: &[Grid]) -> Vec<Body> {
     for (k, grid) in grids.iter().enumerate() {
         for (r, row) in grid.iter().enumerate() {
             for (c, &h) in row.iter().enumerate() {
-                note_sensor_read();
                 if h != 0 {
                     compartments.push(Compartment::from((r as i64, c as i64, k as i64, h)));
                 }
@@ -305,18 +257,10 @@ pub(crate) fn landed_hue(v: &Versor, site: &Site, dst: &Body) -> Option<u8> {
 
 /// A site's coordinates on the grid axes — the section's planar token
 /// (16.5); every other axis rides on the pose. `None` for a site of a base
-/// with fewer than the two grid axes, which has no section — COUNTED here on
-/// [`take_sectionless`], the one producer every chain builder reads through,
-/// so no caller drops such a compartment unseen (audit N-3).
+/// with fewer than the two grid axes, which has no section.
 pub(crate) fn on_grid(s: &Site) -> Option<(i64, i64)> {
     let [ga, gb] = crate::transducer::base::GRID_AXES;
-    match (s.axis(ga), s.axis(gb)) {
-        (Some(r), Some(c)) => Some((r, c)),
-        _ => {
-            SECTIONLESS.with(|c| c.set(c.get() + 1));
-            None
-        }
-    }
+    Some((s.axis(ga)?, s.axis(gb)?))
 }
 
 pub(crate) fn hue_map_of_chain(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
@@ -364,20 +308,13 @@ pub(crate) fn stand_demands(vertices: &mut crate::transducer::sentence::Vertices
             standing.insert(&k, ());
         }
     }
-    // A.17 (R2) — nothing leaves this loop unnamed: a kind with no
-    // coordinates here, a demand its own type refuses, and one already
-    // standing are each counted on the mint's tally.
+    // A kind with no coordinates here, a demand its own type refuses, and
+    // one already standing do not stand again.
     for (kind, chart, mut links) in demanded {
         let Some(k) = coords(&kind) else {
-            note_demand(|t| t.unkeyed += 1);
             continue;
         };
-        if kind.typed().is_err() {
-            note_demand(|t| t.untyped += 1);
-            continue;
-        }
-        if standing.contains(&k) {
-            note_demand(|t| t.merged += 1);
+        if kind.typed().is_err() || standing.contains(&k) {
             continue;
         }
         standing.insert(&k, ());
@@ -387,87 +324,6 @@ pub(crate) fn stand_demands(vertices: &mut crate::transducer::sentence::Vertices
         if let Some(at) = v.at() {
             vertices.put(&at, v);
         }
-    }
-}
-
-/// D3, DIRECTIVE 4 — THE MINT'S OWN VALVE LINE (68).
-///
-/// Every gate of [`oblique_demand`] at its own name, so a recut reads
-/// WHERE the unspellable turns stop rather than only that none arrived.
-/// `offered` is every pair no versor carried; the three refusals are the
-/// three gates in the order they are passed; `minted` is what reached the
-/// court. A starved valve and a closed one look identical on a total and
-/// do not here.
-#[derive(Default, Clone, Copy, Debug)]
-pub struct DemandTally {
-    /// Pairs reaching the mint: no versor carried them.
-    pub offered: u64,
-    /// Refused at gate 1, by the refusal's kind (F5): P — `Mirrored`,
-    /// `Incongruent`, `Isotropy`, `Irrational`, proved permanent.
-    pub permanent: u64,
-    /// Gate 1, I: a bodiless pair, nothing to pose.
-    pub bodiless: u64,
-    /// Gate 1, no refusal: an unoriented pair, a held stabilizer (FR1c).
-    pub held: u64,
-    /// Gate 1, no refusal: the pair reads a turn of the base.
-    pub turned: u64,
-    /// Gate 1, a kind no pose refusal carries: the defect count.
-    pub unclassified: u64,
-    /// Refused at gate 2 — no arc: the pair orients only at the quartic,
-    /// whose reading is `4φ` and whose witness would name a different
-    /// rotation.
-    pub arcless: u64,
-    /// Refused at gate 3 — the arc names no prime the alphabet lacks.
-    /// `z ~ ±i` is unspellable and still mints nothing.
-    pub primeless: u64,
-    /// `RotorPrime` demands minted, each with a primitive witness.
-    pub minted: u64,
-    /// CV1b F3 (R2) — THE POLE'S DEMANDS NOT STOOD, by name. A demand of a
-    /// kind with no coordinates for [`stand_demands`] to key it by.
-    pub unkeyed: u64,
-    /// A demand its own type refuses (`Demand::typed`).
-    pub untyped: u64,
-    /// A demand already standing on the sentence — on the word path or at
-    /// the pole — which stands once.
-    pub merged: u64,
-}
-
-thread_local! {
-    static DEMANDS: std::cell::Cell<DemandTally> =
-        const { std::cell::Cell::new(DemandTally {
-            offered: 0, permanent: 0, bodiless: 0, held: 0, turned: 0, unclassified: 0,
-            arcless: 0, primeless: 0, minted: 0, unkeyed: 0, untyped: 0, merged: 0,
-        }) };
-}
-
-fn note_demand(f: impl Fn(&mut DemandTally)) {
-    DEMANDS.with(|c| {
-        let mut v = c.get();
-        f(&mut v);
-        c.set(v);
-    });
-}
-
-/// Read the mint's tally and clear it.
-pub fn take_demand_tally() -> DemandTally {
-    DEMANDS.with(|c| c.replace(DemandTally::default()))
-}
-
-/// The mint's tally without clearing it, for a per-form line beside a
-/// running total (law 12: only one reader may take).
-pub fn demand_tally() -> DemandTally {
-    DEMANDS.with(|c| c.get())
-}
-
-impl DemandTally {
-    pub fn line(&self) -> String {
-        format!(
-            "offered {} | permanent {} arcless {} primeless {} | gate 1 by kind: bodiless {} held {} turned {} \
-             unclassified {} | MINTED {} | stood: unkeyed {} untyped {} merged {}",
-            self.offered, self.permanent, self.arcless, self.primeless,
-            self.bodiless, self.held, self.turned, self.unclassified, self.minted,
-            self.unkeyed, self.untyped, self.merged,
-        )
     }
 }
 
@@ -536,42 +392,18 @@ pub(crate) fn oblique_rotor_prime(
 ) -> Option<crate::transducer::sentence::Demand> {
     use crate::transducer::alphabet::{PLANE_COL, PLANE_ROW};
     use crate::transducer::blade;
-    note_demand(|t| t.offered += 1);
     // THE PLANE IS THE SENSOR'S OWN, named once for the frame, the arc and
     // the demand (BQ4).
     let sensor = crate::transducer::base::GRID_PLANE;
-    // GATE 1, LABELLED BY THE ANSWER'S KIND, never by the branch (F5): only
-    // the oblique arm passes. A turn is no refusal; a held stabilizer is no
-    // refusal; a refusal is counted as the kind it reads — P permanent, I
-    // bodiless — and any other kind is the defect count, unclassified.
-    use crate::transducer::sentence::ObstructionKind as Kind;
-    match blade::relative_rotor(blade_a, blade_b, sensor, budget) {
-        Err(blade::NoPose::Oblique) => {}
-        Ok(_) => {
-            note_demand(|t| t.turned += 1);
-            return None;
-        }
-        Err(why) => {
-            match why.obstruction_kind() {
-                Some(Kind::P) => note_demand(|t| t.permanent += 1),
-                Some(Kind::I) => note_demand(|t| t.bodiless += 1),
-                None => note_demand(|t| t.held += 1),
-                Some(Kind::D | Kind::C | Kind::N | Kind::Unclassified) => note_demand(|t| t.unclassified += 1),
-            }
-            return None;
-        }
-    }
-    let Some((s, t)) = blade::oblique_arc(blade_a, blade_b, sensor) else {
-        note_demand(|t| t.arcless += 1);
+    // GATE 1: only the oblique arm passes. A turn is no refusal; a held
+    // stabilizer is no refusal; any other answer is a refusal.
+    let Err(blade::NoPose::Oblique) = blade::relative_rotor(blade_a, blade_b, sensor, budget) else {
         return None;
     };
+    let (s, t) = blade::oblique_arc(blade_a, blade_b, sensor)?;
     let plane = (PLANE_ROW, PLANE_COL);
     let norm = &s * &s + &t * &t;
-    let Some(prime) = crate::transducer::alphabet::prime_outside_the_alphabet(&norm, plane) else {
-        note_demand(|t| t.primeless += 1);
-        return None;
-    };
-    note_demand(|t| t.minted += 1);
+    let prime = crate::transducer::alphabet::prime_outside_the_alphabet(&norm, plane)?;
     Some(crate::transducer::sentence::Demand::RotorPrime {
         plane,
         prime,
@@ -773,23 +605,13 @@ impl EdgeTally {
                 Some(t)
             }
             Some(Err(refusals)) => {
-                use crate::transducer::sentence::rung::{note_edge_lost, EdgeLost};
                 for refusal in refusals {
                     match refusal {
                         // 37.7's candidate at an edge: a generator the
                         // language lacks, counted.
-                        EdgeRefusal::Unspelled(_) => {
-                            self.unspelled += 1;
-                            note_edge_lost(EdgeLost::Unspelled);
-                        }
-                        EdgeRefusal::NoReading => {
-                            self.unread += 1;
-                            note_edge_lost(EdgeLost::NoReading);
-                        }
-                        EdgeRefusal::NotRigid => {
-                            self.not_rigid += 1;
-                            note_edge_lost(EdgeLost::Tear);
-                        }
+                        EdgeRefusal::Unspelled(_) => self.unspelled += 1,
+                        EdgeRefusal::NoReading => self.unread += 1,
+                        EdgeRefusal::NotRigid => self.not_rigid += 1,
                     }
                 }
                 None
@@ -928,7 +750,6 @@ pub(crate) fn relative_edge(
         return Err(vec![EdgeRefusal::NotRigid]);
     }
     let gamma = v_i.reverse().geo(v_j);
-    crate::transducer::sentence::rung::note_bends(crate::transducer::sentence::rung::Bend::Relative, &gamma);
     edge_of(&gamma).map(|t| (t, Carried::Relative)).map_err(|e| vec![e])
 }
 

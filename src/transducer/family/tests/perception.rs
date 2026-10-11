@@ -5,19 +5,13 @@ use super::common::*;
 use crate::transducer::base::Site;
 use crate::transducer::family::*;
 
-/// Perception reads each cell of the sensor ONCE per reading: the frames are
-/// perceived once and handed through, never perceived again to size the
-/// stroke, and nothing is held between readings — a second reading reads
-/// the cells again, once each.
+/// A pair form has its frame and a word for the carried body, and nothing is
+/// held between readings: a second reading reads the same form.
 #[test]
 fn pair_form_reads_compartments_once() {
 let a = grid(&["1100", "0000"]);
 let b = grid(&["0011", "0000"]);
-let cells = 2 * 2 * 4;
-reset_sensor_reads();
 let f1 = cipher_form(&a, &b);
-let n = sensor_reads();
-assert_eq!(n, cells, "one reading reads every cell of both frames once");
 assert!(
     f1.vertices.scoped().any(|(_, v)| matches!(v, Vertex::Frame)),
     "every pair form has a frame"
@@ -32,7 +26,6 @@ assert!(
     "a carried body is a word vertex"
 );
 let f2 = cipher_form(&a, &b);
-assert_eq!(sensor_reads(), 2 * cells, "a second reading reads them again, once each: nothing is held");
 assert_eq!(f1.vertices.len(), f2.vertices.len());
 assert_eq!(f1.faces.len(), f2.faces.len());
 }
@@ -679,58 +672,29 @@ fn a_body_pair_is_keyed_by_two_addresses_and_reads_back_as_them() {
     assert_eq!(read_body_pair_key(&long), None, "and nothing past them");
 }
 
-/// Occupancy + ring probes scale with sites, not with n².
-#[test]
-fn face_work_is_linear_in_occupied_sites() {
-let run = |n: usize| -> u64 {
-    reset_face_work();
-    let mut supports = vec![Vec::new()];
-    for i in 0..n {
-        supports.push(vec![(0i64, (i as i64) * 3)]);
-    }
-    let _ = named_pairs(Some(&root_member(0)), &supports_at(&supports));
-    face_work()
-};
-let w = run(8);
-let w4 = run(32);
-assert!(w > 0 && w4 > w, "work grows with bodies, got {w} then {w4}");
-assert!(
-    w.checked_mul(5).is_some_and(|cap| w4 <= cap),
-    "4N work is ~4× N, not n²: {w} vs {w4}"
-);
-}
-
-/// A SITE'S OCCUPANTS ARE CHAINED, NOT CLIQUED. The test above gives every
-/// body a site of its own, so no site ever holds two occupants and a
-/// quadratic in `named_faces` would never fire under it: a pairing
-/// of a site's own vertices as a complete graph, uncounted by
-/// `note_face_work`, is invisible to that gauge.
-///
-/// k bodies on one site are a simplex. The complex needs k−1 faces to
-/// connect them; the k(k−1)/2 − (k−1) chords are cycles that bound by
-/// construction. Both the face count and the work are asserted here, so
-/// neither can go quadratic without a red test.
+/// A SITE'S OCCUPANTS ARE CHAINED, NOT CLIQUED. k bodies on one site are a
+/// simplex. The complex needs k−1 faces to connect them; the k(k−1)/2 −
+/// (k−1) chords are cycles that bound by construction. The face count is
+/// asserted here, so it cannot go quadratic without a red test.
 #[test]
 fn one_site_chains_its_occupants_and_does_not_clique_them() {
-let run = |k: usize| -> (usize, usize, u64) {
-    reset_face_work();
+let run = |k: usize| -> (usize, usize) {
     let mut supports = vec![Vec::new()];
     for _ in 0..k {
         supports.push(vec![(0i64, 0i64)]);
     }
     let pairs = named_pairs(Some(&root_member(0)), &supports_at(&supports));
-    let work = face_work();
     // The vertex each member key names, read back out of it.
     let adj = pairs
         .iter()
         .filter(|(a, b)| matches!((member_index(a), member_index(b)), (Some(i), Some(j)) if i != 0 && j != 0))
         .count();
-    (pairs.len(), adj, work)
+    (pairs.len(), adj)
 };
-let (all, adj, _) = run(8);
+let (all, adj) = run(8);
 assert_eq!(adj, 7, "eight bodies on one site chain in seven faces, not 28: {adj}");
 assert_eq!(all, 15, "plus the eight-body Frame star: {all}");
-let (_, adj4, w4) = run(32);
+let (_, adj4) = run(32);
 assert_eq!(adj4, 31, "and thirty-two chain in thirty-one, not 496: {adj4}");
 // THE ORBITS ARE LINEAR IN THE OCCUPANTS, WHICH IS THE WHOLE POINT. The
 // Frame star already spans every vertex, so each intra-site face is a
@@ -758,11 +722,6 @@ assert_eq!(adj4, 31, "and thirty-two chain in thirty-one, not 496: {adj4}");
 let rank = |faces: &[(u16, u16)], n: usize| faces.len() + 1 - n;
 assert_eq!(rank(&run_faces(8), 9), 7, "eight occupants carry seven independent cycles, not 28");
 assert_eq!(rank(&run_faces(32), 33), 31, "and thirty-two carry thirty-one, not 496");
-let (_, _, w) = run(8);
-assert!(
-    w.checked_mul(5).is_some_and(|cap| w4 <= cap),
-    "the work is counted and stays linear in the occupants: {w} vs {w4}"
-);
 }
 
 /// The faces eight bodies on one site name, by the member pairs they join
@@ -929,16 +888,12 @@ fn six_adjacency_connects_bodies_across_frames_into_one_streamline() {
     );
 }
 
-/// Audit N-3 — A COMPARTMENT WITH NO SECTION IS COUNTED WHERE IT IS REFUSED. A
-/// site of a base with one axis has no grid plane; the chain builder leaves
-/// it out and the one producer, `on_grid`, says so on the line.
+/// Audit N-3 — A SITE OF A BASE WITH ONE AXIS HAS NO GRID PLANE, and its
+/// section is refused by name.
 #[test]
 fn a_sectionless_site_is_counted_at_the_one_producer() {
-    use crate::transducer::family::perceive::{on_grid, take_sectionless};
-    let _ = take_sectionless();
+    use crate::transducer::family::perceive::on_grid;
     assert_eq!(on_grid(&Site::of([4, 5, 0])), Some((4, 5)), "a site of n = 3 has its section");
-    assert_eq!(take_sectionless(), 0, "and nothing is counted for it");
     assert_eq!(on_grid(&Site::of([4])), None, "a site of n = 1 has no grid plane");
-    assert_eq!(take_sectionless(), 1, "and its refusal is counted, not dropped");
 }
 

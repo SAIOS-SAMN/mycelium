@@ -10,7 +10,6 @@ use super::perceive::{
     at_frame_zero, demand_vertex, differing_axes, frame_of_body, support_at,
     word_or_demand_on_chart, Demanded, EdgeTally,
 };
-use super::witness::{cover_nerves, phase_spectrum};
 use super::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::cga;
@@ -85,88 +84,41 @@ struct Member {
 /// A step across two charts, with the compartments of the body it carried.
 type CrossStep = (coord::VertexAt, Invariant, u64, Invariant, u64, Option<Versor>, u64);
 
-use super::percept_reading::{AcrossCharts, FormReading, PerceptReading};
-
 /// MT1 (1) — THE FRAME-AXIS TRANSITIONS OF ONE MEMBER: a new solve by the
 /// existing reader between the member's body at consecutive OCCUPIED frames,
-/// on the inputs and on the outputs, two readings of one step typed by how
-/// they agree, never averaged. Each solve is one transition under the stroke,
-/// read by its action, with the frame its chain carries per lane. Each step
-/// is also the overlap the atlas would add between the member's two charts,
-/// `class ‖ Invariant ‖ k` and `… ‖ k′`, counted with its ruled key's bytes
-/// (AT1 r5). THE STEPS ARE RETURNED — each pair of frames with the motor its
+/// on the inputs and on the outputs. Each solve is one transition under the
+/// stroke. THE STEPS ARE RETURNED — each pair of frames with the motor its
 /// INPUT body took, where it solved — and the atlas files each as an overlap
 /// between the member's two charts carrying that motor, producer `motor`
 /// (AT1 Q3). A step whose input did not solve carries no transition and
 /// makes no overlap (rule 11).
-fn read_frame_axis(
-    claimed: &mut [&Quotient],
-    (class, chart): (&[u8], &[u8]),
-    budget: &mut crate::physics::Budget,
-) -> Vec<(u64, u64, Versor)> {
+fn read_frame_axis(claimed: &mut [&Quotient], budget: &mut crate::physics::Budget) -> Vec<(u64, u64, Versor)> {
     let mut out = Vec::new();
-    let mut gauged: Vec<super::fibres::Step> = Vec::new();
-    use cga::{note_motor, note_step, note_unread, StepClass, TransitionKind::FrameAxis};
     // Succession along e₃ is the frame coordinate's own order (51.1); the
     // fibre's keys are little-endian and do not carry it.
     #[expect(clippy::disallowed_methods, reason = "rule 4 — a sort by a canonical key: the frame, the corpus's e₃ coordinate, whose succession IS the frame-axis transition")]
     claimed.sort_by_key(|q| q.frame);
     let mut solve = |a: &Body, b: &Body| -> Option<Option<Versor>> {
         if !budget.spend() {
-            note_unread(FrameAxis);
             return None;
         }
         // A spent stroke is the read not taken; any other refusal is the pair
         // carried by no motor.
-        let m = match blade::versor_between(&a.shape, &b.shape, budget) {
-            Ok(m) => Some(m),
-            Err(blade::NoPose::Unbounded) => {
-                note_unread(FrameAxis);
-                return None;
-            }
-            Err(_) => None,
-        };
-        if let Some(m) = &m {
-            let lanes = element::measure_lanes(&super::perceive::chain_of(Some(a), Some(b), m));
-            note_motor(FrameAxis, m, Some(lanes));
+        match blade::versor_between(&a.shape, &b.shape, budget) {
+            Ok(m) => Some(Some(m)),
+            Err(blade::NoPose::Unbounded) => None,
+            Err(_) => Some(None),
         }
-        Some(m)
     };
     for step in claimed.windows(2) {
         let [q, next] = step else { continue };
-        let mut key = Vec::new();
-        for k in [q.frame, next.frame] {
-            crate::transducer::sentence::form::atlas::chart_coordinate(class, chart, k, &mut key);
-        }
-        crate::transducer::sentence::form::atlas::note_frame_axis_step(key.len());
-        // BOTH SIDES ARE ASKED, and a side the stroke did not reach is
-        // counted unread under its kind (A.17): nothing is dropped by a
-        // return, so every later step of the member is counted too. The step
-        // itself stands unclassed.
+        // BOTH SIDES ARE ASKED (A.17): a side the stroke did not reach
+        // leaves the step unread.
         let (input, output) = (solve(&q.a_k, &next.a_k), solve(&q.b_k, &next.b_k));
-        let (Some(input), Some(output)) = (input, output) else { continue };
-        // The planes turned: the solved side's, and on a DISAGREEMENT both
-        // motors' — the disagreement is the content.
-        let (class, turned): (StepClass, Vec<&Versor>) = match (&input, &output) {
-            (Some(i), Some(o)) if cga::projective_ratio(i, o).is_some() => (StepClass::Agree, vec![i]),
-            (Some(i), Some(o)) => (StepClass::Disagree, vec![i, o]),
-            (Some(m), None) | (None, Some(m)) => (StepClass::OneSided, vec![m]),
-            (None, None) => (StepClass::Neither, Vec::new()),
-        };
-        note_step(class, &turned);
-        if let Some(m) = &input {
-            out.push((q.frame, next.frame, m.clone()));
-            gauged.push(super::fibres::Step { from: q.frame, to: next.frame, motor: m.clone() });
+        let (Some(input), Some(_)) = (input, output) else { continue };
+        if let Some(m) = input {
+            out.push((q.frame, next.frame, m));
         }
-    }
-    // 78.74, 78.75 — COHESION: the steps' motors lie on the class's flow
-    // along its frame axis; whether that flow continues or bends is its
-    // gauge, read off the generators at the bodies' own base.
-    // The base the bodies stand on: the largest any of them holds (one chart's
-    // bodies share it), never the first's by position (rule 15).
-    let n = claimed.iter().fold(0usize, |n, q| n.max(q.a_k.shape.blade.n()));
-    if let (Ok(n), false) = (u8::try_from(n), claimed.is_empty()) {
-        let _ = super::fibres::cohesion(class, &gauged, n, budget);
     }
     out
 }
@@ -219,15 +171,7 @@ pub(super) fn family_percept(
     scale: Ratio,
     budget: &mut crate::physics::Budget,
 ) -> Percept {
-    let entry = budget.remaining();
     trace::trace("extract/0 frames", trace::Wrote::Nothing, Some(budget));
-    // OR1 — THE ORBITS THIS PERCEPT READS are kept for its cycles line. A
-    // percept that returns before the line leaves the list to the next arm,
-    // which replaces it: at most one percept's orbits are ever held.
-    crate::transducer::sentence::arm_orbits();
-    // 78.74 — and its sections and cohesion, read on this thread until its
-    // fibres are.
-    super::fibres::begin();
     let n = family.len();
     let mut unreached: Vec<usize> = Vec::new();
     let mut ins: Vec<Body> = Vec::new();
@@ -337,16 +281,6 @@ pub(super) fn family_percept(
             };
             match carriage(&a0, &b0, budget) {
                 Some(car) => {
-                    // MT1 — THE IN→OUT TRANSITION READ BY ITS ACTION, the
-                    // whole matrix once under the stroke, with the frame it
-                    // carries per lane.
-                    match budget.spend() {
-                        true => {
-                            let lanes = element::measure_lanes(&super::perceive::chain_of(Some(&a0), Some(&b0), &car.v));
-                            cga::note_motor(cga::TransitionKind::InOut, &car.v, Some(lanes));
-                        }
-                        false => cga::note_unread(cga::TransitionKind::InOut),
-                    }
                     if let Some(qc) = usize::try_from(k).ok().and_then(|k| quotient_charts.get_mut(k)) {
                         qc.insert(&ck, ());
                     }
@@ -487,9 +421,6 @@ pub(super) fn family_percept(
             if let Some(m) = merged {
                 acting.gauge = crate::transducer::sentence::hue_listing(&m);
             }
-            let class_key = tc.key().encode();
-            let chart_key = c.key();
-            let coords = (class_key.as_bytes(), chart_key.as_bytes());
             // EVERY FRAME THE CLASS HOLDS ON THIS CHART, whichever section
             // stands there: the frame-axis steps are read over all of them
             // (AT1 Q3 — consecutive frames of one vertex's chart are two
@@ -537,7 +468,7 @@ pub(super) fn family_percept(
             // The chart's frame-axis steps (MT1), read once, filed with the
             // class's first member: the overlaps they make name the charts by
             // their frames, and the frames name the member standing there.
-            let steps = read_frame_axis(&mut on_chart, coords, budget);
+            let steps = read_frame_axis(&mut on_chart, budget);
             if let [first, ..] = members.as_mut_slice() {
                 first.steps = steps;
             }
@@ -712,9 +643,8 @@ pub(super) fn family_percept(
     // a pivot.
     let mut line_classes: Vec<Vec<u8>> = Vec::new();
     let mut pieces: Vec<super::fibres::Piece> = Vec::new();
-    // AT1 A2 — the class's steps across two charts, and their count by kind.
+    // AT1 A2 — the class's steps across two charts.
     let mut cross_steps: Vec<CrossStep> = Vec::new();
-    let mut across_charts = AcrossCharts::default();
     // 53.6 — A COVER'S CARRIED PIECES ARE GROUPED BY TRANSPORT CLASS,
     // exactly as a chart's quotients are: ONE Word vertex per class present
     // in the cover, one member per chart the class carries a piece on.
@@ -772,7 +702,6 @@ pub(super) fn family_percept(
                         (Some(first), Some(second)) => super::fibres::relate_sections(first, second, budget),
                         _ => super::fibres::Sections::Standing,
                     };
-                    super::fibres::note_section(relation);
                     if relation == super::fibres::Sections::Standing {
                         let links: Vec<Link> = support
                             .iter()
@@ -962,21 +891,14 @@ pub(super) fn family_percept(
                     let motor = match budget.spend() {
                         true => match blade::versor_between(&body_a.shape, &body_b.shape, budget) {
                             Ok(m) => Some(m),
-                            Err(blade::NoPose::Unbounded) => {
-                                cga::note_unread(cga::TransitionKind::FrameAxis);
-                                continue;
-                            }
+                            Err(blade::NoPose::Unbounded) => continue,
                             Err(_) => None,
                         },
-                        false => {
-                            cga::note_unread(cga::TransitionKind::FrameAxis);
-                            continue;
-                        }
+                        false => continue,
                     };
                     cross_steps.push((at.clone(), a.clone(), *k, b.clone(), *k2, motor, body_a.compartments.len() as u64));
                 }
-                ([_], [_]) => {}
-                _ => across_charts.several += 1,
+                _ => {}
             }
         }
     }
@@ -987,7 +909,7 @@ pub(super) fn family_percept(
     // what the SCENE keeps — the torsion each orbit filed, awaiting a chord
     // this form can name, and the classes standing per cover.
     let mut edges = EdgeTally::default();
-    let (meet_chords, meet_faces, pending_torsion, stood) =
+    let (meet_chords, _, pending_torsion, stood) =
         crate::transducer::family::covered::classify_cover(&covers, &mut edges, budget);
     trace::trace("percept/4 orbits+classify", trace::Wrote::Nothing, Some(budget));
     // THE DEMANDS, one vertex per (kind, chart) (50.5), in key order. A
@@ -1029,7 +951,6 @@ pub(super) fn family_percept(
         let _ = scenery.place(demand_vertex(kind.clone(), chart, links), Vec::new());
     }
     form.vertices = scenery.vertices.clone();
-    let nv = form.vertices.len();
 
     trace::trace("percept/6 site faces", trace::Wrote::Nothing, Some(budget));
     // THE INCIDENCE IS THE OCCUPANCY (21 step 2): star faces from the Frame
@@ -1042,12 +963,6 @@ pub(super) fn family_percept(
         .at(&frame_at)
         .and_then(|v| v.face_chart())
         .map(|c| member_key(&frame_at, c.key().as_bytes()));
-    // WHAT WAS OFFERED AND WHAT WAS DROPPED, at the step that dropped it.
-    // Five `continue`s stood here and none of them counted: a form came out
-    // with two faces on nine vertices and nothing said which reader
-    // discarded the other six. A face offered and refused is a measurement
-    // (§8.1) and it was being thrown away silently.
-    let mut drops = FaceDrops::default();
     // 53.6 item 3 — THE COVER'S MEETS ARE OFFERED AS FACES, BETWEEN THE
     // CLASSES THEY RELATE.
     //
@@ -1071,8 +986,7 @@ pub(super) fn family_percept(
     // same lift the orbits' ENDS already used one screen down. They are
     // offered to THIS builder and not pushed as faces directly, so a meet
     // is subject to every reading a face is — the word must re-derive, the
-    // place must exist — and a chord that cannot be built is counted in
-    // `drops` beside the others rather than forced in (§8.1).
+    // place must exist — and a chord that cannot be built is not forced in.
     //
     // `by_transport` is the index that resolves a class to its vertex, and
     // it is built by `reindex`; the scene's vertices are final above, so it
@@ -1112,8 +1026,6 @@ pub(super) fn family_percept(
     // AXIOM B's CHART FOR THIS FORM — one origin and one quantum for every
     // chord it carries (`chord::form_chart`, where the construction is read).
     let (origin, quantum) = super::chord::form_chart(&meet_chords);
-    let (source, image) = cover_nerves(&covers);
-    let spectrum = phase_spectrum(&meet_chords);
     let chord_pairs: Vec<OfferedChord> = meet_chords
         .iter()
         .filter_map(|((ta, ca, _, da), (tb, cb, _, db), e, frame)| {
@@ -1167,7 +1079,6 @@ pub(super) fn family_percept(
             Some((ma, mb, edge))
         })
         .collect();
-    let n_chords = chord_pairs.len();
     // A STAR, SITE OR CONTACT PAIR BRINGS NO EDGE OF ITS OWN — `edge_between`
     // reads it off the two bodies, as it reads any meet's (50.3) — and a
     // CHORD brings the one its meet measured, because `edge_between` is
@@ -1202,28 +1113,18 @@ pub(super) fn family_percept(
     }
     // THE CHORDS, each one overlap between two piece-charts at the cover's
     // frame (AT1, ruled (a)), subject to the same place reading as every
-    // face and counted beside the others (§8.1).
+    // face.
     for (from, to, edge) in chord_pairs {
-        drops.offered += 1;
         let Some(place) = form.face_place(&from, &to, edge) else {
-            drops.place += 1;
             continue;
         };
         form.put_face(Overlap { from, to }, FormFace::placed(place, Producer::Place));
-        drops.built += 1;
     }
     // CV1b F3 — the demands the contacts' oblique poses leave, stood below.
     let mut pole_demanded: Vec<Demanded> = Vec::new();
-    // 78.46(5)(d) — the named pairs no frame places, each with its content.
-    let mut frameless: Vec<super::incidence::Frameless> = Vec::new();
     for Offer { a: ak, b: bk, hows: how, contact: contacted } in offers {
-        drops.offered += 1;
         let contact = how.contains(&Incidence::Contact);
-        if contact {
-            drops.contact_offered += 1;
-        }
         let (Some((i, cik)), Some((j, cjk))) = (read_member_key(&ak), read_member_key(&bk)) else {
-            drops.member_key += 1;
             continue;
         };
         let (measured, pairs) =
@@ -1239,10 +1140,8 @@ pub(super) fn family_percept(
             true => (p.bodies.clone(), p.nuclei.clone()),
             false => ((p.bodies.1.clone(), p.bodies.0.clone()), (p.nuclei.1.clone(), p.nuclei.0.clone())),
         });
-        // BQ5b — the interface, whole; an unread WHAT still a face, counted.
-        let (interface, unnucleated) =
-            super::pairing::interface_of(contacted.as_ref(), body_pair.as_ref().map(|(_, n)| n));
-        drops.unnucleated += usize::from(unnucleated);
+        // BQ5b — the interface, whole; an unread WHAT still a face.
+        let (interface, _) = super::pairing::interface_of(contacted.as_ref(), body_pair.as_ref().map(|(_, n)| n));
         let (edge, refraction) = match contact {
             true => {
                 let (edge, refraction, demands) = super::pairing::members_contact_edge(
@@ -1258,15 +1157,12 @@ pub(super) fn family_percept(
             false => (measured, None),
         };
         let (Some(vi), Some(vj)) = (form.vertices.at(&i), form.vertices.at(&j)) else {
-            drops.vertex += 1;
             continue;
         };
         let (Some(ci), Some(cj)) = (vi.chart_keyed(&cik), vj.chart_keyed(&cjk)) else {
-            drops.chart += 1;
             continue;
         };
         if form.coboundary(&i, &j).is_none() {
-            drops.word += 1;
             continue;
         }
         // ONE OVERLAP PER FRAME THE PAIR STANDS ON TOGETHER (AT1, Q2): the
@@ -1284,26 +1180,10 @@ pub(super) fn family_percept(
                 form.member_frames(&i, &ci).into_iter().filter(|k| there.contains(&frame_key(*k))).collect()
             }
         };
-        let common = !frames.is_empty();
         let frames: Vec<u64> = match &pairs {
             Some(agreeing) => frames.into_iter().filter(|k| agreeing.contains(&frame_key(*k))).collect(),
             None => frames,
         };
-        if frames.is_empty() {
-            // A REFUSAL THAT CARRIES ITS CONTENT (78.46(5)(d)): counted, and
-            // held with the pair, both members' frames, and why.
-            drops.frameless += 1;
-            frameless.push(super::incidence::Frameless {
-                a: (i.clone(), ci.clone(), form.member_frames(&i, &ci)),
-                b: (j.clone(), cj.clone(), form.member_frames(&j, &cj)),
-                why: match common {
-                    true => super::incidence::FramelessWhy::EdgeOnNone,
-                    false => super::incidence::FramelessWhy::NoCommonFrame,
-                },
-            });
-            continue;
-        }
-        let mut stood = false;
         for k in frames {
             let chart = |v: &coord::VertexAt, c: &Invariant| match v {
                 coord::VertexAt::Frame => ChartAt::Frame,
@@ -1314,7 +1194,6 @@ pub(super) fn family_percept(
                 false => Overlap { from: chart(&i, &ci), to: chart(&j, &cj) },
             };
             let Some(mut place) = form.face_place(&o.from, &o.to, edge.clone()) else {
-                drops.place += 1;
                 continue;
             };
             place.refraction = refraction.clone();
@@ -1325,19 +1204,6 @@ pub(super) fn family_percept(
             let mut face = FormFace::placed(place, Producer::Place);
             face.interface = interface.clone();
             form.put_face(o, face);
-            stood = true;
-        }
-        if stood {
-            drops.built += 1;
-            if contact {
-                drops.contact_built += 1;
-            }
-            // 78.103 — A FACE BUILT WITH NOTHING TO CARRY: no edge, no
-            // refraction, and — not a star — no placement read in its stead.
-            // Counted by the face, a contact (its WHAT unread) or a pair.
-            if edge.is_none() && refraction.is_none() && !star_i && !star_j {
-                crate::transducer::sentence::rung::note_edgeless_face(contact);
-            }
         }
     }
     // THE FRAME-AXIS OVERLAPS (AT1 Q3, MT1): each step a member's input body
@@ -1365,25 +1231,22 @@ pub(super) fn family_percept(
     // AT1 A2 — AND ACROSS TWO CHARTS: the motor where the input body's
     // solved (producer Motor, its edge the motor read as a transport), the
     // sections' relative `τ = C_B·C_A⁻¹` where it refused — `face_place`
-    // at each end's own frame, producer Place. Each counted by kind.
+    // at each end's own frame, producer Place.
     for (at, a, k, b, k2, motor, carried) in cross_steps {
         let o = Overlap { from: ChartAt::at(at.clone(), a, k), to: ChartAt::at(at, b, k2) };
         match motor {
             Some(motor) => {
                 let edge = edges.take(Some(super::perceive::edge_of(&motor).map_err(|e| vec![e])));
                 let Some(mut place) = form.face_place(&o.from, &o.to, edge) else {
-                    across_charts.unplaced += 1;
                     continue;
                 };
                 super::pairing::mark_face_carriage(&motor, &place.gauge, carried, budget);
                 place.carriage = motor;
                 carried_on.push((o.clone(), carried));
                 form.put_face(o, FormFace::placed(place, Producer::Motor));
-                across_charts.motor += 1;
             }
             None => {
                 let Some(mut place) = form.face_place(&o.from, &o.to, None) else {
-                    across_charts.unplaced += 1;
                     continue;
                 };
                 // 78.103 — THE SECTIONS' RELATIVE IS A RELATIVE MOTION, AND IT
@@ -1396,7 +1259,6 @@ pub(super) fn family_percept(
                 // motor is.
                 place.edge = edges.take(Some(super::perceive::edge_of(&place.carriage).map_err(|e| vec![e])));
                 form.put_face(o, FormFace::placed(place, Producer::Place));
-                across_charts.relative += 1;
             }
         }
     }
@@ -1406,9 +1268,6 @@ pub(super) fn family_percept(
     form.orbits = cycles.kept.clone();
     form.hue_maps = hue_maps;
     form.reindex();
-    // 78.46(4′) — the certified cells read by their circuits' pair
-    // composites, the vacuum circuits among them (79.3).
-    let _ = form.read_agreements(&cycles, true);
     // 78.71 — THE 𝒯 FLUX OF THIS PERCEPT: every closed circuit's null
     // curvature (Stokes), grouped into tubes by the ray it fixes and counted
     // in each tube's own quantum, weighed by the mass its faces carried —
@@ -1422,11 +1281,8 @@ pub(super) fn family_percept(
         line.free = quotient.free.contains(class);
     }
     // 78.75 — AND THE REFUSALS IT INVERTED: each white-hole source is a field
-    // line of null flux, read into the percept's tubes beside the bodies', and
-    // a theorem — its ellipsis closed by the nilpotent certificate.
+    // line of null flux, read into the percept's tubes beside the bodies'.
     word_transports.extend(quotient.sources.iter().cloned());
-    let slivers: Vec<cga::Mv> = quotient.sources.iter().map(|l| l.carriage.clone()).collect();
-    crate::transducer::sentence::rung::hold_sources(&slivers, budget);
     // 78.69, 78.75 — THE MIND SPEAKS ITS RINGS BY THE MASTER EQUATION: every
     // ring — the orbits kept and the vacua beside them (78.46(4′)) — composed
     // as `Ω = ∏ cᵢ A(wᵢ)`, each closed sentence extrapolated to its theorem and
@@ -1513,106 +1369,11 @@ pub(super) fn family_percept(
         }
     }
     for (kind, chart) in standing_demands {
-        crate::transducer::family::cover::tally(|t| t.standing += 1);
         // A standing demand stands at its own coordinate; two orbits
         // standing the same `(kind, chart)` are one demand, counted twice.
         let _ = form.put_vertex(demand_vertex(kind, &chart, Vec::new()));
     }
     form.reindex();
-    // READ WHETHER OR NOT ANYTHING CLOSED. It was gated on
-    // `!form.orbits.is_empty() || meet_faces > 0`, so the one row that says
-    // why a form is empty was printed only when the form was not empty:
-    // fifteen forms crystallized at `orbits 0` and this line never fired
-    // once. A reading suppressed in the failure case is not a reading.
-    let unread_why = crate::transducer::sentence::Form::unread_gates();
-    // NB1 — THE CONTACT COMPLEX'S CERTIFIED CELLS BY GRADE, off the form's
-    // own carrier by the nerve's one reader (law 12).
-    let contact_cells_by_grade =
-        crate::transducer::cech::cells_by_grade(form.cells.scoped().map(|(_, c)| (c.grade(), c.meet())));
-    // BQ5a's guard (77, 78.4 E1): the circuits that cross a contact face, by
-    // arm.
-    let contact_circuits = super::pairing::contact_circuits(&form, budget);
-    // BQ1, audit N-3 — WHAT PERCEPTION PASSED OVER, always printed: bodies
-    // `body_of` refused (counted at `body_of`, whoever asked), compartments with
-    // no section (counted at `on_grid`), and sections filed at their `n`
-    // alone (counted at `section_moduli`). Zero while intake reads the
-    // grid's three. 78.16 C3: HELD, never printed — the census prints its
-    // lines off this reading and the observer takes it each stroke.
-    let unheard = [
-        crate::transducer::family::perceive::take_unheard(),
-        crate::transducer::family::perceive::take_sectionless(),
-        crate::transducer::blade::take_coarse(),
-    ];
-    // THE FAMILY FORM'S VALUES, taken here, before comprehension's reads
-    // move the running tallies. The site+ring faces are `drops.built`, as
-    // counted when built (rule 11); `unread` is H2c's gate by what refused
-    // it; the resonance says whether a trivial cycle's identity was a
-    // cancellation or an absence (54.7); the contacts, planes (D1), mint
-    // (D3) and metabolism (D2) are the running tallies read WITHOUT
-    // clearing, their one taker elsewhere (law 12), syntropy the contacts'
-    // own condensations.
-    let (gates, resonance) =
-        (crate::transducer::sentence::Form::orbit_gates(), crate::transducer::sentence::orbit_resonance());
-    let form_reading = FormReading {
-        vertices: nv,
-        faces: form.faces.len(),
-        meet_faces,
-        orbits: form.orbits.len(),
-        edges,
-        meet_chords: meet_chords.len(),
-        chords: n_chords,
-        gates,
-        unread: unread_why,
-        resonance,
-        defects: crate::transducer::sentence::orbit_defects(),
-        spectra: crate::transducer::sentence::orbit_spectra(),
-        synonyms: crate::transducer::sentence::orbit_synonyms(),
-        operators: crate::transducer::sentence::form_operators(&form),
-        contacts: crate::transducer::family::pairing::contact_tally(),
-        planes: crate::transducer::cga::plane_tally(),
-        mint: crate::transducer::family::perceive::demand_tally(),
-        metabolism: crate::physics::metabolism::metabolism(),
-        source,
-        contact_cells: contact_cells_by_grade,
-        image,
-        phase: spectrum,
-        drops,
-        contact_circuits,
-    };
-    // OR1, 73.1 — each orbit this percept read (its type, class, planes,
-    // precession, centre and modes under this stroke's budget, BD1), held
-    // with its cells, circuits and bends (78.16).
-    let orbits =
-        super::comprehend::read_and_hold(&form, budget, (entry - budget.remaining()) as u64, unreached.len() as u64);
-    // FR2, 72.1c(3) — where each cycle stands along `e₃`: its span, the meet
-    // of its members' sections, read from the members' frames.
-    let spans = super::span::SpanTally::of(&form);
-    // MT1 — EVERY OVERLAP'S CARRIAGE READ BY ITS ACTION, under the stroke;
-    // the motor tally read without clearing (the corpus test takes it).
-    for (_, face) in form.faces.entries() {
-        match budget.spend() {
-            true => cga::note_motor(cga::TransitionKind::Face, &face.place.carriage, None),
-            false => cga::note_unread(cga::TransitionKind::Face),
-        }
-    }
-    // AT1's READING (r1–r6): this form read as the table it is, and the
-    // searches and frame-axis steps counted so far (running).
-    let reached: Vec<u64> = (0..n).filter(|k| !unreached.contains(k)).filter_map(|k| u64::try_from(k).ok()).collect();
-    let atlas = super::atlas::read_form_atlas(&form, &reached);
-    crate::transducer::sentence::form::atlas::note_form(atlas);
-    // 78.46(5)(d) — each frameless pair with its content; AT1 A2 — the
-    // class's steps across two charts, by kind.
-    super::comprehend::hold_percept(PerceptReading {
-        unheard,
-        form: form_reading,
-        frameless,
-        across: across_charts,
-        orbits,
-        spans,
-        motors: cga::motor_tally(),
-        atlas,
-        searches: crate::transducer::sentence::form::atlas::atlas_tally(),
-    });
     trace::trace("extract/2 faces", trace::Wrote::Nothing, Some(budget));
     Percept { form, varying, unreached }
 }

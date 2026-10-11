@@ -267,8 +267,6 @@ pub(super) fn transitions_on(
             _ => return Err(NoPose::Isotropy),
         };
         for rotor in rotors {
-            // AT1 (r4) — the carry's candidate loop, counted at its site.
-            crate::transducer::sentence::form::atlas::note_carry_candidate();
             // EACH CANDIDATE VERIFIED DRAWS ONE READ FROM THE STROKE (65.5,
             // rule 10), so `Spend` reads the transition and a short stroke is
             // a typed cut, never a silent overrun.

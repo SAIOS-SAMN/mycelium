@@ -687,60 +687,6 @@ pub fn read_rank(circuits: &[CellCircuit], budget: &mut crate::physics::Budget) 
 /// reason where it did not read) and its hue — and each circuit's order of
 /// the cell's constructors (`None` where it does not visit every body), under
 /// the stroke's budget — its rank first, then the rest.
-/// 78.110 E2 — WHAT THE ENCOUNTERS WHERE CIRCUITS MEET READ, per ordered pair
-/// of read circuits crossing one cell (each orbit against each neighbour,
-/// both ways): read, the lift fallen to drag for want of an inverse, the
-/// lift tilting (a plane neither turns in), the lift a rate only, and the
-/// encounters not read by name.
-pub const ENCOUNTER: [&str; 5] = [
-    "encounters read",
-    "lift fell to drag",
-    "lift tilts",
-    "lift a rate only",
-    "encounters unread",
-];
-
-static ENCOUNTERS: [std::sync::atomic::AtomicU64; 5] = [const { std::sync::atomic::AtomicU64::new(0) }; 5];
-
-/// One encounter counted by its [`ENCOUNTER`] name.
-pub fn note_encounter(name: &str) {
-    if let Some(i) = ENCOUNTER.iter().position(|n| *n == name) {
-        let _ = ENCOUNTERS[i].fetch_update(std::sync::atomic::Ordering::Relaxed, std::sync::atomic::Ordering::Relaxed, |n| n.checked_add(1));
-    }
-}
-
-/// The [`ENCOUNTER`] row since the process began.
-pub fn encounter_tally() -> [u64; 5] {
-    std::array::from_fn(|i| ENCOUNTERS[i].load(std::sync::atomic::Ordering::Relaxed))
-}
-
-/// 78.110 E2 — EVERY ENCOUNTER IN ONE CELL, both ways: each read circuit as
-/// the orbit, each other as the neighbour in contact (78.46, R3: inside one
-/// anastomosis), read and counted. NOT on the reading path: wired into
-/// every cell READ it ran 48k–380k encounters a voice in twenty minutes and
-/// cut the voice's perception threefold (epoch 138). It is asked where an
-/// orbit is moved (E3) — once per cell whose circuits changed.
-pub fn read_encounters(read: &[&Mv], budget: &mut crate::physics::Budget) {
-    for (i, orbit) in read.iter().enumerate() {
-        for (j, neighbour) in read.iter().enumerate() {
-            if i == j {
-                continue;
-            }
-            match cga::encounter(orbit, neighbour, budget) {
-                Ok(e) => {
-                    note_encounter("encounters read");
-                    note_encounter(match (e.fell_to_drag, e.tilts()) {
-                        (true, _) => "lift fell to drag",
-                        (false, true) => "lift tilts",
-                        (false, false) => "lift a rate only",
-                    });
-                }
-                Err(_) => note_encounter("encounters unread"),
-            }
-        }
-    }
-}
-
 pub fn read_cell(
     grade: usize,
     round: Option<&Mv>,

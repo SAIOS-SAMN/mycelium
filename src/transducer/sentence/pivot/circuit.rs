@@ -3,7 +3,6 @@
 // their classes, the face transport, coherence, and triviality.
 
 use super::*;
-pub use super::refracted::CosetClosure;
 
 impl Form {
     /// THE HOLONOMY OF THE EDGE TRANSPORTS around an orbit (50.3), ONE PER
@@ -96,7 +95,7 @@ pub(crate) struct PathCarried {
     ///
     /// PL1 — EVERY TRANSITION, IN BOUNDARY ORDER: the face crossed, which way, and
     /// the transport the transition carried where it was read. The charge above is
-    /// read off each transition's carriage by `transition_charged`; the circuit's reading
+    /// read off each transition's carriage by `cga::charged`; the circuit's reading
     /// (`trajectory::read_circuit`) is the same transitions read whole.
     pub(crate) transitions: Vec<CarriedTransition>,
     /// WHY THE EDGE HALF WAS REFUSED, where it was (H2c, rule 11). The face
@@ -166,39 +165,6 @@ pub(crate) enum Unread {
     // and its way (AT1), so it cannot hold.
 }
 
-/// THE UNREAD READINGS, split by why (H2c). A measurement and never a gate.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct UnreadTally {
-    pub cone: u64,
-    pub not_rigid: u64,
-    pub unrefracted: u64,
-    pub no_face: u64,
-}
-
-#[cfg(test)]
-impl Unread {
-    /// The refusal by name, for the lines that read it.
-    pub(crate) fn label(self) -> &'static str {
-        match self {
-            Unread::Cone => "cone",
-            Unread::NotRigid => "not rigid",
-            Unread::Unrefracted => "unrefracted",
-            Unread::NoFace => "no face",
-        }
-    }
-}
-
-impl UnreadTally {
-    pub(crate) fn note(&mut self, why: Unread) {
-        match why {
-            Unread::Cone => self.cone += 1,
-            Unread::NotRigid => self.not_rigid += 1,
-            Unread::Unrefracted => self.unrefracted += 1,
-            Unread::NoFace => self.no_face += 1,
-        }
-    }
-}
-
 // `Crossing` AND `crossing` STOOD HERE (O1, 70.7) and are gone with the
 // faces that related several member pairs (AT1): an overlap relates ONE pair
 // at one frame, and the transition that crosses it says which way — the
@@ -259,30 +225,9 @@ pub(crate) fn paths_carried(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> O
     paths_carried_why(faces, vertices, lp).ok()
 }
 
-/// VS1 — THE SAME CIRCUIT, READ QUIETLY: no transition's charge is noted. A reader
-/// that re-reads a circuit under a trial move (a bend) reads what the move
-/// does and must not write the census's cumulative counters, or the counters
-/// would count the trial's traversals as the corpus's.
-pub(crate) fn paths_carried_quiet(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> Option<Keyed<PathCarried>> {
-    traverse(faces, vertices, lp, false).ok()
-}
-
 /// THE ONE CIRCUIT, SAYING WHY IT REFUSED (H2c). [`paths_carried`] is this read
-/// with the reason dropped. `orbits_of` asks here, so the `unread` gate is
-/// counted by what refused it.
+/// with the reason dropped.
 pub(crate) fn paths_carried_why(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> Result<Keyed<PathCarried>, Unread> {
-    traverse(faces, vertices, lp, true)
-}
-
-/// The same circuit and its reason, filing nothing on the census counters:
-/// a reader off the percept (CS2's, at the pivot) reads the held form's
-/// circuits without moving the percept's tallies.
-pub(crate) fn paths_carried_quiet_why(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> Result<Keyed<PathCarried>, Unread> {
-    traverse(faces, vertices, lp, false)
-}
-
-/// The traversal itself; `note` files each transition's charge on the census counters.
-fn traverse(faces: &Faces, vertices: &Vertices, lp: &Orbit, note: bool) -> Result<Keyed<PathCarried>, Unread> {
     // THE EDGE COMPOSITE OPENS AT THE IDENTITY AND EVERY TRANSITION CONTRIBUTES.
     // It used to open at `None` unless the orbit crossed a face between two
     // bodies, because the star faces contributed nothing and a star-only
@@ -382,12 +327,7 @@ fn traverse(faces: &Faces, vertices: &Vertices, lp: &Orbit, note: bool) -> Resul
         // face it crosses and which way — a transition whose transport was never
         // read is kept as unread rather than as an identity, because unread
         // is not flat (rule 11) — and `acc.edge` below goes `None` for it,
-        // so the whole boundary is already refused. The charge is noted
-        // for every transition that carries a transport: charged, uncharged, or
-        // unread where its carriage is no versor.
-        if let (Some(t), true) = (carried.as_ref(), note) {
-            note_transition_charge(transition_charged(&t.carriage));
-        }
+        // so the whole boundary is already refused.
         // BQ5a — A CONTACT WHOSE EDGE IS NOT ONE TRANSPORT (78.6): the held
         // coset or the static tether its place carries, where no edge formed.
         let refraction = match (&carried, place.as_ref()) {

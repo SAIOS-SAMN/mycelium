@@ -911,7 +911,6 @@ fn a_move_that_splits_two_agreeing_circuits_of_a_cell_is_unclosed() {
     };
     let unperturbed = prior(Agreements::default());
     let perturbed = prior(agreements);
-    let _ = take_perturb_tally();
     let (mut admitted, mut refused) = (0usize, 0usize);
     for cand in &cands {
         if f.trial(0, cand, &kappa, &unperturbed).is_err() {
@@ -924,8 +923,6 @@ fn a_move_that_splits_two_agreeing_circuits_of_a_cell_is_unclosed() {
     }
     assert!(admitted > 0, "the unperturbed trial certifies a discharge, or this asserts nothing");
     assert_eq!(refused, admitted, "every discharge of one circuit splits it from the other");
-    let t = take_perturb_tally();
-    assert_eq!(t.unclosed, u64::try_from(refused).expect("a handful"), "each refusal counted unclosed: {t:?}");
 
     // A CELL ALREADY CURVED REFUSES NOTHING: a 90° turn beside a 180° turn
     // disagree before any move, so no move splits an agreement.

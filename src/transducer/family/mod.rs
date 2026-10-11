@@ -5,11 +5,9 @@
 //! form spoken back onto a scene. A family it does not close is a withheld
 //! form.
 
-mod atlas;
 pub mod bridge;
 mod chord;
 mod comprehend;
-pub use comprehend::{take_cells, take_progress, take_spend, take_viscosity};
 pub(crate) use comprehend::pivot_cells;
 pub mod contact;
 pub mod correspondence;
@@ -34,7 +32,6 @@ pub mod memo;
 pub mod orbit;
 pub mod pair;
 mod percept;
-pub(crate) mod percept_reading;
 pub mod perceive;
 pub mod pairing;
 pub mod rebase;
@@ -46,7 +43,6 @@ pub mod span;
 pub mod speak;
 pub mod statement;
 pub mod trace;
-mod witness;
 
 pub(crate) use correspondence::*;
 pub use deflation::*;
@@ -78,7 +74,6 @@ use super::element::{self, Element, Versor};
 use super::base::Site;
 use super::sentence::{Form, Link, Vertex};
 use super::stalk::{Invariant, Standing};
-use std::cell::Cell;
 
 /// Source of crystallized forms on a class. Standing is a coordinate on
 /// the working atlas, never a gate.

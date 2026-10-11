@@ -54,7 +54,6 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
     while i < args.len() {
         if args[i] == "--home"
             || args[i] == "--at"
-            || args[i] == "--voice"
             || args[i] == "--court"
             || args[i] == "--reading"
             || args[i] == "--why"
@@ -316,7 +315,6 @@ fn main() {
             wallet::run(&home, flag(&args, "--at"), asked);
         }
         let ask = console::Ask {
-            voice: flag(&args, "--voice"),
             court: flag(&args, "--court"),
             reading: flag(&args, "--reading"),
         };

@@ -97,10 +97,7 @@ pub(crate) fn meet_edge(
     // a DILATED carry whose domain and codomain are similar but not
     // congruent, or a 45° relation whose half-angle is irrational — and
     // then `gamma` stands unframed rather than being rotated by an
-    // invented turn (rule 11). Both outcomes are counted, so "the frame
-    // never fired" and "the frame fired and was the identity" cannot read
-    // the same on the line, which is the defect that let `ℓ = 1` pass as
-    // a measurement of the scene.
+    // invented turn (rule 11).
     let own_turn = |s: &crate::transducer::family::cover::Supports, budget: &mut crate::physics::Budget| {
         // The pose over the piece's tube (FR1, 72.1c): the sensor's plane
         // where domain and codomain stand in one section, every axis where
@@ -109,67 +106,17 @@ pub(crate) fn meet_edge(
             crate::transducer::blade::shape_of(&s.domain).blade,
             crate::transducer::blade::shape_of(&s.codomain).blade,
         );
-        if crate::transducer::blade::on_tube(&d, &c) {
-            crate::transducer::family::cover::tally(|t| t.pose_tube += 1);
-        }
         crate::transducer::blade::relative_pose(&d, &c, budget)
     };
     let framed = match (own_turn(supa, budget), own_turn(supb, budget)) {
         // `θ_b θ̃_a γ`: the framed relation as a ray (78.32(1)).
         (Ok(ta), Ok(tb)) => match crate::transducer::cga::is_versor(ta.rotor()).then(|| ta.rotor().reverse()) {
-            Some(inv) => {
-                // A frame either side of which is only fixed mod `π` makes
-                // the composite open too, and it is counted apart: an
-                // even moment cannot close a 180° turn (56.5), so this is
-                // a projective class and not a determined rotor.
-                let open = matches!(
-                    (&ta, &tb),
-                    (crate::transducer::blade::Pose::Open180(_), _)
-                        | (_, crate::transducer::blade::Pose::Open180(_))
-                );
-                crate::transducer::family::cover::tally(|t| match open {
-                    true => t.frame_open_180 += 1,
-                    false => t.framed += 1,
-                });
-                tb.rotor().geo(&inv).geo(&gamma)
-            }
-            None => {
-                crate::transducer::family::cover::tally(|t| t.unframed += 1);
-                gamma
-            }
+            Some(inv) => tb.rotor().geo(&inv).geo(&gamma),
+            None => gamma,
         },
-        _ => {
-            crate::transducer::family::cover::tally(|t| t.unframed += 1);
-            gamma
-        }
+        _ => gamma,
     };
     let mut edge = edge_of(&framed)?;
-    // AXIOM B — THE INTERFACE TRANSITION IS A GEODESIC TRANSVECTION BETWEEN
-    // THE TWO FRAMES' OWN BASE POINTS (54.7, ruled 2026-09-21).
-    //
-    // `edge_of` reads a DISPLACEMENT out of `γ` and rebuilds it, and it
-    // reads it through `cga::point`/`cga::base` — the flat conformal
-    // embedding, `e_∞`-normalised, answering three scalars. So the geodesic
-    // PLANE was destroyed and then re-synthesised from a triple, which is
-    // rank-2 content reconstructed by assumption.
-    //
-    // Here the two frames are asked where they STAND — `V v₀ Ṽ` back on the
-    // sheet — and the transition between those two points is
-    // `R = 1 − v_b v_a`, whose generator IS the geodesic 2-blade
-    // `v_a ∧ v_b`. No `e_∞` is formed and no coordinate is extracted.
-    //
-    // Where either frame does not stand on the sheet the reading is refused
-    // rather than approximated, and `edge_of`'s own carriage stands (rule
-    // 11): that is a frame this chart does not reach, not a zero transition.
-    let geodesic = crate::transducer::cga::frame_base_point(sa)
-        .zip(crate::transducer::cga::frame_base_point(sb))
-        .and_then(|(pa, pb)| crate::transducer::cga::geodesic_transvection(&pa, &pb));
-    match geodesic {
-        Some(_r) => {
-            crate::transducer::family::cover::tally(|t| t.geodesic += 1);
-        }
-        None => crate::transducer::family::cover::tally(|t| t.off_sheet += 1),
-    }
     // Each body's own hue map at the chart its vertex stands at. A cover
     // vertex stands at exactly one, and a vertex standing at none carries no
     // map — which is the empty map, a map that moves no hue, and not a

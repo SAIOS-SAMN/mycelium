@@ -56,10 +56,7 @@ fn a_face_between_two_charts_of_one_vertex_is_crossed_by_its_member_pair() {
             Producer::Place,
         ),
     );
-    Form::reset_orbit_gates();
     let orbits = Form::orbits_of(&f.faces, &f.vertices);
-    let (_, _, unread, _) = Form::orbit_gates();
-    assert_eq!(unread, 0, "nothing is unread: the pair is held, one way round");
     assert_eq!(orbits.len(), 1, "the cycle through the self-face stands as an orbit");
     let carried = paths_carried(&f.faces, &f.vertices, &orbits[0]).expect("the circuit reads the cycle");
     assert!(
@@ -127,12 +124,9 @@ fn a_carriage_on_the_light_cone_leaves_its_orbit_unread() {
     );
 
     let cone = build(true);
-    Form::reset_orbit_gates();
-    let orbits = Form::orbits_of(&cone.faces, &cone.vertices);
-    assert!(orbits.is_empty(), "an orbit based through an unread transport is not an orbit: {orbits:?}");
-    let (_, _, unread, trivial) = Form::orbit_gates();
-    assert_eq!(unread, 2, "the refused tree edge and the cycle beyond it are both counted unread");
-    assert_eq!(trivial, 0, "and nothing was read as flat");
+    let cycles = Form::cycles_of(&cone.faces, &cone.vertices);
+    assert!(cycles.kept.is_empty(), "an orbit based through an unread transport is not an orbit: {:?}", cycles.kept);
+    assert!(cycles.vacua.is_empty(), "and nothing was read as flat");
 }
 
 /// 54.7 AXIOM A — A CYCLE IS BASED, AND BASING MOVES NO READING.

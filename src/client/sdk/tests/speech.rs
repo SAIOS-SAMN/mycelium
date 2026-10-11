@@ -207,12 +207,6 @@ fn a_mind_speaks_its_closed_thought_into_its_own_dialect() {
     // holding what it stood.
     assert_eq!(entity.contemplation.closed_thoughts, 1, "one thought closed its return");
     assert!(entity.dialect_len() >= 1, "the dialect holds it");
-    // Spelled against this mind's own letters (78.47 (i)): one word, spoken.
-    assert_eq!(
-        entity.transcription,
-        crate::observe::TranscriptionTally { spelled: 1, adjoined: 0, ineffable: 0, unread: 0 },
-        "the closed thought was spelled"
-    );
     // What the court hears is the word: its letters re-derive its motion,
     // and its blind replay — speech, never a thought — is clean. The thought's
     // word is the one carrying its return (`ℓ − 1 = 3` on the shell); the

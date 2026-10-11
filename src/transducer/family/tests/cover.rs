@@ -502,15 +502,10 @@ fn a_cover_that_ends_is_parked_and_the_next_stroke_resumes_it() {
 
     // WHOLE, in a stroke that cannot end — and WHAT IT SPENT.
     cursor::clear();
-    let _ = crate::transducer::family::cover::take_cover_tally();
-    let whole = cover_deformation(
-        &input,
-        &image,
-        None,
-        &mut crate::physics::Physics::default().stroke_n(1 << 20),
-    )
-    .expect("a cover that runs to its end");
-    let spend = crate::transducer::family::cover::take_cover_tally().spend;
+    let mut stroke = crate::physics::Physics::default().stroke_n(1 << 20);
+    let opened = stroke.remaining();
+    let whole = cover_deformation(&input, &image, None, &mut stroke).expect("a cover that runs to its end");
+    let spend = (opened - stroke.remaining()) as u64;
     assert_eq!(cursor::parked(), 0, "a cover that completed leaves nothing parked");
     assert!(spend > 1, "the whole cover spends more than one read: {spend}");
 
@@ -575,62 +570,20 @@ fn the_reading_is_the_forms_and_is_stable() {
     assert_eq!(one.orbits.len(), two.orbits.len(), "the same orbits");
 }
 
-/// One cover run to the end of its pieces: the cover, its tally, and how
-/// many bodies the input composite holds.
-fn measured_cover(
-    a: &Grid,
-    b: &Grid,
-) -> (crate::transducer::family::cover::Cover, crate::transducer::family::cover::CoverTally, usize)
-{
-    use crate::transducer::family::cover::{cover_deformation, take_cover_tally};
+/// One cover run to the end of its pieces.
+fn measured_cover(a: &Grid, b: &Grid) -> crate::transducer::family::cover::Cover {
+    use crate::transducer::family::cover::cover_deformation;
     use crate::transducer::family::cursor;
-    use crate::transducer::family::pieces::pieces_of;
     let (input, image) = (composite(a), composite(b));
     cursor::clear();
-    let _ = take_cover_tally();
-    let cover = cover_deformation(
-        &input,
-        &image,
-        None,
-        &mut crate::physics::Physics::default().stroke_n(1 << 20),
-    )
-    .expect("a cover that runs to its end");
-    let t = take_cover_tally();
-    let ins = pieces_of(&input.compartments).scoped().count();
-    (cover, t, ins)
+    cover_deformation(&input, &image, None, &mut crate::physics::Physics::default().stroke_n(1 << 20))
+        .expect("a cover that runs to its end")
 }
 
-/// 50.8 — Φ(U) IS ONE SET, exactly as Φ⁻¹(V) is. The two peels are under
-/// no obligation to agree on granularity, so a carried piece whose image
-/// lies across several output pieces is assembled whole and carried once.
-///
-/// Skipping that case instead refuses every carriage where the output side
-/// holds more bodies than the input — which is the same fault the
-/// pullback's own preimage exists to avoid, taken in the other direction.
-/// The body the pullback cannot place is the one pass (b) is offered, and
-/// its image is read from the versors pass (a) already placed.
-#[test]
-fn an_image_across_several_output_pieces_is_assembled_and_carried_once() {
-    let (a, b) = four_bodies_one_left();
-    let (_, t, _) = measured_cover(&a, &b);
-    assert!(
-        t.propagated > 0,
-        "the pass attempts the pieces the pullback left: {} attempts",
-        t.propagated
-    );
-}
-
-/// 50.8, rule 1 — PASS (b) PROPAGATES, IT DOES NOT SEARCH. The second pass
-/// tried every output piece of the unplaced piece's own shell kind and hue
-/// and asked `carriage` to decide each try: `ins × outs` versor solves over
-/// a correspondence the cover had already measured. It applies the versors
-/// pass (a) placed and reads the image by position, so the attempt count is
-/// `placed × unplaced` — and where the pullback placed nothing, there is no
-/// versor to propagate and the pass attempts nothing at all.
-///
-/// The second half is the one the search could not pass: with no placed
-/// carriage it still ran `ins × outs` attempts, and whatever those found
-/// was a piece the correspondence did not put there.
+/// 50.8, rule 1 — PASS (b) PROPAGATES, IT DOES NOT SEARCH: where the
+/// pullback placed nothing there is no versor to propagate, nothing is
+/// carried, and what no versor carries reports as a demand; a deformation
+/// the pullback reaches carries the pieces that stand in place.
 #[test]
 fn cover_attempts_are_placed_times_unplaced() {
     // TWO BODIES THAT DO NOT MEET. No compartment of the input stands under any
@@ -640,28 +593,15 @@ fn cover_attempts_are_placed_times_unplaced() {
         grid(&["111", "111", "000", "000", "000", "000"]),
         grid(&["000", "000", "000", "000", "111", "111"]),
     );
-    let (cover, t, _) = measured_cover(&apart.0, &apart.1);
-    assert_eq!(t.carried, 0, "the pullback places nothing across a gap");
-    assert_eq!(t.propagated, 0, "and with no placed versor, (b) attempts nothing");
+    let cover = measured_cover(&apart.0, &apart.1);
+    assert_eq!(cover.carried.scoped().count(), 0, "the pullback places nothing across a gap");
     assert!(
         cover.uncarried.iter().any(|&x| x > 0),
         "what no versor carries is a demand, and it reports: {:?}",
         cover.uncarried
     );
-
-    // A DEFORMATION THE PULLBACK REACHES. The attempts (b) makes are
-    // bounded by the versors (a) placed times the input's own bodies —
-    // never by the output's count, which is what the search read.
     let (a, b) = four_bodies_one_left();
-    let (_, t, ins) = measured_cover(&a, &b);
-    assert!(t.carried > 0, "the pullback places the pieces that stand in place");
-    assert!(
-        usize::try_from(t.propagated).expect("attempts this process made")
-            <= usize::try_from(t.carried).expect("carriages this process placed") * ins,
-        "attempts are placed × unplaced: {} against {} × {ins}",
-        t.propagated,
-        t.carried
-    );
+    assert!(measured_cover(&a, &b).carried.scoped().count() > 0, "the pullback places the pieces that stand in place");
 }
 
 /// 13.9 STEP 7, 50.3 — A PURE-COBOUNDARY FORM YIELDS NO EVALUATED ORBIT.

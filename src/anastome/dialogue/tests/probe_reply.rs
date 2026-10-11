@@ -38,28 +38,3 @@ fn the_probe_reply_carries_its_reading_and_no_code() {
     let scaled = ProbeReading { closure: ProbeClosure::Residual(Some(versor(0, 3).scale(&two))), ..readings[1].clone() };
     assert_eq!(decode_probe_reply(&encode_probe_reply(&scaled)).as_ref(), Some(&readings[1]));
 }
-
-/// THE VOICE'S TALLY keys a residual's versor by its CLASS: two probes whose
-/// residuals stand off by one versor (and by λ of it) are one class counted
-/// twice; another versor of another class is another entry; a residual whose
-/// versor did not read is counted apart. Lanes sum per lane.
-#[test]
-fn the_probe_tally_keys_residual_versors_by_their_class() {
-    let mut t = crate::observe::ProbeTally::default();
-    let residual = |v: Option<crate::transducer::cga::Mv>| ProbeReading {
-        settled: [1, 0, 0, 2],
-        closure: ProbeClosure::Residual(v),
-        remaining: [0, 1, 0, 0],
-    };
-    t.note(&residual(Some(versor(0, 3))));
-    t.note(&residual(Some(versor(0, 3).scale(&q(5)))));
-    t.note(&residual(Some(versor(0, 1))));
-    t.note(&residual(None));
-    t.note(&ProbeReading { settled: [4, 0, 0, 0], closure: ProbeClosure::Closed, remaining: [0; 4] });
-    assert_eq!((t.closed, t.residual, t.residual_unread), (1, 4, 1));
-    assert_eq!(t.settled, [8, 0, 0, 8], "summed per lane");
-    assert_eq!(t.remaining, [0, 4, 0, 0]);
-    let counts: Vec<u64> = t.classes.iter().map(|(_, n)| *n).collect();
-    assert_eq!(counts.iter().sum::<u64>() + t.unclassed, 3, "three residual versors read");
-    assert!(counts.contains(&2), "one class met twice: {:?}", t.classes);
-}

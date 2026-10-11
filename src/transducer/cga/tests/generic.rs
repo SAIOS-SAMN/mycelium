@@ -128,52 +128,30 @@ fn the_algebra_at_n4_has_its_own_count_and_holds_n3_inside_it() {
 /// transversion `eᵢ ∧ e_o` is the other pole.
 #[test]
 fn a_translation_is_one_parabolic_plane_in_the_census() {
-    use crate::transducer::alphabet::Rotor;
     use crate::transducer::cga::Pole;
-    let identity = Rotor::scalar(q(1, 1));
-    let _ = cga::take_plane_tally();
-    cga::note_transition(&identity, &cga::translator_at(&[q(2, 1), q(0, 1), q(0, 1)]));
-    let t = cga::take_plane_tally();
-    assert_eq!(t.count_parabolic(1, Pole::Infinity), 1, "one parabolic plane, e1∞");
-    assert_eq!(t.count(ax(1) | EP), 0, "not a turn on e1p");
-    assert_eq!(t.count(ax(1) | EM), 0, "not a boost on e1m");
-    assert_eq!(t.occupied(), 1, "one plane in all: {}", t.line());
+    let slide = cga::translator_at(&[q(2, 1), q(0, 1), q(0, 1)]);
+    let t = cga::occupancy(&slide, slide.n());
+    assert_eq!(t.parabolic, vec![(1, Pole::Infinity)], "one parabolic plane, e1∞");
+    assert!(t.planes.is_empty(), "not a turn on e1p, not a boost on e1m: {t:?}");
     // A pure boost `e1 ∧ e₋` is not null: it stays on its luminal plane.
-    let _ = cga::take_plane_tally();
     let boost = Mv::scalar(q(2, 1)).add(&Mv::blade(ax(1) | EM, q(1, 1)));
-    cga::note_transition(&identity, &boost);
-    let t = cga::take_plane_tally();
-    assert_eq!(t.count(ax(1) | EM), 1, "a boost is a boost");
-    assert_eq!(t.count_parabolic(1, Pole::Infinity), 0);
+    let t = cga::occupancy(&boost, boost.n());
+    assert_eq!(t.planes, vec![ax(1) | EM], "a boost is a boost");
+    assert!(t.parabolic.is_empty());
     // `e1 ∧ e_o` — the other pole.
     let o = cga::occupancy(&Mv::blade(ax(1) | EM, q(1, 1)).sub(&Mv::blade(ax(1) | EP, q(1, 1))), 3);
     assert_eq!(o.parabolic, vec![(1, Pole::Origin)], "{o:?}");
     assert!(o.planes.is_empty(), "{o:?}");
 }
 
-/// 51.2, audit N-2 — THE CENSUS FILES A TURN UNDER THE PLANE IT TURNS. The
-/// letters' `e0e3` is the base's (row, frame) plane, which the carriage
-/// calls `e₁e₃`; `e1e3` is (column, frame), `e₂e₃`; the off-plane `e0e2`
-/// lands on `e₁e₊`. A hand table filed these as `e₂e₃`, `e₂e₊` and `e₁e₃`.
+/// 51.2 — EVERY GRID AXIS HAS ITS SLOT IN THE LETTERS' CHART, and the
+/// orientation character `e2` stands for no base axis.
 #[test]
-fn the_plane_census_reads_the_rotor_chart_through_the_alphabets_slots() {
-    use crate::transducer::alphabet::{axis_of_slot, slot_of_axis, Rotor};
+fn the_alphabets_slots_stand_for_the_grids_axes() {
+    use crate::transducer::alphabet::{axis_of_slot, slot_of_axis};
     for axis in 0..3 {
         let slot = slot_of_axis(axis).expect("the grid's three axes have slots");
         assert_eq!(axis_of_slot(slot), Some(axis), "a slot stands for its own axis");
     }
     assert_eq!(axis_of_slot(2), None, "e2 is the orientation character, no base axis");
-    let cases: [(usize, usize); 3] = [
-        (0b1001, ax(1) | ax(3)),
-        (0b1010, ax(2) | ax(3)),
-        (0b0101, ax(1) | EP),
-    ];
-    for (rotor_mask, plane) in cases {
-        let _ = cga::take_plane_tally();
-        let turn = Rotor::scalar(q(3, 5)).add(&Rotor::blade(rotor_mask, q(4, 5)));
-        cga::note_transition(&turn, &Mv::scalar(BigRational::one()));
-        let t = cga::take_plane_tally();
-        assert_eq!(t.count(plane), 1, "rotor {rotor_mask:#06b} is filed as {}", cga::plane_name(plane));
-        assert_eq!(t.occupied(), 1, "and under no other plane");
-    }
 }

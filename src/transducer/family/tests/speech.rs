@@ -57,9 +57,7 @@ fn a_glued_vertex_speaks_its_cited_form_on_the_one_perception_of_the_scene() {
     let glued = citing.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Glued { .. })).count();
     assert_eq!(glued, 1, "two statements of one citation are one boundary");
     assert_eq!(citing.cover.len(), 1, "and one incidence");
-    reset_sensor_reads();
     let spoken = apply_form(&citing, &x, &identity, &crystal).expect("the citing form speaks");
-    assert_eq!(sensor_reads(), (x.len() * x[0].len()) as u64, "the grid is perceived once for the whole speech");
     assert_eq!(spoken.grid(), Some(y), "and both citations speak the bar's shift onto it");
 }
 

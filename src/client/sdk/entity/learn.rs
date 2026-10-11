@@ -57,26 +57,16 @@ impl Entity {
         rule: Option<&Element>,
         budget: &mut crate::physics::Budget,
     ) -> Option<(u8, [u64; 4])> {
-        let Some(rule) = rule else {
-            self.solves.unminted += 1;
-            return None;
-        };
+        let rule = rule?;
         // 78.142 — THE WORD THAT CROSSES TO THE WITHHELD PAIRS carries no
         // overlap between two of its TRAINING frames (`rule::crossing`): the
         // court reads those frame indices on pairs they do not name and
         // refuses them I. A rule that cannot be re-minted without them has
         // nothing to say about a pair it never saw, and is refuted at home.
-        let crossed = match crate::client::sdk::rule::crossing(rule, train, &self.epigenome) {
-            Ok(e) => e,
-            Err(_) => {
-                self.solves.refuted += 1;
-                return None;
-            }
-        };
+        let crossed = crate::client::sdk::rule::crossing(rule, train, &self.epigenome).ok()?;
         let rule = &crossed;
         let addr = rule.address();
         if self.solve_refused.get(id).is_some_and(|a| a == addr.as_bytes()) {
-            self.solves.withheld_again += 1;
             return None;
         }
         // 78.158a — THE HOME CHECK, the judge's own (`rule::would_judge_with`)
@@ -95,10 +85,7 @@ impl Entity {
                 eprintln!("  solve kept home: the rule cites {} no court admitted (cites unheld)", hex_prefix(&a));
                 return None;
             }
-            Err(_) => {
-                self.solves.refuted += 1;
-                return None;
-            }
+            Err(_) => return None,
         }
         let verdict = self.submit_solve_rule(id, outputs, Some(rule)).ok()?;
         // A refusal is remembered against the rule it refused, one per
@@ -153,12 +140,6 @@ impl Entity {
         }
     }
 
-    /// 78.153c — WHAT THIS VOICE'S SOLVES CAME TO, by the court's reply
-    /// code and the refusal's kind, read for its `K` line.
-    pub fn solves(&self) -> &crate::observe::SolveTally {
-        &self.solves
-    }
-
     /// SUBMIT A SOLVE: the sentence that spoke the outputs, with them. The
     /// court replays the RULE on its withheld pairs and pays what it
     /// discharges (the actions' physics): (SOLVE_BOUNTY, μ⃗) on the task's
@@ -195,29 +176,19 @@ impl Entity {
         let body = self.session.speak_keyed(id, act)?;
         // THE VOICE HEARS ITS VERDICT (the actions' physics): what the court
         // read of its rule — closed first, closed again, or refused with the
-        // replay's reason and kind — folded into this voice's tally. A
-        // receipt that does not decode says nothing was solved and nothing
-        // was paid, which is what the solve earned, counted unruled.
-        // 78.153c — and SAYS it, one typed line per verdict: the task, the
+        // replay's reason and kind. A receipt that does not decode says
+        // nothing was solved and nothing was paid, which is what the solve
+        // earned. 78.153c — the verdict SAID, one typed line: the task, the
         // code by name, the refusal's kind and reason.
         Ok(match dialogue::decode_solve_verdict(&body) {
             Some((code, mu, refusal, modes)) => {
-                self.solves.note(code, &mu, refusal.as_ref());
-                // 78.162 — the modes the closure moved, where the court sent
-                // them: each exact, composed by its coordinates.
-                if let Some(m) = &modes {
-                    self.solves.note_modes(m);
-                }
-                eprintln!("  {}", crate::observe::SolveTally::verdict_line(id, code, refusal.as_ref()));
+                eprintln!("  {}", verdict_line(id, code, refusal.as_ref()));
                 if let Some(m) = &modes {
                     eprintln!("  solve modes · {}", m.print());
                 }
                 (code, mu)
             }
-            None => {
-                self.solves.unruled += 1;
-                (dialogue::SOLVE_NOTHING, [0; 4])
-            }
+            None => (dialogue::SOLVE_NOTHING, [0; 4]),
         })
     }
 
@@ -379,8 +350,6 @@ impl Entity {
     }
 
     pub(crate) fn absorb_class_page(&mut self, body: &[u8], _from: [u8; 32], budget: &mut crate::physics::Budget) {
-        // HEARING — one page heard, on every path a page arrives by.
-        crate::observe::count(&mut self.hearing, &crate::observe::HEARING, "pages");
         let pages = dialogue::decode_class_records(body);
         let mut recs = Vec::new();
         for p in pages {
@@ -542,13 +511,10 @@ impl Entity {
         let k = self.own_k();
         // The caller's stroke (65.5): the page is learned inside its act.
         let heard = self.epigenome.learn_at(taught, k, self.now_tu(), budget);
-        // HEARING — every word heard passes here; the ones admitted too.
-        crate::observe::count(&mut self.hearing, &crate::observe::HEARING, "words heard");
         // 24.3: a page learned is a mode of the stroke's outcome, measured
         // by what the page brought; a page refused on replay measures
         // nothing. The stroke takes the measure once.
         if heard.is_some() {
-            crate::observe::count(&mut self.hearing, &crate::observe::HEARING, "words admitted");
             crate::physics::StrokeOutcome::add(&mut self.learned_mu, &mu);
             // 78.73 — PLASTIC: each court-admitted word this mind took in
             // reshaped its language on the lanes the word occupies.
@@ -574,4 +540,30 @@ impl Entity {
 /// label to read the line by, never a key (78.113).
 fn hex_prefix(addr: &[u8]) -> String {
     crate::chronometry::payload_hash(addr).iter().take(6).map(|b| format!("{b:02x}")).collect::<String>() + "…"
+}
+
+/// 78.153c — ONE SOLVE VERDICT, AS ONE LINE: the task by its citation's
+/// head, the reply's code by name (`SOLVE_NOTHING` 0, `SOLVE_FLOOR` 1,
+/// `SOLVE_BOUNTY` 2, `SOLVE_UNREAD` 3) and number, the refusal's kind by name
+/// (P D C I N, unclassified `?`; `none` where the reply carried no refusal)
+/// and its reason as the court wrote it.
+fn verdict_line(task: &[u8; 32], code: u8, refusal: Option<&dialogue::SolveRefusal>) -> String {
+    const CODES: [&str; 4] = ["nothing", "floor", "bounty", "unread"];
+    const KINDS: [&str; 6] = ["P", "D", "C", "I", "N", "?"];
+    let head: String = task.iter().take(4).map(|b| format!("{b:02x}")).collect();
+    let name = match CODES.get(usize::from(code)) {
+        Some(n) => *n,
+        None => "unknown code",
+    };
+    let (kind, reason) = match refusal {
+        Some(r) => (
+            match KINDS.get(usize::from(r.kind)) {
+                Some(k) => *k,
+                None => "unknown kind",
+            },
+            format!(" · {}", String::from_utf8_lossy(&r.reason)),
+        ),
+        None => ("none", String::new()),
+    };
+    format!("solve verdict · task {head}… · code {name} ({code}) · kind {kind}{reason}")
 }

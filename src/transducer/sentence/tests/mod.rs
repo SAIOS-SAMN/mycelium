@@ -22,8 +22,6 @@ mod rotor_class;
 mod stratum;
 mod symmetry;
 mod address;
-mod trajectory;
-mod viscosity;
 mod nerve;
 mod properties;
 mod receipts;

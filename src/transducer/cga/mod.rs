@@ -26,10 +26,7 @@ mod perturbation;
 mod planes;
 mod spin;
 
-pub use constructors::{
-    carry, construct, construction_outcomes, constructor_orbit, is_constructor, note_construction_outcome, refusal_name,
-    Constructed, ConstructorOrbit, NotConstructed, OrbitUnread, CONSTRUCTIONS,
-};
+pub use constructors::{carry, construct, constructor_orbit, is_constructor, Constructed, ConstructorOrbit, NotConstructed, OrbitUnread};
 pub(crate) use constructors::{constructors_of_base_turn, TurnUnspelled};
 pub use dual::{contract_to_face, dual_frame, wedge, DualFrame};
 pub use embedding::{
@@ -44,20 +41,16 @@ pub use group::{dilator, is_versor, projective_ratio, reflector, weight_of};
 pub use hyperboloid::{frame_base_point, geodesic_transvection, hyperbolic_compartment, hyperboloid_pole};
 pub use linear::{ray_of, LinearFunction};
 pub use mirrors::{base_mirror, mirrors_between, sphere_centre, MirrorReading};
-pub use modes::{mode_order, modes, root_refusals, Mode, Undecomposed};
+pub use modes::{mode_order, modes, Mode, Undecomposed};
 pub use motion::{action_det, action_of, charged, modes_need, motion_modes, period_of, unfold, MotionMode, Period};
-pub use motor::{
-    motor_tally, note_motor, note_step, note_unread, take_motor_tally, KindReading, Motor, MotorAction, MotorTally,
-    StepClass, StepReading, TransitionKind, VectorReading,
-};
+pub use motor::{Motor, MotorAction, VectorReading};
 pub use multivector::{axes, base_axis, blades, pseudo, slots, Mv, E1, E2, E3, EM, EP, MAX_N};
 pub use period::{compact_period, cyclotomic_orders, finite_order, Spectrum};
 pub use encounter::{encounter, Encounter, Unencountered};
 pub use perturbation::{lift_drag, Alignment, LiftDrag};
 pub use planes::{
-    bivector_planes, blade_name, harmonic_planes, is_transvection_plane, note_transition, occupancy,
-    parabolic_name, plane_is_harmonic, plane_name, plane_tally, ray_name, take_plane_tally, transvection_planes,
-    Occupancy, PlaneTally, Pole,
+    bivector_planes, blade_name, harmonic_planes, is_transvection_plane, occupancy, parabolic_name,
+    plane_is_harmonic, plane_name, ray_name, transvection_planes, Occupancy, Pole,
 };
 pub use spin::{
     bivector_is_simple, bivector_split, cayley, cayley_inverse, inverse_even, reflector_vector, transvection,

@@ -1,15 +1,13 @@
 // 78.6, 78.18 — THE REFRACTED EDGE HALF, CARRIED AS ITS FACTORS: a circuit
-// through a held coset or a static contact keeps each transition as crossed, and
-// the candidates the held stabilizers multiply to are formed only by a
-// reader holding the stroke's budget (rule 10).
+// through a held coset or a static contact keeps each transition as crossed,
+// never the product of the candidates the held stabilizers multiply to.
 //
 //! A held `ℤ₂` doubles the candidates at every held transition it is crossed on, so
 //! a circuit over `k` held transitions carries `2ᵏ` — a generate-and-test T5
 //! refuses beyond small `k`. The circuit keeps the factors, never the product;
-//! [`Refracted::candidates`] forms the product one candidate at a time,
-//! spending one read of the stroke per candidate formed, and refuses
-//! UNBOUNDED by name where the stroke is spent. T5's kernel over `𝔽₂` is the
-//! exact reader beyond, the operator's to order (78.18).
+//! a circuit with no held transition has ONE candidate, read by
+//! [`Refracted::single`]. T5's kernel over `𝔽₂` is the exact reader beyond,
+//! the operator's to order (78.18).
 
 use super::*;
 
@@ -21,8 +19,8 @@ pub(crate) enum RefractedTransition {
     Fixed(Box<Transport>),
     /// A static contact: the tether; the gauge half unread by name.
     Static(element::Versor),
-    /// A held coset: every candidate transport.
-    Coset(Vec<Transport>),
+    /// A held coset: several candidate transports, none chosen.
+    Coset,
 }
 
 /// THE EDGE HALF AS ITS FACTORS: the composite before the first refracted
@@ -40,34 +38,6 @@ pub(crate) struct Refracted {
 pub(crate) struct EdgeCandidate {
     pub(crate) carriage: element::Versor,
     pub(crate) gauge: Option<(Word, Vec<(u8, u8)>)>,
-}
-
-/// HOW A CIRCUIT THROUGH A HELD COSET CLOSES (78.6(1)).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CosetClosure {
-    /// Every candidate the identity: the held subgroup acts trivially here.
-    Closed,
-    /// The coset contains the identity: closed modulo the held `ℤ₂ᵏ`.
-    ClosedModuloHeld,
-    /// No candidate is the identity.
-    Open,
-    /// The stroke was spent forming the candidates (rule 10): unread by name.
-    Unbounded,
-}
-
-/// The stroke was spent before every candidate was formed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) struct Unbounded;
-
-/// HOW A COSET'S WHOLE TRANSPORTS CLOSE against the identity ray (EQ1).
-pub(crate) fn closure_of(cands: &[element::Versor]) -> CosetClosure {
-    let identity = element::identity_versor();
-    let closes: Vec<bool> = cands.iter().map(|c| element::same_versor(c, &identity)).collect();
-    match (closes.iter().all(|&b| b), closes.iter().any(|&b| b)) {
-        (true, _) => CosetClosure::Closed,
-        (false, true) => CosetClosure::ClosedModuloHeld,
-        (false, false) => CosetClosure::Open,
-    }
 }
 
 fn crossed(c: &EdgeCandidate, t: &Transport) -> EdgeCandidate {
@@ -98,20 +68,14 @@ impl Refracted {
                 crate::transducer::cga::is_versor(tether).then_some(())?;
                 RefractedTransition::Static(tether.reverse())
             }
-            (Refraction::Coset(c), true) => RefractedTransition::Coset(c.clone()),
-            (Refraction::Coset(c), false) => RefractedTransition::Coset(c.iter().map(Transport::reverse).collect()),
+            (Refraction::Coset(_), _) => RefractedTransition::Coset,
         };
         Some(self.then(transition))
     }
 
     /// The held transitions crossed, `k`.
     pub(crate) fn held_transitions(&self) -> u64 {
-        self.transitions.iter().filter(|s| matches!(s, RefractedTransition::Coset(_))).count() as u64
-    }
-
-    /// 78.6(2) — a static contact crossed: the gauge half unread by name.
-    pub(crate) fn gauge_static(&self) -> bool {
-        self.transitions.iter().any(|s| matches!(s, RefractedTransition::Static(_)))
+        self.transitions.iter().filter(|s| matches!(s, RefractedTransition::Coset)).count() as u64
     }
 
     /// THE ONE CANDIDATE where no held transition was crossed; `None` where one
@@ -125,46 +89,10 @@ impl Refracted {
             c = match s {
                 RefractedTransition::Fixed(t) => crossed(&c, t),
                 RefractedTransition::Static(v) => EdgeCandidate { carriage: v.geo(&c.carriage), gauge: None },
-                RefractedTransition::Coset(_) => return None,
+                RefractedTransition::Coset => return None,
             };
         }
         Some(c)
-    }
-
-    /// EVERY CANDIDATE, formed one at a time under the stroke: one read spent
-    /// per candidate a held transition forms, [`Unbounded`] where the stroke is
-    /// spent before the last (rule 10).
-    pub(crate) fn candidates(&self, budget: &mut crate::physics::Budget) -> Result<Vec<EdgeCandidate>, Unbounded> {
-        let mut cands = vec![EdgeCandidate {
-            carriage: self.head.carriage.clone(),
-            gauge: Some((self.head.word.clone(), self.head.gauge.clone())),
-        }];
-        for s in &self.transitions {
-            cands = match s {
-                RefractedTransition::Fixed(t) => cands.iter().map(|c| crossed(c, t)).collect(),
-                RefractedTransition::Static(v) => {
-                    cands.into_iter().map(|c| EdgeCandidate { carriage: v.geo(&c.carriage), gauge: None }).collect()
-                }
-                RefractedTransition::Coset(coset) => {
-                    let mut next = Vec::with_capacity(cands.len() * coset.len());
-                    for c in &cands {
-                        for t in coset {
-                            if !budget.spend() {
-                                return Err(Unbounded);
-                            }
-                            next.push(crossed(c, t));
-                        }
-                    }
-                    next
-                }
-            };
-        }
-        for c in cands.iter_mut() {
-            if let Some((w, _)) = c.gauge.as_mut() {
-                *w = w.normal_form();
-            }
-        }
-        Ok(cands)
     }
 }
 
@@ -176,7 +104,7 @@ impl PathCarried {
     /// where it rides a held coset: several candidates, none chosen. A
     /// circuit through static contacts only has ONE candidate, and its
     /// geometric composite — the tether holonomy — is read here; its gauge
-    /// half is static, read by [`PathCarried::gauge_static`].
+    /// half is static.
     ///
     /// 78.75 — AND IT IS THE MASTER EQUATION'S ONE PRODUCT. Where every
     /// transition's transport read, the whole transport is `Ω = ∏ cᵢ A(wᵢ)`
@@ -215,32 +143,5 @@ impl PathCarried {
     /// Whether the edge half crosses a held coset.
     pub(crate) fn holds_coset(&self) -> bool {
         self.refracted.as_ref().is_some_and(|r| r.held_transitions() > 0)
-    }
-
-    /// 78.6(1) — EVERY CANDIDATE'S WHOLE TRANSPORT through a held coset, and
-    /// the held transitions crossed, formed under the stroke; `None` where the
-    /// edge half holds no coset.
-    pub(crate) fn coset(
-        &self,
-        budget: &mut crate::physics::Budget,
-    ) -> Option<Result<(Vec<element::Versor>, u64), Unbounded>> {
-        let r = self.refracted.as_ref().filter(|r| r.held_transitions() > 0)?;
-        Some(r.candidates(budget).map(|cands| {
-            (cands.iter().map(|c| c.carriage.geo(&self.face.carriage)).collect(), r.held_transitions())
-        }))
-    }
-
-    /// HOW THE CIRCUIT CLOSES through its held coset, read against the
-    /// identity ray (EQ1) under the stroke; `None` where it holds no coset.
-    pub(crate) fn coset_closure(&self, budget: &mut crate::physics::Budget) -> Option<CosetClosure> {
-        Some(match self.coset(budget)? {
-            Ok((cands, _)) => closure_of(&cands),
-            Err(Unbounded) => CosetClosure::Unbounded,
-        })
-    }
-
-    /// 78.6(2) — the gauge half unread by name: a static contact crossed.
-    pub(crate) fn gauge_static(&self) -> bool {
-        self.refracted.as_ref().is_some_and(Refracted::gauge_static)
     }
 }

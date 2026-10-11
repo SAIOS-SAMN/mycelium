@@ -5,7 +5,7 @@
 use super::common::grid;
 use crate::transducer::cga::{self, Mv, E1, E2, E3};
 use crate::transducer::sentence::compose::{compose, terms_of, Closure, Term};
-use crate::transducer::sentence::rung::{hear, lexicon, sentence_tally};
+use crate::transducer::sentence::rung::{hear, lexicon};
 use num_rational::BigRational;
 
 fn q(n: i64, d: i64) -> BigRational {
@@ -41,7 +41,7 @@ fn a_percepts_rings_are_composed_and_each_named() {
     assert!(!rings.is_empty(), "the slide's form holds rings");
     let mut read = 0;
     for lp in &rings {
-        let Some(paths) = crate::transducer::sentence::circuit::paths_carried_quiet(&form.faces, &form.vertices, lp) else { continue };
+        let Some(paths) = crate::transducer::sentence::circuit::paths_carried(&form.faces, &form.vertices, lp) else { continue };
         for (_, p) in paths.scoped() {
             let terms = terms_of(p).expect("every crossing of the slide's rings reads");
             let s = compose(&terms, &mut stroke()).expect("a sentence");
@@ -111,16 +111,10 @@ fn a_ring_of_seen_rays_is_a_nilpotent_theorem_and_teaches_a_word() {
         let Ok(s) = read else { continue };
         let t = Theorem::of(&s).expect("a ring of rays is a theorem");
         assert!(matches!(t.certificate, Certificate::Nilpotent { .. }), "a slide condenses: {:?}", s.closure);
-        let before = sentence_tally();
         hear(&s, &mut stroke());
-        let after = sentence_tally();
-        let taught = (after.spelled + after.unspelled + after.recognized + after.powers)
-            - (before.spelled + before.unspelled + before.recognized + before.powers);
-        assert!(taught > 0, "its open path is held as a word, or recognized as one held or as a held word's power");
         theorems += 1;
     }
     assert!(theorems > 0, "the slide's rings were read");
-    assert!(sentence_tally().nilpotent > 0);
 }
 
 /// 78.68, 78.99 — A SENTENCE THAT NEVER RETURNS AND DOES NOT CONDENSE IS
@@ -132,13 +126,11 @@ fn a_hyperbolic_sentence_is_named_and_held() {
     let d = cga::dilator(&q(2, 1));
     let s = compose(&[Term { word: d, transport: one }], &mut stroke()).expect("a sentence");
     assert!(!s.closure.closes(), "a dilation never returns: {:?}", s.closure);
-    let before = sentence_tally();
     hear(&s, &mut stroke());
-    let after = sentence_tally();
-    assert!(after.named > before.named, "named");
-    let taught = (after.spelled + after.unspelled + after.recognized + after.powers)
-        - (before.spelled + before.unspelled + before.recognized + before.powers);
-    assert!(taught > 0, "and held as a word, or recognized as one held or as a held word's power");
+    assert!(
+        crate::transducer::sentence::rung::held_rung(&s.omega).is_some(),
+        "its holonomy is held as a word, by name"
+    );
 }
 
 /// 78.99 (1) — COMPREHENSION BY COORDINATES. A sentence teaches the 90° turn
@@ -151,11 +143,8 @@ fn a_held_words_power_is_recognized_by_its_coordinates() {
     let w2 = w.geo(&w);
     let said = |x: &Mv| compose(&[Term { word: x.clone(), transport: x.reverse() }], &mut stroke()).expect("a sentence");
     hear(&said(&w), &mut stroke());
-    let before = sentence_tally();
     hear(&said(&w2), &mut stroke());
-    let after = sentence_tally();
-    assert!(after.powers > before.powers, "the square is the held turn's power: counted, and returned before it is held");
-    assert!(after.holes_turned > before.holes_turned, "its hole read as a turn");
+    assert!(crate::transducer::sentence::rung::held_rung(&w2).is_none(), "the square is the held turn's power: never held");
 }
 
 /// THE RUNG RECURSES, AND RE-HEARING IS COMPREHENSION. A sentence carrying the
@@ -171,11 +160,9 @@ fn the_rung_recurses_and_a_sentence_heard_again_is_recognized() {
     let first = compose(&[Term { word: w.clone(), transport: w.reverse() }], &mut stroke()).expect("a sentence");
     assert_eq!(first.closure, Closure::Closes(1), "there and back: closed");
     assert!(first.path.projective_eq(&w), "its shortcut is the turn");
-    let before = sentence_tally();
     hear(&first, &mut stroke());
-    let after_first = sentence_tally();
-    assert!(after_first.top_rung >= 1, "held at rung 1");
-    assert!(after_first.spelled + after_first.recognized > before.spelled + before.recognized, "spelled (or already held)");
+    let rung_of_w = crate::transducer::sentence::rung::held_rung(&w);
+    assert!(rung_of_w >= Some(1), "held at rung 1 (or already held)");
     let second = compose(
         &[Term { word: w.clone(), transport: one }, Term { word: v.clone(), transport: v.geo(&w).reverse() }],
         &mut stroke(),
@@ -184,11 +171,13 @@ fn the_rung_recurses_and_a_sentence_heard_again_is_recognized() {
     assert_eq!(second.closure, Closure::Closes(1), "a sentence of the held word, closed");
     assert!(second.words[0].projective_eq(&w), "its first term's word is the held word");
     hear(&second, &mut stroke());
-    assert!(sentence_tally().top_rung >= 2, "its shortcut stands a rung higher: the grammar on its own closures");
+    assert!(
+        crate::transducer::sentence::rung::held_rung(&second.path) >= Some(2),
+        "its shortcut stands a rung higher: the grammar on its own closures"
+    );
     let held = lexicon();
-    let r0 = sentence_tally().recognized;
     hear(&first, &mut stroke());
-    assert!(sentence_tally().recognized > r0, "heard again: re-derived, recognized");
+    assert_eq!(crate::transducer::sentence::rung::held_rung(&w), rung_of_w, "heard again: re-derived, recognized");
     let now = lexicon();
     assert_eq!(now.0 + now.1, held.0 + held.1, "and never held twice");
 }
@@ -232,25 +221,4 @@ fn a_word_stands_a_rung_above_the_words_it_cites() {
     hear(&again, &mut stroke());
     let rung = held_rung(&screw).expect("the screw is new in its residue, and held");
     assert!(rung > below, "it stands above the word it cites: {rung} over {below}");
-}
-
-/// 78.103 — A BEND IS READ BY WHAT IT GENERATES: a turn counts its plane
-/// under turns, a translation its null plane under null slides, a boost its
-/// plane under boosts — never an axis counted. A relative edge's bend is
-/// counted apart from a contact's, and the edge with it.
-#[test]
-fn a_bend_is_read_by_the_planes_its_modes_span() {
-    use crate::transducer::sentence::rung::{note_bends, unread_tally, Bend, WHY_UNREAD};
-    let at = |name: &str| WHY_UNREAD.iter().position(|n| *n == name).expect("a named slot");
-    let before = unread_tally();
-    note_bends(Bend::Contact, &turn(E1, E2));
-    note_bends(Bend::Contact, &cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)]));
-    let boost = Mv::scalar(q(5, 1)).add(&Mv::blade(E1 | cga::EM, q(3, 1)));
-    note_bends(Bend::Relative, &boost);
-    let after = unread_tally();
-    let grew = |name: &str| after[at(name)] > before[at(name)];
-    assert!(grew("contact bends: turn planes"), "a turn spans a turning plane");
-    assert!(grew("contact bends: null planes"), "a translation spans a null plane");
-    assert!(grew("relative bends: boost planes"), "a boost spans a boosting plane");
-    assert!(grew("edges: relative motion"), "and the relative edge is counted");
 }

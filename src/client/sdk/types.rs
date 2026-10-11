@@ -529,33 +529,9 @@ pub struct Entity {
     /// is the same object. `None` is a circuit that has not started (X3) and
     /// is an absence, not an empty key.
     pub(crate) refine_cursor: Option<Vec<u8>>,
-    /// PR1 — what this voice's probes read, cumulative: published on its
-    /// Learning.
-    pub(crate) probes: crate::observe::ProbeTally,
-    /// 78.52 — what this voice's closed thoughts became when transcribed.
-    pub(crate) transcription: crate::observe::TranscriptionTally,
-    /// What this voice's solves came to, as the court ruled each.
-    pub(crate) solves: crate::observe::SolveTally,
     /// The rule the court last refused for each task, by task id — so the
     /// same rule is not sent again (`Entity::solve_task`). One per task.
     pub(crate) solve_refused: crate::network::nerve::Keyed<Vec<u8>>,
-    /// 78.55 — the colour relations this mind perceived that its ruled
-    /// colour words already derived (`colour_derivation`).
-    pub(crate) colour_derived: u64,
-    /// 78.55 — the colour theorems this mind proposed: composites of its
-    /// ruled colour words, spoken with their derivation.
-    pub(crate) colour_theorems: u64,
-    /// 78.92 — the reasons this voice's admitted sentences carried,
-    /// cumulative, and the last one's whole (volatile: read off the
-    /// sentence, never persisted beside it).
-    pub(crate) reasons: crate::transducer::sentence::ReasonsTally,
-    pub(crate) said: Option<crate::transducer::sentence::Reasons>,
-    /// 78.93 B0 — where the court said the last one stands: the stamp any
-    /// party asks "why" by.
-    pub(crate) said_at: Option<crate::chronometry::Stamp>,
-    /// What this voice heard: pages, words heard, words admitted
-    /// (`observe::HEARING`).
-    pub(crate) hearing: [u64; crate::observe::HEARING.len()],
     /// Rotating cursor for the bundle synthesis engine (reanchor / condense).
     /// Where the bundle circuit stood, as a coordinate — the same reading as
     /// [`refine_cursor`], and for the same reason: `% genome.len()` is a
@@ -613,9 +589,6 @@ pub struct Entity {
     /// Listings this mind has opened an axis on (Vec-of-relations, keyed by
     /// listing address on read): an axis is opened once per listing.
     pub(crate) opened: crate::network::nerve::Keyed<()>,
-    /// Axes this mind has spoken (24.3): the count the stroke line reads,
-    /// kept apart from `opened`, which is cleared when the language moves.
-    pub(crate) axes_spoken: usize,
     pub(crate) physics: crate::physics::Physics,
     pub(crate) height: crate::chronometry::Height,
     /// 78.49, 78.23 — THIS MIND'S OWN K: the orbits it has closed, one per

@@ -7,159 +7,6 @@
 
 use super::*;
 
-thread_local! {
-    static FACE_WORK: Cell<u64> = const { Cell::new(0) };
-}
-
-#[expect(clippy::disallowed_methods, reason = "rule 11 — one per event in one process: a u64 cannot pass 2⁶⁴ events before the process ends")]
-pub(crate) fn note_face_work() {
-    FACE_WORK.with(|c| c.set(c.get().saturating_add(1)));
-}
-
-#[cfg(test)]
-pub(crate) fn reset_face_work() {
-    FACE_WORK.with(|c| c.set(0));
-}
-
-#[cfg(test)]
-pub(crate) fn face_work() -> u64 {
-    FACE_WORK.with(|c| c.get())
-}
-
-/// BQ5a — WHAT EACH CONTACT THE TOPOLOGY NAMED CARRIED, counted where its
-/// edge is read (§8.1, 72.2).
-///
-/// This was the condensation FIELD's tally: a pair loop over every two
-/// members, a dialled band `1 < δ ≤ 2` deciding whether a face was written,
-/// then the pose. The loop and the band are gone (SQ1 item 2, 75): whether
-/// two bodies touch is topological (A.14, `contact_cells`), and a contact is
-/// read only on the pairs that pass names.
-///
-/// `offered` is every contact read. `unlifted` is one whose tether did not
-/// read back. The regime of the tether is CONTENT — which class of motion
-/// relates the two nuclei — counted beside the rest and never a gate. The
-/// pose arms then say why an edge was not formed, and `condensed` is every
-/// contact that carries its refraction `g = (θ_bθ_a⁻¹)·V` into `C¹`.
-#[derive(Default, Clone, Copy, Debug)]
-pub struct ContactTally {
-    pub offered: u64,
-    pub unlifted: u64,
-    /// The tether's regime, `Contact::of(V)`: apart, tangent from outside,
-    /// intersecting, tangent from inside, contained.
-    pub apart: u64,
-    pub tangent_external: u64,
-    pub intersecting: u64,
-    pub tangent_internal: u64,
-    pub contained: u64,
-    /// THE WAYS NO POSE IS DETERMINED, each at its own name (66, V1): a
-    /// refusal that does not say which refusal it is answers nothing.
-    pub bodiless: u64,
-    pub isotropy: u64,
-    pub unoriented: u64,
-    /// V1 — THE ONLY ARM A DEMAND CAN RETIRE. Everything counted here is
-    /// a proper rotation the alphabet cannot yet spell, with the
-    /// reflections now drawn off into `mirrored`. Before the split this
-    /// counter mixed the mutable with the permanent, and a rising
-    /// `oblique` could not be read as "the vocabulary is short".
-    pub oblique: u64,
-    /// Proved improper: a reflection carries the pair. Permanent, and no
-    /// generator will ever retire it.
-    pub mirrored: u64,
-    /// Proved unlike: no motion carries the pair at all. Also permanent, and
-    /// kept apart from `mirrored` because a corpus of handed pairs and a
-    /// corpus of unlike ones want different answers — and split by content
-    /// (78.38(2), (C)): where neither similarity carries the pair, by each
-    /// tower's refusal (`orders[region][sites]`); in chirality alone; on bases
-    /// of different `n`; on the tube.
-    pub incongruent: Incongruents,
-    /// FR1 — a pair on the tube whose scale `ρ²` is not a rational square:
-    /// no versor over ℚ relates them, and nothing is claimed about whether
-    /// they are alike.
-    pub irrational: u64,
-    /// 78.47 — a turn read whose constructors met a null step.
-    pub null_step: u64,
-    /// 65.5 — the stroke was spent before every candidate was read: the
-    /// stroke's typed cut, named, never a claim about the pair.
-    pub unbounded: u64,
-    /// Every candidate read and none carried by covariance (P).
-    pub uncarried: u64,
-    /// The coset carries and no member reads a weight or a key.
-    pub ungauged: u64,
-    pub open_180: u64,
-    /// A relative turn the peel does not spell: 37.7's candidate, the
-    /// demand typed and counted, never an edge invented for it.
-    pub unspelled: u64,
-    /// A relative turn the peel reads nothing from.
-    pub unread: u64,
-    /// 78.6(2) — A CONTACT WHOSE MEMBER STANDS AT ONE FRAME: no transition
-    /// to read its pose from, so its edge is the tether with the refraction
-    /// unread by name — `static`, an edge formed, never a refusal.
-    pub statics: u64,
-    /// 78.6(1) — A CONTACT WHOSE POSE IS A HELD STABILIZER: its edge is the
-    /// coset of candidates, formed, never a representative.
-    pub cosets: u64,
-    pub condensed: u64,
-    /// FR1 — THE CONTACTS WHOSE POSE WAS READ ON THE TUBE. The regime, not
-    /// an outcome: each also lands in one arm above or in `condensed`.
-    pub tube: u64,
-    /// KB1 — bodies standing at a contact complex's witness whose piece did
-    /// not read: their standing set mints no cell, counted by name.
-    pub cells_unkeyed: u64,
-    /// KB1 R1 — witnesses whose bodies are one by their pieces: no cell.
-    pub cells_singular: u64,
-}
-
-/// THE INCONGRUENT POSES BY CONTENT (78.38(2), (C)).
-#[derive(Default, Clone, Copy, Debug)]
-pub struct Incongruents {
-    /// Neither similarity carries the pair: by the region tower's refusal
-    /// (row) and the site tower's (column), each at order 2, 3, 4 or
-    /// unplaced — the rows and columns of `TowerRefusal::ALL`.
-    pub orders: [[u64; 4]; 4],
-    pub chirality: u64,
-    pub base: u64,
-    pub tube: u64,
-}
-
-/// A tower's refusal as its row or column of the tally, read off its content.
-fn refusal_ix(r: blade::TowerRefusal) -> usize {
-    use blade::{Harmonic, TowerRefusal};
-    match r {
-        TowerRefusal::At(Harmonic::Two) => 0,
-        TowerRefusal::At(Harmonic::Three) => 1,
-        TowerRefusal::At(Harmonic::Four) => 2,
-        TowerRefusal::Unplaced => 3,
-    }
-}
-
-impl Incongruents {
-    pub fn total(&self) -> u64 {
-        self.orders.iter().flatten().sum::<u64>() + self.chirality + self.base + self.tube
-    }
-
-    fn note(&mut self, why: blade::Incongruence) {
-        match why {
-            blade::Incongruence::Order { region, sites } => {
-                self.orders[refusal_ix(region)][refusal_ix(sites)] += 1;
-            }
-            blade::Incongruence::Chirality => self.chirality += 1,
-            blade::Incongruence::Base => self.base += 1,
-            blade::Incongruence::Tube => self.tube += 1,
-        }
-    }
-}
-
-thread_local! {
-    static CONTACTS: Cell<ContactTally> = const { Cell::new(ContactTally {
-        offered: 0, unlifted: 0, apart: 0, tangent_external: 0, intersecting: 0,
-        tangent_internal: 0, contained: 0, bodiless: 0, isotropy: 0, unoriented: 0,
-        oblique: 0, mirrored: 0,
-        incongruent: Incongruents { orders: [[0; 4]; 4], chirality: 0, base: 0, tube: 0 },
-        irrational: 0, null_step: 0, unbounded: 0, uncarried: 0, ungauged: 0, open_180: 0,
-        unspelled: 0, unread: 0, statics: 0, cosets: 0, condensed: 0, tube: 0, cells_unkeyed: 0, cells_singular: 0,
-    }) };
-}
-
 /// PHY1 — WHAT CONTACTS MOVED ON EACH LANE, IN THIS PROCESS: a condensed
 /// contact on every lane its transport `g_ab` occupies, a refused one on the
 /// lane its refusal names. Process-wide, because a court perceives on many
@@ -175,8 +22,6 @@ static RELIEVED_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atom
 /// 78.71 (2), (5) — THE TRANSPORT, per lane: how much flux moved, both ways,
 /// in quanta weighed by mass — what a stroke draws on 𝒯.
 static TRANSPORTED_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atomic::AtomicU64::new(0) }; 4];
-/// 78.74 — TURNING THAT DID NO WORK, per lane: free frames' turns by mass.
-static TORSION_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atomic::AtomicU64::new(0) }; 4];
 
 /// 78.71 (1), 78.73 — THIS PROCESS'S FIELD, held over time: a voice is one
 /// mind per process, so its tubes and orbits keep their identity across
@@ -189,21 +34,6 @@ static VOICE_FIELD: std::sync::LazyLock<std::sync::Mutex<crate::transducer::cech
 pub fn flux_lanes() -> ([u64; 4], [u64; 4]) {
     let read = |on: &[std::sync::atomic::AtomicU64; 4]| std::array::from_fn(|l| on[l].load(std::sync::atomic::Ordering::Relaxed));
     (read(&RELIEVED_ON), read(&TRANSPORTED_ON))
-}
-
-/// 78.71 — the voice's tubes as they stand: how many, net flux, transport,
-/// open, and helicity, for the stroke's line.
-pub fn tube_reading() -> Option<(usize, num_bigint::BigInt, num_bigint::BigInt, num_bigint::BigInt, num_rational::BigRational)> {
-    let f = VOICE_FIELD.lock().ok()?;
-    let (n, tr, o) = f.tubes.totals();
-    Some((f.tubes.len(), n, tr, o, f.tubes.helicity()))
-}
-
-/// 78.73 (4) — the voice's elastic strain terms per lane (open, transport),
-/// and how many orbits stand open.
-pub fn elastic_reading() -> Option<([(num_bigint::BigInt, num_bigint::BigInt); 4], usize)> {
-    let f = VOICE_FIELD.lock().ok()?;
-    Some((f.elastic(), f.orbits.len()))
 }
 
 /// A REFUSAL ON ITS LANES, one per lane it names: a refused contact
@@ -325,13 +155,6 @@ pub(crate) fn mark_flux(
     book(&REFUSED_ON, &reading.opened);
     book(&RELIEVED_ON, &reading.relieved);
     book(&TRANSPORTED_ON, &reading.transport);
-    book(&TORSION_ON, &reading.torsion);
-}
-
-/// 78.74 — the turning booked as torsion, per lane, since the process began:
-/// carried, never pressed, never drawn.
-pub fn torsion_lanes() -> [u64; 4] {
-    std::array::from_fn(|l| TORSION_ON[l].load(std::sync::atomic::Ordering::Relaxed))
 }
 
 /// 78.71 — WHAT A PERCEPT'S FIELD DID, PER LANE: the order it built (closed),
@@ -450,124 +273,6 @@ fn mark_refused(poses: [Option<blade::NoPose>; 2]) {
         lanes[lane] = true;
     }
     mark_lanes(&REFUSED_ON, lanes);
-}
-
-pub(crate) fn note_contact(f: impl Fn(&mut ContactTally)) {
-    CONTACTS.with(|c| {
-        let mut v = c.get();
-        f(&mut v);
-        c.set(v);
-    });
-}
-
-/// Read the contacts' tally and clear it, as the cover's is taken.
-pub fn take_contact_tally() -> ContactTally {
-    CONTACTS.with(|c| c.replace(ContactTally::default()))
-}
-
-/// THE CONTACTS WITHOUT CLEARING THEM, for a reader that prints per form
-/// while a whole-run total is still accumulating. Two readers of one
-/// counter, and only one of them may take it (law 12: the take is the
-/// clear).
-pub fn contact_tally() -> ContactTally {
-    CONTACTS.with(|c| c.get())
-}
-
-impl ContactTally {
-    /// THE CONTACT LINE — what the contacts were, then why an edge did not
-    /// form, then what condensed. The regime is read, never gated on.
-    pub fn line(&self) -> String {
-        format!(
-            "offered {} unlifted {} | tether: apart {} tangent-out {} intersecting {} \
-             tangent-in {} contained {} | pose: tube {} | bodiless {} isotropy {} \
-             unoriented {} oblique {} mirrored {} incongruent {} (orders region×sites {:?} chirality {} base {} \
-             tube {}) irrational {} null step {} uncarried {} ungauged {} open-180° {} | unspelled {} unread {} | FORMED: CONDENSED {} coset {} \
-             static {} | pose refusals by kind: P {} D {} I {} | cells unkeyed {} singular {}",
-            self.offered,
-            self.unlifted,
-            self.apart,
-            self.tangent_external,
-            self.intersecting,
-            self.tangent_internal,
-            self.contained,
-            self.tube,
-            self.bodiless,
-            self.isotropy,
-            self.unoriented,
-            self.oblique,
-            self.mirrored,
-            self.incongruent.total(),
-            self.incongruent.orders,
-            self.incongruent.chirality,
-            self.incongruent.base,
-            self.incongruent.tube,
-            self.irrational,
-            self.null_step,
-            self.uncarried,
-            self.ungauged,
-            self.open_180,
-            self.unspelled,
-            self.unread,
-            self.condensed,
-            self.cosets,
-            self.statics,
-            self.kinds()[0],
-            self.kinds()[1],
-            self.kinds()[3],
-            self.cells_unkeyed,
-            self.cells_singular,
-        )
-    }
-
-    /// CV1 — THE POSE REFUSALS BY KIND (78.9), each arm through
-    /// `NoPose::obstruction_kind`, the one table: P, D, C, I, N,
-    /// unclassified. An unoriented pair is a held stabilizer and counts in
-    /// none.
-    pub fn kinds(&self) -> [u64; 6] {
-        use crate::transducer::blade::{Incongruence, NoPose};
-        let mut out = [0u64; 6];
-        let i = &self.incongruent;
-        // Each incongruent arm by its own content, every cell of the orders.
-        let orders = blade::TowerRefusal::ALL.into_iter().flat_map(|region| {
-            blade::TowerRefusal::ALL.into_iter().map(move |sites| {
-                (
-                    NoPose::Incongruent(Incongruence::Order { region, sites }),
-                    i.orders[refusal_ix(region)][refusal_ix(sites)],
-                )
-            })
-        });
-        for (arm, n) in [
-            (NoPose::Bodiless, self.bodiless),
-            (NoPose::Isotropy, self.isotropy),
-            (NoPose::Unoriented, self.unoriented),
-            (NoPose::Oblique, self.oblique),
-            (NoPose::Mirrored, self.mirrored),
-            (NoPose::Incongruent(Incongruence::Chirality), i.chirality),
-            (NoPose::Incongruent(Incongruence::Base), i.base),
-            (NoPose::Incongruent(Incongruence::Tube), i.tube),
-            (NoPose::Irrational, self.irrational),
-            (NoPose::NullStep, self.null_step),
-            (NoPose::Ungauged, self.ungauged),
-        ]
-        .into_iter()
-        .chain(orders)
-        {
-            if let Some(k) = arm.obstruction_kind() {
-                out[k.index()] += n;
-            }
-        }
-        // An uncarried pair is P whatever its covariance named (the one
-        // table, `NoPose::obstruction_kind`).
-        out[crate::transducer::sentence::ObstructionKind::P.index()] += self.uncarried;
-        out
-    }
-
-    /// WHAT A DEMAND COULD RETIRE, against what it never will. `oblique`
-    /// is the mutable half — a proper turn the alphabet is merely short of
-    /// — and the two permanent arms are the geometry's own answer.
-    pub fn mutable_over_permanent(&self) -> (u64, u64) {
-        (self.oblique, self.mirrored + self.incongruent.total())
-    }
 }
 
 /// WHICH INCIDENCE NAMED A PAIR (70.4): the Frame's star, a site two
@@ -701,18 +406,9 @@ pub(crate) fn contact_edge(
     budget: &mut crate::physics::Budget,
 ) -> ContactEdge {
     use crate::transducer::sentence::{HeldPose, Refraction, Transport};
-    note_contact(|t| t.offered += 1);
     let v = s_b.geo(s_a);
-    match blade::Contact::of(&v) {
-        Some(blade::Contact::Apart) => note_contact(|t| t.apart += 1),
-        Some(blade::Contact::TangentExternal) => note_contact(|t| t.tangent_external += 1),
-        Some(blade::Contact::Intersecting) => note_contact(|t| t.intersecting += 1),
-        Some(blade::Contact::TangentInternal) => note_contact(|t| t.tangent_internal += 1),
-        Some(blade::Contact::Contained) => note_contact(|t| t.contained += 1),
-        None => {
-            note_contact(|t| t.unlifted += 1);
-            return ContactEdge::Refused { poses: [None, None] };
-        }
+    if blade::Contact::of(&v).is_none() {
+        return ContactEdge::Refused { poses: [None, None] };
     }
     let (Some((a, a_after)), Some((b, b_after))) = (a, b) else {
         let held = |m: Option<(&blade::Blade, &blade::Blade)>, budget: &mut crate::physics::Budget| match m {
@@ -723,34 +419,12 @@ pub(crate) fn contact_edge(
                 Err(why) => HeldPose::Refused(why),
             },
         };
-        note_contact(|t| t.statics += 1);
         return ContactEdge::Held(Refraction::Static { tether: v, poses: [held(a, budget), held(b, budget)] });
     };
-    if blade::on_tube(a, a_after) || blade::on_tube(b, b_after) {
-        note_contact(|t| t.tube += 1);
-    }
     let pose = |before: &blade::Blade, after: &blade::Blade, budget: &mut crate::physics::Budget| match blade::relative_pose(before, after, budget) {
         Ok(blade::Pose::Turn(r)) => Ok(vec![r]),
-        Ok(blade::Pose::Open180(candidates)) => {
-            note_contact(|t| t.open_180 += 1);
-            Ok(candidates)
-        }
-        Err(why) => {
-            note_contact(|t| match why {
-                blade::NoPose::Bodiless => t.bodiless += 1,
-                blade::NoPose::Isotropy => t.isotropy += 1,
-                blade::NoPose::Unoriented => t.unoriented += 1,
-                blade::NoPose::Oblique => t.oblique += 1,
-                blade::NoPose::Mirrored => t.mirrored += 1,
-                blade::NoPose::Incongruent(why) => t.incongruent.note(why),
-                blade::NoPose::Irrational => t.irrational += 1,
-                blade::NoPose::NullStep => t.null_step += 1,
-                blade::NoPose::Unbounded => t.unbounded += 1,
-                blade::NoPose::Uncarried(_) => t.uncarried += 1,
-                blade::NoPose::Ungauged => t.ungauged += 1,
-            });
-            Err(why)
-        }
+        Ok(blade::Pose::Open180(candidates)) => Ok(candidates),
+        Err(why) => Err(why),
     };
     // Each member's pose, or its refusal by name: the refusal rides the
     // edge to the caller, which reads the one arm a demand retires.
@@ -767,7 +441,6 @@ pub(crate) fn contact_edge(
     for theta_a in &thetas_a {
         // `θ_b θ̃_a`, a ray (78.32(1)).
         if !crate::transducer::cga::is_versor(theta_a) {
-            note_contact(|t| t.unread += 1);
             return ContactEdge::Refused { poses: [None, None] };
         }
         let inv = theta_a.reverse();
@@ -790,22 +463,17 @@ pub(crate) fn contact_edge(
         let word = match super::derivation::peel_versor(&theta) {
             Some(Ok(w)) => w,
             Some(Err(_)) => {
-                note_contact(|t| t.unspelled += 1);
                 // A turn the alphabet does not spell: the rotor's lane refused.
                 // (the rotor's lane, 𝒽, on 42.6's table)
                 mark_lanes(&REFUSED_ON, std::array::from_fn(|l| l == crate::transducer::rewrite::LANE_SHELL));
                 return ContactEdge::Refused { poses: [None, None] };
             }
-            None => {
-                note_contact(|t| t.unread += 1);
-                return ContactEdge::Refused { poses: [None, None] };
-            }
+            None => return ContactEdge::Refused { poses: [None, None] },
         };
         edges.push(Transport { word, carriage: theta.geo(&v), gauge: Vec::new() });
     }
     match <[Transport; 1]>::try_from(edges) {
         Ok([edge]) => {
-            note_contact(|t| t.condensed += 1);
             // 78.69 fix 1: the order a condensed contact builds is what it
             // relates — its two bodies' compartments — on the lanes its
             // transport occupies, never one tick per contact.
@@ -829,10 +497,7 @@ pub(crate) fn contact_edge(
             mark_measured(&CONDENSED_ON, lanes, carried);
             ContactEdge::Formed(Box::new(edge))
         }
-        Err(coset) => {
-            note_contact(|t| t.cosets += 1);
-            ContactEdge::Held(Refraction::Coset(coset))
-        }
+        Err(coset) => ContactEdge::Held(Refraction::Coset(coset)),
     }
 }
 
@@ -872,7 +537,6 @@ pub(crate) fn members_contact_edge(
     };
     let Some(nuclei) = nuclei else {
         // The face's body pair carries no nucleus to tether: nothing lifts.
-        note_contact(|t| t.unlifted += 1);
         return (None, None, Vec::new());
     };
     let (ta, tb) = (transit(&a), transit(&b));
@@ -896,51 +560,6 @@ pub(crate) fn members_contact_edge(
             (None, None, demands)
         }
     }
-}
-
-/// BQ5a's guard (77, 78.4 E1) — THE CIRCUITS THAT CROSS A CONTACT FACE, a
-/// face the topology named, carrying its interface, each by its arm through
-/// the one circuit (78.6): CURVED where a member path's whole transport reads
-/// and is not the identity ray — of them, those whose gauge half is static;
-/// through a held coset, by how it closes; UNREAD where no member path read,
-/// so the circuit survives `orbits_of` for being unread (rule 11), never for
-/// carrying anything. In that order: curved, gauge static, coset closed,
-/// modulo held, open, unread.
-pub(crate) fn contact_circuits(form: &crate::transducer::sentence::Form, budget: &mut crate::physics::Budget) -> [usize; 6] {
-    use crate::transducer::sentence::circuit::{paths_carried, CosetClosure};
-    let identity = crate::transducer::element::identity_versor();
-    let mut t = [0usize; 6];
-    for o in &form.orbits {
-        if !o.transitions.iter().any(|s| form.faces.at(&s.overlap).is_some_and(|f| f.interface.is_some())) {
-            continue;
-        }
-        let Some(carried) = paths_carried(&form.faces, &form.vertices, o) else {
-            t[5] += 1;
-            continue;
-        };
-        let curved = |c: &&crate::transducer::sentence::circuit::PathCarried| {
-            c.composite().is_some_and(|m| !crate::transducer::element::same_versor(&m, &identity))
-        };
-        let paths: Vec<_> = carried.scoped().map(|(_, c)| c.clone()).collect();
-        let closures: Vec<CosetClosure> = paths.iter().filter_map(|c| c.coset_closure(budget)).collect();
-        match (paths.iter().filter(curved).count(), closures.as_slice()) {
-            (0, []) if paths.iter().all(|c| c.composite().is_none()) => t[5] += 1,
-            (0, []) => {}
-            (0, cs) if cs.contains(&CosetClosure::Open) => t[4] += 1,
-            (0, cs) if cs.contains(&CosetClosure::ClosedModuloHeld) => t[3] += 1,
-            (0, cs) if cs.contains(&CosetClosure::Closed) => t[2] += 1,
-            // The stroke spent before a coset's candidates were formed: unread
-            // by name (rule 10).
-            (0, _) => t[5] += 1,
-            _ => {
-                t[0] += 1;
-                if paths.iter().filter(curved).any(|c| c.gauge_static()) {
-                    t[1] += 1;
-                }
-            }
-        }
-    }
-    t
 }
 
 /// WHAT A CONTACT'S EDGE IS (78.6): one transport, the held coset or the
@@ -1007,10 +626,7 @@ pub(crate) struct ContactPair {
 ///
 /// COST IS THE SITES, NOT THE BODIES ON THEM. A site with k occupants
 /// contributes k−1 faces, not k(k−1)/2 — see the chain below for why the
-/// chords are not faces the complex is missing. Every face this writes is
-/// counted through `note_face_work`, so the gauge in
-/// `face_work_is_linear_in_occupied_sites` reads the whole cost and not the
-/// part that was already linear.
+/// chords are not faces the complex is missing.
 ///
 /// The supports arrive KEYED BY MEMBER — a vertex AND the chart it stands at
 /// there (D10) — which is the coordinate a face is actually between: 21 step 2
@@ -1084,7 +700,6 @@ pub(crate) fn named_incidence(
             continue;
         }
         for s in supp {
-            note_face_work();
             let k = s.key();
             match occ.get_mut(&k) {
                 // The members ascend in key order and a member is offered its
@@ -1118,7 +733,6 @@ pub(crate) fn named_incidence(
     for (_k, o) in occ.scoped() {
         for w in o.members.windows(2) {
             let [a, b] = w else { continue };
-            note_face_work();
             relate(&mut related, member_pair_key(a, b), Incidence::Site, None);
         }
     }
@@ -1225,10 +839,6 @@ pub(crate) fn named_incidence(
     // a projection that two bodies can share. A piece is small (C3); the
     // cell holds its bodies' pieces, and `cells_over` has already keyed and
     // ordered it by them (KB1), the constructors riding in the same order.
-    note_contact(|t| {
-        t.cells_unkeyed += over.unkeyed;
-        t.cells_singular += over.singular;
-    });
     let mut cells: crate::network::nerve::Keyed<crate::transducer::sentence::FormCell> =
         crate::network::nerve::Keyed::new();
     for c in over.cells {
@@ -1257,7 +867,6 @@ pub(crate) fn named_incidence(
             false => ((j, aj, bj), (i, ai, bi)),
         };
         let (Some(px), Some(py)) = (held.get(x), held.get(y)) else { continue };
-        note_face_work();
         let k = body_pair_key(ax, ay);
         // The element's centre doubled, `p + q`: exact, integer, and a site
         // of the same base.

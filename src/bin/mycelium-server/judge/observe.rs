@@ -1,5 +1,5 @@
-// §8.1 — ACT_OBSERVE: a voice's readings held as they stand, and every
-// reading this hypha holds served to whoever asks.
+// §8.1 — ACT_OBSERVE: every reading this hypha holds of its own court served
+// to whoever asks.
 
 use crate::door::Door;
 use crate::transport::answer;
@@ -77,14 +77,6 @@ fn publish_standing(k: &mycelium::cognition::Kernel, mesh: &crate::exchange::Mes
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(act) = observe::decode_act(&frame.body) else { return };
     match act {
-        // A VOICE'S TOTALS, held under the key it names. The readings are
-        // an instrument and no cognition reads them, so the key is taken as
-        // spoken; a voice that names another's key misreports the console
-        // and nothing else.
-        ObserveAct::Push(vk, readings) => {
-            let held = readings.into_iter().all(|r| observe::replace(Source::Voice(vk), r));
-            answer(stream, Frame { lane: frame.lane, body: vec![u8::from(held)] });
-        }
         ObserveAct::Query(prefix) => {
             // ONE HOLD ACROSS TWO QUESTIONS: the kernel held by the same take
             // at this question as at the last is named, with its site.
@@ -114,7 +106,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             // CV5: what this court did with each signer's receipts, and its
             // verdicts by kind, read at the question from the counters the
             // exchange, the back-fill and the adjudication keep.
-            observe::replace(own, Reading::Replication(observe::replication()));
+            observe::replace(own, Reading::Replication(Box::new(observe::replication())));
             observe::replace(own, Reading::Adjudication(observe::adjudication()));
             // 78.145 — the seat relay, read on its own lock (never the
             // kernel's): its standing and each domain's posts filed and

@@ -1,44 +1,26 @@
 // §8.1, audit of Phase N — THE READINGS AN OBSERVER CARRIES, each a whole
 // typed object in its own coordinates and written out by its own codec.
 //
-//! Four readings, one per question the live fleet is asked:
+//! The readings a court publishes about itself, one per question the live
+//! fleet is asked:
 //!
-//! - [`Planes`] — WHICH DIMENSIONS ARE USED: the bivector census in the
-//!   algebra it was read in, `n` first, each populated plane by its own
-//!   blade. The declared planes are generated from `n` by whoever renders
-//!   it, never carried, so a census cannot disagree with its algebra.
-//! - [`Loss`] — WHAT WAS PASSED OVER: every refusal the engine counts where
-//!   a reading did not reach content, on its own axis ([`LOSS_AXES`]).
 //! - [`Memory`] — WHAT IS HELD: the allocator's bytes at the first and the
 //!   latest sample, keyed by the source's own `K`, and the peak — so growth
 //!   is read per unit of the source's own clock, never wall time (law 9).
 //! - [`Court`] — WHAT A COURT HOLDS: its `K`, basis and treasury, and the
 //!   acts it has served by kind.
-//! - [`super::Learning`] — WHAT A MIND HAS LEARNED (LC1): its curve at its
-//!   own `K`, honest at zero, the fields still owed named by their rows.
-//! - [`super::Circuits`] — HOW A CIRCUIT IS BUILT (PL1): every kept circuit
-//!   of the last percept, step by step.
 
 /// A reading's tag, the first byte of its writing and the last byte of its
 /// key.
-pub const TAG_PLANES: u8 = 1;
-pub const TAG_LOSS: u8 = 2;
 pub const TAG_MEMORY: u8 = 3;
 pub const TAG_COURT: u8 = 4;
 pub const TAG_REPLICATION: u8 = 5;
 pub const TAG_ADJUDICATION: u8 = 6;
-pub const TAG_LEARNING: u8 = 7;
-pub const TAG_CIRCUIT: u8 = 8;
-pub const TAG_CELLS: u8 = 9;
-pub const TAG_VISCOSITY: u8 = 10;
-pub const TAG_SPEND: u8 = 11;
-pub const TAG_PROGRESS: u8 = 12;
 pub const TAG_PHASE: u8 = 13;
 pub const TAG_CARRIAGE: u8 = 14;
 pub const TAG_CLOCK: u8 = 15;
 pub const TAG_ECONOMY: u8 = 16;
-/// 2026-09-29 — a mind's faculties, and a court's acts and metabolism.
-pub const TAG_SENSES: u8 = 17;
+/// 2026-09-29 — a court's acts and metabolism.
 pub const TAG_ACTS: u8 = 18;
 pub const TAG_CARRIERS: u8 = 19;
 /// 78.145 — the seat relay's standing and its posts filed and refused.
@@ -46,25 +28,16 @@ pub const TAG_RELAY: u8 = 20;
 
 /// CQ1 — EVERY READING'S NAME, by its tag: the ONE statement the console's
 /// `--reading NAME` is read against (law 12).
-pub const READING_NAMES: [(&str, u8); 20] = [
+pub const READING_NAMES: [(&str, u8); 11] = [
     ("carriers", TAG_CARRIERS),
     ("relay", TAG_RELAY),
     ("clock", TAG_CLOCK),
     ("economy", TAG_ECONOMY),
-    ("senses", TAG_SENSES),
     ("acts", TAG_ACTS),
-    ("planes", TAG_PLANES),
-    ("loss", TAG_LOSS),
     ("memory", TAG_MEMORY),
     ("court", TAG_COURT),
     ("replication", TAG_REPLICATION),
     ("adjudication", TAG_ADJUDICATION),
-    ("learning", TAG_LEARNING),
-    ("circuits", TAG_CIRCUIT),
-    ("cells", TAG_CELLS),
-    ("viscosity", TAG_VISCOSITY),
-    ("spend", TAG_SPEND),
-    ("progress", TAG_PROGRESS),
     ("phase", TAG_PHASE),
     ("carriage", TAG_CARRIAGE),
 ];
@@ -97,257 +70,6 @@ fn take_u8(b: &[u8], p: &mut usize) -> Option<u8> {
     let v = *b.get(*p)?;
     *p += 1;
     Some(v)
-}
-
-/// A PLANE CENSUS'S CLASSIFICATION ([`Planes::turning`]).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Turning {
-    Unread,
-    Unturned,
-    /// Every turn on the sensor's plane; `other` harmonic planes declared and
-    /// never turned.
-    Flattened { other: usize },
-    Turns { turned: usize, of: usize },
-}
-
-/// THE PLANE CENSUS AS A WHOLE OBJECT (D1, 68, 71.2(3)): the algebra's `n`,
-/// the transitions read and those coupling both halves, and each populated
-/// plane with its count, ascending by blade. A plane that never turned is
-/// absent here and present in `cga::bivector_planes(n)`, which is where a
-/// reader learns what was declared.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Planes {
-    pub n: u8,
-    pub read: u64,
-    pub coupled: u64,
-    pub counts: Vec<(u64, u64)>,
-    /// PC1 — each populated PARABOLIC plane, `(base axis, pole, count)`,
-    /// ascending: a null bivector counted once, never as a turn beside a
-    /// boost.
-    pub parabolic: Vec<(u8, u8, u64)>,
-}
-
-impl Planes {
-    /// The census a tally holds, read over the planes of its own algebra.
-    pub fn of(t: &crate::transducer::cga::PlaneTally) -> Planes {
-        use crate::transducer::cga::Pole;
-        let n = t.algebra();
-        let mut counts: Vec<(u64, u64)> = crate::transducer::cga::bivector_planes(n)
-            .into_iter()
-            .map(|p| (p as u64, t.count(p)))
-            .filter(|&(_, c)| c > 0)
-            .collect();
-        counts.sort_unstable();
-        let parabolic: Vec<(u8, u8, u64)> = (1..=n)
-            .flat_map(|i| [Pole::Infinity, Pole::Origin].map(|p| (i, p)))
-            .map(|(i, p)| (i, p.as_u8(), t.count_parabolic(usize::from(i), p)))
-            .filter(|&(_, _, c)| c > 0)
-            .collect();
-        Planes { n, read: t.read, coupled: t.coupled, counts, parabolic }
-    }
-
-    /// WHAT THE CENSUS TURNED ON, read off its counts and never stored: no
-    /// transition read; nothing turned (every transition a boost, a slip or
-    /// the identity); FLATTENED — every turn on the sensor's plane `e1e2`;
-    /// or turns on `turned` of the `of` harmonic planes the algebra declares.
-    pub fn turning(&self) -> Turning {
-        let harmonic = crate::transducer::cga::harmonic_planes(self.n);
-        let turned: Vec<usize> = harmonic.iter().copied().filter(|&b| self.count(b) > 0).collect();
-        let grid = crate::transducer::cga::E1 | crate::transducer::cga::E2;
-        match (self.read, turned.as_slice()) {
-            (0, _) => Turning::Unread,
-            (_, []) => Turning::Unturned,
-            (_, [only]) if *only == grid => Turning::Flattened { other: harmonic.len() - 1 },
-            _ => Turning::Turns { turned: turned.len(), of: harmonic.len() },
-        }
-    }
-
-    /// How often one plane was populated.
-    pub fn count(&self, blade: usize) -> u64 {
-        match self.counts.binary_search_by_key(&(blade as u64), |&(b, _)| b) {
-            Ok(at) => self.counts[at].1,
-            Err(_) => 0,
-        }
-    }
-
-    /// How often one parabolic plane was populated.
-    pub fn count_parabolic(&self, axis: u8, pole: crate::transducer::cga::Pole) -> u64 {
-        match self.parabolic.binary_search_by_key(&(axis, pole.as_u8()), |&(a, p, _)| (a, p)) {
-            Ok(at) => self.parabolic[at].2,
-            Err(_) => 0,
-        }
-    }
-
-    /// Fold a later census into this one: the larger algebra, and each
-    /// plane's count added to its own — never to another plane's (law 5).
-    pub fn absorb(&mut self, o: &Planes) {
-        self.n = self.n.max(o.n);
-        self.read += o.read;
-        self.coupled += o.coupled;
-        for &(blade, c) in &o.counts {
-            match self.counts.binary_search_by_key(&blade, |&(b, _)| b) {
-                Ok(at) => self.counts[at].1 += c,
-                Err(at) => self.counts.insert(at, (blade, c)),
-            }
-        }
-        for &(axis, pole, c) in &o.parabolic {
-            match self.parabolic.binary_search_by_key(&(axis, pole), |&(a, p, _)| (a, p)) {
-                Ok(at) => self.parabolic[at].2 += c,
-                Err(at) => self.parabolic.insert(at, (axis, pole, c)),
-            }
-        }
-    }
-
-    #[must_use]
-    fn put(&self, out: &mut Vec<u8>) -> Option<()> {
-        out.push(self.n);
-        put_u64(out, self.read);
-        put_u64(out, self.coupled);
-        crate::transducer::address::put_u32_count(out, self.counts.len())?;
-        for &(blade, c) in &self.counts {
-            put_u64(out, blade);
-            put_u64(out, c);
-        }
-        crate::transducer::address::put_u32_count(out, self.parabolic.len())?;
-        for &(axis, pole, c) in &self.parabolic {
-            out.push(axis);
-            out.push(pole);
-            put_u64(out, c);
-        }
-        Some(())
-    }
-
-    fn take(b: &[u8], p: &mut usize) -> Option<Planes> {
-        let n = take_u8(b, p)?;
-        let (read, coupled) = (take_u64(b, p)?, take_u64(b, p)?);
-        let m = take_u32(b, p)? as usize;
-        // Each entry is sixteen bytes; a count the body cannot hold is
-        // refused before anything is reserved for it.
-        if !holds(b, *p, m, 16) {
-            return None;
-        }
-        let mut counts = Vec::with_capacity(m);
-        for _ in 0..m {
-            counts.push((take_u64(b, p)?, take_u64(b, p)?));
-        }
-        let m = take_u32(b, p)? as usize;
-        if !holds(b, *p, m, 10) {
-            return None;
-        }
-        let mut parabolic = Vec::with_capacity(m);
-        for _ in 0..m {
-            parabolic.push((take_u8(b, p)?, take_u8(b, p)?, take_u64(b, p)?));
-        }
-        Some(Planes { n, read, coupled, counts, parabolic })
-    }
-}
-
-/// THE AXES OF [`Loss`], in its writing's order: each counter's name and
-/// what it means when it is not zero. The ONE statement of the order, read
-/// by the codec and by every renderer (law 12).
-pub const LOSS_AXES: [(&str, &str); 26] = [
-    ("unheard", "components whose moduli are not read at their n (body_of refused)"),
-    ("sectionless", "compartments with no grid plane, left out of a chain (on_grid refused)"),
-    ("coarse", "sections filed at their n alone, their topology refused"),
-    ("unmeasured", "covers whose share ended before their pieces did"),
-    ("off_sheet", "frames that did not stand on the sheet (Axiom B fell back)"),
-    ("tau_unfooted", "chord ends carrying no footprint"),
-    ("tau_refused", "footprint displacements the Cayley chart could not carry"),
-    ("unframed", "meets no proper turn relates"),
-    ("open_180", "frames whose 180° turn nothing closes (a projective class)"),
-    ("unspellable", "orbits whose holonomy the seventeen do not spell"),
-    ("orbit_unread", "orbits evaluated and not measured: a rotation no versor"),
-    ("refused", "pieces carried whose rotor the seventeen do not spell"),
-    ("unclassed", "meets whose piece carries no transport class"),
-    ("undecodable", "keys this reader wrote and could not read back"),
-    ("offered", "pairs no versor carried, reaching the mint"),
-    ("permanent", "mint gate 1, P: mirrored, incongruent, isotropic or irrational, proved permanent"),
-    ("bodiless", "mint gate 1, I: a bodiless pair, nothing to pose"),
-    ("held", "mint gate 1, no refusal: an unoriented pair, a held stabilizer"),
-    ("turned", "mint gate 1, no refusal: the pair reads a turn of the base"),
-    ("unclassified", "mint gate 1: a kind no pose refusal carries, a defect"),
-    ("arcless", "mint gate 2: orients only at the quartic, no arc"),
-    ("primeless", "mint gate 3: the arc names no prime the alphabet lacks"),
-    ("minted", "RotorPrime demands minted"),
-    ("unkeyed", "pole demands of a kind with no coordinates to stand by"),
-    ("untyped", "pole demands their own type refuses"),
-    ("merged", "pole demands already standing, stood once"),
-];
-
-/// WHAT PERCEPTION, THE COVER AND THE MINT PASSED OVER, each on its own
-/// axis of [`LOSS_AXES`]. Accumulated axis by axis, never summed across
-/// axes (law 5).
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Loss {
-    pub axes: [u64; LOSS_AXES.len()],
-}
-
-impl Loss {
-    /// The losses one stroke read, taken from the counters that hold them.
-    pub fn of(
-        perception: [u64; 3],
-        cover: &crate::transducer::family::cover::CoverTally,
-        mint: &crate::transducer::family::perceive::DemandTally,
-    ) -> Loss {
-        let [unheard, sectionless, coarse] = perception;
-        Loss {
-            axes: [
-                unheard,
-                sectionless,
-                coarse,
-                cover.unmeasured,
-                cover.off_sheet,
-                cover.tau_unfooted,
-                cover.tau_refused,
-                cover.unframed,
-                cover.frame_open_180,
-                cover.unspellable,
-                cover.orbit_unread,
-                cover.refused,
-                cover.unclassed,
-                cover.undecodable,
-                mint.offered,
-                mint.permanent,
-                mint.bodiless,
-                mint.held,
-                mint.turned,
-                mint.unclassified,
-                mint.arcless,
-                mint.primeless,
-                mint.minted,
-                mint.unkeyed,
-                mint.untyped,
-                mint.merged,
-            ],
-        }
-    }
-
-    pub fn absorb(&mut self, o: &Loss) {
-        for (a, b) in self.axes.iter_mut().zip(o.axes.iter()) {
-            *a += b;
-        }
-    }
-
-    fn put(&self, out: &mut Vec<u8>) {
-        #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — a constant table: the axes array is sized LOSS_AXES.len(), 26 entries")]
-        out.push(self.axes.len() as u8);
-        for v in &self.axes {
-            put_u64(out, *v);
-        }
-    }
-
-    fn take(b: &[u8], p: &mut usize) -> Option<Loss> {
-        // The count of axes is written, so a reader of another build's
-        // layout refuses rather than reading one axis as another.
-        if usize::from(take_u8(b, p)?) != LOSS_AXES.len() {
-            return None;
-        }
-        let mut axes = [0u64; LOSS_AXES.len()];
-        for a in axes.iter_mut() {
-            *a = take_u64(b, p)?;
-        }
-        Some(Loss { axes })
-    }
 }
 
 /// THE ALLOCATOR'S BYTES OVER THE SOURCE'S OWN CLOCK: the first sample and
@@ -926,24 +648,10 @@ impl Adjudication {
 /// ONE READING, tagged by what it answers.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Reading {
-    Planes(Planes),
-    Loss(Loss),
     Memory(Memory),
     Court(Box<Court>),
-    Replication(Replication),
+    Replication(Box<Replication>),
     Adjudication(Adjudication),
-    /// LC1 — the learning curve of one mind (78.1).
-    Learning(super::Learning),
-    /// PL1 — the circuits of the last percept, step by step (78.12(4)).
-    Circuit(super::Circuits),
-    /// CO1 — the cells of the last percept as their orbit algebras (78.15).
-    Cells(super::Cells),
-    /// VO1 — VS1's arms per pair of planes per lane (78.16).
-    Viscosity(super::Viscosity),
-    /// SP1 — the stroke by reader (78.16).
-    Spend(super::Spend),
-    /// PG1 — E1's done-when (78.16).
-    Progress(super::Progress),
     /// PH5 — a court's last phase window (78.17).
     Phase(super::Phase),
     /// LD1 — the bytes per award, per receipt delta and per frame (78.22).
@@ -953,9 +661,6 @@ pub enum Reading {
     Clock(super::Clock),
     /// EC1, 78.33 — a court's payments by proof of work, per lane.
     Economy(Box<super::Economy>),
-    /// A mind's faculties: sight, cognition, speech, hearing, language,
-    /// understanding, solving, and its growing carriers.
-    Senses(Box<super::Senses>),
     /// A court's acts and metabolism.
     Acts(Box<super::Acts>),
     /// 78.64 H1 — what each of a court's carriers holds, at its `K`.
@@ -968,23 +673,14 @@ pub enum Reading {
 impl Reading {
     pub fn tag(&self) -> u8 {
         match self {
-            Reading::Planes(_) => TAG_PLANES,
-            Reading::Loss(_) => TAG_LOSS,
             Reading::Memory(_) => TAG_MEMORY,
             Reading::Court(_) => TAG_COURT,
             Reading::Replication(_) => TAG_REPLICATION,
             Reading::Adjudication(_) => TAG_ADJUDICATION,
-            Reading::Learning(_) => TAG_LEARNING,
-            Reading::Circuit(_) => TAG_CIRCUIT,
-            Reading::Cells(_) => TAG_CELLS,
-            Reading::Viscosity(_) => TAG_VISCOSITY,
-            Reading::Spend(_) => TAG_SPEND,
-            Reading::Progress(_) => TAG_PROGRESS,
             Reading::Phase(_) => TAG_PHASE,
             Reading::Carriage(_) => TAG_CARRIAGE,
             Reading::Clock(_) => TAG_CLOCK,
             Reading::Economy(_) => TAG_ECONOMY,
-            Reading::Senses(_) => TAG_SENSES,
             Reading::Acts(_) => TAG_ACTS,
             Reading::Carriers(_) => TAG_CARRIERS,
             Reading::Relay(_) => TAG_RELAY,
@@ -996,24 +692,12 @@ impl Reading {
     /// the two are of different kinds, which is no fold.
     pub fn absorb(&mut self, o: &Reading) -> bool {
         match (self, o) {
-            (Reading::Planes(a), Reading::Planes(b)) => a.absorb(b),
-            (Reading::Loss(a), Reading::Loss(b)) => a.absorb(b),
             (Reading::Memory(a), Reading::Memory(b)) => a.absorb(b),
             // A court's standing, its replication and its adjudications are
             // read whole at the question; the later reading stands.
             (Reading::Court(a), Reading::Court(b)) => *a = b.clone(),
             (Reading::Replication(a), Reading::Replication(b)) => *a = b.clone(),
             (Reading::Adjudication(a), Reading::Adjudication(b)) => *a = b.clone(),
-            // A mind's curve is what it holds at its latest `K`.
-            (Reading::Learning(a), Reading::Learning(b)) => *a = b.clone(),
-            // The circuits are the last percept's; the later percept stands.
-            (Reading::Circuit(a), Reading::Circuit(b)) => *a = b.clone(),
-            (Reading::Cells(a), Reading::Cells(b)) => *a = b.clone(),
-            // A voice's viscosity, spend and progress accumulate over its
-            // percepts, each count on its own axis.
-            (Reading::Viscosity(a), Reading::Viscosity(b)) => a.absorb(b),
-            (Reading::Spend(a), Reading::Spend(b)) => a.absorb(b),
-            (Reading::Progress(a), Reading::Progress(b)) => a.absorb(b),
             // A court's phase is its last window; the later stands.
             (Reading::Phase(a), Reading::Phase(b)) => *a = b.clone(),
             // The carriage is measured whole at the question; the later
@@ -1024,9 +708,7 @@ impl Reading {
             // A court's economy is read off its journal whole; the later
             // stands.
             (Reading::Economy(a), Reading::Economy(b)) => *a = b.clone(),
-            // A mind's faculties and a court's acts are read whole at their
-            // `K`; the later stands.
-            (Reading::Senses(a), Reading::Senses(b)) => *a = b.clone(),
+            // A court's acts are read whole at its `K`; the later stands.
             (Reading::Acts(a), Reading::Acts(b)) => *a = b.clone(),
             // A census is read whole at its `K`; the later stands.
             (Reading::Carriers(a), Reading::Carriers(b)) => *a = b.clone(),
@@ -1045,29 +727,12 @@ impl Reading {
         // The fixed-width readings are total; the rest refuse by the counts
         // and lengths they write.
         match self {
-            Reading::Planes(r) => r.put(out),
             Reading::Court(r) => r.put(out),
             Reading::Replication(r) => r.put(out),
             Reading::Adjudication(r) => r.put(out),
-            Reading::Learning(r) => r.put(out),
-            Reading::Circuit(r) => r.put(out),
-            Reading::Cells(r) => r.put(out),
-            Reading::Viscosity(r) => r.put(out),
             Reading::Carriage(r) => r.put(out),
             Reading::Clock(r) => r.put(out),
-            Reading::Loss(r) => {
-                r.put(out);
-                Some(())
-            }
             Reading::Memory(r) => {
-                r.put(out);
-                Some(())
-            }
-            Reading::Spend(r) => {
-                r.put(out);
-                Some(())
-            }
-            Reading::Progress(r) => {
                 r.put(out);
                 Some(())
             }
@@ -1076,10 +741,6 @@ impl Reading {
                 Some(())
             }
             Reading::Economy(r) => r.put(out),
-            Reading::Senses(r) => {
-                r.put(out);
-                Some(())
-            }
             Reading::Acts(r) => {
                 r.put(out);
                 Some(())
@@ -1093,23 +754,14 @@ impl Reading {
     /// read or a body that does not hold its reading.
     pub fn take(b: &[u8], p: &mut usize) -> Option<Reading> {
         match take_u8(b, p)? {
-            TAG_PLANES => Some(Reading::Planes(Planes::take(b, p)?)),
-            TAG_LOSS => Some(Reading::Loss(Loss::take(b, p)?)),
             TAG_MEMORY => Some(Reading::Memory(Memory::take(b, p)?)),
             TAG_COURT => Some(Reading::Court(Box::new(Court::take(b, p)?))),
-            TAG_REPLICATION => Some(Reading::Replication(Replication::take(b, p)?)),
+            TAG_REPLICATION => Some(Reading::Replication(Box::new(Replication::take(b, p)?))),
             TAG_ADJUDICATION => Some(Reading::Adjudication(Adjudication::take(b, p)?)),
-            TAG_LEARNING => Some(Reading::Learning(super::Learning::take(b, p)?)),
-            TAG_CIRCUIT => Some(Reading::Circuit(super::Circuits::take(b, p)?)),
-            TAG_CELLS => Some(Reading::Cells(super::Cells::take(b, p)?)),
-            TAG_VISCOSITY => Some(Reading::Viscosity(super::Viscosity::take(b, p)?)),
-            TAG_SPEND => Some(Reading::Spend(super::Spend::take(b, p)?)),
-            TAG_PROGRESS => Some(Reading::Progress(super::Progress::take(b, p)?)),
             TAG_PHASE => Some(Reading::Phase(super::Phase::take(b, p)?)),
             TAG_CARRIAGE => Some(Reading::Carriage(super::Carriage::take(b, p)?)),
             TAG_CLOCK => Some(Reading::Clock(super::Clock::take(b, p)?)),
             TAG_ECONOMY => Some(Reading::Economy(Box::new(super::Economy::take(b, p)?))),
-            TAG_SENSES => Some(Reading::Senses(Box::new(super::Senses::take(b, p)?))),
             TAG_ACTS => Some(Reading::Acts(Box::new(super::Acts::take(b, p)?))),
             TAG_CARRIERS => Some(Reading::Carriers(Box::new(super::Carriers::take(b, p)?))),
             TAG_RELAY => Some(Reading::Relay(Box::new(super::Relay::take(b, p)?))),

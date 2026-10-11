@@ -110,8 +110,8 @@ pub(crate) fn park(key: &[u8], pending: Pending) {
     PENDING.with(|p| p.borrow_mut().insert(key, pending));
 }
 
-/// How many covers are parked. A reading for the soak line; nothing
-/// branches on it.
+/// How many covers are parked; nothing branches on it.
+#[cfg(test)]
 pub(crate) fn parked() -> usize {
     PENDING.with(|p| p.borrow().scoped().count())
 }

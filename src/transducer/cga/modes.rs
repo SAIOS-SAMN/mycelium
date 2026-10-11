@@ -135,26 +135,6 @@ fn quotient(p: &[Q], q: &[Q]) -> Vec<Q> {
     trim(out)
 }
 
-/// 78.100 — THE ROOT READER'S REFUSALS FOR THE STROKE, in this process: how
-/// many, the highest degree refused, and the widest coefficient (in bits) of
-/// a polynomial whose roots the stroke ran out reading.
-static ROOTS_REFUSED: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-static ROOTS_DEGREE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-static ROOTS_BITS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-
-fn note_root_refusal(degree: usize, bits: u64) {
-    use std::sync::atomic::Ordering::Relaxed;
-    let _ = ROOTS_REFUSED.fetch_update(Relaxed, Relaxed, |n| n.checked_add(1));
-    ROOTS_DEGREE.fetch_max(u64::try_from(degree).map_or(u64::MAX, |d| d), Relaxed);
-    ROOTS_BITS.fetch_max(bits, Relaxed);
-}
-
-/// The root reader's refusals: `(refused, highest degree, widest bits)`.
-pub fn root_refusals() -> (u64, u64, u64) {
-    use std::sync::atomic::Ordering::Relaxed;
-    (ROOTS_REFUSED.load(Relaxed), ROOTS_DEGREE.load(Relaxed), ROOTS_BITS.load(Relaxed))
-}
-
 /// An integer polynomial's value at `y`, by Horner, ascending coefficients.
 fn eval_int(h: &[num_bigint::BigInt], y: &num_bigint::BigInt) -> num_bigint::BigInt {
     h.iter().rev().fold(num_bigint::BigInt::from(0), |acc, c| acc * y + c)
@@ -345,20 +325,14 @@ pub(super) fn roots_need(p: &[Q]) -> Option<usize> {
 pub(super) fn rational_roots(p: &[Q], budget: &mut crate::physics::Budget) -> Result<Vec<Q>, Undecomposed> {
     let (zero, mut rest, ints) = integer_form(p);
     let mut roots: Vec<Q> = if zero { vec![Q::zero()] } else { Vec::new() };
-    if let ([a0, ..], [.., am]) = (ints.as_slice(), ints.as_slice()) {
+    if let [.., am] = ints.as_slice() {
         if ints.len() > 1 {
-            let unbounded = Undecomposed::Unbounded(ints.len() - 1);
-            // 78.100 — A REFUSAL FOR THE STROKE IS READ: its degree and the
-            // width of the coefficients its search was walking.
-            let refuse = || {
-                note_root_refusal(ints.len() - 1, a0.bits().max(am.bits()));
-                unbounded
-            };
             // THE CANDIDATES, at any degree, by the monic substitute and exact
-            // bisection — no integer factored (78.100, 78.102).
+            // bisection — no integer factored (78.100, 78.102); a stroke spent
+            // refuses by the degree.
             let candidates: Vec<Q> = match monic_integer_roots(&ints, budget) {
                 Ok(ys) => ys.into_iter().map(|y| Q::new(y, am.clone())).collect(),
-                Err(()) => return Err(refuse()),
+                Err(()) => return Err(Undecomposed::Unbounded(ints.len() - 1)),
             };
             for candidate in candidates {
                 let value = rest.iter().rev().fold(Q::zero(), |acc, c| acc * &candidate + c);

@@ -74,29 +74,6 @@ impl PerturbTally {
     }
 }
 
-thread_local! {
-    static PERTURB: std::cell::Cell<PerturbTally> = std::cell::Cell::new(PerturbTally::default());
-}
-
-pub(crate) fn note_perturb(t: &PerturbTally) {
-    PERTURB.with(|c| {
-        let mut held = c.get();
-        held.add(t);
-        c.set(held);
-    });
-}
-
-/// The pair composites read so far, without clearing them (the voice's
-/// `Learning` reads the running total; the census takes).
-pub fn perturb_tally() -> PerturbTally {
-    PERTURB.with(|c| c.get())
-}
-
-/// The pair composites read since the last take.
-pub fn take_perturb_tally() -> PerturbTally {
-    PERTURB.with(|c| c.replace(PerturbTally::default()))
-}
-
 /// EVERY CERTIFIED CELL'S CIRCUITS BY THEIR BASED RAY: cell key → (circuit
 /// chord → the canonical bytes of each of its based routes). Two circuits of
 /// one cell agree exactly where their rays' bytes are equal (C1(a)).
@@ -217,7 +194,7 @@ fn based_rays(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> Option<Vec<Vec<
         return None;
     }
     let inv = theta.reverse();
-    let carried = paths_carried_quiet(faces, vertices, lp)?;
+    let carried = paths_carried(faces, vertices, lp)?;
     let mut out = Vec::new();
     for (_, c) in carried.scoped() {
         let rho = theta.geo(&c.face.carriage).geo(&inv);
@@ -260,15 +237,8 @@ impl Form {
     }
 
     /// The form's cells read by their circuits' pair composites, on its own
-    /// faces and the cycles its reader already traversed (78.46(4′)):
-    /// perception's reading, which it notes, and the pivot trial's
-    /// "before", which it does not — one form's cells are counted once.
-    pub(crate) fn read_agreements(&self, cycles: &Cycles, noted: bool) -> Agreements {
-        let mut t = PerturbTally::default();
-        let read = Agreements::read(self, &self.faces, cycles, &mut t);
-        if noted {
-            note_perturb(&t);
-        }
-        read
+    /// faces and the cycles its reader already traversed (78.46(4′)).
+    pub(crate) fn read_agreements(&self, cycles: &Cycles) -> Agreements {
+        Agreements::read(self, &self.faces, cycles, &mut PerturbTally::default())
     }
 }

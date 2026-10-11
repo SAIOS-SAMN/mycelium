@@ -47,7 +47,6 @@ use crate::transducer::cga::{self, Mv};
 use crate::transducer::element::Versor;
 use num_rational::BigRational;
 use num_traits::Zero;
-use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
 
 /// One piece a frame carries.
 #[derive(Clone, Debug)]
@@ -121,106 +120,6 @@ pub(crate) fn relate_sections(first: &Piece, second: &Piece, budget: &mut crate:
     }
 }
 
-/// One frame-axis step of a class: the frames, and the motor its input body
-/// took between them.
-pub(crate) struct Step {
-    pub from: u64,
-    pub to: u64,
-    pub motor: Versor,
-}
-
-/// THE DIRECTION A MOTOR FLOWS BY: its generators summed — the Cayley
-/// bivector, or each mode's plane at the chart's pole — a flip read one
-/// dimension up. `None` where it does not read.
-fn flow_direction(motor: &Versor, n: u8, budget: &mut crate::physics::Budget) -> Option<Mv> {
-    let even = cga::unfold(motor, n)?;
-    let gens = crate::transducer::cech::flow_generators(&even, budget)?;
-    Some(gens.iter().fold(Mv::zero(), |s, g| s.add(g)))
-}
-
-/// 78.74, 78.75 — COHESION, THE GAUGE OF A CLASS'S COHERENCE STRUCTURE: along
-/// its frame axis each step's motor lies on a flow, and the class COHERES
-/// where the flow CONTINUES — the next step's generator split against the
-/// last's plane (78.46) is pure DRAG, the same flow at its own rate — and
-/// BENDS where the split carries LIFT, the flow turning into a plane neither
-/// step was in. Read off the generators, never off the gap between two
-/// sampled motors. A step that does not move has no plane to continue: from
-/// rest the change is unread by name, never called smooth. A null generator
-/// (a slide) has no square to split by: it continues where the two
-/// generators commute, which is the same statement. The gauge is smooth
-/// changes over changes, exact (counted, never a norm).
-/// Returns (smooth, changes, unread).
-pub(crate) fn cohesion(class: &[u8], steps: &[Step], n: u8, budget: &mut crate::physics::Budget) -> (u64, u64, u64) {
-    let (mut smooth, mut changes, mut unread) = (0u64, 0u64, 0u64);
-    for pair in steps.windows(2) {
-        let [s, t] = pair else { continue };
-        // Only chained steps make a change: a gap is no neighbour.
-        if s.to != t.from {
-            continue;
-        }
-        let (Some(gs), Some(gt)) = (flow_direction(&s.motor, n, budget), flow_direction(&t.motor, n, budget)) else {
-            step(&mut unread, 1);
-            continue;
-        };
-        let continues = match (gs.is_zero(), gt.is_zero()) {
-            // At rest and still at rest: nothing changed.
-            (true, true) => Some(true),
-            // From rest: no plane to continue.
-            (true, false) => None,
-            (false, _) => Some(match cga::lift_drag(&gs, &gt) {
-                Some(split) => split.lift.is_zero(),
-                None => gs.geo(&gt).sub(&gt.geo(&gs)).is_zero(),
-            }),
-        };
-        match continues {
-            Some(true) => {
-                step(&mut smooth, 1);
-                step(&mut changes, 1);
-            }
-            Some(false) => step(&mut changes, 1),
-            None => step(&mut unread, 1),
-        }
-    }
-    note(COH_SMOOTH, smooth);
-    note(COH_CHANGES, changes);
-    note(COH_UNREAD, unread);
-    if changes > 0 || unread > 0 {
-        PERCEPT.with(|p| p.borrow_mut().cohesion.push((class.to_vec(), smooth, changes)));
-    }
-    (smooth, changes, unread)
-}
-
-/// 78.74 — a multiplicity's two sections, related and counted; the demand
-/// stands only where they are `Standing`.
-pub(crate) fn note_section(relation: Sections) {
-    note(
-        match relation {
-            Sections::Congruent => SEC_CONGRUENT,
-            Sections::Coherent => SEC_COHERENT,
-            Sections::Standing => SEC_STANDING,
-        },
-        1,
-    );
-    PERCEPT.with(|p| p.borrow_mut().sections.push(relation));
-}
-
-/// What one percept's sections and cohesion read, gathered on its thread
-/// until its fibres are read (`read_pieces`), then handed to its quotient.
-#[derive(Default)]
-struct PerceptReading {
-    sections: Vec<Sections>,
-    cohesion: Vec<(Vec<u8>, u64, u64)>,
-}
-
-thread_local! {
-    static PERCEPT: std::cell::RefCell<PerceptReading> = std::cell::RefCell::new(PerceptReading::default());
-}
-
-/// A percept begins: what an earlier one left unread is let go.
-pub(crate) fn begin() {
-    PERCEPT.with(|p| *p.borrow_mut() = PerceptReading::default());
-}
-
 /// THE CENTROID OF SITES IN VERTEX COORDINATES, as a conformal point: each
 /// axis's mean, and one half on each grid axis (a compartment's square spans
 /// it; a frame coordinate is the offset alone) — `carry::vertex_centroid`'s
@@ -255,160 +154,6 @@ pub(crate) fn piece_of(frame: u64, class: Vec<u8>, carriage: &Versor, domain: &[
     let mass = u64::try_from(domain.len()).ok()?;
     let out_mass = u64::try_from(codomain.len()).ok()?;
     Some(Piece { frame, class, point, out, mass, out_mass, carriage: carriage.clone(), n })
-}
-
-/// 78.74 — WHAT THE FRAMES' FIBRES DID, in this process.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct FibreTally {
-    pub pairs: u64,
-    pub rigid: u64,
-    pub torsion: u64,
-    pub field: u64,
-    pub lift: u64,
-    /// Two pieces on one centroid: no fibre.
-    pub unpivoted: u64,
-    /// Cross pairs the stroke did not reach.
-    pub unread: u64,
-    pub stable: u64,
-    /// Exactly enough pivots to fix a round, and none left to test it.
-    pub determined: u64,
-    pub emergent: u64,
-    pub open: u64,
-    /// The self-check: a piece's versor carries its input pivot onto its
-    /// output pivot, or does not.
-    pub aligned: u64,
-    pub misaligned: u64,
-    /// Class pairs observed; those certain (every fibre torsion); those
-    /// partly so.
-    pub class_pairs: u64,
-    pub certain: u64,
-    pub partial: u64,
-    /// Classes before the quotient by torsion, and after.
-    pub classes: u64,
-    pub algorithms: u64,
-    /// Merges refused because a pair across the two groups disagreed.
-    pub conflicted: u64,
-    /// Multiplicities by how their two sections related: eliminated as a
-    /// copy, eliminated as one motion up to torsion, or standing.
-    pub sections_congruent: u64,
-    pub sections_coherent: u64,
-    pub sections_standing: u64,
-    /// Cohesion: smooth changes along classes' frame axes, all changes, and
-    /// changes whose generators did not read (or began from rest).
-    pub smooth: u64,
-    pub changes: u64,
-    pub changes_unread: u64,
-    /// 78.75 — lifted fibres inverted into a white-hole source on their
-    /// frame's geoid (one per pivot it emanates from), and lifted fibres in a
-    /// frame with a geoid that gave none: signal recovered, and noise.
-    pub sourced: u64,
-    pub unsourced: u64,
-    /// Fibres whose pivots the motion kept but whose modes did not read.
-    pub modes_unread: u64,
-    /// 78.60, 78.75 — free classes whose generators open no dimension of the
-    /// charged member's algebra (grammar, cost zero), and those that do.
-    pub free_grammar: u64,
-    pub free_opens: u64,
-}
-
-impl FibreTally {
-    /// THE COHESION GAUGE: smooth changes over changes, exact; `None` before
-    /// any change was read.
-    pub fn cohesion(&self) -> Option<BigRational> {
-        (self.changes > 0).then(|| BigRational::new(self.smooth.into(), self.changes.into()))
-    }
-}
-
-impl FibreTally {
-    /// THE TORSION ELIMINATED: `1 − algorithms / classes`, exact, or `None`
-    /// before any class was read.
-    pub fn eliminated(&self) -> Option<BigRational> {
-        (self.classes > 0).then(|| {
-            BigRational::from_integer(1.into()) - BigRational::new(self.algorithms.into(), self.classes.into())
-        })
-    }
-}
-
-const SLOTS: usize = 30;
-static FIBRES: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
-const PAIRS: usize = 0;
-const RIGID: usize = 1;
-const TORSION: usize = 2;
-const FIELD: usize = 3;
-const LIFT: usize = 4;
-const UNPIVOTED: usize = 5;
-const UNREAD: usize = 6;
-const STABLE: usize = 7;
-const DETERMINED: usize = 8;
-const EMERGENT: usize = 9;
-const OPEN: usize = 10;
-const ALIGNED: usize = 11;
-const MISALIGNED: usize = 12;
-const CLASS_PAIRS: usize = 13;
-const CERTAIN: usize = 14;
-const PARTIAL: usize = 15;
-const CLASSES: usize = 16;
-const ALGORITHMS: usize = 17;
-const CONFLICTED: usize = 18;
-const SEC_CONGRUENT: usize = 19;
-const SEC_COHERENT: usize = 20;
-const SEC_STANDING: usize = 21;
-const COH_SMOOTH: usize = 22;
-const COH_CHANGES: usize = 23;
-const COH_UNREAD: usize = 24;
-const SOURCED: usize = 25;
-const UNSOURCED: usize = 26;
-const MODES_UNREAD: usize = 27;
-const FREE_GRAMMAR: usize = 28;
-const FREE_OPENS: usize = 29;
-
-fn note(slot: usize, by: u64) {
-    if by > 0 && FIBRES[slot].fetch_update(Relaxed, Relaxed, |held| held.checked_add(by)).is_err() {
-        let mut past = u64::MAX;
-        let _ = crate::physics::metabolism::step_or_refuse(&mut past, by);
-    }
-}
-
-/// The fibres' tally since the process began.
-pub fn fibre_tally() -> FibreTally {
-    let r = |i: usize| FIBRES[i].load(Relaxed);
-    FibreTally {
-        pairs: r(PAIRS),
-        rigid: r(RIGID),
-        torsion: r(TORSION),
-        field: r(FIELD),
-        lift: r(LIFT),
-        unpivoted: r(UNPIVOTED),
-        unread: r(UNREAD),
-        stable: r(STABLE),
-        determined: r(DETERMINED),
-        emergent: r(EMERGENT),
-        open: r(OPEN),
-        aligned: r(ALIGNED),
-        misaligned: r(MISALIGNED),
-        class_pairs: r(CLASS_PAIRS),
-        certain: r(CERTAIN),
-        partial: r(PARTIAL),
-        classes: r(CLASSES),
-        algorithms: r(ALGORITHMS),
-        conflicted: r(CONFLICTED),
-        sections_congruent: r(SEC_CONGRUENT),
-        sections_coherent: r(SEC_COHERENT),
-        sections_standing: r(SEC_STANDING),
-        smooth: r(COH_SMOOTH),
-        changes: r(COH_CHANGES),
-        changes_unread: r(COH_UNREAD),
-        sourced: r(SOURCED),
-        unsourced: r(UNSOURCED),
-        modes_unread: r(MODES_UNREAD),
-        free_grammar: r(FREE_GRAMMAR),
-        free_opens: r(FREE_OPENS),
-    }
-}
-
-/// k choose 2, or `None` past the carrier.
-fn pairs_in(k: u64) -> Option<u64> {
-    k.checked_mul(k.checked_sub(1)?)?.checked_div(2)
 }
 
 /// One class pair's fibres, by what they said: observed, and how many AGREED
@@ -452,66 +197,8 @@ impl Said {
     }
 }
 
-/// What the fibres between two classes have said in this process, since
-/// the pair first agreed; `None` for a pair never tracked.
-pub fn moving_said(a: &[u8], b: &[u8]) -> Option<Said> {
-    let (a, b) = match a <= b {
-        true => (a, b),
-        false => (b, a),
-    };
-    MOVING.lock().ok()?.get(&pair_key(a, b)?).cloned()
-}
-
-/// THE MOVING ALGORITHM, ACROSS PERCEPTS: per class pair, its fibres'
-/// agreement over observed, held for this process — so a pair's certainty
-/// rises as frames agree and falls as the algorithm moves. A pair enters
-/// once it has agreed and is counted from then on: the sink holds the pairs
-/// that carry the signal, bounded by the agreement seen, never every pair
-/// two pieces ever made.
-static MOVING: std::sync::LazyLock<std::sync::Mutex<crate::network::nerve::Keyed<Said>>> =
-    std::sync::LazyLock::new(|| std::sync::Mutex::new(crate::network::nerve::Keyed::new()));
-
-fn pair_key(a: &[u8], b: &[u8]) -> Option<Vec<u8>> {
-    let mut key = Vec::with_capacity(a.len() + b.len() + 2);
-    key.extend_from_slice(&u16::try_from(a.len()).ok()?.to_le_bytes());
-    key.extend_from_slice(a);
-    key.extend_from_slice(b);
-    Some(key)
-}
-
-/// THE MOVING ALGORITHM'S READING: pairs tracked, how many are certain (every
-/// fibre since they first agreed) and how many partial, and their fibres'
-/// agreement over observed summed — exact.
-pub fn moving_reading() -> Option<(usize, u64, u64, Said)> {
-    let held = MOVING.lock().ok()?;
-    let mut sum = Said::default();
-    let (mut certain, mut partial) = (0u64, 0u64);
-    for (_, s) in held.scoped() {
-        sum.absorb(s);
-        match s.certain() {
-            true => step(&mut certain, 1),
-            false => step(&mut partial, 1),
-        }
-    }
-    Some((held.len(), certain, partial, sum))
-}
-
 /// A class pair, its two keys in order, with what its fibres said.
 pub type PairSaid = ((Vec<u8>, Vec<u8>), Said);
-
-fn track(said: &[PairSaid]) {
-    let Ok(mut held) = MOVING.lock() else { return };
-    for ((a, b), s) in said {
-        let Some(key) = pair_key(a, b) else { continue };
-        match held.get_mut(&key) {
-            Some(h) => h.absorb(s),
-            None if s.agree > 0 => {
-                held.insert(&key, s.clone());
-            }
-            None => {}
-        }
-    }
-}
 
 /// WHAT THE QUOTIENT READ: per class pair (ordered by key) its fibres'
 /// torsion over observed; the classes whose turns are torsion beyond their
@@ -521,27 +208,21 @@ pub struct Quotient {
     pub said: Vec<PairSaid>,
     pub free: Vec<Vec<u8>>,
     pub groups: Vec<Vec<Vec<u8>>>,
-    /// This read's pieces, and the self-check on their coordinates.
-    pub pieces: u64,
-    pub aligned: u64,
-    pub misaligned: u64,
-    /// This percept's multiplicities by how their sections related.
-    pub sections: Vec<Sections>,
-    /// Per class: smooth changes and changes along its frame axis.
-    pub cohesion: Vec<(Vec<u8>, u64, u64)>,
     /// 78.75 — the refusals this read inverted: each white-hole source as
     /// the field line it is, `1 + N`, with the mass of its pivots.
     pub sources: Vec<super::pairing::FieldLine>,
 }
 
+#[cfg(test)]
 thread_local! {
     /// The last quotient this thread read — at most one percept's, replaced
-    /// by the next — so a reader can ask what one extraction found.
+    /// by the next — so a test can ask what one extraction found.
     static LAST: std::cell::RefCell<Option<Quotient>> = const { std::cell::RefCell::new(None) };
 }
 
 /// The quotient this thread's last percept read, taken — what one
-/// extraction found, for the reader that ran it.
+/// extraction found, for the test that ran it.
+#[cfg(test)]
 pub fn take_last() -> Option<Quotient> {
     LAST.with(|l| l.borrow_mut().take())
 }
@@ -552,40 +233,9 @@ fn step(n: &mut u64, by: u64) {
 
 /// THE SELF-CHECK ON A PIECE'S COORDINATES: does its versor carry its input
 /// pivot onto its output pivot? `None` where it landed nowhere readable.
+#[cfg(test)]
 pub(crate) fn aligned(p: &Piece) -> Option<bool> {
     Some(p.carriage.sandwich(&p.point).projective_eq(p.out.as_ref()?))
-}
-
-/// 78.60, 78.75 — WHAT A FREE CLASS COSTS THE LANGUAGE: a class merged into
-/// another's algorithm turns free beyond the group's charged member, and
-/// 78.60 prices a generator by the dimension it opens, `dim_ℚ Lie(V ∪ Γ) /
-/// Lie(V)` — zero for grammar. Read, never assumed: torsion on every fibre is
-/// a statement about the pivots, the cost one about the algebra, and where
-/// they agree the free class is grammar; where a free class still opens a
-/// dimension the quotient eliminated something the algebra did not. `V` is
-/// the charged member's pieces' generators, `Γ` each free member's.
-fn read_cost(pieces: &[Piece], groups: &[Vec<Vec<u8>>], budget: &mut crate::physics::Budget) {
-    let gens_of = |class: &[u8], budget: &mut crate::physics::Budget| -> Option<Vec<Mv>> {
-        let mut out = Vec::new();
-        for p in pieces.iter().filter(|p| p.class == class) {
-            let even = cga::unfold(&p.carriage, u8::try_from(p.n).ok()?)?;
-            out.extend(crate::transducer::cech::flow_generators(&even, budget)?);
-        }
-        Some(out)
-    };
-    for g in groups {
-        let [charged, free @ ..] = g.as_slice() else { continue };
-        let Some(v) = gens_of(charged, budget) else { continue };
-        let Ok(held) = crate::transducer::cech::lie_close(&[], &v, budget) else { continue };
-        for f in free {
-            let Some(gamma) = gens_of(f, budget) else { continue };
-            match crate::transducer::cech::lie_close(&held, &gamma, budget) {
-                Ok(closed) if closed.len() == held.len() => note(FREE_GRAMMAR, 1),
-                Ok(_) => note(FREE_OPENS, 1),
-                Err(_) => {}
-            }
-        }
-    }
 }
 
 /// One source held by its null ray's canonical coordinates: the generator
@@ -604,18 +254,6 @@ fn hold_source(held: &mut crate::network::nerve::Keyed<(Mv, u64)>, src: &crate::
 
 /// READ EVERY FRAME'S FIBRES AND TAKE THE QUOTIENT BY TORSION.
 pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget) -> Quotient {
-    // The self-check on the coordinates: each piece's versor carries its
-    // input pivot onto its output pivot.
-    let (mut on, mut off) = (0u64, 0u64);
-    for p in pieces {
-        match aligned(p) {
-            Some(true) => step(&mut on, 1),
-            Some(false) => step(&mut off, 1),
-            None => {}
-        }
-    }
-    note(ALIGNED, on);
-    note(MISALIGNED, off);
     let mut said: Vec<PairSaid> = Vec::new();
     let mut sources: crate::network::nerve::Keyed<(Mv, u64)> = crate::network::nerve::Keyed::new();
     let mut frames: Vec<u64> = pieces.iter().map(|p| p.frame).collect();
@@ -631,15 +269,6 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
         };
         let points: Vec<Mv> = here.iter().map(|p| p.point.clone()).collect();
         let shape = shared.map(|n| shape_of(&points, n));
-        note(
-            match &shape {
-                Some(Shape::Stable(_)) => STABLE,
-                Some(Shape::Determined(_)) => DETERMINED,
-                Some(Shape::Emergent) => EMERGENT,
-                Some(Shape::Open) | None => OPEN,
-            },
-            1,
-        );
         // 78.75 — THE FRAME'S GEOID AS ONE VECTOR, where its pivots fix a
         // round: the manifold a refusal's inversion is kept inside.
         let sigma = match &shape {
@@ -653,12 +282,6 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
             match groups.iter_mut().find(|(c, v, _)| *c == p.class.as_slice() && v.projective_eq(&p.carriage)) {
                 Some((_, _, members)) => members.push(p),
                 None => groups.push((&p.class, &p.carriage, vec![p])),
-            }
-        }
-        for (_, _, members) in &groups {
-            if let Some(n) = pairs_in(members.len() as u64) {
-                note(PAIRS, n);
-                note(RIGID, n);
             }
         }
         for (a, (ca, va, ma)) in groups.iter().enumerate() {
@@ -681,10 +304,8 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
                 for (pi, ki) in ma.iter().zip(&kept_a) {
                     for (pj, kj) in mb.iter().zip(&kept_b) {
                         if !budget.spend() {
-                            note(UNREAD, 1);
                             continue;
                         }
-                        note(PAIRS, 1);
                         // The tether between the two pieces, measured: one
                         // pivot (two pieces on one centroid) is no tether.
                         let fibre = Fibre::new(
@@ -694,7 +315,6 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
                             BigRational::from_integer(pj.mass.into()),
                         );
                         let Some(fibre) = fibre else {
-                            note(UNPIVOTED, 1);
                             continue;
                         };
                         let needs_modes = (*ki && *kj) || sigma.is_some();
@@ -704,10 +324,7 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
                         let read = modes.as_ref().and_then(|m| m.as_deref());
                         let carried = match (ki, kj, read) {
                             (true, true, Some(m)) => fibre.reads(m),
-                            (true, true, None) => {
-                                note(MODES_UNREAD, 1);
-                                continue;
-                            }
+                            (true, true, None) => continue,
                             _ => Carried::Lift,
                         };
                         // 78.75 — A REFUSAL INVERTED: a lifted fibre in a
@@ -715,23 +332,15 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
                         // its lift moves along the geoid, a white-hole source
                         // — the part of the lift that keeps the geoid, made a
                         // null flow fixing the pivot. Signal recovered from
-                        // the refusal; a lift with none stays noise, counted.
+                        // the refusal; a lift with none stays noise.
                         if let (Carried::Lift, Some(sigma), Some(m)) = (carried, &sigma, read) {
                             let lift = m.iter().fold(Mv::zero(), |l, mode| l.add(&fibre.split(&mode.ray.grade(2)).lift));
-                            let found = crate::physics::source::keeping(sigma, &lift).map(|k| {
-                                [(&pi.point, pi.mass), (&pj.point, pj.mass)]
-                                    .into_iter()
-                                    .filter_map(|(p, mass)| Some((crate::physics::source::Source::of(sigma, p, &k)?, mass)))
-                                    .collect::<Vec<_>>()
-                            });
-                            match found {
-                                Some(found) if !found.is_empty() => {
-                                    for (src, mass) in found {
-                                        note(SOURCED, 1);
+                            if let Some(k) = crate::physics::source::keeping(sigma, &lift) {
+                                for (p, mass) in [(&pi.point, pi.mass), (&pj.point, pj.mass)] {
+                                    if let Some(src) = crate::physics::source::Source::of(sigma, p, &k) {
                                         hold_source(&mut sources, &src, mass);
                                     }
                                 }
-                                _ => note(UNSOURCED, 1),
                             }
                         }
                         let binding = fibre.strength();
@@ -740,19 +349,9 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
                         // Rigid and torsion agree: both keep the fibre's
                         // pivots and levels (the identity is in the torsion
                         // group). Field and lift are work: they disagree.
-                        match carried {
-                            Carried::Rigid => {
-                                note(RIGID, 1);
-                                step(&mut s.agree, 1);
-                                s.bind_agree += &binding;
-                            }
-                            Carried::Torsion => {
-                                note(TORSION, 1);
-                                step(&mut s.agree, 1);
-                                s.bind_agree += &binding;
-                            }
-                            Carried::Field => note(FIELD, 1),
-                            Carried::Lift => note(LIFT, 1),
+                        if let Carried::Rigid | Carried::Torsion = carried {
+                            step(&mut s.agree, 1);
+                            s.bind_agree += &binding;
                         }
                     }
                 }
@@ -769,9 +368,7 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
             }
         }
     }
-    track(&said);
     let mut q = quotient(pieces, said);
-    read_cost(pieces, &q.groups, budget);
     // Each source once, by its null ray, carrying the mass of every pivot it
     // emanates from: a field line the percept's field reads for its flux.
     q.sources = sources
@@ -783,14 +380,8 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
             free: false,
         })
         .collect();
-    q.pieces = pieces.len() as u64;
-    q.aligned = on;
-    q.misaligned = off;
-    let gathered = PERCEPT.with(|p| std::mem::take(&mut *p.borrow_mut()));
-    q.sections = gathered.sections;
-    q.cohesion = gathered.cohesion;
-    let kept = q.clone();
-    LAST.with(|l| *l.borrow_mut() = Some(kept));
+    #[cfg(test)]
+    LAST.with(|l| *l.borrow_mut() = Some(q.clone()));
     q
 }
 
@@ -800,8 +391,7 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
 /// NEVER BLINDLY TRANSITIVE. Torsion is relative to each fibre, so `a ≡ b`
 /// and `b ≡ d` can hold while the fibres between `a` and `d` disagree. Two
 /// groups merge only where every pair across them that was observed is
-/// certain; a merge a disagreeing pair would cross is refused and counted
-/// (`conflicted`).
+/// certain; a merge a disagreeing pair would cross is refused.
 ///
 /// THE STRONGER HOLDS FIRST (78.74). The certain pairs merge in the order
 /// of their binding — the summed strength `m m / d²` of the fibres that
@@ -823,14 +413,8 @@ fn quotient(pieces: &[Piece], mut said: Vec<PairSaid>) -> Quotient {
     };
     let mut groups: Vec<Vec<Vec<u8>>> = classes.iter().map(|c| vec![c.clone()]).collect();
     for ((a, b), s) in &said {
-        note(CLASS_PAIRS, 1);
-        match (s.certain(), s.agree > 0) {
-            (true, _) => note(CERTAIN, 1),
-            (false, true) => {
-                note(PARTIAL, 1);
-                continue;
-            }
-            (false, false) => continue,
+        if !s.certain() {
+            continue;
         }
         let ga = groups.iter().position(|g| g.contains(a));
         let gb = groups.iter().position(|g| g.contains(b));
@@ -846,7 +430,6 @@ fn quotient(pieces: &[Piece], mut said: Vec<PairSaid>) -> Quotient {
             .iter()
             .all(|x| groups[high].iter().all(|y| observed(x, y).is_none_or(Said::certain)));
         if !consistent {
-            note(CONFLICTED, 1);
             continue;
         }
         let moved = groups.remove(high);
@@ -855,8 +438,6 @@ fn quotient(pieces: &[Piece], mut said: Vec<PairSaid>) -> Quotient {
     for g in &mut groups {
         g.sort_unstable();
     }
-    note(CLASSES, classes.len() as u64);
-    note(ALGORITHMS, groups.len() as u64);
     let free = groups.iter().filter(|g| g.len() > 1).flat_map(|g| g.iter().skip(1).cloned()).collect();
     Quotient { said, free, groups, ..Quotient::default() }
 }

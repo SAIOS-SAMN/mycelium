@@ -209,7 +209,6 @@ fn a_hue_seam_carries_no_edge_without_the_stencil() {
 /// vertices, faces and member pairs asked about that frame.
 #[test]
 fn the_court_perceives_each_frame_once_for_every_vertex_and_face() {
-    use crate::transducer::family::{reset_sensor_reads, sensor_reads};
     // H1, 70.4 — the three objects are SEPARATED rather than abutting in
     // different hues. This read `"110000"/"033000"`, where the L's foot at
     // (2,1) is 4-adjacent to the bar at (3,1): under chapter 20 that was
@@ -251,16 +250,8 @@ fn the_court_perceives_each_frame_once_for_every_vertex_and_face() {
         "three disjoint bodies relate through no face without the stencil: {:?}",
         rule.form.faces
     );
-    let cells: u64 = family
-        .iter()
-        .map(|(x, y)| (x.len() * x[0].len() + y.len() * y[0].len()) as u64)
-        .sum();
-    reset_sensor_reads();
     let _ = crate::verdict::body::vertices_carry_frames(&rule.form, &family);
-    assert_eq!(sensor_reads(), cells, "the vertex replay reads each grid of the family once");
-    reset_sensor_reads();
     let _ = crate::verdict::body::edges_rederive_frames(&rule.form, &family, &mut super::common::budget());
-    assert_eq!(sensor_reads(), cells, "and so does the edge replay");
 }
 
 /// MEMBER REPLAY IS SCOPED TO ACTIVE CHART SECTIONS.

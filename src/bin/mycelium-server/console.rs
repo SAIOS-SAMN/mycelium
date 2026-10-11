@@ -1,49 +1,34 @@
 // §8.1 — THE DIAGNOSTIC CONSOLE: any hypha reads what a hypha holds about
 // itself and its voices, and renders it whole.
 //
-//! `mycelium-server --console [--at ADDR] [--home DIR] [--voice HEX | --court
-//! HEX] [--reading NAME]` asks one hypha (the
+//! `mycelium-server --console [--at ADDR] [--home DIR] [--court HEX]
+//! [--reading NAME]` asks one hypha (the
 //! home's own bind by default) for every reading it holds, renders it once
 //! and exits. It reads no clock (law 9): a live view is the operator's
 //! `watch -n 5 mycelium-server --console`, and each frame is one question.
 //!
-//! WHAT IT SHOWS, per source, each reading in its own coordinates:
+//! WHAT IT SHOWS, per court, each reading in its own coordinates (a mind
+//! reports nothing about itself):
 //!
-//! - DIMENSIONS — the plane census in its algebra: every plane `n` declares,
-//!   harmonic and luminal kept apart, each with the count it was turned or
-//!   boosted on. Declared and never populated is FLATTENING made visible
-//!   (Anti-Flattening clause 5); a census whose turns stand only on the
-//!   sensor's plane is named so.
-//! - LOSS — every axis a reading was passed over on, non-zero ones by name
-//!   and meaning.
 //! - MEMORY — the allocator's bytes at the source's first and latest `K`,
 //!   the growth per `K` between them, and the peak: a leak is growth over
 //!   the source's own clock.
 //! - TUNIVERSAL — FIRST, before any other reading (ACT1, 78.21(4)): every
 //!   source by its height with its own `K` beside it, and the spread.
-//! - CLOCK — per source: a court's genesis, per-peer heights and gaps,
-//!   where its snapshot and last fold stand, and the three counts (acts
-//!   sealed without a frame, words held without a stamp by row, rulings
-//!   admitted against applied); a voice's `K`, court height as last heard
-//!   and genome persist.
+//! - CLOCK — per court: its genesis, per-peer heights and gaps, where its
+//!   snapshot and last fold stand, and the three counts (acts sealed without
+//!   a frame, words held without a stamp by row, rulings admitted against
+//!   applied).
 //! - COURT — the court's `K`, basis, treasury and the acts it served.
 //! - PHASE — the court's last phase window and adjoined-by-closure (PH5).
-//! - LEARNING — a mind's curve at its `K` (LC1): dialect span, cover, what
-//!   its closures did, and every field still owed, by its row.
-//! - CIRCUITS — the last percept's kept circuits step by step (PL1): the
-//!   bricks a holonomy is built of, and its first refraction named.
-//! - CELLS, VISCOSITY, SPEND, PROGRESS — the last percept's cells (CO1),
-//!   and summed over the voice's percepts its bends' arms (VO1), the stroke
-//!   by reader (SP1) and E1's done-when (PG1).
 //! - CARRIAGE — the bytes per award, per receipt delta by act kind and per
 //!   frame by act tag, and the largest of each (LD1).
 //!
-//! CQ1 — `--voice HEX` or `--court HEX` (a key or a hex prefix of it) asks
-//! one source's fiber, and `--reading NAME` one kind of reading: the hypha
-//! serves only the prefix asked, and the console reads nothing else.
+//! CQ1 — `--court HEX` (a key or a hex prefix of it) asks one source's
+//! fiber, and `--reading NAME` one kind of reading: the hypha serves only
+//! the prefix asked, and the console reads nothing else.
 
-use mycelium::observe::{self, Court, Loss, Memory, Planes, Reading, Source, LOSS_AXES};
-use mycelium::transducer::cga;
+use mycelium::observe::{self, Court, Memory, Reading, Source};
 use std::path::Path;
 
 const RESET: &str = "\x1b[0m";
@@ -66,10 +51,9 @@ pub(crate) fn address(home: &Path, at: Option<&str>) -> Option<String> {
     rec.bind
 }
 
-/// CQ1 — WHAT THE OPERATOR ASKS: one voice or one court by its key or a hex
-/// prefix of it, and one kind of reading by its name.
+/// CQ1 — WHAT THE OPERATOR ASKS: one court by its key or a hex prefix of it,
+/// and one kind of reading by its name.
 pub(crate) struct Ask<'a> {
-    pub(crate) voice: Option<&'a str>,
     pub(crate) court: Option<&'a str>,
     pub(crate) reading: Option<&'a str>,
 }
@@ -99,11 +83,9 @@ impl Ask<'_> {
                 }
             },
         };
-        let (kind, hex) = match (self.voice, self.court) {
-            (Some(_), Some(_)) => return Err("ask one source: --voice or --court, not both".into()),
-            (Some(v), None) => (observe::SOURCE_VOICE, v),
-            (None, Some(c)) => (observe::SOURCE_COURT, c),
-            (None, None) => return Ok((Vec::new(), tag)),
+        let (kind, hex) = match self.court {
+            Some(c) => (observe::SOURCE_COURT, c),
+            None => return Ok((Vec::new(), tag)),
         };
         let Some(key) = hex_prefix(hex) else {
             return Err(format!("{hex} is not a key's hex prefix (an even count of hex digits, at most 64)"));
@@ -203,27 +185,17 @@ pub(crate) fn render(addr: &str, total: u64, held: &[observe::Held]) -> Vec<Stri
         lines.push(String::new());
         lines.push(match source {
             Source::Court(vk) => format!("{CYAN}{BOLD}── COURT {}{RESET}", short(vk)),
-            Source::Voice(vk) => format!("{CYAN}{BOLD}── VOICE {}{RESET}", short(vk)),
         });
         for r in readings {
             lines.extend(match r {
                 Reading::Court(c) => court(c),
-                Reading::Planes(p) => dimensions(p),
-                Reading::Loss(l) => loss(l),
                 Reading::Memory(m) => memory(m),
                 Reading::Replication(r) => replication(r),
                 Reading::Adjudication(a) => adjudication(a),
-                Reading::Learning(l) => learning(l),
-                Reading::Circuit(c) => circuits(c),
-                Reading::Cells(c) => cells(c),
-                Reading::Viscosity(v) => viscosity(v),
-                Reading::Spend(s) => spend(s),
-                Reading::Progress(p) => progress(p),
                 Reading::Phase(p) => phase(p),
                 Reading::Carriage(c) => carriage(c),
                 Reading::Clock(c) => clock(c),
                 Reading::Economy(e) => economy(e),
-                Reading::Senses(f) => f.lines().into_iter().map(|l| format!("  {l}")).collect(),
                 Reading::Acts(a) => a.lines().into_iter().map(|l| format!("  {l}")).collect(),
                 Reading::Carriers(c) => c.lines().into_iter().map(|l| format!("  {l}")).collect(),
                 Reading::Relay(r) => r.lines().into_iter().map(|l| format!("  {l}")).collect(),
@@ -243,7 +215,6 @@ fn tuniversal(sources: &[(Source, Vec<Reading>)]) -> Vec<String> {
     for (source, readings) in sources {
         let name = match source {
             Source::Court(vk) => format!("court {}", short(vk)),
-            Source::Voice(vk) => format!("voice {}", short(vk)),
         };
         let clock = readings.iter().find_map(|r| match r {
             Reading::Clock(c) => Some(c),
@@ -257,19 +228,6 @@ fn tuniversal(sources: &[(Source, Vec<Reading>)]) -> Vec<String> {
                     "  {name}  {BOLD}h {h}{RESET}  K {}  stamp {h}:{s}:{g}:{t}:{hh}:{k}.{i}{}",
                     c.k,
                     orbits(&c.orbits)
-                )
-            }
-            Some(observe::Clock::Voice(v)) => {
-                heights.push(v.heard);
-                let point = match &v.point {
-                    Some(t) => t.local(),
-                    None => "no final point read".to_string(),
-                };
-                format!(
-                    "  {name}  {BOLD}h {}{RESET} {DIM}(its court, last heard){RESET}  K {}  radius {}  point {point}",
-                    v.heard,
-                    v.k,
-                    v.radius
                 )
             }
             None => format!("  {name}  {DIM}no clock carried{RESET}"),
@@ -459,14 +417,6 @@ fn clock(c: &observe::Clock) -> Vec<String> {
                 format!("  {BOLD}economy{RESET}     {rulings}"),
             ]
         }
-        observe::Clock::Voice(v) => vec![
-            format!("  {BOLD}clock{RESET}       K {}  court h {} as last heard", v.k, v.heard),
-            match &v.point {
-                Some(t) => format!("  {BOLD}tuniversal{RESET}  {}", t.print()),
-                None => format!("  {BOLD}tuniversal{RESET}  {DIM}no final point read{RESET}"),
-            },
-            format!("  {BOLD}genome{RESET}      persisted {}", since(v.persisted, v.heard, v.k)),
-        ],
     }
 }
 
@@ -511,85 +461,6 @@ fn court(c: &Court) -> Vec<String> {
             observe::SERVE_AXES.iter().zip(c.serve).map(|(axis, n)| format!("{axis} {n}")).collect::<Vec<_>>().join(" · ")
         ),
     ]
-}
-
-/// THE PLANE CENSUS IN ITS ALGEBRA: every declared plane, generated from
-/// `n`, each with its count; the halves apart; and what was never turned.
-fn dimensions(p: &Planes) -> Vec<String> {
-    let row = |planes: &[usize]| -> String {
-        planes
-            .iter()
-            .map(|&b| match p.count(b) {
-                0 => format!("{DIM}{} 0{RESET}", cga::plane_name(b)),
-                c => format!("{GREEN}{} {c}{RESET}", cga::plane_name(b)),
-            })
-            .collect::<Vec<_>>()
-            .join("  ")
-    };
-    let (harmonic, luminal) = (cga::harmonic_planes(p.n), cga::transvection_planes(p.n));
-    // PC1 — the parabolic planes the algebra declares, each a null bivector
-    // counted once: every base axis with each of the two poles.
-    let parabolic: Vec<(u8, cga::Pole)> =
-        (1..=p.n).flat_map(|i| [cga::Pole::Infinity, cga::Pole::Origin].map(|q| (i, q))).collect();
-    let parabolic_row = parabolic
-        .iter()
-        .map(|&(i, q)| match p.count_parabolic(i, q) {
-            0 => format!("{DIM}{} 0{RESET}", cga::parabolic_name(usize::from(i), q)),
-            c => format!("{GREEN}{} {c}{RESET}", cga::parabolic_name(usize::from(i), q)),
-        })
-        .collect::<Vec<_>>()
-        .join("  ");
-    let parabolic_used = parabolic.iter().filter(|&&(i, q)| p.count_parabolic(i, q) > 0).count();
-    let used = |planes: &[usize]| planes.iter().filter(|&&b| p.count(b) > 0).count();
-    // The classification is the reading's own (`Planes::turning`); the
-    // console renders it.
-    let verdict = match p.turning() {
-        observe::Turning::Unread => format!("{DIM}no transition read yet{RESET}"),
-        observe::Turning::Unturned => {
-            format!("{YELLOW}nothing turned: every transition was a boost, a slip or the identity{RESET}")
-        }
-        observe::Turning::Flattened { other } => format!(
-            "{RED}{BOLD}FLATTENED{RESET}{RED} — every turn stands on the sensor's plane {}; {other} other harmonic planes declared and never turned{RESET}",
-            cga::plane_name(cga::E1 | cga::E2)
-        ),
-        observe::Turning::Turns { turned, of } => format!("{GREEN}turns on {turned} of {of} harmonic planes{RESET}"),
-    };
-    vec![
-        format!(
-            "  {BOLD}dimensions{RESET}  n {}  Cl({},1)  read {}  coupled {}  harmonic {}/{}  luminal {}/{}  parabolic {}/{}",
-            p.n,
-            u32::from(p.n) + 1,
-            p.read,
-            p.coupled,
-            used(&harmonic),
-            harmonic.len(),
-            used(&luminal),
-            luminal.len(),
-            parabolic_used,
-            parabolic.len()
-        ),
-        format!("    harmonic  {}", row(&harmonic)),
-        format!("    luminal   {}", row(&luminal)),
-        format!("    parabolic {parabolic_row}"),
-        format!("    {verdict}"),
-    ]
-}
-
-/// EVERY AXIS OF LOSS: the non-zero ones by name and meaning, the zero ones
-/// named on one line so their absence is read and not assumed.
-fn loss(l: &Loss) -> Vec<String> {
-    let mut out = vec![format!("  {BOLD}loss{RESET}")];
-    let mut zero: Vec<&str> = Vec::new();
-    for ((name, meaning), &v) in LOSS_AXES.iter().zip(l.axes.iter()) {
-        match v {
-            0 => zero.push(name),
-            v => out.push(format!("    {YELLOW}{name} {v}{RESET}  {DIM}{meaning}{RESET}")),
-        }
-    }
-    if !zero.is_empty() {
-        out.push(format!("    {DIM}zero: {}{RESET}", zero.join(" ")));
-    }
-    out
 }
 
 /// The non-zero axes of one row of counters, each by its name, and a dim
@@ -667,320 +538,6 @@ fn adjudication(a: &observe::Adjudication) -> Vec<String> {
                 .join("  ")
         ),
     ]
-}
-
-/// LC1 — THE LEARNING CURVE OF ONE MIND AT ITS `K` (78.1, 78.3): every field
-/// by name, zero printed as zero, and each field no producer reads yet by the
-/// row that owes it. The planes the mind reads are its DIMENSIONS reading
-/// above, never repeated here.
-fn learning(l: &observe::Learning) -> Vec<String> {
-    let words: u64 = l.strata.iter().map(|(_, n)| n).sum();
-    let owed: Vec<String> = observe::OWED.iter().map(|(field, row)| format!("{field} ({row})")).collect();
-    vec![
-        format!("  {BOLD}learning{RESET}    K {}", l.k),
-        format!("    dialect span  {} strata holding {words} words", l.strata.len()),
-        // CS2 — the pivots against the cells their orbits cross (78.32(c)).
-        format!("    {}", l.pivots.line()),
-        // 13.12 — the contemplation's merges (TP1's line).
-        format!("    {}", l.merges.line()),
-        // 78.37(1), TP1 — the meet graph, its rings, its decoherences, and
-        // what TP1's fix owes, by name.
-        format!("    {}", l.meet.line()),
-        // PR1 — the voice's probes: closure states, lanes moved, the residual
-        // versors' classes.
-        format!("    {}", l.probes.line()),
-        // 78.47 — why the mind did not move, by kind.
-        format!("    {}", l.reasons.line()),
-        format!("    {DIM}owed: {}{RESET}", owed.join("  ")),
-    ]
-}
-
-/// PL1 — THE CIRCUITS OF THE LAST PERCEPT, STEP BY STEP (78.12(4)): each
-/// circuit by its chord with the class its steps compose to and its first
-/// refraction named, then every step — the face and which way, `|` where
-/// the face refracts, the step's class, its modes, the class composed
-/// through it and its ray — and the fields still owed, by their rows.
-/// An overlap as the console names it: its two vertices' coordinates, the
-/// refusal's own label (AT1 — a face is an overlap, never a position).
-fn overlap(o: &mycelium::network::nerve::coord::Overlap) -> String {
-    mycelium::transducer::sentence::At::face(o.from_vertex(), o.to_vertex()).label()
-}
-
-fn circuits(c: &observe::Circuits) -> Vec<String> {
-    let kind = |k: Option<mycelium::network::nerve::coord::BivectorKind>| match k {
-        Some(k) => format!("{k:?}").to_lowercase(),
-        None => "unread".into(),
-    };
-    let owed: Vec<String> = observe::CIRCUIT_OWED.iter().map(|(field, row)| format!("{field} ({row})")).collect();
-    let mut out = vec![format!("  {BOLD}circuits{RESET}    {} kept by the last percept", c.circuits.len())];
-    for circuit in &c.circuits {
-        let holonomy = match circuit.transitions.as_slice() {
-            [.., observe::CircuitTransition { carried: observe::Carried::Read { after, .. }, .. }] => kind(*after),
-            _ => "unread".into(),
-        };
-        let refraction = match circuit.first_refraction() {
-            Some(i) => format!("{YELLOW}first refraction at transition {} (face {}){RESET}", i + 1, overlap(&circuit.transitions[i].face)),
-            None => format!("{DIM}no transition refracts{RESET}"),
-        };
-        out.push(format!(
-            "    chord {}  {} transitions  holonomy {holonomy}  {refraction}",
-            overlap(&circuit.chord),
-            circuit.transitions.len()
-        ));
-        for (i, s) in circuit.transitions.iter().enumerate() {
-            let way = match (s.forward, s.refracted) {
-                (true, false) => "→",
-                (false, false) => "←",
-                (true, true) => "|→",
-                (false, true) => "|←",
-            };
-            let read = match &s.carried {
-                observe::Carried::Unread => format!("{YELLOW}unread{RESET}"),
-                observe::Carried::Cone => format!("{YELLOW}on the cone{RESET}"),
-                observe::Carried::Read { ray, kind: k, modes, after } => {
-                    format!(
-                        "{}  modes [{}]  ⇒ {}  {DIM}ray [{}]{RESET}",
-                        kind(*k),
-                        modes.label(),
-                        kind(*after),
-                        cga::ray_name(ray)
-                    )
-                }
-            };
-            out.push(format!("      {:>2} face {}{way}  {read}", i + 1, overlap(&s.face)));
-        }
-        // CT1 — the reuse ladder's record: every arm that ran, what it read,
-        // and the class their disagreement gives (79.3).
-        if let Some(t) = &circuit.test {
-            let arms: Vec<String> = t
-                .arms
-                .iter()
-                .map(|(arm, read)| {
-                    let r = match read {
-                        observe::ArmRead::Empty => "empty".to_string(),
-                        observe::ArmRead::Reads(n) => format!("reads {n}"),
-                        observe::ArmRead::Routes { agree, disagree } => format!("agree {agree} disagree {disagree}"),
-                        observe::ArmRead::Permanent => "permanent".to_string(),
-                    };
-                    format!("{}: {r}", arm.label())
-                })
-                .collect();
-            out.push(format!("      {BOLD}test{RESET} {}  {DIM}[{}]{RESET}", t.class.label(), arms.join("; ")));
-            // CT2 — each construction offered: a candidate, never installed.
-            for o in &t.offers {
-                let ray = cga::ray_name;
-                out.push(format!(
-                    "        {YELLOW}offer{RESET} {} at face {}: {}  modes [{}]  {DIM}constructor [{}] holonomy [{}]{RESET}",
-                    o.arm.label(),
-                    overlap(&o.face),
-                    if o.flat { "flat" } else { "curved" },
-                    o.modes.label(),
-                    ray(&o.constructor),
-                    ray(&o.holonomy)
-                ));
-            }
-        }
-    }
-    out.push(format!("    {DIM}owed: {}{RESET}", owed.join("  ")));
-    out
-}
-
-/// CO1 — THE CELLS OF THE LAST PERCEPT AS THEIR ORBIT ALGEBRAS (78.14, 78.15):
-/// the form's mirrors and their group, then each cell — its grade, its Gram
-/// form's signature and pairs, its group with the nuclei and with the polars
-/// as mirrors, its dual frame, each product kept with the blade its sealing
-/// step deposits, and each nucleus against the mirrors it stands between.
-fn cells(c: &observe::Cells) -> Vec<String> {
-    let closure = |c: Option<observe::CellClosure>| match c {
-        Some(c) => c.label().to_string(),
-        None => "unread".into(),
-    };
-    let regime = |r: &cga::PairRegime| match r {
-        cga::PairRegime::Finite(m) => format!("m={m}"),
-        cga::PairRegime::Parabolic => "parabolic".into(),
-        cga::PairRegime::Boost => "boost".into(),
-        cga::PairRegime::Rosette => "rosette".into(),
-        cga::PairRegime::Null => "null".into(),
-    };
-    // 78.26(2) — the cross-cell bracket, where the sentence spans cells.
-    let bracket = match c.bracket {
-        Some(b) => format!(" | bracket held {} lost {} unread {}", b.held, b.lost, b.unread),
-        None => String::new(),
-    };
-    let mut out = vec![format!(
-        "  {BOLD}cells{RESET}       {} certified | mirrors {} planes, group {}{bracket}",
-        c.cells.len(),
-        c.mirror_planes,
-        closure(c.mirror_group)
-    )];
-    for (i, cell) in c.cells.iter().enumerate() {
-        let sig = match cell.signature {
-            Some(((p, q, z), r)) => format!("({p},{q},{z}) rank {r}"),
-            None => "unread".into(),
-        };
-        let dual = match cell.dual {
-            Some(observe::CellDual::Frame) => "frame",
-            Some(observe::CellDual::Redundant) => "redundant",
-            Some(observe::CellDual::Degenerate) => "degenerate",
-            None => "unread",
-        };
-        // CS2 — the held constructors and the rank against its own cap.
-        let held = match cell.constructors {
-            Some(k) => format!("{k}"),
-            None => "unread".into(),
-        };
-        // MT1 — the anastomosis's degeneracy, bodies less the nuclei's rank.
-        let degeneracy = match cell.degeneracy {
-            Some(d) => format!("{d}"),
-            None => "unread".into(),
-        };
-        let rank = match cell.capacity {
-            Some(r) if r > c.cap => format!("rank {r} ABOVE cap {}", c.cap),
-            Some(r) => format!("rank {r} of cap {}", c.cap),
-            None => format!("rank unread of cap {}", c.cap),
-        };
-        out.push(format!(
-            "    #{i} grade {}  constructors {held}  degeneracy {degeneracy}  {rank}  gram {sig}  pairs [{}]  group {}  polars {}  dual {dual}  classes {}",
-            cell.grade,
-            cell.pairs.iter().map(regime).collect::<Vec<_>>().join(", "),
-            closure(cell.coxeter),
-            closure(cell.polars),
-            cell.classes
-        ));
-        for p in &cell.products {
-            let blade = cga::ray_name(&p.seal);
-            let det = match p.det {
-                Some(d) => format!("det {d}"),
-                None => "det unread".into(),
-            };
-            out.push(format!(
-                "      product order {:?} grades {:?} {det}{}  {DIM}seal [{}]{RESET}",
-                p.order,
-                p.grades,
-                if p.classed { " classed" } else { "" },
-                blade
-            ));
-        }
-        match &cell.enclosure {
-            Some(observe::CellEnclosure::Flat) => out.push(format!("      {DIM}enclosure flat: the centres span no round{RESET}")),
-            Some(observe::CellEnclosure::Round { bodies, within }) => out.push(format!(
-                "      enclosure  bodies inside {}  on {}  apart {}  wraps {}  unread {}  {}",
-                bodies[0],
-                bodies[1],
-                bodies[2],
-                bodies[3],
-                bodies[4],
-                match within {
-                    Some(w) => format!("within #{w}"),
-                    None => "a root of the parse".into(),
-                }
-            )),
-            None => {}
-        }
-        for (s, ms) in cell.mirrors.iter().enumerate() {
-            let on: Vec<String> = ms.iter().map(|(axis, k, d2, r)| format!("x{axis}={k}: offset {d2} {}", regime(r))).collect();
-            out.push(format!("      {DIM}nucleus {s} on mirrors [{}]{RESET}", on.join("; ")));
-        }
-        // CV1b — what the cell's readers could not hold, by content.
-        if cell.refusals.any() {
-            out.push(format!("      {YELLOW}refused{RESET}  {}", observe::refusals_line(&cell.refusals)));
-        }
-        // 78.26(5) — the rings through the cell, by their residue.
-        let rings = observe::rings_line(&cell.rings);
-        if !rings.is_empty() {
-            out.push(format!("      {DIM}{rings}{RESET}"));
-        }
-    }
-    out
-}
-
-/// VO1 — THE VISCOSITY A VOICE'S BENDS READ (78.7 as amended): per lane,
-/// each pair of planes a trial ran on with its four arms; the lanes that
-/// carry no bend named; the ledger's entropy by lane.
-fn viscosity(v: &observe::Viscosity) -> Vec<String> {
-    use mycelium::transducer::sentence::{bend_plane_name, BendLane};
-    let mut out = vec![format!("  {BOLD}viscosity{RESET}   entropy by lane (𝒮, 𝒢, 𝒯, 𝒽) {:?}", v.entropy)];
-    for (lane, name) in [(BendLane::Spatial, "𝒮"), (BendLane::Holonomic, "𝒽")] {
-        let pairs: Vec<&observe::ViscosityPair> = v.pairs.iter().filter(|p| usize::from(p.lane) == lane.index()).collect();
-        if pairs.is_empty() {
-            out.push(format!("    {name}  {DIM}no held loop{RESET}"));
-        }
-        for p in pairs {
-            let colour = match (p.arms[3], p.arms[2]) {
-                (0, 0) => DIM,
-                (0, _) => GREEN,
-                _ => YELLOW,
-            };
-            out.push(format!(
-                "    {name}  {colour}{}·{}{RESET}  inviscid {}  elastic {}  curved {}  viscous {}  {DIM}refused {} unread {} no-class {}{RESET}",
-                bend_plane_name(p.lane, p.planes.0),
-                bend_plane_name(p.lane, p.planes.1),
-                p.arms[0],
-                p.arms[1],
-                p.arms[2],
-                p.arms[3],
-                p.refused,
-                p.unread,
-                p.no_class
-            ));
-        }
-    }
-    out.push(format!("    {DIM}𝒢, 𝒯: no bend on this lane{RESET}"));
-    out
-}
-
-/// SP1 — THE STROKE BY READER: what each reader spent over the voice's
-/// percepts, and what each left unbounded — whether comprehension starves
-/// perception, on the stroke's own counters.
-fn spend(s: &observe::Spend) -> Vec<String> {
-    let total: u64 = s.reads.iter().sum();
-    let mut out = vec![format!("  {BOLD}spend{RESET}       {} percepts, {total} reads", s.percepts)];
-    for (((name, meaning), reads), unbounded) in observe::SPEND_READERS.iter().zip(s.reads).zip(s.unbounded) {
-        let left = match unbounded {
-            0 => String::new(),
-            u => format!("  {YELLOW}unbounded {u}{RESET}"),
-        };
-        out.push(format!("    {name:<14} {reads:>10}{left}  {DIM}{meaning}{RESET}"));
-    }
-    out
-}
-
-/// PG1 — E1'S DONE-WHEN: contact cycles and those carrying holonomy; the
-/// certified cells by grade with the round kept (the coboundary's agreement
-/// at the grade), reversed or carried, their groups and dual frames.
-fn progress(p: &observe::Progress) -> Vec<String> {
-    let mut out = vec![
-        format!("  {BOLD}progress{RESET}    {} percepts  kept cycles curved {}", p.percepts, p.cycles_curved),
-        format!(
-            "    contact cycles {}  curved {} (gauge static {})  coset closed {} mod-held {} open {}  {DIM}unread {}{RESET}",
-            p.contact_cycles,
-            p.contact_cycles_curved,
-            p.contact_cycles_static,
-            p.contact_cycles_coset[0],
-            p.contact_cycles_coset[1],
-            p.contact_cycles_coset[2],
-            p.contact_cycles_unread
-        ),
-    ];
-    if p.grades.is_empty() {
-        out.push(format!("    {DIM}no cell certified{RESET}"));
-    }
-    for g in &p.grades {
-        out.push(format!(
-            "    grade {}  cells {}  round kept {}  held-z2 {}  {}carried {}{RESET}  group finite {} affine {} infinite {}  dual frames {}",
-            g.grade,
-            g.cells,
-            g.round_kept,
-            g.held_z2,
-            if g.refused > 0 { YELLOW } else { DIM },
-            g.refused,
-            g.finite,
-            g.affine,
-            g.infinite,
-            g.dual_frames
-        ));
-    }
-    out
 }
 
 /// PH5 — A COURT'S PHASE (45.9): its last window's coordinates as it wrote

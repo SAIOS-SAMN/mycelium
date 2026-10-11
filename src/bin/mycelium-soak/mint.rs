@@ -477,17 +477,4 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         "  mint rule_open Form.remainder: empty on {open_rem_empty} of {open_seen}, \
          {open_rem_links} links across the rest"
     );
-    // WHAT THE COVERS' ORBITS CLASSIFIED AS. `tally_orbit` has recorded this
-    // all along and only the soak read it, so the mint sweep could say how
-    // many orbits a scene has and not what any of them turned out to be.
-    // `classify` files a cycle only where the carriage is the IDENTITY
-    // (`cech::classify`), so an orbit with a finite non-identity rotor carried by
-    // a non-identity versor stands as a class rather than filing as torsion.
-    // This line is what says which of those two the corpus produces.
-    let t = mycelium::transducer::family::cover::take_cover_tally();
-    println!(
-        "  mint cover orbits: edges {} flat {} filed {} standing {} unspellable {} \
-         | covers measured {} unmeasured {} carried {}",
-        t.edges, t.flat, t.filed, t.standing, t.unspellable, t.measured, t.unmeasured, t.carried
-    );
 }
