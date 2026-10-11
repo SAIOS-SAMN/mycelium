@@ -628,13 +628,12 @@ mod tests {
         let c = Chatter { speaker: k.verifying_key().to_bytes(), point: None, said: Said::Say { said: vec![9; 100], words: vec![] } };
         send(post.addr(), &c.sign(&k).expect("signed")).expect("sent");
         let mut heard = Vec::new();
-        for _ in 0..200 {
+        for _ in 0..1_000_000 {
             heard = post.take();
             if !heard.is_empty() {
                 break;
             }
             std::thread::yield_now();
-            std::thread::park_timeout(std::time::Duration::from_millis(5));
         }
         assert_eq!(heard.len(), 1);
         assert_eq!(Chatter::open(&heard[0]), Some(c));

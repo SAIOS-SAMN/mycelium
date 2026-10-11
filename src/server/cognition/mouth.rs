@@ -195,13 +195,46 @@ pub(crate) fn level_in(space: &Geometry, mass: &num_rational::BigRational) -> Op
     match space {
         Geometry::Curved((n, d)) => {
             let r = (*d > 0).then(|| num_rational::BigRational::new((*n).into(), (*d).into()))?;
-            Some(Level::Curved(crate::client::sdk::physics::throat_level(mass, &r)?))
+            Some(Level::Curved(throat_level(mass, &r)?))
         }
         Geometry::Torus { .. } => {
-            let (radius, ratio) = crate::client::sdk::physics::flat_throat(mass, &space.shortest_period()?)?;
+            let (radius, ratio) = flat_throat(mass, &space.shortest_period()?)?;
             Some(Level::Flat { radius, ratio })
         }
     }
+}
+
+/// 78.134 — the grid a throat's level is fixed on: `2^-64`.
+pub const THROAT_GRID: u32 = 64;
+
+/// 78.134 — A THROAT'S HORIZON LEVEL on curved space: the mouth's horizon
+/// is `{p : p·v = −c}` about its place `v` on `ℍ³`, at hyperbolic radius `r
+/// = 2m/R` — the mass `m` (G = c = 1) over the space's curvature radius `R`
+/// — so `c = cosh r`. Irrational for rational `r`, so it is the UPPER bound
+/// of the certified enclosure on the fixed grid `2^-THROAT_GRID`: a pure
+/// function of `(m, R)`, the same everywhere, the throat never undersized.
+/// `None` for a non-positive mass or radius.
+pub fn throat_level(m: &num_rational::BigRational, curvature: &num_rational::BigRational) -> Option<num_rational::BigRational> {
+    use num_traits::Signed;
+    if !m.is_positive() || !curvature.is_positive() {
+        return None;
+    }
+    let r = num_rational::BigRational::from_integer(2.into()) * m / curvature;
+    Some(crate::core::certified::cosh(&crate::core::certified::Encl::exact(r), THROAT_GRID).hi)
+}
+
+/// 78.140 — A THROAT IN A FLAT TORUS FACE: the horizon is the sphere of
+/// radius `2m` about the mouth's place (exact — no transcendental), read with
+/// its RATIO `2m / L_min` to the torus's shortest period. `(radius, ratio)`;
+/// `None` for a non-positive mass or period.
+pub fn flat_throat(m: &num_rational::BigRational, shortest_period: &num_rational::BigRational) -> Option<(num_rational::BigRational, num_rational::BigRational)> {
+    use num_traits::Signed;
+    if !m.is_positive() || !shortest_period.is_positive() {
+        return None;
+    }
+    let radius = num_rational::BigRational::from_integer(2.into()) * m;
+    let ratio = &radius / shortest_period;
+    Some((radius, ratio))
 }
 
 /// 78.140 — whether a throat of `mass` fits both its faces (`None` where a

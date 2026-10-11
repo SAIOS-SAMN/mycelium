@@ -225,7 +225,7 @@ fn a_mouth_is_a_tube_between_places_on_curved_space() {
         assert_eq!(place.geo(place), Mv::scalar(Q::from_integer((-1).into())), "on the sheet, v² = −1");
     }
     assert_eq!(t.from_level, t.to_level, "one throat, one curvature: equal ends");
-    let cosh2 = crate::client::sdk::certified::cosh(&crate::client::sdk::certified::Encl::exact(Q::from_integer(2.into())), 64);
+    let cosh2 = crate::core::certified::cosh(&crate::core::certified::Encl::exact(Q::from_integer(2.into())), 64);
     let Level::Curved(c) = &t.from_level else { panic!("a curved face") };
     assert!(cosh2.contains(c) || *c >= cosh2.hi, "c = cosh(2m/R), never undersized");
     let wide = Mouth { tube: Some(Tube { to_space: Geometry::Curved((2, 1)), ..tube() }), nonce: [9; 32], ..mouth(4, 6, one(), one(), [0; 4]) };

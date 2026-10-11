@@ -9,7 +9,11 @@
 //!   integer exponents each generator is cited to, and the residue (16.12).
 //!   Integer because an exponent is a count of letters, by meaning.
 //! - `lanes` — the one checked step of a four-lane measure (STD1, rule 11).
+//! - `certified` — 78.130's certified reals: a transcendental read as a
+//!   proven rational enclosure, the network's standard math (a throat's
+//!   level, `cosh(2m/R)`, is its one reader).
 
+pub mod certified;
 pub mod exponents;
 pub mod gaussian;
 pub mod lanes;

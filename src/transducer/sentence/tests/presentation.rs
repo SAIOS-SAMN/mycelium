@@ -40,7 +40,8 @@ fn a_held_slide_cites_a_longer_slide_on_its_hole_and_composes_to_it() {
     let [b] = back.as_slice() else { panic!("one moving vertex back") };
     let d = p.deconstruct(b, &mut budget).expect("the reverse slide's coordinates read");
     assert!(d.composes);
-    assert_eq!(d.cites.first().map(|c| c.2), Some(-3));
+    let [c, ..] = d.cites.as_slice() else { panic!("a citation") };
+    assert_eq!(c.2, -3);
     assert!(is_still(&motion_power(m, -1).geo(m)), "a motion's −1 power undoes it");
 }
 

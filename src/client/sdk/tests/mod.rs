@@ -23,6 +23,3 @@ mod solve;
 mod speech;
 mod syntropy;
 mod taught;
-mod guest;
-mod certified;
-mod physics;

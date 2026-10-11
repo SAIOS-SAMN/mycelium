@@ -12,16 +12,20 @@ fn word(letters: &[(LetterId, bool)]) -> crate::transducer::element::Element {
     from_connection(&Word::from_letters(letters), &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0]).expect("a connection")
 }
 
-/// Each mind takes the frames that reached its post, until the conversation
-/// has nothing more in flight: the frames travel on their own connections,
-/// so a stroke may find its post still empty and the next one hears them.
-fn converse(minds: &mut [&mut Entity]) {
-    for _ in 0..400 {
-        for m in minds.iter_mut() {
-            let mut b = super::common::budget();
-            m.chatter_stroke(&mut b);
+/// Each mind takes the frames that reached its post until `done` reads true
+/// of the speaker: the frames travel on their own connections, so a stroke
+/// may find its post still empty and a later one hears them. Bounded by
+/// rounds, never by a clock.
+fn converse(a: &mut Entity, b: &mut Entity, done: impl Fn(&Entity) -> bool) {
+    for _ in 0..1_000_000 {
+        if done(a) {
+            return;
         }
-        std::thread::park_timeout(std::time::Duration::from_millis(2));
+        for m in [&mut *a, &mut *b] {
+            let mut budget = super::common::budget();
+            m.chatter_stroke(&mut budget);
+        }
+        std::thread::yield_now();
     }
 }
 
@@ -46,9 +50,10 @@ fn two_minds_form_a_shared_word() {
     let said = word(&[(q, false), (q, false)]);
     a.say(&said);
     assert!(a.chat.as_ref().is_some_and(|c| c.said(said.address().as_bytes())), "A said it");
-    converse(&mut [&mut a, &mut b]);
+    let agreed = |m: &Entity| m.chat.as_ref().is_some_and(|c| c.agreed(said.address().as_bytes()));
+    converse(&mut a, &mut b, agreed);
     assert!(
-        a.chat.as_ref().is_some_and(|c| c.agreed(said.address().as_bytes())),
+        agreed(&a),
         "A holds what it said as agreed language: {:?}",
         a.chat_tally()
     );

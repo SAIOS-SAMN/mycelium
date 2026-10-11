@@ -2,7 +2,7 @@
 // against known constants to 2^-60 — inverse pairs close, P is monotone and
 // tends to one, and the same inputs give the same enclosure on any thread.
 
-use crate::client::sdk::certified::*;
+use crate::core::certified::*;
 use num_bigint::BigInt;
 use num_rational::BigRational as Q;
 use num_traits::{One, Zero};

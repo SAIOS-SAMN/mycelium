@@ -25,6 +25,5 @@ pub mod court;
 // paths (`mycelium::cognition`, `::sdk`, `::registry`, `::synthesis`,
 // `::verdict`) resolve to their role homes.
 pub use client::sdk;
-pub use client::thinking;
 pub use court::verdict;
 pub use server::{cognition, registry, synthesis};

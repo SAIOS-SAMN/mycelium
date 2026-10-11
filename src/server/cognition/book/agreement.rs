@@ -31,10 +31,11 @@ impl Kernel {
             if self.word_at(addr.as_bytes()).is_none() && self.provisional.get(addr.as_bytes()).is_none() {
                 continue;
             }
-            if self.attested.contains(&attestation_key(addr.as_bytes(), &peer)) {
+            let key = attestation_key(addr.as_bytes(), &peer);
+            if self.attested.contains(&key) {
                 continue;
             }
-            self.attested.insert(&attestation_key(addr.as_bytes(), &peer), ());
+            self.attested.insert(key, ());
             self.append_step(crate::chronometry::ActKind::Attest, addr.as_bytes(), peer);
             sealed.push((addr.as_bytes().to_vec(), peer));
         }

@@ -7,12 +7,9 @@
 mod entity;
 mod epigenome;
 pub mod aperture;
-pub mod certified;
 pub mod chatter;
-pub mod physics;
-pub mod guest;
+mod house;
 pub mod kernel;
-mod laws;
 pub mod rule;
 pub mod seat;
 pub mod seat_mind;
