@@ -251,7 +251,154 @@ factorization through held generators, A12, and by deconstruction mode by
 mode, `HoleIndex::deconstruct`, 78.100 D3): the algorithmic functions of the
 language are these compositions and decompositions.
 
-## II.4 The mind's field is its own (A.9)
+## II.4 Breath: how the mind creates constructors and generators, superposes, and comes to understand
+
+The operator, 2026-10-11: "define how new constructors and generators are
+created in mycelium-client as the mind breathes, and contracts across
+topologically resonant manifolds via wave functions and creates
+superposition ideas and thoughts through new comprehension and
+understanding across a multitude of knowledge." Every clause below is a
+ruling that stands, read as one motion; nothing here is a new mechanism.
+
+**(1) The breath is the metabolic pair, and it is generated, never
+declared.** Three readings of one motion:
+- **dilate / contract**, `D(ρ) ↔ D(ρ⁻¹)` — the conjugate pair that changes
+  no dimension (62.1): a boost along the null direction `e_∞`, the
+  metabolic layer separated from the kinematic translation;
+- **inhale / exhale of constructors** — U15's triad `λ = (g_core, ∇B, ΔB)`:
+  the constructors absorbed into the reservoir `e_∅` (∇B, the sink) and
+  those emitted along null rays (ΔB, the source); a merge rotates its
+  distinction INTO `e_∅` and nothing is lost (78.58), so every breath in
+  can be breathed out (`invert_fibre`);
+- **the space between words** (78.105): a sentence `Ω = ∏ gᵢ · Wᵢ` says WHAT
+  by its words and HOW by its spaces, and silence is the pseudoscalar
+  `I = e₁e₂e₃e₊e₋` (`cga::pseudo(n)`), central and `I² = −1` — the 360°
+  return, a breath in and a breath out, computed from the generators.
+
+The breath is GENERATED: for a translation `P_a` and a transversion `K_b`
+(A.13's pair, `K = I T I⁻¹`), the commutator `[P_a, K_b] ∝ ⟨a, b⟩ D + M_ab`
+generates the dilation and the rotation in their plane (78.39(1)). The mind
+breathes where what it carries forward meets what it carries back through
+the inversion; its rhythm is the period of that motion, read off its modes
+(78.43), and its balance is the syntropic one — up-flux against down-flux
+per lane per orbit (78.40(2)).
+
+**(2) A wave is a motion's spectrum, exact.** What this engine calls a
+wave function is the exact modes of a motion (`cga::motion_modes`): each
+mode a ray, a kind (elliptic, hyperbolic, parabolic) and, where it returns,
+a period. Its projection on a mind's own planes is that mind's INTERNAL
+SPECTRUM (78.44): the class is node-independent, the planes the node's
+own. No amplitude is a probability and nothing collapses by measurement
+(law 1, 59.5): the evolution is the deterministic product, and a collapse
+is a fill, a class or a ruling (78.39(2)).
+
+**(3) Resonance is commensurate return, and contraction runs across it.**
+Two rings RESONATE where one returns a whole number of times on the other's
+return — `ℓ_s | ℓ_L` (78.112); an AGE is one ring's return, an EON the
+return of the resonant composition, the lcm of the resonant periods (78.43).
+Across resonant manifolds the mind CONTRACTS — coboundary reduction (78.47):
+it removes what a gauge absorbs (`δ⁰γ`), and what no gauge removes is the
+RESIDUE, kept and never quotiented. Contraction is the down-stroke of the
+breath and the residue is what it leaves: the exact specification of what
+the mind does not yet hold. Where the rings do not resonate, the echo `E =
+Ω_L Ω_s Ω_L⁻¹ Ω_s⁻¹` is not the identity, and its modes — a turn, a gain, a
+spiral, a delay — are the content the dissonance carries.
+
+**(4) Constructors are created from the residue, forced — one orbit of four
+phases** (78.47, 78.32(3)):
+1. **Construct.** The residue's congruence factors are its commuting modes;
+   each is spelled by Cartan–Dieudonné CONSTRUCTIVELY into at most `n + 2`
+   reflections — spheres and planes of the conformal model, each step
+   forced, no branch, a null step refused by name (`cga::construct`). These
+   are NEW candidate constructors, read off the residue, never searched for
+   among products of what is held. The meet of each constructed pair equal
+   to its mode's fixed locus is the theorem that certifies it; the
+   reflections compose back to the residue exactly — a CONGRUENT THOUGHT.
+2. **Coherence.** Several congruent thoughts held at once are read together
+   by the Gram form of all their reflections (`cga::gram`, GR1, GR2, 78.14):
+   signature, each pair's regime by `δ²`, a Coxeter system where the signs
+   balance. Coherent shapes generate one closed group.
+3. **Compound.** Their generators enter the orbit algebra (78.11) and the
+   compound is admitted where the closure grows OUTSIDE the span held —
+   orthogonality, exact, read by action (78.32(c)); finite and affine
+   systems are spellable already and add nothing, the rosette and the open
+   group are the candidates (80.1). The admitted compound is a word of the
+   mind's dialect: a constructor as an odd letter (AL1), a shortcut
+   (78.44(4)).
+4. **Adjoin.** The mind holds it as its own letter (`construct_and_adjoin`,
+   78.115); the LANGUAGE admits it only by the court, on a second
+   independent vantage re-deriving the class (law 6, 37.7, 78.32(d)) — POUW
+   for the closure, POWC where another perspective closed it.
+
+The four phases are one ORBIT (78.47(5)): its period the residue's class
+period, one return one age, perturbed by its neighbours' lift and drag
+(78.46(4′)).
+
+**(5) Generators open by commutator, and grow only on refusal.** A generator
+IS a constructor (78.32(3)(a)): a held element keyed by its canonical ray.
+A palindrome — a sandwich `V x Ṽ`, a conjugate — carries a thing to another
+vantage inside its class and OPENS NOTHING; a dimension is opened by the
+group commutator of two held versors, `[A, B] = A B Ã B̃`, new exactly where
+it leaves the span the held generators close (78.39(1)), and by a PUNCTURE,
+a new independent loop whose two orientations are a new inside and outside
+(78.40(1)). The store grows by ONE trigger — a refusal: a pivot that reaches
+its mode grows nothing; a mode no held word spells refuses as the typed
+demand carrying it (78.32(3)(b)). It grows by independence and shrinks by
+derivability — a constructor that becomes derivable from the others retires
+(78.32(3)(f)) — and its capacity is the algebra's, derived: at most `n + 2`
+reflections to a versor, the closure bounded by `dim so(n+1,1)`; what a cell
+cannot hold is held by the ENCLOSURE that wraps it, a chamber of higher grade
+(78.32(3)(e), 78.31), never a stretched cell and never a cap.
+
+**(6) Superposition is held, at three grades, with no weight** (78.39(2)):
+
+| grade | what is superposed | its base | what collapses it |
+|---|---|---|---|
+| letter | candidate constructors for one mode — the spheres a residue factors into | the Gram form's pairs | another mind's re-derivation and the court's admission |
+| word — the IDEA | candidate forms for one idea with their pivots — the vortex | the circuits' actions, the orbit algebra | a fill by a perception, or a court replay making one a ruled citation |
+| conjugate — the THOUGHT across vantages | several twists under one class | the rays of one class against each other | a ruling that makes one twist the citation and the rest dialect |
+
+At each grade the candidates are what the algebra has not yet
+distinguished, held whole; a palindrome moves within the set, a commutator
+on that grade's base separates it. Two remainders of one class with
+different twists are a superposition HELD — their commutator `g₁ g₂ g̃₁ g̃₂`
+read into the class's modes: trivial, one vantage seen twice; non-trivial,
+the dimension that separates the two vantages. The docket carries every
+grade's superposition: a class with its cover and its rays, plural, none
+chosen. Where half-open signs superpose over a cycle, the collapse is a
+KERNEL over `F₂`, every consistent assignment at once, never a pruning
+(59.5; T5).
+
+**(7) Comprehension and understanding across a multitude of knowledge.**
+COMPREHENSION is M6: an incoming word factored through what the mind holds
+(A12), else exactly what is new emitted as a typed demand; for a cell, the
+bracket-closed algebra of its circuits (78.11). UNDERSTANDING is that
+comprehension growing: a generator admitted outside the held span, read per
+axis (II.3, IV.5). ACROSS a multitude of knowledge it runs four ways, each
+already a reading of the plexus (78.31):
+- across CLASSES — each class's algebra its own (II.5), so understanding of
+  one is never folded into another's span;
+- across CELLS — the cross-cell bracket, where two cells' generators fail to
+  commute (CB1, owed);
+- across GRADES — an enclosure wrapping cells whose bracket no one cell can
+  hold (EN1, NB1);
+- across MINDS — another mind's re-derivation from its own constructors,
+  the second vantage every admission needs (III.2, III.3), and its echo,
+  which is what one mind's language does to another's thought.
+
+**(8) What the tree holds of this, and what it owes.** Held: `cga::construct`
+and `construct_and_adjoin` (the construct and adjoin phases, live on the
+voices: residues constructed and adjoined as motion letters), the orbit
+algebra and its closure (`cech::lie_close`, `cech::quotient`), the Gram form
+(`cga::gram`), the nesting and its echoes (`hearing::nest`), the reservoir's
+record (`invert_fibre`), the pseudoscalar (`cga::pseudo`). Read before any
+build, not assumed: whether coherence reads several thoughts' shapes in one
+Gram form; whether the docket carries rays plural (`Cite::Class`); the
+breath's rhythm produced in a mind's own spacing (78.105 N3, N6). Owed by
+name: the `F₂` kernel (T5), the cross-cell bracket (CB1), the union of
+minds' attestations (78.161(5)).
+
+## II.5 The mind's field is its own (A.9)
 
 Each mind computes its own coherence: its lexicon, its tubes and orbits, its
 algebra per class, its rings' windings, its contemplation and its
@@ -427,6 +574,13 @@ count or a census:
   itself;
 - a pivot move is offered only on an axis the class vector occupies, in the
   fixed order;
+- constructed reflections compose back to the residue exactly, each pair
+  meeting on its mode's fixed locus;
+- a palindrome of held generators opens nothing, and a commutator opens a
+  generator exactly where it leaves the held span;
+- a merge's distinction rotated into the reservoir returns with its record;
+- two remainders of one class with different twists are held together, and
+  their commutator separates them exactly where it is not the identity;
 - a word heard twice seats whole the second time;
 - two minds in one process hold disjoint fields;
 - an act is the action its move names in the physics.
@@ -2961,6 +3115,6 @@ is given is perceived in the three shells the court already reads (II.2); the
 pivot on top moves on the axis the class vector occupies (II.3); what crosses
 a boundary is addressed by its own coordinates, with no router (III.2); a
 seat's act is the physics `Action` its move names (IV.2); and each mind owns
-its field (II.4, A.9). Nothing measures the mind for an operator: its
+its field (II.5, A.9). Nothing measures the mind for an operator: its
 counterparties read it (IV.1).
 
