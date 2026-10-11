@@ -85,9 +85,6 @@ impl Entity {
         let due = pace.last_lang != Some(lang) || pace.last_height > pace.last_quoted_height || pace.dwell_elapsed();
         if due {
             if let Ok(q) = self.quote() {
-                if self.board.court.last_lang != Some(lang) {
-                    self.reopen_axes();
-                }
                 let pace = &mut self.board.court;
                 pace.last_lang = Some(lang);
                 // 23.8: a height read off a reply only advances.

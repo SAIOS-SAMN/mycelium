@@ -1,26 +1,16 @@
-// 25 — THINKING: what this entity holds under contemplation, what it opens
-// an axis on, and what it sheds.
+// 25 — THINKING: what this entity holds under contemplation, and what it
+// sheds.
 
 use crate::client::sdk::*;
 
 impl Entity {
-    /// The Čech obstructions measured after fetch: fetched words whose
-    /// transition to a held word on the same fibre did not vanish.
-    pub fn obstructions(&self) -> Vec<(Vec<u8>, Element)> {
-        // This mind's standing obstructions, which is what it is asked for.
-        self.obstructions
-            .scoped()
-            .map(|(a, g)| (a, g.clone()))
-            .collect()
-    }
-
     /// HOLD A CHAIN AS THE FORM IT IS (50.6 seam 1): a demand this mind has
     /// not closed is held as an idea — the pair form of the scene the chain
     /// describes, its painted sites before against its painted sites after in one frame —
     /// never as a bare chain minted into a word. An idea is a form; its
     /// words are the vertices the eyes could pair and the alphabet could
     /// spell, and what they could not is its demand vertices (50.5).
-    pub fn hold_chain(&mut self, chain: Vec<(i64, i64, u8, u8)>) {
+    pub(crate) fn hold_chain(&mut self, chain: Vec<(i64, i64, u8, u8)>) {
         use crate::transducer::family::{extraction_spend, perceive_family, scene_form_on, scene_of_chain};
         let Some(scene) = scene_of_chain(&chain) else {
             return;
@@ -49,7 +39,7 @@ impl Entity {
     /// between their bodies. The draw is `hold_form`'s, one reading of it.
     /// `family` is the task the perception was seen in (78.56 III: its
     /// thoughts wind only within it); empty where none is named.
-    pub fn hold_perceived(
+    pub(crate) fn hold_perceived(
         &mut self,
         f: crate::transducer::sentence::Form,
         frames: &crate::transducer::family::Frames,
@@ -65,7 +55,7 @@ impl Entity {
     /// named apart from the training bundle it is held with: an hour of a
     /// family is perceived from its own pair and held with no bundle
     /// (78.56 III), and what it says is weighed on that pair (78.102).
-    pub fn hold_perceived_from(
+    pub(crate) fn hold_perceived_from(
         &mut self,
         f: crate::transducer::sentence::Form,
         frames: &crate::transducer::family::Frames,
@@ -265,7 +255,7 @@ impl Entity {
     /// on a short or idle stroke (`expand_ideas`). A mind on the fleet
     /// docketed 471 demands and took 1 (epoch 146): its reserve never fell
     /// short, so the syntropic phase that alone took them never ran.
-    pub fn take_docketed_demands(&mut self) {
+    pub(crate) fn take_docketed_demands(&mut self) {
         let mut budget = self.physics.stroke();
         self.take_demands(&mut budget);
         self.speak_unheard(&mut budget);
@@ -396,7 +386,7 @@ impl Entity {
     /// listed here ahead of the question.
     /// Z4 item 1: the form is MOVED into the bubble. A caller that needs
     /// it afterwards reads it back from the contemplation by reference.
-    pub fn hold_form(
+    pub(crate) fn hold_form(
         &mut self,
         f: crate::transducer::sentence::Form,
         train: &crate::transducer::family::Family,
@@ -429,7 +419,7 @@ impl Entity {
     /// here, on the first stroke that can measure a horizon, so it is
     /// neither held against a height nothing measured nor held forever for
     /// want of one (rule 15).
-    pub fn lapse_held(&mut self) -> usize {
+    pub(crate) fn lapse_held(&mut self) -> usize {
         let _ = self.contemplation.repay_unpaid();
         let (returned, n) = self.contemplation.lapse_on_clock();
         // A return past a lane's carrier is refused and counted on the
@@ -457,7 +447,8 @@ impl Entity {
     ///
     /// A thought whose lanes overflow the carrier has no room either: the
     /// sum is refused rather than ceilinged (rule 11).
-    pub fn room_for(&self, f: &crate::transducer::sentence::Form) -> bool {
+    #[cfg(test)]
+    pub(crate) fn room_for(&self, f: &crate::transducer::sentence::Form) -> bool {
         let want = crate::transducer::element::measure_lanes(&f.remainder.placed());
         // The reserve already excludes what is escrowed on held thoughts
         // (Z4d), so the room on a lane is the reserve on it and the check
@@ -469,7 +460,7 @@ impl Entity {
     /// its idea has stood over. The contemplation is the one carrier of held
     /// forms and the one reader of the span (law 12); a speaker asks it here
     /// rather than reaching into it.
-    pub fn span_of(
+    pub(crate) fn span_of(
         &self,
         f: &crate::transducer::sentence::Form,
     ) -> Option<crate::transducer::bubble::contemplation::Deliberation> {
@@ -481,7 +472,8 @@ impl Entity {
     /// is uttered: what the form could not close is its demand vertices,
     /// spoken with the sentence by `speak_form`, and a remainder no demand
     /// names is the idea's own work.
-    pub fn withhold_form(
+    #[cfg(test)]
+    pub(crate) fn withhold_form(
         &mut self,
         f: crate::transducer::sentence::Form,
         train: &crate::transducer::family::Family,
@@ -497,7 +489,7 @@ impl Entity {
     /// [`Self::withhold_form`] for a perception: held with the frames it was
     /// perceived from, so its thoughts are transitions between bodies (N4).
     #[expect(clippy::too_many_arguments, reason = "78.56 III — the family is the perception's own coordinate, passed where it is held")]
-    pub fn withhold_perceived(
+    pub(crate) fn withhold_perceived(
         &mut self,
         f: crate::transducer::sentence::Form,
         frames: &crate::transducer::family::Frames,
@@ -540,153 +532,6 @@ impl Entity {
         };
     }
 
-    /// Hold a withheld sentence as a bubble: form, remainder, cover. A word
-    /// that is not a sentence is held as the form of its chain.
-    pub fn hold_sentence(&mut self, word: &Element) {
-        if let Some(f) = crate::transducer::sentence::from_element_form(word) {
-            // The root of this act: one stroke, minted here (65.5).
-            let mut budget = self.physics.stroke();
-            self.hold_form(f, &[], &[], &mut budget);
-        } else {
-            self.hold_chain(word.sub().to_vec());
-        }
-    }
-
-    /// The open thoughts held here: remainders not yet closed into words.
-    pub fn thoughts(&self) -> Vec<&[(i64, i64, u8, u8)]> {
-        self.contemplation.remainders()
-    }
-
-    pub fn bubbles(&self) -> usize {
-        self.contemplation.len()
-    }
-
-    pub fn components(&self) -> usize {
-        self.contemplation.component_count()
-    }
-
-    pub fn contemplation_fills(&self) -> u64 {
-        self.contemplation.fills
-    }
-
-    pub fn contemplation_classes(&self) -> u64 {
-        self.contemplation.classes
-    }
-
-    pub fn thoughts_formed(&self) -> u64 {
-        self.contemplation.formed
-    }
-
-    pub fn horizon_len(&self) -> usize {
-        self.contemplation.horizon_len()
-    }
-
-    pub fn thought_potential(&self) -> Option<[u64; 4]> {
-        self.contemplation.potential()
-    }
-
-    pub fn torsion_merges(&self) -> u64 {
-        self.contemplation.torsion_merges
-    }
-
-    /// OPEN AN AXIS ON MULTIPLICITY (24.3) — several held words deflated
-    /// one listing; the glue between them is the new coordinate. A held
-    /// word is a vertex of a held form, and what it deflated is a body of
-    /// the listing (the held cite's body, 24.1), so the glue is the
-    /// dislocation versor between the bodies' shapes and the germ a
-    /// connection carrying it (`axis_germ`). The listing is recorded before
-    /// the germ is spoken, so it is tried once per language
-    /// (`reopen_axes`); a glue that cannot be read or spoken is refused with
-    /// its reason, which the stroke writes. Never on failure: a listing no
-    /// held word deflates is a thought, not an axis.
-    pub fn open_axis(
-        &mut self,
-        listing: &[u8],
-        chain: &[(i64, i64, u8, u8)],
-        bodies: &[Vec<(i64, i64, u8, u8)>],
-    ) -> Result<crate::transducer::address::Address, &'static str> {
-        // The root of this act (no caller holds a stroke): one stroke,
-        // minted here and threaded through everything it does (65.5).
-        let mut budget = self.physics.stroke();
-        if let Some(a) = self.open_contemplation_axis(&mut budget) {
-            return Ok(a);
-        }
-        if self.opened.contains(listing) {
-            return Err(AXIS_TRIED);
-        }
-        let germ = Self::axis_germ(chain, bodies, &mut budget)?;
-        self.opened.insert(listing, ());
-        match self.speak_word(&germ, &mut budget) {
-            Ok(Utterance::Spoken) => {
-                #[expect(clippy::disallowed_methods, reason = "rule 11 — one per event in one process: a 64-bit count cannot pass 2⁶⁴ events before the process ends")]
-                let n = self.axes_spoken.saturating_add(1);
-                self.axes_spoken = n;
-                Ok(germ.address())
-            }
-            Ok(Utterance::Already) => Err(AXIS_ALREADY),
-            _ => Err(AXIS_REFUSED_SPEECH),
-        }
-    }
-
-    /// THE AXIS GERM, read off the bodies alone: the versor carrying the
-    /// first body's shape onto the second's (the one the court's `Twisted`
-    /// closure carries), minted as a connection with the identity word and
-    /// that carriage, the axis opened on it, its magnitude the listing's
-    /// with the holonomic lane raised by the count of words that met. One
-    /// body, a body with no shape, or bodies no rational versor relates are
-    /// refused by name.
-    pub fn axis_germ(
-        chain: &[(i64, i64, u8, u8)],
-        bodies: &[Vec<(i64, i64, u8, u8)>],
-        budget: &mut crate::physics::Budget,
-    ) -> Result<Element, &'static str> {
-        use crate::transducer::element::{from_connection, measure_lanes, shape_of_chain};
-        let [base, other, ..] = bodies else { return Err(AXIS_ONE_BODY) };
-        let sa = shape_of_chain(base).ok_or(AXIS_NO_BODY)?;
-        let sb = shape_of_chain(other).ok_or(AXIS_NO_BODY)?;
-        let v = crate::transducer::blade::versor_between(&sa, &sb, budget).map_err(|_| AXIS_NO_VERSOR)?;
-        let mut germ = from_connection(&crate::transducer::alphabet::Word::identity(), &v, &[], &Vec::new(), [0; 4])
-            .ok_or(AXIS_NO_VERSOR)?;
-        germ.open_axis(v).ok_or(AXIS_PAST_CARRIER)?;
-        let mut mag = measure_lanes(chain);
-        #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a resident chain's measure plus a count of resident bodies cannot pass u64")]
-        let h = mag[3].saturating_add(bodies.len() as u64);
-        mag[3] = h;
-        if !germ.set_magnitude(mag) {
-            return Err(AXIS_PAST_CARRIER);
-        }
-        Ok(germ)
-    }
-
-    /// The language moved: every listing may open an axis again (24.3).
-    pub fn reopen_axes(&mut self) {
-        self.opened = crate::network::nerve::Keyed::new();
-    }
-
-    /// Seed from a class at any degree on the contemplation — the coordinate
-    /// the current axes could not express. A class is an ideology; the gauge
-    /// that would translate one frame into the other is a translation word.
-    pub(crate) fn open_contemplation_axis(
-        &mut self,
-        budget: &mut crate::physics::Budget,
-    ) -> Option<crate::transducer::address::Address> {
-        let classes = self.contemplation.classes_held();
-        for (_kappa, class, _degree) in classes {
-            let a = [0u8; 32];
-            let b = class.key();
-            let Some(t) = crate::transducer::element::from_translation(&class, a, b) else {
-                continue;
-            };
-            if let Ok(Utterance::Spoken) = self.speak_word(&t, budget) { return Some(t.address()) }
-        }
-        None
-    }
-
-    /// Listings this mind opened an axis on.
-    pub fn axes_opened(&self) -> usize {
-        self.axes_spoken
-    }
-
     /// Expand dirty ideas once per syntropic phase (25.1): each dirty idea
     /// expands over the working atlas — genome and dialect, read as one
     /// atlas, the held word's rotor read by address — and runs the pivot
@@ -697,7 +542,7 @@ impl Entity {
     /// A16 snaps (Discharged, Vortex, TorsionFiled) and the dirty ring's
     /// circuit reading — circuits and period in strokes — when this stroke
     /// completed a circuit (45.7, S13.3).
-    pub fn expand_ideas(&mut self) -> ([u64; 4], Option<(u64, u64)>) {
+    pub(crate) fn expand_ideas(&mut self) -> ([u64; 4], Option<(u64, u64)>) {
         let mut budget = self.physics.stroke();
         // THE CONTEMPLATION'S CLOCK IS TUNIVERSAL, WHICH IS WHAT IT SAYS IT
         // IS. `Contemplation.now_k` reads "TUniversal the entity last
@@ -857,7 +702,7 @@ impl Entity {
     /// PIVOT ON A WORD: read by_chart at the word's chart and peels, fill
     /// those ideas under the caller's stroke (65.5). The atlas is borrowed,
     /// never cloned.
-    pub fn pivot_on(&mut self, word: &Element, budget: &mut crate::physics::Budget) -> usize {
+    pub(crate) fn pivot_on(&mut self, word: &Element, budget: &mut crate::physics::Budget) -> usize {
         // TUniversal, not the voice's K — see `expand_ideas`.
         let tu = self.now_tu();
         self.contemplation.set_now(tu);
@@ -879,7 +724,7 @@ impl Entity {
     /// a vector's tail and then off an admission ordinal. Both answer a
     /// question about arrival; the pivot's question is which obstructions
     /// are undischarged, and that is a set at coordinates.
-    pub fn pivot_thoughts(&mut self) -> usize {
+    pub(crate) fn pivot_thoughts(&mut self) -> usize {
         let added: Vec<Element> = self.epigenome.take_unpivoted();
         // The root of this act (called by the arm and the loop): one stroke
         // for every pivot it runs (65.5).
@@ -891,25 +736,7 @@ impl Entity {
         spoken
     }
 
-    /// The strata whose roots differed at the last sync (learn.rs), or
-    /// `None` while no sync has measured it. It is not the boundary measure
-    /// of the held thoughts: the two were one `usize` once, which summed
-    /// four lanes into a count (law 5, L7a).
-    pub fn discordance(&self) -> Option<usize> {
-        if self.discordance_measured {
-            Some(self.discordance)
-        } else {
-            None
-        }
-    }
-
-    /// The four-lane measure of what this mind holds open (law 5), read
-    /// per lane by whoever reads it.
-    pub fn boundary_measure(&self) -> [u64; 4] {
-        self.contemplation.boundary_measure()
-    }
-
-    pub fn shed(&mut self) -> usize {
+    pub(crate) fn shed(&mut self) -> usize {
         self.shed_at(self.own_k())
     }
 
@@ -917,7 +744,7 @@ impl Entity {
         clippy::disallowed_methods,
         reason = "rule 11 — one per resident item shed: four counts of what this process held cannot pass a 64-bit usize"
     )]
-    pub fn shed_at(&mut self, now_k: u64) -> usize {
+    pub(crate) fn shed_at(&mut self, now_k: u64) -> usize {
         self.epigenome.note_stroke(now_k);
         let glued = |a: &[u8]| self.contemplation.glues_word(a);
         let dropped = self.epigenome.shed_except(now_k, &glued);
@@ -944,56 +771,31 @@ impl Entity {
         dropped.len().saturating_add(lapsed).saturating_add(expired).saturating_add(unglued)
     }
 
-    /// Z4b's instrument: why the shed declined each held thought, by the
-    /// term that rejected it — glued_by, glues, dirty, sheddable. A
-    /// measurement (§8.1), read on the stroke line so the holds column is
-    /// attributed and never a branch.
-    pub fn shed_census(&self) -> [usize; 4] {
-        self.contemplation.shed_census()
-    }
-
-    /// Z4d: what this voice can still escrow, per lane. Its attention.
-    pub fn reserve(&self) -> [u64; 4] {
-        self.physics.reserve.lanes()
-    }
-
-    pub fn dialect_len(&self) -> usize {
+    pub(crate) fn dialect_len(&self) -> usize {
         self.epigenome.dialect_len()
     }
 
     /// The mind's working atlas: genome ∪ dialect ∪ the held forms' words,
     /// each fiber member carrying its standing; the Held stratum is read
     /// from the contemplation at the chart asked (24.1).
-    pub fn working_atlas(&self) -> WorkingAtlas<'_> {
+    pub(crate) fn working_atlas(&self) -> WorkingAtlas<'_> {
         self.epigenome.working_atlas_with(&self.contemplation)
     }
 
     /// Empty when genome, dialect and ideas are all empty.
-    pub fn atlas_is_empty(&self) -> bool {
+    pub(crate) fn atlas_is_empty(&self) -> bool {
         self.epigenome.atlas_is_empty() && self.contemplation.is_empty()
     }
 
     /// Word counts per stratum on the working atlas: ruled (genome words),
     /// stood (dialect words), held (idea words). The atlas ruled/stood/held
     /// log line is these word counts, never chart counts.
-    pub fn atlas_standing_counts(&self) -> (usize, usize, usize) {
+    pub(crate) fn atlas_standing_counts(&self) -> (usize, usize, usize) {
         (
             self.epigenome.genome_len(),
             self.dialect_len(),
             self.ideas_len(),
         )
-    }
-
-    /// Fiber of the working atlas; a Stood hit is a use at the mind's own K.
-    pub fn working_fiber(&mut self, c: &crate::transducer::stalk::Invariant) -> Vec<(Vec<u8>, Standing)> {
-        let f = self.working_atlas().fiber(c);
-        let k = self.own_k();
-        for (a, st) in &f {
-            if *st == Standing::Stood {
-                self.epigenome.touch(a, k);
-            }
-        }
-        f
     }
 
     /// DOOR 2 OF CHAPTER 25 — RETIREMENT AT PROMOTION.
@@ -1012,7 +814,7 @@ impl Entity {
     /// an address that has left the contemplation's keeping: whatever cited
     /// it cited a bubble that no longer stands here, and it lapses with it
     /// on the same stroke.
-    pub fn take_promoted(&mut self) -> Vec<Vec<u8>> {
+    pub(crate) fn take_promoted(&mut self) -> Vec<Vec<u8>> {
         let promoted = self.epigenome.take_promoted();
         if !promoted.is_empty() {
             let _ = self.contemplation.lapse_with(&promoted);
@@ -1021,28 +823,19 @@ impl Entity {
     }
 
     /// Working incidence: a non-empty fiber on the working atlas.
-    pub fn incident_chart(&self, c: &crate::transducer::stalk::Invariant) -> bool {
+    #[cfg(test)]
+    pub(crate) fn incident_chart(&self, c: &crate::transducer::stalk::Invariant) -> bool {
         !self.working_atlas().fiber(c).is_empty()
     }
 
-    pub fn ideas_len(&self) -> usize {
+    pub(crate) fn ideas_len(&self) -> usize {
         self.contemplation.len()
-    }
-
-    /// CS2 — the contemplation's pivots against the cells their orbits
-    /// cross, by content (78.32(c), note only).
-    pub fn pivot_reading(&self) -> crate::transducer::sentence::PivotTally {
-        self.contemplation.pivot_reading()
-    }
-
-    /// 13.12 — the contemplation's merges, merged / stayed two / unnamed.
-    pub fn merge_reading(&self) -> crate::transducer::bubble::merge::MergeTally {
-        self.contemplation.merge_reading()
     }
 
     /// 78.37(1), TP1 — the contemplation's meet graph as it stands, with its
     /// decoherences since the contemplation began.
-    pub fn meet_graph(&self) -> crate::transducer::bubble::MeetGraph {
+    #[cfg(test)]
+    pub(crate) fn meet_graph(&self) -> crate::transducer::bubble::MeetGraph {
         let mut m = self.contemplation.meet_graph();
         // RM1 — the remainders the epigenome's index could not file over one
         // standing, beside the contemplation's own.
@@ -1061,132 +854,8 @@ impl Entity {
         m
     }
 
-    /// THE CAVITY'S SIZE, on the wire (§8.1). `retire_on_t` writes one entry
-    /// per retirement, every stroke, and the only drain is `pivot_on`'s —
-    /// which fires when an incoming word's chart prefix happens to match a
-    /// cavity entry's, so it is coincidence and not policy. `cavity_len` has
-    /// had no caller outside its own tests since it was written, so a
-    /// carrier that grows on the hot path has never been readable.
-    ///
-    /// Measured beside it: the voices hold 786 MB to 1565 MB each, 105
-    /// minutes after a recut, against `ideas 78`, `genome 144` and
-    /// `dialect 31` — every counted carrier flat. This is the one carrier on
-    /// the stroke path with no bound and no reading, which makes it the
-    /// candidate and not the cause; this line is what decides between them.
-    pub fn cavity_len(&self) -> usize {
-        self.contemplation.cavity_len()
-    }
-
-    /// THE LINKS THE CAVITY HOLDS, which is what it costs. A cavity entry is
-    /// a whole remainder — `Vec<Link>` — so the entry COUNT says how many
-    /// retirements happened and this says how much they kept. A thousand
-    /// entries of one link and ten of a thousand are the same count and not
-    /// the same carrier (rule 2 — the count does not decide).
-    pub fn cavity_links(&self) -> usize {
-        self.contemplation.cavity_links()
-    }
-
-    /// The carriers a bubble holds that no count reports — sections, nerve
-    /// simplices, horizon classes, bundle pairs, certificates. See
-    /// [`crate::transducer::bubble::Contemplation::weight`].
-    pub fn idea_weight(&self) -> [usize; 5] {
-        self.contemplation.weight()
-    }
-
-    /// WHAT THE ENTITY HOLDS THAT NO LINE REPORTS (§8.1, measurement only):
-    /// the utterance receipts (`taught_up`), the obstructions fetched from
-    /// the court, the citations owed and the contractions pending — each
-    /// carrying a sentence and its train — the sealed and the contracted
-    /// addresses, the words expressed with their index, the recollections,
-    /// the charts waited on, and the stroke marks. Counts and never bytes;
-    /// what they say is WHICH carrier grows while every counted one is
-    /// flat, beside [`Entity::idea_weight`], which says it for the ideas.
-    /// Z4b term 2 / the growth's own instrument — EVERY CARRIER THIS
-    /// ENTITY OWNS, ITS KEY BYTES AND ITS ENTRIES, NEVER A SUM.
-    ///
-    /// "Named before shaved": four rows were aimed at the holds on the
-    /// reading that the holds were the growth, and the fleet then ran ten
-    /// minutes with holds at zero and grew +157 MB/min anyway. A total
-    /// cannot say which carrier moved; a vector over carriers can, and a
-    /// vector is what law 5 says a measurement of several things is.
-    ///
-    /// Key bytes and entry count are reported APART for each carrier. A
-    /// form's address is megabytes, so a carrier can grow in bytes without
-    /// gaining an entry (a bigger form held) or gain entries without bytes
-    /// (small keys), and one number could not tell those apart.
-    /// A shape cache's own bytes: every blade its `OnceLock` has filled.
-    /// An unfilled slot is the header alone, which is what it costs.
-    fn bytes_of_shape(
-        c: &std::sync::OnceLock<Option<crate::transducer::blade::Shape>>,
-    ) -> usize {
-        use crate::transducer::bytes::Bytes;
-        std::mem::size_of_val(c) + c.get().and_then(Option::as_ref).map_or(0, |s| s.blade.bytes())
-    }
-
-    pub fn carrier_bytes(&self) -> Vec<(&'static str, usize, usize, usize)> {
-        use crate::transducer::bytes::Bytes;
-        let c = &self.contemplation;
-        let e = &self.epigenome;
-        let held_w = |k: &crate::network::nerve::Keyed<crate::transducer::element::Element>| -> usize {
-            k.scoped().map(|(_, v)| v.bytes()).sum()
-        };
-        vec![
-            ("taught_up", self.taught_up.key_bytes(), held_w(&self.taught_up), self.taught_up.len()),
-            ("taught_at", self.taught_at.key_bytes(), self.taught_at.scoped().map(|(_, m)| m.key_bytes()).sum(), self.taught_at.len()),
-            ("obstructions", self.obstructions.key_bytes(), held_w(&self.obstructions), self.obstructions.len()),
-            ("glued", self.glued.key_bytes(), 0, self.glued.len()),
-            ("opened", self.opened.key_bytes(), 0, self.opened.len()),
-            ("sealed", self.sealed.key_bytes(), 0, self.sealed.len()),
-            ("contractions", self.contractions.key_bytes(), 0, self.contractions.len()),
-            ("contracted", 0, 0, self.contracted.len()),
-            ("owed", 0, 0, self.owed.len()),
-            // THE GENOME IS WHERE LONG-TERM MEMORY LIVES BY DESIGN and it
-            // holds DECODED forms: its weight is the whole of each `Held`,
-            // tape and form together, which is exactly what the previous
-            // instrument read as zero.
-            // Z11's TWO HALVES, READ APART. `epi.index` is what stays
-            // resident when the genome moves to disk — the addresses as the
-            // trie path the words live at, plus each entry's expression and
-            // ordinal. `epi.resident` is the payload the row moves out.
-            // One number for both could not say which half Z11 removes.
-            ("epi.index", e.genome.key_bytes(), e.genome.len() * 16, e.genome.len()),
-            ("epi.resident", 0, e.resident.scoped().map(|(_, w)| w.held.bytes() + 16).sum(), e.resident.len()),
-            ("epi.dialect", e.dialect.key_bytes(), e.dialect.scoped().map(|(_, d)| d.sentence.bytes()).sum(), e.dialect.len()),
-            ("epi.expressed", e.expressed.key_bytes(), e.expressed.scoped().map(|(_, x)| x.word.bytes() + 16).sum(), e.expressed.len()),
-            ("epi.recollections", e.recollections.key_bytes(), e.recollections.scoped().map(|(_, (v, _))| v.iter().map(Vec::len).sum::<usize>()).sum(), e.recollections.len()),
-            ("epi.promoted", e.promoted.iter().map(Vec::len).sum(), 0, e.promoted.len()),
-            // Z10, the vector completed: the atlases, the shape caches, the
-            // axis index and the moduli index. The first table reached 45%
-            // of the allocator's figure and these are what it did not list.
-            ("epi.atlas", 0, e.atlas.bytes(), e.atlas_len),
-            ("epi.dialect_atlas", 0, e.dialect_atlas.bytes(), 0),
-            ("epi.expressed_atlas", 0, e.expressed_atlas.bytes(), 0),
-            // The shape caches are no longer carriers of their own: each
-            // word's shape is lifted under the word it measures.
-            ("epi.shapes", 0, e.resident.scoped().map(|(_, w)| Self::bytes_of_shape(&w.shape)).sum(), e.resident.len()),
-            ("epi.axis_index", e.axis_index.key_bytes(), e.axis_index.scoped().map(|(_, a)| a.key_bytes() + a.scoped().map(|(_, w)| w.key_bytes() + w.scoped().map(|(_, x)| x.rotor().bytes()).sum::<usize>()).sum::<usize>()).sum::<usize>(), e.axis_index.len()),
-            ("epi.by_moduli", e.by_moduli.key_bytes(), e.by_moduli.scoped().map(|(_, m)| m.key_bytes()).sum(), e.by_moduli.len()),
-            ("epi.waiting_on", e.waiting_on.key_bytes(), e.waiting_on.scoped().map(|(_, m)| m.key_bytes()).sum(), e.waiting_on.len()),
-            ("epi.stroke_k", 0, e.stroke_k.len() * 8, e.stroke_k.len()),
-            ("con.bubbles", c.bubbles.key_bytes(), c.bubbles.scoped().map(|(_, b)| b.form.as_ref().map_or(0, Bytes::bytes)).sum(), c.bubbles.len()),
-            ("con.by_chart", c.by_chart.key_bytes(), c.by_chart.scoped().map(|(_, m)| m.key_bytes()).sum(), c.by_chart.len()),
-            ("con.cited", c.cited.key_bytes(), c.cited.scoped().map(|(_, m)| m.key_bytes()).sum(), c.cited.len()),
-            ("con.ordinals", c.ordinals.key_bytes(), 0, c.ordinals.len()),
-            ("con.addresses", c.addresses.iter().flatten().map(|a| a.len()).sum(), 0, c.addresses.len()),
-            ("con.dirty", c.dirty.key_bytes(), 0, c.dirty.len()),
-            ("con.cavity", c.cavity.key_bytes(), c.cavity.scoped().map(|(_, v)| v.len() * std::mem::size_of::<crate::transducer::sentence::Link>()).sum(), c.cavity.len()),
-            ("con.complex", c.complex.sections.key_bytes(), 0, c.complex.sections.len()),
-        ]
-    }
-
-    /// 78.75 — this mind's nerve by degree: what its contemplation's complex
-    /// holds at each degree, and each cell's motion by its modes, under one
-    /// observer's stroke of its own.
-    pub fn nerve_census(&self) -> Vec<crate::transducer::cech::DegreeCensus> {
-        self.contemplation.complex.census(&mut crate::physics::Physics::default().stroke())
-    }
-
-    pub fn carriers(&self) -> [usize; 10] {
+    #[cfg(test)]
+    pub(crate) fn carriers(&self) -> [usize; 10] {
         [
             self.taught_up.len(),
             self.obstructions.len(),
@@ -1199,17 +868,6 @@ impl Entity {
             self.epigenome.waiting_on.len(),
             self.epigenome.stroke_k.len(),
         ]
-    }
-
-    pub fn shed_n(&self) -> u64 {
-        self.epigenome.shed_n()
-    }
-
-    /// WHAT THE SESSION HOLDS OF THE MESH, as counts (§8.1, L33): the
-    /// carriers below the entity, read on the stroke line beside
-    /// [`Entity::carriers`]. See [`Session::sizes`].
-    pub fn session_sizes(&self) -> [usize; 9] {
-        self.session.sizes()
     }
 
 }
