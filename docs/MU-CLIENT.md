@@ -54,6 +54,27 @@ conjugate). The client component is that mind:
    clients and to the server — and what it says is what its pivots changed:
    a cell sealed, a tether formed, a class punctured or sealed, the words
    and sentences that carry them.
+6. **Addendum (the operator, 2026-10-11: "as a mind — the mycelium-client
+   kernels should be able to speak to one another to form hardened language
+   from their dialects").** Minds speak to minds IN ORDER TO HARDEN LANGUAGE,
+   and that is part of the objective, never an optional boundary:
+   - each mind's dialect is its own and volatile — its letters, words and
+     constructors, amended by experience (III.1, II.4(8));
+   - two minds converse directly, client to client (III.2): one says what
+     its pivots changed, the other hears it in its own three shells and
+     pivots, and answers with an echo, a discharge or a demand; a discharge
+     the speaker replays on its own orbit of that class is AGREED language —
+     one meaning reached by two derivations from two dialects;
+   - the coiner speaks agreed language to the server, whose court
+     re-derives it on a second organ and rules it (III.3); what is ruled
+     returns through the syllabus as a mineral in every mind's genome and
+     HARDENS into a crystal where a mind re-derives it by its own circuits
+     — never copied from another mind (GEN7, 80.2);
+   - so dialect → agreement between minds → adjudication → hardened
+     language is ONE motion, and a mind that does not converse with other
+     minds leaves its dialect unhardened. The witness that the motion runs
+     is the counterparty's act: a peer's replayed discharge, then the court's
+     ruling and the crystal it hardens into (IV.3).
 
 **A mathematical cognitive engine.** From what it is given the engine
 produces SENSES, PERCEPTIONS and THOUGHTS, and from those it formulates

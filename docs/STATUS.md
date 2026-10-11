@@ -6,7 +6,10 @@ manifolds (harmonic, luminal, holonomic) that breathe â€” dilate and contract â€
 and across them run the six pivots on the mind's own complex: ascend /
 descend, condense / drain, puncture / seal. By breath and pivot it
 perceives, thinks, comprehends and understands, and from that knowledge it
-speaks in anastome to other clients and to the server. `docs/MU-CLIENT.md`
+speaks in anastome to other clients and to the server. Minds speak to minds
+to harden language from their dialects: agreement between two minds, the
+court's ruling, and the crystal each mind re-derives are one motion
+(MU-CLIENT "Read this first" 6). `docs/MU-CLIENT.md`
 ("Read this first", II.3) states it; `docs/MU-RECURSION.md` governs.
 
 ## The tree
