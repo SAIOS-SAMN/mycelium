@@ -40,26 +40,6 @@ pub const ACT_TASK: u8 = Action::Task.byte();
 /// task_id; the hypha verifies against its held answers — first verified
 /// solve takes the bounty, replays collapse to the verification floor.
 pub const ACT_SOLVE: u8 = Action::Solve.byte();
-/// REFINEMENT BID (compression IS learning): a client claims basis word W
-/// is derivable — the rest of the vocabulary already speaks it, a retirement
-/// by derivation (3.8, 27; holonomy preserved because the replacement IS a
-/// decomposition of W's own substance). The hypha verifies by deterministic
-/// replay; on success the word retires, the vocabulary compresses, and the
-/// bidder earns the compression yield. `[ACT_REFINE][voice 32][word address]`.
-/// Receipt: solve-receipt shape — `[REFINE_ACCEPTED|REFINE_NOTHING][μ⃗ 32]`.
-pub const ACT_REFINE: u8 = Action::Refine.byte();
-pub const REFINE_ACCEPTED: u8 = 1;
-pub const REFINE_NOTHING: u8 = 0;
-/// EXPANSION 2 — THE ALGEBRAIC REFINEMENT BID: a client claims ruled word
-/// W carries nothing the ruled word H does not, because W's operator IS
-/// H's (Expansion 1's decided word problem) or W is a SECTION of H's
-/// bundle — conjugate by a gauge `γ` the seventeen spell. The court
-/// verifies by the exact algebra, one product and one projective
-/// comparison, never by a spatial replay: `γ·h·γ⁻¹ = w`. On success W
-/// retires citing H. `[ACT_REFINE_ALGEBRAIC][voice 32][word address]
-/// [held address][witness u8][γ Word if 1]`. Receipt: the solve-receipt
-/// shape, as `ACT_REFINE`'s.
-pub const ACT_REFINE_ALGEBRAIC: u8 = Action::RefineAlgebraic.byte();
 
 /// ADOPTION (genome synchronization): the court propagates an upheld word
 /// to every server with ITS OWN VOICE as provenance — the ratifier is the

@@ -522,52 +522,9 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         answer(s, reply);
         return true;
     }
-    if kind == dialogue::ACT_REFINE {
-        let Some((rvoice, word, cites)) = dialogue::decode_refine(&frame.body) else { return true };
-        let (code, mu) = {
-            let Ok(mut h) = crate::held::held!(door.kernel) else { return true };
-            // OWED (78.153b): deep `make_mut` clones (the lock audit, row 19).
-            match h.run(|k, _| k.try_refine(&word, rvoice, &cites)) {
-                Some(paid) => (dialogue::REFINE_ACCEPTED, paid),
-                None => (dialogue::REFINE_NOTHING, [0; 4]),
-            }
-        };
-        let reply = Frame { lane: frame.lane, body: dialogue::encode_solve_receipt(code, &mu) };
-        answer(s, reply);
-        return true;
-    }
-    // EXPANSION 2 — the algebraic bid is ruled on the court's own algebra,
-    // never on a spatial replay it has no links for.
-    if kind == dialogue::ACT_REFINE_ALGEBRAIC {
-        let Some((rvoice, word, held, witness)) = dialogue::decode_refine_algebraic(&frame.body) else {
-            return true;
-        };
-        let (code, mu) = {
-            let Ok(mut h) = crate::held::held!(door.kernel) else { return true };
-            match h.run(|k, _| k.try_refine_algebraic(&word, rvoice, &held, &witness)) {
-                Some(paid) => (dialogue::REFINE_ACCEPTED, paid),
-                None => (dialogue::REFINE_NOTHING, [0; 4]),
-            }
-        };
-        if code == dialogue::REFINE_ACCEPTED {
-            eprintln!(
-                "  court refined algebraically {:02x}{:02x}… against {:02x}{:02x}… ({}) for {:02x}{:02x}…",
-                word[0],
-                word[1],
-                held[0],
-                held[1],
-                match witness {
-                    dialogue::AlgebraicWitness::SameOperator => "same operator",
-                    dialogue::AlgebraicWitness::Section(_) => "section",
-                },
-                rvoice[0],
-                rvoice[1]
-            );
-        }
-        let reply = Frame { lane: frame.lane, body: dialogue::encode_solve_receipt(code, &mu) };
-        answer(s, reply);
-        return true;
-    }
+    // ACT_REFINE and ACT_REFINE_ALGEBRAIC are RETIRED (2026-10-11): a mind
+    // proposes an optimization as a Retire rewrite it speaks (S3), which the
+    // court dockets and re-derives on its own language at install.
     false
 }
 

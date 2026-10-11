@@ -10,7 +10,6 @@ mod offer;
 mod probe_reply;
 mod receipt_section;
 mod receipts_range;
-mod refine;
 mod uplink;
 mod domain;
 mod challenge;

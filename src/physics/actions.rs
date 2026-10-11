@@ -294,7 +294,11 @@ impl Action {
             | Action::Section
             | Action::Stood
             | Action::Uttered
-            | Action::Learned => Kind::Retired,
+            | Action::Learned
+            // 2026-10-11 — a mind proposes an optimization as a Retire
+            // rewrite it speaks (MU-CLIENT §5.4, S3); the two bids retire.
+            | Action::Refine
+            | Action::RefineAlgebraic => Kind::Retired,
             Action::Quote
             | Action::Task
             | Action::Digests
@@ -307,8 +311,6 @@ impl Action {
             | Action::Why
             | Action::Wallet => Kind::Observation,
             Action::Evidence
-            | Action::Refine
-            | Action::RefineAlgebraic
             | Action::Solve
             | Action::Syllabus
             | Action::Probe
