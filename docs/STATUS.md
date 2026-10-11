@@ -28,9 +28,12 @@ it (rewritten whole 2026-10-11); `docs/MU-RECURSION.md` governs.
   never enabled, so a reboot leaves them down); the seats (`systemd-run`,
   posted by their houses) await re-posting. Fleet time is the final
   TUniversal point (78.152), read on the console.
-- Read on 6b2a4fd2: no voice closed its first tick — a blocking quote held it
-  while the hyphae backfilled, then the `Learning` sweep (gdb on a probe
-  voice); no reading reached the console and no voice reached a peer.
+- Running 7ddd1a8e. WITNESSED: minds form shared words and the courts seal
+  them — within five minutes of the restart, 34 `Attest` acts across hyphae
+  a (10), b (12), c (12), each a second mind's signed HOLD on a word another
+  mind spoke, verified by the court (`agreed:` lines); four speaker → hearer
+  pairs among the five voices (37f2c7f1 → 1e14fb3e, ee234447; c7899440 →
+  1e14fb3e; dd8980f6 → ee234447).
 
 ## Next (MU-CLIENT §7.1)
 1. The conversation carriers — one per hypha, per peer mind, for the feed
