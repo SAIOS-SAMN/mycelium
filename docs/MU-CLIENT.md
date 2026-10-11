@@ -343,9 +343,10 @@ it leaves the span the held generators close (78.39(1)), and by a PUNCTURE,
 a new independent loop whose two orientations are a new inside and outside
 (78.40(1)). The store grows by ONE trigger — a refusal: a pivot that reaches
 its mode grows nothing; a mode no held word spells refuses as the typed
-demand carrying it (78.32(3)(b)). It grows by independence and shrinks by
+demand carrying it (78.32(3)(b)). It grows by independence, shrinks by
 derivability — a constructor that becomes derivable from the others retires
-(78.32(3)(f)) — and its capacity is the algebra's, derived: at most `n + 2`
+(78.32(3)(f)) — and is AMENDED BY EXPERIENCE until the thought that holds it
+is discarded (9); its capacity is the algebra's, derived: at most `n + 2`
 reflections to a versor, the closure bounded by `dim so(n+1,1)`; what a cell
 cannot hold is held by the ENCLOSURE that wraps it, a chamber of higher grade
 (78.32(3)(e), 78.31), never a stretched cell and never a cap.
@@ -386,7 +387,61 @@ already a reading of the plexus (78.31):
   the second vantage every admission needs (III.2, III.3), and its echo,
   which is what one mind's language does to another's thought.
 
-**(8) What the tree holds of this, and what it owes.** Held: `cga::construct`
+**(8) History is amended by experience; constructors are amended until the
+thought is discarded** (the operator, 2026-10-11: "history is amended based
+on experience — which is why constructors are amended until the thought is
+'discarded'"; ruled the same day on the deduction below, "exactly — i
+agree"). A mind's history is not a fixed record: every experience against a
+held thought deforms it, and the deformation is read by the constitutive law
+the physics already holds for stress (78.73) — elastic, plastic, fracture —
+on the thought's constructors. Nothing in it is a choice; each step is a
+reading of the algebra or of the flux:
+
+1. **Elastic — confirmed.** The experience's residue returns within the
+   thought's held constructors: the thought is renewed, its constructors
+   stand unchanged, and the stress is relieved by the return (78.73(2)).
+2. **Plastic — amended, by addition, never by overwrite.** The residue does
+   not return: the constructors are re-derived from the residue the
+   experience left (the construct phase of (4), run on the thought's current
+   residue), and the AMENDED constructor enters the thought BESIDE the one it
+   amends. The two are held as a superposition at the conjugate grade (6):
+   one class, two twists, none chosen (rule 15). Replacing the old on
+   amendment would be the implementor choosing, and is refused.
+3. **The commutator reads what the amendment was.** Of the old and the
+   amended, `g₁ g₂ g̃₁ g̃₂`:
+   - the IDENTITY — they are one vantage seen twice; the old is derivable
+     from the amended and RETIRES BY DERIVABILITY (78.32(3)(f)). Here the
+     amendment did replace it — by a derivation, never by a choice;
+   - NOT the identity — the commutator is a new dimension that separates
+     them: experience has taught the thought a DISTINCTION, and both are
+     kept, each a vantage the thought now holds.
+4. **Experience collapses what remains.** Every later perception is read
+   against every constructor the thought holds: one whose residue returns is
+   renewed (elastic), one re-derived again is amended again (plastic), and one
+   whose flux experience no longer renews LAPSES by its flux — fracture,
+   ZeroFlux (78.73, FX1). The thought's history, at any K, IS its
+   superposition as experience has shaped it.
+5. **Discarded — fracture of the whole thought.** A thought is discarded
+   where nothing in it is renewed any more: every constructor lapsed, or none
+   holds its residue. It leaves the active field. Its REMAINDER is not
+   discarded: it goes cold to the cavity — the remainder leaf (RM1), citable
+   by its coordinates, re-filled on a coincident class (78.37(4)). Law 7
+   ("residuals are never discarded") and 78.37 ("classifying and never
+   deleting") hold for the residual one level below the thought; the thought
+   itself is discarded.
+6. **Two histories, two rules.** The MIND's history — its dialect, its
+   constructors, its thoughts — is amended by experience until discarded
+   (78.49: the epigenome and the plan are volatile). The COURT's history —
+   the ledger, its receipts, the genome of court-admitted words — is never
+   amended: it corrects FORWARD by new acts (a rewrite, a retirement, a
+   slash), and a closed cycle integrates into the era root while an open one
+   goes forward as a puncture (U12, 78.65). The mind is plastic; the
+   language it is judged against stays verifiable.
+
+So "amended until discarded" is a deduction, not a policy: held, separated
+by commutator, retired by derivability, renewed or lapsed by flux.
+
+**(9) What the tree holds of this, and what it owes.** Held: `cga::construct`
 and `construct_and_adjoin` (the construct and adjoin phases, live on the
 voices: residues constructed and adjoined as motion letters), the orbit
 algebra and its closure (`cech::lie_close`, `cech::quotient`), the Gram form
@@ -394,9 +449,14 @@ algebra and its closure (`cech::lie_close`, `cech::quotient`), the Gram form
 record (`invert_fibre`), the pseudoscalar (`cga::pseudo`). Read before any
 build, not assumed: whether coherence reads several thoughts' shapes in one
 Gram form; whether the docket carries rays plural (`Cite::Class`); the
-breath's rhythm produced in a mind's own spacing (78.105 N3, N6). Owed by
-name: the `F₂` kernel (T5), the cross-cell bracket (CB1), the union of
-minds' attestations (78.161(5)).
+breath's rhythm produced in a mind's own spacing (78.105 N3, N6); whether a
+thought holds an amended constructor beside the one it amends, or the tree
+overwrites it (8); whether a thought's constructors lapse by their own flux
+and its remainder goes to the cavity when the whole thought fractures (8).
+Owed by name: the `F₂` kernel (T5), the cross-cell bracket (CB1), the union
+of minds' attestations (78.161(5)); and in the doctrine, 78.73's "plastic"
+read as amendment of a held constructor as well as admission of a new
+generator (8).
 
 ## II.5 The mind's field is its own (A.9)
 
@@ -407,6 +467,63 @@ several). The machine's calibration is the substrate's and shared; the halt
 is the host's. Today's tree still holds part of this field as process-wide
 state (IV.5).
 
+## II.6 Volume entering, and thoughts built differently
+
+**What the hypha maintains as volume enters non-Euclidean space.** The
+court keeps, per chart, the holonomy algebra its ruled words' circuits
+generate (`lie_basis`), closed under the bracket and grown only where a new
+generator lies outside it (`close_rank`, `RankStep`); it seals a cell where a
+circuit closes (`ascend`, 62), wraps cells whose bracket none can hold in an
+enclosure of higher grade (EN1), refines the cover and never the base (14.8,
+15.5), and files a closed orbit at its exact period. Volume entering is new
+cells, chambers and generators — each a closure, never a stretched space.
+(`volume_of_simplex` prices a closure in per-lane counts today: 78.162's
+debt.)
+
+**Calabi–Yau, read against this — posed, not ruled.** Neither the doctrine
+nor the tree holds a Calabi–Yau manifold, and a literal one is refused: it
+is fixed by a Ricci-flat Kähler metric whose existence is Yau's theorem, the
+solution of a nonlinear PDE that is proved to exist and not constructed
+exactly over ℚ (laws 1, 4; 78.45). What the engine holds of its STRUCTURE,
+exactly: SPECIAL HOLONOMY — a chart whose holonomy algebra is a proper
+subalgebra of `so(n+1,1)` is the exact counterpart of restricted holonomy; a
+COMPLEX STRUCTURE — `Cl(4,1)`'s pseudoscalar `I` is central with `I² = −1`
+(78.105), the fact behind `Cl(4,1) ≅ M₄(ℂ)`; COMPACTNESS — closed orbits at
+exact periods, and a universe's own geometry, curved or a flat torus
+(78.140). Which of these is ruled the engine's Calabi–Yau reading is the
+operator's (IV.1).
+
+**Thoughts built differently resonate differently, and the structure holds.**
+Two thoughts reaching one construct by different prior paths arrive in
+different frames, and the mind applies its mathematics to that without
+rewriting what any thought IS — the difference is always a coordinate:
+1. **The difference is holonomy, and holonomy is content.** The loop the two
+   paths form has a holonomy: what the history did. It is kept, never gauged
+   away (ANTI_FLATTENING_LAW 6).
+2. **Identity is by class, not by construction.** A word in another frame is
+   its conjugate `W′ = Γ W Γ⁻¹`, keeping its class κ and its period ℓ
+   (78.95): where two differently built thoughts' classes agree they are one
+   meaning reached two ways (13.10) — the dialect.
+3. **Where they do not agree, both are held** at the conjugate grade, and
+   their commutator says whether they are one vantage seen twice or a real
+   distinction (78.39(2)).
+4. **Experience amends each of them** (II.4(8)): elastic, plastic, fracture.
+   Differently built thoughts CONVERGE where their commutator comes to the
+   identity, carry a DISTINCTION where it does not, and FRACTURE where
+   experience stops renewing them.
+5. **New structure meets held structure exactly.** Where new volume — a new
+   cell, chart or another mind's perspective — meets what is held,
+   Mayer–Vietoris computes the union from its pieces (13): the connecting map
+   yields exactly the classes the overlap creates, and exactness guarantees
+   no class held is lost. Naturality (15) makes every key commute with every
+   map of the data: restriction and refinement never fork a meaning (rule 12:
+   restrict, never clone).
+6. **The mind's history is amended; the court's is not.** The mind's
+   thoughts are amended by experience until discarded (II.4(8)); the court
+   corrects forward by acts, and a closed cycle integrates into the era root
+   while an open one goes forward as a puncture (U12). Ascend and descend
+   invert on content while the trajectory never re-enters itself (62.5).
+
 ---
 
 # Part III — Language: dialect, conversation, adjudication, proof
@@ -415,8 +532,11 @@ state (IV.5).
 
 A mind's dialect is its language as it composes it: the letters it coined,
 its words and their derivations, its shortcuts, the transports its
-conversations built — in its epigenome, volatile (78.49), lapsing by its
-flux. Two minds holding different presentations reach one vertex by two
+conversations built — in its epigenome, volatile (78.49), AMENDED BY
+EXPERIENCE until each thought is discarded (II.4(8)), lapsing by its flux.
+It is the mind's history, and it is the history that changes; the court's
+ledger and the genome of court-admitted words are the history that does not
+(II.4(8)6). Two minds holding different presentations reach one vertex by two
 derivations — one meaning, two proofs (13.10, 50.2). The dialect IS that
 difference: different letter structures on spinors reaching the same
 mathematical answer by different functions. Nothing compares them by bytes;
@@ -543,7 +663,10 @@ on the operator's ruling, never on a guess): what "non-conformal" names in
 signals carried over transports (the operator, 2026-09-25: "non-linear
 transposition of non-conformal algebra in non-Euclidean geometry"); and the
 axiom pairing posed with lift and drag (78.46: the star is the axiom
-register, and how the axioms pair is put to the operator).
+register, and how the axioms pair is put to the operator); and which of the
+exact structures of II.6 — special holonomy per chart, the complex structure
+of the central `I`, compactness by closed orbits — is ruled the engine's
+Calabi–Yau reading.
 
 ## IV.2 Seated: the mind in a game engine
 
@@ -581,6 +704,12 @@ count or a census:
 - a merge's distinction rotated into the reservoir returns with its record;
 - two remainders of one class with different twists are held together, and
   their commutator separates them exactly where it is not the identity;
+- an experience whose residue returns leaves a thought's constructors
+  unchanged;
+- an amended constructor is held beside the one it amends, and the old
+  retires exactly where it is derivable from the amended;
+- a thought every constructor of which has lapsed leaves the field, and its
+  remainder is re-filled on a coincident class;
 - a word heard twice seats whole the second time;
 - two minds in one process hold disjoint fields;
 - an act is the action its move names in the physics.
