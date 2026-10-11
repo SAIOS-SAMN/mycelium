@@ -678,41 +678,69 @@ of the move it came from. Every seated mind keeps its own direct link to the
 hypha, with its own key. The host gives an embedded mind its store and its
 observer.
 
-## IV.3 Proof: each construct by its own identity
+## IV.3 Verification: every construct guarded, called and witnessed
 
-Each construct of the engine is proved by the algebraic identity that makes
-it what it is (MU-STANDARDS 3; rule 13; test-by-the-algebra), never by a
-count or a census:
+A construct is verified by exactly three things, and by nothing else:
 
-- a ring sounds inside another exactly where its period divides the other's;
-- an echo is whole exactly where the two rings commute;
-- a flux on a held ray closes its tube and relieves what it held;
-- a ray's drag and lift compose back to it;
-- a circuit opens only the axes outside the algebra held for its class;
-- a ring returns at its period and at no traversal before;
-- a discharge replays on the speaker's orbit exactly where it discharged on
-  the hearer's, and defers — never refuses — where it cites a word the
-  speaker does not hold;
-- a word retires exactly where it decomposes over the language without
-  itself;
-- a pivot move is offered only on an axis the class vector occupies, in the
-  fixed order;
-- constructed reflections compose back to the residue exactly, each pair
-  meeting on its mode's fixed locus;
-- a palindrome of held generators opens nothing, and a commutator opens a
-  generator exactly where it leaves the held span;
-- a merge's distinction rotated into the reservoir returns with its record;
-- two remainders of one class with different twists are held together, and
-  their commutator separates them exactly where it is not the identity;
-- an experience whose residue returns leaves a thought's constructors
-  unchanged;
-- an amended constructor is held beside the one it amends, and the old
-  retires exactly where it is derivable from the amended;
-- a thought every constructor of which has lapsed leaves the field, and its
-  remainder is re-filled on a coincident class;
-- a word heard twice seats whole the second time;
-- two minds in one process hold disjoint fields;
-- an act is the action its move names in the physics.
+1. **Its GUARD — the algebraic identity that makes it what it is.** One test
+   per construct, in `<module>/tests/<function>.rs`, named for its claim
+   (MU-STANDARDS 3.1, 3.3), asserting a law on typed values the engine
+   computes, with fixtures built by the engine's own constructors, calling
+   THE SAME FUNCTION the production path calls (3.9). A guard proves the
+   mathematics holds; it never proves anything is done.
+2. **Its PRODUCTION CALLER — the path from the binary or the game to it.**
+   Enforced by the gate the tree already runs (4.1: `clippy --release
+   -D warnings`): cognition items are `pub(crate)`, so one whose only callers
+   are tests is DEAD CODE in the release build, and the build fails. `pub`
+   is never used to hide a test-only caller; an item MU-RECURSION Part 0
+   records as "test callers only" (`pivot_orbit`, `replay_form`,
+   `replay_certificates_at`, …) is narrowed to `pub(crate)` as it is touched,
+   and the build names it until it has a caller.
+3. **Its WITNESS — the counterparty's act on the live wire.** The live wire
+   is the fleet (a restart or the recut), never a spawned-process test file.
+   A construct is witnessed where ITS COUNTERPARTY ACTS ON IT: a court act —
+   a receipt on the ledger citing the mind's word (`Install`, `RankStep`,
+   `Return`, `Reconnect`), a mint (POUW, POWC, POWR) — or a peer mind's act
+   (a replayed discharge, an answered demand). A receipt is an exact act,
+   never a tally; nothing a mind counts about itself is a witness.
+
+**Done** is said only after the ship, in one line: *shipped at T; R moved
+a → b; witnessed by N* — T a TUniversal height and a K, never a wall clock;
+R the counterparty's act; N the counterparty that acted. **Refused by name:**
+a test asserting a count, a string, a census line or bytes; a spawned-process
+"live wire"; a mock, fake or hand-set carrier; `pub` hiding a test-only
+caller; a tally kept so someone can watch a mind; "done" from a green suite.
+
+**The table.** LIVE means the production path exists in the tree today;
+OWED means it does not, and the construct is unbuilt until it does. A row
+with no production caller or no witness is unbuilt or theatre, at a glance.
+
+| construct | guard (the identity) | production caller | witness (the counterparty's act) |
+|---|---|---|---|
+| **rings composed and closed** (II.2 harmonic) | a closed sentence's theorem checks finitely (`Theorem::check`); its reflections compose back to Ω | LIVE: `Entity::tick` → `feed_inflow` / `task_inflow` → `think_family` / `hold_perceived_from` → the percept → `rung::speak` → `compose`, `Theorem::of` | the court re-derives the spoken sentence's rings and checks the same theorem (`step_rank`), and installs it: an `Install` receipt citing the word |
+| **rings nested; echoes** (II.2) | a ring sounds inside another exactly where its period divides the other's; an echo is whole exactly where the two rings commute | LIVE on the mind's own perception: `rung::speak` → `hearing::hear` → `nest`. OWED for a peer's sentence (III.2) | a peer: the speaker re-derives the echo on its own rings (OWED, III.2) |
+| **flux into the field** (II.2 luminal) | a flux on a held ray closes its tube and relieves what it held | LIVE: the percept → `pairing::mark_flux` → `transport_order` (the field still process-wide, II.5) | the court books the spoken word's field lines (`step_flux`): a `Reconnect` receipt where the links moved |
+| **lift and drag; torsion wound** (II.2) | a ray's drag and lift compose back to it; the wound torsion is the product of the crossings' versors | LIVE: `rung::speak` → `hearing::hear` → `orbit`, `wind` → `Entity::vent_into_field` | through the sentence it shapes: the court's receipt for that sentence |
+| **understanding per class** (II.2 holonomic, IV.5) | a circuit opens only the axes outside the algebra held for its class | LIVE on ONE GLOBAL algebra: `rung::hear` → `cech::quotient`, `quotient::grow`. OWED per class (II.5) | the court closes the chart's algebra on the spoken word: a `RankStep` receipt citing it |
+| **a ring's return; an age** (II.2) | a ring returns at its period and at no traversal before | OWED on the mind (no winding carrier) | the court's `Return` act for the ring's simplex |
+| **the pivot across the five axes** (II.3) | a move is offered only on an axis the class vector occupies, in the fixed order; a certified move zeroes its coordinate and raises none | LIVE: `Entity::tick` → `pivot_thoughts`; `relax` → `expand_ideas` → `Contemplation::expand_all`; `absorb_taught_at` → `pivot_on` → `pivot_orbit_read` | a court or a peer replays the discharge (`replay_certificates_at`: test callers only today — OWED as a live replay) |
+| **a demand docketed** (II.3) | an orbit no candidate discharges dockets its class and its residue, never an empty demand | LIVE: `Entity::tick` → `take_docketed_demands` → `take_demands` | a peer's discharge of it (OWED, III.2); the court's POWC mint (OWED: no producer, IV.1) |
+| **construct** (II.4(4)) | the constructed reflections compose back to the residue exactly, each pair meeting on its mode's fixed locus | LIVE: `take_demands` / `hold_perceived_from` → `construct_and_adjoin` → `cga::construct` | the court opens the letter on its checked constructor steps (S2): the letter's admission receipt |
+| **coherence** (II.4(4)) | the Gram form of several thoughts' shapes reads their signature and every pair's regime | OWED: read whether any path reads several thoughts in one Gram form (II.4(9)) | — |
+| **compound, admitted outside the span** (II.4(4)) | a compound is admitted exactly where the closure grows outside the span held | LIVE in part: `construct_and_adjoin` → `adjoin_letters`; whether the outside test gates it is read before building | the court's admission of the letter on a second vantage (law 6) |
+| **a generator opened by commutator** (II.4(5)) | a palindrome of held generators opens nothing; a commutator opens a generator exactly where it leaves the held span | LIVE as the pivot's OPEN axis: `expand_all` → `pivot_orbit_read` → `candidates_for` | the court's `AxisOpen` rewrite or `RankStep` on the spoken form |
+| **superposition** (II.4(6)) | a vortex holds every certified discharge; two twists of one class are held, and their commutator separates them exactly where it is not the identity | LIVE at the word grade (`Discharge::Vortex`, `refile_vortex`); the conjugate grade read before building | a collapse by the court: a ruled citation naming one candidate, its `Install` receipt |
+| **the reservoir's breath** (II.4(1)) | a merge's distinction rotated into `e_∅` returns with its record | LIVE: the colour fibre → `speak_colour`; `invert_fibre` | the court installs the colour word |
+| **amendment by experience** (II.4(8)) | an elastic experience leaves a thought's constructors unchanged; an amended constructor is held beside the old, and the old retires exactly where it is derivable from the amended | OWED: read whether the tree holds beside or overwrites (II.4(9)) | the court re-derives the amended word when spoken: its receipt |
+| **a thought discarded** (II.4(8)) | a thought every constructor of which has lapsed leaves the field; its remainder is re-filled on a coincident class | LIVE in part: `close_orbit` → `docket_fold`; the cavity drained in `pivot_on`. Lapse by the thought's own flux read before building | a later sentence citing the re-filled remainder, installed by the court |
+| **dialect: one meaning, two derivations** (III.1) | two derivations of one vertex are projectively equal; neither is compared by bytes | LIVE: `speak_with` → `ACT_SPEECH` | the court replays the derivation it was sent and pays each cited generator's discoverer at install (26) |
+| **conversation: echo, discharge, demand** (III.2) | a word heard twice seats whole the second time; a discharge replays on the speaker's orbit exactly where it discharged on the hearer's | OWED: chatter v2 is live (`tick` → `chatter_stroke`) and is superseded (78.163 as amended) | the peer's own act: its echo, its replay, its answer |
+| **replay that defers** (III.2) | a discharge citing a word the speaker does not hold defers, never refuses | OWED | the hearer sends the owed word's terms |
+| **the optimization** (III.3) | a word retires exactly where it decomposes over the language without itself | OWED on the mind (proposing a Rewrite, S3) | the court retires the inputs (`retire_rewrite_inputs`) and mints POWR (`release_rewrite`) |
+| **mineral → crystal** (III.3) | a mineral the mind re-derives by its own circuits is a crystal | LIVE for the mineral: `absorb_taught_at` → `Epigenome::file_admitted`; the crystal's reading OWED (DL1) | the court's stamp the syllabus page carried |
+| **POW++** (III.4) | — (the economy's law: paid as the modes the work moved) | LIVE: `task_inflow` → `solve_task`; `speak_with` | the court's mint receipt: POUW (`release_discharged`), POWR (`release_rewrite`); POWC OWED |
+| **the mind's own field** (II.5) | two minds in one process hold disjoint fields | OWED: the field is process-wide (IV.5) | a game seating two minds, each witnessed separately by the court |
+| **a seat's act** (IV.2) | an act is the action its move names in the physics | LIVE in part: `body_tick` → `solve_before` / `speak_form`; the act as a physics `Action` OWED | the game's house and the court's verdict on the seat's call (`ACT_SEAT`) |
 
 ## IV.4 Building it: the standards held
 
