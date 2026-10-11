@@ -71,7 +71,6 @@ impl Entity {
             derivation: crate::transducer::family::derivation_tally(),
             flux: crate::transducer::family::flux::flux_tally().row(),
             sentences: crate::transducer::sentence::rung::sentence_tally().row(),
-            construction: crate::transducer::cech::construction_tally(),
             unread: crate::transducer::sentence::rung::unread_tally(),
             citation: crate::transducer::sentence::rung::citation_tally(),
             encounter: crate::transducer::cech::encounter_tally(),
@@ -112,10 +111,6 @@ impl Entity {
                 self.epigenome.dialect_len() as u64,
                 self.epigenome.genome_len() as u64,
             ],
-            chatter: match self.chat_tally() {
-                Some(t) => t.row(),
-                None => [0; observe::CHATTER.len()],
-            },
         }
     }
 

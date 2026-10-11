@@ -325,7 +325,7 @@ impl Chatter {
         }
         let (body, sig) = rest.split_at(rest.len() - 64);
         let mut p = 0usize;
-        let sub = *body.first()?;
+        let (&sub, _) = body.split_first()?;
         p += 1;
         let speaker: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
         p += 32;

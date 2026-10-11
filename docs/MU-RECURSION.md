@@ -11371,8 +11371,13 @@ machinery: each mind runs them on its own complex, driven by its breath
 (`dilate / contract`) and its three shells (MU-CLIENT "Read this first",
 II.3). "Exactly one is built" no longer holds: all six are built on the Čech
 complex (`cech/coboundary.rs` `ascend`, `descend`, `drain`; `cech/hole.rs`
-`condense`, `puncture`, `seal`; `cech/board.rs` `Pivot`, `Complex::apply`);
-the mind does not yet call them, and that is the client's next work.
+`condense`, `puncture`, `seal`; `cech/board.rs` `Pivot`, `Complex::apply`).
+On the mind's own complex (`Contemplation.complex`): a held ring ascends
+and punctures, and seals on collapse or on a discharge of its class
+(`bubble/question.rs`, MU-CLIENT II.3); a link's tether is written by
+`set_edge` (the climb then ascends its cells); a retracted thought's star
+drains and descends (`vent_vertex`). The construction's process-wide tally is
+deleted: a pivot's outcome is returned to the field that applied it.
 
 ### 62.2 What this corrects
 

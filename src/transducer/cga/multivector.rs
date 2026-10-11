@@ -182,6 +182,10 @@ impl Mv {
     /// A value from terms in any order, at `n`: like masks summed, zeros
     /// dropped, the rest in mask order.
     fn of_terms(n: u8, mut terms: Vec<(usize, BigRational)>) -> Self {
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 4 — a sort by a canonical coordinate: the blade mask, so like blades sum and a value has one writing"
+        )]
         terms.sort_unstable_by_key(|(m, _)| *m);
         let mut c: Vec<(usize, BigRational)> = Vec::with_capacity(terms.len());
         for (m, v) in terms {
@@ -268,6 +272,10 @@ impl Mv {
     }
 
     /// A4: divide by |first nonzero|, negate so that coefficient is +1.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 15 — the terms stand in mask order, so the first is A4's lowest blade: content, not arrival"
+    )]
     pub fn canonical(&self) -> Option<Mv> {
         let (_, first) = self.c.first()?;
         let mut r = self.scale(&(one() / first.abs()));
@@ -345,7 +353,8 @@ impl Mv {
     pub fn reverse(&self) -> Self {
         self.map_terms(|m, v| {
             let g = grade_of(m);
-            match (g * g.saturating_sub(1) / 2) & 1 {
+            // g(g−1)/2 written as g(g+1)/2 − g, exact at g = 0 with no floor.
+            match (g * (g + 1) / 2 - g) & 1 {
                 0 => v.clone(),
                 _ => -v.clone(),
             }
@@ -539,6 +548,10 @@ impl Mv {
 impl Mv {
     /// The same value in the smallest algebra holding its terms: the inverse
     /// of [`Mv::widened`], exact. The zero narrows to `n = 0`.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — the smallest algebra holding the terms reaches the highest generator any term names: the bound is that reading, nothing chosen among terms"
+    )]
     pub fn narrowed(&self) -> Self {
         let n = self.c.iter().map(|(m, _)| n_of_mask(*m)).max().map_or(0, |n| n);
         Self { n, c: self.c.clone() }

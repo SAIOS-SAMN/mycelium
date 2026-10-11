@@ -76,35 +76,6 @@ pub const UNDERSTANDING: [&str; 5] = ["derivable", "glued", "obstructed", "disco
 /// is the court's `SOLVE_UNREAD`, a retry: it was filed under "refused".
 pub const SOLVING: [&str; 8] =
     ["first closures", "closures again", "refused", "unruled", "unminted", "refuted at home", "withheld again", "unread"];
-/// 78.161, 78.163 — WHAT A MIND'S CHATTER WITH OTHER MINDS CAME TO
-/// (`ChatTally::row`, in this order): things said and frames carried; words
-/// heard and how they read; the loops of its own words said back — curved
-/// (drag, lift, unsplit), still, open; ACKs and HOLDs; thoughts shared and
-/// refuted; transports held in the ear; agreed language and the letters that
-/// then went to the court; frames refused.
-pub const CHATTER: [&str; 21] = [
-    "said",
-    "sent",
-    "unsent",
-    "words heard",
-    "re-derived",
-    "in part",
-    "unread",
-    "loops curved",
-    "drag",
-    "lift",
-    "unsplit",
-    "still",
-    "open",
-    "acks",
-    "holds",
-    "shared",
-    "refuted",
-    "transports held",
-    "agreed",
-    "to court",
-    "refused",
-];
 /// THE GROWING THAT GROW — the leak signals: sizes at one `K`.
 pub const GROWING: [&str; 9] = [
     "bubbles",
@@ -138,10 +109,6 @@ pub struct Senses {
     /// 78.96 — the sentences its rings composed: closed, open by why, the
     /// theorems, the shortcuts and the top rung (`rung::SENTENCES`).
     pub sentences: [u64; crate::transducer::sentence::rung::SENTENCES.len()],
-    /// 78.99 — its construction: the holes its nerve punctured and capped,
-    /// what each glue of two thoughts read, and the words it relayed as
-    /// coordinates (`cech::CONSTRUCTION`).
-    pub construction: [u64; crate::transducer::cech::CONSTRUCTION.len()],
     /// 78.100 — why the language loses what it perceives
     /// (`rung::WHY_UNREAD`).
     pub unread: [u64; crate::transducer::sentence::rung::WHY_UNREAD.len()],
@@ -168,9 +135,6 @@ pub struct Senses {
     /// an empty holding standing in for it.
     pub paid_modes: Option<crate::economy::modes::Modes>,
     pub carriers: [u64; GROWING.len()],
-    /// 78.163 — its chatter with other minds (`CHATTER`); zeros where it
-    /// opened none.
-    pub chatter: [u64; CHATTER.len()],
 }
 
 /// What a court's syllabus pages came to.
@@ -446,7 +410,6 @@ impl Senses {
         put(out, &self.derivation);
         put(out, &self.flux);
         put(out, &self.sentences);
-        put(out, &self.construction);
         put(out, &self.unread);
         put(out, &self.citation);
         put(out, &self.encounter);
@@ -466,7 +429,6 @@ impl Senses {
             None => out.push(0),
         }
         put(out, &self.carriers);
-        put(out, &self.chatter);
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Senses> {
@@ -479,7 +441,7 @@ impl Senses {
             1 => Some(crate::transducer::sentence::Reasons::take(b, p)?),
             _ => return None,
         };
-        let (derivation, flux, sentences, construction, unread) = (take(b, p)?, take(b, p)?, take(b, p)?, take(b, p)?, take(b, p)?);
+        let (derivation, flux, sentences, unread) = (take(b, p)?, take(b, p)?, take(b, p)?, take(b, p)?);
         Some(Senses {
             k,
             sight,
@@ -490,7 +452,6 @@ impl Senses {
             derivation,
             flux,
             sentences,
-            construction,
             unread,
             citation: take(b, p)?,
             encounter: take(b, p)?,
@@ -511,7 +472,6 @@ impl Senses {
                 }
             },
             carriers: take(b, p)?,
-            chatter: take(b, p)?,
         })
     }
 
@@ -531,7 +491,6 @@ impl Senses {
         out.push(format!("derivation: {}", line(&crate::transducer::family::DERIVATION, &self.derivation)));
         out.push(format!("flux: {}", line(&crate::transducer::family::flux::FLUX, &self.flux)));
         out.push(format!("sentences: {}", line(&crate::transducer::sentence::rung::SENTENCES, &self.sentences)));
-        out.push(format!("construction: {}", line(&crate::transducer::cech::CONSTRUCTION, &self.construction)));
         out.push(format!("unread: {}", line(&crate::transducer::sentence::rung::WHY_UNREAD, &self.unread)));
         out.push(format!("citation: {}", line(&crate::transducer::sentence::rung::CITATION, &self.citation)));
         out.push(format!("encounter: {}", line(&crate::transducer::cech::ENCOUNTER, &self.encounter)));
@@ -551,7 +510,6 @@ impl Senses {
                 }
             ),
             format!("carriers: {}", line(&GROWING, &self.carriers)),
-            format!("chatter: {}", line(&CHATTER, &self.chatter)),
         ]);
         out
     }
@@ -569,7 +527,6 @@ impl Senses {
             "derivation" => at(&crate::transducer::family::DERIVATION, &self.derivation, name),
             "flux" => at(&crate::transducer::family::flux::FLUX, &self.flux, name),
             "sentences" => at(&crate::transducer::sentence::rung::SENTENCES, &self.sentences, name),
-            "construction" => at(&crate::transducer::cech::CONSTRUCTION, &self.construction, name),
             "unread" => at(&crate::transducer::sentence::rung::WHY_UNREAD, &self.unread, name),
             "citation" => at(&crate::transducer::sentence::rung::CITATION, &self.citation, name),
             "encounter" => at(&crate::transducer::cech::ENCOUNTER, &self.encounter, name),
@@ -580,7 +537,6 @@ impl Senses {
             "understanding" => at(&UNDERSTANDING, &self.understanding, name),
             "solving" => at(&SOLVING, &self.solving, name),
             "carriers" => at(&GROWING, &self.carriers, name),
-            "chatter" => at(&CHATTER, &self.chatter, name),
             _ => None,
         }
     }

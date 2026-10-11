@@ -73,13 +73,19 @@ fn main() {
         eprintln!("mycelium-client: {why}");
         std::process::exit(2)
     };
-    let home = home_dir(&args).unwrap_or_else(|e| refuse(e));
+    let home = match home_dir(&args) {
+        Ok(h) => h,
+        Err(e) => refuse(e),
+    };
     let _ = std::fs::create_dir_all(&home);
     // A home whose path is not UTF-8 names no key file (rule 11).
     let key_path = home.join("voice.key");
     let Some(key_name) = key_path.to_str() else { refuse("--home path is not UTF-8 and names no key file".to_string()) };
     let voice_key = HyphaKey::load_or_mint(key_name);
-    let mesh_rec = mesh::load_or_migrate_voice(&home, &voice_key).unwrap_or_else(|why| refuse(format!("boot refused: {why}")));
+    let mesh_rec = match mesh::load_or_migrate_voice(&home, &voice_key) {
+        Ok(m) => m,
+        Err(why) => refuse(format!("boot refused: {why}")),
+    };
     let bootstrap = match mesh_rec.bootstrap.is_empty() {
         true => "127.0.0.1:7500".to_string(),
         false => mesh_rec.bootstrap.clone(),
@@ -100,7 +106,11 @@ fn main() {
     if let Err(e) = mind.open_chatter(&rendezvous) {
         eprintln!("mycelium-client: chatter not opened: {e}");
     }
-    if let Some((domain, sub_origin, sit)) = seats(&args).unwrap_or_else(|e| refuse(e)) {
+    let seated = match seats(&args) {
+        Ok(s) => s,
+        Err(e) => refuse(e),
+    };
+    if let Some((domain, sub_origin, sit)) = seated {
         mind.sit(domain, sub_origin, sit, voice_key.sk.clone());
     }
     let stop = Arc::new(AtomicBool::new(false));

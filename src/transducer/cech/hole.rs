@@ -157,7 +157,6 @@ impl Complex {
             }
         }
         self.holes.insert(key, simplex);
-        super::board::note_construction(super::board::PUNCTURED, 1);
         Punctured::Opened(fill)
     }
 
@@ -185,26 +184,33 @@ impl Complex {
             }
             cx.holes.insert(key, hole);
         };
-        use super::board::{note_construction, CAPPED, CAP_REFUSED};
         match outcome {
-            Ascended::Sealed(cap) => {
-                note_construction(CAPPED, 1);
-                Capped::Sealed { cap, killed: hole.fill }
-            }
+            Ascended::Sealed(cap) => Capped::Sealed { cap, killed: hole.fill },
             Ascended::Open => {
                 // The cap was minted and did not close: it goes, and the hole
                 // stands as it was.
                 self.forget(key);
                 restore(self, hole);
-                note_construction(CAP_REFUSED, 1);
                 Capped::Open
             }
             Ascended::AlreadySealed | Ascended::Absent | Ascended::Hole => {
                 restore(self, hole);
-                note_construction(CAP_REFUSED, 1);
                 Capped::Absent
             }
         }
+    }
+
+    /// The holes standing on `vertex` — a peel of its star, never a read of
+    /// every hole (rule 1).
+    pub fn holes_on(&self, vertex: &[u8]) -> Vec<Vec<u8>> {
+        self.star.link(vertex).filter(|(k, _)| self.holes.contains(k)).map(|(k, _)| k).collect()
+    }
+
+    /// The volume a hole was read with when its cell was minted — what its
+    /// cap is re-ascended at (read, never written); `None` where no hole
+    /// stands at `key`.
+    pub fn hole_volume(&self, key: &[u8]) -> Option<[u64; 4]> {
+        self.holes.get(key).map(|h| h.volume)
     }
 
     /// 78.99 (2) — THE HOLES ON A VERTEX, CAPPED before it is released: each

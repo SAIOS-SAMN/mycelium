@@ -198,6 +198,9 @@ impl Contemplation {
     /// spells it, and every entry of that class — held or demanded, pending
     /// or open — is answered. One rule for both kinds.
     pub(crate) fn docket_discharged(&mut self, class_key: &[u8]) {
+        // 62.1 — the holes keeping this class are sealed: the mind holds a
+        // word that spells what it asked (`question.rs`).
+        self.answer_questions(class_key);
         let answered: Vec<Vec<u8>> = self
             .docket_open
             .scoped()

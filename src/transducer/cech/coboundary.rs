@@ -328,10 +328,10 @@ impl Complex {
                                 }
                                 continue;
                             }
-                            // 78.100 — every candidate counted, and where it
-                            // left the climb, by why.
-                            use super::board::{note_construction as note, CLIMB_CANDIDATES, CLIMB_COEFF, CLIMB_FACES, CLIMB_MINTED, CLIMB_NO_VOLUME, CLIMB_REMAINDER};
-                            note(CLIMB_CANDIDATES, 1);
+                            // 78.100 — where a candidate leaves the climb is
+                            // read on the board it leaves: a remainder edge
+                            // among its faces, a face not standing, no volume
+                            // on any lane, a coefficient that does not read.
                             let mut blocked = false;
                             // index: pairs on this simplex (faces)
                             for i in 0..verts.len() {
@@ -341,25 +341,17 @@ impl Complex {
                                     }
                                 }
                             }
-                            if blocked {
-                                note(CLIMB_REMAINDER, 1);
-                                continue;
-                            }
-                            if !self.faces_ready(&verts) {
-                                note(CLIMB_FACES, 1);
+                            if blocked || !self.faces_ready(&verts) {
                                 continue;
                             }
                             let volume = volume_of(&verts);
                             if !nonzero(&volume) {
-                                note(CLIMB_NO_VOLUME, 1);
                                 continue;
                             }
                             let Some((coefficient, carriage)) = self.coboundary_coeff(&verts)
                             else {
-                                note(CLIMB_COEFF, 1);
                                 continue;
                             };
-                            note(CLIMB_MINTED, 1);
                             pending.push(Simplex {
                                 vertices: verts,
                                 coefficient,

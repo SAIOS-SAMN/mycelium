@@ -18,71 +18,12 @@
 //! a pivot one order refuses is a reading of that order, never an error.
 
 use super::*;
-use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
 
-/// 78.99 (2), (4) — THE CONSTRUCTION'S TALLY'S NAMES, in
-/// [`construction_tally`]'s order: the holes the pivots opened and capped,
-/// and what the connecting map read on each glue. The typed reading the
-/// voice's Senses carry.
-pub const CONSTRUCTION: [&str; 17] = [
-    "punctured",
-    "capped",
-    "cap refused",
-    "glues read",
-    "classes made",
-    "loops flat",
-    "holes capped by a glue",
-    "glue: no overlap",
-    "glue: inexact",
-    "glue: a part curved",
-    "glue: unread",
-    // 78.100 — WHY THE CLIMB STOPS: every candidate cell of degree two or
-    // more the climb met, and where each left it — a remainder edge among
-    // its faces, a face not yet standing, no volume on any lane, a
-    // coefficient that did not read — or minted. On epoch 123 no voice or
-    // court nerve held a 2-cell.
-    "climb: candidates",
-    "climb: a remainder edge",
-    "climb: faces not ready",
-    "climb: no volume",
-    "climb: coefficient unread",
-    "climb: minted",
-];
-pub(crate) const PUNCTURED: usize = 0;
-pub(crate) const CAPPED: usize = 1;
-pub(crate) const CAP_REFUSED: usize = 2;
-pub(crate) const GLUES: usize = 3;
-pub(crate) const MADE: usize = 4;
-pub(crate) const FLAT: usize = 5;
-pub(crate) const GLUE_CAPPED: usize = 6;
-pub(crate) const NO_OVERLAP: usize = 7;
-pub(crate) const INEXACT: usize = 8;
-pub(crate) const PART_CURVED: usize = 9;
-pub(crate) const GLUE_UNREAD: usize = 10;
-pub(crate) const CLIMB_CANDIDATES: usize = 11;
-pub(crate) const CLIMB_REMAINDER: usize = 12;
-pub(crate) const CLIMB_FACES: usize = 13;
-pub(crate) const CLIMB_NO_VOLUME: usize = 14;
-pub(crate) const CLIMB_COEFF: usize = 15;
-pub(crate) const CLIMB_MINTED: usize = 16;
-
-static TALLY: [AtomicU64; CONSTRUCTION.len()] = [const { AtomicU64::new(0) }; CONSTRUCTION.len()];
-
-/// One step of a slot of the construction's tally, refused and counted on
-/// the metabolism's ledger where it would pass its carrier.
-pub fn note_construction(slot: usize, by: u64) {
-    let Some(at) = TALLY.get(slot) else { return };
-    if by > 0 && at.fetch_update(Relaxed, Relaxed, |held| held.checked_add(by)).is_err() {
-        let mut past = u64::MAX;
-        let _ = crate::physics::metabolism::step_or_refuse(&mut past, by);
-    }
-}
-
-/// The construction's tally since the process began, in [`CONSTRUCTION`]'s
-/// order.
-pub fn construction_tally() -> [u64; CONSTRUCTION.len()] {
-    std::array::from_fn(|i| TALLY[i].load(Relaxed))
-}
+// THE CONSTRUCTION'S PROCESS-WIDE TALLY WAS HERE AND IS DELETED (2026-10-11):
+// a static counted every mind's punctures, caps and climbs into one number
+// per slot, kept for a console to watch — a watch-tally across fields that
+// are each a mind's own (MU-CLIENT II.5). What a pivot did is its outcome,
+// returned whole to the field that applied it.
 
 /// ONE PIVOT AT ITS COORDINATE: the cell (or hole, or pair) it acts on.
 #[derive(Clone, Debug)]
@@ -104,21 +45,6 @@ pub enum Applied {
     Drained(Drained),
     Punctured(Punctured),
     Capped(Capped),
-}
-
-impl Applied {
-    /// Whether the pivot was refused — pinned, at a hole, absent, open where
-    /// a seal was asked: a reading of its order, never an error.
-    pub fn refused(&self) -> bool {
-        match self {
-            Applied::Ascended(a) => !matches!(a, Ascended::Sealed(_) | Ascended::Open),
-            Applied::Descended(d) => !matches!(d, Descended::Released(_) | Descended::Unsealed),
-            Applied::Condensed(c) => !matches!(c, Condensed::Tethered),
-            Applied::Drained(d) => !matches!(d, Drained::Vacuum | Drained::Cauterized(_)),
-            Applied::Punctured(p) => !matches!(p, Punctured::Opened(_)),
-            Applied::Capped(c) => !matches!(c, Capped::Sealed { .. }),
-        }
-    }
 }
 
 /// A COMPLEX'S COORDINATES ON THE THREE AXES, each in key order (law 2).

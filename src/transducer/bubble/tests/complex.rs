@@ -162,7 +162,8 @@ fn a_front_holds_a_ring_whose_arrivals_disagree_and_stops() {
     assert_eq!((t.collapsed, t.held), (0, 1), "the ring is held: {}", c.meet_graph().line());
     let stopped = c.fronts.scoped().filter(|(_, a)| a.stopped).count();
     assert_eq!(stopped, 1, "and the front stops there");
-    assert_eq!(c.complex.simplex_count(), 3 + 3 + 1, "sections, edges and the ring all stand: nothing deleted");
+    assert_eq!(c.complex.simplex_count(), 3 + 3, "sections and edges stand");
+    assert_eq!(c.complex.board().holes.len(), 1, "and the ring stands as a hole keeping its class: nothing deleted");
 }
 
 /// 78.37, TP1 — A HELD RING GOES ON THE DOCKET, AND THE DOCKET IS TAKEN
@@ -245,12 +246,14 @@ fn a_held_class_is_taken_and_answered_by_its_class_key() {
     assert_eq!((d.open, d.answered), (0, 1), "answered by its class key, by name");
 }
 
-/// 78.37, R1 — IN-PROCESS, A HELD RING'S ENTRY IS ANSWERED WHERE ITS SIMPLEX
-/// RE-FILLS: the ring held with a (3, 4, 5) edge is docketed; the edge made
-/// consistent, the ring's 2-simplex fills, and the entry leaves by name.
+/// 78.37, R1, 62.1 — IN-PROCESS, A HELD RING'S ENTRY IS ANSWERED WHERE ITS
+/// HOLE SEALS FLAT: the ring held with a (3, 4, 5) edge is docketed and
+/// punctured; the edge made consistent, the hole's cap fills, and the entry
+/// leaves by name.
 #[test]
-fn a_held_rings_entry_is_answered_where_its_simplex_refills() {
+fn a_held_rings_entry_is_answered_where_its_hole_seals_flat() {
     use crate::transducer::alphabet::{LetterId, Rotor};
+    use crate::transducer::cech::Capped;
     use crate::transducer::element::identity_versor;
     let p = letter(LetterId::pythagorean_5((0, 1)));
     let (mut c, vs) =
@@ -259,12 +262,11 @@ fn a_held_rings_entry_is_answered_where_its_simplex_refills() {
     c.transport(1);
     c.transport(2);
     assert_eq!(c.docket_reading().pending, 1, "the held class on the docket");
+    let [hole] = c.complex.holes_on(&vs[0]).try_into().expect("the held ring is one hole");
     c.complex.set_edge(&vs[0], &vs[1], Rotor::identity(), identity_versor(), [1, 0, 0, 0]);
-    let _ = c.complex.coboundary_on_link(&vs[0], |_| [1, 0, 0, 0]);
-    let ring = c.complex.link(&vs[0], 2)[0].clone();
-    assert!(matches!(c.fill_meet(&ring), CoboundaryOutcome::Attached(Fill::Filled(..))), "the ring fills");
+    assert!(matches!(c.answer_hole(&hole), Capped::Sealed { cap: Fill::Filled(..), .. }), "the cap fills");
     let d = c.docket_reading();
-    assert_eq!((d.pending, d.answered), (0, 1), "answered where its simplex re-filled");
+    assert_eq!((d.pending, d.answered), (0, 1), "answered where its hole sealed flat");
 }
 
 /// 78.37(2), TC1 — A LEAF HANGING OFF A RING, SHED BY PRICE: a ring of four

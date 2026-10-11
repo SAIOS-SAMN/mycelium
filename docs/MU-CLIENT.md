@@ -257,11 +257,16 @@ no dimension, and it is what moves the complex the pivots act on.
   shell lifts across the plane between them (78.46) and their transition
   re-derives on their union. **drain** — the tension relaxes: the tether
   dissolves and its strain is moved or recorded (A.8, 63).
-- **puncture** — a residue no held word spells, or a new independent loop
-  (78.40(1)): a hole opens and the class enters the mind — the question it
-  now carries. **seal** — a cap is derived over the hole (the holonomic
-  shell closes what it opened): the class is answered and the hole is
-  killed.
+- **puncture** — a new independent loop whose holonomy does not return
+  (78.40(1)): a ring the transport holds at holonomy ≠ 1 is ascended, and
+  where its cell reads a class it is opened into a hole keeping that class,
+  filed by its class key — the question the mind now carries
+  (`bubble/question.rs`: `ask`, from `close_ring`). **seal** — a cap is
+  derived over the hole: the ring collapses (its arrivals come to agree) or
+  a discharge answers its class (`docket_discharged` → `answer_questions`),
+  and the cap re-ascends over the standing boundary, killing the class kept.
+  On an unchanged boundary the cap reads the very class the hole kept:
+  `seal ∘ puncture` is the identity on content.
 
 **Cognition is read off what the pivots do**, never counted:
 - **perceive** — what a breath brings into the three shells (II.2);

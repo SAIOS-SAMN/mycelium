@@ -292,12 +292,11 @@ impl Contemplation {
         arrived: (&Rotor, &element::Versor),
     ) {
         let flat = there.rotor.projective_eq(arrived.0) && element::same_versor(&there.carriage, arrived.1);
-        let rings: Vec<Vec<u8>> = self
-            .complex
-            .link(&there.at, 2)
-            .into_iter()
-            .filter(|rk| self.complex.simplex(rk).is_some_and(|s| s.vertices.iter().any(|v| v.as_slice() == near)))
-            .collect();
+        let on_ring = |rk: &Vec<u8>| self.complex.vertices_at(rk).is_some_and(|vs| vs.iter().any(|v| v.as_slice() == near));
+        let rings: Vec<Vec<u8>> = self.complex.link(&there.at, 2).into_iter().filter(on_ring).collect();
+        // 62.1 — the questions punctured over this ring before, standing as
+        // holes in the complex.
+        let holes: Vec<Vec<u8>> = self.complex.holes_on(&there.at).into_iter().filter(on_ring).collect();
         if flat {
             self.transport.collapsed += 1;
             // R1 — a ring held before that collapses now answers its entry.
@@ -307,10 +306,24 @@ impl Contemplation {
                     self.transport.collapsed_filled += 1;
                 }
             }
+            // 62.1 — SEAL: the arrivals now agree around the ring, so each
+            // hole it holds is capped over its standing boundary and the
+            // class it kept is killed — the question comprehended.
+            for hole in holes {
+                if let crate::transducer::cech::Capped::Sealed { cap: Fill::Filled(..), .. } = self.answer_hole(&hole) {
+                    self.transport.collapsed_filled += 1;
+                }
+            }
             self.decide_neighbors(&there.at);
             return;
         }
         self.transport.held += 1;
+        // 62.1 — ASCEND AND PUNCTURE: each cell of the held ring is sealed
+        // through the one fill path, and one that reads a class is opened into
+        // a hole keeping it — the question the mind now carries.
+        for rk in &rings {
+            self.ask(rk);
+        }
         match disagreement(arrived, (&there.rotor, &there.carriage)) {
             Some((kappa, r)) => {
                 for v in [near, there.at.as_slice()] {

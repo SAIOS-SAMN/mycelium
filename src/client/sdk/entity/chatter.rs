@@ -68,35 +68,6 @@ pub struct ChatTally {
     pub refused: u64,
 }
 
-impl ChatTally {
-    /// The tally in the order of the Senses' `CHATTER` table.
-    pub fn row(&self) -> [u64; crate::observe::CHATTER.len()] {
-        [
-            self.said,
-            self.sent,
-            self.unsent,
-            self.heard,
-            self.rederived,
-            self.partial,
-            self.unread,
-            self.curved,
-            self.drag,
-            self.lift,
-            self.unsplit,
-            self.still,
-            self.open,
-            self.acked,
-            self.held,
-            self.shared,
-            self.refuted,
-            self.transports,
-            self.agreed,
-            self.to_court,
-            self.refused,
-        ]
-    }
-}
-
 /// ONE THING THIS MIND SAID: its words as said; per mind it ACKed, the loops
 /// it read, awaiting that mind's HOLD; and whether some mind has shared it.
 struct Union {
