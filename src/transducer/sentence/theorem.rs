@@ -59,8 +59,9 @@ pub enum Open {
     Unread,
 }
 
+/// A non-zero scalar: the value holds the scalar blade and no other.
 fn identity_like(v: &Mv) -> bool {
-    !v.coeff(0).is_zero() && (1..v.slot_count()).all(|k| v.coeff(k).is_zero())
+    v.terms().map(|(k, _)| k).eq([0])
 }
 
 /// `Ω ∝ 1 + B` with `B² = 0` as a whole multivector: `B = ⟨Ω⟩₂ / ⟨Ω⟩₀`, no

@@ -329,11 +329,15 @@ pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> Verdict {
     // the step's bivector — and what the fluxes carried is what the bodies
     // may have exchanged with no breach.
     let b = t.motion.grade(2);
-    for f in &t.fluxes {
+    for (index, f) in t.fluxes.iter().enumerate() {
+        // A flux at no finite place is named below (continuity), once.
         let Some(centre) = crate::transducer::cga::base_at(&f.at, usize::from(f.at.n())) else { continue };
         let n = centre.len();
         let point = crate::physics::tensegrity::Body { centre, mass: f.mass.clone(), moments: vec![vec![Q::from_integer(0.into()); n]; n] };
-        let pi = crate::physics::tensegrity::momentum(&point, &b);
+        let Some(pi) = crate::physics::tensegrity::momentum(&point, &b) else {
+            v.breaches.push((Law::Momentum, Breach::FluxUnplaced { index }));
+            continue;
+        };
         net = match f.flow {
             Flow::Source => net.sub(&pi),
             Flow::Sink => net.add(&pi),
@@ -479,8 +483,8 @@ fn expansion_of(t: &Transition) -> Option<Q> {
         .bodies
         .iter()
         .map(|(before, after)| {
-            let carried = t.motion.sandwich(&momentum(&before.body, &b)).scale(&unit);
-            projective_ratio(&momentum(&after.body, &b), &carried)
+            let carried = t.motion.sandwich(&momentum(&before.body, &b)?).scale(&unit);
+            projective_ratio(&momentum(&after.body, &b)?, &carried)
         })
         .collect::<Option<Vec<_>>>()?;
     match ratios.as_slice() {

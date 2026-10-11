@@ -30,11 +30,11 @@ pub fn point_at(x: &[BigRational]) -> Mv {
 
 /// THE BASE VECTOR `x = Σ xᵢ eᵢ` of a point's own coordinates, each on its
 /// own base axis: the ONE producer of the vector the embeddings, the
-/// translator and the sheet are built on.
+/// translator and the sheet are built on. A point's coordinates are a
+/// site's (`Site::new` refuses past [`super::MAX_N`]) or a value's of the
+/// algebra, so each has its axis.
 pub fn base_vector(x: &[BigRational]) -> Mv {
-    x.iter()
-        .enumerate()
-        .fold(Mv::zero(), |m, (i, xi)| m.add(&Mv::blade(super::multivector::base_axis(i + 1), xi.clone())))
+    x.iter().zip(super::multivector::axes(super::MAX_N)).fold(Mv::zero(), |m, (xi, a)| m.add(&Mv::blade(a, xi.clone())))
 }
 
 /// A CHART BASE POINT ON THE NULL CONE OF A NON-EUCLIDEAN SPACE (54.7 B8,
@@ -99,13 +99,13 @@ pub fn sphere_at(c: &[BigRational], r2: &BigRational) -> Mv {
 
 /// The base point back out of a conformal point or sphere at `n`: the scale
 /// is `α = −(P·e_∞)`, then `xᵢ = P_{eᵢ}/α` for every base axis. `None` at
-/// infinity (`α = 0`).
+/// infinity (`α = 0`), and for an `n` past the algebra's axes.
 pub fn base_at(p: &Mv, n: usize) -> Option<Vec<BigRational>> {
     let alpha = -p.geo(&e_inf()).scalar_part();
     if alpha.is_zero() {
         return None;
     }
-    Some((1..=n).map(|i| p.coeff(super::multivector::base_axis(i)) / &alpha).collect())
+    (1..=n).map(|i| Some(p.coeff(super::multivector::base_axis(i)?) / &alpha)).collect()
 }
 
 /// THE SLIDE BY `d`, `d = Σ dᵢ eᵢ` over the displacement's own `n`
@@ -162,7 +162,7 @@ pub fn on_sphere(p: &Mv, s: &Mv) -> bool {
 /// the same element. So the caller says which space the boundary is read
 /// in, and the pseudoscalar is that space's.
 pub fn boundary_dual(sigma: &Mv, n: u8) -> Option<Mv> {
-    let i = Mv::blade(pseudo(n.max(sigma.n())), one());
+    let i = Mv::blade(pseudo(n.max(sigma.n()))?, one());
     // THE DUAL'S ORIENTATION IS CONTENT (78.28(2)): `I Ĩ = ±1`, the sign
     // the metric gives the pseudoscalar, so `σ Ĩ` is divided by that sign
     // and by nothing else.

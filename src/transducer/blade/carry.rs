@@ -214,8 +214,13 @@ pub(super) fn transitions_on(
     };
     let rho2 = &rho * &rho;
     let dilator = cga::dilator(&rho);
-    let e_ij = Mv::blade(cga::base_axis(plane.0 + 1) | cga::base_axis(plane.1 + 1), q(1));
-    let mirror = Mv::blade(cga::base_axis(plane.1 + 1), q(1));
+    // A plane on an axis the algebra does not hold carries no extent, as
+    // `extent` refuses it above.
+    let (Some(ai), Some(aj)) = (cga::base_axis(plane.0 + 1), cga::base_axis(plane.1 + 1)) else {
+        return Err(NoPose::Bodiless);
+    };
+    let e_ij = Mv::blade(ai | aj, q(1));
+    let mirror = Mv::blade(aj, q(1));
     // The four 90° turns of the plane as rays: 0°, 90°, 180°, 270°.
     let one = Mv::scalar(q(1));
     let turns_90 = [one.clone(), one.add(&e_ij), e_ij.clone(), e_ij.sub(&one)];

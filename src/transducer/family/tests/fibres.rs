@@ -49,18 +49,18 @@ fn said(q: &crate::transducer::family::fibres::Quotient, a: &[u8], b: &[u8]) -> 
 /// or none, give no pivot.
 #[test]
 fn a_pieces_pivot_is_its_sites_centroid_in_vertex_coordinates() {
-    let sites = [Site::new(vec![0, 0]), Site::new(vec![0, 1])];
+    let sites = [Site::of([0, 0]), Site::of([0, 1])];
     let (point, n) = vertex_point(&sites).expect("two sites of one base");
     assert_eq!(n, 2);
     assert!(point.projective_eq(&cga::point_at(&[q(1, 2), q(1, 1)])), "(0, ½) + (½, ½)");
-    let framed = [Site::new(vec![1, 2, 5])];
+    let framed = [Site::of([1, 2, 5])];
     let (point, _) = vertex_point(&framed).expect("one site");
     assert!(point.projective_eq(&cga::point_at(&[q(3, 2), q(5, 2), q(5, 1)])), "the frame axis takes no half");
-    assert_eq!(vertex_point(&[Site::new(vec![0, 0]), Site::new(vec![0, 0, 1])]).map(|(_, n)| n), None, "two bases");
+    assert_eq!(vertex_point(&[Site::of([0, 0]), Site::of([0, 0, 1])]).map(|(_, n)| n), None, "two bases");
     assert_eq!(vertex_point(&[]).map(|(_, n)| n), None, "no sites");
     // The lifted body reads the same pivot.
     let comps: Vec<crate::transducer::blade::Compartment> =
-        [(0, 0), (0, 1), (1, 1)].iter().map(|&(r, c)| crate::transducer::blade::Compartment { site: Site::new(vec![r, c]), hue: 3 }).collect();
+        [(0, 0), (0, 1), (1, 1)].iter().map(|&(r, c)| crate::transducer::blade::Compartment { site: Site::of([r, c]), hue: 3 }).collect();
     let body = crate::transducer::blade::lift(&comps);
     let sites: Vec<Site> = comps.iter().map(|c| c.site.clone()).collect();
     let (from_sites, _) = vertex_point(&sites).expect("sites");
@@ -71,9 +71,9 @@ fn a_pieces_pivot_is_its_sites_centroid_in_vertex_coordinates() {
 /// output pivot where the coordinates agree, and says so where they do not.
 #[test]
 fn a_pieces_versor_carries_its_input_pivot_onto_its_output() {
-    let domain = [Site::new(vec![0, 0]), Site::new(vec![0, 1])];
-    let landed = [Site::new(vec![2, 3]), Site::new(vec![2, 4])];
-    let elsewhere = [Site::new(vec![5, 5]), Site::new(vec![5, 6])];
+    let domain = [Site::of([0, 0]), Site::of([0, 1])];
+    let landed = [Site::of([2, 3]), Site::of([2, 4])];
+    let elsewhere = [Site::of([5, 5]), Site::of([5, 6])];
     let carriage = cga::translator_at(&[q(2, 1), q(3, 1)]);
     let p = piece_of(1, b"c".to_vec(), &carriage, &domain, &landed).expect("a pivot");
     assert_eq!((p.mass, aligned(&p)), (2, Some(true)), "carried where it landed");

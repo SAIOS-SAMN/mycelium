@@ -2,7 +2,7 @@
 // `m` read off the bivector, each with its plane and class; undecomposed by
 // name; and the inverse Cayley chart.
 
-use super::common::{budget, q};
+use super::common::{ax, budget, q};
 use crate::network::nerve::coord::BivectorKind;
 use crate::transducer::cga::at_three::translator;
 use crate::transducer::cga::*;
@@ -64,7 +64,7 @@ fn a_dispiration_reads_an_elliptic_and_a_hyperbolic_mode() {
 /// isoclinic pair, held whole, no split among its planes chosen.
 #[test]
 fn at_four_axes_two_turns_read_two_modes_and_an_isoclinic_pair_reads_one_over_two_planes() {
-    let e34 = base_axis(3) | base_axis(4);
+    let e34 = ax(3) | ax(4);
     let unequal = Mv::blade(E1 | E2, q(1, 1)).add(&Mv::blade(e34, q(2, 1)));
     assert_eq!(kinds(&unequal), vec![(BivectorKind::Elliptic, 1), (BivectorKind::Elliptic, 1)]);
     let isoclinic = Mv::blade(E1 | E2, q(1, 1)).add(&Mv::blade(e34, q(1, 1)));
@@ -78,7 +78,7 @@ fn at_four_axes_two_turns_read_two_modes_and_an_isoclinic_pair_reads_one_over_tw
 fn a_generator_whose_modes_lie_in_an_extension_is_undecomposed_by_name() {
     let b = Mv::blade(E1 | E2, q(1, 1))
         .add(&Mv::blade(E2 | E3, q(1, 1)))
-        .add(&Mv::blade(base_axis(3) | base_axis(4), q(1, 1)));
+        .add(&Mv::blade(ax(3) | ax(4), q(1, 1)));
     assert_eq!(modes(&b, &mut budget()), Err(Undecomposed::Irrational(2)));
 }
 

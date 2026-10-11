@@ -86,7 +86,7 @@ fn the_action_reader_agrees_with_the_theorem_it_implies() {
         ("three reflections, odd", reflector().geo(&blade(E2)).geo(&blade(E3)), true),
         ("mixed parity", one.add(&blade(E1)), false),
         ("1 + e12 + e3+", one.add(&blade(E1 | E2)).add(&blade(E3 | EP)), false),
-        ("1 + I", one.add(&blade(pseudo(3))), false),
+        ("1 + I", one.add(&blade(pseudo(3).expect("the pseudoscalar at n = 3"))), false),
         ("a null vector", e_inf(), false),
         ("zero", Mv::zero(), false),
     ];

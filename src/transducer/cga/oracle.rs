@@ -77,7 +77,9 @@ fn fixtures() -> Vec<(String, Mv)> {
     out.push(("reflector".into(), cga::reflector()));
     out.push(("e_o".into(), cga::e_o()));
     out.push(("e_inf".into(), cga::e_inf()));
-    out.push(("pseudo".into(), Mv::blade(cga::pseudo(3), q(1, 1))));
+    if let Some(i) = cga::pseudo(3) {
+        out.push(("pseudo".into(), Mv::blade(i, q(1, 1))));
+    }
     for (i, plane) in cga::transvection_planes(3).iter().enumerate() {
         if let Some(t) = cga::transvection(&q(3, 1), &q(1, 2), *plane) {
             out.push((format!("transvection{i}"), t));

@@ -14,3 +14,8 @@ pub(super) fn q(n: i64, d: i64) -> BigRational {
 pub(super) fn budget() -> crate::physics::Budget {
     crate::physics::Physics::default().stroke_n(1 << 16)
 }
+
+/// Base axis `i`'s mask, for a fixture's axis the algebra holds.
+pub(super) fn ax(i: usize) -> usize {
+    crate::transducer::cga::base_axis(i).expect("a fixture's axis within the algebra")
+}

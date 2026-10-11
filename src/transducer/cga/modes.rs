@@ -64,7 +64,7 @@ pub enum Undecomposed {
 /// order — the base axes, `e₊` and `e₋`, `n + 2` of them — so a product of
 /// two in this order is the blade the carrier writes.
 pub(super) fn generators(n: u8) -> Vec<usize> {
-    let mut masks: Vec<usize> = (1..=usize::from(n)).map(super::base_axis).collect();
+    let mut masks: Vec<usize> = super::axes(n).collect();
     masks.push(super::EP);
     masks.push(super::EM);
     masks.sort_unstable();

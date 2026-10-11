@@ -345,10 +345,16 @@ pub fn body_of_shape(s: &crate::transducer::blade::Shape) -> Option<Body> {
     Some(Body { centre, mass: Q::from_integer((b.support.len() as u64).into()), moments })
 }
 
-/// `e_a ∧ e_b` for base axes `a`, `b` counted from 0.
+/// `e_a ∧ e_b` for two base axes, each by its mask.
 fn plane(a: usize, b: usize) -> Mv {
-    let e = |i: usize| Mv::blade(cga::base_axis(i + 1), num_traits::One::one());
+    let e = |m: usize| Mv::blade(m, num_traits::One::one());
     e(a).geo(&e(b)).grade(2)
+}
+
+/// A body's `n` base axes, each by its mask; `None` where the body has more
+/// axes than the algebra's masks hold.
+fn body_axes(n: usize) -> Option<Vec<usize>> {
+    (1..=n).map(cga::base_axis).collect()
 }
 
 /// A.13 · THE DISCRETE ANGULAR MOMENTUM `Π = M₂(B)` of a body under the
@@ -358,31 +364,27 @@ fn plane(a: usize, b: usize) -> Mv {
 /// over the body — and every other part, which carries the centroid, is
 /// weighed by the mass; the result is carried back to the centroid's place.
 /// Exact over ℚ; no velocity, no derivative (law 1): `B` is a step's own
-/// bivector.
-pub fn momentum(body: &Body, b: &Mv) -> Mv {
+/// bivector. `None` where the body has more axes than the algebra holds.
+pub fn momentum(body: &Body, b: &Mv) -> Option<Mv> {
     let t = cga::translator_at(&body.centre);
     let local = t.reverse().geo(b).geo(&t).grade(2);
-    let n = body.moments.len();
+    let held = body_axes(body.moments.len())?;
     let mut pi = Mv::zero();
-    for mask in 0..local.slot_count() {
-        let c = local.coeff(mask);
-        if mask.count_ones() != 2 || c.is_zero() {
-            continue;
-        }
-        let axes: Vec<usize> = (0..n).filter(|&i| mask & cga::base_axis(i + 1) != 0).collect();
+    for (mask, c) in local.terms() {
+        let axes: Vec<usize> = (0..held.len()).filter(|&i| mask & held[i] != 0).collect();
         match axes.as_slice() {
             [a, b] => {
                 for (k, row) in body.moments.iter().enumerate() {
                     let (cka, ckb) = (row.get(*a), row.get(*b));
                     if let (Some(cka), Some(ckb)) = (cka, ckb) {
-                        pi = pi.add(&plane(k, *b).scale(&(c * cka)).sub(&plane(k, *a).scale(&(c * ckb))));
+                        pi = pi.add(&plane(held[k], held[*b]).scale(&(c * cka)).sub(&plane(held[k], held[*a]).scale(&(c * ckb))));
                     }
                 }
             }
             _ => pi = pi.add(&Mv::blade(mask, c * &body.mass)),
         }
     }
-    t.geo(&pi).geo(&t.reverse())
+    Some(t.geo(&pi).geo(&t.reverse()))
 }
 
 /// ONE BODY OF A GROUND at hour 0: its nucleus and its body as A.13 reads it.
@@ -453,12 +455,13 @@ pub fn carried_body(body: &Body, g: &Mv) -> Option<Body> {
         return None;
     }
     let n = body.moments.len();
-    let e = |i: usize| Mv::blade(cga::base_axis(i + 1), num_traits::One::one());
+    let held = body_axes(n)?;
     // image[a][b]: the b-th coordinate of the image of axis a.
-    let image: Vec<Vec<Q>> = (0..n)
-        .map(|a| {
-            let v = r.sandwich(&e(a));
-            (0..n).map(|b| v.coeff(cga::base_axis(b + 1)) / &w).collect()
+    let image: Vec<Vec<Q>> = held
+        .iter()
+        .map(|&a| {
+            let v = r.sandwich(&Mv::blade(a, num_traits::One::one()));
+            held.iter().map(|&b| v.coeff(b) / &w).collect()
         })
         .collect();
     let mut moments = vec![vec![Q::zero(); n]; n];
@@ -491,8 +494,8 @@ pub fn external_torque(before: &Body, after: &Body, step: &Mv) -> Option<Mv> {
     if w.is_zero() {
         return None;
     }
-    let carried = step.sandwich(&momentum(before, &b)).scale(&(Q::from_integer(1.into()) / w));
-    Some(momentum(after, &b).sub(&carried))
+    let carried = step.sandwich(&momentum(before, &b)?).scale(&(Q::from_integer(1.into()) / w));
+    Some(momentum(after, &b)?.sub(&carried))
 }
 
 /// TWO FRAMES' PAIR: their product at unit weight ([`unit_product`]) and

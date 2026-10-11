@@ -16,7 +16,7 @@ fn body(cells: &Cells) -> Blade {
 fn sends(v: &cga::Mv, from: usize, to: usize) -> bool {
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
     let image = v.sandwich(&cga::Mv::blade(from, q(1)));
-    let others = (0..image.slot_count()).filter(|&m| m != to).all(|m| *image.coeff(m) == q(0));
+    let others = image.terms().all(|(m, _)| m == to);
     others && *image.coeff(to) > q(0)
 }
 
@@ -50,7 +50,7 @@ fn fr1b_a_symmetric_body_reads_open_180_at_one_section_and_on_the_tube() {
     for v in &candidates {
         let image = v.sandwich(&cga::Mv::blade(E2, q(1)));
         assert!(
-            (0..image.slot_count()).all(|m| m == E2 || *image.coeff(m) == q(0)) && *image.coeff(E2) != q(0),
+            image.terms().map(|(m, _)| m).eq([E2]),
             "the column axis stays on its line: {v:?}"
         );
     }

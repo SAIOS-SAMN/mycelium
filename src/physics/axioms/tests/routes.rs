@@ -85,7 +85,7 @@ fn r2_constructors_build_generators_and_generators_carry_constructors() {
 fn r3_a_cell_is_the_members_standing_at_its_witness() {
     use crate::network::nerve::coord::Compartment;
     use crate::transducer::base::Site;
-    let at = |x: i64| Compartment { site: Site::new(vec![x, 0, 0]) };
+    let at = |x: i64| Compartment { site: Site::of([x, 0, 0]) };
     let standing: Vec<(Compartment, Vec<usize>)> = vec![(at(0), vec![0, 1]), (at(2), vec![1, 2]), (at(4), vec![0, 1])];
     let cells = crate::transducer::cech::cells_over(
         standing.iter().map(|(l, m)| (l.clone(), m.as_slice())),

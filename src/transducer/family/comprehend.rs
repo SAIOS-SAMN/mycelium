@@ -266,7 +266,11 @@ pub(crate) fn comprehend(
         crate::transducer::address::put_key_bytes(&mut key, &m.k.numer().to_signed_bytes_le());
         crate::transducer::address::put_key_bytes(&mut key, &m.k.denom().to_signed_bytes_le());
         if !planes.contains(&key) {
-            planes.insert(&key, cga::base_mirror(m.axis, &m.k));
+            // A reading's axis is one the algebra holds (`mirrors_between`
+            // reads one per centre coordinate).
+            if let Some(mirror) = cga::base_mirror(m.axis, &m.k) {
+                planes.insert(&key, mirror);
+            }
         }
     }
     let plane_list: Vec<Mv> = planes.scoped().map(|(_, p)| p.clone()).collect();
@@ -315,16 +319,7 @@ fn cell_closure(r: &CoxeterReading) -> CellClosure {
 /// CO1 — THE TYPED READING THE OBSERVER SERVES: every cell as its algebra
 /// read it, SY1's blade per product in its canonical coordinates.
 pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
-    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the algebra's range: a blade mask below the 2^(n+2) slots of Cl(n+1,1), within u16 for n ≤ 14 (the corpus's n = 3)")]
-    let ray = |m: &Mv| -> Vec<(u16, num_rational::BigRational)> {
-        match m.canonical() {
-            Some(r) => (0..r.slot_count())
-                .filter(|&b| !num_traits::Zero::is_zero(r.coeff(b)))
-                .map(|b| (b as u16, r.coeff(b).clone()))
-                .collect(),
-            None => Vec::new(),
-        }
-    };
+    let ray = |m: &Mv| -> Vec<(u64, num_rational::BigRational)> { m.ray() };
     #[expect(
         clippy::cast_possible_truncation,
         reason = "STD1 C1 — the algebra's range: the capacity is the rank of an algebra of d × d matrices, d = n + 2, so ≤ (n + 2)²; the signature's p, q and the rank ≤ n + 2 with n data; a product's grades ≤ n + 2; a mirror's axis in 1..=n, n the algebra's u8. And the product's order: AT1 debt — a body's position within its cell, bounded by the base's 2ⁿ bodies at a corner (n data); at the atlas the order is the bodies' own keys"

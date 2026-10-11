@@ -67,8 +67,8 @@ impl Bytes for crate::transducer::alphabet::Rotor {
 
 impl Bytes for Versor {
     fn bytes(&self) -> usize {
-        // index: every slot the value's own algebra holds (71.2(3))
-        std::mem::size_of::<Self>() + (0..self.slot_count()).map(|m| bytes_q(self.coeff(m))).sum::<usize>()
+        // Every term the value holds: its mask and its coefficient.
+        std::mem::size_of::<Self>() + self.terms().map(|(_, v)| std::mem::size_of::<usize>() + bytes_q(v)).sum::<usize>()
     }
 }
 

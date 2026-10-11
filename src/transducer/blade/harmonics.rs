@@ -159,7 +159,7 @@ mod tests {
         use crate::transducer::base::Site;
         let section: Vec<Site> = [(0, 0, 0), (0, 1, 0), (1, 0, 0)].into_iter().map(Site::from).collect();
         let at_frame = |k: i64| -> Vec<Site> {
-            section.iter().map(|s| Site::new(vec![s.axes()[0], s.axes()[1], k])).collect()
+            section.iter().map(|s| Site::of([s.axes()[0], s.axes()[1], k])).collect()
         };
         let stack: Vec<Site> = (0..3).flat_map(at_frame).collect();
         let spaced: Vec<Site> = (0..3).flat_map(|k| at_frame(2 * k)).collect();
@@ -210,7 +210,7 @@ mod tests {
             [2, 1, 0, 1],
         ]
         .into_iter()
-        .map(|a| Site::new(a.to_vec()))
+        .map(Site::of)
         .collect();
         let shape = blade::shape_of(&body);
         assert_eq!(shape.blade.n(), 4, "the body stands on the base of four");
@@ -230,7 +230,7 @@ mod tests {
                 for c in 0..3i64 {
                     for d in 0..3i64 {
                         if (a, b, c, d) != (1, 1, 1, 1) {
-                            hollow.push(Site::new(vec![a, b, c, d]));
+                            hollow.push(Site::of([a, b, c, d]));
                         }
                     }
                 }
@@ -241,7 +241,7 @@ mod tests {
         // tunnel at every n.
         let ring: Vec<Site> = [(0, 0), (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1), (2, 2)]
             .into_iter()
-            .map(|(r, c)| Site::new(vec![r, c, 0, 0]))
+            .map(|(r, c)| Site::of([r, c, 0, 0]))
             .collect();
         assert_eq!(blade::topology(&ring), Some(vec![1, 1, 0, 0]), "a ring has one tunnel at n = 4 too");
     }

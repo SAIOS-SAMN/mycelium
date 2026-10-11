@@ -48,7 +48,7 @@ fn a_contraction_is_named_by_rank_never_refused() {
 /// versor; it IS not one — two facts under two names (MT1, ruled).
 #[test]
 fn a_mixed_parity_element_acts_as_the_identity() {
-    let one_plus_i = Mv::scalar(q(1, 1)).widened(3).add(&Mv::blade(pseudo(3), q(1, 1)).widened(3));
+    let one_plus_i = Mv::scalar(q(1, 1)).widened(3).add(&Mv::blade(pseudo(3).expect("the pseudoscalar at n = 3"), q(1, 1)).widened(3));
     let a = Motor::new(&one_plus_i).action();
     assert!(a.acts_as_versor() && a.grade_preserving && a.algebra_rank == a.dim());
     assert!(!is_versor(&one_plus_i), "the element has no parity");

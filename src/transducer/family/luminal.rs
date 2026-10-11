@@ -206,9 +206,10 @@ fn rays_of(x: &Grid, y: &Grid, unsaid: &[(i64, i64)], lit_by_ray: &mut Vec<(i64,
     out
 }
 
-/// A WALL OF A CAVITY: the plane `n + δ e_∞` normal to `axis` at `δ`.
+/// A WALL OF A CAVITY: the plane `n + δ e_∞` normal to the base axis whose
+/// mask is `axis`, at `δ`.
 fn wall(axis: usize, delta: BigRational) -> Mv {
-    Mv::blade(cga::base_axis(axis), BigRational::from_integer(1.into())).add(&cga::e_inf().scale(&delta))
+    Mv::blade(axis, BigRational::from_integer(1.into())).add(&cga::e_inf().scale(&delta))
 }
 
 /// L4, L5 ON ONE PAIR: the input's enclosures, each read as a standing wave
@@ -282,10 +283,10 @@ fn cavities_of(x: &Grid, y: &Grid, unsaid: &[(i64, i64)], captured: &mut Vec<(i6
                 let half = BigRational::new(1.into(), 2.into());
                 let q = |n: i64| BigRational::from_integer(n.into());
                 let w = [
-                    wall(1, q(rmin) - &half),
-                    wall(2, q(cmin) - &half),
-                    wall(1, q(rmax) + &half),
-                    wall(2, q(cmax) + &half),
+                    wall(cga::E1, q(rmin) - &half),
+                    wall(cga::E2, q(cmin) - &half),
+                    wall(cga::E1, q(rmax) + &half),
+                    wall(cga::E2, q(cmax) + &half),
                 ];
                 let omega = w[3].geo(&w[2]).geo(&w[1]).geo(&w[0]);
                 cga::motion_modes(&omega, budget)?.ok().map(|ms| ms.iter().map(|m| m.kind).collect())

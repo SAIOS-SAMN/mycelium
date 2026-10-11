@@ -5,7 +5,7 @@
 // each nucleus against the base's mirrors it stands between (MG1) — served
 // to the console on demand, never printed per epoch.
 
-use super::circuit::{holds, put_int, take_int, take_len, take_u16, take_u32, take_u8};
+use super::circuit::{holds, put_int, take_int, take_len, take_u32, take_u8};
 pub use crate::transducer::cech::{CapacityRefused, CellRefusals, CircuitUnread, ModesUnread, Rings};
 pub use crate::transducer::cga::OrbitUnread;
 use crate::transducer::cga::PairRegime;
@@ -171,7 +171,7 @@ pub struct CellProduct {
     pub grades: Vec<u8>,
     pub det: Option<i8>,
     pub classed: bool,
-    pub seal: Vec<(u16, BigRational)>,
+    pub seal: Vec<(u64, BigRational)>,
 }
 
 /// ONE CELL.
@@ -673,7 +673,7 @@ impl Cells {
                 }
                 let mut seal = Vec::with_capacity(ns);
                 for _ in 0..ns {
-                    seal.push((take_u16(b, p)?, take_q(b, p)?));
+                    seal.push((super::circuit::take_u64(b, p)?, take_q(b, p)?));
                 }
                 products.push(CellProduct { order, grades, det, classed, seal });
             }

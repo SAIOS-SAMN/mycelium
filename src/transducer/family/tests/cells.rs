@@ -50,7 +50,7 @@ fn traversed(steps: Vec<(u64, bool)>, composite: Option<crate::transducer::cga::
 fn bodies(sites: &[Vec<i64>]) -> crate::network::nerve::Keyed<Vec<Site>> {
     let mut k = crate::network::nerve::Keyed::new();
     for (i, s) in sites.iter().enumerate() {
-        k.insert(member(u16::try_from(i).expect("a fixture of a handful of bodies") + 1),vec![Site::new(s.clone())]);
+        k.insert(member(u16::try_from(i).expect("a fixture of a handful of bodies") + 1),vec![Site::new(s.clone()).expect("a fixture site within the algebra")]);
     }
     k
 }
@@ -76,7 +76,7 @@ fn three_bodies_meeting_at_a_corner_mint_one_two_cell_carrying_their_meet() {
     let three = bodies(&[vec![0, 0, 0], vec![1, 1, 0], vec![1, 0, 1]]);
     let (_, cells) = named_incidence(None, &three);
     let c = one(by_grade(&cells, 2), "one 2-cell");
-    assert_eq!(c.witnesses, vec![Site::new(vec![2, 2, 2])], "the corner all three stand in");
+    assert_eq!(c.witnesses, vec![Site::of([2, 2, 2])], "the corner all three stand in");
     let meet = c.meet().expect("each nucleus reads");
     assert!(!meet.grade(3).is_zero(), "the meet of three spheres is a grade-3 blade");
     assert_eq!(by_grade(&cells, 1).len(), 3, "and its three faces stand as the pairs' own cells");
@@ -96,8 +96,8 @@ fn three_bodies_meeting_at_a_corner_mint_one_two_cell_carrying_their_meet() {
 #[test]
 fn two_bodies_of_one_member_stand_in_one_cell_apart() {
     let mut k = crate::network::nerve::Keyed::new();
-    k.insert(member(1), vec![Site::new(vec![0, 0, 0]), Site::new(vec![1, 1, 0])]);
-    k.insert(member(2), vec![Site::new(vec![1, 0, 1])]);
+    k.insert(member(1), vec![Site::of([0, 0, 0]), Site::of([1, 1, 0])]);
+    k.insert(member(2), vec![Site::of([1, 0, 1])]);
     let (_, cells) = named_incidence(None, &k);
     let c = one(by_grade(&cells, 2), "one 2-cell over three bodies");
     assert_eq!(c.bodies.len(), 3, "three bodies, two of them one member's");
@@ -222,7 +222,7 @@ fn each_cell_reads_its_enclosure_against_the_forms_other_bodies() {
 #[test]
 fn a_pairwise_loop_of_the_same_three_reads_no_grade_three_content() {
     let nucleus = |s: Vec<i64>| {
-        crate::transducer::blade::shape_of(&[Site::new(s)]).blade.nucleus().expect("a nucleus")
+        crate::transducer::blade::shape_of(&[Site::new(s).expect("a fixture site within the algebra")]).blade.nucleus().expect("a nucleus")
     };
     let (a, b, c) = (nucleus(vec![0, 0, 0]), nucleus(vec![1, 1, 0]), nucleus(vec![1, 0, 1]));
     // `V_xy = s_y s_x`, the tether of two nuclei, around the loop a → b → c → a.
@@ -239,7 +239,7 @@ fn at_four_axes_four_bodies_at_one_element_mint_a_three_cell() {
     let four = bodies(&[vec![0, 0, 0, 0], vec![1, 1, 0, 0], vec![1, 0, 1, 0], vec![1, 0, 0, 1]]);
     let (_, cells) = named_incidence(None, &four);
     let c = one(by_grade(&cells, 3), "one 3-cell at n = 4");
-    assert_eq!(c.witnesses, vec![Site::new(vec![2, 2, 2, 2])], "the corner of ℤ⁴ the four share");
+    assert_eq!(c.witnesses, vec![Site::of([2, 2, 2, 2])], "the corner of ℤ⁴ the four share");
     assert!(!c.meet().expect("each nucleus reads").grade(4).is_zero(), "their meet is a grade-4 blade");
 }
 

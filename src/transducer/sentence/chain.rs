@@ -657,16 +657,19 @@ pub fn elements_standing(positions: &[crate::transducer::base::Site]) -> Vec<(cr
         let Some(count) = 3usize.checked_pow(n as u32) else { continue };
         for code in 0..count {
             let mut rest = code;
-            let axes: Vec<i64> = p
+            // The doubled centre, exact or refused: a coordinate whose double
+            // passes `i64` stands at no element of this base.
+            let axes: Option<Vec<i64>> = p
                 .axes()
                 .iter()
                 .map(|&x| {
                     let o = (rest % 3) as i64;
                     rest /= 3;
-                    2 * x + o
+                    x.checked_mul(2)?.checked_add(o)
                 })
                 .collect();
-            let element = crate::transducer::base::Site::new(axes);
+            // The element has the position's own arity, which the base held.
+            let Some(element) = axes.and_then(crate::transducer::base::Site::new) else { continue };
             let key = element.key();
             match held.get_mut(&key) {
                 Some((_, standing)) => {

@@ -18,6 +18,14 @@
 //! `n` is the smallest algebra holding its generators: a scalar is `n = 0`,
 //! an element of every algebra.
 //!
+//! THE CARRIER HOLDS THE BLADES THE VALUE HAS, AND NO OTHERS. A value is its
+//! non-zero terms, each a blade mask and an exact coefficient, in mask
+//! order; a slot it does not hold is zero. Nothing is sized by `2^{n+2}`: a
+//! single blade of a large algebra is one term, and the geometric product
+//! runs over the terms the two values hold. The algebra is bounded by its
+//! masks — machine words — at [`MAX_N`], and a generator past it is refused
+//! where it would be made ([`base_axis`]), never shifted into a wrong mask.
+//!
 //! THE METRIC IS THE SIGNATURE'S, NOT A LIST: `e₋` squares to −1 and every
 //! other generator to +1, which is `Cl(n+1, 1)` for every `n`.
 
@@ -36,46 +44,68 @@ pub const E3: usize = 0b00100;
 pub const EP: usize = 0b01000;
 pub const EM: usize = 0b10000;
 
+/// THE LARGEST `n` THE ALGEBRA HOLDS: base axis `i ≥ 4` is bit `i + 1` of a
+/// machine-word mask, and the slots of `Cl(n+1, 1)` are `2^{n+2}` masks, so
+/// the last axis whose algebra's masks are all words is `usize::BITS − 3`.
+#[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — usize::BITS − 3 is below 256 on every target")]
+pub const MAX_N: u8 = (usize::BITS - 3) as u8;
+
 /// The mask of base axis `i`, counted from 1: bits 0–2 for the first three,
-/// and bit `i + 1` from the fourth on, so `e₊` and `e₋` never move.
-pub fn base_axis(i: usize) -> usize {
+/// and bit `i + 1` from the fourth on, so `e₊` and `e₋` never move. `None`
+/// for axis 0 (there is none) and past [`MAX_N`]: an axis the algebra's
+/// masks cannot hold is refused, never wrapped into another axis's bit.
+pub fn base_axis(i: usize) -> Option<usize> {
     match i {
-        1..=3 => 1 << (i - 1),
-        _ => 1 << (i + 1),
+        0 => None,
+        1..=3 => Some(1 << (i - 1)),
+        _ if i <= usize::from(MAX_N) => Some(1 << (i + 1)),
+        _ => None,
     }
 }
 
-/// How many coefficient slots the carrier holds at `n`: the masks reach bit
-/// `n + 1` once `n ≥ 3`, and bit 4 before that.
-pub fn slots(n: u8) -> usize {
-    1usize << (usize::from(n.max(3)) + 2)
+/// THE BASE AXES OF `Cl(n+1, 1)`, each by its mask, in axis order: those
+/// the algebra's masks hold (every one, for `n ≤ MAX_N`).
+pub fn axes(n: u8) -> impl Iterator<Item = usize> + Clone {
+    (1..=usize::from(n)).map_while(base_axis)
 }
 
-/// The blades of `Cl(n+1, 1)`: `2^{n+2}`.
-pub fn blades(n: u8) -> usize {
-    1usize << (usize::from(n) + 2)
+/// How many masks the algebra at `n` spans on the wire: the masks reach bit
+/// `n + 1` once `n ≥ 3`, and bit 4 before that. `None` past [`MAX_N`].
+pub fn slots(n: u8) -> Option<usize> {
+    if n > MAX_N {
+        return None;
+    }
+    1usize.checked_shl(u32::from(n.max(3)) + 2)
 }
 
-/// The unit pseudoscalar at `n`: every base axis, `e₊` and `e₋`.
-pub fn pseudo(n: u8) -> usize {
-    (1..=usize::from(n)).fold(EP | EM, |m, i| m | base_axis(i))
+/// The blades of `Cl(n+1, 1)`: `2^{n+2}`. `None` past [`MAX_N`].
+pub fn blades(n: u8) -> Option<usize> {
+    if n > MAX_N {
+        return None;
+    }
+    1usize.checked_shl(u32::from(n) + 2)
+}
+
+/// The unit pseudoscalar at `n`: every base axis, `e₊` and `e₋`. `None` past
+/// [`MAX_N`].
+pub fn pseudo(n: u8) -> Option<usize> {
+    (1..=usize::from(n)).try_fold(EP | EM, |m, i| Some(m | base_axis(i)?))
 }
 
 /// The smallest `n` whose algebra holds every generator of `mask`: the
 /// highest base axis it names.
 #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the algebra's range: an axis of a machine-word blade mask, below usize::BITS ≤ 64")]
 fn n_of_mask(mask: usize) -> u8 {
+    // The highest set bit is the highest generator; e₊, e₋ name no axis.
+    let mut rest = mask & !(EP | EM);
     let mut n = 0usize;
     let mut bit = 0usize;
-    let mut rest = mask;
     while rest != 0 {
         if rest & 1 == 1 {
-            let axis = match bit {
+            n = match bit {
                 0..=2 => bit + 1,
-                3 | 4 => 0,
                 b => b - 1,
             };
-            n = n.max(axis);
         }
         rest >>= 1;
         bit += 1;
@@ -85,13 +115,14 @@ fn n_of_mask(mask: usize) -> u8 {
     n as u8
 }
 
-/// An exact multivector of `Cl(n+1, 1)`: its `n` and one coefficient over ℚ
-/// per slot. Equality is projective (`λ ∈ ℚ×`); coefficient identity is
+/// An exact multivector of `Cl(n+1, 1)`: its `n` and its non-zero terms, each
+/// a blade mask and a coefficient over ℚ, strictly ascending by mask.
+/// Equality is projective (`λ ∈ ℚ×`); coefficient identity is
 /// [`Mv::canonical`].
 #[derive(Debug, Clone)]
 pub struct Mv {
     n: u8,
-    c: Vec<BigRational>,
+    c: Vec<(usize, BigRational)>,
 }
 
 impl PartialEq for Mv {
@@ -111,8 +142,7 @@ pub(super) fn half() -> BigRational {
     BigRational::new(BigInt::from(1), BigInt::from(2))
 }
 
-/// The zero a slot outside a value's algebra reads as: that value has no
-/// coefficient there, which is zero in every larger algebra holding it.
+/// The zero a blade the value does not hold reads as.
 static ZERO: std::sync::LazyLock<BigRational> = std::sync::LazyLock::new(BigRational::zero);
 
 /// The parity of the number of transpositions needed to sort the concatenation
@@ -143,7 +173,33 @@ fn metric_sign(shared: usize) -> i64 {
     }
 }
 
+/// The grade of a blade: how many generators its mask names.
+fn grade_of(mask: usize) -> u32 {
+    mask.count_ones()
+}
+
 impl Mv {
+    /// A value from terms in any order, at `n`: like masks summed, zeros
+    /// dropped, the rest in mask order.
+    fn of_terms(n: u8, mut terms: Vec<(usize, BigRational)>) -> Self {
+        terms.sort_unstable_by_key(|(m, _)| *m);
+        let mut c: Vec<(usize, BigRational)> = Vec::with_capacity(terms.len());
+        for (m, v) in terms {
+            match c.last_mut() {
+                Some((last, sum)) if *last == m => *sum += v,
+                _ => c.push((m, v)),
+            }
+        }
+        c.retain(|(_, v)| !v.is_zero());
+        Self { n, c }
+    }
+
+    /// The same blades with each coefficient mapped; zeros dropped.
+    fn map_terms(&self, f: impl Fn(usize, &BigRational) -> BigRational) -> Self {
+        let c = self.c.iter().map(|(m, v)| (*m, f(*m, v))).filter(|(_, v)| !v.is_zero()).collect();
+        Self { n: self.n, c }
+    }
+
     /// The zero: `n = 0`, an element of every algebra.
     pub fn zero() -> Self {
         Self::zero_at(0)
@@ -151,21 +207,17 @@ impl Mv {
 
     /// The zero of `Cl(n+1, 1)`.
     pub fn zero_at(n: u8) -> Self {
-        Self { n, c: vec![zero(); slots(n)] }
+        Self { n, c: Vec::new() }
     }
 
     pub fn scalar(v: BigRational) -> Self {
-        let mut m = Self::zero();
-        m.c[0] = v;
-        m
+        Self::of_terms(0, vec![(0, v)])
     }
 
     /// A single basis blade with coefficient `v`, in the smallest algebra
     /// holding its generators.
     pub fn blade(mask: usize, v: BigRational) -> Self {
-        let mut m = Self::zero_at(n_of_mask(mask));
-        m.c[mask] = v;
-        m
+        Self::of_terms(n_of_mask(mask), vec![(mask, v)])
     }
 
     /// The `n` this value belongs to: the smallest algebra holding it.
@@ -173,58 +225,63 @@ impl Mv {
         self.n
     }
 
-    /// How many coefficient slots the value holds.
-    pub fn slot_count(&self) -> usize {
+    /// THE TERMS THE VALUE HOLDS: each blade mask and its non-zero
+    /// coefficient, ascending by mask. A blade not here is zero.
+    pub fn terms(&self) -> impl Iterator<Item = (usize, &BigRational)> {
+        self.c.iter().map(|(m, v)| (*m, v))
+    }
+
+    /// How many blades the value holds.
+    pub fn term_count(&self) -> usize {
         self.c.len()
     }
 
-    /// The same value in the algebra at `m ≥ n`: the inclusion ℚⁿ ⊂ ℚᵐ, the
-    /// new slots zero. A value is never narrowed.
-    pub fn widened(&self, m: u8) -> Self {
-        if m <= self.n {
-            return self.clone();
+    /// THE RAY IN ITS CANONICAL COORDINATES: each blade the canonical value
+    /// holds, its mask whole (a machine word, below 2⁶³ within [`MAX_N`]),
+    /// and its exact coefficient. Empty for the zero, which has no ray.
+    pub fn ray(&self) -> Vec<(u64, BigRational)> {
+        match self.canonical() {
+            Some(c) => c.c.into_iter().map(|(m, v)| (m as u64, v)).collect(),
+            None => Vec::new(),
         }
-        let mut c = self.c.clone();
-        c.resize(slots(m), zero());
-        Self { n: m, c }
     }
 
-    /// The two operands in one algebra: the larger `n` of the two.
-    pub(super) fn common(&self, o: &Self) -> (Self, Self) {
-        let n = self.n.max(o.n);
-        (self.widened(n), o.widened(n))
+    /// The same value in the algebra at `m ≥ n`: the inclusion ℚⁿ ⊂ ℚᵐ. A
+    /// value is never narrowed here.
+    pub fn widened(&self, m: u8) -> Self {
+        Self { n: self.n.max(m), c: self.c.clone() }
     }
 
     pub fn coeff(&self, mask: usize) -> &BigRational {
-        match self.c.get(mask) {
-            Some(v) => v,
-            None => &ZERO,
+        match self.c.binary_search_by_key(&mask, |(m, _)| *m) {
+            Ok(i) => &self.c[i].1,
+            Err(_) => &ZERO,
         }
     }
 
     pub fn scalar_part(&self) -> BigRational {
-        self.c[0].clone()
+        self.coeff(0).clone()
     }
 
     pub fn is_zero(&self) -> bool {
-        self.c.iter().all(|x| x.is_zero())
+        self.c.is_empty()
     }
 
     /// A4: divide by |first nonzero|, negate so that coefficient is +1.
     pub fn canonical(&self) -> Option<Mv> {
-        let i = (0..self.c.len()).find(|&i| !self.c[i].is_zero())?;
-        let mut r = self.scale(&(one() / self.c[i].abs()));
-        if r.c[i].is_negative() {
+        let (_, first) = self.c.first()?;
+        let mut r = self.scale(&(one() / first.abs()));
+        if r.c.first().is_some_and(|(_, v)| v.is_negative()) {
             r = r.scale(&-one());
         }
         Some(r)
     }
 
-    /// THE CANONICAL WRITING (A4, 17.2): the coefficients after `canonical`,
-    /// so a versor and every `λ·versor` write the same bytes and a key built
-    /// from them is content rather than one chosen spelling of it. The zero
-    /// element has no `canonical` and is not a versor; its zeros are already
-    /// its only writing, so it is written as it is.
+    /// THE CANONICAL WRITING (A4, 17.2): the coefficients after `canonical`.
+    /// It CARRIES the value between minds; it identifies nothing — two
+    /// derivations of one motion are one by the algebra (`projective_eq`,
+    /// their coordinates), never by these bytes. The zero element has no
+    /// `canonical` and is written as it is.
     pub fn put_canonical(&self, out: &mut Vec<u8>) {
         match self.canonical() {
             Some(c) => c.to_bytes(out),
@@ -255,82 +312,53 @@ impl Mv {
     }
 
     pub fn add(&self, o: &Self) -> Self {
-        let (a, b) = self.common(o);
-        Self { n: a.n, c: a.c.iter().zip(&b.c).map(|(x, y)| x + y).collect() }
+        let n = self.n.max(o.n);
+        Self::of_terms(n, self.c.iter().chain(&o.c).cloned().collect())
     }
 
     pub fn sub(&self, o: &Self) -> Self {
-        let (a, b) = self.common(o);
-        Self { n: a.n, c: a.c.iter().zip(&b.c).map(|(x, y)| x - y).collect() }
+        let n = self.n.max(o.n);
+        let negated = o.c.iter().map(|(m, v)| (*m, -v.clone()));
+        Self::of_terms(n, self.c.iter().cloned().chain(negated).collect())
     }
 
     pub fn scale(&self, s: &BigRational) -> Self {
-        Self { n: self.n, c: self.c.iter().map(|x| x * s).collect() }
+        self.map_terms(|_, v| v * s)
     }
 
     /// THE GEOMETRIC PRODUCT — the whole algebra, for every `n`. `result[i⊕j]
-    /// += sign · metric · a_i · b_j` over every pair of populated blades.
+    /// += sign · metric · a_i · b_j` over every pair of terms the two hold.
     pub fn geo(&self, o: &Self) -> Self {
-        let (a, b) = self.common(o);
-        let mut r = Self::zero_at(a.n);
-        for (i, x) in a.c.iter().enumerate() {
-            if x.is_zero() {
-                continue;
-            }
-            for (j, y) in b.c.iter().enumerate() {
-                if y.is_zero() {
-                    continue;
-                }
-                let sign = reorder_sign(i, j) * metric_sign(i & j);
+        let n = self.n.max(o.n);
+        let mut terms = Vec::with_capacity(self.c.len() * o.c.len());
+        for (i, x) in &self.c {
+            for (j, y) in &o.c {
                 let term = x * y;
-                let out = i ^ j;
-                if sign >= 0 {
-                    r.c[out] = &r.c[out] + &term;
-                } else {
-                    r.c[out] = &r.c[out] - &term;
-                }
+                let sign = reorder_sign(*i, *j) * metric_sign(i & j);
+                terms.push((i ^ j, if sign >= 0 { term } else { -term }));
             }
         }
-        r
+        Self::of_terms(n, terms)
     }
 
     /// The reverse `~M`: blade of grade g gets sign `(−1)^{g(g−1)/2}`.
     pub fn reverse(&self) -> Self {
-        Self {
-            n: self.n,
-            c: self
-                .c
-                .iter()
-                .enumerate()
-                .map(|(i, v)| {
-                    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the algebra's range: a blade mask below the 2^(n+2) slots of Cl(n+1,1)")]
-                    let g = (i as u32).count_ones();
-                    if (g * (g.wrapping_sub(1)) / 2) & 1 == 0 {
-                        v.clone()
-                    } else {
-                        -v.clone()
-                    }
-                })
-                .collect(),
-        }
+        self.map_terms(|m, v| {
+            let g = grade_of(m);
+            match (g * g.saturating_sub(1) / 2) & 1 {
+                0 => v.clone(),
+                _ => -v.clone(),
+            }
+        })
     }
 
     /// The grade involution `M̂`: blade of grade g gets sign `(−1)^g`. On a
     /// vector it is the negation; on an even element the identity.
-    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the algebra's range: a blade mask below the 2^(n+2) slots of Cl(n+1,1)")]
     pub fn involute(&self) -> Self {
-        Self {
-            n: self.n,
-            c: self
-                .c
-                .iter()
-                .enumerate()
-                .map(|(i, v)| match (i as u32).count_ones() & 1 {
-                    0 => v.clone(),
-                    _ => -v.clone(),
-                })
-                .collect(),
-        }
+        self.map_terms(|m, v| match grade_of(m) & 1 {
+            0 => v.clone(),
+            _ => -v.clone(),
+        })
     }
 
     /// THE TWISTED ADJOINT `M̂ x M̃` (78.28(1)): the action of an even or odd
@@ -346,12 +374,8 @@ impl Mv {
     /// zero element occupies none and has no parity.
     pub fn parity(&self) -> Option<bool> {
         let mut odd = None;
-        for (i, v) in self.c.iter().enumerate() {
-            if v.is_zero() {
-                continue;
-            }
-            #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the algebra's range: a blade mask below the 2^(n+2) slots of Cl(n+1,1)")]
-            let o = (i as u32).count_ones() & 1 == 1;
+        for (m, _) in &self.c {
+            let o = grade_of(*m) & 1 == 1;
             match odd {
                 None => odd = Some(o),
                 Some(p) if p != o => return None,
@@ -485,20 +509,9 @@ impl Mv {
     }
 
     /// The grade-`g` part.
-    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the algebra's range: a blade mask below the 2^(n+2) slots of Cl(n+1,1)")]
     pub fn grade(&self, g: u32) -> Self {
-        Self {
-            n: self.n,
-            c: self
-                .c
-                .iter()
-                .enumerate()
-                .map(|(i, v)| match (i as u32).count_ones() == g {
-                    true => v.clone(),
-                    false => zero(),
-                })
-                .collect(),
-        }
+        let c = self.c.iter().filter(|(m, _)| grade_of(*m) == g).cloned().collect();
+        Self { n: self.n, c }
     }
 
     /// The scalar `⟨A B̃⟩₀`-style inner-square. For a grade-1 vector this is the
@@ -524,46 +537,43 @@ impl Mv {
 }
 
 impl Mv {
-    /// The same value in the smallest algebra holding its non-zero
-    /// coefficients: the inverse of [`Mv::widened`], exact, since every slot
-    /// it drops is zero. The zero narrows to `n = 0`.
+    /// The same value in the smallest algebra holding its terms: the inverse
+    /// of [`Mv::widened`], exact. The zero narrows to `n = 0`.
     pub fn narrowed(&self) -> Self {
-        let n = self
-            .c
-            .iter()
-            .enumerate()
-            .filter(|(_, v)| !v.is_zero())
-            .fold(0u8, |n, (mask, _)| {
-                let m = n_of_mask(mask);
-                if m > n {
-                    m
-                } else {
-                    n
-                }
-            });
-        let mut c = self.c.clone();
-        c.truncate(slots(n));
-        Self { n, c }
+        let n = self.c.iter().map(|(m, _)| n_of_mask(*m)).max().map_or(0, |n| n);
+        Self { n, c: self.c.clone() }
     }
 
     /// THE VALUE ON THE WIRE, ITS `n` FIRST (71.2(1), BQ1): the `n` of the
     /// smallest algebra holding it, one byte, then [`Mv::put_coefficients`]
-    /// at that `n`. A value and its widening are one value, so they write
-    /// one run of bytes; a reader takes the `n` off the bytes and never
-    /// assumes one.
+    /// at that `n`. It carries the value; it never identifies it.
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
         let m = self.narrowed();
         out.push(m.n);
         m.put_coefficients(out);
     }
 
-    /// Every slot's exact coefficient: per coefficient `[sign u8][nlen]
+    /// Every mask's exact coefficient over the algebra at the value's `n`,
+    /// zero where it holds no term: per coefficient `[sign u8][nlen]
     /// [numerator][dlen][denominator]`, each length LEB128 (ruled (a)),
-    /// little-endian magnitudes, in
-    /// mask order. At `n ≤ 3` that is thirty-two, the fixed carrier's
-    /// coefficients exactly.
+    /// little-endian magnitudes, in mask order. At `n ≤ 3` that is
+    /// thirty-two, the fixed carrier's coefficients exactly.
+    ///
+    /// The span is `slots(n)`, defined for every `n` a value can hold: its
+    /// masks are made by [`base_axis`], which refuses past [`MAX_N`], by the
+    /// generator constants, by products of masks already held, and by
+    /// [`Mv::from_bytes`], which refuses an `n` past it.
     pub fn put_coefficients(&self, out: &mut Vec<u8>) {
-        for v in &self.c {
+        let span = slots(self.n).map_or(0, |s| s);
+        let mut at = self.c.iter().peekable();
+        for mask in 0..span {
+            let v = match at.peek() {
+                Some((m, v)) if *m == mask => {
+                    at.next();
+                    v
+                }
+                _ => &*ZERO,
+            };
             let (ns, nb) = v.numer().to_bytes_le();
             let db = v.denom().to_bytes_le().1;
             out.push(match ns {
@@ -586,10 +596,18 @@ impl Mv {
     }
 
     /// The inverse of [`Mv::put_coefficients`] at `n`: `slots(n)`
-    /// coefficients.
+    /// coefficients, each read off the bytes before the next. The `n` is the
+    /// writer's claim, never trusted to size anything: past [`MAX_N`] it is
+    /// refused, and a span the remaining bytes cannot hold (every coefficient
+    /// takes at least three) is refused before a coefficient is read. Only
+    /// the non-zero coefficients are kept.
     pub fn coefficients_at(b: &[u8], pos: &mut usize, n: u8) -> Option<Mv> {
-        let mut m = Mv::zero_at(n);
-        for slot in m.c.iter_mut() {
+        let span = slots(n)?;
+        if span > b.len().checked_sub(*pos)? / 3 {
+            return None;
+        }
+        let mut c = Vec::new();
+        for mask in 0..span {
             let sign = *b.get(*pos)?;
             *pos += 1;
             let nb = crate::transducer::address::take_key_bytes(b, pos)?;
@@ -597,15 +615,19 @@ impl Mv {
             let s = match sign {
                 2 => num_bigint::Sign::Minus,
                 1 => num_bigint::Sign::Plus,
-                _ => num_bigint::Sign::NoSign,
+                0 => num_bigint::Sign::NoSign,
+                _ => return None,
             };
             let numer = BigInt::from_bytes_le(s, &nb);
             let denom = BigInt::from_bytes_le(num_bigint::Sign::Plus, &db);
             if denom.is_zero() {
                 return None;
             }
-            *slot = BigRational::new(numer, denom);
+            let v = BigRational::new(numer, denom);
+            if !v.is_zero() {
+                c.push((mask, v));
+            }
         }
-        Some(m)
+        Some(Mv { n, c })
     }
 }

@@ -77,7 +77,7 @@ fn block(n: usize) -> Vec<Site> {
     for _ in 0..n {
         out = out.into_iter().flat_map(|p| (-1..=1i64).map(move |x| [p.clone(), vec![x]].concat())).collect();
     }
-    let mut sites: Vec<Site> = out.into_iter().map(Site::new).collect();
+    let mut sites: Vec<Site> = out.into_iter().map(|a| Site::new(a).expect("a block site within the algebra")).collect();
     sites.sort_unstable();
     sites
 }
@@ -100,7 +100,8 @@ fn a_cube_shares_a_cell_of_its_own_grade_with_every_neighbour() {
     use crate::transducer::sentence::{contact_cells, face_incidence, shared_cells};
     for n in [3usize, 4] {
         let positions = block(n);
-        let centre = positions.binary_search(&Site::new(vec![0; n])).expect("the centre is in its block");
+        let origin = Site::new(vec![0; n]).expect("the origin within the algebra");
+        let centre = positions.binary_search(&origin).expect("the centre is in its block");
         let about: Vec<_> = shared_cells(&positions).into_iter().filter(|c| c.i == centre || c.j == centre).collect();
         assert_eq!(about.len() + 1, 3usize.pow(u32::try_from(n).expect("n is 3 or 4, the loop's literals")), "every neighbour once, at n = {n}");
         for c in &about {
@@ -133,7 +134,8 @@ fn a_cube_shares_a_cell_of_its_own_grade_with_every_neighbour() {
 fn a_contact_is_the_grade_of_the_shared_cell() {
     use crate::transducer::sentence::contact_cells;
     let grade = |a: Vec<i64>, b: Vec<i64>| -> Vec<usize> {
-        contact_cells(&[Site::new(a), Site::new(b)]).into_iter().map(|c| c.grade).collect()
+        let site = |a: Vec<i64>| Site::new(a).expect("a site within the algebra");
+        contact_cells(&[site(a), site(b)]).into_iter().map(|c| c.grade).collect()
     };
     assert_eq!(grade(vec![0, 0, 0], vec![1, 1, 0]), vec![1], "an edge within a frame is grade 1");
     assert_eq!(grade(vec![0, 0, 0], vec![0, 1, 1]), vec![1], "an edge across two frames is grade 1");

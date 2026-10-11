@@ -59,9 +59,20 @@ pub struct Site {
 }
 
 impl Site {
-    /// A site from its coordinates. Their count is its `n`.
-    pub fn new(axes: Vec<i64>) -> Site {
-        Site { axes }
+    /// A site from its coordinates. Their count is its `n`. `None` past the
+    /// algebra's [`MAX_N`](crate::transducer::cga::MAX_N): a base whose axes
+    /// the conformal masks cannot hold is refused where it enters, so every
+    /// point, sphere and translator built on a site stands in the algebra.
+    pub fn new(axes: Vec<i64>) -> Option<Site> {
+        (axes.len() <= usize::from(crate::transducer::cga::MAX_N)).then_some(Site { axes })
+    }
+
+    /// A site of a fixed arity `N` — the sensor's row, column, frame — whose
+    /// count is checked against the algebra when it is compiled, never at
+    /// run time.
+    pub fn of<const N: usize>(axes: [i64; N]) -> Site {
+        const { assert!(N <= crate::transducer::cga::MAX_N as usize, "a site's arity past the algebra's masks") };
+        Site { axes: axes.to_vec() }
     }
 
     /// How many coordinates the site has: the base's `n`.

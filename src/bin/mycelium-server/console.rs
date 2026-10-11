@@ -742,13 +742,12 @@ fn circuits(c: &observe::Circuits) -> Vec<String> {
                 observe::Carried::Unread => format!("{YELLOW}unread{RESET}"),
                 observe::Carried::Cone => format!("{YELLOW}on the cone{RESET}"),
                 observe::Carried::Read { ray, kind: k, modes, after } => {
-                    let ray: Vec<String> = ray.iter().map(|(b, q)| format!("{} {q}", cga::blade_name(usize::from(*b)))).collect();
                     format!(
                         "{}  modes [{}]  ⇒ {}  {DIM}ray [{}]{RESET}",
                         kind(*k),
                         modes.label(),
                         kind(*after),
-                        ray.join(", ")
+                        cga::ray_name(ray)
                     )
                 }
             };
@@ -773,9 +772,7 @@ fn circuits(c: &observe::Circuits) -> Vec<String> {
             out.push(format!("      {BOLD}test{RESET} {}  {DIM}[{}]{RESET}", t.class.label(), arms.join("; ")));
             // CT2 — each construction offered: a candidate, never installed.
             for o in &t.offers {
-                let ray = |r: &[(u16, num_rational::BigRational)]| {
-                    r.iter().map(|(b, q)| format!("{} {q}", cga::blade_name(usize::from(*b)))).collect::<Vec<_>>().join(", ")
-                };
+                let ray = cga::ray_name;
                 out.push(format!(
                     "        {YELLOW}offer{RESET} {} at face {}: {}  modes [{}]  {DIM}constructor [{}] holonomy [{}]{RESET}",
                     o.arm.label(),
@@ -855,7 +852,7 @@ fn cells(c: &observe::Cells) -> Vec<String> {
             cell.classes
         ));
         for p in &cell.products {
-            let blade: Vec<String> = p.seal.iter().map(|(b, q)| format!("{} {q}", cga::blade_name(usize::from(*b)))).collect();
+            let blade = cga::ray_name(&p.seal);
             let det = match p.det {
                 Some(d) => format!("det {d}"),
                 None => "det unread".into(),
@@ -865,7 +862,7 @@ fn cells(c: &observe::Cells) -> Vec<String> {
                 p.order,
                 p.grades,
                 if p.classed { " classed" } else { "" },
-                blade.join(", ")
+                blade
             ));
         }
         match &cell.enclosure {

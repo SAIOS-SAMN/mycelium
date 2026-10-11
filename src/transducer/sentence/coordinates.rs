@@ -128,7 +128,7 @@ impl Hole {
     /// turn's point is no finite order's.
     fn from_parts(generator: &Mv, kind: BivectorKind, planes: usize, c: Q, lambda: Q, order: Option<u32>) -> Option<Hole> {
         let canonical = generator.canonical()?;
-        let at = (0..canonical.slot_count()).find(|&i| !canonical.coeff(i).is_zero())?;
+        let (at, _) = canonical.terms().next()?;
         let half_turn = c == -Q::one();
         // λ against the canonical ray: the generator is `μ·K̂` with `μ` its
         // coefficient at the canonical's first slot, so `λ·generator = λμ·K̂`.

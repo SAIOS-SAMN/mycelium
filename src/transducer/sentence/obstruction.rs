@@ -78,7 +78,7 @@ pub enum ClosureObstruction {
     /// refusal names one. A D held by the court itself — a cited word not yet
     /// ruled (CV2) — carries no coset: its content is the cited address,
     /// which rides the court's docket.
-    Dialect { coset: Vec<(u16, num_rational::BigRational)>, chart: Option<Vec<u8>> },
+    Dialect { coset: Vec<(u64, num_rational::BigRational)>, chart: Option<Vec<u8>> },
     Cover { cocycle: Vec<Link> },
     Integrity,
     NoQuestion,
@@ -277,16 +277,6 @@ impl Refused {
 }
 
 /// A versor's canonical ray, each non-zero blade and its coefficient.
-#[expect(
-    clippy::cast_possible_truncation,
-    reason = "STD1 C1 — the algebra's range: a blade mask below the 2^(n+2) slots of Cl(n+1,1), c.slot_count()"
-)]
-fn ray(h: &Versor) -> Vec<(u16, num_rational::BigRational)> {
-    match h.canonical() {
-        Some(c) => (0..c.slot_count())
-            .filter(|&b| !num_traits::Zero::is_zero(c.coeff(b)))
-            .map(|b| (b as u16, c.coeff(b).clone()))
-            .collect(),
-        None => Vec::new(),
-    }
+fn ray(h: &Versor) -> Vec<(u64, num_rational::BigRational)> {
+    h.ray()
 }

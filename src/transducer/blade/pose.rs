@@ -168,9 +168,15 @@ fn wedge_of(vs: &[Mv]) -> Mv {
     vs.iter().zip(1u32..).fold(Mv::scalar(Q::one()), |w, (v, k)| w.geo(v).grade(k))
 }
 
+/// The base's `n` axes by mask, in axis order: a body's `n` is its sites'
+/// arity, which `Site::new` holds within the algebra.
+fn axes(n: usize) -> impl Iterator<Item = usize> {
+    (1..=n).map_while(cga::base_axis)
+}
+
 /// The base's unit pseudoscalar `e₁ e₂ ⋯ eₙ`, in axis order.
 fn base_pseudoscalar(n: usize) -> Mv {
-    (1..=n).fold(Mv::scalar(Q::one()), |acc, i| acc.geo(&Mv::blade(cga::base_axis(i), Q::one())))
+    axes(n).fold(Mv::scalar(Q::one()), |acc, a| acc.geo(&Mv::blade(a, Q::one())))
 }
 
 /// `n` base vectors' volume `(v₁ ∧ ⋯ ∧ vₙ) Iₙ⁻¹`: the scalar the algebra reads
@@ -181,10 +187,7 @@ fn volume(vs: &[Mv], n: usize) -> Q {
 
 /// `v`'s coordinates on the base axes, as a frame's images are combined.
 fn on_frame(frame: &[Mv], v: &Mv) -> Mv {
-    frame
-        .iter()
-        .enumerate()
-        .fold(Mv::zero(), |acc, (k, img)| acc.add(&img.scale(v.coeff(cga::base_axis(k + 1)))))
+    frame.iter().zip(axes(frame.len())).fold(Mv::zero(), |acc, (img, a)| acc.add(&img.scale(v.coeff(a))))
 }
 
 /// THE COVARIANT COLUMNS `t, Mt, M²t, …` while they stay independent — their
@@ -210,8 +213,8 @@ fn columns(tw: &PointTower, n: usize) -> Vec<Mv> {
 /// w_{n−2} ∧ x) Iₙ⁻¹`, so `c(R w) = det R · R c(w)` for `R` orthogonal. Exact,
 /// one volume per axis.
 fn dual(cols: &[Mv], n: usize) -> Mv {
-    (1..=n).fold(Mv::zero(), |acc, i| {
-        let e = Mv::blade(cga::base_axis(i), Q::one());
+    axes(n).fold(Mv::zero(), |acc, a| {
+        let e = Mv::blade(a, Q::one());
         let mut frame = cols.to_vec();
         frame.push(e.clone());
         acc.add(&e.scale(&volume(&frame, n)))
@@ -243,9 +246,9 @@ fn solve(wa: &[Mv], wb: &[Mv], n: usize) -> Option<Vec<Mv>> {
         })
         .collect();
     Some(
-        (1..=n)
-            .map(|i| {
-                let e = Mv::blade(cga::base_axis(i), Q::one());
+        axes(n)
+            .map(|a| {
+                let e = Mv::blade(a, Q::one());
                 reciprocal.iter().zip(wb).fold(Mv::zero(), |acc, (ak, bk)| acc.add(&bk.scale(&ak.geo(&e).scalar_part())))
             })
             .collect(),
@@ -411,8 +414,14 @@ fn even_pose(
     // Σ_p X_{pr} e_p`, the unknown `X_{pr}` at `p·n + r`. `X ∘ A_a = A_b ∘ X`
     // read on `e_q` and then on `e_p`, one equation each, with the tower's
     // own value `⟨A(e_q)⟩_r` where the product needs it.
-    let axis = |i: usize| Mv::blade(cga::base_axis(i + 1), Q::one());
-    let value = |f: &cga::LinearFunction, r: usize, qq: usize| f.at(&axis(qq)).coeff(cga::base_axis(r + 1)).clone();
+    // The body's axes by mask; a body standing on more than the algebra
+    // holds has no axis to read an intertwiner on.
+    let masks: Vec<usize> = axes(n).collect();
+    if masks.len() != n {
+        return Err(NoPose::Bodiless);
+    }
+    let axis = |i: usize| Mv::blade(masks[i], Q::one());
+    let value = |f: &cga::LinearFunction, r: usize, qq: usize| f.at(&axis(qq)).coeff(masks[r]).clone();
     let mut rows: Vec<Vec<Q>> = Vec::new();
     for (aa, ab) in [(&ta.m, &mb), (&ta.n4, &nb)] {
         for p in 0..n {

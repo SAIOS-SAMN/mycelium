@@ -4,7 +4,6 @@
 use super::embedding::{e_inf, e_o, point_at};
 use super::multivector::{one, Mv, E1};
 use num_rational::BigRational;
-use num_traits::Zero;
 
 /// The bivector `E = e_o ∧ e_∞` (the dilation generator's plane).
 fn e_plane() -> Mv {
@@ -87,14 +86,17 @@ pub fn weight_of(m: &Mv) -> Option<BigRational> {
 /// part there, so such an element compared unequal to itself. Proportion is
 /// the definition of one ray, for every element; no product is taken.
 pub fn projective_ratio(a: &Mv, b: &Mv) -> Option<BigRational> {
-    // Both in one algebra, the larger of the two, so every slot either
-    // holds is read.
-    let (a, b) = a.common(b);
-    let pivot = (0..b.slot_count()).find(|&k| !b.coeff(k).is_zero())?;
-    let (ak, bk) = (a.coeff(pivot), b.coeff(pivot));
-    if ak.is_zero() {
+    // Two rays are one where they hold the same blades and every coefficient
+    // stands to its partner as the first does: the blades either holds are
+    // the whole reading, and a blade one holds and the other does not breaks
+    // the proportion.
+    if a.term_count() != b.term_count() {
         return None;
     }
-    let proportional = (0..a.slot_count()).all(|i| a.coeff(i) * bk == ak * b.coeff(i));
+    let ((pa, ak), (pb, bk)) = (a.terms().next()?, b.terms().next()?);
+    if pa != pb {
+        return None;
+    }
+    let proportional = a.terms().zip(b.terms()).all(|((ma, x), (mb, y))| ma == mb && x * bk == ak * y);
     proportional.then(|| ak / bk)
 }

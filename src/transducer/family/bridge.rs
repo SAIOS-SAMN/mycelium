@@ -188,8 +188,8 @@ pub fn bridge_pair(x: &Grid, y: &Grid, budget: &mut crate::physics::Budget) -> B
                         .iter()
                         .map(|(before, after)| {
                             use crate::physics::tensegrity::momentum;
-                            let carried = t.motion.sandwich(&momentum(&before.body, &b)).scale(&(num_rational::BigRational::from_integer(1.into()) / &w));
-                            crate::transducer::cga::projective_ratio(&carried, &momentum(&after.body, &b))
+                            let carried = t.motion.sandwich(&momentum(&before.body, &b)?).scale(&(num_rational::BigRational::from_integer(1.into()) / &w));
+                            crate::transducer::cga::projective_ratio(&carried, &momentum(&after.body, &b)?)
                         })
                         .collect()
                 })

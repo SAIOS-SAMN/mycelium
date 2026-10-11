@@ -308,7 +308,7 @@ impl<'a> Seen<'a> {
 /// the compartment's centre — and only where it lands on a cell's centre
 /// in the frame it left: a centre between cells is off the lattice.
 fn carried(v: &Versor, r: usize, c: usize) -> Result<(i64, i64), Unstated> {
-    let site = Site::new(vec![
+    let site = Site::of([
         i64::try_from(r).map_err(|_| Unstated::OffLattice)?,
         i64::try_from(c).map_err(|_| Unstated::OffLattice)?,
         0,

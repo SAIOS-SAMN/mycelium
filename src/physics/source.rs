@@ -36,7 +36,7 @@ pub fn geoid_vector(round: &Mv) -> Option<Mv> {
     if round.is_zero() {
         return None;
     }
-    let pseudo = Mv::blade(crate::transducer::cga::pseudo(round.n()), Q::from_integer(1.into()));
+    let pseudo = Mv::blade(crate::transducer::cga::pseudo(round.n())?, Q::from_integer(1.into()));
     let sigma = round.geo(&pseudo);
     let v = sigma.grade(1);
     (!v.is_zero() && sigma.sub(&v).is_zero()).then_some(v)

@@ -936,9 +936,9 @@ fn six_adjacency_connects_bodies_across_frames_into_one_streamline() {
 fn a_sectionless_site_is_counted_at_the_one_producer() {
     use crate::transducer::family::perceive::{on_grid, take_sectionless};
     let _ = take_sectionless();
-    assert_eq!(on_grid(&Site::new(vec![4, 5, 0])), Some((4, 5)), "a site of n = 3 has its section");
+    assert_eq!(on_grid(&Site::of([4, 5, 0])), Some((4, 5)), "a site of n = 3 has its section");
     assert_eq!(take_sectionless(), 0, "and nothing is counted for it");
-    assert_eq!(on_grid(&Site::new(vec![4])), None, "a site of n = 1 has no grid plane");
+    assert_eq!(on_grid(&Site::of([4])), None, "a site of n = 1 has no grid plane");
     assert_eq!(take_sectionless(), 1, "and its refusal is counted, not dropped");
 }
 

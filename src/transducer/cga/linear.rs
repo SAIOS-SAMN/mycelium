@@ -249,7 +249,7 @@ impl LinearFunction {
 /// coefficients on every blade, denominators cleared and content divided
 /// out, exact.
 pub fn ray_of(v: &Mv) -> crate::core::span::Vector {
-    ray((0..v.slot_count()).map(|k| (k, v.coeff(k))).collect())
+    ray(v.terms().collect())
 }
 
 /// Exact rational coordinates as the primitive integer ray on them.

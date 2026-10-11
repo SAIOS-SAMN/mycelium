@@ -2,7 +2,7 @@
 //! and split into the harmonic and luminal halves, and the census of which
 //! ones the engine populates.
 
-use super::multivector::{base_axis, Mv, EM, EP};
+use super::multivector::{axes, base_axis, Mv, EM, EP};
 use num_traits::Zero;
 
 /// THE HYPERBOLIC GENERATORS `eₐ ∧ e₋`, one for every spacelike generator:
@@ -19,7 +19,7 @@ use num_traits::Zero;
 /// declared three restricted dimensional capacity (Anti-Flattening clause
 /// 5).
 pub fn transvection_planes(n: u8) -> Vec<usize> {
-    let mut out: Vec<usize> = (1..=usize::from(n)).map(|i| base_axis(i) | EM).collect();
+    let mut out: Vec<usize> = axes(n).map(|a| a | EM).collect();
     out.push(EP | EM);
     out
 }
@@ -33,15 +33,15 @@ pub fn is_transvection_plane(blade: usize) -> bool {
 /// THE HARMONIC HALF: the planes avoiding `e₋` — every pair of base axes,
 /// then each base axis with `e₊`. `B² < 0`, compact, they turn.
 pub fn harmonic_planes(n: u8) -> Vec<usize> {
-    let n = usize::from(n);
+    let held: Vec<usize> = axes(n).collect();
     let mut out = Vec::new();
-    for i in 1..=n {
-        for j in (i + 1)..=n {
-            out.push(base_axis(i) | base_axis(j));
+    for (k, a) in held.iter().enumerate() {
+        for b in &held[k + 1..] {
+            out.push(a | b);
         }
     }
-    for i in 1..=n {
-        out.push(base_axis(i) | EP);
+    for a in &held {
+        out.push(a | EP);
     }
     out
 }
@@ -107,6 +107,19 @@ pub fn blade_name(blade: usize) -> String {
     }
 }
 
+/// A RAY'S OWN NAME, blade by blade with its exact coefficient: `e12 3/5,
+/// e1p -1`. The one namer of a ray a reading carries ([`Mv::ray`]); a mask
+/// this target's word cannot hold is named `?`, never truncated into another.
+pub fn ray_name(ray: &[(u64, num_rational::BigRational)]) -> String {
+    ray.iter()
+        .map(|(b, q)| match usize::try_from(*b) {
+            Ok(m) => format!("{} {q}", blade_name(m)),
+            Err(_) => format!("? {q}"),
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 /// THE TWO NULL DIRECTIONS OF THE CONFORMAL PAIR: `e_∞ = e₋ + e₊` and
 /// `e_o = ½(e₋ − e₊)`. A bivector `eᵢ ∧ e_∞` is a translation's, `eᵢ ∧ e_o`
 /// a transversion's; both square to zero.
@@ -167,16 +180,16 @@ pub fn occupancy(b: &Mv, n: u8) -> Occupancy {
     let b = b.grade(2);
     let mut null_pairs: Vec<usize> = Vec::new();
     let mut parabolic: Vec<(usize, Pole)> = Vec::new();
-    for i in 1..=usize::from(n) {
-        let (p, m) = (b.coeff(base_axis(i) | EP), b.coeff(base_axis(i) | EM));
+    for (k, a) in axes(n).enumerate() {
+        let (p, m) = (b.coeff(a | EP), b.coeff(a | EM));
         if p.is_zero() || p * p != m * m {
             continue;
         }
         // The stored blades past the third axis are `e₊eᵢ` and `e₋eᵢ`, both
         // the negatives of `eᵢe₊`, `eᵢe₋`; the ratio `p/m` is unchanged.
-        parabolic.push((i, if p == m { Pole::Infinity } else { Pole::Origin }));
-        null_pairs.push(base_axis(i) | EP);
-        null_pairs.push(base_axis(i) | EM);
+        parabolic.push((k + 1, if p == m { Pole::Infinity } else { Pole::Origin }));
+        null_pairs.push(a | EP);
+        null_pairs.push(a | EM);
     }
     let planes = bivector_planes(n)
         .into_iter()
@@ -240,11 +253,12 @@ fn parabolic_key(axis: usize, pole: Pole) -> [u8; 9] {
 
 /// THE CONFORMAL GENERATOR A SLOT OF THE LETTERS' CHART IS READ AS (51.2):
 /// the base axis the slot stands for ([`crate::transducer::alphabet::axis_of_slot`]),
-/// and `e₊` for the off-plane slot, which stands for no base axis.
-fn carriage_generator(slot: u8) -> usize {
+/// and `e₊` for the off-plane slot, which stands for no base axis. `None`
+/// for a slot's axis past the algebra's masks.
+fn carriage_generator(slot: u8) -> Option<usize> {
     match crate::transducer::alphabet::axis_of_slot(slot) {
         Some(axis) => base_axis(axis + 1),
-        None => EP,
+        None => Some(EP),
     }
 }
 
@@ -273,7 +287,9 @@ pub fn note_transition(r: &crate::transducer::alphabet::Rotor, carriage: &Mv) {
     for &(s, t) in &crate::transducer::alphabet::SLOT_PLANES_SIX {
         let rotor_mask = (1usize << s) | (1usize << t);
         if !r.coeff(rotor_mask).is_zero() {
-            seen.insert(plane_key(carriage_generator(s) | carriage_generator(t)), ());
+            if let (Some(a), Some(b)) = (carriage_generator(s), carriage_generator(t)) {
+                seen.insert(plane_key(a | b), ());
+            }
             harmonic = true;
         }
     }

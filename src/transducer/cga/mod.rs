@@ -50,13 +50,13 @@ pub use motor::{
     motor_tally, note_motor, note_step, note_unread, take_motor_tally, KindReading, Motor, MotorAction, MotorTally,
     StepClass, StepReading, TransitionKind, VectorReading,
 };
-pub use multivector::{base_axis, blades, pseudo, slots, Mv, E1, E2, E3, EM, EP};
+pub use multivector::{axes, base_axis, blades, pseudo, slots, Mv, E1, E2, E3, EM, EP, MAX_N};
 pub use period::{compact_period, cyclotomic_orders, finite_order, Spectrum};
 pub use encounter::{encounter, Encounter, Unencountered};
 pub use perturbation::{lift_drag, Alignment, LiftDrag};
 pub use planes::{
     bivector_planes, blade_name, harmonic_planes, is_transvection_plane, note_transition, occupancy,
-    parabolic_name, plane_is_harmonic, plane_name, plane_tally, take_plane_tally, transvection_planes,
+    parabolic_name, plane_is_harmonic, plane_name, plane_tally, ray_name, take_plane_tally, transvection_planes,
     Occupancy, PlaneTally, Pole,
 };
 pub use spin::{

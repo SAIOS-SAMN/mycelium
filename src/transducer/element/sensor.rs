@@ -31,7 +31,7 @@ pub type Point = (num_rational::BigRational, num_rational::BigRational, num_rati
 /// sensor and carried from here as a site of `n = 3`.
 impl From<(i64, i64, i64)> for Site {
     fn from((r, c, k): (i64, i64, i64)) -> Site {
-        Site::new(vec![r, c, k])
+        Site::of([r, c, k])
     }
 }
 
@@ -39,7 +39,7 @@ impl From<(i64, i64, i64)> for Site {
 /// carries, read at the sensor.
 impl From<(i64, i64, i64, u8)> for crate::transducer::blade::Compartment {
     fn from((r, c, k, hue): (i64, i64, i64, u8)) -> Self {
-        crate::transducer::blade::Compartment { site: Site::new(vec![r, c, k]), hue }
+        crate::transducer::blade::Compartment { site: Site::of([r, c, k]), hue }
     }
 }
 
@@ -51,7 +51,7 @@ pub fn site_at(p: &[num_rational::BigRational]) -> Option<Site> {
     p.iter()
         .map(|x| i64::try_from(x.floor().to_integer()).ok())
         .collect::<Option<Vec<i64>>>()
-        .map(Site::new)
+        .and_then(Site::new)
 }
 
 /// The same reading for a point of the corpus's three coordinates.
@@ -91,7 +91,7 @@ pub fn carry_site(v: &Versor, s: &Site) -> Option<Site> {
 
 /// Carry a compartment's center at the corpus's three coordinates.
 pub fn carry_center(v: &Versor, r: i64, c: i64, k: i64) -> Option<Point> {
-    match carry_site_center(v, &Site::new(vec![r, c, k]))?.as_slice() {
+    match carry_site_center(v, &Site::of([r, c, k]))?.as_slice() {
         [x, y, z] => Some((x.clone(), y.clone(), z.clone())),
         _ => None,
     }
@@ -175,7 +175,7 @@ pub fn carry_compartment_site(v: &Versor, s: &Site) -> Option<Vec<Site>> {
             let mut axes = p00.clone();
             axes[ga] = i;
             axes[gb] = j;
-            out.push(Site::new(axes));
+            out.push(Site::new(axes)?);
         }
     }
     Some(out)
@@ -183,7 +183,7 @@ pub fn carry_compartment_site(v: &Versor, s: &Site) -> Option<Vec<Site>> {
 
 /// A whole compartment carried at the corpus's three coordinates.
 pub fn carry_compartment(v: &Versor, r: i64, c: i64, k: i64) -> Option<Vec<(i64, i64, i64)>> {
-    carry_compartment_site(v, &Site::new(vec![r, c, k]))?
+    carry_compartment_site(v, &Site::of([r, c, k]))?
         .iter()
         .map(|s| match s.axes() {
             [r, c, k] => Some((*r, *c, *k)),

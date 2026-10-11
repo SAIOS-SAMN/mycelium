@@ -62,7 +62,8 @@ pub struct Residue {
 /// by name: never an empty answer.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NotCarried {
-    /// The two supports stand on different towers or bases.
+    /// The two supports stand on different towers or bases, or on a base
+    /// whose axes the algebra does not hold (no frame to carry).
     Frames,
     /// The versor is not read at both poles (`conformal_factors`).
     Unfactored(crate::transducer::element::Unfactored),
@@ -97,14 +98,16 @@ fn times(z: &[Q; 2], w: &[Q; 2]) -> [Q; 2] {
     [&z[0] * &w[0] - &z[1] * &w[1], &z[0] * &w[1] + &z[1] * &w[0]]
 }
 
-/// The base axis `e_{k+1}` as a vector of the algebra.
-fn axis(k: usize) -> Mv {
-    Mv::blade(cga::base_axis(k + 1), Q::one())
+/// The base axis `e_{k+1}` as a vector of the algebra; `None` past the
+/// algebra's axes.
+fn axis(k: usize) -> Option<Mv> {
+    Some(Mv::blade(cga::base_axis(k + 1)?, Q::one()))
 }
 
-/// A vector's part on the body's `n` base axes.
+/// A vector's part on the body's `n` base axes (a body's `n` is its sites'
+/// arity, within the algebra).
 fn on_base(y: &Mv, n: usize) -> Mv {
-    cga::base_vector(&(0..n).map(|k| y.coeff(cga::base_axis(k + 1)).clone()).collect::<Vec<Q>>())
+    cga::base_vector(&(1..=n).map_while(cga::base_axis).map(|a| y.coeff(a).clone()).collect::<Vec<Q>>())
 }
 
 impl<'a> ContinuousSupport<'a> {
@@ -123,10 +126,10 @@ impl<'a> ContinuousSupport<'a> {
                 }
                 let rows: Vec<Mv> = (0..n)
                     .map(|i| {
-                        (0..n).try_fold(Mv::zero(), |acc, j| Some(acc.add(&axis(j).scale(&(b.moment2(i, j)? / &m0)))))
+                        (0..n).try_fold(Mv::zero(), |acc, j| Some(acc.add(&axis(j)?.scale(&(b.moment2(i, j)? / &m0)))))
                     })
                     .collect::<Option<Vec<Mv>>>()?;
-                let at = |mask: usize| (0..n).find(|&i| cga::base_axis(i + 1) == mask);
+                let at = |mask: usize| (0..n).find(|&i| cga::base_axis(i + 1) == Some(mask));
                 std::borrow::Cow::Owned(cga::LinearFunction::on_generators(u8::try_from(n).ok()?, |mask| match at(mask) {
                     Some(i) => rows[i].clone(),
                     None => Mv::zero(),
@@ -222,13 +225,16 @@ impl<'a> ContinuousSupport<'a> {
             return Err(NotCarried::Frames);
         }
         cga::weight_of(rotation).filter(|w| !w.is_zero()).ok_or(NotCarried::Weightless)?;
-        let images: Vec<Mv> = (0..n).map(|k| rotation.twisted(&axis(k))).collect();
+        // The frame's axes: a body standing on axes the algebra does not hold
+        // has no frame to carry.
+        let unit: Vec<Mv> = (0..n).map(axis).collect::<Option<Vec<Mv>>>().ok_or(NotCarried::Frames)?;
+        let images: Vec<Mv> = unit.iter().map(|e| rotation.twisted(e)).collect();
         if !images.iter().all(|y| y.sub(&on_base(y, n)).is_zero()) {
             return Err(NotCarried::OffAxes);
         }
         let rho2 = rho * rho;
-        let second_carried = images.iter().enumerate().all(|(k, y)| {
-            let turned = rotation.twisted(&self.second.at(&axis(k))).scale(&rho2);
+        let second_carried = images.iter().zip(&unit).all(|(y, e)| {
+            let turned = rotation.twisted(&self.second.at(e)).scale(&rho2);
             other.second.at(y).sub(&turned).is_zero()
         });
         if !second_carried {
@@ -296,11 +302,10 @@ impl PlaneCarriage {
     /// axes; `None` where the rotation has no weight or `p` is turned off
     /// every plane of the base.
     pub fn of(rotation: &Mv, rho: &Q, n: usize, p: (usize, usize)) -> Option<PlaneCarriage> {
-        fn at(y: &Mv, k: usize) -> &Q {
-            y.coeff(cga::base_axis(k + 1))
-        }
+        let masks: Vec<usize> = (1..=n).map(cga::base_axis).collect::<Option<Vec<usize>>>()?;
+        let at = |y: &Mv, k: usize| -> Q { y.coeff(masks[k]).clone() };
         let w = cga::weight_of(rotation).filter(|w| !w.is_zero())?;
-        let (yi, yj) = (rotation.twisted(&axis(p.0)), rotation.twisted(&axis(p.1)));
+        let (yi, yj) = (rotation.twisted(&axis(p.0)?), rotation.twisted(&axis(p.1)?));
         let rows: Vec<usize> = (0..n).filter(|&k| !at(&yi, k).is_zero() || !at(&yj, k).is_zero()).collect();
         let &[k, l] = rows.as_slice() else { return None };
         crate::transducer::base::plane_index((k, l))?;

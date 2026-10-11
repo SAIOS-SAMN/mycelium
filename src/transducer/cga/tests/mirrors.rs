@@ -42,7 +42,7 @@ fn a_nucleus_reads_its_offset_against_the_mirrors_it_stands_between() {
 #[test]
 fn the_bracketing_mirrors_read_the_grids_affine_group() {
     let planes: Vec<Mv> =
-        [(1, 0), (1, 1), (2, 0), (3, 1), (3, 2)].iter().map(|&(a, k)| base_mirror(a, &q(k, 1))).collect();
+        [(1, 0), (1, 1), (2, 0), (3, 1), (3, 2)].iter().map(|&(a, k)| base_mirror(a, &q(k, 1)).expect("an axis of the base")).collect();
     let r = read_coxeter(&planes, &[], &mut budget());
     assert_eq!(
         r.components,

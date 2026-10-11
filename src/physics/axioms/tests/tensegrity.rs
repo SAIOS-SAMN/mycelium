@@ -238,7 +238,7 @@ fn a13_an_unforced_orbit_carries_its_momentum_and_a_forced_one_leaves_a_torque()
     let before = Body { centre: vec![q(1, 1), zero()], mass: q(4, 1), moments: d(2, 1) };
     let after = Body { centre: vec![zero(), q(-1, 1)], mass: q(4, 1), moments: d(1, 2) };
     let g = rotator(&q(1, 1), &q(1, 1));
-    assert!(!momentum(&before, &g.grade(2)).is_zero(), "the body has momentum");
+    assert!(!momentum(&before, &g.grade(2)).expect("the body's axes are the algebra's").is_zero(), "the body has momentum");
     assert!(external_torque(&before, &after, &g).is_some_and(|t| t.is_zero()), "the orbit carries it");
     let grown = Body { moments: d(3, 1), ..after };
     assert!(external_torque(&before, &grown, &g).is_some_and(|t| !t.is_zero()), "a grown body leaves an external torque");

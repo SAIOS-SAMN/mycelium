@@ -82,7 +82,7 @@ fn each_symmetry_carries_every_site_to_its_index_image() {
         let Some(Step::Motion(v)) = Step::grid_motion(kind, shape(&x), shape(&y)) else { panic!("{kind:?} fits") };
         for (r, row) in x.iter().enumerate() {
             for (c, &h) in row.iter().enumerate() {
-                let site = Site::new(vec![r as i64, c as i64, 0]);
+                let site = Site::of([r as i64, c as i64, 0]);
                 let to = crate::transducer::element::carry_site(&v, &site).expect("a site lands");
                 let [tr, tc, _] = to.axes() else { panic!("three axes") };
                 let (tr, tc) = (usize::try_from(*tr).expect("a row on the grid"), usize::try_from(*tc).expect("a column on the grid"));

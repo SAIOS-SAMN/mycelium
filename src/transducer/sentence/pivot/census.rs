@@ -429,10 +429,7 @@ impl OrbitReading {
         let n = n.max(m.n());
         let canonical = m.canonical();
         let precession: Vec<(usize, num_rational::BigRational)> = match &canonical {
-            Some(c) => (0..c.slot_count())
-                .filter(|&b| !num_traits::Zero::is_zero(c.coeff(b)))
-                .map(|b| (b, c.coeff(b).clone()))
-                .collect(),
+            Some(c) => c.terms().map(|(b, v)| (b, v.clone())).collect(),
             None => Vec::new(),
         };
         let cga::Occupancy { planes, parabolic } = match &canonical {

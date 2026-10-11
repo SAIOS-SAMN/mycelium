@@ -113,8 +113,7 @@ pub fn compose(terms: &[Term], budget: &mut crate::physics::Budget) -> Option<Co
     }
     // A holonomy that is a non-zero scalar is the identity ray: the ring
     // returned at once (ℓ = 1). Otherwise the period is read off its modes.
-    use num_traits::Zero;
-    let identity = !omega.coeff(0).is_zero() && (1..omega.slot_count()).all(|k| omega.coeff(k).is_zero());
+    let identity = omega.terms().map(|(k, _)| k).eq([0]);
     let (closure, modes) = match identity {
         true => (Closure::Closes(1), Vec::new()),
         false => match cga::motion_modes(&omega, budget) {

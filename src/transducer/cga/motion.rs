@@ -124,7 +124,7 @@ pub fn unfold(v: &Mv, n: u8) -> Option<Mv> {
         return None;
     }
     let up = n.checked_add(1)?;
-    let axis = Mv::blade(super::base_axis(usize::from(up)), one());
+    let axis = Mv::blade(super::base_axis(usize::from(up))?, one());
     let turned = axis.geo(&v.widened(up));
     super::is_versor(&turned).then_some(turned)
 }

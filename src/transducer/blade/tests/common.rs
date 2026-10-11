@@ -24,7 +24,7 @@ pub fn dilate(support: &[Site], k: i64) -> Vec<Site> {
                     let mut axes = s.axes().to_vec();
                     axes[ga] = k * axes[ga] + i;
                     axes[gb] = k * axes[gb] + j;
-                    Site::new(axes)
+                    Site::new(axes).expect("a fixture site within the algebra")
                 })
             })
         })

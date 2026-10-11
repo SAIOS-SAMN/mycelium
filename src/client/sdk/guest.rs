@@ -30,7 +30,7 @@ pub fn turn(plane: (usize, usize), s: &Q, b: &Q) -> Option<Mv> {
     if !(1 <= i && i < j && j <= 3) || (s.is_zero() && b.is_zero()) {
         return None;
     }
-    Some(cga::rotator_on_blade(s, b, cga::base_axis(i) | cga::base_axis(j)))
+    Some(cga::rotator_on_blade(s, b, cga::base_axis(i)? | cga::base_axis(j)?))
 }
 
 /// `first`, then `then`: the motion `then · first`, whose sandwich is `then`'s

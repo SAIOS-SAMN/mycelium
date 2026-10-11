@@ -454,16 +454,6 @@ pub fn circuits_of(form: &Form) -> Vec<(coord::Overlap, TraversedCircuit)> {
 
 /// A versor's ray in its canonical coordinates, each non-zero blade and its
 /// exact coefficient. Empty where the element has no canonical writing.
-#[expect(
-    clippy::cast_possible_truncation,
-    reason = "STD1 C1 — the algebra's range: a blade mask below the 2^(n+2) slots of Cl(n+1,1), c.slot_count()"
-)]
-fn ray_of(g: &element::Versor) -> Vec<(u16, num_rational::BigRational)> {
-    match g.canonical() {
-        Some(c) => (0..c.slot_count())
-            .filter(|&b| !num_traits::Zero::is_zero(c.coeff(b)))
-            .map(|b| (b as u16, c.coeff(b).clone()))
-            .collect(),
-        None => Vec::new(),
-    }
+fn ray_of(g: &element::Versor) -> Vec<(u64, num_rational::BigRational)> {
+    g.ray()
 }

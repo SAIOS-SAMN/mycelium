@@ -2,7 +2,7 @@
 // `c`, exact rays that commute and multiply back to the motion, the 180° turn
 // the plane's blade; rays equal by proportion; rational roots at any degree.
 
-use super::common::{budget, q};
+use super::common::{ax, budget, q};
 use crate::network::nerve::coord::BivectorKind;
 use crate::transducer::cga::at_three::translator;
 use crate::transducer::cga::*;
@@ -79,7 +79,7 @@ fn a_dispiration_reads_a_turn_and_a_boost_that_multiply_back() {
 /// planes' product has, no split among them chosen.
 #[test]
 fn an_isoclinic_pair_is_one_mode_over_two_planes() {
-    let e34 = base_axis(3) | base_axis(4);
+    let e34 = ax(3) | ax(4);
     let motion = rotator(&q(1, 1), &q(1, 1)).geo(&rotator_on_blade(&q(1, 1), &q(1, 1), e34));
     let [m] = read(&motion).try_into().expect("one mode");
     assert_eq!((m.kind, m.planes, m.order), (BivectorKind::Elliptic, 2, Some(4)));
@@ -117,7 +117,7 @@ fn rays_are_equal_by_proportion() {
 /// `n = 5` three turn.
 #[test]
 fn three_planes_read_three_modes_by_the_rational_root_theorem() {
-    let plane = |i: usize, j: usize| base_axis(i) | base_axis(j);
+    let plane = |i: usize, j: usize| ax(i) | ax(j);
     let at_four = Mv::blade(plane(1, 2), q(1, 1))
         .add(&Mv::blade(plane(3, 4), q(2, 1)))
         .add(&Mv::blade(EP | EM, q(3, 1)));
@@ -131,7 +131,7 @@ fn three_planes_read_three_modes_by_the_rational_root_theorem() {
     );
     let at_five = Mv::blade(plane(1, 2), q(1, 1))
         .add(&Mv::blade(plane(3, 4), q(2, 1)))
-        .add(&Mv::blade(base_axis(5) | EP, q(3, 1)));
+        .add(&Mv::blade(ax(5) | EP, q(3, 1)));
     assert_eq!(kinds(&at_five), vec![(BivectorKind::Elliptic, 1); 3]);
 }
 

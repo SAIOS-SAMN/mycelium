@@ -24,9 +24,10 @@ use num_traits::Zero;
 
 type Q = BigRational;
 
-/// The mirror `x_axis = k` (`axis` counted from one), as a constructor.
-pub fn base_mirror(axis: usize, k: &Q) -> Mv {
-    Mv::blade(super::base_axis(axis), one()).add(&super::e_inf().scale(k))
+/// The mirror `x_axis = k` (`axis` counted from one), as a constructor;
+/// `None` for an axis the algebra does not hold.
+pub fn base_mirror(axis: usize, k: &Q) -> Option<Mv> {
+    Some(Mv::blade(super::base_axis(axis)?, one()).add(&super::e_inf().scale(k)))
 }
 
 /// A sphere's centre on the base's `n` axes, `c_i = (s · e_i) / (−s · e_∞)`;
@@ -36,7 +37,7 @@ pub fn sphere_centre(s: &Mv, n: u8) -> Option<Vec<Q>> {
     if w.is_zero() {
         return None;
     }
-    Some((1..=usize::from(n)).map(|i| s.geo(&Mv::blade(super::base_axis(i), one())).scalar_part() / &w).collect())
+    Some(super::axes(n).map(|a| s.geo(&Mv::blade(a, one())).scalar_part() / &w).collect())
 }
 
 /// ONE NUCLEUS AGAINST ONE BRACKETING MIRROR: the axis, the mirror's offset,
@@ -68,7 +69,8 @@ pub fn mirrors_between(s: &Mv, n: u8) -> Vec<MirrorReading> {
             return Vec::new();
         }
         for k in ks {
-            let mirror = base_mirror(i + 1, &k);
+            // The centre has one coordinate per axis the algebra holds.
+            let Some(mirror) = base_mirror(i + 1, &k) else { continue };
             let offset = s.geo(&mirror).scalar_part() / &w;
             let regime = super::pair_regime(&[s.clone(), mirror], 0, 1);
             out.push(MirrorReading { axis: i + 1, k, offset, regime });

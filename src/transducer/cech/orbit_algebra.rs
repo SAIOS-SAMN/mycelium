@@ -39,7 +39,6 @@
 use crate::network::nerve::coord::BivectorKind;
 use crate::network::nerve::Keyed;
 use crate::transducer::cga::{self, ConstructorOrbit, GramReading, MotionMode, Mv};
-use num_traits::Zero;
 
 /// WHAT ONE MODE RAY DOES TO THE ROUND.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -623,8 +622,7 @@ pub(crate) fn algebra_contains(cell: &CellAlgebra, f: &cga::LinearFunction) -> O
 
 /// The planes a mode's ray turns in: its bivector part's non-zero blades.
 fn plane_of(m: &MotionMode) -> Vec<usize> {
-    let b = m.ray.grade(2);
-    (0..b.slot_count()).filter(|&k| !b.coeff(k).is_zero()).collect()
+    m.ray.grade(2).terms().map(|(k, _)| k).collect()
 }
 
 fn lcm(a: u32, b: u32) -> u32 {

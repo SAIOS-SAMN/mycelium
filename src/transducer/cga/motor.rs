@@ -14,7 +14,7 @@
 //! that refuses a shear or a sum. The sandwich stays TRANSPORT's shape; the
 //! opening stays the commutator (78.39).
 
-use super::multivector::{base_axis, one, Mv, EM, EP};
+use super::multivector::{one, Mv, EM, EP};
 
 /// A MOTOR: any element of the algebra, even or odd, read by its action.
 /// 78.41's noun — `element::Action` is the element's four-lane action, and
@@ -87,7 +87,7 @@ impl MotorAction {
 
 /// The generators of `Cl(n+1, 1)`: the base axes, then `e₊`, `e₋`.
 fn generators(n: u8) -> Vec<usize> {
-    (1..=usize::from(n)).map(base_axis).chain([EP, EM]).collect()
+    super::multivector::axes(n).chain([EP, EM]).collect()
 }
 
 /// Every blade of `Cl(n+1, 1)`, as the masks the subsets of its generators
@@ -386,14 +386,12 @@ impl Motor {
         let images: Vec<Mv> = gens.iter().map(|&g| self.image(g)).collect();
         let vectors_to_vectors = images.iter().all(|x| x.sub(&x.grade(1)).is_zero());
         let vector_parts: Vec<Mv> = images.iter().map(|x| x.grade(1)).collect();
-        let pseudoscalar = Mv::blade(super::multivector::pseudo(n), one());
-        VectorReading {
-            vectors_to_vectors,
-            rank: span_grade(&vector_parts),
-            dim: gens.len(),
-            pseudo_fixed: super::group::projective_ratio(&self.image(super::multivector::pseudo(n)), &pseudoscalar)
-                .is_some(),
-        }
+        // Every value's `n` is within the algebra's masks, so its
+        // pseudoscalar is one of them.
+        let pseudo_fixed = super::multivector::pseudo(n).is_some_and(|i| {
+            super::group::projective_ratio(&self.image(i), &Mv::blade(i, one())).is_some()
+        });
+        VectorReading { vectors_to_vectors, rank: span_grade(&vector_parts), dim: gens.len(), pseudo_fixed }
     }
 
     /// THE WHOLE ACTION: one image per blade, `2^(n+2)` of them — the

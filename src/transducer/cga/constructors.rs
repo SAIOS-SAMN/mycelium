@@ -215,7 +215,7 @@ pub(crate) fn constructors_of_base_turn(images: &[Mv], n: u8) -> Result<Vec<Mv>,
         return Err(TurnUnspelled::Axis(usize::from(n)));
     }
     let turn = super::LinearFunction::on_generators(n, |mask| {
-        match (0..images.len()).find(|&i| super::base_axis(i + 1) == mask) {
+        match (0..images.len()).find(|&i| super::base_axis(i + 1) == Some(mask)) {
             Some(i) => images[i].clone(),
             None => Mv::blade(mask, one()),
         }

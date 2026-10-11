@@ -102,6 +102,7 @@ fn a_pythagorean_site_map_is_carried_at_its_rational_turn() {
             crate::transducer::base::Site::new(
                 p.iter().map(|x| i64::try_from(x.to_integer()).expect("a site of the lattice")).collect(),
             )
+            .expect("a site within the algebra")
         })
         .collect();
     let image = blade::shape_of(&image);

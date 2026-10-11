@@ -118,9 +118,7 @@ pub fn rotor_of_factors(f: &Conformal) -> Result<crate::transducer::alphabet::Ro
     // `(T·K·D)~ V`: the rotor as a ray, which is how a rotor is read
     // (78.32(1)).
     let r = &f.rotation;
-    let on_base = |m: &Versor| {
-        (0..m.slot_count()).all(|b| BASE_EVEN.iter().any(|&(_, vm)| vm == b) || m.coeff(b).is_zero())
-    };
+    let on_base = |m: &Versor| m.terms().all(|(b, _)| BASE_EVEN.iter().any(|&(_, vm)| vm == b));
     let read = |m: &Versor| -> Rotor {
         BASE_EVEN.iter().fold(Rotor::zero(), |acc, &(rm, vm)| acc.add(&Rotor::blade(rm, m.coeff(vm).clone())))
     };

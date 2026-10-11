@@ -88,10 +88,10 @@ pub struct Offer {
     pub face: crate::network::nerve::coord::Overlap,
     /// The constructed carrier's ray: the tether, or the constructor that
     /// carried it.
-    pub constructor: Vec<(u16, BigRational)>,
+    pub constructor: Vec<(u64, BigRational)>,
     /// T1: the two routes agree — the completed loop is the identity ray.
     pub flat: bool,
-    pub holonomy: Vec<(u16, BigRational)>,
+    pub holonomy: Vec<(u64, BigRational)>,
     pub modes: ModesRead,
 }
 
@@ -291,7 +291,7 @@ impl CircuitTest {
 
 /// A ray in its canonical coordinates, each blade and its exact coefficient.
 #[must_use]
-fn put_ray(out: &mut Vec<u8>, ray: &[(u16, BigRational)]) -> Option<()> {
+fn put_ray(out: &mut Vec<u8>, ray: &[(u64, BigRational)]) -> Option<()> {
     crate::transducer::address::put_u32_count(out, ray.len())?;
     for (blade, c) in ray {
         out.extend_from_slice(&blade.to_le_bytes());
@@ -301,14 +301,14 @@ fn put_ray(out: &mut Vec<u8>, ray: &[(u16, BigRational)]) -> Option<()> {
     Some(())
 }
 
-fn take_ray(b: &[u8], p: &mut usize) -> Option<Vec<(u16, BigRational)>> {
+fn take_ray(b: &[u8], p: &mut usize) -> Option<Vec<(u64, BigRational)>> {
     let m = take_len(b, p)?;
-    if !holds(b, *p, m, 10) {
+    if !holds(b, *p, m, 16) {
         return None;
     }
     let mut ray = Vec::with_capacity(m);
     for _ in 0..m {
-        let blade = take_u16(b, p)?;
+        let blade = take_u64(b, p)?;
         let (numer, denom) = (take_int(b, p)?, take_int(b, p)?);
         if num_traits::Zero::is_zero(&denom) {
             return None;
@@ -349,7 +349,7 @@ pub enum Carried {
     Read {
         /// The transition's versor ray in its canonical coordinates: each non-zero
         /// blade and its exact coefficient, the first `+1` (A4).
-        ray: Vec<(u16, BigRational)>,
+        ray: Vec<(u64, BigRational)>,
         /// The transition's own class, `None` where it is unread.
         kind: Option<BivectorKind>,
         /// The transition's modes, by the one reader of modes.
@@ -405,7 +405,7 @@ pub(super) fn take_u32(b: &[u8], p: &mut usize) -> Option<u32> {
     Some(v)
 }
 
-fn take_u64(b: &[u8], p: &mut usize) -> Option<u64> {
+pub(super) fn take_u64(b: &[u8], p: &mut usize) -> Option<u64> {
     let v = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
     *p += 8;
     Some(v)
@@ -532,19 +532,8 @@ impl CircuitTransition {
             0 => Carried::Unread,
             1 => Carried::Cone,
             2 => {
-                let m = take_len(b, p)?;
-                if !holds(b, *p, m, 10) {
-                    return None;
-                }
-                let mut ray = Vec::with_capacity(m);
-                for _ in 0..m {
-                    let blade = take_u16(b, p)?;
-                    let (numer, denom) = (take_int(b, p)?, take_int(b, p)?);
-                    if num_traits::Zero::is_zero(&denom) {
-                        return None;
-                    }
-                    ray.push((blade, BigRational::new(numer, denom)));
-                }
+                // The ray's one reader (law 12), as `put_ray` is its writer.
+                let ray = take_ray(b, p)?;
                 let kind = take_kind(b, p)?;
                 let modes = take_modes(b, p)?;
                 let after = take_kind(b, p)?;
