@@ -103,6 +103,19 @@ pub struct Chat {
     pub tally: ChatTally,
 }
 
+#[cfg(test)]
+impl Chat {
+    /// Whether this mind said the thing at `addr`.
+    pub(crate) fn said(&self, addr: &[u8]) -> bool {
+        self.union.contains(addr)
+    }
+
+    /// Whether some mind shared the thing this mind said at `addr`.
+    pub(crate) fn agreed(&self, addr: &[u8]) -> bool {
+        self.union.get(addr).is_some_and(|u| u.shared)
+    }
+}
+
 /// THE WORDS OF A FORM, each as its whole motion and its hue map.
 fn spoken_of(f: &crate::transducer::sentence::Form) -> Vec<Spoken> {
     use crate::transducer::sentence::presentation::vertex_motion;
