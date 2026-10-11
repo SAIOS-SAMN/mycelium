@@ -6,9 +6,10 @@ every earlier version of this file: the earlier versions accreted parts
 that amended one another by reference; this one is a single closed form in
 which every statement stands where it applies. Companion documents:
 `ALPHABET.md`, `MU-ENGINEERING.md`, `MU-ECONOMY.md`, `XSEPTUM.md`, and
-`MU-CLIENT.md` — the mind's own chapters, moved out verbatim on 2026-10-11
-(each leaves a pointer here), and the client's integration, its anastome and
-its link to the hypha, written there first.
+`MU-CLIENT.md` — the mind: the counterpart of the hypha that perceives what
+the hypha exports, understands it in its own field and responds in anastome
+(its §1–§9, written there first), and the mind's own chapters moved out
+verbatim on 2026-10-11 into its Part V (each leaves a pointer here).
 
 ## How to read this document
 
@@ -717,7 +718,7 @@ rules it.
   operator). A section wholly about the mind moved there verbatim under its
   own number, and its heading here carries a pointer; a section that
   interleaves the mind with the court or the shared mathematics stayed here
-  and is indexed from MU-CLIENT IV.4. This document still governs: its laws,
+  and is indexed from MU-CLIENT §9. This document still governs: its laws,
   standards, vocabulary, map and shared chapters bind MU-CLIENT, and a ruling
   on the mind amends MU-CLIENT's section that governs its object.
 - **The structure is a plexus, never a ladder** (78.31): the five
@@ -982,7 +983,7 @@ same sense: the complete operation, with its invariant and its refusal.
 | **The learning curve** | 78.1, 78.3, 78.16–78.19 | a mind's perspective is its orbital elements; learning is their change by closures and refinements; the fleet is the soak and a phase lands when its reading moves | `observe/{learning,fleet,cells,circuit,carriage}.rs`, the console | landed (LC1, CO1, PG1, SP1, CQ1, PH5). LC2 open: the first non-zero reading |
 | **POW++** | 74, 78.22, 78.33, MU-ECONOMY | three proofs named apart: POUW (a closure ruled, mint on closure), POWC (a refusal closed at another perspective, the citation paid), POWR (retirement, the freed description burned, the compression yield paid); priced per lane, layer and grade, never summed | `economy/{treasury,escrow,settle,fold}.rs`, `server/cognition/court/replay.rs` (`rule_on`) | PARTIAL: a ruling is paid and slashed at its Ruling act (EC1, ACT1 landed): Upheld mints POUW by `release_discharged` and pays POWR by `release_rewrite`, Slashed revokes by `revoke_award(Slash)` — live from `court_stroke_on` → `docket_replay` (the stroke's slashes) and from `hear_ruling` (a peer's Ruling receipt admitted, `kernel.rs`). POWC has no producer: `settle_refine` and `settle_condense` (`settle.rs`) have no caller; `verdict::rule` (`court/verdict/ruling.rs`) has test callers only. PHY1 open: one reserve, contacts priced per lane (re-read d079aeed) |
 | **The hardening path** | 80.2 | a submitted solution is adjudicated by the court; the server provides the syllabus; minerals harden into crystals by re-derivation over k-steps | `observe/learning.rs`, `client/sdk/entity/learn.rs`, `server/cognition/court/syllabus.rs` | OPEN (DL1, GD1) |
-| **The planetary dialect** | 80 | a constructor is a letter of the local dialect; minds speak to minds by offers; the court rules what converges (n → 1) | `transducer/alphabet/`, `family/derivation`, `anastome/`, `client/sdk/entity/think.rs` (`construct_and_adjoin`) | PARTIAL: a residue the mind cannot say is constructed and its rotation adjoined as the mind's own letter (`construct_and_adjoin`, live from `hold_perceived_from` at `bin/mycelium-client/arms/task.rs` and from `take_demands` in `expand_ideas`). AL1 open: the odd constructor as a letter and the mode-first peel — the slice's S1 (U15's triad) closes both. SP2 is part of the client's objective (MU-CLIENT "Read this first" 6, 2026-10-11): minds speak to minds to harden language from their dialects; the frames run (chatter, 78.161, 78.163), hearing in the hearer's own shells with the pivot on top is owed (MU-CLIENT III.2); DL1 open; the Gödel step's backlog read first (GD1) (re-read d079aeed) |
+| **The planetary dialect** | 80 | a constructor is a letter of the local dialect; minds speak to minds by offers; the court rules what converges (n → 1) | `transducer/alphabet/`, `family/derivation`, `anastome/`, `client/sdk/entity/think.rs` (`construct_and_adjoin`) | PARTIAL: a residue the mind cannot say is constructed and its rotation adjoined as the mind's own letter (`construct_and_adjoin`, live from `hold_perceived_from` at `bin/mycelium-client/arms/task.rs` and from `take_demands` in `expand_ideas`). AL1 open: the odd constructor as a letter and the mode-first peel — the slice's S1 (U15's triad) closes both. SP2 is part of the client's objective (MU-CLIENT §1 item 6, §5.5, 2026-10-11): minds speak to minds to harden language from their dialects; the frames run (chatter, 78.161, 78.163), hearing in the hearer's own shells with its windings and pivots is owed (MU-CLIENT §5.3, §7.1); DL1 open; the Gödel step's backlog read first (GD1) (re-read d079aeed) |
 | **The coherent mind** | 78.37 | held superpositions fold back along the plexus, the ring deciding all four: a fixed section transported one edge per k-step and stopped by holonomy, classifying and never deleting; truncation to the unique 2-core, every class preserved, no matching chosen; flux per lane over one `K` deciding what lapses, `ZeroFlux` by name; a remainder's home a leaf on the word (`κ` inline, `g` a ray, `ℓ`), re-filled on a coincident class by an act; imagination as obstructions constructed, never candidates (Cartan–Dieudonné on the residue, on CS2's demand arm) | `bubble/{contemplation,shed,drive}.rs`, `cech/complex.rs`, `economy/escrow.rs`, `client/sdk/epigenome/persist.rs`, `observe/` | in the tree (TP1, TC1, FX1, RM1 — readings and fixes, 2026-09-25); the demand taker landed (`take_demands`, 78.109 C1). FX1's door OPEN: the mind's flux is read and counted at its orbit's close (`dialect_flux`, `note_dialect_flux`, `entity/boot.rs`) and nothing lapses through it; the fleet's numbers at the recut (re-read d079aeed) |
 
 ## 0.4 The physics over them
@@ -1030,7 +1031,7 @@ By organ, from the sensor to the mesh; each line is the audited state.
 - **Refraction, tethers, routes (72.1, 78.6, 79).** Landed. Condense and drain at the family pole remain the Čech layer's (TH1).
 - **The court (5, 23, 13–15, 74, 78.9).** Glue, Mayer–Vietoris and the refusal reader landed; the court holds no questions across perspectives yet (CV2) and offers no other angle (CV4): POWC has no producer on the fleet.
 - **The ledger and the economy (45, 78.21–78.24, MU-ECONOMY).** The ledger is a partial order carried as a trie with the stamp as its key; the clock reads, a k-step is one orbit closed as an act, and a ruling's economy is applied at its node (ACT1 landed): a ruling pays POUW and POWR and slashes at its Ruling act (`rule_on`, live from the stroke's docket and from a peer's receipt), while POWC has no producer (`settle_refine`, `settle_condense` uncalled). The mind persists as keyed tries by coordinates (LD3 landed; `MYT2` and `GEN7` at HEAD); the escrow still lapses by extent alone (FX1). (Re-read d079aeed.)
-- **The mind (24, 25, 62, 78.7, 78.37, 80).** Pivot, certificates, viscosity landed; held superpositions are not collapsed by the 𝔽₂ kernel (T5); they fold back along the plexus in the tree (78.37: transport stopped by holonomy, truncation to the 2-core, flux read per lane, the remainder on the record with its receptor and re-fill — TP1, TC1, FX1, RM1), unread on any fleet until the recut; FX1's door is open (the flux is counted at the orbit's close, nothing lapses through it); minerals and crystals are not distinguished (DL1); a constructed residue's rotation is adjoined as the mind's own letter (`construct_and_adjoin`), but the odd constructor is not yet a letter and the peel is not mode-first (AL1, both closed by the slice's S1); hyperbolic Coxeter systems under Vinberg's criterion are not read (HX1); minds speaking to minds to harden language from their dialects is the client's objective (SP2; MU-CLIENT "Read this first" 6) — the chatter frames run, hearing through the hearer's own shells and pivot is owed (III.2). (Re-read d079aeed; SP2 amended 2026-10-11.)
+- **The mind (24, 25, 62, 78.7, 78.37, 80).** Pivot, certificates, viscosity landed; held superpositions are not collapsed by the 𝔽₂ kernel (T5); they fold back along the plexus in the tree (78.37: transport stopped by holonomy, truncation to the 2-core, flux read per lane, the remainder on the record with its receptor and re-fill — TP1, TC1, FX1, RM1), unread on any fleet until the recut; FX1's door is open (the flux is counted at the orbit's close, nothing lapses through it); minerals and crystals are not distinguished (DL1); a constructed residue's rotation is adjoined as the mind's own letter (`construct_and_adjoin`), but the odd constructor is not yet a letter and the peel is not mode-first (AL1, both closed by the slice's S1); hyperbolic Coxeter systems under Vinberg's criterion are not read (HX1); minds speaking to minds to harden language from their dialects is the client's objective (SP2; MU-CLIENT §1 item 6, §5.5) — the chatter frames run, hearing through the hearer's own shells, windings and pivots is owed (MU-CLIENT §5.3, §7.1). (Re-read d079aeed; SP2 amended 2026-10-11.)
 - **The fleet (78.3, 78.16–78.19).** The typed readings and the console landed; nothing prints per epoch; the first non-zero learning reading is owed (LC2).
 
 The four places the language loses content, and their carriers, are
@@ -11368,13 +11369,12 @@ machinery of ascend, descend, condense, drain, and puncture"; "seal is
 authorized").** The six pivots in three pairs stand as ruled, `seal`
 authorized as `puncture`'s conjugate, and they are the MIND's pivot
 machinery: each mind runs them on its own complex, driven by its breath
-(`dilate / contract`) and its three shells (MU-CLIENT "Read this first",
-II.3). "Exactly one is built" no longer holds: all six are built on the Čech
+(`dilate / contract`) and its three shells (MU-CLIENT §1, §4.3–§4.5). "Exactly one is built" no longer holds: all six are built on the Čech
 complex (`cech/coboundary.rs` `ascend`, `descend`, `drain`; `cech/hole.rs`
 `condense`, `puncture`, `seal`; `cech/board.rs` `Pivot`, `Complex::apply`).
 On the mind's own complex (`Contemplation.complex`): a held ring ascends
 and punctures, and seals on collapse or on a discharge of its class
-(`bubble/question.rs`, MU-CLIENT II.3); a link's tether is written by
+(`bubble/question.rs`, MU-CLIENT §4.5); a link's tether is written by
 `set_edge` (the climb then ascends its cells); a retracted thought's star
 drains and descends (`vent_vertex`). The construction's process-wide tally is
 deleted: a pivot's outcome is returned to the field that applied it.

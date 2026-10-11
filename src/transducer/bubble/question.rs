@@ -1,4 +1,4 @@
-// 62.1, MU-CLIENT II.3 — THE MIND'S QUESTIONS ARE HOLES IN ITS OWN COMPLEX:
+// 62.1, MU-CLIENT §4.5 — THE MIND'S QUESTIONS ARE HOLES IN ITS OWN COMPLEX:
 // the puncture / seal axis of the board, driven by what the transport reads.
 //
 //! A ring the transport holds at holonomy ≠ 1 (`close_ring`) is ASCENDED —

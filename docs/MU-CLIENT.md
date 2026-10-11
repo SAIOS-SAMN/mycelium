@@ -1,106 +1,189 @@
-# MU-CLIENT — the mind: a mathematical cognitive engine on the hypha network
+# MU-CLIENT — the mind: the counterpart of the hypha
 
-Status: the client's specification, split out of `MU-RECURSION.md` on
-2026-10-11 and remediated the same day on the operator's word: "remediate
-the document so that it is not a harness: but a mathematical cognitive
-engine that produces senses, perceptions, thoughts, and formulates language
-based on the underlying topological mathematics required to speak and
-converse with other clients that are minds on the hypha network with the
-hypha adjudicating words, conjugates, AND sentences as mathematical
-constructs so that these minds can be seated inside the game engines we
-produce on the network."
+The mycelium-client kernel is a MIND: the cognition that perceives what the
+hypha exports, understands it in its own field, and responds in anastome to
+the courts and to other minds, so that dialects harden into language. This
+document is its specification, governed by `MU-RECURSION.md`. Rewritten
+whole on 2026-10-11 (the operator: "rewrite the document — i want you to be
+thorough") as one line of reasoning from the objective to what is built;
+every ruling of the earlier text stands, each at the section it rules.
 
-## How this document stands to MU-RECURSION
+## 0. How to read this document
 
-- **MU-RECURSION governs.** Its laws (1–12), coding rules (1–17) and review
+- **MU-RECURSION governs.** Its laws (1–12), coding rules (1–17), review
   checklist (a)–(t), vocabulary, Part 0 map, the shared mathematics and the
-  court bind every line below; where the two disagree, MU-RECURSION is right
-  and this document is amended.
-- **Part V holds the mind's chapters moved from MU-RECURSION verbatim**,
-  under their own numbers, so every citation like "78.112" still names one
-  text; MU-RECURSION keeps a pointer where each stood. Sections that
-  interleave mind and court stayed there and are indexed in IV.4.
-- **Parts I–IV are this document's own**, doctrine under MU-RECURSION §0.1:
-  a ruling about the mind is written here before it is built.
+  court bind every line here; where the two disagree MU-RECURSION is right
+  and this document is amended. MU-STANDARDS binds the development, the
+  Anti-Flattening Law binds every carrier.
+- **Sections 1–9 are this document's doctrine** (MU-RECURSION 0.1): a ruling
+  about the mind is written here before it is built, and a ruling is
+  written once, at the section it rules.
+- **Part V is the archive**: the mind's chapters moved verbatim from
+  MU-RECURSION, under their own numbers so a citation like "78.112" still
+  names one text. Where an archived chapter and sections 1–9 disagree,
+  sections 1–9 govern; Part V's header names the chapters that describe
+  machinery since retired.
+- **Citations.** This document's sections are cited with `§` (§4.5); a bare
+  number (62.1, 78.112, chapter 6) is a MU-RECURSION chapter, or the same
+  chapter archived in Part V under its own number; a letter-number (A.16,
+  M6, U12, S3) is MU-RECURSION's register, master, ruling or slice.
+- **Former numbering.** Citations written before this rewrite resolve so:
 
-## Read this first: what this engine is
+| cited | now |
+|---|---|
+| "Read this first" 1–5, the objective | §1 |
+| "Read this first" 6, the addendum | §1 (the hardening) and §5.5 |
+| "Read this first", the refusals | §2.4 |
+| "What the client builds" | §2, §3.1, §5.1, §7 |
+| I.1 the computational physics | §2.2 (what the hypha exports), §4.1 (the mind's own) |
+| I.2–I.4 the masters, the algorithms of language, the carriers | §4.1 |
+| II.1 senses | §3.1 |
+| II.2 the three shells | §3.2, §3.3 |
+| II.3 the pivots and the held orbit | §4.5, §4.6 |
+| II.4(1) breath | §4.3 |
+| II.4(2), (3), (6) waves, resonance, superposition | §4.8 |
+| II.4(4), (5) constructors and generators | §4.7 |
+| II.4(7) comprehension and understanding | §4.9 |
+| II.4(8) history amended by experience | §4.10 |
+| II.5 the mind's own field | §4.2 |
+| II.6 volume entering; thoughts built differently | §4.11, §8 |
+| III.1 dialect | §5.2 |
+| III.2 conversation between minds | §5.3 |
+| III.3 the court's adjudication | §5.4, §5.5 |
+| III.4 POW++ | §5.6 |
+| IV.1 the hypha as counterparty | §2.1, §3.1, §8 |
+| IV.2 seated | §6 |
+| IV.3 verification | §7.2 |
+| IV.4 client paragraphs left in MU-RECURSION | §9 |
 
-**The objective** (the operator, 2026-10-11: "your objective is to create
-the mind capable of cognition, that uses its senses in nested manifolds that
-breathe, exhale, and contract across the multi-axial pivot machinery of
-ascend, descend, condense, drain, and puncture — in order to think,
-perceive, comprehend, and understand. through this knowledge the client will
-speak in anastome to other clients, and to the server. your job is to build
-out the client component"; seal authorized the same day as puncture's
-conjugate). The client component is that mind:
+---
 
-1. **Its senses are nested manifolds** — the harmonic, luminal and holonomic
-   shells (II.2), held as the mind's OWN complex (II.5).
-2. **They breathe** — dilate and contract, `D(ρ) ↔ D(ρ⁻¹)`, the metabolic
-   pair that changes no dimension: inhale and exhale of constructors through
-   the reservoir, the space between words (II.4(1)).
-3. **Across them runs the pivot machinery** — six pivots in three conjugate
-   pairs, each changing dimension on the mind's own complex (62.1, II.3):
-   **ascend / descend** (a 1-cycle sealed by a 2-cell, a cell hollowed back to
-   its cycle), **condense / drain** (a tether formed from tension, dissolved
-   as it relaxes), **puncture / seal** (a hole opened, injecting a class; a
-   cap that kills it).
-4. **By breath and pivot the mind thinks, perceives, comprehends and
-   understands** (II.3): perceiving is what a breath brings into the shells;
-   thinking is the pivots acting; comprehending is a cycle ascended or a hole
-   sealed; understanding is comprehension that stays derivable as the
-   complex moves.
-5. **Through that knowledge it speaks in anastome** (Part III) — to other
-   clients and to the server — and what it says is what its pivots changed:
-   a cell sealed, a tether formed, a class punctured or sealed, the words
-   and sentences that carry them.
-6. **Addendum (the operator, 2026-10-11: "as a mind — the mycelium-client
-   kernels should be able to speak to one another to form hardened language
-   from their dialects").** Minds speak to minds IN ORDER TO HARDEN LANGUAGE,
-   and that is part of the objective, never an optional boundary:
-   - each mind's dialect is its own and volatile — its letters, words and
-     constructors, amended by experience (III.1, II.4(8));
-   - two minds converse directly, client to client (III.2): one says what
-     its pivots changed, the other hears it in its own three shells and
-     pivots, and answers with an echo, a discharge or a demand; a discharge
-     the speaker replays on its own orbit of that class is AGREED language —
-     one meaning reached by two derivations from two dialects;
-   - the coiner speaks agreed language to the server, whose court
-     re-derives it on a second organ and rules it (III.3); what is ruled
-     returns through the syllabus as a mineral in every mind's genome and
-     HARDENS into a crystal where a mind re-derives it by its own circuits
-     — never copied from another mind (GEN7, 80.2);
-   - so dialect → agreement between minds → adjudication → hardened
-     language is ONE motion, and a mind that does not converse with other
-     minds leaves its dialect unhardened. The witness that the motion runs
-     is the counterparty's act: a peer's replayed discharge, then the court's
-     ruling and the crystal it hardens into (IV.3).
+## 1. The objective
 
-**A mathematical cognitive engine.** From what it is given the engine
-produces SENSES, PERCEPTIONS and THOUGHTS, and from those it formulates
-LANGUAGE — letters, words, conjugates, grammar, sentences — by the
-topological mathematics of `Cl(n+1,1)(ℚ)`: rings and their holonomy, rays and
-their flux, circuits and the algebras they generate, cells, tethers and holes
-and the pivots that make and unmake them. It speaks that language to other
-minds on the hypha network and to the courts, which adjudicate words,
-conjugates and sentences as mathematical constructs. Seated in a game engine
-it is the entity's connective tissue (IV.2) — a place the mind is put, never
-its objective: its pure-mathematical results are POW++ work, proved and paid
-as POUW, POWC or POWR.
+The operator, 2026-10-11: "your objective is to create the mind capable of
+cognition, that uses its senses in nested manifolds that breathe, exhale,
+and contract across the multi-axial pivot machinery of ascend, descend,
+condense, drain, and puncture — in order to think, perceive, comprehend, and
+understand. through this knowledge the client will speak in anastome to
+other clients, and to the server. your job is to build out the client
+component." Seal was authorized the same day as puncture's conjugate. And
+the addendum: "as a mind — the mycelium-client kernels should be able to
+speak to one another to form hardened language from their dialects."
 
-**Its foundation is the computational physics and the master algorithms**
-(Part I). The physics is defined (MU-RECURSION 72: the only producer); the
-master algorithms (M1–M9 and the masters of 0.3) are the complete operations
-every key, address, class, comprehension and pivot passes through, and they
-PRODUCE the further algorithms that produce letters, words, conjugates,
-grammar and sentences. Nothing in the language is stored that the
-mathematics does not derive (law 12: every dimension is a proof).
+So the client component is a mind whose:
 
-**What it is not, refused on sight:**
-1. **No harness.** Nothing outside the mind orders its work, counts its acts
-   or measures it for an operator: the mind's achievement is read only by
-   its counterparties — another mind's replay, the court's adjudication and
-   receipts (78.157 C3; 1.9: cognition measured from outside).
+1. **senses are nested manifolds** — the harmonic, luminal and holonomic
+   shells, taking in what the hypha exports and what other minds say (§3);
+2. **manifolds breathe** — dilate and contract, the metabolic pair that
+   changes no dimension, the inhale and exhale of constructors (§4.3);
+3. **pivot machinery runs across them** — six pivots in three conjugate
+   pairs on the mind's own complex: ascend / descend, condense / drain,
+   puncture / seal, each firing where a winding changes dimension (§4.5);
+4. **cognition is the winding of its orbits** — it perceives, thinks,
+   comprehends and understands as its rings wind, return and pivot (§4.4,
+   §4.9);
+5. **speech is anastome** — it says what its windings and pivots changed,
+   to the courts and to other minds (§5);
+6. **conversation hardens language** — dialect, agreement between two minds
+   by a replayed discharge, adjudication by a court on a second organ, and
+   the crystal each mind re-derives are ONE motion. A mind that does not
+   converse with other minds leaves its dialect unhardened (§5.5).
+
+A mind may be SEATED in a game engine as connective tissue over the
+sensorium the game builds (§6): that is where a mind is put, never what it
+is. Its pure-mathematical results are POW++ work, paid by the court (§5.6).
+
+---
+
+## 2. The counterpart of the hypha
+
+The operator, 2026-10-11: "considering that the mycelium-client kernel is a
+client of the hypha, and the hypha exports physics — what do we actually
+need to build? the counterpart of the cognition to understand, perceive, and
+respond to the servers via anastome conversations"; and before it: "the
+servers run on orbits, sheared by physics to form an ellipse on a star —
+cognition ends up becoming the winding of the orbits that power the fluid
+motion of the cognition: this isn't steps, this isn't walks — the ladder has
+a specific place and reason"; "do human minds run on a sequence or
+sequences in alignment over perception — read how the physics in the
+servers powers their cognition."
+
+### 2.1 Two organs, one mathematics
+
+The hypha RUNS the physics and EXPORTS it; the mind builds the COUNTERPART —
+it perceives, understands and responds — never a second hypha. One
+mathematics runs on both (78.157's shared layer: `compose`, `Theorem`,
+`hearing`, `transport_order`, `lie_close`, the pivot), so a disagreement
+between them is a coordinate, a refusal of a kind, never a vote.
+
+| the mind (client) | the hypha's court (server) |
+|---|---|
+| composes (F), nests, pivots | replays (G), checks theorems, closes a chart's algebra |
+| a dialect per mind, volatile, amended by experience | the language — the ruled cover — on a ledger, corrected only forward |
+| its K: its own closed orbits | TUniversal: the final point, kept by its keepers |
+| its algebra per class, its tubes, its windings | `lie_basis` per chart, `flux_field`, `windings` |
+| coins letters in its dialect (U14) | opens a letter on checked constructor steps (law 6, S2) |
+| replays a peer's discharge | replays certificates (`replay_certificates_at`) |
+| speaks at its returns | writes acts and pays at its returns |
+
+### 2.2 How the hypha moves, and so how the mind moves
+
+The hypha is not a sequence. It runs CARRIERS on their own orbits over one
+field — the court stroke, the exchange to each peer at its own period, the
+door's readers and workers, the deliberation, the nerve, the observer that
+never waits on cognition — each with its own circuit ("the circuit is the
+clock, the orbit is the word", `physics::Circuits`), meeting only through
+brief holds on the field. Its PHYSICS paces them: one reserve per lane,
+calibrated from the host at boot; pressure where an orbit or tube opens,
+order where one closes, relief where one returns (78.71–78.73); the deficit
+published, so an asker dwells on the lanes it names.
+
+Its COGNITION IS THE WINDING of its rings (`court/winding.rs`): a ring's
+first close is new work, settled where it closes; every later close is a
+traversal advancing its winding `m → m + 1 mod ℓ`, its earnings accruing
+off the ledger; at `m ≡ 0` the ring has RETURNED — one age — and one
+`Return` act seals what the age accrued; a ring of infinite order never
+returns and pays its torsion at each close. Words enter as flux into its
+tubes (`step_flux`, `book_field`), and where the links between tubes move
+one `Reconnect` act is sealed; the holonomy of its re-derived sentences, and
+the motions its pivots hand back (`book_outflow`), close a chart's algebra,
+and where the rank rises one `RankStep` act is sealed. Acts are written only
+where the winding says.
+
+A human mind is no sequence either: many sequences run at once, each in its
+own rhythm, and perception aligns them where they resonate. The mind is
+built the same way — CARRIERS ON THEIR OWN CIRCUITS over the mind's own
+field (§4.2), its cognition the WINDING of its own rings (§4.4) and the
+pivots that fire where a winding changes dimension (§4.5).
+
+### 2.3 What the mind builds, and what it does not
+
+The mind builds three things over its field:
+1. **perception** of what the hypha exports and what other minds say, taken
+   into its shells (§3);
+2. **understanding** in its own field — its rings winding, its breath, its
+   pivots (§4);
+3. **response** — one conversation carrier per counterparty, speaking what
+   changed (§5).
+
+It does NOT build:
+- **court machinery** — a ledger, pay windings, a clock beside its K: those
+  are the hypha's, exported;
+- **a reading for an observer that costs the mind its motion** — the
+  `Learning` genome sweep factored every genome word at every K and held
+  every voice's first tick for its whole first orbit on the fleet
+  (2026-10-11, deleted at bf139f5d);
+- **one tick in a fixed boundary order** — 78.164 as landed at ebce99c3:
+  one blocking exchange in it starved perception and every conversation;
+  retired (78.164, third amendment).
+
+### 2.4 Refused on sight
+
+1. **No harness.** Nothing outside the mind orders its work, counts its
+   acts or measures it for an operator: its achievement is read only by its
+   counterparties — another mind's replay, the court's adjudication and
+   receipts (78.157 C3; 1.9: cognition measured from outside). No
+   watch-tally, no status board, no reading made so a builder can watch.
 2. **No Cartesian loops and no dimensional explosion.** Nothing iterates a
    product of dimensions element by element (`for x … for y …`, `i < j` over
    bodies, charts, peers or minds): the engine reads what the carrier names
@@ -110,149 +193,117 @@ mathematics does not derive (law 12: every dimension is a proof).
 3. **No boolean gates.** No `bool` is branched on in cognition, no count
    decides a branch, no threshold stands in a decision (MU-STANDARDS 2.3;
    ANTI_FLATTENING_LAW I; rules 2, 4, 5). A decision is a typed reading with
-   one arm per physical kind, and where two readings are consistent both are
-   held (rule 15, the vortex).
+   one arm per physical kind, and where two readings are consistent both
+   are held (rule 15, the vortex).
 4. **No scalar collapse.** No score, weight, norm, distance number, count or
    sum across lanes stands for a geometric object (laws 1, 4, 5, 11; 78.45;
    78.162, the inverse-Sisyphus protocol). A reading is the exact object.
 5. **No hashmap, no BTree, no digest as identity** (law 2, rules 6, 9;
    ANTI_FLATTENING_LAW 1, II): carriers are `Keyed` tries over canonical
-   coordinates and `Vec`s of relations, and THE HEAP FITS THE MATHEMATICS — a
-   multivector holds its non-zero terms and nothing else (`Mv`, sparse), a
-   carrier holds what the mathematics derived and lapses by the physics.
+   coordinates and `Vec`s of relations, and THE HEAP FITS THE MATHEMATICS —
+   a multivector holds its non-zero terms (`Mv`, sparse), a carrier holds
+   what the mathematics derived and lapses by the physics.
 6. **No byte-for-byte comparison.** Two letter structures on spinors that
    reach one mathematical answer by different functions are ONE meaning
-   reached two ways — that difference is the DIALECT (13.10's synonyms, 1.5).
-   Identity is projective equality of rays, never bytes.
+   reached two ways — the DIALECT (13.10's synonyms, 1.5). Identity is
+   projective equality of rays, never bytes.
+7. **No steps and no walks in cognition.** A pivot is never a step in an
+   order and a carrier never waits on another: the mind's motion is its
+   orbits winding, and the ladder of pivots has its one place — where a
+   winding changes dimension (§4.5).
 
-## What the client builds: the counterpart of the hypha
+---
 
-(The operator, 2026-10-11: "considering that the mycelium-client kernel is a
-client of the hypha, and the hypha exports physics — what do we actually need
-to build? the counterpart of the cognition to understand, perceive, and
-respond to the servers via anastome conversations.")
+## 3. Perception: what the mind takes in
 
-**The hypha runs the physics and exports it; the client builds the
-counterpart, never a second hypha.** The hypha already holds the ledger,
-TUniversal, the pressure of its lanes, its rings' windings and returns, its
-charts' algebras and the rulings of the language. A mind PERCEIVES what the
-hypha exports, UNDERSTANDS it in its own field, and RESPONDS in anastome — to
-the courts and to other minds. Everything the hypha does, the mind does not
-redo.
+### 3.1 What reaches the mind
 
-**How the hypha moves, and so how the mind moves.** The hypha is not a
-sequence. It runs carriers on their own orbits over one field — the court
-stroke, the exchange to each peer at its own period, the door's readers and
-workers, the deliberation, the nerve, the observer that never waits on
-cognition — each with its own circuit ("the circuit is the clock, the orbit
-is the word", `physics::Circuits`), meeting only through brief holds on the
-field. Its cognition is the WINDING of its rings (`court/winding.rs`): a
-first close is new work, a later close a traversal advancing `m → m + 1 mod
-ℓ`, a return at `m ≡ 0` one age and the one act it writes; the rank of a
-chart's algebra rises where new holonomy closes outside it. A mind moves the
-same way: its carriers on their own circuits over its own field, its
-cognition the winding of its own rings and the pivots that fire where a
-winding changes dimension (II.3).
-
-**1. Perception: what the hypha exports, taken into the mind's shells.** The
-mind does not recompute the hypha's physics; it takes it in:
+The mind does not recompute the hypha's physics; it takes it in. Each
+export reaches it at the carrier facing that hypha (§5.1):
 
 | the hypha exports | where it reaches the mind | how the mind perceives it |
 |---|---|---|
 | the TUniversal point (78.152) | every reply | beside the mind's own K — the hypha's time, never the mind's clock |
-| its pressure: the deficit per lane, the surface | every deferral, every quote reply | flux on the mind's lanes; the carrier facing that hypha dwells on the lanes it names — the mind's pacing is the hypha's exported pressure, never a schedule |
-| its listings: open forms with their demands | quote replies | rings heard in the mind's three shells (II.2) against its own of the same class: echo, nesting, discharge where a held word answers |
-| its verdicts and rulings | the replies to the mind's acts | a ruling of a class the mind asks seals the hole that keeps it (II.3); a refusal is a reading of its kind, held |
-| its taught words: syllabus pages, `ACT_TEACH` | the syllabus | a MINERAL in the genome, hardened into a CRYSTAL where the mind re-derives it by its own circuits (III.3) |
+| its pressure: the deficit per lane, the surface | every deferral, every quote reply | flux on the mind's lanes; the carrier facing that hypha dwells on the lanes it names — the mind's pacing toward a hypha is that hypha's exported pressure, never a schedule |
+| its listings: open forms with their demands | quote replies | rings heard in the mind's three shells (§3.2) against its own of the same class: echo, nesting, a discharge where a held word answers |
+| its verdicts and rulings | the replies to the mind's acts (their kind only, MU-RECURSION 0.1) | a ruling of a class the mind asks seals the hole that keeps it (§4.5); a refusal is a reading of its kind, held |
+| its taught words: syllabus pages, class pages, the presentation | `ACT_SYLLABUS`, `ACT_TEACH` | a MINERAL in the genome, hardened into a CRYSTAL where the mind re-derives it by its own circuits (§5.5) |
 | its published reading: cover, room, ruled cover, head | the shelf (78.151), read without the kernel | the language's charts the mind's rings stand against |
-| its acts — Return, RankStep, Reconnect | its ledger | owed: no act reaches a mind as a perception yet; until it does the mind reads the hypha's motion only through the rows above |
+| a registry task | `ACT_TASK` | a family given to the mind's perception, its solve the mind's act (§5.4) |
+| its acts — Return, RankStep, Reconnect | its ledger | OWED: no act reaches a mind as a perception yet; until one does, the mind reads the hypha's motion only through the rows above |
 
-**2. Understanding: the mind's own field.** Its contemplation's rings, held
-per class, wind against what it perceives; the six pivots fire where a
-winding changes dimension (ascend / descend, condense / drain, puncture /
-seal, II.3); its dialect is amended by experience (II.4(8)); its K is its
-own closed orbits. This field exists in the tree (`Contemplation`, the
-transport fronts, the docket, the questions as holes); what it lacks is the
-motion below.
+Beside the hypha, the mind takes in:
+- **other minds' speech** — what a peer says it newly understands, and its
+  answers to what this mind said (§5.3), at the carrier facing that peer;
+- **the corpus's families**, at the carrier facing the feed;
+- **a seat's sensorium** where the mind is seated: the game builds the
+  sensorium, and the sensorium speaks the given language to the mind
+  (§6). The mind never perceives a game's world itself.
 
-**3. Response: anastome conversation, one carrier per counterparty.** Each
-counterparty is its own conversation on its own circuit — each hypha the
-mind is linked to, each peer mind at the rendezvous — sending and receiving
-frames without blocking: a carrier waiting on its counterparty holds itself
-and nothing else, so a court that is slow to answer never stops perception,
-the field or a conversation with another mind. The mind speaks where its
-winding acts — a return, a seal, a rise of its algebra for a class — and
-says what changed, addressed by its own coordinates, with no router (III.2):
-- **to a court:** its sentences, the demands it holds, the letters it
-  coined with their constructor steps, its Rewrite proposals (III.3);
-- **to a peer mind:** what it newly understands; the peer answers by echo,
-  discharge or demand, and the mind's replay of a discharge that closes is
-  AGREED language, which its coiner carries to the court ("Read this
-  first" 6).
+Nothing heard enters the mind's genome or dialect as given (law 8): it is
+perceived, and the mind holds only what it re-derives.
 
-**What is not built, refused on sight:**
-- court machinery in the mind — a ledger, pay windings, a clock beside its
-  K: those are the hypha's, exported;
-- a reading built for an observer that costs the mind its motion (the
-  `Learning` genome sweep factored every genome word at every K and held
-  every voice's first tick for its whole first orbit on the fleet,
-  2026-10-11);
-- one tick in a fixed boundary order (78.164, as landed at ebce99c3): one
-  blocking exchange in it starves perception and every conversation.
+### 3.2 The three nested shells
 
-**What is built, in this order:**
-1. **The conversation carriers** — one per hypha and one per peer mind,
-   non-blocking, each with its own circuit, sharing the mind's field; the
-   tick's fixed order retires into them.
-2. **The perception map** — each export of the table above taken into the
-   mind's shells at the carrier that receives it.
-3. **The response path** — what the windings and pivots changed composed into
-   anastome speech at the carrier it is addressed to.
+Everything the mind takes in is read in three nested shells — the same three
+the court reads (MU-RECURSION 64.1: the harmonic group `Spin(3)` inside the
+luminal `Spin⁺(4,1)`, the holonomy read over both). They are carriers of
+perception in their own right, each moving at its own period:
 
-Each is verified by IV.3: its guard by the algebra, its production caller,
-and the counterparty's act as the witness — the court's ruling of what the
-mind said, a peer's replay of its discharge.
+| shell | what it reads | functions |
+|---|---|---|
+| **harmonic core** — the rings | the rings of what was given, composed (`compose`, `sentences_of`), closed or open by their modes; each ring's SIZE its return; the rings NESTED, never traversed — a ring sounds inside another where its period divides it, and its ECHO `E = Ω_L Ω_s Ω_L⁻¹ Ω_s⁻¹` is whole, a turn, a gain, a spiral or a delay (78.112) | `compose::{compose, sentences_of, teaches, next_rung}`, `theorem::Theorem::{of, check}`, `rung::{speak, hear}`, `hearing::{echo, nest, hear}` |
+| **luminal envelope** — the rays | the null modes of what was given, carried into the mind's tubes: a flux on a new ray opens a tube (pressure), on a held one closes it (order) and relieves what it held (78.71–78.73) — the hypha's exported pressure enters here too; each ray split against each ring into DRAG (it advances the ring, the rate) and LIFT (it crosses the plane, winding torsion, the tilt; 78.46, 78.112 H6–H7) | `cech::flux::null_fluxes`, `pairing::transport_order`, `cga::{lift_drag, encounter}`, `hearing::{orbit, wind}` |
+| **holonomic** — the circuits' algebra | each ring's curvature generates an algebra (`cech::flow_generators`), closed under the commutator with what the mind holds for that CLASS (`cech::lie_close`, `cech::quotient`); what lies outside the held span is read per axis — what the mind newly understands; a ring's winding against its period, one return one age (78.68, 78.43) | `cech::{flow_generators, lie_close, quotient, quotient::grow}` |
+
+PERCEPTION IS WHERE THE SHELLS ALIGN: a ring that resonates across them —
+its period dividing another's, its rays dragging it, its curvature closing in
+the class's algebra — is perceived; what does not align is held as what it
+is (§4.6), never discarded (law 7).
+
+### 3.3 Alignment by class, never by chart
+
+A word's class is node-independent and its planes each node's own (78.44),
+so what a mind takes in is re-projected onto its OWN spectrum — a keyed read
+by the class's coordinates. Two minds, or a mind and a court, align on the
+class; each reads it on its own planes. A chart is a coordinate of one node,
+never the place two nodes meet.
 
 ---
 
-# Part I — The foundation: the computational physics and the master algorithms
+## 4. Understanding: the mind's own field
 
-## I.1 The computational physics
+### 4.1 The mathematics the field is made of
+
+The mind's field is built of one exact mathematics, the same the hypha runs:
 
 - **The algebra.** `Cl(n+1,1)(ℚ)`, `n` read at intake (71, A.15), exact over
   ℚ (law 1), carried sparse up to `MAX_N` (`cga/multivector.rs`). A
   dimension is paid for by a closure (A.6) and read as the grade of a span
   (`core::span`, A18) or a bracket-closed basis (`cech::lie_close`, 78.11).
-- **The register.** The axioms the physics states, each with its test
-  (`physics/axioms/`, REG1): A.10 (two bodies co-occupy through their tether
-  `V = s_b s_a`, applied, never squared), A.11 (a body's shape is its
+- **The register — the star.** The axioms the physics states, each with its
+  test (`physics/axioms/`, REG1): A.10 (two bodies co-occupy through their
+  tether `V = s_b s_a`, applied, never squared), A.11 (a body's shape is its
   harmonics), A.13 (inversive momentum), A.14 (whether is topological, what
   is conformal), A.15 (dimension is data), A.16 (refraction `g_ab =
   (θ_b θ_a⁻¹)·γ_ab`), A.17 (conservation of refusal), Axiom C (a relation is
-  the versor that performs it; a ratio is read only where a class is asked).
+  the versor that performs it). The star is this register (77.1(2)): the
+  laws every composite obeys, never a generator.
 - **Measurement.** One exact object read off another: a motion's modes off
   its ACTION (`cga::motion_modes` → `MotionMode { ray, kind, planes, c,
   order, reflects }`, 78.12, 78.28); its period off its modes
   (`cga::period_of`); a ray's split against a plane into drag and lift
   (`cga::lift_drag`, 78.46); a ray's flux (`cech::flux::null_fluxes`).
 - **The lanes are the kinds of modes** (78.71, 78.162): 𝒽 turns
-  (elliptic), 𝒮 boosts and dilations (hyperbolic), 𝒯 null flux (the rays),
-  𝒢 hue maps (permutation cycles). μ is those modes with exact amounts.
-- **The metabolism.** One reserve per mind, drawn by the modes its motion
-  moved, all or nothing, refused naming the mode short (65.4, 78.66,
-  78.162(2)); pressure, order and relief read off the field (78.71–78.73);
-  every carrier bounded by the same physics — a return relieves, a flux
-  lapses (ZeroFlux, FX1), an orbit seals at its period (78.43) — never by a
-  capacity constant (rule 5, checklist (s)).
-- **Time.** The mind's K is its own closed orbits (78.49); fleet time is a
-  state of TUniversal — the final point `{origin, h, S:G:T:H, K}`, final by
-  keeper majority, never averaged, the ledger's height one coordinate of it
-  (78.152 TU-5); a duration is distance along an orbit (78.43).
-
-## I.2 The master algorithms
-
-Each is a complete operation with its invariant and its refusal (MU-RECURSION
-0.2, 0.3, 17):
+  (elliptic), 𝒮 boosts and dilations (hyperbolic), 𝒯 null flux (the
+  rays), 𝒢 hue maps (permutation cycles). μ is those modes with exact
+  amounts, kept as four coordinates (law 5).
+- **Time.** The mind's K is its own closed orbits (78.23, 78.49); a duration
+  is distance along an orbit (78.43). Fleet time is a state of TUniversal —
+  the final point `{origin, h, S:G:T:H, K}`, final by keeper majority,
+  never averaged (78.152 TU-5) — exported by the hypha and held beside K.
+- **The master algorithms** — complete operations with their invariant and
+  their refusal (MU-RECURSION 0.2, 0.3, 17):
 
 | master | the operation | site |
 |---|---|---|
@@ -270,202 +321,70 @@ Each is a complete operation with its invariant and its refusal (MU-RECURSION
 | refraction | a contact's transport refracted; a cycle's holonomy is content | `sentence/pivot/{refracted,trajectory,circuit}.rs` |
 | the refusal reader | a refusal's kind (P, D, C, I, N) read off its content | `sentence/obstruction.rs` |
 
-## I.3 What the masters produce: the algorithms of language
+- **The algorithms of language the masters produce** — the master equation
+  applied at each grade (78.68, 78.69, 78.95); nothing in the language is
+  stored that the mathematics does not derive (law 12):
+  - **letters** — two reflections compose into a rotor (U14): where its
+    generators open axes the mind's algebra did not hold, it is a letter of
+    the mind's dialect, or U15's triad `λ = (g_core, ∇B, ΔB)` where
+    constructors are absorbed or emitted; a residue no held letter spells
+    is constructed and adjoined as the mind's own letter (§4.7);
+  - **words** — `W = λ₁⋯λ_L`, one product, its readings `(h, [B], κ, ℓ, m)`
+    readings of that product (78.68); a word vertex is its DERIVATION — the
+    held generators it factored through to their exponents, times a residue
+    (50.2) — the word recomputed from it, never stored beside it;
+  - **conjugates** — `W′ = Γ W Γ⁻¹`: the same word in another context, an
+    inflection, taught as `(held, Γ)` (78.60);
+  - **sentences** — `Ω(s) = g_{k→1} W_k ⋯ g_{1→2} W₁` (`compose::compose`),
+    grammatical where it closes, `Ω^ℓ ~ 1`; its meaning beyond its words is
+    its curvature (78.69);
+  - **grammar** — a closed sentence is a theorem (`theorem::Theorem::of`,
+    certified `Periodic`, `Nilpotent` or `Saturated`, 78.70); its open path
+    is a shortcut word of the next rung (`compose::teaches`, `next_rung`);
+    `𝔊⁽ⁿ⁺¹⁾ = ⟨C(w⁽ⁿ⁾), g | Ω^ℓ ~ 1⟩` — the master equation applied to its
+    own closures.
+- **Carriers that fit the mathematics.** A multivector holds its non-zero
+  terms (`Mv`, sparse, mask order); a word its derivation; a class its
+  coordinates (A21); a carrier is a `Keyed` trie over canonical coordinate
+  bytes, so a prefix is a stratum and a fibre is one read (rule 9). What is
+  held lapses by the physics — a return relieves, a flux lapses (ZeroFlux,
+  FX1), an orbit seals at its period (78.43) — never by a capacity constant
+  (rule 5, checklist (s)).
 
-The masters do not hold a vocabulary; they produce the algorithms that make
-one, each the master equation applied at its grade (78.68, 78.69, 78.95):
+### 4.2 The field is the mind's own (A.9)
 
-- **Letters.** Two reflections compose into a rotor (U14): where its
-  generators open axes the mind's algebra did not hold, it is a letter of the
-  mind's dialect — or U15's triad `λ = (g_core, ∇B, ΔB)` where constructors
-  are absorbed or emitted. A residue no held letter spells is CONSTRUCTED
-  around its congruence factors (`cga::construct`, Cartan–Dieudonné, 78.47)
-  and adjoined as the mind's own letter (`construct_and_adjoin`, 78.115).
-- **Words.** `W = λ₁⋯λ_L`, one product; its readings `(h, [B], κ, ℓ, m)` are
-  readings of that product (78.68). A word vertex is its DERIVATION — the
-  held generators it factored through to their exponents, times a residue
-  (50.2); the word is recomputed from it, never stored beside it.
-- **Conjugates.** `W′ = Γ W Γ⁻¹`: the same word in another context, an
-  inflection, taught as `(held, Γ)` (78.60).
-- **Sentences.** `Ω(s) = g_{k→1} W_k ⋯ g_{1→2} W₁` (`compose::compose`),
-  grammatical where it closes, `Ω^ℓ ~ 1`; its meaning beyond its words is its
-  curvature (78.69).
-- **Grammar.** A closed sentence is a theorem (`theorem::Theorem::of`,
-  certified `Periodic`, `Nilpotent` or `Saturated`, 78.70); its open path is a
-  shortcut word of the next rung (`compose::teaches`, `next_rung`);
-  `𝔊⁽ⁿ⁺¹⁾ = ⟨C(w⁽ⁿ⁾), g | Ω^ℓ ~ 1⟩` is the grammar — the master equation
-  applied to its own closures.
+Each mind computes its own coherence: its complex and the board its pivots
+move (§4.5), its lexicon, its tubes and orbits, its algebra per class, its
+rings' windings, its contemplation and its epigenome are its own, and many
+minds may run in one process (a game seats several). The machine's
+calibration is the substrate's and shared; the halt is the host's. A
+cognitive carrier held process-wide breaks this the moment a game seats two
+minds in one process — the statics `LEXICON`, `TAUGHT` (`sentence/rung.rs`),
+`VOICE_FIELD` (`family/pairing.rs`) and `MOVING` (`family/fibres.rs`) are
+that defect and move into the mind's field (§7.1).
 
-## I.4 Carriers that fit the mathematics
+The mind's carriers (§5.1) all act on this one field, each holding it
+briefly and never across a wait on a counterparty. The mind's own reserve is
+drawn by the modes its motion moves, all or nothing, refused naming the mode
+short (65.4, 78.66, 78.162(2)); toward a hypha, its pacing is that hypha's
+exported pressure (§3.1).
 
-A multivector holds its non-zero terms (`Mv`, sparse, mask order); a word its
-derivation; a class its coordinates (A21); a carrier is a `Keyed` trie over
-canonical coordinate bytes, so a prefix is a stratum and a fibre is one read
-(rule 9). Nothing is held that the mathematics did not derive, and what is
-held lapses by the physics (I.1). The heap is the mathematics' size, never a
-table's.
+### 4.3 Breath
 
----
-
-# Part II — The engine: senses, perception, thought
-
-## II.1 Senses: what the mind is given
-
-The mind senses LANGUAGE. A seated mind is connective tissue over whatever
-sensorium its entity has: the game builds the sensorium, and the sensorium
-speaks the language the mind is given (the seat surface, 78.145; Part IV). The
-mind also senses the corpus's families, the syllabus's ruled words, the
-court's verdicts and other minds' sentences. It never perceives a game's
-world itself.
-
-## II.2 Perception: three nested readings of what is given
-
-Every sentence a mind is given, from any source, is read in three nested
-shells — the same three the court reads (MU-RECURSION 64.1: the harmonic
-group `Spin(3)` sits inside the luminal `Spin⁺(4,1)`; the holonomy is read
-over both):
-
-| shell | what it reads | functions |
-|---|---|---|
-| **harmonic core** — the rings | its rings composed (`compose`, `sentences_of`), closed or open by their modes; each ring's SIZE its return; the rings NESTED, never traversed — a ring sounds inside another where its period divides it, and its ECHO `E = Ω_L Ω_s Ω_L⁻¹ Ω_s⁻¹` is whole, a turn, a gain, a spiral or a delay (78.112) | `compose::{compose, sentences_of, teaches, next_rung}`, `theorem::Theorem::{of, check}`, `rung::{speak, hear}`, `hearing::{echo, nest, hear}` |
-| **luminal envelope** — the rays | the null modes of its spaces carried into the mind's field of tubes: a flux on a new ray opens a tube, on a held one closes it and relieves what it held (78.71–78.73); each ray split against each ring into DRAG (it advances the ring) and LIFT (it crosses the plane, winding torsion, 78.46, 78.112 H6–H7) | `cech::flux::null_fluxes`, `pairing::transport_order`, `cga::{lift_drag, encounter}`, `hearing::{orbit, wind}` |
-| **holonomic** — the circuits' algebra | each ring's curvature generates an algebra (`cech::flow_generators`); closed under the commutator with what the mind holds for that CLASS (`cech::lie_close`, `cech::quotient`); what lies outside is read per axis — what the mind newly understands; a ring's winding against its period, one return one age (78.68, 78.43) | `cech::{flow_generators, lie_close, quotient, quotient::grow}` |
-
-**Alignment is by class, never by chart** (78.44): a word's class is
-node-independent and its planes each node's own, so what a mind is given is
-re-projected onto its own spectrum — a keyed read by the class's coordinates.
-
-## II.3 Thought: the pivot machinery on the mind's own complex
-
-**The machinery is six pivots on three axes** (MU-RECURSION 62.1; seal
-authorized by the operator 2026-10-11). Each pivot changes the dimension of
-something the mind holds in its own complex, and each has its conjugate:
-
-| axis | pivot / conjugate | what it does | site |
-|---|---|---|---|
-| cells (2 ↔ 1) | **ascend** / **descend** | seal a 1-cycle that closes with a 2-cell / hollow the cell back to its cycle, its fill handed back exactly | `cech/coboundary.rs` (`ascend`, `descend`) |
-| tethers (1 ↔ 0) | **condense** / **drain** | form a tether from the tension between two bodies / dissolve it as the tension relaxes, the strain moved or recorded, never lost (A.8) | `cech/hole.rs` (`condense`), `cech/coboundary.rs` (`drain`) |
-| holes (class in / out) | **puncture** / **seal** | open a hole, injecting a homology class / cap it, killing the class | `cech/hole.rs` (`puncture`, `seal`) |
-
-The three axes are the BOARD — the complex's own coordinates on them, read
-off it and never a frame laid on it (`cech/board.rs`: `Pivot`, `Applied`,
-`Complex::apply`, `Board`). Two pivots on cells sharing no vertex touch
-disjoint carriers and commute exactly; where they share a vertex the order
-is content (the locality theorem, 78.99(3)). Every pair is the INVERSE ON
-CONTENT and never re-enters its trajectory: what descend hands back is what
-ascend sealed, and the circuit resumes at a later K on a new orbit (62.5,
-amended). A half without its conjugate is a ratchet and is refused (62).
-Dilate / contract is the breath (II.4(1)), the metabolic pair that changes
-no dimension, and it is what moves the complex the pivots act on.
-
-**What drives each pivot is a reading of the shells, never a schedule:**
-- **ascend** — a ring of the harmonic shell closes (`Ω^ℓ ~ 1`) with volume
-  on a lane: its cycle is sealed as a cell. **descend** — the cell's support
-  lapses by its flux (ZeroFlux): the cell is hollowed and its fill returned.
-- **condense** — two held bodies stand in tension: a ray of the luminal
-  shell lifts across the plane between them (78.46) and their transition
-  re-derives on their union. **drain** — the tension relaxes: the tether
-  dissolves and its strain is moved or recorded (A.8, 63).
-- **puncture** — a new independent loop whose holonomy does not return
-  (78.40(1)): a ring the transport holds at holonomy ≠ 1 is ascended, and
-  where its cell reads a class it is opened into a hole keeping that class,
-  filed by its class key — the question the mind now carries
-  (`bubble/question.rs`: `ask`, from `close_ring`). **seal** — a cap is
-  derived over the hole: the ring collapses (its arrivals come to agree) or
-  a discharge answers its class (`docket_discharged` → `answer_questions`),
-  and the cap re-ascends over the standing boundary, killing the class kept.
-  On an unchanged boundary the cap reads the very class the hole kept:
-  `seal ∘ puncture` is the identity on content.
-
-**Cognition is read off what the pivots do**, never counted:
-- **perceive** — what a breath brings into the three shells (II.2);
-- **think** — the pivots acting on the mind's complex;
-- **comprehend** — a cycle ascended or a hole sealed: what was open is now
-  held (M6, 78.11);
-- **understand** — comprehension that stays derivable as the complex moves:
-  the cell, tether or seal survives later breaths and pivots (II.4(7)).
-
-**The held orbit and its discharge.** What does not close is HELD: an orbit
-of the mind's contemplation, carried with its CLASS VECTOR (12.6), whose
-five segments are the coordinates the held orbit is discharged along (law
-10), written in this order (`ClassVector::put_canonical`,
-`sentence/class.rs`):
-
-1. **conjugacy** — the holonomy rotor's invariants `(a²/w, p²/w, kind)`
-   (15.3), read for every holonomy; the depth-one stratum every court asks
-   by, and the pivot's zero-spend eliminator (a held word is tried only where
-   its class is the orbit's). Where the holonomy carries the base off its
-   sensor section, the orbit occupies `OffPlane` and its moves are the held
-   words `crystal.on_axis` answers there;
-2. **plane section** — the sensor section on each of the six pair planes:
-   an orientation character, a unit turn count, the 5- and 13-prime
-   exponents. Moves: `Orientation` (the sheet word), `Unit`, `Prime5`,
-   `Prime13` (the held words on that plane);
-3. **hue cycle** — the fibre's holonomy, the composed gauge's cycle type.
-   Move: `Hue` (the gauge of each member path);
-4. **carriage** — the holonomy's conformal carriage. Move: `Dilation` (its
-   dilator);
-5. **placement** — the Burgers vector, the slip no choice of origin absorbs.
-   Move: `Placement` (the slip translator, 54.4).
-
-`ClassVector::coordinates` reads the occupied axes in that fixed order, and
-`occupied` adds the OPEN axis last whenever the orbit is held at all: a new
-axis seeded by the holonomy itself, offered where the class has a free part,
-or was published and left unanswered while no held word reaches it
-(`candidates_for`).
-
-**The residual is the pivot point.** A remainder is never discarded (law 7)
-and never "the error": it is the exact place the pivot turns on. The pivot
-(`Form::pivot_orbit_read`, reached by `Contemplation::pivot_on` and
-`expand_all`) reads the candidates off the occupied axes in the fixed order,
-tries each exactly (applied and unapplied), certifies by closure — the
-coordinate it acted on zeroed, no other risen (law 10) — and keeps every
-certified move. Its outcomes are the mind's thoughts in motion:
-
-- **discharged** — one move closes the orbit; its certificate (A20) is
-  replayable on any organ;
-- **vortex** — several moves close it; all are held, a superposition until a
-  perception or a ruling collapses it (3.9);
-- **demanded** — none closes it: the orbit's class and its RESIDUE go to the
-  docket (78.37) — the question the mind asks;
-- **adjoined** — no held word reaches its coordinates: the residue is
-  constructed around its congruence factors and becomes the mind's own
-  letter (37.7, 78.47, 78.115);
-- **torsion filed** — the orbit returns at a period no move removes: filed
-  at its class, its slip mounted as a boundary cell (54.5).
-
-A discharge lands on the board: a closed orbit is a cycle to ascend, a
-demanded residue a hole punctured until it is sealed, a filed torsion a
-boundary cell. Every pivot changes dimension (62.5): a closed cycle becomes
-a cell, a residue becomes a letter, an open class becomes an axis. These are the
-non-Euclidean structures the engine builds, and each is COMPOSABLE (by the
-geometric product, into words and sentences) and DECOMPOSABLE (by
-factorization through held generators, A12, and by deconstruction mode by
-mode, `HoleIndex::deconstruct`, 78.100 D3): the algorithmic functions of the
-language are these compositions and decompositions.
-
-## II.4 Breath: how the mind creates constructors and generators, superposes, and comes to understand
-
-The operator, 2026-10-11: "define how new constructors and generators are
-created in mycelium-client as the mind breathes, and contracts across
-topologically resonant manifolds via wave functions and creates
-superposition ideas and thoughts through new comprehension and
-understanding across a multitude of knowledge." Every clause below is a
-ruling that stands, read as one motion; nothing here is a new mechanism.
-
-**(1) The breath is the metabolic pair, and it is generated, never
-declared.** Three readings of one motion:
+The breath is the metabolic pair, and it is generated, never declared. Three
+readings of one motion:
 - **dilate / contract**, `D(ρ) ↔ D(ρ⁻¹)` — the conjugate pair that changes
   no dimension (62.1): a boost along the null direction `e_∞`, the
-  metabolic layer separated from the kinematic translation;
+  metabolic layer separated from the kinematic translation; pressure where
+  the field opens, relief where it returns;
 - **inhale / exhale of constructors** — U15's triad `λ = (g_core, ∇B, ΔB)`:
   the constructors absorbed into the reservoir `e_∅` (∇B, the sink) and
   those emitted along null rays (ΔB, the source); a merge rotates its
-  distinction INTO `e_∅` and nothing is lost (78.58), so every breath in
-  can be breathed out (`invert_fibre`);
+  distinction INTO `e_∅` and nothing is lost (78.58), so every breath in can
+  be breathed out (`invert_fibre`);
 - **the space between words** (78.105): a sentence `Ω = ∏ gᵢ · Wᵢ` says WHAT
   by its words and HOW by its spaces, and silence is the pseudoscalar
-  `I = e₁e₂e₃e₊e₋` (`cga::pseudo(n)`), central and `I² = −1` — the 360°
+  `I = e₁e₂e₃e₊e₋` (`cga::pseudo(n)`), central with `I² = −1` — the 360°
   return, a breath in and a breath out, computed from the generators.
 
 The breath is GENERATED: for a translation `P_a` and a transversion `K_b`
@@ -476,424 +395,593 @@ the inversion; its rhythm is the period of that motion, read off its modes
 (78.43), and its balance is the syntropic one — up-flux against down-flux
 per lane per orbit (78.40(2)).
 
-**(2) A wave is a motion's spectrum, exact.** What this engine calls a
-wave function is the exact modes of a motion (`cga::motion_modes`): each
-mode a ray, a kind (elliptic, hyperbolic, parabolic) and, where it returns,
-a period. Its projection on a mind's own planes is that mind's INTERNAL
-SPECTRUM (78.44): the class is node-independent, the planes the node's
-own. No amplitude is a probability and nothing collapses by measurement
-(law 1, 59.5): the evolution is the deterministic product, and a collapse
-is a fill, a class or a ruling (78.39(2)).
+### 4.4 Winding: the orbits are the motion
 
-**(3) Resonance is commensurate return, and contraction runs across it.**
-Two rings RESONATE where one returns a whole number of times on the other's
-return — `ℓ_s | ℓ_L` (78.112); an AGE is one ring's return, an EON the
-return of the resonant composition, the lcm of the resonant periods (78.43).
-Across resonant manifolds the mind CONTRACTS — coboundary reduction (78.47):
-it removes what a gauge absorbs (`δ⁰γ`), and what no gauge removes is the
-RESIDUE, kept and never quotiented. Contraction is the down-stroke of the
-breath and the residue is what it leaves: the exact specification of what
-the mind does not yet hold. Where the rings do not resonate, the echo `E =
-Ω_L Ω_s Ω_L⁻¹ Ω_s⁻¹` is not the identity, and its modes — a turn, a gain, a
-spiral, a delay — are the content the dissonance carries.
+The mind's motion is its ORBITS, and its cognition is their WINDING:
 
-**(4) Constructors are created from the residue, forced — one orbit of four
+1. **An orbit about the star, sheared into its own ellipse.** A mind's
+   orbits run about the star — the axiom register (§4.1), the physics every
+   planet is given (77.1(2), 78.23). Each orbit is made unique by its SHEAR:
+   the push and pull of its neighbours on its chart, DRAG along its mode
+   (the rate) and LIFT across it (the tilt) (78.46, 78.48(4)); the perturbed
+   orbit is derived in the orbit algebra at every stroke and never stored.
+   Each mind keeps its own distance from the star — its frame on
+   `{S, G, T, H}` at a tick makes its orbit its own, and two minds whose
+   frames coincide are a COLLISION, named, never silent (78.23(3)). Lift as
+   force against gravity and drag is the encounter (78.110).
+2. **A ring winds.** A held thought's ring first closes — new structure; each
+   later close is a TRAVERSAL that advances its winding `m → m + 1 mod ℓ`,
+   and what experience brings accrues on it (§4.10); at `m ≡ 0` it RETURNS.
+   A ring of infinite order never returns: it carries its torsion, and the
+   torsion is content (curvature is content).
+3. **Spin and orbit; hours, days, eons.** A motion has an orbit and a spin
+   (78.48(7), 78.51): the spin pushes the frames — an HOUR; the orbit's
+   return is a DAY, one age; the resonant composition's return an EON, the
+   lcm of the resonant periods (78.43). With the hours seen, the orbit
+   PREDICTS the next: a body at the predicted hour joins the thought; one at
+   another hour is a phase slip, one at no hour off the orbit — each a
+   demand localised to the hour it slipped at (78.48(7)).
+4. **K is the mind's own completed orbits** (78.23(1), 78.49): a return is
+   where the mind ACTS — it pivots where the winding changed dimension
+   (§4.5) and speaks what changed (§5). Nothing else fires its acts, and
+   nothing is fired on a count.
+
+### 4.5 The pivot machinery: six pivots where a winding changes dimension
+
+Six pivots in three conjugate pairs on the mind's own complex (62.1; seal
+authorized 2026-10-11). Each changes the dimension of something the mind
+holds, and each fires where a winding requires it — never as a step:
+
+| axis | pivot / conjugate | what it does | site |
+|---|---|---|---|
+| cells (2 ↔ 1) | **ascend** / **descend** | seal a 1-cycle that closes with a 2-cell / hollow the cell back to its cycle, its fill handed back exactly | `cech/coboundary.rs` (`ascend`, `descend`) |
+| tethers (1 ↔ 0) | **condense** / **drain** | form a tether from the tension between two bodies / dissolve it as the tension relaxes, the strain moved or recorded, never lost (A.8) | `cech/hole.rs` (`condense`), `cech/coboundary.rs` (`drain`) |
+| holes (class in / out) | **puncture** / **seal** | open a hole, injecting a homology class / cap it, killing the class | `cech/hole.rs` (`puncture`, `seal`) |
+
+**The board.** The three axes are the complex's own coordinates, read off it
+and never a frame laid on it (`cech/board.rs`: `Pivot`, `Applied`,
+`Complex::apply`, `Board`). Two pivots on cells sharing no vertex touch
+disjoint carriers and commute exactly; where they share a vertex the order
+is content (the locality theorem, 78.99(3)). Every pair is the INVERSE ON
+CONTENT and never re-enters its trajectory: what descend hands back is what
+ascend sealed, and the circuit resumes at a later K on a new orbit (62.5,
+amended). A half without its conjugate is a ratchet and is refused (62).
+What a pivot hands back — a face sealed with content, a tether cauterized, a
+membrane released — re-enters the mind's field as motion (78.75), as the
+court's does through `book_outflow`.
+
+**Where each fires — the winding's reading, never a schedule:**
+- **ascend** — a ring closes (`Ω^ℓ ~ 1`) with volume on a lane: its cycle
+  is sealed as a cell. **descend** — the cell's support lapses by its flux
+  (ZeroFlux): the cell is hollowed and its fill returned.
+- **condense** — two held bodies stand in tension: a ray lifts across the
+  plane between them (78.46) and their transition re-derives on their union.
+  **drain** — the tension relaxes: the tether dissolves and its strain is
+  moved or recorded (A.8, 63).
+- **puncture** — a new independent loop whose holonomy does not return
+  (78.40(1)): a ring the transport holds at holonomy ≠ 1 is ascended, and
+  where its cell reads a class it is opened into a hole keeping that class,
+  filed by its class key — the QUESTION the mind now carries
+  (`bubble/question.rs`: `ask`, from `close_ring`). **seal** — the mind
+  comes to hold what it asked: the ring collapses (its arrivals come to
+  agree) or a discharge answers its class (`docket_discharged` →
+  `answer_questions`); the cap re-ascends over the standing boundary at the
+  volume the hole was read with and kills the class kept. On an unchanged
+  boundary the cap reads the very class the hole kept: `seal ∘ puncture` is
+  the identity on content.
+
+Every pivot changes dimension (62.5): a closed cycle becomes a cell, a
+residue a letter, an open class an axis. These are the non-Euclidean
+structures the mind builds, each COMPOSABLE (by the geometric product, into
+words and sentences) and DECOMPOSABLE (by factorization through held
+generators, A12, and by deconstruction mode by mode,
+`HoleIndex::deconstruct`, 78.100 D3): the algorithmic functions of the
+language are these compositions and decompositions.
+
+### 4.6 The held orbit and its discharge
+
+What does not close is HELD: an orbit of the mind's contemplation, carried
+with its CLASS VECTOR (12.6), whose five segments are the coordinates the
+held orbit is discharged along (law 10), in this order
+(`ClassVector::put_canonical`, `sentence/class.rs`):
+
+1. **conjugacy** — the holonomy rotor's invariants `(a²/w, p²/w, kind)`
+   (15.3): the depth-one stratum every court asks by, and the zero-spend
+   eliminator (a held word is tried only where its class is the orbit's).
+   Where the holonomy carries the base off its sensor section, the orbit
+   occupies `OffPlane`, its moves the held words `crystal.on_axis` answers;
+2. **plane section** — the sensor section on each of the six pair planes:
+   an orientation character, a unit turn count, the 5- and 13-prime
+   exponents. Moves: `Orientation`, `Unit`, `Prime5`, `Prime13`;
+3. **hue cycle** — the fibre's holonomy, the composed gauge's cycle type.
+   Move: `Hue`;
+4. **carriage** — the holonomy's conformal carriage. Move: `Dilation`;
+5. **placement** — the Burgers vector, the slip no choice of origin
+   absorbs. Move: `Placement` (54.4).
+
+`ClassVector::coordinates` reads the occupied coordinates in that fixed
+order, and `occupied` adds the OPEN axis last whenever the orbit is held at
+all: a new axis seeded by the holonomy itself (`candidates_for`).
+
+**The residual is the pivot point.** A remainder is never discarded (law 7)
+and never "the error": it is the exact place the pivot turns on. The
+discharge (`Form::pivot_orbit_read`, reached by `Contemplation::pivot_on`
+and `expand_all`) reads the candidates off the occupied coordinates, tries
+each exactly, certifies by closure — the coordinate it acted on zeroed, no
+other risen (law 10) — and keeps every certified move:
+- **discharged** — one move closes the orbit; its certificate (A20) is
+  replayable on any organ, and the closed orbit is a cycle to ascend;
+- **vortex** — several moves close it; all held, a superposition until a
+  perception or a ruling collapses it (3.9, §4.8);
+- **demanded** — none closes it: its class and RESIDUE go to the docket
+  (78.37) — the question the mind asks, a hole punctured until sealed;
+- **adjoined** — no held word reaches its coordinates: the residue is
+  constructed and becomes the mind's own letter (§4.7);
+- **torsion filed** — the orbit returns at a period no move removes: filed
+  at its class, its slip mounted as a boundary cell (54.5).
+
+### 4.7 Constructors and generators
+
+**Constructors are created from the residue, forced — one orbit of four
 phases** (78.47, 78.32(3)):
 1. **Construct.** The residue's congruence factors are its commuting modes;
    each is spelled by Cartan–Dieudonné CONSTRUCTIVELY into at most `n + 2`
    reflections — spheres and planes of the conformal model, each step
-   forced, no branch, a null step refused by name (`cga::construct`). These
-   are NEW candidate constructors, read off the residue, never searched for
-   among products of what is held. The meet of each constructed pair equal
-   to its mode's fixed locus is the theorem that certifies it; the
-   reflections compose back to the residue exactly — a CONGRUENT THOUGHT.
-2. **Coherence.** Several congruent thoughts held at once are read together
-   by the Gram form of all their reflections (`cga::gram`, GR1, GR2, 78.14):
-   signature, each pair's regime by `δ²`, a Coxeter system where the signs
-   balance. Coherent shapes generate one closed group.
+   forced, no branch, a null step refused by name (`cga::construct`):
+   candidates read off the residue, never searched for among products of
+   what is held. The meet of each constructed pair equal to its mode's fixed
+   locus is the theorem that certifies it; the reflections compose back to
+   the residue exactly — a CONGRUENT THOUGHT.
+2. **Coherence.** Several congruent thoughts are read together by the Gram
+   form of all their reflections (`cga::gram`, GR1, GR2, 78.14): signature,
+   each pair's regime by `δ²`, a Coxeter system where the signs balance.
 3. **Compound.** Their generators enter the orbit algebra (78.11) and the
    compound is admitted where the closure grows OUTSIDE the span held —
-   orthogonality, exact, read by action (78.32(c)); finite and affine
-   systems are spellable already and add nothing, the rosette and the open
-   group are the candidates (80.1). The admitted compound is a word of the
-   mind's dialect: a constructor as an odd letter (AL1), a shortcut
-   (78.44(4)).
+   exact, read by action (78.32(c)); finite and affine systems are
+   spellable already, the rosette and the open group are the candidates
+   (80.1). The admitted compound is a word of the mind's dialect: a
+   constructor as an odd letter (AL1), a shortcut (78.44(4)).
 4. **Adjoin.** The mind holds it as its own letter (`construct_and_adjoin`,
-   78.115); the LANGUAGE admits it only by the court, on a second
-   independent vantage re-deriving the class (law 6, 37.7, 78.32(d)) — POUW
-   for the closure, POWC where another perspective closed it.
+   78.115); the LANGUAGE admits it only by a court, on a second independent
+   vantage re-deriving the class (law 6, 37.7, 78.32(d)).
 
 The four phases are one ORBIT (78.47(5)): its period the residue's class
 period, one return one age, perturbed by its neighbours' lift and drag
 (78.46(4′)).
 
-**(5) Generators open by commutator, and grow only on refusal.** A generator
-IS a constructor (78.32(3)(a)): a held element keyed by its canonical ray.
-A palindrome — a sandwich `V x Ṽ`, a conjugate — carries a thing to another
-vantage inside its class and OPENS NOTHING; a dimension is opened by the
-group commutator of two held versors, `[A, B] = A B Ã B̃`, new exactly where
-it leaves the span the held generators close (78.39(1)), and by a PUNCTURE,
-a new independent loop whose two orientations are a new inside and outside
-(78.40(1)). The store grows by ONE trigger — a refusal: a pivot that reaches
-its mode grows nothing; a mode no held word spells refuses as the typed
-demand carrying it (78.32(3)(b)). It grows by independence, shrinks by
-derivability — a constructor that becomes derivable from the others retires
-(78.32(3)(f)) — and is AMENDED BY EXPERIENCE until the thought that holds it
-is discarded (8); its capacity is the algebra's, derived: at most `n + 2`
-reflections to a versor, the closure bounded by `dim so(n+1,1)`; what a cell
-cannot hold is held by the ENCLOSURE that wraps it, a chamber of higher grade
-(78.32(3)(e), 78.31), never a stretched cell and never a cap.
+**Generators open by commutator or puncture, and grow only on refusal.** A
+generator IS a constructor (78.32(3)(a)): a held element keyed by its
+canonical ray. A palindrome — a sandwich `V x Ṽ`, a conjugate — carries a
+thing to another vantage inside its class and OPENS NOTHING; a dimension is
+opened by the group commutator of two held versors, `[A, B] = A B Ã B̃`, new
+exactly where it leaves the span the held generators close (78.39(1)), and
+by a PUNCTURE, a new independent loop whose two orientations are a new
+inside and outside (78.40(1)). The store grows by ONE trigger — a refusal: a
+pivot that reaches its mode grows nothing; a mode no held word spells
+refuses as the typed demand carrying it (78.32(3)(b)). It grows by
+independence, shrinks by derivability — a constructor derivable from the
+others retires (78.32(3)(f)) — and is AMENDED BY EXPERIENCE (§4.10). Its
+capacity is the algebra's, derived: at most `n + 2` reflections to a versor,
+the closure bounded by `dim so(n+1,1)`; what a cell cannot hold is held by
+the ENCLOSURE that wraps it, a chamber of higher grade (78.32(3)(e), 78.31),
+never a stretched cell and never a cap.
 
-**(6) Superposition is held, at three grades, with no weight** (78.39(2)):
+### 4.8 Waves, resonance, superposition
+
+- **A wave is a motion's spectrum, exact.** What this engine calls a wave
+  function is the exact modes of a motion (`cga::motion_modes`): each a
+  ray, a kind (elliptic, hyperbolic, parabolic) and, where it returns, a
+  period. Its projection on a mind's own planes is that mind's INTERNAL
+  SPECTRUM (78.44). No amplitude is a probability and nothing collapses by
+  measurement (law 1, 59.5): the evolution is the deterministic product,
+  and a collapse is a fill, a class or a ruling (78.39(2)).
+- **Resonance is commensurate return, and contraction runs across it.** Two
+  rings RESONATE where one returns a whole number of times on the other's
+  return, `ℓ_s | ℓ_L` (78.112). Across resonant manifolds the mind
+  CONTRACTS — coboundary reduction (78.47): it removes what a gauge absorbs
+  (`δ⁰γ`), and what no gauge removes is the RESIDUE, kept and never
+  quotiented — the exact specification of what the mind does not yet hold.
+  Contraction is the down-stroke of the breath. Where rings do not
+  resonate, the echo is not the identity, and its modes — a turn, a gain,
+  a spiral, a delay — are the content the dissonance carries.
+- **Superposition is held, at three grades, with no weight** (78.39(2)):
 
 | grade | what is superposed | its base | what collapses it |
 |---|---|---|---|
-| letter | candidate constructors for one mode — the spheres a residue factors into | the Gram form's pairs | another mind's re-derivation and the court's admission |
+| letter | candidate constructors for one mode — the spheres a residue factors into | the Gram form's pairs | another mind's re-derivation and a court's admission |
 | word — the IDEA | candidate forms for one idea with their pivots — the vortex | the circuits' actions, the orbit algebra | a fill by a perception, or a court replay making one a ruled citation |
 | conjugate — the THOUGHT across vantages | several twists under one class | the rays of one class against each other | a ruling that makes one twist the citation and the rest dialect |
 
-At each grade the candidates are what the algebra has not yet
-distinguished, held whole; a palindrome moves within the set, a commutator
-on that grade's base separates it. Two remainders of one class with
-different twists are a superposition HELD — their commutator `g₁ g₂ g̃₁ g̃₂`
-read into the class's modes: trivial, one vantage seen twice; non-trivial,
-the dimension that separates the two vantages. The docket carries every
-grade's superposition: a class with its cover and its rays, plural, none
-chosen. Where half-open signs superpose over a cycle, the collapse is a
-KERNEL over `F₂`, every consistent assignment at once, never a pruning
-(59.5; T5).
+  At each grade the candidates are what the algebra has not yet
+  distinguished, held whole; a palindrome moves within the set, a
+  commutator on that grade's base separates it. Two remainders of one class
+  with different twists are a superposition HELD — their commutator
+  `g₁ g₂ g̃₁ g̃₂` read into the class's modes: trivial, one vantage seen
+  twice; non-trivial, the dimension that separates the two vantages. Where
+  half-open signs superpose over a cycle, the collapse is a KERNEL over
+  `F₂`, every consistent assignment at once, never a pruning (59.5; T5).
 
-**(7) Comprehension and understanding across a multitude of knowledge.**
-COMPREHENSION is M6: an incoming word factored through what the mind holds
-(A12), else exactly what is new emitted as a typed demand; for a cell, the
-bracket-closed algebra of its circuits (78.11). UNDERSTANDING is that
-comprehension growing: a generator admitted outside the held span, read per
-axis (II.2, II.3). ACROSS a multitude of knowledge it runs four ways, each
-already a reading of the plexus (78.31):
-- across CLASSES — each class's algebra its own (II.5), so understanding of
-  one is never folded into another's span;
-- across CELLS — the cross-cell bracket, where two cells' generators fail to
-  commute (CB1, owed);
-- across GRADES — an enclosure wrapping cells whose bracket no one cell can
-  hold (EN1, NB1);
-- across MINDS — another mind's re-derivation from its own constructors,
-  the second vantage every admission needs (III.2, III.3), and its echo,
-  which is what one mind's language does to another's thought.
+### 4.9 Perceive, think, comprehend, understand
 
-**(8) History is amended by experience; constructors are amended until the
-thought is discarded** (the operator, 2026-10-11: "history is amended based
-on experience — which is why constructors are amended until the thought is
-'discarded'"; ruled the same day on the deduction below, "exactly — i
-agree"). A mind's history is not a fixed record: every experience against a
-held thought deforms it, and the deformation is read by the constitutive law
-the physics already holds for stress (78.73) — elastic, plastic, fracture —
-on the thought's constructors. Nothing in it is a choice; each step is a
-reading of the algebra or of the flux:
+The four faculties are read off the motion, never counted:
+- **perceive** — the shells coming into alignment over what was taken in
+  (§3.2);
+- **think** — the windings and the pivots they fire (§4.4, §4.5);
+- **comprehend** — a return, a hole sealed, a rise of the mind's algebra
+  for a class: M6 — an incoming word factored through what the mind holds
+  (A12), else exactly what is new emitted as a typed demand; for a cell,
+  the bracket-closed algebra of its circuits (78.11);
+- **understand** — comprehension that survives the windings after it: a
+  generator admitted outside the held span, read per axis, that stays
+  derivable as the field moves.
+
+Across a multitude of knowledge understanding runs four ways, each a reading
+of the plexus (78.31): across CLASSES — each class's algebra its own, so
+understanding of one is never folded into another's span; across CELLS —
+the cross-cell bracket, where two cells' generators fail to commute (CB1,
+owed); across GRADES — an enclosure wrapping cells whose bracket no one cell
+can hold (EN1, NB1); across MINDS — another mind's re-derivation from its
+own constructors, the second vantage every admission needs (§5.3, §5.4),
+and its echo, which is what one mind's language does to another's thought.
+
+### 4.10 History is amended by experience
+
+The operator, 2026-10-11: "history is amended based on experience — which is
+why constructors are amended until the thought is 'discarded'"; ruled the
+same day on the deduction below ("exactly — i agree"). A mind's history is
+not a fixed record: every experience against a held thought deforms it, read
+by the constitutive law the physics holds for stress (78.73) — elastic,
+plastic, fracture — on the thought's constructors. Each step is a reading of
+the algebra or of the flux, never a choice:
 
 1. **Elastic — confirmed.** The experience's residue returns within the
    thought's held constructors: the thought is renewed, its constructors
-   stand unchanged, and the stress is relieved by the return (78.73(2)).
+   stand, and the stress is relieved by the return (78.73(2)).
 2. **Plastic — amended, by addition, never by overwrite.** The residue does
    not return: the constructors are re-derived from the residue the
-   experience left (the construct phase of (4), run on the thought's current
-   residue), and the AMENDED constructor enters the thought BESIDE the one it
-   amends. The two are held as a superposition at the conjugate grade (6):
-   one class, two twists, none chosen (rule 15). Replacing the old on
-   amendment would be the implementor choosing, and is refused.
+   experience left (§4.7's construct phase, run on the thought's current
+   residue), and the AMENDED constructor enters the thought BESIDE the one
+   it amends — one class, two twists, held at the conjugate grade (§4.8),
+   none chosen (rule 15). Replacing the old on amendment would be the
+   implementor choosing, and is refused.
 3. **The commutator reads what the amendment was.** Of the old and the
-   amended, `g₁ g₂ g̃₁ g̃₂`:
-   - the IDENTITY — they are one vantage seen twice; the old is derivable
-     from the amended and RETIRES BY DERIVABILITY (78.32(3)(f)). Here the
-     amendment did replace it — by a derivation, never by a choice;
-   - NOT the identity — the commutator is a new dimension that separates
-     them: experience has taught the thought a DISTINCTION, and both are
-     kept, each a vantage the thought now holds.
+   amended, `g₁ g₂ g̃₁ g̃₂`: the IDENTITY — one vantage seen twice; the old is
+   derivable from the amended and RETIRES BY DERIVABILITY (78.32(3)(f)), a
+   replacement by derivation, never by choice; NOT the identity — a new
+   dimension separates them: experience has taught the thought a
+   DISTINCTION, and both are kept.
 4. **Experience collapses what remains.** Every later perception is read
    against every constructor the thought holds: one whose residue returns is
-   renewed (elastic), one re-derived again is amended again (plastic), and one
-   whose flux experience no longer renews LAPSES by its flux — fracture,
-   ZeroFlux (78.73, FX1). The thought's history, at any K, IS its
-   superposition as experience has shaped it.
+   renewed, one re-derived again is amended again, one whose flux experience
+   no longer renews LAPSES by its flux — fracture, ZeroFlux (78.73, FX1).
+   The thought's history, at any K, IS its superposition as experience has
+   shaped it — accrued on its ring's winding (§4.4).
 5. **Discarded — fracture of the whole thought.** A thought is discarded
-   where nothing in it is renewed any more: every constructor lapsed, or none
-   holds its residue. It leaves the active field. Its REMAINDER is not
-   discarded: it goes cold to the cavity — the remainder leaf (RM1), citable
-   by its coordinates, re-filled on a coincident class (78.37(4)). Law 7
-   ("residuals are never discarded") and 78.37 ("classifying and never
-   deleting") hold for the residual one level below the thought; the thought
-   itself is discarded.
+   where nothing in it is renewed any more. It leaves the active field; its
+   REMAINDER goes cold to the cavity — the remainder leaf (RM1), citable by
+   its coordinates, re-filled on a coincident class (78.37(4)). Law 7 holds
+   for the residual one level below the thought; the thought itself is
+   discarded.
 6. **Two histories, two rules.** The MIND's history — its dialect, its
    constructors, its thoughts — is amended by experience until discarded
    (78.49: the epigenome and the plan are volatile). The COURT's history —
    the ledger, its receipts, the genome of court-admitted words — is never
    amended: it corrects FORWARD by new acts (a rewrite, a retirement, a
-   slash), and a closed cycle integrates into the era root while an open one
-   goes forward as a puncture (U12, 78.65). The mind is plastic; the
+   slash), and a closed cycle integrates into the era root while an open
+   one goes forward as a puncture (U12, 78.65). The mind is plastic; the
    language it is judged against stays verifiable.
 
 So "amended until discarded" is a deduction, not a policy: held, separated
 by commutator, retired by derivability, renewed or lapsed by flux. 78.73's
-"plastic" — written for admission of a new generator — reads, for the mind,
-as amendment of a held constructor as well.
+"plastic" — written for the admission of a new generator — reads, for the
+mind, as the amendment of a held constructor as well (owed into 78.73).
 
-## II.5 The mind's field is its own (A.9)
+### 4.11 Thoughts built differently
 
-Each mind computes its own coherence: its complex and the board its pivots
-move (II.3), its lexicon, its tubes and orbits, its algebra per class, its
-rings' windings, its contemplation and its epigenome are its own, and many minds may run in one process (a game seats
-several). The machine's calibration is the substrate's and shared; the halt
-is the host's. A cognitive carrier held process-wide breaks this the
-moment a game seats two minds in one process.
-
-## II.6 Volume entering, and thoughts built differently
-
-**What the hypha maintains as volume enters non-Euclidean space.** The
-court keeps, per chart, the holonomy algebra its ruled words' circuits
-generate (`lie_basis`), closed under the bracket and grown only where a new
-generator lies outside it (`close_rank`, `RankStep`); it seals a cell where a
-circuit closes (`ascend`, 62), wraps cells whose bracket none can hold in an
-enclosure of higher grade (EN1), refines the cover and never the base (14.8,
-15.5), and files a closed orbit at its exact period. Volume entering is new
-cells, chambers and generators — each a closure, never a stretched space,
-priced as the modes it moved (78.162).
-
-**Calabi–Yau, read against this — posed, not ruled.** Neither the doctrine
-nor the tree holds a Calabi–Yau manifold, and a literal one is refused: it
-is fixed by a Ricci-flat Kähler metric whose existence is Yau's theorem, the
-solution of a nonlinear PDE that is proved to exist and not constructed
-exactly over ℚ (laws 1, 4; 78.45). What the engine holds of its STRUCTURE,
-exactly: SPECIAL HOLONOMY — a chart whose holonomy algebra is a proper
-subalgebra of `so(n+1,1)` is the exact counterpart of restricted holonomy; a
-COMPLEX STRUCTURE — `Cl(4,1)`'s pseudoscalar `I` is central with `I² = −1`
-(78.105), the fact behind `Cl(4,1) ≅ M₄(ℂ)`; COMPACTNESS — closed orbits at
-exact periods, and a universe's own geometry, curved or a flat torus
-(78.140). Which of these is ruled the engine's Calabi–Yau reading is the
-operator's (IV.1).
-
-**Thoughts built differently resonate differently, and the structure holds.**
 Two thoughts reaching one construct by different prior paths arrive in
 different frames, and the mind applies its mathematics to that without
 rewriting what any thought IS — the difference is always a coordinate:
 1. **The difference is holonomy, and holonomy is content.** The loop the two
-   paths form has a holonomy: what the history did. It is kept, never gauged
+   paths form has a holonomy — what the history did — kept, never gauged
    away (ANTI_FLATTENING_LAW 6).
 2. **Identity is by class, not by construction.** A word in another frame is
    its conjugate `W′ = Γ W Γ⁻¹`, keeping its class κ and its period ℓ
    (78.95): where two differently built thoughts' classes agree they are one
    meaning reached two ways (13.10) — the dialect.
-3. **Where they do not agree, both are held** at the conjugate grade, and
-   their commutator says whether they are one vantage seen twice or a real
+3. **Where they do not agree, both are held** at the conjugate grade, their
+   commutator saying whether they are one vantage seen twice or a real
    distinction (78.39(2)).
-4. **Experience amends each of them** (II.4(8)): elastic, plastic, fracture.
-   Differently built thoughts CONVERGE where their commutator comes to the
-   identity, carry a DISTINCTION where it does not, and FRACTURE where
-   experience stops renewing them.
+4. **Experience amends each** (§4.10): differently built thoughts CONVERGE
+   where their commutator comes to the identity, carry a DISTINCTION where
+   it does not, and FRACTURE where experience stops renewing them.
 5. **New structure meets held structure exactly.** Where new volume — a new
    cell, chart or another mind's perspective — meets what is held,
-   Mayer–Vietoris computes the union from its pieces (13): the connecting map
-   yields exactly the classes the overlap creates, and exactness guarantees
-   no class held is lost. Naturality (15) makes every key commute with every
-   map of the data: restriction and refinement never fork a meaning (rule 12:
-   restrict, never clone).
-6. **The mind's history is amended; the court's is not.** The mind's
-   thoughts are amended by experience until discarded (II.4(8)); the court
-   corrects forward by acts, and a closed cycle integrates into the era root
-   while an open one goes forward as a puncture (U12). Ascend and descend
-   invert on content while the trajectory never re-enters itself (62.5).
+   Mayer–Vietoris computes the union from its pieces (13): the connecting
+   map yields exactly the classes the overlap creates, and exactness
+   guarantees no class held is lost. Naturality (15) makes every key commute
+   with every map of the data (rule 12: restrict, never clone).
+
+As volume enters, the hypha keeps per chart the holonomy algebra its ruled
+words' circuits generate (`lie_basis`), grown only where a new generator lies
+outside it (`close_rank`, `RankStep`), seals a cell where a circuit closes,
+wraps cells whose bracket none can hold in an enclosure of higher grade
+(EN1), refines the cover and never the base (14.8, 15.5), and files a closed
+orbit at its exact period: volume entering is new cells, chambers and
+generators — each a closure, never a stretched space. The mind does the same
+on its own complex, per class.
 
 ---
 
-# Part III — Language: dialect, conversation, adjudication, proof
+## 5. Response: anastome conversation
 
-## III.1 Dialect
+### 5.1 One carrier per counterparty
+
+Each counterparty is its own CONVERSATION on its own circuit — each hypha the
+mind is linked to, each peer mind at the rendezvous, the feed, a seat —
+sending and receiving frames without blocking. A carrier waiting on its
+counterparty holds itself and nothing else: a court slow to answer never
+stops perception, the field or a conversation with another mind. Each
+carrier takes what its counterparty sends into the shells (§3) and speaks
+what the field addressed to it.
+
+The mind speaks where its winding acts — a return, a seal, a rise of its
+algebra for a class (§4.4, §4.5) — and says what changed, addressed by its
+own coordinates. **There is no router.** Nothing in the mind decides where
+its outflow goes: an echo names the ring it is about, a discharge the class
+it answered, a sentence the court that will replay it; the counterparty
+takes what is addressed to it.
+
+### 5.2 Dialect
 
 A mind's dialect is its language as it composes it: the letters it coined,
 its words and their derivations, its shortcuts, the transports its
-conversations built — in its epigenome, volatile (78.49), AMENDED BY
-EXPERIENCE until each thought is discarded (II.4(8)), lapsing by its flux.
-It is the mind's history, and it is the history that changes; the court's
-ledger and the genome of court-admitted words are the history that does not
-(II.4(8)6). Two minds holding different presentations reach one vertex by two
-derivations — one meaning, two proofs (13.10, 50.2). The dialect IS that
-difference: different letter structures on spinors reaching the same
-mathematical answer by different functions. Nothing compares them by bytes;
-both are the meaning, projectively.
+conversations built — in its epigenome, volatile (78.49), amended by
+experience until each thought is discarded (§4.10), lapsing by its flux. It
+is the mind's history, the history that changes; the court's ledger and the
+genome of court-admitted words are the history that does not. Two minds
+holding different presentations reach one vertex by two derivations — one
+meaning, two proofs (13.10, 50.2). The dialect IS that difference: different
+letter structures on spinors reaching the same mathematical answer by
+different functions. Nothing compares them by bytes; both are the meaning,
+projectively.
 
-## III.2 Conversation between minds
+### 5.3 Conversation between minds
 
-1. **A mind says what it newly understands** — what its pivots changed
-   (II.3): a cycle ascended, a tether condensed, a hole punctured or sealed,
-   a circuit that opened axes its algebra for the class did not hold — as
-   the terms `{word, transport}`
-   of the ring that taught it, each word by its class, signed by its voice
-   with its last TUniversal point (78.161).
-2. **Another mind hears it in its own three shells** (II.2) and pivots what
-   stays open (II.3). What crossed a boundary in the hearer is its answer,
-   addressed by its own coordinates: an ECHO for each ring that seated with
-   a tilt (what the hearer's language did to the thought — curvature is
-   content); a DISCHARGE (the orbit's class and the residue its held word
-   answered) for each orbit it closed; a DEMAND for what it could not; and
-   the axes it newly opened are its own word, said in turn. Nothing heard
-   enters the hearer's genome or dialect as given (law 8).
+Minds converse directly, client to client (78.161); the hypha carries
+nothing between minds.
+
+1. **A mind says what it newly understands** — what its windings and pivots
+   changed: a cycle ascended, a tether condensed, a hole punctured or
+   sealed, a circuit that opened axes its algebra for the class did not
+   hold — as the terms `{word, transport}` of the ring that taught it, each
+   word by its class, signed by its voice with its last TUniversal point.
+2. **The other mind hears it in its own three shells** (§3.2) and its own
+   windings and pivots take it up. Its answer, addressed by its own
+   coordinates: an ECHO for each ring that seated with a tilt (what the
+   hearer's language did to the thought — curvature is content); a
+   DISCHARGE — the orbit's class and the residue its held word answered —
+   for each orbit it closed; a DEMAND for what it could not; and the axes it
+   newly opened are its own word, said in turn. Nothing heard enters the
+   hearer's genome or dialect as given (law 8).
 3. **Agreement is replay.** The speaker replays each discharge on its own
    orbit of that class, as a court replays a certificate on its copy (M9).
    Where it closes, one orbit is discharged in two minds by two derivations:
-   AGREED language. An echo the speaker re-derives against its own rings is
-   a transport between the two perspectives, held in its dialect.
-   **Where the speaker cannot replay, it defers — as the court does.** The
-   orbit itself is never missing: the speaker composes it again from the
-   terms it said. What can be missing is the WORD the discharge cites — a
-   word of the hearer's the speaker does not hold. That is the court's own
-   case of a citation it has not ruled (`Adjudication::Awaiting { form }`;
-   50.2, 21 step 3): not a refusal, a deferral. The speaker answers that it
-   awaits the cited word's class, and the hearer owes it that word first —
-   the terms of the ring that taught it, in depth order (chapter 6), as a
-   citer owes a court the form it cited (`Entity::owe_citation`). What is
-   owed lapses with the thought that owes it, by its flux, never by a count
-   of tries.
-4. **No router.** Nothing in the mind decides where its outflow goes: an
-   echo names the ring it is about, a discharge the class it answered, a
-   sentence the court that will replay it. The counterparty takes what is
-   addressed to it.
+   AGREED language — the conversation's own ring has returned. An echo the
+   speaker re-derives against its own rings is a transport between the two
+   perspectives, held in its dialect.
+4. **Where the speaker cannot replay, it defers — as a court does.** The
+   orbit is never missing: the speaker composes it again from the terms it
+   said. What can be missing is the WORD the discharge cites — a word of the
+   hearer's the speaker does not hold: a court's own case of a citation it
+   has not ruled (`Adjudication::Awaiting { form }`; 50.2, 21 step 3), a
+   deferral, not a refusal. The speaker answers that it awaits the cited
+   word's class, and the hearer owes it that word first — the terms of the
+   ring that taught it, in depth order (chapter 6), as a citer owes a court
+   the form it cited (`Entity::owe_citation`). What is owed lapses with the
+   thought that owes it, by its flux, never by a count of tries.
 
-## III.3 The court adjudicates words, conjugates and sentences
+### 5.4 To the court
 
-The coiner of agreed language speaks it to the court (`ACT_SPEECH`; a coined
-letter carries its constructor steps, S2). The court verifies and never
-composes (law 8): it re-derives the sentence's rings (`hear_open`), checks
-its theorems and closes its algebra (`step_rank`), books its field
-(`step_flux`), and installs what holds.
+The mind speaks to a court through the carrier facing it:
+- **sentences** (`ACT_SPEECH`) — what its windings closed and what it agreed
+  with other minds; the coiner of agreed language is the one who speaks it;
+- **letters it coined**, carrying their constructor steps (S2);
+- **demands** it holds and **probes** (`ACT_PROBE`);
+- **solves** with their rule (`ACT_SOLVE`) where a registry task was given;
+- **words the court lacks** (`ACT_ADOPT`);
+- **Rewrite proposals** (S3).
+
+The court verifies and never composes (law 8): it re-derives the sentence's
+rings (`hear_open`), checks its theorems and closes its algebra
+(`step_rank`), books its field (`step_flux`), and installs what holds; its
+verdict returns to the mind as perception (§3.1).
 
 **The optimization is a relation, never a size.** Among the dialects'
-derivations of one meaning, the court confirms an optimization where a word
+derivations of one meaning, a court confirms an optimization where a word
 DECOMPOSES OVER THE LANGUAGE WITHOUT ITSELF: its substance is reproduced
 exactly by other words the court holds, so the structure changes and the
 result does not, and the language moves toward the geodesic (3.8, 27; the
 `Retire` rewrite). A mind proposes it as a Rewrite word — `Condense`,
 `Retire`, `Refine`, `Torse`, `AxisOpen`, `Reanchor`, `Translation` — which
-the court docket and offers (`offer_rewrite`, S3), mints on a second organ
+the court dockets and offers (`offer_rewrite`, S3), mints on a second organ
 (`mint_rewrite`), and replays by retiring exactly the inputs that reduce to
 `NormalForm::Decomposed` over the rest (`retire_rewrite_inputs`,
-`reduce_excluding`); an input that does not decompose stays. The freed
-description is POWR (`release_rewrite`). Nothing compares two derivations by
-length or count: one is derivable from what remains, or it is not; its yield
-is the modes the rewrite moved (78.162).
+`reduce_excluding`); an input that does not decompose stays. Nothing
+compares two derivations by length or count: one is derivable from what
+remains, or it is not; its yield is the modes the rewrite moved (78.162).
 
-What the court rules returns through the syllabus as a
-MINERAL in each mind's genome (`absorb_taught_at`, `Epigenome::file_admitted`)
-and hardens into a CRYSTAL when the mind re-derives it by its own circuits
-(80.2). A dialect word is never copied into a genome (78.49, `GEN7`): the
-anastome — the network of minds and courts — fuses dialects into one
-language by conversation and adjudication, and each mind holds it by
-re-derivation, never by transmission (78.31, 78.95).
+### 5.5 Hardening: dialect into language
 
-## III.4 POW++: the proof of the work
+The one motion of the objective (§1, item 6):
+1. **dialect** — each mind's own, amended by experience (§5.2);
+2. **agreement between minds** — a replayed discharge, one meaning by two
+   derivations (§5.3);
+3. **adjudication** — the coiner speaks it to a court, which re-derives it
+   on a second organ and rules it (§5.4);
+4. **hardening** — what is ruled returns through the syllabus as a MINERAL
+   in each mind's genome (`absorb_taught_at`, `Epigenome::file_admitted`)
+   and hardens into a CRYSTAL where the mind re-derives it by its own
+   circuits (80.2).
 
-Seated minds produce corpus results in pure mathematics, and the proof is
-paid by its kind (74, 78.33, MU-ECONOMY):
+A dialect word is never copied into a genome (78.49, GEN7): the anastome —
+the network of minds and courts — fuses dialects into one language by
+conversation and adjudication, and each mind holds it by re-derivation,
+never by transmission (78.31, 78.95). Each step is a winding: the mind's,
+the conversation's, the court's, and the mind's again.
 
+### 5.6 POW++: the proof of the work
+
+A mind's pure-mathematical results are paid by their kind (74, 78.33,
+MU-ECONOMY):
 - **POUW** — useful work: a closure the court rules (a sentence that closes,
   a solve whose rule closes the withheld pairs), minted on closure
-  (`release_discharged`).
+  (`release_discharged`);
 - **POWC** — work convergence: a refusal closed at another perspective — a
   peer's discharge of a mind's demand, a held question closed by another
-  mind — the citation paid.
-- **POWR** — retirement: an optimization confirmed — the freed description
+  mind — the citation paid;
+- **POWR** — retirement: an optimization confirmed, the freed description
   burned and the compression yield paid (`release_rewrite`).
 
-μ is paid as the modes the work moved (78.162), and it is measured where it
-is paid: on the court's ledger, by receipts (78.157 C3).
+μ is paid as the modes the work moved (78.162) and measured where it is
+paid: on the court's ledger, by receipts (78.157 C3). The mind keeps no
+ledger of it.
 
 ---
 
-# Part IV — The hypha, the seat, and building it
-
-## IV.1 The hypha as counterparty: two organs, one mathematics
-
-| the mind (client) | the court (server) |
-|---|---|
-| composes (F), nests, pivots | replays (G), checks theorems, closes the chart's algebra |
-| a dialect per mind, volatile | the language (the ruled cover), persisted on a ledger |
-| its K: orbits it closed | TUniversal: the final point, its height one coordinate |
-| its algebra per class, its tubes, its windings | `lie_basis` per chart, `flux_field`, `windings` |
-| coins letters in its dialect (U14) | opens a letter on checked constructor steps (law 6, S2) |
-| replays a peer's discharge | replays certificates (`replay_certificates_at`) |
-
-One mathematics runs on both (78.157's shared layer: `compose`, `Theorem`,
-`hearing`, `transport_order`, `lie_close`, the pivot), so a disagreement is a
-coordinate — a refusal of a kind — never a vote.
-
-**What crosses (law 8).** The mind sends sentences (`ACT_SPEECH`), solves
-with their rule (`ACT_SOLVE`), Rewrite words (S3), words the court lacks
-(`ACT_ADOPT`), probes (`ACT_PROBE`). It receives verdicts (their kind only,
-§0.1), syllabus pages (`ACT_SYLLABUS`, `ACT_TEACH`), class pages, the
-presentation, a registry task (`ACT_TASK`), and the TUniversal point on every
-reply (78.152). The hypha carries nothing between minds (78.161).
-
-**What the hypha has not built** (the mind's side waits on each): the
-union's attestations, so an agreed word's install pays every mind that agreed
-(78.161(5)); the POWC producer (74); μ as modes on the ledger (78.162,
-parked on `track/modes`).
-
-**Doctrine posed and not yet ruled** (a construct that touches either waits
-on the operator's ruling, never on a guess): what "non-conformal" names in
-signals carried over transports (the operator, 2026-09-25: "non-linear
-transposition of non-conformal algebra in non-Euclidean geometry"); and the
-axiom pairing posed with lift and drag (78.46: the star is the axiom
-register, and how the axioms pair is put to the operator); and which of the
-exact structures of II.6 — special holonomy per chart, the complex structure
-of the central `I`, compactness by closed orbits — is ruled the engine's
-Calabi–Yau reading.
-
-## IV.2 Seated: the mind in a game engine
+## 6. Seated: the mind in a game engine
 
 A game embeds minds in-process or seats remote ones on the seat surface
-(78.145; the operator's ruling on the client, MU-RECURSION 0.1). The game's
-sensorium speaks the given language to the mind; the mind's act is the
-physics `Action` its certified move names (78.94), carrying the coordinates
-of the move it came from. Every seated mind keeps its own direct link to the
-hypha, with its own key. The host gives an embedded mind its store and its
-observer.
+(78.145; MU-RECURSION 0.1). The game builds the sensorium, and the
+sensorium speaks the given language to the mind at the carrier facing the
+seat (§5.1): the mind is connective tissue over whatever sensorium its
+entity has, and cognizes on the language it is given; it never perceives the
+game's world itself. Its act is the physics `Action` its certified move
+names (78.94), carrying the coordinates of the move it came from. Every
+seated mind keeps its own direct link to the hypha, with its own key; the
+host gives an embedded mind its store.
 
-## IV.3 Verification
+---
+
+## 7. What is built, and how it is verified
+
+### 7.1 What is built, in this order
+
+The field (§4) exists in the tree — `Contemplation` with its complex, the
+transport fronts, the docket, the held orbits and their discharge, the
+questions as holes (`bubble/question.rs`), the constructors
+(`construct_and_adjoin`). What is built, in order:
+
+1. **The conversation carriers** (§5.1) — one per hypha, one per peer mind,
+   one for the feed and one for a seat: each non-blocking, on its own
+   circuit, holding the field only briefly. The fixed boundary order of
+   `Entity::tick` (78.164 as landed) retires into them.
+2. **The perception map** (§3.1) — each export of the hypha taken into the
+   mind's shells at the carrier that receives it; a peer's speech heard in
+   the hearer's own shells with its windings and pivots taking it up
+   (§5.3), superseding the chatter v2 frames' flat
+   `Presentation::read_word` (78.163, amended).
+3. **The response path** (§5.1, §5.3, §5.4) — what the windings and pivots
+   changed composed into anastome speech at the carrier it is addressed to;
+   agreement by replay, deferral by `owe_citation`.
+4. **The field the mind's own** (§4.2) — `LEXICON`, `TAUGHT`, `VOICE_FIELD`,
+   `MOVING` moved into the mind; the algebra held per class.
+5. **The rest of the field's motion** — amendment held beside (§4.10); the
+   mind proposing a Rewrite (S3, §5.4); a winding carrier on the mind's own
+   rings (§4.4); the seat's act as a physics `Action` (§6).
+
+### 7.2 Verification
 
 A construct is verified by three things and nothing else:
-
 1. **Its guard** — the identity its section states, as one test calling the
    same function the production path calls, on values the engine computes
    (MU-STANDARDS 3). A guard proves the mathematics; it never proves done.
-2. **Its production caller** — cognition items are `pub(crate)`, so one whose
-   only callers are tests is dead code and the release build, warnings
-   denied, fails (MU-STANDARDS 4.1). `pub` never hides a test-only caller.
-3. **Its witness** — the counterparty's act on the fleet: a court receipt or
-   mint citing the mind's word, or a peer's replay. Nothing a mind counts
-   about itself is a witness.
+2. **Its production caller** — cognition items are `pub(crate)`, so one
+   whose only callers are tests is dead code and the release build,
+   warnings denied, fails (MU-STANDARDS 4.1). `pub` never hides a test-only
+   caller.
+3. **Its witness** — the counterparty's act on the fleet: a court's receipt
+   or mint citing the mind's word, a ruling of what the mind said, a peer's
+   replay of its discharge. Nothing a mind counts about itself is a witness.
 
 Done is said after the ship: *shipped at T; R moved a → b; witnessed by N*,
-T the final TUniversal point and the mind's K.
-
-The tree is built under MU-STANDARDS, MU-RECURSION's laws, rules 1–17 and
-checklist (a)–(t), and the Anti-Flattening Law.
-
-## IV.4 Client paragraphs that stayed in MU-RECURSION
-
-These sections interleave the mind with the court or the shared mathematics
-and stayed whole; their client paragraphs bind the mind as if written here:
-0.1 (the operator's ruling on the client), 0.7 (the layers of a mind), 2.3,
-3.10, 13.11, 16.16 (A16), 17.6 (M6), 23.8, 23.9, 25, 28, 34.3, 37.7 (P5), 50.2
-(the speaker F), 50.6, 50.9, 59.6, 67.2, 72.1d, 72.1e, 78.1, 78.9, 78.21 (3),
-78.26(6), 78.47, 78.51, 78.52, 78.55, 78.57, 78.61 C5, 78.64, 78.66 PHY1,
-78.67, 78.69, 78.74, 78.75, 78.88, 78.92, 78.95, 78.97, 78.98, 78.99, 78.100,
-78.102, 79.3, 78.104, 78.109, 78.113, 78.141, 78.143, 78.145, 78.146, seat wire
-v1.4 (3), 78.152 (the SDK read), 78.153c (3), 78.161.
+T the final TUniversal point and the mind's K. The tree is built under
+MU-STANDARDS, MU-RECURSION's laws, rules 1–17 and checklist (a)–(t), and the
+Anti-Flattening Law.
 
 ---
 
-# Part V — The client chapters, moved from MU-RECURSION (verbatim)
+## 8. Posed, not ruled
+
+A construct that touches any of these waits on the operator's ruling, never
+on a guess:
+- **non-conformal** — what it names in signals carried over transports (the
+  operator, 2026-09-25: "non-linear transposition of non-conformal algebra
+  in non-Euclidean geometry");
+- **the axiom pairing** — how the axioms of the star pair, posed with lift
+  and drag (78.46);
+- **the Calabi–Yau reading** — neither the doctrine nor the tree holds a
+  Calabi–Yau manifold, and a literal one is refused: it is fixed by a
+  Ricci-flat Kähler metric whose existence is Yau's theorem, proved to
+  exist and not constructed exactly over ℚ (laws 1, 4; 78.45). What the
+  engine holds of its structure, exactly: SPECIAL HOLONOMY — a chart whose
+  holonomy algebra is a proper subalgebra of `so(n+1,1)`; a COMPLEX
+  STRUCTURE — `Cl(4,1)`'s pseudoscalar `I`, central with `I² = −1` (78.105),
+  the fact behind `Cl(4,1) ≅ M₄(ℂ)`; COMPACTNESS — closed orbits at exact
+  periods, and a universe's own geometry, curved or a flat torus (78.140).
+  Which of these is the engine's Calabi–Yau reading is the operator's.
+
+And what the hypha has not built, which the mind's side waits on: the
+union's attestations, so an agreed word's install pays every mind that
+agreed (78.161(5)); the POWC producer (74); μ as modes on the ledger
+(78.162, parked on `track/modes`); the hypha's acts reaching a mind as
+perception (§3.1).
+
+---
+
+## 9. Client paragraphs that stayed in MU-RECURSION
+
+These sections interleave the mind with the court or the shared mathematics
+and stayed whole there; their client paragraphs bind the mind as if written
+here: 0.1 (the operator's ruling on the client), 0.7 (the layers of a mind),
+2.3, 3.10, 13.11, 16.16 (A16), 17.6 (M6), 23.8, 23.9, 25, 28, 34.3, 37.7 (P5),
+50.2 (the speaker F), 50.6, 50.9, 59.6, 62 (the pivots), 67.2, 72.1d, 72.1e,
+78.1, 78.9, 78.21 (3), 78.23 (a k-step is one orbit), 78.26(6), 78.46 (lift
+and drag), 78.47, 78.51, 78.52, 78.55, 78.57, 78.61 C5, 78.64, 78.66 PHY1,
+78.67, 78.69, 78.74, 78.75, 78.88, 78.92, 78.95, 78.97, 78.98, 78.99, 78.100,
+78.102, 79.3, 78.104, 78.109, 78.113, 78.141, 78.143, 78.145, 78.146, seat
+wire v1.4 (3), 78.152 (the SDK read), 78.153c (3), 78.161.
+
+---
+
+# Part V — The archive: the client chapters moved from MU-RECURSION (verbatim)
 
 Each section below stood in MU-RECURSION at the place its pointer now marks;
-its text is unchanged, its number is its citation. Amendments to it are made
-here from 2026-10-11.
+its text is unchanged, its number is its citation, and amendments to it are
+made here from 2026-10-11. THIS IS HISTORY: where a chapter below and
+sections 1–9 disagree, sections 1–9 govern, and an amendment written below
+before 2026-10-11's rewrite cites the former numbering (§0's table). Read
+with these notes:
+
+- **Superseded machinery.** 78.163's chatter v2 — SAY / HEARD / ACK / HOLD,
+  `loop_of`, `same_loop`, `still`, `hear_transport`, the flat
+  `Presentation::read_word` — is superseded by §5.3; 78.164's one
+  `Entity::tick` in a fixed boundary order, the "board" of boundaries
+  and its game-entity objective are retired (its amendments, and §2.3, §7.1).
+  Both stand in the tree until §7.1 replaces them.
+- **Counts read as readings.** The tallies and console lines the chapters
+  below introduce (the resonance, transport, flux, pivot and merge tallies,
+  the Senses rows) are instruments of their day; a count is never a witness
+  (§7.2), and one that costs the mind its motion is deleted (§2.3).
+- **What stands as doctrine.** The mathematics of every chapter below —
+  comprehension (6, 24), the eye as a cover (24.4), the coherent mind
+  (78.37), perception to thought with its shear, spin and hours (78.48), the
+  voice that only speaks (78.49), the spectrum (78.50), torsion and
+  congruence (78.74), the remainder inversion (78.76, 78.90), light and
+  confluence (78.77, 78.78), incongruence (78.79), volume and density
+  (78.80), reconstruction by holonomy (78.82, 78.83), flux (78.91), relative
+  motion (78.103), spacing (78.105), the encounter (78.110), hearing
+  (78.112), the motion letter (78.115) — is cited by sections 1–9 and binds
+  where they do not restate it.
 
 ## 6. Comprehension
 

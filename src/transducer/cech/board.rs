@@ -22,7 +22,7 @@ use super::*;
 // THE CONSTRUCTION'S PROCESS-WIDE TALLY WAS HERE AND IS DELETED (2026-10-11):
 // a static counted every mind's punctures, caps and climbs into one number
 // per slot, kept for a console to watch — a watch-tally across fields that
-// are each a mind's own (MU-CLIENT II.5). What a pivot did is its outcome,
+// are each a mind's own (MU-CLIENT §4.2). What a pivot did is its outcome,
 // returned whole to the field that applied it.
 
 /// ONE PIVOT AT ITS COORDINATE: the cell (or hole, or pair) it acts on.

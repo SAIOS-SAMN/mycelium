@@ -206,7 +206,7 @@ pub struct Contemplation {
     /// answered by the mind's own letter and never demanded again (volatile,
     /// as the dialect the letters stand in).
     pub(crate) own_letters: Keyed<()>,
-    /// 62.1, MU-CLIENT II.3 — THE QUESTIONS THE MIND CARRIES: the holes its
+    /// 62.1, MU-CLIENT §4.5 — THE QUESTIONS THE MIND CARRIES: the holes its
     /// complex punctured over held rings, by the class key each keeps →
     /// the cells; sealed where a ring collapses or a discharge answers the
     /// class (`question.rs`). Volatile, as the holes are.

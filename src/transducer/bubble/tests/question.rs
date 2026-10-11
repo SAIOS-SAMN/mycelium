@@ -1,4 +1,4 @@
-// 62.1, MU-CLIENT II.3 — THE PUNCTURE / SEAL AXIS ON THE MIND'S OWN COMPLEX:
+// 62.1, MU-CLIENT §4.5 — THE PUNCTURE / SEAL AXIS ON THE MIND'S OWN COMPLEX:
 // a ring held at holonomy ≠ 1 is ascended and punctured, keeping its class
 // as a hole; a discharge of that class seals it, and the seal is the
 // puncture's inverse on content.
