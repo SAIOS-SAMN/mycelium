@@ -853,8 +853,12 @@ fn the_senses_and_the_acts_travel_whole() {
     senses.solving = [18, 19, 20, 21, 26, 27, 28, 58];
     senses.paid = [22, 23, 24, 25];
     {
-        use crate::economy::{LaneMove, LaneRead};
-        senses.paid_reads = [LaneRead::Read(LaneMove::Fell(22)), LaneRead::Read(LaneMove::Held), LaneRead::Unread, LaneRead::Read(LaneMove::Rose(3))];
+        use crate::economy::modes::{Mode, Modes};
+        use crate::transducer::sentence::presentation::GaugeMode;
+        let mut m = Modes::new();
+        m.add_mode(Mode::Hue(GaugeMode::Move(3, 0)), num_rational::BigRational::new(5.into(), 2.into()));
+        m.add_mode(Mode::Hue(GaugeMode::Cycle(vec![1, 2])), num_rational::BigRational::from_integer(1.into()));
+        senses.paid_modes = Some(m);
     }
     let acts = Acts {
         k: 9,

@@ -280,11 +280,11 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                     // inside `judge_solve_on_stroke` (78.153, resumable).
                     h.run(|k, _| {
                     let verdict = match k.judge_solve_on_stroke(rule, &withheld) {
-                        mycelium::cognition::SolveVerdict::Solved { pay, reads } => {
+                        mycelium::cognition::SolveVerdict::Solved { pay, modes } => {
                             // The court names a task by its citation (wire v1.2).
                             let paid = k.pay_solve(&cite, svoice, rule, pay, first);
                             let code = if first { dialogue::SOLVE_BOUNTY } else { dialogue::SOLVE_FLOOR };
-                            (code, paid, None, Some((k.height(), reads)))
+                            (code, paid, None, Some((k.height(), modes)))
                         }
                         mycelium::cognition::SolveVerdict::Refused(r) => {
                             (dialogue::SOLVE_NOTHING, [0; 4], Some(refused(r.reason, r.obstruction.kind())), None)
@@ -360,8 +360,14 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 }
             }
         }
-        let reads = stamp.as_ref().map(|(_, r)| r);
-        let reply = Frame { lane: frame.lane, body: dialogue::encode_solve_verdict(code, &mu, refusal.as_ref(), reads) };
+        // The paid modes ride behind the receipt; modes that do not write
+        // leave the receipt bare, never a guessed tail.
+        let modes = stamp.as_ref().map(|(_, m)| m);
+        let body = match dialogue::encode_solve_verdict(code, &mu, refusal.as_ref(), modes) {
+            Some(b) => b,
+            None => dialogue::encode_solve_receipt(code, &mu),
+        };
+        let reply = Frame { lane: frame.lane, body };
         answer(s, reply);
         return true;
     }

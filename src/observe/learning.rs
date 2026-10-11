@@ -139,7 +139,7 @@ impl Reasons {
 /// UNREAD apart (`SOLVE_UNREAD`, a retry the court asks for, never a
 /// refusal: 66 solves filed and none paid on 2026-10-09 read as "refused N"
 /// with nothing to say which).
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct SolveTally {
     pub first: u64,
     pub again: u64,
@@ -152,9 +152,9 @@ pub struct SolveTally {
     pub by_code: [u64; 5],
     pub unruled: u64,
     pub paid: [u64; 4],
-    /// The pay read lane by lane over every paid verdict that carried a
-    /// reading: fell, held (open, nothing moved), rose, or unread (no data).
-    pub paid_reads: [crate::economy::LaneRead; 4],
+    /// 78.162 — the modes every paid verdict carried, composed by their
+    /// coordinates: what the mind's closures moved, exact, never four counts.
+    pub paid_modes: crate::economy::modes::Modes,
     /// Solves not sent, by why (`Entity::solve_task`): no rule minted; a
     /// rule its own train refutes; a rule the court already refused.
     pub unminted: u64,
@@ -208,13 +208,9 @@ impl SolveTally {
         }
     }
 
-    /// One paid verdict's lane reading, folded in lane by lane.
-    pub fn note_reads(&mut self, reads: &[crate::economy::LaneRead; 4]) {
-        for (held, now) in self.paid_reads.iter_mut().zip(reads) {
-            if let Some(both) = held.and(now) {
-                *held = both;
-            }
-        }
+    /// One paid verdict's modes, composed in by their coordinates.
+    pub fn note_modes(&mut self, modes: &crate::economy::modes::Modes) {
+        self.paid_modes.add(modes);
     }
 
     /// 78.153c — ONE VERDICT, AS ONE LINE: the task by its citation's head,

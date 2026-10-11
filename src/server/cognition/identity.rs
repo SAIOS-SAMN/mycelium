@@ -116,16 +116,15 @@ impl Kernel {
         )
     }
 
-    /// [`Kernel::measured_replay`] with its reading lane by lane: fell, held
-    /// or rose where the replay carries data on the lane, unread where it
-    /// carries none.
-    pub(crate) fn measured_replay_read(&self, form: &Element, family: &crate::transducer::family::Family) -> ([u64; 4], [crate::economy::LaneRead; 4]) {
+    /// [`Kernel::measured_replay`] with the modes it discharged (78.162): what
+    /// the closing form moved on the pairs it closed, mode by mode, exact.
+    pub(crate) fn measured_replay_read(&self, form: &Element, family: &crate::transducer::family::Family) -> ([u64; 4], crate::economy::modes::Modes) {
         match crate::transducer::sentence::from_element_form(form) {
             Some(f) => {
                 let r = crate::transducer::family::form_deflation_read(&f, family, self, &crate::transducer::alphabet::Word::identity());
-                (r.pay, r.reads)
+                (r.pay, r.modes)
             }
-            None => ([0; 4], [crate::economy::LaneRead::Unread; 4]),
+            None => ([0; 4], crate::economy::modes::Modes::new()),
         }
     }
 

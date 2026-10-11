@@ -100,7 +100,7 @@ impl Entity {
             ],
             solving: [s.first, s.again, s.refused.iter().sum(), s.unruled, s.unminted, s.refuted, s.withheld_again, s.unread],
             paid: s.paid,
-            paid_reads: s.paid_reads,
+            paid_modes: Some(s.paid_modes.clone()),
             carriers: [
                 c.len() as u64,
                 key_bytes,

@@ -220,38 +220,38 @@ pub struct SolveRefusal {
 }
 
 /// `[code][μ 4×u64]` then, for a refusal, `[kind u8][reason, length-prefixed]`.
-/// The tag a paid verdict's lane reading rides behind the receipt under: no
-/// obstruction kind (78.9's are below seven) is it, so a refusal and a
-/// reading are told apart by their first byte.
-pub const SOLVE_READS_TAG: u8 = 0xFF;
+/// The tag a paid verdict's modes ride behind the receipt under: no
+/// obstruction kind (78.9's are below seven) is it, so a refusal and the
+/// modes are told apart by their first byte.
+pub const SOLVE_MODES_TAG: u8 = 0xFE;
 
 /// The receipt and, behind it, the refusal where one was refused, or — paid —
-/// the pay read lane by lane (`LaneRead`: fell, held, rose, unread). A
-/// receipt reader that knows only `[code][μ]` reads the prefix unchanged.
+/// the modes the closing form moved (78.162, the `Modes` codec: a u32 count,
+/// then each mode and its exact amount). A receipt reader that knows only
+/// `[code][μ]` reads the prefix unchanged. `None` where the modes do not
+/// write.
 pub fn encode_solve_verdict(
     code: u8,
     mu: &[u64; 4],
     refusal: Option<&SolveRefusal>,
-    reads: Option<&[crate::economy::LaneRead; 4]>,
-) -> Vec<u8> {
+    modes: Option<&crate::economy::modes::Modes>,
+) -> Option<Vec<u8>> {
     let mut out = encode_solve_receipt(code, mu);
     if let Some(r) = refusal {
         out.push(r.kind);
         crate::transducer::address::put_key_bytes(&mut out, &r.reason);
-    } else if let Some(reads) = reads {
-        out.push(SOLVE_READS_TAG);
-        for r in reads {
-            r.put(&mut out);
-        }
+    } else if let Some(m) = modes {
+        out.push(SOLVE_MODES_TAG);
+        m.put(&mut out)?;
     }
-    out
+    Some(out)
 }
 
 /// A VERDICT READ: the receipt, the refusal where one rode behind it, and
-/// the lane reading where the pay carried one.
-pub type SolveVerdictRead = (u8, [u64; 4], Option<SolveRefusal>, Option<[crate::economy::LaneRead; 4]>);
+/// the modes where the pay carried them.
+pub type SolveVerdictRead = (u8, [u64; 4], Option<SolveRefusal>, Option<crate::economy::modes::Modes>);
 
-/// The receipt and, where one rode behind it, the refusal or the reading.
+/// The receipt and, where one rode behind it, the refusal or the modes.
 pub fn decode_solve_verdict(body: &[u8]) -> Option<SolveVerdictRead> {
     let (code, mu) = decode_solve_receipt(body)?;
     let mut p = 1 + 32;
@@ -260,12 +260,9 @@ pub fn decode_solve_verdict(body: &[u8]) -> Option<SolveVerdictRead> {
     }
     let kind = *body.get(p)?;
     p += 1;
-    if kind == SOLVE_READS_TAG {
-        let mut reads = [crate::economy::LaneRead::Unread; 4];
-        for r in reads.iter_mut() {
-            *r = crate::economy::LaneRead::take(body, &mut p)?;
-        }
-        return (p == body.len()).then_some((code, mu, None, Some(reads)));
+    if kind == SOLVE_MODES_TAG {
+        let modes = crate::economy::modes::Modes::take_from(body, &mut p)?;
+        return (p == body.len()).then_some((code, mu, None, Some(modes)));
     }
     let reason = crate::transducer::address::take_key_bytes(body, &mut p)?;
     (p == body.len()).then_some((code, mu, Some(SolveRefusal { reason, kind }), None))

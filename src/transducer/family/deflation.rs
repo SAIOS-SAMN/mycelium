@@ -184,9 +184,11 @@ pub fn form_deflation_at(
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DeflationRead {
     pub pay: [u64; 4],
-    /// The pay read lane by lane over the pairs it closed: fell, held, rose,
-    /// or unread where the measure carries no data on the lane.
-    pub reads: [crate::economy::LaneRead; 4],
+    /// 78.162 — THE DISCHARGE AS MODES: what the closing form moved on the
+    /// pairs it closed, mode by mode with exact amounts (S boosts, G hue
+    /// modes, T null fluxes, H turns), each pair's at the mass it carried.
+    /// Empty where nothing closed or nothing was carried.
+    pub modes: crate::economy::modes::Modes,
     pub remainders: Vec<crate::transducer::germinate::ResidualGerm>,
     pub unresolved: Vec<crate::transducer::address::Address>,
     /// 78.153 — cited forms reached again while being spoken: a cycle of
@@ -203,10 +205,13 @@ pub fn form_deflation_read(
 ) -> DeflationRead {
     let mut unresolved: Vec<crate::transducer::address::Address> = Vec::new();
     let mut cycled: Vec<crate::transducer::address::Address> = Vec::new();
-    let mut reads = [crate::economy::LaneRead::Unread; 4];
+    let mut modes = crate::economy::modes::Modes::new();
     if family.is_empty() {
-        return DeflationRead { pay: [0; 4], reads, remainders: Vec::new(), unresolved, cycled };
+        return DeflationRead { pay: [0; 4], modes, remainders: Vec::new(), unresolved, cycled };
     }
+    // The form's own motions and hue maps, read once: what each closed pair
+    // moves, at that pair's mass.
+    let moved = form_motions(form);
     let mut pay = [0u64; 4];
     let mut closed_count = 0u64;
     // A mass past its carrier leaves 𝒯 unread, never saturated (rule 11).
@@ -218,24 +223,29 @@ pub fn form_deflation_read(
             unresolved.extend(s.unresolved.iter().cloned());
             cycled.extend(s.cycled.iter().cloned());
         }
-        let (closed, after_chain, pair_reads) = pair_measure_read(form, x, y, spoken.as_ref());
+        let (closed, after_chain, gated) = pair_measure_read(form, x, y, spoken.as_ref());
         for (p, d) in pay.iter_mut().zip(&closed) {
             #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a deflation is at most its pair's resident measure, and their sum cannot pass u64")]
             let next = p.saturating_add(*d);
             *p = next;
         }
-        if let Some(r) = pair_reads {
+        if gated {
             // The pair's own work: the links its before side demanded moved
             // (𝒮), the mass the rule's motions carried on it.
             if let Some(m) = pair_mass(x, y) {
                 carried_mass = carried_mass.and_then(|c| c.checked_add(m));
-            }
-            closed_count += 1;
-            for (held, now) in reads.iter_mut().zip(&r) {
-                if let Some(both) = held.and(now) {
-                    *held = both;
+                let mass = num_rational::BigRational::from_integer(m.into());
+                for (motion, gauge) in &moved {
+                    let mut budget = crate::physics::Physics::default().stroke();
+                    if let Some(ms) = crate::economy::modes::Modes::of_motion(motion, &mass, &mut budget) {
+                        modes.add(&ms);
+                    }
+                    if let Some(gs) = crate::economy::modes::Modes::of_gauge(gauge, &mass) {
+                        modes.add(&gs);
+                    }
                 }
             }
+            closed_count += 1;
         }
         remainders.push(after_chain);
     }
@@ -249,17 +259,27 @@ pub fn form_deflation_read(
     if closed_count > 0 {
         if let Some(t) = carried_mass.and_then(|m| rule_flux(form, m)) {
             pay[crate::transducer::sentence::presentation::LANE_T] = t;
-            reads[crate::transducer::sentence::presentation::LANE_T] = match t {
-                0 => crate::economy::LaneRead::Read(crate::economy::LaneMove::Held),
-                n => crate::economy::LaneRead::Read(crate::economy::LaneMove::Fell(n)),
-            };
         }
     }
     unresolved.sort_unstable();
     unresolved.dedup();
     cycled.sort_unstable();
     cycled.dedup();
-    DeflationRead { pay, reads, remainders, unresolved, cycled }
+    DeflationRead { pay, modes, remainders, unresolved, cycled }
+}
+
+/// EVERY WORD VERTEX'S WHOLE MOTION AND HUE MAP, member by member: its
+/// carriage composed with its rotor's base action, and the member's gauge.
+fn form_motions(form: &Form) -> Vec<(crate::transducer::cga::Mv, Vec<(u8, u8)>)> {
+    let mut out = Vec::new();
+    for (_, v) in form.vertices.scoped() {
+        let crate::transducer::sentence::Vertex::Word { derivation, acts, .. } = v else { continue };
+        for (_, a) in acts.scoped() {
+            let Some(motion) = element::conformal_of_rotor(&derivation.rotor(), &a.carriage) else { continue };
+            out.push((motion, a.gauge.clone()));
+        }
+    }
+    out
 }
 
 /// THE MASS A PAIR CARRIED: the 𝒮 measure of what its before side demanded
@@ -301,16 +321,14 @@ fn rule_flux(form: &Form, mass: u64) -> Option<u64> {
 }
 
 /// ONE PAIR OF THE DEFLATION, from the speech already taken on it: what the
-/// pair pays (zero where the gate below withholds it), its remainder, and its
-/// reading lane by lane — `Some` where the pair paid (the closure gate), each
-/// lane read where a chain carries data and `Unread` on 𝒯; `None` where the
-/// gate refused the pair.
+/// pair pays (zero where the gate below withholds it), its remainder, and
+/// whether the closure gate passed it.
 fn pair_measure_read(
     form: &Form,
     x: &Grid,
     y: &Grid,
     spoken: Option<&Speech>,
-) -> ([u64; 4], crate::transducer::germinate::ResidualGerm, Option<[crate::economy::LaneRead; 4]>) {
+) -> ([u64; 4], crate::transducer::germinate::ResidualGerm, bool) {
     // The exact cochain where the pair refines on K_lcm; the raw residual
     // of the two grids where it does not. Both are measured on the pair.
     let before_chain = match crate::transducer::family::refine::refine_delta(x, y) {
@@ -330,11 +348,8 @@ fn pair_measure_read(
     // its closed words achieved: `deflation_of(lane_moves(after, before))`.
     let closed = crate::economy::deflation_of(&crate::economy::lane_moves(&after_mu, &before_mu));
     match after_chain.is_empty() || form.demand_vertices().next().is_some() {
-        true => {
-            let reads = crate::economy::lane_reads(&after_mu, &before_mu, &element::CHAIN_READS);
-            (closed, after_chain, Some(reads))
-        }
-        false => ([0; 4], after_chain, None),
+        true => (closed, after_chain, true),
+        false => ([0; 4], after_chain, false),
     }
 }
 

@@ -35,12 +35,12 @@ fn a_rule_that_closes_the_withheld_pairs_is_solved_and_priced_by_its_discharge()
     let mut k = Kernel::new();
     let rule = rule_over(&carried());
     match k.judge_solve(&rule, &carried()) {
-        SolveVerdict::Solved { pay, reads } => {
+        SolveVerdict::Solved { pay, modes } => {
             assert!(pay.iter().any(|&m| m > 0), "it discharges something: {pay:?}");
-            // 𝒯 is the ground the rule's slide covered: read, never a bare zero.
-            assert!(matches!(reads[2], crate::economy::LaneRead::Read(crate::economy::LaneMove::Fell(n)) if n > 0), "T is the ground covered: {reads:?}");
-            // An open lane is read, whatever it moved: S paid, so S fell.
-            assert!(matches!(reads[0], crate::economy::LaneRead::Read(_)), "S is read: {reads:?}");
+            // 78.162 — the slide the rule carried is held as its own mode on
+            // T, a null flux with an exact positive amount, never a count of
+            // lanes.
+            assert!(modes.on_lane(crate::economy::modes::T).next().is_some(), "the slide is a T mode: {}", modes.print());
         }
         other => panic!("the replay closes every pair: {other:?}"),
     }

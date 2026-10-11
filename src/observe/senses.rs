@@ -134,9 +134,10 @@ pub struct Senses {
     pub solving: [u64; SOLVING.len()],
     /// What the solves were paid, per lane.
     pub paid: [u64; 4],
-    /// The pay read lane by lane: fell, held (open, nothing moved), rose, or
-    /// unread (no data on the lane).
-    pub paid_reads: [crate::economy::LaneRead; 4],
+    /// 78.162 — the modes the solves' closures moved, each exact. `None`
+    /// where the holding did not travel (a field past its carrier), never
+    /// an empty holding standing in for it.
+    pub paid_modes: Option<crate::economy::modes::Modes>,
     pub carriers: [u64; GROWING.len()],
 }
 
@@ -424,8 +425,13 @@ impl Senses {
         put(out, &self.understanding);
         put(out, &self.solving);
         put(out, &self.paid);
-        for r in &self.paid_reads {
-            r.put(out);
+        let mut modes = Vec::new();
+        match self.paid_modes.as_ref().and_then(|m| m.put(&mut modes)) {
+            Some(()) => {
+                out.push(1);
+                out.extend_from_slice(&modes);
+            }
+            None => out.push(0),
         }
         put(out, &self.carriers);
     }
@@ -462,12 +468,15 @@ impl Senses {
             understanding: take(b, p)?,
             solving: take(b, p)?,
             paid: take(b, p)?,
-            paid_reads: [
-                crate::economy::LaneRead::take(b, p)?,
-                crate::economy::LaneRead::take(b, p)?,
-                crate::economy::LaneRead::take(b, p)?,
-                crate::economy::LaneRead::take(b, p)?,
-            ],
+            paid_modes: {
+                let flag = *b.get(*p)?;
+                *p += 1;
+                match flag {
+                    0 => None,
+                    1 => Some(crate::economy::modes::Modes::take_from(b, p)?),
+                    _ => return None,
+                }
+            },
             carriers: take(b, p)?,
         })
     }
@@ -499,13 +508,13 @@ impl Senses {
             format!("language: {}", line(&LANGUAGE, &self.language)),
             format!("understanding: {}", line(&UNDERSTANDING, &self.understanding)),
             format!(
-                "solving: {} · paid {:?} · read S {} · G {} · T {} · H {}",
+                "solving: {} · paid {:?} · modes {}",
                 line(&SOLVING, &self.solving),
                 self.paid,
-                self.paid_reads[0].print(),
-                self.paid_reads[1].print(),
-                self.paid_reads[2].print(),
-                self.paid_reads[3].print()
+                match &self.paid_modes {
+                    Some(m) => m.print(),
+                    None => "did not travel".to_string(),
+                }
             ),
             format!("carriers: {}", line(&GROWING, &self.carriers)),
         ]);

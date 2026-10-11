@@ -9,9 +9,9 @@ use crate::transducer::element::Element;
 #[derive(Clone, Debug)]
 pub enum SolveVerdict {
     /// Replayed clean on every withheld pair; `pay` what it discharged there,
-    /// and `reads` that pay lane by lane — fell, held, rose, or unread where
-    /// the replay carries no data on the lane.
-    Solved { pay: [u64; 4], reads: [crate::economy::LaneRead; 4] },
+    /// and `modes` the modes the closing form moved on the pairs it closed
+    /// (78.162), each exact: S boosts, G hue modes, T null fluxes, H turns.
+    Solved { pay: [u64; 4], modes: crate::economy::modes::Modes },
     /// Refused by the replay, with its reason, coordinate and kind (78.9).
     Refused(crate::verdict::Refusal),
     /// The solve carried no rule: a raster is no proof of a motion.
@@ -184,11 +184,11 @@ impl Kernel {
         // answered Solved with a zero pay, and the zero was checked only
         // after `pay_solve` had released every escrow bound to the task and
         // the door had spent the task's first closure on it.
-        let (pay, reads) = self.measured_replay_read(rule, withheld);
+        let (pay, modes) = self.measured_replay_read(rule, withheld);
         if pay.iter().all(|&x| x == 0) {
             return SolveVerdict::NoWork;
         }
-        SolveVerdict::Solved { pay, reads }
+        SolveVerdict::Solved { pay, modes }
     }
 
     /// A SOLVE PAID (POUW, the actions' physics). The rule, verdict clean, is
