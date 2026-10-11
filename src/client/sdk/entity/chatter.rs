@@ -69,9 +69,9 @@ pub struct ChatTally {
 }
 
 impl ChatTally {
-    pub fn line(&self) -> String {
-        format!(
-            "chatter: said {} (sent {}, unsent {}) · heard words {} (re-derived {}, in part {}, unread {}) · own loops curved {} (drag {}, lift {}, unsplit {}) still {} open {} · acks {} holds {} · shared {} refuted {} · transports held {} · agreed {} · to court {} · refused {}",
+    /// The tally in the order of the Senses' `CHATTER` table.
+    pub fn row(&self) -> [u64; crate::observe::CHATTER.len()] {
+        [
             self.said,
             self.sent,
             self.unsent,
@@ -92,8 +92,8 @@ impl ChatTally {
             self.transports,
             self.agreed,
             self.to_court,
-            self.refused
-        )
+            self.refused,
+        ]
     }
 }
 
@@ -298,14 +298,12 @@ impl Entity {
         }
     }
 
-    /// THE CHATTER STROKE: every frame heard since the last, one spend each.
+    /// THE CHATTER STROKE: the frames heard, one spend each, earliest first;
+    /// what the stroke cannot reach waits in the post for the next.
     pub fn chatter_stroke(&mut self, budget: &mut crate::physics::Budget) {
-        let Some(frames) = self.chat.as_ref().map(|c| c.post.take()) else { return };
         let voice = self.session.kernel().voice();
-        for f in frames {
-            if !budget.spend() {
-                break;
-            }
+        while budget.spend() {
+            let Some(f) = self.chat.as_ref().and_then(|c| c.post.next()) else { break };
             let Some(c) = Chatter::open(&f) else {
                 if let Some(chat) = self.chat.as_mut() {
                     chat.tally.refused += 1;

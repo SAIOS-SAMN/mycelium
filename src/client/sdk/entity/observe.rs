@@ -112,6 +112,10 @@ impl Entity {
                 self.epigenome.dialect_len() as u64,
                 self.epigenome.genome_len() as u64,
             ],
+            chatter: match self.chat_tally() {
+                Some(t) => t.row(),
+                None => [0; observe::CHATTER.len()],
+            },
         }
     }
 

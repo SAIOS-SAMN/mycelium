@@ -415,7 +415,7 @@ impl Chatter {
 /// waiting for the mind's stroke.
 pub struct Post {
     addr: String,
-    inbox: Arc<Mutex<Vec<Vec<u8>>>>,
+    inbox: Arc<Mutex<std::collections::VecDeque<Vec<u8>>>>,
 }
 
 /// One frame off a connection: `[len u32 LE][frame]`, within the wire's one
@@ -439,7 +439,7 @@ impl Post {
     pub fn open(listen: &str) -> io::Result<Post> {
         let listener = TcpListener::bind(listen)?;
         let addr = listener.local_addr()?.to_string();
-        let inbox: Arc<Mutex<Vec<Vec<u8>>>> = Arc::new(Mutex::new(Vec::new()));
+        let inbox: Arc<Mutex<std::collections::VecDeque<Vec<u8>>>> = Arc::new(Mutex::new(std::collections::VecDeque::new()));
         let into = Arc::clone(&inbox);
         std::thread::Builder::new().name("chatter-post".into()).spawn(move || {
             for conn in listener.incoming() {
@@ -448,7 +448,7 @@ impl Post {
                 let _ = std::thread::Builder::new().name("chatter-conn".into()).spawn(move || {
                     if let Ok(frame) = read_frame(&mut s) {
                         if let Ok(mut held) = into.lock() {
-                            held.push(frame);
+                            held.push_back(frame);
                         }
                     }
                 });
@@ -464,9 +464,16 @@ impl Post {
     /// Every frame heard since the last take, in the order heard.
     pub fn take(&self) -> Vec<Vec<u8>> {
         match self.inbox.lock() {
-            Ok(mut held) => std::mem::take(&mut *held),
+            Ok(mut held) => std::mem::take(&mut *held).into(),
             Err(_) => Vec::new(),
         }
+    }
+
+    /// THE NEXT FRAME heard, the earliest first; the rest stay in the post
+    /// for the mind's next tick — a stroke that ran out hears them later,
+    /// never drops them.
+    pub fn next(&self) -> Option<Vec<u8>> {
+        self.inbox.lock().ok()?.pop_front()
     }
 }
 

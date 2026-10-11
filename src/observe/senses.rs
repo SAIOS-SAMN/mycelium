@@ -76,6 +76,35 @@ pub const UNDERSTANDING: [&str; 5] = ["derivable", "glued", "obstructed", "disco
 /// is the court's `SOLVE_UNREAD`, a retry: it was filed under "refused".
 pub const SOLVING: [&str; 8] =
     ["first closures", "closures again", "refused", "unruled", "unminted", "refuted at home", "withheld again", "unread"];
+/// 78.161, 78.163 — WHAT A MIND'S CHATTER WITH OTHER MINDS CAME TO
+/// (`ChatTally::row`, in this order): things said and frames carried; words
+/// heard and how they read; the loops of its own words said back — curved
+/// (drag, lift, unsplit), still, open; ACKs and HOLDs; thoughts shared and
+/// refuted; transports held in the ear; agreed language and the letters that
+/// then went to the court; frames refused.
+pub const CHATTER: [&str; 21] = [
+    "said",
+    "sent",
+    "unsent",
+    "words heard",
+    "re-derived",
+    "in part",
+    "unread",
+    "loops curved",
+    "drag",
+    "lift",
+    "unsplit",
+    "still",
+    "open",
+    "acks",
+    "holds",
+    "shared",
+    "refuted",
+    "transports held",
+    "agreed",
+    "to court",
+    "refused",
+];
 /// THE GROWING THAT GROW — the leak signals: sizes at one `K`.
 pub const GROWING: [&str; 9] = [
     "bubbles",
@@ -139,6 +168,9 @@ pub struct Senses {
     /// an empty holding standing in for it.
     pub paid_modes: Option<crate::economy::modes::Modes>,
     pub carriers: [u64; GROWING.len()],
+    /// 78.163 — its chatter with other minds (`CHATTER`); zeros where it
+    /// opened none.
+    pub chatter: [u64; CHATTER.len()],
 }
 
 /// What a court's syllabus pages came to.
@@ -434,6 +466,7 @@ impl Senses {
             None => out.push(0),
         }
         put(out, &self.carriers);
+        put(out, &self.chatter);
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Senses> {
@@ -478,6 +511,7 @@ impl Senses {
                 }
             },
             carriers: take(b, p)?,
+            chatter: take(b, p)?,
         })
     }
 
@@ -517,6 +551,7 @@ impl Senses {
                 }
             ),
             format!("carriers: {}", line(&GROWING, &self.carriers)),
+            format!("chatter: {}", line(&CHATTER, &self.chatter)),
         ]);
         out
     }
@@ -545,6 +580,7 @@ impl Senses {
             "understanding" => at(&UNDERSTANDING, &self.understanding, name),
             "solving" => at(&SOLVING, &self.solving, name),
             "carriers" => at(&GROWING, &self.carriers, name),
+            "chatter" => at(&CHATTER, &self.chatter, name),
             _ => None,
         }
     }
