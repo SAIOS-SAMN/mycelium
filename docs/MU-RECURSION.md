@@ -27670,23 +27670,32 @@ its whole motion `M` and hue map `σ`; the hearer derives `M′` and `σ′` fro
 the generators it cites. The loop's holonomy is `H = M′ M̃` (projectively
 `M′ M⁻¹`, 1.5) on the motion and `σ′ ∘ σ⁻¹` on the hue map:
 
-1. FLAT — `H` still and the hue holonomy the identity: the thought crossed
-   whole.
-2. CURVED — `H` is what did not cross (curvature is content), split against
-   the word's own mode blade (78.46) into DRAG (its plane, another rate) and
-   LIFT (the tilt into another plane).
+Two minds are two charts; carrying a thought across them is transport on a
+curved space, and the holonomy is the content — what one mind's language
+does to the other's thought (curvature is content):
+
+1. CURVED — `H` split against the word's own mode blade (78.46) into DRAG
+   (its plane, another rate) and LIFT (the tilt into another plane).
+2. STILL — the hearer echoed: the loop carries nothing new. Agreement is
+   never stillness (as first written here, which made the loop a restated
+   "composes" bool — the Euclidean assumption, corrected the same day).
 3. OPEN — nothing derived, `M` no versor, or `σ` no permutation (a merge):
    no loop closes.
 
-HEARD carries the hearer's derivation (`M′`, `σ′`, its citations), never a
-verdict. The speaker reads every word's loop and ACKNOWLEDGES the thought
-with an ACK carrying each holonomy; the hearer reads the same loop from what
-it heard and what it derived, by the one reader (`chatter::loop_of`) — the
-thought is acknowledged where both minds hold one loop (confirmed), shared
-whole where every loop is flat, refuted where the loops differ. A thing said
-is agreed language where some mind's loops are flat on every word; a hearer's
-bool is never taken on trust. A thought no ACK reaches in one aperture cycle
-of the hearer's strokes is let go.
+HEARD carries whatever the hearer's generators reach (`M′`, `σ′`, its
+citations), never only an exact re-derivation and never a verdict.
+SAY → HEARD → ACK (the speaker's reading of every loop) → HOLD (the
+hearer's own reading, by the one reader `chatter::loop_of`): each mind
+verifies the other's by the algebra (`same_loop`), never a bool on trust.
+Where both hold one loop on every word the thought is SHARED, and THE ACK
+FEEDS THOUGHT (the operator, "ACK needs to FEED THOUGHT"): each mind's ear
+holds every curved holonomy as a transport between the two
+(`Presentation::hear_transport`), a generator of its dialect through which
+later words from that perspective are deconstructed — the geometry the
+conversation built is the vernacular. The thing said is agreed language
+where some mind shared it; a letter waiting for that union goes to the
+court. Readings that differ are refuted, and nothing is held. A thought
+heard and a thing said stand one aperture cycle of the mind's strokes.
 
 ### 80.1 The blueprint reconciled (2026-09-24)
 

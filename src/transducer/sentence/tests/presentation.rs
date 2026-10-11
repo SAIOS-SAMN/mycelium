@@ -79,6 +79,29 @@ fn a_hue_cycle_and_its_powers_stand_on_one_mode_and_its_order_returns_it() {
     assert_eq!(gauge_modes(&[(4, 0)]).expect("a merge is a map"), vec![GaugeMode::Move(4, 0)]);
 }
 
+/// 78.163 — A SHARED THOUGHT FEEDS THE EAR: the holonomy two minds confirmed
+/// — here a slide one mind's language put on the other's thought — is held
+/// as a transport, and a later word that moves by it is read through it,
+/// cited and composing; read twice as far, it cites the transport at twice
+/// its count. An echo (a still transport) moves nothing and is not held.
+#[test]
+fn a_transport_two_minds_hold_reads_a_later_word_through_it_and_an_echo_holds_nothing() {
+    let q = |n: i64| num_rational::BigRational::from_integer(n.into());
+    let slide = crate::transducer::cga::translator_at(&[q(0), q(1), q(0)]);
+    let mut p = Presentation::default();
+    assert!(!p.hear_transport(&crate::transducer::cga::Mv::scalar(q(1)), &[]), "an echo is not held");
+    assert!(p.is_empty());
+    assert!(p.hear_transport(&slide, &[]), "the transport is held");
+    let once = p.read_word(&slide, &[], false).expect("the slide reads");
+    assert!(once.composes && !once.cites.is_empty(), "a word that moves by the transport is read through it: {once:?}");
+    let twice = crate::transducer::cga::translator_at(&[q(0), q(2), q(0)]);
+    let r = p.read_word(&twice, &[], false).expect("the longer slide reads");
+    assert!(r.composes, "twice as far composes from the transport: {r:?}");
+    assert!(r.cites.iter().all(|c| c.3 == 2), "at twice its count: {:?}", r.cites);
+    // Held under the dialect, never ruled: a court replays none of it.
+    assert!(!p.read_word(&slide, &[], true).expect("reads").composes);
+}
+
 #[test]
 fn a_motion_on_a_hole_nothing_holds_is_residue_and_composes_to_nothing() {
     let across = (vec![vec![1u8, 0, 0, 0, 0]], vec![vec![0u8, 1, 0, 0, 0]]);

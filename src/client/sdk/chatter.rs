@@ -17,11 +17,15 @@
 //!   and the citations — never a verdict on it;
 //! - ACK `[said: len u16, bytes][count u16]` then per word `[vertex: len u16,
 //!   bytes][motion: 0 | 1 Mv][hue: 0 | 1, count u8, (from, to)…]`: 78.163,
-//!   the speaker's acknowledgement of the hearer's thought — each word's
-//!   LOOP HOLONOMY, what the round trip said → heard carried it to
-//!   (`holonomy`, `hue_holonomy`), which the hearer re-derives from what it
-//!   heard and what it said, and holds the thought acknowledged only where
-//!   the two minds hold one loop.
+//!   the speaker's reading of the hearer's thought — each word's LOOP
+//!   HOLONOMY, what the round trip said → heard carried it to (`holonomy`,
+//!   `hue_holonomy`). The holonomy is the content: what one mind's language
+//!   does to the other's thought; still only where the hearer echoed.
+//! - HOLD, the same fields as ACK: the hearer's own reading of every loop,
+//!   re-derived from what it heard and what it derived. Each mind verifies
+//!   the other's by the algebra (`same_loop`); where both hold one loop on
+//!   every word, the thought is shared and each mind's ear holds every
+//!   curved holonomy as a transport between the two.
 //!
 //! THE TRANSPORT. Each mind listens on its own address and posts every frame
 //! it hears into its inbox, drained by the mind on its stroke. A frame is
@@ -40,6 +44,7 @@ pub const TAG: u8 = 0x43;
 pub const SAY: u8 = 0;
 pub const HEARD: u8 = 1;
 pub const ACK: u8 = 2;
+pub const HOLD: u8 = 3;
 const SIGNED: &[u8] = b"mycelium chatter v2";
 
 /// ONE WORD SAID: the vertex it is in the speaker's form, its whole motion,
@@ -81,16 +86,20 @@ pub enum Said {
     Say { said: Vec<u8>, words: Vec<Spoken> },
     /// What the hearer re-derived of something said, word by word.
     Heard { said: Vec<u8>, words: Vec<HeardWord> },
-    /// 78.163 — the speaker's acknowledgement of what the hearer thought.
+    /// 78.163 — the speaker's reading of every loop the hearer's thought closed.
     Ack { said: Vec<u8>, words: Vec<AckWord> },
+    /// 78.163 — the hearer's own reading of the same loops.
+    Hold { said: Vec<u8>, words: Vec<AckWord> },
 }
 
 /// 78.163 — THE LOOP'S HOLONOMY ON THE MOTION: what the round trip said →
 /// heard carries the said motion `m` to, `derived · m̃` — the hearer's
 /// derivation composed with the reverse of what was said, projectively
-/// `derived · m⁻¹` (1.5). Still where the thought crossed exactly; otherwise
-/// it is what did not cross (curvature is content). `None` where `m` is no
-/// versor (`m m̃` no non-zero scalar): no loop closes on it.
+/// `derived · m⁻¹` (1.5). Two minds are two charts, and carrying a thought
+/// across them is transport on a curved space: the holonomy is the content —
+/// what one mind's language does to the other's thought. Still only where
+/// the hearer echoed. `None` where `m` is no versor (`m m̃` no non-zero
+/// scalar): no loop closes on it.
 pub fn holonomy(said: &Mv, derived: &Mv) -> Option<Mv> {
     let norm = said.geo(&said.reverse());
     let s = norm.scalar_part();
@@ -117,9 +126,9 @@ pub fn hue_holonomy(said: &[(u8, u8)], derived: &[(u8, u8)]) -> Option<Vec<(u8, 
     Some(crate::transducer::sentence::transport::compose_gauge(derived, &inverse))
 }
 
-/// The loop is FLAT: the motion's holonomy still and the hue map's the
-/// identity — the thought crossed whole.
-pub fn flat(a: &AckWord) -> bool {
+/// The loop is STILL — the motion's holonomy still and the hue map's the
+/// identity: the hearer echoed, and the loop carries no content.
+pub fn still(a: &AckWord) -> bool {
     let motion = a.motion.as_ref().is_some_and(crate::transducer::sentence::presentation::is_still);
     let hue = a.hue.as_ref().is_some_and(|h| crate::transducer::sentence::transport::gauge_eq(h, &[]));
     motion && hue
@@ -229,6 +238,7 @@ impl Chatter {
             Said::Say { .. } => SAY,
             Said::Heard { .. } => HEARD,
             Said::Ack { .. } => ACK,
+            Said::Hold { .. } => HOLD,
         }
     }
 
@@ -254,7 +264,7 @@ impl Chatter {
                     put_gauge(&mut out, &w.gauge)?;
                 }
             }
-            Said::Ack { said, words } => {
+            Said::Ack { said, words } | Said::Hold { said, words } => {
                 put_short(&mut out, said)?;
                 put_count(&mut out, words.len())?;
                 for w in words {
@@ -343,7 +353,7 @@ impl Chatter {
                 }
                 Said::Say { said, words }
             }
-            ACK => {
+            k @ (ACK | HOLD) => {
                 let said = take_short(body, &mut p)?;
                 let n = take_count(body, &mut p)?;
                 let mut words = Vec::new();
@@ -359,7 +369,10 @@ impl Chatter {
                     };
                     words.push(AckWord { vertex, motion, hue });
                 }
-                Said::Ack { said, words }
+                match k {
+                    ACK => Said::Ack { said, words },
+                    _ => Said::Hold { said, words },
+                }
             }
             HEARD => {
                 let said = take_short(body, &mut p)?;
@@ -543,6 +556,7 @@ mod tests {
                     AckWord { vertex: vec![5; 3], motion: None, hue: None },
                 ],
             },
+            Said::Hold { said: vec![2; 7], words: vec![AckWord { vertex: vec![4; 40], motion: Some(one.clone()), hue: None }] },
         ] {
             let c = Chatter { speaker, point: Some(point), said };
             let f = c.sign(&k).expect("signed");
@@ -557,14 +571,15 @@ mod tests {
         assert_eq!(c.sign(&key(8)), None);
     }
 
-    /// 78.163 — THE LOOP said → heard, BY THE ALGEBRA: a hearer that derived
-    /// the turn exactly closes it flat; one that derived the turn twice
-    /// leaves the said turn itself as the holonomy — curved, the content that
-    /// did not cross; a swap heard as the swap closes the hue loop, heard as
-    /// nothing leaves the swap; a merge has no inverse and the hue loop stays
-    /// open; a word the hearer could not read closes nothing.
+    /// 78.163 — THE LOOP said → heard, BY THE ALGEBRA: a hearer that echoed
+    /// the turn closes it still; one that said the turn twice leaves the said
+    /// turn itself as the holonomy — what its language did to the thought; a
+    /// swap heard as the swap closes the hue loop still, heard as nothing
+    /// leaves the swap; a merge has no inverse and the hue loop stays open; a
+    /// word the hearer could not read closes nothing; and both minds read one
+    /// loop, projectively.
     #[test]
-    fn the_loop_said_heard_closes_flat_where_the_thought_crossed_and_its_holonomy_is_what_did_not() {
+    fn the_loop_said_heard_carries_what_the_hearers_language_did_to_the_thought() {
         use crate::transducer::cga::{E1, E2};
         let q = |n: i64| num_rational::BigRational::from_integer(n.into());
         let turn = Mv::scalar(q(1)).add(&Mv::blade(E1 | E2, q(1))).widened(3);
@@ -572,13 +587,13 @@ mod tests {
         let said = Spoken { vertex: vec![1], motion: turn.clone(), gauge: swap.clone() };
         let heard = |derived: Option<Mv>, gauge: Vec<(u8, u8)>| HeardWord { vertex: vec![1], derived, gauge, cites: vec![] };
         let exact = loop_of(&said, &heard(Some(turn.clone()), swap.clone()));
-        assert!(flat(&exact), "the thought crossed whole: {exact:?}");
+        assert!(still(&exact), "an echo carries nothing: {exact:?}");
         let twice = loop_of(&said, &heard(Some(turn.geo(&turn)), swap.clone()));
-        assert!(!flat(&twice));
+        assert!(!still(&twice));
         let h = twice.motion.clone().expect("a loop closes on a versor");
         assert!(h.projective_eq(&turn), "what did not cross is the said turn itself");
         let hueless = loop_of(&said, &heard(Some(turn.clone()), vec![]));
-        assert!(!flat(&hueless), "the swap heard as nothing leaves the swap");
+        assert!(!still(&hueless), "the swap heard as nothing leaves the swap");
         assert!(hueless.hue.as_ref().is_some_and(|m| crate::transducer::sentence::transport::gauge_eq(m, &swap)));
         let merge = Spoken { vertex: vec![1], motion: turn.clone(), gauge: vec![(3, 0)] };
         assert_eq!(loop_of(&merge, &heard(Some(turn.clone()), vec![(3, 0)])).hue, None, "a merge has no inverse: G stays open");

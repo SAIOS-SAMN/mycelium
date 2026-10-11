@@ -9,17 +9,20 @@
 //! minds reach one word by different derivations (1.5); nothing is compared
 //! as bytes, and nothing heard enters the genome or the dialect.
 //!
-//! 78.163 — SAY IS HEARD, AND THE THOUGHT IS ACKNOWLEDGED, BY ITS PHYSICS. The
-//! round trip said → heard is a loop, and its holonomy is what the
-//! conversation carried the thought to (`chatter::loop_of`): still, the
-//! thought crossed whole (FLAT); otherwise the holonomy is what did not
-//! cross, split against the thought's own mode into DRAG (the same plane at
-//! another rate) and LIFT (the tilt into another plane, 78.46). The speaker
-//! reads the loop of every word the hearer derived and ACKNOWLEDGES the
-//! thought by sending it back; the hearer reads the same loop from what it
-//! heard and what it said, and holds the thought acknowledged only where the
-//! two minds hold one loop. A thing said is agreed language where some mind's
-//! loops are flat on every word of it — never a hearer's bool taken on trust.
+//! 78.163 — SAY IS HEARD, AND THE THOUGHT IS SHARED, BY ITS PHYSICS. Two
+//! minds are two charts; carrying a thought across them is transport on a
+//! curved space. The round trip said → heard is a loop, and its holonomy
+//! (`chatter::loop_of`) is the content: what one mind's language does to the
+//! other's thought — split against the word's own mode into DRAG (its plane,
+//! another rate) and LIFT (the tilt into another plane, 78.46); still only
+//! where the hearer echoed. The hearer answers with whatever its generators
+//! reach, never only an exact re-derivation. SAY → HEARD → ACK (the
+//! speaker's reading of every loop) → HOLD (the hearer's own reading): each
+//! mind verifies the other's by the algebra, never a bool on trust. Where
+//! both hold one loop on every word, the thought is SHARED: each mind's ear
+//! holds every curved holonomy as a transport between the two
+//! (`Presentation::hear_transport`) — the geometry the conversation built is
+//! the vernacular — and the thing said is agreed language.
 
 use crate::client::sdk::chatter::{self, AckWord, Chatter, HeardWord, Said, Spoken};
 use crate::client::sdk::*;
@@ -39,26 +42,28 @@ pub struct ChatTally {
     pub partial: u64,
     pub unread: u64,
     /// 78.163 — the loops this mind read of its own words another mind said
-    /// back: flat; curved, and of the curved those with drag and with lift
-    /// against the word's own mode, and those whose mode admits no split;
-    /// and open (nothing derived, or no versor or permutation to close on).
-    pub flat: u64,
+    /// back: closed and curved, of them with drag and with lift against the
+    /// word's own mode, and those whose mode admits no split; still (an
+    /// echo); and open (nothing derived, or no versor or permutation to
+    /// close on).
     pub curved: u64,
     pub drag: u64,
     pub lift: u64,
     pub unsplit: u64,
+    pub still: u64,
     pub open: u64,
-    /// This mind's things whose loops some mind closed flat on every word —
-    /// agreed language — and of them the letters that then went to the court.
+    /// ACKs and HOLDs sent; thoughts SHARED (both minds hold one loop on
+    /// every word, read on this side) and REFUTED (the loops differ); and the
+    /// transports the shared thoughts filed in this mind's ear.
+    pub acked: u64,
+    pub held: u64,
+    pub shared: u64,
+    pub refuted: u64,
+    pub transports: u64,
+    /// This mind's things some mind shared on every word — agreed language —
+    /// and of them the letters that then went to the court.
     pub agreed: u64,
     pub to_court: u64,
-    /// 78.163 — acknowledgements: sent; heard and confirmed (one loop on
-    /// every word, both minds), heard and refuted (the loops differ); and of
-    /// the confirmed, thoughts acknowledged flat — shared whole.
-    pub acked: u64,
-    pub confirmed: u64,
-    pub refuted: u64,
-    pub shared: u64,
     /// Frames that did not open (unsigned, malformed, another tag).
     pub refused: u64,
 }
@@ -66,7 +71,7 @@ pub struct ChatTally {
 impl ChatTally {
     pub fn line(&self) -> String {
         format!(
-            "chatter: said {} (sent {}, unsent {}) · heard words {} (re-derived {}, in part {}, unread {}) · own loops flat {} curved {} (drag {}, lift {}, unsplit {}) open {} · agreed {} · to court {} · acks sent {} confirmed {} refuted {} shared {} · refused {}",
+            "chatter: said {} (sent {}, unsent {}) · heard words {} (re-derived {}, in part {}, unread {}) · own loops curved {} (drag {}, lift {}, unsplit {}) still {} open {} · acks {} holds {} · shared {} refuted {} · transports held {} · agreed {} · to court {} · refused {}",
             self.said,
             self.sent,
             self.unsent,
@@ -74,33 +79,38 @@ impl ChatTally {
             self.rederived,
             self.partial,
             self.unread,
-            self.flat,
             self.curved,
             self.drag,
             self.lift,
             self.unsplit,
+            self.still,
             self.open,
+            self.acked,
+            self.held,
+            self.shared,
+            self.refuted,
+            self.transports,
             self.agreed,
             self.to_court,
-            self.acked,
-            self.confirmed,
-            self.refuted,
-            self.shared,
             self.refused
         )
     }
 }
 
-/// ONE THING THIS MIND SAID: its words as said, and per mind that answered,
-/// how many of them closed flat.
+/// ONE THING THIS MIND SAID: its words as said; per mind it ACKed, the loops
+/// it read, awaiting that mind's HOLD; and whether some mind has shared it.
 struct Union {
     spoken: Vec<Spoken>,
-    by: Keyed<u64>,
+    acked: Keyed<Vec<AckWord>>,
+    shared: bool,
+    /// The mind's own K it was said at: a union stands one aperture cycle
+    /// of the mind's strokes, as a thought heard and a letter waiting do.
+    at: u64,
 }
 
-/// ONE THING THIS MIND HEARD AND SAID AGAIN, waiting for the speaker's
-/// acknowledgement: what was said and what this mind derived, word by word,
-/// and the mind's own K it was heard at.
+/// ONE THING THIS MIND HEARD AND SAID AGAIN, waiting for the speaker's ACK:
+/// what was said and what this mind derived, word by word, and the mind's
+/// own K it was heard at.
 struct Thought {
     words: Vec<(Spoken, HeardWord)>,
     at: u64,
@@ -108,7 +118,7 @@ struct Thought {
 
 /// THE MIND'S CHATTER: its post, where its peers are found, the union each
 /// thing it said has reached, and the thoughts it heard awaiting their
-/// acknowledgement.
+/// ACK.
 pub struct Chat {
     post: chatter::Post,
     dir: std::path::PathBuf,
@@ -197,9 +207,10 @@ impl Entity {
             return;
         }
         let Some(frame) = self.chatter_frame(Said::Say { said: addr.as_bytes().to_vec(), words: words.clone() }) else { return };
+        let at = self.own_k();
         if let Some(chat) = self.chat.as_mut() {
             chat.tally.said += 1;
-            chat.union.insert(&addr, Union { spoken: words, by: Keyed::new() });
+            chat.union.insert(&addr, Union { spoken: words, acked: Keyed::new(), shared: false, at });
         }
         self.chatter_send(&frame, None);
     }
@@ -247,8 +258,10 @@ impl Entity {
             }
         }
         drop(cursor);
-        // 78.163 — a thought no acknowledgement reached in one aperture cycle
-        // of this mind's strokes is let go: the speaker never closed its loop.
+        // 78.163 — a thought no ACK reached in one aperture cycle of this
+        // mind's strokes is let go: the speaker never closed its loop. And a
+        // thing said stands as long: a HOLD after it finds no union, and the
+        // carrier holds what the conversation is still about, never all of it.
         let mut lapsed = Vec::new();
         let mut cursor = chat.thoughts.cursor(None, budget);
         while let Some((k, t)) = Iterator::next(&mut cursor) {
@@ -262,6 +275,20 @@ impl Entity {
         drop(cursor);
         for k in lapsed {
             chat.thoughts.remove(&k);
+        }
+        let mut spent = Vec::new();
+        let mut cursor = chat.union.cursor(None, budget);
+        while let Some((k, u)) = Iterator::next(&mut cursor) {
+            if cursor.circuit() {
+                break;
+            }
+            if now.checked_sub(u.at).is_some_and(|stood| stood >= cycle) {
+                spent.push(k.clone());
+            }
+        }
+        drop(cursor);
+        for k in spent {
+            chat.union.remove(&k);
         }
         for k in due {
             let Some(chat) = self.chat.as_mut() else { return };
@@ -290,8 +317,9 @@ impl Entity {
             }
             match c.said {
                 Said::Say { said, words } => self.hear_said(&c.speaker, said, &words),
-                Said::Heard { said, words } => self.heard_back(&c.speaker, &said, &words, budget),
+                Said::Heard { said, words } => self.heard_back(&c.speaker, &said, &words),
                 Said::Ack { said, words } => self.acknowledged(&c.speaker, &said, &words),
+                Said::Hold { said, words } => self.held_back(&c.speaker, &said, &words, budget),
             }
         }
         self.release_unmet(budget);
@@ -345,22 +373,20 @@ impl Entity {
         }
     }
 
-    /// ANOTHER MIND SAID BACK WHAT IT DERIVED of something this one said: the
-    /// loop said → heard is read on every word, by its physics — flat, or
-    /// curved and split into drag and lift against the word's own mode, or
-    /// open — and the thought is ACKNOWLEDGED back to that mind with each
-    /// word's holonomy. Once one mind's loops are flat on every word, the
-    /// thing said is agreed language, and a letter waiting for its union goes
-    /// to the court.
-    fn heard_back(&mut self, who: &[u8; 32], said: &[u8], words: &[HeardWord], budget: &mut crate::physics::Budget) {
+    /// ANOTHER MIND SAID BACK WHAT IT DERIVED of something this one said:
+    /// every word's loop said → heard is read by its physics — curved, split
+    /// into drag and lift against the word's own mode; still (an echo); or
+    /// open — and the reading is sent back as the ACK, kept until that mind
+    /// HOLDs the same loops.
+    fn heard_back(&mut self, who: &[u8; 32], said: &[u8], words: &[HeardWord]) {
         let Some(spoken) = self.chat.as_ref().and_then(|c| c.union.get(said)).map(|u| u.spoken.clone()) else { return };
         let mut t = ChatTally::default();
         let mut acks = Vec::with_capacity(words.len());
         for h in words {
             let Some(s) = spoken.iter().find(|s| s.vertex == h.vertex) else { continue };
             let a = chatter::loop_of(s, h);
-            match (&a.motion, chatter::flat(&a)) {
-                (_, true) => t.flat += 1,
+            match (&a.motion, chatter::still(&a)) {
+                (_, true) => t.still += 1,
                 (None, false) => t.open += 1,
                 (Some(holonomy), false) => {
                     t.curved += 1;
@@ -375,31 +401,72 @@ impl Entity {
             }
             acks.push(a);
         }
-        let frame = self.chatter_frame(Said::Ack { said: said.to_vec(), words: acks });
+        let frame = self.chatter_frame(Said::Ack { said: said.to_vec(), words: acks.clone() });
         let Some(chat) = self.chat.as_mut() else { return };
-        chat.tally.flat += t.flat;
         chat.tally.curved += t.curved;
         chat.tally.drag += t.drag;
         chat.tally.lift += t.lift;
         chat.tally.unsplit += t.unsplit;
+        chat.tally.still += t.still;
         chat.tally.open += t.open;
         let to = chatter::peer_of(&chat.dir, who);
         let Some(u) = chat.union.get_mut(said) else { return };
-        let needed = u.spoken.len() as u64;
-        let before = u.by.scoped().any(|(_, &n)| n >= needed);
-        let n = match u.by.get(who) {
-            Some(&held) => held.max(t.flat),
-            None => t.flat,
-        };
-        u.by.insert(who, n);
-        let agreed = n >= needed;
+        u.acked.insert(who, acks);
         if let (Some(frame), Some(to)) = (frame, to) {
             self.chatter_send(&frame, Some(&to));
             if let Some(chat) = self.chat.as_mut() {
                 chat.tally.acked += 1;
             }
         }
-        if before || !agreed {
+    }
+
+    /// THE SPEAKER READ THIS MIND'S THOUGHT (its ACK): every word's loop is
+    /// read again here, from what was said and what this mind derived, by
+    /// the one reader. Where the two minds hold one loop on every word the
+    /// thought is SHARED — this mind HOLDs it back, with its own reading for
+    /// the speaker to verify, and its ear holds every curved holonomy as a
+    /// transport between the two. A loop the two read differently is
+    /// refuted, and nothing is held.
+    fn acknowledged(&mut self, speaker: &[u8; 32], said: &[u8], acks: &[AckWord]) {
+        let Some(chat) = self.chat.as_mut() else { return };
+        let mut key = speaker.to_vec();
+        key.extend_from_slice(said);
+        let Some(thought) = chat.thoughts.remove(&key) else { return };
+        let mine: Vec<AckWord> = thought.words.iter().map(|(s, h)| chatter::loop_of(s, h)).collect();
+        if !one_reading(&mine, acks) {
+            chat.tally.refuted += 1;
+            return;
+        }
+        chat.tally.shared += 1;
+        let to = chatter::peer_of(&chat.dir, speaker);
+        self.hold_transports(&mine);
+        let Some(frame) = self.chatter_frame(Said::Hold { said: said.to_vec(), words: mine }) else { return };
+        if let Some(to) = to {
+            self.chatter_send(&frame, Some(&to));
+            if let Some(chat) = self.chat.as_mut() {
+                chat.tally.held += 1;
+            }
+        }
+    }
+
+    /// THE HEARER HOLDS THE LOOPS THIS MIND READ (its HOLD): verified against
+    /// the ACK this mind sent it, by the algebra. Where the two readings are
+    /// one, the thought is SHARED on this side too — this mind's ear holds
+    /// every curved holonomy — and the thing said is agreed language: a
+    /// letter waiting for its union goes to the court.
+    fn held_back(&mut self, who: &[u8; 32], said: &[u8], holds: &[AckWord], budget: &mut crate::physics::Budget) {
+        let Some(chat) = self.chat.as_mut() else { return };
+        let Some(u) = chat.union.get_mut(said) else { return };
+        let Some(sent) = u.acked.remove(who) else { return };
+        if !one_reading(&sent, holds) {
+            chat.tally.refuted += 1;
+            return;
+        }
+        chat.tally.shared += 1;
+        let first = !u.shared;
+        u.shared = true;
+        self.hold_transports(&sent);
+        if !first {
             return;
         }
         let Some(chat) = self.chat.as_mut() else { return };
@@ -409,26 +476,28 @@ impl Entity {
         let _ = self.speak(std::slice::from_ref(&letter), budget);
     }
 
-    /// THE SPEAKER ACKNOWLEDGED THIS MIND'S THOUGHT: each word's loop is read
-    /// again here, from what was said and what this mind derived, by the one
-    /// reader; the thought is acknowledged where the two minds hold one loop
-    /// on every word (confirmed), and shared whole where every loop is flat.
-    /// A loop the two read differently is refuted, and nothing is held.
-    fn acknowledged(&mut self, speaker: &[u8; 32], said: &[u8], acks: &[AckWord]) {
-        let Some(chat) = self.chat.as_mut() else { return };
-        let mut key = speaker.to_vec();
-        key.extend_from_slice(said);
-        let Some(thought) = chat.thoughts.remove(&key) else { return };
-        let mine: Vec<AckWord> = thought.words.iter().map(|(s, h)| chatter::loop_of(s, h)).collect();
-        let one = mine.len() == acks.len() && mine.iter().zip(acks).all(|(a, b)| chatter::same_loop(a, b));
-        match one {
-            true => {
-                chat.tally.confirmed += 1;
-                if mine.iter().all(chatter::flat) {
-                    chat.tally.shared += 1;
-                }
-            }
-            false => chat.tally.refuted += 1,
+    /// A SHARED THOUGHT FEEDS THE EAR: every curved loop's holonomy — what one
+    /// mind's language does to the other's thought — held as a transport, a
+    /// generator of this mind's dialect, through which later words from that
+    /// perspective are deconstructed. Still and open loops carry nothing.
+    fn hold_transports(&mut self, loops: &[AckWord]) {
+        let mut filed = 0u64;
+        for a in loops.iter().filter(|a| !chatter::still(a)) {
+            let (Some(motion), hue) = (&a.motion, &a.hue) else { continue };
+            let hue = match hue {
+                Some(h) => h.as_slice(),
+                None => &[],
+            };
+            filed += u64::from(self.epigenome.ear.hear_transport(motion, hue));
+        }
+        if let Some(chat) = self.chat.as_mut() {
+            chat.tally.transports += filed;
         }
     }
+}
+
+/// Two readings of one thought's loops are one: word for word, the same
+/// loop (`chatter::same_loop`, projectively).
+fn one_reading(a: &[AckWord], b: &[AckWord]) -> bool {
+    a.len() == b.len() && a.iter().zip(b).all(|(x, y)| chatter::same_loop(x, y))
 }

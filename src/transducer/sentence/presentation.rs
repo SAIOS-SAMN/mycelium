@@ -358,6 +358,30 @@ impl Presentation {
     pub fn hear_letter(&mut self, addr: &Address, e: &crate::transducer::element::Element, ruled: bool) -> bool {
         let Some(l) = e.letters() else { return false };
         let Some(motion) = crate::transducer::element::conformal_of(&l.spelling.word, &l.carriage) else { return false };
+        self.file_motion(addr, motion, l.sigma, ruled)
+    }
+
+    /// 78.163 — THE EAR HOLDS A TRANSPORT BETWEEN TWO MINDS: the holonomy of a
+    /// loop said → heard that both minds confirmed — what one mind's language
+    /// does to the other's thought — filed as a generator of this mind's
+    /// dialect (never ruled), under the holes it winds about and the modes of
+    /// its hue map, at the address its own coordinates write. A later word
+    /// heard from that perspective is deconstructed through it. A still
+    /// transport (an echo) moves nothing and is not filed.
+    pub fn hear_transport(&mut self, motion: &Mv, hue: &[(u8, u8)]) -> bool {
+        if is_still(motion) && super::transport::gauge_eq(hue, &[]) {
+            return false;
+        }
+        let Some(mut key) = motion_key(motion) else { return false };
+        key.extend(hue.iter().flat_map(|&(a, b)| [a, b]));
+        self.file_motion(&Address::new(key), motion.clone(), hue.to_vec(), false)
+    }
+
+    /// ONE MOTION AND HUE MAP FILED AS A GENERATOR at its own address, as
+    /// both form and vertex: under the holes its modes wind about (read on
+    /// the stroke they need) and the modes of its hue map. `false` where it
+    /// does not read, or moves nothing on either.
+    fn file_motion(&mut self, addr: &Address, motion: Mv, gauge: Vec<(u8, u8)>, ruled: bool) -> bool {
         let coords = match is_still(&motion) {
             true => Coordinates { holes: Vec::new() },
             false => {
@@ -369,7 +393,7 @@ impl Presentation {
                 }
             }
         };
-        let Some(modes) = gauge_modes(&l.sigma) else { return false };
+        let Some(modes) = gauge_modes(&gauge) else { return false };
         if coords.holes.is_empty() && modes.is_empty() {
             return false;
         }
@@ -378,7 +402,7 @@ impl Presentation {
         for m in &modes {
             self.gauges.nested_insert(m.key(), &key, ());
         }
-        self.held.insert(&key, Generator { form: addr.clone(), vertex: addr.clone(), motion, coords, gauge: l.sigma, ruled });
+        self.held.insert(&key, Generator { form: addr.clone(), vertex: addr.clone(), motion, coords, gauge, ruled });
         true
     }
 
