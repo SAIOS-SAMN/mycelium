@@ -27637,7 +27637,20 @@ modes (`GaugeMode`), the tubes and their quanta.
    the refusal is the reading (a block of them is an inversion to read,
    never a gate to loosen). An identity is enrolled with what it stakes,
    which may be nothing; a witness's standing is its enrolment and the
-   modes it staked, read mode by mode.
+   modes it staked, read mode by mode. The corpus's measured cover
+   survives only as CAPACITY — the room a genesis identity may draw on
+   the book, in the physics' counts until (5) — never staked, spent, paid
+   or written to the ledger.
+5. **A throat's mass is never a scalar** (the operator, 2026-10-11, asked
+   what feeds a throat once its bank holds modes: "re-evaluate your
+   non-euclidean geometry"). 78.134–78.140 read a throat as a scalar `m`
+   (horizon `r = 2m`, a cosh enclosure in a curved face, a ratio `2m/L`
+   below ½ in a torus face) — the Euclidean squaring this protocol forbids.
+   The throat is a ROUND of Cl(4,1), its horizon carried by what its bank
+   holds; whether it fits a face is the meet of the round with its own
+   image, never a ratio. Owed: the throat re-derived. Until then a feed or
+   a draw moves modes into and out of the throat's bank and reads nothing
+   off them into the committed mass.
 
 **Order.** (1) this ruling; (2) the `Modes` carrier (`economy/modes.rs`),
 exact composition and codec, proved by the algebra; (3) producers —
