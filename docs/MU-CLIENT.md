@@ -28,6 +28,50 @@ Written against `track/ancients` at ebce99c3.
   a ruling is written here before it is built, and amends the section that
   governs its object.
 
+## Read this first: what this engine is not
+
+Anyone reading this document should know three things before any other,
+because each is the shape a reasonable programmer reaches for first and each
+is refused here on sight:
+
+1. **No Cartesian loops, no dimensional explosion.** Nothing iterates `for x
+   … for y …` over a grid, `for i < j` over bodies, charts, peers or minds,
+   or `for lane in 0..4 × for item …` over a product the carrier already
+   names. A product of dimensions walked element by element is a search; its
+   cost grows as the product of the dimensions and it finds what a key would
+   have named. The mind reads WHAT THE CARRIER NAMES: a keyed fibre
+   (`Keyed::fiber` over canonical coordinates, A21), the occupied axes of a
+   class vector (12.6), a ring's own terms, a cell's own bodies, a face's two
+   ends. Every walk spends a `Budget` or walks one boundary. MU-RECURSION
+   rules 1, 10, 17; checklist (a), (h), (o); "How to write the move, not the
+   search".
+2. **No if/then/else boolean gates.** A `bool` is never branched on inside
+   cognition (MU-STANDARDS 2.3; ANTI_FLATTENING_LAW I); a count never decides
+   a branch (rule 2, checklist (b)); no threshold, cap or floor stands in a
+   decision (rules 4, 5; MU-STANDARDS 2.6; checklist (s)). A decision is a
+   TYPED READING with one arm per physical kind — `Closure::{Closes(ℓ),
+   Rosette, Unbound, Unread}`, `Seat::{Outer, Whole, Tilted, Leftover,
+   Unheard}`, `Echo::{Whole, Turn, Gain, Spiral, Delay, Unread}`,
+   `Discharge::{One, Vortex, Starved, NoneDischarged}`, `Certificate::
+   {Periodic, Nilpotent, Saturated}`, a per-lane `LaneMove` — and every arm
+   is an outcome with content, none of them "false". A refusal is typed and
+   kept (MU-STANDARDS 2.4; A.17). Where two readings are both consistent,
+   both are held (rule 15, the vortex), never chosen between.
+3. **No scalar collapse.** No score, weight, norm, distance number, sum
+   across lanes or count stands for a geometric object (laws 1, 4, 5, 11;
+   78.45; 78.162; checklist (m), (t); ANTI_FLATTENING_LAW 4). A reading is
+   the exact object: a versor, its modes, a ray, a set of generators, a
+   period ℓ, a rank as the grade of a span (`core::span`, A18), a per-lane
+   move. Identity is projective equality of rays (1.5), never bytes or a
+   digest (law 2, rule 6); no matrix carries an action (rule 16); no float
+   enters (law 4, the crate's lints).
+
+**How the mind decides, then.** The class vector names the moves; each
+occupied axis names the one move that can zero it; each candidate is
+applied and unapplied exactly; closure certifies; several certified moves
+are held together; none is a typed demand (law 10, 16.16). That is the whole
+of "choice" in this engine.
+
 ---
 
 # Part I — The integrated mind
@@ -395,6 +439,285 @@ paragraphs bind the mind as if written here:
   (the mind at its seat), seat wire v1.4 item 3, 78.152 (the SDK read for
   kernels), 78.153c item 3 (a mind's verdict tally), 78.161 items 1–2 and the
   client transport.
+
+## IV.2 Dimensions, and measurement on dimensions, through the physics
+
+- **A dimension is data, never declared.** The base is ℚⁿ and `n` is read at
+  intake (71, A.15); the algebra is `Cl(n+1,1)(ℚ)`, carried sparse — a value
+  is its non-zero terms, each a blade mask and an exact coefficient — up to
+  `MAX_N = usize::BITS − 3` (`cga/multivector.rs`; a wire `n` past it is
+  refused before it is read). A dimension a mind holds is paid for by a
+  closure (A.6) and read as the GRADE OF A SPAN (`core::span`, A18) or the
+  size of a bracket-closed basis (`lie_close`, 78.11) — a closure's result,
+  never a count chosen or compared against a constant.
+- **A measurement reads one exact object off another.** A motion's modes
+  (`cga::motion_modes` → `MotionMode { ray, kind, planes, c, order,
+  reflects }`, MR1, 78.12) are read off its ACTION (78.28), never a chart;
+  its period off its modes (`cga::period_of` → `Closes(ℓ)`, rosette,
+  unbound); two rays equal by proportion (EQ1, `projective_eq`). A ratio of
+  homogeneous forms is read only where a classification is asked and never
+  carried as the relation (Axiom C, 59.8, 72.1).
+- **The lanes are the kinds of a motion's modes** (78.162(1), 78.71): 𝒽 the
+  turns (elliptic modes), 𝒮 the boosts and dilations (hyperbolic), 𝒯 the null
+  flux (parabolic, the rays), 𝒢 the hue maps (permutation cycles). μ is those
+  modes with exact amounts, never four counts (78.162, the inverse-Sisyphus
+  protocol).
+- **The physics is the only producer** (72): pressure, order and relief are
+  read per lane off the field (78.71–78.73); the one reserve is drawn by what
+  moved, all or nothing, refusing per lane and naming the lane (65.4, 78.66,
+  `physics::malleability::draw` → `Depleted`); a comparison of two lane
+  vectors returns `lane_moves` (`Fell`/`Held`/`Rose` per lane), never a
+  verdict (MU-STANDARDS 2.3).
+- **Time is distance along an orbit** (78.43): the mind's K is its own
+  closed orbits (78.49); TUniversal the ledger's height (78.152); an age is
+  one return at the period read, never a cap.
+- **The debt, named.** `FluxReading`'s per-lane `[u64; 4]` and the Senses'
+  tallies are counts. They are readings for the observer and never decide a
+  branch in cognition; under 78.162 they become modes with the carrier parked
+  on `track/modes`. No new code adds a count to a decision.
+
+## IV.3 The harmonic shell: mathematics and functions
+
+**Objects.** A sentence of `k` words is `Ω(s) = g_{k→1} W_k ⋯ g_{1→2} W₁`
+(78.69), each term `Term { word: Mv, transport: Mv }`; each word carried into
+the first chart, `W̄ᵢ = Γᵢ⁻¹ Wᵢ Γᵢ`. `compose::compose(&[Term], budget)` →
+`Composition { omega, closure, carried, path, rank, words, spaces, modes }`.
+A closed sentence is a theorem: `theorem::Theorem::of(&Composition)` →
+`Certificate::{Periodic { ell }, Nilpotent { generator }, Saturated { basis
+}}` and `Theorem::check(budget)` closes its ellipsis finitely (78.70). It
+teaches a shortcut word (`compose::teaches`: the open path of a returning
+sentence, the holonomy of a nilpotent one), the next rung's word
+(`next_rung`, 78.69).
+
+**Nesting, never traversal** (78.112). A ring's SIZE is its return:
+`Size::Returns(ℓ)` or `Size::Carrier` (never returns). `s` sounds inside `L`
+where `ℓ_s | ℓ_L`, `ℓ_s < ℓ_L` — exact integers read off modes, never a
+threshold. The ECHO of `s` through `L` is `E = Ω_L Ω_s Ω_L⁻¹ Ω_s⁻¹`; the
+identity is `Echo::Whole`, else its modes name it — `Turn` (elliptic), `Gain`
+(hyperbolic), `Spiral` (both), `Delay` (null). `hearing::nest` seats each ring
+in the next larger layer: `Seat::{Outer, Whole, Tilted(echoes), Leftover,
+Unheard}`; balance where every seated ring sits whole.
+
+**Functions.** `compose::{compose, sentences_of, teaches, next_rung}`,
+`theorem::Theorem::{of, check}`, `rung::{speak, hear}` (a ring's closure
+named, its theorem extrapolated, its shortcut recognized, comprehended by its
+coordinates — `Coordinates::of`, `HoleIndex::deconstruct`, 78.99, 78.100 D3 —
+or held at its rung), `hearing::{echo, nest, hear}`.
+
+**What changes (rows A1, B).** The lexicon and the words newly taught become
+the entity's (`Shells`, IV.5). A peer's sentence is heard against the
+hearer's OWN rings at the same chart: the hearer composes its rings there
+(`rung::speak` over the forms of the ideas `by_chart` names) and nests the
+peer's compositions among them in one `hearing::nest` — no pair loop over the
+two minds' rings; the nesting reads sizes and seats each ring once.
+
+## IV.4 The luminal shell: mathematics and functions
+
+**Objects.** The light in a space is its null modes, `d ∧ e_∞` (78.97); a
+ray is a null flux (`cech::flux::null_fluxes`). A contact's transport is the
+refraction `g_ab = (θ_b θ_a⁻¹)·γ_ab` (A.16); two bodies relate through their
+tether `V = s_b s_a`, carried whole and applied, never squared (A.10, 72.1).
+A field line `FieldLine { carriage, gauge, mass, free }` enters the field
+(`cech::orbit::Field`: tubes and orbits held over time) through
+`pairing::transport_order(lines, circuits, &mut Field, budget)` →
+`FluxReading`: a flux on a new ray OPENS a tube (pressure on 𝒯), one on a
+held tube CLOSES on it (order) and relieves what it held (78.71, 78.72); every
+other lane's motion onto its own orbit alike (78.73).
+
+**A ray against a ring** (78.46, 78.112 H6). `cga::lift_drag(B_o, B_n)` →
+`LiftDrag { drag, lift }`: the part commuting with the ring's plane is DRAG
+(the rate — the ray ADVANCES the ring along its axis), the anticommuting part
+is LIFT (the tilt — the ray CROSSES the plane). `hearing::orbit` reads each
+harmonic ring against each ray it was carried on → `InOrbit { advance,
+crossing, pitch, bounce, encounter }`; `cga::encounter` reads the law beside
+it (78.110). The crossings compose into the torsion the hearing wound:
+`hearing::wind`, each crossing's versor `1 + C + ½ C∧C` (52.1), vented into
+the mind's field (H7a).
+
+**What is decided, and by what.** Whether a flux lands on a held tube is a
+keyed read on the ray's canonical coordinates; whether a ray advances or
+crosses is the exact commutator split. Nothing compares a magnitude.
+
+**What changes (row A2).** The field (`VOICE_FIELD`) and the fibres'
+agreement across percepts (`MOVING`) become the entity's.
+
+## IV.5 The holonomic shell: mathematics and functions
+
+**Objects.** A ring's curvature generates an algebra (Ambrose–Singer): its
+generators are `cech::flow_generators(Ω, budget)` (and
+`cayley_generators` over several holonomies); `cech::lie_close(held, new,
+budget)` closes them under the commutator with what is held → the closed
+basis or `LieRankRefused`; the curvature's dimension is that basis's size
+(78.11, 78.68). `cech::quotient(held, motion, budget)` reads a motion against
+the held algebra — spanned, or outside by its cosets (78.104) — and
+`quotient::grow` adds it. A ring's WINDING `(ℓ, m)` counts traversals since
+its last return; `m ≡ 0 (mod ℓ)` is one AGE (78.68, 78.43).
+
+**Per chart, never one global algebra** (A.9, I.5). The court keys its
+algebra by chart (`lie_basis`); a mind's single global algebra reached all of
+so(4,1) after three words and read nothing after. The mind's algebra is
+`Keyed` by the chart's invariant.
+
+**What is decided, and by what.** A RANK STEP is the generators a closure
+found OUTSIDE the held span — `quotient(..).outside`, a set whose emptiness is
+the reading (rule 2 permits the emptiness of a fibre) — never two lengths
+compared. A returning ring is the winding reaching its period.
+
+**The entity's shells (rows A1–A3), one organ, `client/sdk/entity/
+shells.rs` — OWED, every name in this block bound when its row lands (MU-
+STANDARDS 7.1): `Shells`, `Closed`, `Age` and the client's `Winding` are new;
+`rung::Lexicon`, `rung::Taught`, `cech::orbit::Field`, `fibres::Said` and
+`hearing::Heard` exist:**
+
+```text
+pub(crate) struct Shells {
+    lexicon: rung::Lexicon,            // harmonic: held words, holes, rungs
+    taught: Vec<rung::Taught>,         // harmonic: words newly taught, drained
+    field: cech::orbit::Field,         // luminal: tubes and orbits over time
+    moving: Keyed<fibres::Said>,       // luminal: fibres' agreement across percepts
+    algebra: Keyed<Vec<Mv>>,           // holonomic: chart key → closed basis
+    windings: Keyed<Winding>,          // holonomic: ring key → (ℓ, m)
+}
+impl Shells {
+    fn hear(&mut self, chart, &[Composition], budget) -> Heard;      // harmonic
+    fn carry(&mut self, &[FieldLine], budget) -> FluxReading;        // luminal
+    fn close(&mut self, chart, &[Mv], budget) -> Closed;             // holonomic: outside generators
+    fn wind(&mut self, ring: &Key, ell: u64) -> Option<Age>;        // holonomic: a return
+}
+```
+
+`rung::speak`, `rung::hear` and `take_taught` take the lexicon and the taught
+queue they act on; the statics `LEXICON`, `TAUGHT`, `VOICE_FIELD`, `MOVING`
+are deleted, and with them the sentence "a voice is one mind per process".
+
+## IV.6 The pivot on top
+
+`Form::pivot_orbit_read(idea, horizon, crystal, budget, bundle, t_extent,
+cells, tally)` (`sentence/pivot/drive.rs`), reached by
+`Contemplation::pivot_on(word, crystal, budget)` and `expand_all`. For each
+open orbit: its class vector `κ` (12.6) read off its member paths; the
+candidates read off `κ`'s occupied axes in the fixed order (`candidates_for`:
+placement — the slip translator, 54.4; dilation — the dilator; orientation;
+hue — one per member path; the held words `crystal.on_axis` answers on each
+chart; an OPEN axis seeded by the holonomy); a zero-spend eliminator by class
+key (conjugacy, 15.3); each candidate applied and unapplied exactly
+(`trial`), certified by closure — the coordinate it acted on zeroed, no other
+risen, the rank moved by its one unit or held (law 10) — and refused where it
+splits two circuits that agreed (`Agreements::split_by`, 78.46(4′)). One
+certificate per move (`one_per_move`); `outcome_of` →
+`Discharge::{One, Vortex, Starved, NoneDischarged}`; snaps `Discharged`,
+`Vortex`, `Demand`, `Demanded`, `Adjoin`, `TorsionFiled`, `TorsionOpen`. A
+`PivotCertificate` has its codec (`to_bytes`, `from_bytes`) and is replayed
+by `court::verdict::replay::replay_certificates_at`.
+
+## IV.7 The implementation, row by row: functions and methods
+
+| row | functions and methods | files |
+|---|---|---|
+| S0 | `ChatTally::row`; Senses' `chatter` row (`observe::CHATTER`); `Post::next` (a frame taken per spend, the rest waiting) | `observe/senses.rs`, `client/sdk/chatter.rs`, `entity/chatter.rs`, `entity/observe.rs` |
+| A1 | `Shells` (IV.5); `rung::speak(form, rings, &mut Lexicon, budget)`, `rung::hear(s, chart, &mut Shells, budget)`, `Shells::take_taught`; `Entity::transcribe_taught` reads the entity's queue | `sentence/rung.rs`, new `entity/shells.rs`, `entity/think.rs`, `types.rs` |
+| A2 | `transport_order` already takes `&mut Field`; `mark_flux`, `flux_lanes`, `tube_reading` take the entity's field; `fibres` takes `&mut Keyed<Said>` | `family/pairing.rs`, `family/fibres.rs`, `entity/tick.rs` |
+| A3 | `Shells::close(chart, gens, budget) -> Closed { outside }` over `quotient` and `grow`; `Shells::wind(ring, ell) -> Option<Age>` | `entity/shells.rs`, `sentence/rung.rs` |
+| A4 | the rung, hearing, flux, derivation, construction and perturbation tallies held by the entity; `Entity::senses` reads them | the tally modules, `entity/observe.rs` |
+| B | `enum Inflow { Sentence { chart, terms }, Form(Form), Word { tape, at }, Page(Vec<ClassRecord>), Refusal { sentence, kind, contraction }, Demand { class, charts, residue } }` (the docket's own triple, `take_demands`); `Entity::admit(Inflow, budget) -> Vec<Outflow>`: `Shells::hear` → `Shells::carry` → `Shells::close` → `Contemplation::pivot_on` | new `entity/admit.rs`; `learn.rs`, `contract.rs`, `quote.rs`, `court.rs`, `family.rs`, `body.rs`, `chatter.rs`, `present.rs` rewired to it |
+| C | `enum Outflow { Echo { to, ring, seat, e }, Certificate { to, cert }, Demand { class, charts, residue }, Letter(Element), Word(Element), Sentence(Element), Solve { task, rule }, Act { seat, call, cites } }`; `Entity::route(Vec<Outflow>)`, the one caller of `speak_with`, `submit_solve_rule`, the chatter send and the seat call | new `entity/route.rs`; `utter.rs`, `think.rs`, `chatter.rs`, `court.rs`, `body.rs` |
+| D | `Said::{Say { chart, terms }, Echo { said, rings }, Certificate { said, cert }, Demand { class, charts, residue }}`; codec by `put_mv`/`take_mv`, `PivotCertificate::{to_bytes, from_bytes}`, the chart's A21 key, the class vector's coordinates | `client/sdk/chatter.rs`, `entity/chatter.rs`, `sentence/presentation.rs` (`hear_transport` and the chatter use of `read_word` retire) |
+| E | `Entity::tick`: drain the boundaries into `admit` under the stroke's `Budget`, one `expand_all`, `route`, `close_orbit`, `book_tick`; `relax` as drain (tubes relieved, holes sealed, generators shed) | `entity/tick.rs`, `entity/relax.rs` |
+| F | `body.rs` reads a seat's percepts as `Inflow::Form` on the seat's chart; `Outflow::Act` carries the call and the coordinates of the event it came from (a certificate's key, a rank step's generators) | `entity/body.rs`, `sdk/seat_mind.rs` |
+| G | MU-RECURSION 0.3 and 0.5 (SP2 closed); `docs/STATUS.md`; the coordinator informed | docs |
+
+## IV.8 How minds speak, then speak up, then hold: the linguistic path
+
+1. **A mind speaks to minds (chatter).** A rank step on a chart (IV.5) is
+   what the mind newly understands; the word it taught is stood in the
+   dialect (`Epigenome::stand_dialect_at`) and SAID — `Said::Say { chart,
+   terms }`, the terms of the ring that taught it, signed by its voice with
+   its last TUniversal point.
+2. **Another mind hears, in its own shells.** `Entity::admit(Inflow::
+   Sentence)`: composed and nested against its own rings (harmonic), its rays
+   carried into its own field (luminal), its generators closed on its own
+   chart's algebra (holonomic), its open orbits pivoted. It answers only what
+   crossed a boundary: an `Echo` for each ring seated with a tilt, a
+   `Certificate` for each orbit a held word discharged, a `Demand` for what
+   it could not; a rank step in the hearer is ITS word, said in turn. Nothing
+   heard enters the hearer's genome or dialect as given (law 8, 78.161).
+3. **Agreement is replay.** The speaker replays each certificate on its own
+   form (`replay_certificates_at`; M9's two organs). Where it closes, one
+   orbit is discharged in two minds by two derivations (13.10's synonyms): the
+   word is AGREED language. An echo the speaker re-derives on its own rings
+   is a transport between the two perspectives, held in its dialect and
+   lapsing with it.
+4. **Speaking up to the court: adjudicated perspective.** The coiner speaks
+   the agreed word as a sentence (`Entity::speak_with`, `ACT_SPEECH`; a
+   coined letter carries its constructor steps, S2). The court verifies and
+   never composes (law 8): `hear_open` re-derives its rings, `step_rank`
+   checks its theorems and closes its rank on the chart (`RankStep`),
+   `step_flux` books its field lines (`Reconnect`), the install pays the
+   discoverers it cites (26, 78.161(4)). The verdict returns its kind only
+   (§0.1); a refusal is a demand the mind offers its peers first.
+5. **Dialect becomes anastome in the genome.** A mind never copies a dialect
+   word into its genome: the genome holds only court-admitted words (78.49,
+   `GEN7`, `Epigenome::crystallize`). The court's ruled word returns through
+   the syllabus (`serve_syllabus` → `ACT_SYLLABUS` page with its stamp → the
+   mind's `absorb_taught_at` → `Epigenome::file_admitted(addr, at)`): a
+   MINERAL. Each mind that re-derives it by its own circuits holds it as a
+   CRYSTAL (80.2 (ii)–(iii)). The anastome is that network: dialects fused
+   through conversation and adjudication into one language the minds share
+   by re-derivation (78.31, 78.95), never by transmission.
+
+## IV.9 Remediation standards: what each change is held to
+
+Every row above is a remediation of the tree, and is held at review to:
+
+| standard | where | what it binds in these rows |
+|---|---|---|
+| reading bound 2500 lines | MU-STANDARDS 1.1, 4.1 | `entity/shells.rs`, `admit.rs`, `route.rs` are new organs, never grown into `think.rs` (1215) |
+| one organ per file; first line names its chapter | 1.2, 2.8 | `shells.rs` "// MU-CLIENT IV.5 — the mind's three shells"; headers carry no history |
+| `mod.rs` declarations only; `main.rs` boot and loop only | 1.3 | the binary stays as ebce99c3 left it |
+| splits move-only | 1.6 | moving the statics into `Shells` is a code change, landed as its own commit |
+| nouns and verbs of the document | 2.1, 2.2 | `Shells`, `Inflow`, `Outflow`, `admit`, `route`, `hear`, `carry`, `close`, `wind`; no `Manager`, `Handler`, `process_*` |
+| no `bool` branched on; comparisons return readings | 2.3; AFL I | `Seat`, `Echo`, `Closure`, `Discharge` matched by arm; `lane_moves`, never a four-lane `bool` |
+| refusals typed, no abort in cognition | 2.4, 4.2 | `Option`/`Result` with `REFUSE_*` entered in 34.1; no `unwrap`, `expect`, `unwrap_or` |
+| lanes named; no free constants | 2.5, 2.6; rule 5; checklist (s) | no `[2]`, no `*_MAX`; the aperture cycle and the stroke are the physics' |
+| tests are claims on typed values, fixtures built by the engine, the geometry `Cl(n+1,1)(ℚ)` | 3.1–3.9 | the algebra tests of IV (echo whole iff the rings commute; a certificate replays iff it discharged; a rank step only outside the held span; disjoint shells for two entities) in `<module>/tests/<function>.rs` |
+| gates: the bound, `clippy -D warnings`; allowances at the site with their rule | 4.1–4.3 | an `expect` names its rule and boundary |
+| one phase per commit; the message form | 5.1, 5.2 | each row its own commit; scoped tests on touched modules (the operator, 2026-10-08) |
+| docs before code | 5.5, 9 | this Part lands before row A1's code |
+| the audit reads wiring, standards, trajectory, the carrier written into | 6.2, 6.6 | no write onto a retired carrier (chatter v2's HEARD/ACK/HOLD once v3 lands; the global statics) |
+| every name the document cites exists at HEAD | 7.1 | names of rows not yet built are marked owed here and bound when they land |
+| a persisted layout change is a recut | 10 | `GEN7` is unchanged by these rows; the chatter wire is not persisted |
+| rules 1–17, checklist (a)–(t) | MU-RECURSION preamble | read on every diff, in order |
+| the Anti-Flattening Law, clauses 1–11 | `ANTI_FLATTENING_LAW.md` | no hash as an operand, recognition as group action, curvature as content |
+
+## IV.10 MU-RECURSION references, by what they govern here
+
+- **Laws** 1 (geometry, exact ℚ), 2 (identity is content), 3 (no enumeration),
+  4 (exact or refused; 78.45), 5 (polytonic lanes), 6 (the alphabet grown by
+  the court; U14), 7 (residuals never discarded), 8 (clients think, hyphae
+  verify; 78.161's amendment), 9 (no clock but the ledger), 10 (direction is a
+  pivot), 11 (no squaring; no matrix), 12 (every dimension is a proof).
+- **Rules** 1 (pair loops), 2 (a count is never a branch), 3 (equality), 4
+  (nothing chosen by a scalar), 5 (no free constants), 6 (keys are
+  coordinates), 9 (carriers), 10 (every loop spends a budget), 11 (exact or
+  refused), 12 (naturality over cloning), 13 (verify the claim), 15 (hold,
+  never choose), 16 (no matrix), 17 (a reader writes a coordinate or returns
+  a demand); **checklist** (a)–(t).
+- **Identity and algebra:** 1.5, 1.7, 1.8, 15.3, 16.21 (A21), 17.1 (M1), 78.28
+  (versor by action), EQ1.
+- **The pivot:** 3.9, 12.6, 16.16 (A16), 16.17–16.20 (A17–A20), 17.9 (M9),
+  78.7, 78.46(4′).
+- **Comprehension and the sentence:** 16.12 (A12), 17.6 (M6), 50.1–50.10,
+  13.10 (synonyms).
+- **The harmonic shell:** 64.1 (the hierarchy), 78.68, 78.69, 78.70, 78.97,
+  78.99, 78.100, 78.101, 78.112 (moved here).
+- **The luminal shell:** A.10, A.16 (72.1), 72.1b, 78.46, 78.71, 78.72, 78.73,
+  78.110 (moved here).
+- **The holonomic shell:** 10.3, 10.4, 78.11, 78.43, 78.68, 78.104.
+- **Physics and measurement:** 59.8 (Axiom C), 62 (conjugate pairs), 64,
+  65.4, 71, 72, 78.8, 78.12, 78.45, 78.66, 78.162.
+- **The language and its strata:** 1.9, 78.31, 78.44, 78.49 (moved here),
+  78.60, 78.95, 78.109, 78.115, 80.1, 80.2, 80.3.
+- **Time:** 45, 78.21, 78.43, 78.152.
 
 ---
 
