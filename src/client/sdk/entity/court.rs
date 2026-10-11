@@ -1,0 +1,229 @@
+// 78.164 — THE COURT, A BOUNDARY: what flows into the field from the hypha
+// (the open book's listings and their demands, the registry's tasks, the
+// language it teaches) and what flows out to it (sentences, probes, solves,
+// colour words), paced by the surface the court itself returns.
+//
+//! The pace is the court's: a quote is asked when the language moved, the
+//! book rose, or a lane's dwell elapsed — a receipt count, never a timer —
+//! and the T lane neither holds the mind back nor releases it (C4). An
+//! occluded wire asks nothing; the answer to impedance is patience.
+
+use crate::client::sdk::*;
+use crate::physics::{Physics, StrokeOutcome};
+use crate::transducer::element::measure_lanes;
+
+/// THE COURT'S PACE, carried from tick to tick: the language and the book
+/// height the court was last asked at, the surface it returned and the dwell
+/// left on each lane, and where the sync last stood.
+#[derive(Default)]
+pub(crate) struct CourtPace {
+    last_lang: Option<(usize, usize, usize)>,
+    last_height: u64,
+    last_quoted_height: u64,
+    last_pressure: [u64; 4],
+    pub(crate) dwell_remaining: [u64; 4],
+    last_synced_lang: Option<(usize, usize, usize)>,
+    last_synced_height: u64,
+}
+
+impl CourtPace {
+    /// A pressed lane whose dwell has run out, the T lane excluded (C4).
+    fn dwell_elapsed(&self) -> bool {
+        [0usize, 1, 3].iter().any(|&l| self.last_pressure[l] > 0 && self.dwell_remaining[l] == 0)
+    }
+
+    /// The pressure the court last returned, the dwell's measure.
+    pub(crate) fn pressure(&self) -> [u64; 4] {
+        self.last_pressure
+    }
+}
+
+impl Entity {
+    /// 50.9, 21 step 3 — WHAT THE MIND OWES THE COURT flows out first: the
+    /// sentences its refusals contracted, and the forms a court waits on.
+    pub(crate) fn court_owed(&mut self) {
+        let _ = self.speak_contracted();
+        let _ = self.speak_owed();
+    }
+
+    /// THE FEED'S NEXT FAMILY ENTERS, paced as the quote is, where the
+    /// reserve can fund thinking it through: thought through whole and its
+    /// form spoken. One family a tick.
+    pub(crate) fn feed_inflow(&mut self, outcome: &mut StrokeOutcome) {
+        let pace = &self.board.court;
+        if pace.last_pressure != [0; 4] && !pace.dwell_elapsed() {
+            return;
+        }
+        let Some(feed) = self.board.feed.as_mut() else { return };
+        let Some((path, task)) = feed.peek() else { return };
+        let mag = super::family::family_magnitude(&task.train);
+        if !crate::economy::lanes_short(&self.physics().reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
+            return;
+        }
+        if let Some(feed) = self.board.feed.as_mut() {
+            feed.entered(&path);
+        }
+        self.physics_mut().bump(&mag);
+        StrokeOutcome::add(&mut outcome.fed, &mag);
+        // A task whose members have no A5 form has no identity to think by.
+        let Some(id) = crate::registry::task_id(&task) else { return };
+        if let (_, Some(uttered)) = self.think_family(&id, &task.train) {
+            StrokeOutcome::add(&mut outcome.uttered, &uttered);
+        }
+    }
+
+    /// THE OPEN BOOK FLOWS IN, where the court is due to be asked: each
+    /// listing's demands are pressure at their charts, and a demand a held
+    /// closed form reproduces is answered — the probe flows out, and a
+    /// closure relieves the pressure it stood for and builds order. A demand
+    /// on a lane the reserve cannot fund waits; a page beyond one tick is
+    /// answered across quotes. Then, while the mind holds no language, the
+    /// syllabus is asked for.
+    pub(crate) fn quote_inflow(&mut self, outcome: &mut StrokeOutcome) {
+        let lang = self.atlas_standing_counts();
+        let pace = &self.board.court;
+        let due = pace.last_lang != Some(lang) || pace.last_height > pace.last_quoted_height || pace.dwell_elapsed();
+        if due {
+            if let Ok(q) = self.quote() {
+                if self.board.court.last_lang != Some(lang) {
+                    self.reopen_axes();
+                }
+                let pace = &mut self.board.court;
+                pace.last_lang = Some(lang);
+                // 23.8: a height read off a reply only advances.
+                pace.last_quoted_height = pace.last_quoted_height.max(q.height);
+                pace.last_height = pace.last_height.max(q.height);
+                pace.last_pressure = q.surface;
+                pace.dwell_remaining = q.surface;
+                self.answer_demands(&q.clusters, outcome);
+            }
+        }
+        if crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty()
+            && (self.epigenome.genome_len() == 0 || self.epigenome.atlas_is_empty())
+        {
+            let _ = self.pull_syllabus();
+            let _ = self.take_promoted();
+        }
+    }
+
+    /// EACH DEMAND OF EACH LISTING, answered by the held closed form that
+    /// reproduces it on its own chart (50.5, L8r): one spend per form spoken.
+    fn answer_demands(&mut self, clusters: &[Cluster], outcome: &mut StrokeOutcome) {
+        let mut spend = self.stroke();
+        for cluster in clusters {
+            let mut pos = 0usize;
+            let Some(e) = crate::transducer::element::Element::from_bytes(&cluster.element, &mut pos) else { continue };
+            let held = crate::transducer::element::Held::of(e);
+            let Some(form) = held.form() else { continue };
+            let demands: Vec<_> = form.demand_vertices().map(|(at, _, chart, links)| (at, chart.clone(), links.to_vec())).collect();
+            for (demand, chart, links) in &demands {
+                let mag = measure_lanes(links);
+                if !crate::economy::lanes_short(&self.physics().reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
+                    continue;
+                }
+                for addr in &self.epigenome.chart_stratum(chart) {
+                    if !spend.spend() {
+                        return;
+                    }
+                    let (Some(word), Some(st)) = (self.epigenome.working_word(addr), self.epigenome.standing_of(addr)) else { continue };
+                    let Some(f) = word.form().cloned() else { continue };
+                    if !f.is_closed() || !reproduces(&self.epigenome, &f, links) {
+                        continue;
+                    }
+                    let target = crate::transducer::sentence::demand_at(cluster.address.as_bytes(), demand);
+                    let cite = crate::anastome::dialogue::CiteWire { addr: word.address(), standing: st.as_u8(), transport: crate::transducer::element::identity_versor(), body: links.clone() };
+                    StrokeOutcome::add(&mut outcome.uttered, &mag);
+                    if let Ok(reading) = self.probe(&target, std::slice::from_ref(&cite)) {
+                        match reading.closure {
+                            crate::anastome::dialogue::ProbeClosure::Closed => {
+                                self.physics_mut().relieve(&mag);
+                                self.physics_mut().syntropy(&mag);
+                                StrokeOutcome::add(&mut outcome.closed, &mag);
+                            }
+                            crate::anastome::dialogue::ProbeClosure::Residual(_) => self.physics_mut().bump(&mag),
+                            crate::anastome::dialogue::ProbeClosure::Gone | crate::anastome::dialogue::ProbeClosure::Nothing => {}
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    /// A TASK FROM THE COURT'S REGISTRY ENTERS (PoUW): its colour word and a
+    /// colour theorem spoken, its hours held one pair at a time under the
+    /// family's coordinate (78.56 III), the family thought through, every
+    /// motion its form could not cite put to the court (78.160 P2), the
+    /// tests spoken through the rule, and the solve — the rule minted at its
+    /// span — flowing out to the court.
+    pub(crate) fn task_inflow(&mut self, outcome: &mut StrokeOutcome, stop: &std::sync::atomic::AtomicBool) {
+        let Ok(Some(crate::anastome::dialogue::TaskEnvelope { id, train, tests })) = self.pull_task() else { return };
+        let mag = super::family::family_magnitude(&train);
+        if crate::economy::lanes_short(&self.physics().reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
+            self.physics_mut().bump(&mag);
+            StrokeOutcome::add(&mut outcome.fed, &mag);
+        }
+        let mut colour = self.stroke();
+        let _ = self.speak_colour(&id, &train, &mut colour);
+        let _ = self.speak_colour_theorem(&mut colour);
+        let mut t = self.extract_family(&id, &train);
+        if !t.frames.is_empty() {
+            for (a, b) in &train {
+                if stop.load(std::sync::atomic::Ordering::SeqCst) {
+                    break;
+                }
+                let pair = [(a.clone(), b.clone())];
+                let hour = crate::transducer::family::perceive_family(&pair);
+                let mut hour_budget = self.stroke_n(crate::transducer::family::extraction_spend(&pair, &hour));
+                if let Some(f) = crate::transducer::family::scene_form_on(&self.epigenome, &mut hour_budget, a, b, &hour) {
+                    self.hold_perceived_from(f, &hour, (&[][..], &pair[..]), &[], &id, &mut hour_budget);
+                }
+            }
+        }
+        let Some(rule) = t.rule.take() else {
+            self.withhold_unextracted(&train, &id);
+            return;
+        };
+        let _ = self.ask_presentation(&rule.form);
+        if let Some(uttered) = self.speak_form(&rule, &train, &t.frames, &id, &mut t.budget) {
+            StrokeOutcome::add(&mut outcome.uttered, &uttered);
+        }
+        let Some(outs) = self.speak_tests(&rule, &tests) else { return };
+        let spoken = self.mint_solve(&rule, &train);
+        let _ = self.solve_task(&id, &train, &outs, spoken.as_ref(), &mut t.budget);
+    }
+
+    /// THE COURT'S LANGUAGE FLOWS IN, where it is due — the language changed
+    /// since the last sync, the book rose, a lane's dwell elapsed, or the
+    /// mind holds no language — never because a tick rested: discovery, the
+    /// syllabus and the sheaf sync by discordant stratum.
+    pub(crate) fn language_inflow(&mut self) {
+        let lang = self.atlas_standing_counts();
+        let pace = &self.board.court;
+        let due = pace.last_synced_lang != Some(lang) || pace.last_height > pace.last_synced_height || pace.dwell_elapsed() || self.epigenome.atlas_is_empty();
+        if !due {
+            return;
+        }
+        self.discover();
+        let _ = self.pull_syllabus();
+        let _ = self.take_promoted();
+        let _ = self.sync_genome();
+        let pace = &mut self.board.court;
+        pace.last_synced_lang = Some(lang);
+        pace.last_synced_height = pace.last_height;
+    }
+}
+
+/// DOES THIS HELD FORM ANSWER THE DEMAND (50.5, L8q) — THE COURT'S OWN
+/// READING (`Kernel::settle_demand`): the demand's bodies framed as a scene
+/// at their own corner, the form spoken on it at the identity placement
+/// (L14), and every link's AFTER colour said at its own site.
+fn reproduces(epi: &Epigenome, f: &crate::transducer::sentence::Form, links: &[(i64, i64, u8, u8)]) -> bool {
+    let Some(((r0, c0), scene, _)) = crate::transducer::family::scene_at_of_chain(links) else { return false };
+    let placement = crate::transducer::alphabet::Word::identity();
+    let Some(sp) = crate::transducer::family::Crystal::speak_form(epi, f, &scene, &placement) else { return false };
+    let Some(spoken) = sp.grid() else { return false };
+    // An offset below the corner, or past `i64`, is off the spoken grid.
+    let at = |x: i64, o: i64| x.checked_sub(o).and_then(|d| usize::try_from(d).ok());
+    links.iter().all(|&(r, c, _, a)| at(r, r0).and_then(|dr| spoken.get(dr)).and_then(|row| row.get(at(c, c0)?)).copied() == Some(a))
+}

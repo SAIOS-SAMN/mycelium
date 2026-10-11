@@ -674,6 +674,9 @@ pub struct Entity {
     pub(crate) seats: crate::network::nerve::Keyed<super::seat_mind::SeatMind>,
     /// 78.161 — this mind's chatter with other minds, where it opened one.
     pub(crate) chat: Option<super::entity::chatter::Chat>,
+    /// 78.164 — the boundaries this mind is open on, and what its field
+    /// keeps from tick to tick to meet them.
+    pub(crate) board: super::entity::tick::Board,
 }
 
 /// A cited form owed to a court, with the citer that waits on it and the

@@ -27697,6 +27697,41 @@ where some mind shared it; a letter waiting for that union goes to the
 court. Readings that differ are refuted, and nothing is held. A thought
 heard and a thing said stand one aperture cycle of the mind's strokes.
 
+### 78.164 The board, not the captain: the mind is a field with boundaries (2026-10-11, the operator)
+
+**The ruling.** "Dont you think the main loop for the client should be
+cognition_engine and that chatter should be a subcomponent of a cognitive
+mind"; "who is this harness for … you built this as a sovereign building a
+captain — not a progenitor laying the board"; "abstract that out further,
+not to put your cognition in there: but the cognition that serves the
+mathematics of the substrate of the hypha"; "the fleet doesn't matter — this
+is a prototyping sandbox"; "scope it - implement".
+
+**Objective.** A game entity whose every action is an outflow of its mind's
+field — no arm, schedule or harness between them.
+
+**What is ruled.**
+1. The mind is a FIELD; everything outside it is a BOUNDARY — the court, the
+   corpus feed, other minds (chatter), a game seat — each with an INFLOW (a
+   perturbation entering the field: a family, a listing's demands, a heard
+   frame, a seat's mail) and an OUTFLOW (what the field closed that faces it:
+   a sentence, a probe, a solve, SAY/ACK/HOLD, a seat call).
+2. One TICK (`Entity::tick`, the SDK's, never the binary's) evolves the field
+   by the substrate's laws: admit each boundary's inflow (paced by its own
+   dwell, the court's surface), evolve what is held by the law its kind names
+   (family, demand, loop, seat), relax inward (shed, expand, pivot, condense,
+   refine, owed speech) where the reserve is short or nothing arrived, then
+   book the tick's physics and close the orbit. The order is the physics'
+   (admission, transport, closure, relaxation, booking), never a schedule.
+3. The binary only opens the boundaries and hands the mind its ticks; it
+   keeps no order of work, no arms, no counters and no console of its own —
+   the mind's readings go to the hypha's console (`observe`).
+4. A seat is the entity's body: its percepts are inflow, its calls outflow.
+
+**Order.** (1) the field and `tick`, the arms deleted, every boundary in
+the SDK; (2) the inflows as typed Cl(4,1) perturbations; (3) the seat as the
+body in a game; (4) the entity acting live.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

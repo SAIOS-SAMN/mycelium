@@ -86,6 +86,7 @@ impl Entity {
             unread_after: Vec::new(),
             seats: crate::network::nerve::Keyed::new(),
             chat: None,
+            board: Default::default(),
         }
     }
 

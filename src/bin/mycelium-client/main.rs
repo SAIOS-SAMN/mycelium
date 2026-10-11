@@ -1,200 +1,35 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 24.3 — THE VOICE, a client on the mesh: the arguments it is started
-//! with, the order it comes up in, and the skeleton of the stroke loop that
-//! runs its four arms.
+//! 24.3, 78.164 — THE VOICE, a mind on the mesh. The binary opens the mind's
+//! boundaries — the court it speaks to, the corpus its home holds, the other
+//! minds it chatters with, the seats it sits in a game — and hands the mind
+//! its ticks. What the mind does with them, and in what order, is the mind's
+//! own (`Entity::tick`); the binary keeps no order of work.
 
 #[global_allocator]
 static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
-mod arms;
-mod feed;
-mod speak;
-
-pub(crate) use crate::feed::{Feed};
-use crate::arms::{feed::feed_arm, quote::quote_arm, syntropy::syntropy_arm, task::task_arm};
-use crate::feed::{pending_feed};
-use mycelium::physics::StrokeOutcome;
 use mycelium::court::identity::HyphaKey;
 use mycelium::network::mesh;
 use mycelium::sdk::{Entity, Kernel};
-use mycelium::voice::Voice;
-use std::path::{PathBuf};
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-
-/// WHAT THE STROKE PACES ON — the readings a stroke carries forward to the
-/// next one. The quote asks when the language moved or the book rose or the
-/// dwell elapsed; the dwell falls from the last reply's pressure; K is the
-/// court's own index. One carrier, because they are one state: the arms
-/// took them as seven `&mut` parameters and each needed
-/// `#[allow(clippy::too_many_arguments)]` to say so.
-#[derive(Default)]
-pub(crate) struct Metabolism {
-    pub(crate) last_lang: (usize, usize, usize),
-    pub(crate) last_height: u64,
-    pub(crate) last_quoted_height: u64,
-    pub(crate) last_pressure: [u64; 4],
-    pub(crate) dwell_remaining: [u64; 4],
-    /// THE BOOK'S K, NOT THIS MIND'S (45.4). It is `YieldQuote::k` — "the
-    /// judge's k-step at the quote, the temporal coordinate of the book
-    /// this quote reads" — taken off a hypha's reply and used to pace the
-    /// stroke line.
-    ///
-    /// It was named `k_step` and printed as `K`, so the stroke line read a
-    /// COURT-SIDE coordinate under the mind's own label, beside
-    /// `Height::stamp_of(now_tu())` — which is the mesh height, the other
-    /// court-side clock. Four voices printed `[h 16504] K 16504` and the
-    /// fifth `[h 16502] K 2587`, and the pair read as one mind racing and
-    /// four in lockstep. They were two readings of the same organ's time,
-    /// and the outlier was a voice whose quotes were not landing.
-    ///
-    /// A mind's own K is `Entity::own_k` — the orbits it acted in (78.49) —
-    /// and it is what `shed_at` ages the dialect by. Both
-    /// are now on the line, under their own names, so a per-voice rate has
-    /// a denominator that belongs to the voice.
-    pub(crate) book_k: u64,
-    pub(crate) last_genome: usize,
-    /// The language and the book height the syntropy arm last synced at
-    /// (24.3, I37): the sheaf sync, the syllabus pull and peer discovery
-    /// are asked when either moved or a lane's dwell elapsed, exactly as
-    /// the quote is, never on every depleted stroke.
-    pub(crate) last_synced_lang: (usize, usize, usize),
-    pub(crate) last_synced_height: u64,
-}
-
-/// WHAT ONE STROKE WORKS ON: this voice's entity — with the one physics it
-/// breathes on (`Entity::physics_mut`, PHY1) — the counters the stroke line
-/// reads, the outcome being accumulated, and the tag it logs under.
-pub(crate) struct Stroke<'a> {
-    pub(crate) entity: &'a mut Entity,
-    pub(crate) c: &'a mut Counts,
-    pub(crate) outcome: &'a mut StrokeOutcome,
-    pub(crate) m: &'a mut Metabolism,
-    pub(crate) tag: &'a str,
-    /// THE STOP ASKED FOR (SIGINT, SIGTERM, SIGHUP): read between arms and
-    /// inside the long ones, so a stroke perceiving a family ends at its next
-    /// boundary and the voice saves its genome and leaves — rather than
-    /// running past the unit's stop timeout and being killed unsaved (every
-    /// recut waited ~90 s a voice for that kill).
-    pub(crate) stop: &'a AtomicBool,
-}
-
-impl Stroke<'_> {
-    /// Whether a stop has been asked for.
-    pub(crate) fn stopping(&self) -> bool {
-        self.stop.load(Ordering::SeqCst)
-    }
-}
-
-/// What this voice has done since it came up. Every field is read by the
-/// stroke line; an accumulator nobody reads is dead.
-#[derive(Default)]
-pub(crate) struct Counts {
-    pub(crate) fed: u64,
-    pub(crate) derived: u64,
-    pub(crate) witnessed: u64,
-    pub(crate) settles: u64,
-    pub(crate) errors: u64,
-    pub(crate) projected: u64,
-    pub(crate) proj_solved: u64,
-    pub(crate) uniq_solved: u64,
-    pub(crate) refined: u64,
-    pub(crate) reanchored: u64,
-    pub(crate) condensed: u64,
-    pub(crate) learned: u64,
-    pub(crate) solves_paid: u64,
-}
 
 fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
     args.windows(2).find(|w| w[0] == name).map(|w| w[1].as_str())
 }
 
-/// THE HEAP AS THE ALLOCATOR COUNTS IT (L33, §8.1): the bytes live in
-/// allocations against the bytes resident in the process, read after
-/// advancing the allocator's epoch so both are one reading. The two apart
-/// tell retention from growth, which is what every counted carrier being
-/// flat while RSS climbs leaves open. Unmeasured where the allocator does
-/// not answer; nothing is put in place of a reading (rule 11).
-fn heap() -> String {
-    let read = || -> Option<(usize, usize)> {
-        tikv_jemalloc_ctl::epoch::advance().ok()?;
-        let allocated = tikv_jemalloc_ctl::stats::allocated::read().ok()?;
-        let resident = tikv_jemalloc_ctl::stats::resident::read().ok()?;
-        Some((allocated, resident))
-    };
-    match read() {
-        Some((allocated, resident)) => format!("allocated {allocated} resident {resident}"),
-        None => "unmeasured".to_string(),
-    }
-}
-
-/// THE HEAP'S LIVE BYTES, one reading (R3, §8.1): taken before and after
-/// each arm of the stroke so the signed difference, summed per arm since
-/// the voice came up, says WHICH arm retains what the heap line says grows.
-/// Unmeasured where the allocator does not answer; a difference is taken
-/// only between two readings.
-/// Z10 — THE PER-CARRIER VECTOR AS ONE FIELD: `name=keys+values/entries`
-/// each, never summed across carriers.
-///
-/// Keys and values are apart because they answer different questions: a
-/// carrier can grow in bytes without gaining an entry (a bigger form held)
-/// or gain entries without bytes (short keys), and the genome grows only
-/// in VALUES — sixty-five decoded forms in six minutes, which the
-/// key-only instrument read as zero.
-///
-/// `account` is the reconciliation the row requires: the carriers' total
-/// against what jemalloc says this process has allocated. A table that
-/// cannot account for the process is not reading the process, and the
-/// residue is printed rather than hidden — what the carriers do NOT reach
-/// is as much a reading as what they do.
-fn carrier_line(entity: &mycelium::client::sdk::Entity) -> String {
-    let mut out = String::new();
-    let mut total = 0usize;
-    for (name, keys, values, n) in entity.carrier_bytes() {
-        #[expect(clippy::disallowed_methods, reason = "rule 11 — a byte total of resident carriers: bytes this process holds cannot pass a 64-bit usize")]
-        let next = total.saturating_add(keys).saturating_add(values);
-        total = next;
-        if keys == 0 && values == 0 && n == 0 {
-            continue;
-        }
-        if !out.is_empty() {
-            out.push(' ');
-        }
-        out.push_str(&format!("{name}={keys}+{values}/{n}"));
-    }
-    // An allocator that does not read is an unread value, not a zero
-    // (rule 11): the account says so rather than reconciling against a
-    // number nothing measured.
-    match allocated() {
-        Some(live) => out.push_str(&format!(" | account carriers {total} live {live}")),
-        None => out.push_str(&format!(" | account carriers {total} live unread")),
-    }
-    out
-}
-
-fn allocated() -> Option<i128> {
-    tikv_jemalloc_ctl::epoch::advance().ok()?;
-    Some(tikv_jemalloc_ctl::stats::allocated::read().ok()? as i128)
-}
-
 fn home_dir(args: &[String]) -> Result<PathBuf, String> {
     let mut i = 1;
     while i < args.len() {
-        if args[i] == "--home" {
-            i += 2;
-            continue;
+        match args[i].as_str() {
+            "--home" => i += 2,
+            // 78.145 — `--seat <domain-hex>[/<sub-origin-hex>] <seat-id>[,…] | all`.
+            "--seat" => i += 3,
+            a if a.starts_with("--") => return Err(format!("unknown flag {a}")),
+            a => return Err(format!("unexpected argument {a}")),
         }
-        // 78.145 — `--seat <domain-hex>[/<sub-origin-hex>] <seat-id>[,…]`
-        // or `all` (78.158a), read by the seat arm (the sub-origin v1.4's).
-        if args[i] == "--seat" {
-            i += 3;
-            continue;
-        }
-        if args[i].starts_with("--") {
-            return Err(format!("unknown flag {}", args[i]));
-        }
-        return Err(format!("unexpected argument {}", args[i]));
     }
     if let Some(p) = flag(args, "--home") {
         return Ok(PathBuf::from(p));
@@ -203,544 +38,88 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
         return Ok(PathBuf::from(p));
     }
     // The fleet's homes are `var/<unit>` under the repository the binary
-    // runs from, never the operator's home directory (moved 2026-09-09).
+    // runs from, never the operator's home directory.
     Ok(PathBuf::from("var").join("voice"))
+}
+
+/// THE SEATS `--seat` NAMES: `<domain-hex>[/<sub-origin-hex>] <seat-id>[,…]`
+/// or `… all`; none where the flag is absent.
+fn seats(args: &[String]) -> Result<Option<([u8; 32], Option<[u8; 32]>, mycelium::sdk::Sit)>, String> {
+    use mycelium::sdk::Sit;
+    let Some(at) = args.iter().position(|a| a == "--seat") else { return Ok(None) };
+    let (Some(d), Some(s)) = (args.get(at + 1), args.get(at + 2)) else {
+        return Err("--seat takes <domain-hex>[/<sub-origin-hex>] <seat-id>[,<seat-id>…] | all".to_string());
+    };
+    let (d, sub) = match d.split_once('/') {
+        Some((d, sub)) => (d, Some(sub)),
+        None => (d.as_str(), None),
+    };
+    let hex = |x: &str| mycelium::court::identity::parse_hex32(x).ok_or_else(|| format!("--seat: {x} is not 32 hex bytes"));
+    let domain = hex(d)?;
+    let sub_origin = match sub {
+        Some(x) => Some(hex(x)?),
+        None => None,
+    };
+    let sit = match s.as_str() {
+        "all" => Sit::All,
+        list => Sit::Seats(list.split(',').map(|one| one.trim().parse::<u32>().map_err(|e| format!("--seat: {one} is not a seat id: {e}"))).collect::<Result<_, _>>()?),
+    };
+    Ok(Some((domain, sub_origin, sit)))
 }
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let home = match home_dir(&args) {
-        Ok(h) => h,
-        Err(e) => {
-            eprintln!("mycelium-client --home DIR: {e}");
-            std::process::exit(2);
-        }
+    let refuse = |why: String| -> ! {
+        eprintln!("mycelium-client: {why}");
+        std::process::exit(2)
     };
+    let home = home_dir(&args).unwrap_or_else(|e| refuse(e));
     let _ = std::fs::create_dir_all(&home);
+    // A home whose path is not UTF-8 names no key file (rule 11).
     let key_path = home.join("voice.key");
-    // A home whose path is not UTF-8 names no key file: minting under the
-    // bare name would put the voice's key in the working directory, which
-    // is a different key from the one that home holds (rule 11).
-    let Some(key_name) = key_path.to_str() else {
-        eprintln!("mycelium-client: --home path is not UTF-8 and names no key file");
-        std::process::exit(2);
-    };
+    let Some(key_name) = key_path.to_str() else { refuse("--home path is not UTF-8 and names no key file".to_string()) };
     let voice_key = HyphaKey::load_or_mint(key_name);
-    let voice = Voice::from_identity(voice_key.vk_bytes());
-    let tag = voice.name().to_string();
-    // 78.145 — the seat arm, where `--seat` names one: taken by this voice's
-    // own key.
-    let mut seat_arm = match crate::arms::seat::SeatArms::of_args(&args, voice_key.sk.clone()) {
-        Ok(a) => a,
-        Err(e) => {
-            eprintln!("mycelium-client {e}");
-            std::process::exit(2);
-        }
-    };
-    let mesh_rec = match mesh::load_or_migrate_voice(&home, &voice_key) {
-        Ok(rec) => rec,
-        Err(why) => {
-            eprintln!("[{tag}] boot refused: {why}");
-            std::process::exit(2);
-        }
+    let mesh_rec = mesh::load_or_migrate_voice(&home, &voice_key).unwrap_or_else(|why| refuse(format!("boot refused: {why}")));
+    let bootstrap = match mesh_rec.bootstrap.is_empty() {
+        true => "127.0.0.1:7500".to_string(),
+        false => mesh_rec.bootstrap.clone(),
     };
     let genome_path = home.join("genome").to_string_lossy().into_owned();
-    let bootstrap = if mesh_rec.bootstrap.is_empty() {
-        "127.0.0.1:7500".to_string()
-    } else {
-        mesh_rec.bootstrap.clone()
-    };
-    let conductor = None::<String>;
-    let height = mycelium::chronometry::Height::default();
-
-    let mut feed = Feed::new(home.clone(), conductor);
-    let mut entity = Entity::open_persistent(
-        &bootstrap,
-        // 78.141 — seated on its key: the solves it is paid for are signed.
-        Kernel::from_key(voice_key.sk.clone()),
-        &genome_path,
-    );
-    entity.set_height(height);
-    entity.discover();
-    // 78.161 — the chatter: this mind listens for other minds and files its
-    // address at the fleet's rendezvous, beside the homes.
+    // 78.141 — seated on its key: the solves it is paid for are signed.
+    let mut mind = Entity::open_persistent(&bootstrap, Kernel::from_key(voice_key.sk.clone()), &genome_path);
+    mind.set_height(mycelium::chronometry::Height::default());
+    mind.discover();
+    mind.keep_genome(genome_path);
+    // THE BOUNDARIES: the corpus the home holds, the other minds at the
+    // fleet's rendezvous beside the homes, the seats `--seat` names.
+    mind.open_feed(home.clone());
     let rendezvous = match home.parent() {
         Some(p) => p.join("chatter"),
         None => PathBuf::from("chatter"),
     };
-    match entity.open_chatter(&rendezvous) {
-        Ok(addr) => eprintln!("[{tag}] chatter at {addr}, rendezvous {}", rendezvous.display()),
-        Err(e) => eprintln!("[{tag}] chatter not opened: {e}"),
+    if let Err(e) = mind.open_chatter(&rendezvous) {
+        eprintln!("mycelium-client: chatter not opened: {e}");
     }
-    let mut chat_said = None;
-    let pending = pending_feed(&home);
-    eprintln!(
-        "[{tag}] mycelium-client → {bootstrap}; genome {} words{}",
-        entity.epigenome.genome_len(),
-        if pending.is_empty() {
-            String::new()
-        } else {
-            format!("; feeding {} from {}/feed", pending.len(), home.display())
-        },
-    );
-
-    let mut c = Counts::default();
-    let mut m = Metabolism { last_genome: usize::MAX, ..Metabolism::default() };
+    if let Some((domain, sub_origin, sit)) = seats(&args).unwrap_or_else(|e| refuse(e)) {
+        mind.sit(domain, sub_origin, sit, voice_key.sk.clone());
+    }
     let stop = Arc::new(AtomicBool::new(false));
     {
         let stop = Arc::clone(&stop);
-        // The ask is read between the arms, and — through the stroke's token
-        // (`physics::halt`) — at the next read of whatever is running.
         let _ = ctrlc::set_handler(move || {
             stop.store(true, Ordering::SeqCst);
             mycelium::physics::halt();
         });
     }
-    let mut extract_memo = mycelium::transducer::family::ExtractMemo::new();
-    m.last_lang = (usize::MAX, usize::MAX, usize::MAX);
-    m.last_synced_lang = (usize::MAX, usize::MAX, usize::MAX);
-    let mut stroke_n = 0u64;
-    let mut last_logged_n = 0u64;
-    let mut last_logged_k = u64::MAX;
-    // What each arm — feed, quote, task, syntropy — has added to the live
-    // heap since the voice came up, in bytes (R3, §8.1).
-    let mut grew = [0i128; 4];
-    // 78.92 — the admitted sentences whose reasons this voice has said.
-    let mut reasons_said = 0u64;
-    // 2026-10-08 (the coordinator's ruling on the voice stop): the genome is
-    // saved BEFORE the arms that can run long, whenever it gained a word since
-    // the last save — so a stop the unit enforces by SIGKILL costs at most one
-    // stroke's learning, never the 26–45 minutes three voices lost.
-    let mut saved_len = entity.epigenome.genome_len();
-
-    loop {
-        if stop.load(Ordering::SeqCst) {
-            // LD0: a genome that was not saved is said, never discarded.
-            if let Err(why) = entity.save_genome(&genome_path) {
-                eprintln!("[{tag}] genome not saved: {why}");
-            }
-            break;
+    while !stop.load(Ordering::SeqCst) {
+        let ticked = mind.tick(&stop);
+        // X6 — a tick that moved nothing admitted nothing: it draws nothing
+        // and parks for the measured transport, never spinning a core.
+        if ticked.moved == [false; 4] {
+            std::thread::sleep(mycelium::physics::idle_park(mind.transport_rtt()));
         }
-        let len = entity.epigenome.genome_len();
-        if len != saved_len {
-            match entity.save_genome(&genome_path) {
-                Ok(_) => saved_len = len,
-                Err(why) => eprintln!("[{tag}] genome not saved: {why}"),
-            }
-        }
-        #[expect(clippy::disallowed_methods, reason = "rule 11 — one per stroke in one process: a u64 cannot pass 2⁶⁴ events before the process ends")]
-        let next = stroke_n.saturating_add(1);
-        stroke_n = next;
-        for l in 0..4 {
-            // A lane with no dwell left has none to spend: the reading of
-            // absence, not a floor.
-            if let Some(next) = m.dwell_remaining[l].checked_sub(1) {
-                m.dwell_remaining[l] = next;
-            }
-        }
-        let mut outcome = StrokeOutcome::default();
-        let occluded =
-            matches!(entity.transport(), mycelium::sdk::TransportAperture::Occluded { .. });
-
-        {
-            let mut stroke = Stroke {
-                entity: &mut entity,
-                c: &mut c,
-                outcome: &mut outcome,
-                m: &mut m,
-                tag: &tag,
-                stop: &stop,
-            };
-            let a0 = allocated();
-            feed_arm(&mut stroke, &mut feed, &mut extract_memo, occluded);
-            let a1 = allocated();
-            if !stroke.stopping() {
-                quote_arm(&mut stroke, occluded);
-            }
-            let a2 = allocated();
-            if !stroke.stopping() {
-                task_arm(&mut stroke, &mut extract_memo, occluded);
-            }
-            // 78.145 — the seat arm: take, read the mail, perceive, call.
-            if let Some(arm) = seat_arm.as_mut() {
-                if !stroke.stopping() {
-                    arm.stroke(stroke.entity, &tag, &stop);
-                }
-            }
-            // 78.161 — what the other minds said since the last stroke, heard
-            // and answered.
-            if !stroke.stopping() {
-                let mut budget = stroke.entity.stroke();
-                stroke.entity.chatter_stroke(&mut budget);
-                if let Some(t) = stroke.entity.chat_tally() {
-                    if chat_said != Some(t) {
-                        eprintln!("[{tag}] {}", t.line());
-                        chat_said = Some(t);
-                    }
-                }
-            }
-            // 37.7 — the docketed demands are taken and constructed on every
-            // stroke, never only on a short or idle one.
-            if !stroke.stopping() {
-                stroke.entity.take_docketed_demands();
-                // 78.153 — the solves the court has not judged are asked
-                // again, and its replay resumes.
-                stroke.entity.resubmit_unread_solves();
-            }
-            let a3 = allocated();
-            // THE SYNTROPIC PHASE on any lane short of one expansion (S10's
-            // reading, S13.2), or on a stroke whose arms moved nothing — the
-            // two resting states of the two-stroke, as the court's reflex
-            // reads them. An idle stroke paid a tick that walked the reserve
-            // down until it went short; a stroke draws only what it does now
-            // (PHY1), so idleness is read as itself.
-            let short = !mycelium::economy::lanes_short(&stroke.entity.physics().reserve_shortfall([true; 4])).is_empty();
-            let idle = stroke.outcome.moved() == [false; 4];
-            if (short || idle) && !stroke.stopping() {
-                syntropy_arm(&mut stroke, &genome_path);
-                stroke.entity.physics_mut().relax();
-            }
-            let a4 = allocated();
-            for (g, (before, after)) in grew.iter_mut().zip([(a0, a1), (a1, a2), (a2, a3), (a3, a4)]) {
-                if let (Some(b), Some(a)) = (before, after) {
-                    *g += a - b;
-                }
-            }
-            // EXPANSION 4 — A LEARNED WORD MEETS THE VORTICES THIS MIND
-            // HOLDS, on the stroke it was learned. `pivot_thoughts` pivots
-            // every genome word added since the last stroke on its own
-            // charts, and `Contemplation::pivot_on` is where a held vortex
-            // collapses on a ruled candidate ("glue") and the symmetries
-            // between its candidates are carried out to be adjoined. It ran
-            // in the syntropic arm alone, and there BEFORE the syllabus pull
-            // and the sheaf sync of the same stroke, so a word learned on a
-            // working stroke — the quote arm learns — or by the sync met no
-            // vortex until a later depleted stroke: 481 vortices formed and
-            // 0 collapsed in 5½ hours of 2cf578a, 35 and 0 in ten minutes of
-            // 00bb4bd. A keyed read of what the genome gained; it spends
-            // nothing when it gained nothing.
-            let met = stroke.entity.pivot_thoughts();
-            if met > 0 {
-                eprintln!("[{tag}] pivot: {met} held thoughts spoken on charts the language now holds");
-            }
-        }
-        // 24.3: WHAT THE MIND LEARNED THIS STROKE is the outcome's sixth
-        // mode. The syllabus pull and the sheaf sync admit their pages
-        // through `absorb_taught`, which measures each at its admission;
-        // the stroke takes the measure once, here, so a stroke that learned
-        // spends the lanes it learned on and does not read idle.
-        StrokeOutcome::add(&mut outcome.learned, &entity.take_learned_mu());
-        // OK1: the stroke's arms have run — quote, utter, learn, syntropy —
-        // and the voice's cycle closes its orbit by name. `K` moves here
-        // and nowhere else; a stroke that acted on nothing closes nothing. A
-        // withheld close is counted on the clock, never printed beside it.
-        entity.close_orbit();
-        // PHY1 — THE STROKE IS A DRAW: one expansion on each lane its outcome
-        // moved, as one vector out of the one reserve, refused by lane name
-        // where a lane cannot cover it (`Physics::spend`); a stroke that
-        // moved nothing draws nothing. And what the contacts this mind
-        // perceived did is booked on the same physics: order built where
-        // they condensed, pressure where they were refused.
-        // 78.71 (2) — 𝒯 IS DRAWN BY THE FLUX TRANSPORTED, NEVER A UNIT: no
-        // outcome lane carries 𝒯 (a chain holds no transport), so the
-        // stroke's unit draw leaves it, and the voice's tubes book it — the
-        // flux transported drawn, the closed flux refilling, the open flux
-        // relieved by closure (`book_flux`). The closed flux is the condensed
-        // 𝒯 since the contacts' mark, read before `book_contacts` moves it.
-        let seen = mycelium::transducer::family::pairing::contact_lanes();
-        let mut moved = outcome.moved();
-        moved[2] = false;
-        let _ = entity.physics_mut().spend(moved);
-        let closed: [u64; 4] = std::array::from_fn(|l| match (l, seen.0[l].checked_sub(entity.physics().contacts_mark[0][l])) {
-            (2, Some(d)) => d,
-            _ => 0,
-        });
-        // Relief on every lane its orbits returned (78.73); the transport
-        // drawn on 𝒯 alone, the lanes the unit draw above does not cover.
-        let (relieved, transported) = mycelium::transducer::family::pairing::flux_lanes();
-        let on_t: [u64; 4] = std::array::from_fn(|l| if l == 2 { transported[l] } else { 0 });
-        let _ = entity.physics_mut().book_flux((relieved, on_t), closed);
-        entity.physics_mut().book_contacts(seen);
-        let Counts {
-            fed,
-            derived,
-            witnessed,
-            settles,
-            errors,
-            projected,
-            proj_solved,
-            uniq_solved,
-            refined,
-            reanchored,
-            condensed,
-            learned,
-            solves_paid,
-        } = c;
-        let Metabolism { book_k, .. } = m;
-        let cycle = mycelium::physics::aperture_cycle() as u64;
-        // The mark is a stroke this voice has passed, so the gap is exact.
-        let since = stroke_n.checked_sub(last_logged_n).is_some_and(|g| g >= cycle);
-        // PACED ON THE MIND'S OWN K (45.4). It paced on the book's, so a
-        // voice thinking hard between quotes logged nothing and a voice
-        // idle through a busy book logged every reply.
-        let own_k = entity.own_k();
-        if last_logged_k == u64::MAX || own_k != last_logged_k || since {
-            let (atlas_ruled, atlas_stood, atlas_held) = entity.atlas_standing_counts();
-            let (axis_charts, axis_words) = entity.axis_index_counts();
-            // C3 — NOTHING PRINTS PER IDLE STROKE (ruled 2026-09-26): the
-            // `stroke idle` line fired on every idle stroke the pacing let
-            // through, 110 lines in five minutes on one voice. The idle stroke
-            // is carried by the percept's `Spend` reading and the readings
-            // pushed below; only a stroke that moved a lane is lined.
-            if moved != [false; 4] {
-                eprintln!(
-                    "[{tag}] [{}] K {own_k} book {book_k} | genome {} | dialect {} | ideas {} | {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed {} census {:?} reserve {:?} carriers {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} | {} | refined {refined} (reanchor {reanchored} condense {condensed}) discordance {} boundary {:?} axes {}",
-                    mycelium::chronometry::Height::stamp_of(entity.now_tu()),
-                    entity.epigenome.genome_len(),
-                    entity.dialect_len(),
-                    entity.ideas_len(),
-                    entity.pivot_reading().line(),
-                    entity.cavity_len(),
-                    entity.cavity_links(),
-                    entity.idea_weight(),
-                    entity.carriers(),
-                    extract_memo.len(),
-                    heap(),
-                    entity.session_sizes(),
-                    entity.shed_n(),
-                    entity.shed_census(),
-                    entity.reserve(),
-                    carrier_line(&entity),
-                    entity.impedance(),
-                    // 78.153c — the court's verdicts by code and kind.
-                    entity.solves().line(),
-                    match entity.discordance() {
-                        Some(strata) => strata.to_string(),
-                        None => "unmeasured".to_string(),
-                    },
-                    entity.boundary_measure(),
-                    entity.axes_opened(),
-                );
-            }
-            eprintln!(
-                "[{tag}] stroke outcome fed {:?} pivoted {:?} stood {:?} uttered {:?} closed {:?} learned {:?}",
-                outcome.fed, outcome.pivoted, outcome.stood, outcome.uttered, outcome.closed, outcome.learned
-            );
-            // 78.67 — THE VOICE'S METABOLISM beside its stroke: its one
-            // reserve off its own books, and this thread's metabolic ledger
-            // (entropy, the orbit classes, draws, refusals by lane), which
-            // until now was held only inside the percept reading.
-            // The order built and the pressure standing, per lane: where a
-            // contact or a face's carriage condensed (`book_contacts`), it
-            // books syntropy and never a draw, so the 𝒯 transport is read
-            // here (78.68).
-            // 78.71 — and the voice's field: its tubes, their net flux and
-            // transport (sign cancellation never hides the second), the flux
-            // left open, and their helicity.
-            let field = match mycelium::transducer::family::pairing::tube_reading() {
-                Some((n, net, transport, open, helicity)) => {
-                    format!("tubes {n} net {net} transport {transport} open {open} helicity {helicity}")
-                }
-                None => "tubes unread".to_string(),
-            };
-            // 78.73 (4): what each lane does under stress, exact.
-            let malleable = match mycelium::transducer::family::pairing::elastic_reading() {
-                Some((elastic, orbits)) => format!("{} orbits {orbits}", entity.physics().malleability_line(&elastic)),
-                None => "malleability unread".to_string(),
-            };
-            // 78.74: the frames' fibres — how relative motions treated them —
-            // the shapes their pivots held, and the turning booked as torsion.
-            let f = mycelium::transducer::family::fibres::fibre_tally();
-            let eliminated = match f.eliminated() {
-                Some(r) => r.to_string(),
-                None => "unread".to_string(),
-            };
-            let moving = match mycelium::transducer::family::fibres::moving_reading() {
-                Some((n, certain, partial, sum)) => {
-                    let c = match sum.certainty() {
-                        Some(c) => c.to_string(),
-                        None => "unobserved".to_string(),
-                    };
-                    // 78.74: the same fibres weighed by their binding.
-                    let b = match sum.binding_certainty() {
-                        Some(b) => b.to_string(),
-                        None => "unobserved".to_string(),
-                    };
-                    format!("moving pairs {n} certain {certain} partial {partial} certainty {c} binding {b}")
-                }
-                None => "moving unread".to_string(),
-            };
-            let cohesion = match f.cohesion() {
-                Some(c) => c.to_string(),
-                None => "unread".to_string(),
-            };
-            let fibres = format!(
-                "fibres {} rigid {} torsion {} field {} lift {} unpivoted {} unread {} modes unread {} | lifts inverted: sourced {} unsourced {} | pieces aligned {} misaligned {} | shapes stable {} determined {} emergent {} open {} | class pairs {} certain {} partial {} conflicted {} | classes {} algorithms {} eliminated {eliminated} | {moving} | sections congruent {} coherent {} standing {} | cohesion {cohesion} ({} of {}, unread {}) | torsion turned {:?}",
-                f.pairs,
-                f.rigid,
-                f.torsion,
-                f.field,
-                f.lift,
-                f.unpivoted,
-                f.unread,
-                f.modes_unread,
-                f.sourced,
-                f.unsourced,
-                f.aligned,
-                f.misaligned,
-                f.stable,
-                f.determined,
-                f.emergent,
-                f.open,
-                f.class_pairs,
-                f.certain,
-                f.partial,
-                f.conflicted,
-                f.classes,
-                f.algorithms,
-                f.sections_congruent,
-                f.sections_coherent,
-                f.sections_standing,
-                f.smooth,
-                f.changes,
-                f.changes_unread,
-                mycelium::transducer::family::pairing::torsion_lanes()
-            );
-            // 78.75: the mind's nerve by degree, and how much is content.
-            let nerve: Vec<String> = entity
-                .nerve_census()
-                .iter()
-                .enumerate()
-                .map(|(d, c)| {
-                    format!(
-                        "d{d} {} (open {} filled {} class {} | flat {} turn {} boost {} null {} 180° {} unread {})",
-                        c.cells,
-                        c.open,
-                        c.filled,
-                        c.class + c.congruent + c.unspellable,
-                        c.flat,
-                        c.turn,
-                        c.boost,
-                        c.null,
-                        c.half,
-                        c.modes_unread
-                    )
-                })
-                .collect();
-            // 78.69, 78.70, 78.75: the master equation in the mind — rings
-            // composed, sentences closed and open, theorems, and the rungs.
-            let st = mycelium::transducer::sentence::rung::sentence_tally();
-            let sentences = format!(
-                "sentences rings {} unread traversal {} transport {} closed {} open rosette {} unbound {} unread {} | theorems periodic {} nilpotent {} (sources {}) | rank {} | shortcuts recognized {} spelled {} unspelled {} lexicon {:?} top rung {} | free classes grammar {} opens {}",
-                st.rings,
-                st.unread,
-                st.unread_transport,
-                st.closed,
-                st.rosette,
-                st.unbound,
-                st.open_unread,
-                st.periodic,
-                st.nilpotent,
-                st.sources,
-                st.rank,
-                st.recognized,
-                st.spelled,
-                st.unspelled,
-                mycelium::transducer::sentence::rung::lexicon(),
-                st.top_rung,
-                f.free_grammar,
-                f.free_opens
-            );
-            // 78.76, 78.90: what the mind's own inversion did with the
-            // remainders its speech left — the one faculty the remainder
-            // path keeps.
-            let it = mycelium::transducer::family::interpret::interpret_tally();
-            let remainder = format!(
-                "remainder inverted: families {} accepted {} closed {} unextracted {} links {} -> {} joined {}",
-                it.families, it.accepted, it.closed, it.unextracted, it.before, it.after, it.joined
-            );
-            // 78.91 — what is no motion, perceived as flux under continuity.
-            let fx = mycelium::transducer::family::flux::flux_tally();
-            let flux = format!(
-                "flux perceived: read {} sources {} (+{}) sinks {} (-{}) reshaped {} refused {} unread {}",
-                fx.read, fx.sources, fx.emitted, fx.sinks, fx.absorbed, fx.reshaped, fx.refused, fx.unread
-            );
-            let field = format!("{field} | {malleable} | {fibres} | nerve {} | {sentences} | {remainder} | {flux}", nerve.join(" | "));
-            eprintln!(
-                "[{tag}] stroke metabolism {} | syntropy {:?} pressure {:?} | {field} | {}",
-                entity.physics().reserve.line(),
-                entity.physics().syntropic,
-                entity.physics().pressure,
-                mycelium::physics::metabolism::metabolism().line()
-            );
-            // 78.92 — THE VOICE SAYS WHY, once per newly admitted sentence:
-            // the last one's reasons in its own words.
-            let rt = entity.reasons();
-            if rt.sentences > reasons_said {
-                reasons_said = rt.sentences;
-                if let Some(r) = entity.said() {
-                    // Where it stands, the place any party asks `--why` by.
-                    let at = match entity.said_at() {
-                        Some(s) => format!("at h {} {}", s.h, s.place().print()),
-                        None => "not yet admitted by an act".to_string(),
-                    };
-                    eprintln!("[{tag}] why (sentence {}, {at}): {}", rt.sentences, r.says().join("; "));
-                }
-            }
-            // WHAT THE COVERS' ORBITS CLASSIFIED AS, read from the counter
-            // the engine already keeps. `tally_orbit` records every `Fill`
-            // at `extract.rs` on the live path, and only `mycelium-soak`
-            // ever read it: the fleet counted these at every stroke and
-            // dropped them, so the only way to ask a running voice what it
-            // filed was to grep its prose for a word — and the Congruent
-            // arm prints "simplex filled", so that grep answered zero
-            // while the counter held the number.
-            let cover = mycelium::transducer::family::cover::take_cover_tally();
-            eprintln!(
-                "[{tag}] stroke covers meets {} edges {} carried {} | orbits flat {} filed {} standing {} unspellable {} unread {} | refused {} propagated {} spend {} pending {}",
-                cover.meets,
-                cover.edges,
-                cover.carried,
-                cover.flat,
-                cover.filed,
-                cover.standing,
-                cover.unspellable,
-                cover.orbit_unread,
-                cover.refused,
-                cover.propagated,
-                cover.spend,
-                cover.pending
-            );
-            // §8.1 — THE SAME INSTRUMENTS, AS READINGS, to the hypha's
-            // console: folded into this voice's totals and pushed whole. A
-            // push the hypha did not hold is said here, not dropped.
-            if !entity.observe(&cover) {
-                eprintln!("[{tag}] observe: the hypha did not hold this voice's readings");
-            }
-            last_logged_k = own_k;
-            last_logged_n = stroke_n;
-        }
-        // The lanes the next stroke needs to expand on and cannot: one
-        // reading per lane (S10, S13.2), never a bit recomputed per lane.
-        let short = entity.physics().reserve_shortfall(moved);
-        let wait: [bool; 4] = std::array::from_fn(|l| short[l] > 0);
-        m.dwell_remaining = entity.physics().dwell(&m.last_pressure, wait);
-        // X6 — AN IDLE STROKE COSTS THE PROCESSOR (the stroke-duration
-        // ruling of 2026-09-11). A stroke that moved no lane admitted
-        // nothing: the feed is clear, the quote is not due, no task stands.
-        // It draws nothing from the reserve, and then parks.
-        // Measured on the fleet at 3d2987e: every voice between 81% and
-        // 87% of a core while its own line read `stroke idle` and `quote 0
-        // clusters`, which is five cores burnt to admit nothing and the
-        // reason the courts' listeners were starved.
-        //
-        // The park is the measured transport where one has been measured
-        // and the floor where none has, which is the pace this voice
-        // already speaks at: a voice waiting on a door 40 polls away asks
-        // again in 40 polls' worth of scheduler time, not immediately.
-        // A working stroke does not park at all.
-        if moved == [false; 4] {
-            std::thread::sleep(mycelium::physics::idle_park(entity.transport_rtt()));
-        }
+    }
+    if let Err(why) = mind.save_kept_genome() {
+        eprintln!("mycelium-client: genome not saved: {why}");
     }
 }
