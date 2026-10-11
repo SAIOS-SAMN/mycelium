@@ -109,7 +109,7 @@ fn a_solve_not_judged_on_its_stroke_is_unread_and_resumed() {
             assert!(asked <= 4096, "asked again, the solve is judged");
             match k.judge_solve_on_stroke(&word, &one) {
                 SolveVerdict::Unread => assert_eq!(k.replay_cursors.len(), 1, "the unread solve keeps its cursor"),
-                SolveVerdict::Solved { pay } => return (pay, asked),
+                SolveVerdict::Solved { pay, .. } => return (pay, asked),
                 other => panic!("never refused for a spent stroke: {other:?}"),
             }
         }

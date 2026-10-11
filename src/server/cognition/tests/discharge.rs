@@ -76,7 +76,7 @@ fn a_closure_pays_each_claim_the_closers_discharge_capped_by_its_escrow() {
     let family = carried();
     let rule = rule_over(&family);
     let pay = match k.judge_solve(&rule, &family) {
-        SolveVerdict::Solved { pay } => pay,
+        SolveVerdict::Solved { pay, .. } => pay,
         other => panic!("the replay closes every pair: {other:?}"),
     };
     assert!(pay.iter().any(|&m| m > 0), "the solve discharges something: {pay:?}");

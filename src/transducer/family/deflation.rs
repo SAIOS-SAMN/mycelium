@@ -184,6 +184,9 @@ pub fn form_deflation_at(
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DeflationRead {
     pub pay: [u64; 4],
+    /// The pay read lane by lane over the pairs it closed: fell, held, rose,
+    /// or unread where the measure carries no data on the lane.
+    pub reads: [crate::economy::LaneRead; 4],
     pub remainders: Vec<crate::transducer::germinate::ResidualGerm>,
     pub unresolved: Vec<crate::transducer::address::Address>,
     /// 78.153 — cited forms reached again while being spoken: a cycle of
@@ -200,8 +203,9 @@ pub fn form_deflation_read(
 ) -> DeflationRead {
     let mut unresolved: Vec<crate::transducer::address::Address> = Vec::new();
     let mut cycled: Vec<crate::transducer::address::Address> = Vec::new();
+    let mut reads = [crate::economy::LaneRead::Unread; 4];
     if family.is_empty() {
-        return DeflationRead { pay: [0; 4], remainders: Vec::new(), unresolved, cycled };
+        return DeflationRead { pay: [0; 4], reads, remainders: Vec::new(), unresolved, cycled };
     }
     let mut pay = [0u64; 4];
     let mut remainders = Vec::with_capacity(family.len());
@@ -211,11 +215,18 @@ pub fn form_deflation_read(
             unresolved.extend(s.unresolved.iter().cloned());
             cycled.extend(s.cycled.iter().cloned());
         }
-        let (closed, after_chain) = pair_measure(form, x, y, spoken.as_ref());
+        let (closed, after_chain, pair_reads) = pair_measure_read(form, x, y, spoken.as_ref());
         for (p, d) in pay.iter_mut().zip(&closed) {
             #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a deflation is at most its pair's resident measure, and their sum cannot pass u64")]
             let next = p.saturating_add(*d);
             *p = next;
+        }
+        if let Some(r) = pair_reads {
+            for (held, now) in reads.iter_mut().zip(&r) {
+                if let Some(both) = held.and(now) {
+                    *held = both;
+                }
+            }
         }
         remainders.push(after_chain);
     }
@@ -223,17 +234,20 @@ pub fn form_deflation_read(
     unresolved.dedup();
     cycled.sort_unstable();
     cycled.dedup();
-    DeflationRead { pay, remainders, unresolved, cycled }
+    DeflationRead { pay, reads, remainders, unresolved, cycled }
 }
 
 /// ONE PAIR OF THE DEFLATION, from the speech already taken on it: what the
-/// pair pays (zero where the gate below withholds it) and its remainder.
-fn pair_measure(
+/// pair pays (zero where the gate below withholds it), its remainder, and its
+/// reading lane by lane — `Some` where the pair paid (the closure gate), each
+/// lane read where a chain carries data and `Unread` on 𝒯; `None` where the
+/// gate refused the pair.
+fn pair_measure_read(
     form: &Form,
     x: &Grid,
     y: &Grid,
     spoken: Option<&Speech>,
-) -> ([u64; 4], crate::transducer::germinate::ResidualGerm) {
+) -> ([u64; 4], crate::transducer::germinate::ResidualGerm, Option<[crate::economy::LaneRead; 4]>) {
     // The exact cochain where the pair refines on K_lcm; the raw residual
     // of the two grids where it does not. Both are measured on the pair.
     let before_chain = match crate::transducer::family::refine::refine_delta(x, y) {
@@ -253,9 +267,23 @@ fn pair_measure(
     // its closed words achieved: `deflation_of(lane_moves(after, before))`.
     let closed = crate::economy::deflation_of(&crate::economy::lane_moves(&after_mu, &before_mu));
     match after_chain.is_empty() || form.demand_vertices().next().is_some() {
-        true => (closed, after_chain),
-        false => ([0; 4], after_chain),
+        true => {
+            let reads = crate::economy::lane_reads(&after_mu, &before_mu, &element::CHAIN_READS);
+            (closed, after_chain, Some(reads))
+        }
+        false => ([0; 4], after_chain, None),
     }
+}
+
+/// ONE PAIR OF THE DEFLATION, its pay and remainder alone.
+fn pair_measure(
+    form: &Form,
+    x: &Grid,
+    y: &Grid,
+    spoken: Option<&Speech>,
+) -> ([u64; 4], crate::transducer::germinate::ResidualGerm) {
+    let (closed, after_chain, _) = pair_measure_read(form, x, y, spoken);
+    (closed, after_chain)
 }
 
 /// 78.153 — ONE PAIR OF THE DEFLATION ON A STROKE: what the court's replay

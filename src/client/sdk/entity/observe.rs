@@ -100,6 +100,7 @@ impl Entity {
             ],
             solving: [s.first, s.again, s.refused.iter().sum(), s.unruled, s.unminted, s.refuted, s.withheld_again, s.unread],
             paid: s.paid,
+            paid_reads: s.paid_reads,
             carriers: [
                 c.len() as u64,
                 key_bytes,
@@ -163,6 +164,7 @@ impl Entity {
                 heard: self.now_tu(),
                 persisted: self.genome_persisted,
                 radius: learning.radius,
+                point: self.tuniversal(),
             })),
         );
         // THE FACULTIES, read off this mind's own carriers at its `K`.

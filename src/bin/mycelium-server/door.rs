@@ -280,11 +280,11 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                     // inside `judge_solve_on_stroke` (78.153, resumable).
                     h.run(|k, _| {
                     let verdict = match k.judge_solve_on_stroke(rule, &withheld) {
-                        mycelium::cognition::SolveVerdict::Solved { pay } => {
+                        mycelium::cognition::SolveVerdict::Solved { pay, reads } => {
                             // The court names a task by its citation (wire v1.2).
                             let paid = k.pay_solve(&cite, svoice, rule, pay, first);
                             let code = if first { dialogue::SOLVE_BOUNTY } else { dialogue::SOLVE_FLOOR };
-                            (code, paid, None, Some(k.height()))
+                            (code, paid, None, Some((k.height(), reads)))
                         }
                         mycelium::cognition::SolveVerdict::Refused(r) => {
                             (dialogue::SOLVE_NOTHING, [0; 4], Some(refused(r.reason, r.obstruction.kind())), None)
@@ -327,7 +327,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 verdict
             }
         };
-        if let Some(at) = stamp {
+        if let Some((at, _)) = stamp {
             // PAID, THEN RECORDED: the closure enters the registry after its
             // payment, so none is lost between the two.
             if let Ok(mut reg) = door.registry.lock() {
@@ -360,7 +360,8 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 }
             }
         }
-        let reply = Frame { lane: frame.lane, body: dialogue::encode_solve_verdict(code, &mu, refusal.as_ref()) };
+        let reads = stamp.as_ref().map(|(_, r)| r);
+        let reply = Frame { lane: frame.lane, body: dialogue::encode_solve_verdict(code, &mu, refusal.as_ref(), reads) };
         answer(s, reply);
         return true;
     }

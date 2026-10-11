@@ -1009,6 +1009,11 @@ pub const MEASURE_BOUND: &str =
 ///
 /// STD1 — the lanes are support counts, and [`MEASURE_BOUND`] is what that
 /// buys every sum of them.
+/// THE LANES A CHAIN'S MEASURE CARRIES DATA ON (`measure_lanes`): spatial,
+/// gauge and shell; never 𝒯, which no chain can read — its 0 there is
+/// "unread", and a reader that reports lanes reports it so.
+pub const CHAIN_READS: [bool; 4] = [true, true, false, true];
+
 pub fn measure_lanes(chain: &[(i64, i64, u8, u8)]) -> [u64; 4] {
     let mut spatial = 0u64;
     let mut gauge = 0u64;

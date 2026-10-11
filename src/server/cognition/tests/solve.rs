@@ -35,7 +35,13 @@ fn a_rule_that_closes_the_withheld_pairs_is_solved_and_priced_by_its_discharge()
     let mut k = Kernel::new();
     let rule = rule_over(&carried());
     match k.judge_solve(&rule, &carried()) {
-        SolveVerdict::Solved { pay } => assert!(pay.iter().any(|&m| m > 0), "it discharges something: {pay:?}"),
+        SolveVerdict::Solved { pay, reads } => {
+            assert!(pay.iter().any(|&m| m > 0), "it discharges something: {pay:?}");
+            // 𝒯 carries no data on a chain's measure: unread, never a zero.
+            assert_eq!(reads[2], crate::economy::LaneRead::Unread, "T is unread: {reads:?}");
+            // An open lane is read, whatever it moved: S paid, so S fell.
+            assert!(matches!(reads[0], crate::economy::LaneRead::Read(_)), "S is read: {reads:?}");
+        }
         other => panic!("the replay closes every pair: {other:?}"),
     }
 }
@@ -128,13 +134,13 @@ fn a_task_in_every_frame_reads_one_word_and_one_verdict() {
     let frames: Vec<Frame<'_>> = vec![&turn, &turn180, &turn270, &mirror, &turned_mirror];
     let mut k = Kernel::new();
     let rule = rule_over(&one.train);
-    let SolveVerdict::Solved { pay } = k.judge_solve(&rule, &one.train) else { panic!("the rule closes its own pair") };
+    let SolveVerdict::Solved { pay, .. } = k.judge_solve(&rule, &one.train) else { panic!("the rule closes its own pair") };
     for (i, f) in frames.iter().enumerate() {
         let other = read(&each(&base.0, *f), &each(&base.1, *f));
         assert_eq!((&other.train, &other.test), (&one.train, &one.test), "frame {i}: one scene through the sensor");
         let again = rule_over(&other.train);
         assert_eq!(again.address(), rule.address(), "frame {i}: one word");
-        assert!(matches!(k.judge_solve(&again, &other.train), SolveVerdict::Solved { pay: p } if p == pay), "frame {i}: one verdict, one price");
+        assert!(matches!(k.judge_solve(&again, &other.train), SolveVerdict::Solved { pay: p, .. } if p == pay), "frame {i}: one verdict, one price");
     }
     // A TASK WITH A POLAR VECTOR: its bodies move one way, so its frame is
     // physical — turned, it is not the same scene.
@@ -152,7 +158,7 @@ fn a_task_in_every_frame_reads_one_word_and_one_verdict() {
 fn the_first_closure_mints_the_discharge_and_a_closure_again_pays_nothing() {
     let mut k = Kernel::new();
     let rule = rule_over(&carried());
-    let SolveVerdict::Solved { pay } = k.judge_solve(&rule, &carried()) else { panic!("solved") };
+    let SolveVerdict::Solved { pay, .. } = k.judge_solve(&rule, &carried()) else { panic!("solved") };
     let (task, voice) = ([5u8; 32], [9u8; 32]);
     let first = k.pay_solve(&task, voice, &rule, pay, true);
     assert_eq!(first, pay, "the first closure is paid its discharge");

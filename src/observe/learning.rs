@@ -152,6 +152,9 @@ pub struct SolveTally {
     pub by_code: [u64; 5],
     pub unruled: u64,
     pub paid: [u64; 4],
+    /// The pay read lane by lane over every paid verdict that carried a
+    /// reading: fell, held (open, nothing moved), rose, or unread (no data).
+    pub paid_reads: [crate::economy::LaneRead; 4],
     /// Solves not sent, by why (`Entity::solve_task`): no rule minted; a
     /// rule its own train refutes; a rule the court already refused.
     pub unminted: u64,
@@ -202,6 +205,15 @@ impl SolveTally {
         // the ledger (STD1).
         if let Some(total) = crate::core::lanes::lanes_add(self.paid, *mu) {
             self.paid = total;
+        }
+    }
+
+    /// One paid verdict's lane reading, folded in lane by lane.
+    pub fn note_reads(&mut self, reads: &[crate::economy::LaneRead; 4]) {
+        for (held, now) in self.paid_reads.iter_mut().zip(reads) {
+            if let Some(both) = held.and(now) {
+                *held = both;
+            }
         }
     }
 

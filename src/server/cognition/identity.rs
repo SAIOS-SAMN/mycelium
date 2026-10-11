@@ -116,6 +116,19 @@ impl Kernel {
         )
     }
 
+    /// [`Kernel::measured_replay`] with its reading lane by lane: fell, held
+    /// or rose where the replay carries data on the lane, unread where it
+    /// carries none.
+    pub(crate) fn measured_replay_read(&self, form: &Element, family: &crate::transducer::family::Family) -> ([u64; 4], [crate::economy::LaneRead; 4]) {
+        match crate::transducer::sentence::from_element_form(form) {
+            Some(f) => {
+                let r = crate::transducer::family::form_deflation_read(&f, family, self, &crate::transducer::alphabet::Word::identity());
+                (r.pay, r.reads)
+            }
+            None => ([0; 4], [crate::economy::LaneRead::Unread; 4]),
+        }
+    }
+
     /// The same measure at the placement a citer put the form at (26).
     pub(crate) fn measured_replay_at(
         &self,

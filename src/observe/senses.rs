@@ -134,6 +134,9 @@ pub struct Senses {
     pub solving: [u64; SOLVING.len()],
     /// What the solves were paid, per lane.
     pub paid: [u64; 4],
+    /// The pay read lane by lane: fell, held (open, nothing moved), rose, or
+    /// unread (no data on the lane).
+    pub paid_reads: [crate::economy::LaneRead; 4],
     pub carriers: [u64; GROWING.len()],
 }
 
@@ -421,6 +424,9 @@ impl Senses {
         put(out, &self.understanding);
         put(out, &self.solving);
         put(out, &self.paid);
+        for r in &self.paid_reads {
+            r.put(out);
+        }
         put(out, &self.carriers);
     }
 
@@ -456,6 +462,12 @@ impl Senses {
             understanding: take(b, p)?,
             solving: take(b, p)?,
             paid: take(b, p)?,
+            paid_reads: [
+                crate::economy::LaneRead::take(b, p)?,
+                crate::economy::LaneRead::take(b, p)?,
+                crate::economy::LaneRead::take(b, p)?,
+                crate::economy::LaneRead::take(b, p)?,
+            ],
             carriers: take(b, p)?,
         })
     }
@@ -486,7 +498,15 @@ impl Senses {
             format!("hearing: {}", line(&HEARING, &self.hearing)),
             format!("language: {}", line(&LANGUAGE, &self.language)),
             format!("understanding: {}", line(&UNDERSTANDING, &self.understanding)),
-            format!("solving: {} · paid {:?}", line(&SOLVING, &self.solving), self.paid),
+            format!(
+                "solving: {} · paid {:?} · read S {} · G {} · T {} · H {}",
+                line(&SOLVING, &self.solving),
+                self.paid,
+                self.paid_reads[0].print(),
+                self.paid_reads[1].print(),
+                self.paid_reads[2].print(),
+                self.paid_reads[3].print()
+            ),
             format!("carriers: {}", line(&GROWING, &self.carriers)),
         ]);
         out

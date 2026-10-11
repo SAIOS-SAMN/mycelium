@@ -53,9 +53,8 @@ match entity.quote() {
         if q.height > m.last_height {
             m.last_height = q.height;
         }
-        // V2: the height read is the mind's TUniversal, and it only
-        // advances (23.8).
-        entity.advance_height(q.height);
+        // The book's height paces the quote; the mind's clock is the
+        // door's final TUniversal point (78.152 TU-7, `Entity::now_tu`).
         m.last_pressure = q.surface;
         // THE DWELL IS THE SURFACE, WHOLE. `m.dwell_remaining[2] = 0` stood
         // here under "C4, again at the quote: T is a cost, never a pace",

@@ -124,6 +124,10 @@ pub struct VoiceClock {
     /// deepest A21 prefix its genome's charts reach — the most axes any
     /// stratum's chart carries. Read with the curve, once.
     pub radius: u64,
+    /// 78.152 TU-7 — THE TUNIVERSAL POINT IT KEEPS TIME BY: the last final
+    /// point its door replies carried, `origin/h:S:G:T:H:K`, whole; `None`
+    /// before the first.
+    pub point: Option<crate::chronometry::tuniversal::TPoint>,
 }
 
 /// ACT1'S READING: a node on the clock, a court or a voice. The court's is
@@ -205,6 +209,13 @@ impl Clock {
                 u64s(out, &[v.k, v.heard]);
                 pair(out, v.persisted);
                 u64s(out, &[v.radius]);
+                match &v.point {
+                    None => out.push(0),
+                    Some(t) => {
+                        out.push(1);
+                        t.put(out);
+                    }
+                }
                 Some(())
             }
         }
@@ -299,7 +310,12 @@ impl Clock {
                 let (k, heard) = (u64_at(b, p)?, u64_at(b, p)?);
                 let persisted = pair(b, p)?;
                 let radius = u64_at(b, p)?;
-                Some(Clock::Voice(VoiceClock { k, heard, persisted, radius }))
+                let point = match byte(b, p)? {
+                    0 => None,
+                    1 => Some(crate::chronometry::tuniversal::TPoint::take(b, p)?),
+                    _ => return None,
+                };
+                Some(Clock::Voice(VoiceClock { k, heard, persisted, radius, point }))
             }
             _ => None,
         }

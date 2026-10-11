@@ -89,6 +89,7 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         heard: 39,
         persisted: None,
         radius: 4,
+        point: Some(crate::chronometry::tuniversal::TPoint { h: 39, lanes: [1, 2, 3, 4], k: 5, ..Default::default() }),
     });
     let all = vec![
         Reading::Planes(planes),
@@ -851,6 +852,10 @@ fn the_senses_and_the_acts_travel_whole() {
     senses.understanding = [14, 15, 16, 17, 38];
     senses.solving = [18, 19, 20, 21, 26, 27, 28, 58];
     senses.paid = [22, 23, 24, 25];
+    {
+        use crate::economy::{LaneMove, LaneRead};
+        senses.paid_reads = [LaneRead::Read(LaneMove::Fell(22)), LaneRead::Read(LaneMove::Held), LaneRead::Unread, LaneRead::Read(LaneMove::Rose(3))];
+    }
     let acts = Acts {
         k: 9,
         reserve: [1, 2, 3, 4],

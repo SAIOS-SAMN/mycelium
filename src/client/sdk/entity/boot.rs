@@ -105,8 +105,15 @@ impl Entity {
         }
     }
 
+    /// 78.152 TU-7 — THE MIND KEEPS TIME BY TUNIVERSAL: the height of the
+    /// last final point its door replies carried (`Session::tuniversal`).
+    /// Before the first, the height it was set at boot — never a book's
+    /// height read off a quote, which is another coordinate.
     pub fn now_tu(&self) -> u64 {
-        self.height.get()
+        match self.session.tuniversal() {
+            Some(p) => p.h,
+            None => self.height.get(),
+        }
     }
 
     /// 78.152 TU-7 — THE LAST FINAL TUNIVERSAL POINT this mind's session

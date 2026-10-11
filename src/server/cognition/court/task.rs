@@ -8,8 +8,10 @@ use crate::transducer::element::Element;
 /// WHAT THE COURT READ OF A SOLVE (the actions' physics).
 #[derive(Clone, Debug)]
 pub enum SolveVerdict {
-    /// Replayed clean on every withheld pair; `pay` what it discharged there.
-    Solved { pay: [u64; 4] },
+    /// Replayed clean on every withheld pair; `pay` what it discharged there,
+    /// and `reads` that pay lane by lane — fell, held, rose, or unread where
+    /// the replay carries no data on the lane.
+    Solved { pay: [u64; 4], reads: [crate::economy::LaneRead; 4] },
     /// Refused by the replay, with its reason, coordinate and kind (78.9).
     Refused(crate::verdict::Refusal),
     /// The solve carried no rule: a raster is no proof of a motion.
@@ -182,11 +184,11 @@ impl Kernel {
         // answered Solved with a zero pay, and the zero was checked only
         // after `pay_solve` had released every escrow bound to the task and
         // the door had spent the task's first closure on it.
-        let pay = self.measured_replay(rule, withheld);
+        let (pay, reads) = self.measured_replay_read(rule, withheld);
         if pay.iter().all(|&x| x == 0) {
             return SolveVerdict::NoWork;
         }
-        SolveVerdict::Solved { pay }
+        SolveVerdict::Solved { pay, reads }
     }
 
     /// A SOLVE PAID (POUW, the actions' physics). The rule, verdict clean, is

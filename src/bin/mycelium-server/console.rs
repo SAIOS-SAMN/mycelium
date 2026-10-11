@@ -261,8 +261,12 @@ fn tuniversal(sources: &[(Source, Vec<Reading>)]) -> Vec<String> {
             }
             Some(observe::Clock::Voice(v)) => {
                 heights.push(v.heard);
+                let point = match &v.point {
+                    Some(t) => t.local(),
+                    None => "no final point read".to_string(),
+                };
                 format!(
-                    "  {name}  {BOLD}h {}{RESET} {DIM}(its court, last heard){RESET}  K {}  radius {}",
+                    "  {name}  {BOLD}h {}{RESET} {DIM}(its court, last heard){RESET}  K {}  radius {}  point {point}",
                     v.heard,
                     v.k,
                     v.radius
@@ -457,6 +461,10 @@ fn clock(c: &observe::Clock) -> Vec<String> {
         }
         observe::Clock::Voice(v) => vec![
             format!("  {BOLD}clock{RESET}       K {}  court h {} as last heard", v.k, v.heard),
+            match &v.point {
+                Some(t) => format!("  {BOLD}tuniversal{RESET}  {}", t.print()),
+                None => format!("  {BOLD}tuniversal{RESET}  {DIM}no final point read{RESET}"),
+            },
             format!("  {BOLD}genome{RESET}      persisted {}", since(v.persisted, v.heard, v.k)),
         ],
     }

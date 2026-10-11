@@ -201,8 +201,13 @@ impl Entity {
         // 78.153c — and SAYS it, one typed line per verdict: the task, the
         // code by name, the refusal's kind and reason.
         Ok(match dialogue::decode_solve_verdict(&body) {
-            Some((code, mu, refusal)) => {
+            Some((code, mu, refusal, reads)) => {
                 self.solves.note(code, &mu, refusal.as_ref());
+                // The pay read lane by lane, where the court sent it: each
+                // lane fell, held, rose, or carried no data (unread).
+                if let Some(r) = reads {
+                    self.solves.note_reads(&r);
+                }
                 eprintln!("  {}", crate::observe::SolveTally::verdict_line(id, code, refusal.as_ref()));
                 (code, mu)
             }
