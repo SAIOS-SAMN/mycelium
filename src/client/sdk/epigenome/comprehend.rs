@@ -13,7 +13,8 @@ impl Epigenome {
     /// because every word after the hole had moved. Positions were the
     /// identity, so removing one word renamed all the others. At a
     /// coordinate a word leaves and nothing else moves.
-    pub fn retire(&mut self, addr: &[u8]) -> bool {
+    #[cfg(test)]
+    pub(crate) fn retire(&mut self, addr: &[u8]) -> bool {
         let Some(_entry) = self.genome.remove(addr) else {
             return false;
         };
@@ -54,7 +55,7 @@ impl Epigenome {
     /// projective mathematics, `cognition::decompose_over`) and fold the
     /// understanding into the epigenome — expression weights rise on the cited
     /// words, the sentence joins the recollections. The genome is untouched.
-    pub fn comprehend(&mut self, utterance: &Element, budget: &mut crate::physics::Budget) -> Comprehension {
+    pub(crate) fn comprehend(&mut self, utterance: &Element, budget: &mut crate::physics::Budget) -> Comprehension {
         // A taught sentence is re-derived as a form: vertices, faces, orbits.
         // Understanding is re-deriving its cochain, not matching its bytes.
         if utterance.is_sentence() {
@@ -319,11 +320,12 @@ impl Epigenome {
     /// what is already held, then bank it in the genome if it is new (by base
     /// address). Inheritance, not local invention: only taught words enter.
     /// Tests without a voice; a live mind uses [`learn_at`] with K and tu.
-    pub fn learn(&mut self, taught: &[u8], budget: &mut crate::physics::Budget) -> Option<Comprehension> {
+    #[cfg(test)]
+    pub(crate) fn learn(&mut self, taught: &[u8], budget: &mut crate::physics::Budget) -> Option<Comprehension> {
         self.learn_at(taught, 0, 0, budget)
     }
 
-    pub fn learn_at(
+    pub(crate) fn learn_at(
         &mut self,
         taught: &[u8],
         k: u64,

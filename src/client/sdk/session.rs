@@ -12,8 +12,6 @@ use super::*;
 pub struct Session {
     pub(crate) addr: String,
     pub(crate) kernel: Kernel,
-    /// The voice this session is the mouth of.
-    pub(crate) voice: crate::voice::Voice,
     /// Consecutive failed exchanges per hypha address.
     pub(crate) resistance: RefCell<crate::network::nerve::Keyed<u64>>,
     /// THE NERVE, as this entity holds it: every hypha it has learned of,
@@ -49,13 +47,11 @@ pub struct Session {
 impl Session {
     /// Point a kernel at a hypha address (e.g. `"127.0.0.1:7500"`).
     pub fn open(addr: &str, kernel: Kernel) -> Self {
-        let voice = crate::voice::Voice::from_identity(kernel.voice());
         let mut router = crate::network::nerve::Router::new();
         router.insert(kernel.voice(), addr.to_string());
         Session {
             addr: addr.to_string(),
             kernel,
-            voice,
             resistance: RefCell::new(crate::network::nerve::Keyed::new()),
             router: RefCell::new(router),
             peers: {
@@ -81,7 +77,7 @@ impl Session {
     /// spoken: every door reply carries the door's final point, and this is
     /// the greatest read. A kernel drives its clock by it and stamps what it
     /// publishes with it (`TPoint::print`); its own step clock stays its own.
-    pub fn tuniversal(&self) -> Option<crate::chronometry::tuniversal::TPoint> {
+    pub(crate) fn tuniversal(&self) -> Option<crate::chronometry::tuniversal::TPoint> {
         self.final_point.get()
     }
 
@@ -97,7 +93,7 @@ impl Session {
     /// DISCOVER the nerve: ask every learned hypha for the addresses it
     /// stands among, then take a cover digest from every learned address
     /// so the first quote already has the trie.
-    pub fn discover(&mut self) {
+    pub(crate) fn discover(&mut self) {
         self.ask_peers(&self.addr.clone());
         let known = self.peers();
         for a in known {
@@ -107,7 +103,7 @@ impl Session {
     }
 
     /// One peer per Budget spend so a stroke cannot stall on the whole nerve.
-    pub fn discover_budgeted(&mut self, budget: &mut crate::physics::Budget) {
+    pub(crate) fn discover_budgeted(&mut self, budget: &mut crate::physics::Budget) {
         if !budget.spend() {
             return;
         }
@@ -148,7 +144,7 @@ impl Session {
     }
 
     /// Digest every learned hypha and absorb its cover. A moved root replaces.
-    pub fn refresh_covers(&mut self) {
+    pub(crate) fn refresh_covers(&mut self) {
         let addrs = self.peers();
         let voice = self.kernel.voice;
         for addr in addrs {
@@ -163,7 +159,7 @@ impl Session {
 
     /// The hypha a key lives on: XOR-closest known contact to the key's
     /// bits. None when the nerve holds no contact (unmeasured).
-    pub fn route(&self, key: &[u8]) -> Option<String> {
+    pub(crate) fn route(&self, key: &[u8]) -> Option<String> {
         self.router.borrow().closest(key).map(|(_, a)| a)
     }
 
@@ -173,7 +169,7 @@ impl Session {
     /// own ruling on this reader — a destination that is not known is
     /// absent, never the empty address, which every caller would then have
     /// to tell apart from a hypha bound at one.
-    pub fn route_chart(
+    pub(crate) fn route_chart(
         &self,
         inv: &crate::transducer::stalk::Invariant,
         mag: &[u64; 4],
@@ -293,7 +289,7 @@ impl Session {
     }
 
     /// The hyphas this entity knows.
-    pub fn peers(&self) -> Vec<String> {
+    pub(crate) fn peers(&self) -> Vec<String> {
         self.peers.scoped().map(|(_, a)| a.clone()).collect()
     }
 
@@ -304,7 +300,8 @@ impl Session {
     /// never bytes, one per carrier, so the stroke line says WHICH of them
     /// grows while every entity carrier is flat (L33); nothing branches on
     /// it.
-    pub fn sizes(&self) -> [usize; 9] {
+    #[cfg(test)]
+    pub(crate) fn sizes(&self) -> [usize; 9] {
         [
             self.peers.len(),
             self.streams.borrow().len(),
@@ -318,7 +315,8 @@ impl Session {
         ]
     }
 
-    pub fn add_peer(&mut self, addr: &str) {
+    #[cfg(test)]
+    pub(crate) fn add_peer(&mut self, addr: &str) {
         if self.peers.contains(addr.as_bytes()) {
             return;
         }
@@ -327,26 +325,22 @@ impl Session {
 
     /// A known hypha: contact string on the socket table, verifying key on
     /// the XOR nerve. Empty-cover routing is closest(chart key) among vks.
-    pub fn know_hypha(&mut self, addr: &str, vk: [u8; 32]) {
+    #[cfg(test)]
+    pub(crate) fn know_hypha(&mut self, addr: &str, vk: [u8; 32]) {
         self.add_peer(addr);
         self.router.borrow_mut().insert(vk, addr.to_string());
     }
 
     /// Speak an act carrying a key to that key's home.
-    pub fn speak_keyed(&self, key: &[u8], act_body: Vec<u8>) -> io::Result<Vec<u8>> {
+    pub(crate) fn speak_keyed(&self, key: &[u8], act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         let Some(addr) = self.route(key) else {
             return Err(io::Error::new(io::ErrorKind::NotConnected, "unmeasured route"));
         };
         self.exchange_at(&addr, act_body)
     }
 
-    pub fn kernel(&self) -> &Kernel {
+    pub(crate) fn kernel(&self) -> &Kernel {
         &self.kernel
-    }
-
-    /// The voice this session speaks with: an identity that speaks (78.49).
-    pub fn voice(&self) -> &crate::voice::Voice {
-        &self.voice
     }
 
     /// The measured impedance Z on THIS SESSION'S OWN WIRE: consecutive
@@ -360,11 +354,11 @@ impl Session {
     /// wire, and 42.6 prices the mesh cover by the hyphae covering a
     /// stratum, not by the worst of them. `z_at` reads any other wire, and
     /// `occluded_at` decides one.
-    pub fn impedance(&self) -> u64 {
+    pub(crate) fn impedance(&self) -> u64 {
         self.z_at(&self.addr)
     }
 
-    pub fn rtt(&self) -> Option<u64> {
+    pub(crate) fn rtt(&self) -> Option<u64> {
         self.rtt_of(&self.addr)
     }
 
@@ -448,7 +442,7 @@ impl Session {
     /// The perceived transport aperture, derived from the impedance at the
     /// ratio-law boundary: a full stroke-cycle of consecutive failures
     /// (reserve ÷ spend strokes) reads as occlusion.
-    pub fn transport(&self) -> TransportAperture {
+    pub(crate) fn transport(&self) -> TransportAperture {
         let z = self.impedance();
         let cycle = crate::physics::aperture_cycle() as u64;
         if z == 0 {
@@ -462,7 +456,7 @@ impl Session {
 
     /// PROBE an open listing with a tentative sentence; the hypha replays and
     /// settles a graded trajectory or closure. Returns its reading (PR1).
-    pub fn probe(&self, target: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<dialogue::ProbeReading> {
+    pub(crate) fn probe(&self, target: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<dialogue::ProbeReading> {
         // LD0: a probe whose address cannot be framed is not spoken.
         let Some(frame) = dialogue::encode_probe(&self.kernel.voice, target, cites) else {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "probe refused: an address cannot be framed"));
@@ -476,7 +470,7 @@ impl Session {
     /// the yield surface (per-lane, priced off genuine metabolic tension) and the
     /// open-demand market's top clusters, each carrying its chain so this kernel
     /// can actually attempt the reduction.
-    pub fn quote(&self, charts: &[crate::transducer::stalk::Invariant]) -> io::Result<YieldQuote> {
+    pub(crate) fn quote(&self, charts: &[crate::transducer::stalk::Invariant]) -> io::Result<YieldQuote> {
         let Some(req) = dialogue::encode_quote_request_charts(&self.kernel.voice, charts) else {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -525,7 +519,7 @@ impl Session {
 
     /// Speak an unkeyed act on the nerve: every learned hypha, starting at
     /// the stroke. A full reflex pool is impedance, not a failed quote.
-    pub fn speak_nerve(&self, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
+    pub(crate) fn speak_nerve(&self, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         let peer_list = self.peers();
         let npeers = peer_list.len().max(1);
         let Some(start) = self.peer_start(npeers) else {
@@ -559,7 +553,7 @@ impl Session {
     /// body. The public SDK surface for custom kernels (and the court): the
     /// wire is the universal language; authority comes from the mathematics,
     /// never the socket.
-    pub fn speak(&self, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
+    pub(crate) fn speak(&self, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         self.exchange(act_body)
     }
 

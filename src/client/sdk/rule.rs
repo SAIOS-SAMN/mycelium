@@ -27,7 +27,9 @@ use crate::core::Q;
 use crate::transducer::cga::{self, Mv};
 use crate::transducer::element::{self, Element};
 use crate::transducer::family::{self, Crystal};
-use crate::transducer::sentence::{self, Acting, Form, Vertex};
+use crate::transducer::sentence::{self, Form};
+#[cfg(test)]
+use crate::transducer::sentence::{Acting, Vertex};
 pub use crate::transducer::family::statement::Unstated;
 pub use crate::transducer::sentence::form::clause::{
     About, Act, Clause, Cmp, Coord, Extent, Order, Paint, Pred, Region, Stop, Tie, Value,
@@ -149,7 +151,7 @@ impl Symmetry {
     /// (column): a rotor in the `e1e2` plane for a turn — `1 ∓ e1e2` up to
     /// scale, a ray, exact — and a vector for a mirror. What
     /// [`Step::InPlace`] reads about each selected body's own centre.
-    pub fn linear(self) -> Mv {
+    pub(crate) fn linear(self) -> Mv {
         use crate::transducer::cga::{E1, E2};
         match self {
             Symmetry::Rotate90 => cga::rotator(&q(1), &q(1)),
@@ -176,7 +178,7 @@ impl Step {
     /// the court carries a site in. `None` where the shapes do not fit the
     /// symmetry: a turn by 90° or 270° and the transpose take `R × C` to
     /// `C × R`; the 180° turn and the mirrors keep `R × C`.
-    pub fn grid_motion(kind: Symmetry, in_shape: (usize, usize), out_shape: (usize, usize)) -> Option<Step> {
+    pub(crate) fn grid_motion(kind: Symmetry, in_shape: (usize, usize), out_shape: (usize, usize)) -> Option<Step> {
         let fits = match kind.exchanges() {
             true => out_shape == (in_shape.1, in_shape.0),
             false => out_shape == in_shape,
@@ -193,12 +195,14 @@ impl Step {
 }
 
 /// The hue `h` lands on under `map`; a hue it does not name stands still.
+#[cfg(test)]
 fn hue_under(map: &[(u8, u8)], h: u8) -> Option<u8> {
     sentence::hue_of(map, h)
 }
 
 /// THE STEPS COMPOSED: the motion `V = Vₙ ⋯ V₁` (the first step acts first
 /// under the sandwich) and the hue map `σ = σₙ ∘ … ∘ σ₁` on the painted hues.
+#[cfg(test)]
 fn composed(steps: &[Step]) -> Result<(Mv, Vec<(u8, u8)>), NoRule> {
     let mut v = element::identity_versor();
     let mut sigma: Vec<(u8, u8)> = (1..=9u8).map(|h| (h, h)).collect();
@@ -227,12 +231,14 @@ fn composed(steps: &[Step]) -> Result<(Mv, Vec<(u8, u8)>), NoRule> {
 }
 
 /// A run of motion and hue steps on one target, composed as it arrives.
+#[cfg(test)]
 struct Pending {
     v: Mv,
     about: About,
     sigma: Vec<(u8, u8)>,
 }
 
+#[cfg(test)]
 impl Pending {
     fn new(about: About) -> Pending {
         Pending { v: element::identity_versor(), about, sigma: (1..=9u8).map(|h| (h, h)).collect() }
@@ -256,6 +262,7 @@ impl Pending {
 /// act on every body; a run of motions and hue maps on one target composes
 /// to one act, the first step acting first; a hue step on a region fills
 /// it with the hue `0` is sent to.
+#[cfg(test)]
 fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
     let stated = steps
         .iter()
@@ -342,6 +349,7 @@ fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
 /// every pair, minted through the one mint. No vertex names a training
 /// frame or a training cell: the clauses select on whatever scene they are
 /// spoken onto, so the word crosses to pairs it never saw.
+#[cfg(test)]
 fn clause_sentence(clauses: Vec<Clause>, family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
     if clauses.is_empty() || family.is_empty() {
         return Err(NoRule::NoFamily);
@@ -372,7 +380,8 @@ fn clause_sentence(clauses: Vec<Clause>, family: &[(Grid, Grid)], crystal: &dyn 
 ///
 /// A rule that states a selection, a region, a creation or a crop is spoken
 /// as the form's clauses instead ([`clause_sentence`], 78.143).
-pub fn sentence(steps: &[Step], family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
+#[cfg(test)]
+pub(crate) fn sentence(steps: &[Step], family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
     if let Some(clauses) = clauses_of(steps)? {
         return clause_sentence(clauses, family, crystal);
     }
@@ -439,7 +448,7 @@ pub fn sentence(steps: &[Step], family: &[(Grid, Grid)], crystal: &dyn Crystal) 
 /// family through the one mint — which re-checks every vertex on every
 /// training pair — at the span the word stood over. A rule with no such
 /// overlap crosses as it is.
-pub fn crossing(rule: &Element, train: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
+pub(crate) fn crossing(rule: &Element, train: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
     use crate::network::nerve::coord::ChartAt;
     let held = element::Held::of(rule.clone());
     let form = held.form().ok_or(NoRule::NotASentence)?;
@@ -468,7 +477,8 @@ pub fn crossing(rule: &Element, train: &[(Grid, Grid)], crystal: &dyn Crystal) -
 /// UNHELD; then `verdict::blind_replay_at` on the pairs, its cited forms
 /// resolved by `resolve`, spoken through `crystal`. A replay no stroke
 /// could read is `Unread` — unjudged, never refuted (78.158a U2).
-pub fn would_judge(
+#[cfg(test)]
+pub(crate) fn would_judge(
     rule: &Element,
     family: &[(Grid, Grid)],
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
@@ -490,7 +500,7 @@ pub fn would_judge(
 /// home and was refused or deferred at the court; asked here, it is
 /// `CitesUnheld` by its address. A client resolves through the court's
 /// words alone (`Epigenome::court_word`).
-pub fn would_judge_with(
+pub(crate) fn would_judge_with(
     rule: &Element,
     family: &[(Grid, Grid)],
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
@@ -517,7 +527,7 @@ impl NoRule {
     /// word (kind N) and is `Unread`, which a client submits; every other
     /// refusal is the judge's, `Refused` with its reason, coordinate and
     /// kind.
-    pub fn of_refusal(refusal: crate::verdict::Refusal) -> NoRule {
+    pub(crate) fn of_refusal(refusal: crate::verdict::Refusal) -> NoRule {
         match refusal.reason == crate::verdict::REFUSE_UNREAD {
             true => NoRule::Unread,
             false => NoRule::Refused(refusal),

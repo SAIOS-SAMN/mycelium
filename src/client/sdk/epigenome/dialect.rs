@@ -6,7 +6,8 @@ use crate::transducer::element::Element;
 
 impl Epigenome {
     /// The count of taught words refused for not verifying.
-    pub fn refused(&self) -> u64 {
+    #[cfg(test)]
+    pub(crate) fn refused(&self) -> u64 {
         self.refused
     }
 
@@ -15,7 +16,8 @@ impl Epigenome {
     }
 
     /// True when a dialect sentence lives on this chart (exact invariant).
-    pub fn dialect_holds(&self, c: &crate::transducer::stalk::Invariant) -> bool {
+    #[cfg(test)]
+    pub(crate) fn dialect_holds(&self, c: &crate::transducer::stalk::Invariant) -> bool {
         !self.dialect_atlas.fiber(c).is_empty()
     }
 
@@ -165,7 +167,8 @@ impl Epigenome {
     }
 
     /// The words this entity has expressed and not yet had ratified.
-    pub fn expressed_len(&self) -> usize {
+    #[cfg(test)]
+    pub(crate) fn expressed_len(&self) -> usize {
         self.expressed.len()
     }
 
@@ -173,7 +176,8 @@ impl Epigenome {
     /// false when the expressed vocabulary already speaks it (the same body
     /// under a transport) — a claim already made, not to be made again.
     /// `k` is the voice's K (law 9); `now_tu` is TUniversal.
-    pub fn express(
+    #[cfg(test)]
+    pub(crate) fn express(
         &mut self,
         residual: &[(i64, i64, u8, u8)],
         k: u64,
@@ -223,11 +227,13 @@ impl Epigenome {
         clippy::disallowed_methods,
         reason = "rule 4 — the peak of the expression readings is their extent, content"
     )]
-    pub fn peak_expression(&self) -> Option<u64> {
+    #[cfg(test)]
+    pub(crate) fn peak_expression(&self) -> Option<u64> {
         self.genome.scoped().map(|(_, w)| w.expression).max()
     }
 
-    pub fn recollections(&self) -> Vec<(Vec<Vec<u8>>, u64)> {
+    #[cfg(test)]
+    pub(crate) fn recollections(&self) -> Vec<(Vec<Vec<u8>>, u64)> {
         // This voice's own recollections, all of them: the reading is what
         // it holds, and the shed is what bounds the carrier.
         self.recollections

@@ -57,7 +57,7 @@ pub enum HouseMail {
 /// A MIND'S RAW MAIL TYPED: a piece that does not read as a TAKEN, PERCEPT
 /// or OUTCOME naming `me` — which the relay never serves — is an error by
 /// name, never skipped.
-pub fn mind_mail(me: [u8; 32], raw: Vec<Mail>) -> io::Result<Vec<MindMail>> {
+pub(crate) fn mind_mail(me: [u8; 32], raw: Vec<Mail>) -> io::Result<Vec<MindMail>> {
     let mut out = Vec::new();
     for m in raw {
         let post = m.post().ok_or_else(|| undecoded("mail piece"))?.post;
@@ -92,13 +92,13 @@ impl SeatHold {
     /// THE BOUND ON AN UNANSWERED TAKE: a full APERTURE CYCLE of the mind's
     /// own strokes (`physics::aperture_cycle`, the stroke count at which a
     /// contact's consecutive failures read as occlusion) — never a clock.
-    pub fn patience() -> u64 {
+    pub(crate) fn patience() -> u64 {
         u64::from(crate::physics::aperture_cycle())
     }
 
     /// AT A STROKE: whether the take is to be posted now — never posted, let
     /// go, or (counted here) unanswered for a full aperture cycle.
-    pub fn stroke(&mut self) -> bool {
+    pub(crate) fn stroke(&mut self) -> bool {
         if self.posted && !self.held {
             self.waited = match self.waited.checked_add(1) {
                 Some(w) => w,
@@ -112,18 +112,18 @@ impl SeatHold {
     }
 
     /// The take was posted: its answer awaited from here.
-    pub fn take_posted(&mut self) {
+    pub(crate) fn take_posted(&mut self) {
         *self = SeatHold { posted: true, held: false, waited: 0 };
     }
 
     /// The take let go: the next stroke posts it again.
-    pub fn let_go(&mut self) {
+    pub(crate) fn let_go(&mut self) {
         *self = SeatHold::default();
     }
 
     /// THE HOUSE'S TAKEN: held — and the listing is to be read (true) — or
     /// refused and let go.
-    pub fn taken(&mut self, ok: bool) -> bool {
+    pub(crate) fn taken(&mut self, ok: bool) -> bool {
         match ok {
             true => {
                 *self = SeatHold { posted: true, held: true, waited: 0 };
@@ -138,7 +138,7 @@ impl SeatHold {
 
     /// AN OUTCOME READ: refused NOT THE HOLDER lets the take go; refused NO
     /// SUCH FUNCTION asks the listing again (true).
-    pub fn outcome(&mut self, applied: bool, reason: u16) -> bool {
+    pub(crate) fn outcome(&mut self, applied: bool, reason: u16) -> bool {
         match (applied, reason) {
             (false, REASON_NOT_THE_HOLDER) => {
                 self.let_go();
@@ -153,7 +153,7 @@ impl SeatHold {
 /// 78.148 — ONE SEAT'S FUNCTIONS in a listing, with the listing's epoch:
 /// the repertoire a mind at that seat perceives. `None` where the post is no
 /// SEATS or names no such seat.
-pub fn seat_fns(listing: &SignedPost, seat: u32) -> Option<(u64, Vec<SeatFn>)> {
+pub(crate) fn seat_fns(listing: &SignedPost, seat: u32) -> Option<(u64, Vec<SeatFn>)> {
     let Post::Seats(seats) = &listing.post else { return None };
     let mine = seats.seats.iter().find(|s| s.seat == seat)?;
     Some((seats.epoch, mine.fns.clone()))
@@ -162,7 +162,7 @@ pub fn seat_fns(listing: &SignedPost, seat: u32) -> Option<(u64, Vec<SeatFn>)> {
 /// 78.158a SIT-ALL — EVERY SEAT A LISTING OFFERS, in the house's own
 /// listing order, with the listing's epoch. `None` where the post is no
 /// SEATS.
-pub fn listed_seats(listing: &SignedPost) -> Option<(u64, Vec<u32>)> {
+pub(crate) fn listed_seats(listing: &SignedPost) -> Option<(u64, Vec<u32>)> {
     let Post::Seats(seats) = &listing.post else { return None };
     let mut ids: Vec<u32> = Vec::new();
     for s in &seats.seats {
@@ -176,7 +176,7 @@ pub fn listed_seats(listing: &SignedPost) -> Option<(u64, Vec<u32>)> {
 /// 78.158a SIT-ALL — A LISTING READ AGAINST THE SEATS SAT: the seats it
 /// offers that are not sat (to take, in the listing's order) and the seats
 /// sat that it no longer offers (to let go, in the order they were sat).
-pub fn reseat(sat: &[u32], listed: &[u32]) -> (Vec<u32>, Vec<u32>) {
+pub(crate) fn reseat(sat: &[u32], listed: &[u32]) -> (Vec<u32>, Vec<u32>) {
     let take = listed.iter().filter(|s| !sat.contains(s)).copied().collect();
     let let_go = sat.iter().filter(|s| !listed.contains(s)).copied().collect();
     (take, let_go)
@@ -213,13 +213,13 @@ pub struct SeatName {
 
 impl super::Entity {
     /// The session this entity speaks through — the seat surface's mouth.
-    pub fn relay(&self) -> &super::Session {
+    pub(crate) fn relay(&self) -> &super::Session {
         &self.session
     }
 
     /// 78.146 — THE MIND AT A SEAT it sits, written: taken from its
     /// coordinate (begun where it was not) and put back there.
-    pub fn with_seat_mind<R>(&mut self, at: SeatName, f: impl FnOnce(&mut super::seat_mind::SeatMind) -> R) -> R {
+    pub(crate) fn with_seat_mind<R>(&mut self, at: SeatName, f: impl FnOnce(&mut super::seat_mind::SeatMind) -> R) -> R {
         let key = seat_key(&at.domain, at.sub_origin.as_ref(), at.seat);
         let mut mind = match self.seats.remove(&key) {
             Some(m) => m,
@@ -231,20 +231,22 @@ impl super::Entity {
     }
 
     /// The mind at a seat, where it sits one.
-    pub fn seat_mind_at(&self, at: SeatName) -> Option<&super::seat_mind::SeatMind> {
+    #[cfg(test)]
+    pub(crate) fn seat_mind_at(&self, at: SeatName) -> Option<&super::seat_mind::SeatMind> {
         self.seats.get(&seat_key(&at.domain, at.sub_origin.as_ref(), at.seat))
     }
 
     /// 78.156 — THE EXPERIENCED-DILATION READING at a seat this entity sits:
     /// its sub-instance's world advance against the final point's, exact.
-    pub fn seat_dilation(&self, at: SeatName) -> Option<&super::seat_mind::Dilation> {
+    #[cfg(test)]
+    pub(crate) fn seat_dilation(&self, at: SeatName) -> Option<&super::seat_mind::Dilation> {
         self.seat_mind_at(at)?.dilation()
     }
 
     /// 78.146 — A PERCEPT AT A SEAT, perceived: held on its series, and a
     /// call's effect read where its outcome came. Reading what a call did is
     /// the mind learning — an act of this orbit (78.49).
-    pub fn perceive_seat(&mut self, p: &Percept) -> super::seat_mind::Perceived {
+    pub(crate) fn perceive_seat(&mut self, p: &Percept) -> super::seat_mind::Perceived {
         let at = SeatName { domain: p.domain, sub_origin: p.sub_origin, seat: p.seat };
         let reading = self.with_seat_mind(at, |m| m.perceive(p));
         if reading.learned.is_some() {
@@ -256,7 +258,7 @@ impl super::Entity {
 
 impl super::Session {
     /// One signed post, answered by its sequence or the refusal by name.
-    pub fn seat_post(&self, s: &SignedPost) -> io::Result<Result<u64, Refusal>> {
+    pub(crate) fn seat_post(&self, s: &SignedPost) -> io::Result<Result<u64, Refusal>> {
         let reply = self.speak(encode_post(s).ok_or_else(unwritten)?)?;
         decode_post_reply(&reply).ok_or_else(|| undecoded("post"))
     }
@@ -265,13 +267,13 @@ impl super::Session {
     /// or (v1.4) at a sub-origin — with the house's signature
     /// (`SignedPost::signed_by` the reserve's key verifies it); `None` where
     /// none is listed.
-    pub fn list_seats(&self, domain: [u8; 32], sub_origin: Option<[u8; 32]>) -> io::Result<Option<SignedPost>> {
+    pub(crate) fn list_seats(&self, domain: [u8; 32], sub_origin: Option<[u8; 32]>) -> io::Result<Option<SignedPost>> {
         let reply = self.speak(encode_read_listing(&domain, sub_origin.as_ref()))?;
         decode_listing_reply(&reply, sub_origin.as_ref()).ok_or_else(|| undecoded("listing"))
     }
 
     /// A MIND TAKES A SEAT, signed by its own key.
-    pub fn take(&self, at: SeatName, key: &SigningKey) -> io::Result<Result<u64, Refusal>> {
+    pub(crate) fn take(&self, at: SeatName, key: &SigningKey) -> io::Result<Result<u64, Refusal>> {
         let mind = key.verifying_key().to_bytes();
         let s = Post::Take(Take { domain: at.domain, sub_origin: at.sub_origin, seat: at.seat, mind, nonce: nonce() }).sign(key).ok_or_else(unwritten)?;
         self.seat_post(&s)
@@ -279,7 +281,7 @@ impl super::Session {
 
     /// A SEATED MIND CALLS: answered by the relay's sequence, with the call's
     /// reference — what the house's outcome will name.
-    pub fn call(&self, at: SeatName, key: &SigningKey, fn_id: u16, args: Vec<Arg>) -> io::Result<(Result<u64, Refusal>, [u8; 32])> {
+    pub(crate) fn call(&self, at: SeatName, key: &SigningKey, fn_id: u16, args: Vec<Arg>) -> io::Result<(Result<u64, Refusal>, [u8; 32])> {
         let mind = key.verifying_key().to_bytes();
         let c = Call { domain: at.domain, sub_origin: at.sub_origin, seat: at.seat, mind, nonce: nonce(), fn_id, args };
         let s = Post::Call(c).sign(key).ok_or_else(unwritten)?;
@@ -293,7 +295,7 @@ impl super::Session {
     /// last sequence beside the pieces, so a cursor left on a restarted relay
     /// is told from progress (`MailRead::cursor`) and acknowledges nothing
     /// there.
-    pub fn read_mail(&self, key: &SigningKey, after: u64, epoch: u64) -> io::Result<Result<MailRead, Refusal>> {
+    pub(crate) fn read_mail(&self, key: &SigningKey, after: u64, epoch: u64) -> io::Result<Result<MailRead, Refusal>> {
         let reply = self.speak(encode_read_mail(&ReadMail::sign_standing(key, after, epoch, nonce())))?;
         decode_mail_reply_standing(&reply).ok_or_else(|| undecoded("mail"))
     }
@@ -302,7 +304,7 @@ impl super::Session {
     /// relay's standing (epoch, last sequence). A piece that does not read as
     /// a TAKEN, PERCEPT or OUTCOME naming this mind — which the relay never
     /// serves — is an error by name, never skipped.
-    pub fn mail(&self, key: &SigningKey, after: u64, epoch: u64) -> io::Result<Result<MindRead, Refusal>> {
+    pub(crate) fn mail(&self, key: &SigningKey, after: u64, epoch: u64) -> io::Result<Result<MindRead, Refusal>> {
         let me = key.verifying_key().to_bytes();
         match self.read_mail(key, after, epoch)? {
             Ok(read) => mind_mail(me, read.mail).map(|mail| Ok(MindRead { epoch: read.epoch, seq: read.seq, mail })),
@@ -311,13 +313,15 @@ impl super::Session {
     }
 
     /// THE HOUSE LISTS ITS SEATS at an epoch; the latest epoch replaces.
-    pub fn post_seats(&self, house: &SigningKey, seats: Seats) -> io::Result<Result<u64, Refusal>> {
+    #[cfg(test)]
+    pub(crate) fn post_seats(&self, house: &SigningKey, seats: Seats) -> io::Result<Result<u64, Refusal>> {
         self.seat_post(&Post::Seats(seats).sign(house).ok_or_else(unwritten)?)
     }
 
     /// THE HOUSE'S MAIL past `after` (read under relay `epoch`): the takes
     /// and calls addressed to its domain, typed.
-    pub fn house_mail(&self, house: &SigningKey, after: u64, epoch: u64) -> io::Result<Result<Vec<HouseMail>, Refusal>> {
+    #[cfg(test)]
+    pub(crate) fn house_mail(&self, house: &SigningKey, after: u64, epoch: u64) -> io::Result<Result<Vec<HouseMail>, Refusal>> {
         let raw = match self.read_mail(house, after, epoch)? {
             Ok(m) => m.mail,
             Err(why) => return Ok(Err(why)),
@@ -335,7 +339,8 @@ impl super::Session {
     }
 
     /// THE HOUSE ANSWERS A TAKE.
-    pub fn post_taken(&self, house: &SigningKey, t: Taken) -> io::Result<Result<u64, Refusal>> {
+    #[cfg(test)]
+    pub(crate) fn post_taken(&self, house: &SigningKey, t: Taken) -> io::Result<Result<u64, Refusal>> {
         self.seat_post(&Post::Taken(t).sign(house).ok_or_else(unwritten)?)
     }
 
@@ -343,13 +348,15 @@ impl super::Session {
     /// house left unstamped is stamped with this session's last final point
     /// (`Session::tuniversal`) before it is signed; one the house stamped
     /// itself keeps its own.
-    pub fn post_percept(&self, house: &SigningKey, p: Percept) -> io::Result<Result<u64, Refusal>> {
+    #[cfg(test)]
+    pub(crate) fn post_percept(&self, house: &SigningKey, p: Percept) -> io::Result<Result<u64, Refusal>> {
         let p = Percept { point: p.point.or(self.tuniversal()), ..p };
         self.seat_post(&Post::Percept(p).sign(house).ok_or_else(unwritten)?)
     }
 
     /// THE HOUSE ANSWERS A CALL with its outcome.
-    pub fn post_outcome(&self, house: &SigningKey, o: Outcome) -> io::Result<Result<u64, Refusal>> {
+    #[cfg(test)]
+    pub(crate) fn post_outcome(&self, house: &SigningKey, o: Outcome) -> io::Result<Result<u64, Refusal>> {
         self.seat_post(&Post::Outcome(o).sign(house).ok_or_else(unwritten)?)
     }
 }

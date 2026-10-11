@@ -11,7 +11,8 @@ mod persist;
 pub mod remainder;
 pub mod shed;
 
-pub use persist::{genome_refused, GenomeRefused};
+pub(crate) use persist::genome_refused;
+pub use persist::GenomeRefused;
 #[cfg(test)]
 pub use persist::{PRE_ORBIT_GENOME_MAGIC, PRE_TRIE_GENOME_MAGIC};
 

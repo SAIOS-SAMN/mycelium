@@ -35,7 +35,7 @@ const LEAF_HELD: u8 = 1;
 /// What a genome file's magic names where this reader refuses it: the
 /// positional and the pre-orbit genomes by their own names, anything else
 /// as not a genome of this build. `None` for this build's magic.
-pub fn genome_refused(bytes: &[u8]) -> Option<&'static str> {
+pub(crate) fn genome_refused(bytes: &[u8]) -> Option<&'static str> {
     match bytes.get(..4) {
         Some(m) if m == GENOME_MAGIC => None,
         Some(m) if m == LEDGER_GENOME_MAGIC => {
@@ -68,12 +68,13 @@ pub struct GenomeRefused {
 }
 
 impl GenomeRefused {
-    pub fn total(&self) -> u64 {
+    #[cfg(test)]
+    pub(crate) fn total(&self) -> u64 {
         self.unstamped + self.unciteable + self.coincident + self.unwritable
     }
 
     /// Named once, with each count, where any is not zero.
-    pub fn name(&self) {
+    pub(crate) fn name(&self) {
         for (what, n) in [
             ("words no court admitted", self.unstamped),
             ("words whose citation cannot be written", self.unciteable),
@@ -91,14 +92,14 @@ impl Epigenome {
     /// FILE A WORD'S ADMITTING STAMP (78.24 (2b), 78.49): the court's stamp
     /// for a word it admitted — a syllabus page's. A word admitted once keeps
     /// its stamp.
-    pub fn file_admitted(&mut self, addr: &crate::transducer::address::Address, at: crate::chronometry::Stamp) {
+    pub(crate) fn file_admitted(&mut self, addr: &crate::transducer::address::Address, at: crate::chronometry::Stamp) {
         if !self.admitted_at.contains(addr) {
             self.admitted_at.insert_shared(addr.shared(), at);
         }
     }
 
     /// The court's stamp a word this mind holds was admitted at.
-    pub fn admitted_at(&self, addr: &[u8]) -> Option<crate::chronometry::Stamp> {
+    pub(crate) fn admitted_at(&self, addr: &[u8]) -> Option<crate::chronometry::Stamp> {
         self.admitted_at.get(addr).copied()
     }
 
@@ -107,7 +108,7 @@ impl Epigenome {
     /// otherwise — never a dialect word, never a word learned with no stamp.
     /// The resolver a home check replays through, so a rule passes at home
     /// only on citations the court holds (`rule::would_judge_with`).
-    pub fn court_word(&self, addr: &[u8]) -> Option<&crate::transducer::element::Held> {
+    pub(crate) fn court_word(&self, addr: &[u8]) -> Option<&crate::transducer::element::Held> {
         match self.admitted_at.contains(addr) {
             true => self.word_at(addr),
             false => None,
@@ -129,7 +130,7 @@ impl Epigenome {
     /// each word at its citation `Cite::word(element, admitted)`, its one
     /// leaf the element. A word no court admitted has no coordinates and is
     /// refused by name and counted, never written.
-    pub fn crystallize(&self) -> (Vec<u8>, GenomeRefused) {
+    pub(crate) fn crystallize(&self) -> (Vec<u8>, GenomeRefused) {
         let mut out = GENOME_MAGIC.to_vec();
         let mut refused = GenomeRefused::default();
         let mut nodes: crate::network::nerve::Keyed<Leaves> = crate::network::nerve::Keyed::new();
@@ -163,7 +164,7 @@ impl Epigenome {
     /// citation that is not its own refuses the tape (rule 11), and nothing
     /// is restored. Each word's admitting stamp is read off its key and
     /// filed; where the words end on the tape is answered.
-    pub fn uncrystallize(&mut self, bytes: &[u8]) -> Option<usize> {
+    pub(crate) fn uncrystallize(&mut self, bytes: &[u8]) -> Option<usize> {
         if genome_refused(bytes).is_some() {
             return None;
         }

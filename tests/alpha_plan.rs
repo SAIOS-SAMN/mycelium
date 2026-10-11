@@ -9,7 +9,6 @@
 
 use mycelium::anastome::dialogue;
 use mycelium::cognition::Kernel;
-use mycelium::sdk::Epigenome;
 use mycelium::transducer::alphabet::{relators, RelatorKind, Word, LetterId};
 use mycelium::transducer::element::{from_connection, identity_versor, Element};
 use mycelium::transducer::family::{extract_rule, perceive, speak_rule, mint_sentence, NoCrystal};
@@ -211,34 +210,6 @@ fn a_single_recolour_is_a_one_morphism_sentence() {
     assert!(rule.form.is_closed(), "a single non-trivial morphism is a closed sentence");
 }
 
-#[test]
-fn dialect_enters_on_stood_and_sheds() {
-    let mut epi = Epigenome::new();
-    let w = conn(&[(1, 2), (2, 1)], Vec::new(), [1, 0, 0, 0]);
-    let addr = w.address();
-    epi.stand_dialect_at(w, 1, 1);
-    assert_eq!(epi.dialect_len(), 1);
-    let aperture = mycelium::physics::aperture_cycle() as u64;
-    // The aperture is measured from the strokes noted; until a whole
-    // aperture of strokes stands, nothing sheds.
-    let n = epi.shed(1);
-    assert_eq!(n, 0, "an unmeasured aperture sheds nothing");
-    for tu in 1..=aperture {
-        epi.note_stroke(tu);
-    }
-    let n = epi.shed(aperture);
-    assert_eq!(n, 0, "fresh dialect is not shed");
-    epi.touch(&addr, 1 + aperture);
-    let n = epi.shed(1 + aperture);
-    assert_eq!(n, 0, "a working-atlas use resets the TUniversal aperture");
-    for tu in (aperture + 1)..=(2 * aperture + 1) {
-        epi.note_stroke(tu);
-    }
-    let n = epi.shed(1 + aperture + aperture + 1);
-    assert_eq!(n, 1, "idle for more than the measured aperture sheds");
-    assert_eq!(epi.dialect_len(), 0);
-}
-
 /// 28, 78.27, 45.8: the snapshot names its layout — the mind as keyed
 /// tries, its line and eras on disk beside it, MYT2 — and the tapes before
 /// it do not re-read: MYT1 and MYC7 are refused by name, an older one as
@@ -268,25 +239,6 @@ fn hypha_snapshot_is_myt2() {
     }
 }
 
-#[test]
-fn dialect_is_a_word_in_the_epigenome() {
-    let mut epi = Epigenome::new();
-    assert!(epi.express(&[(0, 0, 1u8, 2)], 1, 1, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)));
-    assert_eq!(epi.dialect_len(), 1, "an expressed word stands as dialect");
-    assert_eq!(epi.genome_len(), 0, "the genome stays frozen");
-}
-
-#[test]
-fn genome_unchanged_by_dialect() {
-    let mut epi = Epigenome::new();
-    let n0 = epi.genome_len();
-    let (frozen, refused) = epi.crystallize();
-    assert_eq!(&frozen[..4], b"GEN7");
-    assert_eq!(refused.total(), 0, "an empty genome refuses nothing");
-    let w = conn(&[(1, 2), (2, 1)], Vec::new(), [1, 0, 0, 0]);
-    epi.stand_dialect_at(w, 3, 3);
-    assert_eq!(epi.genome_len(), n0, "dialect is not the genome");
-}
 
 // `cohesion_is_per_lane` was here and is DELETED with the reading it named
 // (P10). It built an EMPTY contemplation and asserted the map came back

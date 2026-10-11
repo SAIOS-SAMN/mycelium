@@ -11,7 +11,6 @@
 /// be paid for is refused unsigned.
 #[derive(Clone, Debug)]
 pub struct Kernel {
-    pub(crate) name: String,
     pub(crate) voice: [u8; 32],
     signer: Option<ed25519_dalek::SigningKey>,
 }
@@ -23,17 +22,13 @@ impl Kernel {
     /// which is not an identity (46). A real voice is a keypair from the
     /// genesis manifest, seated by `from_key`.
     #[cfg(test)]
-    pub fn named(name: &str) -> Self {
+    pub(crate) fn named(name: &str) -> Self {
         let sk = ed25519_dalek::SigningKey::from_bytes(&crate::court::identity::HyphaKey::seed_from_name(name));
-        Kernel { name: name.to_string(), voice: sk.verifying_key().to_bytes(), signer: Some(sk) }
+        Kernel { voice: sk.verifying_key().to_bytes(), signer: Some(sk) }
     }
     /// Seat a kernel on verifying-key bytes alone: it speaks, it signs nothing.
     pub fn from_voice(voice: [u8; 32]) -> Self {
-        Kernel {
-            name: format!("{:02x}{:02x}", voice[0], voice[1]),
-            voice,
-            signer: None,
-        }
+        Kernel { voice, signer: None }
     }
     /// 78.141 — seat a kernel on its key (home/voice.key): its voice is the
     /// key's verifying half, and it signs.
@@ -41,14 +36,11 @@ impl Kernel {
         let voice = sk.verifying_key().to_bytes();
         Kernel { signer: Some(sk), ..Kernel::from_voice(voice) }
     }
-    pub fn voice(&self) -> [u8; 32] {
+    pub(crate) fn voice(&self) -> [u8; 32] {
         self.voice
     }
-    pub fn name(&self) -> &str {
-        &self.name
-    }
     /// The key this kernel signs with, where it was seated on one.
-    pub fn signer(&self) -> Option<&ed25519_dalek::SigningKey> {
+    pub(crate) fn signer(&self) -> Option<&ed25519_dalek::SigningKey> {
         self.signer.as_ref()
     }
 }

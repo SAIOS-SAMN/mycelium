@@ -4,7 +4,8 @@
 use crate::client::sdk::*;
 
 impl Epigenome {
-    pub fn shed_n(&self) -> u64 {
+    #[cfg(test)]
+    pub(crate) fn shed_n(&self) -> u64 {
         self.shed_n
     }
 
@@ -12,7 +13,7 @@ impl Epigenome {
     /// mind's OWN K (45.4). The height beside it is standing extent and is
     /// left alone; the lifecycle is the mind's, and a mind that hears
     /// nothing still thinks.
-    pub fn touch(&mut self, addr: &[u8], now_k: u64) {
+    pub(crate) fn touch(&mut self, addr: &[u8], now_k: u64) {
         if let Some(d) = self.dialect.get_mut(addr) {
             d.last_used_k = now_k;
             #[expect(clippy::disallowed_methods, reason = "rule 11 — one per use: a u64 of events cannot pass 2⁶⁴")]
@@ -31,11 +32,12 @@ impl Epigenome {
     /// two failures compounded into a client the kernel killed. A mind's own
     /// K advances on its own acts, so truncation is independent of whether
     /// anyone answered it.
-    pub fn shed(&mut self, now_k: u64) -> usize {
+    #[cfg(test)]
+    pub(crate) fn shed(&mut self, now_k: u64) -> usize {
         self.shed_except(now_k, &|_| false).len()
     }
 
-    pub fn note_stroke(&mut self, now_k: u64) {
+    pub(crate) fn note_stroke(&mut self, now_k: u64) {
         let n = crate::physics::aperture_cycle() as usize;
         self.stroke_k.push(now_k);
         if self.stroke_k.len() > n {
@@ -72,7 +74,7 @@ impl Epigenome {
 
     /// Returns the addresses shed, so the carriers that hang off a dialect
     /// word — its utterance receipt above all (S12.6a) — leave with it.
-    pub fn shed_except(&mut self, now_k: u64, glued: &impl Fn(&[u8]) -> bool) -> Vec<Vec<u8>> {
+    pub(crate) fn shed_except(&mut self, now_k: u64, glued: &impl Fn(&[u8]) -> bool) -> Vec<Vec<u8>> {
         let Some(aperture_k) = self.aperture_k(now_k) else {
             return Vec::new();
         };
@@ -101,7 +103,7 @@ impl Epigenome {
     /// FX1, alternative B — A SEALED FORM'S CIRCUIT RAN THROUGH THESE WORD
     /// VERTICES at the voice's `k`: the dialect words among them are
     /// traversed.
-    pub fn note_traversed(&mut self, words: &[Vec<u8>], k: u64) {
+    pub(crate) fn note_traversed(&mut self, words: &[Vec<u8>], k: u64) {
         for w in words {
             if self.dialect.contains(w) {
                 self.traversed_k.insert(w, k);
@@ -115,7 +117,7 @@ impl Epigenome {
     /// idle-K door's own window; `None` where it has not been measured), and
     /// the idle ones — dialect words no circuit ran through over the window.
     /// The orbit's set is emptied.
-    pub fn dialect_flux(&mut self, now_k: u64) -> (u64, Option<u64>, Option<u64>) {
+    pub(crate) fn dialect_flux(&mut self, now_k: u64) -> (u64, Option<u64>, Option<u64>) {
         let orbit = std::mem::take(&mut self.traversed_orbit).len() as u64;
         let Some(aperture) = self.aperture_k(now_k) else {
             return (orbit, None, None);

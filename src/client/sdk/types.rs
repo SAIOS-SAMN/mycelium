@@ -362,6 +362,7 @@ pub struct GenomeWord {
 
 /// An expressed word — a residual this mind germinated and has not had
 /// ratified — at its own coordinate, for the same reason.
+#[cfg(test)]
 pub struct ExpressedWord {
     pub(crate) word: Element,
     pub(crate) shape: std::sync::OnceLock<Option<crate::transducer::blade::Shape>>,
@@ -397,7 +398,9 @@ pub struct Epigenome {
     /// them. They let the entity recognise a residual it has already
     /// claimed, so a claim is spoken once; a ratified word arrives by
     /// teaching and enters the genome.
+    #[cfg(test)]
     pub(crate) expressed: crate::network::nerve::Keyed<ExpressedWord>,
+    #[cfg(test)]
     pub(crate) expressed_atlas: crate::transducer::stalk::Stalks,
     /// Sentences this mind spoke that stood. Memory only.
     pub(crate) dialect: crate::network::nerve::Keyed<Dialect>,

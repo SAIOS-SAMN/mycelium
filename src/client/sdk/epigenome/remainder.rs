@@ -188,7 +188,8 @@ impl Epigenome {
 
     /// THE RECEPTOR'S READ: the words whose remainder of class `class` was
     /// perceived on the chart chain `at` — a keyed read, never a scan.
-    pub fn remainders_at(&self, at: &[Vec<u8>], class: &crate::transducer::sentence::ClassVector) -> Vec<Address> {
+    #[cfg(test)]
+    pub(crate) fn remainders_at(&self, at: &[Vec<u8>], class: &crate::transducer::sentence::ClassVector) -> Vec<Address> {
         let probe = Remainder { class: Box::new(class.clone()), at: at.to_vec(), answered: None };
         match self.remainder_fibers.get(&probe.index_key()) {
             Some(a) => vec![a.clone()],
@@ -197,7 +198,8 @@ impl Epigenome {
     }
 
     /// Remainders indexed.
-    pub fn remainders_len(&self) -> usize {
+    #[cfg(test)]
+    pub(crate) fn remainders_len(&self) -> usize {
         self.remainder_fibers.len()
     }
 

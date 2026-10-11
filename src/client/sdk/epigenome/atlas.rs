@@ -11,7 +11,7 @@ impl Epigenome {
     /// THE HELD WORD AT AN ADDRESS. Under Z11 the index says whether the
     /// genome HOLDS a word (`holds`) and this says whether it is decoded
     /// and here; today every held word is resident, so the two agree.
-    pub fn word_at(&self, addr: &[u8]) -> Option<&Held> {
+    pub(crate) fn word_at(&self, addr: &[u8]) -> Option<&Held> {
         self.resident.get(addr).map(|w| &w.held)
     }
 
@@ -19,12 +19,12 @@ impl Epigenome {
     /// question, and which stays true under Z11 whether or not the word is
     /// decoded. Every reader that means "does this mind know it" asks
     /// here; a reader that means "can I read its form now" asks `word_at`.
-    pub fn holds(&self, addr: &[u8]) -> bool {
+    pub(crate) fn holds(&self, addr: &[u8]) -> bool {
         self.genome.contains(addr)
     }
 
     /// Working-atlas root: concatenated A21 stratum roots of genome ∪ dialect.
-    pub fn atlas_root(&self) -> crate::transducer::address::Address {
+    pub(crate) fn atlas_root(&self) -> crate::transducer::address::Address {
         let mut rows = crate::transducer::sheaf::digests(&self.atlas);
         rows.extend(crate::transducer::sheaf::digests(&self.dialect_atlas));
         #[expect(
@@ -40,7 +40,8 @@ impl Epigenome {
     }
 
     /// This word's shape, lifted once under the word it measures.
-    pub fn shape_at(&self, addr: &[u8]) -> Option<&crate::transducer::blade::Shape> {
+    #[cfg(test)]
+    pub(crate) fn shape_at(&self, addr: &[u8]) -> Option<&crate::transducer::blade::Shape> {
         let w = self.resident.get(addr)?;
         w.shape
             .get_or_init(|| crate::transducer::element::shape_of_chain(w.held.sub()))
@@ -61,7 +62,8 @@ impl Epigenome {
     /// AND A WORD AT A NEW ADDRESS IS A NEW WORD: no act admitted it. The
     /// punctured word's address is answered so the caller admits it by an
     /// act on its own line (LD3-c) — `None` where nothing was punctured.
-    pub fn puncture(&mut self, addr: &[u8], asg: Vec<(u8, u8)>) -> Option<crate::transducer::address::Address> {
+    #[cfg(test)]
+    pub(crate) fn puncture(&mut self, addr: &[u8], asg: Vec<(u8, u8)>) -> Option<crate::transducer::address::Address> {
         let entry = self.genome.remove(addr)?;
         let Some(mut w) = self.resident.remove(addr) else {
             // The index holds it and the payload does not: under Z11 that
@@ -173,7 +175,7 @@ impl Epigenome {
     /// The standing of a held address, read in the strata's own order
     /// (24.1): Ruled, then Stood. A word this epigenome does not hold has
     /// no standing here.
-    pub fn standing_of(&self, addr: &[u8]) -> Option<Standing> {
+    pub(crate) fn standing_of(&self, addr: &[u8]) -> Option<Standing> {
         if self.genome.contains(addr) {
             return Some(Standing::Ruled);
         }
@@ -239,7 +241,7 @@ pub(crate) fn act_keys_of(e: &Held) -> Vec<(Vec<u8>, crate::transducer::address:
 
 impl Epigenome {
 
-    pub fn genome_len(&self) -> usize {
+    pub(crate) fn genome_len(&self) -> usize {
         self.genome.len()
     }
 
@@ -256,7 +258,7 @@ impl Epigenome {
     /// This replaced `genome_since(seq)` — "every word admitted at or
     /// after an ordinal" — which answered a question about history when
     /// the pivot's question is about standing work.
-    pub fn take_unpivoted(&mut self) -> Vec<Element> {
+    pub(crate) fn take_unpivoted(&mut self) -> Vec<Element> {
         let at: Vec<Vec<u8>> = self.unpivoted.scoped().map(|(k, ())| k).collect();
         self.unpivoted = crate::network::nerve::Keyed::new();
         at.iter()
@@ -265,7 +267,8 @@ impl Epigenome {
     }
 
     /// How many coordinates the pivot has not reached.
-    pub fn unpivoted_len(&self) -> usize {
+    #[cfg(test)]
+    pub(crate) fn unpivoted_len(&self) -> usize {
         self.unpivoted.len()
     }
 
@@ -274,7 +277,8 @@ impl Epigenome {
     /// `for offset in 0..len { (start + offset) % len }` was reaching for
     /// — with the difference that a circuit over coordinates does not
     /// renumber itself when a word is admitted or retired mid-circuit.
-    pub fn genome_circuit_from(&self, at: Option<&[u8]>) -> Vec<Vec<u8>> {
+    #[cfg(test)]
+    pub(crate) fn genome_circuit_from(&self, at: Option<&[u8]>) -> Vec<Vec<u8>> {
         let all: Vec<Vec<u8>> = self.genome.scoped().map(|(k, _)| k).collect();
         let Some(at) = at else { return all };
         match all.iter().position(|k| k.as_slice() == at) {
@@ -289,7 +293,7 @@ impl Epigenome {
         }
     }
 
-    pub fn next_word_after(&self, at: Option<&[u8]>) -> Option<Vec<u8>> {
+    pub(crate) fn next_word_after(&self, at: Option<&[u8]>) -> Option<Vec<u8>> {
         let mut past = at.is_none();
         let mut first: Option<Vec<u8>> = None;
         for (k, _) in self.genome.scoped() {
@@ -314,12 +318,13 @@ impl Epigenome {
     /// spellings in the old vocabulary — and surviving citations reindex.
     /// The genome's atlas, admitted in place. Persistence and crystallize
     /// only. Cognitive reads use [`working_atlas`].
-    pub fn atlas(&self) -> &crate::transducer::stalk::Stalks {
+    #[cfg(test)]
+    pub(crate) fn atlas(&self) -> &crate::transducer::stalk::Stalks {
         &self.atlas
     }
 
     /// Empty when the working language has no genome word and no dialect word.
-    pub fn atlas_is_empty(&self) -> bool {
+    pub(crate) fn atlas_is_empty(&self) -> bool {
         self.atlas_len == 0 && self.dialect.is_empty()
     }
 
@@ -333,7 +338,7 @@ impl Epigenome {
         }
     }
 
-    pub fn working_atlas_with<'a>(
+    pub(crate) fn working_atlas_with<'a>(
         &'a self,
         held: &'a crate::transducer::bubble::Contemplation,
     ) -> WorkingAtlas<'a> {
@@ -362,7 +367,7 @@ impl Epigenome {
     /// whole `Form` copied at every crossing. Thirty-two bytes per member
     /// is the read; the form is fetched by key when it is about to be
     /// spoken.
-    pub fn chart_stratum(&self, chart: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {
+    pub(crate) fn chart_stratum(&self, chart: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {
         let Some(bucket) = self.by_moduli.get(chart.key().as_bytes()) else {
             return Vec::new();
         };
@@ -376,7 +381,8 @@ impl Epigenome {
     }
 
     /// Size of the axis index: charts filed, and total word entries filed across all charts and axes.
-    pub fn axis_index_counts(&self) -> (usize, usize) {
+    #[cfg(test)]
+    pub(crate) fn axis_index_counts(&self) -> (usize, usize) {
         let charts = self.axis_index.len();
         let words: usize = self
             .axis_index
