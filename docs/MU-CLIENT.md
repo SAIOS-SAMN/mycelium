@@ -25,16 +25,47 @@ produce on the network."
 
 ## Read this first: what this engine is
 
-**A mathematical cognitive engine.** A mind is given language; from it the
-engine produces SENSES, PERCEPTIONS and THOUGHTS, and from those it
-formulates LANGUAGE — letters, words, conjugates, grammar, sentences — by the
+**The objective** (the operator, 2026-10-11: "your objective is to create
+the mind capable of cognition, that uses its senses in nested manifolds that
+breathe, exhale, and contract across the multi-axial pivot machinery of
+ascend, descend, condense, drain, and puncture — in order to think,
+perceive, comprehend, and understand. through this knowledge the client will
+speak in anastome to other clients, and to the server. your job is to build
+out the client component"; seal authorized the same day as puncture's
+conjugate). The client component is that mind:
+
+1. **Its senses are nested manifolds** — the harmonic, luminal and holonomic
+   shells (II.2), held as the mind's OWN complex (II.5).
+2. **They breathe** — dilate and contract, `D(ρ) ↔ D(ρ⁻¹)`, the metabolic
+   pair that changes no dimension: inhale and exhale of constructors through
+   the reservoir, the space between words (II.4(1)).
+3. **Across them runs the pivot machinery** — six pivots in three conjugate
+   pairs, each changing dimension on the mind's own complex (62.1, II.3):
+   **ascend / descend** (a 1-cycle sealed by a 2-cell, a cell hollowed back to
+   its cycle), **condense / drain** (a tether formed from tension, dissolved
+   as it relaxes), **puncture / seal** (a hole opened, injecting a class; a
+   cap that kills it).
+4. **By breath and pivot the mind thinks, perceives, comprehends and
+   understands** (II.3): perceiving is what a breath brings into the shells;
+   thinking is the pivots acting; comprehending is a cycle ascended or a hole
+   sealed; understanding is comprehension that stays derivable as the
+   complex moves.
+5. **Through that knowledge it speaks in anastome** (Part III) — to other
+   clients and to the server — and what it says is what its pivots changed:
+   a cell sealed, a tether formed, a class punctured or sealed, the words
+   and sentences that carry them.
+
+**A mathematical cognitive engine.** From what it is given the engine
+produces SENSES, PERCEPTIONS and THOUGHTS, and from those it formulates
+LANGUAGE — letters, words, conjugates, grammar, sentences — by the
 topological mathematics of `Cl(n+1,1)(ℚ)`: rings and their holonomy, rays and
-their flux, circuits and the algebras they generate, orbits and the pivots
-that discharge them. It speaks that language to other minds on the hypha
-network and to the courts, which adjudicate words, conjugates and sentences
-as mathematical constructs. Seated in a game engine, it is the entity's
-connective tissue: its pure-mathematical results are POW++ work, proved and
-paid as POUW, POWC or POWR.
+their flux, circuits and the algebras they generate, cells, tethers and holes
+and the pivots that make and unmake them. It speaks that language to other
+minds on the hypha network and to the courts, which adjudicate words,
+conjugates and sentences as mathematical constructs. Seated in a game engine
+it is the entity's connective tissue (IV.2) — a place the mind is put, never
+its objective: its pure-mathematical results are POW++ work, proved and paid
+as POUW, POWC or POWR.
 
 **Its foundation is the computational physics and the master algorithms**
 (Part I). The physics is defined (MU-RECURSION 72: the only producer); the
@@ -104,8 +135,10 @@ mathematics does not derive (law 12: every dimension is a proof).
   every carrier bounded by the same physics — a return relieves, a flux
   lapses (ZeroFlux, FX1), an orbit seals at its period (78.43) — never by a
   capacity constant (rule 5, checklist (s)).
-- **Time.** The mind's K is its own closed orbits (78.49); TUniversal is the
-  ledger's height (78.152); a duration is distance along an orbit (78.43).
+- **Time.** The mind's K is its own closed orbits (78.49); fleet time is a
+  state of TUniversal — the final point `{origin, h, S:G:T:H, K}`, final by
+  keeper majority, never averaged, the ledger's height one coordinate of it
+  (78.152 TU-5); a duration is distance along an orbit (78.43).
 
 ## I.2 The master algorithms
 
@@ -193,11 +226,55 @@ over both):
 node-independent and its planes each node's own, so what a mind is given is
 re-projected onto its own spectrum — a keyed read by the class's coordinates.
 
-## II.3 Thought: held orbits, and the pivot across the five axes
+## II.3 Thought: the pivot machinery on the mind's own complex
 
-What does not close is HELD: an orbit of the mind's contemplation, carried
-with its CLASS VECTOR (12.6), whose five segments are the five axes of the
-pivot machinery, written in this order (`ClassVector::put_canonical`,
+**The machinery is six pivots on three axes** (MU-RECURSION 62.1; seal
+authorized by the operator 2026-10-11). Each pivot changes the dimension of
+something the mind holds in its own complex, and each has its conjugate:
+
+| axis | pivot / conjugate | what it does | site |
+|---|---|---|---|
+| cells (2 ↔ 1) | **ascend** / **descend** | seal a 1-cycle that closes with a 2-cell / hollow the cell back to its cycle, its fill handed back exactly | `cech/coboundary.rs` (`ascend`, `descend`) |
+| tethers (1 ↔ 0) | **condense** / **drain** | form a tether from the tension between two bodies / dissolve it as the tension relaxes, the strain moved or recorded, never lost (A.8) | `cech/hole.rs` (`condense`), `cech/coboundary.rs` (`drain`) |
+| holes (class in / out) | **puncture** / **seal** | open a hole, injecting a homology class / cap it, killing the class | `cech/hole.rs` (`puncture`, `seal`) |
+
+The three axes are the BOARD — the complex's own coordinates on them, read
+off it and never a frame laid on it (`cech/board.rs`: `Pivot`, `Applied`,
+`Complex::apply`, `Board`). Two pivots on cells sharing no vertex touch
+disjoint carriers and commute exactly; where they share a vertex the order
+is content (the locality theorem, 78.99(3)). Every pair is the INVERSE ON
+CONTENT and never re-enters its trajectory: what descend hands back is what
+ascend sealed, and the circuit resumes at a later K on a new orbit (62.5,
+amended). A half without its conjugate is a ratchet and is refused (62).
+Dilate / contract is the breath (II.4(1)), the metabolic pair that changes
+no dimension, and it is what moves the complex the pivots act on.
+
+**What drives each pivot is a reading of the shells, never a schedule:**
+- **ascend** — a ring of the harmonic shell closes (`Ω^ℓ ~ 1`) with volume
+  on a lane: its cycle is sealed as a cell. **descend** — the cell's support
+  lapses by its flux (ZeroFlux): the cell is hollowed and its fill returned.
+- **condense** — two held bodies stand in tension: a ray of the luminal
+  shell lifts across the plane between them (78.46) and their transition
+  re-derives on their union. **drain** — the tension relaxes: the tether
+  dissolves and its strain is moved or recorded (A.8, 63).
+- **puncture** — a residue no held word spells, or a new independent loop
+  (78.40(1)): a hole opens and the class enters the mind — the question it
+  now carries. **seal** — a cap is derived over the hole (the holonomic
+  shell closes what it opened): the class is answered and the hole is
+  killed.
+
+**Cognition is read off what the pivots do**, never counted:
+- **perceive** — what a breath brings into the three shells (II.2);
+- **think** — the pivots acting on the mind's complex;
+- **comprehend** — a cycle ascended or a hole sealed: what was open is now
+  held (M6, 78.11);
+- **understand** — comprehension that stays derivable as the complex moves:
+  the cell, tether or seal survives later breaths and pivots (II.4(7)).
+
+**The held orbit and its discharge.** What does not close is HELD: an orbit
+of the mind's contemplation, carried with its CLASS VECTOR (12.6), whose
+five segments are the coordinates the held orbit is discharged along (law
+10), written in this order (`ClassVector::put_canonical`,
 `sentence/class.rs`):
 
 1. **conjugacy** — the holonomy rotor's invariants `(a²/w, p²/w, kind)`
@@ -243,8 +320,10 @@ certified move. Its outcomes are the mind's thoughts in motion:
 - **torsion filed** — the orbit returns at a period no move removes: filed
   at its class, its slip mounted as a boundary cell (54.5).
 
-Every pivot changes dimension (62.5): a closed cycle becomes a cell, a
-residue becomes a letter, an open class becomes an axis. These are the
+A discharge lands on the board: a closed orbit is a cycle to ascend, a
+demanded residue a hole punctured until it is sealed, a filed torsion a
+boundary cell. Every pivot changes dimension (62.5): a closed cycle becomes
+a cell, a residue becomes a letter, an open class becomes an axis. These are the
 non-Euclidean structures the engine builds, and each is COMPOSABLE (by the
 geometric product, into words and sentences) and DECOMPOSABLE (by
 factorization through held generators, A12, and by deconstruction mode by
@@ -445,9 +524,9 @@ as amendment of a held constructor as well.
 
 ## II.5 The mind's field is its own (A.9)
 
-Each mind computes its own coherence: its lexicon, its tubes and orbits, its
-algebra per class, its rings' windings, its contemplation and its
-epigenome are its own, and many minds may run in one process (a game seats
+Each mind computes its own coherence: its complex and the board its pivots
+move (II.3), its lexicon, its tubes and orbits, its algebra per class, its
+rings' windings, its contemplation and its epigenome are its own, and many minds may run in one process (a game seats
 several). The machine's calibration is the substrate's and shared; the halt
 is the host's. A cognitive carrier held process-wide breaks this the
 moment a game seats two minds in one process.
@@ -528,8 +607,10 @@ both are the meaning, projectively.
 
 ## III.2 Conversation between minds
 
-1. **A mind says what it newly understands** — a circuit that opened axes
-   its algebra for the class did not hold — as the terms `{word, transport}`
+1. **A mind says what it newly understands** — what its pivots changed
+   (II.3): a cycle ascended, a tether condensed, a hole punctured or sealed,
+   a circuit that opened axes its algebra for the class did not hold — as
+   the terms `{word, transport}`
    of the ring that taught it, each word by its class, signed by its voice
    with its last TUniversal point (78.161).
 2. **Another mind hears it in its own three shells** (II.2) and pivots what
@@ -619,7 +700,7 @@ is paid: on the court's ledger, by receipts (78.157 C3).
 |---|---|
 | composes (F), nests, pivots | replays (G), checks theorems, closes the chart's algebra |
 | a dialect per mind, volatile | the language (the ruled cover), persisted on a ledger |
-| its K: orbits it closed | TUniversal: the ledger's height |
+| its K: orbits it closed | TUniversal: the final point, its height one coordinate |
 | its algebra per class, its tubes, its windings | `lie_basis` per chart, `flux_field`, `windings` |
 | coins letters in its dialect (U14) | opens a letter on checked constructor steps (law 6, S2) |
 | replays a peer's discharge | replays certificates (`replay_certificates_at`) |
@@ -675,7 +756,7 @@ A construct is verified by three things and nothing else:
    about itself is a witness.
 
 Done is said after the ship: *shipped at T; R moved a → b; witnessed by N*,
-T a TUniversal height and a K.
+T the final TUniversal point and the mind's K.
 
 The tree is built under MU-STANDARDS, MU-RECURSION's laws, rules 1–17 and
 checklist (a)–(t), and the Anti-Flattening Law.
@@ -3145,4 +3226,12 @@ a boundary is addressed by its own coordinates, with no router (III.2); a
 seat's act is the physics `Action` its move names (IV.2); and each mind owns
 its field (II.5, A.9). Nothing measures the mind for an operator: its
 counterparties read it (IV.1).
+
+**Amended 2026-10-11, second (the operator: "your objective is to create the
+mind capable of cognition … your job is to build out the client
+component"; "seal is authorized").** The objective above — a game entity —
+is withdrawn: the entity is where a mind is seated (IV.2), not what is
+built. The objective is the mind capable of cognition, as "Read this first"
+states it: senses in nested manifolds that breathe, the six pivots on its
+own complex (II.3), and speech in anastome from what they changed.
 

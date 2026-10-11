@@ -11363,6 +11363,17 @@ direction `e_inf` in the conformal embedding, which is why `D(rho)` looked
 conformal-rather-than-isometric where it sat. The pairing was always sound;
 the organ was wrong (U7).
 
+**Amended 2026-10-11 on the operator's word ("the multi-axial pivot
+machinery of ascend, descend, condense, drain, and puncture"; "seal is
+authorized").** The six pivots in three pairs stand as ruled, `seal`
+authorized as `puncture`'s conjugate, and they are the MIND's pivot
+machinery: each mind runs them on its own complex, driven by its breath
+(`dilate / contract`) and its three shells (MU-CLIENT "Read this first",
+II.3). "Exactly one is built" no longer holds: all six are built on the Čech
+complex (`cech/coboundary.rs` `ascend`, `descend`, `drain`; `cech/hole.rs`
+`condense`, `puncture`, `seal`; `cech/board.rs` `Pivot`, `Complex::apply`);
+the mind does not yet call them, and that is the client's next work.
+
 ### 62.2 What this corrects
 
 `condense / drain` IS TENSION AND RELAXATION, and 59's tether is those two
