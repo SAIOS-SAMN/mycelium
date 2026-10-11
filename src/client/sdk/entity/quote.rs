@@ -23,7 +23,7 @@ impl Entity {
         Some(at)
     }
 
-    pub fn seek_refinement(&mut self) -> Option<(crate::transducer::address::Address, Vec<dialogue::CiteWire>)> {
+    pub(crate) fn seek_refinement(&mut self) -> Option<(crate::transducer::address::Address, Vec<dialogue::CiteWire>)> {
         let at = self.advance_refine_cursor()?;
         let sub = self.epigenome.word_at(&at)?.substance();
         if sub.sub().is_empty() {
@@ -157,7 +157,7 @@ impl Entity {
         }
     }
 
-    pub fn quote(&mut self) -> io::Result<YieldQuote> {
+    pub(crate) fn quote(&mut self) -> io::Result<YieldQuote> {
         let thought_charts: Vec<crate::transducer::stalk::Invariant> = {
             let mut charts = Vec::new();
             // THE BUBBLES THIS MIND HOLDS, all of them: the charts it asks

@@ -20,7 +20,7 @@ impl Entity {
     /// complex, a coordinate the form does not hold, or a form no vertex of
     /// which still acts — held inert until this mind's language moves.
     #[expect(clippy::too_many_arguments, reason = "the refusal's three coordinates, the sentence, its family and task, and the stroke of the act that heard it (65.5)")]
-    pub fn receive_adjudication(
+    pub(crate) fn receive_adjudication(
         &mut self,
         spoken: &Element,
         kind: RefusalKind,
@@ -114,7 +114,7 @@ impl Entity {
     /// UTTER THE CONTRACTED SENTENCES (50.9): each one spoken to the court
     /// with its certificate, over the family and task it was minted for.
     /// One this mind could not speak stays pending.
-    pub fn speak_contracted(&mut self) -> Vec<(crate::transducer::address::Address, u8)> {
+    pub(crate) fn speak_contracted(&mut self) -> Vec<(crate::transducer::address::Address, u8)> {
         let pending = std::mem::take(&mut self.contracted);
         // The root of this act (the arm's): one stroke for every utterance
         // it makes (65.5).
@@ -147,7 +147,7 @@ impl Entity {
     /// family — on a backlog that is one stroke spending the thread on
     /// network round trips and nothing else. The queue is durable across
     /// strokes, so what is not taught this pass is taught next (rule 10).
-    pub fn speak_owed(&mut self) -> Vec<(crate::transducer::address::Address, u8)> {
+    pub(crate) fn speak_owed(&mut self) -> Vec<(crate::transducer::address::Address, u8)> {
         let mut budget = self.physics.stroke();
         let mut owed = std::mem::take(&mut self.owed);
         let keep = owed.split_off(owed.len().min(budget.remaining()));
@@ -180,7 +180,8 @@ impl Entity {
     }
 
     /// How many cited forms wait to be taught to a court.
-    pub fn owed_pending(&self) -> usize {
+    #[cfg(test)]
+    pub(crate) fn owed_pending(&self) -> usize {
         self.owed.len()
     }
 
@@ -242,17 +243,20 @@ impl Entity {
     }
 
     /// The K at which this mind sealed a refused address, if it did.
-    pub fn sealed_at(&self, addr: &[u8]) -> Option<u64> {
+    #[cfg(test)]
+    pub(crate) fn sealed_at(&self, addr: &[u8]) -> Option<u64> {
         self.sealed.get(addr).copied()
     }
 
     /// The contracted sentences waiting to be uttered, taken.
-    pub fn take_contracted(&mut self) -> Vec<Pending> {
+    #[cfg(test)]
+    pub(crate) fn take_contracted(&mut self) -> Vec<Pending> {
         std::mem::take(&mut self.contracted)
     }
 
     /// How many contracted sentences wait to be uttered.
-    pub fn contracted_pending(&self) -> usize {
+    #[cfg(test)]
+    pub(crate) fn contracted_pending(&self) -> usize {
         self.contracted.len()
     }
 }

@@ -683,6 +683,7 @@ pub struct Pending {
 /// against the chain it came from. A reading — the caller decides what to
 /// do with a residual that raised a lane or moved nothing, and 24.2 says
 /// what that is: hold it as thought rather than speak it.
+#[cfg(test)]
 pub(crate) fn residual_move(
     residual: &[(i64, i64, u8, u8)],
     chain: &[(i64, i64, u8, u8)],

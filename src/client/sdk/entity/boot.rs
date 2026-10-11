@@ -9,14 +9,14 @@ impl Entity {
     /// binary's own perception path, which derives against this mind's
     /// presentation and so reads its generator index. The physics stays
     /// private; what is public is a stroke of it.
-    pub fn stroke(&mut self) -> crate::physics::Budget {
+    pub(crate) fn stroke(&mut self) -> crate::physics::Budget {
         self.physics.stroke()
     }
 
     /// A stroke of a MEASURED size — what a caller with a boundary in hand
     /// spends on it (L8w, law 9). The count is read off the work, never
     /// off the machine.
-    pub fn stroke_n(&mut self, n: usize) -> crate::physics::Budget {
+    pub(crate) fn stroke_n(&mut self, n: usize) -> crate::physics::Budget {
         self.physics.stroke_n(n)
     }
 
@@ -25,16 +25,12 @@ impl Entity {
     /// held thoughts escrow in and its syntropy regenerates. A second
     /// physics beside it in the binary held a second reserve the thoughts
     /// never drew on and a syntropic count nothing booked.
-    pub fn physics(&self) -> &crate::physics::Physics {
+    pub(crate) fn physics(&self) -> &crate::physics::Physics {
         &self.physics
     }
 
-    pub fn physics_mut(&mut self) -> &mut crate::physics::Physics {
+    pub(crate) fn physics_mut(&mut self) -> &mut crate::physics::Physics {
         &mut self.physics
-    }
-
-    pub fn add_hypha(&mut self, addr: &str) {
-        self.session.add_peer(addr);
     }
 
     /// Ask the bootstrap hypha for the rest of the nerve, one peer per spend.
@@ -43,7 +39,7 @@ impl Entity {
         self.session.discover_budgeted(&mut budget);
     }
 
-    pub fn open(addr: &str, kernel: Kernel) -> Self {
+    pub(crate) fn open(addr: &str, kernel: Kernel) -> Self {
         let mut session = Session::open(addr, kernel);
         session.discover();
         Entity {
@@ -97,7 +93,8 @@ impl Entity {
     /// cites no peer, so its own height is its K (45.2), and what it stamps
     /// its dialect and its held forms with is this. Set once to zero at
     /// boot and never again, every voice's temporal lane was a point.
-    pub fn advance_height(&mut self, h: u64) {
+    #[cfg(test)]
+    pub(crate) fn advance_height(&mut self, h: u64) {
         if h > self.height.get() {
             self.height = crate::chronometry::Height(h);
         }
@@ -107,19 +104,11 @@ impl Entity {
     /// last final point its door replies carried (`Session::tuniversal`).
     /// Before the first, the height it was set at boot — never a book's
     /// height read off a quote, which is another coordinate.
-    pub fn now_tu(&self) -> u64 {
+    pub(crate) fn now_tu(&self) -> u64 {
         match self.session.tuniversal() {
             Some(p) => p.h,
             None => self.height.get(),
         }
-    }
-
-    /// 78.152 TU-7 — THE LAST FINAL TUNIVERSAL POINT this mind's session
-    /// read (`Session::tuniversal`): what every act it speaks carries, and
-    /// what it stamps a percept or a publication with. `None` before the
-    /// first door reply that carried one.
-    pub fn tuniversal(&self) -> Option<crate::chronometry::tuniversal::TPoint> {
-        self.session.tuniversal()
     }
 
     /// THIS MIND'S OWN K (78.49, 78.23): the orbits it has closed, one per
@@ -132,7 +121,7 @@ impl Entity {
     /// a third quantity belonging to a hypha's chain; none of the three is
     /// interchangeable with another, and the stroke line prints this one
     /// and the height under their own names.
-    pub fn own_k(&self) -> u64 {
+    pub(crate) fn own_k(&self) -> u64 {
         self.k
     }
 
@@ -154,7 +143,7 @@ impl Entity {
     /// the stroke's arms have run. An orbit that acted steps the mind's K by
     /// one; one that acted on nothing leaves K where it was. `true` where
     /// the orbit closed.
-    pub fn close_orbit(&mut self) -> bool {
+    pub(crate) fn close_orbit(&mut self) -> bool {
         // RM1 — the calluses the receptor raised stand first, so a class no
         // held word spells goes up in THIS orbit's plan.
         self.stand_calluses();
@@ -207,7 +196,7 @@ impl Entity {
     /// are read into an epigenome of their own and taken in only once they
     /// read whole, so a refusal leaves this mind as it was. `Err` names why
     /// the file was refused.
-    pub fn restore_genome(&mut self, bytes: &[u8]) -> Result<(), String> {
+    pub(crate) fn restore_genome(&mut self, bytes: &[u8]) -> Result<(), String> {
         if let Some(named) = crate::client::sdk::epigenome::genome_refused(bytes) {
             return Err(named.to_string());
         }
@@ -223,7 +212,7 @@ impl Entity {
     /// THE GENOME'S BYTES: the words a court admitted, at their citations. A
     /// word the writer refused is named once with its count (LD0), and the
     /// counts are answered.
-    pub fn genome_bytes(&self) -> (Vec<u8>, crate::client::sdk::epigenome::GenomeRefused) {
+    pub(crate) fn genome_bytes(&self) -> (Vec<u8>, crate::client::sdk::epigenome::GenomeRefused) {
         let (bytes, refused) = self.epigenome.crystallize();
         refused.name();
         (bytes, refused)
@@ -231,7 +220,7 @@ impl Entity {
 
     /// Persist the genome atomically (write-then-rename). Call from the
     /// syntropic phase when the genome has grown.
-    pub fn save_genome(&mut self, genome_path: &str) -> io::Result<crate::client::sdk::epigenome::GenomeRefused> {
+    pub(crate) fn save_genome(&mut self, genome_path: &str) -> io::Result<crate::client::sdk::epigenome::GenomeRefused> {
         let (bytes, refused) = self.genome_bytes();
         // ACT1: where this voice stood when the genome was taken, noted only
         // once the write lands (78.21(3)).
@@ -243,11 +232,8 @@ impl Entity {
         Ok(refused)
     }
 
-    pub fn kernel(&self) -> &Kernel {
+    #[cfg(test)]
+    pub(crate) fn kernel(&self) -> &Kernel {
         self.session.kernel()
-    }
-
-    pub fn axis_index_counts(&self) -> (usize, usize) {
-        self.epigenome.axis_index_counts()
     }
 }

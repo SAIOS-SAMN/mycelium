@@ -108,7 +108,8 @@ impl Entity {
     }
 
     /// How many utterance receipts the mind holds (7.3's measurement).
-    pub fn utterances_filed(&self) -> usize {
+    #[cfg(test)]
+    pub(crate) fn utterances_filed(&self) -> usize {
         self.taught_up.len()
     }
 
@@ -120,7 +121,8 @@ impl Entity {
     /// address is the chain's own key is passed over, since deconstruction
     /// reads other words, never the chain under locate. A citation is a use
     /// (45.4): a stood word cited here is touched at the mind's own K.
-    pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)], budget: &mut crate::physics::Budget) -> Cited {
+    #[cfg(test)]
+    pub(crate) fn cite(&mut self, chain: &[(i64, i64, u8, u8)], budget: &mut crate::physics::Budget) -> Cited {
         // The chain's own key, a listing key (17.2): the one address the
         // held stratum does not answer with.
         // A chain with no A5 form cites nothing and stands whole as the
@@ -224,34 +226,13 @@ impl Entity {
         (cites, located.residual)
     }
 
-    /// Deepen fibres from puncture cites the hypha has verified. Linear in
-    /// the proof; each address is a keyed read.
-    pub fn puncture_verified(&mut self, cites: &[dialogue::CiteWire]) -> usize {
-        let mut deepened = 0usize;
-        // EVERY CITE'S BODY IS OFFERED: `Epigenome::puncture` answers `None`
-        // for an assignment the word already speaks, so the hypha's own
-        // reading decides what is a section — never a flag the speaker set.
-        for c in cites {
-            let Some(at) = self.epigenome.puncture(&c.addr, crate::transducer::sentence::body_assignment(&c.body)) else {
-                continue;
-            };
-            deepened += 1;
-            // THE PUNCTURED WORD IS ADMITTED BY AN ACT ON THIS VOICE'S LINE
-            // (78.49): a new address learned from a proof the hypha
-            // verified — an act of this mind; the court admits it when it
-            // rules it, and its stamp is then the word's locator.
-            if let Some(word) = self.epigenome.word_at(at.as_bytes()).map(|h| h.element().clone()) {
-                self.act_on(&word);
-            }
-        }
-        deepened
-    }
 
     /// A served listing: cite over the working atlas. Residual strictly
     /// below the chain on a lane is expressed; residual that raised a
     /// lane or moved nothing is held as thought — the form of the listing's chain
     /// (50.6) — and never expressed.
-    pub fn conclude_listing(
+    #[cfg(test)]
+    pub(crate) fn conclude_listing(
         &mut self,
         chain: &[(i64, i64, u8, u8)],
     ) -> crate::client::sdk::Concluded {
@@ -276,7 +257,7 @@ impl Entity {
 
     /// PR1 — A PROBE, AND ITS READING: folded into this voice's typed tally
     /// (served on `Learning`), and returned.
-    pub fn probe(&mut self, target: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<dialogue::ProbeReading> {
+    pub(crate) fn probe(&mut self, target: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<dialogue::ProbeReading> {
         let r = self.session.probe(target, cites)?;
         self.probes.note(&r);
         Ok(r)
@@ -314,7 +295,7 @@ impl Entity {
 
     /// SPEAK sentences as one act, bound to no family and no task: a word
     /// spoken for itself (an axis germ, a crystallized idea).
-    pub fn speak(&mut self, sentences: &[Element], budget: &mut crate::physics::Budget) -> io::Result<Vec<u8>> {
+    pub(crate) fn speak(&mut self, sentences: &[Element], budget: &mut crate::physics::Budget) -> io::Result<Vec<u8>> {
         self.speak_with(sentences, &[], &[], budget)
     }
 
@@ -328,7 +309,7 @@ impl Entity {
     /// reply is one adjudication per sentence sent: a stood or ratified
     /// sentence is filed and its receipt sealed; a refused one is contracted
     /// (`receive_adjudication`) and its contraction queued.
-    pub fn speak_with(
+    pub(crate) fn speak_with(
         &mut self,
         sentences: &[Element],
         train: &crate::transducer::family::Family,
@@ -445,7 +426,7 @@ impl Entity {
     /// (every colour word shares the motionless vertex; a vertex test would
     /// call them all one). Answers the court's code, or `None` where the
     /// family's fibre moved no hue or the word was already said.
-    pub fn speak_colour(
+    pub(crate) fn speak_colour(
         &mut self,
         task: &[u8],
         train: &crate::transducer::family::Family,
@@ -479,7 +460,7 @@ impl Entity {
     /// composing the two words it cites. Each composition draws one read.
     /// Answers the court's code, or `None` where the language is closed
     /// under composition as far as the stroke reached.
-    pub fn speak_colour_theorem(&mut self, budget: &mut crate::physics::Budget) -> Option<u8> {
+    pub(crate) fn speak_colour_theorem(&mut self, budget: &mut crate::physics::Budget) -> Option<u8> {
         let held: Vec<Element> =
             self.epigenome.genome_words().filter(|w| w.is_colour_word()).map(|w| (**w).clone()).collect();
         let mut theorem: Option<Element> = None;
@@ -516,7 +497,7 @@ impl Entity {
     /// genome, never its dialect: a derivation stands on ruled language),
     /// and each composition draws one read from the stroke; a spent stroke
     /// derives nothing, which is the honest reading of a search not made.
-    pub fn colour_derivation(&self, sigma: &[(u8, u8)], budget: &mut crate::physics::Budget) -> bool {
+    pub(crate) fn colour_derivation(&self, sigma: &[(u8, u8)], budget: &mut crate::physics::Budget) -> bool {
         use crate::transducer::element::{compose_fibre, invert_fibre};
         let mut held: Vec<Vec<(u8, u8)>> = Vec::new();
         for w in self.epigenome.genome_words().filter(|w| w.is_colour_word()) {
@@ -547,7 +528,7 @@ impl Entity {
 
     /// Already uttered this operator: same vertex on the working atlas
     /// or already sent up, not the same digest. A dialect hit is a use.
-    pub fn already_taught(&mut self, word: &Element) -> bool {
+    pub(crate) fn already_taught(&mut self, word: &Element) -> bool {
         if self.taught_up.contains(&word.address()) {
             return true;
         }
@@ -576,7 +557,7 @@ impl Entity {
     }
 
     /// Stand the vertex in the dialect and mark it taught, without the wire.
-    pub fn remember_spoken(&mut self, word: &Element) {
+    pub(crate) fn remember_spoken(&mut self, word: &Element) {
         let k = self.own_k();
         self.epigenome.stand_dialect_at(word.clone(), k, self.now_tu());
         self.file_taught(word);
@@ -584,7 +565,7 @@ impl Entity {
 
     /// SPEAK A WORD as a one-sentence family. The word enters the dialect
     /// when it stands; the genome receives it only from the syllabus.
-    pub fn speak_word(&mut self, word: &Element, budget: &mut crate::physics::Budget) -> io::Result<Utterance> {
+    pub(crate) fn speak_word(&mut self, word: &Element, budget: &mut crate::physics::Budget) -> io::Result<Utterance> {
         // A thought that still has a remainder is work, not a message: the
         // wire never carries ∂g. A word with a chain is held, not uttered.
         if let [_, ..] = word.sub() {
@@ -617,11 +598,13 @@ impl Entity {
     }
 
     /// Addresses this mind has uttered (receipt: address at this K).
-    pub fn uttered_n(&self) -> usize {
+    #[cfg(test)]
+    pub(crate) fn uttered_n(&self) -> usize {
         self.taught_up.len()
     }
 
-    pub fn uttered(&self, addr: &[u8]) -> bool {
+    #[cfg(test)]
+    pub(crate) fn uttered(&self, addr: &[u8]) -> bool {
         self.taught_up.contains(addr)
     }
 

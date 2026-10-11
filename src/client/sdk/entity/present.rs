@@ -18,7 +18,7 @@ impl Entity {
     /// ASK THE COURT for every uncited motion of `form`; answers how many
     /// motions the court's citations compose to exactly. A court that does
     /// not answer, or answers what does not decode, teaches nothing.
-    pub fn ask_presentation(&mut self, form: &crate::transducer::sentence::Form) -> usize {
+    pub(crate) fn ask_presentation(&mut self, form: &crate::transducer::sentence::Form) -> usize {
         use crate::transducer::sentence::presentation::{is_still, motion_key, vertex_motion};
         use crate::transducer::sentence::Vertex;
         let root = self.epigenome.atlas_root();

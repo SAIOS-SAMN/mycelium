@@ -7,7 +7,7 @@ impl Entity {
     /// PULL a signed work envelope from the hypha's authoritative registry —
     /// the client never arbitrates raw corpus; the server decides what is
     /// useful work. None = the book is settled (or no registry).
-    pub fn pull_task(&self) -> io::Result<Option<dialogue::TaskEnvelope>> {
+    pub(crate) fn pull_task(&self) -> io::Result<Option<dialogue::TaskEnvelope>> {
         let voice = self.session.kernel().voice();
         let body = self.session.speak_keyed(&voice, dialogue::encode_task_request(&voice))?;
         if body.is_empty() {
@@ -20,7 +20,7 @@ impl Entity {
     /// the task the 32 bytes name, routed as its solve is (by the citation),
     /// or `None` where the registry holds no such task. A reply that does not
     /// decode is an error by name.
-    pub fn pull_task_by_id(&self, citation: &[u8; 32]) -> io::Result<Option<dialogue::TaskEnvelope>> {
+    pub(crate) fn pull_task_by_id(&self, citation: &[u8; 32]) -> io::Result<Option<dialogue::TaskEnvelope>> {
         let voice = self.session.kernel().voice();
         let act = dialogue::encode_task_by_id(&voice, citation);
         let body = self.session.speak_keyed(citation, act)?;
@@ -49,7 +49,7 @@ impl Entity {
     /// On the fleet (epoch 106) each voice sent ~600 solves the court
     /// refused, the same rules round after round, with none of these read.
     /// Answers the court's verdict where one was asked for.
-    pub fn solve_task(
+    pub(crate) fn solve_task(
         &mut self,
         id: &[u8; 32],
         train: &[(Grid, Grid)],
@@ -134,7 +134,7 @@ impl Entity {
     /// its own, so a mind's backlog never floods the door. The one asked is
     /// the least by task coordinate after the last asked (`unread_after`), so
     /// every unread solve is asked in turn.
-    pub fn resubmit_unread_solves(&mut self) {
+    pub(crate) fn resubmit_unread_solves(&mut self) {
         let next = match self.unread_solves.after(&self.unread_after).next() {
             Some((k, v)) => Some((k, v.clone())),
             None => self.unread_solves.scoped().next().map(|(k, v)| (k, v.clone())),
@@ -153,19 +153,13 @@ impl Entity {
         }
     }
 
-    /// 78.153c — WHAT THIS VOICE'S SOLVES CAME TO, by the court's reply
-    /// code and the refusal's kind, read for its `K` line.
-    pub fn solves(&self) -> &crate::observe::SolveTally {
-        &self.solves
-    }
-
     /// SUBMIT A SOLVE: the sentence that spoke the outputs, with them. The
     /// court replays the RULE on its withheld pairs and pays what it
     /// discharges (the actions' physics): (SOLVE_BOUNTY, μ⃗) on the task's
     /// first closure, (SOLVE_FLOOR, 0⃗) on a closure again, (SOLVE_NOTHING,
     /// 0⃗) with the refusal otherwise. A solve without its rule is refused: a
     /// raster is no proof of a motion.
-    pub fn submit_solve_rule(
+    pub(crate) fn submit_solve_rule(
         &mut self,
         id: &[u8; 32],
         outputs: &[Grid],
@@ -234,7 +228,7 @@ impl Entity {
     /// lacking words travel (their sections and connection riding along).
     /// Strata per contact follow the two-stroke ratio; a wide stratum
     /// converges over successive contacts. Returns the words learned.
-    pub fn sync_genome(&mut self) -> io::Result<usize> {
+    pub(crate) fn sync_genome(&mut self) -> io::Result<usize> {
         use crate::transducer::sheaf;
         let voice = self.session.kernel().voice();
         let body = self.session.speak_keyed(&voice, dialogue::encode_digests_request(&voice))?;
@@ -405,7 +399,7 @@ impl Entity {
         }
     }
 
-    pub fn pull_syllabus(&mut self) -> io::Result<usize> {
+    pub(crate) fn pull_syllabus(&mut self) -> io::Result<usize> {
         let voice = self.session.kernel().voice();
         let empty = self.epigenome.genome_len() == 0 || self.epigenome.atlas_is_empty();
         if empty {
@@ -484,7 +478,8 @@ impl Entity {
     /// Hear a taught word with no stamp to locate it by: a word handed in
     /// whole rather than served — learned, and crystallized only once a court
     /// admits it (78.49). The root of its act: one stroke, minted here (65.5).
-    pub fn absorb_taught(&mut self, taught: &[u8]) -> Option<Comprehension> {
+    #[cfg(test)]
+    pub(crate) fn absorb_taught(&mut self, taught: &[u8]) -> Option<Comprehension> {
         let mut budget = self.physics.stroke();
         self.absorb_taught_at(taught, None, &mut budget)
     }
@@ -493,7 +488,7 @@ impl Entity {
     /// k is the mind's K (law 9), tu is TUniversal; they are not one clock.
     /// `at` is the court's stamp the page carried beside the word (78.24
     /// (2b), 78.49): filed as the word's locator, its citation's coordinate.
-    pub fn absorb_taught_at(
+    pub(crate) fn absorb_taught_at(
         &mut self,
         taught: &[u8],
         at: Option<crate::chronometry::Stamp>,
@@ -564,7 +559,7 @@ impl Entity {
     /// WHAT THIS MIND LEARNED SINCE THE STROKE LAST ASKED (24.3): the
     /// measure of the pages admitted, per lane, taken once — the stroke's
     /// `learned` mode.
-    pub fn take_learned_mu(&mut self) -> [u64; 4] {
+    pub(crate) fn take_learned_mu(&mut self) -> [u64; 4] {
         std::mem::take(&mut self.learned_mu)
     }
 }
