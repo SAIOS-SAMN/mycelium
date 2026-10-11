@@ -346,7 +346,7 @@ its mode grows nothing; a mode no held word spells refuses as the typed
 demand carrying it (78.32(3)(b)). It grows by independence, shrinks by
 derivability — a constructor that becomes derivable from the others retires
 (78.32(3)(f)) — and is AMENDED BY EXPERIENCE until the thought that holds it
-is discarded (9); its capacity is the algebra's, derived: at most `n + 2`
+is discarded (8); its capacity is the algebra's, derived: at most `n + 2`
 reflections to a versor, the closure bounded by `dim so(n+1,1)`; what a cell
 cannot hold is held by the ENCLOSURE that wraps it, a chamber of higher grade
 (78.32(3)(e), 78.31), never a stretched cell and never a cap.
