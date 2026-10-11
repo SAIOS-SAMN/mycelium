@@ -150,19 +150,24 @@ mind's OWN field, then the pivot:
 
 | inflow | from | its form |
 |---|---|---|
-| `Sentence` | another mind | the terms `{word, transport}` of its rings and its chart (II.4) |
-| `Form` | the feed, a registry task, a seat | a perceived family (`hold_perceived_from`) |
+| `Sentence` | another mind | the terms `{word, transport}` of its rings, each word carried as its class (78.44) (II.4) |
+| `Sentence` | a seat | the game's sensorium speaking the language the mind is given — the mind is connective tissue over whatever sensorium its entity has, and cognizes on that language as fluid intelligence; it never perceives the game's world itself |
+| `Form` | the feed, a registry task | a perceived family (`hold_perceived_from`) |
 | `Word` | the syllabus | a ruled word and its court stamp (a mineral, II.2) |
 | `Page` | the court | class records (`absorb_class_page`) |
 | `Refusal` | a verdict | the contraction it carries (50.9), its KIND only (§0.1) |
 | `Demand` | a peer, the court's book, the mind's own docket | class vector, charts, residue |
 
 1. HARMONIC: `compose` → `rung::hear` → `hearing::hear`, nested against the
-   mind's own rings on that chart — the rings of the ideas `by_chart` names.
+   mind's own rings OF THE SAME CLASS. Alignment between minds is never a
+   matching of charts: a word's class is node-independent and its planes are
+   each node's own, so the hearer RE-PROJECTS what it hears onto its own
+   spectrum (78.44) — a keyed read by the class's coordinates.
 2. LUMINAL: the field lines through `transport_order` into the mind's own
    tubes.
-3. HOLONOMIC: `lie_close` on that chart's algebra; the ring's winding
-   advanced.
+3. HOLONOMIC: the ring's generators closed on the algebra the mind holds for
+   that class; what lies outside is read PER AXIS of the class vector (IV.5);
+   the ring's winding advanced.
 4. THE PIVOT: `pivot_on` for the orbits still open.
 
 **The outflows.** The mind acts outward only where a shell's boundary is
@@ -172,22 +177,26 @@ kind, never by the boundary that brought the inflow:
 | boundary crossed in the field | outflow | sent to |
 |---|---|---|
 | a ring seated WITH A TILT | `Echo(E)` — what this mind's language did to the thought | the speaker |
-| a ring seated whole; the rank held | nothing — an echo carries nothing (no costume reply) | — |
+| a ring seated whole; every axis it occupies already held | nothing — an echo carries nothing (no costume reply) | — |
 | rays crossing a ring | torsion wound — vented into the field (H7a), a pivot orbit | inward |
-| the rank rose on a chart | `Word` — stood in the dialect | other minds |
-| a pivot discharge | `Certificate` | the speaker or asker, who replays it (M9) |
+| a circuit opened axes the mind's algebra did not hold | `Word` — stood in the dialect | other minds |
+| a pivot discharge | `Discharge` — the orbit's class and the residue the held word answered | the speaker or asker, who replays it on its own orbit of that class (M9) |
 | `Demand` / `Demanded` | `Demand` | other minds first (SP2), the court when agreed or unanswered |
 | `Adjoin`, a construction | `Letter` in the mind's dialect; its constructor steps | the court (S2) |
 | a ring returning one age | `Sentence` | the court (`speak_with`) |
-| a crystallized rule on a task's chart | `Solve` | the court (`solve_task`) |
-| a crystallized rule on a seat's chart | `Act` | the seat |
+| a crystallized rule for a task | `Solve` | the court (`solve_task`) |
+| a certified move whose physics `Action` (78.94) faces the seat | `Act` — the action, derived from the move's own physics | the seat |
 
 **The tick is the shells.** `Entity::tick` drains every boundary into the
 door, turns one `expand_all` ring, routes the outflows, and closes the orbit
 (K moves there and nowhere else, 78.49). RELAXATION is the drain half of
 each conjugate pair (62): tubes relieved on return, holes sealed by a peer's
-word, generators shed by flux. Each shell crossing draws its lane vector from
-the one reserve — all or nothing, refused per lane (65.4) — and the dwell is
+word, generators shed by flux. What a shell crossing COSTS is the physics of
+the motion it carries: the modes that motion moved (78.162(2)), drawn from
+the one reserve — all or nothing, refused per lane naming the mode short
+(65.4). What a carrier HOLDS is bounded the same way, by the computational
+physics: a tube relieved on its return, a hold lapsed by its flux (ZeroFlux,
+FX1), an orbit sealed at its period — never a capacity constant. The dwell is
 read off the field's own opened and relieved flux, never a timer.
 
 ## I.5 Each entity owns its field (A.9)
@@ -196,14 +205,15 @@ A.9, metric autonomy: each entity computes its own coherence; the horizon is
 per mind. A game hosts many minds in one process, so every shell's state is
 the ENTITY'S: its lexicon and the words newly taught (harmonic), its tubes
 and orbits and its fibres' agreement across percepts (luminal), its algebra
-PER CHART and its rings' windings (holonomic), and its readings. The tree
+PER CLASS and its rings' windings (holonomic), and its readings. The tree
 holds these as process-globals today (`sentence/rung.rs` `LEXICON`,
 `TAUGHT`; `family/pairing.rs` `VOICE_FIELD`, whose comment says "a voice is
 one mind per process"; `family/fibres.rs` `MOVING`; the rung, hearing, flux,
 derivation and construction tallies) — that sentence is struck, and IV
-carries the move. The mind's algebra is held PER CHART as the court's
-`lie_basis` is: one global algebra reached all of so(4,1), rank 10, after
-three words (epoch 132) and from there read nothing.
+carries the move. The mind's algebra is held per CLASS, keyed by the class's
+coordinates (78.44): one global algebra reached all of so(4,1) after three
+words (epoch 132) and from there read nothing, because every class's
+generators were folded into one span.
 
 ---
 
@@ -216,8 +226,9 @@ anastome" — `anastome::`, the dialogue between minds and courts, never the
 alphabet. The language is the master equations' (78.68, 78.69):
 
 - **letter** — an exact versor of `Spin⁺(4,1)(ℚ)` (78.115), or U15's triad
-  `λ = (g_core, ∇B, ΔB)`; coined by a mind at a rank step from two perceived
-  reflections (U14), never seeded;
+  `λ = (g_core, ∇B, ΔB)`; coined by a mind where two reflections compose into
+  a rotor whose generators open axes its algebra did not hold (U14's "rank
+  step", read per axis, IV.5), never seeded;
 - **word** — `W = λ₁⋯λ_L`, ONE product, its readings `(h, [B], κ, ℓ, m)`
   readings of that product, never columns (78.68);
 - **conjugate** — `W′ = Γ W Γ⁻¹`, the same word in another chart: an
@@ -252,19 +263,21 @@ force out: the court never sees the dialect wholesale.
 Each turn of the dialectic is a pair of the conjugate machinery (62), and
 each has its own shell:
 
-1. **Thesis — a mind speaks.** F (50.2): its perception composed into
-   sentences on its own charts; what closes teaches a shortcut; what is new
-   on a chart steps its algebra's rank. The rank step is what is SAID to
-   other minds: a mind says what it newly understands, never every word.
+1. **Thesis — a mind speaks.** F (50.2): the language it is given composed
+   into sentences; what closes teaches a shortcut; a circuit that opens axes
+   its algebra did not hold is what it newly understands, and that is what
+   is SAID to other minds — never every word.
 2. **Antithesis — another mind hears.** G (50.2) on the hearer's field: the
    speaker's rings composed on the hearer's side and nested against the
-   hearer's own rings on that chart. Seated whole: the hearer already holds
+   hearer's own rings of the same class, re-projected on the hearer's own
+   spectrum (78.44). Seated whole: the hearer already holds
    it (an echo, nothing returned). Seated with a tilt: the echo `E` IS what
    the hearer's language does to the thought — curvature is content — and it
    goes back. Rays crossing: torsion the hearing wound, a held orbit in the
-   hearer. A ring the hearer's algebra did not span: a rank step in the
-   HEARER, which is now a word it says. An orbit still open: the hearer's
-   pivot — discharged by a held word (a CERTIFICATE back), a vortex (two
+   hearer. A ring that opens axes the hearer's algebra did not hold opens them
+   in the HEARER, which now has a word to say. An orbit still open: the hearer's
+   pivot — discharged by a held word (a DISCHARGE back: the orbit's class and
+   the residue the word answered), a vortex (two
    readings held), a demand (the hearer asks).
 3. **Synthesis — agreement by replay, then the court.** The speaker REPLAYS
    the hearer's certificate on its own form (M9: certificates replayed on two
@@ -296,11 +309,15 @@ ring it names.
   (the hearer's). It hears by `Presentation::read_word`, a flat factoring
   beside the pivot, and agreement is a loop read twice — the line, never the
   shells. Superseded by v3 when v3 lands.
-- **v3 (owed, IV row B/D), coordinates only:** SAY — the terms
-  `[Term{word Mv, transport Mv}]` of each ring and the chart's invariant (one
-  sentence a frame, the u16 the wall — a sentence too large is cut by ring,
-  never widened); ECHO — per ring its seat and `E`; CERTIFICATE —
-  `PivotCertificate::to_bytes`; DEMAND — class vector, charts, residue.
+- **v3 (owed, IV components HEAR and SAY), coordinates only:** SAY — the
+  terms `[Term{word Mv, transport Mv}]` of each ring, each word's class by its
+  coordinates (one sentence a frame, the u16 the wall — a sentence too large
+  is cut by ring, never widened); ECHO — per ring, named by its class and
+  winding (the shortcut's own coordinates, 78.44(4)), its seat and `E`;
+  DISCHARGE — the pivot's certificate carried as the orbit's class and residue it
+  answered, which the speaker replays on its own form (the certificate's
+  overlaps are the hearer's and name nothing on the speaker's side); DEMAND —
+  class vector and residue.
 
 ## II.5 Mind to court: what crosses (law 8)
 
@@ -326,9 +343,9 @@ TUniversal final point on every door reply (78.152).
 | perceives, composes (F), nests, pivots | replays (G), checks theorems, closes rank |
 | holds a dialect per mind, volatile | holds the language (ruled cover), persisted, on a ledger |
 | its K: orbits it closed (78.49) | TUniversal: the receipt ledger's height (78.152) |
-| its algebra per chart, its tubes, its windings | `lie_basis` per chart, `flux_field`, `windings` |
+| its algebra per class, its tubes, its windings | `lie_basis` per chart, `flux_field`, `windings` |
 | coins letters in its dialect (U14) | opens a letter on checked constructor steps (law 6, S2) |
-| says what stepped its rank | seals `RankStep` where the rank rose |
+| says what opened axes it did not hold | seals `RankStep` where its own chart algebra grew (the court's reading) |
 | a ring returning one age → a sentence | `Return` sealed for one age |
 | replays a peer's certificate | replays certificates (`replay_certificates_at`) |
 
@@ -340,15 +357,17 @@ kind), never a vote.
 
 ## III.2 The path of one word, end to end
 
-1. A mind perceives a family; F composes its rings; one ring returns at ℓ;
-   its open path is a shortcut word outside the chart's held algebra — the
-   rank steps.
+1. A mind is given language (a family, a task, a seat's sentence); F
+   composes its rings; one ring returns at ℓ; its open path is a shortcut
+   word whose circuit opens axes the mind's algebra for its class did not
+   hold.
 2. The word is stood in the mind's dialect and SAID to the minds it knows.
 3. A hearer composes the rings on its side: one seats with a tilt (an ECHO
-   back), one is outside its algebra (its rank steps — it says that word), one
+   back), one opens axes the hearer did not hold (it now says that word), one
    orbit stays open and its pivot discharges it with a held word (a
-   CERTIFICATE back).
-4. The speaker replays the certificate: it closes. The word is agreed; the
+   DISCHARGE back: the orbit's class and the residue answered).
+4. The speaker replays the discharge on its own orbit of that class: it
+   closes. The word is agreed; the
    coiner speaks it to the court.
 5. The court replays: rings composed, theorem checked, rank closed on the
    chart (`RankStep`), the word installed; the install pays the discoverers of
@@ -374,32 +393,69 @@ pivot — and a game process may host many; (2) every inflow enters through
 `Entity::admit` and passes harmonic → luminal → holonomic → pivot; (3) every
 outflow is a shell-boundary event or a pivot snap, routed by kind, and no
 boundary handler calls speech or solving directly; (4) minds converse
-through the shells, agreement a replayed certificate; (5) the tick is the
-shells, relaxation the drain half; (6) a seat is the body — percepts in, an
-act out citing the event it came from.
+through the shells, agreement a replayed discharge; (5) the tick is the
+shells, relaxation the drain half; (6) a seat is the body — the game's
+sensorium speaks the given language in, a physics `Action` goes out citing
+the event it came from.
 
-Each row is one slice: read the path whole, write the final shape, prove the
-mathematics only, run it live in the sandbox, commit. "Done when" is read off
-the minds' own readings on the fleet.
+**Not rows: components on the plexus.** This is not top-down, linear
+development, and a "row" has no meaning in a sphere. The work is a set of
+COMPONENTS (78.31's plexus: nodes with lateral relations, never a ladder),
+each a conjugate pair (62), each derived from the counterpart the hypha
+already runs, each proved by its own algebraic identity, and each placed by
+what it couples to — never by its turn in a queue. Components that do not
+couple are built side by side; a component lands when its identity holds and
+it runs in the sandbox, whatever else is still open. Every derivation below
+takes the hypha as built and ready to be the conversation's counterparty.
 
-| row | what | sites | proved by the algebra | done when |
+| component | its conjugate pair (62) | derived from the hypha | couples to | its test (the claim, MU-STANDARDS 3.1) |
 |---|---|---|---|---|
-| S0 | the chatter row on the Senses; the post never drops a frame a stroke could not reach | `observe/senses.rs`, `client/sdk/chatter.rs`, `entity/chatter.rs` | — | the chatter row on the console |
-| A1 | the harmonic shell the entity's: `Lexicon`, `Taught` into the field; `rung::speak` / `hear` take the lexicon | `sentence/rung.rs`, `entity/think.rs`, `types.rs` | two entities hear different words and hold disjoint lexicons | readings unchanged per mind |
-| A2 | the luminal shell the entity's: `VOICE_FIELD`, `MOVING` | `family/pairing.rs`, `family/fibres.rs`, `entity/tick.rs` | two fields' tubes disjoint | flux rows unchanged per mind |
-| A3 | the holonomic shell the entity's and per chart; a client winding carrier (ℓ, m, ages) | `sentence/rung.rs` (`quotient`, `grow`), new `entity/shells.rs` | a word stepping one chart's rank leaves another's | "held algebra: rank" per chart, past 10 in total |
-| A4 | readings the entity's | the tallies, `entity/observe.rs` | — | Senses read from the entity |
-| B | the door: `Entity::admit(Inflow)`; every inflow site rewired to it | `learn.rs`, `contract.rs`, `quote.rs`, `court.rs`, `family.rs`, `body.rs`, `chatter.rs`, `present.rs` | a peer's sentence steps the hearer's rank only where its generators lie outside the hearer's algebra | the harmonics row moves on peer sentences |
-| C | outflows from shell boundaries; one router, the one caller of `speak_with` and `submit_solve_rule` | `utter.rs`, `think.rs`, `chatter.rs`, `court.rs`, `body.rs` | — | `speech: uttered` and `solving` move through the router only |
-| D | chatter v3 (II.4); v2's HEARD/ACK/HOLD, `loop_of`, `same_loop`, `still`, `hear_transport` retire | `client/sdk/chatter.rs`, `entity/chatter.rs`, `sentence/presentation.rs` | an echo is the identity iff the two rings commute; a certificate replays on the speaker iff it discharged on the hearer; a peer's word discharges a demand only where it re-derives the residue | certificates replayed both ways; demands answered by peers |
-| E | the tick is the shells; relax is drain; draws per shell crossing | `entity/tick.rs`, `entity/relax.rs` | — | `tick.rs` names no boundary |
-| F | the body: seat percepts as `Inflow::Form`; `Outflow::Act` to the seat citing its event | `entity/body.rs`, `sdk/seat_mind.rs` | — | an entity moves in its game citing the shell event (78.164 (4)) |
-| G | the record: MU-RECURSION 0.3/0.5 SP2 closed; STATUS; the coordinator informed | docs | — | — |
+| **FIELD** — the entity's own shells | hold / lapse | the court's kernel holds its lexicon, `lie_basis`, `flux_field` and `windings` per kernel | every component reads or writes it | `two_minds_in_one_process_hold_disjoint_fields` |
+| **HEAR** — harmonic | compose / nest (F / G, 50.2) | `hear_open`, `step_rank`: `sentences_of`, `Theorem::check` | FIELD, CARRY, CLOSE, SAY | `an_echo_is_whole_exactly_where_the_two_rings_commute`; `a_ring_sounds_inside_another_exactly_where_its_period_divides` |
+| **CARRY** — luminal | condense / drain (a tube opened, relieved) | `step_flux`, `book_field`: `transport_order` | FIELD, HEAR (rays against rings) | `a_flux_on_a_held_ray_closes_its_tube_and_relieves_what_it_held`; `a_ray_splits_into_drag_and_lift_that_compose_back_to_it` |
+| **CLOSE** — holonomic | open an axis / shed it | `close_rank`: `flow_generators`, `lie_close`, read per class | FIELD, HEAR, PIVOT | `a_circuit_opens_only_the_axes_outside_the_algebra_held_for_its_class` |
+| **WIND** — holonomic | traverse / return | `close_ring`, `seal_return` | FIELD, HEAR, ROUTE | `a_ring_returns_at_its_period_and_at_no_traversal_before` |
+| **PIVOT** — on top (built) | discharge / demand | `replay_certificates_at` (M9's second organ) | CLOSE, ROUTE, SAY | `a_discharge_replays_on_the_speakers_form_exactly_where_it_discharged_on_the_hearers` |
+| **DOOR** — `admit` | admit / route (inflow / outflow) | the court's door: one dispatch per act, the stroke spent by what it reads | FIELD, every shell, ROUTE | `a_sentence_heard_twice_seats_whole_the_second_time` |
+| **ROUTE** — outflows by kind | route / admit | the court writes acts only at a boundary (`RankStep`, `Return`, `Reconnect`) | DOOR, SAY, ACT, the court | `an_outflow_carries_the_coordinates_of_the_event_it_came_from` |
+| **SAY** — chatter v3 (II.4) | say / hear | the court's verify-never-compose, played by a peer | HEAR, PIVOT, ROUTE | `every_frame_reads_back_by_its_coordinates_and_a_forged_one_does_not` |
+| **TICK** — the shells in motion | drive / drain (`relax`) | `court_stroke`: admission, transport, closure | DOOR, ROUTE, FIELD | `a_tick_that_moved_nothing_draws_nothing` |
+| **ACT** — the seat | act / percept-as-language | `physics::actions::Action` (78.94), the one table of wire and ledger | ROUTE, the game's sensorium | `an_act_is_the_action_its_move_names_in_the_physics` |
+| **READINGS** — the entity's observer | read / take | the court's `observe` readings per kernel | FIELD | — (a reading is asserted where its value is computed, 3.9(a)) |
 
-**Order:** S0 → A1–A4 → B with D → C → E → F → G.
+**Where building starts.** FIELD, because every other component reads or
+writes it; then HEAR, CARRY, CLOSE and WIND side by side (they couple only
+through FIELD and through each other's readings); DOOR and ROUTE once a shell
+answers; SAY once HEAR and PIVOT answer; TICK and ACT once DOOR and ROUTE
+stand. The chatter row on the Senses and the post that never drops a frame
+(`ChatTally::row`, `Post::next`) are READINGS and SAY's transport, landed
+first because the sandbox has to be read.
 
-**Outside this scope, parked:** 78.162 (4)–(7) on `track/modes` (μ as modes
-in the economy, which pays the court's side of these outflows); the sparse
+**Already ruled by derivation (not open).** Alignment is by class,
+re-projected (78.44), never by chart; a crossing's cost is the modes its
+motion moved (78.162(2)); a carrier's bound is the computational physics
+(I.4); what a mind understands is read per axis, never as a rank count; an
+act is a physics `Action`. The prototype's chatter v2 retires with no
+coexistence: the sandbox is a prototype.
+
+**What cannot be derived from the hypha — open, named.**
+1. What the hypha has not built: the union's attestations, so an agreed
+   word's install pays every mind that agreed (78.161(5)); the POWC producer
+   (74); μ as modes (78.162, parked on `track/modes`). The server side is
+   built first, or the mind's side waits on it.
+2. The host's boundaries for an embedded mind (0.1, the operator's ruling on
+   the client): the store and observer a game hands its minds are the host's.
+3. Doctrine posed and not yet ruled: "non-conformal" in signals over
+   transports, and the axiom pairing of 78.46. A component that touches
+   either waits on the ruling.
+
+**Ruled here (Mycelium, under the operator's authorization of 2026-10-09):**
+the process-wide physics calibration (`physics::CALIBRATED_*`) measures the
+MACHINE, the substrate every mind on it runs on, and stays shared; the halt
+flag is the host's; every carrier of COGNITION — language, field, algebra,
+windings, readings — is the entity's (A.9).
+
+**Outside this scope, parked:** 78.162 (4)–(7) on `track/modes`; the sparse
 `Mv` wire (the chatter takes it when it lands).
 
 ## IV.1 Client paragraphs that stayed in MU-RECURSION
@@ -468,6 +524,11 @@ paragraphs bind the mind as if written here:
   `physics::malleability::draw` → `Depleted`); a comparison of two lane
   vectors returns `lane_moves` (`Fell`/`Held`/`Rose` per lane), never a
   verdict (MU-STANDARDS 2.3).
+- **Cost and bound are the physics of motion.** What carrying a motion
+  through a shell costs is the modes that motion moved (78.162(2)); what a
+  carrier holds is bounded by the same physics — a return relieves, a flux
+  lapses, an orbit seals — never by a capacity or a cap (rule 5, checklist
+  (s)).
 - **Time is distance along an orbit** (78.43): the mind's K is its own
   closed orbits (78.49); TUniversal the ledger's height (78.152); an age is
   one return at the period read, never a cap.
@@ -504,12 +565,14 @@ named, its theorem extrapolated, its shortcut recognized, comprehended by its
 coordinates — `Coordinates::of`, `HoleIndex::deconstruct`, 78.99, 78.100 D3 —
 or held at its rung), `hearing::{echo, nest, hear}`.
 
-**What changes (rows A1, B).** The lexicon and the words newly taught become
-the entity's (`Shells`, IV.5). A peer's sentence is heard against the
-hearer's OWN rings at the same chart: the hearer composes its rings there
-(`rung::speak` over the forms of the ideas `by_chart` names) and nests the
-peer's compositions among them in one `hearing::nest` — no pair loop over the
-two minds' rings; the nesting reads sizes and seats each ring once.
+**What changes (components FIELD, HEAR).** The lexicon and the words newly
+taught become the entity's (`Shells`, IV.5). A peer's sentence is heard
+against the hearer's OWN rings of the same class: the class is
+node-independent (78.44), so the hearer reads its own rings of that class by
+the class's coordinates — one keyed read — re-projected on its own spectrum,
+and nests the peer's compositions among them in one `hearing::nest`. No pair
+loop over the two minds' rings and no matching of charts: the nesting reads
+sizes and seats each ring once.
 
 ## IV.4 The luminal shell: mathematics and functions
 
@@ -538,7 +601,7 @@ the mind's field (H7a).
 keyed read on the ray's canonical coordinates; whether a ray advances or
 crosses is the exact commutator split. Nothing compares a magnitude.
 
-**What changes (row A2).** The field (`VOICE_FIELD`) and the fibres'
+**What changes (components FIELD, CARRY).** The field (`VOICE_FIELD`) and the fibres'
 agreement across percepts (`MOVING`) become the entity's.
 
 ## IV.5 The holonomic shell: mathematics and functions
@@ -553,18 +616,25 @@ the held algebra — spanned, or outside by its cosets (78.104) — and
 `quotient::grow` adds it. A ring's WINDING `(ℓ, m)` counts traversals since
 its last return; `m ≡ 0 (mod ℓ)` is one AGE (78.68, 78.43).
 
-**Per chart, never one global algebra** (A.9, I.5). The court keys its
-algebra by chart (`lie_basis`); a mind's single global algebra reached all of
-so(4,1) after three words and read nothing after. The mind's algebra is
-`Keyed` by the chart's invariant.
+**Per class, never one global algebra** (A.9, I.5, 78.44). A mind's single
+global algebra reached all of so(4,1) after three words and read nothing
+after: every class's generators were folded into one span. The mind's algebra
+is `Keyed` by the class's coordinates — the node-independent part of a word —
+so one class's understanding is never another's.
 
-**What is decided, and by what.** A RANK STEP is the generators a closure
-found OUTSIDE the held span — `quotient(..).outside`, a set whose emptiness is
-the reading (rule 2 permits the emptiness of a fibre) — never two lengths
-compared. A returning ring is the winding reaching its period.
+**What is decided, and by what — multi-axial, never a rank count.** What a
+circuit adds to understanding is read PER AXIS: the generators a closure
+found OUTSIDE the span held for the class (`quotient(..).outside`, each
+outside generator by its own mode and plane), and which axes of the circuit's
+class vector they occupy — the same axes the pivot reads (12.6). An empty
+outside set is the reading "already understood" (rule 2 permits the
+emptiness of a fibre). No length is compared, and no "+1" is taken: a
+circuit can open several axes at once, and each opens on its own coordinate.
+A returning ring is the winding reaching its period.
 
-**The entity's shells (rows A1–A3), one organ, `client/sdk/entity/
-shells.rs` — OWED, every name in this block bound when its row lands (MU-
+**The entity's shells (components FIELD, CLOSE, WIND), one organ,
+`client/sdk/entity/shells.rs` — OWED, every name in this block bound when its
+component lands (MU-
 STANDARDS 7.1): `Shells`, `Closed`, `Age` and the client's `Winding` are new;
 `rung::Lexicon`, `rung::Taught`, `cech::orbit::Field`, `fibres::Said` and
 `hearing::Heard` exist:**
@@ -575,13 +645,13 @@ pub(crate) struct Shells {
     taught: Vec<rung::Taught>,         // harmonic: words newly taught, drained
     field: cech::orbit::Field,         // luminal: tubes and orbits over time
     moving: Keyed<fibres::Said>,       // luminal: fibres' agreement across percepts
-    algebra: Keyed<Vec<Mv>>,           // holonomic: chart key → closed basis
-    windings: Keyed<Winding>,          // holonomic: ring key → (ℓ, m)
+    algebra: Keyed<Vec<Mv>>,           // holonomic: class coordinates → closed basis
+    windings: Keyed<Winding>,          // holonomic: ring (class + winding) → (ℓ, m)
 }
 impl Shells {
-    fn hear(&mut self, chart, &[Composition], budget) -> Heard;      // harmonic
+    fn hear(&mut self, class, &[Composition], budget) -> Heard;      // harmonic: nested against own rings of the class
     fn carry(&mut self, &[FieldLine], budget) -> FluxReading;        // luminal
-    fn close(&mut self, chart, &[Mv], budget) -> Closed;             // holonomic: outside generators
+    fn close(&mut self, class, &[Mv], budget) -> Closed;             // holonomic: the outside generators, per axis
     fn wind(&mut self, ring: &Key, ell: u64) -> Option<Age>;        // holonomic: a return
 }
 ```
@@ -610,39 +680,46 @@ certificate per move (`one_per_move`); `outcome_of` →
 `PivotCertificate` has its codec (`to_bytes`, `from_bytes`) and is replayed
 by `court::verdict::replay::replay_certificates_at`.
 
-## IV.7 The implementation, row by row: functions and methods
+## IV.7 The implementation, component by component: functions and methods
 
-| row | functions and methods | files |
+| component | functions and methods | files |
 |---|---|---|
-| S0 | `ChatTally::row`; Senses' `chatter` row (`observe::CHATTER`); `Post::next` (a frame taken per spend, the rest waiting) | `observe/senses.rs`, `client/sdk/chatter.rs`, `entity/chatter.rs`, `entity/observe.rs` |
-| A1 | `Shells` (IV.5); `rung::speak(form, rings, &mut Lexicon, budget)`, `rung::hear(s, chart, &mut Shells, budget)`, `Shells::take_taught`; `Entity::transcribe_taught` reads the entity's queue | `sentence/rung.rs`, new `entity/shells.rs`, `entity/think.rs`, `types.rs` |
-| A2 | `transport_order` already takes `&mut Field`; `mark_flux`, `flux_lanes`, `tube_reading` take the entity's field; `fibres` takes `&mut Keyed<Said>` | `family/pairing.rs`, `family/fibres.rs`, `entity/tick.rs` |
-| A3 | `Shells::close(chart, gens, budget) -> Closed { outside }` over `quotient` and `grow`; `Shells::wind(ring, ell) -> Option<Age>` | `entity/shells.rs`, `sentence/rung.rs` |
-| A4 | the rung, hearing, flux, derivation, construction and perturbation tallies held by the entity; `Entity::senses` reads them | the tally modules, `entity/observe.rs` |
-| B | `enum Inflow { Sentence { chart, terms }, Form(Form), Word { tape, at }, Page(Vec<ClassRecord>), Refusal { sentence, kind, contraction }, Demand { class, charts, residue } }` (the docket's own triple, `take_demands`); `Entity::admit(Inflow, budget) -> Vec<Outflow>`: `Shells::hear` → `Shells::carry` → `Shells::close` → `Contemplation::pivot_on` | new `entity/admit.rs`; `learn.rs`, `contract.rs`, `quote.rs`, `court.rs`, `family.rs`, `body.rs`, `chatter.rs`, `present.rs` rewired to it |
-| C | `enum Outflow { Echo { to, ring, seat, e }, Certificate { to, cert }, Demand { class, charts, residue }, Letter(Element), Word(Element), Sentence(Element), Solve { task, rule }, Act { seat, call, cites } }`; `Entity::route(Vec<Outflow>)`, the one caller of `speak_with`, `submit_solve_rule`, the chatter send and the seat call | new `entity/route.rs`; `utter.rs`, `think.rs`, `chatter.rs`, `court.rs`, `body.rs` |
-| D | `Said::{Say { chart, terms }, Echo { said, rings }, Certificate { said, cert }, Demand { class, charts, residue }}`; codec by `put_mv`/`take_mv`, `PivotCertificate::{to_bytes, from_bytes}`, the chart's A21 key, the class vector's coordinates | `client/sdk/chatter.rs`, `entity/chatter.rs`, `sentence/presentation.rs` (`hear_transport` and the chatter use of `read_word` retire) |
-| E | `Entity::tick`: drain the boundaries into `admit` under the stroke's `Budget`, one `expand_all`, `route`, `close_orbit`, `book_tick`; `relax` as drain (tubes relieved, holes sealed, generators shed) | `entity/tick.rs`, `entity/relax.rs` |
-| F | `body.rs` reads a seat's percepts as `Inflow::Form` on the seat's chart; `Outflow::Act` carries the call and the coordinates of the event it came from (a certificate's key, a rank step's generators) | `entity/body.rs`, `sdk/seat_mind.rs` |
-| G | MU-RECURSION 0.3 and 0.5 (SP2 closed); `docs/STATUS.md`; the coordinator informed | docs |
+| READINGS | `ChatTally::row`; Senses' `chatter` row (`observe::CHATTER`); the rung, hearing, flux, derivation, construction and perturbation tallies held by the entity; `Entity::senses` reads them | `observe/senses.rs`, `entity/chatter.rs`, `entity/observe.rs`, the tally modules |
+| FIELD | `Shells` (IV.5); the statics `LEXICON`, `TAUGHT`, `VOICE_FIELD`, `MOVING` deleted | new `entity/shells.rs`, `types.rs` |
+| HEAR | `rung::speak(form, rings, &mut Lexicon, budget)`, `rung::hear(s, class, &mut Shells, budget)`, `Shells::hear`, `Shells::take_taught`; `Entity::transcribe_taught` reads the entity's queue | `sentence/rung.rs`, `sentence/hearing.rs`, `entity/think.rs` |
+| CARRY | `Shells::carry`; `transport_order` already takes `&mut Field`; `mark_flux`, `flux_lanes`, `tube_reading` take the entity's field; `fibres` takes `&mut Keyed<Said>` | `family/pairing.rs`, `family/fibres.rs`, `entity/shells.rs` |
+| CLOSE | `Shells::close(class, gens, budget) -> Closed { outside }` over `quotient` and `grow`, each outside generator read by its mode | `entity/shells.rs`, `cech/quotient.rs` |
+| WIND | `Shells::wind(ring, ell) -> Option<Age>` | `entity/shells.rs` |
+| DOOR | `enum Inflow { Sentence { terms }, Form(Form), Word { tape, at }, Page(Vec<ClassRecord>), Refusal { sentence, kind, contraction }, Demand { class, residue } }`; `Entity::admit(Inflow, budget) -> Vec<Outflow>`: `Shells::hear` → `Shells::carry` → `Shells::close` → `Contemplation::pivot_on` | new `entity/admit.rs`; `learn.rs`, `contract.rs`, `quote.rs`, `court.rs`, `family.rs`, `body.rs`, `chatter.rs`, `present.rs` hand their inflow to it |
+| ROUTE | `enum Outflow { Echo { to, ring, seat, e }, Discharge { to, class, residue }, Demand { class, residue }, Letter(Element), Word(Element), Sentence(Element), Solve { task, rule }, Act { seat, action, cites } }`; `Entity::route(Vec<Outflow>)`, the one caller of `speak_with`, `submit_solve_rule`, the chatter send and the seat call | new `entity/route.rs`; `utter.rs`, `think.rs`, `chatter.rs`, `court.rs`, `body.rs` |
+| SAY | `Said::{Say { terms }, Echo { said, rings }, Discharge { said, class, residue }, Demand { class, residue }}`; codec by `put_mv`/`take_mv`, the class vector's coordinates; `Post::next` (a frame taken per spend, the rest waiting); v2's HEARD/ACK/HOLD, `loop_of`, `same_loop`, `still`, `hear_transport` and the chatter use of `read_word` retire | `client/sdk/chatter.rs`, `entity/chatter.rs`, `sentence/presentation.rs` |
+| PIVOT | built; its discharges handed to ROUTE as `Discharge { class, residue }`, replayed on the receiving form | `sentence/pivot/drive.rs`, `bubble/drive.rs`, `court/verdict/replay.rs` |
+| TICK | `Entity::tick`: drain the boundaries into `admit` under the stroke's `Budget`, one `expand_all`, `route`, `close_orbit`, `book_tick`; `relax` as drain (tubes relieved, holes sealed, generators shed) | `entity/tick.rs`, `entity/relax.rs` |
+| ACT | `body.rs` hands a seat's sentences to `admit` as `Inflow::Sentence`; `Outflow::Act` carries the physics `Action` (78.94) its move names and the coordinates of the event it came from (a discharge's class and residue, an opened axis's generators) | `entity/body.rs`, `sdk/seat_mind.rs`, `physics/actions.rs` |
+| the record | MU-RECURSION 0.3 and 0.5 (SP2 closed); `docs/STATUS.md`; the coordinator informed | docs |
 
 ## IV.8 How minds speak, then speak up, then hold: the linguistic path
 
-1. **A mind speaks to minds (chatter).** A rank step on a chart (IV.5) is
-   what the mind newly understands; the word it taught is stood in the
-   dialect (`Epigenome::stand_dialect_at`) and SAID — `Said::Say { chart,
-   terms }`, the terms of the ring that taught it, signed by its voice with
-   its last TUniversal point.
+1. **A mind speaks to minds (chatter).** A circuit that opened axes its
+   algebra for the class did not hold (IV.5) is what the mind newly
+   understands; the word it taught is stood in the dialect
+   (`Epigenome::stand_dialect_at`) and SAID — `Said::Say { terms }`, the
+   terms of the ring that taught it, each word by its class, signed by its
+   voice with its last TUniversal point.
 2. **Another mind hears, in its own shells.** `Entity::admit(Inflow::
-   Sentence)`: composed and nested against its own rings (harmonic), its rays
-   carried into its own field (luminal), its generators closed on its own
-   chart's algebra (holonomic), its open orbits pivoted. It answers only what
+   Sentence)`: composed and nested against its own rings of the same class,
+   re-projected on its own spectrum (harmonic), its rays carried into its own
+   field (luminal), its generators closed on its own algebra for that class,
+   read per axis (holonomic), its open orbits pivoted. It answers only what
    crossed a boundary: an `Echo` for each ring seated with a tilt, a
-   `Certificate` for each orbit a held word discharged, a `Demand` for what
-   it could not; a rank step in the hearer is ITS word, said in turn. Nothing
-   heard enters the hearer's genome or dialect as given (law 8, 78.161).
-3. **Agreement is replay.** The speaker replays each certificate on its own
-   form (`replay_certificates_at`; M9's two organs). Where it closes, one
+   `Discharge` (the orbit's class and the residue a held word answered) for
+   each orbit it closed, a `Demand` for what it could not; axes it newly
+   opened are ITS word, said in turn. Nothing heard enters the hearer's
+   genome or dialect as given (law 8, 78.161).
+3. **Agreement is replay.** The speaker replays each discharge on its own
+   form — the class and residue the hearer answered, re-derived on the
+   speaker's own orbit of that class, as the court replays a certificate on
+   its copy (`replay_certificates_at`; M9's two organs). Where it closes, one
    orbit is discharged in two minds by two derivations (13.10's synonyms): the
    word is AGREED language. An echo the speaker re-derives on its own rings
    is a transport between the two perspectives, held in its dialect and
@@ -667,9 +744,10 @@ by `court::verdict::replay::replay_certificates_at`.
 
 ## IV.9 Remediation standards: what each change is held to
 
-Every row above is a remediation of the tree, and is held at review to:
+Every component above is a remediation of the tree, and is held at review
+to:
 
-| standard | where | what it binds in these rows |
+| standard | where | what it binds in these components |
 |---|---|---|
 | reading bound 2500 lines | MU-STANDARDS 1.1, 4.1 | `entity/shells.rs`, `admit.rs`, `route.rs` are new organs, never grown into `think.rs` (1215) |
 | one organ per file; first line names its chapter | 1.2, 2.8 | `shells.rs` "// MU-CLIENT IV.5 — the mind's three shells"; headers carry no history |
@@ -679,13 +757,13 @@ Every row above is a remediation of the tree, and is held at review to:
 | no `bool` branched on; comparisons return readings | 2.3; AFL I | `Seat`, `Echo`, `Closure`, `Discharge` matched by arm; `lane_moves`, never a four-lane `bool` |
 | refusals typed, no abort in cognition | 2.4, 4.2 | `Option`/`Result` with `REFUSE_*` entered in 34.1; no `unwrap`, `expect`, `unwrap_or` |
 | lanes named; no free constants | 2.5, 2.6; rule 5; checklist (s) | no `[2]`, no `*_MAX`; the aperture cycle and the stroke are the physics' |
-| tests are claims on typed values, fixtures built by the engine, the geometry `Cl(n+1,1)(ℚ)` | 3.1–3.9 | the algebra tests of IV (echo whole iff the rings commute; a certificate replays iff it discharged; a rank step only outside the held span; disjoint shells for two entities) in `<module>/tests/<function>.rs` |
+| tests are claims on typed values, fixtures built by the engine, the geometry `Cl(n+1,1)(ℚ)` | 3.1–3.9 | one test per component, the claims of IV's component table, in `<module>/tests/<function>.rs` |
 | gates: the bound, `clippy -D warnings`; allowances at the site with their rule | 4.1–4.3 | an `expect` names its rule and boundary |
-| one phase per commit; the message form | 5.1, 5.2 | each row its own commit; scoped tests on touched modules (the operator, 2026-10-08) |
-| docs before code | 5.5, 9 | this Part lands before row A1's code |
+| one phase per commit; the message form | 5.1, 5.2 | each component its own commit, landed when its identity holds; scoped tests on touched modules (the operator, 2026-10-08) |
+| docs before code | 5.5, 9 | this Part lands before FIELD's code |
 | the audit reads wiring, standards, trajectory, the carrier written into | 6.2, 6.6 | no write onto a retired carrier (chatter v2's HEARD/ACK/HOLD once v3 lands; the global statics) |
-| every name the document cites exists at HEAD | 7.1 | names of rows not yet built are marked owed here and bound when they land |
-| a persisted layout change is a recut | 10 | `GEN7` is unchanged by these rows; the chatter wire is not persisted |
+| every name the document cites exists at HEAD | 7.1 | names of components not yet built are marked owed here and bound when they land |
+| a persisted layout change is a recut | 10 | `GEN7` is unchanged by these components; the chatter wire is not persisted |
 | rules 1–17, checklist (a)–(t) | MU-RECURSION preamble | read on every diff, in order |
 | the Anti-Flattening Law, clauses 1–11 | `ANTI_FLATTENING_LAW.md` | no hash as an operand, recognition as group action, curvature as content |
 
