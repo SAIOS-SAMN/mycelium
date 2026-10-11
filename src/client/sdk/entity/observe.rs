@@ -80,9 +80,6 @@ impl Entity {
             language: [
                 self.epigenome.dialect_len() as u64,
                 self.epigenome.genome_len() as u64,
-                learning.installed,
-                learning.closing,
-                learning.adjoined_by_closure,
                 // 78.53 — THE COLOUR VOCABULARY: the court-ruled colour words
                 // in the genome (fibre relations, `is_colour_word`). The
                 // sensor fixed the labels and a colour word is its relation,

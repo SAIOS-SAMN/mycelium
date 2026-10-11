@@ -48,12 +48,6 @@ pub struct Learning {
     /// distance being prefix depth. Read with the span, once; the clock
     /// carries it from here.
     pub radius: u64,
-    /// Generators a closure opened in this genome (I1's reading, per mind).
-    pub adjoined_by_closure: u64,
-    /// Words the genome holds: the court-ruled words taught to this mind.
-    pub installed: u64,
-    /// Of them, those whose form closes.
-    pub closing: u64,
     /// CS2, 78.32(c) — this mind's pivots against the cells their orbits
     /// cross, by content: the count the admission gate waits on.
     pub pivots: crate::transducer::sentence::PivotTally,
@@ -384,21 +378,16 @@ impl Learning {
                 (inv.key().as_bytes().to_vec(), members.len() as u64)
             })
             .collect();
-        let (mut installed, mut closing, mut adjoined_by_closure) = (0u64, 0u64, 0u64);
-        for held in epigenome.genome_words() {
-            installed += 1;
-            adjoined_by_closure += held.generators_opened();
-            if held.form().is_some_and(|f| f.is_closed()) {
-                closing += 1;
-            }
-        }
+        // THE GENOME SWEEP WAS HERE AND IS DELETED (2026-10-11): at every K it
+        // factored every vertex of every genome word to count the generators
+        // closures opened, the words installed and those closing — three
+        // counts for the console that held the mind's tick for its whole
+        // first orbit on the fleet (the factoring of 931–1862 words). What a
+        // closure opened is the court's to read (`Kernel::adjoined`).
         Learning {
             k,
             strata,
             radius,
-            adjoined_by_closure,
-            installed,
-            closing,
             pivots,
             merges,
             meet: Box::new(meet),
@@ -417,9 +406,6 @@ impl Learning {
         for (key, n) in &self.strata {
             crate::transducer::address::put_bytes(out, key)?;
             out.extend_from_slice(&n.to_le_bytes());
-        }
-        for v in [self.adjoined_by_closure, self.installed, self.closing] {
-            out.extend_from_slice(&v.to_le_bytes());
         }
         let t = &self.pivots;
         for v in [t.reached, t.derivable, t.demanded, t.adjoin, t.starved, t.unread_fibre, t.unread_algebra] {
@@ -563,7 +549,6 @@ impl Learning {
         let k = u64_at(b, p)?;
         let radius = u64_at(b, p)?;
         let strata = keyed(b, p)?;
-        let (adjoined_by_closure, installed, closing) = (u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?);
         let pivots = crate::transducer::sentence::PivotTally {
             reached: u64_at(b, p)?,
             derivable: u64_at(b, p)?,
@@ -710,9 +695,6 @@ impl Learning {
             k,
             strata,
             radius,
-            adjoined_by_closure,
-            installed,
-            closing,
             pivots,
             merges,
             meet: Box::new(meet),

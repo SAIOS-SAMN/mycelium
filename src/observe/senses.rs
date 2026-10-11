@@ -69,7 +69,7 @@ pub const HEARING: [&str; 10] = [
     "presentation: still",
 ];
 /// What a mind holds as LANGUAGE.
-pub const LANGUAGE: [&str; 6] = ["dialect", "genome", "installed", "closing", "adjoined by closure", "colour words"];
+pub const LANGUAGE: [&str; 3] = ["dialect", "genome", "colour words"];
 /// What a mind UNDERSTOOD.
 pub const UNDERSTANDING: [&str; 5] = ["derivable", "glued", "obstructed", "discordant strata", "colour derived"];
 /// What a mind's solves came to (the actions' physics). 78.153c — "unread"

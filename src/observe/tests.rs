@@ -488,9 +488,6 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
         k: 41,
         strata: vec![(vec![1, 2], 3), (vec![1, 2, 5], 1)],
         radius: 3,
-        adjoined_by_closure: 1,
-        installed: 4,
-        closing: 2,
         // CS2 — every arm of the pivot reading travels.
         pivots: crate::transducer::sentence::PivotTally {
             reached: 1,
@@ -701,8 +698,8 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
         Default::default(),
     );
     assert_eq!(
-        (fresh.strata.len(), fresh.adjoined_by_closure, fresh.installed, fresh.closing),
-        (0, 0, 0, 0),
+        fresh.strata.len(),
+        0,
         "a mind holding nothing has learned nothing, and says so"
     );
     assert_eq!(
@@ -847,7 +844,7 @@ fn the_senses_and_the_acts_travel_whole() {
         measure: [7, 8, 9, 10],
     });
     senses.hearing = [6, 7, 8, 30, 31, 32, 33, 34, 35, 36];
-    senses.language = [9, 10, 11, 12, 13, 29];
+    senses.language = [9, 10, 29];
     senses.understanding = [14, 15, 16, 17, 38];
     senses.solving = [18, 19, 20, 21, 26, 27, 28, 58];
     senses.paid = [22, 23, 24, 25];

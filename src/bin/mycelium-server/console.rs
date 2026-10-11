@@ -679,10 +679,6 @@ fn learning(l: &observe::Learning) -> Vec<String> {
     vec![
         format!("  {BOLD}learning{RESET}    K {}", l.k),
         format!("    dialect span  {} strata holding {words} words", l.strata.len()),
-        format!(
-            "    closures      adjoined-by-closure {}  installed {}  closing {}",
-            l.adjoined_by_closure, l.installed, l.closing
-        ),
         // CS2 — the pivots against the cells their orbits cross (78.32(c)).
         format!("    {}", l.pivots.line()),
         // 13.12 — the contemplation's merges (TP1's line).
