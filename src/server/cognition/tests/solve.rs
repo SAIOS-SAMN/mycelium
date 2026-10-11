@@ -37,8 +37,8 @@ fn a_rule_that_closes_the_withheld_pairs_is_solved_and_priced_by_its_discharge()
     match k.judge_solve(&rule, &carried()) {
         SolveVerdict::Solved { pay, reads } => {
             assert!(pay.iter().any(|&m| m > 0), "it discharges something: {pay:?}");
-            // 𝒯 carries no data on a chain's measure: unread, never a zero.
-            assert_eq!(reads[2], crate::economy::LaneRead::Unread, "T is unread: {reads:?}");
+            // 𝒯 is the ground the rule's slide covered: read, never a bare zero.
+            assert!(matches!(reads[2], crate::economy::LaneRead::Read(crate::economy::LaneMove::Fell(n)) if n > 0), "T is the ground covered: {reads:?}");
             // An open lane is read, whatever it moved: S paid, so S fell.
             assert!(matches!(reads[0], crate::economy::LaneRead::Read(_)), "S is read: {reads:?}");
         }

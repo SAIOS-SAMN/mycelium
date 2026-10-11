@@ -208,6 +208,9 @@ pub fn form_deflation_read(
         return DeflationRead { pay: [0; 4], reads, remainders: Vec::new(), unresolved, cycled };
     }
     let mut pay = [0u64; 4];
+    let mut closed_count = 0u64;
+    // A mass past its carrier leaves 𝒯 unread, never saturated (rule 11).
+    let mut carried_mass: Option<u64> = Some(0);
     let mut remainders = Vec::with_capacity(family.len());
     for (pi, (x, y)) in family.iter().enumerate() {
         let spoken = apply_form_on(form, x, placement, crystal, Some(pi));
@@ -222,6 +225,12 @@ pub fn form_deflation_read(
             *p = next;
         }
         if let Some(r) = pair_reads {
+            // The pair's own work: the links its before side demanded moved
+            // (𝒮), the mass the rule's motions carried on it.
+            if let Some(m) = pair_mass(x, y) {
+                carried_mass = carried_mass.and_then(|c| c.checked_add(m));
+            }
+            closed_count += 1;
             for (held, now) in reads.iter_mut().zip(&r) {
                 if let Some(both) = held.and(now) {
                     *held = both;
@@ -230,11 +239,65 @@ pub fn form_deflation_read(
         }
         remainders.push(after_chain);
     }
+    // 𝒯 — THE GROUND THE CLOSURE COVERED: a chain carries no clock, so 𝒯 is
+    // read off the rule's own motions — every word vertex's whole motion at
+    // each member, admitted to the tubes (78.71, `transport_order`), its null
+    // flux in quanta — once for each pair the form closed. Measured by whoever
+    // replays the form; never the span anything stood (78.149 (a)).
+    // Weighed by the mass the closed pairs carried: a pair with nothing to
+    // carry covers no ground, whatever the rule would move.
+    if closed_count > 0 {
+        if let Some(t) = carried_mass.and_then(|m| rule_flux(form, m)) {
+            pay[crate::transducer::sentence::presentation::LANE_T] = t;
+            reads[crate::transducer::sentence::presentation::LANE_T] = match t {
+                0 => crate::economy::LaneRead::Read(crate::economy::LaneMove::Held),
+                n => crate::economy::LaneRead::Read(crate::economy::LaneMove::Fell(n)),
+            };
+        }
+    }
     unresolved.sort_unstable();
     unresolved.dedup();
     cycled.sort_unstable();
     cycled.dedup();
     DeflationRead { pay, reads, remainders, unresolved, cycled }
+}
+
+/// THE MASS A PAIR CARRIED: the 𝒮 measure of what its before side demanded
+/// moved (cells created or erased). `None` where the pair demanded nothing.
+fn pair_mass(x: &Grid, y: &Grid) -> Option<u64> {
+    let before_chain = match crate::transducer::family::refine::refine_delta(x, y) {
+        Some(chain) => chain,
+        None => residual_of(Some(x), y),
+    };
+    let m = element::measure_lanes(&before_chain)[crate::transducer::sentence::presentation::LANE_S];
+    (m > 0).then_some(m)
+}
+
+/// THE NULL FLUX A FORM'S MOTIONS CARRY, in quanta, at the mass `mass` its
+/// closed pairs carried: each word vertex's whole motion at each member (its
+/// carriage composed with its rotor's base action) and its hue map, one field
+/// line each, admitted to fresh tubes; the transport they moved on 𝒯. `None`
+/// where no motion reads; nothing where nothing was carried.
+fn rule_flux(form: &Form, mass: u64) -> Option<u64> {
+    use super::pairing::FieldLine;
+    if mass == 0 {
+        return Some(0);
+    }
+    let mut lines = Vec::new();
+    for (_, v) in form.vertices.scoped() {
+        let crate::transducer::sentence::Vertex::Word { derivation, acts, .. } = v else { continue };
+        for (_, a) in acts.scoped() {
+            let Some(carriage) = element::conformal_of_rotor(&derivation.rotor(), &a.carriage) else { continue };
+            lines.push(FieldLine { carriage, gauge: a.gauge.clone(), mass, free: false });
+        }
+    }
+    if lines.is_empty() {
+        return None;
+    }
+    let mut field = crate::transducer::cech::orbit::Field::new();
+    let mut budget = crate::physics::Physics::default().stroke();
+    let r = super::pairing::transport_order(&lines, &[], &mut field, &mut budget);
+    Some(r.transport[crate::transducer::sentence::presentation::LANE_T])
 }
 
 /// ONE PAIR OF THE DEFLATION, from the speech already taken on it: what the

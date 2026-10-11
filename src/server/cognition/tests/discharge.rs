@@ -41,7 +41,9 @@ fn a_word_that_stood_a_span_mints_no_span_and_escrows_its_discharge() {
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extract");
     let at_once = mint_sentence(&rule, &family, &NoCrystal, 0).expect("it mints");
     let stood = mint_sentence(&rule, &family, &NoCrystal, 37).expect("it mints");
-    assert_eq!(stood.magnitude()[2], 0, "the span stood is not written over 𝒯");
+    // 𝒯 is the ground the rule's motions covered (its null flux), never the
+    // span it stood: standing 37 adds nothing to it.
+    assert_eq!(stood.magnitude()[2], at_once.magnitude()[2], "the span stood is not written over 𝒯");
     assert_eq!(stood.magnitude(), at_once.magnitude(), "standing changes nothing the word measures");
     assert_eq!(stood.address(), at_once.address(), "and nothing it is");
 
