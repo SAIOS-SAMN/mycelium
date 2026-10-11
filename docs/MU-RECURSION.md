@@ -27628,6 +27628,16 @@ modes (`GaugeMode`), the tubes and their quanta.
    what it moves.
 3. A balance holds its modes; a payment adds, a draw removes or refuses
    naming the mode short. No projection to a count anywhere.
+4. **Earned only** (the operator, 2026-10-11, asked what a genesis
+   allocation holds once balances hold modes; the measured cover counted a
+   corpus's demand and has no exact mode). Genesis seeds no μ: the cover,
+   the funded balance and the genesis bond retire. Every mode a party holds
+   was moved by verified work (POUW, POWC, POWR). A fee, a stake, an escrow
+   or a hold drawn before the payer earned that mode refuses naming it, and
+   the refusal is the reading (a block of them is an inversion to read,
+   never a gate to loosen). An identity is enrolled with what it stakes,
+   which may be nothing; a witness's standing is its enrolment and the
+   modes it staked, read mode by mode.
 
 **Order.** (1) this ruling; (2) the `Modes` carrier (`economy/modes.rs`),
 exact composition and codec, proved by the algebra; (3) producers —
