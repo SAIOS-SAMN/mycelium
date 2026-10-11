@@ -38,7 +38,6 @@ use crate::chronometry::tuniversal::TPoint;
 use crate::transducer::cga::Mv;
 use std::io::{self, Read, Write};
 use std::net::{TcpListener, TcpStream};
-use std::sync::{Arc, Mutex};
 
 pub const TAG: u8 = 0x43;
 pub const SAY: u8 = 0;
@@ -411,11 +410,11 @@ impl Chatter {
     }
 }
 
-/// THE POST: this mind's listening address and the frames heard on it,
-/// waiting for the mind's stroke.
+/// THE POST: this mind's listening address. Every frame heard on it is
+/// delivered at once to the carrier that converses (MU-CLIENT §5.1), which
+/// sleeps until one arrives — no inbox polled, no clock.
 pub struct Post {
     addr: String,
-    inbox: Arc<Mutex<std::collections::VecDeque<Vec<u8>>>>,
 }
 
 /// One frame off a connection: `[len u32 LE][frame]`, within the wire's one
@@ -433,47 +432,28 @@ fn read_frame(s: &mut TcpStream) -> io::Result<Vec<u8>> {
 }
 
 impl Post {
-    /// LISTEN at `listen` (`127.0.0.1:0` takes any free port): every
-    /// connection is read on its own thread, so a peer that stalls holds
-    /// nothing else up.
-    pub fn open(listen: &str) -> io::Result<Post> {
+    /// LISTEN at `listen` (`127.0.0.1:0` takes any free port), each frame
+    /// handed to `deliver` as it is read: every connection is read on its
+    /// own thread, so a peer that stalls holds nothing else up.
+    pub fn open<D: Fn(Vec<u8>) + Send + Clone + 'static>(listen: &str, deliver: D) -> io::Result<Post> {
         let listener = TcpListener::bind(listen)?;
         let addr = listener.local_addr()?.to_string();
-        let inbox: Arc<Mutex<std::collections::VecDeque<Vec<u8>>>> = Arc::new(Mutex::new(std::collections::VecDeque::new()));
-        let into = Arc::clone(&inbox);
         std::thread::Builder::new().name("chatter-post".into()).spawn(move || {
             for conn in listener.incoming() {
                 let Ok(mut s) = conn else { continue };
-                let into = Arc::clone(&into);
+                let deliver = deliver.clone();
                 let _ = std::thread::Builder::new().name("chatter-conn".into()).spawn(move || {
                     if let Ok(frame) = read_frame(&mut s) {
-                        if let Ok(mut held) = into.lock() {
-                            held.push_back(frame);
-                        }
+                        deliver(frame);
                     }
                 });
             }
         })?;
-        Ok(Post { addr, inbox })
+        Ok(Post { addr })
     }
 
     pub fn addr(&self) -> &str {
         &self.addr
-    }
-
-    /// Every frame heard since the last take, in the order heard.
-    pub fn take(&self) -> Vec<Vec<u8>> {
-        match self.inbox.lock() {
-            Ok(mut held) => std::mem::take(&mut *held).into(),
-            Err(_) => Vec::new(),
-        }
-    }
-
-    /// THE NEXT FRAME heard, the earliest first; the rest stay in the post
-    /// for the mind's next tick — a stroke that ran out hears them later,
-    /// never drops them.
-    pub fn next(&self) -> Option<Vec<u8>> {
-        self.inbox.lock().ok()?.pop_front()
     }
 }
 
@@ -622,21 +602,17 @@ mod tests {
     }
 
     #[test]
-    fn a_frame_sent_to_a_post_is_heard_there() {
-        let post = Post::open("127.0.0.1:0").expect("listen");
+    fn a_frame_sent_to_a_post_is_delivered() {
+        let (tx, rx) = std::sync::mpsc::channel::<Vec<u8>>();
+        let post = Post::open("127.0.0.1:0", move |f| {
+            let _ = tx.send(f);
+        })
+        .expect("listen");
         let k = key(3);
         let c = Chatter { speaker: k.verifying_key().to_bytes(), point: None, said: Said::Say { said: vec![9; 100], words: vec![] } };
         send(post.addr(), &c.sign(&k).expect("signed")).expect("sent");
-        let mut heard = Vec::new();
-        for _ in 0..1_000_000 {
-            heard = post.take();
-            if !heard.is_empty() {
-                break;
-            }
-            std::thread::yield_now();
-        }
-        assert_eq!(heard.len(), 1);
-        assert_eq!(Chatter::open(&heard[0]), Some(c));
+        let heard = rx.recv().expect("delivered");
+        assert_eq!(Chatter::open(&heard), Some(c));
     }
 
     #[test]

@@ -90,10 +90,6 @@ impl Entity {
         if !stopping() {
             self.body_tick(stop);
         }
-        if !stopping() {
-            let mut budget = self.stroke();
-            self.chatter_stroke(&mut budget);
-        }
         // 2. TRANSPORT.
         if !stopping() {
             self.take_docketed_demands();
@@ -108,6 +104,9 @@ impl Entity {
         let _ = self.pivot_thoughts();
         StrokeOutcome::add(&mut outcome.learned, &self.take_learned_mu());
         self.close_orbit();
+        // The conversation runs on its own carrier (MU-CLIENT §5.1); it is
+        // handed the mind's clock as the orbit moves it.
+        self.tell_conversation_the_clock();
         self.book_tick(&outcome);
         let moved = outcome.moved();
         let short = self.physics().reserve_shortfall(moved);

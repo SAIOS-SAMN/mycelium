@@ -63,8 +63,8 @@ impl Epigenome {
         };
         self.moduli_retract(&shed);
         match shed.form() {
-            Some(f) => self.ear.unfile_form(&shed.address(), f),
-            None => self.ear.unfile_letter(&shed.address()),
+            Some(f) => self.ear.write().unfile_form(&shed.address(), f),
+            None => self.ear.write().unfile_letter(&shed.address()),
         }
         // THE MIRROR OF THE ADMISSION, CHART FOR CHART. `stand_dialect_at`
         // admits through `axis_admit`, which for a sentence files each Word
@@ -126,10 +126,10 @@ impl Epigenome {
         // 78.161 — the ear hears the mind's own words too, as its dialect.
         match sentence.form() {
             Some(f) => {
-                self.ear.hear_form(&addr, f, false);
+                self.ear.write().hear_form(&addr, f, false);
             }
             None => {
-                self.ear.hear_letter(&addr, sentence.element(), false);
+                self.ear.write().hear_letter(&addr, sentence.element(), false);
             }
         }
         // RM1 — its remainders, by where they were perceived.

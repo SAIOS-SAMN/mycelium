@@ -142,7 +142,7 @@ impl crate::transducer::family::Crystal for Epigenome {
         motion: &crate::transducer::cga::Mv,
         gauge: &[(u8, u8)],
     ) -> Option<crate::transducer::sentence::presentation::Reading> {
-        self.ear.read_word(motion, gauge, true)
+        self.ear.read().read_word(motion, gauge, true)
     }
 
     /// 1.8: THE PRESENTATION THIS MIND SPEAKS FROM on a versor's chart.
