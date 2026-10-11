@@ -717,7 +717,7 @@ rules it.
   operator). A section wholly about the mind moved there verbatim under its
   own number, and its heading here carries a pointer; a section that
   interleaves the mind with the court or the shared mathematics stayed here
-  and is indexed from MU-CLIENT IV.1. This document still governs: its laws,
+  and is indexed from MU-CLIENT IV.6. This document still governs: its laws,
   standards, vocabulary, map and shared chapters bind MU-CLIENT, and a ruling
   on the mind amends MU-CLIENT's section that governs its object.
 - **The structure is a plexus, never a ladder** (78.31): the five
