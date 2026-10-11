@@ -205,8 +205,7 @@ fn a_mind_speaks_its_closed_thought_into_its_own_dialect() {
     }
     // THE FACULTIES READ IT, typed (never a log): one thought closed, one
     // grounded, one word spelled, nothing ineffable, the dialect holding it.
-    let learning = crate::observe::Learning::default();
-    let senses = entity.senses(&learning);
+    let senses = entity.senses();
     assert_eq!(senses.read("cognition", "closed"), Some(1), "{:#?}", senses.lines());
     assert_eq!(senses.read("cognition", "grounded"), Some(1));
     assert_eq!(senses.read("speech", "spelled"), Some(1));

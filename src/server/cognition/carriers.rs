@@ -162,6 +162,7 @@ impl Kernel {
             drawn,
             recall_short,
             provisional,
+            attested: _,
             open,
             open_cursor: _,
             docket_circuits: _,

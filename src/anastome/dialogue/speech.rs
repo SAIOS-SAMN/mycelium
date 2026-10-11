@@ -94,6 +94,11 @@ pub struct Spoken {
     pub tape: Vec<u8>,
     pub standing: u8,
     pub contraction: Option<Contraction>,
+    /// MU-CLIENT §5.5 — AGREED LANGUAGE: the signed HOLD frame of another
+    /// mind that re-derived this sentence and holds one loop with the
+    /// speaker on every word (78.161, 78.163). The court verifies the
+    /// signature and seals the other mind's attestation (`Attest`).
+    pub agreement: Option<Vec<u8>>,
     // 50.2 step 2 as ruled 2026-09-10: `paths` was here. The generators a
     // voice reached each word vertex through are ON the tape at v7, in
     // the vertex's own derivation, because they are what the vertex is.
@@ -127,13 +132,16 @@ pub fn encode_speech_standing(
                 None => crate::transducer::stalk::Standing::Stood.as_u8(),
             },
             contraction: None,
+            agreement: None,
         })
         .collect();
     encode_speech_spoken(voice, task, tu, &spoken)
 }
 
 /// `[ACT_SPEECH][voice 32][task address][K u64][n u32]` then per sentence
-/// `[standing u8][cert u8][contraction?][len u32][tape]`; the derivation
+/// `[standing u8][carries u8][contraction?][agreement?][len u32][tape]`:
+/// `carries` bit 0 a contraction certificate follows, bit 1 an agreement
+/// (`[len u32][the other mind's signed HOLD frame]`); the derivation
 /// of every word vertex is inside the tape at v7 (50.2 step 2). `None`
 /// where the task's address cannot be framed (LD0): the speech is not
 /// spoken, never sent with the task dropped.
@@ -150,12 +158,12 @@ pub fn encode_speech_spoken(
     crate::transducer::address::put_u32_count(&mut out, sentences.len())?;
     for s in sentences {
         out.push(s.standing);
-        match &s.contraction {
-            Some(c) => {
-                out.push(1);
-                c.to_bytes(&mut out)?;
-            }
-            None => out.push(0),
+        out.push(u8::from(s.contraction.is_some()) | (u8::from(s.agreement.is_some()) << 1));
+        if let Some(c) = &s.contraction {
+            c.to_bytes(&mut out)?;
+        }
+        if let Some(a) = &s.agreement {
+            crate::transducer::address::put_bytes(&mut out, a)?;
         }
         crate::transducer::address::put_bytes(&mut out, &s.tape)?;
     }
@@ -176,25 +184,30 @@ pub fn decode_speech(body: &[u8]) -> Option<SpeechAct> {
     let mut sentences = Vec::with_capacity(n.min(64));
     let mut standing = Vec::with_capacity(n.min(64));
     let mut contractions = Vec::with_capacity(n.min(64));
+    let mut agreements = Vec::with_capacity(n.min(64));
     for _ in 0..n {
         let st = *body.get(pos)?;
         pos += 1;
-        let cites = *body.get(pos)?;
+        let carries = *body.get(pos)?;
         pos += 1;
-        let cited = match cites {
+        if carries & !0b11 != 0 {
+            return None;
+        }
+        let cited = match carries & 1 {
             0 => None,
-            1 => Some(Contraction::from_bytes(body, &mut pos)?),
-            _ => return None,
+            _ => Some(Contraction::from_bytes(body, &mut pos)?),
         };
-        let len = u32::from_le_bytes(body.get(pos..pos + 4)?.try_into().ok()?) as usize;
-        pos += 4;
-        let s = body.get(pos..pos + len)?.to_vec();
-        pos += len;
+        let agreed = match carries & 0b10 {
+            0 => None,
+            _ => Some(crate::transducer::address::take_bytes(body, &mut pos)?),
+        };
+        let s = crate::transducer::address::take_bytes(body, &mut pos)?;
         standing.push(st);
         contractions.push(cited);
+        agreements.push(agreed);
         sentences.push(s);
     }
-    Some(SpeechAct { voice, task, k: tu, sentences, standing, contractions })
+    Some(SpeechAct { voice, task, k: tu, sentences, standing, contractions, agreements })
 }
 
 /// `[ACT_SPEECH][n u8]` then per sentence `[code u8][receipt 32]` and, for

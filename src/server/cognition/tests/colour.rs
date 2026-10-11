@@ -187,7 +187,7 @@ fn a_colour_word_is_minted_ruled_by_evidence_taught_and_held() {
     let mut mind = crate::client::sdk::Entity::open("127.0.0.1:1", crate::client::sdk::Kernel::named("learner"));
     let mut budget = mind.stroke_n(1 << 16);
     assert!(mind.absorb_taught_at(&taught.word, Some(taught.at), &mut budget).is_some(), "learned");
-    let senses = mind.senses(&crate::observe::Learning::default());
+    let senses = mind.senses();
     assert_eq!(senses.read("language", "colour words"), Some(1), "the mind holds what its court installed");
 }
 

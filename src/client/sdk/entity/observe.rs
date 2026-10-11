@@ -27,7 +27,7 @@ impl Entity {
     /// that reached the mind, language and learning off the genome and the
     /// dialect, understanding off the pivots and the glue, solving off the
     /// court's verdicts, and the growing carriers' sizes — the leak signals.
-    pub fn senses(&self, learning: &observe::Learning) -> observe::Senses {
+    pub fn senses(&self) -> observe::Senses {
         let c = &self.contemplation;
         let r = &c.resonance;
         let refused_by_gate =
@@ -164,7 +164,7 @@ impl Entity {
             })),
         );
         // THE FACULTIES, read off this mind's own carriers at its `K`.
-        observe::publish(me, Reading::Senses(Box::new(self.senses(&learning))));
+        observe::publish(me, Reading::Senses(Box::new(self.senses())));
         observe::publish(me, Reading::Learning(learning));
         // PL1 — THE LAST PERCEPT'S CIRCUITS, step by step, where a percept
         // read any since the last push; otherwise the circuits held stand.

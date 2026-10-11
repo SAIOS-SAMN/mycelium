@@ -151,7 +151,7 @@ fn two_courts_of_distinct_identity_reach_one_standing_through_the_codec() {
             &vk,
             &task,
             0,
-            &[Spoken { tape: utter.to_bytes().expect("the record writes"), standing: 0, contraction: cited.clone() }],
+            &[Spoken { tape: utter.to_bytes().expect("the record writes"), standing: 0, contraction: cited.clone(), agreement: None }],
         )
         .expect("the task frames");
         let reply = hear(&mut court1, &frame);
@@ -191,7 +191,7 @@ fn two_courts_of_distinct_identity_reach_one_standing_through_the_codec() {
         &vk,
         &task,
         0,
-        &[Spoken { tape: utter.to_bytes().expect("the record writes"), standing: 0, contraction: cited.clone() }],
+        &[Spoken { tape: utter.to_bytes().expect("the record writes"), standing: 0, contraction: cited.clone(), agreement: None }],
     )
     .expect("the task frames");
     let reply = hear(&mut court2, &frame);

@@ -24,15 +24,22 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     };
     // THE HEARING IS THE TRANSITION THAT ADMITS: what it docketed, and what
     // the sentences waiting on a word carried, it offers when it returns.
-    let (heard, offers) = match crate::held::held!(kernel) {
+    let (heard, offers, attested) = match crate::held::held!(kernel) {
         // OWED (78.153b): the hearing mints its strokes per sentence (the
         // lock audit, row 9); this hold's stroke is not yet threaded in.
         Ok(mut h) => h.run(|k, _| {
             let heard = k.hear_frame(&act);
-            (heard, k.take_offers())
+            // MU-CLIENT §5.5 — agreed language: the other mind's signed
+            // HOLD verified, its attestation sealed on the word.
+            let attested = k.attest_agreements(&act);
+            (heard, k.take_offers(), attested)
         }),
         Err(_) => return,
     };
+    let short = |b: &[u8]| b.iter().take(4).map(|x| format!("{x:02x}")).collect::<String>();
+    for (word, by) in &attested {
+        eprintln!("  agreed: word {}… spoken by {}… attested by {}…", short(word), short(&act.voice), short(by));
+    }
     let body = match heard {
         Ok(adjudicated) => match dialogue::encode_speech_reply(&adjudicated) {
             Some(b) => b,

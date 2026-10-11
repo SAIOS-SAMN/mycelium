@@ -71,6 +71,8 @@ pub struct ChatTally {
 /// ONE THING THIS MIND SAID: its words as said; per mind it ACKed, the loops
 /// it read, awaiting that mind's HOLD; and whether some mind has shared it.
 struct Union {
+    /// What was said, whole: spoken again to the court once agreed.
+    said: crate::transducer::element::Element,
     spoken: Vec<Spoken>,
     acked: Keyed<Vec<AckWord>>,
     shared: bool,
@@ -166,7 +168,12 @@ impl Entity {
         for p in peers {
             match chatter::send(&p, frame) {
                 Ok(()) => chat.tally.sent += 1,
-                Err(_) => chat.tally.unsent += 1,
+                Err(e) => {
+                    chat.tally.unsent += 1;
+                    if e.kind() == std::io::ErrorKind::ConnectionRefused {
+                        chatter::forget(&chat.dir, &p);
+                    }
+                }
             }
         }
     }
@@ -194,7 +201,7 @@ impl Entity {
         let at = self.own_k();
         if let Some(chat) = self.chat.as_mut() {
             chat.tally.said += 1;
-            chat.union.insert(&addr, Union { spoken: words, acked: Keyed::new(), shared: false, at });
+            chat.union.insert(&addr, Union { said: e.clone(), spoken: words, acked: Keyed::new(), shared: false, at });
         }
         self.chatter_send(&frame, None);
     }
@@ -301,7 +308,7 @@ impl Entity {
                 Said::Say { said, words } => self.hear_said(&c.speaker, said, &words),
                 Said::Heard { said, words } => self.heard_back(&c.speaker, &said, &words),
                 Said::Ack { said, words } => self.acknowledged(&c.speaker, &said, &words),
-                Said::Hold { said, words } => self.held_back(&c.speaker, &said, &words, budget),
+                Said::Hold { said, words } => self.held_back(&c.speaker, &said, &words, &f, budget),
             }
         }
         self.release_unmet(budget);
@@ -434,9 +441,11 @@ impl Entity {
     /// THE HEARER HOLDS THE LOOPS THIS MIND READ (its HOLD): verified against
     /// the ACK this mind sent it, by the algebra. Where the two readings are
     /// one, the thought is SHARED on this side too — this mind's ear holds
-    /// every curved holonomy — and the thing said is agreed language: a
-    /// letter waiting for its union goes to the court.
-    fn held_back(&mut self, who: &[u8; 32], said: &[u8], holds: &[AckWord], budget: &mut crate::physics::Budget) {
+    /// every curved holonomy — and the thing said is AGREED LANGUAGE (MU-CLIENT
+    /// §5.5): the coiner speaks it to the court carrying the hearer's signed
+    /// HOLD (`frame`), and the court seals the hearer's attestation; a letter
+    /// waiting for its union goes with it.
+    fn held_back(&mut self, who: &[u8; 32], said: &[u8], holds: &[AckWord], frame: &[u8], budget: &mut crate::physics::Budget) {
         let Some(chat) = self.chat.as_mut() else { return };
         let Some(u) = chat.union.get_mut(said) else { return };
         let Some(sent) = u.acked.remove(who) else { return };
@@ -447,15 +456,23 @@ impl Entity {
         chat.tally.shared += 1;
         let first = !u.shared;
         u.shared = true;
+        let agreed = u.said.clone();
         self.hold_transports(&sent);
         if !first {
             return;
         }
         let Some(chat) = self.chat.as_mut() else { return };
         chat.tally.agreed += 1;
-        let Some((letter, _)) = chat.waiting.remove(said) else { return };
-        chat.tally.to_court += 1;
-        let _ = self.speak(std::slice::from_ref(&letter), budget);
+        let letter = chat.waiting.remove(said).map(|(l, _)| l);
+        if letter.is_some() {
+            chat.tally.to_court += 1;
+        }
+        // A letter waiting for its union is first spoken whole; the agreement
+        // then rides on the thing said, which the court now holds.
+        if let Some(letter) = letter {
+            let _ = self.speak(std::slice::from_ref(&letter), budget);
+        }
+        let _ = self.speak_agreed(&agreed, frame);
     }
 
     /// A SHARED THOUGHT FEEDS THE EAR: every curved loop's holonomy — what one

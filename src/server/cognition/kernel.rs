@@ -595,6 +595,10 @@ pub struct Kernel {
     /// Words installed on two-voice consilience but NOT yet court-final
     /// (Step 5): local dialect awaiting the admission docket, keyed by address.
     pub(crate) provisional: crate::network::nerve::Keyed<Element>,
+    /// MU-CLIENT §5.5, 78.161(5) — the agreements this court sealed, by
+    /// (word, attesting mind): one `Attest` each (`book/agreement.rs`).
+    /// Volatile: the ledger holds the acts.
+    pub(crate) attested: crate::network::nerve::Keyed<()>,
     /// Listings whose field has a non-Flat chart — the court's docket, written
     /// in write_field, read in key order.
     pub(crate) open: crate::network::nerve::Keyed<()>,

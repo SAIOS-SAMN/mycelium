@@ -45,7 +45,7 @@ fn a_voice_keeps_home_a_solve_its_own_train_refutes() {
     let _ = entity.solve_task(&task, &train, &outs, Some(&spoken), &mut budget);
     assert_eq!(entity.solves.refuted, 1, "the rule its own train speaks is not refuted");
     // THE SENSES READ IT, typed.
-    let senses = entity.senses(&crate::observe::Learning::default());
+    let senses = entity.senses();
     assert_eq!(senses.read("solving", "unminted"), Some(1));
     assert_eq!(senses.read("solving", "refuted at home"), Some(1));
 }

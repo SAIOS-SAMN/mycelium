@@ -31,7 +31,7 @@ fn every_sentence_heard_has_its_rings_read_whatever_its_adjudication() {
         &[0x5b; 32],
         [9u8; 4],
         0,
-        &[Spoken { tape: e.to_bytes().expect("the record writes"), standing: 0, contraction: None }],
+        &[Spoken { tape: e.to_bytes().expect("the record writes"), standing: 0, contraction: None, agreement: None }],
     )
     .expect("the task frames");
     let act = dialogue::decode_speech(&frame).expect("the frame decodes");

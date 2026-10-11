@@ -318,6 +318,33 @@ impl Entity {
         self.speak_with(sentences, &[], &[], budget)
     }
 
+    /// MU-CLIENT §5.5 — AGREED LANGUAGE TO THE COURT: a sentence this mind
+    /// said and another mind holds one loop with it on every word, spoken
+    /// carrying that mind's signed HOLD (`agreement`). The sentence's own
+    /// verdict was read when it was first spoken; this act asks the court to
+    /// seal the other mind's attestation, and its reply is the court's.
+    pub(crate) fn speak_agreed(&mut self, e: &Element, agreement: &[u8]) -> io::Result<Vec<u8>> {
+        let voice = self.session.kernel().voice();
+        let tu = self.now_tu();
+        let Some(tape) = e.to_bytes() else {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "agreement refused: the sentence's record does not write"));
+        };
+        let spoken = [dialogue::Spoken {
+            tape,
+            standing: Standing::Stood.as_u8(),
+            contraction: self.certificate_for(e),
+            agreement: Some(agreement.to_vec()),
+        }];
+        let Some(body) = dialogue::encode_speech_spoken(&voice, [], tu, &spoken) else {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "agreement refused: the speech does not frame"));
+        };
+        let reply = self.session.speak_nerve(body)?;
+        match dialogue::decode_speech_reply(&reply) {
+            Some(adjudicated) => Ok(adjudicated.iter().map(|a| a.code()).collect()),
+            None => Err(io::Error::new(io::ErrorKind::InvalidData, "speech reply does not decode")),
+        }
+    }
+
     /// SPEAK a family's cohering sentences as one act, naming the task so
     /// the court replays them on its copy of the family (23.8, 50.2 G).
     /// Each word STANDS in the dialect before it is uttered (24.3:
@@ -368,6 +395,7 @@ impl Entity {
                     tape: sentences[i].to_bytes()?,
                     standing: Standing::Stood.as_u8(),
                     contraction: self.certificate_for(&sentences[i]),
+                    agreement: None,
                 })
             })
             .collect();

@@ -506,6 +506,18 @@ pub fn peer_of(dir: &std::path::Path, voice: &[u8; 32]) -> Option<String> {
     (!addr.is_empty()).then_some(addr)
 }
 
+/// A RENDEZVOUS ENTRY NOTHING LISTENS AT is removed: the mind that filed
+/// it is gone (a refused connection says so exactly), and a frame sent there
+/// again would only be refused again.
+pub fn forget(dir: &std::path::Path, addr: &str) {
+    let Ok(entries) = std::fs::read_dir(dir) else { return };
+    for e in entries.flatten() {
+        if std::fs::read_to_string(e.path()).is_ok_and(|a| a.trim() == addr) {
+            let _ = std::fs::remove_file(e.path());
+        }
+    }
+}
+
 /// THE PEERS: every other mind's address at the rendezvous, and the
 /// addresses `MYCELIUM_CHATTER_PEERS` names, each once, in key order.
 pub fn peers(dir: &std::path::Path, voice: &[u8; 32]) -> Vec<String> {
