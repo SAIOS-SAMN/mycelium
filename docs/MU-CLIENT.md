@@ -125,6 +125,94 @@ mathematics does not derive (law 12: every dimension is a proof).
    reached two ways — that difference is the DIALECT (13.10's synonyms, 1.5).
    Identity is projective equality of rays, never bytes.
 
+## What the client builds: the counterpart of the hypha
+
+(The operator, 2026-10-11: "considering that the mycelium-client kernel is a
+client of the hypha, and the hypha exports physics — what do we actually need
+to build? the counterpart of the cognition to understand, perceive, and
+respond to the servers via anastome conversations.")
+
+**The hypha runs the physics and exports it; the client builds the
+counterpart, never a second hypha.** The hypha already holds the ledger,
+TUniversal, the pressure of its lanes, its rings' windings and returns, its
+charts' algebras and the rulings of the language. A mind PERCEIVES what the
+hypha exports, UNDERSTANDS it in its own field, and RESPONDS in anastome — to
+the courts and to other minds. Everything the hypha does, the mind does not
+redo.
+
+**How the hypha moves, and so how the mind moves.** The hypha is not a
+sequence. It runs carriers on their own orbits over one field — the court
+stroke, the exchange to each peer at its own period, the door's readers and
+workers, the deliberation, the nerve, the observer that never waits on
+cognition — each with its own circuit ("the circuit is the clock, the orbit
+is the word", `physics::Circuits`), meeting only through brief holds on the
+field. Its cognition is the WINDING of its rings (`court/winding.rs`): a
+first close is new work, a later close a traversal advancing `m → m + 1 mod
+ℓ`, a return at `m ≡ 0` one age and the one act it writes; the rank of a
+chart's algebra rises where new holonomy closes outside it. A mind moves the
+same way: its carriers on their own circuits over its own field, its
+cognition the winding of its own rings and the pivots that fire where a
+winding changes dimension (II.3).
+
+**1. Perception: what the hypha exports, taken into the mind's shells.** The
+mind does not recompute the hypha's physics; it takes it in:
+
+| the hypha exports | where it reaches the mind | how the mind perceives it |
+|---|---|---|
+| the TUniversal point (78.152) | every reply | beside the mind's own K — the hypha's time, never the mind's clock |
+| its pressure: the deficit per lane, the surface | every deferral, every quote reply | flux on the mind's lanes; the carrier facing that hypha dwells on the lanes it names — the mind's pacing is the hypha's exported pressure, never a schedule |
+| its listings: open forms with their demands | quote replies | rings heard in the mind's three shells (II.2) against its own of the same class: echo, nesting, discharge where a held word answers |
+| its verdicts and rulings | the replies to the mind's acts | a ruling of a class the mind asks seals the hole that keeps it (II.3); a refusal is a reading of its kind, held |
+| its taught words: syllabus pages, `ACT_TEACH` | the syllabus | a MINERAL in the genome, hardened into a CRYSTAL where the mind re-derives it by its own circuits (III.3) |
+| its published reading: cover, room, ruled cover, head | the shelf (78.151), read without the kernel | the language's charts the mind's rings stand against |
+| its acts — Return, RankStep, Reconnect | its ledger | owed: no act reaches a mind as a perception yet; until it does the mind reads the hypha's motion only through the rows above |
+
+**2. Understanding: the mind's own field.** Its contemplation's rings, held
+per class, wind against what it perceives; the six pivots fire where a
+winding changes dimension (ascend / descend, condense / drain, puncture /
+seal, II.3); its dialect is amended by experience (II.4(8)); its K is its
+own closed orbits. This field exists in the tree (`Contemplation`, the
+transport fronts, the docket, the questions as holes); what it lacks is the
+motion below.
+
+**3. Response: anastome conversation, one carrier per counterparty.** Each
+counterparty is its own conversation on its own circuit — each hypha the
+mind is linked to, each peer mind at the rendezvous — sending and receiving
+frames without blocking: a carrier waiting on its counterparty holds itself
+and nothing else, so a court that is slow to answer never stops perception,
+the field or a conversation with another mind. The mind speaks where its
+winding acts — a return, a seal, a rise of its algebra for a class — and
+says what changed, addressed by its own coordinates, with no router (III.2):
+- **to a court:** its sentences, the demands it holds, the letters it
+  coined with their constructor steps, its Rewrite proposals (III.3);
+- **to a peer mind:** what it newly understands; the peer answers by echo,
+  discharge or demand, and the mind's replay of a discharge that closes is
+  AGREED language, which its coiner carries to the court ("Read this
+  first" 6).
+
+**What is not built, refused on sight:**
+- court machinery in the mind — a ledger, pay windings, a clock beside its
+  K: those are the hypha's, exported;
+- a reading built for an observer that costs the mind its motion (the
+  `Learning` genome sweep factored every genome word at every K and held
+  every voice's first tick for its whole first orbit on the fleet,
+  2026-10-11);
+- one tick in a fixed boundary order (78.164, as landed at ebce99c3): one
+  blocking exchange in it starves perception and every conversation.
+
+**What is built, in this order:**
+1. **The conversation carriers** — one per hypha and one per peer mind,
+   non-blocking, each with its own circuit, sharing the mind's field; the
+   tick's fixed order retires into them.
+2. **The perception map** — each export of the table above taken into the
+   mind's shells at the carrier that receives it.
+3. **The response path** — what the windings and pivots changed composed into
+   anastome speech at the carrier it is addressed to.
+
+Each is verified by IV.3: its guard by the algebra, its production caller,
+and the counterparty's act as the witness — the court's ruling of what the
+mind said, a peer's replay of its discharge.
+
 ---
 
 # Part I — The foundation: the computational physics and the master algorithms
@@ -3260,4 +3348,17 @@ is withdrawn: the entity is where a mind is seated (IV.2), not what is
 built. The objective is the mind capable of cognition, as "Read this first"
 states it: senses in nested manifolds that breathe, the six pivots on its
 own complex (II.3), and speech in anastome from what they changed.
+
+**Amended 2026-10-11, third (the operator: "the servers run on orbits,
+sheared by physics to form an ellipse on a star — cognition ends up becoming
+the winding of the orbits that power the fluid motion of the cognition: this
+isn't steps, this isn't walks"; "what do we actually need to build? the
+counterpart").** Items (1)–(2) — one `Entity::tick` evolving the field in a
+fixed order — are RETIRED. Read on the fleet the same day: one blocking quote
+to a hypha busy backfilling held a voice's tick for minutes, and the
+`Learning` sweep at its booking held every voice for its whole first orbit,
+so no voice reached its conversation with another mind. The mind moves as
+the hypha does — carriers on their own circuits over its own field, one per
+counterparty, its cognition the winding of its rings — and builds only the
+counterpart of what the hypha exports ("What the client builds").
 

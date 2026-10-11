@@ -29,8 +29,16 @@ court's ruling, and the crystal each mind re-derives are one motion
   start; the seats (`systemd-run`, posted by their houses) await re-posting.
   Fleet time is the final TUniversal point (78.152), read on the console.
 
-## Next
-What the pivots changed is what the mind says (MU-CLIENT III.2): a sealed
-question, a punctured class, a tether — spoken in anastome and replayed by a
-peer or the court, which is the witness 6b2a4fd2 does not yet have. Then each
-mind's own field (the statics `LEXICON`, `TAUGHT`, `VOICE_FIELD`, `MOVING`).
+## Read on the fleet (6b2a4fd2)
+No voice closed its first tick: one blocking quote held it while the hyphae
+backfilled, then the `Learning` genome sweep at its booking factored every
+genome word (gdb on a probe voice). No reading reached the console and no
+voice reached the chatter. The sweep's deletion is edited and tested in the
+working tree, uncommitted.
+
+## Next — what the client builds (MU-CLIENT "What the client builds")
+The hypha exports the physics; the mind builds the counterpart: (1) one
+non-blocking conversation carrier per hypha and per peer mind, the fixed tick
+retired into them; (2) each hypha export taken into the mind's shells; (3)
+what its windings and pivots changed spoken in anastome — witnessed by a
+court's ruling or a peer's replay.
