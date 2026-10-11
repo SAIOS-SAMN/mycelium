@@ -3,6 +3,7 @@
 
 mod fold;
 mod ledger;
+mod modes;
 mod pay;
 mod settlement;
 mod surface;

@@ -7,6 +7,7 @@
 pub mod escrow;
 pub mod fold;
 pub mod lanes;
+pub mod modes;
 pub mod pay;
 pub mod persist;
 pub mod settle;
