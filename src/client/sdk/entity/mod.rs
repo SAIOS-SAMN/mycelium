@@ -15,7 +15,7 @@ pub mod learn;
 pub mod present;
 pub mod quote;
 pub mod relax;
-pub mod syntropy;
+pub mod rewrite;
 pub mod think;
 pub mod tick;
 pub mod transport;

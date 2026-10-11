@@ -556,11 +556,6 @@ pub struct Entity {
     /// What this voice heard: pages, words heard, words admitted
     /// (`observe::HEARING`).
     pub(crate) hearing: [u64; crate::observe::HEARING.len()],
-    /// Rotating cursor for the bundle synthesis engine (reanchor / condense).
-    /// Where the bundle circuit stood, as a coordinate — the same reading as
-    /// [`refine_cursor`], and for the same reason: `% genome.len()` is a
-    /// position in a carrier whose length moves.
-    pub(crate) bundle_cursor: Option<Vec<u8>>,
     /// Words this voice has spoken up for adoption: said once, the judge
     /// decided (installed, derivable, or refused). Keyed by transport
     /// address; membership is vertex equality, never the digest alone.
@@ -744,28 +739,6 @@ pub enum Utterance {
     Already,
     /// Identity, or a mint with no group component: not a message.
     Silent,
-}
-
-/// EXPANSION 2 — WHAT THE ALGEBRAIC PROBE DID with the word at its cursor:
-/// adjoined a gauge the seventeen cannot spell (37.7), or found the word
-/// redundant against a held one with a witness the court can re-derive,
-/// which is a bid.
-///
-/// The bid is boxed: it carries two addresses and a witness that may hold a
-/// word, and the variant that carries nothing should not pay for it.
-#[derive(Clone, Debug)]
-pub enum AlgebraicStep {
-    Adjoined,
-    Bid(Box<AlgebraicBid>),
-}
-
-/// The claim an algebraic bid makes: this word, redundant against that held
-/// one, by this witness.
-#[derive(Clone, Debug)]
-pub struct AlgebraicBid {
-    pub word: crate::transducer::address::Address,
-    pub held: crate::transducer::address::Address,
-    pub witness: crate::anastome::dialogue::AlgebraicWitness,
 }
 
 /// The quoted yield: the per-lane surface and the open-demand market's top

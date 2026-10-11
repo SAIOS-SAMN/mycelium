@@ -60,7 +60,6 @@ impl Entity {
             said: None,
             said_at: None,
             hearing: [0; crate::observe::HEARING.len()],
-            bundle_cursor: None,
             taught_up: crate::network::nerve::Keyed::new(),
             taught_at: crate::network::nerve::Keyed::new(),
             discordance: 0,
