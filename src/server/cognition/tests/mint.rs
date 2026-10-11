@@ -150,11 +150,16 @@ for (x, y) in &family {
 }
 assert!(expect.iter().any(|&x| x > 0), "the family has a coboundary to close");
 let decoded = crate::transducer::sentence::from_element_form(&spoken).expect("v2 form");
-assert_eq!(
-    crate::transducer::family::form_deflation(&decoded, &family, &crate::transducer::family::NoCrystal).0,
-    expect,
-    "the form read back from its tape measures the family's coboundary"
-);
+let read = crate::transducer::family::form_deflation(&decoded, &family, &crate::transducer::family::NoCrystal).0;
+// 54a82051 (the operator: "pay the odometer, never the wall clock"): 𝒯 is
+// the ground the closure covered — the null flux of the closing rule's
+// motions, which the sentence's own magnitude carries — and the chain
+// carries no 𝒯 of its own. S, G and H are the family's coboundary.
+let t = crate::transducer::rewrite::LANE_TEMPORAL;
+for l in (0..4).filter(|&l| l != t) {
+    assert_eq!(read[l], expect[l], "lane {l}: the form read back from its tape measures the family's coboundary");
+}
+assert_eq!(read[t], spoken.magnitude()[t], "𝒯: the ground the closure covered, as the sentence carries it");
 let mut k = Kernel::new();
 let task = crate::registry::task_id(&crate::arc::Task {
     train: family.clone(),
@@ -172,8 +177,8 @@ k.enroll([2; 32], cover);
 k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
 assert_eq!(
     k.treasury().minted().expect("minted adds up"),
-    expect,
-    "mint is the measured coboundary, not a bound listing's magnitude"
+    read,
+    "mint is what the form measured over its family — the coboundary and the ground it covered — not a bound listing's magnitude"
 );
 }
 
