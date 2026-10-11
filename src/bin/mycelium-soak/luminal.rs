@@ -39,9 +39,6 @@ struct Totals {
     misfit: u64,
     parabolic: u64,
     other_modes: u64,
-    covers: u64,
-    carried: u64,
-    meets: u64,
 }
 
 impl Totals {
@@ -130,10 +127,8 @@ pub(crate) fn report(dir: &str, names: &[String]) {
                 ));
             }
         }
-        // L6 — the remainder scene, extracted, read by the cover's own tally;
-        // and its demands by kind.
+        // L6 — the remainder scene, extracted, and its demands by kind.
         let (scene, _) = remainder_scene(&task.train, &rems, Painted::Sites);
-        let _ = mycelium::transducer::family::cover::take_cover_tally();
         let mut b = physics.stroke_n(STROKE);
         let kinds = match extract_rule_with(&scene, &empty, &mut b) {
             Some(r) => r.form.vertices.entries().fold([0u64; 3], |mut k, (_, v)| {
@@ -149,10 +144,6 @@ pub(crate) fn report(dir: &str, names: &[String]) {
             }),
             None => [0; 3],
         };
-        let cover = mycelium::transducer::family::cover::take_cover_tally();
-        t.covers = cover.measured + cover.unmeasured;
-        t.carried = cover.carried;
-        t.meets = cover.meets;
         let dominant = match kinds {
             [0, 0, 0] => 3,
             [d, s, c] if d >= s && d >= c => 0,
@@ -162,8 +153,8 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         by_kind[dominant].0 += t.unsaid;
         by_kind[dominant].1 += t.explained();
         println!(
-            "  light {name}: unsaid {} | on a ray {} captured {} both {} neither {} | rays {} (edge {} transmitted {} reflected {} absorbed {}) | cavities {} | remainder demands deformation {} source {} creation {} | cover attempted {} carried {} meets {}",
-            t.unsaid, t.on_ray, t.captured, t.both, t.neither, t.rays, t.edge, t.transmitted, t.reflected, t.absorbed, t.cavities, kinds[0], kinds[1], kinds[2], t.covers, t.carried, t.meets
+            "  light {name}: unsaid {} | on a ray {} captured {} both {} neither {} | rays {} (edge {} transmitted {} reflected {} absorbed {}) | cavities {} | remainder demands deformation {} source {} creation {}",
+            t.unsaid, t.on_ray, t.captured, t.both, t.neither, t.rays, t.edge, t.transmitted, t.reflected, t.absorbed, t.cavities, kinds[0], kinds[1], kinds[2]
         );
         for l in lines.iter().take(6) {
             println!("{l}");
@@ -192,9 +183,6 @@ pub(crate) fn report(dir: &str, names: &[String]) {
             (&mut all.misfit, t.misfit),
             (&mut all.parabolic, t.parabolic),
             (&mut all.other_modes, t.other_modes),
-            (&mut all.covers, t.covers),
-            (&mut all.carried, t.carried),
-            (&mut all.meets, t.meets),
         ] {
             *a += v;
         }
@@ -219,7 +207,6 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         "light cavities: {} | rectangular {} | standing wave {} (fits {} misfit {}) | billiard parabolic {} other {}",
         a.cavities, a.rect, a.filled, a.fits, a.misfit, a.parabolic, a.other_modes
     );
-    println!("light cover on the remainder (L6): attempted {} carried {} meets {}", a.covers, a.carried, a.meets);
     let label = ["deformation", "source", "creation", "no demand"];
     for (i, (u, e)) in by_kind.iter().enumerate() {
         println!("light by dominant remainder demand {}: unsaid {u} explained {e}", label[i]);

@@ -177,12 +177,6 @@ pub(super) fn dispiration(
     db: &[Site],
 ) -> Option<crate::transducer::sentence::Transport> {
     let slip = basepoint_transvection(origin, quantum, da, db);
-    crate::transducer::family::cover::tally(|t| {
-        t.chords_offered += 1;
-        if slip.is_some() {
-            t.tau_active += 1;
-        }
-    });
     match (measured, slip) {
         (None, s) => s,
         (Some(m), None) => Some(m.clone()),
@@ -219,13 +213,7 @@ fn basepoint_transvection(
         }
         Some(sum.into_iter().map(|s| num_rational::BigRational::new(s, n.clone())).collect())
     };
-    let (a, b) = match (centre(da), centre(db)) {
-        (Some(a), Some(b)) => (a, b),
-        _ => {
-            crate::transducer::family::cover::tally(|t| t.tau_unfooted += 1);
-            return None;
-        }
-    };
+    let (a, b) = (centre(da)?, centre(db)?);
     if a == b {
         // THE TWO ENDS MET. Not "collinear" — they do not lie on a
         // line — and not a coincidence, which would make a structural
@@ -235,7 +223,6 @@ fn basepoint_transvection(
         // displacement for a 1-cell to carry, so none is invented
         // (rule 11); what differs between them is higher-moment shape,
         // which is a 2-cell's business.
-        crate::transducer::family::cover::tally(|t| t.tau_met += 1);
         return None;
     }
     // Read from the form's own origin, so the transport does not depend
@@ -258,13 +245,7 @@ fn basepoint_transvection(
         // form's extent, which is a defect in `M(X)` and not a reading.
         _ => None,
     };
-    let carriage = match carriage {
-        Some(c) => c,
-        None => {
-            crate::transducer::family::cover::tally(|t| t.tau_refused += 1);
-            return None;
-        }
-    };
+    let carriage = carriage?;
     Some(crate::transducer::sentence::Transport {
         word: crate::transducer::alphabet::Word::identity(),
         carriage,

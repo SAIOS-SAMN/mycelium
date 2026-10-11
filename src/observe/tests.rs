@@ -1,26 +1,24 @@
 // §8.1 — the observer's readings travel whole and fold axis by axis.
 
 use super::*;
-use crate::transducer::cga;
 
 fn vk(b: u8) -> [u8; 32] {
     [b; 32]
 }
 
-/// Every reading written by its codec reads back as itself, and a push and
-/// a query reply carry them whole.
+/// A court's readings held under its key, written as a query reply and read
+/// back: every one as itself.
+fn reads_back(all: &[Reading]) {
+    let entries: Vec<(Vec<u8>, Reading)> = all.iter().map(|r| (Source::Court(vk(7)).key(r.tag()), r.clone())).collect();
+    let reply = encode_reply(&entries, usize::MAX).expect("the reply writes");
+    let total = u32::try_from(entries.len()).expect("a few readings");
+    assert_eq!(decode_reply(&reply), Some((total, entries)));
+}
+
+/// Every reading written by its codec reads back as itself, and a query
+/// reply carries them whole.
 #[test]
 fn every_reading_reads_back_as_itself_through_the_act() {
-    let planes = Planes {
-        n: 3,
-        read: 7,
-        coupled: 1,
-        counts: vec![(0b00011, 5), (0b11000, 2)],
-        parabolic: vec![(1, 0, 4), (2, 1, 1)],
-    };
-    let mut loss = Loss::default();
-    loss.axes[1] = 4;
-    loss.axes[17] = 2;
     let memory = Memory {
         first_k: 1,
         first_allocated: 10,
@@ -69,7 +67,7 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         tuniversal: TStanding::default(),
     };
     // ACT1 — a court on the clock with a peer above and a peer below its
-    // head (the gap is signed), and a voice before and after a persist.
+    // head (the gap is signed).
     let court_clock = Clock::Court(Box::new(CourtClock {
         k: 13,
         head: [40, 1, 0, 2, 0, 12, 3],
@@ -84,20 +82,10 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         ruling_refusals: [[1, 0, 0], [0; 3], [0; 3], [0, 2, 3]],
         orbits: Orbits { withheld: 2, distance: vec![(vk(1), [-3, 0, 5, -1])] },
     }));
-    let voice_clock = Clock::Voice(VoiceClock {
-        k: 7,
-        heard: 39,
-        persisted: None,
-        radius: 4,
-        point: Some(crate::chronometry::tuniversal::TPoint { h: 39, lanes: [1, 2, 3, 4], k: 5, ..Default::default() }),
-    });
     let all = vec![
-        Reading::Planes(planes),
-        Reading::Loss(loss),
         Reading::Memory(memory),
         Reading::Court(Box::new(court)),
         Reading::Clock(court_clock),
-        Reading::Clock(voice_clock),
         // EC1 — a court's payments by proof of work, each arm on its own
         // lanes.
         Reading::Economy(Box::new(Economy {
@@ -116,17 +104,13 @@ fn every_reading_reads_back_as_itself_through_the_act() {
             tuition: crate::observe::Flow { rows: 4, mu: [5, 6, 7, 8] },
         })),
     ];
-    let push = encode_push(&vk(7), &all).expect("the push writes");
-    assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(7), all.clone())));
-    let entries: Vec<(Vec<u8>, Reading)> =
-        all.iter().map(|r| (Source::Voice(vk(7)).key(r.tag()), r.clone())).collect();
-    let reply = encode_reply(&entries, usize::MAX).expect("the reply writes");
-    assert_eq!(decode_reply(&reply), Some((7, entries.clone())));
+    reads_back(&all);
+    let entries: Vec<(Vec<u8>, Reading)> = all.iter().map(|r| (Source::Court(vk(7)).key(r.tag()), r.clone())).collect();
     // A reply that cannot hold them all says how many were held.
     let short = encode_reply(&entries, 64).expect("the reply writes");
     let (total, sent) = decode_reply(&short).expect("a short reply still decodes");
-    assert_eq!(total, 7);
-    assert!(sent.len() < 7, "the budget is honoured");
+    assert_eq!(total, 4);
+    assert!(sent.len() < 4, "the budget is honoured");
     // A trailing byte is no act.
     let mut long = encode_query(&[1, 2]).expect("the query writes");
     long.push(0);
@@ -144,8 +128,8 @@ fn replication_and_adjudication_read_back_as_themselves() {
     axes[rep::LAG] = 540;
     let mut unattributed = [0u64; REP_AXES];
     unattributed[rep::DIGEST_UNREADABLE] = 1;
-    let all = vec![
-        Reading::Replication(Replication { signers: vec![(vk(3), axes), (vk(4), [0; REP_AXES])], unattributed }),
+    reads_back(&[
+        Reading::Replication(Box::new(Replication { signers: vec![(vk(3), axes), (vk(4), [0; REP_AXES])], unattributed })),
         Reading::Adjudication(Adjudication {
             ratified: 5,
             stood: 9,
@@ -154,9 +138,7 @@ fn replication_and_adjudication_read_back_as_themselves() {
             refused: vec![(0, 3), (2, 4)],
             obstructed: [1, 0, 3, 2, 0, 1],
         }),
-    ];
-    let push = encode_push(&vk(8), &all).expect("the push writes");
-    assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(8), all)));
+    ]);
     assert_eq!(REPLICATION_AXES.len(), REP_AXES, "the axes and the counters agree");
     assert_eq!(REPLICATION_AXES[rep::LAG].0, "lag", "the last axis is the lag, a level");
 }
@@ -188,584 +170,47 @@ fn replication_counts_per_signer_and_verdicts_by_kind() {
 /// A key names its source and what the reading answers.
 #[test]
 fn a_key_names_its_source_and_its_reading() {
-    for s in [Source::Court(vk(1)), Source::Voice(vk(2))] {
-        assert_eq!(Source::of_key(&s.key(TAG_LOSS)), Some((s, TAG_LOSS)));
-    }
+    let s = Source::Court(vk(1));
+    assert_eq!(Source::of_key(&s.key(TAG_MEMORY)), Some((s, TAG_MEMORY)));
     assert_eq!(Source::of_key(&[9; 34]), None, "an unknown source kind");
 }
 
-/// THE PLANE CENSUS FOLDS PLANE BY PLANE, in the larger algebra, and never
-/// adds one plane's count to another's (law 5).
-#[test]
-fn the_plane_census_folds_plane_by_plane() {
-    use crate::transducer::cga::Pole;
-    let mut a = Planes { n: 3, read: 2, coupled: 0, counts: vec![(0b00011, 2)], parabolic: vec![(1, 0, 2)] };
-    let b = Planes {
-        n: 4,
-        read: 3,
-        coupled: 1,
-        counts: vec![(0b00011, 1), (0b10001, 3)],
-        parabolic: vec![(1, 0, 1), (4, 1, 5)],
-    };
-    a.absorb(&b);
-    assert_eq!(a.n, 4);
-    assert_eq!((a.read, a.coupled), (5, 1));
-    assert_eq!(a.count(0b00011), 3);
-    assert_eq!(a.count(0b10001), 3);
-    assert_eq!(a.count(0b00101), 0, "a plane never turned reads zero");
-    assert_eq!(a.count_parabolic(1, Pole::Infinity), 3, "a parabolic plane folds onto its own");
-    assert_eq!(a.count_parabolic(4, Pole::Origin), 5);
-    assert_eq!(a.count_parabolic(1, Pole::Origin), 0, "and never onto its other pole");
-}
-
-/// The census of a tally carries the plane each transition turned, by its
-/// own blade, in the algebra it was read in.
-#[test]
-fn the_census_of_a_tally_carries_each_plane_by_its_blade() {
-    use crate::transducer::alphabet::Rotor;
-    let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
-    let _ = cga::take_plane_tally();
-    let turn = Rotor::scalar(q(3, 5)).add(&Rotor::blade(0b0011, q(4, 5)));
-    cga::note_transition(&turn, &cga::Mv::scalar(q(1, 1)));
-    let p = Planes::of(&cga::take_plane_tally());
-    assert_eq!(p.read, 1);
-    assert_eq!(p.count(cga::E1 | cga::E2), 1, "the grid plane turned");
-    assert_eq!(p.counts.len(), 1, "and no other");
-}
-
-/// THE CENSUS CLASSIFIES ITSELF, typed and read off its counts: nothing read;
-/// every turn on the sensor's plane — FLATTENED, five other harmonic planes
-/// declared and never turned; and a turn on a second plane of the base,
-/// turning on two of the six. The transitions are noted by the engine's own
-/// census move on rotors of the letters' chart.
-#[test]
-fn the_census_classifies_what_it_turned_on() {
-    use crate::transducer::alphabet::Rotor;
-    let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
-    let _ = cga::take_plane_tally();
-    assert_eq!(Planes::of(&cga::take_plane_tally()).turning(), Turning::Unread);
-    let still = cga::Mv::scalar(q(1, 1));
-    let on_grid = Rotor::scalar(q(3, 5)).add(&Rotor::blade(0b0011, q(4, 5)));
-    cga::note_transition(&on_grid, &still);
-    let flat = Planes::of(&cga::take_plane_tally());
-    assert_eq!(flat.turning(), Turning::Flattened { other: 5 }, "every turn on e1e2");
-    cga::note_transition(&on_grid, &still);
-    let on_03 = Rotor::scalar(q(3, 5)).add(&Rotor::blade(0b1001, q(4, 5)));
-    cga::note_transition(&on_03, &still);
-    let two = Planes::of(&cga::take_plane_tally());
-    assert_eq!(two.turning(), Turning::Turns { turned: 2, of: 6 }, "a turn off the sensor's plane");
-}
-
-/// A process's store folds what it produced and holds what it was pushed as
+/// A process's store folds what it produced and holds what it replaces as
 /// it stands; a query reads one source by its prefix.
 #[test]
-fn the_store_folds_its_own_readings_and_holds_pushed_ones_as_they_stand() {
-    let own = Source::Voice(vk(0xa1));
-    let mut one = Loss::default();
-    one.axes[0] = 1;
-    assert!(publish(own, Reading::Loss(one.clone())));
-    assert!(publish(own, Reading::Loss(one)));
+fn the_store_folds_its_own_readings_and_holds_replaced_ones_as_they_stand() {
+    let sample = |k: u64, allocated: u64| Memory {
+        first_k: k,
+        first_allocated: allocated,
+        first_resident: 1,
+        last_k: k,
+        last_allocated: allocated,
+        last_resident: 1,
+        peak_resident: 1,
+        samples: 1,
+    };
+    let own = Source::Court(vk(0xa1));
+    assert!(publish(own, Reading::Memory(sample(1, 10))));
+    assert!(publish(own, Reading::Memory(sample(2, 20))));
     let held = readings(&own.prefix());
     assert_eq!(held.len(), 1);
-    let Reading::Loss(l) = &held[0].1 else { panic!("a loss reading") };
-    assert_eq!(l.axes[0], 2, "the producer's readings fold");
-    let pushed = Source::Voice(vk(0xa2));
-    let mut totals = Loss::default();
-    totals.axes[0] = 5;
-    assert!(replace(pushed, Reading::Loss(totals.clone())));
-    assert!(replace(pushed, Reading::Loss(totals)));
-    let Reading::Loss(l) = &readings(&pushed.prefix())[0].1 else { panic!("a loss reading") };
-    assert_eq!(l.axes[0], 5, "a pushed total stands, it is not folded twice");
+    let Reading::Memory(m) = &held[0].1 else { panic!("a memory reading") };
+    assert_eq!((m.first_k, m.last_k, m.samples), (1, 2, 2), "the producer's readings fold");
+    let replaced = Source::Court(vk(0xa2));
+    assert!(replace(replaced, Reading::Memory(sample(5, 50))));
+    assert!(replace(replaced, Reading::Memory(sample(5, 50))));
+    let Reading::Memory(m) = &readings(&replaced.prefix())[0].1 else { panic!("a memory reading") };
+    assert_eq!(m.samples, 1, "a replaced reading stands, it is not folded twice");
 }
 
-/// PL1 — THE CIRCUITS TRAVEL WHOLE, every arm of a step by name: read with
-/// its ray, class, modes and composite; unread; on the cone. A later
-/// percept's circuits stand, and the three owed fields are named by row.
+/// PH5 — a court's phase travels whole, and the later window stands.
 #[test]
-fn the_circuits_read_back_whole_step_by_step() {
-    use crate::network::nerve::coord::BivectorKind;
-    use crate::transducer::sentence::ModesRead;
-    let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
-    let read = |kind, modes| Carried::Read {
-        ray: vec![(0, q(1, 1)), (0b00011, q(-7, 3))],
-        kind: Some(kind),
-        modes,
-        after: None,
-    };
-    // AT1 — a face is an overlap of two charts, never a slot number: the
-    // `n`th distinct overlap the fixture names, the Frame's chart to a member
-    // on chart `[n]` at frame `n`.
-    let ov = |n: u64| crate::network::nerve::coord::Overlap {
-        from: crate::network::nerve::coord::ChartAt::Frame,
-        to: crate::network::nerve::coord::ChartAt::at(
-            crate::network::nerve::coord::VertexAt::Frame,
-            crate::transducer::stalk::Invariant::counts(&[n]),
-            n,
-        ),
-    };
-    let circuits = Circuits {
-        circuits: vec![
-            Circuit {
-                chord: ov(4),
-                test: Some(CircuitTest {
-                    arms: vec![(TestArm::OtherPairs, ArmRead::Reads(2)), (TestArm::Coset, ArmRead::Empty)],
-                    class: CircuitClass::C,
-                    offers: vec![Offer {
-                        arm: TestArm::ConstructedFibre,
-                        face: ov(9),
-                        constructor: vec![(0b00001, q(1, 1)), (0b10000, q(-1, 2))],
-                        flat: false,
-                        holonomy: vec![(0, q(3, 1)), (0b00011, q(4, 1))],
-                        modes: ModesRead::Split(vec![(BivectorKind::Elliptic, 1, None)]),
-                    }],
-                }),
-                transitions: vec![
-                    CircuitTransition {
-                        face: ov(1),
-                        forward: true,
-                        refracted: false,
-                        carried: read(BivectorKind::Elliptic, ModesRead::Split(vec![(BivectorKind::Elliptic, 1, Some(4))])),
-                    },
-                    CircuitTransition {
-                        face: ov(9),
-                        forward: false,
-                        refracted: true,
-                        carried: read(
-                            BivectorKind::Hyperbolic,
-                            ModesRead::Undecomposed(cga::Undecomposed::Irrational(2)),
-                        ),
-                    },
-                    CircuitTransition { face: ov(2), forward: true, refracted: false, carried: Carried::Cone },
-                ],
-            },
-            Circuit {
-                chord: ov(7),
-                test: Some(CircuitTest {
-                    arms: vec![
-                        (TestArm::OtherCircuits, ArmRead::Routes { agree: 1, disagree: 2 }),
-                        (TestArm::Cone, ArmRead::Permanent),
-                    ],
-                    class: CircuitClass::Curved,
-                    offers: Vec::new(),
-                }),
-                transitions: vec![
-                    CircuitTransition { face: ov(3), forward: false, refracted: false, carried: Carried::Unread },
-                    CircuitTransition {
-                        face: ov(5),
-                        forward: true,
-                        refracted: false,
-                        carried: read(BivectorKind::Trivial, ModesRead::Unread),
-                    },
-                    CircuitTransition {
-                        face: ov(6),
-                        forward: true,
-                        refracted: false,
-                        carried: read(BivectorKind::Parabolic, ModesRead::Undecomposed(cga::Undecomposed::Defective)),
-                    },
-                ],
-            },
-        ],
-    };
-    let push = encode_push(&vk(3), &[Reading::Circuit(circuits.clone())]).expect("the push writes");
-    assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(3), vec![Reading::Circuit(circuits.clone())])));
-    assert_eq!(circuits.circuits[0].first_refraction(), Some(1), "the refracting step is named");
-    assert_eq!(circuits.circuits[1].first_refraction(), None);
-    let mut earlier = Reading::Circuit(Circuits::default());
-    assert!(earlier.absorb(&Reading::Circuit(circuits.clone())), "one kind folds");
-    assert_eq!(earlier, Reading::Circuit(circuits), "the later percept's circuits stand");
-    assert_eq!(
-        CIRCUIT_OWED.map(|(field, _)| field),
-        ["constructors composed", "round carried", "lane drawn"],
-        "the fields no producer reads are owed by their rows, never zero"
-    );
-}
-
-/// CO1 — THE CELLS TRAVEL WHOLE: every closure, every dual arm, a product
-/// with its seal blade, each nucleus's mirrors; a later percept's stand.
-#[test]
-fn the_cells_read_back_whole() {
-    use crate::transducer::cga::PairRegime;
-    let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
-    let cells = Cells {
-        mirror_planes: 5,
-        mirror_group: Some(CellClosure::Affine),
-        cells: vec![
-            CellEntry {
-                grade: 1,
-                round: CellRound::HeldZ2,
-                permutes: CellPermutes::Moves,
-                coherence: CellCoherence::Closes,
-                capacity: Some(3),
-                orbit: CellOrbit::Unbounded,
-                signature: Some(((1, 1, 0), 2)),
-                pairs: vec![PairRegime::Boost],
-                coxeter: Some(CellClosure::Hyperbolic),
-                polars: Some(CellClosure::InfiniteByPair),
-                dual: Some(CellDual::Frame),
-                products: vec![CellProduct {
-                    order: vec![1, 0],
-                    grades: vec![0, 2],
-                    det: Some(1),
-                    classed: false,
-                    seal: vec![(0b00011, q(-7, 3))],
-                }],
-                classes: 0,
-                mirrors: vec![vec![(1, q(0, 1), q(1, 4), PairRegime::Finite(3))], vec![]],
-                enclosure: Some(CellEnclosure::Round { bodies: [1, 2, 0, 1, 0], within: Some(1) }),
-                // CV1b — every arm of the refusals by content travels.
-                refusals: CellRefusals {
-                    circuits: CircuitUnread::ALL.to_vec(),
-                    modes: vec![
-                        ModesUnread::NotVersor,
-                        ModesUnread::Irrational(3),
-                        ModesUnread::Defective,
-                        ModesUnread::Unbounded(2),
-                    ],
-                    capacity: Some(CapacityRefused::Spent { product: 12 }),
-                    zero_meet: true,
-                    nuclei: false,
-                    unordered: 2,
-                    orbit: Some(OrbitUnread::NoRay { constructor: 1 }),
-                },
-                constructors: Some(2),
-                degeneracy: Some(1),
-                // 78.26(5) — every ring axis travels, each its own value.
-                rings: crate::observe::Rings {
-                    coherent: 1,
-                    resonant: 2,
-                    rosette: 3,
-                    parabolic: 4,
-                    boost: 5,
-                    harmonic: 6,
-                    luminal: 7,
-                    holonomic: 8,
-                    d: 9,
-                    c: 10,
-                },
-            },
-            CellEntry {
-                grade: 2,
-                round: CellRound::Carried,
-                permutes: CellPermutes::NoCircuit,
-                coherence: CellCoherence::Unread,
-                capacity: None,
-                orbit: CellOrbit::Closed,
-                signature: None,
-                pairs: vec![PairRegime::Rosette, PairRegime::Finite(6), PairRegime::Parabolic],
-                coxeter: Some(CellClosure::FiniteByCheck),
-                polars: None,
-                dual: Some(CellDual::Redundant),
-                products: vec![CellProduct { order: vec![0, 1, 2], grades: vec![1, 3], det: Some(-1), classed: true, seal: vec![] }],
-                classes: 1,
-                mirrors: vec![],
-                enclosure: Some(CellEnclosure::Flat),
-                refusals: CellRefusals {
-                    capacity: Some(CapacityRefused::Spent { product: 7 }),
-                    nuclei: true,
-                    orbit: Some(OrbitUnread::CarriedNoRay),
-                    ..CellRefusals::default()
-                },
-                constructors: None,
-                degeneracy: None,
-                rings: crate::observe::Rings::default(),
-            },
-        ],
-        bracket: Some(CellBracket { held: 2, lost: 5, unread: 1 }),
-        cap: 25,
-    };
-    let push = encode_push(&vk(4), &[Reading::Cells(cells.clone())]).expect("the push writes");
-    assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(4), vec![Reading::Cells(cells.clone())])));
-    let mut earlier = Reading::Cells(Cells::default());
-    assert!(earlier.absorb(&Reading::Cells(cells.clone())), "one kind folds");
-    assert_eq!(earlier, Reading::Cells(cells), "the later percept's cells stand");
-}
-
-/// LC1 — THE CURVE TRAVELS WHOLE, A LATER ONE STANDS, AND A FRESH MIND READS
-/// ZERO HONESTLY: every field measured and zero, the four owed named by row.
-#[test]
-fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
-    let curve = Learning {
-        k: 41,
-        strata: vec![(vec![1, 2], 3), (vec![1, 2, 5], 1)],
-        radius: 3,
-        // CS2 — every arm of the pivot reading travels.
-        pivots: crate::transducer::sentence::PivotTally {
-            reached: 1,
-            derivable: 2,
-            demanded: 3,
-            adjoin: 4,
-            starved: 5,
-            unread_fibre: 6,
-            unread_algebra: 7,
-        },
-        // 13.12 — every arm of the merges travels.
-        merges: crate::transducer::bubble::merge::MergeTally { merged: 8, stayed: 9, unnamed: 10 },
-        // TP1 — every field of the meet graph travels, the cycle rank signed.
-        meet: Box::new(crate::transducer::bubble::MeetGraph {
-            vertices: 11,
-            thoughts: 12,
-            components: 13,
-            edges: [1, 2, 3, 4, 5, 6],
-            cycle_rank: -7,
-            rings: [7, 8, 9, 10, 11, 12],
-            orbits: [13, 14, 15, 16, 17, 18],
-            decoherence: crate::transducer::bubble::Decoherence {
-                decohered: [[19, 20], [25, 26]],
-                classed: [[21, 22], [27, 28]],
-                rejoined: [[23, 24], [29, 30]],
-            },
-            advanced: 31,
-            sources: 32,
-            transport: crate::transducer::bubble::TransportTally {
-                fixed: [33, 34],
-                collapsed: 35,
-                collapsed_filled: 36,
-                held: 37,
-                classified: 38,
-                unsectioned: 39,
-                ungauged: 40,
-                unclassed: 41,
-            },
-            docket: crate::transducer::bubble::DocketReading {
-                pending: 42,
-                open: 43,
-                owed: 44,
-                unwritten: 45,
-                answered: 46,
-                taken: 47,
-                lapsed: 300,
-            },
-            // TC1 — the nerve's shape and every door, a rank lost negative.
-            core: crate::transducer::bubble::CoreReading {
-                free_vertices: 48,
-                isolated: 49,
-                free_faces: [50, 51],
-                core: 52,
-                h1: -3,
-                unfaced: 53,
-                malformed: 66,
-            },
-            shed: crate::transducer::bubble::ShedTally {
-                removed: [54, 55, 56],
-                in_core: [57, 58, 59],
-                rank_lost: [60, -61, 62],
-            },
-            // TC1's fix — the truncation, a Ȟ¹ movement negative.
-            truncation: crate::transducer::bubble::Truncation {
-                truncated: 67,
-                held_by_class: 68,
-                glued: 69,
-                deferred: 70,
-                rank_moved: -71,
-                malformed: 73,
-            },
-            // FX1 — the flux, every window and count, one optional unread.
-            flux: crate::transducer::bubble::FluxTally {
-                closes: 74,
-                orbit: crate::transducer::bubble::FluxWindow { traversed: 75, zero: 76, held: 77 },
-                aperture: Some(crate::transducer::bubble::FluxWindow { traversed: 78, zero: 79, held: 80 }),
-                gone: 81,
-                unfilamented: 82,
-                credited: 83,
-                acyclic: 84,
-                unfiled: 85,
-                unsealed: 86,
-                unnamed: 87,
-                extent: [[88, 89, 90, 91], [92, 93, 94, 95], [96, 97, 98, 99], [100, 101, 102, 103], [104, 105, 106, 107]],
-                extent_n: [108, 109, 110, 111, 112],
-                dialect: (113, Some(114), None),
-            },
-            // RM1 — the mind's remainders, one unplaced.
-            remainders: crate::transducer::cech::RemainderReading {
-                by_ell: vec![(3, 115)],
-                classes: 116,
-                across: 117,
-                unplaced: 118,
-                refilled: 119,
-                refused: 120,
-                past_carrier: 159,
-                misspoken: 160,
-                unsited: 123,
-                unrecorded: 121,
-                unpriced: 0,
-                unminted: 124,
-                unoffered: 0,
-                unmerged: 125,
-                coincident: 122,
-                // RM1's receptor, every count distinct.
-                nested: 126,
-                discordant: 127,
-                calluses: 128,
-                unspelled: 129,
-                untopped: 130,
-                callus_unminted: 132,
-                receive_malformed: 133,
-                receive_unrecorded: 134,
-                answered_skipped: 135,
-                refill_acts: 136,
-                refill_refused: 137,
-                refill_unshaped: 138,
-                refill_unlocated: 139,
-                refill_unspelled: 140,
-                refill_unopen: 141,
-                refill_unsited: 142,
-                refill_unfilled: 143,
-            },
-            // STD1 — the sums the contemplation refused.
-            overflowed: 158,
-            // N4 — perception across scenes, every count distinct.
-            resonance: crate::transducer::bubble::ResonanceTally {
-                circuits: 200,
-                uncarried: 201,
-                not_reciprocal: [202, 203, 204],
-                unbounded: 205,
-                cells: 206,
-                closes: 207,
-                open: 208,
-                cells_unread: 209,
-                resonant: 210,
-                rosette: 211,
-                parabolic: 212,
-                boost: 213,
-                holonomic: 214,
-                unperturbed: 215,
-                flat: 216,
-                curved: 217,
-                edges: 218,
-                several: 219,
-                kept_congruent: 220,
-                kept_class: 221,
-                predicted: 222,
-                phase_slips: 223,
-                off_orbit: 224,
-                deformed: 227,
-                unfactored: 228,
-                apart: 229,
-                scene_motions: 230,
-                cosets: 231,
-                symmetries: 232,
-                appeared: 233,
-                vanished: 235,
-                unread_lines: 234,
-                consolidated: 236,
-                monocular: 237,
-                collapsed: 238,
-                unbalanced: 239,
-                destabilizing: 240,
-                tilted: 251,
-                stability_unread: 252,
-                reflexive: 241,
-                nonrigid: 242,
-                unsucceeded: 243,
-                torqued: 244,
-                incoherent: 246,
-                demanded: 225,
-                undemanded: 226,
-                grounds: [247, 248, 249, 250],
-            },
-        }),
-        // PR1 — the voice's probes, a residual class counted twice.
-        probes: crate::observe::ProbeTally {
-            closed: 144,
-            residual: 145,
-            residual_unread: 146,
-            nothing: 147,
-            gone: 148,
-            unclassed: 149,
-            settled: [150, 151, 152, 153],
-            remaining: [154, 155, 156, 157],
-            classes: vec![(vec![1, 2, 3], 2), (vec![4], 1)],
-        },
-        // 78.47 — the reasons by kind travel whole.
-        reasons: crate::observe::Reasons {
-            refused: [159, 160, 161, 162, 163, 164],
-            undischarged: [165, 166, 167, 168, 169, 170],
-            perturbed: [171, 172, 173, 174, 175, 176, 177],
-        },
-    };
-    let push = encode_push(&vk(8), &[Reading::Learning(curve.clone())]).expect("the push writes");
-    assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(8), vec![Reading::Learning(curve.clone())])));
-    let mut earlier = Reading::Learning(Learning { k: 3, ..Learning::default() });
-    assert!(earlier.absorb(&Reading::Learning(curve.clone())), "one kind folds");
-    assert_eq!(earlier, Reading::Learning(curve), "the curve at the later K stands");
-
-    let fresh = Learning::of(
-        &crate::client::sdk::Epigenome::default(),
-        0,
-        Default::default(),
-        Default::default(),
-        Default::default(),
-        Default::default(),
-    );
-    assert_eq!(
-        fresh.strata.len(),
-        0,
-        "a mind holding nothing has learned nothing, and says so"
-    );
-    assert_eq!(
-        OWED.map(|(field, _)| field),
-        [
-            "cover",
-            "warm-cold delta",
-            "distinct perspectives per class",
-            "mass per lane per layer per grade",
-        ],
-        "the fields no producer reads are owed by their rows, never zero; the coboundary's agreement is PG1's"
-    );
-}
-
-/// VO1, SP1, PG1 — THE LIVE FLEET'S READINGS TRAVEL WHOLE AND SUM PER AXIS: a
-/// voice's viscosity pair by pair (a new pair filed in order, the ledger's
-/// entropy the later), its spend reader by reader, its progress grade by
-/// grade — never across axes (law 5).
-#[test]
-fn viscosity_spend_and_progress_read_back_whole_and_sum_per_axis() {
-    let pair = |lane, planes, arms| ViscosityPair { lane, planes, arms, refused: 1, unread: 0, no_class: 2 };
-    let v = Viscosity { pairs: vec![pair(0, (3, 5), [1, 2, 0, 0]), pair(3, (0, 1), [0, 0, 4, 1])], entropy: [0, 0, 0, 1] };
-    let s = Spend { percepts: 1, reads: [10, 2, 30, 4, 50], unbounded: [0, 1, 0, 0, 3] };
-    let g = GradeProgress { grade: 2, cells: 3, round_kept: 1, held_z2: 1, refused: 1, finite: 1, affine: 1, infinite: 0, dual_frames: 2 };
-    let p = Progress {
-        percepts: 1,
-        cycles_curved: 7,
-        contact_cycles: 5,
-        contact_cycles_curved: 2,
-        contact_cycles_unread: 1,
-        contact_cycles_static: 1,
-        contact_cycles_coset: [0, 1, 1],
-        grades: vec![g.clone()],
-    };
-    // PH5 — a court's phase travels whole beside them.
+fn a_courts_phase_reads_back_whole() {
     let phase = Phase { windows: 3, h0: 986, h1: 989, held: 1, sections: 1, strata: 2, installed: 1, ..Phase::default() };
-    let all = [
-        Reading::Viscosity(v.clone()),
-        Reading::Spend(s.clone()),
-        Reading::Progress(p.clone()),
-        Reading::Phase(phase.clone()),
-    ];
-    let push = encode_push(&vk(9), &all).expect("the push writes");
-    assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(9), all.to_vec())));
-
-    let mut held = Reading::Viscosity(v.clone());
-    let later = Viscosity { pairs: vec![pair(0, (1, 2), [1, 0, 0, 0]), pair(0, (3, 5), [1, 0, 0, 0])], entropy: [0, 0, 0, 2] };
-    assert!(held.absorb(&Reading::Viscosity(later)));
-    let Reading::Viscosity(held) = held else { panic!("one kind folds into its own kind") };
-    assert_eq!(held.pairs.iter().map(|q| (q.lane, q.planes, q.arms)).collect::<Vec<_>>(), [
-        (0, (1, 2), [1, 0, 0, 0]),
-        (0, (3, 5), [2, 2, 0, 0]),
-        (3, (0, 1), [0, 0, 4, 1])
-    ]);
-    assert_eq!(held.entropy, [0, 0, 0, 2], "the ledger's entropy is cumulative: the later stands");
-
-    let mut spent = Reading::Spend(s.clone());
-    assert!(spent.absorb(&Reading::Spend(s)));
-    assert_eq!(spent, Reading::Spend(Spend { percepts: 2, reads: [20, 4, 60, 8, 100], unbounded: [0, 2, 0, 0, 6] }));
-
-    let mut progressed = Reading::Progress(p.clone());
-    let other = Progress { percepts: 1, grades: vec![GradeProgress { grade: 1, cells: 1, ..GradeProgress::default() }, g], ..Progress::default() };
-    assert!(progressed.absorb(&Reading::Progress(other)));
-    let Reading::Progress(progressed) = progressed else { panic!("one kind folds into its own kind") };
-    assert_eq!((progressed.percepts, progressed.contact_cycles), (2, 5));
-    assert_eq!(progressed.grades.iter().map(|g| (g.grade, g.cells, g.round_kept)).collect::<Vec<_>>(), [(1, 1, 0), (2, 6, 2)]);
+    reads_back(&[Reading::Phase(phase.clone())]);
+    let mut earlier = Reading::Phase(Phase::default());
+    assert!(earlier.absorb(&Reading::Phase(phase.clone())), "one kind folds");
+    assert_eq!(earlier, Reading::Phase(phase), "the later window stands");
 }
 
 /// LD1 — THE CARRIAGE TRAVELS WHOLE, each record filed under its carrier and
@@ -781,9 +226,7 @@ fn the_carriage_reads_back_whole_filed_by_carrier_and_kind() {
         c.rows.iter().map(|r| (r.carrier, r.kind, r.records, r.bytes, r.largest)).collect::<Vec<_>>(),
         [(CARRIER_AWARD, 0, 1, 120, 120), (CARRIER_DELTA, 12, 2, 1000, 900), (CARRIER_FRAME, 0x0d, 1, 40, 40)]
     );
-    let all = [Reading::Carriage(c)];
-    let push = encode_push(&vk(4), &all).expect("the push writes");
-    assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(4), all.to_vec())));
+    reads_back(&[Reading::Carriage(c)]);
 }
 
 /// LD0 step 4 — AN AWARD IS A FIELD OF ITS WORD'S ROW, measured at what the
@@ -810,52 +253,9 @@ fn an_award_is_measured_flat_in_its_word() {
     assert!(back.escrow_of(&[7u8; 3]).is_none(), "the award rides its word's node, not the treasury's tries");
 }
 
-/// LD1, 78.24 — A LEDGER'S NODES ARE MEASURED BY THE ACT KIND THAT SEALED
-/// THEM, and a node citing a word carries the same bytes whatever the size
-/// of the word: the citation is the word's fiber and admitting stamp, never
-/// a copy of it.
-/// THE FACULTIES AND THE ACTS TRAVEL WHOLE (2026-09-29): a mind's `Senses`
-/// and a court's `Acts` go out in a push and come back as they were, every
-/// counter in its faculty; a reading of either kind later stands.
+/// A COURT'S ACTS TRAVEL WHOLE (2026-09-29): every counter in its table.
 #[test]
-fn the_senses_and_the_acts_travel_whole() {
-    let mut senses = Senses { k: 7, ..Senses::default() };
-    for (i, x) in senses.sight.iter_mut().chain(senses.cognition.iter_mut()).chain(senses.carriers.iter_mut()).enumerate() {
-        *x = 300 + i as u64;
-    }
-    senses.speech = [1, 2, 3, 4, 5, 39];
-    senses.reasons = [40, 41, 42, 43, 44, 45, 46, 47, 48];
-    senses.derivation = [50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63];
-    senses.flux = [70, 71, 72, 73, 74, 75, 76, 77];
-    senses.sentences = [80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111];
-    senses.unread = [130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161];
-    senses.citation = [170, 171, 172, 173];
-    senses.encounter = [180, 181, 182, 183, 184];
-    senses.constructions = [190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205];
-    senses.harmonics = [210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228];
-    senses.said = Some(crate::transducer::sentence::Reasons {
-        words: vec![crate::transducer::sentence::reasons::WordReason { generators: 2, adjoined: false, charts: 3, frames: 4 }],
-        loops: vec![crate::transducer::sentence::reasons::LoopReason {
-            curved: true,
-            axes: vec![crate::transducer::sentence::Axis::Hue, crate::transducer::sentence::Axis::Placement],
-        }],
-        open: vec![crate::transducer::sentence::reasons::OpenReason { kind: 3, measure: [5, 0, 0, 1], pieces: 2 }],
-        unsaid: 6,
-        measure: [7, 8, 9, 10],
-    });
-    senses.hearing = [6, 7, 8, 30, 31, 32, 33, 34, 35, 36];
-    senses.language = [9, 10, 29];
-    senses.understanding = [14, 15, 16, 17, 38];
-    senses.solving = [18, 19, 20, 21, 26, 27, 28, 58];
-    senses.paid = [22, 23, 24, 25];
-    {
-        use crate::economy::modes::{Mode, Modes};
-        use crate::transducer::sentence::presentation::GaugeMode;
-        let mut m = Modes::new();
-        m.add_mode(Mode::Hue(GaugeMode::Move(3, 0)), num_rational::BigRational::new(5.into(), 2.into()));
-        m.add_mode(Mode::Hue(GaugeMode::Cycle(vec![1, 2])), num_rational::BigRational::from_integer(1.into()));
-        senses.paid_modes = Some(m);
-    }
+fn the_acts_travel_whole() {
     let acts = Acts {
         k: 9,
         reserve: [1, 2, 3, 4],
@@ -871,14 +271,7 @@ fn the_senses_and_the_acts_travel_whole() {
         deferred: vec![crate::observe::Deferred { head: [1, 2, 3, 4, 5, 6, 7, 8], kind: 2, mag: [39, 40, 41, 42], short: [0, 43, 0, 0], tries: 44, learner: Some([9; 8]) }],
         provisional: [50, 51, 52, 53, 54, 55, 56, 57],
     };
-    let all = vec![Reading::Senses(Box::new(senses.clone())), Reading::Acts(Box::new(acts.clone()))];
-    let push = encode_push(&vk(8), &all).expect("the push writes");
-    assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(8), all)));
-    assert_eq!(senses.read("hearing", "words admitted"), Some(8), "read by its own name");
-    assert_eq!(senses.read("solving", "refused"), Some(20));
-    assert_eq!(senses.read("solving", "refuted at home"), Some(27));
-    assert_eq!(senses.read("solving", "unread"), Some(58), "78.153c — unread, apart from refused");
-    assert_eq!(senses.read("sight", "no such"), None, "a name the table does not hold reads nothing");
+    reads_back(&[Reading::Acts(Box::new(acts))]);
 }
 
 /// EVERY NAME A PRODUCER COUNTS UNDER IS ITS TABLE'S: `count` is silent on a
@@ -893,7 +286,6 @@ fn every_counted_name_is_its_table_s() {
             assert_eq!(slots.iter().sum::<u64>(), 1, "{n} is a slot of its table");
         }
     }
-    holds(&HEARING, &["pages", "words heard", "words admitted"]);
     holds(
         &SYLLABUS,
         &["pages", "words served", "words missed", "ended: order", "ended: frame", "ended: count", "deferred: reserve"],
@@ -974,42 +366,10 @@ fn every_judged_verdict_is_one_slot_of_the_table() {
     assert_eq!(Judged::Unread.name(), "unread");
 }
 
-/// 78.153c — A MIND'S VERDICTS BY THE REPLY'S CODE: unread is a retry and
-/// never a refusal, a refusal is counted by its kind, a code this build does
-/// not know is counted last; and each verdict says itself in one line.
-#[test]
-fn a_minds_verdicts_are_kept_by_code_and_said_one_line_each() {
-    use crate::anastome::dialogue::{SolveRefusal, SOLVE_BOUNTY, SOLVE_NOTHING, SOLVE_UNREAD};
-    let unread = SolveRefusal { reason: b"not judged yet".to_vec(), kind: 4 };
-    let no_work = SolveRefusal { reason: b"no work".to_vec(), kind: 4 };
-    let unsigned = SolveRefusal { reason: b"unsigned".to_vec(), kind: 3 };
-    let mut t = SolveTally::default();
-    t.note(SOLVE_UNREAD, &[0; 4], Some(&unread));
-    t.note(SOLVE_UNREAD, &[0; 4], Some(&unread));
-    t.note(SOLVE_NOTHING, &[0; 4], Some(&no_work));
-    t.note(SOLVE_NOTHING, &[0; 4], Some(&unsigned));
-    t.note(SOLVE_BOUNTY, &[1, 0, 2, 0], None);
-    t.note(9, &[0; 4], None);
-    assert_eq!(t.by_code, [2, 0, 1, 2, 1], "nothing 2, floor 0, bounty 1, unread 2, unknown 1");
-    assert_eq!(t.unread, 2, "unread apart");
-    assert_eq!(t.refused, [0, 0, 0, 1, 1, 0, 0], "the two refusals by kind, I and N; no unread among them");
-    assert_eq!((t.first, t.unruled, t.paid), (1, 1, [1, 0, 2, 0]));
-    assert_eq!(
-        t.line(),
-        "solves nothing 2 floor 0 bounty 1 unread 2 unknown 1 · refused (P D C I N ? x) [0, 0, 0, 1, 1, 0, 0] unruled 1 · kept home unminted 0 refuted 0 withheld 0"
-    );
-    let task = [0xab; 32];
-    assert_eq!(
-        SolveTally::verdict_line(&task, SOLVE_UNREAD, Some(&unread)),
-        "solve verdict · task abababab… · code unread (3) · kind N · not judged yet"
-    );
-    assert_eq!(SolveTally::verdict_line(&task, SOLVE_BOUNTY, None), "solve verdict · task abababab… · code bounty (2) · kind none");
-    assert_eq!(
-        SolveTally::verdict_line(&task, 7, Some(&SolveRefusal { reason: Vec::new(), kind: 9 })),
-        "solve verdict · task abababab… · code unknown code (7) · kind unknown kind · "
-    );
-}
-
+/// LD1, 78.24 — A LEDGER'S NODES ARE MEASURED BY THE ACT KIND THAT SEALED
+/// THEM, and a node citing a word carries the same bytes whatever the size
+/// of the word: the citation is the word's fiber and admitting stamp, never
+/// a copy of it.
 #[test]
 fn a_ledgers_nodes_are_measured_by_act_kind_and_flat_in_the_word() {
     use crate::chronometry::{ActKind, Cite, ReceiptChain, Stamp};

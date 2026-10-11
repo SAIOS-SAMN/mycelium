@@ -716,19 +716,11 @@ fn a_glue_pass_retracts_once_and_a_citation_is_never_cloned() {
     );
     assert!(std::ptr::eq(e, &crystal.e), "and the held element, not a copy of it");
 
-    // THE GLUE PASS RETRACTS ONCE. The extraction is run whole, so the
-    // count is what a voice's own stroke pays and not a contrived call.
-    crate::transducer::sentence::reset_retractions();
+    // The extraction is run whole, as a voice's own stroke runs it.
     let rule = extract_rule_with(&family, &crystal, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("the family extracts against the crystal");
     let cited = rule.form.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Glued { .. })).count();
     assert!(cited > 0, "the bar's shift, which reproduces the family, is cited");
-    assert!(
-        crate::transducer::sentence::retractions() <= 1,
-        "the pass renumbers the form once however many citations it makes: {cited} citations, \
-         {} retractions",
-        crate::transducer::sentence::retractions()
-    );
 }
 
 /// A withheld remainder is a listing chain: from_residual reads it,

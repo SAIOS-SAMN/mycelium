@@ -3,7 +3,7 @@
 // decides whether.
 
 use crate::transducer::blade::{self, Contact};
-use crate::transducer::family::pairing::{contact_edge, take_contact_tally, ContactEdge};
+use crate::transducer::family::pairing::{contact_edge, ContactEdge};
 use crate::transducer::sentence::{HeldPose, Refraction};
 
 fn body(cells: &[(i64, i64, i64)]) -> blade::Blade {
@@ -33,7 +33,6 @@ fn pose(before: &blade::Blade, after: &blade::Blade) -> crate::transducer::cga::
 /// unlike pieces.
 #[test]
 fn a_contact_edge_is_refraction_never_rigidity() {
-    let _ = take_contact_tally();
     let a = body(&[(0, 0, 0), (1, 0, 0), (0, 1, 0)]);
     let a_after = body(&[(0, 0, 0), (0, 1, 0), (-1, 0, 0)]);
     let b = body(&[(2, 1, 0), (3, 1, 0), (2, 2, 0)]);
@@ -51,8 +50,6 @@ fn a_contact_edge_is_refraction_never_rigidity() {
         !edge.word.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()),
         "the word reads the 90° turn one body made against the other"
     );
-    let t = take_contact_tally();
-    assert_eq!((t.offered, t.apart, t.condensed), (1, 1, 1), "offered, read apart, condensed");
 
     // Two unlike touching bodies — no turn carries the one onto the other —
     // still carry their refraction: each is read against itself.
@@ -72,14 +69,11 @@ fn a_contact_edge_is_refraction_never_rigidity() {
     // its refraction where it used to be refused.
     let j = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let j_after = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
-    let _ = take_contact_tally();
     let edge = contact_edge((&nucleus(&j), &nucleus(&bar)), Some((&j, &j_after)), Some((&bar, &bar)), &mut super::common::budget());
     assert!(
         matches!(edge, ContactEdge::Formed(_) | ContactEdge::Held(_)),
         "a mirrored transition carries its refraction"
     );
-    let t = take_contact_tally();
-    assert_eq!((t.offered, t.mirrored), (1, 0), "no pair refused as mirrored");
 }
 
 /// CV1b F3, 78.38 — AN OBLIQUE MEMBER REFUSES THE EDGE AND RAISES THE DEMAND.
@@ -93,12 +87,11 @@ fn a_contact_edge_is_refraction_never_rigidity() {
 /// its order, and raises nothing.
 #[test]
 fn an_oblique_member_refuses_the_edge_and_raises_the_rotor_prime() {
-    use crate::transducer::family::{oblique_rotor_prime, take_demand_tally};
+    use crate::transducer::family::oblique_rotor_prime;
     use crate::transducer::sentence::Demand;
     let l = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let image = body(&[(0, 0, 0), (4, 1, 0), (8, 2, 0), (7, 6, 0)]);
     let bar = body(&[(10, 0, 0), (11, 0, 0), (10, 1, 0)]);
-    let _ = take_contact_tally();
     assert!(
         matches!(
             contact_edge((&nucleus(&l), &nucleus(&bar)), Some((&l, &image)), Some((&bar, &bar)), &mut super::common::budget()),
@@ -106,10 +99,7 @@ fn an_oblique_member_refuses_the_edge_and_raises_the_rotor_prime() {
         ),
         "a similarity at an unspelled angle carries no edge, and the refusal names the arm"
     );
-    let t = take_contact_tally();
-    assert_eq!((t.offered, t.oblique, t.condensed), (1, 1, 0), "refused oblique, never dropped");
 
-    let _ = take_demand_tally();
     let Some(Demand::RotorPrime { prime, witness, .. }) = oblique_rotor_prime(&l, &image, &mut super::common::budget()) else {
         panic!("the oblique member raises the rotor-prime demand");
     };
@@ -119,42 +109,30 @@ fn an_oblique_member_refuses_the_edge_and_raises_the_rotor_prime() {
 
     let s = body(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
     assert!(oblique_rotor_prime(&s, &image, &mut super::common::budget()).is_none(), "a different shape raises nothing");
-    let d = take_demand_tally();
-    assert_eq!((d.offered, d.minted, d.permanent), (2, 1, 1), "one minted, one refused permanent");
 }
 
-/// F5 — GATE 1 IS LABELLED BY THE ANSWER'S KIND, NEVER BY THE BRANCH: a pair
-/// reading a turn of the base is no refusal and counts `turned`; an unlike
-/// pair is P, `permanent`; an empty body is I, `bodiless`. None of them is
-/// counted where another's label belongs.
+/// F5 — GATE 1 PASSES THE OBLIQUE ARM ALONE: a pair reading a turn of the
+/// base is no refusal, an unlike pair is P, an empty body is I; none mints.
 #[test]
 fn the_mints_first_gate_counts_each_answer_by_its_kind() {
-    use crate::transducer::family::{oblique_rotor_prime, take_demand_tally};
+    use crate::transducer::family::oblique_rotor_prime;
     let l = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let turn_90 = body(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (-1, 2, 0)]);
     let s = body(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
     let empty = blade::shape_of::<(i64, i64, i64)>(&[]).blade;
-    let _ = take_demand_tally();
     assert!(blade::relative_pose(&l, &turn_90, &mut super::common::budget()).is_ok(), "the fixture: a 90° turn apart");
     for (a, b) in [(&l, &turn_90),(&l, &s), (&empty, &l)] {
         assert!(oblique_rotor_prime(a, b, &mut super::common::budget()).is_none(), "none of them is oblique");
     }
-    let d = take_demand_tally();
-    assert_eq!(
-        (d.offered, d.turned, d.permanent, d.bodiless, d.held, d.unclassified, d.minted),
-        (3, 1, 1, 1, 0, 0, 0),
-        "each answer under its own kind: {}",
-        d.line()
-    );
 }
 
-/// CV1b F3 (R2), A.17 — THE POLE'S DEMANDS STAND ONCE, AND NONE LEAVES
-/// UNNAMED: the rotor prime stands; the same demand reached again merges into
-/// it; a kind with no coordinates to key it is `unkeyed`; a rotor prime whose
-/// witness carries nothing is `untyped`. Each counted on the mint's tally.
+/// CV1b F3 (R2), A.17 — THE POLE'S DEMANDS STAND ONCE: the rotor prime
+/// stands; the same demand reached again merges into it; a kind with no
+/// coordinates to key it, and a rotor prime whose witness carries nothing,
+/// do not stand.
 #[test]
 fn the_poles_demands_stand_once_and_every_other_is_named() {
-    use crate::transducer::family::{oblique_rotor_prime, stand_demands, take_demand_tally};
+    use crate::transducer::family::{oblique_rotor_prime, stand_demands};
     use crate::transducer::sentence::{Demand, Vertices};
     use crate::transducer::stalk::Invariant;
     let l = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
@@ -163,7 +141,6 @@ fn the_poles_demands_stand_once_and_every_other_is_named() {
     let Demand::RotorPrime { plane, prime, .. } = rotor_prime.clone() else { panic!("a rotor prime") };
     let empty = Demand::RotorPrime { plane, prime, witness: Box::default() };
     let chart = Invariant::default();
-    let _ = take_demand_tally();
     let mut vertices = Vertices::new();
     stand_demands(
         &mut vertices,
@@ -175,8 +152,6 @@ fn the_poles_demands_stand_once_and_every_other_is_named() {
         ],
     );
     assert_eq!(vertices.len(), 1, "the rotor prime stands, once");
-    let t = take_demand_tally();
-    assert_eq!((t.merged, t.unkeyed, t.untyped), (1, 1, 1), "every demand not stood, by its name");
 }
 
 /// 78.6(1) — A HELD `ℤ₂` RIDES THE EDGE AS A COSET: an S-tetromino against
@@ -193,7 +168,6 @@ fn a_held_turn_180_rides_the_contact_edge_as_a_coset() {
     };
     let b = body(&[(4, 0, 0), (5, 0, 0), (4, 1, 0)]);
     let v = blade::tether(&s, &b).expect("both nuclei read");
-    let _ = take_contact_tally();
     let ContactEdge::Held(Refraction::Coset(coset)) =
         contact_edge((&nucleus(&s), &nucleus(&b)), Some((&s, &turned)), Some((&b, &b)), &mut super::common::budget())
     else {
@@ -205,8 +179,6 @@ fn a_held_turn_180_rides_the_contact_edge_as_a_coset() {
         assert!(edge.carriage.projective_eq(&relative.geo(&v)), "each candidate is (θ_bθ_a⁻¹)·V");
     }
     assert!(!coset[0].carriage.projective_eq(&coset[1].carriage), "two candidates, two transports");
-    let t = take_contact_tally();
-    assert_eq!((t.open_180, t.cosets, t.condensed), (1, 1, 0), "a coset formed, no representative condensed");
 }
 
 /// 78.6(2), 78.18(a) — A PIECE AT ONE FRAME CARRIES ITS TETHER: the edge is
@@ -221,7 +193,6 @@ fn a_static_contact_carries_its_tether_and_the_pose_it_read() {
     let b = body(&[(2, 1, 0), (3, 1, 0), (2, 2, 0)]);
     let b_after = body(&[(2, 1, 0), (2, 2, 0), (1, 1, 0)]);
     let v = blade::tether(&a, &b).expect("both nuclei read");
-    let _ = take_contact_tally();
     let ContactEdge::Held(Refraction::Static { tether, poses }) =
         contact_edge((&nucleus(&a), &nucleus(&b)), None, Some((&b, &b_after)), &mut super::common::budget())
     else {
@@ -230,8 +201,6 @@ fn a_static_contact_carries_its_tether_and_the_pose_it_read() {
     assert_eq!(tether, v, "the tether of the two bodies, whole");
     let [HeldPose::OneFrame, HeldPose::Read(theta_b)] = &poses else { panic!("the poses as read: {poses:?}") };
     assert!(theta_b[0].projective_eq(&pose(&b, &b_after)), "the transited end's pose, kept");
-    let t = take_contact_tally();
-    assert_eq!((t.statics, t.open_180, t.condensed, t.mirrored), (1, 0, 0, 0), "static by name, no refraction asked");
 }
 
 /// 78.71 — EVERY LANE READ AS A FIELD: each body's transport through the rule

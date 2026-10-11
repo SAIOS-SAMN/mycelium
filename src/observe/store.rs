@@ -16,14 +16,10 @@
 //! ```text
 //!   query  [ACT_OBSERVE][0][prefix len u32][prefix]
 //!          → [total u32][m u32]([key len u32][key][reading])·m
-//!   push   [ACT_OBSERVE][1][vk 32][m u32]([reading])·m
-//!          → [ok u8]
 //! ```
 //!
-//! A voice PUSHES its totals and the hypha holds them under the voice's key
-//! as they stand (the voice accumulated them; the hypha does not fold them
-//! a second time). Any process QUERIES: the console asks a hypha for
-//! everything it holds, its own court's readings and its voices'.
+//! Any process QUERIES: the console asks a hypha for everything it holds of
+//! its own court. A mind reports nothing about itself.
 
 use super::reading::Reading;
 use crate::anastome::dialogue::ACT_OBSERVE;
@@ -31,22 +27,19 @@ use crate::network::nerve::Keyed;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{LazyLock, Mutex};
 
-/// WHO A READING IS OF: a court (a hypha) or a voice, by its key.
+/// WHO A READING IS OF: a court (a hypha), by its key.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Source {
     Court([u8; 32]),
-    Voice([u8; 32]),
 }
 
 pub const SOURCE_COURT: u8 = 0;
-pub const SOURCE_VOICE: u8 = 1;
 
 impl Source {
     /// The source's prefix: its kind, then its key.
     pub fn prefix(&self) -> Vec<u8> {
         let (kind, vk) = match self {
             Source::Court(vk) => (SOURCE_COURT, vk),
-            Source::Voice(vk) => (SOURCE_VOICE, vk),
         };
         let mut k = Vec::with_capacity(34);
         k.push(kind);
@@ -71,7 +64,6 @@ impl Source {
         };
         match *kind {
             SOURCE_COURT => Some((Source::Court(vk), tag)),
-            SOURCE_VOICE => Some((Source::Voice(vk), tag)),
             _ => None,
         }
     }
@@ -100,8 +92,7 @@ pub fn publish(source: Source, reading: Reading) -> bool {
     }
 }
 
-/// HOLD a reading as it stands — a voice's pushed totals, a court's present
-/// state — in place of whatever was held for `source`.
+/// HOLD a reading as it stands — a court's present state — in place of whatever was held for `source`.
 pub fn replace(source: Source, reading: Reading) -> bool {
     let Ok(mut s) = STORE.lock() else { return false };
     s.insert(source.key(reading.tag()), reading);
@@ -268,28 +259,14 @@ pub fn serves() -> [u64; super::SERVE_AXES.len()] {
     std::array::from_fn(|i| SERVE[i].load(Ordering::Relaxed))
 }
 
-/// 78.47 — the orbits a demand arm left undischarged, by the kind their own
-/// holonomy reads (78.9), apart from the refusals.
-static UNDISCHARGED: [AtomicU64; 6] = [const { AtomicU64::new(0) }; 6];
-
 /// Count one refusal by its kind, where it forms.
 pub fn note_obstruction(kind: crate::transducer::sentence::ObstructionKind) {
     OBSTRUCTED[kind.index()].fetch_add(1, Ordering::Relaxed);
 }
 
-/// Count one orbit no candidate discharged, by its kind.
-pub fn note_undischarged(kind: crate::transducer::sentence::ObstructionKind) {
-    UNDISCHARGED[kind.index()].fetch_add(1, Ordering::Relaxed);
-}
-
 /// The refusals this process has counted by kind.
 pub(crate) fn obstructed() -> [u64; 6] {
     std::array::from_fn(|i| OBSTRUCTED[i].load(Ordering::Relaxed))
-}
-
-/// The undischarged orbits this process has counted by kind.
-pub(crate) fn undischarged() -> [u64; 6] {
-    std::array::from_fn(|i| UNDISCHARGED[i].load(Ordering::Relaxed))
 }
 
 /// Count one verdict, where the court reaches it.
@@ -327,28 +304,14 @@ pub fn adjudication() -> super::Adjudication {
 #[derive(Debug, PartialEq, Eq)]
 pub enum ObserveAct {
     Query(Vec<u8>),
-    Push([u8; 32], Vec<Reading>),
 }
 
 const MODE_QUERY: u8 = 0;
-const MODE_PUSH: u8 = 1;
 
 /// `None` where the prefix passes its four bytes (STD1 3c).
 pub fn encode_query(prefix: &[u8]) -> Option<Vec<u8>> {
     let mut out = vec![ACT_OBSERVE, MODE_QUERY];
     crate::transducer::address::put_bytes(&mut out, prefix)?;
-    Some(out)
-}
-
-/// `None` where the count or a reading passes the field that carries it
-/// (STD1 3c): the push is refused whole, never sent short.
-pub fn encode_push(vk: &[u8; 32], readings: &[Reading]) -> Option<Vec<u8>> {
-    let mut out = vec![ACT_OBSERVE, MODE_PUSH];
-    out.extend_from_slice(vk);
-    crate::transducer::address::put_u32_count(&mut out, readings.len())?;
-    for r in readings {
-        r.put(&mut out)?;
-    }
     Some(out)
 }
 
@@ -368,21 +331,6 @@ pub fn decode_act(b: &[u8]) -> Option<ObserveAct> {
             let prefix = rest.get(p..p.checked_add(len)?)?.to_vec();
             p += len;
             ObserveAct::Query(prefix)
-        }
-        MODE_PUSH => {
-            let vk: [u8; 32] = rest.get(..32)?.try_into().ok()?;
-            p = 32;
-            let m = take_u32(rest, &mut p)? as usize;
-            // A reading is at least its tag; a count the body cannot hold
-            // is refused before anything is reserved.
-            if rest.len().checked_sub(p)? < m {
-                return None;
-            }
-            let mut readings = Vec::with_capacity(m);
-            for _ in 0..m {
-                readings.push(Reading::take(rest, &mut p)?);
-            }
-            ObserveAct::Push(vk, readings)
         }
         _ => return None,
     };

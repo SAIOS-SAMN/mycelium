@@ -893,9 +893,7 @@ impl Contemplation {
                         // 78.68 ROW 8 — ANSWERED BY THE MIND'S OWN LETTER: a
                         // residue it has constructed and holds is said, not
                         // asked for again.
-                        Ok(_) if self.holds_own_letter(&inc.residue) => {
-                            crate::transducer::cga::note_construction_outcome("demands answered by an own letter");
-                        }
+                        Ok(_) if self.holds_own_letter(&inc.residue) => {}
                         Ok(class) => {
                             // 78.114 — with the ring's holonomy as its residue.
                             self.docket_demand(class, &charts, Some(&inc.residue));

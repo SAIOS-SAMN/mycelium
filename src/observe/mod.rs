@@ -3,40 +3,33 @@
 //
 //! The fleet printed its instruments as prose and dropped the counters
 //! behind them; a question about a running voice was answered by reading
-//! its log. This module holds the readings themselves — the plane census in
-//! its algebra (which dimensions are used and which are flat), every
-//! refusal that passes a reading over (what is lost), the allocator over
+//! its log. This module holds the readings themselves — the allocator over
 //! the source's own clock (what is held), and a court's standing — keyed
-//! by source and kind, so a hypha can answer for itself and for its voices
-//! and any hypha can run the console (`mycelium-server --console`).
+//! by source and kind, so a hypha can answer for itself and any hypha can
+//! run the console (`mycelium-server --console`). A mind reports nothing
+//! about itself.
 
+mod acts;
 mod carriage;
 mod carriers;
-mod cells;
-mod circuit;
 mod clock;
 mod economy;
 mod fleet;
-mod learning;
 mod reading;
 mod relay;
-mod senses;
 mod store;
 #[cfg(test)]
 mod tests;
 mod tuniversal;
 
+pub use acts::*;
 pub use carriage::*;
 pub use carriers::*;
-pub use cells::*;
-pub use circuit::*;
 pub use clock::*;
 pub use economy::*;
 pub use fleet::*;
-pub use learning::*;
 pub use reading::*;
 pub use relay::*;
-pub use senses::*;
 pub use store::*;
 pub use tuniversal::*;
 

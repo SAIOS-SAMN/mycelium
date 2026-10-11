@@ -8,8 +8,28 @@
 //! Awards and deltas are measured at the question from what the court or
 //! the voice holds now; frames are counted where the wire writes them.
 
-use super::circuit::{holds, take_len, take_u8};
 use std::sync::atomic::{AtomicU64, Ordering};
+
+fn take_u8(b: &[u8], p: &mut usize) -> Option<u8> {
+    let v = *b.get(*p)?;
+    *p += 1;
+    Some(v)
+}
+
+fn take_len(b: &[u8], p: &mut usize) -> Option<usize> {
+    let v = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
+    *p += 4;
+    usize::try_from(v).ok()
+}
+
+/// A count the body cannot hold at `least` bytes an entry is refused before
+/// anything is reserved for it.
+fn holds(b: &[u8], p: usize, m: usize, least: usize) -> bool {
+    match (b.len().checked_sub(p), m.checked_mul(least)) {
+        (Some(rest), Some(need)) => rest >= need,
+        _ => false,
+    }
+}
 
 /// THE CARRIERS, in the reading's order, each with what one record of it
 /// is. The ONE statement of the order (law 12).

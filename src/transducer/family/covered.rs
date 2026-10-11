@@ -139,16 +139,8 @@ pub(crate) fn classify_cover(
     // is filed under the same coordinate.
     let mut cover_chart: Keyed<ChartAt, crate::network::nerve::coord::Carriage> = Keyed::new();
     let mut owner: Keyed<Keyed<()>, ChartAt> = Keyed::new();
-    // The first carried piece each piece-chart named, which a second
-    // distinct piece at that chart is read against.
-    let mut first_at: Keyed<crate::network::nerve::coord::Carriage, ChartAt> = Keyed::new();
     for (ci, c) in covers.iter().enumerate() {
-        let (carried, carried_refused) = c.cover.carried.decoded();
-        if !carried_refused.is_empty() {
-            crate::transducer::family::cover::tally(|t| {
-                t.undecodable += carried_refused.len() as u64
-            });
-        }
+        let (carried, _) = c.cover.carried.decoded();
         let Ok(frame) = u64::try_from(c.frame) else { continue };
         for (key, (v, _versor, sup)) in carried {
             // THE VERTEX A CARRIED PIECE STANDS AT: one per class, the pieces
@@ -157,17 +149,6 @@ pub(crate) fn classify_cover(
             let Some(piece) = piece_at(&sup.codomain) else { continue };
             let Some(ChartAt::At(member)) = piece_form.stand_member(v, frame) else { continue };
             let pc = ChartAt::piece(member.vertex, member.chart, frame, piece);
-            // TWO DISTINCT PIECES AT ONE PIECE-CHART are a finding and never
-            // a wider key (AT1, ruled (a)): counted, and the first stands.
-            match first_at.at(&pc) {
-                Some(held) if held != &key => {
-                    crate::transducer::family::cover::tally(|t| t.piece_collisions += 1);
-                }
-                Some(_) => {}
-                None => {
-                    first_at.put(&pc, key.clone());
-                }
-            }
             match owner.at_mut(&pc) {
                 Some(set) => {
                     set.insert(ci.to_le_bytes(), ());
@@ -213,14 +194,9 @@ pub(crate) fn classify_cover(
     for c in covers {
         let Ok(frame) = u64::try_from(c.frame) else { continue };
         // THE MEETS, AS COORDINATES (§4.4 E8). A key that does not decode is
-        // this reader failing on its own layout, which the cover counts as
-        // `undecodable`; it is not a meet that named nothing.
-        let (meets, meets_refused) = c.cover.meets.decoded();
-        if !meets_refused.is_empty() {
-            crate::transducer::family::cover::tally(|t| {
-                t.undecodable += meets_refused.len() as u64
-            });
-        }
+        // this reader failing on its own layout; it is not a meet that named
+        // nothing.
+        let (meets, _) = c.cover.meets.decoded();
         for (mk, ()) in meets {
             let (ka, kb) = mk.ends();
             let (Some(pi), Some(pj)) = (cover_chart.at(ka), cover_chart.at(kb)) else { continue };
@@ -243,9 +219,6 @@ pub(crate) fn classify_cover(
                 }
                 _ => None,
             });
-            if edge.is_some() {
-                crate::transducer::family::cover::tally(|t| t.edges += 1);
-            }
             let carried_edge = edge.clone();
             // THE MEET IS AN OVERLAP OF THE TWO PIECE-CHARTS (AT1): its word
             // derived from the ends, its place measured here. A meet of one
@@ -274,7 +247,6 @@ pub(crate) fn classify_cover(
             let (Some((_, pa, supa)), Some((_, pb, supb))) =
                 (c.cover.carried.at(ka), c.cover.carried.at(kb))
             else {
-                crate::transducer::family::cover::tally(|t| t.unclassed += 1);
                 continue;
             };
             let (da, db) = (&supa.codomain, &supb.codomain);
@@ -331,14 +303,10 @@ pub(crate) fn classify_cover(
                 // so the two ends are told apart by their PIECE-CHARTS and
                 // never by their sites.
                 let (ma, mb) = (pi.encode(), pj.encode());
-                if ma == mb {
-                    // ONE SECTION MEETING ITSELF: one class, one chart, one
-                    // carriage. The transition is the identity and carries
-                    // no `τ`, so there is no cycle and none is invented
-                    // (rule 11).
-                    crate::transducer::family::cover::tally(|t| t.within_class += 1);
-                } else {
-                    crate::transducer::family::cover::tally(|t| t.chords += 1);
+                // ONE SECTION MEETING ITSELF — one class, one chart, one
+                // carriage — has the identity for its transition and carries
+                // no `τ`, so there is no cycle and none is invented (rule 11).
+                if ma != mb {
                     let mut pk = Vec::new();
                     let (lo, hi) = if ma < mb { (&ma, &mb) } else { (&mb, &ma) };
                     crate::transducer::address::put_key_bytes(&mut pk, lo.as_bytes());
@@ -373,8 +341,6 @@ pub(crate) fn classify_cover(
                         ));
                     }
                 }
-            } else {
-                crate::transducer::family::cover::tally(|t| t.unclassed += 1);
             }
         }
     }
@@ -445,7 +411,6 @@ pub(crate) fn classify_cover(
             let hue = crate::transducer::sentence::CycleType::of(&e.gauge);
             let sigma = e.gauge.clone();
             let fill = crate::transducer::cech::classify(&e.word.rotor(), &e.carriage, hue);
-            crate::transducer::family::cover::tally_orbit(&fill);
             match fill {
                 crate::transducer::cech::Fill::Congruent(_, g, _) => {
                     let Some(class) = g.holonomy_key() else { continue };

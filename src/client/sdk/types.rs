@@ -510,7 +510,6 @@ pub struct Epigenome {
 /// THE ENTITY — a kernel identity with its genome/epigenome, conversing through
 /// a session: it speaks sentences, learns what the mesh teaches (comprehending,
 /// not storing), asks quotes, and probes listings.
-
 pub struct Entity {
     pub(crate) session: Session,
     pub epigenome: Epigenome,
@@ -524,33 +523,9 @@ pub struct Entity {
     /// is the same object. `None` is a circuit that has not started (X3) and
     /// is an absence, not an empty key.
     pub(crate) refine_cursor: Option<Vec<u8>>,
-    /// PR1 — what this voice's probes read, cumulative: published on its
-    /// Learning.
-    pub(crate) probes: crate::observe::ProbeTally,
-    /// 78.52 — what this voice's closed thoughts became when transcribed.
-    pub(crate) transcription: crate::observe::TranscriptionTally,
-    /// What this voice's solves came to, as the court ruled each.
-    pub(crate) solves: crate::observe::SolveTally,
     /// The rule the court last refused for each task, by task id — so the
     /// same rule is not sent again (`Entity::solve_task`). One per task.
     pub(crate) solve_refused: crate::network::nerve::Keyed<Vec<u8>>,
-    /// 78.55 — the colour relations this mind perceived that its ruled
-    /// colour words already derived (`colour_derivation`).
-    pub(crate) colour_derived: u64,
-    /// 78.55 — the colour theorems this mind proposed: composites of its
-    /// ruled colour words, spoken with their derivation.
-    pub(crate) colour_theorems: u64,
-    /// 78.92 — the reasons this voice's admitted sentences carried,
-    /// cumulative, and the last one's whole (volatile: read off the
-    /// sentence, never persisted beside it).
-    pub(crate) reasons: crate::transducer::sentence::ReasonsTally,
-    pub(crate) said: Option<crate::transducer::sentence::Reasons>,
-    /// 78.93 B0 — where the court said the last one stands: the stamp any
-    /// party asks "why" by.
-    pub(crate) said_at: Option<crate::chronometry::Stamp>,
-    /// What this voice heard: pages, words heard, words admitted
-    /// (`observe::HEARING`).
-    pub(crate) hearing: [u64; crate::observe::HEARING.len()],
     /// Words this voice has spoken up for adoption: said once, the judge
     /// decided (installed, derivable, or refused). Keyed by transport
     /// address; membership is vertex equality, never the digest alone.

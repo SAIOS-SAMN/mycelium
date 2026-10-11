@@ -27,22 +27,15 @@ impl Entity {
             self.epigenome.asked_root = Some(root);
         }
         // THE RESIDUES: word vertices whose derivation cites nothing and whose
-        // whole motion moves something — each stop counted by name.
-        let note = |h: &mut [u64; crate::observe::HEARING.len()], name: &str| {
-            crate::observe::count(h, &crate::observe::HEARING, name)
-        };
-        note(&mut self.hearing, "presentation: forms");
+        // whole motion moves something.
         let mut motions: Vec<crate::transducer::cga::Mv> = Vec::new();
         for (_, v) in form.vertices.scoped() {
             let Vertex::Word { derivation, .. } = v else { continue };
-            note(&mut self.hearing, "presentation: vertices");
             if !derivation.is_spelled() {
-                note(&mut self.hearing, "presentation: citing");
                 continue;
             }
-            match vertex_motion(v).filter(|m| !is_still(m)) {
-                Some(m) => motions.push(m),
-                None => note(&mut self.hearing, "presentation: still"),
+            if let Some(m) = vertex_motion(v).filter(|m| !is_still(m)) {
+                motions.push(m);
             }
         }
         let voice = self.session.kernel().voice();
@@ -59,18 +52,14 @@ impl Entity {
                 continue;
             }
             self.epigenome.asked.insert(&key, ());
-            crate::observe::count(&mut self.hearing, &crate::observe::HEARING, "presentation: asked");
             let ask = dialogue::encode_presentation_request(&voice, &m);
             let Ok(body) = self.session.speak_keyed(&voice, ask) else { continue };
             let Some((words, answer)) = dialogue::decode_presentation_reply(&body) else { continue };
             for t in &words {
-                if self.absorb_taught_at(&t.word, Some(t.at), &mut budget).is_some() {
-                    crate::observe::count(&mut self.hearing, &crate::observe::HEARING, "presentation: words");
-                }
+                let _ = self.absorb_taught_at(&t.word, Some(t.at), &mut budget);
             }
             if answer.read && answer.composes && !answer.cites.is_empty() {
                 self.epigenome.presented.insert(&key, answer.cites);
-                crate::observe::count(&mut self.hearing, &crate::observe::HEARING, "presentation: composes");
                 composed += 1;
             }
         }

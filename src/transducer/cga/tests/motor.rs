@@ -53,35 +53,3 @@ fn a_mixed_parity_element_acts_as_the_identity() {
     assert!(a.acts_as_versor() && a.grade_preserving && a.algebra_rank == a.dim());
     assert!(!is_versor(&one_plus_i), "the element has no parity");
 }
-
-/// The motor tally files each transition under its kind by what its action
-/// is — a degenerate one by the contraction `contracted()` answers, the
-/// algebra rank beside it — the lanes it carries as a distribution, a
-/// frame-axis step's translation along the frame as its PARABOLIC plane,
-/// never as a turn, and a DISAGREEING step's planes off both its motors.
-#[test]
-fn the_tally_types_each_transition_by_its_action() {
-    let _ = take_motor_tally();
-    let along = translator(&q(0, 1), &q(0, 1), &q(1, 1));
-    let across = translator(&q(1, 1), &q(0, 1), &q(0, 1));
-    note_motor(TransitionKind::FrameAxis, &along, Some([1, 0, 2, 0]));
-    note_motor(TransitionKind::FrameAxis, &e_inf().widened(3), None);
-    note_unread(TransitionKind::Face);
-    note_step(StepClass::Agree, &[&along]);
-    note_step(StepClass::Disagree, &[&along, &across]);
-    note_step(StepClass::Neither, &[]);
-    let t = take_motor_tally();
-    assert_eq!((t.frame_axis.read, t.frame_axis.versors), (2, 1));
-    let degenerate: Vec<Vec<u8>> = t.frame_axis.degenerate.scoped().map(|(k, _)| k).collect();
-    assert_eq!(degenerate.len(), 1, "the null vector degenerate under one key");
-    assert!(t.line().contains("contracted 1 of 5 algebra "), "keyed by its contraction, the algebra rank beside it");
-    assert_eq!((t.face.read, t.face.unread, t.in_out.read), (0, 1, 0));
-    assert_eq!((t.steps.agree, t.steps.disagree, t.steps.neither, t.steps.one_sided), (1, 1, 1, 0));
-    assert_eq!(t.steps.planes.scoped().count(), 0, "a translation turns no plane");
-    assert_eq!(t.steps.parabolic.scoped().count(), 2, "e3∞ from both steps, e1∞ from the disagreement's second motor");
-    assert_eq!(t.steps.parabolic.scoped().map(|(_, &c)| c).sum::<u64>(), 3, "along twice, across once");
-    assert_eq!(t.lanes[0].get(&1u64.to_be_bytes()), Some(&1));
-    assert_eq!(t.lanes[2].get(&2u64.to_be_bytes()), Some(&1));
-    assert!(t.line().contains("frame-axis read 2 versors 1"));
-    assert_eq!(take_motor_tally().frame_axis.read, 0, "the take clears");
-}

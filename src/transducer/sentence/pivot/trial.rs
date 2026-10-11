@@ -226,16 +226,9 @@ impl Form {
         // a move that splits two circuits of one anastomosis that agreed —
         // their pair composite the identity before and non-trivial after —
         // raised a coordinate it did not act on, and has not closed the
-        // cell. A pair already non-trivial before does not refuse it. The
-        // after reading is the trial's own and is not tallied as the form's.
+        // cell. A pair already non-trivial before does not refuse it.
         let after_agreements = super::Agreements::read(self, &faces, &cycles, &mut super::PerturbTally::default());
-        let split = agreements.split_by(&after_agreements);
-        super::perturb::note_perturb(&super::PerturbTally {
-            admitted: 1,
-            unclosed: u64::from(split),
-            ..super::PerturbTally::default()
-        });
-        if split {
+        if agreements.split_by(&after_agreements) {
             return Err(Refused::TrialUnclosed);
         }
         Ok(PivotCertificate {

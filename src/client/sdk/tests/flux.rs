@@ -58,11 +58,8 @@ fn a_tether_released_at_the_voice_vents_into_its_field() {
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
     let slide = crate::transducer::cga::translator_at(&[q(1), q(0), q(0)]);
     entity.contemplation.complex.set_edge(&a, &b, Rotor::identity(), slide, [1, 0, 0, 0]);
-    let vented = crate::transducer::sentence::hearing::hearing_tally();
     let _ = entity.contemplation.complex.vent_vertex(&a);
     assert_eq!(entity.vent_into_field(&mut budget), 1, "the cauterized tether's strain reaches the field");
-    let at = crate::transducer::sentence::hearing::HEARING.iter().position(|n| *n == "torsion vented into the field").expect("named");
-    assert!(crate::transducer::sentence::hearing::hearing_tally()[at] > vented[at]);
     assert_eq!(entity.vent_into_field(&mut budget), 0, "taken once");
 }
 

@@ -191,12 +191,8 @@ fn term_choices(carried: &super::circuit::PathCarried) -> Result<Vec<Vec<Term>>,
             let Some(tr) = t.transport.as_ref() else {
                 use super::Refraction;
                 return match (&t.refraction, t.whole) {
-                    (Some(Refraction::Static { tether, .. }), _) => {
-                        super::rung::note_contact(super::rung::ContactRead::Static);
-                        Ok(vec![whole(tether, t.forward)])
-                    }
+                    (Some(Refraction::Static { tether, .. }), _) => Ok(vec![whole(tether, t.forward)]),
                     (Some(Refraction::Coset(candidates)), _) => {
-                        super::rung::note_contact(super::rung::ContactRead::Coset);
                         Ok(candidates.iter().map(|c| whole(&c.carriage, t.forward)).collect())
                     }
                     (None, true) => Err(TermUnread::Unrefracted),
@@ -332,40 +328,13 @@ pub fn is_chord(o: &crate::network::nerve::coord::Overlap) -> bool {
 /// one member path read as terms ([`terms_of`]) and composed ([`compose`]),
 /// the overlaps it crosses kept beside it (what its faces carried is its
 /// mass). The rings are the caller's: a percept's kept orbits and its vacua,
-/// a court's re-derived ones. The contacts' bends are read after every ring
-/// is composed, on what the stroke has left (78.103).
+/// a court's re-derived ones.
 pub fn sentences_of(
     form: &super::Form,
     rings: &[super::Orbit],
     budget: &mut crate::physics::Budget,
 ) -> Vec<(Vec<crate::network::nerve::coord::Overlap>, Result<Composition, RingUnread>)> {
-    let (out, bends) = sentences_and_bends_of(form, rings, budget);
-    read_bends(&bends);
-    out
-}
-
-/// 78.103 — EACH CONTACT BEND, read by what it generates
-/// ([`super::rung::note_bends`]). A READING AFTER THE FACULTY: the mind
-/// composes and hears its rings first; the reading takes no stroke.
-pub(crate) fn read_bends(bends: &[Mv]) {
-    for b in bends {
-        super::rung::note_bends(super::rung::Bend::Contact, b);
-    }
-}
-
-/// One ring as [`sentences_of`] reads it: the overlaps it crosses, and its
-/// composition or why there is none.
-pub(crate) type RingRead = (Vec<crate::network::nerve::coord::Overlap>, Result<Composition, RingUnread>);
-
-/// [`sentences_of`], the contacts' bends handed back unread so the caller
-/// reads them after it has heard the rings (78.103).
-pub(crate) fn sentences_and_bends_of(
-    form: &super::Form,
-    rings: &[super::Orbit],
-    budget: &mut crate::physics::Budget,
-) -> (Vec<RingRead>, Vec<Mv>) {
     let mut out = Vec::with_capacity(rings.len());
-    let mut bends: Vec<Mv> = Vec::new();
     for lp in rings {
         let steps: Vec<crate::network::nerve::coord::Overlap> = lp.transitions.iter().map(|s| s.overlap.clone()).collect();
         // 78.97 — a ring through a chord is heard, never composed.
@@ -373,7 +342,7 @@ pub(crate) fn sentences_and_bends_of(
             out.push((steps, Err(RingUnread::Heard)));
             continue;
         }
-        let Some(paths) = super::circuit::paths_carried_quiet(&form.faces, &form.vertices, lp) else {
+        let Some(paths) = super::circuit::paths_carried(&form.faces, &form.vertices, lp) else {
             out.push((steps, Err(RingUnread::Traversal)));
             continue;
         };
@@ -388,13 +357,6 @@ pub(crate) fn sentences_and_bends_of(
                 continue;
             }
         };
-        // 78.103 — every contact read by its refraction is a bend: each term
-        // its tether or coset opened, kept for the reading after.
-        for (t, choice) in p.transitions.iter().zip(&choices) {
-            if t.transport.is_none() {
-                bends.extend(choice.iter().map(|term| term.transport.clone()));
-            }
-        }
         // 78.6(1), 78.44 — A HELD COSET'S RING IS EVERY ROUTE IT OPENS, each
         // composed and kept, never a representative chosen.
         let Some(routes) = routes(&choices, budget) else {
@@ -407,7 +369,7 @@ pub(crate) fn sentences_and_bends_of(
             out.push((steps.clone(), compose(&terms, budget).ok_or(RingUnread::Traversal)));
         }
     }
-    (out, bends)
+    out
 }
 
 /// 78.69, 78.97, 78.68 — THE WORD A SENTENCE TEACHES, the one rule (78.100

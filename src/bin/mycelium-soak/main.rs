@@ -76,9 +76,6 @@ struct Reading {
     /// as a court reads them off its ruled cover: a form carrying a
     /// `FiledOrbit` has closed a simplex of its cover.
     simplices_filled: u64,
-    /// 50.8 — what the covers of this walk read, taken from the cover's
-    /// own instrument at the end of the walk.
-    cover: mycelium::transducer::family::cover::CoverTally,
 }
 
 fn main() {
@@ -515,26 +512,6 @@ fn main() {
                  families comprehended {} simplices filled {}",
                 r.held, r.adjoined, r.retired, r.cover_rank, r.comprehended, r.simplices_filled
             );
-            // 50.8 — THE COVER'S OWN LINE. Its readings do not survive into
-            // the form: a filed class becomes torsion and a refused
-            // carriage becomes a demand vertex, but a cover that COMPLETED
-            // and found nothing leaves no trace in content. Without these,
-            // `simplices filled 0` cannot be told from `no cover ran`, which is
-            // the ambiguity every reading of this chain has carried.
-            println!(
-                "  soak cover measured {} unmeasured {} pending {} spend {} carried {}",
-                r.cover.measured,
-                r.cover.unmeasured,
-                r.cover.pending,
-                r.cover.spend,
-                r.cover.carried
-            );
-            println!(
-                "  soak cover edges {} meets flat {} filed {} standing {} unspellable {} \
-                 pieces refused {}",
-                r.cover.edges, r.cover.flat, r.cover.filed, r.cover.standing,
-                r.cover.unspellable, r.cover.refused
-            );
         }
         Err(e) => {
             eprintln!("  soak refused: {e}");
@@ -640,7 +617,6 @@ fn walk(dir: &str, limit: usize, stroke: Option<usize>) -> Result<Reading, Strin
             r.comprehended += 1;
         }
     }
-    r.cover = mycelium::transducer::family::cover::take_cover_tally();
     read_engine(&mut epi, &mut r);
     Ok(r)
 }

@@ -347,7 +347,7 @@ impl Form {
                 bundle,
                 t_extent,
                 mu_before,
-                agreements: self.read_agreements(&cycles, false),
+                agreements: self.read_agreements(&cycles),
             };
             let mut applied = false;
             for idx in open {
@@ -531,20 +531,7 @@ impl Form {
                         handled.put(&orbit_k, ());
                     }
                     Discharge::NoneDischarged => {
-                        // A.17, 78.9 — NO CANDIDATE DISCHARGES THE ORBIT: one
-                        // fact, counted once, its kind read off the orbit's
-                        // own holonomy by the one reader — no versor P, a
-                        // versor the dialect does not spell D, a residue on
-                        // the cover C. The candidates' own refusals were the
-                        // trial's returns, never counted (law 12).
-                        crate::observe::note_undischarged(
-                            crate::transducer::sentence::read_obstruction(crate::transducer::sentence::Content::Holonomy {
-                                versor: residue.as_ref(),
-                                chart: None,
-                                proof: "no candidate discharges the orbit",
-                            })
-                            .kind(),
-                        );
+                        // A.17, 78.9 — NO CANDIDATE DISCHARGES THE ORBIT.
                         let infinite = matches!(order, Order::Infinite);
                         if infinite && !held {
                             // One standing demand per chart the orbit
@@ -898,28 +885,10 @@ impl Form {
 }
 
 /// 78.47, 78.111 — AN UNDISCHARGED ORBIT'S RESIDUE: its whole transport, the
-/// first of its circuits that composes one. Where none does, why is counted
-/// on the constructions row — the circuit unread, a held coset's several
-/// routes (one residue per route, none chosen), or a crossing whose
-/// transport did not read — and the demand is docketed without it.
+/// first of its circuits that composes one. Where none does — the circuit
+/// unread, a held coset's several routes (one residue per route, none
+/// chosen), or a crossing whose transport did not read — the demand is
+/// docketed without it.
 fn residue_of(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> Option<crate::transducer::cga::Mv> {
-    use crate::transducer::cga::note_construction_outcome;
-    use crate::transducer::sentence::compose::{terms_of, TermUnread};
-    let Some(paths) = paths_carried_quiet(faces, vertices, lp) else {
-        note_construction_outcome("docketed without residue: circuit unread");
-        return None;
-    };
-    if let Some(r) = paths.scoped().find_map(|(_, c)| c.composite()) {
-        return Some(r);
-    }
-    let coset = paths.scoped().any(|(_, c)| match (&c.refracted, &c.edge) {
-        (None, _) => matches!(terms_of(c), Err(TermUnread::HeldCoset)),
-        (Some(_), None) => true,
-        (Some(_), Some(_)) => false,
-    });
-    note_construction_outcome(match coset {
-        true => "docketed without residue: held coset",
-        false => "docketed without residue: transport unread",
-    });
-    None
+    paths_carried(faces, vertices, lp)?.scoped().find_map(|(_, c)| c.composite())
 }

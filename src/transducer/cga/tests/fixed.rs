@@ -74,22 +74,9 @@ fn a_hyperbolic_modes_poles_are_read_when_rational_and_named_when_not() {
     assert!(cga::centre_of(&tilted, 3).label().contains("Q(√72/49)"));
 }
 
-/// 73.1 — AN ORBIT IS READ WHOLE: a turn on the grid plane is a resonant
-/// orbit on `e12`, its precession written in canonical coordinates, and a
-/// translation is an escape whose centre is at infinity.
+/// 73.1 — A TRANSLATION'S CENTRE IS AT INFINITY.
 #[test]
-fn an_orbit_reads_its_type_plane_precession_and_centre() {
-    use crate::transducer::sentence::OrbitReading;
-    let turn = cga::rotator(&q(0), &q(1));
-    let r = OrbitReading::of(&turn, 3, &mut super::common::budget());
-    assert!(r.kind.starts_with("resonant"), "{}", r.line());
-    assert_eq!(r.planes, vec![cga::E1 | cga::E2], "{}", r.line());
-    assert!(r.line().contains("precession [e12 1]"), "{}", r.line());
-    let slide = OrbitReading::of(&cga::translator_at(&[q(1), q(0), q(0)]), 3, &mut super::common::budget());
-    assert!(slide.kind.starts_with("escape"), "{}", slide.line());
-    assert!(matches!(slide.centre, Centre::AtInfinity { .. }), "{}", slide.line());
-    // PC1: its precession occupies one parabolic plane, read by the census's
-    // own reader, and no turn.
-    assert!(slide.planes.is_empty(), "{}", slide.line());
-    assert_eq!(slide.parabolic, vec![(1, cga::Pole::Infinity)], "{}", slide.line());
+fn a_translations_centre_is_at_infinity() {
+    let slide = cga::translator_at(&[q(1), q(0), q(0)]);
+    assert!(matches!(cga::centre_of(&slide, 3), Centre::AtInfinity { .. }));
 }

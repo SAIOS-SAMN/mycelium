@@ -29,55 +29,6 @@ use num_traits::{One, Zero};
 
 type Q = num_rational::BigRational;
 
-/// What hearing reads, counted by name: the rings heard (a ring whose
-/// closure is unread has no size and is not heard), those that return, the
-/// outer and leftover rings, the seats whole and tilted, each tilted seat's
-/// echoes by their kind, and the perceptions of two or more rings in balance
-/// or not.
-/// 78.112 H6: the harmonic rings met by a seen ray among their spaces, the
-/// rays met, those advancing the ring along its axis (the twist), and those
-/// crossing its plane (the impact). H7a: the released torsion vented into
-/// the voice's field.
-pub const HEARING: [&str; 19] = [
-    "rings heard",
-    "rings returning",
-    "outer rings",
-    "seated whole",
-    "seated with a tilt",
-    "leftover rings",
-    "echo a turn",
-    "echo a gain",
-    "echo a spiral",
-    "echo a delay",
-    "echo unread",
-    "perceptions balanced",
-    "perceptions unbalanced",
-    "rings in orbit",
-    "rays met",
-    "rays advancing",
-    "rays crossing",
-    "torsion vented into the field",
-    "perceptions wound with torsion",
-];
-
-static HEARD: [std::sync::atomic::AtomicU64; 19] = [const { std::sync::atomic::AtomicU64::new(0) }; 19];
-
-/// 78.112 H7a — one released motion vented into the voice's field.
-pub fn note_vented() {
-    note("torsion vented into the field");
-}
-
-fn note(name: &str) {
-    if let Some(i) = HEARING.iter().position(|n| *n == name) {
-        let _ = HEARD[i].fetch_update(std::sync::atomic::Ordering::Relaxed, std::sync::atomic::Ordering::Relaxed, |n| n.checked_add(1));
-    }
-}
-
-/// The [`HEARING`] row since the process began.
-pub fn hearing_tally() -> [u64; 19] {
-    std::array::from_fn(|i| HEARD[i].load(std::sync::atomic::Ordering::Relaxed))
-}
-
 /// A RING'S SIZE: its return, or none — the carrier.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Size {
@@ -284,12 +235,11 @@ pub fn orbit(rings: &[&Composition], budget: &mut crate::physics::Budget) -> Vec
     out
 }
 
-/// One perception's rings heard: their nesting, and (H7b) the torsion the
-/// hearing wound — every crossing composed as one strain, in the order the
-/// rings were heard; `None` where no ray crossed a plane.
+/// One perception's rings heard: (H7b) the torsion the hearing wound — every
+/// crossing composed as one strain, in the order the rings were heard;
+/// `None` where no ray crossed a plane.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Heard {
-    pub nesting: Nesting,
     pub wound: Option<Mv>,
 }
 
@@ -306,71 +256,8 @@ pub fn wind(met: &[InOrbit]) -> Option<Mv> {
         })
 }
 
-/// H1, H2, H6, H7b AT THE VOICE: one perception's rings heard and counted on
-/// the [`HEARING`] row, the encounters of H6 on the encounter row, and the
-/// torsion the hearing wound handed back for the perception's vertex.
+/// H6, H7b AT THE VOICE: one perception's rings met by its seen rays, and
+/// the torsion the hearing wound handed back for the perception's vertex.
 pub fn hear(rings: &[&Composition], budget: &mut crate::physics::Budget) -> Heard {
-    use crate::transducer::cech::note_encounter;
-    let met = orbit(rings, budget);
-    let mut in_orbit: Vec<usize> = met.iter().map(|m| m.ring).collect();
-    in_orbit.dedup();
-    for _ in &in_orbit {
-        note("rings in orbit");
-    }
-    for m in &met {
-        note("rays met");
-        if !m.advance.is_zero() {
-            note("rays advancing");
-        }
-        if !m.crossing.is_zero() {
-            note("rays crossing");
-        }
-        match &m.encounter {
-            Ok(e) => {
-                note_encounter("encounters read");
-                note_encounter(match (e.fell_to_drag, e.tilts()) {
-                    (true, _) => "lift fell to drag",
-                    (false, true) => "lift tilts",
-                    (false, false) => "lift a rate only",
-                });
-            }
-            Err(_) => note_encounter("encounters unread"),
-        }
-    }
-    let n = nest(rings, budget);
-    for (seat, r) in n.seats.iter().zip(rings) {
-        if *seat == Seat::Unheard {
-            continue;
-        }
-        note("rings heard");
-        if r.closure.closes() {
-            note("rings returning");
-        }
-        match seat {
-            Seat::Outer => note("outer rings"),
-            Seat::Whole => note("seated whole"),
-            Seat::Leftover => note("leftover rings"),
-            Seat::Tilted(echoes) => {
-                note("seated with a tilt");
-                for e in echoes {
-                    note(match e {
-                        Echo::Turn => "echo a turn",
-                        Echo::Gain => "echo a gain",
-                        Echo::Spiral => "echo a spiral",
-                        Echo::Delay => "echo a delay",
-                        Echo::Whole | Echo::Unread => "echo unread",
-                    });
-                }
-            }
-            Seat::Unheard => {}
-        }
-    }
-    if n.seats.iter().filter(|s| **s != Seat::Unheard).count() > 1 {
-        note(if n.balanced { "perceptions balanced" } else { "perceptions unbalanced" });
-    }
-    let wound = wind(&met);
-    if wound.is_some() {
-        note("perceptions wound with torsion");
-    }
-    Heard { nesting: n, wound }
+    Heard { wound: wind(&orbit(rings, budget)) }
 }

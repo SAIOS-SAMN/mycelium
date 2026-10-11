@@ -17,39 +17,6 @@ fn json(a: u8, b: u8, c: u8) -> String {
     )
 }
 
-/// 78.55 — THE LANGUAGE DERIVES WHAT IT WAS NOT TOLD. A mind taught two
-/// ruled colour words, {1→2} and {2→3}, derives {1→3} — their composite in
-/// the symmetric inverse monoid — and {2→1}, an inverse, from its language
-/// alone; it derives nothing its words do not compose to ({1→4}); and the
-/// composite of partial injections never merges two hues.
-#[test]
-fn a_mind_derives_a_colour_relation_its_ruled_words_compose_to() {
-    use crate::transducer::element::{colour_word, compose_fibre, invert_fibre};
-    assert_eq!(compose_fibre(&[(2, 3)], &[(1, 2)]), Some(vec![(1, 3)]), "defined where the first moves and the second moves that");
-    assert_eq!(compose_fibre(&[(2, 1)], &[(1, 2)]), None, "a hue returned to itself moves nothing");
-    assert_eq!(invert_fibre(&[(1, 2), (3, 1)]), vec![(1, 3), (2, 1)]);
-    let mut k = Kernel::new();
-    let mut mind = crate::client::sdk::Entity::open("127.0.0.1:1", crate::client::sdk::Kernel::named("deducer"));
-    for (task, (from, to)) in [(10u8, (1u8, 2u8)), (11, (2, 3))] {
-        let family = vec![(vec![vec![from, from]], vec![vec![to, to]])];
-        let word = colour_word(&[(from, to)]).expect("a colour word");
-        let tid = [task; 32];
-        k.bind_task_family(tid, family);
-        assert_eq!(k.perceive_speech([1; 32], &tid, std::slice::from_ref(&word)), vec![crate::anastome::dialogue::SPEECH_STOOD]);
-        k.rule_all_provisionals();
-        k.enroll([2; 32], [8, 8, 8, 8]);
-        k.confirm_peer_holds_addrs(std::slice::from_ref(&word.address()), [2; 32]);
-        let page = k.serve_syllabus(&[word.address().as_bytes().to_vec()], [7; 32], 1 << 20);
-        let [taught] = page.words.as_slice() else { panic!("served") };
-        let mut budget = mind.stroke_n(1 << 16);
-        assert!(mind.absorb_taught_at(&taught.word, Some(taught.at), &mut budget).is_some(), "learned");
-    }
-    let mut budget = mind.stroke_n(1 << 16);
-    assert!(mind.colour_derivation(&[(1, 3)], &mut budget), "the composite is derived");
-    assert!(mind.colour_derivation(&[(2, 1)], &mut budget), "an inverse is derived");
-    assert!(!mind.colour_derivation(&[(1, 4)], &mut budget), "nothing the words do not compose to");
-}
-
 /// 78.55 — A THEOREM STANDS BY ITS PROOF. With {1→2} and {2→3} installed,
 /// the derived word {1→3} — citing them — is the same word a scene would
 /// witness (the citation is outside the address), and the court admits it

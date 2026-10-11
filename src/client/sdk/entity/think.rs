@@ -124,7 +124,6 @@ impl Entity {
             let _ = self.speak_word(&word, budget);
         }
         if let Some(sentence) = open {
-            crate::transducer::sentence::rung::note_open_spoken();
             let _ = self.speak_with(std::slice::from_ref(&sentence), train, family, budget);
         }
         // 78.109 K1 — THE MIND MAKES ITS LETTER. A word its own sentence taught
@@ -164,9 +163,6 @@ impl Entity {
             .collect();
         if !lines.is_empty() {
             mark_flux(&[], &lines, budget);
-            for _ in &lines {
-                crate::transducer::sentence::hearing::note_vented();
-            }
         }
         lines.len()
     }
@@ -186,8 +182,7 @@ impl Entity {
         chart: Option<&crate::transducer::stalk::Invariant>,
         budget: &mut crate::physics::Budget,
     ) {
-        use crate::transducer::cga::{construct, modes_need, note_construction_outcome, refusal_name};
-        note_construction_outcome("residues taken");
+        use crate::transducer::cga::{construct, modes_need};
         // 78.111 C1b — the stroke the residue's modes need, read off the
         // residue: its construction is never refused for a stroke sized for
         // something else. Where there is none to read (no versor, or a need
@@ -197,18 +192,15 @@ impl Entity {
             Some(n) => self.physics.stroke_n(n),
             None => self.physics.stroke_n(0),
         };
-        if let Err(why) = construct(residue, &mut need) {
-            note_construction_outcome(refusal_name(&why));
+        if construct(residue, &mut need).is_err() {
             return;
         }
-        note_construction_outcome("constructed");
         let rotor = crate::transducer::element::conformal_factors(residue)
             .ok()
             .and_then(|f| crate::transducer::element::rotor_of_factors(&f).ok())
             .filter(|r| !r.projective_eq(&crate::transducer::alphabet::Rotor::identity()));
         match (rotor, chart) {
             (Some(r), Some(c)) => {
-                note_construction_outcome("adjoined as letters");
                 self.adjoin_letters(&vec![(r, c.clone())], budget);
                 self.contemplation.own_letter(residue);
             }
@@ -217,17 +209,15 @@ impl Entity {
             // a point), stood in the mind's dialect and spoken — the court
             // verifies and hardens it or refuses by name (C4) — and kept, so
             // the cell that demanded it is answered by it from here on.
-            (None, Some(c)) => match crate::transducer::sentence::motion_letter_form(residue, c, &[]) {
-                Some(e) => {
-                    note_construction_outcome("adjoined as motion letters");
+            (None, Some(c)) => {
+                if let Some(e) = crate::transducer::sentence::motion_letter_form(residue, c, &[]) {
                     self.contemplation.own_letter(residue);
                     if !self.already_taught(&e) {
                         self.stand_crystallized(&e, budget);
                     }
                 }
-                None => note_construction_outcome("constructed, no rotation to adjoin"),
-            },
-            (_, None) => note_construction_outcome("constructed, no rotation to adjoin"),
+            }
+            (_, None) => {}
         }
     }
 
@@ -243,9 +233,8 @@ impl Entity {
                 Some(l) if l.key() <= c.key() => Some(l),
                 _ => Some(c),
             });
-            match residue {
-                Some(r) => self.construct_and_adjoin(&r, least, budget),
-                None => crate::transducer::cga::note_construction_outcome("residues absent"),
+            if let Some(r) = residue {
+                self.construct_and_adjoin(&r, least, budget);
             }
         }
     }
@@ -277,14 +266,8 @@ impl Entity {
         use crate::transducer::sentence::rung::Transcribed;
         let mut words = Vec::new();
         for ground in self.contemplation.take_closed() {
-            match self.transcribe(&ground.generator, ground.period, budget) {
-                (Transcribed::Spelled, Some(word)) => {
-                    self.transcription.spelled += 1;
-                    words.push(word);
-                }
-                (Transcribed::Spelled | Transcribed::Adjoined, _) => self.transcription.adjoined += 1,
-                (Transcribed::Ineffable, _) => self.transcription.ineffable += 1,
-                (Transcribed::Unread, _) => self.transcription.unread += 1,
+            if let (Transcribed::Spelled, Some(word)) = self.transcribe(&ground.generator, ground.period, budget) {
+                words.push(word);
             }
         }
         words
@@ -311,22 +294,15 @@ impl Entity {
         taught: Vec<crate::transducer::sentence::rung::Taught>,
         budget: &mut crate::physics::Budget,
     ) -> (Vec<Element>, Vec<crate::transducer::cga::Mv>) {
-        use crate::transducer::sentence::rung::{note_transcribed, Taught, Transcribed};
+        use crate::transducer::sentence::rung::{Taught, Transcribed};
         let mut words = Vec::new();
         let mut ineffable = Vec::new();
         for Taught { motion, period } in taught {
             match self.transcribe(&motion, period, budget) {
-                (Transcribed::Spelled, Some(word)) => {
-                    note_transcribed(Transcribed::Spelled);
-                    words.push(word);
-                }
-                (Transcribed::Spelled, None) => note_transcribed(Transcribed::Adjoined),
-                (Transcribed::Ineffable, _) => {
-                    note_transcribed(Transcribed::Ineffable);
-                    // Its whole motion: the residue the mind constructs.
-                    ineffable.push(motion.clone());
-                }
-                (read, _) => note_transcribed(read),
+                (Transcribed::Spelled, Some(word)) => words.push(word),
+                // Its whole motion: the residue the mind constructs.
+                (Transcribed::Ineffable, _) => ineffable.push(motion.clone()),
+                _ => {}
             }
         }
         (words, ineffable)
@@ -854,6 +830,7 @@ impl Entity {
         m
     }
 
+    /// The sizes of the carriers this entity owns, by count.
     #[cfg(test)]
     pub(crate) fn carriers(&self) -> [usize; 10] {
         [
@@ -869,5 +846,4 @@ impl Entity {
             self.epigenome.stroke_k.len(),
         ]
     }
-
 }

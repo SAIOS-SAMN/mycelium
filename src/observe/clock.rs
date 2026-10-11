@@ -108,44 +108,18 @@ impl Orbits {
     }
 }
 
-/// ONE MIND ON THE CLOCK (78.21(3), 78.49): its own `K`, the court it last
-/// heard, its genome's write, its radius — no orbits against other signers,
-/// since a voice seals nothing.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct VoiceClock {
-    /// Its own `K`: the orbits the mind acted in.
-    pub k: u64,
-    /// Its court's height when it last heard it.
-    pub heard: u64,
-    /// The court's height it had heard, and its own `K`, when its genome
-    /// was last written whole.
-    pub persisted: Option<(u64, u64)>,
-    /// ITS RADIUS (78.23 as amended): LC1's dialect span read as the
-    /// deepest A21 prefix its genome's charts reach — the most axes any
-    /// stratum's chart carries. Read with the curve, once.
-    pub radius: u64,
-    /// 78.152 TU-7 — THE TUNIVERSAL POINT IT KEEPS TIME BY: the last final
-    /// point its door replies carried, `origin/h:S:G:T:H:K`, whole; `None`
-    /// before the first.
-    pub point: Option<crate::chronometry::tuniversal::TPoint>,
-}
-
-/// ACT1'S READING: a node on the clock, a court or a voice. The court's is
-/// held behind a box: it carries its peers and its rulings per arm, and a
-/// voice's reading does not pay for their room.
+/// ACT1'S READING: a court on the clock, held behind a box: it carries its
+/// peers and its rulings per arm. A mind reports nothing about itself.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Clock {
     Court(Box<CourtClock>),
-    Voice(VoiceClock),
 }
 
 impl Clock {
-    /// The node's height on TUniversal: a court's head, a voice's court as
-    /// last heard.
+    /// The node's height on TUniversal: a court's head.
     pub fn height(&self) -> u64 {
         match self {
             Clock::Court(c) => c.head[0],
-            Clock::Voice(v) => v.heard,
         }
     }
 
@@ -153,7 +127,6 @@ impl Clock {
     pub fn k(&self) -> u64 {
         match self {
             Clock::Court(c) => c.k,
-            Clock::Voice(v) => v.k,
         }
     }
 
@@ -203,20 +176,6 @@ impl Clock {
                     u64s(out, arm);
                 }
                 c.orbits.put(out)
-            }
-            Clock::Voice(v) => {
-                out.push(1);
-                u64s(out, &[v.k, v.heard]);
-                pair(out, v.persisted);
-                u64s(out, &[v.radius]);
-                match &v.point {
-                    None => out.push(0),
-                    Some(t) => {
-                        out.push(1);
-                        t.put(out);
-                    }
-                }
-                Some(())
             }
         }
     }
@@ -305,17 +264,6 @@ impl Clock {
                     ruling_refusals,
                     orbits,
                 })))
-            }
-            1 => {
-                let (k, heard) = (u64_at(b, p)?, u64_at(b, p)?);
-                let persisted = pair(b, p)?;
-                let radius = u64_at(b, p)?;
-                let point = match byte(b, p)? {
-                    0 => None,
-                    1 => Some(crate::chronometry::tuniversal::TPoint::take(b, p)?),
-                    _ => return None,
-                };
-                Some(Clock::Voice(VoiceClock { k, heard, persisted, radius, point }))
             }
             _ => None,
         }

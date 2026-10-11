@@ -43,7 +43,7 @@ fn traversed(steps: Vec<(u64, bool)>, composite: Option<crate::transducer::cga::
     let unread = composite.is_none().then_some(crate::transducer::cech::CircuitUnread::NotRigid);
     let hue = composite.is_some().then(Vec::new);
     let steps = steps.into_iter().map(|(n, forward)| (face(n), forward)).collect();
-    crate::transducer::sentence::TraversedCircuit { steps, composite, hue, unread, coset: None, gauge_static: false }
+    crate::transducer::sentence::TraversedCircuit { steps, composite, hue, unread }
 }
 
 /// One body per member, each a single cube at `site`.
@@ -137,84 +137,6 @@ fn a_circuit_crosses_a_cell_by_the_body_pair_of_the_face_it_steps_over() {
     assert_eq!(p.order, vec![1, 0], "the circuit's own order, read off the step's way");
 }
 
-/// PG1, RC2 — THE PERCEPT'S TYPED READINGS AGREE WITH ONE ANOTHER AND ARE
-/// HELD UNTIL TAKEN: the progress's cells by grade are the typed cells'
-/// own, and the census's tally is read off the same cells; a second
-/// percept's cells replace the first's while its spend and progress sum
-/// onto them, reader by reader and grade by grade (78.16).
-#[test]
-fn the_percepts_readings_agree_and_are_held_until_taken() {
-    use crate::transducer::cga::{self, Mv};
-    use crate::transducer::family::comprehend;
-    let q = |n: i64| num_rational::BigRational::from_integer(n.into());
-    let (p, r) = (vec![1u8], vec![2u8]);
-    let mut form = crate::transducer::sentence::Form::default();
-    let nuclei = vec![Mv::blade(cga::E1, q(1)), Mv::blade(cga::E2, q(1))];
-    let cell = crate::transducer::sentence::FormCell { bodies: vec![p.clone(), r.clone()], witnesses: Vec::new(), nuclei: Some(nuclei) };
-    form.cells.insert([0u8], cell);
-    form.face_bodies.put(&face(0), (p, r));
-    let circuits = vec![traversed(vec![(0u64, true)], Some(cga::rotator(&q(1), &q(1)))), traversed(vec![(0u64, false)], None)];
-    let mut stroke = crate::physics::Physics::default().stroke_n(1 << 16);
-    let comprehension = comprehend::comprehend(&form, &circuits, &mut stroke);
-    let cells = comprehend::cells_reading(&comprehension);
-    let progress = comprehend::progress(&form, &circuits, &cells);
-    let [g] = progress.grades.as_slice() else { panic!("one grade: {:?}", progress.grades) };
-    assert_eq!((g.grade, g.cells), (1, 1), "the progress's cells are the typed cells'");
-    let kept = cells.cells.iter().filter(|c| c.round == crate::observe::CellRound::Kept).count() as u64;
-    assert_eq!(g.round_kept, kept, "the round kept is the typed cells' own arm");
-    assert_eq!(progress.contact_cycles, 0, "a circuit over no contact face is no contact cycle");
-    assert!(super::tally::CellTally::of(&cells).line().starts_with("cells: grade 1: "), "the census reads the same cells");
-
-    let spend = |reads| crate::observe::Spend { percepts: 1, reads, unbounded: [0; 5] };
-    let _ = crate::transducer::family::take_cells();
-    let _ = crate::transducer::family::take_spend();
-    let _ = crate::transducer::family::take_progress();
-    let _ = crate::transducer::family::take_viscosity();
-    comprehend::hold(crate::observe::Cells::default(), Default::default(), spend([1, 2, 3, 4, 5]), progress.clone());
-    comprehend::hold(cells.clone(), Default::default(), spend([10, 0, 0, 0, 1]), progress);
-    assert_eq!(crate::transducer::family::take_cells(), Some(cells), "the last percept's cells stand");
-    let held = crate::transducer::family::take_spend().expect("a spend held");
-    assert_eq!((held.percepts, held.reads), (2, [11, 2, 3, 4, 6]), "spend sums reader by reader");
-    let held = crate::transducer::family::take_progress().expect("a progress held");
-    assert_eq!((held.percepts, held.grades[0].cells), (2, 2), "progress sums grade by grade");
-    assert_eq!(crate::transducer::family::take_spend(), None, "a taken reading is no longer held");
-}
-
-/// EN1 — EACH CELL'S ENCLOSURE AGAINST THE FORM'S OTHER BODIES: the cell of
-/// three bodies at `(0,0,0), (2,0,0), (0,2,0)` joins the round about
-/// `(1,1,0)`, `ρ² = 2`; of the form's other bodies the small one at
-/// `(1,½,0)` is inside it and the rest apart. The pair cell of that small
-/// body and one at `(10,0,0)` joins the round on their diameter, about
-/// `(11/2,¼,0)`: `(2,0,0)` is inside it. The two rounds cut, so neither is
-/// parsed within the other; three collinear centres span no round.
-#[test]
-fn each_cell_reads_its_enclosure_against_the_forms_other_bodies() {
-    use crate::observe::CellEnclosure;
-    use crate::transducer::cga::sphere_at;
-    let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
-    let body = |x: i64, y: i64, r2| sphere_at(&[q(x, 1), q(y, 1), q(0, 1)], &r2);
-    let cell = |pieces: &[u8], nuclei: Vec<crate::transducer::cga::Mv>| crate::transducer::sentence::FormCell {
-        bodies: pieces.iter().map(|&p| vec![p]).collect(),
-        witnesses: Vec::new(),
-        nuclei: Some(nuclei),
-    };
-    let quarter = q(1, 4);
-    let mut form = crate::transducer::sentence::Form::default();
-    form.cells.insert([0u8], cell(&[1, 2, 3], vec![body(0, 0, quarter.clone()), body(2, 0, quarter.clone()), body(0, 2, quarter.clone())]));
-    let small = sphere_at(&[q(1, 1), q(1, 2), q(0, 1)], &q(1, 100));
-    form.cells.insert([1u8], cell(&[4, 5], vec![small, body(10, 0, quarter.clone())]));
-    form.cells.insert([2u8], cell(&[6, 7, 8], vec![body(0, 5, quarter.clone()), body(1, 5, quarter.clone()), body(2, 5, quarter)]));
-    let read = crate::transducer::family::comprehend::read_enclosures(&form);
-    assert_eq!(
-        read,
-        vec![
-            Some(CellEnclosure::Round { bodies: [1, 0, 4, 0, 0], within: None }),
-            Some(CellEnclosure::Round { bodies: [1, 0, 5, 0, 0], within: None }),
-            Some(CellEnclosure::Flat),
-        ]
-    );
-}
-
 /// THE PAIRWISE READING OF THE SAME THREE CARRIES NO GRADE-3 CONTENT
 /// (72.1b): each body taken once per tether and revisited around the loop,
 /// `V_ca V_bc V_ab = s_a s_c s_c s_b s_b s_a` is a scalar — the square the
@@ -243,39 +165,3 @@ fn at_four_axes_four_bodies_at_one_element_mint_a_three_cell() {
     assert!(!c.meet().expect("each nucleus reads").grade(4).is_zero(), "their meet is a grade-4 blade");
 }
 
-/// 78.26(2), R1 — A BRACKET IS HELD BY AN ENCLOSURE OVER ANY CELLS ITS PAIR
-/// SPANS. Circuit 0 (a 90° turn in `e₁₂`) crosses cells A and A′; circuit
-/// 1 (a 90° turn in `e₂₃`) crosses C; the enclosure W wraps A′ and C,
-/// never A, and W's algebra is the one circuits 2 and 3 (the same two turns)
-/// generate, which contains their bracket. Decided at the first cells the
-/// pair spans, (A, C), nothing wraps both and the pair would read LOST; over
-/// the union it is HELD. Circuits 2 and 3 cross W alone, so their pair is
-/// W's own; the pairs of circuit 0 with 3 and of 1 with 2 are held by W over
-/// (A′, W) and (C, W); 0 with 2 and 1 with 3 commute.
-#[test]
-fn a_bracket_is_held_by_an_enclosure_over_any_cells_its_pair_spans() {
-    use crate::transducer::cga::{self, E1, E2, E3};
-    let q = |n: i64| num_rational::BigRational::from_integer(n.into());
-    let across = cga::rotator_on_blade(&q(1), &q(1), E2 | E3);
-    let turn = cga::rotator_on_blade(&q(1), &q(1), E1 | E2).widened(across.n());
-    let stroke = || crate::physics::Physics::default().stroke_n(1 << 16);
-    let cell = |hs: Vec<crate::transducer::cga::Mv>| {
-        use crate::transducer::cech::CellCircuit;
-        let circuits: Vec<CellCircuit> = hs
-            .into_iter()
-            .enumerate()
-            .map(|(i, h)| CellCircuit { ring: CellCircuit::ring_of(&[(face(u64::try_from(i).expect("a fixture of a handful of circuits")), true)]), holonomy: Ok(h), hue: Some(Vec::new()) })
-            .collect();
-        crate::transducer::cech::read_cell(1, None, None, &circuits, &[], &mut stroke())
-    };
-    // A, A′, C, W.
-    let algebras = vec![cell(vec![turn.clone()]), cell(vec![turn.clone()]), cell(vec![across.clone()]), cell(vec![turn, across])];
-    let crossed = vec![vec![0], vec![0], vec![1], vec![2, 3]];
-    let parents = vec![None, Some(3), Some(3), None];
-    let b = crate::transducer::family::comprehend::bracket_over(&crossed, &crossed, &algebras, &parents);
-    assert_eq!(
-        (b.held, b.lost, b.unread),
-        (3, 0, 0),
-        "held by W over the cells each pair spans, never lost at the first two"
-    );
-}

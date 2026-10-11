@@ -38,202 +38,6 @@ use super::pieces::pieces_of;
 use super::*;
 use crate::network::nerve::coord;
 
-/// WHAT THE COVERS OF ONE WALK READ. An instrument and nothing else: no
-/// cognition reads it, no branch consults it, and it is taken and cleared
-/// by the walker that prints it (§8.1 instrumentation).
-///
-/// It exists because the cover's readings do not survive into the form.
-/// A filed class becomes torsion, a refused carriage becomes a demand
-/// vertex the soak already counts — but a cover that COMPLETED and found
-/// nothing, and the reads a cover spent, leave no trace in content, and
-/// without them `simplices filled 0` cannot be told from `no cover ran`.
-#[derive(Default, Clone, Copy)]
-pub struct CoverTally {
-    /// Covers that ran to the end of their pieces, and covers whose share
-    /// ended first.
-    pub measured: u64,
-    pub unmeasured: u64,
-    /// COVERS STILL PARKED at the end of the walk (L20): a stroke ended
-    /// inside them and the placements are held for the next one. Read off
-    /// the cursor's own carrier at the end and counted nowhere, so it
-    /// cannot disagree with what is actually held. An `unmeasured` that
-    /// leaves nothing pending was re-covered from the first piece; one
-    /// that leaves a pending entry will resume.
-    pub pending: usize,
-    /// Reads spent inside covers, apart from the peel's own.
-    pub spend: u64,
-    /// CARRIAGE ATTEMPTS MADE BY PROPAGATION — pass (b). One per (distinct
-    /// placed versor, unplaced piece) whose image names one output piece,
-    /// so it is bounded by `placed × unplaced` and is zero where the
-    /// pullback placed nothing. The pass it replaces tried `ins × outs`
-    /// and this counter is how that cannot come back unseen.
-    pub propagated: u64,
-    /// Carriages placed and 1-simplices of the nerve recorded.
-    pub carried: u64,
-    pub meets: u64,
-    /// MEETS THAT BECAME A FACE CARRYING 50.3's EDGE — the transition
-    /// between the two pieces' own frames. Counted because `flat` alone
-    /// cannot tell an orbit that was evaluated and found flat from an orbit
-    /// whose faces carry no edge to evaluate: without this, wiring the
-    /// edge and not wiring it read the same on the line.
-    pub edges: u64,
-    /// AXIOM B — INTERFACES WHOSE TRANSITION WAS TAKEN AS A GEODESIC
-    /// TRANSVECTION between the two frames' own base points on the sheet,
-    /// and those where a frame did not stand on it.
-    ///
-    /// Counted because the wiring is an `if let`: a frame off the chart
-    /// falls through to `edge_of`'s conformal carriage, and a fallback that
-    /// is not counted is a refusal reported as nothing (rule 11). Without
-    /// these two, Axiom B being live and Axiom B never firing read the same
-    /// on the line — which is the defect `edges` above already exists to
-    /// prevent one level down.
-    pub geodesic: u64,
-    pub off_sheet: u64,
-    /// THE FOOTPRINT'S OWN DISPLACEMENT, offered and reaching the operator
-    /// (54.7, ruled 2026-09-21).
-    ///
-    /// `chords_offered` is every chord the gate emitted; `tau_active` is
-    /// those whose two footprints have DIFFERENT basepoints, so
-    /// `τ = p(D_b) − p(D_a) ≠ 0` and the chord's transport is the
-    /// composition `Ω_frame · T(τ)` rather than the frame transvection
-    /// alone.
-    ///
-    /// Counted because `R = 1 − v_b v_a` has `⟨R⟩₂ = v_a ∧ v_b`, a wedge of
-    /// two vectors and therefore SIMPLE with `I₂ = 0` identically — so a
-    /// corpus of pure transvections reads `non-simple 0` whether or not the
-    /// footprint contributes. Only a composition of two non-parallel boosts
-    /// is non-simple, so without this pair the reading `non-simple 4 of
-    /// 545` cannot distinguish "τ is absent" from "τ is collinear".
-    pub chords_offered: u64,
-    pub tau_active: u64,
-    /// THE THREE WAYS `τ` DOES NOT REACH THE OPERATOR, kept apart because
-    /// they are three different facts and one count of "inactive" reports
-    /// them as one. `tau_unfooted` is a chord end carrying no footprint at
-    /// all; `tau_met` is two footprints standing on one basepoint, so
-    /// `τ = 0` and the identity is the honest transport; `tau_refused` is a
-    /// τ the Cayley transform could not carry, which is a defect and not a
-    /// reading. Only the last is a refusal (rule 11).
-    /// WHETHER THE INTERFACE CARRIED A FRAME (56.5). `framed` is a meet
-    /// whose two supports are related by a proper turn, so `g = θ·γ`;
-    /// `unframed` is one no turn relates — a reflection, a difference of
-    /// shape, or a 45° relation refused as irrational — where `γ` stands
-    /// alone. Counted apart because "the frame never fired" and "the
-    /// frame fired and was the identity" would otherwise read the same,
-    /// which is the defect that let `ℓ = 1` pass as a measurement.
-    pub framed: u64,
-    pub unframed: u64,
-    /// A frame whose 180° turn no even moment can close and whose
-    /// supports differ in cardinality, so no cell test can either (56.5).
-    /// Counted apart from `framed` because it is a PROJECTIVE class, not
-    /// a determined rotor, and reporting the two as one would be the same
-    /// defect as reporting "never fired" and "fired and was identity"
-    /// together.
-    pub frame_open_180: u64,
-    /// FR1 — the pieces whose own pose was read on the tube, the domain or
-    /// the codomain extending off the sensor's plane. The regime, beside the
-    /// three outcomes above, not a fourth.
-    pub pose_tube: u64,
-    pub tau_unfooted: u64,
-    pub tau_met: u64,
-    pub tau_refused: u64,
-    /// THE ORBITS THE FORM CLASSIFIED over those carriages, by their
-    /// reading. They are counted where they are read — on the form, over a
-    /// whole cycle — and not in the cover, which classifies nothing.
-    pub flat: u64,
-    pub filed: u64,
-    pub standing: u64,
-    /// Orbits whose holonomy the seventeen do not spell (37.7).
-    pub unspellable: u64,
-    /// 78.26(5) — orbits evaluated and not measured: a rotor or a rotation it
-    /// was composed from is no versor (`Fill::Unread`).
-    pub orbit_unread: u64,
-    /// Pieces carried geometrically whose rotor the seventeen do not
-    /// spell — the adjunction candidates the cover used to discard.
-    pub refused: u64,
-    /// 53.6 item 3 — WHAT EACH MEET DID AT THE LIFT TO CLASSES.
-    ///
-    /// A meet relates two PIECES; the scene holds classes, so a meet
-    /// becomes incidence the scene can carry only through
-    /// `transport_class`. Three outcomes and they mean different things,
-    /// which is why they are three counters and not one:
-    ///
-    ///   `chords` — the two pieces carry DISTINCT classes, so the meet
-    ///   names a chord between two of the scene's vertices. These are the
-    ///   pairs that span distinct sites, which `named_faces` says
-    ///   in its own comment are "the cycles that carry a class" — and which
-    ///   nothing offered until 54.7.
-    ///
-    ///   `within_class` — both pieces are one class. The meet is real and
-    ///   closes nothing the scene can see; skipping it is correct.
-    ///
-    ///   `unclassed` — a piece carries no transport class at all, so the
-    ///   meet cannot be lifted whatever its geometry. `transport_class`
-    ///   answers only for `Vertex::Word`, and it gates the orbits' ENDS by
-    ///   the same predicate, so this counter reads a blockage that stops
-    ///   the chord and the torsion chord together.
-    ///
-    /// Counted here rather than printed, because a count recovered by
-    /// matching a rendered line is a second carrier of one fact: the text
-    /// can drift from the writer and nothing makes them agree (law 12).
-    /// The line that prints them is a VIEW of this carrier.
-    pub chords: u64,
-    pub within_class: u64,
-    pub unclassed: u64,
-    /// AT1, ruled (a) on the chords — TWO DISTINCT PIECES AT ONE PIECE-CHART:
-    /// one member at one frame, equal nucleus and equal shape moments, and
-    /// yet two carried entries of the cover. The chart's key is fixed-size by
-    /// ruling and is never widened to tell them apart; the second is a
-    /// finding, counted here, and meets nothing as a node of its own.
-    pub piece_collisions: u64,
-    /// §4.4 E8 — A KEY THIS READER WROTE AND COULD NOT READ BACK.
-    ///
-    /// The cover's three carriers are keyed by [`coord::Piece`],
-    /// [`coord::Carriage`] and [`coord::Meet`], each of which decodes or
-    /// refuses. A refusal is this reader failing on its own layout, which
-    /// is a defect and not a reading of the corpus, so it is counted apart
-    /// from every "nothing was there" above: absorbed into one of those it
-    /// would read as an empty cover.
-    pub undecodable: u64,
-}
-
-thread_local! {
-    static TALLY: std::cell::Cell<CoverTally> = std::cell::Cell::new(CoverTally::default());
-}
-
-/// Read the walk's covers and clear the count. `pending` is read from the
-/// cursor's own carrier here and not accumulated as the walk goes: what is
-/// parked at the end IS what is parked, and a counter beside it could say
-/// otherwise (law 12).
-pub fn take_cover_tally() -> CoverTally {
-    let mut t = TALLY.with(|t| t.replace(CoverTally::default()));
-    t.pending = super::cursor::parked();
-    t
-}
-
-/// Count one orbit the FORM classified over the cover's carriages. Called
-/// where the reading happens, which is no longer here.
-pub(crate) fn tally_orbit(fill: &crate::transducer::cech::Fill) {
-    use crate::transducer::cech::Fill;
-    tally(|t| match fill {
-        Fill::Filled(..) => t.flat += 1,
-        Fill::Congruent(..) => t.filed += 1,
-        Fill::Class(..) => t.standing += 1,
-        Fill::Unspellable(..) => t.unspellable += 1,
-        Fill::Unread(_) => t.orbit_unread += 1,
-        // A classified orbit is never unevaluated: `classify` answers every
-        // arm above, and `Open` is the state of a simplex not yet asked.
-        Fill::Open => {}
-    });
-}
-
-pub(crate) fn tally(f: impl Fn(&mut CoverTally)) {
-    TALLY.with(|t| {
-        let mut v = t.get();
-        f(&mut v);
-        t.set(v);
-    });
-}
-
 /// The two supports of one placed carriage: what it was carried FROM and
 /// what it landed on.
 ///
@@ -378,7 +182,6 @@ pub(crate) fn cover_deformation(
     budget: &mut crate::physics::Budget,
 ) -> Result<Cover, Unmeasured> {
     use super::cursor;
-    let opened = budget.remaining();
     let ins = pieces_of(&input.compartments);
     let outs = pieces_of(&image.compartments);
     // WHERE THIS COVER STOPPED, if a stroke stopped it (L20, S13.3). A
@@ -401,7 +204,7 @@ pub(crate) fn cover_deformation(
     // one from a key it was handed.
     let mut occ_in: crate::network::nerve::Keyed<coord::Piece> =
         crate::network::nerve::Keyed::new();
-    let (in_pieces, in_refused) = ins.decoded();
+    let (in_pieces, _) = ins.decoded();
     for (k, p) in &in_pieces {
         for l in &p.body.compartments {
             occ_in.insert(l.site.key(), k.clone());
@@ -411,22 +214,13 @@ pub(crate) fn cover_deformation(
     let mut placed = std::mem::replace(&mut st.placed, crate::network::nerve::Keyed::new());
     let mut consumed = std::mem::replace(&mut st.consumed, crate::network::nerve::Keyed::new());
     let mut reached = std::mem::replace(&mut st.reached, crate::network::nerve::Keyed::new());
-    // A KEY THAT DID NOT DECODE IS A READING (rule 11). Both peels write
-    // their own [`coord::Piece`] keys, so a refusal here is this reader
-    // failing to read back what it wrote and is counted where it happens —
-    // never absorbed into "no pieces", which is a different fact.
-    let (out_pieces, out_refused) = outs.decoded();
-    let undecodable = (in_refused.len() + out_refused.len()) as u64;
-    if undecodable > 0 {
-        tally(|t| t.undecodable += undecodable);
-    }
+    let (out_pieces, _) = outs.decoded();
     let out_keys: Vec<coord::Piece> = out_pieces.iter().map(|(k, _)| k.clone()).collect();
     // THE PARK, written once: everything the stroke MEASURED, and nothing
     // about where it was. It is taken by value, so there is one place a
     // half-run cover is stored and no site can forget a carrier.
     macro_rules! park {
         () => {{
-            tally(|t| t.unmeasured += 1);
             cursor::park(&ckey, cursor::Pending { cover, placed, consumed, reached });
             return Err(Unmeasured);
         }};
@@ -461,10 +255,7 @@ pub(crate) fn cover_deformation(
         // is why they need not (50.8).
         let mut compartments: Vec<Compartment> = Vec::new();
         let mut parts: Vec<coord::Piece> = Vec::new();
-        let (named_pieces, named_refused) = named.decoded();
-        if !named_refused.is_empty() {
-            tally(|t| t.undecodable += named_refused.len() as u64);
-        }
+        let (named_pieces, _) = named.decoded();
         for (ki, ()) in named_pieces {
             let Some(ip) = ins.at(&ki) else { continue };
             compartments.extend_from_slice(&ip.body.compartments);
@@ -579,10 +370,7 @@ pub(crate) fn cover_deformation(
             // image boundary.
             let mut compartments: Vec<Compartment> = Vec::new();
             let mut parts: Vec<coord::Piece> = Vec::new();
-            let (named_pieces, named_refused) = named.decoded();
-            if !named_refused.is_empty() {
-                tally(|t| t.undecodable += named_refused.len() as u64);
-            }
+            let (named_pieces, _) = named.decoded();
             for (ko, ()) in named_pieces {
                 let Some(op) = outs.at(&ko) else { continue };
                 compartments.extend_from_slice(&op.body.compartments);
@@ -613,7 +401,6 @@ pub(crate) fn cover_deformation(
             if !budget.spend() {
                 park!();
             }
-            tally(|t| t.propagated += 1);
             let Some(car) = carriage(&ip.body, &img, budget) else { continue };
             // As in the pullback: a confirmed carriage whose rotor does not
             // spell is 37.7, and it is carried out rather than dropped.
@@ -695,10 +482,7 @@ pub(crate) fn cover_deformation(
     // coordinates overlap, and this reading now says so.
     let mut occ: crate::network::nerve::Keyed<Vec<coord::Carriage>> =
         crate::network::nerve::Keyed::new();
-    let (placed_carriages, placed_refused) = placed.decoded();
-    if !placed_refused.is_empty() {
-        tally(|t| t.undecodable += placed_refused.len() as u64);
-    }
+    let (placed_carriages, _) = placed.decoded();
     for (k, p) in &placed_carriages {
         for (side, support) in [(0u8, &p.domain), (1u8, &p.codomain)] {
             for s in support.iter() {
@@ -755,15 +539,5 @@ pub(crate) fn cover_deformation(
             }
         }
     }
-    // Exact, not saturating: a budget's remaining only falls, so the
-    // opening read is never below the closing one (rule 11).
-    let spent = (opened - budget.remaining()) as u64;
-    tally(|t| {
-        t.measured += 1;
-        t.spend += spent;
-        t.carried += cover.carried.scoped().count() as u64;
-        t.meets += cover.meets.scoped().count() as u64;
-        t.refused += cover.refused.scoped().count() as u64;
-    });
     Ok(cover)
 }

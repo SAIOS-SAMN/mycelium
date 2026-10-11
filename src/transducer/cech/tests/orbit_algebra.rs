@@ -318,18 +318,15 @@ fn the_holonomy_algebra_closes_under_the_commutator() {
 /// 78.110 E2 — THE CIRCUITS CROSSING ONE CELL MEET, BOTH WAYS. Two read
 /// circuits — a turn on `e₁e₂`, and one turning on `e₁e₂` and `e₂e₃` at
 /// once — are each the orbit against the other as neighbour: two
-/// encounters, each read, and the one met by the anticommuting part tilts.
-/// Asked of the cell's circuits directly — never on its reading path.
+/// encounters, and the one met by the anticommuting part tilts.
 #[test]
 fn the_circuits_crossing_a_cell_meet_both_ways() {
     let one = Mv::scalar(q(1, 1));
     let turn = one.add(&Mv::blade(E1 | E2, q(1, 1)));
     let screwed = one.add(&Mv::blade(E1 | E2, q(1, 1))).add(&Mv::blade(E2 | E3, q(1, 1)));
-    let before = encounter_tally();
-    read_encounters(&[&turn, &screwed], &mut stroke());
-    let after = encounter_tally();
-    let at_name = |n: &str| ENCOUNTER.iter().position(|x| *x == n).expect("a named slot");
-    let grew = |n: &str| after[at_name(n)] - before[at_name(n)];
-    assert!(grew("encounters read") + grew("encounters unread") >= 2, "each against the other: {before:?} → {after:?}");
-    assert!(grew("lift tilts") >= 1, "the anticommuting part tilts the orbit it meets");
+    let read = [cga::encounter(&turn, &screwed, &mut stroke()), cga::encounter(&screwed, &turn, &mut stroke())];
+    assert!(
+        read.iter().any(|e| e.as_ref().is_ok_and(|e| !e.fell_to_drag && e.tilts())),
+        "the anticommuting part tilts the orbit it meets"
+    );
 }

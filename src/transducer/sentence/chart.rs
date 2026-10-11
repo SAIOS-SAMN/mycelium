@@ -15,24 +15,6 @@ use crate::network::nerve::{coord, Coordinate, Keyed};
 use crate::transducer::alphabet::Word;
 use crate::transducer::element::{Element, Versor};
 
-thread_local! {
-    /// HOW MANY TIMES A FORM WAS RETRACTED, so a pass that claims to retract
-    /// once can be asked rather than believed (rule 13). A plain counter:
-    /// read and never branched on.
-    static RETRACTIONS: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
-}
-
-/// Retractions since the last reset.
-#[cfg(test)]
-pub fn retractions() -> u64 {
-    RETRACTIONS.with(|c| c.get())
-}
-
-#[cfg(test)]
-pub fn reset_retractions() {
-    RETRACTIONS.with(|c| c.set(0));
-}
-
 impl Form {
     /// DROP THE NAMED VERTICES, BY THEIR COORDINATES (AT1), and every overlap
     /// with an end at one of them; the cover loses the bonds whose ports went,
@@ -48,8 +30,6 @@ impl Form {
     /// is no form this build can write, and the caller refuses it.
     #[must_use]
     pub fn retract_vertices(&mut self, drop: &[coord::VertexAt]) -> bool {
-        #[expect(clippy::disallowed_methods, reason = "rule 11 — one per event in one process: a u64 cannot pass 2⁶⁴ events before the process ends")]
-        RETRACTIONS.with(|c| c.set(c.get().saturating_add(1)));
         for v in drop {
             if matches!(v, coord::VertexAt::Frame) {
                 continue;

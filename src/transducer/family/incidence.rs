@@ -84,84 +84,6 @@ pub(crate) fn occupied_frames(bodies_at: &Keyed<(Body, Body, Versor)>, v: &coord
         .collect()
 }
 
-/// WHAT HAPPENED TO EVERY FACE THIS FORM WAS OFFERED, by the reader that
-/// answered. Each field is one `continue` in the incidence loop; `offered`
-/// is what `named_faces` proposed and `built` is what stood. The counts are
-/// a measurement and never a gate (§8.1).
-#[derive(Default)]
-pub(crate) struct FaceDrops {
-    pub(crate) offered: usize,
-    pub(crate) built: usize,
-    /// THE CORNER CONTACTS (70.4) among them: offered by the diagonal, and
-    /// built into faces carrying 50.3's edge. Counted apart so a form's line
-    /// says whether its bodies relate, not only that faces stood.
-    pub(crate) contact_offered: usize,
-    pub(crate) contact_built: usize,
-    /// BQ5b — contact faces built on WHETHER whose WHAT did not read: the
-    /// body pair's nuclei (or their tether's ray) absent, the interface
-    /// `None` (A.14).
-    pub(crate) unnucleated: usize,
-    pub(crate) member_key: usize,
-    pub(crate) vertex: usize,
-    pub(crate) chart: usize,
-    pub(crate) word: usize,
-    pub(crate) place: usize,
-    /// AT1 — a pair the incidence named that stands on NO FRAME TOGETHER: a
-    /// face is one overlap per frame both members hold (Q2), and a pair with
-    /// none has no overlap to be.
-    pub(crate) frameless: usize,
-}
-
-/// WHY NO FRAME PLACES A NAMED PAIR (78.46(5)(d)).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum FramelessWhy {
-    /// The two members hold no frame in common.
-    NoCommonFrame,
-    /// They hold frames in common, and the edge re-derived on none of them.
-    EdgeOnNone,
-}
-
-/// A NAMED PAIR NO FRAME PLACES — A REFUSAL THAT CARRIES ITS CONTENT
-/// (78.46(5)(d), A.17, law 7): the incidence named the pair, and a face is
-/// one overlap per frame both members stand on (AT1, Q2), so with no such
-/// frame there is no overlap to be. It is counted and it keeps the pair,
-/// both members with the frames each holds, and why; never dropped.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct Frameless {
-    pub(crate) a: (coord::VertexAt, Invariant, Vec<u64>),
-    pub(crate) b: (coord::VertexAt, Invariant, Vec<u64>),
-    pub(crate) why: FramelessWhy,
-}
-
-#[cfg(test)]
-impl Frameless {
-    /// The refusal as the census line reads it: each member by its
-    /// vertex's coordinate and its chart, with its frames, and the reason.
-    pub(crate) fn line(&self) -> String {
-        use crate::network::nerve::Coordinate;
-        let hx = |b: &[u8]| -> String {
-            let mut s: String = b.iter().take(2).map(|x| format!("{x:02x}")).collect();
-            s.push('…');
-            s
-        };
-        // The chart WHOLE: two charts of one vertex share a prefix, and a
-        // prefix that cannot tell them apart is no reading of either (78.45).
-        let whole = |b: &[u8]| -> String { b.iter().map(|x| format!("{x:02x}")).collect() };
-        let member = |(_, c, ks): &(coord::VertexAt, Invariant, Vec<u64>)| {
-            format!("chart {} on frames {ks:?}", whole(c.key().as_bytes()))
-        };
-        let vertices = match self.a.0 == self.b.0 {
-            true => format!("one vertex {}", hx(self.a.0.encode().as_bytes())),
-            false => format!("vertices {} and {}", hx(self.a.0.encode().as_bytes()), hx(self.b.0.encode().as_bytes())),
-        };
-        let why = match self.why {
-            FramelessWhy::NoCommonFrame => "no frame both stand on",
-            FramelessWhy::EdgeOnNone => "the edge re-derived on no frame both stand on",
-        };
-        format!("frameless pair at {vertices}: {} ↔ {}: {why}", member(&self.a), member(&self.b))
-    }
-}
-
 /// A member's input body, output body and the versor carrying one onto the
 /// other.
 type BodiesCarried = (Body, Body, Versor);
@@ -252,11 +174,7 @@ pub(crate) fn edge_between(
             (Some(v_i), Some(v_j)) => (tally.take_carried(super::perceive::relative_edge(v_i, v_j)), None),
             // A star face's transport is its placement (the circuit reads
             // the member's own carriage there), never an edge asked here.
-            _ if matches!(i, coord::VertexAt::Frame) || matches!(j, coord::VertexAt::Frame) => (None, None),
-            _ => {
-                crate::transducer::sentence::rung::note_edge_lost(crate::transducer::sentence::rung::EdgeLost::NoBodies);
-                (None, None)
-            }
+            _ => (None, None),
         };
     }
     // The union edge is the face's where the two fibers have one; the

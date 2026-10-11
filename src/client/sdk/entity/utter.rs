@@ -255,12 +255,9 @@ impl Entity {
         Concluded { cites, residual, familiar }
     }
 
-    /// PR1 — A PROBE, AND ITS READING: folded into this voice's typed tally
-    /// (served on `Learning`), and returned.
+    /// PR1 — A PROBE, AND ITS READING, returned.
     pub(crate) fn probe(&mut self, target: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<dialogue::ProbeReading> {
-        let r = self.session.probe(target, cites)?;
-        self.probes.note(&r);
-        Ok(r)
+        self.session.probe(target, cites)
     }
 
     /// STAND every sentence in the dialect, and say which of them are
@@ -380,14 +377,6 @@ impl Entity {
             // (78.49). A refused utterance is not an admitted one.
             let e = sentences[i].clone();
             self.act_on(&e);
-            // 78.92 — WHY IT WAS SAID, read off the sentence the court
-            // admitted: the same reader the court's copy answers to.
-            if let Some(r) = crate::transducer::sentence::Reasons::of(&e) {
-                self.reasons.note(&r);
-                self.said = Some(r);
-                // 78.93 B0 — and where the court says it stands.
-                self.said_at = fresh.iter().position(|&f| f == i).and_then(|j| adjudicated.get(j)).and_then(|a| a.at());
-            }
             self.file_taught(&e);
             self.contractions.remove(&e.address());
             if let Some(k) = crate::transducer::sentence::from_element_form(&e)
@@ -438,13 +427,6 @@ impl Entity {
         if self.already_taught_addr(addr.as_bytes()) || self.epigenome.holds(addr.as_bytes()) {
             return None;
         }
-        // 78.55 — DID THE LANGUAGE ALREADY SAY IT? A relation this mind has
-        // not heard may still be DERIVED from the colour words it holds: one
-        // of them, an inverse, or two composed. Derived, the mind understood
-        // the scene from its language — a deduction, not an observation.
-        if self.colour_derivation(&sigma, budget) {
-            self.colour_derived += 1;
-        }
         let codes = self.speak_with(std::slice::from_ref(&word), train, task, budget).ok()?;
         match codes.as_slice() {
             [code] => Some(*code),
@@ -484,42 +466,10 @@ impl Entity {
         }
         let theorem = theorem?;
         let codes = self.speak_with(std::slice::from_ref(&theorem), &[], &[], budget).ok()?;
-        self.colour_theorems += 1;
         match codes.as_slice() {
             [code] => Some(*code),
             _ => None,
         }
-    }
-
-    /// 78.55 — WHETHER THIS MIND'S COLOUR WORDS DERIVE `sigma`: a genome
-    /// colour word, its inverse, or the composite of two of those, equal to
-    /// it. The candidates are the court-ruled colour words it holds (its
-    /// genome, never its dialect: a derivation stands on ruled language),
-    /// and each composition draws one read from the stroke; a spent stroke
-    /// derives nothing, which is the honest reading of a search not made.
-    pub(crate) fn colour_derivation(&self, sigma: &[(u8, u8)], budget: &mut crate::physics::Budget) -> bool {
-        use crate::transducer::element::{compose_fibre, invert_fibre};
-        let mut held: Vec<Vec<(u8, u8)>> = Vec::new();
-        for w in self.epigenome.genome_words().filter(|w| w.is_colour_word()) {
-            if let Some(l) = w.letters() {
-                held.push(l.sigma.clone());
-                held.push(invert_fibre(&l.sigma));
-            }
-        }
-        if held.iter().any(|h| h.as_slice() == sigma) {
-            return true;
-        }
-        for a in &held {
-            for b in &held {
-                if !budget.spend() {
-                    return false;
-                }
-                if compose_fibre(a, b).is_some_and(|c| c.as_slice() == sigma) {
-                    return true;
-                }
-            }
-        }
-        false
     }
 
     pub(crate) fn already_taught_addr(&self, addr: &[u8]) -> bool {
