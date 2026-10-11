@@ -12,7 +12,6 @@ pub mod court;
 pub mod family;
 pub mod feed;
 pub mod learn;
-pub mod observe;
 pub mod present;
 pub mod quote;
 pub mod relax;

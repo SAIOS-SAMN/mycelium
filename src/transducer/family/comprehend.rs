@@ -606,12 +606,6 @@ pub(crate) fn hold_percept(r: super::percept_reading::PerceptReading) {
     HELD.with(|h| h.borrow_mut().percepts.push(r));
 }
 
-/// Every percept's reading since the last take, and stop holding them: the
-/// observer takes them each stroke, so nothing grows.
-pub(crate) fn take_percepts() -> Vec<super::percept_reading::PerceptReading> {
-    HELD.with(|h| std::mem::take(&mut h.borrow_mut().percepts))
-}
-
 /// The last percept's cells, and stop holding them. `None` where no percept
 /// read any since the last take — a reading not taken, never an empty one.
 pub fn take_cells() -> Option<Cells> {

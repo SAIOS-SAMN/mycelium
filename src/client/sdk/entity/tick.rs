@@ -14,8 +14,9 @@
 //!    inward work (`relax`).
 //! 4. CLOSURE AND BOOKING — the words learned met by the held thoughts, the
 //!    orbit closed (K moves here and nowhere else), the tick's draw on the
-//!    reserve, the flux transported and relieved, the contacts' order, and
-//!    the mind's readings pushed to the hypha's console on its own K.
+//!    reserve, the flux transported and relieved, and the contacts' order.
+//!    The mind reports nothing about itself: its counterparties' acts are
+//!    its witness (MU-CLIENT §7.2).
 
 use crate::client::sdk::*;
 use crate::physics::StrokeOutcome;
@@ -23,7 +24,7 @@ use std::sync::atomic::AtomicBool;
 
 /// THE BOARD: the boundaries this mind is open on, and what the field keeps
 /// from tick to tick to meet them — the court's pace, the extraction memo,
-/// where its genome is written, and the K its readings were last pushed at.
+/// and where its genome is written.
 #[derive(Default)]
 pub(crate) struct Board {
     pub(crate) court: super::court::CourtPace,
@@ -32,7 +33,6 @@ pub(crate) struct Board {
     pub(crate) memo: crate::transducer::family::ExtractMemo,
     genome_path: Option<String>,
     saved_len: Option<usize>,
-    observed_k: Option<u64>,
 }
 
 /// WHAT ONE TICK MOVED: the lanes its outcome moved; a tick that moved none
@@ -120,8 +120,7 @@ impl Entity {
     /// PHY1, 78.71 — THE TICK'S PHYSICS BOOKED: one expansion on each lane
     /// its outcome moved, drawn from the one reserve (𝒯 is drawn by the flux
     /// transported, never a unit); the orbits' relief, the transport on 𝒯,
-    /// and the contacts' order. The mind's readings go to the hypha's
-    /// console once its own K moved.
+    /// and the contacts' order.
     fn book_tick(&mut self, outcome: &StrokeOutcome) {
         let seen = crate::transducer::family::pairing::contact_lanes();
         let mut moved = outcome.moved();
@@ -135,11 +134,5 @@ impl Entity {
         let on_t: [u64; 4] = std::array::from_fn(|l| if l == 2 { transported[l] } else { 0 });
         let _ = self.physics_mut().book_flux((relieved, on_t), closed);
         self.physics_mut().book_contacts(seen);
-        let k = self.own_k();
-        if self.board.observed_k != Some(k) {
-            let cover = crate::transducer::family::cover::take_cover_tally();
-            let _ = self.observe(&cover);
-            self.board.observed_k = Some(k);
-        }
     }
 }

@@ -203,15 +203,10 @@ fn a_mind_speaks_its_closed_thought_into_its_own_dialect() {
         assert!(entity.hold_perceived(f, &frames, &Vec::new(), &[], b"one scene", &mut budget), "hour {i} is held");
         assert_eq!(spoken(&entity), usize::from(i == 3), "hour {i}: the word stands only once the return closes");
     }
-    // THE FACULTIES READ IT, typed (never a log): one thought closed, one
-    // grounded, one word spelled, nothing ineffable, the dialect holding it.
-    let senses = entity.senses();
-    assert_eq!(senses.read("cognition", "closed"), Some(1), "{:#?}", senses.lines());
-    assert_eq!(senses.read("cognition", "grounded"), Some(1));
-    assert_eq!(senses.read("speech", "spelled"), Some(1));
-    assert_eq!(senses.read("speech", "ineffable"), Some(0));
-    assert!(senses.read("sight", "consolidated").is_some_and(|n| n > 0), "the gate admitted the hours it saw");
-    assert!(senses.read("language", "dialect").is_some_and(|n| n >= 1));
+    // READ OFF THE MIND'S OWN CARRIERS: one thought closed, the dialect
+    // holding what it stood.
+    assert_eq!(entity.contemplation.closed_thoughts, 1, "one thought closed its return");
+    assert!(entity.dialect_len() >= 1, "the dialect holds it");
     // Spelled against this mind's own letters (78.47 (i)): one word, spoken.
     assert_eq!(
         entity.transcription,
