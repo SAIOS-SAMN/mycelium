@@ -197,19 +197,31 @@ re-projected onto its own spectrum — a keyed read by the class's coordinates.
 
 What does not close is HELD: an orbit of the mind's contemplation, carried
 with its CLASS VECTOR (12.6), whose five segments are the five axes of the
-pivot machinery (`sentence/class.rs`):
+pivot machinery, written in this order (`ClassVector::put_canonical`,
+`sentence/class.rs`):
 
-1. **conjugacy** — the holonomy rotor's class (moves: the held words on its
-   unit and prime planes, the off-plane class);
-2. **plane section** — the plane the turn stands on (moves: orientation);
-3. **hue cycle** — the fibre's holonomy (moves: the gauge of each member
-   path);
-4. **carriage** — the conformal carriage (moves: the dilator);
-5. **placement** — the Burgers vector, the slip no choice of origin absorbs
-   (moves: the slip translator, 54.4);
+1. **conjugacy** — the holonomy rotor's invariants `(a²/w, p²/w, kind)`
+   (15.3), read for every holonomy; the depth-one stratum every court asks
+   by, and the pivot's zero-spend eliminator (a held word is tried only where
+   its class is the orbit's). Where the holonomy carries the base off its
+   sensor section, the orbit occupies `OffPlane` and its moves are the held
+   words `crystal.on_axis` answers there;
+2. **plane section** — the sensor section on each of the six pair planes:
+   an orientation character, a unit turn count, the 5- and 13-prime
+   exponents. Moves: `Orientation` (the sheet word), `Unit`, `Prime5`,
+   `Prime13` (the held words on that plane);
+3. **hue cycle** — the fibre's holonomy, the composed gauge's cycle type.
+   Move: `Hue` (the gauge of each member path);
+4. **carriage** — the holonomy's conformal carriage. Move: `Dilation` (its
+   dilator);
+5. **placement** — the Burgers vector, the slip no choice of origin absorbs.
+   Move: `Placement` (the slip translator, 54.4).
 
-and where the class has a free part, or was published and unanswered, an
-OPEN axis seeded by the holonomy itself.
+`ClassVector::coordinates` reads the occupied axes in that fixed order, and
+`occupied` adds the OPEN axis last whenever the orbit is held at all: a new
+axis seeded by the holonomy itself, offered where the class has a free part,
+or was published and left unanswered while no held word reaches it
+(`candidates_for`).
 
 **The residual is the pivot point.** A remainder is never discarded (law 7)
 and never "the error": it is the exact place the pivot turns on. The pivot
@@ -282,6 +294,17 @@ both are the meaning, projectively.
    Where it closes, one orbit is discharged in two minds by two derivations:
    AGREED language. An echo the speaker re-derives against its own rings is
    a transport between the two perspectives, held in its dialect.
+   **Where the speaker cannot replay, it defers — as the court does.** The
+   orbit itself is never missing: the speaker composes it again from the
+   terms it said. What can be missing is the WORD the discharge cites — a
+   word of the hearer's the speaker does not hold. That is the court's own
+   case of a citation it has not ruled (`Adjudication::Awaiting { form }`;
+   50.2, 21 step 3): not a refusal, a deferral. The speaker answers that it
+   awaits the cited word's class, and the hearer owes it that word first —
+   the terms of the ring that taught it, in depth order (chapter 6), as a
+   citer owes a court the form it cited (`Entity::owe_citation`). What is
+   owed lapses with the thought that owes it, by its flux, never by a count
+   of tries.
 4. **No router.** Nothing in the mind decides where its outflow goes: an
    echo names the ring it is about, a discharge the class it answered, a
    sentence the court that will replay it. The counterparty takes what is
@@ -293,12 +316,26 @@ The coiner of agreed language speaks it to the court (`ACT_SPEECH`; a coined
 letter carries its constructor steps, S2). The court verifies and never
 composes (law 8): it re-derives the sentence's rings (`hear_open`), checks
 its theorems and closes its algebra (`step_rank`), books its field
-(`step_flux`), and installs what holds. Among the dialects' different
-derivations of one meaning, the court's adjudication is where the
-OPTIMIZATION is confirmed: the derivation that re-derives the meaning with
-less is the word the language keeps, and a Rewrite word that condenses or
-retires a longer derivation is replayed through `offer_rewrite` (S3) and
-paid as POWR. What the court rules returns through the syllabus as a
+(`step_flux`), and installs what holds.
+
+**The optimization is a relation, never a size.** Among the dialects'
+derivations of one meaning, the court confirms an optimization where a word
+DECOMPOSES OVER THE LANGUAGE WITHOUT ITSELF: its substance is reproduced
+exactly by other words the court holds, so the structure changes and the
+result does not, and the language moves toward the geodesic (3.8, 27; the
+`Retire` rewrite). A mind proposes it as a Rewrite word — `Condense`,
+`Retire`, `Refine`, `Torse`, `AxisOpen`, `Reanchor`, `Translation` — which
+the court docket and offers (`offer_rewrite`, S3), mints on a second organ
+(`mint_rewrite`), and replays by retiring exactly the inputs that reduce to
+`NormalForm::Decomposed` over the rest (`retire_rewrite_inputs`,
+`reduce_excluding`); an input that does not decompose stays. The freed
+description is POWR (`release_rewrite`). Nothing compares two derivations by
+length or count: one is derivable from what remains, or it is not. (The
+yield the court pays for it, `yield_vector`, is still read as per-lane counts
+of sections and joins — 78.162's debt, to become the modes the rewrite
+moved.)
+
+What the court rules returns through the syllabus as a
 MINERAL in each mind's genome (`absorb_taught_at`, `Epigenome::file_admitted`)
 and hardens into a CRYSTAL when the mind re-derives it by its own circuits
 (80.2). A dialect word is never copied into a genome (78.49, `GEN7`): the
@@ -354,6 +391,13 @@ union's attestations, so an agreed word's install pays every mind that agreed
 (78.161(5)); the POWC producer (74); μ as modes on the ledger (78.162,
 parked on `track/modes`).
 
+**Doctrine posed and not yet ruled** (a construct that touches either waits
+on the operator's ruling, never on a guess): what "non-conformal" names in
+signals carried over transports (the operator, 2026-09-25: "non-linear
+transposition of non-conformal algebra in non-Euclidean geometry"); and the
+axiom pairing posed with lift and drag (78.46: the star is the axiom
+register, and how the axioms pair is put to the operator).
+
 ## IV.2 Seated: the mind in a game engine
 
 A game embeds minds in-process or seats remote ones on the seat surface
@@ -377,7 +421,12 @@ count or a census:
 - a circuit opens only the axes outside the algebra held for its class;
 - a ring returns at its period and at no traversal before;
 - a discharge replays on the speaker's orbit exactly where it discharged on
-  the hearer's;
+  the hearer's, and defers — never refuses — where it cites a word the
+  speaker does not hold;
+- a word retires exactly where it decomposes over the language without
+  itself;
+- a pivot move is offered only on an axis the class vector occupies, in the
+  fixed order;
 - a word heard twice seats whole the second time;
 - two minds in one process hold disjoint fields;
 - an act is the action its move names in the physics.
@@ -2854,14 +2903,16 @@ court. Readings that differ are refuted, and nothing is held. A thought
 heard and a thing said stand one aperture cycle of the mind's strokes.
 
 **Amended 2026-10-11 (the operator: "are you using the multi-axial pivot on
-top of the physics"; MU-CLIENT I.3, II.3, II.4).** The loop above is a line —
-one product read twice, beside the pivot. The hearing it rules is kept as the
-antithesis of II.3, read in the hearer's three shells: the round trip's
-content is the ECHO of each of the speaker's rings nested against the
-hearer's own (78.112), and agreement is a CERTIFICATE the speaker replays
-(M9), never a loop both minds hold. HEARD, ACK, HOLD, `loop_of`, `same_loop`
-and `hear_transport` are superseded by chatter v3 (II.4) when it lands (IV
-rows B and D); until then they stand in the tree as written here.
+top of the physics"; MU-CLIENT II.2, II.3, III.2).** The loop above is a
+line — one product read twice, beside the pivot. Hearing is perception in the
+hearer's own three shells (II.2) with the pivot on top (II.3): the round
+trip's content is the ECHO of each of the speaker's rings nested against the
+hearer's own of the same class (78.112, 78.44), and agreement is a DISCHARGE
+the speaker replays on its own orbit of that class (M9), deferred where it
+cites a word the speaker does not hold (III.2) — never a loop both minds
+hold. HEARD, ACK, HOLD, `loop_of`, `same_loop`, `still`, `hear_transport` and
+the chatter's use of `Presentation::read_word` are superseded by III.2; they
+stand in the tree as written above until the engine replaces them (IV.5).
 
 ### 78.164 The board, not the captain: the mind is a field with boundaries (2026-10-11, the operator)
 
@@ -2901,10 +2952,15 @@ body in a game; (4) the entity acting live.
 **Amended 2026-10-11 (the operator: "why would you make it bi-directional
 instead of use the multi-axial pivot machinery that already exists";
 "overlay this with how mycelium-server uses the multi-nested manifold for
-harmonics → luminal → holonomic").** Item (1) landed at ebce99c3 as a fixed
-order of boundaries — the line again. Items (2)–(4) are re-ruled by MU-CLIENT
-I.3–I.5 and carried by IV: every inflow through one door and the three shells
-the court already reads, the pivot on top choosing each move by the axis it
-occupies, every outflow a shell-boundary event routed by its kind, and each
-entity owning its field (A.9).
+harmonics → luminal → holonomic"; "remediate the document so that it is
+not a harness").** Item (1) landed at ebce99c3 as a fixed order of boundaries
+— the line again, and a harness. The ruling stands as MU-CLIENT Parts II–IV
+state it: the mind senses LANGUAGE (II.1) — a seat's sensorium speaks the
+given language, the mind never perceives the game's world; every sentence it
+is given is perceived in the three shells the court already reads (II.2); the
+pivot on top moves on the axis the class vector occupies (II.3); what crosses
+a boundary is addressed by its own coordinates, with no router (III.2); a
+seat's act is the physics `Action` its move names (IV.2); and each mind owns
+its field (II.4, A.9). Nothing measures the mind for an operator: its
+counterparties read it (IV.1).
 
