@@ -184,6 +184,12 @@ pub struct Reading {
     pub cites: Vec<(Address, Address, usize, i64)>,
     pub residue: [u64; 4],
     pub composes: bool,
+    /// 78.163 — WHAT THE READER SAID FOR IT: the product of the generators
+    /// it cited, each at its exponent — its own derivation of the motion,
+    /// whatever it composes to; the identity where it cited none.
+    pub derived: Option<Mv>,
+    /// And the hue map its cited generators compose to.
+    pub derived_gauge: Vec<(u8, u8)>,
 }
 
 /// A MOTION DECONSTRUCTED OVER A PRESENTATION: the generators cited, each
@@ -437,6 +443,9 @@ impl Presentation {
                 .filter_map(|(k, e)| self.held.get(k).map(|g| motion_power(&g.motion, *e)))
                 .fold(one(), |acc, p| acc.geo(&p));
             motion_ok = motion_ok && composed.projective_eq(motion);
+            out.derived = Some(composed);
+        } else {
+            out.derived = Some(one());
         }
         // THE HUE MAP, mode by mode.
         let modes = gauge_modes(gauge)?;
@@ -463,6 +472,7 @@ impl Presentation {
             }
         }
         let gauge_ok = super::transport::gauge_eq(&composed_gauge, gauge);
+        out.derived_gauge = composed_gauge;
         out.composes = out.residue.iter().all(|&r| r == 0) && !out.cites.is_empty() && motion_ok && gauge_ok;
         Some(out)
     }

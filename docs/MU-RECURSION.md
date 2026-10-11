@@ -27660,6 +27660,34 @@ coordinator and the kernels told first (ACT_WALLET, ACT_SOLVE, ACT_DOMAIN,
 ACT_UPLINK, ACT_LAWS, TPoint, TickReading are decoded by the kernels), and
 a recut; (7) the observer.
 
+### 78.163 SAY is HEARD, the thought is ACKNOWLEDGED — by the loop's holonomy (2026-10-11, the operator)
+
+**The ruling.** "SAY must be HEARD and the mind must ACKNOWLEDGE the
+THOUGHT — although, this needs to be based on physics."
+
+**What is ruled.** The round trip said → heard is a LOOP. A word is said as
+its whole motion `M` and hue map `σ`; the hearer derives `M′` and `σ′` from
+the generators it cites. The loop's holonomy is `H = M′ M̃` (projectively
+`M′ M⁻¹`, 1.5) on the motion and `σ′ ∘ σ⁻¹` on the hue map:
+
+1. FLAT — `H` still and the hue holonomy the identity: the thought crossed
+   whole.
+2. CURVED — `H` is what did not cross (curvature is content), split against
+   the word's own mode blade (78.46) into DRAG (its plane, another rate) and
+   LIFT (the tilt into another plane).
+3. OPEN — nothing derived, `M` no versor, or `σ` no permutation (a merge):
+   no loop closes.
+
+HEARD carries the hearer's derivation (`M′`, `σ′`, its citations), never a
+verdict. The speaker reads every word's loop and ACKNOWLEDGES the thought
+with an ACK carrying each holonomy; the hearer reads the same loop from what
+it heard and what it derived, by the one reader (`chatter::loop_of`) — the
+thought is acknowledged where both minds hold one loop (confirmed), shared
+whole where every loop is flat, refuted where the loops differ. A thing said
+is agreed language where some mind's loops are flat on every word; a hearer's
+bool is never taken on trust. A thought no ACK reaches in one aperture cycle
+of the hearer's strokes is let go.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

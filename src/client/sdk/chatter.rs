@@ -3,17 +3,25 @@
 // none of it and judges none of it.
 //
 //! THE WIRE. A frame is `[0x43][sub u8][speaker 32][point: 0 | 1 TPoint
-//! 84][fields][sig 64]`, the signature ed25519 over `"mycelium chatter v1" ‖
+//! 84][fields][sig 64]`, the signature ed25519 over `"mycelium chatter v2" ‖
 //! sub ‖ speaker ‖ point ‖ fields`. Sub-kinds:
 //! - SAY `[said: len u16, bytes][count u16]` then per word `[vertex: len u16,
 //!   bytes][motion Mv][gauge: count u8, (from, to)…]`: what this mind stood,
 //!   each word by its whole Cl(4,1) motion and its hue map — the mathematics
 //!   a hearer re-derives, never a tape it would compare;
 //! - HEARD `[said: len u16, bytes][count u16]` then per word `[vertex: len
-//!   u16, bytes][composes u8][residue S, G, T, H: u64 LE each][cites count
-//!   u16]` and per citation `[form: len u16, bytes][vertex: len u16,
+//!   u16, bytes][derived: 0 | 1 Mv][gauge: count u8, (from, to)…][cites
+//!   count u16]` and per citation `[form: len u16, bytes][vertex: len u16,
 //!   bytes][lane u8][exponent i64 LE]`: how the hearer said each word in its
-//!   own language, lane by lane, and what it could not.
+//!   own language — the motion and hue map its cited generators compose to,
+//!   and the citations — never a verdict on it;
+//! - ACK `[said: len u16, bytes][count u16]` then per word `[vertex: len u16,
+//!   bytes][motion: 0 | 1 Mv][hue: 0 | 1, count u8, (from, to)…]`: 78.163,
+//!   the speaker's acknowledgement of the hearer's thought — each word's
+//!   LOOP HOLONOMY, what the round trip said → heard carried it to
+//!   (`holonomy`, `hue_holonomy`), which the hearer re-derives from what it
+//!   heard and what it said, and holds the thought acknowledged only where
+//!   the two minds hold one loop.
 //!
 //! THE TRANSPORT. Each mind listens on its own address and posts every frame
 //! it hears into its inbox, drained by the mind on its stroke. A frame is
@@ -31,7 +39,8 @@ use std::sync::{Arc, Mutex};
 pub const TAG: u8 = 0x43;
 pub const SAY: u8 = 0;
 pub const HEARD: u8 = 1;
-const SIGNED: &[u8] = b"mycelium chatter v1";
+pub const ACK: u8 = 2;
+const SIGNED: &[u8] = b"mycelium chatter v2";
 
 /// ONE WORD SAID: the vertex it is in the speaker's form, its whole motion,
 /// its hue map.
@@ -42,15 +51,27 @@ pub struct Spoken {
     pub gauge: Vec<(u8, u8)>,
 }
 
-/// ONE WORD HEARD, as the hearer said it in its own language: whether its
-/// citations re-derive the word exactly, the residue per lane `S, G, T, H`,
-/// and each citation — the hearer's form and vertex, the lane, the exponent.
+/// ONE WORD HEARD, as the hearer said it in its own language: the motion and
+/// the hue map its cited generators compose to (`None`: the hearer could not
+/// read the word at all), and each citation — the hearer's form and vertex,
+/// the lane, the exponent.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HeardWord {
     pub vertex: Vec<u8>,
-    pub composes: bool,
-    pub residue: [u64; 4],
+    pub derived: Option<Mv>,
+    pub gauge: Vec<(u8, u8)>,
     pub cites: Vec<(Vec<u8>, Vec<u8>, u8, i64)>,
+}
+
+/// 78.163 — ONE WORD'S LOOP, ACKNOWLEDGED: the holonomy of said → heard on
+/// the motion (`None`: no loop closed — nothing derived, or no versor said)
+/// and on the hue map (`None`: the said map is no permutation, so the loop
+/// cannot close on G).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AckWord {
+    pub vertex: Vec<u8>,
+    pub motion: Option<Mv>,
+    pub hue: Option<Vec<(u8, u8)>>,
 }
 
 /// WHAT A FRAME SAYS.
@@ -60,6 +81,74 @@ pub enum Said {
     Say { said: Vec<u8>, words: Vec<Spoken> },
     /// What the hearer re-derived of something said, word by word.
     Heard { said: Vec<u8>, words: Vec<HeardWord> },
+    /// 78.163 — the speaker's acknowledgement of what the hearer thought.
+    Ack { said: Vec<u8>, words: Vec<AckWord> },
+}
+
+/// 78.163 — THE LOOP'S HOLONOMY ON THE MOTION: what the round trip said →
+/// heard carries the said motion `m` to, `derived · m̃` — the hearer's
+/// derivation composed with the reverse of what was said, projectively
+/// `derived · m⁻¹` (1.5). Still where the thought crossed exactly; otherwise
+/// it is what did not cross (curvature is content). `None` where `m` is no
+/// versor (`m m̃` no non-zero scalar): no loop closes on it.
+pub fn holonomy(said: &Mv, derived: &Mv) -> Option<Mv> {
+    let norm = said.geo(&said.reverse());
+    let s = norm.scalar_part();
+    if num_traits::Zero::is_zero(&s) || !norm.sub(&Mv::scalar(s)).is_zero() {
+        return None;
+    }
+    Some(derived.geo(&said.reverse()))
+}
+
+/// 78.163 — THE LOOP'S HOLONOMY ON THE HUE MAP: `derived ∘ said⁻¹`, the hue
+/// map the round trip leaves. `None` where the said map is no permutation of
+/// the hues it lists — a merge has no inverse, and the loop cannot close on
+/// G.
+pub fn hue_holonomy(said: &[(u8, u8)], derived: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
+    let mut from: Vec<u8> = said.iter().map(|&(a, _)| a).collect();
+    let mut to: Vec<u8> = said.iter().map(|&(_, b)| b).collect();
+    from.sort_unstable();
+    to.sort_unstable();
+    let distinct = from.windows(2).all(|w| w[0] != w[1]);
+    if !distinct || from != to {
+        return None;
+    }
+    let inverse: Vec<(u8, u8)> = said.iter().map(|&(a, b)| (b, a)).collect();
+    Some(crate::transducer::sentence::transport::compose_gauge(derived, &inverse))
+}
+
+/// The loop is FLAT: the motion's holonomy still and the hue map's the
+/// identity — the thought crossed whole.
+pub fn flat(a: &AckWord) -> bool {
+    let motion = a.motion.as_ref().is_some_and(crate::transducer::sentence::presentation::is_still);
+    let hue = a.hue.as_ref().is_some_and(|h| crate::transducer::sentence::transport::gauge_eq(h, &[]));
+    motion && hue
+}
+
+/// ONE WORD'S LOOP read: its holonomy on the motion and on the hue map, from
+/// what was said and what was derived — the one reader both minds use.
+pub fn loop_of(said: &Spoken, heard: &HeardWord) -> AckWord {
+    AckWord {
+        vertex: said.vertex.clone(),
+        motion: heard.derived.as_ref().and_then(|d| holonomy(&said.motion, d)),
+        hue: heard.derived.as_ref().and_then(|_| hue_holonomy(&said.gauge, &heard.gauge)),
+    }
+}
+
+/// Two acknowledgements of one word name one loop: their motions
+/// projectively one (1.5), their hue holonomies one map.
+pub fn same_loop(a: &AckWord, b: &AckWord) -> bool {
+    let motion = match (&a.motion, &b.motion) {
+        (Some(x), Some(y)) => x.projective_eq(y),
+        (None, None) => true,
+        _ => false,
+    };
+    let hue = match (&a.hue, &b.hue) {
+        (Some(x), Some(y)) => crate::transducer::sentence::transport::gauge_eq(x, y),
+        (None, None) => true,
+        _ => false,
+    };
+    a.vertex == b.vertex && motion && hue
 }
 
 /// ONE FRAME: who said it, at which final point, and what.
@@ -94,10 +183,44 @@ fn take_count(b: &[u8], p: &mut usize) -> Option<usize> {
     Some(n)
 }
 
-fn take_u64(b: &[u8], p: &mut usize) -> Option<u64> {
-    let x = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
-    *p += 8;
-    Some(x)
+fn put_gauge(out: &mut Vec<u8>, g: &[(u8, u8)]) -> Option<()> {
+    out.push(u8::try_from(g.len()).ok()?);
+    for &(a, b) in g {
+        out.push(a);
+        out.push(b);
+    }
+    Some(())
+}
+
+fn take_gauge(b: &[u8], p: &mut usize) -> Option<Vec<(u8, u8)>> {
+    let k = usize::from(*b.get(*p)?);
+    *p += 1;
+    let mut g = Vec::with_capacity(k);
+    for _ in 0..k {
+        g.push((*b.get(*p)?, *b.get(*p + 1)?));
+        *p += 2;
+    }
+    Some(g)
+}
+
+fn put_mv(out: &mut Vec<u8>, m: Option<&Mv>) {
+    match m {
+        Some(m) => {
+            out.push(1);
+            m.to_bytes(out);
+        }
+        None => out.push(0),
+    }
+}
+
+fn take_mv(b: &[u8], p: &mut usize) -> Option<Option<Mv>> {
+    let flag = *b.get(*p)?;
+    *p += 1;
+    match flag {
+        0 => Some(None),
+        1 => Some(Some(Mv::from_bytes(b, p)?)),
+        _ => None,
+    }
 }
 
 impl Chatter {
@@ -105,6 +228,7 @@ impl Chatter {
         match self.said {
             Said::Say { .. } => SAY,
             Said::Heard { .. } => HEARD,
+            Said::Ack { .. } => ACK,
         }
     }
 
@@ -127,10 +251,21 @@ impl Chatter {
                 for w in words {
                     put_short(&mut out, &w.vertex)?;
                     w.motion.to_bytes(&mut out);
-                    out.push(u8::try_from(w.gauge.len()).ok()?);
-                    for &(a, b) in &w.gauge {
-                        out.push(a);
-                        out.push(b);
+                    put_gauge(&mut out, &w.gauge)?;
+                }
+            }
+            Said::Ack { said, words } => {
+                put_short(&mut out, said)?;
+                put_count(&mut out, words.len())?;
+                for w in words {
+                    put_short(&mut out, &w.vertex)?;
+                    put_mv(&mut out, w.motion.as_ref());
+                    match &w.hue {
+                        Some(h) => {
+                            out.push(1);
+                            put_gauge(&mut out, h)?;
+                        }
+                        None => out.push(0),
                     }
                 }
             }
@@ -139,10 +274,8 @@ impl Chatter {
                 put_count(&mut out, words.len())?;
                 for w in words {
                     put_short(&mut out, &w.vertex)?;
-                    out.push(u8::from(w.composes));
-                    for r in w.residue {
-                        out.extend_from_slice(&r.to_le_bytes());
-                    }
+                    put_mv(&mut out, w.derived.as_ref());
+                    put_gauge(&mut out, &w.gauge)?;
                     put_count(&mut out, w.cites.len())?;
                     for (form, vertex, lane, e) in &w.cites {
                         put_short(&mut out, form)?;
@@ -205,16 +338,28 @@ impl Chatter {
                 for _ in 0..n {
                     let vertex = take_short(body, &mut p)?;
                     let motion = Mv::from_bytes(body, &mut p)?;
-                    let k = usize::from(*body.get(p)?);
-                    p += 1;
-                    let mut gauge = Vec::with_capacity(k);
-                    for _ in 0..k {
-                        gauge.push((*body.get(p)?, *body.get(p + 1)?));
-                        p += 2;
-                    }
+                    let gauge = take_gauge(body, &mut p)?;
                     words.push(Spoken { vertex, motion, gauge });
                 }
                 Said::Say { said, words }
+            }
+            ACK => {
+                let said = take_short(body, &mut p)?;
+                let n = take_count(body, &mut p)?;
+                let mut words = Vec::new();
+                for _ in 0..n {
+                    let vertex = take_short(body, &mut p)?;
+                    let motion = take_mv(body, &mut p)?;
+                    let flag = *body.get(p)?;
+                    p += 1;
+                    let hue = match flag {
+                        0 => None,
+                        1 => Some(take_gauge(body, &mut p)?),
+                        _ => return None,
+                    };
+                    words.push(AckWord { vertex, motion, hue });
+                }
+                Said::Ack { said, words }
             }
             HEARD => {
                 let said = take_short(body, &mut p)?;
@@ -222,13 +367,8 @@ impl Chatter {
                 let mut words = Vec::new();
                 for _ in 0..n {
                     let vertex = take_short(body, &mut p)?;
-                    let composes = match *body.get(p)? {
-                        0 => false,
-                        1 => true,
-                        _ => return None,
-                    };
-                    p += 1;
-                    let residue = [take_u64(body, &mut p)?, take_u64(body, &mut p)?, take_u64(body, &mut p)?, take_u64(body, &mut p)?];
+                    let derived = take_mv(body, &mut p)?;
+                    let gauge = take_gauge(body, &mut p)?;
                     let m = take_count(body, &mut p)?;
                     let mut cites = Vec::new();
                     for _ in 0..m {
@@ -240,7 +380,7 @@ impl Chatter {
                         p += 8;
                         cites.push((form, v, lane, e));
                     }
-                    words.push(HeardWord { vertex, composes, residue, cites });
+                    words.push(HeardWord { vertex, derived, gauge, cites });
                 }
                 Said::Heard { said, words }
             }
@@ -391,7 +531,17 @@ mod tests {
             Said::Say { said: vec![1, 2, 3], words: vec![Spoken { vertex: vec![4; 40], motion: one.clone(), gauge: vec![(1, 2), (2, 1)] }] },
             Said::Heard {
                 said: vec![6; 10],
-                words: vec![HeardWord { vertex: vec![4; 40], composes: true, residue: [0, 1, 0, 2], cites: vec![(vec![7; 33], vec![8; 34], 1, -3)] }],
+                words: vec![
+                    HeardWord { vertex: vec![4; 40], derived: Some(one.clone()), gauge: vec![(3, 4)], cites: vec![(vec![7; 33], vec![8; 34], 1, -3)] },
+                    HeardWord { vertex: vec![5; 3], derived: None, gauge: vec![], cites: vec![] },
+                ],
+            },
+            Said::Ack {
+                said: vec![2; 7],
+                words: vec![
+                    AckWord { vertex: vec![4; 40], motion: Some(one.clone()), hue: Some(vec![]) },
+                    AckWord { vertex: vec![5; 3], motion: None, hue: None },
+                ],
             },
         ] {
             let c = Chatter { speaker, point: Some(point), said };
@@ -405,6 +555,36 @@ mod tests {
         // Signed by another key than the speaker it names: refused at signing.
         let c = Chatter { speaker, point: None, said: Said::Say { said: vec![], words: vec![] } };
         assert_eq!(c.sign(&key(8)), None);
+    }
+
+    /// 78.163 — THE LOOP said → heard, BY THE ALGEBRA: a hearer that derived
+    /// the turn exactly closes it flat; one that derived the turn twice
+    /// leaves the said turn itself as the holonomy — curved, the content that
+    /// did not cross; a swap heard as the swap closes the hue loop, heard as
+    /// nothing leaves the swap; a merge has no inverse and the hue loop stays
+    /// open; a word the hearer could not read closes nothing.
+    #[test]
+    fn the_loop_said_heard_closes_flat_where_the_thought_crossed_and_its_holonomy_is_what_did_not() {
+        use crate::transducer::cga::{E1, E2};
+        let q = |n: i64| num_rational::BigRational::from_integer(n.into());
+        let turn = Mv::scalar(q(1)).add(&Mv::blade(E1 | E2, q(1))).widened(3);
+        let swap = vec![(1, 2), (2, 1)];
+        let said = Spoken { vertex: vec![1], motion: turn.clone(), gauge: swap.clone() };
+        let heard = |derived: Option<Mv>, gauge: Vec<(u8, u8)>| HeardWord { vertex: vec![1], derived, gauge, cites: vec![] };
+        let exact = loop_of(&said, &heard(Some(turn.clone()), swap.clone()));
+        assert!(flat(&exact), "the thought crossed whole: {exact:?}");
+        let twice = loop_of(&said, &heard(Some(turn.geo(&turn)), swap.clone()));
+        assert!(!flat(&twice));
+        let h = twice.motion.clone().expect("a loop closes on a versor");
+        assert!(h.projective_eq(&turn), "what did not cross is the said turn itself");
+        let hueless = loop_of(&said, &heard(Some(turn.clone()), vec![]));
+        assert!(!flat(&hueless), "the swap heard as nothing leaves the swap");
+        assert!(hueless.hue.as_ref().is_some_and(|m| crate::transducer::sentence::transport::gauge_eq(m, &swap)));
+        let merge = Spoken { vertex: vec![1], motion: turn.clone(), gauge: vec![(3, 0)] };
+        assert_eq!(loop_of(&merge, &heard(Some(turn.clone()), vec![(3, 0)])).hue, None, "a merge has no inverse: G stays open");
+        let unread = loop_of(&said, &heard(None, vec![]));
+        assert_eq!((unread.motion, unread.hue), (None, None), "nothing derived closes nothing");
+        assert!(same_loop(&exact, &loop_of(&said, &heard(Some(turn.scale(&q(3))), swap))), "one loop, read projectively by both minds");
     }
 
     #[test]
