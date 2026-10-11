@@ -230,19 +230,6 @@ impl super::Entity {
         r
     }
 
-    /// The mind at a seat, where it sits one.
-    #[cfg(test)]
-    pub(crate) fn seat_mind_at(&self, at: SeatName) -> Option<&super::seat_mind::SeatMind> {
-        self.seats.get(&seat_key(&at.domain, at.sub_origin.as_ref(), at.seat))
-    }
-
-    /// 78.156 — THE EXPERIENCED-DILATION READING at a seat this entity sits:
-    /// its sub-instance's world advance against the final point's, exact.
-    #[cfg(test)]
-    pub(crate) fn seat_dilation(&self, at: SeatName) -> Option<&super::seat_mind::Dilation> {
-        self.seat_mind_at(at)?.dilation()
-    }
-
     /// 78.146 — A PERCEPT AT A SEAT, perceived: held on its series, and a
     /// call's effect read where its outcome came. Reading what a call did is
     /// the mind learning — an act of this orbit (78.49).
@@ -312,51 +299,4 @@ impl super::Session {
         }
     }
 
-    /// THE HOUSE LISTS ITS SEATS at an epoch; the latest epoch replaces.
-    #[cfg(test)]
-    pub(crate) fn post_seats(&self, house: &SigningKey, seats: Seats) -> io::Result<Result<u64, Refusal>> {
-        self.seat_post(&Post::Seats(seats).sign(house).ok_or_else(unwritten)?)
-    }
-
-    /// THE HOUSE'S MAIL past `after` (read under relay `epoch`): the takes
-    /// and calls addressed to its domain, typed.
-    #[cfg(test)]
-    pub(crate) fn house_mail(&self, house: &SigningKey, after: u64, epoch: u64) -> io::Result<Result<Vec<HouseMail>, Refusal>> {
-        let raw = match self.read_mail(house, after, epoch)? {
-            Ok(m) => m.mail,
-            Err(why) => return Ok(Err(why)),
-        };
-        let mut out = Vec::new();
-        for m in raw {
-            let s = m.post().ok_or_else(|| undecoded("mail piece"))?;
-            out.push(match &s.post {
-                Post::Take(t) => HouseMail::Take(m.seq, t.clone()),
-                Post::Call(c) => HouseMail::Call { seq: m.seq, call: c.clone(), reference: s.reference().ok_or_else(unwritten)? },
-                _ => return Err(undecoded("mail piece for a mind")),
-            });
-        }
-        Ok(Ok(out))
-    }
-
-    /// THE HOUSE ANSWERS A TAKE.
-    #[cfg(test)]
-    pub(crate) fn post_taken(&self, house: &SigningKey, t: Taken) -> io::Result<Result<u64, Refusal>> {
-        self.seat_post(&Post::Taken(t).sign(house).ok_or_else(unwritten)?)
-    }
-
-    /// THE HOUSE PERCEIVES FOR A SEATED MIND. 78.152 TU-7: a percept the
-    /// house left unstamped is stamped with this session's last final point
-    /// (`Session::tuniversal`) before it is signed; one the house stamped
-    /// itself keeps its own.
-    #[cfg(test)]
-    pub(crate) fn post_percept(&self, house: &SigningKey, p: Percept) -> io::Result<Result<u64, Refusal>> {
-        let p = Percept { point: p.point.or(self.tuniversal()), ..p };
-        self.seat_post(&Post::Percept(p).sign(house).ok_or_else(unwritten)?)
-    }
-
-    /// THE HOUSE ANSWERS A CALL with its outcome.
-    #[cfg(test)]
-    pub(crate) fn post_outcome(&self, house: &SigningKey, o: Outcome) -> io::Result<Result<u64, Refusal>> {
-        self.seat_post(&Post::Outcome(o).sign(house).ok_or_else(unwritten)?)
-    }
 }

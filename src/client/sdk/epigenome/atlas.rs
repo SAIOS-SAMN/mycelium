@@ -39,54 +39,6 @@ impl Epigenome {
         crate::transducer::address::Address::new(buf)
     }
 
-    /// This word's shape, lifted once under the word it measures.
-    #[cfg(test)]
-    pub(crate) fn shape_at(&self, addr: &[u8]) -> Option<&crate::transducer::blade::Shape> {
-        let w = self.resident.get(addr)?;
-        w.shape
-            .get_or_init(|| crate::transducer::element::shape_of_chain(w.held.sub()))
-            .as_ref()
-    }
-
-    /// Deepen a held word's fiber with a section this genome verified.
-    /// Through `Held::update`, so the form is re-decoded with the word and
-    /// the two cannot describe different tapes.
-    ///
-    /// A PUNCTURE CHANGES THE TAPE AND THEREFORE THE ADDRESS, so the entry
-    /// is re-filed at the coordinate it now derives for itself rather than
-    /// left sitting under the coordinate it used to have. Under the old
-    /// parallel vectors the word stayed at its slot and `index` silently
-    /// went stale; law 2 does not allow a key that no longer names its
-    /// value.
-    ///
-    /// AND A WORD AT A NEW ADDRESS IS A NEW WORD: no act admitted it. The
-    /// punctured word's address is answered so the caller admits it by an
-    /// act on its own line (LD3-c) — `None` where nothing was punctured.
-    #[cfg(test)]
-    pub(crate) fn puncture(&mut self, addr: &[u8], asg: Vec<(u8, u8)>) -> Option<crate::transducer::address::Address> {
-        let entry = self.genome.remove(addr)?;
-        let Some(mut w) = self.resident.remove(addr) else {
-            // The index holds it and the payload does not: under Z11 that
-            // is a word on disk and not decoded, and a puncture of a word
-            // this mind has not read is refused rather than guessed.
-            self.genome.insert(addr, entry);
-            return None;
-        };
-        if !w.held.update(|e| e.puncture(asg)) {
-            self.genome.insert(addr, entry);
-            self.resident.insert(addr, w);
-            return None;
-        }
-        // The shape was measured on the old chain and is not the new
-        // word's; it is dropped rather than carried across (law 12).
-        w.shape = std::sync::OnceLock::new();
-        // RM1 — the old address's remainders leave the index.
-        self.drop_remainders(addr);
-        let at = w.held.address();
-        self.genome.insert(&at, entry);
-        self.resident.insert(&at, w);
-        Some(at)
-    }
 
     pub fn new() -> Self {
         Epigenome::default()
@@ -272,27 +224,6 @@ impl Epigenome {
         self.unpivoted.len()
     }
 
-    /// THE CIRCUIT FROM A COORDINATE: every genome address once, starting
-    /// after `at` and wrapping to close on it (45.7). This is what a traversal
-    /// `for offset in 0..len { (start + offset) % len }` was reaching for
-    /// — with the difference that a circuit over coordinates does not
-    /// renumber itself when a word is admitted or retired mid-circuit.
-    #[cfg(test)]
-    pub(crate) fn genome_circuit_from(&self, at: Option<&[u8]>) -> Vec<Vec<u8>> {
-        let all: Vec<Vec<u8>> = self.genome.scoped().map(|(k, _)| k).collect();
-        let Some(at) = at else { return all };
-        match all.iter().position(|k| k.as_slice() == at) {
-            // The cursor's word has retired; the circuit starts where the
-            // carrier now starts rather than at an invented offset.
-            None => all,
-            Some(i) => {
-                let mut out: Vec<Vec<u8>> = all[i + 1..].to_vec();
-                out.extend_from_slice(&all[..=i]);
-                out
-            }
-        }
-    }
-
     pub(crate) fn next_word_after(&self, at: Option<&[u8]>) -> Option<Vec<u8>> {
         let mut past = at.is_none();
         let mut first: Option<Vec<u8>> = None;
@@ -316,13 +247,6 @@ impl Epigenome {
     /// (the accepted compression bid). Expression rides along (parallel
     /// vector); recollections citing the retired index dissolve — they were
     /// spellings in the old vocabulary — and surviving citations reindex.
-    /// The genome's atlas, admitted in place. Persistence and crystallize
-    /// only. Cognitive reads use [`working_atlas`].
-    #[cfg(test)]
-    pub(crate) fn atlas(&self) -> &crate::transducer::stalk::Stalks {
-        &self.atlas
-    }
-
     /// Empty when the working language has no genome word and no dialect word.
     pub(crate) fn atlas_is_empty(&self) -> bool {
         self.atlas_len == 0 && self.dialect.is_empty()

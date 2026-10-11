@@ -4,11 +4,6 @@
 use crate::client::sdk::*;
 
 impl Epigenome {
-    #[cfg(test)]
-    pub(crate) fn shed_n(&self) -> u64 {
-        self.shed_n
-    }
-
     /// A working-atlas read of a stood word is a use, stamped with the
     /// mind's OWN K (45.4). The height beside it is standing extent and is
     /// left alone; the lifecycle is the mind's, and a mind that hears

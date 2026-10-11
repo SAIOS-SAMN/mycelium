@@ -5,20 +5,8 @@ use crate::client::sdk::*;
 use crate::transducer::element::Element;
 
 impl Epigenome {
-    /// The count of taught words refused for not verifying.
-    #[cfg(test)]
-    pub(crate) fn refused(&self) -> u64 {
-        self.refused
-    }
-
     pub fn dialect_len(&self) -> usize {
         self.dialect.len()
-    }
-
-    /// True when a dialect sentence lives on this chart (exact invariant).
-    #[cfg(test)]
-    pub(crate) fn dialect_holds(&self, c: &crate::transducer::stalk::Invariant) -> bool {
-        !self.dialect_atlas.fiber(c).is_empty()
     }
 
     pub(crate) fn wait_on(&mut self, missing: &[u8], citer: impl AsRef<[u8]>) {
@@ -166,12 +154,6 @@ impl Epigenome {
         Some(addr)
     }
 
-    /// The words this entity has expressed and not yet had ratified.
-    #[cfg(test)]
-    pub(crate) fn expressed_len(&self) -> usize {
-        self.expressed.len()
-    }
-
     /// EXPRESS a residual: germinate it as this entity's own word. Returns
     /// false when the expressed vocabulary already speaks it (the same body
     /// under a transport) — a claim already made, not to be made again.
@@ -230,16 +212,6 @@ impl Epigenome {
     #[cfg(test)]
     pub(crate) fn peak_expression(&self) -> Option<u64> {
         self.genome.scoped().map(|(_, w)| w.expression).max()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn recollections(&self) -> Vec<(Vec<Vec<u8>>, u64)> {
-        // This voice's own recollections, all of them: the reading is what
-        // it holds, and the shed is what bounds the carrier.
-        self.recollections
-            .scoped()
-            .map(|(_, (a, n))| (a.clone(), *n))
-            .collect()
     }
 
     #[cfg(test)]
