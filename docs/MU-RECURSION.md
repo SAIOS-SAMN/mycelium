@@ -27600,6 +27600,43 @@ the tree of "never handed mind to mind" (`sentence/rung.rs`,
 mind still never takes another's word into its genome; it hears, re-derives
 and agrees.
 
+### 78.162 The inverse-Sisyphus protocol: μ is modes, never counts (2026-10-11, the operator)
+
+**The ruling.** "You're collapsing dimensionality and real math into
+scalars or lossy signals — your signals completely flat"; "are you trying
+to fit a square in a circle or morphing the circle to be a square?";
+"exactly, this is the inverse-sisyphus protocol, you dont square anything";
+"scope it, then implement."
+
+**What was squared, measured 2026-10-11.** A word's measure counts links
+(`measure_lanes`: cells created or erased, cells recoloured, a shell
+difference, and 𝒯 unread); the flux reduces tubes and windings to four
+counts (`cech::flux::Admitted`, `Tubes::measure`); the physics, the
+treasury, the escrows, the holds, the journal, about thirty wire acts, four
+persisted layouts and the receipt's frame all carry `[u64; 4]` — 606 sites.
+The exact objects already exist upstream: a motion's modes
+(`cga::motion_modes`), its holes and windings (`Coordinates`), a hue map's
+modes (`GaugeMode`), the tubes and their quanta.
+
+**What is ruled.**
+1. μ is a set of exact modes with exact amounts, keyed by canonical
+   coordinates, each on its lane by its kind: S boosts and dilations, G
+   hue cycles and moves, T null fluxes, H turns. Law 5 reads: μ⃗ is never
+   summed, ordered, reduced to a scalar — nor counted.
+2. A discharge is the modes the closing rule moved on the pairs it closed,
+   weighed by the mass each pair carried; a word's measure is the modes of
+   what it moves.
+3. A balance holds its modes; a payment adds, a draw removes or refuses
+   naming the mode short. No projection to a count anywhere.
+
+**Order.** (1) this ruling; (2) the `Modes` carrier (`economy/modes.rs`),
+exact composition and codec, proved by the algebra; (3) producers —
+discharge and measure as modes; (4) the economy's internals; (5) the
+physics; (6) the wire, the persisted layouts and the receipts, with the
+coordinator and the kernels told first (ACT_WALLET, ACT_SOLVE, ACT_DOMAIN,
+ACT_UPLINK, ACT_LAWS, TPoint, TickReading are decoded by the kernels), and
+a recut; (7) the observer.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

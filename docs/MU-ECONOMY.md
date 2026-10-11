@@ -24,10 +24,25 @@ and never one payment.
 
 ## 1. The unit
 
+**THE INVERSE-SISYPHUS PROTOCOL (the operator, 2026-10-11): nothing is
+squared.** "You're collapsing dimensionality and real math into scalars or
+lossy signals"; "are you trying to fit a square in a circle or morphing the
+circle to be a square?"; "this is the inverse-sisyphus protocol, you dont
+square anything." μ is not four counts. μ is the exact MODES the verified
+work moved, each on the lane its kind names, each with an exact rational
+amount: on S a boost or dilation (its generator's ray and its point and
+side, c and λ); on G a hue cycle or move; on T a null flux (its ray and its
+count in its tube's quantum); on H a turn (its plane's ray and its turn
+t/ℓ). A balance HOLDS its modes, keyed by their canonical coordinates
+(A21); a payment adds modes, a draw removes them or is refused naming the
+mode it lacks; nothing is projected to a count anywhere — not as a balance,
+not as a label, not on the wire, not on the console. Where this section and
+the sections below speak of `[u64; 4]`, that is the carrier being retired
+(the scope and order are in MU-RECURSION 78.162).
+
 μ is a vector on four lanes: spatial (S), gauge (G), temporal (T),
 holonomic (H). It is never summed and never converted across lanes. A
-balance is `[u64; 4]`; a price is `[u64; 4]`; a payment moves value on
-exactly the lanes the work moved. A comparison of two vectors returns the
+payment moves value on exactly the lanes the work moved. A comparison of two vectors returns the
 reading per lane (`economy::lane_moves`: each lane fell, held or rose) and
 never a verdict; the court accepts a reduction by closure, never by an
 order on μ⃗ (`MU-RECURSION.md` 12.6). There is no scalar anywhere in the
