@@ -344,6 +344,59 @@ impl Presentation {
         heard
     }
 
+    /// 78.161 — THE EAR HEARS A LETTER: a word spelled by letters (a
+    /// connection, an adjoined letter) is one generator, its motion its
+    /// spelling at its carriage (`element::conformal_of`) and its hue map its
+    /// sigma, filed at its own address as both form and vertex. What does not
+    /// read (no letters, no base action) is not filed.
+    pub fn hear_letter(&mut self, addr: &Address, e: &crate::transducer::element::Element, ruled: bool) -> bool {
+        let Some(l) = e.letters() else { return false };
+        let Some(motion) = crate::transducer::element::conformal_of(&l.spelling.word, &l.carriage) else { return false };
+        let coords = match is_still(&motion) {
+            true => Coordinates { holes: Vec::new() },
+            false => {
+                let Some(need) = crate::transducer::cga::modes_need(&motion) else { return false };
+                let mut budget = crate::physics::Physics::default().stroke_n(need);
+                match Coordinates::of(&motion, &mut budget) {
+                    Ok(c) => c,
+                    Err(_) => return false,
+                }
+            }
+        };
+        let Some(modes) = gauge_modes(&l.sigma) else { return false };
+        if coords.holes.is_empty() && modes.is_empty() {
+            return false;
+        }
+        let key = super::generator_key(addr, addr);
+        self.holes.file(&key, &coords);
+        for m in &modes {
+            self.gauges.nested_insert(m.key(), &key, ());
+        }
+        self.held.insert(&key, Generator { form: addr.clone(), vertex: addr.clone(), motion, coords, gauge: l.sigma, ruled });
+        true
+    }
+
+    /// The mirror of [`Presentation::hear_letter`].
+    pub fn unfile_letter(&mut self, addr: &Address) {
+        let key = super::generator_key(addr, addr);
+        if let Some(g) = self.held.remove(&key) {
+            self.holes.unfile(&key, &g.coords);
+            for m in gauge_modes(&g.gauge).into_iter().flatten() {
+                let mk = m.key();
+                let empty = match self.gauges.get_mut(&mk) {
+                    Some(f) => {
+                        f.remove(&key);
+                        f.is_empty()
+                    }
+                    None => false,
+                };
+                if empty {
+                    self.gauges.remove(&mk);
+                }
+            }
+        }
+    }
+
     /// 78.161 — READ A WORD OVER WHAT IS HELD, LANE BY LANE ([`Reading`]): its
     /// whole motion hole by hole (each hole on the lane its kind names), its
     /// hue map mode by mode (on `G`), over every generator held, or only the

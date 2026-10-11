@@ -60,8 +60,9 @@ pub struct Chat {
     dir: std::path::PathBuf,
     union: Keyed<Union>,
     /// Letters stood and said, waiting for a union before the court hears
-    /// them (78.161 item 3), by address.
-    waiting: Keyed<crate::transducer::element::Element>,
+    /// them (78.161 item 3), by address, with the mind's own K they began
+    /// waiting at.
+    waiting: Keyed<(crate::transducer::element::Element, u64)>,
     pub tally: ChatTally,
 }
 
@@ -127,8 +128,15 @@ impl Entity {
         if self.chat.as_ref().is_none_or(|c| c.union.contains(addr.as_bytes())) {
             return;
         }
-        let Some(f) = crate::transducer::sentence::from_element_form(e) else { return };
-        let words = spoken_of(&f);
+        let words = match crate::transducer::sentence::from_element_form(e) {
+            Some(f) => spoken_of(&f),
+            // A word spelled by letters is one word: its spelling at its
+            // carriage, its sigma.
+            None => match e.letters().and_then(|l| Some((crate::transducer::element::conformal_of(&l.spelling.word, &l.carriage)?, l.sigma))) {
+                Some((motion, gauge)) => vec![Spoken { vertex: addr.as_bytes().to_vec(), motion, gauge }],
+                None => Vec::new(),
+            },
+        };
         if words.is_empty() {
             return;
         }
@@ -157,10 +165,39 @@ impl Entity {
         }
         let tu = self.now_tu();
         let _ = self.stand(std::slice::from_ref(e), tu);
+        let k = self.own_k();
         if let Some(chat) = self.chat.as_mut() {
-            chat.waiting.insert(&addr, e.clone());
+            chat.waiting.insert(&addr, (e.clone(), k));
         }
         true
+    }
+
+    /// A LETTER NO MIND RE-DERIVED IN ONE APERTURE CYCLE of this mind's own
+    /// strokes goes to the court on its own: the union decides what is worth
+    /// the court's replay first, and never silences a mind that has no union.
+    fn release_unmet(&mut self, budget: &mut crate::physics::Budget) {
+        let now = self.own_k();
+        let cycle = u64::from(crate::physics::aperture_cycle());
+        let Some(chat) = self.chat.as_mut() else { return };
+        // One circuit of the waiting letters, under the stroke: a wrap past
+        // the last key ends it.
+        let mut due = Vec::new();
+        let mut cursor = chat.waiting.cursor(None, budget);
+        while let Some((k, (_, at))) = Iterator::next(&mut cursor) {
+            if cursor.circuit() {
+                break;
+            }
+            if now.checked_sub(*at).is_some_and(|waited| waited >= cycle) {
+                due.push(k.clone());
+            }
+        }
+        drop(cursor);
+        for k in due {
+            let Some(chat) = self.chat.as_mut() else { return };
+            let Some((letter, _)) = chat.waiting.remove(&k) else { continue };
+            chat.tally.to_court += 1;
+            let _ = self.speak(std::slice::from_ref(&letter), budget);
+        }
     }
 
     /// THE CHATTER STROKE: every frame heard since the last, one spend each.
@@ -185,6 +222,7 @@ impl Entity {
                 Said::Heard { said, words } => self.heard_back(&c.speaker, &said, &words, budget),
             }
         }
+        self.release_unmet(budget);
     }
 
     /// WHAT ANOTHER MIND SAID, SAID AGAIN IN THIS ONE'S LANGUAGE: each word
@@ -252,7 +290,7 @@ impl Entity {
             return;
         }
         chat.tally.agreed += 1;
-        let Some(letter) = chat.waiting.remove(said) else { return };
+        let Some((letter, _)) = chat.waiting.remove(said) else { return };
         chat.tally.to_court += 1;
         let _ = self.speak(std::slice::from_ref(&letter), budget);
     }
