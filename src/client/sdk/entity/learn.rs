@@ -197,6 +197,7 @@ impl Entity {
         };
         let (id, rule, outputs) = (*id, rule.clone(), outputs.to_vec());
         self.board.court.solving.insert(&id, ());
+        crate::observe::note_mind(|m| m.perspective[6] += 1);
         self.ask(move |s| s.speak_keyed(&id, act), move |me, body: io::Result<Vec<u8>>| {
             me.board.court.solving.remove(&id);
             // The court is not reachable: the solve stands as it stood.

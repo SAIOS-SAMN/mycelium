@@ -219,6 +219,13 @@ impl Entity {
         if let Some(uttered) = self.speak_form(&rule, &train, &t.frames, &id, &mut t.budget) {
             StrokeOutcome::add(&mut outcome.uttered, &uttered);
         }
+        // MU-CLIENT §4.4 — A RULE IS SOLVED WITH ONLY WHERE IT IS KNOWN: every
+        // training pair re-derived by the rule its siblings derive. A fit
+        // its own perspectives do not re-derive is not sent; the pairs they
+        // missed were lifted into the mind as structure (`ascertain`).
+        if self.ascertain(&id, &train) != super::family::Ascertained::Known {
+            return;
+        }
         let Some(outs) = self.speak_tests(&rule, &tests) else { return };
         let spoken = self.mint_solve(&rule, &train);
         let _ = self.solve_task(&id, &train, &outs, spoken.as_ref(), &mut t.budget);

@@ -28,6 +28,22 @@ pub(crate) fn family_magnitude(train: &Family) -> [u64; 4] {
     mag
 }
 
+/// WHAT A RULE'S PERSPECTIVES SAID OF IT (MU-CLIENT §4.4): each training pair
+/// a perspective, the rule its siblings derive asked to close it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Ascertained {
+    /// Every held-out pair closed under the rule its siblings derived: the
+    /// rule is an invariant of the family, known.
+    Known,
+    /// Some held-out pair did not close: the rule fits, and is not known.
+    Unknown,
+    /// One pair: no sibling to derive it from.
+    OnePerspective,
+    /// A sibling extraction's stroke ran out before it ruled: not known and
+    /// not refuted.
+    Unread,
+}
+
 /// A FAMILY THOUGHT THROUGH: its rule where the form engine closed one, the
 /// frames it was perceived on, and the stroke it was extracted on.
 pub(crate) struct Thought {
@@ -163,6 +179,76 @@ impl Entity {
             let (mag, rem) = crate::transducer::family::form_deflation(&f, &pair, &self.epigenome);
             self.withhold_perceived(f, &frames, &pair, &rem, mag, family, &mut budget);
         }
+    }
+
+    /// A RULE KNOWN BY ITS PERSPECTIVES, NOT FITTED (MU-CLIENT §4.4): each
+    /// training pair is held out in turn, as the court holds its pairs out;
+    /// the rule the OTHER pairs derive (the form engine on them alone,
+    /// uncached, on its own stroke) is spoken on the held-out input and
+    /// asked to close it — no remainder, and its grid the held-out output.
+    /// Known where every perspective re-derives it: the family's invariant,
+    /// not a fit to all of its pairs at once. A held-out pair that does not
+    /// close is LIFTED (`lift_perspective`), never dropped.
+    pub(crate) fn ascertain(&mut self, id: &[u8], train: &Family) -> Ascertained {
+        use crate::transducer::family::{extract_rule_on, extraction_spend, perceive_family};
+        crate::observe::note_mind(|m| m.perspective[0] += 1);
+        if train.len() < 2 {
+            crate::observe::note_mind(|m| m.perspective[3] += 1);
+            return Ascertained::OnePerspective;
+        }
+        let (mut failed, mut unread) = (false, false);
+        for k in 0..train.len() {
+            let siblings: Vec<(crate::arc::Grid, crate::arc::Grid)> = train.iter().enumerate().filter(|(i, _)| *i != k).map(|(_, p)| p.clone()).collect();
+            let frames = perceive_family(&siblings);
+            let mut budget = self.stroke_n(extraction_spend(&siblings, &frames));
+            let (x, y) = &train[k];
+            let Some(rule) = extract_rule_on(&siblings, &frames, &self.epigenome, &mut budget) else {
+                // No rule from the siblings: where the stroke ran out it is
+                // unread; otherwise nothing they share reaches this pair.
+                match budget.remaining() == 0 {
+                    true => unread = true,
+                    false => {
+                        failed = true;
+                        self.lift_perspective(x, y, id);
+                    }
+                }
+                continue;
+            };
+            let speech = crate::transducer::family::speak::speak_rule(&rule, x, &self.epigenome);
+            let spoken = speech.as_ref().filter(|s| s.remainder.is_empty()).and_then(|s| s.grid());
+            let closes = spoken.as_ref().is_some_and(|g| crate::transducer::family::speak::residual_of(Some(g), y).is_empty());
+            if !closes {
+                failed = true;
+                let from = match &spoken {
+                    Some(g) => g,
+                    None => x,
+                };
+                self.lift_perspective(from, y, id);
+            }
+        }
+        let (slot, outcome) = match (failed, unread) {
+            (true, _) => (2, Ascertained::Unknown),
+            (false, true) => (4, Ascertained::Unread),
+            (false, false) => (1, Ascertained::Known),
+        };
+        crate::observe::note_mind(|m| m.perspective[slot] += 1);
+        outcome
+    }
+
+    /// A PERSPECTIVE THE SIBLINGS DID NOT COVER, LIFTED INTO THE SENSORIUM:
+    /// what their rule said against what was true is perceived as one pair —
+    /// its frames, its scene form, its deflation — and held under the task,
+    /// exactly as a pair no rule closed is (`withhold_unextracted`). Its
+    /// bodies enter perception's cells; what escapes there is demanded and
+    /// constructed. The 2-D gap becomes the mind's own structure.
+    fn lift_perspective(&mut self, said: &crate::arc::Grid, truth: &crate::arc::Grid, id: &[u8]) {
+        let pair = vec![(said.clone(), truth.clone())];
+        let frames = crate::transducer::family::perceive_family(&pair);
+        let mut budget = self.stroke_n(crate::transducer::family::extraction_spend(&pair, &frames));
+        let Some(f) = crate::transducer::family::scene_form_on(&self.epigenome, &mut budget, said, truth, &frames) else { return };
+        let (mag, rem) = crate::transducer::family::form_deflation(&f, &pair, &self.epigenome);
+        self.withhold_perceived(f, &frames, &pair, &rem, mag, id, &mut budget);
+        crate::observe::note_mind(|m| m.perspective[5] += 1);
     }
 
     /// THE TESTS SPOKEN THROUGH THE RULE: every test's output where the rule
