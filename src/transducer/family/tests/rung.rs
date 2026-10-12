@@ -133,6 +133,37 @@ fn a_hyperbolic_sentence_is_named_and_held() {
     );
 }
 
+/// MU-CLIENT §4.2 — TWO MINDS ON ONE THREAD KEEP TWO FIELDS. A mind hears a
+/// dilation's sentence in its own field: it holds the word and is taught it,
+/// and a cover it parks stays with it. A second mind thinking on the same
+/// thread holds none of it and was taught nothing. The first, thinking again,
+/// still holds the word, its teaching already taken, its cover still parked.
+#[test]
+fn two_minds_on_one_thread_keep_two_fields() {
+    use crate::transducer::family::cursor;
+    use crate::transducer::mind::MindField;
+    use crate::transducer::sentence::rung::{held_rung, take_taught};
+    let d = cga::dilator(&q(3, 1));
+    let s = compose(&[Term { word: d, transport: Mv::scalar(q(1, 1)) }], &mut stroke()).expect("a sentence");
+    let (mut a, mut b) = (MindField::default(), MindField::default());
+    a.think(|| {
+        hear(&s, &mut stroke());
+        assert!(held_rung(&s.omega).is_some(), "the first mind holds the word");
+        assert_eq!(take_taught().len(), 1, "and is taught it");
+        cursor::park(b"a cover", cursor::Pending::new());
+    });
+    b.think(|| {
+        assert!(held_rung(&s.omega).is_none(), "the second mind holds nothing the first heard");
+        assert!(take_taught().is_empty(), "and was taught nothing");
+        assert_eq!(cursor::parked(), 0, "nor holds the first's cover");
+    });
+    a.think(|| {
+        assert!(held_rung(&s.omega).is_some(), "the first mind still holds its word");
+        assert!(take_taught().is_empty(), "its teaching taken once");
+        assert!(cursor::take(b"a cover").is_some(), "its cover parked with it");
+    });
+}
+
 /// 78.99 (1) — COMPREHENSION BY COORDINATES. A sentence teaches the 90° turn
 /// of the `e₁e₃` plane, held with its hole and its winding; a second teaches
 /// the turn's square — a new key, but on the same hole at twice the winding —
@@ -179,7 +210,7 @@ fn the_rung_recurses_and_a_sentence_heard_again_is_recognized() {
     hear(&first, &mut stroke());
     assert_eq!(crate::transducer::sentence::rung::held_rung(&w), rung_of_w, "heard again: re-derived, recognized");
     let now = lexicon();
-    assert_eq!(now.0 + now.1, held.0 + held.1, "and never held twice");
+    assert_eq!(now, held, "and never held twice");
 }
 
 /// 78.105 N1 — A HELD WORD IS RECOGNIZED WHATEVER SPACE SURROUNDS IT. A

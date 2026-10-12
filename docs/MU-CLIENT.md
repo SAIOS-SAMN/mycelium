@@ -359,9 +359,14 @@ rings' windings, its contemplation and its epigenome are its own, and many
 minds may run in one process (a game seats several). The machine's
 calibration is the substrate's and shared; the halt is the host's. A
 cognitive carrier held process-wide breaks this the moment a game seats two
-minds in one process — the statics `LEXICON`, `TAUGHT` (`sentence/rung.rs`),
-`VOICE_FIELD` (`family/pairing.rs`) and `MOVING` (`family/fibres.rs`) are
-that defect and move into the mind's field (§7.1).
+minds in one process. The mind owns a `MindField` (`transducer/mind.rs`) —
+its tubes and orbits, its four lane ledgers, its lexicon, the words taught it
+and not yet transcribed, the covers it parked — and thinks in it for the
+length of each tick (`MindField::think`): the field stands in the thread's
+slots, the transducer's readers write into the mind that is thinking, and
+the field is the mind's again when the tick ends. A court perceiving outside
+any mind's tick books on the state its worker threads share, and is taught
+nothing.
 
 The mind's carriers (§5.1) all act on this one field, each holding it
 briefly and never across a wait on a counterparty. The mind's own reserve is
@@ -883,8 +888,9 @@ questions as holes (`bubble/question.rs`), the constructors
 3. **The response path** (§5.1, §5.3, §5.4) — what the windings and pivots
    changed composed into anastome speech at the carrier it is addressed to;
    agreement by replay, deferral by `owe_citation`.
-4. **The field the mind's own** (§4.2) — `LEXICON`, `TAUGHT`, `VOICE_FIELD`,
-   `MOVING` moved into the mind; the algebra held per class.
+4. **The field the mind's own** (§4.2) — landed: the lexicon, the words
+   taught, the tubes and orbits, the lane ledgers and the parked covers are
+   the mind's `MindField`; still owed, the algebra held per class.
 5. **The rest of the field's motion** — amendment held beside (§4.10); the
    mind proposing a Rewrite (S3, §5.4); a winding carrier on the mind's own
    rings (§4.4); the seat's act as a physics `Action` (§6).

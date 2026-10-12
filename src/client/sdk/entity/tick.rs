@@ -61,9 +61,17 @@ impl Entity {
         self.save_genome(&path).map(|_| self.board.saved_len = Some(self.epigenome.genome_len())).map_err(|e| e.to_string())
     }
 
-    /// ONE TICK OF THE MIND'S FIELD (78.164). `stop` is read inside the long
-    /// laws, so a tick thinking a family ends at its next boundary.
+    /// ONE TICK OF THE MIND'S FIELD (78.164), thought in the mind's own field
+    /// (MU-CLIENT §4.2). `stop` is read inside the long laws, so a tick
+    /// thinking a family ends at its next boundary.
     pub fn tick(&mut self, stop: &AtomicBool) -> Ticked {
+        let mut field = std::mem::take(&mut self.field);
+        let ticked = field.think(|| self.tick_in_field(stop));
+        self.field = field;
+        ticked
+    }
+
+    fn tick_in_field(&mut self, stop: &AtomicBool) -> Ticked {
         if self.board.saved_len != Some(self.epigenome.genome_len()) {
             let _ = self.save_kept_genome();
         }

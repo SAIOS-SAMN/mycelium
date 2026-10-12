@@ -64,6 +64,8 @@ impl Pending {
     }
 }
 
+// A mind parks its covers in its own field (`transducer::mind`); a court's
+// worker thread parks them here, on the thread that perceives.
 thread_local! {
     static PENDING: RefCell<Keyed<Pending>> = RefCell::new(Keyed::new());
 }
@@ -102,21 +104,29 @@ pub(crate) fn deformation_key(
 /// is REMOVED on the take: a cover is worked on by one stroke at a time,
 /// and a stroke that takes it either finishes it or parks it again.
 pub(crate) fn take(key: &[u8]) -> Option<Pending> {
-    PENDING.with(|p| p.borrow_mut().remove(key))
+    with_parked(|p| p.remove(key))
 }
 
 /// Park a cover that ran out of budget; the count parked is read below.
 pub(crate) fn park(key: &[u8], pending: Pending) {
-    PENDING.with(|p| p.borrow_mut().insert(key, pending));
+    with_parked(|p| p.insert(key, pending));
+}
+
+/// The covers parked by the mind thinking on this thread, else this thread's.
+fn with_parked<R>(f: impl FnOnce(&mut Keyed<Pending>) -> R) -> R {
+    match crate::transducer::mind::with_pending(f) {
+        Ok(r) => r,
+        Err(f) => PENDING.with(|p| f(&mut p.borrow_mut())),
+    }
 }
 
 /// How many covers are parked; nothing branches on it.
 #[cfg(test)]
 pub(crate) fn parked() -> usize {
-    PENDING.with(|p| p.borrow().scoped().count())
+    with_parked(|p| p.scoped().count())
 }
 
 #[cfg(test)]
 pub(crate) fn clear() {
-    PENDING.with(|p| *p.borrow_mut() = Keyed::new());
+    with_parked(|p| *p = Keyed::new());
 }

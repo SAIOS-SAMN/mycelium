@@ -396,6 +396,7 @@ impl Unspelled {
 /// 78.113 — WHETHER A VERSOR SPELLS in the alphabet's own letters, and
 /// nothing else: the peel, its residue never typed. `None` where it reads
 /// nothing (no rotor, no linear block).
+#[cfg(test)]
 pub(crate) fn spells(v: &Versor) -> Option<bool> {
     Some(peel_core(v, None, Vec::new())?.is_ok())
 }

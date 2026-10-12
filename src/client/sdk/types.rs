@@ -635,6 +635,10 @@ pub struct Entity {
     /// 78.164 — the boundaries this mind is open on, and what its field
     /// keeps from tick to tick to meet them.
     pub(crate) board: super::entity::tick::Board,
+    /// MU-CLIENT §4.2 — THIS MIND'S OWN FIELD: its tubes and orbits, its
+    /// lanes, its lexicon, the words taught it, the covers it parked; it
+    /// thinks in it for the length of each tick.
+    pub(crate) field: crate::transducer::mind::MindField,
 }
 
 /// A cited form owed to a court, with the citer that waits on it and the

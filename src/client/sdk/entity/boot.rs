@@ -71,6 +71,7 @@ impl Entity {
             seats: crate::network::nerve::Keyed::new(),
             chat: None,
             board: Default::default(),
+            field: Default::default(),
         }
     }
 

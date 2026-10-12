@@ -45,5 +45,7 @@ pub mod address;
 pub mod factor;
 /// Chapter 27 — an optimisation spoken as a word.
 pub mod rewrite;
+/// MU-CLIENT §4.2 — a mind's own field, scoped to its tick.
+pub mod mind;
 
 pub use address::Address;

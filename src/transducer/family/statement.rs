@@ -134,11 +134,11 @@ impl<'a> Seen<'a> {
         let wall = |r: usize, c: usize| self.owner_at(r, c).is_some_and(|o| set.contains(&o));
         let mut reached = vec![vec![false; self.cols]; self.rows];
         let mut stack: Vec<(usize, usize)> = Vec::new();
-        for r in 0..self.rows {
-            for c in 0..self.cols {
+        for (r, row) in reached.iter_mut().enumerate() {
+            for (c, cell) in row.iter_mut().enumerate() {
                 let edge = r == 0 || c == 0 || r + 1 == self.rows || c + 1 == self.cols;
                 if edge && !wall(r, c) {
-                    reached[r][c] = true;
+                    *cell = true;
                     stack.push((r, c));
                 }
             }

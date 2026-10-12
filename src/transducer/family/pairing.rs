@@ -7,39 +7,53 @@
 
 use super::*;
 
-/// PHY1 — WHAT CONTACTS MOVED ON EACH LANE, IN THIS PROCESS: a condensed
-/// contact on every lane its transport `g_ab` occupies, a refused one on the
-/// lane its refusal names. Process-wide, because a court perceives on many
-/// threads and books its one reserve from all of them; each holder of a
-/// physics books what moved since it last read (`contact_lanes`). Event
-/// counts, one per contact per lane: a `u64` cannot pass 2⁶⁴ events before
-/// the process ends.
-static CONDENSED_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atomic::AtomicU64::new(0) }; 4];
-static REFUSED_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atomic::AtomicU64::new(0) }; 4];
-/// 78.71 (2) — THE OPEN FLUX A CLOSURE RELIEVED, per lane: the exact conjugate
-/// of the pressure an open field line raised (booked on `REFUSED_ON`).
-static RELIEVED_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atomic::AtomicU64::new(0) }; 4];
-/// 78.71 (2), (5) — THE TRANSPORT, per lane: how much flux moved, both ways,
-/// in quanta weighed by mass — what a stroke draws on 𝒯.
-static TRANSPORTED_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atomic::AtomicU64::new(0) }; 4];
+/// PHY1 — THE LEDGERS A PERCEPT BOOKS ON, per lane: a condensed contact on
+/// every lane its transport `g_ab` occupies, a refused one on the lane its
+/// refusal names (78.71 (2)); the open flux a closure relieved, the exact
+/// conjugate of the pressure an open field line raised (booked as refused);
+/// and the transport, how much flux moved both ways in quanta weighed by mass
+/// — what a stroke draws on 𝒯 (78.71 (5)).
+#[derive(Clone, Copy)]
+enum Ledger {
+    Condensed = 0,
+    Refused = 1,
+    Relieved = 2,
+    Transported = 3,
+}
 
-/// 78.71 (1), 78.73 — THIS PROCESS'S FIELD, held over time: a voice is one
-/// mind per process, so its tubes and orbits keep their identity across
-/// strokes here.
-static VOICE_FIELD: std::sync::LazyLock<std::sync::Mutex<crate::transducer::cech::orbit::Field>> =
+/// THE COURT'S LEDGERS: a court perceives on many threads and books its one
+/// reserve from all of them, outside any mind's tick; a mind books on its own
+/// (`transducer::mind`). Each holder of a physics books what moved since it
+/// last read (`contact_lanes`). Event counts: a `u64` cannot pass 2⁶⁴ events
+/// before the process ends.
+static COURT_ON: [[std::sync::atomic::AtomicU64; 4]; 4] = [const { [const { std::sync::atomic::AtomicU64::new(0) }; 4] }; 4];
+
+/// 78.71 (1), 78.73 — THE COURT'S FIELD, held over time across its worker
+/// threads; a mind's tubes and orbits are its own (`transducer::mind`).
+static COURT_FIELD: std::sync::LazyLock<std::sync::Mutex<crate::transducer::cech::orbit::Field>> =
     std::sync::LazyLock::new(|| std::sync::Mutex::new(crate::transducer::cech::orbit::Field::new()));
 
+/// The two ledgers, per lane, of the thinking mind, else of the court.
+fn read_ledgers(a: Ledger, b: Ledger) -> ([u64; 4], [u64; 4]) {
+    match crate::transducer::mind::with_lanes(|on| (on[a as usize], on[b as usize])) {
+        Ok(read) => read,
+        Err(_) => {
+            let read = |on: &[std::sync::atomic::AtomicU64; 4]| std::array::from_fn(|l| on[l].load(std::sync::atomic::Ordering::Relaxed));
+            (read(&COURT_ON[a as usize]), read(&COURT_ON[b as usize]))
+        }
+    }
+}
+
 /// 78.71 — the open flux closures relieved and the transport moved, per lane,
-/// since the process began.
+/// since the mind (or the court) began.
 pub fn flux_lanes() -> ([u64; 4], [u64; 4]) {
-    let read = |on: &[std::sync::atomic::AtomicU64; 4]| std::array::from_fn(|l| on[l].load(std::sync::atomic::Ordering::Relaxed));
-    (read(&RELIEVED_ON), read(&TRANSPORTED_ON))
+    read_ledgers(Ledger::Relieved, Ledger::Transported)
 }
 
 /// A REFUSAL ON ITS LANES, one per lane it names: a refused contact
 /// transported nothing, so its pressure is the event on the lane that
 /// refused it.
-fn mark_lanes(on: &[std::sync::atomic::AtomicU64; 4], lanes: [bool; 4]) {
+fn mark_lanes(on: Ledger, lanes: [bool; 4]) {
     mark_measured(on, lanes, 1);
 }
 
@@ -47,9 +61,19 @@ fn mark_lanes(on: &[std::sync::atomic::AtomicU64; 4], lanes: [bool; 4]) {
 /// `carried` compartments on each lane the transport occupies — the unit
 /// `measure_lanes` counts, the one pressure is raised in — never a tick per
 /// contact. A sum past its carrier is refused and counted (rule 11).
-fn mark_measured(on: &[std::sync::atomic::AtomicU64; 4], lanes: [bool; 4], carried: u64) {
+fn mark_measured(on: Ledger, lanes: [bool; 4], carried: u64) {
     use std::sync::atomic::Ordering::Relaxed;
-    for (count, moved) in on.iter().zip(lanes) {
+    let mine = crate::transducer::mind::with_lanes(|ledgers| {
+        for (count, moved) in ledgers[on as usize].iter_mut().zip(lanes) {
+            if moved {
+                let _ = crate::physics::metabolism::step_or_refuse(count, carried);
+            }
+        }
+    });
+    if mine.is_ok() {
+        return;
+    }
+    for (count, moved) in COURT_ON[on as usize].iter().zip(lanes) {
         // One atomic step per lane; a step past the carrier leaves the count
         // where it stood and is counted on this thread's ledger.
         if moved && count.fetch_update(Relaxed, Relaxed, |held| held.checked_add(carried)).is_err() {
@@ -59,11 +83,10 @@ fn mark_measured(on: &[std::sync::atomic::AtomicU64; 4], lanes: [bool; 4], carri
     }
 }
 
-/// What contacts have moved since the process began, per lane: condensed,
-/// then refused.
+/// What contacts have moved since the mind (or the court) began, per lane:
+/// condensed, then refused.
 pub fn contact_lanes() -> ([u64; 4], [u64; 4]) {
-    let read = |on: &[std::sync::atomic::AtomicU64; 4]| std::array::from_fn(|l| on[l].load(std::sync::atomic::Ordering::Relaxed));
-    (read(&CONDENSED_ON), read(&REFUSED_ON))
+    read_ledgers(Ledger::Condensed, Ledger::Refused)
 }
 
 // `transport_lanes` stood here: a contact's lanes read off its edge's
@@ -137,24 +160,28 @@ pub(crate) fn mark_flux(
     word_transports: &[FieldLine],
     budget: &mut crate::physics::Budget,
 ) {
-    // The voice's own tubes, held across its strokes (78.71 (1)). A lock
-    // poisoned by a panic elsewhere reads this percept's field into fresh
-    // tubes rather than none.
-    let reading = match VOICE_FIELD.lock() {
-        Ok(mut field) => transport_order(word_transports, circuits, &mut field, budget),
-        Err(_) => transport_order(word_transports, circuits, &mut crate::transducer::cech::orbit::Field::new(), budget),
+    // The thinking mind's own tubes, held across its ticks (78.71 (1)); else
+    // the court's. A lock poisoned by a panic elsewhere reads this percept's
+    // field into fresh tubes rather than none.
+    let mine = crate::transducer::mind::with_field(|field| transport_order(word_transports, circuits, field, budget)).ok();
+    let reading = match mine {
+        Some(r) => r,
+        None => match COURT_FIELD.lock() {
+            Ok(mut field) => transport_order(word_transports, circuits, &mut field, budget),
+            Err(_) => transport_order(word_transports, circuits, &mut crate::transducer::cech::orbit::Field::new(), budget),
+        },
     };
-    let book = |on: &[std::sync::atomic::AtomicU64; 4], v: &[u64; 4]| {
+    let book = |on: Ledger, v: &[u64; 4]| {
         for (lane, amount) in v.iter().enumerate() {
             if *amount > 0 {
                 mark_measured(on, std::array::from_fn(|l| l == lane), *amount);
             }
         }
     };
-    book(&CONDENSED_ON, &reading.order);
-    book(&REFUSED_ON, &reading.opened);
-    book(&RELIEVED_ON, &reading.relieved);
-    book(&TRANSPORTED_ON, &reading.transport);
+    book(Ledger::Condensed, &reading.order);
+    book(Ledger::Refused, &reading.opened);
+    book(Ledger::Relieved, &reading.relieved);
+    book(Ledger::Transported, &reading.transport);
 }
 
 /// 78.71 — WHAT A PERCEPT'S FIELD DID, PER LANE: the order it built (closed),
@@ -263,7 +290,7 @@ pub(crate) fn mark_face_carriage(
 ) {
     let mut lanes = carriage_lanes(carriage, budget);
     lanes[crate::transducer::rewrite::LANE_GAUGE] |= gauge.iter().any(|(a, b)| a != b);
-    mark_measured(&CONDENSED_ON, lanes, carried);
+    mark_measured(Ledger::Condensed, lanes, carried);
 }
 
 /// A refused contact on the lanes its two poses' refusals name.
@@ -272,7 +299,7 @@ fn mark_refused(poses: [Option<blade::NoPose>; 2]) {
     for lane in poses.into_iter().flatten().filter_map(blade::NoPose::lane) {
         lanes[lane] = true;
     }
-    mark_lanes(&REFUSED_ON, lanes);
+    mark_lanes(Ledger::Refused, lanes);
 }
 
 /// WHICH INCIDENCE NAMED A PAIR (70.4): the Frame's star, a site two
@@ -465,7 +492,7 @@ pub(crate) fn contact_edge(
             Some(Err(_)) => {
                 // A turn the alphabet does not spell: the rotor's lane refused.
                 // (the rotor's lane, 𝒽, on 42.6's table)
-                mark_lanes(&REFUSED_ON, std::array::from_fn(|l| l == crate::transducer::rewrite::LANE_SHELL));
+                mark_lanes(Ledger::Refused, std::array::from_fn(|l| l == crate::transducer::rewrite::LANE_SHELL));
                 return ContactEdge::Refused { poses: [None, None] };
             }
             None => return ContactEdge::Refused { poses: [None, None] },
@@ -494,7 +521,7 @@ pub(crate) fn contact_edge(
             };
             lanes[crate::transducer::rewrite::LANE_SHELL] |= !edge.word.is_identity();
             lanes[crate::transducer::rewrite::LANE_GAUGE] |= edge.gauge.iter().any(|(x, y)| x != y);
-            mark_measured(&CONDENSED_ON, lanes, carried);
+            mark_measured(Ledger::Condensed, lanes, carried);
             ContactEdge::Formed(Box::new(edge))
         }
         Err(coset) => ContactEdge::Held(Refraction::Coset(coset)),

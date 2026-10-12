@@ -22,9 +22,11 @@
 //! RECOGNITION IS COMPREHENSION (80.2): a closed sentence whose shortcut the
 //! mind already holds re-derives it, never held twice.
 //!
-//! The lexicon is one mind's — a voice is one mind per process — and holds
-//! one entry per distinct shortcut, by its coordinates: it grows with what
-//! the mind has comprehended, never with how often.
+//! The lexicon is one mind's — held in its own field (`transducer::mind`),
+//! never the process's — and holds one entry per distinct shortcut, by its
+//! coordinates: it grows with what the mind has comprehended, never with how
+//! often. A court hearing outside any mind's tick holds one lexicon across its
+//! worker threads, and transcribes nothing: no word is taught to it.
 
 use super::compose::{Closure, Composition};
 use super::coordinates::{Coordinates, HoleIndex};
@@ -32,31 +34,35 @@ use super::theorem::Theorem;
 use crate::network::nerve::Keyed;
 use crate::transducer::cga::Mv;
 
-/// ONE SHORTCUT THE MIND HOLDS: its rung, whether the alphabet spells it,
-/// and its coordinates — its holes and windings (78.99 (1)) — where its
-/// modes read.
+/// ONE SHORTCUT THE MIND HOLDS: its rung, and its coordinates — its holes
+/// and windings (78.99 (1)) — where its modes read. Whether the alphabet
+/// spells it is read where it is transcribed (`Transcribed`), never held.
 #[derive(Clone, Debug)]
 struct Held {
     rung: u64,
-    spelled: bool,
     coords: Option<Coordinates>,
 }
 
 /// THE MIND'S LEXICON: the words held by their keys, and the holes they
 /// stand on — the fibre a new word is comprehended by (78.99 (1)).
 #[derive(Default)]
-struct Lexicon {
+pub(crate) struct Lexicon {
     held: Keyed<Held>,
     holes: HoleIndex,
 }
 
+/// The court's lexicon, shared by its worker threads: heard outside any
+/// mind's tick.
 static LEXICON: std::sync::LazyLock<std::sync::Mutex<Lexicon>> = std::sync::LazyLock::new(|| std::sync::Mutex::new(Lexicon::default()));
 
-/// 78.100 D1 — THE WORDS NEWLY TAUGHT, each with the period its sentence
-/// returns at (one where it never returns), waiting for the voice to
-/// transcribe them into its language as it transcribes a closed thought
-/// (`take_taught`). Drained whole, never read in place.
-static TAUGHT: std::sync::LazyLock<std::sync::Mutex<Vec<Taught>>> = std::sync::LazyLock::new(|| std::sync::Mutex::new(Vec::new()));
+/// The thinking mind's lexicon, else the court's. A lock poisoned by a panic
+/// elsewhere reads nothing.
+fn with_lexicon<R>(f: impl FnOnce(&mut Lexicon) -> R) -> Option<R> {
+    match crate::transducer::mind::with_lexicon(f) {
+        Ok(r) => Some(r),
+        Err(f) => LEXICON.lock().ok().map(|mut l| f(&mut l)),
+    }
+}
 
 /// ONE TAUGHT WORD: the motion, and the period its sentence returns at.
 #[derive(Clone, Debug)]
@@ -78,19 +84,25 @@ pub enum Transcribed {
     Unread,
 }
 
-/// 78.100 D1 — THE WORDS TAUGHT SINCE THE LAST TAKE, each with its period
-/// the voice transcribes, stands and speaks them.
+/// 78.100 D1 — THE WORDS TAUGHT THE THINKING MIND SINCE THE LAST TAKE, each
+/// with the period its sentence returns at (one where it never returns): the
+/// voice transcribes, stands and speaks them. Drained whole, never read in
+/// place; outside a mind's tick none was taught.
+#[expect(
+    clippy::manual_unwrap_or_default,
+    reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; no mind thinking was taught nothing, the empty list"
+)]
 pub fn take_taught() -> Vec<Taught> {
-    TAUGHT.lock().map_or(Vec::new(), |mut held| std::mem::take(&mut *held))
+    match crate::transducer::mind::with_taught(std::mem::take) {
+        Ok(taught) => taught,
+        Err(_) => Vec::new(),
+    }
 }
 
-/// How many shortcuts the mind holds: spelled (its own words of their rungs)
-/// and unspelled (letters the court is offered as the mind speaks).
-pub fn lexicon() -> (usize, usize) {
-    LEXICON.lock().map_or((0, 0), |l| {
-        let spelled = l.held.scoped().filter(|(_, h)| h.spelled).count();
-        (spelled, l.held.len() - spelled)
-    })
+/// How many shortcuts the mind holds.
+#[cfg(test)]
+pub(crate) fn lexicon() -> Option<usize> {
+    with_lexicon(|l| l.held.len())
 }
 
 /// A motion's coordinates, as the lexicon keys it: its canonical ray.
@@ -116,13 +128,13 @@ fn rung_of(words: &[Mv], held: &Keyed<Held>) -> u64 {
 #[cfg(test)]
 pub(crate) fn held_rung(w: &Mv) -> Option<u64> {
     let key = key_of(w)?;
-    LEXICON.lock().ok()?.held.get(&key).map(|h| h.rung)
+    with_lexicon(|l| l.held.get(&key).map(|h| h.rung)).flatten()
 }
 
 /// The rung `s` stands at against this mind's lexicon as it stands now.
 #[cfg(test)]
 pub(crate) fn rung_in_lexicon(s: &Composition) -> Option<u64> {
-    LEXICON.lock().ok().map(|lex| rung_of(&s.words, &lex.held))
+    with_lexicon(|lex| rung_of(&s.words, &lex.held))
 }
 
 /// 78.75 — A MIND SPEAKS ITS RINGS: each composed (`sentences_of`), each
@@ -160,8 +172,12 @@ pub fn hear(s: &Composition, budget: &mut crate::physics::Budget) {
     // 78.100 D2 — THE ONE TEACHING RULE (`compose::teaches`).
     let theorem = Theorem::of(s);
     let Some(word) = super::compose::teaches(s, &theorem) else { return };
-    if let Ok(mut lex) = LEXICON.lock() {
-        hold_shortcut(&mut lex, s, word, budget);
+    let taught = with_lexicon(|lex| hold_shortcut(lex, s, word, budget)).flatten();
+    // 78.100 D1 — AND A NEW SHORTCUT IS HANDED TO THE THINKING MIND, to be
+    // transcribed into its language, stood and spoken; a court transcribes
+    // nothing.
+    if let Some(t) = taught {
+        let _ = crate::transducer::mind::with_taught(|held| held.push(t));
     }
 }
 
@@ -169,14 +185,15 @@ pub fn hear(s: &Composition, budget: &mut crate::physics::Budget) {
 /// holds it, else comprehended by its coordinates (78.99 (1)) — a held
 /// word's power is derivable and never held twice — else held at its rung,
 /// spelled or left as the letter the court will be offered when the mind
-/// speaks the form, and filed under its holes.
-fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut crate::physics::Budget) {
+/// speaks the form, and filed under its holes. A shortcut newly held is
+/// returned, taught.
+fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut crate::physics::Budget) -> Option<Taught> {
     if is_identity(word) {
-        return;
+        return None;
     }
-    let Some(key) = key_of(word) else { return };
+    let key = key_of(word)?;
     if lex.held.get(&key).is_some() {
-        return;
+        return None;
     }
     // ITS COORDINATES, read off its own modes under the stroke; where they do
     // not read the word is held without them.
@@ -192,7 +209,7 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
         let held = &lex.held;
         let d = lex.holes.deconstruct(c, |k| held.get(k).and_then(|h| h.coords.as_ref()));
         if d.derived() {
-            return;
+            return None;
         }
         // 78.100 D4 — DEPTH IS READ: the word stands one above the highest
         // word it cites.
@@ -205,20 +222,15 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
         r => r.checked_add(1).map_or(r, |up| up),
     };
     let rung = rung_of(&s.words, &lex.held).max(by_citation);
-    // 78.113 — whether it spells, its residue never typed.
-    let spelled = crate::transducer::family::derivation::spells(word) == Some(true);
     if let Some(c) = &coords {
         lex.holes.file(&key, c);
     }
-    lex.held.insert(&key, Held { rung, spelled, coords });
-    // 78.100 D1 — AND IT IS HANDED TO THE VOICE, to be transcribed into its
-    // language, stood and spoken: the period it returns at, one where it
-    // never returns (a null or named word carries no return).
+    lex.held.insert(&key, Held { rung, coords });
+    // The period it returns at, one where it never returns (a null or named
+    // word carries no return).
     let period = match s.closure {
         Closure::Closes(l) => l,
         Closure::Rosette | Closure::Unbound | Closure::Unread => 1,
     };
-    if let Ok(mut taught) = TAUGHT.lock() {
-        taught.push(Taught { motion: word.clone(), period });
-    }
+    Some(Taught { motion: word.clone(), period })
 }
