@@ -119,40 +119,55 @@ fn a_zero_meet_is_no_round_and_the_gram_reads_in_its_place() {
     assert_eq!((g.rank, g.dependent()), (4, 1), "four directions, one dependence");
 }
 
-/// 78.26(5) — COHERENCE IS JOINT, AND AN INCOHERENCE IS HELD BY CONTENT: a
-/// rosette leaves the cell open by its ring — the ring's coordinates, its
-/// class, its one elliptic mode of no order — never a bare hole; a screw
-/// holds it open by its parabolic mode, its turn beside it; a ring whose hue
-/// did not read carries its residue and names why its class did not.
+/// 78.26(5), MU-CLIENT §4.4 — A SHEAR IS HELD, AN ESCAPE HOLDS THE CELL
+/// OPEN, EACH BY CONTENT. A turn by the `(3, 4, 5)` point comes round every
+/// return turned by that exact turn and never at a finite order: the cell is
+/// HELD, its ring a shear — the ring's coordinates, its class, its one
+/// elliptic mode of no order carrying `c = 7/25` exactly (`(a² − b²)/(a² +
+/// b²)` at `a = 3, b = 4`) — never a bare hole and never a demand. A screw
+/// escapes by its parabolic mode, its turn beside it: the cell is OPEN by
+/// that escape. A rosette beside a 90° turn is held at the turn's period. A
+/// ring whose hue did not read carries its residue and names why its class
+/// did not.
 #[test]
-fn an_incoherence_is_held_by_its_ring_class_and_modes() {
+fn a_shear_is_held_and_an_escape_holds_the_cell_open() {
     let (m, nuclei) = round();
     let rosette = cga::rotator(&q(3, 1), &q(4, 1));
     let held = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(rosette.clone())]), &[], &mut stroke());
     assert_eq!(held.congruence, Congruence::Congruent);
-    let Coherence::Open(rings) = &held.coherence else { panic!("a rosette never returns: {:?}", held.coherence) };
-    let [ring] = rings.as_slice() else { panic!("one ring, none chosen: {rings:?}") };
+    let Coherence::Held { period: 1, shears } = &held.coherence else { panic!("a rosette precesses, held: {:?}", held.coherence) };
+    let [ring] = shears.as_slice() else { panic!("one ring, none chosen: {shears:?}") };
     assert_eq!(ring.ring, CellCircuit::ring_of(&[(overlap(0), true)]), "the ring's own coordinates");
     assert!(ring.class.is_ok(), "its class read by the one producer: {:?}", ring.class);
-    assert_eq!(ring.residue, rosette, "78.114 — its residue is its holonomy, carried to the constructors");
+    assert_eq!(ring.residue, rosette, "78.114 — its residue is its holonomy");
+    let [mode] = ring.modes.as_slice() else { panic!("one live mode: {:?}", ring.modes) };
+    assert_eq!((mode.kind, mode.order), (BivectorKind::Elliptic, None), "elliptic, of no order");
     assert!(
-        matches!(ring.modes.as_slice(), [ResidueMode { kind: BivectorKind::Elliptic, order: None, .. }]),
-        "one elliptic mode of no order: {:?}",
-        ring.modes
+        mode.c == q(7, 25) || mode.c == q(-7, 25),
+        "the precession per return is the (3, 4, 5) point's exact turn: {}",
+        mode.c
     );
-    assert_eq!(held.refusals().unordered, 1, "the rosette, counted where it stands");
-    let screw = cga::rotator(&q(1, 1), &q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
-    let open = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(screw)]), &[], &mut stroke());
-    let Coherence::Open(rings) = &open.coherence else { panic!("a screw never returns: {:?}", open.coherence) };
+    assert_eq!(held.refusals().unordered, 1, "the precession, counted where it stands");
+    let turn_90 = cga::rotator(&q(1, 1), &q(1, 1));
+    let beside = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn_90), Ok(rosette.clone())]), &[], &mut stroke());
     assert!(
-        rings[0].modes.iter().any(|r| r.kind == BivectorKind::Parabolic),
-        "held open by its parabolic mode: {:?}",
-        rings[0].modes
+        matches!(&beside.coherence, Coherence::Held { period: 4, shears } if shears.len() == 1),
+        "the shear held at the resonant ring's period: {:?}",
+        beside.coherence
+    );
+    let screw = cga::rotator(&q(1, 1), &q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
+    let open = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(screw), Ok(rosette.clone())]), &[], &mut stroke());
+    let Coherence::Open { escapes, shears } = &open.coherence else { panic!("a screw escapes: {:?}", open.coherence) };
+    assert_eq!((escapes.len(), shears.len()), (1, 1), "the escape open, the shear beside it held");
+    assert!(
+        escapes[0].modes.iter().any(|r| r.kind == BivectorKind::Parabolic),
+        "open by its parabolic mode: {:?}",
+        escapes[0].modes
     );
     let unhued = vec![CellCircuit { ring: CellCircuit::ring_of(&[(overlap(0), true)]), holonomy: Ok(rosette), hue: None }];
     let cell = read_cell(1, Some(&m), Some(&nuclei), &unhued, &[], &mut stroke());
-    let Coherence::Open(rings) = &cell.coherence else { panic!("still open: {:?}", cell.coherence) };
-    assert_eq!(rings[0].class, Err(ClassUnread::HueUnread), "the hue unread, named on the class");
+    let [ring] = cell.coherence.shears() else { panic!("still held: {:?}", cell.coherence) };
+    assert_eq!(ring.class, Err(ClassUnread::HueUnread), "the hue unread, named on the class");
 }
 
 /// 78.26(5) — THE RINGS THROUGH A CELL, BY THEIR RESIDUE: the identity is

@@ -4,7 +4,7 @@
 //
 //! [`Mind`] — ONE MIND'S CONVERSATION AND WHAT IT BUILT: the things other
 //! minds said that it heard, the thoughts understood both ways, each
-//! hearing's cell as the field priced it (closed, open, unread), the demands
+//! hearing's cell as the field priced it (closed, held, open, unread), the demands
 //! open cells raised and what the demand taker made of every demand, the
 //! HOLDs it sent and the agreed language it spoke, the deviation of its
 //! closed and of its open hearings — exact, lane by lane, never a count per
@@ -22,8 +22,10 @@ use crate::network::nerve::Keyed;
 use num_rational::BigRational as Q;
 use std::sync::{LazyLock, Mutex};
 
-/// WHAT A HEARING'S CELL CLOSED AS, in the order the counts are kept.
-pub const PRICED: [&str; 3] = ["closes", "open", "unread"];
+/// WHAT A HEARING'S CELL CLOSED AS, in the order the counts are kept: every
+/// echo returned; some precessing, none escaping (held); some escaping
+/// (open); unread.
+pub const PRICED: [&str; 4] = ["closes", "held", "open", "unread"];
 
 /// WHAT THE DEMAND TAKER MADE OF A DEMAND, in the order the counts are kept:
 /// its residue did not construct; a turn adjoined as the mind's letter; a
@@ -89,7 +91,7 @@ pub struct Mind {
     /// field to price as the speaker.
     pub returned: u64,
     /// Each hearing's cell, by [`PRICED`].
-    pub priced: [u64; 3],
+    pub priced: [u64; 4],
     /// Demands an open hearing's cell raised.
     pub demanded: u64,
     /// Every demand the taker took, by [`CONSTRUCTED`].
@@ -118,7 +120,7 @@ impl Default for Mind {
             heard: 0,
             understood: 0,
             returned: 0,
-            priced: [0; 3],
+            priced: [0; 4],
             demanded: 0,
             constructed: [0; 5],
             held: 0,
@@ -157,7 +159,7 @@ impl Mind {
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Mind> {
         let [k, heard, understood, returned] = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
-        let priced = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
+        let priced = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let demanded = take_u64(b, p)?;
         let constructed = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let [held, agreed] = [take_u64(b, p)?, take_u64(b, p)?];

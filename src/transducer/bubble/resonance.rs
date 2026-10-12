@@ -121,9 +121,11 @@ pub struct ResonanceTally {
     /// RX1 refusals, by what failed: no reverse, the order, a residue.
     pub not_reciprocal: [u64; 3],
     pub unbounded: u64,
-    /// Cells read; of them closed at a joint period, open, unread.
+    /// Cells read; of them closed at a joint period, held (some ring
+    /// precessing, none escaping), open (some ring escaping), unread.
     pub cells: u64,
     pub closes: u64,
+    pub held: u64,
     pub open: u64,
     pub cells_unread: u64,
     /// The circuits by their modes: resonant (harmonic, returns), rosette,
@@ -207,7 +209,7 @@ pub struct ResonanceTally {
 impl ResonanceTally {
     pub fn line(&self) -> String {
         format!(
-            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | strata: deformed {} unfactored {} apart {} | spectrum: scene motions {} cosets {} symmetries {} appeared {} vanished {} unread {} | tensegrity: consolidated {} monocular {} collapsed {} unbalanced {} destabilizing {} tilted {} stability unread {} reflexive {} non-rigid {} no succession {} external torque {} incoherent {} | demanded {} undemanded {} | grounds: filed {} no return {} unplaced {} no succession {}",
+            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} held {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | strata: deformed {} unfactored {} apart {} | spectrum: scene motions {} cosets {} symmetries {} appeared {} vanished {} unread {} | tensegrity: consolidated {} monocular {} collapsed {} unbalanced {} destabilizing {} tilted {} stability unread {} reflexive {} non-rigid {} no succession {} external torque {} incoherent {} | demanded {} undemanded {} | grounds: filed {} no return {} unplaced {} no succession {}",
             self.circuits,
             self.uncarried,
             self.not_reciprocal[0],
@@ -216,6 +218,7 @@ impl ResonanceTally {
             self.unbounded,
             self.cells,
             self.closes,
+            self.held,
             self.open,
             self.cells_unread,
             self.resonant,
@@ -264,7 +267,7 @@ impl ResonanceTally {
     }
 
     /// Every count in the reading's order, one place (write and read both).
-    fn fields(&mut self) -> [&mut u64; 52] {
+    fn fields(&mut self) -> [&mut u64; 53] {
         let [nr0, nr1, nr2] = &mut self.not_reciprocal;
         let [g0, g1, g2, g3] = &mut self.grounds;
         [
@@ -276,6 +279,7 @@ impl ResonanceTally {
             &mut self.unbounded,
             &mut self.cells,
             &mut self.closes,
+            &mut self.held,
             &mut self.open,
             &mut self.cells_unread,
             &mut self.resonant,
@@ -758,7 +762,7 @@ impl Contemplation {
             // would never close. What the cell reads is its circuits: their
             // modes, their joint coherence, the capacity of their algebra.
             let cell = crate::transducer::cech::read_cell(grade, None, None, &circuits, &orders, budget);
-            self.note_cell(&cell, chart);
+            self.note_cell(&cell, chart, budget);
             self.note_shear(&circuits);
         }
         self.file_thoughts(key, &to, budget);
@@ -872,9 +876,26 @@ impl Contemplation {
         }
     }
 
-    /// The cell's reading counted, and each incoherence filed as a demand on
-    /// the chart by its class (the CS2 arm).
-    fn note_cell(&mut self, cell: &crate::transducer::cech::CellAlgebra, chart: &[u8]) {
+    /// The cell's reading counted; each SHEAR held in the mind's field, its
+    /// holonomy a field line whose turn flows on its plane's orbit, the
+    /// precession kept as content (78.73, MU-CLIENT §4.4); and each ESCAPE
+    /// filed as a demand on the chart by its class (the CS2 arm).
+    fn note_cell(&mut self, cell: &crate::transducer::cech::CellAlgebra, chart: &[u8], budget: &mut crate::physics::Budget) {
+        let shears: Vec<crate::transducer::family::pairing::FieldLine> = cell
+            .coherence
+            .shears()
+            .iter()
+            .map(|s| crate::transducer::family::pairing::FieldLine {
+                carriage: s.residue.clone(),
+                gauge: Vec::new(),
+                mass: 1,
+                free: false,
+                line: crate::transducer::cech::Thread::Free,
+            })
+            .collect();
+        if !shears.is_empty() {
+            let _ = crate::transducer::family::pairing::mark_flux(&[], &shears, budget);
+        }
         self.resonance.cells += 1;
         let r = &cell.rings;
         self.resonance.resonant += r.resonant as u64;
@@ -884,11 +905,12 @@ impl Contemplation {
         self.resonance.holonomic += r.holonomic as u64;
         match &cell.coherence {
             Coherence::Closes(_) => self.resonance.closes += 1,
+            Coherence::Held { .. } => self.resonance.held += 1,
             Coherence::Unread => self.resonance.cells_unread += 1,
-            Coherence::Open(incoherent) => {
+            Coherence::Open { escapes, .. } => {
                 self.resonance.open += 1;
                 let charts: Vec<stalk::Invariant> = stalk::Invariant::from_key(chart).into_iter().collect();
-                for inc in incoherent {
+                for inc in escapes {
                     match &inc.class {
                         // 78.68 ROW 8 — ANSWERED BY THE MIND'S OWN LETTER: a
                         // residue it has constructed and holds is said, not

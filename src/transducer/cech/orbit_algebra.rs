@@ -27,9 +27,11 @@
 //! reading in its place.
 //!
 //! COHERENCE IS JOINT: the modes close together where every elliptic order
-//! is finite, at their least common multiple; a parabolic or hyperbolic mode
-//! holds the cell open by name; a turn of no admitted order leaves it
-//! quasi-periodic, HELD, never a refusal.
+//! is finite, at their least common multiple; a turn of no admitted order
+//! is the orbit's ELLIPTIC SHEAR — it comes round every return turned by
+//! its exact turn, precessing, its torsion its content — and leaves the cell
+//! HELD, never a refusal; a parabolic or hyperbolic mode ESCAPES (it leaves
+//! the star and never comes round) and holds the cell open by name.
 //!
 //! THE CAPACITY IS COMPUTED, NEVER ADDED BY HAND: the rank of the unital
 //! ℚ-algebra the circuits' actions `R_c` generate on the vectors, read as
@@ -115,18 +117,35 @@ pub enum Permutes {
     NoCircuit,
 }
 
-/// WHETHER THE MODES CLOSE TOGETHER (78.26(5)).
+/// WHETHER THE MODES CLOSE TOGETHER (78.26(5), MU-CLIENT §4.4).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Coherence {
     /// Every ring resonant — every mode elliptic of finite order: the joint
     /// period, their lcm. A delay, not a loss.
     Closes(u32),
-    /// The NON-RESONANT rings, each with its residue by content, in the
-    /// circuits' order, none chosen (checklist (r)): a rosette, parabolic or
-    /// boost mode never returns. The resonant rings stay on `Rings`.
-    Open(Vec<Incoherence>),
+    /// Every ring comes round, and some PRECESS: each SHEARED ring's live
+    /// modes are elliptic, a turn of no finite order among them — it returns
+    /// every period turned by that exact turn (`ResidueMode::c`), its torsion
+    /// held as its content, never a demand. `period` is the resonant rings'
+    /// joint period. Shears in the circuits' order, none chosen.
+    Held { period: u32, shears: Vec<Incoherence> },
+    /// Some ring ESCAPES: a parabolic or boost mode leaves the star and never
+    /// comes round — each escape by content, the cell's open residue; the
+    /// shears beside them are held as under `Held`. Both in the circuits'
+    /// order, none chosen (checklist (r)).
+    Open { escapes: Vec<Incoherence>, shears: Vec<Incoherence> },
     /// A circuit or its modes did not read, or none crossed the cell.
     Unread,
+}
+
+impl Coherence {
+    /// The sheared rings the cell holds, under `Held` or beside an escape.
+    pub fn shears(&self) -> &[Incoherence] {
+        match self {
+            Coherence::Held { shears, .. } | Coherence::Open { shears, .. } => shears,
+            Coherence::Closes(_) | Coherence::Unread => &[],
+        }
+    }
 }
 
 /// ONE CIRCUIT CROSSING A CELL (78.26(5)): the ring's own coordinates — its
@@ -155,12 +174,15 @@ impl CellCircuit {
 }
 
 /// ONE MODE OF A RING'S RESIDUE: its regime, the planes its ray turns in,
-/// and its order where elliptic of finite order.
+/// its order where elliptic of finite order, and `c`, the value of `S` on
+/// its space (`MotionMode::c`) — for an elliptic mode the exact rational
+/// point of its turn per return, the precession a shear carries.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ResidueMode {
     pub kind: BivectorKind,
     pub plane: Vec<usize>,
     pub order: Option<u32>,
+    pub c: num_rational::BigRational,
 }
 
 /// WHY A RING'S CLASS DID NOT READ: its holonomy does not split as
@@ -178,9 +200,10 @@ pub enum ClassUnread {
     HueUnread,
 }
 
-/// 78.26(5) — A NON-RESONANT RING, BY CONTENT: its coordinates, its class
-/// (ClassVector::of_rotor on its holonomy split as the fill splits it, with
-/// its hue), and every mode of its residue. Never a bare hole.
+/// 78.26(5) — A NON-RESONANT RING, BY CONTENT — a shear or an escape: its
+/// coordinates, its class (ClassVector::of_rotor on its holonomy split as
+/// the fill splits it, with its hue), and every mode of its residue. Never
+/// a bare hole.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Incoherence {
     pub ring: Vec<u8>,
@@ -294,7 +317,7 @@ pub struct CellRefusals {
     /// The cell's nuclei did not read back: no round, no constructors, no
     /// Gram form.
     pub nuclei: bool,
-    /// Elliptic modes of no admitted order: what `Coherence::Held` holds.
+    /// Elliptic modes of no admitted order: the precessions the shears carry.
     pub unordered: usize,
     /// Why the constructors' orbit did not read, where it did not.
     pub orbit: Option<cga::OrbitUnread>,
@@ -395,15 +418,15 @@ impl CellAlgebra {
             capacity: self.capacity.err(),
             zero_meet: self.congruence == Congruence::NoRound(NoRound::ZeroMeet),
             nuclei: self.gram.is_err(),
-            // The rosettes the open rings carry: elliptic modes of no order.
-            unordered: match &self.coherence {
-                Coherence::Open(rings) => rings
-                    .iter()
-                    .flat_map(|r| &r.modes)
-                    .filter(|m| m.kind == BivectorKind::Elliptic && m.order.is_none())
-                    .count(),
-                Coherence::Closes(_) | Coherence::Unread => 0,
-            },
+            // The precessions the sheared rings carry: elliptic modes of no
+            // order. An escape's turn is the escape's, not a shear's.
+            unordered: self
+                .coherence
+                .shears()
+                .iter()
+                .flat_map(|r| &r.modes)
+                .filter(|m| m.kind == BivectorKind::Elliptic && m.order.is_none())
+                .count(),
             orbit: match self.constructors {
                 ConstructorOrbit::Unread(why) => Some(why),
                 _ => None,
@@ -834,35 +857,43 @@ pub fn read_cell_after(
             }
         }
     };
-    // 78.26(5) — COHERENCE RING BY RING: a resonant ring contributes its
-    // orders to the joint period; a non-resonant one is an incoherence held
-    // by content. Every circuit and its modes read here (`unread` is zero),
-    // so each ring is paired with its own modes.
+    // 78.26(5), MU-CLIENT §4.4 — COHERENCE RING BY RING: a resonant ring
+    // contributes its orders to the joint period; a ring whose live modes are
+    // all elliptic, a turn of no order among them, is a SHEAR — it comes
+    // round precessing, held by content; a ring with a parabolic or boost
+    // mode ESCAPES, held by content as the cell's open residue. Every circuit
+    // and its modes read here (`unread` is zero), so each ring is paired with
+    // its own modes.
     let coherence = match (circuits.is_empty(), unread) {
         (false, 0) => {
             let mut orders: Vec<u32> = Vec::new();
-            let mut open: Vec<Incoherence> = Vec::new();
+            let (mut shears, mut escapes): (Vec<Incoherence>, Vec<Incoherence>) = (Vec::new(), Vec::new());
             for (ring, ms) in crossing.iter().zip(&modes).filter_map(|(r, m)| Some((r, m.as_ref()?))) {
                 let live: Vec<&MotionMode> = ms.iter().filter(|m| m.kind != BivectorKind::Trivial).collect();
-                let resonant = live.iter().all(|m| m.kind == BivectorKind::Elliptic && m.order.is_some());
-                match (resonant, &ring.holonomy) {
-                    (true, _) => orders.extend(live.iter().filter_map(|m| m.order)),
-                    (false, Ok(h)) => open.push(Incoherence {
-                        ring: ring.ring.clone(),
-                        class: class_of_ring(h, ring.hue.as_deref()),
-                        modes: live
-                            .iter()
-                            .map(|m| ResidueMode { kind: m.kind, plane: plane_of(m), order: m.order })
-                            .collect(),
-                        residue: h.clone(),
-                    }),
+                let elliptic = live.iter().all(|m| m.kind == BivectorKind::Elliptic);
+                let resonant = elliptic && live.iter().all(|m| m.order.is_some());
+                let by_content = |h: &Mv| Incoherence {
+                    ring: ring.ring.clone(),
+                    class: class_of_ring(h, ring.hue.as_deref()),
+                    modes: live
+                        .iter()
+                        .map(|m| ResidueMode { kind: m.kind, plane: plane_of(m), order: m.order, c: m.c.clone() })
+                        .collect(),
+                    residue: h.clone(),
+                };
+                match (resonant, elliptic, &ring.holonomy) {
+                    (true, _, _) => orders.extend(live.iter().filter_map(|m| m.order)),
+                    (false, true, Ok(h)) => shears.push(by_content(h)),
+                    (false, false, Ok(h)) => escapes.push(by_content(h)),
                     // Modes read only off a read holonomy (above).
-                    (false, Err(_)) => {}
+                    (false, _, Err(_)) => {}
                 }
             }
-            match open.is_empty() {
-                true => Coherence::Closes(orders.into_iter().fold(1, lcm)),
-                false => Coherence::Open(open),
+            let period = orders.into_iter().fold(1, lcm);
+            match (escapes.is_empty(), shears.is_empty()) {
+                (true, true) => Coherence::Closes(period),
+                (true, false) => Coherence::Held { period, shears },
+                (false, _) => Coherence::Open { escapes, shears },
             }
         }
         _ => Coherence::Unread,

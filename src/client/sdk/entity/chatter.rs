@@ -304,9 +304,11 @@ impl Entity {
             let cell = crate::transducer::cech::read_cell(circuits.len(), None, None, &circuits, &orders, &mut budget);
             let (mut demanded, mut answered) = (0u64, 0u64);
             let converged = match &cell.coherence {
-                Coherence::Closes(_) => true,
+                // A held hearing comes round precessing: understood, its
+                // torsion its content, the deviation it carries the price.
+                Coherence::Closes(_) | Coherence::Held { .. } => true,
                 Coherence::Unread => false,
-                Coherence::Open(incoherent) => {
+                Coherence::Open { escapes: incoherent, .. } => {
                     let charts: Vec<crate::transducer::stalk::Invariant> = p
                         .forms
                         .iter()
@@ -329,8 +331,9 @@ impl Entity {
             crate::observe::note_mind(|m| {
                 let (slot, sum) = match &cell.coherence {
                     Coherence::Closes(_) => (0, &mut m.closed),
-                    Coherence::Open(_) => (1, &mut m.open),
-                    Coherence::Unread => (2, &mut m.open),
+                    Coherence::Held { .. } => (1, &mut m.closed),
+                    Coherence::Open { .. } => (2, &mut m.open),
+                    Coherence::Unread => (3, &mut m.open),
                 };
                 for (s, d) in sum.iter_mut().zip(&deviation) {
                     *s += d;

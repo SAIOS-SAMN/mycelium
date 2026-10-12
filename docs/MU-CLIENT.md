@@ -857,9 +857,12 @@ nothing between minds.
    hearer's field, it HOLDs carrying the deviation; converged on the
    speaker's too, the thing said is AGREED language, spoken to the court with
    the hearer's signed HOLD, and the court states the deviation beside the
-   attestation. Where the cell is OPEN — an echo that never returns, a gain,
-   a slide, a rosette — the thought is understood and unagreed, and that echo
-   is a DEMAND (`docket_demand`) on the charts where the hearing stood (the
+   attestation. An echo that is a turn of no finite order comes round every
+   return turned by its exact turn: it PRECESSES, the cell is HELD, the
+   shear is held in the field as its torsion (§4.4), and the thought agrees
+   carrying that deviation. Where the cell is OPEN — an echo that ESCAPES, a
+   gain or a slide, leaving the star — the thought is understood and
+   unagreed, and that echo is a DEMAND (`docket_demand`) on the charts where the hearing stood (the
    hearer's rings it was carried through, or the thing the speaker said),
    its holonomy the residue (78.114). The demand taker constructs from it on
    the next stroke, so deviation feeds construction: the mind expands its

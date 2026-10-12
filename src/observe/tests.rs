@@ -480,7 +480,7 @@ fn a_minds_reading_and_a_courts_agreements_read_back_exact() {
         heard: 4,
         understood: 3,
         returned: 2,
-        priced: [5, 2, 1],
+        priced: [5, 1, 2, 1],
         demanded: 2,
         constructed: [1, 0, 1, 0, 1],
         held: 3,
