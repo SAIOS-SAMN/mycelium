@@ -130,22 +130,32 @@ fn condense_is_drains_inverse_on_content() {
     assert_eq!(c.condense(&vs[0], &w, Rotor::identity(), ident(), vol()), Condensed::Remainder, "a remainder pair refuses");
 }
 
-/// MU-CLIENT §4.5 — THE MIND CONDENSES, AND RE-TETHERS BY THE CONJUGATE
-/// PAIR. Tension between two thoughts condenses a tether; the same tension
-/// again changes nothing; tension re-formed on another transport drains the
-/// standing tether and condenses the new one. Beneath a sealed cell the
-/// tether is pinned: the new transport is not written over the class the
-/// cell read.
+/// MU-CLIENT §4.5 — TWO TRANSPORTS ON ONE PAIR COLLIDE, AND THE STANDING
+/// TETHER IS NEVER WRITTEN OVER. The same tension changes nothing. A 90° turn
+/// against the identity tether is a capture of order 4; a slide grazes
+/// (contact, its null flux out to the field); a dilation flies by
+/// (scattered, out to the field). The board stands as it was through every
+/// one, and the tether carries what it carried; a sealed cell's tether too.
 #[test]
-fn the_mind_condenses_and_retethers_by_drain_then_condense() {
+fn two_transports_on_one_pair_collide_and_the_tether_stands() {
     let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
+    mind.complex.arm_outflow();
     let (a, b) = (v(1).as_bytes().to_vec(), v(2).as_bytes().to_vec());
     assert_eq!(mind.tether(&a, &b, Rotor::identity(), ident(), vol()), Condensed::Tethered);
+    let _ = mind.complex.take_outflow();
+    let board = mind.complex.board();
     assert_eq!(mind.tether(&a, &b, Rotor::identity(), ident(), vol()), Condensed::AlreadyTethered, "the same tension changes nothing");
-    assert_eq!(mind.tether(&a, &b, turn_90(), ident(), vol()), Condensed::Tethered, "re-formed on a turn: drained, then condensed");
-    assert!(mind.complex.tethered_as(&a, &b, &turn_90(), &ident()), "the tether carries the new transport");
+    assert_eq!(mind.tether(&a, &b, turn_90(), ident(), vol()), Condensed::Captured(4), "a 90° turn returns round the tether");
+    assert!(mind.complex.take_outflow().is_empty(), "a capture sends nothing out");
+    let slide = crate::transducer::element::translator_versor(5, 0);
+    assert_eq!(mind.tether(&a, &b, Rotor::identity(), slide, vol()), Condensed::Contact, "a slide grazes");
+    let dilation = crate::transducer::cga::dilator(&num_rational::BigRational::from_integer(2.into()));
+    assert_eq!(mind.tether(&a, &b, Rotor::identity(), dilation, vol()), Condensed::Scattered, "a dilation flies by");
+    assert_eq!(mind.complex.take_outflow().len(), 2, "the contact and the fly-by go to the field");
+    assert_eq!(mind.complex.board(), board, "the board stands through every collision");
+    assert!(mind.complex.tethered_as(&a, &b, &Rotor::identity(), &ident()), "the tether carries what it carried");
     let (vs, _) = sealed_triangle(&mut mind.complex, 11, turn_90());
-    assert_eq!(mind.tether(&vs[0], &vs[2], Rotor::identity(), ident(), vol()), Condensed::AlreadyTethered, "pinned beneath the sealed cell");
+    assert_eq!(mind.tether(&vs[0], &vs[2], Rotor::identity(), ident(), vol()), Condensed::Captured(4), "the sealed cell's tether captures");
     assert!(mind.complex.tethered_as(&vs[0], &vs[2], &turn_90(), &ident()), "the read cell's tether stands as it was");
 }
 

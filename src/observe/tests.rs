@@ -483,6 +483,7 @@ fn a_minds_reading_and_a_courts_agreements_read_back_exact() {
         priced: [5, 1, 2, 1],
         demanded: 2,
         constructed: [1, 0, 1, 0, 1],
+        collisions: [2, 1, 0, 3],
         held: 3,
         agreed: 2,
         closed: [q(1, 2), q(0, 1), q(0, 1), q(3, 7)],

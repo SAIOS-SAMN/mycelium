@@ -22,38 +22,41 @@
 //!
 //! CONDENSE. Two held thoughts the transport relates stand in tension, and
 //! the tension is a TETHER: condensed with its transition. Where a tether
-//! already stands on the pair carrying the same transport, nothing changes.
-//! Where the tension re-formed on another transport, the standing tether
-//! DRAINS first — its strain vented into the field, its class cauterized out
-//! where it carried one — and the new one condenses: the conjugate pair,
-//! never an overwrite. A tether pinned beneath a read cell does not drain
-//! (63.2): the read cell's class stands on it, and the new transport is not
-//! written over it.
+//! already stands on the pair, the two transports COLLIDE and the collision
+//! is physics (`Complex::condense`): their composite read by its modes — a
+//! capture (finite order) returns round the standing tether; a precessing
+//! binary (no finite order), a contact (a slide) or a fly-by (a boost) goes
+//! to the field as torsion, null flux or an escape. The standing tether is
+//! never written over. A tether is re-formed only as the field's event: its
+//! line released (its orbit returned, its tube cancelled), it drains, and
+//! the next tension condenses on the free pair.
 
 use super::*;
-use crate::transducer::cech::{Applied, Ascended, Capped, Condensed, Drained, Pivot, Punctured};
+use crate::transducer::cech::{Applied, Ascended, Capped, Condensed, Pivot, Punctured};
 use crate::transducer::element::Versor;
 
 impl Contemplation {
     /// CONDENSE the tension between `a` and `b` into a tether carrying
-    /// `rotor` and `carriage`, with `volume` per lane; a standing tether on
-    /// another transport drains first. Answers what the condense did.
+    /// `rotor` and `carriage`, with `volume` per lane; where one stands, the
+    /// collision of the two transports (`Complex::condense`). Answers what
+    /// the condense did, and the mind's reading counts each collision.
     pub(crate) fn tether(&mut self, a: &[u8], b: &[u8], rotor: Rotor, carriage: Versor, volume: [u64; 4]) -> Condensed {
-        let pair = Pivot::Condense(a.to_vec(), b.to_vec(), Box::new(rotor.clone()), carriage.clone());
-        match self.complex.apply(&pair, |_| volume, volume) {
-            Applied::Condensed(Condensed::AlreadyTethered) if !self.complex.tethered_as(a, b, &rotor, &carriage) => {
-                let key = crate::transducer::cech::simplex_key(&crate::transducer::cech::sorted_verts([a, b])).as_bytes().to_vec();
-                match self.complex.apply(&Pivot::Drain(key), |_| volume, volume) {
-                    Applied::Drained(Drained::Pinned) => Condensed::AlreadyTethered,
-                    _ => match self.complex.apply(&pair, |_| volume, volume) {
-                        Applied::Condensed(c) => c,
-                        _ => Condensed::Absent,
-                    },
-                }
-            }
+        let pair = Pivot::Condense(a.to_vec(), b.to_vec(), Box::new(rotor), carriage);
+        let condensed = match self.complex.apply(&pair, |_| volume, volume) {
             Applied::Condensed(c) => c,
             _ => Condensed::Absent,
+        };
+        let slot = match condensed {
+            Condensed::Captured(_) => Some(0),
+            Condensed::Precessing => Some(1),
+            Condensed::Contact => Some(2),
+            Condensed::Scattered => Some(3),
+            _ => None,
+        };
+        if let Some(s) = slot {
+            crate::observe::note_mind(|m| m.collisions[s] += 1);
         }
+        condensed
     }
 
     /// PUNCTURE a sealed cell into a hole keeping its class.

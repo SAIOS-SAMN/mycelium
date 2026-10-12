@@ -26,13 +26,34 @@
 
 use super::*;
 
-/// WHAT A `condense` DID — [`Drained`]'s inverse, four facts.
+/// WHAT A `condense` DID — [`Drained`]'s inverse — and, where a tether
+/// already stands on the pair, what the COLLISION of the two transports was
+/// (MU-CLIENT §4.5): their composite `C = old⁻¹ · new` read by its modes, as
+/// two spheres' product is read by its regime (78.52 Row 2). A standing
+/// tether is never written over: what it does not hold goes to the field.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Condensed {
     /// The tether is remembered with its transition, standing open.
     Tethered,
-    /// A tether already stands between the two: nothing changed.
+    /// A tether already stands carrying this transport: nothing changed.
     AlreadyTethered,
+    /// CAPTURE: `C` is a turn of this finite order — the tension returns
+    /// round the standing tether. It stands; nothing is written.
+    Captured(u64),
+    /// A PRECESSING BINARY: `C` is a turn of no finite order. The tether
+    /// stands and `C` goes to the field, its turn flowing on its plane's
+    /// orbit (𝒽) — the torsion held as content.
+    Precessing,
+    /// CONTACT: `C` carries a null mode (a slide) and no boost — the two
+    /// graze at escape. The tether stands and `C`'s null flux goes to the
+    /// pair's tube (𝒯).
+    Contact,
+    /// A FLY-BY: `C` carries a boost — incongruent, it never binds. The
+    /// tether stands, the complex untouched, and `C` goes to the field (𝒮),
+    /// where it escapes and dissipates into the reservoir at the next beat.
+    Scattered,
+    /// `C`'s modes did not read: the tether stands, nothing goes out.
+    CollisionUnread,
     /// The pair is a remainder — a transition that does not realise — and
     /// no tether condenses there.
     Remainder,
@@ -116,8 +137,8 @@ impl Complex {
         if self.is_remainder(&vertices) {
             return Condensed::Remainder;
         }
-        if self.get(&vertices).is_some() {
-            return Condensed::AlreadyTethered;
+        if let Some(standing) = self.get(&vertices).map(|s| s.motion()) {
+            return self.collide(&vertices, a, g, carriage, &standing);
         }
         self.set_edge(a, b, g, carriage, volume);
         // THE TETHER'S STRAIN WINDS INTO THE FIELD as it condenses (A.8): the
@@ -128,6 +149,40 @@ impl Complex {
         };
         self.flow_out(Flow { motion, line: Thread::Wound(simplex_key(&vertices).as_bytes().to_vec()) });
         Condensed::Tethered
+    }
+
+    /// TWO TRANSPORTS MEET ON ONE PAIR (MU-CLIENT §4.5): the arriving one
+    /// oriented as the standing tether is stored (from its lesser vertex) and
+    /// read as a motion as the tether's is, `C = old⁻¹ · new` (the reverse is
+    /// the inverse up to its weight, and a motion is read projectively), and
+    /// `C` read by its modes on the stroke they need.
+    fn collide(&mut self, vertices: &[Vec<u8>], a: &[u8], g: Rotor, carriage: Versor, standing: &crate::transducer::cga::Mv) -> Condensed {
+        use crate::network::nerve::coord::BivectorKind;
+        use crate::transducer::cga::{modes_need, motion_modes, period_of, Period};
+        let (r, c) = match vertices {
+            [lesser, _] if lesser.as_slice() == a => (g, carriage),
+            _ => (g.reverse(), carriage.reverse()),
+        };
+        let arriving = c.geo(&Self::store_coeff(r).lift());
+        let composite = standing.reverse().geo(&arriving);
+        let one = crate::transducer::cga::Mv::scalar(num_rational::BigRational::from_integer(1.into()));
+        if composite.projective_eq(&one) {
+            return Condensed::AlreadyTethered;
+        }
+        let Some(need) = modes_need(&composite) else { return Condensed::CollisionUnread };
+        let mut stroke = crate::physics::Physics::default().stroke_n(need);
+        let Some(Ok(modes)) = motion_modes(&composite, &mut stroke) else { return Condensed::CollisionUnread };
+        let outcome = match period_of(&modes) {
+            None => return Condensed::CollisionUnread,
+            Some(Period::Closes(order)) => return Condensed::Captured(order),
+            Some(Period::Rosette) => Condensed::Precessing,
+            Some(Period::Unbound) => match modes.iter().any(|m| m.kind == BivectorKind::Hyperbolic) {
+                true => Condensed::Scattered,
+                false => Condensed::Contact,
+            },
+        };
+        self.flow_out(Flow { motion: composite, line: Thread::Free });
+        outcome
     }
 
     /// WHETHER THE TETHER STANDING BETWEEN `a` AND `b` CARRIES THIS TRANSPORT:
