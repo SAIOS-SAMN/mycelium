@@ -183,9 +183,15 @@ pub(crate) fn run_minds(dir: &Path, ask: &Ask) -> ! {
     let mut held: Vec<observe::Held> = Vec::new();
     let mut silent: Vec<String> = Vec::new();
     for (voice, addr) in &entries {
-        match chatter::ask(addr, &query).ok().as_deref().and_then(observe::decode_reply) {
-            Some((_, readings)) => held.extend(readings),
-            None => silent.push(format!("{RED}mind {voice:.8}… at {addr} did not answer{RESET}")),
+        match chatter::ask(addr, &query) {
+            Ok(reply) => match observe::decode_reply(&reply) {
+                Some((_, readings)) => held.extend(readings),
+                None => silent.push(format!(
+                    "{RED}mind {voice:.8}… at {addr} answered with no reading this build reads{RESET} ({} bytes)",
+                    reply.len()
+                )),
+            },
+            Err(e) => silent.push(format!("{RED}mind {voice:.8}… at {addr} did not answer{RESET}: {e}")),
         }
     }
     if let Some(t) = tag {
