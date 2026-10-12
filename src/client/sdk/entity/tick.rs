@@ -84,8 +84,10 @@ impl Entity {
             }
         }
         let mut outcome = StrokeOutcome::default();
-        // 1. ADMISSION — the court's answers the carrier landed first.
+        // 1. ADMISSION — the court's answers the carrier landed first, and
+        // what the conversation understood, priced in the mind's own field.
         self.court_inflow(&mut outcome);
+        self.price_hearings();
         let occluded = matches!(self.transport(), TransportAperture::Occluded { .. });
         let stopping = || stop.load(std::sync::atomic::Ordering::SeqCst);
         if !occluded {

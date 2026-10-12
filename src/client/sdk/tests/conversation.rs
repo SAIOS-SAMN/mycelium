@@ -71,7 +71,19 @@ fn two_minds_form_a_shared_word_and_carry_it_to_the_court() {
     }
     let said = word(&[(q, false), (q, false)]);
     a.say(&said);
-    let act = speeches.recv().expect("the agreed speech reaches the court");
+    // Each mind's field prices what its conversation understood, as its tick
+    // does at admission; the court hears once both fields converged.
+    let mut act = None;
+    for _ in 0..4_000_000u32 {
+        if let Ok(heard) = speeches.try_recv() {
+            act = Some(heard);
+            break;
+        }
+        a.price_hearings();
+        b.price_hearings();
+        std::thread::yield_now();
+    }
+    let act = act.expect("the agreed speech reaches the court");
     let agreed = |m: &Entity| m.chat.as_ref().is_some_and(|c| c.agreed(said.address().as_bytes()));
     assert!(agreed(&a), "A holds what it said as agreed language");
     assert_eq!(act.voice, Kernel::named("speaker").voice(), "spoken by the mind that said it");
@@ -80,8 +92,10 @@ fn two_minds_form_a_shared_word_and_carry_it_to_the_court() {
     let spoken = crate::transducer::element::Element::from_bytes(tape, &mut p).expect("the tape reads");
     assert_eq!(spoken.address(), said.address(), "the thing said");
     let [Some(frame)] = act.agreements.as_slice() else { panic!("carrying one agreement") };
-    let Some(Chatter { speaker, said: Said::Hold { said: held, .. }, .. }) = Chatter::open(frame) else { panic!("a signed HOLD") };
+    let Some(Chatter { speaker, said: Said::Hold { said: held, deviation, .. }, .. }) = Chatter::open(frame) else { panic!("a signed HOLD") };
     assert_eq!(speaker, Kernel::named("hearer").voice(), "signed by the mind that agreed");
     assert_eq!(held.as_slice(), said.address().as_bytes(), "naming exactly the word");
+    let zero = num_rational::BigRational::from_integer(0.into());
+    assert!(deviation.iter().all(|d| *d == zero), "heard whole: no strain on any lane: {deviation:?}");
     let _ = std::fs::remove_dir_all(&dir);
 }

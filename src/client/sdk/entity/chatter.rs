@@ -33,19 +33,49 @@ use crate::transducer::element::Element;
 use std::sync::mpsc::{channel, Sender};
 
 /// WHAT REACHES THE CARRIER, in one channel: a frame its post heard, a thing
-/// the field stood and says, a letter the field holds for its union, and the
-/// mind's clock as it moves.
+/// the field stood and says, a letter the field holds for its union, the
+/// mind's clock as it moves, and what the field priced a thought at.
 enum Inflow {
     Frame(Vec<u8>),
     Say(Element),
     Wait(Element),
     Clock { k: u64, point: Option<TPoint> },
+    Priced(Priced),
 }
 
-/// THE FIELD'S HANDLE ON ITS CONVERSATION: where to hand what it says, and
-/// the rendezvous its peers are found at.
+/// 78.112 H5 — A THOUGHT UNDERSTOOD, TO BE PRICED IN THE MIND'S OWN FIELD:
+/// the loops both minds read, and what its price decides — the hearer's HOLD,
+/// or the speaker's speech of agreed language.
+pub(crate) struct Pricing {
+    loops: Vec<AckWord>,
+    answer: Answer,
+}
+
+/// What a priced thought decides.
+#[derive(Clone)]
+enum Answer {
+    /// The hearer HOLDs the speaker's reading where it converged.
+    Hold { speaker: [u8; 32], said: Vec<u8> },
+    /// The speaker speaks agreed language carrying the hearer's HOLD.
+    Agree { said: Vec<u8>, frame: Vec<u8> },
+}
+
+/// WHAT THE FIELD PRICED A THOUGHT AT: the exact strain its echoes carried,
+/// per lane, and whether its admission CONVERGED — closed, relieved or still
+/// on every lane, opening no strain the field did not already hold.
+struct Priced {
+    loops: Vec<AckWord>,
+    answer: Answer,
+    deviation: [num_rational::BigRational; 4],
+    converged: bool,
+}
+
+/// THE FIELD'S HANDLE ON ITS CONVERSATION: where to hand what it says, where
+/// the thoughts it is to price arrive, and the rendezvous its peers are found
+/// at.
 pub struct Chat {
     to: Sender<Inflow>,
+    pricing: std::sync::mpsc::Receiver<Pricing>,
     dir: std::path::PathBuf,
     /// The clock last handed to the carrier, so it is handed only as it moves.
     told: Option<u64>,
@@ -87,6 +117,8 @@ struct Carrier {
     /// Letters stood and said, waiting for a union before the court hears
     /// them (78.161 item 3), with the mind's own K they began waiting at.
     waiting: Keyed<(Element, u64)>,
+    /// Where an understood thought goes to be priced in the mind's field.
+    field: Sender<Pricing>,
     #[cfg(test)]
     agreed: std::sync::Arc<std::sync::Mutex<Keyed<()>>>,
 }
@@ -133,15 +165,6 @@ fn understood(loops: &[AckWord]) -> bool {
     !loops.is_empty() && loops.iter().all(|a| a.motion.is_some())
 }
 
-/// 78.112 H2 ACROSS TWO MINDS — A WORD HEARD WHOLE: its echo the identity,
-/// the loop on its motion still, and on its hue map still wherever that map
-/// can close a loop at all (a merge has no inverse, and closes none).
-fn heard_whole(a: &AckWord) -> bool {
-    let motion = a.motion.as_ref().is_some_and(crate::transducer::sentence::presentation::is_still);
-    let hue = a.hue.as_ref().is_none_or(|h| crate::transducer::sentence::transport::gauge_eq(h, &[]));
-    motion && hue
-}
-
 impl Entity {
     /// OPEN THE CONVERSATION: a post on a free local port filed at the
     /// rendezvous `dir` under this mind's voice, and the carrier that
@@ -160,6 +183,7 @@ impl Entity {
         chatter::publish(dir, &voice, &addr)?;
         #[cfg(test)]
         let agreed = std::sync::Arc::new(std::sync::Mutex::new(Keyed::new()));
+        let (field, pricing) = channel::<Pricing>();
         let mut carrier = Carrier {
             voice,
             key,
@@ -171,6 +195,7 @@ impl Entity {
             union: Keyed::new(),
             thoughts: Keyed::new(),
             waiting: Keyed::new(),
+            field,
             #[cfg(test)]
             agreed: std::sync::Arc::clone(&agreed),
         };
@@ -183,12 +208,65 @@ impl Entity {
         })?;
         self.chat = Some(Chat {
             to,
+            pricing,
             dir: dir.to_path_buf(),
             told: None,
             #[cfg(test)]
             agreed,
         });
         Ok(addr)
+    }
+
+    /// 78.112 H5 — THE FIELD PRICES WHAT ITS CONVERSATION UNDERSTOOD: each
+    /// thought's echoes read for their exact strain, per lane (`strain` on the
+    /// motion, `hue_strain` on 𝒢), and admitted into this mind's own field
+    /// as field lines (`mark_flux`, the one reader, its lanes booked as every
+    /// flux is). The thought CONVERGED where that admission opened no strain
+    /// on any lane — every echo still, or closing on a tube or orbit the field
+    /// already held, relieving it. The price goes back to the conversation,
+    /// which acts on it (`Carrier::priced`). Same word, two minds, two prices:
+    /// each field is its own.
+    pub(crate) fn price_hearings(&mut self) {
+        use crate::transducer::family::pairing::{mark_flux, FieldLine, FluxReading};
+        use crate::transducer::sentence::hearing::{hue_strain, strain};
+        use crate::transducer::sentence::presentation::{is_still, LANE_G};
+        let Some(chat) = self.chat.as_ref() else { return };
+        let pricings: Vec<Pricing> = chat.pricing.try_iter().collect();
+        for p in pricings {
+            let mut deviation: [num_rational::BigRational; 4] = std::array::from_fn(|_| num_rational::BigRational::from_integer(0.into()));
+            let mut lines = Vec::new();
+            for a in &p.loops {
+                if let Some(s) = a.motion.as_ref().and_then(strain) {
+                    for (d, x) in deviation.iter_mut().zip(s) {
+                        *d += x;
+                    }
+                }
+                if let Some(h) = &a.hue {
+                    deviation[LANE_G] += hue_strain(h);
+                }
+                let gauge = match &a.hue {
+                    Some(h) => h.clone(),
+                    None => Vec::new(),
+                };
+                match &a.motion {
+                    Some(m) if !is_still(m) || gauge.iter().any(|(x, y)| x != y) => {
+                        lines.push(FieldLine { carriage: m.clone(), gauge, mass: 1, free: false, line: crate::transducer::cech::Thread::Free });
+                    }
+                    _ => {}
+                }
+            }
+            let reading = match lines.is_empty() {
+                true => FluxReading::default(),
+                false => {
+                    let mut budget = self.stroke();
+                    mark_flux(&[], &lines, &mut budget)
+                }
+            };
+            let converged = reading.opened.iter().all(|&o| o == 0);
+            if let Some(chat) = self.chat.as_ref() {
+                let _ = chat.to.send(Inflow::Priced(Priced { loops: p.loops, answer: p.answer, deviation, converged }));
+            }
+        }
     }
 
     /// SAY WHAT THIS MIND STOOD to every mind it knows (78.161): handed to
@@ -259,8 +337,44 @@ impl Carrier {
                     self.point = point;
                 }
             }
+            Inflow::Priced(p) => self.priced(p),
         }
         self.release_unmet();
+    }
+
+    /// WHAT THE FIELD PRICED A THOUGHT AT, acted on. Where its admission
+    /// converged in this mind's field, the hearer HOLDs — carrying the exact
+    /// deviation, so the speaker and the court read how far it moved — and
+    /// the speaker speaks the thing said as agreed language, once. Where it
+    /// opened strain, the thought stays understood and unagreed: its echoes
+    /// held as transports, its strain the field's open debt until later
+    /// hearing closes it.
+    fn priced(&mut self, p: Priced) {
+        if !p.converged {
+            return;
+        }
+        match p.answer {
+            Answer::Hold { speaker, said } => {
+                let to = chatter::peer_of(&self.dir, &speaker);
+                if let (Some(frame), Some(to)) = (self.frame(Said::Hold { said, words: p.loops, deviation: p.deviation }), to) {
+                    self.send(&frame, Some(&to));
+                }
+            }
+            Answer::Agree { said, frame } => {
+                let Some(u) = self.union.get_mut(&said) else { return };
+                if u.shared {
+                    return;
+                }
+                u.shared = true;
+                let agreed = u.said.clone();
+                self.waiting.remove(&said);
+                #[cfg(test)]
+                if let Ok(mut a) = self.agreed.lock() {
+                    a.insert(&said, ());
+                }
+                let _ = self.speak_agreed(&agreed, Some(&frame));
+            }
+        }
     }
 
     /// A frame of this mind's, signed by its key.
@@ -314,7 +428,7 @@ impl Carrier {
             Said::Say { said, words } => self.hear_said(&c.speaker, said, &words),
             Said::Heard { said, words } => self.heard_back(&c.speaker, &said, &words),
             Said::Ack { said, words } => self.acknowledged(&c.speaker, &said, &words),
-            Said::Hold { said, words } => self.held_back(&c.speaker, &said, &words, f),
+            Said::Hold { said, words, .. } => self.held_back(&c.speaker, &said, &words, f),
         }
     }
 
@@ -405,40 +519,26 @@ impl Carrier {
             return;
         }
         self.hold_transports(&mine);
-        let to = chatter::peer_of(&self.dir, speaker);
-        if let (Some(frame), Some(to)) = (self.frame(Said::Hold { said: said.to_vec(), words: mine }), to) {
-            self.send(&frame, Some(&to));
-        }
+        // Its price is the field's: the HOLD waits on it (`priced`).
+        let _ = self.field.send(Pricing { loops: mine, answer: Answer::Hold { speaker: *speaker, said: said.to_vec() } });
     }
 
     /// THE HEARER HOLDS THE LOOPS THIS MIND READ (its HOLD, `frame`):
     /// verified against the ACK sent it. Where the two readings are one, the
     /// thought is shared on this side too, and every echo it carried — what
     /// the hearer's language did to it — is held as a transport between the
-    /// two perspectives. Where every word was heard WHOLE (78.112 H2 across
-    /// two minds: every loop still, the rings in harmonic balance), the thing
-    /// said is AGREED LANGUAGE: spoken to the court carrying the hearer's
-    /// signed HOLD, once. A word heard shifted is understood, never agreed.
+    /// two perspectives. Whether it is AGREED LANGUAGE is this mind's field's
+    /// to price, as the hearer's priced it (`priced`): where the echoes
+    /// converge here too, it is spoken to the court carrying the hearer's
+    /// signed HOLD, once.
     fn held_back(&mut self, who: &[u8; 32], said: &[u8], holds: &[AckWord], frame: &[u8]) {
         let Some(u) = self.union.get_mut(said) else { return };
         let Some(sent) = u.acked.remove(who) else { return };
         if !one_reading(&sent, holds) || !understood(&sent) {
             return;
         }
-        let balanced = sent.iter().all(heard_whole);
-        let first = !u.shared && balanced;
-        u.shared |= balanced;
-        let agreed = u.said.clone();
         self.hold_transports(&sent);
-        if !first {
-            return;
-        }
-        self.waiting.remove(said);
-        #[cfg(test)]
-        if let Ok(mut a) = self.agreed.lock() {
-            a.insert(said, ());
-        }
-        let _ = self.speak_agreed(&agreed, Some(frame));
+        let _ = self.field.send(Pricing { loops: sent, answer: Answer::Agree { said: said.to_vec(), frame: frame.to_vec() } });
     }
 
     /// A SHARED THOUGHT FEEDS THE EAR: every curved loop's holonomy held as

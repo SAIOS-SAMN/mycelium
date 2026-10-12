@@ -87,8 +87,10 @@ pub enum Said {
     Heard { said: Vec<u8>, words: Vec<HeardWord> },
     /// 78.163 — the speaker's reading of every loop the hearer's thought closed.
     Ack { said: Vec<u8>, words: Vec<AckWord> },
-    /// 78.163 — the hearer's own reading of the same loops.
-    Hold { said: Vec<u8>, words: Vec<AckWord> },
+    /// 78.163 — the hearer's own reading of the same loops, and (78.112 H5)
+    /// the exact strain they carried, per lane: how far the hearer's language
+    /// moved the thought, priced in its own field.
+    Hold { said: Vec<u8>, words: Vec<AckWord>, deviation: [num_rational::BigRational; 4] },
 }
 
 /// 78.163 — THE LOOP'S HOLONOMY ON THE MOTION: what the round trip said →
@@ -263,7 +265,7 @@ impl Chatter {
                     put_gauge(&mut out, &w.gauge)?;
                 }
             }
-            Said::Ack { said, words } | Said::Hold { said, words } => {
+            Said::Ack { said, words } | Said::Hold { said, words, .. } => {
                 put_short(&mut out, said)?;
                 put_count(&mut out, words.len())?;
                 for w in words {
@@ -275,6 +277,13 @@ impl Chatter {
                             put_gauge(&mut out, h)?;
                         }
                         None => out.push(0),
+                    }
+                }
+                // The deviation, each lane an exact rational written as the
+                // scalar the algebra's own codec carries.
+                if let Said::Hold { deviation, .. } = &self.said {
+                    for d in deviation {
+                        Mv::scalar(d.clone()).to_bytes(&mut out);
                     }
                 }
             }
@@ -370,7 +379,11 @@ impl Chatter {
                 }
                 match k {
                     ACK => Said::Ack { said, words },
-                    _ => Said::Hold { said, words },
+                    _ => {
+                        let mut lane = || Mv::from_bytes(body, &mut p).map(|m| m.scalar_part());
+                        let deviation = [lane()?, lane()?, lane()?, lane()?];
+                        Said::Hold { said, words, deviation }
+                    }
                 }
             }
             HEARD => {
@@ -555,7 +568,11 @@ mod tests {
                     AckWord { vertex: vec![5; 3], motion: None, hue: None },
                 ],
             },
-            Said::Hold { said: vec![2; 7], words: vec![AckWord { vertex: vec![4; 40], motion: Some(one.clone()), hue: None }] },
+            Said::Hold {
+                said: vec![2; 7],
+                words: vec![AckWord { vertex: vec![4; 40], motion: Some(one.clone()), hue: None }],
+                deviation: [0, 1, 0, 3].map(|n: i64| num_rational::BigRational::new(n.into(), 7.into())),
+            },
         ] {
             let c = Chatter { speaker, point: Some(point), said };
             let f = c.sign(&k).expect("signed");

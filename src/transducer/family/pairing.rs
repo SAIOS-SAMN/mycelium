@@ -163,7 +163,7 @@ pub(crate) fn mark_flux(
     circuits: &[(crate::transducer::element::Versor, u64)],
     word_transports: &[FieldLine],
     budget: &mut crate::physics::Budget,
-) {
+) -> FluxReading {
     // The thinking mind's own tubes, held across its ticks (78.71 (1)); else
     // the court's. A lock poisoned by a panic elsewhere reads this percept's
     // field into fresh tubes rather than none.
@@ -186,6 +186,7 @@ pub(crate) fn mark_flux(
     book(Ledger::Refused, &reading.opened);
     book(Ledger::Relieved, &reading.relieved);
     book(Ledger::Transported, &reading.transport);
+    reading
 }
 
 /// 78.71 — WHAT A PERCEPT'S FIELD DID, PER LANE: the order it built (closed),

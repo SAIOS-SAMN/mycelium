@@ -20,7 +20,8 @@ fn word(n: usize) -> Element {
 /// The HOLD a mind signs on `said`.
 fn hold(by: &ed25519_dalek::SigningKey, said: &[u8]) -> Vec<u8> {
     let words = vec![AckWord { vertex: said.to_vec(), motion: None, hue: None }];
-    Chatter { speaker: by.verifying_key().to_bytes(), point: None, said: Said::Hold { said: said.to_vec(), words } }.sign(by).expect("signed")
+    let deviation = [1, 0, 0, 2].map(|n: i64| num_rational::BigRational::new(n.into(), 5.into()));
+    Chatter { speaker: by.verifying_key().to_bytes(), point: None, said: Said::Hold { said: said.to_vec(), words, deviation } }.sign(by).expect("signed")
 }
 
 /// One sentence spoken by `voice` carrying `agreement`.
@@ -53,7 +54,8 @@ fn a_second_minds_hold_on_the_word_is_sealed_as_its_attestation() {
     let before = attests(&court);
 
     let sealed = court.attest_agreements(&speech(me, &e, hold(&hearer, addr.as_bytes())));
-    assert_eq!(sealed, vec![(addr.as_bytes().to_vec(), them)], "the hearer's attestation is sealed on the word");
+    let deviation = [1, 0, 0, 2].map(|n: i64| num_rational::BigRational::new(n.into(), 5.into()));
+    assert_eq!(sealed, vec![(addr.as_bytes().to_vec(), them, deviation)], "the hearer's attestation is sealed on the word, its signed deviation read");
     assert_eq!(attests(&court), before + 1, "one Attest on the line");
     assert!(court.attest_agreements(&speech(me, &e, hold(&hearer, addr.as_bytes()))).is_empty(), "sealed once");
 

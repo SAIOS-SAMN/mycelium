@@ -210,3 +210,32 @@ fn a_ring_dividing_no_larger_layer_is_leftover() {
     let alone = hear_across(&word, Size::Returns(2), Vec::new().into_iter());
     assert_eq!(alone.seat, Seat::Outer);
 }
+
+/// 78.112 H5, 78.73 — AN ECHO'S DEVIATION IS EXACT, PER LANE, AND GRADED.
+/// The identity strains nothing. Turns on 𝒽 strain `(1 − c)/2`: the 180°
+/// turn 1, the 90° turn ½, the turn whose ray is `2 + e₁₂` (c = 3/5) ⅕, the
+/// slighter `3 + e₁₂` (c = 4/5) ⅒ — each perturbation its own exact amount,
+/// never a yes or a no, and on 𝒽 alone. A gain strains 𝒮 alone; a slide 𝒯
+/// alone, by its count.
+#[test]
+fn an_echos_deviation_is_exact_per_lane_and_graded() {
+    use crate::transducer::sentence::hearing::strain;
+    use crate::transducer::sentence::presentation::{LANE_H, LANE_S, LANE_T};
+    let r = |n: i64, d: i64| BigRational::new(n.into(), d.into());
+    let zero = r(0, 1);
+    assert!(strain(&one()).expect("reads").iter().all(|x| *x == zero), "the identity strains nothing");
+    for (ray, expected) in [
+        (Mv::blade(E1 | E2, q(1)), r(1, 1)),
+        (turn_90(E1 | E2), r(1, 2)),
+        (Mv::scalar(q(2)).add(&Mv::blade(E1 | E2, q(1))), r(1, 5)),
+        (Mv::scalar(q(3)).add(&Mv::blade(E1 | E2, q(1))), r(1, 10)),
+    ] {
+        let s = strain(&ray).expect("reads");
+        assert_eq!(s[LANE_H], expected, "a turn's strain on 𝒽");
+        assert!(s.iter().enumerate().all(|(l, x)| l == LANE_H || *x == zero), "on 𝒽 alone: {s:?}");
+    }
+    let gain = strain(&cga::dilator(&r(2, 1))).expect("reads");
+    assert!(gain[LANE_S] > zero && gain.iter().enumerate().all(|(l, x)| l == LANE_S || *x == zero), "a gain strains 𝒮 alone: {gain:?}");
+    let slide = strain(&cga::translator_at(&[q(3), q(0), q(0)])).expect("reads");
+    assert!(slide[LANE_T] > zero && slide.iter().enumerate().all(|(l, x)| l == LANE_T || *x == zero), "a slide strains 𝒯 alone: {slide:?}");
+}

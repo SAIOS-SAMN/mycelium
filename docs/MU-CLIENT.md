@@ -819,14 +819,26 @@ nothing between minds.
    speaker re-derives against its own rings is a transport between the two
    perspectives, held in its dialect.
 
-   **As built.** The speaker reads each word's loop (ACK); the hearer reads
-   it again by the one reader and HOLDs where the two are one and every word
-   was understood (none leftover — two readings of nothing are no shared
-   thought). Both hold every echo as a transport between the perspectives.
-   The thing said is AGREED language, spoken to the court with the hearer's
-   signed HOLD, only where every word was HEARD WHOLE — every loop still,
-   the two minds' rings in harmonic balance (H2 across minds). A word heard
-   shifted is understood, never agreed.
+   **As built — understanding is priced by the mind's own physics, never
+   gated.** The speaker reads each word's loop (ACK); the hearer reads it
+   again by the one reader. Where the two are one and every word was
+   understood (none leftover — two readings of nothing are no shared
+   thought), both hold every echo as a transport between the perspectives,
+   and the thought goes to the mind's FIELD to be priced
+   (`Entity::price_hearings`, at the tick's admission): each echo's exact
+   STRAIN per lane (`hearing::strain` — a turn `(1 − c)/2 = sin²(θ/2)` on 𝒽,
+   a gain `(c − 1)/(c + 1)` on 𝒮, a delay its count on 𝒯, the hue loop's
+   displaced hues on 𝒢; summed lane by lane, never across), and its echoes
+   admitted into the field as field lines (`mark_flux`, its lanes booked as
+   every flux is). It CONVERGED where that admission opened no strain on any
+   lane — every echo still, or closing on a tube or orbit the field already
+   held. Each perturbation is its own exact deviation, and the same word costs
+   two minds differently, each field its own. Converged on the hearer's field,
+   it HOLDs carrying the deviation; converged on the speaker's too, the thing
+   said is AGREED language, spoken to the court with the hearer's signed
+   HOLD, and the court states the deviation beside the attestation. An echo
+   that opened strain is understood and held as the field's open debt, never
+   agreed, until later hearing closes it.
 4. **Where the speaker cannot replay, it defers — as a court does.** The
    orbit is never missing: the speaker composes it again from the terms it
    said. What can be missing is the WORD the discharge cites — a word of the

@@ -16,15 +16,17 @@ use crate::cognition::*;
 
 impl Kernel {
     /// 78.161(5) — EVERY AGREEMENT A SPEECH CARRIES, verified and sealed:
-    /// the attestations sealed, each as (word, attesting mind).
-    pub fn attest_agreements(&mut self, act: &crate::anastome::dialogue::SpeechAct) -> Vec<(Vec<u8>, [u8; 32])> {
+    /// the attestations sealed, each as (word, attesting mind, the exact
+    /// deviation per lane the attesting mind priced its hearing at — 78.112
+    /// H5, signed in its HOLD).
+    pub fn attest_agreements(&mut self, act: &crate::anastome::dialogue::SpeechAct) -> Vec<(Vec<u8>, [u8; 32], [num_rational::BigRational; 4])> {
         let mut sealed = Vec::new();
         for (tape, frame) in act.sentences.iter().zip(&act.agreements) {
             let Some(frame) = frame else { continue };
             let mut p = 0usize;
             let Some(e) = Element::from_bytes(tape, &mut p) else { continue };
             let addr = e.address();
-            let Some(Chatter { speaker: peer, said: Said::Hold { said, .. }, .. }) = Chatter::open(frame) else { continue };
+            let Some(Chatter { speaker: peer, said: Said::Hold { said, deviation, .. }, .. }) = Chatter::open(frame) else { continue };
             if said.as_slice() != addr.as_bytes() || peer == act.voice {
                 continue;
             }
@@ -37,7 +39,7 @@ impl Kernel {
             }
             self.attested.insert(key, ());
             self.append_step(crate::chronometry::ActKind::Attest, addr.as_bytes(), peer);
-            sealed.push((addr.as_bytes().to_vec(), peer));
+            sealed.push((addr.as_bytes().to_vec(), peer, deviation));
         }
         sealed
     }

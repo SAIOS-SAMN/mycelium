@@ -269,6 +269,46 @@ pub fn hear_across<'a>(word: &Mv, size: Size, rings: impl Iterator<Item = (Size,
     }
 }
 
+/// 78.112 H5, 78.73 — THE EXACT STRAIN AN ECHO CARRIES, per lane (`LANE_S`,
+/// `LANE_G`, `LANE_T`, `LANE_H`), never a yes or a no: each of its modes by
+/// its own reading, no root taken — a turn (𝒽) `(1 − c)/2 = sin²(θ/2)`, a
+/// gain (𝒮) `(c − 1)/(c + 1) = tanh²(λ/2)`, a delay (𝒯) its count `|λ|` on
+/// its ray — summed lane by lane, never across lanes (law 5). The identity
+/// strains nothing. `None` where its modes do not read. 𝒢 is the hue loop's,
+/// read by [`hue_strain`].
+pub fn strain(echo: &Mv) -> Option<[Q; 4]> {
+    use super::coordinates::{Coordinates, Winding};
+    use super::presentation::{lane_of, LANE_H, LANE_S, LANE_T};
+    let mut out: [Q; 4] = std::array::from_fn(|_| Q::zero());
+    if super::presentation::is_still(echo) {
+        return Some(out);
+    }
+    let need = crate::transducer::cga::modes_need(echo)?;
+    let coords = Coordinates::of(echo, &mut crate::physics::Physics::default().stroke_n(need)).ok()?;
+    for h in &coords.holes {
+        let Some(lane) = lane_of(h.kind) else { continue };
+        let s = match (lane, &h.winding) {
+            (LANE_H, _) => (Q::one() - &h.c) / Q::from_integer(2.into()),
+            (LANE_S, _) => {
+                let den = &h.c + Q::one();
+                if den.is_zero() {
+                    continue;
+                }
+                (&h.c - Q::one()) / den
+            }
+            (LANE_T, Winding::Count(lambda)) => num_traits::Signed::abs(lambda),
+            _ => continue,
+        };
+        out[lane] += s;
+    }
+    Some(out)
+}
+
+/// THE STRAIN A HUE LOOP CARRIES on 𝒢: the hues it leaves displaced.
+pub fn hue_strain(hue_loop: &[(u8, u8)]) -> Q {
+    Q::from_integer(hue_loop.iter().filter(|(a, b)| a != b).count().into())
+}
+
 /// 78.112 H6 — ONE HARMONIC RING MET BY ONE SEEN RAY: the circuit in orbit.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct InOrbit {

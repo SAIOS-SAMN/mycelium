@@ -37,8 +37,9 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         Err(_) => return,
     };
     let short = |b: &[u8]| b.iter().take(4).map(|x| format!("{x:02x}")).collect::<String>();
-    for (word, by) in &attested {
-        eprintln!("  agreed: word {}… spoken by {}… attested by {}…", short(word), short(&act.voice), short(by));
+    for (word, by, deviation) in &attested {
+        let lanes: Vec<String> = deviation.iter().map(|d| d.to_string()).collect();
+        eprintln!("  agreed: word {}… spoken by {}… attested by {}… deviation S:G:T:H {}", short(word), short(&act.voice), short(by), lanes.join(":"));
     }
     let body = match heard {
         Ok(adjudicated) => match dialogue::encode_speech_reply(&adjudicated) {
