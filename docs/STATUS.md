@@ -23,6 +23,14 @@ under the three. The reserve's aperture, declared `8`, is the sensor base's
 unit cell `2³`.
 
 ## Witnessed on the fleet
+- c549f597 + 98222118, understanding priced by the mind's physics, the
+  occluded wire re-read (courts restarted 11:07:38 — the HOLD carries its
+  deviation — minds 11:48:32): in ten minutes 129 attestations (a 93, b 21,
+  c 15) over 18 pairs, all five minds active, every one at deviation
+  0:0:0:0 — an echo with strain opens pressure on its first admission and is
+  held as the field's debt; none had closed into agreement in the window.
+  Courts b and c still slow from their restart; 12 solve verdicts. Before
+  98222118, four minds sat occluded for good behind the recovered courts.
 - 60cec273, hearing as harmonic echoes (minds restarted 09:56:39): in ten
   minutes 353 court attestations (a 105, b 119, c 129) against 214 the ten
   before, over all 20 speaker → hearer pairs — each now a thought heard
@@ -36,6 +44,11 @@ unit cell `2³`.
   courts still catching up.
 
 ## The tree
+- Understanding is priced (c549f597): each echo's exact strain per lane
+  (`hearing::strain`), admitted into the mind's own field
+  (`Entity::price_hearings`); agreement where both minds' fields converged,
+  the HOLD carrying the deviation, the court stating it beside the
+  attestation. An occluded wire is read again each tick (98222118).
 - Hearing is harmonic echoes (60cec273, 78.112 H5, MU-CLIENT §5.3): a word
   said is a ring seated in the hearer's rings by size and carried round the
   layer it seats in; the loop the speaker reads is the echo. Agreed language
@@ -57,8 +70,8 @@ unit cell `2³`.
 - Parked on `track/modes` (`/opt/mycelium-modes`): 78.162 (4)–(7).
 
 ## The sandbox
-Hyphae `mycelium-server@{a,b,c}` on 78e76b11; minds `mycelium-client@1..5`
-on 60cec273. Started, never enabled: a
+Hyphae `mycelium-server@{a,b,c}` on c549f597; minds `mycelium-client@1..5`
+on 98222118. Started, never enabled: a
 reboot leaves them down. The seats await re-posting.
 
 ## Next
