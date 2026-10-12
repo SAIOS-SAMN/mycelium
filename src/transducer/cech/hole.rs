@@ -27,31 +27,24 @@
 use super::*;
 
 /// WHAT A `condense` DID — [`Drained`]'s inverse — and, where a tether
-/// already stands on the pair, what the COLLISION of the two transports was
-/// (MU-CLIENT §4.5): their composite `C = old⁻¹ · new` read by its modes, as
-/// two spheres' product is read by its regime (78.52 Row 2). A standing
-/// tether is never written over: what it does not hold goes to the field.
+/// already stands on the pair, how the FIBRE FLEXED (MU-CLIENT §4.5): the
+/// two transports' composite `C = old⁻¹ · new` read by its modes against
+/// the tether's own axis.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Condensed {
     /// The tether is remembered with its transition, standing open.
     Tethered,
     /// A tether already stands carrying this transport: nothing changed.
     AlreadyTethered,
-    /// CAPTURE: `C` is a turn of this finite order — the tension returns
-    /// round the standing tether. It stands; nothing is written.
-    Captured(u64),
-    /// A PRECESSING BINARY: `C` is a turn of no finite order. The tether
-    /// stands and `C` goes to the field, its turn flowing on its plane's
-    /// orbit (𝒽) — the torsion held as content.
-    Precessing,
-    /// CONTACT: `C` carries a null mode (a slide) and no boost — the two
-    /// graze at escape. The tether stands and `C`'s null flux goes to the
-    /// pair's tube (𝒯).
-    Contact,
-    /// A FLY-BY: `C` carries a boost — incongruent, it never binds. The
-    /// tether stands, the complex untouched, and `C` goes to the field (𝒮),
-    /// where it escapes and dissipates into the reservoir at the next beat.
-    Scattered,
+    /// THE FIBRE FLEXED by `C`: the tether now carries the arriving
+    /// transport (`old · C`), every cell over it re-reads, and `C`'s strain
+    /// winds into the field on the tether's own line — where a stretch's
+    /// boost never returns and dissipates on a beat, the line is released
+    /// and the tether drains: it BREAKS, as the field's event.
+    Flexed(Flex),
+    /// A HOLE over the tether — a question the mind still carries — holds
+    /// it: it does not flex, and `C` goes to the field free.
+    Pinned(Flex),
     /// `C`'s modes did not read: the tether stands, nothing goes out.
     CollisionUnread,
     /// The pair is a remainder — a transition that does not realise — and
@@ -59,6 +52,22 @@ pub enum Condensed {
     Remainder,
     /// Not two distinct vertices.
     Absent,
+}
+
+/// HOW A FIBRE FLEXED (MU-CLIENT §4.5): `C`'s modes against the tether's own
+/// axis, each counted by what it does to the fibre — STRETCH (a boost, 𝒮),
+/// BEND (a turn on a plane off the tether's own), TWIST (a turn commuting
+/// with the tether's own plane, about its axis), FOLD (a turn of order two:
+/// the fibre turned back on itself), SLIDE (a null mode, 𝒯) — and the
+/// period the flex returns at, where every mode turns at a finite order.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Flex {
+    pub stretch: u8,
+    pub bend: u8,
+    pub twist: u8,
+    pub fold: u8,
+    pub slide: u8,
+    pub period: Option<u64>,
 }
 
 /// WHAT A `puncture` DID.
@@ -163,7 +172,7 @@ impl Complex {
             [lesser, _] if lesser.as_slice() == a => (g, carriage),
             _ => (g.reverse(), carriage.reverse()),
         };
-        let arriving = c.geo(&Self::store_coeff(r).lift());
+        let arriving = c.geo(&Self::store_coeff(r.clone()).lift());
         let composite = standing.reverse().geo(&arriving);
         let one = crate::transducer::cga::Mv::scalar(num_rational::BigRational::from_integer(1.into()));
         if composite.projective_eq(&one) {
@@ -172,17 +181,57 @@ impl Complex {
         let Some(need) = modes_need(&composite) else { return Condensed::CollisionUnread };
         let mut stroke = crate::physics::Physics::default().stroke_n(need);
         let Some(Ok(modes)) = motion_modes(&composite, &mut stroke) else { return Condensed::CollisionUnread };
-        let outcome = match period_of(&modes) {
-            None => return Condensed::CollisionUnread,
-            Some(Period::Closes(order)) => return Condensed::Captured(order),
-            Some(Period::Rosette) => Condensed::Precessing,
-            Some(Period::Unbound) => match modes.iter().any(|m| m.kind == BivectorKind::Hyperbolic) {
-                true => Condensed::Scattered,
-                false => Condensed::Contact,
+        // Each mode against the tether's own plane: a turn whose plane
+        // commutes with it turns about the tether's axis (a twist); any other
+        // bends it. An identity tether has no axis, and every turn bends it.
+        let axis = standing.grade(2);
+        let mut flex = Flex {
+            period: match period_of(&modes) {
+                Some(Period::Closes(order)) => Some(order),
+                _ => None,
             },
+            ..Flex::default()
         };
-        self.flow_out(Flow { motion: composite, line: Thread::Free });
-        outcome
+        for m in &modes {
+            let count = match m.kind {
+                BivectorKind::Hyperbolic => &mut flex.stretch,
+                BivectorKind::Parabolic => &mut flex.slide,
+                BivectorKind::Trivial => continue,
+                BivectorKind::Elliptic if m.order == Some(2) => &mut flex.fold,
+                BivectorKind::Elliptic => {
+                    let plane = m.ray.grade(2);
+                    match !axis.is_zero() && plane.geo(&axis).sub(&axis.geo(&plane)).is_zero() {
+                        true => &mut flex.twist,
+                        false => &mut flex.bend,
+                    }
+                }
+            };
+            if let Some(n) = count.checked_add(1) {
+                *count = n;
+            }
+        }
+        let key = simplex_key(vertices).as_bytes().to_vec();
+        let cells: Vec<Vec<u8>> = match self.cofaces_of(vertices) {
+            Some(c) => c.scoped().map(|(k, ())| k).filter(|k| *k != key).collect(),
+            None => Vec::new(),
+        };
+        if cells.iter().any(|k| self.is_hole(k)) {
+            self.flow_out(Flow { motion: composite, line: Thread::Free });
+            return Condensed::Pinned(flex);
+        }
+        // THE FLEX: the fibre carries the arriving transport, and every
+        // cell sealed over it re-reads its holonomy — the membrane flexes
+        // with it, its curvature changed as content.
+        let Some(t) = self.stored_mut(&key) else { return Condensed::CollisionUnread };
+        t.coefficient = Self::store_coeff(r);
+        t.carriage = c;
+        for k in cells {
+            if let Some(verts) = self.vertices_at(&k) {
+                let _ = self.reopen_on_coeff_change(&k, &verts);
+            }
+        }
+        self.flow_out(Flow { motion: composite, line: Thread::Wound(key) });
+        Condensed::Flexed(flex)
     }
 
     /// WHETHER THE TETHER STANDING BETWEEN `a` AND `b` CARRIES THIS TRANSPORT:

@@ -33,9 +33,10 @@ pub const PRICED: [&str; 4] = ["closes", "held", "open", "unread"];
 /// to stand on; a residue it already holds a letter of.
 pub const CONSTRUCTED: [&str; 5] = ["refused", "letter", "motion letter", "no chart", "held"];
 
-/// WHAT TWO TRANSPORTS MEETING ON ONE PAIR WERE (MU-CLIENT §4.5), in the
-/// order the counts are kept.
-pub const COLLISIONS: [&str; 4] = ["captured", "precessing", "contact", "scattered"];
+/// HOW ITS FIBRES FLEXED where a transport met a standing tether (MU-CLIENT
+/// §4.5): each mode by what it did — stretch, bend, twist, fold, slide — and
+/// the flexes a hole pinned, in the order the counts are kept.
+pub const FLEX: [&str; 6] = ["stretch", "bend", "twist", "fold", "slide", "pinned"];
 
 /// WHAT TWO BODIES WHOSE SPHERES MET IN AN ADMITTED SCENE WERE (78.52 Row
 /// 2), in the order the counts are kept.
@@ -104,8 +105,8 @@ pub struct Mind {
     pub demanded: u64,
     /// Every demand the taker took, by [`CONSTRUCTED`].
     pub constructed: [u64; 5],
-    /// Collisions on its tethers, by [`COLLISIONS`].
-    pub collisions: [u64; 4],
+    /// Its fibres' flexes, by [`FLEX`].
+    pub flex: [u64; 6],
     /// Bodies whose spheres met in an admitted scene, by [`BODIES`].
     pub bodies: [u64; 3],
     /// Spin coupled to orbit: each lock `p:q` read, with how often, in
@@ -143,7 +144,7 @@ impl Default for Mind {
             priced: [0; 4],
             demanded: 0,
             constructed: [0; 5],
-            collisions: [0; 4],
+            flex: [0; 6],
             bodies: [0; 3],
             locks: Vec::new(),
             drifts: 0,
@@ -178,7 +179,7 @@ impl Mind {
             put_u64(out, v);
         }
         put_u64(out, self.demanded);
-        for v in self.constructed.iter().chain(&self.collisions).chain(&self.bodies) {
+        for v in self.constructed.iter().chain(&self.flex).chain(&self.bodies) {
             put_u64(out, *v);
         }
         for v in [self.held, self.agreed] {
@@ -203,7 +204,7 @@ impl Mind {
         let priced = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let demanded = take_u64(b, p)?;
         let constructed = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
-        let collisions = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
+        let flex = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let bodies = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let [held, agreed] = [take_u64(b, p)?, take_u64(b, p)?];
         let closed = take_lanes(b, p)?;
@@ -228,7 +229,7 @@ impl Mind {
             priced,
             demanded,
             constructed,
-            collisions,
+            flex,
             bodies,
             locks,
             drifts,
@@ -257,8 +258,8 @@ impl Mind {
             format!("  cells {} · demanded {}", priced.join(" "), self.demanded),
             format!("  constructed {}", constructed.join(" ")),
             format!(
-                "  collisions {} · bodies met {}",
-                COLLISIONS.iter().zip(&self.collisions).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
+                "  fibres {} · bodies met {}",
+                FLEX.iter().zip(&self.flex).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 BODIES.iter().zip(&self.bodies).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
             ),
             format!(

@@ -130,33 +130,46 @@ fn condense_is_drains_inverse_on_content() {
     assert_eq!(c.condense(&vs[0], &w, Rotor::identity(), ident(), vol()), Condensed::Remainder, "a remainder pair refuses");
 }
 
-/// MU-CLIENT §4.5 — TWO TRANSPORTS ON ONE PAIR COLLIDE, AND THE STANDING
-/// TETHER IS NEVER WRITTEN OVER. The same tension changes nothing. A 90° turn
-/// against the identity tether is a capture of order 4; a slide grazes
-/// (contact, its null flux out to the field); a dilation flies by
-/// (scattered, out to the field). The board stands as it was through every
-/// one, and the tether carries what it carried; a sealed cell's tether too.
+/// MU-CLIENT §4.5 — A TETHER IS A FIBRE AND FLEXES. The same tension changes
+/// nothing. A 90° turn against the identity tether bends it (no axis to
+/// twist about), returning at 4; a further 90° in the same plane twists it
+/// about its own axis; a slide slides it; a dilation stretches it. Each time
+/// the fibre carries the arriving transport and its flex's strain winds out
+/// on the tether's own line. Under a sealed cell the fibre flexes and the
+/// cell re-reads; under a hole it is pinned and the flex goes out free.
 #[test]
-fn two_transports_on_one_pair_collide_and_the_tether_stands() {
+fn a_tether_is_a_fibre_and_flexes() {
     let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
     mind.complex.arm_outflow();
     let (a, b) = (v(1).as_bytes().to_vec(), v(2).as_bytes().to_vec());
     assert_eq!(mind.tether(&a, &b, Rotor::identity(), ident(), vol()), Condensed::Tethered);
     let _ = mind.complex.take_outflow();
-    let board = mind.complex.board();
     assert_eq!(mind.tether(&a, &b, Rotor::identity(), ident(), vol()), Condensed::AlreadyTethered, "the same tension changes nothing");
-    assert_eq!(mind.tether(&a, &b, turn_90(), ident(), vol()), Condensed::Captured(4), "a 90° turn returns round the tether");
-    assert!(mind.complex.take_outflow().is_empty(), "a capture sends nothing out");
+    let bent = Flex { bend: 1, period: Some(4), ..Flex::default() };
+    assert_eq!(mind.tether(&a, &b, turn_90(), ident(), vol()), Condensed::Flexed(bent), "a turn bends the fibre");
+    assert!(mind.complex.tethered_as(&a, &b, &turn_90(), &ident()), "the fibre carries the arriving transport");
+    let half = turn_90().geo(&turn_90());
+    let Condensed::Flexed(twisted) = mind.tether(&a, &b, half.clone(), ident(), vol()) else { panic!("it flexes") };
+    assert_eq!((twisted.twist, twisted.bend), (1, 0), "a turn in its own plane twists it: {twisted:?}");
+    let wound = mind.complex.take_outflow();
+    assert_eq!(wound.len(), 2, "each flex winds out");
+    let line = Thread::Wound(simplex_key(&sorted_verts([a.as_slice(), b.as_slice()])).as_bytes().to_vec());
+    assert!(wound.iter().all(|f| f.line == line), "on the tether's own line");
+    let (c, d) = (v(3).as_bytes().to_vec(), v(4).as_bytes().to_vec());
+    assert_eq!(mind.tether(&c, &d, Rotor::identity(), ident(), vol()), Condensed::Tethered);
     let slide = crate::transducer::element::translator_versor(5, 0);
-    assert_eq!(mind.tether(&a, &b, Rotor::identity(), slide, vol()), Condensed::Contact, "a slide grazes");
+    let Condensed::Flexed(slid) = mind.tether(&c, &d, Rotor::identity(), slide, vol()) else { panic!("it flexes") };
+    assert_eq!((slid.slide, slid.period), (1, None), "a slide slides it: {slid:?}");
     let dilation = crate::transducer::cga::dilator(&num_rational::BigRational::from_integer(2.into()));
-    assert_eq!(mind.tether(&a, &b, Rotor::identity(), dilation, vol()), Condensed::Scattered, "a dilation flies by");
-    assert_eq!(mind.complex.take_outflow().len(), 2, "the contact and the fly-by go to the field");
-    assert_eq!(mind.complex.board(), board, "the board stands through every collision");
-    assert!(mind.complex.tethered_as(&a, &b, &Rotor::identity(), &ident()), "the tether carries what it carried");
-    let (vs, _) = sealed_triangle(&mut mind.complex, 11, turn_90());
-    assert_eq!(mind.tether(&vs[0], &vs[2], Rotor::identity(), ident(), vol()), Condensed::Captured(4), "the sealed cell's tether captures");
-    assert!(mind.complex.tethered_as(&vs[0], &vs[2], &turn_90(), &ident()), "the read cell's tether stands as it was");
+    let Condensed::Flexed(stretched) = mind.tether(&c, &d, Rotor::identity(), dilation, vol()) else { panic!("it flexes") };
+    assert!(stretched.stretch >= 1, "a dilation stretches it: {stretched:?}");
+    let (vs, cell) = sealed_triangle(&mut mind.complex, 11, turn_90());
+    assert!(matches!(mind.tether(&vs[0], &vs[2], Rotor::identity(), ident(), vol()), Condensed::Flexed(_)), "under a sealed cell it flexes");
+    assert!(mind.complex.simplex(&cell).is_some_and(|s| s.fill.unsettled()), "and the cell re-reads");
+    let (ws, held) = sealed_triangle(&mut mind.complex, 21, turn_90());
+    assert!(matches!(mind.complex.puncture(&held), Punctured::Opened(_)), "a question opened over it");
+    assert!(matches!(mind.tether(&ws[0], &ws[2], Rotor::identity(), ident(), vol()), Condensed::Pinned(_)), "a hole pins it");
+    assert!(mind.complex.tethered_as(&ws[0], &ws[2], &turn_90(), &ident()), "pinned, it carries what it carried");
 }
 
 /// MU-CLIENT §4.5 — THE MIND'S CELL ASCENDS BY ITS OWN BOUNDARY. The climb

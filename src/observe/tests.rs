@@ -483,7 +483,7 @@ fn a_minds_reading_and_a_courts_agreements_read_back_exact() {
         priced: [5, 1, 2, 1],
         demanded: 2,
         constructed: [1, 0, 1, 0, 1],
-        collisions: [2, 1, 0, 3],
+        flex: [2, 1, 0, 3, 1, 1],
         bodies: [4, 1, 2],
         locks: vec![(1, 1, 3), (2, 1, 1)],
         drifts: 2,

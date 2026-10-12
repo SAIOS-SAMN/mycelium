@@ -21,15 +21,15 @@
 //! releases its whole star the same way (`Complex::vent_vertex`).
 //!
 //! CONDENSE. Two held thoughts the transport relates stand in tension, and
-//! the tension is a TETHER: condensed with its transition. Where a tether
-//! already stands on the pair, the two transports COLLIDE and the collision
-//! is physics (`Complex::condense`): their composite read by its modes — a
-//! capture (finite order) returns round the standing tether; a precessing
-//! binary (no finite order), a contact (a slide) or a fly-by (a boost) goes
-//! to the field as torsion, null flux or an escape. The standing tether is
-//! never written over. A tether is re-formed only as the field's event: its
-//! line released (its orbit returned, its tube cancelled), it drains, and
-//! the next tension condenses on the free pair.
+//! the tension is a TETHER: condensed with its transition. A tether is a
+//! FIBRE: where one already stands on the pair, the arriving transport
+//! FLEXES it (`Complex::condense`) — their composite read by its modes
+//! against the tether's own axis as stretch, bend, twist, fold and slide —
+//! the fibre carries the new transport, the cells over it re-read, and the
+//! flex's strain winds into the field on the tether's line. The field
+//! decides what holds: a stretch's boost never returns, dissipates on a
+//! beat and releases the line, and the tether drains — it BREAKS; a turn
+//! rings until it returns. A hole over the tether pins it rigid.
 
 use super::*;
 use crate::transducer::cech::{Applied, Ascended, Capped, Condensed, Pivot, Punctured};
@@ -46,15 +46,14 @@ impl Contemplation {
             Applied::Condensed(c) => c,
             _ => Condensed::Absent,
         };
-        let slot = match condensed {
-            Condensed::Captured(_) => Some(0),
-            Condensed::Precessing => Some(1),
-            Condensed::Contact => Some(2),
-            Condensed::Scattered => Some(3),
-            _ => None,
-        };
-        if let Some(s) = slot {
-            crate::observe::note_mind(|m| m.collisions[s] += 1);
+        if let Condensed::Flexed(f) | Condensed::Pinned(f) = condensed {
+            let pinned = matches!(condensed, Condensed::Pinned(_));
+            crate::observe::note_mind(|m| {
+                for (slot, n) in [f.stretch, f.bend, f.twist, f.fold, f.slide].into_iter().enumerate() {
+                    m.flex[slot] += u64::from(n);
+                }
+                m.flex[5] += u64::from(pinned);
+            });
         }
         condensed
     }
