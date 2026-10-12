@@ -152,6 +152,53 @@ pub(crate) fn run(home: &Path, at: Option<&str>, ask: &Ask) -> ! {
     std::process::exit(0)
 }
 
+/// MU-CLIENT §5.3 — EVERY MIND AT THE RENDEZVOUS, ASKED ON ITS OWN POST, its
+/// readings rendered as a court's are. A mind that does not answer is said
+/// so, in place; exit 2 where none did.
+pub(crate) fn run_minds(dir: &Path, ask: &Ask) -> ! {
+    use mycelium::client::sdk::chatter;
+    let tag = match ask.reading {
+        None => None,
+        Some(name) => observe::READING_NAMES.iter().find(|(n, _)| *n == name).map(|&(_, t)| t),
+    };
+    let Some(query) = observe::encode_query(&[]) else {
+        println!("{RED}the question does not write{RESET}");
+        std::process::exit(2)
+    };
+    let mut entries: Vec<(String, String)> = match std::fs::read_dir(dir) {
+        Ok(rd) => rd
+            .flatten()
+            .filter_map(|e| {
+                let name = e.file_name().to_string_lossy().into_owned();
+                let addr = std::fs::read_to_string(e.path()).ok()?.trim().to_string();
+                (!name.starts_with('.') && !addr.is_empty()).then_some((name, addr))
+            })
+            .collect(),
+        Err(e) => {
+            println!("{RED}no rendezvous at {}{RESET}: {e}", dir.display());
+            std::process::exit(2)
+        }
+    };
+    entries.sort();
+    let mut held: Vec<observe::Held> = Vec::new();
+    let mut silent: Vec<String> = Vec::new();
+    for (voice, addr) in &entries {
+        match chatter::ask(addr, &query).ok().as_deref().and_then(observe::decode_reply) {
+            Some((_, readings)) => held.extend(readings),
+            None => silent.push(format!("{RED}mind {voice:.8}… at {addr} did not answer{RESET}")),
+        }
+    }
+    if let Some(t) = tag {
+        held.retain(|(k, _)| Source::of_key(k).is_some_and(|(_, g)| g == t));
+    }
+    let total = held.len() as u64;
+    for line in render(&dir.display().to_string(), total, &held).into_iter().chain(silent.iter().cloned()) {
+        println!("{line}");
+    }
+    let answered = entries.len() > silent.len();
+    std::process::exit(if answered { 0 } else { 2 })
+}
+
 fn short(vk: &[u8; 32]) -> String {
     format!("{:02x}{:02x}{:02x}{:02x}…", vk[0], vk[1], vk[2], vk[3])
 }
@@ -185,6 +232,7 @@ pub(crate) fn render(addr: &str, total: u64, held: &[observe::Held]) -> Vec<Stri
         lines.push(String::new());
         lines.push(match source {
             Source::Court(vk) => format!("{CYAN}{BOLD}── COURT {}{RESET}", short(vk)),
+            Source::Mind(vk) => format!("{GREEN}{BOLD}── MIND {}{RESET}", short(vk)),
         });
         for r in readings {
             lines.extend(match r {
@@ -199,6 +247,8 @@ pub(crate) fn render(addr: &str, total: u64, held: &[observe::Held]) -> Vec<Stri
                 Reading::Acts(a) => a.lines().into_iter().map(|l| format!("  {l}")).collect(),
                 Reading::Carriers(c) => c.lines().into_iter().map(|l| format!("  {l}")).collect(),
                 Reading::Relay(r) => r.lines().into_iter().map(|l| format!("  {l}")).collect(),
+                Reading::Mind(m) => m.lines().into_iter().map(|l| format!("  {l}")).collect(),
+                Reading::Agreements(a) => a.lines().into_iter().map(|l| format!("  {l}")).collect(),
             });
         }
     }
@@ -215,6 +265,7 @@ fn tuniversal(sources: &[(Source, Vec<Reading>)]) -> Vec<String> {
     for (source, readings) in sources {
         let name = match source {
             Source::Court(vk) => format!("court {}", short(vk)),
+            Source::Mind(vk) => format!("mind {}", short(vk)),
         };
         let clock = readings.iter().find_map(|r| match r {
             Reading::Clock(c) => Some(c),

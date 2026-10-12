@@ -19,7 +19,7 @@
 //! ```
 //!
 //! Any process QUERIES: the console asks a hypha for everything it holds of
-//! its own court. A mind reports nothing about itself.
+//! its own court, and a mind, on its post, for its own reading.
 
 use super::reading::Reading;
 use crate::anastome::dialogue::ACT_OBSERVE;
@@ -27,19 +27,22 @@ use crate::network::nerve::Keyed;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{LazyLock, Mutex};
 
-/// WHO A READING IS OF: a court (a hypha), by its key.
+/// WHO A READING IS OF: a court (a hypha), or a mind, by its key.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Source {
     Court([u8; 32]),
+    Mind([u8; 32]),
 }
 
 pub const SOURCE_COURT: u8 = 0;
+pub const SOURCE_MIND: u8 = 1;
 
 impl Source {
     /// The source's prefix: its kind, then its key.
     pub fn prefix(&self) -> Vec<u8> {
         let (kind, vk) = match self {
             Source::Court(vk) => (SOURCE_COURT, vk),
+            Source::Mind(vk) => (SOURCE_MIND, vk),
         };
         let mut k = Vec::with_capacity(34);
         k.push(kind);
@@ -64,6 +67,7 @@ impl Source {
         };
         match *kind {
             SOURCE_COURT => Some((Source::Court(vk), tag)),
+            SOURCE_MIND => Some((Source::Mind(vk), tag)),
             _ => None,
         }
     }

@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# OBSERVER — the fleet's pane, read from the running binaries: every mind
+# asked on its own post for its reading (its hearing, what it built, what it
+# holds), and every court for the agreements it attested, per speaker →
+# hearer, with their exact deviation. Typed readings only; no log is read.
+#
+# Usage: scripts/observer [SECONDS]     (a live pane, refreshed every SECONDS, default 5)
+#        scripts/observer once          (one frame, then exit)
+set -uo pipefail
+
+REPO="$(cd "$(dirname "$0")/.." && pwd)"
+BIN="$REPO/target/release/mycelium-server"
+HYPHAE=(a b c)
+
+frame() {
+  "$BIN" --console --minds --home "$REPO/var/a" --reading mind
+  for h in "${HYPHAE[@]}"; do
+    "$BIN" --console --home "$REPO/var/$h" --reading agreements
+  done
+}
+
+if [ "${1:-}" = "once" ]; then
+  frame
+  exit 0
+fi
+exec watch -c -t -n "${1:-5}" "$0" once

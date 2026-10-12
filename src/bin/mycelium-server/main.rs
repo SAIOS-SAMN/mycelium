@@ -58,13 +58,14 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
             || args[i] == "--reading"
             || args[i] == "--why"
             || args[i] == "--wallet"
+            || args[i] == "--rendezvous"
         {
             i += 2;
             continue;
         }
         // Valueless flags, checked here so an unknown one is still refused
         // rather than silently ignored (rule 11).
-        if args[i] == "--mint-genesis" || args[i] == "--recut" || args[i] == "--check" || args[i] == "--console" || args[i] == "--ledger" {
+        if args[i] == "--mint-genesis" || args[i] == "--recut" || args[i] == "--check" || args[i] == "--console" || args[i] == "--ledger" || args[i] == "--minds" {
             i += 1;
             continue;
         }
@@ -318,6 +319,16 @@ fn main() {
             court: flag(&args, "--court"),
             reading: flag(&args, "--reading"),
         };
+        // MU-CLIENT §5.3 — every mind at the rendezvous, asked on its post:
+        // `--minds` the fleet's (beside the homes), `--rendezvous DIR` another.
+        if args.iter().any(|a| a == "--minds") {
+            let dir = match (flag(&args, "--rendezvous"), home.parent()) {
+                (Some(d), _) => PathBuf::from(d),
+                (None, Some(p)) => p.join("chatter"),
+                (None, None) => PathBuf::from("chatter"),
+            };
+            console::run_minds(&dir, &ask);
+        }
         console::run(&home, flag(&args, "--at"), &ask);
     }
     let _ = std::fs::create_dir_all(&home);

@@ -25,10 +25,16 @@ pub const TAG_ACTS: u8 = 18;
 pub const TAG_CARRIERS: u8 = 19;
 /// 78.145 — the seat relay's standing and its posts filed and refused.
 pub const TAG_RELAY: u8 = 20;
+/// MU-CLIENT §5.3 — a mind's conversation and what it built.
+pub const TAG_MIND: u8 = 21;
+/// MU-CLIENT §5.5 — the agreed language a court attested, per pair.
+pub const TAG_AGREEMENTS: u8 = 22;
 
 /// CQ1 — EVERY READING'S NAME, by its tag: the ONE statement the console's
 /// `--reading NAME` is read against (law 12).
-pub const READING_NAMES: [(&str, u8); 11] = [
+pub const READING_NAMES: [(&str, u8); 13] = [
+    ("mind", TAG_MIND),
+    ("agreements", TAG_AGREEMENTS),
     ("carriers", TAG_CARRIERS),
     ("relay", TAG_RELAY),
     ("clock", TAG_CLOCK),
@@ -668,6 +674,10 @@ pub enum Reading {
     /// 78.145 — the seat relay: its standing, and per domain the posts it
     /// filed by kind and refused by reason since boot.
     Relay(Box<super::Relay>),
+    /// MU-CLIENT §5.3 — a mind's conversation and what it built.
+    Mind(Box<super::Mind>),
+    /// MU-CLIENT §5.5 — the agreed language a court attested, per pair.
+    Agreements(Box<super::Agreements>),
 }
 
 impl Reading {
@@ -684,6 +694,8 @@ impl Reading {
             Reading::Acts(_) => TAG_ACTS,
             Reading::Carriers(_) => TAG_CARRIERS,
             Reading::Relay(_) => TAG_RELAY,
+            Reading::Mind(_) => TAG_MIND,
+            Reading::Agreements(_) => TAG_AGREEMENTS,
         }
     }
 
@@ -714,6 +726,10 @@ impl Reading {
             (Reading::Carriers(a), Reading::Carriers(b)) => *a = b.clone(),
             // The relay is read whole at the question; the later stands.
             (Reading::Relay(a), Reading::Relay(b)) => *a = b.clone(),
+            // A mind's reading and a court's agreements are read whole at
+            // the question; the later stands.
+            (Reading::Mind(a), Reading::Mind(b)) => *a = b.clone(),
+            (Reading::Agreements(a), Reading::Agreements(b)) => *a = b.clone(),
             _ => return false,
         }
         true
@@ -747,6 +763,11 @@ impl Reading {
             }
             Reading::Carriers(r) => r.put(out),
             Reading::Relay(r) => r.put(out),
+            Reading::Mind(r) => {
+                r.put(out);
+                Some(())
+            }
+            Reading::Agreements(r) => r.put(out),
         }
     }
 
@@ -765,6 +786,8 @@ impl Reading {
             TAG_ACTS => Some(Reading::Acts(Box::new(super::Acts::take(b, p)?))),
             TAG_CARRIERS => Some(Reading::Carriers(Box::new(super::Carriers::take(b, p)?))),
             TAG_RELAY => Some(Reading::Relay(Box::new(super::Relay::take(b, p)?))),
+            TAG_MIND => Some(Reading::Mind(Box::new(super::Mind::take(b, p)?))),
+            TAG_AGREEMENTS => Some(Reading::Agreements(Box::new(super::Agreements::take(b, p)?))),
             _ => None,
         }
     }

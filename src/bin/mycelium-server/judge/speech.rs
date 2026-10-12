@@ -38,6 +38,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     };
     let short = |b: &[u8]| b.iter().take(4).map(|x| format!("{x:02x}")).collect::<String>();
     for (word, by, deviation) in &attested {
+        mycelium::observe::note_agreement(&act.voice, by, deviation);
         let lanes: Vec<String> = deviation.iter().map(|d| d.to_string()).collect();
         eprintln!("  agreed: word {}… spoken by {}… attested by {}… deviation S:G:T:H {}", short(word), short(&act.voice), short(by), lanes.join(":"));
     }

@@ -468,3 +468,35 @@ fn a_courts_tuniversal_standing_reads_back_exactly() {
         assert_eq!(TStanding::take(&alone, &mut at), None);
     }
 }
+
+/// MU-CLIENT §5.3, §5.5 — A MIND'S READING AND A COURT'S AGREEMENTS travel
+/// whole, their deviations exact rationals lane by lane, and a mind's
+/// reading stands under its own source.
+#[test]
+fn a_minds_reading_and_a_courts_agreements_read_back_exact() {
+    let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
+    let mind = Mind {
+        k: 9,
+        heard: 4,
+        understood: 3,
+        returned: 2,
+        priced: [5, 2, 1],
+        demanded: 2,
+        constructed: [1, 0, 1, 0, 1],
+        held: 3,
+        agreed: 2,
+        closed: [q(1, 2), q(0, 1), q(0, 1), q(3, 7)],
+        open: [q(-1, 3), q(2, 1), q(5, 4), q(0, 1)],
+        ear: 40,
+        thoughts: 6,
+        unions: 1,
+        waiting: 0,
+    };
+    let agreements = Agreements {
+        pairs: vec![Agreed { speaker: vk(1), hearer: vk(2), agreed: 3, whole: 2, deviation: [q(1, 2), q(0, 1), q(0, 1), q(0, 1)] }],
+    };
+    reads_back(&[Reading::Mind(Box::new(mind.clone())), Reading::Agreements(Box::new(agreements))]);
+    let key = Source::Mind(vk(3)).key(TAG_MIND);
+    assert_eq!(Source::of_key(&key), Some((Source::Mind(vk(3)), TAG_MIND)), "a mind's reading stands under the mind");
+    assert!(mind.lines().iter().any(|l| l.contains("deviation closed 1/2:0:0:3/7")), "the deviation is printed exact");
+}

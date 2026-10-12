@@ -6,8 +6,8 @@
 //! its log. This module holds the readings themselves — the allocator over
 //! the source's own clock (what is held), and a court's standing — keyed
 //! by source and kind, so a hypha can answer for itself and any hypha can
-//! run the console (`mycelium-server --console`). A mind reports nothing
-//! about itself.
+//! run the console (`mycelium-server --console`). A mind answers for itself
+//! on its own post (`Mind`), read straight from the running binary.
 
 mod acts;
 mod carriage;
@@ -15,6 +15,7 @@ mod carriers;
 mod clock;
 mod economy;
 mod fleet;
+mod mind;
 mod reading;
 mod relay;
 mod store;
@@ -28,6 +29,7 @@ pub use carriers::*;
 pub use clock::*;
 pub use economy::*;
 pub use fleet::*;
+pub use mind::*;
 pub use reading::*;
 pub use relay::*;
 pub use store::*;

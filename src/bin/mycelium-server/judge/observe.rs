@@ -112,6 +112,9 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             // kernel's): its standing and each domain's posts filed and
             // refused since boot.
             observe::replace(own, Reading::Relay(Box::new(door.seat_relay.reading())));
+            // MU-CLIENT §5.5 — the agreed language this court attested, per
+            // speaker → hearer, read off its own counters.
+            observe::replace(own, Reading::Agreements(Box::new(observe::agreements())));
             // The body's share of the frame, exact, as `rows` reads it.
             let Some(budget) = mycelium::network::wire::frame_budget().checked_sub(64) else {
                 return;

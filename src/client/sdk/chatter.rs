@@ -447,17 +447,28 @@ fn read_frame(s: &mut TcpStream) -> io::Result<Vec<u8>> {
 impl Post {
     /// LISTEN at `listen` (`127.0.0.1:0` takes any free port), each frame
     /// handed to `deliver` as it is read: every connection is read on its
-    /// own thread, so a peer that stalls holds nothing else up.
-    pub fn open<D: Fn(Vec<u8>) + Send + Clone + 'static>(listen: &str, deliver: D) -> io::Result<Post> {
+    /// own thread, so a peer that stalls holds nothing else up. A frame that
+    /// is a QUESTION `answer` takes is answered on the same connection, in
+    /// the same framing, and delivered nowhere: the observer asks the
+    /// running mind and never waits on its conversation.
+    pub fn open<D, A>(listen: &str, deliver: D, answer: A) -> io::Result<Post>
+    where
+        D: Fn(Vec<u8>) + Send + Clone + 'static,
+        A: Fn(&[u8]) -> Option<Vec<u8>> + Send + Clone + 'static,
+    {
         let listener = TcpListener::bind(listen)?;
         let addr = listener.local_addr()?.to_string();
         std::thread::Builder::new().name("chatter-post".into()).spawn(move || {
             for conn in listener.incoming() {
                 let Ok(mut s) = conn else { continue };
-                let deliver = deliver.clone();
+                let (deliver, answer) = (deliver.clone(), answer.clone());
                 let _ = std::thread::Builder::new().name("chatter-conn".into()).spawn(move || {
-                    if let Ok(frame) = read_frame(&mut s) {
-                        deliver(frame);
+                    let Ok(frame) = read_frame(&mut s) else { return };
+                    match answer(&frame) {
+                        Some(reply) => {
+                            let _ = write_frame(&mut s, &reply);
+                        }
+                        None => deliver(frame),
                     }
                 });
             }
@@ -470,13 +481,25 @@ impl Post {
     }
 }
 
-/// SEND one frame to a peer, on its own connection.
-pub fn send(addr: &str, frame: &[u8]) -> io::Result<()> {
-    let mut s = TcpStream::connect(addr)?;
+/// One frame onto a connection: `[len u32 LE][frame]`.
+fn write_frame(s: &mut TcpStream, frame: &[u8]) -> io::Result<()> {
     let n = u32::try_from(frame.len()).map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "frame length"))?;
     s.write_all(&n.to_le_bytes())?;
     s.write_all(frame)?;
     s.flush()
+}
+
+/// SEND one frame to a peer, on its own connection.
+pub fn send(addr: &str, frame: &[u8]) -> io::Result<()> {
+    let mut s = TcpStream::connect(addr)?;
+    write_frame(&mut s, frame)
+}
+
+/// ASK a mind's post one question and read its answer, on one connection.
+pub fn ask(addr: &str, question: &[u8]) -> io::Result<Vec<u8>> {
+    let mut s = TcpStream::connect(addr)?;
+    write_frame(&mut s, question)?;
+    read_frame(&mut s)
 }
 
 fn hex(b: &[u8]) -> String {
@@ -621,10 +644,15 @@ mod tests {
     #[test]
     fn a_frame_sent_to_a_post_is_delivered() {
         let (tx, rx) = std::sync::mpsc::channel::<Vec<u8>>();
-        let post = Post::open("127.0.0.1:0", move |f| {
-            let _ = tx.send(f);
-        })
+        let post = Post::open(
+            "127.0.0.1:0",
+            move |f| {
+                let _ = tx.send(f);
+            },
+            |q: &[u8]| (q == b"?").then(|| b"!".to_vec()),
+        )
         .expect("listen");
+        assert_eq!(ask(post.addr(), b"?").expect("answered"), b"!", "a question is answered on its own connection");
         let k = key(3);
         let c = Chatter { speaker: k.verifying_key().to_bytes(), point: None, said: Said::Say { said: vec![9; 100], words: vec![] } };
         send(post.addr(), &c.sign(&k).expect("signed")).expect("sent");

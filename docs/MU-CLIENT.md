@@ -3506,8 +3506,15 @@ field — no arm, schedule or harness between them.
    book the tick's physics and close the orbit. The order is the physics'
    (admission, transport, closure, relaxation, booking), never a schedule.
 3. The binary only opens the boundaries and hands the mind its ticks; it
-   keeps no order of work, no arms, no counters and no console of its own —
-   the mind's readings go to the hypha's console (`observe`).
+   keeps no order of work, no arms, no counters and no console of its own.
+   The mind's reading (`observe::Mind`: what it heard, each hearing's cell,
+   the demands raised and what the taker made of them, the HOLDs and agreed
+   language, the exact deviation closed and open, what its ear and its
+   conversation hold) is written where the mind acts and answered on its own
+   post at an `ACT_OBSERVE` question, never waiting on cognition; the
+   hypha's console renders it (`mycelium-server --console --minds`) beside
+   each court's attested agreements (`--reading agreements`), and
+   `scripts/observer` is the pane. Nothing is read off a log.
 4. A seat is the entity's body: its percepts are inflow, its calls outflow.
 
 **Order.** (1) the field and `tick`, the arms deleted, every boundary in

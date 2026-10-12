@@ -203,7 +203,10 @@ impl Entity {
             Some(n) => self.physics.stroke_n(n),
             None => self.physics.stroke_n(0),
         };
+        use crate::observe::{note_mind, Constructed};
+        let made = |c: Constructed| note_mind(|m| m.constructed[c as usize] += 1);
         if construct(residue, &mut need).is_err() {
+            made(Constructed::Refused);
             return;
         }
         let rotor = crate::transducer::element::conformal_factors(residue)
@@ -214,6 +217,7 @@ impl Entity {
             (Some(r), Some(c)) => {
                 self.adjoin_letters(&vec![(r, c.clone())], budget);
                 self.contemplation.own_letter(residue);
+                made(Constructed::Letter);
             }
             // 78.68 ROW 8 — A RESIDUE THAT TURNS NOTHING IS STILL A LETTER: its
             // whole motion on the letter's carriage (a slide, a dilation about
@@ -221,14 +225,18 @@ impl Entity {
             // verifies and hardens it or refuses by name (C4) — and kept, so
             // the cell that demanded it is answered by it from here on.
             (None, Some(c)) => {
-                if let Some(e) = crate::transducer::sentence::motion_letter_form(residue, c, &[]) {
-                    self.contemplation.own_letter(residue);
-                    if !self.already_taught(&e) {
-                        self.stand_crystallized(&e);
+                match crate::transducer::sentence::motion_letter_form(residue, c, &[]) {
+                    Some(e) => {
+                        self.contemplation.own_letter(residue);
+                        if !self.already_taught(&e) {
+                            self.stand_crystallized(&e);
+                        }
+                        made(Constructed::MotionLetter);
                     }
+                    None => made(Constructed::Refused),
                 }
             }
-            (_, None) => {}
+            (_, None) => made(Constructed::NoChart),
         }
     }
 

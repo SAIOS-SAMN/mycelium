@@ -158,6 +158,23 @@ fn words_of(e: &Element) -> Vec<Spoken> {
     }
 }
 
+/// THE OBSERVER'S QUESTION, answered on the mind's post (§8.1): the mind's
+/// reading as its carriers last wrote it and the allocator's bytes at its
+/// K, held under this mind's voice, and every reading under the prefix
+/// asked. `None` for a frame that is no question, which is conversation.
+fn observed(voice: &[u8; 32], q: &[u8]) -> Option<Vec<u8>> {
+    use crate::observe::{self, ObserveAct, Reading, Source};
+    let ObserveAct::Query(prefix) = observe::decode_act(q)?;
+    let own = Source::Mind(*voice);
+    let mind = observe::mind();
+    if let Some(m) = observe::Memory::now(mind.k) {
+        observe::publish(own, Reading::Memory(m));
+    }
+    observe::replace(own, Reading::Mind(Box::new(mind)));
+    let budget = crate::network::wire::frame_budget().checked_sub(64)?;
+    observe::encode_reply(&observe::readings(&prefix), budget)
+}
+
 /// Two readings of one thought's loops are one: word for word, the same
 /// loop (`chatter::same_loop`, projectively).
 fn one_reading(a: &[AckWord], b: &[AckWord]) -> bool {
@@ -180,11 +197,15 @@ impl Entity {
         };
         let (to, rx) = channel::<Inflow>();
         let deliver = to.clone();
-        let post = chatter::Post::open("127.0.0.1:0", move |f| {
-            let _ = deliver.send(Inflow::Frame(f));
-        })?;
-        let addr = post.addr().to_string();
         let voice = self.hypha.kernel().voice();
+        let post = chatter::Post::open(
+            "127.0.0.1:0",
+            move |f| {
+                let _ = deliver.send(Inflow::Frame(f));
+            },
+            move |q: &[u8]| observed(&voice, q),
+        )?;
+        let addr = post.addr().to_string();
         chatter::publish(dir, &voice, &addr)?;
         #[cfg(test)]
         let agreed = std::sync::Arc::new(std::sync::Mutex::new(Keyed::new()));
@@ -281,6 +302,7 @@ impl Entity {
             // mind that heard them.
             let orders = vec![None; circuits.len()];
             let cell = crate::transducer::cech::read_cell(circuits.len(), None, None, &circuits, &orders, &mut budget);
+            let (mut demanded, mut answered) = (0u64, 0u64);
             let converged = match &cell.coherence {
                 Coherence::Closes(_) => true,
                 Coherence::Unread => false,
@@ -292,15 +314,31 @@ impl Entity {
                         .map(|h| crate::transducer::stalk::invariant_of(h.element()))
                         .collect();
                     for inc in incoherent {
-                        if let Ok(class) = &inc.class {
-                            if !self.contemplation.holds_own_letter(&inc.residue) {
+                        let Ok(class) = &inc.class else { continue };
+                        match self.contemplation.holds_own_letter(&inc.residue) {
+                            true => answered += 1,
+                            false => {
                                 self.contemplation.docket_demand(class, &charts, Some(&inc.residue));
+                                demanded += 1;
                             }
                         }
                     }
                     false
                 }
             };
+            crate::observe::note_mind(|m| {
+                let (slot, sum) = match &cell.coherence {
+                    Coherence::Closes(_) => (0, &mut m.closed),
+                    Coherence::Open(_) => (1, &mut m.open),
+                    Coherence::Unread => (2, &mut m.open),
+                };
+                for (s, d) in sum.iter_mut().zip(&deviation) {
+                    *s += d;
+                }
+                m.priced[slot] += 1;
+                m.demanded += demanded;
+                m.constructed[crate::observe::Constructed::Held as usize] += answered;
+            });
             if let Some(chat) = self.chat.as_ref() {
                 let _ = chat.to.send(Inflow::Priced(Priced { loops: p.loops, answer: p.answer, deviation, converged }));
             }
@@ -378,6 +416,15 @@ impl Carrier {
             Inflow::Priced(p) => self.priced(p),
         }
         self.release_unmet();
+        let ear = self.ear.read().len() as u64;
+        let (thoughts, unions, waiting) = (self.thoughts.len() as u64, self.union.len() as u64, self.waiting.len() as u64);
+        crate::observe::note_mind(|m| {
+            m.k = self.k;
+            m.ear = ear;
+            m.thoughts = thoughts;
+            m.unions = unions;
+            m.waiting = waiting;
+        });
     }
 
     /// WHAT THE FIELD PRICED A THOUGHT AT, acted on. Where its admission
@@ -396,6 +443,7 @@ impl Carrier {
                 let to = chatter::peer_of(&self.dir, &speaker);
                 if let (Some(frame), Some(to)) = (self.frame(Said::Hold { said, words: p.loops, deviation: p.deviation }), to) {
                     self.send(&frame, Some(&to));
+                    crate::observe::note_mind(|m| m.held += 1);
                 }
             }
             Answer::Agree { said, frame } => {
@@ -410,7 +458,9 @@ impl Carrier {
                 if let Ok(mut a) = self.agreed.lock() {
                     a.insert(&said, ());
                 }
-                let _ = self.speak_agreed(&agreed, Some(&frame));
+                if self.speak_agreed(&agreed, Some(&frame)).is_ok() {
+                    crate::observe::note_mind(|m| m.agreed += 1);
+                }
             }
         }
     }
@@ -479,6 +529,7 @@ impl Carrier {
     /// is read mode by mode on 𝒢. Sent back to the speaker; the thought kept
     /// until the speaker acknowledges it.
     fn hear_said(&mut self, speaker: &[u8; 32], said: Vec<u8>, words: &[Spoken]) {
+        crate::observe::note_mind(|m| m.heard += 1);
         let out: Vec<HeardWord> = {
             let ear = self.ear.read();
             let still = crate::transducer::cga::Mv::scalar(num_rational::BigRational::from_integer(1.into()));
@@ -557,6 +608,7 @@ impl Carrier {
             return;
         }
         self.hold_transports(&mine);
+        crate::observe::note_mind(|m| m.understood += 1);
         // Where it stood in this mind: the forms of the rings its words were
         // carried through, each once, by address.
         let mut forms: Keyed<()> = Keyed::new();
@@ -585,6 +637,7 @@ impl Carrier {
         // Where it stood in this mind: the thing said.
         let forms = vec![said.to_vec()];
         self.hold_transports(&sent);
+        crate::observe::note_mind(|m| m.returned += 1);
         let _ = self.field.send(Pricing { loops: sent, answer: Answer::Agree { said: said.to_vec(), frame: frame.to_vec() }, forms });
     }
 
