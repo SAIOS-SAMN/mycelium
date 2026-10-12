@@ -817,7 +817,13 @@ pub(super) fn family_percept(
             // the word itself is, read for its null flux beside the circuits'.
             for (k, a0, b0, v) in &m.at {
                 let mass = a0.compartments.len() as u64;
-                word_transports.push(super::pairing::FieldLine { carriage: v.clone(), gauge: m.acting.gauge.clone(), mass, free: false });
+                word_transports.push(super::pairing::FieldLine {
+                    carriage: v.clone(),
+                    gauge: m.acting.gauge.clone(),
+                    mass,
+                    free: false,
+                    line: crate::transducer::cech::orbit::Thread::Free,
+                });
                 line_classes.push(class.clone());
                 // 78.74 — THE CHART'S BODY AS A PIVOT: a rigid move is read
                 // through each chart's body at its frame (covers exist only

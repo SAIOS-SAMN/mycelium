@@ -221,7 +221,13 @@ fn every_lane_reads_its_transports_as_a_field() {
     let slide = |x: i64| cga::translator_at(&[q(x, 1), q(0, 1), q(0, 1)]);
     let swap = vec![(1u8, 2u8), (2, 1)];
     let one = Mv::scalar(q(1, 1));
-    let line = |carriage: Mv, gauge: Vec<(u8, u8)>, mass: u64| crate::transducer::family::pairing::FieldLine { carriage, gauge, mass, free: false };
+    let line = |carriage: Mv, gauge: Vec<(u8, u8)>, mass: u64| crate::transducer::family::pairing::FieldLine {
+        carriage,
+        gauge,
+        mass,
+        free: false,
+        line: crate::transducer::cech::orbit::Thread::Free,
+    };
     let transports = vec![
         line(turn.clone(), Vec::new(), 3),
         line(dilate, Vec::new(), 5),

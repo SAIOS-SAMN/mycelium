@@ -205,11 +205,12 @@ fn a_cauterized_tethers_motion_flows_out_to_its_owner() {
     heard.arm_outflow();
     assert!(matches!(heard.drain(&key), Drained::Cauterized(_)), "a sliver is strain");
     let out = heard.take_outflow();
-    assert!(matches!(out.as_slice(), [m] if m.projective_eq(&sliver().reverse())), "the sliver unwound: its reverse vented whole: {out:?}");
+    assert!(matches!(out.as_slice(), [f] if f.motion.projective_eq(&sliver().reverse())), "the sliver unwound: its reverse vented whole: {out:?}");
     assert!(
-        matches!(out.as_slice(), [m] if m.geo(&sliver()).projective_eq(&ident())),
+        matches!(out.as_slice(), [f] if f.motion.geo(&sliver()).projective_eq(&ident())),
         "the vent undoes the strain exactly"
     );
+    assert!(matches!(out.as_slice(), [f] if f.line == Thread::Unwound(key.clone())), "on the tether's own line, unwound");
     assert!(heard.take_outflow().is_empty(), "taken once");
     let (mut vacuum, key) = edge_of(&ident());
     vacuum.arm_outflow();

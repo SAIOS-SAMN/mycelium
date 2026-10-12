@@ -5,6 +5,18 @@
 //! changed, so nothing is recomputed that did not move.
 
 use super::*;
+pub use super::orbit::Thread;
+
+/// 78.75, MU-CLIENT §4.5 — ONE FLOW A PIVOT HANDS BACK: its motion, and the
+/// line it belongs to — WOUND where a tether condenses or a face seals (its
+/// strain enters the field and threads the tubes and orbits its modes land
+/// on), UNWOUND where it drains or is released (its reverse leaves them), FREE
+/// where it belongs to no line of the complex.
+#[derive(Clone, Debug)]
+pub struct Flow {
+    pub motion: crate::transducer::cga::Mv,
+    pub line: Thread,
+}
 
 /// The Čech complex on one chart. One Keyed trie per degree, grown as
 /// overlaps demand. No fixed arity.
@@ -45,11 +57,11 @@ pub struct Complex {
     /// threads reads every seal it made; volatile.
     pub(crate) sealed: u64,
     /// 78.75 — THE PIVOTS' OUTFLOW: the motion each pivot hands back — a
-    /// tether cauterized by `drain`, a membrane released by `descend`, a face
-    /// sealed with content — held for the owner that armed it, who reads it
-    /// into its field (`take_outflow`). `None` while no owner listens, so a
-    /// complex nobody reads holds nothing. Volatile.
-    pub(crate) outflow: Option<Vec<crate::transducer::cga::Mv>>,
+    /// tether condensed or cauterized, a face sealed or a membrane released —
+    /// each with the line it belongs to, held for the owner that armed it, who
+    /// reads it into its field (`take_outflow`). `None` while no owner
+    /// listens, so a complex nobody reads holds nothing. Volatile.
+    pub(crate) outflow: Option<Vec<Flow>>,
     /// 78.99 (2) — THE HOLES: cells `puncture` opened, each keeping its fill
     /// as the class the boundary winds about, standing in its vertices'
     /// stars and pinning its boundary until `seal` caps it. Volatile: no
@@ -158,9 +170,9 @@ impl Complex {
         }
     }
 
-    /// THE MOTIONS THE PIVOTS HANDED BACK since the last take; the complex
+    /// THE FLOWS THE PIVOTS HANDED BACK since the last take; the complex
     /// keeps listening.
-    pub fn take_outflow(&mut self) -> Vec<crate::transducer::cga::Mv> {
+    pub fn take_outflow(&mut self) -> Vec<Flow> {
         match self.outflow.as_mut() {
             Some(held) => std::mem::take(held),
             None => Vec::new(),
@@ -192,16 +204,16 @@ impl Complex {
     /// listens.
     pub(crate) fn vent_wound(&mut self, v: &[u8]) {
         if let Some(w) = self.wound.remove(v) {
-            self.flow_out(w.reverse());
+            self.flow_out(Flow { motion: w.reverse(), line: Thread::Free });
         }
     }
 
-    /// One motion handed back, held where an owner listens; the identity
+    /// One flow handed back, held where an owner listens; the identity
     /// carries nothing and is not held.
-    pub(crate) fn flow_out(&mut self, motion: crate::transducer::cga::Mv) {
+    pub(crate) fn flow_out(&mut self, flow: Flow) {
         let one = crate::transducer::cga::Mv::scalar(num_rational::BigRational::from_integer(1.into()));
-        if let (Some(held), false) = (self.outflow.as_mut(), motion.projective_eq(&one)) {
-            held.push(motion);
+        if let (Some(held), false) = (self.outflow.as_mut(), flow.motion.projective_eq(&one)) {
+            held.push(flow);
         }
     }
 

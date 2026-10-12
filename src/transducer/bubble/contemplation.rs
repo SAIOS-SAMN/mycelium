@@ -229,9 +229,6 @@ pub struct Contemplation {
     pub(crate) spoken: Keyed<super::flux::Spoken>,
     pub(crate) flux: Keyed<[u64; 4]>,
     pub(crate) flux_at: Keyed<u64>,
-    /// MU-CLIENT §4.5 — the height each tether condensed at (or was first
-    /// read standing at): what a relaxed tether's aperture is measured from.
-    pub(crate) tethered_at: Keyed<u64>,
     pub(crate) flux_tally: super::flux::FluxTally,
     /// RM1 — each remainder the Congruent arms perceived and did not record,
     /// by its own name (the reading's `refused`, `unsited`, `unrecorded`,

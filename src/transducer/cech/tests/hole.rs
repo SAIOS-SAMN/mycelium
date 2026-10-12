@@ -35,11 +35,13 @@ fn a_membrane_winds_at_its_seal_and_unwinds_at_its_release() {
     let (_, key) = sealed_triangle(&mut c, 1, turn_90());
     let wound = c.take_outflow();
     let [w] = wound.as_slice() else { panic!("the seal wound one motion in: {wound:?}") };
-    assert!(!w.projective_eq(&ident()), "a turn: pressure held");
+    assert!(!w.motion.projective_eq(&ident()), "a turn: pressure held");
+    assert_eq!(w.line, Thread::Wound(key.clone()), "wound on the cell's own line");
     assert!(matches!(c.descend(&key), Descended::Released(_)), "the membrane releases");
     let vented = c.take_outflow();
     let [u] = vented.as_slice() else { panic!("the release vented one motion: {vented:?}") };
-    assert!(u.geo(w).projective_eq(&ident()), "unwound exactly: the cell's life balances");
+    assert!(u.motion.geo(&w.motion).projective_eq(&ident()), "unwound exactly: the cell's life balances");
+    assert_eq!(u.line, Thread::Unwound(key), "unwound from the line it was wound on");
 }
 
 fn edge_key(a: &[u8], b: &[u8]) -> Vec<u8> {
@@ -170,40 +172,49 @@ fn the_minds_cell_ascends_only_over_its_standing_boundary() {
     assert!(matches!(mind.ascend(&cell), CoboundaryOutcome::Attached(Fill::Filled(..))), "the standing boundary seals flat");
 }
 
-/// MU-CLIENT §4.5 — WHERE THE TENSION RELAXED, THE MIND DESCENDS AND DRAINS.
-/// A sealed triangle of tethers that carried no flux over a whole aperture:
-/// its cell descends and its tethers drain — the complex is empty of both.
-/// The same triangle with one tether carrying flux since the aperture began:
-/// the cell does not stand on relaxed tethers alone, so it stays sealed, and
-/// it pins the two relaxed tethers beneath it.
+/// MU-CLIENT §4.5 — THE FIELD RELEASES WHAT RELAXED, AND THE MIND LETS IT GO.
+/// Two tethers condense carrying opposite turns of one plane; each winds its
+/// strain into the mind's field on its own line, threading the plane's 𝒽
+/// orbit. The second brings the orbit back to its return — the tension
+/// vented — and the field releases both lines: let go, both drain. A tether
+/// under a question (a punctured cell over it) is released and stands: the
+/// hole pins it.
 #[test]
-fn where_the_tension_relaxed_the_mind_descends_and_drains() {
-    let triangle = |flowing: bool| {
+fn the_field_releases_what_relaxed_and_the_mind_lets_it_go() {
+    use crate::transducer::family::pairing::{mark_flux, FieldLine};
+    let mut field = crate::transducer::mind::MindField::default();
+    field.think(|| {
         let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
-        let vs: Vec<Vec<u8>> = [v(31), v(32), v(33)].iter().map(|a| a.as_bytes().to_vec()).collect();
-        for x in &vs {
-            mind.complex.set_section(x, Section::at(crate::transducer::address::Address::from(x.clone()), Rotor::identity()), vol());
-        }
-        mind.now_k = 1;
-        for (a, b) in [(0, 1), (1, 2), (0, 2)] {
-            assert_eq!(mind.tether(&vs[a], &vs[b], Rotor::identity(), ident(), vol()), Condensed::Tethered);
-        }
-        let _ = mind.complex.coboundary_on_link(&vs[0], |_| vol());
-        let cell = simplex_key(&sorted_verts(vs.clone())).as_bytes().to_vec();
-        assert!(matches!(mind.ascend(&cell), CoboundaryOutcome::Attached(_)), "the cell seals");
-        mind.now_k = 10;
-        if flowing {
-            mind.flux_at.insert(edge_key(&vs[0], &vs[1]), 7);
-        }
-        mind.release_relaxed(5);
-        mind
-    };
-    let relaxed = triangle(false);
-    assert!(relaxed.complex.board().sealed.is_empty(), "the cell over relaxed tethers descended");
-    assert!(relaxed.complex.board().tethers.is_empty(), "and its tethers drained");
-    let held = triangle(true);
-    assert_eq!(held.complex.board().sealed.len(), 1, "a cell one of whose tethers carried flux stands");
-    assert_eq!(held.complex.board().tethers.len(), 3, "and pins its relaxed tethers beneath it");
+        mind.complex.arm_outflow();
+        let vs: Vec<Vec<u8>> = [v(31), v(32), v(33), v(34)].iter().map(|a| a.as_bytes().to_vec()).collect();
+        let turn = turn_90();
+        assert_eq!(mind.tether(&vs[0], &vs[1], turn.clone(), ident(), vol()), Condensed::Tethered);
+        assert_eq!(mind.tether(&vs[2], &vs[3], turn.reverse(), ident(), vol()), Condensed::Tethered);
+        let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
+        let lines: Vec<FieldLine> = mind
+            .complex
+            .take_outflow()
+            .into_iter()
+            .map(|f| FieldLine { carriage: f.motion, gauge: Vec::new(), mass: 1, free: false, line: f.line })
+            .collect();
+        assert_eq!(lines.len(), 2, "each tether wound its strain in");
+        mark_flux(&[], &lines, &mut budget);
+        let Ok(released) = crate::transducer::mind::with_field(|f| f.take_released()) else { panic!("a mind is thinking") };
+        let mut expected = vec![edge_key(&vs[0], &vs[1]), edge_key(&vs[2], &vs[3])];
+        expected.sort();
+        let mut got = released.clone();
+        got.sort();
+        assert_eq!(got, expected, "the orbit returned: both lines released");
+        mind.release(&released);
+        assert!(mind.complex.board().tethers.is_empty(), "both tethers drained");
+    });
+    let mut asked = Complex::new();
+    let (vs, key) = sealed_triangle(&mut asked, 41, turn_90());
+    let Punctured::Opened(_) = asked.puncture(&key) else { panic!("punctured: a question") };
+    let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
+    mind.complex = asked;
+    mind.release(&[edge_key(&vs[0], &vs[1])]);
+    assert_eq!(mind.complex.board().tethers.len(), 3, "the question's hole pins its boundary: the tether stands");
 }
 
 /// THE WALK `d, a, p, d` ON ONE CELL (78.99 (3)). `d·a` cancels on the board;
@@ -253,9 +264,9 @@ fn pivots_sharing_no_vertex_commute_and_on_one_cell_the_order_is_content() {
         let mut out: Vec<Vec<u8>> = c
             .take_outflow()
             .iter()
-            .map(|m| {
+            .map(|f| {
                 let mut k = Vec::new();
-                m.put_canonical(&mut k);
+                f.motion.put_canonical(&mut k);
                 k
             })
             .collect();

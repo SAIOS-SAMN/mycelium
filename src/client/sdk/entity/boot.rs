@@ -43,6 +43,10 @@ impl Entity {
     /// THE MIND OPENED toward the hypha at `addr`: its carrier discovers the
     /// nerve on its own thread before it carries the first ask.
     pub(crate) fn open(addr: &str, kernel: Kernel) -> Self {
+        // The complex listens from the first pivot (MU-CLIENT §4.5): every
+        // tether condensed and face sealed winds its strain into the field.
+        let mut contemplation = crate::transducer::bubble::Contemplation::new();
+        contemplation.complex.arm_outflow();
         Entity {
             relay: Session::open(addr, kernel.clone()),
             hypha: super::hypha::Hypha::open(Session::open(addr, kernel)),
@@ -56,7 +60,7 @@ impl Entity {
             learned_mu: [0; 4],
             obstructions: crate::network::nerve::Keyed::new(),
             glued: crate::network::nerve::Keyed::new(),
-            contemplation: crate::transducer::bubble::Contemplation::new(),
+            contemplation,
             physics: crate::physics::Physics::default(),
             height: crate::chronometry::Height::default(),
             k: 0,

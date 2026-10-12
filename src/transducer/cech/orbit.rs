@@ -35,6 +35,35 @@ use crate::transducer::rewrite::{LANE_GAUGE, LANE_SHELL, LANE_SPATIAL};
 use num_rational::BigRational;
 use num_traits::Zero;
 
+/// MU-CLIENT §4.5 — HOW A FIELD LINE STANDS TO A LINE OF THE COMPLEX (a
+/// tether or a cell, by its coordinates): WOUND in — it threads every tube
+/// and orbit its modes land on; UNWOUND — its reverse lands on the same rays
+/// and planes and it leaves them; FREE — it belongs to no line.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Thread {
+    Free,
+    Wound(Vec<u8>),
+    Unwound(Vec<u8>),
+}
+
+/// The lines threading a tube or an orbit, in key order, as `thread` moves
+/// them.
+pub(crate) fn thread_on(lines: &mut Vec<Vec<u8>>, thread: &Thread) {
+    match thread {
+        Thread::Free => {}
+        Thread::Wound(k) => {
+            if let Err(at) = lines.binary_search(k) {
+                lines.insert(at, k.clone());
+            }
+        }
+        Thread::Unwound(k) => {
+            if let Ok(at) = lines.binary_search(k) {
+                lines.remove(at);
+            }
+        }
+    }
+}
+
 /// 78.73 — A FIELD HELD OVER TIME: 𝒯's tubes and the orbits of 𝒮, 𝒢 and
 /// 𝒽, one per mind (a voice's process, a court's kernel).
 #[derive(Clone, Debug, Default)]
@@ -46,6 +75,16 @@ pub struct Field {
 impl Field {
     pub fn new() -> Field {
         Field::default()
+    }
+
+    /// MU-CLIENT §4.5 — THE LINES THE FIELD RELEASED since the last take:
+    /// those threading an orbit that RETURNED (harmonic — its tension vented)
+    /// and those threading a tube whose net flux CANCELLED (luminal — it
+    /// carries no field). Each is a line of the complex whose tension relaxed.
+    pub fn take_released(&mut self) -> Vec<Vec<u8>> {
+        let mut out = std::mem::take(&mut self.orbits.released);
+        out.append(&mut self.tubes.released);
+        out
     }
 
     /// 78.73 (4) — THE ELASTIC STRAIN'S TWO TERMS PER LANE, weighed by mass:
@@ -94,16 +133,19 @@ impl State {
 struct Orbit {
     state: State,
     open: u64,
+    /// The lines of the complex threading it.
+    lines: Vec<Vec<u8>>,
 }
 
 /// 78.73 — THE ORBITS HELD OVER TIME on 𝒮, 𝒢 and 𝒽, with what stands open
-/// and what has moved per lane. A returned orbit is let go; the lane totals
-/// keep what it did.
+/// and what has moved per lane. A returned orbit is let go, and the lines
+/// that threaded it are released; the lane totals keep what it did.
 #[derive(Clone, Debug, Default)]
 pub struct OrbitRegistry {
     orbits: Keyed<Orbit>,
     open: [u64; 4],
     transport: [u64; 4],
+    pub(crate) released: Vec<Vec<u8>>,
 }
 
 /// A mode's key: its lane and its plane's canonical coordinates — ONE ORBIT
@@ -140,7 +182,7 @@ impl OrbitRegistry {
     /// composed into where the orbit stands (78.75). `None` for a null mode
     /// (the tubes hold those), and where the mode's point does not read on the
     /// orbit's plane or an amount passes its carrier.
-    pub fn admit_mode(&mut self, mode: &MotionMode, mass: u64) -> Option<(usize, Admitted)> {
+    pub fn admit_mode(&mut self, mode: &MotionMode, mass: u64, line: &Thread) -> Option<(usize, Admitted)> {
         let lane = match mode.kind {
             BivectorKind::Elliptic => LANE_SHELL,
             BivectorKind::Hyperbolic => LANE_SPATIAL,
@@ -173,14 +215,14 @@ impl OrbitRegistry {
                 (key, State::Ray(before), State::Ray(after))
             }
         };
-        Some((lane, self.step(&key, lane, &before, after, mass)?))
+        Some((lane, self.step(&key, lane, &before, after, mass, line)?))
     }
 
     /// ADMIT ONE HUE MAP carrying `mass` onto 𝒢's orbit of its support.
     /// `None` where it moves no hue (the identity carries no strain), where
     /// it is not a map (one hue sent two places), or an amount passes its
     /// carrier.
-    pub fn admit_hues(&mut self, gauge: &[(u8, u8)], mass: u64) -> Option<Admitted> {
+    pub fn admit_hues(&mut self, gauge: &[(u8, u8)], mass: u64, line: &Thread) -> Option<Admitted> {
         let mut moved: Vec<(u8, u8)> = gauge.iter().copied().filter(|(h, to)| h != to).collect();
         moved.sort_unstable();
         moved.dedup();
@@ -199,13 +241,20 @@ impl OrbitRegistry {
             None => moved.iter().map(|(h, _)| (*h, *h)).collect(),
         };
         let after: Vec<(u8, u8)> = held.iter().map(|(h, at)| (*h, sigma(*at))).collect();
-        self.step(&key, LANE_GAUGE, &State::Hues(held), State::Hues(after), mass)
+        self.step(&key, LANE_GAUGE, &State::Hues(held), State::Hues(after), mass, line)
     }
 
-    /// ONE ADMISSION ON ONE ORBIT: open, close, or return, exactly.
-    fn step(&mut self, key: &[u8], lane: usize, before: &State, after: State, mass: u64) -> Option<Admitted> {
+    /// ONE ADMISSION ON ONE ORBIT: open, close, or return, exactly; the
+    /// admitted line threads or leaves it, and a return releases every line
+    /// that threads it.
+    fn step(&mut self, key: &[u8], lane: usize, before: &State, after: State, mass: u64, line: &Thread) -> Option<Admitted> {
         let transport = self.transport[lane].checked_add(mass)?;
         let held_open = self.orbits.get(key).map_or(0, |o| o.open);
+        let mut lines = match self.orbits.get(key) {
+            Some(o) => o.lines.clone(),
+            None => Vec::new(),
+        };
+        thread_on(&mut lines, line);
         let (d0, d1) = (before.distance()?, after.distance()?);
         // What stands open on the orbit after, `None` where it returned.
         let (moved, left) = match () {
@@ -226,9 +275,12 @@ impl OrbitRegistry {
         match left {
             None => {
                 self.orbits.remove(key);
+                // HARMONIC: the orbit returned; its tension vented, and every
+                // line threading it relaxed.
+                self.released.append(&mut lines);
             }
             Some(open) => {
-                self.orbits.insert(key, Orbit { state: after, open });
+                self.orbits.insert(key, Orbit { state: after, open, lines });
             }
         }
         self.open[lane] = lane_open;

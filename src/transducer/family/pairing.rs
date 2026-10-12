@@ -146,6 +146,10 @@ pub struct FieldLine {
     pub gauge: Vec<(u8, u8)>,
     pub mass: u64,
     pub free: bool,
+    /// MU-CLIENT §4.5 — the line of the complex it is, where it is one: wound
+    /// in, it threads every tube and orbit its modes land on; unwound, it
+    /// leaves them.
+    pub line: crate::transducer::cech::orbit::Thread,
 }
 
 /// 78.71, 78.75 — THE CLOSED FLUX OF A PERCEPT: each sentence's holonomy —
@@ -234,9 +238,10 @@ pub(crate) fn transport_order(
                      gauge: &[(u8, u8)],
                      mass: u64,
                      free: bool,
+                     thread: &crate::transducer::cech::orbit::Thread,
                      budget: &mut crate::physics::Budget| {
         // The hue map onto 𝒢's orbit of its support.
-        if let Some(a) = field.orbits.admit_hues(gauge, mass) {
+        if let Some(a) = field.orbits.admit_hues(gauge, mass, thread) {
             book(r, LANE_GAUGE, a);
         }
         // The line split into its modes once: its null modes to the tubes,
@@ -250,7 +255,7 @@ pub(crate) fn transport_order(
                 Some(g) => g.clone(),
                 None => flux.clone(),
             };
-            if let Some(a) = field.tubes.admit(&flux, &g, mass) {
+            if let Some(a) = field.tubes.admit(&flux, &g, mass, thread) {
                 book(r, LANE_TEMPORAL, a);
             }
         }
@@ -262,16 +267,16 @@ pub(crate) fn transport_order(
                 crate::physics::metabolism::step_or_refuse(&mut r.torsion[crate::transducer::rewrite::LANE_SHELL], mass);
                 continue;
             }
-            if let Some((lane, a)) = field.orbits.admit_mode(m, mass) {
+            if let Some((lane, a)) = field.orbits.admit_mode(m, mass, thread) {
                 book(r, lane, a);
             }
         }
     };
     for line in word_transports {
-        admit(&mut r, &line.carriage, &line.gauge, line.mass, line.free, budget);
+        admit(&mut r, &line.carriage, &line.gauge, line.mass, line.free, &line.line, budget);
     }
     for (h, mass) in circuits {
-        admit(&mut r, h, &[], *mass, false, budget);
+        admit(&mut r, h, &[], *mass, false, &crate::transducer::cech::orbit::Thread::Free, budget);
     }
     r
 }

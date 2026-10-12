@@ -82,7 +82,8 @@ fn a_perception_let_go_unwinds_the_torsion_hearing_wound() {
     let wound = then.geo(&first);
     assert_eq!(entity.contemplation.complex.wound_at(&v), Some(&wound), "the later after the earlier");
     let _ = entity.contemplation.complex.vent_vertex(&v);
-    assert_eq!(entity.contemplation.complex.take_outflow(), vec![wound.reverse()], "the whole strain unwinds");
+    let unwound: Vec<crate::transducer::cga::Mv> = entity.contemplation.complex.take_outflow().into_iter().map(|f| f.motion).collect();
+    assert_eq!(unwound, vec![wound.reverse()], "the whole strain unwinds");
     assert_eq!(entity.contemplation.complex.wound_at(&v), None, "nothing stays wound");
 }
 

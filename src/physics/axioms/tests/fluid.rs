@@ -2,6 +2,10 @@
 // the lanes read by a motion's modes, never by a chord.
 
 use crate::transducer::cech::flux::{null_fluxes, TubeRegistry, Tubes};
+use crate::transducer::cech::orbit::Thread;
+
+/// Flux admitted on no line of a complex.
+const FREE: Thread = Thread::Free;
 use num_traits::Zero;
 use crate::transducer::cga::{self, Mv, E1, E2};
 use num_rational::BigRational;
@@ -78,15 +82,15 @@ fn a_held_tube_opens_then_closes_and_relieves_exactly() {
     let f = |x: i64| null_fluxes(&translator(x, 0), &mut stroke()).expect("reads")[0].clone();
     let g = f(1);
     let mut tubes = TubeRegistry::new();
-    let first = tubes.admit(&f(1), &g, 4).expect("a ray");
+    let first = tubes.admit(&f(1), &g, 4, &FREE).expect("a ray");
     assert_eq!((first.opened, first.closed, first.relieved, first.transport), (4, 0, 0, 4), "the first flux opens its tube");
-    let second = tubes.admit(&f(2), &g, 4).expect("the same ray");
+    let second = tubes.admit(&f(2), &g, 4, &FREE).expect("the same ray");
     assert_eq!((second.opened, second.closed, second.relieved, second.transport), (0, 8, 4, 8), "two quanta of four close on it, relieving the four open");
     assert_eq!(tubes.len(), 1, "one ray, one tube");
     let (_, transport, open) = tubes.totals();
     assert_eq!((transport, open), (12.into(), 0.into()), "transported twelve, nothing left open");
     let half = cga::translator_at(&[q(1, 2), q(0, 1), q(0, 1)]);
-    let third = tubes.admit(&null_fluxes(&half, &mut stroke()).expect("reads")[0], &g, 1).expect("the same ray");
+    let third = tubes.admit(&null_fluxes(&half, &mut stroke()).expect("reads")[0], &g, 1, &FREE).expect("the same ray");
     assert_eq!(third.closed, 1, "one half-quantum");
     assert_eq!(tubes.totals().1, 25.into(), "the held transport rescaled by the finer quantum: 24 + 1");
 }
@@ -98,8 +102,8 @@ fn flux_there_and_back_nets_zero_and_transports_both() {
     let f = |x: i64| null_fluxes(&translator(x, 0), &mut stroke()).expect("reads")[0].clone();
     let mut tubes = TubeRegistry::new();
     let g = f(1);
-    tubes.admit(&f(1), &g, 3).expect("a ray");
-    tubes.admit(&f(-1), &g, 3).expect("the same ray, the other way");
+    tubes.admit(&f(1), &g, 3, &FREE).expect("a ray");
+    tubes.admit(&f(-1), &g, 3, &FREE).expect("the same ray, the other way");
     let (net, transport, open) = tubes.totals();
     assert_eq!((net, transport, open), (0.into(), 6.into(), 0.into()), "net zero, transport six, closed");
 }
@@ -116,7 +120,7 @@ fn a_carried_registry_keeps_its_windings_and_helicity() {
         let line = translator(x, 0);
         let g = crate::transducer::cayley::bivector_of(&line).expect("on the chart");
         for flux in null_fluxes(&line, &mut b).expect("reads") {
-            tubes.admit(&flux, &g, 1).expect("a ray");
+            tubes.admit(&flux, &g, 1, &FREE).expect("a ray");
         }
     }
     assert!(tubes.helicity().is_zero(), "parallel field lines do not link");
@@ -126,7 +130,7 @@ fn a_carried_registry_keeps_its_windings_and_helicity() {
     let g = crate::transducer::cayley::bivector_of(&screw).expect("on the chart");
     let mut screwed = TubeRegistry::new();
     for flux in null_fluxes(&screw, &mut b).expect("reads") {
-        screwed.admit(&flux, &g, 1).expect("a ray");
+        screwed.admit(&flux, &g, 1, &FREE).expect("a ray");
     }
     assert_eq!(screwed.len(), 1, "a screw carries one null flux, along its axis");
     assert!(!screwed.helicity().is_zero(), "a screw's field line links itself");
@@ -144,7 +148,7 @@ fn the_helicity_on_a_stroke_is_whole_or_unread() {
         let line = translator(x, 0);
         let g = crate::transducer::cayley::bivector_of(&line).expect("on the chart");
         for flux in null_fluxes(&line, &mut b).expect("reads") {
-            tubes.admit(&flux, &g, 1).expect("a ray");
+            tubes.admit(&flux, &g, 1, &FREE).expect("a ray");
         }
     }
     let rows = tubes.len();

@@ -137,9 +137,9 @@ impl Complex {
                 crate::physics::metabolism::note_sealed();
                 let _ = crate::physics::metabolism::step_or_refuse(&mut self.sealed, 1);
                 // 78.75 — A SEALED FACE'S CONTENT FLOWS OUT: its motion, one
-                // `Cl(4,1)` element, to the owner's field.
+                // `Cl(4,1)` element, wound into the owner's field on its line.
                 let motion = c.motion();
-                self.flow_out(motion);
+                self.flow_out(Flow { motion, line: Thread::Wound(key.to_vec()) });
             }
         }
     }
@@ -471,7 +471,7 @@ impl Complex {
                 // flows out to the owner's field, where its turns, boosts and
                 // null flux are read like any other. 78.106 — AS IT UNWINDS:
                 // the release vents the strain's reverse (`vent`).
-                self.vent(&simplex.motion());
+                self.vent(key, &simplex.motion());
                 Drained::Cauterized(fill)
             }
         }
@@ -545,7 +545,7 @@ impl Complex {
                 crate::physics::metabolism::note_released();
                 // 78.75 — the released membrane's content flows out, 78.106
                 // unwinding what its seal wound in (`vent`).
-                self.vent(&motion);
+                self.vent(key, &motion);
                 Descended::Released(fill)
             }
         }
@@ -624,8 +624,8 @@ impl Complex {
     /// steadily (`B² = 0`), a turn unrolls round its own orbit and returns
     /// (`B² < 0`, a Niven order), a rosette unrolls and never closes. A cell
     /// holding no strain has no pressure: the valve stays shut, nothing flows.
-    pub(crate) fn vent(&mut self, strain: &crate::transducer::cga::Mv) {
-        self.flow_out(strain.reverse());
+    pub(crate) fn vent(&mut self, line: &[u8], strain: &crate::transducer::cga::Mv) {
+        self.flow_out(Flow { motion: strain.reverse(), line: Thread::Unwound(line.to_vec()) });
     }
 
     /// 78.74 — THE ELASTIC VENT OF THE NERVE: RELEASE A VERTEX whose reading

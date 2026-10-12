@@ -115,6 +115,10 @@ impl Entity {
         let _ = self.pivot_thoughts();
         StrokeOutcome::add(&mut outcome.learned, &self.take_learned_mu());
         self.close_orbit();
+        // The tick's pivots reach the field — each flow on its line — and
+        // what the field released relaxes (MU-CLIENT §4.5).
+        let mut vent = self.stroke();
+        let _ = self.vent_into_field(&mut vent);
         // The conversation runs on its own carrier (MU-CLIENT §5.1); it is
         // handed the mind's clock as the orbit moves it.
         self.tell_conversation_the_clock();

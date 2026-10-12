@@ -223,7 +223,7 @@ impl Contemplation {
 
     /// The edges a held ring stands on: each handle the docket indexes it by
     /// — its closing edge, and the edges of its 2-simplices.
-    pub(crate) fn held_edges(&self) -> Keyed<()> {
+    fn held_edges(&self) -> Keyed<()> {
         let mut out: Keyed<()> = Keyed::new();
         for (h, _) in self.docket_rings.scoped() {
             match self.complex.degree_of(&h) {
@@ -247,7 +247,7 @@ impl Contemplation {
 
     /// Did `edge` carry flux since `from` (on the contemplation's clock), or
     /// this orbit?
-    pub(crate) fn flowed_since(&self, edge: &[u8], from: u64) -> bool {
+    fn flowed_since(&self, edge: &[u8], from: u64) -> bool {
         self.flux_at.get(edge).is_some_and(|&at| at >= from)
     }
 
@@ -285,21 +285,11 @@ impl Contemplation {
         t.aperture = from.map(|_| aperture);
         t.gone = self.flux.scoped().filter(|(k, _)| !standing.contains(k)).count() as u64;
         t.unsealed += self.spoken.scoped().filter(|(_, s)| !s.sealed).count() as u64;
-        // MU-CLIENT §4.5 — where the tension relaxed over the measured
-        // aperture, the cells over it descend and its tethers drain; an
-        // unmeasured aperture releases nothing.
-        if let Some(f) = from {
-            self.release_relaxed(f);
-        }
         self.spoken = Keyed::new();
         self.flux = Keyed::new();
         let stale: Vec<Vec<u8>> = self.flux_at.scoped().filter(|(k, _)| !standing.contains(k)).map(|(k, _)| k).collect();
         for k in stale {
             self.flux_at.remove(&k);
-        }
-        let unstanding: Vec<Vec<u8>> = self.tethered_at.scoped().filter(|(k, _)| self.complex.degree_of(k) != Some(1)).map(|(k, _)| k).collect();
-        for k in unstanding {
-            self.tethered_at.remove(&k);
         }
         self.flux_tally.unfilamented =
             self.degrees_among_nerve().scoped().filter(|(_, &d)| d == 0).count() as u64;

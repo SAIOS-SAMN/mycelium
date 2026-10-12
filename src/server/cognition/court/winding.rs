@@ -559,8 +559,10 @@ impl Kernel {
         addr: &[u8],
         budget: &mut crate::physics::Budget,
     ) {
-        let motions = match self.complexes.get_mut(&inv.key()) {
-            Some(cx) => cx.take_outflow(),
+        // The court's field is read FREE of the complex's lines: its pivots'
+        // motions are booked, and no line of a court complex threads it.
+        let motions: Vec<crate::transducer::cga::Mv> = match self.complexes.get_mut(&inv.key()) {
+            Some(cx) => cx.take_outflow().into_iter().map(|f| f.motion).collect(),
             None => return,
         };
         if motions.is_empty() {
@@ -568,7 +570,13 @@ impl Kernel {
         }
         let lines: Vec<crate::transducer::family::pairing::FieldLine> = motions
             .iter()
-            .map(|m| crate::transducer::family::pairing::FieldLine { carriage: m.clone(), gauge: Vec::new(), mass: 1, free: false })
+            .map(|m| crate::transducer::family::pairing::FieldLine {
+                carriage: m.clone(),
+                gauge: Vec::new(),
+                mass: 1,
+                free: false,
+                line: crate::transducer::cech::orbit::Thread::Free,
+            })
             .collect();
         crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.outflow, lines.len() as u64);
         self.book_field(&lines, addr, budget);
@@ -641,6 +649,7 @@ impl Kernel {
                         gauge: a.gauge.clone(),
                         mass,
                         free: false,
+                        line: crate::transducer::cech::orbit::Thread::Free,
                     });
                 }
             }
@@ -651,6 +660,7 @@ impl Kernel {
                 gauge: f.place.gauge.clone(),
                 mass,
                 free: false,
+                line: crate::transducer::cech::orbit::Thread::Free,
             });
         }
         self.book_field(&lines, addr, budget);

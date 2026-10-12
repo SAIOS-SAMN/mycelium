@@ -78,7 +78,10 @@ fn a_nerve_face_that_condenses_is_a_proof_checked() {
     let chart = Invariant::counts(&[2, 4]);
     let mut cx = crate::transducer::cech::Complex::new();
     cx.arm_outflow();
-    cx.flow_out(crate::transducer::cga::translator_at(&[q(2, 1), q(0, 1), q(0, 1)]));
+    cx.flow_out(crate::transducer::cech::Flow {
+        motion: crate::transducer::cga::translator_at(&[q(2, 1), q(0, 1), q(0, 1)]),
+        line: crate::transducer::cech::Thread::Free,
+    });
     k.complexes.insert(chart.key(), cx);
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
     let before = k.winding_tally();
@@ -113,7 +116,7 @@ fn a_charts_outflow_enters_the_field_and_steps_its_holonomy_algebra() {
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
     let hand_back = |k: &mut Kernel, m: &Mv| {
         if let Some(cx) = k.complexes.get_mut(&chart.key()) {
-            cx.flow_out(m.clone());
+            cx.flow_out(crate::transducer::cech::Flow { motion: m.clone(), line: crate::transducer::cech::Thread::Free });
         }
     };
     hand_back(&mut k, &charge);

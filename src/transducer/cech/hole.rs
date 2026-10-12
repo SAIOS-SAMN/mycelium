@@ -120,10 +120,14 @@ impl Complex {
             return Condensed::AlreadyTethered;
         }
         self.set_edge(a, b, g, carriage, volume);
-        match self.get(&vertices) {
-            Some(_) => Condensed::Tethered,
-            None => Condensed::Absent,
-        }
+        // THE TETHER'S STRAIN WINDS INTO THE FIELD as it condenses (A.8): the
+        // life of a tether balances as a membrane's does — condense winds,
+        // drain unwinds — and its line threads what its modes land on.
+        let Some(motion) = self.get(&vertices).map(|s| s.motion()) else {
+            return Condensed::Absent;
+        };
+        self.flow_out(Flow { motion, line: Thread::Wound(simplex_key(&vertices).as_bytes().to_vec()) });
+        Condensed::Tethered
     }
 
     /// WHETHER THE TETHER STANDING BETWEEN `a` AND `b` CARRIES THIS TRANSPORT:

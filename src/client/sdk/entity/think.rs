@@ -151,6 +151,14 @@ impl Entity {
     /// tubes, turns and boosts onto their orbits, each motion weighing one.
     /// Returns how many motions vented. The complex listens from here on —
     /// armed where it is taken, so a complex read back from disk listens too.
+    ///
+    /// MU-CLIENT §4.5 — EACH FLOW ON ITS LINE: a tether condensed or a face
+    /// sealed winds its strain in and threads what its modes land on; a
+    /// tether drained or a membrane released unwinds it and leaves them. What
+    /// the field RELEASED in admitting them — the lines on an orbit that
+    /// returned, on a tube whose net flux cancelled — is the tension that
+    /// relaxed, and the complex lets those lines go (`Contemplation::release`):
+    /// the field's events, never a poll.
     pub(crate) fn vent_into_field(&mut self, budget: &mut crate::physics::Budget) -> usize {
         use crate::transducer::family::pairing::{mark_flux, FieldLine};
         self.contemplation.complex.arm_outflow();
@@ -159,10 +167,13 @@ impl Entity {
             .complex
             .take_outflow()
             .into_iter()
-            .map(|carriage| FieldLine { carriage, gauge: Vec::new(), mass: 1, free: false })
+            .map(|f| FieldLine { carriage: f.motion, gauge: Vec::new(), mass: 1, free: false, line: f.line })
             .collect();
         if !lines.is_empty() {
             mark_flux(&[], &lines, budget);
+        }
+        if let Ok(released) = crate::transducer::mind::with_field(|field| field.take_released()) {
+            self.contemplation.release(&released);
         }
         lines.len()
     }

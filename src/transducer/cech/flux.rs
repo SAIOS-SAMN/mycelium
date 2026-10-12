@@ -158,6 +158,8 @@ pub struct Tube {
     pub net: BigInt,
     pub transport: BigInt,
     pub open: BigInt,
+    /// MU-CLIENT §4.5 — the lines of the complex threading it, in key order.
+    pub lines: Vec<Vec<u8>>,
 }
 
 /// What admitting one flux did, in quanta weighed by mass: the flux that
@@ -184,6 +186,8 @@ pub struct Admitted {
 #[derive(Clone, Debug, Default)]
 pub struct TubeRegistry {
     tubes: Keyed<Tube>,
+    /// The lines released where a tube's net flux cancelled, until taken.
+    pub(crate) released: Vec<Vec<u8>>,
 }
 
 fn rational_gcd(a: &BigRational, b: &BigRational) -> BigRational {
@@ -196,7 +200,7 @@ fn amount(winding: &BigInt, mass: u64) -> Option<u64> {
 
 impl TubeRegistry {
     pub fn new() -> TubeRegistry {
-        TubeRegistry { tubes: Keyed::new() }
+        TubeRegistry::default()
     }
 
     pub fn len(&self) -> usize {
@@ -208,14 +212,18 @@ impl TubeRegistry {
     }
 
     /// ADMIT ONE FLUX carried by the field line whose generator is
-    /// `generator`, with `mass` compartments: open a tube, or close on one.
+    /// `generator`, with `mass` compartments: open a tube, or close on one;
+    /// the line threads or leaves it. Where the tube's net flux cancels, it
+    /// carries no field and every line threading it is released (LUMINAL).
     /// `None` where the flux has no ray, its ratio does not read, or an amount
     /// passes its carrier — nothing is admitted then.
-    pub fn admit(&mut self, flux: &Mv, generator: &Mv, mass: u64) -> Option<Admitted> {
+    pub fn admit(&mut self, flux: &Mv, generator: &Mv, mass: u64, line: &super::orbit::Thread) -> Option<Admitted> {
         let key = tube_key(flux)?;
         let Some(t) = self.tubes.get(&key).cloned() else {
             let one = BigInt::from(1);
             let opened = amount(&one, mass)?;
+            let mut lines = Vec::new();
+            super::orbit::thread_on(&mut lines, line);
             self.tubes.insert(
                 &key,
                 Tube {
@@ -225,6 +233,7 @@ impl TubeRegistry {
                     net: BigInt::from(mass),
                     transport: BigInt::from(mass),
                     open: BigInt::from(mass),
+                    lines,
                 },
             );
             return Some(Admitted { closed: 0, opened, relieved: 0, transport: opened });
@@ -238,13 +247,20 @@ impl TubeRegistry {
         let moved = amount(&m, mass)?;
         let open = &t.open * &scale;
         let relieved = (&open).min(&BigInt::from(moved)).clone();
+        let net = &t.net * &scale + &m * BigInt::from(mass);
+        let mut lines = t.lines;
+        super::orbit::thread_on(&mut lines, line);
+        if net.is_zero() {
+            self.released.append(&mut lines);
+        }
         let tube = Tube {
             reference: t.reference,
             generator: t.generator,
             quantum: q2,
-            net: &t.net * &scale + &m * BigInt::from(mass),
+            net,
             transport: &t.transport * &scale + BigInt::from(moved),
             open: &open - &relieved,
+            lines,
         };
         self.tubes.insert(&key, tube);
         Some(Admitted { closed: moved, opened: 0, relieved: u64::try_from(relieved).ok()?, transport: moved })

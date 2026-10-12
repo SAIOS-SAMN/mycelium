@@ -2,7 +2,10 @@
 // own orbit's return, a refused draw presses the lane it blocked, and the
 // lanes' (μ, β, ε) read as exact rationals.
 
-use crate::transducer::cech::orbit::OrbitRegistry;
+use crate::transducer::cech::orbit::{OrbitRegistry, Thread};
+
+/// A mode admitted on no line of a complex.
+const FREE: Thread = Thread::Free;
 use crate::transducer::cga::{self, Mv, E1, E2};
 use num_rational::BigRational;
 
@@ -52,7 +55,7 @@ fn turns_of_any_amount_flow_on_one_orbit_and_return_exactly() {
         m
     };
     let mut orbits = OrbitRegistry::new();
-    let mut admit = |t: BigRational| orbits.admit_mode(&mode(t), 3).map(|(l, a)| (l, moved(a))).expect("reads");
+    let mut admit = |t: BigRational| orbits.admit_mode(&mode(t), 3, &FREE).map(|(l, a)| (l, moved(a))).expect("reads");
     assert_eq!(admit(q(1, 2)), (3, (3, 0, 0)), "on 𝒽: away from its return");
     assert_eq!(admit(q(1, 2)), (3, (3, 0, 0)), "further: the flow stands at 4/3");
     assert_eq!(admit(q(-4, 9)), (3, (0, 3, 3)), "another amount, back: nearer");
@@ -72,8 +75,8 @@ fn a_turn_and_its_inverse_return() {
     let [there] = modes(&turn()).try_into().expect("one mode");
     let [back] = modes(&turn().reverse()).try_into().expect("one mode");
     let mut orbits = OrbitRegistry::new();
-    assert_eq!(orbits.admit_mode(&there, 2).map(|(_, a)| moved(a)), Some((2, 0, 0)));
-    assert_eq!(orbits.admit_mode(&back, 2).map(|(_, a)| moved(a)), Some((0, 2, 2)), "returned: relieved whole");
+    assert_eq!(orbits.admit_mode(&there, 2, &FREE).map(|(_, a)| moved(a)), Some((2, 0, 0)));
+    assert_eq!(orbits.admit_mode(&back, 2, &FREE).map(|(_, a)| moved(a)), Some((0, 2, 2)), "returned: relieved whole");
     assert!(orbits.is_empty());
 }
 
@@ -86,9 +89,9 @@ fn dilations_compose_on_one_orbit_and_return_on_spatial() {
         m
     };
     let mut orbits = OrbitRegistry::new();
-    assert_eq!(orbits.admit_mode(&one(q(2, 1)), 5).map(|(l, a)| (l, moved(a))), Some((0, (5, 0, 0))), "a boost is 𝒮");
-    assert_eq!(orbits.admit_mode(&one(q(3, 1)), 5).map(|(l, a)| (l, moved(a))), Some((0, (5, 0, 0))), "by three more: further");
-    assert_eq!(orbits.admit_mode(&one(q(1, 6)), 5).map(|(l, a)| (l, moved(a))), Some((0, (0, 5, 10))), "by a sixth: returned");
+    assert_eq!(orbits.admit_mode(&one(q(2, 1)), 5, &FREE).map(|(l, a)| (l, moved(a))), Some((0, (5, 0, 0))), "a boost is 𝒮");
+    assert_eq!(orbits.admit_mode(&one(q(3, 1)), 5, &FREE).map(|(l, a)| (l, moved(a))), Some((0, (5, 0, 0))), "by three more: further");
+    assert_eq!(orbits.admit_mode(&one(q(1, 6)), 5, &FREE).map(|(l, a)| (l, moved(a))), Some((0, (0, 5, 10))), "by a sixth: returned");
     assert!(orbits.is_empty());
 }
 
@@ -100,13 +103,13 @@ fn dilations_compose_on_one_orbit_and_return_on_spatial() {
 fn a_hue_orbit_returns_when_its_composite_is_the_identity() {
     let mut orbits = OrbitRegistry::new();
     let swap = [(1u8, 2u8), (2, 1)];
-    assert_eq!(orbits.admit_hues(&swap, 4).map(moved), Some((4, 0, 0)));
-    assert_eq!(orbits.admit_hues(&swap, 4).map(moved), Some((0, 4, 4)), "swapped back: returned");
+    assert_eq!(orbits.admit_hues(&swap, 4, &FREE).map(moved), Some((4, 0, 0)));
+    assert_eq!(orbits.admit_hues(&swap, 4, &FREE).map(moved), Some((0, 4, 4)), "swapped back: returned");
     let cycle = [(1u8, 2u8), (2, 3), (3, 1)];
-    let seen: Vec<_> = (0..3).map(|_| orbits.admit_hues(&cycle, 1).map(moved)).collect();
+    let seen: Vec<_> = (0..3).map(|_| orbits.admit_hues(&cycle, 1, &FREE).map(moved)).collect();
     assert_eq!(seen, vec![Some((1, 0, 0)), Some((1, 0, 0)), Some((0, 1, 2))], "three hues displaced until the third returns all");
-    assert_eq!(orbits.admit_hues(&[(1, 2), (1, 3)], 1), None, "one hue two places: no map");
-    assert_eq!(orbits.admit_hues(&[(4, 4)], 1), None, "the identity: no strain");
+    assert_eq!(orbits.admit_hues(&[(1, 2), (1, 3)], 1, &FREE), None, "one hue two places: no map");
+    assert_eq!(orbits.admit_hues(&[(4, 4)], 1, &FREE), None, "the identity: no strain");
     assert_eq!(orbits.totals(), ([0; 4], [0, 11, 0, 0]), "all on 𝒢, all returned");
 }
 

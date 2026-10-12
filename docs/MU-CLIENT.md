@@ -439,17 +439,25 @@ holds, and each fires where a winding requires it — never as a step:
 
 | axis | principle (MU-RECURSION §0.0) | pivot / conjugate | what it does | site | live in the mind |
 |---|---|---|---|---|---|
-| cells (degree `d+1 ↔ d`, any `d`: every dimension an exponent) | **holonomic** — a closed loop's composite is its content | **ascend** / **descend** | seal a cycle that closes with a cell / hollow the cell back to its cycle, its fill handed back exactly | `cech/coboundary.rs` (`ascend`, `descend`) | ascend: every cell the meet graph fills (`bubble/pivot.rs::ascend`, from `fill_meet` and the drive); descend: a released vertex's star (`release_vertex`) |
-| tethers (1 ↔ 0) | **luminal** — flux frozen into a tether; reconnection | **condense** / **drain** | form a tether from the tension between two bodies / dissolve it as the tension relaxes, the strain moved or recorded, never lost (A.8) | `cech/hole.rs` (`condense`), `cech/coboundary.rs` (`drain`) | condense: every tether the contemplation forms (`bubble/pivot.rs::tether`; re-formed tension drains first); drain: a released vertex's star |
+| cells (degree `d+1 ↔ d`, any `d`: every dimension an exponent) | **holonomic** — a closed loop's composite is its content | **ascend** / **descend** | seal a cycle that closes with a cell / hollow the cell back to its cycle, its fill handed back exactly | `cech/coboundary.rs` (`ascend`, `descend`) | ascend: every cell the meet graph fills (`bubble/pivot.rs::ascend`, from `fill_meet` and the drive); descend: a cell over a tether the field released, a cell the field released, a released vertex's star (`bubble/pivot.rs::release`, `release_vertex`) |
+| tethers (1 ↔ 0) | **luminal** — flux frozen into a tether; reconnection | **condense** / **drain** | form a tether from the tension between two bodies / dissolve it as the tension relaxes, the strain moved or recorded, never lost (A.8) | `cech/hole.rs` (`condense`), `cech/coboundary.rs` (`drain`) | condense: every tether the contemplation forms (`bubble/pivot.rs::tether`; re-formed tension drains first); drain: a tether the field released (`release`), a released vertex's star |
 | holes (class in / out) | **harmonic** — a class kept until it returns | **puncture** / **seal** | open a hole, injecting a homology class / cap it, killing the class | `cech/hole.rs` (`puncture`, `seal`) | the mind's questions (`bubble/question.rs`) and a curved cell in the drive, through `bubble/pivot.rs` |
 
 Every pivot is applied through `Complex::apply`, its outcome returned whole.
-OWED: drain and descend fire today only where a vertex is released, and at an
-orbit's close by a height window over a side table (`release_relaxed`,
-9f037ead) — a table and a gate, not a field event. They are rebuilt as the
-field's own: drain as LUMINAL reconnection where a tether's flux leaves its
-tube, descend as the HOLONOMIC release where a cell's boundary no longer
-closes, each fired by the field's admission, never polled.
+
+**Drain and descend are the field's events.** A tether condensed or a face
+sealed winds its strain into the mind's field ON ITS LINE (`cech::Flow`,
+`Thread::Wound`): the line threads every tube and orbit its modes land on. A
+tether drained or a membrane released unwinds it (`Thread::Unwound`), its
+reverse landing on the same rays and planes, so it leaves them — a tether's
+life balances as a membrane's does (A.8). Where an admission RETURNS an orbit
+(harmonic: the tension vented) or CANCELS a tube's net flux (luminal: it
+carries no field), the field releases every line threading it
+(`Field::take_released`), and the mind lets them go (`Contemplation::release`,
+from `vent_into_field` each tick): a released tether's read cells descend
+first (holonomic: a relaxing boundary no longer closes), then it drains; a
+hole over it — a question still carried — pins it, and it stands. Nothing is
+polled, stamped or windowed; the release is what the admission did.
 
 **The board.** The three axes are the complex's own coordinates, read off it
 and never a frame laid on it (`cech/board.rs`: `Pivot`, `Applied`,

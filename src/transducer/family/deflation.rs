@@ -308,7 +308,7 @@ fn rule_flux(form: &Form, mass: u64) -> Option<u64> {
         let crate::transducer::sentence::Vertex::Word { derivation, acts, .. } = v else { continue };
         for (_, a) in acts.scoped() {
             let Some(carriage) = element::conformal_of_rotor(&derivation.rotor(), &a.carriage) else { continue };
-            lines.push(FieldLine { carriage, gauge: a.gauge.clone(), mass, free: false });
+            lines.push(FieldLine { carriage, gauge: a.gauge.clone(), mass, free: false, line: crate::transducer::cech::orbit::Thread::Free });
         }
     }
     if lines.is_empty() {

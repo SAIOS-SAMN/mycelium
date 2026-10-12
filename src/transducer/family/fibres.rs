@@ -378,6 +378,7 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
             gauge: Vec::new(),
             mass: *mass,
             free: false,
+            line: crate::transducer::cech::orbit::Thread::Free,
         })
         .collect();
     #[cfg(test)]
