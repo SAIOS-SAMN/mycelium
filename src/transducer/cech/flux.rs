@@ -188,6 +188,12 @@ pub struct TubeRegistry {
     tubes: Keyed<Tube>,
     /// The lines released where a tube's net flux cancelled, until taken.
     pub(crate) released: Vec<Vec<u8>>,
+    /// THE RESERVOIR `e_∅` on 𝒯 (MU-CLIENT §4.5): the open flux a beat of the
+    /// field dissipated from each tube, by the tube's own ray, until flux on
+    /// that ray re-forms it.
+    reservoir: Keyed<BigInt>,
+    /// Whether a tube's net flux cancelled since the field last beat.
+    cancelled: bool,
 }
 
 fn rational_gcd(a: &BigRational, b: &BigRational) -> BigRational {
@@ -239,6 +245,13 @@ impl TubeRegistry {
             return Some(Admitted { closed: 0, opened, relieved: 0, transport: opened });
         };
         let r = cga::projective_ratio(flux, &t.reference).filter(|r| !r.is_zero())?;
+        // REFORMATION, THE SOURCE: flux landing on a ray whose open flux a
+        // beat dissipated draws it back into the tube first, so the flux is
+        // closed against what re-formed.
+        let mut t = t;
+        if let Some(held) = self.reservoir.remove(&key) {
+            t.open += held;
+        }
         // THE QUANTUM REFINES: the generator of ⟨q, r⟩, and every held amount
         // rescaled by q / q', an exact integer since q' divides q.
         let q2 = rational_gcd(&t.quantum, &r);
@@ -252,6 +265,8 @@ impl TubeRegistry {
         super::orbit::thread_on(&mut lines, line);
         if net.is_zero() {
             self.released.append(&mut lines);
+            // A BEAT of the field: what never returns dissipates on it.
+            self.cancelled = true;
         }
         let tube = Tube {
             reference: t.reference,
@@ -264,6 +279,34 @@ impl TubeRegistry {
         };
         self.tubes.insert(&key, tube);
         Some(Admitted { closed: moved, opened: 0, relieved: u64::try_from(relieved).ok()?, transport: moved })
+    }
+
+    /// DISSIPATION, THE SINK, on 𝒯: every tube's open flux — null flux no
+    /// later flux closed on — moves into the reservoir at the tube's ray. The
+    /// tube stays, frozen in, its net and transport its own.
+    pub(crate) fn dissipate(&mut self) {
+        let open: Vec<(Vec<u8>, BigInt)> = self.tubes.scoped().filter(|(_, t)| !t.open.is_zero()).map(|(k, t)| (k, t.open.clone())).collect();
+        for (k, amount) in open {
+            if let Some(t) = self.tubes.get_mut(&k) {
+                t.open = BigInt::zero();
+            }
+            let held = match self.reservoir.get(&k) {
+                Some(before) => before + &amount,
+                None => amount,
+            };
+            self.reservoir.insert(&k, held);
+        }
+    }
+
+    /// The open flux the reservoir holds on 𝒯, dissipated and not yet
+    /// re-formed.
+    pub fn reserved(&self) -> BigInt {
+        self.reservoir.scoped().fold(BigInt::zero(), |n, (_, x)| n + x)
+    }
+
+    /// Whether a tube's net cancelled since the last beat, the flag taken.
+    pub(crate) fn take_cancelled(&mut self) -> bool {
+        std::mem::take(&mut self.cancelled)
     }
 
     /// 78.71 (4) — THE HELICITY of the tubes held: `Σ_{a ≤ b} net_a · net_b ·

@@ -8,6 +8,7 @@ mod frame;
 mod harmonic;
 mod hue;
 mod malleability;
+mod reservoir;
 mod metabolism;
 mod mint;
 mod fascicle;

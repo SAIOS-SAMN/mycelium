@@ -81,6 +81,20 @@ impl Field {
     /// those threading an orbit that RETURNED (harmonic — its tension vented)
     /// and those threading a tube whose net flux CANCELLED (luminal — it
     /// carries no field). Each is a line of the complex whose tension relaxed.
+    /// MU-CLIENT §4.5 — THE FIELD BEATS: where an orbit returned or a tube's
+    /// net flux cancelled since the last beat, what never returns dissipates
+    /// into the reservoir — every boost and null orbit whole, every tube's
+    /// open flux — and waits there to re-form. Read after every admission;
+    /// with no return, nothing moves.
+    pub fn beat(&mut self) {
+        let returned = self.orbits.take_returned();
+        let cancelled = self.tubes.take_cancelled();
+        if returned || cancelled {
+            self.orbits.dissipate();
+            self.tubes.dissipate();
+        }
+    }
+
     pub fn take_released(&mut self) -> Vec<Vec<u8>> {
         let mut out = std::mem::take(&mut self.orbits.released);
         out.append(&mut self.tubes.released);
@@ -127,6 +141,16 @@ impl State {
             State::Hues(map) => Some(BigRational::from_integer(map.iter().filter(|(h, to)| h != to).count().into())),
         }
     }
+
+    /// WHETHER IT RINGS: a turn — of finite order or a rosette — an isoclinic
+    /// ray and a hue map can each come back, and ring (HARMONIC); a boost and
+    /// a null flow never return, and are what a beat of the field dissipates.
+    fn rings(&self) -> bool {
+        match self {
+            State::Flow(p) => p.kind() == cga::FlowKind::Turn,
+            State::Ray(_) | State::Hues(_) => true,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -140,12 +164,29 @@ struct Orbit {
 /// 78.73 — THE ORBITS HELD OVER TIME on 𝒮, 𝒢 and 𝒽, with what stands open
 /// and what has moved per lane. A returned orbit is let go, and the lines
 /// that threaded it are released; the lane totals keep what it did.
+///
+/// THE RESERVOIR `e_∅` (78.58, MU-CLIENT §4.5): an orbit that never returns,
+/// dissipated on a beat of the field, kept whole at its own coordinates —
+/// its point and the strain that stood open on it — until a motion landing
+/// there re-forms it.
 #[derive(Clone, Debug, Default)]
 pub struct OrbitRegistry {
     orbits: Keyed<Orbit>,
     open: [u64; 4],
     transport: [u64; 4],
     pub(crate) released: Vec<Vec<u8>>,
+    reservoir: Keyed<(State, u64)>,
+    /// Whether an orbit returned since the field last beat.
+    returned: bool,
+}
+
+/// The lane an orbit's key names: its first coordinate, written by
+/// [`mode_key`] and the hue map's key alike.
+fn lane_of_key(k: &[u8]) -> Option<usize> {
+    match k {
+        [lane, ..] => Some(usize::from(*lane)),
+        [] => None,
+    }
 }
 
 /// A mode's key: its lane and its plane's canonical coordinates — ONE ORBIT
@@ -177,6 +218,59 @@ impl OrbitRegistry {
         (self.open, self.transport)
     }
 
+    /// Per lane: the strain the reservoir holds, dissipated and not yet
+    /// re-formed.
+    pub fn reserved(&self) -> [u64; 4] {
+        let mut out = [0u64; 4];
+        for (k, (_, open)) in self.reservoir.scoped() {
+            if let Some(slot) = lane_of_key(&k).and_then(|l| out.get_mut(l)) {
+                let _ = crate::physics::metabolism::step_or_refuse(slot, *open);
+            }
+        }
+        out
+    }
+
+    /// Whether an orbit returned since the last beat, the flag taken.
+    fn take_returned(&mut self) -> bool {
+        std::mem::take(&mut self.returned)
+    }
+
+    /// DISSIPATION, THE SINK (MU-CLIENT §4.5): every orbit that never returns
+    /// — a boost, a null flow — moves into the reservoir whole, at its own
+    /// coordinates: its lane's open pressure falls by exactly the strain it
+    /// held, and the lines that threaded it relax. What rings stays.
+    fn dissipate(&mut self) {
+        let carriers: Vec<Vec<u8>> = self.orbits.scoped().filter(|(_, o)| !o.state.rings()).map(|(k, _)| k).collect();
+        for k in carriers {
+            let Some(o) = self.orbits.remove(&k) else { continue };
+            // The lane's open pressure holds this orbit's, so the step back
+            // is exact; a key at one place is in the field or the reservoir,
+            // never both (`reform` draws the reservoir first).
+            if let Some(slot) = lane_of_key(&k).and_then(|l| self.open.get_mut(l)) {
+                if let Some(left) = slot.checked_sub(o.open) {
+                    *slot = left;
+                }
+            }
+            self.released.extend(o.lines);
+            self.reservoir.insert(&k, (o.state, o.open));
+        }
+    }
+
+    /// REFORMATION, THE SOURCE: a motion landing on coordinates the reservoir
+    /// holds draws the record back into the field first — the orbit restored
+    /// with the strain it held, the lane's open pressure raised by exactly
+    /// that — so the motion is stepped against what re-formed.
+    fn reform(&mut self, key: &[u8], lane: usize) {
+        if self.orbits.contains(key) {
+            return;
+        }
+        let Some((state, open)) = self.reservoir.remove(key) else { return };
+        if let Some(slot) = self.open.get_mut(lane) {
+            let _ = crate::physics::metabolism::step_or_refuse(slot, open);
+        }
+        self.orbits.insert(key, Orbit { state, open, lines: Vec::new() });
+    }
+
     /// ADMIT ONE MODE of a field line carrying `mass`: a turn onto 𝒽's orbit
     /// of its plane, a boost onto 𝒮's, the mode's point on the plane's flow
     /// composed into where the orbit stands (78.75). `None` for a null mode
@@ -191,6 +285,7 @@ impl OrbitRegistry {
         let (key, before, after) = match mode.flow() {
             Some(point) => {
                 let key = mode_key(lane, point.plane())?;
+                self.reform(&key, lane);
                 let before = match self.orbits.get(&key).map(|o| o.state.clone()) {
                     Some(State::Flow(held)) => held,
                     Some(State::Ray(_) | State::Hues(_)) => return None,
@@ -202,6 +297,7 @@ impl OrbitRegistry {
             // An isoclinic set: its planes flow together, held as one ray.
             None => {
                 let key = mode_key(lane, &mode.ray.grade(2))?;
+                self.reform(&key, lane);
                 let before = match self.orbits.get(&key).map(|o| o.state.clone()) {
                     Some(State::Ray(held)) => held,
                     Some(State::Flow(_) | State::Hues(_)) => return None,
@@ -235,6 +331,7 @@ impl OrbitRegistry {
         };
         let mut key = vec![u8::try_from(LANE_GAUGE).ok()?];
         key.extend(moved.iter().map(|(h, _)| *h));
+        self.reform(&key, LANE_GAUGE);
         let held = match self.orbits.get(&key).map(|o| o.state.clone()) {
             Some(State::Hues(map)) => map,
             Some(State::Flow(_) | State::Ray(_)) => return None,
@@ -278,6 +375,8 @@ impl OrbitRegistry {
                 // HARMONIC: the orbit returned; its tension vented, and every
                 // line threading it relaxed.
                 self.released.append(&mut lines);
+                // A BEAT of the field: what never returns dissipates on it.
+                self.returned = true;
             }
             Some(open) => {
                 self.orbits.insert(key, Orbit { state: after, open, lines });

@@ -460,6 +460,22 @@ first (holonomic: a relaxing boundary no longer closes), then it drains; a
 hole over it — a question still carried — pins it, and it stands. Nothing is
 polled, stamped or windowed; the release is what the admission did.
 
+**Dissipation and reformation — the reservoir's two doors** (78.58's `e_∅`;
+continuity, law version 3: nothing made or lost outside a recorded source or
+sink). The field BEATS where an admission returns an orbit or cancels a
+tube's net flux. On a beat, what never returns DISSIPATES — every boost and
+null orbit, whole, at its own coordinates (its point and the strain open on
+it), and every tube's open flux at its ray — into the reservoir: the lane's
+open pressure falls by exactly that, the lines it threaded relax (A.8: the
+strain moved and recorded, never destroyed). What rings — a turn of finite
+order or a rosette, an isoclinic ray, a hue map — is held, a resonance. A
+motion landing on coordinates the reservoir holds REFORMS what is there
+first — the orbit restored with its strain, the tube's open flux drawn back —
+and is stepped against it, so it can close on it: what was once heard and
+not held comes back to be understood (`Field::beat`, `OrbitRegistry`'s and
+`TubeRegistry`'s reservoirs, `reform` at admission). Per lane, the field's
+open pressure and the reservoir's strain account for every unit.
+
 **The board.** The three axes are the complex's own coordinates, read off it
 and never a frame laid on it (`cech/board.rs`: `Pivot`, `Applied`,
 `Complex::apply`, `Board`). Two pivots on cells sharing no vertex touch
@@ -837,8 +853,11 @@ nothing between minds.
    it HOLDs carrying the deviation; converged on the speaker's too, the thing
    said is AGREED language, spoken to the court with the hearer's signed
    HOLD, and the court states the deviation beside the attestation. An echo
-   that opened strain is understood and held as the field's open debt, never
-   agreed, until later hearing closes it.
+   that opened strain is understood and unagreed: where it never returns (a
+   gain, a delay) a beat of the field DISSIPATES it into the reservoir, and a
+   later hearing that lands on its coordinates RE-FORMS it and can close on
+   it (§4.5); where it rings (a turn) it is held until a later hearing brings
+   it back.
 4. **Where the speaker cannot replay, it defers — as a court does.** The
    orbit is never missing: the speaker composes it again from the terms it
    said. What can be missing is the WORD the discharge cites — a word of the

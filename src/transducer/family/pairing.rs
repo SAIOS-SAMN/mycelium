@@ -279,6 +279,9 @@ pub(crate) fn transport_order(
     for (h, mass) in circuits {
         admit(&mut r, h, &[], *mass, false, &crate::transducer::cech::orbit::Thread::Free, budget);
     }
+    // MU-CLIENT §4.5 — and the field beats on what returned: what never
+    // returns dissipates into the reservoir, to re-form where motion lands.
+    field.beat();
     r
 }
 
