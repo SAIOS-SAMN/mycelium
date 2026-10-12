@@ -29,12 +29,18 @@ pub(crate) fn family_magnitude(train: &Family) -> [u64; 4] {
 }
 
 /// WHAT A RULE'S PERSPECTIVES SAID OF IT (MU-CLIENT §4.4): each training pair
-/// a perspective, the rule its siblings derive asked to close it.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// a perspective, the rule its siblings derive asked to close it — and, where
+/// one does not, the INVERSION: the rule that pair alone derives asked to
+/// close every sibling.
+#[derive(Clone, Debug)]
 pub(crate) enum Ascertained {
     /// Every held-out pair closed under the rule its siblings derived: the
     /// rule is an invariant of the family, known.
     Known,
+    /// The siblings under-determined the rule, and one pair alone carries
+    /// it: the rule that pair derives re-derives every other pair. Known by
+    /// inversion — this rule, not the fit, is the family's invariant.
+    KnownByInversion(Box<SentenceRule>),
     /// Some held-out pair did not close: the rule fits, and is not known.
     Unknown,
     /// One pair: no sibling to derive it from.
@@ -196,7 +202,7 @@ impl Entity {
             crate::observe::note_mind(|m| m.perspective[3] += 1);
             return Ascertained::OnePerspective;
         }
-        let (mut failed, mut unread) = (false, false);
+        let (mut failed, mut unread) = (Vec::new(), false);
         for k in 0..train.len() {
             let siblings: Vec<(crate::arc::Grid, crate::arc::Grid)> = train.iter().enumerate().filter(|(i, _)| *i != k).map(|(_, p)| p.clone()).collect();
             let frames = perceive_family(&siblings);
@@ -208,31 +214,67 @@ impl Entity {
                 match budget.remaining() == 0 {
                     true => unread = true,
                     false => {
-                        failed = true;
+                        failed.push(k);
+                        crate::observe::note_mind(|m| m.disagree[0] += 1);
                         self.lift_perspective(x, y, id);
                     }
                 }
                 continue;
             };
-            let speech = crate::transducer::family::speak::speak_rule(&rule, x, &self.epigenome);
-            let spoken = speech.as_ref().filter(|s| s.remainder.is_empty()).and_then(|s| s.grid());
-            let closes = spoken.as_ref().is_some_and(|g| crate::transducer::family::speak::residual_of(Some(g), y).is_empty());
-            if !closes {
-                failed = true;
-                let from = match &spoken {
+            if let Err((kind, said)) = self.disagreement(&rule, x, y) {
+                failed.push(k);
+                crate::observe::note_mind(|m| m.disagree[kind] += 1);
+                let from = match &said {
                     Some(g) => g,
                     None => x,
                 };
                 self.lift_perspective(from, y, id);
             }
         }
-        let (slot, outcome) = match (failed, unread) {
-            (true, _) => (2, Ascertained::Unknown),
-            (false, true) => (4, Ascertained::Unread),
-            (false, false) => (1, Ascertained::Known),
+        // THE INVERSION: where the siblings missed a pair, that pair's own
+        // rule is read back onto every sibling. A rule one perspective
+        // derives that re-derives all the others is the family's invariant.
+        for &k in &failed {
+            let alone = vec![train[k].clone()];
+            let frames = perceive_family(&alone);
+            let mut budget = self.stroke_n(extraction_spend(&alone, &frames));
+            let Some(rule) = extract_rule_on(&alone, &frames, &self.epigenome, &mut budget) else { continue };
+            let covers = train.iter().enumerate().filter(|(i, _)| *i != k).all(|(_, (x, y))| self.disagreement(&rule, x, y).is_ok());
+            if covers {
+                crate::observe::note_mind(|m| m.perspective[7] += 1);
+                return Ascertained::KnownByInversion(Box::new(rule));
+            }
+        }
+        let (slot, outcome) = match (failed.is_empty(), unread) {
+            (false, _) => (2, Ascertained::Unknown),
+            (true, true) => (4, Ascertained::Unread),
+            (true, false) => (1, Ascertained::Known),
         };
         crate::observe::note_mind(|m| m.perspective[slot] += 1);
         outcome
+    }
+
+    /// WHAT ONE PERSPECTIVE DISAGREED ABOUT: the rule spoken on its input
+    /// against its output. `Ok` where it closes; otherwise the kind, in
+    /// [`crate::observe::DISAGREE`]'s order — it spoke nothing, spoke with a
+    /// remainder, laid down another frame, created or erased cells, or
+    /// coloured the right cells otherwise — with the grid it said, where it
+    /// said one.
+    fn disagreement(&self, rule: &SentenceRule, x: &crate::arc::Grid, y: &crate::arc::Grid) -> Result<(), (usize, Option<crate::arc::Grid>)> {
+        let Some(speech) = crate::transducer::family::speak::speak_rule(rule, x, &self.epigenome) else { return Err((1, None)) };
+        let said = speech.grid();
+        if !speech.remainder.is_empty() {
+            return Err((2, said));
+        }
+        let Some(g) = said else { return Err((1, None)) };
+        if crate::transducer::family::speak::residual_of(Some(&g), y).is_empty() {
+            return Ok(());
+        }
+        if g.len() != y.len() || g.iter().zip(y).any(|(a, b)| a.len() != b.len()) {
+            return Err((3, Some(g)));
+        }
+        let occupancy = g.iter().flatten().zip(y.iter().flatten()).any(|(a, b)| (*a == 0) != (*b == 0));
+        Err((if occupancy { 4 } else { 5 }, Some(g)))
     }
 
     /// A PERSPECTIVE THE SIBLINGS DID NOT COVER, LIFTED INTO THE SENSORIUM:

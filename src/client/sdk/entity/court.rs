@@ -223,9 +223,11 @@ impl Entity {
         // training pair re-derived by the rule its siblings derive. A fit
         // its own perspectives do not re-derive is not sent; the pairs they
         // missed were lifted into the mind as structure (`ascertain`).
-        if self.ascertain(&id, &train) != super::family::Ascertained::Known {
-            return;
-        }
+        let rule = match self.ascertain(&id, &train) {
+            super::family::Ascertained::Known => rule,
+            super::family::Ascertained::KnownByInversion(r) => *r,
+            _ => return,
+        };
         let Some(outs) = self.speak_tests(&rule, &tests) else { return };
         let spoken = self.mint_solve(&rule, &train);
         let _ = self.solve_task(&id, &train, &outs, spoken.as_ref(), &mut t.budget);

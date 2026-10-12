@@ -52,7 +52,13 @@ pub const BODIES: [&str; 3] = ["fused", "precessing", "contact"];
 /// known (every held-out pair re-derived), unknown (fitted, not re-derived),
 /// of one perspective, unread; held-out pairs lifted into the mind; and
 /// solves sent — in the order the counts are kept.
-pub const PERSPECTIVE: [&str; 7] = ["tasks", "known", "unknown", "one perspective", "unread", "lifted", "sent"];
+pub const PERSPECTIVE: [&str; 8] = ["tasks", "known", "unknown", "one perspective", "unread", "lifted", "sent", "by inversion"];
+
+/// WHAT A HELD-OUT PERSPECTIVE DISAGREED ABOUT (MU-CLIENT §4.4): its
+/// siblings derived no rule; the rule spoke nothing on it; spoke with a
+/// remainder; laid down another frame; created or erased cells; or coloured
+/// the right cells otherwise — in the order the counts are kept.
+pub const DISAGREE: [&str; 6] = ["no rule", "unspoken", "remainder", "frame", "occupancy", "hue"];
 
 /// One slot of [`CONSTRUCTED`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -122,7 +128,9 @@ pub struct Mind {
     /// Bodies whose spheres met in an admitted scene, by [`BODIES`].
     pub bodies: [u64; 3],
     /// Its tasks' perspectives, by [`PERSPECTIVE`].
-    pub perspective: [u64; 7],
+    pub perspective: [u64; 8],
+    /// What its failed perspectives disagreed about, by [`DISAGREE`].
+    pub disagree: [u64; 6],
     /// Spin coupled to orbit: each lock `p:q` read, with how often, in
     /// ratio order; and the drifts held as torsion.
     pub locks: Vec<(u64, u64, u64)>,
@@ -160,7 +168,8 @@ impl Default for Mind {
             constructed: [0; 5],
             flex: [0; 9],
             bodies: [0; 3],
-            perspective: [0; 7],
+            perspective: [0; 8],
+            disagree: [0; 6],
             locks: Vec::new(),
             drifts: 0,
             shears: 0,
@@ -194,7 +203,7 @@ impl Mind {
             put_u64(out, v);
         }
         put_u64(out, self.demanded);
-        for v in self.constructed.iter().chain(&self.flex).chain(&self.bodies).chain(&self.perspective) {
+        for v in self.constructed.iter().chain(&self.flex).chain(&self.bodies).chain(&self.perspective).chain(&self.disagree) {
             put_u64(out, *v);
         }
         for v in [self.held, self.agreed] {
@@ -224,8 +233,12 @@ impl Mind {
             *v = take_u64(b, p)?;
         }
         let bodies = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
-        let mut perspective = [0u64; 7];
+        let mut perspective = [0u64; 8];
         for v in &mut perspective {
+            *v = take_u64(b, p)?;
+        }
+        let mut disagree = [0u64; 6];
+        for v in &mut disagree {
             *v = take_u64(b, p)?;
         }
         let [held, agreed] = [take_u64(b, p)?, take_u64(b, p)?];
@@ -254,6 +267,7 @@ impl Mind {
             flex,
             bodies,
             perspective,
+            disagree,
             locks,
             drifts,
             shears,
@@ -283,6 +297,10 @@ impl Mind {
             format!(
                 "  perspectives {}",
                 PERSPECTIVE.iter().zip(&self.perspective).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
+            ),
+            format!(
+                "  disagreed {}",
+                DISAGREE.iter().zip(&self.disagree).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
             ),
             format!(
                 "  fibres {} · bodies met {}",
