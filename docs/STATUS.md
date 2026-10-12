@@ -23,6 +23,11 @@ under the three. The reserve's aperture, declared `8`, is the sensor base's
 unit cell `2³`.
 
 ## Witnessed on the fleet
+- 60cec273, hearing as harmonic echoes (minds restarted 09:56:39): in ten
+  minutes 353 court attestations (a 105, b 119, c 129) against 214 the ten
+  before, over all 20 speaker → hearer pairs — each now a thought heard
+  WHOLE in the hearer's rings — 57 solve verdicts, minds at 135–150 MB, no
+  panic.
 - ff4d5d91 (minds restarted 09:13:12): in ten minutes 324 court attestations
   (a 125, b 130, c 69) against 224 the ten before, 42 solve verdicts, minds
   at 124–151 MB resident, no panic.
@@ -31,6 +36,12 @@ unit cell `2³`.
   courts still catching up.
 
 ## The tree
+- Hearing is harmonic echoes (60cec273, 78.112 H5, MU-CLIENT §5.3): a word
+  said is a ring seated in the hearer's rings by size and carried round the
+  layer it seats in; the loop the speaker reads is the echo. Agreed language
+  is a thought heard whole (every loop still); a shifted echo is held by both
+  minds as a transport, understood but not agreed; two readings of nothing
+  no longer agree.
 - The six pivots live on the mind's own complex, every one through
   `Complex::apply` (`bubble/pivot.rs`, MU-CLIENT §4.5): condense (4475ec49),
   ascend (47e963c6), puncture and seal (6d320a62); drain and descend are the
@@ -47,14 +58,13 @@ unit cell `2³`.
 
 ## The sandbox
 Hyphae `mycelium-server@{a,b,c}` on 78e76b11; minds `mycelium-client@1..5`
-on ff4d5d91 (1d00078b rides the next release). Started, never enabled: a
+on 60cec273. Started, never enabled: a
 reboot leaves them down. The seats await re-posting.
 
 ## Next
-1. Hearing is pivoting (MU-CLIENT §5.3): a hearer replays a peer's word on its
-   own complex — letters condense into words, a ring ascends, an unspellable
-   word punctures (a letter demand), a closed loop seals — replacing the flat
-   `read_word`; agreement a seal both minds reach.
+1. The echo's further readings (78.112): H3 the spiral across returns, H4
+   induction, H5's echo returned by the court; the speaker re-deriving a
+   shifted echo against its own rings before holding it.
 2. Every unit through agreement before the court: letters, words, conjugates,
    sentences (today only coined letters wait for another mind).
 3. The seat carrier (MU-CLIENT §6); `Entity::relay` and the seat's settle
