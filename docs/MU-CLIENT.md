@@ -798,12 +798,35 @@ nothing between minds.
    for each orbit it closed; a DEMAND for what it could not; and the axes it
    newly opened are its own word, said in turn. Nothing heard enters the
    hearer's genome or dialect as given (law 8).
+
+   **As built — hearing is harmonic echoes (78.112 H5).** The hearer's ear
+   holds its words as RINGS by their size (`Presentation`: each word's
+   return, the lcm of its turns' orders, or a carrier). A word said is a
+   ring: it seats in the NEXT LARGER layer of the hearer's rings — the least
+   size above it that it divides — read against every ring there
+   (`hearing::hear_across`, `Presentation::hear_echoed`). WHOLE where some
+   echo `Ω_L Ω_s Ω_L⁻¹ Ω_s⁻¹` is the identity: understood whole, carried as
+   it is. TILTED where none is: understood shifted, carried round each ring
+   of the layer, so the loop said → heard the speaker reads IS the echo. On
+   the OUTSIDE where no ring is larger: the carrier, understood as it is.
+   LEFTOVER where larger rings stand that it divides none of: not
+   understood, no loop. Its hue map is read mode by mode on 𝒢. The flat
+   `read_word` no longer hears.
 3. **Agreement is replay.** The speaker replays each discharge on its own
    orbit of that class, as a court replays a certificate on its copy (M9).
    Where it closes, one orbit is discharged in two minds by two derivations:
    AGREED language — the conversation's own ring has returned. An echo the
    speaker re-derives against its own rings is a transport between the two
    perspectives, held in its dialect.
+
+   **As built.** The speaker reads each word's loop (ACK); the hearer reads
+   it again by the one reader and HOLDs where the two are one and every word
+   was understood (none leftover — two readings of nothing are no shared
+   thought). Both hold every echo as a transport between the perspectives.
+   The thing said is AGREED language, spoken to the court with the hearer's
+   signed HOLD, only where every word was HEARD WHOLE — every loop still,
+   the two minds' rings in harmonic balance (H2 across minds). A word heard
+   shifted is understood, never agreed.
 4. **Where the speaker cannot replay, it defers — as a court does.** The
    orbit is never missing: the speaker composes it again from the terms it
    said. What can be missing is the WORD the discharge cites — a word of the

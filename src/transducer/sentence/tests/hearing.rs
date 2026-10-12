@@ -151,3 +151,62 @@ fn hearing_winds_the_crossing_and_a_pure_twist_winds_nothing() {
         .expect("a ring");
     assert_eq!(hear(&[&twist], &mut stroke()).wound, None, "all advance: nothing wound");
 }
+
+/// An ear holding each of `rings` as a word of its dialect.
+fn ear_of(rings: &[Mv]) -> crate::transducer::sentence::presentation::Presentation {
+    let mut ear = crate::transducer::sentence::presentation::Presentation::default();
+    for r in rings {
+        assert!(ear.hear_transport(r, &[]), "the ear holds the ring");
+    }
+    ear
+}
+
+/// 78.112 H5 — A WORD HEARD ACROSS MINDS IS SEATED IN THE HEARER'S RINGS.
+/// The hearer holds the 90° turn of the grid plane (ℓ 4). The speaker's 180°
+/// turn of that plane (ℓ 2, dividing 4) seats in it WHOLE: understood whole,
+/// carried as it is, the loop still. The 180° turn of a crossing plane seats
+/// with a TILT: carried round the ring, the loop said → heard is exactly the
+/// echo `Ω_L Ω_s Ω_L⁻¹ Ω_s⁻¹`, and it is a turn. A turn whose point is no
+/// Niven point never returns: a carrier, larger than every returning ring —
+/// the OUTER ring, understood as it is; so is a slide.
+#[test]
+fn a_word_heard_across_minds_is_seated_in_the_hearers_rings() {
+    use crate::transducer::sentence::hearing::Seat;
+    let ear = ear_of(&[turn_90(E1 | E2)]);
+    let half = Mv::blade(E1 | E2, q(1));
+    let heard = ear.hear_echoed(&half).expect("its modes read");
+    assert_eq!(heard.seat, Seat::Whole, "the half turn sounds inside the quarter turn whole");
+    assert!(heard.carried.as_ref().is_some_and(|c| c.projective_eq(&half)), "carried as it is: the loop still");
+    let crossing = Mv::blade(E1 | E3, q(1));
+    let tilted = ear.hear_echoed(&crossing).expect("its modes read");
+    assert!(matches!(&tilted.seat, Seat::Tilted(e) if e == &vec![Echo::Turn]), "a crossing plane seats with a tilt: {:?}", tilted.seat);
+    let carried = tilted.carried.expect("carried round the ring");
+    let l = turn_90(E1 | E2);
+    let e = l.geo(&crossing).geo(&l.reverse()).geo(&crossing.reverse());
+    assert!(carried.geo(&crossing.reverse()).projective_eq(&e), "the loop said → heard is the echo");
+    let rosette = Mv::scalar(BigRational::new((-1).into(), 2.into())).add(&Mv::blade(E1 | E2, q(1)));
+    assert_eq!(ear.hear_echoed(&rosette).expect("its modes read").seat, Seat::Outer, "c = −3/5: no return, a carrier");
+    let slide = cga::translator_at(&[q(1), q(0), q(0)]);
+    let outer = ear.hear_echoed(&slide).expect("its modes read");
+    assert_eq!(outer.seat, Seat::Outer, "the carrier is larger than every returning ring");
+    assert!(outer.carried.is_some_and(|c| c.projective_eq(&slide)));
+}
+
+/// H2 ACROSS MINDS — THE NESTING DECIDES, NOT THE RINGS' NUMBER. A ring of
+/// size 2 heard where the only larger layer is of size 3 divides none of it:
+/// LEFTOVER, not understood, carried nowhere. Heard where a layer of size 4
+/// stands it seats there; and with no larger layer at all it is the outer
+/// ring.
+#[test]
+fn a_ring_dividing_no_larger_layer_is_leftover() {
+    use crate::transducer::sentence::hearing::{hear_across, Size};
+    let word = Mv::blade(E1 | E2, q(1));
+    let ring = turn_90(E1 | E2);
+    let layer = |s: Size| vec![(s, vec![(b"ring".to_vec(), &ring)])];
+    let left = hear_across(&word, Size::Returns(2), layer(Size::Returns(3)).into_iter());
+    assert_eq!((left.seat, left.carried), (Seat::Leftover, None));
+    let seated = hear_across(&word, Size::Returns(2), layer(Size::Returns(4)).into_iter());
+    assert_eq!(seated.seat, Seat::Whole);
+    let alone = hear_across(&word, Size::Returns(2), Vec::new().into_iter());
+    assert_eq!(alone.seat, Seat::Outer);
+}

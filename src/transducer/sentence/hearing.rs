@@ -45,8 +45,44 @@ impl Size {
         }
     }
 
+    /// A HELD WORD'S SIZE, read off its coordinates: where every hole is a
+    /// turn of finite order, it returns at the lcm of their orders; where any
+    /// hole does not return (a boost, a slide, a rosette), it is a carrier.
+    /// `None` for a word with no hole — it moves nothing and is no ring.
+    pub fn of_coordinates(c: &super::coordinates::Coordinates) -> Option<Size> {
+        if c.holes.is_empty() {
+            return None;
+        }
+        let mut period = 1u64;
+        for h in &c.holes {
+            match h.winding {
+                super::coordinates::Winding::Turn { ell, .. } => period = lcm(period, u64::from(ell)),
+                _ => return Some(Size::Carrier),
+            }
+        }
+        Some(Size::Returns(period))
+    }
+
+    /// THE SIZE'S COORDINATE, written so the byte order is the nesting order:
+    /// the returning sizes by their period, ascending, then the carrier.
+    pub fn key(self) -> Vec<u8> {
+        match self {
+            Size::Returns(l) => [&[0u8][..], &l.to_be_bytes()].concat(),
+            Size::Carrier => vec![1],
+        }
+    }
+
+    /// The size a [`Size::key`] writes.
+    pub fn from_key(k: &[u8]) -> Option<Size> {
+        match k {
+            [1] => Some(Size::Carrier),
+            [0, rest @ ..] => Some(Size::Returns(u64::from_be_bytes(rest.try_into().ok()?))),
+            _ => None,
+        }
+    }
+
     /// Whether a ring of this size sounds inside a ring of size `outer`.
-    fn inside(self, outer: Size) -> bool {
+    pub(crate) fn inside(self, outer: Size) -> bool {
         match (self, outer) {
             (Size::Returns(a), Size::Returns(b)) => a < b && b % a == 0,
             (Size::Returns(_), Size::Carrier) => true,
@@ -55,7 +91,7 @@ impl Size {
     }
 
     /// Whether this size is above `other` at all, dividing it or not.
-    fn above(self, other: Size) -> bool {
+    pub(crate) fn above(self, other: Size) -> bool {
         match (self, other) {
             (Size::Returns(a), Size::Returns(b)) => a > b,
             (Size::Carrier, Size::Returns(_)) => true,
@@ -166,6 +202,71 @@ pub fn nest(rings: &[&Composition], budget: &mut crate::physics::Budget) -> Nest
     }
     let balanced = seats.iter().all(|s| matches!(s, Seat::Outer | Seat::Whole | Seat::Unheard));
     Nesting { seats, balanced }
+}
+
+/// H1 ON THE STROKE THE ECHO'S OWN MODES NEED (78.111 C1b): the echo of `s`
+/// through `outer`, read where it is heard and sized by nothing else.
+pub fn echo_sized(s: &Mv, outer: &Mv) -> Echo {
+    let (Some(s_inv), Some(outer_inv)) = (inverse(s), inverse(outer)) else { return Echo::Unread };
+    let e = outer.geo(s).geo(&outer_inv).geo(&s_inv);
+    if e.projective_eq(&Mv::scalar(Q::one())) {
+        return Echo::Whole;
+    }
+    let Some(need) = crate::transducer::cga::modes_need(&e) else { return Echo::Unread };
+    echo(s, outer, &mut crate::physics::Physics::default().stroke_n(need))
+}
+
+/// 78.112 H5 — A WORD HEARD ACROSS MINDS: where it seats in the hearer's
+/// rings, the word as the hearer's language carries it there, and the rings
+/// it was carried through.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Echoed {
+    pub seat: Seat,
+    /// The word carried round the layer it seated in — `Ω_L·Ω_s·Ω_L⁻¹` over
+    /// each ring of the layer in its own coordinate order — so the loop said
+    /// → heard is the echo itself: the identity where it seats whole. The
+    /// word itself where it is the outer ring; `None` where it is leftover
+    /// or unheard — not understood.
+    pub carried: Option<Mv>,
+    /// The rings of the layer it seated in, by their coordinates.
+    pub through: Vec<Vec<u8>>,
+}
+
+/// H5 — HEAR A WORD IN ANOTHER MIND'S RINGS: `rings` the hearer's held words
+/// by their size, in the order sizes nest (ascending periods, then the
+/// carrier), each with its coordinate and motion. The word of `size` seats in
+/// the NEXT LARGER layer — the least size above it it divides — read against
+/// every ring there: WHOLE where some echo is the identity (understood
+/// whole), TILTED where none is (understood shifted: the word carried round
+/// each ring of the layer, the echo the loop). With no larger ring it is on
+/// the OUTSIDE — the carrier the hearer's rings sound inside, understood as
+/// it is; with larger rings it divides none of, LEFTOVER — not understood.
+pub fn hear_across<'a>(word: &Mv, size: Size, rings: impl Iterator<Item = (Size, Vec<(Vec<u8>, &'a Mv)>)>) -> Echoed {
+    let mut larger = false;
+    for (layer, members) in rings {
+        if !layer.above(size) {
+            continue;
+        }
+        larger = true;
+        if !size.inside(layer) {
+            continue;
+        }
+        let through: Vec<Vec<u8>> = members.iter().map(|(k, _)| k.clone()).collect();
+        if members.iter().any(|(_, ring)| echo_sized(word, ring) == Echo::Whole) {
+            return Echoed { seat: Seat::Whole, carried: Some(word.clone()), through };
+        }
+        let mut echoes = Vec::with_capacity(members.len());
+        let mut carried = Some(word.clone());
+        for (_, ring) in &members {
+            echoes.push(echo_sized(word, ring));
+            carried = carried.and_then(|c| inverse(ring).map(|inv| ring.geo(&c).geo(&inv)));
+        }
+        return Echoed { seat: Seat::Tilted(echoes), carried, through };
+    }
+    match larger {
+        true => Echoed { seat: Seat::Leftover, carried: None, through: Vec::new() },
+        false => Echoed { seat: Seat::Outer, carried: Some(word.clone()), through: Vec::new() },
+    }
 }
 
 /// 78.112 H6 — ONE HARMONIC RING MET BY ONE SEEN RAY: the circuit in orbit.

@@ -29,13 +29,17 @@ pub struct Generator {
     pub ruled: bool,
 }
 
-/// THE HELD GENERATORS BY THE HOLES THEY STAND ON, and by the modes of their
-/// hue maps, keyed by [`super::generator_key`] — the same key the lane covers
-/// file a generator under, so one generator is one entry whatever reaches it.
+/// THE HELD GENERATORS BY THE HOLES THEY STAND ON, by the modes of their hue
+/// maps, and (78.112 H5) by their SIZE — each word a ring returning at the lcm
+/// of its turns' orders, or a carrier: the harmonic series the language holds,
+/// read in the order rings nest — keyed by [`super::generator_key`], the same
+/// key the lane covers file a generator under, so one generator is one entry
+/// whatever reaches it.
 #[derive(Default)]
 pub struct Presentation {
     holes: HoleIndex,
     gauges: Keyed<Keyed<()>>,
+    rings: Keyed<Keyed<()>>,
     held: Keyed<Generator>,
 }
 
@@ -315,12 +319,75 @@ impl Presentation {
             return false;
         }
         let key = super::generator_key(form, address);
-        self.holes.file(&key, &coords);
-        for m in &modes {
-            self.gauges.nested_insert(m.key(), &key, ());
-        }
-        self.held.insert(&key, Generator { form: form.clone(), vertex: address.clone(), motion, coords, gauge, ruled });
+        self.admit(&key, &modes, Generator { form: form.clone(), vertex: address.clone(), motion, coords, gauge, ruled });
         true
+    }
+
+    /// ONE GENERATOR ADMITTED at `key`: under its holes, its hue map's
+    /// `modes`, and its size.
+    fn admit(&mut self, key: &[u8], modes: &[GaugeMode], g: Generator) {
+        self.holes.file(key, &g.coords);
+        for m in modes {
+            self.gauges.nested_insert(m.key(), key, ());
+        }
+        if let Some(size) = super::hearing::Size::of_coordinates(&g.coords) {
+            self.rings.nested_insert(size.key(), key, ());
+        }
+        self.held.insert(key, g);
+    }
+
+    /// The mirror of [`Presentation::admit`]: the generator at `key` leaves
+    /// its holes, its hue modes and its size, and a fibre left empty leaves
+    /// with it.
+    fn retire(&mut self, key: &[u8]) {
+        let Some(g) = self.held.remove(key) else { return };
+        self.holes.unfile(key, &g.coords);
+        let leave = |index: &mut Keyed<Keyed<()>>, at: &[u8]| {
+            let empty = match index.get_mut(at) {
+                Some(f) => {
+                    f.remove(key);
+                    f.is_empty()
+                }
+                None => false,
+            };
+            if empty {
+                index.remove(at);
+            }
+        };
+        // A generator was filed only where its listing is a map.
+        for m in gauge_modes(&g.gauge).into_iter().flatten() {
+            leave(&mut self.gauges, &m.key());
+        }
+        if let Some(size) = super::hearing::Size::of_coordinates(&g.coords) {
+            leave(&mut self.rings, &size.key());
+        }
+    }
+
+    /// The generator held at `key`.
+    pub fn generator(&self, key: &[u8]) -> Option<&Generator> {
+        self.held.get(key)
+    }
+
+    /// 78.112 H5 — HEAR A WORD IN THIS LANGUAGE'S RINGS: its size read off
+    /// its own coordinates (on the stroke its modes need), seated in the next
+    /// larger layer of the rings held, read against every ring there
+    /// (`hearing::hear_across`). A word that moves nothing passes whole. `None`
+    /// where its modes do not read.
+    pub fn hear_echoed(&self, motion: &Mv) -> Option<super::hearing::Echoed> {
+        use super::hearing::{hear_across, Echoed, Seat, Size};
+        if is_still(motion) {
+            return Some(Echoed { seat: Seat::Whole, carried: Some(motion.clone()), through: Vec::new() });
+        }
+        let need = crate::transducer::cga::modes_need(motion)?;
+        let coords = Coordinates::of(motion, &mut crate::physics::Physics::default().stroke_n(need)).ok()?;
+        let size = Size::of_coordinates(&coords)?;
+        let held = &self.held;
+        let layers = self.rings.scoped().filter_map(|(k, members)| {
+            let layer = Size::from_key(&k)?;
+            let rings: Vec<(Vec<u8>, &Mv)> = members.scoped().filter_map(|(g, ())| held.get(&g).map(|x| (g, &x.motion))).collect();
+            Some((layer, rings))
+        });
+        Some(hear_across(motion, size, layers))
     }
 
     /// 78.160 — THE EAR: a form HEARD, each word vertex's motion perceived by
@@ -398,33 +465,13 @@ impl Presentation {
             return false;
         }
         let key = super::generator_key(addr, addr);
-        self.holes.file(&key, &coords);
-        for m in &modes {
-            self.gauges.nested_insert(m.key(), &key, ());
-        }
-        self.held.insert(&key, Generator { form: addr.clone(), vertex: addr.clone(), motion, coords, gauge, ruled });
+        self.admit(&key, &modes, Generator { form: addr.clone(), vertex: addr.clone(), motion, coords, gauge, ruled });
         true
     }
 
     /// The mirror of [`Presentation::hear_letter`].
     pub fn unfile_letter(&mut self, addr: &Address) {
-        let key = super::generator_key(addr, addr);
-        if let Some(g) = self.held.remove(&key) {
-            self.holes.unfile(&key, &g.coords);
-            for m in gauge_modes(&g.gauge).into_iter().flatten() {
-                let mk = m.key();
-                let empty = match self.gauges.get_mut(&mk) {
-                    Some(f) => {
-                        f.remove(&key);
-                        f.is_empty()
-                    }
-                    None => false,
-                };
-                if empty {
-                    self.gauges.remove(&mk);
-                }
-            }
-        }
+        self.retire(&super::generator_key(addr, addr));
     }
 
     /// 78.161 — READ A WORD OVER WHAT IS HELD, LANE BY LANE ([`Reading`]): its
@@ -513,24 +560,7 @@ impl Presentation {
     pub fn unfile_form(&mut self, form: &Address, f: &Form) {
         for (_, v) in f.vertices.scoped() {
             let Vertex::Word { address, .. } = v else { continue };
-            let key = super::generator_key(form, address);
-            if let Some(g) = self.held.remove(&key) {
-                self.holes.unfile(&key, &g.coords);
-                // A generator was filed only where its listing is a map.
-                for m in gauge_modes(&g.gauge).into_iter().flatten() {
-                    let mk = m.key();
-                    let empty = match self.gauges.get_mut(&mk) {
-                        Some(f) => {
-                            f.remove(&key);
-                            f.is_empty()
-                        }
-                        None => false,
-                    };
-                    if empty {
-                        self.gauges.remove(&mk);
-                    }
-                }
-            }
+            self.retire(&super::generator_key(form, address));
         }
     }
 

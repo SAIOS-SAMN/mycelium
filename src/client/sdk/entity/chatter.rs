@@ -127,6 +127,21 @@ fn one_reading(a: &[AckWord], b: &[AckWord]) -> bool {
     a.len() == b.len() && a.iter().zip(b).all(|(x, y)| chatter::same_loop(x, y))
 }
 
+/// Every word of the thought closed its loop on the motion: heard whole or
+/// shifted, none leftover.
+fn understood(loops: &[AckWord]) -> bool {
+    !loops.is_empty() && loops.iter().all(|a| a.motion.is_some())
+}
+
+/// 78.112 H2 ACROSS TWO MINDS — A WORD HEARD WHOLE: its echo the identity,
+/// the loop on its motion still, and on its hue map still wherever that map
+/// can close a loop at all (a merge has no inverse, and closes none).
+fn heard_whole(a: &AckWord) -> bool {
+    let motion = a.motion.as_ref().is_some_and(crate::transducer::sentence::presentation::is_still);
+    let hue = a.hue.as_ref().is_none_or(|h| crate::transducer::sentence::transport::gauge_eq(h, &[]));
+    motion && hue
+}
+
 impl Entity {
     /// OPEN THE CONVERSATION: a post on a free local port filed at the
     /// rendezvous `dir` under this mind's voice, and the carrier that
@@ -303,23 +318,50 @@ impl Carrier {
         }
     }
 
-    /// WHAT ANOTHER MIND SAID, SAID AGAIN IN THIS ONE'S LANGUAGE: each word
-    /// read over all this mind holds, and the derivation — the motion and
-    /// hue map its citations compose to — sent back to the speaker; the
-    /// thought kept until the speaker acknowledges it.
+    /// WHAT ANOTHER MIND SAID, HEARD AS HARMONIC ECHOES (78.112 H5, MU-CLIENT
+    /// §5.3): each word a ring, seated in this mind's own rings — the next
+    /// larger layer of what it holds — and carried round it, so the loop the
+    /// speaker reads is the echo: still where the word seats whole (understood
+    /// whole), the echo itself where it seats with a tilt (understood
+    /// shifted), and none where it is leftover (not understood). Its hue map
+    /// is read mode by mode on 𝒢. Sent back to the speaker; the thought kept
+    /// until the speaker acknowledges it.
     fn hear_said(&mut self, speaker: &[u8; 32], said: Vec<u8>, words: &[Spoken]) {
         let out: Vec<HeardWord> = {
             let ear = self.ear.read();
+            let still = crate::transducer::cga::Mv::scalar(num_rational::BigRational::from_integer(1.into()));
             words
                 .iter()
-                .map(|w| match ear.read_word(&w.motion, &w.gauge, false) {
-                    Some(r) => HeardWord {
+                .map(|w| {
+                    let echoed = ear.hear_echoed(&w.motion);
+                    let hue = ear.read_word(&still, &w.gauge, false);
+                    let mut cites: Vec<(Vec<u8>, Vec<u8>, u8, i64)> = match &hue {
+                        Some(r) => r.cites.iter().filter_map(|(f, v, l, e)| Some((f.to_vec(), v.to_vec(), u8::try_from(*l).ok()?, *e))).collect(),
+                        None => Vec::new(),
+                    };
+                    // The rings the word was carried through, each cited by its
+                    // form and vertex once on every lane its holes stand on.
+                    for ring in echoed.iter().flat_map(|e| e.through.iter()) {
+                        let Some(g) = ear.generator(ring) else { continue };
+                        let mut lanes: Vec<u8> = g
+                            .coords
+                            .holes
+                            .iter()
+                            .filter_map(|h| crate::transducer::sentence::presentation::lane_of(h.kind).and_then(|l| u8::try_from(l).ok()))
+                            .collect();
+                        lanes.sort_unstable();
+                        lanes.dedup();
+                        cites.extend(lanes.into_iter().map(|l| (g.form.to_vec(), g.vertex.to_vec(), l, 1)));
+                    }
+                    HeardWord {
                         vertex: w.vertex.clone(),
-                        derived: r.derived,
-                        gauge: r.derived_gauge,
-                        cites: r.cites.into_iter().filter_map(|(f, v, l, e)| Some((f.into_vec(), v.into_vec(), u8::try_from(l).ok()?, e))).collect(),
-                    },
-                    None => HeardWord { vertex: w.vertex.clone(), derived: None, gauge: Vec::new(), cites: Vec::new() },
+                        derived: echoed.and_then(|e| e.carried),
+                        gauge: match hue {
+                            Some(r) => r.derived_gauge,
+                            None => Vec::new(),
+                        },
+                        cites,
+                    }
                 })
                 .collect()
         };
@@ -357,7 +399,9 @@ impl Carrier {
         key.extend_from_slice(said);
         let Some(thought) = self.thoughts.remove(&key) else { return };
         let mine: Vec<AckWord> = thought.words.iter().map(|(s, h)| chatter::loop_of(s, h)).collect();
-        if !one_reading(&mine, acks) {
+        // A word not understood closes no loop, and two readings of nothing
+        // are no shared thought.
+        if !one_reading(&mine, acks) || !understood(&mine) {
             return;
         }
         self.hold_transports(&mine);
@@ -369,16 +413,21 @@ impl Carrier {
 
     /// THE HEARER HOLDS THE LOOPS THIS MIND READ (its HOLD, `frame`):
     /// verified against the ACK sent it. Where the two readings are one, the
-    /// thought is shared on this side too and the thing said is AGREED
-    /// LANGUAGE: spoken to the court carrying the hearer's signed HOLD, once.
+    /// thought is shared on this side too, and every echo it carried — what
+    /// the hearer's language did to it — is held as a transport between the
+    /// two perspectives. Where every word was heard WHOLE (78.112 H2 across
+    /// two minds: every loop still, the rings in harmonic balance), the thing
+    /// said is AGREED LANGUAGE: spoken to the court carrying the hearer's
+    /// signed HOLD, once. A word heard shifted is understood, never agreed.
     fn held_back(&mut self, who: &[u8; 32], said: &[u8], holds: &[AckWord], frame: &[u8]) {
         let Some(u) = self.union.get_mut(said) else { return };
         let Some(sent) = u.acked.remove(who) else { return };
-        if !one_reading(&sent, holds) {
+        if !one_reading(&sent, holds) || !understood(&sent) {
             return;
         }
-        let first = !u.shared;
-        u.shared = true;
+        let balanced = sent.iter().all(heard_whole);
+        let first = !u.shared && balanced;
+        u.shared |= balanced;
         let agreed = u.said.clone();
         self.hold_transports(&sent);
         if !first {
