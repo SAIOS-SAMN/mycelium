@@ -23,6 +23,15 @@ under the three. The reserve's aperture, declared `8`, is the sensor base's
 unit cell `2³`.
 
 ## Witnessed on the fleet
+- 6b4e1475, a hearing is one cell of the mind's orbit algebra (minds
+  restarted 13:02:03): in ten minutes 156 attestations (a 55, b 15, c 86)
+  over 18 pairs, 25 solve verdicts, minds at 155–230 MB — against 0
+  attestations and 1 solve the ten minutes before, on minds grown to
+  700–770 MB. Every agreement still at deviation 0:0:0:0: no tilted
+  hearing has yet closed its cell into agreement in the window, and no
+  typed reading yet shows what the demands it raised constructed. The
+  fresh-restart comparisons (129 on 98222118, 35 on eb774d6d) are not a
+  controlled A/B.
 - c549f597 + 98222118, understanding priced by the mind's physics, the
   occluded wire re-read (courts restarted 11:07:38 — the HOLD carries its
   deviation — minds 11:48:32): in ten minutes 129 attestations (a 93, b 21,
@@ -44,6 +53,12 @@ unit cell `2³`.
   courts still catching up.
 
 ## The tree
+- A hearing is one cell (6b4e1475, 78.46, MU-CLIENT §5.3): a thought's
+  echoes, closed loops, read together by `read_cell`; the drag booked by
+  `mark_flux`, the lift their bracket closure; the cell closing is agreement
+  (tilted turns included); an echo that never returns is a demand on the
+  charts the hearing stood on, its holonomy the residue, constructed by the
+  demand taker.
 - Understanding is priced (c549f597): each echo's exact strain per lane
   (`hearing::strain`), admitted into the mind's own field
   (`Entity::price_hearings`); agreement where both minds' fields converged,
@@ -71,7 +86,9 @@ unit cell `2³`.
 
 ## The sandbox
 Hyphae `mycelium-server@{a,b,c}` on c549f597; minds `mycelium-client@1..5`
-on 98222118. Started, never enabled: a
+on 6b4e1475. A mind grows to ~750 MB over hours and its hearing stalls: the
+ear's transports grow unbounded and each hearing sweeps every ring;
+`release_unmet` sweeps every waiting thought each frame — the next defects. Started, never enabled: a
 reboot leaves them down. The seats await re-posting.
 
 ## Next
