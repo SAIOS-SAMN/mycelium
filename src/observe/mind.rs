@@ -37,6 +37,10 @@ pub const CONSTRUCTED: [&str; 5] = ["refused", "letter", "motion letter", "no ch
 /// order the counts are kept.
 pub const COLLISIONS: [&str; 4] = ["captured", "precessing", "contact", "scattered"];
 
+/// WHAT TWO BODIES WHOSE SPHERES MET IN AN ADMITTED SCENE WERE (78.52 Row
+/// 2), in the order the counts are kept.
+pub const BODIES: [&str; 3] = ["fused", "precessing", "contact"];
+
 /// One slot of [`CONSTRUCTED`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Constructed {
@@ -102,6 +106,8 @@ pub struct Mind {
     pub constructed: [u64; 5],
     /// Collisions on its tethers, by [`COLLISIONS`].
     pub collisions: [u64; 4],
+    /// Bodies whose spheres met in an admitted scene, by [`BODIES`].
+    pub bodies: [u64; 3],
     /// HOLDs this mind sent.
     pub held: u64,
     /// Agreed language this mind spoke to its court.
@@ -130,6 +136,7 @@ impl Default for Mind {
             demanded: 0,
             constructed: [0; 5],
             collisions: [0; 4],
+            bodies: [0; 3],
             held: 0,
             agreed: 0,
             closed: zero4(),
@@ -151,7 +158,7 @@ impl Mind {
             put_u64(out, v);
         }
         put_u64(out, self.demanded);
-        for v in self.constructed.iter().chain(&self.collisions) {
+        for v in self.constructed.iter().chain(&self.collisions).chain(&self.bodies) {
             put_u64(out, *v);
         }
         for v in [self.held, self.agreed] {
@@ -170,11 +177,12 @@ impl Mind {
         let demanded = take_u64(b, p)?;
         let constructed = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let collisions = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
+        let bodies = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let [held, agreed] = [take_u64(b, p)?, take_u64(b, p)?];
         let closed = take_lanes(b, p)?;
         let open = take_lanes(b, p)?;
         let [ear, thoughts, unions, waiting] = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
-        Some(Mind { k, heard, understood, returned, priced, demanded, constructed, collisions, held, agreed, closed, open, ear, thoughts, unions, waiting })
+        Some(Mind { k, heard, understood, returned, priced, demanded, constructed, collisions, bodies, held, agreed, closed, open, ear, thoughts, unions, waiting })
     }
 
     /// The reading as the console prints it.
@@ -189,8 +197,9 @@ impl Mind {
             format!("  cells {} · demanded {}", priced.join(" "), self.demanded),
             format!("  constructed {}", constructed.join(" ")),
             format!(
-                "  collisions {}",
-                COLLISIONS.iter().zip(&self.collisions).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
+                "  collisions {} · bodies met {}",
+                COLLISIONS.iter().zip(&self.collisions).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
+                BODIES.iter().zip(&self.bodies).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
             ),
             format!("  deviation closed {} · open {}", lanes_line(&self.closed), lanes_line(&self.open)),
             format!("  holds ear {} · thoughts {} · unions {} · waiting {}", self.ear, self.thoughts, self.unions, self.waiting),

@@ -1098,6 +1098,9 @@ impl Contemplation {
         let mut defect = Defect::default();
         use crate::transducer::cga;
         type Q = num_rational::BigRational;
+        // MU-CLIENT §4.5 — THE BODIES THAT MET in a scene: each by its slot
+        // (fused, precessing, contact) and the sphere pair's versor.
+        let mut met: Vec<(usize, Mv)> = Vec::new();
         if unit_ray(generator) {
             self.resonance.reflexive += 1;
             return Ok(());
@@ -1202,6 +1205,23 @@ impl Contemplation {
                     if let Some((s, _)) = theirs.iter().find(|(s, _)| s.projective_eq(&landed)) {
                         bodies.push((s.clone(), x.clone()));
                     }
+                    // A COLLISION OF BODIES (78.52 Row 2): this body, carried
+                    // into the other's configuration, against each of the
+                    // other's bodies it does not land on — their spheres cut
+                    // (fused at a crystallographic angle, precessing at any
+                    // other) or touch (contact). Disjoint spheres are two
+                    // bodies of one system, never a collision; one sphere
+                    // twice is the landing itself.
+                    let landed = ray(landed);
+                    for (s, _) in theirs.iter().filter(|(s, _)| !s.projective_eq(&landed)) {
+                        let slot = match cga::pair_regime(&[s.clone(), landed.clone()], 0, 1) {
+                            cga::PairRegime::Finite(_) => 0,
+                            cga::PairRegime::Rosette => 1,
+                            cga::PairRegime::Parabolic => 2,
+                            cga::PairRegime::Boost | cga::PairRegime::Null => continue,
+                        };
+                        met.push((slot, s.geo(&landed)));
+                    }
                 }
                 defect.metric.extend(metric_defect(&bodies));
             }
@@ -1211,6 +1231,31 @@ impl Contemplation {
         // whole defect is the answer, blade by blade.
         if !defect.closes() {
             return Err(Refusal::Incoherent { defect: Box::new(defect) });
+        }
+        // The admitted scene's collisions: a fusion returns and sends
+        // nothing; a precession's sphere-pair turn and a contact's null flux
+        // are held in the mind's field (𝒽, 𝒯), the torsion and the graze its
+        // content.
+        let held: Vec<crate::transducer::family::pairing::FieldLine> = met
+            .iter()
+            .filter(|(slot, _)| *slot != 0)
+            .map(|(_, v)| crate::transducer::family::pairing::FieldLine {
+                carriage: v.clone(),
+                gauge: Vec::new(),
+                mass: 1,
+                free: false,
+                line: crate::transducer::cech::Thread::Free,
+            })
+            .collect();
+        if !held.is_empty() {
+            let _ = crate::transducer::family::pairing::mark_flux(&[], &held, budget);
+        }
+        if !met.is_empty() {
+            crate::observe::note_mind(|m| {
+                for (slot, _) in &met {
+                    m.bodies[*slot] += 1;
+                }
+            });
         }
         self.resonance.consolidated += 1;
         Ok(())
