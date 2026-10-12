@@ -100,6 +100,27 @@ impl Entity {
                 eprintln!("  solve kept home: the rule cites {} no court admitted (cites unheld)", hex_prefix(&a));
                 return None;
             }
+            // MU-CLIENT §4.4 — A REFUSAL IS RESIDUE, NEVER AN EXIT: a D at
+            // home names the versor no held letter spells, by its canonical
+            // ray, and the chart it acts on. The mind constructs it there
+            // as its own letter — the deviation feeding construction — so
+            // the rule this task asked for can be spelled on its next asking.
+            Err(crate::client::sdk::rule::NoRule::Refused(r)) => {
+                if let crate::transducer::sentence::ClosureObstruction::Dialect { coset, chart } = &r.obstruction {
+                    let residue = coset.iter().try_fold(None::<crate::transducer::cga::Mv>, |acc, (mask, q)| {
+                        let term = crate::transducer::cga::Mv::blade(usize::try_from(*mask).ok()?, q.clone());
+                        Some(Some(match acc {
+                            Some(a) => a.add(&term),
+                            None => term,
+                        }))
+                    });
+                    let chart = chart.as_deref().and_then(crate::transducer::stalk::Invariant::from_key);
+                    if let Some(Some(residue)) = residue {
+                        self.construct_and_adjoin(&residue, chart.as_ref(), budget);
+                    }
+                }
+                return None;
+            }
             Err(_) => return None,
         }
         self.submit_solve_rule(id, outputs, rule).ok()
