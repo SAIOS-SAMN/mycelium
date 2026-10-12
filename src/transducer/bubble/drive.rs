@@ -325,6 +325,9 @@ impl Contemplation {
                         }
                         _ => self.complex.fill(&key),
                     }
+                } else if d >= 2 {
+                    // A cell ascends by its own boundary (MU-CLIENT §4.5).
+                    self.ascend(&key)
                 } else {
                     self.complex.fill(&key)
                 };
@@ -410,7 +413,7 @@ impl Contemplation {
                             // boundary winds about, pinning it, until a
                             // released vertex caps it and hands it out.
                             if d >= 2 {
-                                let _ = self.complex.puncture(&key);
+                                let _ = self.puncture(&key);
                             }
                         }
                         // 37.7 at a simplex: a rotation the seventeen do not

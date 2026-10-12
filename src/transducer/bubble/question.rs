@@ -26,7 +26,7 @@ impl Contemplation {
     pub(crate) fn ask(&mut self, cell: &[u8]) {
         let _ = self.fill_meet(cell);
         let Some(Fill::Class(..)) = self.complex.simplex(cell).map(|s| &s.fill) else { return };
-        if let cech::Punctured::Opened(Fill::Class(kappa, _)) = self.complex.puncture(cell) {
+        if let cech::Punctured::Opened(Fill::Class(kappa, _)) = self.puncture(cell) {
             self.questions.nested_insert(kappa.class_key().as_bytes(), cell, ());
         }
     }
@@ -36,8 +36,7 @@ impl Contemplation {
     /// the class it kept leaves the questions and the cap's reading settles
     /// what was pending on the cell; otherwise the hole stands as it was.
     pub(crate) fn answer_hole(&mut self, cell: &[u8]) -> Capped {
-        let Some(volume) = self.complex.hole_volume(cell) else { return Capped::Absent };
-        let capped = self.complex.seal(cell, |_| volume);
+        let capped = self.seal(cell);
         if let Capped::Sealed { cap, killed } = &capped {
             if let Fill::Class(kappa, _) = killed {
                 self.unfile_question(kappa.class_key().as_bytes(), cell);

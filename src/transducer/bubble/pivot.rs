@@ -25,7 +25,7 @@
 //! written over it.
 
 use super::*;
-use crate::transducer::cech::{Applied, Ascended, Condensed, Drained, Pivot};
+use crate::transducer::cech::{Applied, Ascended, Capped, Condensed, Drained, Pivot, Punctured};
 use crate::transducer::element::Versor;
 
 impl Contemplation {
@@ -53,6 +53,24 @@ impl Contemplation {
             self.tethered_at.insert(&key, self.now_k);
         }
         condensed
+    }
+
+    /// PUNCTURE a sealed cell into a hole keeping its class.
+    pub(crate) fn puncture(&mut self, cell: &[u8]) -> Punctured {
+        match self.complex.apply(&Pivot::Puncture(cell.to_vec()), |_| [0; 4], [0; 4]) {
+            Applied::Punctured(p) => p,
+            _ => Punctured::Absent,
+        }
+    }
+
+    /// SEAL a hole: its cap re-ascended over its standing boundary at the
+    /// volume the hole was read with (read, never written).
+    pub(crate) fn seal(&mut self, hole: &[u8]) -> Capped {
+        let Some(volume) = self.complex.hole_volume(hole) else { return Capped::Absent };
+        match self.complex.apply(&Pivot::Seal(hole.to_vec()), |_| volume, volume) {
+            Applied::Capped(c) => c,
+            _ => Capped::Absent,
+        }
     }
 
     /// DRAIN AND DESCEND WHERE THE TENSION RELAXED (MU-CLIENT §4.5, 78.37(3)),
