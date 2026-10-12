@@ -357,3 +357,25 @@ fn slivers_in_the_manifolds_own_scale_compose_and_keep_it() {
         assert!(k.sandwich(&sigma).projective_eq(&sigma), "each keeps Σ");
     }
 }
+
+/// 78.74 — THE FIBRE'S FIBRATION: `π` places a point by the ratio of the two
+/// pivots' pulls on it. On the fibre from the origin to (3, 4, 0), the point
+/// (6, 8, 0) stands 10 from `Pᵢ` and 5 from `Pⱼ`: at equal masses `π = 25/100
+/// = 1/4`, `Pⱼ` pulling harder; at masses 4 and 1 it stands on the switch,
+/// `π = 1`, the pulls balanced. A point equidistant from both pivots stands
+/// on the switch at equal masses. The pivots have no level. The field line
+/// through (6, 8, 0) is the fibre's own line: (−3, −4, 0) stands on it, (0, 0,
+/// 5) does not.
+#[test]
+fn the_fibration_places_a_point_by_the_pivots_pulls() {
+    let point = |x: i64, y: i64, z: i64| cga::point_at(&[q(x, 1), q(y, 1), q(z, 1)]);
+    let far = point(6, 8, 0);
+    assert_eq!(fibre(1, 1).project(&far), Some(q(1, 4)), "Pⱼ pulls four times harder");
+    assert_eq!(fibre(4, 1).project(&far), Some(q(1, 1)), "the masses balance it on the switch");
+    let even = cga::point_at(&[q(11, 2), q(-1, 1), q(0, 1)]);
+    assert_eq!(fibre(1, 1).project(&even), Some(q(1, 1)), "equidistant: on the switch");
+    let f = fibre(1, 1);
+    assert_eq!(f.project(&f.pi), None, "a pivot has no level");
+    assert!(f.on_field_line(&far, &point(-3, -4, 0)), "one field line carries both");
+    assert!(!f.on_field_line(&far, &point(0, 0, 5)), "another field line");
+}

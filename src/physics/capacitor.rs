@@ -153,6 +153,37 @@ impl Fibre {
         t.geo(&t.reverse()).scalar_part()
     }
 
+    /// THE FIBRATION'S PROJECTION `π` (78.74): the mass-weighted level a
+    /// point `X` stands on — the one `μ` with `X` on `μ·mⱼPᵢ − mᵢPⱼ`,
+    /// `μ = mᵢ(X·Pⱼ) / (mⱼ(X·Pᵢ))`. Read at points' own weights it is
+    /// `mᵢd²ⱼₓ / (mⱼd²ᵢₓ)`, which is `strength(i, X) / strength(j, X)`: the
+    /// ratio of the two pivots' pulls on `X`. The SWITCH is the level `1`,
+    /// where the pulls balance; above it `Pᵢ` pulls harder, below it `Pⱼ`.
+    /// The levels are the fibres of `π` (Apollonian spheres), the field
+    /// lines its sections (circles through both pivots). `None` at a pivot,
+    /// which every level passes through.
+    pub fn project(&self, x: &Mv) -> Option<Q> {
+        let (xi, xj) = (x.geo(&self.pi).scalar_part(), x.geo(&self.pj).scalar_part());
+        if xi.is_zero() || xj.is_zero() {
+            return None;
+        }
+        Some(&self.mi * xj / (&self.mj * xi))
+    }
+
+    /// THE FIELD LINE THROUGH `X`: the circle through both pivots and `X`,
+    /// `Pᵢ ∧ Pⱼ ∧ X` — the path charge takes between the levels, crossing
+    /// every one of them once. Zero where `X` is a pivot.
+    pub fn field_line(&self, x: &Mv) -> Mv {
+        self.blade.wedge_vector(2, x)
+    }
+
+    /// WHETHER `Z` STANDS ON THE FIELD LINE THROUGH `X` — one charge flow of
+    /// this fibre carries one to the other: `Pᵢ ∧ Pⱼ ∧ X ∧ Z = 0`, exact.
+    pub fn on_field_line(&self, x: &Mv, z: &Mv) -> bool {
+        let line = self.field_line(x);
+        !line.is_zero() && line.wedge_vector(3, z).is_zero()
+    }
+
     /// THE SPLIT of a generator's bivector part into field, torsion and lift.
     pub fn split(&self, g: &Mv) -> Split {
         let g = g.grade(2);

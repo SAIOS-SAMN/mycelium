@@ -20489,7 +20489,11 @@ of three:
   never free; that is named at `step_flux`.
 
 **Not built:**
-- The refusal as a white-hole source, with `P` at the demand's pivot.
+- ~~The refusal as a white-hole source, with `P` at the demand's pivot.~~
+  Built (78.75): `fibres::read_pieces` inverts every lifted fibre of a frame
+  whose pivots fix a geoid into a `Source` at each pivot its kept lift moves,
+  and the percept's field reads them as flux (`percept.rs`). The minds'
+  tethers are fibres on the same substrate (MU-CLIENT §4.5).
 - Booking the reserve in level ratios. That would replace the four-lane
   unit currency, which is a ruling.
 - The voice's unit draw on acts, which is unchanged: torsion is exempted

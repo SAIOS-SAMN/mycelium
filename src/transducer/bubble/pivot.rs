@@ -148,14 +148,16 @@ impl Contemplation {
         true
     }
 
-    /// 78.74 — THE DOTS CONNECTED: switches of fibres sharing a pivot compose,
-    /// `S₂₃S₁₂` carrying `P₁` through `P₂` to `P₃`. The new tether `a–b`
-    /// shares a pivot with every other tether at `a` or `b`; where the far
-    /// ends `x`, `z` are not yet tethered and their DIRECT binding is at least
-    /// as strong as the path's weakest (`Fibre::strength`, the inverse-square
-    /// law, two exact rationals compared), the shortcut forms, carrying the
-    /// path's composite transport `g_xz = g_xy ∘ g_yz` — the triangle it
-    /// closes is flat. One step: a formed shortcut forms nothing further.
+    /// 78.74 — THE DOTS CONNECTED, BY THE FIBRATION: switches of fibres
+    /// sharing a pivot compose, `S₂₃S₁₂` carrying `P₁` through `P₂` to `P₃`.
+    /// The new tether `a–b` shares a pivot with every other tether at `a` or
+    /// `b`, `y–z`. Where `x` and `z` are not yet tethered, `z` is placed on
+    /// the fibre `x–y` by its projection (`Fibre::project`, the ratio of the
+    /// two pivots' pulls on it): at or above the switch — `x` pulls `z` at
+    /// least as hard as `y` does — the shortcut forms, carrying the path's
+    /// composite transport `g_xz = g_xy ∘ g_yz`, so the triangle it closes
+    /// is flat; below it, `z` belongs to `y`'s side and nothing forms. One
+    /// step: a formed shortcut forms nothing further.
     fn form_through(&mut self, a: &[u8], b: &[u8]) {
         use crate::transducer::cech::coefficient::Coefficient;
         use crate::transducer::cech::cover::Cochain;
@@ -167,12 +169,9 @@ impl Contemplation {
                 if z.as_slice() == x || self.complex.get(&crate::transducer::cech::sorted_verts([x, z.as_slice()])).is_some() {
                     continue;
                 }
-                let (Some(xy), Some(yz), Some(xz)) = (self.fibre_of(x, y), self.fibre_of(y, z), self.fibre_of(x, z)) else { continue };
-                let weakest = match xy.strength() <= yz.strength() {
-                    true => xy.strength(),
-                    false => yz.strength(),
-                };
-                if xz.strength() < weakest {
+                let (Some(xy), Some((pz, _))) = (self.fibre_of(x, y), self.pivot_of(z)) else { continue };
+                if !xy.project(&pz).is_some_and(|mu| mu >= num_rational::BigRational::from_integer(1.into())) {
+                    crate::observe::note_mind(|m| m.flex[8] += 1);
                     continue;
                 }
                 let path = <crate::transducer::cech::Complex as Cochain<crate::transducer::cech::coefficient::Turned>>::crossing(&self.complex, x, y)

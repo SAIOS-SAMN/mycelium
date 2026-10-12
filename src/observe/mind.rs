@@ -39,8 +39,10 @@ pub const CONSTRUCTED: [&str; 5] = ["refused", "letter", "motion letter", "no ch
 /// also a flex on thoughts with no pivots); the flexes a hole PINNED; the
 /// fibres the field CARRIED (frozen-in flux); the tethers the field released
 /// and the mind LET GO (a return vented, or a stretch that broke); and the
-/// shortcuts FORMED through a shared pivot — in the order the counts are kept.
-pub const FLEX: [&str; 8] = ["rigid", "torsion", "field", "lift", "pinned", "carried", "let go", "formed"];
+/// shortcuts FORMED through a shared pivot, and those the fibration placed
+/// on the far pivot's side of the switch, which form nothing — in the order
+/// the counts are kept.
+pub const FLEX: [&str; 9] = ["rigid", "torsion", "field", "lift", "pinned", "carried", "let go", "formed", "far side"];
 
 /// WHAT TWO BODIES WHOSE SPHERES MET IN AN ADMITTED SCENE WERE (78.52 Row
 /// 2), in the order the counts are kept.
@@ -110,7 +112,7 @@ pub struct Mind {
     /// Every demand the taker took, by [`CONSTRUCTED`].
     pub constructed: [u64; 5],
     /// Its fibres' flexes, by [`FLEX`].
-    pub flex: [u64; 8],
+    pub flex: [u64; 9],
     /// Bodies whose spheres met in an admitted scene, by [`BODIES`].
     pub bodies: [u64; 3],
     /// Spin coupled to orbit: each lock `p:q` read, with how often, in
@@ -148,7 +150,7 @@ impl Default for Mind {
             priced: [0; 4],
             demanded: 0,
             constructed: [0; 5],
-            flex: [0; 8],
+            flex: [0; 9],
             bodies: [0; 3],
             locks: Vec::new(),
             drifts: 0,
@@ -208,7 +210,7 @@ impl Mind {
         let priced = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let demanded = take_u64(b, p)?;
         let constructed = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
-        let mut flex = [0u64; 8];
+        let mut flex = [0u64; 9];
         for v in &mut flex {
             *v = take_u64(b, p)?;
         }
