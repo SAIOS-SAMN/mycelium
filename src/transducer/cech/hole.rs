@@ -126,6 +126,22 @@ impl Complex {
         }
     }
 
+    /// WHETHER THE TETHER STANDING BETWEEN `a` AND `b` CARRIES THIS TRANSPORT:
+    /// the rotor and carriage oriented as a condensed tether stores them,
+    /// read projectively against the stored pair. `false` where no tether
+    /// stands or the pair is no two vertices.
+    pub fn tethered_as(&self, a: &[u8], b: &[u8], g: &Rotor, carriage: &Versor) -> bool {
+        let vertices = sorted_verts([a, b]);
+        let Some(s) = self.get(&vertices) else { return false };
+        // The tether is stored oriented from its lesser vertex, the order
+        // its key is written in.
+        let (r, c) = match vertices.as_slice() {
+            [lesser, _] if lesser.as_slice() == a => (g.clone(), carriage.clone()),
+            _ => (g.reverse(), carriage.reverse()),
+        };
+        s.coefficient.projective_eq(&Self::store_coeff(r)) && crate::transducer::element::same_versor(&s.carriage, &c)
+    }
+
     /// `puncture` — A SEALED CELL OPENED INTO A HOLE (62.1): the cell leaves
     /// the cells as `descend` releases it — its boundary standing with its
     /// transports — but its fill is KEPT, in the complex, as the hole's

@@ -960,7 +960,7 @@ impl Contemplation {
                         _ => None,
                     });
                     let lanes = self.lanes_summed(latest);
-                    self.complex.set_edge(key, &other, rotor, carriage, lanes);
+                    let _ = self.tether(key, &other, rotor, carriage, lanes);
                     self.resonance.edges += 1;
                     continue;
                 }
@@ -1358,7 +1358,7 @@ impl Contemplation {
         };
         self.resonance.consolidated += 1;
         self.resonance.predicted += 1;
-        self.complex.set_edge(key, other, rotor, carriage, [0; 4]);
+        let _ = self.tether(key, other, rotor, carriage, [0; 4]);
         self.resonance.edges += 1;
         let next = super::idea::Grounded { hours: (grounded.hours + 1).min(g.period), ..grounded.clone() };
         self.grounds.insert(pair_key(key, other), next);
@@ -1476,7 +1476,7 @@ impl Contemplation {
             self.resonance.undemanded += 1;
             return;
         };
-        self.complex.set_edge(key, other, rotor, carriage, lanes);
+        let _ = self.tether(key, other, rotor, carriage, lanes);
         self.resonance.edges += 1;
         self.resonance.scene_motions += 1;
     }

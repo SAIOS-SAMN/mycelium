@@ -916,13 +916,9 @@ impl Contemplation {
             }
             let vol = volume_of(&rems, &[key.as_slice(), n.as_slice()]);
             match self.rotor_between(&key, n) {
-                Some(rotor) => self.complex.set_edge(
-                    &key,
-                    n,
-                    rotor,
-                    crate::transducer::element::identity_versor(),
-                    vol,
-                ),
+                Some(rotor) => {
+                    let _ = self.tether(&key, n, rotor, crate::transducer::element::identity_versor(), vol);
+                }
                 None => {
                     let both_remainder = self.bubbles.get(&key).is_some_and(|b| b.form.is_none())
                         && self.bubbles.get(n).is_some_and(|b| b.form.is_none());

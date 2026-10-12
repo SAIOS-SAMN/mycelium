@@ -128,6 +128,25 @@ fn condense_is_drains_inverse_on_content() {
     assert_eq!(c.condense(&vs[0], &w, Rotor::identity(), ident(), vol()), Condensed::Remainder, "a remainder pair refuses");
 }
 
+/// MU-CLIENT §4.5 — THE MIND CONDENSES, AND RE-TETHERS BY THE CONJUGATE
+/// PAIR. Tension between two thoughts condenses a tether; the same tension
+/// again changes nothing; tension re-formed on another transport drains the
+/// standing tether and condenses the new one. Beneath a sealed cell the
+/// tether is pinned: the new transport is not written over the class the
+/// cell read.
+#[test]
+fn the_mind_condenses_and_retethers_by_drain_then_condense() {
+    let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
+    let (a, b) = (v(1).as_bytes().to_vec(), v(2).as_bytes().to_vec());
+    assert_eq!(mind.tether(&a, &b, Rotor::identity(), ident(), vol()), Condensed::Tethered);
+    assert_eq!(mind.tether(&a, &b, Rotor::identity(), ident(), vol()), Condensed::AlreadyTethered, "the same tension changes nothing");
+    assert_eq!(mind.tether(&a, &b, turn_90(), ident(), vol()), Condensed::Tethered, "re-formed on a turn: drained, then condensed");
+    assert!(mind.complex.tethered_as(&a, &b, &turn_90(), &ident()), "the tether carries the new transport");
+    let (vs, _) = sealed_triangle(&mut mind.complex, 11, turn_90());
+    assert_eq!(mind.tether(&vs[0], &vs[2], Rotor::identity(), ident(), vol()), Condensed::AlreadyTethered, "pinned beneath the sealed cell");
+    assert!(mind.complex.tethered_as(&vs[0], &vs[2], &turn_90(), &ident()), "the read cell's tether stands as it was");
+}
+
 /// THE WALK `d, a, p, d` ON ONE CELL (78.99 (3)). `d·a` cancels on the board;
 /// `p` moves the class from the sealed axis to the hole axis; the last `d`
 /// refuses at the hole. The board it leaves is the board `p` alone leaves.
