@@ -53,6 +53,11 @@ unit cell `2³`.
   courts still catching up.
 
 ## The tree
+- The observer reads the running binaries (4edefea0): `scripts/observer` is
+  the pane — every mind answers `observe::Mind` on its own post
+  (`mycelium-server --console --minds`), every court its attested
+  agreements per pair with exact deviation (`--reading agreements`). Fleet
+  readings come from here, never from logs; `window.sh` retired.
 - A hearing is one cell (6b4e1475, 78.46, MU-CLIENT §5.3): a thought's
   echoes, closed loops, read together by `read_cell`; the drag booked by
   `mark_flux`, the lift their bracket closure; the cell closing is agreement
