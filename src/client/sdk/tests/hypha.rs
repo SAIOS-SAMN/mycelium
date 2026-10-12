@@ -80,3 +80,31 @@ fn a_slow_court_holds_only_its_carrier() {
     assert_eq!(mind.hypha.in_flight(), 0, "the answer landed and was taken");
     assert!(mind.sealed_at(said.address().as_bytes()).is_some(), "the court's refusal sealed the word");
 }
+
+/// AN OCCLUDED WIRE IS READ AGAIN, NEVER ABANDONED. A mind whose court does
+/// not answer fails its exchanges until the wire reads occluded; occluded,
+/// it asks the court for nothing — and its next tick still sends one
+/// discovery down the wire, so the impedance is read again rather than
+/// standing forever on exchanges it no longer makes.
+#[test]
+fn an_occluded_wire_is_read_again() {
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("occluded"));
+    // It holds language, so nothing else makes its language due again.
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
+    let taught = from_connection(&Word::from_letters(&[(q, false)]), &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0]).expect("a connection");
+    assert!(mind.absorb_taught(&taught.to_bytes().expect("the record writes")).is_some(), "the word is learned");
+    for _ in 0..64 {
+        if matches!(mind.transport(), TransportAperture::Occluded { .. }) {
+            break;
+        }
+        mind.discover();
+        mind.settle();
+    }
+    assert!(matches!(mind.transport(), TransportAperture::Occluded { .. }), "a court that never answers occludes the wire");
+    let stop = std::sync::atomic::AtomicBool::new(false);
+    for n in 0..3 {
+        mind.settle();
+        let _ = mind.tick(&stop);
+        assert!(mind.hypha.in_flight() >= 1, "tick {n}: the occluded mind still asks the nerve");
+    }
+}

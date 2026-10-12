@@ -89,6 +89,15 @@ impl Entity {
         self.court_inflow(&mut outcome);
         self.price_hearings();
         let occluded = matches!(self.transport(), TransportAperture::Occluded { .. });
+        // AN OCCLUDED WIRE IS READ AGAIN, NEVER ABANDONED: the impedance
+        // decays only on an exchange, so a mind that asked nothing while
+        // occluded stayed occluded for good (read on the fleet 2026-10-12,
+        // four minds idle behind courts that had long recovered). With
+        // nothing in flight, one discovery asks the nerve, and its answer or
+        // its refusal is the impedance read again.
+        if occluded && self.hypha.in_flight() == 0 {
+            self.discover();
+        }
         let stopping = || stop.load(std::sync::atomic::Ordering::SeqCst);
         if !occluded {
             self.court_owed();
