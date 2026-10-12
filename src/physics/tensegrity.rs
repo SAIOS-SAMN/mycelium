@@ -625,6 +625,40 @@ pub fn spin_of(step: &Mv, star: &Star, before: &[Q], after: &[Q]) -> Option<Mv> 
     Some(orbit_about(star, before, after)?.reverse().geo(step))
 }
 
+/// MU-CLIENT §4.4 — SPIN COUPLED TO ORBIT: one rigid step of a body about a
+/// star, split into its orbit and its spin (78.51(2)), each read by its
+/// period. Both of finite order: a LOCK `p:q` (orbit order, spin order) —
+/// the coupled motion returns at their lcm, congruence. Either of no finite
+/// order: a DRIFT — the spin slipping against the orbit, `S·Õ`, the torsion
+/// the body carries.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Coupling {
+    Lock(u64, u64),
+    Drift(Mv),
+}
+
+/// The coupling of `step` carrying a body's centre from `before` to `after`
+/// about `star`. `None` where no orbit of the star carries the body (it did
+/// not keep its distance), where either part's modes do not read on the
+/// stroke they need, or where either part escapes (a slide, a boost: no
+/// orbit to couple).
+pub fn spin_orbit(step: &Mv, star: &Star, before: &[Q], after: &[Q]) -> Option<Coupling> {
+    let orbit = orbit_about(star, before, after)?;
+    let spin = orbit.reverse().geo(step);
+    let period = |m: &Mv| -> Option<cga::Period> {
+        if m.projective_eq(&Mv::scalar(num_traits::One::one())) {
+            return Some(cga::Period::Closes(1));
+        }
+        let mut stroke = crate::physics::Physics::default().stroke_n(cga::modes_need(m)?);
+        cga::period_of(&cga::motion_modes(m, &mut stroke)?.ok()?)
+    };
+    match (period(&orbit)?, period(&spin)?) {
+        (cga::Period::Closes(p), cga::Period::Closes(q)) => Some(Coupling::Lock(p, q)),
+        (cga::Period::Unbound, _) | (_, cga::Period::Unbound) => None,
+        _ => Some(Coupling::Drift(spin.geo(&orbit.reverse()))),
+    }
+}
+
 /// 78.62 — HOW AN OPERATION MOVED THE TORQUE, plane by plane: never a
 /// summed norm, so a turn plane and a boost plane are never added as one
 /// kind and no two operations are force-ranked (rule 4).

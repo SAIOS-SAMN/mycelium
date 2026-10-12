@@ -108,6 +108,14 @@ pub struct Mind {
     pub collisions: [u64; 4],
     /// Bodies whose spheres met in an admitted scene, by [`BODIES`].
     pub bodies: [u64; 3],
+    /// Spin coupled to orbit: each lock `p:q` read, with how often, in
+    /// ratio order; and the drifts held as torsion.
+    pub locks: Vec<(u64, u64, u64)>,
+    pub drifts: u64,
+    /// Perception's cells: rings held as shears (precessing), and rings
+    /// escaping, docketed as demands.
+    pub shears: u64,
+    pub escapes: u64,
     /// HOLDs this mind sent.
     pub held: u64,
     /// Agreed language this mind spoke to its court.
@@ -137,6 +145,10 @@ impl Default for Mind {
             constructed: [0; 5],
             collisions: [0; 4],
             bodies: [0; 3],
+            locks: Vec::new(),
+            drifts: 0,
+            shears: 0,
+            escapes: 0,
             held: 0,
             agreed: 0,
             closed: zero4(),
@@ -150,7 +162,15 @@ impl Default for Mind {
 }
 
 impl Mind {
-    pub(crate) fn put(&self, out: &mut Vec<u8>) {
+    /// One lock `p:q` read.
+    pub fn lock(&mut self, p: u64, q: u64) {
+        match self.locks.binary_search_by_key(&(p, q), |&(a, b, _)| (a, b)) {
+            Ok(at) => self.locks[at].2 += 1,
+            Err(at) => self.locks.insert(at, (p, q, 1)),
+        }
+    }
+
+    pub(crate) fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         for v in [self.k, self.heard, self.understood, self.returned] {
             put_u64(out, v);
         }
@@ -166,9 +186,16 @@ impl Mind {
         }
         put_lanes(out, &self.closed);
         put_lanes(out, &self.open);
-        for v in [self.ear, self.thoughts, self.unions, self.waiting] {
+        for v in [self.ear, self.thoughts, self.unions, self.waiting, self.drifts, self.shears, self.escapes] {
             put_u64(out, v);
         }
+        crate::transducer::address::put_u32_count(out, self.locks.len())?;
+        for &(p, q, n) in &self.locks {
+            for v in [p, q, n] {
+                put_u64(out, v);
+            }
+        }
+        Some(())
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Mind> {
@@ -182,7 +209,40 @@ impl Mind {
         let closed = take_lanes(b, p)?;
         let open = take_lanes(b, p)?;
         let [ear, thoughts, unions, waiting] = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
-        Some(Mind { k, heard, understood, returned, priced, demanded, constructed, collisions, bodies, held, agreed, closed, open, ear, thoughts, unions, waiting })
+        let [drifts, shears, escapes] = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
+        let n = usize::try_from(u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?)).ok()?;
+        *p += 4;
+        // Each lock is three counts.
+        if n > b.len().checked_sub(*p)? / 24 {
+            return None;
+        }
+        let mut locks = Vec::with_capacity(n);
+        for _ in 0..n {
+            locks.push((take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?));
+        }
+        Some(Mind {
+            k,
+            heard,
+            understood,
+            returned,
+            priced,
+            demanded,
+            constructed,
+            collisions,
+            bodies,
+            locks,
+            drifts,
+            shears,
+            escapes,
+            held,
+            agreed,
+            closed,
+            open,
+            ear,
+            thoughts,
+            unions,
+            waiting,
+        })
     }
 
     /// The reading as the console prints it.
@@ -200,6 +260,16 @@ impl Mind {
                 "  collisions {} · bodies met {}",
                 COLLISIONS.iter().zip(&self.collisions).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 BODIES.iter().zip(&self.bodies).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
+            ),
+            format!(
+                "  torsion: shears {} · escapes {} · drifts {} · locks {}",
+                self.shears,
+                self.escapes,
+                self.drifts,
+                match self.locks.is_empty() {
+                    true => "none".to_string(),
+                    false => self.locks.iter().map(|(p, q, n)| format!("{p}:{q}×{n}")).collect::<Vec<_>>().join(" "),
+                }
             ),
             format!("  deviation closed {} · open {}", lanes_line(&self.closed), lanes_line(&self.open)),
             format!("  holds ear {} · thoughts {} · unions {} · waiting {}", self.ear, self.thoughts, self.unions, self.waiting),

@@ -896,6 +896,16 @@ impl Contemplation {
         if !shears.is_empty() {
             let _ = crate::transducer::family::pairing::mark_flux(&[], &shears, budget);
         }
+        let escapes = match &cell.coherence {
+            Coherence::Open { escapes, .. } => escapes.len(),
+            _ => 0,
+        };
+        if !shears.is_empty() || escapes > 0 {
+            crate::observe::note_mind(|m| {
+                m.shears += shears.len() as u64;
+                m.escapes += escapes as u64;
+            });
+        }
         self.resonance.cells += 1;
         let r = &cell.rings;
         self.resonance.resonant += r.resonant as u64;
@@ -1101,6 +1111,7 @@ impl Contemplation {
         // MU-CLIENT §4.5 — THE BODIES THAT MET in a scene: each by its slot
         // (fused, precessing, contact) and the sphere pair's versor.
         let mut met: Vec<(usize, Mv)> = Vec::new();
+        let mut coupled: Vec<crate::physics::tensegrity::Coupling> = Vec::new();
         if unit_ray(generator) {
             self.resonance.reflexive += 1;
             return Ok(());
@@ -1222,6 +1233,14 @@ impl Contemplation {
                         };
                         met.push((slot, s.geo(&landed)));
                     }
+                    // SPIN COUPLED TO ORBIT (MU-CLIENT §4.4): the scene's step
+                    // carrying this body about the other's barycentre, split
+                    // into orbit and spin and read as a lock or a drift.
+                    if let (Some(from), Some(to)) = (cga::base_at(x, usize::from(x.n())), cga::base_at(&landed, usize::from(landed.n()))) {
+                        if let Some(c) = crate::physics::tensegrity::spin_orbit(generator, &star, &from, &to) {
+                            coupled.push(c);
+                        }
+                    }
                 }
                 defect.metric.extend(metric_defect(&bodies));
             }
@@ -1236,10 +1255,17 @@ impl Contemplation {
         // nothing; a precession's sphere-pair turn and a contact's null flux
         // are held in the mind's field (𝒽, 𝒯), the torsion and the graze its
         // content.
+        use crate::physics::tensegrity::Coupling;
+        let drifts = coupled.iter().filter_map(|c| match c {
+            Coupling::Drift(d) => Some(d),
+            Coupling::Lock(..) => None,
+        });
         let held: Vec<crate::transducer::family::pairing::FieldLine> = met
             .iter()
             .filter(|(slot, _)| *slot != 0)
-            .map(|(_, v)| crate::transducer::family::pairing::FieldLine {
+            .map(|(_, v)| v)
+            .chain(drifts)
+            .map(|v| crate::transducer::family::pairing::FieldLine {
                 carriage: v.clone(),
                 gauge: Vec::new(),
                 mass: 1,
@@ -1250,10 +1276,16 @@ impl Contemplation {
         if !held.is_empty() {
             let _ = crate::transducer::family::pairing::mark_flux(&[], &held, budget);
         }
-        if !met.is_empty() {
+        if !met.is_empty() || !coupled.is_empty() {
             crate::observe::note_mind(|m| {
                 for (slot, _) in &met {
                     m.bodies[*slot] += 1;
+                }
+                for c in &coupled {
+                    match c {
+                        Coupling::Lock(p, q) => m.lock(*p, *q),
+                        Coupling::Drift(_) => m.drifts += 1,
+                    }
                 }
             });
         }

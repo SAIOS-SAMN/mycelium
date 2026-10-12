@@ -763,10 +763,7 @@ impl Reading {
             }
             Reading::Carriers(r) => r.put(out),
             Reading::Relay(r) => r.put(out),
-            Reading::Mind(r) => {
-                r.put(out);
-                Some(())
-            }
+            Reading::Mind(r) => r.put(out),
             Reading::Agreements(r) => r.put(out),
         }
     }
