@@ -146,7 +146,7 @@ assert_eq!(entity.own_k(), 0, "a mind that has not acted seats at zero");
 let codes = entity.stand(std::slice::from_ref(&e1), 0);
 assert_eq!(entity.dialect_len(), 1, "the form stands in the dialect");
 assert_eq!(entity.own_k(), 0, "K stands while the orbit is open");
-assert!(entity.close_orbit(), "standing it was an act, so the orbit closes");
+assert!(entity.close_cycle(), "standing it was an act, so the cycle closes");
 assert_eq!(entity.own_k(), 1, "the stroke's close stepped the clock once");
 assert_eq!(codes, vec![0xff], "and it is fresh, so an utterance would ask about it");
 
@@ -156,7 +156,7 @@ assert_eq!(codes, vec![0xff], "and it is fresh, so an utterance would ask about 
 // anyone else.
 entity.file_taught(&e1);
 let codes = entity.stand(std::slice::from_ref(&e1), 0);
-entity.close_orbit();
+entity.close_cycle();
 assert_eq!(entity.own_k(), 2, "a second act in a second stroke, a second step");
 assert_eq!(
     codes,
@@ -192,7 +192,7 @@ fn the_contemplation_is_stamped_with_tuniversal_and_the_shed_with_the_voices_own
     // read off the mesh.
     let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let _ = entity.stand(std::slice::from_ref(&e1), 0);
-    entity.close_orbit();
+    entity.close_cycle();
     let k = entity.own_k();
     entity.advance_height(500);
     assert_ne!(k, entity.now_tu(), "the fixture separates them: {k} against 500");

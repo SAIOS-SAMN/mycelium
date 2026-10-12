@@ -123,25 +123,22 @@ impl Entity {
         self.k
     }
 
-    /// AN ACT OF THIS MIND NAMING ONE WORD — stood, uttered, learned or
-    /// refused (78.49): it marks the orbit as having acted, and FX1 — where
-    /// the word was spoken out of the meet graph, the act's measure (the
-    /// word's magnitude, what the act carried) is credited to the filaments
-    /// its circuits traversed, and the dialect words they ran through are
-    /// noted at this K. Nothing is sealed: the court seals what it admits.
-    pub(crate) fn act_on(&mut self, word: &crate::transducer::element::Element) -> u64 {
+    /// AN ACT OF THIS MIND — a word stood, uttered, learned or refused
+    /// (78.49): it marks the cycle as having acted, and answers the mind's K.
+    /// Nothing is sealed: the court seals what it admits. (FX1 credited the
+    /// act's measure to the filaments its circuits traversed — a table beside
+    /// the field; the flux is the field's, threaded on its lines, MU-CLIENT
+    /// §4.5.)
+    pub(crate) fn act(&mut self) -> u64 {
         self.acted = true;
-        let k = self.own_k();
-        let words = self.contemplation.credit_flux(word.address().as_bytes(), word.magnitude());
-        self.epigenome.note_traversed(&words, k);
-        k
+        self.own_k()
     }
 
-    /// OK1, 78.49 — THIS MIND'S STROKE CLOSES ITS ORBIT: called once, where
-    /// the stroke's arms have run. An orbit that acted steps the mind's K by
-    /// one; one that acted on nothing leaves K where it was. `true` where
-    /// the orbit closed.
-    pub(crate) fn close_orbit(&mut self) -> bool {
+    /// OK1, 78.49 — THIS MIND'S TICK CLOSES ITS CYCLE BY NAME: called once,
+    /// where the tick's laws have run. A cycle that acted steps the mind's K
+    /// by one; one that acted on nothing leaves K where it was. `true` where
+    /// the cycle closed. K is a ledger coordinate, never an orbit (§0.0).
+    pub(crate) fn close_cycle(&mut self) -> bool {
         // RM1 — the calluses the receptor raised stand first, so a class no
         // held word spells goes up in THIS orbit's plan.
         self.stand_calluses();
@@ -153,11 +150,6 @@ impl Entity {
         if closed {
             self.k += 1;
             self.contemplation.docket_sealed();
-            // FX1 — the orbit's flux read at its close, and the dialect's
-            // words traversed beside it (alternative B).
-            let d = self.epigenome.dialect_flux(self.own_k());
-            self.contemplation.note_dialect_flux(d);
-            self.contemplation.flux_close();
         }
         // 78.37(1) — THE FRONTS STEP ON THE MIND'S K, one edge per k-step
         // (a close that acted on nothing leaves K where it was, and the step

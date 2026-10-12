@@ -223,13 +223,6 @@ pub struct Contemplation {
     /// yet credited to the room.
     pub(crate) truncation: super::core::Truncation,
     pub(crate) truncated_escrow: [u64; 4],
-    /// FX1 — forms spoken out of the meet graph awaiting their act, keyed by
-    /// the element's address; the orbit's `Φ⃗` by edge; the height each edge
-    /// last carried flux at; and the reading (volatile).
-    pub(crate) spoken: Keyed<super::flux::Spoken>,
-    pub(crate) flux: Keyed<[u64; 4]>,
-    pub(crate) flux_at: Keyed<u64>,
-    pub(crate) flux_tally: super::flux::FluxTally,
     /// RM1 — each remainder the Congruent arms perceived and did not record,
     /// by its own name (the reading's `refused`, `unsited`, `unrecorded`,
     /// `unminted`, `unmerged`).
@@ -1131,10 +1124,7 @@ impl Contemplation {
         };
         let e = sentence::as_element_form(f, mag)?;
         let retire = b.glued_by.is_empty();
-        let circuits = super::flux::circuits_of(f);
         let old = retire.then(|| b.clone());
-        // FX1 — the edges its circuits traverse, filed for its act.
-        self.file_spoken(e.address().as_bytes(), circuits);
         // 78.37(1) — FIXED BY FILL: the crystallized thought starts a front,
         // read before it leaves the meet graph.
         self.fix(key, false);

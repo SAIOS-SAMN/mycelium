@@ -145,8 +145,6 @@ impl Contemplation {
             .collect();
         // TC1 — a ring whose component holds a leaf waits for the leaf.
         let doomed = self.defer_price(doomed);
-        // FX1 — what flux would do with each, read before it leaves.
-        self.note_extent(&doomed);
         let mut returned = [0u64; 4];
         let n = doomed.len();
         // TC1 — what the price takes that carries a loop, read around it.

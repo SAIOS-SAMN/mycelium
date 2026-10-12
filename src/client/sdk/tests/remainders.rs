@@ -51,7 +51,7 @@ fn stand_with(entity: &mut Entity, gauges: [&[(u8, u8)]; 2], at: &[Vec<u8>], ray
     r.at = at.to_vec();
     let mut w = super::common::two_body_sentence(gauges);
     w.record_cycle(cycle_by(ray, Some(r)));
-    let k = entity.act_on(&w);
+    let k = entity.act();
     let _ = entity.epigenome.stand_dialect_at(w.clone(), k, 0);
     w
 }
@@ -165,7 +165,7 @@ fn a_demand_answered_by_class_key_refills_an_open_remainder() {
     assert_eq!((r.refill_acts, r.refill_refused, r.calluses), (1, 0, 0), "{}", r.line());
     let (r, answered) = remainder_of(&e, &w);
     assert!(answered && r.answered.is_none(), "answered in the mind, the record left to a court's seal");
-    assert!(e.close_orbit(), "the re-fill was an act of this orbit");
+    assert!(e.close_cycle(), "the re-fill was an act of this cycle");
 }
 
 fn cycle(r: Option<Remainder>) -> TorsionCycle {

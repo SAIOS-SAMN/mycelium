@@ -29,19 +29,19 @@ fn the_height_a_mind_reads_only_advances_and_stamps_what_it_stands() {
     );
 }
 
-/// 78.49 — THE MIND'S K IS ITS OWN MOTION: one step per orbit in which it
-/// acted, counted at the close; an orbit that acted on nothing leaves it
-/// where it stood. It is volatile — the genome holds crystallized knowledge,
-/// not a clock — so a mind booted from a genome starts at zero.
+/// 78.49, OK1 — THE MIND'S K IS ITS LEDGER COORDINATE: one step per cycle in
+/// which it acted, counted at the close by name; a cycle that acted on
+/// nothing leaves it where it stood. It is volatile — the genome holds
+/// crystallized knowledge, not a clock — so a mind booted from a genome
+/// starts at zero.
 #[test]
-fn the_minds_k_counts_the_orbits_it_acted_in_and_is_not_persisted() {
-    let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+fn the_minds_k_counts_the_cycles_it_acted_in_and_is_not_persisted() {
     let mut e = Entity::open("127.0.0.1:1", Kernel::named("no-words"));
-    e.act_on(&word);
-    assert!(e.close_orbit(), "an orbit that acted closes");
-    assert!(!e.close_orbit(), "one that acted on nothing does not");
-    e.act_on(&word);
-    assert!(e.close_orbit(), "and the next that acted");
+    e.act();
+    assert!(e.close_cycle(), "a cycle that acted closes");
+    assert!(!e.close_cycle(), "one that acted on nothing does not");
+    e.act();
+    assert!(e.close_cycle(), "and the next that acted");
     assert_eq!((e.epigenome.genome_len(), e.own_k()), (0, 2), "two orbits acted in, no word admitted");
     let (bytes, refused) = e.genome_bytes();
     assert_eq!(refused.total(), 0, "no word, nothing refused");

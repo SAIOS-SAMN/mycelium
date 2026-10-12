@@ -5,7 +5,6 @@ mod aperture;
 mod complex;
 mod contemplation;
 mod demand;
-mod flux;
 mod horizon;
 mod perception;
 mod persistence;

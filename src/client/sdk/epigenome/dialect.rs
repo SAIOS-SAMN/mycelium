@@ -34,8 +34,6 @@ impl Epigenome {
     }
 
     pub(crate) fn drop_dialect(&mut self, da: &[u8]) {
-        // FX1 — its traversal leaves with it.
-        self.traversed_k.remove(da);
         let (shed, missing) = match self.dialect.get(da) {
             Some(d) => (
                 d.sentence.clone(),

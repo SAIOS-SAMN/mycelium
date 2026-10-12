@@ -281,7 +281,7 @@ impl Entity {
             // 78.49: STANDING A FORM IS AN ACT of this mind, and the form
             // stands at the mind's own K — never a number the hypha last
             // replied with. The court seals what it admits.
-            let k = self.act_on(e);
+            let k = self.act();
             self.epigenome.stand_dialect_at(e.clone(), k, tu);
             if !taught {
                 codes[i] = 0xff; // asked about on the wire below
@@ -367,7 +367,7 @@ impl Entity {
             // The utterance was admitted by the court: an act of this mind
             // (78.49). A refused utterance is not an admitted one.
             let Some(e) = sentences.get(i).cloned() else { continue };
-            self.act_on(&e);
+            self.act();
             self.file_taught(&e);
             self.contractions.remove(&e.address());
             if let Some(k) = crate::transducer::sentence::from_element_form(&e)

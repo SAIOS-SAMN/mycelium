@@ -131,9 +131,6 @@ pub struct MeetGraph {
     pub shed: super::core::ShedTally,
     /// TC1's fix — what the truncation removed, refused and deferred.
     pub truncation: super::core::Truncation,
-    /// FX1 — the flux per lane over the last orbit and the aperture, and what
-    /// the extent lapsed read under flux.
-    pub flux: super::flux::FluxTally,
     /// RM1 — the mind's remainders: `Congruent` fills by `ℓ`, their classes
     /// and those standing across charts, the re-fills.
     pub remainders: crate::transducer::cech::RemainderReading,
@@ -198,38 +195,8 @@ impl MeetGraph {
             c.h1, c.core, c.free_vertices, c.isolated, c.free_faces[0], c.free_faces[1], c.unfaced, c.malformed,
             tr.truncated, tr.held_by_class, tr.glued, tr.deferred, tr.rank_moved, tr.malformed
         );
-        let f = &self.flux;
-        let window = |w: &super::flux::FluxWindow| format!("traversed {} zero {} held {}", w.traversed, w.zero, w.held);
-        let aperture = match &f.aperture {
-            Some(w) => window(w),
-            None => "unread".to_string(),
-        };
-        let extent = super::flux::UnderFlux::ALL
-            .iter()
-            .map(|u| format!("{} {} {:?}", u.name(), f.extent_n[u.index()], f.extent[u.index()]))
-            .collect::<Vec<_>>()
-            .join("; ");
-        let opt = |x: Option<u64>| match x {
-            Some(n) => n.to_string(),
-            None => "unread".to_string(),
-        };
-        let flux = format!(
-            "flux: orbits closed {} | orbit (K) {} | aperture (tu) {aperture} | gone {}, unfilamented {} | acts credited {} acyclic {} unfiled {} unsealed {} unnamed nodes {} | extent lapsed: {extent} | dialect traversed orbit {} aperture {} idle {}",
-            f.closes,
-            window(&f.orbit),
-            f.gone,
-            f.unfilamented,
-            f.credited,
-            f.acyclic,
-            f.unfiled,
-            f.unsealed,
-            f.unnamed,
-            f.dialect.0,
-            opt(f.dialect.1),
-            opt(f.dialect.2)
-        );
         let core = format!(
-            "{core} | {flux} | {} | overflowed {} | {}",
+            "{core} | {} | overflowed {} | {}",
             self.remainders.line(),
             self.overflowed,
             self.resonance.line()
@@ -330,7 +297,6 @@ impl Contemplation {
             core: self.core_reading(),
             shed: self.shed,
             truncation: self.truncation,
-            flux: self.flux_tally,
             remainders: self.remainder_reading(),
             overflowed: self.overflowed,
             resonance: self.resonance,

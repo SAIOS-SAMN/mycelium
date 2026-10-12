@@ -115,7 +115,7 @@ impl Entity {
     /// dialect at its own K. Nothing is sealed — a court admits it, or not,
     /// when it is spoken.
     fn stand_word(&mut self, word: crate::transducer::element::Element) -> crate::transducer::element::Element {
-        let k = self.act_on(&word);
+        let k = self.act();
         let tu = self.contemplation.now_k();
         let _ = self.epigenome.stand_dialect_at(word.clone(), k, tu);
         word

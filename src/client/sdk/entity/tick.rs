@@ -114,7 +114,7 @@ impl Entity {
         // 4. CLOSURE AND BOOKING.
         let _ = self.pivot_thoughts();
         StrokeOutcome::add(&mut outcome.learned, &self.take_learned_mu());
-        self.close_orbit();
+        self.close_cycle();
         // The tick's pivots reach the field — each flow on its line — and
         // what the field released relaxes (MU-CLIENT §4.5).
         let mut vent = self.stroke();

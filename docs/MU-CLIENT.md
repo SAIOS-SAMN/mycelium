@@ -347,9 +347,10 @@ The mind's field is built of one exact mathematics, the same the hypha runs:
   terms (`Mv`, sparse, mask order); a word its derivation; a class its
   coordinates (A21); a carrier is a `Keyed` trie over canonical coordinate
   bytes, so a prefix is a stratum and a fibre is one read (rule 9). What is
-  held lapses by the physics — a return relieves, a flux lapses (ZeroFlux,
-  FX1), an orbit seals at its period (78.43) — never by a capacity constant
-  (rule 5, checklist (s)).
+  held lapses by the physics — an orbit's return relieves and releases the
+  lines on it, a tube whose net flux cancels releases its lines (§4.5), an
+  orbit seals at its period (78.43) — never by a capacity constant (rule 5,
+  checklist (s)).
 
 ### 4.2 The field is the mind's own (A.9)
 
@@ -673,8 +674,8 @@ the algebra or of the flux, never a choice:
    DISTINCTION, and both are kept.
 4. **Experience collapses what remains.** Every later perception is read
    against every constructor the thought holds: one whose residue returns is
-   renewed, one re-derived again is amended again, one whose flux experience
-   no longer renews LAPSES by its flux — fracture, ZeroFlux (78.73, FX1).
+   renewed, one re-derived again is amended again, one whose tension the
+   field released LAPSES with it — its line let go (§4.5, 78.73).
    The thought's history, at any K, IS its superposition as experience has
    shaped it — accrued on its ring's winding (§4.4).
 5. **Discarded — fracture of the whole thought.** A thought is discarded
