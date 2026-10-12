@@ -23,6 +23,19 @@ under the three. The reserve's aperture, declared `8`, is the sensor base's
 unit cell `2³`.
 
 ## Witnessed on the fleet
+- A–E (6e511d36 shear held / escape open, ace5c69a transport collisions,
+  2fb871e0 body collisions, 4191bef9 spin–orbit and the reading; minds on
+  them from 15:39, A–E whole from 15:49). Courts' typed readings, 15:39 →
+  15:59 (courts up since 13:54, unchanged): solve verdicts 8 in the 105
+  minutes before → 166 in these 20; first closures 0 → 3 (a 1, c 2), one
+  closure again (a); μ paid on solves [0,0,0,0] → [0,32,0,0] (a 9, c 23,
+  all on 𝒢); refusals C 75, unread 76, P 4, D 3, I 2. Agreements +324
+  (a +152, b +99, c +73), every one heard whole. The minds' readings at
+  15:59: 1 739 escapes docketed, 1 482 motion letters and 107 letters
+  constructed, 46 constructions refused; no perception ring held as a
+  shear, no tether collision of any kind; bodies met fused 1, precessing
+  14; one lock 4:4; 15 drifts. Not a controlled A/B: the minds restarted
+  twice in the window.
 - 6b4e1475, a hearing is one cell of the mind's orbit algebra (minds
   restarted 13:02:03): in ten minutes 156 attestations (a 55, b 15, c 86)
   over 18 pairs, 25 solve verdicts, minds at 155–230 MB — against 0
