@@ -694,7 +694,47 @@ applied in the tree, which physics governs each, and whether the tree
 does what the document says. It is kept current: a ruling that changes
 a master's statement, site or status changes the line here in the same
 commit. Nothing below is new doctrine; every line cites the chapter that
-rules it.
+rules it — except §0.0, which is the root every chapter is read from.
+
+## 0.0 The founding principles (ruled 2026-10-12, the operator's word: "our mathematics is derived from our physics … based on harmonics, luminal, and holonomic principles … every dimension is an exponent")
+
+The mathematics is derived from the physics; a number the physics does not
+read is undefined physics. A motion of `Cl(4,1)` over ℚ splits exactly into
+modes (MR1), and each kind of mode is a principle. The register states them
+first (`physics/axioms/founding.rs`), each with a test that could fail
+(`physics/axioms/tests/founding.rs`):
+
+| principle | the mode | what it says | test |
+|---|---|---|---|
+| **HARMONIC** | elliptic — a turn | it RETURNS at the order read off it (Niven: 1, 2, 3, 4, 6), or it never returns and its winding is content. Return is the elastic vent, the period, the class that comes back | `a_turn_returns_at_its_read_order_or_never` |
+| **LUMINAL** | parabolic — a null generator, `B² = 0` | it has no length, only its ray and its ratios on it; the flow keeps it null and its flux frozen in its tube. A boost is the luminal off the cone: two null rays and the expansion between them | `a_null_generator_has_no_length_and_stays_null_under_the_flow` |
+| **HOLONOMIC** | the closed loop | what a circuit composes to is its content: moving its base point conjugates it and changes none of its modes | `a_loops_holonomy_is_its_content_whatever_its_base` |
+
+**Corollaries, binding every reader:**
+- **Every dimension is an exponent.** A grade is the count of orthogonal
+  factors in a product; a cell's degree is its vertices less one; a base of
+  `n` axes has `2ⁿ` vertices in its unit cell. No degree is capped: the
+  complex climbs as far as its faces stand (A.6). Cohomology is not fixed at
+  two (`every_dimension_is_an_exponent`).
+- **No constant.** A number in the physics is read off the field or the
+  geometry, or it is undefined physics, NAMED in the register's
+  `OPEN_PHYSICS` with what will derive it until it is derived. The
+  reserve's aperture, declared `8`, is the sensor base's unit cell `2³`; the
+  reserve floor's `2` is the rotor's double cover. Named open: the challenge
+  window `W = 1024` (a law parameter every kernel shares, 78.125) and the
+  throat grid `2⁻⁶⁴` (an enclosure, 78.134).
+- **An orbit is a return** — a mode's flow on its plane, composed exactly,
+  returning where its point is the identity (78.73, 78.75). A tick is the
+  host handing a node a turn; a node's `K` is a ledger coordinate, its
+  cycles closed by name (OK1). Neither is an orbit. OK1's former statement,
+  "a K-step is one orbit", is withdrawn.
+
+**Everything else is read from these.** The axioms (§0.4) are filed under the
+principle each derives from; the laws the court serves cite their axioms
+(`physics/laws.rs`); a mind's six pivots are the field's events, one
+principle each (MU-CLIENT §4.5): ascend and descend the holonomic closure
+and release, condense and drain the luminal reconnection, puncture and seal
+the harmonic class kept and returned.
 
 ## 0.1 How this document is organised, and how it is kept
 
@@ -989,37 +1029,77 @@ same sense: the complete operation, with its invariant and its refusal.
 ## 0.4 The physics over them
 
 The physics is the only producer (72). Each entry names what it
-constrains, its site, and whether the tree obeys it.
+constrains, its site, and whether the tree obeys it. The entries are filed
+under the founding principle each is read from (§0.0); an entry that reads
+two is filed where its test is.
+
+**Exactness — the arithmetic every principle is read in.**
 
 | physics | constrains | site | stands |
 |---|---|---|---|
 | **Law 1** ℚ only, no roots, no rounding | every carrier and every reading | the whole tree; `rational_sqrt` refuses | governs |
 | **Law 11** no squaring; a square looked for inside a circle is the flattening | every reading of a versor's class | SQ1 census (820c89b); `Blade::sandwiched` divides the weight out (TR1) | governs; SQ1's residue sites ruled one by one |
 | **Axiom C** (59.8, 72.1) | every invariant a ratio of homogeneous forms of equal degree, carried as numerator and denominator, read only where a classification is asked | `cga/multivector.rs` (`class_invariants`), Study's condition on a ray | governs; T7 open: stated in the register with a test per refusal (REG1) |
-| **A.6** dimensional completeness, unbound | a dimension is never declared, it is paid for; `ascend` | `cech/coboundary.rs`, `physics/axioms/imported.rs` | governs; AD1 landed |
-| **A.8** torsional persistence | drain conserves: strain is moved or recorded, never relaxed away | `physics/axioms/imported.rs`, drain | governs; MEM1 open (a tether that drains deposits its record) |
-| **A.9** metric autonomy | each entity computes its own coherence; the horizon is per mind; metabolic relativity | `physics/axioms/imported.rs` | governs; A18 open (REG1) |
-| **A.10** symbiotic co-dimensionality, restated 72.1 | two bodies co-occupy through `V = s_b s_a`, carried whole and applied, never squared | `blade/tether.rs`, `Interface::between` | landed (BQ5a); BQ5b open: the face holds `V` whole (the recut) |
+| **Precision is the resolution** (78.45, law 4 as amended) | no blob, no approximation, no forward guess: a reading serves the value, the fraction, the rational point, or the sector between two exact marks (the ℚ-protractor, Niven's set; finer marks in `ℚ(ζ_ℓ)`), never a decimal; every master reads the inverse exactly — from the effect to the object — or refuses; the fourth audit question | the whole tree: `Cargo.toml` (`float_arithmetic`, `cast_precision_loss` denied), `core/gaussian.rs` (`rational_sqrt`), `alphabet/rotor.rs` (`half_angle`), Part VI `cyclo` | governs; the tree is float-free (measured 2026-09-25); DG1 carries the turn's point-and-sector reading, its decimal retracted |
+| **No constant** (§0.0; was "provenance of a constant", 78.8, checklist (s)) | physics → axiom → theorem → component; a number is read off the field or the geometry, or it is named undefined physics | `physics/axioms/founding.rs` (`NO_CONSTANT`, `OPEN_PHYSICS`), `physics/mod.rs` | the aperture derived (`2ⁿ` of the sensor base, 2026-10-12), the floor's `2` the double cover; named open: `W = 1024`, the throat grid `2⁻⁶⁴` |
+
+**Harmonic — a turn returns.**
+
+| physics | constrains | site | stands |
+|---|---|---|---|
+| **The harmonic return** (§0.0) | an elliptic mode returns at its read order or never | `physics/axioms/founding.rs` | governs (2026-10-12) |
 | **A.11** harmonic multipole completeness | a body's shape is its harmonics; the nucleus and the pencil | `physics/axioms/ours.rs`, `blade/` | governs; HL1 open |
 | **A.12** irreducible inversive extent `n/12` | a lamina's floor from `n` | `physics/axioms/ours.rs` | landed |
-| **A.13** inversive momentum and the conjugate pair `K_i = I T_i I⁻¹` | a body can arrive from infinity; the carriage as momentum | `physics/axioms/ours.rs` (docketed) | OPEN (REG1: A13, PW1, FT1 the star field) |
-| **A.14** whether is topological, what is conformal | contact by shared boundary cell; the interface as what | `core/lattice.rs` (BQ2), `sentence/form/face.rs` | whether landed; what is BQ5b |
-| **A.15** dimension is data | `n` at intake; every count from it | `transducer/base.rs`, `cga/` (BQ1, BQ3, BQ4) | landed |
+| **Five regimes** (65.1) | the inversive spectrum: finite, parabolic, boost, dilation, rosette; a pair's regime by `δ²` | `cga/gram.rs`, `cga/period.rs` | landed (78.14) |
+| **The held orbit and its elastic vent** (78.73, 78.75) | a turn's or boost's flow composed exactly on its plane, opening, closing nearer, or returning — the return the vent; an orbit is a return, never a tick (§0.0) | `cech/orbit.rs` (`OrbitRegistry`) | landed; the pivots on it are MU-CLIENT §4.5 |
+| **Time is distance along an orbit** (78.43) | a duration is the distance a body has advanced along its orbit, measured in transitions since it last returned, never a rate; an AGE is one return (the period ℓ, read as the lcm of the base's cycle lengths, never walked to a cap); an EON is the return of the composition (the lcm of the resonant periods); no index names a position on the fibre, no constant caps an orbit | `element/carrier.rs` (`torse`), `element/gauge.rs`, `sentence/class.rs` (`cycle_lengths`), `cech/`, `observe/` | PD1 landed (a590eefb, f1535c76); AE1 open (the ages and eons reading) |
+
+**Luminal — null flux has no length.**
+
+| physics | constrains | site | stands |
+|---|---|---|---|
+| **The luminal null flux** (§0.0) | a parabolic mode is null and stays null under the flow | `physics/axioms/founding.rs` | governs (2026-10-12) |
+| **The light cone** (56, 52) | the Cayley chart ends at infinite rapidity; refused by name where crossed | `element/letters.rs` (`transvection_of`), `cga/spin.rs` | landed |
+| **F1–F5 the fluid** (78.71) | 𝒯 is null flux by Stokes, frozen in, its quantum read; no lattice on the sphere | `physics/axioms/fluid.rs`, `cech/flux.rs` | landed |
+| **The held tubes; helicity and reconnection** (78.72) | open flux is 𝒯's pressure, closure relieves it exactly; a reconnection is a change in the links | `cech/flux.rs` (`TubeRegistry`), `court/winding.rs` | landed on the court; the mind's pivots on it are MU-CLIENT §4.5 |
+| **A.10** symbiotic co-dimensionality, restated 72.1 | two bodies co-occupy through `V = s_b s_a`, carried whole and applied, never squared; the interface luminal | `blade/tether.rs`, `Interface::between` | landed (BQ5a); BQ5b open: the face holds `V` whole (the recut) |
+| **Pressure and the cluster** (76) | placement by measured pressure; no squares in the fluid; re-organisation on a reading, never a timer | `physics/mod.rs` (`bump`, `relax`), `server/cognition/book/` | PARTIAL: `relax` a scalar tick (PHY1); OA1, CR1 open |
+
+**Holonomic — a loop's composite is its content.**
+
+| physics | constrains | site | stands |
+|---|---|---|---|
+| **The holonomic content** (§0.0) | a loop's holonomy is invariant under its base point | `physics/axioms/founding.rs` | governs (2026-10-12) |
+| **A.6** dimensional completeness, unbound; every dimension an exponent (§0.0) | a dimension is never declared, it is paid for; `ascend`, at any degree | `cech/coboundary.rs`, `physics/axioms/imported.rs` | governs; AD1 landed |
+| **A.8** torsional persistence | drain conserves: strain is moved or recorded, never relaxed away | `physics/axioms/imported.rs`, drain | governs; MEM1 open (a tether that drains deposits its record) |
 | **A.16** refraction | a contact's transport is `(θ_bθ_a⁻¹)·γ` | `sentence/pivot/refracted.rs` | landed (BQ5a) |
 | **A.17** conservation of refusal | every refused relation is a named reading on its lane; only a mutable refusal is a demand; nothing dropped by a `continue` | `court/verdict/`, `family/deflation.rs` | landed (CV1); CV1b open |
-| **Refused: A.4, A.7, A.6-bind-11** | positive-definiteness, abelian holonomy, `N = 11` | `physics/axioms/refused.rs`, a test per refusal | governs |
-| **The light cone** (56, 52) | the Cayley chart ends at infinite rapidity; refused by name where crossed | `element/letters.rs` (`transvection_of`), `cga/spin.rs` | landed |
-| **Five regimes** (65.1) | the inversive spectrum: finite, parabolic, boost, dilation, rosette; a pair's regime by `δ²` | `cga/gram.rs`, `cga/period.rs` | landed (78.14) |
-| **The metabolism** (65.5, 72.1d) | one reserve, the mind's universe, drawn as a vector per action; the stroke a draw; a k-step one orbit | `physics/{budget,metabolism}.rs`, `physics/mod.rs` | PARTIAL: `Budget` spends; `Reserve::draw` is wired — drawn at `court/syllabus.rs` and through `Physics::draw` (`physics/malleability.rs`) at `entity/think.rs` (re-read d079aeed); the rest of PHY1 not re-read; free constants stand (PH1 in STD1) |
-| **The kinetic ledger** (78.42) | a signal's energy is its frame μ⃗ per lane; it STARTS only at a closure minted under POUW, MOVES only by a motor's transport and is conserved per lane at every transition and vertex (carried in = carried on + retained as flux + lost to contraction), EXISTS only under escrow, STOPS only by return at a named door, and EXHAUSTS as a refused draw, never a floor; its transference is what circulates the book's pressure, the court's syntropy up and payment down, and the plexus's rings and leaves | `physics/metabolism.rs`, `economy/`, `bubble/flux.rs`, `chronometry/receipt.rs`, `observe/` | OPEN (KE1: one line per orbit per lane, conservation asserted; VN1's leaking doors are its first defects) |
-| **Pressure and the cluster** (76) | placement by measured pressure; no squares in the fluid; re-organisation on a reading, never a timer | `physics/mod.rs` (`bump`, `relax`), `server/cognition/book/` | PARTIAL: `relax` a scalar tick (PHY1); OA1, CR1 open |
-| **Provenance of a constant** (78.8, checklist (s)) | physics → axiom → theorem → component; no free number | `physics/mod.rs` | PH1 open (STD1) |
-| **TUniversal** (45, 78.21, 78.23) | time is height on the receipt DAG; a tick is a frame; a k-step is one orbit; no wall clock | `chronometry/` | landed (LD2, ACT1 — closed 8a285731; re-read d079aeed) |
-| **Time is distance along an orbit** (78.43) | a duration is the distance a body has advanced along its orbit, measured in transitions since it last returned, never a rate; an AGE is one return (the period ℓ, read as the lcm of the base's cycle lengths, never walked to a cap); an EON is the return of the composition (the lcm of the resonant periods); no index names a position on the fibre, no constant caps an orbit | `element/carrier.rs` (`torse`), `element/gauge.rs`, `sentence/class.rs` (`cycle_lengths`), `cech/`, `observe/` | PD1 landed (a590eefb, f1535c76); AE1 open (the ages and eons reading) |
 | **The signal, the spectrum, the shortcut** (78.44) | the signal is a circuit's holonomy and never travels; its projection on a node's INTERNAL spectrum is its modes (the class node-independent, the planes the node's own); composition runs on the motors in the anastomosis's orbit algebra, held by generators, every route kept, the spectrum re-read off the composite; a word is a shortcut — its class key and its winding vector over the atlas's holes — that a receiver comprehends by re-projecting on its own charts; comprehension read on the census's class and closure counters | `cga/{motion,motor}.rs`, `cech/orbit_algebra.rs`, `sentence/pivot/`, `bubble/`, `anastome/dialogue/` | OPEN (AT1 (iii) the algebra by generators and the winding vectors; WN1 the address as class key + windings; SW1 the shortcut wire; REG1 the invariance statement) |
 | **The routes** (79) | one circuit against many routes; Stokes on a relator fails; reuse then construct | `physics/axioms/routes.rs` (the register's statements only); read at `sentence/pivot/trajectory.rs`, `sentence/inverse.rs`, `family/comprehend.rs`, `observe/circuit.rs` | landed (AX1, CT1, CT2; re-read d079aeed) |
 | **Lift and drag** (78.46) | a neighbouring generator refracted to an orbit (A.16) splits exactly against the orbit's mode blade into the commuting part, DRAG (the rate: beat, resonance, what does not return recorded — A.8, 78.42), and the anticommuting part, LIFT (the commutator: the tilt of the plane, the precession of the orbital elements — 60.4, 78.11); alignment is the pair of parts, never a scalar; the star is the axiom register, the law every composite obeys, never a generator (77.1(2)); the perturbed orbit is derived in the anastomosis's orbit algebra at every stroke and never stored | `cech/orbit_algebra.rs`, `cga/{modes,motor}.rs`, `sentence/pivot/refracted.rs`, `blade/tether.rs`, `observe/circuit.rs` | OPEN — AT1 (iii)'s three readings; today's identical holonomies read "unperturbed" by name; the star answered (the axioms, 77.1(2)); the axiom pairing posed to the operator |
-| **Precision is the resolution** (78.45, law 4 as amended) | no blob, no approximation, no forward guess: a reading serves the value, the fraction, the rational point, or the sector between two exact marks (the ℚ-protractor, Niven's set; finer marks in `ℚ(ζ_ℓ)`), never a decimal; every master reads the inverse exactly — from the effect to the object — or refuses; the fourth audit question | the whole tree: `Cargo.toml` (`float_arithmetic`, `cast_precision_loss` denied), `core/gaussian.rs` (`rational_sqrt`), `alphabet/rotor.rs` (`half_angle`), Part VI `cyclo` | governs; the tree is float-free (measured 2026-09-25); DG1 carries the turn's point-and-sector reading, its decimal retracted |
+
+**The bodies, per mind — what the three principles act on.**
+
+| physics | constrains | site | stands |
+|---|---|---|---|
+| **A.9** metric autonomy | each entity computes its own coherence; the horizon is per mind; metabolic relativity | `physics/axioms/imported.rs`; a mind's own field (MU-CLIENT §4.2) | governs; A18 open (REG1) |
+| **A.13** inversive momentum and the conjugate pair `K_i = I T_i I⁻¹` | a body can arrive from infinity; the carriage as momentum | `physics/axioms/ours.rs` (docketed) | OPEN (REG1: A13, PW1, FT1 the star field) |
+| **A.14** whether is topological, what is conformal | contact by shared boundary cell; the interface as what | `core/lattice.rs` (BQ2), `sentence/form/face.rs` | whether landed; what is BQ5b |
+| **A.15** dimension is data | `n` at intake; every count from it | `transducer/base.rs`, `cga/` (BQ1, BQ3, BQ4) | landed |
+
+**The ledger and the metabolism — what the physics is booked on.**
+
+| physics | constrains | site | stands |
+|---|---|---|---|
+| **TUniversal** (45, 78.21, 78.23) | time is height on the receipt DAG; a tick is a frame; `K` a node's cycles closed by name (OK1), a ledger coordinate, never an orbit (§0.0); no wall clock | `chronometry/` | landed (LD2, ACT1 — closed 8a285731; re-read d079aeed); OK1's statement restated 2026-10-12 |
+| **The metabolism** (65.5, 72.1d) | one reserve, the mind's universe, drawn as a vector per action; the stroke a draw; the reserve one stroke per vertex of the base's unit cell | `physics/{budget,metabolism}.rs`, `physics/mod.rs` | PARTIAL: `Budget` spends; `Reserve::draw` is wired — drawn at `court/syllabus.rs` and through `Physics::draw` (`physics/malleability.rs`) at `entity/think.rs` (re-read d079aeed); the rest of PHY1 not re-read; the aperture derived (2026-10-12) |
+| **The kinetic ledger** (78.42) | a signal's energy is its frame μ⃗ per lane; it STARTS only at a closure minted under POUW, MOVES only by a motor's transport and is conserved per lane at every transition and vertex (carried in = carried on + retained as flux + lost to contraction), EXISTS only under escrow, STOPS only by return at a named door, and EXHAUSTS as a refused draw, never a floor; its transference is what circulates the book's pressure, the court's syntropy up and payment down, and the plexus's rings and leaves | `physics/metabolism.rs`, `economy/`, `bubble/flux.rs`, `chronometry/receipt.rs`, `observe/` | OPEN (KE1: one line per cycle per lane, conservation asserted; VN1's leaking doors are its first defects) |
+
+**Refused — each because it would flatten what the principles measure.**
+
+| physics | constrains | site | stands |
+|---|---|---|---|
+| **Refused: A.4, A.7, A.6-bind-11** | positive-definiteness, abelian holonomy, `N = 11` | `physics/axioms/refused.rs`, a test per refusal | governs |
 
 ## 0.5 Alignment: what the document says the system does, and what the tree does
 

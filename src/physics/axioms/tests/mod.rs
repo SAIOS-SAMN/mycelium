@@ -3,6 +3,7 @@
 mod contact;
 mod coxeter;
 mod fluid;
+mod founding;
 mod frame;
 mod harmonic;
 mod hue;

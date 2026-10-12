@@ -111,13 +111,16 @@ pub const A13_INVERSIVE_MOMENTUM_DOCKETED: &str =
     "docketed: K_i = I·T_i·I⁻¹ is unvoiced, so every motion fixes infinity; \
      momentum — inertia paired with the inter-frame carriage — is built (78.52)";
 
-/// OK1 — A K-STEP IS ONE ORBIT (ours, 78.23 as amended, ruled 2026-09-24).
+/// OK1 — `K` COUNTS A NODE'S CYCLES CLOSED BY NAME (ours, 78.23 as amended,
+/// ruled 2026-09-24; restated 2026-10-12 under the founding principles).
 ///
-/// A node's `K` counts its ORBITS: one circuit of its cycle — the court's
-/// exchange, deliberation, lapse and persist; the voice's quote, utter,
-/// learn and syntropy — closed BY NAME. The close is an act, a node of
-/// kind `Orbit` at the orbit's last place, and `K` advances by one there
-/// and by nothing else:
+/// It was stated "a K-step is one orbit". That claim is withdrawn: an orbit
+/// is a mode's return on the field (`founding::ORBIT_IS_A_RETURN`), and a
+/// node's cycle is not one. What stands is the LEDGER COORDINATE: a node's
+/// `K` counts its cycles — the court's exchange, deliberation, lapse and
+/// persist; the voice's quote, utter, learn and syntropy — closed BY NAME.
+/// The close is an act, a node of kind `Orbit` (the act's wire name) at the
+/// cycle's last place, and `K` advances by one there and by nothing else:
 ///
 /// ```text
 ///   stamp      h : vk : K : i          i the act's place in orbit K
@@ -142,6 +145,6 @@ pub const A13_INVERSIVE_MOMENTUM_DOCKETED: &str =
 /// writer, at the integrity check and at admission; a collision is exact
 /// equality at one tick. `server::cognition::tests::orbit` — the court's
 /// close withheld on a collision, `K` standing, and sealed a stroke on.
-pub const OK1_K_STEP_IS_ONE_ORBIT: &str =
-    "a K-step is one orbit: K advances by one where a cycle closes by name, \
-     at a close carrying its orbit's per-lane frame, and by nothing else";
+pub const OK1_K_COUNTS_CLOSED_CYCLES: &str =
+    "K is a ledger coordinate: it advances by one where a node's cycle closes by name, \
+     at a close carrying its cycle's per-lane frame, and by nothing else; it is never an orbit";

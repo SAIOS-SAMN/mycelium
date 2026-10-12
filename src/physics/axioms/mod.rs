@@ -1,19 +1,34 @@
-// 56 — THE AXIOM REGISTER: what this engine assumes, what it refuses to
-// assume, and the reading that decides each (ruled 2026-09-22).
+// 56, MU-RECURSION §0.0 — THE AXIOM REGISTER: the founding principles, what
+// this engine assumes under each, what it refuses to assume, and the reading
+// that decides each (ruled 2026-09-22; organised under the founding principles
+// 2026-10-12).
 //
-//! A.1–A.10 are `ipsal-autic`'s register, whose own numbering marks
-//! A.1–A.4 as carried forward unchanged from the convergence-engine and
-//! A.5–A.10 as its additions. They are NOT adopted wholesale. Three are
-//! REFUSED, and the refusals matter more than the imports: each would
-//! flatten something this engine measures, and each is refused here with
-//! a test that says why rather than a paragraph that asserts it.
+//! THE ORDER IS DERIVATION. The founding principles (`founding.rs`) are
+//! first: HARMONIC (a turn returns), LUMINAL (null flux has no length) and
+//! HOLONOMIC (a loop's composite is its content), with their corollaries
+//! (every dimension is an exponent; no constant) and the physics still
+//! undefined, named. Every other entry is read from one of them:
 //!
-//! An axiom that cannot fail a test is a coordinate standing for no
-//! theorem (T21(iii)). Every entry below is either exercised or is
-//! explicitly marked as a statement about work not yet built.
+//! - harmonic — A.11 multipole completeness and A.12 its extent (`ours.rs`),
+//!   CX1 the Coxeter element's class (`coxeter.rs`);
+//! - luminal — F1–F5 the fluid (`fluid.rs`), A.10 co-dimensionality across
+//!   a luminal interface (`imported.rs`);
+//! - holonomic — A.6 dimensional completeness and A.8 torsional persistence
+//!   (`imported.rs`), RX1–RX7 reciprocity (`reciprocity.rs`), the routes
+//!   (`routes.rs`);
+//! - the bodies' equilibrium — A.10.1 tensegrity and A.13 momentum
+//!   (`tensegrity.rs`, `ours.rs`); A.9 metric autonomy, per mind;
+//! - the ledger — OK1, `K` a node's cycles closed by name (`ours.rs`);
+//! - refused — A.4, A.7, A.6-bind-11 (`refused.rs`), each with why.
+//!
+//! A.1–A.10 are `ipsal-autic`'s register, NOT adopted wholesale: three are
+//! REFUSED, each because it would flatten something this engine measures.
+//! An axiom that cannot fail a test is a coordinate standing for no theorem
+//! (T21(iii)); every entry is exercised or marked as work not yet built.
 
 mod coxeter;
 mod fluid;
+mod founding;
 mod imported;
 mod ours;
 mod reciprocity;
@@ -21,6 +36,9 @@ mod refused;
 mod routes;
 mod tensegrity;
 
+pub use founding::{
+    DIMENSION_IS_EXPONENT, HARMONIC_RETURN, HOLONOMIC_CONTENT, LUMINAL_NULL_FLUX, NO_CONSTANT, OPEN_PHYSICS, ORBIT_IS_A_RETURN,
+};
 pub use coxeter::CX1_TREE_CONJUGACY;
 pub use fluid::{F1_NULL_HAS_NO_LENGTH, F2_FLUX_BY_STOKES, F3_FROZEN_IN, F4_QUANTUM_READ, F5_NO_LATTICE_ON_THE_SPHERE};
 pub use imported::{
@@ -29,7 +47,7 @@ pub use imported::{
 };
 pub use ours::{
     A11_HARMONIC_MULTIPOLE_COMPLETENESS, A12_IRREDUCIBLE_INVERSIVE_EXTENT,
-    A13_INVERSIVE_MOMENTUM_DOCKETED, OK1_K_STEP_IS_ONE_ORBIT,
+    A13_INVERSIVE_MOMENTUM_DOCKETED, OK1_K_COUNTS_CLOSED_CYCLES,
 };
 pub use reciprocity::{
     RX1_RECIPROCITY, RX2_EXACTNESS, RX3_FILTRATION, RX4_COMPOSITION, RX5_COHERENCE, RX6_SPLIT, RX7_COHESION,

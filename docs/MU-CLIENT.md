@@ -437,11 +437,19 @@ Six pivots in three conjugate pairs on the mind's own complex (62.1; seal
 authorized 2026-10-11). Each changes the dimension of something the mind
 holds, and each fires where a winding requires it — never as a step:
 
-| axis | pivot / conjugate | what it does | site |
-|---|---|---|---|
-| cells (2 ↔ 1) | **ascend** / **descend** | seal a 1-cycle that closes with a 2-cell / hollow the cell back to its cycle, its fill handed back exactly | `cech/coboundary.rs` (`ascend`, `descend`) |
-| tethers (1 ↔ 0) | **condense** / **drain** | form a tether from the tension between two bodies / dissolve it as the tension relaxes, the strain moved or recorded, never lost (A.8) | `cech/hole.rs` (`condense`), `cech/coboundary.rs` (`drain`) |
-| holes (class in / out) | **puncture** / **seal** | open a hole, injecting a homology class / cap it, killing the class | `cech/hole.rs` (`puncture`, `seal`) |
+| axis | principle (MU-RECURSION §0.0) | pivot / conjugate | what it does | site | live in the mind |
+|---|---|---|---|---|---|
+| cells (degree `d+1 ↔ d`, any `d`: every dimension an exponent) | **holonomic** — a closed loop's composite is its content | **ascend** / **descend** | seal a cycle that closes with a cell / hollow the cell back to its cycle, its fill handed back exactly | `cech/coboundary.rs` (`ascend`, `descend`) | ascend: every cell the meet graph fills (`bubble/pivot.rs::ascend`, from `fill_meet` and the drive); descend: a released vertex's star (`release_vertex`) |
+| tethers (1 ↔ 0) | **luminal** — flux frozen into a tether; reconnection | **condense** / **drain** | form a tether from the tension between two bodies / dissolve it as the tension relaxes, the strain moved or recorded, never lost (A.8) | `cech/hole.rs` (`condense`), `cech/coboundary.rs` (`drain`) | condense: every tether the contemplation forms (`bubble/pivot.rs::tether`; re-formed tension drains first); drain: a released vertex's star |
+| holes (class in / out) | **harmonic** — a class kept until it returns | **puncture** / **seal** | open a hole, injecting a homology class / cap it, killing the class | `cech/hole.rs` (`puncture`, `seal`) | the mind's questions (`bubble/question.rs`) and a curved cell in the drive, through `bubble/pivot.rs` |
+
+Every pivot is applied through `Complex::apply`, its outcome returned whole.
+OWED: drain and descend fire today only where a vertex is released, and at an
+orbit's close by a height window over a side table (`release_relaxed`,
+9f037ead) — a table and a gate, not a field event. They are rebuilt as the
+field's own: drain as LUMINAL reconnection where a tether's flux leaves its
+tube, descend as the HOLONOMIC release where a cell's boundary no longer
+closes, each fired by the field's admission, never polled.
 
 **The board.** The three axes are the complex's own coordinates, read off it
 and never a frame laid on it (`cech/board.rs`: `Pivot`, `Applied`,

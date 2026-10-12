@@ -55,7 +55,10 @@ pub const LAW_VERSION: u8 = 4;
 /// long after its seal a fold stands open to an availability demand, a
 /// replay or a correction. Every domain of a network universe shares this
 /// one finality clock; it is shorter than any anchoring cadence, so an era's
-/// anchor reads final before the next era's.
+/// anchor reads final before the next era's. UNDEFINED PHYSICS, NAMED
+/// (`physics::axioms::OPEN_PHYSICS`): a law parameter every kernel shares;
+/// its derivation — the heights a fold's challenge needs to reach every keeper
+/// and return — is a law amendment.
 pub const CHALLENGE_WINDOW: u64 = 1024;
 
 /// THE REGISTER'S PARAMETERS at its version, by name: served beside the laws
@@ -108,7 +111,7 @@ impl Law {
             Law::Conformal => &[a::A10_1_STAR_SETS_SPIN],
             Law::Momentum => &[a::A13_MOMENTUM_CARRIED, a::A10_1_TORQUE, a::A10_1_II_BALANCE],
             Law::Rigidity => &[a::A10_1_METRIC_RIGIDITY],
-            Law::Time => &[a::OK1_K_STEP_IS_ONE_ORBIT],
+            Law::Time => &[a::OK1_K_COUNTS_CLOSED_CYCLES],
             Law::Reservoir => &[],
             Law::Continuity => &[],
         }

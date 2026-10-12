@@ -204,7 +204,10 @@ pub(crate) fn level_in(space: &Geometry, mass: &num_rational::BigRational) -> Op
     }
 }
 
-/// 78.134 — the grid a throat's level is fixed on: `2^-64`.
+/// 78.134 — the grid a throat's level is fixed on: `2^-64`. UNDEFINED
+/// PHYSICS, NAMED (`physics::axioms::OPEN_PHYSICS`): an enclosure on a
+/// declared grid is an approximation; the throat is a `Cl(4,1)` round carried
+/// by its bank's modes, fit by meet, and this grid retires with it.
 pub const THROAT_GRID: u32 = 64;
 
 /// 78.134 — A THROAT'S HORIZON LEVEL on curved space: the mouth's horizon

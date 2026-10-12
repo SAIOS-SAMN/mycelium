@@ -14,8 +14,10 @@
 /// negentropy) and entropic events (pivots/backlog — disorder) net per lane into
 /// the order flux that paces serving and demand cadence.
 /// THE METABOLIC SCALE IS THE MACHINE'S, NOT OUR MYTHOLOGY (operator-ruled):
-/// only the two-stroke RATIOS are algebra — a full reserve holds eight
-/// expansion strokes; regeneration recovers half an expansion (the governor:
+/// only the RATIOS are algebra, each read off the geometry — a full reserve
+/// holds one expansion stroke per vertex of the sensor base's unit cell
+/// (`2ⁿ`, every dimension an exponent); regeneration recovers half an
+/// expansion, the rotor's double cover (the governor:
 /// a depleted lane needs two strokes per install, so sustained germination
 /// runs at the regeneration pace and bursts genuinely defer); the depletion
 /// floor is one stroke. The SCALE calibrates ONCE at boot from the hardware
@@ -47,14 +49,19 @@ fn read_mem_available_gib() -> Option<u64> {
     Some(kb >> 20)
 }
 
-/// THE TWO-STROKE RATIO (operator-ruled; 78.8's own example of a ratio that
-/// stands with its chain): a full reserve holds this many expansion strokes.
-/// It is algebra, not a scale — the scale is the host's (`reserve_max`).
-pub const STROKES_PER_RESERVE: u64 = 8;
+/// THE APERTURE — EVERY DIMENSION IS AN EXPONENT (founding, MU-RECURSION
+/// §0.0): a full reserve holds one expansion stroke per vertex of the
+/// sensor base's unit cell, `2ⁿ` for its `n` axes — the two grid axes and the
+/// frame axis (`transducer::base`), so `2³`. It was declared `8` (the
+/// "two-stroke ratio", 78.8): the same number, now read off the geometry it
+/// always stood for. It is algebra, not a scale — the scale is the host's
+/// (`reserve_max`).
+pub const STROKES_PER_RESERVE: u64 = 1 << (crate::transducer::base::FRAME_AXIS + 1);
 
 /// THE SMALLEST RESERVE THE RATIO STAYS EXACT ON: a spend of two, so the
-/// regeneration's half of it is a whole unit — derived from the ratio and
-/// the halving, never a number of its own.
+/// regeneration's half of it is a whole unit. The two is the rotor's double
+/// cover — `R` and `−R` are one motion, so a return is earned in halves —
+/// never a number of its own.
 const RESERVE_FLOOR: u64 = STROKES_PER_RESERVE * 2;
 
 /// The calibrated reserve ceiling — measured, not declared: burst capacity
@@ -269,12 +276,11 @@ pub fn digest_ceiling(rtt: u64) -> Lambda {
     from_transport(rtt, reserve_max())
 }
 
-/// Strokes per reserve cycle — the aperture ratio κ: the full reserve over
-/// one spend, which is the two-stroke ratio exactly, since the reserve is a
-/// whole number of spends.
-#[expect(clippy::cast_possible_truncation, reason = "PH1 — the two-stroke ratio, the constant 8, narrowed to the u32 its readers count circuits in")]
+/// Strokes per reserve cycle — the aperture: the full reserve over one
+/// spend, the vertices of the sensor base's unit cell (`STROKES_PER_RESERVE`),
+/// in the `u32` its readers count circuits in.
 pub fn aperture_cycle() -> u32 {
-    STROKES_PER_RESERVE as u32
+    1 << (crate::transducer::base::FRAME_AXIS + 1)
 }
 
 /// One syntropic regeneration — half an expansion, rounded up so exactly two

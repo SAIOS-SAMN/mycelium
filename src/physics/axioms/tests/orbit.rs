@@ -22,7 +22,7 @@ fn close(c: &mut ReceiptChain) -> KStepReceipt {
 /// refused.
 #[test]
 fn k_moves_where_a_cycle_closes_and_nowhere_else() {
-    assert!(!crate::physics::axioms::OK1_K_STEP_IS_ONE_ORBIT.is_empty());
+    assert!(!crate::physics::axioms::OK1_K_COUNTS_CLOSED_CYCLES.is_empty());
     let mut c = ReceiptChain::with_vk([1; 32]);
     assert!(c.open_orbit().is_none(), "nothing acted, nothing to close");
     let a0 = act(&mut c, [1, 0, 2, 0]);
