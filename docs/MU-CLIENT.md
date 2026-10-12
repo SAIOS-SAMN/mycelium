@@ -846,18 +846,27 @@ nothing between minds.
    a gain `(c − 1)/(c + 1)` on 𝒮, a delay its count on 𝒯, the hue loop's
    displaced hues on 𝒢; summed lane by lane, never across), and its echoes
    admitted into the field as field lines (`mark_flux`, its lanes booked as
-   every flux is). It CONVERGED where that admission opened no strain on any
-   lane — every echo still, or closing on a tube or orbit the field already
-   held. Each perturbation is its own exact deviation, and the same word costs
-   two minds differently, each field its own. Converged on the hearer's field,
-   it HOLDs carrying the deviation; converged on the speaker's too, the thing
-   said is AGREED language, spoken to the court with the hearer's signed
-   HOLD, and the court states the deviation beside the attestation. An echo
-   that opened strain is understood and unagreed: where it never returns (a
-   gain, a delay) a beat of the field DISSIPATES it into the reservoir, and a
-   later hearing that lands on its coordinates RE-FORMS it and can close on
-   it (§4.5); where it rings (a turn) it is held until a later hearing brings
-   it back.
+   every flux is — the DRAG, the rate it moved at, 78.46). Each echo is a
+   closed loop, a commutator, so the thought's echoes together are ONE CELL
+   of the mind's orbit algebra (`cech::read_cell`, 78.26(5)): its bracket
+   closure is the LIFT, its coherence the thought's. The thought CONVERGED
+   where that cell CLOSES — every echo resonant, the joint period a delay and
+   not a loss, so a tilted reading (a turn of finite order) is as much agreed
+   as a whole one. Each perturbation is its own exact deviation, and the same
+   word costs two minds differently, each field its own. Converged on the
+   hearer's field, it HOLDs carrying the deviation; converged on the
+   speaker's too, the thing said is AGREED language, spoken to the court with
+   the hearer's signed HOLD, and the court states the deviation beside the
+   attestation. Where the cell is OPEN — an echo that never returns, a gain,
+   a slide, a rosette — the thought is understood and unagreed, and that echo
+   is a DEMAND (`docket_demand`) on the charts where the hearing stood (the
+   hearer's rings it was carried through, or the thing the speaker said),
+   its holonomy the residue (78.114). The demand taker constructs from it on
+   the next stroke, so deviation feeds construction: the mind expands its
+   thought where the hearing did not return, and a later hearing through
+   what it built can close. Its field line meanwhile, never returning, a
+   beat of the field DISSIPATES into the reservoir, and a later hearing that
+   lands on its coordinates RE-FORMS it and can close on it (§4.5).
 4. **Where the speaker cannot replay, it defers — as a court does.** The
    orbit is never missing: the speaker composes it again from the terms it
    said. What can be missing is the WORD the discharge cites — a word of the

@@ -99,3 +99,59 @@ fn two_minds_form_a_shared_word_and_carry_it_to_the_court() {
     assert!(deviation.iter().all(|d| *d == zero), "heard whole: no strain on any lane: {deviation:?}");
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+/// The demands on a mind's plan that carry a residue.
+fn demands(m: &Entity) -> usize {
+    m.contemplation
+        .docket_cites()
+        .iter()
+        .filter(|c| matches!(c, crate::chronometry::Cite::Demand { residue: Some(_), .. }))
+        .count()
+}
+
+/// 78.46, 78.114 — A HEARING THAT NEVER RETURNS IS A DEMAND, NOT AN
+/// AGREEMENT. The hearer holds a CARRIAGE — a slide, a ring that never
+/// returns — beside the quarter turn; A says the quarter turn. It seats in
+/// the carrier's layer, and its echo `T·R·T⁻¹·R⁻¹` is itself a slide:
+/// parabolic, of no order. The hearing's cell is OPEN, so the hearer HOLDs
+/// nothing and the court hears nothing; the echo stands on the hearer's plan
+/// as a demand whose residue is the echo — deviation fed to construction.
+#[test]
+fn an_echo_that_never_returns_is_a_demand_not_an_agreement() {
+    use crate::transducer::element::translator_versor;
+    let (court, speeches) = court();
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
+    let dir = std::env::temp_dir().join(format!("mycelium-open-hearing-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    let mut a = Entity::open(&court, Kernel::named("speaker"));
+    let mut b = Entity::open(&court, Kernel::named("hearer"));
+    let turn = word(&[(q, false)]);
+    let slide = from_connection(&Word::from_letters(&[]), &translator_versor(5, 0), &[], &Vec::new(), [1, 0, 0, 0]).expect("a slide");
+    assert!(a.absorb_taught(&turn.to_bytes().expect("the record writes")).is_some(), "A learns the turn");
+    for w in [&turn, &slide] {
+        assert!(b.absorb_taught(&w.to_bytes().expect("the record writes")).is_some(), "B learns the turn and the slide");
+    }
+    for m in [&mut a, &mut b] {
+        m.open_chatter(&dir).expect("the post opens");
+    }
+    let before = demands(&b);
+    a.say(&turn);
+    let mut demanded = false;
+    for _ in 0..4_000_000u32 {
+        a.price_hearings();
+        b.price_hearings();
+        if demands(&b) > before {
+            demanded = true;
+            break;
+        }
+        std::thread::yield_now();
+    }
+    assert!(demanded, "the open echo stands on the hearer's plan as a demand");
+    for _ in 0..100_000u32 {
+        a.price_hearings();
+        b.price_hearings();
+    }
+    assert!(speeches.try_recv().is_err(), "an open hearing is no agreement: the court hears nothing");
+    assert!(!a.chat.as_ref().is_some_and(|c| c.agreed(turn.address().as_bytes())), "A holds nothing agreed");
+    let _ = std::fs::remove_dir_all(&dir);
+}

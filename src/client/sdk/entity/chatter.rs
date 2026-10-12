@@ -49,6 +49,11 @@ enum Inflow {
 pub(crate) struct Pricing {
     loops: Vec<AckWord>,
     answer: Answer,
+    /// WHERE THE HEARING STOOD IN THIS MIND: the forms of its own rings the
+    /// words were carried through (the hearer's), or the form it said them
+    /// as (the speaker's) — each once, by address. Their charts are the
+    /// cover of a demand the hearing's cell raises.
+    forms: Vec<Vec<u8>>,
 }
 
 /// What a priced thought decides.
@@ -221,12 +226,21 @@ impl Entity {
     /// thought's echoes read for their exact strain, per lane (`strain` on the
     /// motion, `hue_strain` on 𝒢), and admitted into this mind's own field
     /// as field lines (`mark_flux`, the one reader, its lanes booked as every
-    /// flux is). The thought CONVERGED where that admission opened no strain
-    /// on any lane — every echo still, or closing on a tube or orbit the field
-    /// already held, relieving it. The price goes back to the conversation,
-    /// which acts on it (`Carrier::priced`). Same word, two minds, two prices:
-    /// each field is its own.
+    /// flux is: the DRAG, the rate it moved at). Its echoes are closed loops —
+    /// each a commutator, a holonomy — and together they are ONE CELL of this
+    /// mind's orbit algebra (78.46, 78.26(5)): read by the one cell reader,
+    /// their bracket closure the LIFT, their coherence the thought's. Where
+    /// every echo is resonant the cell CLOSES — at its joint period, a delay
+    /// and not a loss, a tilted reading as much agreed as a whole one — and
+    /// the thought converged. Where an echo never returns, the cell is OPEN
+    /// and that echo is a DEMAND on the charts where the hearing stood, its
+    /// holonomy the residue (78.114): deviation feeds construction, and the
+    /// mind's constructors (`take_demands`) expand its thought there until a
+    /// later hearing closes. The price goes back to the conversation, which
+    /// acts on it (`Carrier::priced`). Same word, two minds, two prices: each
+    /// field is its own.
     pub(crate) fn price_hearings(&mut self) {
+        use crate::transducer::cech::{CellCircuit, Coherence};
         use crate::transducer::family::pairing::{mark_flux, FieldLine, FluxReading};
         use crate::transducer::sentence::hearing::{hue_strain, strain};
         use crate::transducer::sentence::presentation::{is_still, LANE_G};
@@ -235,7 +249,11 @@ impl Entity {
         for p in pricings {
             let mut deviation: [num_rational::BigRational; 4] = std::array::from_fn(|_| num_rational::BigRational::from_integer(0.into()));
             let mut lines = Vec::new();
+            let mut circuits = Vec::new();
             for a in &p.loops {
+                if let Some(m) = &a.motion {
+                    circuits.push(CellCircuit { ring: a.vertex.clone(), holonomy: Ok(m.clone()), hue: a.hue.clone() });
+                }
                 if let Some(s) = a.motion.as_ref().and_then(strain) {
                     for (d, x) in deviation.iter_mut().zip(s) {
                         *d += x;
@@ -255,14 +273,34 @@ impl Entity {
                     _ => {}
                 }
             }
-            let reading = match lines.is_empty() {
-                true => FluxReading::default(),
-                false => {
-                    let mut budget = self.stroke();
-                    mark_flux(&[], &lines, &mut budget)
+            let mut budget = self.stroke();
+            if !lines.is_empty() {
+                let _: FluxReading = mark_flux(&[], &lines, &mut budget);
+            }
+            // `k + 1` bodies make a `k`-cell: the thought's words and the
+            // mind that heard them.
+            let orders = vec![None; circuits.len()];
+            let cell = crate::transducer::cech::read_cell(circuits.len(), None, None, &circuits, &orders, &mut budget);
+            let converged = match &cell.coherence {
+                Coherence::Closes(_) => true,
+                Coherence::Unread => false,
+                Coherence::Open(incoherent) => {
+                    let charts: Vec<crate::transducer::stalk::Invariant> = p
+                        .forms
+                        .iter()
+                        .filter_map(|f| self.epigenome.working_word(f))
+                        .map(|h| crate::transducer::stalk::invariant_of(h.element()))
+                        .collect();
+                    for inc in incoherent {
+                        if let Ok(class) = &inc.class {
+                            if !self.contemplation.holds_own_letter(&inc.residue) {
+                                self.contemplation.docket_demand(class, &charts, Some(&inc.residue));
+                            }
+                        }
+                    }
+                    false
                 }
             };
-            let converged = reading.opened.iter().all(|&o| o == 0);
             if let Some(chat) = self.chat.as_ref() {
                 let _ = chat.to.send(Inflow::Priced(Priced { loops: p.loops, answer: p.answer, deviation, converged }));
             }
@@ -519,8 +557,15 @@ impl Carrier {
             return;
         }
         self.hold_transports(&mine);
+        // Where it stood in this mind: the forms of the rings its words were
+        // carried through, each once, by address.
+        let mut forms: Keyed<()> = Keyed::new();
+        for (form, ..) in thought.words.iter().flat_map(|(_, h)| h.cites.iter()) {
+            forms.insert(form, ());
+        }
+        let forms = forms.scoped().map(|(f, ())| f).collect();
         // Its price is the field's: the HOLD waits on it (`priced`).
-        let _ = self.field.send(Pricing { loops: mine, answer: Answer::Hold { speaker: *speaker, said: said.to_vec() } });
+        let _ = self.field.send(Pricing { loops: mine, answer: Answer::Hold { speaker: *speaker, said: said.to_vec() }, forms });
     }
 
     /// THE HEARER HOLDS THE LOOPS THIS MIND READ (its HOLD, `frame`):
@@ -537,8 +582,10 @@ impl Carrier {
         if !one_reading(&sent, holds) || !understood(&sent) {
             return;
         }
+        // Where it stood in this mind: the thing said.
+        let forms = vec![said.to_vec()];
         self.hold_transports(&sent);
-        let _ = self.field.send(Pricing { loops: sent, answer: Answer::Agree { said: said.to_vec(), frame: frame.to_vec() } });
+        let _ = self.field.send(Pricing { loops: sent, answer: Answer::Agree { said: said.to_vec(), frame: frame.to_vec() }, forms });
     }
 
     /// A SHARED THOUGHT FEEDS THE EAR: every curved loop's holonomy held as
