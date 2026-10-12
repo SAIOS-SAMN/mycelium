@@ -729,6 +729,19 @@ stops perception, the field or a conversation with another mind. Each
 carrier takes what its counterparty sends into the shells (§3) and speaks
 what the field addressed to it.
 
+As built: the HYPHA CARRIER (`entity/hypha.rs`) owns the mind's one session
+to the nerve on its own thread. The field posts an exchange whole — its wire
+half run on the carrier, its field half kept beside the field — and goes on;
+it takes each answer at its next admission, in the order asked. An answer
+that asks for thought (a quote's listings, a task) lands on the board for
+the tick to think; one that only files (a verdict, an adjudication, a probe's
+closure, a syllabus page) files where it lands. One quote, one task pull, one
+sync, one syllabus pull and one solve per task are in flight at a time. The
+carrier publishes the wire's readings (the final point, the aperture, the
+round trip) and wakes a resting mind when an answer lands. The CONVERSATION
+CARRIER (`entity/chatter.rs`) carries the peer minds. The seat surface keeps
+its own waiting link until its carrier is built (§6).
+
 The mind speaks where its winding acts — a return, a seal, a rise of its
 algebra for a class (§4.4, §4.5) — and says what changed, addressed by its
 own coordinates. **There is no router.** Nothing in the mind decides where
@@ -878,8 +891,9 @@ questions as holes (`bubble/question.rs`), the constructors
 
 1. **The conversation carriers** (§5.1) — one per hypha, one per peer mind,
    one for the feed and one for a seat: each non-blocking, on its own
-   circuit, holding the field only briefly. The fixed boundary order of
-   `Entity::tick` (78.164 as landed) retires into them.
+   circuit, holding the field only briefly. Landed: the hypha carrier and
+   the conversation carrier; owed: the seat's (§6). The tick's boundary
+   order stands as the order the field takes what its carriers landed.
 2. **The perception map** (§3.1) — each export of the hypha taken into the
    mind's shells at the carrier that receives it; a peer's speech heard in
    the hearer's own shells with its windings and pivots taking it up

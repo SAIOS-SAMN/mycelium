@@ -15,10 +15,11 @@
 use crate::client::sdk::*;
 
 impl Entity {
-    /// ASK THE COURT for every uncited motion of `form`; answers how many
-    /// motions the court's citations compose to exactly. A court that does
-    /// not answer, or answers what does not decode, teaches nothing.
-    pub(crate) fn ask_presentation(&mut self, form: &crate::transducer::sentence::Form) -> usize {
+    /// ASK THE COURT for every uncited motion of `form`; each answer, where it
+    /// lands, teaches the words the mind lacked and keeps the citations that
+    /// compose to the motion exactly. A court that does not answer, or
+    /// answers what does not decode, teaches nothing.
+    pub(crate) fn ask_presentation(&mut self, form: &crate::transducer::sentence::Form) {
         use crate::transducer::sentence::presentation::{is_still, motion_key, vertex_motion};
         use crate::transducer::sentence::Vertex;
         let root = self.epigenome.atlas_root();
@@ -38,9 +39,7 @@ impl Entity {
                 motions.push(m);
             }
         }
-        let voice = self.session.kernel().voice();
-        let mut budget = self.physics.stroke();
-        let mut composed = 0usize;
+        let voice = self.hypha.kernel().voice();
         for m in motions {
             let Some(key) = motion_key(&m) else { continue };
             if self.epigenome.asked.contains(&key) || self.epigenome.presented.contains(&key) {
@@ -53,16 +52,18 @@ impl Entity {
             }
             self.epigenome.asked.insert(&key, ());
             let ask = dialogue::encode_presentation_request(&voice, &m);
-            let Ok(body) = self.session.speak_keyed(&voice, ask) else { continue };
-            let Some((words, answer)) = dialogue::decode_presentation_reply(&body) else { continue };
-            for t in &words {
-                let _ = self.absorb_taught_at(&t.word, Some(t.at), &mut budget);
-            }
-            if answer.read && answer.composes && !answer.cites.is_empty() {
-                self.epigenome.presented.insert(&key, answer.cites);
-                composed += 1;
-            }
+            self.ask(move |s| s.speak_keyed(&voice, ask), move |me, body| {
+                let Ok(body) = body else { return };
+                let Some((words, answer)) = dialogue::decode_presentation_reply(&body) else { return };
+                // The root of this act, the answer's landing (65.5).
+                let mut budget = me.physics.stroke();
+                for t in &words {
+                    let _ = me.absorb_taught_at(&t.word, Some(t.at), &mut budget);
+                }
+                if answer.read && answer.composes && !answer.cites.is_empty() {
+                    me.epigenome.presented.insert(&key, answer.cites);
+                }
+            });
         }
-        composed
     }
 }

@@ -14,6 +14,7 @@ mod demand;
 mod flux;
 mod glue;
 mod height;
+mod hypha;
 mod refinement;
 mod remainders;
 mod rewrite;

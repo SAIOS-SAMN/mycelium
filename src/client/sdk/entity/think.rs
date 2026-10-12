@@ -116,15 +116,15 @@ impl Entity {
         // the speech's own reading (`Utterance`); a refusal there stands as
         // told.
         for word in self.transcribe_closed(budget) {
-            let _ = self.speak_word(&word, budget);
+            let _ = self.speak_word(&word);
         }
         // 78.100 D1 — and the words its sentences taught enter its language
         // the same way: transcribed, stood, spoken.
         for word in taught {
-            let _ = self.speak_word(&word, budget);
+            let _ = self.speak_word(&word);
         }
         if let Some(sentence) = open {
-            let _ = self.speak_with(std::slice::from_ref(&sentence), train, family, budget);
+            self.speak_with(std::slice::from_ref(&sentence), train, family, |_, _| {});
         }
         // 78.109 K1 — THE MIND MAKES ITS LETTER. A word its own sentence taught
         // and no held letter spells is adjoined in its local dialect at once,
@@ -213,7 +213,7 @@ impl Entity {
                 if let Some(e) = crate::transducer::sentence::motion_letter_form(residue, c, &[]) {
                     self.contemplation.own_letter(residue);
                     if !self.already_taught(&e) {
-                        self.stand_crystallized(&e, budget);
+                        self.stand_crystallized(&e);
                     }
                 }
             }
@@ -574,7 +574,7 @@ impl Entity {
         // loop.
         self.adjoin_letters(&adjoined, &mut budget);
         for e in &crystallized {
-            self.stand_crystallized(e, &mut budget);
+            self.stand_crystallized(e);
         }
         // 78.109 C1 — and what the pivot demanded is taken and constructed.
         self.take_demands(&mut budget);
@@ -629,14 +629,14 @@ impl Entity {
             if self.already_taught(&e) {
                 continue;
             }
-            self.stand_crystallized(&e, budget);
+            self.stand_crystallized(&e);
         }
     }
 
     /// A crystallized idea stands in the dialect and is uttered once
     /// (25.2, 24.3): the same vertex already stood or taught is a use, not
     /// a second utterance.
-    fn stand_crystallized(&mut self, e: &Element, budget: &mut crate::physics::Budget) {
+    fn stand_crystallized(&mut self, e: &Element) {
         let addr = e.address();
         if self.already_taught(e) {
             self.unheard.remove(addr.as_bytes());
@@ -649,29 +649,33 @@ impl Entity {
             return;
         }
         // Spoken, refused on the wire, or withheld on a transport error: the
-        // court's reply is the record (its refusal code, its docket).
-        let _ = self.speak(std::slice::from_ref(e), budget);
-        // 37.7 — what no court taught on this utterance (deferred, unread,
-        // unreachable) is said again on a later stroke; a refusal seals it
-        // and it leaves.
-        let sealed = self.sealed.get(addr.as_bytes()).is_some();
-        if self.already_taught(e) || sealed {
-            self.unheard.remove(addr.as_bytes());
-        } else if self.unheard.contains(addr.as_bytes()) || self.unheard.len() < crate::physics::aperture_cycle() as usize {
-            self.unheard.insert(addr.as_bytes(), e.clone());
-        }
+        // court's reply is the record (its refusal code, its docket). 37.7 —
+        // where it lands, what no court taught on this utterance (deferred,
+        // unread, unreachable) is said again on a later stroke; a refusal
+        // seals it and it leaves.
+        let word = e.clone();
+        self.speak(std::slice::from_ref(e), move |me, _| {
+            let sealed = me.sealed.get(addr.as_bytes()).is_some();
+            if me.already_taught(&word) || sealed {
+                me.unheard.remove(addr.as_bytes());
+            } else if me.unheard.contains(addr.as_bytes()) || me.unheard.len() < crate::physics::aperture_cycle() as usize {
+                me.unheard.insert(addr.as_bytes(), word);
+            }
+        });
     }
 
     /// 37.7 — SAY AGAIN WHAT NO COURT TAUGHT: every word this mind spoke that
     /// no court has stood, ratified or sealed is spoken once more, within the
-    /// stroke's budget.
+    /// stroke's budget. A word said again leaves the unheard set while its
+    /// answer is on the way, and returns to it where none taught it.
     fn speak_unheard(&mut self, budget: &mut crate::physics::Budget) {
-        let pending: Vec<Element> = self.unheard.scoped().map(|(_, e)| e.clone()).collect();
-        for e in pending {
+        let pending: Vec<(Vec<u8>, Element)> = self.unheard.scoped().map(|(a, e)| (a, e.clone())).collect();
+        for (a, e) in pending {
             if !budget.spend() {
                 return;
             }
-            self.stand_crystallized(&e, budget);
+            self.unheard.remove(&a);
+            self.stand_crystallized(&e);
         }
     }
 
@@ -688,7 +692,7 @@ impl Entity {
         self.adjoin_letters(&adjoined, budget);
         let mut n = 0usize;
         for e in spoken {
-            if let Ok(Utterance::Spoken) = self.speak_word(&e, budget) { n += 1 }
+            if let Ok(Utterance::Spoken) = self.speak_word(&e) { n += 1 }
         }
         n
     }

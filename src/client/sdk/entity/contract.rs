@@ -113,26 +113,20 @@ impl Entity {
 
     /// UTTER THE CONTRACTED SENTENCES (50.9): each one spoken to the court
     /// with its certificate, over the family and task it was minted for.
-    /// One this mind could not speak stays pending.
-    pub(crate) fn speak_contracted(&mut self) -> Vec<(crate::transducer::address::Address, u8)> {
+    /// One the court could not be reached for is pending again when the
+    /// answer lands.
+    pub(crate) fn speak_contracted(&mut self) {
         let pending = std::mem::take(&mut self.contracted);
-        // The root of this act (the arm's): one stroke for every utterance
-        // it makes (65.5).
-        let mut budget = self.physics.stroke();
-        let mut out = Vec::with_capacity(pending.len());
         for p in pending {
             let addr = p.sentence.address();
             self.contractions.insert(&addr, p.certificate.clone());
-            match self.speak_with(std::slice::from_ref(&p.sentence), &p.train, &p.task, &mut budget) {
-                Ok(codes) => {
-                    if let [code] = codes.as_slice() {
-                        out.push((addr, *code));
-                    }
+            let (sentence, train, task) = (p.sentence.clone(), p.train.clone(), p.task.clone());
+            self.speak_with(std::slice::from_ref(&sentence), &train, &task, move |me, heard| {
+                if heard.is_err() {
+                    me.contracted.push(p);
                 }
-                Err(_) => self.contracted.push(p),
-            }
+            });
         }
-        out
     }
 
     /// UTTER WHAT THIS MIND OWES (21 step 3, chapter 6's depth order): for
@@ -147,18 +141,16 @@ impl Entity {
     /// family — on a backlog that is one stroke spending the thread on
     /// network round trips and nothing else. The queue is durable across
     /// strokes, so what is not taught this pass is taught next (rule 10).
-    pub(crate) fn speak_owed(&mut self) -> Vec<(crate::transducer::address::Address, u8)> {
+    pub(crate) fn speak_owed(&mut self) {
         let mut budget = self.physics.stroke();
         let mut owed = std::mem::take(&mut self.owed);
         let keep = owed.split_off(owed.len().min(budget.remaining()));
         self.owed = keep;
-        let mut out = Vec::with_capacity(owed.len());
         for o in owed {
             if !budget.spend() {
                 self.owed.push(o);
                 continue;
             }
-            let citer = o.citer.address();
             // A cited form this mind sealed cannot be taught to any court:
             // the frame would refuse it here and carry the citer alone.
             if self.sealed.get(o.form.address().as_bytes()).is_some() {
@@ -166,17 +158,14 @@ impl Entity {
                 continue;
             }
             let both = [o.form.clone(), o.citer.clone()];
-            match self.speak_with(&both, &o.train, &o.task, &mut budget) {
-                Ok(codes) => {
-                    if let [_, code] = codes.as_slice() {
-                        out.push((citer, *code));
-                    }
+            let (train, task) = (o.train.clone(), o.task.clone());
+            self.speak_with(&both, &train, &task, move |me, heard| {
+                // The court was not reachable: still owed.
+                if heard.is_err() {
+                    me.owed.push(o);
                 }
-                // The court is not reachable this stroke: still owed.
-                Err(_) => self.owed.push(o),
-            }
+            });
         }
-        out
     }
 
     /// How many cited forms wait to be taught to a court.
@@ -209,7 +198,7 @@ impl Entity {
         let Some(cited) = self.epigenome.working_word(form.as_bytes()).map(|h| h.element().clone()) else {
             return Err(Refused::CitedNotHeld.noted());
         };
-        let courts = self.session.peers().len();
+        let courts = self.hypha.courts();
         let tried = match self.owed_tries.get(addr.as_bytes()) {
             Some(n) => *n,
             None => 0,

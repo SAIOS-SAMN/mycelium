@@ -83,81 +83,14 @@ impl Entity {
         }
     }
 
-    /// Visit every known hypha by a keyed cursor under the stroke Budget.
-    /// Used while the genome is empty so the first syllabus/quote is a fan-out,
-    /// not a seed pin.
-    pub(crate) fn quote_all_hyphae(&mut self, asked: &[crate::transducer::stalk::Invariant]) -> io::Result<YieldQuote> {
-        let peers = self.session.peers();
-        if peers.is_empty() {
-            return self.session.quote(asked);
+    /// ASK THE QUOTE (23.8): the charts this mind is thinking about, each
+    /// with the standing it holds there, read on the field; routed to the
+    /// hyphae that home them and asked on the carrier. One quote is in flight
+    /// at a time, and it lands on the board (`quote_inflow` reads it).
+    pub(crate) fn quote(&mut self) {
+        if self.board.court.quoting {
+            return;
         }
-        let mut budget = self.physics.stroke();
-        let n = peers.len();
-        let Some(start) = self.session.peer_start(n) else { return self.session.quote(asked) };
-        self.session.bump_cursor();
-        let mut last_err = io::Error::new(io::ErrorKind::NotConnected, "no hypha");
-        let mut out: Option<YieldQuote> = None;
-        let asked_st: Vec<(crate::transducer::stalk::Invariant, u8)> = asked
-            .iter()
-            .map(|inv| {
-                (inv.clone(), self.working_atlas().standing_on(inv).as_u8())
-            })
-            .collect();
-        // An ask whose charts do not fit the count the frame writes is not
-        // asked short (47.1).
-        let Some(req) = dialogue::encode_quote_request_standing(&self.session.kernel().voice(), &asked_st)
-        else {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "the ask does not fit the lengths its frame writes",
-            ));
-        };
-        for i in 0..n {
-            if !budget.spend() {
-                break;
-            }
-            let addr = &peers[(start + i) % n];
-            match self.session.exchange_at(addr, req.clone()) {
-                Ok(body) => {
-                    let (height, surface, k, items) = dialogue::decode_quote_reply(&body)
-                        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
-                    let clusters: Vec<Cluster> = items
-                        .into_iter()
-                        .map(|i| Cluster { address: i.addr, mu: i.mu, element: i.element, open: i.open })
-                        .collect();
-                    match &mut out {
-                        None => out = Some(YieldQuote { height, surface, k, clusters }),
-                        Some(q) => {
-                            let mut have: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-                            for h in &q.clusters {
-                                have.insert(&h.address, ());
-                            }
-                            for c in clusters {
-                                if have.contains(&c.address) {
-                                    continue;
-                                }
-                                have.insert(&c.address, ());
-                                q.clusters.push(c);
-                            }
-                        }
-                    }
-                }
-                Err(e) => last_err = e,
-            }
-        }
-        match out {
-            Some(q) => Ok(q),
-            None if last_err.kind() == io::ErrorKind::WouldBlock => Ok(YieldQuote {
-                height: 0,
-                surface: [0; 4],
-                k: 0,
-                clusters: Vec::new(),
-            }),
-            None => Err(last_err),
-        }
-    }
-
-    pub(crate) fn quote(&mut self) -> io::Result<YieldQuote> {
         let thought_charts: Vec<crate::transducer::stalk::Invariant> = {
             let mut charts = Vec::new();
             // THE BUBBLES THIS MIND HOLDS, all of them: the charts it asks
@@ -178,119 +111,170 @@ impl Entity {
             }
             charts
         };
-        let charts = thought_charts;
-        let mut dests: crate::network::nerve::Keyed<Vec<crate::transducer::stalk::Invariant>> =
-            crate::network::nerve::Keyed::new();
+        // Each chart the ask may carry, with the standing this mind holds on
+        // it: the charts it thinks about, the root (an empty atlas is
+        // incident to the root prefix — the first quote reads the book at
+        // depth zero, so a mind need not already hold a word to learn one),
+        // and each held bubble's chart with the volume it routes by.
+        let standing = |inv: &crate::transducer::stalk::Invariant| (inv.clone(), self.working_atlas().standing_on(inv).as_u8());
+        let root = crate::transducer::stalk::Invariant(Vec::new());
+        let empty = self.atlas_is_empty();
+        let plan = QuotePlan {
+            charts: thought_charts.iter().map(standing).collect(),
+            root: vec![standing(&root)],
+            bubbles: self
+                .contemplation
+                .bubbles
+                .scoped()
+                .map(|(_, b)| (standing(&crate::transducer::stalk::invariant(&b.remainder)), b.volume))
+                .collect(),
+            empty,
+            voice: self.hypha.kernel().voice(),
+        };
+        let mut budget = self.physics.stroke();
+        self.board.court.quoting = true;
+        self.ask(move |s| plan.ask(s, &mut budget), |me, q| {
+            me.board.court.quoting = false;
+            me.board.court.quoted = q.ok();
+        });
+    }
+}
+
+/// A CHART AND THE STANDING THE MIND HOLDS ON IT.
+type Standing8 = (crate::transducer::stalk::Invariant, u8);
+
+/// WHAT A QUOTE ASKS, read on the field: the charts the mind thinks about,
+/// the root, each held bubble's chart with its volume, whether the atlas is
+/// empty, and the voice asking.
+struct QuotePlan {
+    charts: Vec<Standing8>,
+    root: Vec<Standing8>,
+    bubbles: Vec<(Standing8, [u64; 4])>,
+    empty: bool,
+    voice: [u8; 32],
+}
+
+impl QuotePlan {
+    /// THE QUOTE ASKED ON THE CARRIER: each bubble's chart routed to the
+    /// hypha that homes it and every hypha asked its charts; where nothing
+    /// routes, or the atlas is empty, every known hypha is asked in turn.
+    /// The listings merge by address.
+    fn ask(self, s: &mut Session, budget: &mut crate::physics::Budget) -> io::Result<YieldQuote> {
+        let mut dests: crate::network::nerve::Keyed<Vec<Standing8>> = crate::network::nerve::Keyed::new();
         let mut dest_order: Vec<String> = Vec::new();
-        let bubbles: Vec<Bubbled> = self
-            .contemplation
-            .bubbles
-            .scoped()
-            .map(|(_, b)| (b.remainder.to_vec(), b.volume))
-            .collect();
-        for (remainder, mag) in &bubbles {
-            let inv = crate::transducer::stalk::invariant(remainder);
+        for ((inv, st), mag) in &self.bubbles {
             // A chart no hypha is known for is not routed to the empty
             // address; it is not routed. The whole ask goes to every hypha
             // below when nothing routes.
-            let Some(dest) = self.session.route_chart(&inv, mag) else {
+            let Some(dest) = s.route_chart(inv, mag) else {
                 continue;
             };
             let dk = dest.as_bytes();
             match dests.get_mut(dk) {
                 Some(held) => {
-                    if !held.iter().any(|h| h == &inv) {
-                        held.push(inv);
+                    if !held.iter().any(|(h, _)| h == inv) {
+                        held.push((inv.clone(), *st));
                     }
                 }
                 None => {
                     dest_order.push(dest.clone());
-                    dests.insert(dk, vec![inv]);
+                    dests.insert(dk, vec![(inv.clone(), *st)]);
                 }
             }
         }
-        if dests.is_empty() || self.atlas_is_empty() {
-            // An empty atlas is incident to the root prefix: the first
-            // quote reads the book at depth zero, so a mind need not
-            // already hold a word to learn one.
-            let root = [crate::transducer::stalk::Invariant(Vec::new())];
-            let asked = if charts.is_empty() || self.atlas_is_empty() {
-                root.as_slice()
-            } else {
-                charts.as_slice()
-            };
-            return self.quote_all_hyphae(asked);
+        if dests.is_empty() || self.empty {
+            let asked = if self.charts.is_empty() || self.empty { &self.root } else { &self.charts };
+            return quote_all_hyphae(s, &self.voice, asked, budget);
         }
         let mut last_err = io::Error::new(io::ErrorKind::NotConnected, "no hypha");
         let mut out: Option<YieldQuote> = None;
         for dest in dest_order {
             // A destination the routing named no charts for is asked the
-            // whole ask below; the empty list is that reading.
-            let invs = match dests.get(dest.as_bytes()) {
-                Some(i) => i.clone(),
-                None => Vec::new(),
+            // whole ask; the empty list is that reading.
+            let asked = match dests.get(dest.as_bytes()) {
+                Some(i) if !i.is_empty() => i.clone(),
+                _ => self.charts.clone(),
             };
-            let asked = if invs.is_empty() { charts.clone() } else { invs };
-            let asked_st: Vec<(crate::transducer::stalk::Invariant, u8)> = asked
-                .iter()
-                .map(|inv| {
-                    (inv.clone(), self.working_atlas().standing_on(inv).as_u8())
-                })
-                .collect();
-            let Some(req) =
-                dialogue::encode_quote_request_standing(&self.session.kernel().voice(), &asked_st)
-            else {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    "the ask does not fit the lengths its frame writes",
-                ));
+            // An ask whose charts do not fit the count the frame writes is
+            // not asked short (47.1).
+            let Some(req) = dialogue::encode_quote_request_standing(&self.voice, &asked) else {
+                return Err(io::Error::new(io::ErrorKind::InvalidInput, "the ask does not fit the lengths its frame writes"));
             };
-            match self.session.exchange_at(&dest, req.clone()).or_else(|e| {
-                if e.kind() == io::ErrorKind::WouldBlock {
-                    self.session.speak_nerve(req)
-                } else {
-                    Err(e)
-                }
-            }) {
-                Ok(body) => {
-                    let (height, surface, k, items) = dialogue::decode_quote_reply(&body)
-                        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
-                    let clusters: Vec<Cluster> = items
-                        .into_iter()
-                        .map(|i| Cluster { address: i.addr, mu: i.mu, element: i.element, open: i.open })
-                        .collect();
-                    match &mut out {
-                        None => {
-                            out = Some(YieldQuote { height, surface, k, clusters });
-                        }
-                        Some(q) => {
-                            let mut have: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-                            for h in &q.clusters {
-                                have.insert(&h.address, ());
-                            }
-                            for c in clusters {
-                                if have.contains(&c.address) {
-                                    continue;
-                                }
-                                have.insert(&c.address, ());
-                                q.clusters.push(c);
-                            }
-                        }
-                    }
-                }
+            let reply = match s.exchange_at(&dest, req.clone()) {
+                Err(e) if e.kind() == io::ErrorKind::WouldBlock => s.speak_nerve(req),
+                other => other,
+            };
+            match reply {
+                Ok(body) => merge_quote(&mut out, &body)?,
                 Err(e) => last_err = e,
             }
         }
-        match out {
-            Some(q) => Ok(q),
-            None if last_err.kind() == io::ErrorKind::WouldBlock => Ok(YieldQuote {
-                height: 0,
-                surface: [0; 4],
-                k: 0,
-                clusters: Vec::new(),
-            }),
-            None => Err(last_err),
+        settle_quote(out, last_err)
+    }
+}
+
+/// Visit every known hypha by a keyed cursor under the stroke Budget.
+/// Used while the genome is empty so the first syllabus/quote is a fan-out,
+/// not a seed pin.
+fn quote_all_hyphae(s: &mut Session, voice: &[u8; 32], asked: &[Standing8], budget: &mut crate::physics::Budget) -> io::Result<YieldQuote> {
+    let peers = s.peers();
+    let Some(start) = s.peer_start(peers.len()) else {
+        let charts: Vec<crate::transducer::stalk::Invariant> = asked.iter().map(|(inv, _)| inv.clone()).collect();
+        return s.quote(&charts);
+    };
+    s.bump_cursor();
+    // An ask whose charts do not fit the count the frame writes is not
+    // asked short (47.1).
+    let Some(req) = dialogue::encode_quote_request_standing(voice, asked) else {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "the ask does not fit the lengths its frame writes"));
+    };
+    let mut last_err = io::Error::new(io::ErrorKind::NotConnected, "no hypha");
+    let mut out: Option<YieldQuote> = None;
+    for i in 0..peers.len() {
+        if !budget.spend() {
+            break;
+        }
+        match s.exchange_at(&peers[(start + i) % peers.len()], req.clone()) {
+            Ok(body) => merge_quote(&mut out, &body)?,
+            Err(e) => last_err = e,
         }
     }
+    settle_quote(out, last_err)
+}
 
+/// ONE HYPHA'S QUOTE MERGED into what the others answered: its listings
+/// joined by address, each once; the first answer's height, surface and K
+/// stand.
+fn merge_quote(out: &mut Option<YieldQuote>, body: &[u8]) -> io::Result<()> {
+    let (height, surface, k, items) =
+        dialogue::decode_quote_reply(body).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
+    let clusters: Vec<Cluster> =
+        items.into_iter().map(|i| Cluster { address: i.addr, mu: i.mu, element: i.element, open: i.open }).collect();
+    match out {
+        None => *out = Some(YieldQuote { height, surface, k, clusters }),
+        Some(q) => {
+            let mut have: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+            for h in &q.clusters {
+                have.insert(&h.address, ());
+            }
+            for c in clusters {
+                if have.contains(&c.address) {
+                    continue;
+                }
+                have.insert(&c.address, ());
+                q.clusters.push(c);
+            }
+        }
+    }
+    Ok(())
+}
+
+/// The merged quote, or — where no hypha answered — the empty quote a full
+/// reflex pool's deferral reads as, else the last refusal.
+fn settle_quote(out: Option<YieldQuote>, last_err: io::Error) -> io::Result<YieldQuote> {
+    match out {
+        Some(q) => Ok(q),
+        None if last_err.kind() == io::ErrorKind::WouldBlock => Ok(YieldQuote { height: 0, surface: [0; 4], k: 0, clusters: Vec::new() }),
+        None => Err(last_err),
+    }
 }

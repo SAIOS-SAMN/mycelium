@@ -33,17 +33,19 @@ impl Entity {
         &mut self.physics
     }
 
-    /// Ask the bootstrap hypha for the rest of the nerve, one peer per spend.
+    /// Ask the bootstrap hypha for the rest of the nerve, one peer per spend,
+    /// on the carrier.
     pub fn discover(&mut self) {
         let mut budget = self.physics.stroke();
-        self.session.discover_budgeted(&mut budget);
+        self.ask(move |s| s.discover_budgeted(&mut budget), |_, ()| {});
     }
 
+    /// THE MIND OPENED toward the hypha at `addr`: its carrier discovers the
+    /// nerve on its own thread before it carries the first ask.
     pub(crate) fn open(addr: &str, kernel: Kernel) -> Self {
-        let mut session = Session::open(addr, kernel);
-        session.discover();
         Entity {
-            session,
+            relay: Session::open(addr, kernel.clone()),
+            hypha: super::hypha::Hypha::open(Session::open(addr, kernel)),
             epigenome: Epigenome::new(),
             refine_cursor: None,
             solve_refused: crate::network::nerve::Keyed::new(),
@@ -97,7 +99,7 @@ impl Entity {
     /// Before the first, the height it was set at boot — never a book's
     /// height read off a quote, which is another coordinate.
     pub(crate) fn now_tu(&self) -> u64 {
-        match self.session.tuniversal() {
+        match self.hypha.tuniversal() {
             Some(p) => p.h,
             None => self.height.get(),
         }
@@ -226,6 +228,6 @@ impl Entity {
 
     #[cfg(test)]
     pub(crate) fn kernel(&self) -> &Kernel {
-        self.session.kernel()
+        self.hypha.kernel()
     }
 }

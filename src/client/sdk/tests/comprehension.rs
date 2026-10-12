@@ -460,8 +460,10 @@ let mut entity = Entity::open("127.0.0.1:1", Kernel::named("once"));
 assert!(!entity.already_taught(&e1));
 entity.remember_spoken(&e1);
 assert!(entity.already_taught(&e2), "same vertex is already taught");
-let mut b = entity.stroke();
-let codes = entity.speak(std::slice::from_ref(&e2), &mut b).expect("no wire on a known vertex");
+let heard = std::rc::Rc::new(std::cell::RefCell::new(None));
+let into = std::rc::Rc::clone(&heard);
+entity.speak(std::slice::from_ref(&e2), move |_, codes| *into.borrow_mut() = Some(codes));
+let codes = heard.borrow_mut().take().expect("heard at once: nothing went on the wire").expect("no wire on a known vertex");
 assert_eq!(codes, vec![dialogue::SPEECH_STOOD]);
 assert_eq!(entity.dialect_len(), 1, "stood once in the dialect");
 }

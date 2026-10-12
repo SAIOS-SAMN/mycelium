@@ -11,6 +11,7 @@ pub mod contract;
 pub mod court;
 pub mod family;
 pub mod feed;
+pub mod hypha;
 pub mod learn;
 pub mod present;
 pub mod quote;

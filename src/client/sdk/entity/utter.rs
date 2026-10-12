@@ -44,6 +44,13 @@ pub(crate) fn read_speech_reply(codes: &mut [u8], got: &[u8]) -> Vec<usize> {
     admitted
 }
 
+/// A SPEECH STOOD: heard already (nothing fresh went on the wire), or the
+/// frame posted with the codes so far and the sentences it asks about.
+enum Posted {
+    Heard(Vec<u8>),
+    Asked { body: Vec<u8>, codes: Vec<u8>, fresh: Vec<usize> },
+}
+
 /// THE STRATUM A WORD'S VERTEX LIES IN: the M1 key of its rotor where it
 /// has letters, its canonical chain where it does not, its address where it
 /// is a sentence.
@@ -255,11 +262,6 @@ impl Entity {
         Concluded { cites, residual, familiar }
     }
 
-    /// PR1 — A PROBE, AND ITS READING, returned.
-    pub(crate) fn probe(&mut self, target: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<dialogue::ProbeReading> {
-        self.session.probe(target, cites)
-    }
-
     /// STAND every sentence in the dialect, and say which of them are
     /// fresh. 24.3 fixes the order — "perceive, think, stand, utter" — and
     /// these are two of those acts, not one: standing is complete before
@@ -291,9 +293,10 @@ impl Entity {
     }
 
     /// SPEAK sentences as one act, bound to no family and no task: a word
-    /// spoken for itself (an axis germ, a crystallized idea).
-    pub(crate) fn speak(&mut self, sentences: &[Element], budget: &mut crate::physics::Budget) -> io::Result<Vec<u8>> {
-        self.speak_with(sentences, &[], &[], budget)
+    /// spoken for itself (an axis germ, a crystallized idea). `heard` takes
+    /// the codes when the court's answer lands.
+    pub(crate) fn speak(&mut self, sentences: &[Element], heard: impl FnOnce(&mut Entity, io::Result<Vec<u8>>) + 'static) {
+        self.speak_with(sentences, &[], &[], heard)
     }
 
     /// SPEAK a family's cohering sentences as one act, naming the task so
@@ -302,17 +305,102 @@ impl Entity {
     /// perceive, think, stand, utter); the genome is frozen. A vertex
     /// already on `taught_up` stands in the dialect and does not go on the
     /// wire. THE SEALED SET IS READ FIRST (50.9): a tape a court refused is
-    /// refused by this mind before any frame is built, and never stood. The
-    /// reply is one adjudication per sentence sent: a stood or ratified
-    /// sentence is filed and its receipt sealed; a refused one is contracted
-    /// (`receive_adjudication`) and its contraction queued.
+    /// refused by this mind before any frame is built, and never stood.
+    ///
+    /// THE SPEECH IS POSTED, NEVER WAITED ON (MU-CLIENT §5.1): the carrier
+    /// speaks it, and where the court's answer lands (`hear_speech`) it is
+    /// one adjudication per sentence sent — a stood or ratified sentence is
+    /// filed and its receipt sealed, a refused one contracted and its
+    /// contraction queued — and `heard` takes the codes. A speech with nothing
+    /// fresh to say is heard at once.
     pub(crate) fn speak_with(
         &mut self,
         sentences: &[Element],
         train: &crate::transducer::family::Family,
         task: &[u8],
-        budget: &mut crate::physics::Budget,
+        heard: impl FnOnce(&mut Entity, io::Result<Vec<u8>>) + 'static,
+    ) {
+        match self.post_speech(sentences, task) {
+            Ok(Posted::Heard(codes)) => heard(self, Ok(codes)),
+            Ok(Posted::Asked { body, codes, fresh }) => {
+                let (sentences, train, task) = (sentences.to_vec(), train.to_vec(), task.to_vec());
+                self.ask(
+                    move |s| s.speak_nerve(body),
+                    move |me, reply| {
+                        let codes = me.hear_speech(&sentences, codes, &fresh, reply, &train, &task);
+                        heard(me, codes);
+                    },
+                );
+            }
+            Err(e) => heard(self, Err(e)),
+        }
+    }
+
+    /// THE COURT'S ANSWER TO A SPEECH, landed: the adjudications read into
+    /// the codes of the sentences sent (`fresh`), each admitted one filed,
+    /// each refused one contracted, each awaiting one owed.
+    fn hear_speech(
+        &mut self,
+        sentences: &[Element],
+        mut codes: Vec<u8>,
+        fresh: &[usize],
+        reply: io::Result<Vec<u8>>,
+        train: &crate::transducer::family::Family,
+        task: &[u8],
     ) -> io::Result<Vec<u8>> {
+        let reply = reply?;
+        // The root of this act, the answer's landing (65.5).
+        let mut budget = self.physics.stroke();
+        let budget = &mut budget;
+        // B7: A REPLY THAT DOES NOT DECODE IS NOT AN OUTCOME. Reading it as
+        // zero adjudications says the court answered and adjudicated
+        // nothing, which is a different fact from "this mind cannot read
+        // what came back" — and it is the second that happened.
+        let Some(adjudicated) = dialogue::decode_speech_reply(&reply) else {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "speech reply does not decode",
+            ));
+        };
+        let got: Vec<u8> = adjudicated.iter().map(|a| a.code()).collect();
+        for i in read_speech_reply(&mut codes, &got) {
+            // The utterance was admitted by the court: an act of this mind
+            // (78.49). A refused utterance is not an admitted one.
+            let Some(e) = sentences.get(i).cloned() else { continue };
+            self.act_on(&e);
+            self.file_taught(&e);
+            self.contractions.remove(&e.address());
+            if let Some(k) = crate::transducer::sentence::from_element_form(&e)
+                .map(|f| crate::transducer::sentence::form_vertex_key(&f))
+            {
+                self.contractions.remove(&k);
+            }
+        }
+        for (j, &i) in fresh.iter().enumerate() {
+            let Some(sentence) = sentences.get(i) else { continue };
+            match adjudicated.get(j) {
+                Some(dialogue::Adjudication::Refused { kind, at, receipt }) => {
+                    self.receive_adjudication(sentence, *kind, at.clone(), *receipt, train, task, budget);
+                }
+                // 21 step 3: the court has not ruled a form this sentence
+                // cited. Nothing is sealed — this is not a refusal — and
+                // the mind owes that court the cited form before the
+                // citer (chapter 6's depth order). The mind HOLDS it,
+                // because it derived through it.
+                Some(dialogue::Adjudication::Awaiting { form }) => {
+                    let _ = self.owe_citation(sentence, form, train, task);
+                }
+                // Stood or ratified: sealed and filed above.
+                Some(_) | None => {}
+            }
+        }
+        Ok(codes)
+    }
+
+    /// The speech stood and framed: heard already where nothing in it is
+    /// fresh, else the frame to post with the codes so far and the sentences
+    /// it asks about.
+    fn post_speech(&mut self, sentences: &[Element], task: &[u8]) -> io::Result<Posted> {
         if sentences.is_empty() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "no sentence"));
         }
@@ -334,9 +422,9 @@ impl Entity {
         }
         let fresh: Vec<usize> = (0..sentences.len()).filter(|&i| codes[i] == 0xff).collect();
         if fresh.is_empty() {
-            return Ok(codes);
+            return Ok(Posted::Heard(codes));
         }
-        let voice = self.session.kernel().voice();
+        let voice = self.hypha.kernel().voice();
         // STD1 3c: a sentence whose record does not write refuses the speech
         // whole, never a speech with that sentence left out.
         let spoken: Option<Vec<dialogue::Spoken>> = fresh
@@ -360,49 +448,7 @@ impl Entity {
         let Some(body) = dialogue::encode_speech_spoken(&voice, task, tu, &spoken) else {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "speech refused: the task's address cannot be framed"));
         };
-        let reply = self.session.speak_nerve(body)?;
-        // B7: A REPLY THAT DOES NOT DECODE IS NOT AN OUTCOME. Reading it as
-        // zero adjudications says the court answered and adjudicated
-        // nothing, which is a different fact from "this mind cannot read
-        // what came back" — and it is the second that happened.
-        let Some(adjudicated) = dialogue::decode_speech_reply(&reply) else {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "speech reply does not decode",
-            ));
-        };
-        let got: Vec<u8> = adjudicated.iter().map(|a| a.code()).collect();
-        for i in read_speech_reply(&mut codes, &got) {
-            // The utterance was admitted by the court: an act of this mind
-            // (78.49). A refused utterance is not an admitted one.
-            let e = sentences[i].clone();
-            self.act_on(&e);
-            self.file_taught(&e);
-            self.contractions.remove(&e.address());
-            if let Some(k) = crate::transducer::sentence::from_element_form(&e)
-                .map(|f| crate::transducer::sentence::form_vertex_key(&f))
-            {
-                self.contractions.remove(&k);
-            }
-        }
-        for (j, &i) in fresh.iter().enumerate() {
-            match adjudicated.get(j) {
-                Some(dialogue::Adjudication::Refused { kind, at, receipt }) => {
-                    self.receive_adjudication(&sentences[i], *kind, at.clone(), *receipt, train, task, budget);
-                }
-                // 21 step 3: the court has not ruled a form this sentence
-                // cited. Nothing is sealed — this is not a refusal — and
-                // the mind owes that court the cited form before the
-                // citer (chapter 6's depth order). The mind HOLDS it,
-                // because it derived through it.
-                Some(dialogue::Adjudication::Awaiting { form }) => {
-                    let _ = self.owe_citation(&sentences[i], form, train, task);
-                }
-                // Stood or ratified: sealed and filed above.
-                Some(_) | None => {}
-            }
-        }
-        Ok(codes)
+        Ok(Posted::Asked { body, codes, fresh })
     }
 
     /// 78.53 — SPEAK WHAT THE COLOUR FIBRE DID. The family's fibre relation
@@ -413,25 +459,17 @@ impl Entity {
     /// from its own copy of the family. A colour word is its relation, so
     /// one already spoken or already in the genome is found by its address
     /// (every colour word shares the motionless vertex; a vertex test would
-    /// call them all one). Answers the court's code, or `None` where the
-    /// family's fibre moved no hue or the word was already said.
-    pub(crate) fn speak_colour(
-        &mut self,
-        task: &[u8],
-        train: &crate::transducer::family::Family,
-        budget: &mut crate::physics::Budget,
-    ) -> Option<u8> {
-        let sigma = crate::transducer::family::fibre_relation(train)?;
-        let word = crate::transducer::element::colour_word(&sigma)?;
+    /// call them all one). Nothing is said where the family's fibre moved no
+    /// hue or the word was already said; the court's answer files itself.
+    pub(crate) fn speak_colour(&mut self, task: &[u8], train: &crate::transducer::family::Family) {
+        let Some(word) = crate::transducer::family::fibre_relation(train).and_then(|s| crate::transducer::element::colour_word(&s)) else {
+            return;
+        };
         let addr = word.address();
         if self.already_taught_addr(addr.as_bytes()) || self.epigenome.holds(addr.as_bytes()) {
-            return None;
+            return;
         }
-        let codes = self.speak_with(std::slice::from_ref(&word), train, task, budget).ok()?;
-        match codes.as_slice() {
-            [code] => Some(*code),
-            _ => None,
-        }
+        self.speak_with(std::slice::from_ref(&word), train, task, |_, _| {});
     }
 
     /// 78.55 — A COLOUR THEOREM: the language's closure, spoken. The ruled
@@ -440,9 +478,9 @@ impl Entity {
     /// first composite it neither holds nor has said is spoken with its
     /// derivation cited — no task, no scene: the court admits it by
     /// composing the two words it cites. Each composition draws one read.
-    /// Answers the court's code, or `None` where the language is closed
-    /// under composition as far as the stroke reached.
-    pub(crate) fn speak_colour_theorem(&mut self, budget: &mut crate::physics::Budget) -> Option<u8> {
+    /// Nothing is said where the language is closed under composition as far
+    /// as the stroke reached.
+    pub(crate) fn speak_colour_theorem(&mut self, budget: &mut crate::physics::Budget) {
         let held: Vec<Element> =
             self.epigenome.genome_words().filter(|w| w.is_colour_word()).map(|w| (**w).clone()).collect();
         let mut theorem: Option<Element> = None;
@@ -464,11 +502,8 @@ impl Entity {
                 }
             }
         }
-        let theorem = theorem?;
-        let codes = self.speak_with(std::slice::from_ref(&theorem), &[], &[], budget).ok()?;
-        match codes.as_slice() {
-            [code] => Some(*code),
-            _ => None,
+        if let Some(theorem) = theorem {
+            self.speak(std::slice::from_ref(&theorem), |_, _| {});
         }
     }
 
@@ -515,7 +550,8 @@ impl Entity {
 
     /// SPEAK A WORD as a one-sentence family. The word enters the dialect
     /// when it stands; the genome receives it only from the syllabus.
-    pub(crate) fn speak_word(&mut self, word: &Element, budget: &mut crate::physics::Budget) -> io::Result<Utterance> {
+    /// `Spoken` is said, posted to the court; its answer files itself.
+    pub(crate) fn speak_word(&mut self, word: &Element) -> io::Result<Utterance> {
         // A thought that still has a remainder is work, not a message: the
         // wire never carries ∂g. A word with a chain is held, not uttered.
         if let [_, ..] = word.sub() {
@@ -529,22 +565,14 @@ impl Entity {
         if word.is_identity() || (!word.is_connection() && word.opened_axes().is_empty()) {
             return Ok(Utterance::Silent);
         }
-        let voice = self.session.kernel().voice();
-        let addr = word.address();
         if self.already_taught(word) {
             return Ok(Utterance::Already);
         }
-        let bytes = word.to_bytes();
-        let codes = self.speak(std::slice::from_ref(word), budget)?;
+        self.speak(std::slice::from_ref(word), |_, _| {});
+        // Filed as said once it is posted, so the next stroke does not say
+        // it again while the court's answer is on its way.
         self.file_taught(word);
-        let _ = (voice, bytes, addr);
-        // ONE SENTENCE WAS SENT, so the reply is one code — the slice says
-        // that rather than a reader taking whichever code came first.
-        match codes.as_slice() {
-            [dialogue::SPEECH_STOOD] | [] => Ok(Utterance::Spoken),
-            [dialogue::SPEECH_REFUSED] => Ok(Utterance::Silent),
-            _ => Ok(Utterance::Spoken),
-        }
+        Ok(Utterance::Spoken)
     }
 
     /// Addresses this mind has uttered (receipt: address at this K).

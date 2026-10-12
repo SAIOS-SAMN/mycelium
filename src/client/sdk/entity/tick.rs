@@ -3,11 +3,13 @@
 // its ticks; what is done, and in what order, is the field's.
 //
 //! THE ORDER IS THE PHYSICS', never a schedule:
-//! 1. ADMISSION — each boundary's inflow, paced by its own dwell: what the
-//!    mind owes the court flows out first; the feed's family, the court's
-//!    open book and its registry's task, the body's mail and the other minds'
-//!    speech flow in, each closed by the law its kind names (family, demand,
-//!    seat, loop) where the reserve can fund it.
+//! 1. ADMISSION — each boundary's inflow, paced by its own dwell: the
+//!    court's answers its carrier landed are taken; what the mind owes the
+//!    court flows out; the feed's family, the court's open book and its
+//!    registry's task, and the body's mail flow in, each closed by the law
+//!    its kind names (family, demand, seat) where the reserve can fund it.
+//!    No exchange is waited on: the court's word arrives on its carrier, the
+//!    other minds' on the conversation's (MU-CLIENT §5.1).
 //! 2. TRANSPORT — the docketed demands constructed and the court's unjudged
 //!    solves asked again.
 //! 3. RELAXATION — where the reserve is short or nothing moved: the field's
@@ -82,8 +84,9 @@ impl Entity {
             }
         }
         let mut outcome = StrokeOutcome::default();
+        // 1. ADMISSION — the court's answers the carrier landed first.
+        self.court_inflow(&mut outcome);
         let occluded = matches!(self.transport(), TransportAperture::Occluded { .. });
-        // 1. ADMISSION.
         let stopping = || stop.load(std::sync::atomic::Ordering::SeqCst);
         if !occluded {
             self.court_owed();

@@ -15,8 +15,7 @@ impl Entity {
         StrokeOutcome::add(&mut outcome.pivoted, &pivoted);
         let _ = self.pivot_thoughts();
         self.language_inflow();
-        let mut budget = self.stroke();
-        let _ = self.propose_retirement(&mut budget);
+        self.propose_retirement();
         self.physics_mut().regenerate();
         self.physics_mut().relax();
     }

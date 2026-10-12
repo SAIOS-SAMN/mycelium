@@ -124,9 +124,10 @@ fn main() {
     while !stop.load(Ordering::SeqCst) {
         let ticked = mind.tick(&stop);
         // X6 — a tick that moved nothing admitted nothing: it draws nothing
-        // and parks for the measured transport, never spinning a core.
+        // and rests until its court's word lands or the measured transport's
+        // park passes, never spinning a core.
         if ticked.moved == [false; 4] {
-            std::thread::sleep(mycelium::physics::idle_park(mind.transport_rtt()));
+            mind.rest();
         }
     }
     if let Err(why) = mind.save_kept_genome() {

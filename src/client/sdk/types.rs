@@ -507,11 +507,14 @@ pub struct Epigenome {
     >,
 }
 
-/// THE ENTITY — a kernel identity with its genome/epigenome, conversing through
-/// a session: it speaks sentences, learns what the mesh teaches (comprehending,
-/// not storing), asks quotes, and probes listings.
+/// THE ENTITY — a kernel identity with its genome/epigenome, conversing with
+/// its court through the hypha carrier (MU-CLIENT §5.1): it speaks sentences,
+/// learns what the mesh teaches (comprehending, not storing), asks quotes, and
+/// probes listings, and never waits on the answer.
 pub struct Entity {
-    pub(crate) session: Session,
+    pub(crate) hypha: super::entity::hypha::Hypha,
+    /// The seat surface's own link to the hypha (`Entity::relay`).
+    pub(crate) relay: Session,
     pub epigenome: Epigenome,
     /// Rotating cursor for the refinement probe — one genome word examined
     /// per stroke, so the compression search is metabolic, never a sweep.

@@ -6,7 +6,9 @@
 //! The pace is the court's: a quote is asked when the language moved, the
 //! book rose, or a lane's dwell elapsed — a receipt count, never a timer —
 //! and the T lane neither holds the mind back nor releases it (C4). An
-//! occluded wire asks nothing; the answer to impedance is patience.
+//! occluded wire asks nothing; the answer to impedance is patience. Every
+//! exchange rides the hypha carrier (MU-CLIENT §5.1): the field asks and
+//! goes on, and takes the answer at its next admission.
 
 use crate::client::sdk::*;
 use crate::physics::{Physics, StrokeOutcome};
@@ -14,7 +16,11 @@ use crate::transducer::element::measure_lanes;
 
 /// THE COURT'S PACE, carried from tick to tick: the language and the book
 /// height the court was last asked at, the surface it returned and the dwell
-/// left on each lane, and where the sync last stood.
+/// left on each lane, and where the sync last stood; and on the carrier
+/// (MU-CLIENT §5.1), the asks in flight — one quote, one task pull, one sync,
+/// one syllabus, a solve per task — and what landed for the tick to think:
+/// the quote, the task, and what the probes the quote's demands raised
+/// closed and pressed.
 #[derive(Default)]
 pub(crate) struct CourtPace {
     last_lang: Option<(usize, usize, usize)>,
@@ -24,6 +30,14 @@ pub(crate) struct CourtPace {
     pub(crate) dwell_remaining: [u64; 4],
     last_synced_lang: Option<(usize, usize, usize)>,
     last_synced_height: u64,
+    pub(crate) quoting: bool,
+    pub(crate) quoted: Option<YieldQuote>,
+    pub(crate) pulling: bool,
+    pub(crate) task: Option<crate::anastome::dialogue::TaskEnvelope>,
+    pub(crate) syncing: bool,
+    pub(crate) schooling: bool,
+    pub(crate) solving: crate::network::nerve::Keyed<()>,
+    probed: StrokeOutcome,
 }
 
 impl CourtPace {
@@ -39,11 +53,20 @@ impl CourtPace {
 }
 
 impl Entity {
-    /// 50.9, 21 step 3 — WHAT THE MIND OWES THE COURT flows out first: the
+    /// THE COURT'S WORD FLOWS IN FIRST: every answer the carrier landed is
+    /// taken, in the order it was asked, and what the probes it answered
+    /// closed and pressed is this tick's.
+    pub(crate) fn court_inflow(&mut self, outcome: &mut StrokeOutcome) {
+        self.take_answers();
+        let probed = std::mem::take(&mut self.board.court.probed);
+        StrokeOutcome::add(&mut outcome.closed, &probed.closed);
+    }
+
+    /// 50.9, 21 step 3 — WHAT THE MIND OWES THE COURT flows out: the
     /// sentences its refusals contracted, and the forms a court waits on.
     pub(crate) fn court_owed(&mut self) {
-        let _ = self.speak_contracted();
-        let _ = self.speak_owed();
+        self.speak_contracted();
+        self.speak_owed();
     }
 
     /// THE FEED'S NEXT FAMILY ENTERS, paced as the quote is, where the
@@ -72,39 +95,42 @@ impl Entity {
         }
     }
 
-    /// THE OPEN BOOK FLOWS IN, where the court is due to be asked: each
-    /// listing's demands are pressure at their charts, and a demand a held
-    /// closed form reproduces is answered — the probe flows out, and a
-    /// closure relieves the pressure it stood for and builds order. A demand
+    /// THE OPEN BOOK FLOWS IN: a quote that landed is read — each listing's
+    /// demands are pressure at their charts, and a demand a held closed form
+    /// reproduces is answered: the probe flows out, and where its closure
+    /// lands it relieves the pressure it stood for and builds order. A demand
     /// on a lane the reserve cannot fund waits; a page beyond one tick is
-    /// answered across quotes. Then, while the mind holds no language, the
-    /// syllabus is asked for.
+    /// answered across quotes. Where the court is due to be asked again, the
+    /// quote is asked (the language moved, the book rose, or a dwell
+    /// elapsed). Then, while the mind holds no language, the syllabus is
+    /// asked for.
     pub(crate) fn quote_inflow(&mut self, outcome: &mut StrokeOutcome) {
         let lang = self.atlas_standing_counts();
+        if let Some(q) = self.board.court.quoted.take() {
+            let pace = &mut self.board.court;
+            pace.last_lang = Some(lang);
+            // 23.8: a height read off a reply only advances.
+            pace.last_quoted_height = pace.last_quoted_height.max(q.height);
+            pace.last_height = pace.last_height.max(q.height);
+            pace.last_pressure = q.surface;
+            pace.dwell_remaining = q.surface;
+            self.answer_demands(&q.clusters, outcome);
+        }
         let pace = &self.board.court;
         let due = pace.last_lang != Some(lang) || pace.last_height > pace.last_quoted_height || pace.dwell_elapsed();
         if due {
-            if let Ok(q) = self.quote() {
-                let pace = &mut self.board.court;
-                pace.last_lang = Some(lang);
-                // 23.8: a height read off a reply only advances.
-                pace.last_quoted_height = pace.last_quoted_height.max(q.height);
-                pace.last_height = pace.last_height.max(q.height);
-                pace.last_pressure = q.surface;
-                pace.dwell_remaining = q.surface;
-                self.answer_demands(&q.clusters, outcome);
-            }
+            self.quote();
         }
         if crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty()
             && (self.epigenome.genome_len() == 0 || self.epigenome.atlas_is_empty())
         {
-            let _ = self.pull_syllabus();
-            let _ = self.take_promoted();
+            self.pull_syllabus();
         }
     }
 
     /// EACH DEMAND OF EACH LISTING, answered by the held closed form that
-    /// reproduces it on its own chart (50.5, L8r): one spend per form spoken.
+    /// reproduces it on its own chart (50.5, L8r): one spend per form spoken,
+    /// its probe's closure booked where it lands.
     fn answer_demands(&mut self, clusters: &[Cluster], outcome: &mut StrokeOutcome) {
         let mut spend = self.stroke();
         for cluster in clusters {
@@ -130,17 +156,21 @@ impl Entity {
                     let target = crate::transducer::sentence::demand_at(cluster.address.as_bytes(), demand);
                     let cite = crate::anastome::dialogue::CiteWire { addr: word.address(), standing: st.as_u8(), transport: crate::transducer::element::identity_versor(), body: links.clone() };
                     StrokeOutcome::add(&mut outcome.uttered, &mag);
-                    if let Ok(reading) = self.probe(&target, std::slice::from_ref(&cite)) {
-                        match reading.closure {
-                            crate::anastome::dialogue::ProbeClosure::Closed => {
-                                self.physics_mut().relieve(&mag);
-                                self.physics_mut().syntropy(&mag);
-                                StrokeOutcome::add(&mut outcome.closed, &mag);
+                    self.ask(
+                        move |s| s.probe(&target, std::slice::from_ref(&cite)),
+                        move |me, reading| {
+                            let Ok(reading) = reading else { return };
+                            match reading.closure {
+                                crate::anastome::dialogue::ProbeClosure::Closed => {
+                                    me.physics_mut().relieve(&mag);
+                                    me.physics_mut().syntropy(&mag);
+                                    StrokeOutcome::add(&mut me.board.court.probed.closed, &mag);
+                                }
+                                crate::anastome::dialogue::ProbeClosure::Residual(_) => me.physics_mut().bump(&mag),
+                                crate::anastome::dialogue::ProbeClosure::Gone | crate::anastome::dialogue::ProbeClosure::Nothing => {}
                             }
-                            crate::anastome::dialogue::ProbeClosure::Residual(_) => self.physics_mut().bump(&mag),
-                            crate::anastome::dialogue::ProbeClosure::Gone | crate::anastome::dialogue::ProbeClosure::Nothing => {}
-                        }
-                    }
+                        },
+                    );
                     break;
                 }
             }
@@ -153,16 +183,20 @@ impl Entity {
     /// motion its form could not cite put to the court (78.160 P2), the
     /// tests spoken through the rule, and the solve — the rule minted at its
     /// span — flowing out to the court.
+    /// The task that landed is thought this tick; the next is asked for now,
+    /// so it is on its way while this one is thought.
     pub(crate) fn task_inflow(&mut self, outcome: &mut StrokeOutcome, stop: &std::sync::atomic::AtomicBool) {
-        let Ok(Some(crate::anastome::dialogue::TaskEnvelope { id, train, tests })) = self.pull_task() else { return };
+        let landed = self.board.court.task.take();
+        self.pull_task();
+        let Some(crate::anastome::dialogue::TaskEnvelope { id, train, tests }) = landed else { return };
         let mag = super::family::family_magnitude(&train);
         if crate::economy::lanes_short(&self.physics().reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
             self.physics_mut().bump(&mag);
             StrokeOutcome::add(&mut outcome.fed, &mag);
         }
+        self.speak_colour(&id, &train);
         let mut colour = self.stroke();
-        let _ = self.speak_colour(&id, &train, &mut colour);
-        let _ = self.speak_colour_theorem(&mut colour);
+        self.speak_colour_theorem(&mut colour);
         let mut t = self.extract_family(&id, &train);
         if !t.frames.is_empty() {
             for (a, b) in &train {
@@ -181,7 +215,7 @@ impl Entity {
             self.withhold_unextracted(&train, &id);
             return;
         };
-        let _ = self.ask_presentation(&rule.form);
+        self.ask_presentation(&rule.form);
         if let Some(uttered) = self.speak_form(&rule, &train, &t.frames, &id, &mut t.budget) {
             StrokeOutcome::add(&mut outcome.uttered, &uttered);
         }
@@ -202,9 +236,8 @@ impl Entity {
             return;
         }
         self.discover();
-        let _ = self.pull_syllabus();
-        let _ = self.take_promoted();
-        let _ = self.sync_genome();
+        self.pull_syllabus();
+        self.sync_genome();
         let pace = &mut self.board.court;
         pace.last_synced_lang = Some(lang);
         pace.last_synced_height = pace.last_height;

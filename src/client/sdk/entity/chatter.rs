@@ -132,7 +132,7 @@ impl Entity {
     /// rendezvous `dir` under this mind's voice, and the carrier that
     /// converses on its own thread, with its own link to this mind's court.
     pub fn open_chatter(&mut self, dir: &std::path::Path) -> std::io::Result<String> {
-        let Some(key) = self.session.kernel().signer().cloned() else {
+        let Some(key) = self.hypha.kernel().signer().cloned() else {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "a mind that signs nothing says nothing"));
         };
         let (to, rx) = channel::<Inflow>();
@@ -141,7 +141,7 @@ impl Entity {
             let _ = deliver.send(Inflow::Frame(f));
         })?;
         let addr = post.addr().to_string();
-        let voice = self.session.kernel().voice();
+        let voice = self.hypha.kernel().voice();
         chatter::publish(dir, &voice, &addr)?;
         #[cfg(test)]
         let agreed = std::sync::Arc::new(std::sync::Mutex::new(Keyed::new()));
@@ -150,9 +150,9 @@ impl Entity {
             key,
             dir: dir.to_path_buf(),
             ear: self.epigenome.ear.clone(),
-            court: Session::open(&self.session.addr, self.session.kernel().clone()),
+            court: Session::open(self.hypha.addr(), self.hypha.kernel().clone()),
             k: self.own_k(),
-            point: self.session.tuniversal(),
+            point: self.hypha.tuniversal(),
             union: Keyed::new(),
             thoughts: Keyed::new(),
             waiting: Keyed::new(),
@@ -190,7 +190,7 @@ impl Entity {
     /// (or once it has waited an aperture cycle unmet). `false` where there
     /// is no conversation or no peer: the caller speaks it as before.
     pub(crate) fn hold_for_union(&mut self, e: &Element) -> bool {
-        let voice = self.session.kernel().voice();
+        let voice = self.hypha.kernel().voice();
         let has_peers = self.chat.as_ref().is_some_and(|c| !chatter::peers(&c.dir, &voice).is_empty());
         if !has_peers {
             return false;
@@ -207,7 +207,7 @@ impl Entity {
     /// (what a lapse is read against) and the final point its frames carry.
     pub(crate) fn tell_conversation_the_clock(&mut self) {
         let k = self.own_k();
-        let point = self.session.tuniversal();
+        let point = self.hypha.tuniversal();
         let Some(chat) = self.chat.as_mut() else { return };
         if chat.told == Some(k) {
             return;

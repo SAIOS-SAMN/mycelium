@@ -212,9 +212,11 @@ pub struct SeatName {
 }
 
 impl super::Entity {
-    /// The session this entity speaks through — the seat surface's mouth.
+    /// The seat surface's own link to the hypha — its mouth, apart from the
+    /// court's carrier; it waits on its answers until the seat has its own
+    /// carrier (MU-CLIENT §6).
     pub(crate) fn relay(&self) -> &super::Session {
-        &self.session
+        &self.relay
     }
 
     /// 78.146 — THE MIND AT A SEAT it sits, written: taken from its

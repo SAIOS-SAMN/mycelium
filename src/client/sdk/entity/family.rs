@@ -108,20 +108,9 @@ impl Entity {
             self.remember_spoken(&word);
             return Some(word.magnitude());
         }
-        match self.speak_with(std::slice::from_ref(&word), train, family, budget) {
-            Ok(codes) if codes.as_slice() == [crate::anastome::dialogue::SPEECH_REFUSED] => {
-                trace::trace_bytes("speak/refused", trace::Wrote::Key(word.address().as_bytes()), None, word.description().len() as i128);
-                None
-            }
-            Ok(_) => {
-                trace::trace_bytes("speak/form", trace::Wrote::Key(word.address().as_bytes()), None, word.description().len() as i128);
-                Some(word.magnitude())
-            }
-            Err(_) => {
-                trace::trace("speak/wire", trace::Wrote::Nothing, None);
-                None
-            }
-        }
+        trace::trace_bytes("speak/form", trace::Wrote::Key(word.address().as_bytes()), None, word.description().len() as i128);
+        self.speak_with(std::slice::from_ref(&word), train, family, |_, _| {});
+        Some(word.magnitude())
     }
 
     /// 50.5 — THE SENTENCE WITH ITS DEMANDS, uttered whole: minted at its
@@ -146,21 +135,20 @@ impl Entity {
             self.remember_spoken(&word);
             return Some(word.magnitude());
         }
-        match self.speak_with(std::slice::from_ref(&word), train, family, budget) {
-            Ok(codes) if codes.as_slice() == [crate::anastome::dialogue::SPEECH_REFUSED] => {
-                self.hold_perceived(form.clone(), frames, train, remainders, family, budget);
-                None
+        // Where the court's answer lands: a sentence it took is order built,
+        // booked by its own magnitude (78.69 fix 3); one refused, or the court
+        // unreached, is held as the open work it is.
+        let mag = word.magnitude();
+        let held = (form.clone(), frames.clone(), train.to_vec(), remainders.to_vec(), family.to_vec());
+        self.speak_with(std::slice::from_ref(&word), train, family, move |me, heard| match heard {
+            Ok(codes) if codes.as_slice() != [crate::anastome::dialogue::SPEECH_REFUSED] => me.physics_mut().syntropy(&mag),
+            _ => {
+                let (form, frames, train, remainders, family) = held;
+                let mut budget = me.physics.stroke();
+                me.hold_perceived(form, &frames, &train, &remainders, &family, &mut budget);
             }
-            Ok(_) => {
-                let mag = word.magnitude();
-                self.physics_mut().syntropy(&mag);
-                Some(mag)
-            }
-            Err(_) => {
-                self.hold_perceived(form.clone(), frames, train, remainders, family, budget);
-                None
-            }
-        }
+        });
+        Some(mag)
     }
 
     /// A family the form engine does not extract is withheld: each pair its

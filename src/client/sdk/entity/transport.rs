@@ -9,11 +9,15 @@ impl Entity {
     /// I do?": measured impedance, adapted pacing, and an inward turn under
     /// occlusion.
     pub(crate) fn transport(&self) -> TransportAperture {
-        self.session.transport()
+        self.hypha.transport()
     }
 
     pub fn transport_rtt(&self) -> Option<u64> {
-        self.session.rtt()
+        self.hypha.rtt()
     }
 
+    /// REST until the court's word lands or the idle park passes.
+    pub fn rest(&self) {
+        self.hypha.rest(self.transport_rtt());
+    }
 }

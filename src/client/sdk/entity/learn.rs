@@ -6,24 +6,39 @@ use crate::client::sdk::*;
 impl Entity {
     /// PULL a signed work envelope from the hypha's authoritative registry —
     /// the client never arbitrates raw corpus; the server decides what is
-    /// useful work. None = the book is settled (or no registry).
-    pub(crate) fn pull_task(&self) -> io::Result<Option<dialogue::TaskEnvelope>> {
-        let voice = self.session.kernel().voice();
-        let body = self.session.speak_keyed(&voice, dialogue::encode_task_request(&voice))?;
-        if body.is_empty() {
-            return Ok(None);
+    /// useful work. One pull is in flight at a time; the envelope lands on
+    /// the board for the tick to think (`task_inflow`), none where the book
+    /// is settled.
+    pub(crate) fn pull_task(&mut self) {
+        if self.board.court.pulling {
+            return;
         }
-        Ok(dialogue::decode_task_envelope(&body))
+        self.board.court.pulling = true;
+        let voice = self.hypha.kernel().voice();
+        self.ask(
+            move |s| s.speak_keyed(&voice, dialogue::encode_task_request(&voice)),
+            |me, body: io::Result<Vec<u8>>| {
+                me.board.court.pulling = false;
+                me.board.court.task = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b));
+            },
+        );
     }
 
     /// 78.146 — PULL ONE TASK BY ITS CITATION (wire v1.2): the envelope of
     /// the task the 32 bytes name, routed as its solve is (by the citation),
     /// or `None` where the registry holds no such task. A reply that does not
-    /// decode is an error by name.
-    pub(crate) fn pull_task_by_id(&self, citation: &[u8; 32]) -> io::Result<Option<dialogue::TaskEnvelope>> {
-        let voice = self.session.kernel().voice();
-        let act = dialogue::encode_task_by_id(&voice, citation);
-        let body = self.session.speak_keyed(citation, act)?;
+    /// decode is an error by name. The seat waits on it (MU-CLIENT §6: the
+    /// seat's own carrier is owed).
+    pub(crate) fn pull_task_by_id(&mut self, citation: &[u8; 32]) -> io::Result<Option<dialogue::TaskEnvelope>> {
+        let voice = self.hypha.kernel().voice();
+        let citation = *citation;
+        let act = dialogue::encode_task_by_id(&voice, &citation);
+        let (tx, rx) = std::sync::mpsc::channel();
+        self.ask(move |s| s.speak_keyed(&citation, act), move |_, body| {
+            let _ = tx.send(body);
+        });
+        self.settle();
+        let body = rx.try_recv().map_err(|_| io::Error::new(io::ErrorKind::NotConnected, "the hypha carrier is gone"))??;
         if body.is_empty() {
             return Ok(None);
         }
@@ -48,7 +63,7 @@ impl Entity {
     ///
     /// On the fleet (epoch 106) each voice sent ~600 solves the court
     /// refused, the same rules round after round, with none of these read.
-    /// Answers the court's verdict where one was asked for.
+    /// The verdict files itself where it lands.
     pub(crate) fn solve_task(
         &mut self,
         id: &[u8; 32],
@@ -56,7 +71,7 @@ impl Entity {
         outputs: &[Grid],
         rule: Option<&Element>,
         budget: &mut crate::physics::Budget,
-    ) -> Option<(u8, [u64; 4])> {
+    ) -> Option<()> {
         let rule = rule?;
         // 78.142 — THE WORD THAT CROSSES TO THE WITHHELD PAIRS carries no
         // overlap between two of its TRAINING frames (`rule::crossing`): the
@@ -87,12 +102,7 @@ impl Entity {
             }
             Err(_) => return None,
         }
-        let verdict = self.submit_solve_rule(id, outputs, Some(rule)).ok()?;
-        // A refusal is remembered against the rule it refused, one per
-        // task: the carrier is bounded by the tasks, and a new rule for the
-        // task replaces it.
-        self.file_verdict(id, rule, outputs, verdict.0);
-        Some(verdict)
+        self.submit_solve_rule(id, outputs, rule).ok()
     }
 
     /// The verdict filed: a closure clears the task, a refusal is remembered
@@ -132,11 +142,11 @@ impl Entity {
                 self.unread_solves.remove(&k);
                 return;
             };
-            match self.submit_solve_rule(&id, &outputs, Some(&rule)) {
-                Ok((code, _)) => self.file_verdict(&id, &rule, &outputs, code),
-                // The court is not reachable this stroke: still unread.
-                Err(_) => {}
+            // A solve whose verdict is on the way is not asked again.
+            if self.board.court.solving.contains(&id) {
+                return;
             }
+            let _ = self.submit_solve_rule(&id, &outputs, &rule);
         }
     }
 
@@ -144,83 +154,101 @@ impl Entity {
     /// court replays the RULE on its withheld pairs and pays what it
     /// discharges (the actions' physics): (SOLVE_BOUNTY, μ⃗) on the task's
     /// first closure, (SOLVE_FLOOR, 0⃗) on a closure again, (SOLVE_NOTHING,
-    /// 0⃗) with the refusal otherwise. A solve without its rule is refused: a
-    /// raster is no proof of a motion.
-    pub(crate) fn submit_solve_rule(
-        &mut self,
-        id: &[u8; 32],
-        outputs: &[Grid],
-        rule: Option<&Element>,
-    ) -> io::Result<(u8, [u64; 4])> {
+    /// 0⃗) with the refusal otherwise. The verdict is filed where it lands
+    /// (`file_verdict`); a court not reached leaves the solve as it stood.
+    pub(crate) fn submit_solve_rule(&mut self, id: &[u8; 32], outputs: &[Grid], rule: &Element) -> io::Result<()> {
         // 78.141 — a solve names its payee by the voice's signature: a
         // kernel seated without its key sends none.
-        let Some(key) = self.session.kernel().signer().cloned() else {
+        let Some(key) = self.hypha.kernel().signer().cloned() else {
             return Err(io::Error::new(io::ErrorKind::PermissionDenied, "a kernel seated without its key signs no solve"));
         };
         // A rule whose record does not write is not sent as no rule (STD1 3c).
-        let bytes = match rule {
-            Some(e) => Some(e.to_bytes().ok_or_else(|| {
-                io::Error::new(io::ErrorKind::InvalidInput, "the rule's record passes a length its field writes")
-            })?),
-            None => None,
-        };
+        let bytes = rule.to_bytes().ok_or_else(|| {
+            io::Error::new(io::ErrorKind::InvalidInput, "the rule's record passes a length its field writes")
+        })?;
         // A solve that does not fit the lengths the frame writes is not
         // sent short: it is not sent (47.1).
-        let Some(act) = dialogue::encode_solve_with_rule(&key, id, outputs, bytes.as_deref())
-        else {
+        let Some(act) = dialogue::encode_solve_with_rule(&key, id, outputs, Some(&bytes)) else {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "solve does not fit the lengths its frame writes",
             ));
         };
-        let body = self.session.speak_keyed(id, act)?;
-        // THE VOICE HEARS ITS VERDICT (the actions' physics): what the court
-        // read of its rule — closed first, closed again, or refused with the
-        // replay's reason and kind. A receipt that does not decode says
-        // nothing was solved and nothing was paid, which is what the solve
-        // earned. 78.153c — the verdict SAID, one typed line: the task, the
-        // code by name, the refusal's kind and reason.
-        Ok(match dialogue::decode_solve_verdict(&body) {
-            Some((code, mu, refusal, modes)) => {
-                eprintln!("  {}", verdict_line(id, code, refusal.as_ref()));
-                if let Some(m) = &modes {
-                    eprintln!("  solve modes · {}", m.print());
+        let (id, rule, outputs) = (*id, rule.clone(), outputs.to_vec());
+        self.board.court.solving.insert(&id, ());
+        self.ask(move |s| s.speak_keyed(&id, act), move |me, body: io::Result<Vec<u8>>| {
+            me.board.court.solving.remove(&id);
+            // The court is not reachable: the solve stands as it stood.
+            let Ok(body) = body else { return };
+            // THE VOICE HEARS ITS VERDICT (the actions' physics): what the
+            // court read of its rule — closed first, closed again, or refused
+            // with the replay's reason and kind. A receipt that does not
+            // decode says nothing was solved and nothing was paid, which is
+            // what the solve earned. 78.153c — the verdict SAID, one typed
+            // line: the task, the code by name, the refusal's kind and reason.
+            let code = match dialogue::decode_solve_verdict(&body) {
+                Some((code, _, refusal, modes)) => {
+                    eprintln!("  {}", verdict_line(&id, code, refusal.as_ref()));
+                    if let Some(m) = &modes {
+                        eprintln!("  solve modes · {}", m.print());
+                    }
+                    code
                 }
-                (code, mu)
-            }
-            None => (dialogue::SOLVE_NOTHING, [0; 4]),
-        })
+                None => dialogue::SOLVE_NOTHING,
+            };
+            // A refusal is remembered against the rule it refused, one per
+            // task: the carrier is bounded by the tasks, and a new rule for
+            // the task replaces it.
+            me.file_verdict(&id, &rule, &outputs, code);
+        });
+        Ok(())
     }
 
-    /// PULL THE SYLLABUS — the court-ratified teaching stream, served from
-    /// this voice's cursor on the hypha (push-on-contact). Every received
-    /// word folds into the genome by address (Epigenome::learn), so both
-    /// new vocabulary and rebound anchors propagate; the dialect then
-    /// re-resolves against the higher-order language on the next study.
-    /// Returns how many words were learned this contact.
     /// THE SHEAF SYNC (Q3): converge this genome on the hypha's language by
     /// stratum. The hypha's section digests over the atlas arrive; the
     /// genome measures its own over the same cover; only the discordant
     /// strata are fetched, each with this genome's have-list, so only the
     /// lacking words travel (their sections and connection riding along).
     /// Strata per contact follow the two-stroke ratio; a wide stratum
-    /// converges over successive contacts. Returns the words learned.
-    pub(crate) fn sync_genome(&mut self) -> io::Result<usize> {
-        use crate::transducer::sheaf;
-        let voice = self.session.kernel().voice();
-        let body = self.session.speak_keyed(&voice, dialogue::encode_digests_request(&voice))?;
-        // A4: the digest is the roots, so a hypha whose roots moved is
-        // asked for its cover at the address this voice's own key routed
-        // to -- the same hypha that answered, by the same route.
-        if self.session.absorb_digest(&body) {
-            if let Some(addr) = self.session.route(&voice) {
-                self.session.fetch_cover(&addr);
-            }
+    /// converges over successive contacts. One sync is in flight at a time:
+    /// the digest asked, the discordant strata fetched where it lands, the
+    /// fetched words absorbed where that lands.
+    pub(crate) fn sync_genome(&mut self) {
+        if self.board.court.syncing {
+            return;
         }
+        self.board.court.syncing = true;
+        let voice = self.hypha.kernel().voice();
+        self.ask(
+            move |s| {
+                let body = s.speak_keyed(&voice, dialogue::encode_digests_request(&voice))?;
+                // A4: the digest is the roots, so a hypha whose roots moved
+                // is asked for its cover at the address this voice's own key
+                // routed to -- the same hypha that answered, by the same route.
+                if s.absorb_digest(&body) {
+                    if let Some(addr) = s.route(&voice) {
+                        s.fetch_cover(&addr);
+                    }
+                }
+                Ok::<_, io::Error>(body)
+            },
+            |me, body| match body {
+                Ok(body) => me.fetch_discordant(&body),
+                Err(_) => me.board.court.syncing = false,
+            },
+        );
+    }
+
+    /// THE DIGEST LANDED: the strata it names discordant with this genome's
+    /// own are fetched, each with this genome's have-list.
+    fn fetch_discordant(&mut self, body: &[u8]) {
+        use crate::transducer::sheaf;
+        let voice = self.hypha.kernel().voice();
         // A reply that does not decode names no strata, and nothing is
         // discordant against a reading nobody took.
-        let Some(remote) = dialogue::decode_digests_reply(&body) else {
-            return Ok(0);
+        let Some(remote) = dialogue::decode_digests_reply(body) else {
+            self.board.court.syncing = false;
+            return;
         };
         // The genome's own atlas (current, admitted in place), never rebuilt here.
         let atlas = self.epigenome.atlas.clone();
@@ -242,18 +270,26 @@ impl Entity {
             .map(|d| dialogue::ChartOf { inv: d.inv.clone(), have: sheaf::have(&atlas, &d.inv) })
             .collect();
         let request = dialogue::encode_fetch(&voice, &charts, crate::network::wire::frame_budget());
-        let mut learned = 0usize;
-        let body = self.session.speak_keyed(&voice, request)?;
+        self.ask(move |s| s.speak_keyed(&voice, request), move |me, body| {
+            me.board.court.syncing = false;
+            if let Ok(body) = body {
+                me.absorb_fetched(&body, &charts);
+            }
+        });
+    }
+
+    /// THE FETCHED STRATA LANDED: their words absorbed and glued on the
+    /// elements, and what this genome holds that the hypha lacks taught up.
+    fn absorb_fetched(&mut self, body: &[u8], charts: &[dialogue::Chart]) {
+        let voice = self.hypha.kernel().voice();
         // The root of this act (the arm's sync): one stroke for every page
         // it absorbs (65.5).
         let mut budget = self.physics.stroke();
         // A reply that does not decode teaches nothing.
-        for t in dialogue::decode_syllabus_reply(&body).into_iter().flatten() {
+        for t in dialogue::decode_syllabus_reply(body).into_iter().flatten() {
             let mut pos = 0usize;
             let fetched = Element::from_bytes(&t.word, &mut pos);
-            if self.absorb_taught_at(&t.word, Some(t.at), &mut budget).is_some() {
-                learned += 1;
-            }
+            let _ = self.absorb_taught_at(&t.word, Some(t.at), &mut budget);
             // ČECH AFTER FETCH: the word is glued on the elements, not on
             // the root that indexed it. Every held word on the same fibre
             // with a group view is a chart overlapping this one; the
@@ -314,15 +350,14 @@ impl Entity {
                 }
             }
         }
-        self.absorb_class_page(&body, voice, &mut budget);
+        self.absorb_class_page(body, voice, &mut budget);
         // THE OTHER DIRECTION OF THE SHEAF: in a discordant stratum this
         // genome may hold what the hypha lacks (a basis that regressed, a
         // word learned from another judge). Those words are taught up for
         // adoption, one contact's budget per stroke; the hypha verifies
         // and installs what it cannot already derive.
-        let mut taught = 0usize;
         let mut used = 0usize;
-        'strata: for dialogue::ChartOf { have: held, .. } in &charts {
+        'strata: for dialogue::ChartOf { have: held, .. } in charts {
             for addr in held {
                 if self.already_taught_addr(addr) {
                     continue; // spoken for adoption once; the judge decided
@@ -340,13 +375,14 @@ impl Entity {
                     break 'strata;
                 }
                 used += bytes.len();
-                if self.session.speak_keyed(addr, dialogue::encode_adopt(&voice, &bytes)).is_ok() {
-                    self.file_taught(&word);
-                    taught += 1;
-                }
+                let (to, act) = (addr.clone(), dialogue::encode_adopt(&voice, &bytes));
+                self.ask(move |s| s.speak_keyed(&to, act), move |me, adopted| {
+                    if adopted.is_ok() {
+                        me.file_taught(&word);
+                    }
+                });
             }
         }
-        Ok(learned + taught)
     }
 
     pub(crate) fn absorb_class_page(&mut self, body: &[u8], _from: [u8; 32], budget: &mut crate::physics::Budget) {
@@ -374,43 +410,70 @@ impl Entity {
         }
     }
 
-    pub(crate) fn pull_syllabus(&mut self) -> io::Result<usize> {
-        let voice = self.session.kernel().voice();
+    /// PULL THE SYLLABUS — the court-ratified teaching stream, served from
+    /// this voice's cursor on the hypha (push-on-contact). Every received
+    /// word folds into the genome by address (Epigenome::learn), so both
+    /// new vocabulary and rebound anchors propagate; the dialect then
+    /// re-resolves against the higher-order language on the next study.
+    /// One pull in flight at a time; the pages are
+    /// absorbed where they land (`absorb_syllabus`). A mind holding no
+    /// language asks every hypha it knows in turn, under one stroke; one
+    /// that holds language asks its own key's home.
+    pub(crate) fn pull_syllabus(&mut self) {
+        if self.board.court.schooling {
+            return;
+        }
+        self.board.court.schooling = true;
+        let voice = self.hypha.kernel().voice();
+        let req = dialogue::encode_syllabus_request(&voice);
         let empty = self.epigenome.genome_len() == 0 || self.epigenome.atlas_is_empty();
-        if empty {
-            let peers = self.session.peers();
-            if peers.is_empty() {
-                return Ok(0);
-            }
-            let mut budget = self.physics.stroke();
-            let n = peers.len();
-            let Some(start) = self.session.peer_start(n) else { return Ok(0) };
-            self.session.bump_cursor();
-            let mut learned = 0usize;
-            let req = dialogue::encode_syllabus_request(&voice);
-            for i in 0..n {
-                if !budget.spend() {
-                    break;
+        let mut budget = self.physics.stroke();
+        self.ask(
+            move |s| {
+                if !empty {
+                    return s.speak_keyed(&voice, req).into_iter().collect::<Vec<_>>();
                 }
-                let addr = &peers[(start + i) % n];
-                let Ok(body) = self.session.exchange_at(addr, req.clone()) else {
-                    continue;
-                };
-                // A reply that does not decode teaches nothing.
-                for t in dialogue::decode_syllabus_reply(&body).into_iter().flatten() {
-                    if self.absorb_taught_at(&t.word, Some(t.at), &mut budget).is_some() {
-                        learned += 1;
+                let peers = s.peers();
+                let Some(start) = s.peer_start(peers.len()) else { return Vec::new() };
+                s.bump_cursor();
+                let mut pages = Vec::new();
+                for i in 0..peers.len() {
+                    if !budget.spend() {
+                        break;
+                    }
+                    if let Ok(body) = s.exchange_at(&peers[(start + i) % peers.len()], req.clone()) {
+                        pages.push(body);
                     }
                 }
-                self.absorb_class_page(&body, voice, &mut budget);
-            }
-            return Ok(learned);
-        }
-        let body = self.session.speak_keyed(&voice, dialogue::encode_syllabus_request(&voice))?;
+                pages
+            },
+            move |me, pages: Vec<Vec<u8>>| {
+                me.board.court.schooling = false;
+                for body in &pages {
+                    me.absorb_syllabus(body, empty);
+                }
+                let _ = me.take_promoted();
+            },
+        );
+    }
+
+    /// A SYLLABUS PAGE LANDED: its words learned — in depth order where the
+    /// mind holds language, as served where it holds none — and its class
+    /// records seeded.
+    fn absorb_syllabus(&mut self, body: &[u8], empty: bool) {
+        let voice = self.hypha.kernel().voice();
         // A reply that does not decode teaches nothing.
-        let Some(mut words) = dialogue::decode_syllabus_reply(&body) else {
-            return Ok(0);
+        let Some(mut words) = dialogue::decode_syllabus_reply(body) else {
+            return;
         };
+        if empty {
+            let mut budget = self.physics.stroke();
+            for t in &words {
+                let _ = self.absorb_taught_at(&t.word, Some(t.at), &mut budget);
+            }
+            self.absorb_class_page(body, voice, &mut budget);
+            return;
+        }
         // DEPTH ORDER IS THE DOCTRINE, not a choice by a scalar: "a mind
         // never receives depth d before it holds every cited form below d;
         // the syllabus serves in depth order" (chapter 6, 24.2), and
@@ -440,14 +503,10 @@ impl Entity {
         // The root of this act (the arm's pull): one stroke for every page
         // it absorbs (65.5).
         let mut budget = self.physics.stroke();
-        let mut learned = 0usize;
         for t in &words {
-            if self.absorb_taught_at(&t.word, Some(t.at), &mut budget).is_some() {
-                learned += 1;
-            }
+            let _ = self.absorb_taught_at(&t.word, Some(t.at), &mut budget);
         }
-        self.absorb_class_page(&body, voice, &mut budget);
-        Ok(learned)
+        self.absorb_class_page(body, voice, &mut budget);
     }
 
     /// Hear a taught word with no stamp to locate it by: a word handed in

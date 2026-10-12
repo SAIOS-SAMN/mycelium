@@ -126,7 +126,10 @@ fn a_sealed_tape_is_refused_by_the_mind_before_the_wire() {
     );
     assert_eq!(held, Contracted::Quiescent, "a malformed complex is held inert");
     assert_eq!(entity.contracted_pending(), 0, "and nothing is re-spoken");
-    let codes = entity.speak(std::slice::from_ref(&e), &mut b).expect("no frame is built for a sealed tape");
+    let heard = std::rc::Rc::new(std::cell::RefCell::new(None));
+    let into = std::rc::Rc::clone(&heard);
+    entity.speak(std::slice::from_ref(&e), move |_, codes| *into.borrow_mut() = Some(codes));
+    let codes = heard.borrow_mut().take().expect("heard at once: no frame went on the wire").expect("no frame is built for a sealed tape");
     assert_eq!(codes, vec![SPEECH_REFUSED], "refused by the mind itself");
     assert!(!entity.uttered(e.address().as_bytes()), "never filed as uttered");
     assert_eq!(entity.dialect_len(), 0, "a sealed sentence does not stand");
@@ -166,7 +169,7 @@ fn a_citation_is_owed_once_per_court_and_a_sealed_one_to_none() {
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("owing"));
     entity.epigenome.stand_dialect_at(cited.clone(), 1, 1);
     let citer = super::common::two_body_sentence([&[(1, 2)], &[(3, 4)]]);
-    let courts = entity.session.peers().len();
+    let courts = entity.hypha.courts();
     assert!(courts >= 1, "the mind knows a court: {courts}");
     for n in 0..courts {
         assert!(

@@ -24,10 +24,11 @@ impl Entity {
         mint(RewriteKind::Retire, std::slice::from_ref(&word), word.clone(), payload, freed)
     }
 
-    /// ONE RETIREMENT PROPOSED to the court, where the vocabulary holds one:
-    /// the speech's codes.
-    pub(crate) fn propose_retirement(&mut self, budget: &mut crate::physics::Budget) -> Option<io::Result<Vec<u8>>> {
-        let rw = self.retirement()?;
-        Some(self.speak(std::slice::from_ref(&rw), budget))
+    /// ONE RETIREMENT PROPOSED to the court, where the vocabulary holds one;
+    /// the court's answer files itself.
+    pub(crate) fn propose_retirement(&mut self) {
+        if let Some(rw) = self.retirement() {
+            self.speak(std::slice::from_ref(&rw), |_, _| {});
+        }
     }
 }
