@@ -139,8 +139,9 @@ pub(crate) fn run(home: &Path, at: Option<&str>, ask: &Ask) -> ! {
     // In the count's own carrier: `held` is the reply's entries, and the
     // arithmetic is exact or the line says it could not count.
     let cut = u64::from(total).abs_diff(held.len() as u64);
+    // The standing's age is kept beside whatever kind was asked for.
     if let Some(t) = keep {
-        held.retain(|(k, _)| Source::of_key(k).is_some_and(|(_, tag)| tag == t));
+        held.retain(|(k, _)| Source::of_key(k).is_some_and(|(_, tag)| tag == t || tag == observe::TAG_ASKED));
     }
     let Some(total) = (held.len() as u64).checked_add(cut) else {
         println!("{RED}{addr} answered a total past any count{RESET}");
@@ -255,6 +256,13 @@ pub(crate) fn render(addr: &str, total: u64, held: &[observe::Held]) -> Vec<Stri
                 Reading::Relay(r) => r.lines().into_iter().map(|l| format!("  {l}")).collect(),
                 Reading::Mind(m) => m.lines().into_iter().map(|l| format!("  {l}")).collect(),
                 Reading::Agreements(a) => a.lines().into_iter().map(|l| format!("  {l}")).collect(),
+                Reading::Asked(n) => vec![match n {
+                    0 | 1 => format!("  {DIM}standing published since the last question{RESET}"),
+                    n => format!(
+                        "  {YELLOW}standing STALE: {} questions since the court last published — every stroke reading below is older{RESET}",
+                        n
+                    ),
+                }],
             });
         }
     }

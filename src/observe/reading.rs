@@ -29,10 +29,13 @@ pub const TAG_RELAY: u8 = 20;
 pub const TAG_MIND: u8 = 21;
 /// MU-CLIENT §5.5 — the agreed language a court attested, per pair.
 pub const TAG_AGREEMENTS: u8 = 22;
+/// The age of a court's published standing, in questions (`Reading::Asked`).
+pub const TAG_ASKED: u8 = 23;
 
 /// CQ1 — EVERY READING'S NAME, by its tag: the ONE statement the console's
 /// `--reading NAME` is read against (law 12).
-pub const READING_NAMES: [(&str, u8); 13] = [
+pub const READING_NAMES: [(&str, u8); 14] = [
+    ("asked", TAG_ASKED),
     ("mind", TAG_MIND),
     ("agreements", TAG_AGREEMENTS),
     ("carriers", TAG_CARRIERS),
@@ -678,6 +681,12 @@ pub enum Reading {
     Mind(Box<super::Mind>),
     /// MU-CLIENT §5.5 — the agreed language a court attested, per pair.
     Agreements(Box<super::Agreements>),
+    /// THE AGE OF THE STANDING, IN QUESTIONS: how many questions this court
+    /// was asked since its stroke last published its standing, this one
+    /// included. One: the standing was published after the last question was
+    /// asked. More: strokes missed that many less one, and every reading the
+    /// stroke publishes is older than they are.
+    Asked(u64),
 }
 
 impl Reading {
@@ -696,6 +705,7 @@ impl Reading {
             Reading::Relay(_) => TAG_RELAY,
             Reading::Mind(_) => TAG_MIND,
             Reading::Agreements(_) => TAG_AGREEMENTS,
+            Reading::Asked(_) => TAG_ASKED,
         }
     }
 
@@ -730,6 +740,7 @@ impl Reading {
             // the question; the later stands.
             (Reading::Mind(a), Reading::Mind(b)) => *a = b.clone(),
             (Reading::Agreements(a), Reading::Agreements(b)) => *a = b.clone(),
+            (Reading::Asked(a), Reading::Asked(b)) => *a = *b,
             _ => return false,
         }
         true
@@ -765,6 +776,10 @@ impl Reading {
             Reading::Relay(r) => r.put(out),
             Reading::Mind(r) => r.put(out),
             Reading::Agreements(r) => r.put(out),
+            Reading::Asked(n) => {
+                put_u64(out, *n);
+                Some(())
+            }
         }
     }
 
@@ -785,6 +800,7 @@ impl Reading {
             TAG_RELAY => Some(Reading::Relay(Box::new(super::Relay::take(b, p)?))),
             TAG_MIND => Some(Reading::Mind(Box::new(super::Mind::take(b, p)?))),
             TAG_AGREEMENTS => Some(Reading::Agreements(Box::new(super::Agreements::take(b, p)?))),
+            TAG_ASKED => Some(Reading::Asked(take_u64(b, p)?)),
             _ => None,
         }
     }

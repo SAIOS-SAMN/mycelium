@@ -11,6 +11,11 @@ use std::net::TcpStream;
 /// (`answer_standing`) and publishes the standing the next question reads.
 static STANDING_ASKED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
+/// THE STANDING'S AGE IN QUESTIONS: raised at every question, cleared where
+/// the stroke publishes — answered beside the readings (`Reading::Asked`), so
+/// a reading never passes for fresher than it is.
+static UNANSWERED: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
 /// The court stroke's side: where the observer left a question, the
 /// standing is published under the lock the stroke already holds.
 ///
@@ -23,6 +28,7 @@ pub(crate) fn answer_standing(k: &mycelium::cognition::Kernel, mesh: &crate::exc
     let asked = STANDING_ASKED.swap(false, std::sync::atomic::Ordering::Relaxed);
     if asked || first {
         publish_standing(k, mesh, Source::Court(id));
+        UNANSWERED.store(0, std::sync::atomic::Ordering::Relaxed);
     }
     asked || first
 }
@@ -99,6 +105,10 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             // (01:15–01:32, 2026-10-01), each refused at the console's
             // 0.5–0.7 s, and b, the lighter court, all 34.
             STANDING_ASKED.store(true, std::sync::atomic::Ordering::Relaxed);
+            let before = UNANSWERED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            if let Some(asked) = before.checked_add(1) {
+                observe::replace(own, Reading::Asked(asked));
+            }
             // PH5 — and its phase, the last window it wrote.
             if let Some(p) = observe::last_phase() {
                 observe::replace(own, Reading::Phase(p));

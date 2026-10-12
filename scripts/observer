@@ -15,6 +15,10 @@ HYPHAE=(a b c)
 frame() {
   "$BIN" --console --minds --home "$REPO/var/a" --reading mind
   for h in "${HYPHAE[@]}"; do
+    # The first question leaves it for the court's stroke; the second reads
+    # what the stroke published, its age said beside it.
+    "$BIN" --console --home "$REPO/var/$h" --reading asked >/dev/null
+    "$BIN" --console --home "$REPO/var/$h" --reading acts
     "$BIN" --console --home "$REPO/var/$h" --reading agreements
   done
 }
