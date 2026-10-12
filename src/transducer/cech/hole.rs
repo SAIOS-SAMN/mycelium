@@ -27,47 +27,27 @@
 use super::*;
 
 /// WHAT A `condense` DID — [`Drained`]'s inverse — and, where a tether
-/// already stands on the pair, how the FIBRE FLEXED (MU-CLIENT §4.5): the
-/// two transports' composite `C = old⁻¹ · new` read by its modes against
-/// the tether's own axis.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// already stands on the pair, the composite `C = old⁻¹ · new` the arriving
+/// transport is to the standing one (MU-CLIENT §4.5). What `C` does to the
+/// FIBRE — field, torsion, lift (78.74) — is read against the fibre's pivots
+/// by whoever holds them (`Contemplation::tether`); the complex holds none.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Condensed {
     /// The tether is remembered with its transition, standing open.
     Tethered,
     /// A tether already stands carrying this transport: nothing changed.
     AlreadyTethered,
     /// THE FIBRE FLEXED by `C`: the tether now carries the arriving
-    /// transport (`old · C`), every cell over it re-reads, and `C`'s strain
-    /// winds into the field on the tether's own line — where a stretch's
-    /// boost never returns and dissipates on a beat, the line is released
-    /// and the tether drains: it BREAKS, as the field's event.
-    Flexed(Flex),
+    /// transport (`old · C`) and every cell over it re-reads.
+    Flexed(Box<crate::transducer::cga::Mv>),
     /// A HOLE over the tether — a question the mind still carries — holds
-    /// it: it does not flex, and `C` goes to the field free.
-    Pinned(Flex),
-    /// `C`'s modes did not read: the tether stands, nothing goes out.
-    CollisionUnread,
+    /// it: it does not flex.
+    Pinned(Box<crate::transducer::cga::Mv>),
     /// The pair is a remainder — a transition that does not realise — and
     /// no tether condenses there.
     Remainder,
     /// Not two distinct vertices.
     Absent,
-}
-
-/// HOW A FIBRE FLEXED (MU-CLIENT §4.5): `C`'s modes against the tether's own
-/// axis, each counted by what it does to the fibre — STRETCH (a boost, 𝒮),
-/// BEND (a turn on a plane off the tether's own), TWIST (a turn commuting
-/// with the tether's own plane, about its axis), FOLD (a turn of order two:
-/// the fibre turned back on itself), SLIDE (a null mode, 𝒯) — and the
-/// period the flex returns at, where every mode turns at a finite order.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct Flex {
-    pub stretch: u8,
-    pub bend: u8,
-    pub twist: u8,
-    pub fold: u8,
-    pub slide: u8,
-    pub period: Option<u64>,
 }
 
 /// WHAT A `puncture` DID.
@@ -163,11 +143,10 @@ impl Complex {
     /// TWO TRANSPORTS MEET ON ONE PAIR (MU-CLIENT §4.5): the arriving one
     /// oriented as the standing tether is stored (from its lesser vertex) and
     /// read as a motion as the tether's is, `C = old⁻¹ · new` (the reverse is
-    /// the inverse up to its weight, and a motion is read projectively), and
-    /// `C` read by its modes on the stroke they need.
+    /// the inverse up to its weight, and a motion is read projectively). The
+    /// fibre flexes to the arriving transport unless a hole pins it; `C` is
+    /// answered for its holder to read against the fibre's pivots.
     fn collide(&mut self, vertices: &[Vec<u8>], a: &[u8], g: Rotor, carriage: Versor, standing: &crate::transducer::cga::Mv) -> Condensed {
-        use crate::network::nerve::coord::BivectorKind;
-        use crate::transducer::cga::{modes_need, motion_modes, period_of, Period};
         let (r, c) = match vertices {
             [lesser, _] if lesser.as_slice() == a => (g, carriage),
             _ => (g.reverse(), carriage.reverse()),
@@ -178,51 +157,18 @@ impl Complex {
         if composite.projective_eq(&one) {
             return Condensed::AlreadyTethered;
         }
-        let Some(need) = modes_need(&composite) else { return Condensed::CollisionUnread };
-        let mut stroke = crate::physics::Physics::default().stroke_n(need);
-        let Some(Ok(modes)) = motion_modes(&composite, &mut stroke) else { return Condensed::CollisionUnread };
-        // Each mode against the tether's own plane: a turn whose plane
-        // commutes with it turns about the tether's axis (a twist); any other
-        // bends it. An identity tether has no axis, and every turn bends it.
-        let axis = standing.grade(2);
-        let mut flex = Flex {
-            period: match period_of(&modes) {
-                Some(Period::Closes(order)) => Some(order),
-                _ => None,
-            },
-            ..Flex::default()
-        };
-        for m in &modes {
-            let count = match m.kind {
-                BivectorKind::Hyperbolic => &mut flex.stretch,
-                BivectorKind::Parabolic => &mut flex.slide,
-                BivectorKind::Trivial => continue,
-                BivectorKind::Elliptic if m.order == Some(2) => &mut flex.fold,
-                BivectorKind::Elliptic => {
-                    let plane = m.ray.grade(2);
-                    match !axis.is_zero() && plane.geo(&axis).sub(&axis.geo(&plane)).is_zero() {
-                        true => &mut flex.twist,
-                        false => &mut flex.bend,
-                    }
-                }
-            };
-            if let Some(n) = count.checked_add(1) {
-                *count = n;
-            }
-        }
         let key = simplex_key(vertices).as_bytes().to_vec();
         let cells: Vec<Vec<u8>> = match self.cofaces_of(vertices) {
             Some(c) => c.scoped().map(|(k, ())| k).filter(|k| *k != key).collect(),
             None => Vec::new(),
         };
         if cells.iter().any(|k| self.is_hole(k)) {
-            self.flow_out(Flow { motion: composite, line: Thread::Free });
-            return Condensed::Pinned(flex);
+            return Condensed::Pinned(Box::new(composite));
         }
         // THE FLEX: the fibre carries the arriving transport, and every
         // cell sealed over it re-reads its holonomy — the membrane flexes
         // with it, its curvature changed as content.
-        let Some(t) = self.stored_mut(&key) else { return Condensed::CollisionUnread };
+        let Some(t) = self.stored_mut(&key) else { return Condensed::Absent };
         t.coefficient = Self::store_coeff(r);
         t.carriage = c;
         for k in cells {
@@ -230,8 +176,42 @@ impl Complex {
                 let _ = self.reopen_on_coeff_change(&k, &verts);
             }
         }
-        self.flow_out(Flow { motion: composite, line: Thread::Wound(key) });
-        Condensed::Flexed(flex)
+        Condensed::Flexed(Box::new(composite))
+    }
+
+    /// FROZEN-IN FLUX (MU-CLIENT §4.5): the tether at `key` is CARRIED by
+    /// the field — an admission moved the orbit it is wound on by
+    /// `increment`, and the fibre moves with it: its transport becomes
+    /// `old · increment`, split back into rotor and carriage as a residue is,
+    /// and every cell over it re-reads. No strain is wound for it: the field
+    /// moved the fibre, the fibre did not move the field. A hole over it pins
+    /// it; a key that is no tether, or a motion that does not split, moves
+    /// nothing. Answers whether it moved.
+    pub fn carry(&mut self, key: &[u8], increment: &crate::transducer::cga::Mv) -> bool {
+        use crate::transducer::element::{conformal_factors, rotor_of_factors};
+        if self.degree_of(key) != Some(1) {
+            return false;
+        }
+        let Some(vertices) = self.vertices_at(key) else { return false };
+        let cells: Vec<Vec<u8>> = match self.cofaces_of(&vertices) {
+            Some(c) => c.scoped().map(|(k, ())| k).filter(|k| k.as_slice() != key).collect(),
+            None => Vec::new(),
+        };
+        if cells.iter().any(|k| self.is_hole(k)) {
+            return false;
+        }
+        let Some(moved) = self.simplex(key).map(|s| s.motion().geo(increment)) else { return false };
+        let Ok(f) = conformal_factors(&moved) else { return false };
+        let Ok(rotor) = rotor_of_factors(&f) else { return false };
+        let Some(t) = self.stored_mut(key) else { return false };
+        t.coefficient = Self::store_coeff(rotor);
+        t.carriage = f.carriage();
+        for k in cells {
+            if let Some(verts) = self.vertices_at(&k) {
+                let _ = self.reopen_on_coeff_change(&k, &verts);
+            }
+        }
+        true
     }
 
     /// WHETHER THE TETHER STANDING BETWEEN `a` AND `b` CARRIES THIS TRANSPORT:

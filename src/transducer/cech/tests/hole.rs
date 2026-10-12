@@ -130,13 +130,13 @@ fn condense_is_drains_inverse_on_content() {
     assert_eq!(c.condense(&vs[0], &w, Rotor::identity(), ident(), vol()), Condensed::Remainder, "a remainder pair refuses");
 }
 
-/// MU-CLIENT §4.5 — A TETHER IS A FIBRE AND FLEXES. The same tension changes
-/// nothing. A 90° turn against the identity tether bends it (no axis to
-/// twist about), returning at 4; a further 90° in the same plane twists it
-/// about its own axis; a slide slides it; a dilation stretches it. Each time
-/// the fibre carries the arriving transport and its flex's strain winds out
-/// on the tether's own line. Under a sealed cell the fibre flexes and the
-/// cell re-reads; under a hole it is pinned and the flex goes out free.
+/// MU-CLIENT §4.5, 78.74 — A TETHER IS A FIBRE AND FLEXES. The same tension
+/// changes nothing. A 90° turn meeting the identity tether flexes it: the
+/// fibre carries the arriving transport, and the composite answered is
+/// exactly `old⁻¹ · new`. Two thoughts with no perceived body have no
+/// pivots, so no fibre reads the flex as torsion: it works, and winds out on
+/// the tether's own line. Under a sealed cell the fibre flexes and the cell
+/// re-reads; under a hole it is pinned and carries what it carried.
 #[test]
 fn a_tether_is_a_fibre_and_flexes() {
     let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
@@ -145,24 +145,12 @@ fn a_tether_is_a_fibre_and_flexes() {
     assert_eq!(mind.tether(&a, &b, Rotor::identity(), ident(), vol()), Condensed::Tethered);
     let _ = mind.complex.take_outflow();
     assert_eq!(mind.tether(&a, &b, Rotor::identity(), ident(), vol()), Condensed::AlreadyTethered, "the same tension changes nothing");
-    let bent = Flex { bend: 1, period: Some(4), ..Flex::default() };
-    assert_eq!(mind.tether(&a, &b, turn_90(), ident(), vol()), Condensed::Flexed(bent), "a turn bends the fibre");
+    let Condensed::Flexed(c) = mind.tether(&a, &b, turn_90(), ident(), vol()) else { panic!("it flexes") };
+    assert!(c.projective_eq(&ident().geo(&turn_90().lift())), "the composite is old⁻¹ · new");
     assert!(mind.complex.tethered_as(&a, &b, &turn_90(), &ident()), "the fibre carries the arriving transport");
-    let half = turn_90().geo(&turn_90());
-    let Condensed::Flexed(twisted) = mind.tether(&a, &b, half.clone(), ident(), vol()) else { panic!("it flexes") };
-    assert_eq!((twisted.twist, twisted.bend), (1, 0), "a turn in its own plane twists it: {twisted:?}");
     let wound = mind.complex.take_outflow();
-    assert_eq!(wound.len(), 2, "each flex winds out");
     let line = Thread::Wound(simplex_key(&sorted_verts([a.as_slice(), b.as_slice()])).as_bytes().to_vec());
-    assert!(wound.iter().all(|f| f.line == line), "on the tether's own line");
-    let (c, d) = (v(3).as_bytes().to_vec(), v(4).as_bytes().to_vec());
-    assert_eq!(mind.tether(&c, &d, Rotor::identity(), ident(), vol()), Condensed::Tethered);
-    let slide = crate::transducer::element::translator_versor(5, 0);
-    let Condensed::Flexed(slid) = mind.tether(&c, &d, Rotor::identity(), slide, vol()) else { panic!("it flexes") };
-    assert_eq!((slid.slide, slid.period), (1, None), "a slide slides it: {slid:?}");
-    let dilation = crate::transducer::cga::dilator(&num_rational::BigRational::from_integer(2.into()));
-    let Condensed::Flexed(stretched) = mind.tether(&c, &d, Rotor::identity(), dilation, vol()) else { panic!("it flexes") };
-    assert!(stretched.stretch >= 1, "a dilation stretches it: {stretched:?}");
+    assert!(matches!(wound.as_slice(), [f] if f.line == line), "with no pivots the flex works, wound on the tether's own line");
     let (vs, cell) = sealed_triangle(&mut mind.complex, 11, turn_90());
     assert!(matches!(mind.tether(&vs[0], &vs[2], Rotor::identity(), ident(), vol()), Condensed::Flexed(_)), "under a sealed cell it flexes");
     assert!(mind.complex.simplex(&cell).is_some_and(|s| s.fill.unsettled()), "and the cell re-reads");
@@ -238,6 +226,38 @@ fn the_field_releases_what_relaxed_and_the_mind_lets_it_go() {
     mind.complex = asked;
     mind.release(&[edge_key(&vs[0], &vs[1])]);
     assert_eq!(mind.complex.board().tethers.len(), 3, "the question's hole pins its boundary: the tether stands");
+}
+
+/// MU-CLIENT §4.5 — FROZEN-IN FLUX: A FIBRE MOVES WITH THE FIELD. Two
+/// tethers carrying the same 90° turn wind onto one plane's orbit; the
+/// second admission moves the orbit by 90°, and the first fibre — wound
+/// there — is carried by exactly that turn: it now carries 180°. The fibre
+/// that moved the orbit is not carried by itself.
+#[test]
+fn a_fibre_moves_with_the_field() {
+    use crate::transducer::family::pairing::{mark_flux, FieldLine};
+    let mut field = crate::transducer::mind::MindField::default();
+    field.think(|| {
+        let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
+        mind.complex.arm_outflow();
+        let vs: Vec<Vec<u8>> = [v(51), v(52), v(53), v(54)].iter().map(|a| a.as_bytes().to_vec()).collect();
+        assert_eq!(mind.tether(&vs[0], &vs[1], turn_90(), ident(), vol()), Condensed::Tethered);
+        assert_eq!(mind.tether(&vs[2], &vs[3], turn_90(), ident(), vol()), Condensed::Tethered);
+        let lines: Vec<FieldLine> = mind
+            .complex
+            .take_outflow()
+            .into_iter()
+            .map(|f| FieldLine { carriage: f.motion, gauge: Vec::new(), mass: 1, free: false, line: f.line })
+            .collect();
+        mark_flux(&[], &lines, &mut crate::physics::Physics::default().stroke_n(1 << 16));
+        let Ok(carried) = crate::transducer::mind::with_field(|f| f.take_carried()) else { panic!("a mind is thinking") };
+        let [(line, increment)] = carried.as_slice() else { panic!("one fibre carried: {}", carried.len()) };
+        let pairs = [(&vs[0], &vs[1]), (&vs[2], &vs[3])];
+        let Some(&(a, b)) = pairs.iter().find(|(a, b)| edge_key(a, b) == *line) else { panic!("a tether's own line") };
+        assert!(mind.complex.carry(line, increment), "the fibre moves");
+        let half = turn_90().geo(&turn_90());
+        assert!(mind.complex.tethered_as(a, b, &half, &ident()), "carried by exactly the orbit's 90°: it carries 180°");
+    });
 }
 
 /// THE WALK `d, a, p, d` ON ONE CELL (78.99 (3)). `d·a` cancels on the board;

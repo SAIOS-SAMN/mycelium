@@ -95,6 +95,12 @@ impl Field {
         }
     }
 
+    /// FROZEN-IN FLUX: the lines the field's admissions carried since the
+    /// last take, each with the increment it moved by, in admission order.
+    pub fn take_carried(&mut self) -> Vec<(Vec<u8>, Mv)> {
+        std::mem::take(&mut self.orbits.carried)
+    }
+
     pub fn take_released(&mut self) -> Vec<Vec<u8>> {
         let mut out = std::mem::take(&mut self.orbits.released);
         out.append(&mut self.tubes.released);
@@ -175,6 +181,10 @@ pub struct OrbitRegistry {
     open: [u64; 4],
     transport: [u64; 4],
     pub(crate) released: Vec<Vec<u8>>,
+    /// FROZEN-IN FLUX (MU-CLIENT §4.5): each line an admission CARRIED —
+    /// every other line wound on the orbit it moved — with the increment it
+    /// moved by, until the field's owner takes them.
+    pub(crate) carried: Vec<(Vec<u8>, Mv)>,
     reservoir: Keyed<(State, u64)>,
     /// Whether an orbit returned since the field last beat.
     returned: bool,
@@ -282,7 +292,7 @@ impl OrbitRegistry {
             BivectorKind::Hyperbolic => LANE_SPATIAL,
             BivectorKind::Parabolic | BivectorKind::Trivial => return None,
         };
-        let (key, before, after) = match mode.flow() {
+        let (key, before, after, increment) = match mode.flow() {
             Some(point) => {
                 let key = mode_key(lane, point.plane())?;
                 self.reform(&key, lane);
@@ -292,7 +302,7 @@ impl OrbitRegistry {
                     None => cga::FlowPoint::origin(point.plane())?,
                 };
                 let after = before.then(&point)?;
-                (key, State::Flow(before), State::Flow(after))
+                (key, State::Flow(before), State::Flow(after), point.versor())
             }
             // An isoclinic set: its planes flow together, held as one ray.
             None => {
@@ -308,10 +318,21 @@ impl OrbitRegistry {
                     Some(ray) => ray,
                     None => after,
                 };
-                (key, State::Ray(before), State::Ray(after))
+                (key, State::Ray(before), State::Ray(after), mode.ray.clone())
             }
         };
-        Some((lane, self.step(&key, lane, &before, after, mass, line)?))
+        let lines = match self.orbits.get(&key) {
+            Some(o) => o.lines.clone(),
+            None => Vec::new(),
+        };
+        let admitted = self.step(&key, lane, &before, after, mass, line)?;
+        // Every OTHER line wound on the orbit is carried by what moved it.
+        let own = match line {
+            Thread::Wound(k) | Thread::Unwound(k) => Some(k),
+            Thread::Free => None,
+        };
+        self.carried.extend(lines.into_iter().filter(|l| Some(l) != own).map(|l| (l, increment.clone())));
+        Some((lane, admitted))
     }
 
     /// ADMIT ONE HUE MAP carrying `mass` onto 𝒢's orbit of its support.

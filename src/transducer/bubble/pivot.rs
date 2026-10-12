@@ -35,27 +35,164 @@ use super::*;
 use crate::transducer::cech::{Applied, Ascended, Capped, Condensed, Pivot, Punctured};
 use crate::transducer::element::Versor;
 
+/// One flex counted on the mind's reading by what it did to the fibre —
+/// rigid, torsion, field, lift, or no fibre to read it on (counted as lift:
+/// work) — and, pinned, beside it.
+fn note_flex(carried: Option<crate::physics::capacitor::Carried>, pinned: bool) {
+    use crate::physics::capacitor::Carried;
+    let slot = match carried {
+        Some(Carried::Rigid) => 0,
+        Some(Carried::Torsion) => 1,
+        Some(Carried::Field) => 2,
+        Some(Carried::Lift) | None => 3,
+    };
+    crate::observe::note_mind(|m| {
+        m.flex[slot] += 1;
+        m.flex[4] += u64::from(pinned);
+    });
+}
+
 impl Contemplation {
+    /// 78.74 — A THOUGHT AS A PIVOT: the barycentre of its bodies' vertex
+    /// centroids, each weighed by its compartments, as a conformal point, and
+    /// the thought's mass. `None` for a thought with no perceived body (a
+    /// word, a sentence): it has no place to pivot at.
+    pub(crate) fn pivot_of(&self, key: &[u8]) -> Option<(crate::transducer::cga::Mv, num_rational::BigRational)> {
+        let b = self.bubbles.get(key)?;
+        let bodies: Vec<(Vec<num_rational::BigRational>, num_rational::BigRational)> = b
+            .spores
+            .scoped()
+            .flat_map(|(_, shapes)| {
+                shapes
+                    .iter()
+                    .filter_map(|s| {
+                        let mass = num_rational::BigRational::from_integer(i64::try_from(s.blade.support.len()).ok()?.into());
+                        let point = s.blade.vertex_point()?;
+                        Some((crate::transducer::cga::base_at(&point, usize::from(point.n()))?, mass))
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+        let star = crate::physics::tensegrity::barycentre(&bodies)?;
+        Some((crate::transducer::cga::point_at(&star.centre), star.mass))
+    }
+
+    /// 78.74 — THE TETHER AS A FIBRE between its two thoughts' pivots, read
+    /// off their coordinates whenever it is asked, never held. `None` where
+    /// either thought has no pivot or the two stand at one point.
+    pub(crate) fn fibre_of(&self, a: &[u8], b: &[u8]) -> Option<crate::physics::capacitor::Fibre> {
+        let ((pa, ma), (pb, mb)) = (self.pivot_of(a)?, self.pivot_of(b)?);
+        crate::physics::capacitor::Fibre::new(pa, pb, ma, mb)
+    }
+
     /// CONDENSE the tension between `a` and `b` into a tether carrying
-    /// `rotor` and `carriage`, with `volume` per lane; where one stands, the
-    /// collision of the two transports (`Complex::condense`). Answers what
-    /// the condense did, and the mind's reading counts each collision.
+    /// `rotor` and `carriage`, with `volume` per lane. Where one stands, the
+    /// arriving transport FLEXES the fibre (`Complex::condense`), and what the
+    /// flex did is read off the fibre by its split (78.74): torsion twists it
+    /// and does NO WORK — nothing is wound into the field for it; a field
+    /// (charge between its levels, the stretch) or a lift (its pivots moved,
+    /// the reshape) does work, and its composite winds into the field on the
+    /// tether's own line, where the field decides what holds — a stretch that
+    /// never returns dissipates, releases the line, and the tether breaks. A
+    /// tether whose thoughts hold no pivots is read as working. A new tether
+    /// FORMS the shortcuts its pivots bind (`form_through`).
     pub(crate) fn tether(&mut self, a: &[u8], b: &[u8], rotor: Rotor, carriage: Versor, volume: [u64; 4]) -> Condensed {
+        use crate::physics::capacitor::Carried;
         let pair = Pivot::Condense(a.to_vec(), b.to_vec(), Box::new(rotor), carriage);
         let condensed = match self.complex.apply(&pair, |_| volume, volume) {
             Applied::Condensed(c) => c,
             _ => Condensed::Absent,
         };
-        if let Condensed::Flexed(f) | Condensed::Pinned(f) = condensed {
-            let pinned = matches!(condensed, Condensed::Pinned(_));
-            crate::observe::note_mind(|m| {
-                for (slot, n) in [f.stretch, f.bend, f.twist, f.fold, f.slide].into_iter().enumerate() {
-                    m.flex[slot] += u64::from(n);
+        match &condensed {
+            Condensed::Flexed(c) => {
+                let carried = self.carried_by(a, b, c);
+                if carried != Some(Carried::Torsion) && carried != Some(Carried::Rigid) {
+                    let key = crate::transducer::cech::simplex_key(&crate::transducer::cech::sorted_verts([a, b])).as_bytes().to_vec();
+                    self.complex.flow_out(crate::transducer::cech::Flow { motion: c.as_ref().clone(), line: crate::transducer::cech::Thread::Wound(key) });
                 }
-                m.flex[5] += u64::from(pinned);
-            });
+                note_flex(carried, false);
+            }
+            Condensed::Pinned(c) => {
+                let carried = self.carried_by(a, b, c);
+                note_flex(carried, true);
+            }
+            Condensed::Tethered => self.form_through(a, b),
+            _ => {}
         }
         condensed
+    }
+
+    /// What a motion does to the fibre between `a` and `b`, read off its
+    /// modes (`Fibre::reads`): rigid, torsion, field or lift. `None` where
+    /// there is no fibre or the motion's modes do not read.
+    fn carried_by(&self, a: &[u8], b: &[u8], motion: &crate::transducer::cga::Mv) -> Option<crate::physics::capacitor::Carried> {
+        let fibre = self.fibre_of(a, b)?;
+        let mut stroke = crate::physics::Physics::default().stroke_n(crate::transducer::cga::modes_need(motion)?);
+        let modes = crate::physics::capacitor::modes_of(motion, motion.n(), &mut stroke)?;
+        Some(fibre.reads(&modes))
+    }
+
+    /// FROZEN-IN FLUX (MU-CLIENT §4.5): the tether on `line` carried by the
+    /// field's flow `increment` — moved with it, its cells re-read, and the
+    /// carriage read off its fibre as any flex is. Answers whether it moved.
+    pub(crate) fn carry(&mut self, line: &[u8], increment: &crate::transducer::cga::Mv) -> bool {
+        if !self.complex.carry(line, increment) {
+            return false;
+        }
+        let carried = match self.complex.vertices_at(line).as_deref() {
+            Some([a, b]) => self.carried_by(a, b, increment),
+            _ => None,
+        };
+        note_flex(carried, false);
+        crate::observe::note_mind(|m| m.flex[5] += 1);
+        true
+    }
+
+    /// 78.74 — THE DOTS CONNECTED: switches of fibres sharing a pivot compose,
+    /// `S₂₃S₁₂` carrying `P₁` through `P₂` to `P₃`. The new tether `a–b`
+    /// shares a pivot with every other tether at `a` or `b`; where the far
+    /// ends `x`, `z` are not yet tethered and their DIRECT binding is at least
+    /// as strong as the path's weakest (`Fibre::strength`, the inverse-square
+    /// law, two exact rationals compared), the shortcut forms, carrying the
+    /// path's composite transport `g_xz = g_xy ∘ g_yz` — the triangle it
+    /// closes is flat. One step: a formed shortcut forms nothing further.
+    fn form_through(&mut self, a: &[u8], b: &[u8]) {
+        use crate::transducer::cech::coefficient::Coefficient;
+        use crate::transducer::cech::cover::Cochain;
+        let mut formed: Vec<(Vec<u8>, Vec<u8>, crate::transducer::cech::coefficient::Turned)> = Vec::new();
+        for (x, y) in [(a, b), (b, a)] {
+            for edge in self.complex.link(y, 1) {
+                let Some(ends) = self.complex.vertices_at(&edge) else { continue };
+                let Some(z) = ends.iter().find(|v| v.as_slice() != y) else { continue };
+                if z.as_slice() == x || self.complex.get(&crate::transducer::cech::sorted_verts([x, z.as_slice()])).is_some() {
+                    continue;
+                }
+                let (Some(xy), Some(yz), Some(xz)) = (self.fibre_of(x, y), self.fibre_of(y, z), self.fibre_of(x, z)) else { continue };
+                let weakest = match xy.strength() <= yz.strength() {
+                    true => xy.strength(),
+                    false => yz.strength(),
+                };
+                if xz.strength() < weakest {
+                    continue;
+                }
+                let path = <crate::transducer::cech::Complex as Cochain<crate::transducer::cech::coefficient::Turned>>::crossing(&self.complex, x, y)
+                    .zip(<crate::transducer::cech::Complex as Cochain<crate::transducer::cech::coefficient::Turned>>::crossing(&self.complex, y, z))
+                    .and_then(|(g, h)| g.compose(&h));
+                if let Some(g) = path {
+                    formed.push((x.to_vec(), z.clone(), g));
+                }
+            }
+        }
+        for (x, z, g) in formed {
+            let volume = match self.complex.get(&crate::transducer::cech::sorted_verts([x.as_slice()])) {
+                Some(s) => s.volume,
+                None => [1, 0, 0, 0],
+            };
+            let pair = Pivot::Condense(x, z, Box::new(g.rotor), g.carriage);
+            if let Applied::Condensed(Condensed::Tethered) = self.complex.apply(&pair, |_| volume, volume) {
+                crate::observe::note_mind(|m| m.flex[7] += 1);
+            }
+        }
     }
 
     /// PUNCTURE a sealed cell into a hole keeping its class.
@@ -96,7 +233,11 @@ impl Contemplation {
                     for (_, k) in cells {
                         let _ = self.complex.apply(&Pivot::Descend(k), |_| [0; 4], [0; 4]);
                     }
-                    let _ = self.complex.apply(&Pivot::Drain(line.clone()), |_| [0; 4], [0; 4]);
+                    if let Applied::Drained(crate::transducer::cech::Drained::Vacuum | crate::transducer::cech::Drained::Cauterized(_)) =
+                        self.complex.apply(&Pivot::Drain(line.clone()), |_| [0; 4], [0; 4])
+                    {
+                        crate::observe::note_mind(|m| m.flex[6] += 1);
+                    }
                 }
                 Some(d) if d >= 2 => {
                     let _ = self.complex.apply(&Pivot::Descend(line.clone()), |_| [0; 4], [0; 4]);

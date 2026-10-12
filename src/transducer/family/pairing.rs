@@ -171,7 +171,14 @@ pub(crate) fn mark_flux(
     let reading = match mine {
         Some(r) => r,
         None => match COURT_FIELD.lock() {
-            Ok(mut field) => transport_order(word_transports, circuits, &mut field, budget),
+            Ok(mut field) => {
+                let reading = transport_order(word_transports, circuits, &mut field, budget);
+                // The court holds no complex of lines: what its field
+                // released or carried relaxes nothing, and is let go here
+                // rather than held without bound.
+                let _ = (field.take_released(), field.take_carried());
+                reading
+            }
             Err(_) => transport_order(word_transports, circuits, &mut crate::transducer::cech::orbit::Field::new(), budget),
         },
     };

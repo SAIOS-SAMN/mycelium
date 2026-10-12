@@ -172,6 +172,13 @@ impl Entity {
         if !lines.is_empty() {
             mark_flux(&[], &lines, budget);
         }
+        // FROZEN-IN FLUX: every fibre the field's admissions carried moves
+        // with the orbit it is wound on (MU-CLIENT §4.5).
+        if let Ok(carried) = crate::transducer::mind::with_field(|field| field.take_carried()) {
+            for (line, increment) in &carried {
+                let _ = self.contemplation.carry(line, increment);
+            }
+        }
         if let Ok(released) = crate::transducer::mind::with_field(|field| field.take_released()) {
             self.contemplation.release(&released);
         }
