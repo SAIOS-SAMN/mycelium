@@ -2,6 +2,12 @@
 // dimension the contemplation makes is one of the six pivots, applied at its
 // coordinate through `Complex::apply`, its outcome returned whole.
 //
+//! ASCEND. A cell the climb minted over standing faces is sealed by its own
+//! vertices through the ascend pivot — never filled around it — so a cell
+//! whose boundary lost a face, carries a remainder, or stands at a hole
+//! refuses by name. A tether's own reading (an edge's fill, which decides a
+//! merge) is no pivot and is read as it is.
+//!
 //! CONDENSE. Two held thoughts the transport relates stand in tension, and
 //! the tension is a TETHER: condensed with its transition. Where a tether
 //! already stands on the pair carrying the same transport, nothing changes.
@@ -13,7 +19,7 @@
 //! written over it.
 
 use super::*;
-use crate::transducer::cech::{Applied, Condensed, Drained, Pivot};
+use crate::transducer::cech::{Applied, Ascended, Condensed, Drained, Pivot};
 use crate::transducer::element::Versor;
 
 impl Contemplation {
@@ -35,6 +41,23 @@ impl Contemplation {
             }
             Applied::Condensed(c) => c,
             _ => Condensed::Absent,
+        }
+    }
+
+    /// ASCEND a cell of the meet graph by its own vertices: its standing
+    /// boundary sealed through the one fill, at the volume the climb minted
+    /// it with (read, never written). A boundary a face has left, a remainder
+    /// among its faces, or a hole there refuses by name — read as no outcome.
+    /// Answers what the fill attached, as the meet graph reads it.
+    pub(crate) fn ascend(&mut self, cell: &[u8]) -> CoboundaryOutcome {
+        let Some((vertices, volume)) = self.complex.simplex(cell).map(|s| (s.vertices.clone(), s.volume)) else {
+            return CoboundaryOutcome::Absent;
+        };
+        match self.complex.apply(&Pivot::Ascend(vertices), |_| volume, volume) {
+            Applied::Ascended(Ascended::Sealed(fill)) => CoboundaryOutcome::Attached(fill),
+            Applied::Ascended(Ascended::Open) => CoboundaryOutcome::Attached(Fill::Open),
+            Applied::Ascended(Ascended::AlreadySealed) => CoboundaryOutcome::AlreadyFilled,
+            _ => CoboundaryOutcome::Absent,
         }
     }
 }

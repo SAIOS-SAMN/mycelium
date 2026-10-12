@@ -391,8 +391,13 @@ impl Contemplation {
     /// FILL A SIMPLEX OF THE MEET GRAPH, and settle a decoherence pending on
     /// it: a class read is the class the cut left between the two thoughts; a
     /// re-fill is the thought rejoined. Every other answer leaves it pending.
+    /// A cell of degree two or more ASCENDS (MU-CLIENT §4.5); a tether is read
+    /// by its own fill.
     pub(crate) fn fill_meet(&mut self, key: &[u8]) -> CoboundaryOutcome {
-        let outcome = self.complex.fill(key);
+        let outcome = match self.complex.degree_of(key) {
+            Some(d) if d >= 2 => self.ascend(key),
+            _ => self.complex.fill(key),
+        };
         self.settle_decoherence(key, &outcome);
         outcome
     }

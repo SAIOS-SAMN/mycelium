@@ -147,6 +147,29 @@ fn the_mind_condenses_and_retethers_by_drain_then_condense() {
     assert!(mind.complex.tethered_as(&vs[0], &vs[2], &turn_90(), &ident()), "the read cell's tether stands as it was");
 }
 
+/// MU-CLIENT §4.5 — THE MIND'S CELL ASCENDS BY ITS OWN BOUNDARY. The climb
+/// mints a cell open over three standing tethers; one tether drains (an open
+/// cell pins nothing), and the cell no longer ascends — its boundary is not
+/// whole. Condensed back, the boundary stands and the cell seals.
+#[test]
+fn the_minds_cell_ascends_only_over_its_standing_boundary() {
+    let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
+    let vs: Vec<Vec<u8>> = [v(21), v(22), v(23)].iter().map(|a| a.as_bytes().to_vec()).collect();
+    for x in &vs {
+        mind.complex.set_section(x, Section::at(crate::transducer::address::Address::from(x.clone()), Rotor::identity()), vol());
+    }
+    for (a, b) in [(0, 1), (1, 2), (0, 2)] {
+        assert_eq!(mind.tether(&vs[a], &vs[b], Rotor::identity(), ident(), vol()), Condensed::Tethered);
+    }
+    let _ = mind.complex.coboundary_on_link(&vs[0], |_| vol());
+    let cell = simplex_key(&sorted_verts(vs.clone())).as_bytes().to_vec();
+    assert!(mind.complex.simplex(&cell).is_some_and(|s| s.fill.unsettled()), "the climb minted the cell open");
+    assert!(matches!(mind.complex.drain(&edge_key(&vs[0], &vs[2])), Drained::Vacuum), "an open cell pins nothing");
+    assert!(matches!(mind.ascend(&cell), CoboundaryOutcome::Absent), "a boundary missing a tether does not ascend");
+    assert_eq!(mind.tether(&vs[0], &vs[2], Rotor::identity(), ident(), vol()), Condensed::Tethered);
+    assert!(matches!(mind.ascend(&cell), CoboundaryOutcome::Attached(Fill::Filled(..))), "the standing boundary seals flat");
+}
+
 /// THE WALK `d, a, p, d` ON ONE CELL (78.99 (3)). `d·a` cancels on the board;
 /// `p` moves the class from the sealed axis to the hole axis; the last `d`
 /// refuses at the hole. The board it leaves is the board `p` alone leaves.
