@@ -61,10 +61,15 @@ pub const PERSPECTIVE: [&str; 8] = ["tasks", "known", "unknown", "one perspectiv
 /// the right cells otherwise — in the order the counts are kept.
 pub const DISAGREE: [&str; 6] = ["no rule", "unspoken", "remainder", "frame", "occupancy", "hue"];
 
-/// ITS QUESTIONS (MU-CLIENT §5.3): words it did not understand and asked
-/// about; questions of others it answered by factoring; atoms it learned at
-/// the bottom of an answer — in the order the counts are kept.
+/// ITS QUESTIONS (MU-CLIENT §5.3): words it did not know and asked of their
+/// residue; questions of others it answered by factoring; rings whose meaning
+/// an answer derived — in the order the counts are kept.
 pub const ASKS: [&str; 3] = ["asked", "clarified", "learned"];
+
+/// WHAT BECAME OF THE ANSWERS IT HEARD (MU-CLIENT §5.3): taken (their factors
+/// re-derived the residue exactly), inexact (they did not), or said under a
+/// question's coordinates it has no question open at.
+pub const ANSWERS: [&str; 3] = ["taken", "inexact", "no question"];
 
 /// HOW EACH HEARD RING WAS TAKEN (MU-CLIENT §4.9), by its two readings —
 /// SOUND (does it sound like something heard) and WORD (is it a word known):
@@ -160,6 +165,11 @@ pub struct Mind {
     pub grown: u64,
     pub vocabulary: u64,
     pub remembered: u64,
+    /// The answers it heard, by [`ANSWERS`]; and its questions open now, and
+    /// of those the ones answered whose factors it does not yet all know.
+    pub answers: [u64; 3],
+    pub unanswered: u64,
+    pub awaiting: u64,
     /// Spin coupled to orbit: each lock `p:q` read, with how often, in
     /// ratio order; and the drifts held as torsion.
     pub locks: Vec<(u64, u64, u64)>,
@@ -204,6 +214,9 @@ impl Default for Mind {
             grown: 0,
             vocabulary: 0,
             remembered: 0,
+            answers: [0; 3],
+            unanswered: 0,
+            awaiting: 0,
             locks: Vec::new(),
             drifts: 0,
             shears: 0,
@@ -244,7 +257,11 @@ impl Mind {
         }
         put_lanes(out, &self.closed);
         put_lanes(out, &self.open);
-        for v in [self.thoughts, self.unions, self.waiting, self.drifts, self.shears, self.escapes, self.lexicon, self.grown, self.vocabulary, self.remembered] {
+        for v in [self.thoughts, self.unions, self.waiting, self.drifts, self.shears, self.escapes, self.lexicon, self.grown, self.vocabulary, self.remembered]
+            .into_iter()
+            .chain(self.answers)
+            .chain([self.unanswered, self.awaiting])
+        {
             put_u64(out, v);
         }
         crate::transducer::address::put_u32_count(out, self.locks.len())?;
@@ -283,6 +300,8 @@ impl Mind {
         let [thoughts, unions, waiting] = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let [drifts, shears, escapes, lexicon, grown] = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let [vocabulary, remembered] = [take_u64(b, p)?, take_u64(b, p)?];
+        let answers = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
+        let [unanswered, awaiting] = [take_u64(b, p)?, take_u64(b, p)?];
         let n = usize::try_from(u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?)).ok()?;
         *p += 4;
         // Each lock is three counts.
@@ -312,6 +331,9 @@ impl Mind {
             grown,
             vocabulary,
             remembered,
+            answers,
+            unanswered,
+            awaiting,
             locks,
             drifts,
             shears,
@@ -342,9 +364,12 @@ impl Mind {
                 PERSPECTIVE.iter().zip(&self.perspective).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
             ),
             format!(
-                "  disagreed {} · questions {}",
+                "  disagreed {} · questions {} · answers {} · unanswered {} (awaiting factors {})",
                 DISAGREE.iter().zip(&self.disagree).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
-                ASKS.iter().zip(&self.asks).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
+                ASKS.iter().zip(&self.asks).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
+                ANSWERS.iter().zip(&self.answers).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
+                self.unanswered,
+                self.awaiting
             ),
             format!(
                 "  rings heard {} · mutual {} · lexicon {} (grown {} by speech) · vocabulary {} · remembers hearing {}",

@@ -438,13 +438,21 @@ impl Entity {
     /// residue itself is an ATOM — the other mind could factor it no further
     /// — and its meaning is taken as given. Answers whether this hearing
     /// answers a question the mind has open.
-    fn take_answer(&mut self, key: &[u8], words: &[Spoken]) -> bool {
-        let Some(q) = self.questions.get_mut(key) else { return false };
+    fn take_answer(&mut self, key: &[u8], said: &[u8], words: &[Spoken]) -> bool {
+        let Some(q) = self.questions.get_mut(key) else {
+            // Said under a question's coordinates, and no question open there.
+            if said.first() == Some(&b'?') {
+                crate::observe::note_mind(|m| m.answers[2] += 1);
+            }
+            return false;
+        };
         let one = crate::transducer::cga::Mv::scalar(num_rational::BigRational::from_integer(1.into()));
         let composed = words.iter().fold(one, |acc, w| acc.geo(&w.motion));
         if !composed.projective_eq(&q.residue) {
+            crate::observe::note_mind(|m| m.answers[1] += 1);
             return false;
         }
+        crate::observe::note_mind(|m| m.answers[0] += 1);
         if let [only] = words {
             if only.motion.projective_eq(&q.residue) {
                 crate::transducer::sentence::rung::learn_by(&q.residue, &[]);
@@ -506,7 +514,7 @@ impl Entity {
         let before = crate::transducer::sentence::rung::lexicon();
         let mut key = speaker.to_vec();
         key.extend_from_slice(&said);
-        let answering = self.take_answer(&key, &words);
+        let answering = self.take_answer(&key, &said, &words);
         let mut heard: Vec<(Spoken, HeardWord)> = Vec::with_capacity(words.len());
         for w in words {
             let terms: Vec<Term> = w.terms.iter().map(|(word, transport)| Term { word: word.clone(), transport: transport.clone() }).collect();
@@ -550,9 +558,12 @@ impl Entity {
         self.close_questions();
         let after = crate::transducer::sentence::rung::lexicon();
         let (vocabulary, remembered) = (self.epigenome.vocabulary.read().len() as u64, self.remembered.scoped().map(|(_, m)| m.len() as u64).sum::<u64>());
+        let (unanswered, awaiting) = (self.questions.len() as u64, self.questions.scoped().filter(|(_, q)| q.factors.is_some()).count() as u64);
         crate::observe::note_mind(|m| {
             m.vocabulary = vocabulary;
             m.remembered = remembered;
+            m.unanswered = unanswered;
+            m.awaiting = awaiting;
         });
         if let (Some(b), Some(a)) = (before, after) {
             crate::observe::note_mind(|m| {
