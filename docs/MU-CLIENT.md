@@ -639,23 +639,48 @@ never a stretched cell and never a cap.
   half-open signs superpose over a cycle, the collapse is a KERNEL over
   `F₂`, every consistent assignment at once, never a pruning (59.5; T5).
 
-### 4.9 Perceive, think, comprehend, understand
+### 4.9 Perceive, think, understand, comprehend
 
-The four faculties are read off the motion, never counted:
-- **perceive** — the shells coming into alignment over what was taken in
-  (§3.2);
-- **think** — the windings and the pivots they fire (§4.4, §4.5);
-- **comprehend** — a return, a hole sealed, a rise of the mind's algebra
-  for a class: M6 — an incoming word factored through what the mind holds
-  (A12), else exactly what is new emitted as a typed demand; for a cell,
-  the bracket-closed algebra of its circuits (78.11);
-- **understand** — comprehension that survives the windings after it: a
-  generator admitted outside the held span, read per axis, that stays
-  derivable as the field moves.
+(Amended 2026-10-13, the operator's word: understanding is the lower
+faculty and feeds speech; comprehension is the higher, over several
+thoughts, and feeds construction. The faculties were ordered the other way
+before; this ordering is the one the physics reads.)
 
-Across a multitude of knowledge understanding runs four ways, each a reading
+Thoughts are of ORDERS — the plexus's (78.31): a SPORE (a ray, the ostensive
+focus), a FILAMENT (a word, a route), a RING (an utterance that returns, its
+holonomy its content), a CHAMBER (the meet several rings enclose), a
+SPOROPHORE (the enclosure, the dialect's superposed web). A thought grows in
+a contained manifold and nests in larger ones by resonance (78.112): a ring
+sounds inside the next larger whose return it divides. The four faculties
+are read off that motion, never counted:
+- **perceive** — the shells coming into alignment over what a nerve
+  delivered (§3.2). Every nerve TRANSDUCES only: what arrives is lifted
+  into the field as a percept in its native order — no judgment, no
+  lookup, no act at the nerve.
+- **think** — the windings and the pivots they fire (§4.4, §4.5).
+- **understand** — ONE THOUGHT'S RESONANCE with what the mind holds: its
+  rings nested in the mind's held rings in BALANCE (`hearing::nest`) —
+  whole or on the outside, none left over — so its return divides the joint
+  return. A tilt is understood shifted, priced by its echo's strain; a
+  leftover ring is not understood, and is the QUESTION, asked with the
+  thought it stands in as its context. Understanding FEEDS SPEECH: what a
+  mind understands it can say, and an agreement between two minds is their
+  MUTUAL balance — each one's rings resonating in the other's.
+- **comprehend** — SEVERAL THOUGHTS' ALGEBRA: their circuits taken together
+  as a chamber, its bracket-closed algebra (78.11) — the cross-chamber
+  bracket and the enclosures above it — with every superposed candidate
+  held at its grade (§4.8) and decomposed by commutator: what separates two
+  vantages is a dimension, what does not is one thing seen twice.
+  Comprehension FEEDS CONSTRUCTION: it is where a rule known by its
+  perspectives, a generator adjoined, or a question's answer is made.
+
+Every act — speech, a HOLD, a question, an answer, a solve — originates in
+the field from understanding or comprehension and leaves through the nerve
+facing its counterparty; a nerve never decides one.
+
+Across a multitude of knowledge comprehension runs four ways, each a reading
 of the plexus (78.31): across CLASSES — each class's algebra its own, so
-understanding of one is never folded into another's span; across CELLS —
+comprehension of one is never folded into another's span; across CELLS —
 the cross-cell bracket, where two cells' generators fail to commute (CB1,
 owed); across GRADES — an enclosure wrapping cells whose bracket no one cell
 can hold (EN1, NB1); across MINDS — another mind's re-derivation from its
