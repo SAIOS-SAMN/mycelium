@@ -27,6 +27,7 @@ mod market;
 mod mouth;
 mod published;
 mod reads;
+pub use reads::HELD_KINDS;
 mod reduce;
 mod room;
 pub mod seat;

@@ -182,13 +182,19 @@ fn check_home(home: &Path) -> ! {
             }
             if bound.is_ok() && scratch.restore(&b) {
                 println!(
-                    "  ledger: {} bytes, restores — {} ruled sentences, K {}, {} nodes held hot ({} this court's own), {} eras",
+                    "  ledger: {} bytes, restores — {} ruled words, K {}, {} nodes held hot ({} this court's own), {} eras",
                     b.len(),
                     scratch.basis_len(),
                     scratch.chain().head_k(),
                     scratch.chain().nodes().count(),
                     scratch.chain().own_len(),
                     scratch.archive().len()
+                );
+                // MU-CLIENT §5.4 — WHAT THE LANGUAGE HOLDS, BY KIND.
+                let kinds = scratch.basis_kinds();
+                println!(
+                    "  language: {}",
+                    mycelium::cognition::HELD_KINDS.iter().zip(kinds).map(|(n, k)| format!("{n} {k}")).collect::<Vec<_>>().join(" · ")
                 );
                 // THE FOLD AS THIS HOME STANDS: where its line would cut, and
                 // whether the ledger and the nets below the cut read exact.
@@ -424,7 +430,7 @@ fn main() {
                 );
             }
             eprintln!(
-                "[{tag}] ledger MYC7: {basis} ruled sentences, treasury entries {entries}, book derived at intake"
+                "[{tag}] ledger MYC7: {basis} ruled words, treasury entries {entries}, book derived at intake"
             );
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {

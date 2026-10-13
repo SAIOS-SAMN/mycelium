@@ -718,6 +718,18 @@ impl Entity {
         self.adjoin_letters(&adjoined, budget);
         let mut n = 0usize;
         for e in spoken {
+            // A REWRITE THE PIVOT MINTED (Torse, Condense; MU-CLIENT §5.4, S3)
+            // is a proposal to the court, spoken as `Retire` is — never a
+            // word for `speak_word`, which says nothing that is not a
+            // connection or an opened axis and so dropped every one of them
+            // unheard.
+            if e.is_rewrite() {
+                if !self.already_taught(&e) {
+                    self.speak(std::slice::from_ref(&e), |_, _| {});
+                    n += 1;
+                }
+                continue;
+            }
             if let Ok(Utterance::Spoken) = self.speak_word(&e) { n += 1 }
         }
         n

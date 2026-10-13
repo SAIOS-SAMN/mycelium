@@ -5,6 +5,10 @@
 
 use super::*;
 
+/// The kinds of word a court's language holds, in [`Kernel::basis_kinds`]'s
+/// order.
+pub const HELD_KINDS: [&str; 7] = ["sentences", "letters", "connections", "colour words", "rewrites", "translations", "other"];
+
 impl Kernel {
     pub(crate) fn mark_persist(&mut self) {
         self.persist_due = true;
@@ -166,6 +170,31 @@ impl Kernel {
 
     pub fn basis_len(&self) -> usize {
         self.basis.len()
+    }
+
+    /// MU-CLIENT §5.4 — WHAT THE COURT'S LANGUAGE HOLDS, BY KIND, in the order
+    /// [`HELD_KINDS`] names: sentences (forms with faces — compositions),
+    /// letters (forms with no face — a generator's carrier), connections,
+    /// colour words, rewrites, translations, and what is none of these. Read
+    /// off each held word; nothing is counted where it is held.
+    pub fn basis_kinds(&self) -> [usize; 7] {
+        let mut out = [0usize; 7];
+        for (_, held) in self.basis.scoped() {
+            let e = held.element();
+            let slot = match () {
+                _ if e.is_rewrite() => 4,
+                _ if e.is_translation() => 5,
+                _ if e.is_colour_word() => 3,
+                _ if e.is_connection() => 2,
+                _ if e.is_sentence() => match held.form().is_some_and(|f| !f.faces.is_empty()) {
+                    true => 0,
+                    false => 1,
+                },
+                _ => 6,
+            };
+            out[slot] += 1;
+        }
+        out
     }
 
     /// The root over the ruled cover. Measured here, where it is asked
