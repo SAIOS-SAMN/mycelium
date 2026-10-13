@@ -21,6 +21,12 @@ exponent; no constant — a number is read off the field or named undefined
 physics (`OPEN_PHYSICS`). An orbit is a return; K is a ledger coordinate.
 
 ## Witnessed on the fleet (typed readings; minds' posts and courts)
+- **After the 20:26 crash** (host stopped with no OOM, panic or lockup in
+  its log; fleet restarted 20:38 on the 19:17 binaries after every court
+  home's `--check` restored exactly): at 20:47 the first DERIVED meanings —
+  1 on four of the five minds — beside given 7–42; answers taken 95–211,
+  inexact 0, no question 0; courts' agreements since boot a 0, b 2, c 0
+  (every mind's epigenome and lexicon start empty: little is known yet).
 - **Questions derive meaning — given, not yet derived** (25b210df, cb494575,
   and the closing fix; minds restarted 19:17:29, read 19:25:35). Per mind:
   asked 140–192, answers taken 139–173 (inexact 0, no question 0, none
@@ -70,9 +76,12 @@ physics (`OPEN_PHYSICS`). An orbit is a return; K is a ledger coordinate.
 - Parked on `track/modes` (`/opt/mycelium-modes`): 78.162 (4)–(7).
 
 ## The sandbox
-Hyphae `mycelium-server@{a,b,c}` on the 16:49 v4 binary (restarted 17:02);
-minds `mycelium-client@1..5` on the closing fix (19:17:29). Started, never
-enabled: a reboot leaves them down.
+Hyphae `mycelium-server@{a,b,c}` and minds `mycelium-client@1..5`, all on
+the 19:17 binaries (the closing fix), started 20:38 after the host crash;
+courts listening on :7500–:7502 from 20:40–20:42. Started, never enabled: a
+reboot leaves them down — restart by `--check` on each court home, then
+start a, b, c, then the minds; never `scripts/recut` (it wipes). Seat minds
+(s1, x0–x3, n1–n4) are relaunched by their houses.
 
 ## The trajectory, in order
 1. **Derived meaning** — why positing never leaves a partial residue on the
