@@ -79,6 +79,11 @@ pub const ANSWERS: [&str; 3] = ["taken", "inexact", "no question"];
 /// seen twice); or from NONE (the hearer knows it only whole).
 pub const VANTAGES: [&str; 3] = ["own", "offered", "none"];
 
+/// THE LAWS ITS WORDS STAND ON (MU-CLIENT §5.4, 78.99): every mode of every
+/// word its own perception newly taught it, by the law that mode returns on —
+/// a turn (periodic), a null count (nilpotent), a rosette, a boost.
+pub const LAWS: [&str; 4] = ["periodic", "nilpotent", "rosette", "boost"];
+
 /// HOW EACH HEARD RING WAS TAKEN (MU-CLIENT §4.9), by its two readings —
 /// SOUND (does it sound like something heard) and WORD (is it a word known):
 /// familiar and known UNDERSTOOD; familiar and unknown ASKED; new and known
@@ -180,6 +185,8 @@ pub struct Mind {
     pub awaiting: u64,
     /// Its hearers' readings of what it said, by [`VANTAGES`].
     pub vantages: [u64; 3],
+    /// The modes of the words its perception taught it, by [`LAWS`].
+    pub laws: [u64; 4],
     /// Spin coupled to orbit: each lock `p:q` read, with how often, in
     /// ratio order; and the drifts held as torsion.
     pub locks: Vec<(u64, u64, u64)>,
@@ -231,6 +238,7 @@ impl Default for Mind {
             unanswered: 0,
             awaiting: 0,
             vantages: [0; 3],
+            laws: [0; 4],
             locks: Vec::new(),
             drifts: 0,
             shears: 0,
@@ -277,6 +285,7 @@ impl Mind {
             .chain(self.answers)
             .chain([self.unanswered, self.awaiting])
             .chain(self.vantages)
+            .chain(self.laws)
         {
             put_u64(out, v);
         }
@@ -319,6 +328,7 @@ impl Mind {
         let answers = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let [unanswered, awaiting] = [take_u64(b, p)?, take_u64(b, p)?];
         let vantages = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
+        let laws = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let n = usize::try_from(u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?)).ok()?;
         *p += 4;
         // Each lock is three counts.
@@ -352,6 +362,7 @@ impl Mind {
             unanswered,
             awaiting,
             vantages,
+            laws,
             locks,
             drifts,
             shears,
@@ -391,10 +402,11 @@ impl Mind {
                 self.awaiting
             ),
             format!(
-                "  rings heard {} · mutual {} · read from {} · lexicon {} (grown {} by speech) · vocabulary {} · remembers hearing {}",
+                "  rings heard {} · mutual {} · read from {} · words' laws {} · lexicon {} (grown {} by speech) · vocabulary {} · remembers hearing {}",
                 SEATS.iter().zip(&self.seats).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 MUTUAL.iter().zip(&self.mutual).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 VANTAGES.iter().zip(&self.vantages).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
+                LAWS.iter().zip(&self.laws).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 self.lexicon,
                 self.grown,
                 self.vocabulary,

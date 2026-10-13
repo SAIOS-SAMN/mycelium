@@ -24,6 +24,7 @@ pub mod presentation;
 pub mod rung;
 pub mod hearing;
 pub mod theorem;
+pub mod word;
 pub mod reasons;
 
 pub use reasons::{Reasons, ReasonsTally};

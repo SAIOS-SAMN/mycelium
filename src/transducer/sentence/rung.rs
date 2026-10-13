@@ -385,6 +385,20 @@ pub fn hear(s: &Composition, budget: &mut crate::physics::Budget) -> Recognition
     // transcribed into its language, stood and spoken; a court transcribes
     // nothing.
     if let Some(t) = taught {
+        // MU-CLIENT §5.4, 78.99 — ITS STRUCTURE: a word of several modes is
+        // the product of its mode-words, each standing on its own hole on
+        // its own law; the mind that knows the word knows them, each a word
+        // of its dictionary. The laws its modes stand on are read.
+        if let Ok(read) = super::word::read(&t.motion) {
+            for m in &read.modes {
+                crate::observe::note_mind(|o| o.laws[m.law.slot()] += 1);
+            }
+            if read.modes.len() > 1 {
+                for m in &read.modes {
+                    learn_by(&m.word, &[]);
+                }
+            }
+        }
         let _ = crate::transducer::mind::with_taught(|held| held.push(t));
     }
     recognition

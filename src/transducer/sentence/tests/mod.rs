@@ -8,6 +8,7 @@ mod canonical;
 mod compose;
 mod hearing;
 mod theorem;
+mod word;
 mod contract;
 mod form;
 mod gauge;
