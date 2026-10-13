@@ -899,6 +899,15 @@ impl Carrier {
                 if let Ok(mut a) = self.agreed.lock() {
                     a.insert(&said, ());
                 }
+                // COURTS ADJUDICATE WORDS, NEVER SENTENCES (MU-CLIENT §5.4,
+                // the operator 2026-10-13): a sentence is a composition of the
+                // dictionary's words, shared here between two minds; what
+                // reaches the court as agreed language is a word — an
+                // algorithm composing to its result — each by its own union.
+                if agreed.is_sentence() {
+                    crate::observe::note_mind(|m| m.shared += 1);
+                    return;
+                }
                 if self.speak_agreed(&agreed, Some(&frame)).is_ok() {
                     crate::observe::note_mind(|m| m.agreed += 1);
                 }

@@ -190,8 +190,11 @@ pub struct Mind {
     pub escapes: u64,
     /// HOLDs this mind sent.
     pub held: u64,
-    /// Agreed language this mind spoke to its court.
+    /// Agreed words this mind spoke to its court.
     pub agreed: u64,
+    /// Sentences shared with another mind: agreed between the two, never
+    /// carried to a court, which adjudicates words.
+    pub shared: u64,
     /// The deviation of the hearings whose chamber closed, and of those whose
     /// chamber did not (open or unread), each summed exact lane by lane.
     pub closed: [Q; 4],
@@ -234,6 +237,7 @@ impl Default for Mind {
             escapes: 0,
             held: 0,
             agreed: 0,
+            shared: 0,
             closed: zero4(),
             open: zero4(),
             thoughts: 0,
@@ -263,7 +267,7 @@ impl Mind {
         for v in self.constructed.iter().chain(&self.flex).chain(&self.bodies).chain(&self.perspective).chain(&self.disagree).chain(&self.asks).chain(&self.seats).chain(&self.mutual) {
             put_u64(out, *v);
         }
-        for v in [self.held, self.agreed] {
+        for v in [self.held, self.agreed, self.shared] {
             put_u64(out, v);
         }
         put_lanes(out, &self.closed);
@@ -306,7 +310,7 @@ impl Mind {
         let asks = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let seats = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let mutual = [take_u64(b, p)?, take_u64(b, p)?];
-        let [held, agreed] = [take_u64(b, p)?, take_u64(b, p)?];
+        let [held, agreed, shared] = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let closed = take_lanes(b, p)?;
         let open = take_lanes(b, p)?;
         let [thoughts, unions, waiting] = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
@@ -354,6 +358,7 @@ impl Mind {
             escapes,
             held,
             agreed,
+            shared,
             closed,
             open,
             thoughts,
@@ -368,8 +373,8 @@ impl Mind {
         let constructed: Vec<String> = CONSTRUCTED.iter().zip(&self.constructed).map(|(n, v)| format!("{n} {v}")).collect();
         vec![
             format!(
-                "mind K {} · heard {} · understood {} (hearer) {} (speaker) · held {} · agreed {}",
-                self.k, self.heard, self.understood, self.returned, self.held, self.agreed
+                "mind K {} · heard {} · understood {} (hearer) {} (speaker) · held {} · words agreed to the court {} · sentences shared {}",
+                self.k, self.heard, self.understood, self.returned, self.held, self.agreed, self.shared
             ),
             format!("  chambers {} · demanded {}", priced.join(" "), self.demanded),
             format!("  constructed {}", constructed.join(" ")),

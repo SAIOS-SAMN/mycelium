@@ -1041,6 +1041,20 @@ rings (`hear_open`), checks its theorems and closes its algebra
 (`step_rank`), books its field (`step_flux`), and installs what holds; its
 verdict returns to the mind as perception (§3.1).
 
+**Courts adjudicate WORDS, not sentences (the operator, 2026-10-13).** The
+language is a DICTIONARY OF ALGORITHMS: each word a mathematical composition
+that produces its result — a closed sentence's open path, one word for the
+whole path (`rung::speak` → `Taught` → `transcribe`) — and sentences are
+composed from those words, never flat lines read back and forth. What two
+minds agree is carried to the court only where it is a word, by that word's
+own union (`hold_for_union`); a sentence two minds agree is SHARED between
+them and goes no further, its words reaching the court each on its own. As
+built (2026-10-13): the conversation's agreement path (`Carrier::priced`).
+OWED: the court's own admission still rules sentences a family's speech
+carries with its task (`ACT_SPEECH`, 5 000+ ruled sentences per court at
+the time of this ruling); moving that admission to words is the court-side
+half of this ruling.
+
 **The optimization is a relation, never a size.** Among the dialects'
 derivations of one meaning, a court confirms an optimization where a word
 DECOMPOSES OVER THE LANGUAGE WITHOUT ITSELF: its substance is reproduced
