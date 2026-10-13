@@ -393,15 +393,17 @@ impl Entity {
     }
 
     /// MU-CLIENT §4.9 — RINGS ANOTHER MIND SAID, UNDERSTOOD IN THIS MIND'S
-    /// FIELD: each composed again from its terms (`compose`), recognized
-    /// against this mind's own rings (`rung::hear` — recognized, comprehended
-    /// by its coordinates, or held new at its rung: the heard thought grows
-    /// the mind's manifold), and seated among them by size (`rung::seat`):
-    /// WHOLE where it resonates with a held ring, TILTED with its echoes,
-    /// OUTER where no held ring is larger, LEFTOVER — not understood, and
-    /// asked for. Each reading carries the held rings it sounded with — this
-    /// mind's re-derivation, which the speaker nests for mutual balance. The
-    /// understanding goes back to the conversation to be carried.
+    /// FIELD: each composed again from its terms (`compose`) and read twice,
+    /// apart. As a WORD against the mind's vocabulary (`rung::hear` —
+    /// recognized, comprehended by its coordinates, or new: the heard thought
+    /// grows the mind's manifold). As a SOUND against what the mind remembers
+    /// hearing (`sound_of`): WHOLE in a heard ring, TILTED round one with its
+    /// echo, or new (OUTER, LEFTOVER). Known and whole is understood; known
+    /// and tilted is understood SHIFTED; familiar and unknown is the
+    /// question; new and unknown is listened to. Each reading carries the
+    /// heard rings it sounded with — this mind's re-derivation, which the
+    /// speaker reads for mutual balance. The understanding goes back to the
+    /// conversation to be carried.
     fn understand(&mut self, speaker: [u8; 32], said: Vec<u8>, words: Vec<Spoken>) {
         use crate::transducer::sentence::compose::{compose, Term};
         use crate::transducer::sentence::hearing::Seat;
@@ -430,21 +432,24 @@ impl Entity {
             // and remembered now, so it is part of that memory from here on.
             let sound = self.sound_of(&ring);
             self.remember_sound(&ring);
-            let familiar = matches!(&sound, Some((e, _)) if matches!(e.seat, Seat::Whole | Seat::Tilted(_)));
-            let (derived, asks, held, slot) = match (&sound, familiar, word.known()) {
-                (None, ..) => (None, None, Vec::new(), 4),
-                // A familiar sound and a known word: UNDERSTOOD, carried
-                // round what it sounded like.
-                (Some((e, through)), true, true) => (e.carried.clone(), None, through.clone(), 0),
+            let (derived, asks, held, slot) = match (&sound, word.known()) {
+                (None, _) => (None, None, Vec::new(), 4),
+                // A known word sounding WHOLE in a heard ring: UNDERSTOOD,
+                // carried as it is.
+                (Some((e, through)), true) if e.seat == Seat::Whole => (e.carried.clone(), None, through.clone(), 0),
+                // A known word sounding TILTED in a heard ring: understood
+                // SHIFTED — carried round that ring, its echo the shift, the
+                // holonomy interpreted and priced by its strain.
+                (Some((e, through)), true) if matches!(e.seat, Seat::Tilted(_)) => (e.carried.clone(), None, through.clone(), 2),
+                // A known word in a sound nothing heard holds: understood as
+                // itself.
+                (Some(_), true) => (Some(ring.clone()), None, Vec::new(), 0),
                 // It sounds like something heard, and is no word I know:
                 // WHAT DOES THAT MEAN — the question.
-                (Some(_), true, false) => (None, Some(ring.clone()), Vec::new(), 1),
-                // A word I know, said in a way I have not heard: understood
-                // SHIFTED, as itself.
-                (Some(_), false, true) => (Some(ring.clone()), None, Vec::new(), 2),
+                (Some((e, _)), false) if matches!(e.seat, Seat::Whole | Seat::Tilted(_)) => (None, Some(ring.clone()), Vec::new(), 1),
                 // A new sound and no word: noise not yet signal — LISTENED
                 // to, held, not asked about.
-                (Some(_), false, false) => (None, None, Vec::new(), 3),
+                (Some(_), false) => (None, None, Vec::new(), 3),
             };
             crate::observe::note_mind(|m| m.seats[slot] += 1);
             let h = HeardWord { vertex: w.vertex.clone(), derived, gauge: w.gauge.clone(), cites: Vec::new(), asks, held };
