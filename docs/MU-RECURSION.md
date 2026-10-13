@@ -24020,8 +24020,11 @@ it; the wire for every act and the core tube's distinct id.
 **Origin v2's bytes were REVISED before first use** (ruling (ii)): 78.139's
 bare curvature `R` is replaced in place by a GEOMETRY — no version 3, since
 no court had sealed a v2 origin (:7520 originated nothing; the fleet's
-homes carry none). `Geometry` is `[0][R n d]` CURVED (a closed curved
-space, the hyperbolic sheet as before) or `[1][k][periods n d …][metric]`
+homes carry none). `Geometry` is `[0][R n d]` CURVED (the hyperbolic
+sheet `ℍ³` as before — an OPEN space of constant negative curvature, its
+frames `Spin⁺(3,1)` (`is_spin_plus_31`); corrected 2026-10-13, it read "a
+closed curved space", which the sheet is not, and no frame of a closed
+3-sphere passes the check) or `[1][k][periods n d …][metric]`
 a flat TORUS of `1 ≤ k ≤ 3` AXIS-ALIGNED positive periods (ruling (iii): a
 general lattice basis waits for a universe that needs one, and brings its
 reduced basis with it) and its metric `0` L1 (netstratum's) or `1` L2.
