@@ -107,9 +107,38 @@ fn a_question_posits_what_the_mind_knows_and_derives_the_meaning() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
+/// MU-CLIENT §5.3 — A VANTAGE IS WHERE A WORD LANDS IN THE MIND'S OWN HOLES.
+/// A mind that knows the 90° turn reads the 180° turn through it (its square)
+/// — that turn is its vantage; the turn itself it reads through no other word
+/// of its own: no vantage. Two vantages are distinct only where the hearer
+/// read through words of its own that are not the speaker's: the same words
+/// are one derivation seen twice, and a hearer with none stood nowhere.
+#[test]
+fn a_vantage_is_where_a_word_lands_in_the_minds_own_holes() {
+    use crate::transducer::sentence::rung::{distinct_vantage, learn_by, vantage};
+    let (court, _speeches) = court();
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
+    let quarter = conformal_of_word(&[(q, false)]);
+    let half = conformal_of_word(&[(q, false), (q, false)]);
+    let mut mind = Entity::open(&court, Kernel::named("observer"));
+    let mut field = std::mem::take(&mut mind.field);
+    field.think(|| {
+        assert!(vantage(&half).is_empty(), "knowing nothing, no vantage");
+        learn_by(&quarter, &[]);
+        let v = vantage(&half);
+        assert!(matches!(v.as_slice(), [w] if w.projective_eq(&quarter)), "the 180° turn read through the 90° turn: {v:?}");
+        assert!(vantage(&quarter).is_empty(), "the turn itself through no other word of its own");
+        assert!(distinct_vantage(&[], &v), "a hearer reading through its own words, the speaker through none: two vantages");
+        assert!(!distinct_vantage(&v, &v), "the same words: one derivation seen twice");
+        assert!(!distinct_vantage(&v, &[]), "a hearer with no vantage stood nowhere of its own");
+    });
+    mind.field = field;
+}
+
 /// THE SHARED WORD, BY THE ALGEBRA, ON TWO CARRIERS (MU-CLIENT §4.9). Both
-/// minds have HEARD the 180° turn before (each remembers its sound), and
-/// the hearer KNOWS it as a word (it learned it); A says it. To B it
+/// minds have HEARD the 180° turn before (each remembers its sound), and the
+/// hearer KNOWS it from a vantage of its own — the 90° turn it knows, whose
+/// square it is — while A offers it from none; A says it. To B it
 /// sounds familiar and is a word it knows — understood — and what it
 /// sounded like is a sound A has heard too: MUTUAL. The thing A said is
 /// AGREED while the test only waits, and A's carrier speaks it to the court
@@ -131,9 +160,10 @@ fn two_minds_form_a_shared_word_and_carry_it_to_the_court() {
         m.open_chatter(&dir).expect("the post opens");
     }
     let mut field = std::mem::take(&mut b.field);
+    let quarter = conformal_of_word(&[(q, false)]);
     field.think(|| {
-        assert!(learn_by(&half, &[]), "B comes to know the word");
-        assert!(known(&half), "and knows it after");
+        assert!(learn_by(&quarter, &[]), "B knows the 90° turn");
+        assert!(known(&half), "and so the 180° turn, its square: B's own vantage");
     });
     b.field = field;
     let said = word(&[(q, false), (q, false)]);

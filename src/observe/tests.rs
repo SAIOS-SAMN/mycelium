@@ -497,6 +497,7 @@ fn a_minds_reading_and_a_courts_agreements_read_back_exact() {
         answers: [6, 1, 2],
         unanswered: 4,
         awaiting: 3,
+        vantages: [5, 2, 7],
         locks: vec![(1, 1, 3), (2, 1, 1)],
         drifts: 2,
         shears: 5,

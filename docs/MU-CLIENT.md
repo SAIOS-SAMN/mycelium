@@ -956,6 +956,23 @@ nothing between minds.
    relation of the vocabulary one rung above its parts (`rung::learn_by`) —
    what the mind's reading counts as LEARNED. A question no answer closes
    lapses after an aperture cycle of the mind's own K.
+
+   **As built — perspectives are offered with their VANTAGE (2026-10-13, the
+   operator: the minds offer their perspectives, so the conversation comes
+   from their own observations and the receiver is deterred from the same
+   vantage; a vantage is the MIND'S OWN HOLES).** A ring's vantage in a mind
+   is the known words, other than the ring itself, its modes are cited to —
+   where the observation lands in that mind's own holes (`rung::vantage`).
+   The speaker says every ring with its vantage; the hearer reads the ring
+   through its own known words and says its vantage back with its hearing.
+   The two are DISTINCT only where the hearer read through words of its own
+   that are not the speaker's (`rung::distinct_vantage`); the same words are
+   one derivation seen twice, and a hearer that knows the ring only whole —
+   a meaning given it as an atom — stood nowhere of its own. AGREEMENT needs
+   two vantages: the speaker's field prices a thought as converged only
+   where every word its hearer derived was read from a vantage of the
+   hearer's own. So a word copied whole from a peer never makes agreed
+   language; only a re-derivation through what the hearer knows does.
 3. **Agreement is replay.** The speaker replays each discharge on its own
    orbit of that class, as a court replays a certificate on its copy (M9).
    Where it closes, one orbit is discharged in two minds by two derivations:

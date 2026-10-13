@@ -223,6 +223,35 @@ pub(crate) fn posit(word: &Mv) -> Option<Posited> {
     read.ok().flatten()
 }
 
+/// MU-CLIENT §5.3 — THE VANTAGE A WORD IS READ FROM IN THIS MIND: the known
+/// words, other than the word itself, its modes are cited to — where the
+/// observation lands in this mind's own holes, each rebuilt from its
+/// coordinates, once, in key order. Empty where the mind reads it through no
+/// word of its own: it knows it only whole, or not at all — no vantage.
+pub(crate) fn vantage(word: &Mv) -> Vec<Mv> {
+    let (Some(key), Some(coords)) = (key_of(word), coords_of(word)) else { return Vec::new() };
+    let read = crate::transducer::mind::with_lexicon(|lex| {
+        let held = &lex.held;
+        let d = lex.holes.deconstruct(&coords, |k| if k == key.as_slice() { None } else { known_coords(held, k) });
+        let mut cited: Keyed<()> = Keyed::new();
+        for c in &d.cites {
+            cited.insert(&c.word, ());
+        }
+        cited.scoped().filter_map(|(k, ())| known_coords(held, &k).map(Coordinates::word)).collect::<Vec<Mv>>()
+    });
+    // Outside a mind's field there is no vocabulary to stand on: no vantage.
+    read.into_iter().flatten().collect()
+}
+
+/// TWO VANTAGES ARE DISTINCT where the hearer read through words of its own
+/// and they are not the speaker's: some word of one is not, projectively,
+/// among the other's. A hearer with no vantage stood nowhere of its own.
+pub(crate) fn distinct_vantage(speaker: &[Mv], hearer: &[Mv]) -> bool {
+    let within = |a: &[Mv], b: &[Mv]| a.iter().all(|x| b.iter().any(|y| x.projective_eq(y)));
+    let same = within(speaker, hearer) && within(hearer, speaker);
+    !hearer.is_empty() && !same
+}
+
 /// MU-CLIENT §5.3 — A WORD'S MEANING DERIVED: `word` is the composition of
 /// `parts`, every one a word the mind knows (the caller has read the
 /// composition exactly). The word is known from here on, one rung above the

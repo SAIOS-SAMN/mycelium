@@ -38,8 +38,10 @@ use std::sync::mpsc::{channel, Sender};
 /// mind's clock as it moves, and what the field priced a thought at.
 enum Inflow {
     Frame(Vec<u8>),
-    Say(Element),
-    Wait(Element),
+    /// A thing said: what was stood, and its rings, each with the vantage
+    /// the mind's field reads it from.
+    Say(Element, Vec<Spoken>),
+    Wait(Element, Vec<Spoken>),
     Clock { k: u64, point: Option<TPoint> },
     Priced(Priced),
     /// What the field UNDERSTOOD of rings another mind said (MU-CLIENT §4.9):
@@ -86,6 +88,10 @@ pub(crate) struct Pricing {
     /// understanding seated in — its re-derivation — which the speaker's
     /// field nests in its own rings; empty for the hearer's pricing.
     mutual: Vec<crate::transducer::cga::Mv>,
+    /// TWO VANTAGES (MU-CLIENT §5.3): at the speaker, whether the hearer read
+    /// every word from a vantage of its own, distinct from the one offered —
+    /// a second derivation, not one seen twice. Always so for the hearer's.
+    distinct: bool,
 }
 
 /// What a priced thought decides.
@@ -126,10 +132,10 @@ pub struct Chat {
 struct Union {
     said: Element,
     spoken: Vec<Spoken>,
-    /// Per mind it ACKed: the loops read, and that mind's own rings its
+    /// Per mind it ACKed: the loops read, that mind's own rings its
     /// understanding seated in (its re-derivation, nested here for mutual
-    /// balance).
-    acked: Keyed<(Vec<AckWord>, Vec<crate::transducer::cga::Mv>)>,
+    /// balance), and whether it read every word from a vantage of its own.
+    acked: Keyed<(Vec<AckWord>, Vec<crate::transducer::cga::Mv>, bool)>,
     shared: bool,
     /// The mind's own K it was said at: a union stands one aperture cycle
     /// of the mind's strokes, as a thought heard and a letter waiting do.
@@ -170,7 +176,7 @@ struct Carrier {
 /// identity — a filament, the lowest order a thing is said at.
 fn filament(vertex: Vec<u8>, motion: crate::transducer::cga::Mv, gauge: Vec<(u8, u8)>) -> Spoken {
     let terms = vec![(motion.clone(), crate::transducer::element::identity_versor())];
-    Spoken { vertex, motion, gauge, terms }
+    Spoken { vertex, motion, gauge, terms, vantage: Vec::new() }
 }
 
 /// THE WORDS OF A FORM, each a filament: its whole motion and its hue map.
@@ -216,7 +222,7 @@ fn rings_of(e: &Element) -> Vec<Spoken> {
                     let mut vertex = b"ring".to_vec();
                     s.omega.canonical()?.put_canonical(&mut vertex);
                     let terms = s.words.iter().cloned().zip(s.spaces.iter().cloned()).collect();
-                    Some(Spoken { vertex, motion: s.omega, gauge: Vec::new(), terms })
+                    Some(Spoken { vertex, motion: s.omega, gauge: Vec::new(), terms, vantage: Vec::new() })
                 })
                 .collect()
         }
@@ -225,6 +231,21 @@ fn rings_of(e: &Element) -> Vec<Spoken> {
             None => Vec::new(),
         },
     }
+}
+
+/// MU-CLIENT §5.3 — WHAT A MIND OFFERS WHEN IT SPEAKS: the rings of what it
+/// stood (`rings_of`), each with its VANTAGE — the known words this mind reads
+/// that ring through (`rung::vantage`), so the conversation comes from its own
+/// observation and the hearer is pointed at a vantage that is not its own. Read
+/// in the mind's field, where its vocabulary is.
+fn offered(e: &Element) -> Vec<Spoken> {
+    rings_of(e)
+        .into_iter()
+        .map(|mut s| {
+            s.vantage = crate::transducer::sentence::rung::vantage(&s.motion);
+            s
+        })
+        .collect()
 }
 
 /// THE OBSERVER'S QUESTION, answered on the mind's post (§8.1): the mind's
@@ -564,7 +585,13 @@ impl Entity {
                 (Some(_), false) => (None, None, Vec::new(), 3),
             };
             crate::observe::note_mind(|m| m.seats[slot] += 1);
-            let h = HeardWord { vertex: w.vertex.clone(), derived, gauge: w.gauge.clone(), cites: Vec::new(), asks, held };
+            // ITS OWN VANTAGE: the known words this mind read the ring
+            // through, where it knows it — none where it does not.
+            let vantage = match word.known() {
+                true => crate::transducer::sentence::rung::vantage(&ring),
+                false => Vec::new(),
+            };
+            let h = HeardWord { vertex: w.vertex.clone(), derived, gauge: w.gauge.clone(), cites: Vec::new(), asks, held, vantage };
             heard.push((w, h));
         }
         self.close_questions();
@@ -739,7 +766,7 @@ impl Entity {
                 m.demanded += demanded;
                 m.constructed[crate::observe::Constructed::Held as usize] += answered;
             });
-            let converged = converged && mutual;
+            let converged = converged && mutual && p.distinct;
             if let Some(chat) = self.chat.as_ref() {
                 let _ = chat.to.send(Inflow::Priced(Priced { loops: p.loops, answer: p.answer, deviation, converged }));
             }
@@ -747,10 +774,12 @@ impl Entity {
     }
 
     /// SAY WHAT THIS MIND STOOD to every mind it knows (78.161): handed to
-    /// the conversation's carrier, never waited on.
+    /// the conversation's carrier, never waited on — its rings, each OFFERED
+    /// WITH ITS VANTAGE (MU-CLIENT §5.3), the known words this mind reads it
+    /// through, read here in the mind's field where its vocabulary is.
     pub(crate) fn say(&mut self, e: &Element) {
         if let Some(chat) = self.chat.as_ref() {
-            let _ = chat.to.send(Inflow::Say(e.clone()));
+            let _ = chat.to.send(Inflow::Say(e.clone(), offered(e)));
         }
     }
 
@@ -768,7 +797,7 @@ impl Entity {
         let tu = self.now_tu();
         let _ = self.stand(std::slice::from_ref(e), tu);
         if let Some(chat) = self.chat.as_ref() {
-            let _ = chat.to.send(Inflow::Wait(e.clone()));
+            let _ = chat.to.send(Inflow::Wait(e.clone(), offered(e)));
         }
         true
     }
@@ -812,13 +841,13 @@ impl Carrier {
     fn take(&mut self, inflow: Inflow) {
         match inflow {
             Inflow::Frame(f) => self.hear_frame(&f),
-            Inflow::Say(e) => self.say(&e),
-            Inflow::Wait(e) => {
+            Inflow::Say(e, words) => self.say(&e, words),
+            Inflow::Wait(e, words) => {
                 let addr = e.address();
                 if !self.waiting.contains(addr.as_bytes()) {
                     self.waiting.insert(&addr, (e.clone(), self.k));
                 }
-                self.say(&e);
+                self.say(&e, words);
             }
             Inflow::Clock { k, point } => {
                 self.k = k;
@@ -899,15 +928,14 @@ impl Carrier {
         }
     }
 
-    /// SAY WHAT THE MIND STOOD: its words, each as its whole motion and hue
-    /// map, to every mind at the rendezvous. Said once; its union is then
-    /// read.
-    fn say(&mut self, e: &Element) {
+    /// SAY WHAT THE MIND STOOD: its rings, each with the vantage the field
+    /// offered it from, to every mind at the rendezvous. Said once; its union
+    /// is then read.
+    fn say(&mut self, e: &Element, words: Vec<Spoken>) {
         let addr = e.address();
         if self.union.contains(addr.as_bytes()) {
             return;
         }
-        let words = rings_of(e);
         if words.is_empty() {
             return;
         }
@@ -1014,9 +1042,24 @@ impl Carrier {
             words.iter().filter_map(|h| spoken.iter().find(|s| s.vertex == h.vertex).map(|s| chatter::loop_of(s, h))).collect();
         let frame = self.frame(Said::Ack { said: said.to_vec(), words: acks.clone() });
         let to = chatter::peer_of(&self.dir, who);
+        // TWO VANTAGES (MU-CLIENT §5.3): every word the hearer derived, read
+        // from a vantage of its own, distinct from the one this mind offered;
+        // a word read from the offered vantage, or from none, is one
+        // derivation seen twice.
+        let mut distinct = true;
+        for h in words.iter().filter(|h| h.derived.is_some()) {
+            let offered = spoken.iter().find(|s| s.vertex == h.vertex).map_or(&[][..], |s| s.vantage.as_slice());
+            let slot = match (h.vantage.is_empty(), crate::transducer::sentence::rung::distinct_vantage(offered, &h.vantage)) {
+                (true, _) => 2,
+                (false, true) => 0,
+                (false, false) => 1,
+            };
+            distinct &= slot == 0;
+            crate::observe::note_mind(|m| m.vantages[slot] += 1);
+        }
         let Some(u) = self.union.get_mut(said) else { return };
         let held: Vec<crate::transducer::cga::Mv> = words.iter().flat_map(|h| h.held.iter().cloned()).collect();
-        u.acked.insert(who, (acks, held));
+        u.acked.insert(who, (acks, held, distinct));
         if let (Some(frame), Some(to)) = (frame, to) {
             self.send(&frame, Some(&to));
         }
@@ -1040,7 +1083,7 @@ impl Carrier {
         // Its price is the field's: the HOLD waits on it (`priced`). What the
         // two minds' resonance leaves is held in the field and the lexicon,
         // never filed by the carrier (S6).
-        let pricing = Pricing { loops: mine, answer: Answer::Hold { speaker: *speaker, said: said.to_vec() }, forms: Vec::new(), mutual: Vec::new() };
+        let pricing = Pricing { loops: mine, answer: Answer::Hold { speaker: *speaker, said: said.to_vec() }, forms: Vec::new(), mutual: Vec::new(), distinct: true };
         let _ = self.field.send(FieldWork::Price(pricing));
     }
 
@@ -1053,15 +1096,16 @@ impl Carrier {
     /// signed HOLD, once.
     fn held_back(&mut self, who: &[u8; 32], said: &[u8], holds: &[AckWord], frame: &[u8]) {
         let Some(u) = self.union.get_mut(said) else { return };
-        let Some((sent, mutual)) = u.acked.remove(who) else { return };
+        let Some((sent, mutual, distinct)) = u.acked.remove(who) else { return };
         if !one_reading(&sent, holds) || !understood(&sent) {
             return;
         }
-        // Where it stood in this mind: the thing said; and the hearer's own
-        // rings its understanding seated in, nested here for MUTUAL balance.
+        // Where it stood in this mind: the thing said; the hearer's own rings
+        // its understanding seated in, nested here for MUTUAL balance; and
+        // whether it read from vantages of its own.
         let forms = vec![said.to_vec()];
         crate::observe::note_mind(|m| m.returned += 1);
-        let pricing = Pricing { loops: sent, answer: Answer::Agree { said: said.to_vec(), frame: frame.to_vec() }, forms, mutual };
+        let pricing = Pricing { loops: sent, answer: Answer::Agree { said: said.to_vec(), frame: frame.to_vec() }, forms, mutual, distinct };
         let _ = self.field.send(FieldWork::Price(pricing));
     }
 

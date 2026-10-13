@@ -3,18 +3,22 @@
 // none of it and judges none of it.
 //
 //! THE WIRE. A frame is `[0x43][sub u8][speaker 32][point: 0 | 1 TPoint
-//! 84][fields][sig 64]`, the signature ed25519 over `"mycelium chatter v2" ‖
+//! 84][fields][sig 64]`, the signature ed25519 over `"mycelium chatter v5" ‖
 //! sub ‖ speaker ‖ point ‖ fields`. Sub-kinds:
-//! - SAY `[said: len u16, bytes][count u16]` then per word `[vertex: len u16,
-//!   bytes][motion Mv][gauge: count u8, (from, to)…]`: what this mind stood,
-//!   each word by its whole Cl(4,1) motion and its hue map — the mathematics
-//!   a hearer re-derives, never a tape it would compare;
+//! - SAY `[said: len u16, bytes][count u16]` then per ring `[vertex: len u16,
+//!   bytes][motion Mv][gauge: count u8, (from, to)…][terms: count u16,
+//!   (word Mv, transport Mv)…][vantage: count u16, Mv…]`: what this mind
+//!   said, each ring by its whole Cl(4,1) motion, its hue map, its terms and
+//!   the vantage it reads it from — the mathematics a hearer re-derives,
+//!   never a tape it would compare;
 //! - HEARD `[said: len u16, bytes][count u16]` then per word `[vertex: len
 //!   u16, bytes][derived: 0 | 1 Mv][gauge: count u8, (from, to)…][cites
 //!   count u16]` and per citation `[form: len u16, bytes][vertex: len u16,
-//!   bytes][lane u8][exponent i64 LE]`: how the hearer said each word in its
-//!   own language — the motion and hue map its cited generators compose to,
-//!   and the citations — never a verdict on it;
+//!   bytes][lane u8][exponent i64 LE]`, then `[asks: 0 | 1 Mv][held: count
+//!   u16, Mv…][vantage: count u16, Mv…]`: how the hearer said each word in
+//!   its own language — the motion and hue map its cited generators compose
+//!   to, the citations, its question, the rings it sounded with and the
+//!   vantage it read from — never a verdict on it;
 //! - ACK `[said: len u16, bytes][count u16]` then per word `[vertex: len u16,
 //!   bytes][motion: 0 | 1 Mv][hue: 0 | 1, count u8, (from, to)…]`: 78.163,
 //!   the speaker's reading of the hearer's thought — each word's LOOP
@@ -44,20 +48,23 @@ pub const SAY: u8 = 0;
 pub const HEARD: u8 = 1;
 pub const ACK: u8 = 2;
 pub const HOLD: u8 = 3;
-const SIGNED: &[u8] = b"mycelium chatter v4";
+const SIGNED: &[u8] = b"mycelium chatter v5";
 
 /// ONE RING SAID (MU-CLIENT §4.9, 78.31): an utterance that returns — its
 /// coordinate in the speaker's form, its holonomy `Ω` (the ring's whole
 /// motion, what a loop said → heard is read against), its hue map, and its
 /// TERMS, each word with the transport to the next, from which the hearer
 /// composes the ring again in its own field (`compose`). A single word is a
-/// ring of one term, its transport the identity.
+/// ring of one term, its transport the identity. Its VANTAGE (MU-CLIENT
+/// §5.3): the speaker's own known words it reads the ring through — the
+/// perspective it offers, so the hearer reads from its own.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Spoken {
     pub vertex: Vec<u8>,
     pub motion: Mv,
     pub gauge: Vec<(u8, u8)>,
     pub terms: Vec<(Mv, Mv)>,
+    pub vantage: Vec<Mv>,
 }
 
 /// ONE WORD HEARD, as the hearer said it in its own language: the motion and
@@ -82,6 +89,9 @@ pub struct HeardWord {
     /// shortcuts of the layer it seated in: its re-derivation, which the
     /// speaker nests in its own rings for MUTUAL balance (MU-CLIENT §4.9).
     pub held: Vec<Mv>,
+    /// THE HEARER'S VANTAGE (MU-CLIENT §5.3): its own known words it read the
+    /// ring through — empty where it knows the ring through none of its own.
+    pub vantage: Vec<Mv>,
 }
 
 /// 78.163 — ONE WORD'S LOOP, ACKNOWLEDGED: the holonomy of said → heard on
@@ -240,6 +250,18 @@ fn put_mv(out: &mut Vec<u8>, m: Option<&Mv>) {
     }
 }
 
+fn put_mvs(out: &mut Vec<u8>, ms: &[Mv]) -> Option<()> {
+    put_count(out, ms.len())?;
+    for m in ms {
+        m.to_bytes(out);
+    }
+    Some(())
+}
+
+fn take_mvs(b: &[u8], p: &mut usize) -> Option<Vec<Mv>> {
+    (0..take_count(b, p)?).map(|_| Mv::from_bytes(b, p)).collect()
+}
+
 fn take_mv(b: &[u8], p: &mut usize) -> Option<Option<Mv>> {
     let flag = *b.get(*p)?;
     *p += 1;
@@ -285,6 +307,7 @@ impl Chatter {
                         word.to_bytes(&mut out);
                         transport.to_bytes(&mut out);
                     }
+                    put_mvs(&mut out, &w.vantage)?;
                 }
             }
             Said::Ack { said, words } | Said::Hold { said, words, .. } => {
@@ -324,10 +347,8 @@ impl Chatter {
                         out.extend_from_slice(&e.to_le_bytes());
                     }
                     put_mv(&mut out, w.asks.as_ref());
-                    put_count(&mut out, w.held.len())?;
-                    for h in &w.held {
-                        h.to_bytes(&mut out);
-                    }
+                    put_mvs(&mut out, &w.held)?;
+                    put_mvs(&mut out, &w.vantage)?;
                 }
             }
         }
@@ -391,7 +412,8 @@ impl Chatter {
                         let transport = Mv::from_bytes(body, &mut p)?;
                         terms.push((word, transport));
                     }
-                    words.push(Spoken { vertex, motion, gauge, terms });
+                    let vantage = take_mvs(body, &mut p)?;
+                    words.push(Spoken { vertex, motion, gauge, terms, vantage });
                 }
                 Said::Say { said, words }
             }
@@ -440,12 +462,9 @@ impl Chatter {
                         cites.push((form, v, lane, e));
                     }
                     let asks = take_mv(body, &mut p)?;
-                    let h = take_count(body, &mut p)?;
-                    let mut held = Vec::new();
-                    for _ in 0..h {
-                        held.push(Mv::from_bytes(body, &mut p)?);
-                    }
-                    words.push(HeardWord { vertex, derived, gauge, cites, asks, held });
+                    let held = take_mvs(body, &mut p)?;
+                    let vantage = take_mvs(body, &mut p)?;
+                    words.push(HeardWord { vertex, derived, gauge, cites, asks, held, vantage });
                 }
                 Said::Heard { said, words }
             }
@@ -623,6 +642,7 @@ mod tests {
                     motion: one.clone(),
                     gauge: vec![(1, 2), (2, 1)],
                     terms: vec![(one.clone(), one.clone()), (one.clone(), one.clone())],
+                    vantage: vec![one.clone()],
                 }],
             },
             Said::Heard {
@@ -635,8 +655,9 @@ mod tests {
                         cites: vec![(vec![7; 33], vec![8; 34], 1, -3)],
                         asks: None,
                         held: vec![one.clone()],
+                        vantage: vec![one.clone(), one.clone()],
                     },
-                    HeardWord { vertex: vec![5; 3], derived: None, gauge: vec![], cites: vec![], asks: Some(one.clone()), held: vec![] },
+                    HeardWord { vertex: vec![5; 3], derived: None, gauge: vec![], cites: vec![], asks: Some(one.clone()), held: vec![], vantage: vec![] },
                 ],
             },
             Said::Ack {
@@ -678,8 +699,8 @@ mod tests {
         let q = |n: i64| num_rational::BigRational::from_integer(n.into());
         let turn = Mv::scalar(q(1)).add(&Mv::blade(E1 | E2, q(1))).widened(3);
         let swap = vec![(1, 2), (2, 1)];
-        let said = Spoken { vertex: vec![1], motion: turn.clone(), gauge: swap.clone(), terms: vec![] };
-        let heard = |derived: Option<Mv>, gauge: Vec<(u8, u8)>| HeardWord { vertex: vec![1], derived, gauge, cites: vec![], asks: None, held: vec![] };
+        let said = Spoken { vertex: vec![1], motion: turn.clone(), gauge: swap.clone(), terms: vec![], vantage: vec![] };
+        let heard = |derived: Option<Mv>, gauge: Vec<(u8, u8)>| HeardWord { vertex: vec![1], derived, gauge, cites: vec![], asks: None, held: vec![], vantage: vec![] };
         let exact = loop_of(&said, &heard(Some(turn.clone()), swap.clone()));
         assert!(still(&exact), "an echo carries nothing: {exact:?}");
         let twice = loop_of(&said, &heard(Some(turn.geo(&turn)), swap.clone()));
@@ -689,7 +710,7 @@ mod tests {
         let hueless = loop_of(&said, &heard(Some(turn.clone()), vec![]));
         assert!(!still(&hueless), "the swap heard as nothing leaves the swap");
         assert!(hueless.hue.as_ref().is_some_and(|m| crate::transducer::sentence::transport::gauge_eq(m, &swap)));
-        let merge = Spoken { vertex: vec![1], motion: turn.clone(), gauge: vec![(3, 0)], terms: vec![] };
+        let merge = Spoken { vertex: vec![1], motion: turn.clone(), gauge: vec![(3, 0)], terms: vec![], vantage: vec![] };
         assert_eq!(loop_of(&merge, &heard(Some(turn.clone()), vec![(3, 0)])).hue, None, "a merge has no inverse: G stays open");
         let unread = loop_of(&said, &heard(None, vec![]));
         assert_eq!((unread.motion, unread.hue), (None, None), "nothing derived closes nothing");
