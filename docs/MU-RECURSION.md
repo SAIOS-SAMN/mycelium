@@ -24867,22 +24867,31 @@ proper time, and TUniversal orders events BETWEEN universes. Ruled:
    kind, and a count of measurement events is a ledger coordinate as K is,
    never a lane (78.159, inverse-Sisyphus). Pricing the torsion later is a
    mode ruling on 𝒽.
-3. **The crossing is a statement of the universe's domain**, kind 12
-   (`KIND_CROSSING`; its read 13), signed by the domain's key and sealed as
-   `Cite::Stated` as geometry, basket and join are: the domain (32); the
-   core tube it crossed (its parent face, as `Genesis` names one); the
-   TUniversal point it crossed at (`TPoint`, `TPoint::LEN`); the cosmic time
-   (`u64`, the bounce's returns); the TORSION as its coordinates — per hole
-   its canonical generator (`put_canonical`), its rational point `c` and side
-   `λ` exact, its winding `t/ℓ` where it has a finite order, else named by
-   `(c, λ)`, never a decimal (78.45); and the MEASUREMENTS `n` (`u64`). The
-   phase advance is never held: it is the torsion's `n`-th member, read by
-   its certificate (`Theorem::at`), so the court re-derives it and the
-   record stays deterministic (law 12). That the torsion phase is the hidden
-   variable fixing a measurement is the universe's own worldbuilding; the
-   court asks only that it be deterministic and recorded.
-OWED: kind 12/13 built (with A2's `Sphere { n, R }`, after the peer
-universe's founding).
+3. **The crossing pair already stands; the torsion rides the ledger entry.**
+   (Superseded the same day: this item first named a new statement
+   `KIND_CROSSING = 12`, which collided with ACT_DOMAIN's LEDGER and
+   re-invented what 78.154 built.) ACT_DOMAIN's sub-kinds are ONE namespace
+   — 1–7 the domain's own (`domain.rs`), 8–11 the universe's statements
+   (`universe.rs`), 12 LEDGER, 13 READ-LEDGER, 14 MAP, 15 READ-MAP, 16
+   TRAVERSE (`atlas.rs`, `crossing.rs`); the 78.128 handoff family's kinds
+   (12 a tube offer, 78.139) are ANOTHER act's namespace. A LEDGER entry
+   already pairs the universe's committed cycle `u` — its cosmic time — with
+   the mesh's final point it was made under: that IS the crossing pair, and
+   TRAVERSE already reads both mouths' points and both universes' latest
+   entries on one edge. What is new is only the TORSION, and it rides the
+   LEDGER entry (sub-kind 12) as an optional trailing field, present only
+   where the entry records one, so every entry signed without it reads and
+   verifies as before: the torsion as its coordinates — per hole its
+   canonical generator (`put_canonical`), its rational point `c` and side `λ`
+   exact, its winding `t/ℓ` where it has a finite order, else named by
+   `(c, λ)`, never a decimal (78.45) — and the MEASUREMENTS `n` (`u64`).
+   The phase advance is never held: it is the torsion's `n`-th member, read
+   by its certificate (`Theorem::at`), so the court re-derives it and the
+   record stays deterministic (law 12). That the torsion phase is the
+   hidden variable fixing a measurement is the universe's own worldbuilding;
+   the court asks only that it be deterministic and recorded.
+OWED: the LEDGER entry's torsion field built (with A2's `Sphere { n, R }`,
+after the peer universe's founding).
 
 ### 78.153 Replays metered and resumable (2026-10-09, the lock audit's fix list, option (A))
 
