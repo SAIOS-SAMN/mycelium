@@ -44,7 +44,7 @@ pub const SAY: u8 = 0;
 pub const HEARD: u8 = 1;
 pub const ACK: u8 = 2;
 pub const HOLD: u8 = 3;
-const SIGNED: &[u8] = b"mycelium chatter v2";
+const SIGNED: &[u8] = b"mycelium chatter v3";
 
 /// ONE WORD SAID: the vertex it is in the speaker's form, its whole motion,
 /// its hue map.
@@ -59,12 +59,19 @@ pub struct Spoken {
 /// the hue map its cited generators compose to (`None`: the hearer could not
 /// read the word at all), and each citation — the hearer's form and vertex,
 /// the lane, the exponent.
+///
+/// THE QUESTION (78.46, MU-CLIENT §5.3): `asks` is the word's LIFT against
+/// the hearer's language — the part no ring it holds carries, exact — where
+/// there is one. A word that seats nowhere is all lift: the hearer did not
+/// understand it, and asks for exactly that. The speaker answers by
+/// factoring it (`Carrier::clarify`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HeardWord {
     pub vertex: Vec<u8>,
     pub derived: Option<Mv>,
     pub gauge: Vec<(u8, u8)>,
     pub cites: Vec<(Vec<u8>, Vec<u8>, u8, i64)>,
+    pub asks: Option<Mv>,
 }
 
 /// 78.163 — ONE WORD'S LOOP, ACKNOWLEDGED: the holonomy of said → heard on
@@ -301,6 +308,7 @@ impl Chatter {
                         out.push(*lane);
                         out.extend_from_slice(&e.to_le_bytes());
                     }
+                    put_mv(&mut out, w.asks.as_ref());
                 }
             }
         }
@@ -405,7 +413,8 @@ impl Chatter {
                         p += 8;
                         cites.push((form, v, lane, e));
                     }
-                    words.push(HeardWord { vertex, derived, gauge, cites });
+                    let asks = take_mv(body, &mut p)?;
+                    words.push(HeardWord { vertex, derived, gauge, cites, asks });
                 }
                 Said::Heard { said, words }
             }
@@ -580,8 +589,14 @@ mod tests {
             Said::Heard {
                 said: vec![6; 10],
                 words: vec![
-                    HeardWord { vertex: vec![4; 40], derived: Some(one.clone()), gauge: vec![(3, 4)], cites: vec![(vec![7; 33], vec![8; 34], 1, -3)] },
-                    HeardWord { vertex: vec![5; 3], derived: None, gauge: vec![], cites: vec![] },
+                    HeardWord {
+                        vertex: vec![4; 40],
+                        derived: Some(one.clone()),
+                        gauge: vec![(3, 4)],
+                        cites: vec![(vec![7; 33], vec![8; 34], 1, -3)],
+                        asks: None,
+                    },
+                    HeardWord { vertex: vec![5; 3], derived: None, gauge: vec![], cites: vec![], asks: Some(one.clone()) },
                 ],
             },
             Said::Ack {
@@ -624,7 +639,7 @@ mod tests {
         let turn = Mv::scalar(q(1)).add(&Mv::blade(E1 | E2, q(1))).widened(3);
         let swap = vec![(1, 2), (2, 1)];
         let said = Spoken { vertex: vec![1], motion: turn.clone(), gauge: swap.clone() };
-        let heard = |derived: Option<Mv>, gauge: Vec<(u8, u8)>| HeardWord { vertex: vec![1], derived, gauge, cites: vec![] };
+        let heard = |derived: Option<Mv>, gauge: Vec<(u8, u8)>| HeardWord { vertex: vec![1], derived, gauge, cites: vec![], asks: None };
         let exact = loop_of(&said, &heard(Some(turn.clone()), swap.clone()));
         assert!(still(&exact), "an echo carries nothing: {exact:?}");
         let twice = loop_of(&said, &heard(Some(turn.geo(&turn)), swap.clone()));

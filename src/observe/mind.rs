@@ -60,6 +60,11 @@ pub const PERSPECTIVE: [&str; 8] = ["tasks", "known", "unknown", "one perspectiv
 /// the right cells otherwise — in the order the counts are kept.
 pub const DISAGREE: [&str; 6] = ["no rule", "unspoken", "remainder", "frame", "occupancy", "hue"];
 
+/// ITS QUESTIONS (MU-CLIENT §5.3): words it did not understand and asked
+/// about; questions of others it answered by factoring; atoms it learned at
+/// the bottom of an answer — in the order the counts are kept.
+pub const ASKS: [&str; 3] = ["asked", "clarified", "learned"];
+
 /// One slot of [`CONSTRUCTED`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Constructed {
@@ -131,6 +136,8 @@ pub struct Mind {
     pub perspective: [u64; 8],
     /// What its failed perspectives disagreed about, by [`DISAGREE`].
     pub disagree: [u64; 6],
+    /// Its questions, by [`ASKS`].
+    pub asks: [u64; 3],
     /// Spin coupled to orbit: each lock `p:q` read, with how often, in
     /// ratio order; and the drifts held as torsion.
     pub locks: Vec<(u64, u64, u64)>,
@@ -170,6 +177,7 @@ impl Default for Mind {
             bodies: [0; 3],
             perspective: [0; 8],
             disagree: [0; 6],
+            asks: [0; 3],
             locks: Vec::new(),
             drifts: 0,
             shears: 0,
@@ -203,7 +211,7 @@ impl Mind {
             put_u64(out, v);
         }
         put_u64(out, self.demanded);
-        for v in self.constructed.iter().chain(&self.flex).chain(&self.bodies).chain(&self.perspective).chain(&self.disagree) {
+        for v in self.constructed.iter().chain(&self.flex).chain(&self.bodies).chain(&self.perspective).chain(&self.disagree).chain(&self.asks) {
             put_u64(out, *v);
         }
         for v in [self.held, self.agreed] {
@@ -241,6 +249,7 @@ impl Mind {
         for v in &mut disagree {
             *v = take_u64(b, p)?;
         }
+        let asks = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let [held, agreed] = [take_u64(b, p)?, take_u64(b, p)?];
         let closed = take_lanes(b, p)?;
         let open = take_lanes(b, p)?;
@@ -268,6 +277,7 @@ impl Mind {
             bodies,
             perspective,
             disagree,
+            asks,
             locks,
             drifts,
             shears,
@@ -299,8 +309,9 @@ impl Mind {
                 PERSPECTIVE.iter().zip(&self.perspective).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
             ),
             format!(
-                "  disagreed {}",
-                DISAGREE.iter().zip(&self.disagree).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
+                "  disagreed {} · questions {}",
+                DISAGREE.iter().zip(&self.disagree).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
+                ASKS.iter().zip(&self.asks).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
             ),
             format!(
                 "  fibres {} · bodies met {}",

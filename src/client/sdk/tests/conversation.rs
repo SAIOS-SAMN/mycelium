@@ -155,3 +155,22 @@ fn an_echo_that_never_returns_is_a_demand_not_an_agreement() {
     assert!(!a.chat.as_ref().is_some_and(|c| c.agreed(turn.address().as_bytes())), "A holds nothing agreed");
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+/// MU-CLIENT §5.3 — A QUESTION IS ANSWERED BY WHAT THE WORD IS MADE OF. A
+/// word of two quarter turns, asked about, factors into its two letters, and
+/// the factors compose back to exactly the word; one quarter turn factors
+/// into nothing smaller and comes back whole — an atom.
+#[test]
+fn a_question_is_answered_by_the_words_factors() {
+    use crate::client::sdk::entity::chatter::factors_of;
+    use crate::transducer::element::conformal_of;
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
+    let two = conformal_of(&Word::from_letters(&[(q, false), (q, false)]), &identity_versor()).expect("a motion");
+    let factors = factors_of(&two, &[], b"word");
+    assert_eq!(factors.len(), 2, "two letters: {factors:?}");
+    let composed = factors.iter().fold(crate::transducer::cga::Mv::scalar(num_rational::BigRational::from_integer(1.into())), |acc, f| acc.geo(&f.motion));
+    assert!(composed.projective_eq(&two), "the factors compose back to the word");
+    let one = conformal_of(&Word::from_letters(&[(q, false)]), &identity_versor()).expect("a motion");
+    let atom = factors_of(&one, &[(1, 2)], b"word");
+    assert!(matches!(atom.as_slice(), [a] if a.motion.projective_eq(&one) && a.gauge == vec![(1, 2)]), "an atom comes back whole: {atom:?}");
+}
