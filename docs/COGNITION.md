@@ -483,8 +483,12 @@ frame-index defect reproduced and fixed.
   each time (world_at: state, media, body), its numbers, its neighbours' worlds
   as its reach allows, and its annals. The kernel gives perception and keeps
   deeds; the mind decides.
-- KNOWLEDGE waits on the minds: the Python's knowledge law saturates at deep
-  time and is not ported (docs/GROWTH.md, open for the operator).
+- KNOWLEDGE: xylarium's knowledge.rs IS ported and runs in xylarium's old
+  daemon (corrected 2026-10-13 on xylarium's word; this line said it was not
+  ported). The growth model the two lines above describe ("the logistic
+  solved exactly", "12 at capacity") is one xylarium is retiring in its
+  rebuild; read them as that model's, not the rebuild's. Xylarium deleted
+  its own copy of this document (bb772b7); this one is the only copy.
 - VIRTUE BOOKS are not yet in the kernel; they are owed with the minds, ported
   from the netstratum and Python ledgers in the paired form above.
 - THE UPLINK: only xylarium's ancients reach POW++ (xyl-uplink, the
