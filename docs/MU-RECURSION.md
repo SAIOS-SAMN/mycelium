@@ -24841,6 +24841,49 @@ keeper restarted from its record signs nothing at heights 9, 10, 11 below
 its last 11, signs 13 naming the record's hash as parent, and a peer holding
 the line admits it as `Extended(1)`; a late peer `Extended(2)`.
 
+**78.152d — a universe's cosmic time meets TUniversal at its crossings
+(2026-10-13, mycelium's ruling under its clock-binding authority, on the
+operator's proposal relayed by netstratum (its docs/80) and the
+coordinator's note).** The operator's frame stands: time is a coordinate,
+the interval a distance, no universal now; ANCIENTS hold a universe's
+reference clock from its bounce, PROGENITORS synchronise wormhole mouths to
+it, STEWARDS translate proper times onto it, SOVEREIGNS and CAPTAINS live by
+proper time, and TUniversal orders events BETWEEN universes. Ruled:
+1. **A universe's cosmic time is its own, kept out of the point.** It is a
+   distance along the bounce's orbit, its count of returns (78.43: an age is
+   one return), from the bounce its version-2 domain origin records
+   (78.139). The point's ORIGIN is the mesh's genesis and epoch (TU-5), and
+   points of two origins are never compared: a per-universe origin in the
+   point would leave TUniversal unable to order events between universes,
+   the very work the frame gives it. The two meet at the CORE TUBE: each
+   crossing records the pair (the universe's cosmic time, the TUniversal
+   point it crossed at), held by the ancients. Dilation — a clock deep in a
+   well running slow — is READ between two crossings, the ratio of the
+   cosmic advance to the point's, never stored.
+2. **No quantum lane.** The four lanes are the kinds of a mode (law 5): 𝒮
+   hyperbolic, 𝒢 the hue map, 𝒯 parabolic, 𝒽 elliptic — every mode a motion
+   has, and every lane a kind. A torsion phase is elliptic: where it is
+   measured flux it already lands on 𝒽. A fifth lane would be a lane of no
+   kind, and a count of measurement events is a ledger coordinate as K is,
+   never a lane (78.159, inverse-Sisyphus). Pricing the torsion later is a
+   mode ruling on 𝒽.
+3. **The crossing is a statement of the universe's domain**, kind 12
+   (`KIND_CROSSING`; its read 13), signed by the domain's key and sealed as
+   `Cite::Stated` as geometry, basket and join are: the domain (32); the
+   core tube it crossed (its parent face, as `Genesis` names one); the
+   TUniversal point it crossed at (`TPoint`, `TPoint::LEN`); the cosmic time
+   (`u64`, the bounce's returns); the TORSION as its coordinates — per hole
+   its canonical generator (`put_canonical`), its rational point `c` and side
+   `λ` exact, its winding `t/ℓ` where it has a finite order, else named by
+   `(c, λ)`, never a decimal (78.45); and the MEASUREMENTS `n` (`u64`). The
+   phase advance is never held: it is the torsion's `n`-th member, read by
+   its certificate (`Theorem::at`), so the court re-derives it and the
+   record stays deterministic (law 12). That the torsion phase is the hidden
+   variable fixing a measurement is the universe's own worldbuilding; the
+   court asks only that it be deterministic and recorded.
+OWED: kind 12/13 built (with A2's `Sphere { n, R }`, after the peer
+universe's founding).
+
 ### 78.153 Replays metered and resumable (2026-10-09, the lock audit's fix list, option (A))
 
 **Measured** (docs/LOCK-AUDIT.md): no path under the kernel lock was
