@@ -128,6 +128,10 @@ struct Thought {
     at: u64,
 }
 
+/// ONE QUESTION ASKED: the residue not understood, the word's hue map, and
+/// the mind's K it was asked at.
+type Asked = (crate::transducer::cga::Mv, Vec<(u8, u8)>, u64);
+
 /// THE CARRIER'S OWN STATE, held on its thread alone.
 struct Carrier {
     voice: [u8; 32],
@@ -148,7 +152,7 @@ struct Carrier {
     /// THE QUESTIONS THIS MIND ASKED (MU-CLIENT §5.3): keyed by the speaker
     /// and the question's coordinates (`question_key`), the residue it did
     /// not understand, the word's hue map, and the mind's K it was asked at.
-    asked: Keyed<(crate::transducer::cga::Mv, Vec<(u8, u8)>, u64)>,
+    asked: Keyed<Asked>,
     #[cfg(test)]
     agreed: std::sync::Arc<std::sync::Mutex<Keyed<()>>>,
 }
@@ -423,10 +427,10 @@ impl Entity {
                 None => (w.motion.clone(), crate::transducer::sentence::rung::hear_word(&w.motion)),
             };
             // THE SOUND: does it sound like something I have heard? Read
-            // against the ear's harmonic memory, never a vocabulary — and
-            // heard now, so it is part of that memory from here on.
+            // against what this mind REMEMBERS hearing, never a vocabulary —
+            // and remembered now, so it is part of that memory from here on.
             let sound = self.sound_of(&ring);
-            self.hear_sound(&ring);
+            self.remember_sound(&ring);
             let familiar = matches!(&sound, Some((e, _)) if matches!(e.seat, Seat::Whole | Seat::Tilted(_)));
             let (derived, asks, held, slot) = match (&sound, familiar, word.known()) {
                 (None, ..) => (None, None, Vec::new(), 4),
@@ -462,7 +466,7 @@ impl Entity {
     }
 
     /// MU-CLIENT §4.9 — DOES THIS SOUND LIKE SOMETHING I HAVE HEARD: a ring
-    /// read against the ear's harmonic memory by its size, in the order sizes
+    /// read against what this mind remembers hearing, by its size, in the order sizes
     /// nest (`hearing::hear_across`) — WHOLE or TILTED where it sounds inside
     /// a heard ring (familiar), OUTER or LEFTOVER where it does not (a new
     /// sound) — with the heard rings it sounded with. `None` where its modes
@@ -476,7 +480,7 @@ impl Entity {
         // A SOUND HEARD AT ITS OWN SIZE: a held ring of the same return it
         // passes through whole — it commutes with it — sounds like it. The
         // nesting below reads only the layers above.
-        if let Some(members) = self.sounds.get(&size.key()) {
+        if let Some(members) = self.remembered.get(&size.key()) {
             let alike: Vec<crate::transducer::cga::Mv> = members
                 .iter()
                 .filter(|(_, m)| crate::transducer::sentence::hearing::echo_sized(ring, m) == crate::transducer::sentence::hearing::Echo::Whole)
@@ -486,8 +490,8 @@ impl Entity {
                 return Some((Echoed { seat: Seat::Whole, carried: Some(ring.clone()), through: Vec::new() }, alike));
             }
         }
-        let layers: Vec<(Size, Vec<(Vec<u8>, &crate::transducer::cga::Mv)>)> = self
-            .sounds
+        let layers: Vec<(Size, Vec<_>)> = self
+            .remembered
             .scoped()
             .filter_map(|(at, members)| Some((Size::from_key(&at)?, members.iter().map(|(k, m)| (k.clone(), m)).collect())))
             .collect();
@@ -495,26 +499,26 @@ impl Entity {
         let through = echoed
             .through
             .iter()
-            .filter_map(|k| self.sounds.scoped().find_map(|(_, members)| members.iter().find(|(m, _)| m == k).map(|(_, r)| r.clone())))
+            .filter_map(|k| self.remembered.scoped().find_map(|(_, members)| members.iter().find(|(m, _)| m == k).map(|(_, r)| r.clone())))
             .collect();
         Some((echoed, through))
     }
 
-    /// A RING HEARD, kept in the ear's harmonic memory under its size, by its
+    /// A RING HEARD, REMEMBERED by the mind under its size, by its
     /// coordinates — once.
-    pub(crate) fn hear_sound(&mut self, ring: &crate::transducer::cga::Mv) {
+    pub(crate) fn remember_sound(&mut self, ring: &crate::transducer::cga::Mv) {
         let (Some(size), Some(ray)) = (sound_size(ring), ring.canonical()) else { return };
         let mut key = Vec::new();
         ray.put_canonical(&mut key);
         let at = size.key();
-        match self.sounds.get_mut(&at) {
+        match self.remembered.get_mut(&at) {
             Some(members) => {
                 if !members.iter().any(|(k, _)| *k == key) {
                     members.push((key, ring.clone()));
                 }
             }
             None => {
-                self.sounds.insert(&at, vec![(key, ring.clone())]);
+                self.remembered.insert(&at, vec![(key, ring.clone())]);
             }
         }
     }

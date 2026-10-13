@@ -78,7 +78,7 @@ impl Entity {
             chat: None,
             board: Default::default(),
             field: Default::default(),
-            sounds: crate::network::nerve::Keyed::new(),
+            remembered: crate::network::nerve::Keyed::new(),
         }
     }
 

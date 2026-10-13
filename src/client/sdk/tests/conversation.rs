@@ -51,7 +51,7 @@ fn court() -> (String, std::sync::mpsc::Receiver<dialogue::SpeechAct>) {
 }
 
 /// THE SHARED WORD, BY THE ALGEBRA, ON TWO CARRIERS (MU-CLIENT §4.9). Both
-/// minds have HEARD the half turn before (its sound is in their ears), and
+/// minds have HEARD the 180° turn before (each remembers its sound), and
 /// the hearer KNOWS it as a word (its lexicon holds it); A says it. To B it
 /// sounds familiar and is a word it knows — understood — and what it
 /// sounded like is a sound A has heard too: MUTUAL. The thing A said is
@@ -70,7 +70,7 @@ fn two_minds_form_a_shared_word_and_carry_it_to_the_court() {
     let half = conformal_of_word(&[(q, false), (q, false)]);
     for m in [&mut a, &mut b] {
         assert!(m.absorb_taught(&taught.to_bytes().expect("the record writes")).is_some(), "the court's word is learned");
-        m.hear_sound(&half);
+        m.remember_sound(&half);
         m.open_chatter(&dir).expect("the post opens");
     }
     let mut field = std::mem::take(&mut b.field);
@@ -111,7 +111,7 @@ fn two_minds_form_a_shared_word_and_carry_it_to_the_court() {
 }
 
 /// MU-CLIENT §4.9 — DOES THIS SOUND LIKE SOMETHING I HAVE HEARD: a ring read
-/// against the ear's harmonic memory, never a vocabulary. With nothing heard
+/// against what the mind remembers hearing, never a vocabulary. With nothing heard
 /// a 180° turn is a NEW sound, on the outside. Having heard a ring of order
 /// three (the turn carrying `e₁ → e₂ → e₃`, `½(1 + e₂e₃ + e₃e₁ + e₁e₂)`), the
 /// half turn's period divides nothing larger heard: LEFTOVER, still a new
@@ -134,7 +134,7 @@ fn a_ring_sounds_familiar_by_resonance_with_what_was_heard() {
     let sounded = |heard: &[&Mv], ring: &Mv| {
         let mut mind = Entity::open(&court, Kernel::named("listener"));
         for h in heard {
-            mind.hear_sound(h);
+            mind.remember_sound(h);
         }
         mind.sound_of(ring).map(|(e, _)| e.seat)
     };
@@ -143,9 +143,9 @@ fn a_ring_sounds_familiar_by_resonance_with_what_was_heard() {
     assert!(matches!(sounded(&[&slide], &half), Some(Seat::Tilted(_))), "inside the carrier, its echo turned: familiar");
     assert_eq!(sounded(&[&half], &half), Some(Seat::Whole), "heard before: whole");
     let mut mind = Entity::open(&court, Kernel::named("listener"));
-    mind.hear_sound(&half);
-    mind.hear_sound(&half);
-    assert_eq!(mind.sounds.scoped().map(|(_, m)| m.len()).sum::<usize>(), 1, "a ring heard twice is held once");
+    mind.remember_sound(&half);
+    mind.remember_sound(&half);
+    assert_eq!(mind.remembered.scoped().map(|(_, m)| m.len()).sum::<usize>(), 1, "a ring heard twice is held once");
 }
 
 /// A word spelled by `letters`, as its whole motion at the identity carriage.

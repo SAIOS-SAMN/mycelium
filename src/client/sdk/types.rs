@@ -637,11 +637,14 @@ pub struct Entity {
     /// lanes, its lexicon, the words taught it, the covers it parked; it
     /// thinks in it for the length of each tick.
     pub(crate) field: crate::transducer::mind::MindField,
-    /// MU-CLIENT §4.9 — THE EAR'S HARMONIC MEMORY: the rings this mind has
-    /// HEARD, by their size (their return), each by its coordinates — never
-    /// a vocabulary. What a heard ring is read against to answer "does this
-    /// SOUND like something I have heard?" A ring heard again is held once.
-    pub(crate) sounds: crate::network::nerve::Keyed<Vec<(Vec<u8>, crate::transducer::cga::Mv)>>,
+    /// MU-CLIENT §4.9 — WHAT THIS MIND REMEMBERS HEARING: the rings it has
+    /// heard, by their size (their return), each by its coordinates — the
+    /// mind's memory, harmonically resonant, never a vocabulary and never the
+    /// ear's (the ear is a tuned resonator that lifts signal from noise and
+    /// keeps nothing past the moment). What a heard ring is read against to
+    /// answer "does this SOUND like something I have heard?" A ring heard
+    /// again is remembered once.
+    pub(crate) remembered: crate::network::nerve::Keyed<Vec<(Vec<u8>, crate::transducer::cga::Mv)>>,
 }
 
 /// A cited form owed to a court, with the citer that waits on it and the

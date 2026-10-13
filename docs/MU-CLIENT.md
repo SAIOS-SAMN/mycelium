@@ -684,7 +684,10 @@ are read off that motion, never counted:
 - **perceive** — the shells coming into alignment over what a nerve
   delivered (§3.2). Every nerve TRANSDUCES only: what arrives is lifted
   into the field as a percept in its native order — no judgment, no
-  lookup, no act at the nerve.
+  lookup, no act at the nerve. An ear is a TUNED RESONATOR: it lifts
+  signal from noise at the sizes it rings at, and keeps nothing past the
+  moment; it holds no vocabulary and no memory (amended 2026-10-13, the
+  operator's word).
 - **think** — the windings and the pivots they fire (§4.4, §4.5).
 - **understand** — ONE THOUGHT'S RESONANCE with what the mind holds: its
   rings nested in the mind's held rings in BALANCE (`hearing::nest`) —
@@ -694,6 +697,17 @@ are read off that motion, never counted:
   thought it stands in as its context. Understanding FEEDS SPEECH: what a
   mind understands it can say, and an agreement between two minds is their
   MUTUAL balance — each one's rings resonating in the other's.
+  A heard ring is read twice, apart (2026-10-13, the operator's word): as a
+  SOUND — "does this sound like something I have heard?" — against the
+  MIND'S MEMORY of what it has heard, the rings it has heard by their size,
+  familiar where it sounds whole or tilted inside one (memory is the mind's
+  and is harmonically resonant; it is never the ear's); and as a WORD —
+  "is this a word I have heard?" — against the mind's vocabulary, the words
+  it deduced and reconstructed. Familiar and known is UNDERSTOOD; familiar
+  and unknown is the QUESTION; known but new to the ear is understood
+  SHIFTED; new and unknown is LISTENED to, noise not yet signal. Every ring
+  heard is remembered once; mutual balance asks the speaker whether what the
+  hearer heard sounds familiar in its memory too.
 - **comprehend** — SEVERAL THOUGHTS' ALGEBRA: their circuits taken together
   as a chamber, its bracket-closed algebra (78.11) — the cross-chamber
   bracket and the enclosures above it — with every superposed candidate
