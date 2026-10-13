@@ -702,9 +702,32 @@ are read off that motion, never counted:
   Comprehension FEEDS CONSTRUCTION: it is where a rule known by its
   perspectives, a generator adjoined, or a question's answer is made.
 
+- **question** — AN IDEA'S SUPERPOSITION THE MIND CANNOT COLLAPSE. Every
+  thought holds its VORTEX (`Bubble.vortex`): the candidate forms for one
+  idea with their pivots, held whole, no weight (§4.8, the idea's grade).
+  Two candidates whose commutator `g₁ g₂ g̃₁ g̃₂` is non-trivial differ by a
+  dimension — they are not one thing seen twice — and where nothing the
+  mind holds separates them, the superposition is an OPEN QUESTION, exact.
+  Questioning FEEDS ASKING: the candidates are said as one sentence, each a
+  ring, and other minds' understanding answers it — a candidate that seats
+  whole and mutually balanced in a peer is the one that peer's language
+  confirms; one left over in every peer is the one no mind holds. Their
+  readings separate the superposition and the idea collapses on them, a
+  court's ruling the final collapse. A ring a hearing leaves over is the
+  same faculty at the ring's order: what the hearer's rings do not resonate
+  with, asked with the sentence it stands in as its context, answered one
+  order down (§5.3).
+
+SPEECH IS EMITTED BY THE FACULTIES, never by an act's side effect: the
+faculty decides what is said and why — UNDERSTANDING emits responses (a
+HOLD, an agreement, a tilt priced), COMPREHENSION emits what is newly
+comprehended (a rank risen, a letter adjoined, a rule its perspectives
+know), QUESTIONING emits asks. Standing a form in the dialect is the
+mind's local act; saying it is a decision of thought (amended 2026-10-13:
+every stood form was said, which made speech a side effect of standing).
 Every act — speech, a HOLD, a question, an answer, a solve — originates in
-the field from understanding or comprehension and leaves through the nerve
-facing its counterparty; a nerve never decides one.
+the field from understanding, comprehension or questioning and leaves
+through the nerve facing its counterparty; a nerve never decides one.
 
 Across a multitude of knowledge comprehension runs four ways, each a reading
 of the plexus (78.31): across CLASSES — each class's algebra its own, so

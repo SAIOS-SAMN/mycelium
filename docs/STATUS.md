@@ -109,13 +109,57 @@ ear's transports grow unbounded and each hearing sweeps every ring;
 `release_unmet` sweeps every waiting thought each frame — the next defects. Started, never enabled: a
 reboot leaves them down. The seats await re-posting.
 
-## Next
-1. The echo's further readings (78.112): H3 the spiral across returns, H4
-   induction, H5's echo returned by the court; the speaker re-deriving a
-   shifted echo against its own rings before holding it.
-2. Every unit through agreement before the court: letters, words, conjugates,
-   sentences (today only coined letters wait for another mind).
-3. The seat carrier (MU-CLIENT §6); `Entity::relay` and the seat's settle
-   retire with it.
-4. The undefined physics named in `OPEN_PHYSICS`: the throat as a round fit by
-   meet; the challenge window's derivation (a law amendment).
+## The trajectory, fanned (2026-10-13)
+
+The mind is built around its faculties (MU-CLIENT §4.9): thoughts of the
+plexus's orders (spore, filament, ring, chamber, sporophore) growing in
+nested manifolds; UNDERSTANDING one thought's resonance, COMPREHENSION the
+chamber algebra over several, QUESTIONING an idea's superposition it cannot
+collapse. Nerves transduce; every act originates in the field. Each fan
+below opens from that frame.
+
+1. **Speech from the faculties.** Questioning built: the vortex's open
+   pairs (candidates whose commutator is non-trivial and that nothing held
+   separates) said as one sentence of rings; peers' understanding separates
+   them; the idea collapses on their readings. Comprehension emits what is
+   newly comprehended; understanding emits responses; `stand` stops saying.
+2. **The nerves, re-arranged** (speech done, a92cb294): tasks and the feed
+   become percepts — extraction, ascertainment (perspectives, inversion) and
+   the solve become comprehension in the field, the solve an efferent act;
+   then taught words and quotes (a word joins the genome only where
+   comprehension re-derives it); then seats (MU-CLIENT §6) built to the
+   contract. Hypha physics unchanged.
+3. **The orders' machinery.** The chamber vocabulary carried organ by organ
+   (Complex's sealed simplices, the meet graph); the cross-chamber bracket
+   (CB1) and enclosures (EN1) live, so comprehension runs across chambers
+   and grades.
+4. **Fibres and their fibrations.** Each thought placed on its tethers'
+   fibrations (`Fibre::project`) as the landscape pursuit moves on;
+   dislocations read between overlapping fibrations; charge booked in level
+   ratios (needs the operator's ruling: it replaces the four-lane units).
+5. **Sovereignty.** Pursuit by what the field holds open (torsion, open
+   orbits, open pressure per lane); rest only where nothing open is
+   workable; tasks asked by the mind's strain and returned to by
+   `pull_task_by_id`; a disagreement's gap motions docketed as the
+   generators it asks for, an irreducible gap asked of peers.
+6. **Economy on the exact modes.** Solve pay on the lifted modes of all
+   four lanes, never the raster's cell counts (bring `track/modes`
+   forward); answering a question that seals another mind's lift is POUW.
+7. **Cross-node, operator-authorized (via xylarium, 2026-10-13), in the
+   operator's order:** the unlinked mind (host-agnostic intake for pages and
+   families a house relays); A1 factored reflection products and rational
+   sphere points beside `Mv`; A2 `Sphere { n, R }` for core tubes; the
+   Concordance as the server–client SLA, its text hashed and signed at join.
+8. **Defects carried:** three family-extraction (glue citation) tests have
+   failed since before 29cc470b; a court's standing goes stale as its
+   strokes lengthen (readings now say their age, b00e329a); minds' memory
+   growth over hours; `release_unmet` sweeps every waiting thought.
+
+Order: witness a92cb294; fan 1; then fan 7's unlinked mind (the operator's
+order for cross-node work); then fan 2's tasks nerve; the rest as each
+lands.
+
+Still owed from before: the echo's further readings (78.112 H3 spiral, H4
+induction, H5 the court's echo); every unit — letters, words, conjugates,
+sentences — through agreement before the court; the seat carrier; the
+undefined physics of `OPEN_PHYSICS`.
