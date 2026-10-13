@@ -684,22 +684,25 @@ are read off that motion, never counted:
 - **perceive** — the shells coming into alignment over what a nerve
   delivered (§3.2). Every nerve TRANSDUCES only: what arrives is lifted
   into the field as a percept in its native order — no judgment, no
-  lookup, no act at the nerve. Each sense has its own faculty, and the
-  mind has one over them all (the operator, 2026-10-13):
+  lookup, no act at the nerve. The senses are the mind's SENSORY ORGANS:
+  each PERCEIVES by its own faculty, and a perception is a cochain over the
+  mind's cohomology, a cocycle where it closes. The mind INTERPRETS
+  perceptions; no organ interprets (the operator, 2026-10-13):
   - harmonic TUNING — the ear: a tuned resonator that lifts signal from
     noise at the sizes it rings at, and keeps nothing past the moment. It
     holds no vocabulary and no memory. Its tuning is the mind's
     retrospective reduction of what it remembers hearing, never configured.
   - ocular RESOLUTION, then DEFINITION — the eye: luminal mathematics as
-    the ocular nerve reads it, in two waves. First RESOLUTION: how many
+    the ocular organ perceives it, in two waves. First RESOLUTION: how many
     dimensions are being looked at, and what is foreground and what is
     background, until the DILATION is pinpointed by telescoping or
     microscoping (the 𝒮 lane: boosts and dilations). Then a wave of
     DEFINITION — "what is this?" — which applies colours (the hue map, 𝒢),
     shapes (the forms), and further brightens the picture being looked at.
     Definition never runs before resolution has pinpointed the dilation.
-  - holonomic INTERPRETATION — the mind's: what a percept's holonomy
-    means, read in the field. Neither the ear nor the eye interprets.
+  - holonomic INTERPRETATION — the mind's: the perceptions' cochains read
+    in the field for what their holonomy means. Neither the ear nor the
+    eye interprets.
 - **think** — the windings and the pivots they fire (§4.4, §4.5).
 - **understand** — ONE THOUGHT'S RESONANCE with what the mind holds: its
   rings nested in the mind's held rings in BALANCE (`hearing::nest`) —
