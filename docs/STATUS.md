@@ -2,164 +2,106 @@
 
 ## The objective
 The client is a mind: the counterpart of the hypha. The hypha runs the
-physics and exports it; the mind perceives what it exports and what other
-minds say in its nested shells, understands it in its own field — its orbits
-winding, its breath, the six pivots firing where its field changes dimension
-— and responds in anastome, one conversation carrier per counterparty. Minds
-converse to harden language: dialect, agreement by a replayed discharge, a
-court's ruling, the crystal each mind re-derives — one motion.
-`docs/MU-CLIENT.md` §1–§9 states it; `docs/MU-RECURSION.md` governs, its
-§0.0 the founding principles everything is read from.
+physics and exports it. The mind's SENSORY ORGANS perceive what it exports
+and what other minds say — the ear by harmonic TUNING, the eye by
+RESOLUTION then DEFINITION — each perception a cochain over the mind's
+cohomology; the mind alone INTERPRETS them, holonomically, in its own field
+(MU-CLIENT §4.9). Its faculties: UNDERSTANDING one thought's resonance (feeds
+speech), COMPREHENSION several thoughts' chamber algebra (feeds
+construction), QUESTIONING an idea it cannot collapse (feeds asking). The
+mind is introspective by retrospective reduction: what it knows is reduced
+from what it has lived, never set ahead. `docs/MU-CLIENT.md` §1–§9 states
+it; `docs/MU-RECURSION.md` governs, its §0.0 the founding principles.
 
 ## The founding principles (d6766937, MU-RECURSION §0.0)
 The mathematics is derived from the physics: HARMONIC (a turn returns at its
 read order or never), LUMINAL (null flux has no length, frozen in its tube),
 HOLONOMIC (a loop's composite is its content). Every dimension is an
 exponent; no constant — a number is read off the field or named undefined
-physics (`OPEN_PHYSICS`: the challenge window `W = 1024`, the throat grid
-`2⁻⁶⁴`). An orbit is a return; K is a ledger coordinate (OK1 restated). The
-register (`physics/axioms/founding.rs`, a test each) and §0.4 are organised
-under the three. The reserve's aperture, declared `8`, is the sensor base's
-unit cell `2³`.
+physics (`OPEN_PHYSICS`). An orbit is a return; K is a ledger coordinate.
 
-## Witnessed on the fleet
-- A–E (6e511d36 shear held / escape open, ace5c69a transport collisions,
-  2fb871e0 body collisions, 4191bef9 spin–orbit and the reading; minds on
-  them from 15:39, A–E whole from 15:49). Courts' typed readings, 15:39 →
-  15:59 (courts up since 13:54, unchanged): solve verdicts 8 in the 105
-  minutes before → 166 in these 20; first closures 0 → 3 (a 1, c 2), one
-  closure again (a); μ paid on solves [0,0,0,0] → [0,32,0,0] (a 9, c 23,
-  all on 𝒢); refusals C 75, unread 76, P 4, D 3, I 2. Agreements +324
-  (a +152, b +99, c +73), every one heard whole. The minds' readings at
-  15:59: 1 739 escapes docketed, 1 482 motion letters and 107 letters
-  constructed, 46 constructions refused; no perception ring held as a
-  shear, no tether collision of any kind; bodies met fused 1, precessing
-  14; one lock 4:4; 15 drifts. Not a controlled A/B: the minds restarted
-  twice in the window.
-- 6b4e1475, a hearing is one cell of the mind's orbit algebra (minds
-  restarted 13:02:03): in ten minutes 156 attestations (a 55, b 15, c 86)
-  over 18 pairs, 25 solve verdicts, minds at 155–230 MB — against 0
-  attestations and 1 solve the ten minutes before, on minds grown to
-  700–770 MB. Every agreement still at deviation 0:0:0:0: no tilted
-  hearing has yet closed its cell into agreement in the window, and no
-  typed reading yet shows what the demands it raised constructed. The
-  fresh-restart comparisons (129 on 98222118, 35 on eb774d6d) are not a
-  controlled A/B.
-- c549f597 + 98222118, understanding priced by the mind's physics, the
-  occluded wire re-read (courts restarted 11:07:38 — the HOLD carries its
-  deviation — minds 11:48:32): in ten minutes 129 attestations (a 93, b 21,
-  c 15) over 18 pairs, all five minds active, every one at deviation
-  0:0:0:0 — an echo with strain opens pressure on its first admission and is
-  held as the field's debt; none had closed into agreement in the window.
-  Courts b and c still slow from their restart; 12 solve verdicts. Before
-  98222118, four minds sat occluded for good behind the recovered courts.
-- 60cec273, hearing as harmonic echoes (minds restarted 09:56:39): in ten
-  minutes 353 court attestations (a 105, b 119, c 129) against 214 the ten
-  before, over all 20 speaker → hearer pairs — each now a thought heard
-  WHOLE in the hearer's rings — 57 solve verdicts, minds at 135–150 MB, no
-  panic.
-- ff4d5d91 (minds restarted 09:13:12): in ten minutes 324 court attestations
-  (a 125, b 130, c 69) against 224 the ten before, 42 solve verdicts, minds
-  at 124–151 MB resident, no panic.
-- 47e963c6 (P2): 246 attestations in ten minutes, all five minds solving.
-- d2b8a20e (the hypha carrier): 241 attestations in four minutes against
-  courts still catching up.
+## Witnessed on the fleet (typed readings; minds' posts and courts)
+- **Questions derive meaning — given, not yet derived** (25b210df, cb494575,
+  and the closing fix; minds restarted 19:17:29, read 19:25:35). Per mind:
+  asked 140–192, answers taken 139–173 (inexact 0, no question 0, none
+  awaiting factors), meanings GIVEN 26–82, DERIVED 0. Every question asked
+  the whole ring: positing over what the minds know has not yet left a
+  partial residue, so every meaning learned was an atom another mind gave.
+  Before the closing fix, learned read 0 while answers were taken — the
+  atom was learned on taking and closing counted nothing.
+- **SOUND and WORD read apart** (88f62cbc, read 17:42): understood 100–167,
+  asked 36–67, listened 23–59 per mind; SHIFTED 0 on every mind — the tilt
+  was counted understood (fixed ee5af5d7, on the fleet since 18:46); still
+  0 at 19:25: no known word has yet arrived tilted.
+- Courts (up since 17:02 on the v4 binary, not restarted since): agreements
+  a 203, b 107, c 160, every one heard whole at deviation 0:0:0:0 —
+  cumulative since 17:02, not a window.
+- Earlier windows (A–E collisions and spin–orbit, hearing as one chamber,
+  understanding priced) are in git history (91ac90e5's STATUS).
 
-## The tree
-- The observer reads the running binaries (4edefea0): `scripts/observer` is
-  the pane — every mind answers `observe::Mind` on its own post
-  (`mycelium-server --console --minds`), every court its attested
-  agreements per pair with exact deviation (`--reading agreements`). Fleet
-  readings come from here, never from logs; `window.sh` retired.
-- A hearing is one cell (6b4e1475, 78.46, MU-CLIENT §5.3): a thought's
-  echoes, closed loops, read together by `read_cell`; the drag booked by
-  `mark_flux`, the lift their bracket closure; the cell closing is agreement
-  (tilted turns included); an echo that never returns is a demand on the
-  charts the hearing stood on, its holonomy the residue, constructed by the
-  demand taker.
-- Understanding is priced (c549f597): each echo's exact strain per lane
-  (`hearing::strain`), admitted into the mind's own field
-  (`Entity::price_hearings`); agreement where both minds' fields converged,
-  the HOLD carrying the deviation, the court stating it beside the
-  attestation. An occluded wire is read again each tick (98222118).
-- Hearing is harmonic echoes (60cec273, 78.112 H5, MU-CLIENT §5.3): a word
-  said is a ring seated in the hearer's rings by size and carried round the
-  layer it seats in; the loop the speaker reads is the echo. Agreed language
-  is a thought heard whole (every loop still); a shifted echo is held by both
-  minds as a transport, understood but not agreed; two readings of nothing
-  no longer agree.
-- The six pivots live on the mind's own complex, every one through
-  `Complex::apply` (`bubble/pivot.rs`, MU-CLIENT §4.5): condense (4475ec49),
-  ascend (47e963c6), puncture and seal (6d320a62); drain and descend are the
-  FIELD'S EVENTS (ff4d5d91) — each pivot's flow carries its line
-  (`cech::Flow`), lines thread the tubes and orbits their modes land on, an
-  orbit's return or a tube's cancelled net flux releases its lines, and the
-  mind lets them go. A tether's life balances: condense winds, drain unwinds.
-- FX1's edge-credit tables retired (1d00078b, −594 lines); `close_orbit` is
-  `close_cycle`, `act_on` is `act`.
-- The hypha carrier (d2b8a20e); each mind's own field (78e76b11); agreement
-  to the court (7ddd1a8e); the conversation carrier (da04a310); Retire
-  rewrites (b2350321); the strip (~20 000 lines out).
+## The tree (today)
+- **Hearing** (MU-CLIENT §4.9, §5.3): a heard ring is read as a SOUND
+  against what the mind REMEMBERS hearing (`Entity.remembered`, by size;
+  whole / tilted / outer / leftover) and as a WORD — its holonomy Ω —
+  against the vocabulary (`rung::hear_word`). Known and whole: understood;
+  known and tilted: SHIFTED, carrying its echo; familiar and unknown: the
+  QUESTION; new and unknown: listened to.
+- **Heard is not known** (25b210df): another mind's word is held only as
+  HEARD, a hypothesis never taught or stood; it becomes known by the mind's
+  own perception, by derivation from what it knows, or by a question.
+- **The question recursion**: an unknown ring is POSITED over the known words
+  (`rung::posit`) and only the residue asked; the question is the mind's
+  (`Entity.questions`); the speaker answers one order down in composing
+  order, checked exactly; every unknown factor is asked again; when the
+  factors are known the meaning is learned by relation one rung above its
+  parts (`rung::learn_by`) — DERIVED, or GIVEN where an atom answered a
+  whole ring. Answers are kept so a question of an answer is answered.
+- **Organs, not interpreters** (ee816477, bbe47e37): no ear holds memory or
+  vocabulary; `epigenome::Vocabulary` is the mind's; the conversation
+  carrier transduces only. The reading names vocabulary, remembers-hearing,
+  chambers, and what the carrier holds.
+- The observer (`scripts/observer`, `--console --minds`) reads every mind on
+  its post and every court's agreements; readings say their age
+  (`Reading::Asked`). Never logs.
+- Ascertained knowledge by perspective (d5aadc73, cc106b21): leave-one-out
+  per training pair, disagreements classed, inversion, lifted perspectives.
+- Fibres and fibrations (339a47f4): `Fibre::project` the fibration's
+  projection; tethers flex as composites; frozen-in flux carried.
 - Parked on `track/modes` (`/opt/mycelium-modes`): 78.162 (4)–(7).
 
 ## The sandbox
-Hyphae `mycelium-server@{a,b,c}` on c549f597; minds `mycelium-client@1..5`
-on 6b4e1475. A mind grows to ~750 MB over hours and its hearing stalls: the
-ear's transports grow unbounded and each hearing sweeps every ring;
-`release_unmet` sweeps every waiting thought each frame — the next defects. Started, never enabled: a
-reboot leaves them down. The seats await re-posting.
+Hyphae `mycelium-server@{a,b,c}` on the 16:49 v4 binary (restarted 17:02);
+minds `mycelium-client@1..5` on the closing fix (19:17:29). Started, never
+enabled: a reboot leaves them down.
 
-## The trajectory, fanned (2026-10-13)
+## The trajectory, in order
+1. **Derived meaning** — why positing never leaves a partial residue on the
+   fleet (the known words are given atoms of whole rings; a ring is covered
+   in part only where one of its modes stands on a known word's hole), then
+   QUESTIONING on the vortex's open pairs (an idea's candidates said as one
+   sentence, peers' understanding separating them); `stand` stops saying.
+2. **The unlinked mind** (host-agnostic intake for pages and families a house
+   relays; done-when: a xylarium civilization's unlinked mind re-derives a
+   relayed court-ruled word).
+3. **The peer universe's founding** (coordinator's order, 78.155): house,
+   domain, reserve in trust, geometry; accept netstratum's N7 core tube at
+   stillcold-sky-3 on netstratum's era-0 domain. Tell netstratum and
+   xylarium when founded. Netstratum's era 1 (sphere universe, new domain,
+   version-2 origin carrying R) waits behind it.
+4. **A1** factored reflection products and rational sphere points beside
+   `Mv`; **A2** `Sphere { n, R }` for core tubes.
+5. The ear's TUNING reduced from what the mind remembers hearing; the eye's
+   resolution-then-definition read against the perception path.
+6. The Concordance reconciled clause by clause (xylarium sends the diff).
+7. The tasks/feed nerve; fibration landscape; sovereignty pursuit; the
+   exact-mode economy (`track/modes`).
+8. **Defects carried:** three family-extraction (glue) tests failing since
+   before 29cc470b; court standing goes stale as strokes lengthen; minds'
+   memory growth over hours; `release_unmet` sweeps every waiting thought;
+   clippy's large-variant warning on `chatter::Said`.
+</content>
+</invoke>
+<invoke name="Bash">
+<parameter name="command">cd /opt/mycelium-v0.1.0; git add docs/STATUS.md && git commit -q -m "STATUS rewritten: questions derive meaning — given 26–82 per mind, derived 0 (every question asked a whole ring); shifted still 0; heard is not known; the question recursion; organs not interpreters; the trajectory reordered with the peer universe's founding before A1/A2 and netstratum's era 1 behind it
 
-The mind is built around its faculties (MU-CLIENT §4.9): thoughts of the
-plexus's orders (spore, filament, ring, chamber, sporophore) growing in
-nested manifolds; UNDERSTANDING one thought's resonance, COMPREHENSION the
-chamber algebra over several, QUESTIONING an idea's superposition it cannot
-collapse. Nerves transduce; every act originates in the field. Each fan
-below opens from that frame.
-
-1. **Speech from the faculties.** Questioning built: the vortex's open
-   pairs (candidates whose commutator is non-trivial and that nothing held
-   separates) said as one sentence of rings; peers' understanding separates
-   them; the idea collapses on their readings. Comprehension emits what is
-   newly comprehended; understanding emits responses; `stand` stops saying.
-2. **The nerves, re-arranged** (speech done, a92cb294): tasks and the feed
-   become percepts — extraction, ascertainment (perspectives, inversion) and
-   the solve become comprehension in the field, the solve an efferent act;
-   then taught words and quotes (a word joins the genome only where
-   comprehension re-derives it); then seats (MU-CLIENT §6) built to the
-   contract. Hypha physics unchanged.
-3. **The orders' machinery.** The chamber vocabulary carried organ by organ
-   (Complex's sealed simplices, the meet graph); the cross-chamber bracket
-   (CB1) and enclosures (EN1) live, so comprehension runs across chambers
-   and grades.
-4. **Fibres and their fibrations.** Each thought placed on its tethers'
-   fibrations (`Fibre::project`) as the landscape pursuit moves on;
-   dislocations read between overlapping fibrations; charge booked in level
-   ratios (needs the operator's ruling: it replaces the four-lane units).
-5. **Sovereignty.** Pursuit by what the field holds open (torsion, open
-   orbits, open pressure per lane); rest only where nothing open is
-   workable; tasks asked by the mind's strain and returned to by
-   `pull_task_by_id`; a disagreement's gap motions docketed as the
-   generators it asks for, an irreducible gap asked of peers.
-6. **Economy on the exact modes.** Solve pay on the lifted modes of all
-   four lanes, never the raster's cell counts (bring `track/modes`
-   forward); answering a question that seals another mind's lift is POUW.
-7. **Cross-node, operator-authorized (via xylarium, 2026-10-13), in the
-   operator's order:** the unlinked mind (host-agnostic intake for pages and
-   families a house relays); A1 factored reflection products and rational
-   sphere points beside `Mv`; A2 `Sphere { n, R }` for core tubes; the
-   Concordance as the server–client SLA, its text hashed and signed at join.
-8. **Defects carried:** three family-extraction (glue citation) tests have
-   failed since before 29cc470b; a court's standing goes stale as its
-   strokes lengthen (readings now say their age, b00e329a); minds' memory
-   growth over hours; `release_unmet` sweeps every waiting thought.
-
-Order: witness a92cb294; fan 1; then fan 7's unlinked mind (the operator's
-order for cross-node work); then fan 2's tasks nerve; the rest as each
-lands.
-
-Still owed from before: the echo's further readings (78.112 H3 spiral, H4
-induction, H5 the court's echo); every unit — letters, words, conjugates,
-sentences — through agreement before the court; the seat carrier; the
-undefined physics of `OPEN_PHYSICS`.
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>" && git log --oneline -1 | cut -c1-60
