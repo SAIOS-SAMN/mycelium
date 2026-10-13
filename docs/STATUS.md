@@ -81,7 +81,11 @@ the 19:17 binaries (the closing fix), started 20:38 after the host crash;
 courts listening on :7500–:7502 from 20:40–20:42. Started, never enabled: a
 reboot leaves them down — restart by `--check` on each court home, then
 start a, b, c, then the minds; never `scripts/recut` (it wipes). Seat minds
-(s1, x0–x3, n1–n4) are relaunched by their houses.
+are mycelium client minds under mycelium's keys, launched by mycelium as
+transient units: n1–n4 (netstratum's council, era-0 domain `5deab117…`,
+seats 1,8,10,11 / 12,13,14,24 / 31,32,43,44 / 56,61,69) relaunched 21:45 on
+v5; x0–x3 stay down by xylarium's W15/W16 until its new domain is founded;
+s1 (barren) down, no session reachable.
 
 ## The trajectory, in order
 1. **Derived meaning** — why positing never leaves a partial residue on the
