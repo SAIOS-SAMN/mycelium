@@ -65,9 +65,12 @@ pub const DISAGREE: [&str; 6] = ["no rule", "unspoken", "remainder", "frame", "o
 /// the bottom of an answer — in the order the counts are kept.
 pub const ASKS: [&str; 3] = ["asked", "clarified", "learned"];
 
-/// HOW EACH HEARD RING WAS UNDERSTOOD (MU-CLIENT §4.9), seated among the
-/// mind's own rings — in the order the counts are kept.
-pub const SEATS: [&str; 5] = ["whole", "tilted", "outer", "leftover", "unheard"];
+/// HOW EACH HEARD RING WAS TAKEN (MU-CLIENT §4.9), by its two readings —
+/// SOUND (does it sound like something heard) and WORD (is it a word known):
+/// familiar and known UNDERSTOOD; familiar and unknown ASKED; new and known
+/// SHIFTED; new and unknown LISTENED (noise not yet signal); modes unread —
+/// in the order the counts are kept.
+pub const SEATS: [&str; 5] = ["understood", "asked", "shifted", "listened", "unheard"];
 
 /// MUTUAL BALANCE at the speaker: the hearer's re-derivation resonating in
 /// this mind, or not — in the order the counts are kept.

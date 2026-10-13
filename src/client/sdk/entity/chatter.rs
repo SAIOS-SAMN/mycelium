@@ -231,6 +231,14 @@ fn observed(voice: &[u8; 32], q: &[u8]) -> Option<Vec<u8>> {
     observe::encode_reply(&observe::readings(&prefix), budget)
 }
 
+/// A RING'S SIZE AS A SOUND: its return, read off its own coordinates on
+/// the stroke its modes need — the carrier where it never returns.
+fn sound_size(ring: &crate::transducer::cga::Mv) -> Option<crate::transducer::sentence::hearing::Size> {
+    let need = crate::transducer::cga::modes_need(ring)?;
+    let coords = crate::transducer::sentence::coordinates::Coordinates::of(ring, &mut crate::physics::Physics::default().stroke_n(need)).ok()?;
+    crate::transducer::sentence::hearing::Size::of_coordinates(&coords)
+}
+
 /// A QUESTION'S COORDINATES: the thing said and the word in it the question
 /// is about, each by its length — the address the speaker's clarification is
 /// said under, so both minds name it alike.
@@ -394,27 +402,46 @@ impl Entity {
     fn understand(&mut self, speaker: [u8; 32], said: Vec<u8>, words: Vec<Spoken>) {
         use crate::transducer::sentence::compose::{compose, Term};
         use crate::transducer::sentence::hearing::Seat;
+        use crate::transducer::sentence::rung::Recognition;
         let mut budget = self.stroke();
         let before = crate::transducer::sentence::rung::lexicon();
         let mut heard: Vec<(Spoken, HeardWord)> = Vec::with_capacity(words.len());
         for w in words {
             let terms: Vec<Term> = w.terms.iter().map(|(word, transport)| Term { word: word.clone(), transport: transport.clone() }).collect();
-            let ring = match compose(&terms, &mut budget) {
-                Some(s) => {
-                    crate::transducer::sentence::rung::hear(&s, &mut budget);
-                    s.omega
-                }
-                None => w.motion.clone(),
-            };
-            let (derived, asks, held, slot) = match crate::transducer::sentence::rung::seat(&ring) {
-                Some((e, through)) => match e.seat {
-                    Seat::Whole => (e.carried, None, through, 0),
-                    Seat::Tilted(_) => (e.carried, None, through, 1),
-                    Seat::Outer => (e.carried, None, Vec::new(), 2),
-                    Seat::Leftover => (None, Some(ring.clone()), Vec::new(), 3),
-                    Seat::Unheard => (None, None, Vec::new(), 4),
+            // THE WORD: is this a word I have heard? Recognized or derivable
+            // in the mind's own vocabulary (`rung::hear`), or new to it.
+            // A sentence by the word its theorem teaches; one that teaches
+            // none, or a lone word, by the word itself.
+            let (ring, word) = match compose(&terms, &mut budget) {
+                Some(s) => match crate::transducer::sentence::rung::hear(&s, &mut budget) {
+                    Recognition::NoWord => {
+                        let r = crate::transducer::sentence::rung::hear_word(&s.omega);
+                        (s.omega, r)
+                    }
+                    r => (s.omega, r),
                 },
-                None => (None, None, Vec::new(), 4),
+                None => (w.motion.clone(), crate::transducer::sentence::rung::hear_word(&w.motion)),
+            };
+            // THE SOUND: does it sound like something I have heard? Read
+            // against the ear's harmonic memory, never a vocabulary — and
+            // heard now, so it is part of that memory from here on.
+            let sound = self.sound_of(&ring);
+            self.hear_sound(&ring);
+            let familiar = matches!(&sound, Some((e, _)) if matches!(e.seat, Seat::Whole | Seat::Tilted(_)));
+            let (derived, asks, held, slot) = match (&sound, familiar, word.known()) {
+                (None, ..) => (None, None, Vec::new(), 4),
+                // A familiar sound and a known word: UNDERSTOOD, carried
+                // round what it sounded like.
+                (Some((e, through)), true, true) => (e.carried.clone(), None, through.clone(), 0),
+                // It sounds like something heard, and is no word I know:
+                // WHAT DOES THAT MEAN — the question.
+                (Some(_), true, false) => (None, Some(ring.clone()), Vec::new(), 1),
+                // A word I know, said in a way I have not heard: understood
+                // SHIFTED, as itself.
+                (Some(_), false, true) => (Some(ring.clone()), None, Vec::new(), 2),
+                // A new sound and no word: noise not yet signal — LISTENED
+                // to, held, not asked about.
+                (Some(_), false, false) => (None, None, Vec::new(), 3),
             };
             crate::observe::note_mind(|m| m.seats[slot] += 1);
             let h = HeardWord { vertex: w.vertex.clone(), derived, gauge: w.gauge.clone(), cites: Vec::new(), asks, held };
@@ -434,6 +461,64 @@ impl Entity {
         }
     }
 
+    /// MU-CLIENT §4.9 — DOES THIS SOUND LIKE SOMETHING I HAVE HEARD: a ring
+    /// read against the ear's harmonic memory by its size, in the order sizes
+    /// nest (`hearing::hear_across`) — WHOLE or TILTED where it sounds inside
+    /// a heard ring (familiar), OUTER or LEFTOVER where it does not (a new
+    /// sound) — with the heard rings it sounded with. `None` where its modes
+    /// do not read.
+    pub(crate) fn sound_of(&self, ring: &crate::transducer::cga::Mv) -> Option<(crate::transducer::sentence::hearing::Echoed, Vec<crate::transducer::cga::Mv>)> {
+        use crate::transducer::sentence::hearing::{hear_across, Echoed, Seat, Size};
+        if crate::transducer::sentence::presentation::is_still(ring) {
+            return Some((Echoed { seat: Seat::Whole, carried: Some(ring.clone()), through: Vec::new() }, Vec::new()));
+        }
+        let size = sound_size(ring)?;
+        // A SOUND HEARD AT ITS OWN SIZE: a held ring of the same return it
+        // passes through whole — it commutes with it — sounds like it. The
+        // nesting below reads only the layers above.
+        if let Some(members) = self.sounds.get(&size.key()) {
+            let alike: Vec<crate::transducer::cga::Mv> = members
+                .iter()
+                .filter(|(_, m)| crate::transducer::sentence::hearing::echo_sized(ring, m) == crate::transducer::sentence::hearing::Echo::Whole)
+                .map(|(_, m)| m.clone())
+                .collect();
+            if !alike.is_empty() {
+                return Some((Echoed { seat: Seat::Whole, carried: Some(ring.clone()), through: Vec::new() }, alike));
+            }
+        }
+        let layers: Vec<(Size, Vec<(Vec<u8>, &crate::transducer::cga::Mv)>)> = self
+            .sounds
+            .scoped()
+            .filter_map(|(at, members)| Some((Size::from_key(&at)?, members.iter().map(|(k, m)| (k.clone(), m)).collect())))
+            .collect();
+        let echoed = hear_across(ring, size, layers.into_iter());
+        let through = echoed
+            .through
+            .iter()
+            .filter_map(|k| self.sounds.scoped().find_map(|(_, members)| members.iter().find(|(m, _)| m == k).map(|(_, r)| r.clone())))
+            .collect();
+        Some((echoed, through))
+    }
+
+    /// A RING HEARD, kept in the ear's harmonic memory under its size, by its
+    /// coordinates — once.
+    pub(crate) fn hear_sound(&mut self, ring: &crate::transducer::cga::Mv) {
+        let (Some(size), Some(ray)) = (sound_size(ring), ring.canonical()) else { return };
+        let mut key = Vec::new();
+        ray.put_canonical(&mut key);
+        let at = size.key();
+        match self.sounds.get_mut(&at) {
+            Some(members) => {
+                if !members.iter().any(|(k, _)| *k == key) {
+                    members.push((key, ring.clone()));
+                }
+            }
+            None => {
+                self.sounds.insert(&at, vec![(key, ring.clone())]);
+            }
+        }
+    }
+
     /// ONE THOUGHT PRICED in this mind's field (78.112 H5): its echoes'
     /// strain, its chamber's coherence, and — at the speaker — MUTUAL
     /// balance: the hearer's own rings its understanding seated in, each
@@ -444,10 +529,9 @@ impl Entity {
         use crate::transducer::family::pairing::{mark_flux, FieldLine, FluxReading};
         use crate::transducer::sentence::hearing::{hue_strain, strain, Seat};
         use crate::transducer::sentence::presentation::{is_still, LANE_G};
-        let mutual = p
-            .mutual
-            .iter()
-            .all(|r| !matches!(crate::transducer::sentence::rung::seat(r), Some((e, _)) if e.seat == Seat::Leftover));
+        // MUTUAL: what the hearer's understanding sounded like must sound
+        // like something this mind has heard too.
+        let mutual = p.mutual.iter().all(|r| matches!(self.sound_of(r), Some((e, _)) if matches!(e.seat, Seat::Whole | Seat::Tilted(_))));
         if !p.mutual.is_empty() {
             crate::observe::note_mind(|m| m.mutual[usize::from(!mutual)] += 1);
         }

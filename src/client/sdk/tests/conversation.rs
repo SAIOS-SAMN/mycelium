@@ -50,14 +50,16 @@ fn court() -> (String, std::sync::mpsc::Receiver<dialogue::SpeechAct>) {
     (addr, rx)
 }
 
-/// THE SHARED WORD, BY THE ALGEBRA, ON TWO CARRIERS. Both minds hold the
-/// court-taught quarter turn; A says the half turn. B's carrier re-derives
-/// it through B's own generator, A's reads the loop said → heard, B's holds
-/// the same loop, and the thing A said is AGREED — while the test only
-/// waits. A's carrier then speaks it to the court carrying B's HOLD: signed
-/// by B, naming exactly the word A said.
+/// THE SHARED WORD, BY THE ALGEBRA, ON TWO CARRIERS (MU-CLIENT §4.9). Both
+/// minds have HEARD the half turn before (its sound is in their ears), and
+/// the hearer KNOWS it as a word (its lexicon holds it); A says it. To B it
+/// sounds familiar and is a word it knows — understood — and what it
+/// sounded like is a sound A has heard too: MUTUAL. The thing A said is
+/// AGREED while the test only waits, and A's carrier speaks it to the court
+/// carrying B's HOLD: signed by B, naming exactly the word A said.
 #[test]
 fn two_minds_form_a_shared_word_and_carry_it_to_the_court() {
+    use crate::transducer::sentence::rung::{hear_word, Recognition};
     let (court, speeches) = court();
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
     let dir = std::env::temp_dir().join(format!("mycelium-conversation-{}", std::process::id()));
@@ -65,10 +67,18 @@ fn two_minds_form_a_shared_word_and_carry_it_to_the_court() {
     let mut a = Entity::open(&court, Kernel::named("speaker"));
     let mut b = Entity::open(&court, Kernel::named("hearer"));
     let taught = word(&[(q, false)]);
+    let half = conformal_of_word(&[(q, false), (q, false)]);
     for m in [&mut a, &mut b] {
         assert!(m.absorb_taught(&taught.to_bytes().expect("the record writes")).is_some(), "the court's word is learned");
+        m.hear_sound(&half);
         m.open_chatter(&dir).expect("the post opens");
     }
+    let mut field = std::mem::take(&mut b.field);
+    field.think(|| {
+        assert_eq!(hear_word(&half), Recognition::New, "B comes to know the word");
+        assert_eq!(hear_word(&half), Recognition::Recognized, "and knows it after");
+    });
+    b.field = field;
     let said = word(&[(q, false), (q, false)]);
     a.say(&said);
     // Each mind's field prices what its conversation understood, as its tick
@@ -100,20 +110,20 @@ fn two_minds_form_a_shared_word_and_carry_it_to_the_court() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
-/// MU-CLIENT §4.9 — A RING IS UNDERSTOOD BY RESONANCE WITH THE MIND'S OWN
-/// RINGS, NEVER BY ITS VOCABULARY. Against an empty lexicon a 180° turn
-/// stands on the OUTSIDE — nothing larger, understood as it is. A mind that
-/// holds a ring of order three (the turn carrying `e₁ → e₂ → e₃`, `½(1 +
-/// e₂e₃ + e₃e₁ + e₁e₂)`) holds a larger ring the half turn's period does not
-/// divide: the half turn is LEFTOVER — not understood, the question. A mind
-/// holding a slide holds the carrier every returning ring sounds inside: the
-/// half turn seats in its layer, its echo through the slide not the
-/// identity — TILTED, understood shifted. Still, a ring is whole.
+/// MU-CLIENT §4.9 — DOES THIS SOUND LIKE SOMETHING I HAVE HEARD: a ring read
+/// against the ear's harmonic memory, never a vocabulary. With nothing heard
+/// a 180° turn is a NEW sound, on the outside. Having heard a ring of order
+/// three (the turn carrying `e₁ → e₂ → e₃`, `½(1 + e₂e₃ + e₃e₁ + e₁e₂)`), the
+/// half turn's period divides nothing larger heard: LEFTOVER, still a new
+/// sound. Having heard a slide — the carrier every returning ring sounds
+/// inside — the half turn sounds inside it, its echo turned: TILTED, a
+/// familiar sound. Having heard the half turn itself, it is WHOLE. A ring
+/// heard twice is held once.
 #[test]
-fn a_ring_is_understood_by_resonance_with_the_minds_own_rings() {
+fn a_ring_sounds_familiar_by_resonance_with_what_was_heard() {
     use crate::transducer::cga::{Mv, E1, E2, E3};
     use crate::transducer::sentence::hearing::Seat;
-    use crate::transducer::sentence::rung::{learn, seat};
+    let (court, _speeches) = court();
     let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
     let half = conformal_of_word(&[(LetterId::turn_90((0, 1)).expect("a quarter turn"), false); 2]);
     let third = Mv::scalar(q(1, 2))
@@ -121,22 +131,21 @@ fn a_ring_is_understood_by_resonance_with_the_minds_own_rings() {
         .add(&Mv::blade(E3 | E1, q(1, 2)))
         .add(&Mv::blade(E1 | E2, q(1, 2)));
     let slide = crate::transducer::element::translator_versor(5, 0);
-    let seated = |held: &[&Mv], ring: &Mv| {
-        let mut field = crate::transducer::mind::MindField::default();
-        let mut out = None;
-        field.think(|| {
-            for h in held {
-                assert!(learn(h), "the ring is held");
-            }
-            out = seat(ring).map(|(e, _)| e.seat);
-        });
-        out
+    let sounded = |heard: &[&Mv], ring: &Mv| {
+        let mut mind = Entity::open(&court, Kernel::named("listener"));
+        for h in heard {
+            mind.hear_sound(h);
+        }
+        mind.sound_of(ring).map(|(e, _)| e.seat)
     };
-    assert_eq!(seated(&[], &half), Some(Seat::Outer), "nothing larger: understood as it is");
-    assert_eq!(seated(&[&third], &half), Some(Seat::Leftover), "a larger ring it divides not: not understood");
-    assert!(matches!(seated(&[&slide], &half), Some(Seat::Tilted(_))), "inside the carrier, its echo turned: understood shifted");
-    let still = Mv::scalar(q(1, 1));
-    assert_eq!(seated(&[&third], &still), Some(Seat::Whole), "a still ring passes whole");
+    assert_eq!(sounded(&[], &half), Some(Seat::Outer), "nothing heard: a new sound");
+    assert_eq!(sounded(&[&third], &half), Some(Seat::Leftover), "a larger sound it divides not: still new");
+    assert!(matches!(sounded(&[&slide], &half), Some(Seat::Tilted(_))), "inside the carrier, its echo turned: familiar");
+    assert_eq!(sounded(&[&half], &half), Some(Seat::Whole), "heard before: whole");
+    let mut mind = Entity::open(&court, Kernel::named("listener"));
+    mind.hear_sound(&half);
+    mind.hear_sound(&half);
+    assert_eq!(mind.sounds.scoped().map(|(_, m)| m.len()).sum::<usize>(), 1, "a ring heard twice is held once");
 }
 
 /// A word spelled by `letters`, as its whole motion at the identity carriage.
