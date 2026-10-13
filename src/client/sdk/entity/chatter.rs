@@ -441,7 +441,7 @@ impl Entity {
     fn take_answer(&mut self, key: &[u8], said: &[u8], words: &[Spoken]) -> bool {
         let Some(q) = self.questions.get_mut(key) else {
             // Said under a question's coordinates, and no question open there.
-            if said.first() == Some(&b'?') {
+            if said.starts_with(b"?") {
                 crate::observe::note_mind(|m| m.answers[2] += 1);
             }
             return false;
@@ -453,38 +453,50 @@ impl Entity {
             return false;
         }
         crate::observe::note_mind(|m| m.answers[0] += 1);
-        if let [only] = words {
-            if only.motion.projective_eq(&q.residue) {
-                crate::transducer::sentence::rung::learn_by(&q.residue, &[]);
-            }
-        }
         q.factors = Some(words.iter().map(|w| w.motion.clone()).collect());
         true
     }
 
     /// MU-CLIENT §5.3 — THE QUESTIONS WHOSE MEANING IS DERIVED, closed: where
-    /// every factor of the answer is a word the mind knows, the residue is
-    /// their composition and the ring the posited words with the residue —
-    /// relations of the vocabulary, the ring's meaning LEARNED. A ring learned
-    /// can be the factor another question waits on, so the questions are
-    /// read again until none closes.
+    /// the answer is an ATOM (one factor, the residue itself — its meaning
+    /// taken as given) or every factor of it is a word the mind knows, the
+    /// residue is their composition and the ring the posited words with the
+    /// residue — relations of the vocabulary. The ring's meaning is LEARNED
+    /// where it is new here, whether the ring was the residue (asked whole)
+    /// or composed of it. A ring learned can be the factor another question
+    /// waits on, so the questions are read again until none closes.
     fn close_questions(&mut self) {
         use crate::transducer::sentence::rung::{known, learn_by};
+        let atom = |q: &Question| matches!(q.factors.as_deref(), Some([f]) if f.projective_eq(&q.residue));
         loop {
-            let ready: Vec<Vec<u8>> =
-                self.questions.scoped().filter(|(_, q)| q.factors.as_ref().is_some_and(|f| f.iter().all(known))).map(|(k, _)| k).collect();
+            let ready: Vec<Vec<u8>> = self
+                .questions
+                .scoped()
+                .filter(|(_, q)| atom(q) || q.factors.as_ref().is_some_and(|f| f.iter().all(known)))
+                .map(|(k, _)| k)
+                .collect();
             if ready.is_empty() {
                 return;
             }
             for k in ready {
                 let Some(q) = self.questions.remove(&k) else { continue };
-                if let Some(factors) = &q.factors {
-                    learn_by(&q.residue, factors);
-                }
-                let mut parts = q.parts;
-                parts.push(q.residue);
-                if learn_by(&q.ring, &parts) {
-                    crate::observe::note_mind(|m| m.asks[2] += 1);
+                // GIVEN where the ring was asked whole and came back an atom;
+                // DERIVED where known words or known factors made it.
+                let given = atom(&q) && q.parts.is_empty() && q.ring.projective_eq(&q.residue);
+                let residue_new = match (atom(&q), &q.factors) {
+                    (true, _) | (false, None) => learn_by(&q.residue, &[]),
+                    (false, Some(factors)) => learn_by(&q.residue, factors),
+                };
+                let ring_new = match q.ring.projective_eq(&q.residue) {
+                    true => residue_new,
+                    false => {
+                        let mut parts = q.parts;
+                        parts.push(q.residue);
+                        learn_by(&q.ring, &parts)
+                    }
+                };
+                if ring_new {
+                    crate::observe::note_mind(|m| m.asks[if given { 3 } else { 2 }] += 1);
                 }
             }
         }

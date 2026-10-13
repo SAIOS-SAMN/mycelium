@@ -63,8 +63,10 @@ pub const DISAGREE: [&str; 6] = ["no rule", "unspoken", "remainder", "frame", "o
 
 /// ITS QUESTIONS (MU-CLIENT §5.3): words it did not know and asked of their
 /// residue; questions of others it answered by factoring; rings whose meaning
-/// an answer derived — in the order the counts are kept.
-pub const ASKS: [&str; 3] = ["asked", "clarified", "learned"];
+/// was DERIVED (from words it knew, or from factors it came to know); rings
+/// whose meaning was GIVEN (asked whole, answered as an atom) — in the order
+/// the counts are kept.
+pub const ASKS: [&str; 4] = ["asked", "clarified", "derived", "given"];
 
 /// WHAT BECAME OF THE ANSWERS IT HEARD (MU-CLIENT §5.3): taken (their factors
 /// re-derived the residue exactly), inexact (they did not), or said under a
@@ -154,7 +156,7 @@ pub struct Mind {
     /// What its failed perspectives disagreed about, by [`DISAGREE`].
     pub disagree: [u64; 6],
     /// Its questions, by [`ASKS`].
-    pub asks: [u64; 3],
+    pub asks: [u64; 4],
     /// Heard rings by how they were understood, by [`SEATS`]; mutual
     /// balances at the speaker, by [`MUTUAL`]; its lexicon's size, and what
     /// heard speech grew it by; its vocabulary's words; and the rings it
@@ -207,7 +209,7 @@ impl Default for Mind {
             bodies: [0; 3],
             perspective: [0; 8],
             disagree: [0; 6],
-            asks: [0; 3],
+            asks: [0; 4],
             seats: [0; 5],
             mutual: [0; 2],
             lexicon: 0,
@@ -291,7 +293,7 @@ impl Mind {
         for v in &mut disagree {
             *v = take_u64(b, p)?;
         }
-        let asks = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
+        let asks = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let seats = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let mutual = [take_u64(b, p)?, take_u64(b, p)?];
         let [held, agreed] = [take_u64(b, p)?, take_u64(b, p)?];

@@ -487,7 +487,7 @@ fn a_minds_reading_and_a_courts_agreements_read_back_exact() {
         bodies: [4, 1, 2],
         perspective: [9, 3, 4, 1, 1, 6, 3, 1],
         disagree: [1, 0, 2, 0, 3, 1],
-        asks: [5, 2, 1],
+        asks: [5, 2, 1, 1],
         seats: [7, 2, 1, 3, 0],
         mutual: [4, 1],
         lexicon: 12,
