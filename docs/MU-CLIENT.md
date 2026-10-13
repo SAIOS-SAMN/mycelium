@@ -56,6 +56,34 @@ every ruling of the earlier text stands, each at the section it rules.
 | IV.3 verification | §7.2 |
 | IV.4 client paragraphs left in MU-RECURSION | §9 |
 
+- **Vocabulary of the objects** (78.31, the anastomosis ruling of
+  2026-09-25; amended 2026-10-13). No object here is a slot, and no word
+  collapses a dimension:
+  - **chamber** — never "cell". The MEET `⋀ sᵢ` that `k + 1` bodies enclose
+    where they FUSE (an anastomosis): on the conformal cone a ROUND, a
+    sphere of dimension `g − 2`, `g ≤ n + 2` the meet's grade. It is read
+    three ways, never collapsed into one: its CONTACT (the shared base
+    element's dimension — the touch sense, the only flat reading), its
+    ANASTOMOTIC DEGREE `k` (bodies less one, the nerve simplex's dimension,
+    any `k`: every dimension an exponent), its MEET (the blade's grade
+    `g`); `g ≤ k + 1`, and `k + 1 − g` is contraction by rank. Its BOUNDARY
+    is the ring or rings it seals (ascend), hollowed back by descend. Its
+    CONTENT is its boundary's holonomy (curvature is content) and the
+    bracket-closed algebra of the circuits crossing it — capacity its rank,
+    coupling its circuit pairs that do not commute — with its coherence
+    (the joint return), its congruence (the round kept), its Gram form (its
+    shape up to motion). It has no address but its bodies' coordinates, and
+    it FLEXES with the fibres that bound it. Chambers wrap into an
+    ENCLOSURE, the sporophore; the bracket across two chambers is the
+    CROSS-CHAMBER bracket. A chamber of the Čech complex is a simplex of
+    degree two or more — `simplex`, `degree` are the topology's own words.
+  - **plane** — a 2-blade of the algebra, never a sheet: one of the ten of
+    `Cl(4,1)` (the six spatial pair planes of `Spin(4)` among them), a
+    motion's mode plane, the plane a ray is split against. The sensor's
+    contact is the one flat reading anywhere; nothing else is laid flat.
+  - **flat** — a named property only: a holonomy that is the identity, or
+    a reader retired for reading one thing at a time. Never a geometry.
+
 ---
 
 ## 1. The objective
@@ -188,7 +216,7 @@ It does NOT build:
    product of dimensions element by element (`for x … for y …`, `i < j` over
    bodies, charts, peers or minds): the engine reads what the carrier names
    — a keyed fibre over canonical coordinates, a class vector's occupied
-   axes, a ring's own terms, a cell's own bodies — and every walk spends a
+   axes, a ring's own terms, an anastomosis's own bodies — and every walk spends a
    `Budget` or walks one boundary (rules 1, 10, 17; checklist (a), (h), (o)).
 3. **No boolean gates.** No `bool` is branched on in cognition, no count
    decides a branch, no threshold stands in a decision (MU-STANDARDS 2.3;
@@ -315,8 +343,8 @@ The mind's field is built of one exact mathematics, the same the hypha runs:
 | M9 torsion bridge | the pivot loop (A16), torsion filed (A17), certificates (A20) replayed on two organs | `bubble/{contemplation,idea,drive}.rs`, `sentence/pivot/` |
 | the spelling peel (A22) | a residue peeled into the letters the mind holds; what does not close is a demand | `alphabet/{spelling,factor}.rs`, `family/derivation.rs` (`peel_versor`) |
 | derivation | a word vertex is the generators it factored through and a residue; the composed rotor its coordinate | `alphabet/derivation.rs`, `family/derivation.rs` |
-| constructors and the Gram form | nuclei and mirrors; a cell's constructors read by exact elimination | `cga/{constructors,gram,mirrors}.rs` |
-| the orbit algebra | a cell's comprehension is its circuits' bracket-closed algebra | `cech/orbit_algebra.rs` |
+| constructors and the Gram form | nuclei and mirrors; a chamber's constructors read by exact elimination | `cga/{constructors,gram,mirrors}.rs` |
+| the orbit algebra | a chamber's comprehension is its circuits' bracket-closed algebra | `cech/orbit_algebra.rs` |
 | modes off the action | a motion's modes read off its action; closures per mode | `cga/{modes,motion,spin}.rs` |
 | refraction | a contact's transport refracted; a cycle's holonomy is content | `sentence/pivot/{refracted,trajectory,circuit}.rs` |
 | the refusal reader | a refusal's kind (P, D, C, I, N) read off its content | `sentence/obstruction.rs` |
@@ -440,9 +468,9 @@ holds, and each fires where a winding requires it — never as a step:
 
 | axis | principle (MU-RECURSION §0.0) | pivot / conjugate | what it does | site | live in the mind |
 |---|---|---|---|---|---|
-| cells (degree `d+1 ↔ d`, any `d`: every dimension an exponent) | **holonomic** — a closed loop's composite is its content | **ascend** / **descend** | seal a cycle that closes with a cell / hollow the cell back to its cycle, its fill handed back exactly | `cech/coboundary.rs` (`ascend`, `descend`) | ascend: every cell the meet graph fills (`bubble/pivot.rs::ascend`, from `fill_meet` and the drive); descend: a cell over a tether the field released, a cell the field released, a released vertex's star (`bubble/pivot.rs::release`, `release_vertex`) |
+| chambers (anastomotic degree `d+1 ↔ d`, any `d`: every dimension an exponent) | **holonomic** — a closed loop's composite is its content | **ascend** / **descend** | seal a cycle that closes with a chamber / hollow the chamber back to its cycle, its fill handed back exactly | `cech/coboundary.rs` (`ascend`, `descend`) | ascend: every chamber the meet graph fills (`bubble/pivot.rs::ascend`, from `fill_meet` and the drive); descend: a chamber over a tether the field released, a chamber the field released, a released vertex's star (`bubble/pivot.rs::release`, `release_vertex`) |
 | tethers (1 ↔ 0) | **luminal** — flux frozen into a tether; reconnection | **condense** / **drain** | form a tether from the tension between two bodies / dissolve it as the tension relaxes, the strain moved or recorded, never lost (A.8) | `cech/hole.rs` (`condense`), `cech/coboundary.rs` (`drain`) | condense: every tether the contemplation forms (`bubble/pivot.rs::tether`; re-formed tension drains first); drain: a tether the field released (`release`), a released vertex's star |
-| holes (class in / out) | **harmonic** — a class kept until it returns | **puncture** / **seal** | open a hole, injecting a homology class / cap it, killing the class | `cech/hole.rs` (`puncture`, `seal`) | the mind's questions (`bubble/question.rs`) and a curved cell in the drive, through `bubble/pivot.rs` |
+| holes (class in / out) | **harmonic** — a class kept until it returns | **puncture** / **seal** | open a hole, injecting a homology class / cap it, killing the class | `cech/hole.rs` (`puncture`, `seal`) | the mind's questions (`bubble/question.rs`) and a curved chamber in the drive, through `bubble/pivot.rs` |
 
 Every pivot is applied through `Complex::apply`, its outcome returned whole.
 
@@ -455,7 +483,7 @@ life balances as a membrane's does (A.8). Where an admission RETURNS an orbit
 (harmonic: the tension vented) or CANCELS a tube's net flux (luminal: it
 carries no field), the field releases every line threading it
 (`Field::take_released`), and the mind lets them go (`Contemplation::release`,
-from `vent_into_field` each tick): a released tether's read cells descend
+from `vent_into_field` each tick): a released tether's read chambers descend
 first (holonomic: a relaxing boundary no longer closes), then it drains; a
 hole over it — a question still carried — pins it, and it stands. Nothing is
 polled, stamped or windowed; the release is what the admission did.
@@ -478,7 +506,7 @@ open pressure and the reservoir's strain account for every unit.
 
 **The board.** The three axes are the complex's own coordinates, read off it
 and never a frame laid on it (`cech/board.rs`: `Pivot`, `Applied`,
-`Complex::apply`, `Board`). Two pivots on cells sharing no vertex touch
+`Complex::apply`, `Board`). Two pivots on chambers sharing no vertex touch
 disjoint carriers and commute exactly; where they share a vertex the order
 is content (the locality theorem, 78.99(3)). Every pair is the INVERSE ON
 CONTENT and never re-enters its trajectory: what descend hands back is what
@@ -490,15 +518,15 @@ court's does through `book_outflow`.
 
 **Where each fires — the winding's reading, never a schedule:**
 - **ascend** — a ring closes (`Ω^ℓ ~ 1`) with volume on a lane: its cycle
-  is sealed as a cell. **descend** — the cell's support lapses by its flux
-  (ZeroFlux): the cell is hollowed and its fill returned.
+  is sealed as a chamber. **descend** — the chamber's support lapses by its
+  flux (ZeroFlux): the chamber is hollowed and its fill returned.
 - **condense** — two held bodies stand in tension: a ray lifts across the
   plane between them (78.46) and their transition re-derives on their union.
   **drain** — the tension relaxes: the tether dissolves and its strain is
   moved or recorded (A.8, 63).
 - **puncture** — a new independent loop whose holonomy does not return
   (78.40(1)): a ring the transport holds at holonomy ≠ 1 is ascended, and
-  where its cell reads a class it is opened into a hole keeping that class,
+  where its chamber reads a class it is opened into a hole keeping that class,
   filed by its class key — the QUESTION the mind now carries
   (`bubble/question.rs`: `ask`, from `close_ring`). **seal** — the mind
   comes to hold what it asked: the ring collapses (its arrivals come to
@@ -508,7 +536,7 @@ court's does through `book_outflow`.
   boundary the cap reads the very class the hole kept: `seal ∘ puncture` is
   the identity on content.
 
-Every pivot changes dimension (62.5): a closed cycle becomes a cell, a
+Every pivot changes dimension (62.5): a closed cycle becomes a chamber, a
 residue a letter, an open class an axis. These are the non-Euclidean
 structures the mind builds, each COMPOSABLE (by the geometric product, into
 words and sentences) and DECOMPOSABLE (by factorization through held
@@ -556,7 +584,7 @@ other risen (law 10) — and keeps every certified move:
 - **adjoined** — no held word reaches its coordinates: the residue is
   constructed and becomes the mind's own letter (§4.7);
 - **torsion filed** — the orbit returns at a period no move removes: filed
-  at its class, its slip mounted as a boundary cell (54.5).
+  at its class, its slip mounted as a boundary chamber (54.5).
 
 ### 4.7 Constructors and generators
 
@@ -600,9 +628,9 @@ refuses as the typed demand carrying it (78.32(3)(b)). It grows by
 independence, shrinks by derivability — a constructor derivable from the
 others retires (78.32(3)(f)) — and is AMENDED BY EXPERIENCE (§4.10). Its
 capacity is the algebra's, derived: at most `n + 2` reflections to a versor,
-the closure bounded by `dim so(n+1,1)`; what a cell cannot hold is held by
-the ENCLOSURE that wraps it, a chamber of higher grade (78.32(3)(e), 78.31),
-never a stretched cell and never a cap.
+the closure bounded by `dim so(n+1,1)`; what a chamber cannot hold is held by
+the ENCLOSURE that wraps it, a sporophore of higher grade (78.32(3)(e), 78.31),
+never a stretched chamber and never a cap.
 
 ### 4.8 Waves, resonance, superposition
 
@@ -680,10 +708,10 @@ facing its counterparty; a nerve never decides one.
 
 Across a multitude of knowledge comprehension runs four ways, each a reading
 of the plexus (78.31): across CLASSES — each class's algebra its own, so
-comprehension of one is never folded into another's span; across CELLS —
-the cross-cell bracket, where two cells' generators fail to commute (CB1,
-owed); across GRADES — an enclosure wrapping cells whose bracket no one cell
-can hold (EN1, NB1); across MINDS — another mind's re-derivation from its
+comprehension of one is never folded into another's span; across CHAMBERS —
+the cross-chamber bracket, where two chambers' generators fail to commute
+(CB1, owed); across GRADES — an enclosure, a sporophore, wrapping chambers
+whose bracket no one chamber can hold (EN1, NB1); across MINDS — another mind's re-derivation from its
 own constructors, the second vantage every admission needs (§5.3, §5.4),
 and its echo, which is what one mind's language does to another's thought.
 
@@ -758,7 +786,7 @@ rewriting what any thought IS — the difference is always a coordinate:
    where their commutator comes to the identity, carry a DISTINCTION where
    it does not, and FRACTURE where experience stops renewing them.
 5. **New structure meets held structure exactly.** Where new volume — a new
-   cell, chart or another mind's perspective — meets what is held,
+   chamber, chart or another mind's perspective — meets what is held,
    Mayer–Vietoris computes the union from its pieces (13): the connecting
    map yields exactly the classes the overlap creates, and exactness
    guarantees no class held is lost. Naturality (15) makes every key commute
@@ -766,10 +794,10 @@ rewriting what any thought IS — the difference is always a coordinate:
 
 As volume enters, the hypha keeps per chart the holonomy algebra its ruled
 words' circuits generate (`lie_basis`), grown only where a new generator lies
-outside it (`close_rank`, `RankStep`), seals a cell where a circuit closes,
-wraps cells whose bracket none can hold in an enclosure of higher grade
+outside it (`close_rank`, `RankStep`), seals a chamber where a circuit closes,
+wraps chambers whose bracket none can hold in an enclosure of higher grade
 (EN1), refines the cover and never the base (14.8, 15.5), and files a closed
-orbit at its exact period: volume entering is new cells, chambers and
+orbit at its exact period: volume entering is new chambers, enclosures and
 generators — each a closure, never a stretched space. The mind does the same
 on its own complex, per class.
 
@@ -872,10 +900,10 @@ nothing between minds.
    displaced hues on 𝒢; summed lane by lane, never across), and its echoes
    admitted into the field as field lines (`mark_flux`, its lanes booked as
    every flux is — the DRAG, the rate it moved at, 78.46). Each echo is a
-   closed loop, a commutator, so the thought's echoes together are ONE CELL
-   of the mind's orbit algebra (`cech::read_cell`, 78.26(5)): its bracket
-   closure is the LIFT, its coherence the thought's. The thought CONVERGED
-   where that cell CLOSES — every echo resonant, the joint period a delay and
+   closed loop, a commutator, so the thought's echoes together enclose ONE
+   CHAMBER of the mind's orbit algebra (`cech::read_chamber`, 78.26(5)): its
+   bracket closure is the LIFT, its coherence the thought's. The thought
+   CONVERGED where that chamber CLOSES — every echo resonant, the joint period a delay and
    not a loss, so a tilted reading (a turn of finite order) is as much agreed
    as a whole one. Each perturbation is its own exact deviation, and the same
    word costs two minds differently, each field its own. Converged on the
@@ -883,9 +911,9 @@ nothing between minds.
    speaker's too, the thing said is AGREED language, spoken to the court with
    the hearer's signed HOLD, and the court states the deviation beside the
    attestation. An echo that is a turn of no finite order comes round every
-   return turned by its exact turn: it PRECESSES, the cell is HELD, the
+   return turned by its exact turn: it PRECESSES, the chamber is HELD, the
    shear is held in the field as its torsion (§4.4), and the thought agrees
-   carrying that deviation. Where the cell is OPEN — an echo that ESCAPES, a
+   carrying that deviation. Where the chamber is OPEN — an echo that ESCAPES, a
    gain or a slide, leaving the star — the thought is understood and
    unagreed, and that echo is a DEMAND (`docket_demand`) on the charts where the hearing stood (the
    hearer's rings it was carried through, or the thing the speaker said),
@@ -1082,6 +1110,10 @@ wire v1.4 (3), 78.152 (the SDK read), 78.153c (3), 78.161.
 ---
 
 # Part V — The archive: the client chapters moved from MU-RECURSION (verbatim)
+
+VOCABULARY (2026-10-13): where an archived chapter says "cell" or "cells",
+read CHAMBER (§0's vocabulary, 78.31) — the meet an anastomosis of bodies
+encloses, never a slot. The archive's text is kept verbatim.
 
 Each section below stood in MU-RECURSION at the place its pointer now marks;
 its text is unchanged, its number is its citation, and amendments to it are
