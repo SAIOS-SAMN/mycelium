@@ -53,7 +53,7 @@ fn a_slide_is_read_on_the_null_lane_and_a_held_slide_re_derives_its_cube() {
     let held = crate::transducer::family::cipher_form(&one.0, &one.1);
     let mut p = Presentation::default();
     let form = Address::from(vec![5u8; 8]);
-    assert!(p.hear_form(&form, &held, false) > 0, "the dialect's slide is heard");
+    assert!(p.learn_form(&form, &held, false) > 0, "the dialect's slide is learned");
     let target = motions(&three.0, &three.1);
     let [m] = target.as_slice() else { panic!("one moving vertex in the longer slide") };
     let r = p.read_word(m, &[], false).expect("the slide reads");
@@ -78,29 +78,6 @@ fn a_hue_cycle_and_its_powers_stand_on_one_mode_and_its_order_returns_it() {
     assert!(gauge_power(&cycle, 3).is_empty(), "the cycle's order returns every hue");
     // A merge is a move on a path, not a cycle.
     assert_eq!(gauge_modes(&[(4, 0)]).expect("a merge is a map"), vec![GaugeMode::Move(4, 0)]);
-}
-
-/// 78.163 — A SHARED THOUGHT FEEDS THE EAR: the holonomy two minds confirmed
-/// — here a slide one mind's language put on the other's thought — is held
-/// as a transport, and a later word that moves by it is read through it,
-/// cited and composing; read twice as far, it cites the transport at twice
-/// its count. An echo (a still transport) moves nothing and is not held.
-#[test]
-fn a_transport_two_minds_hold_reads_a_later_word_through_it_and_an_echo_holds_nothing() {
-    let q = |n: i64| num_rational::BigRational::from_integer(n.into());
-    let slide = crate::transducer::cga::translator_at(&[q(0), q(1), q(0)]);
-    let mut p = Presentation::default();
-    assert!(!p.hear_transport(&crate::transducer::cga::Mv::scalar(q(1)), &[]), "an echo is not held");
-    assert!(p.is_empty());
-    assert!(p.hear_transport(&slide, &[]), "the transport is held");
-    let once = p.read_word(&slide, &[], false).expect("the slide reads");
-    assert!(once.composes && !once.cites.is_empty(), "a word that moves by the transport is read through it: {once:?}");
-    let twice = crate::transducer::cga::translator_at(&[q(0), q(2), q(0)]);
-    let r = p.read_word(&twice, &[], false).expect("the longer slide reads");
-    assert!(r.composes, "twice as far composes from the transport: {r:?}");
-    assert!(r.cites.iter().all(|c| c.3 == 2), "at twice its count: {:?}", r.cites);
-    // Held under the dialect, never ruled: a court replays none of it.
-    assert!(!p.read_word(&slide, &[], true).expect("reads").composes);
 }
 
 #[test]

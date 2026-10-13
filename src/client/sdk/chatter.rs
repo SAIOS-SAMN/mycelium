@@ -24,8 +24,8 @@
 //! - HOLD, the same fields as ACK: the hearer's own reading of every loop,
 //!   re-derived from what it heard and what it derived. Each mind verifies
 //!   the other's by the algebra (`same_loop`); where both hold one loop on
-//!   every word, the thought is shared and each mind's ear holds every
-//!   curved holonomy as a transport between the two.
+//!   every word, the thought is shared, and what the two minds' resonance
+//!   leaves is held in each mind's field — never by a nerve.
 //!
 //! THE TRANSPORT. Each mind listens on its own address and posts every frame
 //! it hears into its inbox, drained by the mind on its stroke. A frame is

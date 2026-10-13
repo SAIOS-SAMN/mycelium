@@ -1,28 +1,29 @@
 // 78.161, 78.163, MU-CLIENT §5.1, §5.3, §5.5 — THE CONVERSATION WITH OTHER
-// MINDS, ON ITS OWN CARRIER: it says what the mind stood, hears what other
-// minds say in the mind's own ear, reads every loop said → heard by its
-// physics, and carries agreed language to the court.
+// MINDS, ON ITS OWN CARRIER: it carries what the mind's faculties say, hands
+// what other minds said to the mind's field, and carries agreed language to
+// the court.
 //
 //! THE CARRIER. The conversation runs on its own thread with its own circuit:
 //! it sleeps until a frame reaches the post or the field hands it something
 //! to say, so a court slow to answer the field never stops a conversation,
-//! and a peer slow to answer never stops the field. It shares one thing with
-//! the field — the EAR (`epigenome::Ear`): the field writes it as the mind
-//! learns, the carrier reads it to hear and files a shared thought's
-//! transports in it. It keeps its own link to the court, for agreed
-//! language only.
+//! and a peer slow to answer never stops the field. It TRANSDUCES only
+//! (MU-CLIENT §4.9): what arrives goes to the field as `FieldWork::Hear`, and
+//! what the field understood comes back to be said; the carrier holds no
+//! vocabulary and no memory of what was heard — both are the mind's. It keeps
+//! its own link to the court, for agreed language only.
 //!
-//! THE PROTOCOL. Hearing is comprehension (1.7): a heard word is read over
-//! everything the hearer holds (`Presentation::read_word`), re-derived
-//! exactly or in part, never compared as bytes. Two minds are two charts;
-//! the round trip said → heard is a loop whose holonomy (`chatter::loop_of`)
-//! is what one mind's language did to the other's thought. SAY → HEARD → ACK
-//! (the speaker's reading of every loop) → HOLD (the hearer's own): each
-//! mind verifies the other's by the algebra. Where both hold one loop on
-//! every word the thought is SHARED: the hearer's ear holds every curved
-//! holonomy as a transport, and the thing said is AGREED language, which
-//! the speaker speaks to the court carrying the hearer's signed HOLD; the
-//! court verifies it and seals the hearer's attestation (78.161(5)).
+//! THE PROTOCOL. A thing said is its RINGS. The hearer's field reads each
+//! twice, apart: as a SOUND against what the mind remembers hearing, and as a
+//! WORD against its vocabulary — never compared as bytes. Two minds are two
+//! charts; the round trip said → heard is a loop whose holonomy
+//! (`chatter::loop_of`) is what one mind's language did to the other's
+//! thought. SAY → HEARD → ACK (the speaker's reading of every loop) → HOLD
+//! (the hearer's own): each mind verifies the other's by the algebra. Where
+//! both hold one loop on every word and the speaker's field finds the
+//! hearer's rings familiar too (MUTUAL balance), the thing said is AGREED
+//! language, which the speaker speaks to the court carrying the hearer's
+//! signed HOLD; the court verifies it and seals the hearer's attestation
+//! (78.161(5)).
 
 use crate::anastome::dialogue;
 use crate::chronometry::tuniversal::TPoint;
@@ -137,7 +138,6 @@ struct Carrier {
     voice: [u8; 32],
     key: ed25519_dalek::SigningKey,
     dir: std::path::PathBuf,
-    ear: super::super::epigenome::Ear,
     court: Session,
     k: u64,
     point: Option<TPoint>,
@@ -330,7 +330,6 @@ impl Entity {
             voice,
             key,
             dir: dir.to_path_buf(),
-            ear: self.epigenome.ear.clone(),
             court: Session::open(self.hypha.addr(), self.hypha.kernel().clone()),
             k: self.own_k(),
             point: self.hypha.tuniversal(),
@@ -452,6 +451,11 @@ impl Entity {
             heard.push((w, h));
         }
         let after = crate::transducer::sentence::rung::lexicon();
+        let (vocabulary, remembered) = (self.epigenome.vocabulary.read().len() as u64, self.remembered.scoped().map(|(_, m)| m.len() as u64).sum::<u64>());
+        crate::observe::note_mind(|m| {
+            m.vocabulary = vocabulary;
+            m.remembered = remembered;
+        });
         if let (Some(b), Some(a)) = (before, after) {
             crate::observe::note_mind(|m| {
                 m.lexicon = a as u64;
@@ -705,11 +709,9 @@ impl Carrier {
             Inflow::Understood { speaker, said, words } => self.understood(&speaker, said, words),
         }
         self.release_unmet();
-        let ear = self.ear.read().len() as u64;
         let (thoughts, unions, waiting) = (self.thoughts.len() as u64, self.union.len() as u64, self.waiting.len() as u64);
         crate::observe::note_mind(|m| {
             m.k = self.k;
-            m.ear = ear;
             m.thoughts = thoughts;
             m.unions = unions;
             m.waiting = waiting;
@@ -913,8 +915,8 @@ impl Carrier {
 
     /// THE SPEAKER READ THIS MIND'S THOUGHT (its ACK): every loop read again
     /// here by the one reader. Where the two minds hold one loop on every
-    /// word the thought is SHARED: this mind HOLDs it back, signed, and its
-    /// ear holds every curved holonomy. Loops read differently hold nothing.
+    /// word the thought is SHARED: this mind's field prices it and HOLDs it
+    /// back, signed. Loops read differently hold nothing.
     fn acknowledged(&mut self, speaker: &[u8; 32], said: &[u8], acks: &[AckWord]) {
         let mut key = speaker.to_vec();
         key.extend_from_slice(said);
@@ -928,17 +930,16 @@ impl Carrier {
         crate::observe::note_mind(|m| m.understood += 1);
         // Its price is the field's: the HOLD waits on it (`priced`). What the
         // two minds' resonance leaves is held in the field and the lexicon,
-        // never filed into the ear (S6).
+        // never filed by the carrier (S6).
         let pricing = Pricing { loops: mine, answer: Answer::Hold { speaker: *speaker, said: said.to_vec() }, forms: Vec::new(), mutual: Vec::new() };
         let _ = self.field.send(FieldWork::Price(pricing));
     }
 
     /// THE HEARER HOLDS THE LOOPS THIS MIND READ (its HOLD, `frame`):
     /// verified against the ACK sent it. Where the two readings are one, the
-    /// thought is shared on this side too, and every echo it carried — what
-    /// the hearer's language did to it — is held as a transport between the
-    /// two perspectives. Whether it is AGREED LANGUAGE is this mind's field's
-    /// to price, as the hearer's priced it (`priced`): where the echoes
+    /// thought is shared on this side too. Whether it is AGREED LANGUAGE is
+    /// this mind's field's to price, as the hearer's priced it (`priced`),
+    /// with the hearer's rings for MUTUAL balance: where the echoes
     /// converge here too, it is spoken to the court carrying the hearer's
     /// signed HOLD, once.
     fn held_back(&mut self, who: &[u8; 32], said: &[u8], holds: &[AckWord], frame: &[u8]) {

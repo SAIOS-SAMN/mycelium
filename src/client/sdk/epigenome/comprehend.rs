@@ -32,8 +32,8 @@ impl Epigenome {
         self.axis_retract(&word.held);
         self.moduli_retract(&word.held);
         match word.held.form() {
-            Some(f) => self.ear.write().unfile_form(&gone, f),
-            None => self.ear.write().unfile_letter(&gone),
+            Some(f) => self.vocabulary.write().unfile_form(&gone, f),
+            None => self.vocabulary.write().unfile_letter(&gone),
         }
         // The recollections that spelled themselves with this word were
         // spellings in the old vocabulary and dissolve with it.
@@ -471,14 +471,14 @@ impl Epigenome {
         self.atlas.admit(&crate::transducer::stalk::invariant_of(&held), at.clone());
         self.axis_admit(&held);
         self.moduli_admit(&held);
-        // 78.160 — THE EAR HEARS IT: the word's motions perceived by their
+        // 78.160 — THE VOCABULARY LEARNS IT: the word's motions filed by their
         // holes and windings.
         match held.form() {
             Some(f) => {
-                self.ear.write().hear_form(&at, f, true);
+                self.vocabulary.write().learn_form(&at, f, true);
             }
             None => {
-                self.ear.write().hear_letter(&at, held.element(), true);
+                self.vocabulary.write().learn_letter(&at, held.element(), true);
             }
         }
         #[expect(clippy::disallowed_methods, reason = "rule 11 — one per resident word admitted: a count of what this process holds cannot pass a 64-bit usize")]

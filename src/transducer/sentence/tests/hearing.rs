@@ -152,17 +152,20 @@ fn hearing_winds_the_crossing_and_a_pure_twist_winds_nothing() {
     assert_eq!(hear(&[&twist], &mut stroke()).wound, None, "all advance: nothing wound");
 }
 
-/// An ear holding each of `rings` as a word of its dialect.
-fn ear_of(rings: &[Mv]) -> crate::transducer::sentence::presentation::Presentation {
-    let mut ear = crate::transducer::sentence::presentation::Presentation::default();
-    for r in rings {
-        assert!(ear.hear_transport(r, &[]), "the ear holds the ring");
-    }
-    ear
+/// A ring's size, read off its own coordinates on the stroke its modes need.
+fn size_of(m: &Mv) -> crate::transducer::sentence::hearing::Size {
+    let need = cga::modes_need(m).expect("its modes read");
+    let coords = crate::transducer::sentence::coordinates::Coordinates::of(m, &mut crate::physics::Physics::default().stroke_n(need)).expect("its coordinates read");
+    crate::transducer::sentence::hearing::Size::of_coordinates(&coords).expect("a size")
+}
+
+/// `m` heard against a mind that remembers hearing the one ring `heard`.
+fn heard_against(m: &Mv, heard: &Mv) -> crate::transducer::sentence::hearing::Echoed {
+    crate::transducer::sentence::hearing::hear_across(m, size_of(m), vec![(size_of(heard), vec![(b"heard".to_vec(), heard)])].into_iter())
 }
 
 /// 78.112 H5 — A WORD HEARD ACROSS MINDS IS SEATED IN THE HEARER'S RINGS.
-/// The hearer holds the 90° turn of the grid plane (ℓ 4). The speaker's 180°
+/// The hearer heard the 90° turn of the grid plane (ℓ 4). The speaker's 180°
 /// turn of that plane (ℓ 2, dividing 4) seats in it WHOLE: understood whole,
 /// carried as it is, the loop still. The 180° turn of a crossing plane seats
 /// with a TILT: carried round the ring, the loop said → heard is exactly the
@@ -172,22 +175,22 @@ fn ear_of(rings: &[Mv]) -> crate::transducer::sentence::presentation::Presentati
 #[test]
 fn a_word_heard_across_minds_is_seated_in_the_hearers_rings() {
     use crate::transducer::sentence::hearing::Seat;
-    let ear = ear_of(&[turn_90(E1 | E2)]);
+    let quarter = turn_90(E1 | E2);
     let half = Mv::blade(E1 | E2, q(1));
-    let heard = ear.hear_echoed(&half).expect("its modes read");
-    assert_eq!(heard.seat, Seat::Whole, "the half turn sounds inside the quarter turn whole");
+    let heard = heard_against(&half, &quarter);
+    assert_eq!(heard.seat, Seat::Whole, "the 180° turn sounds inside the 90° turn whole");
     assert!(heard.carried.as_ref().is_some_and(|c| c.projective_eq(&half)), "carried as it is: the loop still");
     let crossing = Mv::blade(E1 | E3, q(1));
-    let tilted = ear.hear_echoed(&crossing).expect("its modes read");
+    let tilted = heard_against(&crossing, &quarter);
     assert!(matches!(&tilted.seat, Seat::Tilted(e) if e == &vec![Echo::Turn]), "a crossing plane seats with a tilt: {:?}", tilted.seat);
     let carried = tilted.carried.expect("carried round the ring");
     let l = turn_90(E1 | E2);
     let e = l.geo(&crossing).geo(&l.reverse()).geo(&crossing.reverse());
     assert!(carried.geo(&crossing.reverse()).projective_eq(&e), "the loop said → heard is the echo");
     let rosette = Mv::scalar(BigRational::new((-1).into(), 2.into())).add(&Mv::blade(E1 | E2, q(1)));
-    assert_eq!(ear.hear_echoed(&rosette).expect("its modes read").seat, Seat::Outer, "c = −3/5: no return, a carrier");
+    assert_eq!(heard_against(&rosette, &quarter).seat, Seat::Outer, "c = −3/5: no return, a carrier");
     let slide = cga::translator_at(&[q(1), q(0), q(0)]);
-    let outer = ear.hear_echoed(&slide).expect("its modes read");
+    let outer = heard_against(&slide, &quarter);
     assert_eq!(outer.seat, Seat::Outer, "the carrier is larger than every returning ring");
     assert!(outer.carried.is_some_and(|c| c.projective_eq(&slide)));
 }

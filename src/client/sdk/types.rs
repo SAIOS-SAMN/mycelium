@@ -486,12 +486,12 @@ pub struct Epigenome {
     /// mind holds more than it did (`asked_root`).
     pub(crate) asked: crate::network::nerve::Keyed<()>,
     pub(crate) asked_root: Option<crate::transducer::address::Address>,
-    /// 78.160 — THE EAR: every genome word this mind took in, heard by the
-    /// holes its word vertices' whole motions wind about (`hear_form`), filed
-    /// where it is admitted and unfiled where it retires — the language a
-    /// motion is deconstructed over with no court asked. Derived, never
-    /// persisted: a restore hears each word again as it admits it.
-    pub(crate) ear: super::epigenome::Ear,
+    /// 78.160 — THE VOCABULARY: every word this mind took in, by the holes
+    /// its word vertices' whole motions wind about (`learn_form`), filed where
+    /// it is admitted and unfiled where it retires — the language a motion is
+    /// deconstructed over with no court asked. Derived, never persisted: a
+    /// restore learns each word again as it admits it.
+    pub(crate) vocabulary: super::epigenome::Vocabulary,
     /// 21 step 3 — CLOSED FORMS BY WHAT THEIR MEMBERS DO: `act_key` (chart,
     /// whole motion, hue map) → each held word vertex with a member acting
     /// exactly so, by its `generator_key`, as (form, vertex); filled and

@@ -136,13 +136,13 @@ impl crate::transducer::family::Crystal for Epigenome {
         self.presented.get(&key).cloned()
     }
 
-    /// 78.161 — a word read over the ruled words this mind's ear holds.
+    /// 78.161 — a word read over the ruled words this mind's vocabulary holds.
     fn read_word(
         &self,
         motion: &crate::transducer::cga::Mv,
         gauge: &[(u8, u8)],
     ) -> Option<crate::transducer::sentence::presentation::Reading> {
-        self.ear.read().read_word(motion, gauge, true)
+        self.vocabulary.read().read_word(motion, gauge, true)
     }
 
     /// 1.8: THE PRESENTATION THIS MIND SPEAKS FROM on a versor's chart.

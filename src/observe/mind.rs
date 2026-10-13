@@ -4,11 +4,12 @@
 //
 //! [`Mind`] — ONE MIND'S CONVERSATION AND WHAT IT BUILT: the things other
 //! minds said that it heard, the thoughts understood both ways, each
-//! hearing's cell as the field priced it (closed, held, open, unread), the demands
-//! open cells raised and what the demand taker made of every demand, the
-//! HOLDs it sent and the agreed language it spoke, the deviation of its
-//! closed and of its open hearings — exact, lane by lane, never a count per
-//! lane — and what its ear and its conversation hold now. Written where the
+//! hearing's chamber as the field priced it (closed, held, open, unread), the
+//! demands open chambers raised and what the demand taker made of every
+//! demand, the HOLDs it sent and the agreed language it spoke, the deviation
+//! of its closed and of its open hearings — exact, lane by lane, never a count
+//! per lane — its vocabulary and what it remembers hearing, and what its
+//! conversation's carrier holds now. Written where the
 //! mind acts (`note_mind`), by the carrier and the field on their own
 //! circuits; read only at a question, on the mind's post, so the observer
 //! never waits on cognition and nothing in cognition reads it back.
@@ -149,18 +150,21 @@ pub struct Mind {
     pub disagree: [u64; 6],
     /// Its questions, by [`ASKS`].
     pub asks: [u64; 3],
-    /// Heard rings by how they seated, by [`SEATS`]; mutual balances at the
-    /// speaker, by [`MUTUAL`]; its lexicon's size, and what heard speech grew
-    /// it by.
+    /// Heard rings by how they were understood, by [`SEATS`]; mutual
+    /// balances at the speaker, by [`MUTUAL`]; its lexicon's size, and what
+    /// heard speech grew it by; its vocabulary's words; and the rings it
+    /// remembers hearing.
     pub seats: [u64; 5],
     pub mutual: [u64; 2],
     pub lexicon: u64,
     pub grown: u64,
+    pub vocabulary: u64,
+    pub remembered: u64,
     /// Spin coupled to orbit: each lock `p:q` read, with how often, in
     /// ratio order; and the drifts held as torsion.
     pub locks: Vec<(u64, u64, u64)>,
     pub drifts: u64,
-    /// Perception's cells: rings held as shears (precessing), and rings
+    /// Perception's chambers: rings held as shears (precessing), and rings
     /// escaping, docketed as demands.
     pub shears: u64,
     pub escapes: u64,
@@ -168,14 +172,12 @@ pub struct Mind {
     pub held: u64,
     /// Agreed language this mind spoke to its court.
     pub agreed: u64,
-    /// The deviation of the hearings whose cell closed, and of those whose
-    /// cell did not (open or unread), each summed exact lane by lane.
+    /// The deviation of the hearings whose chamber closed, and of those whose
+    /// chamber did not (open or unread), each summed exact lane by lane.
     pub closed: [Q; 4],
     pub open: [Q; 4],
-    /// What the ear and the conversation hold now: the ear's generators,
-    /// the thoughts awaiting an ACK, the things said awaiting a HOLD, the
-    /// letters awaiting a union.
-    pub ear: u64,
+    /// What the conversation's carrier holds now: the thoughts awaiting an
+    /// ACK, the things said awaiting a HOLD, the letters awaiting a union.
     pub thoughts: u64,
     pub unions: u64,
     pub waiting: u64,
@@ -200,6 +202,8 @@ impl Default for Mind {
             mutual: [0; 2],
             lexicon: 0,
             grown: 0,
+            vocabulary: 0,
+            remembered: 0,
             locks: Vec::new(),
             drifts: 0,
             shears: 0,
@@ -208,7 +212,6 @@ impl Default for Mind {
             agreed: 0,
             closed: zero4(),
             open: zero4(),
-            ear: 0,
             thoughts: 0,
             unions: 0,
             waiting: 0,
@@ -241,7 +244,7 @@ impl Mind {
         }
         put_lanes(out, &self.closed);
         put_lanes(out, &self.open);
-        for v in [self.ear, self.thoughts, self.unions, self.waiting, self.drifts, self.shears, self.escapes, self.lexicon, self.grown] {
+        for v in [self.thoughts, self.unions, self.waiting, self.drifts, self.shears, self.escapes, self.lexicon, self.grown, self.vocabulary, self.remembered] {
             put_u64(out, v);
         }
         crate::transducer::address::put_u32_count(out, self.locks.len())?;
@@ -277,8 +280,9 @@ impl Mind {
         let [held, agreed] = [take_u64(b, p)?, take_u64(b, p)?];
         let closed = take_lanes(b, p)?;
         let open = take_lanes(b, p)?;
-        let [ear, thoughts, unions, waiting] = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
+        let [thoughts, unions, waiting] = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let [drifts, shears, escapes, lexicon, grown] = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
+        let [vocabulary, remembered] = [take_u64(b, p)?, take_u64(b, p)?];
         let n = usize::try_from(u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?)).ok()?;
         *p += 4;
         // Each lock is three counts.
@@ -306,6 +310,8 @@ impl Mind {
             mutual,
             lexicon,
             grown,
+            vocabulary,
+            remembered,
             locks,
             drifts,
             shears,
@@ -314,7 +320,6 @@ impl Mind {
             agreed,
             closed,
             open,
-            ear,
             thoughts,
             unions,
             waiting,
@@ -330,7 +335,7 @@ impl Mind {
                 "mind K {} · heard {} · understood {} (hearer) {} (speaker) · held {} · agreed {}",
                 self.k, self.heard, self.understood, self.returned, self.held, self.agreed
             ),
-            format!("  cells {} · demanded {}", priced.join(" "), self.demanded),
+            format!("  chambers {} · demanded {}", priced.join(" "), self.demanded),
             format!("  constructed {}", constructed.join(" ")),
             format!(
                 "  perspectives {}",
@@ -342,11 +347,13 @@ impl Mind {
                 ASKS.iter().zip(&self.asks).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
             ),
             format!(
-                "  rings heard {} · mutual {} · lexicon {} (grown {} by speech)",
+                "  rings heard {} · mutual {} · lexicon {} (grown {} by speech) · vocabulary {} · remembers hearing {}",
                 SEATS.iter().zip(&self.seats).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 MUTUAL.iter().zip(&self.mutual).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 self.lexicon,
-                self.grown
+                self.grown,
+                self.vocabulary,
+                self.remembered
             ),
             format!(
                 "  fibres {} · bodies met {}",
@@ -364,7 +371,7 @@ impl Mind {
                 }
             ),
             format!("  deviation closed {} · open {}", lanes_line(&self.closed), lanes_line(&self.open)),
-            format!("  holds ear {} · thoughts {} · unions {} · waiting {}", self.ear, self.thoughts, self.unions, self.waiting),
+            format!("  carrier holds thoughts {} · unions {} · waiting {}", self.thoughts, self.unions, self.waiting),
         ]
     }
 }

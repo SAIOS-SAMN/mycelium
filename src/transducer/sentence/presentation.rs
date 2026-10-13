@@ -29,17 +29,16 @@ pub struct Generator {
     pub ruled: bool,
 }
 
-/// THE HELD GENERATORS BY THE HOLES THEY STAND ON, by the modes of their hue
-/// maps, and (78.112 H5) by their SIZE — each word a ring returning at the lcm
-/// of its turns' orders, or a carrier: the harmonic series the language holds,
-/// read in the order rings nest — keyed by [`super::generator_key`], the same
-/// key the lane covers file a generator under, so one generator is one entry
-/// whatever reaches it.
+/// THE HELD GENERATORS BY THE HOLES THEY STAND ON and by the modes of their
+/// hue maps — keyed by [`super::generator_key`], the same key the lane covers
+/// file a generator under, so one generator is one entry whatever reaches it.
+/// A language's words, never what a mind has heard: whether a heard ring
+/// SOUNDS like something heard is read against the mind's memory of heard
+/// rings (MU-CLIENT §4.9), not here.
 #[derive(Default)]
 pub struct Presentation {
     holes: HoleIndex,
     gauges: Keyed<Keyed<()>>,
-    rings: Keyed<Keyed<()>>,
     held: Keyed<Generator>,
 }
 
@@ -323,22 +322,18 @@ impl Presentation {
         true
     }
 
-    /// ONE GENERATOR ADMITTED at `key`: under its holes, its hue map's
-    /// `modes`, and its size.
+    /// ONE GENERATOR ADMITTED at `key`: under its holes and its hue map's
+    /// `modes`.
     fn admit(&mut self, key: &[u8], modes: &[GaugeMode], g: Generator) {
         self.holes.file(key, &g.coords);
         for m in modes {
             self.gauges.nested_insert(m.key(), key, ());
         }
-        if let Some(size) = super::hearing::Size::of_coordinates(&g.coords) {
-            self.rings.nested_insert(size.key(), key, ());
-        }
         self.held.insert(key, g);
     }
 
     /// The mirror of [`Presentation::admit`]: the generator at `key` leaves
-    /// its holes, its hue modes and its size, and a fibre left empty leaves
-    /// with it.
+    /// its holes and its hue modes, and a fibre left empty leaves with it.
     fn retire(&mut self, key: &[u8]) {
         let Some(g) = self.held.remove(key) else { return };
         self.holes.unfile(key, &g.coords);
@@ -358,9 +353,6 @@ impl Presentation {
         for m in gauge_modes(&g.gauge).into_iter().flatten() {
             leave(&mut self.gauges, &m.key());
         }
-        if let Some(size) = super::hearing::Size::of_coordinates(&g.coords) {
-            leave(&mut self.rings, &size.key());
-        }
     }
 
     /// The generator held at `key`.
@@ -368,36 +360,14 @@ impl Presentation {
         self.held.get(key)
     }
 
-    /// 78.112 H5 — HEAR A WORD IN THIS LANGUAGE'S RINGS: its size read off
-    /// its own coordinates (on the stroke its modes need), seated in the next
-    /// larger layer of the rings held, read against every ring there
-    /// (`hearing::hear_across`). A word that moves nothing passes whole. `None`
-    /// where its modes do not read.
-    pub fn hear_echoed(&self, motion: &Mv) -> Option<super::hearing::Echoed> {
-        use super::hearing::{hear_across, Echoed, Seat, Size};
-        if is_still(motion) {
-            return Some(Echoed { seat: Seat::Whole, carried: Some(motion.clone()), through: Vec::new() });
-        }
-        let need = crate::transducer::cga::modes_need(motion)?;
-        let coords = Coordinates::of(motion, &mut crate::physics::Physics::default().stroke_n(need)).ok()?;
-        let size = Size::of_coordinates(&coords)?;
-        let held = &self.held;
-        let layers = self.rings.scoped().filter_map(|(k, members)| {
-            let layer = Size::from_key(&k)?;
-            let rings: Vec<(Vec<u8>, &Mv)> = members.scoped().filter_map(|(g, ())| held.get(&g).map(|x| (g, &x.motion))).collect();
-            Some((layer, rings))
-        });
-        Some(hear_across(motion, size, layers))
-    }
-
-    /// 78.160 — THE EAR: a form HEARD, each word vertex's motion perceived by
-    /// its own modes on a stroke sized by what those modes need
+    /// 78.160 — A FORM LEARNED into the vocabulary, each word vertex's motion
+    /// read by its own modes on a stroke sized by what those modes need
     /// (`cga::modes_need`, 78.111 C1b) — never by a stroke sized for
     /// something else — and filed under its holes and its hue map's modes;
-    /// `ruled` where a court ruled the form, else the mind's dialect. What the
-    /// ear cannot read (no base action, a motion past its carrier) is not
+    /// `ruled` where a court ruled the form, else the mind's dialect. What
+    /// does not read (no base action, a motion past its carrier) is not
     /// filed.
-    pub fn hear_form(&mut self, form: &Address, f: &Form, ruled: bool) -> usize {
+    pub fn learn_form(&mut self, form: &Address, f: &Form, ruled: bool) -> usize {
         let mut heard = 0usize;
         for (_, v) in f.vertices.scoped() {
             let Some(motion) = vertex_motion(v) else { continue };
@@ -417,31 +387,15 @@ impl Presentation {
         heard
     }
 
-    /// 78.161 — THE EAR HEARS A LETTER: a word spelled by letters (a
-    /// connection, an adjoined letter) is one generator, its motion its
-    /// spelling at its carriage (`element::conformal_of`) and its hue map its
-    /// sigma, filed at its own address as both form and vertex. What does not
-    /// read (no letters, no base action) is not filed.
-    pub fn hear_letter(&mut self, addr: &Address, e: &crate::transducer::element::Element, ruled: bool) -> bool {
+    /// 78.161 — A LETTER LEARNED into the vocabulary: a word spelled by
+    /// letters (a connection, an adjoined letter) is one generator, its motion
+    /// its spelling at its carriage (`element::conformal_of`) and its hue map
+    /// its sigma, filed at its own address as both form and vertex. What does
+    /// not read (no letters, no base action) is not filed.
+    pub fn learn_letter(&mut self, addr: &Address, e: &crate::transducer::element::Element, ruled: bool) -> bool {
         let Some(l) = e.letters() else { return false };
         let Some(motion) = crate::transducer::element::conformal_of(&l.spelling.word, &l.carriage) else { return false };
         self.file_motion(addr, motion, l.sigma, ruled)
-    }
-
-    /// 78.163 — THE EAR HOLDS A TRANSPORT BETWEEN TWO MINDS: the holonomy of a
-    /// loop said → heard that both minds confirmed — what one mind's language
-    /// does to the other's thought — filed as a generator of this mind's
-    /// dialect (never ruled), under the holes it winds about and the modes of
-    /// its hue map, at the address its own coordinates write. A later word
-    /// heard from that perspective is deconstructed through it. A still
-    /// transport (an echo) moves nothing and is not filed.
-    pub fn hear_transport(&mut self, motion: &Mv, hue: &[(u8, u8)]) -> bool {
-        if is_still(motion) && super::transport::gauge_eq(hue, &[]) {
-            return false;
-        }
-        let Some(mut key) = motion_key(motion) else { return false };
-        key.extend(hue.iter().flat_map(|&(a, b)| [a, b]));
-        self.file_motion(&Address::new(key), motion.clone(), hue.to_vec(), false)
     }
 
     /// ONE MOTION AND HUE MAP FILED AS A GENERATOR at its own address, as
@@ -469,7 +423,7 @@ impl Presentation {
         true
     }
 
-    /// The mirror of [`Presentation::hear_letter`].
+    /// The mirror of [`Presentation::learn_letter`].
     pub fn unfile_letter(&mut self, addr: &Address) {
         self.retire(&super::generator_key(addr, addr));
     }
@@ -549,7 +503,7 @@ impl Presentation {
     }
 
     /// [`Presentation::deconstruct`] on the stroke the motion's own modes
-    /// need — what the ear reads a heard motion against.
+    /// need — what the mind reads a heard motion against.
     pub fn deconstruct_sized(&self, motion: &Mv) -> Option<Deconstructed> {
         let need = crate::transducer::cga::modes_need(motion)?;
         let mut budget = crate::physics::Physics::default().stroke_n(need);

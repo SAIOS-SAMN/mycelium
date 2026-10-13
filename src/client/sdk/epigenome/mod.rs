@@ -19,17 +19,17 @@ pub use persist::{PRE_ORBIT_GENOME_MAGIC, PRE_TRIE_GENOME_MAGIC};
 use crate::transducer::sentence::presentation::Presentation;
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-/// 78.160, MU-CLIENT §5.1 — THE EAR, SHARED BETWEEN TWO CARRIERS: the field
-/// writes it as the mind learns and sheds words; the conversation reads it
-/// to hear what other minds say, and files the transports a shared thought
-/// leaves. A hold is one read or one write, never across a wait on a
-/// counterparty. A poisoned lock still holds a whole presentation (every
-/// write is one call that completes or panics before it is seen), so it is
-/// read on.
+/// 78.160, MU-CLIENT §4.9 — THE MIND'S VOCABULARY: the words it deduced and
+/// reconstructed, by the holes they wind about — never an ear's (an ear
+/// transduces and keeps nothing). The field writes it as the mind learns and
+/// sheds words, and reads a word over it. A hold is one read or one write,
+/// never across a wait on a counterparty. A poisoned lock still holds a whole
+/// presentation (every write is one call that completes or panics before it
+/// is seen), so it is read on.
 #[derive(Clone, Default)]
-pub struct Ear(Arc<RwLock<Presentation>>);
+pub struct Vocabulary(Arc<RwLock<Presentation>>);
 
-impl Ear {
+impl Vocabulary {
     pub(crate) fn read(&self) -> RwLockReadGuard<'_, Presentation> {
         match self.0.read() {
             Ok(g) => g,
