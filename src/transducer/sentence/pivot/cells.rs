@@ -12,14 +12,14 @@
 //! cell whose algebra did not read is UNREAD by which.
 
 use super::*;
-use crate::transducer::cech::{algebra_contains, CellAlgebra};
+use crate::transducer::cech::{algebra_contains, ChamberAlgebra};
 
 /// THE CELLS A HELD FORM'S PIVOT READS AGAINST: each cell's orbit algebra
 /// over the form's own circuits, and, by orbit chord, the cells its circuits
 /// cross. Read once per form and memoised on the idea while the form stands.
 #[derive(Clone, Debug, Default)]
 pub struct PivotCells {
-    pub algebras: Vec<CellAlgebra>,
+    pub algebras: Vec<ChamberAlgebra>,
     /// The cells each orbit's circuit crosses, by the orbit's chord overlap
     /// (AT1).
     pub by_chord: Keyed<Vec<usize>, coord::Overlap>,
@@ -61,7 +61,7 @@ impl PivotTally {
 /// WHAT ONE MOVE DOES TO ONE CELL'S ALGEBRA: `Some(true)` already in it,
 /// `Some(false)` a new direction, `Err(true)` no action (a fibre move),
 /// `Err(false)` the cell's algebra or the move's width did not read.
-fn move_in_cell(by: &PivotBy, cell: &CellAlgebra) -> Result<bool, bool> {
+fn move_in_cell(by: &PivotBy, cell: &ChamberAlgebra) -> Result<bool, bool> {
     let versor = match by {
         PivotBy::Word { word, .. } => element::versor_of_word(word),
         PivotBy::Placement { translator, .. } => Some(translator.clone()),

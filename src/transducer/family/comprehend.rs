@@ -12,7 +12,7 @@
 //! read per step, never a pairwise read.
 
 use crate::network::nerve::Keyed;
-use crate::transducer::cech::CellAlgebra;
+use crate::transducer::cech::ChamberAlgebra;
 use crate::transducer::sentence::Form;
 
 /// THE CIRCUITS CROSSING ONE CELL, by their place in the traversal, each with
@@ -87,14 +87,14 @@ pub(crate) fn cell_algebras(
     form: &Form,
     traversed: &[crate::transducer::sentence::TraversedCircuit],
     budget: &mut crate::physics::Budget,
-) -> Vec<CellAlgebra> {
+) -> Vec<ChamberAlgebra> {
     // Each cell's crossing circuits and their orders of its bodies.
-    type Crossing = (Vec<crate::transducer::cech::CellCircuit>, Vec<Option<Vec<usize>>>);
+    type Crossing = (Vec<crate::transducer::cech::ChamberCircuit>, Vec<Option<Vec<usize>>>);
     let per_cell: Vec<Crossing> = form
         .cells
         .scoped()
         .map(|(_, cell)| {
-            let mut circuits: Vec<crate::transducer::cech::CellCircuit> = Vec::new();
+            let mut circuits: Vec<crate::transducer::cech::ChamberCircuit> = Vec::new();
             let mut orders: Vec<Option<Vec<usize>>> = Vec::new();
             for (at, order) in crossings(form, cell, traversed) {
                 let Some(crate::transducer::sentence::TraversedCircuit { steps, composite, hue, unread }) =
@@ -105,9 +105,9 @@ pub(crate) fn cell_algebras(
                 // OR3's reason rides the circuit into the cell; a composite
                 // missing with no reason recorded is the unnamed refusal, by
                 // its own name. The ring is the circuit's own steps (78.26(5)).
-                use crate::transducer::cech::{CellCircuit, CircuitUnread};
-                circuits.push(CellCircuit {
-                    ring: CellCircuit::ring_of(steps),
+                use crate::transducer::cech::{ChamberCircuit, CircuitUnread};
+                circuits.push(ChamberCircuit {
+                    ring: ChamberCircuit::ring_of(steps),
                     holonomy: match (composite, unread) {
                         (Some(h), _) => Ok(h.clone()),
                         (None, Some(why)) => Err(*why),
@@ -123,14 +123,14 @@ pub(crate) fn cell_algebras(
     // EVERY CELL'S RANK BEFORE ANY CELL'S MODES (78.11 items 4 and 5 across
     // the cells, §6.4, F1b): a stroke that runs out leaves every cell its
     // dimension, never the first cell its modes and the rest nothing.
-    let ranks: Vec<crate::transducer::cech::CellRank> =
+    let ranks: Vec<crate::transducer::cech::ChamberRank> =
         per_cell.iter().map(|(circuits, _)| crate::transducer::cech::read_rank(circuits, budget)).collect();
     form.cells
         .scoped()
         .zip(per_cell)
         .zip(ranks)
         .map(|(((_, cell), (circuits, orders)), rank)| {
-            crate::transducer::cech::read_cell_after(
+            crate::transducer::cech::read_chamber_after(
                 rank,
                 cell.grade(),
                 cell.meet().as_ref(),

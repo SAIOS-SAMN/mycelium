@@ -13,7 +13,7 @@
 //! of the chart's cell, its holonomy the transition's versor. The cell's
 //! constructors are all the chart's bodies' nuclei.
 //!
-//! [`cech::read_cell`] then reads what the laws say to read: each circuit's
+//! [`cech::read_chamber`] then reads what the laws say to read: each circuit's
 //! modes off its own action — HARMONIC (elliptic of finite order: the orbit
 //! returns), LUMINAL (a boost: it never returns), a parabolic slide, a
 //! rosette; the capacity of the algebra the circuits generate; whether the
@@ -37,7 +37,7 @@
 
 use super::*;
 use crate::transducer::blade::{self, NotReciprocal, Shape, Transition};
-use crate::transducer::cech::{CellCircuit, Coherence};
+use crate::transducer::cech::{ChamberCircuit, Coherence};
 use crate::transducer::cga::Mv;
 
 /// A perception's bodies by the chart each stands on (their moduli), in the
@@ -127,7 +127,7 @@ pub struct ResonanceTally {
     pub closes: u64,
     pub held: u64,
     pub open: u64,
-    pub cells_unread: u64,
+    pub chambers_unread: u64,
     /// The circuits by their modes: resonant (harmonic, returns), rosette,
     /// parabolic, boost (luminal); and those carrying the round off
     /// (holonomic).
@@ -220,7 +220,7 @@ impl ResonanceTally {
             self.closes,
             self.held,
             self.open,
-            self.cells_unread,
+            self.chambers_unread,
             self.resonant,
             self.rosette,
             self.parabolic,
@@ -281,7 +281,7 @@ impl ResonanceTally {
             &mut self.closes,
             &mut self.held,
             &mut self.open,
-            &mut self.cells_unread,
+            &mut self.chambers_unread,
             &mut self.resonant,
             &mut self.rosette,
             &mut self.parabolic,
@@ -699,7 +699,7 @@ impl Contemplation {
                 .filter(|(_, a)| a.as_slice() != key)
                 .filter(|(_, a)| self.bubbles.get(a).is_some_and(|b| b.family == family))
                 .collect();
-            let mut circuits: Vec<CellCircuit> = Vec::new();
+            let mut circuits: Vec<ChamberCircuit> = Vec::new();
             // The cell's bodies: this perception's and the fibre's on the chart.
             let mut bodies = mine.len();
             for (o, other) in &fibre {
@@ -720,7 +720,7 @@ impl Contemplation {
                         match transition(x, y, budget) {
                             Ok(t) => {
                                 self.resonance.circuits += 1;
-                                circuits.push(CellCircuit {
+                                circuits.push(ChamberCircuit {
                                     ring: circuit_ring(ok, x, *o, y),
                                     holonomy: Ok(t.versor.clone()),
                                     // A body is read hue-blind; the empty
@@ -761,8 +761,8 @@ impl Contemplation {
             // into another scene, and an orbit of constructors under them
             // would never close. What the cell reads is its circuits: their
             // modes, their joint coherence, the capacity of their algebra.
-            let cell = crate::transducer::cech::read_cell(grade, None, None, &circuits, &orders, budget);
-            self.note_cell(&cell, chart, budget);
+            let cell = crate::transducer::cech::read_chamber(grade, None, None, &circuits, &orders, budget);
+            self.note_chamber(&cell, chart, budget);
             self.note_shear(&circuits);
         }
         self.file_thoughts(key, &to, budget);
@@ -856,7 +856,7 @@ impl Contemplation {
     /// sheared by the others (CURVED); one circuit alone is UNPERTURBED. A
     /// ray that does not read canonically is keyed by nothing and so agrees
     /// with nothing (rule 11).
-    fn note_shear(&mut self, circuits: &[CellCircuit]) {
+    fn note_shear(&mut self, circuits: &[ChamberCircuit]) {
         let mut rays: Keyed<()> = Keyed::new();
         let mut unkeyed = false;
         for c in circuits {
@@ -880,7 +880,7 @@ impl Contemplation {
     /// holonomy a field line whose turn flows on its plane's orbit, the
     /// precession kept as content (78.73, MU-CLIENT §4.4); and each ESCAPE
     /// filed as a demand on the chart by its class (the CS2 arm).
-    fn note_cell(&mut self, cell: &crate::transducer::cech::CellAlgebra, chart: &[u8], budget: &mut crate::physics::Budget) {
+    fn note_chamber(&mut self, cell: &crate::transducer::cech::ChamberAlgebra, chart: &[u8], budget: &mut crate::physics::Budget) {
         let shears: Vec<crate::transducer::family::pairing::FieldLine> = cell
             .coherence
             .shears()
@@ -916,7 +916,7 @@ impl Contemplation {
         match &cell.coherence {
             Coherence::Closes(_) => self.resonance.closes += 1,
             Coherence::Held { .. } => self.resonance.held += 1,
-            Coherence::Unread => self.resonance.cells_unread += 1,
+            Coherence::Unread => self.resonance.chambers_unread += 1,
             Coherence::Open { escapes, .. } => {
                 self.resonance.open += 1;
                 let charts: Vec<stalk::Invariant> = stalk::Invariant::from_key(chart).into_iter().collect();

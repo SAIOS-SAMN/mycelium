@@ -212,19 +212,19 @@ fn c1_one_reference_gives_every_pair() {
 fn c1_capacity_is_the_rank_of_the_actions_algebra() {
     let read = |hs: Vec<Mv>| {
         use crate::network::nerve::coord::{ChartAt, Overlap, VertexAt};
-        use crate::transducer::cech::CellCircuit;
+        use crate::transducer::cech::ChamberCircuit;
         // Each circuit its own ring over its own overlap: the Frame's chart
         // to a member on chart `[i + 1]` (AT1: a face is an overlap).
         let overlap = |i: u64| Overlap {
             from: ChartAt::Frame,
             to: ChartAt::at(VertexAt::Frame, crate::transducer::stalk::Invariant::counts(&[i + 1]), 0),
         };
-        let circuits: Vec<CellCircuit> = hs
+        let circuits: Vec<ChamberCircuit> = hs
             .into_iter()
             .zip(0u64..)
-            .map(|(h, i)| CellCircuit { ring: CellCircuit::ring_of(&[(overlap(i), true)]), holonomy: Ok(h), hue: Some(Vec::new()) })
+            .map(|(h, i)| ChamberCircuit { ring: ChamberCircuit::ring_of(&[(overlap(i), true)]), holonomy: Ok(h), hue: Some(Vec::new()) })
             .collect();
-        crate::transducer::cech::read_cell(1, None, None, &circuits, &[], &mut stroke())
+        crate::transducer::cech::read_chamber(1, None, None, &circuits, &[], &mut stroke())
     };
     assert_eq!(read(vec![one()]).capacity, Ok(1), "the identity: the unit alone");
     let turn_90 = cga::rotator(&q(1, 1), &q(1, 1));

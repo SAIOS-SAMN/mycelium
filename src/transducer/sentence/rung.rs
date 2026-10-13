@@ -41,6 +41,9 @@ use crate::transducer::cga::Mv;
 struct Held {
     rung: u64,
     coords: Option<Coordinates>,
+    /// The shortcut's own motion: the ring a heard ring is echoed against
+    /// where it seats in this one's layer (MU-CLIENT §4.9).
+    word: Mv,
 }
 
 /// THE MIND'S LEXICON: the words held by their keys, and the holes they
@@ -100,9 +103,76 @@ pub fn take_taught() -> Vec<Taught> {
 }
 
 /// How many shortcuts the mind holds.
-#[cfg(test)]
 pub(crate) fn lexicon() -> Option<usize> {
     with_lexicon(|l| l.held.len())
+}
+
+/// MU-CLIENT §4.9 — A HEARD RING UNDERSTOOD AGAINST THIS MIND'S OWN RINGS:
+/// the shortcuts its closed sentences taught it, by size — each its return,
+/// the carrier where it never returns (`hearing::Size`) — layered in the
+/// order sizes nest, and the ring seated in the next larger layer it divides
+/// (`hearing::hear_across`): WHOLE where it resonates with a held ring,
+/// TILTED with its echoes, OUTER where no held ring is larger, LEFTOVER where
+/// it divides none — not understood. Read in a mind's tick only: a court's
+/// lexicon is not a mind's understanding, and outside one there is none.
+/// Answers the seat and the held rings of the layer it seated in, by their
+/// motions — the hearer's re-derivation. `None` where no mind is thinking or
+/// the ring's modes do not read.
+pub(crate) fn seat(ring: &Mv) -> Option<(super::hearing::Echoed, Vec<Mv>)> {
+    use super::hearing::{hear_across, Echoed, Seat, Size};
+    if super::presentation::is_still(ring) {
+        return Some((Echoed { seat: Seat::Whole, carried: Some(ring.clone()), through: Vec::new() }, Vec::new()));
+    }
+    let need = crate::transducer::cga::modes_need(ring)?;
+    let coords = Coordinates::of(ring, &mut crate::physics::Physics::default().stroke_n(need)).ok()?;
+    let size = Size::of_coordinates(&coords)?;
+    crate::transducer::mind::with_lexicon(|lex| {
+        // The held rings by their size's coordinate, which orders them as
+        // sizes nest.
+        let mut layers: Keyed<Vec<(Vec<u8>, Mv)>> = Keyed::new();
+        for (k, h) in lex.held.scoped() {
+            let Some(s) = h.coords.as_ref().and_then(Size::of_coordinates) else { continue };
+            let at = s.key();
+            match layers.get_mut(&at) {
+                Some(members) => members.push((k, h.word.clone())),
+                None => {
+                    layers.insert(&at, vec![(k, h.word.clone())]);
+                }
+            }
+        }
+        let read: Vec<(Size, Vec<(Vec<u8>, Mv)>)> =
+            layers.scoped().filter_map(|(at, members)| Some((Size::from_key(&at)?, members.clone()))).collect();
+        let echoed =
+            hear_across(ring, size, read.iter().map(|(s, members)| (*s, members.iter().map(|(k, m)| (k.clone(), m)).collect())));
+        let through: Vec<Mv> = echoed.through.iter().filter_map(|k| lex.held.get(k).map(|h| h.word.clone())).collect();
+        (echoed, through)
+    })
+    .ok()
+}
+
+/// MU-CLIENT §5.3 — AN ATOM LEARNED: a word another mind could factor no
+/// further, held in this mind's lexicon at the first rung, by its own
+/// coordinates — so a ring of it seats from here on. A word held already is
+/// held once. Answers whether it was newly held; outside a mind's tick
+/// nothing is learned.
+pub(crate) fn learn(word: &Mv) -> bool {
+    if is_identity(word) {
+        return false;
+    }
+    let Some(key) = key_of(word) else { return false };
+    let coords = crate::transducer::cga::modes_need(word)
+        .and_then(|need| Coordinates::of(word, &mut crate::physics::Physics::default().stroke_n(need)).ok());
+    crate::transducer::mind::with_lexicon(|lex| {
+        if lex.held.get(&key).is_some() {
+            return false;
+        }
+        if let Some(c) = &coords {
+            lex.holes.file(&key, c);
+        }
+        lex.held.insert(&key, Held { rung: 1, coords, word: word.clone() });
+        true
+    })
+    .is_ok_and(|learned| learned)
 }
 
 /// A motion's coordinates, as the lexicon keys it: its canonical ray.
@@ -225,7 +295,7 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
     if let Some(c) = &coords {
         lex.holes.file(&key, c);
     }
-    lex.held.insert(&key, Held { rung, coords });
+    lex.held.insert(&key, Held { rung, coords, word: word.clone() });
     // The period it returns at, one where it never returns (a null or named
     // word carries no return).
     let period = match s.closure {

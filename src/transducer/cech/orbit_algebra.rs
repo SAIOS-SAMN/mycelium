@@ -152,13 +152,13 @@ impl Coherence {
 /// steps, each face and its way, framed — its holonomy or OR3's reason, and
 /// its hue, the steps' hue maps composed (`None` where it did not read).
 #[derive(Clone, Debug)]
-pub struct CellCircuit {
+pub struct ChamberCircuit {
     pub ring: Vec<u8>,
     pub holonomy: Result<Mv, CircuitUnread>,
     pub hue: Option<Vec<(u8, u8)>>,
 }
 
-impl CellCircuit {
+impl ChamberCircuit {
     /// A ring's coordinates from its steps: each overlap by its own
     /// coordinates (AT1) and its way, framed.
     pub fn ring_of(steps: &[(crate::network::nerve::coord::Overlap, bool)]) -> Vec<u8> {
@@ -302,9 +302,9 @@ pub enum CapacityRefused {
 
 /// CV1b — WHAT ONE CELL'S READERS COULD NOT HOLD, BY CONTENT (78.26(4)): the
 /// observer's summary of the refusals the readers' own types carry, read off
-/// them by [`CellAlgebra::refusals`] and never stored beside them (law 12).
+/// them by [`ChamberAlgebra::refusals`] and never stored beside them (law 12).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct CellRefusals {
+pub struct ChamberRefusals {
     /// Each crossing circuit whose holonomy did not read, by OR3's reason.
     pub circuits: Vec<CircuitUnread>,
     /// Each read circuit whose modes did not read, by why.
@@ -402,17 +402,17 @@ fn read_rings(
     r
 }
 
-impl CellRefusals {
+impl ChamberRefusals {
     /// Whether any reader of the cell refused.
     pub fn any(&self) -> bool {
-        *self != CellRefusals::default()
+        *self != ChamberRefusals::default()
     }
 }
 
-impl CellAlgebra {
+impl ChamberAlgebra {
     /// THE REFUSALS BY CONTENT, read off the readers' own typed answers.
-    pub fn refusals(&self) -> CellRefusals {
-        CellRefusals {
+    pub fn refusals(&self) -> ChamberRefusals {
+        ChamberRefusals {
             circuits: self.circuits_unread.clone(),
             modes: self.modes_unread.clone(),
             capacity: self.capacity.err(),
@@ -437,7 +437,7 @@ impl CellAlgebra {
 
 /// ONE CELL'S ORBIT ALGEBRA (CG1, CG1b, GR1).
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct CellAlgebra {
+pub struct ChamberAlgebra {
     pub grade: usize,
     /// Circuits crossing the cell, read or not.
     pub circuits: usize,
@@ -538,10 +538,10 @@ pub enum LieRankRefused {
 /// a bracket that joined is bracketed on — one read of the budget per
 /// bracket. At n = 3 the rank is at most 10, dim so(4,1).
 ///
-/// This is not [`CellAlgebra::capacity`], which is the dimension of the
+/// This is not [`ChamberAlgebra::capacity`], which is the dimension of the
 /// unital ASSOCIATIVE algebra the circuits' actions generate on the space.
 /// The rank-step act (78.68) is a step of this one.
-pub fn lie_rank(circuits: &[CellCircuit], budget: &mut crate::physics::Budget) -> Result<usize, LieRankRefused> {
+pub fn lie_rank(circuits: &[ChamberCircuit], budget: &mut crate::physics::Budget) -> Result<usize, LieRankRefused> {
     let holonomies: Vec<Option<&Mv>> = circuits.iter().map(|c| c.holonomy.as_ref().ok()).collect();
     let gens = cayley_generators(&holonomies, budget)?;
     if gens.is_empty() {
@@ -634,7 +634,7 @@ pub fn lie_close(held: &[Mv], new: &[Mv], budget: &mut crate::physics::Budget) -
 /// 78.26(2) — DOES A CELL'S CLOSED ALGEBRA CONTAIN THIS FUNCTION: it lies in
 /// the algebra's span. `None` where the cell's algebra did not read or the
 /// two act in algebras of different `n`.
-pub(crate) fn algebra_contains(cell: &CellAlgebra, f: &cga::LinearFunction) -> Option<bool> {
+pub(crate) fn algebra_contains(cell: &ChamberAlgebra, f: &cga::LinearFunction) -> Option<bool> {
     let span = cell.basis.as_ref()?;
     let [first, ..] = cell.actions.as_deref()? else { return None };
     if first.n() != f.n() {
@@ -682,7 +682,7 @@ fn permutation(ray: &Mv, nuclei: &[Mv], index: &Keyed<usize>) -> Option<Vec<usiz
 /// the read circuits' actions in the one algebra they span, and the rank of
 /// the unital algebra they generate with its closed basis — or why not.
 #[derive(Clone, Debug)]
-pub struct CellRank {
+pub struct ChamberRank {
     actions: Result<Vec<cga::LinearFunction>, CapacityRefused>,
     rank: Result<(usize, crate::core::span::Span), CapacityRefused>,
 }
@@ -691,7 +691,7 @@ pub struct CellRank {
 /// under the stroke's budget. Read before any mode of any cell, so a
 /// budget that runs out leaves every cell its dimension with the modes
 /// unread by name, never the reverse.
-pub fn read_rank(circuits: &[CellCircuit], budget: &mut crate::physics::Budget) -> CellRank {
+pub fn read_rank(circuits: &[ChamberCircuit], budget: &mut crate::physics::Budget) -> ChamberRank {
     let read: Vec<&Mv> = circuits.iter().filter_map(|c| c.holonomy.as_ref().ok()).collect();
     // Every action in the one algebra the cell's circuits span — the join of
     // their algebras, a value never narrowed — so the actions compose.
@@ -702,7 +702,7 @@ pub fn read_rank(circuits: &[CellCircuit], budget: &mut crate::physics::Budget) 
         .map(|(circuit, h)| cga::action_of(&h.widened(n)).ok_or(CapacityRefused::NotVersor { circuit }))
         .collect();
     let rank = actions.as_deref().map_err(|why| *why).and_then(|a| capacity(a, budget));
-    CellRank { actions, rank }
+    ChamberRank { actions, rank }
 }
 
 /// READ ONE CELL'S ORBIT ALGEBRA: its grade, its round, its constructors,
@@ -710,30 +710,30 @@ pub fn read_rank(circuits: &[CellCircuit], budget: &mut crate::physics::Budget) 
 /// reason where it did not read) and its hue — and each circuit's order of
 /// the cell's constructors (`None` where it does not visit every body), under
 /// the stroke's budget — its rank first, then the rest.
-pub fn read_cell(
+pub fn read_chamber(
     grade: usize,
     round: Option<&Mv>,
     nuclei: Option<&[Mv]>,
-    circuits: &[CellCircuit],
+    circuits: &[ChamberCircuit],
     orders: &[Option<Vec<usize>>],
     budget: &mut crate::physics::Budget,
-) -> CellAlgebra {
+) -> ChamberAlgebra {
     let rank = read_rank(circuits, budget);
-    read_cell_after(rank, grade, round, nuclei, circuits, orders, budget)
+    read_chamber_after(rank, grade, round, nuclei, circuits, orders, budget)
 }
 
 /// THE REST OF ONE CELL'S ORBIT ALGEBRA, its rank already read: the modes,
 /// congruence, permutation, coherence, the Gram form, the constructors'
 /// orbit and the Coxeter reading.
-pub fn read_cell_after(
-    rank: CellRank,
+pub fn read_chamber_after(
+    rank: ChamberRank,
     grade: usize,
     round: Option<&Mv>,
     nuclei: Option<&[Mv]>,
-    crossing: &[CellCircuit],
+    crossing: &[ChamberCircuit],
     orders: &[Option<Vec<usize>>],
     budget: &mut crate::physics::Budget,
-) -> CellAlgebra {
+) -> ChamberAlgebra {
     // Each circuit's holonomy, or OR3's reason, in the crossing order.
     let holonomies: Vec<Result<Mv, CircuitUnread>> = crossing.iter().map(|c| c.holonomy.clone()).collect();
     let circuits = holonomies.as_slice();
@@ -936,7 +936,7 @@ pub fn read_cell_after(
         Some(cga::DualFrame::Frame(ps)) => Some(super::read_coxeter(ps, &[], budget)),
         _ => None,
     };
-    CellAlgebra {
+    ChamberAlgebra {
         grade,
         circuits: circuits.len(),
         capacity,

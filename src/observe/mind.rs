@@ -65,6 +65,14 @@ pub const DISAGREE: [&str; 6] = ["no rule", "unspoken", "remainder", "frame", "o
 /// the bottom of an answer — in the order the counts are kept.
 pub const ASKS: [&str; 3] = ["asked", "clarified", "learned"];
 
+/// HOW EACH HEARD RING WAS UNDERSTOOD (MU-CLIENT §4.9), seated among the
+/// mind's own rings — in the order the counts are kept.
+pub const SEATS: [&str; 5] = ["whole", "tilted", "outer", "leftover", "unheard"];
+
+/// MUTUAL BALANCE at the speaker: the hearer's re-derivation resonating in
+/// this mind, or not — in the order the counts are kept.
+pub const MUTUAL: [&str; 2] = ["balanced", "unbalanced"];
+
 /// One slot of [`CONSTRUCTED`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Constructed {
@@ -138,6 +146,13 @@ pub struct Mind {
     pub disagree: [u64; 6],
     /// Its questions, by [`ASKS`].
     pub asks: [u64; 3],
+    /// Heard rings by how they seated, by [`SEATS`]; mutual balances at the
+    /// speaker, by [`MUTUAL`]; its lexicon's size, and what heard speech grew
+    /// it by.
+    pub seats: [u64; 5],
+    pub mutual: [u64; 2],
+    pub lexicon: u64,
+    pub grown: u64,
     /// Spin coupled to orbit: each lock `p:q` read, with how often, in
     /// ratio order; and the drifts held as torsion.
     pub locks: Vec<(u64, u64, u64)>,
@@ -178,6 +193,10 @@ impl Default for Mind {
             perspective: [0; 8],
             disagree: [0; 6],
             asks: [0; 3],
+            seats: [0; 5],
+            mutual: [0; 2],
+            lexicon: 0,
+            grown: 0,
             locks: Vec::new(),
             drifts: 0,
             shears: 0,
@@ -211,7 +230,7 @@ impl Mind {
             put_u64(out, v);
         }
         put_u64(out, self.demanded);
-        for v in self.constructed.iter().chain(&self.flex).chain(&self.bodies).chain(&self.perspective).chain(&self.disagree).chain(&self.asks) {
+        for v in self.constructed.iter().chain(&self.flex).chain(&self.bodies).chain(&self.perspective).chain(&self.disagree).chain(&self.asks).chain(&self.seats).chain(&self.mutual) {
             put_u64(out, *v);
         }
         for v in [self.held, self.agreed] {
@@ -219,7 +238,7 @@ impl Mind {
         }
         put_lanes(out, &self.closed);
         put_lanes(out, &self.open);
-        for v in [self.ear, self.thoughts, self.unions, self.waiting, self.drifts, self.shears, self.escapes] {
+        for v in [self.ear, self.thoughts, self.unions, self.waiting, self.drifts, self.shears, self.escapes, self.lexicon, self.grown] {
             put_u64(out, v);
         }
         crate::transducer::address::put_u32_count(out, self.locks.len())?;
@@ -250,11 +269,13 @@ impl Mind {
             *v = take_u64(b, p)?;
         }
         let asks = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
+        let seats = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
+        let mutual = [take_u64(b, p)?, take_u64(b, p)?];
         let [held, agreed] = [take_u64(b, p)?, take_u64(b, p)?];
         let closed = take_lanes(b, p)?;
         let open = take_lanes(b, p)?;
         let [ear, thoughts, unions, waiting] = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
-        let [drifts, shears, escapes] = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
+        let [drifts, shears, escapes, lexicon, grown] = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let n = usize::try_from(u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?)).ok()?;
         *p += 4;
         // Each lock is three counts.
@@ -278,6 +299,10 @@ impl Mind {
             perspective,
             disagree,
             asks,
+            seats,
+            mutual,
+            lexicon,
+            grown,
             locks,
             drifts,
             shears,
@@ -312,6 +337,13 @@ impl Mind {
                 "  disagreed {} · questions {}",
                 DISAGREE.iter().zip(&self.disagree).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 ASKS.iter().zip(&self.asks).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
+            ),
+            format!(
+                "  rings heard {} · mutual {} · lexicon {} (grown {} by speech)",
+                SEATS.iter().zip(&self.seats).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
+                MUTUAL.iter().zip(&self.mutual).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
+                self.lexicon,
+                self.grown
             ),
             format!(
                 "  fibres {} · bodies met {}",

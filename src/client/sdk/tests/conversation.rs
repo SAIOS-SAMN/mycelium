@@ -79,8 +79,8 @@ fn two_minds_form_a_shared_word_and_carry_it_to_the_court() {
             act = Some(heard);
             break;
         }
-        a.price_hearings();
-        b.price_hearings();
+        a.take_in_conversation();
+        b.take_in_conversation();
         std::thread::yield_now();
     }
     let act = act.expect("the agreed speech reaches the court");
@@ -100,60 +100,48 @@ fn two_minds_form_a_shared_word_and_carry_it_to_the_court() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
-/// The demands on a mind's plan that carry a residue.
-fn demands(m: &Entity) -> usize {
-    m.contemplation
-        .docket_cites()
-        .iter()
-        .filter(|c| matches!(c, crate::chronometry::Cite::Demand { residue: Some(_), .. }))
-        .count()
+/// MU-CLIENT §4.9 — A RING IS UNDERSTOOD BY RESONANCE WITH THE MIND'S OWN
+/// RINGS, NEVER BY ITS VOCABULARY. Against an empty lexicon a 180° turn
+/// stands on the OUTSIDE — nothing larger, understood as it is. A mind that
+/// holds a ring of order three (the turn carrying `e₁ → e₂ → e₃`, `½(1 +
+/// e₂e₃ + e₃e₁ + e₁e₂)`) holds a larger ring the half turn's period does not
+/// divide: the half turn is LEFTOVER — not understood, the question. A mind
+/// holding a slide holds the carrier every returning ring sounds inside: the
+/// half turn seats in its layer, its echo through the slide not the
+/// identity — TILTED, understood shifted. Still, a ring is whole.
+#[test]
+fn a_ring_is_understood_by_resonance_with_the_minds_own_rings() {
+    use crate::transducer::cga::{Mv, E1, E2, E3};
+    use crate::transducer::sentence::hearing::Seat;
+    use crate::transducer::sentence::rung::{learn, seat};
+    let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
+    let half = conformal_of_word(&[(LetterId::turn_90((0, 1)).expect("a quarter turn"), false); 2]);
+    let third = Mv::scalar(q(1, 2))
+        .add(&Mv::blade(E2 | E3, q(1, 2)))
+        .add(&Mv::blade(E3 | E1, q(1, 2)))
+        .add(&Mv::blade(E1 | E2, q(1, 2)));
+    let slide = crate::transducer::element::translator_versor(5, 0);
+    let seated = |held: &[&Mv], ring: &Mv| {
+        let mut field = crate::transducer::mind::MindField::default();
+        let mut out = None;
+        field.think(|| {
+            for h in held {
+                assert!(learn(h), "the ring is held");
+            }
+            out = seat(ring).map(|(e, _)| e.seat);
+        });
+        out
+    };
+    assert_eq!(seated(&[], &half), Some(Seat::Outer), "nothing larger: understood as it is");
+    assert_eq!(seated(&[&third], &half), Some(Seat::Leftover), "a larger ring it divides not: not understood");
+    assert!(matches!(seated(&[&slide], &half), Some(Seat::Tilted(_))), "inside the carrier, its echo turned: understood shifted");
+    let still = Mv::scalar(q(1, 1));
+    assert_eq!(seated(&[&third], &still), Some(Seat::Whole), "a still ring passes whole");
 }
 
-/// 78.46, 78.114 — A HEARING THAT NEVER RETURNS IS A DEMAND, NOT AN
-/// AGREEMENT. The hearer holds a CARRIAGE — a slide, a ring that never
-/// returns — beside the quarter turn; A says the quarter turn. It seats in
-/// the carrier's layer, and its echo `T·R·T⁻¹·R⁻¹` is itself a slide:
-/// parabolic, of no order. The hearing's cell is OPEN, so the hearer HOLDs
-/// nothing and the court hears nothing; the echo stands on the hearer's plan
-/// as a demand whose residue is the echo — deviation fed to construction.
-#[test]
-fn an_echo_that_never_returns_is_a_demand_not_an_agreement() {
-    use crate::transducer::element::translator_versor;
-    let (court, speeches) = court();
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
-    let dir = std::env::temp_dir().join(format!("mycelium-open-hearing-{}", std::process::id()));
-    let _ = std::fs::remove_dir_all(&dir);
-    let mut a = Entity::open(&court, Kernel::named("speaker"));
-    let mut b = Entity::open(&court, Kernel::named("hearer"));
-    let turn = word(&[(q, false)]);
-    let slide = from_connection(&Word::from_letters(&[]), &translator_versor(5, 0), &[], &Vec::new(), [1, 0, 0, 0]).expect("a slide");
-    assert!(a.absorb_taught(&turn.to_bytes().expect("the record writes")).is_some(), "A learns the turn");
-    for w in [&turn, &slide] {
-        assert!(b.absorb_taught(&w.to_bytes().expect("the record writes")).is_some(), "B learns the turn and the slide");
-    }
-    for m in [&mut a, &mut b] {
-        m.open_chatter(&dir).expect("the post opens");
-    }
-    let before = demands(&b);
-    a.say(&turn);
-    let mut demanded = false;
-    for _ in 0..4_000_000u32 {
-        a.price_hearings();
-        b.price_hearings();
-        if demands(&b) > before {
-            demanded = true;
-            break;
-        }
-        std::thread::yield_now();
-    }
-    assert!(demanded, "the open echo stands on the hearer's plan as a demand");
-    for _ in 0..100_000u32 {
-        a.price_hearings();
-        b.price_hearings();
-    }
-    assert!(speeches.try_recv().is_err(), "an open hearing is no agreement: the court hears nothing");
-    assert!(!a.chat.as_ref().is_some_and(|c| c.agreed(turn.address().as_bytes())), "A holds nothing agreed");
-    let _ = std::fs::remove_dir_all(&dir);
+/// A word spelled by `letters`, as its whole motion at the identity carriage.
+fn conformal_of_word(letters: &[(LetterId, bool)]) -> crate::transducer::cga::Mv {
+    crate::transducer::element::conformal_of(&Word::from_letters(letters), &identity_versor()).expect("a motion")
 }
 
 /// MU-CLIENT §5.3 — A QUESTION IS ANSWERED BY WHAT THE WORD IS MADE OF. A

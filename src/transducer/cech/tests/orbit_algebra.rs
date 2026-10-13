@@ -36,11 +36,11 @@ fn overlap(n: u64) -> crate::network::nerve::coord::Overlap {
 /// Circuits crossing a cell, each its own ring — one step over its own face
 /// — with the hue its steps compose: none carries a hue map, so the composed
 /// map is empty, measured.
-fn at(holonomies: Vec<Result<Mv, CircuitUnread>>) -> Vec<CellCircuit> {
+fn at(holonomies: Vec<Result<Mv, CircuitUnread>>) -> Vec<ChamberCircuit> {
     holonomies
         .into_iter()
         .zip(0u64..)
-        .map(|(holonomy, i)| CellCircuit { ring: CellCircuit::ring_of(&[(overlap(i), true)]), holonomy, hue: Some(Vec::new()) })
+        .map(|(holonomy, i)| ChamberCircuit { ring: ChamberCircuit::ring_of(&[(overlap(i), true)]), holonomy, hue: Some(Vec::new()) })
         .collect()
 }
 
@@ -51,7 +51,7 @@ fn at(holonomies: Vec<Result<Mv, CircuitUnread>>) -> Vec<CellCircuit> {
 fn a_turn_in_the_rounds_plane_is_congruent_and_closes() {
     let (m, nuclei) = round();
     let turn = cga::rotator(&q(1, 1), &q(1, 1));
-    let cell = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn)]), &[], &mut stroke());
+    let cell = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn)]), &[], &mut stroke());
     assert_eq!(cell.congruence, Congruence::Congruent);
     assert_eq!(cell.coherence, Coherence::Closes(4));
     assert_eq!(cell.constructors, ConstructorOrbit::Closed { rays: 2 });
@@ -64,7 +64,7 @@ fn a_turn_in_the_rounds_plane_is_congruent_and_closes() {
 fn a_turn_that_carries_the_round_refuses_with_grade_mode_and_plane() {
     let (m, nuclei) = round();
     let across = cga::rotator_on_blade(&q(1, 1), &q(1, 1), E2 | E3);
-    let cell = read_cell(2, Some(&m), Some(&nuclei), &at(vec![Ok(Mv::scalar(q(1, 1))), Ok(across)]), &[], &mut stroke());
+    let cell = read_chamber(2, Some(&m), Some(&nuclei), &at(vec![Ok(Mv::scalar(q(1, 1))), Ok(across)]), &[], &mut stroke());
     let Congruence::Incongruent { grade, failures } = &cell.congruence else { panic!("refused: {:?}", cell.congruence) };
     assert_eq!(*grade, 2, "the failing grade rides the refusal");
     let [f] = failures.as_slice() else { panic!("one failing mode: {failures:?}") };
@@ -83,10 +83,10 @@ fn a_turn_that_carries_the_round_refuses_with_grade_mode_and_plane() {
 #[test]
 fn a_turn_inside_the_span_keeps_the_round_and_not_the_constructors() {
     let (m, nuclei) = round();
-    let turn_90 = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(cga::rotator(&q(1, 1), &q(1, 1)))]), &[], &mut stroke());
+    let turn_90 = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Ok(cga::rotator(&q(1, 1), &q(1, 1)))]), &[], &mut stroke());
     assert_eq!((turn_90.congruence.clone(), turn_90.permutes.clone()), (Congruence::Congruent, Permutes::All));
     assert_eq!(turn_90.modes[0].permutation, Some(vec![1, 0]), "e₁ ↦ e₂, e₂ ↦ −e₁: the swap, as rays");
-    let rosette = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(cga::rotator(&q(3, 1), &q(4, 1)))]), &[], &mut stroke());
+    let rosette = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Ok(cga::rotator(&q(3, 1), &q(4, 1)))]), &[], &mut stroke());
     assert_eq!(rosette.congruence, Congruence::Congruent, "the round is kept");
     assert_eq!(rosette.permutes, Permutes::Moves(vec![(0, 0)]), "and the constructors are not");
 }
@@ -98,7 +98,7 @@ fn a_turn_inside_the_span_keeps_the_round_and_not_the_constructors() {
 fn a_reversed_round_reads_the_held_z2() {
     let (m, nuclei) = round();
     let turn_180 = Mv::blade(E2 | E3, q(1, 1));
-    let cell = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn_180)]), &[], &mut stroke());
+    let cell = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn_180)]), &[], &mut stroke());
     assert_eq!(cell.modes[0].round, RoundKept::Reversed);
     assert_eq!(cell.congruence, Congruence::HeldZ2 { reversed: 1 });
     assert_eq!(cell.permutes, Permutes::All);
@@ -113,7 +113,7 @@ fn a_zero_meet_is_no_round_and_the_gram_reads_in_its_place() {
     let m = meet_of(&nuclei).expect("the nuclei wedge");
     assert!(m.is_zero(), "dependent nuclei: the meet vanishes");
     let turn = cga::rotator(&q(1, 1), &q(1, 1));
-    let cell = read_cell(4, Some(&m), Some(&nuclei), &at(vec![Ok(turn)]), &[], &mut stroke());
+    let cell = read_chamber(4, Some(&m), Some(&nuclei), &at(vec![Ok(turn)]), &[], &mut stroke());
     assert_eq!(cell.congruence, Congruence::NoRound(NoRound::ZeroMeet), "never Congruent: ZM1 names the zero meet");
     let g = cell.gram.expect("the Gram form reads");
     assert_eq!((g.rank, g.dependent()), (4, 1), "four directions, one dependence");
@@ -133,11 +133,11 @@ fn a_zero_meet_is_no_round_and_the_gram_reads_in_its_place() {
 fn a_shear_is_held_and_an_escape_holds_the_cell_open() {
     let (m, nuclei) = round();
     let rosette = cga::rotator(&q(3, 1), &q(4, 1));
-    let held = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(rosette.clone())]), &[], &mut stroke());
+    let held = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Ok(rosette.clone())]), &[], &mut stroke());
     assert_eq!(held.congruence, Congruence::Congruent);
     let Coherence::Held { period: 1, shears } = &held.coherence else { panic!("a rosette precesses, held: {:?}", held.coherence) };
     let [ring] = shears.as_slice() else { panic!("one ring, none chosen: {shears:?}") };
-    assert_eq!(ring.ring, CellCircuit::ring_of(&[(overlap(0), true)]), "the ring's own coordinates");
+    assert_eq!(ring.ring, ChamberCircuit::ring_of(&[(overlap(0), true)]), "the ring's own coordinates");
     assert!(ring.class.is_ok(), "its class read by the one producer: {:?}", ring.class);
     assert_eq!(ring.residue, rosette, "78.114 — its residue is its holonomy");
     let [mode] = ring.modes.as_slice() else { panic!("one live mode: {:?}", ring.modes) };
@@ -149,14 +149,14 @@ fn a_shear_is_held_and_an_escape_holds_the_cell_open() {
     );
     assert_eq!(held.refusals().unordered, 1, "the precession, counted where it stands");
     let turn_90 = cga::rotator(&q(1, 1), &q(1, 1));
-    let beside = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn_90), Ok(rosette.clone())]), &[], &mut stroke());
+    let beside = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn_90), Ok(rosette.clone())]), &[], &mut stroke());
     assert!(
         matches!(&beside.coherence, Coherence::Held { period: 4, shears } if shears.len() == 1),
         "the shear held at the resonant ring's period: {:?}",
         beside.coherence
     );
     let screw = cga::rotator(&q(1, 1), &q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
-    let open = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(screw), Ok(rosette.clone())]), &[], &mut stroke());
+    let open = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Ok(screw), Ok(rosette.clone())]), &[], &mut stroke());
     let Coherence::Open { escapes, shears } = &open.coherence else { panic!("a screw escapes: {:?}", open.coherence) };
     assert_eq!((escapes.len(), shears.len()), (1, 1), "the escape open, the shear beside it held");
     assert!(
@@ -164,8 +164,8 @@ fn a_shear_is_held_and_an_escape_holds_the_cell_open() {
         "open by its parabolic mode: {:?}",
         escapes[0].modes
     );
-    let unhued = vec![CellCircuit { ring: CellCircuit::ring_of(&[(overlap(0), true)]), holonomy: Ok(rosette), hue: None }];
-    let cell = read_cell(1, Some(&m), Some(&nuclei), &unhued, &[], &mut stroke());
+    let unhued = vec![ChamberCircuit { ring: ChamberCircuit::ring_of(&[(overlap(0), true)]), holonomy: Ok(rosette), hue: None }];
+    let cell = read_chamber(1, Some(&m), Some(&nuclei), &unhued, &[], &mut stroke());
     let [ring] = cell.coherence.shears() else { panic!("still held: {:?}", cell.coherence) };
     assert_eq!(ring.class, Err(ClassUnread::HueUnread), "the hue unread, named on the class");
 }
@@ -193,7 +193,7 @@ fn the_rings_through_a_cell_read_by_resonance_level_and_kind() {
         Err(CircuitUnread::Cone),
         Err(CircuitUnread::NotRigid),
     ]);
-    let cell = read_cell(1, Some(&m), Some(&nuclei), &circuits, &[], &mut stroke());
+    let cell = read_chamber(1, Some(&m), Some(&nuclei), &circuits, &[], &mut stroke());
     assert_eq!(
         cell.rings,
         Rings {
@@ -221,19 +221,19 @@ fn the_rings_through_a_cell_read_by_resonance_level_and_kind() {
 #[test]
 fn unread_circuits_a_missing_round_and_no_circuit_are_named() {
     let (m, nuclei) = round();
-    let unread = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Err(CircuitUnread::NotRigid)]), &[], &mut stroke());
+    let unread = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Err(CircuitUnread::NotRigid)]), &[], &mut stroke());
     assert_eq!((unread.congruence, unread.coherence), (Congruence::Unread { unread: 1 }, Coherence::Unread));
     assert_eq!(unread.circuits_unread, vec![CircuitUnread::NotRigid], "the circuit is unread by OR3's reason");
     assert_eq!(unread.capacity, Err(CapacityRefused::NoneRead), "and no circuit read for the capacity");
     let turn = cga::rotator(&q(1, 1), &q(1, 1));
-    let bare = read_cell(1, None, None, &at(vec![Ok(turn)]), &[], &mut stroke());
+    let bare = read_chamber(1, None, None, &at(vec![Ok(turn)]), &[], &mut stroke());
     assert_eq!(
         bare.congruence,
         Congruence::NoRound(NoRound::NucleiUnread),
         "no round because the nuclei did not read, not a zero meet"
     );
     assert_eq!(bare.gram, Err(NucleiUnread), "and no Gram form, by the same content");
-    let none = read_cell(1, Some(&m), Some(&nuclei), &[], &[], &mut stroke());
+    let none = read_chamber(1, Some(&m), Some(&nuclei), &[], &[], &mut stroke());
     assert_eq!((none.congruence, none.capacity), (Congruence::NoCircuit, Err(CapacityRefused::NoneRead)));
 }
 
@@ -247,7 +247,7 @@ fn a_cells_algebra_contains_its_own_products_and_no_other_plane() {
     // Both turns in the one algebra the wider of them stands in.
     let across = cga::rotator_on_blade(&q(1, 1), &q(1, 1), E2 | E3);
     let turn = cga::rotator(&q(1, 1), &q(1, 1)).widened(across.n());
-    let cell = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn.clone())]), &[], &mut stroke());
+    let cell = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn.clone())]), &[], &mut stroke());
     let r = cga::action_of(&turn).expect("a versor acts");
     assert_eq!(algebra_contains(&cell, &r.after(&r)), Some(true), "the 180° turn is in the algebra");
     let other = cga::action_of(&across).expect("a versor acts");
@@ -255,7 +255,7 @@ fn a_cells_algebra_contains_its_own_products_and_no_other_plane() {
     // An action of another algebra's width is not compared: unread, never false.
     let narrow = cga::action_of(&cga::rotator(&q(1, 1), &q(1, 1))).expect("a versor acts");
     assert_eq!(algebra_contains(&cell, &narrow), None, "another width is not read against this algebra");
-    let none = read_cell(1, Some(&m), Some(&nuclei), &[], &[], &mut stroke());
+    let none = read_chamber(1, Some(&m), Some(&nuclei), &[], &[], &mut stroke());
     assert_eq!(algebra_contains(&none, &r), None, "no algebra read, nothing contained");
 }
 
@@ -267,7 +267,7 @@ fn a_spent_capacity_names_the_product_it_ran_out_at() {
     let (m, nuclei) = round();
     let turn = cga::rotator(&q(1, 1), &q(1, 1));
     let mut starved = crate::physics::Physics::default().stroke_n(0);
-    let cell = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn)]), &[], &mut starved);
+    let cell = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn)]), &[], &mut starved);
     assert_eq!(cell.capacity, Err(CapacityRefused::Spent { product: 1 }), "spent at the first product");
 }
 
