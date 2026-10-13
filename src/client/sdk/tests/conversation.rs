@@ -50,16 +50,73 @@ fn court() -> (String, std::sync::mpsc::Receiver<dialogue::SpeechAct>) {
     (addr, rx)
 }
 
+/// MU-CLIENT §5.3 — A QUESTION IS ANSWERED BY WHAT THE MIND KNOWS, AND THE
+/// MEANING DERIVED. B knows the 90° turn of the sensor plane and remembers
+/// the sound of a SCREW — that turn carried along the axis it turns about —
+/// but does not know it as a word. A says the screw. B posits what it knows:
+/// the turn covers the screw's elliptic mode, and the RESIDUE left is the
+/// slide along the axis; B asks of that alone. A answers it whole (a slide
+/// is one carriage, factored no further). B takes the slide, and the screw's
+/// meaning is DERIVED: the turn with the slide, known from here on one rung
+/// above both — where before the answer it was a word B had only heard.
+#[test]
+fn a_question_posits_what_the_mind_knows_and_derives_the_meaning() {
+    use crate::transducer::sentence::rung::{held_rung, known, learn_by};
+    let (court, _speeches) = court();
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
+    let n = |v: i64| num_rational::BigRational::from_integer(v.into());
+    let dir = std::env::temp_dir().join(format!("mycelium-question-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    let mut a = Entity::open(&court, Kernel::named("answerer"));
+    let mut b = Entity::open(&court, Kernel::named("asker"));
+    let along = crate::transducer::cga::translator_at(&[n(0), n(0), n(1)]);
+    let quarter = conformal_of_word(&[(q, false)]);
+    let screw = crate::transducer::element::conformal_of(&Word::from_letters(&[(q, false)]), &along).expect("a motion");
+    b.remember_sound(&screw);
+    let mut field = std::mem::take(&mut b.field);
+    field.think(|| {
+        assert!(learn_by(&quarter, &[]), "B knows the turn");
+        let posited = crate::transducer::sentence::rung::posit(&screw).expect("the screw's modes read");
+        assert!(posited.residue.projective_eq(&along), "what the turn leaves of the screw is the slide alone");
+        assert!(matches!(posited.parts.as_slice(), [p] if p.projective_eq(&quarter)), "the turn is what B posits");
+        assert!(!known(&screw), "the screw itself B does not know");
+    });
+    b.field = field;
+    for m in [&mut a, &mut b] {
+        m.open_chatter(&dir).expect("the post opens");
+    }
+    let said = from_connection(&Word::from_letters(&[(q, false)]), &along, &[], &Vec::new(), [1, 0, 0, 0]).expect("a connection");
+    a.say(&said);
+    let derived = |b: &mut Entity| {
+        let mut field = std::mem::take(&mut b.field);
+        let read = field.think(|| (known(&screw), held_rung(&screw)));
+        b.field = field;
+        read
+    };
+    let mut read = (false, None);
+    for _ in 0..400_000u32 {
+        a.take_in_conversation();
+        b.take_in_conversation();
+        read = derived(&mut b);
+        if read.0 {
+            break;
+        }
+        std::thread::yield_now();
+    }
+    assert_eq!(read, (true, Some(2)), "the screw's meaning derived from the turn and the slide, a rung above both");
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
 /// THE SHARED WORD, BY THE ALGEBRA, ON TWO CARRIERS (MU-CLIENT §4.9). Both
 /// minds have HEARD the 180° turn before (each remembers its sound), and
-/// the hearer KNOWS it as a word (its lexicon holds it); A says it. To B it
+/// the hearer KNOWS it as a word (it learned it); A says it. To B it
 /// sounds familiar and is a word it knows — understood — and what it
 /// sounded like is a sound A has heard too: MUTUAL. The thing A said is
 /// AGREED while the test only waits, and A's carrier speaks it to the court
 /// carrying B's HOLD: signed by B, naming exactly the word A said.
 #[test]
 fn two_minds_form_a_shared_word_and_carry_it_to_the_court() {
-    use crate::transducer::sentence::rung::{hear_word, Recognition};
+    use crate::transducer::sentence::rung::{known, learn_by};
     let (court, speeches) = court();
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
     let dir = std::env::temp_dir().join(format!("mycelium-conversation-{}", std::process::id()));
@@ -75,8 +132,8 @@ fn two_minds_form_a_shared_word_and_carry_it_to_the_court() {
     }
     let mut field = std::mem::take(&mut b.field);
     field.think(|| {
-        assert_eq!(hear_word(&half), Recognition::New, "B comes to know the word");
-        assert_eq!(hear_word(&half), Recognition::Recognized, "and knows it after");
+        assert!(learn_by(&half, &[]), "B comes to know the word");
+        assert!(known(&half), "and knows it after");
     });
     b.field = field;
     let said = word(&[(q, false), (q, false)]);

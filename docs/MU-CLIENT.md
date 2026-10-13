@@ -926,19 +926,36 @@ nothing between minds.
    newly opened are its own word, said in turn. Nothing heard enters the
    hearer's genome or dialect as given (law 8).
 
-   **As built — hearing is harmonic echoes (78.112 H5).** The hearer's ear
-   holds its words as RINGS by their size (`Presentation`: each word's
-   return, the lcm of its turns' orders, or a carrier). A word said is a
-   ring: it seats in the NEXT LARGER layer of the hearer's rings — the least
-   size above it that it divides — read against every ring there
-   (`hearing::hear_across`, `Presentation::hear_echoed`). WHOLE where some
-   echo `Ω_L Ω_s Ω_L⁻¹ Ω_s⁻¹` is the identity: understood whole, carried as
-   it is. TILTED where none is: understood shifted, carried round each ring
-   of the layer, so the loop said → heard the speaker reads IS the echo. On
-   the OUTSIDE where no ring is larger: the carrier, understood as it is.
-   LEFTOVER where larger rings stand that it divides none of: not
-   understood, no loop. Its hue map is read mode by mode on 𝒢. The flat
-   `read_word` no longer hears.
+   **As built — a heard ring is read as a SOUND and as a WORD (§4.9, 78.112
+   H5; rebuilt 2026-10-13).** The SOUND is read against the rings the mind
+   REMEMBERS hearing, by their size (each ring's return, the lcm of its
+   turns' orders, or a carrier): it seats in the next larger layer it
+   divides (`hearing::hear_across`, `Entity::sound_of`) — WHOLE where some
+   echo `Ω_L Ω_s Ω_L⁻¹ Ω_s⁻¹` is the identity, TILTED where none is (carried
+   round the ring, the echo the shift), OUTER where no remembered ring is
+   larger, LEFTOVER where larger rings stand that it divides none of. The
+   WORD — the ring's holonomy Ω — is read against the vocabulary
+   (`rung::hear_word`): KNOWN, DERIVABLE from what the mind knows, HEARD
+   before with its meaning not yet derived, or NEW (held from here on as
+   heard: a hypothesis, never taught or stood as the mind's own).
+
+   **As built — a QUESTION posits what the mind knows (2026-10-13, the
+   operator: recursion posits the words it already knows to derive further
+   meaning).** A familiar ring the mind does not know is POSITED over its
+   known words, mode by mode (`rung::posit`, the deconstruction 78.100 D3):
+   the known words its modes are cited to, and the RESIDUE none reaches. The
+   question asks the residue alone (`HeardWord.asks`), and the mind keeps it
+   (`Entity.questions`). The speaker answers ONE ORDER DOWN: the whole ring
+   of several terms by its terms, any other residue by its carriage and
+   letters — the factors in the order they compose to it, checked exactly
+   before they are said, else said whole as an ATOM. The asker takes an
+   answer only where the factors re-derive the residue exactly; every factor
+   it does not know is asked again, whatever it sounds like, and so on down
+   until the factors are known. Then the residue is their composition and
+   the ring the posited words with the residue: its MEANING is derived, a
+   relation of the vocabulary one rung above its parts (`rung::learn_by`) —
+   what the mind's reading counts as LEARNED. A question no answer closes
+   lapses after an aperture cycle of the mind's own K.
 3. **Agreement is replay.** The speaker replays each discharge on its own
    orbit of that class, as a court replays a certificate on its copy (M9).
    Where it closes, one orbit is discharged in two minds by two derivations:
@@ -950,8 +967,7 @@ nothing between minds.
    gated.** The speaker reads each word's loop (ACK); the hearer reads it
    again by the one reader. Where the two are one and every word was
    understood (none leftover — two readings of nothing are no shared
-   thought), both hold every echo as a transport between the perspectives,
-   and the thought goes to the mind's FIELD to be priced
+   thought), the thought goes to the mind's FIELD to be priced
    (`Entity::price_hearings`, at the tick's admission): each echo's exact
    STRAIN per lane (`hearing::strain` — a turn `(1 − c)/2 = sin²(θ/2)` on 𝒽,
    a gain `(c − 1)/(c + 1)` on 𝒮, a delay its count on 𝒯, the hue loop's

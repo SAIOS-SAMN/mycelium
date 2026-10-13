@@ -65,11 +65,12 @@ pub struct Spoken {
 /// read the word at all), and each citation — the hearer's form and vertex,
 /// the lane, the exponent.
 ///
-/// THE QUESTION (78.46, MU-CLIENT §5.3): `asks` is the word's LIFT against
-/// the hearer's language — the part no ring it holds carries, exact — where
-/// there is one. A word that seats nowhere is all lift: the hearer did not
-/// understand it, and asks for exactly that. The speaker answers by
-/// factoring it (`Carrier::clarify`).
+/// THE QUESTION (78.46, MU-CLIENT §5.3): `asks` is the word's RESIDUE against
+/// what the hearer knows — the ring posited over the hearer's known words,
+/// and the part none of them reaches, exact — where the hearer does not know
+/// the word. A ring whose coordinates do not read is asked whole. The
+/// speaker answers by factoring it (`Carrier::heard_back`), the factors in
+/// the order they compose to it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HeardWord {
     pub vertex: Vec<u8>,

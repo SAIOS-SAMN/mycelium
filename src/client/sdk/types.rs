@@ -645,6 +645,12 @@ pub struct Entity {
     /// answer "does this SOUND like something I have heard?" A ring heard
     /// again is remembered once.
     pub(crate) remembered: crate::network::nerve::Keyed<Vec<(Vec<u8>, crate::transducer::cga::Mv)>>,
+    /// MU-CLIENT §5.3 — THE QUESTIONS THIS MIND HAS OPEN: keyed by the mind
+    /// asked and the question's coordinates, each the word posited over what
+    /// the mind knows and the residue asked about, until a relation derives
+    /// its meaning or it stands an aperture cycle unanswered. The mind's,
+    /// never its conversation's carrier's.
+    pub(crate) questions: crate::network::nerve::Keyed<super::entity::chatter::Question>,
 }
 
 /// A cited form owed to a court, with the citer that waits on it and the

@@ -22,6 +22,14 @@
 //! RECOGNITION IS COMPREHENSION (80.2): a closed sentence whose shortcut the
 //! mind already holds re-derives it, never held twice.
 //!
+//! HEARD IS NOT KNOWN (MU-CLIENT §4.9, §5.3). A word another mind said is
+//! held, where new, only as HEARD — a hypothesis, taught to no one. It
+//! becomes KNOWN when the mind's own perception closes it, when what the
+//! mind knows derives it, or when a question's answer does: the word is
+//! POSITED over the known words (`posit`), the residue they leave is asked,
+//! and the factors that answer it, once known, derive the word's meaning —
+//! a relation of the vocabulary, one rung above its parts (`learn_by`).
+//!
 //! The lexicon is one mind's — held in its own field (`transducer::mind`),
 //! never the process's — and holds one entry per distinct shortcut, by its
 //! coordinates: it grows with what the mind has comprehended, never with how
@@ -34,13 +42,18 @@ use super::theorem::Theorem;
 use crate::network::nerve::Keyed;
 use crate::transducer::cga::Mv;
 
-/// ONE SHORTCUT THE MIND HOLDS: its rung, and its coordinates — its holes
-/// and windings (78.99 (1)) — where its modes read. Whether the alphabet
-/// spells it is read where it is transcribed (`Transcribed`), never held.
+/// ONE SHORTCUT THE MIND HOLDS: its rung, its coordinates — its holes and
+/// windings (78.99 (1)) — where its modes read, and whether it is only HEARD:
+/// a word another mind said that this mind holds as a hypothesis, its meaning
+/// not yet derived (MU-CLIENT §4.9, §5.3). A word the mind's own perception
+/// closed, or one a relation derived from words it knows, is KNOWN. Whether
+/// the alphabet spells it is read where it is transcribed (`Transcribed`),
+/// never held.
 #[derive(Clone, Debug)]
 struct Held {
     rung: u64,
     coords: Option<Coordinates>,
+    heard: bool,
 }
 
 /// THE MIND'S LEXICON: the words held by their keys, and the holes they
@@ -104,31 +117,53 @@ pub(crate) fn lexicon() -> Option<usize> {
     with_lexicon(|l| l.held.len())
 }
 
-/// MU-CLIENT §4.9 — IS THIS A WORD I HAVE HEARD: a word itself, read in the
-/// mind's vocabulary — RECOGNIZED where it is held, COMPREHENDED where its
-/// coordinates cite only held words (derivable), else NEW: held now at the
-/// first rung, so the next hearing knows it. The identity is no word.
-/// Outside a mind's tick there is no vocabulary to read: no word.
+/// A word's coordinates, read on the stroke its own modes need; `None` where
+/// they do not read.
+fn coords_of(word: &Mv) -> Option<Coordinates> {
+    let need = crate::transducer::cga::modes_need(word)?;
+    Coordinates::of(word, &mut crate::physics::Physics::default().stroke_n(need)).ok()
+}
+
+/// The coordinates of a word the mind KNOWS, by its key; a word only heard
+/// is no ground to derive from.
+fn known_coords<'a>(held: &'a Keyed<Held>, k: &[u8]) -> Option<&'a Coordinates> {
+    held.get(k).filter(|h| !h.heard).and_then(|h| h.coords.as_ref())
+}
+
+/// MU-CLIENT §4.9 — IS THIS A WORD I HAVE HEARD: another mind's word, read in
+/// this mind's vocabulary — RECOGNIZED where the mind knows it, COMPREHENDED
+/// where its coordinates cite only words it knows (derivable), HEARD where it
+/// was heard before and its meaning is not yet derived, else NEW: held now as
+/// heard, a hypothesis the mind can posit. The identity is no word. Outside a
+/// mind's tick there is no vocabulary to read: no word.
 pub(crate) fn hear_word(word: &Mv) -> Recognition {
     if is_identity(word) {
         return Recognition::NoWord;
     }
     let Some(key) = key_of(word) else { return Recognition::NoWord };
-    let coords = crate::transducer::cga::modes_need(word)
-        .and_then(|need| Coordinates::of(word, &mut crate::physics::Physics::default().stroke_n(need)).ok());
+    let coords = coords_of(word);
     let read = crate::transducer::mind::with_lexicon(|lex| {
-        if lex.held.get(&key).is_some() {
-            return Recognition::Recognized;
-        }
-        if let Some(c) = &coords {
-            let held = &lex.held;
-            if lex.holes.deconstruct(c, |k| held.get(k).and_then(|h| h.coords.as_ref())).derived() {
-                return Recognition::Comprehended;
+        let held = &lex.held;
+        // Derivable from words the mind knows, never from itself.
+        let derivable = coords.as_ref().is_some_and(|c| lex.holes.deconstruct(c, |k| if k == key.as_slice() { None } else { known_coords(held, k) }).derived());
+        match lex.held.get_mut(&key) {
+            Some(h) if !h.heard => Recognition::Recognized,
+            // Heard before, and what the mind has come to know since derives
+            // it: its meaning is the mind's now.
+            Some(h) if derivable => {
+                h.heard = false;
+                Recognition::Comprehended
             }
-            lex.holes.file(&key, c);
+            Some(_) => Recognition::Heard,
+            None if derivable => Recognition::Comprehended,
+            None => {
+                if let Some(c) = &coords {
+                    lex.holes.file(&key, c);
+                }
+                lex.held.insert(&key, Held { rung: 1, coords, heard: true });
+                Recognition::New
+            }
         }
-        lex.held.insert(&key, Held { rung: 1, coords });
-        Recognition::New
     });
     match read {
         Ok(r) => r,
@@ -136,11 +171,92 @@ pub(crate) fn hear_word(word: &Mv) -> Recognition {
     }
 }
 
-/// MU-CLIENT §5.3 — AN ATOM LEARNED: a word another mind could factor no
-/// further, held in this mind's vocabulary (`hear_word`). Answers whether
-/// it was newly held.
-pub(crate) fn learn(word: &Mv) -> bool {
-    hear_word(word) == Recognition::New
+/// Whether the thinking mind KNOWS `word`: held as known, or derivable from
+/// words it knows. Reads; files nothing.
+pub(crate) fn known(word: &Mv) -> bool {
+    if is_identity(word) {
+        return true;
+    }
+    let Some(key) = key_of(word) else { return false };
+    let coords = coords_of(word);
+    let read = crate::transducer::mind::with_lexicon(|lex| {
+        if let Some(h) = lex.held.get(&key) {
+            return !h.heard;
+        }
+        let held = &lex.held;
+        coords.as_ref().is_some_and(|c| lex.holes.deconstruct(c, |k| known_coords(held, k)).derived())
+    });
+    read.is_ok_and(|k| k)
+}
+
+/// MU-CLIENT §5.3 — A WORD POSITED OVER WHAT THE MIND KNOWS: the known words
+/// its modes are cited to (each at its own coordinates, rebuilt), and the
+/// RESIDUE — the product of the modes no known word reaches, exact. The word
+/// is the cited modes times the residue in any order (its modes commute,
+/// MR1). The word itself, held only as heard, is never cited for itself.
+pub(crate) struct Posited {
+    pub(crate) parts: Vec<Mv>,
+    pub(crate) residue: Mv,
+}
+
+/// POSIT WHAT THE MIND KNOWS to derive what it does not (MU-CLIENT §5.3):
+/// `word` deconstructed mode by mode over the known words. `None` where its
+/// coordinates do not read, or where nothing is left over (it is derivable).
+pub(crate) fn posit(word: &Mv) -> Option<Posited> {
+    let key = key_of(word)?;
+    let coords = coords_of(word)?;
+    let read = crate::transducer::mind::with_lexicon(|lex| {
+        let held = &lex.held;
+        let d = lex.holes.deconstruct(&coords, |k| if k == key.as_slice() { None } else { known_coords(held, k) });
+        if d.residue.is_empty() {
+            return None;
+        }
+        // Each known word cited once, by its key, whatever holes it covers.
+        let mut cited: Keyed<()> = Keyed::new();
+        for c in &d.cites {
+            cited.insert(&c.word, ());
+        }
+        let parts = cited.scoped().filter_map(|(k, ())| known_coords(held, &k).map(Coordinates::word)).collect();
+        let residue = Coordinates { holes: d.residue }.word();
+        Some(Posited { parts, residue })
+    });
+    read.ok().flatten()
+}
+
+/// MU-CLIENT §5.3 — A WORD'S MEANING DERIVED: `word` is the composition of
+/// `parts`, every one a word the mind knows (the caller has read the
+/// composition exactly). The word is known from here on, one rung above the
+/// highest part it is made of — a relation of the vocabulary, the meaning
+/// the recursion derived. An empty `parts` is an ATOM another mind could
+/// factor no further, known at the first rung. Answers whether its meaning
+/// is new: it was unheld, or held only as heard.
+pub(crate) fn learn_by(word: &Mv, parts: &[Mv]) -> bool {
+    if is_identity(word) {
+        return false;
+    }
+    let Some(key) = key_of(word) else { return false };
+    let coords = coords_of(word);
+    let part_keys: Vec<Vec<u8>> = parts.iter().filter_map(key_of).collect();
+    let read = crate::transducer::mind::with_lexicon(|lex| {
+        let below = part_keys.iter().filter_map(|k| lex.held.get(k).filter(|h| !h.heard).map(|h| h.rung)).fold(0u64, u64::max);
+        let rung = below.checked_add(1).map_or(below, |r| r);
+        match lex.held.get_mut(&key) {
+            Some(h) if !h.heard => false,
+            Some(h) => {
+                h.heard = false;
+                h.rung = h.rung.max(rung);
+                true
+            }
+            None => {
+                if let Some(c) = &coords {
+                    lex.holes.file(&key, c);
+                }
+                lex.held.insert(&key, Held { rung, coords, heard: false });
+                true
+            }
+        }
+    });
+    read.is_ok_and(|new| new)
 }
 
 /// A motion's coordinates, as the lexicon keys it: its canonical ray.
@@ -158,7 +274,7 @@ fn is_identity(m: &Mv) -> bool {
 /// WORDS that the mind holds as shortcuts — read apart from the spaces
 /// between them (78.105 N1); rung 1 for a sentence of perceived words alone.
 fn rung_of(words: &[Mv], held: &Keyed<Held>) -> u64 {
-    let below = words.iter().filter_map(|m| held.get(&key_of(m)?).map(|h| h.rung)).fold(0u64, u64::max);
+    let below = words.iter().filter_map(|m| held.get(&key_of(m)?).filter(|h| !h.heard).map(|h| h.rung)).fold(0u64, u64::max);
     below.checked_add(1).map_or(below, |r| r)
 }
 
@@ -198,29 +314,30 @@ pub fn speak(
 }
 
 /// MU-CLIENT §4.9 — WHAT A HEARD SENTENCE WAS, AS A WORD: the word its
-/// theorem teaches RECOGNIZED (the mind holds it), COMPREHENDED (a
-/// composition of words it holds, derivable), or NEW — held now at its rung,
-/// a word this mind had not heard before; or it teaches NO WORD (no theorem
-/// stands, or its word does not read).
+/// theorem teaches RECOGNIZED (the mind knows it), COMPREHENDED (a
+/// composition of words it knows, derivable), HEARD (another mind said it
+/// before and its meaning is not yet derived), or NEW — held now at its
+/// rung, a word this mind had not met before; or it teaches NO WORD (no
+/// theorem stands, or its word does not read).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Recognition {
     Recognized,
     Comprehended,
+    Heard,
     New,
     NoWord,
 }
 
 impl Recognition {
-    /// A word this mind had heard before: held, or derivable from what it
-    /// holds.
+    /// A word this mind knows: known, or derivable from what it knows.
     pub fn known(self) -> bool {
         matches!(self, Recognition::Recognized | Recognition::Comprehended)
     }
 }
 
-/// ONE COMPOSED SENTENCE, HEARD BY THE MIND: its theorem extrapolated where a
-/// certificate stands, and its shortcut recognized, held at its rung, or left
-/// for the court to offer. Answers what it was as a word.
+/// ONE COMPOSED SENTENCE OF THE MIND'S OWN PERCEPTION: its theorem
+/// extrapolated where a certificate stands, and its shortcut recognized, held
+/// at its rung, or left for the court to offer. Answers what it was as a word.
 pub fn hear(s: &Composition, budget: &mut crate::physics::Budget) -> Recognition {
     // 78.97 — THE WORD A THEOREM TEACHES: a returning sentence its open path (the
     // closing transport's inverse, one word for the whole path, 78.69); a
@@ -248,15 +365,30 @@ pub fn hear(s: &Composition, budget: &mut crate::physics::Budget) -> Recognition
 /// holds it, else comprehended by its coordinates (78.99 (1)) — a held
 /// word's power is derivable and never held twice — else held at its rung,
 /// spelled or left as the letter the court will be offered when the mind
-/// speaks the form, and filed under its holes. Answers what the word was,
-/// and a shortcut newly held, taught.
+/// speaks the form, and filed under its holes. Where the mind's own
+/// perception closes a word it had only heard, the word is the mind's own
+/// from here on, and taught. Answers what the word was, and a shortcut newly
+/// the mind's, taught.
 fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut crate::physics::Budget) -> (Recognition, Option<Taught>) {
     if is_identity(word) {
         return (Recognition::NoWord, None);
     }
     let Some(key) = key_of(word) else { return (Recognition::NoWord, None) };
-    if lex.held.get(&key).is_some() {
-        return (Recognition::Recognized, None);
+    // The period it returns at, one where it never returns (a null or named
+    // word carries no return).
+    let period = match s.closure {
+        Closure::Closes(l) => l,
+        Closure::Rosette | Closure::Unbound | Closure::Unread => 1,
+    };
+    if let Some(h) = lex.held.get_mut(&key) {
+        return match h.heard {
+            false => (Recognition::Recognized, None),
+            // Heard before, closed now by this mind's own perception.
+            true => {
+                h.heard = false;
+                (Recognition::New, Some(Taught { motion: word.clone(), period }))
+            }
+        };
     }
     // ITS COORDINATES, read off its own modes under the stroke; where they do
     // not read the word is held without them.
@@ -270,7 +402,7 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
         // what is held — derivable, never held twice (S2); a power of one
         // held word is the case where one word covers every hole.
         let held = &lex.held;
-        let d = lex.holes.deconstruct(c, |k| held.get(k).and_then(|h| h.coords.as_ref()));
+        let d = lex.holes.deconstruct(c, |k| known_coords(held, k));
         if d.derived() {
             return (Recognition::Comprehended, None);
         }
@@ -288,12 +420,6 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
     if let Some(c) = &coords {
         lex.holes.file(&key, c);
     }
-    lex.held.insert(&key, Held { rung, coords });
-    // The period it returns at, one where it never returns (a null or named
-    // word carries no return).
-    let period = match s.closure {
-        Closure::Closes(l) => l,
-        Closure::Rosette | Closure::Unbound | Closure::Unread => 1,
-    };
+    lex.held.insert(&key, Held { rung, coords, heard: false });
     (Recognition::New, Some(Taught { motion: word.clone(), period }))
 }
