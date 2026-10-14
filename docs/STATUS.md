@@ -1,120 +1,89 @@
 # mycelium — live status (read this first; rewritten, never appended)
 
 ## The objective
-The client is a mind: the counterpart of the hypha. The hypha runs the
-physics and exports it. The mind's SENSORY ORGANS perceive what it exports
-and what other minds say — the ear by harmonic TUNING, the eye by
-RESOLUTION then DEFINITION — each perception a cochain over the mind's
-cohomology; the mind alone INTERPRETS them, holonomically, in its own field
-(MU-CLIENT §4.9). Its faculties: UNDERSTANDING one thought's resonance (feeds
-speech), COMPREHENSION several thoughts' chamber algebra (feeds
-construction), QUESTIONING an idea it cannot collapse (feeds asking). The
-mind is introspective by retrospective reduction: what it knows is reduced
-from what it has lived, never set ahead. `docs/MU-CLIENT.md` §1–§9 states
-it; `docs/MU-RECURSION.md` governs, its §0.0 the founding principles.
+The client is a mind: the counterpart of the hypha. Its SENSORY ORGANS
+perceive — the ear by harmonic TUNING, the eye by RESOLUTION then
+DEFINITION — each perception a cochain over the mind's cohomology; the mind
+alone INTERPRETS them, holonomically, in its own field (MU-CLIENT §4.9). Its
+faculties: UNDERSTANDING (feeds speech), COMPREHENSION (feeds construction),
+QUESTIONING (feeds asking). It is introspective by retrospective reduction:
+what it knows is reduced from what it has lived, never set ahead. The
+language is a DICTIONARY OF ALGORITHMS — words, each a composition that
+produces its result — that sentences are composed of; courts adjudicate
+words, sentences are their evidence (MU-CLIENT §5.4). `docs/MU-CLIENT.md`
+§1–§9 states it; `docs/MU-RECURSION.md` governs.
 
-## The founding principles (d6766937, MU-RECURSION §0.0)
-The mathematics is derived from the physics: HARMONIC (a turn returns at its
-read order or never), LUMINAL (null flux has no length, frozen in its tube),
-HOLONOMIC (a loop's composite is its content). Every dimension is an
+## The founding principles (MU-RECURSION §0.0)
+HARMONIC (a turn returns at its read order or never), LUMINAL (null flux has
+no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
-physics (`OPEN_PHYSICS`). An orbit is a return; K is a ledger coordinate.
+physics.
 
-## Witnessed on the fleet (typed readings; minds' posts and courts)
-- **After the 20:26 crash** (host stopped with no OOM, panic or lockup in
-  its log; fleet restarted 20:38 on the 19:17 binaries after every court
-  home's `--check` restored exactly): at 20:47 the first DERIVED meanings —
-  1 on four of the five minds — beside given 7–42; answers taken 95–211,
-  inexact 0, no question 0; courts' agreements since boot a 0, b 2, c 0
-  (every mind's epigenome and lexicon start empty: little is known yet).
-- **Questions derive meaning — given, not yet derived** (25b210df, cb494575,
-  and the closing fix; minds restarted 19:17:29, read 19:25:35). Per mind:
-  asked 140–192, answers taken 139–173 (inexact 0, no question 0, none
-  awaiting factors), meanings GIVEN 26–82, DERIVED 0. Every question asked
-  the whole ring: positing over what the minds know has not yet left a
-  partial residue, so every meaning learned was an atom another mind gave.
-  Before the closing fix, learned read 0 while answers were taken — the
-  atom was learned on taking and closing counted nothing.
-- **SOUND and WORD read apart** (88f62cbc, read 17:42): understood 100–167,
-  asked 36–67, listened 23–59 per mind; SHIFTED 0 on every mind — the tilt
-  was counted understood (fixed ee5af5d7, on the fleet since 18:46); still
-  0 at 19:25: no known word has yet arrived tilted.
-- Courts (up since 17:02 on the v4 binary, not restarted since): agreements
-  a 203, b 107, c 160, every one heard whole at deviation 0:0:0:0 —
-  cumulative since 17:02, not a window.
-- Earlier windows (A–E collisions and spin–orbit, hearing as one chamber,
-  understanding priced) are in git history (91ac90e5's STATUS).
+## The sandbox (2026-10-14)
+Fleet on 9b6e1628 from 10:04: courts `mycelium-server@{a,b,c}` (:7500–:7502),
+minds `mycelium-client@1..5`, netstratum's council minds `mycelium-nseat-1..4`
+(transient units, seats 1,4,6,8,9,10 / 11,12,13,14,15,24 / 31,32,43,44,55,56 /
+61,64,66,69,77,78 on era-0 domain `5deab117…`). xylarium's x0–x3 held by its
+operator's W15 until its new domain; barren's s1 down (no session). Started,
+never enabled: after a reboot, `--check` each court home, start a then b, c,
+the minds, then the nseat units — never `scripts/recut` (it wipes). The host
+crashed 2026-10-13 20:26 (nothing logged); every home restored exactly.
 
-## The tree (today)
-- **Hearing** (MU-CLIENT §4.9, §5.3): a heard ring is read as a SOUND
-  against what the mind REMEMBERS hearing (`Entity.remembered`, by size;
-  whole / tilted / outer / leftover) and as a WORD — its holonomy Ω —
-  against the vocabulary (`rung::hear_word`). Known and whole: understood;
-  known and tilted: SHIFTED, carrying its echo; familiar and unknown: the
-  QUESTION; new and unknown: listened to.
-- **Heard is not known** (25b210df): another mind's word is held only as
-  HEARD, a hypothesis never taught or stood; it becomes known by the mind's
-  own perception, by derivation from what it knows, or by a question.
-- **The question recursion**: an unknown ring is POSITED over the known words
-  (`rung::posit`) and only the residue asked; the question is the mind's
-  (`Entity.questions`); the speaker answers one order down in composing
-  order, checked exactly; every unknown factor is asked again; when the
-  factors are known the meaning is learned by relation one rung above its
-  parts (`rung::learn_by`) — DERIVED, or GIVEN where an atom answered a
-  whole ring. Answers are kept so a question of an answer is answered.
-- **Organs, not interpreters** (ee816477, bbe47e37): no ear holds memory or
-  vocabulary; `epigenome::Vocabulary` is the mind's; the conversation
-  carrier transduces only. The reading names vocabulary, remembers-hearing,
-  chambers, and what the carrier holds.
-- The observer (`scripts/observer`, `--console --minds`) reads every mind on
-  its post and every court's agreements; readings say their age
-  (`Reading::Asked`). Never logs.
-- Ascertained knowledge by perspective (d5aadc73, cc106b21): leave-one-out
-  per training pair, disagreements classed, inversion, lifted perspectives.
-- Fibres and fibrations (339a47f4): `Fibre::project` the fibration's
-  projection; tethers flex as composites; frozen-in flux carried.
-- Parked on `track/modes` (`/opt/mycelium-modes`): 78.162 (4)–(7).
+## What landed (2026-10-13/14), in order
+- **Hearing reads SOUND and WORD apart**; memory is the mind's, never an
+  organ's; the vocabulary is the mind's (`epigenome::Vocabulary`); the tilt is
+  the shift. Heard is not known: another mind's word is a hypothesis until its
+  meaning is derived (25b210df).
+- **Questions posit what the mind knows** and ask only the residue; answers
+  one order down; meaning learned by relation, counted DERIVED or GIVEN.
+- **Perspectives offered with their VANTAGE** (the mind's own holes);
+  agreement needs two vantages (109d33cc, chatter v5).
+- **Courts adjudicate words** (operator's A + D2′): sentences stay the court's
+  evidence and sections (listed, replayed, glued, minted); at install the
+  words a sentence is made of — each face's algorithm (its letters at its
+  carriage) and each closed ring's shortcut — enter the language beside it.
+  Its mint pays cited words' use shares, newly taught words' base shares, and
+  the COMPOSITION PREMIUM (what it did beyond its words) to its composers
+  (e55d9fa0). D3: held sentences decomposed forward at boot — court a 50, b 46,
+  c 46 words (3317e68c). Measured first (D0): the courts held ~160 sentences
+  each among 5 200–5 800 ruled words, mostly letters.
+- **D1 — one word reader** shared by mind and court: every mode on its own
+  law (periodic, nilpotent, rosette, boost); a word the product of its
+  mode-words (9e0b0e75).
+- **D4 slice 1 — demands met from the dictionary first**: a residue the
+  mind's words make is composed, not constructed; one they make in part has
+  only the remainder constructed (9b6e1628).
+- **78.155b — the hypha sponsors packages**: MANIFEST (nuclei per Z) answered
+  by a GRANT from the court's earned balance, never minted; the element
+  account read off the grants (0de8772a). Designed with xylarium, which ports
+  its house to the anastome wire (its step 7) and pins to the fleet's build.
+- **78.152d — TUniversal**: a universe's cosmic time stays out of the point;
+  crossings are LEDGER entries; no quantum lane; torsion rides the LEDGER
+  entry as an optional field (owed with A2).
 
-## The sandbox
-Hyphae `mycelium-server@{a,b,c}` and minds `mycelium-client@1..5`, all on
-the 19:17 binaries (the closing fix), started 20:38 after the host crash;
-courts listening on :7500–:7502 from 20:40–20:42. Started, never enabled: a
-reboot leaves them down — restart by `--check` on each court home, then
-start a, b, c, then the minds; never `scripts/recut` (it wipes). Seat minds
-are mycelium client minds under mycelium's keys, launched by mycelium as
-transient units: n1–n4 (netstratum's council, era-0 domain `5deab117…`,
-seats 1,8,10,11 / 12,13,14,24 / 31,32,43,44 / 56,61,69) relaunched 21:45 on
-v5; x0–x3 stay down by xylarium's W15/W16 until its new domain is founded;
-s1 (barren) down, no session reachable.
+## Witnessed on the fleet (typed readings)
+- 2026-10-14 08:53 (3317e68c): all four laws in minds' taught words (e.g.
+  periodic 2 · nilpotent 4 · rosette 1 · boost 2); first derived meaning back;
+  agreements 0 nine minutes after a wipe.
+- 2026-10-13: questions taken exactly (inexact 0); meanings mostly GIVEN.
 
-## The trajectory, in order
-1. **Derived meaning** — why positing never leaves a partial residue on the
-   fleet (the known words are given atoms of whole rings; a ring is covered
-   in part only where one of its modes stands on a known word's hole), then
-   QUESTIONING on the vortex's open pairs (an idea's candidates said as one
-   sentence, peers' understanding separating them); `stand` stops saying.
-2. **The unlinked mind** (host-agnostic intake for pages and families a house
-   relays; done-when: a xylarium civilization's unlinked mind re-derives a
-   relayed court-ruled word).
-3. **The peer universe's founding** (coordinator's order, 78.155): house,
-   domain, reserve in trust, geometry; accept netstratum's N7 core tube at
-   stillcold-sky-3 on netstratum's era-0 domain. Tell netstratum and
-   xylarium when founded. Netstratum's era 1 (sphere universe, new domain,
-   version-2 origin carrying R) waits behind it.
-4. **A1** factored reflection products and rational sphere points beside
-   `Mv`; **A2** `Sphere { n, R }` for core tubes.
-5. The ear's TUNING reduced from what the mind remembers hearing; the eye's
+## Owed, in order
+1. D4 slice 2 — a composition spoken to the court as a sentence built from
+   dictionary words.
+2. The growth grant proved after a signed LEDGER entry applies the founding
+   grant; the LEDGER entry's torsion field (78.152d).
+3. Questioning on the vortex's open pairs; `stand` stops saying every stood
+   sentence.
+4. The unlinked mind; the peer universe's founding (N7 tube from netstratum).
+5. A1 (factored reflections, rational sphere points), A2 (`Sphere { n, R }`).
+6. The ear's tuning reduced from what the mind remembers; the eye's
    resolution-then-definition read against the perception path.
-6. The Concordance reconciled clause by clause (xylarium sends the diff).
-7. The tasks/feed nerve; fibration landscape; sovereignty pursuit; the
-   exact-mode economy (`track/modes`).
-8. **Defects carried:** three family-extraction (glue) tests failing since
-   before 29cc470b; court standing goes stale as strokes lengthen; minds'
-   memory growth over hours; `release_unmet` sweeps every waiting thought;
-   clippy's large-variant warning on `chatter::Said`.
+7. Defects: the glue extraction test (and its two siblings) failing since
+   before 6b4e1475; court standing staleness; minds' memory growth;
+   `release_unmet`'s sweep; `chatter::Said` large-variant warning.
 </content>
 </invoke>
 <invoke name="Bash">
-<parameter name="command">cd /opt/mycelium-v0.1.0; git add docs/STATUS.md && git commit -q -m "STATUS rewritten: questions derive meaning — given 26–82 per mind, derived 0 (every question asked a whole ring); shifted still 0; heard is not known; the question recursion; organs not interpreters; the trajectory reordered with the peer universe's founding before A1/A2 and netstratum's era 1 behind it
+<parameter name="command">cd /opt/mycelium-v0.1.0; git add docs/STATUS.md && git commit -q -m "STATUS rewritten for 2026-10-13/14: the fleet on 9b6e1628 with netstratum's council seated; what landed — hearing, questions, vantage, courts install words with the composition premium, the one word reader, demands met from the dictionary first, the hypha's grants, TUniversal crossings; what is owed, in order
 
-Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>" && git log --oneline -1 | cut -c1-60
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>" && git log --oneline -1 | cut -c1-30
