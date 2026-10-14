@@ -64,14 +64,13 @@ the minds, then the nseat units — never `scripts/recut` (it wipes).
 - 16:54: minds spoke 20 compositions and agreed 7 words to the court.
 
 ## Owed, in order
-1. **MU-RECURSION 78.166 — the inversions, in its build order:** 0a SPEECH
-   reading at the door (where speech stops: nothing docketed, nothing minted
-   since ~12:22) → 0b b's fold refusal read → 0c the compounding ratio →
-   1a every residue through `compose_or_construct` → 1b the remainder asked
-   again → 2a b's fold unblocked → 2b a peer's line held as its root (c's
-   453 731 hot nodes) → 1c conjugates as relations (a conjugator on the
-   derivation; wire change) → 2c catch-up from roots → 3a a task perceived
-   only when asked.
+1. **The soak of 78.166** (built: 1a/1b 9ec4cb87, 1c 6b1a34bf, 2a 194fab1f;
+   0a/0b/0c, 2b/2c need no code; 3a held). Read: b's fold `folded` > 0 and
+   its treasury entries falling; c's hot nodes and a/c's lag on b falling as
+   roots are adopted; minds' letters + motion letters against composed /
+   compositions spoken; the courts' compositions against letters.
+   **3a** waits on a measurement (the intake's share of the warm-up) and a
+   ruling (storing a listing's task binding vs C 1.13).
 2. The page as a multi-dimensional object for the learner fetch (graded by
    stratum, closed under citation, classes inside their cells, relative to
    the learner's held words, bounded per lane) — after 78.166.

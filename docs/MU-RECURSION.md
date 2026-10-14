@@ -25823,6 +25823,29 @@ as its witness before it is called done.
   Witness: the warm-up after a restart (zeros for ~30 minutes today) ends in
   the time the first asks take.
 
+**As built (2026-10-14 night), against the plan.**
+- *0a* — no code: the adjudication reading (CV5) already counts the door's
+  outcomes; a second table would have been two carriers for one fact. Read:
+  speech reaches every court and stands (a 6 stood, 4 ratified; b 3/2; c 1/1
+  in 45 minutes) — thin, never blocked.
+- *0b* — the `--check` instrument names b's fold: root 33368.18, cut 33369.1
+  (the fold's own close), orbit 33370 a page and more of lists, so every
+  close read the prefix [fold, close] as idle.
+- *0c* — no code: the mind's `constructed` / `compositions spoken` and the
+  court's language by kind are the ratio.
+- *1a, 1b* — 9ec4cb87. *1c* — 6b1a34bf (the conjugator rides a trailing
+  section of the envelope, so every home reads as it did).
+- *2a* — 194fab1f: the close asks the head that carries work; on b's own home
+  the close now proposes 33370.5238.
+- *2b, 2c* — no code: the shedder (`shed_folded_lines`) and the root catch-up
+  (78.147) already run at every root adopted; they were starved by 2a. The
+  soak reads them: c's hot nodes, the peers' lag on b.
+- *3a* — HELD, not built: a restored listing keeps no binding to its task, and
+  the binding is re-derived only by perceiving the task's pairs; lazy intake
+  needs either that derived binding stored (against C 1.13) or listings
+  unmeasured until asked. Measure the intake's share of the warm-up first,
+  then rule.
+
 **Order:** 0a → 0b/0c → 1a → 1b → 2a → 2b → 1c → 2c → 3a. Phase 0 first
 because every later step is witnessed by it; 1a first of the rest because the
 mind is the objective and its mathematics is furthest from its doctrine
