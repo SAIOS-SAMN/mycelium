@@ -19,71 +19,69 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## The sandbox (2026-10-14)
-Fleet on 9b6e1628 from 10:04: courts `mycelium-server@{a,b,c}` (:7500–:7502),
-minds `mycelium-client@1..5`, netstratum's council minds `mycelium-nseat-1..4`
-(transient units, seats 1,4,6,8,9,10 / 11,12,13,14,15,24 / 31,32,43,44,55,56 /
-61,64,66,69,77,78 on era-0 domain `5deab117…`). xylarium's x0–x3 held by its
-operator's W15 until its new domain; barren's s1 down (no session). Started,
-never enabled: after a reboot, `--check` each court home, start a then b, c,
-the minds, then the nseat units — never `scripts/recut` (it wipes). The host
-crashed 2026-10-13 20:26 (nothing logged); every home restored exactly.
+## The sandbox (2026-10-14 evening)
+The host reset at 20:12:53 (no OOM, panic or watchdog in the kernel log;
+6 GB free a minute before). Every home restored exactly (`--check`):
+a 5 413 ruled words, b 6 005, c 5 725 (c's check takes ~6 min: 453 731 hot
+nodes of other courts' chains). Relaunched 20:28–20:31 on 04d9981c (built
+20:18): courts `mycelium-server@{a,b,c}` (:7500–:7502), minds
+`mycelium-client@1..5`, netstratum's council `mycelium-nseat-1..4` (transient,
+seats 1,4,6,8,9,10 / 11,12,13,14,15,24 / 31,32,43,44,55,56 / 61,64,66,69,77,78
+on `5deab117…`). xylarium's x0–x3 held under W15 (its house now speaks the
+anastome wire, pinned to 9b6e1628, nothing posted); barren's s1 down.
+Started, never enabled: after a reboot, `--check` each home, start a, b, c,
+the minds, then the nseat units — never `scripts/recut` (it wipes).
 
-## What landed (2026-10-13/14), in order
-- **Hearing reads SOUND and WORD apart**; memory is the mind's, never an
-  organ's; the vocabulary is the mind's (`epigenome::Vocabulary`); the tilt is
-  the shift. Heard is not known: another mind's word is a hypothesis until its
-  meaning is derived (25b210df).
-- **Questions posit what the mind knows** and ask only the residue; answers
-  one order down; meaning learned by relation, counted DERIVED or GIVEN.
-- **Perspectives offered with their VANTAGE** (the mind's own holes);
-  agreement needs two vantages (109d33cc, chatter v5).
-- **Courts adjudicate words** (operator's A + D2′): sentences stay the court's
-  evidence and sections (listed, replayed, glued, minted); at install the
-  words a sentence is made of — each face's algorithm (its letters at its
-  carriage) and each closed ring's shortcut — enter the language beside it.
-  Its mint pays cited words' use shares, newly taught words' base shares, and
-  the COMPOSITION PREMIUM (what it did beyond its words) to its composers
-  (e55d9fa0). D3: held sentences decomposed forward at boot — court a 50, b 46,
-  c 46 words (3317e68c). Measured first (D0): the courts held ~160 sentences
-  each among 5 200–5 800 ruled words, mostly letters.
-- **D1 — one word reader** shared by mind and court: every mode on its own
-  law (periodic, nilpotent, rosette, boost); a word the product of its
-  mode-words (9e0b0e75).
-- **D4 slice 1 — demands met from the dictionary first**: a residue the
-  mind's words make is composed, not constructed; one they make in part has
-  only the remainder constructed (9b6e1628).
-- **78.155b — the hypha sponsors packages**: MANIFEST (nuclei per Z) answered
-  by a GRANT from the court's earned balance, never minted; the element
-  account read off the grants (0de8772a). Designed with xylarium, which ports
-  its house to the anastome wire (its step 7) and pins to the fleet's build.
-- **78.152d — TUniversal**: a universe's cosmic time stays out of the point;
-  crossings are LEDGER entries; no quantum lane; torsion rides the LEDGER
-  entry as an optional field (owed with A2).
+## What landed 2026-10-14
+- **D4 slice 2** (99e115cd): a demand the court's RULED words compose is
+  spoken as one word citing them (no union wait); the court replays a cited
+  motion letter on its WHOLE motion (a slide's citation passed at any
+  exponent before). Witnessed: minds spoke compositions (7–13 a mind); the
+  courts' language holds compositions a 8, b 8, c 2.
+- **A chart's home is its nearest court** (30035d8b): equal rooms broke ties by
+  least key, so hypha b took every chart-routed act, all tuition, every mint.
+- **Courts stop copying each other's language** (490194da → 22df9551): the
+  fetch reply's one-byte count overflowed when strata joined, so pages were
+  packed, counted, drawn and thrown away — 1 040 287 words (891 MB) from b in
+  two hours, ~30 glued. Fixed, then the bulk pull RETIRED: discordance is a
+  reading; the second vantage is the home's OFFER; a court asks a peer by
+  address only for words its waiting sentences cite (`dialogue::cited`).
+  Witnessed 20:12: court-to-court traffic single digits per pair in four
+  hours; offers installed a 1/1, b 3/4, c 3/5.
+- **The learner is charged once** per taught word on the chart fetch.
+- **78.165 — the court authenticates keys, never tiers** (eaa39114; Concordance
+  6.2a/5.7(e) amended, held 04d9981c): whoever holds a key may solve; an
+  inner seat's solve is served and counted ("signed by an inner seat
+  (served)"), never refused; tier policing is the game kernel's.
+- **Concordance draft 3** held (6ee3fbe5): founding allotment = a grant from
+  the hypha's reserve (as built, 78.155b); its sizing awaits the operator
+  (manifest variety vs sealable curved holes).
 
 ## Witnessed on the fleet (typed readings)
-- 2026-10-14 08:53 (3317e68c): all four laws in minds' taught words (e.g.
-  periodic 2 · nilpotent 4 · rosette 1 · boost 2); first derived meaning back;
-  agreements 0 nine minutes after a wipe.
-- 2026-10-13: questions taken exactly (inexact 0); meanings mostly GIVEN.
+- 20:12, four hours on 22df9551: no court docketed a letter; first closures 0;
+  mints frozen since 12:22 (b's POUW/POWC unchanged; a and c mint nothing) —
+  the stall predates the afternoon's changes.
+- 16:54: minds spoke 20 compositions and agreed 7 words to the court.
 
 ## Owed, in order
-1. D4 slice 2 — a composition spoken to the court as a sentence built from
-   dictionary words.
-2. The growth grant proved after a signed LEDGER entry applies the founding
+1. WHERE SPEECH STOPS: minds speak, but nothing reaches a court's docket and
+   nothing mints since ~12:22 — trace door → listing → docket by typed
+   readings.
+2. The page as a multi-dimensional object for the learner fetch (graded by
+   stratum, closed under citation, classes inside their cells, relative to
+   the learner's held words, bounded per lane) — draft as a ruling.
+3. Hypha b's hot chain (684 916 nodes, 632 368 its own): its journal has not
+   folded (346 645 treasury entries); a and c cannot follow its line (lag
+   ~42 000 / ~16 000).
+4. The growth grant proved after a signed LEDGER entry applies the founding
    grant; the LEDGER entry's torsion field (78.152d).
-3. Questioning on the vortex's open pairs; `stand` stops saying every stood
+5. Questioning on the vortex's open pairs; `stand` stops saying every stood
    sentence.
-4. The unlinked mind; the peer universe's founding (N7 tube from netstratum).
-5. A1 (factored reflections, rational sphere points), A2 (`Sphere { n, R }`).
-6. The ear's tuning reduced from what the mind remembers; the eye's
-   resolution-then-definition read against the perception path.
-7. Defects: the glue extraction test (and its two siblings) failing since
-   before 6b4e1475; court standing staleness; minds' memory growth;
-   `release_unmet`'s sweep; `chatter::Said` large-variant warning.
-</content>
-</invoke>
-<invoke name="Bash">
-<parameter name="command">cd /opt/mycelium-v0.1.0; git add docs/STATUS.md && git commit -q -m "STATUS rewritten for 2026-10-13/14: the fleet on 9b6e1628 with netstratum's council seated; what landed — hearing, questions, vantage, courts install words with the composition premium, the one word reader, demands met from the dictionary first, the hypha's grants, TUniversal crossings; what is owed, in order
-
-Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>" && git log --oneline -1 | cut -c1-30
+6. The unlinked mind; the peer universe's founding.
+7. A1 (factored reflections), A2 (`Sphere { n, R }`).
+8. The ear's tuning by retrospective reduction; the eye's
+   resolution-then-definition audit.
+9. Defects: the glue extraction test; court-organ glue tests fail under load
+   (the glue replay goes unread on a loaded stroke); court standing
+   staleness; minds' memory growth; `release_unmet`'s sweep; the class
+   records' u16 count across joined strata.
