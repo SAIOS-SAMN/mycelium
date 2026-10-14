@@ -202,18 +202,24 @@ fn a_syllabus_page_served_seals_a_receipt() {
 
 /// 45.1, 47.3: an install on a second vantage seals a receipt, at the
 /// installed address. A book that cannot say where an install stands
-/// cannot re-derive it.
+/// cannot re-derive it. MU-CLIENT §5.4 (A): every word the installed
+/// sentence brings into the language is a holding of its own, sealed on its
+/// own step — so the install is one step and one per new word, and the
+/// sentence's own step cites it by its admitting stamp.
 #[test]
 fn an_install_seals_a_receipt_at_the_installed_address() {
     let (mut k, addr) = docketed([0x5c; 32]);
+    let held = k.word_at(addr.as_bytes()).cloned().or_else(|| k.provisional.get(addr.as_bytes()).cloned()).expect("docketed");
+    let words = crate::cognition::book::speech::words_of_sentence(&held, &mut crate::physics::Physics::default().stroke_n(1 << 20));
+    let new = words.iter().filter(|w| k.basis.get(w.address().as_bytes()).is_none()).count() as u64;
     let before = k.chain().own_len();
     let mut install = k.stroke();
     k.home_install(&addr, [0xbb; 32], &mut install);
-    assert_eq!(k.chain().own_len(), before + 1, "an install is one step");
+    assert_eq!(k.chain().own_len(), before + 1 + new, "an install is one step, and one per word it brings");
     let at = k.admitted_at(addr.as_bytes()).expect("the installed word keeps its admitting stamp");
     assert!(
-        k.chain().head().is_some_and(|r| r.cites.iter().any(|c| c.at() == Some(at))),
-        "the node cites the installed word by its admitting stamp"
+        k.chain().nodes().any(|r| r.cites.iter().any(|c| c.at() == Some(at))),
+        "a node cites the installed word by its admitting stamp"
     );
 }
 

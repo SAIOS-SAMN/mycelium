@@ -715,22 +715,41 @@ impl Kernel {
 
 }
 
-/// MU-CLIENT §5.4 — THE WORDS A SENTENCE TEACHES: every closed ring of the
-/// sentence composed by the master equation, the word it teaches read by its
-/// coordinates (`sentence::word::taught`) and spelled by the alphabet at its
-/// carriage carrying its return (`spelled_word`), each once, in the rings'
-/// order. A word the alphabet does not spell is offered as a letter by
-/// `hear_open`, which every heard sentence passes; it is not one of these.
+/// MU-CLIENT §5.4 — THE WORDS OF A SENTENCE, the dictionary it is composed
+/// of: first the word each FACE applies — its letters across the overlap
+/// (`Form::face_word`) at the face's carriage with its hue map, the
+/// algorithm that carries one chart onto the next — then the word each
+/// closed RING teaches for its whole path, read by its coordinates
+/// (`sentence::word::taught`) and spelled at its carriage carrying its return
+/// (`spelled_word`). Each once, faces first. A face that applies nothing (its
+/// word, carriage and hue map the identity) is no word; a ring's word the
+/// alphabet does not spell is offered as a letter by `hear_open`, which every
+/// heard sentence passes.
 pub(crate) fn words_of_sentence(s: &Element, budget: &mut crate::physics::Budget) -> Vec<Element> {
     use crate::transducer::sentence::compose::{sentences_of, Closure};
     let Some(form) = crate::transducer::sentence::from_element_form(s) else { return Vec::new() };
     if form.faces.is_empty() {
         return Vec::new();
     }
-    let cycles = crate::transducer::sentence::Form::cycles_of(&form.faces, &form.vertices);
-    let rings: Vec<crate::transducer::sentence::Orbit> = cycles.kept.iter().chain(&cycles.vacua).cloned().collect();
     let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     let mut out = Vec::new();
+    for (o, face) in form.faces.entries() {
+        let Some(word) = form.face_word(&o) else { continue };
+        let carriage = &face.place.carriage;
+        let gauge = &face.place.gauge;
+        let still = word.is_identity()
+            && carriage.projective_eq(&crate::transducer::element::identity_versor())
+            && crate::transducer::sentence::transport::gauge_eq(gauge, &[]);
+        if still {
+            continue;
+        }
+        let Some(e) = crate::transducer::element::from_connection(&word, carriage, gauge, &Vec::new(), [0, 0, 0, 0]) else { continue };
+        if seen.insert(e.address(), ()).is_none() {
+            out.push(e);
+        }
+    }
+    let cycles = crate::transducer::sentence::Form::cycles_of(&form.faces, &form.vertices);
+    let rings: Vec<crate::transducer::sentence::Orbit> = cycles.kept.iter().chain(&cycles.vacua).cloned().collect();
     for (_, read) in sentences_of(&form, &rings, budget) {
         let Ok(comp) = read else { continue };
         let Some(word) = crate::transducer::sentence::word::taught(&comp) else { continue };

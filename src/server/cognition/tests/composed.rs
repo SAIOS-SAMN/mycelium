@@ -10,6 +10,31 @@ fn grid(rows: &[&str]) -> crate::arc::Grid {
     rows.iter().map(|r| r.bytes().map(|b| b.checked_sub(b'0').expect("a grid row is digits")).collect()).collect()
 }
 
+/// D3 — THE HELD SENTENCES DECOMPOSED FORWARD. A court that holds a sentence
+/// from before words were installed beside it (here: held directly, its words
+/// not) brings every word that sentence teaches into its language on one
+/// forward pass, discovered by the sentence's own discoverer; a second pass
+/// finds nothing new.
+#[test]
+fn held_sentences_are_decomposed_forward_once() {
+    let mut k = Kernel::new();
+    let speaker = [3u8; 32];
+    let family = vec![(grid(&["10", "11"]), grid(&["11", "10"]))];
+    let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a rule extracts");
+    let spoken = mint_sentence(&rule, &family, &NoCrystal, 0).expect("a sentence");
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
+    k.basis_push(spoken.clone(), speaker, &mut budget);
+    let words = words_of_sentence(&spoken, &mut crate::physics::Physics::default().stroke_n(1 << 20));
+    assert!(!words.is_empty(), "the rotation's sentence teaches at least one word");
+    let first = k.decompose_held_sentences();
+    assert_eq!(first, words.iter().filter(|w| w.address() != spoken.address()).count(), "every word the sentence teaches entered");
+    for word in &words {
+        assert!(k.basis.get(word.address().as_bytes()).is_some(), "held beside the sentence");
+        assert_eq!(k.discoverer_of(word.address().as_bytes()), Some(speaker), "under the sentence's discoverer");
+    }
+    assert_eq!(k.decompose_held_sentences(), 0, "a second pass finds nothing new");
+}
+
 /// AN INSTALLED SENTENCE BRINGS ITS WORDS INTO THE LANGUAGE. Spoken with its
 /// task, a family's sentence stands; installed on a second vantage, it is held
 /// as the court's evidence, and every word its closed rings teach is held

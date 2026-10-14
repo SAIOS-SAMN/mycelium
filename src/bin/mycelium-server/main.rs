@@ -432,6 +432,10 @@ fn main() {
             eprintln!(
                 "[{tag}] ledger MYC7: {basis} ruled words, treasury entries {entries}, book derived at intake"
             );
+            // MU-CLIENT §5.4 (A), D3 — the held sentences' words enter the
+            // language beside them, forward, once.
+            let decomposed = h.run(|k, _| k.decompose_held_sentences());
+            eprintln!("[{tag}] held sentences decomposed forward: {decomposed} words entered the language beside them");
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
             eprintln!("[{tag}] no ledger at {state_path}: a fresh court");

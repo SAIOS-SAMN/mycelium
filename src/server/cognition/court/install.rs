@@ -171,6 +171,43 @@ impl Kernel {
         shares
     }
 
+    /// MU-CLIENT §5.4 (A), D3 — THE HELD SENTENCES DECOMPOSED FORWARD: every
+    /// sentence this court's language holds brings the words it teaches into
+    /// the language beside it, each on its own Install act witnessed by this
+    /// court, discovered by the sentence's own discoverer and bound to its
+    /// task — as an install brings them now. Paid nothing: each sentence was
+    /// paid when it was installed. Never reverted, never recut, and held words
+    /// are not installed twice, so a later boot finds nothing new. Each
+    /// sentence is read on a stroke of this court's own metabolism (65.5).
+    /// Answers how many words entered the language.
+    pub fn decompose_held_sentences(&mut self) -> usize {
+        let sentences: Vec<(Vec<u8>, Element)> = self
+            .basis
+            .scoped()
+            .filter(|(_, h)| h.form().is_some_and(|f| !f.faces.is_empty()))
+            .map(|(a, h)| (a, h.element().clone()))
+            .collect();
+        #[expect(clippy::manual_unwrap_or_default, reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a court with no voice of its own witnesses as the null identity, a stated fact")]
+        let witness = match self.court_voice {
+            Some(v) => v,
+            None => [0; 32],
+        };
+        let mut added = 0usize;
+        for (addr, w) in sentences {
+            let drawn = self.discoverer_of(&addr);
+            let mut budget = self.physics.stroke();
+            let held = |k: &Kernel, word: &Element| k.basis.get(word.address().as_bytes()).is_some();
+            let words = crate::cognition::book::speech::words_of_sentence(&w, &mut budget);
+            let new = words.iter().filter(|word| !held(self, word)).count();
+            let _ = self.install_taught_words(&addr, &w, drawn, witness, &mut budget);
+            added += new;
+        }
+        if added > 0 {
+            self.mark_persist();
+        }
+        added
+    }
+
     /// 26 AS RULED 2026-09-10 — THE SHARE EACH CITED FORM TAKES OF THIS
     /// INSTALL'S MINT. Both levels of citation are read, because they are
     /// one mechanism (21 step 3): a `Glued` vertex citing a whole form,
