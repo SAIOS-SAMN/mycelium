@@ -1,0 +1,139 @@
+// 78.155b — THE HYPHA SPONSORS A UNIVERSE'S PACKAGE: a manifest of nuclei per
+// Z answered by a grant from what the court has earned, never a mint.
+
+use crate::anastome::dialogue::domain::{decode_domain_request, DomainGenesis, DomainRequest, Founded, Origin, Reservation};
+use crate::anastome::dialogue::endowment::{
+    decode_endowment_reading, decode_grant_reply, encode_endowment_read, encode_endowment_reading, encode_grant_reply, encode_manifest, GrantRefusal, Granted, Manifest, SignedManifest,
+};
+use crate::server::cognition::Kernel;
+use ed25519_dalek::SigningKey;
+use num_bigint::BigUint;
+
+fn key(b: u8) -> SigningKey {
+    SigningKey::from_bytes(&[b; 32])
+}
+
+fn vk(k: &SigningKey) -> [u8; 32] {
+    k.verifying_key().to_bytes()
+}
+
+const DOMAIN: u8 = 7;
+const RESERVE: u8 = 27;
+
+/// A domain founded with its reserve designated; originated where `origin`.
+fn universe(origin: bool) -> Kernel {
+    let mut k = Kernel::new();
+    let mut tiers = vec![vk(&key(RESERVE)), vk(&key(47))];
+    tiers.sort_unstable();
+    let g = DomainGenesis { domain: vk(&key(DOMAIN)), tiers };
+    assert!(matches!(k.admit_domain(&g.sign(&key(DOMAIN))), Founded::Sealed { .. }));
+    let r = Reservation { domain: vk(&key(DOMAIN)), tier: vk(&key(RESERVE)), nonce: [0; 32] };
+    assert!(matches!(k.designate_reserve(&r.sign(&key(DOMAIN))), Founded::Reserved { .. }));
+    if origin {
+        let o = Origin { domain: vk(&key(DOMAIN)), kind: 1, version: 1, commitment: [DOMAIN; 32], universe: None };
+        assert!(matches!(k.record_origin(&o.sign(&key(DOMAIN))), Founded::Originated { .. }));
+    }
+    k
+}
+
+/// A package of hydrogen, carbon and iron nuclei, counted astronomically.
+fn manifest(nonce: u8) -> Manifest {
+    let big = |e: u32| BigUint::from(10u8).pow(e);
+    Manifest { domain: vk(&key(DOMAIN)), nuclei: vec![(1, big(60)), (6, big(58)), (26, big(55))], nonce: [nonce; 32] }
+}
+
+fn signed(m: Manifest, by: u8) -> SignedManifest {
+    m.sign(&key(by)).expect("the manifest writes")
+}
+
+/// THE MANIFEST AND ITS READING TRAVEL WHOLE: a manifest of astronomical
+/// counts reads back as itself off the domain door; the grant's reply and the
+/// endowment's reading likewise. A count that is no positive integer is no
+/// manifest.
+#[test]
+fn a_manifest_and_its_reading_travel_whole() {
+    let s = signed(manifest(1), RESERVE);
+    let bytes = encode_manifest(&s).expect("it writes");
+    assert_eq!(decode_domain_request(&bytes), Some(DomainRequest::Manifest(Box::new(s.clone()))));
+    assert_eq!(decode_domain_request(&encode_endowment_read(vk(&key(DOMAIN)))), Some(DomainRequest::ReadEndowment(vk(&key(DOMAIN)))));
+    let refused = Granted::Refused(GrantRefusal::InFlight);
+    assert_eq!(decode_grant_reply(&encode_grant_reply(&refused)), Some(refused));
+    let mut k = universe(true);
+    let anchor = k.anchor();
+    let me = k.identity;
+    k.treasury.genesis(me, [100, 100, 100, 100], anchor);
+    let granted = k.manifest(&s);
+    assert_eq!(decode_grant_reply(&encode_grant_reply(&granted)), Some(granted));
+    let reading = k.endowment_reading(&vk(&key(DOMAIN))).expect("reads");
+    assert_eq!(decode_endowment_reading(&encode_endowment_reading(&reading).expect("writes")), Some(reading));
+}
+
+/// THE FOUNDING GRANT, FROM WHAT THE COURT EARNED. A universe's first
+/// manifest is granted the court's read price for one unit of gas per lane
+/// per kind of nuclei it carries — moved from the court's balance to the
+/// reserve, never minted — and the reading says so: founding granted, the
+/// universe's nuclei those of its manifest. A second manifest waits while
+/// the first is not applied in the universe's ledger; the same manifest is
+/// never granted twice.
+#[test]
+fn a_founding_manifest_is_granted_from_what_the_court_earned() {
+    let mut k = universe(true);
+    let anchor = k.anchor();
+    let me = k.identity;
+    k.treasury.genesis(me, [100, 100, 100, 100], anchor);
+    let reserve = vk(&key(RESERVE));
+    let price = k.read_price().expect("a price");
+    let before = (k.treasury.balance_mu(&me), k.treasury.balance_mu(&reserve));
+    let m = manifest(1);
+    let Granted::Sealed { mu, founding, .. } = k.manifest(&signed(m.clone(), RESERVE)) else { panic!("granted") };
+    assert!(founding, "the first is the founding grant");
+    assert_eq!(mu, price.map(|p| p * 3), "three kinds of nuclei: three units of gas per lane at the read price");
+    let after = (k.treasury.balance_mu(&me), k.treasury.balance_mu(&reserve));
+    assert_eq!(after.0, std::array::from_fn(|l| before.0[l] - mu[l]), "out of the court's earned balance");
+    assert_eq!(after.1, std::array::from_fn(|l| before.1[l] + mu[l]), "into the reserve: a transfer, never a mint");
+    let r = k.endowment_reading(&reserve_domain()).expect("reads");
+    assert_eq!(r.founding, mu);
+    assert_eq!(r.nuclei, m.nuclei, "the universe holds its manifest's nuclei");
+    assert!(matches!(r.grants.as_slice(), [g] if g.founding && !g.applied));
+    assert_eq!(k.manifest(&signed(m, RESERVE)), Granted::Refused(GrantRefusal::Granted), "never twice");
+    assert_eq!(k.manifest(&signed(manifest(2), RESERVE)), Granted::Refused(GrantRefusal::InFlight), "growth waits on the founding grant's application");
+}
+
+fn reserve_domain() -> [u8; 32] {
+    vk(&key(DOMAIN))
+}
+
+/// A GRANT IS REFUSED BY NAME: signed by another key than the sitting
+/// reserve; a domain with no origin; nuclei unordered or of a zero count; and
+/// a court that has earned too little — nothing moved, nothing minted.
+#[test]
+fn a_grant_is_refused_by_name() {
+    let mut unoriginated = universe(false);
+    assert_eq!(unoriginated.manifest(&signed(manifest(1), RESERVE)), Granted::Refused(GrantRefusal::NotAUniverse));
+    let mut k = universe(true);
+    assert_eq!(k.manifest(&signed(manifest(1), DOMAIN)), Granted::Refused(GrantRefusal::Unsigned), "the domain key is not the sitting reserve");
+    let mut unordered = manifest(1);
+    unordered.nuclei.reverse();
+    assert_eq!(k.manifest(&signed(unordered, RESERVE)), Granted::Refused(GrantRefusal::Malformed));
+    let mut zero = manifest(1);
+    zero.nuclei[0].1 = BigUint::from(0u8);
+    assert_eq!(k.manifest(&signed(zero, RESERVE)), Granted::Refused(GrantRefusal::Malformed));
+    assert_eq!(k.manifest(&signed(manifest(1), RESERVE)), Granted::Refused(GrantRefusal::EndowmentShort), "a court that earned nothing grants nothing");
+}
+
+/// THE GRANTS SURVIVE A RESTART: written on the court's own node and read
+/// back whole, the reading the same after as before.
+#[test]
+fn the_grants_survive_a_restart() {
+    let mut k = universe(true);
+    let anchor = k.anchor();
+    let me = k.identity;
+    k.treasury.genesis(me, [100, 100, 100, 100], anchor);
+    assert!(matches!(k.manifest(&signed(manifest(1), RESERVE)), Granted::Sealed { .. }));
+    let before = k.endowment_reading(&reserve_domain());
+    let snap = k.snapshot();
+    let mut booted = Kernel::new();
+    assert!(booted.restore(&snap), "clean restore");
+    let after = booted.endowment_reading(&reserve_domain());
+    assert_eq!(after.as_ref().map(|r| (&r.founding, &r.grants, &r.nuclei)), before.as_ref().map(|r| (&r.founding, &r.grants, &r.nuclei)));
+}

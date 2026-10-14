@@ -191,6 +191,7 @@ impl Kernel {
             origins,
             universes,
             atlas,
+            grants,
             seats,
         } = self;
         let mut c = crate::observe::Carriers { k: chain.head_k(), held: Vec::new() };
@@ -233,6 +234,8 @@ impl Kernel {
         c.count("atlas.ladder", atlas.ladder.len());
         c.count("atlas.claims", atlas.claims.len());
         c.count("atlas.spent", atlas.spent.len());
+        // 78.155b — the grants made, each with its manifest.
+        c.count("grants", grants.scoped().map(|(_, g)| g.len()).sum());
         c.count("basis", basis.len());
         c.count("by_action", by_action.len());
         c.count("by_footprint", nested(by_footprint));

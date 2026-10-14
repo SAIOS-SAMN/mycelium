@@ -25432,6 +25432,70 @@ minted, the edge pending then residual 1),
 `dialogue::tests::atlas::a_map_act_and_the_map_read_back` (the record and its
 frames back exactly, signatures verifying).
 
+### 78.155b The hypha sponsors a universe's package: manifests, grants, the endowment (2026-10-14, the operator's ruling W25 relayed by xylarium; designed by mycelium with xylarium under the operator's authority)
+
+**Ruled (the operator).** Genesis stays earned-only. In the development
+sandbox the hypha's reserve SPONSORS new universes' founding packages until
+a market exists where μ is bought, staked and yields. A package is ELEMENTS
+only: how many galaxies, their recipes and where their cores stand are the
+universe's own design, never stated upward (W14).
+
+**Designed (mycelium with xylarium).**
+1. **MANIFEST, ACT_DOMAIN 17** — a universe's request for a package: a COUNT
+   OF NUCLEI per Z, ascending Z each once, every count a positive integer
+   of any size, written as an exact rational of denominator one in the
+   algebra's scalar codec. Unit-free and the same in every universe: each
+   kernel maps its own matter onto Z (xylarium's map the identity, Z 1..150;
+   netstratum's almanac kinds onto the Z it states) and converts with its own
+   nucleon mass, neither ever stated upward. Isotopes stay the universe's
+   own. Signed by the domain's SITTING RESERVE, as its statements are.
+   `[ACT_DOMAIN][domain 32][0x80 0x00][17][count u16 LE](Z u16 LE, count Mv
+   scalar)…[nonce 32][sig 64]`; signed bytes `"mycelium manifest v1" ‖
+   domain ‖ the entries as written ‖ nonce`; its HASH is the citation hash of
+   those bytes.
+2. **GRANT** — the court's answer to a manifest: a transfer of μ from this
+   court's own earned balance to the reserve on one sealed act citing the
+   manifest's hash, never a mint. The first manifest after the origin is the
+   FOUNDING grant, each later one a GROWTH grant, and a growth grant waits
+   until every earlier grant is applied in the universe's own LEDGER entries
+   (in `applied`, as a crossing is). WHAT IT MOVES is read off the field: a
+   manifest of `n` kinds of nuclei is granted the court's READ PRICE (78.154)
+   for `n` units of gas on every lane — enough to stake for its first
+   crossing's coordinates. Reply `[0][mu 4×u64][founding u8][stamp][receipt
+   32]` or `[1][refusal u8]`: NotFounded 1, NotAUniverse 2, NotReserve 3,
+   Unsigned 4, Malformed 5, Granted 6, InFlight 7, EndowmentShort 8,
+   Overflow 9, LineRefused 10.
+3. **THE ENDOWMENT IS WHAT THE COURT HAS EARNED** (refined from the first
+   design, which set a FOUNDING and a GROWTH pot aside by a funding act): a
+   pot set aside needs a chosen sum, which is a constant. The court's own
+   balance of fees and tolls is the endowment; a grant draws on it at the
+   act and refuses `EndowmentShort` where it falls short; the FOUNDING and
+   GROWTH endowments are what was granted from it, read off the grants (law
+   12).
+4. **THE ELEMENT ACCOUNT IS READ OFF THE GRANTS.** A universe holds the
+   nuclei its granted manifests carry; the hypha's account is the negative of
+   every universe's, so the network's total is zero by construction — no
+   stock of matter is declared anywhere. Elements are never priced in μ: μ
+   is the gas of coordinates (MU-ECONOMY §7.1), and a package's crossing pays
+   its TRAVERSE's map fee like any other.
+5. **READ-ENDOWMENT, ACT_DOMAIN 18** — `[ACT_DOMAIN][domain 32][0x80
+   0x00][18]`, answered `[earned 4×u64][founding 4×u64][growth 4×u64][grants
+   u16 LE]([manifest 32][mu 4×u64][founding u8][applied u8])…[nuclei]`, the
+   nuclei as a manifest writes them (a count of zero where none); nothing
+   that decodes where a total passes its carrier, never a capped one.
+
+**Landed** (`server/cognition/endowment.rs`, `anastome/dialogue/endowment.rs`;
+the grants persisted on the court's own node, `LEAF_ENDOWMENT` 10, absent on
+every home written before). Proved (`cognition::tests::endowment`): the
+manifest, the grant's reply and the reading read back whole; a founding
+manifest of three kinds granted three units of gas per lane at the read
+price, out of the court's balance into the reserve, the reading's founding
+total and nuclei its own, never twice, a second manifest InFlight; refused
+by name — no origin, the domain key not the reserve, nuclei unordered or of
+a zero count, a court that earned nothing; the grants back whole across a
+restart. OWED: a growth grant proved after the founding grant's application
+in a signed LEDGER entry.
+
 ### 78.158a The solve paths wired (U1–U4), the home check on court words, sit-all
 
 *Moved to `MU-CLIENT.md` Part V, verbatim (2026-10-11).*

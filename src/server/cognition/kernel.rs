@@ -474,6 +474,11 @@ pub struct Kernel {
     /// crossings' edges, the final points held, and the claims on stakes —
     /// persisted on the court's own node (`LEAF_ATLAS`).
     pub(crate) atlas: super::atlas::Atlas,
+    /// 78.155b — THE GRANTS THIS COURT MADE, by domain, in the order made:
+    /// each with the manifest it answered. The endowment's totals and every
+    /// universe's nuclei are read off these, never held beside them (law 12)
+    /// — persisted on the court's own node (`LEAF_ENDOWMENT`).
+    pub(crate) grants: crate::network::nerve::Keyed<Vec<super::endowment::HeldGrant>>,
     /// 78.145 — THE SEAT RELAY: each domain's latest seat listing and the
     /// mail between its house and the minds seated in it. Volatile and
     /// bounded; never persisted. 78.146: on its own lock, so a door serves a

@@ -183,6 +183,12 @@ pub enum DomainRequest {
     ReadMap([u8; 32]),
     /// 78.154 — a TRAVERSE: coordinates retrieved and the crossing mapped.
     Traverse(Box<super::crossing::SignedTraverse>),
+    /// 78.155b — a universe's MANIFEST: nuclei per Z asked as a package, by
+    /// its sitting reserve; answered with a grant.
+    Manifest(Box<super::endowment::SignedManifest>),
+    /// 78.155b — what the court can grant and has granted, read; nothing
+    /// sealed.
+    ReadEndowment([u8; 32]),
 }
 
 const KIND_READ_RESERVE: u8 = 2;
@@ -564,6 +570,13 @@ pub fn decode_domain_request(b: &[u8]) -> Option<DomainRequest> {
             let s = super::crossing::take_traverse(domain, rest, &mut p)?;
             return (p == rest.len()).then_some(DomainRequest::Traverse(Box::new(s)));
         }
+        // 78.155b — a universe's manifest and the endowment's read.
+        super::endowment::KIND_MANIFEST => {
+            p += 1;
+            let s = super::endowment::take_manifest(domain, rest, &mut p)?;
+            return (p == rest.len()).then_some(DomainRequest::Manifest(Box::new(s)));
+        }
+        super::endowment::KIND_READ_ENDOWMENT => return (rest.len() == p + 1).then_some(DomainRequest::ReadEndowment(domain)),
         KIND_RESERVE => {}
         _ => return None,
     }

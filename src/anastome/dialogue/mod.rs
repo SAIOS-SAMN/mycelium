@@ -28,6 +28,7 @@ pub mod syllabus;
 pub mod tube;
 pub mod uplink;
 pub mod domain;
+pub mod endowment;
 pub mod universe;
 pub mod wallet;
 pub mod why;

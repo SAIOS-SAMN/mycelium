@@ -108,7 +108,7 @@ impl Kernel {
                 b,
                 pos,
                 COURT_TRIE,
-                &[LEAF_HEAD, LEAF_ROOT, LEAF_LINE, LEAF_DOMAINS, LEAF_LEDGERS, LEAF_CHALLENGES, LEAF_HANDOFFS, LEAF_ROOTS, LEAF_ATLAS],
+                &[LEAF_HEAD, LEAF_ROOT, LEAF_LINE, LEAF_DOMAINS, LEAF_LEDGERS, LEAF_CHALLENGES, LEAF_HANDOFFS, LEAF_ROOTS, LEAF_ATLAS, LEAF_ENDOWMENT],
             )?;
             let nodes: Vec<(Vec<u8>, crate::snapshot::Leaves)> =
                 court.scoped().map(|(k, l)| (k, l.clone())).collect();
@@ -181,6 +181,12 @@ impl Kernel {
                 kernel.proofs_mark = crate::chronometry::next_mark();
             }
             // 78.154 — the atlas; a home written before 78.154 carries none.
+            // 78.155b — the grants, where any was made; absent before it.
+            if let Some(v) = leaf(leaves, LEAF_ENDOWMENT) {
+                for (domain, held) in whole(v, super::super::endowment::take_grants)? {
+                    kernel.grants.insert(domain, held);
+                }
+            }
             if let Some(v) = leaf(leaves, LEAF_ATLAS) {
                 kernel.atlas = whole(v, super::super::atlas::Atlas::take)?;
             }

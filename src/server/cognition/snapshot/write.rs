@@ -213,6 +213,11 @@ impl Kernel {
         if !self.atlas.is_empty() {
             leaves.push((LEAF_ATLAS, self.atlas.put()));
         }
+        // 78.155b — the grants, where any was made. Each manifest was read
+        // off the wire within the same carriers, so it writes back whole.
+        if let Some(v) = (!self.grants.is_empty()).then(|| super::super::endowment::put_grants(&self.grants)).flatten() {
+            leaves.push((LEAF_ENDOWMENT, v));
+        }
         nodes.insert(self.chain.vk(), leaves);
         put_trie(out, COURT_TRIE, &nodes);
     }

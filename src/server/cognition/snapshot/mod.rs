@@ -50,6 +50,9 @@ pub const LEAF_ROOTS: u8 = 8;
 /// edges, the final points held, the claims on stakes; absent where none is
 /// held (and on every home written before it).
 pub const LEAF_ATLAS: u8 = 9;
+/// 78.155b — the grants this court made, each with its manifest; absent
+/// where none was made (and on every home written before it).
+pub const LEAF_ENDOWMENT: u8 = 10;
 
 /// T2 — THE LEDGER (78.24, 78.27): a node per stamp, the per-act data
 /// standing at it, and the act's receipt where the line is in the snapshot.

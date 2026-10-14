@@ -50,6 +50,13 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             DomainRequest::Map(s) => encode_map_reply(&k.map(&s, fin)),
             DomainRequest::ReadMap(domain) => encode_map_reading(&k.map_reading(&domain)),
             DomainRequest::Traverse(s) => encode_traverse_reply(&k.traverse(&s, fin)),
+            // 78.155b — a manifest granted or refused, and the endowment read.
+            DomainRequest::Manifest(s) => mycelium::anastome::dialogue::endowment::encode_grant_reply(&k.manifest(&s)),
+            // A reading that passes its carrier is answered with nothing that
+            // decodes, never a capped total.
+            DomainRequest::ReadEndowment(domain) => {
+                k.endowment_reading(&domain).and_then(|r| mycelium::anastome::dialogue::endowment::encode_endowment_reading(&r)).into_iter().flatten().collect()
+            }
         }),
         Err(_) => return,
     };

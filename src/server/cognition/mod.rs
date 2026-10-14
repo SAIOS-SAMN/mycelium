@@ -15,6 +15,7 @@ mod convert;
 mod cocycle;
 mod court;
 mod crossing;
+mod endowment;
 mod depth;
 mod germinate;
 mod handoff;

@@ -4,6 +4,7 @@ pub mod common;
 
 mod admission;
 mod composed;
+mod endowment;
 mod agreement;
 mod atlas;
 mod aperture;
