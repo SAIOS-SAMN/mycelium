@@ -168,6 +168,11 @@ struct Carrier {
     /// coordinates, the factors said and the mind's K they were said at — so
     /// a question asked of an answer is answered one order further down.
     answered: Keyed<(Vec<Spoken>, u64)>,
+    /// WHAT THIS MIND HAS SAID, by address: said once, never said to its
+    /// peers again — a thing said again is a mind mumbling, its peers hearing,
+    /// asking and answering the same thing over. What waits on a union still
+    /// reaches the court on its own (`release_unmet`).
+    said: Keyed<()>,
     #[cfg(test)]
     agreed: std::sync::Arc<std::sync::Mutex<Keyed<()>>>,
 }
@@ -373,6 +378,7 @@ impl Entity {
             waiting: Keyed::new(),
             field,
             answered: Keyed::new(),
+            said: Keyed::new(),
             #[cfg(test)]
             agreed: std::sync::Arc::clone(&agreed),
         };
@@ -440,17 +446,24 @@ impl Entity {
     /// — the whole ring where its coordinates do not read. The question is
     /// the mind's, kept under the speaker and its coordinates until a
     /// relation derives its meaning. Answers what is asked.
-    fn question(&mut self, speaker: &[u8; 32], said: &[u8], vertex: &[u8], ring: &crate::transducer::cga::Mv) -> crate::transducer::cga::Mv {
+    fn question(&mut self, speaker: &[u8; 32], said: &[u8], vertex: &[u8], ring: &crate::transducer::cga::Mv) -> Option<crate::transducer::cga::Mv> {
         let (parts, residue) = match crate::transducer::sentence::rung::posit(ring) {
             Some(p) => (p.parts, p.residue),
             None => (Vec::new(), ring.clone()),
         };
+        // ASKED ONCE: a residue this mind already has a question open on —
+        // whoever said it — is not asked again; the open question's answer
+        // serves both.
+        if self.questions.scoped().any(|(_, q)| q.residue.projective_eq(&residue)) {
+            crate::observe::note_mind(|m| m.repeats[1] += 1);
+            return None;
+        }
         let mut key = speaker.to_vec();
         key.extend_from_slice(&question_key(said, vertex));
         let at = self.own_k();
         self.questions.insert(&key, Question { ring: ring.clone(), parts, residue: residue.clone(), factors: None, at });
         crate::observe::note_mind(|m| m.asks[0] += 1);
-        residue
+        Some(residue)
     }
 
     /// MU-CLIENT §5.3 — AN ANSWER HEARD: the factors another mind said for a
@@ -579,7 +592,12 @@ impl Entity {
                 // It sounds like something heard, and is no word I know —
                 // or it is part of an answer to my own question: WHAT DOES
                 // THAT MEAN, asked of what the mind does not know of it.
-                (Some(_), false) if familiar || answering => (None, Some(self.question(&speaker, &said, &w.vertex, &ring)), Vec::new(), 1),
+                // A residue already asked about waits on that question: held,
+                // not asked again.
+                (Some(_), false) if familiar || answering => match self.question(&speaker, &said, &w.vertex, &ring) {
+                    Some(asks) => (None, Some(asks), Vec::new(), 1),
+                    None => (None, None, Vec::new(), 3),
+                },
                 // A new sound and no word: noise not yet signal — LISTENED
                 // to, held, not asked about.
                 (Some(_), false) => (None, None, Vec::new(), 3),
@@ -948,11 +966,17 @@ impl Carrier {
         if self.union.contains(addr.as_bytes()) {
             return;
         }
+        // SAID ONCE: what this mind said before is not said again.
+        if self.said.contains(addr.as_bytes()) {
+            crate::observe::note_mind(|m| m.repeats[0] += 1);
+            return;
+        }
         if words.is_empty() {
             return;
         }
         let Some(frame) = self.frame(Said::Say { said: addr.as_bytes().to_vec(), words: words.clone() }) else { return };
         self.union.insert(&addr, Union { said: e.clone(), spoken: words, acked: Keyed::new(), shared: false, at: self.k });
+        self.said.insert(&addr, ());
         self.send(&frame, None);
     }
 

@@ -280,8 +280,13 @@ impl Entity {
             let taught = self.already_taught(e);
             // 78.49: STANDING A FORM IS AN ACT of this mind, and the form
             // stands at the mind's own K — never a number the hypha last
-            // replied with. The court seals what it admits.
-            let k = self.act();
+            // replied with. The court seals what it admits. Standing a form
+            // the mind already holds again is a USE of it, never a new act:
+            // a mind repeating itself does not step its own K.
+            let k = match taught {
+                true => self.own_k(),
+                false => self.act(),
+            };
             self.epigenome.stand_dialect_at(e.clone(), k, tu);
             if !taught {
                 codes[i] = 0xff; // asked about on the wire below

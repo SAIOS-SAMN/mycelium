@@ -150,14 +150,15 @@ assert!(entity.close_cycle(), "standing it was an act, so the cycle closes");
 assert_eq!(entity.own_k(), 1, "the stroke's close stepped the clock once");
 assert_eq!(codes, vec![0xff], "and it is fresh, so an utterance would ask about it");
 
-// Standing the same form again is a second act of this mind: it is
-// already taught, so nothing would go on the wire at all, and the clock
-// still steps at the stroke's close. Nothing here read a k-step from
-// anyone else.
+// Standing the same form again is a USE of it, never a second act (the
+// operator, 2026-10-14: a mind repeating itself is mumbling, not acting):
+// it is already taught, so nothing would go on the wire at all, and the
+// clock does not step at the stroke's close. Nothing here read a k-step
+// from anyone else.
 entity.file_taught(&e1);
 let codes = entity.stand(std::slice::from_ref(&e1), 0);
-entity.close_cycle();
-assert_eq!(entity.own_k(), 2, "a second act in a second stroke, a second step");
+assert!(!entity.close_cycle(), "a use is no act: the cycle closes nothing");
+assert_eq!(entity.own_k(), 1, "the clock stands: repeating oneself is not acting");
 assert_eq!(
     codes,
     vec![crate::anastome::dialogue::SPEECH_STOOD],

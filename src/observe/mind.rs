@@ -86,6 +86,10 @@ pub const VANTAGES: [&str; 3] = ["own", "offered", "none"];
 /// a turn (periodic), a null count (nilpotent), a rosette, a boost.
 pub const LAWS: [&str; 4] = ["periodic", "nilpotent", "rosette", "boost"];
 
+/// WHAT IT DID NOT REPEAT (compaction): a thing it had said, not said to its
+/// peers again; a residue it had a question open on, not asked again.
+pub const REPEATS: [&str; 2] = ["not said again", "not asked again"];
+
 /// HOW EACH HEARD RING WAS TAKEN (MU-CLIENT §4.9), by its two readings —
 /// SOUND (does it sound like something heard) and WORD (is it a word known):
 /// familiar and known UNDERSTOOD; familiar and unknown ASKED; new and known
@@ -189,6 +193,9 @@ pub struct Mind {
     pub awaiting: u64,
     /// Its hearers' readings of what it said, by [`VANTAGES`].
     pub vantages: [u64; 3],
+    /// What compaction held back, by [`REPEATS`]: things it would have said
+    /// again, residues it would have asked about again.
+    pub repeats: [u64; 2],
     /// The modes of the words its perception taught it, by [`LAWS`].
     pub laws: [u64; 4],
     /// Spin coupled to orbit: each lock `p:q` read, with how often, in
@@ -242,6 +249,7 @@ impl Default for Mind {
             unanswered: 0,
             awaiting: 0,
             vantages: [0; 3],
+            repeats: [0; 2],
             laws: [0; 4],
             locks: Vec::new(),
             drifts: 0,
@@ -290,6 +298,7 @@ impl Mind {
             .chain([self.unanswered, self.awaiting])
             .chain(self.vantages)
             .chain(self.laws)
+            .chain(self.repeats)
         {
             put_u64(out, v);
         }
@@ -336,6 +345,7 @@ impl Mind {
         let [unanswered, awaiting] = [take_u64(b, p)?, take_u64(b, p)?];
         let vantages = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let laws = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
+        let repeats = [take_u64(b, p)?, take_u64(b, p)?];
         let n = usize::try_from(u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?)).ok()?;
         *p += 4;
         // Each lock is three counts.
@@ -369,6 +379,7 @@ impl Mind {
             unanswered,
             awaiting,
             vantages,
+            repeats,
             laws,
             locks,
             drifts,
@@ -401,12 +412,13 @@ impl Mind {
                 PERSPECTIVE.iter().zip(&self.perspective).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
             ),
             format!(
-                "  disagreed {} · questions {} · answers {} · unanswered {} (awaiting factors {})",
+                "  disagreed {} · questions {} · answers {} · unanswered {} (awaiting factors {}) · {}",
                 DISAGREE.iter().zip(&self.disagree).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 ASKS.iter().zip(&self.asks).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 ANSWERS.iter().zip(&self.answers).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 self.unanswered,
-                self.awaiting
+                self.awaiting,
+                REPEATS.iter().zip(&self.repeats).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" · ")
             ),
             format!(
                 "  rings heard {} · mutual {} · read from {} · words' laws {} · lexicon {} (grown {} by speech) · vocabulary {} · remembers hearing {}",
