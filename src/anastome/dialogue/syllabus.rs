@@ -82,6 +82,17 @@ pub fn append_class_records(out: &mut Vec<u8>, records: &[ClassPage]) -> Option<
     Some(())
 }
 
+/// The bytes one record takes framed (`append_class_records`), read by
+/// writing it: what a fetch measures before taking it onto a reply, so the
+/// classes are bounded by the frame as the words are. `None` where it does
+/// not frame.
+pub fn class_record_width(r: &ClassPage) -> Option<usize> {
+    let mut rec = Vec::new();
+    crate::transducer::address::put_class_record(&mut rec, &r.key, r.order)?;
+    r.rotor.put_canonical(&mut rec);
+    Some(rec.len())
+}
+
 /// The class records after the taught words, or none: a record that does
 /// not read refuses the page whole and says so, never a page cut short at
 /// the record that failed.

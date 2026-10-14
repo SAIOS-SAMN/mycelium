@@ -493,11 +493,12 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     // received was lost on the wire or in the decode.
     ("fetch_served", "words this court served to this signer's fetch, on pages that went out"),
     ("fetch_received", "words this signer's pages carried that decoded here, each handed to the glue"),
+    ("fetch_unanswered", "fetches this court asked of this signer that no reply answered"),
 ];
 
 /// How many axes [`REPLICATION_AXES`] holds: the one statement of the
 /// reading's width, read by the codec, the store and every renderer.
-pub const REP_AXES: usize = 53;
+pub const REP_AXES: usize = 54;
 
 /// The axes of [`REPLICATION_AXES`] by name, for the sites that count them.
 pub mod rep {
@@ -555,6 +556,7 @@ pub mod rep {
     pub const GLUE_UNREAD: usize = 50;
     pub const FETCH_SERVED: usize = 51;
     pub const FETCH_RECEIVED: usize = 52;
+    pub const FETCH_UNANSWERED: usize = 53;
 }
 
 /// REPLICATION PER SIGNER (CV5): each signer this court heard from, by key,

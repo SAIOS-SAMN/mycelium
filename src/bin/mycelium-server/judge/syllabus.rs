@@ -56,7 +56,8 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let kernel = &door.kernel;
     let Some((fvoice, charts)) = dialogue::decode_fetch(&frame.body) else { return };
     // The body's share of the frame, exact.
-    let Some(mut budget) = mycelium::network::wire::frame_budget().checked_sub(64) else {
+    // The class records' own count (two bytes) is reserved with the head.
+    let Some(mut budget) = mycelium::network::wire::frame_budget().checked_sub(64 + 2) else {
         return;
     };
     let mut words: Vec<dialogue::Taught> = Vec::new();
@@ -102,8 +103,28 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             };
             budget = left;
             words.extend(page);
-            classes.extend(k.class_records_on(inv, &fvoice, reads));
-            if budget == 0 {
+            // THE CLASSES ARE MEASURED AS THE WORDS ARE (2026-10-14): they
+            // were appended past the byte budget the words filled, and the
+            // root stratum's are every complex's in the nerve, so a reply ran
+            // past the frame, was refused whole, and its words — counted
+            // served — never reached the asker. A record is taken while the
+            // bytes left and the two-byte count hold it; one that does not
+            // fit ends the reply, and the asker's next fetch resumes.
+            let mut full = false;
+            for r in k.class_records_on(inv, &fvoice, reads) {
+                let fits = dialogue::class_record_width(&r).and_then(|w| budget.checked_sub(w));
+                match fits {
+                    Some(left) if classes.len() < usize::from(u16::MAX) => {
+                        budget = left;
+                        classes.push(r);
+                    }
+                    _ => {
+                        full = true;
+                        break;
+                    }
+                }
+            }
+            if full || budget == 0 {
                 break;
             }
         }
@@ -132,9 +153,10 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         return;
     }
     let reply = Frame { lane: frame.lane, body };
-    answer(stream, reply);
-    // The words a peer court's fetch carried away, under the court that asked.
-    if matches!(asker, mycelium::cognition::Asker::Court(_)) {
+    let written = crate::transport::answer_written(stream, reply);
+    // The words a peer court's fetch carried away, under the court that
+    // asked: only on a reply the wire took.
+    if written && matches!(asker, mycelium::cognition::Asker::Court(_)) {
         mycelium::observe::note_replication(Some(fvoice), mycelium::observe::rep::FETCH_SERVED, words.len() as u64);
     }
 }

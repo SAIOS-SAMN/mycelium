@@ -972,7 +972,10 @@ impl Exchange {
                                     }
                                 }
                             }
-                            None => note_rtt_timeout(&mesh, pid),
+                            None => {
+                                mycelium::observe::note_replication(Some(vk_peer), mycelium::observe::rep::FETCH_UNANSWERED, 1);
+                                note_rtt_timeout(&mesh, pid)
+                            }
                         }
                     }
                     None => {
