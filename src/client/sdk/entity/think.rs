@@ -260,8 +260,40 @@ impl Entity {
                 _ => Some(c),
             });
             if let Some(r) = residue {
-                self.construct_and_adjoin(&r, least, budget);
+                self.compose_or_construct(&r, least, budget);
             }
+        }
+    }
+
+    /// MU-CLIENT §5.4, D4 — A DEMAND MET FROM THE DICTIONARY FIRST. A residue
+    /// the words this mind knows already make is COMPOSED of them: nothing is
+    /// constructed, no dimension minted twice. One they make IN PART is
+    /// posited over them (`rung::posit`, mode by mode, exact) and only what
+    /// they leave is constructed; the residue is then a relation of the
+    /// dictionary — the known words with the new one — one rung above them
+    /// (`rung::learn_by`), so a later demand is composed of it. One no known
+    /// word reaches is constructed whole, as before.
+    pub(crate) fn compose_or_construct(
+        &mut self,
+        residue: &crate::transducer::cga::Mv,
+        chart: Option<&crate::transducer::stalk::Invariant>,
+        budget: &mut crate::physics::Budget,
+    ) {
+        use crate::observe::{note_mind, Constructed};
+        use crate::transducer::sentence::rung::{known, learn_by, posit};
+        if known(residue) {
+            note_mind(|m| m.constructed[Constructed::Composed as usize] += 1);
+            return;
+        }
+        match posit(residue) {
+            Some(p) if !p.parts.is_empty() => {
+                self.construct_and_adjoin(&p.residue, chart, budget);
+                let mut parts = p.parts;
+                parts.push(p.residue);
+                learn_by(residue, &parts);
+                note_mind(|m| m.constructed[Constructed::InPart as usize] += 1);
+            }
+            _ => self.construct_and_adjoin(residue, chart, budget),
         }
     }
 

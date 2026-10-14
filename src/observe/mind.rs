@@ -31,8 +31,10 @@ pub const PRICED: [&str; 4] = ["closes", "held", "open", "unread"];
 /// WHAT THE DEMAND TAKER MADE OF A DEMAND, in the order the counts are kept:
 /// its residue did not construct; a turn adjoined as the mind's letter; a
 /// motion with no turn stood as a motion letter; constructed with no chart
-/// to stand on; a residue it already holds a letter of.
-pub const CONSTRUCTED: [&str; 5] = ["refused", "letter", "motion letter", "no chart", "held"];
+/// to stand on; a residue it already holds a letter of; COMPOSED whole of the
+/// words it knows (MU-CLIENT §5.4, D4: nothing constructed); composed IN
+/// PART, only what its words left constructed.
+pub const CONSTRUCTED: [&str; 7] = ["refused", "letter", "motion letter", "no chart", "held", "composed", "in part"];
 
 /// WHAT ITS FIBRES DID (78.74, MU-CLIENT §4.5), each flex read off the
 /// fibre's own split: RIGID, TORSION (a twist, no work), FIELD (charge
@@ -103,6 +105,8 @@ pub enum Constructed {
     MotionLetter,
     NoChart,
     Held,
+    Composed,
+    InPart,
 }
 
 fn zero4() -> [Q; 4] {
@@ -157,7 +161,7 @@ pub struct Mind {
     /// Demands an open hearing's cell raised.
     pub demanded: u64,
     /// Every demand the taker took, by [`CONSTRUCTED`].
-    pub constructed: [u64; 5],
+    pub constructed: [u64; 7],
     /// Its fibres' flexes, by [`FLEX`].
     pub flex: [u64; 9],
     /// Bodies whose spheres met in an admitted scene, by [`BODIES`].
@@ -222,7 +226,7 @@ impl Default for Mind {
             returned: 0,
             priced: [0; 4],
             demanded: 0,
-            constructed: [0; 5],
+            constructed: [0; 7],
             flex: [0; 9],
             bodies: [0; 3],
             perspective: [0; 8],
@@ -302,7 +306,10 @@ impl Mind {
         let [k, heard, understood, returned] = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let priced = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let demanded = take_u64(b, p)?;
-        let constructed = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
+        let mut constructed = [0u64; 7];
+        for v in &mut constructed {
+            *v = take_u64(b, p)?;
+        }
         let mut flex = [0u64; 9];
         for v in &mut flex {
             *v = take_u64(b, p)?;

@@ -107,6 +107,40 @@ fn a_question_posits_what_the_mind_knows_and_derives_the_meaning() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
+/// MU-CLIENT §5.4, D4 — A DEMAND IS MET FROM THE DICTIONARY FIRST. A mind
+/// that knows the 90° turn meets a demand for the 180° turn — its square —
+/// composed whole: nothing constructed, it was a word of the dictionary all
+/// along. It meets a demand for a SCREW in part: it posits the turn, only the
+/// slide it lacked is constructed, and the screw is known from then on as the
+/// turn with the slide, a rung above both.
+#[test]
+fn a_demand_is_met_from_the_dictionary_first() {
+    use crate::transducer::sentence::rung::{held_rung, known, learn_by};
+    let (court, _speeches) = court();
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
+    let n = |v: i64| num_rational::BigRational::from_integer(v.into());
+    let quarter = conformal_of_word(&[(q, false)]);
+    let half = conformal_of_word(&[(q, false), (q, false)]);
+    let along = crate::transducer::cga::translator_at(&[n(0), n(0), n(1)]);
+    let screw = crate::transducer::element::conformal_of(&Word::from_letters(&[(q, false)]), &along).expect("a motion");
+    let mut mind = Entity::open(&court, Kernel::named("composer"));
+    let mut field = std::mem::take(&mut mind.field);
+    field.think(|| {
+        learn_by(&quarter, &[]);
+        let chart = crate::transducer::stalk::Invariant::default();
+        let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
+        assert!(known(&half), "the 180° turn is the 90° turn's square: a word of the dictionary");
+        mind.compose_or_construct(&half, Some(&chart), &mut budget);
+        assert_eq!(held_rung(&half), None, "composed whole: nothing constructed or held anew");
+        assert!(!known(&screw) && !known(&along), "neither the screw nor the slide is known");
+        mind.compose_or_construct(&screw, Some(&chart), &mut budget);
+        assert!(known(&along), "only the slide it lacked was constructed and is known");
+        assert!(known(&screw), "and the screw is known");
+        assert_eq!(held_rung(&screw), Some(2), "as the turn with the slide, a rung above both");
+    });
+    mind.field = field;
+}
+
 /// MU-CLIENT §5.3 — A VANTAGE IS WHERE A WORD LANDS IN THE MIND'S OWN HOLES.
 /// A mind that knows the 90° turn reads the 180° turn through it (its square)
 /// — that turn is its vantage; the turn itself it reads through no other word

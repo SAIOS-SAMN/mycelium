@@ -482,7 +482,7 @@ fn a_minds_reading_and_a_courts_agreements_read_back_exact() {
         returned: 2,
         priced: [5, 1, 2, 1],
         demanded: 2,
-        constructed: [1, 0, 1, 0, 1],
+        constructed: [1, 0, 1, 0, 1, 2, 1],
         flex: [2, 1, 0, 3, 1, 1, 7, 2, 4],
         bodies: [4, 1, 2],
         perspective: [9, 3, 4, 1, 1, 6, 3, 1],
