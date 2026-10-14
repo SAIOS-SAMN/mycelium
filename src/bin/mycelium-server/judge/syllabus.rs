@@ -53,6 +53,11 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         present(stream, frame, door, pvoice, &motion);
         return;
     }
+    // 2026-10-14 — a peer court's citation ask, by address.
+    if let Some((cvoice, addrs)) = dialogue::decode_cited_request(&frame.body) {
+        cited(stream, frame, door, cvoice, &addrs);
+        return;
+    }
     let kernel = &door.kernel;
     let Some((fvoice, charts)) = dialogue::decode_fetch(&frame.body) else { return };
     // The body's share of the frame, exact.
@@ -158,6 +163,41 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     // asked: only on a reply the wire took.
     if written && matches!(asker, mycelium::cognition::Asker::Court(_)) {
         mycelium::observe::note_replication(Some(fvoice), mycelium::observe::rep::FETCH_SERVED, words.len() as u64);
+    }
+}
+
+/// 2026-10-14 — A PEER COURT'S CITATION, ANSWERED BY ADDRESS: each asked word
+/// this court installed, at the stamp that admitted it, while the frame's
+/// bytes and the reply's one-byte count carry it. Courts exchange what a
+/// waiting sentence cites, never a stratum's whole lack. Only a key this
+/// court's mesh knows is a court; any other asker is a learner, taught at
+/// its own expense through the fetch, and is answered with nothing here.
+fn cited(stream: &mut TcpStream, frame: &Frame, door: &Door, cvoice: [u8; 32], addrs: &[mycelium::transducer::address::Address]) {
+    let court = door.mesh.addrs.lock().is_ok_and(|a| a.get(&cvoice).is_some());
+    let Some(mut budget) = mycelium::network::wire::frame_budget().checked_sub(64) else { return };
+    let mut words: Vec<dialogue::Taught> = Vec::new();
+    if court {
+        if let Ok(mut h) = crate::held::held!(door.kernel) {
+            h.run(|k, reads| {
+                for a in addrs {
+                    if words.len() == usize::from(u8::MAX) || !reads.spend() {
+                        break;
+                    }
+                    let Some(t) = k.taught_installed(a.as_bytes()) else { continue };
+                    let width = mycelium::chronometry::Stamp::LEN + 4 + t.word.len();
+                    let Some(left) = budget.checked_sub(width) else { break };
+                    budget = left;
+                    words.push(t);
+                }
+            });
+        }
+    }
+    let Some(body) = dialogue::encode_syllabus_reply(&words) else {
+        eprintln!("  citation answer refused: the page does not fit its count");
+        return;
+    };
+    if crate::transport::answer_written(stream, Frame { lane: frame.lane, body }) && court {
+        mycelium::observe::note_replication(Some(cvoice), mycelium::observe::rep::FETCH_SERVED, words.len() as u64);
     }
 }
 

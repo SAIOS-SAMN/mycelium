@@ -283,39 +283,6 @@ fn peer_doors(mesh: &Mesh, join: &[String]) -> Keyed<String> {
     dests
 }
 
-/// 78.153b — THE HAVE-LISTS A FETCH CARRIES, on the hold's stroke: one read
-/// per stratum (`Kernel::fetch_have` — its ruled fiber and what this court
-/// heard on it), from past the stratum this peer's last fetch reached, round
-/// once. A stroke spent ends the list where it stands and keeps the cursor
-/// (`from`, by peer), so every stratum is fetched in turn and none starves
-/// behind a prefix; a stratum not reached is fetched at the next digest,
-/// never dropped.
-fn have_lists(
-    k: &Kernel,
-    strata: &[&mycelium::transducer::stalk::Invariant],
-    from: &mut Keyed<Vec<u8>>,
-    peer: [u8; 32],
-    reads: &mut mycelium::physics::Budget,
-) -> Vec<dialogue::ChartOf<Vec<u8>>> {
-    let past = from.get(&peer).map(|past| strata.iter().position(|inv| inv.key().as_bytes() > past.as_slice()));
-    let start = match past {
-        Some(Some(p)) => p,
-        // No cursor, or no stratum past it: round from the first.
-        Some(None) | None => 0,
-    };
-    let (reached, rest) = strata.split_at(start);
-    let mut out = Vec::new();
-    for inv in rest.iter().chain(reached) {
-        if !reads.spend() {
-            return out;
-        }
-        out.push(dialogue::ChartOf { inv: (*inv).clone(), have: k.fetch_have(inv) });
-        from.insert(peer, inv.key().as_bytes().to_vec());
-    }
-    from.remove(&peer);
-    out
-}
-
 /// 78.152b — THE KEEPER'S RING PUSHED: where the court loop signed a reading,
 /// its ring is queued as `ACT_TICK` to every peer court on the nerve, never
 /// blocking (`try_send`: a full nerve drops it, and the next reading's ring
@@ -388,9 +355,6 @@ impl Exchange {
         // The cycle each peer was last asked at: the quiet-digest ceiling's
         // reading, one entry per peer this court knows.
         let mut asked_cycle: mycelium::network::nerve::Keyed<u64> = mycelium::network::nerve::Keyed::new();
-        // 78.153b: per peer, the last stratum whose have-list a fetch carried
-        // on a spent stroke; the next fetch resumes past it.
-        let mut fetch_from: mycelium::network::nerve::Keyed<Vec<u8>> = mycelium::network::nerve::Keyed::new();
         // The orbits this court sealed since the ledger was last persisted.
         let mut sealed_since_persist = 0u64;
         let mut idle = 0u64;
@@ -766,7 +730,7 @@ impl Exchange {
                         let Some(remote) = dialogue::decode_digests_reply(&reply) else {
                             continue;
                         };
-                        let charts = {
+                        {
                             // 78.153b — the confirmation on the hold's stroke,
                             // resumed past the stratum the last digest reached;
                             // the installed language's stalks taken by their
@@ -812,18 +776,20 @@ impl Exchange {
                                     }
                                 }
                             }
-                            let strata: Vec<&mycelium::transducer::stalk::Invariant> = match discord.is_empty() {
-                                true => local.iter().map(|s| &s.inv).collect(),
-                                false => discord.iter().map(|s| &s.inv).collect(),
-                            };
-                            // The have-lists on a second hold's stroke, one read
-                            // per stratum, from past the one this peer's last
-                            // fetch reached (`have_lists`).
-                            match crate::held::held!(kernel) {
-                                Ok(mut h) => h.run(|k, reads| have_lists(k, &strata, &mut fetch_from, vk_peer, reads)),
-                                Err(_) => continue,
-                            }
-                        };
+                            // 2026-10-14 — DISCORDANCE IS A READING, NEVER AN
+                            // ORDER TO COPY. Each discordant stratum was
+                            // fetched whole, every word this court lacked on
+                            // it: courts never become one language (each
+                            // installs its own minds' words), so the strata
+                            // stay discordant and the fetch never ended —
+                            // 1 040 287 words (891 MB) served by hypha b in two
+                            // hours, ~30 glued, and a cost of courts² × the
+                            // language. The language is held by its cover:
+                            // a word's second vantage is its home's OFFER to
+                            // the hyphae covering its chart (47.3), and a
+                            // court asks a peer for a word only where a
+                            // sentence it holds cites it (below).
+                        }
                         if !unchanged {
                             any_moved = true;
                             // A4, owed since Stage 8c: THE COVER IS FETCHED
@@ -891,14 +857,24 @@ impl Exchange {
                                 }
                             }
                         }
-                        if charts.is_empty() {
+                        // 2026-10-14 — THE CITATION ASKED BY ADDRESS: the
+                        // words this court's waiting sentences cite and it has
+                        // not ruled (`awaited_citations`), as many as one ask
+                        // and one reply's count carry. Nothing waits, nothing
+                        // is asked.
+                        let awaited = match crate::held::held!(kernel) {
+                            Ok(mut h) => h.run(|k, _| match mycelium::network::wire::frame_budget().checked_sub(64) {
+                                Some(bytes) => k.awaited_citations(usize::from(u8::MAX), bytes),
+                                None => Vec::new(),
+                            }),
+                            Err(_) => continue,
+                        };
+                        if awaited.is_empty() {
                             continue;
                         }
-                        let fetch = dialogue::encode_fetch(
-                            &mesh.vk,
-                            &charts,
-                            mycelium::network::wire::frame_budget(),
-                        );
+                        let Some(fetch) = dialogue::encode_cited_request(&mesh.vk, &awaited) else {
+                            continue;
+                        };
                         match tell_peer(&d, fetch) {
                             Some((page, dt2)) => {
                                 note_rtt_ok(&mesh, &pid, dt2);

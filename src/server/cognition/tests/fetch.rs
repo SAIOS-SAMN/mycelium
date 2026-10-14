@@ -91,6 +91,42 @@ fn a_voice_pays_for_its_fetch_and_a_short_voice_waits() {
     assert_eq!(k.treasury().balance_mu(&voice), funded, "nor charged again");
 }
 
+/// A COURT ASKS FOR WHAT ITS WAITING SENTENCES CITE, AND SERVES ONLY ITS
+/// LANGUAGE (2026-10-14). A sentence waiting on a form this court has not
+/// ruled names that form among the citations it asks its peers for; once the
+/// form is ruled here it is asked no more. Asked by address, a court serves a
+/// word it installed, at the stamp that admitted it — and not a provisional,
+/// which is not yet language.
+#[test]
+fn a_court_asks_what_its_sentences_cite_and_serves_only_its_language() {
+    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
+    let mut k = Kernel::new();
+    k.bind_identity([0x6a; 32]);
+    assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
+    let spoken = k.provisional.scoped().next().expect("a provisional sentence").1.clone();
+    let addr = spoken.address();
+    assert!(k.taught_installed(addr.as_bytes()).is_none(), "a provisional is not served: it is not yet language");
+    // A sentence waits on the provisional word: cited, not yet ruled here.
+    let unheld = crate::transducer::address::Address::from(vec![9u8; 12]);
+    k.await_citation([1; 32], b"task", &spoken, &addr);
+    k.await_citation([2; 32], b"task", &spoken, &unheld);
+    let asked = k.awaited_citations(255, 1 << 20);
+    assert!(asked.contains(&addr) && asked.contains(&unheld) && asked.len() == 2, "every waiting citation is asked: {asked:?}");
+    assert!(k.awaited_citations(0, 1 << 20).is_empty(), "no room, nothing asked");
+    let mut ruling = k.stroke();
+    k.ruled_admit(addr.as_bytes(), &mut ruling);
+    assert!(!k.awaited_citations(255, 1 << 20).contains(&addr), "a citation ruled here is asked no more");
+    let inv = crate::transducer::sentence::chart::chart_of(&spoken).expect("a chart");
+    k.ruled.admit(&inv, addr.clone());
+    k.basis_insert(spoken.clone(), [1; 32]);
+    let t = k.taught_installed(addr.as_bytes()).expect("an installed word is served by address");
+    assert_eq!(Some(t.at), k.admitted_at(addr.as_bytes()), "at the stamp that admitted it here");
+    let mut p = 0usize;
+    let back = crate::transducer::element::Element::from_bytes(&t.word, &mut p).expect("the word reads back");
+    assert_eq!(back.address(), addr, "the word itself");
+}
+
 /// A PAGE TAKES NO WORD ITS REPLY CANNOT CARRY (2026-10-14). The reply counts
 /// its words in one byte across every stratum's page; a page that took past
 /// the room left was packed, counted served and drawn from the reserve, and

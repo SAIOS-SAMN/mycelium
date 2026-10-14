@@ -8,6 +8,7 @@ pub mod acts;
 pub mod atlas;
 pub mod carrier;
 pub mod challenge;
+pub mod cited;
 pub mod commitment;
 pub mod crossing;
 pub mod handoff;
@@ -35,6 +36,7 @@ pub mod why;
 
 pub use acts::*;
 pub use carrier::*;
+pub use cited::*;
 pub use cover::*;
 pub use demand::*;
 pub use docket::*;

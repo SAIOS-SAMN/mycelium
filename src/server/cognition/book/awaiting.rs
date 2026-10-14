@@ -136,6 +136,41 @@ impl Kernel {
         }
     }
 
+    /// 2026-10-14 — THE WORDS THIS COURT'S WAITING SENTENCES NEED: every
+    /// address a sentence waits on that this court has not ruled, in key
+    /// order (content, rule 15), as many as one ask frames — `room` addresses
+    /// within `bytes`. What a court asks its peers for by address, in place
+    /// of every stratum's whole lack.
+    pub fn awaited_citations(&self, room: usize, bytes: usize) -> Vec<crate::transducer::address::Address> {
+        let mut out = Vec::new();
+        let mut used = 0usize;
+        for (form, _) in self.awaiting.scoped() {
+            if out.len() >= room {
+                break;
+            }
+            // A ruled form, or one past the two-byte length `put_addr` frames
+            // an address in (the wall, never widened), is not asked.
+            if self.ruled_contains(&form) || form.len() > usize::from(u16::MAX) {
+                continue;
+            }
+            let Some(next) = used.checked_add(form.len() + 2).filter(|&n| n <= bytes) else { break };
+            used = next;
+            out.push(crate::transducer::address::Address::from(form.as_slice()));
+        }
+        out
+    }
+
+    /// 2026-10-14 — ONE WORD SERVED BY ADDRESS to a peer court's citation
+    /// ask: the word this court INSTALLED there (the genome boundary — a
+    /// provisional or a dialect word is not language, and is not served), at
+    /// the stamp that admitted it. `None` where it holds none, or its record
+    /// does not write (STD1 3c).
+    pub fn taught_installed(&self, addr: &[u8]) -> Option<crate::anastome::dialogue::Taught> {
+        let word = self.installed_word(addr)?;
+        let at = self.admitted_at(addr)?;
+        Some(crate::anastome::dialogue::Taught { at, word: word.to_bytes()? })
+    }
+
     /// 78.153 — ONE FORM WHOSE RE-HEARING WAS UNREAD, heard again on the
     /// court's stroke: the first in key order, one read to find it.
     pub(crate) fn rehear_one_due(&mut self, budget: &mut crate::physics::Budget) {

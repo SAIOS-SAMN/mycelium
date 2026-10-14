@@ -3,6 +3,7 @@
 
 mod acts;
 mod atlas;
+mod cited;
 mod commitment;
 mod equivocation;
 mod fold_wire;
