@@ -12,11 +12,15 @@
 //! A GRANT answers a universe's MANIFEST: the first after its origin is its
 //! FOUNDING grant, each later one a GROWTH grant, and a growth grant waits
 //! until the universe's own ledger has applied the grant before it (one in
-//! flight). What a grant moves is read off the field, never a constant: a
-//! manifest carrying `n` kinds of nuclei is granted the court's READ PRICE
-//! for `n` units of gas on every lane — enough to stake for its first
-//! crossing's coordinates. It is a transfer from this court to the reserve,
-//! sealed as an act citing the manifest by its hash.
+//! flight). What a grant moves is read off the field, never a constant. THE
+//! FOUNDING GRANT is the physics: a manifest carrying `n` kinds of nuclei is
+//! granted the court's READ PRICE for `n` units of gas on every lane — enough
+//! to stake for its first crossing's coordinates. A GROWTH GRANT is the
+//! mathematics (78.155c, the operator 2026-10-14): the measured discharge of
+//! the closures the court judged in that universe since its previous grant
+//! (`closed_since_grant`); none judged, no growth grant. Either is a transfer
+//! from this court to the reserve, sealed as an act citing the manifest by
+//! its hash.
 //!
 //! THE ELEMENT ACCOUNT is read off the grants too: a universe holds the
 //! nuclei its granted manifests carry; the hypha's account is the negative
@@ -103,6 +107,35 @@ pub(crate) fn take_grants(b: &[u8], p: &mut usize) -> Option<Vec<([u8; 32], Vec<
         .collect()
 }
 
+/// 78.155c — the closures awaiting a growth grant written:
+/// `[domains][(domain 32, lanes 4 × u64) …]`, in domain order.
+pub(crate) fn put_closed(closed: &Keyed<[u64; 4]>) -> Vec<u8> {
+    let mut v = Vec::new();
+    put_key_count(&mut v, closed.len());
+    for (domain, lanes) in closed.scoped() {
+        v.extend_from_slice(&domain);
+        for x in lanes {
+            v.extend_from_slice(&x.to_le_bytes());
+        }
+    }
+    v
+}
+
+pub(crate) fn take_closed(b: &[u8], p: &mut usize) -> Option<Vec<([u8; 32], [u64; 4])>> {
+    (0..take_key_count(b, p)?)
+        .map(|_| {
+            let domain: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+            *p += 32;
+            let mut lanes = [0u64; 4];
+            for x in &mut lanes {
+                *x = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+                *p += 8;
+            }
+            Some((domain, lanes))
+        })
+        .collect()
+}
+
 /// Two nuclei counts summed per Z, exact, in ascending Z.
 fn add_nuclei(a: &Nuclei, b: &Nuclei) -> Nuclei {
     let mut sum: Keyed<num_bigint::BigUint> = Keyed::new();
@@ -160,13 +193,32 @@ impl Kernel {
         if !held.iter().all(|g| self.grant_applied(&m.domain, &g.hash)) {
             return refuse(GrantRefusal::InFlight);
         }
-        let Some(price) = self.read_price() else { return refuse(GrantRefusal::Overflow) };
-        let Ok(kinds) = u64::try_from(m.nuclei.len()) else { return refuse(GrantRefusal::Overflow) };
-        let mut mu = [0u64; 4];
-        for (x, p) in mu.iter_mut().zip(price) {
-            let Some(v) = p.checked_mul(kinds) else { return refuse(GrantRefusal::Overflow) };
-            *x = v;
-        }
+        let founding = held.is_empty();
+        let mu = match founding {
+            // THE FOUNDING GRANT, THE PHYSICS (the operator, 2026-10-14): the
+            // variety of matter — the read price for one unit of gas per lane
+            // per kind of nuclei the manifest counts.
+            true => {
+                let Some(price) = self.read_price() else { return refuse(GrantRefusal::Overflow) };
+                let Ok(kinds) = u64::try_from(m.nuclei.len()) else { return refuse(GrantRefusal::Overflow) };
+                let mut mu = [0u64; 4];
+                for (x, p) in mu.iter_mut().zip(price) {
+                    let Some(v) = p.checked_mul(kinds) else { return refuse(GrantRefusal::Overflow) };
+                    *x = v;
+                }
+                mu
+            }
+            // 78.155c — A GROWTH GRANT, THE MATHEMATICS (the operator,
+            // 2026-10-14): the measured discharge of the closures the court
+            // judged in this universe since its previous grant — the
+            // endowment grows only as its minds develop traversable
+            // mathematics. None judged: no growth grant. Never estimated
+            // ahead of a closure.
+            false => match self.growth_size(&m.domain) {
+                Ok(c) => c,
+                Err(why) => return refuse(why),
+            },
+        };
         let earned = self.treasury.balance_mu(&self.identity);
         if !crate::economy::lanes_short(&crate::economy::shortfall(&mu, &earned)).is_empty() {
             return refuse(GrantRefusal::EndowmentShort);
@@ -176,12 +228,24 @@ impl Kernel {
         if self.treasury.pay(self.identity, reserve, mu, (r.stamp, r.chain_hash)).is_err() {
             return refuse(GrantRefusal::EndowmentShort);
         }
-        let founding = held.is_empty();
         let mut now = held;
         now.push(HeldGrant { manifest: s.clone(), hash, mu, founding, at: r.stamp, receipt: r.chain_hash });
         self.grants.insert(m.domain, now);
+        // The closures a grant answered are its own: the next growth grant
+        // counts only those judged after it.
+        self.closed_since_grant.remove(&m.domain);
         self.mark_persist();
         Granted::Sealed { mu, founding, at: r.stamp, receipt: r.chain_hash }
+    }
+
+    /// 78.155c — WHAT `domain`'S NEXT GROWTH GRANT MOVES: the measured
+    /// discharge of the closures this court judged in that universe since its
+    /// previous grant, exact per lane; refused by name where none was judged.
+    pub fn growth_size(&self, domain: &[u8; 32]) -> Result<[u64; 4], GrantRefusal> {
+        match self.closed_since_grant.get(domain).copied() {
+            Some(c) if c.iter().any(|&x| x > 0) => Ok(c),
+            _ => Err(GrantRefusal::NoNewClosures),
+        }
     }
 
     /// 78.155b — WHAT THIS COURT CAN GRANT AND HAS GRANTED, read: its earned

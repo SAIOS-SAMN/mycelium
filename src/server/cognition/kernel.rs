@@ -479,6 +479,11 @@ pub struct Kernel {
     /// universe's nuclei are read off these, never held beside them (law 12)
     /// — persisted on the court's own node (`LEAF_ENDOWMENT`).
     pub(crate) grants: crate::network::nerve::Keyed<Vec<super::endowment::HeldGrant>>,
+    /// 78.155c — THE CLOSURES JUDGED IN EACH UNIVERSE SINCE ITS LAST GRANT:
+    /// by domain, the measured discharge of every first closure a key of that
+    /// domain made, summed exact per lane — what its next growth grant moves.
+    /// Taken whole when a grant seals; persisted (`LEAF_CLOSED`).
+    pub(crate) closed_since_grant: crate::network::nerve::Keyed<[u64; 4]>,
     /// 78.145 — THE SEAT RELAY: each domain's latest seat listing and the
     /// mail between its house and the minds seated in it. Volatile and
     /// bounded; never persisted. 78.146: on its own lock, so a door serves a

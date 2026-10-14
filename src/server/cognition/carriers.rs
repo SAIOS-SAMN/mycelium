@@ -192,6 +192,7 @@ impl Kernel {
             universes,
             atlas,
             grants,
+            closed_since_grant,
             seats,
         } = self;
         let mut c = crate::observe::Carriers { k: chain.head_k(), held: Vec::new() };
@@ -236,6 +237,8 @@ impl Kernel {
         c.count("atlas.spent", atlas.spent.len());
         // 78.155b — the grants made, each with its manifest.
         c.count("grants", grants.scoped().map(|(_, g)| g.len()).sum());
+        // 78.155c — the universes with closures awaiting a growth grant.
+        c.count("closed_since_grant", closed_since_grant.len());
         c.count("basis", basis.len());
         c.count("by_action", by_action.len());
         c.count("by_footprint", nested(by_footprint));

@@ -155,6 +155,9 @@ pub enum GrantRefusal {
     Overflow,
     /// The court's line could not take the act.
     LineRefused,
+    /// 78.155c — a growth grant with no closure judged in the universe since
+    /// its previous grant: the endowment grows only with its mathematics.
+    NoNewClosures,
 }
 
 impl GrantRefusal {
@@ -170,6 +173,7 @@ impl GrantRefusal {
             GrantRefusal::EndowmentShort => 8,
             GrantRefusal::Overflow => 9,
             GrantRefusal::LineRefused => 10,
+            GrantRefusal::NoNewClosures => 11,
         }
     }
 
@@ -185,6 +189,7 @@ impl GrantRefusal {
             GrantRefusal::EndowmentShort,
             GrantRefusal::Overflow,
             GrantRefusal::LineRefused,
+            GrantRefusal::NoNewClosures,
         ]
         .into_iter()
         .find(|r| r.byte() == b)

@@ -237,6 +237,21 @@ impl Kernel {
         if let Some(total) = crate::core::lanes::lanes_add(self.acts.paid, paid) {
             self.acts.paid = total;
         }
+        // 78.155c — A CLOSURE JUDGED IN A UNIVERSE grows that universe's next
+        // growth grant by its measured discharge: the key that closed it is a
+        // key of a founded domain (membership, never tier — 78.165). A sum
+        // past its carrier is refused and the closure counts nothing there
+        // rather than a capped amount (rule 11).
+        if let Some(domain) = self.tier_domain.get(&voice).copied() {
+            let held = match self.closed_since_grant.get(&domain) {
+                Some(h) => *h,
+                None => [0; 4],
+            };
+            if let Some(now) = crate::core::lanes::lanes_add(held, pay) {
+                self.closed_since_grant.insert(domain, now);
+                self.mark_persist();
+            }
+        }
         paid
     }
 

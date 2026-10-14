@@ -137,3 +137,34 @@ fn the_grants_survive_a_restart() {
     let after = booted.endowment_reading(&reserve_domain());
     assert_eq!(after.as_ref().map(|r| (&r.founding, &r.grants, &r.nuclei)), before.as_ref().map(|r| (&r.founding, &r.grants, &r.nuclei)));
 }
+
+/// 78.155c — A GROWTH GRANT IS SIZED BY THE CLOSURES JUDGED IN ITS UNIVERSE
+/// (the operator, 2026-10-14). Before any closure there is no growth grant. A
+/// first closure by a key of the domain — any key it registered, membership
+/// never tier — grows the next growth grant by exactly its measured discharge;
+/// a closure by a key no domain names grows nothing; a second adds to it.
+/// The size survives a restart, and a grant sealed takes it whole: the next
+/// growth grant counts only closures judged after it.
+#[test]
+fn a_growth_grant_is_sized_by_the_closures_judged_in_its_universe() {
+    let mut k = universe(true);
+    let domain = reserve_domain();
+    assert_eq!(k.growth_size(&domain), Err(GrantRefusal::NoNewClosures), "no closure judged: no growth grant");
+    let rule = crate::transducer::element::from_residual(&vec![(0i64, 0i64, 1u8, 2u8)]).expect("a rule");
+    let line = vk(&key(47));
+    let _ = k.pay_solve(b"task-a", line, &rule, [3, 0, 2, 1], true);
+    assert_eq!(k.growth_size(&domain), Ok([3, 0, 2, 1]), "the closure's measured discharge, a line's key counting for its universe");
+    let _ = k.pay_solve(b"task-b", [0xee; 32], &rule, [9, 9, 9, 9], true);
+    assert_eq!(k.growth_size(&domain), Ok([3, 0, 2, 1]), "a key no domain names grows nothing here");
+    let _ = k.pay_solve(b"task-c", vk(&key(RESERVE)), &rule, [1, 1, 0, 0], true);
+    assert_eq!(k.growth_size(&domain), Ok([4, 1, 2, 1]), "a second closure adds, exact per lane");
+    let mut booted = Kernel::new();
+    assert!(booted.restore(&k.snapshot()), "clean restore");
+    assert_eq!(booted.growth_size(&domain), Ok([4, 1, 2, 1]), "the size survives a restart");
+    // A grant sealed takes the closures it answered.
+    let anchor = k.anchor();
+    let me = k.identity;
+    k.treasury.genesis(me, [100, 100, 100, 100], anchor);
+    assert!(matches!(k.manifest(&signed(manifest(1), RESERVE)), Granted::Sealed { founding: true, .. }));
+    assert_eq!(k.growth_size(&domain), Err(GrantRefusal::NoNewClosures), "the closures before a grant are its own");
+}

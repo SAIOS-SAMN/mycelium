@@ -25496,6 +25496,37 @@ a zero count, a court that earned nothing; the grants back whole across a
 restart. OWED: a growth grant proved after the founding grant's application
 in a signed LEDGER entry.
 
+### 78.155c Growth grants are sized by the mathematics (2026-10-14, the operator's ruling relayed by xylarium)
+
+The ruling: the FOUNDING grant is the physics — sized by the variety of
+matter, one read price per unit of gas per lane for each kind of nuclei the
+MANIFEST counts — and stays as built (78.155b). A GROWTH grant is the
+mathematics: sized by the curved holes the court has SEALED in that universe
+since its previous grant, i.e. the closures judged there; a universe with no
+new closures gets no growth grant. Both stay sealed transfers from the
+court's earned balance, never mints; each growth grant still waits on every
+earlier grant applied in the universe's LEDGER. Holes are never estimated
+ahead of closures; μ pays only measured discharge.
+
+As built: `Kernel::closed_since_grant` holds, per domain, the MEASURED
+DISCHARGE of every first closure a key of that domain made (membership,
+never tier — 78.165), summed exact per lane where the closure is paid
+(`pay_solve`); a growth grant moves exactly it (`growth_size`), refused by
+name `NoNewClosures` (wire code 11) where none was judged; any grant sealed
+takes it whole, so the next counts only closures judged after it. Persisted
+on the court's node (`LEAF_CLOSED` 11, absent on older homes).
+
+The closures the court judges today are the solve arm's first closures; the
+network's CURVED HOLES proper (5.7: motions withheld from tethered mouth
+loops, sealed one per loop) are not yet sealed by any court. When they are,
+their closures are first closures of this same arm and grow the grant the
+same way, with nothing here changed.
+
+Tests: before any closure, no growth grant; a line's first closure grows its
+universe's next growth grant by exactly its discharge, a key no domain names
+grows nothing, a second adds per lane; the size survives a restart; a grant
+sealed takes the closures it answered.
+
 ### 78.158a The solve paths wired (U1–U4), the home check on court words, sit-all
 
 *Moved to `MU-CLIENT.md` Part V, verbatim (2026-10-11).*

@@ -108,7 +108,7 @@ impl Kernel {
                 b,
                 pos,
                 COURT_TRIE,
-                &[LEAF_HEAD, LEAF_ROOT, LEAF_LINE, LEAF_DOMAINS, LEAF_LEDGERS, LEAF_CHALLENGES, LEAF_HANDOFFS, LEAF_ROOTS, LEAF_ATLAS, LEAF_ENDOWMENT],
+                &[LEAF_HEAD, LEAF_ROOT, LEAF_LINE, LEAF_DOMAINS, LEAF_LEDGERS, LEAF_CHALLENGES, LEAF_HANDOFFS, LEAF_ROOTS, LEAF_ATLAS, LEAF_ENDOWMENT, LEAF_CLOSED],
             )?;
             let nodes: Vec<(Vec<u8>, crate::snapshot::Leaves)> =
                 court.scoped().map(|(k, l)| (k, l.clone())).collect();
@@ -185,6 +185,12 @@ impl Kernel {
             if let Some(v) = leaf(leaves, LEAF_ENDOWMENT) {
                 for (domain, held) in whole(v, super::super::endowment::take_grants)? {
                     kernel.grants.insert(domain, held);
+                }
+            }
+            // 78.155c — the closures awaiting a growth grant; absent before it.
+            if let Some(v) = leaf(leaves, LEAF_CLOSED) {
+                for (domain, closed) in whole(v, super::super::endowment::take_closed)? {
+                    kernel.closed_since_grant.insert(domain, closed);
                 }
             }
             if let Some(v) = leaf(leaves, LEAF_ATLAS) {

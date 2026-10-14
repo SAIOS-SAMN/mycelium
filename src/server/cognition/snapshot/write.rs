@@ -218,6 +218,10 @@ impl Kernel {
         if let Some(v) = (!self.grants.is_empty()).then(|| super::super::endowment::put_grants(&self.grants)).flatten() {
             leaves.push((LEAF_ENDOWMENT, v));
         }
+        // 78.155c — the closures awaiting a growth grant, where any is held.
+        if !self.closed_since_grant.is_empty() {
+            leaves.push((LEAF_CLOSED, super::super::endowment::put_closed(&self.closed_since_grant)));
+        }
         nodes.insert(self.chain.vk(), leaves);
         put_trie(out, COURT_TRIE, &nodes);
     }

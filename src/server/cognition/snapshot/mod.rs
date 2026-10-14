@@ -53,6 +53,10 @@ pub const LEAF_ATLAS: u8 = 9;
 /// 78.155b — the grants this court made, each with its manifest; absent
 /// where none was made (and on every home written before it).
 pub const LEAF_ENDOWMENT: u8 = 10;
+/// 78.155c — the closures judged in each universe since its last grant, by
+/// domain, per lane; absent where none is held (and on every home written
+/// before it).
+pub const LEAF_CLOSED: u8 = 11;
 
 /// T2 — THE LEDGER (78.24, 78.27): a node per stamp, the per-act data
 /// standing at it, and the act's receipt where the line is in the snapshot.
