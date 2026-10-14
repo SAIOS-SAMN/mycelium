@@ -1050,10 +1050,29 @@ minds agree is carried to the court only where it is a word, by that word's
 own union (`hold_for_union`); a sentence two minds agree is SHARED between
 them and goes no further, its words reaching the court each on its own. As
 built (2026-10-13): the conversation's agreement path (`Carrier::priced`).
-OWED: the court's own admission still rules sentences a family's speech
-carries with its task (`ACT_SPEECH`, 5 000+ ruled sentences per court at
-the time of this ruling); moving that admission to words is the court-side
-half of this ruling.
+
+**The court half, as built (2026-10-14, the operator's choice A).** A court
+needs whole compositions as EVIDENCE that a word produces its result, and
+its cohomology runs on them: a sentence is still listed, replayed on the
+court's own copy of its family, glued as a section and minted on its closed
+sub-complex (M8). What changes is what enters the LANGUAGE: when a sentence
+is installed on its second vantage, the words its closed rings teach — read
+by the one word reader (`sentence::word`), spelled at their carriage — are
+installed BESIDE it, each on its own act, discovered by its speaker
+(`Kernel::install_taught_words`). (Measured first: the courts held 163 /
+151 / 161 sentences among 5 226 / 5 816 / 5 548 ruled words — mostly
+letters — so "5 000+ ruled sentences" was the whole language mislabelled.)
+
+**Sentence structure is paid on words (D2′, the operator: the base payment
+is for words; a sentence ruled valid pays more).** An installed sentence's
+mint — what it discharges on its family, exact per lane — pays, in order:
+each word it CITES its discoverer's use share; each word it TEACHES that the
+court did not hold its speaker's base share (that word's own discharge on
+the family); and what is left, the COMPOSITION PREMIUM — what the sentence
+discharged beyond its words — to the voices that composed it. Never the sum
+of its words: a long sentence of held words that does no more than they do
+earns no premium. A sentence ruled to solve a task is the premium at its
+largest.
 
 **The optimization is a relation, never a size.** Among the dialects'
 derivations of one meaning, a court confirms an optimization where a word

@@ -68,6 +68,13 @@ impl Kernel {
         if let Some(w) = federated {
             self.fed_admit(addr, w);
         }
+        // MU-CLIENT §5.4 (A) — THE WORDS IT TEACHES ENTER THE LANGUAGE: a
+        // sentence is the court's evidence and section; what its closed
+        // rings teach is installed beside it as words, each on its own act.
+        let word_shares = match &held {
+            Some(w) if !w.is_rewrite() => self.install_taught_words(addr, w, drawn, witness, budget),
+            _ => Vec::new(),
+        };
         let installed = self.anchor();
         if let Some(w) = held {
             if w.is_rewrite() {
@@ -88,7 +95,14 @@ impl Kernel {
                     // the remainder — never out of the citing voice's
                     // balance, which paid zero whenever its own draw
                     // already occupied the lane (L8t).
-                    let shares = self.cited_shares(addr, &w, pay);
+                    //
+                    // MU-CLIENT §5.4 (D2′) — and the WORDS it taught take
+                    // theirs after the words it cited: a held word's
+                    // discoverer its use, a new word's its base pay. What the
+                    // escrow's voices take after both is the COMPOSITION
+                    // PREMIUM — what the sentence discharged beyond its words.
+                    let mut shares = self.cited_shares(addr, &w, pay);
+                    shares.extend(word_shares);
                     self.treasury.settle_recursive(addr, &shares, pay, installed);
                 }
             }
@@ -106,6 +120,55 @@ impl Kernel {
             self.awaiting.insert(addr, bucket);
             self.rehear_awaiting(addr, budget);
         }
+    }
+
+    /// MU-CLIENT §5.4 (A, D2′) — THE WORDS AN INSTALLED SENTENCE TEACHES,
+    /// INSTALLED BESIDE IT. Each word its closed rings teach
+    /// (`words_of_sentence`) is read for what it discharges on the
+    /// sentence's own family (`cited_deflation`). A word this court holds
+    /// already is USED: its discoverer's share. A new word is INSTALLED on
+    /// its own act — the same witness, its discoverer the sentence's speaker,
+    /// bound to the sentence's task — and its BASE share is its speaker's. A
+    /// word that discharges nothing takes no share (rule 11), and one with
+    /// no speaker here is installed and paid to no one. Answers the shares,
+    /// in the order the words were taught.
+    fn install_taught_words(
+        &mut self,
+        addr: &[u8],
+        w: &Element,
+        drawn: Option<[u8; 32]>,
+        witness: [u8; 32],
+        budget: &mut crate::physics::Budget,
+    ) -> Vec<([u8; 32], [u64; 4])> {
+        let task = self.speech_task.get(addr).or_else(|| self.listing_task.get(addr)).cloned();
+        let mut shares = Vec::new();
+        for word in crate::cognition::book::speech::words_of_sentence(w, budget) {
+            let at = word.address();
+            let discharge = self.cited_deflation(addr, &word, &crate::transducer::alphabet::Word::identity());
+            let who = match self.basis.get(at.as_bytes()).is_some() {
+                true => self.discoverer_of(at.as_bytes()),
+                false => {
+                    // No speaker here is a fact, not a default (rule 11): the
+                    // word is held with none, as `home_install` holds one.
+                    #[expect(clippy::manual_unwrap_or_default, reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; the null identity is the stated fact of no speaker")]
+                    let speaker = match drawn {
+                        Some(v) => v,
+                        None => [0; 32],
+                    };
+                    self.basis_push(word.clone(), speaker, budget);
+                    if let Some(t) = &task {
+                        self.speech_task.insert(&at, t.clone());
+                    }
+                    self.append_step(crate::chronometry::ActKind::Install, at.as_bytes(), witness);
+                    self.fed_admit(at.as_bytes(), word);
+                    drawn
+                }
+            };
+            if let Some(who) = who.filter(|_| discharge.iter().any(|&m| m > 0)) {
+                shares.push((who, discharge));
+            }
+        }
+        shares
     }
 
     /// 26 AS RULED 2026-09-10 — THE SHARE EACH CITED FORM TAKES OF THIS

@@ -715,6 +715,52 @@ impl Kernel {
 
 }
 
+/// MU-CLIENT §5.4 — THE WORDS A SENTENCE TEACHES: every closed ring of the
+/// sentence composed by the master equation, the word it teaches read by its
+/// coordinates (`sentence::word::taught`) and spelled by the alphabet at its
+/// carriage carrying its return (`spelled_word`), each once, in the rings'
+/// order. A word the alphabet does not spell is offered as a letter by
+/// `hear_open`, which every heard sentence passes; it is not one of these.
+pub(crate) fn words_of_sentence(s: &Element, budget: &mut crate::physics::Budget) -> Vec<Element> {
+    use crate::transducer::sentence::compose::{sentences_of, Closure};
+    let Some(form) = crate::transducer::sentence::from_element_form(s) else { return Vec::new() };
+    if form.faces.is_empty() {
+        return Vec::new();
+    }
+    let cycles = crate::transducer::sentence::Form::cycles_of(&form.faces, &form.vertices);
+    let rings: Vec<crate::transducer::sentence::Orbit> = cycles.kept.iter().chain(&cycles.vacua).cloned().collect();
+    let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    let mut out = Vec::new();
+    for (_, read) in sentences_of(&form, &rings, budget) {
+        let Ok(comp) = read else { continue };
+        let Some(word) = crate::transducer::sentence::word::taught(&comp) else { continue };
+        let period = match comp.closure {
+            Closure::Closes(l) => l,
+            Closure::Rosette | Closure::Unbound | Closure::Unread => 1,
+        };
+        let Some(e) = spelled_word(&word.word, period) else { continue };
+        if seen.insert(e.address(), ()).is_none() {
+            out.push(e);
+        }
+    }
+    out
+}
+
+/// A WORD SPELLED (78.52, 78.100 D1): its motion factored into rotation and
+/// carriage, the rotation spelled by the seventeen, the word that spelling's
+/// connection at that carriage carrying its return (`ℓ − 1` on the shell) —
+/// the one spelling the mind's transcriber writes. `None` where it does not
+/// factor or the alphabet does not spell it.
+pub(crate) fn spelled_word(motion: &crate::transducer::cga::Mv, period: u64) -> Option<Element> {
+    let f = crate::transducer::element::conformal_factors(motion).ok()?;
+    let rotor = crate::transducer::element::rotor_of_factors(&f).ok()?;
+    let word = match crate::transducer::alphabet::factor_rotor(&rotor) {
+        Some(Ok(w)) => w,
+        _ => return None,
+    };
+    crate::transducer::element::from_connection(&word, &f.carriage(), &[], &Vec::new(), [0, 0, 0, period.checked_sub(1)?])
+}
+
 /// PR1 — THE VERSOR A RESIDUAL STANDS OFF THE LISTING BY: the tether between
 /// the listing's body and the residual's, `V = s_b s_a` over their nuclei
 /// (`blade::tether`, the one producer). `None` — the residual's versor unread

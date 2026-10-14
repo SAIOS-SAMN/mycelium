@@ -3,6 +3,7 @@
 pub mod common;
 
 mod admission;
+mod composed;
 mod agreement;
 mod atlas;
 mod aperture;
