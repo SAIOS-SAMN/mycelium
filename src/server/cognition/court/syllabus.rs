@@ -367,7 +367,7 @@ impl Kernel {
     ) -> Vec<crate::anastome::dialogue::Taught> {
         let seed = self.syllabus_seed();
         let mut reads = self.physics.stroke();
-        self.serve_ruled_on(inv, have, budget, asker, &seed, &mut reads)
+        self.serve_ruled_on(inv, have, (budget, usize::from(u8::MAX)), asker, &seed, &mut reads)
     }
 
     /// THE STRATUM FETCH ON THE HOLD'S STROKE (78.153b): the words of the
@@ -379,11 +379,22 @@ impl Kernel {
     /// never a stroke minted here. OWED: the walk over the fiber is keyed
     /// reads bounded by the stratum, and a word the asker cannot pay for is
     /// still written out before its deferral (its width is read first).
+    ///
+    /// `(budget, room)`: the bytes AND THE WORDS the reply still carries.
+    /// The reply counts its words in one byte (`encode_syllabus_reply`), and
+    /// a fetch joins the pages of every stratum asked; each page stopped at
+    /// 255 on its own, so two strata passed the count, the reply refused to
+    /// encode, and the fetch went unanswered — every word on it packed,
+    /// counted served and, to a court, drawn from the reserve, then thrown
+    /// away and asked again the next cycle: 1 040 287 words (891 MB) served
+    /// by hypha b in two hours, ~30 glued (read 2026-10-14). A page now
+    /// takes no word the reply cannot carry; the count is the wall, never
+    /// widened.
     pub fn serve_ruled_on(
         &mut self,
         inv: &crate::transducer::stalk::Invariant,
         have: &[crate::transducer::address::Address],
-        budget: usize,
+        (budget, room): (usize, usize),
         asker: Asker,
         seed: &[Vec<u8>],
         reads: &mut crate::physics::Budget,
@@ -427,7 +438,7 @@ impl Kernel {
             let Some(bytes) = w.to_bytes() else { continue };
             let mag = w.magnitude();
             let width = crate::chronometry::Stamp::LEN + 4 + bytes.len();
-            if used + width > budget || out.len() == usize::from(u8::MAX) {
+            if used + width > budget || out.len() >= room {
                 break;
             }
             // WHAT THE FETCH HANDS OUT IS PAID (the actions' metabolism), and

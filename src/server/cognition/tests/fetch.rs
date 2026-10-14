@@ -83,4 +83,48 @@ fn a_voice_pays_for_its_fetch_and_a_short_voice_waits() {
     assert_eq!(std::array::from_fn::<u64, 4, _>(|l| before[l] - after[l]), mag, "and pays the word's magnitude");
     assert_eq!(k.acts_reading().fetch[axis("served to voices")], 1);
     assert_eq!(k.physics.reserve.lanes(), reserve, "the court's reserve stands where it stood");
+    // A have-list that leaves the word out does not charge for it twice:
+    // what this court taught this learner is this court's to know.
+    k.fund(voice, mag);
+    let funded = k.treasury().balance_mu(&voice);
+    assert!(k.serve_ruled(&inv, &[], 1 << 20, Asker::Voice(voice)).is_empty(), "a word taught is not sent again");
+    assert_eq!(k.treasury().balance_mu(&voice), funded, "nor charged again");
+}
+
+/// A PAGE TAKES NO WORD ITS REPLY CANNOT CARRY (2026-10-14). The reply counts
+/// its words in one byte across every stratum's page; a page that took past
+/// the room left was packed, counted served and drawn from the reserve, and
+/// the reply then refused to encode. With room for one of two words, one is
+/// served, one counted, and the reserve drawn for one.
+#[test]
+fn a_page_takes_no_word_its_reply_cannot_carry() {
+    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
+    let mut k = Kernel::new();
+    k.bind_identity([0x5a; 32]);
+    assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
+    let spoken = k.provisional.scoped().next().expect("a provisional sentence").1.clone();
+    let held = from_element_form(&spoken).expect("a sentence");
+    let moved = Transport { word: crate::transducer::alphabet::Word::identity(), carriage: crate::transducer::element::translator_versor(1, 0), gauge: Vec::new() }
+        .refract(&held)
+        .and_then(|f| as_element_form(&f, spoken.magnitude()))
+        .expect("the refracted sentence is a word");
+    let inv = crate::transducer::sentence::chart::chart_of(&spoken).expect("a chart");
+    let mut filing = k.stroke();
+    for (i, w) in [(0u64, &spoken), (1, &moved)] {
+        let addr = w.address();
+        k.ruled.admit(&inv, addr.clone());
+        k.basis_insert(w.clone(), [1; 32]);
+        k.file_admitted(&addr, crate::chronometry::Stamp { h: 1, vk: [1; 32], k: 1, i }, &mut filing);
+    }
+    let axis = |n: &str| crate::observe::FETCH.iter().position(|a| *a == n).expect("a named axis");
+    let reserve = k.physics.reserve.lanes();
+    let seed = k.syllabus_seed();
+    let mut reads = k.physics.stroke();
+    let page = k.serve_ruled_on(&inv, &[], (1 << 20, 1), Asker::Court([0x5b; 32]), &seed, &mut reads);
+    assert_eq!(page.len(), 1, "room for one: one word");
+    assert_eq!(k.acts_reading().fetch[axis("served to courts")], 1, "one counted served");
+    let drawn: [u64; 4] = std::array::from_fn(|l| reserve[l] - k.physics.reserve.lanes()[l]);
+    let one = [spoken.magnitude(), moved.magnitude()];
+    assert!(one.iter().any(|m| *m == drawn), "the reserve drawn for the one word served: {drawn:?}");
 }

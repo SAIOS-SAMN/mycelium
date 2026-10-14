@@ -86,7 +86,10 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         // a stroke spent serves a shorter page and fewer class records, the
         // next fetch resuming the class reading where this one stopped.
         for dialogue::ChartOf { inv, have } in &charts {
-            let page = k.serve_ruled_on(inv, have, budget, asker, read.syllabus_seed(), reads);
+            // The words the reply still carries: it counts them in one byte
+            // across every stratum's page (`serve_ruled_on`).
+            let Some(room) = usize::from(u8::MAX).checked_sub(words.len()).filter(|&r| r > 0) else { break };
+            let page = k.serve_ruled_on(inv, have, (budget, room), asker, read.syllabus_seed(), reads);
             // `serve_ruled` fills to the budget and no further, so what is
             // left is exact. A page WIDER than the budget is a broken page,
             // and the frame it would go in cannot carry it: the fetch is
