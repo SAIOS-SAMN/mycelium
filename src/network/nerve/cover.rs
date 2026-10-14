@@ -401,10 +401,28 @@ fn room_reading(a: &[u64; 4], b: &[u64; 4], lanes: &[u8]) -> Vec<(u8, i64)> {
         .collect()
 }
 
+/// WHETHER `a` IS XOR-NEARER `key` THAN `b`: the router's own metric
+/// (`Router::closest`), read byte by byte from the high bit.
+fn xor_nearer(key: &[u8; 32], a: &[u8; 32], b: &[u8; 32]) -> bool {
+    for ((k, x), y) in key.iter().zip(a).zip(b) {
+        let (da, db) = (k ^ x, k ^ y);
+        if da != db {
+            return da < db;
+        }
+    }
+    false
+}
+
 /// Home by incidence: intersection of cover fibers on every occupied lane,
 /// then remaining-room dominance on those lanes (a hypha wins only when its
-/// room is ≥ on every occupied lane and > on one), then identity when rooms
-/// are equal or incomparable.
+/// room is ≥ on every occupied lane and > on one), then, when rooms are
+/// equal or incomparable, the hypha XOR-NEAREST THE CHART — the router's
+/// metric on the chart key's hash, so equal courts share the charts and each
+/// chart has one home on every node. It was identity order: the least key
+/// won every tie, and courts bonded alike tie on every chart, so every
+/// chart-routed act of the fleet went to one court (2026-10-14: hypha b,
+/// `244be…`, took every learner's tuition and every mint). The hash spreads
+/// what the structured chart keys would not: they share their leading bytes.
 pub fn home(
     cover: &Cover,
     inv: &crate::transducer::stalk::Invariant,
@@ -414,7 +432,8 @@ pub fn home(
     self_id: Option<(&[u8; 32], &[u64; 4], &str)>,
 ) -> ([u8; 32], String) {
     let lanes = occupied_lanes(mag);
-    let fits = |room: &[u64; 4]| lanes.iter().all(|&l| mag[l as usize] == 0 || room[l as usize] > 0);
+    let near: [u8; 32] = *blake3::hash(inv.key().as_bytes()).as_bytes();
+    let fits =|room: &[u64; 4]| lanes.iter().all(|&l| mag[l as usize] == 0 || room[l as usize] > 0);
     let room_of = |id: &[u8; 32]| -> Option<[u64; 4]> {
         if let Some((sid, sroom, _)) = self_id {
             if id == sid {
@@ -460,10 +479,10 @@ pub fn home(
                 } else {
                     // The incumbent may not dominate either -- equal room, or
                     // each short on a lane the other is not. Neither is
-                    // worse, so identity decides, as a TIEBREAK and never as
-                    // a measure.
+                    // worse, so the chart's nearness decides, as a TIEBREAK
+                    // and never as a measure.
                     let theirs = room_reading(broom, &room, &lanes);
-                    if (short(&theirs) || !spare(&theirs)) && id < *bid {
+                    if (short(&theirs) || !spare(&theirs)) && xor_nearer(&near, &id, bid) {
                         *best = Some((id, addr, room));
                     }
                 }
@@ -486,7 +505,7 @@ pub fn home(
     if let Some((id, addr, _)) = best {
         return (id, addr);
     }
-    // No covering hypha with room: novel (or the fiber is full), room then identity.
+    // No covering hypha with room: novel (or the fiber is full), room then the chart's nearness.
     if let Some((sid, sroom, saddr)) = self_id {
         if fits(sroom) {
             consider(&mut best, *sid, saddr.to_string(), *sroom);

@@ -27,8 +27,19 @@ fn cover_lcp_is_the_plane_and_a_miss_at_the_first_axis_is_novel() {
     assert_eq!(c.multiplicity(0, &inv(&[1, 2])), 2, "the plane still has both covering vertices");
 }
 
+/// The hypha XOR-nearest the hash of `chart`'s key, of `a` and `b`: the
+/// tiebreak `home` reads, computed apart.
+fn nearer(chart: &Invariant, a: [u8; 32], b: [u8; 32]) -> [u8; 32] {
+    let k = *blake3::hash(chart.key().as_bytes()).as_bytes();
+    let (da, db): ([u8; 32], [u8; 32]) = (std::array::from_fn(|i| a[i] ^ k[i]), std::array::from_fn(|i| b[i] ^ k[i]));
+    match da < db {
+        true => a,
+        false => b,
+    }
+}
+
 #[test]
-fn home_is_identity_order_on_the_fiber_and_room_when_novel() {
+fn home_is_room_then_the_charts_nearness_on_the_fiber_and_room_when_novel() {
     let mut c = Cover::new();
     let mut rooms = Keyed::new();
     let mut addrs = Keyed::new();
@@ -40,25 +51,28 @@ fn home_is_identity_order_on_the_fiber_and_room_when_novel() {
     addrs.insert(hi, "127.0.0.1:7501".into());
     rooms.insert(lo, [8, 8, 8, 8]);
     rooms.insert(hi, [8, 8, 8, 8]);
-    let (id, addr) = home(&c, &inv(&[4]), &[1, 0, 0, 0], &rooms, &addrs, None);
-    assert_eq!(id, lo, "equal rooms: identity is the last tiebreak");
-    assert_eq!(addr, "127.0.0.1:7500");
+    let (id, _) = home(&c, &inv(&[4]), &[1, 0, 0, 0], &rooms, &addrs, None);
+    assert_eq!(id, nearer(&inv(&[4]), lo, hi), "equal rooms: the hypha nearest the chart");
     // Unequal rooms on the occupied lane: more remaining room wins.
     rooms.insert(lo, [2, 8, 8, 8]);
     rooms.insert(hi, [8, 8, 8, 8]);
     let (id, _) = home(&c, &inv(&[4]), &[1, 0, 0, 0], &rooms, &addrs, None);
     assert_eq!(id, hi, "more remaining room on the occupied lane homes there");
+    rooms.insert(lo, [8, 2, 8, 8]);
+    rooms.insert(hi, [2, 8, 8, 8]);
+    let (id, _) = home(&c, &inv(&[4]), &[1, 0, 0, 0], &rooms, &addrs, None);
+    assert_eq!(id, lo, "and from the other side");
     // Incomparable rooms on two occupied lanes: no lane is ranked above
-    // another, so identity is the tiebreak (lexicographic room would pick hi).
+    // another, so the chart's nearness is the tiebreak, never a lane order.
     rooms.insert(lo, [2, 8, 8, 8]);
     rooms.insert(hi, [8, 2, 8, 8]);
     let (id, _) = home(&c, &inv(&[4]), &[1, 1, 0, 0], &rooms, &addrs, None);
-    assert_eq!(id, lo, "incomparable rooms fall to identity, never a lane order");
+    assert_eq!(id, nearer(&inv(&[4]), lo, hi), "incomparable rooms fall to the chart's nearness");
     rooms.insert(lo, [8, 8, 8, 8]);
     rooms.insert(hi, [8, 8, 8, 8]);
-    // Novel chart: both have room; identity still wins.
+    // Novel chart: both have room; the chart's nearness decides.
     let (id, _) = home(&c, &inv(&[99]), &[1, 0, 0, 0], &rooms, &addrs, None);
-    assert_eq!(id, lo);
+    assert_eq!(id, nearer(&inv(&[99]), lo, hi));
     // Room: hi has room on the residual lane, lo does not.
     rooms.insert(lo, [8, 0, 8, 8]);
     rooms.insert(hi, [0, 3, 0, 0]);
@@ -69,6 +83,34 @@ fn home_is_identity_order_on_the_fiber_and_room_when_novel() {
     rooms.insert(hi, [0, 3, 0, 0]);
     let (id, _) = home(&c, &inv(&[4]), &[0, 1, 0, 0], &rooms, &addrs, None);
     assert_eq!(id, hi, "fiber ∩ room: covering without room loses to covering with room");
+}
+
+/// COURTS BONDED ALIKE SHARE THE CHARTS (2026-10-14): three hyphae with equal
+/// rooms covering every chart each home some of a corpus — never one hypha
+/// all of it, which is what identity order made of every tie — and a chart
+/// homes at the same hypha however often it is asked.
+#[test]
+fn courts_bonded_alike_share_the_charts() {
+    let mut c = Cover::new();
+    let mut rooms = Keyed::new();
+    let mut addrs = Keyed::new();
+    let ids = [[0x24u8; 32], [0xceu8; 32], [0x6cu8; 32]];
+    let corpus: Vec<Invariant> = (0..24u64).map(|i| inv(&[1, i])).collect();
+    for (n, id) in ids.iter().enumerate() {
+        for chart in &corpus {
+            c.admit(0, chart, *id);
+        }
+        addrs.insert(*id, format!("127.0.0.1:750{n}"));
+        rooms.insert(*id, [8, 8, 8, 8]);
+    }
+    let mut counts = [0usize; 3];
+    for chart in &corpus {
+        let (id, _) = home(&c, chart, &[1, 0, 0, 0], &rooms, &addrs, None);
+        assert_eq!(home(&c, chart, &[1, 0, 0, 0], &rooms, &addrs, None).0, id, "one home per chart");
+        let Some(n) = ids.iter().position(|x| *x == id) else { panic!("a covering hypha") };
+        counts[n] += 1;
+    }
+    assert!(counts.iter().all(|&n| n > 0), "every court bonded alike homes some charts: {counts:?}");
 }
 
 #[test]
