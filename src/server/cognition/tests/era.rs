@@ -141,9 +141,10 @@ assert_eq!(held.rows_range(&home, None, act(9), 0, 10).0, 0, "another signer's r
 
 assert_eq!(k.propose_fold(), Err(REFUSE_FOLD_OPEN), "the fold receipt's orbit is open: no cut yet");
 k.orbit();
-// 78.67 (A): the close asks, and a prefix of the fold and its close alone
-// moves no work — nothing is proposed, so a fold never feeds the next one.
-assert_eq!(k.propose_fold_at_close(), Err(crate::verdict::REFUSE_FOLD_IDLE), "a fold's own orbit is idle");
+// 78.67 (A), 78.166 2a: the close asks, and a prefix of the fold and its
+// close alone moves no work — its cut falls past it, where no close stands
+// yet — so nothing is proposed, and a fold never feeds the next one.
+assert!(k.propose_fold_at_close().is_err(), "a fold's own orbit proposes nothing");
 assert!(k.fold_proposal().is_none(), "the close proposed nothing");
 let p2 = k.propose_fold().expect("the fold receipt's orbit closed, and is itself final");
 assert_eq!((p2.after, p2.root.at), (Some(close(2)), close(3)));
@@ -454,4 +455,39 @@ fn a_fold_passes_an_open_listing_word_and_escrow_and_each_closes_after_it() {
     assert_eq!(Kernel::new().verify_fold(line, &p2, &receipts, &fetched), Ok(()), "and its witness re-derives it");
     k.commit_fold([3; 64], &co_sign("w", p2.root.hash)).expect("sealed");
     assert!(k.treasury().audit().is_ok());
+}
+
+/// 78.166 2a — AFTER A FOLD, AN ORBIT LONGER THAN A PAGE FOLDS AT ITS CLOSE.
+/// The line past a fresh root opens with the fold and its own orbit's close;
+/// the orbit after them holds more acts than one witness page carries. The
+/// last close on the page was that fold's own, its prefix carried no work,
+/// and every close read idle while the root stood still (hypha b). The cut
+/// now falls past the page: nothing is proposed while the long orbit is open
+/// (no fold feeds the next), and at its close the fold is proposed there.
+#[test]
+fn after_a_fold_an_orbit_longer_than_a_page_folds_at_its_close() {
+    let home = [0x5d; 32];
+    let mut k = Kernel::new();
+    k.bind_identity(home);
+    for _ in 0..3 {
+        k.append_step(ActKind::List, [1; 32], [2; 32]);
+        k.orbit();
+    }
+    let p = k.propose_fold().expect("a final prefix proposes");
+    k.commit_fold([3; 64], &co_sign("w", p.root.hash)).expect("two signatures seal the fold");
+    k.orbit();
+    let (at_most, _) = Kernel::receipts_frame().expect("a frame");
+    // The long orbit changes the algorithm, as b's did (15 670 installs): a
+    // generator enters the presentation, then more than a page of lists.
+    k.append_step(ActKind::Install, [1; 32], [2; 32]);
+    for _ in 0..=at_most {
+        k.append_step(ActKind::List, [1; 32], [2; 32]);
+    }
+    assert_eq!(k.propose_fold_at_close(), Err(REFUSE_FOLD_OPEN), "the long orbit is open: nothing to cut, nothing proposed");
+    let closed = match k.orbit() {
+        crate::chronometry::Close::Sealed(at) => at.place(),
+        other => panic!("the long orbit closes: {other:?}"),
+    };
+    let proposed = k.propose_fold_at_close().expect("the long orbit's close carries work: the fold is proposed");
+    assert_eq!(proposed.root.at, closed, "cut at the long orbit's own close, past the page");
 }

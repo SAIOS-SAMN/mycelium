@@ -208,6 +208,25 @@ fn check_home(home: &Path) -> ! {
                             scratch.treasury().audit().map(|_| "exact"),
                             mycelium::economy::nets_read(&rows).map(|n| n.rows.len())
                         );
+                        // 78.166 0b — what the close asks of it, on this
+                        // scratch copy (the running court is not touched):
+                        // the root it stands on, and the answer.
+                        let root = scratch.chain().root().map(|r| r.at.print());
+                        let asked = scratch.propose_fold_at_close().map(|p| p.root.at.print());
+                        println!("  fold: root {root:?} · asked at a close: {asked:?}");
+                        // The first receipts past the root, and how many the
+                        // witness page holds: where the cut can land.
+                        let me = scratch.chain().vk();
+                        let after = scratch.chain().root().map(|r| r.at);
+                        if let (Some(top), Some((at_most, bytes))) = (scratch.chain().head_place(), Kernel::receipts_frame()) {
+                            let page = scratch.receipts_page(&me, after, top, at_most, bytes);
+                            println!("  fold: the witness page holds {} receipts ({at_most} at most, {bytes} bytes)", page.len());
+                            for r in scratch.chain().line_between(&me, after, top, 6) {
+                                let mut tape = Vec::new();
+                                let _ = r.write(&mut tape);
+                                println!("    {} {:?} parents {} cites {} tape {} bytes", r.stamp.place().print(), r.kind, r.parents.len(), r.cites.len(), tape.len());
+                            }
+                        }
                     }
                     None => println!("  fold: no close to cut at"),
                 }

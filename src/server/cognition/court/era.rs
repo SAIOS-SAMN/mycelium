@@ -39,20 +39,48 @@ impl Kernel {
     /// longer than a page folds whole at its own close, since a fold cuts
     /// nowhere else.
     pub fn fold_head(&self) -> Option<Place> {
+        self.fold_head_reading(false)
+    }
+
+    /// 78.166 2a — THE HEAD A CLOSE ASKS: [`Kernel::fold_head`], but a cut
+    /// whose prefix carries no work is no cut and falls past the page.
+    /// `propose_fold` asks whether the line CAN fold (the fold's own orbit
+    /// can); the close asks whether it SHOULD, and a prefix of a fold and
+    /// its close alone should not.
+    pub fn fold_head_carrying_work(&self) -> Option<Place> {
+        self.fold_head_reading(true)
+    }
+
+    fn fold_head_reading(&self, carrying_work: bool) -> Option<Place> {
         let head = self.final_prefix_head()?;
         let me = self.chain.vk();
         let after = self.chain.root().map(|r| r.at);
         let (at_most, bytes) = Self::receipts_frame()?;
         // The page is served in line order: walked once, it names the last
-        // close on it and the place it reached.
-        let (mut cut, mut past) = (None, after);
+        // close on it, whether work stands before that close, and the place
+        // it reached.
+        use crate::chronometry::ActKind;
+        let (mut cut, mut past, mut work, mut work_cut) = (None, after, false, false);
         for r in self.receipts_page(&me, after, head, at_most, bytes) {
             past = Some(r.stamp.place());
-            if r.kind == crate::chronometry::ActKind::Orbit {
-                cut = past;
+            match r.kind {
+                ActKind::Orbit => {
+                    cut = past;
+                    work_cut = work;
+                }
+                ActKind::Fold => {}
+                _ => work = true,
             }
         }
-        if cut.is_some() {
+        // 78.166 2a — A CUT THAT CARRIES NO WORK IS NO CUT. Right after a fold
+        // the line opens with the fold and its own orbit's close; where the
+        // orbit after it is longer than a page, that close was the only one on
+        // the page, the prefix was [fold, close], (A) read idle at every close
+        // and the root never moved — hypha b, 2026-10-14: root 33368.18, cut
+        // 33369.1 for ever, orbit 33370 a page and more of lists, 641 619 acts
+        // hot. Such a cut falls to the first close past the page, as an orbit
+        // longer than a page folds whole at its own close (below).
+        if cut.is_some() && (work_cut || !carrying_work) {
             return cut;
         }
         // 78.153b — THE FIRST CLOSE PAST THE PAGE, read lazily: it unpacked

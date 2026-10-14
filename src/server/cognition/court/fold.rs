@@ -52,6 +52,11 @@ impl Kernel {
     /// proposes nothing (`REFUSE_FOLD_INEXACT`).
     pub fn propose_fold(&mut self) -> Result<Proposal, &'static str> {
         let head = self.fold_head().ok_or(REFUSE_FOLD_OPEN)?;
+        self.propose_fold_at(head)
+    }
+
+    /// The proposal at `head`, read as [`Kernel::propose_fold`] reads it.
+    fn propose_fold_at(&mut self, head: Place) -> Result<Proposal, &'static str> {
         // 78.153b — the rows below the head read ONCE: the audit and the nets
         // `fold_reading` asks, the epochs, and the diagnostic below each read
         // them again, three clones of the journal's prefix under the kernel
@@ -97,10 +102,14 @@ impl Kernel {
     /// to the fold's head moves work and outweighs its era's framing
     /// (`fold_amortizes`). `propose_fold` answers whether the line CAN fold
     /// — final and conserving; this answers whether it SHOULD.
+    ///
+    /// 78.166 2a — at the head that carries work (`fold_head_carrying_work`):
+    /// a cut at a fold's own close alone falls past the page to the first
+    /// close beyond it, where the orbit after a fold is longer than a page.
     pub fn propose_fold_at_close(&mut self) -> Result<Proposal, &'static str> {
-        let head = self.fold_head().ok_or(REFUSE_FOLD_OPEN)?;
+        let head = self.fold_head_carrying_work().ok_or(REFUSE_FOLD_OPEN)?;
         self.fold_transitions(head)?;
-        self.propose_fold()
+        self.propose_fold_at(head)
     }
 
     /// 78.67 (A), 78.68 — A FOLD MOVES WORK, AT A PHASE TRANSITION.
