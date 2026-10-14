@@ -904,7 +904,10 @@ impl Carrier {
                 // dictionary's words, shared here between two minds; what
                 // reaches the court as agreed language is a word — an
                 // algorithm composing to its result — each by its own union.
-                if agreed.is_sentence() {
+                // A sentence is a form WITH FACES — a composition; a letter is
+                // a form too (a frame and one vertex, no face) and is a word,
+                // carried to the court like any word.
+                if crate::transducer::sentence::from_element_form(&agreed).is_some_and(|f| !f.faces.is_empty()) {
                     crate::observe::note_mind(|m| m.shared += 1);
                     return;
                 }
