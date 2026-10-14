@@ -1074,6 +1074,28 @@ of its words: a long sentence of held words that does no more than they do
 earns no premium. A sentence ruled to solve a task is the premium at its
 largest.
 
+**A demand is met from the dictionary, and the composition goes to the
+court (D4, 2026-10-14).** The demand taker (`compose_or_construct`) first
+reads the residue's whole motion over the words the mind's court RULED
+(`heard_citation`: the cited powers multiply to the motion, the cited rotors
+to its rotor, the hue maps to its hue map, exact, or nothing). Where they
+compose it, the mind speaks ONE word whose derivation cites them
+(`composed_form`, `speak_composition`) — nothing constructed, no dimension
+minted, so it waits on no union (a sentence never takes this road: it is
+shared, not carried). Else, where the mind's lexicon knows it, nothing is
+said; where it knows it in part, only the remainder is constructed (slice
+1). The court replays the citations against the words it holds, and a
+derivation citing a letter that turns nothing (a slide, a dilation — the
+motion letters of 78.68 row 8) is replayed on the WHOLE MOTION
+(`carriage_claim_holds`): before this the rotor check passed such a citation
+at any exponent. Installed, the composition is a relation of the language —
+`--check` counts it apart as a COMPOSITION — and each cited word's discoverer
+is credited with the use (26); like a letter it names no body, so it is paid
+nothing of itself (78.149 (c)). Not yet: words that are connections (spelled
+by the seventeen) are not citable this way — the vocabulary files them, but
+neither the mind's `by_address` nor the court's resolver yields a vertex for
+them.
+
 **The optimization is a relation, never a size.** Among the dialects'
 derivations of one meaning, a court confirms an optimization where a word
 DECOMPOSES OVER THE LANGUAGE WITHOUT ITSELF: its substance is reproduced

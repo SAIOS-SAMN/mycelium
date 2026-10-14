@@ -273,6 +273,10 @@ impl Entity {
     /// dictionary — the known words with the new one — one rung above them
     /// (`rung::learn_by`), so a later demand is composed of it. One no known
     /// word reaches is constructed whole, as before.
+    ///
+    /// A residue the RULED words compose is spoken to the court as that
+    /// composition (`speak_composition`) before the mind's own lexicon is
+    /// asked: what a court can replay goes to the court.
     pub(crate) fn compose_or_construct(
         &mut self,
         residue: &crate::transducer::cga::Mv,
@@ -281,7 +285,7 @@ impl Entity {
     ) {
         use crate::observe::{note_mind, Constructed};
         use crate::transducer::sentence::rung::{known, learn_by, posit};
-        if known(residue) {
+        if self.speak_composition(residue, chart) || known(residue) {
             note_mind(|m| m.constructed[Constructed::Composed as usize] += 1);
             return;
         }
@@ -295,6 +299,36 @@ impl Entity {
             }
             _ => self.construct_and_adjoin(residue, chart, budget),
         }
+    }
+
+    /// MU-CLIENT §5.4, D4 — A COMPOSITION SPOKEN TO THE COURT: the residue's
+    /// whole motion read over the words this mind's court RULED
+    /// (`heard_citation` — the cited powers multiply to the motion, the cited
+    /// rotors to its rotor, exact, or nothing), and where they compose it,
+    /// spoken as one word whose derivation cites them (`composed_form`), at
+    /// the residue's carriage on `chart`. The court replays the citations
+    /// against what it holds and credits each cited word's discoverer with
+    /// the use (26). It mints no dimension, so it waits on no union. Said
+    /// once: a composition a court already taught is a use, not a second
+    /// utterance. Answers whether the ruled words compose it.
+    pub(crate) fn speak_composition(
+        &mut self,
+        residue: &crate::transducer::cga::Mv,
+        chart: Option<&crate::transducer::stalk::Invariant>,
+    ) -> bool {
+        let Some(chart) = chart else { return false };
+        let Ok(factors) = crate::transducer::element::conformal_factors(residue) else { return false };
+        let Ok(rotor) = crate::transducer::element::rotor_of_factors(&factors) else { return false };
+        let carriage = factors.carriage();
+        let Some(derivation) = crate::transducer::family::heard_citation(&self.epigenome, &rotor, &carriage, &[]) else {
+            return false;
+        };
+        let Some(e) = crate::transducer::sentence::composed_form(derivation, &carriage, chart) else { return false };
+        if !self.already_taught(&e) {
+            crate::observe::note_mind(|m| m.composed += 1);
+            self.stand_crystallized(&e);
+        }
+        true
     }
 
     /// 37.7 — THE DOCKET TAKEN ON EVERY STROKE, on the stroke's own budget:
@@ -702,8 +736,13 @@ impl Entity {
             return;
         }
         // 78.161 item 3 — a letter goes to the court once another mind
-        // agreed to it; until then it stands in the dialect and is said.
-        if self.hold_for_union(e) {
+        // agreed to it; until then it stands in the dialect and is said. A
+        // WORD (no face) whose derivation cites ruled words mints no
+        // dimension: the court replays it from what it holds (D4), and it
+        // goes now. A sentence is never one: it is shared, not carried.
+        let cites = e.receipts().derivations.iter().any(|d| !d.generators.is_empty());
+        let composed = cites && crate::transducer::sentence::from_element_form(e).is_some_and(|f| f.faces.is_empty());
+        if !composed && self.hold_for_union(e) {
             return;
         }
         // Spoken, refused on the wire, or withheld on a transport error: the

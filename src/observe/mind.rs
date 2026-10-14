@@ -210,6 +210,9 @@ pub struct Mind {
     pub held: u64,
     /// Agreed words this mind spoke to its court.
     pub agreed: u64,
+    /// Compositions of ruled words this mind spoke to its court (D4), each
+    /// a word whose derivation cites them.
+    pub composed: u64,
     /// Sentences shared with another mind: agreed between the two, never
     /// carried to a court, which adjudicates words.
     pub shared: u64,
@@ -257,6 +260,7 @@ impl Default for Mind {
             escapes: 0,
             held: 0,
             agreed: 0,
+            composed: 0,
             shared: 0,
             closed: zero4(),
             open: zero4(),
@@ -299,6 +303,7 @@ impl Mind {
             .chain(self.vantages)
             .chain(self.laws)
             .chain(self.repeats)
+            .chain([self.composed])
         {
             put_u64(out, v);
         }
@@ -346,7 +351,8 @@ impl Mind {
         let vantages = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let laws = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let repeats = [take_u64(b, p)?, take_u64(b, p)?];
-        let n = usize::try_from(u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?)).ok()?;
+        let composed = take_u64(b, p)?;
+        let n =usize::try_from(u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?)).ok()?;
         *p += 4;
         // Each lock is three counts.
         if n > b.len().checked_sub(*p)? / 24 {
@@ -387,6 +393,7 @@ impl Mind {
             escapes,
             held,
             agreed,
+            composed,
             shared,
             closed,
             open,
@@ -402,8 +409,8 @@ impl Mind {
         let constructed: Vec<String> = CONSTRUCTED.iter().zip(&self.constructed).map(|(n, v)| format!("{n} {v}")).collect();
         vec![
             format!(
-                "mind K {} · heard {} · understood {} (hearer) {} (speaker) · held {} · words agreed to the court {} · sentences shared {}",
-                self.k, self.heard, self.understood, self.returned, self.held, self.agreed, self.shared
+                "mind K {} · heard {} · understood {} (hearer) {} (speaker) · held {} · words agreed to the court {} · compositions spoken {} · sentences shared {}",
+                self.k, self.heard, self.understood, self.returned, self.held, self.agreed, self.composed, self.shared
             ),
             format!("  chambers {} · demanded {}", priced.join(" "), self.demanded),
             format!("  constructed {}", constructed.join(" ")),

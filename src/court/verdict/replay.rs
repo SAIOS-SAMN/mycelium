@@ -237,8 +237,8 @@ pub(crate) fn derivations_compose<'r>(
             sentence::rotor_at_vertex(&cited, vertex.as_bytes())
         };
         match derivation.verify_with(&held) {
-            Verified::Composes => {}
-            Verified::Differs => {
+            Verified::Composes if carriage_claim_holds(v, &derivation, resolve) => {}
+            Verified::Composes | Verified::Differs => {
                 return Err(Halt::Refused(Refusal::new(
                     REFUSE_DERIVATION,
                     sentence::At::vertex(vertex.clone(), class.clone()),
@@ -259,6 +259,63 @@ pub(crate) fn derivations_compose<'r>(
         }
     }
     Ok(())
+}
+
+/// MU-CLIENT §5.4, D4 — A LETTER THAT TURNS NOTHING IS CITED FOR ITS
+/// CARRIAGE. `verify_with` composes the cited ROTORS (L14), and a motion
+/// letter's rotor is the identity (78.68 row 8): its whole action is the
+/// slide or dilation on its vertex, so a citation of it at any exponent
+/// composed — a check that checked nothing. Where a derivation cites such a
+/// letter it claims the whole motion, and the claim is replayed whole: the
+/// cited vertices' motions at their exponents, times the residue's letters at
+/// the identity carriage, against the citing vertex's motion, exact (1.5).
+/// A derivation citing only letters that turn claims its rotor, as before.
+///
+/// THE EXPONENT COMES OFF THE TAPE (rule 10). A unipotent motion (a slide)
+/// grows in height as `log |e|`, so its power costs the exponent's bits. Any
+/// other has a factor whose height grows with `|e|` itself, so a power whose
+/// exponent passes the bits the target's own coordinates are written in is
+/// refused: no such power is the target, short of a cancellation against
+/// another citation, which a speaker writes in its least exponents.
+fn carriage_claim_holds<'r>(
+    v: &Vertex,
+    derivation: &crate::transducer::alphabet::Derivation,
+    resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
+) -> bool {
+    use crate::transducer::cga::Mv;
+    use crate::transducer::sentence::presentation::{motion_key, motion_power, vertex_motion};
+    let identity = crate::transducer::alphabet::Rotor::identity();
+    let mut powers: Vec<(Mv, i64)> = Vec::with_capacity(derivation.generators.len());
+    let mut claims_carriage = false;
+    for (form, vertex, e) in &derivation.generators {
+        let Some(cited) = resolve(form.as_bytes()) else { return false };
+        let Some(g @ Vertex::Word { derivation: d, .. }) = sentence::vertex_cited(&cited, vertex.as_bytes()) else {
+            return false;
+        };
+        claims_carriage |= d.rotor().projective_eq(&identity);
+        let Some(m) = vertex_motion(g) else { return false };
+        powers.push((m, *e));
+    }
+    if !claims_carriage {
+        return true;
+    }
+    let Some(target) = vertex_motion(v) else { return false };
+    let Some(bits) = motion_key(&target).and_then(|k| u64::try_from(k.len()).ok()).and_then(|n| n.checked_mul(8)) else {
+        return false;
+    };
+    let mut composed = Mv::scalar(num_rational::BigRational::from_integer(1.into()));
+    for (m, e) in &powers {
+        let n = m.sub(&Mv::scalar(m.scalar_part()));
+        let unipotent = n.geo(&n).is_zero();
+        if !unipotent && e.unsigned_abs() > bits {
+            return false;
+        }
+        composed = composed.geo(&motion_power(m, *e));
+    }
+    let Some(residue) = crate::transducer::element::conformal_of(&derivation.residue, &crate::transducer::element::identity_versor()) else {
+        return false;
+    };
+    composed.geo(&residue).projective_eq(&target)
 }
 
 /// 37.7 P2 — EVERY `RotorPrime` DEMAND CARRIES ITS PRIME. The witness is

@@ -506,6 +506,7 @@ fn a_minds_reading_and_a_courts_agreements_read_back_exact() {
         escapes: 1,
         held: 3,
         agreed: 2,
+        composed: 8,
         shared: 1,
         closed: [q(1, 2), q(0, 1), q(0, 1), q(3, 7)],
         open: [q(-1, 3), q(2, 1), q(5, 4), q(0, 1)],

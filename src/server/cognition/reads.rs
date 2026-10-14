@@ -7,7 +7,7 @@ use super::*;
 
 /// The kinds of word a court's language holds, in [`Kernel::basis_kinds`]'s
 /// order.
-pub const HELD_KINDS: [&str; 7] = ["sentences", "letters", "connections", "colour words", "rewrites", "translations", "other"];
+pub const HELD_KINDS: [&str; 8] = ["sentences", "letters", "compositions", "connections", "colour words", "rewrites", "translations", "other"];
 
 impl Kernel {
     pub(crate) fn mark_persist(&mut self) {
@@ -173,24 +173,28 @@ impl Kernel {
     }
 
     /// MU-CLIENT §5.4 — WHAT THE COURT'S LANGUAGE HOLDS, BY KIND, in the order
-    /// [`HELD_KINDS`] names: sentences (forms with faces — compositions),
-    /// letters (forms with no face — a generator's carrier), connections,
-    /// colour words, rewrites, translations, and what is none of these. Read
-    /// off each held word; nothing is counted where it is held.
-    pub fn basis_kinds(&self) -> [usize; 7] {
-        let mut out = [0usize; 7];
+    /// [`HELD_KINDS`] names: sentences (forms with faces), letters (forms
+    /// with no face — a generator's carrier, citing nothing), compositions
+    /// (forms with no face whose word cites held words — the dictionary's
+    /// relations, D4), connections, colour words, rewrites, translations, and
+    /// what is none of these. Read off each held word; nothing is counted
+    /// where it is held.
+    pub fn basis_kinds(&self) -> [usize; 8] {
+        let mut out = [0usize; 8];
         for (_, held) in self.basis.scoped() {
             let e = held.element();
+            let cites = || e.receipts().derivations.iter().any(|d| !d.generators.is_empty());
             let slot = match () {
-                _ if e.is_rewrite() => 4,
-                _ if e.is_translation() => 5,
-                _ if e.is_colour_word() => 3,
-                _ if e.is_connection() => 2,
-                _ if e.is_sentence() => match held.form().is_some_and(|f| !f.faces.is_empty()) {
-                    true => 0,
-                    false => 1,
+                _ if e.is_rewrite() => 5,
+                _ if e.is_translation() => 6,
+                _ if e.is_colour_word() => 4,
+                _ if e.is_connection() => 3,
+                _ if e.is_sentence() => match (held.form().is_some_and(|f| !f.faces.is_empty()), cites()) {
+                    (true, _) => 0,
+                    (false, false) => 1,
+                    (false, true) => 2,
                 },
-                _ => 6,
+                _ => 7,
             };
             out[slot] += 1;
         }

@@ -19,6 +19,11 @@ fn word(letters: &[(LetterId, bool)]) -> crate::transducer::element::Element {
 /// carrying an agreement arrives, answers each act with an empty speech
 /// reply, and hands the agreed speech back.
 fn court() -> (String, std::sync::mpsc::Receiver<dialogue::SpeechAct>) {
+    court_keeping(|act| act.agreements.iter().any(Option::is_some))
+}
+
+/// [`court`], handing back every speech `keep` names.
+fn court_keeping(keep: fn(&dialogue::SpeechAct) -> bool) -> (String, std::sync::mpsc::Receiver<dialogue::SpeechAct>) {
     let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("the court listens");
     let addr = listener.local_addr().expect("an address").to_string();
     let (tx, rx) = std::sync::mpsc::channel();
@@ -40,7 +45,7 @@ fn court() -> (String, std::sync::mpsc::Receiver<dialogue::SpeechAct>) {
                 let reply = crate::network::wire::Frame { lane, body: dialogue::encode_speech_reply(&[]).expect("a reply") };
                 let _ = s.write_all(&reply.encode().expect("framed"));
                 if let Some(act) = dialogue::decode_speech(&body) {
-                    if act.agreements.iter().any(Option::is_some) {
+                    if keep(&act) {
                         let _ = tx.send(act);
                     }
                 }
@@ -139,6 +144,59 @@ fn a_demand_is_met_from_the_dictionary_first() {
         assert_eq!(held_rung(&screw), Some(2), "as the turn with the slide, a rung above both");
     });
     mind.field = field;
+}
+
+/// MU-CLIENT §5.4, D4 — A COMPOSITION OF RULED WORDS IS SPOKEN TO THE COURT.
+/// The court ruled a SLIDE, a motion letter; a mind holding it meets a demand
+/// for the slide carried twice as far. The ruled words compose it — the slide
+/// squared, exact on the whole motion — so nothing is constructed: the mind
+/// speaks ONE word whose derivation cites the slide at exponent 2, with no
+/// peer to agree it (it mints no dimension). The court's replay composes the
+/// citation against the slide it holds and admits it; the same word citing
+/// the slide once is refused.
+#[test]
+fn a_composition_of_ruled_words_is_spoken_to_the_court() {
+    let (court, speeches) = court_keeping(|act| !act.sentences.is_empty());
+    let n = |v: i64| num_rational::BigRational::from_integer(v.into());
+    let chart = crate::transducer::stalk::Invariant::default();
+    let along = crate::transducer::cga::translator_at(&[n(0), n(0), n(1)]);
+    let twice = crate::transducer::cga::translator_at(&[n(0), n(0), n(2)]);
+    let slide = crate::transducer::sentence::motion_letter_form(&along, &chart, &[]).expect("the slide is a letter");
+    let mut mind = Entity::open(&court, Kernel::named("composer"));
+    assert!(mind.absorb_taught(&slide.to_bytes().expect("the record writes")).is_some(), "the court's slide is learned");
+    let mut field = std::mem::take(&mut mind.field);
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
+    field.think(|| mind.compose_or_construct(&twice, Some(&chart), &mut budget));
+    mind.field = field;
+    let mut act = None;
+    for _ in 0..4_000_000u32 {
+        if let Ok(heard) = speeches.try_recv() {
+            act = Some(heard);
+            break;
+        }
+        std::thread::yield_now();
+    }
+    let act = act.expect("the composition reaches the court");
+    let [tape] = act.sentences.as_slice() else { panic!("one word") };
+    let mut p = 0usize;
+    let spoken = crate::transducer::element::Element::from_bytes(tape, &mut p).expect("the tape reads");
+    let f = crate::transducer::sentence::from_element_form(&spoken).expect("a form");
+    assert!(f.faces.is_empty(), "a word, not a sentence");
+    let env = spoken.receipts();
+    let [cite] = env.derivations.as_slice() else { panic!("one derivation: {:?}", env.derivations) };
+    assert!(
+        matches!(cite.generators.as_slice(), [(form, _, 2)] if *form == slide.address()),
+        "citing the ruled slide at exponent 2: {:?}",
+        cite.generators
+    );
+    let held = crate::transducer::sentence::from_element_form(&slide).expect("the slide's form");
+    let resolve = |a: &[u8]| (a == slide.address().as_bytes()).then(|| held.clone());
+    assert!(crate::court::verdict::replay::derivations_compose_at(&f, env, &resolve).is_none(), "the court composes it from the slide it holds");
+    let mut forged = env.clone();
+    for d in &mut forged.derivations {
+        d.generators = d.generators.iter().map(|(f, v, _)| (f.clone(), v.clone(), 1)).collect();
+    }
+    assert!(crate::court::verdict::replay::derivations_compose_at(&f, &forged, &resolve).is_some(), "citing the slide once composes something else: refused");
 }
 
 /// MU-CLIENT §5.3 — A VANTAGE IS WHERE A WORD LANDS IN THE MIND'S OWN HOLES.

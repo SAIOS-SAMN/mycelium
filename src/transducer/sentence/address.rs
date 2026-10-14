@@ -79,19 +79,42 @@ fn letter_form(
     chart: &crate::transducer::stalk::Invariant,
     bodies: &[crate::transducer::sentence::Link],
 ) -> Option<Element> {
-    use crate::transducer::alphabet::Derivation;
     rotor.is_versor().then_some(())?;
+    word_form(crate::transducer::alphabet::Derivation::adjoined(rotor.clone()), carriage, chart, bodies)
+}
+
+/// MU-CLIENT §5.4, D4 — A WORD COMPOSED OF THE DICTIONARY: one word vertex
+/// whose derivation CITES the ruled words whose powers multiply to its whole
+/// motion (`heard_citation`, exact on the motion, the rotor and the hue map),
+/// its carriage on the vertex as a letter's is. It mints no dimension — every
+/// mode it moves is a ruled word's — so a court replays it from what it
+/// already holds (`verify_with`) and needs no second mind to agree it. Its
+/// magnitude is a letter's, its existence as a word, never μ (78.149 (c)).
+/// `None` where the derivation cites nothing: that is a letter, not a
+/// composition.
+pub fn composed_form(
+    derivation: crate::transducer::alphabet::Derivation,
+    carriage: &crate::transducer::element::Versor,
+    chart: &crate::transducer::stalk::Invariant,
+) -> Option<Element> {
+    if derivation.is_spelled() {
+        return None;
+    }
+    word_form(derivation, carriage, chart, &[])
+}
+
+/// The one construction of a one-word form: the derivation on the vertex,
+/// its carriage on the vertex's one member at `chart`.
+fn word_form(
+    derivation: crate::transducer::alphabet::Derivation,
+    carriage: &crate::transducer::element::Versor,
+    chart: &crate::transducer::stalk::Invariant,
+    bodies: &[crate::transducer::sentence::Link],
+) -> Option<Element> {
     let mut f = Form::default();
     // A LETTER STANDS AT NO FRAME: it is the carrier of an action, not a
     // placed body (above), so its member holds no frame and makes no chart.
-    f.put_vertex(Vertex::word_on(
-        Derivation::adjoined(rotor.clone()),
-        chart.clone(),
-        carriage.clone().into(),
-        Vec::new(),
-        [],
-        None,
-    ))?;
+    f.put_vertex(Vertex::word_on(derivation, chart.clone(), carriage.clone().into(), Vec::new(), [], None))?;
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     // What the language could not say without it: the demand's own bodies,
