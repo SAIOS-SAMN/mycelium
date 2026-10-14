@@ -130,6 +130,10 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     }
     let reply = Frame { lane: frame.lane, body };
     answer(stream, reply);
+    // The words a peer court's fetch carried away, under the court that asked.
+    if matches!(asker, mycelium::cognition::Asker::Court(_)) {
+        mycelium::observe::note_replication(Some(fvoice), mycelium::observe::rep::FETCH_SERVED, words.len() as u64);
+    }
 }
 
 /// 78.160 P1 — THE PRESENTATION ASKED BY A RESIDUE: the motion deconstructed

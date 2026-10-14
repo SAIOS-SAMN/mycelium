@@ -963,6 +963,9 @@ impl Exchange {
                                         }
                                     }
                                 }
+                                // The words this peer's page carried that
+                                // decoded here, each handed to the glue.
+                                mycelium::observe::note_replication(Some(vk_peer), mycelium::observe::rep::FETCH_RECEIVED, named.len() as u64);
                                 if !named.is_empty() {
                                     if let Ok(mut h) = crate::held::held!(kernel) {
                                         h.run(|k, reads| k.confirm_peer_holds_addrs_on(&named, vk_peer, reads));

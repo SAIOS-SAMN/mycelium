@@ -444,6 +444,15 @@ impl Kernel {
                 // the fetch drew every page from the serving court's reserve
                 // and deferred 542–590 words a court against four served.
                 Asker::Voice(voice) => {
+                    // DRAG: a word this court already taught this learner is
+                    // held, and is neither sent nor charged again — as the
+                    // presentation and the syllabus read it. The have-list
+                    // is the learner's word; what it was taught is this
+                    // court's, and a list that leaves a word out paid for it
+                    // on every fetch.
+                    if self.taught_voice.contains(&taught_key(&addr, &voice)) {
+                        continue;
+                    }
                     let short = crate::economy::shortfall(&mag, &self.treasury.balance_mu(&voice));
                     if !crate::economy::lanes_short(&short).is_empty() {
                         crate::observe::count(&mut self.acts.fetch, &crate::observe::FETCH, "deferred: learner short");
@@ -455,6 +464,7 @@ impl Kernel {
                             eprintln!("  fetch: a learner's payment refused after its balance was read: {why:?}");
                         }
                     }
+                    self.taught_voice.insert(taught_key(&addr, &voice), ());
                 }
                 // A PEER COURT'S EXCHANGE draws on this court's reserve per
                 // lane, as it did: no ruling yet says what one court pays

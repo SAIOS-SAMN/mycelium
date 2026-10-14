@@ -119,7 +119,10 @@ impl Kernel {
             return Some(Glue::Held);
         }
         match self.glue_stop(&spoken, &addr, budget) {
-            Some(Stop::Unread) => return None,
+            Some(Stop::Unread) => {
+                crate::observe::note_replication(Some(peer), rep::GLUE_UNREAD, 1);
+                return None;
+            }
             Some(stop) => return Some(self.stopped(stop, &spoken, addr, peer)),
             None => {}
         }

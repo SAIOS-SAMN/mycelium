@@ -432,6 +432,10 @@ pub fn home(
     self_id: Option<(&[u8; 32], &[u64; 4], &str)>,
 ) -> ([u8; 32], String) {
     let lanes = occupied_lanes(mag);
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "law 2 — the chart's identity stays its key; this digest is no identity and locates nothing, it only spreads a tie of equal rooms over the hyphae the router's metric reads (raw structured keys share their leading bytes, and the tie would fall to one court again)"
+    )]
     let near: [u8; 32] = *blake3::hash(inv.key().as_bytes()).as_bytes();
     let fits =|room: &[u64; 4]| lanes.iter().all(|&l| mag[l as usize] == 0 || room[l as usize] > 0);
     let room_of = |id: &[u8; 32]| -> Option<[u64; 4]> {

@@ -29,8 +29,9 @@ fn cover_lcp_is_the_plane_and_a_miss_at_the_first_axis_is_novel() {
 
 /// The hypha XOR-nearest the hash of `chart`'s key, of `a` and `b`: the
 /// tiebreak `home` reads, computed apart.
+#[expect(clippy::disallowed_methods, reason = "law 2 — the tiebreak's spreading digest, computed apart to check `home` against; no identity")]
 fn nearer(chart: &Invariant, a: [u8; 32], b: [u8; 32]) -> [u8; 32] {
-    let k = *blake3::hash(chart.key().as_bytes()).as_bytes();
+    let k =*blake3::hash(chart.key().as_bytes()).as_bytes();
     let (da, db): ([u8; 32], [u8; 32]) = (std::array::from_fn(|i| a[i] ^ k[i]), std::array::from_fn(|i| b[i] ^ k[i]));
     match da < db {
         true => a,

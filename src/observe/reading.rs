@@ -482,11 +482,22 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     // continued hot from it; or refused, the proof not standing.
     ("root_adopted", "fold roots of this signer adopted on their two signatures, its line continued hot from them"),
     ("root_refused", "fold roots of this signer answered and refused: a signature or the root's hash did not verify"),
+    // 2026-10-14 — THE ONE GLUE PATH THAT WROTE NOTHING AND SAID NOTHING: a
+    // fetched word whose replay the stroke could not finish (78.153) glues
+    // nothing, marks nothing heard, and leaves no trace in the have-list, so
+    // the next fetch is served it again.
+    ("glue_unread", "fetched words of this signer whose replay the stroke could not finish: nothing glued, nothing marked"),
+    // 2026-10-14 — THE FETCH'S TWO ENDS, so a word served is accounted for
+    // at the court that took it: served under the signer that asked,
+    // received under the signer that served. A word served and never
+    // received was lost on the wire or in the decode.
+    ("fetch_served", "words this court served to this signer's fetch, on pages that went out"),
+    ("fetch_received", "words this signer's pages carried that decoded here, each handed to the glue"),
 ];
 
 /// How many axes [`REPLICATION_AXES`] holds: the one statement of the
 /// reading's width, read by the codec, the store and every renderer.
-pub const REP_AXES: usize = 50;
+pub const REP_AXES: usize = 53;
 
 /// The axes of [`REPLICATION_AXES`] by name, for the sites that count them.
 pub mod rep {
@@ -541,6 +552,9 @@ pub mod rep {
     pub const MISSING_DEPTH: usize = 47;
     pub const ROOT_ADOPTED: usize = 48;
     pub const ROOT_REFUSED: usize = 49;
+    pub const GLUE_UNREAD: usize = 50;
+    pub const FETCH_SERVED: usize = 51;
+    pub const FETCH_RECEIVED: usize = 52;
 }
 
 /// REPLICATION PER SIGNER (CV5): each signer this court heard from, by key,
