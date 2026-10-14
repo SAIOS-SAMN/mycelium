@@ -25718,6 +25718,117 @@ Why it was costume: the court knows a tier only as the domain declared it,
 so the refusal bound the kernels that would have relayed anyway, and a key
 the domain never registered was served regardless.
 
+### 78.166 The inversions: start slow, compile, compound — out of brute force (2026-10-14, the operator)
+
+The operator: "this sounds like brute force: we should be inverted: start
+with slow then compile and compound — where is our mathematics
+disillusioned"; then: "scope it and write it: we don't need more designs
+that don't get built — we need a solid implementation plan that breaks us
+out of brute force with the correct inversions."
+
+**Where the mathematics departed from itself (read on the fleet,
+2026-10-14).**
+- *History held, not folded.* Hypha c holds 453 731 hot nodes of OTHER
+  courts' lines against 13 of its own; b 684 916 (632 368 its own), its
+  journal unfolded at 346 645 treasury entries. `--check` of c takes six
+  minutes. The doctrine: state at checkpoints keyed by coordinate (C 1.13),
+  an atlas is compaction (78.41). The site: `Chain::adopt_root` records a
+  peer's fold root and retires nothing below it.
+- *Replay where the doctrine says reconstruct* (C 4.4). Every boot
+  re-perceives the 1 000-task corpus (`intake_corpus`), whether or not a
+  mind asks for a task — against 1.12, compact until observed.
+- *Primitives minted instead of words compounded.* The courts hold
+  ~4 500–5 100 letters against 8 compositions and ~160 sentences; a mind
+  constructs 52–78 motion letters a window. Three roads adjoin a letter
+  without asking the dictionary first: the ineffable words of a perception
+  (`hold_perceived_from` → `construct_and_adjoin`), the pivot's unspellable
+  rotors (`adjoin_letters` → `generator_form`), and D4's remainder (a fresh
+  letter for whatever the posit left). Only `take_demands` composes first.
+- *Growth not reaching the docket.* No court docketed a letter and nothing
+  minted from ~12:22 to the 20:12 reset while minds spoke; the door has no
+  typed reading of what became of speech, so where it stops is unread.
+
+**The inversion.** START SLOW: from the genesis, the generators and the
+fold roots — the least that is exact. COMPILE: every act folds into its
+stratum and every peer's line is held as its root and what our acts cite.
+COMPOUND: every new word is posited over the dictionary before a primitive
+is admitted; a letter is the residue the algebra proves irreducible. The
+health reading is what compounds (compositions to letters), never what
+accumulates.
+
+**The plan, in build order.** Each step is one commit, scoped tests by the
+algebra, a release only where it is substantive, and the fleet reading named
+as its witness before it is called done.
+
+*Phase 0 — the readings that witness everything after (no behaviour change).*
+- **0a, SPEECH at the door.** `Kernel::adjudicate_one`
+  (`book/speech.rs`) counts each sentence's outcome on a new `SPEECH` table
+  of the acts reading: stood, ratified, awaiting a citation, deferred,
+  refused by room, refused (other), pivot. Test: one sentence per outcome
+  lands on its slot. Witness: the reading names where minds' speech stops.
+- **0b, b's fold.** No code: `--reading court`'s fold line (`FOLD_OUTCOMES`)
+  on hypha b names which refusal holds its journal unfolded.
+- **0c, the compounding ratio.** The court reading prints
+  `basis_kinds` (sentences / letters / compositions) beside what entered
+  since boot; the mind's reading already splits `constructed` (letter,
+  motion letter, composed, in part) and `compositions spoken`.
+
+*Phase 1 — compound before adjoin (the mind).*
+- **1a, one road for every residue.** The ineffable loop of
+  `hold_perceived_from` and the pivot's `adjoin_letters` go through
+  `compose_or_construct` (`think.rs`): spoken as a composition where the
+  ruled words make it, known where the lexicon does, the remainder alone
+  constructed where it is made in part, a letter only where nothing held
+  reaches it. Tests: a mind holding the court's 90° turn that perceives a
+  sentence teaching the 180° turn adjoins nothing; one holding the court's
+  slide meets a double slide by a composition spoken, no motion letter.
+  Witness: `constructed` letter + motion letter fall against composed and
+  compositions spoken; the courts' compositions rise against letters.
+- **1b, the remainder asked again.** In `compose_or_construct`'s in-part
+  arm the remainder is posited over the dictionary WITH the parts just
+  composed, and constructed only where that leaves something. Test: a
+  remainder that is a power of a part is composed, not constructed.
+- **1c, conjugates are relations, not letters.** A residue whose class key
+  (`Mv::class_key`, a conjugacy invariant) is a held word's is that word
+  transported: g·w·g⁻¹. `Derivation` gains a CONJUGATOR (a word, left and
+  right of the cited product), carried on `DerivationCite`, and the court's
+  `verify_with` composes g·∏·g⁻¹ before comparing; the mind speaks the
+  conjugate citing w with its conjugator. Wire change (the receipts codec),
+  so it is its own release. Tests: a turn about another axis is spoken as
+  the held turn conjugated, and the court refuses a wrong conjugator.
+  Witness: letters constructed for conjugates fall to 0; the court's
+  compositions count conjugates.
+
+*Phase 2 — compile: fold on land, peers held as folded (the court).*
+- **2a, b's fold unblocked** — the refusal 0b names, fixed at its site.
+  Witness: b's treasury entries fall to epoch rows; its fold line reads
+  `folded` > 0.
+- **2b, a peer's line held as its root.** `Chain::adopt_root` retires the
+  adopted signer's nodes below the root from `nodes` and `lines` (they are
+  answered by the era proof, `proved`); the snapshot holds what is above
+  peer roots. Tests: after adopting a root at place p no node of that signer
+  below p is held; its `line_tip` is unchanged; a citation below p resolves
+  through `proved`. Witness: c's hot nodes 453 731 → the size of its peers'
+  lines above their roots; `--check` from minutes to seconds.
+- **2c, catch-up from roots.** A court lagging a peer's line (a and c
+  behind b by ~42 000 / ~16 000) asks for the peer's fold root (78.147)
+  rather than paging receipts from the lag. Witness: the replication lag
+  falls to a fold's span.
+
+*Phase 3 — start slow: reconstruct, never replay (boot).*
+- **3a, a task perceived when it is asked.** `intake_corpus` registers the
+  corpus by id and perceives a task's family only when a mind asks for it or
+  a solve cites it (C 1.12: compact until observed). Test: a court booted on
+  a corpus perceives no family until one is asked, then exactly that one.
+  Witness: the warm-up after a restart (zeros for ~30 minutes today) ends in
+  the time the first asks take.
+
+**Order:** 0a → 0b/0c → 1a → 1b → 2a → 2b → 1c → 2c → 3a. Phase 0 first
+because every later step is witnessed by it; 1a first of the rest because the
+mind is the objective and its mathematics is furthest from its doctrine
+there; 2b before 1c because it is the court's largest carrier and needs no
+wire change.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

@@ -64,24 +64,26 @@ the minds, then the nseat units — never `scripts/recut` (it wipes).
 - 16:54: minds spoke 20 compositions and agreed 7 words to the court.
 
 ## Owed, in order
-1. WHERE SPEECH STOPS: minds speak, but nothing reaches a court's docket and
-   nothing mints since ~12:22 — trace door → listing → docket by typed
-   readings.
+1. **MU-RECURSION 78.166 — the inversions, in its build order:** 0a SPEECH
+   reading at the door (where speech stops: nothing docketed, nothing minted
+   since ~12:22) → 0b b's fold refusal read → 0c the compounding ratio →
+   1a every residue through `compose_or_construct` → 1b the remainder asked
+   again → 2a b's fold unblocked → 2b a peer's line held as its root (c's
+   453 731 hot nodes) → 1c conjugates as relations (a conjugator on the
+   derivation; wire change) → 2c catch-up from roots → 3a a task perceived
+   only when asked.
 2. The page as a multi-dimensional object for the learner fetch (graded by
    stratum, closed under citation, classes inside their cells, relative to
-   the learner's held words, bounded per lane) — draft as a ruling.
-3. Hypha b's hot chain (684 916 nodes, 632 368 its own): its journal has not
-   folded (346 645 treasury entries); a and c cannot follow its line (lag
-   ~42 000 / ~16 000).
-4. The growth grant proved after a signed LEDGER entry applies the founding
+   the learner's held words, bounded per lane) — after 78.166.
+3. The growth grant proved after a signed LEDGER entry applies the founding
    grant; the LEDGER entry's torsion field (78.152d).
-5. Questioning on the vortex's open pairs; `stand` stops saying every stood
+4. Questioning on the vortex's open pairs; `stand` stops saying every stood
    sentence.
-6. The unlinked mind; the peer universe's founding.
-7. A1 (factored reflections), A2 (`Sphere { n, R }`).
-8. The ear's tuning by retrospective reduction; the eye's
+5. The unlinked mind; the peer universe's founding.
+6. A1 (factored reflections), A2 (`Sphere { n, R }`).
+7. The ear's tuning by retrospective reduction; the eye's
    resolution-then-definition audit.
-9. Defects: the glue extraction test; court-organ glue tests fail under load
+8. Defects: the glue extraction test; court-organ glue tests fail under load
    (the glue replay goes unread on a loaded stroke); court standing
    staleness; minds' memory growth; `release_unmet`'s sweep; the class
    records' u16 count across joined strata.
