@@ -146,6 +146,55 @@ fn a_demand_is_met_from_the_dictionary_first() {
     mind.field = field;
 }
 
+/// 78.166 1b — THE REMAINDER ASKED AGAIN. A mind that knows the 90° turn in
+/// its own lexicon, and holds the slide the court ruled, meets a demand for
+/// the turn carried along twice the slide. The lexicon posits the turn and
+/// leaves the double slide; that remainder is no primitive — the court's
+/// slide composes it — so the mind speaks it citing the slide at exponent 2,
+/// constructs nothing, and knows the whole word from then on.
+#[test]
+fn a_remainder_the_ruled_words_compose_is_spoken_not_constructed() {
+    use crate::transducer::sentence::rung::{known, learn_by};
+    let (court, speeches) = court_keeping(|act| !act.sentences.is_empty());
+    let n = |v: i64| num_rational::BigRational::from_integer(v.into());
+    let chart = crate::transducer::stalk::Invariant::default();
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
+    let along = crate::transducer::cga::translator_at(&[n(0), n(0), n(1)]);
+    let twice = crate::transducer::cga::translator_at(&[n(0), n(0), n(2)]);
+    let quarter = conformal_of_word(&[(q, false)]);
+    let screw = crate::transducer::element::conformal_of(&Word::from_letters(&[(q, false)]), &twice).expect("a motion");
+    let slide = crate::transducer::sentence::motion_letter_form(&along, &chart, &[]).expect("the slide is a letter");
+    let mut mind = Entity::open(&court, Kernel::named("remainder"));
+    assert!(mind.absorb_taught(&slide.to_bytes().expect("the record writes")).is_some(), "the court's slide is learned");
+    let mut field = std::mem::take(&mut mind.field);
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
+    let knows = field.think(|| {
+        learn_by(&quarter, &[]);
+        mind.compose_or_construct(&screw, Some(&chart), &mut budget);
+        known(&screw)
+    });
+    mind.field = field;
+    assert!(knows, "the whole word is known: the turn with the double slide");
+    let mut act = None;
+    for _ in 0..4_000_000u32 {
+        if let Ok(heard) = speeches.try_recv() {
+            act = Some(heard);
+            break;
+        }
+        std::thread::yield_now();
+    }
+    let act = act.expect("the remainder's composition reaches the court");
+    let [tape] = act.sentences.as_slice() else { panic!("one word") };
+    let mut p = 0usize;
+    let spoken = crate::transducer::element::Element::from_bytes(tape, &mut p).expect("the tape reads");
+    let [cite] = spoken.receipts().derivations.as_slice() else { panic!("one derivation") };
+    assert!(
+        matches!(cite.generators.as_slice(), [(form, _, 2)] if *form == slide.address()),
+        "the remainder spoken as the ruled slide at exponent 2: {:?}",
+        cite.generators
+    );
+}
+
 /// MU-CLIENT §5.4, D4 — A COMPOSITION OF RULED WORDS IS SPOKEN TO THE COURT.
 /// The court ruled a SLIDE, a motion letter; a mind holding it meets a demand
 /// for the slide carried twice as far. The ruled words compose it — the slide

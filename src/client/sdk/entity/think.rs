@@ -134,10 +134,17 @@ impl Entity {
         // chatter, which they re-derive and agree or differ on (78.161), never
         // taken into their genomes. What it offers the mesh is the sentence
         // above; whether the mesh holds it too is the court's to verify.
-        // 78.109 C1 — through the one road a residue takes: constructed,
-        // certified, then adjoined.
+        // 78.109 C1, 78.166 1a — THROUGH THE ONE ROAD A RESIDUE TAKES, and it
+        // asks the dictionary first (`compose_or_construct`): spoken as a
+        // composition where the ruled words make it, known where the lexicon
+        // does, its remainder alone constructed where it is made in part, and
+        // a letter only where nothing held reaches it. This went straight to
+        // `construct_and_adjoin`, so every word a perception taught that the
+        // seventeen and the adjoined letters could not spell became a new
+        // primitive — 52–78 motion letters a mind a window, against 8
+        // compositions in a court's language of ~5 000 letters (2026-10-14).
         for residue in &ineffable {
-            self.construct_and_adjoin(residue, chart.as_ref(), budget);
+            self.compose_or_construct(residue, chart.as_ref(), budget);
         }
         true
     }
@@ -291,7 +298,13 @@ impl Entity {
         }
         match posit(residue) {
             Some(p) if !p.parts.is_empty() => {
-                self.construct_and_adjoin(&p.residue, chart, budget);
+                // 78.166 1b — THE REMAINDER ASKED AGAIN: what the lexicon's
+                // parts leave may be a composition of the court's RULED words
+                // (the vocabulary, not the lexicon); spoken as that, nothing
+                // is constructed. Only what neither reaches is a primitive.
+                if !self.speak_composition(&p.residue, chart) {
+                    self.construct_and_adjoin(&p.residue, chart, budget);
+                }
                 let mut parts = p.parts;
                 parts.push(p.residue);
                 learn_by(residue, &parts);
