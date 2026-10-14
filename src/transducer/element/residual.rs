@@ -415,6 +415,7 @@ pub fn derived_colour_word(first: &Element, after: &Element) -> Option<Element> 
         // is its own form and vertex, applied once.
         generators: vec![(first.address(), first.address(), 1), (after.address(), after.address(), 1)],
         residue: crate::transducer::alphabet::Word::identity(),
+        conjugator: None,
     };
     word.set_receipts(super::ReceiptsEnvelope { derivations: vec![derivation], ..Default::default() });
     Some(word)

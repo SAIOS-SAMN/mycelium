@@ -61,6 +61,7 @@ fn a_colour_theorem_stands_by_composing_what_it_cites() {
             vertex: forged.address(),
             generators: vec![(a.address(), a.address(), 1), (b.address(), b.address(), 1)],
             residue: crate::transducer::alphabet::Word::identity(),
+            conjugator: None,
         }],
         ..Default::default()
     });

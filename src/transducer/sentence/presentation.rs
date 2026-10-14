@@ -40,6 +40,24 @@ pub struct Presentation {
     holes: HoleIndex,
     gauges: Keyed<Keyed<()>>,
     held: Keyed<Generator>,
+    /// 78.166 1c — the generators by the CLASS of their turn (`Rotor::class_key`,
+    /// a conjugacy invariant): where a motion's class is a held word's, the
+    /// motion may be that word transported, and the conjugator is solved
+    /// exactly (`conjugate_of`). A generator that turns nothing has no class
+    /// here.
+    classes: Keyed<Keyed<()>>,
+}
+
+/// The class key of a motion's turn: its rotor's conjugacy class, where it
+/// has one and turns something.
+fn turn_class(motion: &Mv) -> Option<(crate::transducer::alphabet::Rotor, Address)> {
+    let f = crate::transducer::element::conformal_factors(motion).ok()?;
+    let r = crate::transducer::element::rotor_of_factors(&f).ok()?;
+    if r.projective_eq(&crate::transducer::alphabet::Rotor::identity()) {
+        return None;
+    }
+    let class = r.class_key()?;
+    Some((r, class))
 }
 
 /// THE LANES A WORD IS READ ON (law 5): `S` the boosts and dilations, `G` the
@@ -329,7 +347,35 @@ impl Presentation {
         for m in modes {
             self.gauges.nested_insert(m.key(), key, ());
         }
+        if let Some((_, class)) = turn_class(&g.motion) {
+            self.classes.nested_insert(class.as_bytes(), key, ());
+        }
         self.held.insert(key, g);
+    }
+
+    /// 78.166 1c — A TURN READ AS A HELD WORD TRANSPORTED: a generator whose
+    /// turn is in `rotor`'s conjugacy class (by its class key, one keyed
+    /// read), and the rotor `g` with `g · W · g̃ = rotor`, solved exactly
+    /// (`simultaneous_conjugators`, one elimination over ℚ) and checked by
+    /// composing it. Only the ruled where `ruled_only` (what a court can
+    /// replay). `None` where no held word of the class is a conjugate of it.
+    pub fn conjugate_of(
+        &self,
+        rotor: &crate::transducer::alphabet::Rotor,
+        ruled_only: bool,
+    ) -> Option<(Address, Address, crate::transducer::alphabet::Rotor)> {
+        let class = rotor.class_key()?;
+        let fibre = self.classes.get(class.as_bytes())?;
+        for (k, ()) in fibre.scoped() {
+            let Some(held) = self.held.get(&k).filter(|g| g.ruled || !ruled_only) else { continue };
+            let Some((w, _)) = turn_class(&held.motion) else { continue };
+            for g in crate::transducer::alphabet::bundle::simultaneous_conjugators(&[(w.clone(), rotor.clone())]) {
+                if g.geo(&w).geo(&g.reverse()).projective_eq(rotor) {
+                    return Some((held.form.clone(), held.vertex.clone(), g));
+                }
+            }
+        }
+        None
     }
 
     /// The mirror of [`Presentation::admit`]: the generator at `key` leaves
@@ -352,6 +398,9 @@ impl Presentation {
         // A generator was filed only where its listing is a map.
         for m in gauge_modes(&g.gauge).into_iter().flatten() {
             leave(&mut self.gauges, &m.key());
+        }
+        if let Some((_, class)) = turn_class(&g.motion) {
+            leave(&mut self.classes, class.as_bytes());
         }
     }
 

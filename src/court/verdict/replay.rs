@@ -315,7 +315,17 @@ fn carriage_claim_holds<'r>(
     let Some(residue) = crate::transducer::element::conformal_of(&derivation.residue, &crate::transducer::element::identity_versor()) else {
         return false;
     };
-    composed.geo(&residue).projective_eq(&target)
+    let composed = composed.geo(&residue);
+    // 78.166 1c — a transported derivation's motion is `G · ∏ · G̃`, the
+    // conjugator's motion at the identity carriage.
+    let composed = match derivation.conjugator() {
+        None => composed,
+        Some(g) => match crate::transducer::element::conformal_of_rotor(g, &crate::transducer::element::identity_versor()) {
+            Some(gm) => gm.geo(&composed).geo(&gm.reverse()),
+            None => return false,
+        },
+    };
+    composed.projective_eq(&target)
 }
 
 /// 37.7 P2 — EVERY `RotorPrime` DEMAND CARRIES ITS PRIME. The witness is

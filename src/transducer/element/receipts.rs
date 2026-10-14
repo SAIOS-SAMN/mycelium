@@ -507,6 +507,11 @@ pub struct DerivationCite {
     pub generators: Vec<Cited>,
     /// What no held generator reached, in letters.
     pub residue: Word,
+    /// 78.166 1c — the rotor the cited product is TRANSPORTED by, where the
+    /// vertex is a held word conjugated: `g · ∏ · g̃`. Carried in the
+    /// envelope's trailing section, never in this cite's own bytes, so every
+    /// record written before it reads as it did.
+    pub conjugator: Option<Rotor>,
 }
 
 impl DerivationCite {
@@ -514,9 +519,14 @@ impl DerivationCite {
     /// rotor comes from the FORM — it is the vertex's coordinate — and the
     /// citations from here, so neither side can forge the other: a mind that
     /// lies about its citations is caught by `verify_with` composing them
-    /// against a rotor it did not write.
+    /// against a rotor it did not write. A transported cite carries its
+    /// conjugator, and `verify_with` composes it.
     pub fn against(&self, carried: &Rotor) -> Derivation {
-        Derivation::factored(self.generators.clone(), self.residue.clone(), carried.clone())
+        let d = Derivation::factored(self.generators.clone(), self.residue.clone(), carried.clone());
+        match &self.conjugator {
+            Some(g) => d.conjugated(g.clone()),
+            None => d,
+        }
     }
 
     /// `u32` lengths and a `u64` count, for [`NerveEdge::to_bytes`]'s
@@ -552,7 +562,7 @@ impl DerivationCite {
             generators.push((form, vx, e));
         }
         let residue = Word::take_whole(b, pos)?;
-        Some(DerivationCite { vertex, generators, residue })
+        Some(DerivationCite { vertex, generators, residue, conjugator: None })
     }
 }
 
@@ -630,6 +640,7 @@ impl ReceiptsEnvelope {
                         vertex: address.clone(),
                         generators: derivation.generators.clone(),
                         residue: derivation.residue.clone(),
+                        conjugator: derivation.conjugator().cloned(),
                     });
                 }
                 _ => {}
@@ -732,6 +743,20 @@ impl ReceiptsEnvelope {
         for w in &self.witness {
             crate::transducer::address::put_bytes(out, w)?;
         }
+        // 78.166 1c — THE TRANSPORTED CITES, a trailing section written only
+        // where one is: each by its index among `derivations` and its
+        // conjugator's canonical ray. A record with none is byte for byte
+        // what it was, and a reader that stops before this section (an older
+        // build: the block bounds the parse) reads the cites untransported.
+        let conjugated: Vec<(usize, &Rotor)> =
+            self.derivations.iter().enumerate().filter_map(|(i, d)| d.conjugator.as_ref().map(|g| (i, g))).collect();
+        if !conjugated.is_empty() {
+            out.extend_from_slice(&(conjugated.len() as u64).to_le_bytes());
+            for (i, g) in conjugated {
+                out.extend_from_slice(&(i as u64).to_le_bytes());
+                g.put_canonical(out);
+            }
+        }
         Some(())
     }
 
@@ -804,6 +829,17 @@ impl ReceiptsEnvelope {
         let n = count(b, pos)?;
         for _ in 0..n {
             env.witness.push(Address::from_bytes(crate::transducer::address::take_bytes(b, pos)?));
+        }
+        // 78.166 1c — the transported cites, where the block holds them; a
+        // record written before them ends here. An index past the cites, or
+        // a ray that does not read, refuses the record (rule 11).
+        if *pos < b.len() {
+            let n = count(b, pos)?;
+            for _ in 0..n {
+                let i = usize::try_from(count(b, pos)?).ok()?;
+                let g = Rotor::from_bytes(b, pos)?;
+                env.derivations.get_mut(i)?.conjugator = Some(g);
+            }
         }
         Some(env)
     }

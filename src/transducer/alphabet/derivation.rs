@@ -58,12 +58,34 @@ pub struct Derivation {
     /// boxed — every `Vertex::Word` of every form would carry the field
     /// whether or not it cites anything.
     composed: Option<Box<Rotor>>,
+    /// 78.166 1c — THE CONJUGATOR: where the vertex is a held word
+    /// TRANSPORTED, `g · (∏ g_i^{e_i} · r) · g̃`, the rotor `g` that carries
+    /// it. Evidence, never identity: the vertex's key is its rotor alone
+    /// (1.5), so a conjugate cited this way and one spelled whole reach one
+    /// address. `None` for every derivation that is not a transport.
+    conjugator: Option<Box<Rotor>>,
 }
 
 impl Derivation {
     /// A word spelled from the identity alone: A22's case, no citation.
     pub fn spelled(word: Word) -> Derivation {
-        Derivation { generators: Vec::new(), residue: word, composed: None }
+        Derivation { generators: Vec::new(), residue: word, composed: None, conjugator: None }
+    }
+
+    /// 78.166 1c — THIS DERIVATION TRANSPORTED by `g`: the vertex is
+    /// `g · (what it cites) · g̃`. A held word conjugated is a relation of
+    /// the dictionary, never a new letter. A spelled derivation cites
+    /// nothing to transport and is returned as it is.
+    pub fn conjugated(mut self, g: Rotor) -> Derivation {
+        if !self.is_spelled() {
+            self.conjugator = Some(Box::new(g));
+        }
+        self
+    }
+
+    /// The rotor this derivation is transported by, where it is one.
+    pub fn conjugator(&self) -> Option<&Rotor> {
+        self.conjugator.as_deref()
     }
 
     /// AN ADJOINED GENERATOR (37.7): cites nothing, spells nothing, and
@@ -76,7 +98,7 @@ impl Derivation {
     /// identity. That is why this is its own constructor and not
     /// `spelled(Word::formed(r))`.
     pub fn adjoined(rotor: Rotor) -> Derivation {
-        Derivation { generators: Vec::new(), residue: Word::identity(), composed: Some(Box::new(rotor)) }
+        Derivation { generators: Vec::new(), residue: Word::identity(), composed: Some(Box::new(rotor)), conjugator: None }
     }
 
     /// Whether this is AN ADJOINED GENERATOR (`Derivation::adjoined`): it
@@ -95,7 +117,7 @@ impl Derivation {
     pub fn factored(generators: Vec<Cited>, residue: Word, composed: Rotor) -> Derivation {
         match generators.is_empty() {
             true => Derivation::spelled(residue),
-            false => Derivation { generators, residue, composed: Some(Box::new(composed)) },
+            false => Derivation { generators, residue, composed: Some(Box::new(composed)), conjugator: None },
         }
     }
 
@@ -138,7 +160,17 @@ impl Derivation {
         for (form, vertex, e) in &self.generators {
             w = w.compose(&power_of(&resolve(form, vertex)?, *e));
         }
-        Some(w.compose(&self.residue).normal_form())
+        let w = w.compose(&self.residue);
+        // A TRANSPORTED vertex in letters is `g w g⁻¹`, where the alphabet
+        // spells `g`; where it does not, there are no letters to give, and
+        // the action stays `rotor()` (rule 11: never a smaller word).
+        match &self.conjugator {
+            None => Some(w.normal_form()),
+            Some(g) => match crate::transducer::alphabet::factor_rotor(g) {
+                Some(Ok(gw)) => Some(gw.compose(&w).compose(&gw.inverse()).normal_form()),
+                _ => None,
+            },
+        }
     }
 
     /// The word this vertex spells when it spells one on its own: the
@@ -224,6 +256,11 @@ impl Derivation {
             r = r.geo(&p);
         }
         let got = r.geo(&self.residue.rotor());
+        // 78.166 1c — a transported vertex composes `g · ∏ · g̃`.
+        let got = match &self.conjugator {
+            None => got,
+            Some(g) => g.geo(&got).geo(&g.reverse()),
+        };
         match got.projective_eq(&self.rotor()) {
             true => Verified::Composes,
             false => Verified::Differs,
@@ -278,7 +315,9 @@ impl Derivation {
             1 => Some(Box::new(Rotor::from_bytes(b, pos)?)),
             _ => return None,
         };
-        Some(Derivation { generators, residue, composed })
+        // The conjugator rides the receipts envelope, never this tape (it is
+        // evidence, 78.166 1c): a tape reads back untransported.
+        Some(Derivation { generators, residue, composed, conjugator: None })
     }
 }
 

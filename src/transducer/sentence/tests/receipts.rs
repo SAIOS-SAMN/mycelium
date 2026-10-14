@@ -433,6 +433,7 @@ fn an_envelope_carries_an_address_wider_than_the_wire_prefix() {
             vertex: wide.clone(),
             generators: vec![(wide.clone(), wide.clone(), 1)],
             residue: Word::identity(),
+            conjugator: None,
         }],
         ..ReceiptsEnvelope::default()
     };
@@ -444,3 +445,38 @@ fn an_envelope_carries_an_address_wider_than_the_wire_prefix() {
     assert_eq!(p, block.len(), "and the block is consumed exactly");
 }
 
+
+/// 78.166 1c — A TRANSPORTED CITE READS BACK WITH ITS CONJUGATOR, AND ONE
+/// WITH NONE IS THE RECORD IT WAS. The conjugator rides a trailing section
+/// written only where a cite carries one: an envelope without it writes the
+/// bytes it always wrote (so every home written before reads as it did),
+/// and the section ends where the block ends.
+#[test]
+fn a_transported_cite_reads_back_and_an_untransported_record_is_unchanged() {
+    let addr = crate::transducer::address::Address::new(vec![5u8; 40]);
+    let plain = ReceiptsEnvelope {
+        derivations: vec![crate::transducer::element::DerivationCite {
+            vertex: addr.clone(),
+            generators: vec![(addr.clone(), addr.clone(), 1)],
+            residue: Word::identity(),
+            conjugator: None,
+        }],
+        ..ReceiptsEnvelope::default()
+    };
+    let mut before = Vec::new();
+    plain.to_block(&mut before).expect("the envelope writes");
+    // The last field of the record as it was: the witness count, zero.
+    assert_eq!(&before[before.len() - 8..], &0u64.to_le_bytes(), "an untransported record ends at its witness count");
+    let mut p = 0usize;
+    assert_eq!(ReceiptsEnvelope::from_block(&before, &mut p).expect("reads"), plain);
+    let g = Word::from_letters(&[(crate::transducer::alphabet::LetterId::turn_90((1, 3)).expect("a 90° turn"), false)]).rotor();
+    let mut moved = plain.clone();
+    moved.derivations[0].conjugator = Some(g.clone());
+    let mut after = Vec::new();
+    moved.to_block(&mut after).expect("the envelope writes");
+    assert!(after.len() > before.len(), "the conjugator rides after the record");
+    let mut p = 0usize;
+    let back = ReceiptsEnvelope::from_block(&after, &mut p).expect("a transported cite reads back");
+    assert_eq!(back, moved, "with its conjugator");
+    assert_eq!(p, after.len(), "the block is consumed exactly");
+}

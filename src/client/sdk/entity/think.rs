@@ -292,7 +292,7 @@ impl Entity {
     ) {
         use crate::observe::{note_mind, Constructed};
         use crate::transducer::sentence::rung::{known, learn_by, posit};
-        if self.speak_composition(residue, chart) || known(residue) {
+        if self.speak_composition(residue, chart) || known(residue) || self.speak_conjugate(residue, chart) {
             note_mind(|m| m.constructed[Constructed::Composed as usize] += 1);
             return;
         }
@@ -312,6 +312,38 @@ impl Entity {
             }
             _ => self.construct_and_adjoin(residue, chart, budget),
         }
+    }
+
+    /// 78.166 1c — A CONJUGATE SPOKEN AS THE HELD WORD TRANSPORTED: where the
+    /// residue's turn is in the class of a word the court ruled, it is that
+    /// word conjugated — `g · W · g̃` — and the mind speaks ONE word citing
+    /// W with its conjugator `g` (solved exactly, `Presentation::conjugate_of`),
+    /// at the residue's carriage on `chart`. The court composes the cite with
+    /// its conjugator against the vertex's rotor and refuses a wrong one. No
+    /// letter is minted for a turn the language already holds in another
+    /// orientation. Said once, as a composition is. Answers whether it was a
+    /// conjugate.
+    pub(crate) fn speak_conjugate(
+        &mut self,
+        residue: &crate::transducer::cga::Mv,
+        chart: Option<&crate::transducer::stalk::Invariant>,
+    ) -> bool {
+        let Some(chart) = chart else { return false };
+        let Ok(factors) = crate::transducer::element::conformal_factors(residue) else { return false };
+        let Ok(rotor) = crate::transducer::element::rotor_of_factors(&factors) else { return false };
+        let Some((form, vertex, g)) = self.epigenome.vocabulary.read().conjugate_of(&rotor, true) else { return false };
+        let derivation = crate::transducer::alphabet::Derivation::factored(
+            vec![(form, vertex, 1)],
+            crate::transducer::alphabet::Word::identity(),
+            rotor,
+        )
+        .conjugated(g);
+        let Some(e) = crate::transducer::sentence::composed_form(derivation, &factors.carriage(), chart) else { return false };
+        if !self.already_taught(&e) {
+            crate::observe::note_mind(|m| m.composed += 1);
+            self.stand_crystallized(&e);
+        }
+        true
     }
 
     /// MU-CLIENT §5.4, D4 — A COMPOSITION SPOKEN TO THE COURT: the residue's

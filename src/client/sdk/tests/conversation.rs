@@ -195,6 +195,54 @@ fn a_remainder_the_ruled_words_compose_is_spoken_not_constructed() {
     );
 }
 
+/// 78.166 1c — A CONJUGATE IS THE HELD WORD TRANSPORTED, NEVER A NEW LETTER.
+/// The court ruled a letter for the 90° turn of the (0,1) plane. A mind
+/// holding it meets a demand for the 90° turn of the (0,3) plane — the same
+/// turn in another orientation, one class. It speaks one word citing the held
+/// letter with the conjugator that carries it, `g · W · g̃`; the court's replay
+/// composes it, and the same cite with the identity for its conjugator — a
+/// claim the citation does not make good — is refused.
+#[test]
+fn a_conjugate_is_spoken_as_the_held_word_transported() {
+    let (court, speeches) = court_keeping(|act| !act.sentences.is_empty());
+    let chart = crate::transducer::stalk::Invariant::default();
+    let q01 = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("a 90° turn"), false)]).rotor();
+    let q03 = LetterId::turn_90((0, 3)).expect("a 90° turn");
+    let residue = conformal_of_word(&[(q03, false)]);
+    let letter = crate::transducer::sentence::generator_form(&q01, &chart, &[]).expect("the turn is a letter");
+    let mut mind = Entity::open(&court, Kernel::named("conjugator"));
+    assert!(mind.absorb_taught(&letter.to_bytes().expect("the record writes")).is_some(), "the court's letter is learned");
+    let mut field = std::mem::take(&mut mind.field);
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
+    field.think(|| mind.compose_or_construct(&residue, Some(&chart), &mut budget));
+    mind.field = field;
+    let mut act = None;
+    for _ in 0..4_000_000u32 {
+        if let Ok(heard) = speeches.try_recv() {
+            act = Some(heard);
+            break;
+        }
+        std::thread::yield_now();
+    }
+    let act = act.expect("the conjugate reaches the court");
+    let [tape] = act.sentences.as_slice() else { panic!("one word") };
+    let mut p = 0usize;
+    let spoken = crate::transducer::element::Element::from_bytes(tape, &mut p).expect("the tape reads, its conjugator with it");
+    let f = crate::transducer::sentence::from_element_form(&spoken).expect("a form");
+    let env = spoken.receipts();
+    let [cite] = env.derivations.as_slice() else { panic!("one derivation") };
+    assert!(matches!(cite.generators.as_slice(), [(form, _, 1)] if *form == letter.address()), "citing the held letter once");
+    assert!(cite.conjugator.is_some(), "with the conjugator that carries it");
+    let held = crate::transducer::sentence::from_element_form(&letter).expect("the letter's form");
+    let resolve = |a: &[u8]| (a == letter.address().as_bytes()).then(|| held.clone());
+    assert!(crate::court::verdict::replay::derivations_compose_at(&f, env, &resolve).is_none(), "the court composes g · W · g̃");
+    let mut wrong = env.clone();
+    for d in &mut wrong.derivations {
+        d.conjugator = Some(crate::transducer::alphabet::Rotor::identity());
+    }
+    assert!(crate::court::verdict::replay::derivations_compose_at(&f, &wrong, &resolve).is_some(), "a conjugator that does not carry it is refused");
+}
+
 /// MU-CLIENT §5.4, D4 — A COMPOSITION OF RULED WORDS IS SPOKEN TO THE COURT.
 /// The court ruled a SLIDE, a motion letter; a mind holding it meets a demand
 /// for the slide carried twice as far. The ruled words compose it — the slide
