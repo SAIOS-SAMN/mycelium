@@ -337,7 +337,7 @@ fn every_counted_name_is_its_table_s() {
             "no work",
             "unread",
             "unsigned",
-            "not an ancient",
+            "signed by an inner seat (served)",
             "no such task",
             "no rule carried",
         ],

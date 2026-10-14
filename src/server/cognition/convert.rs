@@ -317,18 +317,20 @@ impl Kernel {
         self.tier_domain.get(tier).is_some_and(|d| self.reserve_of(d) == Some(*tier))
     }
 
-    /// WHO A HYPHA SERVES A SOLVE FROM (the operator, 2026-10-08): ANYONE —
-    /// the hypha answers any key, holding μ or earning its first; this is not
-    /// a law of the server. A universe founded on this court speaks to it
-    /// only through its ANCIENTS: a key that is a tier INSIDE a founded
-    /// domain is served only as that domain's sitting reserve, and its other
-    /// seats reach the hypha by relay (progenitors and stewards to the
-    /// ancients), never directly. `false` only for such an inner tier.
-    pub fn may_solve(&self, signer: &[u8; 32]) -> bool {
-        match self.tier_domain.get(signer) {
-            None => true,
-            Some(d) => self.reserve_of(d) == Some(*signer),
-        }
+    /// WHETHER A KEY IS AN INNER SEAT OF ITS DOMAIN: a tier the domain itself
+    /// registered that is not its sitting reserve — the ancients' house.
+    ///
+    /// A READING, NEVER A GATE (the operator, 2026-10-14: "he who holds the
+    /// keys may solve"). The court authenticates a KEY, and whoever holds it
+    /// is served and paid: keeping the house's key is the ancients' charge,
+    /// and a tier reaching the hypha directly is the game kernel's to answer,
+    /// with game-kernel repercussions. The court cannot know a tier — only
+    /// what a domain declared of its own keys — so a refusal here bound only
+    /// the kernels that would have relayed anyway. What it does is DETECT:
+    /// the door counts the solves an inner seat signed, so a kernel, or a
+    /// stipulation the operator may later rule, has the reading to act on.
+    pub fn inner_seat(&self, signer: &[u8; 32]) -> bool {
+        self.tier_domain.get(signer).is_some_and(|d| self.reserve_of(d) != Some(*signer))
     }
 
     /// A fold admitted: where its tier is its domain's reserve and a

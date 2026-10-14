@@ -87,7 +87,9 @@ pub const PROVISIONAL: [&str; 8] = [
 /// and (78.153c) the verdicts 78.149 and 78.153 added — NO WORK (a clean
 /// replay that discharged nothing) and UNREAD (a stroke that ran out before
 /// the replay ruled) — and the door's refusals before any judging: unsigned,
-/// an inner seat that is not an ancient, no such task, no rule carried.
+/// no such task, no rule carried; and, BESIDE them and refusing nothing, the
+/// solves an inner seat of a founded domain signed and was served (the
+/// operator, 2026-10-14: the court authenticates keys, never tiers).
 /// Named through [`Judged`], so no verdict has a name the table lacks.
 pub const JUDGED: [&str; 16] = [
     "first closures",
@@ -103,7 +105,7 @@ pub const JUDGED: [&str; 16] = [
     "no work",
     "unread",
     "unsigned",
-    "not an ancient",
+    "signed by an inner seat (served)",
     "no such task",
     "no rule carried",
 ];
@@ -123,8 +125,10 @@ pub enum Judged {
     Unread,
     /// The door's, before judging: the solve names no payee.
     Unsigned,
-    /// The door's: an inner seat of a founded universe (`may_solve`).
-    NotAncient,
+    /// Counted at the door and REFUSING NOTHING: the solve was signed by an
+    /// inner seat of a founded domain (`inner_seat`), and is judged and paid
+    /// as any key's.
+    InnerSeat,
     /// The door's: the citation names no task on this book.
     NoSuchTask,
     /// The door's: the solve carried no rule (or one that did not parse).
@@ -149,7 +153,7 @@ impl Judged {
             Judged::NoWork,
             Judged::Unread,
             Judged::Unsigned,
-            Judged::NotAncient,
+            Judged::InnerSeat,
             Judged::NoSuchTask,
             Judged::NoRuleCarried,
         ]
@@ -172,7 +176,7 @@ impl Judged {
             Judged::NoWork => 10,
             Judged::Unread => 11,
             Judged::Unsigned => 12,
-            Judged::NotAncient => 13,
+            Judged::InnerSeat => 13,
             Judged::NoSuchTask => 14,
             Judged::NoRuleCarried => 15,
         }

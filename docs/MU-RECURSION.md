@@ -25687,6 +25687,37 @@ a recut; (7) the observer.
 
 *Moved to `MU-CLIENT.md` Part V, verbatim (2026-10-11).*
 
+### 78.165 The court authenticates keys, never tiers (2026-10-14, the operator)
+
+The operator: "this is in client-server authentication, he who holds the
+keys may solve: it's on the ancients to keep that key secure, and
+unauthorized access via a tier is the client kernel's responsibility to
+handle; and potentially if the hypha detects unauthorized access we might
+put stipulations in there, but it should be game kernel level
+repercussions."
+
+1. **Whoever holds a key may solve.** The court authenticates the key and
+   pays the account that key names. It never refuses a solve for the
+   holder's tier. `may_solve` refused a founded domain's inner seat (a
+   tier it registered that is not its sitting reserve). It is superseded
+   forward by `inner_seat`, a reading.
+2. **Keeping the house's key is the ancients' charge.** A tier reaching the
+   hypha directly is the game kernel's to answer, with game-kernel
+   repercussions (Concordance 6.2a's "only the ancients face the hypha" is
+   a law each kernel keeps and attests, never a door the court holds).
+3. **The court detects, and refuses nothing.** The door counts the solves
+   an inner seat signed (`signed by an inner seat (served)`), so a kernel,
+   or a stipulation the operator may later rule, has the reading to act on.
+4. **What the court does need is accounts, not ranks:** whose balance a
+   payment lands in (a founded domain's earnings in its reserve account),
+   and which domain a key belongs to, for 5.7(d)'s no-self-pay. Domain
+   membership (`tier_domain`) stays. Folds, mouths and conversions are
+   signed by the keys their accounts name; that is ownership, not tier.
+
+Why it was costume: the court knows a tier only as the domain declared it,
+so the refusal bound the kernels that would have relayed anyway, and a key
+the domain never registered was served regardless.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

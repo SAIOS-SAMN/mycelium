@@ -233,22 +233,23 @@ fn a_torus_face_reads_its_throat_flat_and_bounded_by_its_own_image() {
     assert!(matches!(booted.handoff(&Handoff::Draw { mouth: tube, mu_s: 1, seq: 1 }.sign(&reserve(5))), Handed::Sealed { .. }), "still a core: its far reserve keeps it");
 }
 
-/// THE HYPHA SERVES ANYONE; A FOUNDED UNIVERSE SPEAKS THROUGH ITS ANCIENTS
-/// (the operator, 2026-10-08): a key no domain names solves freely; a founded
-/// domain's sitting reserve — its ancients' house — solves; an inner seat of
-/// that domain (a line) does not, until it is the sitting reserve; a
-/// re-designated reserve's old tier is then an inner seat.
+/// THE COURT AUTHENTICATES KEYS, NEVER TIERS (the operator, 2026-10-14: "he
+/// who holds the keys may solve"): the court READS which keys are a founded
+/// domain's inner seats — tiers it registered that are not its sitting
+/// reserve, the ancients' house — and refuses none of them. A key no domain
+/// names is no inner seat; the house is none; a line is one until it is the
+/// sitting reserve; a hand-on pending its anchor changes nothing yet.
 #[test]
-fn the_hypha_serves_anyone_and_a_founded_universe_through_its_ancients() {
+fn the_court_reads_a_founded_universes_inner_seats_and_refuses_none() {
     let mut k = founded();
-    assert!(k.may_solve(&[0xab; 32]), "a key no domain names: anyone is served");
-    assert!(k.may_solve(&vk(&reserve(4))) && k.is_ancients_house(&vk(&reserve(4))), "the ancients' house");
-    assert!(!k.may_solve(&vk(&line(4))), "an inner seat speaks through its ancients");
+    assert!(!k.inner_seat(&[0xab; 32]), "a key no domain names is no inner seat");
+    assert!(!k.inner_seat(&vk(&reserve(4))) && k.is_ancients_house(&vk(&reserve(4))), "the ancients' house is none");
+    assert!(k.inner_seat(&vk(&line(4))), "a line of the domain is one: read, not refused");
     // A hand-on is PENDING until its anchor passes: the sitting reserve stays
     // the house, and the named tier is still an inner seat.
     let r = Reservation { domain: vk(&domain(4)), tier: vk(&line(4)), nonce: [1; 32] };
     assert!(matches!(k.designate_reserve(&r.sign(&reserve(4))), Founded::Reserved { now: false, .. }), "the sitting reserve hands on, pending");
-    assert!(k.may_solve(&vk(&reserve(4))) && !k.may_solve(&vk(&line(4))), "until the anchor passes, the house is unchanged");
+    assert!(!k.inner_seat(&vk(&reserve(4))) && k.inner_seat(&vk(&line(4))), "until the anchor passes, the house is unchanged");
 }
 
 /// THE WIRE: an origin of version 2, every statement, the universe read and

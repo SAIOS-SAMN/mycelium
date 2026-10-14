@@ -223,9 +223,13 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             };
             dialogue::SolveRefusal { reason: reason.as_bytes().to_vec(), kind }
         };
-        // The operator (2026-10-08): the hypha serves anyone; a universe founded
-        // here speaks only through its ancients — an inner tier of a founded
-        // domain that is not its sitting reserve is refused (`may_solve`).
+        // THE COURT AUTHENTICATES KEYS, NEVER TIERS (the operator, 2026-10-14:
+        // "he who holds the keys may solve"). A solve signed by an inner seat
+        // of a founded domain is judged and paid as any key's: keeping the
+        // house's key is the ancients' charge, and a tier reaching the hypha
+        // directly is the game kernel's to answer. It is COUNTED, refusing
+        // nothing (`inner_seat`), so a kernel — or a stipulation the operator
+        // may rule — has the reading to act on.
         // 78.153c — THE DOOR'S REFUSALS BEFORE ANY JUDGING, each counted on
         // its slot of the court's acts under the one hold the seat's check
         // already takes: 66 solves filed and none paid read as no verdict
@@ -234,11 +238,13 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         let rule_carried = rule.is_some();
         let pre: Option<Judged> = match crate::held::held!(door.kernel) {
             Ok(mut h) => h.run(|k, _| {
+                if signed && k.inner_seat(&svoice) {
+                    k.note_judged(Judged::InnerSeat);
+                }
                 let pre = match open {
                     // 78.141 — the court pays the voice a solve names:
                     // unsigned, it names no payee, and nothing is judged.
                     _ if !signed => Some(Judged::Unsigned),
-                    _ if !k.may_solve(&svoice) => Some(Judged::NotAncient),
                     None => Some(Judged::NoSuchTask),
                     Some(_) if !rule_carried => Some(Judged::NoRuleCarried),
                     Some(_) => None,
@@ -248,15 +254,14 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 }
                 pre
             }),
-            // A poisoned kernel reads no seat: refused as the inner seat it
-            // cannot rule out, and counted nowhere (no court to count on).
-            Err(_) => Some(Judged::NotAncient),
+            // A poisoned kernel judges nothing, and answers nothing — as the
+            // judging below answers where its hold fails.
+            Err(_) => return true,
         };
         let (code, mu, refusal, stamp) = match (pre, open, rule.as_ref()) {
             (Some(pre), _, _) => {
                 let reason = match pre {
                     Judged::Unsigned => "unsigned: a solve names its payee by its voice's signature",
-                    Judged::NotAncient => "an inner seat of a founded universe: it speaks to the hypha only through its ancients' house",
                     Judged::NoSuchTask => "no such task on this book",
                     _ => "a solve carries its rule: a raster is no proof of a motion",
                 };
