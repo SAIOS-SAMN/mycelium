@@ -76,6 +76,10 @@ pub const DEMANDED: [&str; 6] = ["rotor prime", "standing", "source", "creation"
 /// change of size), transverses (the special conformal half), or neither.
 pub const BOOSTS: [&str; 3] = ["scaled", "transverse", "neither"];
 
+/// 78.167 B — WHY A TEST'S SPEECH WAS HELD, NOT SENT AS A SOLVE: a body it
+/// did not reach, or a creation, merge or reshape its form could not speak.
+pub const WITHHELD: [&str; 2] = ["a body unreached", "occupancy unspoken"];
+
 /// ITS QUESTIONS (MU-CLIENT §5.3): words it did not know and asked of their
 /// residue; questions of others it answered by factoring; rings whose meaning
 /// was DERIVED (from words it knew, or from factors it came to know); rings
@@ -192,6 +196,8 @@ pub struct Mind {
     pub demanded_kinds: [u64; 6],
     /// 78.167 A3 — the boost modes of its words, by [`BOOSTS`].
     pub boosts: [u64; 3],
+    /// 78.167 B — tests whose speech was held, by [`WITHHELD`].
+    pub withheld_tests: [u64; 2],
     /// Its questions, by [`ASKS`].
     pub asks: [u64; 4],
     /// Heard rings by how they were understood, by [`SEATS`]; mutual
@@ -261,6 +267,7 @@ impl Default for Mind {
             disagree: [0; 9],
             demanded_kinds: [0; 6],
             boosts: [0; 3],
+            withheld_tests: [0; 2],
             asks: [0; 4],
             seats: [0; 5],
             mutual: [0; 2],
@@ -326,6 +333,7 @@ impl Mind {
             .chain([self.composed])
             .chain(self.demanded_kinds)
             .chain(self.boosts)
+            .chain(self.withheld_tests)
         {
             put_u64(out, v);
         }
@@ -379,6 +387,7 @@ impl Mind {
             *v = take_u64(b, p)?;
         }
         let boosts = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
+        let withheld_tests = [take_u64(b, p)?, take_u64(b, p)?];
         let n =usize::try_from(u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?)).ok()?;
         *p += 4;
         // Each lock is three counts.
@@ -403,6 +412,7 @@ impl Mind {
             disagree,
             demanded_kinds,
             boosts,
+            withheld_tests,
             asks,
             seats,
             mutual,
@@ -444,8 +454,9 @@ impl Mind {
             format!("  chambers {} · demanded {}", priced.join(" "), self.demanded),
             format!("  constructed {}", constructed.join(" ")),
             format!(
-                "  perspectives {}",
-                PERSPECTIVE.iter().zip(&self.perspective).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
+                "  perspectives {} · tests withheld {}",
+                PERSPECTIVE.iter().zip(&self.perspective).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
+                WITHHELD.iter().zip(&self.withheld_tests).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
             ),
             format!(
                 "  disagreed {} · demands unspoken {} · questions {} · answers {} · unanswered {} (awaiting factors {}) · {}",

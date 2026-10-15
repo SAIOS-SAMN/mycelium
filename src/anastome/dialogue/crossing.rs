@@ -335,6 +335,7 @@ pub struct Gas {
 /// was priced at, and the fee — `⌊gas · price⌋` per lane — held as a claim
 /// on the payer's stake and paid whole to the route's courts.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[expect(clippy::large_enum_variant, reason = "the sealed crossing is the answer's content and its common case; a refusal is the rare one")]
 pub enum Crossed {
     Sealed { crossing: [u8; 32], h: u64, point: TPoint, gas: Gas, price: [u64; 4], fee: [u64; 4] },
     Refused(CrossRefusal),

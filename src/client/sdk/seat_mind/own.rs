@@ -53,6 +53,10 @@ impl Domain {
     }
 }
 
+/// THE NEXT ARGUMENTS TO TRY: where they stand (the domain and its value,
+/// none for the least-tried first call) and the arguments themselves.
+pub type Untried = (Option<(usize, u64)>, Vec<Arg>);
+
 /// ONE FUNCTION OF THE MIND'S OWN SEAT, as the listing names it, and what
 /// the mind has learned of its arguments.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -107,7 +111,7 @@ impl Own {
     /// THE NEXT ARGUMENTS NOT YET TRIED, in the module's order, with where
     /// they stand; none once every value in its bounded domains is tried, or
     /// where it is not the mind's to explore.
-    pub fn untried(&self) -> Option<(Option<(usize, u64)>, Vec<Arg>)> {
+    pub fn untried(&self) -> Option<Untried> {
         let domains = self.domains.as_ref()?;
         if self.closed {
             return None;

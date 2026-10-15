@@ -88,11 +88,14 @@ fn axes(vk: [u8; 32]) -> [u64; crate::observe::REP_AXES] {
     r.signers.iter().find(|(s, _)| *s == vk).map(|(_, a)| *a).expect("the signer is read")
 }
 
+/// Every ask the source served: the signer, the place after which, the ask.
+type Asked = Mutex<Vec<([u8; 32], Option<Place>, Ask)>>;
+
 /// The page source over courts in this process: each signer's own court
 /// answers its line through the serving door, eight receipts a page.
 fn source<'a>(
     courts: &'a [&'a Kernel],
-    asked: &'a Mutex<Vec<([u8; 32], Option<Place>, Ask)>>,
+    asked: &'a Asked,
 ) -> impl FnMut(&[u8; 32], Option<Place>, Place, Ask) -> Option<ReceiptsAnswer> + 'a {
     move |who: &[u8; 32], after: Option<Place>, upto: Place, ask: Ask| {
         if let Ok(mut a) = asked.lock() {

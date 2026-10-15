@@ -42,9 +42,12 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
     Ok(PathBuf::from("var").join("voice"))
 }
 
+/// The seated domain, its sub-origin where one is named, and the seats sat.
+type Seated = ([u8; 32], Option<[u8; 32]>, mycelium::sdk::Sit);
+
 /// THE SEATS `--seat` NAMES: `<domain-hex>[/<sub-origin-hex>] <seat-id>[,…]`
 /// or `… all`; none where the flag is absent.
-fn seats(args: &[String]) -> Result<Option<([u8; 32], Option<[u8; 32]>, mycelium::sdk::Sit)>, String> {
+fn seats(args: &[String]) -> Result<Option<Seated>, String> {
     use mycelium::sdk::Sit;
     let Some(at) = args.iter().position(|a| a == "--seat") else { return Ok(None) };
     let (Some(d), Some(s)) = (args.get(at + 1), args.get(at + 2)) else {

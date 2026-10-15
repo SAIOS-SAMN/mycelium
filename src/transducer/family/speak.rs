@@ -172,6 +172,7 @@ pub(crate) fn apply_form_metered(
 }
 
 /// What a metered speech came to (78.153).
+#[expect(clippy::large_enum_variant, reason = "the speech is the common outcome and is moved out at once; the bare refusals carry nothing to box against")]
 pub(crate) enum Spoken {
     Said(Speech),
     /// The speech does not fit its own frame (`speak_on_scene`'s `None`).

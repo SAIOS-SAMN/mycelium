@@ -53,3 +53,23 @@ fn a_speech_names_the_bodies_it_did_not_reach() {
     let bar = bodies.iter().position(|b| b.compartments.len() == 3).expect("the bar is perceived");
     assert!(speech.unreached.contains(&bar), "the bar of a shape the family never showed is named unreached: {:?}", speech.unreached);
 }
+
+/// 78.167 B — A SPEECH THAT LEFT A BODY UNREACHED IS NEVER A SOLVE. The same
+/// rule spoken on a test whose every body it reaches is the answer the court
+/// is sent; spoken on a test holding a bar of a shape its family never
+/// showed, the whole answer is withheld (the bar held as a question), never
+/// sent with the bar silently erased.
+#[test]
+fn a_speech_with_an_unreached_body_is_withheld() {
+    use crate::client::sdk::*;
+    let family = vec![
+        (grid(&["1000", "0000", "0000"]), grid(&["0000", "1000", "0000"])),
+        (grid(&["0000", "0100", "0000"]), grid(&["0000", "0000", "0100"])),
+    ];
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
+    let rule = crate::transducer::family::extract_rule(&family, &mut budget).expect("the family has a rule");
+    let mut e = Entity::open("127.0.0.1:1", Kernel::named("withheld"));
+    let reached = e.speak_tests(&rule, &[grid(&["0010", "0000", "0000"])]).expect("every body reached: the answer stands");
+    assert_eq!(reached, vec![grid(&["0000", "0010", "0000"])]);
+    assert!(e.speak_tests(&rule, &[grid(&["0010", "0000", "2220"])]).is_none(), "the bar unreached: nothing is sent");
+}

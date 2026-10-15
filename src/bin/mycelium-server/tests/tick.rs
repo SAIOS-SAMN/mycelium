@@ -46,8 +46,7 @@ fn a_reading_is_signed_with_no_digest_and_a_pushed_ring_is_heard_off_the_kernel(
     assert_eq!(sign_tick(&m, None), None, "no tick read, nothing signed");
     let t10 = Tick { h: 10, lanes: [4, 0, 0, 0], k: 1 };
     let ring = sign_tick(&m, Some(t10)).expect("a reading is due");
-    assert_eq!(ring.len(), 1);
-    let first = ring.iter().next().expect("the reading");
+    let [first] = ring.as_slice() else { panic!("one reading: {}", ring.len()) };
     assert_eq!((first.keeper, first.tick), (va, t10));
     assert!(first.verifies(&origin), "signed by this court at its origin");
     assert_eq!(sign_tick(&m, Some(t10)), None, "the same tick is not due again");

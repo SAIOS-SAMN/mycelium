@@ -170,7 +170,7 @@ impl Contemplation {
                     continue;
                 }
                 let (Some(xy), Some((pz, _))) = (self.fibre_of(x, y), self.pivot_of(z)) else { continue };
-                if !xy.project(&pz).is_some_and(|mu| mu >= num_rational::BigRational::from_integer(1.into())) {
+                if xy.project(&pz).is_none_or(|mu| mu < num_rational::BigRational::from_integer(1.into())) {
                     crate::observe::note_mind(|m| m.flex[8] += 1);
                     continue;
                 }

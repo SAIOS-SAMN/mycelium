@@ -107,6 +107,7 @@ pub struct AckWord {
 
 /// WHAT A FRAME SAYS.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[expect(clippy::large_enum_variant, reason = "a frame is decoded, read once and dropped; the hold's exact strain per lane is its content, not a field to box away")]
 pub enum Said {
     /// What the speaker stood (`said`, its address), word by word.
     Say { said: Vec<u8>, words: Vec<Spoken> },

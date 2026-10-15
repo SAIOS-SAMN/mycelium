@@ -64,6 +64,11 @@ cast_possible_truncation = "deny"
 # MU-STANDARDS 4.2: the tables of clippy.toml are read through these two.
 disallowed_types    = "deny"
 disallowed_methods  = "deny"
+# The two lints that ask for `unwrap_or` / `unwrap_or_default` ask for a
+# method clippy.toml disallows (a silent default where the match names the
+# case): the law's match stands, and the lint that would undo it is off.
+manual_unwrap_or         = "allow"
+manual_unwrap_or_default = "allow"
 # §2.4: COGNITION REFUSES, IT DOES NOT ABORT. A reader that cannot answer
 # returns the refusal to the caller that can act on it; a process that dies
 # answers nobody and loses the chain position it was holding.

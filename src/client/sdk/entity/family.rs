@@ -197,7 +197,7 @@ impl Entity {
         budget: &mut crate::physics::Budget,
     ) -> Option<[u64; 4]> {
         let form = &rule.form;
-        let Some(deliberation) = self.span_of(form) else { return None };
+        let deliberation = self.span_of(form)?;
         let Ok(word) = crate::transducer::family::mint_sentence_why(rule, train, &self.epigenome, deliberation.span()) else {
             self.hold_perceived(form.clone(), frames, train, remainders, family, budget);
             return None;
@@ -358,6 +358,15 @@ impl Entity {
 
     /// THE TESTS SPOKEN THROUGH THE RULE: every test's output where the rule
     /// speaks it whole; a remainder a test leaves is held as thought.
+    ///
+    /// 78.167 B — WHOLE MEANS EVERY BODY SPOKEN FOR. A test input can carry a
+    /// shape no training pair showed: no vertex reaches it, and the speech
+    /// would answer as though it were erased — a guess sent as a solve. A
+    /// speech that left a body unreached, or a creation, a merge or a reshape
+    /// unspoken (its form's demands of those kinds), is no answer: it is held
+    /// as thought — the unreached bodies' cells as the chain the mind works on
+    /// next — and the solve waits for a rule that speaks for them (a clause
+    /// statement, 78.167 C, says what happens to every body).
     pub(crate) fn speak_tests(&mut self, rule: &SentenceRule, tests: &[crate::arc::Grid]) -> Option<Vec<crate::arc::Grid>> {
         tests
             .iter()
@@ -367,8 +376,27 @@ impl Entity {
                     if !s.remainder.is_empty() {
                         self.hold_chain(s.remainder.iter().map(|&(r, c, h)| (r, c, h, h)).collect());
                     }
+                    if !s.unreached.is_empty() {
+                        let bodies = crate::transducer::family::perceive(x);
+                        let chain: Vec<(i64, i64, u8, u8)> = s
+                            .unreached
+                            .iter()
+                            .filter_map(|&i| bodies.get(i))
+                            .flat_map(|b| b.compartments.iter().filter_map(|l| crate::transducer::family::on_grid(&l.site).map(|(r, c)| (r, c, l.hue, l.hue))))
+                            .collect();
+                        crate::observe::note_mind(|m| m.withheld_tests[0] += 1);
+                        self.hold_chain(chain);
+                    }
                 }
-                spoken.filter(|s| s.remainder.is_empty()).and_then(|s| s.grid())
+                // Creation (3), merge (2) and reshape (4) say what happens to
+                // occupancy, and a demand of theirs spoke nothing.
+                let occupancy_unspoken = spoken.as_ref().is_some_and(|s| s.demanded[2] + s.demanded[3] + s.demanded[4] > 0);
+                if occupancy_unspoken {
+                    crate::observe::note_mind(|m| m.withheld_tests[1] += 1);
+                }
+                spoken
+                    .filter(|s| s.remainder.is_empty() && s.unreached.is_empty() && !occupancy_unspoken)
+                    .and_then(|s| s.grid())
             })
             .collect()
     }

@@ -234,14 +234,14 @@ impl Modes {
     /// TAKE ANOTHER HOLDING OUT, WHOLE OR NOT AT ALL: every mode asked is held
     /// in at least the amount asked, or nothing is taken and the first mode
     /// short — in coordinate order — is named with both amounts.
-    pub fn take(&mut self, asked: &Modes) -> Result<(), Short> {
+    pub fn take(&mut self, asked: &Modes) -> Result<(), Box<Short>> {
         for (k, (m, want)) in asked.held.scoped() {
             let have = match self.held.get(&k) {
                 Some((_, a)) => a.clone(),
                 None => Q::zero(),
             };
             if &have < want {
-                return Err(Short { mode: m.clone(), held: have, asked: want.clone() });
+                return Err(Box::new(Short { mode: m.clone(), held: have, asked: want.clone() }));
             }
         }
         for (k, (_, want)) in asked.held.scoped() {

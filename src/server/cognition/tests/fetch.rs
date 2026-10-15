@@ -162,5 +162,5 @@ fn a_page_takes_no_word_its_reply_cannot_carry() {
     assert_eq!(k.acts_reading().fetch[axis("served to courts")], 1, "one counted served");
     let drawn: [u64; 4] = std::array::from_fn(|l| reserve[l] - k.physics.reserve.lanes()[l]);
     let one = [spoken.magnitude(), moved.magnitude()];
-    assert!(one.iter().any(|m| *m == drawn), "the reserve drawn for the one word served: {drawn:?}");
+    assert!(one.contains(&drawn),"the reserve drawn for the one word served: {drawn:?}");
 }
