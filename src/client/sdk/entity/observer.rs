@@ -14,7 +14,8 @@ use crate::client::sdk::*;
 use crate::observe::live;
 
 /// The calls the mind answers, as `calls` lists them.
-const CALLS: [(&str, &str); 8] = [
+const CALLS: [(&str, &str); 9] = [
+    ("perception", "what perception's cells did: circuits, cells, thoughts, hours, the consolidation gate, grounds filed and refused by name"),
     ("now", "where the winding carrier stands, the reserve, the court's pace, what the mind holds"),
     ("thoughts [from N]", "every held thought by ordinal: its scene, ℓ, hours, winding m, returns, next hour, twist, slips, vortex, escrow"),
     ("thought N", "one thought by ordinal, whole"),
@@ -73,6 +74,10 @@ impl Entity {
                 Err(e) => vec![format!("thought {n}: {e}")],
             },
             ["field"] => self.read_field(),
+            // What perception's cells did, every outcome counted where it
+            // forms (`ResonanceTally`): where thoughts and grounds are made
+            // or refused, by name.
+            ["perception"] => self.contemplation.resonance.line().split(" | ").map(str::to_string).collect(),
             ["held"] => self.read_held(),
             ["scenes"] => self.read_scenes(),
             ["questions"] => self.read_questions(),
