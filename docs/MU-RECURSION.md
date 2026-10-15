@@ -26313,6 +26313,103 @@ beside these as one source of closures among others, never the measure.
   worked or refused by mode, like any open loop (a-sink-keeps-its-bound). The
   operator may rule otherwise.
 
+#### 7. Amended (2026-10-15, the operator): the superposition, the totality, the economy
+
+The operator, on §§1–6: "what happened to our superposition of ideation —
+that would be the predictive self-model"; "you're moving too fast and not
+thinking enough about impact, about what we have built, about wiring: think
+about where these components go (client, server, courts) and the totality
+of the impact"; asked whether the courts can take the change so it stays in
+the clients; and ruled: "the courts should pay for words, and sentences —
+iff you built this correctly." Read on the path (read-only, foreground)
+before amending.
+
+**7.1 The superposition of ideation is the predictive self-model; S2 and S3
+become one component.** §3 kept a forecast compared as sets and a rollout,
+and S4 picked maximal loops and worked them: collapse at every step, one
+prediction, one commitment. Refusing barren-realms' float amplitudes
+(`|Ψ⟩ = Σ cₖ|Ideationₖ⟩`) is right; dropping the superposition with them
+was wrong. As amended:
+- **An ideation** is a candidate closure the mind holds for its open loops:
+  a held form, a composition of ruled words, a clause set read off an
+  effect (78.167 C), or a conjugate. It is held by its coordinates
+  (citations, never a copy of a form: an-index-copies-the-address).
+- **Its amplitude is exact coordinates, never a float:** the rollout's
+  outcome — the elements of `Open` it would close, the holonomy it leaves,
+  its cost per lane (four, never summed).
+- **The superposition is carried across cycles.** Uncommitted ideations
+  persist. Its width (independent ideations) is a reading; an ideation lost
+  without a closure or a named refusal is a collapse, and a defect.
+- **Collapse is exact closure,** never the highest payoff: an ideation
+  commits when its rollout returns exactly on the loops it claims and the
+  lanes pay. Commuting ideations commit together; a non-commuting pair stays
+  superposed, and its commutator is a loop of `Open`.
+- **Surprise reshapes the superposition,** never a weight: a miss enters
+  `Open` and every ideation it touches is spoken again on the new state.
+- **S4 orders the superposition** (which ideations are rolled out, which are
+  ready to close), and never picks a winner.
+
+**7.2 Where each component lives, and what it moves.**
+
+| Component | Home | Courts / wire touched | Peers told |
+|---|---|---|---|
+| S1 `Open` | client: a READING over the holders that exist (questions, contemplation, docket, unread solves, failed perspectives) — never a new store. A loop the court also holds (a remainder record, RM1) is the court's to close (78.49: the ledger is the court's); the mind holds only its perception of it. | none | — |
+| S2/S3 the ideation superposition | client, volatile with the plan (78.49: the plan is volatile, the genome is only what a court admitted). Bound by the reserve: an ideation is held by paying its reservation, as `hold_form` reserves today — no capping constant (a-sink-keeps-its-bound). Rollouts spend the stroke, on minds CPU-bound at 25%. | none | — |
+| S4 deliberation | client tick. Admission (court inflow, acks/holds, quotes, owed forms) stays every cycle: the wire must not starve. The court's pressure (the dwell) is a constraint beside the lanes: a self-driven mind would otherwise flood its courts with offers — the 10× concern, inverted. | load only | — |
+| S1b a task is perception | client task path; solves and verdicts unchanged at the court | rates: fewer solves while minds work their own loops | xylarium (the readings it pins on) |
+| E1–E3 the economy (7.3) | **court** | install measure, the grant ledger | xylarium (78.155c re-pin) |
+| S5 curiosity | court: an index of tasks by chart coordinates (small coordinates, never addresses); the wire: a cited task ask | a door, a wire act | xylarium, netstratum |
+| S6 peer records | client epigenome, a fold of the mind's own receipts (the court's `Agreements` is an observer reading, not court state) | none | — |
+| seat play | client `seat_mind`: its exploration of `untried` arguments is another test-like drive; its unexplored functions are elements of `Open`, never a subsystem apart | none | netstratum |
+
+**7.3 The economy is task-bound: the courts do not yet pay words and
+sentences as ruled.** Read 2026-10-15:
+- An installed sentence is measured by replay on the family of the task it
+  was spoken for (`identity.rs:175-178`, `discharge_on`): a sentence with no
+  task measures `[0;4]`, is installed, and mints nothing (`install.rs:86-89`).
+- D2′'s shares (`install.rs:135-172`, `287-305`) — use to a cited word's
+  discoverer, base pay to a new word's speaker, the composition premium to
+  the composers — are all measured on that same task family: no task, no
+  share.
+- A word spoken alone (`is_sentence` false) is measured by its chain on the
+  book, and by nothing where it stands for no listing.
+- A word agreed between two minds is sealed as an attestation
+  (`agreement.rs`, `ActKind::Attest`) and paid nothing.
+- A solve pays the closer's discharge on the withheld pairs, and only a first
+  closure counts toward the growth grant (`task.rs:205-250`, 78.155c).
+- The mind sends an EMPTY task for what it speaks on its own (`book/speech.rs:452-466`).
+
+So a mind moved by its own loops earns nothing for the closures no task
+asked for; its reserve drains and it starves. The drive inversion is not
+client-only. As amended, by the ruling that courts pay words and sentences:
+- **E1 · Evidence, not purpose.** Every scene a mind perceives is a family the
+  court served (a task or the feed). A word or sentence a mind speaks names
+  the family its loop closed on — the scene's coordinates — whether or not
+  that task asked for the closure, and the court measures and pays it on that
+  family as it pays any install. Client: speak with the scene's task, never
+  the empty one. Court: unchanged where it holds that family; UNREAD whether
+  the court holds every feed family (`task_family` is filled at
+  `task.rs:92` for tasks registered with it).
+- **E2 · A closure of the language itself.** A question answered or a
+  composition of ruled words closes on no scene. It is measured over the
+  families its cited words are bound to (each word's own discharge there),
+  and its composition premium is what it discharges as a whole beyond them,
+  per lane, exact — D2′ applied where no task binds the sentence. Court:
+  `discharge_of` reads the cited words' families when the sentence names no
+  task. Never the sum of the words (padding, palindrome).
+- **E3 · The growth grant counts what the courts paid.** `closed_since_grant`
+  sums first closures by domain keys at `pay_solve` only; it counts the
+  first install of a word or sentence by a domain key on the same terms
+  (membership, never tier — 78.165). 78.155c amended; xylarium re-pins.
+- Solves (`pay_solve`) are unchanged: one source of earning among others.
+
+**7.4 The gate, amended.** E1 + S1a + S4a + S1b, and E2 + E3 at the courts,
+before the soak: a mind that works its own loops and is never paid for them
+starves on the fleet, and the soak would read that as the drive failing.
+The superposition (7.1) follows; S4b, S6, S5 and seat play after the soak.
+The court release (E2/E3) and the client release ship together, and xylarium
+is told before the fleet restarts.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

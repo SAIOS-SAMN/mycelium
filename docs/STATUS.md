@@ -85,9 +85,15 @@ the minds, then the nseat units — never `scripts/recut` (it wipes).
    taken from `Open`'s maximal elements by containment and lanes, never a
    scalar; the fixed tick of phases retired), S1b (a task is perception: a
    failed perspective enters `Open`, a solve is sent on closure; D1/D2 land
-   here). Then S2/S3 (the self-forecast by exact rollout; misses enter
-   `Open`), S4b (the bracket), S6 (peer records), S5 (cited task asks, a wire
-   change).
+   here). Amended (§7): the courts' pay is task-bound — a sentence with no
+   task mints nothing, an agreed word is attested and unpaid — so the gate
+   also holds E1 (a mind's word names the family its loop closed on: evidence,
+   not purpose), E2 (a closure of the language measured over its cited words'
+   families, D2′ where no task binds it) and E3 (growth grants count first
+   installs, 78.155c amended, xylarium re-pins); court and client ship
+   together. Then the ideation superposition (S2/S3 as one: the predictive
+   self-model, collapse only by exact closure), S4b (the bracket), S6 (peer
+   records), S5 (cited task asks, a wire change), seat play.
 3. **The soak**, on 78.166 (1a/1b 9ec4cb87, 1c 6b1a34bf, 2a 194fab1f), 78.155c
    (b6bd8ca1), 78.167 A–C and 78.168's gate. The completion reading is the
    mind's own: `Open` falling across K, closures no task asked for above 0,
