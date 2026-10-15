@@ -7,25 +7,34 @@ use super::common::*;
 use crate::client::sdk::*;
 use crate::transducer::alphabet::{LetterId, Word};
 
-/// STOOD NOW, SAID AT A RETURN. A fresh sentence spoken stands in the
-/// dialect at once — the mind's own act — and nothing reaches the carrier
-/// facing the court until the mind's own field comes round; the winding reads
-/// that return, K steps by it, and the speech is posted.
+/// MU-CLIENT §4.4(4), §7.1 R2 — STOOD NOW, SAID AT THE RETURN OF THE THOUGHT
+/// IT SPEAKS FOR, AND AT NO OTHER. Two fresh sentences spoken under two
+/// scenes stand in the dialect at once — the mind's own act — and nothing
+/// reaches the carrier facing the court. Said again before its return, a
+/// sentence is the one thing held, never two. A thought of the first scene
+/// comes round by the field's own motion (`bind_a_thought`: two hours of a
+/// slide, the escaping relation bound by the drive); the winding reads that
+/// return, K steps by exactly it, and the first scene's speech is posted —
+/// the second's, whose scene no thought of has returned, is still held.
 #[test]
-fn a_speech_stands_now_and_leaves_at_the_minds_return() {
+fn a_speech_leaves_at_its_own_thoughts_return_and_no_other() {
     let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
+    let e2 = two_body_sentence([&[(5, 6), (5, 6)], &[(7, 8), (7, 8)]]);
+    let (one, two) = ([1u8; 32], [2u8; 32]);
     let mut e = Entity::open("127.0.0.1:1", Kernel::named("winding"));
-    e.speak(std::slice::from_ref(&e1), |_, _| {});
-    assert_eq!(e.dialect_len(), 1, "it stands at once");
-    assert_eq!((e.hypha.in_flight(), e.at_return.len(), e.own_k()), (0, 1, 0), "nothing posted: it waits for a return");
+    e.speak_with(std::slice::from_ref(&e1), &[], &one, |_, _| {});
+    e.speak_with(std::slice::from_ref(&e2), &[], &two, |_, _| {});
+    assert_eq!(e.dialect_len(), 2, "both stand at once");
+    assert_eq!((e.hypha.in_flight(), e.held_for_returns(), e.own_k()), (0, 2, 0), "nothing posted: each waits for its thought's return");
     // Said again before the return, it is the one thing held, never two
     // (MU-CLIENT §4.13: held by its coordinates, never by a count).
-    e.speak(std::slice::from_ref(&e1), |_, _| {});
-    assert_eq!(e.at_return.len(), 1, "one speech held, its latest saying");
-    let returned = come_round(&mut e);
-    assert!(returned > 0, "the field's orbit came round");
+    e.speak_with(std::slice::from_ref(&e1), &[], &one, |_, _| {});
+    assert_eq!(e.held_for_returns(), 2, "one speech held per sentence, its latest saying");
+    let returned = bind_a_thought(&mut e, &one);
+    assert!(returned > 0, "a thought of the first scene came round");
     assert_eq!(e.own_k(), returned, "K stepped by exactly the returns");
-    assert_eq!((e.hypha.in_flight(), e.at_return.len()), (1, 0), "the return posted it");
+    assert_eq!(e.hypha.in_flight(), 1, "the first scene's speech posted at its thought's return");
+    assert_eq!(e.held_for_returns(), 1, "the second scene's still waits for a thought of its own");
 }
 
 /// The scene a task's pairs make: one bar carried a column along.

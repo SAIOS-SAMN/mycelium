@@ -193,6 +193,14 @@ pub(crate) fn mark_flux(
     book(Ledger::Refused, &reading.opened);
     book(Ledger::Relieved, &reading.relieved);
     book(Ledger::Transported, &reading.transport);
+    // MU-CLIENT §7.1 R1 — a scratch field records what it admitted and what
+    // that booked, for the mind's field to admit where the law lands.
+    let mut booked = [[0u64; 4]; 4];
+    booked[Ledger::Condensed as usize] = reading.order;
+    booked[Ledger::Refused as usize] = reading.opened;
+    booked[Ledger::Relieved as usize] = reading.relieved;
+    booked[Ledger::Transported as usize] = reading.transport;
+    crate::transducer::mind::record_flux(circuits, word_transports, &booked);
     reading
 }
 

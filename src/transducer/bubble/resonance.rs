@@ -999,6 +999,9 @@ impl Contemplation {
                         _ => None,
                     });
                     let lanes = self.lanes_summed(latest);
+                    if let [row, ..] = rows.as_slice() {
+                        self.carry_vortices_round(&rotor, &row.chart);
+                    }
                     let _ = self.tether(key, &other, rotor, carriage, lanes);
                     self.resonance.edges += 1;
                     continue;
@@ -1026,7 +1029,8 @@ impl Contemplation {
                     match self.gate(rows, &line.t.versor, false, budget) {
                         Ok(()) => {
                             self.note_ground(key, &other, rows, &line.t.versor, false);
-                            self.scene_edge(key, &other, &line.t, line.lanes);
+                            let chart = Self::chart_of_rows(rows);
+                            self.scene_edge(key, &other, &line.t, line.lanes, &chart);
                         }
                         Err(why) => self.note_refusal(&why, &line.t.versor, rows),
                     }
@@ -1042,7 +1046,8 @@ impl Contemplation {
                             self.note_refusal(&why, &rep.versor, rows);
                             continue;
                         }
-                        self.scene_edge(key, &other, rep, first.lanes);
+                        let chart = Self::chart_of_rows(rows);
+                        self.scene_edge(key, &other, rep, first.lanes, &chart);
                         self.resonance.cosets += 1;
                         for m in &members {
                             let q = m.versor.geo(&rep.versor.reverse());
@@ -1355,6 +1360,22 @@ impl Contemplation {
                 self.grounds.insert(pair_key(key, other), grounded);
                 self.resonance.grounds[0] += 1;
             }
+            // MU-CLIENT §4.12 — A RELATION THAT NEVER RETURNS IS AN ESCAPING
+            // ORBIT, NEVER NOTHING: no ground (it has no period to wind), and
+            // it is filed for the drive to bind, under the scene it was
+            // perceived in. Demanding it return would be squaring (78.168
+            // §2); dropping it left every scene of slides with no thought at
+            // all (read on the fleet 2026-10-15: grounds 0, no return 17).
+            Err(Ungrounded::NoReturn) => {
+                self.ungrounded(Ungrounded::NoReturn);
+                let family = match self.bubbles.get(key) {
+                    Some(b) => b.family.clone(),
+                    None => Vec::new(),
+                };
+                let escaping = super::idea::Escaping { generator: forward, chart: first.chart.clone(), family };
+                self.escaping.insert(pair_key(key, other), escaping);
+                self.escaped += 1;
+            }
             Err(why) => self.ungrounded(why),
         }
     }
@@ -1658,14 +1679,39 @@ impl Contemplation {
     /// configuration, written as the complex carries an edge — its rotor and
     /// carriage — with what it carried, per lane. The complex's fill decides
     /// what the thought is.
-    fn scene_edge(&mut self, key: &[u8], other: &[u8], t: &Transition, lanes: [u64; 4]) {
+    fn scene_edge(&mut self, key: &[u8], other: &[u8], t: &Transition, lanes: [u64; 4], chart: &[u8]) {
         let Some((rotor, carriage)) = halves(&t.versor) else {
             self.resonance.undemanded += 1;
             return;
         };
+        self.carry_vortices_round(&rotor, chart);
         let _ = self.tether(key, other, rotor, carriage, lanes);
         self.resonance.edges += 1;
         self.resonance.scene_motions += 1;
+    }
+
+    /// MU-CLIENT §4.8, §7.1 R3 — THE VORTEX CARRIED ROUND ON A NEW
+    /// PERCEPTION: a perception joins a thought by a motion, and that motion
+    /// is read against every vortex held at its rotor's conjugacy class
+    /// (`collapse_on`, the one reader a glue and the syllabus collapse by).
+    /// The candidate the perception's own move carries — whose orbit the new
+    /// scene brings round — is the fill that collapses the superposition;
+    /// the others are a symmetry the mind measured, kept for its letters
+    /// (Expansion 4). A perception carrying no candidate collapses nothing:
+    /// the vortex is carried on whole.
+    fn carry_vortices_round(&mut self, rotor: &crate::transducer::alphabet::Rotor, chart: &[u8]) {
+        let Some(chart) = stalk::Invariant::from_key(chart) else { return };
+        let kept = self.collapse_on(std::slice::from_ref(rotor), &chart, "perception");
+        self.vortex_symmetries.extend(kept);
+    }
+
+    /// The chart the pair's first row stands on: where a scene's motion
+    /// meets a thought; none for no row.
+    fn chart_of_rows(rows: &[Row]) -> Vec<u8> {
+        match rows {
+            [row, ..] => row.chart.clone(),
+            [] => Vec::new(),
+        }
     }
 
     /// The other's bodies on the charts the pair shares, by their landing

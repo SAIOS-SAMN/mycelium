@@ -69,16 +69,21 @@ impl Entity {
         self.speak_owed();
     }
 
-    /// THE FEED'S NEXT FAMILY ENTERS, paced as the quote is, where the
-    /// reserve can fund thinking it through: thought through whole and its
-    /// form spoken. One family a tick.
+    /// THE FEED'S NEXT FAMILY IS TAKEN IN, paced by the mind's metabolism —
+    /// where the reserve has regenerated on the lanes it costs — and
+    /// perceived on the perception carrier: thought through whole and its
+    /// form spoken where it lands. One scene on the carrier at a time.
     pub(crate) fn feed_inflow(&mut self, outcome: &mut StrokeOutcome) {
-        let pace = &self.board.court;
-        if pace.last_pressure != [0; 4] && !pace.dwell_elapsed() {
+        // One scene on the perception carrier at a time: the next waits for
+        // the last to be taken.
+        if self.perceiving() {
             return;
         }
         let Some(feed) = self.board.feed.as_mut() else { return };
         let Some((path, task)) = feed.peek() else { return };
+        // THE MIND'S METABOLISM PACES ITS INTAKE (the operator, 2026-10-15):
+        // a family is taken where the reserve has regenerated on the lanes
+        // it costs.
         let mag = super::family::family_magnitude(&task.train);
         if !crate::economy::lanes_short(&self.physics().reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
             return;
@@ -86,17 +91,16 @@ impl Entity {
         if let Some(feed) = self.board.feed.as_mut() {
             feed.entered(&path);
         }
-        self.physics_mut().bump(&mag);
-        StrokeOutcome::add(&mut outcome.fed, &mag);
         // A task whose members have no A5 form has no identity to think by.
         // MU-CLIENT §5.4 (E1) — the scene is named by the court's own name
         // for it, its 32-byte CITATION, never the raw content address a
         // court binds nothing under (finding 8).
         let Some(id) = crate::registry::task_id(&task) else { return };
         let id = crate::registry::citation(&id);
-        if let (_, Some(uttered)) = self.think_family(&id, &task.train) {
-            StrokeOutcome::add(&mut outcome.uttered, &uttered);
-        }
+        self.physics_mut().bump(&mag);
+        StrokeOutcome::add(&mut outcome.fed, &mag);
+        // MU-CLIENT §7.1 R1 — perceived on its own carrier, off the field.
+        self.perceive_scene(super::perceive::Scene { id: id.to_vec(), train: task.train, tests: Vec::new(), reading: super::perceive::Reading::Feed });
     }
 
     /// THE OPEN BOOK FLOWS IN: a quote that landed is read — each listing's
@@ -181,94 +185,50 @@ impl Entity {
         }
     }
 
-    /// A TASK FROM THE COURT'S REGISTRY ENTERS (PoUW): its colour word and a
-    /// colour theorem spoken, its hours held one pair at a time under the
-    /// family's coordinate (78.56 III), the family thought through, every
-    /// motion its form could not cite put to the court (78.160 P2), the
-    /// tests spoken through the rule, and the solve — the rule minted at its
-    /// span — flowing out to the court.
-    /// The task that landed is perceived this stroke; the next is asked for
-    /// only where the mind rests or returns (the winding carrier).
-    pub(crate) fn task_inflow(&mut self, outcome: &mut StrokeOutcome, stop: &std::sync::atomic::AtomicBool) {
-        let landed = self.board.court.task.take();
-        let Some(crate::anastome::dialogue::TaskEnvelope { id, train, tests }) = landed else { return };
-        let mag = super::family::family_magnitude(&train);
-        if crate::economy::lanes_short(&self.physics().reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
-            self.physics_mut().bump(&mag);
-            StrokeOutcome::add(&mut outcome.fed, &mag);
-        }
-        self.at_law("a task: its colour word");
-        self.speak_colour(&id, &train);
-        let mut colour = self.stroke();
-        self.at_law("a task: its colour theorem");
-        self.speak_colour_theorem(&mut colour);
-        self.at_law("a task: its family extracted");
-        let mut t = self.extract_family(&id, &train);
-        if !t.frames.is_empty() {
-            self.at_law("a task: its hours held");
-            for (a, b) in &train {
-                if stop.load(std::sync::atomic::Ordering::SeqCst) {
-                    break;
-                }
-                let pair = [(a.clone(), b.clone())];
-                let hour = crate::transducer::family::perceive_family(&pair);
-                let mut hour_budget = self.stroke_n(crate::transducer::family::extraction_spend(&pair, &hour));
-                if let Some(f) = crate::transducer::family::scene_form_on(&self.epigenome, &mut hour_budget, a, b, &hour) {
-                    self.hold_perceived_from(f, &hour, (&[][..], &pair[..]), &[], &id, &mut hour_budget);
-                }
-            }
-        }
-        let Some(rule) = t.rule.take() else {
-            self.at_law("a task: no rule, held for comprehension");
-            self.withhold_unextracted(&train, &id);
-            self.await_comprehension(crate::anastome::dialogue::TaskEnvelope { id, train, tests });
+    /// MU-CLIENT §3.1, §7.1 R4 — A TASK IS PERCEPTION: a scene the court's
+    /// registry sent is TAKEN IN where the mind's metabolism can carry it —
+    /// the reserve regenerated on the lanes it costs (the operator: "there
+    /// should be internal metabolism in the mind") — and perceived on the
+    /// perception carrier, off the field (R1): its colour, its hours under
+    /// its citation (78.56 III), its rule spoken, and its comprehension,
+    /// which may emit a solve (`entity/perceive.rs`). A scene the metabolism
+    /// cannot yet carry waits where it landed; one scene is perceived at a
+    /// time.
+    pub(crate) fn task_inflow(&mut self, outcome: &mut StrokeOutcome) {
+        if self.perceiving() {
             return;
-        };
-        self.at_law("a task: its rule presented and spoken");
-        self.ask_presentation(&rule.form);
-        if let Some(uttered) = self.speak_form(&rule, &train, &t.frames, &id, &mut t.budget) {
-            StrokeOutcome::add(&mut outcome.uttered, &uttered);
         }
-        let envelope = crate::anastome::dialogue::TaskEnvelope { id, train, tests };
-        self.at_law("a task: comprehended");
-        if !self.comprehend(&envelope, rule, &mut t.budget) {
-            self.await_comprehension(envelope);
+        let Some(envelope) = self.board.court.task.as_ref() else { return };
+        let mag = super::family::family_magnitude(&envelope.train);
+        if !crate::economy::lanes_short(&self.physics().reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
+            return;
         }
+        let Some(crate::anastome::dialogue::TaskEnvelope { id, train, tests }) = self.board.court.task.take() else { return };
+        self.physics_mut().bump(&mag);
+        StrokeOutcome::add(&mut outcome.fed, &mag);
+        self.perceive_scene(super::perceive::Scene { id: id.to_vec(), train, tests, reading: super::perceive::Reading::Task });
     }
 
-    /// MU-CLIENT §4.9 — COMPREHENSION OF A SCENE, which may emit a solve: a
-    /// rule is solved with only where its perspectives KNOW it — every
-    /// training pair re-derived by the rule its siblings derive — and its
-    /// tests spoken through it without remainder. A fit its own perspectives
-    /// do not re-derive is not sent; the pairs they missed were lifted into
-    /// the mind as structure (`ascertain`). `true` where the solve was
-    /// emitted (held for the mind's return).
-    fn comprehend(&mut self, task: &crate::anastome::dialogue::TaskEnvelope, rule: crate::transducer::sentence::SentenceRule, budget: &mut crate::physics::Budget) -> bool {
-        let rule = match self.ascertain(&task.id, &task.train) {
-            super::family::Ascertained::Known => rule,
-            super::family::Ascertained::KnownByInversion(r) => *r,
-            _ => return false,
-        };
-        let Some(outs) = self.speak_tests(&rule, &task.tests) else { return false };
-        let spoken = self.mint_solve(&rule, &task.train);
-        self.solve_task(&task.id, &task.train, &outs, spoken.as_ref(), budget).is_some()
-    }
-
-    /// A SCENE NOT YET COMPREHENDED WAITS BESIDE ITS THOUGHTS (MU-CLIENT
-    /// §3.1, §4.9): kept by its citation with the language root it was last
-    /// read at, read again at the mind's returns (`comprehend_waiting`), and
-    /// gone when its last thought lapses — never by a count.
-    fn await_comprehension(&mut self, task: crate::anastome::dialogue::TaskEnvelope) {
-        let root = self.epigenome.atlas_root();
-        self.comprehending.insert(task.id, (task, root));
+    /// THE NEXT SCENE ASKED FOR, BY THE METABOLISM: where nothing waits to be
+    /// taken in or is being perceived and the reserve stands regenerated on
+    /// every lane — never because the mind rested or returned, never on a
+    /// count.
+    pub(crate) fn ask_for_a_scene(&mut self) {
+        if self.board.court.task.is_some() || self.perceiving() {
+            return;
+        }
+        if !crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty() {
+            return;
+        }
+        self.pull_task();
     }
 
     /// AT A RETURN, ONE WAITING SCENE READ AGAIN: the least by citation after
     /// the last read. A scene none of whose thoughts still stands lapses with
     /// them; one the mind's language has not moved since its last reading is
-    /// left as it was (nothing new to comprehend it by); otherwise its rule is
-    /// extracted again and comprehended, and the scene leaves once its solve
-    /// is emitted.
+    /// left as it was (nothing new to comprehend it by); otherwise it is taken
+    /// in again on the perception carrier, comprehension alone, and waits
+    /// again where its solve is not emitted.
     pub(crate) fn comprehend_waiting(&mut self) {
         let next = match self.comprehending.after(&self.comprehended_after).next() {
             Some((k, _)) => Some(k),
@@ -284,15 +244,13 @@ impl Entity {
         if self.comprehending.get(&id).is_some_and(|(_, at)| *at == root) {
             return;
         }
-        let Some((task, _)) = self.comprehending.remove(&id) else { return };
-        let mut t = self.extract_family(&task.id, &task.train);
-        let solved = match t.rule.take() {
-            Some(rule) => self.comprehend(&task, rule, &mut t.budget),
-            None => false,
-        };
-        if !solved {
-            self.comprehending.insert(task.id, (task, root));
+        // Read again only where the perception carrier is free; otherwise it
+        // waits as it was, to be read at a later return.
+        if self.perceiving() {
+            return;
         }
+        let Some((task, _)) = self.comprehending.remove(&id) else { return };
+        self.perceive_scene(super::perceive::Scene { id: task.id.to_vec(), train: task.train, tests: task.tests, reading: super::perceive::Reading::Again });
     }
 
     /// THE COURT'S LANGUAGE FLOWS IN, where it is due — the language changed

@@ -87,6 +87,26 @@ pub fn enter(law: &'static str) {
     s.now.boundary += 1;
 }
 
+/// WHERE EACH OTHER CARRIER STANDS, by its name: the law it entered last
+/// and how many it has entered.
+static CARRIERS: LazyLock<Mutex<Keyed<(&'static str, u64)>>> = LazyLock::new(|| Mutex::new(Keyed::new()));
+
+/// A CARRIER BESIDE THE WINDING (`name`) ENTERS `law`.
+pub fn enter_carrier(name: &'static str, law: &'static str) {
+    let Ok(mut c) = CARRIERS.lock() else { return };
+    let n = match c.get(name.as_bytes()) {
+        Some((_, n)) => n + 1,
+        None => 1,
+    };
+    c.insert(name.as_bytes(), (law, n));
+}
+
+/// Every other carrier's standing, one line each.
+pub fn carriers() -> Vec<String> {
+    let Ok(c) = CARRIERS.lock() else { return Vec::new() };
+    c.scoped().map(|(name, (law, n))| format!("{} carrier: in {law} · boundary {n}", String::from_utf8_lossy(&name))).collect()
+}
+
 /// Where the winding carrier stands.
 pub fn now() -> Now {
     match SLOT.0.lock() {
@@ -175,6 +195,7 @@ pub fn ask(line: &str) -> Option<u64> {
 pub fn read(line: &str, asked: u64) -> Vec<String> {
     let Ok(s) = SLOT.0.lock() else { return vec!["the observer's slot is poisoned".to_string()] };
     let mut out = vec![standing(&s.now)];
+    out.extend(carriers());
     match s.answers.get(line.as_bytes()) {
         Some((at, lines)) if *at > asked => {
             out.push(format!("{line} — answered at boundary {at}"));

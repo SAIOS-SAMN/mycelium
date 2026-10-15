@@ -133,7 +133,23 @@ impl Entity {
                 c.thought_returns
             ),
             format!(
-                "held for the return {} · scenes waiting {} · unheard words {} · unread solves {} · owed {} · contracted {} · questions {}",
+                "drive: escaping now {} · escaped {} · bound {} · dissipated {} · deliberated aligned {} orthogonal {} both {} · separated {} · perception carrier {}",
+                c.escaping.len(),
+                c.escaped,
+                c.bound,
+                c.dissipated,
+                c.deliberated[0],
+                c.deliberated[1],
+                c.deliberated[2],
+                c.separated,
+                match self.board.perceiver.as_ref() {
+                    Some(p) => format!("scenes {} solves {}", p.scenes, p.judging),
+                    None => "not opened".to_string(),
+                }
+            ),
+            format!(
+                "held for returns {} over {} scenes · scenes waiting {} · unheard words {} · unread solves {} · owed {} · contracted {} · questions {}",
+                self.held_for_returns(),
                 self.at_return.len(),
                 self.comprehending.len(),
                 self.unheard.len(),
@@ -244,16 +260,26 @@ impl Entity {
 
     fn read_held(&self) -> Vec<String> {
         let mut out = vec![format!(
-            "{} sayings held for the mind's next return (one release for all of them, at any return)",
+            "{} sayings held over {} scenes, each leaving at the return of a thought of its scene (none: at the mind's next return)",
+            self.held_for_returns(),
             self.at_return.len()
         )];
-        out.extend(self.at_return_by.scoped().map(|(at, i)| {
-            let kind = match at.as_slice() {
-                [1, ..] => "SAY to peers",
-                _ => "speech or solve",
+        for (scene, held) in self.at_return.scoped() {
+            let name = match scene.is_empty() {
+                true => "the mind's own".to_string(),
+                false => format!("scene {}", tail(&scene, 4)),
             };
-            format!("  [{i}] {kind} · {}", tail(&at, 8))
-        }));
+            out.push(format!("  {name}: {} held", held.len()));
+            out.extend(held.iter().map(|(at, _)| {
+                let kind = match at.as_slice() {
+                    [0, ..] => "speech",
+                    [1, ..] => "SAY to peers",
+                    [2, ..] => "solve",
+                    _ => "seat call",
+                };
+                format!("    {kind} · {}", tail(at, 8))
+            }));
+        }
         out
     }
 

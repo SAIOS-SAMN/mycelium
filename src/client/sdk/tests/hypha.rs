@@ -70,7 +70,7 @@ fn a_slow_court_holds_only_its_carrier() {
     let said = from_connection(&Word::from_letters(&[(q, false)]), &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0]).expect("a connection");
     assert!(matches!(mind.speak_word(&said), Ok(Utterance::Spoken)), "said, and the field goes on");
     // MU-CLIENT §4.4(4) — it leaves when the mind's own field comes round.
-    assert!(super::common::come_round(&mut mind) > 0, "the mind's orbit returned");
+    assert!(super::common::bind_a_thought(&mut mind, &[]) > 0, "the mind's orbit returned");
     let act = speeches.recv().expect("the speech reached the court");
     assert_eq!(act.voice, Kernel::named("unwaiting").voice(), "spoken by the mind");
     assert_eq!(mind.hypha.in_flight(), 1, "its answer is in flight");

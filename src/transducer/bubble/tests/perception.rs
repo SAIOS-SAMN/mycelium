@@ -436,6 +436,35 @@ fn one_motion_carrying_every_body_is_the_scene_and_the_thought() {
     assert!(matches!(thought(&c, &a, &b), Some(Fill::Class(..))), "the scene's motion is the thought");
 }
 
+/// MU-CLIENT §4.12, §7.1 R3 — A SLIDE'S THOUGHT ESCAPES, NEVER DROPPED. The
+/// same two Ls carried one column along, seen in one scene: the motion that
+/// carries every body never returns, so it files no ground (its slot: no
+/// return) — and the thought is filed as ESCAPING, under the pair it relates,
+/// with its generator, its chart and the scene it was perceived in, for the
+/// drive to bind. Never made to return (squaring), never let go.
+#[test]
+fn a_slides_thought_escapes_and_is_filed_for_the_drive() {
+    let draw = |cells: &[(usize, usize)], shift: usize| -> Vec<String> {
+        (0..7).map(|r| (0..9).map(|col| if col >= shift && cells.contains(&(r, col - shift)) { '1' } else { '0' }).collect()).collect()
+    };
+    let hour = |c: &mut Contemplation, cells: &[(usize, usize)]| {
+        let (input, output) = (draw(cells, 0), draw(cells, 1));
+        let i: Vec<&str> = input.iter().map(String::as_str).collect();
+        let o: Vec<&str> = output.iter().map(String::as_str).collect();
+        perceive_in(c, &i, &o, b"the scene")
+    };
+    let mut c = Contemplation::new();
+    hour(&mut c, &[&LA[..], &LB[..]].concat());
+    hour(&mut c, &[slid(&LA, 1), slid(&LB, 1)].concat());
+    assert_eq!((c.resonance.scene_motions, c.resonance.grounds[0]), (1, 0), "one scene motion, no ground: {}", c.resonance.line());
+    assert!(c.resonance.grounds[1] > 0, "no return: {}", c.resonance.line());
+    let filed: Vec<&crate::transducer::bubble::idea::Escaping> = c.escaping.scoped().map(|(_, e)| e).collect();
+    assert_eq!((filed.len(), c.escaped), (1, 1), "the escaping thought filed once");
+    let [e] = filed.as_slice() else { panic!("one escaping thought") };
+    assert_eq!(e.family, b"the scene".to_vec(), "under the scene it was perceived in");
+    assert!(!crate::transducer::sentence::presentation::is_still(&e.generator), "with the motion that carries it");
+}
+
 /// A TURNED SCENE (78.50, 78.51 tier 2): the two Ls both turned 90° about one
 /// point — one motion carries the whole configuration, elliptic. The two
 /// bodies co-rotate about their barycentre in synchronous lock, their

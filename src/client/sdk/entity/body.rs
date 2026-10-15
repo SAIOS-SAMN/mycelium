@@ -296,10 +296,13 @@ impl Entity {
                 let at = seat.at;
                 for id in tasks_before(&p) {
                     if !seat.answered.contains(&id) && !seat.solving.contains(&id) {
-                        self.hold_for_return(&seat_act_key(&at, Some(&id)), move |me| me.seat_act(at, Some(id)));
+                        self.hold_for_return(&seat_act_key(&at, Some(&id)), &[], move |me| me.seat_act(at, Some(id)));
                     }
                 }
-                self.hold_for_return(&seat_act_key(&at, None), move |me| me.seat_act(at, None));
+                // A seat's call is the mind's own: it leaves at the mind's
+                // next return (§6 — seat play from orbits comes after the
+                // soak).
+                self.hold_for_return(&seat_act_key(&at, None), &[], move |me| me.seat_act(at, None));
             }
             MindMail::Outcome(_, o) => {
                 let answered = self.with_seat_mind(seat.at, |m| m.outcome(&o));

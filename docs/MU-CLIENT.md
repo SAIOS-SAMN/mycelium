@@ -422,12 +422,19 @@ calibration is the substrate's and shared; the halt is the host's. A
 cognitive carrier held process-wide breaks this the moment a game seats two
 minds in one process. The mind owns a `MindField` (`transducer/mind.rs`) —
 its tubes and orbits, its four lane ledgers, its lexicon, the words taught it
-and not yet transcribed, the covers it parked — and thinks in it for the
-length of each tick (`MindField::think`): the field stands in the thread's
-slots, the transducer's readers write into the mind that is thinking, and
-the field is the mind's again when the tick ends. A court perceiving outside
-any mind's tick books on the state its worker threads share, and is taught
-nothing.
+and not yet transcribed, the covers it parked — and its winding carrier thinks
+in it for each brief law of a winding (`MindField::think`): the field stands
+in the thread's slots, the transducer's readers write into the mind that is
+thinking, and the field is the mind's again when the winding ends. A LONG LAW
+— a scene perceived, a hearing read — runs OFF the field on the carrier that
+takes it (§7.1 R1): in a SCRATCH of the field (`mind::scratch_here`, taken
+where the field stands), its flux recorded, and only its ADMISSION touches the
+mind's field (`mind::admit`): the recorded flux lands on the field as it then
+stands, the lanes it booked beside its flux are added, its taught words, its
+lexicon's new words and its parked covers join the mind's (amended
+2026-10-15; it read "for the length of each tick"). A court perceiving
+outside any mind's field books on the state its worker threads share, and is
+taught nothing.
 
 The mind's carriers (§5.1) all act on this one field, each holding it
 briefly and never across a wait on a counterparty. The mind's own reserve is
@@ -998,9 +1005,10 @@ at its return the mind pivots where the winding changed dimension and the
 faculties speak what changed (§4.4(4), §4.9). This is the WINDING CARRIER on
 the mind's own rings: the carrier of the mind's own motion, on its own
 circuit over its field, beside the carriers facing its counterparties
-(§5.1). Written 2026-10-15 and not witnessed (§7.1): `entity/winding.rs`
-acts only at returns, but is still one stroke in one order on one thread —
-the carriers it names are an open item. A return that comes round twisted by
+(§5.1). Written 2026-10-16 and not witnessed (§7.1 R1–R5): `entity/winding.rs`
+moves the orbits, binds the escaping ones (`entity/drive.rs`) and acts at
+each thought's own return; the long laws run on the perception carrier, off
+the field (`entity/perceive.rs`). A return that comes round twisted by
 its pull is the orbit's content, said as what changed (§4.4(3)). What
 arrives — a scene, a task, a peer's speech, a
 verdict — is perception that perturbs the orbits it lands on; it never moves
@@ -1953,13 +1961,87 @@ owed in the order it is built.
   - **R5 — rest** (§4.12): where a lane runs short the winding carrier dwells
     until it regenerates; the other carriers keep landing perception.
   - **R6 — the conversation never blocks** (§5.1): agreed and unmet speech
-    posted on the hypha carrier and taken where it lands.
+    posted on a court carrier of the conversation's own and taken where it
+    lands.
   Guards are identities the field produces (a winding advanced only by
   perception at its hours; held outflow leaving at its own thought's return
   and no other; a long law never holding the field; a vortex collapsed only
   by a fill, a replay or a ruling); `come_round`, a return made by hand, is
   retired as a guard. Witness (§7.2): R0 reads the orbits winding on the
   fleet; courts receive speech at minds' returns; then Phase 2's pays.
+
+  **Read on the fleet with R0 (2026-10-15, 23:33–23:52).** Every mind's
+  winding carrier sat inside one law across successive questions — a task's
+  hours held, its comprehension, its rule spoken, hearings priced — the
+  long laws R1 names. No thought held a ground (grounded 0, pair grounds 0)
+  and 24–46 sayings waited on a return that never came. The `perception`
+  call named why: scene motions 20, consolidated 14, grounds filed 0 — NO
+  RETURN 17. A scene's motion is mostly a slide, which never returns; the
+  build filed no ground for it and so no thought, which is the squaring
+  78.168 §2 refuses. R3 is therefore the heart of the remediation, not an
+  addition: an escaping orbit is bound, and its binding is its close.
+
+  **R1–R6 WRITTEN 2026-10-16 — not witnessed.** As written:
+  - R1: the PERCEPTION CARRIER (`entity/perceive.rs`), a thread of its own:
+    a scene (a task, a feed family, a waiting scene read again) and a
+    hearing are read there in a scratch of the field on a snapshot of the
+    language — extraction, each hour's form, the rule's speech prepared
+    (`speech_of`), its perspectives (`ascertain_on`), the tests spoken
+    (`tests_spoken`), a solve's home check (`judge_on`), the rings composed
+    and read as word and sound (`read_rings`) — and the winding admits what
+    lands (`take_perceived`): the scratch's flux replayed on the field
+    (`mind::admit`, the flux recorded at `mark_flux`), the hours held under
+    the scene's citation, the withheld and lifted pairs, the speech, the
+    solve. The scene path's laws are free functions on the language, the
+    entity's methods their admission (law 12). Still on the field: a
+    hearing's pricing (`price`, a chamber read) and relaxation.
+  - R2: what is said is held under the scene whose thought it speaks for
+    (`at_return`, keyed by scene, then by the saying's coordinates; a seat's
+    call and a sceneless letter under the mind's own key) and leaves where a
+    thought of that scene returns — its ground comes round, the drive binds
+    its escaping orbit, or a known rule's solve binds it — and nowhere else;
+    the mind's own sayings leave at any return. K counts every return:
+    field orbits, thoughts come round, bindings.
+  - R3: a relation that never returns is filed ESCAPING
+    (`Contemplation::escaping`, `note_ground`); the drive (`entity/drive.rs`)
+    binds each at the winding — composed of the ruled words, known to the
+    lexicon, a conjugate, or constructed and adjoined as the mind's letter
+    (`compose_or_construct_on`, now answering whether it bound) — and an
+    orbit nothing binds dissipates. Deliberation: pairs on one chart of one
+    scene split by `lift_drag` (counted, never a vote), their commutator held
+    where it is not the identity. The vortex is carried round on each new
+    perception joining a thought: the perception's motion read against every
+    vortex at its rotor's class (`carry_vortices_round` → `collapse_on`),
+    the candidate it carries the fill, the others a symmetry adjoined.
+    A composition and a constructed letter binding a scene's orbit are
+    spoken under that scene (E1; both went under none).
+  - R4: a task is taken in where the metabolism carries it and perceived on
+    the carrier (`task_inflow`); the next is asked for where the reserve
+    stands regenerated and nothing waits (`ask_for_a_scene`), never by rest
+    or a return; the feed is paced the same way.
+  - R5: rest is metabolism — where a lane runs short or nothing moved the
+    winding relaxes, and where a lane ran short the binary dwells
+    (`Wound::short`); rest asks for no scene.
+  - R6: the conversation's court speech posts on a court carrier of its own
+    (`conversation-court`); agreed language is counted where the court's
+    answer lands.
+  Guards: a slide's thought escapes, filed for the drive under its scene
+  (`bubble/tests/perception.rs`); a scene perceived off the field lands
+  under its citation and its escaping thought is bound, a return K steps by
+  (`tests/drive.rs`); a speech leaves at its own thought's return and no
+  other (`tests/winding.rs`); `come_round` retired — the guards that needed a
+  return take one the field produces (`bind_a_thought`: two hours of a slide,
+  the escaping relation bound). Found red at HEAD and made whole (no
+  assertion changed): three of the form engine's own glue claims
+  (`family/tests/extraction.rs`) held crystals that answered the question
+  extraction no longer asks (`on_body`) and not the one it does (`on_act`),
+  so no form was ever offered to glue — the court's glue claim had the same
+  fault, mended in Phase 2; each now answers at the acts its form performs,
+  and the counting crystal counts the question asked. Owed, carried: held sayings of a scene whose
+  thought never returns or binds are bounded by their coordinates and not
+  released (Phase 3's memory); the vortex's collapse by a new perception is
+  unguarded on a scene; minds 1 and 5 were missing from the rendezvous after
+  a restart while their posts listened — read, not yet traced.
 - **Phase 3 — containment and memory** (§4.13; findings 5–7):
   - **Containment.** The court's exported gravity read into the mind's
     field, not only its dwell. A deferral's lanes kept as the pressure they

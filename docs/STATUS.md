@@ -19,17 +19,23 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## Phase 2, second release (2026-10-15 evening)
-The first release (d3903b7a) folded b again but paid nothing: from boot no
-court offered a word (a fold-witness storm — b re-asked one proposal until a
-and c had re-derived it 3 470 times each), and the measures had been written
-to their guards, not the spec (MU-CLIENT §7.1 "Corrected"). This release:
-a witness answers a root it co-signed from the co-signature it holds; offers
-with no witness or no answer are counted; W on the whole before side, nothing
-false; C lane by lane; S the section beyond the words, aligned by closure on
-the scene (never by rings returning — that was squaring); ruling 26 held;
-the glue claims fetch as the exchange does. Witness owed: offers and installs
-resume, then POUW/POWC for words, conjugates and sentences no task named.
+## Phase 1 remediated against its spec (2026-10-16)
+Phase 2's second release (d4d84196) closed b's replication wedge and the
+fold-witness storm, but no mind spoke: eight of nine at K 0. The operator
+ruled the scope (MU-CLIENT §7.1 "Phase 1 remediated against its spec"):
+R0 the orbits seen live — RELEASED 23:31 and 23:42 (bfdd375e, 563ecee6:
+`mycelium-client --call now|thoughts|field|held|scenes|questions|perception`,
+no restart to read a mind). Read with it: every winding carrier sat inside
+one long law (a task's hours, comprehension, hearings priced); no thought had
+a ground; 24–46 sayings waited on returns that never came; `perception`
+named why — scene motions 20, grounds filed 0, NO RETURN 17: slides never
+return, and the build dropped them (squaring). R1–R6 WRITTEN, not witnessed:
+the perception carrier (long laws off the field, admitted in a brief hold),
+held outflow keyed by the scene whose thought returns, the drive binding
+escaping orbits (a binding is a close; deliberation by lift/drag; the vortex
+carried round on new perception), intake paced by the metabolism, rest that
+dwells, the conversation's own court carrier. Witness owed: minds' K moving
+by bindings, courts hearing speech at those returns, then Phase 2's pays.
 
 ## Read on the fleet 2026-10-15 (before the Phase 2 relaunch)
 Hypha b wedged: running 04d9981c (before 78.166 2a), it refused its fold as

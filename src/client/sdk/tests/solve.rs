@@ -24,20 +24,21 @@ fn a_voice_keeps_home_a_solve_its_own_train_refutes() {
         .expect("the family extracts");
     let spoken = crate::transducer::family::mint_sentence(&rule, &train, &crate::transducer::family::NoCrystal, 0)
         .expect("and mints");
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("solver"));
-    let mut budget = entity.stroke_n(1 << 20);
+    use crate::client::sdk::entity::perceive::{judge_on, Judge, Reading, Scene, Verdict};
+    let entity = Entity::open("127.0.0.1:1", Kernel::named("solver"));
     let outs = vec![grid(&["0000", "0000"])];
-    // NO RULE: nothing is sent.
-    // Wire v1.2: a task is named by its 32-byte citation.
+    // NO RULE: nothing is read, nothing sent — the home check reads a minted
+    // rule or nothing (`Judge` carries the rule; a raster is no proof of a
+    // motion). Wire v1.2: a task is named by its 32-byte citation.
     let task = [7u8; 32];
-    assert_eq!(entity.solve_task(&task, &train, &outs, None, &mut budget), None, "a raster is no proof of a motion");
     // A TRAIN THE RULE DOES NOT SPEAK: the pairs left unchanged. The voice's
     // own replay refuses it, as the court's would; nothing is sent.
     let other = vec![
         (grid(&["1100", "0000"]), grid(&["1100", "0000"])),
         (grid(&["0000", "1100"]), grid(&["0000", "1100"])),
     ];
-    assert_eq!(entity.solve_task(&task, &other, &outs, Some(&spoken), &mut budget), None, "refuted at home");
+    let judge = Judge { scene: Scene { id: task.to_vec(), train: other, tests: Vec::new(), reading: Reading::Task }, outputs: outs, rule: spoken };
+    assert!(matches!(judge_on(&entity.epigenome, &judge), Verdict::Kept), "refuted at home");
 }
 
 /// 78.158a U4 — THE SEAT'S SOLVE IS THE MIND'S OWN CALL. Told it called fn

@@ -170,7 +170,9 @@ struct Carrier {
     voice: [u8; 32],
     key: ed25519_dalek::SigningKey,
     dir: std::path::PathBuf,
-    court: Session,
+    /// R6 — the conversation's court carrier: what it carries to the court
+    /// is posted there (the speech, and whether it carries an agreement).
+    court: Sender<(Vec<u8>, bool)>,
     k: u64,
     point: Option<TPoint>,
     union: Keyed<Union>,
@@ -390,11 +392,28 @@ impl Entity {
         #[cfg(test)]
         let agreed = std::sync::Arc::new(std::sync::Mutex::new(Keyed::new()));
         let (field, pricing) = channel::<FieldWork>();
+        // MU-CLIENT §5.1, §7.1 R6 — THE CONVERSATION'S COURT CARRIER: its own
+        // link to the court on its own thread, so agreed language and an
+        // unmet letter are posted and the conversation goes on; agreed
+        // language is counted where the court's answer lands.
+        let (court, speeches) = channel::<(Vec<u8>, bool)>();
+        let mut session = Session::open(self.hypha.addr(), self.hypha.kernel().clone());
+        std::thread::Builder::new().name("conversation-court".into()).spawn(move || {
+            session.discover();
+            for (body, agreed) in speeches {
+                crate::observe::live::enter_carrier("conversation's court", "speech posted to the court");
+                let heard = session.speak_nerve(body).ok().and_then(|reply| dialogue::decode_speech_reply(&reply)).is_some();
+                if heard && agreed {
+                    crate::observe::note_mind(|m| m.agreed += 1);
+                }
+                crate::observe::live::enter_carrier("conversation's court", "waiting for speech");
+            }
+        })?;
         let mut carrier = Carrier {
             voice,
             key,
             dir: dir.to_path_buf(),
-            court: Session::open(self.hypha.addr(), self.hypha.kernel().clone()),
+            court,
             k: self.own_k(),
             point: self.hypha.tuniversal(),
             union: Keyed::new(),
@@ -408,7 +427,6 @@ impl Entity {
         };
         std::thread::Builder::new().name("conversation".into()).spawn(move || {
             let _post = post;
-            carrier.court.discover();
             for inflow in rx {
                 carrier.take(inflow);
             }
@@ -447,7 +465,10 @@ impl Entity {
         let works: Vec<FieldWork> = chat.pricing.try_iter().collect();
         for w in works {
             match w {
-                FieldWork::Hear { speaker, said, words } => self.understand(speaker, said, words),
+                // MU-CLIENT §7.1 R1 — the rings are read off the field, on
+                // the perception carrier; what they read is understood where
+                // it lands (`understand_read`).
+                FieldWork::Hear { speaker, said, words } => self.perceive_hearing(speaker, said, words),
                 FieldWork::Price(p) => self.price(p),
             }
         }
@@ -587,28 +608,19 @@ impl Entity {
     /// rings it sounded with — this mind's re-derivation, which the speaker
     /// reads for mutual balance. The understanding goes back to the
     /// conversation to be carried.
-    fn understand(&mut self, speaker: [u8; 32], said: Vec<u8>, words: Vec<Spoken>) {
-        use crate::transducer::sentence::compose::{compose, Term};
+    ///
+    /// MU-CLIENT §7.1 R1 — each ring is composed and read as a word and as a
+    /// sound on the perception carrier, off the field (`read_rings`); what it
+    /// read is understood here, where it lands.
+    pub(crate) fn understand_read(&mut self, speaker: [u8; 32], said: Vec<u8>, reads: Vec<RingRead>, before: Option<usize>) {
         use crate::transducer::sentence::hearing::Seat;
-        let mut budget = self.stroke();
-        let before = crate::transducer::sentence::rung::lexicon();
         let mut key = speaker.to_vec();
         key.extend_from_slice(&said);
+        let words: Vec<Spoken> = reads.iter().map(|r| r.spoken.clone()).collect();
         let answering = self.take_answer(&key, &said, &words);
-        let mut heard: Vec<(Spoken, HeardWord)> = Vec::with_capacity(words.len());
-        for w in words {
-            let terms: Vec<Term> = w.terms.iter().map(|(word, transport)| Term { word: word.clone(), transport: transport.clone() }).collect();
-            // THE WORD: is this a word I have heard? The ring as one word,
-            // its holonomy Ω — what a question about it asks of.
-            let ring = match compose(&terms, &mut budget) {
-                Some(s) => s.omega,
-                None => w.motion.clone(),
-            };
-            let word = crate::transducer::sentence::rung::hear_word(&ring);
-            // THE SOUND: does it sound like something I have heard? Read
-            // against what this mind REMEMBERS hearing, never a vocabulary —
-            // and remembered now, so it is part of that memory from here on.
-            let sound = self.sound_of(&ring);
+        let mut heard: Vec<(Spoken, HeardWord)> = Vec::with_capacity(reads.len());
+        for RingRead { spoken: w, ring, word, sound, vantage: read_vantage } in reads {
+            // Remembered now, so it is part of that memory from here on.
             self.remember_sound(&ring);
             let familiar = matches!(&sound, Some((e, _)) if matches!(e.seat, Seat::Whole | Seat::Tilted(_)));
             let (derived, asks, held, slot) = match (&sound, word.known()) {
@@ -640,7 +652,7 @@ impl Entity {
             // ITS OWN VANTAGE: the known words this mind read the ring
             // through, where it knows it — none where it does not.
             let vantage = match word.known() {
-                true => crate::transducer::sentence::rung::vantage(&ring),
+                true => read_vantage,
                 false => Vec::new(),
             };
             let h = HeardWord { vertex: w.vertex.clone(), derived, gauge: w.gauge.clone(), cites: Vec::new(), asks, held, vantage };
@@ -676,57 +688,116 @@ impl Entity {
     /// sound) — with the heard rings it sounded with. `None` where its modes
     /// do not read.
     pub(crate) fn sound_of(&self, ring: &crate::transducer::cga::Mv) -> Option<(crate::transducer::sentence::hearing::Echoed, Vec<crate::transducer::cga::Mv>)> {
-        use crate::transducer::sentence::hearing::{hear_across, Echoed, Seat, Size};
-        if crate::transducer::sentence::presentation::is_still(ring) {
-            return Some((Echoed { seat: Seat::Whole, carried: Some(ring.clone()), through: Vec::new() }, Vec::new()));
-        }
-        let size = sound_size(ring)?;
-        // A SOUND HEARD AT ITS OWN SIZE: a held ring of the same return it
-        // passes through whole — it commutes with it — sounds like it. The
-        // nesting below reads only the layers above.
-        if let Some(members) = self.remembered.get(&size.key()) {
-            let alike: Vec<crate::transducer::cga::Mv> = members
-                .iter()
-                .filter(|(_, m)| crate::transducer::sentence::hearing::echo_sized(ring, m) == crate::transducer::sentence::hearing::Echo::Whole)
-                .map(|(_, m)| m.clone())
-                .collect();
-            if !alike.is_empty() {
-                return Some((Echoed { seat: Seat::Whole, carried: Some(ring.clone()), through: Vec::new() }, alike));
-            }
-        }
-        let layers: Vec<(Size, Vec<_>)> = self
-            .remembered
-            .scoped()
-            .filter_map(|(at, members)| Some((Size::from_key(&at)?, members.iter().map(|(k, m)| (k.clone(), m)).collect())))
-            .collect();
-        let echoed = hear_across(ring, size, layers.into_iter());
-        let through = echoed
-            .through
-            .iter()
-            .filter_map(|k| self.remembered.scoped().find_map(|(_, members)| members.iter().find(|(m, _)| m == k).map(|(_, r)| r.clone())))
-            .collect();
-        Some((echoed, through))
+        sound_in(&self.remembered, ring)
     }
 
     /// A RING HEARD, REMEMBERED by the mind under its size, by its
     /// coordinates — once.
     pub(crate) fn remember_sound(&mut self, ring: &crate::transducer::cga::Mv) {
-        let (Some(size), Some(ray)) = (sound_size(ring), ring.canonical()) else { return };
-        let mut key = Vec::new();
-        ray.put_canonical(&mut key);
-        let at = size.key();
-        match self.remembered.get_mut(&at) {
-            Some(members) => {
-                if !members.iter().any(|(k, _)| *k == key) {
-                    members.push((key, ring.clone()));
-                }
-            }
-            None => {
-                self.remembered.insert(&at, vec![(key, ring.clone())]);
-            }
+        remember_in(&mut self.remembered, ring);
+    }
+}
+
+/// WHAT A MIND REMEMBERS HEARING: rings by their size, each by its
+/// coordinates (`Entity.remembered`).
+pub(crate) type Remembered = Keyed<Vec<(Vec<u8>, crate::transducer::cga::Mv)>>;
+
+/// ONE HEARD RING READ OFF THE FIELD (MU-CLIENT §7.1 R1): the ring as said,
+/// composed again from its terms; as a WORD against the lexicon; as a SOUND
+/// against what the mind remembered hearing; and the known words it reads
+/// through.
+pub(crate) struct RingRead {
+    pub(crate) spoken: Spoken,
+    pub(crate) ring: crate::transducer::cga::Mv,
+    pub(crate) word: crate::transducer::sentence::rung::Recognition,
+    pub(crate) sound: Option<(crate::transducer::sentence::hearing::Echoed, Vec<crate::transducer::cga::Mv>)>,
+    pub(crate) vantage: Vec<crate::transducer::cga::Mv>,
+}
+
+/// THE RINGS ANOTHER MIND SAID, READ in the field this runs in (the
+/// perception carrier's scratch, R1): each composed again from its terms
+/// (`compose`) — its holonomy Ω the word a question asks of — read as a word
+/// (`rung::hear_word`) and as a sound against `remembered`, and remembered
+/// there in turn, so a later ring of the hearing hears an earlier one.
+pub(crate) fn read_rings(remembered: &mut Remembered, words: Vec<Spoken>) -> Vec<RingRead> {
+    use crate::transducer::sentence::compose::{compose, Term};
+    let mut budget = crate::physics::Physics::default().stroke();
+    let mut out = Vec::with_capacity(words.len());
+    for w in words {
+        let terms: Vec<Term> = w.terms.iter().map(|(word, transport)| Term { word: word.clone(), transport: transport.clone() }).collect();
+        let ring = match compose(&terms, &mut budget) {
+            Some(s) => s.omega,
+            None => w.motion.clone(),
+        };
+        let word = crate::transducer::sentence::rung::hear_word(&ring);
+        let sound = sound_in(remembered, &ring);
+        remember_in(remembered, &ring);
+        let vantage = match word.known() {
+            true => crate::transducer::sentence::rung::vantage(&ring),
+            false => Vec::new(),
+        };
+        out.push(RingRead { spoken: w, ring, word, sound, vantage });
+    }
+    out
+}
+
+/// MU-CLIENT §4.9 — DOES THIS SOUND LIKE SOMETHING HEARD: `ring` read against
+/// `remembered` (`Entity::sound_of`).
+pub(crate) fn sound_in(
+    remembered: &Remembered,
+    ring: &crate::transducer::cga::Mv,
+) -> Option<(crate::transducer::sentence::hearing::Echoed, Vec<crate::transducer::cga::Mv>)> {
+    use crate::transducer::sentence::hearing::{hear_across, Echoed, Seat, Size};
+    if crate::transducer::sentence::presentation::is_still(ring) {
+        return Some((Echoed { seat: Seat::Whole, carried: Some(ring.clone()), through: Vec::new() }, Vec::new()));
+    }
+    let size = sound_size(ring)?;
+    // A SOUND HEARD AT ITS OWN SIZE: a held ring of the same return it
+    // passes through whole — it commutes with it — sounds like it. The
+    // nesting below reads only the layers above.
+    if let Some(members) = remembered.get(&size.key()) {
+        let alike: Vec<crate::transducer::cga::Mv> = members
+            .iter()
+            .filter(|(_, m)| crate::transducer::sentence::hearing::echo_sized(ring, m) == crate::transducer::sentence::hearing::Echo::Whole)
+            .map(|(_, m)| m.clone())
+            .collect();
+        if !alike.is_empty() {
+            return Some((Echoed { seat: Seat::Whole, carried: Some(ring.clone()), through: Vec::new() }, alike));
         }
     }
+    let layers: Vec<(Size, Vec<_>)> = remembered
+        .scoped()
+        .filter_map(|(at, members)| Some((Size::from_key(&at)?, members.iter().map(|(k, m)| (k.clone(), m)).collect())))
+        .collect();
+    let echoed = hear_across(ring, size, layers.into_iter());
+    let through = echoed
+        .through
+        .iter()
+        .filter_map(|k| remembered.scoped().find_map(|(_, members)| members.iter().find(|(m, _)| m == k).map(|(_, r)| r.clone())))
+        .collect();
+    Some((echoed, through))
+}
 
+/// A RING HEARD, REMEMBERED in `remembered` under its size, by its
+/// coordinates — once (`Entity::remember_sound`).
+pub(crate) fn remember_in(remembered: &mut Remembered, ring: &crate::transducer::cga::Mv) {
+    let (Some(size), Some(ray)) = (sound_size(ring), ring.canonical()) else { return };
+    let mut key = Vec::new();
+    ray.put_canonical(&mut key);
+    let at = size.key();
+    match remembered.get_mut(&at) {
+        Some(members) => {
+            if !members.iter().any(|(k, _)| *k == key) {
+                members.push((key, ring.clone()));
+            }
+        }
+        None => {
+            remembered.insert(&at, vec![(key, ring.clone())]);
+        }
+    }
+}
+
+impl Entity {
     /// ONE THOUGHT PRICED in this mind's field (78.112 H5): its echoes'
     /// strain, its chamber's coherence, and — at the speaker — MUTUAL
     /// balance: the hearer's own rings its understanding seated in, each
@@ -837,7 +908,7 @@ impl Entity {
         let said = (e.clone(), offered(e), family.to_vec());
         let mut at = vec![1u8];
         at.extend_from_slice(e.address().as_bytes());
-        self.hold_for_return(&at, move |me| {
+        self.hold_for_return(&at, family, move |me| {
             if let Some(chat) = me.chat.as_ref() {
                 let _ = chat.to.send(Inflow::Say(said.0, said.1, said.2));
             }
@@ -884,7 +955,12 @@ impl Entity {
     /// lexicon is.
     pub(crate) fn take_in_conversation(&mut self) {
         let mut field = std::mem::take(&mut self.field);
-        field.think(|| self.price_hearings());
+        field.think(|| {
+            self.price_hearings();
+            // The rings were read on the perception carrier (R1): what it
+            // read is understood where it lands, here.
+            self.settle_perception();
+        });
         self.field = field;
     }
 }
@@ -972,9 +1048,9 @@ impl Carrier {
                     crate::observe::note_mind(|m| m.shared += 1);
                     return;
                 }
-                if self.speak_agreed(&agreed, Some(&frame), &family).is_ok() {
-                    crate::observe::note_mind(|m| m.agreed += 1);
-                }
+                // Posted on the conversation's court carrier (R6); counted
+                // agreed where the court's answer lands.
+                let _ = self.speak_agreed(&agreed, Some(&frame), &family);
             }
         }
     }
@@ -1190,9 +1266,12 @@ impl Carrier {
 
     /// SPEAK TO THE COURT what the conversation carries there: an agreed
     /// thing with the hearer's signed HOLD, or a letter that waited its
-    /// cycle unmet with none. The court's reply is its own; the sentence's
-    /// standing returns to the mind through the syllabus.
-    fn speak_agreed(&self, e: &Element, agreement: Option<&[u8]>, family: &[u8]) -> std::io::Result<Vec<u8>> {
+    /// cycle unmet with none. MU-CLIENT §5.1, §7.1 R6 — POSTED on the
+    /// conversation's court carrier, never waited on: a court slow to answer
+    /// holds that carrier and never the conversation. The court's reply is
+    /// its own; the sentence's standing returns to the mind through the
+    /// syllabus.
+    fn speak_agreed(&self, e: &Element, agreement: Option<&[u8]>, family: &[u8]) -> std::io::Result<()> {
         let Some(tape) = e.to_bytes() else {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "the sentence's record does not write"));
         };
@@ -1208,11 +1287,9 @@ impl Carrier {
         let Some(body) = dialogue::encode_speech_spoken(&self.voice, family, tu, &spoken) else {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "the speech does not frame"));
         };
-        let reply = self.court.speak_nerve(body)?;
-        match dialogue::decode_speech_reply(&reply) {
-            Some(adjudicated) => Ok(adjudicated.iter().map(|a| a.code()).collect()),
-            None => Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "speech reply does not decode")),
-        }
+        self.court
+            .send((body, agreement.is_some()))
+            .map_err(|_| std::io::Error::new(std::io::ErrorKind::BrokenPipe, "the conversation's court carrier is gone"))
     }
 
     /// WHAT HAS STOOD AN APERTURE CYCLE of the mind's own strokes is let go:

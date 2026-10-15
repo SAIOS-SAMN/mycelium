@@ -453,6 +453,20 @@ assert!(
 );
 }
 
+/// 21 step 3 — THE QUESTION THE GLUE ASKS A CRYSTAL: whether the held form
+/// `f` acts at `act` — one of its word vertices performs exactly that act
+/// (`presentation::act_key`: chart, whole motion, hue map) — as the mind's
+/// crystal files a closed form (`act_keys_of`), and at no other act.
+fn acts_at(f: &Form, act: &[u8]) -> bool {
+    f.is_closed()
+        && f.vertices.scoped().any(|(_, v)| {
+            let Vertex::Word { derivation, acts, .. } = v else { return false };
+            acts.scoped().any(|(_, a)| {
+                crate::transducer::sentence::presentation::act_key(&a.chart, &derivation.rotor(), &a.carriage, &a.gauge).as_deref() == Some(act)
+            })
+        })
+}
+
 /// A held closed form glued as a vertex: depth 1, fewer Word vertices.
 #[test]
 fn extract_rule_glues_a_held_form() {
@@ -480,6 +494,12 @@ impl Crystal for Held {
     }
     fn on_body(&self, c: &Invariant) -> Vec<(&Element, &Form, Standing)> {
         self.on_class(c)
+    }
+    fn on_act(&self, act: &[u8]) -> Vec<(&Element, &Form, Standing)> {
+        match acts_at(&self.f, act) {
+            true => vec![(&self.e, &self.f, Standing::Held)],
+            false => Vec::new(),
+        }
     }
     fn speak_form(
         &self,
@@ -611,8 +631,15 @@ fn the_glue_speaks_a_cited_form_once_per_placement_and_asks_once_per_chart() {
             vec![(&self.e, &self.f, Standing::Held)]
         }
         fn on_body(&self, c: &Invariant) -> Vec<(&Element, &Form, Standing)> {
-            self.asked.set(self.asked.get() + 1);
             self.on_class(c)
+        }
+        /// The question the glue asks, counted where it is asked.
+        fn on_act(&self, act: &[u8]) -> Vec<(&Element, &Form, Standing)> {
+            self.asked.set(self.asked.get() + 1);
+            match acts_at(&self.f, act) {
+                true => vec![(&self.e, &self.f, Standing::Held)],
+                false => Vec::new(),
+            }
         }
         fn speak_form(&self, f: &Form, x: &Grid, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
             self.speeches.set(self.speeches.get() + 1);
@@ -683,6 +710,12 @@ fn a_glue_pass_retracts_once_and_a_citation_is_never_cloned() {
         }
         fn on_body(&self, c: &Invariant) -> Vec<(&Element, &Form, Standing)> {
             self.on_class(c)
+        }
+        fn on_act(&self, act: &[u8]) -> Vec<(&Element, &Form, Standing)> {
+            match acts_at(&self.f, act) {
+                true => vec![(&self.e, &self.f, Standing::Held)],
+                false => Vec::new(),
+            }
         }
         fn speak_form(&self, f: &Form, x: &Grid, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
             apply_form(f, x, placement, self)

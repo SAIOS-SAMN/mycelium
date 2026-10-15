@@ -205,7 +205,7 @@ fn a_mind_speaks_its_closed_thought_into_its_own_dialect() {
         assert_eq!(spoken(&entity), 0, "hour {i}: nothing stands before the mind's return");
     }
     let mut budget = entity.stroke_n(1 << 20);
-    assert_eq!(entity.act_on_returns(&mut budget, true), 1, "the thought came round: one return");
+    assert_eq!(entity.act_on_returns(&mut budget, Vec::new(), true), 1, "the thought came round: one return");
     assert_eq!((entity.own_k(), spoken(&entity)), (1, 1), "K stepped by it, and the word stands at it");
     // READ OFF THE MIND'S OWN CARRIERS: one thought closed, the dialect
     // holding what it stood.

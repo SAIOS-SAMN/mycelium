@@ -340,7 +340,10 @@ impl Entity {
                     crate::transducer::address::put_key_bytes(&mut at, e.address().as_bytes());
                 }
                 let (sentences, train, task) = (sentences.to_vec(), train.to_vec(), task.to_vec());
-                self.hold_for_return(&at, move |me| {
+                // R2 — held for the return of a thought of the scene it is
+                // spoken under.
+                let scene = task.clone();
+                self.hold_for_return(&at, &scene, move |me| {
                     me.ask(
                         move |s| s.speak_nerve(body),
                         move |me, reply| {
@@ -467,27 +470,6 @@ impl Entity {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "speech refused: the task's address cannot be framed"));
         };
         Ok(Posted::Asked { body, codes, fresh })
-    }
-
-    /// 78.53 — SPEAK WHAT THE COLOUR FIBRE DID. The family's fibre relation
-    /// (`fibre_relation`, read where the base stands still, in the sensor's
-    /// labels) is minted as a colour word, stood in this mind's dialect —
-    /// its short-term language, pruned by truncation — and spoken to the
-    /// court WITH THE TASK it was seen in, so the court can re-derive it
-    /// from its own copy of the family. A colour word is its relation, so
-    /// one already spoken or already in the genome is found by its address
-    /// (every colour word shares the motionless vertex; a vertex test would
-    /// call them all one). Nothing is said where the family's fibre moved no
-    /// hue or the word was already said; the court's answer files itself.
-    pub(crate) fn speak_colour(&mut self, task: &[u8], train: &crate::transducer::family::Family) {
-        let Some(word) = crate::transducer::family::fibre_relation(train).and_then(|s| crate::transducer::element::colour_word(&s)) else {
-            return;
-        };
-        let addr = word.address();
-        if self.already_taught_addr(addr.as_bytes()) || self.epigenome.holds(addr.as_bytes()) {
-            return;
-        }
-        self.speak_with(std::slice::from_ref(&word), train, task, |_, _| {});
     }
 
     /// 78.55 — A COLOUR THEOREM: the language's closure, spoken. The ruled

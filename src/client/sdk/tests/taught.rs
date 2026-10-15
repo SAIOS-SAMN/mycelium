@@ -74,7 +74,7 @@ fn a_mind_adjoins_its_ineffable_word_and_says_it_at_once() {
     // Constructing reads the residue's modes under the stroke they need,
     // read off the residue (78.111 C1b): the mind's own stroke suffices.
     for residue in &ineffable {
-        e.construct_and_adjoin(residue, Some(&chart), &mut budget);
+        e.construct_and_adjoin(residue, Some(&chart), &[], &mut budget);
     }
     let (_, again) = e.transcribe_these(vec![Taught { motion: w, period: 1 }], &mut budget);
     assert!(again.is_empty(), "no longer ineffable: the mind holds its letter, and says it");
@@ -95,7 +95,7 @@ fn a_dilation_about_a_point_becomes_the_minds_motion_letter() {
     assert!(!e.contemplation.holds_own_letter(&star), "not held before it is made");
     let chart = crate::transducer::stalk::Invariant::counts(&[1]);
     let mut budget = e.stroke();
-    e.construct_and_adjoin(&star, Some(&chart), &mut budget);
+    e.construct_and_adjoin(&star, Some(&chart), &[], &mut budget);
     assert!(e.contemplation.holds_own_letter(&star), "the mind keeps the motion letter it made");
     let letter = crate::transducer::sentence::motion_letter_form(&star, &chart, &[]).expect("a letter");
     let bare = crate::transducer::sentence::generator_form(&crate::transducer::alphabet::Rotor::identity(), &chart, &[])

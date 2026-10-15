@@ -25,85 +25,6 @@ impl Entity {
     }
 
 
-    /// A SOLVE THIS VOICE CAN STAND BEHIND, OR NONE SENT. A solve is a rule,
-    /// and the court replays it on the task's withheld pairs; so the voice
-    /// first replays it on the pairs it holds — the train — exactly as the
-    /// court will (`blind_replay_at` over this mind's own crystal), and:
-    /// - a solve with no minted rule is not sent (UNMINTED): a raster is no
-    ///   proof of a motion, and the court refuses it by construction;
-    /// - a rule its own train refutes is not sent (REFUTED AT HOME);
-    /// - a rule the court already refused for this task is not sent again
-    ///   until this voice's rule for it changes (WITHHELD AGAIN);
-    /// - a rule citing a word no court admitted is kept home, by name (CITES
-    ///   UNHELD, 78.157 §3a);
-    /// - a replay no stroke here could read is SENT: unjudged at home is
-    ///   not refuted, and the court resumes it (78.158a U2).
-    ///
-    /// On the fleet (epoch 106) each voice sent ~600 solves the court
-    /// refused, the same rules round after round, with none of these read.
-    /// The verdict files itself where it lands.
-    pub(crate) fn solve_task(
-        &mut self,
-        id: &[u8; 32],
-        train: &[(Grid, Grid)],
-        outputs: &[Grid],
-        rule: Option<&Element>,
-        budget: &mut crate::physics::Budget,
-    ) -> Option<()> {
-        let rule = rule?;
-        // 78.142 — THE WORD THAT CROSSES TO THE WITHHELD PAIRS carries no
-        // overlap between two of its TRAINING frames (`rule::crossing`): the
-        // court reads those frame indices on pairs they do not name and
-        // refuses them I. A rule that cannot be re-minted without them has
-        // nothing to say about a pair it never saw, and is refuted at home.
-        let crossed = crate::client::sdk::rule::crossing(rule, train, &self.epigenome).ok()?;
-        let rule = &crossed;
-        let addr = rule.address();
-        if self.solve_refused.get(id).is_some_and(|a| a == addr.as_bytes()) {
-            return None;
-        }
-        // 78.158a — THE HOME CHECK, the judge's own (`rule::would_judge_with`)
-        // on this call's stroke, its citations resolved through the
-        // COURT-STAMPED words alone (78.157 §3a): a dialect word or one
-        // learned with no stamp is not a citation the court holds.
-        let resolve = |a: &[u8]| self.epigenome.court_word(a).and_then(|e| e.form().cloned());
-        match crate::client::sdk::rule::would_judge_with(rule, train, &resolve, &self.epigenome, budget) {
-            Ok(()) => {}
-            // U2 — UNJUDGED, NEVER REFUTED: the court's replay resumes it on
-            // its cursor and answers SOLVE_UNREAD until it rules.
-            Err(crate::client::sdk::rule::NoRule::Unread) => {}
-            // A citation no court admitted: its own outcome, not refuted —
-            // the rule waits for the court to hold the word it cites.
-            Err(crate::client::sdk::rule::NoRule::CitesUnheld(a)) => {
-                eprintln!("  solve kept home: the rule cites {} no court admitted (cites unheld)", hex_prefix(&a));
-                return None;
-            }
-            // MU-CLIENT §4.4 — A REFUSAL IS RESIDUE, NEVER AN EXIT: a D at
-            // home names the versor no held letter spells, by its canonical
-            // ray, and the chart it acts on. The mind constructs it there
-            // as its own letter — the deviation feeding construction — so
-            // the rule this task asked for can be spelled on its next asking.
-            Err(crate::client::sdk::rule::NoRule::Refused(r)) => {
-                if let crate::transducer::sentence::ClosureObstruction::Dialect { coset, chart } = &r.obstruction {
-                    let residue = coset.iter().try_fold(None::<crate::transducer::cga::Mv>, |acc, (mask, q)| {
-                        let term = crate::transducer::cga::Mv::blade(usize::try_from(*mask).ok()?, q.clone());
-                        Some(Some(match acc {
-                            Some(a) => a.add(&term),
-                            None => term,
-                        }))
-                    });
-                    let chart = chart.as_deref().and_then(crate::transducer::stalk::Invariant::from_key);
-                    if let Some(Some(residue)) = residue {
-                        self.construct_and_adjoin(&residue, chart.as_ref(), budget);
-                    }
-                }
-                return None;
-            }
-            Err(_) => return None,
-        }
-        self.submit_solve_rule(id, outputs, rule).ok()
-    }
-
     /// The verdict filed: a closure clears the task, a refusal is remembered
     /// against its rule, and an UNREAD solve is kept to be asked again (78.153:
     /// the court's replay resumes where its stroke ran out).
@@ -181,7 +102,8 @@ impl Entity {
         // the place of the earlier.
         let mut at = vec![2u8];
         at.extend_from_slice(&id);
-        self.hold_for_return(&at, move |me| me.post_solve(id, act, rule, outputs));
+        // R2 — held for the return of a thought of the task's scene.
+        self.hold_for_return(&at, &id, move |me| me.post_solve(id, act, rule, outputs));
         Ok(())
     }
 
@@ -609,7 +531,7 @@ impl Entity {
 /// An address as the journal prints it: the first six bytes of its whole
 /// digest (`payload_hash`), as the client's `fam_id` labels a task — a
 /// label to read the line by, never a key (78.113).
-fn hex_prefix(addr: &[u8]) -> String {
+pub(crate) fn hex_prefix(addr: &[u8]) -> String {
     crate::chronometry::payload_hash(addr).iter().take(6).map(|b| format!("{b:02x}")).collect::<String>() + "…"
 }
 

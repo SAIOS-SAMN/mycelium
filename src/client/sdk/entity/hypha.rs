@@ -51,6 +51,9 @@ pub(crate) struct Hypha {
     landings: VecDeque<Landing>,
     view: Arc<Mutex<View>>,
     woken: Receiver<()>,
+    /// What wakes the resting field: every carrier that lands something for
+    /// it (this one, the perception carrier) holds a copy.
+    wake: Sender<()>,
     kernel: Kernel,
     addr: String,
 }
@@ -65,6 +68,7 @@ impl Hypha {
         let view = Arc::new(Mutex::new(View::of(&session)));
         let (to, jobs) = channel::<Job>();
         let (wake, woken) = channel::<()>();
+        let waker = wake.clone();
         let published = Arc::clone(&view);
         // A carrier that cannot be spawned leaves every ask unanswered: the
         // field goes on with its court silent, as on an occluded wire.
@@ -81,11 +85,17 @@ impl Hypha {
                 let _ = wake.send(());
             }
         });
-        Hypha { to, landings: VecDeque::new(), view, woken, kernel, addr }
+        Hypha { to, landings: VecDeque::new(), view, woken, wake: waker, kernel, addr }
     }
 
     pub(crate) fn kernel(&self) -> &Kernel {
         &self.kernel
+    }
+
+    /// A copy of what wakes the resting field, for another carrier that
+    /// lands something for it.
+    pub(crate) fn waker(&self) -> Sender<()> {
+        self.wake.clone()
     }
 
     /// The hypha this mind was pointed at.

@@ -329,6 +329,7 @@ pub struct GenomeView<'a> {
 /// the parallel-vector defect Z9 removed — that made POSITION the identity
 /// and made a removal shift three carriers. Here a removal is two keyed
 /// removes at the same key, and neither can name a word the other does not.
+#[derive(Clone)]
 pub struct GenomeEntry {
     /// How often this entity speaks or hears it — the recollection
     /// efficiency. Content: how often a word was used is not derivable
@@ -352,6 +353,7 @@ pub struct GenomeEntry {
 /// THE PAYLOAD: the decoded word, and what Z11 moves to disk. Resident
 /// today; under Z11 this carrier is the bounded escrowed cache and holds
 /// only what a reading has reached.
+#[derive(Clone)]
 pub struct GenomeWord {
     /// The word, with the form its tape decodes to (L16).
     pub(crate) held: crate::transducer::element::Held,
@@ -363,12 +365,13 @@ pub struct GenomeWord {
 /// An expressed word — a residual this mind germinated and has not had
 /// ratified — at its own coordinate, for the same reason.
 #[cfg(test)]
+#[derive(Clone)]
 pub struct ExpressedWord {
     pub(crate) word: Element,
     pub(crate) shape: std::sync::OnceLock<Option<crate::transducer::blade::Shape>>,
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Epigenome {
     /// THE CRYSTALLIZED LANGUAGE AS THIS MIND HOLDS IT (L16): each word
     /// with the form its tape decodes to, decoded once at the admission.
@@ -585,18 +588,17 @@ pub struct Entity {
     /// returned in. The mind's clock is its own motion; the ledger is the
     /// court's (law 8), and no receipt of the mind's exists.
     pub(crate) k: u64,
-    /// MU-CLIENT §4.4(4), §4.13 — WHAT THE MIND SAYS, HELD FOR ITS RETURN:
-    /// speech to a court, a solve, a SAY to its peers, each posted where the
-    /// mind's orbits return and nowhere else, so its outflow is bounded by
-    /// its own periods. Each is held BY ITS COORDINATES (`at_return_by`): a
-    /// thing said twice before a return is one thing, its latest saying in
-    /// the place of its first, so what is held is bounded by the distinct
-    /// things the mind has to say — never by a count. An answer to a
-    /// counterparty's frame is never held here: it leaves where the frame
-    /// lands.
-    pub(crate) at_return: Vec<HeldSaying>,
-    /// Where each held saying stands in `at_return`, by its coordinates.
-    pub(crate) at_return_by: crate::network::nerve::Keyed<usize>,
+    /// MU-CLIENT §4.4(4), §4.13, §7.1 R2 — WHAT THE MIND SAYS, HELD FOR THE
+    /// RETURN OF THE THOUGHT IT SPEAKS FOR: speech to a court, a solve, a SAY
+    /// to its peers, by the scene whose thought it speaks for (empty for what
+    /// the mind says for itself), each posted where a thought of that scene
+    /// returns — or, with no scene, at the mind's next return — and nowhere
+    /// else, so its outflow is bounded by its thoughts' own periods. Within a
+    /// scene each is held BY ITS COORDINATES: a thing said twice before its
+    /// return is one thing, its latest saying in the place of its first —
+    /// never by a count. An answer to a counterparty's frame is never held
+    /// here: it leaves where the frame lands.
+    pub(crate) at_return: crate::network::nerve::Keyed<Vec<(Vec<u8>, HeldSaying)>>,
     /// MU-CLIENT §3.1, §4.9 — THE SCENES NOT YET COMPREHENDED, by the task's
     /// citation, each with the language root it was last read at: read again
     /// at the mind's returns, gone with their last thought.

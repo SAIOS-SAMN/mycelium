@@ -11,27 +11,23 @@ impl Entity {
     /// words are the vertices the eyes could pair and the alphabet could
     /// spell, and what they could not is its demand vertices (50.5).
     pub(crate) fn hold_chain(&mut self, chain: Vec<(i64, i64, u8, u8)>) {
-        use crate::transducer::family::{extraction_spend, perceive_family, scene_form_on, scene_of_chain};
-        let Some(scene) = scene_of_chain(&chain) else {
-            return;
-        };
         // 50.2 step 2: this mind's own presentation is what its word
         // vertices derive against, under a stroke sized by the scene it is
-        // handed (L8w); a fixed spend unit does not reach one scene. The
-        // scene's frames are perceived once: the stroke is sized by them and
-        // the percept reads them.
-        let frames = perceive_family(std::slice::from_ref(&scene));
-        let mut budget = self.physics.stroke_n(extraction_spend(std::slice::from_ref(&scene), &frames));
-        // `None` is a vertex the stroke could not factor through this
-        // mind's presentation: unmeasured, so nothing is held rather than
-        // a form held with the presentation's reach asserted unread.
-        let Some(f) = scene_form_on(&self.epigenome, &mut budget, &scene.0, &scene.1, &frames) else {
-            return;
-        };
-        // A perception, held with the bodies it was perceived as (N4); a
-        // remainder scene is named by no task. Held with no bundle, weighed
-        // on the scene it was perceived from.
-        self.hold_perceived_from(f, &frames, (&[][..], std::slice::from_ref(&scene)), &[], &[], &mut budget);
+        // handed (L8w). `None` is a vertex the stroke could not factor
+        // through this mind's presentation: unmeasured, so nothing is held
+        // rather than a form held with the presentation's reach asserted
+        // unread.
+        let Some(p) = super::family::chain_percept(&self.epigenome, &chain) else { return };
+        self.hold_scene(p, &[]);
+    }
+
+    /// A SCENE PERCEIVED AS ITS FORM, HELD: a perception with the bodies it
+    /// was perceived as (N4), held with no bundle and weighed on the scene
+    /// it was perceived from, under `family` (empty: a remainder scene is
+    /// named by no task).
+    pub(crate) fn hold_scene(&mut self, p: super::family::PairPercept, family: &[u8]) {
+        let mut budget = self.physics.stroke_n(crate::transducer::family::extraction_spend(&p.pair, &p.frames));
+        self.hold_perceived_from(p.form, &p.frames, (&[][..], &p.pair), &[], family, &mut budget);
     }
 
     /// N4 — HOLD A PERCEPTION with the frames it was perceived from, so the
@@ -201,8 +197,9 @@ impl Entity {
         &mut self,
         residue: &crate::transducer::cga::Mv,
         chart: Option<&crate::transducer::stalk::Invariant>,
+        family: &[u8],
         budget: &mut crate::physics::Budget,
-    ) {
+    ) -> bool {
         use crate::transducer::cga::{construct, modes_need};
         // 78.111 C1b — the stroke the residue's modes need, read off the
         // residue: its construction is never refused for a stroke sized for
@@ -217,7 +214,7 @@ impl Entity {
         let made = |c: Constructed| note_mind(|m| m.constructed[c as usize] += 1);
         if construct(residue, &mut need).is_err() {
             made(Constructed::Refused);
-            return;
+            return false;
         }
         let rotor = crate::transducer::element::conformal_factors(residue)
             .ok()
@@ -228,25 +225,35 @@ impl Entity {
                 self.adjoin_letters(&vec![(r, c.clone())], budget);
                 self.contemplation.own_letter(residue);
                 made(Constructed::Letter);
+                true
             }
             // 78.68 ROW 8 — A RESIDUE THAT TURNS NOTHING IS STILL A LETTER: its
             // whole motion on the letter's carriage (a slide, a dilation about
             // a point), stood in the mind's dialect and spoken — the court
             // verifies and hardens it or refuses by name (C4) — and kept, so
             // the cell that demanded it is answered by it from here on.
+            // MU-CLIENT §5.4 (E1) — under the scene its residue was
+            // perceived in, where the court measures it.
             (None, Some(c)) => {
                 match crate::transducer::sentence::motion_letter_form(residue, c, &[]) {
                     Some(e) => {
                         self.contemplation.own_letter(residue);
                         if !self.already_taught(&e) {
-                            self.stand_crystallized(&e, &[]);
+                            self.stand_crystallized(&e, family);
                         }
                         made(Constructed::MotionLetter);
+                        true
                     }
-                    None => made(Constructed::Refused),
+                    None => {
+                        made(Constructed::Refused);
+                        false
+                    }
                 }
             }
-            (_, None) => made(Constructed::NoChart),
+            (_, None) => {
+                made(Constructed::NoChart);
+                false
+            }
         }
     }
 
@@ -286,7 +293,7 @@ impl Entity {
         chart: Option<&crate::transducer::stalk::Invariant>,
         budget: &mut crate::physics::Budget,
     ) {
-        self.compose_or_construct_on(residue, chart, &[], budget);
+        let _ = self.compose_or_construct_on(residue, chart, &[], budget);
     }
 
     /// [`Self::compose_or_construct`] for a residue a scene taught: `family`
@@ -298,12 +305,12 @@ impl Entity {
         chart: Option<&crate::transducer::stalk::Invariant>,
         family: &[u8],
         budget: &mut crate::physics::Budget,
-    ) {
+    ) -> bool {
         use crate::observe::{note_mind, Constructed};
         use crate::transducer::sentence::rung::{known, learn_by, posit};
-        if self.speak_composition(residue, chart) || known(residue) || self.speak_conjugate(residue, chart, family) {
+        if self.speak_composition(residue, chart, family) || known(residue) || self.speak_conjugate(residue, chart, family) {
             note_mind(|m| m.constructed[Constructed::Composed as usize] += 1);
-            return;
+            return true;
         }
         match posit(residue) {
             Some(p) if !p.parts.is_empty() => {
@@ -311,15 +318,16 @@ impl Entity {
                 // parts leave may be a composition of the court's RULED words
                 // (the vocabulary, not the lexicon); spoken as that, nothing
                 // is constructed. Only what neither reaches is a primitive.
-                if !self.speak_composition(&p.residue, chart) {
-                    self.construct_and_adjoin(&p.residue, chart, budget);
+                if !self.speak_composition(&p.residue, chart, family) {
+                    let _ = self.construct_and_adjoin(&p.residue, chart, family, budget);
                 }
                 let mut parts = p.parts;
                 parts.push(p.residue);
                 learn_by(residue, &parts);
                 note_mind(|m| m.constructed[Constructed::InPart as usize] += 1);
+                true
             }
-            _ => self.construct_and_adjoin(residue, chart, budget),
+            _ => self.construct_and_adjoin(residue, chart, family, budget),
         }
     }
 
@@ -372,6 +380,7 @@ impl Entity {
         &mut self,
         residue: &crate::transducer::cga::Mv,
         chart: Option<&crate::transducer::stalk::Invariant>,
+        family: &[u8],
     ) -> bool {
         let Some(chart) = chart else { return false };
         let Ok(factors) = crate::transducer::element::conformal_factors(residue) else { return false };
@@ -383,7 +392,9 @@ impl Entity {
         let Some(e) = crate::transducer::sentence::composed_form(derivation, &carriage, chart) else { return false };
         if !self.already_taught(&e) {
             crate::observe::note_mind(|m| m.composed += 1);
-            self.stand_crystallized(&e, &[]);
+            // MU-CLIENT §5.4 (E1) — under the scene its residue was
+            // perceived in, where the court measures the composition.
+            self.stand_crystallized(&e, family);
         }
         true
     }

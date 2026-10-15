@@ -1,57 +1,69 @@
-// MU-CLIENT §4.4, §4.12, 78.168 — THE WINDING CARRIER: the carrier of the
-// mind's own motion, on its own circuit over its field, beside the carriers
-// facing its counterparties (the hypha's, the conversation's). Its stroke
-// takes what those carriers landed, moves the field, and ACTS AT THE
-// RETURNS of the mind's orbits — nowhere else. It replaces the tick
-// (78.164, third amendment): no schedule of work, no outflow fired by an
-// arrival or by the stroke itself.
+// MU-CLIENT §4.4, §4.12, 78.168, §7.1 R1–R5 — THE WINDING CARRIER: the
+// carrier of the mind's own motion, on its own circuit over its field, beside
+// the carriers facing its counterparties (the hypha's, the conversation's,
+// the seat's) and the perception carrier that perceives the scenes it takes
+// in. It moves the orbits, binds the escaping ones, and ACTS AT EACH
+// THOUGHT'S OWN RETURN — nowhere else. It replaces the tick (78.164, third
+// amendment): no schedule of work, no outflow fired by an arrival or by the
+// stroke itself, and no long law on it — a scene is perceived off the field
+// and only its admission lands here (R1).
 //
-//! ONE STROKE OF THE WINDING:
-//! 1. ADMISSION — what each counterparty's carrier landed is taken where it
-//!    landed: the court's answers, the conversation's hearings, the feed's
-//!    family, the court's open book and its task (a scene perceived), the
-//!    seat's mail. Answers to a counterparty's frame (a probe answering a
-//!    listing, HEARD, ACK, HOLD) leave where the frame lands.
-//! 2. THE FIELD MOVES — the docket's demands constructed, the held thoughts
-//!    pivoted, what the pivots closed vented into the field; and where the
-//!    reserve runs short or nothing arrived, the mind RESTS (relaxes,
-//!    regenerates) and, resting, asks for a scene.
-//! 3. THE RETURNS — the orbits of the field that returned and the thoughts
-//!    whose winding came round in this stroke. K moves by exactly them
-//!    (`close_cycle`).
-//! 4. THE ACT AT A RETURN — only where something returned: the closed
-//!    thoughts' words transcribed and said, what the mind owes its courts,
-//!    its unheard words, its unjudged solves, and every speech, solve and
-//!    SAY held for the return (`at_return`) leave now. The mind's outflow
-//!    is bounded by its own periods (MU-CLIENT §4.13).
-//! 5. BOOKING — the stroke's physics on the reserve, and the court's dwell.
+//! ONE WINDING:
+//! 1. ADMISSION — what each carrier landed is taken where it landed, briefly:
+//!    the court's answers, the conversation's hearings, the open book, a
+//!    scene the metabolism can carry handed to the perception carrier, what
+//!    that carrier read admitted, the seat's mail.
+//! 2. THE FIELD MOVES — the docket's demands constructed; THE DRIVE (R3): the
+//!    escaping orbits bound — each binding a thought's close — and
+//!    deliberated; where a lane runs short, or nothing moved, the mind's
+//!    metabolism relaxes and regenerates (R5); the held thoughts pivoted,
+//!    what the pivots released vented into the field.
+//! 3. THE RETURNS — the field's orbits that returned, the thoughts whose
+//!    winding came round, and the escaping orbits bound, each with the scene
+//!    it belongs to. K moves by exactly them (`close_cycle`).
+//! 4. THE ACT AT A RETURN (R2) — what was held for a scene's return leaves
+//!    where a thought of that scene returned, and nowhere else; what the
+//!    mind holds for its own return (no scene) leaves at any return of the
+//!    mind; and at a return the mind reads a waiting scene again, says what
+//!    it owes its courts, its unheard words and its unjudged solves.
+//! 5. THE NEXT SCENE is asked for where the metabolism stands regenerated
+//!    and nothing waits to be perceived (the operator: "there should be
+//!    internal metabolism in the mind") — never by rest, never by a return.
+//! 6. BOOKING — the stroke's physics on the reserve, and the court's dwell.
 //!
 //! The mind reports nothing about itself: its counterparties' acts are its
-//! witness (MU-CLIENT §7.2).
+//! witness (MU-CLIENT §7.2); its observer reads it as it stands (`observe::live`).
 
 use crate::client::sdk::*;
 use crate::physics::StrokeOutcome;
 use std::sync::atomic::AtomicBool;
 
 /// THE BOARD: the boundaries this mind is open on, and what the field keeps
-/// from stroke to stroke to meet them — the court's pace, the extraction
-/// memo, and where its genome is written.
+/// from stroke to stroke to meet them — the court's pace, the perception
+/// carrier, and where its genome is written.
 #[derive(Default)]
 pub(crate) struct Board {
     pub(crate) court: super::court::CourtPace,
     pub(crate) feed: Option<super::feed::Feed>,
     pub(crate) body: Option<super::body::Body>,
-    pub(crate) memo: crate::transducer::family::ExtractMemo,
+    /// MU-CLIENT §7.1 R1 — the perception carrier, opened where the mind
+    /// first takes a scene in.
+    pub(crate) perceiver: Option<super::perceive::Perceiver>,
+    /// MU-CLIENT §7.1 R2 — the scenes whose thought a known rule bound since
+    /// the last return was read (a solve emitted by comprehension binds its
+    /// scene's thought, §7.1 Phase 1 item 4): each a close.
+    pub(crate) bound_by_rule: Vec<Vec<u8>>,
     genome_path: Option<String>,
     saved_len: Option<usize>,
 }
 
-/// WHAT ONE STROKE OF THE WINDING MOVED: the lanes its outcome moved (a
-/// stroke that moved none admitted nothing), and how many of the mind's
-/// orbits returned in it.
+/// WHAT ONE WINDING MOVED: the lanes its outcome moved (a winding that moved
+/// none admitted nothing), how many of the mind's orbits returned in it, and
+/// whether a lane ran short — the mind rests then, until it regenerates.
 pub struct Wound {
     pub moved: [bool; 4],
     pub returns: u64,
+    pub short: bool,
 }
 
 impl Entity {
@@ -75,9 +87,9 @@ impl Entity {
         self.save_genome(&path).map(|_| self.board.saved_len = Some(self.epigenome.genome_len())).map_err(|e| e.to_string())
     }
 
-    /// ONE STROKE OF THE WINDING CARRIER, thought in the mind's own field
-    /// (MU-CLIENT §4.2). `stop` is read inside the long laws, so a stroke
-    /// thinking a family ends at its next boundary.
+    /// ONE WINDING OF THE WINDING CARRIER, thought in the mind's own field
+    /// (MU-CLIENT §4.2), whose every law is a brief hold of it. `stop` is
+    /// read between the laws.
     pub fn wind(&mut self, stop: &AtomicBool) -> Wound {
         let mut field = std::mem::take(&mut self.field);
         let wound = field.think(|| self.stroke_in_field(stop));
@@ -123,22 +135,29 @@ impl Entity {
             self.quote_inflow(&mut outcome);
         }
         if !occluded && !stopping() {
-            self.at_law("admission: a task");
-            self.task_inflow(&mut outcome, stop);
+            self.at_law("admission: a scene taken in");
+            self.task_inflow(&mut outcome);
         }
+        self.at_law("admission: what perception read");
+        self.take_perceived();
         if !stopping() {
             self.at_law("admission: the seat's mail");
             self.body_tick();
         }
-        // 2. THE FIELD MOVES — the docket constructed, the held thoughts
-        // pivoted, and REST where the reserve runs short or nothing arrived.
+        // 2. THE FIELD MOVES.
         if !stopping() {
             self.at_law("motion: the docket constructed");
             self.take_docketed_demands();
         }
+        let mut budget = self.stroke();
+        self.at_law("motion: the drive");
+        let bound = self.drive(&mut budget);
         let short = !crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty();
-        let resting = short || outcome.moved() == [false; 4];
-        if resting && !stopping() {
+        // MU-CLIENT §4.12, R5 — REST IS METABOLISM: where a lane runs short
+        // the mind relaxes and regenerates (and the binary dwells until it
+        // has, `Wound::short`); where nothing moved it does its inward work.
+        // Neither asks for a scene.
+        if (short || outcome.moved() == [false; 4]) && !stopping() {
             self.at_law("motion: rest");
             self.relax(&mut outcome);
         }
@@ -148,70 +167,104 @@ impl Entity {
         let mut vent = self.stroke();
         self.at_law("motion: the vent");
         let _ = self.vent_into_field(&mut vent);
-        // 3. THE RETURNS, AND 4. THE ACT AT A RETURN.
+        // 3. THE RETURNS, AND 4. THE ACT AT EACH RETURN.
         self.at_law("returns");
-        let returns = self.act_on_returns(&mut vent, !occluded);
-        // A RESTING MIND ASKS FOR A SCENE: its field holds nothing that moved,
-        // so it perceives (MU-CLIENT §4.12) — never a pull fired by the
-        // stroke itself.
-        if (resting || returns > 0) && !occluded && !stopping() {
-            self.at_law("rest: a scene asked for");
-            self.pull_task();
+        let returns = self.act_on_returns(&mut vent, bound, !occluded);
+        // 5. THE NEXT SCENE, by the metabolism.
+        if !occluded && !stopping() {
+            self.at_law("the next scene asked for");
+            self.ask_for_a_scene();
         }
         // The conversation runs on its own carrier (MU-CLIENT §5.1); it is
         // handed the mind's clock as the orbits move it.
         self.tell_conversation_the_clock();
-        // 5. BOOKING.
+        // 6. BOOKING.
         self.at_law("booking");
         self.book_tick(&outcome);
         let moved = outcome.moved();
-        let short = self.physics().reserve_shortfall(moved);
-        let wait: [bool; 4] = std::array::from_fn(|l| short[l] > 0);
+        let lanes_short = self.physics().reserve_shortfall(moved);
+        let wait: [bool; 4] = std::array::from_fn(|l| lanes_short[l] > 0);
         let pressure = self.board.court.pressure();
         self.board.court.dwell_remaining = self.physics().dwell(&pressure, wait);
-        Wound { moved, returns }
+        self.at_law("between windings");
+        Wound { moved, returns, short }
     }
 
-    /// MU-CLIENT §4.4(4) — THE RETURNS READ, AND THE ACT AT THEM: the
-    /// stroke's returns (the field's orbits that came round, the thoughts
-    /// whose winding did), K stepped by exactly them, and — where any
-    /// returned and the wire is open — the act at the return. Answers how
-    /// many returned.
-    pub(crate) fn act_on_returns(&mut self, budget: &mut crate::physics::Budget, open: bool) -> u64 {
-        let returns = self.returns_of_stroke(budget);
+    /// MU-CLIENT §4.4(4), §7.1 R2 — THE RETURNS READ, AND THE ACT AT EACH:
+    /// the winding's returns (the field's orbits that came round, the
+    /// thoughts whose winding did, the escaping orbits the drive `bound`, the
+    /// scenes a known rule bound), K stepped by exactly them, and — where any
+    /// returned and the wire is open — the act at the return, each scene's
+    /// held outflow leaving at its own thought's return. Answers how many
+    /// returned.
+    pub(crate) fn act_on_returns(&mut self, budget: &mut crate::physics::Budget, bound: Vec<Vec<u8>>, open: bool) -> u64 {
+        let (returns, mut scenes) = self.returns_of_stroke(budget);
+        let by_rule = std::mem::take(&mut self.board.bound_by_rule);
+        let bindings = u64::try_from(bound.len() + by_rule.len()).ok();
+        for s in bound.into_iter().chain(by_rule) {
+            if !scenes.contains(&s) {
+                scenes.push(s);
+            }
+        }
+        let returns = match bindings.and_then(|b| returns.checked_add(b)) {
+            Some(n) => n,
+            None => returns,
+        };
         self.close_cycle(returns);
         if returns > 0 && open {
-            self.act_at_return();
+            self.act_at_return(&scenes);
         }
         returns
     }
 
-    /// MU-CLIENT §4.4(4), §4.13 — WHAT THE MIND SAYS, HELD FOR ITS RETURN BY
-    /// ITS COORDINATES `at`: `say` leaves at the next stroke in which one of
-    /// the mind's orbits returns. Said again before that return, the latest
-    /// saying stands in the place of the first — one thing said once.
-    pub(crate) fn hold_for_return(&mut self, at: &[u8], say: impl FnOnce(&mut Entity) + 'static) {
-        match self.at_return_by.get(at).copied().and_then(|i| self.at_return.get_mut(i)) {
-            Some(slot) => *slot = Box::new(say),
+    /// MU-CLIENT §4.4(4), §4.13, §7.1 R2 — WHAT THE MIND SAYS, HELD FOR THE
+    /// RETURN OF THE THOUGHT IT SPEAKS FOR: `scene` is that thought's scene
+    /// (its family's citation; empty for what the mind says for itself — a
+    /// seat's call, a letter of no scene — which leaves at the mind's next
+    /// return of any orbit), `at` the saying's own coordinates. Said again
+    /// before that return, the latest saying stands in the place of the
+    /// first — one thing said once.
+    pub(crate) fn hold_for_return(&mut self, at: &[u8], scene: &[u8], say: impl FnOnce(&mut Entity) + 'static) {
+        let held = match self.at_return.get_mut(scene) {
+            Some(h) => h,
             None => {
-                self.at_return_by.insert(at, self.at_return.len());
-                self.at_return.push(Box::new(say));
+                self.at_return.insert(scene, Vec::new());
+                match self.at_return.get_mut(scene) {
+                    Some(h) => h,
+                    None => return,
+                }
             }
+        };
+        match held.iter_mut().find(|(a, _)| a.as_slice() == at) {
+            Some(slot) => slot.1 = Box::new(say),
+            None => held.push((at.to_vec(), Box::new(say))),
         }
     }
 
-    /// THE STROKE'S RETURNS (MU-CLIENT §4.4): the orbits of the mind's field
-    /// that returned since the last stroke, and the thoughts whose winding
+    /// How many sayings are held for returns, over every scene.
+    pub(crate) fn held_for_returns(&self) -> usize {
+        self.at_return.scoped().map(|(_, h)| h.len()).sum()
+    }
+
+    /// THE WINDING'S RETURNS (MU-CLIENT §4.4): the orbits of the mind's field
+    /// that returned since the last winding, and the thoughts whose winding
     /// came round — each transcribed against the mind's own letters and its
-    /// word said (held for the act at this return). Answers how many.
-    fn returns_of_stroke(&mut self, budget: &mut crate::physics::Budget) -> u64 {
+    /// word said under its scene (held for that scene's return). Answers how
+    /// many, and the scenes they returned in.
+    fn returns_of_stroke(&mut self, budget: &mut crate::physics::Budget) -> (u64, Vec<Vec<u8>>) {
         let field = match crate::transducer::mind::with_field(|f| f.take_returns()) {
             Ok(n) => n,
-            // No field stands in the thread's slot: none of its orbits is
+            // No field stands in the thread's slots: none of its orbits is
             // read as returned (rule 11 — absence, never a count).
             Err(_) => 0,
         };
         let came_round = u64::try_from(self.contemplation.closed.len()).ok();
+        let mut scenes: Vec<Vec<u8>> = Vec::new();
+        for (_, family) in &self.contemplation.closed {
+            if !scenes.contains(family) {
+                scenes.push(family.clone());
+            }
+        }
         self.at_law("returns: thoughts transcribed");
         let thoughts = self.transcribe_closed(budget);
         // MU-CLIENT §5.4 (E1) — each under the scene its thought was
@@ -230,19 +283,22 @@ impl Entity {
         if rederived > 0 {
             crate::observe::note_mind(|m| m.asks[4] += rederived);
         }
-        match came_round.and_then(|t| field.checked_add(t)) {
+        let n = match came_round.and_then(|t| field.checked_add(t)) {
             Some(n) => n,
             // A count past its carrier is refused: the field's own returns
             // stand.
             None => field,
-        }
+        };
+        (n, scenes)
     }
 
-    /// MU-CLIENT §4.4(4) — THE ACT AT A RETURN: a scene waiting on its
-    /// comprehension read again, what the mind owes its courts, its words no
-    /// court has taught, its unjudged solves, and every speech, solve and SAY
-    /// held for the return leave now, and nowhere else.
-    fn act_at_return(&mut self) {
+    /// MU-CLIENT §4.4(4), §7.1 R2 — THE ACT AT A RETURN: a scene waiting on
+    /// its comprehension read again, what the mind owes its courts, its words
+    /// no court has taught and its unjudged solves; then what was held for
+    /// the return of each scene in `scenes` leaves, and what the mind held
+    /// for its own return (no scene) — and nothing held for a scene whose
+    /// thought did not return.
+    fn act_at_return(&mut self, scenes: &[Vec<u8>]) {
         self.at_law("act at a return: a waiting scene read again");
         self.comprehend_waiting();
         self.at_law("act at a return: what the courts are owed");
@@ -252,11 +308,14 @@ impl Entity {
         self.speak_unheard(&mut budget);
         self.at_law("act at a return: unread solves");
         self.resubmit_unread_solves();
-        // What was held for the return leaves: every speech, solve and SAY,
-        // in the order the mind said them.
         self.at_law("act at a return: what was held leaves");
-        self.at_return_by = crate::network::nerve::Keyed::new();
-        for say in std::mem::take(&mut self.at_return) {
+        let mut leaving: Vec<HeldSaying> = Vec::new();
+        for scene in std::iter::once(&Vec::new()).chain(scenes) {
+            if let Some(held) = self.at_return.remove(scene) {
+                leaving.extend(held.into_iter().map(|(_, say)| say));
+            }
+        }
+        for say in leaving {
             say(self);
         }
     }

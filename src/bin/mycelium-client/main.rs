@@ -2,9 +2,10 @@
 //
 //! 24.3, 78.164 — THE VOICE, a mind on the mesh. The binary opens the mind's
 //! boundaries — the court it speaks to, the corpus its home holds, the other
-//! minds it chatters with, the seats it sits in a game — and hands the mind
-//! its ticks. What the mind does with them, and in what order, is the mind's
-//! own (`Entity::tick`); the binary keeps no order of work.
+//! minds it chatters with, the seats it sits in a game — and runs the mind's
+//! winding carrier on this thread (MU-CLIENT §4.12): what the mind does at
+//! each winding is the mind's own (`Entity::wind`); the binary keeps no
+//! order of work, and rests the mind where it moved nothing or ran short.
 
 #[global_allocator]
 static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
@@ -182,10 +183,13 @@ fn main() {
         // MU-CLIENT §4.12 — the winding carrier's stroke: the mind's own
         // motion, acting at its returns.
         let wound = mind.wind(&stop);
-        // X6 — a stroke that moved nothing and returned nothing admitted
-        // nothing: it draws nothing and rests until its court's word lands or
-        // the measured transport's park passes, never spinning a core.
-        if wound.moved == [false; 4] && wound.returns == 0 {
+        // X6 — a winding that moved nothing and returned nothing admitted
+        // nothing: it draws nothing and rests until a carrier lands something
+        // or the measured transport's park passes, never spinning a core.
+        // MU-CLIENT §4.12, §7.1 R5 — and where a lane ran short the mind
+        // RESTS: it dwells while the metabolism regenerates, its other
+        // carriers landing perception meanwhile, then continues its orbits.
+        if (wound.moved == [false; 4] && wound.returns == 0) || wound.short {
             mind.rest();
         }
     }

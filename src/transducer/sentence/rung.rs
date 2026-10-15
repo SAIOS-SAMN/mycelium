@@ -64,11 +64,37 @@ struct Held {
 /// stand on — the fibre a new word is comprehended by (78.99 (1)) — and the
 /// given atoms a newly known word stood beside, to be reduced again at the
 /// mind's next return.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub(crate) struct Lexicon {
     held: Keyed<Held>,
     holes: HoleIndex,
     reconsider: Keyed<()>,
+}
+
+impl Lexicon {
+    /// MU-CLIENT §7.1 R1 — A SCRATCH LEXICON ADMITTED: the words a long law
+    /// learned off the mind's field join the mind's lexicon, with the holes
+    /// they stand on and the given atoms they marked; a word the mind holds
+    /// already is the mind's as it stands, save that one the law came to
+    /// KNOW (heard before, derived since) is known here too.
+    pub(crate) fn absorb(&mut self, other: Lexicon) {
+        for (k, h) in other.held.scoped() {
+            match self.held.get_mut(&k) {
+                Some(mine) => {
+                    if mine.heard && !h.heard {
+                        mine.heard = false;
+                    }
+                }
+                None => {
+                    self.held.insert(&k, h.clone());
+                }
+            }
+        }
+        self.holes.join(&other.holes);
+        for (k, ()) in other.reconsider.scoped() {
+            self.reconsider.insert(&k, ());
+        }
+    }
 }
 
 /// 78.167 D1 — A NEWLY KNOWN WORD STANDS BESIDE THE GIVEN ATOMS ON ITS HOLES:

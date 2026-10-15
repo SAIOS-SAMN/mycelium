@@ -382,9 +382,22 @@ impl Signature {
 
 /// 78.99 (1) — THE HOLES A LEXICON HOLDS: per hole key, the words standing on
 /// it, by their own keys — the fibre a new word's comprehension reads.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct HoleIndex {
     on: Keyed<Keyed<()>>,
+}
+
+impl HoleIndex {
+    /// MU-CLIENT §7.1 R1 — ANOTHER INDEX'S WORDS JOINED TO THIS ONE: every
+    /// word on every hole it holds stands here too (a scratch lexicon's,
+    /// admitted into the mind's).
+    pub(crate) fn join(&mut self, other: &HoleIndex) {
+        for (hole, words) in other.on.scoped() {
+            for (w, ()) in words.scoped() {
+                self.on.nested_insert(hole.clone(), &w, ());
+            }
+        }
+    }
 }
 
 /// 78.100 D3 — ONE MODE OF A WORD CITED BY ITS MOTION: the held word that

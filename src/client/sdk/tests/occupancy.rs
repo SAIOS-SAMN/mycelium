@@ -68,8 +68,11 @@ fn a_speech_with_an_unreached_body_is_withheld() {
     ];
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
     let rule = crate::transducer::family::extract_rule(&family, &mut budget).expect("the family has a rule");
-    let mut e = Entity::open("127.0.0.1:1", Kernel::named("withheld"));
-    let reached = e.speak_tests(&rule, &[grid(&["0010", "0000", "0000"])]).expect("every body reached: the answer stands");
-    assert_eq!(reached, vec![grid(&["0000", "0010", "0000"])]);
-    assert!(e.speak_tests(&rule, &[grid(&["0010", "0000", "2220"])]).is_none(), "the bar unreached: nothing is sent");
+    use crate::client::sdk::entity::family::tests_spoken;
+    let e = Entity::open("127.0.0.1:1", Kernel::named("withheld"));
+    let (reached, _) = tests_spoken(&e.epigenome, &rule, &[grid(&["0010", "0000", "0000"])]);
+    assert_eq!(reached.expect("every body reached: the answer stands"), vec![grid(&["0000", "0010", "0000"])]);
+    let (unreached, held) = tests_spoken(&e.epigenome, &rule, &[grid(&["0010", "0000", "2220"])]);
+    assert!(unreached.is_none(), "the bar unreached: nothing is sent");
+    assert!(!held.is_empty(), "the bar is held as a question");
 }

@@ -107,36 +107,227 @@ pub(crate) struct Thought {
     pub budget: crate::physics::Budget,
 }
 
-impl Entity {
-    /// THE FAMILY'S RULE: its frames perceived once (the memo answers a
-    /// family already perceived at this atlas root), the stroke sized by the
-    /// family (L8w), the form engine the only extractor.
-    pub(crate) fn extract_family(&mut self, id: &[u8], train: &Family) -> Thought {
-        let gen = self.epigenome.atlas_root();
-        let frames = match self.board.memo.holds(id, &gen) {
-            true => Frames::new(),
-            false => crate::transducer::family::perceive_family(train),
-        };
-        let mut budget = self.stroke_n(crate::transducer::family::extraction_spend(train, &frames));
-        let rule = crate::transducer::family::extract_rule_cached(&mut self.board.memo, id, train, gen, &mut budget, &self.epigenome, Some(&frames));
-        Thought { rule, frames, budget }
-    }
+/// A chain of painted sites, before and after: what a perception's
+/// remainder and a test's unreached bodies are held as.
+pub(crate) type Chain = Vec<(i64, i64, u8, u8)>;
 
-    /// A FAMILY THOUGHT THROUGH AND SPOKEN: the rule's form spoken to the
-    /// court (`speak_form`), or the family withheld where no rule closed.
-    /// Answers the thought and what the speech uttered.
-    pub(crate) fn think_family(&mut self, id: &[u8], train: &Family) -> (Thought, Option<[u64; 4]>) {
-        let mut t = self.extract_family(id, train);
-        let uttered = match t.rule.as_ref() {
-            Some(rule) => self.speak_form(rule, train, &t.frames, id, &mut t.budget),
-            None => {
-                self.withhold_unextracted(train, id);
-                None
+/// ONE PAIR PERCEIVED AS ITS FORM, off the mind's field (MU-CLIENT §7.1 R1):
+/// the form, the frames it was perceived on, the pair, and what it closes
+/// and leaves on that pair.
+pub(crate) struct PairPercept {
+    pub form: crate::transducer::sentence::Form,
+    pub frames: Frames,
+    pub pair: Vec<crate::transducer::family::TrainPair>,
+    pub mag: [u64; 4],
+    pub remainders: Vec<Chain>,
+}
+
+/// THE FAMILY'S RULE: its frames perceived once (the memo answers a family
+/// already perceived at this atlas root), the stroke sized by the family
+/// (L8w), the form engine the only extractor — read on the language given.
+pub(crate) fn extract_on(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, id: &[u8], train: &Family) -> Thought {
+    let gen = epi.atlas_root();
+    let frames = match memo.holds(id, &gen) {
+        true => Frames::new(),
+        false => crate::transducer::family::perceive_family(train),
+    };
+    let mut budget = crate::physics::Physics::default().stroke_n(crate::transducer::family::extraction_spend(train, &frames));
+    let rule = crate::transducer::family::extract_rule_cached(memo, id, train, gen, &mut budget, epi, Some(&frames));
+    Thought { rule, frames, budget }
+}
+
+/// ONE PAIR AS ITS SCENE FORM on the language given, on a stroke sized by
+/// the pair (L8w), with what it closes and leaves there; `None` where the
+/// mind's presentation cannot factor it.
+pub(crate) fn pair_percept(epi: &Epigenome, x: &crate::arc::Grid, y: &crate::arc::Grid) -> Option<PairPercept> {
+    let mut p = scene_percept(epi, x, y)?;
+    let (mag, remainders) = crate::transducer::family::form_deflation(&p.form, &p.pair, epi);
+    (p.mag, p.remainders) = (mag, remainders);
+    Some(p)
+}
+
+/// ONE PAIR AS ITS SCENE FORM alone, nothing measured on it: an hour of a
+/// family, held with no bundle (78.56 III).
+pub(crate) fn scene_percept(epi: &Epigenome, x: &crate::arc::Grid, y: &crate::arc::Grid) -> Option<PairPercept> {
+    let pair = vec![(x.clone(), y.clone())];
+    let frames = crate::transducer::family::perceive_family(&pair);
+    let mut budget = crate::physics::Physics::default().stroke_n(crate::transducer::family::extraction_spend(&pair, &frames));
+    let form = crate::transducer::family::scene_form_on(epi, &mut budget, x, y, &frames)?;
+    Some(PairPercept { form, frames, pair, mag: [0; 4], remainders: Vec::new() })
+}
+
+/// THE SCENE A CHAIN DESCRIBES, perceived as its form on the language given
+/// (50.6 seam 1): its painted sites before against after in one frame.
+/// `None` where it describes no scene or the presentation cannot factor it.
+pub(crate) fn chain_percept(epi: &Epigenome, chain: &[(i64, i64, u8, u8)]) -> Option<PairPercept> {
+    let scene = crate::transducer::family::scene_of_chain(chain)?;
+    scene_percept(epi, &scene.0, &scene.1)
+}
+
+/// WHAT A RULE'S SPEECH PREPARES, on the language given (78.81): the
+/// remainder interpreted in the act that speaks it — an inversion the speech
+/// accepted IS the form spoken — with what it closes and leaves on the
+/// family.
+pub(crate) fn speech_of(epi: &Epigenome, rule: &SentenceRule, train: &Family, budget: &mut crate::physics::Budget) -> (SentenceRule, [u64; 4], Vec<Chain>) {
+    let (mag, remainders) = crate::transducer::family::form_deflation(&rule.form, train, epi);
+    let (joined, _) = crate::transducer::family::interpret::interpret(&rule.form, train, &remainders, epi, budget);
+    match joined {
+        Some((form, after)) => {
+            let (m, _) = crate::transducer::family::form_deflation(&form, train, epi);
+            (SentenceRule { form, ratio: rule.ratio }, m, after)
+        }
+        None => (rule.clone(), mag, remainders),
+    }
+}
+
+/// A RULE KNOWN BY ITS PERSPECTIVES, NOT FITTED (MU-CLIENT §4.4), read on
+/// the language given: each training pair held out in turn, the rule the
+/// OTHER pairs derive (the form engine on them alone, uncached, on its own
+/// stroke) spoken on the held-out input and asked to close it — no
+/// remainder, its grid the held-out output. Known where every perspective
+/// re-derives it. Answers the reading and the pairs a held-out perspective
+/// left uncovered — what the siblings' rule said against the truth — which
+/// the mind LIFTS into its sensorium where the reading lands, never drops.
+pub(crate) fn ascertain_on(epi: &Epigenome, train: &Family) -> (Ascertained, Vec<(crate::arc::Grid, crate::arc::Grid)>) {
+    use crate::transducer::family::{extract_rule_on, extraction_spend, perceive_family};
+    crate::observe::note_mind(|m| m.perspective[0] += 1);
+    let mut lifts = Vec::new();
+    if train.len() < 2 {
+        crate::observe::note_mind(|m| m.perspective[3] += 1);
+        return (Ascertained::OnePerspective, lifts);
+    }
+    let (mut failed, mut unread) = (Vec::new(), false);
+    for k in 0..train.len() {
+        let siblings: Vec<(crate::arc::Grid, crate::arc::Grid)> = train.iter().enumerate().filter(|(i, _)| *i != k).map(|(_, p)| p.clone()).collect();
+        let frames = perceive_family(&siblings);
+        let mut budget = crate::physics::Physics::default().stroke_n(extraction_spend(&siblings, &frames));
+        let (x, y) = &train[k];
+        let Some(rule) = extract_rule_on(&siblings, &frames, epi, &mut budget) else {
+            // No rule from the siblings: where the stroke ran out it is
+            // unread; otherwise nothing they share reaches this pair.
+            match budget.remaining() == 0 {
+                true => unread = true,
+                false => {
+                    failed.push(k);
+                    crate::observe::note_mind(|m| m.disagree[0] += 1);
+                    lifts.push((x.clone(), y.clone()));
+                }
             }
+            continue;
         };
-        (t, uttered)
+        if let Err(Disagreed { kinds, said, demanded }) = disagreement_on(epi, &rule, x, y) {
+            failed.push(k);
+            crate::observe::note_mind(|m| {
+                for kind in &kinds {
+                    if let Some(n) = m.disagree.get_mut(*kind) {
+                        *n += 1;
+                    }
+                }
+                for (n, d) in m.demanded_kinds.iter_mut().zip(demanded) {
+                    *n += d;
+                }
+            });
+            let from = match said {
+                Some(g) => g,
+                None => x.clone(),
+            };
+            lifts.push((from, y.clone()));
+        }
     }
+    // THE INVERSION: where the siblings missed a pair, that pair's own rule
+    // is read back onto every sibling. A rule one perspective derives that
+    // re-derives all the others is the family's invariant.
+    for &k in &failed {
+        let alone = vec![train[k].clone()];
+        let frames = perceive_family(&alone);
+        let mut budget = crate::physics::Physics::default().stroke_n(extraction_spend(&alone, &frames));
+        let Some(rule) = extract_rule_on(&alone, &frames, epi, &mut budget) else { continue };
+        let covers = train.iter().enumerate().filter(|(i, _)| *i != k).all(|(_, (x, y))| disagreement_on(epi, &rule, x, y).is_ok());
+        if covers {
+            crate::observe::note_mind(|m| m.perspective[7] += 1);
+            return (Ascertained::KnownByInversion(Box::new(rule)), lifts);
+        }
+    }
+    let (slot, outcome) = match (failed.is_empty(), unread) {
+        (false, _) => (2, Ascertained::Unknown),
+        (true, true) => (4, Ascertained::Unread),
+        (true, false) => (1, Ascertained::Known),
+    };
+    crate::observe::note_mind(|m| m.perspective[slot] += 1);
+    (outcome, lifts)
+}
 
+/// WHAT ONE PERSPECTIVE DISAGREED ABOUT, on the language given: the rule
+/// spoken on its input against its output. `Ok` where it closes; otherwise
+/// the kinds, in [`crate::observe::DISAGREE`]'s order — it spoke nothing,
+/// spoke with a remainder, laid down another frame, put cells in the wrong
+/// places (by cause, 78.167 A1), or coloured the right cells otherwise — with
+/// the grid it said, where it said one, and the demands it spoke nothing for.
+pub(crate) fn disagreement_on(epi: &Epigenome, rule: &SentenceRule, x: &crate::arc::Grid, y: &crate::arc::Grid) -> Result<(), Disagreed> {
+    let refused = |kind: usize, said: Option<crate::arc::Grid>, demanded: [u64; 6]| Disagreed { kinds: vec![kind], said, demanded };
+    let Some(speech) = crate::transducer::family::speak::speak_rule(rule, x, epi) else { return Err(refused(1, None, [0; 6])) };
+    let said = speech.grid();
+    if !speech.remainder.is_empty() {
+        return Err(refused(2, said, speech.demanded));
+    }
+    let Some(g) = said else { return Err(refused(1, None, speech.demanded)) };
+    if crate::transducer::family::speak::residual_of(Some(&g), y).is_empty() {
+        return Ok(());
+    }
+    if g.len() != y.len() || g.iter().zip(y).any(|(a, b)| a.len() != b.len()) {
+        return Err(refused(3, Some(g), speech.demanded));
+    }
+    let kinds = occupancy_causes(&g, x, y, &speech.unreached);
+    let kinds = match kinds.is_empty() {
+        true => vec![8],
+        false => kinds,
+    };
+    Err(Disagreed { kinds, said: Some(g), demanded: speech.demanded })
+}
+
+/// THE TESTS SPOKEN THROUGH THE RULE, on the language given: every test's
+/// output where the rule speaks it whole, and the chains a test's speech
+/// left — its remainder, and (78.167 B) its unreached bodies — for the mind
+/// to hold as thought. WHOLE MEANS EVERY BODY SPOKEN FOR: a speech that left
+/// a body unreached, or a creation, a merge or a reshape unspoken (its
+/// form's demands of those kinds), is no answer, and the solve waits for a
+/// rule that speaks for them (a clause statement, 78.167 C, says what
+/// happens to every body).
+pub(crate) fn tests_spoken(epi: &Epigenome, rule: &SentenceRule, tests: &[crate::arc::Grid]) -> (Option<Vec<crate::arc::Grid>>, Vec<Chain>) {
+    let mut chains = Vec::new();
+    let outputs = tests
+        .iter()
+        .map(|x| {
+            let spoken = crate::transducer::family::speak_rule(rule, x, epi);
+            if let Some(s) = &spoken {
+                if !s.remainder.is_empty() {
+                    chains.push(s.remainder.iter().map(|&(r, c, h)| (r, c, h, h)).collect());
+                }
+                if !s.unreached.is_empty() {
+                    let bodies = crate::transducer::family::perceive(x);
+                    let chain: Chain = s
+                        .unreached
+                        .iter()
+                        .filter_map(|&i| bodies.get(i))
+                        .flat_map(|b| b.compartments.iter().filter_map(|l| crate::transducer::family::on_grid(&l.site).map(|(r, c)| (r, c, l.hue, l.hue))))
+                        .collect();
+                    crate::observe::note_mind(|m| m.withheld_tests[0] += 1);
+                    chains.push(chain);
+                }
+            }
+            // Creation (3), merge (2) and reshape (4) say what happens to
+            // occupancy, and a demand of theirs spoke nothing.
+            let occupancy_unspoken = spoken.as_ref().is_some_and(|s| s.demanded[2] + s.demanded[3] + s.demanded[4] > 0);
+            if occupancy_unspoken {
+                crate::observe::note_mind(|m| m.withheld_tests[1] += 1);
+            }
+            spoken.filter(|s| s.remainder.is_empty() && s.unreached.is_empty() && !occupancy_unspoken).and_then(|s| s.grid())
+        })
+        .collect();
+    (outputs, chains)
+}
+
+impl Entity {
     /// SPEAK A RULE AS ITS CRYSTALLIZED FORM (chapter 30 step 4). The
     /// remainder is interpreted in the act that speaks it (78.81): an
     /// inversion the speech accepted IS the form spoken. A form carrying
@@ -144,16 +335,24 @@ impl Entity {
     /// unmeasurable span, or no mint is held as thought; the wire never sees
     /// a nerve. Answers the magnitude uttered.
     pub(crate) fn speak_form(&mut self, rule: &SentenceRule, train: &Family, frames: &Frames, family: &[u8], budget: &mut crate::physics::Budget) -> Option<[u64; 4]> {
+        let prepared = speech_of(&self.epigenome, rule, train, budget);
+        self.speak_prepared(prepared, train, frames, family, budget)
+    }
+
+    /// THE PREPARED SPEECH SPOKEN (`speech_of` read it, here or on the
+    /// perception carrier): an unmeasurable span withholds; a form carrying
+    /// demands is uttered whole with them (50.5); a form with a remainder, or
+    /// no mint, is held as thought; otherwise its word is spoken under its
+    /// scene. Answers the magnitude uttered.
+    pub(crate) fn speak_prepared(
+        &mut self,
+        (rule, mag, remainders): (SentenceRule, [u64; 4], Vec<Chain>),
+        train: &Family,
+        frames: &Frames,
+        family: &[u8],
+        budget: &mut crate::physics::Budget,
+    ) -> Option<[u64; 4]> {
         use crate::transducer::family::trace;
-        let (mag, remainders) = crate::transducer::family::form_deflation(&rule.form, train, &self.epigenome);
-        let (joined, _) = crate::transducer::family::interpret::interpret(&rule.form, train, &remainders, &self.epigenome, budget);
-        let (rule, mag, remainders) = match joined {
-            Some((form, after)) => {
-                let (m, _) = crate::transducer::family::form_deflation(&form, train, &self.epigenome);
-                (std::borrow::Cow::Owned(SentenceRule { form, ratio: rule.ratio }), m, after)
-            }
-            None => (std::borrow::Cow::Borrowed(rule), mag, remainders),
-        };
         let form = &rule.form;
         // 78.149 (a): the span is not μ; an unmeasurable one withholds.
         if self.span_of(form).is_none() {
@@ -222,183 +421,21 @@ impl Entity {
         Some(mag)
     }
 
-    /// A family the form engine does not extract is withheld: each pair its
-    /// own form, perceived on a stroke sized by the pair (L8w); a pair this
-    /// mind's presentation cannot factor is left for a later tick.
-    pub(crate) fn withhold_unextracted(&mut self, train: &Family, family: &[u8]) {
-        for (a, b) in train {
-            let pair = vec![(a.clone(), b.clone())];
-            let frames = crate::transducer::family::perceive_family(&pair);
-            let mut budget = self.stroke_n(crate::transducer::family::extraction_spend(&pair, &frames));
-            let Some(f) = crate::transducer::family::scene_form_on(&self.epigenome, &mut budget, a, b, &frames) else { continue };
-            let (mag, rem) = crate::transducer::family::form_deflation(&f, &pair, &self.epigenome);
-            self.withhold_perceived(f, &frames, &pair, &rem, mag, family, &mut budget);
-        }
-    }
-
-    /// A RULE KNOWN BY ITS PERSPECTIVES, NOT FITTED (MU-CLIENT §4.4): each
-    /// training pair is held out in turn, as the court holds its pairs out;
-    /// the rule the OTHER pairs derive (the form engine on them alone,
-    /// uncached, on its own stroke) is spoken on the held-out input and
-    /// asked to close it — no remainder, and its grid the held-out output.
-    /// Known where every perspective re-derives it: the family's invariant,
-    /// not a fit to all of its pairs at once. A held-out pair that does not
-    /// close is LIFTED (`lift_perspective`), never dropped.
-    pub(crate) fn ascertain(&mut self, id: &[u8], train: &Family) -> Ascertained {
-        use crate::transducer::family::{extract_rule_on, extraction_spend, perceive_family};
-        crate::observe::note_mind(|m| m.perspective[0] += 1);
-        if train.len() < 2 {
-            crate::observe::note_mind(|m| m.perspective[3] += 1);
-            return Ascertained::OnePerspective;
-        }
-        let (mut failed, mut unread) = (Vec::new(), false);
-        for k in 0..train.len() {
-            let siblings: Vec<(crate::arc::Grid, crate::arc::Grid)> = train.iter().enumerate().filter(|(i, _)| *i != k).map(|(_, p)| p.clone()).collect();
-            let frames = perceive_family(&siblings);
-            let mut budget = self.stroke_n(extraction_spend(&siblings, &frames));
-            let (x, y) = &train[k];
-            let Some(rule) = extract_rule_on(&siblings, &frames, &self.epigenome, &mut budget) else {
-                // No rule from the siblings: where the stroke ran out it is
-                // unread; otherwise nothing they share reaches this pair.
-                match budget.remaining() == 0 {
-                    true => unread = true,
-                    false => {
-                        failed.push(k);
-                        crate::observe::note_mind(|m| m.disagree[0] += 1);
-                        self.lift_perspective(x, y, id);
-                    }
-                }
-                continue;
-            };
-            if let Err(Disagreed { kinds, said, demanded }) = self.disagreement(&rule, x, y) {
-                failed.push(k);
-                crate::observe::note_mind(|m| {
-                    for kind in &kinds {
-                        if let Some(n) = m.disagree.get_mut(*kind) {
-                            *n += 1;
-                        }
-                    }
-                    for (n, d) in m.demanded_kinds.iter_mut().zip(demanded) {
-                        *n += d;
-                    }
-                });
-                let from = match &said {
-                    Some(g) => g,
-                    None => x,
-                };
-                self.lift_perspective(from, y, id);
-            }
-        }
-        // THE INVERSION: where the siblings missed a pair, that pair's own
-        // rule is read back onto every sibling. A rule one perspective
-        // derives that re-derives all the others is the family's invariant.
-        for &k in &failed {
-            let alone = vec![train[k].clone()];
-            let frames = perceive_family(&alone);
-            let mut budget = self.stroke_n(extraction_spend(&alone, &frames));
-            let Some(rule) = extract_rule_on(&alone, &frames, &self.epigenome, &mut budget) else { continue };
-            let covers = train.iter().enumerate().filter(|(i, _)| *i != k).all(|(_, (x, y))| self.disagreement(&rule, x, y).is_ok());
-            if covers {
-                crate::observe::note_mind(|m| m.perspective[7] += 1);
-                return Ascertained::KnownByInversion(Box::new(rule));
-            }
-        }
-        let (slot, outcome) = match (failed.is_empty(), unread) {
-            (false, _) => (2, Ascertained::Unknown),
-            (true, true) => (4, Ascertained::Unread),
-            (true, false) => (1, Ascertained::Known),
-        };
-        crate::observe::note_mind(|m| m.perspective[slot] += 1);
-        outcome
-    }
-
-    /// WHAT ONE PERSPECTIVE DISAGREED ABOUT: the rule spoken on its input
-    /// against its output. `Ok` where it closes; otherwise the kinds, in
-    /// [`crate::observe::DISAGREE`]'s order — it spoke nothing, spoke with a
-    /// remainder, laid down another frame, put cells in the wrong places (by
-    /// cause, 78.167 A1), or coloured the right cells otherwise — with the
-    /// grid it said, where it said one, and the demands it spoke nothing for.
-    fn disagreement(&self, rule: &SentenceRule, x: &crate::arc::Grid, y: &crate::arc::Grid) -> Result<(), Disagreed> {
-        let refused = |kind: usize, said: Option<crate::arc::Grid>, demanded: [u64; 6]| Disagreed { kinds: vec![kind], said, demanded };
-        let Some(speech) = crate::transducer::family::speak::speak_rule(rule, x, &self.epigenome) else { return Err(refused(1, None, [0; 6])) };
-        let said = speech.grid();
-        if !speech.remainder.is_empty() {
-            return Err(refused(2, said, speech.demanded));
-        }
-        let Some(g) = said else { return Err(refused(1, None, speech.demanded)) };
-        if crate::transducer::family::speak::residual_of(Some(&g), y).is_empty() {
-            return Ok(());
-        }
-        if g.len() != y.len() || g.iter().zip(y).any(|(a, b)| a.len() != b.len()) {
-            return Err(refused(3, Some(g), speech.demanded));
-        }
-        let kinds = occupancy_causes(&g, x, y, &speech.unreached);
-        let kinds = match kinds.is_empty() {
-            true => vec![8],
-            false => kinds,
-        };
-        Err(Disagreed { kinds, said: Some(g), demanded: speech.demanded })
+    /// ONE PAIR PERCEIVED, WITHHELD under its scene: held with the frames it
+    /// was perceived from, what it leaves its demand (`withhold_perceived`).
+    pub(crate) fn withhold_pair(&mut self, p: PairPercept, family: &[u8]) {
+        let mut budget = self.stroke_n(crate::transducer::family::extraction_spend(&p.pair, &p.frames));
+        self.withhold_perceived(p.form, &p.frames, &p.pair, &p.remainders, p.mag, family, &mut budget);
     }
 
     /// A PERSPECTIVE THE SIBLINGS DID NOT COVER, LIFTED INTO THE SENSORIUM:
-    /// what their rule said against what was true is perceived as one pair —
-    /// its frames, its scene form, its deflation — and held under the task,
-    /// exactly as a pair no rule closed is (`withhold_unextracted`). Its
-    /// bodies enter perception's cells; what escapes there is demanded and
+    /// what their rule said against what was true, perceived as one pair and
+    /// withheld under the task exactly as a pair no rule closed is. Its bodies
+    /// enter perception's cells; what escapes there is demanded and
     /// constructed. The 2-D gap becomes the mind's own structure.
-    fn lift_perspective(&mut self, said: &crate::arc::Grid, truth: &crate::arc::Grid, id: &[u8]) {
-        let pair = vec![(said.clone(), truth.clone())];
-        let frames = crate::transducer::family::perceive_family(&pair);
-        let mut budget = self.stroke_n(crate::transducer::family::extraction_spend(&pair, &frames));
-        let Some(f) = crate::transducer::family::scene_form_on(&self.epigenome, &mut budget, said, truth, &frames) else { return };
-        let (mag, rem) = crate::transducer::family::form_deflation(&f, &pair, &self.epigenome);
-        self.withhold_perceived(f, &frames, &pair, &rem, mag, id, &mut budget);
+    pub(crate) fn lift_pair(&mut self, p: PairPercept, id: &[u8]) {
+        self.withhold_pair(p, id);
         crate::observe::note_mind(|m| m.perspective[5] += 1);
-    }
-
-    /// THE TESTS SPOKEN THROUGH THE RULE: every test's output where the rule
-    /// speaks it whole; a remainder a test leaves is held as thought.
-    ///
-    /// 78.167 B — WHOLE MEANS EVERY BODY SPOKEN FOR. A test input can carry a
-    /// shape no training pair showed: no vertex reaches it, and the speech
-    /// would answer as though it were erased — a guess sent as a solve. A
-    /// speech that left a body unreached, or a creation, a merge or a reshape
-    /// unspoken (its form's demands of those kinds), is no answer: it is held
-    /// as thought — the unreached bodies' cells as the chain the mind works on
-    /// next — and the solve waits for a rule that speaks for them (a clause
-    /// statement, 78.167 C, says what happens to every body).
-    pub(crate) fn speak_tests(&mut self, rule: &SentenceRule, tests: &[crate::arc::Grid]) -> Option<Vec<crate::arc::Grid>> {
-        tests
-            .iter()
-            .map(|x| {
-                let spoken = crate::transducer::family::speak_rule(rule, x, &self.epigenome);
-                if let Some(s) = &spoken {
-                    if !s.remainder.is_empty() {
-                        self.hold_chain(s.remainder.iter().map(|&(r, c, h)| (r, c, h, h)).collect());
-                    }
-                    if !s.unreached.is_empty() {
-                        let bodies = crate::transducer::family::perceive(x);
-                        let chain: Vec<(i64, i64, u8, u8)> = s
-                            .unreached
-                            .iter()
-                            .filter_map(|&i| bodies.get(i))
-                            .flat_map(|b| b.compartments.iter().filter_map(|l| crate::transducer::family::on_grid(&l.site).map(|(r, c)| (r, c, l.hue, l.hue))))
-                            .collect();
-                        crate::observe::note_mind(|m| m.withheld_tests[0] += 1);
-                        self.hold_chain(chain);
-                    }
-                }
-                // Creation (3), merge (2) and reshape (4) say what happens to
-                // occupancy, and a demand of theirs spoke nothing.
-                let occupancy_unspoken = spoken.as_ref().is_some_and(|s| s.demanded[2] + s.demanded[3] + s.demanded[4] > 0);
-                if occupancy_unspoken {
-                    crate::observe::note_mind(|m| m.withheld_tests[1] += 1);
-                }
-                spoken
-                    .filter(|s| s.remainder.is_empty() && s.unreached.is_empty() && !occupancy_unspoken)
-                    .and_then(|s| s.grid())
-            })
-            .collect()
     }
 
     /// THE SENTENCE A SOLVE CARRIES: the rule minted at its span, or `None`
