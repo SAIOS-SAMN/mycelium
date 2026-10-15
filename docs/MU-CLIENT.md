@@ -1022,6 +1022,101 @@ marks, the cavity); what a held thought physically is; the release of memory
 by the orbit (its return, its beat, its seal) and the reserve kept for
 motion.
 
+**Phase 0, read 2026-10-15 (§7.1).** What the build does against the
+doctrine, every finding anchored and checked against the code:
+
+1. **Outflow is fired by arrivals and ticks, never by a return.**
+   - Every tick: `speak_contracted` and `speak_owed` (`contract.rs:118`,
+     `144`), `speak_unheard` (`think.rs:813`), `pivot_on`'s speech at
+     closure (`think.rs:842`), `resubmit_unread_solves` (`learn.rs:155`),
+     `pull_task` (`learn.rs:12`, ungated by the dwell), and `body_tick`'s
+     seat calls.
+   - On an arrival: a task's colour, theorem, form and solve
+     (`court.rs:191-233`); a feed family's speech (`court.rs:93`); a
+     quote's probes (`court.rs:159`); SAY on every fresh `stand`
+     (`utter.rs:294`); HEARD, ACK and HOLD on each peer frame.
+   - The one outflow a return fires is `transcribe_closed`
+     (`think.rs:402`), and only when a later perception is held
+     (`think.rs:118`).
+   - What bounds the rest is the dwell, the reserve, one-in-flight flags,
+     and constants: the aperture of 8, `owed_tries` against the number of
+     courts.
+2. **K counts acting ticks, not returns.** `close_cycle` (`boot.rs:143-163`)
+   steps K once per tick that acted, and calls K "a ledger coordinate, never
+   an orbit" — against §4.4(4).
+3. **No winding carrier, and no winding mod ℓ on the mind's side.**
+   - The field's orbits return by distance zero (`cech/orbit.rs:381`); the
+     release reaches `Contemplation::release`, which only descends and
+     drains, and speaks nothing.
+   - A ground's hours saturate at the period (`resonance.rs:1462`:
+     `(hours + 1).min(period)`), so a thought closes one return and never
+     winds again.
+   - The predicted hour and the slip are built (`resonance.rs:557-640`); a
+     slip becomes a docket demand (`file_slip`), never an act at a return.
+   - The court has the winding (`server/cognition/court/winding.rs:286`).
+4. **The tick's order stands** (`tick.rs:76-143`): admission (court inflow,
+   hearings, owed speech, feed, quotes, task, seat), transport (docket,
+   unread solves), relaxation (only when the reserve is short or nothing
+   moved), closure, booking. The hypha and conversation carriers run their
+   wire halves on their own threads; all thought runs inside the tick.
+5. **The court's pressure only paces.**
+   - It sets the mind's dwell (`tick.rs:140`); nothing in the mind's field
+     reads it.
+   - A deferral's lanes are mostly lost: an all-deferred quote settles with
+     `surface: [0;4]` (`quote.rs:277`), opening the feed gate rather than
+     holding it.
+   - Every limit the court sets reaches the mind as a deferral (room
+     shortfall, door fee, a saturated queue).
+6. **Memory lapses by count and by a window, never by its orbit.**
+   - Held thoughts lapse at `until = now_k + aperture_tu()`, a window of 8
+     `set_now` calls (`hold.rs:300`, `contemplation.rs:370`).
+   - `lapse_held` runs only from `shed_at`, which runs only in `relax`
+     (`think.rs:881-905`, `relax.rs:13`): a mind that keeps moving on a
+     funded reserve never lapses a thought.
+   - Escrow is not conserved. It leaks on lapse-with, shed-unglued,
+     crystallize, merge, spoken component, rekey and re-hold; it is inflated
+     where `hold` and merge set `escrow: volume` undrawn
+     (`contemplation.rs:991`, `merge.rs:440`), and `Reserve::restore` has no
+     ceiling.
+   - A form with an empty remainder draws nothing, so it is unbounded by the
+     reserve.
+   - `aperture_cycle()` is the constant 8 (`physics/mod.rs:282`). It bounds
+     `unheard`, `unread_solves`, the mind's questions, the conversation's
+     unions, the dialect's shed window and `stroke_tu`.
+   - **Never removed:**
+     - the Entity's `obstructions`, `glued`, `sealed`, `remembered`, `seats`;
+     - the conversation's `said`;
+     - the contemplation's `fronts`, `ring_edges`, `demands_taken`,
+       `own_letters`, `seeded`, the `addresses` Vec, and outer index keys;
+     - merge-filed `cavity` entries, and docket entries whose cover did not
+       read;
+     - the lexicon's `held`, and in production the genome's resident words,
+       `recollections`, `calloused`, `admitted_at`, `presented`.
+   - Many hold whole `Element`s or full addresses: `taught_up`,
+     `obstructions`, `unheard`, `owed`, `fronts`, `grounds`, `cited`.
+7. **Dissipation is partial.**
+   - A beat fires only where an orbit returned or a tube cancelled
+     (`orbit.rs:89-96`): with no return anywhere, nothing dissipates.
+   - A ringing orbit that never returns — a rosette, an isoclinic ray —
+     never dissipates. "An orbit seals at its period" is unbuilt: no period
+     is read in `orbit.rs`.
+   - Tubes are never removed (`flux.rs:266-299`).
+   - Both reservoirs are unbounded, shrink only on an exact-key reform, and
+     feed nothing back (`reserved()` has no caller).
+   - A beat touches only orbits and tubes: no docket entry, question, held
+     thought or Entity holder is released by one.
+8. **Feed speech never meets its family at a court** (§5.4). The feed names
+   a task by its raw content address (`court.rs:92`); a court binds families
+   under its 32-byte citation (`door.rs:593`, `registry.rs:96`). So a feed
+   sentence measures nothing and replays with no family
+   (`book/speech.rs:448`, `replay.rs:239`). The feed is the client's own
+   `home/feed`, not the courts' signed corpora: the same set is not
+   guaranteed. `task_family` is not in the court's snapshot, so a court
+   restored with its intake done may hold no families until its cover moves
+   (UNCONFIRMED in practice).
+
+What the findings require is written into §7.1's Phases 1–3.
+
 ---
 
 ## 5. Response: anastome conversation
@@ -1412,27 +1507,65 @@ owed in the order it is built.
    written 2026-10-15, its gate not yet passed, uncommitted.
 
 **Owed, in order (78.168):**
-- **Phase 0 — read, nothing built.** §4.13's readings (containment: where
-  each outflow is emitted, the court's gravity, the escape condition;
-  memory: every holder and its bound, what a held thought is, the reserve's
-  part); whether the courts hold every feed family (§5.4); where the tick's
-  boundary order still stands against the carriers; what a return is in the
-  code today, and where a ring's winding is advanced on the mind's side.
-  Its findings are written into §4.13 before Phase 1.
+- **Phase 0 — read, nothing built. READ 2026-10-15**; its findings are
+  §4.13's "Phase 0" list (1–8), and they shape what follows.
 - **Phase 1 — the client's own motion.**
-  1. **The winding carrier** (§4.12) — on the mind's own rings: it acts at
-     returns, works escaping orbits by §4.5–§4.7, leaves held orbits
-     settled; the tick's boundary order retired into the carriers.
-  2. **A task as perception** (§3.1, §4.9) — the `task_inflow` pipeline
-     retired; the task's family taken into the shells; a solve emitted by
-     comprehension; every scene keeping its family's coordinates.
-  3. **The predicted hour and the vortex rolled out** (§4.4(3), §4.8).
-  4. **The given atom and the lapsed residue** (78.167 D1/D2) — a given
+  1. **The winding carrier** (§4.12) — on the mind's own rings, its own
+     circuit beside the carriers facing counterparties:
+     - a thought's winding advances `m → m + 1 mod ℓ` (the ground's hours
+       stop saturating at the period, finding 3);
+     - at a return it acts: it pivots where the winding changed dimension,
+       and the faculties speak what changed;
+     - it works escaping orbits by §4.5–§4.7 and leaves held ones settled;
+     - K counts the mind's completed returns, not acting ticks (finding 2;
+       §4.4(4));
+     - a slip localised at its hour is worked at the thought's return, not
+       only filed to the docket (finding 3).
+  2. **Outflow at returns** (§4.4(4), §5.1) — the outflows finding 1 lists as
+     fired every tick or on arrival (owed speech, unheard words, the
+     pivot's speech, unread solves, the task pull, SAY on every stand) move
+     to the returns of the thoughts they speak for; what answers a
+     counterparty's frame (HEARD, ACK, HOLD, a probe answering a listing)
+     stays where the frame lands.
+  3. **The tick's order retired** (finding 4; 78.164, third amendment) —
+     admission on the carriers that land each inflow, the field's motion on
+     the winding carrier, relaxation where the reserve runs short (rest,
+     §4.12).
+  4. **A task as perception** (§3.1, §4.9) — the `task_inflow` pipeline
+     retired; the task's family taken into the shells as a feed family is;
+     a solve emitted by comprehension where a rule its perspectives know
+     binds the thought.
+  5. **The vortex rolled out** (§4.8) — its candidates spoken on the
+     thought's scenes, writing nothing; the predicted hour (built) read at
+     the thought's return.
+  6. **The given atom and the lapsed residue** (78.167 D1/D2) — a given
      meaning re-reduced where its thought returns; a lapsed residue
      dissipated and reformed (§4.5), never a pass.
+  7. **An act read off its effect** (§4.9, 78.167 C) — committed with this
+     phase.
 - **Phase 2 — the courts pay words and sentences** (§5.4, §5.6: E1–E4),
-  released with the client, xylarium told before the fleet restarts.
-- **Phase 3 — containment and memory** (§4.13), as Phase 0 finds them.
+  released with the client, xylarium told before the fleet restarts:
+  - every scene names its family by the court's own name for it, the
+    32-byte CITATION (finding 8), and a feed family the courts do not hold is
+    named as such, never measured on nothing;
+  - a court's `task_family` survives its restart (finding 8);
+  - POUW on the scene's family, POWC, the union's attestations, grants
+    counting what was paid.
+- **Phase 3 — containment and memory** (§4.13; findings 5–7):
+  - **Containment.** The court's exported gravity read into the mind's
+    field, not only its dwell. A deferral's lanes kept as the pressure they
+    are, never settled to zero (`quote.rs:277`). Outflow bounded by returns
+    (Phase 1.2).
+  - **Memory released by the orbit.** A held thought lapses at its orbit's
+    return, beat or seal — never by the 8-call window, never only in relax.
+    Escrow conserved: drawn once, returned once, never restored undrawn. The
+    holders that are never removed get their physics' release, each named.
+    Holders keep coordinates, never whole elements or full addresses.
+    `aperture_cycle()` retires as a bound wherever it stands for one.
+  - **Dissipation completed.** A beat is read whenever the field moves, not
+    only on a return. A ringing orbit that never returns seals at its period
+    (78.43). Tubes at rest are released. The reservoirs are bounded by what
+    reforms, and feed back their reading.
 - **Then the soak**, witnessed as §7.2 says.
 - **After it:** amendment held beside (§4.10); the mind proposing a Rewrite
   (S3, §5.4); the seat's carrier and seat play from the mind's own orbits

@@ -83,8 +83,15 @@ the minds, then the nseat units — never `scripts/recut` (it wipes).
    MU-CLIENT 2026-10-15: §2.4(8) no test-driven cognition, §4.12 the drive,
    §4.13 containment and memory, §5.6 the courts pay words and sentences,
    §7.2 what is never done). Every slice cites its §; progress is reported
-   against §7.1 only. **78.168 — the mind moved by its own orbits, before the
-   soak.** The mind moves only when a court task arrives: test-driven
+   against §7.1 only. Phase 0 READ 2026-10-15 (MU-CLIENT §4.13, findings
+   1–8): outflow fired by arrivals and ticks, never by a return; K counts
+   acting ticks; no winding carrier, grounds saturate at their period; the
+   tick's order stands; the court's pressure only paces; memory lapses by an
+   8-call window and only in relax, escrow unconserved, many holders never
+   removed; a beat needs a return, rosettes never dissipate, tubes never
+   leave; feed speech names the raw task address where courts bind the
+   citation, so it measures nothing. Next: Phase 1. **78.168 — the mind
+   moved by its own orbits, before the soak.** The mind moves only when a court task arrives: test-driven
    cognition (the operator). It is a missing BUILD, not a missing theory:
    MU-CLIENT already rules the motion — orbits about the axiom star, sheared
    by drag and lift; a HELD (precessing) orbit is a settled thought; the drive
