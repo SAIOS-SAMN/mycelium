@@ -79,7 +79,11 @@ the minds, then the nseat units — never `scripts/recut` (it wipes).
    erasure do not change before C states the erasure); C1–C5 in
    `family/acts.rs`, uncommitted (the release clippy gate not yet passed).
    Under 78.168, C is comprehension and D1/D2 move into the winding.
-2. **MU-RECURSION 78.168 — the mind moved by its own orbits, before the
+2. **MU-CLIENT §7.1 — the build's one checklist** (78.168 written into
+   MU-CLIENT 2026-10-15: §2.4(8) no test-driven cognition, §4.12 the drive,
+   §4.13 containment and memory, §5.6 the courts pay words and sentences,
+   §7.2 what is never done). Every slice cites its §; progress is reported
+   against §7.1 only. **78.168 — the mind moved by its own orbits, before the
    soak.** The mind moves only when a court task arrives: test-driven
    cognition (the operator). It is a missing BUILD, not a missing theory:
    MU-CLIENT already rules the motion — orbits about the axiom star, sheared

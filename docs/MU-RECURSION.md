@@ -26118,7 +26118,14 @@ an open thought leave only "by exact return":
 8. "minds are on the mycelium network, mycelium has universes — that is our
    sandbox: there is no escape because there is no incentive to escape."
 
-Then: "rewrite 78.168 in orbital terms and scope it further."
+Then: "rewrite 78.168 in orbital terms and scope it further"; and "update
+MU-CLIENT to hold the entire spec, ensure that the build after the
+completion of the implementation of the document is not test driven
+cognition: align". **This chapter's rulings are written into MU-CLIENT**
+(§0 the checklist; §1(7); §2.4(8) no test-driven cognition; §3.1; §4.4(3);
+§4.8; §4.9; §4.12 the drive; §4.13 containment and memory; §5.3(5); §5.4;
+§5.6; §6; §7.1 the build's order; §7.2 what is never done; §8). MU-CLIENT
+governs the client build; this chapter is the record of how it was reached.
 
 **The first draft is superseded whole** (commits 68afa05f, d025ee66). It
 invented a parallel theory — an `Open` set leaving only by exact return, a

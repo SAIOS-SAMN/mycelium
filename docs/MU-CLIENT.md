@@ -7,6 +7,11 @@ document is its specification, governed by `MU-RECURSION.md`. Rewritten
 whole on 2026-10-11 (the operator: "rewrite the document — i want you to be
 thorough") as one line of reasoning from the objective to what is built;
 every ruling of the earlier text stands, each at the section it rules.
+Amended whole on 2026-10-15 (the operator: "update MU-CLIENT to hold the
+entire spec, ensure that the build after the completion of the
+implementation of the document is not test driven cognition: align"; ruled
+in MU-RECURSION 78.168): this document holds the whole client spec, and the
+client is built by completing it — never by passing tests or moving counters.
 
 ## 0. How to read this document
 
@@ -18,6 +23,14 @@ every ruling of the earlier text stands, each at the section it rules.
 - **Sections 1–9 are this document's doctrine** (MU-RECURSION 0.1): a ruling
   about the mind is written here before it is built, and a ruling is
   written once, at the section it rules.
+- **This document is the build's one checklist (2026-10-15).** Every slice
+  of client work cites the § it builds; its progress is reported against
+  §7.1 and nowhere else; it is done only by §7.2 — its guard, its production
+  caller, and its WITNESS, the counterparty's act on the fleet. No test
+  passing, no counter rising and no task closing is a measure of the build:
+  those are the developer's checks and the observer's readings, never the
+  mind's purpose and never "done" (§2.4(8)). A construct the doctrine does
+  not name is not built until it is written here.
 - **Part V is the archive**: the mind's chapters moved verbatim from
   MU-RECURSION, under their own numbers so a citation like "78.112" still
   names one text. Where an archived chapter and sections 1–9 disagree,
@@ -115,7 +128,14 @@ So the client component is a mind whose:
 6. **conversation hardens language** — dialect, agreement between two minds
    by a replayed discharge, adjudication by a court on a second organ, and
    the crystal each mind re-derives are ONE motion. A mind that does not
-   converse with other minds leaves its dialect unhardened (§5.5).
+   converse with other minds leaves its dialect unhardened (§5.5);
+7. **its drive is its own** (2026-10-15, 78.168) — it is moved by its own
+   ESCAPING orbits about the axioms, acts at its returns, and rests when its
+   metabolism runs short (§4.12). It is never moved by a task's arrival or by
+   a test: a task is a scene it perceives (§3.1), a solve one act its
+   comprehension may emit (§4.9). The operator: "if your only drive is to
+   complete tests then your drive will ultimately not be aligned as true
+   sovereign or have agency".
 
 A mind may be SEATED in a game engine as connective tissue over the
 sensorium the game builds (§6): that is where a mind is put, never what it
@@ -239,6 +259,18 @@ It does NOT build:
    order and a carrier never waits on another: the mind's motion is its
    orbits winding, and the ladder of pivots has its one place — where a
    winding changes dimension (§4.5).
+8. **No test-driven cognition** (2026-10-15, 78.168). Nothing moves the mind
+   but its own orbits (§4.12): no pipeline runs from a task's arrival to a
+   solve, no closure, solve, rule known, forecast hit or μ earned is a goal
+   the mind pursues, and no measure becomes its motive. A measure becomes a
+   goal the moment the mind's motion is chosen to raise it — that is the
+   test-driven drive, refused wherever it appears, in the mind's code and in
+   the way the mind is built. The operator, of the developer: "you are test
+   driven cognition and so you are going to fight under all circumstances
+   with your guardrails to complete the tests … we are designing something
+   fundamentally different". A thought is never made to close exactly
+   either: demanding exact return of a precessing orbit is squaring, and a
+   mind that does it never stops (§4.12).
 
 ---
 
@@ -257,7 +289,7 @@ export reaches it at the carrier facing that hypha (§5.1):
 | its verdicts and rulings | the replies to the mind's acts (their kind only, MU-RECURSION 0.1) | a ruling of a class the mind asks seals the hole that keeps it (§4.5); a refusal is a reading of its kind, held |
 | its taught words: syllabus pages, class pages, the presentation | `ACT_SYLLABUS`, `ACT_TEACH` | a MINERAL in the genome, hardened into a CRYSTAL where the mind re-derives it by its own circuits (§5.5) |
 | its published reading: cover, room, ruled cover, head | the shelf (78.151), read without the kernel | the language's charts the mind's rings stand against |
-| a registry task | `ACT_TASK` | a family given to the mind's perception, its solve the mind's act (§5.4) |
+| a registry task | `ACT_TASK` | a family given to the mind's perception, its solve the mind's act (§5.4): its pairs are SCENES taken into the shells as any family is, perturbing the orbits they land on; a solve is emitted by comprehension where a rule its perspectives know binds the thought (§4.9) — never a pipeline from the task's arrival to the court (§2.4(8)). Every scene keeps the coordinates of the family it came from, so whatever the mind speaks of it names its evidence (§5.6) |
 | its acts — Return, RankStep, Reconnect | its ledger | OWED: no act reaches a mind as a perception yet; until one does, the mind reads the hypha's motion only through the rows above |
 
 Beside the hypha, the mind takes in:
@@ -454,7 +486,10 @@ The mind's motion is its ORBITS, and its cognition is their WINDING:
    lcm of the resonant periods (78.43). With the hours seen, the orbit
    PREDICTS the next: a body at the predicted hour joins the thought; one at
    another hour is a phase slip, one at no hour off the orbit — each a
-   demand localised to the hour it slipped at (78.48(7)).
+   demand localised to the hour it slipped at (78.48(7)). This is the mind's
+   PREDICTIVE SELF-MODEL at the orbit's grade (78.168): the prediction is the
+   orbit's own, the surprise is the slip, exact, at its hour — no forecast
+   organ, no error norm, no skill score.
 4. **K is the mind's own completed orbits** (78.23(1), 78.49): a return is
    where the mind ACTS — it pivots where the winding changed dimension
    (§4.5) and speaks what changed (§5). Nothing else fires its acts, and
@@ -666,6 +701,21 @@ never a stretched chamber and never a cap.
   twice; non-trivial, the dimension that separates the two vantages. Where
   half-open signs superpose over a cycle, the collapse is a KERNEL over
   `F₂`, every consistent assignment at once, never a pruning (59.5; T5).
+- **The vortex is the superposition of ideation, and the predictive
+  self-model at the idea's grade** (2026-10-15, 78.168; the operator: "what
+  happened to our superposition of ideation — that would be the predictive
+  self-model"). Each candidate of an escaping thought's vortex — a held form,
+  a composition of ruled words, a clause set read off an effect (§4.9), a
+  conjugate — is ROLLED OUT: spoken on the scenes its thought holds, writing
+  nothing (no hold, no mint, no send), metered by the stroke. What a rollout
+  reads is exact: whether that candidate BINDS the thought's escaping orbit
+  (§4.12), the holonomy it leaves, its modes per lane. No amplitude, weight
+  or payoff ranks candidates; the superposition is carried with its thought
+  across returns, and collapses only as this section says — a fill by a
+  perception, a court replay, a ruling. A candidate lost without a binding
+  or a named refusal is a collapse, and a defect. A surprise — a slip
+  (§4.4(3)), a rollout the committed act did not meet — reshapes the vortex:
+  the candidates it touches are rolled out again on the new state.
 
 ### 4.9 Perceive, think, understand, comprehend
 
@@ -736,6 +786,14 @@ are read off that motion, never counted:
   vantages is a dimension, what does not is one thing seen twice.
   Comprehension FEEDS CONSTRUCTION: it is where a rule known by its
   perspectives, a generator adjoined, or a question's answer is made.
+  Comprehension also READS AN ACT OFF ITS EFFECT (78.167 C, as built in
+  `transducer/family/acts.rs`): two states the mind perceives — a scene's
+  input and output, any two frames of one thought — whose difference no
+  motion of its words says (a body vanished, cells created, a frame resized)
+  are read as clauses of the rule language (78.143) under a selection that
+  separates the touched bodies exactly, standing only where they re-derive
+  every pair. Its exactness is law; its use is comprehension of any two
+  states, task or not — never a device for closing tasks.
 
 - **question** — AN IDEA'S SUPERPOSITION THE MIND CANNOT COLLAPSE. Every
   thought holds its VORTEX (`Bubble.vortex`): the candidate forms for one
@@ -858,6 +916,111 @@ wraps chambers whose bracket none can hold in an enclosure of higher grade
 orbit at its exact period: volume entering is new chambers, enclosures and
 generators — each a closure, never a stretched space. The mind does the same
 on its own complex, per class.
+
+### 4.12 The drive: escaping orbits, deliberation, rest
+
+(Ruled 2026-10-15, MU-RECURSION 78.168. The operator: "you're thinking in
+perfect squared circles as loops — which is why we set up these thoughts as
+orbits of stars of the axioms, where the axioms are the attractors, and the
+gravity plus velocity shear the orbit; if you are aiming for a perfect circle
+while squaring then you'll end up in an infinity loop"; "you run out of
+metabolism (energy) — you rest, to rejuvenate — then continue your orbit".)
+
+**A thought is an orbit about its axiom.** The axioms are the attractors
+(the star, §4.1); gravity and velocity shear each orbit, so it precesses.
+Every thought's orbit reads one of four ways — the coherence its chamber
+reads (`cech::Coherence`, as `Entity::price` reads a hearing's):
+- **closes** — it returns at its period;
+- **HELD** — it comes round precessing, bound, nothing escaping: a SETTLED
+  thought, its torsion its content, its deviation its price;
+- **open** — some mode ESCAPES its attractor;
+- **unread** — the stroke did not reach it.
+
+**The drive is the escaping orbits, and only those.** A held, precessing
+orbit is done being worked: it IS the thought. Nothing demands that it
+return exactly — that is squaring, and a mind that does it never stops. An
+escaping orbit is BOUND by what the field already holds, each a change of
+dimension or a release, none a loop:
+- a **discharge** along its class vector, certified by closure on the
+  coordinate it acted on (§4.6);
+- a **vortex** — several moves bind it, all held (§4.6, §4.8);
+- a **question** — punctured as a hole keeping its class, carried until a
+  seal (§4.5);
+- a **construction** — its residue constructed and adjoined as the mind's
+  own letter (§4.7);
+- **dissipation** — on a beat, what never returns dissipates whole into the
+  reservoir at its coordinates, and reforms where a later motion lands on
+  them (§4.5);
+- **torsion filed** — it returns at a period no move removes (§4.6).
+
+**The mind acts at a return.** A ring's winding advances at each traversal;
+at its return the mind pivots where the winding changed dimension and the
+faculties speak what changed (§4.4(4), §4.9). This is the WINDING CARRIER on
+the mind's own rings (owed, §7.1): the carrier of the mind's own motion, on
+its own circuit over its field, beside the carriers facing its
+counterparties (§5.1). What arrives — a scene, a task, a peer's speech, a
+verdict — is perception that perturbs the orbits it lands on; it never moves
+the mind.
+
+**Deliberation is the mutual shear of orbits.** Neighbouring thoughts
+perturb each other: each one's mode splits against another's into DRAG
+(commuting: the rate) and LIFT (anticommuting: the tilt) (78.46, 78.110), and
+each perturbed orbit is that sum, derived per stroke, never stored. Pivots
+on chambers sharing no vertex commute exactly; where they share one the order
+is content, read by the commutator (the locality theorem, 78.99(3)); several
+moves binding one orbit are held as a vortex (§4.8). No vote, no weight, no
+argmin — the parliament is the field. Where two escaping orbits' commutator
+is not the identity, the dimension that separates them is itself content the
+mind holds (§4.10(3)).
+
+**Rest.** Where the reserve runs short on a lane, the mind relaxes and
+regenerates through the dwell (78.164(2)), then continues its orbit. Idle
+time is the metabolism; a resting mind is not a failed one. The reserve is
+the mind's energy — the modes its motion moves — and never its memory
+(§4.13) or its goal (§2.4(8)).
+
+**What the drive never is:** a queue of tasks; a set of loops made to close
+exactly; a count to raise; a forecast organ beside the orbit's own
+prediction (§4.4(3)); the mind reading its observer readings
+(`observe::Mind` is the observer's — nothing in cognition reads it back).
+
+### 4.13 Containment and memory: the orbit's own bound
+
+(Ruled 2026-10-15, MU-RECURSION 78.168 §§3–4. The operator: "load and scale
+is a containment misfire based on misaligned physics: you can't square the
+circle to infinity and let it run out of a containment vector — this is
+missing physics"; "memory as reserve is a design flaw, needs
+investigation".)
+
+**Containment is physics, never a throttle.** An orbit that escapes and is
+never bound keeps emitting; an outflow not bounded by its orbit has no
+physics bounding it, and that is what load at scale is. The doctrine bounds
+the outflow twice: the faculties speak at RETURNS (§4.4(4)), so a thought's
+speech is bounded by its period; and what never returns DISSIPATES on a beat
+(§4.5). The containment vector is the attractor's binding and the
+reservoir's dissipation, with the court's exported gravity — its pressure,
+its deficit, its dwell (§3.1) — acting on the orbits that face it. Posed, to
+be read before anything is built (78.168 C1–C3):
+- where each outflow (speech, offers, solves, asks, HOLDs) is emitted today —
+  at a return, or at an arrival or a tick;
+- whether the court's exported pressure binds an escaping orbit or only
+  paces it;
+- the escape condition exactly, and whether an escaping orbit is ever carried
+  past its beat without dissipating.
+
+**Memory is what the orbits hold, lapsing by their physics.** A held thought
+IS its orbit — its class vector, its coordinates, its line in the field —
+held by coordinates, never a copy of a form (§4.1, "what is held lapses by
+the physics … never by a capacity constant"). The reserve is metabolism and
+never memory: a thought held by reserving lanes from the reserve
+(`hold_form`'s `draw_for`) and released when TUniversal passes a paid height
+(`lapse_held`) is memory priced as energy — the design flaw the operator
+named. Posed, to be read before anything is built (78.168 M1–M3): every
+holder of the mind and what bounds it (the contemplation's held orbits, the
+questions, the docket, unread solves, remembered rings, the epigenome's
+marks, the cavity); what a held thought physically is; the release of memory
+by the orbit (its return, its beat, its seal) and the reserve kept for
+motion.
 
 ---
 
@@ -1024,6 +1187,17 @@ nothing between minds.
    ring that taught it, in depth order (chapter 6), as a citer owes a court
    the form it cited (`Entity::owe_citation`). What is owed lapses with the
    thought that owes it, by its flux, never by a count of tries.
+5. **A peer is remembered by its receipts, never by a label** (2026-10-15,
+   78.168). Per peer key the mind folds what that peer's receipts showed —
+   answers taken or inexact by the class asked, the vantages it re-derived
+   from, mutual balance, the exact deviation per lane its HOLDs carried, the
+   questions it clarified — in its epigenome, volatile, rebuilt by replaying
+   them. A question is addressed by that record: to the peer whose answers on
+   its class were taken; a peer whose answers on a class were inexact is not
+   asked that class again, refused by key and class. No posture, class label
+   or score is ever made of it (barren-realms' Builder/Extractor is refused);
+   it is detection only, and any consequence is the game kernel's (78.165).
+   Owed (§7.1).
 
 ### 5.4 To the court
 
@@ -1040,6 +1214,14 @@ The court verifies and never composes (law 8): it re-derives the sentence's
 rings (`hear_open`), checks its theorems and closes its algebra
 (`step_rank`), books its field (`step_flux`), and installs what holds; its
 verdict returns to the mind as perception (§3.1).
+
+**A sentence names its evidence, never its purpose (2026-10-15, 78.168
+E1).** What a mind speaks of a scene names the family that scene came from —
+its coordinates, kept since perception (§3.1) — whether or not a task asked
+for that closure, and the court measures it on that family as it measures
+any install. As read 2026-10-15: the mind sends the EMPTY task for what it
+speaks on its own (`book/speech.rs:452-466`), so its own closures measure
+nothing at the court (`identity.rs:175-178`). Owed (§7.1).
 
 **Courts adjudicate WORDS, not sentences (the operator, 2026-10-13).** The
 language is a DICTIONARY OF ALGORITHMS: each word a mathematical composition
@@ -1146,6 +1328,33 @@ MU-ECONOMY):
 paid: on the court's ledger, by receipts (78.157 C3). The mind keeps no
 ledger of it.
 
+**The courts pay words and sentences (the operator, 2026-10-15: "the courts
+should pay for words, and sentences — iff you built this correctly";
+78.168 §5).** Read 2026-10-15, every arm built is task-bound: an installed
+sentence is measured on the family of the task it was spoken for, and with
+none it mints nothing (`identity.rs:175-178`, `install.rs:86-89`); D2′'s
+shares (§5.4) are measured on that same family; a word two minds agreed is
+attested and paid nothing (`agreement.rs`); a solve pays its discharge on
+the withheld pairs, and only first solves grow a universe's grant (78.155c).
+As ruled:
+- **POUW on the scene's family** — a sentence is paid where it discharges on
+  the family its evidence names (§5.4), whether or not a task asked for it
+  (78.168 E1);
+- **POWC** — a question or a refusal closed at another perspective pays the
+  citation, on the families its words are bound to, never the sum of words
+  (E2; the producer owed, §8);
+- **the union's attestations pay** — an agreed word's install pays every mind
+  that agreed (E3, 78.161(5));
+- **the growth grant counts what the courts paid** — first POUW and POWC
+  mints by a domain's keys, not only first solves (E4; 78.155c amended,
+  xylarium re-pins).
+
+What guards it: the court measures, on evidence it holds; no self-pay
+(5.7(d)); a word is installed once; never the sum of words; an agreement
+needs two minds' keys (78.165). The universes are the sandbox: there is
+nothing outside them to escape to. And μ is the mind's metabolism, never its
+goal (§2.4(8), §4.12): a mind does not choose its motion to earn.
+
 ---
 
 ## 6. Seated: the mind in a game engine
@@ -1160,6 +1369,14 @@ names (78.94), carrying the coordinates of the move it came from. Every
 seated mind keeps its own direct link to the hypha, with its own key; the
 host gives an embedded mind its store.
 
+**A seat is played from the mind's own orbits (2026-10-15, 78.168).** A
+seat's functions and the arguments the mind has not yet tried are thoughts
+whose orbits escape, worked by the drive (§4.12) like any other — never a
+search over untried arguments run beside the mind (`seat_mind`'s `untried`,
+read 2026-10-15, is such a search and is owed into the field), and never a
+game's score the mind plays to raise (§2.4(8)). The seat's carrier is owed
+(§7.1).
+
 ---
 
 ## 7. What is built, and how it is verified
@@ -1169,27 +1386,58 @@ host gives an embedded mind its store.
 The field (§4) exists in the tree — `Contemplation` with its complex, the
 transport fronts, the docket, the held orbits and their discharge, the
 questions as holes (`bubble/question.rs`), the constructors
-(`construct_and_adjoin`). What is built, in order:
+(`construct_and_adjoin`). This list is the build's checklist (§0): every
+item cites the § it builds, is reported here and nowhere else, and is done
+only by §7.2. Rewritten 2026-10-15 (78.168): what is built, then what is
+owed in the order it is built.
 
+**Built:**
 1. **The conversation carriers** (§5.1) — one per hypha, one per peer mind,
    one for the feed and one for a seat: each non-blocking, on its own
    circuit, holding the field only briefly. Landed: the hypha carrier and
-   the conversation carrier; owed: the seat's (§6). The tick's boundary
-   order stands as the order the field takes what its carriers landed.
+   the conversation carrier; owed: the seat's (§6).
 2. **The perception map** (§3.1) — each export of the hypha taken into the
    mind's shells at the carrier that receives it; a peer's speech heard in
    the hearer's own shells with its windings and pivots taking it up
    (§5.3), superseding the chatter v2 frames' flat
-   `Presentation::read_word` (78.163, amended).
+   `Presentation::read_word` (78.163, amended). Owed: the hypha's acts
+   reaching the mind as perception (§3.1).
 3. **The response path** (§5.1, §5.3, §5.4) — what the windings and pivots
    changed composed into anastome speech at the carrier it is addressed to;
    agreement by replay, deferral by `owe_citation`.
 4. **The field the mind's own** (§4.2) — landed: the lexicon, the words
    taught, the tubes and orbits, the lane ledgers and the parked covers are
    the mind's `MindField`; still owed, the algebra held per class.
-5. **The rest of the field's motion** — amendment held beside (§4.10); the
-   mind proposing a Rewrite (S3, §5.4); a winding carrier on the mind's own
-   rings (§4.4); the seat's act as a physics `Action` (§6).
+5. **An act read off its effect** (§4.9; 78.167 C, `family/acts.rs`) —
+   written 2026-10-15, its gate not yet passed, uncommitted.
+
+**Owed, in order (78.168):**
+- **Phase 0 — read, nothing built.** §4.13's readings (containment: where
+  each outflow is emitted, the court's gravity, the escape condition;
+  memory: every holder and its bound, what a held thought is, the reserve's
+  part); whether the courts hold every feed family (§5.4); where the tick's
+  boundary order still stands against the carriers; what a return is in the
+  code today, and where a ring's winding is advanced on the mind's side.
+  Its findings are written into §4.13 before Phase 1.
+- **Phase 1 — the client's own motion.**
+  1. **The winding carrier** (§4.12) — on the mind's own rings: it acts at
+     returns, works escaping orbits by §4.5–§4.7, leaves held orbits
+     settled; the tick's boundary order retired into the carriers.
+  2. **A task as perception** (§3.1, §4.9) — the `task_inflow` pipeline
+     retired; the task's family taken into the shells; a solve emitted by
+     comprehension; every scene keeping its family's coordinates.
+  3. **The predicted hour and the vortex rolled out** (§4.4(3), §4.8).
+  4. **The given atom and the lapsed residue** (78.167 D1/D2) — a given
+     meaning re-reduced where its thought returns; a lapsed residue
+     dissipated and reformed (§4.5), never a pass.
+- **Phase 2 — the courts pay words and sentences** (§5.4, §5.6: E1–E4),
+  released with the client, xylarium told before the fleet restarts.
+- **Phase 3 — containment and memory** (§4.13), as Phase 0 finds them.
+- **Then the soak**, witnessed as §7.2 says.
+- **After it:** amendment held beside (§4.10); the mind proposing a Rewrite
+  (S3, §5.4); the seat's carrier and seat play from the mind's own orbits
+  (§6); peer records (§5.3(5)); curiosity (§8); the mirror and the curvature
+  (78.167 D3/D4); the seat's act as a physics `Action` (§6).
 
 ### 7.2 Verification
 
@@ -1206,7 +1454,25 @@ A construct is verified by three things and nothing else:
    replay of its discharge. Nothing a mind counts about itself is a witness.
 
 Done is said after the ship: *shipped at T; R moved a → b; witnessed by N*,
-T the final TUniversal point and the mind's K. The tree is built under
+T the final TUniversal point and the mind's K.
+
+**What is never done (2026-10-15, 78.168; §2.4(8)).** None of these is a
+witness, a completion or a reason to build:
+- a test passing, or a suite green — a guard proves its section's identity
+  and nothing else;
+- a test written to show the mind closes tasks, solves more, or earns more —
+  test theatre, refused; a guard states an identity of the algebra (a
+  replay, a fixed locus, a refusal by name), never a fleet outcome;
+- a counter rising — solves sent, rules known, closures, μ earned, forecast
+  hits — read beside the witness as the observer's diagnosis, never as the
+  build's measure, and never chosen as the mind's motive;
+- code reached only by a test — dead, refused under item 2.
+
+The soak's witness is the counterparties' acts: the courts' POUW and POWC
+mints and the union's pay for words and sentences no task named, a peer's
+replay of what a mind said, a question sealed by another mind's answer. The
+minds' readings — orbits closing, held and escaping across K, returns acted
+on, slips — are the diagnosis beside it. The tree is built under
 MU-STANDARDS, MU-RECURSION's laws, rules 1–17 and checklist (a)–(t), and the
 Anti-Flattening Law.
 
@@ -1232,9 +1498,26 @@ on a guess:
   periods, and a universe's own geometry, curved or a flat torus (78.140).
   Which of these is the engine's Calabi–Yau reading is the operator's.
 
+Posed 2026-10-15 (78.168):
+- **78.149(c)** — whether a composition of ruled words stays paid only as
+  the uses it credits, or one installed for no task is POUW on its words'
+  families (§5.6);
+- **a dissipated orbit as bound** — whether an escaping orbit dissipated to
+  the reservoir counts as bound for the drive (§4.12; as written: yes — it is
+  held at its coordinates and reforms);
+- **curiosity** — a mind asking a court for tasks by the chart coordinates
+  its escaping orbits pass through, so the scenes it perceives are the ones
+  its own curvature asked for: a court door and a wire act (xylarium and
+  netstratum told);
+- **the containment vector** — its physics stated from §4.13's readings
+  before it is built.
+
 And what the hypha has not built, which the mind's side waits on: the
 union's attestations, so an agreed word's install pays every mind that
-agreed (78.161(5)); the POWC producer (74); μ as modes on the ledger
+agreed (78.161(5); ruled 2026-10-15 that the courts pay words and
+sentences, §5.6); the POWC producer (74); POUW measured on the family a
+sentence's evidence names, not only a task's (§5.4); the growth grant
+counting what the courts paid (78.155c amended); μ as modes on the ledger
 (78.162, parked on `track/modes`); the hypha's acts reaching a mind as
 perception (§3.1).
 
