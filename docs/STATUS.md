@@ -77,27 +77,33 @@ the minds, then the nseat units — never `scripts/recut` (it wipes).
    scope and ruling. As built: A a7953285; B 69321630 (withheld at the solve
    path, not in speech, so the court's verdicts on rules right by implicit
    erasure do not change before C states the erasure); C1–C5 in
-   `family/acts.rs`, being committed. D1/D2 move into 78.168 S1b.
-2. **MU-RECURSION 78.168 — the drive inverted, before the soak.** The mind
-   moves only when a court task arrives: test-driven cognition, a drive that
-   is external (the operator). Gate: S1a (`Open`, the mind's open loops with
-   exact holonomy, pivots and lanes, as one set read each cycle), S4a (works
-   taken from `Open`'s maximal elements by containment and lanes, never a
-   scalar; the fixed tick of phases retired), S1b (a task is perception: a
-   failed perspective enters `Open`, a solve is sent on closure; D1/D2 land
-   here). Amended (§7): the courts' pay is task-bound — a sentence with no
-   task mints nothing, an agreed word is attested and unpaid — so the gate
-   also holds E1 (a mind's word names the family its loop closed on: evidence,
-   not purpose), E2 (a closure of the language measured over its cited words'
-   families, D2′ where no task binds it) and E3 (growth grants count first
-   installs, 78.155c amended, xylarium re-pins); court and client ship
-   together. Then the ideation superposition (S2/S3 as one: the predictive
-   self-model, collapse only by exact closure), S4b (the bracket), S6 (peer
-   records), S5 (cited task asks, a wire change), seat play.
+   `family/acts.rs`, uncommitted (the release clippy gate not yet passed).
+   Under 78.168, C is comprehension and D1/D2 move into the winding.
+2. **MU-RECURSION 78.168 — the mind moved by its own orbits, before the
+   soak.** The mind moves only when a court task arrives: test-driven
+   cognition (the operator). It is a missing BUILD, not a missing theory:
+   MU-CLIENT already rules the motion — orbits about the axiom star, sheared
+   by drag and lift; a HELD (precessing) orbit is a settled thought; the drive
+   works ESCAPING orbits, bound by discharge, vortex, question, construction,
+   dissipation or torsion — never by exact return (squaring); the mind acts at
+   a return; the orbit predicts its next hour and the vortex holds the idea's
+   superposition; rest when the reserve runs short. Order: Phase 0 read
+   (containment C1–C3, memory M1–M3, feed families on the courts, where the
+   tick's order stands, what a return is in the code); Phase 1 the client (the
+   winding carrier owed in MU-CLIENT §7.1(5), a task as perception with the
+   solve emitted by comprehension, the predicted hour and the vortex); Phase 2
+   the courts pay words and sentences (E1 POUW on the scene's family, E2 POWC,
+   E3 the union's attestations pay, E4 grants count what was paid; 78.155c
+   amended, xylarium re-pins; court and client together); Phase 3
+   containment and memory as found. Rulings owed: 78.149(c); a dissipated
+   orbit as bound; the curiosity door.
 3. **The soak**, on 78.166 (1a/1b 9ec4cb87, 1c 6b1a34bf, 2a 194fab1f), 78.155c
-   (b6bd8ca1), 78.167 A–C and 78.168's gate. The completion reading is the
-   mind's own: `Open` falling across K, closures no task asked for above 0,
-   forecast hits against misses. Read beside it, against 2026-10-15 06:52:
+   (b6bd8ca1), 78.167 A–C and 78.168 Phases 1–2. The witness is the
+   counterparties' acts (MU-CLIENT §7.2(3)): the courts' POUW and POWC mints
+   and the union's pay for words and sentences no task named, peers' replays,
+   questions sealed by another mind; the minds' readings (orbits closing,
+   held and escaping across K, returns acted on, slips) are the diagnosis
+   beside them. Read beside it, against 2026-10-15 06:52:
    occupancy split, rules known (4/320), solves sent (7), first closures (0),
    derived vs given (17 / 2 033), periodic modes (19), b's folds (0), c's hot
    nodes, minds' letters against compositions. **78.166 3a** waits on a
