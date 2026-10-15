@@ -29,20 +29,20 @@ fn the_height_a_mind_reads_only_advances_and_stamps_what_it_stands() {
     );
 }
 
-/// 78.49, OK1 — THE MIND'S K IS ITS LEDGER COORDINATE: one step per cycle in
-/// which it acted, counted at the close by name; a cycle that acted on
-/// nothing leaves it where it stood. It is volatile — the genome holds
-/// crystallized knowledge, not a clock — so a mind booted from a genome
-/// starts at zero.
+/// 78.49, OK1, MU-CLIENT §4.4(4) — THE MIND'S K IS ITS COMPLETED ORBITS: the
+/// close steps it by exactly the returns of the stroke, and a stroke in which
+/// nothing returned leaves it where it stood — whatever the mind did in it:
+/// an act moves no clock. It is volatile — the genome holds crystallized
+/// knowledge, not a clock — so a mind booted from a genome starts at zero.
 #[test]
-fn the_minds_k_counts_the_cycles_it_acted_in_and_is_not_persisted() {
+fn the_minds_k_counts_its_returns_and_is_not_persisted() {
     let mut e = Entity::open("127.0.0.1:1", Kernel::named("no-words"));
     e.act();
-    assert!(e.close_cycle(), "a cycle that acted closes");
-    assert!(!e.close_cycle(), "one that acted on nothing does not");
-    e.act();
-    assert!(e.close_cycle(), "and the next that acted");
-    assert_eq!((e.epigenome.genome_len(), e.own_k()), (0, 2), "two orbits acted in, no word admitted");
+    assert!(!e.close_cycle(0), "an act with no return closes nothing");
+    assert_eq!(e.own_k(), 0, "acting moved no clock");
+    assert!(e.close_cycle(1), "one orbit returned: the stroke closes");
+    assert!(e.close_cycle(2), "two returned in one stroke");
+    assert_eq!((e.epigenome.genome_len(), e.own_k()), (0, 3), "three returns, no word admitted");
     let (bytes, refused) = e.genome_bytes();
     assert_eq!(refused.total(), 0, "no word, nothing refused");
     let mut booted = Entity::open("127.0.0.1:1", Kernel::named("no-words"));

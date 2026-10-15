@@ -1,7 +1,8 @@
 // 78.146 — A TASK BEFORE THE SEAT (wire v1.2): a percept record of kind 4,
 // `[Key(citation)]` — the task's 32-byte citation (`registry::citation`) —
 // with no counsel, says "this task is before the seat". The mind fetches it
-// by its citation (`Entity::pull_task_by_id`), extracts and mints its
+// by its citation on the court's carrier (`Entity::pull_before`, at the
+// mind's return), and where it lands extracts and mints its
 // rule as the task arm does, and calls fn 1 with the rule's tape, the test
 // outputs as the solve act writes grids, and — where the rule is a pure
 // motion and hue map — the steps the house's D4 kinds and hue moves name.

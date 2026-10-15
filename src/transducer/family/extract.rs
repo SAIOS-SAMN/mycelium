@@ -43,7 +43,25 @@ pub fn extract_rule_on(
     if family.is_empty() {
         return None;
     }
-    let scale = family_ratio(family)?;
+    // 78.167 C5 — FRAMES THAT SHARE NO RATIO carry no motion the vertices
+    // read, and the act may still be read off the pairs: a crop's frame is
+    // the body's, never one ratio of the input's.
+    let Some(scale) = family_ratio(family) else {
+        if family.len() < 2 {
+            return None;
+        }
+        return match super::acts::read_acts(&Form::default(), family, budget) {
+            Ok(clauses) => {
+                crate::observe::note_mind(|m| m.acts[0] += 1);
+                let form = Form { clauses, ..Form::default() };
+                finish(form, ((1, 1), (1, 1)), &[])
+            }
+            Err(u) => {
+                crate::observe::note_mind(|m| m.acts[u.slot()] += 1);
+                None
+            }
+        };
+    };
     let Percept { form, varying, unreached } = family_percept(family, frames, scale, budget);
     let unreached_pairs: Vec<(Grid, Grid)> = unreached.iter().filter_map(|&k| family.get(k).cloned()).collect();
     trace::trace("extract/1 derive_against", trace::Wrote::Nothing, Some(budget));
@@ -169,7 +187,44 @@ pub fn extract_rule_on(
     // derived from its ends and the pivot's factors, so there is no gauge
     // for a solve to choose and the orbits a form holds are its content.
     trace::trace("extract/8 finish", trace::Wrote::Nothing, Some(budget));
-    finish(form, scale, &unreached_pairs)
+    let rule = finish(form, scale, &unreached_pairs)?;
+    Some(stated(rule, family, crystal, budget))
+}
+
+/// 78.167 C — THE ACT READ OFF ITS EFFECT where the vertices do not say the
+/// family: a rule whose speech re-derives every pair is left as it is; one
+/// whose does not carries the clauses `acts` reads, where they re-derive
+/// every pair, and is otherwise left with the reason counted.
+fn stated(
+    mut rule: crate::transducer::sentence::SentenceRule,
+    family: &[(Grid, Grid)],
+    crystal: &dyn Crystal,
+    budget: &mut crate::physics::Budget,
+) -> crate::transducer::sentence::SentenceRule {
+    // A coordinate separating bodies on ONE pair separates nothing: a scene's
+    // form (one pair) is the vertices' alone.
+    if !rule.form.clauses.is_empty() || family.len() < 2 {
+        return rule;
+    }
+    // SAID HONESTLY: the grid, every body reached, and no creation, merge or
+    // reshape left unspoken — a pair right only by a body silently dropped
+    // is not said (78.167 B), and its erasure is read as the act it is.
+    let says = family.iter().all(|(x, y)| {
+        speak::apply_form(&rule.form, x, &crate::transducer::alphabet::Word::identity(), crystal).is_some_and(|s| {
+            s.unreached.is_empty() && s.demanded[2] + s.demanded[3] + s.demanded[4] == 0 && s.grid().is_some_and(|g| g == *y)
+        })
+    });
+    if says {
+        return rule;
+    }
+    match super::acts::read_acts(&rule.form, family, budget) {
+        Ok(clauses) => {
+            crate::observe::note_mind(|m| m.acts[0] += 1);
+            rule.form.clauses = clauses;
+        }
+        Err(u) => crate::observe::note_mind(|m| m.acts[u.slot()] += 1),
+    }
+    rule
 }
 
 /// Extract the invariant cochain of a family.

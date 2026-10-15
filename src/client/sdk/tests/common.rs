@@ -61,3 +61,26 @@ as_element_form(&f, [1, 0, 0, 0]).expect("v2 sentence")
 pub fn budget() -> crate::physics::Budget {
     crate::physics::Physics::default().stroke_n(1 << 20)
 }
+
+/// MU-CLIENT §4.4(4) — THE MIND'S OWN FIELD COMES ROUND, and the winding acts
+/// at it: a quarter turn admitted four times on one plane, in the mind's own
+/// field, returns its orbit; the winding reads that return
+/// (`act_on_returns`) and acts — what the mind held for its return leaves.
+/// Answers how many of its orbits returned.
+pub fn come_round(mind: &mut crate::client::sdk::Entity) -> u64 {
+    use crate::transducer::alphabet::{LetterId, Word};
+    use crate::transducer::family::pairing::{mark_flux, FieldLine};
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
+    let quarter = crate::transducer::element::conformal_of(&Word::from_letters(&[(q, false)]), &crate::transducer::element::identity_versor()).expect("a motion");
+    let line = || FieldLine { carriage: quarter.clone(), gauge: Vec::new(), mass: 1, free: false, line: crate::transducer::cech::orbit::Thread::Free };
+    let mut field = std::mem::take(&mut mind.field);
+    let returned = field.think(|| {
+        let mut b = budget();
+        for _ in 0..4 {
+            let _ = mark_flux(&[], &[line()], &mut b);
+        }
+        mind.act_on_returns(&mut b, true)
+    });
+    mind.field = field;
+    returned
+}

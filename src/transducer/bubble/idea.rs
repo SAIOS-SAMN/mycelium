@@ -271,16 +271,28 @@ pub struct Bubble {
     /// hours stand on, and the hours it has seen. A thought is its ground, not
     /// the form of whichever perception arrived first. Volatile.
     pub ground: Option<Grounded>,
+    /// MU-CLIENT §4.4(3), §7.1 — THE SLIPS OFF THIS THOUGHT'S ORBIT: each a
+    /// perception no rotation of its pull carried onto it, by the chart it
+    /// slipped on and its residue — the thought's own demand, WORKED AT ITS
+    /// RETURN (docketed and constructed there), carried into the thought it
+    /// merges into, gone with it where it lapses.
+    pub slips: Vec<(Vec<u8>, crate::transducer::cga::Mv)>,
 }
 
 /// 78.52(6) Stage C — A GROUND HELD: the ground, the chart its hours stand on,
-/// and how many of its hours have been seen (at most its period: an hour past
-/// the return is hour 0 again).
+/// and every hour it has seen. Its WINDING is `hours % period` (an hour past
+/// a return is hour 0 again) and its returns `hours / period` (MU-CLIENT
+/// §4.4(2)): the count winds, it never stops at the period.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Grounded {
     pub chart: Vec<u8>,
     pub ground: crate::physics::tensegrity::Ground,
     pub hours: u64,
+    /// MU-CLIENT §4.4(1) — THE TWIST ITS PULL HAS PUT ON IT: every rotation
+    /// about its attractor its returns came round by, composed, read at hour
+    /// 0. The orbit's precession, kept as its content; none while it has come
+    /// round exactly.
+    pub twist: Option<crate::transducer::cga::Mv>,
 }
 
 /// CS2 — the cells a held form's pivot reads against, from the idea's memo

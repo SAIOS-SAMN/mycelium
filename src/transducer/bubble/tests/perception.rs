@@ -276,6 +276,29 @@ fn the_fourth_hour_closes_the_return_and_the_thought_waits_for_its_voice() {
     assert_eq!(ground.period, 4, "the return's period");
 }
 
+/// MU-CLIENT §4.4(2) — THE WINDING CONTINUES PAST THE FIRST RETURN. The L's
+/// four hours seen twice: the fourth closes the thought (its first return,
+/// new structure); the eighth completes its SECOND return — a traversal of
+/// the same orbit, never a second first close — and the thought's hours
+/// stand at eight, its winding back at hour 0. Each return hands the ground
+/// to the voice and names the thought that came round.
+#[test]
+fn the_winding_returns_again_past_its_first_close() {
+    let mut c = Contemplation::new();
+    for _ in 0..2 {
+        perceive(&mut c, &O0, &O0_OUT);
+        perceive(&mut c, &O1, &O1_OUT);
+        perceive(&mut c, &O2, &O2_OUT);
+        perceive(&mut c, &O3, &O3_OUT);
+    }
+    assert_eq!((c.closed_thoughts, c.thought_returns), (1, 1), "one first close, one later return: {}", c.resonance.line());
+    assert_eq!(c.closed.len(), 2, "each return handed the ground to the voice");
+    assert_eq!(c.came_round.len(), 2, "and named the thought that came round");
+    let [(_, thought)] = c.bubbles.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
+    let hours = thought.ground.as_ref().map(|g| (g.hours, g.hours % g.ground.period));
+    assert_eq!(hours, Some((8, 0)), "eight hours seen, the winding at hour 0");
+}
+
 /// A SCENE'S THOUGHT TRANSCRIBES TO ONE WORD (78.52(6) Stage C). The two Ls
 /// of 78.50 turned whole about (3, 3), hour by hour: the first two scenes form
 /// one grounded thought (its two bodies, the turn about their barycentre); the
@@ -319,47 +342,65 @@ fn the_next_hour_of_an_orbit_is_predicted_and_joins_the_thought() {
     assert_eq!(bodies, 3, "the thought stands on the three hours");
 }
 
-/// A PHASE SLIP. After hours 0 and 1 the orbit predicts hour 2; the L at
-/// hour 3 is on the orbit but not where it was predicted. It is not joined;
-/// its slip is a demand at the chart whose residue is the phase it slipped
-/// by — one step of the orbit, a congruence of period 4.
+/// MU-CLIENT §4.4(1) (2026-10-15, amending 78.48(7)'s phase slip) — AN HOUR
+/// OUT OF TURN ON THE ORBIT IS THE PULL'S TWIST. After hours 0 and 1 the orbit
+/// predicts hour 2; the L at hour 3 stands on the same orbit one step further,
+/// carried there by a rotation about the attractor — the orbit sheared by its
+/// pull (drag: the rate), never a circle demanded back. It joins; the ground
+/// stands sheared where the orbit now is; the twist is kept as the thought's
+/// content — one step of the orbit, of period 4 — and nothing is demanded.
 #[test]
-fn an_hour_out_of_turn_is_a_phase_slip_demanded() {
+fn an_hour_out_of_turn_is_the_orbit_twisted_by_its_pull() {
     let mut c = Contemplation::new();
     perceive(&mut c, &O0, &O0_OUT);
     perceive(&mut c, &O1, &O1_OUT);
     perceive(&mut c, &O3, &O3_OUT);
-    assert_eq!((c.resonance.predicted, c.resonance.phase_slips, c.resonance.off_orbit), (0, 1, 0), "{}", c.resonance.line());
-    assert_eq!(c.torsion_merges, 1, "the slipped hour does not join");
+    let r = &c.resonance;
+    assert_eq!((r.predicted, r.phase_slips, r.off_orbit, r.twisted, r.lifted), (1, 0, 0, 1, 0), "{}", r.line());
     let period = |r: &crate::transducer::cga::Mv| {
         let f = crate::transducer::element::conformal_factors(r).ok()?;
         crate::transducer::element::rotor_of_factors(&f).ok()?.order()
     };
-    let slipped = c.docket_cites().into_iter().any(|cite| match cite {
-        Cite::Demand { residue: Some(r), .. } => period(&r) == Some(Order::Finite(4)),
-        _ => false,
-    });
-    assert!(slipped, "a demand at the chart, its residue one step of the orbit");
+    let [(_, thought)] = c.bubbles.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
+    let twist = thought.ground.as_ref().and_then(|g| g.twist.as_ref()).and_then(period);
+    assert_eq!(twist, Some(Order::Finite(4)), "the thought keeps its twist: one step of the orbit");
+    let demanded = c.docket_cites().into_iter().any(|cite| matches!(cite, Cite::Demand { residue: Some(_), .. }));
+    assert!(!demanded, "a twist of the pull is the orbit's content, never a demand");
 }
 
-/// OFF THE ORBIT. After hours 0 and 1, the L of hour 0 carried one row down
-/// is on no hour of the orbit: its slip is a demand at the chart, counted
-/// apart from a phase slip.
+/// OFF THE ORBIT, HELD ON THE THOUGHT (MU-CLIENT §4.4(3), §7.1). The L's four
+/// hours bring its thought round once (the voice's return taken). Then the L
+/// of hour 0 carried one row down: on no hour of the orbit — no rotation of
+/// the pull carries it there — its slip is counted apart from a phase slip
+/// and HELD ON THE THOUGHT it slipped against, its demand not docketed. (That
+/// the thought's next return works it is built — `work_slips`, at the voice's
+/// return — and not shown here: on one chart the off-orbit body is a body of
+/// the field, and takes part in every later perception, so the scene does
+/// not bring the slipped-against thought round again.)
 #[test]
-fn a_body_off_the_orbit_slips_and_is_demanded() {
+fn a_body_off_the_orbit_slips_and_is_held_on_the_thought() {
     let mut c = Contemplation::new();
-    perceive(&mut c, &O0, &O0_OUT);
-    perceive(&mut c, &O1, &O1_OUT);
+    for (x, y) in [(&O0, &O0_OUT), (&O1, &O1_OUT), (&O2, &O2_OUT), (&O3, &O3_OUT)] {
+        perceive(&mut c, x, y);
+    }
+    assert_eq!(c.closed_thoughts, 1, "the thought came round once");
+    c.work_returned();
+    let predicted = c.resonance.predicted;
     perceive(
         &mut c,
         &["000000", "010000", "010000", "011000", "000000"],
         &["000000", "001000", "001000", "001100", "000000"],
     );
-    assert_eq!((c.resonance.predicted, c.resonance.phase_slips, c.resonance.off_orbit), (0, 0, 1), "{}", c.resonance.line());
-    assert!(
-        c.docket_cites().into_iter().any(|cite| matches!(cite, Cite::Demand { residue: Some(_), .. })),
-        "the slip stands as a demand carrying its residue"
-    );
+    let r = &c.resonance;
+    assert_eq!((r.predicted - predicted, r.phase_slips, r.off_orbit), (0, 0, 1), "{}", r.line());
+    let slips: Vec<crate::transducer::cga::Mv> = c.bubbles.scoped().flat_map(|(_, b)| b.slips.iter().map(|(_, r)| r.clone()).collect::<Vec<_>>()).collect();
+    let [slip] = slips.as_slice() else { panic!("the thought holds its one slip: {}", slips.len()) };
+    // The slip's OWN demand carries its residue (the chamber may file its own
+    // incoherence beside it; that is another demand).
+    let demanded = |c: &Contemplation| {
+        c.docket_cites().into_iter().any(|cite| matches!(cite, Cite::Demand { residue: Some(r), .. } if r.projective_eq(slip)))
+    };
+    assert!(!demanded(&c), "held on the thought, its demand not yet docketed");
 }
 
 /// BRANCHING — one L, then two Ls each turned 90° about its own place: the

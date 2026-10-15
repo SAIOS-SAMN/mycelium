@@ -502,14 +502,19 @@ pub struct Epigenome {
     >,
 }
 
+/// ONE SAYING HELD FOR THE MIND'S RETURN: what leaves when it is run there.
+pub(crate) type HeldSaying = Box<dyn FnOnce(&mut Entity)>;
+
 /// THE ENTITY — a kernel identity with its genome/epigenome, conversing with
 /// its court through the hypha carrier (MU-CLIENT §5.1): it speaks sentences,
 /// learns what the mesh teaches (comprehending, not storing), asks quotes, and
 /// probes listings, and never waits on the answer.
 pub struct Entity {
     pub(crate) hypha: super::entity::hypha::Hypha,
-    /// The seat surface's own link to the hypha (`Entity::relay`).
-    pub(crate) relay: Session,
+    /// MU-CLIENT §6 — THE SEAT'S OWN CARRIER: the seat surface's link to the
+    /// hypha on its own thread (`Entity::ask_seat`), so a slow house holds
+    /// that carrier and never the mind.
+    pub(crate) seat: super::entity::hypha::Hypha,
     pub epigenome: Epigenome,
     /// Rotating cursor for the refinement probe — one genome word examined
     /// per stroke, so the compression search is metabolic, never a sweep.
@@ -574,13 +579,31 @@ pub struct Entity {
     pub(crate) contemplation: crate::transducer::bubble::Contemplation,
     pub(crate) physics: crate::physics::Physics,
     pub(crate) height: crate::chronometry::Height,
-    /// 78.49, 78.23 — THIS MIND'S OWN K: the orbits it has closed, one per
-    /// stroke in which it acted — it stood, uttered, learned or settled —
-    /// counted at the close. The mind's clock is its own motion; the ledger
-    /// is the court's (law 8), and no receipt of the mind's exists.
+    /// 78.49, 78.23, MU-CLIENT §4.4(4) — THIS MIND'S OWN K: its completed
+    /// orbits — every orbit of its field that returned and every thought
+    /// whose winding came round — counted at the close of the stroke they
+    /// returned in. The mind's clock is its own motion; the ledger is the
+    /// court's (law 8), and no receipt of the mind's exists.
     pub(crate) k: u64,
-    /// Whether this orbit has acted yet: the close steps `k` only then.
-    pub(crate) acted: bool,
+    /// MU-CLIENT §4.4(4), §4.13 — WHAT THE MIND SAYS, HELD FOR ITS RETURN:
+    /// speech to a court, a solve, a SAY to its peers, each posted where the
+    /// mind's orbits return and nowhere else, so its outflow is bounded by
+    /// its own periods. Each is held BY ITS COORDINATES (`at_return_by`): a
+    /// thing said twice before a return is one thing, its latest saying in
+    /// the place of its first, so what is held is bounded by the distinct
+    /// things the mind has to say — never by a count. An answer to a
+    /// counterparty's frame is never held here: it leaves where the frame
+    /// lands.
+    pub(crate) at_return: Vec<HeldSaying>,
+    /// Where each held saying stands in `at_return`, by its coordinates.
+    pub(crate) at_return_by: crate::network::nerve::Keyed<usize>,
+    /// MU-CLIENT §3.1, §4.9 — THE SCENES NOT YET COMPREHENDED, by the task's
+    /// citation, each with the language root it was last read at: read again
+    /// at the mind's returns, gone with their last thought.
+    pub(crate) comprehending: crate::network::nerve::Keyed<(crate::anastome::dialogue::TaskEnvelope, crate::transducer::address::Address)>,
+    /// The citation last read again (`comprehend_waiting`): each waiting
+    /// scene is read in turn.
+    pub(crate) comprehended_after: Vec<u8>,
     /// ACT1 (78.21(3)) — the court's height this voice had heard, and its
     /// own `K`, when its genome was last written whole; none before.
     pub(crate) genome_persisted: Option<(u64, u64)>,
@@ -632,7 +655,7 @@ pub struct Entity {
     pub(crate) chat: Option<super::entity::chatter::Chat>,
     /// 78.164 — the boundaries this mind is open on, and what its field
     /// keeps from tick to tick to meet them.
-    pub(crate) board: super::entity::tick::Board,
+    pub(crate) board: super::entity::winding::Board,
     /// MU-CLIENT §4.2 — THIS MIND'S OWN FIELD: its tubes and orbits, its
     /// lanes, its lexicon, the words taught it, the covers it parked; it
     /// thinks in it for the length of each tick.

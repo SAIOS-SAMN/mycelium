@@ -155,6 +155,11 @@ pub struct ResonanceTally {
     pub predicted: u64,
     pub phase_slips: u64,
     pub off_orbit: u64,
+    /// MU-CLIENT §4.4(1) — returns that came round TWISTED by their pull (a
+    /// rotation about the attractor), and of those, the ones whose twist
+    /// tilted the orbit's plane (LIFT).
+    pub twisted: u64,
+    pub lifted: u64,
     /// The strata (78.49(4)): body pairs parting at a Betti axis whose
     /// surgery was read (deformed) or did not factor; and pairs parting at a
     /// finer axis, which no conformal motion carries (apart).
@@ -209,7 +214,7 @@ pub struct ResonanceTally {
 impl ResonanceTally {
     pub fn line(&self) -> String {
         format!(
-            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} held {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | strata: deformed {} unfactored {} apart {} | spectrum: scene motions {} cosets {} symmetries {} appeared {} vanished {} unread {} | tensegrity: consolidated {} monocular {} collapsed {} unbalanced {} destabilizing {} tilted {} stability unread {} reflexive {} non-rigid {} no succession {} external torque {} incoherent {} | demanded {} undemanded {} | grounds: filed {} no return {} unplaced {} no succession {}",
+            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} held {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} twisted {} lifted {} | strata: deformed {} unfactored {} apart {} | spectrum: scene motions {} cosets {} symmetries {} appeared {} vanished {} unread {} | tensegrity: consolidated {} monocular {} collapsed {} unbalanced {} destabilizing {} tilted {} stability unread {} reflexive {} non-rigid {} no succession {} external torque {} incoherent {} | demanded {} undemanded {} | grounds: filed {} no return {} unplaced {} no succession {}",
             self.circuits,
             self.uncarried,
             self.not_reciprocal[0],
@@ -236,6 +241,8 @@ impl ResonanceTally {
             self.predicted,
             self.phase_slips,
             self.off_orbit,
+            self.twisted,
+            self.lifted,
             self.deformed,
             self.unfactored,
             self.apart,
@@ -1052,7 +1059,8 @@ impl Contemplation {
                     }
                 }
                 // NO ONE MOTION CARRIES THE SCENE: the spectrum is kept, each
-                // ray by its class, and every slipped hour is a demand.
+                // ray by its class, and every slipped hour is the demand of the
+                // thought it slipped against, worked at that thought's return.
                 _ => {
                     self.resonance.several += 1;
                     for (_, line) in spectrum.scoped() {
@@ -1060,7 +1068,7 @@ impl Contemplation {
                     }
                     for (row, h) in rows.iter().zip(&hours) {
                         if let Hour::Slipped { on_orbit, residue } = h {
-                            self.file_slip(&row.chart, residue, *on_orbit);
+                            self.file_slip(&row.chart, residue, *on_orbit, &other);
                         }
                     }
                 }
@@ -1343,7 +1351,7 @@ impl Contemplation {
         let forward = if orbit { generator.clone() } else { generator.reverse() };
         match ground_of(bodies, &forward) {
             Ok(ground) => {
-                let grounded = super::idea::Grounded { chart: first.chart.clone(), hours: hours.min(ground.period), ground };
+                let grounded = super::idea::Grounded { chart: first.chart.clone(), hours, ground, twist: None };
                 self.grounds.insert(pair_key(key, other), grounded);
                 self.resonance.grounds[0] += 1;
             }
@@ -1379,31 +1387,94 @@ impl Contemplation {
         }
     }
 
+    /// MU-CLIENT §4.4(1), §4.12 — THE RETURN TWISTED BY ITS PULL: the
+    /// rotation about the orbit's attractor (the centre its generator holds,
+    /// `cga::centre_of`) that carries the constellation the orbit predicted at
+    /// this hour onto the bodies perceived (`cga::twist_about`), every body by
+    /// the one twist. The ground is SHEARED by it — its bodies stand where the
+    /// twist puts them at hour 0, the orbit predicted from there — and the
+    /// twist ACCRUES on the thought's winding, its content (curvature is
+    /// content). Read against the orbit's plane it splits into DRAG (the
+    /// rate) and LIFT (the tilt, 78.46), each counted. `None` where no
+    /// rotation of the pull carries it: the body was carried off the
+    /// attractor (a slide away, a change of size, another body).
+    fn twisted_return(&mut self, held: super::idea::Grounded, mine: &[(&Mv, &crate::physics::tensegrity::Body)], power: &Mv) -> Option<super::idea::Grounded> {
+        use crate::physics::tensegrity::{carried_body, GroundBody};
+        let g = &held.ground;
+        let centre = match crate::transducer::cga::centre_of(&g.generator, g.generator.n()) {
+            crate::transducer::cga::Centre::Fixed { point, .. } => point,
+            _ => return None,
+        };
+        let n = usize::from(g.generator.n());
+        let [first, ..] = g.bodies.as_slice() else { return None };
+        let predicted_first = power.sandwich(&first.nucleus);
+        let lands = |tau: &Mv| {
+            g.bodies.iter().all(|b| {
+                let q = tau.sandwich(&power.sandwich(&b.nucleus));
+                mine.iter().any(|(s, _)| s.projective_eq(&q))
+            })
+        };
+        let tau = mine.iter().find_map(|(s, _)| crate::transducer::cga::twist_about(&centre, &predicted_first, s, n).filter(|t| lands(t)))?;
+        // The twist read at hour 0: the ground sheared where its hours begin.
+        let at_zero = power.reverse().geo(&tau).geo(power);
+        let bodies: Option<Vec<GroundBody>> = g
+            .bodies
+            .iter()
+            .map(|b| Some(GroundBody { nucleus: at_zero.sandwich(&b.nucleus), body: carried_body(&b.body, &at_zero)? }))
+            .collect();
+        let sheared = ground_of(bodies?, &g.generator).ok()?;
+        self.resonance.twisted += 1;
+        if let Some(split) = crate::transducer::cga::lift_drag(&g.generator.grade(2), &tau.grade(2)) {
+            if !split.lift.is_zero() {
+                self.resonance.lifted += 1;
+            }
+        }
+        let twist = Some(match &held.twist {
+            Some(t) => at_zero.geo(t),
+            None => at_zero,
+        });
+        Some(super::idea::Grounded { ground: sheared, twist, ..held })
+    }
+
     /// `join_ground`'s reading: the verdict and the ground's generator.
     fn read_ground(&mut self, key: &[u8], other: &[u8], rows: &[Row], budget: &mut crate::physics::Budget) -> Option<(Verdict, Mv)> {
         use crate::physics::tensegrity::{carried_body, coherence, external_torque, hour, metric_defect, Constellation, Refusal};
-        let grounded = self.bubbles.get(other)?.ground.clone()?;
-        let g = &grounded.ground;
+        let held = self.bubbles.get(other)?.ground.clone()?;
         let mine: Vec<(&Mv, &crate::physics::tensegrity::Body)> = rows
             .iter()
-            .filter(|r| r.chart == grounded.chart)
+            .filter(|r| r.chart == held.chart)
             .filter_map(|r| match (&r.nucleus, &r.body) {
                 (Some(s), Some(b)) => Some((s, b)),
                 _ => None,
             })
             .collect();
-        if mine.len() != g.bodies.len() {
+        if mine.len() != held.ground.bodies.len() {
             return None;
         }
-        let h = grounded.hours % g.period;
+        let h = held.hours % held.ground.period;
         let mut power = Mv::scalar(num_traits::One::one());
         for _ in 0..h {
-            let next = g.generator.geo(&power);
+            let next = held.ground.generator.geo(&power);
             power = match next.canonical() {
                 Some(ray) => ray,
                 None => next,
             };
         }
+        // MU-CLIENT §4.4(1) — THE ORBIT IS SHEARED BY ITS PULL: where the
+        // perception does not stand exactly where the orbit predicted, the
+        // twist of the pull is read (`twisted_return`) and the ground stands
+        // sheared — read from where the orbit now is, never demanded back
+        // onto a perfect circle. No twist of the pull carries it there: it was
+        // carried off the attractor, and the hours below read the slip.
+        let exact = held.ground.bodies.iter().all(|base| {
+            let predicted = power.sandwich(&base.nucleus);
+            mine.iter().any(|(s, _)| s.projective_eq(&predicted))
+        });
+        let grounded = match exact {
+            true => held,
+            false => self.twisted_return(held, &mine, &power)?,
+        };
+        let g = &grounded.ground;
         // Each body of the ground, at its predicted place, against the one of
         // this perception's bodies that stands there.
         let mut matched: Vec<(&crate::physics::tensegrity::GroundBody, &Mv, &crate::physics::tensegrity::Body)> =
@@ -1413,7 +1484,17 @@ impl Contemplation {
             let (s, b) = mine.iter().find(|(s, _)| s.projective_eq(&predicted))?;
             matched.push((base, s, b));
         }
-        let before: Vec<_> = (0..h).flat_map(|m| g.bodies.iter().map(move |b| hour(&b.nucleus, &g.coupling, m))).collect();
+        // THE HOURS BEFORE THIS ONE are the orbit's most recent return
+        // (MU-CLIENT §4.4(2)): the last `period − 1` hours seen, each at its
+        // hour on the orbit — within the first return exactly `0 … h−1`; past
+        // it the window winds on, so a thought coming round again is read
+        // against the return it completed, never against no hours at all.
+        let seen = grounded.hours;
+        let start = match seen.checked_sub(g.period - 1) {
+            Some(s) => s,
+            None => 0,
+        };
+        let before: Vec<_> = (start..seen).flat_map(|m| g.bodies.iter().map(move |b| hour(&b.nucleus, &g.coupling, m % g.period))).collect();
         let mut after = before.clone();
         after.extend(g.bodies.iter().map(|b| hour(&b.nucleus, &g.coupling, h)));
         // 78.57 — THE COHERENCE FORM of the next hour, whole: Δω, then the metric defect of
@@ -1459,7 +1540,14 @@ impl Contemplation {
         self.resonance.predicted += 1;
         let _ = self.tether(key, other, rotor, carriage, [0; 4]);
         self.resonance.edges += 1;
-        let next = super::idea::Grounded { hours: (grounded.hours + 1).min(g.period), ..grounded.clone() };
+        // MU-CLIENT §4.4(2) — THE WINDING ADVANCES, never stops at the period:
+        // the hour past a return is hour 0 again (`hours % period` above), and
+        // the thought keeps every hour it has seen, so each return it completes
+        // is read (`closing_ground`). A count past its carrier is refused.
+        let Some(seen) = grounded.hours.checked_add(1) else {
+            return Some((Err(Refusal::NoSuccession), g.generator.clone()));
+        };
+        let next = super::idea::Grounded { hours: seen, ..grounded.clone() };
         self.grounds.insert(pair_key(key, other), next);
         Some((Ok(()), generator))
     }
@@ -1640,11 +1728,35 @@ impl Contemplation {
     /// was seen against what was predicted, classified as an edge is and
     /// filed by that class with the residue as its ray; a phase slip (on the
     /// orbit at another hour) and a body off the orbit counted apart.
-    fn file_slip(&mut self, chart: &[u8], residue: &Mv, on_orbit: bool) {
+    /// A SLIP OFF A THOUGHT'S ORBIT, counted and HELD ON THAT THOUGHT
+    /// (MU-CLIENT §4.4(3), §7.1): its own demand, worked at its return
+    /// (`work_slips`). Where no thought stands to hold it, it is docketed now.
+    fn file_slip(&mut self, chart: &[u8], residue: &Mv, on_orbit: bool, thought: &[u8]) {
         match on_orbit {
             true => self.resonance.phase_slips += 1,
             false => self.resonance.off_orbit += 1,
         }
+        match self.bubbles.get_mut(thought) {
+            Some(b) => b.slips.push((chart.to_vec(), residue.clone())),
+            None => self.docket_slip(chart, residue),
+        }
+    }
+
+    /// AT A THOUGHT'S RETURN, ITS SLIPS WORKED: each docketed as the demand
+    /// its residue's class is, on the chart it slipped on, for the demand
+    /// taker to construct.
+    pub(crate) fn work_slips(&mut self, thought: &[u8]) {
+        let slips = match self.bubbles.get_mut(thought) {
+            Some(b) => std::mem::take(&mut b.slips),
+            None => return,
+        };
+        for (chart, residue) in slips {
+            self.docket_slip(&chart, &residue);
+        }
+    }
+
+    /// A slip's residue docketed as the demand its class is, on its chart.
+    fn docket_slip(&mut self, chart: &[u8], residue: &Mv) {
         let class = halves(residue).and_then(|(r, c)| match crate::transducer::cech::classify(&r, &c, sentence::CycleType::Identity) {
             Fill::Congruent(k, ..) | Fill::Class(k, _) => Some(k),
             Fill::Filled(..) | Fill::Unspellable(_) | Fill::Unread(_) | Fill::Open => None,

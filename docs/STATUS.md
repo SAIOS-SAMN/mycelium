@@ -90,7 +90,20 @@ the minds, then the nseat units — never `scripts/recut` (it wipes).
    8-call window and only in relax, escrow unconserved, many holders never
    removed; a beat needs a return, rosettes never dissipate, tubes never
    leave; feed speech names the raw task address where courts bind the
-   citation, so it measures nothing. Next: Phase 1. **78.168 — the mind
+   citation, so it measures nothing. Phase 1 WRITTEN 2026-10-15, NOT
+   WITNESSED (MU-CLIENT §7.1, with its open items): the winding stroke
+   (`entity/winding.rs`, `Entity::wind`), K by returns, outflow held for the
+   return, the ground winding mod ℓ and the return twisted by its pull
+   (`cga::twist_about`; the hour-out-of-turn reading posed, §8), a task
+   perceived and comprehended with its scene waiting beside its thoughts,
+   slips held on their thought and worked at its return, the seat's calls
+   held for the return, D1 re-derivation and D2 construction of a lapsed
+   residue, 78.167 C's acts, the seat's own carrier (nothing in the mind
+   waits on a counterparty); claims run through real returns. Open: whether
+   one stroke's sequence on the mind's own circuit meets §4.12 (posed), the
+   vortex rollout (removed — it told no candidate apart; a reading on a new
+   perception is owed), the lift untried on a grid, slips-at-return not
+   shown on one chart. **78.168 — the mind
    moved by its own orbits, before the soak.** The mind moves only when a court task arrives: test-driven
    cognition (the operator). It is a missing BUILD, not a missing theory:
    MU-CLIENT already rules the motion — orbits about the axiom star, sheared

@@ -165,7 +165,6 @@ fn a_demand_answered_by_class_key_refills_an_open_remainder() {
     assert_eq!((r.refill_acts, r.refill_refused, r.calluses), (1, 0, 0), "{}", r.line());
     let (r, answered) = remainder_of(&e, &w);
     assert!(answered && r.answered.is_none(), "answered in the mind, the record left to a court's seal");
-    assert!(e.close_cycle(), "the re-fill was an act of this cycle");
 }
 
 fn cycle(r: Option<Remainder>) -> TorsionCycle {

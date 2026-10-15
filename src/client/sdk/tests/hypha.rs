@@ -69,6 +69,8 @@ fn a_slow_court_holds_only_its_carrier() {
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
     let said = from_connection(&Word::from_letters(&[(q, false)]), &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0]).expect("a connection");
     assert!(matches!(mind.speak_word(&said), Ok(Utterance::Spoken)), "said, and the field goes on");
+    // MU-CLIENT §4.4(4) — it leaves when the mind's own field comes round.
+    assert!(super::common::come_round(&mut mind) > 0, "the mind's orbit returned");
     let act = speeches.recv().expect("the speech reached the court");
     assert_eq!(act.voice, Kernel::named("unwaiting").voice(), "spoken by the mind");
     assert_eq!(mind.hypha.in_flight(), 1, "its answer is in flight");
@@ -104,7 +106,33 @@ fn an_occluded_wire_is_read_again() {
     let stop = std::sync::atomic::AtomicBool::new(false);
     for n in 0..3 {
         mind.settle();
-        let _ = mind.tick(&stop);
-        assert!(mind.hypha.in_flight() >= 1, "tick {n}: the occluded mind still asks the nerve");
+        let _ = mind.wind(&stop);
+        assert!(mind.hypha.in_flight() >= 1, "stroke {n}: the occluded mind still asks the nerve");
     }
+}
+
+/// MU-CLIENT §5.1, §6 — A SILENT HOUSE HOLDS ONLY THE SEAT'S CARRIER. A mind
+/// sits a seat in a house that takes every connection and never answers. Its
+/// body's stroke returns at once — the take and the first page of its mail
+/// posted on the seat's own carrier, waiting there — and nothing of it rides
+/// the court's carrier.
+#[test]
+fn a_silent_house_holds_only_the_seats_carrier() {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("the house listens");
+    let addr = listener.local_addr().expect("an address").to_string();
+    std::thread::spawn(move || {
+        let mut held = Vec::new();
+        // Taken, read, never answered.
+        for s in listener.incoming().flatten() {
+            held.push(s);
+        }
+    });
+    let mut mind = Entity::open(&addr, Kernel::named("seated"));
+    let key = ed25519_dalek::SigningKey::from_bytes(&[7; 32]);
+    mind.sit([5; 32], None, crate::client::sdk::entity::body::Sit::Seats(vec![1]), key);
+    mind.body_tick();
+    assert_eq!(mind.seat.in_flight(), 2, "the take and the first page wait on the seat's carrier");
+    assert_eq!(mind.hypha.in_flight(), 0, "the court's carrier carries none of it");
+    mind.body_tick();
+    assert_eq!(mind.seat.in_flight(), 2, "a page in flight is not asked again: one reading of the box at a time");
 }

@@ -327,15 +327,27 @@ impl Entity {
     ) {
         match self.post_speech(sentences, task) {
             Ok(Posted::Heard(codes)) => heard(self, Ok(codes)),
+            // MU-CLIENT §4.4(4) — STOOD NOW, SAID AT THE RETURN: the words
+            // stand in the dialect at once (the mind's own act), and the
+            // speech leaves where the mind's orbits next return.
             Ok(Posted::Asked { body, codes, fresh }) => {
+                // Its coordinates: the scene it names, then each sentence's
+                // address — the same speech said again is one speech.
+                let mut at = vec![0u8];
+                crate::transducer::address::put_key_bytes(&mut at, task);
+                for e in sentences {
+                    crate::transducer::address::put_key_bytes(&mut at, e.address().as_bytes());
+                }
                 let (sentences, train, task) = (sentences.to_vec(), train.to_vec(), task.to_vec());
-                self.ask(
-                    move |s| s.speak_nerve(body),
-                    move |me, reply| {
-                        let codes = me.hear_speech(&sentences, codes, &fresh, reply, &train, &task);
-                        heard(me, codes);
-                    },
-                );
+                self.hold_for_return(&at, move |me| {
+                    me.ask(
+                        move |s| s.speak_nerve(body),
+                        move |me, reply| {
+                            let codes = me.hear_speech(&sentences, codes, &fresh, reply, &train, &task);
+                            heard(me, codes);
+                        },
+                    );
+                });
             }
             Err(e) => heard(self, Err(e)),
         }

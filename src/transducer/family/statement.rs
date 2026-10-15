@@ -65,7 +65,7 @@ fn qu(n: usize) -> Option<Q> {
 }
 
 /// A body's extent `(top, left, bottom, right)`, read over every cell.
-fn extent_of(cells: &[(usize, usize, u8)]) -> Option<(usize, usize, usize, usize)> {
+pub(crate) fn extent_of(cells: &[(usize, usize, u8)]) -> Option<(usize, usize, usize, usize)> {
     let [(r0, c0, _), ..] = cells else { return None };
     let (mut t, mut l, mut b, mut r) = (*r0, *c0, *r0, *c0);
     for &(rr, cc, _) in cells {
@@ -295,6 +295,43 @@ impl<'a> Seen<'a> {
         }
     }
 
+    /// THE BACKGROUND CELLS A REGION NAMES about the selection, each once
+    /// per body that names it (a fill paints them all one hue).
+    fn region(&self, region: Region, sel: &[usize]) -> Vec<(usize, usize)> {
+        match region {
+            Region::Interior => self.enclosed(sel),
+            Region::Halo => {
+                let mut out = Vec::new();
+                for &b in sel {
+                    for &(r, c, _) in &self.cells[b] {
+                        for (dr, dc) in AROUND {
+                            if let Some((a, d)) = self.at(r, c, dr, dc) {
+                                if self.hue(a, d) == 0 {
+                                    out.push((a, d));
+                                }
+                            }
+                        }
+                    }
+                }
+                out
+            }
+            Region::Extent => {
+                let mut out = Vec::new();
+                for &b in sel {
+                    let Some((t, l, bt, r)) = extent_of(&self.cells[b]) else { continue };
+                    for a in t..=bt {
+                        for d in l..=r {
+                            if self.hue(a, d) == 0 {
+                                out.push((a, d));
+                            }
+                        }
+                    }
+                }
+                out
+            }
+        }
+    }
+
     /// A body's centre in the sensor's coordinates (each index plus ½):
     /// the centre of its extent, exact.
     fn centre(&self, b: usize) -> Option<[Q; 2]> {
@@ -384,39 +421,7 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                 }
             }
             Act::Fill { region, hue } => {
-                let cells: Vec<(usize, usize)> = match region {
-                    Region::Interior => seen.enclosed(&sel),
-                    Region::Halo => {
-                        let mut out = Vec::new();
-                        for &b in &sel {
-                            for &(r, c, _) in &seen.cells[b] {
-                                for (dr, dc) in AROUND {
-                                    if let Some((a, d)) = seen.at(r, c, dr, dc) {
-                                        if seen.hue(a, d) == 0 {
-                                            out.push((a, d));
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        out
-                    }
-                    Region::Extent => {
-                        let mut out = Vec::new();
-                        for &b in &sel {
-                            let Some((t, l, bt, r)) = extent_of(&seen.cells[b]) else { continue };
-                            for a in t..=bt {
-                                for d in l..=r {
-                                    if seen.hue(a, d) == 0 {
-                                        out.push((a, d));
-                                    }
-                                }
-                            }
-                        }
-                        out
-                    }
-                };
-                for (r, c) in cells {
+                for (r, c) in seen.region(*region, &sel) {
                     canvas[r][c] = *hue;
                 }
             }
@@ -511,6 +516,23 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
         [] => 0,
     };
     Ok(Spoken { frame: (out.len(), cols), painted })
+}
+
+/// 78.167 C — WHAT EACH PREDICATE SELECTS on one scene, as a clause reads
+/// it (the scene seen once): `None` where the predicate is unstated there.
+/// The act reading separates an effect's bodies by these and nothing else.
+pub(crate) fn select_each(preds: &[Pred], x: &Grid, bodies: &[Body]) -> Vec<Option<Vec<usize>>> {
+    let seen = Seen::of(x, bodies);
+    let all = seen.all();
+    preds.iter().map(|p| seen.select(p, &all).ok()).collect()
+}
+
+/// 78.167 C — the cells a region names about each ONE body of the scene, as
+/// a fill would paint them: the act reading asks which bodies' regions the
+/// created cells lie in.
+pub(crate) fn regions_each(region: Region, x: &Grid, bodies: &[Body]) -> Vec<Vec<(usize, usize)>> {
+    let seen = Seen::of(x, bodies);
+    (0..bodies.len()).map(|b| seen.region(region, &[b])).collect()
 }
 
 /// THE GRID SCALED BY `up / down`, one of them 1: each cell an `up × up`

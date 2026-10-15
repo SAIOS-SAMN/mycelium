@@ -597,6 +597,11 @@ fn speak_on_scene(
         let spoken = super::statement::speak_clauses(&f.clauses, x, bodies).ok()?;
         fy = spoken.frame;
         painted = spoken.painted;
+        // 78.167 C — the clauses are the whole speech: what the vertices left
+        // as remainder is not what was said, and a demand is stated by the
+        // clause that reads its act.
+        remainder.clear();
+        demanded = [0; 6];
     }
     painted.sort_unstable();
     painted.dedup();

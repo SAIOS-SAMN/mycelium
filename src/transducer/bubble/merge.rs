@@ -205,7 +205,7 @@ impl Contemplation {
                             self.remainders.unminted += 1;
                         }
                         if let Some(ground) = closing {
-                            self.close_thought(ground);
+                            self.close_thought(ground, nk.as_bytes());
                         }
                     } else {
                         // The merge named no thought (`merges.unnamed`): no
@@ -244,25 +244,55 @@ impl Contemplation {
         std::mem::take(&mut self.closed)
     }
 
-    /// 78.52 — DOES THIS MERGE CLOSE A RETURN? The pair's ground, read at the
-    /// gate, carries the hours the merged thought will have seen; where that
-    /// reaches the ground's period and no thought merged had reached it — the
-    /// constellation has closed a return, every hour admitted balanced with
-    /// its momentum carried — the ground is the thought to transcribe.
-    fn closing_ground(&self, vertices: &[Vec<u8>]) -> Option<crate::physics::tensegrity::Ground> {
+    /// MU-CLIENT §4.4(1) — THE TWISTS the thoughts that came round again
+    /// carry, drained for the voice to transcribe at its return.
+    pub(crate) fn take_twists(&mut self) -> Vec<crate::transducer::cga::Mv> {
+        std::mem::take(&mut self.twists)
+    }
+
+    /// 78.52, MU-CLIENT §4.4(2) — DOES THIS MERGE COMPLETE A RETURN? The
+    /// pair's ground, read at the gate, carries every hour the merged thought
+    /// will have seen; its returns are those hours over its period. Where the
+    /// merge completes a return no thought merged had completed — the
+    /// constellation came round, every hour admitted balanced with its
+    /// momentum carried — the ground goes to the voice: its FIRST return is
+    /// the thought's first close, new structure; each later one is a
+    /// TRAVERSAL the winding completed, where the voice says only what changed
+    /// (a word its letters now spell that they did not before).
+    fn closing_ground(&self, vertices: &[Vec<u8>]) -> Option<(super::idea::Grounded, bool)> {
         let [a, b] = vertices else { return None };
         let pair = self.grounds.get(&super::resonance::pair_key(a, b))?;
         let period = pair.ground.period;
-        let closed_before = vertices.iter().any(|v| self.bubbles.get(v).and_then(|t| t.ground.as_ref()).is_some_and(|g| g.hours >= period));
-        (pair.hours >= period && !closed_before).then(|| pair.ground.clone())
+        let returns = pair.hours.checked_div(period)?;
+        if returns == 0 {
+            return None;
+        }
+        let returned = |v: &Vec<u8>| self.bubbles.get(v).and_then(|t| t.ground.as_ref()).and_then(|g| g.hours.checked_div(period));
+        if vertices.iter().any(|v| returned(v).is_some_and(|r| r >= returns)) {
+            return None;
+        }
+        let first = vertices.iter().all(|v| returned(v).is_none_or(|r| r == 0));
+        Some((pair.clone(), first))
     }
 
-    /// 78.52 — A CLOSED THOUGHT WAITS FOR ITS VOICE: its ground stays the
-    /// mind's; the voice transcribes it against its own letters in the act
-    /// that closed it (`Entity::transcribe_closed`).
-    fn close_thought(&mut self, ground: crate::physics::tensegrity::Ground) {
-        self.closed.push(ground);
-        self.closed_thoughts += 1;
+    /// 78.52 — A THOUGHT THAT CAME ROUND WAITS FOR ITS VOICE: its ground stays
+    /// the mind's; the voice transcribes it against its own letters at the
+    /// return (`Entity::transcribe_closed`), and its slips are worked there
+    /// (`work_returned`). Counted as a first close or as a later return of
+    /// its winding.
+    fn close_thought(&mut self, (grounded, first): (super::idea::Grounded, bool), thought: &[u8]) {
+        // MU-CLIENT §4.4(1) — a later return says what changed: the twist its
+        // pull has put on the orbit, transcribed by the voice beside the
+        // thought's own word.
+        if let (false, Some(twist)) = (first, &grounded.twist) {
+            self.twists.push(twist.clone());
+        }
+        self.closed.push(grounded.ground);
+        self.came_round.push(thought.to_vec());
+        match first {
+            true => self.closed_thoughts += 1,
+            false => self.thought_returns += 1,
+        }
     }
 
     /// A merge of fewer than two bubbles is the bubble itself, and a merge
@@ -317,6 +347,7 @@ impl Contemplation {
         let mut certificates = Keyed::new();
         let mut vortex = Keyed::new();
         let mut ground: Option<super::idea::Grounded> = None;
+        let mut slips: Vec<(Vec<u8>, crate::transducer::cga::Mv)> = Vec::new();
         let mut bundle = None;
         let mut remainders: Keyed<Vec<Link>> = Keyed::new();
         let mut old_rems: Keyed<Vec<Link>> = Keyed::new();
@@ -358,6 +389,9 @@ impl Contemplation {
             if bundle.is_none() {
                 bundle = b.bundle.clone();
             }
+            // The slips of what merged are the merged thought's, still waiting
+            // on its return.
+            slips.extend(b.slips.iter().cloned());
             nerve = b.nerve.clone();
             self.bubbles.remove(v);
         }
@@ -446,6 +480,7 @@ impl Contemplation {
             remainders,
             cells_read: None,
             ground,
+            slips,
         };
         // THE ONE DERIVATION of where a bubble is filed (`Bubble::key`): a
         // grounded thought at its word's coordinates, else by its bodies.
@@ -453,6 +488,11 @@ impl Contemplation {
         self.admit_incidence(&key.shared(), &bubble);
         self.bubbles.insert(&key, bubble);
         self.dirty.insert(&key, ());
+        // A merged thought that had come round is the thought that came
+        // round, now under the merge's key (MU-CLIENT §4.4(4)).
+        for v in verts {
+            self.follow_came_round(v, key.as_bytes());
+        }
         // The merged thought re-links with its re-gauged sections: the GAUGE
         // moved (78.26(6)).
         self.link_new(&key, super::meet::Adjunct::Gauge);

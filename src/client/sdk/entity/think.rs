@@ -109,17 +109,12 @@ impl Entity {
         self.contemplation.hold_perceived(f, frames, train, remainders, draw, family, budget);
         // 78.112 H7a — what the hold released vents into the mind's field.
         self.vent_into_field(budget);
-        // 78.52 — A CLOSED THOUGHT SPEAKS IN THE ACT THAT CLOSED IT: the thoughts
-        // this perception closed are transcribed against this mind's own
-        // letters, and each word stands in the dialect and goes to the court
-        // now, never on some later word's arrival. What the wire answers is
-        // the speech's own reading (`Utterance`); a refusal there stands as
-        // told.
-        for word in self.transcribe_closed(budget) {
-            let _ = self.speak_word(&word);
-        }
-        // 78.100 D1 — and the words its sentences taught enter its language
-        // the same way: transcribed, stood, spoken.
+        // 78.52, MU-CLIENT §4.4(4) — A THOUGHT THIS PERCEPTION BROUGHT ROUND
+        // IS SPOKEN AT ITS RETURN: its ground waits for the winding carrier,
+        // which transcribes it against this mind's own letters in the stroke
+        // it returned in (`returns_of_stroke`).
+        // 78.100 D1 — the words its sentences taught enter its language:
+        // transcribed and stood now, and said at the mind's return.
         for word in taught {
             let _ = self.speak_word(&word);
         }
@@ -384,7 +379,6 @@ impl Entity {
     pub(crate) fn take_docketed_demands(&mut self) {
         let mut budget = self.physics.stroke();
         self.take_demands(&mut budget);
-        self.speak_unheard(&mut budget);
     }
 
     /// 78.52 — TRANSCRIPTION, AGAINST THIS MIND'S OWN LETTERS (78.47 (i)). A
@@ -404,6 +398,20 @@ impl Entity {
         let mut words = Vec::new();
         for ground in self.contemplation.take_closed() {
             if let (Transcribed::Spelled, Some(word)) = self.transcribe(&ground.generator, ground.period, budget) {
+                words.push(word);
+            }
+        }
+        // MU-CLIENT §4.4(1) — WHAT CHANGED AT A LATER RETURN: the twist the
+        // pull put on the orbit, transcribed by the same transcriber at its
+        // own period where it returns; a twist of no finite order is the
+        // thought's torsion, held, and nothing is said of it.
+        for twist in self.contemplation.take_twists() {
+            let period = crate::transducer::element::conformal_factors(&twist)
+                .ok()
+                .and_then(|f| crate::transducer::element::rotor_of_factors(&f).ok())
+                .and_then(|r| r.order());
+            let Some(crate::transducer::alphabet::Order::Finite(ell)) = period else { continue };
+            if let (Transcribed::Spelled, Some(word)) = self.transcribe(&twist, u64::from(ell), budget) {
                 words.push(word);
             }
         }
@@ -810,7 +818,7 @@ impl Entity {
     /// no court has stood, ratified or sealed is spoken once more, within the
     /// stroke's budget. A word said again leaves the unheard set while its
     /// answer is on the way, and returns to it where none taught it.
-    fn speak_unheard(&mut self, budget: &mut crate::physics::Budget) {
+    pub(crate) fn speak_unheard(&mut self, budget: &mut crate::physics::Budget) {
         let pending: Vec<(Vec<u8>, Element)> = self.unheard.scoped().map(|(a, e)| (a, e.clone())).collect();
         for (a, e) in pending {
             if !budget.spend() {

@@ -430,14 +430,21 @@ impl Entity {
     }
 
     /// A QUESTION THAT HAS STOOD AN APERTURE CYCLE of the mind's own K
-    /// unanswered is let go, as a thought heard and a thing said are.
+    /// unanswered leaves the conversation — and its RESIDUE is never let go
+    /// (78.167 D2): no other mind answered it, so it is the mind's own
+    /// escaping orbit, bound by construction (`compose_or_construct`:
+    /// composed of what it knows, known, constructed in part, or adjoined as
+    /// its own letter — MU-CLIENT §4.12). Its question is not asked again.
     fn lapse_questions(&mut self) {
         let now = self.own_k();
         let cycle = u64::from(crate::physics::aperture_cycle());
         let lapsed: Vec<Vec<u8>> =
             self.questions.scoped().filter(|(_, q)| now.checked_sub(q.at).is_some_and(|waited| waited >= cycle)).map(|(k, _)| k).collect();
+        let mut budget = self.physics.stroke();
         for k in lapsed {
-            self.questions.remove(&k);
+            if let Some(q) = self.questions.remove(&k) {
+                self.compose_or_construct(&q.residue, None, &mut budget);
+            }
         }
     }
 
@@ -500,7 +507,7 @@ impl Entity {
     /// or composed of it. A ring learned can be the factor another question
     /// waits on, so the questions are read again until none closes.
     fn close_questions(&mut self) {
-        use crate::transducer::sentence::rung::{known, learn_by};
+        use crate::transducer::sentence::rung::{known, learn_by, learn_given};
         let atom = |q: &Question| matches!(q.factors.as_deref(), Some([f]) if f.projective_eq(&q.residue));
         loop {
             let ready: Vec<Vec<u8>> = self
@@ -518,7 +525,10 @@ impl Entity {
                 // DERIVED where known words or known factors made it.
                 let given = atom(&q) && q.parts.is_empty() && q.ring.projective_eq(&q.residue);
                 let residue_new = match (atom(&q), &q.factors) {
-                    (true, _) | (false, None) => learn_by(&q.residue, &[]),
+                    // 78.167 D1 — an atom's meaning is GIVEN, kept so: it is
+                    // reduced again once the mind knows a word beside it.
+                    (true, _) => learn_given(&q.residue),
+                    (false, None) => learn_by(&q.residue, &[]),
                     (false, Some(factors)) => learn_by(&q.residue, factors),
                 };
                 let ring_new = match q.ring.projective_eq(&q.residue) {
@@ -794,11 +804,20 @@ impl Entity {
     /// SAY WHAT THIS MIND STOOD to every mind it knows (78.161): handed to
     /// the conversation's carrier, never waited on — its rings, each OFFERED
     /// WITH ITS VANTAGE (MU-CLIENT §5.3), the known words this mind reads it
-    /// through, read here in the mind's field where its vocabulary is.
+    /// through, read here in the mind's field where its vocabulary is. Said
+    /// at the mind's next return, never on the standing (MU-CLIENT §4.4(4)).
     pub(crate) fn say(&mut self, e: &Element) {
-        if let Some(chat) = self.chat.as_ref() {
-            let _ = chat.to.send(Inflow::Say(e.clone(), offered(e)));
+        if self.chat.is_none() {
+            return;
         }
+        let said = (e.clone(), offered(e));
+        let mut at = vec![1u8];
+        at.extend_from_slice(e.address().as_bytes());
+        self.hold_for_return(&at, move |me| {
+            if let Some(chat) = me.chat.as_ref() {
+                let _ = chat.to.send(Inflow::Say(said.0, said.1));
+            }
+        });
     }
 
     /// 78.161 item 3 — A LETTER WAITS FOR ITS UNION. Where this mind

@@ -3,6 +3,7 @@
 
 pub mod common;
 
+mod acts;
 mod address_set;
 mod bridge;
 mod budget;

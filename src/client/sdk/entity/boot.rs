@@ -48,7 +48,7 @@ impl Entity {
         let mut contemplation = crate::transducer::bubble::Contemplation::new();
         contemplation.complex.arm_outflow();
         Entity {
-            relay: Session::open(addr, kernel.clone()),
+            seat: super::hypha::Hypha::open(Session::open(addr, kernel.clone())),
             hypha: super::hypha::Hypha::open(Session::open(addr, kernel)),
             epigenome: Epigenome::new(),
             refine_cursor: None,
@@ -64,7 +64,10 @@ impl Entity {
             physics: crate::physics::Physics::default(),
             height: crate::chronometry::Height::default(),
             k: 0,
-            acted: false,
+            at_return: Vec::new(),
+            at_return_by: crate::network::nerve::Keyed::new(),
+            comprehending: crate::network::nerve::Keyed::new(),
+            comprehended_after: Vec::new(),
             genome_persisted: None,
             sealed: crate::network::nerve::Keyed::new(),
             contractions: crate::network::nerve::Keyed::new(),
@@ -126,21 +129,20 @@ impl Entity {
     }
 
     /// AN ACT OF THIS MIND — a word stood, uttered, learned or refused
-    /// (78.49): it marks the cycle as having acted, and answers the mind's K.
-    /// Nothing is sealed: the court seals what it admits. (FX1 credited the
-    /// act's measure to the filaments its circuits traversed — a table beside
-    /// the field; the flux is the field's, threaded on its lines, MU-CLIENT
-    /// §4.5.)
+    /// (78.49): it stands at the mind's K, which it answers. An act moves no
+    /// clock: K moves by the orbits that return (`close_cycle`). Nothing is
+    /// sealed: the court seals what it admits.
     pub(crate) fn act(&mut self) -> u64 {
-        self.acted = true;
         self.own_k()
     }
 
-    /// OK1, 78.49 — THIS MIND'S TICK CLOSES ITS CYCLE BY NAME: called once,
-    /// where the tick's laws have run. A cycle that acted steps the mind's K
-    /// by one; one that acted on nothing leaves K where it was. `true` where
-    /// the cycle closed. K is a ledger coordinate, never an orbit (§0.0).
-    pub(crate) fn close_cycle(&mut self) -> bool {
+    /// OK1, 78.49, MU-CLIENT §4.4(4) — THE STROKE CLOSES BY ITS RETURNS:
+    /// `returns` is how many of the mind's orbits came round in it — orbits
+    /// of its field that returned, thoughts whose winding completed a
+    /// return. K steps by exactly that, and a stroke in which nothing
+    /// returned leaves K where it was: the mind's clock is its own completed
+    /// orbits, never its acts. `true` where K moved.
+    pub(crate) fn close_cycle(&mut self, returns: u64) -> bool {
         // RM1 — the calluses the receptor raised stand first, so a class no
         // held word spells goes up in THIS orbit's plan.
         self.stand_calluses();
@@ -148,9 +150,9 @@ impl Entity {
         // carry lapses, so the plan is bounded by what the mind holds. The
         // plan is volatile (78.49): nothing of it is written anywhere.
         self.contemplation.docket_fold();
-        let closed = std::mem::take(&mut self.acted);
+        // A count past its carrier is refused, and K stands where it was.
+        let closed = returns > 0 && crate::physics::metabolism::step_or_refuse(&mut self.k, returns);
         if closed {
-            self.k += 1;
             self.contemplation.docket_sealed();
         }
         // 78.37(1) — THE FRONTS STEP ON THE MIND'S K, one edge per k-step

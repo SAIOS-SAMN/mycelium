@@ -101,6 +101,12 @@ impl Field {
         std::mem::take(&mut self.orbits.carried)
     }
 
+    /// MU-CLIENT §4.4(4) — THE ORBITS THAT RETURNED since the last take: the
+    /// mind's K moves by its returns, and its acts are spoken there.
+    pub fn take_returns(&mut self) -> u64 {
+        std::mem::take(&mut self.orbits.returns)
+    }
+
     pub fn take_released(&mut self) -> Vec<Vec<u8>> {
         let mut out = std::mem::take(&mut self.orbits.released);
         out.append(&mut self.tubes.released);
@@ -188,6 +194,9 @@ pub struct OrbitRegistry {
     reservoir: Keyed<(State, u64)>,
     /// Whether an orbit returned since the field last beat.
     returned: bool,
+    /// MU-CLIENT §4.4(4) — the orbits that returned since the field's owner
+    /// last took them: where a mind's K moves, and its acts are spoken.
+    returns: u64,
 }
 
 /// The lane an orbit's key names: its first coordinate, written by
@@ -398,6 +407,9 @@ impl OrbitRegistry {
                 self.released.append(&mut lines);
                 // A BEAT of the field: what never returns dissipates on it.
                 self.returned = true;
+                // A count past its carrier is refused and the return still
+                // stands (the beat above is the field's own).
+                let _ = crate::physics::metabolism::step_or_refuse(&mut self.returns, 1);
             }
             Some(open) => {
                 self.orbits.insert(key, Orbit { state: after, open, lines });

@@ -80,12 +80,17 @@ pub const BOOSTS: [&str; 3] = ["scaled", "transverse", "neither"];
 /// did not reach, or a creation, merge or reshape its form could not speak.
 pub const WITHHELD: [&str; 2] = ["a body unreached", "occupancy unspoken"];
 
+/// 78.167 C — A FAMILY'S ACTS READ OFF THEIR EFFECTS where its vertices did
+/// not say it: stated as clauses, or refused by [`crate::transducer::family::acts::Unread`].
+pub const ACTS: [&str; 8] = ["stated", "cited", "unfolded", "overwritten", "inseparable", "uncreated", "unsized", "spent"];
+
 /// ITS QUESTIONS (MU-CLIENT §5.3): words it did not know and asked of their
 /// residue; questions of others it answered by factoring; rings whose meaning
 /// was DERIVED (from words it knew, or from factors it came to know); rings
-/// whose meaning was GIVEN (asked whole, answered as an atom) — in the order
-/// the counts are kept.
-pub const ASKS: [&str; 4] = ["asked", "clarified", "derived", "given"];
+/// whose meaning was GIVEN (asked whole, answered as an atom); given meanings
+/// RE-DERIVED once the mind knew the words beside them (78.167 D1) — in the
+/// order the counts are kept.
+pub const ASKS: [&str; 5] = ["asked", "clarified", "derived", "given", "re-derived"];
 
 /// WHAT BECAME OF THE ANSWERS IT HEARD (MU-CLIENT §5.3): taken (their factors
 /// re-derived the residue exactly), inexact (they did not), or said under a
@@ -198,8 +203,10 @@ pub struct Mind {
     pub boosts: [u64; 3],
     /// 78.167 B — tests whose speech was held, by [`WITHHELD`].
     pub withheld_tests: [u64; 2],
+    /// 78.167 C — families' acts, by [`ACTS`].
+    pub acts: [u64; 8],
     /// Its questions, by [`ASKS`].
-    pub asks: [u64; 4],
+    pub asks: [u64; 5],
     /// Heard rings by how they were understood, by [`SEATS`]; mutual
     /// balances at the speaker, by [`MUTUAL`]; its lexicon's size, and what
     /// heard speech grew it by; its vocabulary's words; and the rings it
@@ -268,7 +275,8 @@ impl Default for Mind {
             demanded_kinds: [0; 6],
             boosts: [0; 3],
             withheld_tests: [0; 2],
-            asks: [0; 4],
+            acts: [0; 8],
+            asks: [0; 5],
             seats: [0; 5],
             mutual: [0; 2],
             lexicon: 0,
@@ -334,6 +342,7 @@ impl Mind {
             .chain(self.demanded_kinds)
             .chain(self.boosts)
             .chain(self.withheld_tests)
+            .chain(self.acts)
         {
             put_u64(out, v);
         }
@@ -367,7 +376,7 @@ impl Mind {
         for v in &mut disagree {
             *v = take_u64(b, p)?;
         }
-        let asks = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
+        let asks = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let seats = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let mutual = [take_u64(b, p)?, take_u64(b, p)?];
         let [held, agreed, shared] = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
@@ -388,6 +397,10 @@ impl Mind {
         }
         let boosts = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let withheld_tests = [take_u64(b, p)?, take_u64(b, p)?];
+        let mut acts = [0u64; 8];
+        for a in &mut acts {
+            *a = take_u64(b, p)?;
+        }
         let n =usize::try_from(u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?)).ok()?;
         *p += 4;
         // Each lock is three counts.
@@ -413,6 +426,7 @@ impl Mind {
             demanded_kinds,
             boosts,
             withheld_tests,
+            acts,
             asks,
             seats,
             mutual,
@@ -454,9 +468,10 @@ impl Mind {
             format!("  chambers {} · demanded {}", priced.join(" "), self.demanded),
             format!("  constructed {}", constructed.join(" ")),
             format!(
-                "  perspectives {} · tests withheld {}",
+                "  perspectives {} · tests withheld {} · acts {}",
                 PERSPECTIVE.iter().zip(&self.perspective).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
-                WITHHELD.iter().zip(&self.withheld_tests).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
+                WITHHELD.iter().zip(&self.withheld_tests).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
+                ACTS.iter().zip(&self.acts).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
             ),
             format!(
                 "  disagreed {} · demands unspoken {} · questions {} · answers {} · unanswered {} (awaiting factors {}) · {}",

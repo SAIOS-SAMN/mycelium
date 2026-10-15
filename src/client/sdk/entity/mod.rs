@@ -18,6 +18,6 @@ pub mod quote;
 pub mod relax;
 pub mod rewrite;
 pub mod think;
-pub mod tick;
+pub mod winding;
 pub mod transport;
 pub mod utter;

@@ -92,6 +92,8 @@ fn a_question_posits_what_the_mind_knows_and_derives_the_meaning() {
     }
     let said = from_connection(&Word::from_letters(&[(q, false)]), &along, &[], &Vec::new(), [1, 0, 0, 0]).expect("a connection");
     a.say(&said);
+    // MU-CLIENT §4.4(4) — what A says leaves when A's own field comes round.
+    assert!(super::common::come_round(&mut a) > 0, "A's orbit returned");
     let derived = |b: &mut Entity| {
         let mut field = std::mem::take(&mut b.field);
         let read = field.think(|| (known(&screw), held_rung(&screw)));
@@ -175,6 +177,8 @@ fn a_remainder_the_ruled_words_compose_is_spoken_not_constructed() {
     });
     mind.field = field;
     assert!(knows, "the whole word is known: the turn with the double slide");
+    // MU-CLIENT §4.4(4) — what the mind composed leaves when its field comes round.
+    assert!(super::common::come_round(&mut mind) > 0, "the mind's orbit returned");
     let mut act = None;
     for _ in 0..4_000_000u32 {
         if let Ok(heard) = speeches.try_recv() {
@@ -216,6 +220,8 @@ fn a_conjugate_is_spoken_as_the_held_word_transported() {
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
     field.think(|| mind.compose_or_construct(&residue, Some(&chart), &mut budget));
     mind.field = field;
+    // MU-CLIENT §4.4(4) — what the mind composed leaves when its field comes round.
+    assert!(super::common::come_round(&mut mind) > 0, "the mind's orbit returned");
     let mut act = None;
     for _ in 0..4_000_000u32 {
         if let Ok(heard) = speeches.try_recv() {
@@ -265,6 +271,8 @@ fn a_composition_of_ruled_words_is_spoken_to_the_court() {
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
     field.think(|| mind.compose_or_construct(&twice, Some(&chart), &mut budget));
     mind.field = field;
+    // MU-CLIENT §4.4(4) — what the mind composed leaves when its field comes round.
+    assert!(super::common::come_round(&mut mind) > 0, "the mind's orbit returned");
     let mut act = None;
     for _ in 0..4_000_000u32 {
         if let Ok(heard) = speeches.try_recv() {
@@ -357,6 +365,8 @@ fn two_minds_form_a_shared_word_and_carry_it_to_the_court() {
     b.field = field;
     let said = word(&[(q, false), (q, false)]);
     a.say(&said);
+    // MU-CLIENT §4.4(4) — what A says leaves when A's own field comes round.
+    assert!(super::common::come_round(&mut a) > 0, "A's orbit returned");
     // Each mind's field prices what its conversation understood, as its tick
     // does at admission; the court hears once both fields converged.
     let mut act = None;

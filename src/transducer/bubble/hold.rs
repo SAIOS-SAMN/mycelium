@@ -313,6 +313,7 @@ impl Contemplation {
             cells_read: None,
             // A perception holds no ground: its hours begin when it relates.
             ground: None,
+            slips: Vec::new(),
         };
         // RE-HOLDING AN UNMUTATED FORM IS NOT MOVEMENT (ruled 2026-09-14).
         //

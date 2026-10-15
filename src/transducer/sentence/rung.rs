@@ -54,14 +54,69 @@ struct Held {
     rung: u64,
     coords: Option<Coordinates>,
     heard: bool,
+    /// 78.167 D1 — KNOWN AS AN ATOM: its meaning was GIVEN whole (another
+    /// mind could factor it no further), never derived here. Re-read where a
+    /// word the mind comes to know stands on one of its holes.
+    given: bool,
 }
 
 /// THE MIND'S LEXICON: the words held by their keys, and the holes they
-/// stand on — the fibre a new word is comprehended by (78.99 (1)).
+/// stand on — the fibre a new word is comprehended by (78.99 (1)) — and the
+/// given atoms a newly known word stood beside, to be reduced again at the
+/// mind's next return.
 #[derive(Default)]
 pub(crate) struct Lexicon {
     held: Keyed<Held>,
     holes: HoleIndex,
+    reconsider: Keyed<()>,
+}
+
+/// 78.167 D1 — A NEWLY KNOWN WORD STANDS BESIDE THE GIVEN ATOMS ON ITS HOLES:
+/// each is marked to be reduced again (`re_reduce_given`). One fibre read per
+/// hole of the new word, never a sweep of the lexicon.
+fn mark_given_beside(lex: &mut Lexicon, key: &[u8], coords: &Coordinates) {
+    for h in &coords.holes {
+        let Some(fibre) = lex.holes.fibre(&h.key) else { continue };
+        let beside: Vec<Vec<u8>> = fibre.scoped().map(|(k, ())| k).filter(|k| k.as_slice() != key).collect();
+        for k in beside {
+            if lex.held.get(&k).is_some_and(|w| w.given) {
+                lex.reconsider.insert(&k, ());
+            }
+        }
+    }
+}
+
+/// 78.167 D1 — THE GIVEN ATOMS REDUCED AGAIN, at the mind's return: each one
+/// a newly known word stood beside is deconstructed over the words the mind
+/// knows (never itself); where no residue is left its meaning is DERIVED —
+/// no longer given, at the rung one above the words it cites. Answers how many
+/// were re-derived; the marks are taken whole.
+pub(crate) fn re_reduce_given() -> u64 {
+    let read = crate::transducer::mind::with_lexicon(|lex| {
+        let marked: Vec<Vec<u8>> = lex.reconsider.scoped().map(|(k, ())| k).collect();
+        lex.reconsider = Keyed::new();
+        let mut derived = 0u64;
+        for key in marked {
+            let Some(coords) = lex.held.get(&key).filter(|h| h.given).and_then(|h| h.coords.clone()) else { continue };
+            let held = &lex.held;
+            let d = lex.holes.deconstruct(&coords, |k| if k == key.as_slice() { None } else { known_coords(held, k) });
+            if !d.residue.is_empty() {
+                continue;
+            }
+            let below = d.cites.iter().filter_map(|c| lex.held.get(&c.word).map(|h| h.rung)).fold(0u64, u64::max);
+            if let Some(h) = lex.held.get_mut(&key) {
+                h.given = false;
+                h.rung = h.rung.max(below.checked_add(1).map_or(below, |r| r));
+                derived = derived.checked_add(1).map_or(derived, |n| n);
+            }
+        }
+        derived
+    });
+    match read {
+        Ok(n) => n,
+        // No mind thinking: nothing was reduced.
+        Err(_) => 0,
+    }
 }
 
 /// The court's lexicon, shared by its worker threads: heard outside any
@@ -160,7 +215,7 @@ pub(crate) fn hear_word(word: &Mv) -> Recognition {
                 if let Some(c) = &coords {
                     lex.holes.file(&key, c);
                 }
-                lex.held.insert(&key, Held { rung: 1, coords, heard: true });
+                lex.held.insert(&key, Held { rung: 1, coords, heard: true, given: false });
                 Recognition::New
             }
         }
@@ -260,6 +315,18 @@ pub(crate) fn distinct_vantage(speaker: &[Mv], hearer: &[Mv]) -> bool {
 /// factor no further, known at the first rung. Answers whether its meaning
 /// is new: it was unheld, or held only as heard.
 pub(crate) fn learn_by(word: &Mv, parts: &[Mv]) -> bool {
+    learn(word, parts, false)
+}
+
+/// 78.167 D1 — A MEANING GIVEN WHOLE: another mind answered `word` as an
+/// atom it could factor no further. Known at the first rung and marked
+/// GIVEN, so it is reduced again where the mind comes to know a word beside
+/// it (`re_reduce_given`). Answers whether its meaning is new.
+pub(crate) fn learn_given(word: &Mv) -> bool {
+    learn(word, &[], true)
+}
+
+fn learn(word: &Mv, parts: &[Mv], given: bool) -> bool {
     if is_identity(word) {
         return false;
     }
@@ -269,10 +336,11 @@ pub(crate) fn learn_by(word: &Mv, parts: &[Mv]) -> bool {
     let read = crate::transducer::mind::with_lexicon(|lex| {
         let below = part_keys.iter().filter_map(|k| lex.held.get(k).filter(|h| !h.heard).map(|h| h.rung)).fold(0u64, u64::max);
         let rung = below.checked_add(1).map_or(below, |r| r);
-        match lex.held.get_mut(&key) {
+        let new = match lex.held.get_mut(&key) {
             Some(h) if !h.heard => false,
             Some(h) => {
                 h.heard = false;
+                h.given = given;
                 h.rung = h.rung.max(rung);
                 true
             }
@@ -280,10 +348,18 @@ pub(crate) fn learn_by(word: &Mv, parts: &[Mv]) -> bool {
                 if let Some(c) = &coords {
                     lex.holes.file(&key, c);
                 }
-                lex.held.insert(&key, Held { rung, coords, heard: false });
+                lex.held.insert(&key, Held { rung, coords: coords.clone(), heard: false, given });
                 true
             }
+        };
+        // A word newly KNOWN by derivation stands beside the given atoms on
+        // its holes: they are reduced again at the mind's return.
+        if new && !given {
+            if let Some(c) = &coords {
+                mark_given_beside(lex, &key, c);
+            }
         }
+        new
     });
     read.is_ok_and(|new| new)
 }
@@ -479,7 +555,8 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
     let rung = rung_of(&s.words, &lex.held).max(by_citation);
     if let Some(c) = &coords {
         lex.holes.file(&key, c);
+        mark_given_beside(lex, &key, c);
     }
-    lex.held.insert(&key, Held { rung, coords, heard: false });
+    lex.held.insert(&key, Held { rung, coords, heard: false, given: false });
     (Recognition::New, Some(Taught { motion: word.clone(), period }))
 }

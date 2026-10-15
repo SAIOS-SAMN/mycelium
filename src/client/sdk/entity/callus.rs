@@ -135,7 +135,6 @@ impl Entity {
     ) -> bool {
         match self.epigenome.mark_refilled(word.as_bytes(), class, at, &spelling.address()) {
             true => {
-                self.acted = true;
                 self.epigenome.calluses.refilled += 1;
                 true
             }

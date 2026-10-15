@@ -143,6 +143,20 @@ pub struct Contemplation {
     /// the fixed seventeen. And how many closed.
     pub(crate) closed: Vec<crate::physics::tensegrity::Ground>,
     pub closed_thoughts: u64,
+    /// MU-CLIENT §4.4(2) — the later returns thoughts' windings completed
+    /// (each a traversal past the first close).
+    pub thought_returns: u64,
+    /// MU-CLIENT §4.8 — the thoughts that came round since the voice's last
+    /// return, by key: their vortices are rolled out there, and the list is
+    /// taken whole each time.
+    pub(crate) came_round: Vec<Vec<u8>>,
+    /// MU-CLIENT §4.4(1) — the twists thoughts that came round again carry,
+    /// for the voice to transcribe at its return; taken whole each time.
+    pub(crate) twists: Vec<crate::transducer::cga::Mv>,
+    /// MU-CLIENT §3.1 — the thoughts by the scene they were perceived in
+    /// (the family's coordinate), by ordinal; an entry leaves with its last
+    /// thought.
+    pub(crate) by_family: Keyed<Keyed<()>>,
     /// TUniversal the entity last stamped; T-room and potential[2] read it.
     pub(crate) now_k: u64,
     /// Z4d — THE APERTURE OF STROKES ON TUNIVERSAL, as a window of the
@@ -525,6 +539,20 @@ impl Contemplation {
                 m.remove(&ob);
             }
         }
+        // A scene's last thought gone, the scene's entry goes with it: an
+        // outer key naming nothing is never kept (MU-CLIENT §4.13).
+        if !b.family.is_empty() {
+            let empty = match self.by_family.get_mut(&b.family) {
+                Some(m) => {
+                    m.remove(&ob);
+                    m.is_empty()
+                }
+                None => false,
+            };
+            if empty {
+                self.by_family.remove(&b.family);
+            }
+        }
         // THE ORDINAL IS SPENT, NOT FREED. Its slot is emptied and the
         // ordinal is never issued again, so an entry this retraction
         // missed names nothing instead of naming whatever arrived next.
@@ -682,6 +710,9 @@ impl Contemplation {
         let Some(moving) = self.bubbles.remove(from) else {
             return;
         };
+        // A thought that came round is still the thought that came round
+        // under its new key (MU-CLIENT §4.4(4)).
+        self.follow_came_round(from, to);
         self.retract_incidence(from, &moving);
         let was_dirty = self.dirty.remove(from).is_some();
         match self.bubbles.get_mut(to) {
@@ -765,6 +796,29 @@ impl Contemplation {
         for (addr, ()) in b.glues.scoped() {
             self.cited.nested_insert(&addr, key, ());
         }
+        // MU-CLIENT §3.1, §4.9 — the scene it was perceived in: its family's
+        // coordinate (a task's citation), read where a scene waits on its
+        // comprehension (`holds_family`).
+        if !b.family.is_empty() {
+            self.by_family.nested_insert(&b.family, key, ());
+        }
+    }
+
+    /// A THOUGHT RE-FILED (a rekey, a merge) carries its having come round:
+    /// every record of `from` among the thoughts waiting on the voice's return
+    /// names `to` instead.
+    pub(crate) fn follow_came_round(&mut self, from: &[u8], to: &[u8]) {
+        for k in self.came_round.iter_mut() {
+            if k.as_slice() == from {
+                *k = to.to_vec();
+            }
+        }
+    }
+
+    /// WHETHER ANY THOUGHT STILL STANDS ON A SCENE: a bubble perceived in
+    /// the family `family` is held. One keyed read.
+    pub(crate) fn holds_family(&self, family: &[u8]) -> bool {
+        self.by_family.get(family).is_some_and(|m| !m.is_empty())
     }
 
     /// THE HELD STRATUM AT A CHART (24.1 as ruled 2026-09-09): the Word
@@ -1004,6 +1058,7 @@ impl Contemplation {
             remainders: Keyed::new(),
             cells_read: None,
             ground: None,
+            slips: Vec::new(),
         };
         if let Some(old) = self.bubbles.get(key.as_bytes()).cloned() {
             self.retract_incidence(key.as_bytes(), &old);

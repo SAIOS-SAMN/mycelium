@@ -24,28 +24,6 @@ impl Entity {
         );
     }
 
-    /// 78.146 — PULL ONE TASK BY ITS CITATION (wire v1.2): the envelope of
-    /// the task the 32 bytes name, routed as its solve is (by the citation),
-    /// or `None` where the registry holds no such task. A reply that does not
-    /// decode is an error by name. The seat waits on it (MU-CLIENT §6: the
-    /// seat's own carrier is owed).
-    pub(crate) fn pull_task_by_id(&mut self, citation: &[u8; 32]) -> io::Result<Option<dialogue::TaskEnvelope>> {
-        let voice = self.hypha.kernel().voice();
-        let citation = *citation;
-        let act = dialogue::encode_task_by_id(&voice, &citation);
-        let (tx, rx) = std::sync::mpsc::channel();
-        self.ask(move |s| s.speak_keyed(&citation, act), move |_, body| {
-            let _ = tx.send(body);
-        });
-        self.settle();
-        let body = rx.try_recv().map_err(|_| io::Error::new(io::ErrorKind::NotConnected, "the hypha carrier is gone"))??;
-        if body.is_empty() {
-            return Ok(None);
-        }
-        dialogue::decode_task_envelope(&body)
-            .map(Some)
-            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the task envelope did not decode"))
-    }
 
     /// A SOLVE THIS VOICE CAN STAND BEHIND, OR NONE SENT. A solve is a rule,
     /// and the court replays it on the task's withheld pairs; so the voice
@@ -197,6 +175,19 @@ impl Entity {
         };
         let (id, rule, outputs) = (*id, rule.clone(), outputs.to_vec());
         self.board.court.solving.insert(id, ());
+        // MU-CLIENT §4.4(4) — the solve is one act comprehension emits, and
+        // it leaves at the mind's next return.
+        // One solve a task: a later rule for it before the return stands in
+        // the place of the earlier.
+        let mut at = vec![2u8];
+        at.extend_from_slice(&id);
+        self.hold_for_return(&at, move |me| me.post_solve(id, act, rule, outputs));
+        Ok(())
+    }
+
+    /// THE SOLVE POSTED at a return (`submit_solve_rule`): counted sent, its
+    /// verdict filed where it lands.
+    fn post_solve(&mut self, id: [u8; 32], act: Vec<u8>, rule: Element, outputs: Vec<Grid>) {
         crate::observe::note_mind(|m| m.perspective[6] += 1);
         self.ask(move |s| s.speak_keyed(&id, act), move |me, body: io::Result<Vec<u8>>| {
             me.board.court.solving.remove(&id);
@@ -223,7 +214,6 @@ impl Entity {
             // the task replaces it.
             me.file_verdict(&id, &rule, &outputs, code);
         });
-        Ok(())
     }
 
     /// THE SHEAF SYNC (Q3): converge this genome on the hypha's language by
@@ -589,8 +579,7 @@ impl Entity {
             }
         }
         // 78.49: a page LEARNED is an act of this mind, learned at its own K.
-        self.acted = true;
-        let k = self.own_k();
+        let k = self.act();
         // The caller's stroke (65.5): the page is learned inside its act.
         let heard = self.epigenome.learn_at(taught, k, self.now_tu(), budget);
         // 24.3: a page learned is a mode of the stroke's outcome, measured

@@ -18,7 +18,7 @@ pub mod types;
 
 pub use aperture::*;
 pub use entity::body::Sit;
-pub use entity::tick::Ticked;
+pub use entity::winding::Wound;
 pub use kernel::*;
 pub use session::*;
 pub use types::*;

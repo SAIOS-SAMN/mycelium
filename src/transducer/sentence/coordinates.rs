@@ -471,6 +471,11 @@ impl HoleIndex {
         self.on.get(hole).is_some()
     }
 
+    /// The held words standing on `hole`, by key: one fibre, read.
+    pub fn fibre(&self, hole: &[u8]) -> Option<&Keyed<()>> {
+        self.on.get(hole)
+    }
+
     /// FILE A HELD WORD under each of its holes.
     pub fn file(&mut self, word: &[u8], coords: &Coordinates) {
         for h in &coords.holes {

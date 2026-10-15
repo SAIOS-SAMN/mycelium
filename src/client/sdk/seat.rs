@@ -212,13 +212,6 @@ pub struct SeatName {
 }
 
 impl super::Entity {
-    /// The seat surface's own link to the hypha — its mouth, apart from the
-    /// court's carrier; it waits on its answers until the seat has its own
-    /// carrier (MU-CLIENT §6).
-    pub(crate) fn relay(&self) -> &super::Session {
-        &self.relay
-    }
-
     /// 78.146 — THE MIND AT A SEAT it sits, written: taken from its
     /// coordinate (begun where it was not) and put back there.
     pub(crate) fn with_seat_mind<R>(&mut self, at: SeatName, f: impl FnOnce(&mut super::seat_mind::SeatMind) -> R) -> R {
@@ -234,14 +227,11 @@ impl super::Entity {
 
     /// 78.146 — A PERCEPT AT A SEAT, perceived: held on its series, and a
     /// call's effect read where its outcome came. Reading what a call did is
-    /// the mind learning — an act of this orbit (78.49).
+    /// the mind learning — an act, which moves no clock (K moves by the
+    /// mind's returns, MU-CLIENT §4.4(4)).
     pub(crate) fn perceive_seat(&mut self, p: &Percept) -> super::seat_mind::Perceived {
         let at = SeatName { domain: p.domain, sub_origin: p.sub_origin, seat: p.seat };
-        let reading = self.with_seat_mind(at, |m| m.perceive(p));
-        if reading.learned.is_some() {
-            self.acted = true;
-        }
-        reading
+        self.with_seat_mind(at, |m| m.perceive(p))
     }
 }
 

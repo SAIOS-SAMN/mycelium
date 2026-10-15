@@ -183,11 +183,10 @@ impl Entity {
     /// motion its form could not cite put to the court (78.160 P2), the
     /// tests spoken through the rule, and the solve — the rule minted at its
     /// span — flowing out to the court.
-    /// The task that landed is thought this tick; the next is asked for now,
-    /// so it is on its way while this one is thought.
+    /// The task that landed is perceived this stroke; the next is asked for
+    /// only where the mind rests or returns (the winding carrier).
     pub(crate) fn task_inflow(&mut self, outcome: &mut StrokeOutcome, stop: &std::sync::atomic::AtomicBool) {
         let landed = self.board.court.task.take();
-        self.pull_task();
         let Some(crate::anastome::dialogue::TaskEnvelope { id, train, tests }) = landed else { return };
         let mag = super::family::family_magnitude(&train);
         if crate::economy::lanes_short(&self.physics().reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
@@ -213,24 +212,76 @@ impl Entity {
         }
         let Some(rule) = t.rule.take() else {
             self.withhold_unextracted(&train, &id);
+            self.await_comprehension(crate::anastome::dialogue::TaskEnvelope { id, train, tests });
             return;
         };
         self.ask_presentation(&rule.form);
         if let Some(uttered) = self.speak_form(&rule, &train, &t.frames, &id, &mut t.budget) {
             StrokeOutcome::add(&mut outcome.uttered, &uttered);
         }
-        // MU-CLIENT §4.4 — A RULE IS SOLVED WITH ONLY WHERE IT IS KNOWN: every
-        // training pair re-derived by the rule its siblings derive. A fit
-        // its own perspectives do not re-derive is not sent; the pairs they
-        // missed were lifted into the mind as structure (`ascertain`).
-        let rule = match self.ascertain(&id, &train) {
+        let envelope = crate::anastome::dialogue::TaskEnvelope { id, train, tests };
+        if !self.comprehend(&envelope, rule, &mut t.budget) {
+            self.await_comprehension(envelope);
+        }
+    }
+
+    /// MU-CLIENT §4.9 — COMPREHENSION OF A SCENE, which may emit a solve: a
+    /// rule is solved with only where its perspectives KNOW it — every
+    /// training pair re-derived by the rule its siblings derive — and its
+    /// tests spoken through it without remainder. A fit its own perspectives
+    /// do not re-derive is not sent; the pairs they missed were lifted into
+    /// the mind as structure (`ascertain`). `true` where the solve was
+    /// emitted (held for the mind's return).
+    fn comprehend(&mut self, task: &crate::anastome::dialogue::TaskEnvelope, rule: crate::transducer::sentence::SentenceRule, budget: &mut crate::physics::Budget) -> bool {
+        let rule = match self.ascertain(&task.id, &task.train) {
             super::family::Ascertained::Known => rule,
             super::family::Ascertained::KnownByInversion(r) => *r,
-            _ => return,
+            _ => return false,
         };
-        let Some(outs) = self.speak_tests(&rule, &tests) else { return };
-        let spoken = self.mint_solve(&rule, &train);
-        let _ = self.solve_task(&id, &train, &outs, spoken.as_ref(), &mut t.budget);
+        let Some(outs) = self.speak_tests(&rule, &task.tests) else { return false };
+        let spoken = self.mint_solve(&rule, &task.train);
+        self.solve_task(&task.id, &task.train, &outs, spoken.as_ref(), budget).is_some()
+    }
+
+    /// A SCENE NOT YET COMPREHENDED WAITS BESIDE ITS THOUGHTS (MU-CLIENT
+    /// §3.1, §4.9): kept by its citation with the language root it was last
+    /// read at, read again at the mind's returns (`comprehend_waiting`), and
+    /// gone when its last thought lapses — never by a count.
+    fn await_comprehension(&mut self, task: crate::anastome::dialogue::TaskEnvelope) {
+        let root = self.epigenome.atlas_root();
+        self.comprehending.insert(task.id, (task, root));
+    }
+
+    /// AT A RETURN, ONE WAITING SCENE READ AGAIN: the least by citation after
+    /// the last read. A scene none of whose thoughts still stands lapses with
+    /// them; one the mind's language has not moved since its last reading is
+    /// left as it was (nothing new to comprehend it by); otherwise its rule is
+    /// extracted again and comprehended, and the scene leaves once its solve
+    /// is emitted.
+    pub(crate) fn comprehend_waiting(&mut self) {
+        let next = match self.comprehending.after(&self.comprehended_after).next() {
+            Some((k, _)) => Some(k),
+            None => self.comprehending.scoped().next().map(|(k, _)| k),
+        };
+        let Some(id) = next else { return };
+        self.comprehended_after = id.clone();
+        if !self.contemplation.holds_family(&id) {
+            self.comprehending.remove(&id);
+            return;
+        }
+        let root = self.epigenome.atlas_root();
+        if self.comprehending.get(&id).is_some_and(|(_, at)| *at == root) {
+            return;
+        }
+        let Some((task, _)) = self.comprehending.remove(&id) else { return };
+        let mut t = self.extract_family(&task.id, &task.train);
+        let solved = match t.rule.take() {
+            Some(rule) => self.comprehend(&task, rule, &mut t.budget),
+            None => false,
+        };
+        if !solved {
+            self.comprehending.insert(task.id, (task, root));
+        }
     }
 
     /// THE COURT'S LANGUAGE FLOWS IN, where it is due — the language changed

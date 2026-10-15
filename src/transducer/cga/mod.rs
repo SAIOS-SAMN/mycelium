@@ -25,6 +25,7 @@ mod period;
 mod perturbation;
 mod planes;
 mod spin;
+mod twist;
 
 pub use constructors::{carry, construct, constructor_orbit, is_constructor, Constructed, ConstructorOrbit, NotConstructed, OrbitUnread};
 pub(crate) use constructors::{constructors_of_base_turn, TurnUnspelled};
@@ -48,6 +49,7 @@ pub use multivector::{axes, base_axis, blades, pseudo, slots, Mv, E1, E2, E3, EM
 pub use period::{compact_period, cyclotomic_orders, finite_order, Spectrum};
 pub use encounter::{encounter, Encounter, Unencountered};
 pub use perturbation::{lift_drag, Alignment, LiftDrag};
+pub use twist::twist_about;
 pub use planes::{
     bivector_planes, blade_name, harmonic_planes, is_transvection_plane, occupancy, parabolic_name,
     plane_is_harmonic, plane_name, ray_name, transvection_planes, Occupancy, Pole,

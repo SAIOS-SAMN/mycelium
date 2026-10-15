@@ -125,11 +125,13 @@ fn main() {
         });
     }
     while !stop.load(Ordering::SeqCst) {
-        let ticked = mind.tick(&stop);
-        // X6 — a tick that moved nothing admitted nothing: it draws nothing
-        // and rests until its court's word lands or the measured transport's
-        // park passes, never spinning a core.
-        if ticked.moved == [false; 4] {
+        // MU-CLIENT §4.12 — the winding carrier's stroke: the mind's own
+        // motion, acting at its returns.
+        let wound = mind.wind(&stop);
+        // X6 — a stroke that moved nothing and returned nothing admitted
+        // nothing: it draws nothing and rests until its court's word lands or
+        // the measured transport's park passes, never spinning a core.
+        if wound.moved == [false; 4] && wound.returns == 0 {
             mind.rest();
         }
     }

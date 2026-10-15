@@ -135,52 +135,80 @@ impl Hypha {
     }
 }
 
+/// AN EXCHANGE POSTED ON A CARRIER: `wire` runs on the carrier's thread
+/// against its session, and `then` takes its answer on the field where it
+/// lands.
+fn post<R: Send + 'static>(carrier: &mut Hypha, wire: impl FnOnce(&mut Session) -> R + Send + 'static, then: impl FnOnce(&mut Entity, R) + 'static) {
+    let (tx, rx) = channel::<R>();
+    let job: Job = Box::new(move |s| {
+        let _ = tx.send(wire(s));
+    });
+    if carrier.to.send(job).is_err() {
+        // The carrier is gone: nothing will answer this ask.
+        return;
+    }
+    let mut then = Some(then);
+    carrier.landings.push_back(Box::new(move |me| match rx.try_recv() {
+        Ok(r) => {
+            if let Some(t) = then.take() {
+                t(me, r);
+            }
+            true
+        }
+        Err(TryRecvError::Empty) => false,
+        Err(TryRecvError::Disconnected) => true,
+    }));
+}
+
+/// A CARRIER'S ANSWERS TAKEN, in the order they were asked: each that landed
+/// is filed; the first not landed, and all after it, wait. An answer's filing
+/// may ask again; those asks wait behind.
+fn take_from(me: &mut Entity, carrier: fn(&mut Entity) -> &mut Hypha) {
+    let mut waiting = std::mem::take(&mut carrier(me).landings);
+    while let Some(mut landing) = waiting.pop_front() {
+        if !landing(me) {
+            waiting.push_front(landing);
+            break;
+        }
+    }
+    waiting.append(&mut carrier(me).landings);
+    carrier(me).landings = waiting;
+}
+
 impl Entity {
-    /// ASK THE COURT: `wire` runs on the carrier against the session, and
-    /// `then` takes its answer on the field at the next admission.
+    /// ASK THE COURT: `wire` runs on the hypha's carrier against the session,
+    /// and `then` takes its answer on the field at the next admission.
     pub(crate) fn ask<R: Send + 'static>(
         &mut self,
         wire: impl FnOnce(&mut Session) -> R + Send + 'static,
         then: impl FnOnce(&mut Entity, R) + 'static,
     ) {
-        let (tx, rx) = channel::<R>();
-        let job: Job = Box::new(move |s| {
-            let _ = tx.send(wire(s));
-        });
-        if self.hypha.to.send(job).is_err() {
-            // The carrier is gone: nothing will answer this ask.
-            return;
-        }
-        let mut then = Some(then);
-        self.hypha.landings.push_back(Box::new(move |me| match rx.try_recv() {
-            Ok(r) => {
-                if let Some(t) = then.take() {
-                    t(me, r);
-                }
-                true
-            }
-            Err(TryRecvError::Empty) => false,
-            Err(TryRecvError::Disconnected) => true,
-        }));
+        post(&mut self.hypha, wire, then);
     }
 
-    /// THE COURT'S ANSWERS TAKEN, in the order they were asked: each that
-    /// landed is filed; the first not landed, and all after it, wait. An
-    /// answer's filing may ask again; those asks wait behind.
+    /// MU-CLIENT §6 — ASK THE HOUSE A SEAT STANDS IN: posted on the SEAT'S
+    /// OWN CARRIER, so a slow house holds that carrier and nothing else.
+    pub(crate) fn ask_seat<R: Send + 'static>(
+        &mut self,
+        wire: impl FnOnce(&mut Session) -> R + Send + 'static,
+        then: impl FnOnce(&mut Entity, R) + 'static,
+    ) {
+        post(&mut self.seat, wire, then);
+    }
+
+    /// THE COURT'S ANSWERS TAKEN, in the order they were asked.
     pub(crate) fn take_answers(&mut self) {
-        let mut waiting = std::mem::take(&mut self.hypha.landings);
-        while let Some(mut landing) = waiting.pop_front() {
-            if !landing(self) {
-                waiting.push_front(landing);
-                break;
-            }
-        }
-        waiting.append(&mut self.hypha.landings);
-        self.hypha.landings = waiting;
+        take_from(self, |e| &mut e.hypha);
     }
 
-    /// Every answer asked for, taken: the field waits on its court. For the
-    /// boot and for guards, never the tick.
+    /// THE HOUSE'S ANSWERS TAKEN off the seat's carrier, in the order asked.
+    pub(crate) fn take_seat_answers(&mut self) {
+        take_from(self, |e| &mut e.seat);
+    }
+
+    /// Every answer asked for, taken: the field waits on its court. A guard's
+    /// only — nothing the mind does waits on a counterparty (MU-CLIENT §5.1).
+    #[cfg(test)]
     pub(crate) fn settle(&mut self) {
         while self.hypha.in_flight() > 0 {
             let before = self.hypha.in_flight();

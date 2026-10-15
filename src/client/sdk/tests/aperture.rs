@@ -136,29 +136,29 @@ assert!(epi.working_word(&addr).is_none());
 /// do ("what a test never does ... read the network"). Nothing about the
 /// claim needed the wire: standing is complete before anything is uttered.
 #[test]
-fn standing_a_form_steps_the_minds_own_k() {
+fn standing_a_form_is_an_act_at_the_minds_k_and_moves_no_clock() {
 let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
 let mut entity = Entity::open("127.0.0.1:1", Kernel::named("clock"));
-assert_eq!(entity.own_k(), 0, "a mind that has not acted seats at zero");
+assert_eq!(entity.own_k(), 0, "a mind none of whose orbits returned seats at zero");
 
 // Standing is the act, and it is complete before anything is uttered. It
-// acts in the open orbit; the stroke's close moves K (OK1, 78.49).
+// stands at the mind's K; only a return moves K (MU-CLIENT §4.4(4)).
 let codes = entity.stand(std::slice::from_ref(&e1), 0);
 assert_eq!(entity.dialect_len(), 1, "the form stands in the dialect");
-assert_eq!(entity.own_k(), 0, "K stands while the orbit is open");
-assert!(entity.close_cycle(), "standing it was an act, so the cycle closes");
-assert_eq!(entity.own_k(), 1, "the stroke's close stepped the clock once");
+assert!(!entity.close_cycle(0), "standing is no return: the stroke closes nothing");
+assert_eq!(entity.own_k(), 0, "K stands");
+assert!(entity.close_cycle(1), "an orbit returned: the stroke closes");
+assert_eq!(entity.own_k(), 1, "the return stepped the clock once");
 assert_eq!(codes, vec![0xff], "and it is fresh, so an utterance would ask about it");
 
-// Standing the same form again is a USE of it, never a second act (the
-// operator, 2026-10-14: a mind repeating itself is mumbling, not acting):
-// it is already taught, so nothing would go on the wire at all, and the
-// clock does not step at the stroke's close. Nothing here read a k-step
-// from anyone else.
+// Standing the same form again is a USE of it (the operator, 2026-10-14: a
+// mind repeating itself is mumbling, not acting): it is already taught, so
+// nothing would go on the wire at all. Nothing here read a k-step from
+// anyone else.
 entity.file_taught(&e1);
 let codes = entity.stand(std::slice::from_ref(&e1), 0);
-assert!(!entity.close_cycle(), "a use is no act: the cycle closes nothing");
-assert_eq!(entity.own_k(), 1, "the clock stands: repeating oneself is not acting");
+assert!(!entity.close_cycle(0), "a use returns nothing");
+assert_eq!(entity.own_k(), 1, "the clock stands");
 assert_eq!(
     codes,
     vec![crate::anastome::dialogue::SPEECH_STOOD],
@@ -193,7 +193,7 @@ fn the_contemplation_is_stamped_with_tuniversal_and_the_shed_with_the_voices_own
     // read off the mesh.
     let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let _ = entity.stand(std::slice::from_ref(&e1), 0);
-    entity.close_cycle();
+    entity.close_cycle(1);
     let k = entity.own_k();
     entity.advance_height(500);
     assert_ne!(k, entity.now_tu(), "the fixture separates them: {k} against 500");

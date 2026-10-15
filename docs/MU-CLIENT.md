@@ -478,18 +478,45 @@ The mind's motion is its ORBITS, and its cognition is their WINDING:
 2. **A ring winds.** A held thought's ring first closes — new structure; each
    later close is a TRAVERSAL that advances its winding `m → m + 1 mod ℓ`,
    and what experience brings accrues on it (§4.10); at `m ≡ 0` it RETURNS.
+   Written 2026-10-15, not witnessed (§7.1): a ground keeps every hour it has seen; its winding
+   is `hours mod ℓ`, its returns `hours / ℓ`; the hours before a new one are
+   the orbit's most recent return (a window that winds on, never `0 … h−1`
+   alone); a merge that completes a return no thought merged had completed
+   hands the ground to the voice — its first return the first close, each
+   later one a traversal (`closing_ground`, `thought_returns`).
    A ring of infinite order never returns: it carries its torsion, and the
    torsion is content (curvature is content).
 3. **Spin and orbit; hours, days, eons.** A motion has an orbit and a spin
    (78.48(7), 78.51): the spin pushes the frames — an HOUR; the orbit's
    return is a DAY, one age; the resonant composition's return an EON, the
    lcm of the resonant periods (78.43). With the hours seen, the orbit
-   PREDICTS the next: a body at the predicted hour joins the thought; one at
-   another hour is a phase slip, one at no hour off the orbit — each a
-   demand localised to the hour it slipped at (78.48(7)). This is the mind's
-   PREDICTIVE SELF-MODEL at the orbit's grade (78.168): the prediction is the
-   orbit's own, the surprise is the slip, exact, at its hour — no forecast
-   organ, no error norm, no skill score.
+   PREDICTS the next: a body at the predicted hour joins the thought. This is
+   the mind's PREDICTIVE SELF-MODEL at the orbit's grade (78.168): the
+   prediction is the orbit's own — no forecast organ, no error norm, no skill
+   score.
+
+   **The orbit is sheared by its pull (2026-10-15; the operator: "loops need
+   to be orbits in order to shear position from axiomatic gravity — twist is
+   the rotation of that pull").** That an hour out of turn on the same orbit
+   is the pull's twist (drag) rather than a phase slip demanded — amending
+   78.48(7) — is the developer's reading of that ruling, POSED for the
+   operator's confirmation (§8); the code and its claim follow the reading
+   until ruled. A body that does not
+   stand where the orbit predicted, but where a ROTATION ABOUT THE ORBIT'S
+   ATTRACTOR carries the predicted constellation — the centre its generator
+   holds (`cga::centre_of`) kept still — is the orbit TWISTED by its pull,
+   never a circle demanded back (`cga::twist_about`, two reflections, exact).
+   It joins; the ground is SHEARED, its hours predicted from where the orbit
+   now stands; the twist ACCRUES on the thought's winding as its content,
+   split against the orbit's plane into DRAG (commuting: the rate — an hour
+   out of turn on the same orbit is this) and LIFT (anticommuting: the tilt)
+   (78.46), each counted; and at a later return the voice says it, the
+   twist transcribed at its own period, as what changed
+   (`Contemplation::twisted_return`, `transcribe_closed`). A body no rotation
+   of the pull carries there — carried farther from the attractor, resized,
+   another body — is OFF THE ORBIT, and only that is a demand localised to
+   the hour it slipped at. The SURPRISE is therefore exact and twofold: the
+   twist (content the thought keeps) or the slip off the orbit (a demand).
 4. **K is the mind's own completed orbits** (78.23(1), 78.49): a return is
    where the mind ACTS — it pivots where the winding changed dimension
    (§4.5) and speaks what changed (§5). Nothing else fires its acts, and
@@ -706,16 +733,26 @@ never a stretched chamber and never a cap.
   happened to our superposition of ideation — that would be the predictive
   self-model"). Each candidate of an escaping thought's vortex — a held form,
   a composition of ruled words, a clause set read off an effect (§4.9), a
-  conjugate — is ROLLED OUT: spoken on the scenes its thought holds, writing
-  nothing (no hold, no mint, no send), metered by the stroke. What a rollout
-  reads is exact: whether that candidate BINDS the thought's escaping orbit
-  (§4.12), the holonomy it leaves, its modes per lane. No amplitude, weight
-  or payoff ranks candidates; the superposition is carried with its thought
-  across returns, and collapses only as this section says — a fill by a
-  perception, a court replay, a ruling. A candidate lost without a binding
-  or a named refusal is a collapse, and a defect. A surprise — a slip
-  (§4.4(3)), a rollout the committed act did not meet — reshapes the vortex:
-  the candidates it touches are rolled out again on the new state.
+  conjugate — is ROLLED OUT, writing nothing (no hold, no mint, no send),
+  metered by the stroke, and what a rollout reads is exact: whether that
+  candidate BINDS the thought's escaping orbit (§4.12), the holonomy it
+  leaves, its modes per lane. No amplitude, weight or payoff ranks
+  candidates; the superposition is carried with its thought across returns,
+  and collapses only as this section says — a fill by a perception, a court
+  replay, a ruling. A candidate lost without a binding or a named refusal is
+  a collapse, and a defect.
+
+  **Read 2026-10-15, what the rollout must read (design owed, §7.1).** A
+  rollout that SPEAKS the candidates on the thought's OWN scenes decides
+  nothing, and was removed: the candidates are certified discharges of the
+  same orbit on those same scenes, and a candidate's move rewrites the form's
+  FACES, which a form's speech does not read — every candidate speaks the
+  scenes alike. What tells candidates apart is their orbit's holonomy read on
+  a scene the vortex has NOT yet seen: a new perception at the thought's
+  next return, each candidate's move carried round on it, the one whose
+  orbit returns there the fill that collapses the vortex. Until that is
+  built, a vortex collapses only where it did — a glue or the syllabus
+  naming a deciding word (`collapse_on`).
 
 ### 4.9 Perceive, think, understand, comprehend
 
@@ -956,9 +993,13 @@ dimension or a release, none a loop:
 **The mind acts at a return.** A ring's winding advances at each traversal;
 at its return the mind pivots where the winding changed dimension and the
 faculties speak what changed (§4.4(4), §4.9). This is the WINDING CARRIER on
-the mind's own rings (owed, §7.1): the carrier of the mind's own motion, on
-its own circuit over its field, beside the carriers facing its
-counterparties (§5.1). What arrives — a scene, a task, a peer's speech, a
+the mind's own rings: the carrier of the mind's own motion, on its own
+circuit over its field, beside the carriers facing its counterparties
+(§5.1). Written 2026-10-15 and not witnessed (§7.1): `entity/winding.rs`
+acts only at returns, but is still one stroke in one order on one thread —
+the carriers it names are an open item. A return that comes round twisted by
+its pull is the orbit's content, said as what changed (§4.4(3)). What
+arrives — a scene, a task, a peer's speech, a
 verdict — is perception that perturbs the orbits it lands on; it never moves
 the mind.
 
@@ -1141,8 +1182,9 @@ closure, a syllabus page) files where it lands. One quote, one task pull, one
 sync, one syllabus pull and one solve per task are in flight at a time. The
 carrier publishes the wire's readings (the final point, the aperture, the
 round trip) and wakes a resting mind when an answer lands. The CONVERSATION
-CARRIER (`entity/chatter.rs`) carries the peer minds. The seat surface keeps
-its own waiting link until its carrier is built (§6).
+CARRIER (`entity/chatter.rs`) carries the peer minds. The SEAT'S CARRIER (a
+second carrier of the same kind, over the relay's session, `ask_seat`)
+carries the house a seat stands in (§6; written 2026-10-15).
 
 The mind speaks where its winding acts — a return, a seal, a rise of its
 algebra for a class (§4.4, §4.5) — and says what changed, addressed by its
@@ -1469,8 +1511,9 @@ seat's functions and the arguments the mind has not yet tried are thoughts
 whose orbits escape, worked by the drive (§4.12) like any other — never a
 search over untried arguments run beside the mind (`seat_mind`'s `untried`,
 read 2026-10-15, is such a search and is owed into the field), and never a
-game's score the mind plays to raise (§2.4(8)). The seat's carrier is owed
-(§7.1).
+game's score the mind plays to raise (§2.4(8)). The seat's own carrier is
+written (2026-10-15, §7.1); folding `seat_mind`'s exploration into the
+field is still owed.
 
 ---
 
@@ -1490,7 +1533,8 @@ owed in the order it is built.
 1. **The conversation carriers** (§5.1) — one per hypha, one per peer mind,
    one for the feed and one for a seat: each non-blocking, on its own
    circuit, holding the field only briefly. Landed: the hypha carrier and
-   the conversation carrier; owed: the seat's (§6).
+   the conversation carrier; the seat's written 2026-10-15, not witnessed
+   (§6).
 2. **The perception map** (§3.1) — each export of the hypha taken into the
    mind's shells at the carrier that receives it; a peer's speech heard in
    the hearer's own shells with its windings and pivots taking it up
@@ -1543,6 +1587,90 @@ owed in the order it is built.
      dissipated and reformed (§4.5), never a pass.
   7. **An act read off its effect** (§4.9, 78.167 C) — committed with this
      phase.
+
+  **Phase 1 WRITTEN 2026-10-15 — not witnessed** (one commit; nothing of it
+  is done until the soak's counterparties witness it, §7.2). Open items of
+  this phase, carried, not glossed:
+  - the carriers, as built: every counterparty now waits on its OWN carrier
+    — the court on the hypha's, the peers on the conversation's, the house a
+    seat stands in on the SEAT'S (`ask_seat`, a carrier of its own over the
+    relay's session; its by-id task pull on the court's) — and nothing in the
+    mind waits on any of them (`settle` is a guard's only). The winding's
+    stroke is the mind's own circuit: it takes what each carrier landed,
+    moves the field, reads its returns and acts there, in that sequence
+    (admission precedes motion precedes the return), and holds no wait. That
+    a sequence within the mind's own circuit meets §4.12 is the developer's
+    reading, open to the operator's;
+  - the vortex rollout (§4.8) is not built: a rollout that spoke the
+    candidates on the thought's own scenes told none apart and was removed;
+    the reading it needs (each candidate's orbit carried round on a NEW
+    perception) is a design owed;
+  - the twist's LIFT (a tilted plane) cannot arise on the sensor's one grid
+    plane — every rotation about an attractor there is drag — and is untried
+    on the fleet; the split itself is the algebra's, claimed (`lift_drag`);
+  - that a slip's demand is docketed at the return of the thought it slipped
+    against is built (`work_slips`) and not shown by a scene on one chart:
+    the off-orbit body is a body of the field there, and takes part in every
+    later perception.
+
+  Remediated 2026-10-15 (the operator: "make the corrections and find the
+  hang"; "remediate in that order"): the hang (a claim awaiting speech that
+  now waits for a return) and the four failing claims run through a REAL
+  return — the mind's own field comes round (`come_round`: a quarter turn
+  admitted four times on one plane) and the winding reads it
+  (`act_on_returns`) — no release by hand; what is held for the return is
+  held by its coordinates (`at_return_by`), a thing said twice one thing;
+  slips are held on the thought they slipped against and worked at its
+  return (`work_returned`), the record of a thought that came round following
+  it through a rekey or a merge; the seat's calls are held for the return by
+  seat and task and made on the seat as it then stands (`seat_act`); the
+  seat's own carrier built (`entity/body.rs` posts every exchange with the
+  house on it and continues where each answer lands; a take counts as
+  posted from its sending; the blocking `pull_task_by_id` retired).
+
+  As written, item by item:
+  1. The winding stroke is `entity/winding.rs` (the tick's file, renamed and
+     rewritten): `Entity::wind`, run by the binary's loop, beside the hypha
+     and conversation carriers' threads.
+     Its stroke: admission of what the carriers landed; the field's motion
+     (the docket constructed, rest where the reserve is short or nothing
+     arrived, the pivots, the vent); THE RETURNS (`returns_of_stroke`: the
+     field's orbits that returned, counted by `OrbitRegistry::returns`, and
+     the thoughts that came round); K stepped by exactly them
+     (`close_cycle(returns)`); the act at a return; booking. The winding is
+     the ground's (finding 3 fixed, §4.4(2)); the return twisted by its pull
+     is read as content (§4.4(3)). Slips off the orbit are filed to the
+     docket and constructed in the field's motion; what is constructed is
+     said at the next return.
+  2. Outflow at returns: court speech (`speak_with` posts through
+     `hold_for_return`), solves (`post_solve`), SAY, owed speech, unheard
+     words and unjudged solves leave only in `act_at_return`; a stood word
+     stands at once (the mind's own act). The task pull fires where the mind
+     RESTS or returns, never every stroke. Answers to a counterparty's frame
+     (probes answering a listing, HEARD, ACK, HOLD) and asks for perception
+     (quotes, the syllabus, the sync, all paced by the court's dwell) stay
+     where they are. The seat's calls are held for the return by seat and
+     task (`seat_act`), and every exchange with the house rides the seat's
+     own carrier (remediated below).
+  3. The tick's order: the stroke above keeps one sequence (admission →
+     motion → returns → act → booking) on the mind's own circuit; nothing in
+     it fires outflow except a return, and nothing in it waits on a
+     counterparty — every counterparty is on its own carrier (open item
+     above).
+  4. A task is perceived as a family is; comprehension
+     (`court.rs::comprehend`) may emit its solve; a scene not yet
+     comprehended waits beside its thoughts (`Entity.comprehending`, the
+     contemplation's `by_family` index) and is read again at the mind's
+     returns where its language moved (`comprehend_waiting`), gone with its
+     last thought.
+  5. At a thought's return its slips are worked (`bubble/returned.rs`); the
+     vortex rollout is not built (above).
+  6. D1: a meaning given whole is marked GIVEN (`rung::learn_given`); a word
+     newly known stands beside the given atoms on its holes and they are
+     reduced again at the return (`re_reduce_given`, ASKS "re-derived"). D2: a
+     question that lapses hands its residue to construction
+     (`compose_or_construct`), never to nothing.
+  7. `family/acts.rs` (78.167 C1–C5), as committed here.
 - **Phase 2 — the courts pay words and sentences** (§5.4, §5.6: E1–E4),
   released with the client, xylarium told before the fleet restarts:
   - every scene names its family by the court's own name for it, the
@@ -1632,6 +1760,16 @@ on a guess:
   Which of these is the engine's Calabi–Yau reading is the operator's.
 
 Posed 2026-10-15 (78.168):
+- **an hour out of turn on the orbit** — the pull's twist (drag, held as the
+  orbit's content) as written in §4.4(3), or a phase slip demanded as
+  78.48(7) ruled;
+- **what K counts** — as written, every orbit of the mind's field that
+  returned AND every thought whose winding came round (§4.4(4)); or the
+  thoughts' returns alone;
+- **the winding's stroke** — whether one sequence on the mind's own circuit
+  (admission, motion, returns, the act), holding no wait, with every
+  counterparty on its own carrier, meets §4.12's "carriers on their own
+  circuits", or the field's motion must itself be split into carriers;
 - **78.149(c)** — whether a composition of ruled words stays paid only as
   the uses it credits, or one installed for no task is POUW on its words'
   families (§5.6);

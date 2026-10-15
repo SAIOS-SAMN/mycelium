@@ -168,13 +168,14 @@ fn a_code_the_hypha_did_not_send_is_not_an_outcome() {
     );
 }
 
-/// 78.52 — A MIND SPEAKS WHAT IT THOUGHT, IN ITS OWN DIALECT. An L seen at
-/// its four hours about the grid point (2, 2), held by one mind with no hypha
-/// to hear it: the fourth perception closes the thought's return, and the
-/// mind speaks the WORD the thought transcribes to in that same act — a
-/// connection spelled in the letters stands in the mind's dialect, carrying
-/// its return; the thought itself never does. It waits on no word from
-/// anywhere.
+/// 78.52, MU-CLIENT §4.4(4) — A MIND SPEAKS WHAT IT THOUGHT, IN ITS OWN
+/// DIALECT, AT ITS RETURN. An L seen at its four hours about the grid point
+/// (2, 2), held by one mind with no hypha to hear it: the fourth perception
+/// brings the thought round, and the winding reads that return
+/// (`act_on_returns`) — K steps by it, and the mind speaks the WORD the
+/// thought transcribes to — a connection spelled in the letters stands in the
+/// mind's dialect, carrying its return; the thought itself never does.
+/// Nothing stands before the return. It waits on no word from anywhere.
 #[test]
 fn a_mind_speaks_its_closed_thought_into_its_own_dialect() {
     use crate::client::sdk::*;
@@ -201,8 +202,11 @@ fn a_mind_speaks_its_closed_thought_into_its_own_dialect() {
         let mut budget = entity.stroke_n(1 << 20);
         let f = scene_form_on(&NoCrystal, &mut budget, &a, &b, &frames).expect("the scene reads");
         assert!(entity.hold_perceived(f, &frames, &Vec::new(), &[], b"one scene", &mut budget), "hour {i} is held");
-        assert_eq!(spoken(&entity), usize::from(i == 3), "hour {i}: the word stands only once the return closes");
+        assert_eq!(spoken(&entity), 0, "hour {i}: nothing stands before the mind's return");
     }
+    let mut budget = entity.stroke_n(1 << 20);
+    assert_eq!(entity.act_on_returns(&mut budget, true), 1, "the thought came round: one return");
+    assert_eq!((entity.own_k(), spoken(&entity)), (1, 1), "K stepped by it, and the word stands at it");
     // READ OFF THE MIND'S OWN CARRIERS: one thought closed, the dialect
     // holding what it stood.
     assert_eq!(entity.contemplation.closed_thoughts, 1, "one thought closed its return");
