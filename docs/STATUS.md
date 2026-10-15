@@ -82,18 +82,18 @@ the minds, then the nseat units — never `scripts/recut` (it wipes).
    minds' letters against compositions. **78.166 3a** waits on a measurement
    (the intake's share of the warm-up) and a ruling (storing a listing's
    task binding vs C 1.13).
-2. The page as a multi-dimensional object for the learner fetch (graded by
+3. The page as a multi-dimensional object for the learner fetch (graded by
    stratum, closed under citation, classes inside their cells, relative to
    the learner's held words, bounded per lane) — after 78.166.
-3. The growth grant proved after a signed LEDGER entry applies the founding
+4. The growth grant proved after a signed LEDGER entry applies the founding
    grant; the LEDGER entry's torsion field (78.152d).
-4. Questioning on the vortex's open pairs; `stand` stops saying every stood
+5. Questioning on the vortex's open pairs; `stand` stops saying every stood
    sentence.
-5. The unlinked mind; the peer universe's founding.
-6. A1 (factored reflections), A2 (`Sphere { n, R }`).
-7. The ear's tuning by retrospective reduction; the eye's
+6. The unlinked mind; the peer universe's founding.
+7. A1 (factored reflections), A2 (`Sphere { n, R }`) — 78.167 D3/D4.
+8. The ear's tuning by retrospective reduction; the eye's
    resolution-then-definition audit.
-8. Defects: the glue extraction test; court-organ glue tests fail under load
+9. Defects: the glue extraction test; court-organ glue tests fail under load
    (the glue replay goes unread on a loaded stroke); court standing
    staleness; minds' memory growth; `release_unmet`'s sweep; the class
    records' u16 count across joined strata.
