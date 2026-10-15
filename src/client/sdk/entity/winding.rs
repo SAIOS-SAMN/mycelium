@@ -86,7 +86,11 @@ impl Entity {
     }
 
     fn stroke_in_field(&mut self, stop: &AtomicBool) -> Wound {
+        // The observer reads where the carrier stands at every law it enters
+        // (`observe::live`, `entity::observer`).
+        self.stroke_begins();
         if self.board.saved_len != Some(self.epigenome.genome_len()) {
+            self.at_law("genome written");
             let _ = self.save_kept_genome();
         }
         let court = &mut self.board.court;
@@ -98,7 +102,9 @@ impl Entity {
         let mut outcome = StrokeOutcome::default();
         let stopping = || stop.load(std::sync::atomic::Ordering::SeqCst);
         // 1. ADMISSION — what the carriers landed.
+        self.at_law("admission: the court's answers");
         self.court_inflow(&mut outcome);
+        self.at_law("admission: hearings priced");
         self.price_hearings();
         let occluded = matches!(self.transport(), TransportAperture::Occluded { .. });
         // AN OCCLUDED WIRE IS READ AGAIN, NEVER ABANDONED: the impedance
@@ -109,43 +115,54 @@ impl Entity {
             self.discover();
         }
         if !occluded {
+            self.at_law("admission: the feed's family");
             self.feed_inflow(&mut outcome);
         }
         if !occluded && !stopping() {
+            self.at_law("admission: the open book");
             self.quote_inflow(&mut outcome);
         }
         if !occluded && !stopping() {
+            self.at_law("admission: a task");
             self.task_inflow(&mut outcome, stop);
         }
         if !stopping() {
+            self.at_law("admission: the seat's mail");
             self.body_tick();
         }
         // 2. THE FIELD MOVES — the docket constructed, the held thoughts
         // pivoted, and REST where the reserve runs short or nothing arrived.
         if !stopping() {
+            self.at_law("motion: the docket constructed");
             self.take_docketed_demands();
         }
         let short = !crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty();
         let resting = short || outcome.moved() == [false; 4];
         if resting && !stopping() {
+            self.at_law("motion: rest");
             self.relax(&mut outcome);
         }
+        self.at_law("motion: the pivots");
         let _ = self.pivot_thoughts();
         StrokeOutcome::add(&mut outcome.learned, &self.take_learned_mu());
         let mut vent = self.stroke();
+        self.at_law("motion: the vent");
         let _ = self.vent_into_field(&mut vent);
         // 3. THE RETURNS, AND 4. THE ACT AT A RETURN.
+        self.at_law("returns");
         let returns = self.act_on_returns(&mut vent, !occluded);
         // A RESTING MIND ASKS FOR A SCENE: its field holds nothing that moved,
         // so it perceives (MU-CLIENT §4.12) — never a pull fired by the
         // stroke itself.
         if (resting || returns > 0) && !occluded && !stopping() {
+            self.at_law("rest: a scene asked for");
             self.pull_task();
         }
         // The conversation runs on its own carrier (MU-CLIENT §5.1); it is
         // handed the mind's clock as the orbits move it.
         self.tell_conversation_the_clock();
         // 5. BOOKING.
+        self.at_law("booking");
         self.book_tick(&outcome);
         let moved = outcome.moved();
         let short = self.physics().reserve_shortfall(moved);
@@ -195,6 +212,7 @@ impl Entity {
             Err(_) => 0,
         };
         let came_round = u64::try_from(self.contemplation.closed.len()).ok();
+        self.at_law("returns: thoughts transcribed");
         let thoughts = self.transcribe_closed(budget);
         // MU-CLIENT §5.4 (E1) — each under the scene its thought was
         // perceived in.
@@ -203,9 +221,11 @@ impl Entity {
         }
         // MU-CLIENT §4.4(3) — what each returned thought holds against its
         // orbit (its slips) is worked at its return.
+        self.at_law("returns: slips worked");
         self.contemplation.work_returned();
         // 78.167 D1 — the given meanings a newly known word stood beside,
         // reduced again where the mind's orbits return.
+        self.at_law("returns: given meanings reduced again");
         let rederived = crate::transducer::sentence::rung::re_reduce_given();
         if rederived > 0 {
             crate::observe::note_mind(|m| m.asks[4] += rederived);
@@ -223,13 +243,18 @@ impl Entity {
     /// court has taught, its unjudged solves, and every speech, solve and SAY
     /// held for the return leave now, and nowhere else.
     fn act_at_return(&mut self) {
+        self.at_law("act at a return: a waiting scene read again");
         self.comprehend_waiting();
+        self.at_law("act at a return: what the courts are owed");
         self.court_owed();
         let mut budget = self.physics.stroke();
+        self.at_law("act at a return: unheard words");
         self.speak_unheard(&mut budget);
+        self.at_law("act at a return: unread solves");
         self.resubmit_unread_solves();
         // What was held for the return leaves: every speech, solve and SAY,
         // in the order the mind said them.
+        self.at_law("act at a return: what was held leaves");
         self.at_return_by = crate::network::nerve::Keyed::new();
         for say in std::mem::take(&mut self.at_return) {
             say(self);

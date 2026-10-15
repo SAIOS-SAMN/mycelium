@@ -75,6 +75,19 @@ pub(crate) struct Question {
     at: u64,
 }
 
+impl Question {
+    /// The question as its observer reads it (`entity::observer`): the
+    /// words it was posited over, whether an answer came, and the mind's K
+    /// it was asked at.
+    pub(crate) fn observed(&self) -> String {
+        let answer = match &self.factors {
+            Some(f) => format!("answered by {} factors", f.len()),
+            None => "unanswered".to_string(),
+        };
+        format!("posited over {} known words · {answer} · asked at K {}", self.parts.len(), self.at)
+    }
+}
+
 /// 78.112 H5 — A THOUGHT UNDERSTOOD, TO BE PRICED IN THE MIND'S OWN FIELD:
 /// the loops both minds read, and what its price decides — the hearer's HOLD,
 /// or the speaker's speech of agreed language.
@@ -264,6 +277,12 @@ fn offered(e: &Element) -> Vec<Spoken> {
 /// asked. `None` for a frame that is no question, which is conversation.
 fn observed(voice: &[u8; 32], q: &[u8]) -> Option<Vec<u8>> {
     use crate::observe::{self, ObserveAct, Reading, Source};
+    // A CALL (the operator 2026-10-15): answered by the mind out of what it
+    // holds, where its winding carrier stands (`observe::live`).
+    if let Some(line) = observe::live::decode_call(q) {
+        let budget = crate::network::wire::frame_budget().checked_sub(64)?;
+        return observe::live::encode_lines(&observe::live::call(&line), budget);
+    }
     let ObserveAct::Query(prefix) = observe::decode_act(q)?;
     let own = Source::Mind(*voice);
     let mind = observe::mind();

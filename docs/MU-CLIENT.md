@@ -284,7 +284,7 @@ export reaches it at the carrier facing that hypha (§5.1):
 | the hypha exports | where it reaches the mind | how the mind perceives it |
 |---|---|---|
 | the TUniversal point (78.152) | every reply | beside the mind's own K — the hypha's time, never the mind's clock |
-| its pressure: the deficit per lane, the surface | every deferral, every quote reply | flux on the mind's lanes; the carrier facing that hypha dwells on the lanes it names — the mind's pacing toward a hypha is that hypha's exported pressure, never a schedule |
+| its pressure: the deficit per lane, the surface | every deferral, every quote reply | flux on the mind's lanes, which its metabolism carries; the mind's intake is paced by that metabolism — a scene admitted when the reserve has regenerated on the lanes it costs — never by a schedule and never by the pressure alone (amended 2026-10-15, the operator: "there should be internal metabolism in the mind") |
 | its listings: open forms with their demands | quote replies | rings heard in the mind's three shells (§3.2) against its own of the same class: echo, nesting, a discharge where a held word answers |
 | its verdicts and rulings | the replies to the mind's acts (their kind only, MU-RECURSION 0.1) | a ruling of a class the mind asks seals the hole that keeps it (§4.5); a refusal is a reading of its kind, held |
 | its taught words: syllabus pages, class pages, the presentation | `ACT_SYLLABUS`, `ACT_TEACH` | a MINERAL in the genome, hardened into a CRYSTAL where the mind re-derives it by its own circuits (§5.5) |
@@ -432,8 +432,11 @@ nothing.
 The mind's carriers (§5.1) all act on this one field, each holding it
 briefly and never across a wait on a counterparty. The mind's own reserve is
 drawn by the modes its motion moves, all or nothing, refused naming the mode
-short (65.4, 78.66, 78.162(2)); toward a hypha, its pacing is that hypha's
-exported pressure (§3.1).
+short (65.4, 78.66, 78.162(2)). Its intake is paced by that metabolism
+(the operator, 2026-10-15: "there should be internal metabolism in the
+mind"): a scene is admitted when the reserve has regenerated on the lanes it
+costs, and the next asked for then; a hypha's exported pressure is
+perception the metabolism carries, never the pace itself (§3.1, amended).
 
 ### 4.3 Breath
 
@@ -1866,10 +1869,11 @@ owed in the order it is built.
   - Still owed: E2's guard (no fixture yet writes a listing whose demand
     another mind's cited form closes); POWC on "a held question closed by
     another mind" (the conversation's questions reach no court; an evidence
-    path is a design); a ring whose holonomy is a FILED CLASS (S reads the
-    identity only); whether any mind on the fleet is a domain's key, without
-    which E4 is witnessed only by seated universes; the closed thought's
-    TWIST spoken under no family.
+    path is a design); whether any mind on the fleet is a domain's key,
+    without which E4 is witnessed only by seated universes; the closed
+    thought's TWIST spoken under no family. (A ring whose holonomy is a filed
+    class is no longer owed here: S reads no ring — its alignment is its
+    closure on the scene, above.)
 
   **The fold-witness storm (read on the fleet after the first release,
   2026-10-15).** b, folding again, waited an aperture of its witness's bare
@@ -1881,6 +1885,81 @@ owed in the order it is built.
   co-signature it holds (`Kernel::cosigned_root`, counted `held` on the
   fold-witness reading); an offer with no eligible witness, and one a
   witness left unanswered, are counted (`PROVISIONAL`), never silent.
+- **Phase 1 remediated against its spec (scoped 2026-10-15; the operator:
+  "scope the remediation against the spec before building anything").**
+  Read on the fleet after Phase 2's second release: replication whole again,
+  and eight minds of nine at K 0 after 38 minutes, one at K 1 — no speech
+  reached a court, so nothing was offered, installed or paid. Phase 1 as
+  written keeps one stroke in one order on one thread, the field handed whole
+  to it (`MindField::think`), so one long law stops every carrier (§2.2,
+  §2.3, §2.4(7), §4.2); a ground's hours move only where a merge decides a
+  pair, and what is held for a return leaves wholesale at any return
+  (§4.4(2)–(4)); no drive binds escaping orbits (§4.12); a task is a
+  pipeline on arrival (§3.1); rest pulls a task (§4.12); the conversation
+  calls its court synchronously and releases unmet letters on a K that does
+  not move (§5.1). Client only; the server is not changed.
+  **Rulings (the operator, 2026-10-15):**
+  1. "build the observer into the mind so we can have an API to read the
+     live state and call functions : we can remove this later" — R0 is an
+     instrument the operator permits against §2.4(1), to be removed when the
+     operator says; every call reads, none moves the mind (§2.4(8)).
+  2. K (the developer's judgement, as asked): as §4.4(4) writes it — the
+     mind's completed orbits, its field's that returned and its thoughts'
+     whose winding came round; each thought's acts fire at ITS return (R2),
+     a field orbit's return beats the field (§4.5).
+  3. "there should be internal metabolism in the mind" — the mind's intake
+     is paced by its own metabolism: a scene the hypha carrier landed is
+     admitted when the reserve has regenerated on the lanes it costs, and the
+     next is asked for then; never by rest, never by a return, and the
+     court's exported pressure is perception the metabolism carries (Phase
+     3's containment), not the pace itself. §3.1's "paced by the court's
+     exported pressure" is amended so.
+  In order, R0 released first on its own, then R1–R6 as one commit:
+  - **R0 — the orbits seen live (WRITTEN 2026-10-15, not witnessed).**
+    `observe::live`: where the winding carrier stands (the law entered last,
+    its boundary, its stroke, K and height at entry), written at every law
+    it enters (`Entity::at_law`); and CALLS, served on the mind's post by the
+    conversation's carrier and answered by the mind at the winding's next
+    law boundary (`entity/observer.rs`: `now`, `thoughts [from N]`,
+    `thought N`, `field`, `held`, `scenes`, `questions`, `calls`). An asker
+    waits a park at a time while the carrier passes boundaries (law 9: the
+    pace is strokes) and, after a park with none, is told where the carrier
+    stands and that its call waits — so a mind held inside one law
+    names that law. `mycelium-client --call "<call>" [--mind HEX]` asks the
+    minds at the rendezvous; no restart reads them.
+  - **R1 — carriers on their own circuits; the tick retired** (§2.2, §2.3,
+    §4.2, §5.1; 78.164 third amendment): each counterparty's carrier admits
+    what lands with a brief hold of the field; long laws (perceiving a
+    scene, extraction) run on the carrier that received the scene, off the
+    field, only their admission touching it; the winding carrier moves the
+    orbits on its own circuit. §4.2's "for the length of each tick" amended
+    to the brief holds its second paragraph rules.
+  - **R2 — each thought winds and acts at its own return** (§4.4(2)–(4),
+    §4.12): `m → m + 1 mod ℓ` as perceptions land at its predicted hours, a
+    body at another hour its twist or a slip; at its return its own pivots,
+    transcription, held speech and solve, keyed by the thought and released
+    by it alone.
+  - **R4 — a task is perception** (§3.1, §4.9, §1(7), §2.4(8)): its pairs
+    land as scenes in the shells on the hypha carrier under the family's
+    citation; its colour word, rule and solve emitted by the faculties at the
+    returns of the thoughts they belong to; intake paced by the metabolism
+    (ruling 3); the empty-bundle hours named by their family.
+  - **R3 — the drive and deliberation** (§4.12, §4.6, §4.8): coherence read
+    at each winding; an escaping orbit bound by discharge, vortex, question,
+    construction, dissipation or torsion where each applies; deliberation as
+    neighbouring orbits' drag and lift (`lift_drag`); the vortex carried
+    round on the next perception, collapsed by the candidate whose orbit
+    returns there.
+  - **R5 — rest** (§4.12): where a lane runs short the winding carrier dwells
+    until it regenerates; the other carriers keep landing perception.
+  - **R6 — the conversation never blocks** (§5.1): agreed and unmet speech
+    posted on the hypha carrier and taken where it lands.
+  Guards are identities the field produces (a winding advanced only by
+  perception at its hours; held outflow leaving at its own thought's return
+  and no other; a long law never holding the field; a vortex collapsed only
+  by a fill, a replay or a ruling); `come_round`, a return made by hand, is
+  retired as a guard. Witness (§7.2): R0 reads the orbits winding on the
+  fleet; courts receive speech at minds' returns; then Phase 2's pays.
 - **Phase 3 — containment and memory** (§4.13; findings 5–7):
   - **Containment.** The court's exported gravity read into the mind's
     field, not only its dwell. A deferral's lanes kept as the pressure they

@@ -232,6 +232,12 @@ impl OrbitRegistry {
         self.orbits.is_empty()
     }
 
+    /// The returns its owner has not yet taken (the mind's observer reads
+    /// them; `Field::take_returns` takes them).
+    pub fn pending_returns(&self) -> u64 {
+        self.returns
+    }
+
     /// Per lane: what stands open, and what has moved, weighed by mass.
     pub fn totals(&self) -> ([u64; 4], [u64; 4]) {
         (self.open, self.transport)

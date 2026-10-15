@@ -555,3 +555,40 @@ fn a_minds_reading_and_a_courts_agreements_read_back_exact() {
     assert_eq!(Source::of_key(&key), Some((Source::Mind(vk(3)), TAG_MIND)), "a mind's reading stands under the mind");
     assert!(mind.lines().iter().any(|l| l.contains("deviation closed 1/2:0:0:3/7")), "the deviation is printed exact");
 }
+
+/// THE OBSERVER'S CALL (the operator 2026-10-15): a call travels whole, is
+/// left for the winding carrier, and is answered at the next law boundary
+/// the carrier passes — the asker reads the carrier's standing beside the
+/// answer; its lines travel whole, and lines past the frame are said by
+/// their count and where to ask from.
+#[test]
+fn a_call_is_answered_at_the_carriers_next_boundary() {
+    let line = "observe-test: thoughts";
+    let q = live::encode_call(line).expect("the call writes");
+    assert_eq!(live::decode_call(&q).as_deref(), Some(line), "the call reads back");
+    assert_eq!(decode_act(&q), None, "a call is no query: a court's door reads no act in it");
+    // Before any boundary answers it, the call is said to be waiting.
+    let asked = live::ask(line).expect("the call is left");
+    let waiting = live::read(line, asked);
+    assert!(matches!(waiting.as_slice(), [l, ..] if l.starts_with("winding carrier: in")), "the carrier's standing first: {waiting:?}");
+    assert!(waiting.iter().any(|l| l.contains("NOT ANSWERED")), "a call no boundary reached is said so: {waiting:?}");
+    // The carrier passes a boundary and answers what waits there. (Another
+    // carrier in this process may take the call first; it is answered at a
+    // boundary all the same.)
+    live::enter("observe-test: a law");
+    for w in live::wanted() {
+        let lines = match w == line {
+            true => vec!["#0 thought · ℓ 4 · hours 5 · m 1".to_string()],
+            false => Vec::new(),
+        };
+        live::answer(&w, lines);
+    }
+    let out = live::read(line, asked);
+    assert!(out.iter().any(|l| l.starts_with(line) && l.contains("answered at boundary")), "answered fresh: {out:?}");
+    let lines: Vec<String> = (0..50).map(|i| format!("line {i}")).collect();
+    let all = live::encode_lines(&lines, usize::MAX).expect("the lines write");
+    assert_eq!(live::decode_lines(&all), Some(lines.clone()), "the lines read back whole");
+    let cut = live::decode_lines(&live::encode_lines(&lines, 200).expect("the lines write")).expect("they read");
+    assert!(cut.len() < lines.len(), "a frame of 200 bytes holds fewer");
+    assert!(matches!(cut.as_slice(), [.., l] if l.contains("lines past the frame") && l.contains("from")), "and says what it left: {cut:?}");
+}

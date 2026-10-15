@@ -1,0 +1,279 @@
+// MU-CLIENT §4.4, §4.12, §7.2 — THE MIND ANSWERS ITS OBSERVER (the operator
+// 2026-10-15: "build the observer into the mind so we can have an API to read
+// the live state and call functions : we can remove this later"): the calls
+// `observe::live` leaves for the winding carrier, answered out of what the
+// mind holds at the law boundary the carrier passes.
+//
+//! Every answer READS: the carrier's standing, the thoughts and their
+//! winding (period ℓ, hours seen, winding m, returns, the next hour), the
+//! field's orbits and tubes, what is held for the return, the scenes and
+//! solves waiting, the questions open. None moves the mind, and nothing in
+//! cognition reads an answer back.
+
+use crate::client::sdk::*;
+use crate::observe::live;
+
+/// The calls the mind answers, as `calls` lists them.
+const CALLS: [(&str, &str); 8] = [
+    ("now", "where the winding carrier stands, the reserve, the court's pace, what the mind holds"),
+    ("thoughts [from N]", "every held thought by ordinal: its scene, ℓ, hours, winding m, returns, next hour, twist, slips, vortex, escrow"),
+    ("thought N", "one thought by ordinal, whole"),
+    ("field", "the field's orbits and tubes: open and moved per lane, the reservoir, returns not yet taken"),
+    ("held", "what waits for the mind's next return"),
+    ("scenes", "scenes waiting on comprehension, unread solves, unheard words, owed forms"),
+    ("questions", "the questions this mind has open"),
+    ("calls", "this list"),
+];
+
+fn hex(b: &[u8]) -> String {
+    b.iter().map(|x| format!("{x:02x}")).collect()
+}
+
+/// The last `n` bytes of a coordinate, as hex: where coordinates of one
+/// stratum differ.
+fn tail(b: &[u8], n: usize) -> String {
+    match b.len().checked_sub(n) {
+        Some(at) => hex(&b[at..]),
+        None => hex(b),
+    }
+}
+
+fn lanes(l: &[u64; 4]) -> String {
+    format!("{}:{}:{}:{}", l[0], l[1], l[2], l[3])
+}
+
+impl Entity {
+    /// THE WINDING CARRIER ENTERS `law`, and the calls waiting are answered
+    /// at this boundary.
+    pub(crate) fn at_law(&mut self, law: &'static str) {
+        live::enter(law);
+        for line in live::wanted() {
+            let lines = self.answer_call(&line);
+            live::answer(&line, lines);
+        }
+    }
+
+    /// THE WINDING CARRIER BEGINS A STROKE.
+    pub(crate) fn stroke_begins(&mut self) {
+        live::stroke_began(self.own_k(), self.hypha.tuniversal().map(|p| p.h));
+        self.at_law("stroke");
+    }
+
+    fn answer_call(&mut self, line: &str) -> Vec<String> {
+        let words: Vec<&str> = line.split_whitespace().collect();
+        match words.as_slice() {
+            [] | ["now"] => self.read_now(),
+            ["thoughts"] => self.read_thoughts(0),
+            ["thoughts", "from", n] => match n.parse::<usize>() {
+                Ok(n) => self.read_thoughts(n),
+                Err(e) => vec![format!("from {n}: {e}")],
+            },
+            ["thought", n] => match n.parse::<u16>() {
+                Ok(n) => self.read_thought(n),
+                Err(e) => vec![format!("thought {n}: {e}")],
+            },
+            ["field"] => self.read_field(),
+            ["held"] => self.read_held(),
+            ["scenes"] => self.read_scenes(),
+            ["questions"] => self.read_questions(),
+            ["calls"] => CALLS.iter().map(|(c, what)| format!("{c:<18} {what}")).collect(),
+            _ => {
+                let mut out = vec![format!("no call `{line}`; the calls:")];
+                out.extend(CALLS.iter().map(|(c, what)| format!("{c:<18} {what}")));
+                out
+            }
+        }
+    }
+
+    fn read_now(&self) -> Vec<String> {
+        let c = &self.contemplation;
+        let grounded = c.bubbles.scoped().filter(|(_, b)| b.ground.is_some()).count();
+        let percepts = c.bubbles.scoped().filter(|(_, b)| b.percept).count();
+        let pace = &self.board.court;
+        let short = self.physics().reserve_shortfall([true; 4]);
+        vec![
+            format!(
+                "mind K {} · TUniversal {} · courts seen {} · answers landed and not taken {}",
+                self.own_k(),
+                match self.hypha.tuniversal() {
+                    Some(p) => format!("h {}", p.h),
+                    None => "no height carried".to_string(),
+                },
+                self.hypha.courts(),
+                self.hypha.in_flight()
+            ),
+            format!(
+                "reserve {} · short {} · court pressure {} · dwell left {}",
+                lanes(&self.physics().reserve.lanes()),
+                lanes(&short),
+                lanes(&pace.pressure()),
+                lanes(&pace.dwell_remaining)
+            ),
+            format!(
+                "asks in flight: quote {} · task {} · sync {} · syllabus {} · solves {} · a quote landed {} · a task landed {}",
+                pace.quoting,
+                pace.pulling,
+                pace.syncing,
+                pace.schooling,
+                pace.solving.len(),
+                pace.quoted.is_some(),
+                pace.task.is_some()
+            ),
+            format!(
+                "thoughts held {} (grounded {grounded}, perceptions {percepts}) · pair grounds {} · came round, not yet transcribed {} · first closes {} · later returns {}",
+                c.bubbles.len(),
+                c.grounds.len(),
+                c.closed.len(),
+                c.closed_thoughts,
+                c.thought_returns
+            ),
+            format!(
+                "held for the return {} · scenes waiting {} · unheard words {} · unread solves {} · owed {} · contracted {} · questions {}",
+                self.at_return.len(),
+                self.comprehending.len(),
+                self.unheard.len(),
+                self.unread_solves.len(),
+                self.owed.len(),
+                self.contracted.len(),
+                self.questions.len()
+            ),
+        ]
+    }
+
+    /// One thought as one line: its ordinal, scene, layer, and — where it
+    /// holds a ground — its winding.
+    fn thought_line(&self, key: &[u8], b: &crate::transducer::bubble::Bubble) -> String {
+        let ordinal = match self.contemplation.ordinals.get(key) {
+            Some(o) => format!("#{o}"),
+            None => "#?".to_string(),
+        };
+        let scene = match b.family.is_empty() {
+            true => "no scene".to_string(),
+            false => format!("scene {}", tail(&b.family, 4)),
+        };
+        let layer = match b.percept {
+            true => "perception",
+            false => "thought",
+        };
+        let winding = match &b.ground {
+            Some(g) => {
+                let period = g.ground.period;
+                match (g.hours.checked_rem(period), g.hours.checked_div(period)) {
+                    (Some(m), Some(r)) => format!(
+                        "class {} · ℓ {period} · hours {} · m {m} · returns {r} · next hour {} · {}",
+                        tail(g.ground.class.as_bytes(), 4),
+                        g.hours,
+                        (m + 1) % period,
+                        match &g.twist {
+                            Some(_) => "twisted (precessing)",
+                            None => "untwisted",
+                        }
+                    ),
+                    _ => format!("class {} · ℓ 0: no winding reads", tail(g.ground.class.as_bytes(), 4)),
+                }
+            }
+            None => "no ground: no winding".to_string(),
+        };
+        format!(
+            "{ordinal} {layer} · {scene} · {winding} · slips {} · vortex {} · candidates {} · escrow {} · paid through {}",
+            b.slips.len(),
+            b.vortex.scoped().map(|(_, v)| v.len()).sum::<usize>(),
+            b.candidates.scoped().map(|(_, v)| v.len()).sum::<usize>(),
+            lanes(&b.escrow),
+            match b.until {
+                Some(u) => format!("h {u}"),
+                None => "unmeasured".to_string(),
+            }
+        )
+    }
+
+    fn read_thoughts(&self, from: usize) -> Vec<String> {
+        let all: Vec<(Vec<u8>, &crate::transducer::bubble::Bubble)> = self.contemplation.bubbles.scoped().collect();
+        let mut out = vec![format!("{} held; from {from}", all.len())];
+        out.extend(all.iter().skip(from).map(|(k, b)| self.thought_line(k, b)));
+        out
+    }
+
+    fn read_thought(&self, ordinal: u16) -> Vec<String> {
+        let Some(Some(addr)) = self.contemplation.addresses.get(usize::from(ordinal)) else {
+            return vec![format!("#{ordinal}: no thought stands at this ordinal")];
+        };
+        let Some(b) = self.contemplation.bubbles.get(addr) else {
+            return vec![format!("#{ordinal}: its address stands in no bubble")];
+        };
+        let mut out = vec![self.thought_line(addr, b)];
+        if let Some(g) = &b.ground {
+            out.push(format!("  ground on chart {} · bodies {}", tail(&g.chart, 8), g.ground.bodies.len()));
+        }
+        if let Some(f) = &b.form {
+            out.push(format!("  form: vertices {} · faces {} · orbits {} · closed {}", f.vertices.len(), f.faces.len(), f.orbits.len(), f.is_closed()));
+        }
+        for (chart, _) in &b.slips {
+            out.push(format!("  slip on chart {}", tail(chart, 8)));
+        }
+        out.push(format!(
+            "  glues {} · glued by {} · torsion filed {} · certificates {} · remainders {} · bundle pairs {}",
+            b.glues.len(),
+            b.glued_by.len(),
+            b.torsion.len(),
+            b.certificates.len(),
+            b.remainders.len(),
+            b.bundle.as_ref().map_or(0, Vec::len)
+        ));
+        out
+    }
+
+    fn read_field(&self) -> Vec<String> {
+        let read = crate::transducer::mind::with_field(|f| {
+            let (open, moved) = f.orbits.totals();
+            vec![
+                format!("orbits standing {} · tubes {} · returns not yet taken {}", f.orbits.len(), f.tubes.len(), f.orbits.pending_returns()),
+                format!("open per lane {} · moved per lane {} · reservoir {}", lanes(&open), lanes(&moved), lanes(&f.orbits.reserved())),
+            ]
+        });
+        match read {
+            Ok(lines) => lines,
+            Err(_) => vec!["no field stands in the winding carrier's slots at this boundary".to_string()],
+        }
+    }
+
+    fn read_held(&self) -> Vec<String> {
+        let mut out = vec![format!(
+            "{} sayings held for the mind's next return (one release for all of them, at any return)",
+            self.at_return.len()
+        )];
+        out.extend(self.at_return_by.scoped().map(|(at, i)| {
+            let kind = match at.as_slice() {
+                [1, ..] => "SAY to peers",
+                _ => "speech or solve",
+            };
+            format!("  [{i}] {kind} · {}", tail(&at, 8))
+        }));
+        out
+    }
+
+    fn read_scenes(&self) -> Vec<String> {
+        let mut out = vec![format!("scenes waiting on comprehension {}", self.comprehending.len())];
+        out.extend(self.comprehending.scoped().map(|(id, (t, _))| {
+            format!(
+                "  scene {} · pairs {} · tests {} · thoughts on it {}",
+                tail(&id, 4),
+                t.train.len(),
+                t.tests.len(),
+                self.contemplation.holds_family(&id)
+            )
+        }));
+        out.push(format!("unread solves {}", self.unread_solves.len()));
+        out.extend(self.unread_solves.scoped().map(|(id, _)| format!("  solve on {}", tail(&id, 4))));
+        out.push(format!("unheard words {}", self.unheard.len()));
+        out.extend(self.unheard.scoped().map(|(a, (_, fam))| format!("  word {} under scene {}", tail(&a, 4), tail(fam, 4))));
+        out.push(format!("owed {} · contracted {}", self.owed.len(), self.contracted.len()));
+        out
+    }
+
+    fn read_questions(&self) -> Vec<String> {
+        let mut out = vec![format!("questions open {}", self.questions.len())];
+        out.extend(self.questions.scoped().map(|(k, q)| format!("  {} · {}", tail(&k, 6), q.observed())));
+        out
+    }
+}

@@ -197,11 +197,15 @@ impl Entity {
             self.physics_mut().bump(&mag);
             StrokeOutcome::add(&mut outcome.fed, &mag);
         }
+        self.at_law("a task: its colour word");
         self.speak_colour(&id, &train);
         let mut colour = self.stroke();
+        self.at_law("a task: its colour theorem");
         self.speak_colour_theorem(&mut colour);
+        self.at_law("a task: its family extracted");
         let mut t = self.extract_family(&id, &train);
         if !t.frames.is_empty() {
+            self.at_law("a task: its hours held");
             for (a, b) in &train {
                 if stop.load(std::sync::atomic::Ordering::SeqCst) {
                     break;
@@ -215,15 +219,18 @@ impl Entity {
             }
         }
         let Some(rule) = t.rule.take() else {
+            self.at_law("a task: no rule, held for comprehension");
             self.withhold_unextracted(&train, &id);
             self.await_comprehension(crate::anastome::dialogue::TaskEnvelope { id, train, tests });
             return;
         };
+        self.at_law("a task: its rule presented and spoken");
         self.ask_presentation(&rule.form);
         if let Some(uttered) = self.speak_form(&rule, &train, &t.frames, &id, &mut t.budget) {
             StrokeOutcome::add(&mut outcome.uttered, &uttered);
         }
         let envelope = crate::anastome::dialogue::TaskEnvelope { id, train, tests };
+        self.at_law("a task: comprehended");
         if !self.comprehend(&envelope, rule, &mut t.budget) {
             self.await_comprehension(envelope);
         }
