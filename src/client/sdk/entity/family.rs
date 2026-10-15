@@ -28,6 +28,55 @@ pub(crate) fn family_magnitude(train: &Family) -> [u64; 4] {
     mag
 }
 
+/// WHAT ONE PERSPECTIVE DISAGREED ABOUT, read whole: every kind present (in
+/// [`crate::observe::DISAGREE`]'s order), the grid the rule said, and the
+/// demands its form spoke nothing for, by kind.
+pub(crate) struct Disagreed {
+    pub(crate) kinds: Vec<usize>,
+    pub(crate) said: Option<crate::arc::Grid>,
+    pub(crate) demanded: [u64; 6],
+}
+
+/// 78.167 A1 — WHY A SPEECH PUT CELLS IN THE WRONG PLACES, cell by cell,
+/// each cause present once, in [`crate::observe::DISAGREE`]'s slots: a cell
+/// the truth holds and the speech left ground is ERASED (4) where an input
+/// body no vertex reached stood there, DISPLACED (6) where the input held a
+/// body the speech did reach, UNCREATED (5) where the input was ground; a
+/// cell the speech painted and the truth holds as ground is UNCLEARED (7).
+/// Empty where every cell agrees on occupancy (the hues alone differ).
+pub(crate) fn occupancy_causes(said: &crate::arc::Grid, x: &crate::arc::Grid, y: &crate::arc::Grid, unreached: &[usize]) -> Vec<usize> {
+    let bodies = crate::transducer::family::perceive(x);
+    let mut erased: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    for &i in unreached {
+        let Some(b) = bodies.get(i) else { continue };
+        for l in &b.compartments {
+            if let Some((r, c)) = crate::transducer::family::on_grid(&l.site) {
+                erased.insert(crate::transducer::family::site_key(r, c), ());
+            }
+        }
+    }
+    let mut kinds = [false; 4];
+    for (r, (srow, trow)) in said.iter().zip(y).enumerate() {
+        for (c, (s, t)) in srow.iter().zip(trow).enumerate() {
+            let (Ok(ri), Ok(ci)) = (i64::try_from(r), i64::try_from(c)) else { continue };
+            match (*s == 0, *t == 0) {
+                (true, false) => {
+                    let input = x.get(r).and_then(|row| row.get(c)).is_some_and(|&h| h != 0);
+                    let at = match (erased.contains(&crate::transducer::family::site_key(ri, ci)), input) {
+                        (true, _) => 0,
+                        (false, true) => 2,
+                        (false, false) => 1,
+                    };
+                    kinds[at] = true;
+                }
+                (false, true) => kinds[3] = true,
+                _ => {}
+            }
+        }
+    }
+    [4, 5, 6, 7].into_iter().zip(kinds).filter(|(_, present)| *present).map(|(k, _)| k).collect()
+}
+
 /// WHAT A RULE'S PERSPECTIVES SAID OF IT (MU-CLIENT §4.4): each training pair
 /// a perspective, the rule its siblings derive asked to close it — and, where
 /// one does not, the INVERSION: the rule that pair alone derives asked to
@@ -221,9 +270,18 @@ impl Entity {
                 }
                 continue;
             };
-            if let Err((kind, said)) = self.disagreement(&rule, x, y) {
+            if let Err(Disagreed { kinds, said, demanded }) = self.disagreement(&rule, x, y) {
                 failed.push(k);
-                crate::observe::note_mind(|m| m.disagree[kind] += 1);
+                crate::observe::note_mind(|m| {
+                    for kind in &kinds {
+                        if let Some(n) = m.disagree.get_mut(*kind) {
+                            *n += 1;
+                        }
+                    }
+                    for (n, d) in m.demanded_kinds.iter_mut().zip(demanded) {
+                        *n += d;
+                    }
+                });
                 let from = match &said {
                     Some(g) => g,
                     None => x,
@@ -255,26 +313,31 @@ impl Entity {
     }
 
     /// WHAT ONE PERSPECTIVE DISAGREED ABOUT: the rule spoken on its input
-    /// against its output. `Ok` where it closes; otherwise the kind, in
+    /// against its output. `Ok` where it closes; otherwise the kinds, in
     /// [`crate::observe::DISAGREE`]'s order — it spoke nothing, spoke with a
-    /// remainder, laid down another frame, created or erased cells, or
-    /// coloured the right cells otherwise — with the grid it said, where it
-    /// said one.
-    fn disagreement(&self, rule: &SentenceRule, x: &crate::arc::Grid, y: &crate::arc::Grid) -> Result<(), (usize, Option<crate::arc::Grid>)> {
-        let Some(speech) = crate::transducer::family::speak::speak_rule(rule, x, &self.epigenome) else { return Err((1, None)) };
+    /// remainder, laid down another frame, put cells in the wrong places (by
+    /// cause, 78.167 A1), or coloured the right cells otherwise — with the
+    /// grid it said, where it said one, and the demands it spoke nothing for.
+    fn disagreement(&self, rule: &SentenceRule, x: &crate::arc::Grid, y: &crate::arc::Grid) -> Result<(), Disagreed> {
+        let refused = |kind: usize, said: Option<crate::arc::Grid>, demanded: [u64; 6]| Disagreed { kinds: vec![kind], said, demanded };
+        let Some(speech) = crate::transducer::family::speak::speak_rule(rule, x, &self.epigenome) else { return Err(refused(1, None, [0; 6])) };
         let said = speech.grid();
         if !speech.remainder.is_empty() {
-            return Err((2, said));
+            return Err(refused(2, said, speech.demanded));
         }
-        let Some(g) = said else { return Err((1, None)) };
+        let Some(g) = said else { return Err(refused(1, None, speech.demanded)) };
         if crate::transducer::family::speak::residual_of(Some(&g), y).is_empty() {
             return Ok(());
         }
         if g.len() != y.len() || g.iter().zip(y).any(|(a, b)| a.len() != b.len()) {
-            return Err((3, Some(g)));
+            return Err(refused(3, Some(g), speech.demanded));
         }
-        let occupancy = g.iter().flatten().zip(y.iter().flatten()).any(|(a, b)| (*a == 0) != (*b == 0));
-        Err((if occupancy { 4 } else { 5 }, Some(g)))
+        let kinds = occupancy_causes(&g, x, y, &speech.unreached);
+        let kinds = match kinds.is_empty() {
+            true => vec![8],
+            false => kinds,
+        };
+        Err(Disagreed { kinds, said: Some(g), demanded: speech.demanded })
     }
 
     /// A PERSPECTIVE THE SIBLINGS DID NOT COVER, LIFTED INTO THE SENSORIUM:

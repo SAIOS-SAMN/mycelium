@@ -254,6 +254,8 @@ type Cited = (
     Vec<Painted>,
     Vec<crate::transducer::address::Address>,
     Vec<crate::transducer::address::Address>,
+    Vec<usize>,
+    [u64; 6],
 );
 
 impl Scene {
@@ -303,6 +305,11 @@ fn speak_on_scene(
     let mut unresolved: Vec<crate::transducer::address::Address> = Vec::new();
     let mut cycled: Vec<crate::transducer::address::Address> = Vec::new();
     let mut unfolded = false;
+    // 78.167 A2 — WHAT THE SPEECH REACHED, so what it did not is named: each
+    // scene body a vertex (or a cited form) spoke, and the demand vertices it
+    // could speak nothing for, by kind.
+    let mut reached = vec![false; bodies.len()];
+    let mut demanded = [0u64; 6];
     for (vi, v) in f.vertices.entries() {
         match v {
             Vertex::Frame => {}
@@ -362,6 +369,7 @@ fn speak_on_scene(
                         let Ok(i) = usize::try_from(u64::from_le_bytes(raw)) else { continue };
                         if let Some(body) = bodies.get(i) {
                             emit_carried(body, &versor, &member.gauge, fy, &mut painted, &mut remainder);
+                            reached[i] = true;
                         }
                     }
                 }
@@ -398,11 +406,20 @@ fn speak_on_scene(
                     // 578 times onto the same grid; what comes back is the
                     // same painted set every time, because nothing in the
                     // citation varies.
-                    if let Some((p, r, u, c)) = scene.spoken.borrow().get(&key) {
+                    if let Some((p, r, u, c, left, d)) = scene.spoken.borrow().get(&key) {
                         painted.extend_from_slice(p);
                         remainder.extend_from_slice(r);
                         unresolved.extend_from_slice(u);
                         cycled.extend_from_slice(c);
+                        // A body the cited form reached is reached by this one.
+                        for (i, hit) in reached.iter_mut().enumerate() {
+                            if !left.contains(&i) {
+                                *hit = true;
+                            }
+                        }
+                        for (n, k) in demanded.iter_mut().zip(d) {
+                            *n += k;
+                        }
                         continue;
                     }
                     // 78.153 — A CITATION ALREADY BEING SPOKEN is a cycle of
@@ -432,8 +449,23 @@ fn speak_on_scene(
                     let sp = sp?;
                     scene.spoken.borrow_mut().insert(
                         &key,
-                        (sp.painted.clone(), sp.remainder.clone(), sp.unresolved.clone(), sp.cycled.clone()),
+                        (
+                            sp.painted.clone(),
+                            sp.remainder.clone(),
+                            sp.unresolved.clone(),
+                            sp.cycled.clone(),
+                            sp.unreached.clone(),
+                            sp.demanded,
+                        ),
                     );
+                    for (i, hit) in reached.iter_mut().enumerate() {
+                        if !sp.unreached.contains(&i) {
+                            *hit = true;
+                        }
+                    }
+                    for (n, k) in demanded.iter_mut().zip(sp.demanded) {
+                        *n += k;
+                    }
                     painted.extend(sp.painted);
                     remainder.extend(sp.remainder);
                     unresolved.extend(sp.unresolved);
@@ -491,6 +523,7 @@ fn speak_on_scene(
                         let Ok(i) = usize::try_from(u64::from_le_bytes(raw)) else { continue };
                         if let Some(body) = bodies.get(i) {
                             emit_carried(body, &versor, &member.gauge, fy, &mut painted, &mut remainder);
+                            reached[i] = true;
                         }
                     }
                 }
@@ -504,8 +537,14 @@ fn speak_on_scene(
                 unfolded = true;
             }
             Vertex::Unfolded { .. } => {}
-            // 50.5: a demand speaks nothing; its bodies are the remainder.
-            Vertex::Demand { .. } => {}
+            // 50.5: a demand speaks nothing — 78.167 A2: and the speech says
+            // which, by kind, so a wrong grid is read for what it could not
+            // say.
+            Vertex::Demand { kind, .. } => {
+                if let Some(n) = demanded.get_mut(usize::from(kind.kind_byte())) {
+                    *n += 1;
+                }
+            }
         }
     }
     if unfolded {
@@ -564,6 +603,13 @@ fn speak_on_scene(
     unresolved.dedup();
     cycled.sort_unstable();
     cycled.dedup();
+    // A body the speech did not reach is named, never silent (rule 11). An
+    // unfolded form fills the frame, and clauses paint a canvas that opens as
+    // the input, so under either every body is spoken for.
+    let unreached: Vec<usize> = match unfolded || !f.clauses.is_empty() {
+        true => Vec::new(),
+        false => reached.iter().enumerate().filter(|(_, hit)| !**hit).map(|(i, _)| i).collect(),
+    };
     Some(Speech {
         frame: fy,
         painted,
@@ -571,6 +617,8 @@ fn speak_on_scene(
         unspoken,
         unresolved,
         cycled,
+        unreached,
+        demanded,
     })
 }
 
@@ -590,6 +638,12 @@ pub struct Speech {
     /// 78.153 — the cited forms this speech reached while they were still
     /// being spoken: a cycle of citations, which no speech completes.
     pub cycled: Vec<crate::transducer::address::Address>,
+    /// 78.167 A2 — the scene's bodies, by index, no vertex or cited form
+    /// reached: absent from the speech, and named so (rule 11).
+    pub unreached: Vec<usize>,
+    /// 78.167 A2 — the demand vertices the form carries that spoke nothing
+    /// on this scene, by `Demand::kind_byte`.
+    pub demanded: [u64; 6],
 }
 
 impl Speech {

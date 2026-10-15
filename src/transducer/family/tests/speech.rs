@@ -331,6 +331,8 @@ fn a_speech_whose_site_is_outside_its_frame_refuses_the_grid() {
         painted: vec![(2, 2, 5)],
         remainder: Vec::new(),
         unspoken: Vec::new(),
+        unreached: Vec::new(),
+        demanded: [0; 6],
     };
     assert_eq!(
         fits.grid(),

@@ -59,9 +59,22 @@ pub const PERSPECTIVE: [&str; 8] = ["tasks", "known", "unknown", "one perspectiv
 
 /// WHAT A HELD-OUT PERSPECTIVE DISAGREED ABOUT (MU-CLIENT §4.4): its
 /// siblings derived no rule; the rule spoke nothing on it; spoke with a
-/// remainder; laid down another frame; created or erased cells; or coloured
-/// the right cells otherwise — in the order the counts are kept.
-pub const DISAGREE: [&str; 6] = ["no rule", "unspoken", "remainder", "frame", "occupancy", "hue"];
+/// remainder; laid down another frame; or coloured the right cells
+/// otherwise — and, where it put cells in the wrong places (78.167 A1, the
+/// occupancy split by cause, each cause present counted): ERASED a body the
+/// truth keeps that no vertex reached; did not CREATE cells the truth has
+/// and the input has not; DISPLACED — left ground where the truth keeps a
+/// body the speech did reach; did not CLEAR cells the truth has as ground —
+/// in the order the counts are kept.
+pub const DISAGREE: [&str; 9] = ["no rule", "unspoken", "remainder", "frame", "erased", "uncreated", "displaced", "uncleared", "hue"];
+
+/// 78.167 A2 — THE DEMANDS A FAILED PERSPECTIVE'S RULE SPOKE NOTHING FOR, by
+/// kind (`Demand::kind_byte`'s order).
+pub const DEMANDED: [&str; 6] = ["rotor prime", "standing", "source", "creation", "deformation", "dislocation"];
+
+/// 78.167 A3 — WHERE A BOOST MODE COMES FROM: its word scales (ρ ≠ 1, a
+/// change of size), transverses (the special conformal half), or neither.
+pub const BOOSTS: [&str; 3] = ["scaled", "transverse", "neither"];
 
 /// ITS QUESTIONS (MU-CLIENT §5.3): words it did not know and asked of their
 /// residue; questions of others it answered by factoring; rings whose meaning
@@ -173,7 +186,12 @@ pub struct Mind {
     /// Its tasks' perspectives, by [`PERSPECTIVE`].
     pub perspective: [u64; 8],
     /// What its failed perspectives disagreed about, by [`DISAGREE`].
-    pub disagree: [u64; 6],
+    pub disagree: [u64; 9],
+    /// 78.167 A2 — what their rules' demands spoke nothing for, by
+    /// [`DEMANDED`].
+    pub demanded_kinds: [u64; 6],
+    /// 78.167 A3 — the boost modes of its words, by [`BOOSTS`].
+    pub boosts: [u64; 3],
     /// Its questions, by [`ASKS`].
     pub asks: [u64; 4],
     /// Heard rings by how they were understood, by [`SEATS`]; mutual
@@ -240,7 +258,9 @@ impl Default for Mind {
             flex: [0; 9],
             bodies: [0; 3],
             perspective: [0; 8],
-            disagree: [0; 6],
+            disagree: [0; 9],
+            demanded_kinds: [0; 6],
+            boosts: [0; 3],
             asks: [0; 4],
             seats: [0; 5],
             mutual: [0; 2],
@@ -304,6 +324,8 @@ impl Mind {
             .chain(self.laws)
             .chain(self.repeats)
             .chain([self.composed])
+            .chain(self.demanded_kinds)
+            .chain(self.boosts)
         {
             put_u64(out, v);
         }
@@ -333,7 +355,7 @@ impl Mind {
         for v in &mut perspective {
             *v = take_u64(b, p)?;
         }
-        let mut disagree = [0u64; 6];
+        let mut disagree = [0u64; 9];
         for v in &mut disagree {
             *v = take_u64(b, p)?;
         }
@@ -352,6 +374,11 @@ impl Mind {
         let laws = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let repeats = [take_u64(b, p)?, take_u64(b, p)?];
         let composed = take_u64(b, p)?;
+        let mut demanded_kinds = [0u64; 6];
+        for v in &mut demanded_kinds {
+            *v = take_u64(b, p)?;
+        }
+        let boosts = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let n =usize::try_from(u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?)).ok()?;
         *p += 4;
         // Each lock is three counts.
@@ -374,6 +401,8 @@ impl Mind {
             bodies,
             perspective,
             disagree,
+            demanded_kinds,
+            boosts,
             asks,
             seats,
             mutual,
@@ -419,8 +448,9 @@ impl Mind {
                 PERSPECTIVE.iter().zip(&self.perspective).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
             ),
             format!(
-                "  disagreed {} · questions {} · answers {} · unanswered {} (awaiting factors {}) · {}",
+                "  disagreed {} · demands unspoken {} · questions {} · answers {} · unanswered {} (awaiting factors {}) · {}",
                 DISAGREE.iter().zip(&self.disagree).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
+                DEMANDED.iter().zip(&self.demanded_kinds).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 ASKS.iter().zip(&self.asks).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 ANSWERS.iter().zip(&self.answers).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 self.unanswered,
@@ -428,11 +458,12 @@ impl Mind {
                 REPEATS.iter().zip(&self.repeats).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" · ")
             ),
             format!(
-                "  rings heard {} · mutual {} · read from {} · words' laws {} · lexicon {} (grown {} by speech) · vocabulary {} · remembers hearing {}",
+                "  rings heard {} · mutual {} · read from {} · words' laws {} (boosts {}) · lexicon {} (grown {} by speech) · vocabulary {} · remembers hearing {}",
                 SEATS.iter().zip(&self.seats).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 MUTUAL.iter().zip(&self.mutual).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 VANTAGES.iter().zip(&self.vantages).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 LAWS.iter().zip(&self.laws).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
+                BOOSTS.iter().zip(&self.boosts).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 self.lexicon,
                 self.grown,
                 self.vocabulary,

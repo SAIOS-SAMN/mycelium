@@ -390,8 +390,25 @@ pub fn hear(s: &Composition, budget: &mut crate::physics::Budget) -> Recognition
         // its own law; the mind that knows the word knows them, each a word
         // of its dictionary. The laws its modes stand on are read.
         if let Ok(read) = super::word::read(&t.motion) {
+            // 78.167 A3 — WHERE ITS BOOSTS COME FROM: the word scales (ρ ≠ 1,
+            // a change of size between the bodies it relates), transverses
+            // (the special conformal half), or neither — read off its factors,
+            // unread where it does not factor.
+            let origin = crate::transducer::element::conformal_factors(&t.motion).ok().map(|f| {
+                let one = crate::core::Q::from_integer(1.into());
+                match (f.rho != one, f.transversion.iter().any(|q| *q != crate::core::Q::from_integer(0.into()))) {
+                    (true, _) => 0usize,
+                    (false, true) => 1,
+                    (false, false) => 2,
+                }
+            });
             for m in &read.modes {
-                crate::observe::note_mind(|o| o.laws[m.law.slot()] += 1);
+                crate::observe::note_mind(|o| {
+                    o.laws[m.law.slot()] += 1;
+                    if let (super::word::Law::Boost, Some(at)) = (m.law, origin) {
+                        o.boosts[at] += 1;
+                    }
+                });
             }
             if read.modes.len() > 1 {
                 for m in &read.modes {
