@@ -70,13 +70,16 @@ pub const FETCH: [&str; 19] = [
 /// 78.102, 47.3 — THE ROAD A PROVISIONAL WORD TAKES TO THE GENOME, where it
 /// stops: a letter docketed from a sentence heard (heard again, the voice
 /// converges on the same address as a party), every provisional word offered to
-/// the witness hyphae covering its chart, and what each witness answered —
+/// the witness hyphae covering its chart — or emitted with no hypha covering
+/// it, or asked of one that never answered — and what each witness answered —
 /// its re-derivation reached and the word installed, reached inexactly, or
 /// still awaiting a second vantage; refused; unmeasured.
-pub const PROVISIONAL: [&str; 8] = [
+pub const PROVISIONAL: [&str; 10] = [
     "letters docketed",
     "letters heard again (converged as a party)",
     "offers sent to witnesses",
+    "offers with no eligible witness",
+    "offers a witness left unanswered",
     "witness reached: installed",
     "witness reached: inexact",
     "witness reached: awaiting a vantage",

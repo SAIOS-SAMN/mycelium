@@ -288,7 +288,9 @@ pub enum ServeAxis {
 /// The catch-up paths of [`Court::catchup`].
 pub const CATCHUP_PATHS: [&str; 2] = ["back-fill", "fold witness"];
 /// The outcomes of one catch-up page asked of the owning court.
-pub const CATCHUP_OUTCOMES: [&str; 5] = ["page", "unanswered", "deferred", "undecoded", "empty"];
+/// `held`: on the fold-witness path, a root this court had already co-signed,
+/// answered with the co-signature it holds and nothing fetched.
+pub const CATCHUP_OUTCOMES: [&str; 6] = ["page", "unanswered", "deferred", "undecoded", "empty", "held"];
 
 /// Where one catch-up page is counted.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -305,6 +307,7 @@ pub enum CatchupOutcome {
     Deferred = 2,
     Undecoded = 3,
     Empty = 4,
+    Held = 5,
 }
 
 /// THE AXES OF [`Court::folds`], in its writing's order.

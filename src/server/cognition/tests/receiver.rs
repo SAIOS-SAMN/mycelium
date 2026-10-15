@@ -24,8 +24,7 @@ fn a_spoken_sentence_is_bound_to_its_tasks_family_and_mints() {
     assert!(home.ruled_contains(&addr), "the stroke replays the sentence on its pair and rules it");
     let spoken = home.provisional.get(&addr).cloned().expect("provisional until a witness");
     let mut cover = crate::network::nerve::Cover::new();
-    let mut glue = peer.stroke();
-    assert!(matches!(peer.glue_fetched(spoken, [1; 32], [2; 32], &mut cover, &mut glue), Glue::Admitted));
+    assert!(matches!(fetched(&mut peer, &spoken, [1; 32], [2; 32], &mut cover), Glue::Admitted));
     let cover = home.genesis_cover().expect("measured");
     home.enroll([2; 32], cover);
     home.confirm_peer_holds(&peer.ruled_digests(), [2; 32]);

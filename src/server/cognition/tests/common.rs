@@ -131,3 +131,21 @@ rows.iter()
 pub fn budget() -> crate::physics::Budget {
     crate::physics::Physics::default().stroke_n(1 << 20)
 }
+
+/// 78.153 — A FETCHED WORD GLUED AS THE EXCHANGE GLUES IT: each fetch on one
+/// stroke of the court's own metabolism, its size the host's (`spend_unit`,
+/// read off the host's free memory); a replay that stroke could not finish
+/// waits as dialect and the next fetch resumes it where it stopped — so a
+/// fetch that rules nothing must have moved the replay, or the glue stalls
+/// and the claim fails. Answers the verdict the replay reached: what a claim
+/// about a glue's verdict asserts on, on any host.
+pub fn fetched(k: &mut Kernel, spoken: &Element, peer: [u8; 32], me: [u8; 32], cover: &mut crate::network::nerve::Cover) -> Glue {
+    loop {
+        let before = k.court_replay_progress(spoken);
+        let mut stroke = k.stroke();
+        if let Some(verdict) = k.glue_fetched_ruled(spoken.clone(), peer, me, cover, &mut stroke) {
+            return verdict;
+        }
+        assert_ne!(k.court_replay_progress(spoken), before, "an unread glue resumes where it stopped, or it stalls");
+    }
+}

@@ -155,23 +155,6 @@ assert!(
 );
 }
 
-/// 78.153 — A FETCHED WORD GLUED AS THE EXCHANGE GLUES IT: each fetch on one
-/// stroke of the court's own metabolism, its size the host's (`spend_unit`);
-/// a replay that stroke could not finish waits as dialect and the next fetch
-/// resumes it where it stopped — so a fetch that rules nothing must have
-/// moved the replay, or the glue stalls and the claim fails. Answers the
-/// verdict the replay reached.
-fn fetched(k: &mut Kernel, spoken: &Element, peer: [u8; 32], me: [u8; 32], cover: &mut crate::network::nerve::Cover) -> Glue {
-    loop {
-        let before = k.court_replay_progress(spoken);
-        let mut stroke = k.stroke();
-        if let Some(verdict) = k.glue_fetched_ruled(spoken.clone(), peer, me, cover, &mut stroke) {
-            return verdict;
-        }
-        assert_ne!(k.court_replay_progress(spoken), before, "an unread glue resumes where it stopped, or it stalls");
-    }
-}
-
 /// Adopt writes a field entry and a deflation so the stroke can rule
 /// a client-minted connection. Ruled listings do not starve later ones.
 #[test]
@@ -303,8 +286,7 @@ assert_eq!(home.basis_len(), 0);
 home.rule_all_provisionals();
 let spoken = home.provisional.scoped().next().unwrap().1.clone();
 let mut cover = crate::network::nerve::Cover::new();
-let mut glue = peer.stroke();
-assert!(matches!(peer.glue_fetched(spoken, [1; 32], [2; 32], &mut cover, &mut glue), Glue::Admitted));
+assert!(matches!(fetched(&mut peer, &spoken, [1; 32], [2; 32], &mut cover), Glue::Admitted));
 assert!(peer.basis_len() >= 1);
 let cover = home.genesis_cover().expect("measured");
 home.enroll([2; 32], cover); // 47.3: a witness with room
@@ -485,11 +467,7 @@ fn a_witness_glues_an_offer_at_the_homes_vantage() {
 
     let mut witness = Kernel::new();
     let mut cover = crate::network::nerve::Cover::new();
-    let mut glue = witness.stroke();
-    assert!(matches!(
-        witness.glue_fetched(spoken.clone(), home_vk, witness_vk, &mut cover, &mut glue),
-        Glue::Admitted
-    ));
+    assert!(matches!(fetched(&mut witness, &spoken, home_vk, witness_vk, &mut cover), Glue::Admitted));
     let cx = witness.complexes().get(&inv.key()).expect("the class has a complex");
     assert_eq!(
         cx.sections.get(home_vk.as_slice()).map(|s| s.addr.clone()),
@@ -506,8 +484,7 @@ fn a_witness_glues_an_offer_at_the_homes_vantage() {
     // vantage, and the simplex has one vertex where 13.9 needs two.
     let mut confused = Kernel::new();
     let mut cover = crate::network::nerve::Cover::new();
-    let mut glue = confused.stroke();
-    let _ = confused.glue_fetched(spoken, witness_vk, witness_vk, &mut cover, &mut glue);
+    let _ = fetched(&mut confused, &spoken, witness_vk, witness_vk, &mut cover);
     let cx = confused.complexes().get(&inv.key()).expect("the class has a complex");
     assert_eq!(
         cx.sections.get(witness_vk.as_slice()).map(|s| s.addr.clone()),
@@ -544,9 +521,8 @@ fn a_witness_that_rederived_nothing_answers_with_nothing() {
     let mut witness = Kernel::new();
     witness.bind_identity(witness_vk);
     let mut cover = crate::network::nerve::Cover::new();
-    let mut glue = witness.stroke();
     assert!(matches!(
-        witness.glue_fetched(spoken.clone(), home_vk, witness_vk, &mut cover, &mut glue),
+        fetched(&mut witness, &spoken, home_vk, witness_vk, &mut cover),
         Glue::Admitted
     ));
 
@@ -617,9 +593,8 @@ fn a_court_sections_what_it_ruled_itself_and_not_what_a_peer_sent() {
     let mut heard = Kernel::new();
     heard.bind_identity(me);
     let mut cover = crate::network::nerve::Cover::new();
-    let mut glue = heard.stroke();
     assert!(matches!(
-        heard.glue_fetched(spoken.clone(), [0x0b; 32], me, &mut cover, &mut glue),
+        fetched(&mut heard, &spoken, [0x0b; 32], me, &mut cover),
         Glue::Admitted
     ));
     assert!(

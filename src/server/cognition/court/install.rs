@@ -107,15 +107,10 @@ impl Kernel {
                     // MU-CLIENT §5.6 (S) — a sentence's voices take its
                     // GLUING: what its rings close beyond its words' own
                     // sections. A word's voices take what is left.
-                    // A site carries no clock: lane 𝒯, the ground the
-                    // closure's motions covered, is the sentence's whole and
-                    // its voices keep it (no word's section reads it).
                     let premium = match crate::transducer::sentence::from_element_form(&w).is_some_and(|f| !f.faces.is_empty()) {
                         true => {
-                            let mut glued = self.gluing_of(addr, &w, &crate::cognition::book::speech::words_of_sentence(&w, budget));
-                            let t = crate::transducer::sentence::presentation::LANE_T;
-                            glued[t] = pay[t];
-                            Some(glued)
+                            let words = crate::cognition::book::speech::words_of_sentence(&w, budget);
+                            Some(self.gluing_of(addr, &w, &words))
                         }
                         false => None,
                     };
@@ -238,12 +233,12 @@ impl Kernel {
         added
     }
 
-    /// 26 AS RULED 2026-09-10 — THE SHARE EACH CITED FORM TAKES OF THIS
-    /// INSTALL'S MINT. Both levels of citation are read, because they are
-    /// one mechanism (21 step 3): a `Glued` vertex citing a whole form,
-    /// and a word vertex's derivation citing a `Word` vertex inside one.
+    /// 26 AS RULED 2026-09-10 — THE SHARE EACH GLUED FORM TAKES OF THIS
+    /// INSTALL'S MINT: a `Glued` vertex citing a whole closed form. A word
+    /// vertex's derivation citing a generator earns ROOM, not coin (held
+    /// 2026-10-15): it is credited as a use and takes no share here.
     ///
-    /// The share is the CITED FORM'S OWN verified deflation on the
+    /// The share is the CITED FORM'S OWN local discharge on the
     /// citer's bound family — what that form closes, measured here on the
     /// family this sentence was spoken over, not a magnitude copied off
     /// its tape. A form whose verdict this court has not ruled takes
@@ -295,17 +290,14 @@ impl Kernel {
         for e in &env.nerve {
             take(&mut cited, &mut out, &e.target, &e.placement);
         }
-        // A derivation citation's placement is the citing vertex's own
-        // frame. Its carriage is `D(ρ)·T(t)` and carries no rotation (L14),
-        // and `apply_form` places by a WORD, so what is passed here is the
-        // identity: the cited form speaks in its own frame. Where the
-        // generator acts on a body the citer's family does not carry, that
-        // measures zero, and a zero share is no share (rule 11).
-        for cite in &env.derivations {
-            for (form_addr, _, _) in &cite.generators {
-                take(&mut cited, &mut out, form_addr, &crate::transducer::alphabet::Word::identity());
-            }
-        }
+        // 26 AS RULED 2026-09-10, held 2026-10-15 — A DERIVATION CITATION
+        // EARNS ROOM, NOT COIN: a generator cited inside a word's derivation
+        // contributes an action, and its discoverer's use is credited as
+        // standing (`note_form_citations`, `use_credit`), never a share of the
+        // citer's mint. Only a GLUED form — a closed form cited whole — takes
+        // a share, its own local section on the citer's family. The local
+        // measure (MU-CLIENT §5.6 W) reads the glued form and the taught
+        // words; it does not turn a derivation's use into coin.
         out
     }
 
@@ -337,7 +329,14 @@ impl Kernel {
         if cited.is_connection() && !cited.is_colour_word() {
             return crate::transducer::family::local::word_local(cited, family).pay;
         }
-        self.measured_replay_at(cited, family, placement)
+        // A CITED FORM'S USE IS ITS LOCAL DISCHARGE too (§5.6 W: "D2′'s base
+        // and use shares read it"): what it closes inside the citer at the
+        // citer's placement, its section, never the whole-pair closure a
+        // cited word inside a sentence rarely meets alone.
+        match crate::transducer::sentence::from_element_form(cited) {
+            Some(f) => crate::transducer::family::local::form_local(&f, family, self, placement).pay,
+            None => [0; 4],
+        }
     }
 
     pub(crate) fn note_form_citations(&mut self, addr: &[u8], w: &Element) {

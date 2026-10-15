@@ -60,7 +60,7 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         overflowed: 9,
         // The fold's round by outcome, each in its own slot.
         folds: [10, 11, 12, 13, 14, 15, 16, 17],
-        catchup: [[16, 17, 18, 19, 20], [21, 22, 23, 24, 25]],
+        catchup: [[16, 17, 18, 19, 20, 26], [21, 22, 23, 24, 25, 27]],
         // The serving side of a catch-up page, each axis in its own slot.
         serve: [26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45],
         // 78.152 — nothing final yet travels as nothing final.
@@ -269,7 +269,7 @@ fn the_acts_travel_whole() {
         colours: 37,
         colours_derived: 38,
         deferred: vec![crate::observe::Deferred { head: [1, 2, 3, 4, 5, 6, 7, 8], kind: 2, mag: [39, 40, 41, 42], short: [0, 43, 0, 0], tries: 44, learner: Some([9; 8]) }],
-        provisional: [50, 51, 52, 53, 54, 55, 56, 57],
+        provisional: [50, 51, 52, 53, 54, 55, 56, 57, 58, 59],
         pays: [71, 72, 73, 74, 75, 76, 77],
         pays_lanes: std::array::from_fn(|i| 80 + i as u64),
     };
@@ -341,6 +341,8 @@ fn every_counted_name_is_its_table_s() {
             "letters docketed",
             "letters heard again (converged as a party)",
             "offers sent to witnesses",
+            "offers with no eligible witness",
+            "offers a witness left unanswered",
             "witness reached: installed",
             "witness reached: inexact",
             "witness reached: awaiting a vantage",

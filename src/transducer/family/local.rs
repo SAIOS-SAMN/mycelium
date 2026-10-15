@@ -8,10 +8,10 @@
 //! right — its local section over the open set where it agrees with the pair
 //! (a sheaf's local section, never a whole-scene claim). Three readers share
 //! one measure:
-//! - [`word_local`] — a CONNECTION decompressed body by body: its versor
-//!   carries each body of the pair's before side, its hue map recolours it,
-//!   and the body is in the word's section where every site it lands on says
-//!   the pair's answer (W);
+//! - [`word_local`] — a CONNECTION decompressed onto the pair's whole before
+//!   side: its versor carries every painted site, its hue map recolours them,
+//!   its section is every site its speech changed, and the pair pays only
+//!   where nothing it changed is false (W);
 //! - [`form_local`] — a FORM spoken onto each pair (`apply_form_on`), its
 //!   section the sites it closed where it asserted nothing false (C, S);
 //! - [`measure_sites`] — the demand of the pair over a set of sites, priced
@@ -100,16 +100,19 @@ pub fn measure_sites(family: &[(Grid, Grid)], sites: &[Keyed<()>]) -> [u64; 4] {
     pay
 }
 
-/// W — A CONNECTION'S LOCAL DISCHARGE. The word decompressed by its own
-/// letters: its versor (`conformal_of`, the spelling at its carriage) carries
-/// every body of each pair's before side once (`carry_painted`, exact), its
-/// hue map (`sigma`) recolours what it carries. A body is in the word's
-/// section where the word MOVES or RECOLOURS it and every site its image
-/// lands on holds that hue in the pair's answer; its closed sites are the
-/// image sites the pair demanded and the vacated sites the answer left
-/// empty. A body the word carries off the grid, or onto a site the answer
-/// does not hold, is no part of its section. Empty for anything that is not
-/// a connection: a letter standing at no frame names no body (78.149(c)).
+/// W — A CONNECTION'S LOCAL DISCHARGE (MU-CLIENT §5.6 W, as the spec reads).
+/// The word decompressed by its own letters onto each pair's WHOLE before
+/// side: its versor (`conformal_of`, the spelling at its carriage) carries
+/// every painted site at once (`carry_painted`, exact) and its hue map
+/// (`sigma`) recolours what it carries — the speech is the before side moved
+/// whole. Its section on the pair is EVERY SITE ITS SPEECH CHANGED (painted
+/// where the before side held another hue, vacated where it held one). It
+/// pays on a pair only where it says nothing false there: every changed site
+/// holds, in the pair's answer, what the speech says — a site carried off
+/// the grid, or two sites carried onto one with two hues, is false, and the
+/// pair pays nothing. Never a choice of the bodies it happens to fit. Empty
+/// for anything that is not a connection: a letter standing at no frame names
+/// no body (78.149(c)).
 pub fn word_local(word: &Element, family: &[(Grid, Grid)]) -> Local {
     let mut out = Local { pay: [0; 4], sites: Vec::with_capacity(family.len()) };
     let versor = match (word.is_connection(), word.letters()) {
@@ -125,40 +128,74 @@ pub fn word_local(word: &Element, family: &[(Grid, Grid)]) -> Local {
         None => h,
     };
     for (x, y) in family {
-        let mut closed = Keyed::new();
-        for body in perceive(x) {
-            let painted: Vec<Painted> = body
-                .compartments
-                .iter()
-                .filter_map(|c| Some((c.site.axis(0)?, c.site.axis(1)?, c.hue)))
-                .collect();
-            let Some(image) = carry_painted(&v, &painted) else { continue };
-            let image: Vec<Painted> = image.into_iter().map(|(r, c, h)| (r, c, recolour(h))).collect();
-            let landed = occupy_keys(&image);
-            // The word does nothing to a body it leaves where and as it was.
-            let mut still = painted.clone();
-            still.sort_unstable();
-            if still == image {
-                continue;
-            }
-            if !image.iter().all(|&(r, c, h)| hue_at(y, r, c) == Some(h)) {
-                continue;
-            }
-            for &(r, c, h) in &image {
-                if hue_at(x, r, c) != Some(h) {
-                    closed.insert(site_key(r, c), ());
-                }
-            }
-            for &(r, c, _) in &painted {
-                if !landed.contains(&site_key(r, c)) && hue_at(y, r, c) == Some(0) {
-                    closed.insert(site_key(r, c), ());
-                }
-            }
-        }
-        out.sites.push(closed);
+        // A pair the word said something false on is no part of its section.
+        out.sites.push(match spoken_section(x, y, &v, &recolour) {
+            Some(closed) => closed,
+            None => Keyed::new(),
+        });
     }
     out.pay = measure_sites(family, &out.sites);
     out
+}
+
+/// ONE PAIR OF A WORD'S SPEECH: the before side's painted sites carried whole
+/// by `v` and recoloured, laid as the after side the word says; its changed
+/// sites, each required to hold in the answer what the speech says there.
+/// `Some(changed)` where nothing it says is false; `None` where a site is
+/// carried off the frame along `e₃`, two sites land on one with two hues, or
+/// a changed site's answer differs.
+fn spoken_section(x: &Grid, y: &Grid, v: &element::Versor, recolour: &dyn Fn(u8) -> u8) -> Option<Keyed<()>> {
+    let mut painted: Vec<Painted> = Vec::new();
+    for (r, row) in x.iter().enumerate() {
+        for (c, &h) in row.iter().enumerate() {
+            if h != 0 {
+                painted.push((r as i64, c as i64, h));
+            }
+        }
+    }
+    let image = carry_painted(v, &painted)?;
+    // THE SPEECH: every painted site vacated, every image site painted.
+    let mut said: Keyed<u8> = Keyed::new();
+    for &(r, c, _) in &painted {
+        said.insert(site_key(r, c), 0);
+    }
+    let mut landed: Keyed<u8> = Keyed::new();
+    for &(r, c, h) in &image {
+        let hue = recolour(h);
+        match landed.get(&site_key(r, c)) {
+            Some(&held) if held != hue => return None,
+            _ => {
+                landed.insert(site_key(r, c), hue);
+            }
+        }
+    }
+    let mut sites: Vec<(i64, i64)> = painted.iter().map(|&(r, c, _)| (r, c)).chain(image.iter().map(|&(r, c, _)| (r, c))).collect();
+    sites.sort_unstable();
+    sites.dedup();
+    let mut changed = Keyed::new();
+    for (r, c) in sites {
+        let key = site_key(r, c);
+        let spoken = match landed.get(&key) {
+            Some(&h) => h,
+            None => match said.get(&key) {
+                Some(&h) => h,
+                None => continue,
+            },
+        };
+        // A site the before side does not reach holds absence there.
+        let before = match hue_at(x, r, c) {
+            Some(h) => h,
+            None => 0,
+        };
+        if spoken == before {
+            continue;
+        }
+        if hue_at(y, r, c) != Some(spoken) {
+            return None;
+        }
+        changed.insert(key, ());
+    }
+    Some(changed)
 }
 
 /// C, S — A FORM'S LOCAL SECTION: the form spoken onto each pair at

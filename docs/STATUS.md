@@ -19,6 +19,18 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
+## Phase 2, second release (2026-10-15 evening)
+The first release (d3903b7a) folded b again but paid nothing: from boot no
+court offered a word (a fold-witness storm — b re-asked one proposal until a
+and c had re-derived it 3 470 times each), and the measures had been written
+to their guards, not the spec (MU-CLIENT §7.1 "Corrected"). This release:
+a witness answers a root it co-signed from the co-signature it holds; offers
+with no witness or no answer are counted; W on the whole before side, nothing
+false; C lane by lane; S the section beyond the words, aligned by closure on
+the scene (never by rings returning — that was squaring); ruling 26 held;
+the glue claims fetch as the exchange does. Witness owed: offers and installs
+resume, then POUW/POWC for words, conjugates and sentences no task named.
+
 ## Read on the fleet 2026-10-15 (before the Phase 2 relaunch)
 Hypha b wedged: running 04d9981c (before 78.166 2a), it refused its fold as
 idle at every close — 0 folds in 20 h against a 564, c 542; 735 803

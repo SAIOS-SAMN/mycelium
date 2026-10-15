@@ -1537,13 +1537,25 @@ weight or a constant:
   lane by lane as the shortfall (a lane the transport did not raise pays
   nothing, never a negative). W's discoverer keeps W's use; the
   conjugate's speaker takes the transport.
-- **S — a sentence's GLUING.** A sentence's premium is paid on the sites its
-  closed rings close that NO word of it closes on its own section — the
-  sites read as a set (closed by the sentence, less the union of its words'
-  local closures), never a subtraction of sums. It exists only where the
-  sentence's rings compose (their holonomy the identity or a filed class):
-  the alignment is the gluing of local sections into a global one, and what
-  the gluing alone closes is the premium. A sentence that does no more than
+- **Ruling 26 held (2026-10-15).** A DERIVATION citation — a generator cited
+  inside a word's derivation, the W a conjugate cites among them — earns
+  ROOM (standing, `use_credit`), never coin. A GLUED form (a closed form
+  cited whole) takes a share of the citer's mint, read locally; a taught
+  word's base share is read locally (W).
+- **S — a sentence's GLUING** (ruled 2026-10-15, the operator: "proceed
+  with those answers"). A sentence glues its words' local sections along its
+  faces, the overlaps. Its premium is paid on the sites it closes that NO
+  word of it closes on its own section — read as a set (closed by the
+  sentence, less the union of its words' local closures), never a
+  subtraction of sums. Its ALIGNMENT is its closure on its scene, which the
+  court's replay certifies before it lists it — never its rings' holonomy
+  returning to the identity: a ring's holonomy is the orbit of the motion it
+  carries (a turn closes at its period, a slide never returns), and
+  demanding that it return is squaring (78.168 §2). Lane 𝒯, the ground the
+  composition's motions covered, is the composition's whole: a word measured
+  by its sites carries none. This is D2′'s composition premium (§5.4) with
+  its words read locally, so "what the sentence discharged beyond its words"
+  measures composition, not the whole pay. A sentence that does no more than
   its words earns none.
 - **M — modes as the unit.** Every measure carries the modes its closures
   moved (S boosts, G hue modes, T null fluxes, H turns); the ledger paying
@@ -1816,10 +1828,59 @@ owed in the order it is built.
      required to have moved the replay; the tick claim read the process's
      hold count while other tests took kernels beside it — it reads its own
      thread's (`held::holds_here`). No assertion changed.
-  The court's acts reading carries the pays by kind (`PAYS`). Open: a
-  conjugate's guard on a court that holds its cited word, and E2's on a
-  listing another mind spoke, stand on the soak's witness; the closed
-  thought's TWIST is spoken under no family.
+  The court's acts reading carries the pays by kind (`PAYS`).
+
+  **Corrected 2026-10-15, read against this spec (the operator: "find the
+  misalignment between what the spec says and what the implementation does
+  and isolate where you built theatre").** The first writing passed its gate
+  and paid nothing on the fleet; read clause by clause:
+  - W had been written body by body — a word paid for the bodies it
+    happened to fit, said false about the rest — against "the sites its
+    speech changed … and says nothing false"; its guard asserted that
+    choice. Now: the word's speech is the before side moved WHOLE
+    (`spoken_section`), its section every site it changed, and a pair it
+    says anything false on pays nothing; the guards state both.
+  - C had been written as a difference of sites against "lane by lane as
+    the shortfall", and unguarded. Now `transport_on` is
+    `shortfall(conjugate's local discharge, W's)`; guarded on a court
+    holding a ruled W: the identity conjugator adds nothing on any lane.
+  - The D2′ use share of a cited form read the whole-pair gate against
+    "D2′'s base and use shares read it [the local discharge]". Now
+    `cited_deflation` reads a cited form's local section too — which is also
+    E2's measure, as the spec words it ("the cited word's discharge on the
+    listing's family").
+  - S's 𝒯 lane had been set to the whole pay's to turn a failing test green
+    (THEATRE, withdrawn). A second writing gated the gluing on rings whose
+    holonomy returns — and docked a slide's sentence half its closure, its
+    one ring `Unbound`: that gate was squaring (78.168 §2), withdrawn. As
+    ruled: the sentence's section beyond its words' sections, its alignment
+    its closure on the scene, 𝒯 its composition's whole (§5.6 S).
+  - Ruling 26 held: a derivation citation earns room, not coin
+    (`cited_shares` pays glued forms alone).
+  - Seven glue claims asserted a verdict on one fetch whose stroke is sized
+    by the host's free memory; each now glues as the exchange does
+    (`tests::common::fetched`, an unread fetch required to move the replay).
+  - A guard that compared `discharge_on` with the function it calls
+    (tautology) is replaced by the court's reader judged against known
+    sites.
+  - Still owed: E2's guard (no fixture yet writes a listing whose demand
+    another mind's cited form closes); POWC on "a held question closed by
+    another mind" (the conversation's questions reach no court; an evidence
+    path is a design); a ring whose holonomy is a FILED CLASS (S reads the
+    identity only); whether any mind on the fleet is a domain's key, without
+    which E4 is witnessed only by seated universes; the closed thought's
+    TWIST spoken under no family.
+
+  **The fold-witness storm (read on the fleet after the first release,
+  2026-10-15).** b, folding again, waited an aperture of its witness's bare
+  round trip, which a prefix's re-derivation outlasts: 84 652 asks
+  "unmeasured" against 339 folds, and a and c re-derived one root of b's
+  3 470 times each (11 830 / 10 409 fold-witness pages); no court offered a
+  word from boot (45 / 46 / 50 offer lines in the two hours before, 0 / 1 /
+  0 after). A witness now answers a root it already co-signed with the
+  co-signature it holds (`Kernel::cosigned_root`, counted `held` on the
+  fold-witness reading); an offer with no eligible witness, and one a
+  witness left unanswered, are counted (`PROVISIONAL`), never silent.
 - **Phase 3 — containment and memory** (§4.13; findings 5–7):
   - **Containment.** The court's exported gravity read into the mind's
     field, not only its dwell. A deferral's lanes kept as the pressure they

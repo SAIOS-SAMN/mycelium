@@ -273,6 +273,31 @@ fn a_citation_into_a_held_era_is_proved_not_chased() {
     assert!(asks.iter().all(|(who, _, ask)| *who != bvk || *ask == Ask::Replay), "b's line asked only as the era's replay: {asks:?}");
 }
 
+/// 47.3 — A ROOT ALREADY CO-SIGNED IS ANSWERED WITH THE CO-SIGNATURE HELD (the
+/// fold-witness storm read on the fleet, 2026-10-15). A court holding b's root
+/// with the witness's signed position answers that witness's re-asked
+/// proposal of the same root with that very position — nothing re-derived;
+/// for another root, or as another key than the one that co-signed, it holds
+/// no answer and the prefix is re-derived as before.
+#[test]
+fn a_root_already_cosigned_is_answered_with_the_cosignature_held() {
+    let (bkey, mut b) = court("catchup-cosigned-b");
+    let bvk = bkey.vk_bytes();
+    strokes(&mut b, 3);
+    let proof = fold(&mut b, &bkey);
+    let wvk = super::common::court_key("catchup-witness").vk_bytes();
+    let mut w = Kernel::new();
+    w.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
+    assert_eq!(w.adopt_root(AT, &proof), RootAdoption::Adopted, "the root held with both signed positions");
+    let said = w.cosigned_root(&bvk, &proof.root, &wvk).expect("its own co-signature, said again");
+    assert_eq!((said.sig, said.receipt.chain_hash, said.prefix.payload), (proof.witness.sig, proof.witness.receipt.chain_hash, proof.witness.prefix.payload.clone()), "the very position it signed over the root");
+    assert!(w.cosigned_root(&bvk, &proof.root, &[0x77; 32]).is_none(), "another key co-signed nothing here");
+    let mut moved = proof.root;
+    moved.hash[0] ^= 1;
+    assert!(w.cosigned_root(&bvk, &moved, &wvk).is_none(), "another root is re-derived");
+    assert!(w.cosigned_root(&[0x55; 32], &proof.root, &wvk).is_none(), "another home's root is not this one");
+}
+
 /// 78.147 (3′) — AN ERA LONGER THAN A PAGE IS PROVED PAGE BY PAGE (the wedge
 /// read on hypha b, 2026-10-15). As (3), but b's era runs twelve strokes —
 /// two dozen receipts and more against a page of eight — so no one page

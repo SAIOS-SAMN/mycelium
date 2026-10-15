@@ -39,6 +39,14 @@ pub(crate) fn offer(kernel: &Mutex<Kernel>, mesh: &Mesh, offers: Vec<(Address, V
             Ok(c) => c.witnesses(&inv, &word.magnitude(), &mesh.vk),
             Err(_) => mycelium::network::nerve::Keyed::new(),
         };
+        // An offer no hypha covers is counted, never silent: it waits for a
+        // transition that concerns it.
+        if witnesses.is_empty() {
+            if let Ok(mut h) = crate::held::held!(kernel) {
+                h.run(|k, _| k.note_provisional("offers with no eligible witness"));
+            }
+            continue;
+        }
         // 47.1: THE HOME SIGNS ITS OWN CAUSAL POSITION, with the offered
         // ADDRESS as the payload; a home with no origin or no receipt has no
         // position to sign from and offers nothing. The prefix's chart is
@@ -89,6 +97,9 @@ pub(crate) fn offer(kernel: &Mutex<Kernel>, mesh: &Mesh, offers: Vec<(Address, V
             }
             let Some((reply, dt)) = tell_peer(&d, body) else {
                 crate::transport::note_rtt_timeout(mesh, d.as_bytes());
+                if let Ok(mut h) = crate::held::held!(kernel) {
+                    h.run(|k, _| k.note_provisional("offers a witness left unanswered"));
+                }
                 continue;
             };
             crate::transport::note_rtt_ok(mesh, d.as_bytes(), dt);

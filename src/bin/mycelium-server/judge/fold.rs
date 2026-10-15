@@ -60,6 +60,21 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         refuse(s, mycelium::verdict::REFUSE_RECEIPT);
         return;
     }
+    // A ROOT THIS COURT ALREADY CO-SIGNED IS ANSWERED WITH THE CO-SIGNATURE IT
+    // HOLDS, never re-derived (read on the fleet 2026-10-15): a home waits an
+    // aperture of its witness's measured round trip, a prefix's re-derivation
+    // outlasts it, and the home asked the same proposal again every round —
+    // a and c re-derived one root of b's 3 470 times each, 11 830 pages
+    // fetched, the courts' doors and kernels taken by it and their offers
+    // left unanswered. The proof held for the home is this court's own
+    // signed position over that root (`hold_era_proved`): what it said once,
+    // it says again.
+    let held = crate::held::held!(door.kernel).ok().and_then(|mut h| h.run(|k, _| k.cosigned_root(&home, &p.root, &me)));
+    if let Some(section) = held {
+        mycelium::observe::note_catchup(mycelium::observe::CatchupPath::FoldWitness, mycelium::observe::CatchupOutcome::Held);
+        say(s, dialogue::FoldWitness::CoSigned { section: Box::new(section) });
+        return;
+    }
     // The prefix, fetched from the home by place range and by rows cursor;
     // a home that cannot be reached leaves the fold unmeasured.
     let Some(dest) = door.mesh.addrs.lock().ok().and_then(|a| a.get(&home).cloned()) else {

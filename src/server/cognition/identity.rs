@@ -206,10 +206,12 @@ impl Kernel {
         crate::transducer::family::Crystal::by_address(self, form.as_bytes()).map(|_| form.clone())
     }
 
-    /// C — WHAT A CONJUGATOR ADDED ON `family`: the conjugate's local section
-    /// beyond the cited word's own, spoken in its own frame — the sites the
-    /// transport closed that the word untransported does not, measured. A
-    /// conjugate that closes nothing its word does not is paid nothing.
+    /// C — WHAT A CONJUGATOR ADDED ON `family` (MU-CLIENT §5.6 C, as the spec
+    /// reads): the conjugate's local discharge less the cited word's own, both
+    /// read by the one local reader in their own frames, LANE BY LANE AS THE
+    /// SHORTFALL — a lane the transport did not raise pays nothing, never a
+    /// negative. A conjugate that discharges no more than its word is paid
+    /// nothing; W's discoverer keeps W's use (the D2′ share, read locally).
     pub(crate) fn transport_on(&self, word: &Element, family: &crate::transducer::family::Family) -> [u64; 4] {
         use crate::transducer::family::local::form_local;
         let here = crate::transducer::alphabet::Word::identity();
@@ -217,22 +219,39 @@ impl Kernel {
             return [0; 4];
         };
         let Some((_, base)) = crate::transducer::family::Crystal::by_address(self, cited.as_bytes()) else { return [0; 4] };
-        let own = form_local(&base, family, self, &here);
-        form_local(&conj, family, self, &here).beyond(&own, family).pay
+        let own = form_local(&base, family, self, &here).pay;
+        let transported = form_local(&conj, family, self, &here).pay;
+        crate::economy::shortfall(&transported, &own)
     }
 
-    /// S — A SENTENCE'S GLUING on the family it is bound to: the sites its
-    /// closed rings close that no word it teaches closes on its own section,
-    /// measured — the premium the voices that composed it take. Nothing
-    /// where it is bound to no family, or does no more than its words.
+    /// S — A SENTENCE'S GLUING on the family it is bound to (MU-CLIENT §5.6 S,
+    /// as ruled 2026-10-15). A sentence glues its words' local sections along
+    /// its faces, the overlaps, and its alignment is CLOSURE ON ITS SCENE —
+    /// what the court's replay certifies before it is listed — never the
+    /// holonomy of its rings returning to the identity: a ring's holonomy is
+    /// the orbit of the motion it carries (a turn closes at its period, a
+    /// slide never returns, `Unbound`), and demanding that every ring return
+    /// is squaring (78.168 §2); read so, it docked a slide's sentence half
+    /// its own closure. The gluing is the sentence's section beyond the union
+    /// of its taught words' own sections, as sites. Lane 𝒯, the ground the
+    /// composition's motions covered, is the composition's whole: a word
+    /// measured by its sites carries none, so none of it is the words'.
+    /// Nothing where it is bound to no family, or closes nothing.
     pub(crate) fn gluing_of(&self, addr: &[u8], sentence: &Element, words: &[Element]) -> [u64; 4] {
         use crate::transducer::family::local::{form_local, word_local, Local};
         let task = self.speech_task.get(addr).or_else(|| self.listing_task.get(addr));
         let Some(family) = task.and_then(|t| self.task_family.get(t.as_bytes())) else { return [0; 4] };
         let Some(form) = crate::transducer::sentence::from_element_form(sentence) else { return [0; 4] };
-        let whole = form_local(&form, family, self, &crate::transducer::alphabet::Word::identity());
+        let here = crate::transducer::alphabet::Word::identity();
+        let section = form_local(&form, family, self, &here);
+        if section.pay.iter().all(|&m| m == 0) {
+            return [0; 4];
+        }
         let sections: Vec<Local> = words.iter().map(|w| word_local(w, family)).collect();
-        whole.beyond(&Local::union(&sections, family.len()), family).pay
+        let mut pay = section.beyond(&Local::union(&sections, family.len()), family).pay;
+        let t = crate::transducer::sentence::presentation::LANE_T;
+        pay[t] = crate::transducer::family::form_deflation_read(&form, family, self, &here).pay[t];
+        pay
     }
 
     /// [`Kernel::discharge_on`] over the family the word is BOUND to — the

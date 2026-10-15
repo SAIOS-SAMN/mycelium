@@ -96,12 +96,11 @@ fn a_peer_admits_a_colour_word_by_re_deriving_its_witness() {
     let mut peer = Kernel::new();
     peer.bind_task_family(tid, family);
     let mut cover = crate::network::nerve::Cover::new();
-    let mut glue = peer.stroke();
-    assert!(!matches!(peer.glue_fetched(sent.clone(), [1; 32], [2; 32], &mut cover, &mut glue), Glue::Dialect), "proven here");
-    // A COURT WITHOUT IT holds it as dialect.
+    assert!(!matches!(super::common::fetched(&mut peer, &sent, [1; 32], [2; 32], &mut cover), Glue::Dialect), "proven here");
+    // A COURT WITHOUT IT holds it as dialect — ruled so, never a replay the
+    // stroke left unread.
     let mut stranger = Kernel::new();
-    let mut glue = stranger.stroke();
-    assert!(matches!(stranger.glue_fetched(sent, [1; 32], [3; 32], &mut cover, &mut glue), Glue::Dialect), "unproven here");
+    assert!(matches!(super::common::fetched(&mut stranger, &sent, [1; 32], [3; 32], &mut cover), Glue::Dialect), "unproven here");
 }
 
 #[test]

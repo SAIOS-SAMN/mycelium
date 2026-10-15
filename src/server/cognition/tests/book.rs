@@ -169,8 +169,7 @@ speak_pair(&mut k, &a, &b, [2; 32]);
 let spoken = k.provisional.scoped().next().unwrap().1.clone();
 let forged = strip_words(&spoken);
 let mut cover = crate::network::nerve::Cover::new();
-let mut glue = k.stroke();
-assert!(matches!(k.glue_fetched(forged.clone(), [2; 32], [1; 32], &mut cover, &mut glue), Glue::Slashed(_)));
+assert!(matches!(fetched(&mut k, &forged, [2; 32], [1; 32], &mut cover), Glue::Slashed(_)));
 // The simplices the complexes hold, each by its own key: a row that is not
 // re-filed moves none of them.
 let simplices = |k: &Kernel| k.complexes.scoped().map(|(_, c)| c.by_key.len()).sum::<usize>();
@@ -245,8 +244,7 @@ speak_pair(&mut k, &a, &b, [2; 32]);
 let spoken = k.provisional.scoped().next().unwrap().1.clone();
 let forged = strip_words(&spoken);
 let mut cover = crate::network::nerve::Cover::new();
-let mut glue = k.stroke();
-assert!(matches!(k.glue_fetched(forged.clone(), [2; 32], [1; 32], &mut cover, &mut glue), Glue::Slashed(_)));
+assert!(matches!(fetched(&mut k, &forged, [2; 32], [1; 32], &mut cover), Glue::Slashed(_)));
 assert_eq!(k.heard_len(), 1);
 let inv = crate::transducer::stalk::invariant_of(&forged);
 let mut moved = [0u8; 32];

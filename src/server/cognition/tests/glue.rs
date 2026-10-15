@@ -311,8 +311,7 @@ fn glue_records_true_geometric_section_and_edge_carriage() {
     let mut heard = Kernel::new();
     heard.bind_identity(me);
     let mut cover = crate::network::nerve::Cover::new();
-    let mut glue = heard.stroke();
-    let outcome = heard.glue_fetched(spoken.clone(), peer_id, me, &mut cover, &mut glue);
+    let outcome = fetched(&mut heard, &spoken, peer_id, me, &mut cover);
     assert!(matches!(outcome, Glue::Admitted));
 
     let cx_h = heard.complexes().get(&inv.key()).expect("complex exists");
@@ -397,8 +396,7 @@ fn an_attached_word_is_held_and_not_read_again() {
     own.court_stroke();
     let theirs = word(2);
     let mut cover = crate::network::nerve::Cover::new();
-    let mut glue = own.stroke();
-    let outcome = own.glue_fetched(theirs.clone(), peer, me, &mut cover, &mut glue);
+    let outcome = fetched(&mut own, &theirs, peer, me, &mut cover);
     if outcome == Glue::Attached {
         assert!(own.word_at(theirs.address().as_bytes()).is_some(), "the attached word is held");
         let inv = crate::transducer::stalk::invariant_of(&theirs);

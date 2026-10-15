@@ -27,26 +27,40 @@ fn slide(r: i64, c: i64) -> crate::transducer::element::Element {
     from_connection(&Word::identity(), &translator_versor(r, c), &[], &Vec::new(), [1, 0, 0, 0]).expect("a slide spells")
 }
 
-/// W — A WORD CLOSES THE BODY ITS LETTERS CARRY RIGHT, AND NO MORE. One body
-/// slides two columns; another stands. The slide carries both: the first
-/// lands where the answer holds it and is the word's section — the sites it
-/// painted and the sites it vacated — while the second lands where the answer
-/// holds nothing of it and is no part of the section. The section's pay is
-/// the pair's demand over those sites.
+/// W — A WORD'S SECTION IS EVERY SITE ITS SPEECH CHANGED. The slide carries
+/// the pair's whole before side — both bodies — and the answer holds both
+/// where it carried them: its section is each site it painted and each it
+/// vacated, and it is paid the pair's demand over them.
 #[test]
-fn a_word_closes_the_body_its_letters_carry_right() {
+fn a_words_section_is_every_site_its_speech_changed() {
     let family = vec![(
-        grid(&["0000", "1100", "0000", "0200"]),
-        grid(&["0000", "0011", "0000", "0200"]),
+        grid(&["000000", "110000", "000000", "020000"]),
+        grid(&["000000", "001100", "000000", "000200"]),
     )];
     let read = word_local(&slide(0, 2), &family);
-    let carried = sites(&[(1, 0), (1, 1), (1, 2), (1, 3)]);
+    let changed = sites(&[(1, 0), (1, 1), (1, 2), (1, 3), (3, 1), (3, 3)]);
     let [got] = read.sites.as_slice() else { panic!("one pair, one section") };
     let got: Vec<Vec<u8>> = got.scoped().map(|(k, _)| k).collect();
-    let want: Vec<Vec<u8>> = carried.scoped().map(|(k, _)| k).collect();
-    assert_eq!(got, want, "the carried body's painted and vacated sites, and only those");
-    assert_eq!(read.pay, measure_sites(&family, &[carried]), "paid the pair's demand over its section");
-    assert!(read.pay.iter().any(|&m| m > 0), "a word that closes a body is paid");
+    let want: Vec<Vec<u8>> = changed.scoped().map(|(k, _)| k).collect();
+    assert_eq!(got, want, "every painted and every vacated site of the whole before side moved");
+    assert_eq!(read.pay, measure_sites(&family, &[changed]), "paid the pair's demand over its section");
+    assert!(read.pay.iter().any(|&m| m > 0), "a word that says the pair is paid");
+}
+
+/// W — A WORD THAT SAYS SOMETHING FALSE ON A PAIR IS PAID NOTHING THERE, even
+/// where part of what it said is right. One body slides two columns, the other
+/// stands: the slide carries both, so it says the standing body moved, and the
+/// answer holds it where it stood. Nothing of the pair is the word's — never a
+/// choice of the body it happened to fit.
+#[test]
+fn a_word_saying_something_false_on_a_pair_is_paid_nothing_there() {
+    let family = vec![(
+        grid(&["000000", "110000", "000000", "020000"]),
+        grid(&["000000", "001100", "000000", "020000"]),
+    )];
+    let read = word_local(&slide(0, 2), &family);
+    assert!(read.sites.iter().all(|s| s.is_empty()), "no site of a pair it spoke falsely on");
+    assert_eq!(read.pay, [0; 4], "and nothing paid");
 }
 
 /// W — A WORD THAT CARRIES A BODY WRONG HAS NO SECTION THERE. The same slide
@@ -73,11 +87,14 @@ fn a_letter_names_no_body() {
     assert_eq!(read.pay, [0; 4], "a letter is paid nothing on its own");
 }
 
-/// S — A SENTENCE THAT DOES NO MORE THAN ITS WORDS EARNS NO GLUING: the
-/// family's rule closes the slid body, the slide closes the same sites, and
-/// the rule's sites beyond the word's are none.
+/// W, C — A FORM AND ITS WORD READ ONE SECTION: the family's rule (one body
+/// slid, a form) closes on its own section exactly the sites the slide word
+/// closes on its own, so the rule's section beyond the word's is empty — the
+/// form reader and the word reader agree where the form says no more than the
+/// word. (The sentence's gluing, read off its rings, is guarded at the court:
+/// `server::cognition::tests::measure`.)
 #[test]
-fn a_sentence_doing_no_more_than_its_word_earns_no_gluing() {
+fn a_form_and_its_word_read_one_section() {
     let family = vec![
         (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),
         (grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"])),

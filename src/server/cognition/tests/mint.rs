@@ -36,11 +36,7 @@ assert_eq!(home.treasury().minted().expect("minted adds up"), [0; 4], "the claim
 home.court_settle();
 let spoken = home.provisional.get(&addr).cloned().expect("still provisional until a peer glues");
 let mut cover = crate::network::nerve::Cover::new();
-let mut glue = peer.stroke();
-assert!(matches!(
-    peer.glue_fetched(spoken, [1; 32], [2; 32], &mut cover, &mut glue),
-    Glue::Admitted
-));
+assert!(matches!(fetched(&mut peer, &spoken, [1; 32], [2; 32], &mut cover), Glue::Admitted));
 let cover = home.genesis_cover().expect("measured");
 home.enroll([2; 32], cover); // 47.3: a witness with room
 let bond = home.treasury().bond_total();
