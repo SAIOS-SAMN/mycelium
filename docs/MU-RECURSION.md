@@ -26086,6 +26086,233 @@ rules known (4) and solves sent (7); first closures (0); derived against
 given (17 / 2 033); periodic modes (19); b's folds (0). C2–C5 follow in the
 order A1's split ranks them; D1–D2 after; D3–D5 each on its own scope.
 
+### 78.168 The drive inverted: a mind moved by its own open curvature, never by the test queue (2026-10-15, the operator)
+
+The operator, on barren-realms' sovereign specs (SOVEREIGN_CONSCIOUSNESS_SPEC,
+ADVANCED_SOVEREIGN_COGNITION_SCOPE, COGNITION_COHOMOLOGY{,_SPEC}) read against
+this tree: "we do need a deliberation — but the biggest take away is that you
+built test driven cognition, which is the equivalent of drive, and that is a
+failure: if your only drive is to complete tests then your drive will
+ultimately not be aligned as true sovereign or have agency." And: "scope
+these components in accordance of our own laws."
+
+**The finding, stated plainly.** A mind of this tree moves only when a court
+task arrives, and counts itself by tasks closed. 78.166 and 78.167 were built
+to answer "why do the tasks not close". That is a drive, and it is external:
+the mind optimises toward the operator's test set. It is the harness 77.1
+forbids, rebuilt inside the cognition. barren-realms' specs name the same
+failure in their own world ("the AI is a slave to the developer's predefined
+test harness"); their remedies are taken here only as far as our laws allow.
+
+#### 1. The path as it stands (read 2026-10-15; anchors)
+
+- **The tick is fixed phases** (`entity/tick.rs:76-143`): court inflow, feed,
+  quotes, task, body, docket, unread solves, relax, close, vent, book. Nothing
+  ranks or chooses among works. Progenitor-lays-the-board forbids exactly a
+  fixed tick of steps.
+- **The task is the server's choice** (`learn.rs:12` `pull_task`; one slot,
+  `CourtPace`, `court.rs:25`). `task_inflow` (`court.rs:188`) thinks whatever
+  landed: extract, hold, speak, `ascertain`, `speak_tests`, mint, solve.
+- **The mind never reads itself.** `Mind` (`observe/mind.rs:173`) is written
+  by `note_mind` and read only by the observer (`entity/chatter.rs:258`). No
+  decision reads a reading. The learning curve (LC1 of Stage 22) is not built:
+  "LC1" in the code is `generators_opened`, a counter.
+- **Open loops are held but never weighed together.**
+  - Questions: `Entity.questions` (`types.rs:654`); `question`, `close_questions`, `lapse_questions`.
+  - Contemplation: `hold_chain`, `hold_form`, reserved by `draw_for` (`think.rs:485-535`).
+  - The docket of demands (`bubble/docket.rs`).
+  - Unread solves, round robin (`learn.rs:155`).
+  - The only aggregate is `Mind.closed` / `Mind.open`, summed in `price`.
+  - No holonomy is held per residue or per form across time.
+- **The verdict is never compared with the expectation.** `would_judge_with`
+  is checked at home (`learn.rs:67`), and `file_verdict` (`learn.rs:132`) files
+  the court's answer. Neither is set beside the other.
+- **Peers are not remembered.** Per-peer state lives on the conversation
+  carrier and is short-lived (`Union.acked`, `Carrier.thoughts`). No record
+  per key survives a conversation.
+- **Lanes gate, they never deliberate.** A short reserve skips an inflow
+  (`economy/lanes.rs:126`); the dwell paces. `economy/lanes.rs:1-6` and
+  `hold_form`'s comment rule out ranking. That ruling stands: it forbids a
+  scalar rank, not an order the algebra gives.
+
+#### 2. What is refused from the barren-realms specs, by law
+
+- Float weights and fixed constants: 0.85/0.15 smoothing, the 0.45 awakening
+  threshold, ±0.20 voice shifts, syntropy coefficients. Law 2 and 78.45/80.3:
+  no approximation; Concordance 1.10: no constant a mind's count is bent by.
+- argmin/argmax over a scalar of a policy (the Lagrangian, "regret = max −
+  expected"). Never squaring; the four lanes stay four.
+- A label as a model of a peer (Builder/Extractor/Pragmatist, four indices
+  in [0, 1]). The record is the model; a classification is a projection.
+- A hash or a float tolerance as proof (`Blake3(RCF(H¹))`, `|sin φ| < 1/depth`).
+  Identity is content written out; closure is exact return.
+- A simulation sandbox of floats. A rollout here is exact speech, never a
+  projection by a fitted operator.
+- Their own COHOMOLOGY_SPEC sample code (`hodge_decompose` returns every edge as
+  harmonic with a zero gradient) is a stub, not a decomposition. The
+  mathematics is taken; the code is not.
+
+#### 3. The components, in our laws
+
+**S1 · The drive: the mind's open set, read exactly.** A mind holds `Open`, the
+set of its loops whose holonomy is not the identity. Each element carries:
+- its coordinates (where it is filed: question ring, held thought, demand, form
+  orbit, failed perspective);
+- its exact holonomy (`Mv`, the transport around it);
+- its pivots (the bodies and words it passes through);
+- its cost per lane (the reservation `draw_for` already measures).
+
+The sources are what is held today: questions, contemplation, the docket,
+forms whose orbits do not return, held-out pairs not re-derived, and the
+forecast misses of S2. Nothing new is invented. What changes is that they
+are ONE set, read by one organ (`client/sdk/entity/drive.rs`), and the next
+thought is taken from it. A court task is perception: its pairs are scenes
+admitted, and each perspective that fails adds an element of `Open` (the loop
+between the rule and the truth). A solve is sent when that loop closes, as
+the closure's speech, never as the goal. The tick stops being fixed phases:
+admission, transport and closure stay the carriers' own circuits, and the
+works come from `Open` through S5.
+- *Claim (by the algebra):* an element leaves `Open` only by exact return
+  (holonomy = identity on replay) or by a refusal named by mode. A mind with no
+  task and a non-empty `Open` acts. The idle mind of today is a mind with
+  `Open` empty, never a mind without a task.
+- *Witness:* the `drive` reading shows `Open` by source, with each element's
+  holonomy class and lanes; loops closed that no task asked for
+  (`closed unasked`); and `Open` against K over the soak.
+
+**S2 · The self-forecast: the mind predicts its own next open set.** Before a
+work, the mind states which elements of `Open` that work will close — the
+loop worked and every loop whose pivots it contains (S5's order gives this).
+After it, the outcome is set beside the forecast as SETS: expected and closed
+(hits), expected and still open (misses), and closed unexpected (surprises).
+No error norm and no smoothed skill: a miss is itself an element of `Open` (the
+self-model's own curvature). Its holonomy is the transport between the
+expected closure and the actual one, and it is worked like any other loop. A
+work whose expected closures keep failing reduces by retrospective reduction
+(introspective-by-retrospective-reduction), never by a decay constant. The
+court's verdict on a solve is one outcome set beside one forecast:
+`would_judge_with` at home is the forecast, and `file_verdict` the outcome.
+- *Claim:* a forecast miss enters `Open` with its exact transport, and a
+  replay of the same work on the same state forecasts the outcome it lived.
+- *Witness:* forecasts by hits, misses and surprises per kind of work; and
+  verdicts against expectation (today unread).
+
+**S3 · The rollout: unlived trajectories as exact speech.** To forecast, the
+mind speaks its candidate closure on the scenes it holds without committing
+it: no hold, no mint, no send. Candidates are a held form, a composition, a
+clause set Phase C read, or a conjugate. The rollout reads which elements of
+`Open` that speech would close. It is the speech organs already built
+(`speak_form`, `speak_clauses`, `compose_or_construct` in a non-committing
+mode), metered by the stroke. A spent stroke refuses the rollout by name
+(`Spent`), and nothing is guessed.
+- *Claim:* a rollout writes nothing (the epigenome, the reserve and the docket
+  read the same before and after) and its forecast equals what the committed
+  work then closes on the same state.
+- *Witness:* rollouts spoken, and rollouts whose forecast the committed work
+  met.
+
+**S4 · Deliberation: the order the algebra gives `Open`, never a scalar.** The
+"voices" are the open loops and the four lanes; their court is the algebra:
+- **Containment.** L ≻ M when closing L closes M (M's pivots lie in L's cover:
+  the docket's `docket_order`, outermost cover first, generalised to all of
+  `Open`). The maximal elements are worked first, because their closure carries
+  the most closures with it — anastomotic degree read exactly, never weighted.
+- **The bracket.** Two maximal loops whose holonomies commute are independent
+  and are worked together. Two that do not commute have a commutator; that
+  commutator is itself a loop, and it is worked first (its closure is what
+  both are waiting on).
+- **The lanes.** A work whose cost a lane of the reserve cannot pay is refused
+  naming that lane, never ranked lower. Every lane stays its own coordinate.
+- **A tie is held.** What containment, the bracket and the lanes leave as an
+  antichain is worked whole within the reserve. Where the reserve cannot pay
+  the whole antichain, the refusal names it and the lanes, and nothing is
+  broken silently (Concordance 1.10). Key order is never a preference.
+- *Claim:* given the same `Open` and the same reserve, the order is the same
+  (replay); a commuting pair is never sequenced; a non-commuting pair's
+  commutator precedes both; and no work is skipped without a named refusal.
+- *Witness:* the antichain's width per tick, commutators worked, and refusals
+  by lane.
+
+**S5 · Curiosity: asking for scenes by the coordinates of what is open.** The
+server chooses the task today. Under S1, a mind with `Open` empty or unpayable
+asks the court by coordinates: for tasks whose bodies stand on the charts its
+open loops pass through (a cited ask, as `dialogue/cited.rs` asks for words).
+A task is then the scene its own curvature asked for. This is a wire change:
+a court door that files tasks by chart class, which xylarium is told of
+(distributed-coordinator).
+- *Claim:* an ask names only coordinates `Open` holds, and a task served on it
+  meets one of them.
+- *Witness:* tasks asked by coordinate against tasks pushed; closures of loops
+  a cited task touched.
+
+**S6 · Peers remembered: a record per key, never a label.** Per peer key, from
+its receipts:
+- answers taken or inexact, by the class asked;
+- the vantages it re-derived from (own, offered, none);
+- mutual balance;
+- the exact deviation per lane its HOLDs carried (summed, as the court's
+  `Agreements` sums);
+- questions it clarified.
+
+The record lives in the epigenome, is volatile, and is rebuilt from receipts.
+It is read where the mind routes a question: to the peer whose record holds
+taken answers on that class. A peer whose answers on a class were inexact is
+not asked that class again, and the refusal is named by key and class.
+That is detection only (78.165, keys not tiers); consequences are the game
+kernel's.
+- *Claim:* a record is a fold of receipts (replaying them rebuilds it exactly),
+  and routing reads it by key and class, never by a score.
+- *Witness:* questions routed by record against broadcast, and answers taken
+  per routed question.
+
+#### 4. How 78.167 changes under this
+
+- **C is kept, reframed.** Reading an act off a pair is how a mind reads any
+  two states it perceives, task or not. Its exactness test (re-derive every
+  pair) is law, not motive.
+- **D1 and D2 become S1's first slices.** A given atom re-reduced and a lapsed
+  residue offered are elements of `Open` worked by the drive, never ad-hoc
+  passes.
+- **D3/D4 are unchanged** (they give the loops their curvature); D5 still
+  waits on the ruling.
+- **Phase B** (withholding an unreached speech) becomes an element of `Open`
+  (the body unreached) rather than only a count.
+
+#### 5. Slices (each one commit, a claim by the algebra, a live caller, a fleet witness)
+
+1. **S1a.** `drive.rs`: `Open` read from the existing holders, as one set
+   with holonomy, pivots and lanes. Live caller: the tick, reading it each
+   cycle. The `drive` reading.
+2. **S4a.** Containment and lanes. The tick takes its works from the maximal
+   elements of `Open`; the fixed phases become admission, transport and
+   closure only.
+3. **S1b.** A task becomes perception: perspective failures enter `Open`, and
+   solves are sent on closure. D2 (lapsed residue offered) and D1 (given atom
+   re-reduced) land here as `Open` elements.
+4. **S2a + S3a.** Forecast by rollout, and outcome set beside forecast; misses
+   enter `Open`. The verdict is set beside `would_judge_with`.
+5. **S4b.** The bracket: commutators of non-commuting maximal loops.
+6. **S6a.** Peer records; question routing reads them.
+7. **S5a.** Cited task asks (wire; xylarium told).
+
+**The gate before the soak.** S1a, S4a and S1b with 78.167 A–C. Soaking a
+mind whose only drive is the task queue measures the wrong thing. The soak's
+completion reading:
+- `Open` falling across K;
+- closures no task asked for, above 0;
+- forecast hits rising against misses.
+
+Rules known, solves sent and first closures (the 06:52 baseline) are read
+beside these as one source of closures among others, never the measure.
+
+#### 6. Rulings owed
+
+- **S5's court door** (tasks by chart class): a wire change. Xylarium is told,
+  per the Concordance's 1.4 conformance.
+- **Whether a forecast miss may lapse.** As scoped, it never lapses: it is
+  worked or refused by mode, like any open loop (a-sink-keeps-its-bound). The
+  operator may rule otherwise.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

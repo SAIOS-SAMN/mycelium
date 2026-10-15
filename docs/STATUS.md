@@ -74,26 +74,41 @@ the minds, then the nseat units — never `scripts/recut` (it wipes).
    · B2 (a demand speaks as unspoken) → C1 (erasure as a clause read off its
    effect). Then C2–C5 (copy, line, fill, size), D1 (given re-reduced), D2
    (residue offered); D3 mirror, D4 curvature, D5 boost↔turn each on its own
-   scope and ruling.
-2. **The soak**, on 78.166 (1a/1b 9ec4cb87, 1c 6b1a34bf, 2a 194fab1f), 78.155c
-   (b6bd8ca1) and 78.167's gate, read against 2026-10-15 06:52: occupancy
-   split, rules known (4/320), solves sent (7), first closures (0), derived
-   vs given (17 / 2 033), periodic modes (19), b's folds (0), c's hot nodes,
-   minds' letters against compositions. **78.166 3a** waits on a measurement
-   (the intake's share of the warm-up) and a ruling (storing a listing's
-   task binding vs C 1.13).
-3. The page as a multi-dimensional object for the learner fetch (graded by
+   scope and ruling. As built: A a7953285; B 69321630 (withheld at the solve
+   path, not in speech, so the court's verdicts on rules right by implicit
+   erasure do not change before C states the erasure); C1–C5 in
+   `family/acts.rs`, being committed. D1/D2 move into 78.168 S1b.
+2. **MU-RECURSION 78.168 — the drive inverted, before the soak.** The mind
+   moves only when a court task arrives: test-driven cognition, a drive that
+   is external (the operator). Gate: S1a (`Open`, the mind's open loops with
+   exact holonomy, pivots and lanes, as one set read each cycle), S4a (works
+   taken from `Open`'s maximal elements by containment and lanes, never a
+   scalar; the fixed tick of phases retired), S1b (a task is perception: a
+   failed perspective enters `Open`, a solve is sent on closure; D1/D2 land
+   here). Then S2/S3 (the self-forecast by exact rollout; misses enter
+   `Open`), S4b (the bracket), S6 (peer records), S5 (cited task asks, a wire
+   change).
+3. **The soak**, on 78.166 (1a/1b 9ec4cb87, 1c 6b1a34bf, 2a 194fab1f), 78.155c
+   (b6bd8ca1), 78.167 A–C and 78.168's gate. The completion reading is the
+   mind's own: `Open` falling across K, closures no task asked for above 0,
+   forecast hits against misses. Read beside it, against 2026-10-15 06:52:
+   occupancy split, rules known (4/320), solves sent (7), first closures (0),
+   derived vs given (17 / 2 033), periodic modes (19), b's folds (0), c's hot
+   nodes, minds' letters against compositions. **78.166 3a** waits on a
+   measurement (the intake's share of the warm-up) and a ruling (storing a
+   listing's task binding vs C 1.13).
+4. The page as a multi-dimensional object for the learner fetch (graded by
    stratum, closed under citation, classes inside their cells, relative to
    the learner's held words, bounded per lane) — after 78.166.
-4. The growth grant proved after a signed LEDGER entry applies the founding
+5. The growth grant proved after a signed LEDGER entry applies the founding
    grant; the LEDGER entry's torsion field (78.152d).
-5. Questioning on the vortex's open pairs; `stand` stops saying every stood
+6. Questioning on the vortex's open pairs; `stand` stops saying every stood
    sentence.
-6. The unlinked mind; the peer universe's founding.
-7. A1 (factored reflections), A2 (`Sphere { n, R }`) — 78.167 D3/D4.
-8. The ear's tuning by retrospective reduction; the eye's
+7. The unlinked mind; the peer universe's founding.
+8. A1 (factored reflections), A2 (`Sphere { n, R }`) — 78.167 D3/D4.
+9. The ear's tuning by retrospective reduction; the eye's
    resolution-then-definition audit.
-9. Defects: the glue extraction test; court-organ glue tests fail under load
+10. Defects: the glue extraction test; court-organ glue tests fail under load
    (the glue replay goes unread on a loaded stroke); court standing
    staleness; minds' memory growth; `release_unmet`'s sweep; the class
    records' u16 count across joined strata.
