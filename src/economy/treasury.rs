@@ -204,6 +204,13 @@ pub struct Treasury {
     /// stands and reads it again where it moved (the witness's `ACT_ROWS`,
     /// answered off the published reading). Volatile.
     pub(crate) journal_mark: u64,
+    /// MU-CLIENT §5.6 (E4) — THE PROOF-OF-WORK PAYMENTS since the court last
+    /// took them (`take_paid_out`): every POUW and POWC paid, to whom and per
+    /// lane — the pooled draw and the mint both, as `mint_to` paid them. The
+    /// court counts them toward the growth grant of the universe whose key was
+    /// paid. Volatile; drained at every act that pays and on every stroke, so
+    /// it holds no more than one stroke's payments.
+    pub(crate) paid_out: Vec<([u8; 32], [u64; 4])>,
 }
 
 /// 78.151 — which accounts a publisher reads again: every one, or the
@@ -238,6 +245,7 @@ impl Default for Treasury {
             overflowed: 0,
             touched: Touched::Every,
             journal_mark: 0,
+            paid_out: Vec::new(),
         }
     }
 }
@@ -772,6 +780,21 @@ impl Treasury {
     /// A MINT to `who`, standing at the act that minted it and carrying the
     /// proof of work it pays (78.33) — none for a subsidy.
     pub(crate) fn mint_to(&mut self, who: [u8; 32], mu: [u64; 4], anchor: Anchor, arm: Option<Arm>) -> [u64; 4] {
+        let paid = self.mint_to_paying(who, mu, anchor, arm);
+        // E4 — a proof of work paid is a payment the growth grant counts.
+        if matches!(arm, Some(Arm::Pouw) | Some(Arm::Powc)) && paid.iter().any(|&x| x > 0) {
+            self.paid_out.push((who, paid));
+        }
+        paid
+    }
+
+    /// MU-CLIENT §5.6 (E4) — the proof-of-work payments made since the last
+    /// take, drained.
+    pub(crate) fn take_paid_out(&mut self) -> Vec<([u8; 32], [u64; 4])> {
+        std::mem::take(&mut self.paid_out)
+    }
+
+    fn mint_to_paying(&mut self, who: [u8; 32], mu: [u64; 4], anchor: Anchor, arm: Option<Arm>) -> [u64; 4] {
         if mu.iter().all(|&x| x == 0) {
             return [0; 4];
         }

@@ -57,6 +57,15 @@ impl Treasury {
         paid
     }
 
+    /// MU-CLIENT §5.6 (E2) — POWC MINTED: a demand closed at another
+    /// perspective — another mind's citation discharging what a speaker
+    /// could not — pays the closer the citation's measured discharge, a mint
+    /// carrying the POWC arm (78.33). The caller measures it and refuses
+    /// self-pay; nothing here prices it.
+    pub fn settle_convergence(&mut self, closer: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+        self.mint_to(closer, mu, anchor, Some(Arm::Powc))
+    }
+
     /// A SUBSIDY from the pool (system-initiated yields with no payer: the
     /// redundancy probe, bootstrap awards). Bounded by the pool, like all pay.
     /// No proof of work (78.33 as ruled): a subsidy is a policy ratio
@@ -171,11 +180,18 @@ impl Treasury {
     /// measured on the citer's own family and cannot exceed its mint
     /// except by a rounding the caller did not intend, so the floor is a
     /// bound on arithmetic and never an invented value (rule 11).
+    ///
+    /// MU-CLIENT §5.6 (S) — `premium`, where it is given, is what the escrow's
+    /// voices are paid: a sentence's GLUING, read off the sites its rings
+    /// close beyond its words', never the arithmetic left after the shares —
+    /// capped by what is left, and what is left above it never issued (E1).
+    /// `None` for a word, whose voices take what is left.
     pub fn settle_recursive(
         &mut self,
         escrow: &[u8],
         shares: &[([u8; 32], [u64; 4])],
         pay: [u64; 4],
+        premium: Option<[u64; 4]>,
         anchor: Anchor,
     ) -> [u64; 4] {
         let Some(crate::economy::escrow::Escrowed { voices, mu, .. }) = self.release_award(escrow)
@@ -199,8 +215,15 @@ impl Treasury {
             }
             self.mint_to(*discoverer, paid, anchor, Some(Arm::Pouw));
         }
-        self.mint_claim(&voices, left, anchor);
-        left
+        let taken: [u64; 4] = match premium {
+            Some(p) => std::array::from_fn(|l| match p[l] < left[l] {
+                true => p[l],
+                false => left[l],
+            }),
+            None => left,
+        };
+        self.mint_claim(&voices, taken, anchor);
+        taken
     }
 
     /// THE ASSEMBLY PREMIUM (7d): a fragmented parent demand's children all

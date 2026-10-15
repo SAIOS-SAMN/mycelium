@@ -83,6 +83,22 @@ pub const PROVISIONAL: [&str; 8] = [
     "witness refused",
     "witness unmeasured",
 ];
+/// MU-CLIENT §5.6 — WHAT A COURT PAID, BY KIND (Phase 2): the speech it heard
+/// under a scene it holds no family for (measured on nothing, named), and each
+/// pay by the measure that read it — a word's section (W), a conjugate's
+/// transport (C), a sentence's gluing (S), a demand closed by another mind
+/// (POWC, E2), an attesting mind joined to a word's claim (E3), a mint
+/// counted toward a universe's growth grant (E4). The observer's diagnosis;
+/// the witness is the ledger's mints.
+pub const PAYS: [&str; 7] = [
+    "scenes on no family held",
+    "word sections",
+    "conjugate transports",
+    "sentence gluings",
+    "demands closed by another mind",
+    "attestations joined to a claim",
+    "mints counted toward a grant",
+];
 /// What a court's solves came to: by verdict, refusals by kind (P D C I N ?),
 /// and (78.153c) the verdicts 78.149 and 78.153 added — NO WORK (a clean
 /// replay that discharged nothing) and UNREAD (a stroke that ran out before
@@ -222,6 +238,10 @@ pub struct Acts {
     /// 78.102, 47.3 — the road a provisional word takes to the genome
     /// ([`PROVISIONAL`]).
     pub provisional: [u64; PROVISIONAL.len()],
+    /// MU-CLIENT §5.6 — each [`PAYS`] kind counted, and what it paid per lane
+    /// (four lanes a kind, in [`PAYS`]'s order).
+    pub pays: [u64; PAYS.len()],
+    pub pays_lanes: [u64; PAYS.len() * 4],
 }
 
 /// The kinds a deferred word is read as, on [`Deferred::kind`].
@@ -301,6 +321,10 @@ impl Acts {
                 }
             }
         }
+        // Phase 2's pays, after the rows: a reading written before them ends
+        // at the rows and reads as none paid.
+        put(out, &self.pays);
+        put(out, &self.pays_lanes);
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Acts> {
@@ -333,7 +357,13 @@ impl Acts {
             };
             deferred.push(Deferred { head, kind, mag, short, tries, learner });
         }
-        Some(Acts { k, reserve, drawn, restored, refused, syllabus, fetch, judged, paid, colours, colours_derived, deferred, provisional })
+        // A reading that ends at its rows was written before Phase 2's pays:
+        // none read, never a short read past the end.
+        let (pays, pays_lanes) = match b.get(*p..) {
+            Some([]) | None => ([0; PAYS.len()], [0; PAYS.len() * 4]),
+            Some(_) => (take(b, p)?, take(b, p)?),
+        };
+        Some(Acts { k, reserve, drawn, restored, refused, syllabus, fetch, judged, paid, colours, colours_derived, deferred, provisional, pays, pays_lanes })
     }
 
     /// The reading, act by act, named.
@@ -348,6 +378,17 @@ impl Acts {
             format!("solves: {} · paid {:?}", line(&JUDGED, &self.judged), self.paid),
             format!("colour words installed: {} · admitted by derivation: {}", self.colours, self.colours_derived),
             format!("provisional: {}", line(&PROVISIONAL, &self.provisional)),
+            format!(
+                "pays: {}",
+                PAYS.iter()
+                    .enumerate()
+                    .map(|(i, n)| {
+                        let lanes: Vec<u64> = self.pays_lanes.iter().skip(i * 4).take(4).copied().collect();
+                        format!("{n} {} {lanes:?}", self.pays[i])
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" · ")
+            ),
         ]
         .into_iter()
         .chain(self.deferred.iter().map(|d| {
@@ -380,6 +421,26 @@ pub struct ActsTally {
     /// ruled colour words, no scene witnessing them.
     pub colours_derived: u64,
     pub provisional: [u64; PROVISIONAL.len()],
+    /// MU-CLIENT §5.6 — [`PAYS`], counted and per lane.
+    pub pays: [u64; PAYS.len()],
+    pub pays_lanes: [u64; PAYS.len() * 4],
+}
+
+impl ActsTally {
+    /// MU-CLIENT §5.6 — ONE PAY OF A KIND, counted with what it paid per lane.
+    /// A kind [`PAYS`] does not name counts nothing; a lane past its carrier
+    /// is refused where it stands (STD1).
+    pub fn pay(&mut self, kind: &str, mu: [u64; 4]) {
+        let Some(i) = PAYS.iter().position(|n| *n == kind) else { return };
+        if let Some(slot) = self.pays.get_mut(i) {
+            *slot += 1;
+        }
+        for (l, m) in mu.iter().enumerate() {
+            if let Some(slot) = self.pays_lanes.get_mut(i * 4 + l) {
+                let _ = crate::physics::metabolism::step_or_refuse(slot, *m);
+            }
+        }
+    }
 }
 
 impl ActsTally {

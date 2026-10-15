@@ -102,8 +102,38 @@ impl Kernel {
                     // escrow's voices take after both is the COMPOSITION
                     // PREMIUM — what the sentence discharged beyond its words.
                     let mut shares = self.cited_shares(addr, &w, pay);
+                    let word_shares_paid = word_shares.clone();
                     shares.extend(word_shares);
-                    self.treasury.settle_recursive(addr, &shares, pay, installed);
+                    // MU-CLIENT §5.6 (S) — a sentence's voices take its
+                    // GLUING: what its rings close beyond its words' own
+                    // sections. A word's voices take what is left.
+                    // A site carries no clock: lane 𝒯, the ground the
+                    // closure's motions covered, is the sentence's whole and
+                    // its voices keep it (no word's section reads it).
+                    let premium = match crate::transducer::sentence::from_element_form(&w).is_some_and(|f| !f.faces.is_empty()) {
+                        true => {
+                            let mut glued = self.gluing_of(addr, &w, &crate::cognition::book::speech::words_of_sentence(&w, budget));
+                            let t = crate::transducer::sentence::presentation::LANE_T;
+                            glued[t] = pay[t];
+                            Some(glued)
+                        }
+                        false => None,
+                    };
+                    let taken = self.treasury.settle_recursive(addr, &shares, pay, premium, installed);
+                    // The pays by kind, for the observer (MU-CLIENT §5.6).
+                    let kind = match (premium.is_some(), w.is_connection(), self.conjugate_of(&w).is_some()) {
+                        (true, _, _) => "sentence gluings",
+                        (false, true, _) => "word sections",
+                        (false, false, true) => "conjugate transports",
+                        (false, false, false) => "",
+                    };
+                    if taken.iter().any(|&m| m > 0) {
+                        self.acts.pay(kind, taken);
+                    }
+                    for (_, share) in &word_shares_paid {
+                        self.acts.pay("word sections", *share);
+                    }
+                    self.grow_grants_by_paid();
                 }
             }
         } else {
@@ -284,7 +314,7 @@ impl Kernel {
     /// binding for the citer itself), and the cited form is replayed over
     /// it: a generator that closes nothing there is used for nothing
     /// there, whatever it closes elsewhere.
-    fn cited_deflation(
+    pub(crate) fn cited_deflation(
         &self,
         citer: &[u8],
         cited: &Element,
@@ -301,6 +331,12 @@ impl Kernel {
         let Some(family) = self.task_family.get(&task) else {
             return [0; 4];
         };
+        // MU-CLIENT §5.6 (W) — a connection is decompressed by its own
+        // letters and measured on its own section of the citer's family; the
+        // form decompressor never reached it.
+        if cited.is_connection() && !cited.is_colour_word() {
+            return crate::transducer::family::local::word_local(cited, family).pay;
+        }
         self.measured_replay_at(cited, family, placement)
     }
 

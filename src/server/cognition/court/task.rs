@@ -237,22 +237,36 @@ impl Kernel {
         if let Some(total) = crate::core::lanes::lanes_add(self.acts.paid, paid) {
             self.acts.paid = total;
         }
-        // 78.155c — A CLOSURE JUDGED IN A UNIVERSE grows that universe's next
-        // growth grant by its measured discharge: the key that closed it is a
-        // key of a founded domain (membership, never tier — 78.165). A sum
-        // past its carrier is refused and the closure counts nothing there
-        // rather than a capped amount (rule 11).
-        if let Some(domain) = self.tier_domain.get(&voice).copied() {
+        self.grow_grants_by_paid();
+        paid
+    }
+
+    /// 78.155c AS AMENDED (MU-CLIENT §5.6, E4) — WHAT THE COURTS PAID GROWS
+    /// THE GRANT. Every POUW and POWC payment since the last take (a solve's,
+    /// a word's, a conjugate's, a sentence's, a claim's, a demand closed by
+    /// another mind) is counted toward the next growth grant of the universe
+    /// whose key was paid — membership, never tier (78.165). Where it was
+    /// only first solves, a universe whose minds earned by words and
+    /// sentences no task named never grew. A sum past its carrier is refused
+    /// and counts nothing there rather than a capped amount (rule 11).
+    pub(crate) fn grow_grants_by_paid(&mut self) {
+        let paid = self.treasury.take_paid_out();
+        let mut moved = false;
+        for (who, mu) in paid {
+            let Some(domain) = self.tier_domain.get(&who).copied() else { continue };
             let held = match self.closed_since_grant.get(&domain) {
                 Some(h) => *h,
                 None => [0; 4],
             };
-            if let Some(now) = crate::core::lanes::lanes_add(held, pay) {
+            if let Some(now) = crate::core::lanes::lanes_add(held, mu) {
                 self.closed_since_grant.insert(domain, now);
-                self.mark_persist();
+                self.acts.pay("mints counted toward a grant", mu);
+                moved = true;
             }
         }
-        paid
+        if moved {
+            self.mark_persist();
+        }
     }
 
     /// THIS COURT'S ACTS AND ITS METABOLISM, read at the question: the
@@ -273,6 +287,8 @@ impl Kernel {
             colours_derived: self.acts.colours_derived,
             deferred: self.deferred_reading(),
             provisional: self.acts.provisional,
+            pays: self.acts.pays,
+            pays_lanes: self.acts.pays_lanes,
         }
     }
 

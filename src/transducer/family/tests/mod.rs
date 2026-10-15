@@ -23,6 +23,7 @@ mod incongruence;
 mod interpret;
 mod invert;
 mod lanes;
+mod local;
 mod luminal;
 mod orbit;
 mod pairing;

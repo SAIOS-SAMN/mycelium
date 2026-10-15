@@ -23,7 +23,9 @@ pub type Adjoined = Vec<(crate::transducer::alphabet::Rotor, crate::transducer::
 pub struct Expanded {
     pub spent: usize,
     pub pivoted: [u64; 4],
-    pub crystallized: Vec<Element>,
+    /// Each with the family its evidence names (MU-CLIENT §5.4, E1), empty
+    /// where none.
+    pub crystallized: Vec<(Element, Vec<u8>)>,
     /// The ring's circuit completed this stroke, `(circuits, period)`.
     pub circuit: Option<(u64, u64)>,
     /// 37.7's ADJUNCTION CANDIDATES: the rotors this stroke's cover meets

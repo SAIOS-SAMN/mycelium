@@ -28,6 +28,7 @@ pub mod confluence;
 pub mod incongruence;
 pub mod interpret;
 pub mod invert;
+pub mod local;
 pub mod luminal;
 pub mod memo;
 pub mod orbit;

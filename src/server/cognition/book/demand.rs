@@ -159,6 +159,7 @@ impl Kernel {
                     self.treasury.settle_use(voice, disc, mag, anchor);
                 }
             }
+            self.pay_convergence(voice, at, used.as_bytes(), anchor);
             return ProbeReading { settled: before, closure: ProbeClosure::Closed, remaining: [0; 4] };
         }
         // WHAT WAS RELEASED IS WHAT WAS SAID, measured on the links the
@@ -178,5 +179,28 @@ impl Kernel {
         self.book_gen += 1;
         self.append_step(crate::chronometry::ActKind::Settled, at, voice);
         ProbeReading { settled, closure: ProbeClosure::Residual(v), remaining: after }
+    }
+
+    /// MU-CLIENT §5.6 (E2) — A DEMAND CLOSED AT ANOTHER PERSPECTIVE PAYS THE
+    /// CITATION (POWC). `closer` cited `cited` and it closed a demand of the
+    /// listing at `at`; where the listing was spoken by another mind, the
+    /// closer is minted the cited word's discharge on the family the listing
+    /// is bound to — the citation, measured once, never the sum of the cites.
+    /// The listing's own speaker closing its own demand is paid nothing here
+    /// (5.7(d), no self-pay), and a listing bound to no family measures
+    /// nothing (a reading, not a floor).
+    fn pay_convergence(&mut self, closer: [u8; 32], at: &[u8], cited: &[u8], anchor: crate::economy::Anchor) {
+        let speaker = self.drawers.get(at).copied().or_else(|| self.discoverer_of(at));
+        if speaker.is_none_or(|s| s == closer) {
+            return;
+        }
+        let Some(word) = self.basis.get(cited).map(|h| h.element().clone()) else { return };
+        let mu = self.cited_deflation(at, &word, &crate::transducer::alphabet::Word::identity());
+        if mu.iter().all(|&m| m == 0) {
+            return;
+        }
+        let paid = self.treasury.settle_convergence(closer, mu, anchor);
+        self.acts.pay("demands closed by another mind", paid);
+        self.grow_grants_by_paid();
     }
 }

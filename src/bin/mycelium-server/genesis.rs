@@ -188,7 +188,23 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
         eprintln!("[{tag}] kernel lock poisoned; no bond staked");
         return;
     };
+    // MU-CLIENT §5.4 (E1, finding 8) — EVERY FAMILY THE BOOK HOLDS, bound by
+    // its citation before the door opens: a court restored with its intake
+    // done held no family until its cover moved, so every scene a mind spoke
+    // of measured nothing here. A poisoned registry binds none, and says so.
+    let families: Vec<([u8; 32], Vec<mycelium::transducer::family::TrainPair>)> = match registry.lock() {
+        Ok(reg) => reg.families().map(|(c, train)| (c, train.to_vec())).collect(),
+        Err(_) => {
+            eprintln!("[{tag}] registry lock poisoned; no family bound");
+            Vec::new()
+        }
+    };
     h.run(|k, _| {
+    let bound = families.len();
+    for (cite, train) in families {
+        k.bind_task_family(cite, train);
+    }
+    eprintln!("[{tag}] families bound: {bound} by citation");
     if cover_measured {
         k.set_genesis_cover(cover);
         bond_genesis(k, vk, cover, genesis, tag);

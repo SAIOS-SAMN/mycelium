@@ -30,6 +30,21 @@ impl Crystal for Held {
     fn on_body(&self, c: &Invariant) -> Vec<(&Element, &Form, Standing)> {
         self.on_class(c)
     }
+    /// 21 step 3 — the question the glue asks: the held form, at exactly the
+    /// acts its own word vertices perform (`act_key`), as the mind's crystal
+    /// files a closed form (`act_keys_of`) — and at no other act.
+    fn on_act(&self, act: &[u8]) -> Vec<(&Element, &Form, Standing)> {
+        let acts_so = self.f.vertices.scoped().any(|(_, v)| {
+            let Vertex::Word { derivation, acts, .. } = v else { return false };
+            acts.scoped().any(|(_, a)| {
+                crate::transducer::sentence::presentation::act_key(&a.chart, &derivation.rotor(), &a.carriage, &a.gauge).as_deref() == Some(act)
+            })
+        });
+        match acts_so && self.f.is_closed() {
+            true => vec![(&self.e, &self.f, Standing::Held)],
+            false => Vec::new(),
+        }
+    }
     fn speak_form(
         &self,
         f: &Form,

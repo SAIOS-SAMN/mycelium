@@ -69,3 +69,30 @@ fn a_second_minds_hold_on_the_word_is_sealed_as_its_attestation() {
     assert!(court.attest_agreements(&speech(me, &other, hold(&hearer, other.address().as_bytes()))).is_empty(), "a word the court does not hold");
     assert_eq!(attests(&court), before + 1, "nothing else sealed");
 }
+
+/// MU-CLIENT §5.6 (E3) — THE UNION'S ATTESTATION PAYS. A word the court holds
+/// on its docket with a claim in escrow for its speaker: the hearer's HOLD
+/// joins the hearer to the claim beside the speaker, so the install pays both;
+/// the claim's measure is the speaker's, untouched. A word with no claim
+/// standing (installed, or its claim dropped) gains no party.
+#[test]
+fn an_attestation_joins_the_hearer_to_the_words_claim() {
+    let mut court = Kernel::new();
+    let (speaker, hearer) = (key(1), key(2));
+    let me = speaker.verifying_key().to_bytes();
+    let them = hearer.verifying_key().to_bytes();
+    let e = word(2);
+    let addr = e.address();
+    court.provisional.insert(addr.as_bytes(), e.clone());
+    let anchor = court.anchor();
+    court.treasury.escrow_award(&addr, vec![me], [3, 0, 0, 1], anchor);
+    let _ = court.attest_agreements(&speech(me, &e, hold(&hearer, addr.as_bytes())));
+    let claim = court.treasury.escrow_of(addr.as_bytes()).expect("the claim stands");
+    assert_eq!(claim.voices, vec![me, them], "the speaker and the mind that agreed, both parties");
+    assert_eq!(claim.mu, [3, 0, 0, 1], "the measure is the speaker's, untouched");
+
+    let bare = word(3);
+    court.provisional.insert(bare.address().as_bytes(), bare.clone());
+    let _ = court.attest_agreements(&speech(me, &bare, hold(&hearer, bare.address().as_bytes())));
+    assert!(court.treasury.escrow_of(bare.address().as_bytes()).is_none(), "no claim standing, no party joined, none invented");
+}

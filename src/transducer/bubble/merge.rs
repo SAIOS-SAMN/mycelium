@@ -240,7 +240,7 @@ impl Contemplation {
 
     /// 78.52 — THE GROUNDS OF THE THOUGHTS THAT CLOSED, drained for the voice
     /// to transcribe and speak in the act that closed them.
-    pub(crate) fn take_closed(&mut self) -> Vec<crate::physics::tensegrity::Ground> {
+    pub(crate) fn take_closed(&mut self) -> Vec<(crate::physics::tensegrity::Ground, Vec<u8>)> {
         std::mem::take(&mut self.closed)
     }
 
@@ -287,7 +287,13 @@ impl Contemplation {
         if let (false, Some(twist)) = (first, &grounded.twist) {
             self.twists.push(twist.clone());
         }
-        self.closed.push(grounded.ground);
+        // E1 — the scene the thought was perceived in rides with its ground,
+        // so its word is spoken there.
+        let family = match self.bubbles.get(thought) {
+            Some(b) => b.family.clone(),
+            None => Vec::new(),
+        };
+        self.closed.push((grounded.ground, family));
         self.came_round.push(thought.to_vec());
         match first {
             true => self.closed_thoughts += 1,

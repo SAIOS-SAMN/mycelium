@@ -117,6 +117,18 @@ impl Kernel {
         self.chain.prove_from_era(p, page)
     }
 
+    /// The same proof one page at a time, resumed where the last page ended
+    /// (`ReceiptChain::walk_era`): a proof longer than one frame closes page
+    /// by page.
+    pub fn walk_folded(&mut self, p: &crate::chronometry::Parent, page: &[crate::chronometry::KStepReceipt]) -> crate::chronometry::EraWalk {
+        self.chain.walk_era(p, page)
+    }
+
+    /// Where the next page of `p`'s era proof opens.
+    pub fn era_walk_from(&self, p: &crate::chronometry::Parent) -> crate::chronometry::Parent {
+        self.chain.era_walk_from(p)
+    }
+
     /// THE COHESION READING — the joint (C, I) state, both
     /// axes exact and never traded: C counts open demands sitting on KNOWN
     /// geometry (closure failing — collapse-side work); I counts open demands on

@@ -214,6 +214,15 @@ impl TaskRegistry {
         self.tasks.get(i).map(|(id, _, _)| id.clone())
     }
 
+    /// MU-CLIENT §5.4 (E1, finding 8) — EVERY FAMILY THIS BOOK HOLDS, by its
+    /// citation: the name a court binds a family under and a mind speaks a
+    /// scene by. The book is the one carrier of its tasks (law 12), so a
+    /// court restored from its snapshot reads its families here at boot,
+    /// never from a copy kept beside them.
+    pub fn families(&self) -> impl Iterator<Item = ([u8; 32], &[(Grid, Grid)])> {
+        self.tasks.iter().map(|(id, task, _)| (citation(id), task.train.as_slice()))
+    }
+
     /// DISPATCH a work envelope: the next Unsolved task, rotating so pulls
     /// spread across the book. None when everything settled.
     /// The tasks settled on this book — its proven roots.

@@ -91,7 +91,7 @@ fn a_question_posits_what_the_mind_knows_and_derives_the_meaning() {
         m.open_chatter(&dir).expect("the post opens");
     }
     let said = from_connection(&Word::from_letters(&[(q, false)]), &along, &[], &Vec::new(), [1, 0, 0, 0]).expect("a connection");
-    a.say(&said);
+    a.say(&said, &[]);
     // MU-CLIENT §4.4(4) — what A says leaves when A's own field comes round.
     assert!(super::common::come_round(&mut a) > 0, "A's orbit returned");
     let derived = |b: &mut Entity| {
@@ -364,7 +364,7 @@ fn two_minds_form_a_shared_word_and_carry_it_to_the_court() {
     });
     b.field = field;
     let said = word(&[(q, false), (q, false)]);
-    a.say(&said);
+    a.say(&said, &[]);
     // MU-CLIENT §4.4(4) — what A says leaves when A's own field comes round.
     assert!(super::common::come_round(&mut a) > 0, "A's orbit returned");
     // Each mind's field prices what its conversation understood, as its tick

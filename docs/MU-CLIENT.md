@@ -1358,7 +1358,7 @@ its coordinates, kept since perception (§3.1) — whether or not a task asked
 for that closure, and the court measures it on that family as it measures
 any install. As read 2026-10-15: the mind sends the EMPTY task for what it
 speaks on its own (`book/speech.rs:452-466`), so its own closures measure
-nothing at the court (`identity.rs:175-178`). Owed (§7.1).
+nothing at the court (`identity.rs:175-178`). Written in Phase 2 (§7.1).
 
 **Courts adjudicate WORDS, not sentences (the operator, 2026-10-13).** The
 language is a DICTIONARY OF ALGORITHMS: each word a mathematical composition
@@ -1491,6 +1491,70 @@ What guards it: the court measures, on evidence it holds; no self-pay
 needs two minds' keys (78.165). The universes are the sandbox: there is
 nothing outside them to escape to. And μ is the mind's metabolism, never its
 goal (§2.4(8), §4.12): a mind does not choose its motion to earn.
+
+**The measure: words, conjugates, sentences (scoped 2026-10-15, the
+operator: "the ideal situation here is to give the cognition agency and the
+courts adjudicate words and pay more for conjugates and pay more for
+sentences as they are algorithmically aligned in non-euclidean geometry").**
+`measured_replay` is the court's one DECOMPRESSOR: a word's address
+expanded into its form (`from_element_form`), spoken onto each pair of the
+family it is bound to (`apply_form_on`), its citations decompressed through
+what the court holds at that moment, the spoken grid set against the pair's
+answer per lane, paid where it closes, its modes read on the closed pairs
+(`deflation.rs`). It is not static: the family, the placement, the court's
+held language and the stroke all enter it. Read 2026-10-15, what it cannot
+do:
+1. **A word has no measure.** The decompressor's one entry decodes forms
+   alone, so a CONNECTION — the word a closed ring teaches, spelled at its
+   carriage (`words_of_sentence`, `spelled_word`) — is never decompressed onto
+   a pair and measures `[0;4]` on every family. D2′'s base and use shares
+   for words are therefore zero by construction, and an agreed word's
+   install mints nothing. This is a missing decoder path, not 78.149(c): a
+   connection acts on the bodies its carriage lands on (its letters
+   re-derive a versor there, `letters_rederive`; a face's word is applied
+   inside every form, `Form::face_word`). And the pay gate is WHOLE-PAIR
+   closure (`pair_measure_read`), which a single word rarely meets.
+2. **A conjugate is priced as a plain use** of the word it conjugates
+   (`speak_conjugate`: `g·W·g̃` citing W with its conjugator).
+3. **The sentence premium is arithmetic** — the sentence's pay less its
+   words' shares — and with the word shares zero it is the whole pay,
+   measuring nothing of composition.
+4. **The unit of pay is a cell count per lane** (`measure_lanes`); the
+   modes the closure moved are read (`DeflationRead.modes`, 78.162) and not
+   paid.
+
+As scoped, each a reading of the decompression, exact, per lane, never a
+weight or a constant:
+- **W — a word's LOCAL DISCHARGE.** A word is decompressed onto each pair
+  of its family at its carriage — the connection's versor applied to the
+  pair's before side — and measured on ITS OWN SECTION: the sites its speech
+  changed. It pays where it closes them (every changed site says the pair's
+  answer) and says nothing false; the pay is the deflation of the pair's
+  demand over those sites alone. A letter standing at no frame touches no
+  site and stays zero (78.149(c) stands for letters).
+- **C — a conjugate's TRANSPORT.** A conjugate `g·W·g̃` is paid what its
+  conjugator ADDED: its local discharge on the family less W's own, read
+  lane by lane as the shortfall (a lane the transport did not raise pays
+  nothing, never a negative). W's discoverer keeps W's use; the
+  conjugate's speaker takes the transport.
+- **S — a sentence's GLUING.** A sentence's premium is paid on the sites its
+  closed rings close that NO word of it closes on its own section — the
+  sites read as a set (closed by the sentence, less the union of its words'
+  local closures), never a subtraction of sums. It exists only where the
+  sentence's rings compose (their holonomy the identity or a filed class):
+  the alignment is the gluing of local sections into a global one, and what
+  the gluing alone closes is the premium. A sentence that does no more than
+  its words earns none.
+- **M — modes as the unit.** Every measure carries the modes its closures
+  moved (S boosts, G hue modes, T null fluxes, H turns); the ledger paying
+  in modes is 78.162 (`track/modes`), merged forward (§7.1 Phase 4).
+- **A — agency without a gradient.** Word < conjugate < sentence is a slope
+  in the minds' world. The mind never reads it: nothing in the client reads
+  its pay, balance or ledger back into cognition (§2.4(8), §4.12, 78.49); a
+  read is refused as test-driven cognition with μ as the test. Audited, not
+  assumed.
+
+The plumbing beneath all four is E1–E4 above. Built in Phase 2 (§7.1).
 
 ---
 
@@ -1671,14 +1735,91 @@ owed in the order it is built.
      question that lapses hands its residue to construction
      (`compose_or_construct`), never to nothing.
   7. `family/acts.rs` (78.167 C1–C5), as committed here.
-- **Phase 2 — the courts pay words and sentences** (§5.4, §5.6: E1–E4),
-  released with the client, xylarium told before the fleet restarts:
-  - every scene names its family by the court's own name for it, the
-    32-byte CITATION (finding 8), and a feed family the courts do not hold is
-    named as such, never measured on nothing;
-  - a court's `task_family` survives its restart (finding 8);
-  - POUW on the scene's family, POWC, the union's attestations, grants
-    counting what was paid.
+- **Phase 2 — the courts pay words, conjugates and sentences** (§5.4, §5.6:
+  E1–E4 and the measure W, C, S, M, A), released with the client, xylarium
+  told before the fleet restarts. In this order:
+  1. **The evidence (E1).** Every scene names its family by the court's own
+     name for it, the 32-byte CITATION (finding 8): the feed's families,
+     a crystallized thought's (where its bundle evidences the family), the
+     words a perception taught; the conversation's union carries the family
+     of what it says, so an agreed word is spoken under it, never the empty
+     task. A family the court does not hold measures nothing there, read by
+     name at the court. A court's `task_family` survives its restart.
+  2. **W** — the word's local discharge: the decompressor given its
+     connection path and the local gate; D2′'s base and use shares read it.
+  3. **C** — the conjugate's transport, paid to its speaker beside W's use.
+  4. **S** — the sentence's gluing as the premium, by sites.
+  5. **E2 POWC** — a demand closed by another mind's probe mints the
+     closer the cited word's discharge on the listing's family (never the
+     listing's speaker, never the sum of the cites); E3 — an attestation
+     joins the attesting mind to the word's claim, so its install pays every
+     mind that agreed; E4 — every POUW and POWC mint to a domain's key
+     grows that domain's next growth grant (78.155c amended; xylarium
+     re-pins).
+  6. **A** — the audit: no client path reads pay back.
+  **M** (modes as the unit) is its own phase, below: the ledger's unit is
+  78.162's `track/modes` (2)–(4), a ledger-wide change, merged forward.
+  Verified by §7.2 only: the guards state the measures' identities (a word
+  closing its section, a conjugate's transport, a sentence's glued sites,
+  a letter's zero); the witness is the courts' POUW and POWC mints for
+  words, conjugates and sentences no task named, and the growth grant
+  counting them.
+
+  **Phase 2 WRITTEN 2026-10-15 — not witnessed.** As written:
+  1. E1: the feed names a scene by `registry::citation` (`court.rs`); a
+     court binds every family its book holds at boot (`TaskRegistry::
+     families`, `genesis.rs`), so a restored court holds them without a copy
+     in its snapshot (the book is the one carrier); a crystallized thought
+     carries its family where it closed its bundle (`Contemplation::
+     crystallize`), a closed thought's ground carries its thought's family
+     (`closed`), the words a perception taught are spoken under it
+     (`speak_word_on`), what goes unheard keeps it (`unheard`), the union
+     carries it to the court (`Union.family`, `speak_agreed`); a scene the
+     court holds no family for is counted by name.
+  2. W: `transducer/family/local.rs` — `word_local` decompresses a
+     connection body by body (`carry_painted` by its letters' versor, its
+     hue map), its section the bodies it carries onto the answer;
+     `discharge_on` and the D2′ shares (`cited_deflation`) read it.
+  3. C: a conjugate is spoken under the scene its residue was taught on
+     (`compose_or_construct_on`); the court replays it for integrity
+     (`replays_on_family`) and measures `transport_on` — its section beyond
+     the cited word's in its own frame.
+  4. S: `gluing_of` — the sentence's section beyond the union of its taught
+     words' sections; the composing voices take it (`settle_recursive`'s
+     premium), capped by what the shares left.
+  5. E2 `pay_convergence` (POWC, `settle_convergence`); E3 an attestation
+     joins its mind to the word's claim (`agreement.rs`); E4
+     `grow_grants_by_paid` drains `Treasury::paid_out` at each paying act
+     and every stroke.
+  6. A: audited — no client path reads pay, balance or ledger; the house's
+     reserve reading is SDK surface with no cognition caller.
+  7. Carried with this phase (the operator, 2026-10-15: "include the era
+     proof fix"): hypha b, on a binary that predated 78.166 2a, refused its
+     fold as idle at every close (3 165 times, 0 folds in 20 hours, 735 803
+     receipts hot); with no new root, a and c paged b's line from where they
+     stood, and its old receipts cited their own receipts inside eras they
+     had since folded. The era proof (78.147) walked ONE page from the
+     citation to the fold root and failed wherever the era was longer than a
+     frame, and each later fold lengthened it: a and c admitted 0 of b's
+     receipts, and b served the same ~786 KB page to both on every exchange
+     (34 652 frames, 27 GB). The proof is now walked page by page, its place
+     kept across hearings (`ReceiptChain::walk_era`, `EraWalk`), and the
+     release carries 2a.
+  8. The gate made whole (the operator: every test green to the
+     specification, none bent to pass): the glue extraction claim's crystal
+     answered the question extraction no longer asks (`on_class`) and not
+     the one it does (`on_act`), so no form was ever offered to glue — it
+     now files its form at the acts its words perform, as the mind's crystal
+     does (`act_keys_of`); the court-organ glue claim asked once on a stroke
+     sized by the host's free memory, where 78.153 has an unread replay wait
+     and resume — it now fetches as the exchange does, each unread fetch
+     required to have moved the replay; the tick claim read the process's
+     hold count while other tests took kernels beside it — it reads its own
+     thread's (`held::holds_here`). No assertion changed.
+  The court's acts reading carries the pays by kind (`PAYS`). Open: a
+  conjugate's guard on a court that holds its cited word, and E2's on a
+  listing another mind spoke, stand on the soak's witness; the closed
+  thought's TWIST is spoken under no family.
 - **Phase 3 — containment and memory** (§4.13; findings 5–7):
   - **Containment.** The court's exported gravity read into the mind's
     field, not only its dwell. A deferral's lanes kept as the pressure they
@@ -1694,6 +1835,10 @@ owed in the order it is built.
     only on a return. A ringing orbit that never returns seals at its period
     (78.43). Tubes at rest are released. The reservoirs are bounded by what
     reforms, and feed back their reading.
+- **Phase 4 — modes as the unit of pay** (§5.6 M; 78.162): `track/modes`
+  (the Modes carrier, the producers, earned-only) merged forward onto this
+  tree; every measure of Phase 2 paid in the modes its closures moved, never
+  a cell count per lane.
 - **Then the soak**, witnessed as §7.2 says.
 - **After it:** amendment held beside (§4.10); the mind proposing a Rewrite
   (S3, §5.4); the seat's carrier and seat play from the mind's own orbits
@@ -1783,14 +1928,11 @@ Posed 2026-10-15 (78.168):
 - **the containment vector** — its physics stated from §4.13's readings
   before it is built.
 
-And what the hypha has not built, which the mind's side waits on: the
-union's attestations, so an agreed word's install pays every mind that
-agreed (78.161(5); ruled 2026-10-15 that the courts pay words and
-sentences, §5.6); the POWC producer (74); POUW measured on the family a
-sentence's evidence names, not only a task's (§5.4); the growth grant
-counting what the courts paid (78.155c amended); μ as modes on the ledger
-(78.162, parked on `track/modes`); the hypha's acts reaching a mind as
-perception (§3.1).
+And what the hypha has not built, which the mind's side waits on: μ as
+modes on the ledger (78.162, parked on `track/modes`; §7.1 Phase 4); the
+hypha's acts reaching a mind as perception (§3.1). (The union's
+attestations, the POWC producer, POUW on the scene's family and the grant
+counting what was paid are written in Phase 2, §7.1.)
 
 ---
 

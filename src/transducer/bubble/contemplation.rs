@@ -140,8 +140,9 @@ pub struct Contemplation {
     /// 78.52 — the grounds of thoughts whose hours closed a return, waiting for
     /// the voice that transcribes them in the act that closed them: the voice
     /// spells each against its OWN held letters (78.47, finding (i)), never
-    /// the fixed seventeen. And how many closed.
-    pub(crate) closed: Vec<crate::physics::tensegrity::Ground>,
+    /// the fixed seventeen. And how many closed. Each with the scene its
+    /// thought was perceived in (MU-CLIENT §5.4, E1), empty for none.
+    pub(crate) closed: Vec<(crate::physics::tensegrity::Ground, Vec<u8>)>,
     pub closed_thoughts: u64,
     /// MU-CLIENT §4.4(2) — the later returns thoughts' windings completed
     /// (each a traversal past the first close).
@@ -1158,7 +1159,12 @@ impl Contemplation {
     /// (`retire_on_t` skips those). `None` when the form is not closed, a
     /// pair of the bundle is still open, or nothing is measured: a form that
     /// closes nothing is the citation, not a form (4), and stays a thought.
-    pub fn crystallize(&mut self, key: &[u8], crystal: &dyn Crystal) -> Option<Element> {
+    ///
+    /// MU-CLIENT §5.4 (E1) — WITH THE SCENE ITS EVIDENCE NAMES: the family
+    /// it was perceived in where it closed that family's whole bundle, so the
+    /// court replays and pays it there; empty where it closed no bundle (an
+    /// hour, a remainder), whose evidence is no family a court binds.
+    pub fn crystallize(&mut self, key: &[u8], crystal: &dyn Crystal) -> Option<(Element, Vec<u8>)> {
         let b = self.bubbles.get(key)?;
         let f = b.form.as_ref()?;
         if !f.is_cauterized() || !f.remainder.is_empty() {
@@ -1167,15 +1173,15 @@ impl Contemplation {
         if b.remainders.scoped().any(|(_, r)| !r.is_empty()) {
             return None;
         }
-        let mag = match b.bundle.as_deref() {
+        let (mag, family) = match b.bundle.as_deref() {
             Some(bundle) => {
                 let (pay, rems) = crate::transducer::family::form_deflation(f, bundle, crystal);
                 if rems.iter().any(|r| !r.is_empty()) {
                     return None;
                 }
-                pay
+                (pay, b.family.clone())
             }
-            None => form_mag(f)?,
+            None => (form_mag(f)?, Vec::new()),
         };
         let e = sentence::as_element_form(f, mag)?;
         let retire = b.glued_by.is_empty();
@@ -1189,7 +1195,7 @@ impl Contemplation {
             self.dirty.remove(key);
         }
         self.formed += 1;
-        Some(e)
+        Some((e, family))
     }
 
     /// Classes on the contemplation, any degree.

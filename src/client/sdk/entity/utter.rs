@@ -274,7 +274,7 @@ impl Entity {
     /// It is its own function so that the claim "standing steps the mind's
     /// own K, and no reply moves it" can be proved without a socket, which
     /// §3.7 does not let a test open.
-    pub(crate) fn stand(&mut self, sentences: &[Element], tu: u64) -> Vec<u8> {
+    pub(crate) fn stand(&mut self, sentences: &[Element], tu: u64, family: &[u8]) -> Vec<u8> {
         let mut codes = vec![dialogue::SPEECH_STOOD; sentences.len()];
         for (i, e) in sentences.iter().enumerate() {
             let taught = self.already_taught(e);
@@ -290,8 +290,9 @@ impl Entity {
             self.epigenome.stand_dialect_at(e.clone(), k, tu);
             if !taught {
                 codes[i] = 0xff; // asked about on the wire below
-                // 78.161 — and said to the minds this one chatters with.
-                self.say(e);
+                // 78.161 — and said to the minds this one chatters with,
+                // under the scene it was spoken under (E1).
+                self.say(e, family);
             }
         }
         codes
@@ -433,7 +434,7 @@ impl Entity {
             }
         }
         let standing: Vec<Element> = open.iter().map(|&i| sentences[i].clone()).collect();
-        let stood = self.stand(&standing, tu);
+        let stood = self.stand(&standing, tu, task);
         for (j, &i) in open.iter().enumerate() {
             codes[i] = stood[j];
         }
@@ -569,6 +570,14 @@ impl Entity {
     /// when it stands; the genome receives it only from the syllabus.
     /// `Spoken` is said, posted to the court; its answer files itself.
     pub(crate) fn speak_word(&mut self, word: &Element) -> io::Result<Utterance> {
+        self.speak_word_on(word, &[], &[])
+    }
+
+    /// [`Self::speak_word`] UNDER THE SCENE THAT TAUGHT IT (MU-CLIENT §5.4,
+    /// E1): `family` is the citation of the family the word's sentence was
+    /// perceived on, so the court measures the word's own section there (W);
+    /// empty where no family evidences it.
+    pub(crate) fn speak_word_on(&mut self, word: &Element, train: &crate::transducer::family::Family, family: &[u8]) -> io::Result<Utterance> {
         // A thought that still has a remainder is work, not a message: the
         // wire never carries ∂g. A word with a chain is held, not uttered.
         if let [_, ..] = word.sub() {
@@ -585,7 +594,7 @@ impl Entity {
         if self.already_taught(word) {
             return Ok(Utterance::Already);
         }
-        self.speak(std::slice::from_ref(word), |_, _| {});
+        self.speak_with(std::slice::from_ref(word), train, family, |_, _| {});
         // Filed as said once it is posted, so the next stroke does not say
         // it again while the court's answer is on its way.
         self.file_taught(word);

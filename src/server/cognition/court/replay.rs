@@ -9,6 +9,16 @@ use crate::cognition::*;
 use crate::network::nerve::Coordinate;
 use crate::transducer::element::{self, Element};
 
+/// MU-CLIENT §5.6 (C) — WHETHER A WORD'S REPLAY RUNS ON ITS BOUND FAMILY.
+/// A conjugate (`g · W · g̃`, its derivation carrying a conjugator) is a
+/// word: its section on the family is MEASURED (`transport_on`), never
+/// certified by closing every pair, which no word does — so, as a colour
+/// word's, its replay is the word's integrity alone. Every other word replays
+/// on the family it is bound to, as before.
+pub(crate) fn replays_on_family(spoken: &Element) -> bool {
+    !spoken.receipts().derivations.iter().any(|d| d.conjugator.is_some())
+}
+
 /// 78.153 — WHERE A WORD'S REPLAY IS KEPT: its address and the task whose
 /// family it is replayed on, each length-delimited (A21).
 pub(crate) fn replay_key(spoken: &Element, task: Option<&[u8]>) -> Vec<u8> {
@@ -199,7 +209,7 @@ impl Kernel {
         spoken: &Element,
         budget: &mut crate::physics::Budget,
     ) -> (crate::verdict::Replayed, bool) {
-        let task = self.court_task_of(spoken);
+        let task = self.court_task_of(spoken).filter(|_| replays_on_family(spoken));
         self.replay_on_cursor(spoken, task.as_ref().map(|t| t.as_bytes()), false, budget)
     }
 
@@ -213,7 +223,7 @@ impl Kernel {
     /// Where `court_replay` keeps this word's cursor, and how far it stands.
     #[cfg(test)]
     pub(crate) fn court_replay_progress(&self, spoken: &Element) -> Option<(crate::verdict::Phase, usize, usize)> {
-        let task = self.court_task_of(spoken);
+        let task = self.court_task_of(spoken).filter(|_| replays_on_family(spoken));
         let key = replay_key(spoken, task.as_ref().map(|t| t.as_bytes()));
         self.replay_cursors.get(&key).map(|c| c.progress())
     }
@@ -263,6 +273,10 @@ impl Kernel {
     /// [`Kernel::court_stroke`] ON THE HOLD'S STROKE (78.153b): the binary's
     /// court loop hands in the one stroke its kernel hold was taken with.
     pub fn court_stroke_on(&mut self, budget: &mut crate::physics::Budget) {
+        // E4 — what every other act paid since the last stroke, counted
+        // toward the grants (an install, a solve and a demand closure count
+        // at their own act).
+        self.grow_grants_by_paid();
         // PHY1: what the contacts this court perceived did, on any thread,
         // booked on its one reserve's physics — order built where they
         // condensed, pressure where they were refused.

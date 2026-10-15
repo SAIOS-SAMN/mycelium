@@ -40,7 +40,9 @@ fn a_reading_is_signed_with_no_digest_and_a_pushed_ring_is_heard_off_the_kernel(
     let (va, vb) = (a.verifying_key().to_bytes(), b.verifying_key().to_bytes());
     let m = mesh(&a);
     let origin = Origin { genesis: GENESIS, epoch: EPOCH };
-    let holds = crate::held::holds();
+    // Read on this thread: the signing and the door run here, and the tests
+    // beside this one take kernels of their own on theirs.
+    let holds = crate::held::holds_here();
 
     // THE COURT LOOP SIGNS: a tick read, a reading due, no digest built.
     assert_eq!(sign_tick(&m, None), None, "no tick read, nothing signed");
@@ -75,5 +77,5 @@ fn a_reading_is_signed_with_no_digest_and_a_pushed_ring_is_heard_off_the_kernel(
     long.push(0);
     assert_eq!(hear_tick(&m, &long), Err(TickRefused::Unreadable));
 
-    assert_eq!(crate::held::holds(), holds, "no kernel was taken: not by the signing, not by the door");
+    assert_eq!(crate::held::holds_here(), holds, "no kernel was taken: not by the signing, not by the door");
 }

@@ -53,7 +53,7 @@ impl Kernel {
         // the frame's replays move on.
         let keys: Vec<Vec<u8>> = sentences
             .iter()
-            .map(|s| crate::cognition::court::replay::replay_key(s, (!s.is_colour_word()).then_some(task)))
+            .map(|s| crate::cognition::court::replay::replay_key(s, (!s.is_colour_word() && crate::cognition::court::replay::replays_on_family(s)).then_some(task)))
             .collect();
         let progress = |k: &Kernel| -> Vec<Option<(crate::verdict::Phase, usize, usize)>> {
             keys.iter().map(|key| k.replay_cursors.get(key).map(|c| c.progress())).collect()
@@ -372,7 +372,7 @@ impl Kernel {
         // The test's own act: its root, one stroke — spoken again, as the
         // voice speaks again, while the court defers it on no lane with its
         // replay moved on (78.153: a replay longer than one stroke resumes).
-        let key = crate::cognition::court::replay::replay_key(s, (!s.is_colour_word()).then_some(task));
+        let key = crate::cognition::court::replay::replay_key(s, (!s.is_colour_word() && crate::cognition::court::replay::replays_on_family(s)).then_some(task));
         loop {
             let before = self.replay_cursors.get(&key).map(|c| c.progress());
             let mut budget = self.physics.stroke();
@@ -421,7 +421,10 @@ impl Kernel {
         // from this family at adjudication (`adjudicate_one`); it carries no
         // chain by construction, so its replay against the family is that
         // evidence, and here it is replayed for integrity alone.
-        let family_task = match s.is_colour_word() {
+        // MU-CLIENT §5.6 (C) — and a conjugate's evidence is its section,
+        // measured below: replayed for integrity, never for closing every
+        // pair (`replays_on_family`).
+        let family_task = match s.is_colour_word() || !crate::cognition::court::replay::replays_on_family(s) {
             true => None,
             false => Some(task),
         };
@@ -449,6 +452,11 @@ impl Kernel {
             true => None,
             false => self.task_family.get(task).map(Vec::as_slice),
         };
+        // MU-CLIENT §5.4 (E1) — a scene this court holds no family for is
+        // measured on nothing here, and read by name.
+        if heard_on.is_none() && !task.is_empty() && task != [0u8; 32] {
+            self.acts.pay("scenes on no family held", [0; 4]);
+        }
         let discharge = self.discharge_on(s.address().as_bytes(), s, heard_on);
         let out = self.list_sentence(s, voice, discharge);
         // A SENTENCE SPOKEN FOR ITSELF NAMES NO TASK. `Entity::speak` sends

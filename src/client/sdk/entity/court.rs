@@ -89,7 +89,11 @@ impl Entity {
         self.physics_mut().bump(&mag);
         StrokeOutcome::add(&mut outcome.fed, &mag);
         // A task whose members have no A5 form has no identity to think by.
+        // MU-CLIENT §5.4 (E1) — the scene is named by the court's own name
+        // for it, its 32-byte CITATION, never the raw content address a
+        // court binds nothing under (finding 8).
         let Some(id) = crate::registry::task_id(&task) else { return };
+        let id = crate::registry::citation(&id);
         if let (_, Some(uttered)) = self.think_family(&id, &task.train) {
             StrokeOutcome::add(&mut outcome.uttered, &uttered);
         }

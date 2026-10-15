@@ -19,6 +19,18 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
+## Read on the fleet 2026-10-15 (before the Phase 2 relaunch)
+Hypha b wedged: running 04d9981c (before 78.166 2a), it refused its fold as
+idle at every close — 0 folds in 20 h against a 564, c 542; 735 803
+receipts hot; +330 KB a K; 3.2 GB resident. a and c admitted 0 of b's
+receipts (gap 18 113 / 34 656, lag 45 082 / 19 372 heights): b's old
+receipts cite their eras folded since, and the one-page era proof never
+reached the root. b served the same ~786 KB page to both each exchange
+(34 652 frames, 27 GB). Fixed in Phase 2's commit: the era proof walks page
+by page (`walk_era`); the release carries 2a. Before-reading of the pays
+(POUW/POWC since each court's last fold): a 0/0, b POUW [262,279,285,44]
+over 105 mint rows with POWC as transfers only, c 0/0.
+
 ## The sandbox (2026-10-14 evening)
 The host reset at 20:12:53 (no OOM, panic or watchdog in the kernel log;
 6 GB free a minute before). Every home restored exactly (`--check`):
@@ -103,7 +115,9 @@ the minds, then the nseat units — never `scripts/recut` (it wipes).
    one stroke's sequence on the mind's own circuit meets §4.12 (posed), the
    vortex rollout (removed — it told no candidate apart; a reading on a new
    perception is owed), the lift untried on a grid, slips-at-return not
-   shown on one chart. **78.168 — the mind
+   shown on one chart. Phase 2 WRITTEN 2026-10-15, NOT WITNESSED (MU-CLIENT
+   §5.6's measure W/C/S/A, E1–E4; §7.1 lists it item by item); modes as
+   the unit of pay moved to its own Phase 4. **78.168 — the mind
    moved by its own orbits, before the soak.** The mind moves only when a court task arrives: test-driven
    cognition (the operator). It is a missing BUILD, not a missing theory:
    MU-CLIENT already rules the motion — orbits about the axiom star, sheared
@@ -144,7 +158,6 @@ the minds, then the nseat units — never `scripts/recut` (it wipes).
 8. A1 (factored reflections), A2 (`Sphere { n, R }`) — 78.167 D3/D4.
 9. The ear's tuning by retrospective reduction; the eye's
    resolution-then-definition audit.
-10. Defects: the glue extraction test; court-organ glue tests fail under load
-   (the glue replay goes unread on a loaded stroke); court standing
+10. Defects: court standing
    staleness; minds' memory growth; `release_unmet`'s sweep; the class
    records' u16 count across joined strata.

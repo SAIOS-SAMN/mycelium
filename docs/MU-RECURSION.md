@@ -24454,6 +24454,20 @@ self-witnessed proofs refused; a citation into a held era proved by replay,
 the line never asked below the root; cross-citing lines both advance from
 their roots in one hearing each.
 
+**Amended 2026-10-15 (the operator: "include the era proof fix"): item 4's
+"one era replay" is walked PAGE BY PAGE.** Read on hypha b: a court whose
+peers kept folding while it did not (b, on a build before 78.166 2a) was
+paged from where they stood, and its old receipts cited eras they had since
+folded. One replay page from the citation to the root failed wherever the era
+was longer than a frame, and every later fold made it longer: a and c
+admitted 0 of b's receipts in 20 hours and asked b for the same full page on
+every exchange (27 GB). The walk now keeps its place where a page ends
+(`ReceiptChain::walk_era` — Proved, Continues, Stalled, Broken) and the next
+page opens there, across hearings, one spend a page, the root read again as
+each page lands. Proved: `a_citation_into_an_era_longer_than_a_page_is_
+proved_page_by_page` (an era of two dozen receipts against a page of eight,
+more than one replay asked). MU-CLIENT §7.1 Phase 2 carries it.
+
 ### 78.148 The mind's own call (2026-10-08)
 
 *Moved to `MU-CLIENT.md` Part V, verbatim (2026-10-11).*

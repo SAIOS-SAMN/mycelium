@@ -196,8 +196,10 @@ impl Entity {
         };
         let came_round = u64::try_from(self.contemplation.closed.len()).ok();
         let thoughts = self.transcribe_closed(budget);
-        for word in thoughts {
-            let _ = self.speak_word(&word);
+        // MU-CLIENT §5.4 (E1) — each under the scene its thought was
+        // perceived in.
+        for (word, family) in thoughts {
+            let _ = self.speak_word_on(&word, &[], &family);
         }
         // MU-CLIENT §4.4(3) — what each returned thought holds against its
         // orbit (its slips) is worked at its return.

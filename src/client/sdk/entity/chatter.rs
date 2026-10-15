@@ -39,9 +39,11 @@ use std::sync::mpsc::{channel, Sender};
 enum Inflow {
     Frame(Vec<u8>),
     /// A thing said: what was stood, and its rings, each with the vantage
-    /// the mind's field reads it from.
-    Say(Element, Vec<Spoken>),
-    Wait(Element, Vec<Spoken>),
+    /// the mind's field reads it from; and the scene it was spoken under —
+    /// the family's citation, empty for none (MU-CLIENT §5.4, E1), so what
+    /// the union carries to the court is spoken there too.
+    Say(Element, Vec<Spoken>, Vec<u8>),
+    Wait(Element, Vec<Spoken>, Vec<u8>),
     Clock { k: u64, point: Option<TPoint> },
     Priced(Priced),
     /// What the field UNDERSTOOD of rings another mind said (MU-CLIENT §4.9):
@@ -140,6 +142,8 @@ struct Union {
     /// The mind's own K it was said at: a union stands one aperture cycle
     /// of the mind's strokes, as a thought heard and a letter waiting do.
     at: u64,
+    /// The scene it was spoken under (E1): agreed, it is spoken there.
+    family: Vec<u8>,
 }
 
 /// ONE THING THIS MIND HEARD AND SAID AGAIN, waiting for the speaker's ACK.
@@ -160,8 +164,9 @@ struct Carrier {
     /// 78.163 — keyed by the speaker's voice then what it said.
     thoughts: Keyed<Thought>,
     /// Letters stood and said, waiting for a union before the court hears
-    /// them (78.161 item 3), with the mind's own K they began waiting at.
-    waiting: Keyed<(Element, u64)>,
+    /// them (78.161 item 3), with the mind's own K they began waiting at and
+    /// the scene they were spoken under (E1).
+    waiting: Keyed<(Element, u64, Vec<u8>)>,
     /// Where what the conversation transduced goes to the mind's field.
     field: Sender<FieldWork>,
     /// THE ANSWERS THIS MIND GAVE (MU-CLIENT §5.3): keyed by the question's
@@ -806,16 +811,16 @@ impl Entity {
     /// WITH ITS VANTAGE (MU-CLIENT §5.3), the known words this mind reads it
     /// through, read here in the mind's field where its vocabulary is. Said
     /// at the mind's next return, never on the standing (MU-CLIENT §4.4(4)).
-    pub(crate) fn say(&mut self, e: &Element) {
+    pub(crate) fn say(&mut self, e: &Element, family: &[u8]) {
         if self.chat.is_none() {
             return;
         }
-        let said = (e.clone(), offered(e));
+        let said = (e.clone(), offered(e), family.to_vec());
         let mut at = vec![1u8];
         at.extend_from_slice(e.address().as_bytes());
         self.hold_for_return(&at, move |me| {
             if let Some(chat) = me.chat.as_ref() {
-                let _ = chat.to.send(Inflow::Say(said.0, said.1));
+                let _ = chat.to.send(Inflow::Say(said.0, said.1, said.2));
             }
         });
     }
@@ -825,16 +830,16 @@ impl Entity {
     /// is said to them, and the court hears it once another mind agreed it
     /// (or once it has waited an aperture cycle unmet). `false` where there
     /// is no conversation or no peer: the caller speaks it as before.
-    pub(crate) fn hold_for_union(&mut self, e: &Element) -> bool {
+    pub(crate) fn hold_for_union(&mut self, e: &Element, family: &[u8]) -> bool {
         let voice = self.hypha.kernel().voice();
         let has_peers = self.chat.as_ref().is_some_and(|c| !chatter::peers(&c.dir, &voice).is_empty());
         if !has_peers {
             return false;
         }
         let tu = self.now_tu();
-        let _ = self.stand(std::slice::from_ref(e), tu);
+        let _ = self.stand(std::slice::from_ref(e), tu, family);
         if let Some(chat) = self.chat.as_ref() {
-            let _ = chat.to.send(Inflow::Wait(e.clone(), offered(e)));
+            let _ = chat.to.send(Inflow::Wait(e.clone(), offered(e), family.to_vec()));
         }
         true
     }
@@ -878,13 +883,13 @@ impl Carrier {
     fn take(&mut self, inflow: Inflow) {
         match inflow {
             Inflow::Frame(f) => self.hear_frame(&f),
-            Inflow::Say(e, words) => self.say(&e, words),
-            Inflow::Wait(e, words) => {
+            Inflow::Say(e, words, family) => self.say(&e, words, family),
+            Inflow::Wait(e, words, family) => {
                 let addr = e.address();
                 if !self.waiting.contains(addr.as_bytes()) {
-                    self.waiting.insert(&addr, (e.clone(), self.k));
+                    self.waiting.insert(&addr, (e.clone(), self.k, family.clone()));
                 }
-                self.say(&e, words);
+                self.say(&e, words, family);
             }
             Inflow::Clock { k, point } => {
                 self.k = k;
@@ -930,7 +935,7 @@ impl Carrier {
                     return;
                 }
                 u.shared = true;
-                let agreed = u.said.clone();
+                let (agreed, family) = (u.said.clone(), u.family.clone());
                 self.waiting.remove(&said);
                 #[cfg(test)]
                 if let Ok(mut a) = self.agreed.lock() {
@@ -948,7 +953,7 @@ impl Carrier {
                     crate::observe::note_mind(|m| m.shared += 1);
                     return;
                 }
-                if self.speak_agreed(&agreed, Some(&frame)).is_ok() {
+                if self.speak_agreed(&agreed, Some(&frame), &family).is_ok() {
                     crate::observe::note_mind(|m| m.agreed += 1);
                 }
             }
@@ -980,7 +985,7 @@ impl Carrier {
     /// SAY WHAT THE MIND STOOD: its rings, each with the vantage the field
     /// offered it from, to every mind at the rendezvous. Said once; its union
     /// is then read.
-    fn say(&mut self, e: &Element, words: Vec<Spoken>) {
+    fn say(&mut self, e: &Element, words: Vec<Spoken>, family: Vec<u8>) {
         let addr = e.address();
         if self.union.contains(addr.as_bytes()) {
             return;
@@ -994,7 +999,7 @@ impl Carrier {
             return;
         }
         let Some(frame) = self.frame(Said::Say { said: addr.as_bytes().to_vec(), words: words.clone() }) else { return };
-        self.union.insert(&addr, Union { said: e.clone(), spoken: words, acked: Keyed::new(), shared: false, at: self.k });
+        self.union.insert(&addr, Union { said: e.clone(), spoken: words, acked: Keyed::new(), shared: false, at: self.k, family });
         self.said.insert(&addr, ());
         self.send(&frame, None);
     }
@@ -1168,7 +1173,7 @@ impl Carrier {
     /// thing with the hearer's signed HOLD, or a letter that waited its
     /// cycle unmet with none. The court's reply is its own; the sentence's
     /// standing returns to the mind through the syllabus.
-    fn speak_agreed(&self, e: &Element, agreement: Option<&[u8]>) -> std::io::Result<Vec<u8>> {
+    fn speak_agreed(&self, e: &Element, agreement: Option<&[u8]>, family: &[u8]) -> std::io::Result<Vec<u8>> {
         let Some(tape) = e.to_bytes() else {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "the sentence's record does not write"));
         };
@@ -1179,7 +1184,9 @@ impl Carrier {
             agreement: agreement.map(<[u8]>::to_vec),
         }];
         let tu = self.point.map_or(0, |p| p.h);
-        let Some(body) = dialogue::encode_speech_spoken(&self.voice, [], tu, &spoken) else {
+        // MU-CLIENT §5.4 (E1) — under the scene it was spoken under, so the
+        // court measures it where its evidence is.
+        let Some(body) = dialogue::encode_speech_spoken(&self.voice, family, tu, &spoken) else {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "the speech does not frame"));
         };
         let reply = self.court.speak_nerve(body)?;
@@ -1211,10 +1218,10 @@ impl Carrier {
         for k in spent {
             self.union.remove(&k);
         }
-        let due: Vec<Vec<u8>> = self.waiting.scoped().filter(|(_, (_, at))| stood(*at)).map(|(k, _)| k).collect();
+        let due: Vec<Vec<u8>> = self.waiting.scoped().filter(|(_, (_, at, _))| stood(*at)).map(|(k, _)| k).collect();
         for k in due {
-            if let Some((letter, _)) = self.waiting.remove(&k) {
-                let _ = self.speak_agreed(&letter, None);
+            if let Some((letter, _, family)) = self.waiting.remove(&k) {
+                let _ = self.speak_agreed(&letter, None, &family);
             }
         }
     }

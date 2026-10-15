@@ -174,16 +174,65 @@ impl Kernel {
     ) -> [u64; 4] {
         match (word.is_rewrite(), word.is_sentence(), family) {
             (true, _, _) => word.magnitude(),
+            // MU-CLIENT §5.6 (C) — a conjugate is paid what its conjugator
+            // added on the family: its own section beyond the cited word's.
+            (false, true, Some(f)) if self.conjugate_of(word).is_some() => self.transport_on(word, f),
             (false, true, Some(f)) => self.measured_replay(word, f),
             (false, true, None) => [0; 4],
-            // A connection is measured by the listing it stands for on the
-            // book, and by nothing where it stands for none (26: association
-            // with a listing is not a mint).
+            // MU-CLIENT §5.6 (W) — a connection bound to a family is
+            // decompressed onto it and measured on its own section; a colour
+            // word's evidence is its fibre relation, never a section.
+            (false, false, Some(f)) if word.is_connection() && !word.is_colour_word() => {
+                crate::transducer::family::local::word_local(word, f).pay
+            }
+            // A connection bound to no family is measured by the listing it
+            // stands for on the book, and by nothing where it stands for none
+            // (26: association with a listing is not a mint).
             (false, false, _) => match self.book_elem(addr) {
                 Some(e) => e.chain_magnitude(),
                 None => [0; 4],
             },
         }
+    }
+
+    /// MU-CLIENT §5.6 (C) — THE WORD A CONJUGATE TRANSPORTS: the form its
+    /// derivation cites, where that derivation carries a conjugator (`g · W ·
+    /// g̃`, 78.166 1c) and the cite is one this court holds. `None` for any
+    /// word that is not a conjugate of a held word.
+    pub(crate) fn conjugate_of(&self, word: &Element) -> Option<crate::transducer::address::Address> {
+        let env = word.receipts();
+        let cite = env.derivations.iter().find(|d| d.conjugator.is_some())?;
+        let [(form, _, _)] = cite.generators.as_slice() else { return None };
+        crate::transducer::family::Crystal::by_address(self, form.as_bytes()).map(|_| form.clone())
+    }
+
+    /// C — WHAT A CONJUGATOR ADDED ON `family`: the conjugate's local section
+    /// beyond the cited word's own, spoken in its own frame — the sites the
+    /// transport closed that the word untransported does not, measured. A
+    /// conjugate that closes nothing its word does not is paid nothing.
+    pub(crate) fn transport_on(&self, word: &Element, family: &crate::transducer::family::Family) -> [u64; 4] {
+        use crate::transducer::family::local::form_local;
+        let here = crate::transducer::alphabet::Word::identity();
+        let (Some(conj), Some(cited)) = (crate::transducer::sentence::from_element_form(word), self.conjugate_of(word)) else {
+            return [0; 4];
+        };
+        let Some((_, base)) = crate::transducer::family::Crystal::by_address(self, cited.as_bytes()) else { return [0; 4] };
+        let own = form_local(&base, family, self, &here);
+        form_local(&conj, family, self, &here).beyond(&own, family).pay
+    }
+
+    /// S — A SENTENCE'S GLUING on the family it is bound to: the sites its
+    /// closed rings close that no word it teaches closes on its own section,
+    /// measured — the premium the voices that composed it take. Nothing
+    /// where it is bound to no family, or does no more than its words.
+    pub(crate) fn gluing_of(&self, addr: &[u8], sentence: &Element, words: &[Element]) -> [u64; 4] {
+        use crate::transducer::family::local::{form_local, word_local, Local};
+        let task = self.speech_task.get(addr).or_else(|| self.listing_task.get(addr));
+        let Some(family) = task.and_then(|t| self.task_family.get(t.as_bytes())) else { return [0; 4] };
+        let Some(form) = crate::transducer::sentence::from_element_form(sentence) else { return [0; 4] };
+        let whole = form_local(&form, family, self, &crate::transducer::alphabet::Word::identity());
+        let sections: Vec<Local> = words.iter().map(|w| word_local(w, family)).collect();
+        whole.beyond(&Local::union(&sections, family.len()), family).pay
     }
 
     /// [`Kernel::discharge_on`] over the family the word is BOUND to — the

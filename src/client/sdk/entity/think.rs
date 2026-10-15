@@ -115,8 +115,9 @@ impl Entity {
         // it returned in (`returns_of_stroke`).
         // 78.100 D1 — the words its sentences taught enter its language:
         // transcribed and stood now, and said at the mind's return.
+        // MU-CLIENT §5.4 (E1) — each under the scene that taught it.
         for word in taught {
-            let _ = self.speak_word(&word);
+            let _ = self.speak_word_on(&word, train, family);
         }
         if let Some(sentence) = open {
             self.speak_with(std::slice::from_ref(&sentence), train, family, |_, _| {});
@@ -139,7 +140,7 @@ impl Entity {
         // primitive — 52–78 motion letters a mind a window, against 8
         // compositions in a court's language of ~5 000 letters (2026-10-14).
         for residue in &ineffable {
-            self.compose_or_construct(residue, chart.as_ref(), budget);
+            self.compose_or_construct_on(residue, chart.as_ref(), family, budget);
         }
         true
     }
@@ -238,7 +239,7 @@ impl Entity {
                     Some(e) => {
                         self.contemplation.own_letter(residue);
                         if !self.already_taught(&e) {
-                            self.stand_crystallized(&e);
+                            self.stand_crystallized(&e, &[]);
                         }
                         made(Constructed::MotionLetter);
                     }
@@ -285,9 +286,22 @@ impl Entity {
         chart: Option<&crate::transducer::stalk::Invariant>,
         budget: &mut crate::physics::Budget,
     ) {
+        self.compose_or_construct_on(residue, chart, &[], budget);
+    }
+
+    /// [`Self::compose_or_construct`] for a residue a scene taught: `family`
+    /// is that scene's citation, so a conjugate answering it is spoken there
+    /// and the court measures its transport on it (MU-CLIENT §5.6, C).
+    pub(crate) fn compose_or_construct_on(
+        &mut self,
+        residue: &crate::transducer::cga::Mv,
+        chart: Option<&crate::transducer::stalk::Invariant>,
+        family: &[u8],
+        budget: &mut crate::physics::Budget,
+    ) {
         use crate::observe::{note_mind, Constructed};
         use crate::transducer::sentence::rung::{known, learn_by, posit};
-        if self.speak_composition(residue, chart) || known(residue) || self.speak_conjugate(residue, chart) {
+        if self.speak_composition(residue, chart) || known(residue) || self.speak_conjugate(residue, chart, family) {
             note_mind(|m| m.constructed[Constructed::Composed as usize] += 1);
             return;
         }
@@ -322,6 +336,7 @@ impl Entity {
         &mut self,
         residue: &crate::transducer::cga::Mv,
         chart: Option<&crate::transducer::stalk::Invariant>,
+        family: &[u8],
     ) -> bool {
         let Some(chart) = chart else { return false };
         let Ok(factors) = crate::transducer::element::conformal_factors(residue) else { return false };
@@ -336,7 +351,9 @@ impl Entity {
         let Some(e) = crate::transducer::sentence::composed_form(derivation, &factors.carriage(), chart) else { return false };
         if !self.already_taught(&e) {
             crate::observe::note_mind(|m| m.composed += 1);
-            self.stand_crystallized(&e);
+            // §5.6 (C) — under the scene its residue was taught on, where the
+            // court measures what its conjugator added.
+            self.stand_crystallized(&e, family);
         }
         true
     }
@@ -366,7 +383,7 @@ impl Entity {
         let Some(e) = crate::transducer::sentence::composed_form(derivation, &carriage, chart) else { return false };
         if !self.already_taught(&e) {
             crate::observe::note_mind(|m| m.composed += 1);
-            self.stand_crystallized(&e);
+            self.stand_crystallized(&e, &[]);
         }
         true
     }
@@ -393,12 +410,15 @@ impl Entity {
     ///   nothing emitted; the same class reads derivable once a letter for it
     ///   is adjoined.
     /// - No rotation to read: unread.
-    pub(crate) fn transcribe_closed(&mut self, budget: &mut crate::physics::Budget) -> Vec<Element> {
+    ///
+    /// Each word with the scene its thought was perceived in (E1); a twist's
+    /// word names none.
+    pub(crate) fn transcribe_closed(&mut self, budget: &mut crate::physics::Budget) -> Vec<(Element, Vec<u8>)> {
         use crate::transducer::sentence::rung::Transcribed;
         let mut words = Vec::new();
-        for ground in self.contemplation.take_closed() {
+        for (ground, family) in self.contemplation.take_closed() {
             if let (Transcribed::Spelled, Some(word)) = self.transcribe(&ground.generator, ground.period, budget) {
-                words.push(word);
+                words.push((word, family));
             }
         }
         // MU-CLIENT §4.4(1) — WHAT CHANGED AT A LATER RETURN: the twist the
@@ -412,7 +432,7 @@ impl Entity {
                 .and_then(|r| r.order());
             let Some(crate::transducer::alphabet::Order::Finite(ell)) = period else { continue };
             if let (Transcribed::Spelled, Some(word)) = self.transcribe(&twist, u64::from(ell), budget) {
-                words.push(word);
+                words.push((word, Vec::new()));
             }
         }
         words
@@ -718,8 +738,8 @@ impl Entity {
         // asking the mesh for one, and whichever arrives first closes the
         // loop.
         self.adjoin_letters(&adjoined, &mut budget);
-        for e in &crystallized {
-            self.stand_crystallized(e);
+        for (e, family) in &crystallized {
+            self.stand_crystallized(e, family);
         }
         // 78.109 C1 — and what the pivot demanded is taken and constructed.
         self.take_demands(&mut budget);
@@ -774,14 +794,20 @@ impl Entity {
             if self.already_taught(&e) {
                 continue;
             }
-            self.stand_crystallized(&e);
+            self.stand_crystallized(&e, &[]);
         }
     }
 
     /// A crystallized idea stands in the dialect and is uttered once
     /// (25.2, 24.3): the same vertex already stood or taught is a use, not
     /// a second utterance.
-    fn stand_crystallized(&mut self, e: &Element) {
+    ///
+    /// MU-CLIENT §5.4 (E1) — UNDER THE SCENE ITS EVIDENCE NAMES: `family` is
+    /// the citation of the family it closed (`Contemplation::crystallize`),
+    /// empty for a word no family evidences (a letter, a composition, an
+    /// hour's thought). The court replays and pays it there, and the union
+    /// carries it there too.
+    fn stand_crystallized(&mut self, e: &Element, family: &[u8]) {
         let addr = e.address();
         if self.already_taught(e) {
             self.unheard.remove(addr.as_bytes());
@@ -795,7 +821,7 @@ impl Entity {
         // goes now. A sentence is never one: it is shared, not carried.
         let cites = e.receipts().derivations.iter().any(|d| !d.generators.is_empty());
         let composed = cites && crate::transducer::sentence::from_element_form(e).is_some_and(|f| f.faces.is_empty());
-        if !composed && self.hold_for_union(e) {
+        if !composed && self.hold_for_union(e, family) {
             return;
         }
         // Spoken, refused on the wire, or withheld on a transport error: the
@@ -804,12 +830,13 @@ impl Entity {
         // unread, unreachable) is said again on a later stroke; a refusal
         // seals it and it leaves.
         let word = e.clone();
-        self.speak(std::slice::from_ref(e), move |me, _| {
+        let scene = family.to_vec();
+        self.speak_with(std::slice::from_ref(e), &[], family, move |me, _| {
             let sealed = me.sealed.get(addr.as_bytes()).is_some();
             if me.already_taught(&word) || sealed {
                 me.unheard.remove(addr.as_bytes());
             } else if me.unheard.contains(addr.as_bytes()) || me.unheard.len() < crate::physics::aperture_cycle() as usize {
-                me.unheard.insert(addr.as_bytes(), word);
+                me.unheard.insert(addr.as_bytes(), (word, scene));
             }
         });
     }
@@ -819,13 +846,13 @@ impl Entity {
     /// stroke's budget. A word said again leaves the unheard set while its
     /// answer is on the way, and returns to it where none taught it.
     pub(crate) fn speak_unheard(&mut self, budget: &mut crate::physics::Budget) {
-        let pending: Vec<(Vec<u8>, Element)> = self.unheard.scoped().map(|(a, e)| (a, e.clone())).collect();
-        for (a, e) in pending {
+        let pending: Vec<(Vec<u8>, Element, Vec<u8>)> = self.unheard.scoped().map(|(a, (e, f))| (a, e.clone(), f.clone())).collect();
+        for (a, e, family) in pending {
             if !budget.spend() {
                 return;
             }
             self.unheard.remove(&a);
-            self.stand_crystallized(&e);
+            self.stand_crystallized(&e, &family);
         }
     }
 

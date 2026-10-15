@@ -273,6 +273,56 @@ fn a_citation_into_a_held_era_is_proved_not_chased() {
     assert!(asks.iter().all(|(who, _, ask)| *who != bvk || *ask == Ask::Replay), "b's line asked only as the era's replay: {asks:?}");
 }
 
+/// 78.147 (3′) — AN ERA LONGER THAN A PAGE IS PROVED PAGE BY PAGE (the wedge
+/// read on hypha b, 2026-10-15). As (3), but b's era runs twelve strokes —
+/// two dozen receipts and more against a page of eight — so no one page
+/// reaches the root from the cited act. The walk keeps its place at each
+/// page's end and the next page opens there; the citation is proved and d's
+/// head cited, every ask of b's line an era replay, more than one of them.
+#[test]
+fn a_citation_into_an_era_longer_than_a_page_is_proved_page_by_page() {
+    let (bkey, mut b) = court("catchup-long-era-b");
+    let bvk = bkey.vk_bytes();
+    strokes(&mut b, 12);
+    let b0 = b.chain().at_place(Place::GENESIS).expect("b's first act");
+    let proof = fold(&mut b, &bkey);
+    strokes(&mut b, 1);
+    let mut c0 = Kernel::new();
+    c0.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
+    assert_eq!(c0.adopt_root(AT, &proof), RootAdoption::Adopted, "c stands on b's root");
+    let c = Mutex::new(c0);
+    let dkey = super::common::court_key("catchup-long-era-d");
+    let mut dc = ReceiptChain::with_vk(dkey.vk_bytes());
+    dc.admit(b0.clone());
+    dc.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![Parent { at: b0.stamp, hash: b0.chain_hash }]).expect("d cites b0");
+    let r = dc.head().expect("d acted");
+    let pre = SignedPrefix {
+        genesis: [7; 32],
+        epoch: 2,
+        prev_receipt_hash: r.prev_hash(),
+        at: r.stamp.place(),
+        height: r.stamp.h,
+        chart: vec![],
+        payload: r.stamp.key(),
+    };
+    let asked = Mutex::new(Vec::new());
+    let courts = [&b];
+    let proved = axes(bvk)[rep::FOLDED_PROVED];
+    let heard: Result<_, ()> = crate::server::backfill::hear(
+        &c,
+        ORIGIN,
+        || Ok(c.lock().expect("c").admit_receipt(AT, super::common::verified(&pre, &dkey), &r)),
+        || c.lock().ok().map(|mut k| k.stroke()),
+        source(&courts, &asked),
+    );
+    assert!(matches!(heard, Ok(Admitted::Parent(_))), "d's head is cited: {heard:?}");
+    assert!(axes(bvk)[rep::FOLDED_PROVED] > proved, "the citation proved by its era");
+    let asks = asked.into_inner().expect("asks");
+    let replays = asks.iter().filter(|(who, _, ask)| *who == bvk && *ask == Ask::Replay).count();
+    assert!(replays > 1, "the era walked over more than one page: {asks:?}");
+    assert!(asks.iter().all(|(who, _, ask)| *who != bvk || *ask == Ask::Replay), "b's line asked only as the era's replay");
+}
+
 /// 78.147 (4) — CROSS-CITING LINES BOTH ADVANCE FROM THEIR ROOTS. Courts a
 /// and b cite each other's acts, fold on two signatures each, and cite each
 /// other past their roots. Court c heard only their first strokes. Hearing

@@ -252,7 +252,7 @@ const O3_OUT: [&str; 5] = ["000000", "000000", "000100", "011100", "000000"];
 /// The one thought held, and the one ground its closing handed its voice.
 fn the_thought_and_its_ground(c: &Contemplation) -> (crate::transducer::bubble::Bubble, crate::physics::tensegrity::Ground) {
     let [(_, thought)] = c.bubbles.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
-    let [ground] = c.closed.as_slice() else { panic!("one thought closed: {}", c.closed.len()) };
+    let [(ground, _)] = c.closed.as_slice() else { panic!("one thought closed: {}", c.closed.len()) };
     (thought.clone(), ground.clone())
 }
 

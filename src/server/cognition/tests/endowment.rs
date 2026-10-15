@@ -168,3 +168,26 @@ fn a_growth_grant_is_sized_by_the_closures_judged_in_its_universe() {
     assert!(matches!(k.manifest(&signed(manifest(1), RESERVE)), Granted::Sealed { founding: true, .. }));
     assert_eq!(k.growth_size(&domain), Err(GrantRefusal::NoNewClosures), "the closures before a grant are its own");
 }
+
+/// 78.155c AS AMENDED (MU-CLIENT §5.6, E4) — WHAT THE COURTS PAID GROWS THE
+/// GRANT, not only first solves: a POWC mint (a demand closed by another
+/// mind) and a POUW claim released to two voices (a word's install, split
+/// between its speaker and the mind that agreed) each grow the next growth
+/// grant of the universe whose key was paid, by exactly what that key was
+/// paid; what a key no domain names was paid grows nothing.
+#[test]
+fn every_proof_of_work_paid_grows_the_grant() {
+    let mut k = universe(true);
+    let domain = reserve_domain();
+    let line = vk(&key(47));
+    let anchor = k.anchor();
+    let _ = k.treasury.settle_convergence(line, [2, 0, 0, 1], anchor);
+    k.grow_grants_by_paid();
+    assert_eq!(k.growth_size(&domain), Ok([2, 0, 0, 1]), "a POWC mint to a key of the universe");
+    k.treasury.mint_claim(&[line, [0xee; 32]], [4, 2, 0, 0], anchor);
+    k.grow_grants_by_paid();
+    assert_eq!(k.growth_size(&domain), Ok([4, 1, 0, 1]), "a claim split two ways: the universe's key's half, exactly");
+    let _ = k.treasury.settle_convergence([0xee; 32], [9, 9, 9, 9], anchor);
+    k.grow_grants_by_paid();
+    assert_eq!(k.growth_size(&domain), Ok([4, 1, 0, 1]), "a key no domain names grows nothing here");
+}

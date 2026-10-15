@@ -39,6 +39,16 @@ impl Kernel {
             }
             self.attested.insert(key, ());
             self.append_step(crate::chronometry::ActKind::Attest, addr.as_bytes(), peer);
+            // MU-CLIENT §5.6 (E3) — THE UNION'S ATTESTATION PAYS: the mind that
+            // agreed is a party to the word's claim, as a second speaker of it
+            // is (`list_sentence`), so its install pays every mind that agreed.
+            // A word already installed was paid at its install, once.
+            if self.provisional.contains(&addr) && self.treasury.escrow_of(addr.as_bytes()).is_some() {
+                self.convergence.used_by(addr.as_bytes(), peer);
+                let anchor = self.anchor();
+                self.treasury.escrow_award(&addr, vec![peer], [0; 4], anchor);
+                self.acts.pay("attestations joined to a claim", [0; 4]);
+            }
             sealed.push((addr.as_bytes().to_vec(), peer, deviation));
         }
         sealed

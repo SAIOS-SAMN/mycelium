@@ -145,23 +145,31 @@ assert_eq!(home.basis_len(), 0);
 home.court_stroke();
 let spoken = home.provisional.scoped().next().unwrap().1.clone();
 let mut cover = crate::network::nerve::Cover::new();
-let mut glue = peer.stroke();
-assert!(matches!(
-    peer.glue_fetched(spoken.clone(), [1; 32], [2; 32], &mut cover, &mut glue),
-    Glue::Admitted
-));
+assert!(matches!(fetched(&mut peer, &spoken, [1; 32], [2; 32], &mut cover), Glue::Admitted));
 assert!(peer.basis_len() >= 1, "the word is language on the second organ");
-let mut glue = third.stroke();
-assert!(matches!(
-    third.glue_fetched(spoken.clone(), [2; 32], [3; 32], &mut cover, &mut glue),
-    Glue::Admitted
-));
+assert!(matches!(fetched(&mut third, &spoken, [2; 32], [3; 32], &mut cover), Glue::Admitted));
 let forged = strip_words(&spoken);
-let mut glue = third.stroke();
 assert!(
-    matches!(third.glue_fetched(forged, [2; 32], [3; 32], &mut cover, &mut glue), Glue::Slashed(_)),
+    matches!(fetched(&mut third, &forged, [2; 32], [3; 32], &mut cover), Glue::Slashed(_)),
     "never admit on a word that fails replay"
 );
+}
+
+/// 78.153 — A FETCHED WORD GLUED AS THE EXCHANGE GLUES IT: each fetch on one
+/// stroke of the court's own metabolism, its size the host's (`spend_unit`);
+/// a replay that stroke could not finish waits as dialect and the next fetch
+/// resumes it where it stopped — so a fetch that rules nothing must have
+/// moved the replay, or the glue stalls and the claim fails. Answers the
+/// verdict the replay reached.
+fn fetched(k: &mut Kernel, spoken: &Element, peer: [u8; 32], me: [u8; 32], cover: &mut crate::network::nerve::Cover) -> Glue {
+    loop {
+        let before = k.court_replay_progress(spoken);
+        let mut stroke = k.stroke();
+        if let Some(verdict) = k.glue_fetched_ruled(spoken.clone(), peer, me, cover, &mut stroke) {
+            return verdict;
+        }
+        assert_ne!(k.court_replay_progress(spoken), before, "an unread glue resumes where it stopped, or it stalls");
+    }
 }
 
 /// Adopt writes a field entry and a deflation so the stroke can rule

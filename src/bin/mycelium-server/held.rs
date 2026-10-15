@@ -43,11 +43,12 @@ pub(crate) fn spawn_watchdog() {
     });
 }
 
-/// Every take of the kernel through `held!` since boot: the book's hold
-/// number. A path that takes no kernel leaves it where it stood (78.152b).
+/// The takes of the kernel THIS thread made through `held!` (78.152b): a
+/// path that takes no kernel leaves it where it stood, read apart from the
+/// holds other threads of the process make beside it.
 #[cfg(test)]
-pub(crate) fn holds() -> u64 {
-    mycelium::server::held::holds()
+pub(crate) fn holds_here() -> u64 {
+    mycelium::server::held::holds_here()
 }
 
 /// THE STEP A LONG HOLD STANDS IN (`mycelium::server::held::step`).

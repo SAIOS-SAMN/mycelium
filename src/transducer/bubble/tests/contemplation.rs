@@ -366,7 +366,7 @@ fn a_closed_idea_crystallizes_with_its_trajectory_and_leaves_the_contemplation()
     let mut budget = crate::physics::Physics::default().stroke_n(8);
     let crate::transducer::bubble::drive::Expanded { crystallized, .. } =
         c.expand_all(&atlas, &|_| None, &NoCrystal, &mut budget);
-    let [e] = crystallized.as_slice() else {
+    let [(e, _)] = crystallized.as_slice() else {
         panic!("one idea crystallizes, got {}", crystallized.len());
     };
     assert!(e.is_sentence(), "the crystallized idea is a sentence tape");

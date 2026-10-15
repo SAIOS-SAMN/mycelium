@@ -143,7 +143,7 @@ assert_eq!(entity.own_k(), 0, "a mind none of whose orbits returned seats at zer
 
 // Standing is the act, and it is complete before anything is uttered. It
 // stands at the mind's K; only a return moves K (MU-CLIENT §4.4(4)).
-let codes = entity.stand(std::slice::from_ref(&e1), 0);
+let codes = entity.stand(std::slice::from_ref(&e1), 0, &[]);
 assert_eq!(entity.dialect_len(), 1, "the form stands in the dialect");
 assert!(!entity.close_cycle(0), "standing is no return: the stroke closes nothing");
 assert_eq!(entity.own_k(), 0, "K stands");
@@ -156,7 +156,7 @@ assert_eq!(codes, vec![0xff], "and it is fresh, so an utterance would ask about 
 // nothing would go on the wire at all. Nothing here read a k-step from
 // anyone else.
 entity.file_taught(&e1);
-let codes = entity.stand(std::slice::from_ref(&e1), 0);
+let codes = entity.stand(std::slice::from_ref(&e1), 0, &[]);
 assert!(!entity.close_cycle(0), "a use returns nothing");
 assert_eq!(entity.own_k(), 1, "the clock stands");
 assert_eq!(
@@ -192,7 +192,7 @@ fn the_contemplation_is_stamped_with_tuniversal_and_the_shed_with_the_voices_own
     // Two clocks, driven apart: an orbit this mind acted in, and a height
     // read off the mesh.
     let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
-    let _ = entity.stand(std::slice::from_ref(&e1), 0);
+    let _ = entity.stand(std::slice::from_ref(&e1), 0, &[]);
     entity.close_cycle(1);
     let k = entity.own_k();
     entity.advance_height(500);

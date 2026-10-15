@@ -90,6 +90,19 @@ pub fn holds() -> u64 {
     BOOK.lock().map_or(0, |b| b.hold)
 }
 
+thread_local! {
+    /// The takes of the kernel THIS THREAD made through `held!`: what a path
+    /// run on it took, apart from every other thread's holds in the process
+    /// (the book counts them all).
+    static HOLDS_HERE: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+
+/// Every take of the kernel through `held!` by THIS thread: a path that takes
+/// no kernel leaves it where it stood, whatever other threads take beside it.
+pub fn holds_here() -> u64 {
+    HOLDS_HERE.with(|h| h.get())
+}
+
 /// THE STEP A LONG HOLD STANDS IN: a site that does several things under
 /// one hold names each as it enters it, so a hold that stands across the
 /// observer's questions says which step it stands in (hypha a, 2026-10-09:
@@ -241,6 +254,7 @@ pub fn lock<'a>(m: &'a Mutex<Kernel>, at: &'static str) -> Result<Held<'a>, ()> 
             }
         });
     }
+    HOLDS_HERE.with(|h| h.set(h.get().wrapping_add(1)));
     let stroke = guard.stroke();
     Ok(Held { guard, stroke, at, spent_at: crate::physics::spent_here() })
 }

@@ -270,8 +270,35 @@ fn the_acts_travel_whole() {
         colours_derived: 38,
         deferred: vec![crate::observe::Deferred { head: [1, 2, 3, 4, 5, 6, 7, 8], kind: 2, mag: [39, 40, 41, 42], short: [0, 43, 0, 0], tries: 44, learner: Some([9; 8]) }],
         provisional: [50, 51, 52, 53, 54, 55, 56, 57],
+        pays: [71, 72, 73, 74, 75, 76, 77],
+        pays_lanes: std::array::from_fn(|i| 80 + i as u64),
     };
     reads_back(&[Reading::Acts(Box::new(acts))]);
+}
+
+/// MU-CLIENT §5.6 — EVERY PAY A PRODUCER NAMES IS A KIND OF ITS TABLE: each
+/// counted once with its lanes on its own slot.
+#[test]
+fn every_pay_is_a_kind_of_its_table() {
+    let mut t = crate::observe::ActsTally::default();
+    for (i, kind) in [
+        "scenes on no family held",
+        "word sections",
+        "conjugate transports",
+        "sentence gluings",
+        "demands closed by another mind",
+        "attestations joined to a claim",
+        "mints counted toward a grant",
+    ]
+    .iter()
+    .enumerate()
+    {
+        t.pay(kind, [1, 2, 3, i as u64]);
+        assert_eq!(t.pays[i], 1, "{kind} is a slot of its table");
+        assert_eq!(&t.pays_lanes[i * 4..i * 4 + 4], &[1, 2, 3, i as u64], "{kind} carries its lanes");
+    }
+    t.pay("no such kind", [9; 4]);
+    assert_eq!(t.pays.iter().sum::<u64>(), 7, "a kind the table does not hold counts nothing");
 }
 
 /// EVERY NAME A PRODUCER COUNTS UNDER IS ITS TABLE'S: `count` is silent on a

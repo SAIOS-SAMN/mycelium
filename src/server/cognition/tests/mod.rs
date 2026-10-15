@@ -6,6 +6,7 @@ mod admission;
 mod composed;
 mod endowment;
 mod agreement;
+mod measure;
 mod atlas;
 mod aperture;
 mod backfill;

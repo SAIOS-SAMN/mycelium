@@ -52,6 +52,13 @@ pub struct ReceiptChain {
     /// closed era returns nothing new, so a proof stands; it is not
     /// persisted, and is proved again where a citation asks after restore.
     proved: Keyed<[u8; 32]>,
+    /// AN ERA PROOF IN PROGRESS: `p`'s key and hash → the last receipt of
+    /// the signer's line the walk from `p` has re-derived, where the page
+    /// that carried it ended short of the root (`walk_era`). The next page
+    /// is asked from there, so a proof longer than one frame closes page by
+    /// page across hearings, never asked again from `p`. Volatile; an entry
+    /// leaves when its proof stands or breaks.
+    walking: Keyed<Parent>,
     /// THE OPERATORS the ledger has met, each once, by the index a node
     /// names it with.
     operators: Vec<[u8; 32]>,
@@ -118,6 +125,28 @@ fn raise(held: Option<Place>, at: Place) -> Option<Place> {
         Some(m) if m >= at => m,
         _ => at,
     })
+}
+
+/// WHAT ONE PAGE OF AN ERA PROOF DID (`ReceiptChain::walk_era`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EraWalk {
+    /// The walk reached the root: the citation is proved.
+    Proved,
+    /// The page was a whole chain and ended short of the root: the walk
+    /// stands at its last receipt, the next page opens there.
+    Continues,
+    /// The page moved nothing: the walk keeps its place.
+    Stalled,
+    /// The page is not the chain the walk stands on, or the citation is no
+    /// citation into a closed era.
+    Broken,
+}
+
+/// An era proof's key: the cited receipt's place key, then its hash.
+fn era_walk_key(p: &Parent) -> Vec<u8> {
+    let mut k = p.at.key();
+    k.extend_from_slice(&p.hash);
+    k
 }
 
 impl ReceiptChain {
@@ -442,29 +471,66 @@ impl ReceiptChain {
     /// page: the chain is the proof. `false` where `p` stands past the root,
     /// no root is held, or the page does not prove it.
     pub fn prove_from_era(&mut self, p: &Parent, page: &[KStepReceipt]) -> bool {
-        let Some(root) = self.peer_roots.get(&p.at.vk).copied() else { return false };
-        if p.at.place() > root.at.place() {
-            return false;
+        matches!(self.walk_era(p, page), EraWalk::Proved)
+    }
+
+    /// WHERE THE NEXT PAGE OF `p`'S ERA PROOF OPENS: the last receipt a
+    /// walk from `p` re-derived, or `p` itself where none has begun.
+    pub fn era_walk_from(&self, p: &Parent) -> Parent {
+        match self.walking.get(&era_walk_key(p)) {
+            Some(at) => *at,
+            None => *p,
         }
-        let Some(start) = page.iter().position(|r| r.stamp == p.at && r.chain_hash == p.hash && r.rederives()) else {
-            return false;
+    }
+
+    /// 78.65, 78.87 R2 — ONE PAGE OF AN ERA PROOF, walked from where the
+    /// proof stands (`era_walk_from`): the page opens at that receipt, and
+    /// every receipt after it re-derives its own hash and names the one
+    /// before it, up to the root the signer's fold archived the line to.
+    /// PROVED where the walk reaches the root: `p` is held as proved and the
+    /// walk leaves. CONTINUES where the page is a whole chain from where it
+    /// opened and ends short of the root, having moved: the walk stands at
+    /// its last receipt and the next page opens there — a proof longer than
+    /// one frame closes page by page, and a root a later fold moved further
+    /// is walked to as well. STALLED where the page moved nothing (the walk
+    /// keeps its place). BROKEN where the page is not the chain the walk
+    /// stands on, or `p` is no citation into a closed era: the walk leaves.
+    pub fn walk_era(&mut self, p: &Parent, page: &[KStepReceipt]) -> EraWalk {
+        let key = era_walk_key(p);
+        let broken = |c: &mut Self| {
+            c.walking.remove(&key);
+            EraWalk::Broken
         };
-        let mut last = Parent { at: page[start].stamp, hash: page[start].chain_hash };
+        let Some(root) = self.peer_roots.get(&p.at.vk).copied() else { return broken(self) };
+        if p.at.place() > root.at.place() {
+            return broken(self);
+        }
+        let from = self.era_walk_from(p);
+        let Some(start) = page.iter().position(|r| r.stamp == from.at && r.chain_hash == from.hash && r.rederives()) else {
+            return broken(self);
+        };
+        let mut last = from;
         let mut reached = last == root;
         for r in page.iter().skip(start + 1) {
             if reached {
                 break;
             }
             if !r.rederives() || r.prev != Some(last) {
-                return false;
+                return broken(self);
             }
             last = Parent { at: r.stamp, hash: r.chain_hash };
             reached = last == root;
         }
         if reached {
+            self.walking.remove(&key);
             self.proved.insert(p.at.key(), p.hash);
+            return EraWalk::Proved;
         }
-        reached
+        if last == from {
+            return EraWalk::Stalled;
+        }
+        self.walking.insert(key, last);
+        EraWalk::Continues
     }
 
     /// 78.147 — WHERE A SIGNER'S LINE STANDS IN THIS LEDGER, as the next
@@ -537,6 +603,7 @@ impl ReceiptChain {
             folded,
             peer_roots,
             proved,
+            walking,
             operators,
             operator_at: _,
             journal: _,
@@ -550,6 +617,7 @@ impl ReceiptChain {
         c.count("chain.folded", folded.len());
         c.count("chain.peer_roots", peer_roots.len());
         c.count("chain.proved", proved.len());
+        c.count("chain.walking", walking.len());
         c.count("chain.operators", operators.len());
     }
 

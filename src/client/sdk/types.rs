@@ -635,8 +635,9 @@ pub struct Entity {
     /// and the guard that kept it from being spoken twice kept it from ever
     /// being spoken again (courts deferred 211/126/442 acts, epoch 146). Said
     /// again each stroke until a court stands or ratifies it, or seals it;
-    /// at most an aperture of them (`physics::aperture_cycle`).
-    pub(crate) unheard: crate::network::nerve::Keyed<Element>,
+    /// at most an aperture of them (`physics::aperture_cycle`). Each with the
+    /// scene it was spoken under (MU-CLIENT §5.4, E1).
+    pub(crate) unheard: crate::network::nerve::Keyed<(Element, Vec<u8>)>,
     /// 78.153 — THE SOLVES THE COURT HAS NOT JUDGED YET (`SOLVE_UNREAD`), by
     /// task: the rule and the outputs, asked again each stroke until the
     /// court rules, its replay resuming where its stroke ran out. Without it

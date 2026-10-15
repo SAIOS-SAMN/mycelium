@@ -74,19 +74,34 @@ fn prove_folded(
     if p.at.place() > root {
         return None;
     }
-    if !budget.spend() {
-        return Some(false);
+    // THE PROOF IS WALKED PAGE BY PAGE (the wedge read on hypha b,
+    // 2026-10-15): it asked one page from the citation to the root and failed
+    // wherever the era between them was longer than a frame — and every later
+    // fold moved the root further, so a court behind its peers' folds could
+    // never prove an old citation, its signer's line never admitted again
+    // (a and c admitted 0 of b's receipts in 20 hours). Each page now opens
+    // where the walk stands, its progress kept across hearings, one spend a
+    // page; the root is read again as each page lands.
+    loop {
+        if !budget.spend() {
+            return Some(false);
+        }
+        let from = held!(kernel).ok()?.run(|k, _| k.era_walk_from(p));
+        let root = held!(kernel).ok()?.run(|k, _| k.chain().peer_root(&p.at.vk))?;
+        // THE ONE ERA-REPLAY ASK (78.147): the era's own receipts, from where
+        // the walk stands to the root; a root answer proves no citation.
+        let Some(ReceiptsAnswer::Page(page)) = fetch(&p.at.vk, place_before(from.at.place()), root, Ask::Replay) else {
+            return Some(false);
+        };
+        match held!(kernel).ok()?.run(|k, _| k.walk_folded(p, &page)) {
+            crate::chronometry::EraWalk::Proved => {
+                note_replication(Some(p.at.vk), rep::FOLDED_PROVED, 1);
+                return Some(true);
+            }
+            crate::chronometry::EraWalk::Continues => {}
+            crate::chronometry::EraWalk::Stalled | crate::chronometry::EraWalk::Broken => return Some(false),
+        }
     }
-    // THE ONE ERA-REPLAY ASK (78.147): the era's own receipts, from the
-    // citation to the root; a root answer proves no citation.
-    let Some(ReceiptsAnswer::Page(page)) = fetch(&p.at.vk, place_before(p.at.place()), root, Ask::Replay) else {
-        return Some(false);
-    };
-    let proved = held!(kernel).ok().is_some_and(|mut h| h.run(|k, _| k.prove_folded(p, &page)));
-    if proved {
-        note_replication(Some(p.at.vk), rep::FOLDED_PROVED, 1);
-    }
-    Some(proved)
 }
 
 /// 78.147 — A ROOT ANSWERED FOR A CATCH-UP, adopted on its two signatures
