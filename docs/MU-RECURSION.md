@@ -25877,11 +25877,214 @@ as its witness before it is called done.
   unmeasured until asked. Measure the intake's share of the warm-up first,
   then rule.
 
+*(78.167 below scopes what must stand before the soak these steps await.)*
+
 **Order:** 0a → 0b/0c → 1a → 1b → 2a → 2b → 1c → 2c → 3a. Phase 0 first
 because every later step is witnessed by it; 1a first of the rest because the
 mind is the objective and its mathematics is furthest from its doctrine
 there; 2b before 1c because it is the court's largest carrier and needs no
 wire change.
+
+### 78.167 Congruent thoughts: the act read off its effect, the mirror, the curvature — scope before the soak (2026-10-15, the operator)
+
+The operator: "do you have solutions to the problems so that congruent
+thoughts may form inside the cognition?" — partially; "should you develop
+that further before shipping a fleet to soak" — yes; "scope it and document
+it thoroughly and exhaustively." What follows is the path read whole, the
+causes pinned to their code, and the build in slices, each with its change,
+its claim by the algebra, its fleet witness, and what it waits on. The soak
+of 78.166 waits on the gate at the end.
+
+#### 1. What the fleet read (2026-10-15 06:52, nine minds, 10½ hours on 04d9981c)
+
+| Reading | Value | What it names |
+|---|---|---|
+| tasks perceived / rules known / solves sent / closed | 320 / 4 / 7 / 0 | no closure reaches a court |
+| perspectives disagreeing, by kind | occupancy **904**, hue 48, remainder 23, no rule 0, frame 0, unspoken 0 | the rule speaks whole, at the right frame, and wrong |
+| meanings derived / given | 17 / 2 033 | the vocabulary grows by atoms |
+| questions unanswered | 1 897 (37f2 786, c789 747) | residues no peer factors |
+| the laws minds' words stand on | boost 358, nilpotent 49, rosette 21, periodic 19 | almost no mode returns |
+| constructed: letters / motion letters / composed / in part | 505 / 1 689 / 2 298 / 63 | composition already leads |
+| court b's line: acts / rank steps / returns | 641 619 / 2 / 394 | the charts' algebras barely grow |
+| docketed / offer-installs / first closures / mint | 0 / 0 / 0 / frozen since 12:22 | no work paid |
+| council seats filed / taken | 0 / 0 (3 258 take requests) | no agency in a game |
+
+#### 2. The causes, read on the path (perception → rule → speech → perspective)
+
+**C-1. "Occupancy" is a wrong speech, not a missing one.** `Entity::disagreement`
+(`client/sdk/entity/family.rs`) counts occupancy only after the sibling rule
+spoke on the held-out input with NO remainder and the RIGHT frame: the grid
+it said differs from the truth in whether some cell is ground. So 904
+perspectives fail by what the speech emitted, never by what it could not say.
+
+**C-2. The speech erases what it does not name, silently.**
+`speak_on_scene` (`transducer/family/speak.rs`) emits only bodies a
+vertex's member reaches by its exact chart (`atlas.fiber(&member.chart)`);
+an input body on any other chart is neither painted nor put in the
+remainder — it vanishes from the output with no trace. Rule 11 refuses an
+absence read as a value; here it is read as erasure.
+
+**C-3. The effects are perceived exactly; their acts are never read.**
+Perception names every change of occupancy as a demand vertex
+(`family/percept.rs`, `family/fiber.rs`):
+- `Demand::Creation` — an output body no input body carries onto;
+- `Demand::Source{multiplicity}` — several input bodies carried onto one;
+- `Demand::TopologicalDeformation{image, axes}` — a body whose shape
+  changes (no versor exists), and `vanished(body)` is the deformation onto
+  the EMPTY image: erasure.
+
+And `speak_on_scene` speaks every demand as nothing (`Vertex::Demand => {}`,
+"a demand speaks nothing; its bodies are the remainder" — and none is
+written there). The remainder inversion (`family/invert.rs`, 78.76/78.81)
+extracts a rule from the remainder scene and joins its WORD vertices; its
+demand vertices are counted by kind and dropped (`continue`).
+
+**C-4. The language to say these acts exists — and only a host speaks it.**
+78.143's clauses (`sentence/form/clause.rs`, spoken by
+`family/statement.rs` on both mind and court) carry exactly the acts the
+demands name: `Recolour` (a hue sent to 0 erases), `Fill{region}`,
+`Extend{ray, stop}`, `Copy{template}` (create), `Crop`, `Scale` (size), each
+under a typed `Select(Pred)` over a body's own exact coordinates. Clauses
+are built in one place, the SDK rule seam (`client/sdk/rule.rs`
+`clauses_of`, from `Step`s a host states); no mind infers one from what it
+perceives, and the seat mind's task path (`seat_mind/task.rs`) translates a
+rule into D4 symmetries and hue steps only.
+
+**C-5. Bodies are matched by exact chart.** A held-out body whose shape
+chart no training body shared is reached by no vertex — C-2 on a new shape.
+
+**C-6. Modes that do not return.** 358 of 447 mode readings are boosts
+(hyperbolic: dilations), 19 periodic. A boost's orbit never returns, so a
+loop of them never closes and a chart's holonomy algebra cannot reduce.
+UNREAD: whether the boosts are the scenes' own scalings or the carriage's
+`D(ρ)` read where a body's measure changed — the mode's ORIGIN is not on any
+reading yet.
+
+**C-7. One sheet, flat charts.** Odd versors are read as their even part
+times the orientation character (AL1 in `peel_core`); a reflection is no
+carrier of its own (A1 owed), and no carrier holds a radius (A2,
+`Sphere{n, R}`, owed). A double manifold `M ∪ M̄` glued along its boundary
+has no mirror sheet to be, and no loop closes on a curved chart.
+
+**C-8. Meaning by atoms.** `close_questions` learns an answered word as an
+atom where its answer gave it whole (`given` 2 033) and by relation only
+where its factors were known (`derived` 17); nothing re-reduces a given atom
+when the lexicon later holds what derives it.
+
+**C-9. Residues held forever.** An asked residue waits on its question; the
+asked-once guard (compaction) keeps it from being asked again, and nothing
+constructs and offers an irreducible residue (1 897 open).
+
+**C-10. History not compiled** — b's line (fixed by 78.166 2a, not shipped).
+
+**C-11. The council unseated** — 3 258 take requests at court a's relay,
+0 seat listings filed for domain `5deab117…`: the house has posted no seats
+to take, or the relay drops them. Unread which.
+
+#### 3. The build, in slices (each one commit, scoped tests by the algebra, the named fleet reading as its witness)
+
+**Phase A — the readings (no behaviour change).**
+- **A1 · occupancy split by cause.** `disagreement` splits `occupancy` into
+  three slots of `DISAGREE`: *erased* (said ground where the truth and the
+  input both hold the body — C-2/C-5), *uncreated* (said ground where the
+  truth holds cells the input does not — C-3 creation), *uncleared* (said
+  cells where the truth is ground — C-3 erasure). Claim: three held-out
+  pairs, one per cause, land on their slots. Witness: the 904 split.
+- **A2 · what a speech left unsaid.** `Speech` gains the input bodies no
+  vertex reached and the demand vertices by kind; `disagreement` reads them.
+  Claim: a body on an unseen chart is named, never silent. Witness: per
+  mind, unreached bodies and demands by kind beside the split.
+- **A3 · where a mode comes from.** The mind's `LAWS` reading split by
+  origin — the rotor, the carriage's dilation, the carriage's slide. Claim:
+  a pure slide reads nilpotent from the carriage, a 90° turn periodic from
+  the rotor. Witness: whether the 358 boosts are scenes' scalings or the
+  carriage's measure (C-6's question).
+- **A4 · the council.** Read the relay at court a: listings filed per
+  domain against takes (typed, `--reading relay` already carries both);
+  ask netstratum whether its house posts seat listings. No code until read.
+
+**Phase B — speak honestly (rule 11).**
+- **B1 · an unreached body is remainder, never erased.** `speak_on_scene`
+  puts every input body no vertex reached into `remainder`. Effect: C-2 and
+  C-5 move from occupancy to remainder; `speak_form` then withholds the
+  rule as the open work it is, and the perspective's lift perceives the
+  unreached body. Claim: a rule without a vertex for a body leaves that body
+  in the remainder. Witness: occupancy falls by A1's *erased*; remainder
+  rises by the same.
+- **B2 · a demand vertex speaks its demand.** A `Creation` or
+  `TopologicalDeformation` vertex whose act is not yet read (Phase C) is
+  named in the speech (`unspoken` by its coordinate), so the perspective
+  reads it as *unspoken*, not as a wrong grid. Claim: a rule with a creation
+  demand is unspoken on its held-out input. Witness: A1's *uncreated* moves
+  to *unspoken*.
+
+**Phase C — THE INVERSION: the act read off its effect.** One organ,
+`transducer/family/acts.rs`, reads a demand's act from the family's own
+pairs and writes it as a clause the rule carries; a clause stands only where
+it re-derives EVERY training pair exactly (the perspective's own test), else
+it is refused by name. No search: each act is checked against a FIXED list
+of coordinates the body already carries (78.41(2′) — compaction, never a
+tree).
+- **C1 · erasure.** A vanished body (deformation onto the empty image) on
+  every pair is `Select(pred)` + `Recolour(h → 0)`, the predicate read as
+  the coordinate (class, hue, extent, contact…) on which the vanished
+  bodies and the kept ones SEPARATE exactly on every pair; none separates —
+  refused (`NotOne`). Claim: a family erasing every body of one hue is
+  known, its rule re-deriving each held-out pair. Witness: A1's *uncleared*
+  falls; rules known rise.
+- **C2 · creation by copy.** A created body congruent to an input body is
+  `Copy{template}` on a seed selection. Claim: a family stamping a template
+  onto marked cells is known.
+- **C3 · creation by line.** Created cells collinear from a body to a stop
+  are `Extend{ray, stop}`. Claim: a family drawing lines to the border is
+  known.
+- **C4 · creation by enclosure.** Created cells filling what a body's
+  boundary encloses are `Fill{region}`. Claim: a family filling enclosed
+  regions is known.
+- **C5 · size.** A deformation whose image is the input scaled or cropped is
+  `Scale` / `Crop`. Claim: a family scaling by an exact ratio is known.
+Witness for all of C: A1's *uncreated* and *uncleared* fall; rules known
+(4/320) and solves sent (7) rise; first closures at the courts above 0; the
+remainder inversion's demands, counted and dropped today, read as acts.
+
+**Phase D — the geometry congruence needs.**
+- **D1 · given meanings re-reduced (C-8).** When a word is learned, the given
+  atoms filed on the holes it stands on (the hole index, one keyed read —
+  never a scan) are posited again; one that now decomposes is a relation,
+  counted *re-derived*. Claim: an atom given before its factors were known
+  is derived once they are. Witness: derived rises against given.
+- **D2 · the irreducible residue offered (C-9).** A residue whose question
+  lapsed unanswered is the mind's own demand: through `compose_or_construct`
+  (78.166 1a) — composed, known, in part, or a letter spoken. Claim: a
+  lapsed residue no word reaches is constructed once, never asked again.
+  Witness: unanswered falls.
+- **D3 · the mirror (A1, C-7).** A reflection carrier beside `Mv`, read in
+  the peel as itself rather than as an even part times the orientation
+  character; the double of a form glued along its boundary. Scope it on its
+  own path read (the peel, the vertex carriage, the court's replay) before
+  building; it changes the wire.
+- **D4 · the curvature (A2, C-7).** `Sphere{n, R}` carriers, so a loop
+  closes on a curved chart. Same discipline as D3.
+- **D5 · boost ↔ turn (C-6).** Only after A3 reads where the boosts come
+  from; the compact reading of a hyperbolic mode is doctrine and waits on
+  the operator's ruling.
+
+#### 4. What waits on a ruling
+
+- **D5** (the compact dual of a boost): doctrine, after A3's reading.
+- **D3/D4 wire changes**: the Concordance's 1.4 conformance holds them
+  (decoded values, never bytes); xylarium is told when its reads change.
+- **78.166 3a** (lazy intake): unchanged — its measurement first.
+
+#### 5. The gate before the soak
+
+Build A1–A3 and B1–B2 and C1 first: they turn the 904 into named causes,
+stop the silent erasure, and close the commonest effect (a body removed).
+The fleet restarts on them together with 78.166 and 78.155c, and the soak
+reads, against 2026-10-15 06:52: A1's split; occupancy against remainder;
+rules known (4) and solves sent (7); first closures (0); derived against
+given (17 / 2 033); periodic modes (19); b's folds (0). C2–C5 follow in the
+order A1's split ranks them; D1–D2 after; D3–D5 each on its own scope.
 
 ### 80.1 The blueprint reconciled (2026-09-24)
 

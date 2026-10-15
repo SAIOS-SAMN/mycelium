@@ -64,13 +64,24 @@ the minds, then the nseat units — never `scripts/recut` (it wipes).
 - 16:54: minds spoke 20 compositions and agreed 7 words to the court.
 
 ## Owed, in order
-1. **The soak of 78.166** (built: 1a/1b 9ec4cb87, 1c 6b1a34bf, 2a 194fab1f;
-   0a/0b/0c, 2b/2c need no code; 3a held). Read: b's fold `folded` > 0 and
-   its treasury entries falling; c's hot nodes and a/c's lag on b falling as
-   roots are adopted; minds' letters + motion letters against composed /
-   compositions spoken; the courts' compositions against letters.
-   **3a** waits on a measurement (the intake's share of the warm-up) and a
-   ruling (storing a listing's task binding vs C 1.13).
+1. **MU-RECURSION 78.167 — congruent thoughts, before the soak.** The 904
+   occupancy refusals are wrong speeches: unreached bodies erased silently
+   (`speak_on_scene`), and creation / erasure / merge / reshape perceived
+   exactly as demands but never read as acts — the clause language that says
+   them (78.143) is spoken only from a host's steps. Gate: A1 (occupancy
+   split by cause) · A2 (what a speech left unsaid) · A3 (where a mode comes
+   from) · A4 (the council's relay, read) → B1 (unreached body is remainder)
+   · B2 (a demand speaks as unspoken) → C1 (erasure as a clause read off its
+   effect). Then C2–C5 (copy, line, fill, size), D1 (given re-reduced), D2
+   (residue offered); D3 mirror, D4 curvature, D5 boost↔turn each on its own
+   scope and ruling.
+2. **The soak**, on 78.166 (1a/1b 9ec4cb87, 1c 6b1a34bf, 2a 194fab1f), 78.155c
+   (b6bd8ca1) and 78.167's gate, read against 2026-10-15 06:52: occupancy
+   split, rules known (4/320), solves sent (7), first closures (0), derived
+   vs given (17 / 2 033), periodic modes (19), b's folds (0), c's hot nodes,
+   minds' letters against compositions. **78.166 3a** waits on a measurement
+   (the intake's share of the warm-up) and a ruling (storing a listing's
+   task binding vs C 1.13).
 2. The page as a multi-dimensional object for the learner fetch (graded by
    stratum, closed under citation, classes inside their cells, relative to
    the learner's held words, bounded per lane) — after 78.166.
