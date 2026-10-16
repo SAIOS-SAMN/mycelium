@@ -103,6 +103,13 @@ pub struct Contemplation {
     /// them. What retires them is the CITED address lapsing, and that is a
     /// keyed read here rather than a read of every bubble asking each what
     /// it cites (rule 1, rule 17).
+    ///
+    /// MU-CLIENT §4.13 — KEYED BY THE CITED ADDRESS'S 32-BYTE HASH
+    /// (`cited_at`), the operator's ruling (2026-10-16): a hash compacts
+    /// coordinates where nothing is lost. Every reader comes with the
+    /// address in hand and hashes it; the address itself stands on the
+    /// citing bubble's `glues`, never copied a second time here. A cited
+    /// address whose last citer leaves leaves with it.
     pub(crate) cited: Keyed<Keyed<()>>,
     /// Bubble address → its ordinal in this contemplation. The shape
     /// `Form.by_address` already has.
@@ -395,6 +402,18 @@ impl Contemplation {
 
     /// True when a live idea glued this address (a dialect entry so marked
     /// is not shed).
+    /// THE KEY A CITED ADDRESS IS FILED UNDER in the citation fibration: its
+    /// 32-byte hash — the address compacted, located exactly by every reader
+    /// that holds it (`cited`).
+    pub(crate) fn cited_at(addr: &[u8]) -> [u8; 32] {
+        crate::chronometry::payload_hash(addr)
+    }
+
+    /// Whether a held thought cites `addr`.
+    pub(crate) fn cites(&self, addr: &[u8]) -> bool {
+        self.cited.get(&Self::cited_at(addr)).is_some_and(|m| !m.is_empty())
+    }
+
     pub fn glues_word(&self, addr: &[u8]) -> bool {
         self.bubbles
             .scoped()
@@ -525,8 +544,16 @@ impl Contemplation {
         }
         self.unfile_vortex(key, &b.vortex_strata());
         for (addr, ()) in b.glues.scoped() {
-            if let Some(m) = self.cited.get_mut(&addr) {
-                m.remove(&ob);
+            let at = Self::cited_at(&addr);
+            let gone = match self.cited.get_mut(&at) {
+                Some(m) => {
+                    m.remove(&ob);
+                    m.is_empty()
+                }
+                None => false,
+            };
+            if gone {
+                self.cited.remove(&at);
             }
         }
         // A scene's last thought gone, the scene's entry goes with it: an
@@ -794,7 +821,7 @@ impl Contemplation {
         // The citation fibration: this bubble is filed under every address
         // it cites, by ordinal.
         for (addr, ()) in b.glues.scoped() {
-            self.cited.nested_insert(&addr, key, ());
+            self.cited.nested_insert(Self::cited_at(&addr), key, ());
         }
         // MU-CLIENT §3.1, §4.9 — the scene it was perceived in: its family's
         // coordinate (a task's citation), read where a scene waits on its

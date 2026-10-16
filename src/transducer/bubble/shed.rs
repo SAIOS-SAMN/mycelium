@@ -82,7 +82,7 @@ impl Contemplation {
                 frontier.push(addr.clone());
             }
             // And every bubble citing it, by keyed read of the fibration.
-            let citers: Vec<u16> = match self.cited.get(&addr) {
+            let citers: Vec<u16> = match self.cited.get(&Self::cited_at(&addr)) {
                 Some(m) => m.scoped().filter_map(|(k, _)| Self::ordinal_of_key(&k)).collect(),
                 None => Vec::new(),
             };

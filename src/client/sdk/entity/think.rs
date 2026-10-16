@@ -1043,7 +1043,7 @@ impl Entity {
         let (unheard, speaking) = (&self.unheard, &self.speaking);
         let referenced = |a: &[u8], d: &Dialect| {
             c.bubbles.contains(a)
-                || c.cited.get(a).is_some_and(|m| !m.is_empty())
+                || c.cites(a)
                 || glued.contains(a)
                 || covered.contains(&crate::transducer::stalk::invariant_of(d.sentence.element()).key())
                 || speaking.contains(a)
