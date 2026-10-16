@@ -173,9 +173,11 @@ pub(crate) fn mark_flux(
         None => match COURT_FIELD.lock() {
             Ok(mut field) => {
                 let reading = transport_order(word_transports, circuits, &mut field, budget);
-                // The court holds no complex of lines: what its field
-                // released or carried relaxes nothing, and is let go here
-                // rather than held without bound.
+                // MU-CLIENT §4.5 — the court's field beats after each
+                // admission (a mind's, at its vent). It holds no complex of
+                // lines: what its field released or carried relaxes nothing,
+                // and is let go here rather than held without bound.
+                field.beat();
                 let _ = (field.take_released(), field.take_carried());
                 reading
             }
@@ -294,9 +296,6 @@ pub(crate) fn transport_order(
     for (h, mass) in circuits {
         admit(&mut r, h, &[], *mass, false, &crate::transducer::cech::orbit::Thread::Free, budget);
     }
-    // MU-CLIENT §4.5 — and the field beats on what returned: what never
-    // returns dissipates into the reservoir, to re-form where motion lands.
-    field.beat();
     r
 }
 

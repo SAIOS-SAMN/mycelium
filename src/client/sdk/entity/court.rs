@@ -28,6 +28,11 @@ pub(crate) struct CourtPace {
     last_quoted_height: u64,
     last_pressure: [u64; 4],
     pub(crate) dwell_remaining: [u64; 4],
+    /// MU-CLIENT §4.13 — THE COURT'S GRAVITY ON THE MIND'S FIELD: the
+    /// deficit its last deferral named, per lane, standing until the court
+    /// answers a quote; the mind's beat drags on these lanes
+    /// (`Field::beat_under`).
+    pub(crate) deficit: [u64; 4],
     last_synced_lang: Option<(usize, usize, usize)>,
     last_synced_height: u64,
     pub(crate) quoting: bool,
@@ -122,6 +127,12 @@ impl Entity {
             pace.last_height = pace.last_height.max(q.height);
             pace.last_pressure = q.surface;
             pace.dwell_remaining = q.surface;
+            // A deferral's deficit stands as the court's gravity; a quote
+            // the court answered relieves it.
+            pace.deficit = match q.deficit {
+                Some(d) => d,
+                None => [0; 4],
+            };
             self.answer_demands(&q.clusters, outcome);
         }
         let pace = &self.board.court;

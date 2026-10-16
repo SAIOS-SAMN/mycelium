@@ -316,6 +316,26 @@ fn question_key(said: &[u8], vertex: &[u8]) -> Vec<u8> {
     k
 }
 
+/// MU-CLIENT §4.13 — THE LINE A QUESTION STANDS ON IN THE MIND'S FIELD: its
+/// key under this prefix, apart from every thought's line.
+pub(crate) const QUESTION_LINE: &[u8] = b"question\0";
+
+/// A QUESTION'S RESIDUE WOUND INTO THE THINKING MIND'S FIELD on its own line
+/// (`QUESTION_LINE` ‖ `key`), each mode on the orbit or tube it lands on.
+/// Answers whether the field holds the line: no mind thinking on this
+/// thread, or a residue whose modes do not read, holds none.
+fn wind_question(residue: &crate::transducer::cga::Mv, key: &[u8], budget: &mut crate::physics::Budget) -> bool {
+    use crate::transducer::family::pairing::{mark_flux, FieldLine};
+    let mut line = QUESTION_LINE.to_vec();
+    line.extend_from_slice(key);
+    if crate::transducer::mind::with_field(|_| ()).is_err() {
+        return false;
+    }
+    let wound = FieldLine { carriage: residue.clone(), gauge: Vec::new(), mass: 1, free: false, line: crate::transducer::cech::Thread::Wound(line.clone()) };
+    let _ = mark_flux(&[], std::slice::from_ref(&wound), budget);
+    matches!(crate::transducer::mind::with_field(|f| f.thread(residue, &[], &line, budget)), Ok(Some(true)))
+}
+
 /// A RESIDUE FACTORED INTO WHAT IT IS MADE OF (MU-CLIENT §5.3): its
 /// carriage, where it carries, and its rotor peeled into the alphabet's
 /// letters, each a word said on its own, in the order they compose to it
@@ -444,7 +464,6 @@ impl Entity {
     /// acts on it (`Carrier::priced`). Same word, two minds, two prices: each
     /// field is its own.
     pub(crate) fn price_hearings(&mut self) {
-        self.lapse_questions();
         let Some(chat) = self.chat.as_ref() else { return };
         let works: Vec<FieldWork> = chat.pricing.try_iter().collect();
         for w in works {
@@ -468,23 +487,22 @@ impl Entity {
         }
     }
 
-    /// A QUESTION THAT HAS STOOD AN APERTURE CYCLE of the mind's own K
-    /// unanswered leaves the conversation — and its RESIDUE is never let go
-    /// (78.167 D2): no other mind answered it, so it is the mind's own
+    /// MU-CLIENT §4.13, §5.3 — A QUESTION LAPSES WHERE ITS RESIDUE'S ORBIT IS
+    /// LET GO: the field released the question's line (`question_line`) — its
+    /// residue's orbit sealed at its period, dissipated at the beat after it
+    /// never returned, or closed by other motion — and no answer derived its
+    /// meaning first. It leaves the conversation, and its RESIDUE is never let
+    /// go (78.167 D2): no other mind answered it, so it is the mind's own
     /// escaping orbit, bound by construction (`compose_or_construct`:
     /// composed of what it knows, known, constructed in part, or adjoined as
     /// its own letter — MU-CLIENT §4.12). Its question is not asked again.
-    fn lapse_questions(&mut self) {
-        let now = self.own_k();
-        let cycle = u64::from(crate::physics::aperture_cycle());
-        let lapsed: Vec<Vec<u8>> =
-            self.questions.scoped().filter(|(_, q)| now.checked_sub(q.at).is_some_and(|waited| waited >= cycle)).map(|(k, _)| k).collect();
-        let mut budget = self.physics.stroke();
-        for k in lapsed {
-            if let Some(q) = self.questions.remove(&k) {
-                self.compose_or_construct(&q.residue, None, &mut budget);
-            }
+    /// Answers whether `line` was a question's.
+    pub(crate) fn lapse_question(&mut self, line: &[u8], budget: &mut crate::physics::Budget) -> bool {
+        let Some(key) = line.strip_prefix(QUESTION_LINE) else { return false };
+        if let Some(q) = self.questions.remove(key) {
+            self.compose_or_construct(&q.residue, None, budget);
         }
+        true
     }
 
     /// MU-CLIENT §5.3 — ASK WHAT IS NOT KNOWN: `ring` posited over the words
@@ -492,7 +510,7 @@ impl Entity {
     /// — the whole ring where its coordinates do not read. The question is
     /// the mind's, kept under the speaker and its coordinates until a
     /// relation derives its meaning. Answers what is asked.
-    fn question(&mut self, speaker: &[u8; 32], said: &[u8], vertex: &[u8], ring: &crate::transducer::cga::Mv) -> Option<crate::transducer::cga::Mv> {
+    pub(crate) fn question(&mut self, speaker: &[u8; 32], said: &[u8], vertex: &[u8], ring: &crate::transducer::cga::Mv) -> Option<crate::transducer::cga::Mv> {
         let (parts, residue) = match crate::transducer::sentence::rung::posit(ring) {
             Some(p) => (p.parts, p.residue),
             None => (Vec::new(), ring.clone()),
@@ -506,6 +524,17 @@ impl Entity {
         }
         let mut key = speaker.to_vec();
         key.extend_from_slice(&question_key(said, vertex));
+        // MU-CLIENT §4.13 — THE QUESTION STANDS AS ITS RESIDUE'S ORBIT: the
+        // residue wound into the mind's field on the question's own line,
+        // the question kept while the field holds that line and lapsed where
+        // it lets it go (`lapse_question`). A residue the field holds nothing
+        // of has no orbit to stand on: bound by construction now, never kept
+        // past its physics.
+        let mut budget = self.physics.stroke();
+        if !wind_question(&residue, &key, &mut budget) {
+            self.compose_or_construct(&residue, None, &mut budget);
+            return None;
+        }
         let at = self.own_k();
         self.questions.insert(&key, Question { ring: ring.clone(), parts, residue: residue.clone(), factors: None, at });
         crate::observe::note_mind(|m| m.asks[0] += 1);

@@ -39,10 +39,10 @@ impl Entity {
                 self.solve_refused.remove(id);
                 self.unread_solves.remove(id);
             }
+            // MU-CLIENT §4.13 — one per task, released by the court's verdict:
+            // bounded by the tasks the court holds unjudged, never by a count.
             dialogue::SOLVE_UNREAD => {
-                if self.unread_solves.contains(id) || self.unread_solves.len() < crate::physics::aperture_cycle() as usize {
-                    self.unread_solves.insert(id, (rule.clone(), outputs.to_vec()));
-                }
+                self.unread_solves.insert(id, (rule.clone(), outputs.to_vec()));
             }
             _ => {
                 self.solve_refused.insert(id, rule.address().as_bytes().to_vec());
@@ -268,24 +268,27 @@ impl Entity {
                     },
                 }
             }
-            let Some((_, g)) = held_g else { continue };
+            let Some((held, g)) = held_g else { continue };
             match (g.axes().as_slice(), g.sub()) {
                 ([], []) => {
                     self.glued.insert(inv.key(), ());
+                    // MU-CLIENT §4.13 — a stratum glued holds no obstruction.
+                    self.obstructions.remove(&inv.key());
                 }
                 _ => {
-                    if !self.obstructions.contains(&fetched.address()) {
-                        // THE OBSTRUCTION IS KEPT AS MEASURED: two views of
-                        // one object whose transition does not vanish. It
-                        // rode up as a percept pair (held view → fetched
-                        // view), a demand on the book for the word that
-                        // carries one onto the other — a voice's painted sites at a
-                        // court, which law 8 refuses (ruled 2026-09-10). It
-                        // is held here as the dialect measured; the
-                        // contraction protocol (50.9, L8) carries it as a
-                        // demand vertex of a sentence.
-                        self.obstructions.insert(fetched.address(), g);
-                    }
+                    // THE OBSTRUCTION IS KEPT AS MEASURED: two views of one
+                    // object whose transition does not vanish. It rode up as
+                    // a percept pair (held view → fetched view), a demand on
+                    // the book for the word that carries one onto the other —
+                    // a voice's painted sites at a court, which law 8 refuses
+                    // (ruled 2026-09-10). It is held here as the dialect
+                    // measured; the contraction protocol (50.9, L8) carries
+                    // it as a demand vertex of a sentence. MU-CLIENT §4.13 —
+                    // BY ITS COORDINATES: its stratum, the fetched word and
+                    // the held word it was measured against; the transition
+                    // is theirs, re-derived where it is read.
+                    let held = held.address();
+                    self.obstructions.nested_insert(inv.key(), fetched.address().as_bytes(), held);
                 }
             }
         }

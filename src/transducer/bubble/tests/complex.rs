@@ -269,15 +269,16 @@ fn a_held_rings_entry_is_answered_where_its_hole_seals_flat() {
     assert_eq!((d.pending, d.answered), (0, 1), "answered where its hole sealed flat");
 }
 
-/// 78.37(2), TC1 — A LEAF HANGING OFF A RING, SHED BY PRICE: a ring of four
-/// thoughts (no 2-simplex, so the nerve's Ȟ¹ is 1) with a leaf on one
-/// corner reads one free vertex and a 2-core of four. The price door sheds
-/// the leaf: removed 1, in the core 0, rank lost 0. Then it sheds a corner of
-/// the ring: in the core 1, rank lost 1 — what shedding by price took that
-/// carried a loop, read exactly. A filled triangle beside it reads three free
-/// edge faces and Ȟ¹ 0: every 2-simplex a cell whatever its fill.
+/// 78.37(2), TC1, MU-CLIENT §4.13 — A LEAF HANGING OFF A RING, RELEASED BY
+/// ITS ORBIT: a ring of four thoughts (no 2-simplex, so the nerve's Ȟ¹ is 1)
+/// with a leaf on one corner reads one free vertex and a 2-core of four. The
+/// field lets the leaf's line go and the orbit door removes it: removed 1, in
+/// the core 0, rank lost 0. Then a corner of the ring: in the core 1, rank
+/// lost 1 — what a release by the orbit took that carried a loop, read
+/// exactly. A filled triangle beside it reads three free edge faces and Ȟ¹ 0:
+/// every 2-simplex a cell whatever its fill.
 #[test]
-fn a_leaf_off_a_ring_shed_by_price_carries_no_loop_and_a_corner_does() {
+fn a_leaf_off_a_ring_released_by_its_orbit_carries_no_loop_and_a_corner_does() {
     use crate::transducer::alphabet::Rotor;
     use crate::transducer::cech::Section;
     use crate::transducer::element::identity_versor;
@@ -292,13 +293,12 @@ fn a_leaf_off_a_ring_shed_by_price_carries_no_loop_and_a_corner_does() {
     }
     let r = c.core_reading();
     assert_eq!((r.free_vertices, r.isolated, r.core, r.h1), (1, 0, 4, 1), "{r:?}");
-    c.set_now(10);
-    c.bubbles.insert(&vs[4], Bubble { until: Some(1), ..Bubble::default() });
-    let _ = c.lapse_on_clock();
+    c.bubbles.insert(&vs[4], Bubble::default());
+    c.release_thought(&vs[4]);
     let s = c.meet_graph().shed;
     assert_eq!((s.removed[0], s.in_core[0], s.rank_lost[0]), (1, 0, 0), "a leaf carried no loop");
-    c.bubbles.insert(&vs[2], Bubble { until: Some(1), ..Bubble::default() });
-    let _ = c.lapse_on_clock();
+    c.bubbles.insert(&vs[2], Bubble::default());
+    c.release_thought(&vs[2]);
     let s = c.meet_graph().shed;
     assert_eq!((s.removed[0], s.in_core[0], s.rank_lost[0]), (2, 1, 1), "a corner of the ring carried one");
 

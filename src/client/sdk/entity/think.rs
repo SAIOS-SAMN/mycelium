@@ -171,6 +171,12 @@ impl Entity {
         if !lines.is_empty() {
             mark_flux(&[], &lines, budget);
         }
+        // MU-CLIENT §4.5, §7.1 Phase 3 — THE MIND'S BEAT: where its field moved
+        // since the last vent, what stood through the last beat and never
+        // returned dissipates now — and under the court's gravity, what still
+        // rings on a lane its deficit presses (§4.13).
+        let deficit = self.board.court.deficit;
+        let _ = crate::transducer::mind::with_field(|field| field.beat_under(&deficit));
         // FROZEN-IN FLUX: every fibre the field's admissions carried moves
         // with the orbit it is wound on (MU-CLIENT §4.5).
         if let Ok(carried) = crate::transducer::mind::with_field(|field| field.take_carried()) {
@@ -179,9 +185,48 @@ impl Entity {
             }
         }
         if let Ok(released) = crate::transducer::mind::with_field(|field| field.take_released()) {
-            self.contemplation.release(&released);
+            // MU-CLIENT §4.13 — a question's line let go lapses the question
+            // (`lapse_question`); every other line is the contemplation's.
+            let mut thought = Vec::with_capacity(released.len());
+            for (line, why) in released {
+                if !self.lapse_question(&line, budget) {
+                    thought.push((line, why));
+                }
+            }
+            self.contemplation.release(&thought);
         }
+        // MU-CLIENT §4.13, §7.1 Phase 3 — the thoughts newly standing thread
+        // their lines in the field as it now stands; and the escrow every door
+        // returned this stroke is credited to the reserve, lane by lane, once.
+        self.contemplation.thread_new(budget);
+        self.physics.reserve.restore(self.contemplation.take_returned_escrow());
+        self.lock_reservoirs();
         lines.len()
+    }
+
+    /// MU-CLIENT §4.13 — THE RESERVOIRS FEED BACK: what the field's
+    /// reservoirs hold is potential locked in `e_∅`, so the operational
+    /// reserve is the reserve less what they hold — `reserve − escrow −
+    /// reserved(e_∅)`, the escrow already drawn by the holds. Per lane: a
+    /// reservoir that grew takes the growth from the reserve, as much as the
+    /// lane holds (`Reserve::drain`; a lane spent locks what it can, and the
+    /// rest is taken at a later vent); one that fell — strain re-formed by
+    /// motion, or condensed at its eon — gives back exactly what it had
+    /// locked beyond what it still holds.
+    fn lock_reservoirs(&mut self) {
+        let Ok(Some(reserved)) = crate::transducer::mind::with_field(|field| field.reserved()) else { return };
+        let locked = self.board.reservoir_locked;
+        // A lane's reservoir either grew past what it locked, or fell below
+        // it, or stands: the part that did not happen is exactly none.
+        let part = |a: u64, b: u64| match a.checked_sub(b) {
+            Some(d) => d,
+            None => 0,
+        };
+        let grow: [u64; 4] = std::array::from_fn(|l| part(reserved[l], locked[l]));
+        let give: [u64; 4] = std::array::from_fn(|l| part(locked[l], reserved[l]));
+        let short = self.physics.reserve.drain(grow);
+        self.physics.reserve.restore(give);
+        self.board.reservoir_locked = std::array::from_fn(|l| locked[l] + (grow[l] - short[l]) - give[l]);
     }
 
     /// 78.109 C1, 78.47 — A RESIDUE THE MIND CANNOT SAY, CONSTRUCTED AND MADE
@@ -611,25 +656,6 @@ impl Entity {
         true
     }
 
-    /// Z4d — THE STROKE'S LAPSE: every thought the clock has passed leaves,
-    /// as a set, and its escrow returns to the reserve LANE BY LANE.
-    ///
-    /// A thought held before any aperture was measured is paid through one
-    /// here, on the first stroke that can measure a horizon, so it is
-    /// neither held against a height nothing measured nor held forever for
-    /// want of one (rule 15).
-    pub(crate) fn lapse_held(&mut self) -> usize {
-        let _ = self.contemplation.repay_unpaid();
-        let (returned, n) = self.contemplation.lapse_on_clock();
-        // A return past a lane's carrier is refused and counted on the
-        // metabolic ledger, the lane standing where it was (STD1).
-        self.physics.reserve.restore(returned);
-        // TC1 — and what the truncation removed since, returned alike.
-        let truncated = self.contemplation.take_truncated_escrow();
-        self.physics.reserve.restore(truncated);
-        n
-    }
-
     /// DOOR 3 OF CHAPTER 25 — ROOM, PER LANE, AND NOTHING IS EVICTED.
     ///
     /// Room is `boundary_measure` against this voice's reserve, LANE BY
@@ -892,25 +918,33 @@ impl Entity {
         let scene = family.to_vec();
         self.speak_with(std::slice::from_ref(e), &[], family, move |me, _| {
             let sealed = me.sealed.get(addr.as_bytes()).is_some();
-            if me.already_taught(&word) || sealed {
-                me.unheard.remove(addr.as_bytes());
-            } else if me.unheard.contains(addr.as_bytes()) || me.unheard.len() < crate::physics::aperture_cycle() as usize {
-                me.unheard.insert(addr.as_bytes(), (word, scene));
+            // Held where its dialect stands it, and only there: a word the
+            // dialect no longer holds has nothing to be said again from.
+            let stands = me.epigenome.working_word(addr.as_bytes()).is_some();
+            match me.already_taught(&word) || sealed || !stands {
+                true => {
+                    me.unheard.remove(addr.as_bytes());
+                }
+                false => {
+                    me.unheard.insert(addr.as_bytes(), scene);
+                }
             }
         });
     }
 
     /// 37.7 — SAY AGAIN WHAT NO COURT TAUGHT: every word this mind spoke that
     /// no court has stood, ratified or sealed is spoken once more, within the
-    /// stroke's budget. A word said again leaves the unheard set while its
-    /// answer is on the way, and returns to it where none taught it.
+    /// stroke's budget, read where its language stands it. A word said again
+    /// leaves the unheard set while its answer is on the way, and returns to
+    /// it where none taught it.
     pub(crate) fn speak_unheard(&mut self, budget: &mut crate::physics::Budget) {
-        let pending: Vec<(Vec<u8>, Element, Vec<u8>)> = self.unheard.scoped().map(|(a, (e, f))| (a, e.clone(), f.clone())).collect();
-        for (a, e, family) in pending {
+        let pending: Vec<(Vec<u8>, Vec<u8>)> = self.unheard.scoped().map(|(a, f)| (a, f.clone())).collect();
+        for (a, family) in pending {
             if !budget.spend() {
                 return;
             }
             self.unheard.remove(&a);
+            let Some(e) = self.epigenome.working_word(&a).map(|h| h.element().clone()) else { continue };
             self.stand_crystallized(&e, &family);
         }
     }
@@ -964,22 +998,61 @@ impl Entity {
         spoken
     }
 
-    pub(crate) fn shed(&mut self) -> usize {
-        self.shed_at(self.own_k())
-    }
-
+    /// MU-CLIENT §4.13 — THE SHED, BY REFERENCE: a dialect word stands while
+    /// something live references it, and is dropped where nothing does
+    /// (`Epigenome::shed_unreferenced`). What references a word, each read
+    /// by its coordinates:
+    /// - a thought standing AT it, or a thought CITING it (door 1's
+    ///   fibration, `cited`);
+    /// - a thought that GLUED it;
+    /// - an open docket entry whose COVER holds its chart;
+    /// - its own unjudged speech: said and not yet answered (`speaking`),
+    ///   answered and not taught (`unheard`), or taught by a court and not
+    ///   yet ratified into the genome (`taught_up`) — its receipt is what
+    ///   keeps it from being said twice.
+    ///
+    /// Run at the winding's vent, where the thoughts the field released have
+    /// left; and at rest.
     #[expect(
         clippy::disallowed_methods,
         reason = "rule 11 — one per resident item shed: four counts of what this process held cannot pass a 64-bit usize"
     )]
-    pub(crate) fn shed_at(&mut self, now_k: u64) -> usize {
-        self.epigenome.note_stroke(now_k);
-        let glued = |a: &[u8]| self.contemplation.glues_word(a);
-        let dropped = self.epigenome.shed_except(now_k, &glued);
+    pub(crate) fn shed(&mut self) -> usize {
+        let c = &self.contemplation;
+        let mut glued: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        for (_, b) in c.bubbles.scoped() {
+            for (a, _) in b.glues.scoped() {
+                glued.insert(&a, ());
+            }
+        }
+        let mut covered: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        for cite in c.docket_cites() {
+            if let crate::chronometry::Cite::Class { cover: Some(cover), .. } | crate::chronometry::Cite::Demand { cover: Some(cover), .. } = cite {
+                for chart in cover {
+                    covered.insert(&chart, ());
+                }
+            }
+        }
+        let mut unratified: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        for (a, _) in self.taught_up.scoped() {
+            if !self.epigenome.genome.contains(&a) {
+                unratified.insert(&a, ());
+            }
+        }
+        let (unheard, speaking) = (&self.unheard, &self.speaking);
+        let referenced = |a: &[u8], d: &Dialect| {
+            c.bubbles.contains(a)
+                || c.cited.get(a).is_some_and(|m| !m.is_empty())
+                || glued.contains(a)
+                || covered.contains(&crate::transducer::stalk::invariant_of(d.sentence.element()).key())
+                || speaking.contains(a)
+                || unheard.contains(a)
+                || unratified.contains(a)
+        };
+        let dropped = self.epigenome.shed_unreferenced(&referenced);
         // 7.3, S12.6a: the utterance receipt of a word that shed leaves
-        // with it. Kept, `taught_up` grew by every word the mind ever
-        // uttered — the strokes, not the shed's residue — and 24.3's "nothing
-        // is uttered twice" only needs the receipt while the word stands.
+        // with it: 24.3's "nothing is uttered twice" needs the receipt only
+        // while the word stands.
         for a in &dropped {
             self.forget_utterance(a);
         }
@@ -989,14 +1062,10 @@ impl Entity {
         // the signal and it is already in hand; no sweep discovers these
         // later.
         let lapsed = self.contemplation.lapse_with(&dropped);
-        // Z4d: AND THE CLOCK'S OWN LAPSE. A thought whose paid height
-        // TUniversal has passed leaves here too, as a set, with its escrow
-        // returned per lane. Door 1 answers for what a thought CITES;
-        // this answers for what it was PAID, and a thought that cites
-        // nothing standing still has a horizon.
-        let expired = self.lapse_held();
         let unglued = self.contemplation.shed_unglued();
-        dropped.len().saturating_add(lapsed).saturating_add(expired).saturating_add(unglued)
+        // The escrow these doors returned is credited where every door's is,
+        // at the vent (`vent_into_field`).
+        dropped.len().saturating_add(lapsed).saturating_add(unglued)
     }
 
     pub(crate) fn dialect_len(&self) -> usize {
@@ -1095,7 +1164,7 @@ impl Entity {
             self.epigenome.expressed.len(),
             self.epigenome.recollections.len(),
             self.epigenome.waiting_on.len(),
-            self.epigenome.stroke_k.len(),
+            self.unheard.len(),
         ]
     }
 }

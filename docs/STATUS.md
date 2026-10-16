@@ -19,6 +19,23 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
+## Phase 3 — containment and memory (2026-10-16)
+The host crashed (memory) and rebooted mid-build; nothing runs. The fleet
+— courts, minds 1–5, netstratum's conductor, seat relay and nseat-1..4 — is
+held DOWN until Phase 3 ships as one release; netstratum restarts only on
+mycelium's word, its conductor after the minds' genomes restore, at a slower
+cadence. Phase 3 is BUILT to MU-CLIENT §7.1's "as built" (the operator's
+rulings Q1–Q4 included): memory released by the field (Returned /
+Dissipated / Sealed / Cancelled / AtRest), the beat per vent with one beat
+of standing, escrow conserved, holders by coordinates (unheard, unread
+solves, obstructions, questions by their residue's orbit, the dialect shed
+by reference), the court's deficit kept and dragging escaping orbits in on
+its lanes, reservoirs condensing at the eon and locking the reserve. Owed
+in Phase 3's own list: the conversation carrier's window; `taught_up`,
+`fronts`, `grounds`, `cited` whole. Then: commit, release, notify, restart,
+witness (thoughts stand across hours, held speech reaches the courts,
+deferrals hold the dwell and the drag).
+
 ## Phase 1 remediated, cleaned, and real convergence (2026-10-16)
 R0 (bfdd375e, 563ecee6) and R1–R6 (f3a8d15b) released 01:23: the minds wind
 (K to 307), bind escaping orbits, the courts hear speech; pays 0 bar one

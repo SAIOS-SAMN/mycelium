@@ -212,14 +212,20 @@ impl Contemplation {
         }
     }
 
-    /// LET GO THE LINES THE FIELD RELEASED (MU-CLIENT §4.5): each a tether or
-    /// a cell whose tension relaxed in the field. A released CELL descends,
-    /// its fill handed out. A released TETHER's read cells descend first,
-    /// highest degree first — a boundary relaxing no longer closes — and the
-    /// tether drains; a hole over it pins it, and it stands. A line no longer
-    /// in the complex is gone already and nothing happens.
-    pub(crate) fn release(&mut self, lines: &[Vec<u8>]) {
-        for line in lines {
+    /// LET GO THE LINES THE FIELD RELEASED (MU-CLIENT §4.5, §4.13): each a
+    /// thought, a tether or a cell whose tension relaxed in the field, with
+    /// why. A THOUGHT's own line is read by its cause (`line::release_line`):
+    /// a grounded thought winds on past its return, and every other release
+    /// lets the thought go. A released CELL descends, its fill handed out. A
+    /// released TETHER's read cells descend first, highest degree first — a
+    /// boundary relaxing no longer closes — and the tether drains; a hole over
+    /// it pins it, and it stands. A line no longer in the complex is gone
+    /// already and nothing happens.
+    pub(crate) fn release(&mut self, lines: &[(Vec<u8>, crate::transducer::cech::orbit::Released)]) {
+        for (line, why) in lines {
+            if self.release_line(line, *why) {
+                continue;
+            }
             match self.complex.degree_of(line) {
                 Some(1) => {
                     let cofaces = self.complex.vertices_at(line).and_then(|ends| self.complex.cofaces_of(&ends));

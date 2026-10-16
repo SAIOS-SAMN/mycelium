@@ -1,128 +1,41 @@
-// 24.1, 24.2 — the aperture and the shed: what a mind holds, what it lets
-// go, and that it sheds on its own K though the mesh never advances.
+// 24.1, 24.2, MU-CLIENT §4.13 — the shed: what a mind holds, and what it
+// lets go where nothing live references it.
 
 use super::common::*;
 use crate::client::sdk::*;
 
-/// Shed never removes a dialect entry a live idea glued, and never the genome.
+/// MU-CLIENT §4.13 — A DIALECT WORD STANDS WHILE A THOUGHT GLUES IT, and one
+/// nothing references is shed at once — no window, no clock; the genome
+/// never sheds.
 #[test]
-fn shed_spares_glued_dialect_and_the_genome() {
-let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
-let e2 = two_body_sentence([&[(1, 3), (1, 3)], &[(3, 5), (3, 5)]]);
-let mut entity = Entity::open("127.0.0.1:1", Kernel::named("shed"));
-entity.epigenome.stand_dialect_at(e1.clone(), 0, 0);
-entity.epigenome.stand_dialect_at(e2.clone(), 0, 0);
-assert_eq!(entity.dialect_len(), 2);
-let addr = e1.address();
-entity.hold_chain(vec![(9, 0, 1, 2)]);
-let idea = entity
-    .contemplation
-    .bubbles
-    .scoped()
-    .next()
-    .map(|(k, _)| k)
-    .expect("idea");
-entity.contemplation.mark_glue(&idea, addr.clone());
-let aperture = crate::physics::aperture_cycle() as u64;
-// The first aperture after boot is unmeasured: nothing sheds while
-// the stroke ring fills, however idle an entry is.
-for tu in 1..aperture {
-    entity.shed_at(tu);
-    assert_eq!(entity.dialect_len(), 2, "an unmeasured aperture sheds nothing");
-}
-// The ring is full at this stroke: the aperture is measured, the
-// idle unglued entry sheds, the glued one stands.
-entity.shed_at(aperture + 1);
-assert_eq!(entity.dialect_len(), 1, "the idle unglued entry sheds; the glued one stands");
-assert!(entity.epigenome.working_word(&addr).is_some(), "the glued entry stands");
-assert!(entity.epigenome.working_word(&e2.address()).is_none(), "the idle entry is gone");
-assert_eq!(entity.epigenome.genome_len(), 0, "genome is untouched by shed");
+fn a_dialect_word_stands_while_a_thought_glues_it_and_the_genome_never_sheds() {
+    let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
+    let e2 = two_body_sentence([&[(1, 3), (1, 3)], &[(3, 5), (3, 5)]]);
+    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("shed"));
+    let _ = entity.stand(&[e1.clone(), e2.clone()], 0, &[]);
+    assert_eq!(entity.dialect_len(), 2);
+    let addr = e1.address();
+    entity.hold_chain(vec![(9, 0, 1, 2)]);
+    let idea = entity.contemplation.bubbles.scoped().next().map(|(k, _)| k).expect("idea");
+    entity.contemplation.mark_glue(&idea, addr.clone());
+    let _ = entity.shed();
+    assert_eq!(entity.dialect_len(), 1, "the unreferenced word sheds; the glued one stands");
+    assert!(entity.epigenome.working_word(&addr).is_some(), "the glued word stands");
+    assert!(entity.epigenome.working_word(&e2.address()).is_none(), "the unreferenced word is gone");
+    assert_eq!(entity.epigenome.genome_len(), 0, "the genome is untouched by the shed");
 }
 
-/// 7.3, 24.1, Stage 12 S12.6a — THE MIND'S CARRIERS GROW BY THE SHED'S
-/// RESIDUE, NOT BY THE STROKES. A voice that withholds a form with a new
-/// body every stroke and sheds on its own K holds, at 4N strokes, no more
-/// dialect and no more utterance receipts than at N plus one aperture: a
-/// word idle for an aperture leaves, and its receipt leaves with it. The
-/// receipt stayed, and `taught_up` grew by every word ever uttered.
+/// MU-CLIENT §4.13 — A WORD THE MIND SAID AND A COURT TAUGHT STANDS UNTIL
+/// THE GENOME HOLDS IT: its receipt is what keeps it from being said twice,
+/// so it is referenced while it is unratified, whatever its thoughts did.
 #[test]
-fn a_minds_carriers_grow_by_the_sheds_residue_not_by_the_strokes() {
-use super::common::closed_turn;
-let aperture = crate::physics::aperture_cycle() as u64;
-let run = |strokes: u64| -> (usize, usize) {
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("leak"));
-    let form = closed_turn(None);
-    for k in 1..=strokes {
-        // A body no earlier stroke spoke: a bar one site longer each stroke.
-        let bar: Vec<(i64, i64, u8, u8)> = (0..=k as i64).map(|c| (0, c, 1u8, 2u8)).collect();
-        let mut b = entity.stroke();
-        entity.withhold_form(form.clone(), &[], std::slice::from_ref(&bar), [1, 0, 0, 0], &mut b);
-        entity.shed_at(k);
-    }
-    (entity.dialect_len(), entity.utterances_filed())
-};
-let n = 2 * aperture;
-let (dialect_n, receipts_n) = run(n);
-let (dialect_4n, receipts_4n) = run(4 * n);
-assert!(
-    dialect_4n <= dialect_n + usize::try_from(aperture).expect("aperture_cycle() is the aperture ratio 8"),
-    "dialect at 4N ({dialect_4n}) stays within an aperture of N ({dialect_n})"
-);
-assert!(
-    receipts_4n <= receipts_n + usize::try_from(aperture).expect("aperture_cycle() is the aperture ratio 8"),
-    "utterance receipts at 4N ({receipts_4n}) stay within an aperture of N ({receipts_n}): a receipt leaves with its word"
-);
-}
-
-/// An expressed word stands at the voice's K and TUniversal, so a shed
-/// inside the aperture does not drop the mind's own speech.
-#[test]
-fn expressed_word_survives_shed_within_the_aperture() {
-use crate::transducer::element::{canonical_chain, from_canonical};
-let mut epi = Epigenome::new();
-let residual = [(0i64, 0i64, 1u8, 2u8)];
-assert!(epi.express(&residual, 7, 10, &mut super::common::budget()), "the residual is claimed");
-let addr = from_canonical(&canonical_chain(&residual).expect("one link is A5's chain")).address();
-let d = epi.dialect.get(&addr).expect("stood");
-assert_eq!(d.last_used_k, 7, "k is the voice's K");
-assert_eq!(d.last_used_tu, 10, "tu is the standing extent in heights");
-// The lifecycle is counted in the mind's OWN K (45.4), so the
-// strokes that measure the aperture are K values, not heights.
-let aperture = crate::physics::aperture_cycle() as u64;
-let now = 7 + aperture - 1;
-for k in 7..=now {
-    epi.note_stroke(k);
-}
-let n = epi.shed(now);
-assert_eq!(n, 0, "expressed within the aperture stands");
-assert_eq!(epi.dialect_len(), 1);
-assert!(epi.working_word(&addr).is_some());
-}
-
-/// The defect this coordinate change closes. Heights advance only on
-/// admitted receipts (45.2), so a mind whose mesh admits nothing has a
-/// TUniversal frozen at 0 — and a lifecycle read against it could never
-/// fire, holding everything the mind ever stood for the life of the
-/// process. A mind's own K advances on its own acts, so it reclaims
-/// what it holds whether or not anyone answered it.
-#[test]
-fn a_mind_sheds_on_its_own_k_though_the_mesh_never_advances() {
-use crate::transducer::element::{canonical_chain, from_canonical};
-let mut epi = Epigenome::new();
-let residual = [(0i64, 0i64, 1u8, 2u8)];
-// Stood at the mind's K 1, with TUniversal frozen at 0 throughout:
-// no receipt was ever admitted.
-assert!(epi.express(&residual, 1, 0, &mut super::common::budget()), "the residual is claimed");
-let addr = from_canonical(&canonical_chain(&residual).expect("one link is A5's chain")).address();
-assert_eq!(epi.dialect_len(), 1);
-let aperture = crate::physics::aperture_cycle() as u64;
-let now = 1 + aperture + 1;
-for k in 1..=now {
-    epi.note_stroke(k);
-}
-assert_eq!(epi.shed(now), 1, "unused past the aperture, it sheds");
-assert_eq!(epi.dialect_len(), 0, "the mind reclaimed what it held");
-assert!(epi.working_word(&addr).is_none());
+fn a_taught_word_stands_until_it_is_ratified() {
+    let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
+    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("taught"));
+    entity.remember_spoken(&e1);
+    let _ = entity.shed();
+    assert!(entity.epigenome.working_word(&e1.address()).is_some(), "taught and unratified, it stands");
+    assert!(entity.already_taught(&e1), "and its receipt with it");
 }
 
 /// 45.4 — THE MIND'S K IS ITS OWN ACTS, and no reply moves it. The test
@@ -181,11 +94,6 @@ assert_eq!(
 /// lane 𝒯 of a minted word, `retire_on_t` is the T-room — so all three
 /// measured a span of the wrong clock. A span in a mind's own K is not
 /// comparable across voices; TUniversal is the shared coordinate.
-///
-/// `shed` is the deliberate opposite and stays: 45.4 rules that a mind sheds
-/// by its own K and NEVER by the mesh's height, because heights
-/// advance only on admitted receipts, so a fleet refusing work could not
-/// reclaim what it held.
 #[test]
 fn the_contemplation_is_stamped_with_tuniversal_and_the_shed_with_the_voices_own_k() {
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("clocks"));
@@ -311,51 +219,34 @@ fn a_hold_draws_its_own_lanes_and_returns_them_on_the_lapse() {
         "the lanes moved APART: {before:?} -> {after:?}"
     );
 
-    // The escrow returns on the lapse. The aperture is unmeasured here, so
-    // nothing is paid to a height and nothing lapses — which is rule 15,
-    // and the reading that a thought is never held against a height
-    // nothing measured.
-    assert_eq!(entity.lapse_held(), 0, "an unmeasured horizon lapses nothing");
+    // MU-CLIENT §7.1 Phase 3 — THE ESCROW RETURNS ONCE, EXACTLY, when the
+    // thought is released by its orbit: the reserve stands where it stood
+    // before the hold, lane by lane.
+    let held: Vec<Vec<u8>> = entity.contemplation.bubbles.scoped().filter(|(_, b)| b.escrow == drew).map(|(k, _)| k).collect();
+    let [key] = held.as_slice() else { panic!("one thought holds the draw: {}", held.len()) };
+    entity.contemplation.release_thought(key);
+    entity.physics.reserve.restore(entity.contemplation.take_returned_escrow());
+    assert_eq!(entity.physics.reserve.lanes(), before, "released, it returned exactly what it drew");
+    assert_eq!(entity.contemplation.take_returned_escrow(), [0; 4], "once");
 }
 
-/// Z4d — A LAPSE RETURNS ONLY WHAT THE HOLD DREW, and a thought held
-/// without a draw returns nothing.
-///
-/// THE FLEET FOUND THIS AND THE SUITE DID NOT. `hold_form` set the
-/// bubble's escrow to the thought's own measure while the DRAW happened a
-/// level up in the entity, so the same number lived in two places and they
-/// disagreed: every bubble built without a draw — `hold`, a merge, a tape
-/// restore — returned a full escrow on its lapse and the reserve inflated.
-/// Read on the fleet at 3245041: `reserve [2194, 203, 88, 3382]` against a
-/// `reserve_max` of 88, with lane `𝒯` alone still at 88 because nothing
-/// draws or returns on it.
-///
-/// The escrow is now what the caller DREW, passed in, so one place draws
-/// and one place records the same number (law 12).
+/// Z4d, MU-CLIENT §7.1 Phase 3 — A RELEASE RETURNS ONLY WHAT THE HOLD DREW,
+/// and a thought held without a draw returns nothing: escrow is never
+/// restored undrawn, so the reserve cannot inflate. A remainder held alone
+/// draws nothing and holds nothing in escrow; released, it returns nothing.
 #[test]
-fn a_lapse_returns_only_what_the_hold_drew() {
+fn a_release_returns_only_what_the_hold_drew() {
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("drew"));
     let before = entity.physics.reserve.clone();
-    // Held with no draw: `hold_chain` goes to the contemplation directly.
     entity.hold_chain(vec![(9, 0, 1, 2)]);
     assert_eq!(entity.physics.reserve, before, "a hold that drew nothing takes nothing");
-    // Stamp a whole aperture so a horizon can be MEASURED, then pay the
-    // held thought through it. A thought paid on this stroke cannot lapse
-    // on this stroke, which is the escrow working and not a miss.
-    for k in 1..=(crate::physics::aperture_cycle().max(1) as u64) {
-        entity.contemplation.set_now(k);
-    }
-    assert_eq!(entity.lapse_held(), 0, "a thought paid this stroke does not lapse on it");
-    // Now the clock passes the height it was paid through.
-    let paid_through = entity.contemplation.now_k()
-        + entity.contemplation.aperture_tu().expect("a measured horizon");
-    entity.contemplation.set_now(paid_through + 1);
-    let n = entity.lapse_held();
-    assert!(n > 0, "a measured horizon lapses what the clock has passed");
-    assert_eq!(
-        entity.physics.reserve, before,
-        "and it returns NOTHING, because nothing was drawn: the reserve cannot inflate"
-    );
+    let held: Vec<Vec<u8>> = entity.contemplation.bubbles.scoped().map(|(k, _)| k).collect();
+    let [key] = held.as_slice() else { panic!("one thought held: {}", held.len()) };
+    assert_eq!(entity.contemplation.bubbles.get(key).map(|b| b.escrow), Some([0; 4]), "it holds nothing in escrow");
+    entity.contemplation.release_thought(key);
+    assert!(entity.contemplation.bubbles.get(key).is_none(), "released");
+    entity.physics.reserve.restore(entity.contemplation.take_returned_escrow());
+    assert_eq!(entity.physics.reserve, before, "and it returns NOTHING, because nothing was drawn");
 }
 
 /// THE PIVOT'S PENDING WORK IS A SET OF COORDINATES, not a point on a

@@ -2105,6 +2105,59 @@ owed in the order it is built.
     only on a return. A ringing orbit that never returns seals at its period
     (78.43). Tubes at rest are released. The reservoirs are bounded by what
     reforms, and feed back their reading.
+  - **As built, 2026-10-16** (rulings: Readings 1–3 and conserved escrow;
+    Q1 (a) a grounded thought admits its generator on its own line per hour;
+    Q2 (b) it winds on past its return; slide perceptions release on the
+    beat, the demand keeping the scene; then questions by their residue's
+    orbit, the dialect shed by reference, court gravity as drag, reservoirs
+    condensing at the eon and locking the reserve):
+    - The field (`cech/orbit.rs`, `cech/flux.rs`) lets a line go typed by
+      why (`Released`): Returned (on a tube, flux along its ray closed what
+      stood open), Dissipated, Sealed, Cancelled, AtRest. An orbit counts the
+      transitions carried and its period, the lcm of the orders of the
+      motions that moved it; carried its period unreturned, it seals into the
+      reservoir; a rosette has no period and never seals. The field beats
+      once per vent of the mind (`vent_into_field`) and after each admission
+      at a court; a beat dissipates only what stood through the previous beat
+      unreturned, so a motion stands one beat for the next hour to meet it.
+      Tubes at rest are let go.
+    - Held thoughts are their lines (`bubble/line.rs`): a perception threads
+      its faces' motors and hue maps where the field holds them; one held by
+      nothing stands one vent and leaves at the next. A grounded thought
+      winds its generator on its own line, hours times at formation and once
+      per joined hour, winds on at Returned and lapses on any other release.
+      A released thought leaves whole: remainder to the cavity, escrow
+      returned, scene counted a return (R2). The 8-call window, `until`,
+      `paid_from`, `lapse_held`, `renew` and `repay_unpaid` are deleted.
+    - Escrow conserved: drawn once, returned once by every door
+      (`return_escrow`), credited at the vent; merge sums the parts; a
+      re-hold keeps the prior escrow.
+    - Holders keep coordinates and leave by their physics: `unheard` holds
+      address → scene, the word read where the dialect stands it, gone with
+      it; `unread_solves` one per task, gone at the court's verdict;
+      `obstructions` stratum → fetched → held address, gone when the stratum
+      glues; a question is its residue wound on its own line
+      (`QUESTION_LINE`), lapsed into construction where the field lets that
+      line go (`lapse_question`); the dialect sheds, at the winding's vent,
+      every word nothing references — no thought at or citing it, none
+      gluing it, no open docket cover on its chart, not unheard, not taught
+      and unratified, not waiting on citations (`Entity::shed`).
+    - Containment: a deferral's lanes are the quote's surface and its
+      `deficit` (`quote.rs`, `session.rs`), never four zero lanes; the
+      deficit stands as the court's gravity until the court answers a quote,
+      and the mind's beat drags in, on each lane it presses, every orbit that
+      stood a beat unreturned, ringing or not (`Field::beat_under`).
+    - Reservoirs: a record that stood one eon untouched (the lcm of the
+      ringing orbits' periods; one beat where none rings) condenses to
+      nothing, counted (`Field::condensed`); what the reservoirs hold is
+      locked out of the reserve at the vent and given back as it re-forms or
+      condenses (`lock_reservoirs`).
+    - Owed: the conversation carrier's own window (`release_unmet`, on its
+      own thread: thoughts unACKed, answers given, unions, waiting letters)
+      still reads `aperture_cycle()`; `taught_up` and `fronts`/`grounds`/
+      `cited` still hold whole elements or full addresses; the seat's
+      patience and the session's transport readings are not the mind's
+      memory and keep the aperture.
 - **Phase 4 — modes as the unit of pay** (§5.6 M; 78.162): `track/modes`
   (the Modes carrier, the producers, earned-only) merged forward onto this
   tree; every measure of Phase 2 paid in the modes its closures moved, never

@@ -306,8 +306,6 @@ impl Contemplation {
             // nothing draws or returns on it. One place draws, one place
             // records, the same number (law 12).
             escrow,
-            until: self.aperture_tu().and_then(|span| self.now_k.checked_add(span)),
-            paid_from: self.aperture_tu().map(|_| self.now_k),
             glues,
             glued_by: Keyed::new(),
             torsion,
@@ -350,7 +348,13 @@ impl Contemplation {
         // and a pivot rewrites the form, which changes the key and starts a
         // new bubble at its own phase change.
         let mut bubble = bubble;
+        let mut drawn_again: Option<[u64; 4]> = None;
         if let Some(prior) = self.bubbles.get(key.as_bytes()) {
+            // ESCROW CONSERVED (MU-CLIENT §7.1 Phase 3): the thought standing
+            // here holds what was drawn for it once; what this re-hold drew
+            // is returned, never held twice.
+            drawn_again = Some(bubble.escrow);
+            bubble.escrow = prior.escrow;
             bubble.moved_k = prior.moved_k;
             bubble.nerve = prior.nerve.clone();
             bubble.cover = prior.cover.clone();
@@ -373,11 +377,16 @@ impl Contemplation {
             self.retract_incidence(key.as_bytes(), &old);
         }
         mark("retract_incidence");
+        if let Some(again) = drawn_again {
+            self.return_escrow(&again);
+        }
         self.admit_incidence(&key.shared(), &bubble);
         mark("admit_incidence");
         self.bubbles.insert(&key, bubble);
         mark("bubbles.insert");
         self.dirty.insert(&key, ());
+        // MU-CLIENT §4.13 — its line is threaded at the next vent.
+        self.awaits_thread(key.as_bytes());
         // A held form is a new candidate (78.26(6)).
         self.link_new(&key, super::meet::Adjunct::Candidate);
         mark("link_new");

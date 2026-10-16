@@ -365,10 +365,15 @@ impl Contemplation {
                                             self.fix(v, false);
                                         }
                                         for v in &comp {
-                                            if let Some(b) = self.bubbles.get(v).cloned() {
+                                            if let Some(b) = self.bubbles.remove(v) {
                                                 self.retract_incidence(v, &b);
+                                                self.unthreaded.remove(v);
+                                                self.unheld.remove(v);
+                                                // The thought leaves as the word
+                                                // it spoke, and the escrow it
+                                                // held returns, once.
+                                                self.return_escrow(&b.escrow);
                                             }
-                                            self.bubbles.remove(v);
                                         }
                                     }
                                 }

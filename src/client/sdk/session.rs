@@ -473,25 +473,22 @@ impl Session {
                             open: i.open,
                         })
                         .collect(),
+                    deficit: None,
                 })
             }
             // A deferred quote is no quote: no height, no K, no clusters —
             // and the door's deficit as the surface, so the arm dwells on
-            // the lanes the judge named (23.8, S13.4).
-            Err(e) if e.kind() == io::ErrorKind::WouldBlock => Ok(YieldQuote {
-                height: 0,
+            // the lanes the judge named (23.8, S13.4), and as the deficit,
+            // the gravity the mind's field feels (MU-CLIENT §4.13).
+            Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
                 // A would-block that carries no deferral names no lanes,
                 // and no surface is read off one.
-                surface: match e
-                    .get_ref()
-                    .and_then(|inner| inner.downcast_ref::<Deferral>())
-                {
+                let lanes = match e.get_ref().and_then(|inner| inner.downcast_ref::<Deferral>()) {
                     Some(d) => d.lanes,
                     None => [0; 4],
-                },
-                k: 0,
-                clusters: Vec::new(),
-            }),
+                };
+                Ok(YieldQuote { height: 0, surface: lanes, k: 0, clusters: Vec::new(), deficit: Some(lanes) })
+            }
             Err(e) => Err(e),
         }
     }

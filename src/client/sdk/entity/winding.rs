@@ -55,6 +55,11 @@ pub(crate) struct Board {
     /// Scenes and solves on the perception carrier not yet admitted: one at
     /// a time.
     pub(crate) scenes_perceiving: usize,
+    /// MU-CLIENT §4.13 — THE RESERVE LOCKED IN THE FIELD'S RESERVOIRS, per
+    /// lane: the strain they hold, taken out of the operational reserve at
+    /// the vent and given back as it re-forms or condenses
+    /// (`Entity::lock_reservoirs`).
+    pub(crate) reservoir_locked: [u64; 4],
     genome_path: Option<String>,
     saved_len: Option<usize>,
 }
@@ -158,6 +163,10 @@ impl Entity {
         let mut vent = self.stroke();
         self.at_law("motion: the vent");
         let _ = self.vent_into_field(&mut vent);
+        // MU-CLIENT §4.13 — the dialect sheds what nothing live references,
+        // the thoughts the field released having left.
+        self.at_law("motion: the shed");
+        let _ = self.shed();
         // The docket, the one taker: every demand bound, each binding a
         // close of a thought of its scene.
         self.at_law("motion: the docket taken");
@@ -196,6 +205,11 @@ impl Entity {
     /// own thought's return. Answers how many returned.
     pub(crate) fn act_on_returns(&mut self, budget: &mut crate::physics::Budget, bound: Vec<Vec<u8>>, open: bool) -> u64 {
         let (returns, mut scenes) = self.returns_of_stroke(budget);
+        // MU-CLIENT §4.13, 78.168 — a thought the field released (its orbit
+        // dissipated, sealed, or a perception's returned) is bound, as a
+        // demand bound is: its scene's return.
+        let mut bound = bound;
+        bound.extend(self.contemplation.take_released_scenes());
         let bindings = u64::try_from(bound.len()).ok();
         for s in bound {
             if !scenes.contains(&s) {

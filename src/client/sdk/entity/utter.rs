@@ -106,6 +106,8 @@ impl Entity {
     pub(crate) fn forget_utterance(&mut self, addr: &[u8]) {
         // MU-CLIENT §5.5 — and the scenes it was spoken under let it go.
         self.scenes.forget(addr);
+        // MU-CLIENT §4.13 — a word the dialect shed is not said again.
+        self.unheard.remove(addr);
         let Some(word) = self.taught_up.remove(addr) else {
             return;
         };
@@ -114,12 +116,6 @@ impl Entity {
                 inner.remove(addr);
             }
         }
-    }
-
-    /// How many utterance receipts the mind holds (7.3's measurement).
-    #[cfg(test)]
-    pub(crate) fn utterances_filed(&self) -> usize {
-        self.taught_up.len()
     }
 
     /// CITE a chain over the working atlas: the genome and the dialect by
@@ -348,6 +344,12 @@ impl Entity {
                     crate::transducer::address::put_key_bytes(&mut at, e.address().as_bytes());
                 }
                 let (sentences, train, task) = (sentences.to_vec(), train.to_vec(), task.to_vec());
+                // MU-CLIENT §4.13 — unjudged until the court's answer lands.
+                for i in &fresh {
+                    if let Some(e) = sentences.get(*i) {
+                        self.speaking.insert(e.address().as_bytes(), ());
+                    }
+                }
                 // R2 — held for the return of a thought of the scene it is
                 // spoken under.
                 let scene = task.clone();
@@ -355,6 +357,9 @@ impl Entity {
                     me.ask(
                         move |s| s.speak_nerve(body),
                         move |me, reply| {
+                            for e in &sentences {
+                                me.speaking.remove(e.address().as_bytes());
+                            }
                             let codes = me.hear_speech(&sentences, codes, &fresh, reply, &train, &task);
                             heard(me, codes);
                         },

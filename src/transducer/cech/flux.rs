@@ -160,6 +160,9 @@ pub struct Tube {
     pub open: BigInt,
     /// MU-CLIENT §4.5 — the lines of the complex threading it, in key order.
     pub lines: Vec<Vec<u8>>,
+    /// Whether it has stood through a beat of the field: its open flux is
+    /// dissipated at the beat after the one it stood through.
+    pub aged: bool,
 }
 
 /// What admitting one flux did, in quanta weighed by mass: the flux that
@@ -186,14 +189,18 @@ pub struct Admitted {
 #[derive(Clone, Debug, Default)]
 pub struct TubeRegistry {
     tubes: Keyed<Tube>,
-    /// The lines released where a tube's net flux cancelled, until taken.
-    pub(crate) released: Vec<Vec<u8>>,
+    /// The lines released — a tube's net flux cancelled, its open flux
+    /// dissipated, or the tube at rest — each with why, until taken.
+    pub(crate) released: Vec<(Vec<u8>, super::orbit::Released)>,
     /// THE RESERVOIR `e_∅` on 𝒯 (MU-CLIENT §4.5): the open flux a beat of the
     /// field dissipated from each tube, by the tube's own ray, until flux on
     /// that ray re-forms it.
     reservoir: Keyed<BigInt>,
-    /// Whether a tube's net flux cancelled since the field last beat.
-    cancelled: bool,
+    /// The beats each reservoir record has stood untouched, by its ray: at
+    /// one eon it condenses (`condense`).
+    stood: Keyed<u64>,
+    /// Whether an admission moved a tube since the field last beat.
+    moved: bool,
 }
 
 fn rational_gcd(a: &BigRational, b: &BigRational) -> BigRational {
@@ -230,6 +237,16 @@ impl TubeRegistry {
             let opened = amount(&one, mass)?;
             let mut lines = Vec::new();
             super::orbit::thread_on(&mut lines, line);
+            // A movement of the field: it beats on it.
+            self.moved = true;
+            // REFORMATION, THE SOURCE: open flux a beat dissipated on this ray
+            // (from a tube since let go at rest) is drawn back into the tube
+            // the flux opens.
+            let open = match self.reservoir.remove(&key) {
+                Some(held) => BigInt::from(mass) + held,
+                None => BigInt::from(mass),
+            };
+            self.stood.remove(&key);
             self.tubes.insert(
                 &key,
                 Tube {
@@ -238,8 +255,9 @@ impl TubeRegistry {
                     quantum: BigRational::from_integer(1.into()),
                     net: BigInt::from(mass),
                     transport: BigInt::from(mass),
-                    open: BigInt::from(mass),
+                    open,
                     lines,
+                    aged: false,
                 },
             );
             return Some(Admitted { closed: 0, opened, relieved: 0, transport: opened });
@@ -251,6 +269,7 @@ impl TubeRegistry {
         let mut t = t;
         if let Some(held) = self.reservoir.remove(&key) {
             t.open += held;
+            self.stood.remove(&key);
         }
         // THE QUANTUM REFINES: the generator of ⟨q, r⟩, and every held amount
         // rescaled by q / q', an exact integer since q' divides q.
@@ -263,11 +282,17 @@ impl TubeRegistry {
         let net = &t.net * &scale + &m * BigInt::from(mass);
         let mut lines = t.lines;
         super::orbit::thread_on(&mut lines, line);
+        // LUMINAL: a tube whose net flux cancelled carries no field, and every
+        // line threading it relaxes. CLOSED: flux returning along the known
+        // ray relieved all that stood open on it — order built, the tension
+        // the lines hung on vented, as an orbit's return vents its own.
         if net.is_zero() {
-            self.released.append(&mut lines);
-            // A BEAT of the field: what never returns dissipates on it.
-            self.cancelled = true;
+            self.released.extend(std::mem::take(&mut lines).into_iter().map(|l| (l, super::orbit::Released::Cancelled)));
+        } else if !open.is_zero() && open == relieved {
+            self.released.extend(std::mem::take(&mut lines).into_iter().map(|l| (l, super::orbit::Released::Returned)));
         }
+        // A movement of the field: it beats on it.
+        self.moved = true;
         let tube = Tube {
             reference: t.reference,
             generator: t.generator,
@@ -276,25 +301,62 @@ impl TubeRegistry {
             transport: &t.transport * &scale + BigInt::from(moved),
             open: &open - &relieved,
             lines,
+            aged: t.aged,
         };
         self.tubes.insert(&key, tube);
         Some(Admitted { closed: moved, opened: 0, relieved: u64::try_from(relieved).ok()?, transport: moved })
     }
 
-    /// DISSIPATION, THE SINK, on 𝒯: every tube's open flux — null flux no
-    /// later flux closed on — moves into the reservoir at the tube's ray. The
-    /// tube stays, frozen in, its net and transport its own.
+    /// DISSIPATION, THE SINK, on 𝒯: the open flux of every tube that stood
+    /// through the last beat — null flux no later flux closed on — moves into
+    /// the reservoir at the tube's ray, and the lines it threaded relax
+    /// (MU-CLIENT §4.5: what never returns dissipates whole, its lines
+    /// released). The tube stays, frozen in, its net and transport its own.
     pub(crate) fn dissipate(&mut self) {
-        let open: Vec<(Vec<u8>, BigInt)> = self.tubes.scoped().filter(|(_, t)| !t.open.is_zero()).map(|(k, t)| (k, t.open.clone())).collect();
+        let open: Vec<(Vec<u8>, BigInt)> = self.tubes.scoped().filter(|(_, t)| t.aged && !t.open.is_zero()).map(|(k, t)| (k, t.open.clone())).collect();
         for (k, amount) in open {
             if let Some(t) = self.tubes.get_mut(&k) {
                 t.open = BigInt::zero();
+                self.released.extend(std::mem::take(&mut t.lines).into_iter().map(|l| (l, super::orbit::Released::Dissipated)));
             }
             let held = match self.reservoir.get(&k) {
                 Some(before) => before + &amount,
                 None => amount,
             };
             self.reservoir.insert(&k, held);
+            self.stood.insert(&k, 0);
+        }
+    }
+
+    /// MU-CLIENT §4.13 — VACUUM CONDENSATION on 𝒯: every reservoir record
+    /// stands one beat more, and one that stood a whole `eon` untouched — no
+    /// flux landed on its ray to re-form it — condenses to nothing. Answers
+    /// the flux condensed; a sum past the carrier is refused and the record
+    /// still condenses.
+    pub(crate) fn condense(&mut self, eon: u64) -> u64 {
+        let mut out = 0u64;
+        let keys: Vec<Vec<u8>> = self.stood.scoped().map(|(k, _)| k).collect();
+        for k in keys {
+            let Some(beats) = self.stood.get(&k).and_then(|b| b.checked_add(1)) else { continue };
+            if beats < eon {
+                self.stood.insert(&k, beats);
+                continue;
+            }
+            self.stood.remove(&k);
+            if let Some(held) = self.reservoir.remove(&k).and_then(|h| u64::try_from(h).ok()) {
+                let _ = crate::physics::metabolism::step_or_refuse(&mut out, held);
+            }
+        }
+        out
+    }
+
+    /// Every tube the field holds after a beat has stood through it.
+    pub(crate) fn age(&mut self) {
+        let held: Vec<Vec<u8>> = self.tubes.scoped().map(|(k, _)| k).collect();
+        for k in held {
+            if let Some(t) = self.tubes.get_mut(&k) {
+                t.aged = true;
+            }
         }
     }
 
@@ -304,9 +366,38 @@ impl TubeRegistry {
         self.reservoir.scoped().fold(BigInt::zero(), |n, (_, x)| n + x)
     }
 
-    /// Whether a tube's net cancelled since the last beat, the flag taken.
-    pub(crate) fn take_cancelled(&mut self) -> bool {
-        std::mem::take(&mut self.cancelled)
+    /// Whether an admission moved a tube since the last beat, the flag taken.
+    pub(crate) fn take_moved(&mut self) -> bool {
+        std::mem::take(&mut self.moved)
+    }
+
+    /// MU-CLIENT §7.1 Phase 3 — A TUBE AT REST IS LET GO: one whose net flux
+    /// cancelled and on which nothing stands open carries no field and holds
+    /// nothing a later flux could close against; its lines were released
+    /// when it cancelled. The reservoir keeps what it dissipated at its ray,
+    /// so flux landing there again opens the tube anew and re-forms it.
+    pub(crate) fn release_at_rest(&mut self) {
+        let rest: Vec<Vec<u8>> = self.tubes.scoped().filter(|(_, t)| t.net.is_zero() && t.open.is_zero()).map(|(k, _)| k).collect();
+        for k in rest {
+            if let Some(t) = self.tubes.remove(&k) {
+                self.released.extend(t.lines.into_iter().map(|l| (l, super::orbit::Released::AtRest)));
+            }
+        }
+    }
+
+    /// `key` THREADED ON THE TUBE OF `flux`'s RAY, where the field holds open
+    /// flux on it; nothing moves. A tube frozen in with nothing open — its
+    /// flux dissipated or closed — holds nothing a line could hang on.
+    /// Answers whether it was held.
+    pub(crate) fn thread(&mut self, flux: &Mv, key: &[u8]) -> bool {
+        let Some(at) = tube_key(flux) else { return false };
+        match self.tubes.get_mut(&at) {
+            Some(t) if !t.open.is_zero() => {
+                super::orbit::thread_on(&mut t.lines, &super::orbit::Thread::Wound(key.to_vec()));
+                true
+            }
+            _ => false,
+        }
     }
 
     /// 78.71 (4) — THE HELICITY of the tubes held: `Σ_{a ≤ b} net_a · net_b ·

@@ -36,8 +36,8 @@ fn a_leaf_off_a_ring_is_truncated_and_the_ring_stands() {
     let t = c.meet_graph().truncation;
     assert_eq!((t.truncated, t.rank_moved, t.malformed), (1, 0, 0), "{t:?}");
     assert!(!c.bubbles.contains(&vs[4]), "the leaf left");
-    assert_eq!(c.take_truncated_escrow(), [1, 2, 3, 4], "its escrow returns");
-    assert_eq!(c.take_truncated_escrow(), [0; 4], "once");
+    assert_eq!(c.take_returned_escrow(), [1, 2, 3, 4], "its escrow returns");
+    assert_eq!(c.take_returned_escrow(), [0; 4], "once");
     assert_eq!(c.cavity_len(), 1, "its remainder at the cavity");
 }
 
@@ -114,24 +114,4 @@ fn per_component_truncation_agrees_with_the_whole_nerve() {
     assert_eq!((r.free_vertices, r.core, r.h1), (0, 8, 2), "{r:?}");
     let core = c.two_core();
     assert!(vs.iter().filter(|v| c.bubbles.contains(v)).all(|v| core.contains(v)), "what stands is the whole 2-core");
-}
-
-/// THE PRICE DEFERS A RING WHILE A LEAF STANDS: a ring thought whose height
-/// passed waits while its component holds a leaf that is not lapsing; once
-/// the leaf lapses too, both go on one stroke and the opened ring's path
-/// truncates after, down to the one thought it leaves isolated.
-#[test]
-fn the_price_defers_a_ring_while_a_leaf_stands() {
-    let (mut c, vs) = nerve(5, &[RING.as_slice(), &[(0, 4)]].concat(), [0; 4]);
-    c.set_now(10);
-    c.bubbles.get_mut(&vs[2]).expect("held").until = Some(1);
-    let (_, n) = c.lapse_on_clock();
-    assert_eq!((n, c.meet_graph().truncation.deferred), (0, 1), "deferred while the leaf stands");
-    assert!(c.bubbles.contains(&vs[2]));
-    c.bubbles.get_mut(&vs[4]).expect("held").until = Some(1);
-    let (_, n) = c.lapse_on_clock();
-    assert_eq!(n, 2, "the leaf and the ring thought lapse together");
-    let t = c.meet_graph().truncation;
-    assert_eq!((t.deferred, t.truncated, t.rank_moved), (1, 2, 0), "the opened ring's path truncates: {t:?}");
-    assert_eq!((c.len(), c.core_reading().isolated), (1, 1), "its middle stands, isolated");
 }

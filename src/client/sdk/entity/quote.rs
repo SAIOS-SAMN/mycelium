@@ -251,7 +251,7 @@ fn merge_quote(out: &mut Option<YieldQuote>, body: &[u8]) -> io::Result<()> {
     let clusters: Vec<Cluster> =
         items.into_iter().map(|i| Cluster { address: i.addr, mu: i.mu, element: i.element, open: i.open }).collect();
     match out {
-        None => *out = Some(YieldQuote { height, surface, k, clusters }),
+        None => *out = Some(YieldQuote { height, surface, k, clusters, deficit: None }),
         Some(q) => {
             let mut have: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
             for h in &q.clusters {
@@ -269,12 +269,21 @@ fn merge_quote(out: &mut Option<YieldQuote>, body: &[u8]) -> io::Result<()> {
     Ok(())
 }
 
-/// The merged quote, or — where no hypha answered — the empty quote a full
-/// reflex pool's deferral reads as, else the last refusal.
+/// The merged quote, or — where no hypha answered — the quote a deferral
+/// reads as, else the last refusal. MU-CLIENT §4.13 — A DEFERRAL'S LANES ARE
+/// THE PRESSURE THEY ARE: no height, no K, no clusters, and the door's
+/// deficit as the surface, so the mind dwells on the lanes the court named
+/// (23.8, S13.4), as `Session::quote` reads it — never four zero lanes,
+/// which open the gate a deferral holds.
 fn settle_quote(out: Option<YieldQuote>, last_err: io::Error) -> io::Result<YieldQuote> {
     match out {
         Some(q) => Ok(q),
-        None if last_err.kind() == io::ErrorKind::WouldBlock => Ok(YieldQuote { height: 0, surface: [0; 4], k: 0, clusters: Vec::new() }),
+        None if last_err.kind() == io::ErrorKind::WouldBlock => match last_err.get_ref().and_then(|inner| inner.downcast_ref::<Deferral>()) {
+            Some(d) => Ok(YieldQuote { height: 0, surface: d.lanes, k: 0, clusters: Vec::new(), deficit: Some(d.lanes) }),
+            // A would-block that carries no deferral names no lanes: it is the
+            // refusal it is, never a surface read off nothing.
+            None => Err(last_err),
+        },
         None => Err(last_err),
     }
 }

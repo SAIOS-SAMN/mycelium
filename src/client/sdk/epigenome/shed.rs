@@ -1,5 +1,5 @@
-// 24.1 — THE SHED: what this client stops holding, and the aperture in
-// receipts that decides when (law 9).
+// 24.1, MU-CLIENT §4.13 — THE SHED: what this client stops holding, by what
+// still references it — never by a window of its clock.
 
 use crate::client::sdk::*;
 
@@ -17,75 +17,21 @@ impl Epigenome {
         }
     }
 
-    /// Drop dialect unused for an aperture of the MIND'S OWN K (45.4, 78.49:
-    /// the mind sheds by its own orbits, never by the mesh's height). A
-    /// dialect entry a live idea glues is not shed. The genome never sheds.
+    /// MU-CLIENT §4.13 — A DIALECT WORD STANDS WHILE SOMETHING LIVE REFERENCES
+    /// IT. The dialect is the mind's own basis, not yet ratified into the
+    /// genome: it exists to span the representations of its standing
+    /// thoughts, its open demands and its unjudged sentences, and has no
+    /// right of its own past them — the inverse of door 1, where a thought
+    /// lapses with the word it cites. Each entry `referenced` does not hold,
+    /// and that waits on no citation (a withheld sentence is unjudged until
+    /// its citations arrive, `resolve_withheld`), is dropped. No idle window,
+    /// no count, no clock. The genome never sheds.
     ///
-    /// Read against TUniversal this could not fire at all on a mesh that
-    /// admitted nothing: heights advance only on admitted receipts (45.2),
-    /// so a fleet refusing work also could not reclaim what it held, and the
-    /// two failures compounded into a client the kernel killed. A mind's own
-    /// K advances on its own acts, so truncation is independent of whether
-    /// anyone answered it.
-    #[cfg(test)]
-    pub(crate) fn shed(&mut self, now_k: u64) -> usize {
-        self.shed_except(now_k, &|_| false).len()
-    }
-
-    pub(crate) fn note_stroke(&mut self, now_k: u64) {
-        let n = crate::physics::aperture_cycle() as usize;
-        self.stroke_k.push(now_k);
-        if self.stroke_k.len() > n {
-            self.stroke_k.remove(0);
-        }
-    }
-
-    /// The span of the last aperture of strokes IN THIS MIND'S OWN K, one
-    /// unit, measured. This line read "TUniversal span", which is the clock
-    /// `shed` above rules OUT in its own words — 45.4: the mind sheds by its
-    /// own K, never by the mesh's height — and every caller passes
-    /// `Entity::own_k()`. A doc naming the other clock is how the two get
-    /// crossed, and they were: the contemplation's `now_k` says TUniversal
-    /// and was being stamped with the mind's K.
-    ///
-    /// `None` until a whole aperture of strokes has been noted: an
-    /// unmeasured aperture is held, never guessed (rule 15), so nothing
-    /// sheds in the first aperture after boot.
-    pub(crate) fn aperture_k(&self, now_k: u64) -> Option<u64> {
-        let n = crate::physics::aperture_cycle() as usize;
-        if self.stroke_k.len() < n {
-            return None;
-        }
-        #[expect(
-            clippy::disallowed_methods,
-            reason = "rule 15 — FIFO drain head: the window is filled in stroke order, so its head is the oldest stroke in it"
-        )]
-        let first = *self.stroke_k.first()?;
-        // The window's first stroke is a K this mind has passed, so the
-        // aperture is exact; a first stroke ahead of now is a broken clock
-        // and measures no aperture.
-        now_k.checked_sub(first)
-    }
-
     /// Returns the addresses shed, so the carriers that hang off a dialect
     /// word — its utterance receipt above all (S12.6a) — leave with it.
-    pub(crate) fn shed_except(&mut self, now_k: u64, glued: &impl Fn(&[u8]) -> bool) -> Vec<Vec<u8>> {
-        let Some(aperture_k) = self.aperture_k(now_k) else {
-            return Vec::new();
-        };
-        // Every dialect entry is asked whether it has stood past the
-        // aperture -- that IS the shed -- and the filter is the reading.
-        let drop: Vec<Vec<u8>> = self
-            .dialect
-            .scoped()
-            // An entry last used at a K this mind has not reached is not
-            // idle; only what has stood past the aperture is shed.
-            .filter(|(a, d)| {
-                now_k.checked_sub(d.last_used_k).is_some_and(|idle| idle > aperture_k)
-                    && !glued(a)
-            })
-            .map(|(a, _)| a)
-            .collect();
+    pub(crate) fn shed_unreferenced(&mut self, referenced: &impl Fn(&[u8], &Dialect) -> bool) -> Vec<Vec<u8>> {
+        let waits = |d: &Dialect| d.withheld && !d.missing.is_empty();
+        let drop: Vec<Vec<u8>> = self.dialect.scoped().filter(|(a, d)| !waits(d) && !referenced(a, d)).map(|(a, _)| a).collect();
         for a in &drop {
             self.drop_dialect(a);
         }
@@ -94,5 +40,4 @@ impl Epigenome {
         self.shed_n = n;
         drop
     }
-
 }

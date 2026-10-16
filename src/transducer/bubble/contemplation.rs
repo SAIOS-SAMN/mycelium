@@ -160,16 +160,6 @@ pub struct Contemplation {
     pub(crate) by_family: Keyed<Keyed<()>>,
     /// TUniversal the entity last stamped; T-room and potential[2] read it.
     pub(crate) now_k: u64,
-    /// Z4d — THE APERTURE OF STROKES ON TUNIVERSAL, as a window of the
-    /// heights this contemplation has been stamped at. The span of it is
-    /// what a held thought's escrow BUYS, so the mind's short-term memory
-    /// forgets by a measured horizon and not by a constant.
-    ///
-    /// The dialect keeps the same window on the VOICE'S K
-    /// (`Epigenome::aperture_k`) and this is its twin on TUniversal —
-    /// 45.4's two clocks, kept apart, each measuring its own carrier's
-    /// horizon. Crossing them is the defect that doc already names.
-    pub(crate) stroke_tu: Vec<u64>,
     /// Mesh-seeded classes, keyed by class key, Standing::Held. Not persisted.
     pub(crate) seeded: Keyed<(Rotor, Order, Standing)>,
     /// EXPANSION 4 — THE VORTICES BY THEIR CONJUGACY STRATUM: the
@@ -242,10 +232,22 @@ pub struct Contemplation {
     pub(crate) docket_lapsed: u64,
     /// TC1 — what each shedding door removed, and of it what carried a loop.
     pub(crate) shed: super::core::ShedTally,
-    /// TC1's fix — what the truncation did, and the escrow it returned not
-    /// yet credited to the room.
+    /// TC1's fix — what the truncation did.
     pub(crate) truncation: super::core::Truncation,
-    pub(crate) truncated_escrow: [u64; 4],
+    /// MU-CLIENT §7.1 Phase 3 — THE ESCROW RETURNED, by whatever door removed
+    /// the thought that held it, not yet credited to the room: drawn once,
+    /// returned once (`line::return_escrow`).
+    pub(crate) returned_escrow: [u64; 4],
+    /// The scenes whose thought the field released, not yet taken by the
+    /// stroke's returns (`line::release_thought`).
+    pub(crate) released_scenes: Vec<Vec<u8>>,
+    /// The thoughts newly standing whose line is not yet threaded
+    /// (`line::thread_new`).
+    pub(crate) unthreaded: Keyed<()>,
+    /// The perceptions the field held nothing of when they threaded: each
+    /// stands the one vent, to be met, and leaves at the next
+    /// (`line::thread_new`).
+    pub(crate) unheld: Keyed<()>,
     /// RM1 — each remainder the Congruent arms perceived and did not record,
     /// by its own name (the reading's `refused`, `unsited`, `unrecorded`,
     /// `unminted`, `unmerged`).
@@ -380,32 +382,6 @@ impl Contemplation {
 
     pub fn set_now(&mut self, k: u64) {
         self.now_k = k;
-        // The window is the last aperture of stamps, in stamp order.
-        let n = crate::physics::aperture_cycle() as usize;
-        self.stroke_tu.push(k);
-        if self.stroke_tu.len() > n {
-            self.stroke_tu.remove(0);
-        }
-    }
-
-    /// Z4d — THE SPAN AN ESCROW BUYS: the measured aperture of this
-    /// contemplation's own strokes on TUniversal.
-    ///
-    /// `None` until a whole aperture has been stamped. An unmeasured
-    /// horizon is held, never guessed (rule 15), so nothing lapses in the
-    /// first aperture after boot and no thought is paid to a height
-    /// nothing measured.
-    pub fn aperture_tu(&self) -> Option<u64> {
-        let n = crate::physics::aperture_cycle() as usize;
-        if self.stroke_tu.len() < n {
-            return None;
-        }
-        #[expect(
-            clippy::disallowed_methods,
-            reason = "rule 15 — FIFO drain head: the window is filled in stamp order, so its head is the oldest stamp in it"
-        )]
-        let first = *self.stroke_tu.first()?;
-        self.now_k.checked_sub(first)
     }
 
     pub fn len(&self) -> usize {
@@ -729,14 +705,24 @@ impl Contemplation {
         self.follow_came_round(from, to);
         self.retract_incidence(from, &moving);
         let was_dirty = self.dirty.remove(from).is_some();
+        self.unthreaded.remove(from);
+        self.unheld.remove(from);
         match self.bubbles.get_mut(to) {
             Some(standing) => {
                 standing.moved_k = standing.moved_k.min(moving.moved_k);
+                // ESCROW CONSERVED: the two lineages are one thought, holding
+                // what each held.
+                if !crate::core::lanes::lanes_step(&mut standing.escrow, &moving.escrow) {
+                    self.overflowed += 1;
+                }
             }
             None => {
                 let shared: std::sync::Arc<[u8]> = std::sync::Arc::from(to);
                 self.admit_incidence(&shared, &moving);
                 self.bubbles.insert_shared(shared, moving);
+                // Under its new key the thought threads its line again: its
+                // line in the field is its key.
+                self.awaits_thread(to);
             }
         }
         if was_dirty {
@@ -1056,9 +1042,9 @@ impl Contemplation {
             spores: super::resonance::Spores::default(),
             family: Vec::new(),
             moved_k: self.now_k,
-            escrow: volume,
-            until: self.aperture_tu().and_then(|span| self.now_k.checked_add(span)),
-            paid_from: self.aperture_tu().map(|_| self.now_k),
+            // Nothing was drawn for a remainder held alone, so nothing is
+            // held in escrow to return (escrow is never restored undrawn).
+            escrow: [0; 4],
             glues: Keyed::new(),
             glued_by: Keyed::new(),
             torsion: Keyed::new(),
@@ -1206,6 +1192,11 @@ impl Contemplation {
             self.retract_incidence(key, &old);
             self.bubbles.remove(key);
             self.dirty.remove(key);
+            self.unthreaded.remove(key);
+            self.unheld.remove(key);
+            // The thought leaves as the word it crystallized to, and the
+            // escrow it held returns, once.
+            self.return_escrow(&old.escrow);
         }
         self.formed += 1;
         Some((e, family))

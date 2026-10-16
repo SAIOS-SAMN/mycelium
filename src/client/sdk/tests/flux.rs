@@ -50,6 +50,37 @@ fn a_perception_let_go_unwinds_the_torsion_hearing_wound() {
     assert_eq!(entity.contemplation.complex.wound_at(&v), None, "nothing stays wound");
 }
 
+/// MU-CLIENT §4.13, §5.3 — A QUESTION STANDS AS ITS RESIDUE'S ORBIT AND
+/// LAPSES WHERE THE FIELD LETS IT GO. A gain asked about is wound into the
+/// mind's field on the question's line: it stands through the beat of the
+/// vent it was asked at, and when the field moves again the gain, never
+/// returning, dissipates at the beat after — its line let go, the question
+/// lapsed, its residue bound by construction. No count of the mind's K.
+#[test]
+fn a_question_stands_as_its_residues_orbit_and_lapses_where_the_field_lets_it_go() {
+    use crate::transducer::cech::Thread;
+    use crate::transducer::family::pairing::{mark_flux, FieldLine};
+    let q = |n: i64| num_rational::BigRational::from_integer(n.into());
+    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("asking"));
+    let mut field = std::mem::take(&mut entity.field);
+    let (asked, stood, after) = field.think(|| {
+        let gain = crate::transducer::cga::dilator(&q(2));
+        let asked = entity.question(&[7u8; 32], b"said", b"vertex", &gain).is_some();
+        let mut budget = entity.stroke();
+        let _ = entity.vent_into_field(&mut budget);
+        let stood = entity.questions.len();
+        let turn = cga_turn(q(1));
+        let free = FieldLine { carriage: turn, gauge: Vec::new(), mass: 1, free: false, line: Thread::Free };
+        let _ = mark_flux(&[], std::slice::from_ref(&free), &mut budget);
+        let _ = entity.vent_into_field(&mut budget);
+        (asked, stood, entity.questions.len())
+    });
+    entity.field = field;
+    assert!(asked, "the gain is asked about");
+    assert_eq!(stood, 1, "it stands through the beat it was asked at");
+    assert_eq!(after, 0, "dissipated at the beat after, the question lapsed");
+}
+
 /// A 90° turn on `e₁e₂`, `1 + e₁₂`, at weight `w`.
 fn cga_turn(w: num_rational::BigRational) -> crate::transducer::cga::Mv {
     use crate::transducer::cga::{Mv, E1, E2};

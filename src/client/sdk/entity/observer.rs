@@ -154,20 +154,22 @@ impl Entity {
             // them again), the strata its last digest found discordant, the
             // strata glued, the obstructions kept.
             format!(
-                "language: genome {} · dialect {} · taught words refused {} · discordant strata {} (measured {}) · glued {} · obstructions {}",
+                "language: genome {} · dialect {} · taught words refused {} · discordant strata {} (measured {}) · glued {} · obstructions {} over {} strata",
                 self.epigenome.genome_len(),
                 self.epigenome.dialect_len(),
                 self.epigenome.refused,
                 self.discordance,
                 self.discordance_measured,
                 self.glued.len(),
+                self.obstructions.scoped().map(|(_, on)| on.len()).sum::<usize>(),
                 self.obstructions.len()
             ),
             format!(
-                "held for returns {} over {} scenes · scenes waiting {} · unheard words {} · unread solves {} · owed {} · contracted {} · questions {}",
+                "held for returns {} over {} scenes · scenes waiting {} · speaking {} · unheard words {} · unread solves {} · owed {} · contracted {} · questions {}",
                 self.held_for_returns(),
                 self.at_return.len(),
                 self.comprehending.len(),
+                self.speaking.len(),
                 self.unheard.len(),
                 self.unread_solves.len(),
                 self.owed.len(),
@@ -212,15 +214,11 @@ impl Entity {
             None => "no ground: no winding".to_string(),
         };
         format!(
-            "{ordinal} {layer} · {scene} · {winding} · slips {} · vortex {} · candidates {} · escrow {} · paid through {}",
+            "{ordinal} {layer} · {scene} · {winding} · slips {} · vortex {} · candidates {} · escrow {}",
             b.slips.len(),
             b.vortex.scoped().map(|(_, v)| v.len()).sum::<usize>(),
             b.candidates.scoped().map(|(_, v)| v.len()).sum::<usize>(),
             lanes(&b.escrow),
-            match b.until {
-                Some(u) => format!("h {u}"),
-                None => "unmeasured".to_string(),
-            }
         )
     }
 
@@ -313,7 +311,7 @@ impl Entity {
         out.push(format!("unread solves {}", self.unread_solves.len()));
         out.extend(self.unread_solves.scoped().map(|(id, _)| format!("  solve on {}", tail(&id, 4))));
         out.push(format!("unheard words {}", self.unheard.len()));
-        out.extend(self.unheard.scoped().map(|(a, (_, fam))| format!("  word {} under scene {}", tail(&a, 4), tail(fam, 4))));
+        out.extend(self.unheard.scoped().map(|(a, fam)| format!("  word {} under scene {}", tail(&a, 4), tail(fam, 4))));
         out.push(format!("owed {} · contracted {}", self.owed.len(), self.contracted.len()));
         out
     }

@@ -41,9 +41,10 @@ pub struct CoreReading {
     pub malformed: u64,
 }
 
-/// TC1 — WHAT EACH SHEDDING DOOR REMOVED, cumulative at the producer: price
-/// (the escrow's paid height passed), citation (a cited address lapsed),
-/// unglued — each: thoughts removed, of those the ones standing in the
+/// TC1 — WHAT EACH SHEDDING DOOR REMOVED, cumulative at the producer: orbit
+/// (the field let the thought's line go — its orbit dissipated, sealed, or a
+/// perception's returned; MU-CLIENT §7.1 Phase 3), citation (a cited address
+/// lapsed), unglued — each: thoughts removed, of those the ones standing in the
 /// 2-core, and the nerve's `Ȟ¹` rank lost (before minus after, signed: a
 /// removal can open a loop as well as close one).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -57,8 +58,7 @@ pub struct ShedTally {
 /// thoughts it removed, the free vertices it refused (a class, congruence or
 /// unspellable rotor on the one edge — 13.12's held coordinate, content off a
 /// ring; a thought something glued, whose door is promotion or lapse), each
-/// counted once per truncation that met it; the price lapses deferred while
-/// a leaf stood in the ring's component; and the nerve's `Ȟ¹` after minus
+/// counted once per truncation that met it; and the nerve's `Ȟ¹` after minus
 /// before, summed — zero by the theorem, a finding otherwise — and the
 /// incidences no simplex answered.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -66,7 +66,6 @@ pub struct Truncation {
     pub truncated: u64,
     pub held_by_class: u64,
     pub glued: u64,
-    pub deferred: u64,
     pub rank_moved: i64,
     pub malformed: u64,
 }
@@ -80,17 +79,17 @@ enum Refusal {
 /// A shedding door, as the tally's index.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Door {
-    Price,
+    Orbit,
     Citation,
     Unglued,
 }
 
 impl Door {
-    pub const ALL: [Door; 3] = [Door::Price, Door::Citation, Door::Unglued];
+    pub const ALL: [Door; 3] = [Door::Orbit, Door::Citation, Door::Unglued];
 
     pub fn index(self) -> usize {
         match self {
-            Door::Price => 0,
+            Door::Orbit => 0,
             Door::Citation => 1,
             Door::Unglued => 2,
         }
@@ -98,7 +97,7 @@ impl Door {
 
     pub fn name(self) -> &'static str {
         match self {
-            Door::Price => "price",
+            Door::Orbit => "orbit",
             Door::Citation => "citation",
             Door::Unglued => "unglued",
         }
@@ -392,9 +391,9 @@ impl Contemplation {
                 self.truncation.truncated += 1;
                 match self.bubbles.remove(v) {
                     Some(b) => {
-                        if !crate::core::lanes::lanes_step(&mut self.truncated_escrow, &b.escrow) {
-                            self.overflowed += 1;
-                        }
+                        self.return_escrow(&b.escrow);
+                        self.unthreaded.remove(v);
+                        self.unheld.remove(v);
                         self.retract_incidence(v, &b);
                         self.dirty.remove(v);
                         self.cavity.insert(super::shed::cavity_key(&b.remainder, v), b.remainder.to_vec());
@@ -412,51 +411,4 @@ impl Contemplation {
         }
     }
 
-    /// THE PRICE DEFERS A RING WHILE A LEAF STANDS: of `doomed`, a thought
-    /// in the 2-core whose component holds a free vertex not itself doomed
-    /// stays, counted `deferred`, and lapses once the leaf is gone.
-    pub(crate) fn defer_price(&mut self, doomed: Vec<Vec<u8>>) -> Vec<Vec<u8>> {
-        if doomed.is_empty() {
-            return doomed;
-        }
-        let core = self.two_core();
-        if !doomed.iter().any(|k| core.contains(k)) {
-            return doomed;
-        }
-        let mut dset: Keyed<()> = Keyed::new();
-        for k in &doomed {
-            dset.insert(k, ());
-        }
-        let deg = self.degrees_among(&self.nerve_vertices());
-        // Each component's verdict, read once and kept for its vertices.
-        let mut leafy: Keyed<bool> = Keyed::new();
-        let mut out = Vec::new();
-        for k in doomed {
-            if !core.contains(&k) {
-                out.push(k);
-                continue;
-            }
-            let held = match leafy.get(&k) {
-                Some(&l) => l,
-                None => {
-                    let comp = self.components_of(std::slice::from_ref(&k));
-                    let l = comp.scoped().any(|(v, _)| deg.get(&v) == Some(&1) && !dset.contains(&v));
-                    for (v, _) in comp.scoped() {
-                        leafy.insert(&v, l);
-                    }
-                    l
-                }
-            };
-            match held {
-                true => self.truncation.deferred += 1,
-                false => out.push(k),
-            }
-        }
-        out
-    }
-
-    /// The escrow the truncation returned since last taken, for the room.
-    pub fn take_truncated_escrow(&mut self) -> [u64; 4] {
-        std::mem::take(&mut self.truncated_escrow)
-    }
 }

@@ -464,6 +464,14 @@ pub(super) fn pair_key(a: &[u8], b: &[u8]) -> Vec<u8> {
     k
 }
 
+/// THE LINE OF THE TETHER between two thoughts (MU-CLIENT §4.13, Reading 2):
+/// the key of the edge they span, the one the tether's own flex winds on
+/// (`Contemplation::tether`), so the relation's flux and its tether are let
+/// go together.
+pub(super) fn tether_line(a: &[u8], b: &[u8]) -> Vec<u8> {
+    crate::transducer::cech::simplex_key(&crate::transducer::cech::sorted_verts([a, b])).as_bytes().to_vec()
+}
+
 /// A row's key among a line's carried bodies: its place, big-endian.
 fn row_key(i: usize) -> [u8; 8] {
     (i as u64).to_be_bytes()
@@ -769,7 +777,7 @@ impl Contemplation {
             // would never close. What the cell reads is its circuits: their
             // modes, their joint coherence, the capacity of their algebra.
             let cell = crate::transducer::cech::read_chamber(grade, None, None, &circuits, &orders, budget);
-            self.note_chamber(&cell, chart, budget);
+            self.note_chamber(&cell, chart, key, budget);
             self.note_shear(&circuits);
         }
         self.file_thoughts(key, &to, budget);
@@ -885,9 +893,11 @@ impl Contemplation {
 
     /// The cell's reading counted; each SHEAR held in the mind's field, its
     /// holonomy a field line whose turn flows on its plane's orbit, the
-    /// precession kept as content (78.73, MU-CLIENT §4.4); and each ESCAPE
-    /// filed as a demand on the chart by its class (the CS2 arm).
-    fn note_chamber(&mut self, cell: &crate::transducer::cech::ChamberAlgebra, chart: &[u8], budget: &mut crate::physics::Budget) {
+    /// precession kept as content (78.73, MU-CLIENT §4.4) — wound on the line
+    /// of the thought whose perception read the cell (`key`, MU-CLIENT
+    /// §4.13); and each ESCAPE filed as a demand on the chart by its class
+    /// (the CS2 arm).
+    fn note_chamber(&mut self, cell: &crate::transducer::cech::ChamberAlgebra, chart: &[u8], key: &[u8], budget: &mut crate::physics::Budget) {
         let shears: Vec<crate::transducer::family::pairing::FieldLine> = cell
             .coherence
             .shears()
@@ -897,7 +907,7 @@ impl Contemplation {
                 gauge: Vec::new(),
                 mass: 1,
                 free: false,
-                line: crate::transducer::cech::Thread::Free,
+                line: crate::transducer::cech::Thread::Wound(key.to_vec()),
             })
             .collect();
         if !shears.is_empty() {
@@ -989,11 +999,11 @@ impl Contemplation {
             let every = hours.iter().all(|h| matches!(h, Hour::Predicted(_)));
             if let (true, [g, more @ ..]) = (every, steps.as_slice()) {
                 if let (true, Some((rotor, carriage))) = (more.iter().all(|s| s.projective_eq(g)), halves(g)) {
-                    if let Err(why) = self.gate(rows, g, true, budget) {
+                    if let Err(why) = self.gate(rows, g, true, &tether_line(key, &other), budget) {
                         self.note_refusal(&why, g, rows);
                         continue;
                     }
-                    self.note_ground(key, &other, rows, g, true);
+                    self.note_ground(key, &other, rows, g, true, budget);
                     let latest = rows.iter().filter_map(|r| match r.lanes.as_slice() {
                         [.., Some(l)] => Some(*l),
                         _ => None,
@@ -1026,9 +1036,9 @@ impl Contemplation {
                 // ONE MOTION CARRIES THE WHOLE CONFIGURATION: the thought.
                 [line] => {
                     self.note_unmatched(rows, &theirs, line);
-                    match self.gate(rows, &line.t.versor, false, budget) {
+                    match self.gate(rows, &line.t.versor, false, &tether_line(key, &other), budget) {
                         Ok(()) => {
-                            self.note_ground(key, &other, rows, &line.t.versor, false);
+                            self.note_ground(key, &other, rows, &line.t.versor, false, budget);
                             let chart = Self::chart_of_rows(rows);
                             self.scene_edge(key, &other, &line.t, line.lanes, &chart);
                         }
@@ -1042,7 +1052,7 @@ impl Contemplation {
                 [first, rest @ ..] if rest.iter().all(|l| same_landing(l, first) && same_carried(l, first)) => {
                     let members: Vec<Transition> = whole.iter().map(|l| l.t.clone()).collect();
                     if let Some(rep) = crate::transducer::blade::coset_representative(&members) {
-                        if let Err(why) = self.gate(rows, &rep.versor, false, budget) {
+                        if let Err(why) = self.gate(rows, &rep.versor, false, &tether_line(key, &other), budget) {
                             self.note_refusal(&why, &rep.versor, rows);
                             continue;
                         }
@@ -1112,7 +1122,10 @@ impl Contemplation {
     ///   this perception's at hour 1 carried back by the scene's motion, one
     ///   constellation per chart; `c` the other's barycentre, each body
     ///   weighed by its mass (its sites).
-    fn gate(&mut self, rows: &[Row], generator: &Mv, orbit: bool, budget: &mut crate::physics::Budget) -> Result<(), crate::physics::tensegrity::Refusal> {
+    ///
+    /// What the admitted relation holds in the mind's field is wound on its
+    /// tether's line, `line` (MU-CLIENT §4.13, Reading 2).
+    fn gate(&mut self, rows: &[Row], generator: &Mv, orbit: bool, line: &[u8], budget: &mut crate::physics::Budget) -> Result<(), crate::physics::tensegrity::Refusal> {
         use crate::physics::tensegrity::{
             barycentre, coherence, external_torque, hour, metric_defect, succession, Constellation, Defect, Refusal,
         };
@@ -1283,7 +1296,7 @@ impl Contemplation {
                 gauge: Vec::new(),
                 mass: 1,
                 free: false,
-                line: crate::transducer::cech::Thread::Free,
+                line: crate::transducer::cech::Thread::Wound(line.to_vec()),
             })
             .collect();
         if !held.is_empty() {
@@ -1322,7 +1335,11 @@ impl Contemplation {
     /// the period its return. A grounded other is joined by its own ground
     /// (`join_ground`), never here; a relation that does not return (a slide,
     /// a boost) has no ground and speaks no word.
-    fn note_ground(&mut self, key: &[u8], other: &[u8], rows: &[Row], generator: &Mv, orbit: bool) {
+    ///
+    /// MU-CLIENT §4.13 (Q1 as ruled) — a ground filed winds its line: its
+    /// generator admitted on the thought's own line once for each hour seen
+    /// (`wind_ground`), so its orbit returns when its winding does.
+    fn note_ground(&mut self, key: &[u8], other: &[u8], rows: &[Row], generator: &Mv, orbit: bool, budget: &mut crate::physics::Budget) {
         if self.bubbles.get(other).is_some_and(|b| b.ground.is_some()) {
             return;
         }
@@ -1357,6 +1374,7 @@ impl Contemplation {
         match ground_of(bodies, &forward) {
             Ok(ground) => {
                 let grounded = super::idea::Grounded { chart: first.chart.clone(), hours, ground, twist: None };
+                self.wind_ground(&grounded, hours, budget);
                 self.grounds.insert(pair_key(key, other), grounded);
                 self.resonance.grounds[0] += 1;
             }
@@ -1576,6 +1594,9 @@ impl Contemplation {
             return Some((Err(Refusal::NoSuccession), g.generator.clone()));
         };
         let next = super::idea::Grounded { hours: seen, ..grounded.clone() };
+        // MU-CLIENT §4.13 (Q1 as ruled) — the hour joined is one more
+        // transition of the thought's orbit in the field, on its own line.
+        self.wind_ground(&next, 1, budget);
         self.grounds.insert(pair_key(key, other), next);
         Some((Ok(()), generator))
     }

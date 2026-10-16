@@ -358,6 +358,10 @@ impl Contemplation {
         let mut remainders: Keyed<Vec<Link>> = Keyed::new();
         let mut old_rems: Keyed<Vec<Link>> = Keyed::new();
         let mut merged_volume = [0u64; 4];
+        // ESCROW CONSERVED (MU-CLIENT §7.1 Phase 3): what each merged thought
+        // holds is carried whole into the merge, never re-drawn and never its
+        // volume.
+        let mut escrow = [0u64; 4];
         // THE THOUGHT STANDS ON THE BODIES IT WAS FORMED OF (78.48(5)): its
         // perceptions' bodies by chart, IN THE ORDER THEY ARRIVED — each
         // idea's ordinal counts admissions, written big-endian so the keyed
@@ -378,6 +382,11 @@ impl Contemplation {
             for (m, x) in merged_volume.iter_mut().zip(&b.volume) {
                 *m = (*m).max(*x);
             }
+            if !crate::core::lanes::lanes_step(&mut escrow, &b.escrow) {
+                self.overflowed += 1;
+            }
+            self.unthreaded.remove(v);
+            self.unheld.remove(v);
             self.retract_incidence(v, &b);
             remainder = union_rem(&remainder, &b.remainder);
             absorb_keyed(&mut cover, &b.cover);
@@ -445,6 +454,7 @@ impl Contemplation {
         }
         if remainder.is_empty() && spores.is_empty() && ground.is_none() {
             self.merges.unnamed += 1;
+            self.return_escrow(&escrow);
             return None;
         }
         // THE THOUGHT'S VOLUME is the largest of what merged, lane by lane —
@@ -456,6 +466,7 @@ impl Contemplation {
         // rather than one that cannot be named (U14).
         let Some(remainder) = element::place_chain(&remainder) else {
             self.merges.unnamed += 1;
+            self.return_escrow(&escrow);
             return None;
         };
         let bubble = Bubble {
@@ -477,9 +488,7 @@ impl Contemplation {
             certificates,
             vortex,
             candidates: Keyed::new(),
-            escrow: volume,
-            until: None,
-            paid_from: None,
+            escrow,
             rotor: None,
             form: None,
             bundle,

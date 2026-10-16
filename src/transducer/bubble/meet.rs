@@ -191,9 +191,9 @@ impl MeetGraph {
             .join("; ");
         let tr = &self.truncation;
         let core = format!(
-            "nerve: Ȟ¹ {}, 2-core {}, free vertices {} isolated {}, free faces edges {} triangles {}, unfaced {} malformed {} | shed: {doors} | truncated {} (refused: held by class {} glued {}; price deferred {}; Ȟ¹ moved {} malformed {})",
+            "nerve: Ȟ¹ {}, 2-core {}, free vertices {} isolated {}, free faces edges {} triangles {}, unfaced {} malformed {} | shed: {doors} | truncated {} (refused: held by class {} glued {}; Ȟ¹ moved {} malformed {})",
             c.h1, c.core, c.free_vertices, c.isolated, c.free_faces[0], c.free_faces[1], c.unfaced, c.malformed,
-            tr.truncated, tr.held_by_class, tr.glued, tr.deferred, tr.rank_moved, tr.malformed
+            tr.truncated, tr.held_by_class, tr.glued, tr.rank_moved, tr.malformed
         );
         let core = format!(
             "{core} | {} | overflowed {} | {}",

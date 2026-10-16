@@ -6,6 +6,7 @@ mod complex;
 mod contemplation;
 mod demand;
 mod horizon;
+mod line;
 mod perception;
 mod persistence;
 mod pivot_cells;

@@ -12,6 +12,7 @@ pub mod hold;
 pub mod drive;
 pub mod horizon;
 pub mod idea;
+pub mod line;
 pub mod meet;
 pub mod merge;
 pub mod pivot;

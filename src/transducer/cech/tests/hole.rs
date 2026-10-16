@@ -213,9 +213,13 @@ fn the_field_releases_what_relaxed_and_the_mind_lets_it_go() {
         let Ok(released) = crate::transducer::mind::with_field(|f| f.take_released()) else { panic!("a mind is thinking") };
         let mut expected = vec![edge_key(&vs[0], &vs[1]), edge_key(&vs[2], &vs[3])];
         expected.sort();
-        let mut got = released.clone();
+        let mut got: Vec<Vec<u8>> = released.iter().map(|(l, _)| l.clone()).collect();
         got.sort();
         assert_eq!(got, expected, "the orbit returned: both lines released");
+        assert!(
+            released.iter().all(|(_, why)| *why == crate::transducer::cech::orbit::Released::Returned),
+            "released because the orbit returned"
+        );
         mind.release(&released);
         assert!(mind.complex.board().tethers.is_empty(), "both tethers drained");
     });
@@ -224,7 +228,7 @@ fn the_field_releases_what_relaxed_and_the_mind_lets_it_go() {
     let Punctured::Opened(_) = asked.puncture(&key) else { panic!("punctured: a question") };
     let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
     mind.complex = asked;
-    mind.release(&[edge_key(&vs[0], &vs[1])]);
+    mind.release(&[(edge_key(&vs[0], &vs[1]), crate::transducer::cech::orbit::Released::Returned)]);
     assert_eq!(mind.complex.board().tethers.len(), 3, "the question's hole pins its boundary: the tether stands");
 }
 

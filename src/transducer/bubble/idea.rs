@@ -196,25 +196,13 @@ pub struct Bubble {
     pub family: Vec<u8>,
     /// TUniversal when this bubble's charts last moved.
     pub moved_k: u64,
-    /// Z4d — THE ESCROW THIS THOUGHT IS HELD ON: the μ⃗ drawn from the
-    /// voice's reserve to keep it, per lane, returned when it lapses or is
-    /// promoted. What a voice can still escrow on each lane is its
-    /// attention, and the four lanes move apart (law 5): a mind rich on
-    /// `𝒽` and spent on `𝒮` holds turns and withholds placements.
+    /// Z4d, MU-CLIENT §7.1 Phase 3 — THE ESCROW THIS THOUGHT IS HELD ON: the
+    /// μ⃗ drawn from the voice's reserve to keep it, per lane — drawn once,
+    /// carried whole into what it merges into, returned once by whatever
+    /// door removes it (`line::return_escrow`). What a voice can still escrow
+    /// on each lane is its attention, and the four lanes move apart (law 5).
+    /// The thought stands by its orbit (`line`), never by a height paid.
     pub escrow: [u64; 4],
-    /// THE HEIGHT THIS THOUGHT IS PAID THROUGH, on TUniversal. It stands
-    /// while its receipts are ahead of the clock and leaves when the clock
-    /// passes it.
-    ///
-    /// `None` is NOT "forever": it is a thought held before any aperture
-    /// was measured, and an unmeasured horizon is held rather than guessed
-    /// (rule 15). Such a thought lapses when the aperture is first measured
-    /// and it is paid to a height, never against a default.
-    pub until: Option<u64>,
-    /// FX1 — THE HEIGHT ITS PAID EXTENT BEGAN AT, on TUniversal: written
-    /// wherever `until` is, so the extent `[paid_from, until]` is one object
-    /// for the flux reading and the door after it. `None` with `until`.
-    pub paid_from: Option<u64>,
     /// Addresses this idea glued (crystallized forms it rests on).
     pub glues: Keyed<()>,
     /// Ideas that glued this bubble; a non-empty set is not shed.

@@ -104,10 +104,14 @@ impl Contemplation {
             if let Some(b) = self.bubbles.remove(k) {
                 self.retract_incidence(k, &b);
                 self.dirty.remove(k);
+                self.unthreaded.remove(k);
+                self.unheld.remove(k);
                 // What it could not close goes to the cavity at its chart,
                 // as a retirement has always left it, so a word arriving on
-                // that chart can read it back (`pivot_on`).
+                // that chart can read it back (`pivot_on`); and the escrow it
+                // held returns, once.
                 self.cavity.insert(cavity_key(&b.remainder, k), b.remainder.to_vec());
+                self.return_escrow(&b.escrow);
             }
         }
         self.shed_after(super::core::Door::Citation, n, before);
@@ -116,102 +120,6 @@ impl Contemplation {
             self.truncate(&touched);
         }
         n
-    }
-
-    /// Z4d — THE RECEIPT IS THE ESCROW: every thought whose paid height the
-    /// clock has passed lapses, AS A SET, and its escrow returns.
-    ///
-    /// A thought stands while its receipts are ahead of TUniversal and
-    /// leaves when the clock passes it. NOTHING IS CHOSEN: the set is every
-    /// bubble whose `until` the clock has passed, taken together on the
-    /// stroke that reads the height, never one by age, size or arrival
-    /// (rules 4 and 15). That is what separates a lapse from an eviction.
-    ///
-    /// A thought with no `until` is one held before any aperture was
-    /// measured. It does not lapse here — an unmeasured horizon is held,
-    /// never guessed (rule 15) — and it is paid to a height by `repay` on
-    /// the first stroke that can measure one.
-    ///
-    /// Returns the escrow returned, per lane, and the count. The escrow is
-    /// a VECTOR and is never summed (law 5): a voice that lapses a thought
-    /// rich in `𝒽` gets its turns back and not its placements.
-    pub fn lapse_on_clock(&mut self) -> ([u64; 4], usize) {
-        let now = self.now_k;
-        let doomed: Vec<Vec<u8>> = self
-            .bubbles
-            .scoped()
-            .filter(|(_, b)| b.until.is_some_and(|u| u <= now))
-            .map(|(k, _)| k)
-            .collect();
-        // TC1 — a ring whose component holds a leaf waits for the leaf.
-        let doomed = self.defer_price(doomed);
-        let mut returned = [0u64; 4];
-        let n = doomed.len();
-        // TC1 — what the price takes that carries a loop, read around it.
-        let before = self.shed_before(&doomed);
-        let touched = self.touched_by(&doomed);
-        for k in &doomed {
-            if let Some(b) = self.bubbles.remove(k) {
-                if !crate::core::lanes::lanes_step(&mut returned, &b.escrow) {
-                    self.overflowed += 1;
-                }
-                self.retract_incidence(k, &b);
-                self.dirty.remove(k);
-                self.cavity.insert(cavity_key(&b.remainder, k), b.remainder.to_vec());
-            }
-        }
-        self.shed_after(super::core::Door::Price, n, before);
-        if n > 0 {
-            self.truncate(&touched);
-        }
-        (returned, n)
-    }
-
-    /// Z4d — A THOUGHT HELD BEFORE ANY APERTURE WAS MEASURED IS PAID NOW.
-    /// The first stroke that can measure a horizon pays every unpaid
-    /// thought through it, so a thought is never held against a height
-    /// nothing measured and never held forever for want of one.
-    pub fn repay_unpaid(&mut self) -> usize {
-        let Some(span) = self.aperture_tu() else {
-            return 0;
-        };
-        let Some(until) = self.now_k.checked_add(span) else {
-            return 0;
-        };
-        let unpaid: Vec<Vec<u8>> =
-            self.bubbles.scoped().filter(|(_, b)| b.until.is_none()).map(|(k, _)| k).collect();
-        let n = unpaid.len();
-        let from = self.now_k;
-        for k in unpaid {
-            if let Some(b) = self.bubbles.get_mut(&k) {
-                b.until = Some(until);
-                b.paid_from = Some(from);
-            }
-        }
-        n
-    }
-
-    /// Z4d — RENEWAL. A thought a court has answered for — standing what it
-    /// cites, or listing what it asks — is paid through another aperture
-    /// from the height that answer was read at. Renewal is the only thing
-    /// that moves `until` forward, so a thought nothing answers for lapses
-    /// on schedule however long it has stood.
-    pub fn renew(&mut self, key: &[u8]) -> bool {
-        let Some(span) = self.aperture_tu() else {
-            return false;
-        };
-        let Some(until) = self.now_k.checked_add(span) else {
-            return false;
-        };
-        let from = self.now_k;
-        match self.bubbles.get_mut(key) {
-            Some(b) => {
-                b.until = Some(until);
-                b.paid_from = Some(from);
-                true
-            }
-            None => false,
-        }
     }
 
     /// Shed ideas no live glue holds. Returns how many bubbles left.
@@ -242,9 +150,9 @@ impl Contemplation {
             );
         }
         // THE UNGLUED DOOR ACTS ON THOUGHTS ONLY (N4): a perception never
-        // passes it — it leaves by the physics, its paid height passed or
-        // what it cites lapsed — and a thought's glue is also the transition
-        // that formed it, an edge of the meet graph.
+        // passes it — it leaves by the physics, its line let go by the field
+        // (`line`) or what it cites lapsed — and a thought's glue is also the
+        // transition that formed it, an edge of the meet graph.
         let drop: Vec<Vec<u8>> = self
             .bubbles
             .scoped()
@@ -265,6 +173,10 @@ impl Contemplation {
             if let Some(b) = self.bubbles.remove(k) {
                 self.retract_incidence(k, &b);
                 self.dirty.remove(k);
+                self.unthreaded.remove(k);
+                self.unheld.remove(k);
+                // The escrow it held returns, once.
+                self.return_escrow(&b.escrow);
             }
         }
         self.shed_after(super::core::Door::Unglued, n, before);

@@ -413,8 +413,6 @@ pub struct Epigenome {
     pub(crate) promoted: Vec<Vec<u8>>,
     /// Dialects dropped this process.
     pub(crate) shed_n: u64,
-    /// TUniversal at each of the last aperture_cycle strokes.
-    pub(crate) stroke_k: Vec<u64>,
     /// Held words keyed by (chart, axis). Filled at atlas/dialect admit,
     /// emptied at remove/shed/retire. `on_axis` is one fiber read.
     pub(crate) axis_index: crate::transducer::sentence::AxisIndex,
@@ -566,10 +564,12 @@ pub struct Entity {
     /// once per stroke by `take_learned_mu`.
     pub(crate) learned_mu: [u64; 4],
     /// ČECH AFTER FETCH: the obstructions measured on the fibre when a
-    /// fetched word met the words already held there — (the fetched
-    /// word's address, the transition that did not vanish). The digest
-    /// only indexed the wire; this is the glue, on the elements.
-    pub(crate) obstructions: crate::network::nerve::Keyed<Element>,
+    /// fetched word met the words already held there, by their coordinates
+    /// — the stratum, then the fetched word's address, to the address of the
+    /// held word whose transition to it did not vanish. The digest only
+    /// indexed the wire; this is the glue, on the elements. A stratum that
+    /// glues lets its obstructions go.
+    pub(crate) obstructions: crate::network::nerve::Keyed<crate::network::nerve::Keyed<crate::transducer::address::Address>>,
     /// Strata the fibre Čech has already glued (a fetched word's transition
     /// to the held representative vanished): the outer index is not walked
     /// there again. The digest names what differs by address; the geometry
@@ -636,16 +636,24 @@ pub struct Entity {
     /// a letter or crystallized idea a court deferred stands in the dialect,
     /// and the guard that kept it from being spoken twice kept it from ever
     /// being spoken again (courts deferred 211/126/442 acts, epoch 146). Said
-    /// again each stroke until a court stands or ratifies it, or seals it;
-    /// at most an aperture of them (`physics::aperture_cycle`). Each with the
-    /// scene it was spoken under (MU-CLIENT §5.4, E1).
-    pub(crate) unheard: crate::network::nerve::Keyed<(Element, Vec<u8>)>,
+    /// again at the mind's returns until a court stands or ratifies it, or
+    /// seals it. MU-CLIENT §4.13 — HELD BY ITS COORDINATES: the word's
+    /// address, with the scene it was spoken under (§5.4, E1); the word is
+    /// the one its dialect stands, read there, and it leaves where the
+    /// dialect sheds it — bounded by the language, never by a count.
+    pub(crate) unheard: crate::network::nerve::Keyed<Vec<u8>>,
+    /// MU-CLIENT §4.13 — WHAT THIS MIND HAS SAID AND NO COURT HAS ANSWERED
+    /// YET, by address: a speech stood and held for its scene's return, or
+    /// posted and not yet landed. Each is an unjudged sentence the dialect
+    /// keeps (`Entity::shed`); it leaves where the court's answer lands.
+    pub(crate) speaking: crate::network::nerve::Keyed<()>,
     /// 78.153 — THE SOLVES THE COURT HAS NOT JUDGED YET (`SOLVE_UNREAD`), by
     /// task: the rule and the outputs, asked again each stroke until the
     /// court rules, its replay resuming where its stroke ran out. Without it
     /// the task arm moved to the next task and the solve was never asked
-    /// again: 38 of 41 verdicts on the fleet were "unread" (2026-10-10). At
-    /// most an aperture of them (`physics::aperture_cycle`).
+    /// again: 38 of 41 verdicts on the fleet were "unread" (2026-10-10).
+    /// MU-CLIENT §4.13 — one per task, released by the court's verdict:
+    /// bounded by what the court holds unjudged.
     pub(crate) unread_solves: crate::network::nerve::Keyed<(Element, Vec<Grid>)>,
     /// The task coordinate the last unread solve was asked again at: the
     /// next asking takes the least after it, so every one is asked in turn.
@@ -762,6 +770,9 @@ pub struct YieldQuote {
     /// book this quote reads.
     pub k: u64,
     pub clusters: Vec<Cluster>,
+    /// MU-CLIENT §4.13 — WHERE THE COURT DEFERRED: its door's per-lane
+    /// deficit, the gravity it exports; `None` for a quote it answered.
+    pub deficit: Option<[u64; 4]>,
 }
 
 #[derive(Clone, Debug)]
