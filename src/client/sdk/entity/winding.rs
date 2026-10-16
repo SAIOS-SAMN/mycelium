@@ -55,11 +55,14 @@ pub(crate) struct Board {
     /// Scenes and solves on the perception carrier not yet admitted: one at
     /// a time.
     pub(crate) scenes_perceiving: usize,
-    /// MU-CLIENT §4.13 — HEARINGS WAITING FOR THE PERCEPTION CARRIER, and
-    /// whether one is on it: one at a time, as scenes are, each taken with a
-    /// scratch of the field as it stands when it is taken — never a scratch
-    /// per hearing held while the carrier works through them.
-    pub(crate) hearings: std::collections::VecDeque<super::perceive::Hearing>,
+    /// MU-CLIENT §4.13 — HEARINGS WAITING FOR THE PERCEPTION CARRIER, by their
+    /// coordinates (the speaker, then what was said: a thing said again by
+    /// the same mind before it is read is one hearing, its latest saying in
+    /// the place of the first), and whether one is on it: one at a time, as
+    /// scenes are, each taken with a scratch of the field as it stands when
+    /// it is taken. Bounded by the distinct things the mind's peers say,
+    /// never by a count.
+    pub(crate) hearings: crate::network::nerve::Keyed<super::perceive::Hearing>,
     pub(crate) hearing: bool,
     /// MU-CLIENT §4.13 — THE RESERVE LOCKED IN THE FIELD'S RESERVOIRS, per
     /// lane: the strain they hold, taken out of the operational reserve at

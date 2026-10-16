@@ -262,21 +262,26 @@ impl Entity {
     /// RINGS ANOTHER MIND SAID, to be read on the perception carrier off the
     /// field (MU-CLIENT §4.9, §7.1 R1) and understood where the reading
     /// lands, with what their evidence read on their scene (§5.5). MU-CLIENT
-    /// §4.13 — ONE AT A TIME: the hearing waits on the board, and the next
-    /// is taken when the one on the carrier lands (`hear_next`).
+    /// §4.13 — ONE AT A TIME, BY ITS COORDINATES: the hearing waits on the
+    /// board under the speaker and what was said, the same thing said again
+    /// by the same mind standing in the place of the one waiting; the next is
+    /// taken when the one on the carrier lands (`hear_next`).
     pub(crate) fn perceive_hearing(&mut self, speaker: [u8; 32], said: Vec<u8>, words: Vec<crate::client::sdk::chatter::Spoken>, evident: super::converge::Evident) {
-        self.board.hearings.push_back(Hearing { speaker, said, words, evident });
+        let mut key = speaker.to_vec();
+        crate::transducer::address::put_key_bytes(&mut key, &said);
+        self.board.hearings.insert(&key, Hearing { speaker, said, words, evident });
         self.hear_next();
     }
 
-    /// THE NEXT HEARING TAKEN, where none is on the carrier: posted with
-    /// what the mind remembers hearing and a scratch of its field as they
-    /// stand now.
+    /// THE NEXT HEARING TAKEN, where none is on the carrier — the least by
+    /// its coordinates, never by its arrival (rule 15) — posted with what the
+    /// mind remembers hearing and a scratch of its field as they stand now.
     fn hear_next(&mut self) {
         if self.board.hearing {
             return;
         }
-        let Some(Hearing { speaker, said, words, evident }) = self.board.hearings.pop_front() else { return };
+        let Some(key) = self.board.hearings.scoped().next().map(|(k, _)| k) else { return };
+        let Some(Hearing { speaker, said, words, evident }) = self.board.hearings.remove(&key) else { return };
         self.board.hearing = true;
         let (mut field, from) = crate::transducer::mind::scratch_here();
         let mut remembered = self.remembered.clone();

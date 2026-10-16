@@ -36,3 +36,21 @@ fn a_scene_perceived_off_the_field_lands_and_its_escaping_thought_is_bound() {
     assert!(returned > 0, "the binding is a return");
     assert_eq!(k, returned, "K moved by exactly the returns");
 }
+
+/// MU-CLIENT §4.13 — HEARINGS WAIT BY THEIR COORDINATES, ONE AT A TIME. The
+/// first hearing goes to the perception carrier; while it is there, the same
+/// thing said again by the same mind waits once, its latest saying in the
+/// place of the first, and a different thing waits beside it.
+#[test]
+fn a_hearing_said_again_waits_once() {
+    use crate::client::sdk::entity::converge::Evident;
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("hearing"));
+    let speaker = [3u8; 32];
+    mind.perceive_hearing(speaker, b"first".to_vec(), Vec::new(), Evident::Unbound);
+    assert!(mind.board.hearing, "the first is on the carrier");
+    mind.perceive_hearing(speaker, b"again".to_vec(), Vec::new(), Evident::Unbound);
+    mind.perceive_hearing(speaker, b"again".to_vec(), Vec::new(), Evident::Unbound);
+    assert_eq!(mind.board.hearings.len(), 1, "said again before it is read, it waits once");
+    mind.perceive_hearing(speaker, b"other".to_vec(), Vec::new(), Evident::Unbound);
+    assert_eq!(mind.board.hearings.len(), 2, "a different thing waits beside it");
+}
