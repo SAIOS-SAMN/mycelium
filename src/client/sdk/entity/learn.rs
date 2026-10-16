@@ -240,35 +240,32 @@ impl Entity {
                 continue; // no group view: the additive coboundary has no transition
             }
             let inv = crate::transducer::stalk::invariant_of(&fetched);
-            let fibre: Vec<Vec<u8>> = self.epigenome.atlas.fiber(&inv).to_vec();
-            // One transition, to the stratum's representative: the first
-            // held word on the fibre with a group view that is not the
-            // fetched word itself. Siblings are interchangeable under the
-            // class's symmetry; the transition to one of them is the glue.
-            let mut held_g: Option<(&Element, crate::transducer::element::Element)> = None;
-            for a in &fibre {
-                let Some(held) = self.epigenome.word_at(a) else {
-                    continue;
-                };
-                if held.address() == fetched.address() || held.axes().is_empty() {
-                    continue;
-                }
-                let Some(g) = crate::transducer::cech::transition(held, &fetched) else {
-                    continue;
-                };
-                match (g.axes().as_slice(), g.sub()) {
-                    ([], []) => {
-                        held_g = Some((held, g));
-                        break;
-                    }
-                    _ => match &held_g {
-                        None => held_g = Some((held, g)),
-                        Some((h, _)) if held.address() < h.address() => held_g = Some((held, g)),
-                        _ => {}
-                    },
-                }
+            // A stratum already glued holds no obstruction: nothing to read.
+            if self.glued.contains(&inv.key()) {
+                continue;
             }
-            let Some((held, g)) = held_g else { continue };
+            // ONE TRANSITION, to the stratum's representative: the held word
+            // of least address on the fibre with a group view that is not the
+            // fetched word itself. Siblings are interchangeable under the
+            // class's symmetry; the transition to one of them is the glue,
+            // never one per sibling (law 3). Each transition is one spend of
+            // the landing's stroke: a page past it is absorbed, and its glue
+            // read on a later fetch.
+            let epigenome = &self.epigenome;
+            let representative = epigenome.atlas.fiber(&inv).iter().filter_map(|a| epigenome.word_at(a)).fold(None, |least: Option<&Element>, held| {
+                if held.address() == fetched.address() || held.axes().is_empty() {
+                    return least;
+                }
+                match least {
+                    Some(l) if l.address() <= held.address() => Some(l),
+                    _ => Some(held),
+                }
+            });
+            let Some(held) = representative else { continue };
+            if !budget.spend() {
+                continue;
+            }
+            let Some(g) = crate::transducer::cech::transition(held, &fetched) else { continue };
             match (g.axes().as_slice(), g.sub()) {
                 ([], []) => {
                     self.glued.insert(inv.key(), ());
