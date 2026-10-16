@@ -70,12 +70,16 @@ pub struct TransportTally {
     pub unclassed: u64,
 }
 
-/// The key of one arrival: the source, then the thought reached, each framed.
+/// The key of one arrival: the source, then the thought reached, each
+/// framed — MU-CLIENT §4.13, compacted to its 32-byte hash (the operator's
+/// ruling of 2026-10-16: a hash is valid where nothing is lost): the arrival
+/// holds its source and the thought reached itself, and every reader derives
+/// the key from the two it holds.
 fn arrival_key(source: &[u8], at: &[u8]) -> Vec<u8> {
     let mut k = Vec::new();
     crate::transducer::address::put_key_bytes(&mut k, source);
     crate::transducer::address::put_key_bytes(&mut k, at);
-    k
+    crate::chronometry::payload_hash(&k).to_vec()
 }
 
 /// THE CLASS OF A DISAGREEMENT between two sections of one thought: the ray

@@ -461,7 +461,11 @@ pub(super) fn pair_key(a: &[u8], b: &[u8]) -> Vec<u8> {
     let mut k = Vec::new();
     crate::transducer::address::put_key_bytes(&mut k, lo);
     crate::transducer::address::put_key_bytes(&mut k, hi);
-    k
+    // MU-CLIENT §4.13 — COMPACTED (the operator's ruling of 2026-10-16: a
+    // hash is valid where nothing is lost): every reader holds the two
+    // thoughts' keys and derives the pair, and nothing reads the pair back
+    // out of the key, so the two whole keys are its 32-byte hash.
+    crate::chronometry::payload_hash(&k).to_vec()
 }
 
 /// THE LINE OF THE TETHER between two thoughts (MU-CLIENT §4.13, Reading 2):
