@@ -37,6 +37,12 @@ pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
             .collect(),
         _ => return,
     };
+    // A round with no peer holding room carries the proposal nowhere:
+    // counted, never silent (LD0).
+    if witnesses.is_empty() {
+        observe::note_fold(FoldOutcome::NoWitness);
+        return;
+    }
     // The round's stroke: a hold's, handed on whole (78.153b).
     let Some(mut budget) = crate::held::held!(kernel).ok().map(|h| h.into_stroke()) else { return };
     for (vk, dest) in witnesses {

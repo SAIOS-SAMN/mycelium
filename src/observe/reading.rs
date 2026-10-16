@@ -310,9 +310,12 @@ pub enum CatchupOutcome {
     Held = 5,
 }
 
-/// THE AXES OF [`Court::folds`], in its writing's order.
-pub const FOLD_OUTCOMES: [&str; 8] =
-    ["proposed", "open", "inexact", "folded", "refused", "unmeasured", "idle", "no-transition"];
+/// THE AXES OF [`Court::folds`], in its writing's order. `stale`: a pending
+/// proposal dropped because the rows beneath its root moved, or its prefix
+/// is no longer final; `no witness`: a round with no peer holding room to
+/// co-sign it — the two ways a proposal ends without being carried.
+pub const FOLD_OUTCOMES: [&str; 10] =
+    ["proposed", "open", "inexact", "folded", "refused", "unmeasured", "idle", "no-transition", "stale", "no witness"];
 
 /// Where each fold outcome is counted on [`FOLD_OUTCOMES`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -325,7 +328,22 @@ pub enum FoldOutcome {
     Unmeasured = 5,
     Idle = 6,
     NoTransition = 7,
+    Stale = 8,
+    NoWitness = 9,
 }
+
+/// THE AXES OF [`Adjudication::body_faults`]: the fault a vertex-body
+/// refusal's proof names (`court::verdict::body`), in this order.
+pub const BODY_FAULTS: [&str; 8] = [
+    "no versor",
+    "carries nowhere",
+    "no compartment",
+    "before the frame",
+    "past the frame",
+    "wrong hue",
+    "image reached in part",
+    "gauge ambiguous",
+];
 
 impl Court {
     #[must_use]
@@ -636,6 +654,12 @@ pub struct Adjudication {
     /// CV1 — the same refusals by the kind of obstruction (78.9): P, D, C,
     /// I, N, unclassified.
     pub obstructed: [u64; 6],
+    /// The vertex-body refusals by the fault their proof names
+    /// ([`BODY_FAULTS`]), and of them, those whose vertex lifted no versor
+    /// on the chart and those that did — a rotor that does not lift apart
+    /// from a transport that lands wrong.
+    pub body_faults: [u64; BODY_FAULTS.len()],
+    pub body_lifted: [u64; 2],
 }
 
 impl Adjudication {
@@ -651,6 +675,9 @@ impl Adjudication {
         }
         for v in self.obstructed {
             put_u64(out, v);
+        }
+        for v in self.body_faults.iter().chain(&self.body_lifted) {
+            put_u64(out, *v);
         }
         Some(())
     }
@@ -669,7 +696,12 @@ impl Adjudication {
         for v in obstructed.iter_mut() {
             *v = take_u64(b, p)?;
         }
-        Some(Adjudication { ratified, stood, awaiting, deferred, refused, obstructed })
+        let mut body_faults = [0u64; BODY_FAULTS.len()];
+        for v in body_faults.iter_mut() {
+            *v = take_u64(b, p)?;
+        }
+        let body_lifted = [take_u64(b, p)?, take_u64(b, p)?];
+        Some(Adjudication { ratified, stood, awaiting, deferred, refused, obstructed, body_faults, body_lifted })
     }
 }
 

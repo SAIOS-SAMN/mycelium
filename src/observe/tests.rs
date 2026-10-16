@@ -59,7 +59,7 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         room_overflowed: 8,
         overflowed: 9,
         // The fold's round by outcome, each in its own slot.
-        folds: [10, 11, 12, 13, 14, 15, 16, 17],
+        folds: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
         catchup: [[16, 17, 18, 19, 20, 26], [21, 22, 23, 24, 25, 27]],
         // The serving side of a catch-up page, each axis in its own slot.
         serve: [26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45],
@@ -137,6 +137,8 @@ fn replication_and_adjudication_read_back_as_themselves() {
             deferred: 2,
             refused: vec![(0, 3), (2, 4)],
             obstructed: [1, 0, 3, 2, 0, 1],
+            body_faults: [0, 1, 2, 3, 4, 5, 6, 7],
+            body_lifted: [8, 9],
         }),
     ]);
     assert_eq!(REPLICATION_AXES.len(), REP_AXES, "the axes and the counters agree");

@@ -263,6 +263,20 @@ pub fn serves() -> [u64; super::SERVE_AXES.len()] {
     std::array::from_fn(|i| SERVE[i].load(Ordering::Relaxed))
 }
 
+/// THE VERTEX-BODY REFUSALS by the fault their proof names, on
+/// [`super::BODY_FAULTS`]'s axes, and by whether the vertex lifted a versor.
+static BODY_FAULTS: [AtomicU64; super::BODY_FAULTS.len()] = [const { AtomicU64::new(0) }; super::BODY_FAULTS.len()];
+static BODY_LIFTED: [AtomicU64; 2] = [const { AtomicU64::new(0) }; 2];
+
+/// Count one vertex-body refusal: its fault's slot on [`super::BODY_FAULTS`]
+/// and whether its vertex lifted a versor on the chart.
+pub fn note_body_fault(slot: usize, lifted: bool) {
+    if let Some(n) = BODY_FAULTS.get(slot) {
+        n.fetch_add(1, Ordering::Relaxed);
+    }
+    BODY_LIFTED[usize::from(lifted)].fetch_add(1, Ordering::Relaxed);
+}
+
 /// Count one refusal by its kind, where it forms.
 pub fn note_obstruction(kind: crate::transducer::sentence::ObstructionKind) {
     OBSTRUCTED[kind.index()].fetch_add(1, Ordering::Relaxed);
@@ -301,6 +315,8 @@ pub fn adjudication() -> super::Adjudication {
             .filter(|&(_, n)| n > 0)
             .collect(),
         obstructed: obstructed(),
+        body_faults: std::array::from_fn(|i| BODY_FAULTS[i].load(Ordering::Relaxed)),
+        body_lifted: std::array::from_fn(|i| BODY_LIFTED[i].load(Ordering::Relaxed)),
     }
 }
 

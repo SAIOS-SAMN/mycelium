@@ -185,6 +185,8 @@ impl Kernel {
         let stands = nets.as_ref() == Ok(&p.epochs) && self.final_prefix_head().is_some_and(|h| h >= p.root.at);
         if !stands {
             self.fold_pending = None;
+            // Counted by outcome, never discarded (LD0).
+            crate::observe::note_fold(crate::observe::FoldOutcome::Stale);
         }
         stands
     }

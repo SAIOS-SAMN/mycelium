@@ -602,6 +602,14 @@ fn adjudication(a: &observe::Adjudication) -> Vec<String> {
                 .collect::<Vec<_>>()
                 .join("  ")
         ),
+        // MU-CLIENT §4.13 — the vertex-body refusals by the fault their proof
+        // names, and by whether the vertex lifted a versor on the chart.
+        format!(
+            "    vertex body by fault  {}  · versor lifted {}  none {}",
+            observe::BODY_FAULTS.iter().zip(a.body_faults).map(|(f, n)| format!("{f} {n}")).collect::<Vec<_>>().join("  "),
+            a.body_lifted[1],
+            a.body_lifted[0]
+        ),
     ]
 }
 

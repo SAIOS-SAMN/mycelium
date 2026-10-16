@@ -407,6 +407,10 @@ fn carry_frames_from(
                     _ => None,
                 };
                 let key = chart.key();
+                // MU-CLIENT §4.13 — the refusal counted by its fault and by
+                // whether the vertex lifted a versor, on the court's
+                // adjudication reading: typed, never read off a log.
+                crate::observe::note_body_fault(fault_slot(why), versor.is_some());
                 *why_out = Some(why);
                 return Err(Halt::Refused(Refusal::closure(
                     REFUSE_VERTEX_BODY,
@@ -417,6 +421,17 @@ fn carry_frames_from(
         }
     }
     Ok(())
+}
+
+/// A VERTEX-BODY FAULT'S SLOT on `observe::BODY_FAULTS`, in that order; a
+/// fault this list does not name takes the slot past it, counted nowhere.
+fn fault_slot(why: &str) -> usize {
+    const FAULTS: [&str; 8] =
+        [FAIL_NO_VERSOR, FAIL_NO_CARRY, FAIL_NO_COMPARTMENT, FAIL_BEFORE_FRAME, FAIL_PAST_FRAME, FAIL_HUE, FAIL_PART, FAIL_GAUGE_AMBIGUOUS];
+    match FAULTS.iter().position(|f| *f == why) {
+        Some(at) => at,
+        None => FAULTS.len(),
+    }
 }
 
 /// The body of `y` the image of `body`'s anchor compartment falls in, under
