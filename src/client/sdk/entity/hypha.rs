@@ -196,10 +196,15 @@ pub(crate) fn post<S: Send + 'static, R: Send + 'static>(
         // The carrier is gone: nothing will answer this ask.
         return;
     }
+    // WHERE THE ANSWER IS TAKEN, named for the observer: the path of the
+    // field half that takes it, so a landing that holds the winding names
+    // itself (`observe::live`) — a reading, never read back by cognition.
+    let named = std::any::type_name_of_val(&then);
     let mut then = Some(then);
     carrier.landings.push_back(Box::new(move |me| match rx.try_recv() {
         Ok(r) => {
             if let Some(t) = then.take() {
+                crate::observe::live::enter(named);
                 t(me, r);
             }
             true
