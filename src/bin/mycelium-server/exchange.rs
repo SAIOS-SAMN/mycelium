@@ -382,6 +382,8 @@ impl Exchange {
                     if crate::judge::observe::answer_standing(k, &mesh, mesh.vk, !standing_published) {
                         standing_published = true;
                     }
+                    // 78.92 — and a why the full door left, the same way.
+                    crate::judge::why::answer_left(k);
                     // 78.151 — the door's reading, published whole under the
                     // lock the stroke already holds.
                     crate::held::step("publish");

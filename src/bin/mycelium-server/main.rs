@@ -793,6 +793,10 @@ fn main() {
                 if judge::seat::serve_exempt(&mut stream, &frame, &door) {
                     continue;
                 }
+                // 78.92 — a why is left for the court stroke, never waited on.
+                if judge::why::serve_left(&mut stream, &frame, &door) {
+                    continue;
+                }
                 let Ok(deficit) = door.mesh.deficit.lock().map(|d| *d) else { continue };
                 let body = dialogue::encode_deferral(outcome_code(&Outcome::GermPending), &deficit);
                 answer(&mut stream, Frame { lane: frame.lane, body });
@@ -853,6 +857,10 @@ fn main() {
                 }
                 // 78.146 — a mind's own read is served, once per window.
                 if judge::seat::serve_exempt(&mut stream, &frame, &door) {
+                    continue;
+                }
+                // 78.92 — a why is left for the court stroke, never waited on.
+                if judge::why::serve_left(&mut stream, &frame, &door) {
                     continue;
                 }
                 let Ok(deficit) = door.mesh.deficit.lock().map(|d| *d) else { continue };
