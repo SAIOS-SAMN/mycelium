@@ -172,7 +172,7 @@ fn a_code_the_hypha_did_not_send_is_not_an_outcome() {
 /// DIALECT, AT ITS RETURN. An L seen at its four hours about the grid point
 /// (2, 2), held by one mind with no hypha to hear it: the fourth perception
 /// brings the thought round, and the winding reads that return
-/// (`act_on_returns`) — K steps by it, and the mind speaks the WORD the
+/// (`act_on_returns`) — K moves by it, and the mind speaks the WORD the
 /// thought transcribes to — a connection spelled in the letters stands in the
 /// mind's dialect, carrying its return; the thought itself never does.
 /// Nothing stands before the return. It waits on no word from anywhere.
@@ -206,7 +206,7 @@ fn a_mind_speaks_its_closed_thought_into_its_own_dialect() {
     }
     let mut budget = entity.stroke_n(1 << 20);
     assert_eq!(entity.act_on_returns(&mut budget, Vec::new(), true), 1, "the thought came round: one return");
-    assert_eq!((entity.own_k(), spoken(&entity)), (1, 1), "K stepped by it, and the word stands at it");
+    assert_eq!((entity.own_k(), spoken(&entity)), (1, 1), "K moved by it, and the word stands at it");
     // READ OFF THE MIND'S OWN CARRIERS: one thought closed, the dialect
     // holding what it stood.
     assert_eq!(entity.contemplation.closed_thoughts, 1, "one thought closed its return");

@@ -29,12 +29,12 @@ fn slide(r: i64, c: i64) -> Element {
     crate::transducer::element::residual::from_connection(&w, &crate::transducer::element::translator_versor(r, c), &[], &Vec::new(), [1, 0, 0, 0]).expect("a slide spells")
 }
 
-/// The half-turn of the sensor plane carried by `(r, c)`: the unit square at
+/// The 180° turn of the sensor plane carried by `(r, c)`: the unit square at
 /// `(i, j)` lands at `(r − 1 − i, c − 1 − j)`.
-fn half_turn(r: i64, c: i64) -> Element {
+fn turn_180(r: i64, c: i64) -> Element {
     let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane");
     let w = crate::transducer::alphabet::Word::from_letters(&[(q, false), (q, false)]);
-    crate::transducer::element::residual::from_connection(&w, &crate::transducer::element::translator_versor(r, c), &[], &Vec::new(), [1, 0, 0, 0]).expect("a half-turn spells")
+    crate::transducer::element::residual::from_connection(&w, &crate::transducer::element::translator_versor(r, c), &[], &Vec::new(), [1, 0, 0, 0]).expect("a 180° turn spells")
 }
 
 /// A court holding the scene's family, with `words` on its docket bound to
@@ -130,9 +130,9 @@ fn an_agreement_the_scene_refutes_is_not_sealed() {
 }
 
 /// K2 — TWO CONSTRUCTIONS, ONE CONCLUSION, VERIFIED. The speaker's slide and
-/// the hearer's own half-turn are bound to one scene and change its same four
+/// the hearer's own 180° turn are bound to one scene and change its same four
 /// sites: the hearer's attestation of the slide carries the convergence, and
-/// the speaker's `Attest` is sealed on the half-turn, once. A word of the
+/// the speaker's `Attest` is sealed on the turn, once. A word of the
 /// scene the hearer did not discover, and a hearer's word with another
 /// section, converge with nothing.
 #[test]
@@ -142,17 +142,17 @@ fn two_words_with_one_section_on_the_scene_converge() {
     let them = hearer.verifying_key().to_bytes();
     // `wrong` is true on a smaller section (the two sites it changed): its
     // own, not the slide's.
-    let (mine, theirs, wrong) = (slide(0, 2), half_turn(1, 4), slide(0, 1));
+    let (mine, theirs, wrong) = (slide(0, 2), turn_180(1, 4), slide(0, 1));
     let mut court = court_with(&[(&mine, me), (&theirs, them), (&wrong, them)]);
     let before = attests(&court);
     let sealed = court.attest_agreements(&speech(me, &mine, hold(&hearer, mine.address().as_bytes())));
     let [a] = sealed.as_slice() else { panic!("one attestation, got {sealed:?}") };
-    assert_eq!(a.converged, vec![theirs.address().as_bytes().to_vec()], "the half-turn converged; the one-column slide, another section, did not");
-    assert_eq!(attests(&court), before + 2, "the hearer's Attest on the slide, the speaker's on the half-turn");
+    assert_eq!(a.converged, vec![theirs.address().as_bytes().to_vec()], "the 180° turn converged; the one-column slide, another section, did not");
+    assert_eq!(attests(&court), before + 2, "the hearer's Attest on the slide, the speaker's on the turn");
     let _ = court.attest_agreements(&speech(me, &mine, hold(&hearer, mine.address().as_bytes())));
     assert_eq!(attests(&court), before + 2, "sealed once");
 
-    // The same half-turn discovered by a third mind is not the hearer's own.
+    // The same 180° turn discovered by a third mind is not the hearer's own.
     let mut other = court_with(&[(&mine, me), (&theirs, third.verifying_key().to_bytes())]);
     let sealed = other.attest_agreements(&speech(me, &mine, hold(&hearer, mine.address().as_bytes())));
     let [a] = sealed.as_slice() else { panic!("one attestation") };
@@ -171,7 +171,7 @@ fn an_attestation_joins_the_hearer_to_the_words_claim() {
     let them = hearer.verifying_key().to_bytes();
     let e = slide(0, 2);
     let addr = e.address();
-    let bare = half_turn(1, 4);
+    let bare = turn_180(1, 4);
     let mut court = court_with(&[(&e, me), (&bare, me)]);
     let anchor = court.anchor();
     court.treasury.escrow_award(&addr, vec![me], [3, 0, 0, 1], anchor);

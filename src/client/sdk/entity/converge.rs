@@ -35,13 +35,6 @@ pub(crate) enum Evident {
     Unread,
 }
 
-impl Evident {
-    /// Whether the hearer may HOLD what it heard.
-    pub(crate) fn holds(self) -> bool {
-        matches!(self, Evident::Unbound | Evident::True)
-    }
-}
-
 /// ONE SCENE THIS MIND SPOKE WORDS ON: its family and the words, by address.
 struct SceneWords {
     family: Vec<crate::transducer::family::TrainPair>,

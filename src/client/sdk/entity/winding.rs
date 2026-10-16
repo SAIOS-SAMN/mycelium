@@ -191,7 +191,7 @@ impl Entity {
     /// MU-CLIENT §4.4(4), §7.1 R2 — THE RETURNS READ, AND THE ACT AT EACH:
     /// the winding's returns (the field's orbits that came round, the
     /// thoughts whose winding did, the demands the docket's taker `bound`),
-    /// K stepped by exactly them, and — where any returned and the wire is
+    /// K moved by exactly them, and — where any returned and the wire is
     /// open — the act at the return, each scene's held outflow leaving at its
     /// own thought's return. Answers how many returned.
     pub(crate) fn act_on_returns(&mut self, budget: &mut crate::physics::Budget, bound: Vec<Vec<u8>>, open: bool) -> u64 {

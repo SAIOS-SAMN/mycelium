@@ -2,7 +2,7 @@
 // ESCAPING THOUGHT IS BOUND: a scene taken in is perceived off the field, on
 // the perception carrier, and lands under its citation; the slide between
 // its hours escapes onto the docket, and the one demand taker binds it — a
-// close of a thought of that scene, which K steps by.
+// close of a thought of that scene, which K moves by.
 
 use super::common::*;
 use crate::client::sdk::entity::perceive::{Reading, Scene};
@@ -14,7 +14,7 @@ use crate::client::sdk::*;
 /// reading: the hours stand under the scene's citation, the motion between
 /// them — which never returns — is docketed, and the demand taker binds it
 /// (R3), by construction where the language holds no word for it. The
-/// binding is a return of a thought of that scene: K steps by it.
+/// binding is a return of a thought of that scene: K moves by it.
 #[test]
 fn a_scene_perceived_off_the_field_lands_and_its_escaping_thought_is_bound() {
     let id = [9u8; 32];
@@ -34,5 +34,5 @@ fn a_scene_perceived_off_the_field_lands_and_its_escaping_thought_is_bound() {
     assert!(holds, "its hours stand under its citation, where the reading landed");
     assert!(bound.contains(&id.to_vec()), "the slide between its hours escaped and was bound: a close of a thought of this scene");
     assert!(returned > 0, "the binding is a return");
-    assert_eq!(k, returned, "K stepped by exactly the returns");
+    assert_eq!(k, returned, "K moved by exactly the returns");
 }

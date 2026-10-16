@@ -13,8 +13,8 @@ use crate::transducer::alphabet::{LetterId, Word};
 /// reaches the carrier facing the court. Said again before its return, a
 /// sentence is the one thing held, never two. A thought of the first scene
 /// comes round by the field's own motion (`bind_a_thought`: two hours of a
-/// slide, the escaping relation bound by the drive); the winding reads that
-/// return, K steps by exactly it, and the first scene's speech is posted —
+/// slide, the escaping relation bound by the demand taker); the winding reads
+/// that return, K moves by exactly it, and the first scene's speech is posted —
 /// the second's, whose scene no thought of has returned, is still held.
 #[test]
 fn a_speech_leaves_at_its_own_thoughts_return_and_no_other() {
@@ -32,7 +32,7 @@ fn a_speech_leaves_at_its_own_thoughts_return_and_no_other() {
     assert_eq!(e.held_for_returns(), 2, "one speech held per sentence, its latest saying");
     let returned = bind_a_thought(&mut e, &one);
     assert!(returned > 0, "a thought of the first scene came round");
-    assert_eq!(e.own_k(), returned, "K stepped by exactly the returns");
+    assert_eq!(e.own_k(), returned, "K moved by exactly the returns");
     assert_eq!(e.hypha.in_flight(), 1, "the first scene's speech posted at its thought's return");
     assert_eq!(e.held_for_returns(), 1, "the second scene's still waits for a thought of its own");
 }

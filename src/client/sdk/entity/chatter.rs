@@ -49,9 +49,8 @@ enum Inflow {
     Priced(Priced),
     /// What the field UNDERSTOOD of rings another mind said (MU-CLIENT §4.9):
     /// each said ring beside the hearer's reading of it, for the carrier to
-    /// carry back; and whether its evidence lets the hearer HOLD it
-    /// (MU-CLIENT §5.5).
-    Understood { speaker: [u8; 32], said: Vec<u8>, words: Vec<(Spoken, HeardWord)>, holds: bool },
+    /// carry back; and what its evidence read on its scene (MU-CLIENT §5.5).
+    Understood { speaker: [u8; 32], said: Vec<u8>, words: Vec<(Spoken, HeardWord)>, evident: super::converge::Evident },
 }
 
 /// WHAT THE CONVERSATION HANDS THE FIELD (MU-CLIENT §4.9): the nerve
@@ -676,7 +675,7 @@ impl Entity {
             });
         }
         if let Some(chat) = self.chat.as_ref() {
-            let _ = chat.to.send(Inflow::Understood { speaker, said, words: heard, holds: evident.holds() });
+            let _ = chat.to.send(Inflow::Understood { speaker, said, words: heard, evident });
         }
     }
 
@@ -992,7 +991,7 @@ impl Carrier {
                 }
             }
             Inflow::Priced(p) => self.priced(p),
-            Inflow::Understood { speaker, said, words, holds } => self.understood(&speaker, said, words, holds),
+            Inflow::Understood { speaker, said, words, evident } => self.understood(&speaker, said, words, evident),
         }
         self.release_unmet();
         let (thoughts, unions, waiting) = (self.thoughts.len() as u64, self.union.len() as u64, self.waiting.len() as u64);
@@ -1095,9 +1094,9 @@ impl Carrier {
         // MU-CLIENT §5.5 — A WORD SPOKEN UNDER A SCENE CARRIES ITS EVIDENCE:
         // the scene's citation and the word's record, so the hearer reads
         // what it does there. A record that does not write carries none.
-        let evidence = match family.len() == 32 && super::converge::sectioned(e) {
-            true => e.to_bytes().map(|word| chatter::Evidence { scene: family.clone(), word }),
-            false => None,
+        let evidence = match (<[u8; 32]>::try_from(family.as_slice()), super::converge::sectioned(e)) {
+            (Ok(scene), true) => e.to_bytes().map(|word| chatter::Evidence { scene: scene.to_vec(), word }),
+            _ => None,
         };
         let Some(frame) = self.frame(Said::Say { said: addr.as_bytes().to_vec(), words: words.clone(), evidence }) else { return };
         self.union.insert(&addr, Union { said: e.clone(), spoken: words, acked: Keyed::new(), shared: false, at: self.k, family });
@@ -1133,15 +1132,19 @@ impl Carrier {
 
     /// WHAT THE FIELD UNDERSTOOD, CARRIED BACK: the hearing — its questions
     /// in it — said back to the speaker, and the thought kept until the
-    /// speaker acknowledges it. A thought its evidence does not let this mind
-    /// hold (MU-CLIENT §5.5) is not kept, so no HOLD answers its ACK.
-    fn understood(&mut self, speaker: &[u8; 32], said: Vec<u8>, heard: Vec<(Spoken, HeardWord)>, holds: bool) {
+    /// speaker acknowledges it. A thought its evidence refutes, or whose scene
+    /// was not read (MU-CLIENT §5.5), is not kept, so no HOLD answers its ACK.
+    fn understood(&mut self, speaker: &[u8; 32], said: Vec<u8>, heard: Vec<(Spoken, HeardWord)>, evident: super::converge::Evident) {
+        use super::converge::Evident;
         let (words, out): (Vec<Spoken>, Vec<HeardWord>) = heard.into_iter().unzip();
         let Some(frame) = self.frame(Said::Heard { said: said.clone(), words: out.clone() }) else { return };
         let mut key = speaker.to_vec();
         key.extend_from_slice(&said);
-        if holds {
-            self.thoughts.insert(&key, Thought { words: words.into_iter().zip(out).collect(), at: self.k });
+        match evident {
+            Evident::Unbound | Evident::True => {
+                self.thoughts.insert(&key, Thought { words: words.into_iter().zip(out).collect(), at: self.k });
+            }
+            Evident::Refuted | Evident::Unread => {}
         }
         if let Some(to) = chatter::peer_of(&self.dir, speaker) {
             self.send(&frame, Some(&to));

@@ -1755,7 +1755,7 @@ owed in the order it is built.
      (the docket constructed, rest where the reserve is short or nothing
      arrived, the pivots, the vent); THE RETURNS (`returns_of_stroke`: the
      field's orbits that returned, counted by `OrbitRegistry::returns`, and
-     the thoughts that came round); K stepped by exactly them
+     the thoughts that came round); K moved by exactly them
      (`close_cycle(returns)`); the act at a return; booking. The winding is
      the ground's (finding 3 fixed, §4.4(2)); the return twisted by its pull
      is read as content (§4.4(3)). Slips off the orbit are filed to the

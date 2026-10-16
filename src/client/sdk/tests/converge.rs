@@ -16,30 +16,30 @@ fn slide(r: i64, c: i64) -> Element {
     from_connection(&Word::identity(), &translator_versor(r, c), &[], &Vec::new(), [1, 0, 0, 0]).expect("a slide spells")
 }
 
-/// The half-turn of the sensor plane, carried by `(r, c)`: a compartment is
+/// The 180° turn of the sensor plane, carried by `(r, c)`: a compartment is
 /// the unit square at its site, so the square at `(i, j)` lands at
 /// `(r − 1 − i, c − 1 − j)`.
-fn half_turn(r: i64, c: i64) -> Element {
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
+fn turn_180(r: i64, c: i64) -> Element {
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
     let word = Word::from_letters(&[(q, false), (q, false)]);
-    from_connection(&word, &translator_versor(r, c), &[], &Vec::new(), [1, 0, 0, 0]).expect("a half-turn spells")
+    from_connection(&word, &translator_versor(r, c), &[], &Vec::new(), [1, 0, 0, 0]).expect("a 180° turn spells")
 }
 
 /// TWO CONSTRUCTIONS, ONE CONCLUSION. On `11·· → ··11` the slide by two
-/// columns and the half-turn about the row's middle are different vertices,
+/// columns and the 180° turn about the row's middle are different vertices,
 /// and each changes exactly the four sites of the row: the hearer that spoke
-/// the slide on the scene reads the half-turn true there and converged with
-/// its own. The slide heard back is the same vertex — one object read twice,
-/// no convergence.
+/// the slide on the scene reads the turn true there and converged with its
+/// own. The slide heard back is the same vertex — one object read twice, no
+/// convergence.
 #[test]
 fn two_different_words_with_one_section_converge() {
     let scene = [7u8; 32];
     let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
-    let (mine, theirs) = (slide(0, 2), half_turn(1, 4));
+    let (mine, theirs) = (slide(0, 2), turn_180(1, 4));
     assert!(!mine.same_vertex(&theirs), "two constructions, not one");
     let mut s = Scenes::default();
     s.hold(&scene, &family, &mine);
-    assert_eq!(s.read(&scene, &theirs, &family, [9; 32]), Evident::True, "the half-turn is true on the scene");
+    assert_eq!(s.read(&scene, &theirs, &family, [9; 32]), Evident::True, "the 180° turn is true on the scene");
     assert_eq!(s.converged.len(), 1, "and converges with the slide: one section, two orbits");
     assert_eq!(s.read(&scene, &mine, &family, [9; 32]), Evident::True);
     assert_eq!(s.converged.len(), 1, "the slide heard back is one vertex read twice: no convergence");
@@ -57,7 +57,6 @@ fn a_word_false_on_its_scene_is_refuted() {
     s.hold(&scene, &family, &slide(0, 2));
     assert_eq!(s.read(&scene, &slide(1, 0), &family, [9; 32]), Evident::Refuted);
     assert_eq!(s.read(&scene, &slide(0, 1), &family, [9; 32]), Evident::True, "true where it changed a site, on a smaller section");
-    assert!(!Evident::Refuted.holds() && !Evident::Unread.holds(), "refuted or unread, never held");
     assert!(s.converged.is_empty());
 }
 
