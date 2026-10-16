@@ -216,6 +216,14 @@ pub struct Contemplation {
     /// 78.109 C1 — the docketed demands the taker has handed out, by their
     /// entries' coordinates: each taken once (volatile).
     pub(crate) demands_taken: Keyed<()>,
+    /// MU-CLIENT §5.4 (E1), §7.1 R2 — THE SCENE EACH DEMAND WAS PERCEIVED
+    /// IN, by its residue's canonical ray: filed by the perception that filed
+    /// the demand (`demands_in_scene`, whichever reader docketed it) and
+    /// handed out with it (`take_demands`) — so its binding is a return of a
+    /// thought of that scene and what was held for the scene's return leaves,
+    /// whether or not the perceiving thought still stands. Volatile, as the
+    /// docket.
+    pub(crate) demand_scenes: Keyed<Keyed<()>>,
     /// 78.68 ROW 8 — THE RESIDUES THIS MIND HAS MADE LETTERS OF, by their
     /// canonical rays: a cell's incoherence whose residue stands here is
     /// answered by the mind's own letter and never demanded again (volatile,

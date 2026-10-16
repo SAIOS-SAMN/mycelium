@@ -466,6 +466,28 @@ fn a_slides_thought_escapes_and_is_filed_for_the_drive() {
     assert!(slides.iter().all(|d| !d.charts.is_empty()), "on the chart it stands on");
     assert!(slides.iter().all(|d| d.families == vec![b"the scene".to_vec()]), "under the scene its thoughts were perceived in");
     assert!(c.take_demands().is_empty(), "handed out once");
+
+    // MU-CLIENT §7.1 R2 — THE SCENE OUTLIVES THE THOUGHT THAT PERCEIVED IT:
+    // the perceiving thoughts lapse before the taker runs (read on the fleet
+    // 2026-10-16 08:26: thoughts 0, the speech held for 18 scenes never left),
+    // and the demand still carries the scene its motion was perceived in.
+    let mut c = Contemplation::new();
+    hour(&mut c, &[&LA[..], &LB[..]].concat());
+    hour(&mut c, &[slid(&LA, 1), slid(&LB, 1)].concat());
+    let held: Vec<Vec<u8>> = c.bubbles.scoped().map(|(k, _)| k).collect();
+    for k in held {
+        c.bubbles.remove(&k);
+    }
+    let filed = c.demand_scenes.len();
+    let taken = c.take_demands();
+    let slides: Vec<&crate::transducer::bubble::docket::TakenDemand> =
+        taken.iter().filter(|d| d.residue.as_ref().is_some_and(|r| !crate::transducer::sentence::presentation::is_still(r))).collect();
+    assert!(!slides.is_empty(), "the escaping orbit is still docketed");
+    let families: Vec<&Vec<Vec<u8>>> = slides.iter().map(|d| &d.families).collect();
+    assert!(
+        slides.iter().all(|d| d.families == vec![b"the scene".to_vec()]),
+        "under the scene it was perceived in, its thoughts gone: scenes filed under {filed} rays, the slides handed out under {families:?}"
+    );
 }
 
 /// A TURNED SCENE (78.50, 78.51 tier 2): the two Ls both turned 90° about one

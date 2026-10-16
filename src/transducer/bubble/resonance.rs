@@ -1369,7 +1369,8 @@ impl Contemplation {
             // scene of slides with no thought at all (read on the fleet
             // 2026-10-15: grounds 0, no return 17).
             // A motion the cell already docketed (an open cell's escape) is
-            // that one demand.
+            // that one demand. Either way it stands in the scene of the
+            // perception that filed it (`Contemplation::demands_in_scene`).
             Err(Ungrounded::NoReturn) if self.docketed_residue(&forward) => self.ungrounded(Ungrounded::NoReturn),
             Err(Ungrounded::NoReturn) => {
                 self.ungrounded(Ungrounded::NoReturn);

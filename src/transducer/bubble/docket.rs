@@ -100,6 +100,30 @@ impl Contemplation {
         self.docket_put(Cite::Demand { class: Box::new(class.clone()), residue, cover });
     }
 
+    /// MU-CLIENT §5.4 (E1), §7.1 R2 — EVERY DEMAND A PERCEPTION FILED STANDS
+    /// IN ITS SCENE: each entry of the docket not in `before` (the docket as
+    /// the perception found it) that carries a residue has `family` filed under
+    /// the residue's canonical ray — whichever reader filed it (a relation that
+    /// never returns, a cell's open escape, a demand vertex of the form). A
+    /// perception of no scene files nothing.
+    pub(crate) fn demands_in_scene(&mut self, before: &Keyed<()>, family: &[u8]) {
+        if family.is_empty() {
+            return;
+        }
+        let rays: Vec<crate::transducer::address::Address> = self
+            .docket
+            .scoped()
+            .filter(|(k, _)| !before.contains(k))
+            .filter_map(|(_, c)| match c {
+                Cite::Demand { residue: Some(r), .. } => r.key(),
+                _ => None,
+            })
+            .collect();
+        for ray in rays {
+            self.demand_scenes.nested_insert(ray.as_bytes(), family, ());
+        }
+    }
+
     /// Whether a demand on the plan already carries `residue` (projectively),
     /// in either direction: one motion is one demand, however many readers
     /// met it and whichever way each read it.
@@ -118,11 +142,12 @@ impl Contemplation {
     /// the charts of its cover. The entry stays on the plan; only a discharge
     /// answers it (R1).
     ///
-    /// MU-CLIENT §5.4 (E1), §7.1 R2 — AND THE SCENES IT STANDS IN: read off
-    /// the cover, the families of the thoughts standing on its charts
-    /// (`by_chart`), never stored beside the entry (law 12) — so what binds
-    /// it is spoken under the scene its evidence is in, and its binding is a
-    /// return of a thought of that scene.
+    /// MU-CLIENT §5.4 (E1), §7.1 R2 — AND THE SCENES IT STANDS IN: the scene
+    /// its motion was perceived in, filed when it was perceived
+    /// (`demand_scenes` — the perceiving thought may have lapsed since), and
+    /// the families of the thoughts standing on its cover's charts now
+    /// (`by_chart`) — so what binds it is spoken under the scene its evidence
+    /// is in, and its binding is a return of a thought of that scene.
     pub(crate) fn take_demands(&mut self) -> Vec<TakenDemand> {
         let mut out = Vec::new();
         for (k, c) in self.docket_open.scoped().chain(self.docket.scoped()) {
@@ -137,6 +162,16 @@ impl Contemplation {
                 .filter_map(|key| crate::transducer::stalk::Invariant::from_key(key))
                 .collect();
             let mut families: Keyed<()> = Keyed::new();
+            // The scene its motion was perceived in, filed then, in either
+            // direction it was read (`demand_in_scene_of`).
+            let rays = residue.iter().flat_map(|r| [r.key(), r.reverse().key()]).flatten();
+            for ray in rays {
+                if let Some(scenes) = self.demand_scenes.get(ray.as_bytes()) {
+                    for (f, ()) in scenes.scoped() {
+                        families.insert(&f, ());
+                    }
+                }
+            }
             for chart in cover.iter().flatten() {
                 for (id, _) in self.by_chart.link(chart) {
                     let family = Contemplation::ordinal_of_key(&id).and_then(|o| self.address_at(o)).and_then(|a| self.bubbles.get(a)).map(|b| b.family.clone());

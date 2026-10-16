@@ -86,14 +86,23 @@ impl Contemplation {
         budget: &mut crate::physics::Budget,
     ) -> Option<crate::transducer::address::Address> {
         let heard = f.heard.clone();
-        let key = self.hold_form_inner(f, train, remainders, escrow, budget, super::resonance::spores_of(frames), family)?;
-        // 78.112 H7b — the torsion hearing its rings wound, on its vertex,
-        // until the mind lets the perception go and it unwinds.
-        if let Some(w) = &heard {
-            self.complex.wind(key.as_bytes(), w);
+        // The docket as it stood before this perception: what the hold adds
+        // to it stands in this perception's scene.
+        let mut before: Keyed<()> = Keyed::new();
+        for (k, _) in self.docket.scoped() {
+            before.insert(&k, ());
         }
-        self.perceive_cells(key.as_bytes(), budget);
-        Some(key)
+        let key = self.hold_form_inner(f, train, remainders, escrow, budget, super::resonance::spores_of(frames), family);
+        if let Some(key) = &key {
+            // 78.112 H7b — the torsion hearing its rings wound, on its vertex,
+            // until the mind lets the perception go and it unwinds.
+            if let Some(w) = &heard {
+                self.complex.wind(key.as_bytes(), w);
+            }
+            self.perceive_cells(key.as_bytes(), budget);
+        }
+        self.demands_in_scene(&before, family);
+        key
     }
 
     #[expect(clippy::too_many_arguments, reason = "78.56 III — the family rides with the spores it scopes")]
