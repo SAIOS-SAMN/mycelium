@@ -19,23 +19,24 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## Phase 1 remediated against its spec (2026-10-16)
-Phase 2's second release (d4d84196) closed b's replication wedge and the
-fold-witness storm, but no mind spoke: eight of nine at K 0. The operator
-ruled the scope (MU-CLIENT §7.1 "Phase 1 remediated against its spec"):
-R0 the orbits seen live — RELEASED 23:31 and 23:42 (bfdd375e, 563ecee6:
-`mycelium-client --call now|thoughts|field|held|scenes|questions|perception`,
-no restart to read a mind). Read with it: every winding carrier sat inside
-one long law (a task's hours, comprehension, hearings priced); no thought had
-a ground; 24–46 sayings waited on returns that never came; `perception`
-named why — scene motions 20, grounds filed 0, NO RETURN 17: slides never
-return, and the build dropped them (squaring). R1–R6 WRITTEN, not witnessed:
-the perception carrier (long laws off the field, admitted in a brief hold),
-held outflow keyed by the scene whose thought returns, the drive binding
-escaping orbits (a binding is a close; deliberation by lift/drag; the vortex
-carried round on new perception), intake paced by the metabolism, rest that
-dwells, the conversation's own court carrier. Witness owed: minds' K moving
-by bindings, courts hearing speech at those returns, then Phase 2's pays.
+## Phase 1 remediated, cleaned, and real convergence (2026-10-16)
+R0 (bfdd375e, 563ecee6) and R1–R6 (f3a8d15b) released 01:23: the minds wind
+(K to 307), bind escaping orbits, the courts hear speech; pays 0 bar one
+sentence gluing; offers with no eligible witness 26/16/16. The operator
+found secondary machinery; CLEANED (0823ea4e): escaping orbits are docket
+demands, one carrier type (`hypha::Carrier<S>`), `drive.rs` and the
+conversation's own court thread gone. REAL CONVERGENCE (the operator:
+"seperate algorithmic constructions reach the same conclusion"; "no theatre
+when we have mathematics") — two words, not one vertex, with the same
+`word_local` section on one scene. V1–V4 (client: SAY carries evidence,
+wire v6; scenes held per mind; a hearer HOLDs only a word true on its scene;
+the `convergence` call) and K1–K2 (court: an attestation only on a word true
+on its bound scene; the convergence sealed as the speaker's Attest on the
+attesting mind's word) WRITTEN, gated, NOT witnessed (MU-CLIENT §5.5). K3
+owed the operator's ruling: convergence as the 47.3 second vantage, or a
+share. Then C1–C9 (C5 dropped): intake by hours, Stood/Ratified into the
+genome, shed by K not windings, speak only what is true of the scene,
+fetch/syllabus on deferral, escrow returned, POWC and comprehension traces.
 
 ## Read on the fleet 2026-10-15 (before the Phase 2 relaunch)
 Hypha b wedged: running 04d9981c (before 78.166 2a), it refused its fold as

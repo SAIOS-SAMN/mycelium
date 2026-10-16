@@ -8,6 +8,7 @@ pub mod boot;
 pub mod callus;
 pub mod chatter;
 pub mod contract;
+pub mod converge;
 pub mod court;
 pub mod family;
 pub mod feed;

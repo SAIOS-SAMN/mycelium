@@ -677,6 +677,10 @@ pub struct Entity {
     /// its meaning or it stands an aperture cycle unanswered. The mind's,
     /// never its conversation's carrier's.
     pub(crate) questions: crate::network::nerve::Keyed<super::entity::chatter::Question>,
+    /// MU-CLIENT §5.5 — THE SCENES THIS MIND SPOKE WORDS ON, what a heard
+    /// word is read against, and the convergences found there
+    /// (`entity::converge`).
+    pub(crate) scenes: super::entity::converge::Scenes,
 }
 
 /// A cited form owed to a court, with the citer that waits on it and the

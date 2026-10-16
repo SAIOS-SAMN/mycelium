@@ -14,7 +14,8 @@ use crate::client::sdk::*;
 use crate::observe::live;
 
 /// The calls the mind answers, as `calls` lists them.
-const CALLS: [(&str, &str); 9] = [
+const CALLS: [(&str, &str); 10] = [
+    ("convergence", "scenes this mind spoke words on, heard words' evidence read (true, refuted, unread), and each convergence: another mind's word and this mind's, different vertices, one section"),
     ("perception", "what perception's cells did: circuits, cells, thoughts, hours, the consolidation gate, grounds filed and refused by name"),
     ("now", "where the winding carrier stands, the reserve, the court's pace, what the mind holds"),
     ("thoughts [from N]", "every held thought by ordinal: its scene, ℓ, hours, winding m, returns, next hour, twist, slips, vortex, escrow"),
@@ -81,6 +82,7 @@ impl Entity {
             ["held"] => self.read_held(),
             ["scenes"] => self.read_scenes(),
             ["questions"] => self.read_questions(),
+            ["convergence"] => self.read_convergence(),
             ["calls"] => CALLS.iter().map(|(c, what)| format!("{c:<18} {what}")).collect(),
             _ => {
                 let mut out = vec![format!("no call `{line}`; the calls:")];
@@ -299,6 +301,18 @@ impl Entity {
         out.push(format!("unheard words {}", self.unheard.len()));
         out.extend(self.unheard.scoped().map(|(a, (_, fam))| format!("  word {} under scene {}", tail(&a, 4), tail(fam, 4))));
         out.push(format!("owed {} · contracted {}", self.owed.len(), self.contracted.len()));
+        out
+    }
+
+    fn read_convergence(&self) -> Vec<String> {
+        let s = &self.scenes;
+        let (scenes, words) = s.held();
+        let mut out = vec![
+            format!("scenes spoken on {scenes} · words held there {words}"),
+            format!("heard words' evidence: true {} · refuted {} · unread {}", s.read[0], s.read[1], s.read[2]),
+            format!("convergences {}", s.converged.len()),
+        ];
+        out.extend(s.converged.scoped().map(|(k, by)| format!("  {} · heard from {}", tail(&k, 12), tail(by, 4))));
         out
     }
 

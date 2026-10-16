@@ -37,10 +37,14 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         Err(_) => return,
     };
     let short = |b: &[u8]| b.iter().take(4).map(|x| format!("{x:02x}")).collect::<String>();
-    for (word, by, deviation) in &attested {
-        mycelium::observe::note_agreement(&act.voice, by, deviation);
-        let lanes: Vec<String> = deviation.iter().map(|d| d.to_string()).collect();
-        eprintln!("  agreed: word {}… spoken by {}… attested by {}… deviation S:G:T:H {}", short(word), short(&act.voice), short(by), lanes.join(":"));
+    for a in &attested {
+        mycelium::observe::note_agreement(&act.voice, &a.by, &a.deviation);
+        let lanes: Vec<String> = a.deviation.iter().map(|d| d.to_string()).collect();
+        eprintln!("  agreed: word {}… spoken by {}… attested by {}… deviation S:G:T:H {}", short(&a.word), short(&act.voice), short(&a.by), lanes.join(":"));
+        // MU-CLIENT §5.5 — two constructions, one section, verified here.
+        for w in &a.converged {
+            eprintln!("  converged: word {}… of {}… and word {}… of {}… close one section on their scene", short(&a.word), short(&act.voice), short(w), short(&a.by));
+        }
     }
     let body = match heard {
         Ok(adjudicated) => match dialogue::encode_speech_reply(&adjudicated) {

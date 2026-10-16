@@ -43,6 +43,8 @@ impl Entity {
         // it again — a citer of a sealed address waits at every court.
         self.epigenome.drop_dialect(addr.as_bytes());
         self.owed_tries.remove(addr.as_bytes());
+        // MU-CLIENT §5.5 — refused, it is no word of this mind's on any scene.
+        self.scenes.forget(addr.as_bytes());
         let Some(mut form) = crate::transducer::sentence::from_element_form(spoken) else {
             return self.quiescent(spoken, train, budget);
         };

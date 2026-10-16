@@ -252,8 +252,9 @@ impl Entity {
 
     /// RINGS ANOTHER MIND SAID, posted to the perception carrier to be read
     /// off the field (MU-CLIENT §4.9, §7.1 R1) with what the mind remembers
-    /// hearing as it stands, and understood where the reading lands.
-    pub(crate) fn perceive_hearing(&mut self, speaker: [u8; 32], said: Vec<u8>, words: Vec<crate::client::sdk::chatter::Spoken>) {
+    /// hearing as it stands, and understood where the reading lands, with
+    /// what their evidence read on their scene (MU-CLIENT §5.5).
+    pub(crate) fn perceive_hearing(&mut self, speaker: [u8; 32], said: Vec<u8>, words: Vec<crate::client::sdk::chatter::Spoken>, evident: super::converge::Evident) {
         let (mut field, from) = crate::transducer::mind::scratch_here();
         let mut remembered = self.remembered.clone();
         super::hypha::post(
@@ -270,7 +271,7 @@ impl Entity {
                     let mut budget = me.physics.stroke();
                     let _ = crate::transducer::mind::admit(a, &mut budget);
                 }
-                me.understand_read(speaker, said, reads, before);
+                me.understand_read(speaker, said, reads, before, evident);
             },
         );
     }

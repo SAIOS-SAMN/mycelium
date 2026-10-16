@@ -104,6 +104,8 @@ impl Entity {
     /// The utterance receipt of a word that left the dialect leaves both
     /// indices with it (S12.6a): by address, and in its vertex stratum.
     pub(crate) fn forget_utterance(&mut self, addr: &[u8]) {
+        // MU-CLIENT §5.5 — and the scenes it was spoken under let it go.
+        self.scenes.forget(addr);
         let Some(word) = self.taught_up.remove(addr) else {
             return;
         };
@@ -326,6 +328,12 @@ impl Entity {
         task: &[u8],
         heard: impl FnOnce(&mut Entity, io::Result<Vec<u8>>) + 'static,
     ) {
+        // MU-CLIENT §5.5 — every word with a section spoken under a scene is
+        // held there, what a word another mind says of that scene is read
+        // against; a word a court sealed is not this mind's to speak.
+        for e in sentences.iter().filter(|e| self.sealed.get(&e.address()).is_none()) {
+            self.scenes.hold(task, train, e);
+        }
         match self.post_speech(sentences, task) {
             Ok(Posted::Heard(codes)) => heard(self, Ok(codes)),
             // MU-CLIENT §4.4(4) — STOOD NOW, SAID AT THE RETURN: the words

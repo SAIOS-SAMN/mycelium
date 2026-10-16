@@ -1460,6 +1460,37 @@ conversation and adjudication, and each mind holds it by re-derivation,
 never by transmission (78.31, 78.95). Each step is a winding: the mind's,
 the conversation's, the court's, and the mind's again.
 
+**Real convergence (the operator 2026-10-16: "converence would be seperate
+algorithmic constructions reach the same conclusion :: or different orbits
+reaching the same conclusion").** Agreement on one word read twice is one
+object, not convergence; 47.3's `same_vertex` is one object re-derived twice,
+not convergence. Convergence is two words `W_A`, `W_B` that are NOT one vertex,
+each decompressed onto one scene `F` by its own letters
+(`family::local::word_local`, the reader every word is paid by, W), whose
+sections are the same pair by pair — neither closes a site beyond the other
+(`Local::beyond`) — and neither says anything false. Built:
+
+- **V1** — a SAY of a word with a section spoken under a scene carries its
+  EVIDENCE: the scene's citation and the word's record (`chatter::Evidence`,
+  wire `mycelium chatter v6`).
+- **V2** — each mind holds the words it spoke under each scene with the
+  scene's family (`entity::converge::Scenes`), while the utterance stands;
+  shed or sealed, it leaves.
+- **V3** — the hearer reads the heard word on its scene (held, or pulled by
+  its citation, the act a seat pulls a task by): an empty section REFUTES it
+  and an unread scene leaves it unread — neither is HELD, so no agreement on
+  a word the evidence does not carry. A true word beside one of the hearer's
+  own on the scene, another vertex with the same section, is a convergence.
+- **V4** — the observer call `convergence`: scenes and words held, evidence
+  read (true, refuted, unread), each convergence.
+- **K1** — the court seals an attestation only on a word true on the scene
+  it is bound to, read on its own copy of the family (`attest_agreements`).
+- **K2** — where the attesting mind discovered a word bound to the same
+  scene, another vertex with the same section, the court seals the
+  speaker's `Attest` on it, once: the convergence, on the ledger.
+- **K3 — OWED, the operator's ruling**: whether a verified convergence is
+  the second vantage an install waits on (47.3), or is paid a share.
+
 ### 5.6 POW++: the proof of the work
 
 A mind's pure-mathematical results are paid by their kind (74, 78.33,

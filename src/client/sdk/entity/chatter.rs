@@ -49,8 +49,9 @@ enum Inflow {
     Priced(Priced),
     /// What the field UNDERSTOOD of rings another mind said (MU-CLIENT §4.9):
     /// each said ring beside the hearer's reading of it, for the carrier to
-    /// carry back.
-    Understood { speaker: [u8; 32], said: Vec<u8>, words: Vec<(Spoken, HeardWord)> },
+    /// carry back; and whether its evidence lets the hearer HOLD it
+    /// (MU-CLIENT §5.5).
+    Understood { speaker: [u8; 32], said: Vec<u8>, words: Vec<(Spoken, HeardWord)>, holds: bool },
 }
 
 /// WHAT THE CONVERSATION HANDS THE FIELD (MU-CLIENT §4.9): the nerve
@@ -58,7 +59,7 @@ enum Inflow {
 /// answer to a question among them), to be understood; a thought both minds
 /// read, to be priced.
 pub(crate) enum FieldWork {
-    Hear { speaker: [u8; 32], said: Vec<u8>, words: Vec<Spoken> },
+    Hear { speaker: [u8; 32], said: Vec<u8>, words: Vec<Spoken>, evidence: Option<chatter::Evidence> },
     Price(Pricing),
     /// MU-CLIENT §5.1, §7.1 R6 — what the conversation carries to the court
     /// (agreed language with the hearer's HOLD, or a letter unmet), framed:
@@ -451,8 +452,9 @@ impl Entity {
             match w {
                 // MU-CLIENT §7.1 R1 — the rings are read off the field, on
                 // the perception carrier; what they read is understood where
-                // it lands (`understand_read`).
-                FieldWork::Hear { speaker, said, words } => self.perceive_hearing(speaker, said, words),
+                // it lands (`understand_read`). MU-CLIENT §5.5 — a word's
+                // evidence is read on its scene first (`converge`).
+                FieldWork::Hear { speaker, said, words, evidence } => self.hear_with_evidence(speaker, said, words, evidence),
                 FieldWork::Price(p) => self.price(p),
                 // Agreed language is counted where the court's answer lands.
                 FieldWork::Speak { body, agreed } => self.ask(
@@ -605,7 +607,11 @@ impl Entity {
     /// MU-CLIENT §7.1 R1 — each ring is composed and read as a word and as a
     /// sound on the perception carrier, off the field (`read_rings`); what it
     /// read is understood here, where it lands.
-    pub(crate) fn understand_read(&mut self, speaker: [u8; 32], said: Vec<u8>, reads: Vec<RingRead>, before: Option<usize>) {
+    ///
+    /// MU-CLIENT §5.5 — `evident` is what the word's evidence read on its
+    /// scene: a word refuted there, or a scene not read, is understood and
+    /// never HELD.
+    pub(crate) fn understand_read(&mut self, speaker: [u8; 32], said: Vec<u8>, reads: Vec<RingRead>, before: Option<usize>, evident: super::converge::Evident) {
         use crate::transducer::sentence::hearing::Seat;
         let mut key = speaker.to_vec();
         key.extend_from_slice(&said);
@@ -670,7 +676,7 @@ impl Entity {
             });
         }
         if let Some(chat) = self.chat.as_ref() {
-            let _ = chat.to.send(Inflow::Understood { speaker, said, words: heard });
+            let _ = chat.to.send(Inflow::Understood { speaker, said, words: heard, holds: evident.holds() });
         }
     }
 
@@ -986,7 +992,7 @@ impl Carrier {
                 }
             }
             Inflow::Priced(p) => self.priced(p),
-            Inflow::Understood { speaker, said, words } => self.understood(&speaker, said, words),
+            Inflow::Understood { speaker, said, words, holds } => self.understood(&speaker, said, words, holds),
         }
         self.release_unmet();
         let (thoughts, unions, waiting) = (self.thoughts.len() as u64, self.union.len() as u64, self.waiting.len() as u64);
@@ -1086,7 +1092,14 @@ impl Carrier {
         if words.is_empty() {
             return;
         }
-        let Some(frame) = self.frame(Said::Say { said: addr.as_bytes().to_vec(), words: words.clone() }) else { return };
+        // MU-CLIENT §5.5 — A WORD SPOKEN UNDER A SCENE CARRIES ITS EVIDENCE:
+        // the scene's citation and the word's record, so the hearer reads
+        // what it does there. A record that does not write carries none.
+        let evidence = match family.len() == 32 && super::converge::sectioned(e) {
+            true => e.to_bytes().map(|word| chatter::Evidence { scene: family.clone(), word }),
+            false => None,
+        };
+        let Some(frame) = self.frame(Said::Say { said: addr.as_bytes().to_vec(), words: words.clone(), evidence }) else { return };
         self.union.insert(&addr, Union { said: e.clone(), spoken: words, acked: Keyed::new(), shared: false, at: self.k, family });
         self.said.insert(&addr, ());
         self.send(&frame, None);
@@ -1101,7 +1114,7 @@ impl Carrier {
             return;
         }
         match c.said {
-            Said::Say { said, words } => self.hear_said(&c.speaker, said, &words),
+            Said::Say { said, words, evidence } => self.hear_said(&c.speaker, said, &words, evidence),
             Said::Heard { said, words } => self.heard_back(&c.speaker, &said, &words),
             Said::Ack { said, words } => self.acknowledged(&c.speaker, &said, &words),
             Said::Hold { said, words, .. } => self.held_back(&c.speaker, &said, &words, f),
@@ -1113,20 +1126,23 @@ impl Carrier {
     /// — go to the mind's field, which understands them against what it
     /// knows (`Entity::understand`), and the understanding comes back to be
     /// carried (`understood`).
-    fn hear_said(&mut self, speaker: &[u8; 32], said: Vec<u8>, words: &[Spoken]) {
+    fn hear_said(&mut self, speaker: &[u8; 32], said: Vec<u8>, words: &[Spoken], evidence: Option<chatter::Evidence>) {
         crate::observe::note_mind(|m| m.heard += 1);
-        let _ = self.field.send(FieldWork::Hear { speaker: *speaker, said, words: words.to_vec() });
+        let _ = self.field.send(FieldWork::Hear { speaker: *speaker, said, words: words.to_vec(), evidence });
     }
 
-    /// WHAT THE FIELD UNDERSTOOD, CARRIED BACK: the thought kept until the
-    /// speaker acknowledges it, and the hearing — its questions in it — said
-    /// back to the speaker.
-    fn understood(&mut self, speaker: &[u8; 32], said: Vec<u8>, heard: Vec<(Spoken, HeardWord)>) {
+    /// WHAT THE FIELD UNDERSTOOD, CARRIED BACK: the hearing — its questions
+    /// in it — said back to the speaker, and the thought kept until the
+    /// speaker acknowledges it. A thought its evidence does not let this mind
+    /// hold (MU-CLIENT §5.5) is not kept, so no HOLD answers its ACK.
+    fn understood(&mut self, speaker: &[u8; 32], said: Vec<u8>, heard: Vec<(Spoken, HeardWord)>, holds: bool) {
         let (words, out): (Vec<Spoken>, Vec<HeardWord>) = heard.into_iter().unzip();
         let Some(frame) = self.frame(Said::Heard { said: said.clone(), words: out.clone() }) else { return };
         let mut key = speaker.to_vec();
         key.extend_from_slice(&said);
-        self.thoughts.insert(&key, Thought { words: words.into_iter().zip(out).collect(), at: self.k });
+        if holds {
+            self.thoughts.insert(&key, Thought { words: words.into_iter().zip(out).collect(), at: self.k });
+        }
         if let Some(to) = chatter::peer_of(&self.dir, speaker) {
             self.send(&frame, Some(&to));
         }
@@ -1179,7 +1195,7 @@ impl Carrier {
             };
             let question = question_key(said, &h.vertex);
             if let (Some(frame), Some(to)) =
-                (self.frame(Said::Say { said: question.clone(), words: factors.clone() }), chatter::peer_of(&self.dir, who))
+                (self.frame(Said::Say { said: question.clone(), words: factors.clone(), evidence: None }), chatter::peer_of(&self.dir, who))
             {
                 self.send(&frame, Some(&to));
                 self.answered.insert(&question, (factors, self.k));

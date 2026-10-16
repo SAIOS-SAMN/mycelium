@@ -10,6 +10,7 @@ mod comprehension;
 mod contact;
 mod contract;
 mod conversation;
+mod converge;
 mod demand;
 mod flux;
 mod glue;

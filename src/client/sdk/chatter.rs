@@ -3,14 +3,17 @@
 // none of it and judges none of it.
 //
 //! THE WIRE. A frame is `[0x43][sub u8][speaker 32][point: 0 | 1 TPoint
-//! 84][fields][sig 64]`, the signature ed25519 over `"mycelium chatter v5" ‖
+//! 84][fields][sig 64]`, the signature ed25519 over `"mycelium chatter v6" ‖
 //! sub ‖ speaker ‖ point ‖ fields`. Sub-kinds:
 //! - SAY `[said: len u16, bytes][count u16]` then per ring `[vertex: len u16,
 //!   bytes][motion Mv][gauge: count u8, (from, to)…][terms: count u16,
 //!   (word Mv, transport Mv)…][vantage: count u16, Mv…]`: what this mind
 //!   said, each ring by its whole Cl(4,1) motion, its hue map, its terms and
 //!   the vantage it reads it from — the mathematics a hearer re-derives,
-//!   never a tape it would compare;
+//!   never a tape it would compare; then its EVIDENCE `[0 | 1 scene: len
+//!   u16, bytes][word: len u16, bytes]`: for a word spoken under a scene,
+//!   the scene's citation and the word's record, so the hearer reads what
+//!   the word does on that scene (MU-CLIENT §5.5, real convergence);
 //! - HEARD `[said: len u16, bytes][count u16]` then per word `[vertex: len
 //!   u16, bytes][derived: 0 | 1 Mv][gauge: count u8, (from, to)…][cites
 //!   count u16]` and per citation `[form: len u16, bytes][vertex: len u16,
@@ -48,7 +51,7 @@ pub const SAY: u8 = 0;
 pub const HEARD: u8 = 1;
 pub const ACK: u8 = 2;
 pub const HOLD: u8 = 3;
-const SIGNED: &[u8] = b"mycelium chatter v5";
+const SIGNED: &[u8] = b"mycelium chatter v6";
 
 /// ONE RING SAID (MU-CLIENT §4.9, 78.31): an utterance that returns — its
 /// coordinate in the speaker's form, its holonomy `Ω` (the ring's whole
@@ -105,12 +108,24 @@ pub struct AckWord {
     pub hue: Option<Vec<(u8, u8)>>,
 }
 
+/// MU-CLIENT §5.5 — A WORD'S EVIDENCE: the citation of the scene it was
+/// spoken under and the word's own record, so the hearer decompresses the
+/// word onto that scene (`family::local::word_local`) and reads what it does
+/// there — the effect two different constructions converge on, never the
+/// word's bytes.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Evidence {
+    pub scene: Vec<u8>,
+    pub word: Vec<u8>,
+}
+
 /// WHAT A FRAME SAYS.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[expect(clippy::large_enum_variant, reason = "a frame is decoded, read once and dropped; the hold's exact strain per lane is its content, not a field to box away")]
 pub enum Said {
-    /// What the speaker stood (`said`, its address), word by word.
-    Say { said: Vec<u8>, words: Vec<Spoken> },
+    /// What the speaker stood (`said`, its address), word by word, and its
+    /// evidence where it is a word spoken under a scene.
+    Say { said: Vec<u8>, words: Vec<Spoken>, evidence: Option<Evidence> },
     /// What the hearer re-derived of something said, word by word.
     Heard { said: Vec<u8>, words: Vec<HeardWord> },
     /// 78.163 — the speaker's reading of every loop the hearer's thought closed.
@@ -296,7 +311,7 @@ impl Chatter {
             None => out.push(0),
         }
         match &self.said {
-            Said::Say { said, words } => {
+            Said::Say { said, words, evidence } => {
                 put_short(&mut out, said)?;
                 put_count(&mut out, words.len())?;
                 for w in words {
@@ -309,6 +324,14 @@ impl Chatter {
                         transport.to_bytes(&mut out);
                     }
                     put_mvs(&mut out, &w.vantage)?;
+                }
+                match evidence {
+                    Some(e) => {
+                        out.push(1);
+                        put_short(&mut out, &e.scene)?;
+                        put_short(&mut out, &e.word)?;
+                    }
+                    None => out.push(0),
                 }
             }
             Said::Ack { said, words } | Said::Hold { said, words, .. } => {
@@ -416,7 +439,14 @@ impl Chatter {
                     let vantage = take_mvs(body, &mut p)?;
                     words.push(Spoken { vertex, motion, gauge, terms, vantage });
                 }
-                Said::Say { said, words }
+                let flag = *body.get(p)?;
+                p += 1;
+                let evidence = match flag {
+                    0 => None,
+                    1 => Some(Evidence { scene: take_short(body, &mut p)?, word: take_short(body, &mut p)? }),
+                    _ => return None,
+                };
+                Said::Say { said, words, evidence }
             }
             k @ (ACK | HOLD) => {
                 let said = take_short(body, &mut p)?;
@@ -645,7 +675,9 @@ mod tests {
                     terms: vec![(one.clone(), one.clone()), (one.clone(), one.clone())],
                     vantage: vec![one.clone()],
                 }],
+                evidence: Some(Evidence { scene: vec![3; 32], word: vec![8; 50] }),
             },
+            Said::Say { said: vec![1], words: vec![], evidence: None },
             Said::Heard {
                 said: vec![6; 10],
                 words: vec![
@@ -683,7 +715,7 @@ mod tests {
             assert_eq!(Chatter::open(&forged), None, "a changed byte does not verify");
         }
         // Signed by another key than the speaker it names: refused at signing.
-        let c = Chatter { speaker, point: None, said: Said::Say { said: vec![], words: vec![] } };
+        let c = Chatter { speaker, point: None, said: Said::Say { said: vec![], words: vec![], evidence: None } };
         assert_eq!(c.sign(&key(8)), None);
     }
 
@@ -731,7 +763,7 @@ mod tests {
         .expect("listen");
         assert_eq!(ask(post.addr(), b"?").expect("answered"), b"!", "a question is answered on its own connection");
         let k = key(3);
-        let c = Chatter { speaker: k.verifying_key().to_bytes(), point: None, said: Said::Say { said: vec![9; 100], words: vec![] } };
+        let c = Chatter { speaker: k.verifying_key().to_bytes(), point: None, said: Said::Say { said: vec![9; 100], words: vec![], evidence: None } };
         send(post.addr(), &c.sign(&k).expect("signed")).expect("sent");
         let heard = rx.recv().expect("delivered");
         assert_eq!(Chatter::open(&heard), Some(c));
