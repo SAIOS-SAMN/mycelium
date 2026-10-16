@@ -136,6 +136,23 @@ assert!(
     epi.dialect.scoped().any(|(_, d)| d.withheld),
     "the dialect holds the withheld sentence"
 );
+
+// SERVED AGAIN, IT STILL WAITS AND IS NOT LEARNED AGAIN: a sync fetches the
+// stratum it stands in while its citation is missing, and the mind reads it
+// as the dialect holds it — withheld on the same address — measuring
+// nothing, with no second replay.
+let bytes = e.to_bytes().expect("the record writes");
+let mut mind = crate::client::sdk::Entity::open("127.0.0.1:1", crate::client::sdk::Kernel::named("withheld"));
+assert!(matches!(mind.absorb_taught(&bytes), Some(Comprehension::Withheld { .. })), "learned once: withheld");
+let _ = mind.take_learned_mu();
+match mind.absorb_taught(&bytes) {
+    Some(Comprehension::Withheld { missing }) => {
+        assert_eq!(missing, vec![missing_addr.as_bytes().to_vec()], "still waiting on the cited address")
+    }
+    other => panic!("expected Withheld again, got {other:?}"),
+}
+assert_eq!(mind.take_learned_mu(), [0; 4], "served again, it measures nothing");
+assert_eq!(mind.epigenome.genome_len(), 0, "and enters no genome");
 }
 
 /// Waiting-on is keyed by the missing address; the overlap face of the

@@ -476,6 +476,9 @@ impl Entity {
         // The page's words the genome does not hold, as the page carried
         // them: what is learned.
         let mut fresh: Vec<u8> = Vec::new();
+        // What the page's withheld words still wait on, as the dialect holds
+        // it.
+        let mut waiting: Vec<Vec<u8>> = Vec::new();
         while pos < taught.len() {
             let before = pos;
             let Some(e) = Element::from_bytes(taught, &mut pos) else {
@@ -498,6 +501,17 @@ impl Entity {
                 }
                 continue;
             }
+            // A WORD THE DIALECT HOLDS WITHHELD WAITS ON ITS CITATIONS, and is
+            // comprehended again when one arrives (`resolve_withheld`). Served
+            // again — every sync fetches the stratum it stands in while its
+            // citations are missing — it is the same Withheld reading, and
+            // replayed and comprehended again it held the winding in the
+            // fetch's landing for minutes (read on the fleet 2026-10-16 08:21:
+            // genome still, refused 0, the dialect up 294 in a minute).
+            if let Some(d) = self.epigenome.dialect.get(e.address().as_bytes()).filter(|d| d.withheld) {
+                waiting.extend(d.missing.iter().cloned());
+                continue;
+            }
             // STD1 — a page whose measure passes its carrier is refused whole:
             // its words arrived from the wire at any lane.
             if !crate::core::lanes::lanes_step(&mut mu, &e.magnitude()) {
@@ -509,9 +523,13 @@ impl Entity {
             }
             heard_words.push(e);
         }
-        // Every word of the page already held: heard by holding it.
+        // Nothing on the page to learn again: words held are heard by holding
+        // them, and withheld words still wait on what they cite.
         if heard_words.is_empty() {
-            return Some(Comprehension::Held);
+            return match waiting.as_slice() {
+                [] => Some(Comprehension::Held),
+                [_, ..] => Some(Comprehension::Withheld { missing: waiting }),
+            };
         }
         // THE WORDS THE PAGE TAUGHT (78.24, 78.49): a page carrying the
         // court's stamp teaches words the court admitted, and each is filed at
