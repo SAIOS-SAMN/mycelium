@@ -76,6 +76,22 @@ fn a_word_is_crystallized_at_the_courts_stamp_and_only_there() {
     let (_, refused) = unruled.genome_bytes();
     assert_eq!(refused.unstamped, 1, "and not crystallized: no court admitted it");
 
+    // A COURT THAT RESTARTED SERVES ITS SYLLABUS AGAIN: the booted mind holds
+    // the word at its address, so the page is heard by holding it — nothing
+    // learned, measured or admitted again, and the word keeps the stamp it
+    // was admitted at (`file_admitted`).
+    let again = crate::chronometry::Stamp::new(9, [3; 32], crate::chronometry::Place { k: 4, i: 1 });
+    let _ = booted.take_learned_mu();
+    let mut budget = booted.stroke();
+    assert_eq!(booted.absorb_taught_at(&bytes, Some(again), &mut budget), Some(Comprehension::Held), "a held word re-served is heard by holding it");
+    assert_eq!(booted.take_learned_mu(), [0; 4], "the page brought nothing the mind did not hold");
+    assert_eq!(booted.epigenome.genome_len(), 1, "nothing admitted again");
+    assert_eq!(booted.epigenome.admitted_at(word.address().as_bytes()), Some(court), "a word admitted once keeps its stamp");
+    let mut fresh = Entity::open("127.0.0.1:1", Kernel::named("learned-word"));
+    let mut budget = fresh.stroke();
+    let _ = fresh.absorb_taught_at(&bytes, Some(court), &mut budget);
+    assert_ne!(fresh.take_learned_mu(), [0; 4], "a word not held measures what it brought");
+
     let mut ledgered = genome.clone();
     ledgered[..4].copy_from_slice(b"GEN6");
     let mut refused_boot = Entity::open("127.0.0.1:1", Kernel::named("learned-word"));

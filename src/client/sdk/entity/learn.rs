@@ -473,6 +473,9 @@ impl Entity {
         // one act and its measure is what it brought.
         let mut mu = [0u64; 4];
         let mut heard_words = Vec::new();
+        // The page's words the genome does not hold, as the page carried
+        // them: what is learned.
+        let mut fresh: Vec<u8> = Vec::new();
         while pos < taught.len() {
             let before = pos;
             let Some(e) = Element::from_bytes(taught, &mut pos) else {
@@ -481,13 +484,34 @@ impl Entity {
             if pos == before {
                 break;
             }
+            // A WORD THE GENOME HOLDS AT ITS ADDRESS IS ALREADY LEARNED (law
+            // 6: the address is the word's content). Served again — a court
+            // that restarted serves its syllabus from the start — it brings
+            // only the court's stamp, filed below; replayed, comprehended and
+            // pivoted again, every restart re-learned the mind's whole
+            // language, a page per landing, and held the winding for minutes
+            // (read on the fleet 2026-10-16 07:38: every mind in
+            // `pull_syllabus`'s landing).
+            if self.epigenome.holds(e.address().as_bytes()) {
+                if let Some(at) = at {
+                    self.epigenome.file_admitted(&e.address(), at);
+                }
+                continue;
+            }
             // STD1 — a page whose measure passes its carrier is refused whole:
             // its words arrived from the wire at any lane.
             if !crate::core::lanes::lanes_step(&mut mu, &e.magnitude()) {
                 eprintln!("  page refused: its measure passes a lane's carrier");
                 return None;
             }
+            if let Some(slice) = taught.get(before..pos) {
+                fresh.extend_from_slice(slice);
+            }
             heard_words.push(e);
+        }
+        // Every word of the page already held: heard by holding it.
+        if heard_words.is_empty() {
+            return Some(Comprehension::Held);
         }
         // THE WORDS THE PAGE TAUGHT (78.24, 78.49): a page carrying the
         // court's stamp teaches words the court admitted, and each is filed at
@@ -508,7 +532,7 @@ impl Entity {
         // 78.49: a page LEARNED is an act of this mind, learned at its own K.
         let k = self.act();
         // The caller's stroke (65.5): the page is learned inside its act.
-        let heard = self.epigenome.learn_at(taught, k, self.now_tu(), budget);
+        let heard = self.epigenome.learn_at(&fresh, k, self.now_tu(), budget);
         // 24.3: a page learned is a mode of the stroke's outcome, measured
         // by what the page brought; a page refused on replay measures
         // nothing. The stroke takes the measure once.
