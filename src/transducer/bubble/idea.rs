@@ -279,18 +279,6 @@ pub struct Bubble {
     pub slips: Vec<(Vec<u8>, crate::transducer::cga::Mv)>,
 }
 
-/// MU-CLIENT §4.12, §7.1 R3 — AN ESCAPING THOUGHT: an admitted relation
-/// whose orbit never returns, its generator (the step that carries the
-/// perception onto its neighbour), the chart it stands on and the scene it
-/// was perceived in. The drive binds it — by what the language already
-/// holds, or by construction — and the binding is its close.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Escaping {
-    pub generator: crate::transducer::cga::Mv,
-    pub chart: Vec<u8>,
-    pub family: Vec<u8>,
-}
-
 /// 78.52(6) Stage C — A GROUND HELD: the ground, the chart its hours stand on,
 /// and every hour it has seen. Its WINDING is `hours % period` (an hour past
 /// a return is hour 0 again) and its returns `hours / period` (MU-CLIENT

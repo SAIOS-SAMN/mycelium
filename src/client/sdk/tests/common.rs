@@ -81,10 +81,11 @@ pub fn two_hours_of_a_slide() -> [(crate::arc::Grid, crate::arc::Grid); 2] {
 /// FIELD'S OWN MOTION, and the winding acts at it. Two hours of the scene
 /// (`two_hours_of_a_slide`) are perceived and held under it; the relation
 /// between them carries every body and never returns — a slide — so it
-/// ESCAPES, and the drive binds it, here by the word the mind knows for it;
-/// the binding is the thought's close. The winding reads its returns
-/// (`act_on_returns`) and acts — what was held for the scene's return, and
-/// for the mind's own, leaves. Answers how many returned.
+/// ESCAPES onto the docket, and the one demand taker binds it, here by the
+/// word the mind knows for it; the binding is the thought's close. The
+/// winding reads its returns (`act_on_returns`) and acts — what was held for
+/// the scene's return, and for the mind's own, leaves. Answers how many
+/// returned.
 pub fn bind_a_thought(mind: &mut crate::client::sdk::Entity, scene: &[u8]) -> u64 {
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
     let mut field = std::mem::take(&mut mind.field);
@@ -95,12 +96,22 @@ pub fn bind_a_thought(mind: &mut crate::client::sdk::Entity, scene: &[u8]) -> u6
             let f = scene_form_on(&NoCrystal, &mut b, &x, &y, &frames).expect("the hour reads");
             mind.contemplation.hold_perceived(f, &frames, &Vec::new(), &[], [0; 4], scene, &mut b).expect("held");
         }
-        let escaping: Vec<crate::transducer::cga::Mv> = mind.contemplation.escaping.scoped().map(|(_, e)| e.generator.clone()).collect();
-        assert!(!escaping.is_empty(), "the slide's thought escaped, filed for the drive");
-        for g in &escaping {
+        // The mind knows the motions its docket holds, so their binding is a
+        // word it knows and says nothing new.
+        let docketed: Vec<crate::transducer::cga::Mv> = mind
+            .contemplation
+            .docket_cites()
+            .into_iter()
+            .filter_map(|c| match c {
+                crate::chronometry::Cite::Demand { residue, .. } => residue,
+                _ => None,
+            })
+            .collect();
+        assert!(!docketed.is_empty(), "the slide's thought escaped onto the docket");
+        for g in &docketed {
             crate::transducer::sentence::rung::learn_by(g, &[]);
         }
-        let bound = mind.drive(&mut b);
+        let bound = mind.take_demands(&mut b);
         mind.act_on_returns(&mut b, bound, true)
     });
     mind.field = field;

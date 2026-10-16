@@ -132,21 +132,21 @@ impl Entity {
                 c.closed_thoughts,
                 c.thought_returns
             ),
-            format!(
-                "drive: escaping now {} · escaped {} · bound {} · dissipated {} · deliberated aligned {} orthogonal {} both {} · separated {} · perception carrier {}",
-                c.escaping.len(),
-                c.escaped,
-                c.bound,
-                c.dissipated,
-                c.deliberated[0],
-                c.deliberated[1],
-                c.deliberated[2],
-                c.separated,
-                match self.board.perceiver.as_ref() {
-                    Some(p) => format!("scenes {} solves {}", p.scenes, p.judging),
-                    None => "not opened".to_string(),
-                }
-            ),
+            {
+                let d = c.docket_reading();
+                format!(
+                    "docket: pending {} · open {} · answered {} · lapsed {} · demands taken {} · perception carrier {}",
+                    d.pending,
+                    d.open,
+                    d.answered,
+                    d.lapsed,
+                    c.demands_taken.len(),
+                    match self.board.perceiver.as_ref() {
+                        Some(p) => format!("in flight {} (scenes and solves {})", p.in_flight(), self.board.scenes_perceiving),
+                        None => "not opened".to_string(),
+                    }
+                )
+            },
             format!(
                 "held for returns {} over {} scenes · scenes waiting {} · unheard words {} · unread solves {} · owed {} · contracted {} · questions {}",
                 self.held_for_returns(),

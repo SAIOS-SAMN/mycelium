@@ -251,20 +251,6 @@ pub struct Contemplation {
     /// An admission refused because the bubble's ordinal would pass its u16
     /// is counted here too (STD1 3c-5; the slot itself is AT1's debt).
     pub(crate) overflowed: u64,
-    /// MU-CLIENT §4.12, §7.1 R3 — THE ESCAPING THOUGHTS: each admitted
-    /// relation whose orbit never returns (a slide, a boost — a ring of
-    /// infinite order), by the pair it relates, for the drive to bind. Never
-    /// dropped and never made to return (squaring, 78.168 §2). Volatile.
-    pub(crate) escaping: Keyed<super::idea::Escaping>,
-    /// What the drive did with them since the contemplation began: bound,
-    /// dissipated unbound, and the neighbouring pairs it read against each
-    /// other (aligned, orthogonal, both — MU-CLIENT §4.12 deliberation) and
-    /// the separating dimensions it held.
-    pub(crate) escaped: u64,
-    pub(crate) bound: u64,
-    pub(crate) dissipated: u64,
-    pub(crate) deliberated: [u64; 3],
-    pub(crate) separated: u64,
     /// MU-CLIENT §4.8, §7.1 R3 — the symmetries a vortex carried round on a
     /// new perception left when it collapsed (the candidates the perception
     /// did not carry), with the chart, for the mind to adjoin as its letters

@@ -34,6 +34,14 @@ pub struct DocketReading {
     pub lapsed: u64,
 }
 
+/// 78.109 C1 — ONE DEMAND HANDED OUT: its residue, the charts of its cover,
+/// and the scenes of the thoughts standing on them (`take_demands`).
+pub(crate) struct TakenDemand {
+    pub(crate) residue: Option<crate::transducer::cga::Mv>,
+    pub(crate) charts: Vec<crate::transducer::stalk::Invariant>,
+    pub(crate) families: Vec<Vec<u8>>,
+}
+
 /// An entry's own coordinates, its key in the docket.
 fn entry_key(c: &Cite) -> Option<Vec<u8>> {
     let mut k = Vec::new();
@@ -92,13 +100,30 @@ impl Contemplation {
         self.docket_put(Cite::Demand { class: Box::new(class.clone()), residue, cover });
     }
 
+    /// Whether a demand on the plan already carries `residue` (projectively),
+    /// in either direction: one motion is one demand, however many readers
+    /// met it and whichever way each read it.
+    pub(crate) fn docketed_residue(&self, residue: &crate::transducer::cga::Mv) -> bool {
+        let back = residue.reverse();
+        self.docket_open.scoped().chain(self.docket.scoped()).any(|(_, c)| match c {
+            Cite::Demand { residue: Some(r), .. } => r.projective_eq(residue) || r.projective_eq(&back),
+            _ => false,
+        })
+    }
+
     /// 78.109 C1 — THE DEMAND TAKER (CV4/SP2, VN1: "only a discharge answered
     /// a docketed Demand"). Each demand on the plan — this orbit's and the
     /// open questions — handed out ONCE, by its entry's coordinates: its
     /// residue (the coordinate its constructors are derived from, 78.47) and
     /// the charts of its cover. The entry stays on the plan; only a discharge
     /// answers it (R1).
-    pub(crate) fn take_demands(&mut self) -> Vec<(Option<crate::transducer::cga::Mv>, Vec<crate::transducer::stalk::Invariant>)> {
+    ///
+    /// MU-CLIENT §5.4 (E1), §7.1 R2 — AND THE SCENES IT STANDS IN: read off
+    /// the cover, the families of the thoughts standing on its charts
+    /// (`by_chart`), never stored beside the entry (law 12) — so what binds
+    /// it is spoken under the scene its evidence is in, and its binding is a
+    /// return of a thought of that scene.
+    pub(crate) fn take_demands(&mut self) -> Vec<TakenDemand> {
         let mut out = Vec::new();
         for (k, c) in self.docket_open.scoped().chain(self.docket.scoped()) {
             let Cite::Demand { residue, cover, .. } = &c else { continue };
@@ -106,12 +131,22 @@ impl Contemplation {
                 continue;
             }
             self.demands_taken.insert(&k, ());
-            let charts = cover
+            let charts: Vec<crate::transducer::stalk::Invariant> = cover
                 .iter()
                 .flatten()
                 .filter_map(|key| crate::transducer::stalk::Invariant::from_key(key))
                 .collect();
-            out.push((residue.clone(), charts));
+            let mut families: Keyed<()> = Keyed::new();
+            for chart in cover.iter().flatten() {
+                for (id, _) in self.by_chart.link(chart) {
+                    let family = Contemplation::ordinal_of_key(&id).and_then(|o| self.address_at(o)).and_then(|a| self.bubbles.get(a)).map(|b| b.family.clone());
+                    if let Some(f) = family.filter(|f| !f.is_empty()) {
+                        families.insert(&f, ());
+                    }
+                }
+            }
+            let families = families.scoped().map(|(f, _)| f).collect();
+            out.push(TakenDemand { residue: residue.clone(), charts, families });
         }
         out
     }

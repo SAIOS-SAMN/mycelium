@@ -7,10 +7,15 @@ impl Entity {
     /// PULL a signed work envelope from the hypha's authoritative registry —
     /// the client never arbitrates raw corpus; the server decides what is
     /// useful work. One pull is in flight at a time; the envelope lands on
-    /// the board for the tick to think (`task_inflow`), none where the book
-    /// is settled.
+    /// the board to be taken in (`task_inflow`), none where the book is
+    /// settled. MU-CLIENT §4.12, ruling 3 — THE METABOLISM ASKS: only where
+    /// nothing waits to be taken in or is being perceived, and the reserve
+    /// stands regenerated on every lane.
     pub(crate) fn pull_task(&mut self) {
-        if self.board.court.pulling {
+        if self.board.court.pulling || self.board.court.task.is_some() || self.perceiving() {
+            return;
+        }
+        if !crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty() {
             return;
         }
         self.board.court.pulling = true;

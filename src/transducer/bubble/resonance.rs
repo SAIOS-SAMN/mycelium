@@ -1362,19 +1362,25 @@ impl Contemplation {
             }
             // MU-CLIENT §4.12 — A RELATION THAT NEVER RETURNS IS AN ESCAPING
             // ORBIT, NEVER NOTHING: no ground (it has no period to wind), and
-            // it is filed for the drive to bind, under the scene it was
-            // perceived in. Demanding it return would be squaring (78.168
-            // §2); dropping it left every scene of slides with no thought at
-            // all (read on the fleet 2026-10-15: grounds 0, no return 17).
+            // it is DOCKETED as the demand it is — its class, the chart it
+            // stands on as its cover, its motion the residue — for the demand
+            // taker to bind (`take_demands`, the one taker). Demanding it
+            // return would be squaring (78.168 §2); dropping it left every
+            // scene of slides with no thought at all (read on the fleet
+            // 2026-10-15: grounds 0, no return 17).
+            // A motion the cell already docketed (an open cell's escape) is
+            // that one demand.
+            Err(Ungrounded::NoReturn) if self.docketed_residue(&forward) => self.ungrounded(Ungrounded::NoReturn),
             Err(Ungrounded::NoReturn) => {
                 self.ungrounded(Ungrounded::NoReturn);
-                let family = match self.bubbles.get(key) {
-                    Some(b) => b.family.clone(),
-                    None => Vec::new(),
-                };
-                let escaping = super::idea::Escaping { generator: forward, chart: first.chart.clone(), family };
-                self.escaping.insert(pair_key(key, other), escaping);
-                self.escaped += 1;
+                let class = halves(&forward).and_then(|(r, c)| sentence::ClassVector::of_rotor(&r, c, sentence::CycleType::Identity));
+                match (class, stalk::Invariant::from_key(&first.chart)) {
+                    (Some(k), Some(chart)) => {
+                        self.docket_demand(&k, &[chart], Some(&forward));
+                        self.resonance.demanded += 1;
+                    }
+                    _ => self.resonance.undemanded += 1,
+                }
             }
             Err(why) => self.ungrounded(why),
         }

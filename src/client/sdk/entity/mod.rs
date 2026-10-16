@@ -9,7 +9,6 @@ pub mod callus;
 pub mod chatter;
 pub mod contract;
 pub mod court;
-pub mod drive;
 pub mod family;
 pub mod feed;
 pub mod hypha;

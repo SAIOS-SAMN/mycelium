@@ -7,9 +7,10 @@
 //! perspectives (`ascertain_on`), the tests spoken through it, a solve's
 //! home replay: each reads the mind's LANGUAGE as it stood when the scene
 //! was taken (a snapshot of the epigenome) and moves a SCRATCH of the mind's
-//! field (`MindField::scratch`), so the winding carrier and every other
-//! carrier go on while it runs. What it reads comes back as one landing; the
-//! winding carrier admits it where it lands (`take_perceived`): the scratch's
+//! field (`mind::scratch_here`), so the winding carrier and every other
+//! carrier go on while it runs. The carrier is the mind's one carrier type
+//! (`hypha::Carrier`, as the court's and the seat's are): what it reads lands
+//! as an answer does, and the winding admits it (`take_perceived`): the scratch's
 //! flux, lanes, taught words, lexicon and covers land on the field
 //! (`mind::admit`), the hours and withheld pairs are held under the scene's
 //! citation, the rule's speech is spoken, and a rule its perspectives know
@@ -22,7 +23,6 @@
 
 use crate::client::sdk::*;
 use crate::transducer::sentence::SentenceRule;
-use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Arc;
 
 use super::family::{Ascertained, Chain, PairPercept};
@@ -90,83 +90,9 @@ pub(crate) enum Verdict {
     Kept,
 }
 
-/// RINGS ANOTHER MIND SAID, to be read off the field: who said them, what
-/// was said, the rings, and what the mind remembered hearing when they
-/// arrived.
-struct Hearing {
-    speaker: [u8; 32],
-    said: Vec<u8>,
-    words: Vec<crate::client::sdk::chatter::Spoken>,
-    remembered: super::chatter::Remembered,
-}
-
-enum Job {
-    Scene(Box<Scene>, Arc<Epigenome>, Box<crate::transducer::mind::MindField>, [[u64; 4]; 4]),
-    Judge(Box<Judge>, Arc<Epigenome>),
-    Hear(Box<Hearing>, Box<crate::transducer::mind::MindField>, [[u64; 4]; 4]),
-}
-
-enum Landed {
-    Scene(Box<Perceived>),
-    Judged(Box<(Judge, Verdict)>),
-    Heard(Box<Heard>),
-}
-
-/// RINGS READ OFF THE FIELD, landed: who said them, what was said, each
-/// ring's reading, and the scratch's admission.
-type Heard = ([u8; 32], Vec<u8>, Vec<super::chatter::RingRead>, Option<crate::transducer::mind::Admission>);
-
-/// THE FIELD'S END OF THE PERCEPTION CARRIER: where scenes are posted, where
-/// what was read lands, and what is in flight.
-pub(crate) struct Perceiver {
-    to: Sender<Job>,
-    from: Receiver<Landed>,
-    /// Scenes, solves and hearings posted and not yet admitted.
-    pub(crate) scenes: usize,
-    pub(crate) judging: usize,
-    pub(crate) hearings: usize,
-}
-
-impl Perceiver {
-    /// THE CARRIER OPENED on its own thread, waking the field through
-    /// `wake` where each reading lands.
-    fn open(wake: Sender<()>) -> Perceiver {
-        let (to, jobs) = channel::<Job>();
-        let (back, from) = channel::<Landed>();
-        let _ = std::thread::Builder::new().name("perception".into()).spawn(move || {
-            let mut memo = crate::transducer::family::ExtractMemo::default();
-            for job in jobs {
-                let landed = match job {
-                    Job::Scene(scene, language, mut field, from) => {
-                        crate::observe::live::enter_carrier("perception", "a scene perceived off the field");
-                        let read = field.think(|| perceive(&mut memo, &language, *scene));
-                        crate::observe::live::enter_carrier("perception", "waiting for a scene");
-                        let admission = field.into_admission(&from);
-                        Landed::Scene(Box::new(Perceived { admission, ..read }))
-                    }
-                    Job::Judge(judge, language) => {
-                        crate::observe::live::enter_carrier("perception", "a solve read before it is sent");
-                        let verdict = judge_on(&language, &judge);
-                        crate::observe::live::enter_carrier("perception", "waiting for a scene");
-                        Landed::Judged(Box::new((*judge, verdict)))
-                    }
-                    Job::Hear(mut h, mut field, from) => {
-                        crate::observe::live::enter_carrier("perception", "rings another mind said, read off the field");
-                        let words = std::mem::take(&mut h.words);
-                        let reads = field.think(|| super::chatter::read_rings(&mut h.remembered, words));
-                        crate::observe::live::enter_carrier("perception", "waiting for a scene");
-                        Landed::Heard(Box::new((h.speaker, std::mem::take(&mut h.said), reads, field.into_admission(&from))))
-                    }
-                };
-                if back.send(landed).is_err() {
-                    return;
-                }
-                let _ = wake.send(());
-            }
-        });
-        Perceiver { to, from, scenes: 0, judging: 0, hearings: 0 }
-    }
-}
+/// THE PERCEPTION CARRIER: the mind's carrier type (`hypha::Carrier`) over
+/// the extraction memo it keeps between scenes.
+pub(crate) type Perceiver = super::hypha::Carrier<crate::transducer::family::ExtractMemo>;
 
 /// THE SCENE READ ON THE CARRIER, in its scratch field, on the language
 /// given — every law the old pipeline ran on the field, run here.
@@ -280,10 +206,13 @@ pub(crate) fn judge_on(epi: &Epigenome, j: &Judge) -> Verdict {
 }
 
 impl Entity {
-    /// The perception carrier, opened where the mind first takes a scene.
+    /// The perception carrier, opened where the mind first takes a scene; it
+    /// wakes the resting field through the hypha's own waker.
     fn perceiver(&mut self) -> &mut Perceiver {
         let wake = self.hypha.waker();
-        self.board.perceiver.get_or_insert_with(|| Perceiver::open(wake))
+        self.board
+            .perceiver
+            .get_or_insert_with(|| super::hypha::Carrier::open("perception", crate::transducer::family::ExtractMemo::default(), wake, |_| {}, |_| {}))
     }
 
     /// The mind's language as it stands, for a carrier to read off the
@@ -292,59 +221,91 @@ impl Entity {
         Arc::new(self.epigenome.clone())
     }
 
-    /// Whether the perception carrier holds a scene or a solve not yet
-    /// admitted.
+    /// Whether a scene or a solve is on the perception carrier, not yet
+    /// admitted: one at a time (a hearing does not hold a scene back).
     pub(crate) fn perceiving(&self) -> bool {
-        self.board.perceiver.as_ref().is_some_and(|p| p.scenes + p.judging > 0)
+        self.board.scenes_perceiving > 0
     }
 
     /// TAKE A SCENE IN: posted to the perception carrier with the language
-    /// and a scratch of the field as they stand. Called from inside the
-    /// mind's own field (the winding's stroke), where the field stands in the
-    /// thread's slots — the scratch is read from there.
+    /// and a scratch of the field as they stand — the field stands in the
+    /// thread's slots during a winding, and the scratch is taken of it there
+    /// — and admitted where its reading lands (`admit_scene`).
     pub(crate) fn perceive_scene(&mut self, scene: Scene) {
         let language = self.language();
-        // The field stands in the thread's slots during a stroke: the
-        // scratch is taken of it there, put back as it was.
-        let (scratch, from) = crate::transducer::mind::scratch_here();
-        let p = self.perceiver();
-        if p.to.send(Job::Scene(Box::new(scene), language, Box::new(scratch), from)).is_ok() {
-            p.scenes += 1;
-        }
+        let (mut field, from) = crate::transducer::mind::scratch_here();
+        self.board.scenes_perceiving += 1;
+        super::hypha::post(
+            self.perceiver(),
+            move |memo| {
+                crate::observe::live::enter_carrier("perception", "a scene perceived off the field");
+                let read = field.think(|| perceive(memo, &language, scene));
+                crate::observe::live::enter_carrier("perception", "waiting for a scene");
+                Perceived { admission: field.into_admission(&from), ..read }
+            },
+            |me, read| {
+                me.scene_landed();
+                me.admit_scene(read);
+            },
+        );
     }
 
     /// RINGS ANOTHER MIND SAID, posted to the perception carrier to be read
-    /// off the field (MU-CLIENT §4.9, §7.1 R1), with what the mind remembers
-    /// hearing as it stands.
+    /// off the field (MU-CLIENT §4.9, §7.1 R1) with what the mind remembers
+    /// hearing as it stands, and understood where the reading lands.
     pub(crate) fn perceive_hearing(&mut self, speaker: [u8; 32], said: Vec<u8>, words: Vec<crate::client::sdk::chatter::Spoken>) {
-        let (scratch, from) = crate::transducer::mind::scratch_here();
-        let remembered = self.remembered.clone();
-        let p = self.perceiver();
-        if p.to.send(Job::Hear(Box::new(Hearing { speaker, said, words, remembered }), Box::new(scratch), from)).is_ok() {
-            p.hearings += 1;
-        }
+        let (mut field, from) = crate::transducer::mind::scratch_here();
+        let mut remembered = self.remembered.clone();
+        super::hypha::post(
+            self.perceiver(),
+            move |_| {
+                crate::observe::live::enter_carrier("perception", "rings another mind said, read off the field");
+                let reads = field.think(|| super::chatter::read_rings(&mut remembered, words));
+                crate::observe::live::enter_carrier("perception", "waiting for a scene");
+                (reads, field.into_admission(&from))
+            },
+            move |me, (reads, admission)| {
+                let before = crate::transducer::sentence::rung::lexicon();
+                if let Some(a) = admission {
+                    let mut budget = me.physics.stroke();
+                    let _ = crate::transducer::mind::admit(a, &mut budget);
+                }
+                me.understand_read(speaker, said, reads, before);
+            },
+        );
     }
 
     /// A SOLVE TO BE READ BEFORE IT IS SENT, posted to the perception
-    /// carrier.
+    /// carrier and admitted where its verdict lands.
     fn judge_solve(&mut self, judge: Judge) {
         let language = self.language();
-        let p = self.perceiver();
-        if p.to.send(Job::Judge(Box::new(judge), language)).is_ok() {
-            p.judging += 1;
+        self.board.scenes_perceiving += 1;
+        super::hypha::post(
+            self.perceiver(),
+            move |_| {
+                crate::observe::live::enter_carrier("perception", "a solve read before it is sent");
+                let verdict = judge_on(&language, &judge);
+                crate::observe::live::enter_carrier("perception", "waiting for a scene");
+                (judge, verdict)
+            },
+            |me, (judge, verdict)| {
+                me.scene_landed();
+                me.admit_verdict(judge, verdict);
+            },
+        );
+    }
+
+    /// A scene or a solve landed off the perception carrier.
+    fn scene_landed(&mut self) {
+        if let Some(n) = self.board.scenes_perceiving.checked_sub(1) {
+            self.board.scenes_perceiving = n;
         }
     }
 
-    /// WHAT THE PERCEPTION CARRIER READ, ADMITTED where it lands — each
-    /// reading in the order it was taken.
+    /// WHAT THE PERCEPTION CARRIER READ, ADMITTED where it lands, in the
+    /// order it was taken.
     pub(crate) fn take_perceived(&mut self) {
-        let landed: Vec<Landed> = match self.board.perceiver.as_ref() {
-            Some(p) => p.from.try_iter().collect(),
-            None => return,
-        };
-        for l in landed {
-            self.admit_landed(l);
-        }
+        super::hypha::take_from(self, |e| e.board.perceiver.as_mut());
     }
 
     /// Every scene, solve and hearing posted to the perception carrier,
@@ -353,50 +314,13 @@ impl Entity {
     #[cfg(test)]
     pub(crate) fn settle_perception(&mut self) {
         loop {
-            let landed = match self.board.perceiver.as_ref() {
-                Some(p) if p.scenes + p.judging + p.hearings > 0 => p.from.recv().ok(),
-                _ => None,
+            let before = match self.board.perceiver.as_ref() {
+                Some(p) if p.in_flight() > 0 => p.in_flight(),
+                _ => return,
             };
-            match landed {
-                Some(l) => self.admit_landed(l),
-                None => return,
-            }
-        }
-    }
-
-    /// ONE READING ADMITTED where it landed.
-    fn admit_landed(&mut self, l: Landed) {
-        match l {
-            Landed::Scene(p) => {
-                if let Some(c) = self.board.perceiver.as_mut() {
-                    if let Some(n) = c.scenes.checked_sub(1) {
-                        c.scenes = n;
-                    }
-                }
-                self.admit_scene(*p);
-            }
-            Landed::Judged(judged) => {
-                let (j, v) = *judged;
-                if let Some(c) = self.board.perceiver.as_mut() {
-                    if let Some(n) = c.judging.checked_sub(1) {
-                        c.judging = n;
-                    }
-                }
-                self.admit_verdict(j, v);
-            }
-            Landed::Heard(heard) => {
-                let (speaker, said, reads, admission) = *heard;
-                if let Some(c) = self.board.perceiver.as_mut() {
-                    if let Some(n) = c.hearings.checked_sub(1) {
-                        c.hearings = n;
-                    }
-                }
-                let before = crate::transducer::sentence::rung::lexicon();
-                if let Some(a) = admission {
-                    let mut budget = self.physics.stroke();
-                    let _ = crate::transducer::mind::admit(a, &mut budget);
-                }
-                self.understand_read(speaker, said, reads, before);
+            self.take_perceived();
+            if self.board.perceiver.as_ref().is_some_and(|p| p.in_flight() == before) {
+                self.hypha.wait_landing();
             }
         }
     }
@@ -468,14 +392,10 @@ impl Entity {
         match v {
             Verdict::Send(rule) => {
                 let refused = self.solve_refused.get(&id).is_some_and(|a| a == rule.address().as_bytes());
-                match refused || self.submit_solve_rule(&id, &j.outputs, &rule).is_err() {
-                    true => self.await_scene(j.scene),
-                    // §7.1 Phase 1 item 4 — a solve emitted by comprehension
-                    // where a rule its perspectives know BINDS the scene's
-                    // thought: that binding is the thought's close, read at
-                    // the next winding's returns, where what was held for the
-                    // scene — this solve among it — leaves (R2).
-                    false => self.board.bound_by_rule.push(j.scene.id),
+                // Submitted, it is held for the return of a thought of its
+                // scene (R2) and leaves there.
+                if refused || self.submit_solve_rule(&id, &j.outputs, &rule).is_err() {
+                    self.await_scene(j.scene);
                 }
             }
             Verdict::Construct(residue, chart) => {

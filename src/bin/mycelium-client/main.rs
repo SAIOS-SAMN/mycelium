@@ -186,10 +186,7 @@ fn main() {
         // X6 — a winding that moved nothing and returned nothing admitted
         // nothing: it draws nothing and rests until a carrier lands something
         // or the measured transport's park passes, never spinning a core.
-        // MU-CLIENT §4.12, §7.1 R5 — and where a lane ran short the mind
-        // RESTS: it dwells while the metabolism regenerates, its other
-        // carriers landing perception meanwhile, then continues its orbits.
-        if (wound.moved == [false; 4] && wound.returns == 0) || wound.short {
+        if wound.moved == [false; 4] && wound.returns == 0 {
             mind.rest();
         }
     }

@@ -9,8 +9,9 @@
 //! and a peer slow to answer never stops the field. It TRANSDUCES only
 //! (MU-CLIENT §4.9): what arrives goes to the field as `FieldWork::Hear`, and
 //! what the field understood comes back to be said; the carrier holds no
-//! vocabulary and no memory of what was heard — both are the mind's. It keeps
-//! its own link to the court, for agreed language only.
+//! vocabulary and no memory of what was heard — both are the mind's. Agreed
+//! language goes to the court through the field, on the mind's own hypha
+//! carrier (`FieldWork::Speak`).
 //!
 //! THE PROTOCOL. A thing said is its RINGS. The hearer's field reads each
 //! twice, apart: as a SOUND against what the mind remembers hearing, and as a
@@ -59,6 +60,10 @@ enum Inflow {
 pub(crate) enum FieldWork {
     Hear { speaker: [u8; 32], said: Vec<u8>, words: Vec<Spoken> },
     Price(Pricing),
+    /// MU-CLIENT §5.1, §7.1 R6 — what the conversation carries to the court
+    /// (agreed language with the hearer's HOLD, or a letter unmet), framed:
+    /// the field posts it on the mind's own hypha carrier, never waited on.
+    Speak { body: Vec<u8>, agreed: bool },
 }
 
 /// ONE QUESTION THIS MIND ASKED (MU-CLIENT §5.3): the ring it did not know,
@@ -170,9 +175,6 @@ struct Carrier {
     voice: [u8; 32],
     key: ed25519_dalek::SigningKey,
     dir: std::path::PathBuf,
-    /// R6 — the conversation's court carrier: what it carries to the court
-    /// is posted there (the speech, and whether it carries an agreement).
-    court: Sender<(Vec<u8>, bool)>,
     k: u64,
     point: Option<TPoint>,
     union: Keyed<Union>,
@@ -392,28 +394,10 @@ impl Entity {
         #[cfg(test)]
         let agreed = std::sync::Arc::new(std::sync::Mutex::new(Keyed::new()));
         let (field, pricing) = channel::<FieldWork>();
-        // MU-CLIENT §5.1, §7.1 R6 — THE CONVERSATION'S COURT CARRIER: its own
-        // link to the court on its own thread, so agreed language and an
-        // unmet letter are posted and the conversation goes on; agreed
-        // language is counted where the court's answer lands.
-        let (court, speeches) = channel::<(Vec<u8>, bool)>();
-        let mut session = Session::open(self.hypha.addr(), self.hypha.kernel().clone());
-        std::thread::Builder::new().name("conversation-court".into()).spawn(move || {
-            session.discover();
-            for (body, agreed) in speeches {
-                crate::observe::live::enter_carrier("conversation's court", "speech posted to the court");
-                let heard = session.speak_nerve(body).ok().and_then(|reply| dialogue::decode_speech_reply(&reply)).is_some();
-                if heard && agreed {
-                    crate::observe::note_mind(|m| m.agreed += 1);
-                }
-                crate::observe::live::enter_carrier("conversation's court", "waiting for speech");
-            }
-        })?;
         let mut carrier = Carrier {
             voice,
             key,
             dir: dir.to_path_buf(),
-            court,
             k: self.own_k(),
             point: self.hypha.tuniversal(),
             union: Keyed::new(),
@@ -470,6 +454,15 @@ impl Entity {
                 // it lands (`understand_read`).
                 FieldWork::Hear { speaker, said, words } => self.perceive_hearing(speaker, said, words),
                 FieldWork::Price(p) => self.price(p),
+                // Agreed language is counted where the court's answer lands.
+                FieldWork::Speak { body, agreed } => self.ask(
+                    move |s| s.speak_nerve(body).ok().and_then(|reply| dialogue::decode_speech_reply(&reply)).is_some(),
+                    move |_, heard| {
+                        if heard && agreed {
+                            crate::observe::note_mind(|m| m.agreed += 1);
+                        }
+                    },
+                ),
             }
         }
     }
@@ -1266,11 +1259,11 @@ impl Carrier {
 
     /// SPEAK TO THE COURT what the conversation carries there: an agreed
     /// thing with the hearer's signed HOLD, or a letter that waited its
-    /// cycle unmet with none. MU-CLIENT §5.1, §7.1 R6 — POSTED on the
-    /// conversation's court carrier, never waited on: a court slow to answer
-    /// holds that carrier and never the conversation. The court's reply is
-    /// its own; the sentence's standing returns to the mind through the
-    /// syllabus.
+    /// cycle unmet with none. MU-CLIENT §5.1, §7.1 R6 — framed here and
+    /// handed to the field, which posts it on the mind's own hypha carrier,
+    /// never waited on: a court slow to answer holds that carrier and never
+    /// the conversation. The court's reply is its own; the sentence's
+    /// standing returns to the mind through the syllabus.
     fn speak_agreed(&self, e: &Element, agreement: Option<&[u8]>, family: &[u8]) -> std::io::Result<()> {
         let Some(tape) = e.to_bytes() else {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "the sentence's record does not write"));
@@ -1287,9 +1280,9 @@ impl Carrier {
         let Some(body) = dialogue::encode_speech_spoken(&self.voice, family, tu, &spoken) else {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "the speech does not frame"));
         };
-        self.court
-            .send((body, agreement.is_some()))
-            .map_err(|_| std::io::Error::new(std::io::ErrorKind::BrokenPipe, "the conversation's court carrier is gone"))
+        self.field
+            .send(FieldWork::Speak { body, agreed: agreement.is_some() })
+            .map_err(|_| std::io::Error::new(std::io::ErrorKind::BrokenPipe, "the mind's field is gone"))
     }
 
     /// WHAT HAS STOOD AN APERTURE CYCLE of the mind's own strokes is let go:

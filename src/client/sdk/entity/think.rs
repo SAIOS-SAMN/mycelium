@@ -257,22 +257,69 @@ impl Entity {
         }
     }
 
-    /// 78.109 C1 — THE DEMAND TAKER: each demand the mind's pivot docketed
-    /// (an undischarged orbit's class with its whole residue) taken once and
-    /// constructed — the residue on the first chart of its cover — where only
-    /// a discharge answered one before (VN1).
-    pub(crate) fn take_demands(&mut self, budget: &mut crate::physics::Budget) {
-        for (residue, charts) in self.contemplation.take_demands() {
+    /// 78.109 C1, MU-CLIENT §4.12 — THE DEMAND TAKER, THE ONE BINDER OF AN
+    /// ESCAPING ORBIT: each demand the mind docketed — a pivot's undischarged
+    /// orbit, an open cell's escape, a relation that never returns — taken
+    /// once and BOUND by what the field holds (`compose_or_construct_on`:
+    /// the ruled words composed, the lexicon, a conjugate, else constructed
+    /// as the mind's own letter), on the least chart of its cover and under
+    /// each scene whose thoughts stand there (E1). A binding is the orbit's
+    /// close: answers the scenes bound, each a return of a thought of that
+    /// scene (§4.4(4)).
+    ///
+    /// DELIBERATION (§4.12) is the mutual shear of the orbits taken together:
+    /// for each pair on one chart, where their commutator is not the identity
+    /// — the lift between them (78.46: drag commutes) — the dimension that
+    /// separates them is held as content (§4.10(3)), composed or constructed
+    /// as any residue is. No vote, weight or argmin. And what a
+    /// vortex carried round on a new perception left when it collapsed — a
+    /// symmetry the mind measured (Expansion 4) — is adjoined as its letters.
+    pub(crate) fn take_demands(&mut self, budget: &mut crate::physics::Budget) -> Vec<Vec<u8>> {
+        let kept = std::mem::take(&mut self.contemplation.vortex_symmetries);
+        if !kept.is_empty() {
+            self.adjoin_letters(&kept, budget);
+        }
+        let taken = self.contemplation.take_demands();
+        let mut bound: Vec<Vec<u8>> = Vec::new();
+        let mut separating: Vec<(crate::transducer::cga::Mv, crate::transducer::stalk::Invariant, Vec<Vec<u8>>)> = Vec::new();
+        for (i, a) in taken.iter().enumerate() {
+            for b in taken.iter().skip(i + 1) {
+                let (Some(ra), Some(rb), [ca, ..], [cb, ..]) = (&a.residue, &b.residue, a.charts.as_slice(), b.charts.as_slice()) else { continue };
+                if ca != cb {
+                    continue;
+                }
+                let commutator = ra.geo(rb).geo(&ra.reverse()).geo(&rb.reverse());
+                if !crate::transducer::sentence::presentation::is_still(&commutator) {
+                    separating.push((commutator, ca.clone(), a.families.clone()));
+                }
+            }
+        }
+        for d in taken {
             // The chart its letter is filed on: the cover's least by its own
             // coordinate — content, never an arrival (rule 15).
-            let least = charts.iter().fold(None, |least: Option<&crate::transducer::stalk::Invariant>, c| match least {
+            let least = d.charts.iter().fold(None, |least: Option<&crate::transducer::stalk::Invariant>, c| match least {
                 Some(l) if l.key() <= c.key() => Some(l),
                 _ => Some(c),
             });
-            if let Some(r) = residue {
-                self.compose_or_construct(&r, least, budget);
+            let Some(r) = d.residue else { continue };
+            let scenes: Vec<Vec<u8>> = match d.families.is_empty() {
+                true => vec![Vec::new()],
+                false => d.families,
+            };
+            for family in scenes {
+                if self.compose_or_construct_on(&r, least, &family, budget) && !bound.contains(&family) {
+                    bound.push(family);
+                }
             }
         }
+        for (c, chart, families) in separating {
+            let family = match families.as_slice() {
+                [f, ..] => f.clone(),
+                [] => Vec::new(),
+            };
+            let _ = self.compose_or_construct_on(&c, Some(&chart), &family, budget);
+        }
+        bound
     }
 
     /// MU-CLIENT §5.4, D4 — A DEMAND MET FROM THE DICTIONARY FIRST. A residue
@@ -404,9 +451,9 @@ impl Entity {
     /// on a short or idle stroke (`expand_ideas`). A mind on the fleet
     /// docketed 471 demands and took 1 (epoch 146): its reserve never fell
     /// short, so the syntropic phase that alone took them never ran.
-    pub(crate) fn take_docketed_demands(&mut self) {
+    pub(crate) fn take_docketed_demands(&mut self) -> Vec<Vec<u8>> {
         let mut budget = self.physics.stroke();
-        self.take_demands(&mut budget);
+        self.take_demands(&mut budget)
     }
 
     /// 78.52 — TRANSCRIPTION, AGAINST THIS MIND'S OWN LETTERS (78.47 (i)). A
@@ -752,8 +799,9 @@ impl Entity {
         for (e, family) in &crystallized {
             self.stand_crystallized(e, family);
         }
-        // 78.109 C1 — and what the pivot demanded is taken and constructed.
-        self.take_demands(&mut budget);
+        // 78.109 C1 — what the pivot demanded is taken by the winding's one
+        // taker after the field's motion (`take_docketed_demands`), where the
+        // scenes its bindings close are returns.
         (pivoted, circuit)
     }
 

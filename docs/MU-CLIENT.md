@@ -1006,7 +1006,8 @@ faculties speak what changed (§4.4(4), §4.9). This is the WINDING CARRIER on
 the mind's own rings: the carrier of the mind's own motion, on its own
 circuit over its field, beside the carriers facing its counterparties
 (§5.1). Written 2026-10-16 and not witnessed (§7.1 R1–R5): `entity/winding.rs`
-moves the orbits, binds the escaping ones (`entity/drive.rs`) and acts at
+moves the orbits, binds the escaping ones through the docket's one taker
+(`take_demands`) and acts at
 each thought's own return; the long laws run on the perception carrier, off
 the field (`entity/perceive.rs`). A return that comes round twisted by
 its pull is the orbit's content, said as what changed (§4.4(3)). What
@@ -1981,10 +1982,22 @@ owed in the order it is built.
   78.168 §2 refuses. R3 is therefore the heart of the remediation, not an
   addition: an escaping orbit is bound, and its binding is its close.
 
-  **R1–R6 WRITTEN 2026-10-16 — not witnessed.** As written:
-  - R1: the PERCEPTION CARRIER (`entity/perceive.rs`), a thread of its own:
-    a scene (a task, a feed family, a waiting scene read again) and a
-    hearing are read there in a scratch of the field on a snapshot of the
+  **R1–R6 WRITTEN 2026-10-16 (f3a8d15b) — not witnessed; then FOLDED ONTO
+  THE ORGANS THAT EXIST (the operator: "are you building secondary machinery
+  instead of using machinery that exists already?"; "clean it up first").**
+  The first writing built beside what was there: an escaping store and a
+  drive beside the docket and its taker, a perception thread with its own
+  job/landing protocol beside the hypha carrier's, a second court session on
+  the conversation's thread, a pacing call and a rest flag beside the pull
+  and the dwell, a list of rule-bound scenes beside the returns. Each is
+  deleted and its work done by the organ that already did it. As written
+  now:
+  - R1: the PERCEPTION CARRIER (`entity/perceive.rs`) is the mind's one
+    carrier type (`hypha::Carrier<S>`, the hypha's own post/landing/wake,
+    made generic over the state its thread holds: the court's session, the
+    seat's, the extraction memo): a scene (a task, a feed family, a waiting
+    scene read again) and a hearing are read there in a scratch of the field
+    on a snapshot of the
     language — extraction, each hour's form, the rule's speech prepared
     (`speech_of`), its perspectives (`ascertain_on`), the tests spoken
     (`tests_spoken`), a solve's home check (`judge_on`), the rings composed
@@ -1998,37 +2011,41 @@ owed in the order it is built.
   - R2: what is said is held under the scene whose thought it speaks for
     (`at_return`, keyed by scene, then by the saying's coordinates; a seat's
     call and a sceneless letter under the mind's own key) and leaves where a
-    thought of that scene returns — its ground comes round, the drive binds
-    its escaping orbit, or a known rule's solve binds it — and nowhere else;
-    the mind's own sayings leave at any return. K counts every return:
-    field orbits, thoughts come round, bindings.
-  - R3: a relation that never returns is filed ESCAPING
-    (`Contemplation::escaping`, `note_ground`); the drive (`entity/drive.rs`)
-    binds each at the winding — composed of the ruled words, known to the
-    lexicon, a conjugate, or constructed and adjoined as the mind's letter
-    (`compose_or_construct_on`, now answering whether it bound) — and an
-    orbit nothing binds dissipates. Deliberation: pairs on one chart of one
-    scene split by `lift_drag` (counted, never a vote), their commutator held
-    where it is not the identity. The vortex is carried round on each new
-    perception joining a thought: the perception's motion read against every
-    vortex at its rotor's class (`carry_vortices_round` → `collapse_on`),
-    the candidate it carries the fill, the others a symmetry adjoined.
-    A composition and a constructed letter binding a scene's orbit are
-    spoken under that scene (E1; both went under none).
+    thought of that scene returns — its ground comes round or the docket's
+    taker binds a demand standing in it — and nowhere else; the mind's own
+    sayings leave at any return. K counts every return: field orbits,
+    thoughts come round, bindings.
+  - R3: a relation that never returns is DOCKETED as the demand it is
+    (`note_ground` → `docket_demand`: its class, its chart the cover, its
+    motion the residue); the docket's one taker (`take_demands`, run once a
+    winding after the field's motion) binds each — composed of the ruled
+    words, known to the lexicon, a conjugate, or constructed and adjoined as
+    the mind's letter (`compose_or_construct_on`, answering whether it
+    bound) — under every scene whose thoughts stand on its cover (read off
+    `by_chart`, never stored), and answers the scenes bound. Deliberation:
+    among the demands taken together, a pair on one chart whose commutator
+    is not the identity has the dimension separating them held as content.
+    The vortex is carried round on each new perception joining a thought:
+    the perception's motion read against every vortex at its rotor's class
+    (`carry_vortices_round` → `collapse_on`), the candidate it carries the
+    fill, the others a symmetry the taker adjoins. A composition and a
+    constructed letter binding a scene's orbit are spoken under that scene
+    (E1; both went under none).
   - R4: a task is taken in where the metabolism carries it and perceived on
-    the carrier (`task_inflow`); the next is asked for where the reserve
-    stands regenerated and nothing waits (`ask_for_a_scene`), never by rest
-    or a return; the feed is paced the same way.
+    the carrier (`task_inflow`); the next is asked for by `pull_task`
+    itself, where the reserve stands regenerated and nothing waits, never by
+    rest or a return; the feed is paced the same way.
   - R5: rest is metabolism — where a lane runs short or nothing moved the
-    winding relaxes, and where a lane ran short the binary dwells
-    (`Wound::short`); rest asks for no scene.
-  - R6: the conversation's court speech posts on a court carrier of its own
-    (`conversation-court`); agreed language is counted where the court's
-    answer lands.
-  Guards: a slide's thought escapes, filed for the drive under its scene
-  (`bubble/tests/perception.rs`); a scene perceived off the field lands
-  under its citation and its escaping thought is bound, a return K steps by
-  (`tests/drive.rs`); a speech leaves at its own thought's return and no
+    winding relaxes; the court's dwell and the binary's park are as built;
+    rest asks for no scene.
+  - R6: the conversation's court speech is framed on the conversation's
+    thread and handed to the field (`FieldWork::Speak`), which posts it on
+    the mind's own hypha carrier; agreed language is counted where the
+    court's answer lands.
+  Guards: a slide's thought escapes onto the docket under its scene, handed
+  out once (`bubble/tests/perception.rs`); a scene perceived off the field
+  lands under its citation and its escaping thought is bound, a return K
+  steps by (`tests/perceive.rs`); a speech leaves at its own thought's return and no
   other (`tests/winding.rs`); `come_round` retired — the guards that needed a
   return take one the field produces (`bind_a_thought`: two hours of a slide,
   the escaping relation bound). Found red at HEAD and made whole (no

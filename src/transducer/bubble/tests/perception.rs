@@ -439,9 +439,10 @@ fn one_motion_carrying_every_body_is_the_scene_and_the_thought() {
 /// MU-CLIENT §4.12, §7.1 R3 — A SLIDE'S THOUGHT ESCAPES, NEVER DROPPED. The
 /// same two Ls carried one column along, seen in one scene: the motion that
 /// carries every body never returns, so it files no ground (its slot: no
-/// return) — and the thought is filed as ESCAPING, under the pair it relates,
-/// with its generator, its chart and the scene it was perceived in, for the
-/// drive to bind. Never made to return (squaring), never let go.
+/// return) — and the escaping orbit is DOCKETED as the demand it is, its
+/// motion the residue and its chart the cover, so the one demand taker
+/// hands it out under the scene its thoughts stand in. Never made to return
+/// (squaring), never let go.
 #[test]
 fn a_slides_thought_escapes_and_is_filed_for_the_drive() {
     let draw = |cells: &[(usize, usize)], shift: usize| -> Vec<String> {
@@ -458,11 +459,13 @@ fn a_slides_thought_escapes_and_is_filed_for_the_drive() {
     hour(&mut c, &[slid(&LA, 1), slid(&LB, 1)].concat());
     assert_eq!((c.resonance.scene_motions, c.resonance.grounds[0]), (1, 0), "one scene motion, no ground: {}", c.resonance.line());
     assert!(c.resonance.grounds[1] > 0, "no return: {}", c.resonance.line());
-    let filed: Vec<&crate::transducer::bubble::idea::Escaping> = c.escaping.scoped().map(|(_, e)| e).collect();
-    assert_eq!((filed.len(), c.escaped), (1, 1), "the escaping thought filed once");
-    let [e] = filed.as_slice() else { panic!("one escaping thought") };
-    assert_eq!(e.family, b"the scene".to_vec(), "under the scene it was perceived in");
-    assert!(!crate::transducer::sentence::presentation::is_still(&e.generator), "with the motion that carries it");
+    let taken = c.take_demands();
+    let slides: Vec<&crate::transducer::bubble::docket::TakenDemand> =
+        taken.iter().filter(|d| d.residue.as_ref().is_some_and(|r| !crate::transducer::sentence::presentation::is_still(r))).collect();
+    assert!(!slides.is_empty(), "the escaping orbit docketed with the motion that carries it: {}", c.resonance.line());
+    assert!(slides.iter().all(|d| !d.charts.is_empty()), "on the chart it stands on");
+    assert!(slides.iter().all(|d| d.families == vec![b"the scene".to_vec()]), "under the scene its thoughts were perceived in");
+    assert!(c.take_demands().is_empty(), "handed out once");
 }
 
 /// A TURNED SCENE (78.50, 78.51 tier 2): the two Ls both turned 90° about one

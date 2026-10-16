@@ -209,20 +209,6 @@ impl Entity {
         self.perceive_scene(super::perceive::Scene { id: id.to_vec(), train, tests, reading: super::perceive::Reading::Task });
     }
 
-    /// THE NEXT SCENE ASKED FOR, BY THE METABOLISM: where nothing waits to be
-    /// taken in or is being perceived and the reserve stands regenerated on
-    /// every lane — never because the mind rested or returned, never on a
-    /// count.
-    pub(crate) fn ask_for_a_scene(&mut self) {
-        if self.board.court.task.is_some() || self.perceiving() {
-            return;
-        }
-        if !crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty() {
-            return;
-        }
-        self.pull_task();
-    }
-
     /// AT A RETURN, ONE WAITING SCENE READ AGAIN: the least by citation after
     /// the last read. A scene none of whose thoughts still stands lapses with
     /// them; one the mind's language has not moved since its last reading is
