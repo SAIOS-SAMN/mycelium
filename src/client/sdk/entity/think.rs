@@ -204,17 +204,18 @@ impl Entity {
         lines.len()
     }
 
-    /// MU-CLIENT §4.13 — THE RESERVOIRS FEED BACK: what the field's
-    /// reservoirs hold is potential locked in `e_∅`, so the operational
-    /// reserve is the reserve less what they hold — `reserve − escrow −
-    /// reserved(e_∅)`, the escrow already drawn by the holds. Per lane: a
-    /// reservoir that grew takes the growth from the reserve, as much as the
-    /// lane holds (`Reserve::drain`; a lane spent locks what it can, and the
-    /// rest is taken at a later vent); one that fell — strain re-formed by
-    /// motion, or condensed at its eon — gives back exactly what it had
-    /// locked beyond what it still holds.
+    /// MU-CLIENT §4.13 — THE FIELD FEEDS BACK: what its reservoirs hold is
+    /// potential locked in `e_∅`, and on 𝒯 the flux its tubes hold open is
+    /// pressure the reserve does not hold (78.71 (2): the reserve falls by
+    /// the flux left open and no more), so the operational reserve is the
+    /// reserve less both — `reserve − escrow − withheld`, the escrow already
+    /// drawn by the holds (`Field::withheld`). Per lane: what grew is taken
+    /// from the reserve, as much as the lane holds (`Reserve::drain`; a lane
+    /// spent locks what it can, and the rest is taken at a later vent); what
+    /// fell — flux closed, strain re-formed by motion or condensed at its eon
+    /// — gives back exactly what it had locked beyond what still stands.
     fn lock_reservoirs(&mut self) {
-        let Ok(Some(reserved)) = crate::transducer::mind::with_field(|field| field.reserved()) else { return };
+        let Ok(Some(reserved)) = crate::transducer::mind::with_field(|field| field.withheld()) else { return };
         let locked = self.board.reservoir_locked;
         // A lane's reservoir either grew past what it locked, or fell below
         // it, or stands: the part that did not happen is exactly none.

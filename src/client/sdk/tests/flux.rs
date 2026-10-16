@@ -81,6 +81,37 @@ fn a_question_stands_as_its_residues_orbit_and_lapses_where_the_field_lets_it_go
     assert_eq!(after, 0, "dissipated at the beat after, the question lapsed");
 }
 
+/// MU-CLIENT §4.13, 78.71 (2) — THE RESERVE ON 𝒯 FALLS BY THE FLUX LEFT OPEN
+/// AND NO MORE. A slide opens its tube by 2: at the vent the reserve on 𝒯
+/// stands exactly 2 lower. The same slide again closes on the tube, nothing
+/// left open: at the next vent the 2 comes back, exactly — nothing refilled
+/// that was not taken, nothing kept that the field no longer holds open.
+#[test]
+fn the_reserve_on_t_falls_by_the_flux_left_open_and_no_more() {
+    use crate::transducer::cech::Thread;
+    use crate::transducer::family::pairing::{mark_flux, FieldLine};
+    use crate::transducer::rewrite::LANE_TEMPORAL;
+    let q = |n: i64| num_rational::BigRational::from_integer(n.into());
+    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("open flux"));
+    let mut field = std::mem::take(&mut entity.field);
+    let (before, open, closed) = field.think(|| {
+        let slide = crate::transducer::cga::translator_at(&[q(1), q(0), q(0)]);
+        let line = FieldLine { carriage: slide, gauge: Vec::new(), mass: 2, free: false, line: Thread::Free };
+        let mut budget = entity.stroke();
+        let _ = entity.vent_into_field(&mut budget);
+        let before = entity.physics.reserve.lanes()[LANE_TEMPORAL];
+        let _ = mark_flux(&[], std::slice::from_ref(&line), &mut budget);
+        let _ = entity.vent_into_field(&mut budget);
+        let open = entity.physics.reserve.lanes()[LANE_TEMPORAL];
+        let _ = mark_flux(&[], std::slice::from_ref(&line), &mut budget);
+        let _ = entity.vent_into_field(&mut budget);
+        (before, open, entity.physics.reserve.lanes()[LANE_TEMPORAL])
+    });
+    entity.field = field;
+    assert_eq!(before - open, 2, "the open flux withheld from 𝒯, exactly");
+    assert_eq!(closed, before, "closed, it comes back exactly");
+}
+
 /// A 90° turn on `e₁e₂`, `1 + e₁₂`, at weight `w`.
 fn cga_turn(w: num_rational::BigRational) -> crate::transducer::cga::Mv {
     use crate::transducer::cga::{Mv, E1, E2};

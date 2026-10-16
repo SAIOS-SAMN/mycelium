@@ -340,21 +340,16 @@ impl Entity {
     }
 
     /// PHY1, 78.71 — THE STROKE'S PHYSICS BOOKED: one expansion on each lane
-    /// its outcome moved, drawn from the one reserve (𝒯 is drawn by the flux
-    /// transported, never a unit); the orbits' relief, the transport on 𝒯,
-    /// and the contacts' order.
+    /// its outcome moved, drawn from the one reserve (𝒯 never by a unit: it
+    /// is withheld by the flux the field holds open, `lock_reservoirs`); the
+    /// tubes' relief, and the contacts' order.
     fn book_tick(&mut self, outcome: &StrokeOutcome) {
         let seen = crate::transducer::family::pairing::contact_lanes();
         let mut moved = outcome.moved();
         moved[2] = false;
         let _ = self.physics_mut().spend(moved);
-        let closed: [u64; 4] = std::array::from_fn(|l| match (l, seen.0[l].checked_sub(self.physics().contacts_mark[0][l])) {
-            (2, Some(d)) => d,
-            _ => 0,
-        });
-        let (relieved, transported) = crate::transducer::family::pairing::flux_lanes();
-        let on_t: [u64; 4] = std::array::from_fn(|l| if l == 2 { transported[l] } else { 0 });
-        let _ = self.physics_mut().book_flux((relieved, on_t), closed);
+        let (relieved, _) = crate::transducer::family::pairing::flux_lanes();
+        self.physics_mut().book_flux(relieved);
         self.physics_mut().book_contacts(seen);
     }
 }

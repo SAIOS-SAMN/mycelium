@@ -311,9 +311,9 @@ pub struct Physics {
     /// What contacts had moved, per lane, when this physics last booked them
     /// — condensed, then refused (`book_contacts`).
     pub contacts_mark: [[u64; 4]; 2],
-    /// What the voice's tubes had relieved, then transported, when this
-    /// physics last booked its field (`book_flux`, 78.71).
-    pub flux_mark: [[u64; 4]; 2],
+    /// What the voice's tubes had relieved when this physics last booked its
+    /// field (`book_flux`, 78.71).
+    pub flux_mark: [u64; 4],
     /// 78.73 — PLASTIC events per lane: generators that entered the language
     /// on it, the medium taking stress by changing shape (`malleability`).
     pub plastic: [u64; 4],
@@ -340,7 +340,7 @@ impl Default for Physics {
             regen_mark: [0; 4],
             relax_mark: [0; 4],
             contacts_mark: [[0; 4]; 2],
-            flux_mark: [[0; 4]; 2],
+            flux_mark: [0; 4],
             plastic: [0; 4],
             reserve: Reserve::of([reserve_max(); 4]),
         }
@@ -445,41 +445,29 @@ impl Physics {
         self.contacts_mark = [seen.0, seen.1];
     }
 
-    /// 78.71 (2) — WHAT THE FIELD DID, DRAWN AND REFILLED BY FLUX: since this
-    /// physics last booked it, the flux the voice's tubes transported is
-    /// drawn from 𝒯 by its amount in quanta (never a unit per stroke), the
-    /// open flux their closures relieved falls off 𝒯's pressure exactly, and
-    /// the flux that closed (`closed`, the condensed 𝒯 since the contacts'
-    /// mark) refills 𝒯. So the reserve falls by the flux left open and no
-    /// more. `flux` is (relieved, transported) so far, per lane; a count
-    /// behind its mark books nothing on that lane (rule 11). A draw 𝒯 cannot
-    /// cover is refused by name and charged what the lane holds.
+    /// 78.71 (2) — WHAT THE FIELD DID, ITS RELIEF BOOKED: since this physics
+    /// last booked it, the open flux the voice's tubes' closures relieved
+    /// falls off 𝒯's pressure exactly. `relieved` is what closures relieved
+    /// so far, per lane; a count behind its mark books nothing on that lane
+    /// (rule 11).
+    ///
+    /// MU-CLIENT §4.13 — THE RESERVE ON 𝒯 IS CONSERVED, never drawn and
+    /// refilled here: it falls by the flux left open and no more, by the one
+    /// lock that withholds what the field holds — the tubes' open flux and
+    /// the reservoirs (`Field::withheld`, `Entity::lock_reservoirs`) — and
+    /// gives it back exactly as it closes, dissipates or condenses — never by
+    /// the condensed ledger, which counts face carriages that drew nothing.
     #[expect(
         clippy::manual_unwrap_or_default,
         reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a count behind its mark books nothing, named at the arm"
     )]
-    pub fn book_flux(&mut self, flux: ([u64; 4], [u64; 4]), closed: [u64; 4]) -> Option<Depleted> {
-        let since = |now: &[u64; 4], mark: &[u64; 4]| -> [u64; 4] {
-            std::array::from_fn(|l| match now[l].checked_sub(mark[l]) {
-                Some(d) => d,
-                None => 0,
-            })
-        };
-        let relieved = since(&flux.0, &self.flux_mark[0]);
-        let transported = since(&flux.1, &self.flux_mark[1]);
-        self.flux_mark = [flux.0, flux.1];
-        self.relieve(&relieved);
-        let refused = match self.draw(transported) {
-            Ok(()) => None,
-            Err(refused) => {
-                let _ = self.reserve.drain(transported);
-                Some(refused)
-            }
-        };
-        if closed != [0; 4] {
-            self.reserve.restore(closed);
-        }
-        refused
+    pub fn book_flux(&mut self, relieved: [u64; 4]) {
+        let since: [u64; 4] = std::array::from_fn(|l| match relieved[l].checked_sub(self.flux_mark[l]) {
+            Some(d) => d,
+            None => 0,
+        });
+        self.flux_mark = relieved;
+        self.relieve(&since);
     }
 
     /// A pivot on `lane` — a torsion charge (the demand for a new fiber). An

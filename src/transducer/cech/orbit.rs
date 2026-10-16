@@ -148,6 +148,18 @@ impl Field {
         }
     }
 
+    /// MU-CLIENT §4.13 — WHAT THE FIELD WITHHOLDS FROM THE RESERVE, per lane:
+    /// what its reservoirs hold, and on 𝒯 the flux its tubes hold open too —
+    /// the reserve falls by the flux left open and no more (78.71 (2)).
+    /// `None` past the carrier.
+    pub fn withheld(&self) -> Option<[u64; 4]> {
+        let mut out = self.reserved()?;
+        let (_, _, open) = self.tubes.totals();
+        let open = u64::try_from(open).ok()?;
+        out[crate::transducer::rewrite::LANE_TEMPORAL] = out[crate::transducer::rewrite::LANE_TEMPORAL].checked_add(open)?;
+        Some(out)
+    }
+
     /// MU-CLIENT §4.13 — WHAT THE RESERVOIRS HOLD, per lane: the strain
     /// dissipated and neither re-formed nor condensed — 𝒯's off the tubes,
     /// the other lanes' off the orbits. `None` past the carrier.
