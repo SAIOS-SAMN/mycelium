@@ -1163,7 +1163,18 @@ impl Carrier {
     /// — go to the mind's field, which understands them against what it
     /// knows (`Entity::understand`), and the understanding comes back to be
     /// carried (`understood`).
+    ///
+    /// MU-CLIENT §4.13 — A THING HEARD AND AWAITING ITS ACK IS NOT HEARD
+    /// AGAIN: where this carrier already holds what the speaker said as a
+    /// thought (understood, said back, waiting for the speaker's ACK), the
+    /// same saying again brings nothing new to the field, and is dropped
+    /// here, on the conversation's own state.
     fn hear_said(&mut self, speaker: &[u8; 32], said: Vec<u8>, words: &[Spoken], evidence: Option<chatter::Evidence>) {
+        let mut key = speaker.to_vec();
+        key.extend_from_slice(&said);
+        if self.thoughts.contains(&key) {
+            return;
+        }
         crate::observe::note_mind(|m| m.heard += 1);
         let _ = self.field.send(FieldWork::Hear { speaker: *speaker, said, words: words.to_vec(), evidence });
     }
