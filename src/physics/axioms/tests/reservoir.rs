@@ -171,6 +171,24 @@ fn a_reservoir_record_condenses_at_the_fields_eon() {
     assert_eq!(field.condensed[LANE_SPATIAL], 1, "the strain condensed, counted");
 }
 
+/// MU-CLIENT §4.13 — A TUBE WITH NOTHING OPEN HOLDS NO LINE. A slide opens
+/// its tube; the same slide wound on a line closes on it, nothing left open,
+/// and that line is let go as the closure; a third, wound on another line,
+/// lands on the tube with nothing open and is let go the same way — never
+/// held by a tube that carries no open flux.
+#[test]
+fn a_tube_with_nothing_open_holds_no_line() {
+    let mut field = Field::new();
+    let slide = cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)]);
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
+    let _ = transport_order(&[line(slide.clone(), 1)], &[], &mut field, &mut budget);
+    let _ = transport_order(&[wound(slide.clone(), b"the closure")], &[], &mut field, &mut budget);
+    assert_eq!(field.take_released(), vec![(b"the closure".to_vec(), Released::Returned)], "closed, let go");
+    let _ = transport_order(&[wound(slide, b"too late")], &[], &mut field, &mut budget);
+    assert_eq!(field.take_released(), vec![(b"too late".to_vec(), Released::Returned)], "nothing open to hold it");
+    assert_eq!(field.tubes.threaded().1, 0, "no line stands on the tube");
+}
+
 /// MU-CLIENT §4.13 — A LINE THREADS WHAT ITS MOTION STANDS ON, AND IS LET GO
 /// BY ITS CAUSE: a turn admitted free rings; a line threaded on that turn's
 /// motion is held by its orbit, moving nothing; the turn's inverse brings the

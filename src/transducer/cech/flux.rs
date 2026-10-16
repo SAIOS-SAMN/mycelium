@@ -284,11 +284,13 @@ impl TubeRegistry {
         super::orbit::thread_on(&mut lines, line);
         // LUMINAL: a tube whose net flux cancelled carries no field, and every
         // line threading it relaxes. CLOSED: flux returning along the known
-        // ray relieved all that stood open on it — order built, the tension
-        // the lines hung on vented, as an orbit's return vents its own.
+        // ray left nothing open on it — order built, the tension the lines
+        // hung on vented, as an orbit's return vents its own. A line wound in
+        // by flux that closed on a tube with nothing open is let go with them:
+        // a tube with nothing open holds no line (`thread`).
         if net.is_zero() {
             self.released.extend(std::mem::take(&mut lines).into_iter().map(|l| (l, super::orbit::Released::Cancelled)));
-        } else if !open.is_zero() && open == relieved {
+        } else if (&open - &relieved).is_zero() {
             self.released.extend(std::mem::take(&mut lines).into_iter().map(|l| (l, super::orbit::Released::Returned)));
         }
         // A movement of the field: it beats on it.
