@@ -261,10 +261,48 @@ impl Entity {
     fn read_field(&self) -> Vec<String> {
         let read = crate::transducer::mind::with_field(|f| {
             let (open, moved) = f.orbits.totals();
-            vec![
-                format!("orbits standing {} · tubes {} · returns not yet taken {}", f.orbits.len(), f.tubes.len(), f.orbits.pending_returns()),
-                format!("open per lane {} · moved per lane {} · reservoir {}", lanes(&open), lanes(&moved), lanes(&f.orbits.reserved())),
-            ]
+            let (holding, lines, open_tubes) = f.tubes.threaded();
+            let reserved = match f.reserved() {
+                Some(r) => lanes(&r),
+                None => "past the carrier".to_string(),
+            };
+            let mut out = vec![
+                format!("orbits standing {} · tubes {} · returns not yet taken {} · sealed {}", f.orbits.len(), f.tubes.len(), f.orbits.pending_returns(), f.orbits.sealed()),
+                format!("open per lane {} · moved per lane {} · reservoir {} · condensed {}", lanes(&open), lanes(&moved), reserved, lanes(&f.condensed)),
+                format!("tubes holding lines {holding} ({lines} lines) · tubes open {open_tubes}"),
+            ];
+            // MU-CLIENT §4.13 — each orbit standing, and the lines it holds.
+            out.extend(f.orbits.standing().into_iter().map(|o| {
+                let lane = match o.lane {
+                    Some(l) => l.to_string(),
+                    None => "?".to_string(),
+                };
+                let period = match o.period {
+                    Some(p) => p.to_string(),
+                    None => "none (a rosette)".to_string(),
+                };
+                format!(
+                    "  orbit on lane {lane} · {} · carried {} of period {period} · {} · open {} · lines {}",
+                    if o.rings { "rings" } else { "never returns" },
+                    o.carried,
+                    if o.aged { "stood a beat" } else { "fresh" },
+                    o.open,
+                    o.lines
+                )
+            }));
+            out
+        });
+        let c = &self.contemplation;
+        let thoughts = format!(
+            "thoughts: unthreaded {} · held by nothing, leaving at the next vent {} · hearings waiting {} (one on the carrier: {})",
+            c.unthreaded.len(),
+            c.unheld.len(),
+            self.board.hearings.len(),
+            self.board.hearing
+        );
+        let read = read.map(|mut lines| {
+            lines.push(thoughts);
+            lines
         });
         match read {
             Ok(lines) => lines,

@@ -73,6 +73,15 @@ pub(crate) struct Perceived {
     chains: Vec<PairPercept>,
 }
 
+/// RINGS ANOTHER MIND SAID, WAITING TO BE READ: the speaker, what was said,
+/// the words, and what their evidence read on their scene.
+pub(crate) struct Hearing {
+    speaker: [u8; 32],
+    said: Vec<u8>,
+    words: Vec<crate::client::sdk::chatter::Spoken>,
+    evident: super::converge::Evident,
+}
+
 /// A SOLVE TO BE READ BEFORE IT IS SENT (`Entity::solve_task`'s home check),
 /// on the carrier: the scene, the outputs, and the rule minted at its span.
 pub(crate) struct Judge {
@@ -250,11 +259,25 @@ impl Entity {
         );
     }
 
-    /// RINGS ANOTHER MIND SAID, posted to the perception carrier to be read
-    /// off the field (MU-CLIENT §4.9, §7.1 R1) with what the mind remembers
-    /// hearing as it stands, and understood where the reading lands, with
-    /// what their evidence read on their scene (MU-CLIENT §5.5).
+    /// RINGS ANOTHER MIND SAID, to be read on the perception carrier off the
+    /// field (MU-CLIENT §4.9, §7.1 R1) and understood where the reading
+    /// lands, with what their evidence read on their scene (§5.5). MU-CLIENT
+    /// §4.13 — ONE AT A TIME: the hearing waits on the board, and the next
+    /// is taken when the one on the carrier lands (`hear_next`).
     pub(crate) fn perceive_hearing(&mut self, speaker: [u8; 32], said: Vec<u8>, words: Vec<crate::client::sdk::chatter::Spoken>, evident: super::converge::Evident) {
+        self.board.hearings.push_back(Hearing { speaker, said, words, evident });
+        self.hear_next();
+    }
+
+    /// THE NEXT HEARING TAKEN, where none is on the carrier: posted with
+    /// what the mind remembers hearing and a scratch of its field as they
+    /// stand now.
+    fn hear_next(&mut self) {
+        if self.board.hearing {
+            return;
+        }
+        let Some(Hearing { speaker, said, words, evident }) = self.board.hearings.pop_front() else { return };
+        self.board.hearing = true;
         let (mut field, from) = crate::transducer::mind::scratch_here();
         let mut remembered = self.remembered.clone();
         super::hypha::post(
@@ -266,12 +289,14 @@ impl Entity {
                 (reads, field.into_admission(&from))
             },
             move |me, (reads, admission)| {
+                me.board.hearing = false;
                 let before = crate::transducer::sentence::rung::lexicon();
                 if let Some(a) = admission {
                     let mut budget = me.physics.stroke();
                     let _ = crate::transducer::mind::admit(a, &mut budget);
                 }
                 me.understand_read(speaker, said, reads, before, evident);
+                me.hear_next();
             },
         );
     }

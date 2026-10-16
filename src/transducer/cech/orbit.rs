@@ -206,6 +206,18 @@ impl Field {
     }
 }
 
+/// ONE STANDING ORBIT, READ (`OrbitRegistry::standing`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct OrbitReading {
+    pub lane: Option<usize>,
+    pub rings: bool,
+    pub carried: u64,
+    pub period: Option<u64>,
+    pub aged: bool,
+    pub open: u64,
+    pub lines: usize,
+}
+
 /// Where an orbit stands.
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum State {
@@ -412,6 +424,25 @@ impl OrbitRegistry {
     /// The orbits that sealed at their period without returning.
     pub fn sealed(&self) -> u64 {
         self.sealed
+    }
+
+    /// MU-CLIENT §4.13 — EACH ORBIT STANDING, AS THE OBSERVER READS IT: its
+    /// lane, whether it rings, the transitions carried against its period,
+    /// whether it stood through a beat, its open strain, and the lines it
+    /// holds — a reading, never read back by cognition.
+    pub fn standing(&self) -> Vec<OrbitReading> {
+        self.orbits
+            .scoped()
+            .map(|(k, o)| OrbitReading {
+                lane: lane_of_key(&k),
+                rings: o.state.rings(),
+                carried: o.carried,
+                period: o.period,
+                aged: o.aged,
+                open: o.open,
+                lines: o.lines.len(),
+            })
+            .collect()
     }
 
     /// DISSIPATION, THE SINK (MU-CLIENT §4.5): every orbit that never returns

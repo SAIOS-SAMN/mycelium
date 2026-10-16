@@ -350,6 +350,15 @@ impl TubeRegistry {
         out
     }
 
+    /// MU-CLIENT §4.13 — THE TUBES' LINES, AS THE OBSERVER READS THEM: how many
+    /// tubes hold a line, how many lines they hold, and how many stand open —
+    /// a reading, never read back by cognition.
+    pub fn threaded(&self) -> (usize, usize, usize) {
+        self.tubes.scoped().fold((0, 0, 0), |(holding, lines, open), (_, t)| {
+            (holding + usize::from(!t.lines.is_empty()), lines + t.lines.len(), open + usize::from(!t.open.is_zero()))
+        })
+    }
+
     /// Every tube the field holds after a beat has stood through it.
     pub(crate) fn age(&mut self) {
         let held: Vec<Vec<u8>> = self.tubes.scoped().map(|(k, _)| k).collect();
