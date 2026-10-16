@@ -64,6 +64,9 @@ pub(crate) struct Board {
     /// never by a count.
     pub(crate) hearings: crate::network::nerve::Keyed<super::perceive::Hearing>,
     pub(crate) hearing: bool,
+    /// The hearings that lapsed unread across a return, since the mind began
+    /// (`Entity::lapse_hearings`).
+    pub(crate) hearings_lapsed: u64,
     /// MU-CLIENT §4.13 — THE RESERVE LOCKED IN THE FIELD'S RESERVOIRS, per
     /// lane: the strain they hold, taken out of the operational reserve at
     /// the vent and given back as it re-forms or condenses
@@ -229,7 +232,14 @@ impl Entity {
             Some(n) => n,
             None => returns,
         };
+        let before = self.own_k();
         self.close_cycle(returns);
+        // MU-CLIENT §4.13 — the hearings left unread across a return lapse.
+        if returns > 0 {
+            if let Ok(lapsed) = u64::try_from(self.lapse_hearings(before)) {
+                let _ = crate::physics::metabolism::step_or_refuse(&mut self.board.hearings_lapsed, lapsed);
+            }
+        }
         if returns > 0 && open {
             self.act_at_return(&scenes);
         }

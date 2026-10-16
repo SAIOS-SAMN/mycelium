@@ -54,3 +54,24 @@ fn a_hearing_said_again_waits_once() {
     mind.perceive_hearing(speaker, b"other".to_vec(), Vec::new(), Evident::Unbound);
     assert_eq!(mind.board.hearings.len(), 2, "a different thing waits beside it");
 }
+
+/// MU-CLIENT §4.13 — A HEARING WAITS AT MOST ACROSS ONE RETURN. Two hearings
+/// wait while one is on the carrier; the return that closes the traversal
+/// they arrived in keeps them; one more arrives; at the next return the two
+/// lapse unread and the one that arrived since waits on.
+#[test]
+fn a_hearing_unread_across_a_return_lapses() {
+    use crate::client::sdk::entity::converge::Evident;
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("lapsing"));
+    let speaker = [4u8; 32];
+    for said in [&b"on the carrier"[..], b"one", b"two"] {
+        mind.perceive_hearing(speaker, said.to_vec(), Vec::new(), Evident::Unbound);
+    }
+    let mut b = budget();
+    assert!(mind.act_on_returns(&mut b, vec![b"a scene".to_vec()], false) > 0, "a binding is a return");
+    assert_eq!(mind.board.hearings.len(), 2, "the return closing their traversal keeps them");
+    mind.perceive_hearing(speaker, b"since".to_vec(), Vec::new(), Evident::Unbound);
+    assert!(mind.act_on_returns(&mut b, vec![b"a scene".to_vec()], false) > 0, "and again");
+    assert_eq!(mind.board.hearings.len(), 1, "unread across a return, the two lapse; the one since waits");
+    assert_eq!(mind.board.hearings_lapsed, 2, "counted");
+}

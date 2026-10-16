@@ -74,12 +74,14 @@ pub(crate) struct Perceived {
 }
 
 /// RINGS ANOTHER MIND SAID, WAITING TO BE READ: the speaker, what was said,
-/// the words, and what their evidence read on their scene.
+/// the words, what their evidence read on their scene, and the mind's own K
+/// it arrived at (MU-CLIENT §4.13: it waits at most across one return).
 pub(crate) struct Hearing {
     speaker: [u8; 32],
     said: Vec<u8>,
     words: Vec<crate::client::sdk::chatter::Spoken>,
     evident: super::converge::Evident,
+    pub(crate) at_k: u64,
 }
 
 /// A SOLVE TO BE READ BEFORE IT IS SENT (`Entity::solve_task`'s home check),
@@ -269,8 +271,24 @@ impl Entity {
     pub(crate) fn perceive_hearing(&mut self, speaker: [u8; 32], said: Vec<u8>, words: Vec<crate::client::sdk::chatter::Spoken>, evident: super::converge::Evident) {
         let mut key = speaker.to_vec();
         crate::transducer::address::put_key_bytes(&mut key, &said);
-        self.board.hearings.insert(&key, Hearing { speaker, said, words, evident });
+        let at_k = self.own_k();
+        self.board.hearings.insert(&key, Hearing { speaker, said, words, evident, at_k });
         self.hear_next();
+    }
+
+    /// MU-CLIENT §4.13 — A HEARING WAITS AT MOST ACROSS ONE RETURN: at the
+    /// mind's return (`act_on_returns`), every hearing that arrived before the
+    /// traversal the return closes (`before`, the mind's K as that traversal
+    /// began) lapses unread — the sensory buffer, never a ledger; a peer that
+    /// needs agreement says its word again. One that arrived in the traversal
+    /// just closed waits one more, so none lapses the instant it lands. Answers
+    /// how many lapsed.
+    pub(crate) fn lapse_hearings(&mut self, before: u64) -> usize {
+        let stale: Vec<Vec<u8>> = self.board.hearings.scoped().filter(|(_, h)| h.at_k < before).map(|(k, _)| k).collect();
+        for k in &stale {
+            self.board.hearings.remove(k);
+        }
+        stale.len()
     }
 
     /// THE NEXT HEARING TAKEN, where none is on the carrier — the least by
@@ -281,7 +299,7 @@ impl Entity {
             return;
         }
         let Some(key) = self.board.hearings.scoped().next().map(|(k, _)| k) else { return };
-        let Some(Hearing { speaker, said, words, evident }) = self.board.hearings.remove(&key) else { return };
+        let Some(Hearing { speaker, said, words, evident, .. }) = self.board.hearings.remove(&key) else { return };
         self.board.hearing = true;
         let (mut field, from) = crate::transducer::mind::scratch_here();
         let mut remembered = self.remembered.clone();

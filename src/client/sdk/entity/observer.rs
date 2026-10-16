@@ -294,11 +294,12 @@ impl Entity {
         });
         let c = &self.contemplation;
         let thoughts = format!(
-            "thoughts: unthreaded {} · held by nothing, leaving at the next vent {} · hearings waiting {} (one on the carrier: {})",
+            "thoughts: unthreaded {} · held by nothing, leaving at the next vent {} · hearings waiting {} (one on the carrier: {}) · lapsed unread across a return {}",
             c.unthreaded.len(),
             c.unheld.len(),
             self.board.hearings.len(),
-            self.board.hearing
+            self.board.hearing,
+            self.board.hearings_lapsed
         );
         let read = read.map(|mut lines| {
             lines.push(thoughts);
