@@ -149,25 +149,26 @@ fn the_courts_deficit_drags_a_ringing_orbit_in_on_its_lane() {
     assert!(field.orbits.reserved()[LANE_SHELL] > 0, "its strain held in the reservoir");
 }
 
-/// MU-CLIENT §4.13, 78.43 — A RESERVOIR RECORD CONDENSES AT THE FIELD'S EON.
-/// A gain dissipated while a 90° turn rings (period 4, so the field's eon is
-/// 4) stands in the reservoir untouched through three beats, and condenses
-/// to nothing at the fourth: the reservoir is bounded by what re-forms, and
-/// the strain condensed is counted. The beats are moved by slides on fresh
-/// rays, which touch no orbit.
+/// MU-CLIENT §4.13, 78.43 — A RESERVOIR RECORD CONDENSES WHEN THE EON IT
+/// ENTERED UNDER CLOSES. A gain dissipates while a 90° turn rings: the
+/// record enters under that ringing orbit. However many beats the field
+/// takes — slides on fresh rays, touching no orbit — the record stands while
+/// the turn rings: no count of beats ages it. The turn's inverse brings it
+/// home; the orbit it awaited has left, its eon has closed, and at that beat
+/// the record condenses to nothing, counted.
 #[test]
-fn a_reservoir_record_condenses_at_the_fields_eon() {
+fn a_reservoir_record_condenses_when_its_eon_closes() {
     let mut field = Field::new();
     let slide = |x: i64, y: i64| cga::translator_at(&[q(x, 1), q(y, 1), q(0, 1)]);
     let _ = admit(&mut field, &[line(turn(E1 | E3), 1), line(cga::dilator(&q(2, 1)), 1)]);
     let _ = admit(&mut field, &[line(slide(0, 1), 1)]);
     assert_eq!(field.orbits.reserved()[LANE_SPATIAL], 1, "the gain dissipated, in the reservoir");
-    for (x, y) in [(1, 1), (1, 2), (1, 3)] {
+    for (x, y) in [(1, 1), (1, 2), (1, 3), (2, 3), (3, 4), (3, 5)] {
         let _ = admit(&mut field, &[line(slide(x, y), 1)]);
-        assert_eq!(field.orbits.reserved()[LANE_SPATIAL], 1, "it stands within the eon");
+        assert_eq!(field.orbits.reserved()[LANE_SPATIAL], 1, "it stands while the orbit it awaits rings");
     }
-    let _ = admit(&mut field, &[line(slide(2, 3), 1)]);
-    assert_eq!(field.orbits.reserved()[LANE_SPATIAL], 0, "at the eon it condensed");
+    let _ = admit(&mut field, &[line(turn(E1 | E3).reverse(), 1)]);
+    assert_eq!(field.orbits.reserved()[LANE_SPATIAL], 0, "its eon closed, it condensed");
     assert_eq!(field.condensed[LANE_SPATIAL], 1, "the strain condensed, counted");
 }
 

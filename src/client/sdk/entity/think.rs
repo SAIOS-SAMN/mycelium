@@ -176,7 +176,7 @@ impl Entity {
         // returned dissipates now — and under the court's gravity, what still
         // rings on a lane its deficit presses (§4.13).
         let deficit = self.board.court.deficit;
-        let _ = crate::transducer::mind::with_field(|field| field.beat_under(&deficit));
+        let beat = matches!(crate::transducer::mind::with_field(|field| field.beat_under(&deficit)), Ok(true));
         // FROZEN-IN FLUX: every fibre the field's admissions carried moves
         // with the orbit it is wound on (MU-CLIENT §4.5).
         if let Ok(carried) = crate::transducer::mind::with_field(|field| field.take_carried()) {
@@ -198,7 +198,7 @@ impl Entity {
         // MU-CLIENT §4.13, §7.1 Phase 3 — the thoughts newly standing thread
         // their lines in the field as it now stands; and the escrow every door
         // returned this stroke is credited to the reserve, lane by lane, once.
-        self.contemplation.thread_new(budget);
+        self.contemplation.thread_new(budget, beat);
         self.physics.reserve.restore(self.contemplation.take_returned_escrow());
         self.lock_reservoirs();
         lines.len()

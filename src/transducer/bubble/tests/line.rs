@@ -17,21 +17,28 @@ fn perceive(c: &mut Contemplation, input: &[&str], output: &[&str], family: &[u8
     let (a, b) = (grid(input), grid(output));
     let frames = perceive_family(&[(a.clone(), b.clone())]);
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
-    let f = scene_form_on(&NoCrystal, &mut budget, &a, &b, &frames).expect("the scene reads");    c.hold_perceived(f, &frames, &Vec::new(), &[], escrow, family, &mut budget).expect("held").as_bytes().to_vec()
+    let f = scene_form_on(&NoCrystal, &mut budget, &a, &b, &frames).expect("the scene reads");
+    c.hold_perceived(f, &frames, &Vec::new(), &[], escrow, family, &mut budget).expect("held").as_bytes().to_vec()
 }
 
 /// THE VENT, as a winding takes it: the field beats, what it let go is let
 /// go, and the thoughts newly standing thread their lines.
 fn vent(c: &mut Contemplation) {
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
-    let Ok(released) = crate::transducer::mind::with_field(|f| {
-        f.beat();
-        f.take_released()
-    }) else {
+    let Ok((beat, released)) = crate::transducer::mind::with_field(|f| (f.beat(), f.take_released())) else {
         panic!("a mind is thinking")
     };
     c.release(&released);
-    c.thread_new(&mut budget);
+    c.thread_new(&mut budget, beat);
+}
+
+/// THE FIELD MOVED by a motion of no thought: a 90° turn on `e₁e₃`, free.
+fn move_field() {
+    use crate::transducer::cga::{Mv, E1, E3};
+    let one = num_rational::BigRational::from_integer(1.into());
+    let turn = Mv::scalar(one.clone()).add(&Mv::blade(E1 | E3, one));
+    let line = crate::transducer::family::pairing::FieldLine { carriage: turn, gauge: Vec::new(), mass: 1, free: false, line: crate::transducer::cech::Thread::Free };
+    let _ = crate::transducer::family::pairing::mark_flux(&[], std::slice::from_ref(&line), &mut crate::physics::Physics::default().stroke_n(1 << 16));
 }
 
 /// Two Ls three columns apart, each carried one column along: one scene of a
@@ -46,8 +53,9 @@ const SLIDE_ON: [&str; 3] = ["00100010", "00100010", "00110011"];
 /// second hour, perceived while the first stands, meets it; its slide lands
 /// on the same ray and closes all that stood open there, and the first is
 /// let go at the vent as that closure. The second finds nothing open to
-/// thread: it stands the one vent, to be met, and leaves at the next. Both
-/// gone, their remainders are at the cavity, their escrow returned exactly,
+/// thread: it stands until the field next moves, to be met — a vent with
+/// nothing moved lets it go nowhere — and leaves at the beat of that motion.
+/// Both gone, their remainders are at the cavity, their escrow returned exactly,
 /// their scene counted for the stroke's returns, while the escaping motion
 /// between the hours stands on the docket under that scene.
 #[test]
@@ -63,7 +71,10 @@ fn a_slide_perception_is_released_where_its_motion_is_let_go() {
         vent(&mut c);
         assert!(c.bubbles.get(&first).is_none(), "the first let go as its ray closed");
         vent(&mut c);
-        assert!(c.bubbles.get(&second).is_none(), "the second, held by nothing, left at the vent after");
+        assert!(c.bubbles.get(&second).is_some(), "nothing moved: no time passed, and it stands");
+        move_field();
+        vent(&mut c);
+        assert!(c.bubbles.get(&second).is_none(), "the second, held by nothing, left at the field's next beat");
         assert!(c.cavity_len() > cavity, "their remainders at the cavity");
         assert_eq!(c.take_returned_escrow(), [2, 0, 0, 0], "their escrow returned, exactly");
         let scenes = c.take_released_scenes();

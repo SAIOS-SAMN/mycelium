@@ -88,6 +88,13 @@ pub struct Field {
     pub orbits: OrbitRegistry,
     /// The strain the reservoirs condensed since the field began, per lane.
     pub condensed: [u64; 4],
+    /// 78.43, MU-CLIENT §4.13 — THE EON EACH RESERVOIR RECORD ENTERED UNDER:
+    /// by the record's key, the ringing orbits that stood when it entered.
+    /// It condenses when the last of them has left — returned, sealed or
+    /// dissipated — never by a count of beats.
+    awaiting: Keyed<Vec<Vec<u8>>>,
+    /// The same, for the tubes' reservoir records, by their ray.
+    awaiting_tubes: Keyed<Vec<Vec<u8>>>,
 }
 
 impl Field {
@@ -100,52 +107,82 @@ impl Field {
     /// and those threading a tube whose net flux CANCELLED (luminal — it
     /// carries no field). Each is a line of the complex whose tension relaxed.
     /// MU-CLIENT §4.5, §7.1 Phase 3 — THE FIELD BEATS WHEREVER IT MOVED: where
-    /// any admission moved an orbit or a tube since the last beat, what stood
-    /// through the last beat and never returned dissipates into the reservoir
-    /// — every boost and null orbit whole, every tube's open flux — the lines
-    /// it threaded released, and waits there to re-form; a tube at rest (no
-    /// net flux, nothing open) is let go. What the field holds after the beat
-    /// has stood through it. So what never returns is dissipated at the beat
-    /// AFTER its admission, never in it: a motion stands one beat, for the
-    /// lines of the thoughts it moved to thread. The mind beats once at each
-    /// vent (`vent_into_field`), the court after each admission; a field
-    /// nothing moved does not beat.
-    pub fn beat(&mut self) {
-        self.beat_under(&[0; 4]);
+    /// any admission moved an orbit or a tube since the last beat, every
+    /// orbit that never returns — a boost, a null flow — and every tube's
+    /// open flux that no motion CARRIED since the last beat dissipates into
+    /// the reservoir, the lines it threaded released, and waits there to
+    /// re-form; a tube at rest (no net flux, nothing open) is let go. An
+    /// orbit's time is its own motion (78.43): what an admission moved since
+    /// the last beat is in motion and stands, so a motion stands through the
+    /// beat of its own admission, for the lines of the thoughts it moved to
+    /// thread, and dissipates at the first beat the field's motion no longer
+    /// carries it. The mind beats once at each vent (`vent_into_field`), the
+    /// court after each admission; a field nothing moved does not beat.
+    /// Answers whether it beat.
+    pub fn beat(&mut self) -> bool {
+        self.beat_under(&[0; 4])
     }
 
     /// MU-CLIENT §4.13, 78.168 C2 — THE BEAT UNDER THE COURT'S GRAVITY: on a
     /// lane where the court's exported deficit stands (`deficit`, per lane, a
-    /// deferral's lanes kept as the pressure they are), every orbit that
-    /// stood through the last beat without returning is dragged in — ringing
-    /// or not, it dissipates into the reservoir as a boost does, its lines
-    /// released. The drag acts along the orbit's own mode (78.46: drag is the
-    /// rate, never the tilt), so an escaping thought that would ring on is
-    /// brought to rest and its relation docketed, never carried out past the
-    /// court's limit. A lane with no deficit beats as `beat` does.
+    /// deferral's lanes kept as the pressure they are), every orbit no motion
+    /// carried since the last beat is dragged in — ringing or not, it
+    /// dissipates into the reservoir as a boost does, its lines released. The
+    /// drag acts along the orbit's own mode (78.46: drag is the rate, never
+    /// the tilt), so an escaping thought that would ring on is brought to
+    /// rest and its relation docketed, never carried out past the court's
+    /// limit. A lane with no deficit beats as `beat` does.
     ///
-    /// MU-CLIENT §4.13 — AND THE RESERVOIRS CONDENSE: before what this beat
-    /// dissipates enters them, every record that stood a whole eon untouched
-    /// condenses to nothing (`OrbitRegistry::condense`), the strain it held
-    /// counted in `condensed` for the field's owner.
-    pub fn beat_under(&mut self, deficit: &[u64; 4]) {
+    /// 78.43, MU-CLIENT §4.13 — AND THE RESERVOIRS CONDENSE AT THE CLOSE OF
+    /// THEIR EON: a record entered under the ringing orbits then standing
+    /// (`awaiting`), and when the last of them has left the field — returned,
+    /// sealed or dissipated — the record's eon has closed and it condenses to
+    /// nothing, counted in `condensed`. A record entered while nothing rang
+    /// entered under an empty eon, closed by the field's next beat. A record
+    /// re-formed by motion has left the reservoir and awaits nothing.
+    pub fn beat_under(&mut self, deficit: &[u64; 4]) -> bool {
         let orbits = self.orbits.take_moved();
         let tubes = self.tubes.take_moved();
-        if orbits || tubes {
-            if let Some(eon) = self.orbits.eon() {
-                let on_orbits = self.orbits.condense(eon);
-                let on_tubes = self.tubes.condense(eon);
-                for (slot, add) in self.condensed.iter_mut().zip(on_orbits) {
-                    let _ = crate::physics::metabolism::step_or_refuse(slot, add);
-                }
-                let _ = crate::physics::metabolism::step_or_refuse(&mut self.condensed[crate::transducer::rewrite::LANE_TEMPORAL], on_tubes);
-            }
-            self.orbits.dissipate(deficit);
-            self.tubes.dissipate();
-            self.tubes.release_at_rest();
-            self.orbits.age();
-            self.tubes.age();
+        if !(orbits || tubes) {
+            return false;
         }
+        let left = self.orbits.take_left();
+        let closed = close_eons(&mut self.awaiting, &left, &|k| self.orbits.holds_record(k));
+        for k in closed {
+            if let Some((lane, open)) = self.orbits.condense_record(&k) {
+                if let Some(slot) = self.condensed.get_mut(lane) {
+                    let _ = crate::physics::metabolism::step_or_refuse(slot, open);
+                }
+            }
+        }
+        let closed = close_eons(&mut self.awaiting_tubes, &left, &|k| self.tubes.holds_record(k));
+        for k in closed {
+            if let Some(open) = self.tubes.condense_record(&k) {
+                let _ = crate::physics::metabolism::step_or_refuse(&mut self.condensed[crate::transducer::rewrite::LANE_TEMPORAL], open);
+            }
+        }
+        self.orbits.dissipate(deficit);
+        // A tube record the beat joined enters again under the eon now.
+        for ray in self.tubes.dissipate() {
+            self.awaiting_tubes.remove(&ray);
+        }
+        self.tubes.release_at_rest();
+        self.orbits.rest();
+        self.tubes.rest();
+        // Every record that entered since the last beat enters under the
+        // ringing orbits standing now.
+        let ringing = self.orbits.ringing();
+        for k in self.orbits.record_keys() {
+            if !self.awaiting.contains(&k) {
+                self.awaiting.insert(&k, ringing.clone());
+            }
+        }
+        for k in self.tubes.record_keys() {
+            if !self.awaiting_tubes.contains(&k) {
+                self.awaiting_tubes.insert(&k, ringing.clone());
+            }
+        }
+        true
     }
 
     /// MU-CLIENT §4.13 — WHAT THE FIELD WITHHOLDS FROM THE RESERVE, per lane:
@@ -225,9 +262,31 @@ pub struct OrbitReading {
     pub rings: bool,
     pub carried: u64,
     pub period: Option<u64>,
-    pub aged: bool,
+    pub in_motion: bool,
     pub open: u64,
     pub lines: usize,
+}
+
+/// 78.43 — THE EONS THE ORBITS THAT LEFT HAVE CLOSED: each record's awaited
+/// orbits less those that left; a record that has left its reservoir
+/// (re-formed by motion) awaits nothing and is dropped; one whose awaited
+/// orbits have all left has its eon closed, and its key is answered.
+fn close_eons(awaiting: &mut Keyed<Vec<Vec<u8>>>, left: &[Vec<u8>], holds: &dyn Fn(&[u8]) -> bool) -> Vec<Vec<u8>> {
+    let mut closed = Vec::new();
+    let keys: Vec<Vec<u8>> = awaiting.scoped().map(|(k, _)| k).collect();
+    for k in keys {
+        if !holds(&k) {
+            awaiting.remove(&k);
+            continue;
+        }
+        let Some(waits) = awaiting.get_mut(&k) else { continue };
+        waits.retain(|o| !left.contains(o));
+        if waits.is_empty() {
+            awaiting.remove(&k);
+            closed.push(k);
+        }
+    }
+    closed
 }
 
 /// Where an orbit stands.
@@ -283,9 +342,9 @@ struct Orbit {
     /// (a mode's order, a hue map's cycles). `None` once a motion of no order
     /// moved it — a rosette, whose winding is content and never seals.
     period: Option<u64>,
-    /// Whether it has stood through a beat of the field: what never returns
-    /// is dissipated at the beat after the one it stood through.
-    aged: bool,
+    /// Whether an admission's motion carried it since the field last beat:
+    /// what never returns, no motion carrying it, dissipates at the beat.
+    in_motion: bool,
 }
 
 /// The least common multiple of two orders; `None` past the carrier.
@@ -322,9 +381,10 @@ pub struct OrbitRegistry {
     /// moved by, until the field's owner takes them.
     pub(crate) carried: Vec<(Vec<u8>, Mv)>,
     reservoir: Keyed<(State, u64)>,
-    /// The beats each reservoir record has stood untouched, by its key: at
-    /// one eon it condenses (`condense`).
-    stood: Keyed<u64>,
+    /// 78.43 — THE ORBITS THAT LEFT THE FIELD since the last beat — returned,
+    /// sealed or dissipated — by their keys: each closes the eons that
+    /// awaited it (`Field::beat_under`).
+    left: Vec<Vec<u8>>,
     /// Whether an admission moved an orbit since the field last beat.
     moved: bool,
     /// MU-CLIENT §4.4(4) — the orbits that returned since the field's owner
@@ -440,8 +500,8 @@ impl OrbitRegistry {
 
     /// MU-CLIENT §4.13 — EACH ORBIT STANDING, AS THE OBSERVER READS IT: its
     /// lane, whether it rings, the transitions carried against its period,
-    /// whether it stood through a beat, its open strain, and the lines it
-    /// holds — a reading, never read back by cognition.
+    /// whether motion carried it since the last beat, its open strain, and
+    /// the lines it holds — a reading, never read back by cognition.
     pub fn standing(&self) -> Vec<OrbitReading> {
         self.orbits
             .scoped()
@@ -450,7 +510,7 @@ impl OrbitRegistry {
                 rings: o.state.rings(),
                 carried: o.carried,
                 period: o.period,
-                aged: o.aged,
+                in_motion: o.in_motion,
                 open: o.open,
                 lines: o.lines.len(),
             })
@@ -458,14 +518,15 @@ impl OrbitRegistry {
     }
 
     /// DISSIPATION, THE SINK (MU-CLIENT §4.5): every orbit that never returns
-    /// — a boost, a null flow — and has stood through a beat moves into the
-    /// reservoir whole, at its own coordinates: its lane's open pressure falls
-    /// by exactly the strain it held, and the lines that threaded it relax.
-    /// What rings stays, but on a lane the court's `deficit` presses.
+    /// — a boost, a null flow — and that no motion carried since the last
+    /// beat moves into the reservoir whole, at its own coordinates: its
+    /// lane's open pressure falls by exactly the strain it held, and the
+    /// lines that threaded it relax. What rings stays, but on a lane the
+    /// court's `deficit` presses.
     fn dissipate(&mut self, deficit: &[u64; 4]) {
         let pressed = |k: &[u8]| lane_of_key(k).and_then(|l| deficit.get(l)).is_some_and(|d| *d > 0);
         let carriers: Vec<Vec<u8>> =
-            self.orbits.scoped().filter(|(k, o)| o.aged && (!o.state.rings() || pressed(k))).map(|(k, _)| k).collect();
+            self.orbits.scoped().filter(|(k, o)| !o.in_motion && (!o.state.rings() || pressed(k))).map(|(k, _)| k).collect();
         for k in carriers {
             let Some(o) = self.orbits.remove(&k) else { continue };
             // The lane's open pressure holds this orbit's, so the step back
@@ -478,55 +539,45 @@ impl OrbitRegistry {
             }
             self.released.extend(o.lines.into_iter().map(|l| (l, Released::Dissipated)));
             self.reservoir.insert(&k, (o.state, o.open));
-            self.stood.insert(&k, 0);
+            self.left.push(k);
         }
     }
 
-    /// 78.43 — THE FIELD'S EON: the least common multiple of the periods of
-    /// the orbits ringing in it, one beat where none rings; `None` past the
-    /// carrier, or where a rosette rings (no period: no eon closes).
-    fn eon(&self) -> Option<u64> {
-        self.orbits.scoped().filter(|(_, o)| o.state.rings()).try_fold(1u64, |e, (_, o)| lcm(e, o.period?))
+    /// The orbits that left the field since the last take.
+    fn take_left(&mut self) -> Vec<Vec<u8>> {
+        std::mem::take(&mut self.left)
     }
 
-    /// MU-CLIENT §4.13 — VACUUM CONDENSATION: every reservoir record stands
-    /// one beat more, and one that stood a whole eon untouched — no motion
-    /// landed on its coordinates to re-form it — condenses to nothing, so
-    /// the reservoir is bounded by what re-forms. Answers the strain
-    /// condensed, per lane.
-    fn condense(&mut self, eon: u64) -> [u64; 4] {
-        let mut out = [0u64; 4];
-        let keys: Vec<Vec<u8>> = self.stood.scoped().map(|(k, _)| k).collect();
-        for k in keys {
-            let Some(beats) = self.stood.get(&k).and_then(|b| b.checked_add(1)) else { continue };
-            if beats < eon {
-                self.stood.insert(&k, beats);
-                continue;
-            }
-            self.stood.remove(&k);
-            if let Some((_, open)) = self.reservoir.remove(&k) {
-                if let Some(slot) = lane_of_key(&k).and_then(|l| out.get_mut(l)) {
-                    let _ = crate::physics::metabolism::step_or_refuse(slot, open);
-                }
-            }
-        }
-        out
+    /// The orbits ringing in the field now, by their keys: the eon a record
+    /// entering the reservoir now waits on.
+    fn ringing(&self) -> Vec<Vec<u8>> {
+        self.orbits.scoped().filter(|(_, o)| o.state.rings()).map(|(k, _)| k).collect()
     }
 
-    /// Every orbit the field holds after a beat has stood through it; and
-    /// every reservoir record that entered since the last beat (a seal, in
-    /// an admission) begins its count here, as one dissipated at this beat
-    /// does — none is counted for a beat it did not stand through.
-    fn age(&mut self) {
+    /// The reservoir's records, by their keys.
+    fn record_keys(&self) -> Vec<Vec<u8>> {
+        self.reservoir.scoped().map(|(k, _)| k).collect()
+    }
+
+    /// Whether the reservoir holds a record at `key`.
+    fn holds_record(&self, key: &[u8]) -> bool {
+        self.reservoir.contains(key)
+    }
+
+    /// MU-CLIENT §4.13 — VACUUM CONDENSATION: the record at `key`, its eon
+    /// closed, condenses to nothing. Answers its lane and the strain it held.
+    fn condense_record(&mut self, key: &[u8]) -> Option<(usize, u64)> {
+        let (_, open) = self.reservoir.remove(key)?;
+        Some((lane_of_key(key)?, open))
+    }
+
+    /// The beat taken: no orbit is in motion until an admission carries it.
+    fn rest(&mut self) {
         let held: Vec<Vec<u8>> = self.orbits.scoped().map(|(k, _)| k).collect();
         for k in held {
             if let Some(o) = self.orbits.get_mut(&k) {
-                o.aged = true;
+                o.in_motion = false;
             }
-        }
-        let entered: Vec<Vec<u8>> = self.reservoir.scoped().map(|(k, _)| k).filter(|k| !self.stood.contains(k)).collect();
-        for k in entered {
-            self.stood.insert(&k, 0);
         }
     }
 
@@ -539,12 +590,11 @@ impl OrbitRegistry {
             return;
         }
         let Some((state, open)) = self.reservoir.remove(key) else { return };
-        self.stood.remove(key);
         if let Some(slot) = self.open.get_mut(lane) {
             let _ = crate::physics::metabolism::step_or_refuse(slot, open);
         }
         // Re-formed, it begins a new age where the motion lands on it.
-        self.orbits.insert(key, Orbit { state, open, lines: Vec::new(), carried: 0, period: Some(1), aged: false });
+        self.orbits.insert(key, Orbit { state, open, lines: Vec::new(), carried: 0, period: Some(1), in_motion: true });
     }
 
     /// ADMIT ONE MODE of a field line carrying `mass`: a turn onto 𝒽's orbit
@@ -656,9 +706,9 @@ impl OrbitRegistry {
             Some(o) => o.lines.clone(),
             None => Vec::new(),
         };
-        let (carried, period, aged) = match self.orbits.get(key) {
-            Some(o) => (o.carried, o.period, o.aged),
-            None => (0, Some(1), false),
+        let (carried, period) = match self.orbits.get(key) {
+            Some(o) => (o.carried, o.period),
+            None => (0, Some(1)),
         };
         let carried = carried.checked_add(1)?;
         let period = match (period, order) {
@@ -695,6 +745,7 @@ impl OrbitRegistry {
                 // stands.
                 let _ = crate::physics::metabolism::step_or_refuse(&mut self.returns, 1);
                 self.open[lane] = lane_open;
+                self.left.push(key.to_vec());
             }
             // 78.43 — CARRIED ITS WHOLE PERIOD AND NOT HOME: the age is
             // complete and the orbit SEALS — its lines released, its point
@@ -706,9 +757,11 @@ impl OrbitRegistry {
                 self.reservoir.insert(key, (after, open));
                 self.open[lane] = lane_open.checked_sub(open)?;
                 let _ = crate::physics::metabolism::step_or_refuse(&mut self.sealed, 1);
+                self.left.push(key.to_vec());
             }
+            // Carried by this motion: in motion until the field's next beat.
             Some(open) => {
-                self.orbits.insert(key, Orbit { state: after, open, lines, carried, period, aged });
+                self.orbits.insert(key, Orbit { state: after, open, lines, carried, period, in_motion: true });
                 self.open[lane] = lane_open;
             }
         }

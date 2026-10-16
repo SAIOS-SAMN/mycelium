@@ -60,12 +60,16 @@ pub(crate) struct Board {
     /// the same mind before it is read is one hearing, its latest saying in
     /// the place of the first), and whether one is on it: one at a time, as
     /// scenes are, each taken with a scratch of the field as it stands when
-    /// it is taken. Bounded by the distinct things the mind's peers say,
-    /// never by a count.
+    /// it is taken. Bounded by the distinct things the mind's peers say in
+    /// one traversal of the mind's orbit, never by a count: `hearings` are
+    /// those heard in the traversal now running, `hearings_crossed` those
+    /// that waited across its last return, which lapse at the next
+    /// (`Entity::lapse_hearings`).
     pub(crate) hearings: crate::network::nerve::Keyed<super::perceive::Hearing>,
+    pub(crate) hearings_crossed: crate::network::nerve::Keyed<super::perceive::Hearing>,
     pub(crate) hearing: bool,
     /// The hearings that lapsed unread across a return, since the mind began
-    /// (`Entity::lapse_hearings`).
+    /// — a reading, never read back by cognition.
     pub(crate) hearings_lapsed: u64,
     /// MU-CLIENT §4.13 — THE RESERVE LOCKED IN THE FIELD'S RESERVOIRS, per
     /// lane: the strain they hold, taken out of the operational reserve at
@@ -232,11 +236,10 @@ impl Entity {
             Some(n) => n,
             None => returns,
         };
-        let before = self.own_k();
         self.close_cycle(returns);
         // MU-CLIENT §4.13 — the hearings left unread across a return lapse.
         if returns > 0 {
-            if let Ok(lapsed) = u64::try_from(self.lapse_hearings(before)) {
+            if let Ok(lapsed) = u64::try_from(self.lapse_hearings()) {
                 let _ = crate::physics::metabolism::step_or_refuse(&mut self.board.hearings_lapsed, lapsed);
             }
         }

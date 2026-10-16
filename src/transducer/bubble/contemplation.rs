@@ -245,7 +245,7 @@ pub struct Contemplation {
     /// (`line::thread_new`).
     pub(crate) unthreaded: Keyed<()>,
     /// The perceptions the field held nothing of when they threaded: each
-    /// stands the one vent, to be met, and leaves at the next
+    /// stands until the field next moves, to be met, and leaves at that beat
     /// (`line::thread_new`).
     pub(crate) unheld: Keyed<()>,
     /// RM1 — each remainder the Congruent arms perceived and did not record,

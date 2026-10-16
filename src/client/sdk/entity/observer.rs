@@ -285,7 +285,7 @@ impl Entity {
                     "  orbit on lane {lane} · {} · carried {} of period {period} · {} · open {} · lines {}",
                     if o.rings { "rings" } else { "never returns" },
                     o.carried,
-                    if o.aged { "stood a beat" } else { "fresh" },
+                    if o.in_motion { "carried since the last beat" } else { "at rest since the last beat" },
                     o.open,
                     o.lines
                 )
@@ -297,7 +297,7 @@ impl Entity {
             "thoughts: unthreaded {} · held by nothing, leaving at the next vent {} · hearings waiting {} (one on the carrier: {}) · lapsed unread across a return {}",
             c.unthreaded.len(),
             c.unheld.len(),
-            self.board.hearings.len(),
+            self.hearings_waiting(),
             self.board.hearing,
             self.board.hearings_lapsed
         );

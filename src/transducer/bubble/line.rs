@@ -90,17 +90,21 @@ impl Contemplation {
     /// THE PERCEPTIONS NEWLY STANDING THREAD THEIR LINES (MU-CLIENT §4.13):
     /// each on the orbits and tubes its faces' motors and hue maps stand on,
     /// in the field as it stands. One the field holds nothing of — its motion
-    /// closed or let go already — stands the one vent, as a motion stands one
-    /// beat, so the perception after it can meet it, and leaves at the next
-    /// vent. A grounded thought winds its own line as its hours are admitted
-    /// (`wind_ground`), and a thought with no motion (a remainder held alone,
-    /// a merge without ground) has no orbit and stands by the citation and
-    /// unglued doors.
-    pub(crate) fn thread_new(&mut self, budget: &mut crate::physics::Budget) {
-        let stood: Vec<Vec<u8>> = self.unheld.scoped().map(|(k, _)| k).collect();
-        self.unheld = Keyed::new();
-        for key in stood {
-            self.release_thought(&key);
+    /// closed or let go already — stands until the field next moves, as a
+    /// motion stands through the beat of its own admission, so the perception
+    /// after it can meet it, and leaves at that beat (`beat`: the field moved
+    /// and beat since the last vent). A field nothing moved has no time
+    /// passing, and lets nothing go. A grounded thought winds its own line as
+    /// its hours are admitted (`wind_ground`), and a thought with no motion
+    /// (a remainder held alone, a merge without ground) has no orbit and
+    /// stands by the citation and unglued doors.
+    pub(crate) fn thread_new(&mut self, budget: &mut crate::physics::Budget, beat: bool) {
+        if beat {
+            let stood: Vec<Vec<u8>> = self.unheld.scoped().map(|(k, _)| k).collect();
+            self.unheld = Keyed::new();
+            for key in stood {
+                self.release_thought(&key);
+            }
         }
         let fresh: Vec<Vec<u8>> = self.unthreaded.scoped().map(|(k, _)| k).collect();
         self.unthreaded = Keyed::new();

@@ -50,15 +50,17 @@ fn a_hearing_said_again_waits_once() {
     assert!(mind.board.hearing, "the first is on the carrier");
     mind.perceive_hearing(speaker, b"again".to_vec(), Vec::new(), Evident::Unbound);
     mind.perceive_hearing(speaker, b"again".to_vec(), Vec::new(), Evident::Unbound);
-    assert_eq!(mind.board.hearings.len(), 1, "said again before it is read, it waits once");
+    assert_eq!(mind.hearings_waiting(), 1, "said again before it is read, it waits once");
     mind.perceive_hearing(speaker, b"other".to_vec(), Vec::new(), Evident::Unbound);
-    assert_eq!(mind.board.hearings.len(), 2, "a different thing waits beside it");
+    assert_eq!(mind.hearings_waiting(), 2, "a different thing waits beside it");
 }
 
-/// MU-CLIENT §4.13 — A HEARING WAITS AT MOST ACROSS ONE RETURN. Two hearings
-/// wait while one is on the carrier; the return that closes the traversal
-/// they arrived in keeps them; one more arrives; at the next return the two
-/// lapse unread and the one that arrived since waits on.
+/// MU-CLIENT §4.13 — A HEARING WAITS AT MOST ACROSS ONE RETURN, the return
+/// being the event and no clock read. Two hearings wait while one is on the
+/// carrier; the return that closes the traversal they were heard in carries
+/// them across; one more is heard; at the next return the two lapse unread
+/// and the one heard since crosses in their place. The same thing said again
+/// is heard in the traversal it was said in.
 #[test]
 fn a_hearing_unread_across_a_return_lapses() {
     use crate::client::sdk::entity::converge::Evident;
@@ -69,9 +71,11 @@ fn a_hearing_unread_across_a_return_lapses() {
     }
     let mut b = budget();
     assert!(mind.act_on_returns(&mut b, vec![b"a scene".to_vec()], false) > 0, "a binding is a return");
-    assert_eq!(mind.board.hearings.len(), 2, "the return closing their traversal keeps them");
+    assert_eq!(mind.board.hearings_crossed.len(), 2, "the return closing their traversal carries them across");
     mind.perceive_hearing(speaker, b"since".to_vec(), Vec::new(), Evident::Unbound);
+    mind.perceive_hearing(speaker, b"two".to_vec(), Vec::new(), Evident::Unbound);
+    assert_eq!((mind.board.hearings.len(), mind.board.hearings_crossed.len()), (2, 1), "said again, it is heard in this traversal");
     assert!(mind.act_on_returns(&mut b, vec![b"a scene".to_vec()], false) > 0, "and again");
-    assert_eq!(mind.board.hearings.len(), 1, "unread across a return, the two lapse; the one since waits");
-    assert_eq!(mind.board.hearings_lapsed, 2, "counted");
+    assert_eq!(mind.board.hearings_lapsed, 1, "unread across a return, the one left lapses");
+    assert_eq!(mind.board.hearings_crossed.len(), 2, "the two heard since cross in its place");
 }

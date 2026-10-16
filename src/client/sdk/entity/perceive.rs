@@ -74,14 +74,12 @@ pub(crate) struct Perceived {
 }
 
 /// RINGS ANOTHER MIND SAID, WAITING TO BE READ: the speaker, what was said,
-/// the words, what their evidence read on their scene, and the mind's own K
-/// it arrived at (MU-CLIENT §4.13: it waits at most across one return).
+/// the words, and what their evidence read on their scene.
 pub(crate) struct Hearing {
     speaker: [u8; 32],
     said: Vec<u8>,
     words: Vec<crate::client::sdk::chatter::Spoken>,
     evident: super::converge::Evident,
-    pub(crate) at_k: u64,
 }
 
 /// A SOLVE TO BE READ BEFORE IT IS SENT (`Entity::solve_task`'s home check),
@@ -271,35 +269,46 @@ impl Entity {
     pub(crate) fn perceive_hearing(&mut self, speaker: [u8; 32], said: Vec<u8>, words: Vec<crate::client::sdk::chatter::Spoken>, evident: super::converge::Evident) {
         let mut key = speaker.to_vec();
         crate::transducer::address::put_key_bytes(&mut key, &said);
-        let at_k = self.own_k();
-        self.board.hearings.insert(&key, Hearing { speaker, said, words, evident, at_k });
+        // Said again, it is heard in this traversal, in the place of the first.
+        self.board.hearings_crossed.remove(&key);
+        self.board.hearings.insert(&key, Hearing { speaker, said, words, evident });
         self.hear_next();
     }
 
     /// MU-CLIENT §4.13 — A HEARING WAITS AT MOST ACROSS ONE RETURN: at the
-    /// mind's return (`act_on_returns`), every hearing that arrived before the
-    /// traversal the return closes (`before`, the mind's K as that traversal
-    /// began) lapses unread — the sensory buffer, never a ledger; a peer that
-    /// needs agreement says its word again. One that arrived in the traversal
-    /// just closed waits one more, so none lapses the instant it lands. Answers
-    /// how many lapsed.
-    pub(crate) fn lapse_hearings(&mut self, before: u64) -> usize {
-        let stale: Vec<Vec<u8>> = self.board.hearings.scoped().filter(|(_, h)| h.at_k < before).map(|(k, _)| k).collect();
-        for k in &stale {
-            self.board.hearings.remove(k);
-        }
-        stale.len()
+    /// mind's return (`act_on_returns`), the hearings that already waited
+    /// across the last return lapse unread — the sensory buffer, never a
+    /// ledger; a peer that needs agreement says its word again — and those
+    /// heard in the traversal the return closes cross it, to wait until the
+    /// next. None lapses the instant it lands. The return is the event; no
+    /// clock is read. Answers how many lapsed.
+    pub(crate) fn lapse_hearings(&mut self) -> usize {
+        let crossed = std::mem::take(&mut self.board.hearings);
+        let lapsed = std::mem::replace(&mut self.board.hearings_crossed, crossed);
+        lapsed.len()
+    }
+
+    /// Every hearing waiting, in either traversal.
+    pub(crate) fn hearings_waiting(&self) -> usize {
+        self.board.hearings.len() + self.board.hearings_crossed.len()
     }
 
     /// THE NEXT HEARING TAKEN, where none is on the carrier — the least by
-    /// its coordinates, never by its arrival (rule 15) — posted with what the
-    /// mind remembers hearing and a scratch of its field as they stand now.
+    /// its coordinates over every hearing waiting, never by its arrival
+    /// (rule 15) — posted with what the mind remembers hearing and a scratch
+    /// of its field as they stand now.
     fn hear_next(&mut self) {
         if self.board.hearing {
             return;
         }
-        let Some(key) = self.board.hearings.scoped().next().map(|(k, _)| k) else { return };
-        let Some(Hearing { speaker, said, words, evident, .. }) = self.board.hearings.remove(&key) else { return };
+        let first = |set: &crate::network::nerve::Keyed<Hearing>| set.scoped().next().map(|(k, _)| k);
+        let taken = match (first(&self.board.hearings), first(&self.board.hearings_crossed)) {
+            (Some(a), Some(b)) if b < a => self.board.hearings_crossed.remove(&b),
+            (Some(a), _) => self.board.hearings.remove(&a),
+            (None, Some(b)) => self.board.hearings_crossed.remove(&b),
+            (None, None) => None,
+        };
+        let Some(Hearing { speaker, said, words, evident }) = taken else { return };
         self.board.hearing = true;
         let (mut field, from) = crate::transducer::mind::scratch_here();
         let mut remembered = self.remembered.clone();
