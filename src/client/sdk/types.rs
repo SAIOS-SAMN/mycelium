@@ -531,9 +531,15 @@ pub struct Entity {
     /// same rule is not sent again (`Entity::solve_task`). One per task.
     pub(crate) solve_refused: crate::network::nerve::Keyed<Vec<u8>>,
     /// Words this voice has spoken up for adoption: said once, the judge
-    /// decided (installed, derivable, or refused). Keyed by transport
-    /// address; membership is vertex equality, never the digest alone.
-    pub(crate) taught_up: crate::network::nerve::Keyed<Element>,
+    /// decided (installed, derivable, or refused). Membership is vertex
+    /// equality, never the digest alone. MU-CLIENT §4.13 — KEYED BY THE
+    /// ADDRESS'S 32-BYTE HASH (`Entity::taught_key`, the operator's ruling of
+    /// 2026-10-16: a hash compacts coordinates where nothing is lost), each
+    /// with the stratum its vertex was filed under in `taught_at` — none for
+    /// a sentence, which is one vertex by its address alone. The word itself
+    /// stands where the language holds it (the dialect keeps a taught word
+    /// until the genome does), and the exact test reads it there.
+    pub(crate) taught_up: crate::network::nerve::Keyed<Option<Vec<u8>>>,
     /// `taught_up` INDEXED BY VERTEX STRATUM: the M1 key of a word's rotor
     /// (or its canonical chain, where it has no letters) to the addresses
     /// uttered at it.

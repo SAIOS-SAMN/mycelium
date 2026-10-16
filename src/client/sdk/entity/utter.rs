@@ -87,18 +87,31 @@ pub(crate) fn vertex_stratum(word: &Element) -> Option<Vec<u8>> {
 }
 
 impl Entity {
+    /// THE KEY AN UTTERANCE RECEIPT IS FILED UNDER: its address's 32-byte
+    /// hash — the address compacted, located exactly by every reader that
+    /// holds it (`taught_up`).
+    pub(crate) fn taught_key(addr: &[u8]) -> [u8; 32] {
+        crate::chronometry::payload_hash(addr)
+    }
+
     /// File an uttered word in both indices at once: by address, and in
     /// the stratum its vertex lies in.
     pub(crate) fn file_taught(&mut self, word: &Element) {
         let addr = word.address();
         // A word with no stratum (a chain A5 refuses) is filed by address
-        // alone: there is no vertex for another spelling to share.
-        if let Some(at) = vertex_stratum(word) {
+        // alone: there is no vertex for another spelling to share. A
+        // SENTENCE is one vertex by its address alone (`same_vertex`), which
+        // the receipt's own key answers: it is filed in no stratum.
+        let at = match word.is_sentence() {
+            true => None,
+            false => vertex_stratum(word),
+        };
+        if let Some(at) = &at {
             self.taught_at.nested_insert(at, &addr, ());
         }
         // An admitted citer is owed to no court any more.
         self.owed_tries.remove(addr.as_bytes());
-        self.taught_up.insert(addr, word.clone());
+        self.taught_up.insert(Self::taught_key(addr.as_bytes()), at);
     }
 
     /// The utterance receipt of a word that left the dialect leaves both
@@ -108,12 +121,19 @@ impl Entity {
         self.scenes.forget(addr);
         // MU-CLIENT §4.13 — a word the dialect shed is not said again.
         self.unheard.remove(addr);
-        let Some(word) = self.taught_up.remove(addr) else {
+        let Some(at) = self.taught_up.remove(&Self::taught_key(addr)) else {
             return;
         };
-        if let Some(at) = vertex_stratum(&word) {
-            if let Some(inner) = self.taught_at.get_mut(&at) {
-                inner.remove(addr);
+        if let Some(at) = at {
+            let empty = match self.taught_at.get_mut(&at) {
+                Some(inner) => {
+                    inner.remove(addr);
+                    inner.is_empty()
+                }
+                None => false,
+            };
+            if empty {
+                self.taught_at.remove(&at);
             }
         }
     }
@@ -521,25 +541,27 @@ impl Entity {
     }
 
     pub(crate) fn already_taught_addr(&self, addr: &[u8]) -> bool {
-        self.taught_up.contains(addr)
+        self.taught_up.contains(&Self::taught_key(addr))
     }
 
     /// Already uttered this operator: same vertex on the working atlas
     /// or already sent up, not the same digest. A dialect hit is a use.
     pub(crate) fn already_taught(&mut self, word: &Element) -> bool {
-        if self.taught_up.contains(&word.address()) {
+        if self.already_taught_addr(word.address().as_bytes()) {
             return true;
         }
-        // THE STRATUM, THEN THE EXACT TEST. This read the whole of
-        // `taught_up` running `same_vertex` against every word this mind
-        // had ever uttered, on every sentence of every speak (law 3, and
-        // its answer: the carrier was missing a key). `taught_at` names the
-        // words that COULD be one vertex with this one; the exact test
-        // decides over that fiber and nothing else.
+        // THE STRATUM, THEN THE EXACT TEST, never a walk of every word this
+        // mind uttered (law 3). `taught_at` names the words that COULD be
+        // one vertex with this one; the exact test decides over that fiber
+        // and nothing else, on each word as the language holds it. A sentence
+        // is one vertex by its address, answered above.
+        if word.is_sentence() {
+            return self.epigenome.same_vertex_in_genome(word).is_some() || self.touched_in_dialect(word);
+        }
         if let Some(fiber) = vertex_stratum(word).and_then(|at| self.taught_at.get(&at)) {
             let candidates: Vec<Vec<u8>> = fiber.scoped().map(|(k, _)| k).collect();
             for a in candidates {
-                if self.taught_up.get(&a).is_some_and(|e| e.same_vertex(word)) {
+                if self.epigenome.working_word(&a).is_some_and(|h| h.element().same_vertex(word)) {
                     return true;
                 }
             }
@@ -547,11 +569,14 @@ impl Entity {
         if self.epigenome.same_vertex_in_genome(word).is_some() {
             return true;
         }
-        if let Some(a) = self.epigenome.same_vertex_in_dialect(word) {
-            self.epigenome.touch(&a, self.own_k());
-            return true;
-        }
-        false
+        self.touched_in_dialect(word)
+    }
+
+    /// The same vertex standing in the dialect, touched as a use.
+    fn touched_in_dialect(&mut self, word: &Element) -> bool {
+        let Some(a) = self.epigenome.same_vertex_in_dialect(word) else { return false };
+        self.epigenome.touch(&a, self.own_k());
+        true
     }
 
     /// Stand the vertex in the dialect and mark it taught, without the wire.
@@ -604,7 +629,7 @@ impl Entity {
 
     #[cfg(test)]
     pub(crate) fn uttered(&self, addr: &[u8]) -> bool {
-        self.taught_up.contains(addr)
+        self.already_taught_addr(addr)
     }
 
 }

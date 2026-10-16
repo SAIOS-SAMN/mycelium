@@ -1034,12 +1034,11 @@ impl Entity {
                 }
             }
         }
-        let mut unratified: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for (a, _) in self.taught_up.scoped() {
-            if !self.epigenome.genome.contains(&a) {
-                unratified.insert(&a, ());
-            }
-        }
+        // A dialect word stands taught and unratified where its receipt is
+        // held and the genome does not hold it (the genome never holds a
+        // dialect word it promoted: promotion drops it from the dialect).
+        let taught_up = &self.taught_up;
+        let unratified = |a: &[u8]| taught_up.contains(&Entity::taught_key(a));
         let (unheard, speaking) = (&self.unheard, &self.speaking);
         let referenced = |a: &[u8], d: &Dialect| {
             c.bubbles.contains(a)
@@ -1048,7 +1047,7 @@ impl Entity {
                 || covered.contains(&crate::transducer::stalk::invariant_of(d.sentence.element()).key())
                 || speaking.contains(a)
                 || unheard.contains(a)
-                || unratified.contains(a)
+                || unratified(a)
         };
         let dropped = self.epigenome.shed_unreferenced(&referenced);
         // 7.3, S12.6a: the utterance receipt of a word that shed leaves
