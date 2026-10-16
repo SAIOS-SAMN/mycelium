@@ -157,17 +157,20 @@ struct Union {
     /// balance), and whether it read every word from a vantage of its own.
     acked: Keyed<(Vec<AckWord>, Vec<crate::transducer::cga::Mv>, bool)>,
     shared: bool,
-    /// The mind's own K it was said at: a union stands one aperture cycle
-    /// of the mind's strokes, as a thought heard and a letter waiting do.
-    at: u64,
+    /// MU-CLIENT §4.13 — whether it has waited across one of the mind's
+    /// returns: a union stands until the next return after that, as a
+    /// thought heard, an answer given and a letter waiting do
+    /// (`Carrier::release_unmet`).
+    crossed: bool,
     /// The scene it was spoken under (E1): agreed, it is spoken there.
     family: Vec<u8>,
 }
 
-/// ONE THING THIS MIND HEARD AND SAID AGAIN, waiting for the speaker's ACK.
+/// ONE THING THIS MIND HEARD AND SAID AGAIN, waiting for the speaker's ACK,
+/// and whether it has waited across one of the mind's returns.
 struct Thought {
     words: Vec<(Spoken, HeardWord)>,
-    at: u64,
+    crossed: bool,
 }
 
 /// THE CARRIER'S OWN STATE, held on its thread alone.
@@ -181,15 +184,16 @@ struct Carrier {
     /// 78.163 — keyed by the speaker's voice then what it said.
     thoughts: Keyed<Thought>,
     /// Letters stood and said, waiting for a union before the court hears
-    /// them (78.161 item 3), with the mind's own K they began waiting at and
-    /// the scene they were spoken under (E1).
-    waiting: Keyed<(Element, u64, Vec<u8>)>,
+    /// them (78.161 item 3), with whether each has waited across one of the
+    /// mind's returns and the scene it was spoken under (E1).
+    waiting: Keyed<(Element, bool, Vec<u8>)>,
     /// Where what the conversation transduced goes to the mind's field.
     field: Sender<FieldWork>,
     /// THE ANSWERS THIS MIND GAVE (MU-CLIENT §5.3): keyed by the question's
-    /// coordinates, the factors said and the mind's K they were said at — so
-    /// a question asked of an answer is answered one order further down.
-    answered: Keyed<(Vec<Spoken>, u64)>,
+    /// coordinates, the factors said and whether they have waited across one
+    /// of the mind's returns — so a question asked of an answer is answered
+    /// one order further down.
+    answered: Keyed<(Vec<Spoken>, bool)>,
     /// WHAT THIS MIND HAS SAID, by address: said once, never said to its
     /// peers again — a thing said again is a mind mumbling, its peers hearing,
     /// asking and answering the same thing over. What waits on a union still
@@ -1009,20 +1013,25 @@ impl Carrier {
             Inflow::Wait(e, words, family) => {
                 let addr = e.address();
                 if !self.waiting.contains(addr.as_bytes()) {
-                    self.waiting.insert(&addr, (e.clone(), self.k, family.clone()));
+                    self.waiting.insert(&addr, (e.clone(), false, family.clone()));
                 }
                 self.say(&e, words, family);
             }
             Inflow::Clock { k, point } => {
+                // The mind's K moves only by its returns, and is told only as
+                // it moves: a clock that moved is a return.
+                let returned = k != self.k;
                 self.k = k;
                 if point.is_some() {
                     self.point = point;
+                }
+                if returned {
+                    self.release_unmet();
                 }
             }
             Inflow::Priced(p) => self.priced(p),
             Inflow::Understood { speaker, said, words, evident } => self.understood(&speaker, said, words, evident),
         }
-        self.release_unmet();
         let (thoughts, unions, waiting) = (self.thoughts.len() as u64, self.union.len() as u64, self.waiting.len() as u64);
         crate::observe::note_mind(|m| {
             m.k = self.k;
@@ -1128,7 +1137,7 @@ impl Carrier {
             _ => None,
         };
         let Some(frame) = self.frame(Said::Say { said: addr.as_bytes().to_vec(), words: words.clone(), evidence }) else { return };
-        self.union.insert(&addr, Union { said: e.clone(), spoken: words, acked: Keyed::new(), shared: false, at: self.k, family });
+        self.union.insert(&addr, Union { said: e.clone(), spoken: words, acked: Keyed::new(), shared: false, crossed: false, family });
         self.said.insert(&addr, ());
         self.send(&frame, None);
     }
@@ -1171,7 +1180,7 @@ impl Carrier {
         key.extend_from_slice(&said);
         match evident {
             Evident::Unbound | Evident::True => {
-                self.thoughts.insert(&key, Thought { words: words.into_iter().zip(out).collect(), at: self.k });
+                self.thoughts.insert(&key, Thought { words: words.into_iter().zip(out).collect(), crossed: false });
             }
             Evident::Refuted | Evident::Unread => {}
         }
@@ -1230,7 +1239,7 @@ impl Carrier {
                 (self.frame(Said::Say { said: question.clone(), words: factors.clone(), evidence: None }), chatter::peer_of(&self.dir, who))
             {
                 self.send(&frame, Some(&to));
-                self.answered.insert(&question, (factors, self.k));
+                self.answered.insert(&question, (factors, false));
                 crate::observe::note_mind(|m| m.asks[1] += 1);
             }
         }
@@ -1333,32 +1342,49 @@ impl Carrier {
             .map_err(|_| std::io::Error::new(std::io::ErrorKind::BrokenPipe, "the mind's field is gone"))
     }
 
-    /// WHAT HAS STOOD AN APERTURE CYCLE of the mind's own strokes is let go:
-    /// a thought no ACK reached, an answer given, a thing said no HOLD met;
-    /// and a letter no
-    /// mind agreed goes to the court on its own — the union decides what is
-    /// worth the court's replay first, and never silences a mind that has
-    /// none.
+    /// MU-CLIENT §4.13 — AT THE MIND'S RETURN, WHAT WAITED ACROSS THE LAST ONE
+    /// IS LET GO: a thought no ACK reached, an answer given, a thing said no
+    /// HOLD met; and a letter no mind agreed goes to the court on its own —
+    /// the union decides what is worth the court's replay first, and never
+    /// silences a mind that has none. What waits now crosses this return, to
+    /// stand until the next. The return is the event; no count is read.
     fn release_unmet(&mut self) {
-        let now = self.k;
-        let cycle = u64::from(crate::physics::aperture_cycle());
-        let stood = |at: u64| now.checked_sub(at).is_some_and(|waited| waited >= cycle);
-        let lapsed: Vec<Vec<u8>> = self.thoughts.scoped().filter(|(_, t)| stood(t.at)).map(|(k, _)| k).collect();
+        let lapsed: Vec<Vec<u8>> = self.thoughts.scoped().filter(|(_, t)| t.crossed).map(|(k, _)| k).collect();
         for k in lapsed {
             self.thoughts.remove(&k);
         }
-        let given: Vec<Vec<u8>> = self.answered.scoped().filter(|(_, (_, at))| stood(*at)).map(|(k, _)| k).collect();
+        let given: Vec<Vec<u8>> = self.answered.scoped().filter(|(_, (_, crossed))| *crossed).map(|(k, _)| k).collect();
         for k in given {
             self.answered.remove(&k);
         }
-        let spent: Vec<Vec<u8>> = self.union.scoped().filter(|(_, u)| stood(u.at)).map(|(k, _)| k).collect();
+        let spent: Vec<Vec<u8>> = self.union.scoped().filter(|(_, u)| u.crossed).map(|(k, _)| k).collect();
         for k in spent {
             self.union.remove(&k);
         }
-        let due: Vec<Vec<u8>> = self.waiting.scoped().filter(|(_, (_, at, _))| stood(*at)).map(|(k, _)| k).collect();
+        let due: Vec<Vec<u8>> = self.waiting.scoped().filter(|(_, (_, crossed, _))| *crossed).map(|(k, _)| k).collect();
         for k in due {
             if let Some((letter, _, family)) = self.waiting.remove(&k) {
                 let _ = self.speak_agreed(&letter, None, &family);
+            }
+        }
+        for k in self.thoughts.scoped().map(|(k, _)| k).collect::<Vec<_>>() {
+            if let Some(t) = self.thoughts.get_mut(&k) {
+                t.crossed = true;
+            }
+        }
+        for k in self.answered.scoped().map(|(k, _)| k).collect::<Vec<_>>() {
+            if let Some(a) = self.answered.get_mut(&k) {
+                a.1 = true;
+            }
+        }
+        for k in self.union.scoped().map(|(k, _)| k).collect::<Vec<_>>() {
+            if let Some(u) = self.union.get_mut(&k) {
+                u.crossed = true;
+            }
+        }
+        for k in self.waiting.scoped().map(|(k, _)| k).collect::<Vec<_>>() {
+            if let Some(w) = self.waiting.get_mut(&k) {
+                w.1 = true;
             }
         }
     }
