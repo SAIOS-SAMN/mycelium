@@ -149,6 +149,20 @@ impl Entity {
                     }
                 )
             },
+            // 24.2 — WHAT THE MIND HAS LEARNED: its genome and dialect, the
+            // taught words it refused (they never enter, so a sync fetches
+            // them again), the strata its last digest found discordant, the
+            // strata glued, the obstructions kept.
+            format!(
+                "language: genome {} · dialect {} · taught words refused {} · discordant strata {} (measured {}) · glued {} · obstructions {}",
+                self.epigenome.genome_len(),
+                self.epigenome.dialect_len(),
+                self.epigenome.refused,
+                self.discordance,
+                self.discordance_measured,
+                self.glued.len(),
+                self.obstructions.len()
+            ),
             format!(
                 "held for returns {} over {} scenes · scenes waiting {} · unheard words {} · unread solves {} · owed {} · contracted {} · questions {}",
                 self.held_for_returns(),
