@@ -74,66 +74,59 @@ pub(crate) fn mind_mail(me: [u8; 32], raw: Vec<Mail>) -> io::Result<Vec<MindMail
     Ok(out)
 }
 
-/// 78.148 — A MIND'S HOLD ON ITS SEAT: whether its take is posted, whether
-/// the house answered it held, and how many of the mind's own strokes it has
-/// waited for that answer. The seat is held again when it is lost: a TAKEN
-/// refused, or a call refused NOT THE HOLDER (a house restarted, the seat
-/// passed), lets the take go and the next stroke takes again; a take no
-/// TAKEN answers within [`SeatHold::patience`] strokes is let go and posted
-/// again.
+/// 78.148, MU-CLIENT §7.1 — A MIND'S HOLD ON ITS SEAT, BY THE HOUSE'S OWN
+/// EVENTS (the operator, 2026-10-17: a stroke-count retry flooded a house
+/// that refused every take, ~360 takes a second, its TAKENs dropped at the
+/// relay's bound): whether its take is posted, whether the house answered
+/// it held, and the listing epoch it last posted or was refused under. A
+/// seat is taken only where the house's latest listing NAMES it, and once
+/// under that listing: refused, or unanswered, it waits for the house's next
+/// listing epoch — never a count of the mind's strokes. A call refused NOT
+/// THE HOLDER (the house restarted, the seat passed) lets the take go, and
+/// the seat may be taken again under the listing standing.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct SeatHold {
     pub posted: bool,
     pub held: bool,
-    pub waited: u64,
+    pub under: Option<u64>,
 }
 
 impl SeatHold {
-    /// THE BOUND ON AN UNANSWERED TAKE: a full APERTURE CYCLE of the mind's
-    /// own strokes (`physics::aperture_cycle`, the stroke count at which a
-    /// contact's consecutive failures read as occlusion) — never a clock.
+    /// THE BOUND ON A READING OF THE MIND'S OWN RELAY (its mail's pages, its
+    /// listing read again): a full APERTURE CYCLE of the mind's own strokes
+    /// (`physics::aperture_cycle`). Never a bound on what is sent a house.
     pub(crate) fn patience() -> u64 {
         u64::from(crate::physics::aperture_cycle())
     }
 
-    /// AT A STROKE: whether the take is to be posted now — never posted, let
-    /// go, or (counted here) unanswered for a full aperture cycle.
-    pub(crate) fn stroke(&mut self) -> bool {
-        if self.posted && !self.held {
-            self.waited = match self.waited.checked_add(1) {
-                Some(w) => w,
-                None => self.waited,
-            };
-            if self.waited >= Self::patience() {
-                self.let_go();
-            }
-        }
-        !self.posted
+    /// WHETHER THE TAKE IS TO BE POSTED, the house's latest listing naming
+    /// this seat under epoch `listed` (none: the listing names it not, or no
+    /// listing is read): not held, and not already posted or refused under
+    /// that epoch.
+    pub(crate) fn may_take(&self, listed: Option<u64>) -> bool {
+        listed.is_some_and(|e| !self.held && self.under != Some(e))
     }
 
-    /// The take was posted: its answer awaited from here.
-    pub(crate) fn take_posted(&mut self) {
-        *self = SeatHold { posted: true, held: false, waited: 0 };
+    /// The take was posted under the listing epoch `epoch`: its answer
+    /// awaited, or the next epoch.
+    pub(crate) fn take_posted(&mut self, epoch: u64) {
+        *self = SeatHold { posted: true, held: false, under: Some(epoch) };
     }
 
-    /// The take let go: the next stroke posts it again.
+    /// The take let go: it may be posted again under the listing standing.
     pub(crate) fn let_go(&mut self) {
         *self = SeatHold::default();
     }
 
     /// THE HOUSE'S TAKEN: held — and the listing is to be read (true) — or
-    /// refused and let go.
+    /// refused, the seat waiting for the house's next listing epoch.
     pub(crate) fn taken(&mut self, ok: bool) -> bool {
-        match ok {
-            true => {
-                *self = SeatHold { posted: true, held: true, waited: 0 };
-                true
-            }
-            false => {
-                self.let_go();
-                false
-            }
+        self.posted = false;
+        self.held = ok;
+        if ok {
+            self.posted = true;
         }
+        ok
     }
 
     /// AN OUTCOME READ: refused NOT THE HOLDER lets the take go; refused NO

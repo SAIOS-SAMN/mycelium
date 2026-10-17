@@ -6,11 +6,13 @@
 //
 //! One mind may sit many seats (barren-realms, 2026-10-09): they share the
 //! mind's key and so one mailbox, read to its end page by page, each piece to
-//! the seat it names. A seat lost — a TAKEN refused, a call refused NOT THE
-//! HOLDER, a take unanswered a full aperture cycle of strokes — is taken again
-//! (78.148). Sit-all (78.158a) sits every seat the domain's listing offers,
-//! read again when a listing names another epoch and at every aperture
-//! cycle. A cursor on a restarted relay is no progress (v1.4).
+//! the seat it names. A SEAT IS TAKEN ONLY WHERE THE HOUSE'S LATEST LISTING
+//! NAMES IT, once under that listing (MU-CLIENT §7.1, the operator
+//! 2026-10-17): refused or unanswered, it waits for the house's next listing
+//! epoch; a call refused NOT THE HOLDER lets it go to be taken again (78.148,
+//! the stroke-count retry retired). The listing is read off the mind's own
+//! relay at every aperture cycle, and sit-all (78.158a) sits every seat it
+//! offers. A cursor on a restarted relay is no progress (v1.4).
 //!
 //! MU-CLIENT §5.1, §6 — THE SEAT'S OWN CARRIER: every exchange with the house
 //! (a listing, a take, a page of mail, a call) is POSTED on the seat's carrier
@@ -35,6 +37,9 @@ pub enum Sit {
 struct Seat {
     at: SeatName,
     hold: SeatHold,
+    /// The epoch of the house's latest listing where it names this seat;
+    /// none where the latest listing read names it not, or none is read.
+    listed: Option<u64>,
     memo: crate::transducer::family::ExtractMemo,
     /// The tasks answered, by citation: answered is an APPLIED outcome.
     answered: crate::network::nerve::Keyed<()>,
@@ -117,6 +122,7 @@ impl Seat {
         Seat {
             at,
             hold: SeatHold::default(),
+            listed: None,
             memo: crate::transducer::family::ExtractMemo::new(),
             answered: crate::network::nerve::Keyed::new(),
             solving: crate::network::nerve::Keyed::new(),
@@ -153,7 +159,7 @@ impl Entity {
             after: 0,
             epoch: None,
             listed: None,
-            relist: all,
+            relist: true,
             unlisted: 0,
             mailing: false,
             pages: 0,
@@ -167,13 +173,13 @@ impl Entity {
     pub(crate) fn body_tick(&mut self) {
         self.take_seat_answers();
         let Some(mut body) = self.board.body.take() else { return };
-        if body.all {
-            if let Some(n) = body.unlisted.checked_add(1) {
-                body.unlisted = n;
-            }
-            if body.relist || body.unlisted >= SeatHold::patience() {
-                self.sit_listing(&mut body);
-            }
+        // The house's listing, read off the mind's own relay: which seats it
+        // names, under which epoch — what a take waits on (MU-CLIENT §7.1).
+        if let Some(n) = body.unlisted.checked_add(1) {
+            body.unlisted = n;
+        }
+        if body.relist || body.unlisted >= SeatHold::patience() {
+            self.sit_listing(&mut body);
         }
         for seat in &mut body.seats {
             self.take_seat(seat, &body.key);
@@ -239,48 +245,45 @@ impl Entity {
         self.board.body = Some(body);
     }
 
-    /// 78.158a SIT-ALL — the domain's latest listing asked; where it lands,
-    /// the seats it offers are sat and those it no longer offers let go.
+    /// THE DOMAIN'S LATEST LISTING, asked of the mind's own relay; where it
+    /// lands, each seat sat reads whether it names it and under which epoch
+    /// (a take waits on it), and — 78.158a SIT-ALL — the seats it offers are
+    /// sat and those it no longer offers let go. No listing names no seat.
     fn sit_listing(&mut self, body: &mut Body) {
         body.unlisted = 0;
         body.relist = false;
         let (domain, sub_origin) = (body.domain, body.sub_origin);
         self.ask_seat(move |s| s.list_seats(domain, sub_origin), |me, read: io::Result<Option<SignedPost>>| {
-            let Ok(Some(listing)) = read else { return };
-            let Some((epoch, listed)) = crate::client::sdk::seat::listed_seats(&listing) else { return };
+            let Ok(read) = read else { return };
+            let named = read.as_ref().and_then(crate::client::sdk::seat::listed_seats);
             let Some(mut body) = me.board.body.take() else { return };
-            let sat: Vec<u32> = body.seats.iter().map(|s| s.at.seat).collect();
-            let (take, let_go) = crate::client::sdk::seat::reseat(&sat, &listed);
-            body.seats.retain(|s| !let_go.contains(&s.at.seat));
-            for seat in take {
-                body.seats.push(Seat::new(SeatName { domain: body.domain, sub_origin: body.sub_origin, seat }));
+            if let (true, Some((_, listed))) = (body.all, named.as_ref()) {
+                let sat: Vec<u32> = body.seats.iter().map(|s| s.at.seat).collect();
+                let (take, let_go) = crate::client::sdk::seat::reseat(&sat, listed);
+                body.seats.retain(|s| !let_go.contains(&s.at.seat));
+                for seat in take {
+                    body.seats.push(Seat::new(SeatName { domain: body.domain, sub_origin: body.sub_origin, seat }));
+                }
             }
-            body.listed = Some(epoch);
+            for seat in &mut body.seats {
+                seat.listed = named.as_ref().and_then(|(epoch, listed)| listed.contains(&seat.at.seat).then_some(*epoch));
+            }
+            body.listed = named.map(|(epoch, _)| epoch);
             me.board.body = Some(body);
         });
     }
 
-    /// THE SEAT TAKEN (again, where it was lost or went unanswered a full
-    /// aperture cycle of strokes); the calls of a take let go answer nothing.
+    /// THE SEAT TAKEN, where the house's latest listing names it and no take
+    /// was posted or refused under that listing (`SeatHold::may_take`). A take
+    /// the wire does not carry, the house refuses, or leaves unanswered waits
+    /// for the house's next listing epoch; the calls of a take let go answer
+    /// nothing.
     fn take_seat(&mut self, seat: &mut Seat, key: &ed25519_dalek::SigningKey) {
-        if !seat.hold.stroke() {
-            return;
-        }
+        let Some(epoch) = seat.listed.filter(|_| seat.hold.may_take(seat.listed)) else { return };
         seat.solving = crate::network::nerve::Keyed::new();
-        // POSTED FROM THE SENDING: a take on the carrier is a take awaited, its
-        // strokes counted against the hold's patience; one the wire or the
-        // house refuses is let go where that answer lands, and taken again.
-        seat.hold.take_posted();
+        seat.hold.take_posted(epoch);
         let (at, key) = (seat.at, key.clone());
-        self.ask_seat(move |s| s.take(at, &key), move |me, taken: io::Result<Result<u64, Refusal>>| {
-            if !matches!(taken, Ok(Ok(_))) {
-                me.with_body_seat(at, |seat| {
-                    if !seat.hold.held {
-                        seat.hold.let_go();
-                    }
-                });
-            }
-        });
+        self.ask_seat(move |s| s.take(at, &key), move |_, _: io::Result<Result<u64, Refusal>>| {});
     }
 
     /// THE SHARED BOX'S NEXT PAGE, asked on the seat's carrier; it is read

@@ -552,54 +552,56 @@ fn the_listing_is_perceived_as_the_minds_repertoire() {
     assert_eq!(m.repertoire().iter().map(|o| o.id).collect::<Vec<_>>(), vec![1, 2, 5], "the listing read again restores it");
 }
 
-/// 78.148 — THE SEAT HELD AGAIN. A TAKEN refused lets the take go and the
-/// next stroke takes again; held, the listing is to be read; a call refused
-/// NOT THE HOLDER lets it go, NO SUCH FUNCTION asks the listing; a take no
-/// TAKEN answers is posted again after a full aperture cycle of strokes —
-/// and, on one court's relay, the house reads the second take.
+/// 78.148, MU-CLIENT §7.1 — THE SEAT HELD BY THE HOUSE'S OWN EVENTS. No
+/// listing names the seat: no take. Listed under epoch 1, it is taken once;
+/// refused, it waits — no take under epoch 1 again, however long; the house
+/// lists again under epoch 2, and it is taken once more, and the house reads
+/// that second take on one court's relay. Held, the listing is to be read; a
+/// call refused NOT THE HOLDER lets it go, NO SUCH FUNCTION asks the
+/// listing; a take left unanswered waits for the next listing.
 #[test]
-fn the_seat_is_taken_again_when_lost() {
+fn the_seat_is_taken_by_the_houses_own_events() {
     use crate::client::sdk::seat::SeatHold;
     let mut k = founded();
     let (d, me) = (vk(&domain()), vk(&mind()));
     list(&mut k, 1, vec![SeatFn { id: 2, tags: vec![TAG_COUNT] }]);
     let mut h = SeatHold::default();
+    assert!(!h.may_take(None), "no listing names the seat: no take");
     let mut after = 0u64;
     let mut nonce = 0u8;
-    let mut take = |k: &mut Kernel, h: &mut SeatHold| {
-        assert!(h.stroke(), "the stroke posts the take");
+    let mut take = |k: &mut Kernel, h: &mut SeatHold, epoch: u64| {
+        assert!(h.may_take(Some(epoch)), "the listing names the seat: the take is posted");
         nonce += 1;
         k.seat_post(&Post::Take(Take { domain: d, sub_origin: None, seat: 7, mind: me, nonce: [nonce; 32] }).sign(&mind()).expect("writes")).expect("relayed");
-        h.take_posted();
+        h.take_posted(epoch);
     };
-    take(&mut k, &mut h);
+    take(&mut k, &mut h, 1);
+    assert!(!h.may_take(Some(1)), "posted under epoch 1: it waits for the answer");
     k.seat_post(&Post::Taken(Taken { domain: d, sub_origin: None, seat: 7, mind: me, ok: false, reason: 1 }).sign(&house()).expect("writes")).expect("relayed");
     for piece in mind_mail(me, k.seat_mail(&ReadMail::sign(&mind(), after, [0; 32])).expect("signed").mail).expect("typed") {
         let MindMail::Taken(seq, t) = piece else { panic!("a TAKEN") };
         after = seq;
-        assert!(!h.taken(t.ok), "refused: let go, no listing");
+        assert!(!h.taken(t.ok), "refused: no listing to read");
     }
-    assert_eq!(h, SeatHold::default(), "the take let go");
-    take(&mut k, &mut h);
+    assert!(!h.may_take(Some(1)), "refused under epoch 1: never taken again under it");
+    list(&mut k, 2, vec![SeatFn { id: 2, tags: vec![TAG_COUNT] }]);
+    take(&mut k, &mut h, 2);
     let takes = k.seat_mail(&ReadMail::sign(&house(), 0, [0; 32])).expect("signed").mail.iter().filter(|m| m.sub == SUB_TAKE).count();
-    assert_eq!(takes, 2, "the house reads the second take");
+    assert_eq!(takes, 2, "the house reads the second take, under the new listing");
     k.seat_post(&Post::Taken(Taken { domain: d, sub_origin: None, seat: 7, mind: me, ok: true, reason: 0 }).sign(&house()).expect("writes")).expect("relayed");
     for piece in mind_mail(me, k.seat_mail(&ReadMail::sign(&mind(), after, [0; 32])).expect("signed").mail).expect("typed") {
         let MindMail::Taken(_, t) = piece else { panic!("a TAKEN") };
         assert!(h.taken(t.ok), "held: the listing is to be read");
     }
-    assert!(h.held && !h.stroke(), "held: the stroke reads its mail");
+    assert!(h.held && !h.may_take(Some(2)) && !h.may_take(Some(3)), "held: no take under any listing");
     assert_eq!(listed_fns(&k, 7).1, vec![SeatFn { id: 2, tags: vec![TAG_COUNT] }]);
     assert!(h.outcome(false, REASON_NO_SUCH_FUNCTION) && h.held, "no such function: the listing again, the seat still held");
     assert!(!h.outcome(false, REASON_BAD_ARGUMENTS) && h.held, "bad arguments: information for the mind, the seat still held");
     assert!(!h.outcome(false, REASON_NOT_THE_HOLDER) && !h.held, "not the holder: let go");
-    assert!(h.stroke(), "and taken again");
-    h.take_posted();
-    for _ in 1..SeatHold::patience() {
-        assert!(!h.stroke(), "an unanswered take waits within the aperture cycle");
-    }
-    assert!(h.stroke(), "unanswered a full aperture cycle: posted again");
-    assert_eq!(SeatHold::patience(), u64::from(crate::physics::aperture_cycle()));
+    assert!(h.may_take(Some(2)), "and taken again under the listing standing");
+    h.take_posted(2);
+    assert!(!h.may_take(Some(2)), "an unanswered take waits: never a count of strokes");
+    assert!(h.may_take(Some(3)), "the house's next listing: posted again");
 }
 
 /// 78.148 — A VERSOR'S CHANGE IS THE VERSOR THAT CARRIES IT (the operator's
