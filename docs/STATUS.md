@@ -35,6 +35,19 @@ lacking them; retiring rollouts, the gauge argmin, `step`/`evaluate`), and
 the vertex-body over-claim spoken as sections at the pivot (out of scope
 until ruled back in).
 
+## The n-dimensional source (2026-10-17)
+Ruled in by the operator ("at the source we are only limited by the observed
+dimensional capacity"): `physics::outflow` — 78.75's white-hole source on
+grade one and two alone, at any n read off the coordinates (no dimension
+constant): `keeping` (`K = L − σ∧(σ·L)/σ²`), `SourceN::of` (`N = P ∧ (P·K)`,
+verified null, fixing P, keeping σ, refused by name), `outflow_planes` (N's
+component on each base plane). Guarded to equal the Cl(4,1) `Source::of` on
+n = 3; each plane's outflow read exactly on S⁶⁰ and S³⁶⁰. It unblocks worlds
+on xylarium and netstratum (two-plane staging split kinds by parity), whose
+services stay down until mycelium's go — the operator's. Also ruled valid:
+netstratum's number grammar (ℤ count, ℚ share, ℝ only a span read at its
+exact bounds; a choice collapses to an exact deed).
+
 ## Phase 3 — containment and memory (2026-10-16)
 SHIPPED and released as one build to MU-CLIENT §7.1's "as built" (rulings
 Q1–Q4, the hearing-queue rulings, the counts replaced by orbital events, the

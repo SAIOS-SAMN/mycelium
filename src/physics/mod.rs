@@ -108,6 +108,7 @@ pub mod fascicle;
 pub mod laws;
 pub mod malleability;
 pub mod metabolism;
+pub mod outflow;
 pub mod source;
 pub mod tensegrity;
 pub use budget::{halt, halted, spent_here, Budget, Depleted, Reserve};
