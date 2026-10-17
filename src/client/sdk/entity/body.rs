@@ -52,6 +52,26 @@ struct Seat {
     /// The standing call: (fn, its arguments in the codec's canonical form,
     /// its outcome applied). A setting that stands is not posted again.
     standing: Option<(u16, Vec<u8>, bool)>,
+    /// MU-CLIENT §7.1 — what the seat met, since the body sat it: a reading
+    /// for the observer, never read back by cognition.
+    met: SeatMet,
+}
+
+/// WHAT ONE SEAT MET (the observer's `now`): the percepts perceived at it,
+/// the task records they set before it, the calls the mind posted there
+/// (its own and its solves), and the beats it passed — no counsel, and no
+/// read call dominating.
+#[derive(Clone, Copy, Debug, Default)]
+struct SeatMet {
+    percepts: u64,
+    tasks: u64,
+    calls: u64,
+    passed: u64,
+}
+
+/// One more of a reading; a reading past its carrier stands.
+fn met(slot: &mut u64) {
+    let _ = crate::physics::metabolism::step_or_refuse(slot, 1);
 }
 
 /// THE BODY: the seats sat, the key they are sat by, and the shared box's
@@ -103,6 +123,7 @@ impl Seat {
             refused: crate::network::nerve::Keyed::new(),
             passed: crate::network::nerve::Keyed::new(),
             standing: None,
+            met: SeatMet::default(),
         }
     }
 }
@@ -162,6 +183,29 @@ impl Entity {
             self.ask_mail(&mut body);
         }
         self.board.body = Some(body);
+    }
+
+    /// MU-CLIENT §7.1 — EACH SEAT SAT, AS THE OBSERVER READS IT: whether it is
+    /// held, the percepts perceived there, the task records set before it, its
+    /// tasks passed uncoupled and standing, the calls posted and the beats
+    /// passed. None where the body sits no seat.
+    pub(crate) fn seat_lines(&self) -> Vec<String> {
+        let Some(body) = self.board.body.as_ref() else { return Vec::new() };
+        body.seats
+            .iter()
+            .map(|s| {
+                format!(
+                    "  seat {} · held {} · percepts {} · task records {} · tasks passed standing {} · calls posted {} · beats passed {}",
+                    s.at.seat,
+                    s.hold.held,
+                    s.met.percepts,
+                    s.met.tasks,
+                    s.passed.len(),
+                    s.met.calls,
+                    s.met.passed
+                )
+            })
+            .collect()
     }
 
     /// The seat at `at`, where the body still sits it.
@@ -307,6 +351,10 @@ impl Entity {
                 let _ = self.perceive_seat(&p);
                 let at = seat.at;
                 let before = tasks_before(&p);
+                met(&mut seat.met.percepts);
+                if let Ok(n) = u64::try_from(before.len()) {
+                    let _ = crate::physics::metabolism::step_or_refuse(&mut seat.met.tasks, n);
+                }
                 // A task passed and no longer before the seat is let go: the
                 // house set it aside. A counselled percept states no tasks.
                 if !p.records.iter().any(|r| matches!(r, crate::anastome::dialogue::seat::Record::Counsel { .. })) {
@@ -381,7 +429,14 @@ impl Entity {
         if !seat.hold.held {
             return;
         }
-        let Decision::Call(choice) = self.with_seat_mind(seat.at, |m| m.decide()) else { return };
+        let choice = match self.with_seat_mind(seat.at, |m| m.decide()) {
+            Decision::Call(choice) => choice,
+            Decision::NothingToCall => {
+                met(&mut seat.met.passed);
+                return;
+            }
+            Decision::Awaiting { .. } => return,
+        };
         if choice.fn_id == FN_SOLVE {
             return;
         }
@@ -391,6 +446,7 @@ impl Entity {
             return;
         }
         let (at, key, fn_id, args) = (seat.at, key.clone(), choice.fn_id, choice.args);
+        met(&mut seat.met.calls);
         let posted = args.clone();
         self.ask_seat(move |s| s.call(at, &key, fn_id, posted), move |me, called: io::Result<(Result<u64, Refusal>, [u8; 32])>| {
             if let Ok((Ok(_), reference)) = called {
@@ -481,6 +537,7 @@ impl Entity {
         };
         let Some(args) = solve_args(&crossed, &outs, &steps) else { return };
         let (at, key, id, addr) = (seat.at, key.clone(), *id, crossed.address().as_bytes().to_vec());
+        met(&mut seat.met.calls);
         let posted = args.clone();
         self.ask_seat(move |s| s.call(at, &key, FN_SOLVE, posted), move |me, called: io::Result<(Result<u64, Refusal>, [u8; 32])>| {
             if let Ok((Ok(_), reference)) = called {

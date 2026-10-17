@@ -194,6 +194,9 @@ impl Entity {
                 )
             },
         ]
+        .into_iter()
+        .chain(self.seat_lines())
+        .collect()
     }
 
     /// One thought as one line: its ordinal, scene, layer, and — where it
