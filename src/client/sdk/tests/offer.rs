@@ -65,6 +65,43 @@ fn an_offer_couples_only_to_what_the_mind_holds() {
     assert!(!mind.couples(&other, &cell.charts), "a body on no chart the mind holds couples to nothing");
 }
 
+/// A RESTORED MIND HEARS AN OFFER IN ITS OWN LANGUAGE, AND STILL ASKS FOR
+/// NOTHING (the operator, 2026-10-17: a string resonates because it is tuned,
+/// not because it rings). A mind whose language holds a word on the one-cell
+/// body's chart — and no thought, no plan, no orbit: what a restored genome
+/// is — holds no tension and asks the court for nothing; offered the one-cell
+/// family, it couples through its language and takes it in; offered the
+/// slide, on charts its language does not speak on, it couples to nothing.
+#[test]
+fn a_restored_mind_takes_an_offer_in_its_own_language_and_asks_for_nothing() {
+    use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("restored"));
+    let [(x, y)] = <[_; 1]>::try_from(one_cell_steps()).expect("one pair");
+    let mut field = std::mem::take(&mut mind.field);
+    let (settled, asked) = field.think(|| {
+        let mut b = budget();
+        let frames = perceive_family(&[(x.clone(), y.clone())]);
+        let f = scene_form_on(&NoCrystal, &mut b, &x, &y, &frames).expect("the pair reads");
+        let word = crate::transducer::sentence::as_element_form(&f, [1, 0, 0, 0]).expect("a word");
+        mind.epigenome.moduli_admit(&crate::transducer::element::Held::of(word));
+        let settled = mind.strained();
+        mind.pull_task();
+        (settled, mind.board.court.pulling)
+    });
+    mind.field = field;
+    assert!(mind.contemplation.is_empty(), "no thought held: the language alone");
+    assert!(!settled && !asked, "a settled mind with a language holds no tension and asks for nothing");
+    let cell = Offer::of(&one_cell_steps());
+    assert!(mind.couples(&[7; 32], &cell.charts), "an offer on a chart its language speaks on couples");
+    assert!(!mind.couples(&[8; 32], &Offer::of(&two_hours_of_a_slide()).charts), "one on charts it does not speak on couples to nothing");
+    mind.board.court.task = Some((crate::anastome::dialogue::TaskEnvelope { id: [7; 32], train: one_cell_steps(), tests: Vec::new() }, cell));
+    let mut outcome = crate::physics::StrokeOutcome::default();
+    let mut field = std::mem::take(&mut mind.field);
+    field.think(|| mind.task_inflow(&mut outcome));
+    mind.field = field;
+    assert!(mind.board.court.task.is_none() && mind.perceiving(), "coupled: taken in, on the perception carrier");
+}
+
 /// AN UNCOUPLED TASK IS NOT TAKEN, AND LAPSES AT ITS SECOND RETURN. The
 /// court's task lands on a mind that holds nothing: the intake leaves it where
 /// it landed and perceives nothing; the first return carries it across; at

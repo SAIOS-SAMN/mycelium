@@ -2170,7 +2170,12 @@ owed in the order it is built.
       bodies stand on (`Offer::of`, body moduli — the charts held thoughts
       are filed under). An offer couples where the mind holds a thought of
       its scene, the scene waits on its comprehension, or one of its charts
-      is a chart a held thought stands on or a docket cover names. Only a
+      is a chart a held thought stands on, a docket cover names, or the
+      mind's language speaks on — a closed word filed under a body there
+      (`Epigenome::speaks_on`; ruled 2026-10-17 on the fleet's first reading,
+      where every restored mind held a genome and no thought and so coupled
+      to nothing: a string resonates because it is tuned, not because it
+      rings). Only a
       coupled offer is extracted. An uncoupled one draws nothing, waits, and
       lapses at the second return it waits across (`lapse_offers`): the
       task let go, the feed family left on disk, the seat's task kept by its

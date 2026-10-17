@@ -300,6 +300,13 @@ impl Epigenome {
         bucket.scoped().map(|(a, ())| a).collect()
     }
 
+    /// MU-CLIENT §7.1 — WHETHER THE LANGUAGE SPEAKS ON A CHART (its key): a
+    /// closed word of the mind is filed under a body standing there
+    /// (`moduli_admit`). One keyed read.
+    pub(crate) fn speaks_on(&self, chart: &[u8]) -> bool {
+        self.by_moduli.get(chart).is_some_and(|bucket| !bucket.is_empty())
+    }
+
     pub fn take_promoted(&mut self) -> Vec<Vec<u8>> {
         std::mem::take(&mut self.promoted)
     }
