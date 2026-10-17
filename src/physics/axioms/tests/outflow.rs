@@ -88,19 +88,25 @@ fn turned(n: usize, m: usize, root: i64) -> (Vector, NullPoint, Bivector) {
 /// EACH PLANE ITS OWN OUTFLOW, AT ANY OBSERVED DIMENSION. On S⁶⁰ (61 base
 /// axes: thirty planes and an axis) and S³⁶⁰ (361: a hundred and eighty and
 /// an axis), the source a many-plane turn opens has on plane `i` exactly its
-/// rate times the pivot's square radius there, `λᵢ (P₂ᵢ₋₁² + P₂ᵢ²)` — so
-/// every plane the pivot stands in turns at its own phase, and a plane it
-/// holds nothing of reads zero.
+/// rate times the pivot's square radius there, `λᵢ (P₂ᵢ₋₁² + P₂ᵢ²)`, and its
+/// direction there is the pivot's in-plane position turned 90° on, scaled by
+/// `λᵢ` — so every plane the pivot stands in turns at its own phase, and a
+/// plane it holds nothing of reads zero.
 #[test]
 fn each_plane_has_its_own_outflow_at_any_observed_dimension() {
     for (n, m, root) in [(61usize, 49usize, 7i64), (361, 361, 19)] {
         let (sigma, p, l) = turned(n, m, root);
         let planes = outflow_planes(&sigma, &p, &l).expect("a source");
         assert_eq!(planes.len(), n / 2, "every base plane, the odd axis paired with none");
-        for (i, (plane, flow)) in planes.iter().enumerate() {
-            assert_eq!(*plane, Plane { first: 2 * i + 1, second: 2 * i + 2 });
+        let one = |a: usize| q(i64::from(a < m), 1);
+        for (i, f) in planes.iter().enumerate() {
+            assert_eq!(f.plane, Plane { first: 2 * i + 1, second: 2 * i + 2 });
             let held = [2 * i, 2 * i + 1].iter().filter(|a| **a < m).count() as i64;
-            assert_eq!(*flow, q(i as i64 + 1, 7) * q(held, 1), "plane {} of n = {n}", i + 1);
+            let rate = q(i as i64 + 1, 7);
+            assert_eq!(f.outflow, &rate * q(held, 1), "plane {} of n = {n}", i + 1);
+            // The turn carries (P₂ᵢ₋₁, P₂ᵢ) to (−λP₂ᵢ, λP₂ᵢ₋₁): a quarter of
+            // 360° ahead of the pivot in its plane.
+            assert_eq!(f.direction, (-&rate * one(2 * i + 1), &rate * one(2 * i)), "plane {} of n = {n}: where the matter leaves", i + 1);
         }
         let src = SourceN::of(&sigma, &p, &keeping(&sigma, &l).expect("kept")).expect("a source");
         assert!(src.generator.contracted_by(p.vector()).expect("same n").is_zero(), "it fixes the pivot");

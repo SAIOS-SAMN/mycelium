@@ -25,9 +25,12 @@
 //!   `v = P·K`;
 //! - the source `N = P ∧ v`, verified null (`N² = (P·v)² − P²v² = 0`), fixing
 //!   `P` (`P·N = 0`) and keeping `σ` (`σ·N = 0`);
-//! - ITS OUTFLOW BY PLANE: on each base plane `(e₂ᵢ₋₁, e₂ᵢ)`, `N`'s component
-//!   `P₂ᵢ₋₁v₂ᵢ − P₂ᵢv₂ᵢ₋₁`. An odd last base axis pairs with no base axis; its
-//!   flow is in `N` whole, on the planes it shares with `e₊` and `e₋`.
+//! - ITS FLOW BY PLANE: on each base plane `(e₂ᵢ₋₁, e₂ᵢ)`, `N`'s component
+//!   `P₂ᵢ₋₁v₂ᵢ − P₂ᵢv₂ᵢ₋₁` — how much outflow the plane carries — and `v`'s
+//!   in-plane components `(v₂ᵢ₋₁, v₂ᵢ)` — where in it the matter leaves, the
+//!   direction a phase reading decides (L9). An odd last base axis pairs with
+//!   no base axis; its flow is in `N` whole, on the planes it shares with `e₊`
+//!   and `e₋`.
 //!
 //! Every claim is checked on the value before it is returned and refused by
 //! name otherwise (rule 11): nothing is asserted the algebra does not hold, and
@@ -252,12 +255,25 @@ pub fn keeping(sigma: &Vector, l: &Bivector) -> Result<Bivector, Refused> {
     }
 }
 
-/// A WHITE-HOLE SOURCE IN n DIMENSIONS: the pivot it emanates from and its
-/// null generator.
+/// A WHITE-HOLE SOURCE IN n DIMENSIONS: the pivot it emanates from, the
+/// velocity the kept generator gives it (`v = P·K`), and its null generator
+/// `N = P ∧ v`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SourceN {
     pub at: NullPoint,
+    pub velocity: Vector,
     pub generator: Bivector,
+}
+
+/// ONE BASE PLANE'S FLOW: the plane, the outflow the source carries on it
+/// (`N`'s component), and where in it the matter leaves — the pivot's
+/// velocity in the plane, `(v₂ᵢ₋₁, v₂ᵢ)`, exact, for a phase reading to
+/// decide its sector (L9).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PlaneFlow {
+    pub plane: Plane,
+    pub outflow: Q,
+    pub direction: (Q, Q),
 }
 
 /// ONE BASE PLANE `(e₂ᵢ₋₁, e₂ᵢ)`, its axes counted from 1 as the law writes
@@ -291,23 +307,32 @@ impl SourceN {
         let fixes = n.contracted_by(pv)?.is_zero();
         let keeps = n.contracted_by(sigma)?.is_zero();
         match null && fixes && keeps {
-            true => Ok(SourceN { at: p.clone(), generator: n }),
+            true => Ok(SourceN { at: p.clone(), velocity: v, generator: n }),
             false => Err(Refused::Unverified),
         }
     }
 
-    /// ITS OUTFLOW BY PLANE: on each base plane `(e₂ᵢ₋₁, e₂ᵢ)`, the
-    /// generator's component `P₂ᵢ₋₁v₂ᵢ − P₂ᵢv₂ᵢ₋₁`, every plane in order, a
-    /// plane the source does not turn at zero.
-    pub fn planes(&self) -> Vec<(Plane, Q)> {
-        (0..self.generator.n / 2).map(|i| (Plane { first: 2 * i + 1, second: 2 * i + 2 }, self.generator.component(2 * i, 2 * i + 1))).collect()
+    /// ITS FLOW BY PLANE: on each base plane `(e₂ᵢ₋₁, e₂ᵢ)`, the generator's
+    /// component `P₂ᵢ₋₁v₂ᵢ − P₂ᵢv₂ᵢ₋₁` and the velocity's in-plane
+    /// components `(v₂ᵢ₋₁, v₂ᵢ)`, every plane in order; a plane the source
+    /// does not turn reads zero.
+    pub fn planes(&self) -> Vec<PlaneFlow> {
+        let v = self.velocity.coords();
+        (0..self.generator.n / 2)
+            .map(|i| PlaneFlow {
+                plane: Plane { first: 2 * i + 1, second: 2 * i + 2 },
+                outflow: self.generator.component(2 * i, 2 * i + 1),
+                direction: (v[2 * i].clone(), v[2 * i + 1].clone()),
+            })
+            .collect()
     }
 }
 
-/// THE OUTFLOW BY PLANE OF THE SOURCE A LIFT `l` OPENS AT `p` ON THE GEOID
+/// THE FLOW BY PLANE OF THE SOURCE A LIFT `l` OPENS AT `p` ON THE GEOID
 /// `sigma` (the module's law): the part of `l` keeping the geoid, the source
-/// it opens at `p`, and that source's component on every base plane.
-pub fn outflow_planes(sigma: &Vector, p: &NullPoint, l: &Bivector) -> Result<Vec<(Plane, Q)>, Refused> {
+/// it opens at `p`, and that source's outflow and direction on every base
+/// plane.
+pub fn outflow_planes(sigma: &Vector, p: &NullPoint, l: &Bivector) -> Result<Vec<PlaneFlow>, Refused> {
     let k = keeping(sigma, l)?;
     Ok(SourceN::of(sigma, p, &k)?.planes())
 }
