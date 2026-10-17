@@ -15,6 +15,7 @@ pub mod feed;
 pub mod hypha;
 pub mod learn;
 pub mod observer;
+pub mod offer;
 pub mod perceive;
 pub mod present;
 pub mod quote;

@@ -2158,6 +2158,35 @@ owed in the order it is built.
       `cited` still hold whole elements or full addresses; the seat's
       patience and the session's transport readings are not the mind's
       memory and keep the aperture.
+  - **As built, 2026-10-17 — the sovereign mind** (operator: "a sovereign
+    mind treats tasks and percepts as sensory offers, not commands"; idling
+    is a first-class equilibrium; no generate-and-test):
+    - Tension (`Entity::strained`): a demand on the plan, a ringing orbit,
+      or a reservoir uncondensed (`Field::strained`). The mind asks the court
+      for a task (`pull_task`) only under tension; a full reserve over a
+      settled field asks for nothing, and the winding rests.
+    - The resonance filter (`entity/offer.rs`): a court task, a feed family
+      and a task before a seat are offers, read once to the charts their
+      bodies stand on (`Offer::of`, body moduli — the charts held thoughts
+      are filed under). An offer couples where the mind holds a thought of
+      its scene, the scene waits on its comprehension, or one of its charts
+      is a chart a held thought stands on or a docket cover names. Only a
+      coupled offer is extracted. An uncoupled one draws nothing, waits, and
+      lapses at the second return it waits across (`lapse_offers`): the
+      task let go, the feed family left on disk, the seat's task kept by its
+      charts and pulled again only where they couple. A hearing is read only
+      where the lexicon reaches one of its words — whole, or in part, its
+      residue the question (`rung::posit`) — or the word lands on the field
+      as it stands (`Field::lands`); others lapse as unread hearings do.
+    - The seat mind enumerates no argument: the `Exploring` counter, the
+      learned domains and the fewest-reads tie-break are deleted; with no
+      counsel it calls the dominant read call under REACH, or passes.
+    - The pass is silence on the wire and a typed reading to the observer
+      (`now`: tension, offers standing and coupling, passed by kind).
+    - Owed: the barren-realms side — the sovereign seat's typed actions on
+      the wire (its `FN_ID` table lacks them), retiring the rollouts, the
+      gauge argmin and `step`/`evaluate` — is that peer's; the seat call's
+      favoured directions from the house's deficit records.
 - **Phase 4 — modes as the unit of pay** (§5.6 M; 78.162): `track/modes`
   (the Modes carrier, the producers, earned-only) merged forward onto this
   tree; every measure of Phase 2 paid in the modes its closures moved, never

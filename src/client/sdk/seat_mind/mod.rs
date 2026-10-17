@@ -558,18 +558,13 @@ pub struct SeatMind {
     pub(crate) counsel: Vec<Counsel>,
     pub(crate) experience: Keyed<Experience>,
     pub(crate) pending: Option<Pending>,
-    /// 78.148 — its own seat's functions as the listing names them, and
-    /// what it learned of their arguments (`own`).
+    /// 78.148 — its own seat's functions as the listing names them (`own`).
     pub(crate) repertoire: Vec<Own>,
     /// 78.148 — what each call, a function AT ITS ARGUMENTS, was seen to do
-    /// (`own::call_key`).
+    /// (`own::call_key`). The mind calls only what it read here or was
+    /// counselled — never a blind probe (barren-realms, 2026-10-09: `handle`
+    /// closes every throat a line holds, `forge` spends ~1e21 J).
     pub(crate) own: Keyed<Experience>,
-    /// COUNSEL-ONLY FUNCTIONS: every function a house has ever counselled.
-    /// The mind never explores one of them on its own — it calls it only as
-    /// counselled, or on what its experience of the counselled calls shows
-    /// (barren-realms, 2026-10-09: `handle` closes every throat a line holds,
-    /// `forge` spends ~1e21 J; a blind upward probe of either is a real act).
-    pub(crate) counselled: Vec<u16>,
 }
 
 impl SeatMind {
@@ -592,7 +587,6 @@ impl SeatMind {
             pending: None,
             repertoire: Vec::new(),
             own: Keyed::new(),
-            counselled: Vec::new(),
         }
     }
 
@@ -667,9 +661,6 @@ impl SeatMind {
             match r {
                 Record::Counsel { fn_id, args, worth, cost } => {
                     self.counsel.push(Counsel { fn_id: *fn_id, args: args.clone(), worth: worth.clone(), cost: cost.clone() });
-                    if !self.counselled.contains(fn_id) {
-                        self.counselled.push(*fn_id);
-                    }
                     let a = args.clone();
                     self.with_experience(*fn_id, |e| e.args = Some(a));
                 }
@@ -729,9 +720,8 @@ impl SeatMind {
     /// THE HOUSE'S ANSWER TO A CALL: the call it names, if it is the one
     /// this mind awaits, marked applied or refused, and counted on its
     /// function and on the call at its arguments; the repertoire taught by
-    /// it (78.148: a BAD ARGUMENTS refusal bounds a domain, NO SUCH FUNCTION
-    /// takes the function out until the listing is read again). Returns the
-    /// function it answered.
+    /// it (78.148: NO SUCH FUNCTION takes the function out until the listing
+    /// is read again). Returns the function it answered.
     pub fn outcome(&mut self, o: &Outcome) -> Option<u16> {
         let pending = self.pending.as_mut().filter(|p| p.reference == o.call)?;
         pending.applied = Some(o.applied);
@@ -745,7 +735,7 @@ impl SeatMind {
         };
         self.with_experience(fn_id, count);
         self.with_call_experience(fn_id, &args, count);
-        self.own_answered(fn_id, &args, o.applied, o.reason);
+        self.own_answered(fn_id, o.applied, o.reason);
         Some(fn_id)
     }
 

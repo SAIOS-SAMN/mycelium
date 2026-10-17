@@ -7,12 +7,18 @@ impl Entity {
     /// PULL a signed work envelope from the hypha's authoritative registry —
     /// the client never arbitrates raw corpus; the server decides what is
     /// useful work. One pull is in flight at a time; the envelope lands on
-    /// the board to be taken in (`task_inflow`), none where the book is
-    /// settled. MU-CLIENT §4.12, ruling 3 — THE METABOLISM ASKS: only where
-    /// nothing waits to be taken in or is being perceived, and the reserve
-    /// stands regenerated on every lane.
+    /// the board as an offer, read to its charts (`offer`), to be taken in
+    /// where it couples (`task_inflow`), none where the book is settled.
+    /// MU-CLIENT §4.12, §7.1 — THE MIND ASKS ONLY UNDER TENSION: where its
+    /// field holds strain it has not resolved (`strained`), nothing waits to
+    /// be taken in or is being perceived, and the reserve stands regenerated
+    /// on every lane. A full reserve over a settled field is equilibrium, and
+    /// asks for nothing.
     pub(crate) fn pull_task(&mut self) {
         if self.board.court.pulling || self.board.court.task.is_some() || self.perceiving() {
+            return;
+        }
+        if !self.strained() {
             return;
         }
         if !crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty() {
@@ -24,7 +30,10 @@ impl Entity {
             move |s| s.speak_keyed(&voice, dialogue::encode_task_request(&voice)),
             |me, body: io::Result<Vec<u8>>| {
                 me.board.court.pulling = false;
-                me.board.court.task = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b));
+                me.board.court.task = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b)).map(|env| {
+                    let offer = super::offer::Offer::of(&env.train);
+                    (env, offer)
+                });
             },
         );
     }

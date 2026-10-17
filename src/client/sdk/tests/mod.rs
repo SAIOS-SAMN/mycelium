@@ -17,6 +17,7 @@ mod glue;
 mod height;
 mod hypha;
 mod occupancy;
+mod offer;
 mod perceive;
 mod refinement;
 mod remainders;

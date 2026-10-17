@@ -1,160 +1,42 @@
 // 78.148 — THE MIND'S OWN CALL: with no counsel, a seated mind calls from its
-// own repertoire — the functions its seat's listing names — with arguments of
-// its own, learned from what the house answered and what each call moved.
+// own repertoire — the functions its seat's listing names — at arguments it
+// has READ, learned from what the house answered and what each call moved.
 //
 //! THE REPERTOIRE IS PERCEIVED, never told: after the house answers its take
 //! (and again when a call is refused NO SUCH FUNCTION), the arm reads the
 //! domain's listing and hands the mind its own seat's functions, each with
 //! its arguments' tags (`SeatMind::perceive_listing`).
 //!
-//! ITS OWN ARGUMENTS, NO SCRIPT. A function whose every argument is a Count
-//! or a Flag is the mind's to explore. One call per beat, in increasing
-//! order: its least arguments (every one zero, a flag false) first; then
-//! each argument in turn upward from one, the others at their least. The
-//! house's answer is the information: applied (or refused for any other
-//! reason) the value is tried; refused BAD ARGUMENTS at `n`, that
-//! argument's domain is bounded below `n` and `n` is never called again
-//! (refused at the least, no value of the function applies). A flag's
-//! domain is two values from the start. A call unanswered within its beat
-//! is let go untried, and asked again.
+//! NO ARGUMENT IS ENUMERATED (the operator, 2026-10-17: "every component is a
+//! combinatorial algorithm that decomposes according to our pivot machinery
+//! … if you end up with search then we have drifted into brute force"). The
+//! mind calls a function only at arguments whose call it has read — a call
+//! counselled or made before, whose effect on the records it perceived — and
+//! never walks a domain upward until the house refuses a value.
 //!
-//! THE CHOICE, once every value of every bounded domain is tried: the read
-//! calls (a listed function at arguments whose effect was read) compared by
-//! the exact dominance `choice` reads — quantity by quantity, no sum — over
-//! the records the mind's OWN VALUATION favours (`SeatMind::reach`, the one
-//! place it is stated). One call dominates: it, said so. None does: of the
-//! undominated calls, the one read fewest times is read again (the earliest
-//! explored among equals), so a rate the world's drift may hide is
-//! sharpened rather than guessed. OWED, named: a Count domain the house
-//! never bounds is explored without end (no constant is put in its place);
-//! a multivector record's carrier as a call's effect.
+//! THE CHOICE: the read calls (a listed function at arguments whose effect
+//! was read) compared by the exact dominance `choice` reads — quantity by
+//! quantity, no sum — over the records the mind's OWN VALUATION favours
+//! (`SeatMind::reach`, the one place it is stated). One call dominates: it,
+//! said so. None does, or none is read: the mind PASSES — no call, no count
+//! of reads to break the tie (MU-CLIENT §7.1: rest is an equilibrium, never a
+//! stall to break). OWED, named: a multivector record's carrier as a call's
+//! effect.
 
 use super::*;
-use crate::anastome::dialogue::seat::{put_args, take_args, SeatFn, REASON_BAD_ARGUMENTS, REASON_NO_SUCH_FUNCTION, TAG_COUNT, TAG_FLAG};
+use crate::anastome::dialogue::seat::{put_args, take_args, SeatFn, REASON_NO_SUCH_FUNCTION};
 
-/// ONE ARGUMENT'S DOMAIN, as the house's answers taught it.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Domain {
-    /// A flag (values 0 and 1, written false and true), else a count.
-    pub flag: bool,
-    /// The least value not yet tried here, the others at their least.
-    pub next: u64,
-    /// The least value refused BAD ARGUMENTS: the domain lies below it. A
-    /// flag's is two from the start.
-    pub bound: Option<u64>,
-}
-
-impl Domain {
-    fn open(&self) -> bool {
-        match self.bound {
-            Some(b) => self.next < b,
-            None => true,
-        }
-    }
-}
-
-/// THE NEXT ARGUMENTS TO TRY: where they stand (the domain and its value,
-/// none for the least-tried first call) and the arguments themselves.
-pub type Untried = (Option<(usize, u64)>, Vec<Arg>);
-
-/// ONE FUNCTION OF THE MIND'S OWN SEAT, as the listing names it, and what
-/// the mind has learned of its arguments.
+/// ONE FUNCTION OF THE MIND'S OWN SEAT, as the listing names it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Own {
     pub id: u16,
     pub tags: Vec<u8>,
-    /// Each argument's domain; none where an argument is neither a Count nor
-    /// a Flag (the function is not the mind's to explore).
-    pub domains: Option<Vec<Domain>>,
-    /// Its least arguments were answered.
-    pub least_tried: bool,
-    /// Its least arguments were refused BAD ARGUMENTS: no value applies.
-    pub closed: bool,
 }
 
 impl Own {
-    /// A listed function, nothing yet learned of it.
+    /// A listed function.
     pub fn of(f: &SeatFn) -> Own {
-        let domains = f
-            .tags
-            .iter()
-            .map(|t| match *t {
-                TAG_COUNT => Some(Domain { flag: false, next: 1, bound: None }),
-                TAG_FLAG => Some(Domain { flag: true, next: 1, bound: Some(2) }),
-                _ => None,
-            })
-            .collect::<Option<Vec<_>>>();
-        Own { id: f.id, tags: f.tags.clone(), domains, least_tried: false, closed: false }
-    }
-
-    /// Its arguments with argument `i` at `v` (`at`), every other at its least.
-    fn args_with(&self, at: Option<(usize, u64)>) -> Option<Vec<Arg>> {
-        let domains = self.domains.as_ref()?;
-        Some(
-            domains
-                .iter()
-                .enumerate()
-                .map(|(i, d)| {
-                    let v = match at {
-                        Some((j, v)) if j == i => v,
-                        _ => 0,
-                    };
-                    match d.flag {
-                        true => Arg::Flag(v == 1),
-                        false => Arg::Count(v),
-                    }
-                })
-                .collect(),
-        )
-    }
-
-    /// THE NEXT ARGUMENTS NOT YET TRIED, in the module's order, with where
-    /// they stand; none once every value in its bounded domains is tried, or
-    /// where it is not the mind's to explore.
-    pub fn untried(&self) -> Option<Untried> {
-        let domains = self.domains.as_ref()?;
-        if self.closed {
-            return None;
-        }
-        if !self.least_tried {
-            return Some((None, self.args_with(None)?));
-        }
-        let (i, d) = domains.iter().enumerate().find(|(_, d)| d.open())?;
-        Some((Some((i, d.next)), self.args_with(Some((i, d.next)))?))
-    }
-
-    /// Each argument's bound as learned.
-    pub fn bounds(&self) -> Vec<Option<u64>> {
-        match &self.domains {
-            Some(ds) => ds.iter().map(|d| d.bound).collect(),
-            None => Vec::new(),
-        }
-    }
-
-    /// THE HOUSE ANSWERED `args`: where they are this function's next
-    /// untried, they are tried — or, refused BAD ARGUMENTS, the domain is
-    /// bounded there and the value never called again.
-    fn answered(&mut self, args: &[Arg], applied: bool, reason: u16) {
-        let Some((at, want)) = self.untried() else { return };
-        if want.as_slice() != args {
-            return;
-        }
-        let bad = !applied && reason == REASON_BAD_ARGUMENTS;
-        match at {
-            None => {
-                self.least_tried = true;
-                self.closed = bad;
-            }
-            Some((i, v)) => {
-                let Some(d) = self.domains.as_mut().and_then(|ds| ds.get_mut(i)) else { return };
-                match (bad, v.checked_add(1)) {
-                    (false, Some(next)) => d.next = next,
-                    // Refused, or the carrier's last value tried: the domain
-                    // ends here.
-                    (true, _) | (false, None) => d.bound = Some(v),
-                }
-            }
-        }
+        Own { id: f.id, tags: f.tags.clone() }
     }
 }
 
@@ -174,7 +56,7 @@ pub fn of_call_key(k: &[u8]) -> Option<(u16, Vec<Arg>)> {
     (p == k.len()).then_some((id, args))
 }
 
-/// An explored call's argument values: a count as itself, a flag as 0 or 1.
+/// A read call's argument values: a count as itself, a flag as 0 or 1.
 pub fn arg_values(args: &[Arg]) -> Option<Vec<u64>> {
     args.iter()
         .map(|a| match a {
@@ -196,18 +78,9 @@ struct ReadCall<'a> {
 
 impl SeatMind {
     /// 78.148 — THE LISTING PERCEIVED: its own seat's functions are the
-    /// mind's repertoire. A function listed again with the same argument
-    /// tags keeps what was learned of its domains; one no longer listed is
-    /// gone from it.
+    /// mind's repertoire; one no longer listed is gone from it.
     pub fn perceive_listing(&mut self, fns: &[SeatFn]) {
-        let held = std::mem::take(&mut self.repertoire);
-        self.repertoire = fns
-            .iter()
-            .map(|f| match held.iter().find(|o| o.id == f.id && o.tags == f.tags) {
-                Some(o) => o.clone(),
-                None => Own::of(f),
-            })
-            .collect();
+        self.repertoire = fns.iter().map(Own::of).collect();
     }
 
     /// The repertoire, in the listing's order.
@@ -234,29 +107,26 @@ impl SeatMind {
 
     /// The house's answer to one of the mind's calls, read into its
     /// repertoire: NO SUCH FUNCTION takes the function out of it until the
-    /// listing is read again; any other answer teaches its domains.
-    pub(crate) fn own_answered(&mut self, fn_id: u16, args: &[Arg], applied: bool, reason: u16) {
+    /// listing is read again.
+    pub(crate) fn own_answered(&mut self, fn_id: u16, applied: bool, reason: u16) {
         if !applied && reason == REASON_NO_SUCH_FUNCTION {
             self.repertoire.retain(|o| o.id != fn_id);
-            return;
-        }
-        if let Some(o) = self.repertoire.iter_mut().find(|o| o.id == fn_id) {
-            o.answered(args, applied, reason);
         }
     }
 
-    /// The read calls of listed explorable functions.
+    /// The read calls of listed functions whose arguments are counts and
+    /// flags.
     fn read_calls(&self) -> Vec<ReadCall<'_>> {
         let mut calls: Vec<ReadCall<'_>> = self
             .own
             .scoped()
             .filter_map(|(k, e)| {
                 let (fn_id, args) = of_call_key(&k)?;
-                let place = self.repertoire.iter().position(|o| o.id == fn_id && o.domains.is_some())?;
+                let place = self.repertoire.iter().position(|o| o.id == fn_id)?;
                 (e.read > 0).then_some(ReadCall { place, fn_id, values: arg_values(&args)?, e })
             })
             .collect();
-        // The explored order: the listing's, then the values upward.
+        // The listing's order, then the values upward.
         #[expect(clippy::disallowed_methods, reason = "rule 4 — a canonical key: the house's listing order, then the argument values upward; nothing measured ranks the calls")]
         calls.sort_by(|a, b| (a.place, &a.values).cmp(&(b.place, &b.values)));
         calls
@@ -293,19 +163,7 @@ impl SeatMind {
 
     /// THE MIND'S OWN CALL, no counsel given (the module's rule).
     pub(crate) fn own_call(&self) -> Decision {
-        for o in &self.repertoire {
-            // A function a house has counselled is never probed blind.
-            if self.counselled.contains(&o.id) {
-                continue;
-            }
-            if let Some((at, args)) = o.untried() {
-                return Decision::Call(Choice { fn_id: o.id, args, followed: false, why: Why::Exploring { at, bounds: o.bounds() } });
-            }
-        }
         let calls = self.read_calls();
-        if calls.is_empty() {
-            return Decision::NothingToCall;
-        }
         let favoured = self.reach();
         let along: Vec<Vec<Q>> = calls.iter().map(|c| favoured.iter().map(|(k, d)| d.along(&c.e.rate_at(k))).collect()).collect();
         let dominates = |a: &[Q], b: &[Q]| a.iter().zip(b).all(|(x, y)| x >= y) && a.iter().zip(b).any(|(x, y)| x > y);
@@ -316,30 +174,11 @@ impl SeatMind {
                 None => false,
             })
             .collect();
-        let call_of = |c: &ReadCall<'_>, why: Why| match c.e.args.clone() {
-            Some(args) => Decision::Call(Choice { fn_id: c.fn_id, args, followed: false, why }),
-            None => Decision::NothingToCall,
-        };
-        if let [i] = dominant.as_slice() {
-            if let Some(c) = calls.get(*i) {
-                let over = calls.iter().enumerate().filter(|(j, _)| j != i).map(|(_, o)| (o.fn_id, o.values.clone())).collect();
-                let named = favoured.iter().filter_map(|(k, d)| Some((Locator::of(k)?, *d, c.e.rate_at(k)))).collect();
-                return call_of(c, Why::Reached { valuation: Valuation::Reach, values: c.values.clone(), over, along: named });
-            }
-        }
-        // None dominates: the undominated, the one read fewest (the earliest
-        // explored among equals).
-        let front: Vec<usize> = (0..calls.len())
-            .filter(|&i| match along.get(i) {
-                Some(mine) => !others(i).any(|theirs| dominates(theirs, mine)),
-                None => false,
-            })
-            .collect();
-        #[expect(clippy::disallowed_methods, reason = "rule 4 — not a measure of worth: among calls no call dominates, the one this mind has read fewest times is read again (its own count of reads, named on the typed line), the earliest explored among equals")]
-        let least = front.iter().filter_map(|i| calls.get(*i)).min_by_key(|c| c.e.read);
-        match least {
-            Some(c) => call_of(c, Why::Unreached { valuation: Valuation::Reach, values: c.values.clone(), front: front.len(), read: c.e.read }),
-            None => Decision::NothingToCall,
-        }
+        let [i] = dominant.as_slice() else { return Decision::NothingToCall };
+        let Some(c) = calls.get(*i) else { return Decision::NothingToCall };
+        let Some(args) = c.e.args.clone() else { return Decision::NothingToCall };
+        let over = calls.iter().enumerate().filter(|(j, _)| j != i).map(|(_, o)| (o.fn_id, o.values.clone())).collect();
+        let named = favoured.iter().filter_map(|(k, d)| Some((Locator::of(k)?, *d, c.e.rate_at(k)))).collect();
+        Decision::Call(Choice { fn_id: c.fn_id, args, followed: false, why: Why::Reached { valuation: Valuation::Reach, values: c.values.clone(), over, along: named } })
     }
 }

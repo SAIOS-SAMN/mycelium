@@ -37,45 +37,46 @@ fn a_scene_perceived_off_the_field_lands_and_its_escaping_thought_is_bound() {
     assert_eq!(k, returned, "K moved by exactly the returns");
 }
 
-/// MU-CLIENT §4.13 — HEARINGS WAIT BY THEIR COORDINATES, ONE AT A TIME. The
-/// first hearing goes to the perception carrier; while it is there, the same
-/// thing said again by the same mind waits once, its latest saying in the
-/// place of the first, and a different thing waits beside it.
+/// MU-CLIENT §4.13, §7.1 — HEARINGS WAIT BY THEIR COORDINATES, AND ONE THAT
+/// COUPLES TO NOTHING IS NOT READ. A hearing of no word the mind knows and
+/// none that lands on its field never goes to the perception carrier; the
+/// same thing said again by the same mind waits once, its latest saying in
+/// the place of the first, and a different thing waits beside it.
 #[test]
 fn a_hearing_said_again_waits_once() {
     use crate::client::sdk::entity::converge::Evident;
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("hearing"));
     let speaker = [3u8; 32];
     mind.perceive_hearing(speaker, b"first".to_vec(), Vec::new(), Evident::Unbound);
-    assert!(mind.board.hearing, "the first is on the carrier");
+    assert!(!mind.board.hearing, "coupled to nothing, it is not read");
     mind.perceive_hearing(speaker, b"again".to_vec(), Vec::new(), Evident::Unbound);
     mind.perceive_hearing(speaker, b"again".to_vec(), Vec::new(), Evident::Unbound);
-    assert_eq!(mind.hearings_waiting(), 1, "said again before it is read, it waits once");
+    assert_eq!(mind.hearings_waiting(), 2, "said again before it is read, it waits once");
     mind.perceive_hearing(speaker, b"other".to_vec(), Vec::new(), Evident::Unbound);
-    assert_eq!(mind.hearings_waiting(), 2, "a different thing waits beside it");
+    assert_eq!(mind.hearings_waiting(), 3, "a different thing waits beside it");
 }
 
 /// MU-CLIENT §4.13 — A HEARING WAITS AT MOST ACROSS ONE RETURN, the return
-/// being the event and no clock read. Two hearings wait while one is on the
-/// carrier; the return that closes the traversal they were heard in carries
-/// them across; one more is heard; at the next return the two lapse unread
-/// and the one heard since crosses in their place. The same thing said again
-/// is heard in the traversal it was said in.
+/// being the event and no clock read. Three hearings, coupled to nothing,
+/// wait; the return that closes the traversal they were heard in carries them
+/// across; one more is heard, and one said again; at the next return the two
+/// left lapse unread and the two heard since cross in their place. The same
+/// thing said again is heard in the traversal it was said in.
 #[test]
 fn a_hearing_unread_across_a_return_lapses() {
     use crate::client::sdk::entity::converge::Evident;
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("lapsing"));
     let speaker = [4u8; 32];
-    for said in [&b"on the carrier"[..], b"one", b"two"] {
+    for said in [&b"zero"[..], b"one", b"two"] {
         mind.perceive_hearing(speaker, said.to_vec(), Vec::new(), Evident::Unbound);
     }
     let mut b = budget();
     assert!(mind.act_on_returns(&mut b, vec![b"a scene".to_vec()], false) > 0, "a binding is a return");
-    assert_eq!(mind.board.hearings_crossed.len(), 2, "the return closing their traversal carries them across");
+    assert_eq!(mind.board.hearings_crossed.len(), 3, "the return closing their traversal carries them across");
     mind.perceive_hearing(speaker, b"since".to_vec(), Vec::new(), Evident::Unbound);
     mind.perceive_hearing(speaker, b"two".to_vec(), Vec::new(), Evident::Unbound);
-    assert_eq!((mind.board.hearings.len(), mind.board.hearings_crossed.len()), (2, 1), "said again, it is heard in this traversal");
+    assert_eq!((mind.board.hearings.len(), mind.board.hearings_crossed.len()), (2, 2), "said again, it is heard in this traversal");
     assert!(mind.act_on_returns(&mut b, vec![b"a scene".to_vec()], false) > 0, "and again");
-    assert_eq!(mind.board.hearings_lapsed, 1, "unread across a return, the one left lapses");
+    assert_eq!(mind.board.hearings_lapsed, 2, "unread across a return, the two left lapse");
     assert_eq!(mind.board.hearings_crossed.len(), 2, "the two heard since cross in its place");
 }

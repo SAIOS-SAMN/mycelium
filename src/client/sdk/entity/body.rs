@@ -45,6 +45,10 @@ struct Seat {
     /// The solves the house refused, by task: the refused rule's address and
     /// the atlas root it was extracted at.
     refused: crate::network::nerve::Keyed<(crate::transducer::address::Address, Vec<u8>)>,
+    /// MU-CLIENT §7.1 — THE TASKS PASSED, by task: the charts its offer stood
+    /// on when it coupled to nothing (`offer`). Pulled again only where it
+    /// couples; let go where the house no longer sets it before the seat.
+    passed: crate::network::nerve::Keyed<Vec<Vec<u8>>>,
     /// The standing call: (fn, its arguments in the codec's canonical form,
     /// its outcome applied). A setting that stands is not posted again.
     standing: Option<(u16, Vec<u8>, bool)>,
@@ -97,6 +101,7 @@ impl Seat {
             answered: crate::network::nerve::Keyed::new(),
             solving: crate::network::nerve::Keyed::new(),
             refused: crate::network::nerve::Keyed::new(),
+            passed: crate::network::nerve::Keyed::new(),
             standing: None,
         }
     }
@@ -174,8 +179,15 @@ impl Entity {
         let Some(mut body) = self.board.body.take() else { return };
         let key = body.key.clone();
         if let Some(seat) = body.seats.iter_mut().find(|s| s.at == at) {
+            // MU-CLIENT §7.1 — a task passed is pulled again only where its
+            // offer now couples to the mind.
+            let uncoupled = |id: &[u8; 32]| seat.passed.get(id).is_some_and(|charts| !self.couples(id, charts));
             match task {
-                Some(id) if !seat.answered.contains(&id) && !seat.solving.contains(&id) && seat.hold.held => self.pull_before(at, key, id),
+                Some(id) if uncoupled(&id) => {}
+                Some(id) if !seat.answered.contains(&id) && !seat.solving.contains(&id) && seat.hold.held => {
+                    let _ = seat.passed.remove(&id);
+                    self.pull_before(at, key, id)
+                }
                 Some(_) => {}
                 None => self.beat(seat, &key),
             }
@@ -294,7 +306,16 @@ impl Entity {
             MindMail::Percept(_, p) => {
                 let _ = self.perceive_seat(&p);
                 let at = seat.at;
-                for id in tasks_before(&p) {
+                let before = tasks_before(&p);
+                // A task passed and no longer before the seat is let go: the
+                // house set it aside. A counselled percept states no tasks.
+                if !p.records.iter().any(|r| matches!(r, crate::anastome::dialogue::seat::Record::Counsel { .. })) {
+                    let gone: Vec<Vec<u8>> = seat.passed.scoped().map(|(k, _)| k).filter(|k| !before.iter().any(|id| id.as_slice() == k.as_slice())).collect();
+                    for k in gone {
+                        let _ = seat.passed.remove(&k);
+                    }
+                }
+                for id in before {
                     if !seat.answered.contains(&id) && !seat.solving.contains(&id) {
                         self.hold_for_return(&seat_act_key(&at, Some(&id)), &[], move |me| me.seat_act(at, Some(id)));
                     }
@@ -380,7 +401,10 @@ impl Entity {
     }
 
     /// 78.146 — A TASK BEFORE THE SEAT, pulled by its citation on the court's
-    /// carrier; it is solved where it lands (`solve_before`).
+    /// carrier, and OFFERED where it lands (MU-CLIENT §7.1, `offer`): solved
+    /// where it couples to the mind (`solve_before`), passed where it couples
+    /// to nothing — its charts kept, so it is pulled again only where they
+    /// couple.
     fn pull_before(&mut self, at: SeatName, key: ed25519_dalek::SigningKey, id: [u8; 32]) {
         let voice = self.hypha.kernel().voice();
         let act = dialogue::encode_task_by_id(&voice, &id);
@@ -393,9 +417,17 @@ impl Entity {
                 return;
             }
             let Some(env) = dialogue::decode_task_envelope(&body) else { return };
+            let offer = super::offer::Offer::of(&env.train);
+            let couples = me.couples(&id, &offer.charts);
             let Some(mut b) = me.board.body.take() else { return };
             if let Some(seat) = b.seats.iter_mut().find(|s| s.at == at) {
-                me.solve_before(seat, &key, &id, env.train, env.tests);
+                match couples {
+                    true => me.solve_before(seat, &key, &id, env.train, env.tests),
+                    false => {
+                        seat.passed.insert(id, offer.charts);
+                        me.passed(super::offer::PASSED_SEAT);
+                    }
+                }
             }
             me.board.body = Some(b);
         });

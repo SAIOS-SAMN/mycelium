@@ -4,9 +4,10 @@
 // period; and, against a fake house on one court's relay, a mind that follows
 // the counsel only until it has read what its calls do, then calls the
 // function whose outcome moves the record the counsel's worth favours.
-// 78.148: with no counsel, its own arguments explored and the dominant call
-// chosen under its own valuation; the listing perceived; the seat taken
-// again when lost; a versor series carried by its exact carrier.
+// 78.148, MU-CLIENT §7.1: with no counsel, the dominant read call chosen
+// under its own valuation, or none and the mind passes — no argument
+// enumerated; the listing perceived; the seat taken again when lost; a versor
+// series carried by its exact carrier.
 
 use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
 use crate::anastome::dialogue::seat::*;
@@ -418,12 +419,13 @@ fn list(k: &mut Kernel, epoch: u64, fns: Vec<SeatFn>) {
 
 /// 78.148 — THE FAKE HOUSE OF ONE COUNT FUNCTION, FOCUS (fn 2), never told
 /// to the mind: value 0 raises record 10, value 1 raises record 11, value 2
-/// raises records 10, 11 and 12; 3 and above are BAD ARGUMENTS. The house
-/// counsels nothing. The mind reads the listing off the relay, then each
-/// beat its mail; it perceives, decides and calls; the house applies or
-/// refuses each call and answers it. Returns the decisions, the values the
-/// mind called, the records, and the mind.
-fn play_own(beats: u64) -> (Vec<Decision>, Vec<u64>, [i64; 3], SeatMind) {
+/// raises records 10, 11 and 12; 3 and above are BAD ARGUMENTS. On its first
+/// `counselled` beats the house counsels FOCUS at the beat's value less one,
+/// worth one; after them it counsels nothing. The mind reads the listing off
+/// the relay, then each beat its mail; it perceives, decides and calls; the
+/// house applies or refuses each call and answers it. Returns the decisions,
+/// the values the mind called, the records, and the mind.
+fn play_own(beats: u64, counselled: u64) -> (Vec<Decision>, Vec<u64>, [i64; 3], SeatMind) {
     let mut k = founded();
     let d = vk(&domain());
     let me = vk(&mind());
@@ -437,7 +439,10 @@ fn play_own(beats: u64) -> (Vec<Decision>, Vec<u64>, [i64; 3], SeatMind) {
     let (mut after, mut house_after, mut x, mut nonce) = (0u64, 0u64, [0i64; 3], 0u8);
     let (mut decisions, mut values) = (Vec::new(), Vec::new());
     for beat in 1..=beats {
-        let records = (0..3u16).map(|i| Record::Plain { kind: 10 + i, args: vec![Arg::Q { num: x[usize::from(i)], den: 1 }] }).collect();
+        let mut records: Vec<Record> = (0..3u16).map(|i| Record::Plain { kind: 10 + i, args: vec![Arg::Q { num: x[usize::from(i)], den: 1 }] }).collect();
+        if beat <= counselled {
+            records.push(Record::Counsel { fn_id: 2, args: vec![Arg::Count(beat - 1)], worth: Arg::Count(1), cost: Arg::Count(0) });
+        }
         k.seat_post(&Post::Percept(percept(beat, Arg::Q { num: beat as i64, den: 1 }, records)).sign(&house()).expect("writes")).expect("relayed");
         let raw = k.seat_mail(&ReadMail::sign(&mind(), after, [0; 32])).expect("signed").mail;
         for piece in mind_mail(me, raw).expect("typed") {
@@ -486,31 +491,33 @@ fn play_own(beats: u64) -> (Vec<Decision>, Vec<u64>, [i64; 3], SeatMind) {
     (decisions, values, x, m)
 }
 
-/// 78.148 — ITS OWN ARGUMENTS, NO SCRIPT. With no counsel the mind explores
-/// FOCUS's one Count in increasing order — 0, 1, 2 — and 3, which the house
-/// refuses BAD ARGUMENTS: the refusal bounds the domain below 3 and 3 is
-/// never called again. Every value tried, it reads under its own valuation
-/// (REACH: the records its calls moved, the way they moved them) that 2
-/// moves records 10, 11 and 12 at least as far as 0 and 1 on every one,
-/// further on one — and calls 2 from then on, saying so.
+/// MU-CLIENT §7.1 — NO ARGUMENT IS ENUMERATED. With no counsel and no call
+/// read, the mind holding FOCUS in its repertoire calls nothing on any beat:
+/// it never walks the Count upward to learn where the house refuses. It
+/// passes, and the records stand.
 #[test]
-fn the_mind_explores_its_own_arguments_and_calls_the_dominant() {
-    let (decisions, values, x, m) = play_own(9);
-    assert_eq!(values, vec![0, 1, 2, 3, 2, 2, 2, 2, 2], "explored upward, the refused value never again, then the dominant");
-    let explored: Vec<Option<(usize, u64)>> = decisions
-        .iter()
-        .take(4)
-        .map(|d| match d {
-            Decision::Call(Choice { why: Why::Exploring { at, .. }, followed: false, .. }) => *at,
-            other => panic!("exploring: {other}"),
-        })
-        .collect();
-    assert_eq!(explored, vec![None, Some((0, 1)), Some((0, 2)), Some((0, 3))], "the least first, then the argument upward");
-    assert_eq!(m.repertoire().iter().map(|o| (o.id, o.bounds())).collect::<Vec<_>>(), vec![(2, vec![Some(3)])], "BAD ARGUMENTS at 3 bounds the domain");
-    let refused = m.call_experience(2, &[Arg::Count(3)]).expect("tried");
-    assert_eq!((refused.applied, refused.refused.clone(), refused.read), (0, vec![(REASON_BAD_ARGUMENTS, 1)], 0));
+fn with_nothing_read_and_no_counsel_the_mind_passes() {
+    let (decisions, values, x, m) = play_own(6, 0);
+    assert!(values.is_empty(), "no value is ever probed: {values:?}");
+    assert!(decisions.iter().all(|d| *d == Decision::NothingToCall), "every beat a pass");
+    assert_eq!(x, [0, 0, 0], "nothing moved");
+    assert!(m.call_experience(2, &[Arg::Count(3)]).is_none(), "the refused value was never called");
+}
+
+/// 78.148 — THE DOMINANT CALL UNDER ITS OWN VALUATION, READ, NEVER PROBED.
+/// The house counsels FOCUS at 0, 1 and 2 on the first three beats, and the
+/// mind follows; it reads what each call moved. Then the house counsels
+/// nothing, and the mind reads under its own valuation (REACH: the records
+/// its calls moved, the way they moved them) that 2 moves records 10, 11 and
+/// 12 at least as far as 0 and 1 on every one, further on one — and calls 2
+/// from then on, saying so. 3 is never called.
+#[test]
+fn the_mind_calls_the_dominant_of_what_it_read() {
+    let (decisions, values, x, m) = play_own(9, 3);
+    assert_eq!(values, vec![0, 1, 2, 2, 2, 2, 2, 2, 2], "the counsel followed, then the dominant read call");
+    assert!(m.call_experience(2, &[Arg::Count(3)]).is_none(), "no value past what was read is probed");
     let at = |kind| Locator { kind, keys: vec![], occurrence: 0, position: 0 };
-    for d in &decisions[4..] {
+    for d in &decisions[3..] {
         let Decision::Call(c) = d else { panic!("{d}") };
         let Why::Reached { valuation, values, over, along } = &c.why else { panic!("{d}") };
         assert_eq!((*valuation, values.clone()), (Valuation::Reach, vec![2]), "{d}");
@@ -519,14 +526,13 @@ fn the_mind_explores_its_own_arguments_and_calls_the_dominant() {
         assert!(d.to_string().contains("valuation REACH"), "the beat line names its valuation: {d}");
     }
     assert_eq!(m.reach().len(), 3, "reach favours the three records the calls moved");
-    assert_eq!(x, [1 + 1 + 5, 1 + 1 + 5, 1 + 5], "0 once, 1 once, 2 six times; 3 applied never");
+    assert_eq!(x, [1 + 7, 1 + 7, 7], "0 once, 1 once, 2 seven times; 3 never");
 }
 
-/// 78.148 — THE LISTING IS THE MIND'S REPERTOIRE: a function whose arguments
-/// are not all Counts or Flags is not the mind's to explore (fn 1, two
-/// Bytes); a Count function is (fn 2) — and a Flag one is two values from
-/// the start. A call refused NO SUCH FUNCTION takes the function out; the
-/// listing read again restores it.
+/// 78.148 — THE LISTING IS THE MIND'S REPERTOIRE, and holding it is no
+/// reason to call: with no counsel and nothing read, a mind that holds three
+/// listed functions passes. A call refused NO SUCH FUNCTION takes the
+/// function out; the listing read again restores it.
 #[test]
 fn the_listing_is_perceived_as_the_minds_repertoire() {
     let mut k = founded();
@@ -534,20 +540,14 @@ fn the_listing_is_perceived_as_the_minds_repertoire() {
     let (epoch, fns) = listed_fns(&k, 7);
     assert_eq!(epoch, 3);
     let mut m = SeatMind::new(vk(&domain()), 7);
-    assert_eq!(m.decide(), Decision::NothingToCall, "no counsel and no repertoire: nothing to call");
     m.perceive_listing(&fns);
-    let held: Vec<(u16, bool, Vec<Option<u64>>)> = m.repertoire().iter().map(|o| (o.id, o.domains.is_some(), o.bounds())).collect();
-    assert_eq!(held, vec![(1, false, vec![]), (2, true, vec![None]), (5, true, vec![Some(2)])]);
+    assert_eq!(m.repertoire().iter().map(|o| o.id).collect::<Vec<_>>(), vec![1, 2, 5]);
     m.perceive(&percept(1, Arg::Count(1), vec![]));
-    let Decision::Call(c) = m.decide() else { panic!("the mind explores") };
-    assert_eq!((c.fn_id, c.args.clone(), c.followed), (2, vec![Arg::Count(0)], false), "fn 1 skipped, fn 2 at its least");
-    m.called(2, c.args, [1; 32]);
+    assert_eq!(m.decide(), Decision::NothingToCall, "a repertoire held, nothing read: the mind passes");
+    m.called(2, vec![Arg::Count(0)], [1; 32]);
     let refusal = Outcome { domain: vk(&domain()), sub_origin: None, seat: 7, mind: vk(&mind()), call: [1; 32], applied: false, reason: REASON_NO_SUCH_FUNCTION, deed: [0; 32] };
     assert_eq!(m.outcome(&refusal), Some(2));
     assert_eq!(m.repertoire().iter().map(|o| o.id).collect::<Vec<_>>(), vec![1, 5], "no such function: gone until the listing is read again");
-    m.perceive(&percept(2, Arg::Count(2), vec![]));
-    let Decision::Call(c) = m.decide() else { panic!("the flag function is explored") };
-    assert_eq!((c.fn_id, c.args), (5, vec![Arg::Flag(false)]));
     m.perceive_listing(&fns);
     assert_eq!(m.repertoire().iter().map(|o| o.id).collect::<Vec<_>>(), vec![1, 2, 5], "the listing read again restores it");
 }
@@ -647,19 +647,16 @@ fn a_versor_series_changes_by_its_exact_carrier() {
     assert_eq!(m.series(&at(22)).expect("held").orbit(), Some(Return::Fixed), "a held versor is carried by one: fixed");
 }
 
-/// A FUNCTION A HOUSE COUNSELLED IS NEVER PROBED BLIND (barren-realms,
-/// 2026-10-09: `handle` closes every throat; `forge` spends real energy).
-/// Counselled once, on a later beat with no counsel the mind explores only
-/// its other functions.
+/// NO FUNCTION IS PROBED BLIND (barren-realms, 2026-10-09: `handle` closes
+/// every throat; `forge` spends real energy). Counselled once and never
+/// called, on a later beat with no counsel the mind calls neither the
+/// counselled function nor any other: nothing is read, so it passes.
 #[test]
-fn a_counselled_function_is_never_explored_blind() {
+fn no_function_is_probed_blind() {
     let mut m = SeatMind::new(vk(&domain()), 7);
     m.perceive_listing(&[SeatFn { id: 13, tags: vec![TAG_COUNT] }, SeatFn { id: 2, tags: vec![TAG_COUNT] }]);
     let counsel = Record::Counsel { fn_id: 13, args: vec![Arg::Count(1)], worth: Arg::Count(1), cost: Arg::Count(0) };
     m.perceive(&percept(1, Arg::Count(1), vec![counsel]));
     m.perceive(&percept(2, Arg::Count(2), vec![]));
-    match m.decide() {
-        Decision::Call(c) => assert_eq!(c.fn_id, 2, "the uncounselled function is explored, never fn 13: {c:?}"),
-        other => panic!("a call: {other}"),
-    }
+    assert_eq!(m.decide(), Decision::NothingToCall, "nothing read: no probe");
 }

@@ -24,9 +24,9 @@
 //!   all, and the house counsels one this mind has not read: that one, tried;
 //! - otherwise the counsel, followed — no read function dominates.
 //!
-//! WITH NO COUNSEL (78.148) the call is the mind's own (`own`): its listed
-//! functions' argument domains explored, then the dominant call under its
-//! own valuation, REACH.
+//! WITH NO COUNSEL (78.148) the call is the mind's own (`own`): the dominant
+//! read call under its own valuation, REACH — or none, and the mind passes.
+//! No argument is enumerated (MU-CLIENT §7.1).
 //!
 //! No sum across quantities is formed: dominance is read quantity by
 //! quantity, so no hidden scalar weighs one record against another.
@@ -144,20 +144,11 @@ pub enum Why {
     Untried { against: Vec<u16> },
     /// No read function dominates: the counsel.
     NoneDominates,
-    /// 78.148 — no counsel: a listed function's arguments not yet tried, in
-    /// increasing order — the least (`at` none), then argument `i` at value
-    /// `v` with the others at their least; `bounds` each argument's domain
-    /// as learned (the least value refused BAD_ARGUMENTS, or none yet).
-    Exploring { at: Option<(usize, u64)>, bounds: Vec<Option<u64>> },
-    /// 78.148 — no counsel, every bounded domain tried: under the mind's own
-    /// valuation, this call's read rates along the favoured records are at
-    /// least every other read call's (`over`, each a function and its
-    /// argument values), above one's, and the favoured way on one.
+    /// 78.148 — no counsel: under the mind's own valuation, this read call's
+    /// rates along the favoured records are at least every other read call's
+    /// (`over`, each a function and its argument values), above one's, and
+    /// the favoured way on one.
     Reached { valuation: Valuation, values: Vec<u64>, over: Vec<(u16, Vec<u64>)>, along: Vec<(Locator, Direction, Q)> },
-    /// 78.148 — no counsel, no read call dominates under the mind's own
-    /// valuation: of the `front` undominated calls, the one read fewest
-    /// times (`read`), read again — its rate sharpened, no scalar formed.
-    Unreached { valuation: Valuation, values: Vec<u64>, front: usize, read: u64 },
 }
 
 /// 78.148 — THE VALUATION a choice is read under.
@@ -194,23 +185,12 @@ impl std::fmt::Display for Why {
             }
             Why::Untried { against } => write!(f, "fn {against:?} moved the favoured records against or not at all — a counselled call not yet read, tried"),
             Why::NoneDominates => write!(f, "no read call dominates on every favoured record — the house's counsel"),
-            Why::Exploring { at, bounds } => {
-                write!(f, "no counsel: its arguments explored in increasing order, never a value refused — ")?;
-                match at {
-                    None => write!(f, "the least, untried")?,
-                    Some((i, v)) => write!(f, "argument {i} at {v}, untried")?,
-                }
-                write!(f, " (domains bounded {bounds:?})")
-            }
             Why::Reached { valuation, values, over, along } => {
                 write!(f, "{valuation}: at {values:?} its read outcomes move")?;
                 for (at, d, rate) in along {
                     write!(f, " {at} {d:?} at {rate}/call")?;
                 }
                 write!(f, ", at least as far the favoured way as calls {over:?} on every one")
-            }
-            Why::Unreached { valuation, values, front, read } => {
-                write!(f, "{valuation}: no read call dominates — of {front} undominated, {values:?} read fewest ({read}) is read again")
             }
         }
     }
@@ -232,7 +212,8 @@ pub enum Decision {
     Call(Choice),
     /// Its last call is not answered and read yet.
     Awaiting { fn_id: u16 },
-    /// No counsel and no read call it holds arguments for.
+    /// No counsel, and no read call dominates under its own valuation: the
+    /// mind passes (MU-CLIENT §7.1).
     NothingToCall,
 }
 
@@ -241,7 +222,7 @@ impl std::fmt::Display for Decision {
         match self {
             Decision::Call(c) => write!(f, "call fn {} followed-counsel {}: {}", c.fn_id, c.followed, c.why),
             Decision::Awaiting { fn_id } => write!(f, "no call: fn {fn_id} awaits its outcome and reading"),
-            Decision::NothingToCall => write!(f, "no call: no counsel and no read call to make"),
+            Decision::NothingToCall => write!(f, "no call: no counsel, and no read call dominates — the mind passes"),
         }
     }
 }

@@ -68,4 +68,10 @@ impl Feed {
         retire(path);
         self.at += 1;
     }
+
+    /// MU-CLIENT §7.1 — THE FAMILY STANDING WAS PASSED: the mind did not take
+    /// it, and it stays on disk, offered again at the next listing.
+    pub(crate) fn passed(&mut self) {
+        self.at += 1;
+    }
 }

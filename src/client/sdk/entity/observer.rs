@@ -176,6 +176,23 @@ impl Entity {
                 self.contracted.len(),
                 self.questions.len()
             ),
+            // MU-CLIENT §7.1 — THE MIND'S ATTENTION: whether it holds tension
+            // (and so asks), the offers standing, whether each couples, and
+            // the offers it passed uncoupled since it began, by kind.
+            {
+                let standing = |o: Option<(&[u8], &super::offer::Offer)>| match o {
+                    Some((id, o)) => format!("couples {} · crossed a return {}", self.couples(id, &o.charts), o.crossed),
+                    None => "none".to_string(),
+                };
+                let passed: Vec<String> = super::offer::PASSED.iter().zip(&self.board.offers_passed).map(|(k, n)| format!("{k} {n}")).collect();
+                format!(
+                    "attention: tension {} · court task {} · feed family {} · passed uncoupled: {}",
+                    self.strained(),
+                    standing(pace.task.as_ref().map(|(e, o)| (&e.id[..], o))),
+                    standing(self.board.feed_offer.as_ref().map(|(_, id, o)| (id.as_slice(), o))),
+                    passed.join(" · ")
+                )
+            },
         ]
     }
 

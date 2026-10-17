@@ -38,7 +38,8 @@ pub(crate) struct CourtPace {
     pub(crate) quoting: bool,
     pub(crate) quoted: Option<YieldQuote>,
     pub(crate) pulling: bool,
-    pub(crate) task: Option<crate::anastome::dialogue::TaskEnvelope>,
+    /// MU-CLIENT §7.1 — the task the court sent, with its offer (`offer`).
+    pub(crate) task: Option<(crate::anastome::dialogue::TaskEnvelope, super::offer::Offer)>,
     pub(crate) syncing: bool,
     pub(crate) schooling: bool,
     pub(crate) solving: crate::network::nerve::Keyed<()>,
@@ -74,10 +75,13 @@ impl Entity {
         self.speak_owed();
     }
 
-    /// THE FEED'S NEXT FAMILY IS TAKEN IN, paced by the mind's metabolism —
-    /// where the reserve has regenerated on the lanes it costs — and
-    /// perceived on the perception carrier: thought through whole and its
-    /// form spoken where it lands. One scene on the carrier at a time.
+    /// THE FEED'S NEXT FAMILY IS OFFERED, and taken in where it couples to
+    /// the mind (`offer`) and the mind's metabolism can carry it — the
+    /// reserve regenerated on the lanes it costs — then perceived on the
+    /// perception carrier: thought through whole and its form spoken where it
+    /// lands. One scene on the carrier at a time. A family that couples to
+    /// nothing waits, and is passed at its second return (`lapse_offers`),
+    /// left on disk.
     pub(crate) fn feed_inflow(&mut self, outcome: &mut StrokeOutcome) {
         // One scene on the perception carrier at a time: the next waits for
         // the last to be taken.
@@ -86,6 +90,26 @@ impl Entity {
         }
         let Some(feed) = self.board.feed.as_mut() else { return };
         let Some((path, task)) = feed.peek() else { return };
+        // A task whose members have no A5 form has no identity to think by,
+        // and its file is retired. MU-CLIENT §5.4 (E1) — the scene is named
+        // by the court's own name for it, its 32-byte CITATION, never the raw
+        // content address a court binds nothing under (finding 8).
+        let Some(id) = crate::registry::task_id(&task) else {
+            feed.entered(&path);
+            return;
+        };
+        let id = crate::registry::citation(&id).to_vec();
+        // The offer is read once, where the family first stands.
+        if !matches!(&self.board.feed_offer, Some((at, _, _)) if *at == path) {
+            self.board.feed_offer = Some((path.clone(), id.clone(), super::offer::Offer::of(&task.train)));
+        }
+        let couples = match &self.board.feed_offer {
+            Some((_, id, o)) => self.couples(id, &o.charts),
+            None => false,
+        };
+        if !couples {
+            return;
+        }
         // THE MIND'S METABOLISM PACES ITS INTAKE (the operator, 2026-10-15):
         // a family is taken where the reserve has regenerated on the lanes
         // it costs.
@@ -96,16 +120,11 @@ impl Entity {
         if let Some(feed) = self.board.feed.as_mut() {
             feed.entered(&path);
         }
-        // A task whose members have no A5 form has no identity to think by.
-        // MU-CLIENT §5.4 (E1) — the scene is named by the court's own name
-        // for it, its 32-byte CITATION, never the raw content address a
-        // court binds nothing under (finding 8).
-        let Some(id) = crate::registry::task_id(&task) else { return };
-        let id = crate::registry::citation(&id);
+        self.board.feed_offer = None;
         self.physics_mut().bump(&mag);
         StrokeOutcome::add(&mut outcome.fed, &mag);
         // MU-CLIENT §7.1 R1 — perceived on its own carrier, off the field.
-        self.perceive_scene(super::perceive::Scene { id: id.to_vec(), train: task.train, tests: Vec::new(), reading: super::perceive::Reading::Feed });
+        self.perceive_scene(super::perceive::Scene { id, train: task.train, tests: Vec::new(), reading: super::perceive::Reading::Feed });
     }
 
     /// THE OPEN BOOK FLOWS IN: a quote that landed is read — each listing's
@@ -196,25 +215,30 @@ impl Entity {
         }
     }
 
-    /// MU-CLIENT §3.1, §7.1 R4 — A TASK IS PERCEPTION: a scene the court's
-    /// registry sent is TAKEN IN where the mind's metabolism can carry it —
-    /// the reserve regenerated on the lanes it costs (the operator: "there
-    /// should be internal metabolism in the mind") — and perceived on the
-    /// perception carrier, off the field (R1): its colour, its hours under
-    /// its citation (78.56 III), its rule spoken, and its comprehension,
-    /// which may emit a solve (`entity/perceive.rs`). A scene the metabolism
-    /// cannot yet carry waits where it landed; one scene is perceived at a
-    /// time.
+    /// MU-CLIENT §3.1, §7.1 R4 — A TASK IS PERCEPTION, AND AN OFFER: a scene
+    /// the court's registry sent is TAKEN IN where it couples to the mind
+    /// (`offer`) and the mind's metabolism can carry it — the reserve
+    /// regenerated on the lanes it costs (the operator: "there should be
+    /// internal metabolism in the mind") — and perceived on the perception
+    /// carrier, off the field (R1): its colour, its hours under its citation
+    /// (78.56 III), its rule spoken, and its comprehension, which may emit a
+    /// solve (`entity/perceive.rs`). A scene that couples to nothing, or that
+    /// the metabolism cannot yet carry, waits where it landed, and one that
+    /// still couples to nothing at its second return lapses
+    /// (`lapse_offers`); one scene is perceived at a time.
     pub(crate) fn task_inflow(&mut self, outcome: &mut StrokeOutcome) {
         if self.perceiving() {
             return;
         }
-        let Some(envelope) = self.board.court.task.as_ref() else { return };
+        let Some((envelope, offer)) = self.board.court.task.as_ref() else { return };
+        if !self.couples(&envelope.id, &offer.charts) {
+            return;
+        }
         let mag = super::family::family_magnitude(&envelope.train);
         if !crate::economy::lanes_short(&self.physics().reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
             return;
         }
-        let Some(crate::anastome::dialogue::TaskEnvelope { id, train, tests }) = self.board.court.task.take() else { return };
+        let Some((crate::anastome::dialogue::TaskEnvelope { id, train, tests }, _)) = self.board.court.task.take() else { return };
         self.physics_mut().bump(&mag);
         StrokeOutcome::add(&mut outcome.fed, &mag);
         self.perceive_scene(super::perceive::Scene { id: id.to_vec(), train, tests, reading: super::perceive::Reading::Task });

@@ -186,6 +186,24 @@ impl Contemplation {
         out
     }
 
+    /// MU-CLIENT §4.12, §7.1 — WHETHER A DEMAND STANDS ON THE PLAN, this
+    /// orbit's or an open question: an undischarged orbit, an open cell's
+    /// escape, a relation that never returns — strain the mind holds unbound.
+    pub(crate) fn holds_demand(&self) -> bool {
+        self.docket_open.scoped().chain(self.docket.scoped()).any(|(_, c)| matches!(c, Cite::Demand { .. }))
+    }
+
+    /// MU-CLIENT §7.1 — WHETHER `chart` (a chart's key) IS ON THE COVER of
+    /// an entry of the plan: a question the mind holds stands there.
+    pub(crate) fn docket_covers(&self, chart: &[u8]) -> bool {
+        self.docket_open.scoped().chain(self.docket.scoped()).any(|(_, c)| c.cover().is_some_and(|cover| cover.iter().any(|k| k.as_slice() == chart)))
+    }
+
+    /// Whether a thought the mind holds stands on `chart` (a chart's key).
+    pub(crate) fn held_on(&self, chart: &[u8]) -> bool {
+        self.by_chart.get(chart).is_some_and(|m| !m.is_empty())
+    }
+
     /// THE WHOLE PLAN, in its entries' own key order: the open questions
     /// carried forward and this orbit's new entries. The mind's reading of
     /// its own plan; nothing writes it anywhere (78.49).

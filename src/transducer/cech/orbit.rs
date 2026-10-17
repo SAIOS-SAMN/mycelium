@@ -242,6 +242,29 @@ impl Field {
         Some(held)
     }
 
+    /// MU-CLIENT §4.12, §7.1 — WHETHER A MOTION LANDS ON THE FIELD AS IT
+    /// STANDS: an orbit the field holds on a plane of its modes or on the
+    /// support of its hue map, or a tube holding open flux on its null ray —
+    /// where `thread` would hang a line, read and moving nothing. `None`
+    /// where the motion's modes do not read.
+    pub fn lands(&self, motion: &Mv, gauge: &[(u8, u8)], budget: &mut crate::physics::Budget) -> Option<bool> {
+        if orbit_of_hues(gauge).is_some_and(|(_, at)| self.orbits.orbits.contains(&at)) {
+            return Some(true);
+        }
+        let Ok(modes) = cga::motion_modes(motion, budget)? else { return None };
+        let on_tube = super::flux::null_fluxes_of(&modes).iter().any(|f| self.tubes.holds_open(f));
+        let on_orbit = modes.iter().filter_map(orbit_of_mode).any(|(_, at)| self.orbits.orbits.contains(&at));
+        Some(on_tube || on_orbit)
+    }
+
+    /// MU-CLIENT §4.12, §7.1 — THE FIELD HOLDS STRAIN: an orbit rings in it
+    /// (an unsettled winding), or its reservoirs hold strain that has neither
+    /// re-formed nor condensed. A field of neither stands in equilibrium.
+    /// Past the carrier, the reservoirs hold strain.
+    pub fn strained(&self) -> bool {
+        self.orbits.rings() || self.reserved().is_none_or(|r| r.iter().any(|x| *x > 0))
+    }
+
     /// 78.73 (4) — THE ELASTIC STRAIN'S TWO TERMS PER LANE, weighed by mass:
     /// what stands open and what has moved — 𝒯's off its tubes, the other
     /// lanes' off their orbits. `ε = open / transport`, exact.
@@ -552,6 +575,11 @@ impl OrbitRegistry {
     /// entering the reservoir now waits on.
     fn ringing(&self) -> Vec<Vec<u8>> {
         self.orbits.scoped().filter(|(_, o)| o.state.rings()).map(|(k, _)| k).collect()
+    }
+
+    /// Whether any orbit standing rings.
+    pub fn rings(&self) -> bool {
+        self.orbits.scoped().any(|(_, o)| o.state.rings())
     }
 
     /// The reservoir's records, by their keys.

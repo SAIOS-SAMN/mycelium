@@ -17,9 +17,10 @@
 //! emits its solve once its replay is read here too.
 //!
 //! THE PACE IS THE MIND'S METABOLISM (the operator, 2026-10-15: "there should
-//! be internal metabolism in the mind"): a scene is taken when the reserve
-//! has regenerated on the lanes it costs; the carrier perceives one scene at
-//! a time, and the next is asked for when it is taken (`court.rs`).
+//! be internal metabolism in the mind"), AND ITS ATTENTION ITS OWN (2026-10-17):
+//! a scene is taken where it couples to the field (`offer`) and the reserve
+//! has regenerated on the lanes it costs; a hearing is read where it couples;
+//! the carrier perceives one scene at a time (`court.rs`).
 
 use crate::client::sdk::*;
 use crate::transducer::sentence::SentenceRule;
@@ -97,6 +98,22 @@ pub(crate) enum Verdict {
     Send(Box<Element>),
     Construct(crate::transducer::cga::Mv, Option<crate::transducer::stalk::Invariant>),
     Kept,
+}
+
+/// MU-CLIENT §7.1 — A HEARING COUPLES TO THE MIND where one of its words is
+/// reached by the mind's lexicon — known whole, or known in part, the
+/// dictionary positing some of its modes and the residue left the question
+/// the mind would ask (`rung::posit`) — or lands on the field as it stands:
+/// an orbit or an open tube its motion's modes, or its hue map, fall on
+/// (`Field::lands`). Read on the thinking mind's field; with none standing in
+/// the slots, the lexicon alone.
+fn hearing_couples(h: &Hearing, budget: &mut crate::physics::Budget) -> bool {
+    use crate::transducer::sentence::rung::{known, posit};
+    h.words.iter().any(|w| {
+        known(&w.motion)
+            || posit(&w.motion).is_some_and(|p| !p.parts.is_empty())
+            || matches!(crate::transducer::mind::with_field(|f| f.lands(&w.motion, &w.gauge, budget)), Ok(Some(true)))
+    })
 }
 
 /// THE PERCEPTION CARRIER: the mind's carrier type (`hypha::Carrier`) over
@@ -294,15 +311,19 @@ impl Entity {
     }
 
     /// THE NEXT HEARING TAKEN, where none is on the carrier — the least by
-    /// its coordinates over every hearing waiting, never by its arrival
-    /// (rule 15) — posted with what the mind remembers hearing and a scratch
-    /// of its field as they stand now.
+    /// its coordinates over every hearing waiting that COUPLES to the mind
+    /// (`hearing_couples`), never by its arrival (rule 15) — posted with what
+    /// the mind remembers hearing and a scratch of its field as they stand
+    /// now. MU-CLIENT §7.1 — a hearing that couples to nothing is not read:
+    /// it waits, and lapses at the returns as every unread hearing does.
     fn hear_next(&mut self) {
         if self.board.hearing {
             return;
         }
-        let first = |set: &crate::network::nerve::Keyed<Hearing>| set.scoped().next().map(|(k, _)| k);
-        let taken = match (first(&self.board.hearings), first(&self.board.hearings_crossed)) {
+        let mut budget = self.physics.stroke();
+        let mut first = |set: &crate::network::nerve::Keyed<Hearing>| set.scoped().find(|(_, h)| hearing_couples(h, &mut budget)).map(|(k, _)| k);
+        let (now, crossed) = (first(&self.board.hearings), first(&self.board.hearings_crossed));
+        let taken = match (now, crossed) {
             (Some(a), Some(b)) if b < a => self.board.hearings_crossed.remove(&b),
             (Some(a), _) => self.board.hearings.remove(&a),
             (None, Some(b)) => self.board.hearings_crossed.remove(&b),

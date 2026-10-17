@@ -19,22 +19,31 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
+## The sovereign mind (2026-10-17) — the current work
+Scope (operator): mind cognition only. The fleet, the court's fold and
+ledger, and the physics-law queues (xylarium, netstratum) are out of scope.
+Barren-realms' sovereign cognition (ASCE) is brought in as native orbital
+algebra, never as ported search or scalar heuristics; there is no generate-
+and-test anywhere. The client is TASK-DERIVATIVE AND SOVEREIGN: what arrives
+is an offer, taken only where it couples to the field; it asks only under
+tension; rest is an equilibrium. BUILT, scoped tests green, NOT released or
+witnessed (MU-CLIENT §7.1 "As built, 2026-10-17"): `Entity::strained`, the
+resonance filter (`entity/offer.rs`) on court tasks, the feed, seat tasks
+and hearings, the seat mind's `Exploring` deleted. Owed: the barren-realms
+side (its sovereign seat's typed actions on the wire, its `FN_ID` table
+lacking them; retiring rollouts, the gauge argmin, `step`/`evaluate`), and
+the vertex-body over-claim spoken as sections at the pivot (out of scope
+until ruled back in).
+
 ## Phase 3 — containment and memory (2026-10-16)
-The host crashed (memory) and rebooted mid-build; nothing runs. The fleet
-— courts, minds 1–5, netstratum's conductor, seat relay and nseat-1..4 — is
-held DOWN until Phase 3 ships as one release; netstratum restarts only on
-mycelium's word, its conductor after the minds' genomes restore, at a slower
-cadence. Phase 3 is BUILT to MU-CLIENT §7.1's "as built" (the operator's
-rulings Q1–Q4 included): memory released by the field (Returned /
-Dissipated / Sealed / Cancelled / AtRest), the beat per vent with one beat
-of standing, escrow conserved, holders by coordinates (unheard, unread
-solves, obstructions, questions by their residue's orbit, the dialect shed
-by reference), the court's deficit kept and dragging escaping orbits in on
-its lanes, reservoirs condensing at the eon and locking the reserve. Owed
-in Phase 3's own list: the conversation carrier's window; `taught_up`,
-`fronts`, `grounds`, `cited` whole. Then: commit, release, notify, restart,
-witness (thoughts stand across hours, held speech reaches the courts,
-deferrals hold the dwell and the drag).
+SHIPPED and released as one build to MU-CLIENT §7.1's "as built" (rulings
+Q1–Q4, the hearing-queue rulings, the counts replaced by orbital events, the
+auditor's items: `--why` under load, `release_unmet` at returns, the local
+ACK drop, hashed holders, the court's typed refusal and fold readings).
+Read on the fleet 2026-10-16: hearings bounded, the T reserve level with the
+other lanes; the courts' vertex-body refusals are the over-claim (a chart-
+wide carriage false for some bodies), and court a's fold proposals find no
+witness.
 
 ## Phase 1 remediated, cleaned, and real convergence (2026-10-16)
 R0 (bfdd375e, 563ecee6) and R1–R6 (f3a8d15b) released 01:23: the minds wind

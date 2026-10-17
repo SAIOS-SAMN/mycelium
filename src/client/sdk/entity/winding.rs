@@ -28,10 +28,15 @@
 //!    mind holds for its own return (no scene) leaves at any return of the
 //!    mind; and at a return the mind reads a waiting scene again, says what
 //!    it owes its courts, its unheard words and its unjudged solves.
-//! 5. THE NEXT SCENE is asked for (`pull_task`) where the metabolism stands
-//!    regenerated and nothing waits to be perceived (the operator: "there
-//!    should be internal metabolism in the mind") — never by rest, never by
-//!    a return.
+//! 5. THE NEXT SCENE is asked for (`pull_task`) only under TENSION — a demand
+//!    on the plan, an orbit ringing, a reservoir uncondensed — where the
+//!    metabolism stands regenerated and nothing waits to be perceived (the
+//!    operator, 2026-10-17: "a full reserve over a settled field is
+//!    equilibrium"); never by rest, never by a return. What any boundary
+//!    lands is an OFFER, taken only where it couples to the field
+//!    (`offer`); at a return, an offer that waited across the last one
+//!    uncoupled lapses. A winding that moves nothing and returns nothing
+//!    leaves the mind at rest.
 //! 6. BOOKING — the stroke's physics on the reserve, and the court's dwell.
 //!
 //! The mind reports nothing about itself: its counterparties' acts are its
@@ -76,6 +81,12 @@ pub(crate) struct Board {
     /// the vent and given back as it re-forms or condenses
     /// (`Entity::lock_reservoirs`).
     pub(crate) reservoir_locked: [u64; 4],
+    /// MU-CLIENT §7.1 — THE FEED'S FAMILY STANDING AS AN OFFER: its file, its
+    /// citation, and its offer (`offer`).
+    pub(crate) feed_offer: Option<(std::path::PathBuf, Vec<u8>, super::offer::Offer)>,
+    /// The offers passed uncoupled since the mind began, by kind
+    /// (`offer::PASSED`) — a reading, never read back by cognition.
+    pub(crate) offers_passed: [u64; 3],
     genome_path: Option<String>,
     saved_len: Option<usize>,
 }
@@ -237,11 +248,13 @@ impl Entity {
             None => returns,
         };
         self.close_cycle(returns);
-        // MU-CLIENT §4.13 — the hearings left unread across a return lapse.
+        // MU-CLIENT §4.13 — the hearings left unread across a return lapse,
+        // and §7.1 the offers left uncoupled across one.
         if returns > 0 {
             if let Ok(lapsed) = u64::try_from(self.lapse_hearings()) {
                 let _ = crate::physics::metabolism::step_or_refuse(&mut self.board.hearings_lapsed, lapsed);
             }
+            self.lapse_offers();
         }
         if returns > 0 && open {
             self.act_at_return(&scenes);

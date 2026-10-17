@@ -391,6 +391,12 @@ impl TubeRegistry {
         }
     }
 
+    /// MU-CLIENT §4.13 — WHETHER `flux`'s RAY STANDS OPEN in the field: the
+    /// tube a line would thread (`thread`), read and moving nothing.
+    pub(crate) fn holds_open(&self, flux: &Mv) -> bool {
+        tube_key(flux).and_then(|at| self.tubes.get(&at)).is_some_and(|t| !t.open.is_zero())
+    }
+
     /// `key` THREADED ON THE TUBE OF `flux`'s RAY, where the field holds open
     /// flux on it; nothing moves. A tube frozen in with nothing open — its
     /// flux dissipated or closed — holds nothing a line could hang on.
