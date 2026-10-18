@@ -19,7 +19,23 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## The fleet at rest (2026-10-18 06:02) — where it stands
+## The voices at 15:46, 2026-10-18 — where they stand
+Voices 1–5 on 3a622678 (relaunched 15:41; courts and nseat-1..4 untouched).
+The day's chain: ARC-AGI-2 feed through the mind's own boundary (6aba4ec8,
+f7127f30) · sync only where the court's language may have moved (78f13c07) ·
+the over-claim answered at the pivot (c1f48d01) · a residual chain is an open
+question, never a word (4d7e2a29, 3416d6ed) · THE CORPUS MET WHERE THE MIND'S
+ORBITS STAND, the feed's walk deleted (210daa68) · an open question is a
+chain, not the residual's tag alone (3a622678). Genomes fell from 42–47 MB to
+4.9–5.3 MB (the language). Read 15:46: every voice tension false, open
+questions 0, 827–934 feed families on the corpus (2 279–2 517 coordinates),
+none met — the field is quiet (no thought held after a restart, no orbit in
+motion or ringing), and a quiet field meets nothing by the ruled design.
+OWED A RULING: what first moves a restored mind's field so the corpus is
+met — the language's tuning (`speaks_on` charts) as a standing focus, or
+rest until a court task couples.
+
+## The fleet at rest (2026-10-18 06:02)
 Running on e296c317 (courts on c8438b8f's server): courts a, b, c; minds 1–5;
 netstratum's council nseat-1..4. Verified by the auditor: resting minds and
 council at 0.00% CPU (from ~54% and a pinned 25%), waking only on landings —
