@@ -173,6 +173,24 @@ struct Thought {
     crossed: bool,
 }
 
+/// WHERE THE CONVERSATION'S WORK GOES TO THE MIND'S FIELD, and the waker of
+/// its winding (MU-CLIENT §7.1): a mind at rest is blocked on its landings,
+/// so what the conversation hands the field wakes it.
+struct FieldLink {
+    work: Sender<FieldWork>,
+    wake: Sender<()>,
+}
+
+impl FieldLink {
+    /// The work handed to the field and the winding woken; `Err` where the
+    /// mind's field is gone (the work dropped with it).
+    fn send(&self, w: FieldWork) -> Result<(), ()> {
+        self.work.send(w).map_err(|_| ())?;
+        let _ = self.wake.send(());
+        Ok(())
+    }
+}
+
 /// THE CARRIER'S OWN STATE, held on its thread alone.
 struct Carrier {
     voice: [u8; 32],
@@ -188,7 +206,7 @@ struct Carrier {
     /// mind's returns and the scene it was spoken under (E1).
     waiting: Keyed<(Element, bool, Vec<u8>)>,
     /// Where what the conversation transduced goes to the mind's field.
-    field: Sender<FieldWork>,
+    field: FieldLink,
     /// THE ANSWERS THIS MIND GAVE (MU-CLIENT §5.3): keyed by the question's
     /// coordinates, the factors said and whether they have waited across one
     /// of the mind's returns — so a question asked of an answer is answered
@@ -427,7 +445,7 @@ impl Entity {
             union: Keyed::new(),
             thoughts: Keyed::new(),
             waiting: Keyed::new(),
-            field,
+            field: FieldLink { work: field, wake: self.hypha.waker() },
             answered: Keyed::new(),
             said: Keyed::new(),
             #[cfg(test)]

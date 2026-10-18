@@ -77,7 +77,16 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             return;
         }
         Ok(SeatRequest::Post(s)) => match crate::held::held!(door.kernel) {
-            Ok(mut h) => encode_post_reply(h.run(|k, _| k.seat_post(&s))),
+            Ok(mut h) => {
+                let filed = h.run(|k, _| k.seat_post(&s));
+                drop(h);
+                // A post filed is an event of the court: the held reads are
+                // answered (`hold`).
+                if filed.is_ok() {
+                    crate::hold::stir();
+                }
+                encode_post_reply(filed)
+            }
             Err(_) => return,
         },
         Ok(SeatRequest::ReadMail(r)) => match crate::held::held!(door.kernel) {

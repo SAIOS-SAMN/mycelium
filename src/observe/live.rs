@@ -71,6 +71,18 @@ static SLOT: LazyLock<(Mutex<Slot>, Condvar)> = LazyLock::new(|| {
 /// Whether any call waits, read without the lock at every boundary.
 static WANTED: AtomicBool = AtomicBool::new(false);
 
+/// MU-CLIENT §7.1 — THE WINDING'S WAKER: a mind at rest is blocked on its
+/// landings, so a call left for it wakes it (`wake_with`); none where no
+/// mind gave one.
+static WAKE: Mutex<Option<std::sync::mpsc::Sender<()>>> = Mutex::new(None);
+
+/// The waker a call left for the winding sends on.
+pub fn wake_with(wake: std::sync::mpsc::Sender<()>) {
+    if let Ok(mut w) = WAKE.lock() {
+        *w = Some(wake);
+    }
+}
+
 /// THE WINDING CARRIER BEGINS A STROKE at the mind's K and height `h`.
 pub fn stroke_began(k: u64, h: Option<u64>) {
     let Ok(mut s) = SLOT.0.lock() else { return };
@@ -186,6 +198,11 @@ pub fn ask(line: &str) -> Option<u64> {
     let Ok(mut s) = SLOT.0.lock() else { return None };
     s.wanted.insert(line.as_bytes(), ());
     WANTED.store(true, Ordering::Relaxed);
+    if let Ok(w) = WAKE.lock() {
+        if let Some(w) = w.as_ref() {
+            let _ = w.send(());
+        }
+    }
     Some(s.now.boundary)
 }
 

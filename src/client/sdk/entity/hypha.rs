@@ -173,6 +173,15 @@ impl Hypha {
         while self.woken.try_recv().is_ok() {}
     }
 
+    /// MU-CLIENT §7.1 — SOVEREIGN REST: blocked until a carrier lands
+    /// something — a court's answer, a held seat read the court answered at
+    /// its next event, a hearing, an observer's call, the stop — and no clock
+    /// in between.
+    pub(crate) fn block(&self) {
+        let _ = self.woken.recv();
+        while self.woken.try_recv().is_ok() {}
+    }
+
     /// Wait for the next landing on any carrier: a guard's only.
     #[cfg(test)]
     pub(crate) fn wait_landing(&self) {

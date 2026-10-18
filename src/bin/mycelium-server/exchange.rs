@@ -416,6 +416,9 @@ impl Exchange {
                     last_tick = at;
                     if let Some(ring) = crate::tshelf::sign_tick(&mesh, tick) {
                         push_tick(&mesh, &join, &nerve, &ring);
+                        // A reading signed is the court's clock advancing:
+                        // the held seat reads are answered (`hold`).
+                        crate::hold::stir();
                     }
                 }
                 if let Ok(mut sy) = syllabus.lock() {

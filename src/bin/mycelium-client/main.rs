@@ -172,20 +172,28 @@ fn main() {
         mind.sit(domain, sub_origin, sit, voice_key.sk.clone());
     }
     let stop = Arc::new(AtomicBool::new(false));
+    // MU-CLIENT §7.1 — a mind at rest is blocked on its landings: an
+    // observer's call and the stop each wake it.
+    mycelium::observe::live::wake_with(mind.waker());
     {
         let stop = Arc::clone(&stop);
+        let wake = std::sync::Mutex::new(mind.waker());
         let _ = ctrlc::set_handler(move || {
             stop.store(true, Ordering::SeqCst);
             mycelium::physics::halt();
+            if let Ok(w) = wake.lock() {
+                let _ = w.send(());
+            }
         });
     }
     while !stop.load(Ordering::SeqCst) {
         // MU-CLIENT §4.12 — the winding carrier's stroke: the mind's own
         // motion, acting at its returns.
         let wound = mind.wind(&stop);
-        // X6 — a winding that moved nothing and returned nothing admitted
-        // nothing: it draws nothing and rests until a carrier lands something
-        // or the measured transport's park passes, never spinning a core.
+        // X6, MU-CLIENT §7.1 — a winding that moved nothing and returned
+        // nothing admitted nothing: it draws nothing and rests, blocked until
+        // a carrier lands something (a held seat read answers at the court's
+        // next event), never spinning a core.
         if wound.moved == [false; 4] && wound.returns == 0 {
             mind.rest();
         }

@@ -194,6 +194,16 @@ impl SharedRelay {
     /// reader whose box holds a piece filed since its last exempt read.
     /// `None` where it is not exempt (no box, or the window spent): the
     /// door's ordinary rule answers it.
+    /// WHETHER ANYTHING WAS FILED PAST THE READER'S CURSOR: the relay's last
+    /// sequence beyond what the read acknowledges, on the relay's epoch — a
+    /// read with nothing past it waits for the court's next event (the
+    /// server's held read). Any box counts: a house reads its own besides its
+    /// key's.
+    pub fn filed_past(&self, r: &ReadMail) -> bool {
+        let relay = self.lock();
+        relay.seq > r.after_on(relay.epoch, relay.seq)
+    }
+
     pub fn exempt_read(&self, r: &ReadMail) -> Option<Result<MailRead, Refusal>> {
         if !r.verified() {
             return Some(Err(Refusal::Unsigned));

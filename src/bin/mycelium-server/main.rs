@@ -15,6 +15,7 @@ mod exchange;
 mod fold;
 mod genesis;
 mod held;
+mod hold;
 mod judge;
 mod ledger;
 mod offer;
@@ -787,6 +788,9 @@ fn main() {
             if judge::serve_published(&mut stream, &frame, &door) {
                 continue;
             }
+            // 78.146 amended — a seat read with nothing filed past it waits
+            // for the court's next event (`hold`), off the judging pool.
+            let Some((stream, frame)) = hold::offer(stream, frame, &door) else { continue };
             if let Err(e) = work_tx.try_send((stream, frame)) {
                 let (std::sync::mpsc::TrySendError::Full((mut stream, frame)) | std::sync::mpsc::TrySendError::Disconnected((mut stream, frame))) = e;
                 // 78.146 — a mind's own read is served, once per window.
@@ -855,6 +859,9 @@ fn main() {
                 if judge::serve_published(&mut stream, &frame, &door) {
                     continue;
                 }
+                // 78.146 amended — a seat read with nothing filed past it
+                // waits for the court's next event (`hold`).
+                let Some((mut stream, frame)) = hold::offer(stream, frame, &door) else { continue };
                 // 78.146 — a mind's own read is served, once per window.
                 if judge::seat::serve_exempt(&mut stream, &frame, &door) {
                     continue;
@@ -869,6 +876,8 @@ fn main() {
             }
         });
     }
+    // 78.146 amended — the held seat reads, answered at the court's events.
+    hold::spawn(door.clone());
 
     for stream in listener.incoming() {
         let Ok(s) = stream else { continue };

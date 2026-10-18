@@ -16,8 +16,19 @@ impl Entity {
         self.hypha.rtt()
     }
 
-    /// REST until the court's word lands or the idle park passes.
+    /// REST (MU-CLIENT §7.1, the operator 2026-10-17): blocked until a carrier
+    /// lands something — never a clock — save while the court's dwell runs
+    /// on a pressed lane, which is counted in the mind's own strokes, so those
+    /// strokes are parked at the measured transport until it elapses.
     pub fn rest(&self) {
-        self.hypha.rest(self.transport_rtt());
+        match self.board.court.dwelling() {
+            true => self.hypha.rest(self.transport_rtt()),
+            false => self.hypha.block(),
+        }
+    }
+
+    /// The waker of the mind's winding: whatever sends on it ends a rest.
+    pub fn waker(&self) -> std::sync::mpsc::Sender<()> {
+        self.hypha.waker()
     }
 }

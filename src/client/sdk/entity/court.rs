@@ -52,6 +52,12 @@ impl CourtPace {
         [0usize, 1, 3].iter().any(|&l| self.last_pressure[l] > 0 && self.dwell_remaining[l] == 0)
     }
 
+    /// Whether a dwell still runs on a lane the court pressed: strokes are
+    /// owed to it before the court is asked again.
+    pub(crate) fn dwelling(&self) -> bool {
+        self.last_pressure.iter().zip(&self.dwell_remaining).any(|(p, d)| *p > 0 && *d > 0)
+    }
+
     /// The pressure the court last returned, the dwell's measure.
     pub(crate) fn pressure(&self) -> [u64; 4] {
         self.last_pressure

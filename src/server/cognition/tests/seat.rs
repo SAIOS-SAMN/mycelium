@@ -151,6 +151,29 @@ fn a_minds_read_is_exempt_once_per_window() {
     assert_eq!(read(&mut k, &mind(), first).len(), 1);
 }
 
+/// 78.146 amended, MU-CLIENT §7.1 — A READ WAITS WHERE NOTHING WAS FILED
+/// PAST IT (`filed_past`, the court's held read): a read acknowledging the
+/// relay's last sequence, at its epoch, has nothing past it and waits for
+/// the court's next event; a post filed anywhere puts something past it; a
+/// read under another epoch acknowledges nothing, so anything filed is past
+/// it.
+#[test]
+fn a_read_with_nothing_filed_past_it_waits() {
+    let mut k = founded();
+    let d = vk(&domain());
+    let m = vk(&mind());
+    let relay = k.seat_relay();
+    let percept = |seq| Percept { domain: d, sub_origin: None, seat: 7, mind: m, local_time: Arg::Q { num: 1, den: 1 }, seq, records: Vec::new(), point: None };
+    let first = k.seat_post(&Post::Percept(percept(1)).sign(&house()).expect("writes")).expect("relayed");
+    let (epoch, seq) = relay.standing();
+    assert_eq!(seq, first, "the relay's last sequence is the post just filed");
+    assert!(!relay.filed_past(&ReadMail::sign_standing(&mind(), seq, epoch, [1; 32])), "acknowledging the last sequence: nothing past it, it waits");
+    assert!(relay.filed_past(&ReadMail::sign_standing(&mind(), 0, epoch, [2; 32])), "acknowledging nothing: what was filed is past it");
+    assert!(relay.filed_past(&ReadMail::sign_standing(&mind(), seq, epoch.wrapping_add(1), [3; 32])), "under another epoch it acknowledges nothing");
+    k.seat_post(&Post::Percept(percept(2)).sign(&house()).expect("writes")).expect("relayed");
+    assert!(relay.filed_past(&ReadMail::sign_standing(&mind(), seq, epoch, [4; 32])), "a post filed since: it is answered now");
+}
+
 /// SEAT-WIRE v1.4 ON THE RELAY: listings held per (domain, sub-origin), the
 /// domain's own untouched by a sub-universe's; a scoped percept filed to the
 /// mind it names; a read at the relay's standing answered with its epoch and
