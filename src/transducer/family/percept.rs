@@ -128,6 +128,15 @@ fn read_frame_axis(claimed: &mut [&Quotient], budget: &mut crate::physics::Budge
 /// the compartments gathered at their own frames, so a frame not claimed is not in
 /// it. Its frame-axis steps are the CHART's, read once over every frame the
 /// class holds on it ([`read_frame_axis`] at the caller), not the member's.
+/// WHETHER A GAUGE REPRODUCES A FRAME'S OWN HUE MAP on its bodies: every hue
+/// the frame's input union holds is sent by `gauge` where the frame's map
+/// sends it (a hue a map does not name is fixed by it, `hue_of`). Exact, one
+/// read per compartment: what the court replays the member's frame by.
+fn gauge_reproduces(gauge: &[(u8, u8)], q: &Quotient) -> bool {
+    use crate::transducer::sentence::hue_of;
+    q.a0.compartments.iter().all(|l| matches!((hue_of(gauge, l.hue), hue_of(&q.car.sigma, l.hue)), (Some(a), Some(b)) if a == b))
+}
+
 fn member_of(chart: &Invariant, acting: Acting, claimed: &mut [&Quotient], union_by: &Versor) -> Member {
     let mut frames: Vec<u64> = Vec::new();
     let mut at: Vec<(u64, Body, Body, Versor)> = Vec::new();
@@ -421,6 +430,21 @@ pub(super) fn family_percept(
             if let Some(m) = merged {
                 acting.gauge = crate::transducer::sentence::hue_listing(&m);
             }
+            // THE MEMBER CLAIMS ONLY THE FRAMES ITS GAUGE REPRODUCES (21 step
+            // 1, the operator 2026-10-18: the over-claim answered at the
+            // pivot, never by a filter of candidates). Agreeing with the
+            // least frame's map was the test; the gauge the member holds is
+            // the merged one, or — where two claimed frames disagree — the
+            // least frame's alone, and a frame that moved a hue that gauge
+            // leaves fixed was claimed under it: the court replays the frame
+            // and the compartment lands on the wrong hue (5 of 7 vertex-body
+            // refusals across the courts, 2026-10-18). A frame whose map the
+            // gauge does not reproduce is ANOTHER HUE SECTION, not claimed.
+            let before = claimed.len();
+            claimed.retain(|q| gauge_reproduces(&acting.gauge, q));
+            if claimed.len() < before {
+                varying.place_varies.put(&tc.key(), ());
+            }
             // EVERY FRAME THE CLASS HOLDS ON THIS CHART, whichever section
             // stands there: the frame-axis steps are read over all of them
             // (AT1 Q3 — consecutive frames of one vertex's chart are two
@@ -463,6 +487,9 @@ pub(super) fn family_percept(
                 };
                 let mut group: Vec<&Quotient> = group.clone();
                 on_chart.extend(group.iter().copied());
+                // The section claims only the frames its own gauge — its
+                // first frame's — reproduces.
+                group.retain(|q| gauge_reproduces(&section.gauge, q));
                 members.push(member_of(c, section, &mut group, &g.car.v));
             }
             // The chart's frame-axis steps (MT1), read once, filed with the
