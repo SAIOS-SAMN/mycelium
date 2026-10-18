@@ -19,7 +19,17 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## The voices at 15:46, 2026-10-18 — where they stand
+## The voices at 18:54, 2026-10-18 — where they stand
+Voices 1–5 on 422755c2 (relaunched 18:37; courts and nseat-1..4 untouched):
+THE GROUND STATE RESONATES WITH ITS LANGUAGE (the auditor's ruling) — a field
+with no orbit in motion or ringing takes as its focus the corpus's charts its
+language speaks on. Witnessed: feed families 917/914/827/926/934 at 15:46 →
+879/888/776/841/902 at 18:54, every voice meeting families, tension true from
+the admissions, the reserve short on G in three voices and one met family
+waiting on it — the metabolism paces the intake. Open: a reading of which
+focus a meeting came from (ground or orbit), to witness the hand-over.
+
+## The voices at 15:46, 2026-10-18
 Voices 1–5 on 3a622678 (relaunched 15:41; courts and nseat-1..4 untouched).
 The day's chain: ARC-AGI-2 feed through the mind's own boundary (6aba4ec8,
 f7127f30) · sync only where the court's language may have moved (78f13c07) ·
@@ -31,9 +41,7 @@ chain, not the residual's tag alone (3a622678). Genomes fell from 42–47 MB to
 questions 0, 827–934 feed families on the corpus (2 279–2 517 coordinates),
 none met — the field is quiet (no thought held after a restart, no orbit in
 motion or ringing), and a quiet field meets nothing by the ruled design.
-OWED A RULING: what first moves a restored mind's field so the corpus is
-met — the language's tuning (`speaks_on` charts) as a standing focus, or
-rest until a court task couples.
+Ruled the same day: the language's tuning as the ground state's focus.
 
 ## The fleet at rest (2026-10-18 06:02)
 Running on e296c317 (courts on c8438b8f's server): courts a, b, c; minds 1–5;
