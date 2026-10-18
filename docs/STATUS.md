@@ -19,7 +19,24 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## The sovereign mind (2026-10-17) — the current work
+## The fleet at rest (2026-10-18 06:02) — where it stands
+Running on e296c317 (courts on c8438b8f's server): courts a, b, c; minds 1–5;
+netstratum's council nseat-1..4. Verified by the auditor: resting minds and
+council at 0.00% CPU (from ~54% and a pinned 25%), waking only on landings —
+a court's answer, a held seat read answered at the court's next event, a
+hearing, an observer's call, the stop. The take flood is gone (relay takes
+frozen at 3 416 174 since 23:10). Courts ~78% each: their own exchange loop
+(~7 heights a second) — OUT OF SCOPE (operator). No client restart without
+cause: each costs the large-genome minds ~12 min of genome sync at a core.
+Awaiting counterparties: netstratum's seat house (down until its economy and
+lines resume; it tells us before starting), xylarium's domain (x0–x3 held).
+Owed, cosmetic, rides the next functional release: the observer names a
+carrier landing by its closure's type name. The chain this session:
+99f648fa sovereign mind · 8702174c/fb44289f n-D source · a562478b language
+coupling · 66c8f646 seat reading · 7b216fc7 event-driven seating · c8438b8f
+held reads and blocking rest · e296c317 listing read where the relay moved.
+
+## The sovereign mind (2026-10-17)
 Scope (operator): mind cognition only. The fleet, the court's fold and
 ledger, and the physics-law queues (xylarium, netstratum) are out of scope.
 Barren-realms' sovereign cognition (ASCE) is brought in as native orbital
