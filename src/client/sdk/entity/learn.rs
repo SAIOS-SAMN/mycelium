@@ -496,6 +496,17 @@ impl Entity {
             if pos == before {
                 break;
             }
+            // MU-CLIENT §7.1 — A RESIDUAL CHAIN IS AN OPEN QUESTION, NEVER A
+            // WORD (the operator, 2026-10-18): what the court teaches of one
+            // is filed on the mind's carrier of open questions, by address,
+            // and never learned into the genome.
+            if crate::client::sdk::epigenome::is_residual(&e) {
+                let addr = e.address();
+                if !self.board.open_residuals.contains(addr.as_bytes()) {
+                    self.board.open_residuals.insert(addr.as_bytes(), e.sub().to_vec());
+                }
+                continue;
+            }
             // A WORD THE GENOME HOLDS AT ITS ADDRESS IS ALREADY LEARNED (law
             // 6: the address is the word's content). Served again — a court
             // that restarted serves its syllabus from the start — it brings

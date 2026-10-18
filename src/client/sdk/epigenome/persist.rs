@@ -65,6 +65,15 @@ pub struct GenomeRefused {
     pub coincident: u64,
     /// STD1 3c — words whose record passes a length its field writes.
     pub unwritable: u64,
+    /// MU-CLIENT §7.1 — residual chains: open questions, never words.
+    pub residual: u64,
+}
+
+/// WHETHER AN ELEMENT IS A RESIDUAL CHAIN: its address leads with the
+/// residual's tag — what perception could not say, an open question and never
+/// a word (the operator, 2026-10-18).
+pub(crate) fn is_residual(e: &Element) -> bool {
+    matches!(e.address().as_bytes(), [tag, ..] if *tag == crate::transducer::address::TAG_RESIDUAL)
 }
 
 impl GenomeRefused {
@@ -80,6 +89,7 @@ impl GenomeRefused {
             ("words whose citation cannot be written", self.unciteable),
             ("words coinciding at one citation", self.coincident),
             ("words whose record passes a length its field writes", self.unwritable),
+            ("residual chains, open questions and never words", self.residual),
         ] {
             if n > 0 {
                 eprintln!("  genome refused {n} {what}");
@@ -136,6 +146,11 @@ impl Epigenome {
         let mut nodes: crate::network::nerve::Keyed<Leaves> = crate::network::nerve::Keyed::new();
         crate::snapshot::persist(&self.resident, |_, g| {
             let elem = g.held.element();
+            // A residual chain is an open question, never crystallized.
+            if is_residual(elem) {
+                refused.residual += 1;
+                return;
+            }
             let Some(at) = self.admitted_at(g.held.address().as_bytes()) else {
                 refused.unstamped += 1;
                 return;
@@ -192,6 +207,14 @@ impl Epigenome {
             crate::chronometry::Cite::word(&e, at).put_canonical(&mut again)?;
             if again != key {
                 return None;
+            }
+            // MU-CLIENT §7.1 — A RESIDUAL CHAIN IS AN OPEN QUESTION, NEVER A
+            // WORD (the operator, 2026-10-18): one an older genome file
+            // holds is read whole and handed to the mind's carrier of open
+            // questions, never admitted.
+            if is_residual(&e) {
+                self.restored_residuals.push((e.address().as_bytes().to_vec(), e.sub().to_vec()));
+                continue;
             }
             admitted.push((e.address(), at));
             // The tape is decoded to a form HERE, once, as the word is

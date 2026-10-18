@@ -190,8 +190,10 @@ impl Entity {
                     None => "not opened".to_string(),
                 };
                 format!(
-                    "attention: tension {} · court task {} · feed: {} · passed uncoupled: {}",
+                    "attention: tension {} · open questions {} (one waits on the reserve {}) · court task {} · feed: {} · passed uncoupled: {}",
                     self.strained(),
+                    self.board.open_residuals.len(),
+                    self.board.question_waits,
                     standing(pace.task.as_ref().map(|(e, o)| (&e.id[..], o))),
                     feed,
                     passed.join(" · ")

@@ -25,10 +25,11 @@
 //! (`feed`); a seat's task is kept by its charts and pulled again only where
 //! they couple.
 //!
-//! THE TENSION. The mind ASKS for an offer (`pull_task`) only where its field
-//! holds strain it has not resolved: a demand on its plan, an orbit that
-//! rings, a reservoir that neither re-formed nor condensed (`strained`). A
-//! full reserve over a settled field is equilibrium; the mind rests.
+//! THE TENSION. The mind ASKS for an offer (`pull_task`) only where it holds
+//! strain it has not resolved: an open question (a residual chain, never a
+//! word), a demand on its plan, an orbit that rings, a reservoir that neither
+//! re-formed nor condensed (`strained`). A full reserve over a settled field
+//! with no question open is equilibrium; the mind rests.
 
 use crate::client::sdk::*;
 
@@ -66,7 +67,24 @@ impl Entity {
     /// field that is strained (`Field::strained`). Read where the field
     /// stands in the winding carrier's slots; outside them, the plan alone.
     pub(crate) fn strained(&self) -> bool {
-        self.contemplation.holds_demand() || matches!(crate::transducer::mind::with_field(|f| f.strained()), Ok(true))
+        !self.board.open_residuals.is_empty() || self.contemplation.holds_demand() || matches!(crate::transducer::mind::with_field(|f| f.strained()), Ok(true))
+    }
+
+    /// MU-CLIENT §7.1 — AN OPEN QUESTION TAKEN INTO THOUGHT: the least of the
+    /// open residual chains, by address, held as the idea it is
+    /// (`hold_chain`: its pair form, what it could not spell its demands) where
+    /// the reserve carries its measure — else it waits, and the mind's strokes
+    /// are parked meanwhile (`rest`). One a winding.
+    pub(crate) fn question_inflow(&mut self) {
+        self.board.question_waits = false;
+        let Some((addr, chain)) = self.board.open_residuals.scoped().next().map(|(k, c)| (k, c.clone())) else { return };
+        let mag = crate::transducer::element::measure_lanes(&chain);
+        if !crate::economy::lanes_short(&self.physics().reserve_shortfall(crate::physics::Physics::lanes_of(&mag))).is_empty() {
+            self.board.question_waits = true;
+            return;
+        }
+        self.board.open_residuals.remove(&addr);
+        self.hold_chain(chain);
     }
 
     /// DOES THE OFFER OF SCENE `id`, ON `charts`, COUPLE TO THE MIND (the

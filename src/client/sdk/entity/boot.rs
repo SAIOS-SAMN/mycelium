@@ -200,6 +200,11 @@ impl Entity {
             .uncrystallize(bytes)
             .filter(|end| *end == bytes.len())
             .ok_or_else(|| "the file is not a whole GEN7 tape".to_string())?;
+        // MU-CLIENT §7.1 — the residual chains the file held are open
+        // questions, handed to the mind's carrier, never words.
+        for (addr, chain) in std::mem::take(&mut epigenome.restored_residuals) {
+            self.board.open_residuals.insert(&addr, chain);
+        }
         self.epigenome = epigenome;
         Ok(())
     }

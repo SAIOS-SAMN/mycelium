@@ -22,7 +22,7 @@ impl Entity {
     /// both are owed the mind's own strokes, so those strokes are parked at
     /// the measured transport until they are paid.
     pub fn rest(&self) {
-        match self.board.court.dwelling() || self.board.feed_waits {
+        match self.board.court.dwelling() || self.board.feed_waits || self.board.question_waits {
             true => self.hypha.rest(self.transport_rtt()),
             false => self.hypha.block(),
         }

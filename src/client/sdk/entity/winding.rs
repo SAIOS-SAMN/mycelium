@@ -88,6 +88,16 @@ pub(crate) struct Board {
     /// the mind's own return, not theirs (`speak_with`). Bounded by the
     /// families the feed held.
     pub(crate) feed_scenes: crate::network::nerve::Keyed<()>,
+    /// MU-CLIENT §7.1 — THE OPEN QUESTIONS: residual chains a court taught or
+    /// an older genome file held, by address — what perception could not
+    /// say, never words (the operator, 2026-10-18). Volatile: a court teaches
+    /// them again after a restart. Each is taken into thought as the
+    /// metabolism carries it (`question_inflow`); while any stands, the mind
+    /// holds tension.
+    pub(crate) open_residuals: crate::network::nerve::Keyed<Vec<(i64, i64, u8, u8)>>,
+    /// An open question waits on the reserve: the mind's strokes regenerate
+    /// it, so the mind does not block meanwhile.
+    pub(crate) question_waits: bool,
     /// The offers passed uncoupled since the mind began, by kind
     /// (`offer::PASSED`) — a reading, never read back by cognition.
     pub(crate) offers_passed: [u64; 3],
@@ -179,6 +189,10 @@ impl Entity {
         }
         self.at_law("admission: what perception read");
         self.take_perceived();
+        if !stopping() {
+            self.at_law("admission: an open question taken");
+            self.question_inflow();
+        }
         if !stopping() {
             self.at_law("admission: the seat's mail");
             self.body_tick();

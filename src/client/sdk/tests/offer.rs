@@ -146,6 +146,35 @@ fn the_feed_is_walked_and_an_uncoupled_family_never_stands_in_front() {
     let _ = std::fs::remove_dir_all(&home);
 }
 
+/// A RESIDUAL CHAIN IS AN OPEN QUESTION, NEVER A WORD (the operator,
+/// 2026-10-18). A court teaches one: it is not learned into the genome, and
+/// stands on the mind's carrier of open questions, once however often taught;
+/// the mind, holding nothing else, now holds tension; at its next intake the
+/// question is taken into thought and leaves the carrier.
+#[test]
+fn a_residual_taught_is_an_open_question_and_never_a_word() {
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("questioning"));
+    let chain = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2), (1, 0, 1, 2), (2, 2, 3, 4)];
+    let residual = crate::transducer::element::from_residual(&chain).expect("a residual chain");
+    let tape = residual.to_bytes().expect("the record writes");
+    let mut field = std::mem::take(&mut mind.field);
+    let (settled, strained) = field.think(|| {
+        let settled = mind.strained();
+        let _ = mind.absorb_taught(&tape);
+        let _ = mind.absorb_taught(&tape);
+        (settled, mind.strained())
+    });
+    mind.field = field;
+    assert!(!settled, "a mind just opened holds no strain");
+    assert!(!mind.epigenome.holds(residual.address().as_bytes()), "never learned into the genome");
+    assert_eq!(mind.board.open_residuals.len(), 1, "one open question, however often taught");
+    assert!(strained, "an open question is tension");
+    let mut field = std::mem::take(&mut mind.field);
+    field.think(|| mind.question_inflow());
+    mind.field = field;
+    assert!(mind.board.open_residuals.is_empty(), "taken into thought, it leaves the carrier");
+}
+
 /// AN UNCOUPLED TASK IS NOT TAKEN, AND LAPSES AT ITS SECOND RETURN. The
 /// court's task lands on a mind that holds nothing: the intake leaves it where
 /// it landed and perceives nothing; the first return carries it across; at

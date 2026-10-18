@@ -38,26 +38,20 @@ assert_eq!(epi.genome_len(), 1, "comprehension never mutates the genome");
 // The word stands at the court's stamp that admitted it; one no court
 // admitted has no coordinates on the genome and is refused by name (78.27,
 // 78.49).
-let (_, unstamped) = epi.crystallize();
-assert_eq!(unstamped.unstamped, 1, "a word no court admitted is refused and counted, never written");
+// MU-CLIENT §7.1 (the operator, 2026-10-18): a RESIDUAL CHAIN is an open
+// question, never a word — this one is never written to the genome file,
+// counted by name, and a genome file that held one restores it as an open
+// question for the mind's carrier.
+let (_, refused) = epi.crystallize();
+assert_eq!((refused.residual, refused.unstamped), (1, 0), "a residual is left out by name, before its stamp is asked");
 let admitting = crate::chronometry::Stamp::new(1, [7; 32], crate::chronometry::Place::GENESIS);
 epi.admit_all_at(admitting);
 let (frozen, refused) = epi.crystallize();
 assert_eq!(refused.total(), 0, "nothing refused");
 let mut back = Epigenome::new();
 assert!(back.uncrystallize(&frozen).is_some(), "crystallized genome restores");
-assert_eq!(back.genome_len(), epi.genome_len());
-assert_eq!(
-    back.genome_words().next().map(|w| w.address()),
-    epi.genome_words().next().map(|w| w.address()),
-    "words identical by address"
-);
-assert_eq!(
-    back.peak_expression(),
-    Some(0),
-    "expression is NOT persisted — the restored word is carried at a weight of zero, \
-     which is a weight and not the absence of one"
-);
+assert_eq!(back.genome_len(), 0, "the residual was never written: no word restores");
+assert!(back.restored_residuals.is_empty(), "and no open question rides a file that never held it");
 assert_eq!(
     Epigenome::new().peak_expression(),
     None,
@@ -527,7 +521,10 @@ assert!(
 );
 }
 
-/// A taught word that fails replay is refused, not learned.
+/// A taught record that fails replay is refused, not learned — the
+/// language's own reader (`Epigenome::learn`). And at the mind's boundary
+/// (MU-CLIENT §7.1, the operator 2026-10-18) a residual chain, fat or honest,
+/// is never learned at all: it is an open question.
 #[test]
 fn taught_word_that_fails_replay_is_refused_not_learned() {
 use crate::transducer::element::from_canonical;
@@ -537,34 +534,32 @@ let honest = from_canonical(
 );
 let mut fat = honest.clone();
 assert!(fat.set_magnitude([999, 0, 0, 0]), "a residual holds no section, so any lane fits");
+let mut epi = Epigenome::new();
+assert!(epi.learn(&fat.to_bytes().expect("the record writes"), &mut super::common::budget()).is_none(), "a record that fails replay is not learned");
+assert_eq!(epi.genome_len(), 0, "genome stays empty");
+assert!(epi.learn(&honest.to_bytes().expect("the record writes"), &mut super::common::budget()).is_some(), "an honest derivation reads");
 let mut entity = Entity::open("127.0.0.1:1", Kernel::named("syllabus-refuse"));
-assert!(
-    entity.absorb_taught(&fat.to_bytes().expect("the record writes")).is_none(),
-    "a word that fails replay is not learned"
-);
-assert_eq!(entity.epigenome.genome_len(), 0, "genome stays empty");
-assert_eq!(entity.dialect_len(), 0, "dialect stays empty");
-assert!(
-    entity.absorb_taught(&honest.to_bytes().expect("the record writes")).is_some(),
-    "an honest derivation is learned"
-);
+let _ = entity.absorb_taught(&honest.to_bytes().expect("the record writes"));
+assert_eq!((entity.epigenome.genome_len(), entity.dialect_len()), (0, 0), "a residual taught is never learned");
+assert_eq!(entity.board.open_residuals.len(), 1, "it is an open question");
 }
 
 /// 24.3 — WHAT A STROKE LEARNED IS MEASURED PER LANE. A page the mind
 /// learns is measured at its admission by what it brought, the stroke takes
-/// the measure once, and a page refused on replay measures nothing.
+/// the measure once; and a page that teaches only residual chains — open
+/// questions, never words (MU-CLIENT §7.1) — learns nothing and measures
+/// nothing.
 #[test]
 fn a_learned_page_is_measured_per_lane_and_a_refused_one_is_not() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
-let honest = from_canonical(
+let residual = from_canonical(
     &germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap(),
 );
-let mut fat = honest.clone();
-assert!(fat.set_magnitude([999, 0, 0, 0]), "a residual holds no section, so any lane fits");
 let mut entity = Entity::open("127.0.0.1:1", Kernel::named("learned-measured"));
-assert!(entity.absorb_taught(&fat.to_bytes().expect("the record writes")).is_none(), "the fat word is refused");
-assert_eq!(entity.take_learned_mu(), [0; 4], "a refused page measures nothing");
+let _ = entity.absorb_taught(&residual.to_bytes().expect("the record writes"));
+assert_eq!(entity.take_learned_mu(), [0; 4], "a page of open questions measures nothing");
+let honest = two_body_sentence([&[(1, 2)], &[(3, 4)]]);
 assert!(entity.absorb_taught(&honest.to_bytes().expect("the record writes")).is_some(), "the honest word is learned");
 let mu = honest.magnitude();
 assert_ne!(mu, [0; 4], "the page carries a measure");
