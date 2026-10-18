@@ -507,6 +507,7 @@ impl Entity {
                 let addr = e.address();
                 if !self.board.open_residuals.contains(addr.as_bytes()) {
                     self.board.open_residuals.insert(addr.as_bytes(), e.sub().to_vec());
+                    self.place_question(addr.as_bytes(), e.sub());
                 }
                 self.board.residual_strata.insert(crate::transducer::stalk::invariant_of(&e).key().as_bytes(), ());
                 continue;

@@ -458,6 +458,16 @@ fn orbit_of_mode(mode: &MotionMode) -> Option<(usize, Vec<u8>)> {
 /// of its support.
 type HueOrbit = (Vec<(u8, u8)>, Vec<u8>);
 
+/// ONE ORBIT AT THE MIND'S FOCUS: its lane, its key, and the lines threading
+/// it (`OrbitRegistry::focus`).
+pub type FocusOrbit = (Option<usize>, Vec<u8>, Vec<Vec<u8>>);
+
+/// THE KEY OF 𝒢'S ORBIT A HUE MAP STANDS ON — the coordinate the field files
+/// it under — or `None` where it moves no hue or is no map.
+pub fn hue_orbit_key(gauge: &[(u8, u8)]) -> Option<Vec<u8>> {
+    orbit_of_hues(gauge).map(|(_, key)| key)
+}
+
 /// THE HUES A MAP MOVES, sorted, and the key of 𝒢's orbit of its support —
 /// the one derivation the admission and the threading share. `None` where it
 /// moves no hue or is no map (one hue sent two places).
@@ -580,6 +590,20 @@ impl OrbitRegistry {
     /// Whether any orbit standing rings.
     pub fn rings(&self) -> bool {
         self.orbits.scoped().any(|(_, o)| o.state.rings())
+    }
+
+    /// MU-CLIENT §7.1 — THE FIELD'S FOCUS (the operator, 2026-10-18: the
+    /// corpus met where the mind's orbits stand, never along a file's line):
+    /// the orbits the admissions since the last beat carried, or — none in
+    /// motion — the orbits that ring; each with its lane, its key and the
+    /// lines threading it. Read, moving nothing.
+    pub fn focus(&self) -> Vec<FocusOrbit> {
+        let read = |(k, o): (Vec<u8>, &Orbit)| (lane_of_key(&k), k, o.lines.clone());
+        let moving: Vec<FocusOrbit> = self.orbits.scoped().filter(|(_, o)| o.in_motion).map(read).collect();
+        match moving.is_empty() {
+            false => moving,
+            true => self.orbits.scoped().filter(|(_, o)| o.state.rings()).map(read).collect(),
+        }
     }
 
     /// The reservoir's records, by their keys.

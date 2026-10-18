@@ -203,6 +203,7 @@ impl Entity {
         // MU-CLIENT §7.1 — the residual chains the file held are open
         // questions, handed to the mind's carrier, never words.
         for (addr, chain, stratum) in std::mem::take(&mut epigenome.restored_residuals) {
+            self.place_question(&addr, &chain);
             self.board.open_residuals.insert(&addr, chain);
             self.board.residual_strata.insert(&stratum, ());
         }

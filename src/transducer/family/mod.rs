@@ -393,6 +393,21 @@ pub fn family_ratio(family: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, 
 /// court re-derives it from the grids it holds (`element::colour_word`),
 /// so the word stands by evidence and never by a count of who said it.
 pub fn fibre_relation(family: &[TrainPair]) -> Option<Vec<(u8, u8)>> {
+    // 78.58 — the function the scenes showed, a hue standing still
+    // included, lifted unitarily: a merge rotates its distinction into
+    // the reservoir. Dropping the still hues first read a hue recoloured
+    // into one that stayed as an injection, and minted a merge as if
+    // nothing were lost.
+    crate::transducer::element::lift_fibre(&fibre_map(family)?)
+}
+
+/// THE MAP THE SCENES SHOW of the hue fibre where the base stands still,
+/// before any lift: each hue at each site standing in both scenes to the hue
+/// there, a hue standing still included — the map a perception's faces
+/// carry, and so the coordinate the field files a 𝒢 orbit under
+/// (MU-CLIENT §7.1, the corpus met where the mind's orbits stand). `None`
+/// where a hue goes two ways.
+pub fn fibre_map(family: &[TrainPair]) -> Option<Vec<(u8, u8)>> {
     let mut map: Vec<(u8, u8)> = Vec::new();
     for (x, y) in family {
         // 78.56 — WHERE THE BASE STANDS STILL across a change of extent:
@@ -413,12 +428,7 @@ pub fn fibre_relation(family: &[TrainPair]) -> Option<Vec<(u8, u8)>> {
             }
         }
     }
-    // 78.58 — the function the scenes showed, a hue standing still
-    // included, lifted unitarily: a merge rotates its distinction into
-    // the reservoir. Dropping the still hues first read a hue recoloured
-    // into one that stayed as an injection, and minted a merge as if
-    // nothing were lost.
-    crate::transducer::element::lift_fibre(&map)
+    Some(map)
 }
 
 /// One body carried onto another: the transport and the gauge map.

@@ -108,49 +108,68 @@ fn family_json(train: &[(crate::arc::Grid, crate::arc::Grid)]) -> String {
     serde_json::json!({ "train": pairs, "test": [] }).to_string()
 }
 
-/// THE FEED IS WALKED, NEVER BLOCKED (the operator, 2026-10-18). A mind whose
-/// language speaks on the one-cell chart and nowhere the slide's bodies
-/// stand finds two families in its feed, the slide first in file order. The
-/// slide couples to nothing: it is passed at once and stays on disk, said to
-/// the observer once; the walk goes on to the one-cell family behind it,
-/// which couples, is taken in and perceived, its file retired. Walked to the
-/// listing's end, the feed waits — listed again only where a family arrives
-/// or the language moves.
-#[test]
-fn the_feed_is_walked_and_an_uncoupled_family_never_stands_in_front() {
-    use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
-    let home = std::env::temp_dir().join(format!("mycelium-feed-walk-{}", std::process::id()));
+/// A family of two cells whose hues `a` and `b` swap where they stand: a hue
+/// map that is a cycle, so its 𝒢 orbit stands (an injection seals at once,
+/// its order one).
+fn two_cells_swapped(a: u8, b: u8) -> Vec<(crate::arc::Grid, crate::arc::Grid)> {
+    let at = |left: u8, right: u8| -> crate::arc::Grid { vec![vec![0, 0, 0, 0], vec![0, left, right, 0], vec![0, 0, 0, 0]] };
+    vec![(at(a, b), at(b, a))]
+}
+
+/// A feed folder holding these families, each at its file.
+fn feed_of(name: &str, families: &[(&str, Vec<(crate::arc::Grid, crate::arc::Grid)>)]) -> std::path::PathBuf {
+    let home = std::env::temp_dir().join(format!("mycelium-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&home);
-    let feed = home.join("feed");
-    std::fs::create_dir_all(&feed).expect("the feed folder");
-    std::fs::write(feed.join("a-slide.json"), family_json(&two_hours_of_a_slide())).expect("written");
-    std::fs::write(feed.join("b-cell.json"), family_json(&one_cell_steps())).expect("written");
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("feeding"));
+    std::fs::create_dir_all(home.join("feed")).expect("the feed folder");
+    for (file, train) in families {
+        std::fs::write(home.join("feed").join(file), family_json(train)).expect("written");
+    }
+    home
+}
+
+/// THE CORPUS IS MET WHERE THE MIND'S ORBITS STAND, never along a file's line
+/// (the operator, 2026-10-18). Two families wait in the feed, two cells
+/// swapping hues 3 and 4 first in file order and two swapping 1 and 2 after
+/// it. A mind whose field holds no orbit meets neither: both stay on disk,
+/// undisturbed. A mind whose field rings a 𝒢 orbit on the support {1, 2}
+/// meets the family whose hue fibre moves those hues — at that orbit's own
+/// coordinate — and takes it in, its file retired; the other lies elsewhere
+/// and stays.
+#[test]
+fn the_corpus_is_met_where_the_minds_orbits_stand() {
+    use crate::transducer::cech::Thread;
+    let families = [("a-three.json", two_cells_swapped(3, 4)), ("b-one.json", two_cells_swapped(1, 2))];
+    let still = feed_of("focus-still", &families);
+    let mut quiet = Entity::open("127.0.0.1:1", Kernel::named("quiet"));
+    quiet.open_feed(still.clone());
+    let mut field = std::mem::take(&mut quiet.field);
+    field.think(|| quiet.corpus_inflow(&mut crate::physics::StrokeOutcome::default()));
+    quiet.field = field;
+    assert_eq!(quiet.board.corpus.size().0, 2, "both families placed at their coordinates");
+    assert!(still.join("feed/a-three.json").exists() && still.join("feed/b-one.json").exists() && !quiet.perceiving(), "no orbit: nothing met, both undisturbed");
+    let home = feed_of("focus-ringing", &families);
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("ringing"));
     mind.open_feed(home.clone());
-    let [(x, y)] = <[_; 1]>::try_from(one_cell_steps()).expect("one pair");
     let mut field = std::mem::take(&mut mind.field);
     field.think(|| {
-        let mut b = budget();
-        let frames = perceive_family(&[(x.clone(), y.clone())]);
-        let f = scene_form_on(&NoCrystal, &mut b, &x, &y, &frames).expect("the pair reads");
-        let word = crate::transducer::sentence::as_element_form(&f, [1, 0, 0, 0]).expect("a word");
-        mind.epigenome.moduli_admit(&crate::transducer::element::Held::of(word));
-        let mut outcome = crate::physics::StrokeOutcome::default();
-        mind.feed_inflow(&mut outcome);
+        let rang = crate::transducer::mind::with_field(|f| f.orbits.admit_hues(&[(1, 2), (2, 1)], 1, &Thread::Free).is_some());
+        assert!(matches!(rang, Ok(true)), "a 𝒢 orbit on the support {{1, 2}}");
+        mind.corpus_inflow(&mut crate::physics::StrokeOutcome::default());
     });
     mind.field = field;
-    assert!(feed.join("a-slide.json").exists(), "the slide, uncoupled, is passed and stays on disk");
-    assert!(!feed.join("b-cell.json").exists() && feed.join(".done").join("b-cell.json").exists(), "the family behind it couples, is taken, its file retired");
+    assert!(!home.join("feed/b-one.json").exists() && home.join("feed/.done/b-one.json").exists(), "the family on the orbit's coordinate is met and taken in");
+    assert!(home.join("feed/a-three.json").exists(), "the other lies elsewhere on the manifold, undisturbed");
     assert!(mind.perceiving(), "taken in: on the perception carrier");
-    assert_eq!(mind.board.offers_passed[crate::client::sdk::entity::offer::PASSED_FEED], 1, "the slide said passed, once");
+    let _ = std::fs::remove_dir_all(&still);
     let _ = std::fs::remove_dir_all(&home);
 }
 
 /// A RESIDUAL CHAIN IS AN OPEN QUESTION, NEVER A WORD (the operator,
 /// 2026-10-18). A court teaches one: it is not learned into the genome, and
 /// stands on the mind's carrier of open questions, once however often taught;
-/// the mind, holding nothing else, now holds tension; at its next intake the
-/// question is taken into thought and leaves the carrier.
+/// the mind, holding nothing else, now holds tension; placed on the corpus,
+/// it is met where the mind's field rings on its hue fibre's support, taken
+/// into thought, and leaves the carrier.
 #[test]
 fn a_residual_taught_is_an_open_question_and_never_a_word() {
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("questioning"));
@@ -171,10 +190,15 @@ fn a_residual_taught_is_an_open_question_and_never_a_word() {
     let stratum = crate::transducer::stalk::invariant_of(&residual).key();
     assert!(mind.board.residual_strata.contains(stratum.as_bytes()), "its stratum is one the sheaf sync never fetches");
     assert!(strained, "an open question is tension");
+    assert_eq!(mind.board.corpus.size().0, 1, "placed on the corpus at its coordinates");
     let mut field = std::mem::take(&mut mind.field);
-    field.think(|| mind.question_inflow());
+    field.think(|| {
+        // A cycle on the support {1, 3} — the hues the residual's map moves.
+        let _ = crate::transducer::mind::with_field(|f| f.orbits.admit_hues(&[(1, 3), (3, 1)], 1, &crate::transducer::cech::Thread::Free));
+        mind.corpus_inflow(&mut crate::physics::StrokeOutcome::default());
+    });
     mind.field = field;
-    assert!(mind.board.open_residuals.is_empty(), "taken into thought, it leaves the carrier");
+    assert!(mind.board.open_residuals.is_empty(), "met where the field rings, taken into thought, it leaves the carrier");
 }
 
 /// AN UNCOUPLED TASK IS NOT TAKEN, AND LAPSES AT ITS SECOND RETURN. The

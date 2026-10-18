@@ -21,9 +21,9 @@
 //! nothing — no refusal, no penalty, said to the observer by kind
 //! (`Board::offers_passed`). A court's task waits, read again as the field
 //! moves, and LAPSES at the second return it waits across uncoupled; a feed
-//! family is passed at once and left on disk, the feed's walk going on
-//! (`feed`); a seat's task is kept by its charts and pulled again only where
-//! they couple.
+//! family is never offered at all — it stands on the corpus at its own
+//! coordinates and is met where the mind's orbits stand (`focus`); a seat's
+//! task is kept by its charts and pulled again only where they couple.
 //!
 //! THE TENSION. The mind ASKS for an offer (`pull_task`) only where it holds
 //! strain it has not resolved: an open question (a residual chain, never a
@@ -35,10 +35,9 @@ use crate::client::sdk::*;
 
 /// The kinds of offer a mind passes, as the observer names them, each at its
 /// slot of `Board::offers_passed`.
-pub(crate) const PASSED: [&str; 3] = ["court task", "feed family", "seat task"];
+pub(crate) const PASSED: [&str; 2] = ["court task", "seat task"];
 pub(crate) const PASSED_TASK: usize = 0;
-pub(crate) const PASSED_FEED: usize = 1;
-pub(crate) const PASSED_SEAT: usize = 2;
+pub(crate) const PASSED_SEAT: usize = 1;
 
 /// ONE OFFER STANDING AT A BOUNDARY: the charts its bodies stand on, read
 /// once where it landed, and whether it has waited across a return.
@@ -70,22 +69,6 @@ impl Entity {
         !self.board.open_residuals.is_empty() || self.contemplation.holds_demand() || matches!(crate::transducer::mind::with_field(|f| f.strained()), Ok(true))
     }
 
-    /// MU-CLIENT §7.1 — AN OPEN QUESTION TAKEN INTO THOUGHT: the least of the
-    /// open residual chains, by address, held as the idea it is
-    /// (`hold_chain`: its pair form, what it could not spell its demands) where
-    /// the reserve carries its measure — else it waits, and the mind's strokes
-    /// are parked meanwhile (`rest`). One a winding.
-    pub(crate) fn question_inflow(&mut self) {
-        self.board.question_waits = false;
-        let Some((addr, chain)) = self.board.open_residuals.scoped().next().map(|(k, c)| (k, c.clone())) else { return };
-        let mag = crate::transducer::element::measure_lanes(&chain);
-        if !crate::economy::lanes_short(&self.physics().reserve_shortfall(crate::physics::Physics::lanes_of(&mag))).is_empty() {
-            self.board.question_waits = true;
-            return;
-        }
-        self.board.open_residuals.remove(&addr);
-        self.hold_chain(chain);
-    }
 
     /// DOES THE OFFER OF SCENE `id`, ON `charts`, COUPLE TO THE MIND (the
     /// module's rule).

@@ -2179,12 +2179,22 @@ owed in the order it is built.
       coupled offer is extracted. An uncoupled one draws nothing, waits, and
       lapses at the second return it waits across (`lapse_offers`): the
       task let go, the seat's task kept by its charts and pulled again only
-      where they couple. The feed is WALKED (2026-10-18): each family read
-      once to its offer and held by its file, one that couples to nothing
-      passed at once and left on disk, the walk going on — no family stands
-      in front of the rest; at the listing's end it waits, listed again only
-      where a family arrives (the kernel's file notice, `inotify`, wakes the
-      resting mind) or the language moved since the walk ended. A hearing is read only
+      where they couple. THE CORPUS IS MET WHERE THE MIND'S ORBITS STAND
+      (2026-10-18, replacing the feed's walk, which the operator read as
+      "uni-directional and linear, like the orbits aren't being sheared into
+      ellipsis"): every feed family and every open question is placed once
+      on the corpus (`focus::Corpus`) at its own coordinates — its bodies'
+      charts, and the key of the 𝒢 orbit its raw hue fibre moves
+      (`fibre_map`, `hue_orbit_key`). The focus is the field's own motion
+      (`OrbitRegistry::focus`: the orbits in motion, else those ringing); a
+      𝒢 orbit's key is a corpus coordinate, a plane orbit is met through the
+      covers of the thoughts threading it. The least item on the focus is
+      taken in as the reserve carries its measure — a family perceived, a
+      question held — and its admission moves the field, which is the next
+      focus. No file order, no cursor, no "passed"; arrivals are noticed by
+      the kernel (`inotify`), which wakes the resting mind. A non-cycle hue
+      map has order one and seals at once, so 𝒢 focus comes from cycles and
+      the charts carry the rest. A hearing is read only
       where the lexicon reaches one of its words — whole, or in part, its
       residue the question (`rung::posit`) — or the word lands on the field
       as it stands (`Field::lands`); others lapse as unread hearings do.

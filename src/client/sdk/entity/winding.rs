@@ -91,9 +91,9 @@ pub(crate) struct Board {
     /// MU-CLIENT §7.1 — THE OPEN QUESTIONS: residual chains a court taught or
     /// an older genome file held, by address — what perception could not
     /// say, never words (the operator, 2026-10-18). Volatile: a court teaches
-    /// them again after a restart. Each is taken into thought as the
-    /// metabolism carries it (`question_inflow`); while any stands, the mind
-    /// holds tension.
+    /// them again after a restart. Each is placed on the corpus and taken
+    /// into thought where the focus meets it (`focus`); while any stands, the
+    /// mind holds tension.
     pub(crate) open_residuals: crate::network::nerve::Keyed<Vec<(i64, i64, u8, u8)>>,
     /// The strata residual chains stand on, by their chart invariant's key:
     /// the sheaf sync never fetches them, the mind holding their chains as
@@ -104,7 +104,10 @@ pub(crate) struct Board {
     pub(crate) question_waits: bool,
     /// The offers passed uncoupled since the mind began, by kind
     /// (`offer::PASSED`) — a reading, never read back by cognition.
-    pub(crate) offers_passed: [u64; 3],
+    pub(crate) offers_passed: [u64; 2],
+    /// MU-CLIENT §7.1 — THE CORPUS the focus meets: every feed family and
+    /// open question at its own coordinates (`focus`).
+    pub(crate) corpus: super::focus::Corpus,
     genome_path: Option<String>,
     saved_len: Option<usize>,
 }
@@ -179,10 +182,6 @@ impl Entity {
         if occluded && self.hypha.in_flight() == 0 {
             self.discover();
         }
-        if !occluded {
-            self.at_law("admission: the feed's family");
-            self.feed_inflow(&mut outcome);
-        }
         if !occluded && !stopping() {
             self.at_law("admission: the open book");
             self.quote_inflow(&mut outcome);
@@ -193,9 +192,13 @@ impl Entity {
         }
         self.at_law("admission: what perception read");
         self.take_perceived();
+        // MU-CLIENT §7.1 — THE CORPUS MET WHERE THE ORBITS STAND (`focus`):
+        // read after perception's admission, so the orbits it carried — not
+        // yet beaten at the vent — lead the focus, and the next item met
+        // follows the last.
         if !stopping() {
-            self.at_law("admission: an open question taken");
-            self.question_inflow();
+            self.at_law("admission: what the focus meets");
+            self.corpus_inflow(&mut outcome);
         }
         if !stopping() {
             self.at_law("admission: the seat's mail");

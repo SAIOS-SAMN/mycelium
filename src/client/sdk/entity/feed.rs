@@ -1,18 +1,17 @@
 // 78.164 — THE FEED, A BOUNDARY: the corpus this mind's home holds, each
-// family an offer the mind takes or passes (MU-CLIENT §7.1), entering the
-// field as a family to think through whole.
+// family placed on the mind's corpus at its own coordinates (`focus`) and met
+// where the mind's orbits stand, entering the field as a family to think
+// through whole.
 //
 //! A feed file is retired when it has entered, so a restart does not present
-//! the same family twice. A family the mind passes stays on disk.
+//! the same family twice; a family not met stays on disk.
 //!
-//! ONE WALK OF THE LISTING (the operator, 2026-10-18): the families are
-//! offered in file order, each read once to its offer (its citation and the
-//! charts its bodies stand on) and held by its file; one that couples to
-//! nothing is passed at once and the walk goes on, so no family stands in
-//! front of the rest. At the listing's end the walk waits — listed again
-//! only where a family ARRIVED at the folder (the kernel's file notice,
-//! waking the resting mind: no clock polls the folder) or the mind's
-//! language MOVED since the walk ended, so a family passed may couple now.
+//! NO ORDER OF FILES (the operator, 2026-10-18: "feed walked sounds
+//! uni-directional and linear"): the folder is listed where a family ARRIVES
+//! (the kernel's file notice, waking the resting mind — no clock polls the
+//! folder) and at the first reading; each new family is handed out once to
+//! be placed at its coordinates, and taken back by its citation where the
+//! mind's focus meets it.
 
 use crate::network::nerve::Keyed;
 use std::path::{Path, PathBuf};
@@ -39,33 +38,30 @@ fn retire(path: &Path) {
     }
 }
 
-/// A FILE'S KEY in the offers held: its path as written.
+/// A FILE'S KEY: its path as written.
 fn file_key(path: &Path) -> Vec<u8> {
     path.to_string_lossy().as_bytes().to_vec()
 }
 
-/// THE FEED: the files read at the last listing and where the walk stands,
-/// each family's offer held by its file (its citation, the charts its bodies
-/// stand on), the language root the last walk ended at, and whether a family
-/// arrived since.
+/// THE FEED: the files already handed out, each family's file by its
+/// citation, and whether a family arrived since the folder was last listed.
 pub(crate) struct Feed {
     home: PathBuf,
-    files: Vec<PathBuf>,
-    at: usize,
-    offers: Keyed<(Vec<u8>, Vec<Vec<u8>>)>,
-    walked_at: Option<crate::transducer::address::Address>,
+    listed: Keyed<()>,
+    files: Keyed<PathBuf>,
     arrived: Arc<AtomicBool>,
 }
 
 impl Feed {
     pub(crate) fn new(home: PathBuf) -> Feed {
-        Feed { home, files: Vec::new(), at: 0, offers: Keyed::new(), walked_at: None, arrived: Arc::new(AtomicBool::new(false)) }
+        // The first reading lists the folder as an arrival does.
+        Feed { home, listed: Keyed::new(), files: Keyed::new(), arrived: Arc::new(AtomicBool::new(true)) }
     }
 
     /// THE FOLDER WATCHED: a family written or moved into `home/feed` marks
     /// the feed arrived and wakes the mind on `wake` (the kernel's file
     /// notice, on its own thread; no clock). A folder that cannot be watched
-    /// is said once, and the feed is listed again where the language moves.
+    /// is said once; what it holds at the first reading is still placed.
     pub(crate) fn watch(&self, wake: std::sync::mpsc::Sender<()>) {
         use inotify::{Inotify, WatchMask};
         let dir = self.home.join("feed");
@@ -74,7 +70,7 @@ impl Feed {
         let mut inotify = match watched {
             Ok(i) => i,
             Err(e) => {
-                eprintln!("  feed not watched ({e}): read again where the language moves");
+                eprintln!("  feed not watched ({e}): read at the first reading only");
                 return;
             }
         };
@@ -91,80 +87,63 @@ impl Feed {
             }
         });
         if let Err(e) = spawned {
-            eprintln!("  feed not watched ({e}): read again where the language moves");
+            eprintln!("  feed not watched ({e}): read at the first reading only");
         }
     }
 
-    /// WHETHER THE WALK GOES ON: within the listing, it does; at its end, the
-    /// folder is listed again where a family arrived or the language (`root`)
-    /// moved since the walk ended — else the walk waits.
-    pub(crate) fn walk(&mut self, root: &crate::transducer::address::Address) -> bool {
-        if self.at < self.files.len() {
-            return true;
+    /// THE FAMILIES THAT ARRIVED, each once with its file: the folder listed
+    /// where a family arrived since the last listing, and every file not yet
+    /// handed out read whole — one that holds no task is retired. None where
+    /// nothing arrived.
+    pub(crate) fn arrivals(&mut self) -> Vec<(PathBuf, crate::arc::Task)> {
+        if !self.arrived.swap(false, Ordering::SeqCst) {
+            return Vec::new();
         }
-        let arrived = self.arrived.swap(false, Ordering::SeqCst);
-        if !arrived && self.walked_at.as_ref() == Some(root) {
-            return false;
-        }
-        self.files = pending_feed(&self.home);
-        self.at = 0;
-        self.walked_at = Some(root.clone());
-        let listed: Keyed<()> = {
-            let mut k = Keyed::new();
-            for f in &self.files {
-                k.insert(file_key(f), ());
+        let mut out = Vec::new();
+        for path in pending_feed(&self.home) {
+            let key = file_key(&path);
+            if self.listed.contains(&key) {
+                continue;
             }
-            k
-        };
-        // An offer held for a file no longer listed leaves with it.
-        let gone: Vec<Vec<u8>> = self.offers.scoped().map(|(k, _)| k).filter(|k| !listed.contains(k)).collect();
-        for k in gone {
-            self.offers.remove(&k);
-        }
-        !self.files.is_empty()
-    }
-
-    /// THE NEXT FAMILY OF THE WALK, and its file: files that hold no task are
-    /// retired and stepped over. `None` at the listing's end.
-    pub(crate) fn next_family(&mut self) -> Option<(PathBuf, crate::arc::Task)> {
-        while let Some(path) = self.files.get(self.at).cloned() {
+            self.listed.insert(key, ());
             match std::fs::read_to_string(&path).ok().and_then(|t| crate::arc::parse_task(&t)) {
-                Some(task) => return Some((path, task)),
-                None => {
-                    retire(&path);
-                    self.at += 1;
-                }
+                Some(task) => out.push((path, task)),
+                None => retire(&path),
             }
         }
-        None
+        out
     }
 
-    /// The offer held for the family at `path`: its citation and charts.
-    pub(crate) fn offer_of(&self, path: &Path) -> Option<&(Vec<u8>, Vec<Vec<u8>>)> {
-        self.offers.get(&file_key(path))
+    /// The family at `path` filed by its citation `id`, to be taken back by it.
+    pub(crate) fn file(&mut self, path: &Path, id: &[u8]) {
+        self.files.insert(id, path.to_path_buf());
     }
 
-    /// The offer of the family at `path`, read once and held.
-    pub(crate) fn hold_offer(&mut self, path: &Path, id: Vec<u8>, charts: Vec<Vec<u8>>) {
-        self.offers.insert(file_key(path), (id, charts));
+    /// THE FAMILY AT ITS CITATION, read again from its file; none where the
+    /// file left or no longer reads.
+    pub(crate) fn take(&self, id: &[u8]) -> Option<(PathBuf, crate::arc::Task)> {
+        let path = self.files.get(id)?.clone();
+        let task = std::fs::read_to_string(&path).ok().and_then(|t| crate::arc::parse_task(&t))?;
+        Some((path, task))
     }
 
-    /// The family at `path` entered the field: its file is retired.
-    pub(crate) fn entered(&mut self, path: &Path) {
+    /// The family at `path`, citation `id`, entered the field: its file is
+    /// retired.
+    pub(crate) fn entered(&mut self, path: &Path, id: &[u8]) {
         retire(path);
-        self.offers.remove(&file_key(path));
-        self.at += 1;
+        self.files.remove(id);
+        self.listed.remove(&file_key(path));
     }
 
-    /// MU-CLIENT §7.1 — THE FAMILY WAS PASSED: the mind did not take it, it
-    /// stays on disk, and the walk goes on.
-    pub(crate) fn passed(&mut self) {
-        self.at += 1;
+    /// A family filed at `id` that no longer reads: let go.
+    pub(crate) fn forget(&mut self, id: &[u8]) {
+        if let Some(path) = self.files.remove(id) {
+            self.listed.remove(&file_key(&path));
+        }
     }
 
-    /// The observer's reading: files listed, where the walk stands, offers
-    /// held.
-    pub(crate) fn reading(&self) -> (usize, usize, usize) {
-        (self.files.len(), self.at, self.offers.len())
+    /// The families placed and not yet entered.
+    pub(crate) fn held(&self) -> usize {
+        self.files.len()
     }
 }

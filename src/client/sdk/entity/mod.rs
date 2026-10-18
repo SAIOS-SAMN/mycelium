@@ -12,6 +12,7 @@ pub mod converge;
 pub mod court;
 pub mod family;
 pub mod feed;
+pub mod focus;
 pub mod hypha;
 pub mod learn;
 pub mod observer;
