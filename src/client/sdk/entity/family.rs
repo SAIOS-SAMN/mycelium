@@ -140,20 +140,25 @@ pub(crate) fn extract_on(memo: &mut crate::transducer::family::ExtractMemo, epi:
 /// the pair (L8w), with what it closes and leaves there; `None` where the
 /// mind's presentation cannot factor it.
 pub(crate) fn pair_percept(epi: &Epigenome, x: &crate::arc::Grid, y: &crate::arc::Grid) -> Option<PairPercept> {
-    let mut p = scene_percept(epi, x, y)?;
-    let (mag, remainders) = crate::transducer::family::form_deflation(&p.form, &p.pair, epi);
-    (p.mag, p.remainders) = (mag, remainders);
-    Some(p)
+    let pair = [(x.clone(), y.clone())];
+    crate::arc::on_ground_of(&pair, || {
+        let mut p = scene_percept(epi, x, y)?;
+        let (mag, remainders) = crate::transducer::family::form_deflation(&p.form, &p.pair, epi);
+        (p.mag, p.remainders) = (mag, remainders);
+        Some(p)
+    })
 }
 
 /// ONE PAIR AS ITS SCENE FORM alone, nothing measured on it: an hour of a
 /// family, held with no bundle (78.56 III).
 pub(crate) fn scene_percept(epi: &Epigenome, x: &crate::arc::Grid, y: &crate::arc::Grid) -> Option<PairPercept> {
     let pair = vec![(x.clone(), y.clone())];
-    let frames = crate::transducer::family::perceive_family(&pair);
-    let mut budget = crate::physics::Physics::default().stroke_n(crate::transducer::family::extraction_spend(&pair, &frames));
-    let form = crate::transducer::family::scene_form_on(epi, &mut budget, x, y, &frames)?;
-    Some(PairPercept { form, frames, pair, mag: [0; 4], remainders: Vec::new() })
+    crate::arc::on_ground_of(&pair, || {
+        let frames = crate::transducer::family::perceive_family(&pair);
+        let mut budget = crate::physics::Physics::default().stroke_n(crate::transducer::family::extraction_spend(&pair, &frames));
+        let form = crate::transducer::family::scene_form_on(epi, &mut budget, x, y, &frames)?;
+        Some(PairPercept { form, frames, pair: pair.clone(), mag: [0; 4], remainders: Vec::new() })
+    })
 }
 
 /// THE SCENE A CHAIN DESCRIBES, perceived as its form on the language given

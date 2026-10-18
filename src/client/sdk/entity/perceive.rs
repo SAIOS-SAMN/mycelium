@@ -220,8 +220,16 @@ fn hearing_couples(h: &Hearing, budget: &mut crate::physics::Budget) -> bool {
 pub(crate) type Perceiver = super::hypha::Carrier<crate::transducer::family::ExtractMemo>;
 
 /// THE SCENE READ ON THE CARRIER, in its scratch field, on the language
-/// given — every law the old pipeline ran on the field, run here.
+/// given — every law the old pipeline ran on the field, run here — and on
+/// the ground its demonstrations name (`arc::ground_of`): its pairs, the
+/// siblings its perspectives derive from and its tests are read on one
+/// ground, the one the court reads its withheld pairs on.
 fn perceive(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, scene: Scene) -> Perceived {
+    let ground = crate::arc::ground_of(&scene.train);
+    crate::arc::on_ground(ground, || perceive_on_ground(memo, epi, scene))
+}
+
+fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, scene: Scene) -> Perceived {
     use super::family::{ascertain_on, chain_percept, extract_on, pair_percept, scene_percept, speech_of, tests_spoken};
     let mut read = Perceived {
         admission: None,
@@ -318,6 +326,10 @@ fn perceive(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, 
 /// the court refused, the same rules round after round, with none of these
 /// read.
 pub(crate) fn judge_on(epi: &Epigenome, j: &Judge) -> Verdict {
+    crate::arc::on_ground(crate::arc::ground_of(&j.scene.train), || judge_on_ground(epi, j))
+}
+
+fn judge_on_ground(epi: &Epigenome, j: &Judge) -> Verdict {
     use crate::client::sdk::rule::{crossing, would_judge_with, NoRule};
     let Ok(crossed) = crossing(&j.rule, &j.scene.train, epi) else { return Verdict::Kept(Stop::Uncrossed) };
     let frames = crate::transducer::family::perceive_family(&j.scene.train);

@@ -917,7 +917,7 @@ fn replay_after_perceiving(
             // tell which it had and contracted over the union. Partitioned,
             // each carries its own verdict and its own links.
             let (silent, wrong): (Vec<_>, Vec<_>) =
-                undeclared.iter().copied().partition(|&(_, _, spoken, _)| spoken == 0);
+                undeclared.iter().copied().partition(|&(_, _, spoken, _)| spoken == crate::arc::ground());
             // THE WRONG ONES FIRST. A form carrying both said something
             // false, and that is the refusal it owes; contracting its
             // silence while leaving the falsehood would mint an address

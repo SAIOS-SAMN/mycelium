@@ -570,22 +570,23 @@ pub fn declare_unspoken(
     }
     let mut declared = form.clone();
     let mut any = false;
+    let void = crate::arc::ground();
     for ((x, _), rem) in family.iter().zip(remainders) {
         let links: Vec<Link> = rem
             .iter()
             .filter(|&&(r, c, spoken, observed)| {
-                spoken == 0 && undeclared.binary_search(&(r, c, spoken, observed)).is_ok()
+                spoken == void && undeclared.binary_search(&(r, c, spoken, observed)).is_ok()
             })
             .map(|&(r, c, _, observed)| {
                 // The hue the input holds at the site. Outside the input
-                // frame there is none, and absence is hue 0 in this
-                // encoding — `residual_of`'s own reading, not a floor.
+                // frame there is none, and absence is the scene's ground in
+                // this encoding — `residual_of`'s own reading, not a floor.
                 let before = match (usize::try_from(r), usize::try_from(c)) {
                     (Ok(ur), Ok(uc)) => match x.get(ur).and_then(|row| row.get(uc)) {
                         Some(h) => *h,
-                        None => 0,
+                        None => void,
                     },
-                    _ => 0,
+                    _ => void,
                 };
                 (r, c, before, observed)
             })

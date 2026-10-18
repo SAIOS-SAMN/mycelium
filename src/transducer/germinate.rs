@@ -5,7 +5,8 @@
 //! conformal-and-gauge element closes a body. Anonymous, addressed by form.
 
 /// A residual germ: sorted `(row, col, hue_before, hue_after)` over the union of
-/// A's and B's painted sites. hue 0 means the site is unpainted on that side.
+/// A's and B's painted sites. The scene's ground (`arc::ground`: hue 0, or the
+/// hue its family is drawn on) means the site is unpainted on that side.
 pub type ResidualGerm = Vec<(i64, i64, u8, u8)>;
 
 /// Mint A5's chain from two grids' painted sites — the exact coboundary.
@@ -19,14 +20,15 @@ pub fn germinate(
     b: &[(i64, i64, u8)],
 ) -> Option<crate::transducer::element::PlacedChain> {
     // Collect the union of sites with their before/after hues.
+    let void = crate::arc::ground();
     let mut links: ResidualGerm = Vec::new();
     let upsert = |links: &mut ResidualGerm, r: i64, c: i64, before: u8, after: u8| {
         match links.iter_mut().find(|(rr, cc, _, _)| *rr == r && *cc == c) {
             Some(e) => {
-                if before != 0 {
+                if before != void {
                     e.2 = before;
                 }
-                if after != 0 {
+                if after != void {
                     e.3 = after;
                 }
             }
@@ -34,10 +36,10 @@ pub fn germinate(
         }
     };
     for (r, c, h) in a {
-        upsert(&mut links, *r, *c, *h, 0);
+        upsert(&mut links, *r, *c, *h, void);
     }
     for (r, c, h) in b {
-        upsert(&mut links, *r, *c, 0, *h);
+        upsert(&mut links, *r, *c, void, *h);
     }
     // Keep only links that actually change (before != after); a net-zero
     // demand needs no germ.
@@ -56,10 +58,11 @@ pub fn germinate(
 /// with `after`. Reproduces the demand it was minted from — the germination
 /// closes.
 pub fn apply(germ: &[(i64, i64, u8, u8)], a: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
+    let void = crate::arc::ground();
     let mut out: Vec<(i64, i64, u8)> = a.to_vec();
     for (r, c, _before, after) in germ {
         out.retain(|(rr, cc, _)| !(rr == r && cc == c)); // clear the site
-        if *after != 0 {
+        if *after != void {
             out.push((*r, *c, *after));
         }
     }

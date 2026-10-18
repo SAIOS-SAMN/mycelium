@@ -98,16 +98,17 @@ pub fn flows(x: &Grid, y: &Grid) -> Option<Vec<Flow>> {
     }
     let mut out = Vec::new();
     // The void sites the light reaches, gathered where each ray is read.
+    let void = crate::arc::ground();
     let mut lit: Vec<(i64, i64)> = Vec::new();
     for (r, row) in x.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
             let (ri, ci) = (r as i64, c as i64);
             let to = at(y, ri, ci)?;
             let mut light = Vec::new();
-            if h != 0 {
+            if h != void {
                 for (k, &(dr, dc)) in (0u8..).zip(DIRECTIONS.iter()) {
                     let (free, edge) = reach(x, (ri, ci), (dr, dc));
-                    let Some(hue) = at(y, ri + dr, ci + dc).filter(|&o| o != 0 && free > 0) else { continue };
+                    let Some(hue) = at(y, ri + dr, ci + dc).filter(|&o| o != void && free > 0) else { continue };
                     let mut len = 1i64;
                     while len < free && at(y, ri + (len + 1) * dr, ci + (len + 1) * dc) == Some(hue) {
                         len += 1;
@@ -216,7 +217,7 @@ fn table(pairs: &[(&[Site], &[Flow])], axis: usize) -> (Keyed<Held>, TimeClosure
                         Congruence::InTime => cl.in_time += 1,
                         Congruence::Gauge => {
                             cl.gauge += 1;
-                            cl.gauge_void += u64::from(s.hue == 0);
+                            cl.gauge_void += u64::from(s.hue == crate::arc::ground());
                         }
                         Congruence::Light => cl.light += 1,
                     }
@@ -257,7 +258,7 @@ pub struct InTime {
 /// Carry an input field by a table in time. `Err(())` where a free ray's
 /// time is unread; `Ok(None)` where a key is unseen.
 fn carried(x: &Grid, sites: &[Site], t: &Keyed<Held>, axis: usize) -> Result<Option<Grid>, ()> {
-    let mut out: Grid = x.iter().map(|row| vec![0u8; row.len()]).collect();
+    let mut out: Grid = x.iter().map(|row| vec![crate::arc::ground(); row.len()]).collect();
     let mut emitted: Vec<(i64, i64, u8)> = Vec::new();
     for s in sites {
         let Some(held) = t.get(&key(s, axis)) else { return Ok(None) };

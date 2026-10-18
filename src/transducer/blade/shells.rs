@@ -203,7 +203,7 @@ pub fn reduced(painted: &[(i64, i64, u8)], k: i64) -> Option<Vec<(i64, i64, u8)>
             let mut hue = None;
             for dr in 0..k {
                 for dc in 0..k {
-                    let h = have.get(&pos_key(br + dr, bc + dc)).copied().unwrap_or(0);
+                    let h = have.get(&pos_key(br + dr, bc + dc)).copied().unwrap_or_else(crate::arc::ground);
                     match hue {
                         None => hue = Some(h),
                         Some(held) if held != h => return None,
@@ -212,7 +212,7 @@ pub fn reduced(painted: &[(i64, i64, u8)], k: i64) -> Option<Vec<(i64, i64, u8)>
                 }
             }
             if let Some(h) = hue {
-                if h != 0 {
+                if h != crate::arc::ground() {
                     out.push(((br - r0) / k, (bc - c0) / k, h));
                 }
             }

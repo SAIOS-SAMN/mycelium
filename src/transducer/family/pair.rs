@@ -151,13 +151,14 @@ pub(crate) fn delta_links(a: &Body, b: &Body) -> Vec<Link> {
     for l in &b.compartments {
         after.insert(l.site.key(), l.hue);
     }
+    let void = crate::arc::ground();
     let mut links: Vec<Link> = Vec::new();
     for l in &a.compartments {
-        // A site the image does not hold is absent there, and hue 0 IS
-        // absence in this encoding.
+        // A site the image does not hold is absent there, and the scene's
+        // ground IS absence in this encoding.
         let gone = match after.get(&l.site.key()) {
             Some(h2) => *h2,
-            None => 0,
+            None => void,
         };
         if let Some((r, c)) = on_grid(&l.site) {
             links.push((r, c, l.hue, gone));
@@ -165,7 +166,7 @@ pub(crate) fn delta_links(a: &Body, b: &Body) -> Vec<Link> {
     }
     for l in &b.compartments {
         if let (false, Some((r, c))) = (before.contains(&l.site.key()), on_grid(&l.site)) {
-            links.push((r, c, 0, l.hue));
+            links.push((r, c, void, l.hue));
         }
     }
     links.sort_unstable();

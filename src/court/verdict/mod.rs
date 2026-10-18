@@ -258,7 +258,7 @@ impl Refusal {
             // coordinate — one minted word per cycle.
             REFUSE_NOT_CLOSED => match &self.at {
                 sentence::At::Chart(_, links)
-                    if links.iter().any(|&(_, _, spoken, _)| spoken != 0) =>
+                    if links.iter().any(|&(_, _, spoken, _)| spoken != crate::arc::ground()) =>
                 {
                     sentence::RefusalKind::RemainderWrong
                 }

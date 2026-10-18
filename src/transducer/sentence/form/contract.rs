@@ -123,7 +123,7 @@ impl Form {
             // where the demand is mounted. A coordinate with nothing
             // declarable in it contracts to NOTHING.
             (RefusalKind::RemainderUndeclared, At::Chart(inv, links)) => {
-                let links: Vec<Link> = links.iter().copied().filter(|&(_, _, spoken, _)| spoken == 0).collect();
+                let links: Vec<Link> = links.iter().copied().filter(|&(_, _, spoken, _)| spoken == crate::arc::ground()).collect();
                 if links.is_empty() {
                     return None;
                 }

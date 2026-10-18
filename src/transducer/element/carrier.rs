@@ -1012,16 +1012,17 @@ pub const MEASURE_BOUND: &str =
 pub fn measure_lanes(chain: &[(i64, i64, u8, u8)]) -> [u64; 4] {
     let mut spatial = 0u64;
     let mut gauge = 0u64;
+    let void = crate::arc::ground();
     let mut before_pos: Vec<(i64, i64)> = Vec::new();
     let mut after_pos: Vec<(i64, i64)> = Vec::new();
     for &(r, c, b, a) in chain {
-        if b != 0 {
+        if b != void {
             before_pos.push((r, c));
         }
-        if a != 0 {
+        if a != void {
             after_pos.push((r, c));
         }
-        match (b != 0, a != 0) {
+        match (b != void, a != void) {
             (true, true) if b != a => gauge += 1,
             (true, false) | (false, true) => spatial += 1,
             _ => {}

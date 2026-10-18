@@ -80,19 +80,20 @@ pub fn field(x: &Grid) -> Vec<Site> {
         sums.push(s);
         masses.push(mass);
     }
+    let void = crate::arc::ground();
     let mut out = Vec::new();
     for r in 0..rows {
         for (c, &hue) in x[r].iter().enumerate() {
             let (ri, ci) = (r as i64, c as i64);
             let mut near: Vec<Cell> = Vec::new();
-            if hue != 0 {
+            if hue != void {
                 near.push((ri, ci, hue));
             }
             let mut ring = [255u8; 8];
             for (k, (dr, dc)) in DIRECTIONS.iter().enumerate() {
                 if let Some(h) = at(x, ri + dr, ci + dc) {
                     ring[k] = h;
-                    if h != 0 {
+                    if h != void {
                         near.push((ri + dr, ci + dc, h));
                     }
                 }
@@ -129,13 +130,14 @@ pub fn transports(x: &Grid, y: &Grid) -> Option<Vec<Transport>> {
     if x.len() != y.len() || x.iter().zip(y).any(|(a, b)| a.len() != b.len()) {
         return None;
     }
+    let void = crate::arc::ground();
     let mut out = Vec::new();
     for (r, row) in x.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
             let (ri, ci) = (r as i64, c as i64);
             let to = at(y, ri, ci)?;
             let mut rays = Vec::new();
-            if h != 0 {
+            if h != void {
                 for (k, (dr, dc)) in (0u8..).zip(DIRECTIONS.iter()) {
                     let mut t = 1i64;
                     let mut lit: Option<u8> = None;
@@ -299,7 +301,7 @@ pub struct Reconstruction {
 /// Carry an input field by a table: every site to its key's target hue,
 /// then the light each emits laid along its free reach.
 fn carried(x: &Grid, sites: &[Site], t: &Keyed<Transport>, axis: usize) -> Option<Grid> {
-    let mut out: Grid = x.iter().map(|row| vec![0u8; row.len()]).collect();
+    let mut out: Grid = x.iter().map(|row| vec![crate::arc::ground(); row.len()]).collect();
     let mut emitted: Vec<(i64, i64, u8)> = Vec::new();
     for s in sites {
         let m = t.get(&key(s, axis))?;

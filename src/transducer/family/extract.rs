@@ -26,15 +26,27 @@ pub fn extract_rule_with(
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<crate::transducer::sentence::SentenceRule> {
-    let frames = super::perceive::perceive_family(family);
-    extract_rule_on(family, &frames, crystal, budget)
+    crate::arc::on_ground_of(family, || {
+        let frames = super::perceive::perceive_family(family);
+        extract_rule_on(family, &frames, crystal, budget)
+    })
 }
 
 /// THE EXTRACTION ON FRAMES ALREADY PERCEIVED (rule 10, ruled 2026-09-26):
 /// the caller that sized its stroke by the family's frames
 /// ([`super::perceive_family`], [`super::extraction_spend`]) hands them here
-/// and the percept reads them; no frame is perceived a second time.
+/// and the percept reads them; no frame is perceived a second time. Read on
+/// the family's own ground (`arc::on_ground_of`).
 pub fn extract_rule_on(
+    family: &[(Grid, Grid)],
+    frames: &super::perceive::Frames,
+    crystal: &dyn Crystal,
+    budget: &mut crate::physics::Budget,
+) -> Option<crate::transducer::sentence::SentenceRule> {
+    crate::arc::on_ground_of(family, || extract_rule_on_ground(family, frames, crystal, budget))
+}
+
+fn extract_rule_on_ground(
     family: &[(Grid, Grid)],
     frames: &super::perceive::Frames,
     crystal: &dyn Crystal,

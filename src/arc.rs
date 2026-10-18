@@ -2,8 +2,9 @@
 //
 //! Law 11 — THE SENSOR'S GRIDS: a task's grids read as input→output train
 //! pairs of A→B demands on painted sites, and the measured frame of a
-//! pair. Hue 0 is not a painted site; this arm presents the scene and does
-//! no cognition.
+//! pair. The scene's ground (`ground`: hue 0, or the hue a family is drawn
+//! on) is not a painted site; this arm presents the scene and does no
+//! cognition.
 
 use serde::Deserialize;
 
@@ -23,6 +24,90 @@ pub fn grid_width(g: &[Vec<u8>]) -> usize {
         reason = "rule 15 — canonical key order: row zero is the grid's own coordinate, and a rectangular grid's width is its length"
     )]
     g.first().map_or(0, Vec::len)
+}
+
+/// THE SCENE'S AMBIENT GROUND Ω (the auditor's ruling, 2026-10-18): the hue
+/// the bodies of a family stand on — the void the eye does not see. A
+/// family that shows hue 0 on any grid of its demonstration pairs stands on
+/// hue 0. A family that never shows it is drawn on a canvas: its ground is
+/// the hue of the greatest cell count over those grids, an exact count in
+/// ℤ; where two hues tie for it the scene names no ground of its own and
+/// the void is hue 0 (`Tie::Hold`, law 10). (The count alone, over every
+/// family, read a body larger than its ground — a filled square, a frame
+/// grown full — as the ground itself: refined on that reading.) The
+/// channels are never relabelled (78.56 II): a hue 7 ground stays hue 7 on
+/// every grid, word and wire; Ω only says which hue the eye reads as the
+/// void.
+pub fn ground_of(family: &[(Grid, Grid)]) -> u8 {
+    let mut count = [0u64; 256];
+    for (x, y) in family {
+        for &h in x.iter().chain(y).flatten() {
+            if let Some(n) = count.get_mut(usize::from(h)) {
+                if let Some(more) = n.checked_add(1) {
+                    *n = more;
+                }
+            }
+        }
+    }
+    if count[0] > 0 {
+        return 0;
+    }
+    let mut most: Option<(u64, u8)> = None;
+    let mut tied = false;
+    for (h, &n) in count.iter().enumerate() {
+        let Ok(h) = u8::try_from(h) else { continue };
+        match most {
+            Some((m, _)) if n < m => {}
+            Some((m, _)) if n == m => tied = true,
+            _ if n == 0 => {}
+            _ => {
+                most = Some((n, h));
+                tied = false;
+            }
+        }
+    }
+    match (most, tied) {
+        (Some((_, h)), false) => h,
+        _ => 0,
+    }
+}
+
+thread_local! {
+    /// The ground of the family being read on this thread; `None` where no
+    /// family's reading is open, and the void is hue 0.
+    static GROUND: std::cell::Cell<Option<u8>> = const { std::cell::Cell::new(None) };
+}
+
+/// THE VOID OF THE SCENE BEING READ: the open family's ground, or hue 0
+/// where none is open — so a reader outside every family reads as it
+/// always did.
+pub fn ground() -> u8 {
+    match GROUND.with(std::cell::Cell::get) {
+        Some(g) => g,
+        None => 0,
+    }
+}
+
+/// READ `f` ON THE GROUND OF `family`: the family's ground opened for every
+/// perception, speech and replay inside it — UNLESS a family is already
+/// open on this thread, whose ground stands (the siblings a perspective
+/// derives from, a test spoken through the family's rule, are read on the
+/// family's own ground, never on one their subset would name). The scope
+/// closes as `f` returns.
+pub fn on_ground_of<T>(family: &[(Grid, Grid)], f: impl FnOnce() -> T) -> T {
+    match GROUND.with(std::cell::Cell::get) {
+        Some(_) => f(),
+        None => on_ground(ground_of(family), f),
+    }
+}
+
+/// READ `f` ON GROUND `g`, whatever was open; the previous scope restored as
+/// `f` returns.
+pub fn on_ground<T>(g: u8, f: impl FnOnce() -> T) -> T {
+    let before = GROUND.with(|c| c.replace(Some(g)));
+    let out = f();
+    GROUND.with(|c| c.set(before));
+    out
 }
 
 #[derive(Deserialize)]
@@ -53,10 +138,14 @@ pub struct Task {
 /// channels are the detector's own — an absolute boundary (78.56 II).
 pub fn parse_task(json: &str) -> Option<Task> {
     let raw: RawTask = serde_json::from_str(json).ok()?;
-    Some(frame_fixed(Task {
+    let task = Task {
         train: raw.train.into_iter().map(|p| (p.input, p.output)).collect(),
         test: raw.test.into_iter().map(|p| (p.input, p.output)).collect(),
-    }))
+    };
+    // The frame's moments weigh the painted sites: those off the family's
+    // own ground.
+    let ground = ground_of(&task.train);
+    Some(on_ground(ground, || frame_fixed(task)))
 }
 
 /// 78.54, 78.56 — THE LATTICE'S FRAME IS A GAUGE WHERE THE TASK CARRIES NO
@@ -140,10 +229,11 @@ pub fn extents(g: &Grid) -> [usize; AXES] {
 /// every axis — with its hue, in the lattice's own order. The one pass over
 /// a scene's sites (law 11's sensor clause); every reader here takes it.
 pub fn painted_sites(g: &Grid) -> Vec<([usize; AXES], u8)> {
+    let void = ground();
     let mut out = Vec::new();
     for (r, row) in g.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
-            if h != 0 {
+            if h != void {
                 out.push(([r, c], h));
             }
         }
@@ -151,11 +241,12 @@ pub fn painted_sites(g: &Grid) -> Vec<([usize; AXES], u8)> {
     out
 }
 
-/// The hue at a site, `0` (the void) where the site is not in the grid.
+/// The hue at a site, the scene's ground (the void) where the site is not
+/// in the grid.
 pub fn hue_at(g: &Grid, site: [usize; AXES]) -> u8 {
     match g.get(site[0]).and_then(|row| row.get(site[1])) {
         Some(&h) => h,
-        None => 0,
+        None => ground(),
     }
 }
 
@@ -171,7 +262,7 @@ fn centred(x: usize, n: usize) -> i128 {
 fn reoriented(g: &Grid, order: [usize; AXES], reversed: [bool; AXES]) -> Grid {
     let e = extents(g);
     let ne: [usize; AXES] = std::array::from_fn(|j| e[order[j]]);
-    let mut out: Grid = vec![vec![0; ne[1]]; ne[0]];
+    let mut out: Grid = vec![vec![ground(); ne[1]]; ne[0]];
     for (site, h) in painted_sites(g) {
         let at: [usize; AXES] = std::array::from_fn(|j| {
             let axis = order[j];
@@ -290,15 +381,15 @@ fn exact_root(n: i64) -> Option<i64> {
     (x * x == n).then_some(x)
 }
 
-/// A grid → its painted sites, the PERCEPTUAL convention: background hue 0
-/// is omitted (the eye sees only novelty), consistent with the coboundary
-/// germination's hue 0 = absent. The walk is the grid's own sites (a scene
-/// boundary), not a product of carriers.
+/// A grid → its painted sites, the PERCEPTUAL convention: the scene's
+/// ground is omitted (the eye sees only novelty). The walk is the grid's own
+/// sites (a scene boundary), not a product of carriers.
 pub fn painted_of_grid(g: &Grid) -> Vec<(i64, i64, u8)> {
+    let void = ground();
     let mut out = Vec::new();
     for (r, row) in g.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
-            if h != 0 {
+            if h != void {
                 out.push((r as i64, c as i64, h));
             }
         }

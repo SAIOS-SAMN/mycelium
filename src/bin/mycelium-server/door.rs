@@ -195,15 +195,23 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // Wire v1.2: the solve names its task by citation; the court reads
         // the task's content address off this book. A citation this book
         // holds no task for is refused by name below ("no such task").
-        let (tid, withheld, open) = {
+        // THE TASK'S GROUND (the auditor's ruling, 2026-10-18): the withheld
+        // pairs are read on the ground the task's demonstrations name, the
+        // one the voice spoke them on — never on one the withheld pairs
+        // would name alone.
+        let (tid, withheld, open, ground) = {
             let Ok(reg) = door.registry.lock() else { return true };
             match reg.by_citation(&cite) {
                 Some(tid) => {
                     let w = reg.withheld(&tid);
                     let o = reg.open(&tid);
-                    (tid, w, o)
+                    let g = match reg.task(&tid) {
+                        Some(t) => mycelium::arc::ground_of(&t.train),
+                        None => 0,
+                    };
+                    (tid, w, o, g)
                 }
-                None => (mycelium::transducer::address::Address::new(cite.to_vec()), Vec::new(), None),
+                None => (mycelium::transducer::address::Address::new(cite.to_vec()), Vec::new(), None, 0),
             }
         };
         // THE SOLVE, JUDGED BY ITS ACTION AND PAID (the actions' physics): the
@@ -284,7 +292,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                     // OWED (78.153b): the solve's replay mints its own stroke
                     // inside `judge_solve_on_stroke` (78.153, resumable).
                     h.run(|k, _| {
-                    let verdict = match k.judge_solve_on_stroke(rule, &withheld) {
+                    let verdict = match mycelium::arc::on_ground(ground, || k.judge_solve_on_stroke(rule, &withheld)) {
                         mycelium::cognition::SolveVerdict::Solved { pay, modes } => {
                             // The court names a task by its citation (wire v1.2).
                             let paid = k.pay_solve(&cite, svoice, rule, pay, first);

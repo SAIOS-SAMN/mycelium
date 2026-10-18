@@ -427,15 +427,16 @@ pub(crate) fn cover_deformation(
     // (c) WHAT IS LEFT, AS A VOLUME. Both bodies (50.8 case 4): the
     // input's compartments no piece carried, and the image's compartments no piece
     // reached.
+    let void = crate::arc::ground();
     let mut left: Vec<Link> = Vec::new();
     for l in &input.compartments {
         if let (false, Some((r, c))) = (reached.contains(&l.site.key()), on_grid(&l.site)) {
-            left.push((r, c, l.hue, 0));
+            left.push((r, c, l.hue, void));
         }
     }
     for l in &image.compartments {
         if let (false, Some((r, c))) = (reached.contains(&l.site.key()), on_grid(&l.site)) {
-            left.push((r, c, 0, l.hue));
+            left.push((r, c, void, l.hue));
         }
     }
     cover.uncarried = element::measure_lanes(&left);

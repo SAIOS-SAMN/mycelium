@@ -670,7 +670,7 @@ impl Speech {
         if !self.unresolved.is_empty() || !self.cycled.is_empty() {
             return None;
         }
-        let mut out: Grid = vec![vec![0u8; self.frame.1]; self.frame.0];
+        let mut out: Grid = vec![vec![crate::arc::ground(); self.frame.1]; self.frame.0];
         for &(r, c, h) in &self.painted {
             let (Ok(ur), Ok(uc)) = (usize::try_from(r), usize::try_from(c)) else {
                 return None;
@@ -698,10 +698,10 @@ pub(crate) fn residual_of(spoken: Option<&Grid>, observed: &Grid) -> Vec<(i64, i
     for (r, row) in observed.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
             // A site the speech does not reach is unoccupied there, and
-            // hue 0 IS absence in this encoding.
+            // the scene's ground IS absence in this encoding.
             let s = match spoken.and_then(|g| g.get(r)).and_then(|row| row.get(c)) {
                 Some(h) => *h,
-                None => 0,
+                None => crate::arc::ground(),
             };
             if s != h {
                 out.push((r as i64, c as i64, s, h));
@@ -712,8 +712,9 @@ pub(crate) fn residual_of(spoken: Option<&Grid>, observed: &Grid) -> Vec<(i64, i
         for (r, row) in g.iter().enumerate() {
             for (c, &s) in row.iter().enumerate() {
                 let inside = observed.get(r).and_then(|row| row.get(c)).is_some();
-                if !inside && s != 0 {
-                    out.push((r as i64, c as i64, s, 0));
+                let void = crate::arc::ground();
+                if !inside && s != void {
+                    out.push((r as i64, c as i64, s, void));
                 }
             }
         }

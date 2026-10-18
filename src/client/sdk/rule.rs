@@ -300,8 +300,9 @@ fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
             }
             Step::Hue(map) => match region {
                 Some(r) => {
-                    let hue = hue_under(map, 0).ok_or(NoRule::NotAHueMap)?;
-                    if hue == 0 {
+                    let void = crate::arc::ground();
+                    let hue = hue_under(map, void).ok_or(NoRule::NotAHueMap)?;
+                    if hue == void {
                         return Err(NoRule::NotAHueMap);
                     }
                     out.push(Clause { select: select.clone(), act: Act::Fill { region: r, hue } });

@@ -145,10 +145,11 @@ pub fn word_local(word: &Element, family: &[(Grid, Grid)]) -> Local {
 /// carried off the frame along `e₃`, two sites land on one with two hues, or
 /// a changed site's answer differs.
 fn spoken_section(x: &Grid, y: &Grid, v: &element::Versor, recolour: &dyn Fn(u8) -> u8) -> Option<Keyed<()>> {
+    let void = crate::arc::ground();
     let mut painted: Vec<Painted> = Vec::new();
     for (r, row) in x.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
-            if h != 0 {
+            if h != void {
                 painted.push((r as i64, c as i64, h));
             }
         }

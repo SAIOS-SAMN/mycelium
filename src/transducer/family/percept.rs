@@ -631,7 +631,7 @@ pub(super) fn family_percept(
                 let links: Vec<Link> = body
                     .compartments
                     .iter()
-                    .filter_map(|l| on_grid(&l.site).map(|(r, c)| (r, c, 0u8, l.hue)))
+                    .filter_map(|l| on_grid(&l.site).map(|(r, c)| (r, c, crate::arc::ground(), l.hue)))
                     .collect();
                 demanded.push((Demand::Creation, body.moduli.clone(), links));
             }

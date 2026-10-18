@@ -79,7 +79,7 @@ pub fn remainder_scene(
         .iter()
         .zip(remainders)
         .map(|((x, y), rem)| {
-            let mut m: Grid = y.iter().map(|row| vec![0u8; row.len()]).collect();
+            let mut m: Grid = y.iter().map(|row| vec![crate::arc::ground(); row.len()]).collect();
             let mut paint = |r: i64, c: i64, h: u8| {
                 if let (Ok(ur), Ok(uc)) = (usize::try_from(r), usize::try_from(c)) {
                     if let Some(cell) = m.get_mut(ur).and_then(|row| row.get_mut(uc)) {

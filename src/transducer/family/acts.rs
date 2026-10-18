@@ -168,7 +168,7 @@ fn predicates(pairs: &[Pair<'_>]) -> Vec<Pred> {
 
 /// The spoken clauses laid on their frame.
 fn grid_of(s: &statement::Spoken) -> Option<Grid> {
-    let mut g: Grid = vec![vec![0u8; s.frame.1]; s.frame.0];
+    let mut g: Grid = vec![vec![crate::arc::ground(); s.frame.1]; s.frame.0];
     for &(r, c, h) in &s.painted {
         *g.get_mut(usize::try_from(r).ok()?)?.get_mut(usize::try_from(c).ok()?)? = h;
     }
@@ -272,18 +272,19 @@ enum Fate {
 }
 
 fn fate(b: &Body, y: &Grid) -> Fate {
+    let void = crate::arc::ground();
     let cells = cells_of(b);
     let said: Vec<Option<u8>> = cells.iter().map(|&(r, c, _)| at(y, r, c)).collect();
     if cells.iter().zip(&said).all(|(c, s)| *s == Some(c.2)) {
         return Fate::Kept;
     }
-    if said.iter().all(|s| *s == Some(0)) {
+    if said.iter().all(|s| *s == Some(void)) {
         return Fate::Erased;
     }
     let mut map: Vec<(u8, u8)> = Vec::new();
     for (&(_, _, h), s) in cells.iter().zip(&said) {
         let Some(t) = *s else { return Fate::Changed };
-        if t == 0 {
+        if t == void {
             return Fate::Changed;
         }
         match map.iter().find(|(f, _)| *f == h) {
@@ -353,7 +354,8 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
     // the bodies the separating coordinate selects.
     if erased.iter().any(|e| !e.is_empty()) {
         let select = r.separate(&erased, &still).ok_or(Unread::Inseparable)?;
-        let ground = (1..crate::transducer::element::PALETTE).filter_map(|h| u8::try_from(h).ok()).map(|h| (h, 0)).collect();
+        let void = crate::arc::ground();
+        let ground = (0..crate::transducer::element::PALETTE).filter_map(|h| u8::try_from(h).ok()).filter(|&h| h != void).map(|h| (h, void)).collect();
         base.push(Clause { select, act: Act::Recolour(ground) });
     }
     if recoloured.iter().any(|e| !e.is_empty()) {
@@ -403,7 +405,7 @@ fn created(r: &mut Reading<'_, '_>, base: Vec<Clause>, touched: &[Vec<usize>], e
     for &(_, _, h) in residue.iter().flatten() {
         insert_sorted(&mut created_hues, h);
     }
-    let cleared = matches!(created_hues.as_slice(), [0, ..]);
+    let cleared = created_hues.contains(&crate::arc::ground());
     let attempt = |r: &mut Reading<'_, '_>, clause: Clause| -> Result<Option<Vec<Clause>>, Unread> {
         let mut all = base.clone();
         all.push(clause);

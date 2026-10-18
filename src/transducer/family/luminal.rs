@@ -125,12 +125,13 @@ fn waveform(h: &[u8]) -> Option<(u64, Vec<u8>)> {
 /// The output's lit run along `dir` from `(r, c)` (exclusive), over sites the
 /// input leaves free: its hues and its sites.
 fn lit_run(x: &Grid, y: &Grid, (r, c): (i64, i64), dir: (i64, i64)) -> (Vec<u8>, Vec<(i64, i64)>) {
+    let void = crate::arc::ground();
     let (mut hues, mut sites) = (Vec::new(), Vec::new());
     let mut t = 1i64;
     loop {
         let (rr, cc) = (r + t * dir.0, c + t * dir.1);
         match (at(x, rr, cc), at(y, rr, cc)) {
-            (Some(0), Some(h)) if h != 0 => {
+            (Some(free), Some(h)) if free == void && h != void => {
                 hues.push(h);
                 sites.push((rr, cc));
             }
@@ -177,7 +178,7 @@ fn rays_of(x: &Grid, y: &Grid, unsaid: &[(i64, i64)], lit_by_ray: &mut Vec<(i64,
                     Some((hue, (br, bc))) => {
                         // Through the body, then what the output shows past it.
                         let mut t = 0i64;
-                        while at(x, br + t * dir.0, bc + t * dir.1).is_some_and(|h| h != 0) {
+                        while at(x, br + t * dir.0, bc + t * dir.1).is_some_and(|h| h != crate::arc::ground()) {
                             t += 1;
                         }
                         let exit = (br + (t - 1) * dir.0, bc + (t - 1) * dir.1);
@@ -221,7 +222,7 @@ fn cavities_of(x: &Grid, y: &Grid, unsaid: &[(i64, i64)], captured: &mut Vec<(i6
     for (r0, row) in x.iter().enumerate() {
         for (c0, &h) in row.iter().enumerate() {
             let start = (r0 as i64, c0 as i64);
-            if h != 0 || seen.contains(&start) {
+            if h != crate::arc::ground() || seen.contains(&start) {
                 continue;
             }
             // The empty component, 4-connected.

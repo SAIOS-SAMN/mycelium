@@ -118,7 +118,7 @@ impl<'a> Seen<'a> {
     fn hue(&self, r: usize, c: usize) -> u8 {
         match self.x.get(r).and_then(|row| row.get(c)) {
             Some(h) => *h,
-            None => 0,
+            None => crate::arc::ground(),
         }
     }
 
@@ -155,7 +155,7 @@ impl<'a> Seen<'a> {
         let mut out = Vec::new();
         for (r, row) in reached.iter().enumerate() {
             for (c, &got) in row.iter().enumerate() {
-                if !got && self.hue(r, c) == 0 {
+                if !got && self.hue(r, c) == crate::arc::ground() {
                     out.push((r, c));
                 }
             }
@@ -306,7 +306,7 @@ impl<'a> Seen<'a> {
                     for &(r, c, _) in &self.cells[b] {
                         for (dr, dc) in AROUND {
                             if let Some((a, d)) = self.at(r, c, dr, dc) {
-                                if self.hue(a, d) == 0 {
+                                if self.hue(a, d) == crate::arc::ground() {
                                     out.push((a, d));
                                 }
                             }
@@ -321,7 +321,7 @@ impl<'a> Seen<'a> {
                     let Some((t, l, bt, r)) = extent_of(&self.cells[b]) else { continue };
                     for a in t..=bt {
                         for d in l..=r {
-                            if self.hue(a, d) == 0 {
+                            if self.hue(a, d) == crate::arc::ground() {
                                 out.push((a, d));
                             }
                         }
@@ -413,7 +413,7 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                 }
                 for &b in &sel {
                     for &(r, c, _) in &seen.cells[b] {
-                        canvas[r][c] = 0;
+                        canvas[r][c] = crate::arc::ground();
                     }
                 }
                 for (r, c, h) in landed {
@@ -442,7 +442,7 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                         };
                         let (mut a, mut d) = (r, c);
                         while let Some((na, nd)) = seen.at(a, d, dr, dc) {
-                            if *stop == Stop::Contact && before[na][nd] != 0 {
+                            if *stop == Stop::Contact && before[na][nd] != crate::arc::ground() {
                                 break;
                             }
                             canvas[na][nd] = colour;
@@ -468,7 +468,7 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                 }
                 for &b in &seeds {
                     for &(r, c, _) in &seen.cells[b] {
-                        canvas[r][c] = 0;
+                        canvas[r][c] = crate::arc::ground();
                     }
                 }
                 for (r, c, h) in landed {
@@ -500,10 +500,11 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
         None => out,
         Some((up, down)) => scaled(&out, up, down)?,
     };
+    let void = crate::arc::ground();
     let mut painted = Vec::new();
     for (i, row) in out.iter().enumerate() {
         for (j, &h) in row.iter().enumerate() {
-            if h != 0 {
+            if h != void {
                 let (Ok(pi), Ok(pj)) = (i64::try_from(i), i64::try_from(j)) else {
                     return Err(Unstated::OffLattice);
                 };

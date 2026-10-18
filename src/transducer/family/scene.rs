@@ -266,7 +266,7 @@ pub fn restrict(g: &Grid, chart: &Chart) -> Option<Grid> {
     // `usize` or the restriction is refused (rule 11), never wrapped.
     let span = |lo: i64, hi: i64| usize::try_from(hi.checked_sub(lo)?.checked_add(1)?).ok();
     let (h, w) = (span(r0, r1)?, span(c0, c1)?);
-    let mut out = vec![vec![0u8; w]; h];
+    let mut out = vec![vec![crate::arc::ground(); w]; h];
     for &(r, c) in &plane {
         let hue = *g.get(usize::try_from(r).ok()?).and_then(|row| row.get(usize::try_from(c).ok()?))?;
         let (dr, dc) = (usize::try_from(r - r0).ok()?, usize::try_from(c - c0).ok()?);

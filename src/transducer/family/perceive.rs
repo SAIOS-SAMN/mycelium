@@ -23,8 +23,9 @@ pub type Compartment = crate::transducer::blade::Compartment;
 pub fn grid_of_painted(painted: &[(i64, i64, u8)]) -> Grid {
     // The head only SEEDS the bounding box; the box is folded over every
     // site below, so no member is chosen here.
+    let void = crate::arc::ground();
     let [(r0, c0, _), ..] = painted else {
-        return vec![vec![0]];
+        return vec![vec![void]];
     };
     let (r0, c0) = (*r0, *c0);
     let (mut min_r, mut min_c, mut max_r, mut max_c) = (r0, c0, r0, c0);
@@ -46,7 +47,7 @@ pub fn grid_of_painted(painted: &[(i64, i64, u8)]) -> Grid {
     let h = (max_r - min_r + 1) as usize;
     #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the painted sites' bounding-box width, an i64 span ≥ 1 of the sites the sensor delivers, narrowing only on a 32-bit target")]
     let w = (max_c - min_c + 1) as usize;
-    let mut g = vec![vec![0u8; w]; h];
+    let mut g = vec![vec![void; w]; h];
     #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: a painted site's offset inside the bounding box just sized from these same sites, 0 ≤ r − min_r < h and 0 ≤ c − min_c < w")]
     for &(r, c, hue) in painted {
         g[(r - min_r) as usize][(c - min_c) as usize] = hue;
@@ -91,8 +92,9 @@ pub fn scene_at_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<((i64, i64), Gr
     let h = (max_r - min_r + 1) as usize;
     #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the chain's bounding-box width, an i64 span ≥ 1 of the sites the sensor delivers, narrowing only on a 32-bit target")]
     let w = (max_c - min_c + 1) as usize;
-    let mut before = vec![vec![0u8; w]; h];
-    let mut after = vec![vec![0u8; w]; h];
+    let void = crate::arc::ground();
+    let mut before = vec![vec![void; w]; h];
+    let mut after = vec![vec![void; w]; h];
     #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: a chain site's offset inside the bounding box just sized from these same sites, 0 ≤ r − min_r < h and 0 ≤ c − min_c < w")]
     for &(r, c, b, a) in chain {
         before[(r - min_r) as usize][(c - min_c) as usize] = b;
@@ -144,7 +146,8 @@ fn bodies_of(compartments: &[Compartment]) -> Vec<Body> {
 }
 
 /// Perceive one scene: its bodies, each a maximal hue-blind 4-connected
-/// component of compartments standing in frame `0` (70.4); hue 0 is the
+/// component of compartments standing in frame `0` (70.4); the scene's
+/// ground (`arc::ground`: hue 0, or the hue its family is drawn on) is the
 /// background the eye does not see. A body's colours are the gauge it
 /// carries, and a seam between two of them is its own gauge section. Two
 /// bodies meet at a corner, never along an edge — along an edge they would
@@ -164,10 +167,11 @@ pub fn perceive(grid: &Grid) -> Vec<Body> {
 /// that depends on its extent there, and a vertex keyed by it would find
 /// nothing on a frame perceived by itself.
 pub fn perceive_at(grid: &Grid, k: i64) -> Vec<Body> {
+    let void = crate::arc::ground();
     let mut compartments: Vec<Compartment> = Vec::new();
     for (r, row) in grid.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
-            if h != 0 {
+            if h != void {
                 compartments.push(Compartment::from((r as i64, c as i64, k, h)));
             }
         }
@@ -184,22 +188,25 @@ pub type Frames = Vec<(Vec<Body>, Vec<Body>)>;
 /// stroke is sized by ([`super::extraction_spend`]) and the percept then
 /// reads, so no frame's components are read a second time to size the draw.
 pub fn perceive_family(family: &[(Grid, Grid)]) -> Frames {
-    family
-        .iter()
-        .enumerate()
-        .map(|(k, (a, b))| (perceive_at(a, k as i64), perceive_at(b, k as i64)))
-        .collect()
+    crate::arc::on_ground_of(family, || {
+        family
+            .iter()
+            .enumerate()
+            .map(|(k, (a, b))| (perceive_at(a, k as i64), perceive_at(b, k as i64)))
+            .collect()
+    })
 }
 
 /// Perceive a family's frames as bodies on `(r, c, k)`: hue-blind
 /// 6-connected components across the frames (51.3, 51.4, 70.4), the frame of each
 /// grid its place in the family.
 pub fn perceive_frames(grids: &[Grid]) -> Vec<Body> {
+    let void = crate::arc::ground();
     let mut compartments: Vec<Compartment> = Vec::new();
     for (k, grid) in grids.iter().enumerate() {
         for (r, row) in grid.iter().enumerate() {
             for (c, &h) in row.iter().enumerate() {
-                if h != 0 {
+                if h != void {
                     compartments.push(Compartment::from((r as i64, c as i64, k as i64, h)));
                 }
             }
@@ -215,6 +222,7 @@ pub fn perceive_frames(grids: &[Grid]) -> Vec<Body> {
 /// of the section, which A5 refuses downstream — its chain is its sections,
 /// one per frame (51.4).
 pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i64, i64, u8, u8)> {
+    let void = crate::arc::ground();
     let mut chain = Vec::new();
     match (a, b) {
         (Some(src), Some(dst)) => {
@@ -230,14 +238,14 @@ pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i
         (None, Some(dst)) => {
             for l in &dst.compartments {
                 if let Some((r, c)) = on_grid(&l.site) {
-                    chain.push((r, c, 0, l.hue));
+                    chain.push((r, c, void, l.hue));
                 }
             }
         }
         (Some(src), None) => {
             for l in &src.compartments {
                 if let Some((r, c)) = on_grid(&l.site) {
-                    chain.push((r, c, l.hue, 0));
+                    chain.push((r, c, l.hue, void));
                 }
             }
         }

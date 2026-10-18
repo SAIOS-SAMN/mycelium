@@ -408,6 +408,11 @@ pub fn fibre_relation(family: &[TrainPair]) -> Option<Vec<(u8, u8)>> {
 /// (MU-CLIENT §7.1, the corpus met where the mind's orbits stand). `None`
 /// where a hue goes two ways.
 pub fn fibre_map(family: &[TrainPair]) -> Option<Vec<(u8, u8)>> {
+    crate::arc::on_ground_of(family, || fibre_map_on_ground(family))
+}
+
+fn fibre_map_on_ground(family: &[TrainPair]) -> Option<Vec<(u8, u8)>> {
+    let void = crate::arc::ground();
     let mut map: Vec<(u8, u8)> = Vec::new();
     for (x, y) in family {
         // 78.56 — WHERE THE BASE STANDS STILL across a change of extent:
@@ -418,7 +423,7 @@ pub fn fibre_map(family: &[TrainPair]) -> Option<Vec<(u8, u8)>> {
         for (site, h) in crate::arc::painted_sites(x) {
             let Some(there) = crate::arc::carried_site(x, y, s, site) else { continue };
             let t = crate::arc::hue_at(y, there);
-            if t == 0 {
+            if t == void {
                 continue;
             }
             match map.iter().find(|(f, _)| *f == h) {
