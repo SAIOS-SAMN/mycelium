@@ -371,8 +371,16 @@ impl Entity {
                     }
                 }
                 // R2 — held for the return of a thought of the scene it is
-                // spoken under.
-                let scene = task.clone();
+                // spoken under; a FEED family's speech for the mind's own
+                // return (the operator, 2026-10-18: a family read off disk is
+                // no standing orbit, and its words waited on a return of its
+                // scene that never came — 32 sayings over 16 scenes on one
+                // mind). It still names its scene on the wire, where the
+                // court measures it (E1).
+                let scene = match self.board.feed_scenes.contains(&task) {
+                    true => Vec::new(),
+                    false => task.clone(),
+                };
                 self.hold_for_return(&at, &scene, move |me| {
                     me.ask(
                         move |s| s.speak_nerve(body),

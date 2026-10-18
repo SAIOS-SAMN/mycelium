@@ -33,7 +33,6 @@ pub(crate) struct CourtPace {
     /// answers a quote; the mind's beat drags on these lanes
     /// (`Field::beat_under`).
     pub(crate) deficit: [u64; 4],
-    last_synced_lang: Option<(usize, usize, usize)>,
     last_synced_height: u64,
     pub(crate) quoting: bool,
     pub(crate) quoted: Option<YieldQuote>,
@@ -145,6 +144,7 @@ impl Entity {
             }
             self.physics_mut().bump(&mag);
             StrokeOutcome::add(&mut outcome.fed, &mag);
+            self.board.feed_scenes.insert(&id, ());
             // MU-CLIENT §7.1 R1 — perceived on its own carrier, off the field.
             self.perceive_scene(super::perceive::Scene { id, train: task.train, tests: Vec::new(), reading: super::perceive::Reading::Feed });
             return;
@@ -298,14 +298,17 @@ impl Entity {
         self.perceive_scene(super::perceive::Scene { id: task.id.to_vec(), train: task.train, tests: task.tests, reading: super::perceive::Reading::Again });
     }
 
-    /// THE COURT'S LANGUAGE FLOWS IN, where it is due — the language changed
-    /// since the last sync, the book rose, a lane's dwell elapsed, or the
-    /// mind holds no language — never because a tick rested: discovery, the
-    /// syllabus and the sheaf sync by discordant stratum.
+    /// THE COURT'S LANGUAGE FLOWS IN, where the COURT'S language may have
+    /// moved — its book rose since the last sync, a lane's dwell elapsed, or
+    /// the mind holds no language — never because the mind's own motion moved
+    /// (the operator, 2026-10-18: a thought held or a dialect word stood is
+    /// the mind's, and a sync brings nothing for it; counted, every family a
+    /// large mind perceived re-ran a minutes-long sync) and never because a
+    /// tick rested: discovery, the syllabus and the sheaf sync by discordant
+    /// stratum.
     pub(crate) fn language_inflow(&mut self) {
-        let lang = self.atlas_standing_counts();
         let pace = &self.board.court;
-        let due = pace.last_synced_lang != Some(lang) || pace.last_height > pace.last_synced_height || pace.dwell_elapsed() || self.epigenome.atlas_is_empty();
+        let due = pace.last_height > pace.last_synced_height || pace.dwell_elapsed() || self.epigenome.atlas_is_empty();
         if !due {
             return;
         }
@@ -313,7 +316,6 @@ impl Entity {
         self.pull_syllabus();
         self.sync_genome();
         let pace = &mut self.board.court;
-        pace.last_synced_lang = Some(lang);
         pace.last_synced_height = pace.last_height;
     }
 }

@@ -84,6 +84,10 @@ pub(crate) struct Board {
     /// MU-CLIENT §7.1 — a feed family that couples waits on the reserve: the
     /// mind's strokes regenerate it, so the mind does not block meanwhile.
     pub(crate) feed_waits: bool,
+    /// The scenes taken in off the feed, by citation: their speech leaves at
+    /// the mind's own return, not theirs (`speak_with`). Bounded by the
+    /// families the feed held.
+    pub(crate) feed_scenes: crate::network::nerve::Keyed<()>,
     /// The offers passed uncoupled since the mind began, by kind
     /// (`offer::PASSED`) — a reading, never read back by cognition.
     pub(crate) offers_passed: [u64; 3],
