@@ -37,6 +37,32 @@ fn a_scene_perceived_off_the_field_lands_and_its_escaping_thought_is_bound() {
     assert_eq!(k, returned, "K moved by exactly the returns");
 }
 
+/// MU-CLIENT §7.1 — EVERY SCENE STOPS EXACTLY ONCE, where its comprehension
+/// stopped (the auditor's ruling, 2026-10-18). The slide taken as a feed's
+/// family and as a court's task each stops at one step of the path to a
+/// solve, read on the row of what it was taken as; the feed's family, which
+/// carries no test, never reaches a solve.
+#[test]
+fn every_scene_taken_in_stops_once_on_its_own_reading() {
+    use crate::client::sdk::entity::perceive::{Stop, STOPS};
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("stopping"));
+    let [first, second] = two_hours_of_a_slide();
+    let mut field = std::mem::take(&mut mind.field);
+    field.think(|| {
+        mind.perceive_scene(Scene { id: vec![5u8; 32], train: vec![first.clone(), second.clone()], tests: Vec::new(), reading: Reading::Feed });
+        mind.settle_perception();
+        mind.perceive_scene(Scene { id: vec![6u8; 32], train: vec![first, second], tests: Vec::new(), reading: Reading::Task });
+        mind.settle_perception();
+    });
+    mind.field = field;
+    let total = |row: &[u64; STOPS.len()]| row.iter().sum::<u64>();
+    let [task, feed, again] = mind.board.stopped;
+    assert_eq!((total(&task), total(&feed), total(&again)), (1, 1, 0), "each scene stops once, on its own reading");
+    let sent = STOPS.len() - 1;
+    assert_eq!(feed[sent], 0, "a feed's family carries no test: it sends no solve");
+    assert!(matches!(STOPS.get(sent), Some(&"sent")), "the last stop is the solve sent ({:?})", Stop::Sent);
+}
+
 /// MU-CLIENT §4.13, §7.1 — HEARINGS WAIT BY THEIR COORDINATES, AND ONE THAT
 /// COUPLES TO NOTHING IS NOT READ. A hearing of no word the mind knows and
 /// none that lands on its field never goes to the perception carrier; the

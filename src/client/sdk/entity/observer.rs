@@ -200,6 +200,22 @@ impl Entity {
                     passed.join(" · ")
                 )
             },
+            // MU-CLIENT §7.1 — WHERE EACH SCENE'S COMPREHENSION STOPPED, by
+            // what it was taken as; the stops no scene reached are not named.
+            {
+                let by_reading: Vec<String> = super::perceive::READINGS
+                    .iter()
+                    .zip(&self.board.stopped)
+                    .map(|(reading, stops)| {
+                        let named: Vec<String> = super::perceive::STOPS.iter().zip(stops).filter(|(_, n)| **n > 0).map(|(s, n)| format!("{s} {n}")).collect();
+                        match named.is_empty() {
+                            true => format!("{reading}: none"),
+                            false => format!("{reading}: {}", named.join(", ")),
+                        }
+                    })
+                    .collect();
+                format!("comprehension stopped at · {}", by_reading.join(" · "))
+            },
         ]
         .into_iter()
         .chain(self.seat_lines())

@@ -105,6 +105,10 @@ pub(crate) struct Board {
     /// The offers passed uncoupled since the mind began, by kind
     /// (`offer::PASSED`) — a reading, never read back by cognition.
     pub(crate) offers_passed: [u64; 2],
+    /// WHERE EACH SCENE'S COMPREHENSION STOPPED since the mind began, by what
+    /// it was taken as (`perceive::Reading`) and the stop (`perceive::Stop`) —
+    /// a reading, never read back by cognition.
+    pub(crate) stopped: [[u64; super::perceive::STOPS.len()]; 3],
     /// MU-CLIENT §7.1 — THE CORPUS the focus meets: every feed family and
     /// open question at its own coordinates (`focus`).
     pub(crate) corpus: super::focus::Corpus,

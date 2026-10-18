@@ -38,7 +38,7 @@ fn a_voice_keeps_home_a_solve_its_own_train_refutes() {
         (grid(&["0000", "1100"]), grid(&["0000", "1100"])),
     ];
     let judge = Judge { scene: Scene { id: task.to_vec(), train: other, tests: Vec::new(), reading: Reading::Task }, outputs: outs, rule: spoken };
-    assert!(matches!(judge_on(&entity.epigenome, &judge), Verdict::Kept), "refuted at home");
+    assert!(matches!(judge_on(&entity.epigenome, &judge), Verdict::Kept(crate::client::sdk::entity::perceive::Stop::Uncrossed)), "refuted at home: it cannot be re-minted without its own pairs");
 }
 
 /// 78.158a U4 — THE SEAT'S SOLVE IS THE MIND'S OWN CALL. Told it called fn

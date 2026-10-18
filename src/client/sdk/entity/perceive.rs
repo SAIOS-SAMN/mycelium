@@ -39,6 +39,100 @@ pub(crate) enum Reading {
     Again,
 }
 
+impl Reading {
+    fn index(self) -> usize {
+        match self {
+            Reading::Task => 0,
+            Reading::Feed => 1,
+            Reading::Again => 2,
+        }
+    }
+}
+
+/// MU-CLIENT §7.1 — WHERE A SCENE'S COMPREHENSION STOPPED (the auditor's
+/// ruling, 2026-10-18: no solve witnessed; read where comprehension stops
+/// before the rule's synthesis is touched). Each scene stops at exactly one:
+/// the furthest step of the path from its pairs to a solve the court judges.
+/// Why a held-out pair disagreed is the observer's `disagreed` reading.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Stop {
+    /// The form engine closed no rule on the pairs.
+    NoRule,
+    /// No rule: the extraction's stroke ran out before it ruled.
+    NoRuleUnread,
+    /// A rule, on one pair: no sibling to derive it from.
+    OnePerspective,
+    /// A rule that fits, and some held-out pair did not close under the rule
+    /// its siblings derived.
+    Unknown,
+    /// A sibling extraction's stroke ran out: not known, not refuted.
+    Unread,
+    /// A rule known, and the scene carried no test to speak.
+    Untested,
+    /// A rule known, and some test it did not speak whole.
+    TestsUnspoken,
+    /// The tests spoken, and the rule not minted at its span.
+    Unminted,
+    /// The home check: the rule cannot cross to the withheld pairs.
+    Uncrossed,
+    /// The home check: the rule cites a word no court admitted.
+    CitesUnheld,
+    /// The home check: the mind's own pairs refute the rule.
+    Refuted,
+    /// The home check: a residue no held letter spells, constructed.
+    Constructed,
+    /// The court refused this rule for this task already.
+    RefusedBefore,
+    /// The solve could not be submitted (a kernel seated without its key).
+    Unsubmitted,
+    /// Submitted to the court.
+    Sent,
+}
+
+/// The stops, as the observer names them, in `Stop::index` order.
+pub(crate) const STOPS: [&str; 15] = [
+    "no rule",
+    "no rule (stroke ran out)",
+    "one perspective",
+    "unknown",
+    "unread",
+    "known, no test",
+    "tests unspoken",
+    "unminted",
+    "uncrossed",
+    "cites unheld",
+    "refuted at home",
+    "constructed",
+    "refused before",
+    "unsubmitted",
+    "sent",
+];
+
+/// The readings, as the observer names them, in `Reading::index` order.
+pub(crate) const READINGS: [&str; 3] = ["task", "feed", "again"];
+
+impl Stop {
+    fn index(self) -> usize {
+        match self {
+            Stop::NoRule => 0,
+            Stop::NoRuleUnread => 1,
+            Stop::OnePerspective => 2,
+            Stop::Unknown => 3,
+            Stop::Unread => 4,
+            Stop::Untested => 5,
+            Stop::TestsUnspoken => 6,
+            Stop::Unminted => 7,
+            Stop::Uncrossed => 8,
+            Stop::CitesUnheld => 9,
+            Stop::Refuted => 10,
+            Stop::Constructed => 11,
+            Stop::RefusedBefore => 12,
+            Stop::Unsubmitted => 13,
+            Stop::Sent => 14,
+        }
+    }
+}
+
 /// ONE SCENE TAKEN IN: its citation, its demonstration pairs, its tests, and
 /// what it is taken as.
 pub(crate) struct Scene {
@@ -72,6 +166,9 @@ pub(crate) struct Perceived {
     known: Option<(SentenceRule, Option<Vec<crate::arc::Grid>>)>,
     /// The chains the tests' speech left, as their scenes' forms.
     chains: Vec<PairPercept>,
+    /// Where the reading stopped, on the carrier; the winding reads on
+    /// from a known rule with tests spoken (`admit_scene`).
+    stop: Stop,
 }
 
 /// RINGS ANOTHER MIND SAID, WAITING TO BE READ: the speaker, what was said,
@@ -97,7 +194,8 @@ pub(crate) struct Judge {
 pub(crate) enum Verdict {
     Send(Box<Element>),
     Construct(crate::transducer::cga::Mv, Option<crate::transducer::stalk::Invariant>),
-    Kept,
+    /// Kept home, and where (`Stop::Uncrossed`, `CitesUnheld`, `Refuted`).
+    Kept(Stop),
 }
 
 /// MU-CLIENT §7.1 — A HEARING COUPLES TO THE MIND where one of its words is
@@ -133,6 +231,7 @@ fn perceive(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, 
         speech: None,
         known: None,
         chains: Vec::new(),
+        stop: Stop::NoRule,
         scene,
     };
     let (id, train, tests) = (&read.scene.id, &read.scene.train, &read.scene.tests);
@@ -146,6 +245,9 @@ fn perceive(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, 
         read.hours = train.iter().filter_map(|(a, b)| scene_percept(epi, a, b)).collect();
     }
     let Some(rule) = t.rule.take() else {
+        if t.budget.remaining() == 0 {
+            read.stop = Stop::NoRuleUnread;
+        }
         if read.scene.reading != Reading::Again {
             read.withheld = train.iter().filter_map(|(a, b)| pair_percept(epi, a, b)).collect();
         }
@@ -154,21 +256,43 @@ fn perceive(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, 
     if read.scene.reading != Reading::Again {
         read.speech = Some((speech_of(epi, &rule, train, &mut t.budget), t.frames.clone()));
     }
-    if read.scene.reading == Reading::Feed {
-        return read;
-    }
     // MU-CLIENT §4.9 — COMPREHENSION OF THE SCENE: a rule known by its
-    // perspectives, its tests spoken through it.
+    // perspectives, its tests spoken through it. A feed's family is read
+    // this far as well, so where its comprehension stops is read; it carries
+    // no test, so it emits no solve, and its uncovered perspectives are not
+    // lifted onto the mind (its rule's speech is what it gives).
     let (ascertained, lifts) = ascertain_on(epi, train);
-    read.lifted = lifts.iter().filter_map(|(x, y)| pair_percept(epi, x, y)).collect();
     let known = match ascertained {
         Ascertained::Known => Some(rule),
         Ascertained::KnownByInversion(r) => Some(*r),
-        _ => None,
+        Ascertained::Unknown => {
+            read.stop = Stop::Unknown;
+            None
+        }
+        Ascertained::OnePerspective => {
+            read.stop = Stop::OnePerspective;
+            None
+        }
+        Ascertained::Unread => {
+            read.stop = Stop::Unread;
+            None
+        }
     };
+    if read.scene.reading == Reading::Feed {
+        if known.is_some() {
+            read.stop = Stop::Untested;
+        }
+        return read;
+    }
+    read.lifted = lifts.iter().filter_map(|(x, y)| pair_percept(epi, x, y)).collect();
     if let Some(rule) = known {
         let (outputs, chains) = tests_spoken(epi, &rule, tests);
         read.chains = chains.iter().filter_map(|c: &Chain| chain_percept(epi, c)).collect();
+        read.stop = match (&outputs, tests.is_empty()) {
+            (_, true) => Stop::Untested,
+            (Some(_), false) => Stop::Sent,
+            (None, false) => Stop::TestsUnspoken,
+        };
         read.known = Some((rule, outputs));
     }
     read
@@ -198,7 +322,7 @@ fn perceive(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, 
 /// read.
 pub(crate) fn judge_on(epi: &Epigenome, j: &Judge) -> Verdict {
     use crate::client::sdk::rule::{crossing, would_judge_with, NoRule};
-    let Ok(crossed) = crossing(&j.rule, &j.scene.train, epi) else { return Verdict::Kept };
+    let Ok(crossed) = crossing(&j.rule, &j.scene.train, epi) else { return Verdict::Kept(Stop::Uncrossed) };
     let frames = crate::transducer::family::perceive_family(&j.scene.train);
     let mut budget = crate::physics::Physics::default().stroke_n(crate::transducer::family::extraction_spend(&j.scene.train, &frames));
     let resolve = |a: &[u8]| epi.court_word(a).and_then(|e| e.form().cloned());
@@ -207,7 +331,7 @@ pub(crate) fn judge_on(epi: &Epigenome, j: &Judge) -> Verdict {
         Ok(()) | Err(NoRule::Unread) => Verdict::Send(Box::new(crossed)),
         Err(NoRule::CitesUnheld(a)) => {
             eprintln!("  solve kept home: the rule cites {} no court admitted (cites unheld)", super::learn::hex_prefix(&a));
-            Verdict::Kept
+            Verdict::Kept(Stop::CitesUnheld)
         }
         // MU-CLIENT §4.4 — A REFUSAL IS RESIDUE, NEVER AN EXIT: a D at home
         // names the versor no held letter spells and the chart it acts on.
@@ -222,12 +346,12 @@ pub(crate) fn judge_on(epi: &Epigenome, j: &Judge) -> Verdict {
                 });
                 match residue {
                     Some(Some(residue)) => Verdict::Construct(residue, chart.as_deref().and_then(crate::transducer::stalk::Invariant::from_key)),
-                    _ => Verdict::Kept,
+                    _ => Verdict::Kept(Stop::Refuted),
                 }
             }
-            _ => Verdict::Kept,
+            _ => Verdict::Kept(Stop::Refuted),
         },
-        Err(_) => Verdict::Kept,
+        Err(_) => Verdict::Kept(Stop::Refuted),
     }
 }
 
@@ -451,14 +575,28 @@ impl Entity {
         }
         let scene = Scene { id, train, tests, reading };
         if reading == Reading::Feed {
+            self.stopped(reading, p.stop);
             return;
         }
         match p.known {
             Some((rule, Some(outputs))) => match self.mint_solve(&rule, &scene.train) {
                 Some(minted) => self.judge_solve(Judge { scene, outputs, rule: minted }),
-                None => self.await_scene(scene),
+                None => {
+                    self.stopped(reading, Stop::Unminted);
+                    self.await_scene(scene);
+                }
             },
-            _ => self.await_scene(scene),
+            _ => {
+                self.stopped(reading, p.stop);
+                self.await_scene(scene);
+            }
+        }
+    }
+
+    /// WHERE A SCENE'S COMPREHENSION STOPPED, read for the observer.
+    fn stopped(&mut self, reading: Reading, stop: Stop) {
+        if let Some(slot) = self.board.stopped.get_mut(reading.index()).and_then(|r| r.get_mut(stop.index())) {
+            let _ = crate::physics::metabolism::step_or_refuse(slot, 1);
         }
     }
 
@@ -467,22 +605,35 @@ impl Entity {
     /// residue no letter spells is constructed where it acts; a scene whose
     /// solve was not sent waits beside its thoughts.
     fn admit_verdict(&mut self, j: Judge, v: Verdict) {
+        let reading = j.scene.reading;
         let Ok(id) = <[u8; 32]>::try_from(j.scene.id.as_slice()) else { return };
         match v {
             Verdict::Send(rule) => {
                 let refused = self.solve_refused.get(&id).is_some_and(|a| a == rule.address().as_bytes());
                 // Submitted, it is held for the return of a thought of its
                 // scene (R2) and leaves there.
-                if refused || self.submit_solve_rule(&id, &j.outputs, &rule).is_err() {
+                let stop = match refused {
+                    true => Stop::RefusedBefore,
+                    false => match self.submit_solve_rule(&id, &j.outputs, &rule) {
+                        Ok(()) => Stop::Sent,
+                        Err(_) => Stop::Unsubmitted,
+                    },
+                };
+                self.stopped(reading, stop);
+                if stop != Stop::Sent {
                     self.await_scene(j.scene);
                 }
             }
             Verdict::Construct(residue, chart) => {
+                self.stopped(reading, Stop::Constructed);
                 let mut budget = self.physics.stroke();
                 self.construct_and_adjoin(&residue, chart.as_ref(), &j.scene.id, &mut budget);
                 self.await_scene(j.scene);
             }
-            Verdict::Kept => self.await_scene(j.scene),
+            Verdict::Kept(stop) => {
+                self.stopped(reading, stop);
+                self.await_scene(j.scene);
+            }
         }
     }
 
