@@ -70,10 +70,15 @@ pub struct GenomeRefused {
 }
 
 /// WHETHER AN ELEMENT IS A RESIDUAL CHAIN: its address leads with the
-/// residual's tag — what perception could not say, an open question and never
-/// a word (the operator, 2026-10-18).
+/// residual's tag AND it carries a chain — what perception could not say, an
+/// open question and never a word (the operator, 2026-10-18). The tag alone
+/// also opens a rewrite, a letters word and a spatial action with no chain
+/// (`vertex::KIND_*`): those are words of the language, and read as questions
+/// they had no scene to be met at, stood open forever and held the mind in
+/// tension it could never resolve (read on the fleet 2026-10-18 15:34: 146–266
+/// open questions, none on the corpus).
 pub(crate) fn is_residual(e: &Element) -> bool {
-    matches!(e.address().as_bytes(), [tag, ..] if *tag == crate::transducer::address::TAG_RESIDUAL)
+    !e.sub().is_empty() && matches!(e.address().as_bytes(), [tag, ..] if *tag == crate::transducer::address::TAG_RESIDUAL)
 }
 
 impl GenomeRefused {

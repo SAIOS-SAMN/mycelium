@@ -201,6 +201,24 @@ fn a_residual_taught_is_an_open_question_and_never_a_word() {
     assert!(mind.board.open_residuals.is_empty(), "met where the field rings, taken into thought, it leaves the carrier");
 }
 
+/// AN OPEN QUESTION IS A CHAIN. The residual's tag also opens a word with no
+/// chain (a rewrite, a letters word, a bare action): it has no scene to be
+/// met at, and read as a question it stood open forever. Only an element
+/// that carries a chain is one.
+#[test]
+fn only_a_chain_under_the_residual_tag_is_an_open_question() {
+    use crate::client::sdk::epigenome::is_residual;
+    let bare = crate::transducer::element::Element::identity();
+    assert!(
+        matches!(bare.address().as_bytes(), [tag, ..] if *tag == crate::transducer::address::TAG_RESIDUAL),
+        "the chain-free word stands under the residual's tag"
+    );
+    assert!(!is_residual(&bare), "a word with no chain is no open question");
+    let chain = vec![(0i64, 0i64, 1u8, 2u8), (2, 2, 3, 4)];
+    let residual = crate::transducer::element::from_residual(&chain).expect("a residual chain");
+    assert!(is_residual(&residual), "a chain under the tag is one");
+}
+
 /// AN UNCOUPLED TASK IS NOT TAKEN, AND LAPSES AT ITS SECOND RETURN. The
 /// court's task lands on a mind that holds nothing: the intake leaves it where
 /// it landed and perceives nothing; the first return carries it across; at

@@ -57,7 +57,9 @@ fn the_minds_k_counts_its_returns_and_is_not_persisted() {
 /// court rules it. A genome that carried a voice's ledger is refused by name.
 #[test]
 fn a_word_is_crystallized_at_the_courts_stamp_and_only_there() {
-    let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+    // A sentence of the language: a residual chain is an open question, never
+    // a word (MU-CLIENT §7.1), and never reaches the genome.
+    let word = super::common::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let court = crate::chronometry::Stamp::new(7, [3; 32], crate::chronometry::Place { k: 2, i: 1 });
     let mut e = Entity::open("127.0.0.1:1", Kernel::named("learned-word"));
     let mut budget = e.stroke();
