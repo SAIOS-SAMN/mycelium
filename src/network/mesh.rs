@@ -460,7 +460,7 @@ pub fn load_or_migrate_voice(home: &Path, key: &HyphaKey) -> Result<MeshRecord, 
     let vk = key.vk_bytes();
     if let Some((rec, layout)) = MeshRecord::open_at(home, &vk)? {
         resave_legacy(home, key, &rec, layout)?;
-        drop_loose(home, &["bootstrap", "tuniversal", "thoughts", "feed", "conductor"]);
+        drop_loose_voice(home);
         migrate_genome(home, &vk);
         return Ok(rec);
     }
@@ -481,9 +481,18 @@ pub fn load_or_migrate_voice(home: &Path, key: &HyphaKey) -> Result<MeshRecord, 
         epoch: 0,
     };
     let _ = rec.save(home, key);
-    drop_loose(home, &["bootstrap", "tuniversal", "thoughts", "feed", "conductor"]);
+    drop_loose_voice(home);
     migrate_genome(home, &vk);
     Ok(rec)
+}
+
+/// A VOICE'S LOOSE OLD FILES, dropped: and `feed` only where it is a loose
+/// old FILE — the folder `home/feed` is the mind's live feed boundary (78.164,
+/// MU-CLIENT §7.1), and dropping it at every boot erased the ARC-AGI-2
+/// corpus staged there before a restart (2026-10-18 09:25).
+fn drop_loose_voice(home: &Path) {
+    drop_loose(home, &["bootstrap", "tuniversal", "thoughts", "conductor"]);
+    let _ = std::fs::remove_file(home.join("feed"));
 }
 
 fn migrate_registry(home: &Path) {
