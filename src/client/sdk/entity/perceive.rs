@@ -30,7 +30,8 @@ use super::family::{Ascertained, Chain, PairPercept};
 
 /// WHAT A SCENE IS TAKEN AS: a court's task (its colour, its hours, its rule
 /// and the comprehension that may emit a solve), a feed's family (its rule
-/// spoken, or withheld), or a waiting scene read again in a language that
+/// spoken, or withheld, and its test inputs spoken where the rule is known),
+/// or a waiting scene read again in a language that
 /// moved (its comprehension alone).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Reading {
@@ -258,9 +259,9 @@ fn perceive(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, 
     }
     // MU-CLIENT §4.9 — COMPREHENSION OF THE SCENE: a rule known by its
     // perspectives, its tests spoken through it. A feed's family is read
-    // this far as well, so where its comprehension stops is read; it carries
-    // no test, so it emits no solve, and its uncovered perspectives are not
-    // lifted onto the mind (its rule's speech is what it gives).
+    // the same way and its test inputs spoken, so a rule known on it emits
+    // its solve; its uncovered perspectives are not lifted onto the mind
+    // (its rule's speech is what it gives).
     let (ascertained, lifts) = ascertain_on(epi, train);
     let known = match ascertained {
         Ascertained::Known => Some(rule),
@@ -278,13 +279,9 @@ fn perceive(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, 
             None
         }
     };
-    if read.scene.reading == Reading::Feed {
-        if known.is_some() {
-            read.stop = Stop::Untested;
-        }
-        return read;
+    if read.scene.reading != Reading::Feed {
+        read.lifted = lifts.iter().filter_map(|(x, y)| pair_percept(epi, x, y)).collect();
     }
-    read.lifted = lifts.iter().filter_map(|(x, y)| pair_percept(epi, x, y)).collect();
     if let Some(rule) = known {
         let (outputs, chains) = tests_spoken(epi, &rule, tests);
         read.chains = chains.iter().filter_map(|c: &Chain| chain_percept(epi, c)).collect();
@@ -574,12 +571,8 @@ impl Entity {
             let _ = self.speak_prepared(prepared, &train, &frames, &id, &mut budget);
         }
         let scene = Scene { id, train, tests, reading };
-        if reading == Reading::Feed {
-            self.stopped(reading, p.stop);
-            return;
-        }
         match p.known {
-            Some((rule, Some(outputs))) => match self.mint_solve(&rule, &scene.train) {
+            Some((rule, Some(outputs))) if reading != Reading::Feed || !scene.tests.is_empty() => match self.mint_solve(&rule, &scene.train) {
                 Some(minted) => self.judge_solve(Judge { scene, outputs, rule: minted }),
                 None => {
                     self.stopped(reading, Stop::Unminted);
@@ -641,7 +634,12 @@ impl Entity {
     /// §3.1, §4.9): kept by its citation with the language root it was read
     /// at, read again at the mind's returns where the language moved. A
     /// scene named by no task's citation is not kept.
+    /// A feed's family does not wait: it has left the corpus, and no court
+    /// asked for it.
     fn await_scene(&mut self, scene: Scene) {
+        if scene.reading == Reading::Feed {
+            return;
+        }
         let Ok(id) = <[u8; 32]>::try_from(scene.id.as_slice()) else { return };
         let root = self.epigenome.atlas_root();
         let envelope = crate::anastome::dialogue::TaskEnvelope { id, train: scene.train, tests: scene.tests };

@@ -223,8 +223,12 @@ impl Entity {
                 crate::physics::StrokeOutcome::add(&mut outcome.fed, &mag);
                 self.board.feed_scenes.insert(&key, ());
                 // MU-CLIENT §7.1 R1 — perceived on its own carrier, off the
-                // field.
-                self.perceive_scene(super::perceive::Scene { id: key, train: task.train, tests: Vec::new(), reading: super::perceive::Reading::Feed });
+                // field. Its tests are their INPUTS alone (the auditor's
+                // ruling, 2026-10-18): what the court withholds never crosses
+                // the mind's boundary; a rule known on the family speaks them,
+                // and the court judges the solve on its own withheld pairs.
+                let tests = task.test.into_iter().map(|(x, _)| x).collect();
+                self.perceive_scene(super::perceive::Scene { id: key, train: task.train, tests, reading: super::perceive::Reading::Feed });
             }
             ITEM_QUESTION => {
                 let Some(chain) = self.board.open_residuals.get(&key).cloned() else {
