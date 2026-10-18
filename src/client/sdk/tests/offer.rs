@@ -102,6 +102,50 @@ fn a_restored_mind_takes_an_offer_in_its_own_language_and_asks_for_nothing() {
     assert!(mind.board.court.task.is_none() && mind.perceiving(), "coupled: taken in, on the perception carrier");
 }
 
+/// A family as the ARC corpus writes it, its pairs as given and no test.
+fn family_json(train: &[(crate::arc::Grid, crate::arc::Grid)]) -> String {
+    let pairs: Vec<serde_json::Value> = train.iter().map(|(x, y)| serde_json::json!({ "input": x, "output": y })).collect();
+    serde_json::json!({ "train": pairs, "test": [] }).to_string()
+}
+
+/// THE FEED IS WALKED, NEVER BLOCKED (the operator, 2026-10-18). A mind whose
+/// language speaks on the one-cell chart and nowhere the slide's bodies
+/// stand finds two families in its feed, the slide first in file order. The
+/// slide couples to nothing: it is passed at once and stays on disk, said to
+/// the observer once; the walk goes on to the one-cell family behind it,
+/// which couples, is taken in and perceived, its file retired. Walked to the
+/// listing's end, the feed waits — listed again only where a family arrives
+/// or the language moves.
+#[test]
+fn the_feed_is_walked_and_an_uncoupled_family_never_stands_in_front() {
+    use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
+    let home = std::env::temp_dir().join(format!("mycelium-feed-walk-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&home);
+    let feed = home.join("feed");
+    std::fs::create_dir_all(&feed).expect("the feed folder");
+    std::fs::write(feed.join("a-slide.json"), family_json(&two_hours_of_a_slide())).expect("written");
+    std::fs::write(feed.join("b-cell.json"), family_json(&one_cell_steps())).expect("written");
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("feeding"));
+    mind.open_feed(home.clone());
+    let [(x, y)] = <[_; 1]>::try_from(one_cell_steps()).expect("one pair");
+    let mut field = std::mem::take(&mut mind.field);
+    field.think(|| {
+        let mut b = budget();
+        let frames = perceive_family(&[(x.clone(), y.clone())]);
+        let f = scene_form_on(&NoCrystal, &mut b, &x, &y, &frames).expect("the pair reads");
+        let word = crate::transducer::sentence::as_element_form(&f, [1, 0, 0, 0]).expect("a word");
+        mind.epigenome.moduli_admit(&crate::transducer::element::Held::of(word));
+        let mut outcome = crate::physics::StrokeOutcome::default();
+        mind.feed_inflow(&mut outcome);
+    });
+    mind.field = field;
+    assert!(feed.join("a-slide.json").exists(), "the slide, uncoupled, is passed and stays on disk");
+    assert!(!feed.join("b-cell.json").exists() && feed.join(".done").join("b-cell.json").exists(), "the family behind it couples, is taken, its file retired");
+    assert!(mind.perceiving(), "taken in: on the perception carrier");
+    assert_eq!(mind.board.offers_passed[crate::client::sdk::entity::offer::PASSED_FEED], 1, "the slide said passed, once");
+    let _ = std::fs::remove_dir_all(&home);
+}
+
 /// AN UNCOUPLED TASK IS NOT TAKEN, AND LAPSES AT ITS SECOND RETURN. The
 /// court's task lands on a mind that holds nothing: the intake leaves it where
 /// it landed and perceives nothing; the first return carries it across; at

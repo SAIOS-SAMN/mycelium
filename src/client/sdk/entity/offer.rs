@@ -18,9 +18,12 @@
 //! restored mind, whose thoughts and plan are volatile, still hears an offer
 //! in its own language). An offer that
 //! couples is taken as the metabolism can carry it; one that does not draws
-//! nothing and waits, read again as the field moves, and LAPSES at the second
-//! return it waits across, uncoupled — no refusal, no penalty, said to the
-//! observer by kind (`Board::offers_passed`).
+//! nothing — no refusal, no penalty, said to the observer by kind
+//! (`Board::offers_passed`). A court's task waits, read again as the field
+//! moves, and LAPSES at the second return it waits across uncoupled; a feed
+//! family is passed at once and left on disk, the feed's walk going on
+//! (`feed`); a seat's task is kept by its charts and pulled again only where
+//! they couple.
 //!
 //! THE TENSION. The mind ASKS for an offer (`pull_task`) only where its field
 //! holds strain it has not resolved: a demand on its plan, an orbit that
@@ -80,10 +83,9 @@ impl Entity {
         }
     }
 
-    /// AT A RETURN, THE OFFERS WAITING ARE READ AGAIN: one that waited across
-    /// the last return and still couples to nothing lapses — the court's task
-    /// let go, the feed's family stepped past and left on disk — and every
-    /// other one crosses this return.
+    /// AT A RETURN, THE COURT'S TASK WAITING IS READ AGAIN: one that waited
+    /// across the last return and still couples to nothing lapses, let go;
+    /// otherwise it crosses this return.
     pub(crate) fn lapse_offers(&mut self) {
         let task = self.board.court.task.as_ref().map(|(e, o)| (o.crossed, self.couples(&e.id, &o.charts)));
         match task {
@@ -93,22 +95,6 @@ impl Entity {
             }
             Some(_) => {
                 if let Some((_, o)) = self.board.court.task.as_mut() {
-                    o.crossed = true;
-                }
-            }
-            None => {}
-        }
-        let feed = self.board.feed_offer.as_ref().map(|(_, id, o)| (o.crossed, self.couples(id, &o.charts)));
-        match feed {
-            Some((true, false)) => {
-                self.board.feed_offer = None;
-                if let Some(f) = self.board.feed.as_mut() {
-                    f.passed();
-                }
-                self.passed(PASSED_FEED);
-            }
-            Some(_) => {
-                if let Some((_, _, o)) = self.board.feed_offer.as_mut() {
                     o.crossed = true;
                 }
             }

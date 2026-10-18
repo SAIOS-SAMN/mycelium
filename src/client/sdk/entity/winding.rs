@@ -81,9 +81,9 @@ pub(crate) struct Board {
     /// the vent and given back as it re-forms or condenses
     /// (`Entity::lock_reservoirs`).
     pub(crate) reservoir_locked: [u64; 4],
-    /// MU-CLIENT §7.1 — THE FEED'S FAMILY STANDING AS AN OFFER: its file, its
-    /// citation, and its offer (`offer`).
-    pub(crate) feed_offer: Option<(std::path::PathBuf, Vec<u8>, super::offer::Offer)>,
+    /// MU-CLIENT §7.1 — a feed family that couples waits on the reserve: the
+    /// mind's strokes regenerate it, so the mind does not block meanwhile.
+    pub(crate) feed_waits: bool,
     /// The offers passed uncoupled since the mind began, by kind
     /// (`offer::PASSED`) — a reading, never read back by cognition.
     pub(crate) offers_passed: [u64; 3],
@@ -101,7 +101,10 @@ pub struct Wound {
 impl Entity {
     /// THE CORPUS FEED at `home/feed` is a boundary of this mind.
     pub fn open_feed(&mut self, home: std::path::PathBuf) {
-        self.board.feed = Some(super::feed::Feed::new(home));
+        let feed = super::feed::Feed::new(home);
+        // A family arriving at the folder wakes the resting mind.
+        feed.watch(self.hypha.waker());
+        self.board.feed = Some(feed);
     }
 
     /// THE GENOME IS WRITTEN AT `path` whenever it gained a word, before the

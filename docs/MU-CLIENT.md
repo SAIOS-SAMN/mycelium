@@ -2178,8 +2178,13 @@ owed in the order it is built.
       rings). Only a
       coupled offer is extracted. An uncoupled one draws nothing, waits, and
       lapses at the second return it waits across (`lapse_offers`): the
-      task let go, the feed family left on disk, the seat's task kept by its
-      charts and pulled again only where they couple. A hearing is read only
+      task let go, the seat's task kept by its charts and pulled again only
+      where they couple. The feed is WALKED (2026-10-18): each family read
+      once to its offer and held by its file, one that couples to nothing
+      passed at once and left on disk, the walk going on — no family stands
+      in front of the rest; at the listing's end it waits, listed again only
+      where a family arrives (the kernel's file notice, `inotify`, wakes the
+      resting mind) or the language moved since the walk ended. A hearing is read only
       where the lexicon reaches one of its words — whole, or in part, its
       residue the question (`rung::posit`) — or the word lands on the field
       as it stands (`Field::lands`); others lapse as unread hearings do.

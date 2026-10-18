@@ -185,11 +185,15 @@ impl Entity {
                     None => "none".to_string(),
                 };
                 let passed: Vec<String> = super::offer::PASSED.iter().zip(&self.board.offers_passed).map(|(k, n)| format!("{k} {n}")).collect();
+                let feed = match self.board.feed.as_ref().map(super::feed::Feed::reading) {
+                    Some((listed, at, read)) => format!("listed {listed} · walked to {at} · offers read {read} · a family waits on the reserve {}", self.board.feed_waits),
+                    None => "not opened".to_string(),
+                };
                 format!(
-                    "attention: tension {} · court task {} · feed family {} · passed uncoupled: {}",
+                    "attention: tension {} · court task {} · feed: {} · passed uncoupled: {}",
                     self.strained(),
                     standing(pace.task.as_ref().map(|(e, o)| (&e.id[..], o))),
-                    standing(self.board.feed_offer.as_ref().map(|(_, id, o)| (id.as_slice(), o))),
+                    feed,
                     passed.join(" · ")
                 )
             },

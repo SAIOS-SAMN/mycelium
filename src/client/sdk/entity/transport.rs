@@ -18,10 +18,11 @@ impl Entity {
 
     /// REST (MU-CLIENT §7.1, the operator 2026-10-17): blocked until a carrier
     /// lands something — never a clock — save while the court's dwell runs
-    /// on a pressed lane, which is counted in the mind's own strokes, so those
-    /// strokes are parked at the measured transport until it elapses.
+    /// on a pressed lane, or a feed family that couples waits on the reserve:
+    /// both are owed the mind's own strokes, so those strokes are parked at
+    /// the measured transport until they are paid.
     pub fn rest(&self) {
-        match self.board.court.dwelling() {
+        match self.board.court.dwelling() || self.board.feed_waits {
             true => self.hypha.rest(self.transport_rtt()),
             false => self.hypha.block(),
         }

@@ -81,56 +81,74 @@ impl Entity {
         self.speak_owed();
     }
 
-    /// THE FEED'S NEXT FAMILY IS OFFERED, and taken in where it couples to
-    /// the mind (`offer`) and the mind's metabolism can carry it — the
-    /// reserve regenerated on the lanes it costs — then perceived on the
-    /// perception carrier: thought through whole and its form spoken where it
-    /// lands. One scene on the carrier at a time. A family that couples to
-    /// nothing waits, and is passed at its second return (`lapse_offers`),
-    /// left on disk.
+    /// THE FEED WALKED (`feed`): each family offered in file order, read once
+    /// to its offer; one that couples to nothing is passed at once and left
+    /// on disk, and the walk goes on; the first that couples (`offer`) is
+    /// taken in where the mind's metabolism can carry it — the reserve
+    /// regenerated on the lanes it costs; else the walk waits on it — and
+    /// perceived on the perception carrier: thought through whole and its
+    /// form spoken where it lands. One scene on the carrier at a time.
     pub(crate) fn feed_inflow(&mut self, outcome: &mut StrokeOutcome) {
         // One scene on the perception carrier at a time: the next waits for
         // the last to be taken.
         if self.perceiving() {
             return;
         }
-        let Some(feed) = self.board.feed.as_mut() else { return };
-        let Some((path, task)) = feed.peek() else { return };
-        // A task whose members have no A5 form has no identity to think by,
-        // and its file is retired. MU-CLIENT §5.4 (E1) — the scene is named
-        // by the court's own name for it, its 32-byte CITATION, never the raw
-        // content address a court binds nothing under (finding 8).
-        let Some(id) = crate::registry::task_id(&task) else {
-            feed.entered(&path);
-            return;
-        };
-        let id = crate::registry::citation(&id).to_vec();
-        // The offer is read once, where the family first stands.
-        if !matches!(&self.board.feed_offer, Some((at, _, _)) if *at == path) {
-            self.board.feed_offer = Some((path.clone(), id.clone(), super::offer::Offer::of(&task.train)));
-        }
-        let couples = match &self.board.feed_offer {
-            Some((_, id, o)) => self.couples(id, &o.charts),
-            None => false,
-        };
-        if !couples {
+        let root = self.epigenome.atlas_root();
+        if !self.board.feed.as_mut().is_some_and(|f| f.walk(&root)) {
             return;
         }
-        // THE MIND'S METABOLISM PACES ITS INTAKE (the operator, 2026-10-15):
-        // a family is taken where the reserve has regenerated on the lanes
-        // it costs.
-        let mag = super::family::family_magnitude(&task.train);
-        if !crate::economy::lanes_short(&self.physics().reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
+        loop {
+            let Some(feed) = self.board.feed.as_mut() else { return };
+            let Some((path, task)) = feed.next_family() else { return };
+            // The offer, read once by its file. A task whose members have no
+            // A5 form has no identity to think by, and its file is retired.
+            // MU-CLIENT §5.4 (E1) — the scene is named by the court's own name
+            // for it, its 32-byte CITATION, never the raw content address a
+            // court binds nothing under (finding 8).
+            let (id, charts, fresh) = match feed.offer_of(&path) {
+                Some((id, charts)) => (id.clone(), charts.clone(), false),
+                None => {
+                    let Some(id) = crate::registry::task_id(&task) else {
+                        feed.entered(&path);
+                        continue;
+                    };
+                    let id = crate::registry::citation(&id).to_vec();
+                    let charts = super::offer::Offer::of(&task.train).charts;
+                    feed.hold_offer(&path, id.clone(), charts.clone());
+                    (id, charts, true)
+                }
+            };
+            if !self.couples(&id, &charts) {
+                if let Some(feed) = self.board.feed.as_mut() {
+                    feed.passed();
+                }
+                // Said to the observer once per family, where its offer is
+                // first read.
+                if fresh {
+                    self.passed(super::offer::PASSED_FEED);
+                }
+                continue;
+            }
+            // THE MIND'S METABOLISM PACES ITS INTAKE (the operator,
+            // 2026-10-15): a family is taken where the reserve has
+            // regenerated on the lanes it costs.
+            let mag = super::family::family_magnitude(&task.train);
+            // A family that couples waits on the reserve: the mind's strokes
+            // regenerate it, so it does not block while one waits (`rest`).
+            self.board.feed_waits = !crate::economy::lanes_short(&self.physics().reserve_shortfall(Physics::lanes_of(&mag))).is_empty();
+            if self.board.feed_waits {
+                return;
+            }
+            if let Some(feed) = self.board.feed.as_mut() {
+                feed.entered(&path);
+            }
+            self.physics_mut().bump(&mag);
+            StrokeOutcome::add(&mut outcome.fed, &mag);
+            // MU-CLIENT §7.1 R1 — perceived on its own carrier, off the field.
+            self.perceive_scene(super::perceive::Scene { id, train: task.train, tests: Vec::new(), reading: super::perceive::Reading::Feed });
             return;
         }
-        if let Some(feed) = self.board.feed.as_mut() {
-            feed.entered(&path);
-        }
-        self.board.feed_offer = None;
-        self.physics_mut().bump(&mag);
-        StrokeOutcome::add(&mut outcome.fed, &mag);
-        // MU-CLIENT §7.1 R1 — perceived on its own carrier, off the field.
-        self.perceive_scene(super::perceive::Scene { id, train: task.train, tests: Vec::new(), reading: super::perceive::Reading::Feed });
     }
 
     /// THE OPEN BOOK FLOWS IN: a quote that landed is read — each listing's
