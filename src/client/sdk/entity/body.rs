@@ -94,6 +94,9 @@ pub(crate) struct Body {
     relist: bool,
     unlisted: u64,
     mailing: bool,
+    /// The relay's standing (epoch, last sequence) at the mind's last read:
+    /// where it moves, something was filed, and the listing is read again.
+    relay_seen: Option<(u64, u64)>,
     pages: u64,
 }
 
@@ -162,6 +165,7 @@ impl Entity {
             relist: true,
             unlisted: 0,
             mailing: false,
+            relay_seen: None,
             pages: 0,
         });
     }
@@ -306,6 +310,15 @@ impl Entity {
         body.mailing = false;
         let mail = match read {
             Ok(Ok(MindRead { epoch, seq, mail })) => {
+                // MU-CLIENT §7.1 — SOMETHING WAS FILED ON THE RELAY since the
+                // mind last read it (another epoch, or a sequence it had not
+                // seen): a house may have listed, so the listing is read again
+                // now, never after a count of strokes — at rest the court's
+                // events are the only strokes there are.
+                if body.relay_seen != Some((epoch, seq)) {
+                    body.relist = true;
+                    body.relay_seen = Some((epoch, seq));
+                }
                 let standing = MailRead { epoch, seq, mail: Vec::new() };
                 body.after = standing.cursor(body.epoch, body.after);
                 body.epoch = Some(epoch);
