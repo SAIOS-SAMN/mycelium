@@ -202,10 +202,13 @@ impl Entity {
         let atlas = self.epigenome.atlas.clone();
         let local = sheaf::digests(&atlas);
         // The outer index names what differs by address; a stratum the
-        // fibre Čech already glued is not walked again.
+        // fibre Čech already glued is not walked again, and a stratum of
+        // residual chains — open questions the mind holds on its carrier and
+        // never as words (MU-CLIENT §7.1, the operator 2026-10-18) — differs
+        // from the court's by doctrine and is never fetched for it.
         let strata: Vec<_> = sheaf::discordant(&remote, &local)
             .into_iter()
-            .filter(|d| !self.glued.contains(&d.inv.key()))
+            .filter(|d| !self.glued.contains(&d.inv.key()) && !self.board.residual_strata.contains(d.inv.key().as_bytes()))
             .cloned()
             .collect();
         self.discordance = strata.len();
@@ -505,6 +508,7 @@ impl Entity {
                 if !self.board.open_residuals.contains(addr.as_bytes()) {
                     self.board.open_residuals.insert(addr.as_bytes(), e.sub().to_vec());
                 }
+                self.board.residual_strata.insert(crate::transducer::stalk::invariant_of(&e).key().as_bytes(), ());
                 continue;
             }
             // A WORD THE GENOME HOLDS AT ITS ADDRESS IS ALREADY LEARNED (law

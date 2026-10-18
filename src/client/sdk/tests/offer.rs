@@ -168,6 +168,8 @@ fn a_residual_taught_is_an_open_question_and_never_a_word() {
     assert!(!settled, "a mind just opened holds no strain");
     assert!(!mind.epigenome.holds(residual.address().as_bytes()), "never learned into the genome");
     assert_eq!(mind.board.open_residuals.len(), 1, "one open question, however often taught");
+    let stratum = crate::transducer::stalk::invariant_of(&residual).key();
+    assert!(mind.board.residual_strata.contains(stratum.as_bytes()), "its stratum is one the sheaf sync never fetches");
     assert!(strained, "an open question is tension");
     let mut field = std::mem::take(&mut mind.field);
     field.think(|| mind.question_inflow());

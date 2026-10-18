@@ -213,7 +213,8 @@ impl Epigenome {
             // holds is read whole and handed to the mind's carrier of open
             // questions, never admitted.
             if is_residual(&e) {
-                self.restored_residuals.push((e.address().as_bytes().to_vec(), e.sub().to_vec()));
+                let stratum = crate::transducer::stalk::invariant_of(&e).key().as_bytes().to_vec();
+                self.restored_residuals.push((e.address().as_bytes().to_vec(), e.sub().to_vec(), stratum));
                 continue;
             }
             admitted.push((e.address(), at));

@@ -371,9 +371,10 @@ pub struct ExpressedWord {
     pub(crate) shape: std::sync::OnceLock<Option<crate::transducer::blade::Shape>>,
 }
 
-/// AN OPEN QUESTION AS A GENOME FILE HELD IT: the residual chain's address
-/// and its links (row, column, hue before, hue after).
-pub(crate) type OpenResidual = (Vec<u8>, Vec<(i64, i64, u8, u8)>);
+/// AN OPEN QUESTION AS A GENOME FILE HELD IT: the residual chain's address,
+/// its links (row, column, hue before, hue after), and the stratum it stands
+/// on (its chart invariant's key, the sheaf sync's coordinate).
+pub(crate) type OpenResidual = (Vec<u8>, Vec<(i64, i64, u8, u8)>, Vec<u8>);
 
 #[derive(Default, Clone)]
 pub struct Epigenome {
