@@ -19,7 +19,24 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## The voices at 18:54, 2026-10-18 — where they stand
+## Toward a solve (2026-10-19 00:25) — where it stands
+Courts a, b, c and voices 1–5 on 832f2f80 (relaunched 00:05 / 00:10). No
+solve yet: comprehension stops at "unknown" (a rule fits, a held-out pair
+fails under its siblings' rule) and "no rule" — the typed reading
+(9fd8e4be). Built this cycle: feed families carry their test inputs (the
+outputs never cross; 3f6838f9); THE AMBIENT GROUND (832f2f80) — a family that
+never shows hue 0 is drawn on the canvas of its greatest count, read as the
+void by perception, speech and the court's judging (refined from the ruled
+pure count, which read a body larger than its ground as the ground); 167
+training tasks read a canvas; tasks perceived as one body 359 → 214. Next:
+Phase A (sub-body recolour, ~71 tasks), Phase B (copy / line / fill read off
+their effect, the legacy guess-and-check C2–C4 replaced), Phase C (frame
+acts). Owed: the refinement-bid and retirement claims learn canonical chains
+as words (failing since 4d7e2a29), restated with sentence words. Courts
+after the joint restart: ticks refused while peers re-anchor keepers (b
+anchored a and c by 00:25), the court loop out of scope.
+
+## The voices at 18:54, 2026-10-18
 Voices 1–5 on 422755c2 (relaunched 18:37; courts and nseat-1..4 untouched):
 THE GROUND STATE RESONATES WITH ITS LANGUAGE (the auditor's ruling) — a field
 with no orbit in motion or ringing takes as its focus the corpus's charts its
