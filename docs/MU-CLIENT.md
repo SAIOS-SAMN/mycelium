@@ -2194,7 +2194,13 @@ owed in the order it is built.
       focus. No file order, no cursor, no "passed"; arrivals are noticed by
       the kernel (`inotify`), which wakes the resting mind. A non-cycle hue
       map has order one and seals at once, so 𝒢 focus comes from cycles and
-      the charts carry the rest. A hearing is read only
+      the charts carry the rest. THE GROUND STATE (the auditor's ruling,
+      2026-10-18, on the fleet's reading at 15:46 — restored minds, their
+      fields quiet, met none of ~900 families): a field with no orbit in
+      motion and none ringing takes as its focus the corpus's charts its
+      language speaks on (`ground_focus`, `speaks_on`); what stands there is
+      met sympathetically, its admission excites the field, and the field's
+      orbits take the focus over. A hearing is read only
       where the lexicon reaches one of its words — whole, or in part, its
       residue the question (`rung::posit`) — or the word lands on the field
       as it stands (`Field::lands`); others lapse as unread hearings do.

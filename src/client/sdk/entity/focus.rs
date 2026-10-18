@@ -24,9 +24,13 @@
 //! question held as the idea it is. Its admission moves the field: drag
 //! carries the orbits of commuting modes along, lift opens orbits on new
 //! planes, and those are the next focus. The path through the corpus is the
-//! trajectory of the mind's own orbits. A field with no orbit in motion and
-//! none ringing meets nothing; an open question is tension still, so the
-//! mind asks the court for a task, whose perception rings the field again.
+//! trajectory of the mind's own orbits.
+//!
+//! THE GROUND STATE. A field with no orbit in motion and none ringing — a
+//! mind just restored, its thoughts volatile — is at rest, not deaf: its
+//! focus is the charts its language speaks on (`ground_focus`). What stands
+//! there resonates sympathetically and is met; its admission excites the
+//! field, and the orbits it sets moving take the focus over.
 
 use crate::client::sdk::*;
 use crate::network::nerve::Keyed;
@@ -121,10 +125,15 @@ impl Entity {
         self.board.corpus.place(tagged(ITEM_QUESTION, addr), coords);
     }
 
-    /// THE FIELD'S FOCUS AS CORPUS COORDINATES (the module's rule).
+    /// THE FIELD'S FOCUS AS CORPUS COORDINATES (the module's rule); in its
+    /// ground state, the charts its language is tuned to.
     fn focus_coords(&self) -> Keyed<()> {
         let mut out: Keyed<()> = Keyed::new();
+        // No field to read: no focus at all, never the ground state.
         let Ok(orbits) = crate::transducer::mind::with_field(|f| f.orbits.focus()) else { return out };
+        if orbits.is_empty() {
+            return self.ground_focus();
+        }
         for (lane, key, lines) in orbits {
             if lane == Some(crate::transducer::rewrite::LANE_GAUGE) {
                 out.insert(tagged(COORD_GAUGE, &key), ());
@@ -134,6 +143,25 @@ impl Entity {
                 let Some(b) = self.contemplation.bubbles.get(&line) else { continue };
                 for (chart, ()) in b.cover.scoped() {
                     out.insert(tagged(COORD_CHART, &chart), ());
+                }
+            }
+        }
+        out
+    }
+
+    /// THE GROUND STATE'S FOCUS (the auditor's ruling, 2026-10-18): a field
+    /// with no orbit in motion and none ringing is not deaf — an instrument
+    /// at rest still has the spectrum its geometry tunes it to. Its focus is
+    /// the corpus's charts its language speaks on (`speaks_on`: a closed word
+    /// filed under a body there), each read by its key. What stands there is
+    /// met sympathetically; its admission excites the field, and the orbits
+    /// it sets moving are the focus from then on.
+    fn ground_focus(&self) -> Keyed<()> {
+        let mut out: Keyed<()> = Keyed::new();
+        for (coord, _) in self.board.corpus.at.scoped() {
+            if let [COORD_CHART, chart @ ..] = coord.as_slice() {
+                if self.epigenome.speaks_on(chart) {
+                    out.insert(&coord, ());
                 }
             }
         }

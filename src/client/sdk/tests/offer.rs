@@ -164,6 +164,47 @@ fn the_corpus_is_met_where_the_minds_orbits_stand() {
     let _ = std::fs::remove_dir_all(&home);
 }
 
+/// THE GROUND STATE RESONATES WITH ITS LANGUAGE (the auditor's ruling,
+/// 2026-10-18). A mind restored with a word on the swapped cells' charts and
+/// nothing else — no thought, no orbit in motion, none ringing — is at rest,
+/// not deaf: of the swap and the slide waiting in its feed, it meets the one
+/// its language speaks on, takes it in and leaves the slide undisturbed. The
+/// perception's admission excites the field: the swap's 𝒢 cycle stands in it
+/// (a cycle, so its orbit does not seal at once), and the field's orbits —
+/// not the language — are the focus from then on.
+#[test]
+fn a_mind_at_rest_meets_what_its_language_speaks_on_and_the_admission_moves_its_field() {
+    use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
+    let [(x, y)] = <[_; 1]>::try_from(two_cells_swapped(1, 2)).expect("one pair");
+    let home = feed_of("ground-state", &[("a-slide.json", two_hours_of_a_slide().to_vec()), ("b-cell.json", two_cells_swapped(1, 2))]);
+    // The word is read on a field of its own: what the restored mind holds is
+    // the word, never the field its reading moved.
+    let mut elsewhere = Entity::open("127.0.0.1:1", Kernel::named("elsewhere")).field;
+    let word = elsewhere.think(|| {
+        let mut b = budget();
+        let frames = perceive_family(&[(x.clone(), y.clone())]);
+        let f = scene_form_on(&NoCrystal, &mut b, &x, &y, &frames).expect("the pair reads");
+        crate::transducer::sentence::as_element_form(&f, [1, 0, 0, 0]).expect("a word")
+    });
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("ground"));
+    mind.open_feed(home.clone());
+    mind.epigenome.moduli_admit(&crate::transducer::element::Held::of(word));
+    let mut field = std::mem::take(&mut mind.field);
+    let (quiet, excited) = field.think(|| {
+        let quiet = mind.contemplation.is_empty() && matches!(crate::transducer::mind::with_field(|f| f.orbits.focus().is_empty()), Ok(true));
+        mind.corpus_inflow(&mut crate::physics::StrokeOutcome::default());
+        mind.settle_perception();
+        let excited = matches!(crate::transducer::mind::with_field(|f| !f.orbits.focus().is_empty()), Ok(true));
+        (quiet, excited)
+    });
+    mind.field = field;
+    assert!(quiet, "the ground state: no orbit in motion or ringing, no thought");
+    assert!(home.join("feed/.done/b-cell.json").exists(), "the family on its language's chart is met sympathetically and taken in");
+    assert!(home.join("feed/a-slide.json").exists(), "the slide, on charts its language does not speak on, stays undisturbed");
+    assert!(excited, "the admission excites the field: its orbits are the focus now");
+    let _ = std::fs::remove_dir_all(&home);
+}
+
 /// A RESIDUAL CHAIN IS AN OPEN QUESTION, NEVER A WORD (the operator,
 /// 2026-10-18). A court teaches one: it is not learned into the genome, and
 /// stands on the mind's carrier of open questions, once however often taught;
