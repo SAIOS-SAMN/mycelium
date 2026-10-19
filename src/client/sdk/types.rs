@@ -529,14 +529,6 @@ pub struct Entity {
     pub epigenome: Epigenome,
     /// Rotating cursor for the refinement probe — one genome word examined
     /// per stroke, so the compression search is metabolic, never a sweep.
-    /// WHERE THE REFINEMENT CIRCUIT STOOD, AS A COORDINATE. It was a `usize`
-    /// advanced by `% genome.len()`: modular arithmetic over a length that
-    /// changes whenever a word is admitted or retired, so the cursor
-    /// silently skipped and re-visited words as the genome moved under it.
-    /// The court's own refine cursor has been an address since 45.7; this
-    /// is the same object. `None` is a circuit that has not started (X3) and
-    /// is an absence, not an empty key.
-    pub(crate) refine_cursor: Option<Vec<u8>>,
     /// The rule the court last refused for each task, by task id — so the
     /// same rule is not sent again (`Entity::solve_task`). One per task.
     pub(crate) solve_refused: crate::network::nerve::Keyed<Vec<u8>>,

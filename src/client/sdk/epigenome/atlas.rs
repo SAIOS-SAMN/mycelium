@@ -224,25 +224,6 @@ impl Epigenome {
         self.unpivoted.len()
     }
 
-    pub(crate) fn next_word_after(&self, at: Option<&[u8]>) -> Option<Vec<u8>> {
-        let mut past = at.is_none();
-        let mut first: Option<Vec<u8>> = None;
-        for (k, _) in self.genome.scoped() {
-            if first.is_none() {
-                first = Some(k.clone());
-            }
-            if past {
-                return Some(k);
-            }
-            if at == Some(k.as_slice()) {
-                past = true;
-            }
-        }
-        // Past the last coordinate, or the cursor named a word that has
-        // since retired: the circuit closes on the first.
-        first
-    }
-
     /// RETIRE a word whose meaning the rest of the genome already carries
     /// (the accepted compression bid). Expression rides along (parallel
     /// vector); recollections citing the retired index dissolve — they were

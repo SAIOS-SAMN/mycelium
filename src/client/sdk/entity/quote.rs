@@ -1,88 +1,12 @@
 // 23.8 — THE QUOTE: what the market offers this entity, read across every
-// hypha it knows, and the refinement it bids for.
+// hypha it knows. (The refinement bid it once made over chain words is
+// gone: since MU-CLIENT §7.1's doctrine a chain is an open question and
+// never a genome word, so no genome word was left for it to examine; the
+// court consolidates its own language, `retire_redundant`.)
 
 use crate::client::sdk::*;
 
 impl Entity {
-    /// SEEK REFINEMENT — the compression probe (0x09, one word per stroke):
-    /// advance the cursor to the next genome word and ask, in the entity's
-    /// OWN language, whether the rest of the genome already speaks it
-    /// (decompose its substance with itself excluded). A derivable word is a
-    /// redundancy the vocabulary is carrying — a compression bid. The probe
-    /// is a virtual rollout (zero mutation); the hypha's deterministic
-    /// replay, not this discovery, decides retirement.
-    /// ADVANCE THE REFINEMENT CIRCUIT BY ONE COORDINATE, wrapping at the end
-    /// of the trie — the carrier's own circuit (45.7), not `% len`. A genome
-    /// of fewer than two words has no redundancy to seek.
-    fn advance_refine_cursor(&mut self) -> Option<Vec<u8>> {
-        if self.epigenome.genome_len() < 2 {
-            return None;
-        }
-        let at = self.epigenome.next_word_after(self.refine_cursor.as_deref())?;
-        self.refine_cursor = Some(at.clone());
-        Some(at)
-    }
-
-    pub(crate) fn seek_refinement(&mut self) -> Option<(crate::transducer::address::Address, Vec<dialogue::CiteWire>)> {
-        let at = self.advance_refine_cursor()?;
-        let sub = self.epigenome.word_at(&at)?.substance();
-        if sub.sub().is_empty() {
-            // A SENTENCE HAS NO CHAIN AND IS NOT THEREFORE IRREDUCIBLE.
-            // `as_element_form` writes a description and a magnitude and
-            // never a chain, so `sub()` is empty for EVERY sentence and this
-            // arm has always refused all of them: the spatial deconstruction
-            // below can only ever examine chain-carrying residual words.
-            //
-            // A word is an OPERATOR, not a tile. Two words can induce one
-            // element of `Spin(4,0)` with disjoint supports, and one word can
-            // be a change of basepoint away from another. Neither is visible
-            // to a test that asks whether links pave links. `algebraic_redundancy`
-            // asks the two algebraic questions instead — is this operator
-            // already held, and is it a section of a bundle already held —
-            // and both are decided exactly rather than searched.
-            return None;
-        }
-        // `locate` deconstructs over the WORKING atlas (U2): a cite's index
-        // runs over the genome, then the dialect, then the ideas. A
-        // refinement bid cites ruled words only (rule 11: a cite the genome
-        // does not hold is not a compression the mesh can replay), so a
-        // deconstruction that leans on a stood or held word is no bid; it
-        // was read as a genome index and voice 4 died on it (I35).
-        let mut budget = self.physics.stroke();
-        let located = self.epigenome.locate(sub.sub(), Some(&at), &mut budget);
-        let (cites, residual) = (located.cites, located.residual);
-        // RULED IS "THE GENOME HOLDS THIS ADDRESS", asked at the coordinate.
-        // It was `c.word < g.len()` — an offset compared against a length,
-        // which is true of any index into the dialect's range as soon as
-        // the genome grows past it. That is the read voice 4 died on (I35).
-        let ruled = cites.iter().all(|c| self.epigenome.word_at(c.word.as_bytes()).is_some());
-        match (cites.len(), residual.as_slice(), ruled) {
-            (1.., [], true) => {
-                let word = self.epigenome.word_at(&at)?.address();
-                let epi = &self.epigenome;
-                let wires: Option<Vec<dialogue::CiteWire>> = cites
-                    .into_iter()
-                    .map(|c| {
-                        let cited = epi.word_at(c.word.as_bytes())?;
-                        // L6: a cite IS the body it reconstructs. One whose
-                        // gauge reconstructs none is no cite, and a bid
-                        // that cannot spell one of its cites is no bid.
-                        let body =
-                            crate::transducer::sentence::cited_pattern(cited, &c.assignment)?;
-                        Some(dialogue::CiteWire {
-                            addr: cited.address(),
-                            standing: Standing::Ruled.as_u8(),
-                            transport: c.transport,
-                            body,
-                        })
-                    })
-                    .collect();
-                Some((word, wires?))
-            }
-            _ => None,
-        }
-    }
-
     /// ASK THE QUOTE (23.8): the charts this mind is thinking about, each
     /// with the standing it holds there, read on the field; routed to the
     /// hyphae that home them and asked on the carrier. One quote is in flight

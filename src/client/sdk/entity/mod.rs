@@ -21,7 +21,6 @@ pub mod perceive;
 pub mod present;
 pub mod quote;
 pub mod relax;
-pub mod rewrite;
 pub mod think;
 pub mod winding;
 pub mod transport;

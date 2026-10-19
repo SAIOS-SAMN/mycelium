@@ -51,7 +51,6 @@ impl Entity {
             seat: super::hypha::Hypha::open(Session::open(addr, kernel.clone())),
             hypha: super::hypha::Hypha::open(Session::open(addr, kernel)),
             epigenome: Epigenome::new(),
-            refine_cursor: None,
             solve_refused: crate::network::nerve::Keyed::new(),
             taught_up: crate::network::nerve::Keyed::new(),
             taught_at: crate::network::nerve::Keyed::new(),
