@@ -50,6 +50,35 @@ fn the_minds_k_counts_its_returns_and_is_not_persisted() {
     assert_eq!(booted.own_k(), 0, "and the booted mind's K is its own, from zero");
 }
 
+/// A REWRITE IS AN ACT ON THE LANGUAGE, NEVER A WORD OF IT. A syllabus page
+/// carrying a court's `Retire` back teaches the mind nothing: the genome does
+/// not take it, and its stratum is one the sheaf sync never fetches. Where a
+/// language holds one, the genome writer leaves it out by name (read on the
+/// fleet 2026-10-19: rewrites were 88% of a 48 MB genome).
+#[test]
+fn a_rewrite_taught_is_never_a_word_of_the_genome() {
+    let word = super::common::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
+    let other = super::common::two_body_sentence([&[(5, 6), (5, 6)], &[(7, 8), (7, 8)]]);
+    let payload = crate::transducer::rewrite::RewritePayload::Retire { cites: vec![other.address()], freed: word.magnitude() };
+    let rewrite = crate::transducer::rewrite::mint(crate::transducer::rewrite::RewriteKind::Retire, &[word.address()], word.address(), payload, word.magnitude())
+        .expect("the retirement mints");
+    assert!(rewrite.is_rewrite(), "a rewrite");
+    let tape = rewrite.to_bytes().expect("the record writes");
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("rewritten"));
+    let _ = mind.absorb_taught(&tape);
+    assert!(!mind.epigenome.holds(rewrite.address().as_bytes()) && mind.epigenome.genome_len() == 0, "never learned into the genome");
+    let stratum = crate::transducer::stalk::invariant_of(&rewrite).key();
+    assert!(mind.board.residual_strata.contains(stratum.as_bytes()), "its stratum is one the sheaf sync never fetches");
+    let mut epi = Epigenome::new();
+    if epi.learn(&tape, &mut super::common::budget()).is_some() && epi.holds(rewrite.address().as_bytes()) {
+        epi.admit_all_at(crate::chronometry::Stamp::new(1, [7; 32], crate::chronometry::Place::GENESIS));
+        let (frozen, refused) = epi.crystallize();
+        assert_eq!(refused.rewrite, 1, "a rewrite the language holds is left out of the genome by name");
+        let mut back = Epigenome::new();
+        assert!(back.uncrystallize(&frozen).is_some() && !back.holds(rewrite.address().as_bytes()), "and never restored as a word");
+    }
+}
+
 /// 78.49 — THE GENOME IS WHAT A COURT ADMITTED. A word a syllabus page
 /// taught with the court's stamp is crystallized at that stamp and restores
 /// at it; a word learned with no court's stamp is held in the mind and

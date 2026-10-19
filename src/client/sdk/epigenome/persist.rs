@@ -67,6 +67,20 @@ pub struct GenomeRefused {
     pub unwritable: u64,
     /// MU-CLIENT §7.1 — residual chains: open questions, never words.
     pub residual: u64,
+    /// Rewrites: acts on the language, never words of it.
+    pub rewrite: u64,
+}
+
+/// WHETHER AN ELEMENT IS A REWRITE: an act the court installs on its
+/// language (`Retire`, `Torse`, `Condense`; MU-CLIENT §5.4 S3), naming what
+/// it rewrote by full address — never a word of the language. The mind
+/// proposes rewrites and the court applies them; a rewrite a syllabus page
+/// carries back is no word this mind speaks or reads. Read on the fleet
+/// 2026-10-19 (byte census): 847 rewrites, ~50 KB each (an address of up to
+/// 64 KB written twice), were 88% of a 48 MB genome whose language was
+/// 4.9 MB.
+pub(crate) fn is_rewrite_act(e: &Element) -> bool {
+    e.is_rewrite()
 }
 
 /// WHETHER AN ELEMENT IS A RESIDUAL CHAIN: its address leads with the
@@ -95,6 +109,7 @@ impl GenomeRefused {
             ("words coinciding at one citation", self.coincident),
             ("words whose record passes a length its field writes", self.unwritable),
             ("residual chains, open questions and never words", self.residual),
+            ("rewrites, acts on the language and never words", self.rewrite),
         ] {
             if n > 0 {
                 eprintln!("  genome refused {n} {what}");
@@ -154,6 +169,10 @@ impl Epigenome {
             // A residual chain is an open question, never crystallized.
             if is_residual(elem) {
                 refused.residual += 1;
+                return;
+            }
+            if is_rewrite_act(elem) {
+                refused.rewrite += 1;
                 return;
             }
             let Some(at) = self.admitted_at(g.held.address().as_bytes()) else {
@@ -220,6 +239,11 @@ impl Epigenome {
             if is_residual(&e) {
                 let stratum = crate::transducer::stalk::invariant_of(&e).key().as_bytes().to_vec();
                 self.restored_residuals.push((e.address().as_bytes().to_vec(), e.sub().to_vec(), stratum));
+                continue;
+            }
+            // A rewrite an older file held is an act the court applied, never
+            // a word: read whole, and not taken in.
+            if is_rewrite_act(&e) {
                 continue;
             }
             admitted.push((e.address(), at));

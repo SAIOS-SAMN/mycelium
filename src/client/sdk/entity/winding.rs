@@ -95,9 +95,10 @@ pub(crate) struct Board {
     /// into thought where the focus meets it (`focus`); while any stands, the
     /// mind holds tension.
     pub(crate) open_residuals: crate::network::nerve::Keyed<Vec<(i64, i64, u8, u8)>>,
-    /// The strata residual chains stand on, by their chart invariant's key:
-    /// the sheaf sync never fetches them, the mind holding their chains as
-    /// open questions and never as words (`fetch_discordant`).
+    /// The strata residual chains and rewrites stand on, by their chart
+    /// invariant's key: the sheaf sync never fetches them, the mind holding
+    /// residual chains as open questions and rewrites as the court's acts,
+    /// never as words (`fetch_discordant`).
     pub(crate) residual_strata: crate::network::nerve::Keyed<()>,
     /// An open question waits on the reserve: the mind's strokes regenerate
     /// it, so the mind does not block meanwhile.

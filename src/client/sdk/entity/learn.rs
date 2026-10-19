@@ -512,6 +512,13 @@ impl Entity {
                 self.board.residual_strata.insert(crate::transducer::stalk::invariant_of(&e).key().as_bytes(), ());
                 continue;
             }
+            // A REWRITE IS AN ACT ON THE LANGUAGE, NEVER A WORD OF IT: the
+            // court applied it; the mind does not learn it, and its stratum
+            // is one the sheaf sync never fetches.
+            if crate::client::sdk::epigenome::is_rewrite_act(&e) {
+                self.board.residual_strata.insert(crate::transducer::stalk::invariant_of(&e).key().as_bytes(), ());
+                continue;
+            }
             // A WORD THE GENOME HOLDS AT ITS ADDRESS IS ALREADY LEARNED (law
             // 6: the address is the word's content). Served again — a court
             // that restarted serves its syllabus from the start — it brings
