@@ -19,7 +19,19 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## Toward a solve (2026-10-19 00:25) — where it stands
+## Relaunched after the power loss (2026-10-19 14:36) — where it stands
+The host lost power; up at 14:29. Every court home passed `--check`
+(ledgers restore, keepers resume above h 1 500 218 / 1 499 703 / 1 500 246).
+Courts a, b, c bound 14:36:20; voices 1–5 and netstratum's council seats
+n1–n4 (transient `mycelium-nseat-1..4`, re-created with their seat lists)
+up 14:36:33, all on aa37c802 — which carries, deployed by this relaunch:
+78.167 Phase A (recolours read per body and per monochrome part,
+`Act::Parts`), read-off composite selection (`Pred::And`), and the client's
+dead chain refinement/retirement removed. netstratum given the go for its
+conductor on its live code (ef0152e); it asks before re-founding on 3165b59.
+Next: Phase B (copy / line / fill read off their effect).
+
+## Toward a solve (2026-10-19 00:25)
 Courts a, b, c and voices 1–5 on 832f2f80 (relaunched 00:05 / 00:10). No
 solve yet: comprehension stops at "unknown" (a rule fits, a held-out pair
 fails under its siblings' rule) and "no rule" — the typed reading
