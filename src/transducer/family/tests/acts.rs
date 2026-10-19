@@ -120,6 +120,23 @@ fn a_family_recolouring_bodies_by_where_they_stand_is_known() {
     );
 }
 
+/// SELECTION READ OFF THE TARGETS: the cells of hue 5 that touch a 2 are
+/// recoloured 1 — a 5 touching nothing, and a 3 touching a 2, kept. Every
+/// body is one cell, one chart, so no vertex's gauge can say it; and no one
+/// coordinate of the list does (hue 5 holds a 5 that stays; touching a 2
+/// holds the 3). The meet of what the targets share — hue 5, touches a 2 —
+/// does, read off them.
+#[test]
+fn a_family_selecting_by_two_coordinates_at_once_is_known() {
+    knows(
+        &[
+            (&["50000", "02003", "00020", "50000"], &["10000", "02003", "00020", "50000"]),
+            (&["30000", "02000", "00500", "00020", "50000"], &["30000", "02000", "00100", "00020", "50000"]),
+        ],
+        (&["02000", "50005", "00000"], &["02000", "10005", "00000"]),
+    );
+}
+
 /// 78.167 Phase A — A BODY RECOLOURED IN PART: one body of hues 1 and 5,
 /// its least monochrome part recoloured 3 while a part of the same hue in
 /// the same body is kept. Read on the scene's parts — each kept or

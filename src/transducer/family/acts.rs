@@ -115,7 +115,7 @@ fn insert_sorted<T: Ord>(v: &mut Vec<T>, x: T) {
 }
 
 /// THE FIXED LIST OF PREDICATES the family's bodies carry: every body, each
-/// hue and its complement and its contact, each chart, the extremum of each
+/// hue and its complement, its contact and its absence, each chart, the extremum of each
 /// coordinate in each order (ties held), and each exact count of the
 /// coordinates a body reads off its own cells.
 fn predicates(pairs: &[Pair<'_>]) -> Vec<Pred> {
@@ -153,6 +153,7 @@ fn predicates(pairs: &[Pair<'_>]) -> Vec<Pred> {
     out.extend(charts.into_iter().map(Pred::Chart));
     out.extend(hues.iter().map(|&h| Pred::Not(Box::new(Pred::Hue(h)))));
     out.extend(hues.iter().map(|&h| Pred::Touches(Box::new(Pred::Hue(h)))));
+    out.extend(hues.iter().map(|&h| Pred::Not(Box::new(Pred::Touches(Box::new(Pred::Hue(h)))))));
     for coord in RANKED {
         for order in [Order::Greatest, Order::Least] {
             out.push(Pred::extremum(coord, order, Tie::Hold));
@@ -166,24 +167,77 @@ fn predicates(pairs: &[Pair<'_>]) -> Vec<Pred> {
     out
 }
 
-/// THE PREDICATE ON WHICH THE TARGETS SEPARATE: the first of the list that,
-/// on every pair, selects within `scope` exactly that pair's targets
-/// (sorted) — `sels[pair][pred]` what each predicate selects there. `None`
-/// where no coordinate of the list separates. Bodies or parts alike: the
-/// list and its selections are the domain's own.
-fn separate_on(preds: &[Pred], sels: &[Vec<Option<Vec<usize>>>], targets: &[Vec<usize>], scope: &[Vec<usize>]) -> Option<Pred> {
-    (0..preds.len())
-        .find(|&i| {
-            sels.iter().zip(targets.iter().zip(scope)).all(|(sels, (t, s))| match &sels[i] {
-                Some(sel) => {
-                    let mut within: Vec<usize> = sel.iter().copied().filter(|b| s.contains(b)).collect();
-                    within.sort_unstable();
-                    within == *t
-                }
-                None => false,
-            })
+/// What `sel` selects within `scope`, sorted.
+fn within(sel: &[usize], scope: &[usize]) -> Vec<usize> {
+    let mut w: Vec<usize> = sel.iter().copied().filter(|b| scope.contains(b)).collect();
+    w.sort_unstable();
+    w
+}
+
+/// THE PREDICATE ON WHICH THE TARGETS SEPARATE — `sels[pair][pred]` what
+/// each predicate of the list selects there, `None` where it is unstated:
+/// - the first of the list that, on every pair, selects within `scope`
+///   exactly that pair's targets;
+/// - else THE TARGETS' OWN DESCRIPTION, read off them (the auditor's
+///   ruling, 2026-10-19: a composite derived from the difference between
+///   targets and the rest, never iterated): of the predicates holding of
+///   every target on every pair, each one, in the list's order, that
+///   excludes something the ones before it kept — the meet of what the
+///   targets share, every conjunct earning its place. It stands where it is
+///   exactly the targets, read by speaking it on each pair (`select_each`:
+///   a conjunction narrows in order, so a rank in it ranks the survivors).
+///
+/// `None` where neither separates. Bodies or parts alike: the list, its
+/// selections and the pairs are the domain's own.
+fn separate_on(
+    preds: &[Pred],
+    sels: &[Vec<Option<Vec<usize>>>],
+    pairs: &[Pair<'_>],
+    targets: &[Vec<usize>],
+    scope: &[Vec<usize>],
+) -> Option<Pred> {
+    let exact = |i: usize| {
+        sels.iter().zip(targets.iter().zip(scope)).all(|(sels, (t, s))| match &sels[i] {
+            Some(sel) => within(sel, s) == *t,
+            None => false,
         })
-        .map(|i| preds[i].clone())
+    };
+    if let Some(i) = (0..preds.len()).find(|&i| exact(i)) {
+        return Some(preds[i].clone());
+    }
+    // THE MEET OF WHAT THE TARGETS SHARE.
+    let covers = |i: usize| {
+        sels.iter().zip(targets).all(|(sels, t)| match &sels[i] {
+            Some(sel) => t.iter().all(|b| sel.contains(b)),
+            None => false,
+        })
+    };
+    let mut kept: Vec<Vec<usize>> = scope.to_vec();
+    let mut meet: Vec<Pred> = Vec::new();
+    for i in (0..preds.len()).filter(|&i| covers(i)) {
+        // A predicate covering the targets is stated on every pair.
+        let narrowed: Vec<Vec<usize>> = sels
+            .iter()
+            .zip(&kept)
+            .map(|(sels, k)| match &sels[i] {
+                Some(sel) => within(sel, k),
+                None => Vec::new(),
+            })
+            .collect();
+        if narrowed != kept {
+            kept = narrowed;
+            meet.push(preds[i].clone());
+        }
+    }
+    if kept.as_slice() != targets || meet.len() < 2 {
+        return None;
+    }
+    let and = Pred::And(meet);
+    let spoken = pairs.iter().zip(targets.iter().zip(scope)).all(|(p, (t, s))| match statement::select_each(std::slice::from_ref(&and), p.x, &p.bodies).as_slice() {
+        [Some(sel)] => within(sel, s) == *t,
+        _ => false,
+    });
+    spoken.then_some(and)
 }
 
 /// THE RECOLOUR CLASSES, keyed by the exact map an effect showed (its pairs'
@@ -251,7 +305,7 @@ fn part_clauses(pairs: &[Pair<'_>], moved_charts: &[&crate::transducer::stalk::I
     classes
         .scoped()
         .map(|(key, at)| {
-            separate_on(&preds, &sels, at, &scope).map(|select| Clause { select, act: Act::Parts(Box::new(Act::Recolour(map_of_class(&key)))) })
+            separate_on(&preds, &sels, &parted, at, &scope).map(|select| Clause { select, act: Act::Parts(Box::new(Act::Recolour(map_of_class(&key)))) })
         })
         .collect()
 }
@@ -293,7 +347,7 @@ impl Reading<'_, '_> {
     /// THE PREDICATE ON WHICH THE TARGETS SEPARATE among the scene's bodies
     /// (`separate_on`).
     fn separate(&self, targets: &[Vec<usize>], scope: &[Vec<usize>]) -> Option<Pred> {
-        separate_on(&self.preds, &self.sels, targets, scope)
+        separate_on(&self.preds, &self.sels, &self.pairs, targets, scope)
     }
 
     fn every(&self) -> Vec<Vec<usize>> {
