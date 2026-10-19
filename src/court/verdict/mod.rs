@@ -153,6 +153,7 @@ pub const REFUSE_RULE_INEXACT: &str = "a predicate reads a coordinate that is no
 pub const REFUSE_RULE_NOT_ONE: &str = "a crop or a copy's template selects no single body";
 pub const REFUSE_RULE_OFF_LATTICE: &str = "a carried or copied cell lands off the lattice";
 pub const REFUSE_RULE_STILL: &str = "a created line names no ray";
+pub const REFUSE_RULE_NESTED: &str = "an act on parts names another act on parts";
 /// 78.153, defect 4 of the lock audit — A CYCLE OF CITATIONS: a cited form
 /// reached again while it is still being spoken. The nerve admits mutual
 /// citation (a posetal height forbade every 2-simplex), and no speech of a
@@ -196,7 +197,7 @@ pub fn ruled_obstruction(reason: &'static str) -> sentence::ClosureObstruction {
         REFUSE_DERIVATION | REFUSE_FACE | REFUSE_RANK_LOST | REFUSE_PIVOT_INEXACT | REFUSE_INFLATED_YIELD
         | REFUSE_LETTER_WITNESS | REFUSE_NOT_CONTRACTION | REFUSE_PERIOD_UNDERIVED => O::Integrity,
         REFUSE_REBASE_TRIVIAL | REFUSE_UNFOLD_STILL | REFUSE_ORBIT_STILL => O::Integrity,
-        REFUSE_RULE_TIE | REFUSE_RULE_INEXACT | REFUSE_RULE_NOT_ONE | REFUSE_RULE_OFF_LATTICE | REFUSE_RULE_STILL => {
+        REFUSE_RULE_TIE | REFUSE_RULE_INEXACT | REFUSE_RULE_NOT_ONE | REFUSE_RULE_OFF_LATTICE | REFUSE_RULE_STILL | REFUSE_RULE_NESTED => {
             O::Integrity
         }
         REFUSE_CITATION_CYCLE => O::Integrity,

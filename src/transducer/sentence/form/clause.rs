@@ -201,6 +201,12 @@ pub enum Act {
     /// `up × up` block, or each uniform `down × down` block one cell (a
     /// block that is not uniform is no cell, refused by name).
     Scale { up: u8, down: u8 },
+    /// ON THE SCENE'S PARTS: the clause's selection read among the scene's
+    /// monochrome parts — each hue's 4-connected run within a body — and the
+    /// act done to the parts it selects (78.167 Phase A: a body recoloured
+    /// in part is parts recoloured whole). One level: an act on parts is not
+    /// itself on parts.
+    Parts(Box<Act>),
 }
 
 /// ONE STATEMENT: a selection and what is done to it.
@@ -492,6 +498,10 @@ fn put_act(buf: &mut Vec<u8>, act: &Act) {
             buf.push(*up);
             buf.push(*down);
         }
+        Act::Parts(inner) => {
+            buf.push(7);
+            put_act(buf, inner);
+        }
     }
 }
 
@@ -538,6 +548,11 @@ fn take_act(k: &[u8], p: &mut usize) -> Option<Act> {
             _ => return None,
         }),
         6 => Act::Scale { up: take_byte(k, p)?, down: take_byte(k, p)? },
+        // One level: a tape nesting parts in parts is no act.
+        7 => match take_act(k, p)? {
+            Act::Parts(_) => return None,
+            inner => Act::Parts(Box::new(inner)),
+        },
         _ => return None,
     })
 }

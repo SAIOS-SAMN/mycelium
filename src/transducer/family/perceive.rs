@@ -179,6 +179,31 @@ pub fn perceive_at(grid: &Grid, k: i64) -> Vec<Body> {
     bodies_of(&compartments)
 }
 
+/// 78.167 Phase A — THE SCENE'S MONOCHROME PARTS: each hue's 4-connected
+/// runs of painted cells, every one a body of its own (a hue-blind body of
+/// several hues is several parts; a body of one hue is one part). What a
+/// clause on parts selects among (`Act::Parts`): a body recoloured in part is
+/// parts recoloured whole. Read in the lattice's order, hue by hue.
+pub fn perceive_parts(grid: &Grid) -> Vec<Body> {
+    let void = crate::arc::ground();
+    let mut by_hue: crate::network::nerve::Keyed<Vec<Compartment>> = crate::network::nerve::Keyed::new();
+    for (r, row) in grid.iter().enumerate() {
+        for (c, &h) in row.iter().enumerate() {
+            if h == void {
+                continue;
+            }
+            let l = Compartment::from((r as i64, c as i64, 0, h));
+            match by_hue.get_mut(&[h]) {
+                Some(ls) => ls.push(l),
+                None => {
+                    by_hue.insert([h], vec![l]);
+                }
+            }
+        }
+    }
+    by_hue.scoped().flat_map(|(_, ls)| bodies_of(ls)).collect()
+}
+
 /// A FAMILY'S FRAMES, PERCEIVED: each pair's input bodies and output bodies,
 /// frame `k` at `k`.
 pub type Frames = Vec<(Vec<Body>, Vec<Body>)>;

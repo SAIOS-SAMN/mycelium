@@ -166,6 +166,96 @@ fn predicates(pairs: &[Pair<'_>]) -> Vec<Pred> {
     out
 }
 
+/// THE PREDICATE ON WHICH THE TARGETS SEPARATE: the first of the list that,
+/// on every pair, selects within `scope` exactly that pair's targets
+/// (sorted) — `sels[pair][pred]` what each predicate selects there. `None`
+/// where no coordinate of the list separates. Bodies or parts alike: the
+/// list and its selections are the domain's own.
+fn separate_on(preds: &[Pred], sels: &[Vec<Option<Vec<usize>>>], targets: &[Vec<usize>], scope: &[Vec<usize>]) -> Option<Pred> {
+    (0..preds.len())
+        .find(|&i| {
+            sels.iter().zip(targets.iter().zip(scope)).all(|(sels, (t, s))| match &sels[i] {
+                Some(sel) => {
+                    let mut within: Vec<usize> = sel.iter().copied().filter(|b| s.contains(b)).collect();
+                    within.sort_unstable();
+                    within == *t
+                }
+                None => false,
+            })
+        })
+        .map(|i| preds[i].clone())
+}
+
+/// THE RECOLOUR CLASSES, keyed by the exact map an effect showed (its pairs'
+/// bytes, so the classes are read in the map's own order): on each pair the
+/// bodies (or parts) that showed it, sorted.
+type Classes = crate::network::nerve::Keyed<Vec<Vec<usize>>>;
+
+/// The bodies (or parts) `i` of pair `k` showing `map`, filed in its class.
+fn file_class(classes: &mut Classes, map: &[(u8, u8)], k: usize, i: usize, pairs: usize) {
+    let key: Vec<u8> = map.iter().flat_map(|&(a, b)| [a, b]).collect();
+    match classes.get_mut(&key) {
+        Some(at) => insert_sorted(&mut at[k], i),
+        None => {
+            let mut at = vec![Vec::new(); pairs];
+            at[k].push(i);
+            classes.insert(&key, at);
+        }
+    }
+}
+
+/// The map a class is keyed by.
+fn map_of_class(key: &[u8]) -> Vec<(u8, u8)> {
+    key.chunks_exact(2).map(|p| (p[0], p[1])).collect()
+}
+
+/// 78.167 Phase A — THE RECOLOURS READ ON THE SCENE'S PARTS, where a body
+/// changed in part: each monochrome part (`perceive_parts`) of the bodies no
+/// carriage moves is kept, sent to the ground, or recoloured by one map —
+/// read off the pair — and the parts that showed one map are one clause on
+/// parts, selected by the coordinate that separates them from the rest.
+/// `None` where a part is itself changed in part (no part reading says it),
+/// or a class separates on no coordinate.
+fn part_clauses(pairs: &[Pair<'_>], moved_charts: &[&crate::transducer::stalk::Invariant]) -> Option<Vec<Clause>> {
+    let void = crate::arc::ground();
+    let parted: Vec<Pair<'_>> = pairs.iter().map(|p| Pair { x: p.x, y: p.y, bodies: perceive_parts(p.x) }).collect();
+    let preds = predicates(&parted);
+    let sels: Vec<Vec<Option<Vec<usize>>>> = parted.iter().map(|p| statement::select_each(&preds, p.x, &p.bodies)).collect();
+    let mut scope: Vec<Vec<usize>> = Vec::new();
+    let mut classes: Classes = crate::network::nerve::Keyed::new();
+    for (k, (p, whole)) in parted.iter().zip(pairs).enumerate() {
+        // A part of a body a carriage moves is the carriage's.
+        let moved: Vec<(usize, usize)> = whole
+            .bodies
+            .iter()
+            .filter(|b| moved_charts.contains(&&b.moduli))
+            .flat_map(|b| cells_of(b).into_iter().map(|(r, c, _)| (r, c)))
+            .collect();
+        let mut s = Vec::new();
+        for (i, part) in p.bodies.iter().enumerate() {
+            let cells = cells_of(part);
+            if cells.iter().any(|&(r, c, _)| moved.contains(&(r, c))) {
+                continue;
+            }
+            s.push(i);
+            let map = match fate(part, p.y) {
+                Fate::Kept => continue,
+                Fate::Erased => cells.iter().map(|&(_, _, h)| h).filter(|&h| h != void).map(|h| (h, void)).take(1).collect(),
+                Fate::Recoloured(map) => map,
+                Fate::Changed => return None,
+            };
+            file_class(&mut classes, &map, k, i, parted.len());
+        }
+        scope.push(s);
+    }
+    classes
+        .scoped()
+        .map(|(key, at)| {
+            separate_on(&preds, &sels, at, &scope).map(|select| Clause { select, act: Act::Parts(Box::new(Act::Recolour(map_of_class(&key)))) })
+        })
+        .collect()
+}
+
 /// The spoken clauses laid on their frame.
 fn grid_of(s: &statement::Spoken) -> Option<Grid> {
     let mut g: Grid = vec![vec![crate::arc::ground(); s.frame.1]; s.frame.0];
@@ -200,22 +290,10 @@ impl Reading<'_, '_> {
         })
     }
 
-    /// THE PREDICATE ON WHICH THE TARGETS SEPARATE: the first of the list
-    /// that, on every pair, selects within `scope` exactly that pair's
-    /// targets (sorted). `None` where no coordinate of the list separates.
+    /// THE PREDICATE ON WHICH THE TARGETS SEPARATE among the scene's bodies
+    /// (`separate_on`).
     fn separate(&self, targets: &[Vec<usize>], scope: &[Vec<usize>]) -> Option<Pred> {
-        (0..self.preds.len())
-            .find(|&i| {
-                self.sels.iter().zip(targets.iter().zip(scope)).all(|(sels, (t, s))| match &sels[i] {
-                    Some(sel) => {
-                        let mut within: Vec<usize> = sel.iter().copied().filter(|b| s.contains(b)).collect();
-                        within.sort_unstable();
-                        within == *t
-                    }
-                    None => false,
-                })
-            })
-            .map(|i| self.preds[i].clone())
+        separate_on(&self.preds, &self.sels, targets, scope)
     }
 
     fn every(&self) -> Vec<Vec<usize>> {
@@ -225,14 +303,17 @@ impl Reading<'_, '_> {
 
 /// THE FORM'S MOTIONS AS CARRIAGES: each word member's versor (its rotor
 /// composed with its carriage, as the vertex speaks it) on the bodies of its
-/// chart, with its hue map. A member that moves nothing and maps no hue is
-/// no act, and leaves its bodies where the canvas holds them.
+/// chart, with its hue map. A member that moves nothing is no motion: it
+/// leaves its bodies where the canvas holds them, and what became of their
+/// hues is read off the effect body by body (78.167 Phase A) — one member's
+/// one map over a chart whose bodies were recoloured two ways was an
+/// over-claim the effect refutes.
 fn carriages(form: &Form) -> Result<Vec<Clause>, Unread> {
     let one = crate::transducer::cga::Mv::scalar(crate::core::Q::from_integer(1.into()));
     let mut out = Vec::new();
     let mut carry = |chart: &crate::transducer::stalk::Invariant, v: Option<Versor>, gauge: &[(u8, u8)]| {
         let Some(v) = v else { return };
-        if v.projective_eq(&one) && gauge.iter().all(|(a, b)| a == b) {
+        if v.projective_eq(&one) {
             return;
         }
         out.push(Clause { select: Pred::Chart(chart.clone()), act: Act::Carry { motion: v, about: About::Grid, gauge: gauge.to_vec() } });
@@ -316,12 +397,15 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
             _ => None,
         })
         .collect();
+    let n = r.pairs.len();
     let mut still: Vec<Vec<usize>> = Vec::new();
     let mut erased: Vec<Vec<usize>> = Vec::new();
     let mut recoloured: Vec<Vec<usize>> = Vec::new();
     let mut changed: Vec<Vec<usize>> = Vec::new();
-    let mut map: Vec<(u8, u8)> = Vec::new();
-    for p in &r.pairs {
+    // 78.167 Phase A — each body's map read off the pair, the bodies that
+    // showed one map one class (never one map forced over all of them).
+    let mut classes: Classes = crate::network::nerve::Keyed::new();
+    for (k, p) in r.pairs.iter().enumerate() {
         let (mut s, mut e, mut rc, mut ch) = (Vec::new(), Vec::new(), Vec::new(), Vec::new());
         for (i, b) in p.bodies.iter().enumerate() {
             if moved_charts.contains(&&b.moduli) {
@@ -332,13 +416,7 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
                 Fate::Kept => {}
                 Fate::Erased => e.push(i),
                 Fate::Recoloured(m) => {
-                    for (h, t) in m {
-                        match map.iter().find(|(f, _)| *f == h) {
-                            Some(&(_, old)) if old != t => return Err(Unread::Inseparable),
-                            Some(_) => {}
-                            None => map.push((h, t)),
-                        }
-                    }
+                    file_class(&mut classes, &m, k, i, n);
                     rc.push(i);
                 }
                 Fate::Changed => ch.push(i),
@@ -349,18 +427,30 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
         recoloured.push(rc);
         changed.push(ch);
     }
+    // A BODY CHANGED IN PART is read on its parts: where every part of the
+    // still bodies is kept, erased or recoloured whole, the recolours (and
+    // erasures) are the parts' own clauses.
+    let on_parts = match changed.iter().any(|c| !c.is_empty()) {
+        true => part_clauses(&r.pairs, &moved_charts),
+        false => None,
+    };
     let mut base: Vec<Clause> = Vec::new();
-    // C1 — A VANISHED BODY: every hue of the palette sent to the ground, on
-    // the bodies the separating coordinate selects.
-    if erased.iter().any(|e| !e.is_empty()) {
-        let select = r.separate(&erased, &still).ok_or(Unread::Inseparable)?;
-        let void = crate::arc::ground();
-        let ground = (0..crate::transducer::element::PALETTE).filter_map(|h| u8::try_from(h).ok()).filter(|&h| h != void).map(|h| (h, void)).collect();
-        base.push(Clause { select, act: Act::Recolour(ground) });
-    }
-    if recoloured.iter().any(|e| !e.is_empty()) {
-        let select = r.separate(&recoloured, &still).ok_or(Unread::Inseparable)?;
-        base.push(Clause { select, act: Act::Recolour(map) });
+    match on_parts {
+        Some(clauses) => base.extend(clauses),
+        None => {
+            // C1 — A VANISHED BODY: every hue of the palette sent to the
+            // ground, on the bodies the separating coordinate selects.
+            if erased.iter().any(|e| !e.is_empty()) {
+                let select = r.separate(&erased, &still).ok_or(Unread::Inseparable)?;
+                let void = crate::arc::ground();
+                let ground = (0..crate::transducer::element::PALETTE).filter_map(|h| u8::try_from(h).ok()).filter(|&h| h != void).map(|h| (h, void)).collect();
+                base.push(Clause { select, act: Act::Recolour(ground) });
+            }
+            for (key, at) in classes.scoped() {
+                let select = r.separate(at, &still).ok_or(Unread::Inseparable)?;
+                base.push(Clause { select, act: Act::Recolour(map_of_class(&key)) });
+            }
+        }
     }
     base.extend(carried);
     if r.rederives(&base)? {

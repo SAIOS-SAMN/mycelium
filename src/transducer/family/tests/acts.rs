@@ -102,3 +102,32 @@ fn a_family_cropping_to_a_body_is_known() {
         (&["00030", "22200", "00000", "00000", "00000"], &["222"]),
     );
 }
+
+/// 78.167 Phase A — MAPS THAT DIFFER ACROSS BODIES: one hue, one shape, and
+/// the topmost bodies recoloured 1 while the bottommost are recoloured 2.
+/// Each map is read off the bodies that showed it, and each class is
+/// selected by the coordinate that separates it — never one map forced over
+/// all of them (refused as inseparable before).
+#[test]
+fn a_family_recolouring_bodies_by_where_they_stand_is_known() {
+    knows(
+        &[
+            (&["5050", "0000", "0500"], &["1010", "0000", "0200"]),
+            (&["0005", "0500", "0000"], &["0001", "0200", "0000"]),
+            (&["0000", "5000", "0050"], &["0000", "1000", "0020"]),
+        ],
+        (&["0500", "0005"], &["0100", "0002"]),
+    );
+}
+
+/// 78.167 Phase A — A BODY RECOLOURED IN PART: one body of hues 1 and 5,
+/// its least monochrome part recoloured 3 while a part of the same hue in
+/// the same body is kept. Read on the scene's parts — each kept or
+/// recoloured whole — the recolour is one clause on parts.
+#[test]
+fn a_family_recolouring_part_of_a_body_is_known() {
+    knows(
+        &[(&["15511", "00000"], &["35511", "00000"]), (&["11551", "00000"], &["11553", "00000"])],
+        (&["155111", "000000"], &["355111", "000000"]),
+    );
+}

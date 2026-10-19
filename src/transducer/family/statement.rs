@@ -33,6 +33,8 @@ pub enum Unstated {
     OffLattice,
     /// A created line names no ray.
     Still,
+    /// An act on parts names another act on parts: parts are read one level.
+    Nested,
 }
 
 /// WHAT THE CLAUSES SPOKE: the output frame and its painted cells.
@@ -368,14 +370,24 @@ fn mapped(map: &[(u8, u8)], h: u8) -> u8 {
 /// SPEAK THE CLAUSES on `x`, whose bodies `bodies` are (the scene the form
 /// is spoken onto, perceived once). The canvas opens as the input; each
 /// clause selects on the input and paints the canvas; a crop sets the
-/// output's extent.
+/// output's extent. A clause on parts (`Act::Parts`) selects among the
+/// scene's monochrome parts (`perceive_parts`), read once where one asks.
 pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Spoken, Unstated> {
-    let seen = Seen::of(x, bodies);
+    let whole = Seen::of(x, bodies);
+    let parts: Vec<Body> = match clauses.iter().any(|c| matches!(c.act, Act::Parts(_))) {
+        true => perceive_parts(x),
+        false => Vec::new(),
+    };
+    let on_parts = Seen::of(x, &parts);
     let mut canvas: Vec<Vec<u8>> = x.clone();
     let mut window: Option<(usize, usize, usize, usize)> = None;
     let mut scale: Option<(u8, u8)> = None;
-    let all = seen.all();
     for clause in clauses {
+        let (seen, act) = match &clause.act {
+            Act::Parts(inner) => (&on_parts, inner.as_ref()),
+            act => (&whole, act),
+        };
+        let all = seen.all();
         let sel = seen.select(&clause.select, &all)?;
         // A landed cell past the frame is no cell of this grid and is not
         // spoken on it, as a carried compartment past the frame is not.
@@ -386,7 +398,7 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                 }
             }
         };
-        match &clause.act {
+        match act {
             Act::Recolour(map) => {
                 for &b in &sel {
                     for &(r, c, h) in &seen.cells[b] {
@@ -484,11 +496,12 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                 window = Some(extent_of(&cells).ok_or(Unstated::NotOne)?);
             }
             Act::Scale { up, down } => scale = Some((*up, *down)),
+            Act::Parts(_) => return Err(Unstated::Nested),
         }
     }
     let (t, l, b, r) = match window {
         Some(w) => w,
-        None => (0, 0, seen.rows.checked_sub(1).ok_or(Unstated::NotOne)?, seen.cols.checked_sub(1).ok_or(Unstated::NotOne)?),
+        None => (0, 0, whole.rows.checked_sub(1).ok_or(Unstated::NotOne)?, whole.cols.checked_sub(1).ok_or(Unstated::NotOne)?),
     };
     let out: Vec<Vec<u8>> = canvas
         .iter()
