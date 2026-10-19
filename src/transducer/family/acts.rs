@@ -525,11 +525,25 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
     created(&mut r, base, &touched, &every)
 }
 
-/// C2–C4 — CELLS CREATED: the cells the clauses so far leave unlike the
-/// output, read as a copy onto the changed bodies, a fill of a region, or a
-/// line along a ray.
+/// 78.167 Phase B — CELLS CREATED: the cells the clauses so far leave unlike
+/// the output (the residue), and the ONE act their geometry is, read off it
+/// — never a candidate tried and re-derived (the auditor's ruling,
+/// 2026-10-19):
+/// - where the bodies an act touched are its seeds, a COPY — its template the
+///   input body whose own pattern is what the output stamped on each seed
+///   (`read_copy`);
+/// - else a FILL, one hue created in the region the residue is
+///   (`read_fill`);
+/// - else a LINE where every residue cell lies on runs the effect drew from
+///   bodies, each run's ray the displacement measured from the body cell it
+///   leaves (`read_lines`).
+///
+/// The reading stands where its clauses re-derive every pair — one proof,
+/// never a filter. A residue that clears a cell is no creation (OVERWRITTEN);
+/// one no reading says is UNCREATED.
 fn created(r: &mut Reading<'_, '_>, base: Vec<Clause>, touched: &[Vec<usize>], every: &[Vec<usize>]) -> Result<Vec<Clause>, Unread> {
     let Some(canvas) = r.speak(&base)? else { return Err(Unread::Overwritten) };
+    let void = crate::arc::ground();
     let residue: Vec<Vec<(usize, usize, u8)>> = canvas
         .iter()
         .zip(&r.pairs)
@@ -545,100 +559,247 @@ fn created(r: &mut Reading<'_, '_>, base: Vec<Clause>, touched: &[Vec<usize>], e
             out
         })
         .collect();
-    let mut created_hues: Vec<u8> = Vec::new();
-    for &(_, _, h) in residue.iter().flatten() {
-        insert_sorted(&mut created_hues, h);
+    if residue.iter().flatten().any(|&(_, _, h)| h == void) {
+        return Err(Unread::Overwritten);
     }
-    let cleared = created_hues.contains(&crate::arc::ground());
-    let attempt = |r: &mut Reading<'_, '_>, clause: Clause| -> Result<Option<Vec<Clause>>, Unread> {
-        let mut all = base.clone();
-        all.push(clause);
-        Ok(r.rederives(&all)?.then_some(all))
+    // A fill is the stricter reading — the residue IS a region, cell for
+    // cell — so it is read before a line, which a region's cells, each
+    // beside its boundary and stopped at the far side, would also read as.
+    let read = match touched.iter().any(|c| !c.is_empty()) {
+        true => read_copy(r, touched, every),
+        false => match read_fill(r, &residue, every) {
+            Some(clauses) => Some(clauses),
+            None => read_lines(r, &canvas, &residue, every),
+        },
     };
-    // C2 — COPY: the bodies an act touched are seeds, and the one template
-    // a coordinate of the list names is stamped onto each.
-    if touched.iter().any(|c| !c.is_empty()) {
-        if let Some(seeds) = r.separate(touched, every) {
-            let templates: Vec<Pred> = (0..r.preds.len())
-                .filter(|&i| r.sels.iter().all(|s| s[i].as_ref().is_some_and(|sel| sel.len() == 1)))
-                .map(|i| r.preds[i].clone())
-                .collect();
-            for template in templates {
-                if let Some(c) = attempt(r, Clause { select: seeds.clone(), act: Act::Copy { template } })? {
-                    return Ok(c);
-                }
+    let Some(clauses) = read else { return Err(Unread::Uncreated) };
+    let mut all = base;
+    all.extend(clauses);
+    match r.rederives(&all)? {
+        true => Ok(all),
+        false => Err(Unread::Uncreated),
+    }
+}
+
+/// Each body's cell owner on a pair's input grid.
+fn owners(p: &Pair<'_>) -> Vec<Vec<Option<usize>>> {
+    let cols = match p.x.as_slice() {
+        [row, ..] => row.len(),
+        [] => 0,
+    };
+    let mut owner = vec![vec![None; cols]; p.x.len()];
+    for (b, body) in p.bodies.iter().enumerate() {
+        for (i, j, _) in cells_of(body) {
+            if let Some(o) = owner.get_mut(i).and_then(|row| row.get_mut(j)) {
+                *o = Some(b);
             }
         }
     }
-    // C4 — FILL: one hue created, in the region of the bodies whose own
-    // region holds created cells.
-    if let [hue] = created_hues.as_slice() {
-        for region in [Region::Interior, Region::Halo, Region::Extent] {
-            let holders: Vec<Vec<usize>> = r
-                .pairs
-                .iter()
-                .zip(&residue)
-                .map(|(p, res)| {
-                    statement::regions_each(region, p.x, &p.bodies)
-                        .iter()
-                        .enumerate()
-                        .filter(|(_, cells)| cells.iter().any(|&(a, b)| res.iter().any(|&(i, j, _)| (i, j) == (a, b))))
-                        .map(|(b, _)| b)
-                        .collect()
-                })
-                .collect();
-            if holders.iter().all(Vec::is_empty) {
+    owner
+}
+
+/// One cell `(i, j)` stepped by `(dr, dc)`, inside a grid of `rows × cols`.
+fn step(i: usize, j: usize, (dr, dc): (i64, i64), rows: usize, cols: usize) -> Option<(usize, usize)> {
+    let ni = usize::try_from(i64::try_from(i).ok()?.checked_add(dr)?).ok()?;
+    let nj = usize::try_from(i64::try_from(j).ok()?.checked_add(dc)?).ok()?;
+    (ni < rows && nj < cols).then_some((ni, nj))
+}
+
+/// WHAT THE RUNS ALONG ONE RAY SHOWED: on each pair the bodies they leave;
+/// whether every run carried its body's own hue; the one hue every run
+/// carried, where they all carried one; whether a run stopped at a painted
+/// cell.
+struct Rays {
+    starts: Vec<Vec<usize>>,
+    own: bool,
+    hue: Option<Option<u8>>,
+    contact: bool,
+}
+
+/// C3 — LINES READ OFF THEIR EFFECT. Every residue cell beside a body cell
+/// measures a ray — its displacement from that cell — and the walk from the
+/// body cell along it must run through residue cells to a stop: the grid's
+/// border, or a cell painted before (contact). Each ray so measured is one
+/// clause: the bodies its runs leave (separated), painted their own hue or
+/// the one hue every run carried, stopping at contact where any run did.
+/// `None` where the runs do not cover the residue, or a ray's bodies do not
+/// separate, or its runs carry no one paint.
+fn read_lines(r: &Reading<'_, '_>, canvas: &[Grid], residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> Option<Vec<Clause>> {
+    let void = crate::arc::ground();
+    let n = r.pairs.len();
+    let mut rays: crate::network::nerve::Keyed<Rays> = crate::network::nerve::Keyed::new();
+    for (k, ((p, res), before)) in r.pairs.iter().zip(residue).zip(canvas).enumerate() {
+        let (rows, cols) = frame_of(p.x);
+        let owner = owners(p);
+        let created = |i: usize, j: usize| res.iter().find(|&&(a, b, _)| (a, b) == (i, j)).map(|&(_, _, h)| h);
+        let mut covered: Vec<(usize, usize)> = Vec::new();
+        for &(i, j, _) in res {
+            for (dr, dc) in RAYS.map(|(a, b)| (i64::from(a), i64::from(b))) {
+                // The body cell this residue cell stands beside, and the
+                // displacement from it: the ray, measured.
+                let Some((bi, bj)) = step(i, j, (-dr, -dc), rows, cols) else { continue };
+                let Some(b) = owner[bi][bj] else { continue };
+                let own = p.x[bi][bj];
+                let (mut run, mut at_cell, mut stop) = (Vec::new(), (bi, bj), None);
+                while let Some((ni, nj)) = step(at_cell.0, at_cell.1, (dr, dc), rows, cols) {
+                    match created(ni, nj) {
+                        Some(h) => {
+                            run.push((ni, nj, h));
+                            at_cell = (ni, nj);
+                        }
+                        None => {
+                            stop = Some(before[ni][nj] != void);
+                            break;
+                        }
+                    }
+                }
+                // A run to the border stops there; one before a ground cell
+                // the effect left is no line.
+                let contact = match stop {
+                    None => false,
+                    Some(true) => true,
+                    Some(false) => continue,
+                };
+                let key = [dr.to_le_bytes()[0], dc.to_le_bytes()[0]];
+                if rays.get(&key).is_none() {
+                    rays.insert(key, Rays { starts: vec![Vec::new(); n], own: true, hue: None, contact: false });
+                }
+                let entry = rays.get_mut(&key)?;
+                insert_sorted(&mut entry.starts[k], b);
+                entry.contact |= contact;
+                for &(a, c, h) in &run {
+                    entry.own &= h == own;
+                    entry.hue = match entry.hue {
+                        None => Some(Some(h)),
+                        Some(Some(was)) if was == h => Some(Some(h)),
+                        _ => Some(None),
+                    };
+                    insert_sorted(&mut covered, (a, c));
+                }
+            }
+        }
+        if res.iter().any(|&(i, j, _)| !covered.contains(&(i, j))) {
+            return None;
+        }
+    }
+    if rays.is_empty() {
+        return None;
+    }
+    rays.scoped()
+        .map(|(key, rr)| {
+            let [dr, dc] = <[u8; 2]>::try_from(key.as_slice()).ok()?;
+            let ray = (i8::from_le_bytes([dr]), i8::from_le_bytes([dc]));
+            let paint = match (rr.own, rr.hue) {
+                (true, _) => Paint::Own,
+                (false, Some(Some(h))) => Paint::Hue(h),
+                _ => return None,
+            };
+            let stop = if rr.contact { Stop::Contact } else { Stop::Border };
+            let select = r.separate(&rr.starts, every)?;
+            Some(Clause { select, act: Act::Extend { ray, paint, stop } })
+        })
+        .collect()
+}
+
+/// C4 — A FILL READ OFF ITS EFFECT: one hue created, every cell of it on the
+/// ground, and the region it is — of the interior a body encloses, its halo
+/// and its extent, the one whose cells, over the bodies whose region holds
+/// residue, are exactly the residue on every pair. `None` where the residue
+/// is several hues, or no region is it.
+fn read_fill(r: &Reading<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> Option<Vec<Clause>> {
+    let mut hues: Vec<u8> = Vec::new();
+    for &(_, _, h) in residue.iter().flatten() {
+        insert_sorted(&mut hues, h);
+    }
+    let [hue] = hues.as_slice() else { return None };
+    let is_region = |region: Region| -> Option<Vec<Vec<usize>>> {
+        let mut holders = Vec::with_capacity(r.pairs.len());
+        for (p, res) in r.pairs.iter().zip(residue) {
+            let mut cells: Vec<(usize, usize)> = res.iter().map(|&(i, j, _)| (i, j)).collect();
+            cells.sort_unstable();
+            let regions = statement::regions_each(region, p.x, &p.bodies);
+            let held: Vec<usize> = regions.iter().enumerate().filter(|(_, rc)| rc.iter().any(|c| cells.binary_search(c).is_ok())).map(|(b, _)| b).collect();
+            let mut union: Vec<(usize, usize)> = held.iter().flat_map(|&b| regions[b].iter().copied()).collect();
+            union.sort_unstable();
+            union.dedup();
+            if union != cells {
+                return None;
+            }
+            holders.push(held);
+        }
+        Some(holders)
+    };
+    let (region, holders) = [Region::Interior, Region::Halo, Region::Extent].into_iter().find_map(|region| is_region(region).map(|h| (region, h)))?;
+    let select = r.separate(&holders, every)?;
+    Some(vec![Clause { select, act: Act::Fill { region, hue: *hue } }])
+}
+
+/// A body's cells relative to its centre, doubled so every centre is a whole
+/// number: the pattern a copy stamps, as bytes.
+fn pattern_key(cells: &[(usize, usize, u8)]) -> Option<Vec<u8>> {
+    let (t, l, b, r) = statement::extent_of(cells)?;
+    let (cr, cc) = (i64::try_from(t + b).ok()?, i64::try_from(l + r).ok()?);
+    let mut rel: Vec<(i64, i64, u8)> = Vec::with_capacity(cells.len());
+    for &(i, j, h) in cells {
+        rel.push((2 * i64::try_from(i).ok()? - cr, 2 * i64::try_from(j).ok()? - cc, h));
+    }
+    rel.sort_unstable();
+    Some(rel.iter().flat_map(|&(a, c, h)| a.to_le_bytes().into_iter().chain(c.to_le_bytes()).chain([h])).collect())
+}
+
+/// The pattern the output stamped on a seed: the output's body standing on
+/// the seed's cells, relative to the SEED's centre.
+fn stamped_key(seed: &[(usize, usize, u8)], out_bodies: &[Body]) -> Option<Vec<u8>> {
+    let (t, l, b, r) = statement::extent_of(seed)?;
+    let over = out_bodies
+        .iter()
+        .map(cells_of)
+        .find(|cells| cells.iter().any(|&(i, j, _)| seed.iter().any(|&(si, sj, _)| (i, j) == (si, sj))))?;
+    let (cr, cc) = (i64::try_from(t + b).ok()?, i64::try_from(l + r).ok()?);
+    let mut rel: Vec<(i64, i64, u8)> = Vec::with_capacity(over.len());
+    for &(i, j, h) in &over {
+        rel.push((2 * i64::try_from(i).ok()? - cr, 2 * i64::try_from(j).ok()? - cc, h));
+    }
+    rel.sort_unstable();
+    Some(rel.iter().flat_map(|&(a, c, h)| a.to_le_bytes().into_iter().chain(c.to_le_bytes()).chain([h])).collect())
+}
+
+/// C2 — A COPY READ OFF ITS EFFECT: the bodies the effect touched are the
+/// seeds; on each pair, what the output stamped over every seed, relative to
+/// the seed's centre, is one pattern, and the template is the input body
+/// whose own centred pattern is that pattern — read by its key, never a bank
+/// of templates tried. The seeds and the template are each separated by the
+/// list. `None` where the seeds stamp two patterns, or no body is the one
+/// they stamp.
+fn read_copy(r: &Reading<'_, '_>, touched: &[Vec<usize>], every: &[Vec<usize>]) -> Option<Vec<Clause>> {
+    let mut templates: Vec<Vec<usize>> = Vec::with_capacity(r.pairs.len());
+    for (p, seeds) in r.pairs.iter().zip(touched) {
+        let out_bodies = perceive(p.y);
+        let mut by_pattern: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
+        for (b, body) in p.bodies.iter().enumerate() {
+            if seeds.contains(&b) {
                 continue;
             }
-            let Some(select) = r.separate(&holders, every) else { continue };
-            if let Some(c) = attempt(r, Clause { select, act: Act::Fill { region, hue: *hue } })? {
-                return Ok(c);
-            }
-        }
-    }
-    // C3 — EXTEND: for each ray, the bodies one of whose cells has a created
-    // cell next along it; the line painted its own hue or the one created.
-    for ray in RAYS {
-        let (dr, dc) = (i64::from(ray.0), i64::from(ray.1));
-        let starts: Vec<Vec<usize>> = r
-            .pairs
-            .iter()
-            .zip(&residue)
-            .map(|(p, res)| {
-                p.bodies
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, b)| {
-                        cells_of(b).iter().any(|&(i, j, _)| {
-                            let (Ok(i), Ok(j)) = (i64::try_from(i), i64::try_from(j)) else { return false };
-                            let (Ok(ni), Ok(nj)) = (usize::try_from(i + dr), usize::try_from(j + dc)) else { return false };
-                            res.iter().any(|&(a, b, _)| (a, b) == (ni, nj))
-                        })
-                    })
-                    .map(|(b, _)| b)
-                    .collect()
-            })
-            .collect();
-        if starts.iter().all(Vec::is_empty) {
-            continue;
-        }
-        let Some(select) = r.separate(&starts, every) else { continue };
-        let paints: Vec<Paint> = match created_hues.as_slice() {
-            [h] => vec![Paint::Own, Paint::Hue(*h)],
-            _ => vec![Paint::Own],
-        };
-        for paint in paints {
-            for stop in [Stop::Border, Stop::Contact] {
-                if let Some(c) = attempt(r, Clause { select: select.clone(), act: Act::Extend { ray, paint, stop } })? {
-                    return Ok(c);
+            if let Some(key) = pattern_key(&cells_of(body)) {
+                if by_pattern.get(&key).is_none() {
+                    by_pattern.insert(key, b);
                 }
             }
         }
+        let mut template: Option<usize> = None;
+        for &s in seeds {
+            let key = stamped_key(&cells_of(&p.bodies[s]), &out_bodies)?;
+            let &t = by_pattern.get(&key)?;
+            match template {
+                Some(was) if was != t => return None,
+                _ => template = Some(t),
+            }
+        }
+        templates.push(template.into_iter().collect());
     }
-    Err(match cleared {
-        true => Unread::Overwritten,
-        false => Unread::Uncreated,
-    })
+    let template = r.separate(&templates, every)?;
+    let seeds = r.separate(touched, every)?;
+    Some(vec![Clause { select: seeds, act: Act::Copy { template } }])
 }
 
 /// C5 — THE FRAME RESIZED: every cell scaled by the one exact ratio the

@@ -50,6 +50,22 @@ fn a_family_drawing_lines_to_the_border_is_known() {
     );
 }
 
+/// 78.167 Phase B — LINES ALONG TWO RAYS: from each cell of hue 3, a line of
+/// its hue to the border rightward and another downward. Each ray is
+/// measured off the effect — the displacement from the cell a run leaves —
+/// so two rays are two clauses, never two of eight rays tried.
+#[test]
+fn a_family_drawing_lines_along_two_rays_is_known() {
+    knows(
+        &[
+            (&["0000", "0300", "0000", "0000"], &["0000", "0333", "0300", "0300"]),
+            (&["3000", "0000", "0000", "0000"], &["3333", "3000", "3000", "3000"]),
+            (&["0000", "0000", "0030", "0000"], &["0000", "0000", "0033", "0030"]),
+        ],
+        (&["0000", "0000", "0300", "0000"], &["0000", "0000", "0333", "0300"]),
+    );
+}
+
 /// C4 — AN ENCLOSURE FILLED: what a ring's boundary encloses, painted 4.
 #[test]
 fn a_family_filling_enclosed_regions_is_known() {
