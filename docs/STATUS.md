@@ -27,8 +27,14 @@ n1–n4 (transient `mycelium-nseat-1..4`, re-created with their seat lists)
 up 14:36:33, all on aa37c802 — which carries, deployed by this relaunch:
 78.167 Phase A (recolours read per body and per monochrome part,
 `Act::Parts`), read-off composite selection (`Pred::And`), and the client's
-dead chain refinement/retirement removed. netstratum given the go for its
-conductor on its live code (ef0152e); it asks before re-founding on 3165b59.
+dead chain refinement/retirement removed. netstratum re-founded live on
+ec784f9 (rehearsed on a copy; 155 lines re-seated, beat 8861 clean).
+GENOME GROWTH FIXED (ece419eb, 9a640ded; voices and seats on 9a640ded since
+17:09): the typed byte census found court rewrites (description tag 0x14,
+~50 KB each, an address written twice) were 76–88% of the large genomes —
+a rewrite is an act on the language, never learned or written; a restore
+that leaves anything out writes the file at the first stroke. Files now:
+voices 5.6–6.1 MB, seats 0.63–0.77 MB (were up to 48 MB / 42 MB).
 Next: Phase B (copy / line / fill read off their effect).
 
 ## Toward a solve (2026-10-19 00:25)
