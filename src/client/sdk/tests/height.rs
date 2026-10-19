@@ -79,6 +79,38 @@ fn a_rewrite_taught_is_never_a_word_of_the_genome() {
     }
 }
 
+/// A GENOME FILE HOLDING MORE THAN THE GENOME IS WRITTEN AGAIN. A file an
+/// older writer wrote with a rewrite at its citation restores without it,
+/// and the mind keeping that genome holds it unwritten — its file is written
+/// at the first stroke, though no word was gained — so the file is the genome
+/// and never more; a file holding only words is kept as it is.
+#[test]
+fn a_restore_that_left_something_out_writes_the_genome_again() {
+    let word = super::common::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
+    let payload = crate::transducer::rewrite::RewritePayload::Retire { cites: vec![word.address()], freed: word.magnitude() };
+    let rewrite = crate::transducer::rewrite::mint(crate::transducer::rewrite::RewriteKind::Retire, &[word.address()], word.address(), payload, word.magnitude())
+        .expect("the retirement mints");
+    // The file an older writer wrote: the rewrite at its own citation, the
+    // trie the genome file is.
+    let at = crate::chronometry::Stamp::new(1, [7; 32], crate::chronometry::Place::GENESIS);
+    let mut key = Vec::new();
+    crate::chronometry::Cite::word(&rewrite, at).put_canonical(&mut key).expect("its citation writes");
+    let mut nodes: crate::network::nerve::Keyed<crate::snapshot::Leaves> = crate::network::nerve::Keyed::new();
+    nodes.insert(key, vec![(1, rewrite.to_bytes().expect("the record writes"))]);
+    let mut older = b"GEN7".to_vec();
+    crate::snapshot::put_trie(&mut older, "words", &nodes);
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("rewritten-file"));
+    assert_eq!(mind.restore_genome(&older), Ok(()), "the older file restores");
+    assert_eq!(mind.epigenome.genome_len(), 0, "without its rewrite");
+    mind.keep_genome("unused".to_string());
+    assert!(mind.board.genome_unwritten, "the file held more than the genome: written again at the first stroke");
+    let (plain, _) = Epigenome::new().crystallize();
+    let mut fresh = Entity::open("127.0.0.1:1", Kernel::named("plain-file"));
+    assert_eq!(fresh.restore_genome(&plain), Ok(()), "a file of words alone restores");
+    fresh.keep_genome("unused".to_string());
+    assert!(!fresh.board.genome_unwritten, "and is kept as it is");
+}
+
 /// 78.49 — THE GENOME IS WHAT A COURT ADMITTED. A word a syllabus page
 /// taught with the court's stamp is crystallized at that stamp and restores
 /// at it; a word learned with no court's stamp is held in the mind and

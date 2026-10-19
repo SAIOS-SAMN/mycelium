@@ -244,6 +244,7 @@ impl Epigenome {
             // A rewrite an older file held is an act the court applied, never
             // a word: read whole, and not taken in.
             if is_rewrite_act(&e) {
+                self.restored_dropped = self.restored_dropped.checked_add(1)?;
                 continue;
             }
             admitted.push((e.address(), at));

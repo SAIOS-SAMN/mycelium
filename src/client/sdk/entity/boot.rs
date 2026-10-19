@@ -199,6 +199,9 @@ impl Entity {
             .uncrystallize(bytes)
             .filter(|end| *end == bytes.len())
             .ok_or_else(|| "the file is not a whole GEN7 tape".to_string())?;
+        // A file holding what the genome leaves out (residual chains, rewrites)
+        // is written again at the first stroke.
+        self.board.genome_unwritten = !epigenome.restored_residuals.is_empty() || epigenome.restored_dropped > 0;
         // MU-CLIENT §7.1 — the residual chains the file held are open
         // questions, handed to the mind's carrier, never words.
         for (addr, chain, stratum) in std::mem::take(&mut epigenome.restored_residuals) {

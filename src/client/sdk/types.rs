@@ -443,6 +443,10 @@ pub struct Epigenome {
     /// 2026-10-18), so the restore files it here and the boot hands it to the
     /// mind's carrier at once (`Entity::restore_genome`) — empty after.
     pub(crate) restored_residuals: Vec<OpenResidual>,
+    /// The rewrites the restore read on the file and left out — acts on the
+    /// language, never words of it: the file held more than the genome now
+    /// does, and is written again (`Entity::restore_genome`).
+    pub(crate) restored_dropped: u64,
     /// 1.8, 50.2 step 2 — THE GENERATORS this mind holds, by the chart of
     /// the versor each carries: versor chart → (vertex address → form
     /// address). A ruled word is a form since L5, so the generators of the

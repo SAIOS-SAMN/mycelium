@@ -115,6 +115,10 @@ pub(crate) struct Board {
     pub(crate) corpus: super::focus::Corpus,
     genome_path: Option<String>,
     saved_len: Option<usize>,
+    /// The genome restored holds less than its file did (the residual chains
+    /// and rewrites the restore left out): the file is written again at the
+    /// first stroke, whatever the genome's length.
+    pub(crate) genome_unwritten: bool,
 }
 
 /// WHAT ONE WINDING MOVED: the lanes its outcome moved (a winding that moved
@@ -135,9 +139,13 @@ impl Entity {
 
     /// THE GENOME IS WRITTEN AT `path` whenever it gained a word, before the
     /// stroke that could run long, so a stop costs at most one stroke's
-    /// learning.
+    /// learning — and at the first stroke where the restore left out what the
+    /// file held, so the file is the genome and never more.
     pub fn keep_genome(&mut self, path: String) {
-        self.board.saved_len = Some(self.epigenome.genome_len());
+        self.board.saved_len = match self.board.genome_unwritten {
+            true => None,
+            false => Some(self.epigenome.genome_len()),
+        };
         self.board.genome_path = Some(path);
     }
 
@@ -145,7 +153,12 @@ impl Entity {
     /// said, never discarded.
     pub fn save_kept_genome(&mut self) -> Result<(), String> {
         let Some(path) = self.board.genome_path.clone() else { return Ok(()) };
-        self.save_genome(&path).map(|_| self.board.saved_len = Some(self.epigenome.genome_len())).map_err(|e| e.to_string())
+        self.save_genome(&path)
+            .map(|_| {
+                self.board.saved_len = Some(self.epigenome.genome_len());
+                self.board.genome_unwritten = false;
+            })
+            .map_err(|e| e.to_string())
     }
 
     /// ONE WINDING OF THE WINDING CARRIER, thought in the mind's own field
