@@ -66,6 +66,23 @@ fn a_family_drawing_lines_along_two_rays_is_known() {
     );
 }
 
+/// 78.167 Phase B, Step 1 — TWO ACTS IN ONE SCENE: a ring's interior filled 4
+/// and, from each cell of hue 3, a line of its hue to the border on its right.
+/// Read as one act the created cells are neither a fill nor a line; read
+/// piece by piece, the fill's piece and the line's piece are each their own
+/// clause, and the composed sentence is proved once.
+#[test]
+fn a_family_filling_and_drawing_at_once_is_known() {
+    knows(
+        &[
+            (&["11100", "10100", "11100", "00000", "30000"], &["11100", "14100", "11100", "00000", "33333"]),
+            (&["00000", "00111", "30101", "00111", "00000"], &["00000", "00111", "33141", "00111", "00000"]),
+            (&["01110", "01010", "01110", "00000", "00030"], &["01110", "01410", "01110", "00000", "00033"]),
+        ],
+        (&["30000", "00000", "11100", "10100", "11100"], &["33333", "00000", "11100", "14100", "11100"]),
+    );
+}
+
 /// C4 — AN ENCLOSURE FILLED: what a ring's boundary encloses, painted 4.
 #[test]
 fn a_family_filling_enclosed_regions_is_known() {
