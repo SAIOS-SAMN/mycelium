@@ -79,9 +79,10 @@ struct Refused {
     unciteable: u64,
     /// Two words at one citation — one fiber, one admitting act.
     coincident: u64,
-    /// Per-word fields on a word no node holds: awards, deflations, fields,
-    /// ranks.
-    orphans: u64,
+    /// Per-word fields on a word no node holds, by carrier: awards,
+    /// deflations, hot fields, cold fields, rank closures — named apart, so
+    /// a reading says which carrier kept a quantity its word left.
+    orphans: [u64; 5],
     /// A rank's closure on a word no node holds.
     closures: u64,
     /// Receipts, settlements and dialect transitions that could not stand.
@@ -105,7 +106,6 @@ impl Refused {
             ("federated words ruled at no act", self.unruled),
             ("words whose citation cannot be written", self.unciteable),
             ("words coinciding at one citation", self.coincident),
-            ("per-word fields on no held word", self.orphans),
             ("rank closures on no held word", self.closures),
             ("receipts that cannot be written", self.receipts),
             ("settlements that cannot stand", self.settlements),
@@ -124,6 +124,10 @@ impl Refused {
             if n > 0 {
                 eprintln!("  snapshot refused {n} {what}");
             }
+        }
+        let [a, d, h, c, r] = self.orphans;
+        if a + d + h + c + r > 0 {
+            eprintln!("  snapshot refused per-word fields on no held word: awards {a} deflations {d} fields hot {h} cold {c} rank closures {r}");
         }
     }
 }
@@ -499,11 +503,16 @@ impl Kernel {
         // A per-word field on a word no node holds is a quantity on a word
         // this court no longer has: counted, and not written (R6).
         let orphan = |keys: Vec<Vec<u8>>| keys.iter().filter(|a| !held.contains(a)).count() as u64;
-        refused.orphans += orphan(self.treasury.award_addresses())
-            + orphan(self.deflations.scoped().map(|(a, _)| a).collect())
-            + orphan(self.field.scoped().map(|(a, _)| a).collect())
-            + orphan(self.field_cold.scoped().map(|(a, _)| a).collect())
-            + orphan(rank.closure_carrier().scoped().map(|(a, _)| a).collect());
+        let counts = [
+            orphan(self.treasury.award_addresses()),
+            orphan(self.deflations.scoped().map(|(a, _)| a).collect()),
+            orphan(self.field.scoped().map(|(a, _)| a).collect()),
+            orphan(self.field_cold.scoped().map(|(a, _)| a).collect()),
+            orphan(rank.closure_carrier().scoped().map(|(a, _)| a).collect()),
+        ];
+        for (n, k) in refused.orphans.iter_mut().zip(counts) {
+            *n += k;
+        }
         put_trie(out, WORDS_TRIE, &nodes);
     }
 
