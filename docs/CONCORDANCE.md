@@ -112,6 +112,20 @@ The hypha (the mycelium-server) is the court of many universes. A kernel is a pr
       no universe's history is rewritten by another's choice. A universe may
       also keep a form in its own shell, outside `forms`, until it chooses
       to land it (xylarium's clarifications, 2026-10-20).
+    - A7a — THE ONION HOLDS. A form one universe alone selects reaches the
+      core only through the seam and never sits beside the universal forms
+      as a peer: a divergence is two OUTER shells over one shared centre,
+      never a second plane at the core. Where a law diverges in full, the
+      shared centre is what the two forms still have in common (for the
+      streams, the route) (netstratum, 2026-10-20).
+    - A7b — A DIVERGENCE IS BETWEEN LAWFUL FORMS. A universe selects only
+      among forms that each pass the landing rule and the design laws on
+      their own — derived, exact, composing frame by frame, no invented
+      constant. A7 never shelters a stand-in: a form that fails is retired,
+      not selected (netstratum's "½ every ⌈1/x⌉ rings" fails composition and
+      is retired). A ruled divergence records the joint read showing the two
+      forms differ after the exact frame map: the divergence itself is
+      witnessed (netstratum, 2026-10-20).
     - THE LEDGER AT ADOPTION. One law each: the stream ROUTE, and TIME
       (TUniversal ↔ a body's own clock with the delay from the live reach).
       Ruled divergences under A7: the stream CHOICE (xylarium reads the
