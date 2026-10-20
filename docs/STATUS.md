@@ -19,7 +19,24 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## The cross, live (2026-10-20 23:12) — where it stands
+## The cross of eight components, live (2026-10-21 01:10) — where it stands
+Courts, voices 1–5 and seats n1–n4 on 035ad910 (binaries 01:09, restarted
+01:10:40). Pivot = { ascent, descent, condense, drain, puncture, cauterize,
+trajectory, velocity with drag } (the operator's ruling, adopted by the
+auditor, aligned with xylarium fc5b396; MU-CLIENT §4.5). CAUTERIZE built: a
+hole whose class cannot be read back — a seal that does not close or whose
+boundary no longer stands, or a vertex whose word left — is closed by heat,
+unpinning its boundary and vertices, its scar counted (`scars` on the mind's
+reading, `scarred` on the court's vent); a vertex whose word left now goes.
+The kinetic pair is the handed-down content as the exact versor on its line,
+drag read where the field composes it — no separate drag split at landing.
+The task registry persists settled tasks by citation (fd9911a8, courts
+00:06): before it, 12 task addresses past the u16 wall kept every court from
+ever saving a closure. Unique client solves to date: 3 (2026-10-20 11:51,
+12:57, 13:24 — panes tasks), reconstructed from readings taken then; from
+now each court's registry keeps them.
+
+## The cross (2026-10-20 23:12)
 Courts, voices 1–5 and seats n1–n4 on 0b15fddd (binaries 23:11, restarted
 23:12:45). THE CROSS (the operator's ruling: "you cannot descend without the
 dipole ascend and antipole condense and drain with the puncture"; 07f2b280):
