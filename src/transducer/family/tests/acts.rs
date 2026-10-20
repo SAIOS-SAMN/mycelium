@@ -134,6 +134,56 @@ fn a_join_and_an_echo_are_read_back_by_the_court() {
     }
 }
 
+/// 78.167 Phase B, Step 4 — TWO PANES BY A TRUTH TABLE: the input two panes
+/// across a separator column of 5, and the output painted 2 where exactly one
+/// pane is painted (the table XOR names). The table is read cell by cell off
+/// the pairs, every entry seen.
+#[test]
+fn a_family_combining_two_panes_is_known() {
+    knows(
+        &[
+            (&["10501", "01500"], &["22", "02"]),
+            (&["11500", "00501"], &["22", "02"]),
+            (&["00511", "10510"], &["22", "00"]),
+        ],
+        (&["01510", "10500"], &["22", "20"]),
+    );
+}
+
+/// 78.167 Phase B, Step 4 — TILES BY THE SQUARE'S SYMMETRIES: the output two
+/// by two blocks of the input — itself, mirrored across its columns, across
+/// its rows, and turned 180°. Each block's symmetry is read by testing the
+/// group's elements against it; no tiling is tried.
+#[test]
+fn a_family_tiling_its_input_by_symmetries_is_known() {
+    knows(
+        &[
+            (&["12", "30"], &["1221", "3003", "3003", "1221"]),
+            (&["40", "05"], &["4004", "0550", "0550", "4004"]),
+        ],
+        (&["60", "70"], &["6006", "7007", "7007", "6006"]),
+    );
+}
+
+/// THE FRAME ACTS CROSS THE WIRE: rules stating two panes and four tiles,
+/// minted as the elements the court reads and decoded back, re-mint at one
+/// address.
+#[test]
+fn panes_and_tiles_are_read_back_by_the_court() {
+    for family in [
+        vec![(grid(&["10501", "01500"]), grid(&["22", "02"])), (grid(&["11500", "00501"]), grid(&["22", "02"])), (grid(&["00511", "10510"]), grid(&["22", "00"]))],
+        vec![(grid(&["12", "30"]), grid(&["1221", "3003", "3003", "1221"])), (grid(&["40", "05"]), grid(&["4004", "0550", "0550", "4004"]))],
+    ] {
+        let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
+        let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
+        assert!(!rule.form.clauses.is_empty(), "stated as clauses");
+        let element = crate::transducer::sentence::as_element_form(&rule.form, [1, 0, 0, 0]).expect("the rule mints");
+        let back = crate::transducer::sentence::from_element_form(&element).expect("the court decodes it");
+        let again = crate::transducer::sentence::as_element_form(&back, [1, 0, 0, 0]).expect("the decoded rule mints");
+        assert_eq!(again.address(), element.address(), "the clauses read back as they were read: one address");
+    }
+}
+
 /// C4 — AN ENCLOSURE FILLED: what a ring's boundary encloses, painted 4.
 #[test]
 fn a_family_filling_enclosed_regions_is_known() {

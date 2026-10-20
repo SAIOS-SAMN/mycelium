@@ -478,6 +478,14 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
     let mut r = Reading { pairs, preds, sels, budget };
     let every = r.every();
     if r.pairs.iter().any(|p| frame_of(p.x) != frame_of(p.y)) {
+        // 78.167 Phase B, Step 4 — A NEW FRAME read off the frames: the panes
+        // the input splits into, or the tiles the output is made of.
+        if let Some(clause) = read_panes(&r).or_else(|| read_tiles(&r)) {
+            let all = vec![clause];
+            if r.rederives(&all)? {
+                return Ok(all);
+            }
+        }
         return sized(&mut r, carried, &every);
     }
     // THE BODIES NO CARRIAGE MOVES, and what became of each.
@@ -1155,6 +1163,118 @@ fn read_copy(r: &Reading<'_, '_>, touched: &[Vec<usize>], every: &[Vec<usize>]) 
     let template = r.separate(&templates, every)?;
     let seeds = r.separate(touched, every)?;
     Some(vec![Clause { select: seeds, act: Act::Copy { template } }])
+}
+
+/// C6 — THE PANES READ OFF THE FRAMES AND THE CELLS (78.167 Phase B, Step 4):
+/// where every pair's input is two equal panes along its rows (or its
+/// columns) — a separator line of one cell between them or none, the same on
+/// every pair — and the output is one pane's frame, the truth table is read
+/// cell by cell: for each pair of pane cells painted or not, whether the
+/// output cell is painted. `None` where an entry is unseen on every pair (no
+/// table is read past what the pairs show), two pairs disagree on one, or
+/// the output is painted in more than one hue.
+fn read_panes(r: &Reading<'_, '_>) -> Option<Clause> {
+    let void = crate::arc::ground();
+    let split = |along_rows: bool| -> Option<bool> {
+        let gaps: Vec<Option<bool>> = r
+            .pairs
+            .iter()
+            .map(|p| {
+                let ((hx, wx), (hy, wy)) = (frame_of(p.x), frame_of(p.y));
+                let (n, m, ok) = match along_rows {
+                    true => (hx, hy, wx == wy),
+                    false => (wx, wy, hx == hy),
+                };
+                match (ok, n == 2 * m, n == 2 * m + 1) {
+                    (true, true, _) => Some(false),
+                    (true, _, true) => Some(true),
+                    _ => None,
+                }
+            })
+            .collect();
+        match gaps.as_slice() {
+            [Some(g), rest @ ..] if rest.iter().all(|x| *x == Some(*g)) => Some(*g),
+            _ => None,
+        }
+    };
+    let (along_rows, gap) = match (split(true), split(false)) {
+        (Some(g), None) => (true, g),
+        (None, Some(g)) => (false, g),
+        _ => return None,
+    };
+    let mut table: [Option<bool>; 4] = [None; 4];
+    let mut hue: Option<u8> = None;
+    for p in &r.pairs {
+        let (hy, wy) = frame_of(p.y);
+        for i in 0..hy {
+            for j in 0..wy {
+                let (a, b) = match along_rows {
+                    true => (p.x[i][j], p.x[i + hy + usize::from(gap)][j]),
+                    false => (p.x[i][j], p.x[i][j + wy + usize::from(gap)]),
+                };
+                let bit = 2 * usize::from(a != void) + usize::from(b != void);
+                let painted = p.y[i][j] != void;
+                match table[bit] {
+                    Some(was) if was != painted => return None,
+                    _ => table[bit] = Some(painted),
+                }
+                if painted {
+                    match hue {
+                        Some(h) if h != p.y[i][j] => return None,
+                        _ => hue = Some(p.y[i][j]),
+                    }
+                }
+            }
+        }
+    }
+    let mut bits = 0u8;
+    for (i, entry) in table.iter().enumerate() {
+        // An entry no pair shows is unread: no table is read past the pairs.
+        if (*entry)? {
+            bits |= 1 << i;
+        }
+    }
+    Some(Clause { select: Pred::All, act: Act::Panes { along_rows, gap, table: bits, paint: hue? } })
+}
+
+/// C7 — THE TILES READ OFF THE FRAMES AND THE BLOCKS (78.167 Phase B, Step 4):
+/// where every pair's output is the same whole number of the input's frames
+/// along each axis, each block is read as the symmetries of the square that
+/// carry the input onto it — the group's elements tested against the block,
+/// never a tiling tried — and the block's symmetry is the one every pair's
+/// block admits; where a symmetric input admits several on every pair, the
+/// group's first in its code order (itself before any turn), which is every
+/// pair's block alike. `None` where a block admits none on some pair, or the
+/// pairs share none.
+fn read_tiles(r: &Reading<'_, '_>) -> Option<Clause> {
+    let factors: Vec<Option<(usize, usize)>> = r
+        .pairs
+        .iter()
+        .map(|p| {
+            let ((hx, wx), (hy, wy)) = (frame_of(p.x), frame_of(p.y));
+            (hx > 0 && wx > 0 && hy % hx == 0 && wy % wx == 0 && (hy, wy) != (hx, wx)).then(|| (hy / hx, wy / wx))
+        })
+        .collect();
+    let (rows, cols) = match factors.as_slice() {
+        [Some(f), rest @ ..] if rest.iter().all(|x| *x == Some(*f)) => *f,
+        _ => return None,
+    };
+    let mut turns = Vec::with_capacity(rows * cols);
+    for i in 0..rows * cols {
+        let (bi, bj) = (i / cols, i % cols);
+        let fits = |t: u8| -> bool {
+            r.pairs.iter().all(|p| {
+                let (hx, wx) = frame_of(p.x);
+                let block: Grid = (0..hx).map(|a| (0..wx).map(|b| p.y[bi * hx + a][bj * wx + b]).collect()).collect();
+                statement::turn_of(p.x, t).is_some_and(|g| g == block)
+            })
+        };
+        turns.push((0u8..8).find(|&t| fits(t))?);
+    }
+    Some(Clause {
+        select: Pred::All,
+        act: Act::Tile { rows: u8::try_from(rows).ok()?, cols: u8::try_from(cols).ok()?, turns },
+    })
 }
 
 /// C5 — THE FRAME RESIZED: every cell scaled by the one exact ratio the

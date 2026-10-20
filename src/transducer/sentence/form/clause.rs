@@ -217,6 +217,21 @@ pub enum Act {
     /// a versor of `Cl(4,1)(ℚ)` onto the canvas with a hue map on what lands,
     /// the bodies KEPT where they stood — a carriage that leaves its source.
     Echo { motion: Mv, gauge: Vec<(u8, u8)> },
+    /// FRAME, THE PANES (78.167 Phase B, Step 4): the input split along its
+    /// rows (`along_rows`) or its columns into two equal panes — a separator
+    /// line of one cell between them where `gap` — and the output the pane's
+    /// frame: a cell painted `paint` where `table` holds of whether each pane
+    /// is painted there (bit `2a + b` for panes painted `a`, `b`), the ground
+    /// otherwise. The truth table is the act; AND, OR, XOR and NOR are names
+    /// for four of them.
+    Panes { along_rows: bool, gap: bool, table: u8, paint: u8 },
+    /// FRAME, THE TILES (78.167 Phase B, Step 4): the output `rows × cols`
+    /// blocks of the input's frame, block `i` (in the lattice's order) the
+    /// input under the square's symmetry `turns[i]`: 0 itself, 1 mirrored
+    /// across its columns, 2 across its rows, 3 a turn of 180°, 4 a turn of
+    /// 90°, 5 of 270°, 6 the transpose, 7 the anti-transpose. A quarter turn,
+    /// a transpose of an input that is not square is no block of its frame.
+    Tile { rows: u8, cols: u8, turns: Vec<u8> },
 }
 
 /// ONE STATEMENT: a selection and what is done to it.
@@ -521,6 +536,19 @@ fn put_act(buf: &mut Vec<u8>, act: &Act) {
             motion.put_canonical(buf);
             put_gauge(buf, gauge);
         }
+        Act::Panes { along_rows, gap, table, paint } => {
+            buf.push(10);
+            buf.push(u8::from(*along_rows));
+            buf.push(u8::from(*gap));
+            buf.push(*table);
+            buf.push(*paint);
+        }
+        Act::Tile { rows, cols, turns } => {
+            buf.push(11);
+            buf.push(*rows);
+            buf.push(*cols);
+            buf.extend_from_slice(turns);
+        }
     }
 }
 
@@ -594,6 +622,36 @@ fn take_act(k: &[u8], p: &mut usize) -> Option<Act> {
         9 => {
             let motion = Mv::from_bytes(k, p)?;
             Act::Echo { motion, gauge: take_gauge(k, p)? }
+        }
+        10 => {
+            let along_rows = match take_byte(k, p)? {
+                0 => false,
+                1 => true,
+                _ => return None,
+            };
+            let gap = match take_byte(k, p)? {
+                0 => false,
+                1 => true,
+                _ => return None,
+            };
+            let table = take_byte(k, p)?;
+            if table > 0b1111 {
+                return None;
+            }
+            Act::Panes { along_rows, gap, table, paint: take_byte(k, p)? }
+        }
+        11 => {
+            let (rows, cols) = (take_byte(k, p)?, take_byte(k, p)?);
+            let n = usize::from(rows).checked_mul(usize::from(cols))?;
+            let mut turns = Vec::with_capacity(n);
+            for _ in 0..n {
+                let t = take_byte(k, p)?;
+                if t > 7 {
+                    return None;
+                }
+                turns.push(t);
+            }
+            Act::Tile { rows, cols, turns }
         }
         _ => return None,
     })

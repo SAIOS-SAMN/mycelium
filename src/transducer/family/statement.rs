@@ -35,6 +35,37 @@ pub enum Unstated {
     Still,
     /// An act on parts names another act on parts: parts are read one level.
     Nested,
+    /// The input has not the frame the act names: no two equal panes it
+    /// splits into, or a quarter turn of a tile that is not square.
+    Unframed,
+}
+
+/// THE SQUARE'S SYMMETRY `t` ON A GRID (`Act::Tile`'s codes): 0 itself, 1
+/// mirrored across its columns, 2 across its rows, 3 a turn of 180°, 4 a turn
+/// of 90°, 5 of 270°, 6 the transpose, 7 the anti-transpose. `None` for a
+/// code past 7, or a quarter turn or transpose of a grid that is not square.
+pub(crate) fn turn_of(g: &[Vec<u8>], t: u8) -> Option<Grid> {
+    let h = g.len();
+    let w = match g {
+        [row, ..] => row.len(),
+        [] => 0,
+    };
+    let at = |i: usize, j: usize| g.get(i).and_then(|row| row.get(j)).copied();
+    let grid = |rows: usize, cols: usize, f: &dyn Fn(usize, usize) -> Option<u8>| -> Option<Grid> { (0..rows).map(|i| (0..cols).map(|j| f(i, j)).collect()).collect() };
+    let last = |n: usize, i: usize| n.checked_sub(1).and_then(|m| m.checked_sub(i));
+    match t {
+        0 => Some(g.to_vec()),
+        1 => grid(h, w, &|i, j| at(i, last(w, j)?)),
+        2 => grid(h, w, &|i, j| at(last(h, i)?, j)),
+        3 => grid(h, w, &|i, j| at(last(h, i)?, last(w, j)?)),
+        4..=7 if h == w => match t {
+            4 => grid(h, w, &|i, j| at(last(h, j)?, i)),
+            5 => grid(h, w, &|i, j| at(j, last(w, i)?)),
+            6 => grid(h, w, &|i, j| at(j, i)),
+            _ => grid(h, w, &|i, j| at(last(h, j)?, last(w, i)?)),
+        },
+        _ => None,
+    }
 }
 
 /// WHAT THE CLAUSES SPOKE: the output frame and its painted cells.
@@ -382,6 +413,8 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
     let mut canvas: Vec<Vec<u8>> = x.clone();
     let mut window: Option<(usize, usize, usize, usize)> = None;
     let mut scale: Option<(u8, u8)> = None;
+    // A frame act's output stands in place of the canvas (`Panes`, `Tile`).
+    let mut framed: Option<Grid> = None;
     for clause in clauses {
         let (seen, act) = match &clause.act {
             Act::Parts(inner) => (&on_parts, inner.as_ref()),
@@ -509,6 +542,48 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                     paint(&mut canvas, r, c, h);
                 }
             }
+            Act::Panes { along_rows, gap, table, paint: hue } => {
+                let void = crate::arc::ground();
+                let (n, other) = match along_rows {
+                    true => (whole.rows, whole.cols),
+                    false => (whole.cols, whole.rows),
+                };
+                let k = n.checked_sub(usize::from(*gap)).filter(|m| m % 2 == 0).map(|m| m / 2).ok_or(Unstated::Unframed)?;
+                if k == 0 {
+                    return Err(Unstated::Unframed);
+                }
+                let cell = |a: usize, b: usize| -> u8 { if *along_rows { canvas[a][b] } else { canvas[b][a] } };
+                // The pane's cell at `a` along the split, `b` across it.
+                let at = |a: usize, b: usize| -> u8 {
+                    let first = cell(a, b) != void;
+                    let second = cell(a + k + usize::from(*gap), b) != void;
+                    let bit = 2 * usize::from(first) + usize::from(second);
+                    if (table >> bit) & 1 == 1 { *hue } else { void }
+                };
+                let out: Grid = match along_rows {
+                    true => (0..k).map(|a| (0..other).map(|b| at(a, b)).collect()).collect(),
+                    false => (0..other).map(|b| (0..k).map(|a| at(a, b)).collect()).collect(),
+                };
+                framed = Some(out);
+            }
+            Act::Tile { rows, cols, turns } => {
+                let (h, w) = (whole.rows, whole.cols);
+                let (rows, cols) = (usize::from(*rows), usize::from(*cols));
+                if turns.len() != rows * cols || rows == 0 || cols == 0 {
+                    return Err(Unstated::Unframed);
+                }
+                let mut out = vec![vec![crate::arc::ground(); w * cols]; h * rows];
+                for (i, &t) in turns.iter().enumerate() {
+                    let block = turn_of(&canvas, t).ok_or(Unstated::Unframed)?;
+                    let (bi, bj) = (i / cols, i % cols);
+                    for (r, row) in block.iter().enumerate() {
+                        for (c, &v) in row.iter().enumerate() {
+                            out[bi * h + r][bj * w + c] = v;
+                        }
+                    }
+                }
+                framed = Some(out);
+            }
             Act::Connect { paint: with } => {
                 // Joined through what was ground BEFORE this clause, so no
                 // join of the clause blocks another.
@@ -554,16 +629,18 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
             }
         }
     }
-    let (t, l, b, r) = match window {
-        Some(w) => w,
-        None => (0, 0, whole.rows.checked_sub(1).ok_or(Unstated::NotOne)?, whole.cols.checked_sub(1).ok_or(Unstated::NotOne)?),
+    let out: Vec<Vec<u8>> = match framed {
+        // A frame act's output is the output; a crop of the input's frame
+        // does not cut it.
+        Some(g) => g,
+        None => {
+            let (t, l, b, r) = match window {
+                Some(w) => w,
+                None => (0, 0, whole.rows.checked_sub(1).ok_or(Unstated::NotOne)?, whole.cols.checked_sub(1).ok_or(Unstated::NotOne)?),
+            };
+            canvas.iter().take(b + 1).skip(t).map(|row| row.iter().take(r + 1).skip(l).copied().collect()).collect()
+        }
     };
-    let out: Vec<Vec<u8>> = canvas
-        .iter()
-        .take(b + 1)
-        .skip(t)
-        .map(|row| row.iter().take(r + 1).skip(l).copied().collect())
-        .collect();
     let out = match scale {
         None => out,
         Some((up, down)) => scaled(&out, up, down)?,
