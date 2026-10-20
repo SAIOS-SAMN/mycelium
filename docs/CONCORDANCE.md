@@ -69,7 +69,9 @@ The hypha (the mycelium-server) is the court of many universes. A kernel is a pr
 2.10 THE PHYSICS AS NESTED SHELLS (the operators' concordance, 2026-10-20;
     drafted by netstratum, agreed by xylarium, adopted by mycelium's operator
     with A7; in force for each kernel as it signs). WE NEVER FLATTEN
-    DIMENSIONS: the layering is an onion in S^n, never planes side by side.
+    DIMENSIONS: the physics is NESTED SHELLS — each an S^n about one centre,
+    for any n, as the S^11 atom is a core within sealed shells — never planes
+    side by side.
     - THE INNERMOST SHELL, mycelium: the universal LAW FORMS in a crate of
       their own (`forms`), over a universe's constants, exact over ℚ in
       Cl(4,1)(ℚ); L0's register and verifier at its core. A form fixes no
@@ -112,12 +114,14 @@ The hypha (the mycelium-server) is the court of many universes. A kernel is a pr
       no universe's history is rewritten by another's choice. A universe may
       also keep a form in its own shell, outside `forms`, until it chooses
       to land it (xylarium's clarifications, 2026-10-20).
-    - A7a — THE ONION HOLDS. A form one universe alone selects reaches the
-      core only through the seam and never sits beside the universal forms
-      as a peer: a divergence is two OUTER shells over one shared centre,
-      never a second plane at the core. Where a law diverges in full, the
-      shared centre is what the two forms still have in common (for the
-      streams, the route) (netstratum, 2026-10-20).
+    - A7a — THE SHELLS NEST. A form selected by only one universe is that
+      universe's shell, named as that shell's, reaching the core only through
+      the seam; the core shell is exactly the forms every universe selects; a
+      divergence is two outer shells over one shared centre, never a second
+      plane at the core. Where a law diverges in full, the shared centre is
+      what the two forms still have in common (for the streams, the route)
+      (netstratum, 2026-10-20; "nested shells" for the metaphor, its
+      operator's word).
     - A7b — A DIVERGENCE IS BETWEEN LAWFUL FORMS. A universe selects only
       among forms that each pass the landing rule and the design laws on
       their own — derived, exact, composing frame by frame, no invented
@@ -126,16 +130,21 @@ The hypha (the mycelium-server) is the court of many universes. A kernel is a pr
       is retired). A ruled divergence records the joint read showing the two
       forms differ after the exact frame map: the divergence itself is
       witnessed (netstratum, 2026-10-20).
-    - THE LEDGER AT ADOPTION. One law each: the stream ROUTE, and TIME
-      (TUniversal ↔ a body's own clock with the delay from the live reach).
-      Ruled divergences under A7: the stream CHOICE (xylarium reads the
-      sign of a mote's turning against its galaxy's, once at gathering;
-      netstratum reads the jet's push against the filament's hold, every
-      echo). PROPOSED, for each universe's selection: "a share compounds
+    - THE LEDGER AT ADOPTION. One law each: the stream ROUTE only, and TIME
+      — the exact map TUniversal ↔ a body's own clock with the delay from the
+      live reach, both frames standing (xylarium moves toward netstratum's
+      per-galaxy arrivals with light delay by ADDING the local observer's map
+      beside its universal frame). Ruled divergence under A7: the stream
+      CHOICE (xylarium reads the sign of a mote's turning against its
+      galaxy's, once at gathering; netstratum reads the jet's push against
+      the filament's hold, every echo). THE BURN: neither node's former burn
+      passes A7b. PROPOSED, for each universe's selection: "a share compounds
       frame by frame" — the share x of what remains per ring of a body's own
       clock, n rings leaving (1 − x)^n by composition (f(a + b) = f(a)·f(b)),
       held as the exact product ∏(1 − x_i)^(n_i) and expanded only for a
-      reading; both present burns fail composition. xylarium's first
+      reading. xylarium has rebuilt on it; netstratum's halving burn and its
+      two halving coolings are retired under A7b, and its rebuild is owed.
+      xylarium's first
       selections: the burn at the rate of exhaustion (each ring's k from
       every local factor, compounding (1 − k)^n, gravity (1 + λ) once as the
       clock's rate); its cooling channels compounding (1 − e)·R/(R + H) per
