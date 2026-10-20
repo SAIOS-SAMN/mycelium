@@ -723,8 +723,10 @@ impl Kernel {
     /// 78.74 — THE NERVE'S ELASTIC VENT AT THE COURT: a word leaving the
     /// language voids every vantage whose section it was on its chart, and
     /// each such vantage releases its star (`Complex::release_vertex`) —
-    /// membranes descend, tethers drain (vacuum, or cauterized with their
-    /// record) — so the complex no longer only accretes.
+    /// chambers cross (their classes kept as holes, which hold the vantage
+    /// until they return), tethers drain where no class stands over them
+    /// (vacuum, or cauterized with their record) — so the complex no longer
+    /// only accretes, and never loses a class it sealed.
     pub(crate) fn release_vantages(&mut self, inv: &crate::transducer::stalk::Invariant, addr: &[u8]) {
         let Some(cx) = self.complexes.get_mut(&inv.key()) else { return };
         // 78.75 — what the release hands back is held for the chart's next
@@ -735,7 +737,7 @@ impl Kernel {
             let r = cx.release_vertex(&v);
             let t = &mut self.released_cells;
             for (held, by) in [
-                (&mut t.released, r.released),
+                (&mut t.kept, r.kept),
                 (&mut t.unsealed, r.unsealed),
                 (&mut t.vacuum, r.vacuum),
                 (&mut t.cauterized, r.cauterized),

@@ -218,10 +218,12 @@ fn a_cauterized_tethers_motion_flows_out_to_its_owner() {
     assert!(vacuum.take_outflow().is_empty(), "nothing carried, nothing out");
 }
 
-/// 78.74 — THE NERVE'S ELASTIC VENT: releasing a vertex lets its whole star
-/// go through the pivots — the sealed membrane descends first and hands its
-/// fill back, then its tethers drain — and leaves the cells not on it
-/// standing, with no ghost incidence. A tetrahedron's vertex releases its
+/// 78.74 — THE NERVE'S ELASTIC VENT, THROUGH THE CROSS: releasing a vertex
+/// takes its star through the pivots — the sealed membrane crosses first,
+/// its class kept as a hole, and the hole holds its boundary and the vertex
+/// (the operator's ruling, 2026-10-20); a membrane that sealed nothing goes,
+/// its tethers drain, and the vertex with them — the cells not on it
+/// standing, with no ghost incidence. A tetrahedron's vertex crosses its
 /// 3-cell too: `descend` is gated at every degree from two up.
 #[test]
 fn releasing_a_vertex_vents_its_star_through_the_pivots() {
@@ -239,7 +241,29 @@ fn releasing_a_vertex_vents_its_star_through_the_pivots() {
     let face = cell_of(c.link(vs[0].as_bytes(), 2), "a 2-cell stands");
     assert!(c.fill(&face).attached().is_some(), "the membrane is sealed, pinning its boundary");
     let r = c.release_vertex(vs[0].as_bytes());
-    assert_eq!((r.released, r.vacuum, r.pinned), (1, 2, 0), "the membrane released with its fill, both tethers to vacuum: {r:?}");
+    assert_eq!(r.kept, 1, "the membrane crossed, its class kept: {r:?}");
+    assert!(r.pinned > 0 && r.vacuum == 0, "its tethers held under the hole: {r:?}");
+    assert!(c.is_hole(&face) && c.sections.get(vs[0].as_bytes()).is_some(), "the hole holds the vertex");
+    for x in &vs {
+        for k in c.link_of(x.as_bytes()) {
+            assert!(c.simplex(&k).is_some() || c.is_hole(&k), "no ghost incidence");
+        }
+    }
+
+    // A MEMBRANE THAT SEALED NOTHING keeps nothing: the vertex goes.
+    let mut c = Complex::new();
+    for x in &vs {
+        c.set_section(x, Section::at(x.clone(), Rotor::identity()), vol());
+    }
+    for i in 0..3 {
+        for j in i + 1..3 {
+            c.set_edge(&vs[i], &vs[j], Rotor::identity(), ident(), vol());
+        }
+    }
+    c.coboundary_on_link(vs[0].as_bytes(), |_| vol());
+    let face = cell_of(c.link(vs[0].as_bytes(), 2), "a 2-cell stands");
+    let r = c.release_vertex(vs[0].as_bytes());
+    assert_eq!((r.unsealed, r.vacuum, r.pinned), (1, 2, 0), "the open membrane goes, both tethers to vacuum: {r:?}");
     assert!(c.simplex(&face).is_none() && c.sections.get(vs[0].as_bytes()).is_none(), "the vertex and its cells are gone");
     assert_eq!(c.link(vs[1].as_bytes(), 1).len(), 1, "the edge v2–v3 stands, unpinned");
     for x in &vs[1..] {
@@ -265,9 +289,9 @@ fn releasing_a_vertex_vents_its_star_through_the_pivots() {
         let _ = c.fill(&k);
     }
     let r = c.release_vertex(vs[0].as_bytes());
-    assert_eq!(r.pinned, 0, "highest degree first: nothing pinned: {r:?}");
-    assert!(r.released + r.unsealed >= 4, "the 3-cell and its three faces on v1 released: {r:?}");
-    assert!(solid.iter().all(|k| c.simplex(k).is_none()), "the 3-cell is gone");
+    assert!(r.kept >= 1, "highest degree first: the 3-cell crossed, its class kept: {r:?}");
+    assert!(solid.iter().all(|k| c.simplex(k).is_none() && c.is_hole(k)), "the 3-cell left the cells, kept as a hole");
+    assert!(c.sections.get(vs[0].as_bytes()).is_some(), "and the hole holds the vertex: {r:?}");
 }
 
 /// THE PINNING RULE — WHAT MAKES THIS A PIVOT AND NOT AN UNDO STACK.
@@ -278,7 +302,7 @@ fn releasing_a_vertex_vents_its_star_through_the_pivots() {
 /// from geometry into algebra (62.4). The edge refuses, and it refuses by
 /// NAMING the reason rather than by answering absent.
 #[test]
-fn an_edge_beneath_a_reading_is_pinned_until_the_coface_descends() {
+fn an_edge_beneath_a_reading_is_pinned() {
     let mut c = Complex::new();
     let vs = [v(1), v(2), v(3)];
     for x in &vs {
@@ -329,16 +353,17 @@ fn an_edge_beneath_a_reading_is_pinned_until_the_coface_descends() {
     assert!(c.simplex(&edge).is_some(), "the 1-cell survived the refusal");
 }
 
-/// T2b — THE LADDER BREATHES: mint, seal, re-open, release.
+/// T2b — THE LADDER BREATHES THROUGH THE CROSS: mint, seal, cross, read back.
 ///
-/// The one test that proves the conjugate pairs actually close. A 1-cell
-/// enters a 2-cell, is pinned there, and the ONLY named remedy is
-/// `descend`; before it existed that edge was immortal and the complex
-/// could still accrete at degree 2 with no way back. Here the whole cycle
-/// runs and the complex comes back empty of cells, with no ghost incidence
-/// left in any star.
+/// The test that proves the pairs close as one cross (the operator's
+/// ruling, 2026-10-20). A 1-cell enters a 2-cell and is pinned there. The
+/// chamber descends through the puncture: its class kept as a hole, its
+/// content handed down; the edge stays condensed under the kept class —
+/// it drains only where no class stands over it — and the class returns by
+/// the seal, the dipole's read-back, to the same chamber. No ghost incidence
+/// is left in any star at any step.
 #[test]
-fn a_cell_ascends_descends_and_then_drains_leaving_no_ghost() {
+fn a_cell_ascends_crosses_and_is_read_back_leaving_no_ghost() {
     let mut c = Complex::new();
     let vs = [v(1), v(2), v(3)];
     for x in &vs {
@@ -360,35 +385,26 @@ fn a_cell_ascends_descends_and_then_drains_leaving_no_ghost() {
         "and its boundary is pinned beneath the reading"
     );
 
-    // DESCEND — the membrane releases and hands its class back.
+    // DESCEND — the cross: the chamber leaves the cells through the
+    // puncture, its class kept as a hole rather than handed out or erased.
     let down = c.descend(&face);
     assert!(down.opened(), "a 2-cell with no 3-cell above it descends: {down:?}");
-    assert!(
-        down.released().is_some(),
-        "and a SEALED membrane hands its class out rather than erasing it: {down:?}"
-    );
-    assert!(c.simplex(&face).is_none(), "the membrane is gone");
+    assert!(down.kept().is_some(), "and a SEALED chamber keeps its class through the throat: {down:?}");
+    assert!(c.simplex(&face).is_none() && c.is_hole(&face), "the chamber is a hole");
 
-    // THE BOUNDARY SURVIVED AND IS UNPINNED. This is the whole point of
-    // the pair: descending re-opens the cycle without destroying it.
-    assert_eq!(
-        c.link(vs[0].as_bytes(), 1).len(),
-        2,
-        "both 1-cells on this vertex are still standing"
-    );
-    assert!(
-        matches!(c.drain(&edge), Drained::Vacuum),
-        "and the edge that was pinned now drains cleanly"
-    );
+    // THE BOUNDARY SURVIVED, CONDENSED UNDER THE KEPT CLASS.
+    assert_eq!(c.link(vs[0].as_bytes(), 1).len(), 2, "both 1-cells on this vertex are still standing");
+    assert!(matches!(c.drain(&edge), Drained::Pinned), "and the edge drains only where no class stands over it");
+
+    // THE DIPOLE'S READ-BACK: the seal returns the class to a chamber.
+    assert!(matches!(c.seal(&face, |_| vol()), Capped::Sealed { .. }), "the kept boundary closes again");
+    assert!(c.simplex(&face).is_some_and(|s| !s.fill.unsettled()), "the chamber stands sealed");
 
     // NO GHOST INCIDENCE anywhere: every star is consistent with what the
     // complex can actually evaluate.
     for x in &vs {
         for k in c.link_of(x.as_bytes()) {
-            assert!(
-                c.simplex(&k).is_some(),
-                "a star names only cells the complex holds"
-            );
+            assert!(c.simplex(&k).is_some() || c.is_hole(&k), "a star names only cells and holes the complex holds");
         }
     }
 }
@@ -426,7 +442,8 @@ fn an_unread_membrane_descends_without_a_class() {
 
     let down = c.descend(&face);
     assert!(matches!(down, Descended::Unsealed), "it recorded nothing: {down:?}");
-    assert!(down.released().is_none(), "so there is no class to hand back");
+    assert!(down.kept().is_none(), "so there is no class to keep");
+    assert!(!c.is_hole(&face), "and no hole is opened");
     assert!(down.opened(), "and the membrane still left");
 }
 

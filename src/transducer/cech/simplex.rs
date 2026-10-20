@@ -202,35 +202,38 @@ pub enum Drained {
     Absent,
 }
 
-/// 78.74 — WHAT RELEASING ONE VERTEX DID, cell by cell: the membranes and
-/// higher cells released (with a fill handed back) or unsealed, the edges
-/// drained to vacuum or cauterized, and the cells that stood pinned from
-/// outside the vertex's star.
+/// 78.74 — WHAT RELEASING ONE VERTEX DID, cell by cell: the chambers crossed
+/// (their classes kept as holes, `kept`) or unsealed, the edges drained to
+/// vacuum or cauterized, and what stood pinned — by a hole the cross left,
+/// or by a coface outside the vertex's star — so the vertex stood.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Release {
-    pub released: u64,
+    pub kept: u64,
     pub unsealed: u64,
     pub vacuum: u64,
     pub cauterized: u64,
     pub pinned: u64,
 }
 
-/// WHAT A `descend` DID — [`Drained`] one degree up, and the same four
-/// facts (63.3).
+/// WHAT A `descend` DID — THE CROSS (the operator's ruling, 2026-10-20: no
+/// descend without its dipole ascend, its antipoles condense and drain, and
+/// the puncture).
 ///
-/// `Unsealed` and `Released` are both successful descents and differ in
-/// whether the membrane had ever sealed a circulation. A 2-cell standing
-/// `Open` recorded nothing, so nothing travels out; one carrying a fill was
-/// the witness that a boundary holonomy CLOSED, and releasing it cannot
-/// silently erase that.
+/// `Unsealed` and `Throat` are both crossings and differ in whether the
+/// chamber had ever sealed a circulation. One standing unsettled recorded
+/// nothing, so the membrane goes and nothing is kept; one carrying a fill
+/// was the witness that a boundary holonomy CLOSED, and its class is never
+/// handed out alone: the throat opens.
 #[derive(Clone, Debug)]
 pub enum Descended {
-    /// The 2-cell stood `Open` — it sealed no circulation, so the membrane
-    /// goes and no class is handed back.
+    /// The chamber stood unsettled — it sealed no circulation, so the
+    /// membrane goes and no class is kept or handed down.
     Unsealed,
-    /// The 2-cell carried a reading. It is released and the class travels
-    /// out; its boundary 1-cells stay, now unpinned.
-    Released(Fill),
+    /// THE THROAT: the chamber is punctured and its class KEPT as a hole,
+    /// its content — the strain its seal wound in — handed down to the
+    /// field (unwound on its line), its boundary locked under the hole. Only
+    /// `seal`, ascend's read-back, returns the class to a chamber.
+    Throat(Fill),
     /// A 3-cell above this one has been read, so descending would
     /// retroactively invalidate it. That coface must descend first.
     Pinned,
@@ -257,18 +260,17 @@ pub enum Ascended {
 }
 
 impl Descended {
-    /// The class a sealed membrane handed back, where there was one.
-    pub fn released(&self) -> Option<&Fill> {
+    /// The class the throat kept as a hole, where there was one.
+    pub fn kept(&self) -> Option<&Fill> {
         match self {
-            Descended::Released(f) => Some(f),
+            Descended::Throat(f) => Some(f),
             _ => None,
         }
     }
 
-    /// Did the membrane leave the complex? Both descents did; neither
-    /// refusal.
+    /// Did the chamber leave the cells? Both crossings did; no refusal.
     pub fn opened(&self) -> bool {
-        matches!(self, Descended::Unsealed | Descended::Released(_))
+        matches!(self, Descended::Unsealed | Descended::Throat(_))
     }
 }
 

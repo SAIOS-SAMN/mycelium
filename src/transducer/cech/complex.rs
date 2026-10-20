@@ -262,6 +262,12 @@ impl Complex {
             .collect()
     }
 
+    /// THE HOLES STANDING: classes the cross kept and questions carried, each
+    /// pinning its boundary and its vertices until its seal.
+    pub fn holes_standing(&self) -> usize {
+        self.holes.len()
+    }
+
     /// THE ENTRIES THE COMPLEX HOLDS: its simplices at every degree and
     /// their index, its sections, its stars, its remainder and its
     /// congruent fills.

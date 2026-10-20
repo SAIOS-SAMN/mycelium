@@ -195,6 +195,11 @@ impl Entity {
             }
             self.contemplation.release(&thought);
         }
+        // THE CLASSES THE CROSS KEPT, standing (the operator's ruling,
+        // 2026-10-20): each hole holds its boundary and its vertices until
+        // its seal, so the reading names how many stand.
+        let holes = self.contemplation.complex.holes_standing() as u64;
+        crate::observe::note_mind(|m| m.holes = holes);
         // MU-CLIENT §4.13, §7.1 Phase 3 — the thoughts newly standing thread
         // their lines in the field as it now stands; and the escrow every door
         // returned this stroke is credited to the reserve, lane by lane, once.

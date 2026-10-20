@@ -540,11 +540,28 @@ holds, and each fires where a winding requires it — never as a step:
 
 | axis | principle (MU-RECURSION §0.0) | pivot / conjugate | what it does | site | live in the mind |
 |---|---|---|---|---|---|
-| chambers (anastomotic degree `d+1 ↔ d`, any `d`: every dimension an exponent) | **holonomic** — a closed loop's composite is its content | **ascend** / **descend** | seal a cycle that closes with a chamber / hollow the chamber back to its cycle, its fill handed back exactly | `cech/coboundary.rs` (`ascend`, `descend`) | ascend: every chamber the meet graph fills (`bubble/pivot.rs::ascend`, from `fill_meet` and the drive); descend: a chamber over a tether the field released, a chamber the field released, a released vertex's star (`bubble/pivot.rs::release`, `release_vertex`) |
+| chambers (anastomotic degree `d+1 ↔ d`, any `d`: every dimension an exponent) | **holonomic** — a closed loop's composite is its content | **ascend** / **descend** | seal a cycle that closes with a chamber / cross it back to its cycle through the puncture, its class kept as a hole and its content handed down; the seal reads it back exactly | `cech/coboundary.rs` (`ascend`, `descend`) | ascend: every chamber the meet graph fills (`bubble/pivot.rs::ascend`, from `fill_meet` and the drive); descend: a chamber over a tether the field released, a chamber the field released, a released vertex's star (`bubble/pivot.rs::release`, `release_vertex`) |
 | tethers (1 ↔ 0) | **luminal** — flux frozen into a tether; reconnection | **condense** / **drain** | form a tether from the tension between two bodies / dissolve it as the tension relaxes, the strain moved or recorded, never lost (A.8) | `cech/hole.rs` (`condense`), `cech/coboundary.rs` (`drain`) | condense: every tether the contemplation forms (`bubble/pivot.rs::tether`; re-formed tension drains first); drain: a tether the field released (`release`), a released vertex's star |
 | holes (class in / out) | **harmonic** — a class kept until it returns | **puncture** / **seal** | open a hole, injecting a homology class / cap it, killing the class | `cech/hole.rs` (`puncture`, `seal`) | the mind's questions (`bubble/question.rs`) and a curved chamber in the drive, through `bubble/pivot.rs` |
 
 Every pivot is applied through `Complex::apply`, its outcome returned whole.
+
+**The cross — no descend alone** (the operator's ruling, 2026-10-20: "you
+cannot descend without the dipole ascend and antipole condense and drain
+with the puncture"). The three pairs are one structure where a chamber
+descends: the DIPOLE ascend / descend across degrees, the ANTIPOLES
+condense / drain within a degree, and the PUNCTURE their throat. A descend
+moves only as the whole cross (`Complex::descend`): the chamber is punctured
+and its class KEPT in the complex as a hole; its content — the strain its
+seal wound in — is handed down to the field on its line; its boundary
+tethers stay condensed, locked under the hole, and drain only where no class
+stands over them; and ascend reads the class back only as the `seal` of that
+hole, over the standing boundary. No path hands a sealed class out alone. A
+chamber that sealed nothing keeps nothing and goes. THE HOLES PIN THE VERTEX:
+a vertex whose word has left (`release_vertex`, `vent_vertex`) crosses its
+chambers and stands under the classes they kept until each is sealed on
+return — a pinned star is never dropped. Dimension-2 entropy is the seal's
+kill of a kept class (`note_killed`), never a descent.
 
 **Drain and descend are the field's events.** A tether condensed or a face
 sealed winds its strain into the mind's field ON ITS LINE (`cech::Flow`,
@@ -555,9 +572,10 @@ life balances as a membrane's does (A.8). Where an admission RETURNS an orbit
 (harmonic: the tension vented) or CANCELS a tube's net flux (luminal: it
 carries no field), the field releases every line threading it
 (`Field::take_released`), and the mind lets them go (`Contemplation::release`,
-from `vent_into_field` each tick): a released tether's read chambers descend
-first (holonomic: a relaxing boundary no longer closes), then it drains; a
-hole over it — a question still carried — pins it, and it stands. Nothing is
+from `vent_into_field` each tick): a released tether's read chambers cross
+first (holonomic: a relaxing boundary no longer closes — their classes kept
+as holes), then it drains where no class stands over it; a hole over it — a
+class kept, or a question still carried — pins it, and it stands. Nothing is
 polled, stamped or windowed; the release is what the admission did.
 
 **Dissipation and reformation — the reservoir's two doors** (78.58's `e_∅`;
@@ -591,7 +609,9 @@ court's does through `book_outflow`.
 **Where each fires — the winding's reading, never a schedule:**
 - **ascend** — a ring closes (`Ω^ℓ ~ 1`) with volume on a lane: its cycle
   is sealed as a chamber. **descend** — the chamber's support lapses by its
-  flux (ZeroFlux): the chamber is hollowed and its fill returned. Descend is
+  flux (ZeroFlux): the chamber crosses — its class kept as a hole, its
+  content handed down (the cross, above); a meet over the same vertices
+  reads it back by the seal. Descend is
   algebraic and Clifford descent — the exact conjugate dual of ascend, a
   categorical projection from chamber to ring — never numerical gradient
   optimization (the auditor's ruling, 2026-10-20: the name stands, as the

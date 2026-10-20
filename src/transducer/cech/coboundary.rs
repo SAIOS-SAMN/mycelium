@@ -505,13 +505,24 @@ impl Complex {
     /// a complex with an empty 3-skeleton it is vacuously empty and never
     /// fires — which is exactly how `drain` behaved before 2-cells existed.
     ///
-    /// THE CLASS TRAVELS OUT. A 2-cell exists because a boundary holonomy
-    /// CLOSED; releasing the membrane cannot silently erase that the
-    /// circulation was sealed, so the fill it carried is handed back the way
-    /// `drain` hands back a cauterized edge's. What stays behind is the
-    /// boundary: the three 1-cells are untouched, the cycle reverts to an
-    /// open one, and — because `forget` drops this simplex from each of
-    /// their stars — they are UNPINNED and may now drain.
+    /// THE CROSS (the operator's ruling, 2026-10-20: "you cannot descend
+    /// without the dipole ascend and antipole condense and drain with the
+    /// puncture"). A descend never moves alone, and no other path takes a
+    /// sealed chamber's class out: a chamber exists because a boundary
+    /// holonomy CLOSED, and its descent is
+    /// - THE PUNCTURE — the throat: the chamber opened into a hole that KEEPS
+    ///   its class in the complex (`puncture`);
+    /// - THE DESCENT through it — the chamber's content, the strain its seal
+    ///   wound into the field, handed down and unwound on its own line
+    ///   (`vent`);
+    /// - THE ANTIPOLES within the tier — the boundary's tethers stay
+    ///   condensed, locked under the hole that pins them; a tether drains
+    ///   only where no class stands over it;
+    /// - THE DIPOLE — `ascend` is the only read-back: at the hole it is the
+    ///   `seal`, which returns the class to a chamber.
+    ///
+    /// A chamber that sealed nothing (unsettled) keeps no class: the
+    /// membrane goes and nothing is handed down.
     pub fn descend(&mut self, key: &[u8]) -> Descended {
         // AT A HOLE, descend refuses by name: its conjugate is `seal`
         // (78.99 (2)).
@@ -533,29 +544,24 @@ impl Complex {
         if self.pinned_above(key, &simplex.vertices) {
             return Descended::Pinned;
         }
-        // AN UNREAD 2-CELL SEALED NOTHING. It stands `Open`, so no
-        // circulation was ever recorded closed and there is no class to
-        // hand back — the membrane simply goes.
-        let motion = simplex.motion();
-        let sealed = match simplex.fill {
-            Fill::Open => None,
-            held => Some(held),
-        };
-        self.forget(key);
-        match sealed {
-            None => Descended::Unsealed,
-            Some(fill) => {
-                // D2 — ENTROPY AT DIMENSION 2, counted apart from the
-                // dimension-1 cauterization: the two terminate different
-                // skeleta and a ledger that merges them cannot say which
-                // dimension the engine is spending.
-                crate::physics::metabolism::note_released();
-                // 78.75 — the released membrane's content flows out, 78.106
-                // unwinding what its seal wound in (`vent`).
-                self.vent(key, &motion);
-                Descended::Released(fill)
-            }
+        // A CHAMBER THAT SEALED NOTHING — unsettled: open, or its reading
+        // unread — recorded no class, so there is none to keep (rule 11):
+        // the membrane simply goes, as `puncture` keeps nothing there.
+        if simplex.fill.unsettled() {
+            self.forget(key);
+            return Descended::Unsealed;
         }
+        let motion = simplex.motion();
+        // THE THROAT: the class kept in as a hole, pinning the boundary.
+        let Punctured::Opened(fill) = self.puncture(key) else {
+            return Descended::Absent;
+        };
+        // THE DESCENT THROUGH IT: 78.75 — the chamber's content flows out,
+        // 78.106 unwinding what its seal wound in (`vent`). Nothing
+        // terminates here: the class stands, killed only where `seal` caps
+        // the hole (D2's entropy at dimension 2, `note_killed`).
+        self.vent(key, &motion);
+        Descended::Throat(fill)
     }
 
     /// AD1 — `ascend`, THE INVERSE OF `descend` ON CONTENT (62.5 as amended
@@ -638,17 +644,17 @@ impl Complex {
     /// 78.74 — THE ELASTIC VENT OF THE NERVE: RELEASE A VERTEX whose reading
     /// is void — its section's word has left. Every cell in its star is let
     /// go, highest degree first so no cell is pinned by one still to go:
-    /// each cell of degree two or more `descend`s (its fill handed back), each
-    /// edge `drain`s (vacuum, or cauterized with its record), and
-    /// the vertex and its section go last. A cell pinned from above by a
-    /// coface outside this star stands, and so does the vertex, by count.
-    /// Without this the complex only accreted: `drain`, `descend` and
-    /// `ascend` existed and nothing called them.
+    /// each cell of degree two or more CROSSES (`descend`: a sealed
+    /// chamber's class kept as a hole, its content handed down), each edge
+    /// `drain`s where no class stands over it (vacuum, or cauterized with
+    /// its record). THE HOLES PIN THE VERTEX (the operator's ruling,
+    /// 2026-10-20): a class the cross kept stands on it, so the vertex and
+    /// its section stay until each hole is sealed on return; only a star
+    /// with nothing pinned lets the vertex go. Without this the complex only
+    /// accreted: `drain`, `descend` and `ascend` existed and nothing called
+    /// them.
     pub fn release_vertex(&mut self, v: &[u8]) -> Release {
         let mut out = Release::default();
-        // 78.99 (2) — its holes capped first, so their classes leave by
-        // `descend` with the rest of the star, never dropped with a hole.
-        self.seal_holes_on(v);
         let mut cells: Vec<(usize, Vec<u8>)> = match self.star.get(v) {
             Some(star) => star.scoped().filter_map(|(k, ())| self.degree_of(&k).map(|d| (d, k))).collect(),
             None => Vec::new(),
@@ -666,12 +672,16 @@ impl Complex {
                 },
                 _ => match self.descend(&k) {
                     Descended::Unsealed => out.unsealed += 1,
-                    Descended::Released(_) => out.released += 1,
+                    Descended::Throat(_) => out.kept += 1,
                     Descended::Pinned => out.pinned += 1,
                     Descended::Absent | Descended::Hole => {}
                 },
             }
         }
+        // The holes standing on the vertex — those it carried before and
+        // those the cross just opened — hold it.
+        let holes = self.holes_on(v).len() as u64;
+        out.pinned += holes;
         if out.pinned == 0 {
             let vertex = simplex_key(&[v.to_vec()]);
             self.forget(vertex.as_bytes());
@@ -684,18 +694,12 @@ impl Complex {
     }
 
     /// 78.74 — A VERTEX THAT MUST GO, VENTED: its star released through the
-    /// pivots (`release_vertex`, every outcome booked on the ledger), and
-    /// whatever stood pinned from outside its star then dropped, so a mind
-    /// that sheds a vertex keeps its bound. The voice's contemplation
-    /// dropped vertices silently (`drop_vertex`): no drain, no descent, no
-    /// reading — its nerve released and the ledger never saw it.
+    /// pivots (`release_vertex`, every outcome booked on the ledger). A star
+    /// pinned — by a class the cross kept, or a coface outside it — is no
+    /// longer dropped (the operator's ruling, 2026-10-20): dropping it lost
+    /// the classes it stood under, and the vertex stands until they return.
     pub fn vent_vertex(&mut self, v: &[u8]) -> Release {
-        let r = self.release_vertex(v);
-        if r.pinned > 0 {
-            self.drop_vertex(v);
-            self.vent_wound(v);
-        }
-        r
+        self.release_vertex(v)
     }
 
     /// Unbind one simplex from every carrier that names it. The inverse of

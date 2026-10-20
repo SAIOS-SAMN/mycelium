@@ -6,19 +6,23 @@
 //!
 //! ```text
 //!     dim 2   ascend   ───►  seal a cycle with a cell          coboundary.rs
-//!             descend  ◄───  release it, the class OUT         coboundary.rs
+//!             descend  ◄───  the cross: through the puncture   coboundary.rs
 //!     dim 1   condense ───►  remember a tether                 here
 //!             drain    ◄───  dissolve it, cauterized OUT       coboundary.rs
 //!     hole    puncture ───►  open a cell, the class kept IN    here
 //!             seal     ◄───  cap the hole, the class killed    here
 //! ```
 //!
-//! `descend` AND `puncture` BOTH OPEN THE BOUNDARY CYCLE, and they are two
-//! facts: `descend` hands the class out to the owner's field, `puncture`
-//! keeps it in the complex as a hole the boundary winds about. Only `seal`
-//! caps a hole. A HOLE PINS ITS BOUNDARY — it carries a read class, as a
-//! read coface does (63.2) — and at a hole `descend`, `ascend` and
-//! `puncture` refuse by name (78.99 (2)).
+//! THE CROSS (the operator's ruling, 2026-10-20): no descend without its
+//! dipole ascend, its antipoles condense and drain, and the puncture. A
+//! descend opens the boundary cycle THROUGH a puncture — the class kept in
+//! the complex as a hole the boundary winds about, the chamber's content
+//! handed down to the field — so no class is ever handed out alone. Only
+//! `seal`, ascend's read-back, caps a hole and returns the class to a
+//! chamber. A HOLE PINS ITS BOUNDARY — it carries a read class, as a read
+//! coface does (63.2): its tethers stay condensed, and drain only where no
+//! class stands over them; at a hole `descend`, `ascend` and `puncture`
+//! refuse by name (78.99 (2)).
 //!
 //! HOLES ARE VOLATILE: no persisted complex punctures yet, so the tries
 //! (`persist.rs`) carry none; the first caller on a persisted complex brings
@@ -289,7 +293,13 @@ impl Complex {
             cx.holes.insert(key, hole);
         };
         match outcome {
-            Ascended::Sealed(cap) => Capped::Sealed { cap, killed: hole.fill },
+            Ascended::Sealed(cap) => {
+                // D2 — ENTROPY AT DIMENSION 2: the class the hole kept is
+                // killed here and nowhere else (the cross keeps it), counted
+                // apart from the dimension-1 cauterization.
+                crate::physics::metabolism::note_killed();
+                Capped::Sealed { cap, killed: hole.fill }
+            }
             Ascended::Open => {
                 // The cap was minted and did not close: it goes, and the hole
                 // stands as it was.
@@ -315,20 +325,5 @@ impl Complex {
     /// stands at `key`.
     pub fn hole_volume(&self, key: &[u8]) -> Option<[u64; 4]> {
         self.holes.get(key).map(|h| h.volume)
-    }
-
-    /// 78.99 (2) — THE HOLES ON A VERTEX, CAPPED before it is released: each
-    /// hole re-ascended over its standing boundary at the volume it was read
-    /// with when its cell was minted (read, never written), so the class it
-    /// kept returns to a cell and the release hands it out by `descend`. A
-    /// hole whose cap does not close stands and pins, and the vertex with it.
-    pub(crate) fn seal_holes_on(&mut self, v: &[u8]) {
-        let holes: Vec<(Vec<u8>, [u64; 4])> = match self.star.get(v) {
-            Some(star) => star.scoped().filter_map(|(k, ())| self.holes.get(&k).map(|h| (k, h.volume))).collect(),
-            None => Vec::new(),
-        };
-        for (k, volume) in holes {
-            let _ = self.seal(&k, |_| volume);
-        }
     }
 }

@@ -548,6 +548,7 @@ fn a_minds_reading_and_a_courts_agreements_read_back_exact() {
         thoughts: 6,
         unions: 1,
         waiting: 0,
+        holes: 3,
     };
     let agreements = Agreements {
         pairs: vec![Agreed { speaker: vk(1), hearer: vk(2), agreed: 3, whole: 2, deviation: [q(1, 2), q(0, 1), q(0, 1), q(0, 1)] }],

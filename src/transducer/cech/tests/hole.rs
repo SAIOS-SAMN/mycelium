@@ -1,7 +1,9 @@
 // 78.99 (2), (3), 62.1, 63.3 — THE PIVOTS COMPLETED AND THE BOARD: condense
 // is drain's inverse on content; puncture keeps the class in as a hole that
-// pins its boundary and refuses every pivot but seal; seal caps it; pivots on
-// cells sharing no vertex commute; the walk `d, a, p, d` reads as ruled.
+// pins its boundary and refuses every pivot but seal; seal caps it; a descend
+// is the cross, through the puncture (the operator's ruling, 2026-10-20);
+// pivots on cells sharing no vertex commute; the walk `d, a, s, d` reads as
+// ruled.
 
 use super::common::*;
 use crate::transducer::alphabet::Rotor;
@@ -23,11 +25,13 @@ fn sealed_triangle(c: &mut Complex, n: u8, third: Rotor) -> (Vec<Vec<u8>>, Vec<u
     (vs, key)
 }
 
-/// 78.106 — A MEMBRANE'S LIFE BALANCES: SEAL WINDS, RELEASE UNWINDS. A cell
+/// 78.106 — A MEMBRANE'S LIFE BALANCES: SEAL WINDS, THE CROSS UNWINDS. A cell
 /// sealed over a 90° turn winds its motion into the owner's field; let go by
-/// `descend`, the valve vents the reverse — the same flow unwound — so what
-/// the field took in over the cell's life composes to the identity. A turn
-/// of finite order unrolls round its own orbit; nothing is stepped.
+/// `descend` — the cross — its content is handed down through the throat: the
+/// valve vents the reverse, the same flow unwound, so what the field took in
+/// over the cell's life composes to the identity, while its class stays kept
+/// as a hole. A turn of finite order unrolls round its own orbit; nothing is
+/// stepped.
 #[test]
 fn a_membrane_winds_at_its_seal_and_unwinds_at_its_release() {
     let mut c = Complex::new();
@@ -37,7 +41,8 @@ fn a_membrane_winds_at_its_seal_and_unwinds_at_its_release() {
     let [w] = wound.as_slice() else { panic!("the seal wound one motion in: {wound:?}") };
     assert!(!w.motion.projective_eq(&ident()), "a turn: pressure held");
     assert_eq!(w.line, Thread::Wound(key.clone()), "wound on the cell's own line");
-    assert!(matches!(c.descend(&key), Descended::Released(_)), "the membrane releases");
+    assert!(matches!(c.descend(&key), Descended::Throat(_)), "the membrane crosses");
+    assert!(c.is_hole(&key), "its class kept as a hole");
     let vented = c.take_outflow();
     let [u] = vented.as_slice() else { panic!("the release vented one motion: {vented:?}") };
     assert!(u.motion.geo(&w.motion).projective_eq(&ident()), "unwound exactly: the cell's life balances");
@@ -74,20 +79,36 @@ fn puncture_keeps_the_class_in_and_only_seal_caps_the_hole() {
     assert_eq!(c.board().sealed, vec![(key, cap)]);
 }
 
-/// A RELEASED VERTEX CAPS ITS HOLES FIRST (78.99 (2), the voice's vent): the
-/// hole is sealed at the volume its cell was read with, its class returned to
-/// a cell, and the release then hands that class out by `descend` with the
-/// rest of the star — no hole left naming a boundary that is gone.
+/// THE HOLES PIN THE VERTEX (the operator's ruling, 2026-10-20). A vertex
+/// released under a sealed chamber crosses it — the class kept as a hole —
+/// and the hole holds the vertex: it stands, its section and its boundary
+/// with it, and no class is handed out. The class returns by the dipole's
+/// read-back alone: the seal re-ascends it over the standing boundary. A
+/// vertex under a chamber that sealed nothing keeps nothing, and goes.
 #[test]
-fn a_released_vertex_caps_its_holes_and_hands_their_classes_out() {
+fn a_released_vertex_stands_under_the_classes_it_keeps() {
     let mut c = Complex::new();
     let (vs, key) = sealed_triangle(&mut c, 1, turn_90());
-    let Punctured::Opened(_) = c.puncture(&key) else { panic!("punctured") };
+    let sealed = c.board();
     let r = c.release_vertex(&vs[0]);
-    assert!(!c.is_hole(&key), "the hole was capped");
-    assert_eq!(r.released, 1, "and its class handed out by the descend: {r:?}");
-    assert_eq!(r.pinned, 0, "nothing stands pinned");
-    assert!(c.board().holes.is_empty() && c.board().sealed.is_empty());
+    assert_eq!(r.kept, 1, "the chamber crossed, its class kept: {r:?}");
+    assert!(r.pinned > 0, "and the hole holds the vertex: {r:?}");
+    assert!(c.is_hole(&key) && c.sections.get(vs[0].as_slice()).is_some(), "the vertex stands under its kept class");
+    let Capped::Sealed { killed, .. } = c.seal(&key, |_| vol()) else { panic!("the boundary still closes: the class reads back") };
+    assert_eq!(c.board(), sealed, "the read-back returns the chamber exactly");
+    assert!(!matches!(killed, Fill::Open), "the class the hole kept");
+    let mut open = Complex::new();
+    let ws: Vec<Vec<u8>> = [v(11), v(12), v(13)].iter().map(|a| a.as_bytes().to_vec()).collect();
+    for x in &ws {
+        open.set_section(x, Section::at(crate::transducer::address::Address::from(x.clone()), Rotor::identity()), vol());
+    }
+    for (a, b) in [(0, 1), (1, 2), (0, 2)] {
+        open.set_edge(&ws[a], &ws[b], Rotor::identity(), ident(), vol());
+    }
+    let _ = open.coboundary_on_link(&ws[0], |_| vol());
+    let r = open.release_vertex(&ws[0]);
+    assert_eq!((r.kept, r.unsealed, r.pinned), (0, 1, 0), "a chamber that sealed nothing keeps nothing: {r:?}");
+    assert!(open.sections.get(ws[0].as_slice()).is_none(), "and the vertex goes");
 }
 
 /// 78.100 — WHERE THE CLIMB STOPS, read on the board it leaves. Three
@@ -264,31 +285,36 @@ fn a_fibre_moves_with_the_field() {
     });
 }
 
-/// THE WALK `d, a, p, d` ON ONE CELL (78.99 (3)). `d·a` cancels on the board;
-/// `p` moves the class from the sealed axis to the hole axis; the last `d`
-/// refuses at the hole. The board it leaves is the board `p` alone leaves.
+/// THE WALK `d, a, s, d` ON ONE CELL (78.99 (3), the cross). `d` crosses
+/// through the puncture: the class moves from the sealed axis to the hole
+/// axis; `a` refuses at the hole — the dipole reads back by `s`, the seal,
+/// alone — and `s` returns the chamber; the last `d` crosses again. The board
+/// it leaves is the board `p` alone leaves: the descent IS the puncture,
+/// with the content handed down.
 #[test]
-fn the_walk_descend_ascend_puncture_descend_reads_as_ruled() {
+fn the_walk_descend_ascend_seal_descend_reads_as_ruled() {
     let mut c = Complex::new();
     let (vs, key) = sealed_triangle(&mut c, 1, turn_90());
     let sealed = c.board();
-    let walk = [Pivot::Descend(key.clone()), Pivot::Ascend(vs.clone()), Pivot::Puncture(key.clone()), Pivot::Descend(key.clone())];
+    let walk = [Pivot::Descend(key.clone()), Pivot::Ascend(vs.clone()), Pivot::Seal(key.clone()), Pivot::Descend(key.clone())];
     let read: Vec<Applied> = walk.iter().map(|p| c.apply(p, |_| vol(), vol())).collect();
-    assert!(matches!(read[0], Applied::Descended(Descended::Released(_))));
-    assert!(matches!(read[1], Applied::Ascended(Ascended::Sealed(_))));
-    assert!(matches!(read[2], Applied::Punctured(Punctured::Opened(_))));
-    assert!(matches!(read[3], Applied::Descended(Descended::Hole)), "the last descend refuses at the hole");
+    assert!(matches!(read[0], Applied::Descended(Descended::Throat(_))), "the descend crosses through the puncture");
+    assert!(matches!(read[1], Applied::Ascended(Ascended::Hole)), "ascend refuses at the hole: only the seal reads it back");
+    assert!(matches!(read[2], Applied::Capped(Capped::Sealed { .. })), "the seal returns the chamber");
+    assert!(matches!(read[3], Applied::Descended(Descended::Throat(_))), "and it crosses again");
     let mut alone = Complex::new();
     let (_, k2) = sealed_triangle(&mut alone, 1, turn_90());
     assert_eq!(alone.board(), sealed);
     let _ = alone.puncture(&k2);
-    assert_eq!(c.board(), alone.board(), "d·a cancelled on the board: the walk leaves what p alone leaves");
+    assert_eq!(c.board(), alone.board(), "the walk leaves what p alone leaves");
 }
 
 /// THE LOCALITY THEOREM. Two cells sharing no vertex: a descend of one and a
 /// puncture of the other, in either order, leave one board and one outflow.
-/// On one cell the order is content: `d` then `p` leaves no hole (the puncture
-/// finds no cell), `p` then `d` leaves the hole (the descend refuses).
+/// On one cell the cross shows itself: `d` then `p` and `p` then `d` leave one
+/// board — the descent is the puncture — and differ in what flowed: `d`
+/// first handed the content down, `p` first kept it, and the descend then
+/// refuses at the hole.
 #[test]
 fn pivots_sharing_no_vertex_commute_and_on_one_cell_the_order_is_content() {
     let build = || {
@@ -324,8 +350,8 @@ fn pivots_sharing_no_vertex_commute_and_on_one_cell_the_order_is_content() {
     let (mut first_d, ..) = build();
     let _ = first_d.apply(&Pivot::Descend(ka.clone()), |_| vol(), vol());
     assert!(
-        matches!(first_d.apply(&Pivot::Puncture(ka.clone()), |_| vol(), vol()), Applied::Punctured(Punctured::Absent)),
-        "no cell left to puncture"
+        matches!(first_d.apply(&Pivot::Puncture(ka.clone()), |_| vol(), vol()), Applied::Punctured(Punctured::Hole)),
+        "the descend left the hole: a hole is not punctured twice"
     );
     let (mut first_p, ..) = build();
     let _ = first_p.apply(&Pivot::Puncture(ka.clone()), |_| vol(), vol());
@@ -333,5 +359,7 @@ fn pivots_sharing_no_vertex_commute_and_on_one_cell_the_order_is_content() {
         matches!(first_p.apply(&Pivot::Descend(ka.clone()), |_| vol(), vol()), Applied::Descended(Descended::Hole)),
         "the descend refuses at the hole"
     );
-    assert_ne!(first_d.board(), first_p.board(), "on one cell the order is content: the hole moved");
+    assert_eq!(first_d.board(), first_p.board(), "on one cell the descent is the puncture: one board");
+    assert_eq!(first_d.take_outflow().len(), 1, "d first handed the content down");
+    assert!(first_p.take_outflow().is_empty(), "p first kept it in");
 }

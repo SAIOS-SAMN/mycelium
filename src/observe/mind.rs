@@ -256,6 +256,9 @@ pub struct Mind {
     pub thoughts: u64,
     pub unions: u64,
     pub waiting: u64,
+    /// The holes standing on the mind's complex — classes the cross kept and
+    /// questions carried — as the last vent left them.
+    pub holes: u64,
 }
 
 impl Default for Mind {
@@ -302,6 +305,7 @@ impl Default for Mind {
             thoughts: 0,
             unions: 0,
             waiting: 0,
+            holes: 0,
         }
     }
 }
@@ -343,6 +347,7 @@ impl Mind {
             .chain(self.boosts)
             .chain(self.withheld_tests)
             .chain(self.acts)
+            .chain([self.holes])
         {
             put_u64(out, v);
         }
@@ -401,6 +406,7 @@ impl Mind {
         for a in &mut acts {
             *a = take_u64(b, p)?;
         }
+        let holes = take_u64(b, p)?;
         let n =usize::try_from(u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?)).ok()?;
         *p += 4;
         // Each lock is three counts.
@@ -453,6 +459,7 @@ impl Mind {
             thoughts,
             unions,
             waiting,
+            holes,
         })
     }
 
@@ -496,9 +503,10 @@ impl Mind {
                 self.remembered
             ),
             format!(
-                "  fibres {} · bodies met {}",
+                "  fibres {} · bodies met {} · holes standing {}",
                 FLEX.iter().zip(&self.flex).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
-                BODIES.iter().zip(&self.bodies).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
+                BODIES.iter().zip(&self.bodies).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
+                self.holes
             ),
             format!(
                 "  torsion: shears {} · escapes {} · drifts {} · locks {}",

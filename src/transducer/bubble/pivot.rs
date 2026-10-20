@@ -216,11 +216,13 @@ impl Contemplation {
     /// thought, a tether or a cell whose tension relaxed in the field, with
     /// why. A THOUGHT's own line is read by its cause (`line::release_line`):
     /// a grounded thought winds on past its return, and every other release
-    /// lets the thought go. A released CELL descends, its fill handed out. A
-    /// released TETHER's read cells descend first, highest degree first — a
-    /// boundary relaxing no longer closes — and the tether drains; a hole over
-    /// it pins it, and it stands. A line no longer in the complex is gone
-    /// already and nothing happens.
+    /// lets the thought go. A released CELL descends by THE CROSS
+    /// (`Complex::descend`): its class kept as a hole through the puncture,
+    /// its content handed down. A released TETHER's read cells cross first,
+    /// highest degree first — a boundary relaxing no longer closes — and the
+    /// tether drains where no class stands over it; a hole over it — a class
+    /// kept, or a question still carried — pins it, and it stands condensed.
+    /// A line no longer in the complex is gone already and nothing happens.
     pub(crate) fn release(&mut self, lines: &[(Vec<u8>, crate::transducer::cech::orbit::Released)]) {
         for (line, why) in lines {
             if self.release_line(line, *why) {
@@ -257,7 +259,18 @@ impl Contemplation {
     /// it with (read, never written). A boundary a face has left, a remainder
     /// among its faces, or a hole there refuses by name — read as no outcome.
     /// Answers what the fill attached, as the meet graph reads it.
+    ///
+    /// THE DIPOLE'S READ-BACK: at a hole the cross left, ascend is the
+    /// `seal` — the class the throat kept returns to a chamber over the
+    /// standing boundary, or the hole stands where it does not close.
     pub(crate) fn ascend(&mut self, cell: &[u8]) -> CoboundaryOutcome {
+        if self.complex.is_hole(cell) {
+            return match self.seal(cell) {
+                Capped::Sealed { cap, .. } => CoboundaryOutcome::Attached(cap),
+                Capped::Open => CoboundaryOutcome::Attached(Fill::Open),
+                Capped::Absent => CoboundaryOutcome::Absent,
+            };
+        }
         let Some((vertices, volume)) = self.complex.simplex(cell).map(|s| (s.vertices.clone(), s.volume)) else {
             return CoboundaryOutcome::Absent;
         };

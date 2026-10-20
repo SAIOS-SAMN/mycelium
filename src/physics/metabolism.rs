@@ -8,7 +8,8 @@
 //!
 //! ```text
 //!   ENTROPY    a cauterization — `Drained::Cauterized` (dimension 1) and
-//!              `Descended::Released` (dimension 2). An IRREVERSIBLE
+//!              a hole's class killed by its seal, `Capped::Sealed`
+//!              (dimension 2; a descent keeps its class). An IRREVERSIBLE
 //!              termination: a loop that cannot be re-entered from the
 //!              loop it just left, which is what makes the record it
 //!              leaves a record and not a state.
@@ -19,7 +20,7 @@
 //!              inside a single carrier. It is READ beside this line.
 //!              AT DIMENSION 2 IT IS COUNTED HERE: `sealed`, an ascent
 //!              that sealed a cell (AD1) — the one producer of that fact,
-//!              beside `released`, its entropy at the same dimension, and
+//!              beside `killed`, its entropy at the same dimension, and
 //!              never netted against it.
 //!   ORBIT ℓ    `Order(Rotor)` — the cyclotomic period, a discrete integer
 //!              bound, and the structure `μ` is carried BY rather than a
@@ -45,13 +46,15 @@ pub struct Metabolism {
     /// ENTROPY at dimension 1 — a drain that cauterized rather than
     /// finding vacuum.
     pub cauterized: u64,
-    /// ENTROPY at dimension 2 — a descent that released a fill.
-    pub released: u64,
+    /// ENTROPY at dimension 2 — a class a hole kept, killed by its `seal`
+    /// (the cross keeps every class it descends: the operator's ruling,
+    /// 2026-10-20).
+    pub killed: u64,
     /// SYNTROPY at dimension 2 and above — a cell sealed by ANY fill (78.74,
     /// the pivot machinery tied in): the climb's `fill` and `fill_by_gauge`
     /// as well as `ascend`, booked once at the one fill writer. Kept beside
-    /// `released`, never netted against it: the pair is history (62.5 as
-    /// amended), and a seal and a release are two events.
+    /// `killed`, never netted against it: the pair is history (62.5 as
+    /// amended), and a seal and a kill are two events.
     pub sealed: u64,
     /// Metabolic draw per lane (𝒮, 𝒢, 𝒯, 𝒽) — the flux itself.
     pub drawn: [u64; 4],
@@ -91,7 +94,7 @@ pub struct Metabolism {
 thread_local! {
     static METABOLISM: std::cell::Cell<Metabolism> =
         const { std::cell::Cell::new(Metabolism {
-            cauterized: 0, released: 0, sealed: 0, drawn: [0; 4], restored: [0; 4],
+            cauterized: 0, killed: 0, sealed: 0, drawn: [0; 4], restored: [0; 4],
             depleted: [0; 4], orbit_finite: 0, orbit_sum: 0, orbit_infinite: 0, orbit_unbound: 0, orbit_unread: 0, viscous: [0; 4],
             overflowed: 0,
         }) };
@@ -136,9 +139,10 @@ pub fn note_cauterized() {
     note(|m| m.cauterized += 1);
 }
 
-/// An irreversible termination at dimension 2 (`Descended::Released`).
-pub fn note_released() {
-    note(|m| m.released += 1);
+/// An irreversible termination at dimension 2: a hole's class killed by its
+/// seal (`Capped::Sealed`).
+pub fn note_killed() {
+    note(|m| m.killed += 1);
 }
 
 /// A cell sealed at dimension 2 or above, by any fill (78.74).
@@ -216,10 +220,10 @@ impl Metabolism {
     /// counter by the caller rather than duplicated here.
     pub fn line(&self) -> String {
         format!(
-            "entropy: cauterized {} released {} | sealed {} | orbit: closed {} Σℓ {} rosette {} unbound {} unread {} \
+            "entropy: cauterized {} killed {} | sealed {} | orbit: closed {} Σℓ {} rosette {} unbound {} unread {} \
              | draw {:?} restore {:?} depleted {:?} | overflowed {}",
             self.cauterized,
-            self.released,
+            self.killed,
             self.sealed,
             self.orbit_finite,
             self.orbit_sum,
@@ -246,6 +250,6 @@ impl Metabolism {
 
     /// Total irreversible terminations across both dimensions.
     pub fn entropy(&self) -> u64 {
-        self.cauterized + self.released
+        self.cauterized + self.killed
     }
 }

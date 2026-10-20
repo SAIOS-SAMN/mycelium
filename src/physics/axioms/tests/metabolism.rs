@@ -63,15 +63,15 @@ fn d2_entropy_and_orbit_are_counted_at_their_own_dimensions() {
     use crate::transducer::cga::Period;
     let _ = metabolism::take_metabolism();
     metabolism::note_cauterized();
-    metabolism::note_released();
-    metabolism::note_released();
+    metabolism::note_killed();
+    metabolism::note_killed();
     metabolism::note_orbit(Some(Period::Closes(4)));
     metabolism::note_orbit(Some(Period::Closes(2)));
     metabolism::note_orbit(Some(Period::Rosette));
     metabolism::note_orbit(Some(Period::Unbound));
     metabolism::note_orbit(None);
     let m = metabolism::take_metabolism();
-    assert_eq!((m.cauterized, m.released), (1, 2), "two dimensions, two counts");
+    assert_eq!((m.cauterized, m.killed), (1, 2), "two dimensions, two counts");
     assert_eq!(m.entropy(), 3, "and a total that does not lose them");
     assert_eq!((m.orbit_finite, m.orbit_sum), (2, 6), "Σℓ over closed orbits");
     assert_eq!(m.orbit_infinite, 1, "an orbit that never closes is not a period");
