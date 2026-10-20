@@ -738,6 +738,7 @@ impl Kernel {
             let t = &mut self.released_cells;
             for (held, by) in [
                 (&mut t.kept, r.kept),
+                (&mut t.scarred, r.scarred),
                 (&mut t.unsealed, r.unsealed),
                 (&mut t.vacuum, r.vacuum),
                 (&mut t.cauterized, r.cauterized),

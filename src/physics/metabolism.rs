@@ -43,8 +43,9 @@
 /// lane's, and netting them would trade one against another.
 #[derive(Default, Clone, Copy, Debug)]
 pub struct Metabolism {
-    /// ENTROPY at dimension 1 — a drain that cauterized rather than
-    /// finding vacuum.
+    /// ENTROPY BY HEAT — a drain that cauterized rather than finding vacuum
+    /// (dimension 1), or a hole cauterized where its class could not be read
+    /// back (dimension 2, its scar recorded on the complex).
     pub cauterized: u64,
     /// ENTROPY at dimension 2 — a class a hole kept, killed by its `seal`
     /// (the cross keeps every class it descends: the operator's ruling,
@@ -134,7 +135,9 @@ pub fn step_or_refuse(slot: &mut u64, x: u64) -> bool {
     }
 }
 
-/// An irreversible termination at dimension 1 (`Drained::Cauterized`).
+/// An irreversible termination by heat: a drain at dimension 1 that found
+/// strain (`Drained::Cauterized`), or a hole at dimension 2 whose class could
+/// not be read back (`Cauterized::Scarred`).
 pub fn note_cauterized() {
     note(|m| m.cauterized += 1);
 }

@@ -546,22 +546,40 @@ holds, and each fires where a winding requires it — never as a step:
 
 Every pivot is applied through `Complex::apply`, its outcome returned whole.
 
-**The cross — no descend alone** (the operator's ruling, 2026-10-20: "you
-cannot descend without the dipole ascend and antipole condense and drain
-with the puncture"). The three pairs are one structure where a chamber
-descends: the DIPOLE ascend / descend across degrees, the ANTIPOLES
-condense / drain within a degree, and the PUNCTURE their throat. A descend
-moves only as the whole cross (`Complex::descend`): the chamber is punctured
-and its class KEPT in the complex as a hole; its content — the strain its
-seal wound in — is handed down to the field on its line; its boundary
-tethers stay condensed, locked under the hole, and drain only where no class
-stands over them; and ascend reads the class back only as the `seal` of that
-hole, over the standing boundary. No path hands a sealed class out alone. A
-chamber that sealed nothing keeps nothing and goes. THE HOLES PIN THE VERTEX:
-a vertex whose word has left (`release_vertex`, `vent_vertex`) crosses its
-chambers and stands under the classes they kept until each is sealed on
-return — a pinned star is never dropped. Dimension-2 entropy is the seal's
-kill of a kept class (`note_killed`), never a descent.
+**The cross — eight components, no descend alone** (the operator's
+rulings, 2026-10-20: "you cannot descend without the dipole ascend and
+antipole condense and drain with the puncture"; descent "can not be done
+without all of the other pivotry components: ascent, trajectory, drag,
+velocity, condense, drain, puncture, cauterize" — adopted by the auditor,
+aligned with xylarium spec fc5b396):
+
+    Pivot = { ascent, descent, condense, drain, puncture, cauterize,
+              trajectory, velocity with drag }
+
+four conjugate pairs on one structure where a chamber descends — the
+DIMENSIONAL pair ascend / descend across degrees, the THERMODYNAMIC pair
+condense / drain within a degree, the TOPOLOGICAL pair puncture / seal —
+cauterize, the throat and its closing, and the KINETIC pair trajectory /
+velocity with drag on the line the content travels. A descend moves only as
+the whole cross (`Complex::descend`): the chamber is PUNCTURED and its class
+KEPT in the complex as a hole; its content — the strain its seal wound in —
+is handed down to the field on its own line as the exact `Cl(4,1)` versor it
+is, its generator's plane and sense the TRAJECTORY, its magnitude the
+VELOCITY, its DRAG the part commuting with the orbit it lands on (78.46, read
+where the field composes it, never stored); its boundary tethers stay
+CONDENSED, locked under the hole, and DRAIN only where no class stands over
+them; ASCEND reads the class back only as the `seal` of that hole over the
+standing boundary; and where the class cannot be read back — the seal does
+not close, or a vertex's word has left so no meet over it recurs — the hole
+is CAUTERIZED (`Complex::cauterize`): closed by heat, unpinning its boundary
+and its vertices, its scar recorded on the complex (`scars`), never silently
+capped and never left as a wound that pins for ever. The field already
+carries the strain handed down at the throat and dissipates what never
+returns at its beat (the reservoir's heat). No path hands a sealed class out
+alone; a chamber that sealed nothing keeps nothing and goes; a pinned star
+is never dropped. Dimension-2 entropy is the seal's kill of a kept class
+(`killed`) or a hole's cauterization (`cauterized`, with drain's at
+dimension 1) — never a descent.
 
 **Drain and descend are the field's events.** A tether condensed or a face
 sealed winds its strain into the mind's field ON ITS LINE (`cech::Flow`,

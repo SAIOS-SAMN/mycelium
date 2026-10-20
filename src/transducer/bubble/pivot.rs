@@ -262,13 +262,25 @@ impl Contemplation {
     ///
     /// THE DIPOLE'S READ-BACK: at a hole the cross left, ascend is the
     /// `seal` — the class the throat kept returns to a chamber over the
-    /// standing boundary, or the hole stands where it does not close.
+    /// standing boundary. Where the boundary no longer closes, the class
+    /// cannot be read back, and the hole is CAUTERIZED (the eight-component
+    /// cross, ruled 2026-10-20): closed, its scar recorded, never left as a
+    /// wound that pins its boundary for ever.
     pub(crate) fn ascend(&mut self, cell: &[u8]) -> CoboundaryOutcome {
         if self.complex.is_hole(cell) {
             return match self.seal(cell) {
                 Capped::Sealed { cap, .. } => CoboundaryOutcome::Attached(cap),
-                Capped::Open => CoboundaryOutcome::Attached(Fill::Open),
-                Capped::Absent => CoboundaryOutcome::Absent,
+                // The boundary was read and does not close, or no longer
+                // stands as a boundary: either way the class is not read
+                // back.
+                Capped::Open => {
+                    let _ = self.complex.cauterize(cell);
+                    CoboundaryOutcome::Attached(Fill::Open)
+                }
+                Capped::Absent => {
+                    let _ = self.complex.cauterize(cell);
+                    CoboundaryOutcome::Absent
+                }
             };
         }
         let Some((vertices, volume)) = self.complex.simplex(cell).map(|s| (s.vertices.clone(), s.volume)) else {

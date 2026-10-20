@@ -67,6 +67,11 @@ pub struct Complex {
     /// stars and pinning its boundary until `seal` caps it. Volatile: no
     /// persisted complex punctures yet (`hole.rs`).
     pub(crate) holes: Keyed<Simplex>,
+    /// THE SCARS: holes CAUTERIZED where their class could not be read back
+    /// (the eight-component cross, ruled 2026-10-20) — counted on the chart
+    /// that bore them, the class itself handed to the caller that burned it,
+    /// never held here, so the record keeps its bound. Volatile.
+    pub(crate) scars: u64,
     /// 78.112 H7b — THE TORSION HEARING WOUND AT EACH VERTEX: the crossings of
     /// the rings heard in that perception (the light crossing their planes,
     /// the impact), composed as one strain and wound on at each hearing. It
@@ -266,6 +271,12 @@ impl Complex {
     /// pinning its boundary and its vertices until its seal.
     pub fn holes_standing(&self) -> usize {
         self.holes.len()
+    }
+
+    /// THE SCARS: holes cauterized on this complex, each a class burned where
+    /// it could not be read back.
+    pub fn scars(&self) -> u64 {
+        self.scars
     }
 
     /// THE ENTRIES THE COMPLEX HOLDS: its simplices at every degree and

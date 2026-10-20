@@ -79,24 +79,31 @@ fn puncture_keeps_the_class_in_and_only_seal_caps_the_hole() {
     assert_eq!(c.board().sealed, vec![(key, cap)]);
 }
 
-/// THE HOLES PIN THE VERTEX (the operator's ruling, 2026-10-20). A vertex
-/// released under a sealed chamber crosses it — the class kept as a hole —
-/// and the hole holds the vertex: it stands, its section and its boundary
-/// with it, and no class is handed out. The class returns by the dipole's
-/// read-back alone: the seal re-ascends it over the standing boundary. A
-/// vertex under a chamber that sealed nothing keeps nothing, and goes.
+/// A VERTEX WHOSE WORD HAS LEFT READS NO CLASS BACK, AND CAUTERIZES (the
+/// eight-component cross, ruled 2026-10-20). Released under a sealed
+/// chamber, it crosses it — the class kept through the throat, its content
+/// handed down — and, no meet over it recurring, the hole is cauterized: the
+/// class burned, its scar recorded, the boundary unpinned, and the vertex
+/// goes. A question standing on it is cauterized first. A vertex under a
+/// chamber that sealed nothing keeps nothing, and goes, with no scar.
 #[test]
-fn a_released_vertex_stands_under_the_classes_it_keeps() {
+fn a_released_vertex_cauterizes_the_classes_it_cannot_read_back() {
     let mut c = Complex::new();
+    c.arm_outflow();
     let (vs, key) = sealed_triangle(&mut c, 1, turn_90());
-    let sealed = c.board();
+    let _ = c.take_outflow();
     let r = c.release_vertex(&vs[0]);
-    assert_eq!(r.kept, 1, "the chamber crossed, its class kept: {r:?}");
-    assert!(r.pinned > 0, "and the hole holds the vertex: {r:?}");
-    assert!(c.is_hole(&key) && c.sections.get(vs[0].as_slice()).is_some(), "the vertex stands under its kept class");
-    let Capped::Sealed { killed, .. } = c.seal(&key, |_| vol()) else { panic!("the boundary still closes: the class reads back") };
-    assert_eq!(c.board(), sealed, "the read-back returns the chamber exactly");
-    assert!(!matches!(killed, Fill::Open), "the class the hole kept");
+    assert_eq!((r.kept, r.scarred, r.pinned), (1, 1, 0), "the chamber crossed and its class was cauterized: {r:?}");
+    assert!(!c.is_hole(&key) && c.board().holes.is_empty(), "no wound left standing");
+    assert_eq!(c.scars(), 1, "the scar recorded on the complex");
+    assert!(c.sections.get(vs[0].as_slice()).is_none(), "and the vertex goes");
+    assert!(!c.take_outflow().is_empty(), "its content was handed down at the throat");
+    let mut asked = Complex::new();
+    let (ws, held) = sealed_triangle(&mut asked, 21, turn_90());
+    let Punctured::Opened(_) = asked.puncture(&held) else { panic!("a question opened") };
+    let r = asked.release_vertex(&ws[0]);
+    assert_eq!((r.scarred, r.pinned), (1, 0), "the question on it cauterized first: {r:?}");
+    assert!(asked.sections.get(ws[0].as_slice()).is_none(), "and the vertex goes");
     let mut open = Complex::new();
     let ws: Vec<Vec<u8>> = [v(11), v(12), v(13)].iter().map(|a| a.as_bytes().to_vec()).collect();
     for x in &ws {
@@ -107,8 +114,32 @@ fn a_released_vertex_stands_under_the_classes_it_keeps() {
     }
     let _ = open.coboundary_on_link(&ws[0], |_| vol());
     let r = open.release_vertex(&ws[0]);
-    assert_eq!((r.kept, r.unsealed, r.pinned), (0, 1, 0), "a chamber that sealed nothing keeps nothing: {r:?}");
-    assert!(open.sections.get(ws[0].as_slice()).is_none(), "and the vertex goes");
+    assert_eq!((r.kept, r.scarred, r.unsealed, r.pinned), (0, 0, 1, 0), "a chamber that sealed nothing keeps nothing: {r:?}");
+    assert!(open.sections.get(ws[0].as_slice()).is_none() && open.scars() == 0, "and the vertex goes, unscarred");
+}
+
+/// THE READ-BACK THAT CANNOT BE MADE CAUTERIZES (the eight-component
+/// cross). A chamber crosses on the mind's complex and the meet over the same
+/// vertices reads its class back whole — ascend at the hole, the seal — with
+/// no scar. Crossed again, one pair of its boundary then stands as a
+/// remainder — a transition that does not realise — so the boundary no
+/// longer stands as one and the class cannot be read back: the hole is
+/// cauterized, its scar recorded, not left standing.
+#[test]
+fn a_read_back_that_cannot_be_made_cauterizes() {
+    let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
+    let (vs, key) = sealed_triangle(&mut mind.complex, 61, turn_90());
+    assert!(matches!(mind.complex.descend(&key), Descended::Throat(_)), "the chamber crosses");
+    assert!(
+        matches!(mind.ascend(&key), CoboundaryOutcome::Attached(f) if !f.unsettled()),
+        "a boundary that still closes reads the class back"
+    );
+    assert!(mind.complex.simplex(&key).is_some() && mind.complex.scars() == 0, "the chamber returned, no scar");
+    assert!(matches!(mind.complex.descend(&key), Descended::Throat(_)), "it crosses again");
+    mind.complex.set_remainder_edge(&vs[0], &vs[2]);
+    assert!(!matches!(mind.ascend(&key), CoboundaryOutcome::Attached(f) if !f.unsettled()), "the read-back cannot be made");
+    assert!(!mind.complex.is_hole(&key), "the hole is cauterized, not left standing");
+    assert_eq!(mind.complex.scars(), 1, "its scar recorded");
 }
 
 /// 78.100 — WHERE THE CLIMB STOPS, read on the board it leaves. Three

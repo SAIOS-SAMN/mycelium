@@ -11,7 +11,13 @@
 //!             drain    ◄───  dissolve it, cauterized OUT       coboundary.rs
 //!     hole    puncture ───►  open a cell, the class kept IN    here
 //!             seal     ◄───  cap the hole, the class killed    here
+//!             cauterize ◄──  close it by heat, the scar kept   here
 //! ```
+//!
+//! CAUTERIZE (the eight-component cross, ruled 2026-10-20): where a hole's
+//! class cannot be read back — its seal does not close, or a vertex's word
+//! has left — the hole is closed by heat, unpinning its boundary, its scar
+//! recorded; never left standing as a wound that pins for ever.
 //!
 //! THE CROSS (the operator's ruling, 2026-10-20): no descend without its
 //! dipole ascend, its antipoles condense and drain, and the puncture. A
@@ -67,6 +73,15 @@ pub enum Punctured {
     /// A hole already stands here; its conjugate is `seal`.
     Hole,
     /// No cell of degree two or more at this key.
+    Absent,
+}
+
+/// WHAT A `cauterize` DID.
+#[derive(Clone, Debug)]
+pub enum Cauterized {
+    /// The hole is closed and its class burned: this fill, the scar.
+    Scarred(Fill),
+    /// No hole at this key.
     Absent,
 }
 
@@ -325,5 +340,28 @@ impl Complex {
     /// stands at `key`.
     pub fn hole_volume(&self, key: &[u8]) -> Option<[u64; 4]> {
         self.holes.get(key).map(|h| h.volume)
+    }
+
+    /// `cauterize` — THE HOLE CLOSED WHERE ITS CLASS CANNOT BE READ BACK (the
+    /// eight-component cross, ruled 2026-10-20): `seal`'s conjugate by heat.
+    /// The content was handed down at the throat, so the field already
+    /// carries the strain and dissipates what never returns (its beat, the
+    /// reservoir's heat); here the class is burned — a cauterization at
+    /// dimension two, counted as `drain`'s is at dimension one — the hole
+    /// leaves its vertices' stars, unpinning its boundary and its vertices,
+    /// and the scar is recorded on this complex. Never silently capped:
+    /// the burned class is answered to the caller.
+    pub fn cauterize(&mut self, key: &[u8]) -> Cauterized {
+        let Some(hole) = self.holes.remove(key) else {
+            return Cauterized::Absent;
+        };
+        for v in &hole.vertices {
+            if let Some(star) = self.star.get_mut(v) {
+                star.remove(key);
+            }
+        }
+        crate::physics::metabolism::note_cauterized();
+        self.scars += 1;
+        Cauterized::Scarred(hole.fill)
     }
 }

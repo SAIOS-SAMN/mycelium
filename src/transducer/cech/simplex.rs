@@ -203,12 +203,14 @@ pub enum Drained {
 }
 
 /// 78.74 — WHAT RELEASING ONE VERTEX DID, cell by cell: the chambers crossed
-/// (their classes kept as holes, `kept`) or unsealed, the edges drained to
-/// vacuum or cauterized, and what stood pinned — by a hole the cross left,
-/// or by a coface outside the vertex's star — so the vertex stood.
+/// (their classes kept as holes, `kept`) or unsealed, the holes on it
+/// cauterized (`scarred`: a vertex whose word left reads no class back),
+/// the edges drained to vacuum or cauterized, and what stood pinned, so the
+/// vertex stood.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Release {
     pub kept: u64,
+    pub scarred: u64,
     pub unsealed: u64,
     pub vacuum: u64,
     pub cauterized: u64,

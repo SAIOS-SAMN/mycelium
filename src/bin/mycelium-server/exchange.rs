@@ -507,7 +507,7 @@ impl Exchange {
                         w.heard_taught_nothing
                     );
                     eprintln!(
-                        "  court metabolism K {} | {} | syntropy {:?} pressure {:?} | {} | eras {} hot {} | rings first {} carried {} returns {} unbound {} repriced {} rank steps {} (by outflow {}) held {} ringless {} (acyclic {} vacuous {} circuits unread {}) formless {} unread {} | sentences {} theorems checked {} refused {} shortcuts offered {} nerve closed {} | outflow {} | tubes {tubes} net {net} transport {transport} open {open} helicity {helicity} flux {} reconnections {} | vent kept {} unsealed {} vacuum {} cauterized {} pinned {} | sealed {} | multiplicity condensed {} | folds {}",
+                        "  court metabolism K {} | {} | syntropy {:?} pressure {:?} | {} | eras {} hot {} | rings first {} carried {} returns {} unbound {} repriced {} rank steps {} (by outflow {}) held {} ringless {} (acyclic {} vacuous {} circuits unread {}) formless {} unread {} | sentences {} theorems checked {} refused {} shortcuts offered {} nerve closed {} | outflow {} | tubes {tubes} net {net} transport {transport} open {open} helicity {helicity} flux {} reconnections {} | vent kept {} scarred {} unsealed {} vacuum {} cauterized {} pinned {} | sealed {} | multiplicity condensed {} | folds {}",
                         k.k_step(),
                         k.physics().reserve.line(),
                         k.physics().syntropic,
@@ -538,6 +538,7 @@ impl Exchange {
                         w.flux_transport,
                         w.reconnections,
                         vent.kept,
+                        vent.scarred,
                         vent.unsealed,
                         vent.vacuum,
                         vent.cauterized,

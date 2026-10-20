@@ -505,21 +505,30 @@ impl Complex {
     /// a complex with an empty 3-skeleton it is vacuously empty and never
     /// fires — which is exactly how `drain` behaved before 2-cells existed.
     ///
-    /// THE CROSS (the operator's ruling, 2026-10-20: "you cannot descend
-    /// without the dipole ascend and antipole condense and drain with the
-    /// puncture"). A descend never moves alone, and no other path takes a
-    /// sealed chamber's class out: a chamber exists because a boundary
-    /// holonomy CLOSED, and its descent is
+    /// THE CROSS, OF EIGHT COMPONENTS (the operator's rulings, 2026-10-20: "you
+    /// cannot descend without the dipole ascend and antipole condense and
+    /// drain with the puncture"; and descent "can not be done without all of
+    /// the other pivotry components: ascent, trajectory, drag, velocity,
+    /// condense, drain, puncture, cauterize" — the auditor's adoption,
+    /// aligned with xylarium fc5b396). A descend never moves alone, and no
+    /// other path takes a sealed chamber's class out: a chamber exists
+    /// because a boundary holonomy CLOSED, and its descent is
     /// - THE PUNCTURE — the throat: the chamber opened into a hole that KEEPS
     ///   its class in the complex (`puncture`);
-    /// - THE DESCENT through it — the chamber's content, the strain its seal
-    ///   wound into the field, handed down and unwound on its own line
-    ///   (`vent`);
+    /// - THE DESCENT through it, WITH ITS TRAJECTORY AND VELOCITY — the
+    ///   chamber's content, the strain its seal wound into the field, handed
+    ///   down whole on its own line as the exact `Cl(4,1)` versor it is: its
+    ///   generator's plane and sense the trajectory, its magnitude the
+    ///   velocity, and its DRAG the part commuting with the orbit it lands on
+    ///   (78.46), read where the field composes it (`vent`);
     /// - THE ANTIPOLES within the tier — the boundary's tethers stay
     ///   condensed, locked under the hole that pins them; a tether drains
     ///   only where no class stands over it;
     /// - THE DIPOLE — `ascend` is the only read-back: at the hole it is the
-    ///   `seal`, which returns the class to a chamber.
+    ///   `seal`, which returns the class to a chamber;
+    /// - CAUTERIZE — where the class cannot be read back (the seal does not
+    ///   close, or the vertex's word has left), the hole is closed by heat,
+    ///   unpinning its boundary, its scar recorded (`cauterize`).
     ///
     /// A chamber that sealed nothing (unsettled) keeps no class: the
     /// membrane goes and nothing is handed down.
@@ -647,14 +656,21 @@ impl Complex {
     /// each cell of degree two or more CROSSES (`descend`: a sealed
     /// chamber's class kept as a hole, its content handed down), each edge
     /// `drain`s where no class stands over it (vacuum, or cauterized with
-    /// its record). THE HOLES PIN THE VERTEX (the operator's ruling,
-    /// 2026-10-20): a class the cross kept stands on it, so the vertex and
-    /// its section stay until each hole is sealed on return; only a star
-    /// with nothing pinned lets the vertex go. Without this the complex only
-    /// accreted: `drain`, `descend` and `ascend` existed and nothing called
-    /// them.
+    /// its record). A VERTEX WHOSE WORD HAS LEFT READS NO CLASS BACK — no
+    /// meet over it recurs — so every hole on it is CAUTERIZED (the
+    /// eight-component cross, ruled 2026-10-20: an unsealable hole is closed,
+    /// unpinning the vertex, its scar recorded): those standing on it first,
+    /// and each class the cross keeps as it crosses, before the faces below
+    /// it. Only a star with nothing pinned lets the vertex go. Without this
+    /// the complex only accreted: `drain`, `descend` and `ascend` existed and
+    /// nothing called them.
     pub fn release_vertex(&mut self, v: &[u8]) -> Release {
         let mut out = Release::default();
+        for h in self.holes_on(v) {
+            if let Cauterized::Scarred(_) = self.cauterize(&h) {
+                out.scarred += 1;
+            }
+        }
         let mut cells: Vec<(usize, Vec<u8>)> = match self.star.get(v) {
             Some(star) => star.scoped().filter_map(|(k, ())| self.degree_of(&k).map(|d| (d, k))).collect(),
             None => Vec::new(),
@@ -672,16 +688,17 @@ impl Complex {
                 },
                 _ => match self.descend(&k) {
                     Descended::Unsealed => out.unsealed += 1,
-                    Descended::Throat(_) => out.kept += 1,
+                    Descended::Throat(_) => {
+                        out.kept += 1;
+                        if let Cauterized::Scarred(_) = self.cauterize(&k) {
+                            out.scarred += 1;
+                        }
+                    }
                     Descended::Pinned => out.pinned += 1,
                     Descended::Absent | Descended::Hole => {}
                 },
             }
         }
-        // The holes standing on the vertex — those it carried before and
-        // those the cross just opened — hold it.
-        let holes = self.holes_on(v).len() as u64;
-        out.pinned += holes;
         if out.pinned == 0 {
             let vertex = simplex_key(&[v.to_vec()]);
             self.forget(vertex.as_bytes());
@@ -694,10 +711,10 @@ impl Complex {
     }
 
     /// 78.74 — A VERTEX THAT MUST GO, VENTED: its star released through the
-    /// pivots (`release_vertex`, every outcome booked on the ledger). A star
-    /// pinned — by a class the cross kept, or a coface outside it — is no
-    /// longer dropped (the operator's ruling, 2026-10-20): dropping it lost
-    /// the classes it stood under, and the vertex stands until they return.
+    /// pivots (`release_vertex`, every outcome booked on the ledger, every
+    /// class it kept cauterized with its scar). A star still pinned is never
+    /// dropped (the operator's ruling, 2026-10-20): dropping it lost what it
+    /// stood under without a record.
     pub fn vent_vertex(&mut self, v: &[u8]) -> Release {
         self.release_vertex(v)
     }

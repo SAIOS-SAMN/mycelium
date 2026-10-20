@@ -219,12 +219,14 @@ fn a_cauterized_tethers_motion_flows_out_to_its_owner() {
 }
 
 /// 78.74 — THE NERVE'S ELASTIC VENT, THROUGH THE CROSS: releasing a vertex
-/// takes its star through the pivots — the sealed membrane crosses first,
-/// its class kept as a hole, and the hole holds its boundary and the vertex
-/// (the operator's ruling, 2026-10-20); a membrane that sealed nothing goes,
-/// its tethers drain, and the vertex with them — the cells not on it
-/// standing, with no ghost incidence. A tetrahedron's vertex crosses its
-/// 3-cell too: `descend` is gated at every degree from two up.
+/// whose word has left takes its star through the pivots — the sealed
+/// membrane crosses first, its class kept through the throat, and, no meet
+/// over the vertex recurring, the hole is cauterized with its scar (the
+/// eight-component cross, ruled 2026-10-20); its tethers then drain and the
+/// vertex goes, the cells not on it standing, with no ghost incidence. A
+/// membrane that sealed nothing goes unscarred. A tetrahedron's vertex
+/// crosses and cauterizes its 3-cell before the faces below it: `descend` is
+/// gated at every degree from two up.
 #[test]
 fn releasing_a_vertex_vents_its_star_through_the_pivots() {
     let mut c = Complex::new();
@@ -241,12 +243,12 @@ fn releasing_a_vertex_vents_its_star_through_the_pivots() {
     let face = cell_of(c.link(vs[0].as_bytes(), 2), "a 2-cell stands");
     assert!(c.fill(&face).attached().is_some(), "the membrane is sealed, pinning its boundary");
     let r = c.release_vertex(vs[0].as_bytes());
-    assert_eq!(r.kept, 1, "the membrane crossed, its class kept: {r:?}");
-    assert!(r.pinned > 0 && r.vacuum == 0, "its tethers held under the hole: {r:?}");
-    assert!(c.is_hole(&face) && c.sections.get(vs[0].as_bytes()).is_some(), "the hole holds the vertex");
-    for x in &vs {
+    assert_eq!((r.kept, r.scarred, r.vacuum, r.pinned), (1, 1, 2, 0), "crossed, cauterized, both tethers to vacuum: {r:?}");
+    assert!(!c.is_hole(&face) && c.sections.get(vs[0].as_bytes()).is_none(), "no wound left, and the vertex goes");
+    assert_eq!(c.scars(), 1, "the scar recorded");
+    for x in &vs[1..] {
         for k in c.link_of(x.as_bytes()) {
-            assert!(c.simplex(&k).is_some() || c.is_hole(&k), "no ghost incidence");
+            assert!(c.simplex(&k).is_some(), "no ghost incidence");
         }
     }
 
@@ -289,9 +291,10 @@ fn releasing_a_vertex_vents_its_star_through_the_pivots() {
         let _ = c.fill(&k);
     }
     let r = c.release_vertex(vs[0].as_bytes());
-    assert!(r.kept >= 1, "highest degree first: the 3-cell crossed, its class kept: {r:?}");
-    assert!(solid.iter().all(|k| c.simplex(k).is_none() && c.is_hole(k)), "the 3-cell left the cells, kept as a hole");
-    assert!(c.sections.get(vs[0].as_bytes()).is_some(), "and the hole holds the vertex: {r:?}");
+    assert_eq!(r.pinned, 0, "highest degree first, each kept class cauterized before the faces below it: {r:?}");
+    assert!(r.kept >= 4 && r.scarred == r.kept, "the 3-cell and its three faces on v1 crossed and cauterized: {r:?}");
+    assert!(solid.iter().all(|k| c.simplex(k).is_none() && !c.is_hole(k)), "the 3-cell is gone, no wound left");
+    assert!(c.sections.get(vs[0].as_bytes()).is_none(), "and the vertex goes");
 }
 
 /// THE PINNING RULE — WHAT MAKES THIS A PIVOT AND NOT AN UNDO STACK.
