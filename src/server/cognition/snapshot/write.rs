@@ -68,7 +68,8 @@ struct Refused {
     /// Per row — basis, provisional, listing, cavity, federation — the
     /// words held without an admitting stamp.
     unstamped: [u64; 5],
-    /// Basis words with no discoverer to restore them under.
+    /// Basis words with no discoverer to restore them under, standing in no
+    /// federation that would restore them.
     undiscovered: u64,
     /// Rows whose element stands at an address that is not its own.
     misaddressed: u64,
@@ -331,7 +332,16 @@ impl Kernel {
         };
         crate::snapshot::persist(&self.basis, |addr, held| {
             if self.admitted_at.contains(addr) && self.discoverer_of(addr).is_none() {
-                refused.undiscovered += 1;
+                // A FEDERATION WORD THE BASIS ADOPTED stands written as the
+                // federation's, and the restore adopts it again from there
+                // (`prune_basis_to_ruled`): its basis row is re-derived, not
+                // refused. No discoverer is invented for it — the ledger
+                // names no voice — so it pays none. Only a basis word that
+                // stands nowhere else is refused (read on the fleet
+                // 2026-10-20: 9/12/13 at every boot, the same words).
+                if self.court_fed_index.get(addr).is_none() {
+                    refused.undiscovered += 1;
+                }
                 return;
             }
             hold(&mut drafts, refused, 0, addr, held.element(), MEMBER_BASIS);

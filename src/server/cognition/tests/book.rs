@@ -124,6 +124,27 @@ assert!(booted.restore(&snap));
 assert_eq!(booted.basis_len(), kept, "restore skips the leaked basis and rebuilds from the federation");
 }
 
+/// A FEDERATION WORD WITH NO DISCOVERER is written as the federation's and
+/// adopted again at restore: its basis row is re-derived, never lost and
+/// never given a discoverer the ledger does not name (read on the fleet
+/// 2026-10-20: the same 9/12/13 words "refused" at every boot).
+#[test]
+fn a_federation_word_with_no_discoverer_is_restored_from_the_federation() {
+let mut k = Kernel::new();
+glue_pair(&mut k, &[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 1, 1), (1, 0, 1), (1, 1, 1)]);
+let kept = k.basis_len();
+let addr: Vec<u8> = k.court_federation.first().map(|(a, _)| a.as_bytes().to_vec()).expect("a ruled word");
+k.forget_discoverer(&addr);
+assert!(k.discoverer_of(&addr).is_none(), "its discoverer is gone");
+let mut booted = Kernel::new();
+assert!(booted.restore(&k.snapshot()));
+assert_eq!(booted.basis_len(), kept, "the word stands in the basis again, adopted from the federation");
+assert!(booted.discoverer_of(&addr).is_none(), "no discoverer invented for it");
+let mut again = Kernel::new();
+assert!(again.restore(&booted.snapshot()), "and it round-trips");
+assert_eq!(again.basis_len(), kept);
+}
+
 /// An append shares the prior word's Arc; it does not clone the basis.
 #[test]
 fn language_append_shares_prior_word_arcs() {
