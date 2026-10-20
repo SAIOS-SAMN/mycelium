@@ -19,7 +19,25 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## The creation and frame acts live (2026-10-20 11:39) — where it stands
+## The creation acts the auditor named, live (2026-10-20 20:18) — where it stands
+Courts, voices 1–5 and council seats n1–n4 on 6851cc25 (binaries 20:18,
+restarted 20:18:31). New: echoes MIRRORED OR TURNED (a body's shape under
+the square's first symmetry giving it, carried about its own centre by a
+Cl(4,1)(ℚ) versor — `Echo { about: Body }`, tag 12), echoes AT SEVERAL
+OFFSETS (each offset every pair shows, its own clause; echo-shaped pieces
+read whole or not at all), and BENT CONNECTORS (a row run and a column run
+round an empty corner, `Act::Bend`, tag 13); the court console names a task
+by its citation (ec67212e). Over the 1 000 training tasks at the fleet's
+stroke: stated 80 → 86, SOLVED by the court's judging on the tasks' withheld
+tests 60 → 65 (0ca9ddb6, 3ac3eb23, f25ffba3, a2fd1cf0, d4a91cb9), none lost.
+Open: 6ca952ad now stated but unminted ("MintLinksWithoutDemand"); every
+court boot refuses 9/12/13 snapshot basis words "with no discoverer", the
+same counts since at least 2026-10-20 10:59 — to be read. `forms`: C₂ in
+xylarium's shell (ff0e817d, its five-row joint read reproduced); netstratum's
+operator ruled degrees, so C₂ is a ruled divergence (A7), its witness (exact
+angles + the divergence's record) to land with netstratum's forms.
+
+## The creation and frame acts live (2026-10-20 11:39)
 Courts, voices 1–5 and council seats n1–n4 on 9ec9748d (courts bound 11:13,
 clients 11:14). Deployed together: Phase A (recolours per body and per
 monochrome part, `Act::Parts`), read-off composite selection, Phase B Steps
