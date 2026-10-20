@@ -6,7 +6,7 @@
 
 use crate::arc::{refine_delta, Grid, Task};
 use crate::network::nerve::Keyed;
-use crate::transducer::address::{put_addr, take_addr, Address};
+use crate::transducer::address::Address;
 
 /// The closed task lifecycle. Settled carries the settle count — the decay's
 /// exact denominator, never a boolean "done".
@@ -262,27 +262,32 @@ impl TaskRegistry {
         None
     }
 
-    /// SNAPSHOT the settlement states — `CUR2 [cursor u32][n u32][(id 32)
-    /// (settled u8)(count u64)]·n`. The count is a `u64` since STD1, and the
-    /// header says so: a snapshot without it is an older layout and is
-    /// refused whole, never read at the wrong width. The TASKS re-register from corpus at boot (content is
-    /// identity, so ids are stable across restarts); only the STATES need
-    /// disk. Without this, a hypha restart resets Settled → Unsolved and a
-    /// crash-loop becomes a replay-bounty mint.
+    /// SNAPSHOT the settlement states — `CUR3 [cursor u32][n u32][(citation
+    /// 32)(settled u8)(count u64)]·n`. A task is named by its CITATION (wire
+    /// v1.2), the 32 bytes every reading names it by: `CUR2` wrote each
+    /// task's whole content address behind a u16, and 12 of the 1 000
+    /// training tasks' addresses pass that wall (185 000 bytes the widest),
+    /// so the snapshot refused whole and NO COURT EVER PERSISTED A SETTLED
+    /// TASK (read 2026-10-20: no `corpora/registry` on any court). The count
+    /// is a `u64` since STD1, and the header says so: a snapshot of another
+    /// layout is refused whole, never read at the wrong width. The TASKS
+    /// re-register from corpus at boot (content is identity, so citations
+    /// are stable across restarts); only the STATES need disk. Without this,
+    /// a hypha restart resets Settled → Unsolved and a crash-loop becomes a
+    /// replay-bounty mint.
     ///
-    /// `None` where a cursor, the task count or a task's address passes its
-    /// field (STD1 3c): no snapshot is written rather than a short one —
-    /// the address's own refusal was dropped here.
+    /// `None` where a cursor or the task count passes its field (STD1 3c):
+    /// no snapshot is written rather than a short one.
     pub fn snapshot(&self) -> Option<Vec<u8>> {
         use crate::transducer::address::put_u32_count;
         let mut out = Vec::with_capacity(8 + self.tasks.len() * 41);
         // The dispatch cursor leads: a restart continues the corpus from
         // where it stood instead of re-dispatching its head.
-        out.extend_from_slice(b"CUR2");
+        out.extend_from_slice(b"CUR3");
         put_u32_count(&mut out, self.cursor)?;
         put_u32_count(&mut out, self.tasks.len())?;
         for (id, _, state) in &self.tasks {
-            put_addr(&mut out, id)?;
+            out.extend_from_slice(&citation(id));
             match state {
                 TaskState::Unsolved => {
                     out.push(0);
@@ -305,9 +310,10 @@ impl TaskRegistry {
     /// the corpus is the authority on WHAT exists; the snapshot only on what
     /// was already settled. Returns how many states were restored.
     pub fn overlay(&mut self, bytes: &[u8]) -> usize {
-        // An older layout (no header, or `CUR1` with its `u32` counts) is
-        // refused whole: read at this width it would restore wrong states.
-        if bytes.get(0..4) != Some(b"CUR2") {
+        // Another layout (no header, `CUR1` with its `u32` counts, `CUR2`
+        // naming tasks by address) is refused whole: read at this width it
+        // would restore wrong states.
+        if bytes.get(0..4) != Some(b"CUR3") {
             return 0;
         }
         if let Some(c) = bytes.get(4..8).and_then(|b| b.try_into().ok()).map(|b| u32::from_le_bytes(b) as usize) {
@@ -321,7 +327,8 @@ impl TaskRegistry {
         let mut restored = 0usize;
         p += 4;
         for _ in 0..n {
-            let Some(id) = take_addr(bytes, &mut p) else { break };
+            let Some(cite) = bytes.get(p..p + 32) else { break };
+            p += 32;
             let (Some(&settled), Some(count)) = (
                 bytes.get(p),
                 bytes.get(p + 1..p + 9).and_then(|b| b.try_into().ok()).map(u64::from_le_bytes),
@@ -330,7 +337,7 @@ impl TaskRegistry {
             };
             p += 9;
             if settled == 1 {
-                if let Some(&i) = self.by_id.get(id.as_bytes()) {
+                if let Some(&i) = self.by_citation.get(cite) {
                     if let Some(entry) = self.tasks.get_mut(i) {
                         entry.2 = TaskState::Settled(count);
                         restored += 1;
@@ -479,6 +486,30 @@ mod tests {
         let mut again = TaskRegistry::new();
         again.register(toy_task());
         assert_eq!(again.overlay(&older), 0, "a CUR1 snapshot is not read at the u64 width");
+    }
+
+    /// A TASK WIDER THAN THE U16 WALL IS SETTLED ACROSS A RESTART (read on
+    /// the fleet 2026-10-20: 12 of the 1 000 training tasks have content
+    /// addresses past 65 535 bytes, and the address-keyed snapshot refused
+    /// the whole book, so no court ever kept a settled task). Named by its
+    /// citation, it snapshots, restores, and stays closed.
+    #[test]
+    fn a_task_wider_than_the_wall_stays_settled_across_a_restart() {
+        // Many pairs of busy frames: each pair's listing key is written
+        // into the task's address, so the address grows with them.
+        let busy = |s: u8| -> Grid { (0..30).map(|r| (0..30).map(|c| ((r * 7 + c * 3 + usize::from(s)) % 9) as u8 + 1).collect()).collect() };
+        let wide = Task { train: (0..12u8).map(|s| (busy(s), busy(s + 1))).collect(), test: vec![(busy(40), Vec::new())] };
+        let mut reg = TaskRegistry::new();
+        reg.register(toy_task());
+        let id = reg.register(wide.clone()).expect("the wide task has an identity");
+        assert!(id.as_bytes().len() > usize::from(u16::MAX), "the fixture passes the wall: {} bytes", id.as_bytes().len());
+        assert_eq!(reg.close(&id), Some(Closure::First));
+        let snap = reg.snapshot().expect("a book holding a task wider than the wall still snapshots");
+        let mut reborn = TaskRegistry::new();
+        reborn.register(toy_task());
+        reborn.register(wide);
+        assert_eq!(reborn.overlay(&snap), 1, "its settled state restored, by citation");
+        assert_eq!(reborn.close(&id), Some(Closure::Again), "and the restart does not re-open it");
     }
 
     /// Dispatch rotates over the unsolved book and dries up when settled.
