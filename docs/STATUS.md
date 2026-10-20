@@ -19,7 +19,25 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## Ground-read solves and the snapshot count, live (2026-10-20 21:34) — where it stands
+## The cross, live (2026-10-20 23:12) — where it stands
+Courts, voices 1–5 and seats n1–n4 on 0b15fddd (binaries 23:11, restarted
+23:12:45). THE CROSS (the operator's ruling: "you cannot descend without the
+dipole ascend and antipole condense and drain with the puncture"; 07f2b280):
+`Complex::descend` is the cross — the chamber punctured, its class kept as a
+hole, its content handed down to the field, its tethers condensed under the
+hole, ascend reading it back only as the seal (reached by the meet); a
+vertex whose word left stands under the classes it kept (ruled: the holes
+pin the vertex), a pinned star never dropped; dimension-2 entropy is the
+seal's kill (`killed`); MU-CLIENT §4.5 states it; xylarium aligned (spec
+11.0 (27), fbd90a5). The minds' reading names `holes standing` (all 0 at
+23:20 — nothing crossed yet). The court replays a sentence on its family's
+ground (0b15fddd): the torse claim, red since 1b7ba1be, green. DESCEND
+retained and defined (cb0b9d96). The snapshot names orphaned per-word
+fields by carrier (a1178878) — to read at the first write. To watch:
+holes standing per mind, and the vertices they pin (the ruling accepts
+that a vertex may stand indefinitely).
+
+## Ground-read solves and the snapshot count (2026-10-20 21:34)
 Courts, voices 1–5 and seats n1–n4 on 8bf66c17 (binaries 21:32, restarted
 21:34:07). The mint and the deflation read a family on its own ground, and
 the mind admits a scene (and a seat solves) on the scene's ground
