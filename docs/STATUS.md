@@ -30,9 +30,15 @@ by a truth table `Act::Panes`, tiles by the square's symmetries
 first live reading showed known rules refused at the mint by vertices the
 clauses had replaced). The act reader over the 1 000 training tasks: stated
 16 → 80. In the tree, five such rules are minted and SOLVED by the court's
-own judging on pairs never shown. On the fleet: no solve submitted yet; the
-witness is a court's first closure. netstratum's conductor stopped at beat
-8917 (its choice; it re-founds on its aligned build later); its seats run.
+own judging on pairs never shown. FIRST CLOSURE WITNESSED on the fleet:
+court c, 11:51:53 — "task 1093… solved by voice 1e; re-dispatched first
+here" (mind 1e14fb3e…; court c's syntropy S 4 038 → 6 975 at the solve).
+By 12:35 the voices had sent 10 solves (2 court tasks, 8 feed families);
+courts a and b show no closure and no refusal yet. Open: one voice re-read
+its waiting scenes 461 times in the hour ("again: unknown 461") — read
+whether that is the language moving or a re-read without cause.
+netstratum's conductor stopped at beat 8917 (its choice; it re-founds on its
+aligned build later); its seats run.
 
 ## Relaunched after the power loss (2026-10-19 14:36)
 The host lost power; up at 14:29. Every court home passed `--check`
