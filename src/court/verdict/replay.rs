@@ -421,7 +421,28 @@ pub fn replay_form_on(
 /// run on a stroke that never ran out: every phase before the cursor
 /// passed, and passing is a function of the word's content and of cited
 /// forms that are content-addressed, so it does not change between strokes.
+///
+/// ON THE FAMILY'S OWN GROUND (the auditor's ruling, 2026-10-18), whatever
+/// the caller opened: the voice extracts and mints a family there, and a
+/// court replaying it on another ground reads the family's ground as a
+/// remainder the form never spoke ("form leaves a remainder on the
+/// family", read 2026-10-20 on a family with no void cell).
 pub fn replay_form_on_resume<'r>(
+    f: &Form,
+    spoken: &Element,
+    resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
+    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
+    cursor: &mut ReplayCursor,
+) -> Replayed {
+    match family {
+        Some(fam) => crate::arc::on_ground_of(fam, || replay_on_ground(f, spoken, resolve, family, crystal, budget, cursor)),
+        None => replay_on_ground(f, spoken, resolve, family, crystal, budget, cursor),
+    }
+}
+
+fn replay_on_ground<'r>(
     f: &Form,
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
