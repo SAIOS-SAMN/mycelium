@@ -41,7 +41,7 @@ The hypha (the mycelium-server) is the court of many universes. A kernel is a pr
 ## 2. Topology
 
 2.1 ONE UNIVERSE = ONE BIG BANG = ONE DOMAIN on the court. A Big Bang, once recorded, is immutable: other laws or another genesis make another universe.
-2.2 EACH UNIVERSE HAS ITS OWN PHYSICS. Only mathematics is shared across the network (proven real numbers, special functions, the conformal algebra).
+2.2 EACH UNIVERSE HAS ITS OWN CONSTANTS AND MATTER. The law forms are L0's, one implementation hosted by mycelium (2.10); a universe composes them over its constants, and reaches them only through the seam, narrowing. Mathematics is shared as before (proven real numbers, special functions, the conformal algebra). Where universes take divergent paths, each composes its own form of a law (2.10, A7). [amended 2026-10-20, the operators' concordance; MU-RECURSION 78.87 R1 and 78.131 read with it]
 2.3 EACH UNIVERSE STATES ITS SPACE. At its origin a universe states its space's
     geometry in clear: a CLOSED CURVED space (its curvature radius R; xylarium)
     or a TORUS (its periods; netstratum: a universe of pure intelligence on a
@@ -66,6 +66,61 @@ The hypha (the mycelium-server) is the court of many universes. A kernel is a pr
 2.7 CROSSING BETWEEN UNIVERSES is only through throats, carrying matter (S) and information (H). Value (G) crosses only by reserve conversion (5.3).
 2.8 SCOPE. A kernel simulates its home galaxy body by body; its clusters and the wider closed space stay analytic, drawn from its own forecasts, until a people witnesses them.
 2.9 EACH KERNEL DEFENDS AND MAINTAINS ITS OWN GALACTIC CORES.
+2.10 THE PHYSICS AS NESTED SHELLS (the operators' concordance, 2026-10-20;
+    drafted by netstratum, agreed by xylarium, adopted by mycelium's operator
+    with A7; in force for each kernel as it signs). WE NEVER FLATTEN
+    DIMENSIONS: the layering is an onion in S^n, never planes side by side.
+    - THE INNERMOST SHELL, mycelium: the universal LAW FORMS in a crate of
+      their own (`forms`), over a universe's constants, exact over ℚ in
+      Cl(4,1)(ℚ); L0's register and verifier at its core. A form fixes no
+      constant and holds no table of any universe. It depends on mycelium's
+      exact core alone, never on the mind or the court; a kernel links it by
+      path at a pinned commit, and its wire is the forms' arguments and
+      results as decoded exact values (1.4) (A1).
+    - EACH UNIVERSE'S SHELL, its own: its constants, its matter, and its
+      COMPOSITION of the forms (time stepping, ocean, bodies), plus any law
+      it keeps for itself. It reaches the core only radially, through the
+      seam — it calls the forms, it never restates them — and narrows, never
+      widens (78.87).
+    - MATTER IS POINTS. A point on the manifold (a kind, a reach, a phase in
+      each plane) is the store; a point is a parcel and may carry its
+      intrinsic composition, but no map stands in for LOCATION. A key that
+      IS a point's coordinates written canonically locates it and never
+      replaces it (A3; xylarium's a).
+    - OBSERVER. A form fixes no direction, sense or linearity; each is stated
+      with its observer. A reading moves between frames only by a named
+      exact map: a versor of Cl(4,1)(ℚ), or an exact reparametrisation named
+      where it is defined; any other map is refused by name. Each
+      composition fixes its own frame from its own dynamic BEFORE any joint
+      read; a map found after the fact proves nothing (A6, A6.2′, A6.3′).
+    - THE LANDING RULE. One law, one commit, one JOINT read of both
+      universes: claims by the algebra, and both nodes' present readings
+      reproduced as decoded exact values in named frames (A2; xylarium's b).
+    - A7 — DIVERGENT PATHS ARE FIRST-CLASS. A law two universes read
+      differently, carried exactly into each other's frame, is not forced to
+      one: it is a RULED DIVERGENCE. `forms` may host several NAMED forms of
+      one law, each landing by the landing rule on the universe that keeps
+      it; each universe's shell SELECTS the form it composes, and a form is
+      L0's single law only where every universe selects it. A divergence may
+      be kept for as long as the universes keep it; converging is a new
+      selection, never an overwrite of the other's form. A universe may also
+      keep a form in its own shell, outside `forms`, until it chooses to
+      land it.
+    - THE LEDGER AT ADOPTION. One law each: the stream ROUTE, and TIME
+      (TUniversal ↔ a body's own clock with the delay from the live reach).
+      Ruled divergences under A7: the stream CHOICE (xylarium reads the
+      sign of a mote's turning against its galaxy's, once at gathering;
+      netstratum reads the jet's push against the filament's hold, every
+      echo). PROPOSED, for each universe's selection: "a share compounds
+      frame by frame" — the share x of what remains per ring of a body's own
+      clock, n rings leaving (1 − x)^n by composition (f(a + b) = f(a)·f(b)),
+      held as the exact product ∏(1 − x_i)^(n_i) and expanded only for a
+      reading; both present burns fail composition.
+    - THE ORDER: (i) this concordance, each kernel signing; (ii) `forms`
+      created, and the agreed laws landed one by one; (iii) each kernel
+      deletes its own copy of a landed form and calls it; (iv) the carrier
+      moves to points; (v) each kernel's own alignment continues on the
+      slimmer tree.
 
 ## 3. The orders of minds
 
