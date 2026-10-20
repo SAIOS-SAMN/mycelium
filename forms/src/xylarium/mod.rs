@@ -5,4 +5,6 @@
 //! core shell only when every universe selects it — a new selection, landed
 //! by the landing rule, never a move of this file's say-so.
 
+pub mod closeness;
+pub mod frames;
 pub mod share_compounds;
