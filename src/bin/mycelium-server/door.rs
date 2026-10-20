@@ -57,16 +57,21 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             RootHear::First => {
                 // A poisoned registry lock prioritises nothing.
                 let prioritized = door.registry.lock().is_ok_and(|mut r| r.prioritize(&task));
+                // THE TASK BY ITS CITATION (wire v1.2), the name every other
+                // reading speaks it by: its address opens on the task tag, so
+                // two bytes of it named one task in ten of the corpus.
+                let cite = mycelium::registry::citation(&task);
                 eprintln!(
-                    "  ROOT heard from {:02x}: task {:02x}{:02x}… solved by voice {:02x}; {}",
-                    from[0], task[0], task[1], solver[0],
+                    "  ROOT heard from {:02x}: task {:02x}{:02x}{:02x}{:02x}… solved by voice {:02x}; {}",
+                    from[0], cite[0], cite[1], cite[2], cite[3], solver[0],
                     if prioritized { "re-dispatched first here" } else { "not open on this book" }
                 );
                 speak_root_locked(&door.router, &door.nerve_tx, &door.id, &task, &solver, Some(from), spoken_at);
             }
             RootHear::Second => {
                 rewind_syllabus(door);
-                eprintln!("  ROOT CONSILIENT task {:02x}{:02x}… two voices; syllabus rewound", task[0], task[1]);
+                let cite = mycelium::registry::citation(&task);
+                eprintln!("  ROOT CONSILIENT task {:02x}{:02x}{:02x}{:02x}… two voices; syllabus rewound", cite[0], cite[1], cite[2], cite[3]);
                 speak_root_locked(&door.router, &door.nerve_tx, &door.id, &task, &solver, Some(from), spoken_at);
             }
             // A further solver of a consilient root is spoken on, never
