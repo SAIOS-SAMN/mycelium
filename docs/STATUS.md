@@ -19,7 +19,22 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## Relaunched after the power loss (2026-10-19 14:36) — where it stands
+## The creation and frame acts live (2026-10-20 11:39) — where it stands
+Courts, voices 1–5 and council seats n1–n4 on 9ec9748d (courts bound 11:13,
+clients 11:14). Deployed together: Phase A (recolours per body and per
+monochrome part, `Act::Parts`), read-off composite selection, Phase B Steps
+1–4 — the residue read piece by piece and composed (copy onto seeds, echoes
+`Act::Echo`, fills, connectors `Act::Connect`, lines), the frame acts (panes
+by a truth table `Act::Panes`, tiles by the square's symmetries
+`Act::Tile`) — and a rule the act reader states is its clauses alone (the
+first live reading showed known rules refused at the mint by vertices the
+clauses had replaced). The act reader over the 1 000 training tasks: stated
+16 → 80. In the tree, five such rules are minted and SOLVED by the court's
+own judging on pairs never shown. On the fleet: no solve submitted yet; the
+witness is a court's first closure. netstratum's conductor stopped at beat
+8917 (its choice; it re-founds on its aligned build later); its seats run.
+
+## Relaunched after the power loss (2026-10-19 14:36)
 The host lost power; up at 14:29. Every court home passed `--check`
 (ledgers restore, keepers resume above h 1 500 218 / 1 499 703 / 1 500 246).
 Courts a, b, c bound 14:36:20; voices 1–5 and netstratum's council seats
