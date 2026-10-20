@@ -1073,17 +1073,22 @@ hues.sort_unstable();
 hues.dedup();
 assert_eq!(hues.len(), 2, "the merged body carries both hues: {hues:?}");
 assert!(!pf.is_closed(), "a sentence with demands is valid, never closed (2.2, 50.1)");
+// 78.167 Phase B — THE FAMILY'S RULE NO LONGER OWES IT: the act reader
+// states the merge as clauses that re-derive both pairs, and a rule stated
+// so is its clauses alone (no demand rides it). The scene above — one pair,
+// a form of vertices — still owes the account per input body.
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the family extracts");
 let demands: Vec<_> = rule.form.demand_vertices().collect();
 assert!(
-    !demands.is_empty(),
-    "the merge leaves the family's rule owing an account too"
+    !rule.form.clauses.is_empty() && demands.is_empty(),
+    "the family's rule states the merge as clauses, owing nothing: {:?}",
+    rule.form.clauses
 );
 assert!(
     demands.iter().all(|(_, _, _, links)| !links.is_empty()),
     "each carrying the links it stands for: {demands:?}"
 );
-assert!(!rule.form.is_closed(), "and the rule is valid, never closed");
+assert!(rule.form.is_closed(), "and the rule, owing nothing, is closed");
 }
 
 /// 52.5 READING 6 (ruled 2026-09-18) — SUCCESSION ALONG e₃ IS THE NEXT

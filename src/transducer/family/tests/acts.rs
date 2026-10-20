@@ -282,3 +282,65 @@ fn a_family_recolouring_part_of_a_body_is_known() {
         (&["155111", "000000"], &["355111", "000000"]),
     );
 }
+
+/// THE COURT SOLVES WHAT THE ACT READER READ: a rule stated as clauses —
+/// tiles, panes, a fill and a line at once, recolours by where bodies stand,
+/// an echo — mints over its family (the clauses its whole speech, no vertex
+/// beside them claiming frames the effect refuted), and the court's own
+/// judging solves it on a pair the family never showed. This is the path a
+/// first closure takes.
+#[test]
+fn the_court_solves_what_the_act_reader_read() {
+    let cases: Vec<(&str, Vec<(&[&str], &[&str])>, (&[&str], &[&str]))> = vec![
+        (
+            "tiles",
+            vec![(&["12", "30"], &["1221", "3003", "3003", "1221"]), (&["40", "05"], &["4004", "0550", "0550", "4004"])],
+            (&["60", "70"], &["6006", "7007", "7007", "6006"]),
+        ),
+        (
+            "panes",
+            vec![(&["10501", "01500"], &["22", "02"]), (&["11500", "00501"], &["22", "02"]), (&["00511", "10510"], &["22", "00"])],
+            (&["01510", "10500"], &["22", "20"]),
+        ),
+        (
+            "a fill and a line",
+            vec![
+                (&["11100", "10100", "11100", "00000", "30000"], &["11100", "14100", "11100", "00000", "33333"]),
+                (&["00000", "00111", "30101", "00111", "00000"], &["00000", "00111", "33141", "00111", "00000"]),
+                (&["01110", "01010", "01110", "00000", "00030"], &["01110", "01410", "01110", "00000", "00033"]),
+            ],
+            (&["30000", "00000", "11100", "10100", "11100"], &["33333", "00000", "11100", "14100", "11100"]),
+        ),
+        (
+            "recolours by where bodies stand",
+            vec![
+                (&["5050", "0000", "0500"], &["1010", "0000", "0200"]),
+                (&["0005", "0500", "0000"], &["0001", "0200", "0000"]),
+                (&["0000", "5000", "0050"], &["0000", "1000", "0020"]),
+            ],
+            (&["0500", "0005"], &["0100", "0002"]),
+        ),
+        (
+            "an echo",
+            vec![
+                (&["120", "000", "000", "000"], &["120", "000", "120", "000"]),
+                (&["000", "033", "000", "000", "000"], &["000", "033", "000", "033", "000"]),
+                (&["0400", "0400", "0000", "0000", "0000"], &["0400", "0400", "0400", "0400", "0000"]),
+            ],
+            (&["5000", "0000", "0000", "0000"], &["5000", "0000", "5000", "0000"]),
+        ),
+    ];
+    for (name, fam, held) in cases {
+        let family: Vec<(Grid, Grid)> = fam.iter().map(|(x, y)| (grid(x), grid(y))).collect();
+        let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
+        let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
+        assert!(!rule.form.clauses.is_empty(), "{name}: stated as clauses");
+        let minted = match crate::transducer::family::mint_sentence_why(&rule, &family, &NoCrystal, 0) {
+            Ok(word) => word,
+            Err(why) => panic!("{name}: the rule mints over its family: {why:?}"),
+        };
+        let mut court = crate::cognition::Kernel::new();
+        let verdict = court.judge_solve(&minted, &[(grid(held.0), grid(held.1))]);
+        assert!(matches!(verdict, crate::cognition::SolveVerdict::Solved { .. }), "{name}: the court solves it on a pair it never saw: {verdict:?}");
+    }
+}

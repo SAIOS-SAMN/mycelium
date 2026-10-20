@@ -807,7 +807,9 @@ fn a_scene_of_five_bodies_on_three_charts_answers_the_chart_whose_fiber_holds_on
     assert_eq!(chart, dot.moduli, "answers the chart whose fiber holds one");
 }
 
-/// Y4: A family whose rule selects that body extracts a rule vertex where it extracted a demand before.
+/// Y4: A family whose rule selects that body extracts a rule where it
+/// extracted a demand before. 78.167 Phase B: the act reader states it —
+/// the bodies not selected erased — and the rule is its clauses alone.
 #[test]
 fn a_family_whose_rule_selects_that_body_extracts_a_rule_vertex_where_it_extracted_a_demand_before() {
     let family = vec![
@@ -842,13 +844,7 @@ fn a_family_whose_rule_selects_that_body_extracts_a_rule_vertex_where_it_extract
     ];
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let rule = extract_rule(&family, &mut budget).expect("the family extracts");
-    let words = rule
-        .form
-        .vertices
-        .scoped()
-        .filter(|(_, v)| matches!(v, Vertex::Word { .. }))
-        .count();
-    assert_eq!(words, 1, "extracts a rule vertex, got {words}");
+    assert!(!rule.form.clauses.is_empty(), "the rule states the selection as clauses: {:?}", rule.form.vertices);
     assert!(
         rule.form.demand_vertices().next().is_none(),
         "zero demands where it extracted demands before: {:?}",

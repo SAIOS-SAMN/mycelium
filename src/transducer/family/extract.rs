@@ -232,7 +232,14 @@ fn stated(
     match super::acts::read_acts(&rule.form, family, budget) {
         Ok(clauses) => {
             crate::observe::note_mind(|m| m.acts[0] += 1);
-            rule.form.clauses = clauses;
+            // THE CLAUSES ARE THE WHOLE SPEECH (78.143, `speak`): the form
+            // stating them is them. The vertices the extraction read beside
+            // them speak nothing, and carried into the sentence they would
+            // be claims on the frames the effect refuted — the mint and the
+            // court read every word vertex's carriage (read on the fleet
+            // 2026-10-20: known rules refused at the mint, "an image body is
+            // reached in part", "a lamina lands on the wrong hue").
+            rule.form = Form { clauses, ..Form::default() };
         }
         Err(u) => crate::observe::note_mind(|m| m.acts[u.slot()] += 1),
     }
