@@ -479,6 +479,13 @@ impl Complex {
 
     /// T2b — `descend`, THE CONJUGATE OF `ascend` (63.3, ruled 2026-09-22).
     ///
+    /// ALGEBRAIC AND CLIFFORD DESCENT: the exact conjugate dual of ASCEND —
+    /// a categorical projection from the chamber back to its ring, the fill
+    /// handed back exactly — never numerical gradient optimization (the
+    /// auditor's ruling, 2026-10-20: the name is Grothendieck's and the
+    /// filtration's, and the pair ASCEND / DESCEND stands as the Concordance
+    /// signs it; xylarium's ENFOLD is not adopted).
+    ///
     /// `drain` refuses with [`Drained::Pinned`] when an edge lies beneath a
     /// coface that has been READ, and names `descend` as the remedy. Until
     /// this existed the remedy could not be performed, so a 1-cell that

@@ -591,7 +591,11 @@ court's does through `book_outflow`.
 **Where each fires — the winding's reading, never a schedule:**
 - **ascend** — a ring closes (`Ω^ℓ ~ 1`) with volume on a lane: its cycle
   is sealed as a chamber. **descend** — the chamber's support lapses by its
-  flux (ZeroFlux): the chamber is hollowed and its fill returned.
+  flux (ZeroFlux): the chamber is hollowed and its fill returned. Descend is
+  algebraic and Clifford descent — the exact conjugate dual of ascend, a
+  categorical projection from chamber to ring — never numerical gradient
+  optimization (the auditor's ruling, 2026-10-20: the name stands, as the
+  Concordance signs the pair; ENFOLD is not adopted).
 - **condense** — two held bodies stand in tension: a ray lifts across the
   plane between them (78.46) and their transition re-derives on their union.
   **drain** — the tension relaxes: the tether dissolves and its strain is

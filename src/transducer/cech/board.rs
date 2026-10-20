@@ -29,6 +29,9 @@ use super::*;
 #[derive(Clone, Debug)]
 pub enum Pivot {
     Ascend(Vec<Vec<u8>>),
+    /// Algebraic and Clifford descent: the exact conjugate dual of
+    /// `Ascend` — the chamber projected back to its ring — never numerical
+    /// gradient optimization (`Complex::descend`).
     Descend(Vec<u8>),
     Condense(Vec<u8>, Vec<u8>, Box<Rotor>, Versor),
     Drain(Vec<u8>),
