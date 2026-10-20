@@ -196,8 +196,22 @@ pub struct DeflationRead {
     pub cycled: Vec<crate::transducer::address::Address>,
 }
 
-/// [`form_deflation_at`]'s one computation, whole.
+/// [`form_deflation_at`]'s one computation, whole — READ ON THE FAMILY'S
+/// GROUND (the auditor's ruling, 2026-10-18), whatever the caller opened:
+/// a family whose ground is not 0 spoken on 0 leaves its whole ground as a
+/// remainder (read on the fleet 2026-10-20: 176 of the 1 000 training
+/// tasks, refused at the mint as "links remain and the form declares no
+/// demand").
 pub fn form_deflation_read(
+    form: &Form,
+    family: &[(Grid, Grid)],
+    crystal: &dyn Crystal,
+    placement: &crate::transducer::alphabet::Word,
+) -> DeflationRead {
+    crate::arc::on_ground_of(family, || form_deflation_read_on_ground(form, family, crystal, placement))
+}
+
+fn form_deflation_read_on_ground(
     form: &Form,
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
@@ -428,7 +442,7 @@ pub fn mint_sentence(
     crystal: &dyn Crystal,
     _stood: u64,
 ) -> Option<element::Element> {
-    mint_or_refuse(rule, family, crystal).map_err(crate::transducer::sentence::Refused::noted).ok()
+    mint_sentence_why(rule, family, crystal, _stood).ok()
 }
 
 /// [`mint_sentence`] with its refusal named (A.17) and counted where it
@@ -440,7 +454,9 @@ pub fn mint_sentence_why(
     crystal: &dyn Crystal,
     _stood: u64,
 ) -> Result<element::Element, crate::transducer::sentence::Refused> {
-    mint_or_refuse(rule, family, crystal).map_err(crate::transducer::sentence::Refused::noted)
+    // The mint reads its family on the family's own ground, whatever the
+    // caller opened (`form_deflation_read`).
+    crate::arc::on_ground_of(family, || mint_or_refuse(rule, family, crystal)).map_err(crate::transducer::sentence::Refused::noted)
 }
 
 /// THE MINT'S REFUSAL BY ARM (78.67): a vertex that does not carry its

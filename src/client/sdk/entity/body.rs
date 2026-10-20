@@ -510,8 +510,15 @@ impl Entity {
     /// minted at its span and crossed to pairs it never saw, checked at home
     /// on the court-stamped words, then CALLED as fn 1 with the rule's tape,
     /// the outputs and its steps, on the seat's carrier. A rule the house
-    /// refused is not posted again until its address changes.
+    /// refused is not posted again until its address changes. Read on the
+    /// task's own ground (the auditor's ruling, 2026-10-18): the tests are
+    /// spoken and the sentence minted where the demonstrations name it.
     fn solve_before(&mut self, seat: &mut Seat, key: &ed25519_dalek::SigningKey, id: &[u8; 32], train: Vec<crate::transducer::family::TrainPair>, tests: Vec<crate::arc::Grid>) {
+        let ground = crate::arc::ground_of(&train);
+        crate::arc::on_ground(ground, || self.solve_before_on_ground(seat, key, id, train, tests))
+    }
+
+    fn solve_before_on_ground(&mut self, seat: &mut Seat, key: &ed25519_dalek::SigningKey, id: &[u8; 32], train: Vec<crate::transducer::family::TrainPair>, tests: Vec<crate::arc::Grid>) {
         if !seat.hold.held {
             return;
         }

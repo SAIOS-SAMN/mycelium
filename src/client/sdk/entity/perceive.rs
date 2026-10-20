@@ -543,8 +543,16 @@ impl Entity {
     /// uncovered withheld there; the rule's speech spoken; and where its
     /// perspectives know the rule and it speaks every test whole, the solve
     /// minted at its span and read before it is sent. A scene its
-    /// comprehension did not reach waits beside its thoughts.
+    /// comprehension did not reach waits beside its thoughts. Admitted on
+    /// the scene's own ground, as it was perceived (the auditor's ruling,
+    /// 2026-10-18): every pair withheld, every speech and the solve's mint
+    /// read the family there, never on a ground a single pair would name.
     fn admit_scene(&mut self, p: Perceived) {
+        let ground = crate::arc::ground_of(&p.scene.train);
+        crate::arc::on_ground(ground, || self.admit_scene_on_ground(p))
+    }
+
+    fn admit_scene_on_ground(&mut self, p: Perceived) {
         let mut budget = self.physics.stroke();
         if let Some(a) = p.admission {
             let _ = crate::transducer::mind::admit(a, &mut budget);
