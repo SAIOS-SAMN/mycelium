@@ -19,7 +19,26 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## The creation acts the auditor named, live (2026-10-20 20:18) — where it stands
+## Ground-read solves and the snapshot count, live (2026-10-20 21:34) — where it stands
+Courts, voices 1–5 and seats n1–n4 on 8bf66c17 (binaries 21:32, restarted
+21:34:07). The mint and the deflation read a family on its own ground, and
+the mind admits a scene (and a seat solves) on the scene's ground
+(1b7ba1be): 176 of the 1 000 training tasks have a ground that is not 0,
+and their solves stopped at "unminted" (6ca952ad was that, not a mint
+defect); 6ca952ad, 8e301a54, 9565186b now reach the court's judging, which
+refuses them on their withheld tests — solved stays 65. The court snapshot's
+"basis words with no discoverer" were federation words re-adopted at every
+restore and miscounted (8bf66c17): WITNESSED — all three courts wrote their
+snapshot at 21:39 and none names it. Still open: "per-word fields on no held
+word" (1–12 per write), and nerve "tick refused" between courts climbing
+past 1 024 (also before this release). No closure since 20:18; the cursors
+stand at 899/888/891 and the first task a new act solves in dispatch order
+is f25ffba3 (954, a mirrored echo) — about 14 hours at the present pace.
+`forms`: C₂ in shares (68772055, the flat retired — xylarium's operator);
+netstratum's N read of share_compounds REPRODUCED (6 696 bodies, 8 003 runs,
+0 mismatches on the 60⁻⁶ grain); its 4N and xylarium's seed-7 reads owed.
+
+## The creation acts the auditor named, live (2026-10-20 20:18)
 Courts, voices 1–5 and council seats n1–n4 on 6851cc25 (binaries 20:18,
 restarted 20:18:31). New: echoes MIRRORED OR TURNED (a body's shape under
 the square's first symmetry giving it, carried about its own centre by a
