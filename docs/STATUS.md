@@ -30,13 +30,22 @@ by a truth table `Act::Panes`, tiles by the square's symmetries
 first live reading showed known rules refused at the mint by vertices the
 clauses had replaced). The act reader over the 1 000 training tasks: stated
 16 → 80. In the tree, five such rules are minted and SOLVED by the court's
-own judging on pairs never shown. FIRST CLOSURE WITNESSED on the fleet:
-court c, 11:51:53 — "task 1093… solved by voice 1e; re-dispatched first
-here" (mind 1e14fb3e…; court c's syntropy S 4 038 → 6 975 at the solve).
-By 12:35 the voices had sent 10 solves (2 court tasks, 8 feed families);
-courts a and b show no closure and no refusal yet. Open: one voice re-read
-its waiting scenes 461 times in the hour ("again: unknown 461") — read
-whether that is the language moving or a re-read without cause.
+own judging on pairs never shown. FIRST CLOSURES WITNESSED on the fleet:
+"task 1093… / 10cf… / 10a3… solved" at 11:51:53, 12:57:08, 13:24:54 (voices
+1e, ee, ee). PANES, READ WHOLE (2026-10-20 17:30): the "3 of 22" was the
+fleet's dispatch window, not the reader. Of the training tasks whose frames
+split into two halves, 20 read as one truth table; at the fleet's own stroke
+(`extraction_spend`) all 20 are stated `Act::Panes`, mint, and are SOLVED by
+the court's own judging on their withheld test pairs. The other 8 refuse by
+name (3 no equal panes, 2 a table entry two cells disagree on, 2 several
+output hues, 1 a table entry unseen). The courts dispatch the corpus in file
+order (cursors 883/888/883 of 1 000); in the window since the deploy the
+only tasks under `10cf…` and `10a3…` are e133d23d (872) and e345f17b (880),
+both panes, and `1093…` holds dae9d2b5 (849, panes) — every panes task
+dispatched since the act reader landed closed. The rest close as the cursor
+comes round. The ROOT line now names a task by four bytes of its citation
+(ec67212e; rides the next court release). The waiting-scene re-reads are
+gated on the scene's own language (dc7c9406, live 16:55).
 netstratum's conductor stopped at beat 8917 (its choice; it re-founds on its
 aligned build later); its seats run.
 
