@@ -216,7 +216,10 @@ pub enum Act {
     /// CREATE, AGAIN (78.167 Phase B, Step 3): the selected bodies carried by
     /// a versor of `Cl(4,1)(ℚ)` onto the canvas with a hue map on what lands,
     /// the bodies KEPT where they stood — a carriage that leaves its source.
-    Echo { motion: Mv, gauge: Vec<(u8, u8)> },
+    /// About the grid, one motion for every body; about each body's own
+    /// centre, a mirror or a turn of the body's own frame carried along
+    /// (the auditor's directive, 2026-10-20: rotated or mirrored echoes).
+    Echo { motion: Mv, about: About, gauge: Vec<(u8, u8)> },
     /// FRAME, THE PANES (78.167 Phase B, Step 4): the input split along its
     /// rows (`along_rows`) or its columns into two equal panes — a separator
     /// line of one cell between them where `gap` — and the output the pane's
@@ -232,6 +235,14 @@ pub enum Act {
     /// 90°, 5 of 270°, 6 the transpose, 7 the anti-transpose. A quarter turn,
     /// a transpose of an input that is not square is no block of its frame.
     Tile { rows: u8, cols: u8, turns: Vec<u8> },
+    /// CREATE, BETWEEN, ROUND A CORNER (the auditor's directive, 2026-10-20:
+    /// Manhattan bent connectors): from each selected body standing on one
+    /// row to each body `to` selects standing on one column, the path along
+    /// the first body's row to the second's column — the corner — and along
+    /// that column to it, painted `paint`, where every cell of it was ground
+    /// before the clause. A pair already facing along a row or a column is no
+    /// bend (that is `Connect`'s).
+    Bend { to: Pred, paint: Paint },
 }
 
 /// ONE STATEMENT: a selection and what is done to it.
@@ -531,8 +542,14 @@ fn put_act(buf: &mut Vec<u8>, act: &Act) {
             buf.push(8);
             put_paint(buf, paint);
         }
-        Act::Echo { motion, gauge } => {
-            buf.push(9);
+        // An echo about the grid keeps the tag and bytes it was first
+        // written with, so no form already minted moves its address; one
+        // about each body is its own tag.
+        Act::Echo { motion, about, gauge } => {
+            buf.push(match about {
+                About::Grid => 9,
+                About::Body => 12,
+            });
             motion.put_canonical(buf);
             put_gauge(buf, gauge);
         }
@@ -548,6 +565,11 @@ fn put_act(buf: &mut Vec<u8>, act: &Act) {
             buf.push(*rows);
             buf.push(*cols);
             buf.extend_from_slice(turns);
+        }
+        Act::Bend { to, paint } => {
+            buf.push(13);
+            put_pred(buf, to);
+            put_paint(buf, paint);
         }
     }
 }
@@ -619,9 +641,13 @@ fn take_act(k: &[u8], p: &mut usize) -> Option<Act> {
             inner => Act::Parts(Box::new(inner)),
         },
         8 => Act::Connect { paint: take_paint(k, p)? },
-        9 => {
+        tag @ (9 | 12) => {
             let motion = Mv::from_bytes(k, p)?;
-            Act::Echo { motion, gauge: take_gauge(k, p)? }
+            let about = match tag {
+                9 => About::Grid,
+                _ => About::Body,
+            };
+            Act::Echo { motion, about, gauge: take_gauge(k, p)? }
         }
         10 => {
             let along_rows = match take_byte(k, p)? {
@@ -653,6 +679,7 @@ fn take_act(k: &[u8], p: &mut usize) -> Option<Act> {
             }
             Act::Tile { rows, cols, turns }
         }
+        13 => Act::Bend { to: take_pred(k, p, 0)?, paint: take_paint(k, p)? },
         _ => return None,
     })
 }

@@ -530,11 +530,20 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
             }
             Act::Scale { up, down } => scale = Some((*up, *down)),
             Act::Parts(_) => return Err(Unstated::Nested),
-            Act::Echo { motion, gauge } => {
+            Act::Echo { motion, about, gauge } => {
                 let mut landed: Vec<(i64, i64, u8)> = Vec::new();
                 for &b in &sel {
+                    let v = match about {
+                        About::Grid => motion.clone(),
+                        About::Body => {
+                            let [cr, cc] = seen.centre(b).ok_or(Unstated::OffLattice)?;
+                            let to = crate::transducer::cga::translator_at(&[cr.clone(), cc.clone()]);
+                            let from = crate::transducer::cga::translator_at(&[-cr, -cc]);
+                            to.geo(motion).geo(&from)
+                        }
+                    };
                     for &(r, c, h) in &seen.cells[b] {
-                        let (tr, tc) = carried(motion, r, c)?;
+                        let (tr, tc) = carried(&v, r, c)?;
                         landed.push((tr, tc, mapped(gauge, h)));
                     }
                 }
@@ -620,6 +629,57 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                                 }
                             }
                             last = Some((i, o, h));
+                        }
+                    }
+                }
+                for (r, c, h) in joins {
+                    canvas[r][c] = h;
+                }
+            }
+            Act::Bend { to, paint: with } => {
+                // Bent through what was ground BEFORE this clause, so no bend
+                // of the clause blocks another.
+                let before = canvas.clone();
+                let void = crate::arc::ground();
+                let targets = seen.select(to, &all)?;
+                let one_hue = |b: usize| -> Option<u8> {
+                    let [(_, _, h), rest @ ..] = seen.cells[b].as_slice() else { return None };
+                    rest.iter().all(|c| c.2 == *h).then_some(*h)
+                };
+                let mut joins: Vec<(usize, usize, u8)> = Vec::new();
+                for &f in &sel {
+                    for &t in targets.iter().filter(|&&t| t != f) {
+                        let (Some((ft, fl, fb, fr)), Some((tt, tl, tb, tr))) = (extent_of(&seen.cells[f]), extent_of(&seen.cells[t])) else {
+                            continue;
+                        };
+                        // The source stands on one row, the target on one
+                        // column: otherwise no one corner is named.
+                        if ft != fb || tl != tr {
+                            return Err(Unstated::NotOne);
+                        }
+                        let (row, col) = (ft, tl);
+                        // Facing along a row or a column: no corner.
+                        if (fl..=fr).contains(&col) || (tt..=tb).contains(&row) {
+                            continue;
+                        }
+                        let hue = match with {
+                            Paint::Hue(k) => *k,
+                            Paint::Own => match (one_hue(f), one_hue(t)) {
+                                (Some(a), Some(b)) if a == b => a,
+                                _ => continue,
+                            },
+                        };
+                        let across: Vec<usize> = match col > fr {
+                            true => (fr + 1..=col).collect(),
+                            false => (col..fl).collect(),
+                        };
+                        let along: Vec<usize> = match tt > row {
+                            true => (row + 1..tt).collect(),
+                            false => (tb + 1..row).collect(),
+                        };
+                        let path: Vec<(usize, usize)> = across.into_iter().map(|c| (row, c)).chain(along.into_iter().map(|r| (r, col))).collect();
+                        if path.iter().all(|&(r, c)| before[r][c] == void) {
+                            joins.extend(path.into_iter().map(|(r, c)| (r, c, hue)));
                         }
                     }
                 }

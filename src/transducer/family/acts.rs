@@ -578,8 +578,15 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
 /// - where the bodies an act touched are its seeds, a COPY — its template the
 ///   input body whose own pattern is what the output stamped on each seed
 ///   (`read_copy`);
+/// - then ECHOES: pieces that are a body's own shape at the one offset every
+///   such piece offers (`read_echoes`), then on what is left a body's shape
+///   mirrored or turned, at each offset every pair showing one offers
+///   (`read_turned_echoes`);
 /// - then FILLS, piece by piece: a piece of one hue that a region of the
 ///   bodies holding it covers (`read_fills`);
+/// - then JOINS: straight pieces between two bodies (`read_connects`), and
+///   pieces round one corner from a body on its row to one on its column
+///   (`read_bends`);
 /// - then LINES on what remains, every cell on runs the effect drew from
 ///   bodies, each run's ray the displacement measured from the body cell it
 ///   leaves (`read_lines`).
@@ -605,6 +612,17 @@ fn created(r: &mut Reading<'_, '_>, base: Vec<Clause>, touched: &[Vec<usize>], e
     let (echoes, _) = read_echoes(r, &residue, every);
     all.extend(echoes);
     let Some((_, residue)) = residue_of(r, &all)? else { return Err(Unread::Overwritten) };
+    // ECHOES TURNED OR MIRRORED, and at several offsets, on what the one
+    // offset left.
+    let (turned, _) = read_turned_echoes(r, &residue, every);
+    let residue = match turned.is_empty() {
+        true => residue,
+        false => {
+            all.extend(turned);
+            let Some((_, residue)) = residue_of(r, &all)? else { return Err(Unread::Overwritten) };
+            residue
+        }
+    };
     // FILLS, piece by piece — the stricter reading: a region, cell for
     // cell, before a line, which a region's cells each beside its boundary
     // would also read as.
@@ -613,6 +631,10 @@ fn created(r: &mut Reading<'_, '_>, base: Vec<Clause>, touched: &[Vec<usize>], e
     // CONNECTORS: straight pieces whose two ends abut two bodies.
     let (connects, rest) = read_connects(r, &rest, every);
     all.extend(connects);
+    // BENDS: pieces round one corner from a body on its row to a body on
+    // its column.
+    let (bends, rest) = read_bends(r, &rest, every);
+    all.extend(bends);
     // LINES on what no fill or connector read, on the canvas they left (a
     // line stops at what was painted before it).
     if rest.iter().any(|res| !res.is_empty()) {
@@ -1094,7 +1116,301 @@ fn read_echoes(r: &Reading<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: 
     };
     let q = |v: i64| crate::core::Q::from_integer(v.into());
     let motion = crate::transducer::cga::translator_at(&[q(dr), q(dc)]);
-    (vec![Clause { select, act: Act::Echo { motion, gauge } }], rest)
+    (vec![Clause { select, act: Act::Echo { motion, about: About::Grid, gauge } }], rest)
+}
+
+/// The square's symmetry `t` (`Act::Tile`'s codes) on a cell `(a, b)` of an
+/// extent of `h` rows and `w` columns, read from its least corner: the cell
+/// it lands on in the turned extent, read from that extent's least corner.
+fn turned(t: u8, (a, b): (usize, usize), (h, w): (usize, usize)) -> Option<(usize, usize)> {
+    let last = |n: usize, i: usize| -> Option<usize> { n.checked_sub(1)?.checked_sub(i) };
+    Some(match t {
+        0 => (a, b),
+        1 => (a, last(w, b)?),
+        2 => (last(h, a)?, b),
+        3 => (last(h, a)?, last(w, b)?),
+        4 => (b, last(h, a)?),
+        5 => (last(w, b)?, a),
+        6 => (b, a),
+        7 => (last(w, b)?, last(h, a)?),
+        _ => return None,
+    })
+}
+
+/// THE SQUARE'S SYMMETRY `t` AS A VERSOR of `Cl(4,1)(ℚ)` about the origin of
+/// the sensor's plane (`e1` the rows, `e2` the columns): a mirror is one
+/// reflector, a turn the product of two — `e1 − e2` swaps the axes, and a
+/// quarter turn is that swap followed by one axis reversed.
+fn symmetry(t: u8) -> Option<crate::transducer::cga::Mv> {
+    use crate::transducer::cga::{Mv, E1, E2};
+    let one = || crate::core::Q::from_integer(1.into());
+    let (e1, e2) = (Mv::blade(E1, one()), Mv::blade(E2, one()));
+    let swap = e1.sub(&e2);
+    Some(match t {
+        0 => Mv::scalar(one()),
+        1 => e2,
+        2 => e1,
+        3 => e1.geo(&e2),
+        4 => e2.geo(&swap),
+        5 => e1.geo(&swap),
+        6 => swap,
+        7 => e1.add(&e2),
+        _ => return None,
+    })
+}
+
+/// A shape's cells, relative to its least corner and sorted, as bytes.
+fn shape_bytes(rel: &[(usize, usize)]) -> Vec<u8> {
+    rel.iter().flat_map(|&(a, b)| a.to_le_bytes().into_iter().chain(b.to_le_bytes())).collect()
+}
+
+/// The echo an offer's bytes name: its symmetry, the displacement of the
+/// centres (doubled), and its map. Itself is an echo about the grid; a
+/// mirror or a turn is carried about each body's own centre.
+fn echo_of(key: &[u8]) -> Option<Act> {
+    let (&t, rest) = key.split_first()?;
+    let dr = i64::from_le_bytes(rest.get(0..8)?.try_into().ok()?);
+    let dc = i64::from_le_bytes(rest.get(8..16)?.try_into().ok()?);
+    let gauge = rest.get(16..)?.chunks_exact(2).map(|p| (p[0], p[1])).collect();
+    let half = |v: i64| crate::core::Q::new(v.into(), 2.into());
+    let slide = crate::transducer::cga::translator_at(&[half(dr), half(dc)]);
+    Some(match t {
+        0 => Act::Echo { motion: slide, about: About::Grid, gauge },
+        _ => Act::Echo { motion: slide.geo(&symmetry(t)?), about: About::Body, gauge },
+    })
+}
+
+/// C2″ — ECHOES TURNED, AND AT SEVERAL OFFSETS (the auditor's directive,
+/// 2026-10-20), read on what the one-offset echo left: a piece that is an
+/// input body's own shape under one of the square's symmetries — the
+/// group's first that gives it, itself before any turn — its hues by one
+/// map, offers that symmetry, the displacement of the centres and the map.
+/// Each body's eight shapes are filed by their bytes, so a piece's offers
+/// are one keyed read. The echoes are the offers EVERY pair showing one
+/// makes — several where it shows several — each on the bodies offering
+/// it (separated by the list), and each standing only where, spoken alone,
+/// it paints nothing the output does not hold. What no echo stated covers
+/// is left for the fills, the joins and the lines.
+fn read_turned_echoes(r: &Reading<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
+    let n = r.pairs.len();
+    let mut pieces: Vec<Weighed> = Vec::new();
+    for (k, (p, res)) in r.pairs.iter().zip(residue).enumerate() {
+        let bodies: Vec<Vec<(usize, usize, u8)>> = p.bodies.iter().map(cells_of).collect();
+        let mut by_shape: crate::network::nerve::Keyed<Vec<(usize, u8)>> = crate::network::nerve::Keyed::new();
+        for (b, cells) in bodies.iter().enumerate() {
+            let Some((t0, l0, b0, r0)) = statement::extent_of(cells) else { continue };
+            let hw = (b0 - t0 + 1, r0 - l0 + 1);
+            for t in 0u8..8 {
+                let mut rel: Vec<(usize, usize)> = cells.iter().filter_map(|&(i, j, _)| turned(t, (i - t0, j - l0), hw)).collect();
+                if rel.len() != cells.len() {
+                    continue;
+                }
+                rel.sort_unstable();
+                let key = shape_bytes(&rel);
+                match by_shape.get_mut(&key) {
+                    // The group's first symmetry giving the shape is the
+                    // body's offer of it.
+                    Some(at) => {
+                        if !at.iter().any(|(o, _)| *o == b) {
+                            at.push((b, t));
+                        }
+                    }
+                    None => {
+                        by_shape.insert(&key, vec![(b, t)]);
+                    }
+                }
+            }
+        }
+        for piece in pieces_of(res) {
+            let (Some((pr, pc, ps)), Some((pt, pl, pb, pright))) = (shape_of(&piece), statement::extent_of(&piece)) else { continue };
+            let mut offers = Vec::new();
+            let filed = match by_shape.get(&shape_bytes(&ps)) {
+                Some(at) => at.clone(),
+                None => Vec::new(),
+            };
+            for (b, t) in filed {
+                let cells = &bodies[b];
+                let Some((t0, l0, b0, r0)) = statement::extent_of(cells) else { continue };
+                let hw = (b0 - t0 + 1, r0 - l0 + 1);
+                // The map, cell for cell; one hue going two ways is no echo.
+                let mut map: Vec<(u8, u8)> = Vec::new();
+                let mut whole = true;
+                for &(i, j, h) in cells {
+                    let landed = turned(t, (i - t0, j - l0), hw).map(|(a, c)| (pr + a, pc + c));
+                    let Some(&(_, _, to)) = landed.and_then(|at| piece.iter().find(|&&(a, c, _)| (a, c) == at)) else {
+                        whole = false;
+                        break;
+                    };
+                    match map.iter().find(|(f, _)| *f == h) {
+                        Some(&(_, was)) if was != to => {
+                            whole = false;
+                            break;
+                        }
+                        Some(_) => {}
+                        None => map.push((h, to)),
+                    }
+                }
+                if !whole {
+                    continue;
+                }
+                map.retain(|(f, to)| f != to);
+                map.sort_unstable();
+                // The centres' displacement, doubled to whole numbers.
+                let twice = |a: usize, b: usize, c: usize, d: usize| -> Option<i64> { i64::try_from(a + b).ok()?.checked_sub(i64::try_from(c + d).ok()?) };
+                let (Some(dr), Some(dc)) = (twice(pt, pb, t0, b0), twice(pl, pright, l0, r0)) else { continue };
+                let mut key = vec![t];
+                key.extend_from_slice(&dr.to_le_bytes());
+                key.extend_from_slice(&dc.to_le_bytes());
+                for (f, to) in &map {
+                    key.extend_from_slice(&[*f, *to]);
+                }
+                offers.push((key, b));
+            }
+            pieces.push((k, piece, offers));
+        }
+    }
+    // THE OFFERS EVERY PAIR SHOWING AN ECHO MAKES.
+    let mut shown: Vec<Option<Vec<Vec<u8>>>> = vec![None; n];
+    for (k, _, offers) in &pieces {
+        for (key, _) in offers {
+            let at = shown[*k].get_or_insert_with(Vec::new);
+            if !at.contains(key) {
+                at.push(key.clone());
+            }
+        }
+    }
+    let showing: Vec<&Vec<Vec<u8>>> = shown.iter().flatten().collect();
+    let mut keys: Vec<Vec<u8>> = match showing.split_first() {
+        Some((head, tail)) => head.iter().filter(|key| tail.iter().all(|o| o.contains(key))).cloned().collect(),
+        None => Vec::new(),
+    };
+    keys.sort_unstable();
+    let mut clauses = Vec::new();
+    let mut kept: Vec<Vec<u8>> = Vec::new();
+    for key in keys {
+        let mut sources: Vec<Vec<usize>> = vec![Vec::new(); n];
+        for (k, _, offers) in &pieces {
+            for (o, b) in offers {
+                if *o == key {
+                    insert_sorted(&mut sources[*k], *b);
+                }
+            }
+        }
+        let (Some(select), Some(act)) = (r.separate(&sources, every), echo_of(&key)) else { continue };
+        let clause = Clause { select, act };
+        // AN ECHO THE EFFECT REFUTES IS NO ACT: spoken alone, it paints only
+        // what the output holds.
+        if r.pairs.iter().all(|p| agrees(&clause, p)) {
+            clauses.push(clause);
+            kept.push(key);
+        }
+    }
+    // THE ECHO-SHAPED PIECES ARE READ WHOLE OR NOT AT ALL (as the one offset
+    // is the one every such piece offers, and the lines cover the residue or
+    // nothing): a piece offering an echo that no echo stated covers says the
+    // echoes are not the act — a ray's cells, each one cell, each offer a
+    // one-cell body's echo at its distance, and the offsets every pair shares
+    // stop where the shortest ray does — and all is left to the readings
+    // after.
+    let whole = pieces.iter().all(|(_, _, offers)| offers.is_empty() || offers.iter().any(|(o, _)| kept.contains(o)));
+    let mut rest: PairCells = vec![Vec::new(); n];
+    for (k, piece, offers) in pieces {
+        if !whole || !offers.iter().any(|(o, _)| kept.contains(o)) {
+            rest[k].extend(piece);
+        }
+    }
+    match whole {
+        true => (clauses, rest),
+        false => (Vec::new(), rest),
+    }
+}
+
+/// A bend class: on each pair the sources its pieces leave, the targets
+/// they reach, and the cells they explain.
+type BendClass = (Vec<Vec<usize>>, Vec<Vec<usize>>, PairCells);
+
+/// THE BEND A PIECE IS, where it is one: of one hue, a run along a row and a
+/// run along a column meeting at a corner at an end of each; beyond the row
+/// run's far end, along the row, a body standing on that row alone — the
+/// source — and beyond the column run's far end, along the column, another
+/// body standing on that column alone — the target. Its hue, source and
+/// target.
+fn bend_of(piece: &[(usize, usize, u8)], p: &Pair<'_>, owner: &[Vec<Option<usize>>]) -> Option<(u8, usize, usize)> {
+    let [(_, _, hue), more @ ..] = piece else { return None };
+    if more.iter().any(|c| c.2 != *hue) {
+        return None;
+    }
+    let (rows, cols) = frame_of(p.x);
+    let at = |cell: Option<(usize, usize)>| cell.filter(|&(a, b)| a < rows && b < cols).and_then(|(a, b)| owner[a][b]);
+    let run = |v: &[usize]| v.windows(2).all(|w| w[1] == w[0] + 1);
+    for &(cr, cc, _) in piece {
+        // The piece is sorted, so each run reads in order.
+        let row: Vec<usize> = piece.iter().filter(|c| c.0 == cr).map(|c| c.1).collect();
+        let col: Vec<usize> = piece.iter().filter(|c| c.1 == cc).map(|c| c.0).collect();
+        let ([c0, .., c1], [r0, .., r1]) = (row.as_slice(), col.as_slice()) else { continue };
+        if row.len() + col.len() != piece.len() + 1 || !run(&row) || !run(&col) {
+            continue;
+        }
+        let source = match (cc == *c1, cc == *c0) {
+            (true, _) => c0.checked_sub(1).map(|c| (cr, c)),
+            (_, true) => Some((cr, c1 + 1)),
+            _ => continue,
+        };
+        let target = match (cr == *r1, cr == *r0) {
+            (true, _) => r0.checked_sub(1).map(|r| (r, cc)),
+            (_, true) => Some((r1 + 1, cc)),
+            _ => continue,
+        };
+        let (Some(f), Some(t)) = (at(source), at(target)) else { continue };
+        let on_row = cells_of(&p.bodies[f]).iter().all(|c| c.0 == cr);
+        let on_col = cells_of(&p.bodies[t]).iter().all(|c| c.1 == cc);
+        if f != t && on_row && on_col {
+            return Some((*hue, f, t));
+        }
+    }
+    None
+}
+
+/// C3″ — BENT CONNECTORS READ OFF THEIR EFFECT (the auditor's directive,
+/// 2026-10-20: Manhattan connectors round an empty corner): each piece that
+/// is a bend (`bend_of`) names its source and its target; the pieces of one
+/// hue are one clause, `Bend` painted that hue, on the sources they leave,
+/// `to` the targets they reach — each separated by the list. What is no
+/// bend, or whose class does not separate, is left for the lines.
+fn read_bends(r: &Reading<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
+    let n = r.pairs.len();
+    let mut classes: crate::network::nerve::Keyed<BendClass> = crate::network::nerve::Keyed::new();
+    let mut rest: PairCells = vec![Vec::new(); n];
+    for (k, (p, res)) in r.pairs.iter().zip(residue).enumerate() {
+        let owner = owners(p);
+        for piece in pieces_of(res) {
+            let Some((hue, f, t)) = bend_of(&piece, p, &owner) else {
+                rest[k].extend(piece);
+                continue;
+            };
+            let key = [hue];
+            if classes.get(&key).is_none() {
+                classes.insert(key, (vec![Vec::new(); n], vec![Vec::new(); n], vec![Vec::new(); n]));
+            }
+            if let Some((sources, targets, cells)) = classes.get_mut(&key) {
+                insert_sorted(&mut sources[k], f);
+                insert_sorted(&mut targets[k], t);
+                cells[k].extend(piece);
+            }
+        }
+    }
+    let mut clauses = Vec::new();
+    for (key, (sources, targets, cells)) in classes.scoped() {
+        match (key.as_slice(), r.separate(sources, every), r.separate(targets, every)) {
+            ([hue], Some(select), Some(to)) => clauses.push(Clause { select, act: Act::Bend { to, paint: Paint::Hue(*hue) } }),
+            _ => {
+                for (k, c) in cells.iter().enumerate() {
+                    rest[k].extend(c.iter().copied());
+                }
+            }
+        }
+    }
+    (clauses, rest)
 }
 
 /// A body's cells relative to its centre, doubled so every centre is a whole

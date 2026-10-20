@@ -12,8 +12,9 @@ fn grid(rows: &[&str]) -> Grid {
 }
 
 /// The rule the family extracts, its clauses read, and its speech on the
-/// held-out input: exactly the held-out output, nothing unreached.
-fn knows(family: &[(&[&str], &[&str])], held: (&[&str], &[&str])) {
+/// held-out input: exactly the held-out output, nothing unreached. The
+/// clauses it was read as.
+fn knows(family: &[(&[&str], &[&str])], held: (&[&str], &[&str])) -> Vec<crate::transducer::sentence::form::clause::Clause> {
     let family: Vec<(Grid, Grid)> = family.iter().map(|(x, y)| (grid(x), grid(y))).collect();
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
@@ -21,6 +22,7 @@ fn knows(family: &[(&[&str], &[&str])], held: (&[&str], &[&str])) {
     let s = speak_rule(&rule, &grid(held.0), &NoCrystal).expect("it speaks the held-out input");
     assert!(s.unreached.is_empty(), "every body spoken for: {:?}", s.unreached);
     assert_eq!(s.grid(), Some(grid(held.1)), "the held-out pair re-derived; clauses {:?}", rule.form.clauses);
+    rule.form.clauses
 }
 
 /// C1 — A VANISHED BODY: every body of one hue erased, the rest kept.
@@ -112,6 +114,92 @@ fn a_family_echoing_its_bodies_is_known() {
         ],
         (&["5000", "0000", "0000", "0000"], &["5000", "0000", "5000", "0000"]),
     );
+}
+
+/// AN ECHO MIRRORED (the auditor's directive, 2026-10-20): every body
+/// repeated three columns over, mirrored across its own columns, the source
+/// kept. The piece is the body's shape under the square's symmetry the group
+/// reaches first; no symmetry is tried against the output.
+#[test]
+fn a_family_echoing_its_bodies_mirrored_is_known() {
+    use crate::transducer::sentence::form::clause::{About, Act};
+    let clauses = knows(
+        &[
+            (&["1100000", "1000000", "0000000"], &["1101100", "1000100", "0000000"]),
+            (&["0000000", "0022000", "0020000"], &["0000000", "0022022", "0020002"]),
+            (&["000000", "110000", "100000", "000000"], &["000000", "110110", "100010", "000000"]),
+        ],
+        (&["330000", "300000", "000000"], &["330330", "300030", "000000"]),
+    );
+    assert!(clauses.iter().any(|c| matches!(c.act, Act::Echo { about: About::Body, .. })), "read as an echo about each body: {clauses:?}");
+}
+
+/// ECHOES AT TWO OFFSETS (the auditor's directive, 2026-10-20: multi-offset
+/// stamps): every body repeated two rows below and two columns over. No one
+/// offset is offered by every echoed piece, so the one-offset reading leaves
+/// them; each offset every pair shows is its own echo.
+#[test]
+fn a_family_echoing_its_bodies_at_two_offsets_is_known() {
+    use crate::transducer::sentence::form::clause::Act;
+    let clauses = knows(
+        &[
+            (&["1000", "0000", "0000", "0000"], &["1010", "0000", "1000", "0000"]),
+            (&["0000", "0200", "0000", "0000"], &["0000", "0202", "0000", "0200"]),
+            (&["0300", "0000", "0000"], &["0303", "0000", "0300"]),
+        ],
+        (&["0000", "4000", "0000", "0000"], &["0000", "4040", "0000", "4000"]),
+    );
+    let echoes = clauses.iter().filter(|c| matches!(c.act, Act::Echo { .. })).count();
+    assert_eq!(echoes, 2, "one echo for each offset: {clauses:?}");
+}
+
+/// BODIES JOINED ROUND A CORNER (the auditor's directive, 2026-10-20:
+/// Manhattan bent connectors): from the 2 along its row to the 3's column,
+/// and along that column to the 3, in hue 8 — the corner an empty cell. The
+/// bend is read off the piece: a run on a row and a run on a column meeting
+/// at the corner, each abutting the body it leaves or reaches.
+#[test]
+fn a_family_joining_bodies_round_a_corner_is_known() {
+    use crate::transducer::sentence::form::clause::Act;
+    let clauses = knows(
+        &[
+            (
+                &["000030", "000000", "000000", "000000", "200000", "000000"],
+                &["000030", "000080", "000080", "000080", "288880", "000000"],
+            ),
+            (&["020000", "000000", "000000", "000000", "000030"], &["028880", "000080", "000080", "000080", "000030"]),
+            (
+                &["000000", "000000", "000002", "000000", "000000", "030000"],
+                &["000000", "000000", "088882", "080000", "080000", "030000"],
+            ),
+        ],
+        (&["00030", "00000", "00000", "20000", "00000"], &["00030", "00080", "00080", "28880", "00000"]),
+    );
+    assert!(clauses.iter().any(|c| matches!(c.act, Act::Bend { .. })), "read as a bend: {clauses:?}");
+}
+
+/// THE CREATION ACTS CROSS THE WIRE: rules stating a mirrored echo, echoes
+/// at two offsets and a bend, minted as the elements the court reads and
+/// decoded back, re-mint at one address.
+#[test]
+fn turned_echoes_and_bends_are_read_back_by_the_court() {
+    for family in [
+        vec![(grid(&["1100000", "1000000", "0000000"]), grid(&["1101100", "1000100", "0000000"])), (grid(&["0000000", "0022000", "0020000"]), grid(&["0000000", "0022022", "0020002"]))],
+        vec![(grid(&["1000", "0000", "0000", "0000"]), grid(&["1010", "0000", "1000", "0000"])), (grid(&["0000", "0200", "0000", "0000"]), grid(&["0000", "0202", "0000", "0200"]))],
+        vec![
+            (grid(&["000030", "000000", "000000", "000000", "200000", "000000"]), grid(&["000030", "000080", "000080", "000080", "288880", "000000"])),
+            (grid(&["020000", "000000", "000000", "000000", "000030"]), grid(&["028880", "000080", "000080", "000080", "000030"])),
+        ],
+    ] {
+        let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
+        let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
+        assert!(!rule.form.clauses.is_empty(), "stated as clauses");
+        let element = crate::transducer::sentence::as_element_form(&rule.form, [1, 0, 0, 0]).expect("the rule mints");
+        let back = crate::transducer::sentence::from_element_form(&element).expect("the court decodes it");
+        assert_eq!(back.clauses.len(), rule.form.clauses.len(), "every clause read back");
+        let again = crate::transducer::sentence::as_element_form(&back, [1, 0, 0, 0]).expect("the decoded rule mints");
+        assert_eq!(again.address(), element.address(), "the clauses read back as they were read: one address");
+    }
 }
 
 /// THE NEW ACTS CROSS THE WIRE: a rule stating a join and one stating an
@@ -328,6 +416,39 @@ fn the_court_solves_what_the_act_reader_read() {
                 (&["0400", "0400", "0000", "0000", "0000"], &["0400", "0400", "0400", "0400", "0000"]),
             ],
             (&["5000", "0000", "0000", "0000"], &["5000", "0000", "5000", "0000"]),
+        ),
+        (
+            "a mirrored echo",
+            vec![
+                (&["1100000", "1000000", "0000000"], &["1101100", "1000100", "0000000"]),
+                (&["0000000", "0022000", "0020000"], &["0000000", "0022022", "0020002"]),
+                (&["000000", "110000", "100000", "000000"], &["000000", "110110", "100010", "000000"]),
+            ],
+            (&["330000", "300000", "000000"], &["330330", "300030", "000000"]),
+        ),
+        (
+            "echoes at two offsets",
+            vec![
+                (&["1000", "0000", "0000", "0000"], &["1010", "0000", "1000", "0000"]),
+                (&["0000", "0200", "0000", "0000"], &["0000", "0202", "0000", "0200"]),
+                (&["0300", "0000", "0000"], &["0303", "0000", "0300"]),
+            ],
+            (&["0000", "4000", "0000", "0000"], &["0000", "4040", "0000", "4000"]),
+        ),
+        (
+            "a bend",
+            vec![
+                (
+                    &["000030", "000000", "000000", "000000", "200000", "000000"],
+                    &["000030", "000080", "000080", "000080", "288880", "000000"],
+                ),
+                (&["020000", "000000", "000000", "000000", "000030"], &["028880", "000080", "000080", "000080", "000030"]),
+                (
+                    &["000000", "000000", "000002", "000000", "000000", "030000"],
+                    &["000000", "000000", "088882", "080000", "080000", "030000"],
+                ),
+            ],
+            (&["00030", "00000", "00000", "20000", "00000"], &["00030", "00080", "00080", "28880", "00000"]),
         ),
     ];
     for (name, fam, held) in cases {
