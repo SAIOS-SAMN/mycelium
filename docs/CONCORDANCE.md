@@ -100,12 +100,18 @@ The hypha (the mycelium-server) is the court of many universes. A kernel is a pr
       differently, carried exactly into each other's frame, is not forced to
       one: it is a RULED DIVERGENCE. `forms` may host several NAMED forms of
       one law, each landing by the landing rule on the universe that keeps
-      it; each universe's shell SELECTS the form it composes, and a form is
-      L0's single law only where every universe selects it. A divergence may
-      be kept for as long as the universes keep it; converging is a new
-      selection, never an overwrite of the other's form. A universe may also
-      keep a form in its own shell, outside `forms`, until it chooses to
-      land it.
+      it; each universe's shell SELECTS the form it composes. L0's core is
+      the INTERSECTION of the selections, never their union: a form is L0's
+      single law only where every universe selects it, and a form one
+      universe alone selects is THAT universe's shell's even where `forms`
+      hosts it, named as its shell's (`forms::xylarium::stream_by_turning`,
+      `forms::netstratum::stream_by_force`). A divergence may be kept for as
+      long as the universes keep it. Converging is a new SELECTION, never an
+      overwrite of the other's form, and a selection changes by the landing
+      rule, with a joint read in the SELECTING universe's own frame (A6.3′):
+      no universe's history is rewritten by another's choice. A universe may
+      also keep a form in its own shell, outside `forms`, until it chooses
+      to land it (xylarium's clarifications, 2026-10-20).
     - THE LEDGER AT ADOPTION. One law each: the stream ROUTE, and TIME
       (TUniversal ↔ a body's own clock with the delay from the live reach).
       Ruled divergences under A7: the stream CHOICE (xylarium reads the
@@ -115,7 +121,12 @@ The hypha (the mycelium-server) is the court of many universes. A kernel is a pr
       frame by frame" — the share x of what remains per ring of a body's own
       clock, n rings leaving (1 − x)^n by composition (f(a + b) = f(a)·f(b)),
       held as the exact product ∏(1 − x_i)^(n_i) and expanded only for a
-      reading; both present burns fail composition.
+      reading; both present burns fail composition. xylarium's first
+      selections: the burn at the rate of exhaustion (each ring's k from
+      every local factor, compounding (1 − k)^n, gravity (1 + λ) once as the
+      clock's rate); its cooling channels compounding (1 − e)·R/(R + H) per
+      ring; the stream choice by relative turning at gathering, on the
+      2026-10-16 route.
     - THE ORDER: (i) this concordance, each kernel signing; (ii) `forms`
       created, and the agreed laws landed one by one; (iii) each kernel
       deletes its own copy of a landed form and calls it; (iv) the carrier
