@@ -497,6 +497,61 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
             }
             Act::Scale { up, down } => scale = Some((*up, *down)),
             Act::Parts(_) => return Err(Unstated::Nested),
+            Act::Echo { motion, gauge } => {
+                let mut landed: Vec<(i64, i64, u8)> = Vec::new();
+                for &b in &sel {
+                    for &(r, c, h) in &seen.cells[b] {
+                        let (tr, tc) = carried(motion, r, c)?;
+                        landed.push((tr, tc, mapped(gauge, h)));
+                    }
+                }
+                for (r, c, h) in landed {
+                    paint(&mut canvas, r, c, h);
+                }
+            }
+            Act::Connect { paint: with } => {
+                // Joined through what was ground BEFORE this clause, so no
+                // join of the clause blocks another.
+                let before = canvas.clone();
+                let void = crate::arc::ground();
+                let chosen = |r: usize, c: usize| -> Option<(usize, u8)> {
+                    let o = seen.owner_at(r, c)?;
+                    sel.contains(&o).then(|| (o, seen.hue(r, c)))
+                };
+                let mut joins: Vec<(usize, usize, u8)> = Vec::new();
+                // Each row read along its columns, each column along its rows.
+                for (along_rows, outer, inner) in [(true, seen.rows, seen.cols), (false, seen.cols, seen.rows)] {
+                    for a in 0..outer {
+                        let cell = |i: usize| if along_rows { (a, i) } else { (i, a) };
+                        let mut last: Option<(usize, usize, u8)> = None;
+                        for i in 0..inner {
+                            let (r, c) = cell(i);
+                            let Some((o, h)) = chosen(r, c) else {
+                                if before[r][c] != void {
+                                    last = None;
+                                }
+                                continue;
+                            };
+                            if let Some((li, lo, lh)) = last {
+                                let hue = match with {
+                                    Paint::Hue(k) => Some(*k),
+                                    Paint::Own => (lh == h).then_some(h),
+                                };
+                                if let (true, Some(hue)) = (lo != o && i > li + 1, hue) {
+                                    for m in li + 1..i {
+                                        let (mr, mc) = cell(m);
+                                        joins.push((mr, mc, hue));
+                                    }
+                                }
+                            }
+                            last = Some((i, o, h));
+                        }
+                    }
+                }
+                for (r, c, h) in joins {
+                    canvas[r][c] = h;
+                }
+            }
         }
     }
     let (t, l, b, r) = match window {

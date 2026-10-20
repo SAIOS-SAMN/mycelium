@@ -205,7 +205,22 @@ fn separate_on(
     if let Some(i) = (0..preds.len()).find(|&i| exact(i)) {
         return Some(preds[i].clone());
     }
-    // THE MEET OF WHAT THE TARGETS SHARE.
+    let (meet, kept) = meet_on(preds, sels, targets, scope);
+    if kept.as_slice() != targets || meet.len() < 2 {
+        return None;
+    }
+    let and = Pred::And(meet);
+    let spoken = pairs.iter().zip(targets.iter().zip(scope)).all(|(p, (t, s))| match statement::select_each(std::slice::from_ref(&and), p.x, &p.bodies).as_slice() {
+        [Some(sel)] => within(sel, s) == *t,
+        _ => false,
+    });
+    spoken.then_some(and)
+}
+
+/// THE MEET OF WHAT THE TARGETS SHARE: of the predicates holding of every
+/// target on every pair, each one, in the list's order, that excludes what
+/// the ones before kept — and what the meet keeps within `scope`.
+fn meet_on(preds: &[Pred], sels: &[Vec<Option<Vec<usize>>>], targets: &[Vec<usize>], scope: &[Vec<usize>]) -> (Vec<Pred>, Vec<Vec<usize>>) {
     let covers = |i: usize| {
         sels.iter().zip(targets).all(|(sels, t)| match &sels[i] {
             Some(sel) => t.iter().all(|b| sel.contains(b)),
@@ -229,15 +244,23 @@ fn separate_on(
             meet.push(preds[i].clone());
         }
     }
-    if kept.as_slice() != targets || meet.len() < 2 {
-        return None;
+    (meet, kept)
+}
+
+/// THE TARGETS' OWN DESCRIPTION for an act that leaves untouched the bodies
+/// it cannot reach (a join with no partner): the one predicate that
+/// separates them, else the meet of what they share — never required to
+/// exclude the bodies the act would leave as they stand; the proof decides.
+fn described_on(preds: &[Pred], sels: &[Vec<Option<Vec<usize>>>], pairs: &[Pair<'_>], targets: &[Vec<usize>], scope: &[Vec<usize>]) -> Pred {
+    if let Some(p) = separate_on(preds, sels, pairs, targets, scope) {
+        return p;
     }
-    let and = Pred::And(meet);
-    let spoken = pairs.iter().zip(targets.iter().zip(scope)).all(|(p, (t, s))| match statement::select_each(std::slice::from_ref(&and), p.x, &p.bodies).as_slice() {
-        [Some(sel)] => within(sel, s) == *t,
-        _ => false,
-    });
-    spoken.then_some(and)
+    let (mut meet, _) = meet_on(preds, sels, targets, scope);
+    match meet.len() {
+        0 => Pred::All,
+        1 => meet.remove(0),
+        _ => Pred::And(meet),
+    }
 }
 
 /// THE RECOLOUR CLASSES, keyed by the exact map an effect showed (its pairs'
@@ -569,13 +592,21 @@ fn created(r: &mut Reading<'_, '_>, base: Vec<Clause>, touched: &[Vec<usize>], e
         }
     }
     let Some((_, residue)) = residue_of(r, &all)? else { return Err(Unread::Overwritten) };
+    // ECHOES: pieces that are an input body's own shape at one offset, the
+    // source kept.
+    let (echoes, _) = read_echoes(r, &residue, every);
+    all.extend(echoes);
+    let Some((_, residue)) = residue_of(r, &all)? else { return Err(Unread::Overwritten) };
     // FILLS, piece by piece — the stricter reading: a region, cell for
     // cell, before a line, which a region's cells each beside its boundary
     // would also read as.
     let (fills, rest) = read_fills(r, &residue, every);
     all.extend(fills);
-    // LINES on what no fill read, on the canvas the fills left (a line
-    // stops at what was painted before it).
+    // CONNECTORS: straight pieces whose two ends abut two bodies.
+    let (connects, rest) = read_connects(r, &rest, every);
+    all.extend(connects);
+    // LINES on what no fill or connector read, on the canvas they left (a
+    // line stops at what was painted before it).
     if rest.iter().any(|res| !res.is_empty()) {
         let Some((canvas, _)) = residue_of(r, &all)? else { return Err(Unread::Overwritten) };
         let Some(lines) = read_lines(r, &canvas, &rest, every) else { return Err(Unread::Uncreated) };
@@ -857,6 +888,205 @@ fn read_lines(r: &Reading<'_, '_>, canvas: &[Grid], residue: &[Vec<(usize, usize
             Some(Clause { select, act: Act::Extend { ray, paint, stop } })
         })
         .collect()
+}
+
+/// C3′ — CONNECTORS READ OFF THEIR EFFECT (78.167 Phase B, Step 2): a piece
+/// that is a straight segment along a row or a column, of one hue, whose two
+/// ends abut — along its axis — cells of two different bodies, joins those
+/// bodies. The pieces of one hue are one clause, `Connect` painted that hue,
+/// on the bodies they join (separated by the list). What is no connector, or
+/// whose class does not separate, is left for the lines.
+fn read_connects(r: &Reading<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
+    let n = r.pairs.len();
+    let mut classes: crate::network::nerve::Keyed<FillClass> = crate::network::nerve::Keyed::new();
+    let mut rest: PairCells = vec![Vec::new(); n];
+    // The hues some piece of which, somewhere in the family, joins nothing:
+    // a connector of that hue would leave it unsaid, so the hue is the
+    // lines'.
+    let mut unjoined: Vec<u8> = Vec::new();
+    for (k, (p, res)) in r.pairs.iter().zip(residue).enumerate() {
+        let (rows, cols) = frame_of(p.x);
+        let owner = owners(p);
+        let body_at = |i: Option<usize>, j: Option<usize>| -> Option<usize> {
+            let (i, j) = (i?, j?);
+            (i < rows && j < cols).then(|| owner[i][j]).flatten()
+        };
+        for piece in pieces_of(res) {
+            let mut hues: Vec<u8> = Vec::new();
+            for &(_, _, h) in &piece {
+                insert_sorted(&mut hues, h);
+            }
+            let ends = match statement::extent_of(&piece) {
+                Some((r0, c0, r1, c1)) if r0 == r1 && c1 - c0 + 1 == piece.len() => {
+                    Some((body_at(Some(r0), c0.checked_sub(1)), body_at(Some(r0), Some(c1 + 1))))
+                }
+                Some((r0, c0, r1, c1)) if c0 == c1 && r1 - r0 + 1 == piece.len() => {
+                    Some((body_at(r0.checked_sub(1), Some(c0)), body_at(Some(r1 + 1), Some(c0))))
+                }
+                _ => None,
+            };
+            if let [hue] = hues.as_slice() {
+                if !matches!(ends, Some((Some(a), Some(b))) if a != b) {
+                    insert_sorted(&mut unjoined, *hue);
+                }
+            }
+            match (hues.as_slice(), ends) {
+                ([hue], Some((Some(a), Some(b)))) if a != b => {
+                    let key = [*hue];
+                    if classes.get(&key).is_none() {
+                        classes.insert(key, (vec![Vec::new(); n], vec![Vec::new(); n]));
+                    }
+                    if let Some((at, cells)) = classes.get_mut(&key) {
+                        insert_sorted(&mut at[k], a);
+                        insert_sorted(&mut at[k], b);
+                        cells[k].extend(piece);
+                    }
+                }
+                _ => rest[k].extend(piece),
+            }
+        }
+    }
+    let mut clauses = Vec::new();
+    for (key, (ends, cells)) in classes.scoped() {
+        match key.as_slice() {
+            // A body with no partner is never joined: the ends' own
+            // description selects them, the inert ones beside them or not.
+            [hue] if !unjoined.contains(hue) => {
+                let select = described_on(&r.preds, &r.sels, &r.pairs, ends, every);
+                clauses.push(Clause { select, act: Act::Connect { paint: Paint::Hue(*hue) } });
+            }
+            _ => {
+                for (k, c) in cells.iter().enumerate() {
+                    rest[k].extend(c.iter().copied());
+                }
+            }
+        }
+    }
+    (clauses, rest)
+}
+
+/// A shape: its least corner, and its cells relative to it, hue-blind.
+type Shape = (usize, usize, Vec<(usize, usize)>);
+
+/// An echo offered: its offset and map as bytes, and the body offering it.
+type Offer = (Vec<u8>, usize);
+
+/// A piece the echo reader weighs: its pair, its cells, and its offers.
+type Weighed = (usize, Vec<(usize, usize, u8)>, Vec<Offer>);
+
+/// An echo read: its offset, and its map.
+type EchoRead = (i64, i64, Vec<(u8, u8)>);
+
+/// A shape read off its cells, the corner its extent's own.
+fn shape_of(cells: &[(usize, usize, u8)]) -> Option<Shape> {
+    let (r0, c0, _, _) = statement::extent_of(cells)?;
+    let mut s: Vec<(usize, usize)> = cells.iter().map(|&(i, j, _)| (i - r0, j - c0)).collect();
+    s.sort_unstable();
+    Some((r0, c0, s))
+}
+
+/// C2′ — ECHOES READ OFF THEIR EFFECT (78.167 Phase B, Step 3): a piece that
+/// is an input body's own shape, its hues by one map, at an offset. Each such
+/// piece offers the offsets (and maps) at which some body lands on it
+/// exactly; the offset every echo-shaped piece offers, where exactly one is
+/// offered by all of them, is the act's — set algebra on the effect, no
+/// offset swept. Its sources are the bodies landing on a piece there,
+/// separated by the list. `None` read (no clauses) where no one offset is
+/// offered by every echo-shaped piece.
+fn read_echoes(r: &Reading<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
+    let n = r.pairs.len();
+    // Per piece: (pair, cells, the offers it makes) — an offer is the offset
+    // and map as bytes, and the body making it.
+    let mut pieces: Vec<Weighed> = Vec::new();
+    for (k, (p, res)) in r.pairs.iter().zip(residue).enumerate() {
+        for piece in pieces_of(res) {
+            let Some((pr, pc, ps)) = shape_of(&piece) else { continue };
+            let mut offers = Vec::new();
+            for (b, body) in p.bodies.iter().enumerate() {
+                let cells = cells_of(body);
+                let Some((br, bc, bs)) = shape_of(&cells) else { continue };
+                if bs != ps {
+                    continue;
+                }
+                // The map, cell for cell; one hue going two ways is no echo.
+                let mut map: Vec<(u8, u8)> = Vec::new();
+                let mut whole = true;
+                for &(i, j, h) in &cells {
+                    let Some(&(_, _, t)) = piece.iter().find(|&&(a, c, _)| a + br == i + pr && c + bc == j + pc) else {
+                        whole = false;
+                        break;
+                    };
+                    match map.iter().find(|(f, _)| *f == h) {
+                        Some(&(_, was)) if was != t => whole = false,
+                        Some(_) => {}
+                        None => map.push((h, t)),
+                    }
+                }
+                if !whole {
+                    continue;
+                }
+                // A hue kept is no part of the map.
+                map.retain(|(f, t)| f != t);
+                map.sort_unstable();
+                let (dr, dc) = (i64::try_from(pr).ok().zip(i64::try_from(br).ok()), i64::try_from(pc).ok().zip(i64::try_from(bc).ok()));
+                let (Some((a, b0)), Some((c, d0))) = (dr, dc) else { continue };
+                let mut key: Vec<u8> = Vec::new();
+                key.extend_from_slice(&(a - b0).to_le_bytes());
+                key.extend_from_slice(&(c - d0).to_le_bytes());
+                for (f, t) in &map {
+                    key.extend_from_slice(&[*f, *t]);
+                }
+                offers.push((key, b));
+            }
+            pieces.push((k, piece, offers));
+        }
+    }
+    let mut rest: PairCells = vec![Vec::new(); n];
+    // THE OFFSET EVERY ECHO-SHAPED PIECE OFFERS.
+    let shaped: Vec<&Weighed> = pieces.iter().filter(|(_, _, o)| !o.is_empty()).collect();
+    let mut common: Option<Vec<Vec<u8>>> = None;
+    for (_, _, offers) in &shaped {
+        let mine: Vec<Vec<u8>> = offers.iter().map(|(key, _)| key.clone()).collect();
+        common = Some(match common {
+            None => mine,
+            Some(c) => c.into_iter().filter(|key| mine.contains(key)).collect(),
+        });
+    }
+    let read = match common.as_deref() {
+        Some([key]) => Some(key.clone()),
+        _ => None,
+    };
+    let Some(key) = read else {
+        for (k, piece, _) in pieces {
+            rest[k].extend(piece);
+        }
+        return (Vec::new(), rest);
+    };
+    let mut sources: Vec<Vec<usize>> = vec![Vec::new(); n];
+    for (k, piece, offers) in pieces {
+        let mut echoed = false;
+        for (o, b) in &offers {
+            if *o == key {
+                insert_sorted(&mut sources[k], *b);
+                echoed = true;
+            }
+        }
+        if !echoed {
+            rest[k].extend(piece);
+        }
+    }
+    let decoded = || -> Option<EchoRead> {
+        let dr = i64::from_le_bytes(key.get(0..8)?.try_into().ok()?);
+        let dc = i64::from_le_bytes(key.get(8..16)?.try_into().ok()?);
+        let gauge = key.get(16..)?.chunks_exact(2).map(|p| (p[0], p[1])).collect();
+        Some((dr, dc, gauge))
+    };
+    let (Some((dr, dc, gauge)), Some(select)) = (decoded(), r.separate(&sources, every)) else {
+        return (Vec::new(), rest);
+    };
+    let q = |v: i64| crate::core::Q::from_integer(v.into());
+    let motion = crate::transducer::cga::translator_at(&[q(dr), q(dc)]);
+    (vec![Clause { select, act: Act::Echo { motion, gauge } }], rest)
 }
 
 /// A body's cells relative to its centre, doubled so every centre is a whole

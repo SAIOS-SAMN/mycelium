@@ -212,9 +212,11 @@ assert!(
 #[test]
 fn demands_ride_the_rule_form_and_the_sentence_mints_whole() {
 use crate::transducer::sentence::Demand;
+// The bars land at two different offsets from the 1-bars, so no one echo
+// says them (78.167 Phase B, Step 3): they stay the demand's to declare.
 let family = vec![
     (grid(&["1100", "0000", "0000", "0000"]), grid(&["1100", "0000", "0220", "0000"])),
-    (grid(&["0000", "1100", "0000", "0000"]), grid(&["0000", "1100", "0000", "0220"])),
+    (grid(&["0000", "1100", "0000", "0000"]), grid(&["0000", "1100", "0000", "2200"])),
 ];
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the bundle extracts");
 let demands: Vec<_> = rule.form.demand_vertices().collect();

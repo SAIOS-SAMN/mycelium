@@ -83,6 +83,57 @@ fn a_family_filling_and_drawing_at_once_is_known() {
     );
 }
 
+/// 78.167 Phase B, Step 2 — BODIES JOINED: every two cells of hue 1 facing
+/// each other along a row or a column joined in hue 3; a 1 with no partner
+/// kept. The join is read off the straight pieces whose ends abut two bodies;
+/// no line says it (a line from the lone 1 would run to the border).
+#[test]
+fn a_family_joining_facing_bodies_is_known() {
+    knows(
+        &[
+            (&["10010", "00000", "00100"], &["13310", "00000", "00100"]),
+            (&["00000", "10001", "00000", "01000"], &["00000", "13331", "00000", "01000"]),
+            (&["0100", "0000", "0000", "0100", "0001"], &["0100", "0300", "0300", "0100", "0001"]),
+        ],
+        (&["1000", "0000", "1001"], &["1000", "3000", "1331"]),
+    );
+}
+
+/// 78.167 Phase B, Step 3 — A BODY ECHOED: every body of the scene repeated
+/// two rows below itself, the source kept. The offset is the one every
+/// echoed piece offers — read off them, no offset swept.
+#[test]
+fn a_family_echoing_its_bodies_is_known() {
+    knows(
+        &[
+            (&["120", "000", "000", "000"], &["120", "000", "120", "000"]),
+            (&["000", "033", "000", "000", "000"], &["000", "033", "000", "033", "000"]),
+            (&["0400", "0400", "0000", "0000", "0000"], &["0400", "0400", "0400", "0400", "0000"]),
+        ],
+        (&["5000", "0000", "0000", "0000"], &["5000", "0000", "5000", "0000"]),
+    );
+}
+
+/// THE NEW ACTS CROSS THE WIRE: a rule stating a join and one stating an
+/// echo, minted as the elements the court reads and decoded back, carry the
+/// clauses they were read with — the court replays what the voice read.
+#[test]
+fn a_join_and_an_echo_are_read_back_by_the_court() {
+    for family in [
+        vec![(grid(&["10010", "00000", "00100"]), grid(&["13310", "00000", "00100"])), (grid(&["00000", "10001", "00000", "01000"]), grid(&["00000", "13331", "00000", "01000"]))],
+        vec![(grid(&["120", "000", "000", "000"]), grid(&["120", "000", "120", "000"])), (grid(&["000", "033", "000", "000", "000"]), grid(&["000", "033", "000", "033", "000"]))],
+    ] {
+        let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
+        let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
+        assert!(!rule.form.clauses.is_empty(), "stated as clauses");
+        let element = crate::transducer::sentence::as_element_form(&rule.form, [1, 0, 0, 0]).expect("the rule mints");
+        let back = crate::transducer::sentence::from_element_form(&element).expect("the court decodes it");
+        assert_eq!(back.clauses.len(), rule.form.clauses.len(), "every clause read back");
+        let again = crate::transducer::sentence::as_element_form(&back, [1, 0, 0, 0]).expect("the decoded rule mints");
+        assert_eq!(again.address(), element.address(), "the clauses read back as they were read: one address");
+    }
+}
+
 /// C4 — AN ENCLOSURE FILLED: what a ring's boundary encloses, painted 4.
 #[test]
 fn a_family_filling_enclosed_regions_is_known() {

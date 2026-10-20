@@ -207,6 +207,16 @@ pub enum Act {
     /// in part is parts recoloured whole). One level: an act on parts is not
     /// itself on parts.
     Parts(Box<Act>),
+    /// CREATE, BETWEEN (78.167 Phase B, Step 2): along every row and every
+    /// column, two consecutive cells of selected bodies, of two different
+    /// bodies, are joined through the cells between them where every one of
+    /// those was ground before the clause — painted the one hue, or the hue
+    /// the two ends share (`Paint::Own`; ends of two hues are not joined).
+    Connect { paint: Paint },
+    /// CREATE, AGAIN (78.167 Phase B, Step 3): the selected bodies carried by
+    /// a versor of `Cl(4,1)(ℚ)` onto the canvas with a hue map on what lands,
+    /// the bodies KEPT where they stood — a carriage that leaves its source.
+    Echo { motion: Mv, gauge: Vec<(u8, u8)> },
 }
 
 /// ONE STATEMENT: a selection and what is done to it.
@@ -502,6 +512,33 @@ fn put_act(buf: &mut Vec<u8>, act: &Act) {
             buf.push(7);
             put_act(buf, inner);
         }
+        Act::Connect { paint } => {
+            buf.push(8);
+            put_paint(buf, paint);
+        }
+        Act::Echo { motion, gauge } => {
+            buf.push(9);
+            motion.put_canonical(buf);
+            put_gauge(buf, gauge);
+        }
+    }
+}
+
+fn put_paint(buf: &mut Vec<u8>, paint: &Paint) {
+    match paint {
+        Paint::Own => buf.push(0),
+        Paint::Hue(h) => {
+            buf.push(1);
+            buf.push(*h);
+        }
+    }
+}
+
+fn take_paint(k: &[u8], p: &mut usize) -> Option<Paint> {
+    match take_byte(k, p)? {
+        0 => Some(Paint::Own),
+        1 => Some(Paint::Hue(take_byte(k, p)?)),
+        _ => None,
     }
 }
 
@@ -553,6 +590,11 @@ fn take_act(k: &[u8], p: &mut usize) -> Option<Act> {
             Act::Parts(_) => return None,
             inner => Act::Parts(Box::new(inner)),
         },
+        8 => Act::Connect { paint: take_paint(k, p)? },
+        9 => {
+            let motion = Mv::from_bytes(k, p)?;
+            Act::Echo { motion, gauge: take_gauge(k, p)? }
+        }
         _ => return None,
     })
 }
