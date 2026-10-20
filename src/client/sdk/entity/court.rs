@@ -199,10 +199,17 @@ impl Entity {
 
     /// AT A RETURN, ONE WAITING SCENE READ AGAIN: the least by citation after
     /// the last read. A scene none of whose thoughts still stands lapses with
-    /// them; one the mind's language has not moved since its last reading is
-    /// left as it was (nothing new to comprehend it by); otherwise it is taken
-    /// in again on the perception carrier, comprehension alone, and waits
-    /// again where its solve is not emitted.
+    /// them; one whose OWN language has not moved since its last reading —
+    /// the words filed on the charts its bodies stand on (`scene_language`)
+    /// — is left at rest (nothing new to comprehend it by); otherwise it is
+    /// taken in again on the perception carrier, comprehension alone, and
+    /// waits again where its solve is not emitted.
+    ///
+    /// The gate read the WHOLE language's root, which the mind's dialect
+    /// moves at nearly every return as it stands and sheds its own words: a
+    /// waiting scene was read again whether or not anything new could speak
+    /// on it — 461 re-reads in an hour on one voice (read on the fleet
+    /// 2026-10-20), each holding the perception carrier from a new scene.
     pub(crate) fn comprehend_waiting(&mut self) {
         let next = match self.comprehending.after(&self.comprehended_after).next() {
             Some((k, _)) => Some(k),
@@ -214,8 +221,11 @@ impl Entity {
             self.comprehending.remove(&id);
             return;
         }
-        let root = self.epigenome.atlas_root();
-        if self.comprehending.get(&id).is_some_and(|(_, at)| *at == root) {
+        let unmoved = match self.comprehending.get(&id) {
+            Some((task, at)) => self.scene_language(&task.train) == *at,
+            None => true,
+        };
+        if unmoved {
             return;
         }
         // Read again only where the perception carrier is free; otherwise it

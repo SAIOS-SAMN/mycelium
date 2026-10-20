@@ -54,7 +54,7 @@ fn envelope(id: [u8; 32]) -> crate::anastome::dialogue::TaskEnvelope {
 fn a_waiting_scene_lapses_with_its_last_thought() {
     let id = [7u8; 32];
     let mut alone = Entity::open("127.0.0.1:1", Kernel::named("alone"));
-    let root = alone.epigenome.atlas_root();
+    let root = alone.scene_language(&envelope(id).train);
     alone.comprehending.insert(id, (envelope(id), root));
     alone.comprehend_waiting();
     assert!(alone.comprehending.get(&id).is_none(), "no thought stands on it: it lapses with them");
@@ -66,7 +66,9 @@ fn a_waiting_scene_lapses_with_its_last_thought() {
     let f = crate::transducer::family::scene_form_on(&held.epigenome, &mut budget, &a, &b, &frames).expect("the scene reads");
     held.contemplation.hold_perceived(f, &frames, &Vec::new(), &[], [0; 4], &id, &mut budget).expect("held");
     assert!(held.contemplation.holds_family(&id), "a thought stands on the scene");
-    let root = held.epigenome.atlas_root();
+    // Its own language — the words on the charts it stands on — as it was
+    // last read (`scene_language`).
+    let root = held.scene_language(&envelope(id).train);
     held.comprehending.insert(id, (envelope(id), root));
     held.comprehend_waiting();
     assert!(held.comprehending.get(&id).is_some(), "it waits beside its thought");

@@ -653,8 +653,22 @@ impl Entity {
             return;
         }
         let Ok(id) = <[u8; 32]>::try_from(scene.id.as_slice()) else { return };
-        let root = self.epigenome.atlas_root();
+        let root = self.scene_language(&scene.train);
         let envelope = crate::anastome::dialogue::TaskEnvelope { id, train: scene.train, tests: scene.tests };
         self.comprehending.insert(id, (envelope, root));
+    }
+
+    /// THE LANGUAGE WHERE A SCENE STANDS: the charts its bodies stand on
+    /// (`Offer::of`), each written out with the root of the words the
+    /// language files there (`sheaf::stratum_root`, the same root the atlas's
+    /// own root is written from). Only a word on one of these charts can
+    /// change what the scene is comprehended by.
+    pub(crate) fn scene_language(&self, train: &crate::transducer::family::Family) -> crate::transducer::address::Address {
+        let mut buf = Vec::new();
+        for chart in super::offer::Offer::of(train).charts {
+            crate::transducer::address::put_key_bytes(&mut buf, &chart);
+            crate::transducer::address::put_key_bytes(&mut buf, &crate::transducer::sheaf::stratum_root(&self.epigenome.words_on(&chart)));
+        }
+        crate::transducer::address::Address::new(buf)
     }
 }

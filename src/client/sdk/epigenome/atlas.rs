@@ -288,6 +288,15 @@ impl Epigenome {
         self.by_moduli.get(chart).is_some_and(|bucket| !bucket.is_empty())
     }
 
+    /// THE WORDS THE LANGUAGE FILES ON A CHART (its key), in the carrier's
+    /// own order: what can speak on a body standing there. One keyed read.
+    pub(crate) fn words_on(&self, chart: &[u8]) -> Vec<Vec<u8>> {
+        match self.by_moduli.get(chart) {
+            Some(bucket) => bucket.scoped().map(|(a, ())| a).collect(),
+            None => Vec::new(),
+        }
+    }
+
     pub fn take_promoted(&mut self) -> Vec<Vec<u8>> {
         std::mem::take(&mut self.promoted)
     }

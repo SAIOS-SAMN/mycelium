@@ -63,6 +63,34 @@ fn every_scene_taken_in_stops_once_on_its_own_reading() {
     assert!(matches!(STOPS.get(sent), Some(&"sent")), "the last stop is the solve sent ({:?})", Stop::Sent);
 }
 
+/// A WAITING SCENE RESTS UNTIL ITS OWN LANGUAGE MOVES (the auditor's
+/// directive, 2026-10-20: 461 re-reads in an hour on one voice). The
+/// language where the slide stands — its charts and the words filed on
+/// them — does not move when the mind gains a word on a chart the slide's
+/// bodies do not stand on, so the slide is not read again; it moves when a
+/// word is filed on the slide's own chart.
+#[test]
+fn a_waiting_scene_rests_until_a_word_lands_where_it_stands() {
+    use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
+    let word_of = |x: &crate::arc::Grid, y: &crate::arc::Grid| {
+        let mut b = budget();
+        let frames = perceive_family(&[(x.clone(), y.clone())]);
+        let f = scene_form_on(&NoCrystal, &mut b, x, y, &frames).expect("the pair reads");
+        crate::transducer::sentence::as_element_form(&f, [1, 0, 0, 0]).expect("a word")
+    };
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("resting"));
+    let slide: Vec<(crate::arc::Grid, crate::arc::Grid)> = two_hours_of_a_slide().to_vec();
+    let before = mind.scene_language(&slide);
+    // A word on a chart elsewhere: one cell stepping a column.
+    let at = |c: usize| -> crate::arc::Grid { (0..3).map(|r| (0..3).map(|x| u8::from(r == 1 && x == c)).collect()).collect() };
+    mind.epigenome.moduli_admit(&crate::transducer::element::Held::of(word_of(&at(0), &at(1))));
+    assert_eq!(mind.scene_language(&slide), before, "a word elsewhere leaves the slide's language where it was: it rests");
+    // A word on the slide's own chart: its first hour, said as a word.
+    let [(x, y), _] = two_hours_of_a_slide();
+    mind.epigenome.moduli_admit(&crate::transducer::element::Held::of(word_of(&x, &y)));
+    assert_ne!(mind.scene_language(&slide), before, "a word where the slide stands moves its language: it is read again");
+}
+
 /// MU-CLIENT §4.13, §7.1 — HEARINGS WAIT BY THEIR COORDINATES, AND ONE THAT
 /// COUPLES TO NOTHING IS NOT READ. A hearing of no word the mind knows and
 /// none that lands on its field never goes to the perception carrier; the
