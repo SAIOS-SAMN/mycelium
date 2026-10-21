@@ -14,7 +14,15 @@
 //!     EXPAND     x ↦ ρ x,  ρ > 1                    a dilation outward
 //!     CONTRACT   x ↦ x / ρ, ρ > 1                   a dilation inward
 //!     BEND       x ↦ (x + b|x|²)/(1 + 2b·x + |b|²|x|²)   a transversion
+//!     TURN       (plane, degrees)                     an ordered turn, held as its angle
 //! ```
+//!
+//! THE TURN IN DEGREES (xylarium's and netstratum's rulings: angles in exact
+//! degrees, no half-angle tangents, no rational-cosine rotors): held as its
+//! plane and its angle, undone by its negation, composed in one plane by
+//! adding degrees; it carries a position only where its cosine and sine are
+//! both rational — a whole number of quarter turns — and is refused by name
+//! everywhere else, never enclosed or rounded.
 //!
 //! Every move is exact over ℚ and has an exact inverse (a stretch by `−t`,
 //! the same reflection, the other dilation, a bend by `−b`), so a frame's
@@ -51,6 +59,13 @@ pub enum Refused {
     NoMirror,
     /// The reading stands at a bend's pole: it is carried to infinity.
     AtPole,
+    /// A turn whose degrees carry a position only through an irrational
+    /// cosine or sine (every angle but a whole quarter turn): refused by
+    /// name, never enclosed or rounded. The turn itself stands exact.
+    Inexact,
+    /// A turn's plane names an axis the reading does not have, or one axis
+    /// twice.
+    NoPlane,
 }
 
 /// ONE MOVE OF A FRAME.
@@ -62,6 +77,12 @@ pub enum Move {
     Expand(Q),
     Contract(Q),
     Bend(Vec<Q>),
+    /// AN ORDERED TURN IN DEGREES (xylarium's "the flat retired",
+    /// netstratum's "laws as angles"): in the plane of axes `(i, j)`, from
+    /// `i` toward `j`, by exactly `degrees` — held as the angle, never as a
+    /// rational-cosine rotor or a half-angle tangent. Consecutive turns in
+    /// one plane compose by adding their degrees.
+    Turn { plane: (usize, usize), degrees: Q },
 }
 
 fn dot(a: &[Q], b: &[Q]) -> Q {
@@ -77,6 +98,7 @@ impl Move {
             Move::Expand(r) => Move::Contract(r.clone()),
             Move::Contract(r) => Move::Expand(r.clone()),
             Move::Bend(b) => Move::Bend(b.iter().map(|x| -x.clone()).collect()),
+            Move::Turn { plane, degrees } => Move::Turn { plane: *plane, degrees: -degrees.clone() },
         }
     }
 
@@ -119,7 +141,39 @@ impl Move {
                 }
                 Ok(x.iter().zip(b).map(|(a, c)| (a + c * &xx) / &den).collect())
             }
+            Move::Turn { plane: (i, j), degrees } => {
+                if i == j || *i >= x.len() || *j >= x.len() {
+                    return Err(Refused::NoPlane);
+                }
+                let (c, s) = quarter_turn(degrees).ok_or(Refused::Inexact)?;
+                let mut out = x.to_vec();
+                let (xi, xj) = (x[*i].clone(), x[*j].clone());
+                out[*i] = &xi * &c - &xj * &s;
+                out[*j] = &xi * &s + &xj * &c;
+                Ok(out)
+            }
         }
+    }
+}
+
+/// The cosine and sine of a turn by `degrees`, where both are rational: a
+/// whole number of quarter turns. `None` everywhere else (Niven: a
+/// rational-degree angle has rational cosine and sine together only at the
+/// quarter turns).
+fn quarter_turn(degrees: &Q) -> Option<(Q, Q)> {
+    let quarters = degrees / Q::from_integer(90.into());
+    if !quarters.is_integer() {
+        return None;
+    }
+    let four = num_bigint::BigInt::from(4);
+    let k = ((quarters.to_integer() % &four) + &four) % &four;
+    let (one, zero) = (Q::one(), Q::zero());
+    match u8::try_from(k).ok()? {
+        0 => Some((one, zero)),
+        1 => Some((zero, one)),
+        2 => Some((-one, zero)),
+        3 => Some((zero, -one)),
+        _ => None,
     }
 }
 
@@ -157,9 +211,24 @@ impl Frame {
         &self.moves
     }
 
-    /// A READING CARRIED INTO THIS FRAME, exactly, move by move.
+    /// A READING CARRIED INTO THIS FRAME, exactly, move by move —
+    /// consecutive turns in one plane composed first by adding their
+    /// degrees, so a run that sums to whole quarter turns carries exactly
+    /// even where its parts would not.
     pub fn carry(&self, x: &[Q]) -> Result<Vec<Q>, Refused> {
-        self.moves.iter().try_fold(x.to_vec(), |p, m| m.apply(&p))
+        self.composed().iter().try_fold(x.to_vec(), |p, m| m.apply(&p))
+    }
+
+    /// The moves with each run of turns in one plane composed into one turn.
+    fn composed(&self) -> Vec<Move> {
+        let mut out: Vec<Move> = Vec::with_capacity(self.moves.len());
+        for m in &self.moves {
+            match (out.last_mut(), m) {
+                (Some(Move::Turn { plane: p, degrees: d }), Move::Turn { plane, degrees }) if p == plane => *d += degrees,
+                _ => out.push(m.clone()),
+            }
+        }
+        out
     }
 }
 
@@ -234,6 +303,23 @@ mod tests {
         assert_eq!(half_turn.carry(&x), Ok(v(&[(-3, 5), (2, 7)])), "the antipode");
         let one = Move::Twist(v(&[(2, 1), (1, 1)])).apply(&x).expect("reflected");
         assert_eq!(dot(&one, &one), dot(&x, &x), "a twist keeps the distance");
+    }
+
+    /// AN ORDERED TURN IN DEGREES: held exactly as its angle, undone by its
+    /// negation; a quarter turn carries a position exactly; a turn by 30°
+    /// alone is refused by name — no cosine of it is rational — while three
+    /// of them in one plane compose to 90° and carry exactly.
+    #[test]
+    fn a_turn_is_held_in_degrees_and_carried_where_exact() {
+        let x = v(&[(3, 5), (-2, 7), (1, 1)]);
+        let quarter = Move::Turn { plane: (0, 1), degrees: q(90, 1) };
+        assert_eq!(quarter.apply(&x), Ok(v(&[(2, 7), (3, 5), (1, 1)])), "a quarter turn from axis 0 toward axis 1");
+        assert_eq!(quarter.inverse().apply(&quarter.apply(&x).expect("turned")), Ok(x.clone()), "undone by its negation");
+        let thirty = Move::Turn { plane: (0, 1), degrees: q(30, 1) };
+        assert_eq!(thirty.apply(&x), Err(Refused::Inexact), "30° alone: refused, never rounded");
+        let three = Frame::identity().then(thirty.clone()).then(thirty.clone()).then(thirty);
+        assert_eq!(three.carry(&x), quarter.apply(&x), "three turns of 30° in one plane compose to 90°, exactly");
+        assert_eq!(Move::Turn { plane: (1, 1), degrees: q(90, 1) }.apply(&x), Err(Refused::NoPlane));
     }
 
     /// REFUSED BY NAME: a bend's pole carried to infinity, a mirror of zero, a
