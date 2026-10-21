@@ -19,8 +19,10 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## Heat and cold, the throat's two faces, live (2026-10-21 07:03) — where it stands
-Courts, voices 1–5 and seats n1–n4 on a86139e3 (restarted 07:03:58). The
+## Heat and cold, the throat's two faces, live (2026-10-21 07:17) — where it stands
+Courts, voices 1–5 and seats n1–n4 on 7eada6b1 (restarted 07:17:59; the
+vacuum bounded by the field: a frozen class passes from cold to heat when a
+vertex it names is shed, 7eada6b1; the cold seal itself a86139e3). The
 seal by COLD (the operator's rulings: heat belongs to the continuum, its
 inverse is the vacuum's cold; "the vacuum hold the frozen class"): a hole
 whose read-back cannot be made while its vertices stand is FROZEN — held
