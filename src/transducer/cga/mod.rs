@@ -51,7 +51,7 @@ pub use period::{compact_period, cyclotomic_orders, finite_order, Spectrum};
 pub use encounter::{encounter, Encounter, Unencountered};
 pub use perturbation::{lift_drag, Alignment, LiftDrag};
 pub use twist::twist_about;
-pub use breath::{breath, Breath};
+pub use breath::{breath, breathe, Breath, Unbreathed};
 pub use planes::{
     bivector_planes, blade_name, harmonic_planes, is_transvection_plane, occupancy, parabolic_name,
     plane_is_harmonic, plane_name, ray_name, transvection_planes, Occupancy, Pole,

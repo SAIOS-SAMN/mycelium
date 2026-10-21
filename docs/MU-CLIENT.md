@@ -478,12 +478,23 @@ axis, read on either half of the breath. Both are read off the commutator
 formed in the algebra (`cga::breath`): its coefficient on `D = e_∞ ∧ e_o`,
 and the rest of its bivector, which the claims prove lies in `a ∧ b` and
 commutes with `D`. `a ∥ b` breathes with no pinch; `a ⊥ b` pinches with no
-breath. APPLIED: where a mind holds a thought whose motion carries both a
-translation and a transversion, the pinch's TWIST — its exact Cayley rotor —
-is wound on the thought's vertex beside its hearing's torsion
-(`Complex::wind`) and unwinds with it when the thought is let go; the
-reading counts the breaths that moved radially and the pinches that
-twisted (`breath`). The mind
+breath.
+
+THE WIDER MACHINERY (the operator, 2026-10-21: the split "needs wider
+machinery" — every plane of a motion, across motions, beyond three axes).
+`cga::breathe(B₁, B₂)` breathes ANY two generators, of any dimension the
+algebra carries: their commutator's radial coefficient on `D`, and the rest
+split into ALL its commuting simple planes (`modes`, verified to re-sum,
+refused by name where they lie in an extension of ℚ), each read by kind —
+an elliptic plane a PINCH with its own twist, a parabolic plane a null
+carry, a hyperbolic plane a boost. `cga::breath(a, b)` is the pair the spec
+names, read over every base axis. APPLIED: where a mind holds a thought, it
+breathes WITHIN each motion (its translation against its transversion) and
+ACROSS its motions (every pair of their exact Cayley generators, each once);
+every pinch's twist is wound on the thought's vertex beside its hearing's
+torsion (`Complex::wind`) and unwinds with it when the thought is let go.
+The reading counts the breaths that moved radially and the planes by kind
+(`breath radial · pinched · null · boost`). The mind
 breathes where what it carries forward meets what it carries back through
 the inversion; its rhythm is the period of that motion, read off its modes
 (78.43), and its balance is the syntropic one — up-flux against down-flux

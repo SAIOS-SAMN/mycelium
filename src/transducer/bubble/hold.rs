@@ -13,23 +13,44 @@ use crate::transducer::element;
 use crate::transducer::sentence::{Form, Vertex};
 use crate::transducer::stalk;
 
-/// MU-CLIENT §4.3 — THE BREATHS A FORM HOLDS: for each word act whose motion
-/// carries both a translation and a transversion — what is carried forward
-/// meeting what is carried back through the inversion — the breath their
-/// generators' commutator is (`cga::breath`), split into its radial axis and
-/// its orthogonal pinch. A motion that does not factor, or carries only one
-/// of the two, breathes nothing here.
-pub(crate) fn breaths_of(f: &Form) -> Vec<crate::transducer::cga::Breath> {
+/// MU-CLIENT §4.3 — THE BREATHS A FORM HOLDS, every plane, across its
+/// motions, over every axis (the operator, 2026-10-21: the split "needs
+/// wider machinery"):
+/// - WITHIN EACH MOTION: where it carries both a translation and a
+///   transversion — what is carried forward meeting what is carried back
+///   through the inversion — the breath of the two (`cga::breath`);
+/// - ACROSS ITS MOTIONS: every pair of the motions' generators (their exact
+///   Cayley bivectors) breathed against each other (`cga::breathe`), each
+///   pair once, in the form's own order.
+///
+/// Each breath is split into its radial axis and its commuting planes by
+/// kind. A motion that does not factor, has no generator in the chart, or a
+/// pair whose planes do not split over ℚ, breathes nothing here.
+pub(crate) fn breaths_of(f: &Form, budget: &mut crate::physics::Budget) -> Vec<crate::transducer::cga::Breath> {
     let mut out = Vec::new();
+    let mut generators: Vec<crate::transducer::cga::Mv> = Vec::new();
     for (_, v) in f.vertices.scoped() {
         let Vertex::Word { derivation, acts, .. } = v else { continue };
         for (_, a) in acts.scoped() {
             let Some(motion) = element::conformal_of_rotor(&derivation.rotor(), &a.carriage) else { continue };
+            if let Some(g) = crate::transducer::cga::cayley_inverse(&motion) {
+                generators.push(g);
+            }
             let Ok(c) = element::conformal_factors(&motion) else { continue };
             if !c.transverses() || c.translation.iter().all(num_traits::Zero::is_zero) {
                 continue;
             }
-            if let Some(b) = crate::transducer::cga::breath(&c.translation, &c.transversion) {
+            if let Ok(b) = crate::transducer::cga::breath(&c.translation, &c.transversion, budget) {
+                out.push(b);
+            }
+        }
+    }
+    for (i, x) in generators.iter().enumerate() {
+        for y in generators.iter().skip(i + 1) {
+            if !budget.spend() {
+                return out;
+            }
+            if let Ok(b) = crate::transducer::cga::breathe(x, y, budget) {
                 out.push(b);
             }
         }
@@ -110,7 +131,7 @@ impl Contemplation {
         budget: &mut crate::physics::Budget,
     ) -> Option<crate::transducer::address::Address> {
         let heard = f.heard.clone();
-        let breaths = breaths_of(&f);
+        let breaths = breaths_of(&f, budget);
         // The docket as it stood before this perception: what the hold adds
         // to it stands in this perception's scene.
         let mut before: Keyed<()> = Keyed::new();
@@ -131,13 +152,15 @@ impl Contemplation {
             // the inversion (a transversion), their commutator's orthogonal
             // part twists (`cga::breath`).
             for b in &breaths {
-                let twist = b.twist();
+                let [pinched, null, boost] = b.by_kind();
                 crate::observe::note_mind(|m| {
                     m.breath[0] += u64::from(!num_traits::Zero::is_zero(&b.radial));
-                    m.breath[1] += u64::from(twist.is_some());
+                    m.breath[1] += pinched;
+                    m.breath[2] += null;
+                    m.breath[3] += boost;
                 });
-                if let Some(t) = &twist {
-                    self.complex.wind(key.as_bytes(), t);
+                for t in b.twists() {
+                    self.complex.wind(key.as_bytes(), &t);
                 }
             }
             self.perceive_cells(key.as_bytes(), budget);
