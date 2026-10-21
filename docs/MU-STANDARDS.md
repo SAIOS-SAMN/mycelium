@@ -109,6 +109,19 @@ refusal strings are added to 34.1 in the same commit. `unwrap()`,
 appear in cognition outside tests; `unreachable!` where the type system
 already excludes the arm names the invariant in its message.
 
+THE SCOPE AND THE LAWFUL DEFAULT (agreed by mycelium, netstratum and
+xylarium, 2026-10-21; xylarium's CONDUCT 9.6). "Cognition" names where the
+rule was first stated, not its bound: a coding standard binds every line a
+developer writes — a universe's physics kernel as much as a mind's code —
+and never limits what a mind may count or rank (the operator, 2026-10-08).
+A default stands only where THE LAW ITSELF ASSIGNS THAT VALUE AT THAT
+POINT — the law's reading of absence: the empty sum is 0, the empty
+product 1, an empty enclosure holds nothing — named at its site (here an
+`#[expect(..., reason = "<the law>")]` the gate checks). Arithmetic
+convenience never qualifies: a division by zero is never lawfully 0 or 1
+unless the law names that value there; everything else is a refusal by
+name.
+
 2.5 **Lanes.** μ⃗ lanes are addressed through `Lane::{S, G, T, H}` (or the
 four-element array with a named index constant), never a bare `[2]`.
 
