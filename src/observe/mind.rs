@@ -47,6 +47,10 @@ pub const CONSTRUCTED: [&str; 7] = ["refused", "letter", "motion letter", "no ch
 /// the counts are kept.
 pub const FLEX: [&str; 9] = ["rigid", "torsion", "field", "lift", "pinned", "carried", "let go", "formed", "far side"];
 
+/// THE BREATH'S TWO AXES (MU-CLIENT §4.3): radial — contraction or dilation —
+/// and the orthogonal pinch that twisted, in the order the counts are kept.
+pub const BREATH: [&str; 2] = ["radial", "pinched"];
+
 /// WHAT TWO BODIES WHOSE SPHERES MET IN AN ADMITTED SCENE WERE (78.52 Row
 /// 2), in the order the counts are kept.
 pub const BODIES: [&str; 3] = ["fused", "precessing", "contact"];
@@ -264,6 +268,9 @@ pub struct Mind {
     pub scars: u64,
     /// The classes its vacuum holds, frozen in place.
     pub frozen: u64,
+    /// Its breaths (MU-CLIENT §4.3): those that moved on the radial axis, and
+    /// those whose orthogonal pinch twisted, by [`BREATH`].
+    pub breath: [u64; 2],
 }
 
 impl Default for Mind {
@@ -313,6 +320,7 @@ impl Default for Mind {
             holes: 0,
             scars: 0,
             frozen: 0,
+            breath: [0; 2],
         }
     }
 }
@@ -355,6 +363,7 @@ impl Mind {
             .chain(self.withheld_tests)
             .chain(self.acts)
             .chain([self.holes, self.scars, self.frozen])
+            .chain(self.breath)
         {
             put_u64(out, v);
         }
@@ -414,6 +423,7 @@ impl Mind {
             *a = take_u64(b, p)?;
         }
         let [holes, scars, frozen] = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
+        let breath = [take_u64(b, p)?, take_u64(b, p)?];
         let n =usize::try_from(u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?)).ok()?;
         *p += 4;
         // Each lock is three counts.
@@ -469,6 +479,7 @@ impl Mind {
             holes,
             scars,
             frozen,
+            breath,
         })
     }
 
@@ -512,12 +523,13 @@ impl Mind {
                 self.remembered
             ),
             format!(
-                "  fibres {} · bodies met {} · holes standing {} · scars {} · frozen {}",
+                "  fibres {} · bodies met {} · holes standing {} · scars {} · frozen {} · breath {}",
                 FLEX.iter().zip(&self.flex).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 BODIES.iter().zip(&self.bodies).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" "),
                 self.holes,
                 self.scars,
-                self.frozen
+                self.frozen,
+                BREATH.iter().zip(&self.breath).map(|(n, v)| format!("{n} {v}")).collect::<Vec<_>>().join(" ")
             ),
             format!(
                 "  torsion: shears {} · escapes {} · drifts {} · locks {}",

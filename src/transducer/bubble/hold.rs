@@ -13,6 +13,30 @@ use crate::transducer::element;
 use crate::transducer::sentence::{Form, Vertex};
 use crate::transducer::stalk;
 
+/// MU-CLIENT §4.3 — THE BREATHS A FORM HOLDS: for each word act whose motion
+/// carries both a translation and a transversion — what is carried forward
+/// meeting what is carried back through the inversion — the breath their
+/// generators' commutator is (`cga::breath`), split into its radial axis and
+/// its orthogonal pinch. A motion that does not factor, or carries only one
+/// of the two, breathes nothing here.
+pub(crate) fn breaths_of(f: &Form) -> Vec<crate::transducer::cga::Breath> {
+    let mut out = Vec::new();
+    for (_, v) in f.vertices.scoped() {
+        let Vertex::Word { derivation, acts, .. } = v else { continue };
+        for (_, a) in acts.scoped() {
+            let Some(motion) = element::conformal_of_rotor(&derivation.rotor(), &a.carriage) else { continue };
+            let Ok(c) = element::conformal_factors(&motion) else { continue };
+            if !c.transverses() || c.translation.iter().all(num_traits::Zero::is_zero) {
+                continue;
+            }
+            if let Some(b) = crate::transducer::cga::breath(&c.translation, &c.transversion) {
+                out.push(b);
+            }
+        }
+    }
+    out
+}
+
 impl Contemplation {
     /// Z4 item 1 — THE FORM IS MOVED IN, NOT COPIED. It took `&Form` and
     /// the bubble kept `f.clone()`: 12.8 MB on a 590-vertex rule, measured
@@ -86,6 +110,7 @@ impl Contemplation {
         budget: &mut crate::physics::Budget,
     ) -> Option<crate::transducer::address::Address> {
         let heard = f.heard.clone();
+        let breaths = breaths_of(&f);
         // The docket as it stood before this perception: what the hold adds
         // to it stands in this perception's scene.
         let mut before: Keyed<()> = Keyed::new();
@@ -98,6 +123,22 @@ impl Contemplation {
             // until the mind lets the perception go and it unwinds.
             if let Some(w) = &heard {
                 self.complex.wind(key.as_bytes(), w);
+            }
+            // MU-CLIENT §4.3 — THE BREATH'S PINCH, wound on the thought's
+            // vertex beside its hearing, and unwound with it when the mind
+            // lets the thought go: where a motion it holds carries what it
+            // takes forward (a translation) and what it carries back through
+            // the inversion (a transversion), their commutator's orthogonal
+            // part twists (`cga::breath`).
+            for b in &breaths {
+                let twist = b.twist();
+                crate::observe::note_mind(|m| {
+                    m.breath[0] += u64::from(!num_traits::Zero::is_zero(&b.radial));
+                    m.breath[1] += u64::from(twist.is_some());
+                });
+                if let Some(t) = &twist {
+                    self.complex.wind(key.as_bytes(), t);
+                }
             }
             self.perceive_cells(key.as_bytes(), budget);
         }

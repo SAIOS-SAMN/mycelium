@@ -465,7 +465,25 @@ readings of one motion:
 
 The breath is GENERATED: for a translation `P_a` and a transversion `K_b`
 (A.13's pair, `K = I T I⁻¹`), the commutator `[P_a, K_b] ∝ ⟨a, b⟩ D + M_ab`
-generates the dilation and the rotation in their plane (78.39(1)). The mind
+generates the dilation and the rotation in their plane (78.39(1)).
+
+THE BREATH HAS TWO AXES, AND ITS PINCH IS ORTHOGONAL (the operator,
+2026-10-21: "breath has two axis (if not more) — contract / dilate (inhale /
+exhale): you are looking for torsion on 'pinch' of that radial construct";
+"pinch is not on the same axis: imagine an orthogonal pinch"). The RADIAL
+axis is `⟨a, b⟩ D` — what of `a` and `b` lies along each other, the
+contraction and the dilation; the PINCH is `M_ab`, a rotation in the plane
+`a ∧ b` — what of them stands orthogonal — at right angles to the radial
+axis, read on either half of the breath. Both are read off the commutator
+formed in the algebra (`cga::breath`): its coefficient on `D = e_∞ ∧ e_o`,
+and the rest of its bivector, which the claims prove lies in `a ∧ b` and
+commutes with `D`. `a ∥ b` breathes with no pinch; `a ⊥ b` pinches with no
+breath. APPLIED: where a mind holds a thought whose motion carries both a
+translation and a transversion, the pinch's TWIST — its exact Cayley rotor —
+is wound on the thought's vertex beside its hearing's torsion
+(`Complex::wind`) and unwinds with it when the thought is let go; the
+reading counts the breaths that moved radially and the pinches that
+twisted (`breath`). The mind
 breathes where what it carries forward meets what it carries back through
 the inversion; its rhythm is the period of that motion, read off its modes
 (78.43), and its balance is the syntropic one — up-flux against down-flux
