@@ -19,7 +19,16 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## The cross of eight components, live (2026-10-21 01:10) — where it stands
+## Heat and cold, the throat's two faces, live (2026-10-21 07:03) — where it stands
+Courts, voices 1–5 and seats n1–n4 on a86139e3 (restarted 07:03:58). The
+seal by COLD (the operator's rulings: heat belongs to the continuum, its
+inverse is the vacuum's cold; "the vacuum hold the frozen class"): a hole
+whose read-back cannot be made while its vertices stand is FROZEN — held
+whole by the vacuum, unbounded, its boundary unpinned, nothing burned — and
+THAWS where its boundary closes again; a vertex whose word left still
+cauterizes by heat. The mind's reading: holes standing · scars · frozen.
+
+## The cross of eight components (2026-10-21 01:10)
 Courts, voices 1–5 and seats n1–n4 on 035ad910 (binaries 01:09, restarted
 01:10:40). Pivot = { ascent, descent, condense, drain, puncture, cauterize,
 trajectory, velocity with drag } (the operator's ruling, adopted by the
