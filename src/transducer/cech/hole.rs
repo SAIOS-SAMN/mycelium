@@ -46,6 +46,15 @@
 
 use super::*;
 
+/// A frozen class's entry on one of its vertices: the vertex, length-prefixed
+/// so no vertex is another's prefix, then the class's key.
+fn frozen_on_key(v: &[u8], key: &[u8]) -> Vec<u8> {
+    let mut k = Vec::new();
+    crate::transducer::address::put_key_bytes(&mut k, v);
+    k.extend_from_slice(key);
+    k
+}
+
 /// WHAT A `condense` DID — [`Drained`]'s inverse — and, where a tether
 /// already stands on the pair, the composite `C = old⁻¹ · new` the arriving
 /// transport is to the standing one (MU-CLIENT §4.5). What `C` does to the
@@ -415,8 +424,45 @@ impl Complex {
             }
         }
         let fill = hole.fill.clone();
+        for v in &hole.vertices {
+            self.frozen_on.insert(frozen_on_key(v, key), ());
+        }
         self.frozen.insert(key, hole);
         Frozen::Held(fill)
+    }
+
+    /// The frozen classes standing on `v`: one keyed fiber, never a read of
+    /// the vacuum.
+    pub fn frozen_on(&self, v: &[u8]) -> Vec<Vec<u8>> {
+        let mut prefix = Vec::new();
+        crate::transducer::address::put_key_bytes(&mut prefix, v);
+        match self.frozen_on.fiber_at(&prefix) {
+            Some(f) => f.filter_map(|(k, ())| k.get(prefix.len()..).map(<[u8]>::to_vec)).collect(),
+            None => Vec::new(),
+        }
+    }
+
+    /// A frozen class leaves the vacuum: its entry and its vertices' index.
+    fn unfreeze(&mut self, key: &[u8]) -> Option<Simplex> {
+        let held = self.frozen.remove(key)?;
+        for v in &held.vertices {
+            self.frozen_on.remove(&frozen_on_key(v, key));
+        }
+        Some(held)
+    }
+
+    /// FROM COLD TO HEAT (the auditor's ruling, 2026-10-21): a frozen class
+    /// one of whose vertices is shed can no longer thaw, so it is
+    /// cauterized — the class burned, booked as a cauterization, its scar
+    /// counted — and the vacuum lets it go. The vacuum is thereby bounded by
+    /// the field: it holds a class only while every vertex it names stands.
+    pub fn cauterize_frozen(&mut self, key: &[u8]) -> Cauterized {
+        let Some(held) = self.unfreeze(key) else {
+            return Cauterized::Absent;
+        };
+        crate::physics::metabolism::note_cauterized();
+        self.scars += 1;
+        Cauterized::Scarred(held.fill)
     }
 
     /// `thaw` — THE COLD SEAL'S INVERSE: a frozen class re-ascended over its
@@ -431,7 +477,7 @@ impl Complex {
         let (vertices, volume) = held;
         match self.ascend(&vertices, |_| volume) {
             Ascended::Sealed(fill) => {
-                self.frozen.remove(key);
+                let _ = self.unfreeze(key);
                 Thawed::Sealed(fill)
             }
             Ascended::Open => {

@@ -582,7 +582,10 @@ the seal does not close, its boundary condensed — the hole is FROZEN
 place (`frozen`; the vacuum may hold what the continuum may not), unpinning
 its boundary, burning nothing, and THAWED back into a chamber
 (`Complex::thaw`) where a meet over the same vertices finds its boundary
-closing again. Neither face silently caps, and no hole is left as a wound
+closing again. THE VACUUM IS BOUNDED BY THE FIELD (the auditor's ruling,
+2026-10-21): a frozen class stands only while every vertex it names stands;
+when one is shed it can no longer thaw, and passes from cold to heat —
+cauterized, its scar counted (`cauterize_frozen`). Neither face silently caps, and no hole is left as a wound
 that pins for ever. The field already
 carries the strain handed down at the throat and dissipates what never
 returns at its beat (the reservoir's heat). No path hands a sealed class out

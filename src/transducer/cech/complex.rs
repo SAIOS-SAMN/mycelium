@@ -79,8 +79,15 @@ pub struct Complex {
     /// and thawed back into a chamber where a meet over the same vertices
     /// finds its boundary closing again. The continuum's seal (`cauterize`)
     /// burns and keeps a count; the vacuum holds what the continuum may not,
-    /// so this carrier is not bounded by a count. Volatile.
+    /// so this carrier is not bounded by a count: it is BOUNDED BY THE FIELD
+    /// (the auditor's ruling, 2026-10-21) — a frozen class stands only while
+    /// every vertex it names stands, and passes from cold to heat
+    /// (`cauterize_frozen`) the moment one is shed. Volatile.
     pub(crate) frozen: Keyed<Simplex>,
+    /// The frozen classes standing on each vertex, keyed by the vertex
+    /// (length-prefixed) and then the class's key: one fiber per vertex, so
+    /// a vertex shed reads its frozen classes and nothing else (rule 1).
+    pub(crate) frozen_on: Keyed<()>,
     /// 78.112 H7b — THE TORSION HEARING WOUND AT EACH VERTEX: the crossings of
     /// the rings heard in that perception (the light crossing their planes,
     /// the impact), composed as one strain and wound on at each hearing. It
@@ -618,6 +625,15 @@ impl Complex {
 
     /// Drop every simplex that contains `vertex`. Used when bubbles merge.
     pub fn drop_vertex(&mut self, vertex: &[u8]) {
+        // No class is dropped silently: the holes on the vertex are
+        // cauterized and its frozen classes pass from cold to heat, each
+        // with its scar, before the vertex goes.
+        for h in self.holes_on(vertex) {
+            let _ = self.cauterize(&h);
+        }
+        for f in self.frozen_on(vertex) {
+            let _ = self.cauterize_frozen(&f);
+        }
         let Some(keys) = self.star.remove(vertex) else {
             self.sections.remove(vertex);
             return;

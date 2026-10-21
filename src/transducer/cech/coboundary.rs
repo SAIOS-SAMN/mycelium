@@ -671,6 +671,14 @@ impl Complex {
                 out.scarred += 1;
             }
         }
+        // THE VACUUM BOUNDED BY THE FIELD (the auditor's ruling, 2026-10-21):
+        // a frozen class naming this vertex can no longer thaw, and passes
+        // from cold to heat.
+        for f in self.frozen_on(v) {
+            if let Cauterized::Scarred(_) = self.cauterize_frozen(&f) {
+                out.scarred += 1;
+            }
+        }
         let mut cells: Vec<(usize, Vec<u8>)> = match self.star.get(v) {
             Some(star) => star.scoped().filter_map(|(k, ())| self.degree_of(&k).map(|d| (d, k))).collect(),
             None => Vec::new(),

@@ -167,6 +167,26 @@ fn a_frozen_class_thaws_where_its_boundary_closes_again() {
     assert_eq!(mind.complex.board(), sealed, "the chamber returned exactly");
 }
 
+/// THE VACUUM IS BOUNDED BY THE FIELD (the auditor's ruling, 2026-10-21): a
+/// frozen class stands only while every vertex it names stands. Shed one of
+/// its vertices and the class can no longer thaw: it passes from cold to
+/// heat — cauterized, its scar counted, the vacuum letting it go — and the
+/// vertex goes.
+#[test]
+fn a_frozen_class_passes_to_heat_when_a_vertex_it_names_is_shed() {
+    let mut c = Complex::new();
+    let (vs, key) = sealed_triangle(&mut c, 81, turn_90());
+    let Descended::Throat(_) = c.descend(&key) else { panic!("the chamber crosses") };
+    let Frozen::Held(_) = c.freeze(&key) else { panic!("frozen in place") };
+    assert_eq!(c.frozen_on(&vs[1]), vec![key.clone()], "the frozen class stands on each vertex it names");
+    let r = c.release_vertex(&vs[1]);
+    assert_eq!(r.scarred, 1, "from cold to heat: {r:?}");
+    assert!(!c.is_frozen(&key) && c.board().frozen.is_empty(), "the vacuum let it go");
+    assert_eq!(c.scars(), 1, "its scar counted");
+    assert!(c.frozen_on(&vs[0]).is_empty() && c.frozen_on(&vs[2]).is_empty(), "and no vertex names it any more");
+    assert!(c.sections.get(vs[1].as_slice()).is_none(), "the vertex goes");
+}
+
 /// 78.100 — WHERE THE CLIMB STOPS, read on the board it leaves. Three
 /// vertices on a path: the third face does not stand and no cell is minted;
 /// with the face and no volume on any lane, none again; with volume, one.
