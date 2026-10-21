@@ -13,7 +13,7 @@
 //!
 //! ```text
 //!     STRETCH    x ↦ x + t                         a translation
-//!     TWIST      x ↦ x − 2 (v·x)/(v·v) v            a reflection; two are a turn
+//!     TWIST      x ↦ x − 2 (v·x)/(v·v) v            an AXIAL reflection (v on one axis)
 //!     EXPAND     x ↦ ρ x,  ρ > 1                    a dilation outward
 //!     CONTRACT   x ↦ x / ρ, ρ > 1                   a dilation inward
 //!     BEND       x ↦ (x + b|x|²)/(1 + 2b·x + |b|²|x|²)   a transversion
@@ -69,6 +69,11 @@ pub enum Refused {
     /// A turn's plane names an axis the reading does not have, or one axis
     /// twice.
     NoPlane,
+    /// A twist whose mirror is not an axis's (the auditor's ruling,
+    /// 2026-10-21): spatial frames turn and mirror only by the square's
+    /// symmetries, quarter turns and axial reflections; a mirror at another
+    /// slope would turn by a rational-cosine angle and shatter the lattice.
+    NotAxial,
 }
 
 /// ONE MOVE OF A FRAME.
@@ -121,6 +126,9 @@ impl Move {
                 let vv = dot(v, v);
                 if vv.is_zero() {
                     return Err(Refused::NoMirror);
+                }
+                if v.iter().filter(|c| !c.is_zero()).count() != 1 {
+                    return Err(Refused::NotAxial);
                 }
                 let k = Q::from_integer(2.into()) * dot(v, x) / vv;
                 Ok(x.iter().zip(v).map(|(a, b)| a - &k * b).collect())
@@ -266,7 +274,7 @@ mod tests {
         let x = v(&[(3, 7), (-2, 5), (1, 1)]);
         let moves = [
             Move::Stretch(v(&[(1, 2), (0, 1), (-4, 3)])),
-            Move::Twist(v(&[(1, 1), (2, 1), (2, 1)])),
+            Move::Twist(v(&[(0, 1), (2, 1), (0, 1)])),
             Move::Expand(q(5, 2)),
             Move::Contract(q(7, 3)),
             Move::Bend(v(&[(1, 3), (-1, 4), (0, 1)])),
@@ -284,8 +292,8 @@ mod tests {
     fn a_frame_and_its_inverse_are_the_identity() {
         let frame = Frame::identity()
             .then(Move::Bend(v(&[(1, 5), (1, 7)])))
-            .then(Move::Twist(v(&[(3, 1), (4, 1)])))
-            .then(Move::Twist(v(&[(1, 1), (0, 1)])))
+            .then(Move::Twist(v(&[(0, 1), (4, 1)])))
+            .then(Move::Turn { plane: (0, 1), degrees: q(270, 1) })
             .then(Move::Expand(q(9, 4)))
             .then(Move::Stretch(v(&[(-1, 3), (2, 1)])))
             .then(Move::Contract(q(3, 2)));
@@ -296,16 +304,20 @@ mod tests {
         }
     }
 
-    /// TWO TWISTS ARE A TURN: reflections in two mirrors at a right angle
-    /// turn the plane by 180°, so a point goes to its antipode; each twist
-    /// keeps every distance from the origin.
+    /// TWO TWISTS ARE A TURN: reflections in the two axes' mirrors turn the
+    /// plane by 180°, so a point goes to its antipode — exactly the turn of
+    /// 180°; a twist keeps every distance from the origin. A mirror at any
+    /// other slope is refused by name (the auditor's ruling, 2026-10-21):
+    /// spatial frames are the square's symmetries.
     #[test]
     fn two_twists_are_a_turn() {
         let half_turn = Frame::identity().then(Move::Twist(v(&[(1, 1), (0, 1)]))).then(Move::Twist(v(&[(0, 1), (1, 1)])));
         let x = v(&[(3, 5), (-2, 7)]);
         assert_eq!(half_turn.carry(&x), Ok(v(&[(-3, 5), (2, 7)])), "the antipode");
-        let one = Move::Twist(v(&[(2, 1), (1, 1)])).apply(&x).expect("reflected");
+        assert_eq!(half_turn.carry(&x), Move::Turn { plane: (0, 1), degrees: q(180, 1) }.apply(&x), "the turn of 180°");
+        let one = Move::Twist(v(&[(0, 1), (3, 1)])).apply(&x).expect("reflected");
         assert_eq!(dot(&one, &one), dot(&x, &x), "a twist keeps the distance");
+        assert_eq!(Move::Twist(v(&[(2, 1), (1, 1)])).apply(&x), Err(Refused::NotAxial), "a mirror off the axes: refused");
     }
 
     /// AN ORDERED TURN IN DEGREES: held exactly as its angle, undone by its
