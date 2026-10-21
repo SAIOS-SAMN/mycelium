@@ -100,6 +100,16 @@ impl Remaining {
     }
 }
 
+/// WHAT REMAINS, READ IN ANY OBSERVER'S FRAME (the operator, 2026-10-21:
+/// forms read in frames that bend, twist, stretch, expand and contract —
+/// never on a grid): its reading is the one-axis point it is, carried
+/// exactly by the frame form.
+impl crate::frame::ReadIn for Remaining {
+    fn reading_point(&self) -> Vec<Q> {
+        vec![self.reading()]
+    }
+}
+
 /// `base^e` exactly, by squaring along the exponent's own bits.
 fn power(base: &Q, e: u64) -> Q {
     let mut out = Q::one();
@@ -162,6 +172,19 @@ mod tests {
         let r = Remaining::whole().after(&q(1, 2), 2).and_then(|r| r.after(&q(1, 3), 1)).expect("shares");
         assert_eq!(r.factors().len(), 2);
         assert_eq!(r.reading(), q(1, 4) * q(2, 3));
+    }
+
+    /// WHAT REMAINS IS READ IN A FRAME, AND BACK: a history's exact product
+    /// carried into an observer's frame — contracted, twisted, bent — and
+    /// back by the inverse frame returns bit for bit; no floor is taken.
+    #[test]
+    fn what_remains_is_read_in_a_frame_and_back() {
+        use crate::frame::{Frame, Move, ReadIn};
+        let r = Remaining::whole().after(&q(1, 4), 3).and_then(|r| r.after(&q(2, 9), 5)).expect("shares");
+        let frame = Frame::identity().then(Move::Contract(q(3, 1))).then(Move::Twist(vec![q(1, 1)])).then(Move::Bend(vec![q(2, 5)]));
+        let there = r.read_in(&frame).expect("carried");
+        assert_eq!(frame.inverse().carry(&there), Ok(vec![r.reading()]), "there and back, exactly");
+        assert_eq!(r.read_in(&Frame::identity()), Ok(vec![q(27, 64) * power(&q(7, 9), 5)]), "the identity reads it as it is");
     }
 
     /// REFUSED BY NAME: a negative share, a share that would take all that

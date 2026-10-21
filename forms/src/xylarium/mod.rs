@@ -6,5 +6,4 @@
 //! by the landing rule, never a move of this file's say-so.
 
 pub mod closeness;
-pub mod frames;
 pub mod share_compounds;

@@ -24,8 +24,13 @@
 //!
 //! OBSERVER (A6). A form fixes no direction or linearity; each is stated with
 //! its observer, and a reading moves between frames only by a named exact
-//! map, fixed by each universe's own dynamic before any joint read.
+//! map, fixed by each universe's own dynamic before any joint read. That map
+//! is itself a form ([`frame`]): an exact, invertible conformal map that
+//! bends, twists, stretches, expands and contracts — never a floor on a
+//! grid, which rounds a reading off and cannot be undone (the operator,
+//! 2026-10-21). Joint reads compare exact values.
 
+pub mod frame;
 pub mod xylarium;
 
 /// The exact rationals every form computes over (the same object as
