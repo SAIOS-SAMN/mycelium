@@ -32,7 +32,7 @@
 //! rings until it returns. A hole over the tether pins it rigid.
 
 use super::*;
-use crate::transducer::cech::{Applied, Ascended, Capped, Condensed, Pivot, Punctured};
+use crate::transducer::cech::{Applied, Ascended, Capped, Condensed, Pivot, Punctured, Thawed};
 use crate::transducer::element::Versor;
 
 /// One flex counted on the mind's reading by what it did to the fibre —
@@ -262,23 +262,35 @@ impl Contemplation {
     ///
     /// THE DIPOLE'S READ-BACK: at a hole the cross left, ascend is the
     /// `seal` — the class the throat kept returns to a chamber over the
-    /// standing boundary. Where the boundary no longer closes, the class
-    /// cannot be read back, and the hole is CAUTERIZED (the eight-component
-    /// cross, ruled 2026-10-20): closed, its scar recorded, never left as a
-    /// wound that pins its boundary for ever.
+    /// standing boundary. Where the boundary no longer closes while its
+    /// vertices stand, the class cannot be read back and is SEALED BY COLD
+    /// (the operator's rulings, 2026-10-21: the vacuum's face of the throat,
+    /// "the vacuum hold the frozen class"): frozen in place, the hole closed
+    /// and its boundary unpinned, never left as a wound that pins for ever.
+    /// At a class the vacuum holds, ascend is the THAW: the chamber returns
+    /// where its boundary closes again. (Where a vertex's word has left, the
+    /// boundary drains with it and the hole is cauterized by heat:
+    /// `release_vertex`.)
     pub(crate) fn ascend(&mut self, cell: &[u8]) -> CoboundaryOutcome {
+        if self.complex.is_frozen(cell) {
+            return match self.complex.thaw(cell) {
+                Thawed::Sealed(fill) => CoboundaryOutcome::Attached(fill),
+                Thawed::Held => CoboundaryOutcome::Attached(Fill::Open),
+                Thawed::Absent => CoboundaryOutcome::Absent,
+            };
+        }
         if self.complex.is_hole(cell) {
             return match self.seal(cell) {
                 Capped::Sealed { cap, .. } => CoboundaryOutcome::Attached(cap),
                 // The boundary was read and does not close, or no longer
                 // stands as a boundary: either way the class is not read
-                // back.
+                // back, and the vacuum holds it.
                 Capped::Open => {
-                    let _ = self.complex.cauterize(cell);
+                    let _ = self.complex.freeze(cell);
                     CoboundaryOutcome::Attached(Fill::Open)
                 }
                 Capped::Absent => {
-                    let _ = self.complex.cauterize(cell);
+                    let _ = self.complex.freeze(cell);
                     CoboundaryOutcome::Absent
                 }
             };

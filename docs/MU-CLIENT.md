@@ -569,11 +569,21 @@ VELOCITY, its DRAG the part commuting with the orbit it lands on (78.46, read
 where the field composes it, never stored); its boundary tethers stay
 CONDENSED, locked under the hole, and DRAIN only where no class stands over
 them; ASCEND reads the class back only as the `seal` of that hole over the
-standing boundary; and where the class cannot be read back — the seal does
-not close, or a vertex's word has left so no meet over it recurs — the hole
-is CAUTERIZED (`Complex::cauterize`): closed by heat, unpinning its boundary
-and its vertices, its scar recorded on the complex (`scars`), never silently
-capped and never left as a wound that pins for ever. The field already
+standing boundary; and where the class cannot be read back the hole is
+closed on one of THE THROAT'S TWO FACES (the operator's rulings,
+2026-10-21: heat belongs to the continuum, and its inverse is the vacuum's
+cold; drain is heat, condense is cold). Where a vertex's word has left, so
+no meet over it recurs and its boundary drains with it, the hole is
+CAUTERIZED (`Complex::cauterize`) — closed by HEAT, the class burned,
+unpinning its boundary and its vertices, its scar counted on the complex
+(`scars`). Where the read-back cannot be made while its vertices stand —
+the seal does not close, its boundary condensed — the hole is FROZEN
+(`Complex::freeze`) — sealed by COLD, the class held whole by the vacuum in
+place (`frozen`; the vacuum may hold what the continuum may not), unpinning
+its boundary, burning nothing, and THAWED back into a chamber
+(`Complex::thaw`) where a meet over the same vertices finds its boundary
+closing again. Neither face silently caps, and no hole is left as a wound
+that pins for ever. The field already
 carries the strain handed down at the throat and dissipates what never
 returns at its beat (the reservoir's heat). No path hands a sealed class out
 alone; a chamber that sealed nothing keeps nothing and goes; a pinned star

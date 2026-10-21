@@ -34,7 +34,7 @@ pub use board::{independent, Applied, Board, Pivot};
 pub use coboundary::*;
 pub use complex::*;
 pub use connecting::{connecting, Glued, Unglued};
-pub use hole::{Capped, Cauterized, Condensed, Punctured};
+pub use hole::{Capped, Cauterized, Condensed, Frozen, Punctured, Thawed};
 pub use coxeter::*;
 pub use nerve::*;
 pub use orbit_algebra::*;

@@ -118,15 +118,17 @@ fn a_released_vertex_cauterizes_the_classes_it_cannot_read_back() {
     assert!(open.sections.get(ws[0].as_slice()).is_none() && open.scars() == 0, "and the vertex goes, unscarred");
 }
 
-/// THE READ-BACK THAT CANNOT BE MADE CAUTERIZES (the eight-component
-/// cross). A chamber crosses on the mind's complex and the meet over the same
-/// vertices reads its class back whole — ascend at the hole, the seal — with
-/// no scar. Crossed again, one pair of its boundary then stands as a
-/// remainder — a transition that does not realise — so the boundary no
-/// longer stands as one and the class cannot be read back: the hole is
-/// cauterized, its scar recorded, not left standing.
+/// THE READ-BACK THAT CANNOT BE MADE IS SEALED BY COLD (the operator's
+/// rulings, 2026-10-21: the vacuum's face of the throat, "the vacuum hold
+/// the frozen class"). A chamber crosses on the mind's complex and the meet
+/// over the same vertices reads its class back whole — ascend at the hole,
+/// the seal. Crossed again, one pair of its boundary then stands as a
+/// remainder — a transition that does not realise — so, its vertices
+/// standing, the class cannot be read back: it is FROZEN in place, held by
+/// the vacuum whole, the hole closed and its boundary unpinned. Nothing is
+/// burned: no scar.
 #[test]
-fn a_read_back_that_cannot_be_made_cauterizes() {
+fn a_read_back_that_cannot_be_made_is_frozen() {
     let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
     let (vs, key) = sealed_triangle(&mut mind.complex, 61, turn_90());
     assert!(matches!(mind.complex.descend(&key), Descended::Throat(_)), "the chamber crosses");
@@ -135,11 +137,34 @@ fn a_read_back_that_cannot_be_made_cauterizes() {
         "a boundary that still closes reads the class back"
     );
     assert!(mind.complex.simplex(&key).is_some() && mind.complex.scars() == 0, "the chamber returned, no scar");
-    assert!(matches!(mind.complex.descend(&key), Descended::Throat(_)), "it crosses again");
+    let Descended::Throat(kept) = mind.complex.descend(&key) else { panic!("it crosses again") };
     mind.complex.set_remainder_edge(&vs[0], &vs[2]);
     assert!(!matches!(mind.ascend(&key), CoboundaryOutcome::Attached(f) if !f.unsettled()), "the read-back cannot be made");
-    assert!(!mind.complex.is_hole(&key), "the hole is cauterized, not left standing");
-    assert_eq!(mind.complex.scars(), 1, "its scar recorded");
+    assert!(!mind.complex.is_hole(&key), "the hole closed, not left standing");
+    assert_eq!(mind.complex.board().frozen, vec![(key.clone(), kept)], "the vacuum holds the class whole, in place");
+    assert_eq!(mind.complex.scars(), 0, "nothing burned");
+}
+
+/// THE COLD SEAL'S INVERSE: A FROZEN CLASS THAWS. Frozen in place over a
+/// boundary that still stands, the class is held, pinning nothing; the meet
+/// over the same vertices asks for it — ascend at the frozen class, the
+/// thaw — and the boundary closes: the chamber returns with the same fill
+/// and the vacuum lets it go. The board is the sealed board again.
+#[test]
+fn a_frozen_class_thaws_where_its_boundary_closes_again() {
+    let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
+    let (vs, key) = sealed_triangle(&mut mind.complex, 71, turn_90());
+    let sealed = mind.complex.board();
+    let Descended::Throat(kept) = mind.complex.descend(&key) else { panic!("the chamber crosses") };
+    let Frozen::Held(held) = mind.complex.freeze(&key) else { panic!("frozen in place") };
+    assert_eq!(held, kept, "the class held whole");
+    let edge = simplex_key(&sorted_verts([vs[0].as_slice(), vs[1].as_slice()])).as_bytes().to_vec();
+    assert!(mind.complex.is_frozen(&key) && !mind.complex.is_hole(&key), "frozen, no longer a hole");
+    assert!(matches!(mind.complex.drain(&edge), Drained::Vacuum), "a frozen class pins nothing");
+    let _ = mind.complex.condense(&vs[0], &vs[1], Rotor::identity(), ident(), vol());
+    assert!(matches!(mind.ascend(&key), CoboundaryOutcome::Attached(f) if !f.unsettled()), "the boundary closes again: it thaws");
+    assert!(!mind.complex.is_frozen(&key), "the vacuum let it go");
+    assert_eq!(mind.complex.board(), sealed, "the chamber returned exactly");
 }
 
 /// 78.100 — WHERE THE CLIMB STOPS, read on the board it leaves. Three

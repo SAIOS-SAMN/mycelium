@@ -358,12 +358,12 @@ impl Contemplation {
     /// it: a class read is the class the cut left between the two thoughts; a
     /// re-fill is the thought rejoined. Every other answer leaves it pending.
     /// A cell of degree two or more ASCENDS (MU-CLIENT §4.5), and so does a
-    /// hole the cross left there — its read-back, the seal; a tether is read
-    /// by its own fill.
+    /// hole the cross left there — its read-back, the seal — and a class the
+    /// vacuum holds there — its thaw; a tether is read by its own fill.
     pub(crate) fn fill_meet(&mut self, key: &[u8]) -> CoboundaryOutcome {
         let outcome = match self.complex.degree_of(key) {
             Some(d) if d >= 2 => self.ascend(key),
-            None if self.complex.is_hole(key) => self.ascend(key),
+            None if self.complex.is_hole(key) || self.complex.is_frozen(key) => self.ascend(key),
             _ => self.complex.fill(key),
         };
         self.settle_decoherence(key, &outcome);

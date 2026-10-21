@@ -12,7 +12,17 @@
 //!     hole    puncture ───►  open a cell, the class kept IN    here
 //!             seal     ◄───  cap the hole, the class killed    here
 //!             cauterize ◄──  close it by heat, the scar kept   here
+//!             freeze   ◄───  close it by cold, the class held  here
+//!             thaw     ───►  the frozen class re-sealed        here
 //! ```
+//!
+//! HEAT AND COLD, THE THROAT'S TWO FACES (the operator's rulings,
+//! 2026-10-21): drain is heat, the continuum; condense is cold, the vacuum.
+//! Where a vertex's word has left, its boundary drains with it and the hole
+//! is cauterized — the class burned, its scar counted. Where the read-back
+//! cannot be made while its vertices stand, its boundary condensed, the hole
+//! is frozen — the class held whole by the vacuum, which may hold what the
+//! continuum may not, and thawed where its boundary closes again.
 //!
 //! CAUTERIZE (the eight-component cross, ruled 2026-10-20): where a hole's
 //! class cannot be read back — its seal does not close, or a vertex's word
@@ -82,6 +92,27 @@ pub enum Cauterized {
     /// The hole is closed and its class burned: this fill, the scar.
     Scarred(Fill),
     /// No hole at this key.
+    Absent,
+}
+
+/// WHAT A `freeze` DID.
+#[derive(Clone, Debug)]
+pub enum Frozen {
+    /// The hole is closed by cold and its class held in the vacuum, whole.
+    Held(Fill),
+    /// No hole at this key.
+    Absent,
+}
+
+/// WHAT A `thaw` DID.
+#[derive(Clone, Debug)]
+pub enum Thawed {
+    /// The frozen class's boundary closes again: the chamber returns with
+    /// this fill and the vacuum lets it go.
+    Sealed(Fill),
+    /// The boundary still does not close: the class stays frozen.
+    Held,
+    /// The vacuum holds no class at this key.
     Absent,
 }
 
@@ -363,5 +394,52 @@ impl Complex {
         crate::physics::metabolism::note_cauterized();
         self.scars += 1;
         Cauterized::Scarred(hole.fill)
+    }
+
+    /// `freeze` — THE SEAL BY COLD, the vacuum's face of the throat
+    /// (the operator's rulings, 2026-10-21: heat belongs to the continuum and
+    /// its inverse is the vacuum's cold; "the vacuum hold the frozen
+    /// class"). Where a hole's class cannot be read back while its vertices
+    /// still stand — its boundary condensed, no longer closing as one — the
+    /// class is FROZEN IN PLACE: the hole leaves its vertices' stars,
+    /// unpinning its boundary, and the vacuum holds the class whole at its
+    /// coordinate. Nothing is burned, so no entropy is booked; what is held
+    /// may return (`thaw`).
+    pub fn freeze(&mut self, key: &[u8]) -> Frozen {
+        let Some(hole) = self.holes.remove(key) else {
+            return Frozen::Absent;
+        };
+        for v in &hole.vertices {
+            if let Some(star) = self.star.get_mut(v) {
+                star.remove(key);
+            }
+        }
+        let fill = hole.fill.clone();
+        self.frozen.insert(key, hole);
+        Frozen::Held(fill)
+    }
+
+    /// `thaw` — THE COLD SEAL'S INVERSE: a frozen class re-ascended over its
+    /// standing boundary by the one `ascend`, at the volume it was read with
+    /// (read, never written). Where the boundary closes again the chamber
+    /// returns and the vacuum lets the class go; where it does not, the class
+    /// stays frozen and nothing is minted.
+    pub fn thaw(&mut self, key: &[u8]) -> Thawed {
+        let Some(held) = self.frozen.get(key).map(|s| (s.vertices.clone(), s.volume)) else {
+            return Thawed::Absent;
+        };
+        let (vertices, volume) = held;
+        match self.ascend(&vertices, |_| volume) {
+            Ascended::Sealed(fill) => {
+                self.frozen.remove(key);
+                Thawed::Sealed(fill)
+            }
+            Ascended::Open => {
+                // The cap was minted and did not close: it goes.
+                self.forget(key);
+                Thawed::Held
+            }
+            Ascended::AlreadySealed | Ascended::Absent | Ascended::Hole => Thawed::Held,
+        }
     }
 }

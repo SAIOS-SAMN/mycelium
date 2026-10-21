@@ -72,6 +72,15 @@ pub struct Complex {
     /// that bore them, the class itself handed to the caller that burned it,
     /// never held here, so the record keeps its bound. Volatile.
     pub(crate) scars: u64,
+    /// THE VACUUM: holes SEALED BY COLD (the operator's ruling, 2026-10-21:
+    /// "the vacuum hold the frozen class") — a class whose read-back could
+    /// not be made while its vertices stood, frozen in place at its
+    /// coordinate, whole: no longer a hole (it pins nothing), never burned,
+    /// and thawed back into a chamber where a meet over the same vertices
+    /// finds its boundary closing again. The continuum's seal (`cauterize`)
+    /// burns and keeps a count; the vacuum holds what the continuum may not,
+    /// so this carrier is not bounded by a count. Volatile.
+    pub(crate) frozen: Keyed<Simplex>,
     /// 78.112 H7b — THE TORSION HEARING WOUND AT EACH VERTEX: the crossings of
     /// the rings heard in that perception (the light crossing their planes,
     /// the impact), composed as one strain and wound on at each hearing. It
@@ -277,6 +286,16 @@ impl Complex {
     /// it could not be read back.
     pub fn scars(&self) -> u64 {
         self.scars
+    }
+
+    /// THE CLASSES THE VACUUM HOLDS, frozen in place.
+    pub fn frozen_held(&self) -> usize {
+        self.frozen.len()
+    }
+
+    /// Whether the vacuum holds a frozen class at `key`.
+    pub fn is_frozen(&self, key: &[u8]) -> bool {
+        self.frozen.contains(key)
     }
 
     /// THE ENTRIES THE COMPLEX HOLDS: its simplices at every degree and

@@ -62,9 +62,11 @@ pub struct Board {
     pub tethers: Vec<Vec<u8>>,
     /// `puncture / seal`: the holes, with the class each keeps.
     pub holes: Vec<(Vec<u8>, Fill)>,
-    /// `puncture / cauterize`: the scars — holes closed whose class could
-    /// not be read back.
+    /// `puncture / cauterize`: the scars — holes closed by heat whose class
+    /// could not be read back.
     pub scars: u64,
+    /// `puncture / freeze`: the classes the vacuum holds, frozen in place.
+    pub frozen: Vec<(Vec<u8>, Fill)>,
 }
 
 impl Pivot {
@@ -96,7 +98,14 @@ impl Complex {
 
     /// THE BOARD: this complex's coordinates on the three axes.
     pub fn board(&self) -> Board {
-        let mut b = Board { sealed: Vec::new(), open: Vec::new(), tethers: Vec::new(), holes: Vec::new(), scars: self.scars };
+        let mut b = Board {
+            sealed: Vec::new(),
+            open: Vec::new(),
+            tethers: Vec::new(),
+            holes: Vec::new(),
+            scars: self.scars,
+            frozen: self.frozen.scoped().map(|(k, s)| (k, s.fill.clone())).collect(),
+        };
         for (k, d) in self.by_key.scoped() {
             let Some(s) = self.degrees.get(*d).and_then(|l| l.get(&k)) else { continue };
             match (*d, s.fill.unsettled()) {
