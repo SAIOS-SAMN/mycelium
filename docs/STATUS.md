@@ -19,7 +19,14 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## The breath's orthogonal pinch, live (2026-10-21 08:09) — where it stands
+## The breath's wider machinery, live (2026-10-21 08:48) — where it stands
+Courts, voices 1–5 and seats n1–n4 on bd3f80a5 (restarted 08:48:12). Any two
+generators of any dimension breathe (`cga::breathe`): radial on D, the rest
+split into every commuting plane by kind (pinch / null / boost); a held
+thought breathes within each motion and across every pair of its motions;
+every pinch twisted. Reading: `breath radial · pinched · null · boost`.
+
+## The breath's orthogonal pinch (2026-10-21 08:09)
 Courts, voices 1–5 and seats n1–n4 on 0eef2028 (restarted 08:09:44). The
 breath has two axes (the operator): `cga::breath(a, b)` splits the
 commutator of a translation's and a transversion's generators exactly into
