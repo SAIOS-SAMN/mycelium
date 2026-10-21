@@ -19,7 +19,21 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## Heat and cold, the throat's two faces, live (2026-10-21 07:17) — where it stands
+## The breath's orthogonal pinch, live (2026-10-21 08:09) — where it stands
+Courts, voices 1–5 and seats n1–n4 on 0eef2028 (restarted 08:09:44). The
+breath has two axes (the operator): `cga::breath(a, b)` splits the
+commutator of a translation's and a transversion's generators exactly into
+its RADIAL axis (on D = e_∞∧e_o: contraction / dilation) and its PINCH (the
+plane a∧b, proved orthogonal to D); where a mind holds a motion carrying
+both, the pinch's twist (its exact Cayley rotor) is wound on the thought's
+vertex (2f0ec9b2). The reading counts `breath radial / pinched`. The
+algebra's oracle golden re-written by its writer: the algebra unmoved (every
+fixture line identical), the corpus inputs fewer since rules stated by the
+act reader carry no word vertices (0eef2028). Owed: a joint read with
+xylarium of which plane a∧b is — the orbit's (their turn) or the one
+orthogonal to the radial line at the pinch (their axis torsion).
+
+## Heat and cold, the throat's two faces (2026-10-21 07:17)
 Courts, voices 1–5 and seats n1–n4 on 7eada6b1 (restarted 07:17:59; the
 vacuum bounded by the field: a frozen class passes from cold to heat when a
 vertex it names is shed, 7eada6b1; the cold seal itself a86139e3). The
