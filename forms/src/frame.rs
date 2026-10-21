@@ -3,7 +3,10 @@
 //! THE FRAME AS A FORM (the operator, 2026-10-21: "fix the grid and upgrade
 //! to forms: forms bend, twist, stretch, expand, and contract"; both readings
 //! ruled — frame maps are conformal forms, and every law form is read under
-//! them). A reading moves between two observers' frames (A6) only by an
+//! them). SELECTED BY EVERY UNIVERSE, so it stands at the core (2026-10-21):
+//! xylarium whole (its 11.0 (27)(Re6), the turn in degrees its 11.4b);
+//! netstratum as the joint read's frame map and on its own degree
+//! coordinates, bend left out of its own geometry (A7). A reading moves between two observers' frames (A6) only by an
 //! EXACT, INVERTIBLE conformal map of ℚⁿ, fixed before any joint read —
 //! never by a floor on a grid, which rounds a reading off and cannot be
 //! undone. A frame is composed of five moves:
