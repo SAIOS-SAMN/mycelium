@@ -23,6 +23,18 @@
 //! (Cartan–Dieudonné), never as a matrix carrying the action. A bend sends
 //! the point at its pole to infinity: there it is refused by name, never
 //! rounded.
+//!
+//! A FRAME ACTS ON A READING'S OWN COORDINATES, whatever the observer reads
+//! them in — never on a chart laid over them. Read as Euclidean positions,
+//! two rational reflections turn by an angle whose cosine is rational, which
+//! is a rational number of degrees only at Niven's angles; so a frame does
+//! not carry an arbitrary rational-degree turning of positions, and does not
+//! claim to. A reading whose coordinates ARE angles in degrees (a sphere's
+//! place as its polar share and phases, netstratum's) is turned EXACTLY by a
+//! stretch on its phase coordinate — Δ° added — and mirrored by a twist on
+//! it (θ ↦ −θ), with no stereographic chart; a bend is conformal only in
+//! flat coordinates, and a universe whose geometry is not flat leaves it
+//! out of its own frames (A7).
 
 use crate::Q;
 use num_traits::{One, Zero};
