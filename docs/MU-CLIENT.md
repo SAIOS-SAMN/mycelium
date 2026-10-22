@@ -2123,6 +2123,23 @@ owed in the order it is built.
     solve. The scene path's laws are free functions on the language, the
     entity's methods their admission (law 12). Still on the field: a
     hearing's pricing (`price`, a chamber read) and relaxation.
+  - THE PERSPECTIVES AND WHO RUNS THEM (the auditor's rulings, 2026-10-22).
+    A voice's rule is known by its perspectives — each pair held out, the
+    rule its siblings derive asked to close it (`ascertain_on`). On a TWO-pair
+    family each sibling set is one pair, and the act reader states no clause
+    from one pair; so a clause rule the act reader states over both pairs and
+    that closes both exactly is UNDETERMINED by its perspectives, not unknown,
+    and is sent for the court to judge. Its three guards: exactly two pairs,
+    a rule of clauses (a vertex fit stays unknown), both pairs closed exactly
+    — an unknown rule names the first it fails (`Unexempt`). Witnessed on the
+    fleet 2026-10-22 16:46: 1f85a75f read undetermined by a voice, sent, and
+    settled by court a. A SEAT does not ascertain: it is the domain's
+    delegate presenting a petition (`solve_before`: tests spoken whole, the
+    rule minted at its span, crossed, the home check), and the court, which
+    holds the withheld pairs, is its judge. Every court task that lands on a
+    mind is attributed by its citation on the mind's typed reading
+    (`TaskSeen`): taken or waiting, how read, what its perspectives said,
+    where it stopped.
   - R2: what is said is held under the scene whose thought it speaks for
     (`at_return`, keyed by scene, then by the saying's coordinates; a seat's
     call and a sceneless letter under the mind's own key) and leaves where a
