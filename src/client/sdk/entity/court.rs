@@ -43,6 +43,17 @@ pub(crate) struct CourtPace {
     pub(crate) schooling: bool,
     pub(crate) solving: crate::network::nerve::Keyed<()>,
     probed: StrokeOutcome,
+    /// The solves this mind was paid for since it began (a bounty or a floor
+    /// filed): the one event that raises its balance at a court.
+    pub(crate) earned: u64,
+    /// THE STRATA FETCHED FOR NOTHING, by chart key: the court's root for the
+    /// stratum when its fetch brought no word, and `earned` then. Every word
+    /// it lacks there costs a lane this learner is short on, and the court
+    /// defers it unpaid; it is fetched again only once the court's root moves
+    /// or the mind is paid (2026-10-22: 439 156 and 806 768 deferrals on
+    /// courts a and c, the same strata asked at every sync). One entry per
+    /// chart, the atlas its bound.
+    pub(crate) starved: crate::network::nerve::Keyed<(Vec<u8>, u64)>,
 }
 
 impl CourtPace {

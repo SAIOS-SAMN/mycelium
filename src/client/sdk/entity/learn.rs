@@ -51,6 +51,10 @@ impl Entity {
             dialogue::SOLVE_BOUNTY | dialogue::SOLVE_FLOOR => {
                 self.solve_refused.remove(id);
                 self.unread_solves.remove(id);
+                // Paid: a stratum starved for want of it may be fetched again.
+                if let Some(n) = self.board.court.earned.checked_add(1) {
+                    self.board.court.earned = n;
+                }
             }
             // MU-CLIENT §4.13 — one per task, released by the court's verdict:
             // bounded by the tasks the court holds unjudged, never by a count.
@@ -210,13 +214,25 @@ impl Entity {
         // residual chains — open questions the mind holds on its carrier and
         // never as words (MU-CLIENT §7.1, the operator 2026-10-18) — differs
         // from the court's by doctrine and is never fetched for it.
-        let strata: Vec<_> = sheaf::discordant(&remote, &local)
+        let all: Vec<_> = sheaf::discordant(&remote, &local)
             .into_iter()
             .filter(|d| !self.glued.contains(&d.inv.key()) && !self.board.residual_strata.contains(d.inv.key().as_bytes()))
             .cloned()
             .collect();
-        self.discordance = strata.len();
+        self.discordance = all.len();
         self.discordance_measured = true;
+        // A stratum fetched for nothing rests until the court's root there
+        // moves or this mind is paid (`CourtPace::starved`).
+        let earned = self.board.court.earned;
+        let strata: Vec<_> = all
+            .into_iter()
+            .filter(|d| !self.board.court.starved.get(d.inv.key().as_bytes()).is_some_and(|(root, at)| *root == d.root && *at == earned))
+            .collect();
+        if strata.is_empty() {
+            self.board.court.syncing = false;
+            return;
+        }
+        let roots: Vec<(Vec<u8>, Vec<u8>)> = strata.iter().map(|d| (d.inv.key().as_bytes().to_vec(), d.root.clone())).collect();
         // One exchange per contact: every discordant chart with this
         // genome's have-list, the request and the reply each filled to the
         // carrier. A wide discordance converges over contacts.
@@ -228,15 +244,29 @@ impl Entity {
         self.ask(move |s| s.speak_keyed(&voice, request), move |me, body| {
             me.board.court.syncing = false;
             if let Ok(body) = body {
-                me.absorb_fetched(&body, &charts);
+                let brought = me.absorb_fetched(&body, &charts);
+                // Each stratum asked that brought no word rests at the root
+                // it was asked at; one that brought any leaves the rest.
+                for (chart, root) in roots {
+                    match brought.contains(&chart) {
+                        true => {
+                            me.board.court.starved.remove(&chart);
+                        }
+                        false => {
+                            me.board.court.starved.insert(&chart, (root, me.board.court.earned));
+                        }
+                    }
+                }
             }
         });
     }
 
     /// THE FETCHED STRATA LANDED: their words absorbed and glued on the
     /// elements, and what this genome holds that the hypha lacks taught up.
-    fn absorb_fetched(&mut self, body: &[u8], charts: &[dialogue::Chart]) {
+    /// Answers the chart keys a fetched word stood on.
+    fn absorb_fetched(&mut self, body: &[u8], charts: &[dialogue::Chart]) -> crate::network::nerve::Keyed<()> {
         let voice = self.hypha.kernel().voice();
+        let mut brought = crate::network::nerve::Keyed::new();
         // The root of this act (the arm's sync): one stroke for every page
         // it absorbs (65.5).
         let mut budget = self.physics.stroke();
@@ -244,6 +274,9 @@ impl Entity {
         for t in dialogue::decode_syllabus_reply(body).into_iter().flatten() {
             let mut pos = 0usize;
             let fetched = Element::from_bytes(&t.word, &mut pos);
+            if let Some(w) = &fetched {
+                brought.insert(crate::transducer::stalk::invariant_of(w).key().as_bytes(), ());
+            }
             let _ = self.absorb_taught_at(&t.word, Some(t.at), &mut budget);
             // ČECH AFTER FETCH: the word is glued on the elements, not on
             // the root that indexed it. Every held word on the same fibre
@@ -338,6 +371,7 @@ impl Entity {
                 });
             }
         }
+        brought
     }
 
     pub(crate) fn absorb_class_page(&mut self, body: &[u8], _from: [u8; 32], budget: &mut crate::physics::Budget) {

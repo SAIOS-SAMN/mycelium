@@ -158,12 +158,14 @@ impl Entity {
             // them again), the strata its last digest found discordant, the
             // strata glued, the obstructions kept.
             format!(
-                "language: genome {} · dialect {} · taught words refused {} · discordant strata {} (measured {}) · glued {} · obstructions {} over {} strata",
+                "language: genome {} · dialect {} · taught words refused {} · discordant strata {} (measured {}; resting unpaid {}, paid solves {}) · glued {} · obstructions {} over {} strata",
                 self.epigenome.genome_len(),
                 self.epigenome.dialect_len(),
                 self.epigenome.refused,
                 self.discordance,
                 self.discordance_measured,
+                self.board.court.starved.len(),
+                self.board.court.earned,
                 self.glued.len(),
                 self.obstructions.scoped().map(|(_, on)| on.len()).sum::<usize>(),
                 self.obstructions.len()
