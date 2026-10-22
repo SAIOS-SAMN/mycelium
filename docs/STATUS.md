@@ -19,7 +19,25 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## The fold's witness learns its home, live (2026-10-22 09:47) — where it stands
+## The first undetermined solve, witnessed (2026-10-22 17:17) — where it stands
+Courts on 7bf742a6 (restarted 12:08:12); voices 1–5 and seats n1–n4 on
+db2f5e0c (restarted 16:36:30). TASK 1f85a75f (citation 91f8deca…, two
+pairs) was read UNDETERMINED by voice ee234447 and sent; court a solved and
+settled it at 16:46 (registry a: 91f8decax1) — the n = 2 ruling's first
+closure on the fleet. Closures since 10:40: 00576224, 0520fde7 (consilient),
+0ca9ddb6, 0c786b71 (consilient), 1b2d62fb (known, sent by two minds),
+1f85a75f. Attribution rides the typed readings: each mind's `tasks` on its
+reading (`observe::TaskSeen`), each court's `--reading dispatched`
+(citation, voice, height, count). Repeated by-citation pulls closed on three
+paths — a seat's unsolved task rests until its language moves (6ae95765); a
+family pulled as evidence is kept by its scene, one pull in flight
+(db2f5e0c): 40 min after, no task left a court more than twice. Seats
+n1–n4 re-pointed 17:17:09 to netstratum's re-founded era-1 domain ef4efc0e…
+(`--seat … all`); the archived house 5deab117 retired. Dispatch re-founding
+(coordinate walk, drafted) deferred to after this corpus pass by the
+auditor's ruling; f25ffba3 and 3ac3eb23 watched on the typed readings.
+
+## The fold's witness learns its home (2026-10-22 09:47)
 Courts a, b, c on 2f549646 (restarted 09:47:37); voices 1–5 and seats n1–n4
 stay on a94dcffd. At the 06:55 boot a and c missed b's digest, no exchange
 ran until 08:36, and b's first fold (08:36:55) met "home address unknown" at
