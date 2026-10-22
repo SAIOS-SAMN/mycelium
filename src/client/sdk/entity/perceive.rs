@@ -141,19 +141,58 @@ impl Perspectives {
         }
     }
 
-    /// As the observer names it.
-    pub(crate) fn name(self) -> &'static str {
+    fn index(self) -> usize {
         use super::family::Unexempt;
         match self {
-            Perspectives::Known => "known",
-            Perspectives::ByInversion => "known by inversion",
-            Perspectives::Undetermined => "undetermined",
-            Perspectives::Unknown(Unexempt::Pairs) => "unknown (guard 3: not two pairs)",
-            Perspectives::Unknown(Unexempt::Vertex) => "unknown (guard 1: a vertex fit, no clause)",
-            Perspectives::Unknown(Unexempt::Unproven) => "unknown (guard 2: the clauses do not close both pairs)",
-            Perspectives::OnePerspective => "one perspective",
-            Perspectives::Unread => "unread",
+            Perspectives::Known => 0,
+            Perspectives::ByInversion => 1,
+            Perspectives::Undetermined => 2,
+            Perspectives::Unknown(Unexempt::Pairs) => 3,
+            Perspectives::Unknown(Unexempt::Vertex) => 4,
+            Perspectives::Unknown(Unexempt::Unproven) => 5,
+            Perspectives::OnePerspective => 6,
+            Perspectives::Unread => 7,
         }
+    }
+
+    /// As the observer names it.
+    pub(crate) fn name(self) -> &'static str {
+        PERSPECTIVES[self.index()]
+    }
+}
+
+/// What a scene's perspectives said, as the observer names it, in
+/// `Perspectives::index` order.
+pub(crate) const PERSPECTIVES: [&str; 8] = [
+    "known",
+    "known by inversion",
+    "undetermined",
+    "unknown (guard 3: not two pairs)",
+    "unknown (guard 1: a vertex fit, no clause)",
+    "unknown (guard 2: the clauses do not close both pairs)",
+    "one perspective",
+    "unread",
+];
+
+impl TaskRead {
+    /// The task under `citation` as the typed reading carries it: each code
+    /// one past its name's index, zero where nothing is read yet; `None`
+    /// where a code passes its byte, never clamped (rule 11).
+    fn seen(&self, citation: [u8; 32]) -> Option<crate::observe::TaskSeen> {
+        let one_past = |i: usize| u8::try_from(i.checked_add(1)?).ok();
+        Some(crate::observe::TaskSeen {
+            citation,
+            taken: u8::from(self.taken),
+            reading: u8::try_from(self.reading.index()).ok()?,
+            perspectives: match self.perspectives {
+                Some(p) => one_past(p.index())?,
+                None => 0,
+            },
+            stop: match self.stop {
+                Some(s) => one_past(s.index())?,
+                None => 0,
+            },
+        })
     }
 }
 
@@ -711,6 +750,11 @@ impl Entity {
         read.reading = reading;
         note(&mut read);
         self.board.tasks.insert(id, read);
+        // On the typed reading too, which the mind's post answers even while
+        // its carrier is parked (the auditor's ruling, 2026-10-22).
+        if let Some(seen) = <[u8; 32]>::try_from(id).ok().and_then(|c| read.seen(c)) {
+            crate::observe::note_mind(|m| m.task(seen));
+        }
     }
 
     /// A SOLVE'S HOME CHECK ADMITTED: a crossed rule this task has not

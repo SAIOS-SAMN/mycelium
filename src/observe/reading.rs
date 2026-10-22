@@ -31,11 +31,15 @@ pub const TAG_MIND: u8 = 21;
 pub const TAG_AGREEMENTS: u8 = 22;
 /// The age of a court's published standing, in questions (`Reading::Asked`).
 pub const TAG_ASKED: u8 = 23;
+/// The auditor's dispatch observation (2026-10-22): every task a court
+/// dispatched, by its citation, to whom and at what height.
+pub const TAG_DISPATCHED: u8 = 24;
 
 /// CQ1 — EVERY READING'S NAME, by its tag: the ONE statement the console's
 /// `--reading NAME` is read against (law 12).
-pub const READING_NAMES: [(&str, u8); 14] = [
+pub const READING_NAMES: [(&str, u8); 15] = [
     ("asked", TAG_ASKED),
+    ("dispatched", TAG_DISPATCHED),
     ("mind", TAG_MIND),
     ("agreements", TAG_AGREEMENTS),
     ("carriers", TAG_CARRIERS),
@@ -738,6 +742,8 @@ pub enum Reading {
     /// asked. More: strokes missed that many less one, and every reading the
     /// stroke publishes is older than they are.
     Asked(u64),
+    /// The tasks a court dispatched, by citation (`TAG_DISPATCHED`).
+    Dispatched(Box<super::Dispatched>),
 }
 
 impl Reading {
@@ -757,6 +763,7 @@ impl Reading {
             Reading::Mind(_) => TAG_MIND,
             Reading::Agreements(_) => TAG_AGREEMENTS,
             Reading::Asked(_) => TAG_ASKED,
+            Reading::Dispatched(_) => TAG_DISPATCHED,
         }
     }
 
@@ -792,6 +799,8 @@ impl Reading {
             (Reading::Mind(a), Reading::Mind(b)) => *a = b.clone(),
             (Reading::Agreements(a), Reading::Agreements(b)) => *a = b.clone(),
             (Reading::Asked(a), Reading::Asked(b)) => *a = *b,
+            // The dispatches are read whole at the question; the later stands.
+            (Reading::Dispatched(a), Reading::Dispatched(b)) => *a = b.clone(),
             _ => return false,
         }
         true
@@ -831,6 +840,7 @@ impl Reading {
                 put_u64(out, *n);
                 Some(())
             }
+            Reading::Dispatched(r) => r.put(out),
         }
     }
 
@@ -852,6 +862,7 @@ impl Reading {
             TAG_MIND => Some(Reading::Mind(Box::new(super::Mind::take(b, p)?))),
             TAG_AGREEMENTS => Some(Reading::Agreements(Box::new(super::Agreements::take(b, p)?))),
             TAG_ASKED => Some(Reading::Asked(take_u64(b, p)?)),
+            TAG_DISPATCHED => Some(Reading::Dispatched(Box::new(super::Dispatched::take(b, p)?))),
             _ => None,
         }
     }

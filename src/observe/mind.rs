@@ -131,6 +131,47 @@ pub const SEATS: [&str; 5] = ["understood", "asked", "shifted", "listened", "unh
 /// this mind, or not — in the order the counts are kept.
 pub const MUTUAL: [&str; 2] = ["balanced", "unbalanced"];
 
+/// ONE COURT TASK AS IT LANDED ON THIS MIND (the auditor's attribution
+/// reading, 2026-10-22, carried on the typed reading so a parked carrier
+/// never hides it): its citation, whole — the task's coordinates, kept
+/// losslessly — and four codes: taken in (1) or waiting to couple (0); how it
+/// was last read (`perceive::READINGS`); what its perspectives said (0 none,
+/// else one past `perceive::PERSPECTIVES`); where it stopped (0 not yet, else
+/// one past `perceive::STOPS`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct TaskSeen {
+    pub citation: [u8; 32],
+    pub taken: u8,
+    pub reading: u8,
+    pub perspectives: u8,
+    pub stop: u8,
+}
+
+impl TaskSeen {
+    /// The task as the console prints it.
+    pub fn line(&self) -> String {
+        use crate::client::sdk::{PERSPECTIVES, READINGS, STOPS};
+        let named = |names: &[&'static str], code: u8| -> String {
+            match usize::from(code).checked_sub(1).and_then(|i| names.get(i)) {
+                Some(n) => (*n).to_string(),
+                None => format!("code {code}"),
+            }
+        };
+        let reading = READINGS.get(usize::from(self.reading)).map_or_else(|| format!("code {}", self.reading), |r| (*r).to_string());
+        let said = match self.perspectives {
+            0 => "no rule ascertained".to_string(),
+            c => named(&PERSPECTIVES, c),
+        };
+        let stood = match (self.stop, self.taken) {
+            (0, 0) => "landed, waiting to couple".to_string(),
+            (0, _) => "on the perception carrier, or its solve read at home".to_string(),
+            (c, _) => format!("stopped: {}", named(&STOPS, c)),
+        };
+        let hex: String = self.citation.iter().map(|b| format!("{b:02x}")).collect();
+        format!("task {hex} · {reading} · perspectives: {said} · {stood}")
+    }
+}
+
 /// One slot of [`CONSTRUCTED`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Constructed {
@@ -275,6 +316,9 @@ pub struct Mind {
     /// Its breaths (MU-CLIENT §4.3): those that moved on the radial axis, and
     /// their planes by kind, by [`BREATH`].
     pub breath: [u64; 4],
+    /// Every court task that landed on it, in citation order ([`TaskSeen`]):
+    /// one entry per task, the corpus its bound.
+    pub tasks: Vec<TaskSeen>,
 }
 
 impl Default for Mind {
@@ -325,11 +369,21 @@ impl Default for Mind {
             scars: 0,
             frozen: 0,
             breath: [0; 4],
+            tasks: Vec::new(),
         }
     }
 }
 
 impl Mind {
+    /// One court task's reading, standing in the place of the last one kept
+    /// for its citation.
+    pub fn task(&mut self, t: TaskSeen) {
+        match self.tasks.binary_search_by_key(&t.citation, |s| s.citation) {
+            Ok(at) => self.tasks[at] = t,
+            Err(at) => self.tasks.insert(at, t),
+        }
+    }
+
     /// One lock `p:q` read.
     pub fn lock(&mut self, p: u64, q: u64) {
         match self.locks.binary_search_by_key(&(p, q), |&(a, b, _)| (a, b)) {
@@ -376,6 +430,11 @@ impl Mind {
             for v in [p, q, n] {
                 put_u64(out, v);
             }
+        }
+        crate::transducer::address::put_u32_count(out, self.tasks.len())?;
+        for t in &self.tasks {
+            out.extend_from_slice(&t.citation);
+            out.extend_from_slice(&[t.taken, t.reading, t.perspectives, t.stop]);
         }
         Some(())
     }
@@ -438,6 +497,19 @@ impl Mind {
         for _ in 0..n {
             locks.push((take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?));
         }
+        let n = usize::try_from(u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?)).ok()?;
+        *p += 4;
+        // Each task is its citation and four codes.
+        if n > b.len().checked_sub(*p)? / 36 {
+            return None;
+        }
+        let mut tasks = Vec::with_capacity(n);
+        for _ in 0..n {
+            let citation: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+            let &[taken, reading, perspectives, stop] = b.get(*p + 32..*p + 36)? else { return None };
+            *p += 36;
+            tasks.push(TaskSeen { citation, taken, reading, perspectives, stop });
+        }
         Some(Mind {
             k,
             heard,
@@ -484,6 +556,7 @@ impl Mind {
             scars,
             frozen,
             breath,
+            tasks,
         })
     }
 
@@ -547,7 +620,11 @@ impl Mind {
             ),
             format!("  deviation closed {} · open {}", lanes_line(&self.closed), lanes_line(&self.open)),
             format!("  carrier holds thoughts {} · unions {} · waiting {}", self.thoughts, self.unions, self.waiting),
+            format!("  court tasks landed {}", self.tasks.len()),
         ]
+        .into_iter()
+        .chain(self.tasks.iter().map(|t| format!("    {}", t.line())))
+        .collect()
     }
 }
 

@@ -153,13 +153,18 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // A plain request is dispatched the next open task; 78.146, a request
         // naming a task's citation (wire v1.2) is answered that task, open or
         // settled, or nothing where this registry holds no such task.
+        // The auditor's dispatch observation (2026-10-22): each task that
+        // leaves, by its citation, to the voice that asked, at this court's
+        // height — read-only, never read back by the court.
+        let sent = |cite: [u8; 32], voice: [u8; 32]| mycelium::observe::note_dispatch(cite, voice, door.published.take().height());
         let body = match (dialogue::decode_task_request(&frame.body), dialogue::decode_task_by_id(&frame.body)) {
-            (Some(_), _) => {
+            (Some(voice), _) => {
                 let Ok(mut reg) = door.registry.lock() else { return true };
                 let mut body = Vec::new();
                 for _ in 0..reg.len() {
                     let Some((tid, task)) = reg.dispatch() else { break };
                     if let Some(b) = envelope(&tid, task) {
+                        sent(mycelium::registry::citation(&tid), voice);
                         body = b;
                         break;
                     }
@@ -173,11 +178,14 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 }
                 body
             }
-            (None, Some((_, cite))) => {
+            (None, Some((voice, cite))) => {
                 let Ok(reg) = door.registry.lock() else { return true };
                 let found = reg.by_citation(&cite).and_then(|tid| reg.task(tid.as_bytes()).and_then(|task| envelope(&tid, task)));
                 match found {
-                    Some(b) => b,
+                    Some(b) => {
+                        sent(cite, voice);
+                        b
+                    }
                     None => Vec::new(),
                 }
             }

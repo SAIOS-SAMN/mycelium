@@ -552,6 +552,7 @@ fn a_minds_reading_and_a_courts_agreements_read_back_exact() {
         scars: 2,
         frozen: 1,
         breath: [4, 3, 1, 2],
+        tasks: vec![TaskSeen { citation: [0x7b; 32], taken: 1, reading: 0, perspectives: 3, stop: 15 }],
     };
     let agreements = Agreements {
         pairs: vec![Agreed { speaker: vk(1), hearer: vk(2), agreed: 3, whole: 2, deviation: [q(1, 2), q(0, 1), q(0, 1), q(0, 1)] }],
@@ -560,6 +561,11 @@ fn a_minds_reading_and_a_courts_agreements_read_back_exact() {
     let key = Source::Mind(vk(3)).key(TAG_MIND);
     assert_eq!(Source::of_key(&key), Some((Source::Mind(vk(3)), TAG_MIND)), "a mind's reading stands under the mind");
     assert!(mind.lines().iter().any(|l| l.contains("deviation closed 1/2:0:0:3/7")), "the deviation is printed exact");
+    // A court task travels by its whole citation and is named on the console:
+    // taken, read as a task, undetermined by its perspectives, sent.
+    let named = mind.tasks[0].line();
+    assert!(named.starts_with(&format!("task {}", "7b".repeat(32))), "the whole citation: {named}");
+    assert!(named.contains("perspectives: undetermined") && named.ends_with("stopped: sent"), "{named}");
 }
 
 /// THE OBSERVER'S CALL (the operator 2026-10-15): a call travels whole, is
@@ -597,4 +603,20 @@ fn a_call_is_answered_at_the_carriers_next_boundary() {
     let cut = live::decode_lines(&live::encode_lines(&lines, 200).expect("the lines write")).expect("they read");
     assert!(cut.len() < lines.len(), "a frame of 200 bytes holds fewer");
     assert!(matches!(cut.as_slice(), [.., l] if l.contains("lines past the frame") && l.contains("from")), "and says what it left: {cut:?}");
+}
+
+/// THE AUDITOR'S DISPATCH OBSERVATION (2026-10-22): a task that leaves a
+/// court stands under its whole citation with the voice it last went to and
+/// the court's height then; dispatched again it is counted, the later voice
+/// and height standing; and the reading travels whole.
+#[test]
+fn a_dispatched_task_stands_under_its_citation_and_reads_back() {
+    let cite = [0xf2; 32];
+    note_dispatch(cite, vk(1), 40);
+    note_dispatch(cite, vk(2), 41);
+    let d = dispatched();
+    let s = d.sent.iter().find(|s| s.citation == cite).copied().expect("kept by its citation");
+    assert_eq!((s.voice, s.height, s.times), (vk(2), 41, 2), "the later voice and height stand; dispatched twice");
+    reads_back(&[Reading::Dispatched(Box::new(d.clone()))]);
+    assert!(d.lines().iter().any(|l| l.contains(&"f2".repeat(32)) && l.contains("at height 41")), "named whole");
 }
