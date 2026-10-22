@@ -274,10 +274,14 @@ impl Entity {
         for t in dialogue::decode_syllabus_reply(body).into_iter().flatten() {
             let mut pos = 0usize;
             let fetched = Element::from_bytes(&t.word, &mut pos);
-            if let Some(w) = &fetched {
+            let _ = self.absorb_taught_at(&t.word, Some(t.at), &mut budget);
+            // BROUGHT IS WHAT THE GENOME NOW HOLDS: a word that arrived and was
+            // refused is sent again on the next fetch, so counting its arrival
+            // kept its stratum from ever resting (the auditor, 2026-10-22: court
+            // a still deferring ~12 000 words an hour after 98698aef).
+            if let Some(w) = fetched.as_ref().filter(|w| self.epigenome.holds(w.address().as_bytes())) {
                 brought.insert(crate::transducer::stalk::invariant_of(w).key().as_bytes(), ());
             }
-            let _ = self.absorb_taught_at(&t.word, Some(t.at), &mut budget);
             // ČECH AFTER FETCH: the word is glued on the elements, not on
             // the root that indexed it. Every held word on the same fibre
             // with a group view is a chart overlapping this one; the
