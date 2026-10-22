@@ -19,7 +19,22 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## The first undetermined solve, witnessed (2026-10-22 17:17) — where it stands
+## A closed sphere is a universe's space (2026-10-22 21:28) — where it stands
+Courts, voices 1–5 and seats n1–n4 on 8718fede (restarted 21:28:41; courts
+listening 21:31:33, no fold storm). `Geometry::Curved` is HYPERBOLIC ℍ³
+(78.134); netstratum's and xylarium's closed 3-spheres were both stated as
+it. `Geometry::Sphere(R)` (WIRE-CHANGE, agreed by netstratum's operator and
+xylarium): Spin(4) frames, places F e₊ F̃ on v² = +1, a throat's cap at the
+lower bound of cos(2m/R), fitting while (2m/R)/π < 1. netstratum re-founds
+its sphere on a new genesis and retires ef4efc0e; xylarium re-pins when its
+operator rules. Also live: a seat sat and not held rests on a timed wait
+and keeps reading the listing (cc8ce504 — the seats had sat unheld three
+hours); a stratum fetched for nothing rests until the court's root moves or
+the mind is paid (98698aef). Only the five voices are genesis-funded; the
+n-seats and netstratum-mind-1 (454cdda0, earned-only, in our chatter) learn
+the zero-cost words. Seats ruled petitioners, never ascertaining (b55126dc).
+
+## The first undetermined solve, witnessed (2026-10-22 17:17)
 Courts on 7bf742a6 (restarted 12:08:12); voices 1–5 and seats n1–n4 on
 db2f5e0c (restarted 16:36:30). TASK 1f85a75f (citation 91f8deca…, two
 pairs) was read UNDETERMINED by voice ee234447 and sent; court a solved and
