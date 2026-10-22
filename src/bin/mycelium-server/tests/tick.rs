@@ -27,6 +27,7 @@ fn mesh(sk: &SigningKey) -> Mesh {
         asked_at: Arc::new(Mutex::new(Keyed::new())),
         circuits: Arc::new(Mutex::new(Keyed::new())),
         deficit: Arc::new(Mutex::new([0; 4])),
+        fold_unmeasured_at: Arc::new(Mutex::new(Keyed::new())),
         origin: Arc::new(Mutex::new(Some((GENESIS, EPOCH)))),
     }
 }

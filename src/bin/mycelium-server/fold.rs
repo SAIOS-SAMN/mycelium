@@ -4,8 +4,8 @@
 //! One proposal at a time, one witness per spend of the court's own
 //! stroke: the peers with room on some lane, in key order, until one
 //! co-signs. A refusal names its 34.1 constant and is written; an
-//! unmeasured answer is silence and the proposal stands for the next
-//! circuit.
+//! unmeasured answer is silence and the proposal stands, carried to that
+//! witness again once this court's K has moved (`Mesh::fold_unmeasured_at`).
 
 use crate::exchange::Mesh;
 use crate::transport::{note_rtt_ok, note_rtt_timeout, rtt_floor, tell_peer, tell_peer_within};
@@ -43,9 +43,22 @@ pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
         observe::note_fold(FoldOutcome::NoWitness);
         return;
     }
+    // A witness that left this court's fold unmeasured at this K is not
+    // carried it again until K moves: its answer is instant, and re-asked
+    // every cycle it was a storm that starved the doors (2026-10-22).
+    let Some(k_now) = crate::held::held!(kernel).ok().map(|mut h| h.run(|k, _| k.k_step())) else { return };
+    let paced = |vk: &[u8; 32]| mesh.fold_unmeasured_at.lock().is_ok_and(|m| m.get(vk) == Some(&k_now));
+    let unmeasured = |vk: &[u8; 32]| {
+        if let Ok(mut m) = mesh.fold_unmeasured_at.lock() {
+            m.insert(vk, k_now);
+        }
+    };
     // The round's stroke: a hold's, handed on whole (78.153b).
     let Some(mut budget) = crate::held::held!(kernel).ok().map(|h| h.into_stroke()) else { return };
     for (vk, dest) in witnesses {
+        if paced(&vk) {
+            continue;
+        }
         if !budget.spend() {
             break;
         }
@@ -62,11 +75,13 @@ pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
         let Some((reply, dt)) = asked else {
             note_rtt_timeout(mesh, vk);
             observe::note_fold(FoldOutcome::Unmeasured);
+            unmeasured(&vk);
             continue;
         };
         note_rtt_ok(mesh, vk, dt);
         if crate::transport::is_deferred(&reply) {
             observe::note_fold(FoldOutcome::Unmeasured);
+            unmeasured(&vk);
             continue;
         }
         match dialogue::decode_fold_reply(&reply) {
@@ -105,10 +120,12 @@ pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
             }
             Some(dialogue::FoldWitness::Unmeasured { .. }) => {
                 observe::note_fold(FoldOutcome::Unmeasured);
+                unmeasured(&vk);
                 eprintln!("  court fold unmeasured by witness {:02x}{:02x}…", vk[0], vk[1]);
             }
             None => {
                 observe::note_fold(FoldOutcome::Unmeasured);
+                unmeasured(&vk);
                 eprintln!("  court fold unmeasured: reply undecodable from {:02x}{:02x}…", vk[0], vk[1]);
             }
         }

@@ -531,6 +531,7 @@ fn main() {
         asked_at: Arc::new(Mutex::new(Keyed::new())),
         circuits: Arc::new(Mutex::new(Keyed::new())),
         deficit: Arc::new(Mutex::new([0; 4])),
+        fold_unmeasured_at: Arc::new(Mutex::new(Keyed::new())),
         // 45.5: a genesis of all zeros is not a genesis, it is the absence
         // of one. `None` here refuses every admission (REFUSE_ORIGIN is not
         // even reached -- there is nothing to compare against), which is the

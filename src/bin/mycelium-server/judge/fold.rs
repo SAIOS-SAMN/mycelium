@@ -80,6 +80,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(dest) = door.mesh.addrs.lock().ok().and_then(|a| a.get(&home).cloned()) else {
         eprintln!("  court fold unmeasured {:02x}{:02x}…: home address unknown", home[0], home[1]);
         say(s, dialogue::FoldWitness::Unmeasured { vk: me });
+        learn_doors(&door.mesh, &door.join_peers, &door.router);
         return;
     };
     let Some(receipts) = fetch_receipts(&door.mesh, &dest, &me, &home, p.after, p.root.at) else {
@@ -169,6 +170,30 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         home[0], home[1], p.root.hash[0], p.root.hash[1]
     );
     say(s, dialogue::FoldWitness::CoSigned { section: Box::new(section) });
+}
+
+/// A HOME THIS WITNESS HOLDS NO ADDRESS FOR is learned from the configured
+/// doors (2026-10-22). Addresses are admitted off signed digests, and the
+/// boot asks each door once: a door that missed that ask stayed unknown
+/// while no exchange ran, and every fold of its home went unmeasured — a and
+/// c never knew b. Each configured door whose address the mesh does not yet
+/// hold is asked for its digest, as the boot asks it, after the home has had
+/// its answer; a door already held is never asked here.
+pub(crate) fn learn_doors(mesh: &crate::exchange::Mesh, join: &[String], router: &std::sync::Mutex<mycelium::network::nerve::Router>) {
+    let held: Vec<String> = match mesh.addrs.lock() {
+        Ok(a) => a.scoped().map(|(_, addr)| addr.clone()).collect(),
+        Err(_) => return,
+    };
+    for p in join {
+        if p == &mesh.bind || held.contains(p) {
+            continue;
+        }
+        let Some((reply, _)) = tell_peer_measured(mesh, p, dialogue::encode_digests_request(&mesh.vk)) else { continue };
+        if crate::transport::is_deferred(&reply) {
+            continue;
+        }
+        let _ = crate::admission::admit_peer_digest(mesh, &reply, router);
+    }
 }
 
 /// The home's receipts strictly after `after` up to `upto`, page by page;

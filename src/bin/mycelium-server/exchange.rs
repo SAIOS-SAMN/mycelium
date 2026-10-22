@@ -66,6 +66,14 @@ pub(crate) struct Mesh {
     /// (23.8, S13.4): the deferral carries it and the asker dwells on it.
     /// Taken one at a time, like `rtt_window`.
     pub(crate) deficit: Arc<Mutex<[u64; 4]>>,
+    /// This court's K when each witness last left its fold UNMEASURED
+    /// (2026-10-22): that witness is carried the proposal again only once
+    /// this court's K has moved. A witness answers "unmeasured" at once, and
+    /// re-asked every cycle it was the fold storm — b's first fold, 800 000
+    /// asks in 55 minutes, the doors too taken to answer the exchange that
+    /// would have taught a and c b's door. Taken one at a time, like
+    /// `rtt_window`.
+    pub(crate) fold_unmeasured_at: Arc<Mutex<Keyed<u64>>>,
     /// This node's own `(H_genesis, E_origin)`, the pair 47.2 step 1 tests
     /// every signed frame against. `None` is UNMEASURED, not zero: a node
     /// that has not adopted a genesis admits no receipt at all rather than
@@ -88,6 +96,7 @@ impl Clone for Mesh {
             asked_at: Arc::clone(&self.asked_at),
             circuits: Arc::clone(&self.circuits),
             deficit: Arc::clone(&self.deficit),
+            fold_unmeasured_at: Arc::clone(&self.fold_unmeasured_at),
             origin: Arc::clone(&self.origin),
         }
     }
