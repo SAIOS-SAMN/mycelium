@@ -201,12 +201,6 @@ impl Entity {
         self.board.body = Some(body);
     }
 
-    /// Whether the body sits a seat it does not hold: its take waits on the
-    /// house's listing, read again on the mind's own strokes (`rest`).
-    pub(crate) fn seats_unheld(&self) -> bool {
-        self.board.body.as_ref().is_some_and(|b| b.seats.is_empty() || b.seats.iter().any(|s| !s.hold.held))
-    }
-
     /// MU-CLIENT §7.1 — EACH SEAT SAT, AS THE OBSERVER READS IT: whether it is
     /// held, the percepts perceived there, the task records set before it, its
     /// tasks passed uncoupled and standing, the calls posted and the beats
@@ -322,7 +316,7 @@ impl Entity {
     fn read_mail_page(&mut self, read: io::Result<Result<MindRead, Refusal>>) {
         let Some(mut body) = self.board.body.take() else { return };
         body.mailing = false;
-        let mail = match read {
+        let (mail, standing_seq) = match read {
             Ok(Ok(MindRead { epoch, seq, mail })) => {
                 // MU-CLIENT §7.1 — SOMETHING WAS FILED ON THE RELAY since the
                 // mind last read it (another epoch, or a sequence it had not
@@ -336,7 +330,7 @@ impl Entity {
                 let standing = MailRead { epoch, seq, mail: Vec::new() };
                 body.after = standing.cursor(body.epoch, body.after);
                 body.epoch = Some(epoch);
-                mail
+                (mail, seq)
             }
             _ => {
                 self.board.body = Some(body);
@@ -344,6 +338,17 @@ impl Entity {
             }
         };
         let more = !mail.is_empty();
+        // AN EMPTY PAGE READS THE RELAY TO ITS STANDING (2026-10-22): the
+        // relay holds a read only where nothing is filed past its cursor, and
+        // its sequence counts every post, into any box — so a mind whose box
+        // stayed empty kept a cursor below it, every read answered at once,
+        // and five minds read ~2 400 times a second, the courts' doors taken
+        // and their keepers' rings and digests turned away. Nothing in this
+        // box stands past the cursor up to the standing: the cursor moves
+        // there, and the next read is held to the court's next event.
+        if !more {
+            body.after = body.after.max(standing_seq);
+        }
         for piece in mail {
             let (at, seq) = match &piece {
                 MindMail::Taken(q, t) => (SeatName { domain: t.domain, sub_origin: t.sub_origin, seat: t.seat }, *q),
@@ -360,8 +365,19 @@ impl Entity {
             Some(n) => n,
             None => body.pages,
         };
-        if more && body.pages < SeatHold::patience() {
-            self.ask_mail(&mut body);
+        // ONE READ ALWAYS OUTSTANDING: more mail is read on while this
+        // reading's patience lasts; an empty page asks again at once, and the
+        // relay holds that read to the court's next event — a post filed (a
+        // listing, a take, a percept) or a keeper's reading — so a mind at rest
+        // blocks on it and is woken by the house, never by a clock (2026-10-22:
+        // a seat that rested with no read outstanding never saw the house list).
+        match (more, body.pages < SeatHold::patience()) {
+            (true, false) => {}
+            (true, true) => self.ask_mail(&mut body),
+            (false, _) => {
+                body.pages = 0;
+                self.ask_mail(&mut body);
+            }
         }
         self.board.body = Some(body);
     }

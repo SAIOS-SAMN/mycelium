@@ -20,13 +20,13 @@ impl Entity {
     /// lands something — never a clock — save while the court's dwell runs
     /// on a pressed lane, or a feed family that couples waits on the reserve:
     /// both are owed the mind's own strokes, so those strokes are parked at
-    /// the measured transport until they are paid. So is a SEAT SAT AND NOT
-    /// HELD: the house's listing is read again on the mind's own strokes
-    /// (`SeatHold::patience`), and a mind blocked with none landing never
-    /// reads it (2026-10-22: four seats re-pointed before netstratum's house
-    /// listed read no listing, blocked, and took no seat for three hours).
+    /// the measured transport until they are paid. A seated mind blocks too:
+    /// its mail read is held at the relay to the court's next event and its
+    /// landing wakes the mind (`read_mail_page`) — a timed rest for an unheld
+    /// seat (cc8ce504) is retired, its wakes having read the relay ~2 400
+    /// times a second with five minds (2026-10-22).
     pub fn rest(&self) {
-        match self.board.court.dwelling() || self.board.feed_waits || self.board.question_waits || self.seats_unheld() {
+        match self.board.court.dwelling() || self.board.feed_waits || self.board.question_waits {
             true => self.hypha.rest(self.transport_rtt()),
             false => self.hypha.block(),
         }
