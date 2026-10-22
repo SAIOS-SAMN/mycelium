@@ -28,7 +28,6 @@ use crate::transducer::cga::{self, Mv};
 use crate::transducer::element::{self, Element};
 use crate::transducer::family::{self, Crystal};
 use crate::transducer::sentence::{self, Form};
-#[cfg(test)]
 use crate::transducer::sentence::{Acting, Vertex};
 pub use crate::transducer::family::statement::Unstated;
 pub use crate::transducer::sentence::form::clause::{
@@ -177,8 +176,9 @@ impl Step {
     /// coordinates (each index plus ½, [`centre`]), which is the one frame
     /// the court carries a site in. `None` where the shapes do not fit the
     /// symmetry: a turn by 90° or 270° and the transpose take `R × C` to
-    /// `C × R`; the 180° turn and the mirrors keep `R × C`.
-    pub(crate) fn grid_motion(kind: Symmetry, in_shape: (usize, usize), out_shape: (usize, usize)) -> Option<Step> {
+    /// `C × R`; the 180° turn and the mirrors keep `R × C`. Public for a
+    /// client stating its programs through [`sentence`] (2026-10-22).
+    pub fn grid_motion(kind: Symmetry, in_shape: (usize, usize), out_shape: (usize, usize)) -> Option<Step> {
         let fits = match kind.exchanges() {
             true => out_shape == (in_shape.1, in_shape.0),
             false => out_shape == in_shape,
@@ -195,14 +195,12 @@ impl Step {
 }
 
 /// The hue `h` lands on under `map`; a hue it does not name stands still.
-#[cfg(test)]
 fn hue_under(map: &[(u8, u8)], h: u8) -> Option<u8> {
     sentence::hue_of(map, h)
 }
 
 /// THE STEPS COMPOSED: the motion `V = Vₙ ⋯ V₁` (the first step acts first
 /// under the sandwich) and the hue map `σ = σₙ ∘ … ∘ σ₁` on the painted hues.
-#[cfg(test)]
 fn composed(steps: &[Step]) -> Result<(Mv, Vec<(u8, u8)>), NoRule> {
     let mut v = element::identity_versor();
     let mut sigma: Vec<(u8, u8)> = (1..=9u8).map(|h| (h, h)).collect();
@@ -231,14 +229,12 @@ fn composed(steps: &[Step]) -> Result<(Mv, Vec<(u8, u8)>), NoRule> {
 }
 
 /// A run of motion and hue steps on one target, composed as it arrives.
-#[cfg(test)]
 struct Pending {
     v: Mv,
     about: About,
     sigma: Vec<(u8, u8)>,
 }
 
-#[cfg(test)]
 impl Pending {
     fn new(about: About) -> Pending {
         Pending { v: element::identity_versor(), about, sigma: (1..=9u8).map(|h| (h, h)).collect() }
@@ -262,7 +258,6 @@ impl Pending {
 /// act on every body; a run of motions and hue maps on one target composes
 /// to one act, the first step acting first; a hue step on a region fills
 /// it with the hue `0` is sent to.
-#[cfg(test)]
 fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
     let stated = steps
         .iter()
@@ -350,7 +345,6 @@ fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
 /// every pair, minted through the one mint. No vertex names a training
 /// frame or a training cell: the clauses select on whatever scene they are
 /// spoken onto, so the word crosses to pairs it never saw.
-#[cfg(test)]
 fn clause_sentence(clauses: Vec<Clause>, family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
     if clauses.is_empty() || family.is_empty() {
         return Err(NoRule::NoFamily);
@@ -381,8 +375,12 @@ fn clause_sentence(clauses: Vec<Clause>, family: &[(Grid, Grid)], crystal: &dyn 
 ///
 /// A rule that states a selection, a region, a creation or a crop is spoken
 /// as the form's clauses instead ([`clause_sentence`], 78.143).
-#[cfg(test)]
-pub(crate) fn sentence(steps: &[Step], family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
+///
+/// PUBLIC FOR A CLIENT THAT STATES ITS OWN PROGRAMS IN THE FLEET'S TONGUE
+/// (2026-10-22, reversing Strip 7 for this path): netstratum's `tongue`
+/// mints its solver programs as rule elements only through this
+/// constructor, never as forged bytes (its D10b).
+pub fn sentence(steps: &[Step], family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
     if let Some(clauses) = clauses_of(steps)? {
         return clause_sentence(clauses, family, crystal);
     }
