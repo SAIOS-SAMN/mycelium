@@ -53,6 +53,13 @@ pub(crate) struct Scenes {
     /// Each convergence once, keyed scene ‖ heard word ‖ own word, with the
     /// mind that spoke the heard word.
     pub(crate) converged: Keyed<[u8; 32]>,
+    /// WHAT A WORD'S EVIDENCE READ on a scene this mind does not hold, keyed
+    /// scene ‖ word: true or refuted is the word's section on that family,
+    /// which neither moves, so a word said again is not pulled again
+    /// (2026-10-22: one family pulled by its citation 49 times from one
+    /// court, a peer's word heard at each of its returns). Unread is not
+    /// kept: it is asked again.
+    pub(crate) evidenced: Keyed<Evident>,
 }
 
 /// A WORD THAT HAS A SECTION: a connection, not a colour word — the words the
@@ -174,6 +181,13 @@ impl Entity {
             self.perceive_hearing(speaker, said, words, evident);
             return;
         }
+        // Read already on this scene: what it read stands.
+        let mut seen = ev.scene.clone();
+        crate::transducer::address::put_key_bytes(&mut seen, &said);
+        if let Some(evident) = self.scenes.evidenced.get(&seen).copied() {
+            self.perceive_hearing(speaker, said, words, evident);
+            return;
+        }
         let act = dialogue::encode_task_by_id(&self.hypha.kernel().voice(), &id);
         self.ask(move |s| s.speak_keyed(&id, act), move |me, body: io::Result<Vec<u8>>| {
             let family = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b)).map(|env| env.train);
@@ -184,6 +198,9 @@ impl Entity {
                     Evident::Unread
                 }
             };
+            if matches!(evident, Evident::True | Evident::Refuted) {
+                me.scenes.evidenced.insert(&seen, evident);
+            }
             me.perceive_hearing(speaker, said, words, evident);
         });
     }
