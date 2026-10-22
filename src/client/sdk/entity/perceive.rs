@@ -270,10 +270,13 @@ fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &E
     // the same way and its test inputs spoken, so a rule known on it emits
     // its solve; its uncovered perspectives are not lifted onto the mind
     // (its rule's speech is what it gives).
-    let (ascertained, lifts) = ascertain_on(epi, train);
+    let (ascertained, lifts) = ascertain_on(epi, train, &rule);
     let known = match ascertained {
         Ascertained::Known => Some(rule),
         Ascertained::KnownByInversion(r) => Some(*r),
+        // Undetermined by its perspectives: spoken and sent, the court the
+        // judge (the auditor's ruling, 2026-10-22).
+        Ascertained::Undetermined => Some(rule),
         Ascertained::Unknown => {
             read.stop = Stop::Unknown;
             None

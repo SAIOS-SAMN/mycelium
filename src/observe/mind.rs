@@ -59,9 +59,11 @@ pub const BODIES: [&str; 3] = ["fused", "precessing", "contact"];
 
 /// WHAT ITS TASKS' PERSPECTIVES SAID (MU-CLIENT §4.4): tasks seen; rules
 /// known (every held-out pair re-derived), unknown (fitted, not re-derived),
-/// of one perspective, unread; held-out pairs lifted into the mind; and
-/// solves sent — in the order the counts are kept.
-pub const PERSPECTIVE: [&str; 8] = ["tasks", "known", "unknown", "one perspective", "unread", "lifted", "sent", "by inversion"];
+/// of one perspective, unread; held-out pairs lifted into the mind; solves
+/// sent; known by inversion; and undetermined by their perspectives (a
+/// two-pair clause rule, sent for the court to judge) — in the order the
+/// counts are kept.
+pub const PERSPECTIVE: [&str; 9] = ["tasks", "known", "unknown", "one perspective", "unread", "lifted", "sent", "by inversion", "undetermined"];
 
 /// WHAT A HELD-OUT PERSPECTIVE DISAGREED ABOUT (MU-CLIENT §4.4): its
 /// siblings derived no rule; the rule spoke nothing on it; spoke with a
@@ -199,7 +201,7 @@ pub struct Mind {
     /// Bodies whose spheres met in an admitted scene, by [`BODIES`].
     pub bodies: [u64; 3],
     /// Its tasks' perspectives, by [`PERSPECTIVE`].
-    pub perspective: [u64; 8],
+    pub perspective: [u64; 9],
     /// What its failed perspectives disagreed about, by [`DISAGREE`].
     pub disagree: [u64; 9],
     /// 78.167 A2 — what their rules' demands spoke nothing for, by
@@ -287,7 +289,7 @@ impl Default for Mind {
             constructed: [0; 7],
             flex: [0; 9],
             bodies: [0; 3],
-            perspective: [0; 8],
+            perspective: [0; 9],
             disagree: [0; 9],
             demanded_kinds: [0; 6],
             boosts: [0; 3],
@@ -391,7 +393,7 @@ impl Mind {
             *v = take_u64(b, p)?;
         }
         let bodies = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
-        let mut perspective = [0u64; 8];
+        let mut perspective = [0u64; 9];
         for v in &mut perspective {
             *v = take_u64(b, p)?;
         }

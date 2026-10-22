@@ -516,7 +516,7 @@ fn a_minds_reading_and_a_courts_agreements_read_back_exact() {
         constructed: [1, 0, 1, 0, 1, 2, 1],
         flex: [2, 1, 0, 3, 1, 1, 7, 2, 4],
         bodies: [4, 1, 2],
-        perspective: [9, 3, 4, 1, 1, 6, 3, 1],
+        perspective: [9, 3, 4, 1, 1, 6, 3, 1, 2],
         disagree: [1, 0, 2, 0, 3, 1, 4, 2, 1],
         demanded_kinds: [0, 1, 2, 3, 4, 5],
         boosts: [7, 1, 2],

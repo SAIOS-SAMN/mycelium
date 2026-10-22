@@ -92,6 +92,14 @@ pub(crate) enum Ascertained {
     KnownByInversion(Box<SentenceRule>),
     /// Some held-out pair did not close: the rule fits, and is not known.
     Unknown,
+    /// UNDETERMINED BY ITS PERSPECTIVES (the auditor's ruling, 2026-10-22):
+    /// a clause rule the act reader stated over a TWO-pair family, proven on
+    /// both pairs. Its siblings are one pair each, and the act reader states
+    /// no clause from one pair ("a coordinate separating bodies on one pair
+    /// separates nothing"), so a sibling's rule cannot be the family's: its
+    /// held-out failure is no refutation. Not known, and not refuted — sent,
+    /// for the court to judge on its withheld pairs.
+    Undetermined,
     /// One pair: no sibling to derive it from.
     OnePerspective,
     /// A sibling extraction's stroke ran out before it ruled: not known and
@@ -193,7 +201,7 @@ pub(crate) fn speech_of(epi: &Epigenome, rule: &SentenceRule, train: &Family, bu
 /// re-derives it. Answers the reading and the pairs a held-out perspective
 /// left uncovered — what the siblings' rule said against the truth — which
 /// the mind LIFTS into its sensorium where the reading lands, never drops.
-pub(crate) fn ascertain_on(epi: &Epigenome, train: &Family) -> (Ascertained, Vec<(crate::arc::Grid, crate::arc::Grid)>) {
+pub(crate) fn ascertain_on(epi: &Epigenome, train: &Family, rule: &SentenceRule) -> (Ascertained, Vec<(crate::arc::Grid, crate::arc::Grid)>) {
     use crate::transducer::family::{extract_rule_on, extraction_spend, perceive_family};
     crate::observe::note_mind(|m| m.perspective[0] += 1);
     let mut lifts = Vec::new();
@@ -253,7 +261,17 @@ pub(crate) fn ascertain_on(epi: &Epigenome, train: &Family) -> (Ascertained, Vec
             return (Ascertained::KnownByInversion(Box::new(rule)), lifts);
         }
     }
+    // THE TWO-PAIR CLAUSE RULE, UNDETERMINED (the auditor's ruling,
+    // 2026-10-22, its three guards): exactly two pairs, so each sibling set
+    // is one pair (guard 3); the family's rule is the act reader's clauses
+    // (guard 1 — a vertex fit stays unknown); and it closes both pairs
+    // exactly, no remainder, the grid each output (guard 2).
+    let undetermined = !failed.is_empty()
+        && train.len() == 2
+        && !rule.form.clauses.is_empty()
+        && train.iter().all(|(x, y)| disagreement_on(epi, rule, x, y).is_ok());
     let (slot, outcome) = match (failed.is_empty(), unread) {
+        (false, _) if undetermined => (8, Ascertained::Undetermined),
         (false, _) => (2, Ascertained::Unknown),
         (true, true) => (4, Ascertained::Unread),
         (true, false) => (1, Ascertained::Known),
