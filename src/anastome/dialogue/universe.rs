@@ -81,8 +81,12 @@ pub enum Metric {
 }
 
 /// 78.140 — A UNIVERSE'S SPACE (the operator's ruling, the Concordance's
-/// 2.3 as amended): a closed CURVED space of radius `R`, or a flat TORUS of
-/// axis-aligned periods (one to three) and its metric. Every distance is
+/// 2.3 as amended): a CURVED space of radius `R` — HYPERBOLIC `ℍ³`, of
+/// negative curvature (78.134: its frames in `Spin⁺(3,1)`, its places on the
+/// sheet `v² = −1`, a throat's level `cosh(2m/R)`), never a sphere — or a
+/// flat TORUS of axis-aligned periods (one to three) and its metric. A
+/// closed sphere has no kind here yet (2026-10-22: netstratum's era-1
+/// sphere was declared `Curved` and so stated as hyperbolic). Every distance is
 /// that space's own geodesic. `R` and the periods are lengths in GEOMETRIZED
 /// MEGAPARSECS (Concordance 1.8, 2.3): G = c = 1, the same unit a throat's
 /// mass is written in, so `2m/R` and `2m/L_min` read true.
