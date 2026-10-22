@@ -53,18 +53,19 @@ pub(crate) struct Scenes {
     /// Each convergence once, keyed scene ‖ heard word ‖ own word, with the
     /// mind that spoke the heard word.
     pub(crate) converged: Keyed<[u8; 32]>,
-    /// WHAT A WORD'S EVIDENCE READ on a scene this mind does not hold, keyed
-    /// scene ‖ word: true or refuted is the word's section on that family,
-    /// which neither moves, so a word said again is not pulled again
-    /// (2026-10-22: one family pulled by its citation 49 times from one
-    /// court, a peer's word heard at each of its returns). Unread is not
-    /// kept: it is asked again.
-    pub(crate) evidenced: Keyed<Evident>,
-    /// The scene ‖ word pulls on the court's carrier now: a hearing of the
-    /// same word on the same scene meanwhile is let go, as a hearing that
-    /// waited lapses — its speaker says it again — never pulled twice
-    /// (2026-10-22: one family pulled 8 times before the first landed).
-    pub(crate) evidencing: Keyed<()>,
+    /// THE FAMILIES PULLED AS EVIDENCE, by scene: a scene this mind spoke no
+    /// word on, pulled by its citation once and read here for every word
+    /// heard on it after — a family does not move (2026-10-22: one family
+    /// pulled 49 times from one court as a peer said its word at each
+    /// return, and another 18 times for the different words peers said on
+    /// it). One entry per scene, the corpus its bound. A pull that read
+    /// nothing is not kept: it is asked again.
+    pulled: Keyed<Vec<crate::transducer::family::TrainPair>>,
+    /// The scenes whose pull is on the court's carrier now: a hearing on one
+    /// meanwhile is let go, as a hearing that waited lapses — its speaker
+    /// says it again — never pulled twice (8 pulls of one family before the
+    /// first landed).
+    pulling: Keyed<()>,
 }
 
 /// A WORD THAT HAS A SECTION: a connection, not a colour word — the words the
@@ -181,36 +182,32 @@ impl Entity {
             self.perceive_hearing(speaker, said, words, Evident::Refuted);
             return;
         };
-        if let Some(family) = self.scenes.family(&ev.scene).map(<[_]>::to_vec) {
+        // A scene it spoke on, or one pulled before: read here.
+        let held = self.scenes.family(&ev.scene).or_else(|| self.scenes.pulled.get(&ev.scene).map(Vec::as_slice)).map(<[_]>::to_vec);
+        if let Some(family) = held {
             let evident = self.scenes.read(&ev.scene, &word, &family, speaker);
             self.perceive_hearing(speaker, said, words, evident);
             return;
         }
-        // Read already on this scene: what it read stands.
-        let mut seen = ev.scene.clone();
-        crate::transducer::address::put_key_bytes(&mut seen, &said);
-        if let Some(evident) = self.scenes.evidenced.get(&seen).copied() {
-            self.perceive_hearing(speaker, said, words, evident);
+        if self.scenes.pulling.contains(&id) {
             return;
         }
-        if self.scenes.evidencing.contains(&seen) {
-            return;
-        }
-        self.scenes.evidencing.insert(&seen, ());
+        self.scenes.pulling.insert(id, ());
         let act = dialogue::encode_task_by_id(&self.hypha.kernel().voice(), &id);
         self.ask(move |s| s.speak_keyed(&id, act), move |me, body: io::Result<Vec<u8>>| {
-            me.scenes.evidencing.remove(&seen);
+            me.scenes.pulling.remove(&id);
             let family = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b)).map(|env| env.train);
             let evident = match family {
-                Some(f) => me.scenes.read(&id, &word, &f, speaker),
+                Some(f) => {
+                    let evident = me.scenes.read(&id, &word, &f, speaker);
+                    me.scenes.pulled.insert(id, f);
+                    evident
+                }
                 None => {
                     me.scenes.read[2] += 1;
                     Evident::Unread
                 }
             };
-            if matches!(evident, Evident::True | Evident::Refuted) {
-                me.scenes.evidenced.insert(&seen, evident);
-            }
             me.perceive_hearing(speaker, said, words, evident);
         });
     }
