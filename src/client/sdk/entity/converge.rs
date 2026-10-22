@@ -60,6 +60,11 @@ pub(crate) struct Scenes {
     /// court, a peer's word heard at each of its returns). Unread is not
     /// kept: it is asked again.
     pub(crate) evidenced: Keyed<Evident>,
+    /// The scene ‖ word pulls on the court's carrier now: a hearing of the
+    /// same word on the same scene meanwhile is let go, as a hearing that
+    /// waited lapses — its speaker says it again — never pulled twice
+    /// (2026-10-22: one family pulled 8 times before the first landed).
+    pub(crate) evidencing: Keyed<()>,
 }
 
 /// A WORD THAT HAS A SECTION: a connection, not a colour word — the words the
@@ -188,8 +193,13 @@ impl Entity {
             self.perceive_hearing(speaker, said, words, evident);
             return;
         }
+        if self.scenes.evidencing.contains(&seen) {
+            return;
+        }
+        self.scenes.evidencing.insert(&seen, ());
         let act = dialogue::encode_task_by_id(&self.hypha.kernel().voice(), &id);
         self.ask(move |s| s.speak_keyed(&id, act), move |me, body: io::Result<Vec<u8>>| {
+            me.scenes.evidencing.remove(&seen);
             let family = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b)).map(|env| env.train);
             let evident = match family {
                 Some(f) => me.scenes.read(&id, &word, &f, speaker),
