@@ -19,7 +19,24 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## A closed sphere is a universe's space (2026-10-22 21:28) — where it stands
+## The sphere universe founded; the relay read storm closed (2026-10-22 23:29) — where it stands
+Courts on 8718fede (since 21:28:41); voices 1–5 and seats n1–n4 on
+1d391d68 (23:03:26). netstratum's SPHERE domain 7119e487… is founded on
+court a — origin Sphere((17,2)), its reserve, its ledger — and lists two
+seats; n1–n4 re-pointed there 23:28:45 (`--seat … all`), n2 and n4 took
+seats 0 and 1 unaided at 23:29:11; ef4efc0e retired. From 21:31 to 23:03
+the seat minds read the relay ~2 400 times a second (an empty box's cursor
+never reached the relay's sequence, so no read was held; cc8ce504's timed
+rest fed it): every court's door deferred its peers, no digest was
+admitted, keeper rings were refused as strangers, and no TUniversal point
+went final from 17:59 until 23:27:49. 1d391d68: an empty page reads to the
+relay's standing and one held read stays outstanding; the timed rest is
+retired. The house now speaks the court's acts through `Session::speak`
+and the public dialogue codecs (7323c0c5; `sentence`/`grid_motion` public,
+ac8d425a). Open: court a still defers ~12 000 fetched words an hour to
+short learners (98698aef rests only strata that bring no word).
+
+## A closed sphere is a universe's space (2026-10-22 21:28)
 Courts, voices 1–5 and seats n1–n4 on 8718fede (restarted 21:28:41; courts
 listening 21:31:33, no fold storm). `Geometry::Curved` is HYPERBOLIC ℍ³
 (78.134); netstratum's and xylarium's closed 3-spheres were both stated as
