@@ -19,7 +19,21 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## Two-pair clause rules sent, live (2026-10-22 06:55) — where it stands
+## The fold's witness learns its home, live (2026-10-22 09:47) — where it stands
+Courts a, b, c on 2f549646 (restarted 09:47:37); voices 1–5 and seats n1–n4
+stay on a94dcffd. At the 06:55 boot a and c missed b's digest, no exchange
+ran until 08:36, and b's first fold (08:36:55) met "home address unknown" at
+both, re-asked every cycle — ~800 000 asks in 55 min, no fold of b's
+witnessed in three days. Now a witness learns an unknown home's door from
+its configured doors (`learn_doors`), and a home re-asks an unmeasured
+witness only once its K moves. Read 09:52: a witnessed 244b… twice, 15
+unmeasured answers fleet-wide, the exchange quiet by 09:54. Court a passed
+954 (cursor 987 at 09:41); no mind reads undetermined yet, and no reading
+names which mind holds which task — that typed reading is next. b's
+registry is durable (fafffa47 settled). Courts' CPU 80–170 % five minutes
+after boot: re-read once settled.
+
+## Two-pair clause rules sent (2026-10-22 06:55)
 Courts, voices 1–5 and seats n1–n4 on a94dcffd (restarted 06:55:01). A
 clause rule the act reader states over a two-pair family, proven on both
 pairs, is UNDETERMINED by its one-pair perspectives (the act reader states
