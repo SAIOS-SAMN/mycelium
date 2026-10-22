@@ -201,6 +201,12 @@ impl Entity {
         self.board.body = Some(body);
     }
 
+    /// Whether the body sits a seat it does not hold: its take waits on the
+    /// house's listing, read again on the mind's own strokes (`rest`).
+    pub(crate) fn seats_unheld(&self) -> bool {
+        self.board.body.as_ref().is_some_and(|b| b.seats.is_empty() || b.seats.iter().any(|s| !s.hold.held))
+    }
+
     /// MU-CLIENT §7.1 — EACH SEAT SAT, AS THE OBSERVER READS IT: whether it is
     /// held, the percepts perceived there, the task records set before it, its
     /// tasks passed uncoupled and standing, the calls posted and the beats
