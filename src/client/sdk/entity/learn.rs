@@ -34,6 +34,10 @@ impl Entity {
                     let offer = super::offer::Offer::of(&env.train);
                     (env, offer)
                 });
+                // Landed on this mind, not yet taken in: attributed here.
+                if let Some(id) = me.board.court.task.as_ref().map(|(e, _)| e.id) {
+                    me.note_task(&id, super::perceive::Reading::Task, |t| *t = super::perceive::TaskRead { taken: false, reading: t.reading, perspectives: None, stop: None });
+                }
             },
         );
     }

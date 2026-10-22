@@ -4,6 +4,7 @@ pub mod common;
 
 mod aperture;
 mod ascertain;
+mod attribution;
 mod axis;
 mod carriers;
 mod cite;

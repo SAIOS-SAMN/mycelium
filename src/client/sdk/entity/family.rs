@@ -90,8 +90,9 @@ pub(crate) enum Ascertained {
     /// it: the rule that pair derives re-derives every other pair. Known by
     /// inversion — this rule, not the fit, is the family's invariant.
     KnownByInversion(Box<SentenceRule>),
-    /// Some held-out pair did not close: the rule fits, and is not known.
-    Unknown,
+    /// Some held-out pair did not close: the rule fits, and is not known —
+    /// with the first guard of the undetermined ruling it fails.
+    Unknown(Unexempt),
     /// UNDETERMINED BY ITS PERSPECTIVES (the auditor's ruling, 2026-10-22):
     /// a clause rule the act reader stated over a TWO-pair family, proven on
     /// both pairs. Its siblings are one pair each, and the act reader states
@@ -105,6 +106,19 @@ pub(crate) enum Ascertained {
     /// A sibling extraction's stroke ran out before it ruled: not known and
     /// not refuted.
     Unread,
+}
+
+/// WHY A RULE ITS PERSPECTIVES DID NOT KNOW IS NOT UNDETERMINED: the first of
+/// the ruling's three guards it fails (the auditor, 2026-10-22), read in the
+/// order the ruling is stated from the family outward.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Unexempt {
+    /// Guard 3: the family is not two pairs; its siblings could speak.
+    Pairs,
+    /// Guard 1: a vertex fit — the act reader stated no clause.
+    Vertex,
+    /// Guard 2: the clause rule does not close both pairs exactly.
+    Unproven,
 }
 
 /// A FAMILY THOUGHT THROUGH: its rule where the form engine closed one, the
@@ -266,13 +280,17 @@ pub(crate) fn ascertain_on(epi: &Epigenome, train: &Family, rule: &SentenceRule)
     // is one pair (guard 3); the family's rule is the act reader's clauses
     // (guard 1 — a vertex fit stays unknown); and it closes both pairs
     // exactly, no remainder, the grid each output (guard 2).
-    let undetermined = !failed.is_empty()
-        && train.len() == 2
-        && !rule.form.clauses.is_empty()
-        && train.iter().all(|(x, y)| disagreement_on(epi, rule, x, y).is_ok());
+    let unexempt = match (train.len() == 2, rule.form.clauses.is_empty()) {
+        _ if failed.is_empty() => None,
+        (false, _) => Some(Unexempt::Pairs),
+        (true, true) => Some(Unexempt::Vertex),
+        (true, false) => (!train.iter().all(|(x, y)| disagreement_on(epi, rule, x, y).is_ok())).then_some(Unexempt::Unproven),
+    };
     let (slot, outcome) = match (failed.is_empty(), unread) {
-        (false, _) if undetermined => (8, Ascertained::Undetermined),
-        (false, _) => (2, Ascertained::Unknown),
+        (false, _) => match unexempt {
+            None => (8, Ascertained::Undetermined),
+            Some(why) => (2, Ascertained::Unknown(why)),
+        },
         (true, true) => (4, Ascertained::Unread),
         (true, false) => (1, Ascertained::Known),
     };

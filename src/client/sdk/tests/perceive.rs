@@ -58,9 +58,8 @@ fn every_scene_taken_in_stops_once_on_its_own_reading() {
     let total = |row: &[u64; STOPS.len()]| row.iter().sum::<u64>();
     let [task, feed, again] = mind.board.stopped;
     assert_eq!((total(&task), total(&feed), total(&again)), (1, 1, 0), "each scene stops once, on its own reading");
-    let sent = STOPS.len() - 1;
+    let sent = STOPS.iter().position(|s| *s == Stop::Sent.name()).expect("the solve sent is a named stop");
     assert_eq!(feed[sent], 0, "a feed's family carries no test: it sends no solve");
-    assert!(matches!(STOPS.get(sent), Some(&"sent")), "the last stop is the solve sent ({:?})", Stop::Sent);
 }
 
 /// A WAITING SCENE RESTS UNTIL ITS OWN LANGUAGE MOVES (the auditor's

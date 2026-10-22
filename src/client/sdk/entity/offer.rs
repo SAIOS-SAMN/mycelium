@@ -91,7 +91,9 @@ impl Entity {
         let task = self.board.court.task.as_ref().map(|(e, o)| (o.crossed, self.couples(&e.id, &o.charts)));
         match task {
             Some((true, false)) => {
-                self.board.court.task = None;
+                if let Some((e, _)) = self.board.court.task.take() {
+                    self.note_task(&e.id, super::perceive::Reading::Task, |t| t.stop = Some(super::perceive::Stop::Lapsed));
+                }
                 self.passed(PASSED_TASK);
             }
             Some(_) => {

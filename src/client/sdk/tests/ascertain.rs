@@ -4,7 +4,7 @@
 // clause rule proven on both pairs is undetermined by its perspectives — sent
 // for the court to judge — never refuted by a sibling that cannot speak it.
 
-use crate::client::sdk::entity::family::{ascertain_on, Ascertained};
+use crate::client::sdk::entity::family::{ascertain_on, Ascertained, Unexempt};
 use crate::client::sdk::*;
 
 fn grid(rows: &[&str]) -> crate::arc::Grid {
@@ -50,7 +50,7 @@ fn a_vertex_fit_on_two_pairs_stays_unknown() {
     let mut rule = rule_of(&train);
     rule.form.clauses.clear();
     let (outcome, _) = ascertain_on(&Epigenome::new(), &train, &rule);
-    assert!(!matches!(outcome, Ascertained::Undetermined), "no clauses, no exemption: {outcome:?}");
+    assert!(matches!(outcome, Ascertained::Unknown(Unexempt::Vertex)), "no clauses, no exemption — guard 1 named: {outcome:?}");
 }
 
 /// GUARD 2 — THE RULE MUST CLOSE BOTH PAIRS: a clause rule read off another
@@ -64,7 +64,7 @@ fn a_clause_rule_that_does_not_close_its_pairs_is_not_undetermined() {
     ]);
     assert!(!other.form.clauses.is_empty(), "the other family's rule is clauses too");
     let (outcome, _) = ascertain_on(&Epigenome::new(), &train, &other);
-    assert!(!matches!(outcome, Ascertained::Undetermined), "unproven on these pairs: {outcome:?}");
+    assert!(matches!(outcome, Ascertained::Unknown(Unexempt::Unproven)), "unproven on these pairs — guard 2 named: {outcome:?}");
 }
 
 /// GUARD 3 — THREE PAIRS ARE READ BY THEIR PERSPECTIVES: with two pairs to

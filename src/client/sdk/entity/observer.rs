@@ -14,7 +14,9 @@ use crate::client::sdk::*;
 use crate::observe::live;
 
 /// The calls the mind answers, as `calls` lists them.
-const CALLS: [(&str, &str); 10] = [
+const CALLS: [(&str, &str); 12] = [
+    ("tasks", "every court task that landed on this mind, by its whole citation: taken or waiting, how read, what its perspectives said (the undetermined guard it failed), where it stopped"),
+    ("task HEX", "the court tasks whose citation begins with HEX, as `tasks` reads them"),
     ("convergence", "scenes this mind spoke words on, heard words' evidence read (true, refuted, unread), and each convergence: another mind's word and this mind's, different vertices, one section"),
     ("perception", "what perception's cells did: circuits, cells, thoughts, hours, the consolidation gate, grounds filed and refused by name"),
     ("now", "where the winding carrier stands, the reserve, the court's pace, what the mind holds"),
@@ -81,6 +83,8 @@ impl Entity {
             ["perception"] => self.contemplation.resonance.line().split(" | ").map(str::to_string).collect(),
             ["held"] => self.read_held(),
             ["scenes"] => self.read_scenes(),
+            ["tasks"] => self.read_tasks(""),
+            ["task", prefix] => self.read_tasks(prefix),
             ["questions"] => self.read_questions(),
             ["convergence"] => self.read_convergence(),
             ["calls"] => CALLS.iter().map(|(c, what)| format!("{c:<18} {what}")).collect(),
@@ -395,6 +399,35 @@ impl Entity {
         out.push(format!("unheard words {}", self.unheard.len()));
         out.extend(self.unheard.scoped().map(|(a, fam)| format!("  word {} under scene {}", tail(&a, 4), tail(fam, 4))));
         out.push(format!("owed {} · contracted {}", self.owed.len(), self.contracted.len()));
+        out
+    }
+
+    /// THE COURT TASKS THAT LANDED ON THIS MIND whose citation begins with
+    /// `prefix` (the auditor's attribution reading, 2026-10-22), each by its
+    /// whole citation.
+    fn read_tasks(&self, prefix: &str) -> Vec<String> {
+        let prefix = prefix.to_ascii_lowercase();
+        let named: Vec<String> = self
+            .board
+            .tasks
+            .scoped()
+            .map(|(id, t)| (hex(&id), t))
+            .filter(|(id, _)| id.starts_with(&prefix))
+            .map(|(id, t)| {
+                let stood = match (t.stop, t.taken) {
+                    (Some(s), _) => format!("stopped: {}", s.name()),
+                    (None, false) => "landed, waiting to couple".to_string(),
+                    (None, true) => "on the perception carrier, or its solve read at home".to_string(),
+                };
+                let said = match t.perspectives {
+                    Some(p) => p.name(),
+                    None => "no rule ascertained",
+                };
+                format!("  task {id} · {} · perspectives: {said} · {stood}", t.reading.name())
+            })
+            .collect();
+        let mut out = vec![format!("court tasks landed on this mind {} · matching `{prefix}` {}", self.board.tasks.len(), named.len())];
+        out.extend(named);
         out
     }
 

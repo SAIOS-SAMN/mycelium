@@ -88,10 +88,13 @@ pub(crate) enum Stop {
     Unsubmitted,
     /// Submitted to the court.
     Sent,
+    /// A court task that landed and coupled to nothing across a return: let
+    /// go untaken (`lapse_offers`).
+    Lapsed,
 }
 
 /// The stops, as the observer names them, in `Stop::index` order.
-pub(crate) const STOPS: [&str; 15] = [
+pub(crate) const STOPS: [&str; 16] = [
     "no rule",
     "no rule (stroke ran out)",
     "one perspective",
@@ -107,10 +110,80 @@ pub(crate) const STOPS: [&str; 15] = [
     "refused before",
     "unsubmitted",
     "sent",
+    "lapsed uncoupled",
 ];
 
 /// The readings, as the observer names them, in `Reading::index` order.
 pub(crate) const READINGS: [&str; 3] = ["task", "feed", "again"];
+
+/// WHAT A SCENE'S PERSPECTIVES SAID OF ITS RULE (`Ascertained`), kept for the
+/// observer without the rule: for an unknown rule, the guard of the
+/// undetermined ruling it failed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Perspectives {
+    Known,
+    ByInversion,
+    Undetermined,
+    Unknown(super::family::Unexempt),
+    OnePerspective,
+    Unread,
+}
+
+impl Perspectives {
+    fn of(a: &Ascertained) -> Self {
+        match a {
+            Ascertained::Known => Perspectives::Known,
+            Ascertained::KnownByInversion(_) => Perspectives::ByInversion,
+            Ascertained::Undetermined => Perspectives::Undetermined,
+            Ascertained::Unknown(why) => Perspectives::Unknown(*why),
+            Ascertained::OnePerspective => Perspectives::OnePerspective,
+            Ascertained::Unread => Perspectives::Unread,
+        }
+    }
+
+    /// As the observer names it.
+    pub(crate) fn name(self) -> &'static str {
+        use super::family::Unexempt;
+        match self {
+            Perspectives::Known => "known",
+            Perspectives::ByInversion => "known by inversion",
+            Perspectives::Undetermined => "undetermined",
+            Perspectives::Unknown(Unexempt::Pairs) => "unknown (guard 3: not two pairs)",
+            Perspectives::Unknown(Unexempt::Vertex) => "unknown (guard 1: a vertex fit, no clause)",
+            Perspectives::Unknown(Unexempt::Unproven) => "unknown (guard 2: the clauses do not close both pairs)",
+            Perspectives::OnePerspective => "one perspective",
+            Perspectives::Unread => "unread",
+        }
+    }
+}
+
+/// ONE COURT TASK AS IT LANDED ON THIS MIND (the auditor's attribution
+/// reading, 2026-10-22): whether it was taken in or still waits to couple,
+/// how it was last taken, what its perspectives said where the form engine
+/// closed a rule, and where its comprehension stopped — `None` while it waits,
+/// is on the perception carrier, or its solve is read at home. A reading,
+/// never read back by cognition.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct TaskRead {
+    pub(crate) taken: bool,
+    pub(crate) reading: Reading,
+    pub(crate) perspectives: Option<Perspectives>,
+    pub(crate) stop: Option<Stop>,
+}
+
+impl Reading {
+    /// As the observer names it.
+    pub(crate) fn name(self) -> &'static str {
+        READINGS[self.index()]
+    }
+}
+
+impl Stop {
+    /// As the observer names it.
+    pub(crate) fn name(self) -> &'static str {
+        STOPS[self.index()]
+    }
+}
 
 impl Stop {
     fn index(self) -> usize {
@@ -130,6 +203,7 @@ impl Stop {
             Stop::RefusedBefore => 12,
             Stop::Unsubmitted => 13,
             Stop::Sent => 14,
+            Stop::Lapsed => 15,
         }
     }
 }
@@ -170,6 +244,8 @@ pub(crate) struct Perceived {
     /// Where the reading stopped, on the carrier; the winding reads on
     /// from a known rule with tests spoken (`admit_scene`).
     stop: Stop,
+    /// What the rule's perspectives said, where a rule was closed.
+    perspectives: Option<Perspectives>,
 }
 
 /// RINGS ANOTHER MIND SAID, WAITING TO BE READ: the speaker, what was said,
@@ -241,6 +317,7 @@ fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &E
         known: None,
         chains: Vec::new(),
         stop: Stop::NoRule,
+        perspectives: None,
         scene,
     };
     let (id, train, tests) = (&read.scene.id, &read.scene.train, &read.scene.tests);
@@ -271,13 +348,14 @@ fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &E
     // its solve; its uncovered perspectives are not lifted onto the mind
     // (its rule's speech is what it gives).
     let (ascertained, lifts) = ascertain_on(epi, train, &rule);
+    read.perspectives = Some(Perspectives::of(&ascertained));
     let known = match ascertained {
         Ascertained::Known => Some(rule),
         Ascertained::KnownByInversion(r) => Some(*r),
         // Undetermined by its perspectives: spoken and sent, the court the
         // judge (the auditor's ruling, 2026-10-22).
         Ascertained::Undetermined => Some(rule),
-        Ascertained::Unknown => {
+        Ascertained::Unknown(_) => {
             read.stop = Stop::Unknown;
             None
         }
@@ -395,6 +473,7 @@ impl Entity {
     /// — and admitted where its reading lands (`admit_scene`).
     pub(crate) fn perceive_scene(&mut self, scene: Scene) {
         let language = self.language();
+        self.note_task(&scene.id, scene.reading, |t| *t = TaskRead { taken: true, reading: t.reading, perspectives: None, stop: None });
         let (mut field, from) = crate::transducer::mind::scratch_here();
         self.board.scenes_perceiving += 1;
         super::hypha::post(
@@ -593,27 +672,45 @@ impl Entity {
             self.ask_presentation(&prepared.0.form);
             let _ = self.speak_prepared(prepared, &train, &frames, &id, &mut budget);
         }
+        self.note_task(&id, reading, |t| t.perspectives = p.perspectives);
         let scene = Scene { id, train, tests, reading };
         match p.known {
             Some((rule, Some(outputs))) if reading != Reading::Feed || !scene.tests.is_empty() => match self.mint_solve(&rule, &scene.train) {
                 Some(minted) => self.judge_solve(Judge { scene, outputs, rule: minted }),
                 None => {
-                    self.stopped(reading, Stop::Unminted);
+                    self.stopped(&scene.id, reading, Stop::Unminted);
                     self.await_scene(scene);
                 }
             },
             _ => {
-                self.stopped(reading, p.stop);
+                self.stopped(&scene.id, reading, p.stop);
                 self.await_scene(scene);
             }
         }
     }
 
-    /// WHERE A SCENE'S COMPREHENSION STOPPED, read for the observer.
-    fn stopped(&mut self, reading: Reading, stop: Stop) {
+    /// WHERE A SCENE'S COMPREHENSION STOPPED, read for the observer: counted
+    /// by reading, and kept on the task it stopped on.
+    fn stopped(&mut self, id: &[u8], reading: Reading, stop: Stop) {
         if let Some(slot) = self.board.stopped.get_mut(reading.index()).and_then(|r| r.get_mut(stop.index())) {
             let _ = crate::physics::metabolism::step_or_refuse(slot, 1);
         }
+        self.note_task(id, reading, |t| t.stop = Some(stop));
+    }
+
+    /// ONE COURT TASK'S READING KEPT BY ITS CITATION (`TaskRead`), taken as
+    /// `reading`; a feed's family is no court task and is not kept.
+    pub(crate) fn note_task(&mut self, id: &[u8], reading: Reading, note: impl FnOnce(&mut TaskRead)) {
+        if reading == Reading::Feed {
+            return;
+        }
+        let mut read = match self.board.tasks.get(id) {
+            Some(t) => *t,
+            None => TaskRead { taken: false, reading, perspectives: None, stop: None },
+        };
+        read.reading = reading;
+        note(&mut read);
+        self.board.tasks.insert(id, read);
     }
 
     /// A SOLVE'S HOME CHECK ADMITTED: a crossed rule this task has not
@@ -635,19 +732,19 @@ impl Entity {
                         Err(_) => Stop::Unsubmitted,
                     },
                 };
-                self.stopped(reading, stop);
+                self.stopped(&j.scene.id, reading, stop);
                 if stop != Stop::Sent {
                     self.await_scene(j.scene);
                 }
             }
             Verdict::Construct(residue, chart) => {
-                self.stopped(reading, Stop::Constructed);
+                self.stopped(&j.scene.id, reading, Stop::Constructed);
                 let mut budget = self.physics.stroke();
                 self.construct_and_adjoin(&residue, chart.as_ref(), &j.scene.id, &mut budget);
                 self.await_scene(j.scene);
             }
             Verdict::Kept(stop) => {
-                self.stopped(reading, stop);
+                self.stopped(&j.scene.id, reading, stop);
                 self.await_scene(j.scene);
             }
         }

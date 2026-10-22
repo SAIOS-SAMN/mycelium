@@ -110,6 +110,10 @@ pub(crate) struct Board {
     /// it was taken as (`perceive::Reading`) and the stop (`perceive::Stop`) —
     /// a reading, never read back by cognition.
     pub(crate) stopped: [[u64; super::perceive::STOPS.len()]; 3],
+    /// EACH COURT TASK THIS MIND TOOK, by its citation (`perceive::TaskRead`):
+    /// one entry per task, the corpus its bound — a reading, never read back
+    /// by cognition.
+    pub(crate) tasks: crate::network::nerve::Keyed<super::perceive::TaskRead>,
     /// MU-CLIENT §7.1 — THE CORPUS the focus meets: every feed family and
     /// open question at its own coordinates (`focus`).
     pub(crate) corpus: super::focus::Corpus,
