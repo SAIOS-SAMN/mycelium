@@ -125,6 +125,19 @@ pub fn is_spin_plus_31(f: &Mv) -> bool {
     is_even(f) && fixes_axis && upper
 }
 
+/// WHETHER A FRAME IS A MOTION OF THE CLOSED SPHERE: an element of
+/// `Spin(4)`, the rotations of `S³` inside `Cl(4,1)` — even, a versor, and
+/// commuting with `e₋`, the one axis the sphere's span leaves out (the mirror
+/// of `ℍ³`'s condition on `e₊`). `Spin(4)` is connected: no sheet to choose.
+pub fn is_spin_4(f: &Mv) -> bool {
+    use crate::transducer::cga::{is_versor, EM};
+    if f.is_zero() || !is_versor(f) {
+        return false;
+    }
+    let em = Mv::blade(EM, BigRational::from_integer(1.into()));
+    is_even(f) && f.geo(&em).sub(&em.geo(f)).is_zero()
+}
+
 fn is_even(f: &Mv) -> bool {
     [1u32, 3, 5].iter().all(|g| f.grade(*g).is_zero())
 }
@@ -148,13 +161,15 @@ fn wrapped(x: &BigRational, l: &BigRational) -> BigRational {
 }
 
 /// 78.140 — A MOUTH'S PLACE IN ITS FACE'S SPACE, its frame a motion of that
-/// space: a curved face's place on the sheet (`v² = −1`); a torus face's the
+/// space: a curved face's place on the sheet (`v² = −1`); a sphere face's on
+/// the sphere (`v² = +1`, `F e₊ F̃`); a torus face's the
 /// base point `F e_o F̃` on the torus's axes, read modulo its periods — a
 /// point of the fundamental domain. `None` where the frame is no motion of
 /// the space, or stands off the torus's axes.
 pub fn place_in(space: &Geometry, frame: &Mv) -> Option<Mv> {
     match space {
         Geometry::Curved(_) => is_spin_plus_31(frame).then(|| crate::transducer::cga::frame_base_point(frame))?,
+        Geometry::Sphere(_) => is_spin_4(frame).then(|| crate::transducer::cga::sphere_base_point(frame))?,
         Geometry::Torus { periods, .. } => {
             if !is_euclidean_motion(frame) {
                 return None;
@@ -177,20 +192,28 @@ pub fn place_in(space: &Geometry, frame: &Mv) -> Option<Mv> {
 /// 78.140 — A THROAT'S LEVEL IN ONE FACE (the coordinator's ruling (i)):
 /// CURVED, the horosphere level `c = cosh(2m/R)` (the upper bound of its
 /// certified enclosure); FLAT, the sphere's RADIUS `2m` in the face's units
-/// and its RATIO `2m / L_min`, which a fitting throat keeps below `½`.
+/// and its RATIO `2m / L_min`, which a fitting throat keeps below `½`;
+/// SPHERE (2026-10-22), the cap's level `c = cos(2m/R)` — the horizon
+/// `{p : p·v ≥ c}` about the place `v` on `S³`, the LOWER bound of its
+/// certified enclosure so the throat is never undersized — and its RATIO
+/// `(2m/R) / π` (the upper bound), which a fitting throat keeps below `1`:
+/// a cap past the antipode would cover the sphere.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Level {
     Curved(BigRational),
     Flat { radius: BigRational, ratio: BigRational },
+    Sphere { level: BigRational, ratio: BigRational },
 }
 
 impl Level {
     /// Whether the throat fits its face: always in a curved face; in a torus
-    /// face, its sphere clear of its own image (`ratio < ½`).
+    /// face, its sphere clear of its own image (`ratio < ½`); in a sphere
+    /// face, its cap short of the antipode (`ratio < 1`).
     pub fn fits(&self) -> bool {
         match self {
             Level::Curved(_) => true,
             Level::Flat { ratio, .. } => ratio < &BigRational::new(1.into(), 2.into()),
+            Level::Sphere { ratio, .. } => ratio < &BigRational::from_integer(1.into()),
         }
     }
 
@@ -205,6 +228,11 @@ impl Level {
                 Mv::scalar(radius.clone()).to_bytes(out);
                 Mv::scalar(ratio.clone()).to_bytes(out);
             }
+            Level::Sphere { level, ratio } => {
+                out.push(2);
+                Mv::scalar(level.clone()).to_bytes(out);
+                Mv::scalar(ratio.clone()).to_bytes(out);
+            }
         }
     }
 
@@ -214,6 +242,7 @@ impl Level {
         match tag {
             0 => Some(Level::Curved(Mv::from_bytes(b, p)?.scalar_part())),
             1 => Some(Level::Flat { radius: Mv::from_bytes(b, p)?.scalar_part(), ratio: Mv::from_bytes(b, p)?.scalar_part() }),
+            2 => Some(Level::Sphere { level: Mv::from_bytes(b, p)?.scalar_part(), ratio: Mv::from_bytes(b, p)?.scalar_part() }),
             _ => None,
         }
     }
@@ -233,7 +262,7 @@ pub struct TubeReading {
 }
 
 /// `[0]` no tube; `[1][from place][to place][from level][to level][mass n d]`,
-/// each level `[0][c]` or `[1][radius][ratio]`, each rational a scalar
+/// each level `[0][c]`, `[1][radius][ratio]` or `[2][c][ratio]`, each rational a scalar
 /// multivector — the canonical rational.
 pub fn encode_tube_reading(r: Option<&TubeReading>) -> Vec<u8> {
     let Some(r) = r else { return vec![0] };

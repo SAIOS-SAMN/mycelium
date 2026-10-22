@@ -201,7 +201,30 @@ pub(crate) fn level_in(space: &Geometry, mass: &num_rational::BigRational) -> Op
             let (radius, ratio) = flat_throat(mass, &space.shortest_period()?)?;
             Some(Level::Flat { radius, ratio })
         }
+        Geometry::Sphere((n, d)) => {
+            let r = (*d > 0).then(|| num_rational::BigRational::new((*n).into(), (*d).into()))?;
+            let (level, ratio) = sphere_throat(mass, &r)?;
+            Some(Level::Sphere { level, ratio })
+        }
     }
+}
+
+/// A THROAT ON A CLOSED SPHERE (2026-10-22): the horizon is the cap of
+/// angular radius `r = 2m/R` about the mouth's place on `S³`, `{p : p·v ≥
+/// cos r}` — `cos r` irrational for rational `r`, so its LOWER bound on the
+/// fixed grid (a lower level is a wider cap: the throat never undersized) —
+/// with its RATIO `r / π`, the UPPER bound, which a fitting throat keeps below
+/// `1`. `(level, ratio)`; `None` for a non-positive mass or radius.
+pub fn sphere_throat(m: &num_rational::BigRational, radius: &num_rational::BigRational) -> Option<(num_rational::BigRational, num_rational::BigRational)> {
+    use crate::core::certified::{cos, pi, Encl};
+    use num_traits::Signed;
+    if !m.is_positive() || !radius.is_positive() {
+        return None;
+    }
+    let r = num_rational::BigRational::from_integer(2.into()) * m / radius;
+    let level = cos(&Encl::exact(r.clone()), THROAT_GRID).lo;
+    let ratio = Encl::exact(r).div(&pi(THROAT_GRID))?.hi;
+    Some((level, ratio))
 }
 
 /// 78.134 — the grid a throat's level is fixed on: `2^-64`. UNDEFINED
