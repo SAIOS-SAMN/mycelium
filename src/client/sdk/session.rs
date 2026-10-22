@@ -77,7 +77,7 @@ impl Session {
     /// spoken: every door reply carries the door's final point, and this is
     /// the greatest read. A kernel drives its clock by it and stamps what it
     /// publishes with it (`TPoint::print`); its own step clock stays its own.
-    pub(crate) fn tuniversal(&self) -> Option<crate::chronometry::tuniversal::TPoint> {
+    pub fn tuniversal(&self) -> Option<crate::chronometry::tuniversal::TPoint> {
         self.final_point.get()
     }
 
@@ -310,8 +310,10 @@ impl Session {
         self.router.borrow_mut().insert(vk, addr.to_string());
     }
 
-    /// Speak an act carrying a key to that key's home.
-    pub(crate) fn speak_keyed(&self, key: &[u8], act_body: Vec<u8>) -> io::Result<Vec<u8>> {
+    /// Speak an act carrying a key to that key's home. Public with `speak`:
+    /// a client house (78.145) speaks the court's acts through the public
+    /// dialogue codecs on these two (2026-10-22, reversing Strip 7 here).
+    pub fn speak_keyed(&self, key: &[u8], act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         let Some(addr) = self.route(key) else {
             return Err(io::Error::new(io::ErrorKind::NotConnected, "unmeasured route"));
         };
@@ -529,7 +531,7 @@ impl Session {
     /// body. The public SDK surface for custom kernels (and the court): the
     /// wire is the universal language; authority comes from the mathematics,
     /// never the socket.
-    pub(crate) fn speak(&self, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
+    pub fn speak(&self, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         self.exchange(act_body)
     }
 
