@@ -19,7 +19,22 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## The breath's wider machinery, live (2026-10-21 08:48) — where it stands
+## Two-pair clause rules sent, live (2026-10-22 06:55) — where it stands
+Courts, voices 1–5 and seats n1–n4 on a94dcffd (restarted 06:55:01). A
+clause rule the act reader states over a two-pair family, proven on both
+pairs, is UNDETERMINED by its one-pair perspectives (the act reader states
+no clause from one pair) and is sent for the court to judge (the auditor's
+ruling, three guards). Corpus profile: of 813 tasks reaching the check, 761
+were unknown — 741 the court refuses (720 vertex fits, rightly stopped) and
+20 it would solve; the 15 two-pair clause unknowns now undetermined: 11 the
+court solves (f25ffba3 — the task-954 passage — and 3ac3eb23 among them),
+4 it refuses. Dispatch is demand-paced (voices pull only under tension; 47
+court tasks fleet-wide in ~11.5 h); a 36 h watch logs court a's passage of
+954 and the first durable registry. `forms::frame` selected by all three,
+spatial twists axial only (f1feb8c4); netstratum's lever-build joint reads
+reproduced exactly; xylarium's exact seed-7 reads owed.
+
+## The breath's wider machinery (2026-10-21 08:48)
 Courts, voices 1–5 and seats n1–n4 on bd3f80a5 (restarted 08:48:12). Any two
 generators of any dimension breathe (`cga::breathe`): radial on D, the rest
 split into every commuting plane by kind (pinch / null / boost); a held
