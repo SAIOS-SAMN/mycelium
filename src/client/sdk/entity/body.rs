@@ -54,6 +54,11 @@ struct Seat {
     /// on when it coupled to nothing (`offer`). Pulled again only where it
     /// couples; let go where the house no longer sets it before the seat.
     passed: crate::network::nerve::Keyed<Vec<Vec<u8>>>,
+    /// THE TASKS READ AND NOT SOLVED, by task: the atlas root the reading
+    /// stopped at. Pulled again only once the mind's language moved, as a
+    /// waiting court scene rests (2026-10-22: seat n1 pulled one task by its
+    /// citation 8 times at one court height, each reading stopping silently).
+    rested: crate::network::nerve::Keyed<crate::transducer::address::Address>,
     /// The standing call: (fn, its arguments in the codec's canonical form,
     /// its outcome applied). A setting that stands is not posted again.
     standing: Option<(u16, Vec<u8>, bool)>,
@@ -131,6 +136,7 @@ impl Seat {
             solving: crate::network::nerve::Keyed::new(),
             refused: crate::network::nerve::Keyed::new(),
             passed: crate::network::nerve::Keyed::new(),
+            rested: crate::network::nerve::Keyed::new(),
             standing: None,
             met: SeatMet::default(),
         }
@@ -236,8 +242,10 @@ impl Entity {
             // MU-CLIENT §7.1 — a task passed is pulled again only where its
             // offer now couples to the mind.
             let uncoupled = |id: &[u8; 32]| seat.passed.get(id).is_some_and(|charts| !self.couples(id, charts));
+            // A task read and not solved rests until the language moves.
+            let rests = |id: &[u8; 32]| seat.rested.get(id).is_some_and(|root| *root == self.epigenome.atlas_root());
             match task {
-                Some(id) if uncoupled(&id) => {}
+                Some(id) if uncoupled(&id) || rests(&id) => {}
                 Some(id) if !seat.answered.contains(&id) && !seat.solving.contains(&id) && seat.hold.held => {
                     let _ = seat.passed.remove(&id);
                     self.pull_before(at, key, id)
@@ -378,6 +386,11 @@ impl Entity {
                     for k in gone {
                         let _ = seat.passed.remove(&k);
                     }
+                    // So is a task rested and no longer before it.
+                    let gone: Vec<Vec<u8>> = seat.rested.scoped().map(|(k, _)| k).filter(|k| !before.iter().any(|id| id.as_slice() == k.as_slice())).collect();
+                    for k in gone {
+                        let _ = seat.rested.remove(&k);
+                    }
                 }
                 for id in before {
                     if !seat.answered.contains(&id) && !seat.solving.contains(&id) {
@@ -498,6 +511,7 @@ impl Entity {
                     false => {
                         seat.passed.insert(id, offer.charts);
                         me.passed(super::offer::PASSED_SEAT);
+                        me.note_task(&id, super::perceive::Reading::Task, |t| t.stop = Some(super::perceive::Stop::Lapsed));
                     }
                 }
             }
@@ -513,39 +527,60 @@ impl Entity {
     /// refused is not posted again until its address changes. Read on the
     /// task's own ground (the auditor's ruling, 2026-10-18): the tests are
     /// spoken and the sentence minted where the demonstrations name it.
+    ///
+    /// Where the reading stopped is kept on the task's attribution, and a
+    /// task read and not solved rests until the mind's language moves
+    /// (`Seat::rested`).
     fn solve_before(&mut self, seat: &mut Seat, key: &ed25519_dalek::SigningKey, id: &[u8; 32], train: Vec<crate::transducer::family::TrainPair>, tests: Vec<crate::arc::Grid>) {
+        use super::perceive::{Reading, Stop};
         let ground = crate::arc::ground_of(&train);
-        crate::arc::on_ground(ground, || self.solve_before_on_ground(seat, key, id, train, tests))
+        let Some(stop) = crate::arc::on_ground(ground, || self.solve_before_on_ground(seat, key, id, train, tests)) else { return };
+        self.note_task(id, Reading::Task, |t| {
+            t.taken = true;
+            t.stop = Some(stop);
+        });
+        if stop != Stop::Sent {
+            seat.rested.insert(id, self.epigenome.atlas_root());
+        }
     }
 
-    fn solve_before_on_ground(&mut self, seat: &mut Seat, key: &ed25519_dalek::SigningKey, id: &[u8; 32], train: Vec<crate::transducer::family::TrainPair>, tests: Vec<crate::arc::Grid>) {
+    /// Where the reading stopped; `None` where nothing was read (the seat
+    /// is not held).
+    fn solve_before_on_ground(&mut self, seat: &mut Seat, key: &ed25519_dalek::SigningKey, id: &[u8; 32], train: Vec<crate::transducer::family::TrainPair>, tests: Vec<crate::arc::Grid>) -> Option<super::perceive::Stop> {
+        use super::perceive::Stop;
         if !seat.hold.held {
-            return;
+            return None;
         }
         let gen = self.epigenome.atlas_root();
         if seat.refused.get(id).is_some_and(|(root, _)| *root == gen) {
-            return;
+            return Some(Stop::RefusedBefore);
         }
         let frames = match seat.memo.holds(id, &gen) {
             true => crate::transducer::family::Frames::new(),
             false => crate::transducer::family::perceive_family(&train),
         };
         let mut budget = self.stroke_n(crate::transducer::family::extraction_spend(&train, &frames));
-        let Some(rule) = crate::transducer::family::extract_rule_cached(&mut seat.memo, id, &train, gen, &mut budget, &self.epigenome, Some(&frames)) else { return };
+        let Some(rule) = crate::transducer::family::extract_rule_cached(&mut seat.memo, id, &train, gen, &mut budget, &self.epigenome, Some(&frames)) else {
+            return Some(match budget.remaining() {
+                0 => Stop::NoRuleUnread,
+                _ => Stop::NoRule,
+            });
+        };
         let _ = self.speak_form(&rule, &train, &frames, id, &mut budget);
         let outs: Option<Vec<crate::arc::Grid>> = tests.iter().map(|x| crate::transducer::family::speak_rule(&rule, x, &self.epigenome).filter(|s| s.remainder.is_empty()).and_then(|s| s.grid())).collect();
-        let Some(outs) = outs else { return };
-        let Some(minted) = self.mint_solve(&rule, &train) else { return };
-        let Ok(crossed) = crate::client::sdk::rule::crossing(&minted, &train, &self.epigenome) else { return };
+        let Some(outs) = outs else { return Some(Stop::TestsUnspoken) };
+        let Some(minted) = self.mint_solve(&rule, &train) else { return Some(Stop::Unminted) };
+        let Ok(crossed) = crate::client::sdk::rule::crossing(&minted, &train, &self.epigenome) else { return Some(Stop::Uncrossed) };
         if seat.refused.get(id).is_some_and(|(_, addr)| addr.as_slice() == crossed.address().as_bytes()) {
-            return;
+            return Some(Stop::RefusedBefore);
         }
         // 78.157 §3a, 78.158a U2 — the home check on the court-stamped words;
         // unread at home goes to the court, which resumes it.
         let resolve = |a: &[u8]| self.epigenome.court_word(a).and_then(|e| e.form().cloned());
         match crate::client::sdk::rule::would_judge_with(&crossed, &train, &resolve, &self.epigenome, &mut budget) {
             Ok(()) | Err(crate::client::sdk::rule::NoRule::Unread) => {}
-            Err(_) => return,
+            Err(crate::client::sdk::rule::NoRule::CitesUnheld(_)) => return Some(Stop::CitesUnheld),
+            Err(_) => return Some(Stop::Refuted),
         }
         let shapes = |g: &crate::arc::Grid| match g.as_slice() {
             [row, ..] => (g.len(), row.len()),
@@ -558,7 +593,7 @@ impl Entity {
             },
             [] => Vec::new(),
         };
-        let Some(args) = solve_args(&crossed, &outs, &steps) else { return };
+        let Some(args) = solve_args(&crossed, &outs, &steps) else { return Some(Stop::Unsubmitted) };
         let (at, key, id, addr) = (seat.at, key.clone(), *id, crossed.address().as_bytes().to_vec());
         met(&mut seat.met.calls);
         let posted = args.clone();
@@ -570,5 +605,6 @@ impl Entity {
                 });
             }
         });
+        Some(Stop::Sent)
     }
 }
