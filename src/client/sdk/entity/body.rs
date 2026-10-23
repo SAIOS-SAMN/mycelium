@@ -303,7 +303,18 @@ impl Entity {
                     body.seats.push(Seat::new(SeatName { domain: body.domain, sub_origin: body.sub_origin, seat }));
                 }
             }
+            // A NEW LISTING EPOCH VOIDS EVERY HOLD (2026-10-23): a house that
+            // listed anew holds no seat for its earlier takers — netstratum's
+            // restart gave seat 1 to n3 while n4, still reading itself the
+            // holder, took nothing and its declination was refused "the
+            // caller does not hold the seat". Each seat is let go, and taken
+            // again under the new epoch.
+            let fresh = named.as_ref().map(|(epoch, _)| *epoch);
+            let renewed = matches!((body.listed, fresh), (Some(old), Some(new)) if old != new);
             for seat in &mut body.seats {
+                if renewed {
+                    seat.hold.let_go();
+                }
                 seat.listed = named.as_ref().and_then(|(epoch, listed)| listed.contains(&seat.at.seat).then_some(*epoch));
             }
             body.listed = named.map(|(epoch, _)| epoch);
