@@ -165,9 +165,79 @@ impl Entity {
                 }
             }
         }
+        if out.is_empty() {
+            return self.curiosity_focus();
+        }
         out
     }
 
+    /// THE CORPUS CURIOSITY LAW (the auditor's ruling, 2026-10-23): where the
+    /// ground focus meets nothing — the language speaks on no chart the corpus
+    /// stands on, and a restarted voice rested at K 0 beside fifty unread
+    /// families — the vacuum couples to the NEAREST stratum. A corpus chart's
+    /// affinity is the deepest exact prefix of axes (A21, `ChartAxis`
+    /// compared exactly) it shares with any chart the language speaks on; the
+    /// focus is the corpus charts of greatest affinity, in key order. Where
+    /// none shares even one leading axis, the canonically least corpus chart:
+    /// a mind is never frozen cold. Engaged only from the ground state, and
+    /// only while its exact focus is empty; the first admission's orbits take
+    /// the focus over.
+    fn curiosity_focus(&self) -> Keyed<()> {
+        let language: Vec<crate::transducer::stalk::Invariant> =
+            self.epigenome.spoken_charts().iter().filter_map(|k| crate::transducer::stalk::Invariant::from_key(k)).collect();
+        curiosity(&language, self.board.corpus.at.scoped().map(|(coord, _)| coord))
+    }
+}
+
+/// THE CURIOSITY LAW'S SELECTION (`Entity::curiosity_focus`), on the
+/// language's charts and the corpus's coordinates in key order: the corpus
+/// charts of greatest exact shared-prefix depth with the language; where none
+/// shares a leading axis, the least corpus chart alone.
+pub(crate) fn curiosity(language: &[crate::transducer::stalk::Invariant], coords: impl Iterator<Item = Vec<u8>>) -> Keyed<()> {
+    use crate::transducer::stalk::Invariant;
+    {
+        let depth = |a: &Invariant, b: &Invariant| a.0.iter().zip(&b.0).take_while(|(x, y)| x == y).count();
+        let mut best: Option<usize> = None;
+        let mut out: Keyed<()> = Keyed::new();
+        for coord in coords {
+            let [COORD_CHART, chart @ ..] = coord.as_slice() else { continue };
+            let Some(inv) = Invariant::from_key(chart) else { continue };
+            // The comparison the ruling states (Concordance 1.10): the deepest
+            // prefix shared with any spoken chart; none shared — or a language
+            // that speaks on no chart — shares depth 0.
+            let affinity = language.iter().fold(0usize, |deepest, l| {
+                let d = depth(&inv, l);
+                match d > deepest {
+                    true => d,
+                    false => deepest,
+                }
+            });
+            match best {
+                Some(b) if affinity < b => {}
+                Some(b) if affinity == b => {
+                    out.insert(&coord, ());
+                }
+                _ => {
+                    best = Some(affinity);
+                    out = Keyed::new();
+                    out.insert(&coord, ());
+                }
+            }
+        }
+        // No shared axis at all: the least chart alone (key order is the
+        // scoped order, so the first inserted stands first).
+        if best == Some(0) {
+            if let Some((least, ())) = out.scoped().next() {
+                let mut one: Keyed<()> = Keyed::new();
+                one.insert(&least, ());
+                return one;
+            }
+        }
+        out
+    }
+}
+
+impl Entity {
     /// THE CORPUS AT A WINDING (the module's rule): the feed's arrivals
     /// placed; then, one scene at a time, the item the focus meets taken in
     /// where the reserve carries its measure — else it waits, and the mind's

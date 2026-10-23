@@ -288,6 +288,12 @@ impl Epigenome {
         self.by_moduli.get(chart).is_some_and(|bucket| !bucket.is_empty())
     }
 
+    /// THE CHARTS THE LANGUAGE SPEAKS ON, each by its key, in key order —
+    /// what the ground state's curiosity measures the corpus against.
+    pub(crate) fn spoken_charts(&self) -> Vec<Vec<u8>> {
+        self.by_moduli.scoped().filter(|(_, bucket)| !bucket.is_empty()).map(|(k, _)| k).collect()
+    }
+
     /// THE WORDS THE LANGUAGE FILES ON A CHART (its key), in the carrier's
     /// own order: what can speak on a body standing there. One keyed read.
     pub(crate) fn words_on(&self, chart: &[u8]) -> Vec<Vec<u8>> {

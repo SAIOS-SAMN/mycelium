@@ -130,11 +130,12 @@ fn feed_of(name: &str, families: &[(&str, Vec<(crate::arc::Grid, crate::arc::Gri
 /// THE CORPUS IS MET WHERE THE MIND'S ORBITS STAND, never along a file's line
 /// (the operator, 2026-10-18). Two families wait in the feed, two cells
 /// swapping hues 3 and 4 first in file order and two swapping 1 and 2 after
-/// it. A mind whose field holds no orbit meets neither: both stay on disk,
-/// undisturbed. A mind whose field rings a 𝒢 orbit on the support {1, 2}
-/// meets the family whose hue fibre moves those hues — at that orbit's own
-/// coordinate — and takes it in, its file retired; the other lies elsewhere
-/// and stays.
+/// it. A mind whose field holds no orbit and whose language speaks on no
+/// chart is never frozen (the curiosity law, 2026-10-23): it meets exactly one
+/// — the least corpus chart — and takes it in, the other undisturbed. A mind
+/// whose field rings a 𝒢 orbit on the support {1, 2} meets the family whose
+/// hue fibre moves those hues — at that orbit's own coordinate — and takes it
+/// in, its file retired; the other lies elsewhere and stays.
 #[test]
 fn the_corpus_is_met_where_the_minds_orbits_stand() {
     use crate::transducer::cech::Thread;
@@ -145,8 +146,10 @@ fn the_corpus_is_met_where_the_minds_orbits_stand() {
     let mut field = std::mem::take(&mut quiet.field);
     field.think(|| quiet.corpus_inflow(&mut crate::physics::StrokeOutcome::default()));
     quiet.field = field;
-    assert_eq!(quiet.board.corpus.size().0, 2, "both families placed at their coordinates");
-    assert!(still.join("feed/a-three.json").exists() && still.join("feed/b-one.json").exists() && !quiet.perceiving(), "no orbit: nothing met, both undisturbed");
+    assert_eq!(quiet.board.corpus.size().0, 1, "both placed, one met and taken off the corpus");
+    let stayed = [still.join("feed/a-three.json").exists(), still.join("feed/b-one.json").exists()];
+    assert_eq!(stayed.iter().filter(|s| **s).count(), 1, "no orbit, no language: the least chart met, the other undisturbed");
+    assert!(quiet.perceiving(), "never frozen: the one met is on the perception carrier");
     let home = feed_of("focus-ringing", &families);
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("ringing"));
     mind.open_feed(home.clone());
@@ -203,6 +206,35 @@ fn a_mind_at_rest_meets_what_its_language_speaks_on_and_the_admission_moves_its_
     assert!(home.join("feed/a-slide.json").exists(), "the slide, on charts its language does not speak on, stays undisturbed");
     assert!(excited, "the admission excites the field: its orbits are the focus now");
     let _ = std::fs::remove_dir_all(&home);
+}
+
+/// THE CORPUS CURIOSITY LAW (the auditor's ruling, 2026-10-23): where the
+/// ground focus meets nothing, the vacuum couples to the nearest stratum — the
+/// corpus charts sharing the deepest exact prefix of axes with a chart the
+/// language speaks on, ties all held in key order; where none shares a leading
+/// axis, or the language speaks on no chart, the least corpus chart alone.
+#[test]
+fn the_ground_state_couples_to_the_nearest_stratum_when_its_language_meets_nothing() {
+    use crate::client::sdk::entity::focus::curiosity;
+    use crate::transducer::stalk::Invariant;
+    let coord = |ns: &[u64]| {
+        let mut c = vec![b'c'];
+        c.extend_from_slice(Invariant::counts(ns).key().as_bytes());
+        c
+    };
+    let held = |k: &crate::network::nerve::Keyed<()>| k.scoped().map(|(c, ())| c).collect::<Vec<_>>();
+    let language = [Invariant::counts(&[2, 1, 0])];
+    // depth 2, depth 1, depth 0, depth 2 — in no particular order of arrival.
+    let corpus = [coord(&[2, 1, 5]), coord(&[2, 9]), coord(&[7]), coord(&[2, 1, 6])];
+    let mut nearest = vec![coord(&[2, 1, 5]), coord(&[2, 1, 6])];
+    nearest.sort();
+    assert_eq!(held(&curiosity(&language, corpus.iter().cloned())), nearest, "the deepest shared prefix, its ties all held");
+    let disjoint = [Invariant::counts(&[9])];
+    let mut all = corpus.to_vec();
+    all.sort();
+    let least = vec![all[0].clone()];
+    assert_eq!(held(&curiosity(&disjoint, all.iter().cloned())), least, "no shared axis: the least chart alone");
+    assert_eq!(held(&curiosity(&[], all.iter().cloned())), least, "a language on no chart: the least chart alone");
 }
 
 /// A RESIDUAL CHAIN IS AN OPEN QUESTION, NEVER A WORD (the operator,
