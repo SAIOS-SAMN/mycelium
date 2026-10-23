@@ -530,6 +530,12 @@ pub struct Entity {
     /// hypha on its own thread (`Entity::ask_seat`), so a slow house holds
     /// that carrier and never the mind.
     pub(crate) seat: super::entity::hypha::Hypha,
+    /// THE SEAT'S PERCEIVING CARRIER (2026-10-23): the held mail read alone
+    /// (`Entity::ask_held`), on its own thread and session. The court holds
+    /// that read to its next event; on the seat's carrier it blocked every
+    /// take, solve and declination queued behind it, and a call the court
+    /// never received could not be the event that released the read.
+    pub(crate) held: super::entity::hypha::Hypha,
     pub epigenome: Epigenome,
     /// Rotating cursor for the refinement probe — one genome word examined
     /// per stroke, so the compression search is metabolic, never a sweep.

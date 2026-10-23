@@ -111,11 +111,12 @@ fn an_occluded_wire_is_read_again() {
     }
 }
 
-/// MU-CLIENT §5.1, §6 — A SILENT HOUSE HOLDS ONLY THE SEAT'S CARRIER. A mind
+/// MU-CLIENT §5.1, §6 — A SILENT HOUSE HOLDS ONLY THE SEAT'S CARRIERS. A mind
 /// sits a seat in a house that takes every connection and never answers. Its
-/// body's stroke returns at once — the take and the first page of its mail
-/// posted on the seat's own carrier, waiting there — and nothing of it rides
-/// the court's carrier.
+/// body's stroke returns at once — the take posted on the seat's own carrier,
+/// the first page of its mail on the perceiving carrier, which the court holds
+/// to its next event and so never stands in front of a take, solve or
+/// declination (2026-10-23) — and nothing of it rides the court's carrier.
 #[test]
 fn a_silent_house_holds_only_the_seats_carrier() {
     let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("the house listens");
@@ -131,8 +132,9 @@ fn a_silent_house_holds_only_the_seats_carrier() {
     let key = ed25519_dalek::SigningKey::from_bytes(&[7; 32]);
     mind.sit([5; 32], None, crate::client::sdk::entity::body::Sit::Seats(vec![1]), key);
     mind.body_tick();
-    assert_eq!(mind.seat.in_flight(), 2, "the take and the first page wait on the seat's carrier");
+    assert_eq!(mind.seat.in_flight(), 1, "the take waits on the seat's carrier");
+    assert_eq!(mind.held.in_flight(), 1, "the first page waits on the perceiving carrier, apart from the take");
     assert_eq!(mind.hypha.in_flight(), 0, "the court's carrier carries none of it");
     mind.body_tick();
-    assert_eq!(mind.seat.in_flight(), 2, "a page in flight is not asked again: one reading of the box at a time");
+    assert_eq!(mind.held.in_flight(), 1, "a page in flight is not asked again: one reading of the box at a time");
 }

@@ -50,9 +50,13 @@ impl Entity {
         // The seat's carrier lands on the mind's own waker: a house's percept
         // wakes the resting mind that is to take it up.
         let hypha = super::hypha::Hypha::open(Session::open(addr, kernel.clone()));
-        let seat = super::hypha::Hypha::open_beside(Session::open(addr, kernel), hypha.waker());
+        let seat = super::hypha::Hypha::open_beside(Session::open(addr, kernel.clone()), hypha.waker());
+        // The held mail read on a carrier of its own, so it never stands in
+        // front of a take, a solve or a declination.
+        let held = super::hypha::Hypha::open_beside(Session::open(addr, kernel), hypha.waker());
         Entity {
             seat,
+            held,
             hypha,
             epigenome: Epigenome::new(),
             solve_refused: crate::network::nerve::Keyed::new(),

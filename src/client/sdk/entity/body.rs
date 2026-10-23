@@ -355,7 +355,10 @@ impl Entity {
             None => 0,
         };
         let (key, after) = (body.key.clone(), body.after);
-        self.ask_seat(move |s| s.mail(&key, after, held_epoch), |me, read| me.read_mail_page(read));
+        // On the perceiving carrier: the court holds this read to its next
+        // event, and on the seat's carrier it stood in front of every take,
+        // solve and declination (2026-10-23).
+        self.ask_held(move |s| s.mail(&key, after, held_epoch), |me, read| me.read_mail_page(read));
     }
 
     /// A PAGE OF THE SHARED BOX, landed: each piece perceived at the seat it

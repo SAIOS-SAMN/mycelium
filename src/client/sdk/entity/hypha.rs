@@ -284,9 +284,21 @@ impl Entity {
         take_from(self, |e| Some(&mut e.hypha.carrier));
     }
 
-    /// THE HOUSE'S ANSWERS TAKEN off the seat's carrier, in the order asked.
+    /// THE HELD MAIL READ, posted on the perceiving carrier alone
+    /// (`Entity::held`), never in front of the seat's own acts.
+    pub(crate) fn ask_held<R: Send + 'static>(
+        &mut self,
+        wire: impl FnOnce(&mut Session) -> R + Send + 'static,
+        then: impl FnOnce(&mut Entity, R) + 'static,
+    ) {
+        post(&mut self.held.carrier, wire, then);
+    }
+
+    /// THE HOUSE'S ANSWERS TAKEN off the seat's carrier and the perceiving
+    /// carrier, each in the order asked.
     pub(crate) fn take_seat_answers(&mut self) {
         take_from(self, |e| Some(&mut e.seat.carrier));
+        take_from(self, |e| Some(&mut e.held.carrier));
     }
 
     /// Every answer asked for, taken: the field waits on its court. A guard's
