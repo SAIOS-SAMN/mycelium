@@ -19,7 +19,23 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## The sphere universe founded; the relay read storm closed (2026-10-22 23:29) — where it stands
+## The seat petition lifecycle, end to end; a quiet window (2026-10-23 19:00) — where it stands
+Courts on 8718fede (since 2026-10-22 21:28); voices 1–5 and seats n1–n4 on
+1303224d (19:00:16). QUIET WINDOW to ~01:00: no restarts on mycelium,
+netstratum or xylarium unless something breaks (agreed by all three; one
+build lock, /run/user/1000/xyl-heavy.lock). The seat lifecycle is witnessed
+whole: netstratum's house percept → seat → pull by citation from the court
+the citation routes to → every task evaluated (no coupling gate) → solve
+(fn 1) or declination (fn 2, `[Key(citation), Count(stop)]`) → the court's
+judgment (first seat solve, 8dcab6cb: SOLVE_NOTHING; first accepted
+declination 16:01:39, 20 s after its percept). Today's seat-path fixes:
+c21b8ecf, 91d1c1c8, a65b3510, 0bc9dea5, e6de9833, eedc20fd, 25b72099,
+924dfe63, 44b576fc, 1303224d. Registries: 14 distinct tasks settled (a 8,
+b 5, c 4); court basis a 6 616 / b 7 153 / c 6 697. Open: rule quality
+(unminted, no rule, wrong rules), and four of five voices idling at K 0
+after restarts — the window's offline work.
+
+## The sphere universe founded; the relay read storm closed (2026-10-22 23:29)
 Courts on 8718fede (since 21:28:41); voices 1–5 and seats n1–n4 on
 1d391d68 (23:03:26). netstratum's SPHERE domain 7119e487… is founded on
 court a — origin Sphere((17,2)), its reserve, its ledger — and lists two
