@@ -256,7 +256,20 @@ impl Entity {
             // A task read and not solved rests until the language moves.
             let rests = |id: &[u8; 32]| seat.rested.get(id).is_some_and(|root| *root == self.epigenome.atlas_root());
             match task {
-                Some(id) if uncoupled(&id) || rests(&id) => {}
+                Some(id) if uncoupled(&id) => {}
+                // A TASK RESTING, SET BEFORE THE SEAT AGAIN, IS DECLINED AGAIN
+                // at once with the stop it was read to — no pull, no reading:
+                // a seat never holds a petition in silence (2026-10-23: the
+                // house handed n2's declined 831504eb straight back, and the
+                // resting seat held it mute for the house's whole patience).
+                Some(id) if rests(&id) => {
+                    let code = self.board.tasks.get(&id).and_then(|t| t.stop).and_then(|s| s.code());
+                    if let (true, Some(code)) = (seat.hold.held, code) {
+                        let (key, args) = (key.clone(), decline_args(&id, code));
+                        met(&mut seat.met.calls);
+                        self.ask_seat(move |s| s.call(at, &key, FN_DECLINE, args), |_, _: io::Result<(Result<u64, Refusal>, [u8; 32])>| {});
+                    }
+                }
                 Some(id) if !seat.answered.contains(&id) && !seat.solving.contains(&id) && seat.hold.held => {
                     let _ = seat.passed.remove(&id);
                     self.pull_before(at, key, id)
