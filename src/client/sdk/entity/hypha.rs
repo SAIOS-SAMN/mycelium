@@ -100,9 +100,26 @@ impl Hypha {
     /// discovers the nerve before it carries the first ask: a court still
     /// waking holds the carrier, never the mind's boot.
     pub(crate) fn open(session: Session) -> Hypha {
+        Hypha::open_waking(session, None)
+    }
+
+    /// A CARRIER BESIDE THE MIND'S, whose landings wake the mind's own rest
+    /// (`mind`, the main hypha's waker): the seat's carrier is one — the
+    /// mind blocks on its main hypha alone, and a seat's answer woke a
+    /// channel no one waited on, so a percept the house filed sat unread
+    /// until something else woke the mind (2026-10-23: n4, 31 minutes).
+    pub(crate) fn open_beside(session: Session, mind: Sender<()>) -> Hypha {
+        Hypha::open_waking(session, Some(mind))
+    }
+
+    fn open_waking(session: Session, mind: Option<Sender<()>>) -> Hypha {
         let kernel = session.kernel().clone();
         let view = Arc::new(Mutex::new(View::of(&session)));
-        let (wake, woken) = channel::<()>();
+        let (own, woken) = channel::<()>();
+        let wake = match mind {
+            Some(w) => w,
+            None => own,
+        };
         let (first, every) = (Arc::clone(&view), Arc::clone(&view));
         let publish = |v: &Arc<Mutex<View>>, s: &Session| {
             if let Ok(mut held) = v.lock() {

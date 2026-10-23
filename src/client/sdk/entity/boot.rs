@@ -47,9 +47,13 @@ impl Entity {
         // tether condensed and face sealed winds its strain into the field.
         let mut contemplation = crate::transducer::bubble::Contemplation::new();
         contemplation.complex.arm_outflow();
+        // The seat's carrier lands on the mind's own waker: a house's percept
+        // wakes the resting mind that is to take it up.
+        let hypha = super::hypha::Hypha::open(Session::open(addr, kernel.clone()));
+        let seat = super::hypha::Hypha::open_beside(Session::open(addr, kernel), hypha.waker());
         Entity {
-            seat: super::hypha::Hypha::open(Session::open(addr, kernel.clone())),
-            hypha: super::hypha::Hypha::open(Session::open(addr, kernel)),
+            seat,
+            hypha,
             epigenome: Epigenome::new(),
             solve_refused: crate::network::nerve::Keyed::new(),
             taught_up: crate::network::nerve::Keyed::new(),
