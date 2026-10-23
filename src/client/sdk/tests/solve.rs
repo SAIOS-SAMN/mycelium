@@ -63,6 +63,25 @@ fn a_seats_solve_outcome_reads_learned_against_fn_one() {
     assert_eq!(m.outcome(&other), None);
 }
 
+/// THE DECLINATION (the auditor's ruling, 2026-10-23): a seat whose reading
+/// stops short of a solve calls fn 2 with the task's citation and its stop's
+/// code, and the call travels whole through the codec the house reads — a
+/// function apart from the solve's.
+#[test]
+fn a_declination_names_its_task_and_its_stop() {
+    use crate::anastome::dialogue::seat::{put_args, take_args, Arg};
+    use crate::client::sdk::seat_mind::task::{decline_args, FN_DECLINE, FN_SOLVE};
+    assert_ne!(FN_DECLINE, FN_SOLVE, "a declination is no solve");
+    let cite = [0x4b; 32];
+    let args = decline_args(&cite, 1);
+    assert_eq!(args, vec![Arg::Key(cite), Arg::Count(1)], "the citation, then the stop's code");
+    let mut b = Vec::new();
+    put_args(&mut b, &args).expect("the args write");
+    let mut p = 0;
+    assert_eq!(take_args(&b, &mut p), Some(args), "read back whole");
+    assert_eq!(p, b.len());
+}
+
 /// 78.158a SIT-ALL — A LISTING OF N SEATS SITS N: `listed_seats` reads every
 /// seat a SEATS listing offers with its epoch, and `reseat` reads a listing
 /// against the seats sat — a first listing takes all N; a re-listing takes

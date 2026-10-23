@@ -222,6 +222,13 @@ impl Stop {
     pub(crate) fn name(self) -> &'static str {
         STOPS[self.index()]
     }
+
+    /// The stop as the wire carries it — one past its place in [`STOPS`],
+    /// as the typed reading codes it (`observe::TaskSeen`); `None` past a
+    /// count's carrier, never clamped.
+    pub(crate) fn code(self) -> Option<u64> {
+        u64::try_from(self.index()).ok()?.checked_add(1)
+    }
 }
 
 impl Stop {

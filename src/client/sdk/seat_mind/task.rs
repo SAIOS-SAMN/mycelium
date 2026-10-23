@@ -27,6 +27,18 @@ pub const KIND_TASK: u16 = 4;
 /// The function a seat solves a task by.
 pub const FN_SOLVE: u16 = 1;
 
+/// THE FUNCTION A SEAT DECLINES A TASK BY (the auditor's ruling, 2026-10-23):
+/// where its reading stops short of a solve, the seat says so — `[Key(the
+/// task's citation), Count(the stop)]`, the stop one past its place in
+/// `perceive::STOPS` — and the house frees the seat at once, never after its
+/// patience. Silence was ambiguous: in flight, or given up.
+pub const FN_DECLINE: u16 = 2;
+
+/// The arguments of a declination: the task's citation and the stop's code.
+pub fn decline_args(citation: &[u8; 32], stop: u64) -> Vec<Arg> {
+    vec![Arg::Key(*citation), Arg::Count(stop)]
+}
+
 /// The D4 kinds in the house's order: kind `i + 1` is `D4[i]`.
 pub const D4: [Symmetry; 6] =
     [Symmetry::Rotate90, Symmetry::Rotate180, Symmetry::Rotate270, Symmetry::FlipH, Symmetry::FlipV, Symmetry::Transpose];

@@ -23,7 +23,7 @@
 
 use crate::anastome::dialogue::seat::{MailRead, Refusal, SignedPost};
 use crate::client::sdk::seat::{seat_fns, MindMail, MindRead, SeatHold, SeatName};
-use crate::client::sdk::seat_mind::task::{grid_steps, solve_args, tasks_before, FN_SOLVE};
+use crate::client::sdk::seat_mind::task::{decline_args, grid_steps, solve_args, tasks_before, FN_DECLINE, FN_SOLVE};
 use crate::client::sdk::seat_mind::Decision;
 use crate::client::sdk::*;
 
@@ -561,7 +561,9 @@ impl Entity {
             }
             Decision::Awaiting { .. } => return,
         };
-        if choice.fn_id == FN_SOLVE {
+        // The house's petitions are answered by their own acts, never by a
+        // beat: a solve, or its declination.
+        if choice.fn_id == FN_SOLVE || choice.fn_id == FN_DECLINE {
             return;
         }
         let mut encoded = Vec::new();
@@ -604,19 +606,14 @@ impl Entity {
                 return;
             }
             let Some(env) = dialogue::decode_task_envelope(&body) else { return unread(me) };
-            let offer = super::offer::Offer::of(&env.train);
-            let couples = me.couples(&id, &offer.charts);
+            // EVERY TASK THE HOUSE SETS IS EVALUATED (the auditor's ruling,
+            // 2026-10-23): a seat's attention is its house's, and a resting
+            // seat's field couples to nothing — the coupling gate passed every
+            // petition. The petition path itself is the gate (`solve_before`).
             let Some(mut b) = me.board.body.take() else { return };
             if let Some(seat) = b.seats.iter_mut().find(|s| s.at == at) {
                 let _ = seat.unpulled.remove(&id);
-                match couples {
-                    true => me.solve_before(seat, &key, &id, env.train, env.tests),
-                    false => {
-                        seat.passed.insert(id, offer.charts);
-                        me.passed(super::offer::PASSED_SEAT);
-                        me.note_task(&id, super::perceive::Reading::Task, |t| t.stop = Some(super::perceive::Stop::Lapsed));
-                    }
-                }
+                me.solve_before(seat, &key, &id, env.train, env.tests);
             }
             me.board.body = Some(b);
         });
@@ -644,6 +641,14 @@ impl Entity {
         });
         if stop != Stop::Sent {
             seat.rested.insert(id, self.epigenome.atlas_root());
+            // THE DECLINATION (the auditor's ruling, 2026-10-23): a reading
+            // stopped short of a solve is said to the house, which frees the
+            // seat at once — never left to its patience.
+            if let Some(code) = stop.code() {
+                let (at, key, args) = (seat.at, key.clone(), decline_args(id, code));
+                met(&mut seat.met.calls);
+                self.ask_seat(move |s| s.call(at, &key, FN_DECLINE, args), |_, _: io::Result<(Result<u64, Refusal>, [u8; 32])>| {});
+            }
         }
     }
 

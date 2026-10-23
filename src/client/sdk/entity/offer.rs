@@ -35,9 +35,10 @@ use crate::client::sdk::*;
 
 /// The kinds of offer a mind passes, as the observer names them, each at its
 /// slot of `Board::offers_passed`.
-pub(crate) const PASSED: [&str; 2] = ["court task", "seat task"];
+/// A seat passes nothing: its house's tasks are every one evaluated (the
+/// auditor's ruling, 2026-10-23), so the court's task is the one kind.
+pub(crate) const PASSED: [&str; 1] = ["court task"];
 pub(crate) const PASSED_TASK: usize = 0;
-pub(crate) const PASSED_SEAT: usize = 1;
 
 /// ONE OFFER STANDING AT A BOUNDARY: the charts its bodies stand on, read
 /// once where it landed, and whether it has waited across a return.

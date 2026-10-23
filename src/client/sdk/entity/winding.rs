@@ -105,7 +105,7 @@ pub(crate) struct Board {
     pub(crate) question_waits: bool,
     /// The offers passed uncoupled since the mind began, by kind
     /// (`offer::PASSED`) — a reading, never read back by cognition.
-    pub(crate) offers_passed: [u64; 2],
+    pub(crate) offers_passed: [u64; 1],
     /// WHERE EACH SCENE'S COMPREHENSION STOPPED since the mind began, by what
     /// it was taken as (`perceive::Reading`) and the stop (`perceive::Stop`) —
     /// a reading, never read back by cognition.
