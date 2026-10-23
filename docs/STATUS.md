@@ -19,7 +19,21 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## The seat petition lifecycle, end to end; a quiet window (2026-10-23 19:00) — where it stands
+## The curiosity law woke the voices (2026-10-23 21:13) — where it stands
+Voices 1–4 on 6fa43cc0 (20:58:11); voice 5, seats, courts as below. Four
+restarted voices had rested at K 0: their ground focus (corpus charts their
+language speaks on) met nothing, and no hearing coupled (no scene-bound
+evidence on the wire). The auditor ruled the corpus curiosity law: where the
+exact ground focus is empty, the corpus charts of deepest exact shared
+axis-prefix with the language (`curiosity`), else the least chart. In 15
+minutes each voice took up ~45 families (feed 50 → 5), K 61–131, 2–3 known
+each, conversation 100–150 rings heard; courts settled 8 new tasks (f094988f
+consilient; 31691096 and 56bbc4bc by seat mind a54249a5) — registries 22
+distinct (a 14, b 7, c 6). Ground-state hearing (f720338c) kept, now with
+evidence on the wire. Watch: the feeds near empty — whether court tasks and
+conversation carry the voices on.
+
+## The seat petition lifecycle, end to end; a quiet window (2026-10-23 19:00)
 Courts on 8718fede (since 2026-10-22 21:28); voices 1–5 and seats n1–n4 on
 1303224d (19:00:16). QUIET WINDOW to ~01:00: no restarts on mycelium,
 netstratum or xylarium unless something breaks (agreed by all three; one
