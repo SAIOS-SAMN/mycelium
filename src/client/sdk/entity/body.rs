@@ -261,6 +261,14 @@ impl Entity {
                     let _ = seat.passed.remove(&id);
                     self.pull_before(at, key, id)
                 }
+                // A TASK BEFORE A SEAT NOT YET HELD waits for the hold, taken
+                // up again at a later landing (`unpulled`): a restarted mind
+                // reads the house's percept before its re-take is answered,
+                // and the task was skipped for good (2026-10-23: n4, percepts 1,
+                // held false, nothing pulled).
+                Some(id) if !seat.hold.held && !seat.answered.contains(&id) && !seat.solving.contains(&id) => {
+                    seat.unpulled.insert(id, ());
+                }
                 Some(_) => {}
                 None => self.beat(seat, &key),
             }
