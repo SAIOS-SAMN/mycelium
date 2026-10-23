@@ -133,3 +133,36 @@ fn a_hearing_unread_across_a_return_lapses() {
     assert_eq!(mind.board.hearings_lapsed, 2, "unread across a return, the two left lapse");
     assert_eq!(mind.board.hearings_crossed.len(), 2, "the two heard since cross in its place");
 }
+
+/// THE GROUND STATE HEARS ITS LANGUAGE'S CHARTS (the auditor's ground-state
+/// ruling, 2026-10-18, extended to hearing by the operator, 2026-10-23): a
+/// mind at rest — no thought, no orbit, a language that holds a word on the
+/// one-cell body's chart — takes up a hearing whose evidence scene stands on
+/// that chart, and lets one standing only on charts its language does not
+/// speak on wait, as an empty field couples to nothing else.
+#[test]
+fn a_mind_at_rest_hears_what_is_said_on_its_languages_charts() {
+    use crate::client::sdk::entity::converge::Evident;
+    use crate::client::sdk::entity::offer::Offer;
+    use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
+    let at = |c: usize| -> crate::arc::Grid { (0..3).map(|r| (0..3).map(|x| u8::from(r == 1 && x == c)).collect()).collect() };
+    let cell = vec![(at(0), at(1))];
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("at rest"));
+    let mut field = std::mem::take(&mut mind.field);
+    let (elsewhere, on_its_chart) = field.think(|| {
+        let mut b = budget();
+        let (x, y) = &cell[0];
+        let frames = perceive_family(&cell);
+        let f = scene_form_on(&NoCrystal, &mut b, x, y, &frames).expect("the pair reads");
+        let word = crate::transducer::sentence::as_element_form(&f, [1, 0, 0, 0]).expect("a word");
+        mind.epigenome.moduli_admit(&crate::transducer::element::Held::of(word));
+        let speaker = [3u8; 32];
+        mind.perceive_hearing_on(speaker, b"elsewhere".to_vec(), Vec::new(), Evident::True, Offer::of(&two_hours_of_a_slide()).charts);
+        let elsewhere = mind.board.hearing;
+        mind.perceive_hearing_on(speaker, b"on its chart".to_vec(), Vec::new(), Evident::True, Offer::of(&cell).charts);
+        (elsewhere, mind.board.hearing)
+    });
+    mind.field = field;
+    assert!(!elsewhere, "a word said on charts its language does not speak on waits");
+    assert!(on_its_chart, "a word said on a chart its language speaks on is heard at rest");
+}

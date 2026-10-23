@@ -301,6 +301,10 @@ pub(crate) struct Hearing {
     said: Vec<u8>,
     words: Vec<crate::client::sdk::chatter::Spoken>,
     evident: super::converge::Evident,
+    /// The charts the bodies of the scene its evidence names stand on (the
+    /// family read where the evidence was), by key; none where it named no
+    /// scene that read.
+    charts: Vec<Vec<u8>>,
 }
 
 /// A SOLVE TO BE READ BEFORE IT IS SENT (`Entity::solve_task`'s home check),
@@ -328,13 +332,22 @@ pub(crate) enum Verdict {
 /// an orbit or an open tube its motion's modes, or its hue map, fall on
 /// (`Field::lands`). Read on the thinking mind's field; with none standing in
 /// the slots, the lexicon alone.
-fn hearing_couples(h: &Hearing, budget: &mut crate::physics::Budget) -> bool {
+///
+/// THE GROUND STATE HEARS ITS LANGUAGE'S CHARTS (the auditor's ruling on the
+/// ground state, 2026-10-18, extended to hearing by the operator 2026-10-23):
+/// a field with no orbit in motion and none ringing is not deaf — a hearing
+/// whose evidence scene stands on a chart the mind's language speaks on
+/// (`speaks_on`, as `ground_focus` meets the corpus) couples. A restarted
+/// voice had heard 34 rings and read none, its corpus met nothing, and it
+/// rested at K 0 with no sense left that could wake it.
+fn hearing_couples(h: &Hearing, epi: &Epigenome, ground: bool, budget: &mut crate::physics::Budget) -> bool {
     use crate::transducer::sentence::rung::{known, posit};
-    h.words.iter().any(|w| {
-        known(&w.motion)
-            || posit(&w.motion).is_some_and(|p| !p.parts.is_empty())
-            || matches!(crate::transducer::mind::with_field(|f| f.lands(&w.motion, &w.gauge, budget)), Ok(Some(true)))
-    })
+    (ground && h.charts.iter().any(|c| epi.speaks_on(c)))
+        || h.words.iter().any(|w| {
+            known(&w.motion)
+                || posit(&w.motion).is_some_and(|p| !p.parts.is_empty())
+                || matches!(crate::transducer::mind::with_field(|f| f.lands(&w.motion, &w.gauge, budget)), Ok(Some(true)))
+        })
 }
 
 /// THE PERCEPTION CARRIER: the mind's carrier type (`hypha::Carrier`) over
@@ -545,11 +558,17 @@ impl Entity {
     /// by the same mind standing in the place of the one waiting; the next is
     /// taken when the one on the carrier lands (`hear_next`).
     pub(crate) fn perceive_hearing(&mut self, speaker: [u8; 32], said: Vec<u8>, words: Vec<crate::client::sdk::chatter::Spoken>, evident: super::converge::Evident) {
+        self.perceive_hearing_on(speaker, said, words, evident, Vec::new());
+    }
+
+    /// A hearing with the charts its evidence scene's bodies stand on — what
+    /// a field in its ground state hears it by (`hearing_couples`).
+    pub(crate) fn perceive_hearing_on(&mut self, speaker: [u8; 32], said: Vec<u8>, words: Vec<crate::client::sdk::chatter::Spoken>, evident: super::converge::Evident, charts: Vec<Vec<u8>>) {
         let mut key = speaker.to_vec();
         crate::transducer::address::put_key_bytes(&mut key, &said);
         // Said again, it is heard in this traversal, in the place of the first.
         self.board.hearings_crossed.remove(&key);
-        self.board.hearings.insert(&key, Hearing { speaker, said, words, evident });
+        self.board.hearings.insert(&key, Hearing { speaker, said, words, evident, charts });
         self.hear_next();
     }
 
@@ -582,7 +601,11 @@ impl Entity {
             return;
         }
         let mut budget = self.physics.stroke();
-        let mut first = |set: &crate::network::nerve::Keyed<Hearing>| set.scoped().find(|(_, h)| hearing_couples(h, &mut budget)).map(|(k, _)| k);
+        // The ground state: no orbit in motion and none ringing, as the
+        // corpus's focus reads it (`focus_coords`).
+        let ground = matches!(crate::transducer::mind::with_field(|f| f.orbits.focus().is_empty()), Ok(true));
+        let epi = &self.epigenome;
+        let mut first = |set: &crate::network::nerve::Keyed<Hearing>| set.scoped().find(|(_, h)| hearing_couples(h, epi, ground, &mut budget)).map(|(k, _)| k);
         let (now, crossed) = (first(&self.board.hearings), first(&self.board.hearings_crossed));
         let taken = match (now, crossed) {
             (Some(a), Some(b)) if b < a => self.board.hearings_crossed.remove(&b),
@@ -590,7 +613,7 @@ impl Entity {
             (None, Some(b)) => self.board.hearings_crossed.remove(&b),
             (None, None) => None,
         };
-        let Some(Hearing { speaker, said, words, evident }) = taken else { return };
+        let Some(Hearing { speaker, said, words, evident, .. }) = taken else { return };
         self.board.hearing = true;
         let (mut field, from) = crate::transducer::mind::scratch_here();
         let mut remembered = self.remembered.clone();

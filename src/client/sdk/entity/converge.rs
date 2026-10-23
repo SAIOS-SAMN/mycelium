@@ -163,6 +163,16 @@ impl Scenes {
     }
 }
 
+/// THE CHARTS A HEARING IS HEARD BY IN THE GROUND STATE: the charts its
+/// evidence scene's bodies stand on (`Offer::of`), where the word is true
+/// there — a refuted or unread word wakes no resting mind.
+fn charts_heard(evident: Evident, family: &crate::transducer::family::Family) -> Vec<Vec<u8>> {
+    match evident {
+        Evident::True => super::offer::Offer::of(family).charts,
+        _ => Vec::new(),
+    }
+}
+
 impl Entity {
     /// RINGS ANOTHER MIND SAID, WITH THEIR EVIDENCE: read on their scene
     /// before they are understood, so the understanding knows whether the
@@ -186,7 +196,8 @@ impl Entity {
         let held = self.scenes.family(&ev.scene).or_else(|| self.scenes.pulled.get(&ev.scene).map(Vec::as_slice)).map(<[_]>::to_vec);
         if let Some(family) = held {
             let evident = self.scenes.read(&ev.scene, &word, &family, speaker);
-            self.perceive_hearing(speaker, said, words, evident);
+            let charts = charts_heard(evident, &family);
+            self.perceive_hearing_on(speaker, said, words, evident, charts);
             return;
         }
         if self.scenes.pulling.contains(&id) {
@@ -197,18 +208,19 @@ impl Entity {
         self.ask(move |s| s.speak_keyed(&id, act), move |me, body: io::Result<Vec<u8>>| {
             me.scenes.pulling.remove(&id);
             let family = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b)).map(|env| env.train);
-            let evident = match family {
+            let (evident, charts) = match family {
                 Some(f) => {
                     let evident = me.scenes.read(&id, &word, &f, speaker);
+                    let charts = charts_heard(evident, &f);
                     me.scenes.pulled.insert(id, f);
-                    evident
+                    (evident, charts)
                 }
                 None => {
                     me.scenes.read[2] += 1;
-                    Evident::Unread
+                    (Evident::Unread, Vec::new())
                 }
             };
-            me.perceive_hearing(speaker, said, words, evident);
+            me.perceive_hearing_on(speaker, said, words, evident, charts);
         });
     }
 }
