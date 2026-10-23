@@ -59,6 +59,12 @@ struct Seat {
     /// waiting court scene rests (2026-10-22: seat n1 pulled one task by its
     /// citation 8 times at one court height, each reading stopping silently).
     rested: crate::network::nerve::Keyed<crate::transducer::address::Address>,
+    /// THE TASKS WHOSE PULL READ NOTHING — the court deferred it, or its
+    /// reply was no envelope — taken up again at the seat's next mail landing
+    /// (the court's next event), let go when the house sets it aside. A
+    /// pull lost there waited the house's whole patience (~100 min) before the
+    /// task came round again (2026-10-23: court a's door deferring).
+    unpulled: crate::network::nerve::Keyed<()>,
     /// The standing call: (fn, its arguments in the codec's canonical form,
     /// its outcome applied). A setting that stands is not posted again.
     standing: Option<(u16, Vec<u8>, bool)>,
@@ -137,6 +143,7 @@ impl Seat {
             refused: crate::network::nerve::Keyed::new(),
             passed: crate::network::nerve::Keyed::new(),
             rested: crate::network::nerve::Keyed::new(),
+            unpulled: crate::network::nerve::Keyed::new(),
             standing: None,
             met: SeatMet::default(),
         }
@@ -362,6 +369,17 @@ impl Entity {
                 due.extend(self.read_piece(seat, piece).into_iter().map(|id| (at, id)));
             }
         }
+        // A pull that read nothing is asked again at this landing — the
+        // court's next event — never on a clock.
+        for seat in &body.seats {
+            for (k, ()) in seat.unpulled.scoped() {
+                if let Ok(id) = <[u8; 32]>::try_from(k.as_slice()) {
+                    if !due.contains(&(seat.at, id)) {
+                        due.push((seat.at, id));
+                    }
+                }
+            }
+        }
         body.pages = match body.pages.checked_add(1) {
             Some(n) => n,
             None => body.pages,
@@ -419,10 +437,14 @@ impl Entity {
                     for k in gone {
                         let _ = seat.passed.remove(&k);
                     }
-                    // So is a task rested and no longer before it.
+                    // So is a task rested, or unpulled, and no longer before it.
                     let gone: Vec<Vec<u8>> = seat.rested.scoped().map(|(k, _)| k).filter(|k| !before.iter().any(|id| id.as_slice() == k.as_slice())).collect();
                     for k in gone {
                         let _ = seat.rested.remove(&k);
+                    }
+                    let gone: Vec<Vec<u8>> = seat.unpulled.scoped().map(|(k, _)| k).filter(|k| !before.iter().any(|id| id.as_slice() == k.as_slice())).collect();
+                    for k in gone {
+                        let _ = seat.unpulled.remove(&k);
                     }
                 }
                 due.extend(before.into_iter().filter(|id| !seat.answered.contains(id) && !seat.solving.contains(id)));
@@ -524,18 +546,26 @@ impl Entity {
         let voice = self.hypha.kernel().voice();
         let act = dialogue::encode_task_by_id(&voice, &id);
         self.ask(move |s| s.speak_keyed(&id, act), move |me, body: io::Result<Vec<u8>>| {
-            let Ok(body) = body else { return };
+            // A pull that read nothing waits for the next landing (`unpulled`).
+            let unread = |me: &mut Entity| {
+                me.with_body_seat(at, |seat| {
+                    seat.unpulled.insert(id, ());
+                })
+            };
+            let Ok(body) = body else { return unread(me) };
             if body.is_empty() {
                 me.with_body_seat(at, |seat| {
+                    let _ = seat.unpulled.remove(&id);
                     seat.answered.insert(id, ());
                 });
                 return;
             }
-            let Some(env) = dialogue::decode_task_envelope(&body) else { return };
+            let Some(env) = dialogue::decode_task_envelope(&body) else { return unread(me) };
             let offer = super::offer::Offer::of(&env.train);
             let couples = me.couples(&id, &offer.charts);
             let Some(mut b) = me.board.body.take() else { return };
             if let Some(seat) = b.seats.iter_mut().find(|s| s.at == at) {
+                let _ = seat.unpulled.remove(&id);
                 match couples {
                     true => me.solve_before(seat, &key, &id, env.train, env.tests),
                     false => {
