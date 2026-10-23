@@ -361,7 +361,20 @@ impl Entity {
                 body.epoch = Some(epoch);
                 (mail, seq)
             }
-            _ => {
+            // A READ THE WIRE DID NOT CARRY IS ASKED AGAIN (2026-10-23): the
+            // relay holds a read to the court's next event, which outlasts the
+            // transport's deadline; a held read timed out here was dropped,
+            // and the mind, blocked with no read outstanding, never saw the
+            // percept the house filed next (n4: seat 1 held, percepts 0). The
+            // renewal is paced by that deadline, never a spin.
+            Err(_) => {
+                self.ask_mail(&mut body);
+                self.board.body = Some(body);
+                return;
+            }
+            // A refusal names a fault in the read itself (unsigned,
+            // malformed): asking again at once would only be refused again.
+            Ok(Err(_)) => {
                 self.board.body = Some(body);
                 return;
             }
