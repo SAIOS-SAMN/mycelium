@@ -349,6 +349,7 @@ impl Entity {
         if !more {
             body.after = body.after.max(standing_seq);
         }
+        let mut due: Vec<(SeatName, [u8; 32])> = Vec::new();
         for piece in mail {
             let (at, seq) = match &piece {
                 MindMail::Taken(q, t) => (SeatName { domain: t.domain, sub_origin: t.sub_origin, seat: t.seat }, *q),
@@ -358,7 +359,7 @@ impl Entity {
             body.after = seq;
             // A piece for a seat this mind does not sit is read past.
             if let Some(seat) = body.seats.iter_mut().find(|s| s.at == at) {
-                self.read_piece(seat, piece);
+                due.extend(self.read_piece(seat, piece).into_iter().map(|id| (at, id)));
             }
         }
         body.pages = match body.pages.checked_add(1) {
@@ -380,13 +381,23 @@ impl Entity {
             }
         }
         self.board.body = Some(body);
+        // THE HOUSE'S PERCEPT IS ITS OWN EVENT (the auditor's ruling,
+        // 2026-10-22, option (a)): each task it sets before a seat is taken up
+        // where the mail lands, the body back on the board — never held for a
+        // return of the mind's, which a resting seat mind (K 0, no feed, no
+        // tension) never makes; the targets reached the house and no seat.
+        for (at, id) in due {
+            self.seat_act(at, Some(id));
+        }
     }
 
     /// ONE PIECE OF MAIL PERCEIVED AT ITS SEAT: a TAKEN marks the hold (and
     /// the listing is asked), a PERCEPT is perceived by the mind — its beat's
-    /// call and the tasks before it held for the mind's return (MU-CLIENT
-    /// §4.4(4)) — and an OUTCOME marks the call it answers.
-    fn read_piece(&mut self, seat: &mut Seat, piece: MindMail) {
+    /// call held for the mind's return (MU-CLIENT §4.4(4)), the tasks before
+    /// it answered, to be taken up where the mail lands — and an OUTCOME marks
+    /// the call it answers.
+    fn read_piece(&mut self, seat: &mut Seat, piece: MindMail) -> Vec<[u8; 32]> {
+        let mut due = Vec::new();
         match piece {
             MindMail::Taken(_, t) => {
                 if (SeatName { domain: t.domain, sub_origin: t.sub_origin, seat: t.seat }) == seat.at && seat.hold.taken(t.ok) {
@@ -414,11 +425,7 @@ impl Entity {
                         let _ = seat.rested.remove(&k);
                     }
                 }
-                for id in before {
-                    if !seat.answered.contains(&id) && !seat.solving.contains(&id) {
-                        self.hold_for_return(&seat_act_key(&at, Some(&id)), &[], move |me| me.seat_act(at, Some(id)));
-                    }
-                }
+                due.extend(before.into_iter().filter(|id| !seat.answered.contains(id) && !seat.solving.contains(id)));
                 // A seat's call is the mind's own: it leaves at the mind's
                 // next return (§6 — seat play from orbits comes after the
                 // soak).
@@ -449,6 +456,7 @@ impl Entity {
                 }
             }
         }
+        due
     }
 
     /// 78.148 — THE LISTING ASKED: where it lands, this seat's functions are
