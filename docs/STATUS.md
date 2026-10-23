@@ -19,7 +19,20 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## The curiosity law woke the voices (2026-10-23 21:13) — where it stands
+## Voices carry on past their feeds (2026-10-24 01:03) — where it stands
+Voices 1–5 on 3fe72fde (00:02:46); netstratum-mind-1 on today's client
+(01:01); courts and seats unchanged. After the curiosity law woke them the
+voices had stalled: a lane spent on the families they took in (voice 4 at
+7:0:56:7), tension held, and `rest` blocked a mind merely short — no stroke,
+no regeneration, no ask. Now a strained mind on a short lane rests on its
+measured transport (an owed stroke, as the dwell and the reserve waits are);
+one with no tension still blocks. In the hour after: voices 1–4's feeds
+drained to 0, voice 5's 145 → 107; K rising (voice 4 to 1 204); voice 4
+solved three court tasks on an empty feed (40c53609, 564afc6d, f2f63bfc).
+Registries: 29 distinct settled (from 23 at 00:02, 14 at 18:09). Three
+voices plateau (K 192–310): attention and rule quality, the next read.
+
+## The curiosity law woke the voices (2026-10-23 21:13)
 Voices 1–4 on 6fa43cc0 (20:58:11); voice 5, seats, courts as below. Four
 restarted voices had rested at K 0: their ground focus (corpus charts their
 language speaks on) met nothing, and no hearing coupled (no scene-bound
