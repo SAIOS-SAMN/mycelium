@@ -109,6 +109,9 @@ pub(crate) struct Body {
     /// where it moves, something was filed, and the listing is read again.
     relay_seen: Option<(u64, u64)>,
     pages: u64,
+    /// A listing read has landed since the body sat: mail is asked only
+    /// after (`ask_mail`).
+    listing_read: bool,
 }
 
 /// A SEAT'S ACT'S COORDINATES, held for the mind's return: the seat (its
@@ -180,6 +183,7 @@ impl Entity {
             mailing: false,
             relay_seen: None,
             pages: 0,
+            listing_read: false,
         });
     }
 
@@ -273,7 +277,14 @@ impl Entity {
         body.relist = false;
         let (domain, sub_origin) = (body.domain, body.sub_origin);
         self.ask_seat(move |s| s.list_seats(domain, sub_origin), |me, read: io::Result<Option<SignedPost>>| {
-            let Ok(read) = read else { return };
+            // A listing that could not be read still opens the mail: the held
+            // read is what wakes a resting mind, and it must never be withheld.
+            let Ok(read) = read else {
+                if let Some(b) = me.board.body.as_mut() {
+                    b.listing_read = true;
+                }
+                return;
+            };
             let named = read.as_ref().and_then(crate::client::sdk::seat::listed_seats);
             let Some(mut body) = me.board.body.take() else { return };
             if let (true, Some((_, listed))) = (body.all, named.as_ref()) {
@@ -288,6 +299,7 @@ impl Entity {
                 seat.listed = named.as_ref().and_then(|(epoch, listed)| listed.contains(&seat.at.seat).then_some(*epoch));
             }
             body.listed = named.map(|(epoch, _)| epoch);
+            body.listing_read = true;
             me.board.body = Some(body);
         });
     }
@@ -306,8 +318,18 @@ impl Entity {
     }
 
     /// THE SHARED BOX'S NEXT PAGE, asked on the seat's carrier; it is read
-    /// where it lands (`read_mail_page`).
+    /// where it lands (`read_mail_page`). A body that sits every seat listed
+    /// asks none before its first listing read has landed — whatever it named,
+    /// so a listing that names nothing never leaves the mind without the read
+    /// that wakes it: its seats stand only then, and
+    /// a piece for a seat not yet sat is read past — the cursor beyond it,
+    /// never seen again (2026-10-23: a restart read the house's percepts
+    /// before its listing and lost them). The listing's landing wakes the
+    /// mind, and its next tick asks.
     fn ask_mail(&mut self, body: &mut Body) {
+        if body.all && !body.listing_read {
+            return;
+        }
         body.mailing = true;
         let held_epoch = match body.epoch {
             Some(e) => e,
