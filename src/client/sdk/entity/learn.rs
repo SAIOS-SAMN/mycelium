@@ -9,18 +9,13 @@ impl Entity {
     /// useful work. One pull is in flight at a time; the envelope lands on
     /// the board as an offer, read to its charts (`offer`), to be taken in
     /// where it couples (`task_inflow`), none where the book is settled.
-    /// MU-CLIENT §4.12, §7.1 — THE MIND ASKS ONLY UNDER TENSION: where its
-    /// field holds strain it has not resolved (`strained`), nothing waits to
-    /// be taken in or is being perceived, and the reserve stands regenerated
-    /// on every lane. A full reserve over a settled field with the corpus
-    /// still holding items is equilibrium, and asks for nothing.
-    /// THE RECEPTIVE VACUUM (the auditor's ruling, 2026-10-24): a settled mind
-    /// whose corpus holds nothing — its feed exhausted, no question placed —
-    /// asks too, the reserve regenerated: the ground state is the state of
-    /// greatest receptive coupling, not exhaustion, and a task is an offer
-    /// that couples or lapses (`lapse_standing_task`), never a command.
-    /// Asked under strain alone, voices 1–4 sat blocked at K 0 on empty feeds
-    /// with the court's registry unsolved beside them.
+    /// MU-CLIENT §4.12, §7.1 — WHEN THE MIND ASKS: nothing waits to be taken
+    /// in or is being perceived, the reserve stands regenerated on every
+    /// lane, and either the field holds strain (`strained`) or the corpus
+    /// holds no item (ruled 2026-10-24; asked under strain alone, a mind with
+    /// an empty feed never asked again). A settled field over a corpus that
+    /// holds items asks for nothing. The task is an offer: it couples or
+    /// lapses (`lapse_standing_task`).
     pub(crate) fn pull_task(&mut self) {
         if self.board.court.pulling || self.board.court.task.is_some() || self.perceiving() {
             return;
@@ -28,8 +23,8 @@ impl Entity {
         if !crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty() {
             return;
         }
-        let vacuum = self.board.corpus.size().0 == 0;
-        if !self.strained() && !vacuum {
+        let corpus_empty = self.board.corpus.size().0 == 0;
+        if !self.strained() && !corpus_empty {
             return;
         }
         self.board.court.pulling = true;

@@ -28,9 +28,9 @@
 //! THE TENSION. The mind ASKS for an offer (`pull_task`) where it holds
 //! strain it has not resolved: an open question (a residual chain, never a
 //! word), a demand on its plan, an orbit that rings, a reservoir that neither
-//! re-formed nor condensed (`strained`) — or where, settled, its corpus holds
-//! nothing (the receptive vacuum, 2026-10-24). A full reserve over a settled
-//! field whose corpus holds items is equilibrium; the mind rests.
+//! re-formed nor condensed (`strained`) — or where its corpus holds no item
+//! (2026-10-24). A full reserve over a settled field whose corpus holds items
+//! asks for nothing; the mind rests.
 
 use crate::client::sdk::*;
 
@@ -106,17 +106,13 @@ impl Entity {
         }
     }
 
-    /// THE UNIVERSAL APERTURE LAPSE (the auditor's rulings, 2026-10-24): no
-    /// offer across the transport is held unbounded. The court's task waiting
-    /// uncoupled lapses at the first horizon it reaches — the second return
-    /// it waits across (`lapse_offers`), its wait passing the mind's aperture
-    /// of strokes (one full aperture of its measured transport,
-    /// `physics::persist_dwell`), or the court's next final point past the
-    /// one it landed under. Gated first to the ground state, the aperture
-    /// left a field whose orbits stand in focus and never return holding its
-    /// task without end: dd89 stepped at its round trip ~93 strokes a second,
-    /// returns 0, K flat. Read once a stroke; an unmeasured transport bounds
-    /// the wait by the return and the final alone.
+    /// THE TASK'S BOUND (ruled 2026-10-24): the court's task waiting
+    /// uncoupled lapses at the first of the second return it waits across
+    /// (`lapse_offers`), its wait reaching one aperture of the measured
+    /// transport (`physics::persist_dwell`), or a court final past the one
+    /// it landed under. A field that never returns would otherwise hold it
+    /// without end. Read once a stroke; with the transport unmeasured, the
+    /// return and the final bound it.
     pub(crate) fn lapse_standing_task(&mut self) {
         let aperture = self.transport_rtt().map(crate::physics::persist_dwell);
         let finality = self.hypha.tuniversal().map(|p| p.h);

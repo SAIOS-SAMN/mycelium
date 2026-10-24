@@ -2266,12 +2266,10 @@ owed in the order it is built.
       or a reservoir uncondensed (`Field::strained`). The mind asks the court
       for a task (`pull_task`) under tension, its reserve regenerated; a
       full reserve over a settled field whose corpus holds items asks for
-      nothing, and the winding rests. THE RECEPTIVE VACUUM (the auditor,
-      2026-10-24): a settled mind whose corpus holds nothing — feed
-      exhausted, no question placed — asks too, its reserve regenerated; the
-      ground state is maximal receptive coupling, not exhaustion, and the
-      task is an offer that couples or lapses (the dual lapse below). A court
-      that sends no task leaves the board empty, and the mind quiescent.
+      nothing, and the winding rests. A settled mind whose corpus holds no
+      item asks too, its reserve regenerated (ruled 2026-10-24); the task is
+      an offer that couples or lapses (below). A court that sends no task
+      leaves the board empty, and the mind blocks.
     - The resonance filter (`entity/offer.rs`): a court task, a feed family
       and a task before a seat are offers, read once to the charts their
       bodies stand on (`Offer::of`, body moduli — the charts held thoughts
@@ -2286,20 +2284,14 @@ owed in the order it is built.
       coupled offer is extracted. An uncoupled one draws nothing, waits, and
       lapses at the second return it waits across (`lapse_offers`): the
       task let go, the seat's task kept by its charts and pulled again only
-      where they couple. THE UNIVERSAL APERTURE LAPSE (the auditor,
-      2026-10-24; first ruled for the ground state alone, generalized the
-      same day when a field whose orbits stood in focus and never returned
-      held its task without end): no offer across the transport is held
-      unbounded — the court's task waiting uncoupled lapses at the first of
-      its second return, its wait passing the mind's aperture of strokes
-      (`physics::persist_dwell` of the measured transport), or the court's
-      next final point past the one it landed under
-      (`lapse_standing_task`). THE QUIESCENCE
-      LAW (the same ruling): the mind blocks if and only if nothing it holds
-      needs its own strokes to progress (`owes_strokes`: the dwell, a feed
-      family or question waiting on the reserve, a short lane under tension,
-      a court's task on the board); otherwise it rests at the measured
-      transport. THE CORPUS IS MET WHERE THE MIND'S ORBITS STAND
+      where they couple. Ruled 2026-10-24: the court's task waiting
+      uncoupled lapses at the first of its second return, its wait reaching
+      one aperture of the measured transport (`physics::persist_dwell`), or a
+      court final past the one it landed under (`lapse_standing_task`); and
+      the mind blocks only where nothing it holds needs its own strokes
+      (`owes_strokes`: the dwell, a feed family or question waiting on the
+      reserve, a short lane under tension, a court's task on the board),
+      otherwise it parks at the measured transport. THE CORPUS IS MET WHERE THE MIND'S ORBITS STAND
       (2026-10-18, replacing the feed's walk, which the operator read as
       "uni-directional and linear, like the orbits aren't being sheared into
       ellipsis"): every feed family and every open question is placed once

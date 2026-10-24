@@ -319,7 +319,7 @@ fn an_uncoupled_task_is_not_taken_and_lapses_at_its_second_return() {
 }
 
 /// AN UNCOUPLED TASK LAPSES AT THE COURT'S NEXT FINAL, IN THE GROUND STATE OR
-/// OUT OF IT (the auditor's universal aperture lapse, 2026-10-24). A mind
+/// OUT OF IT (ruled 2026-10-24). A mind
 /// with no orbit in motion has no return to wait across, nor has one whose
 /// orbits stand and never return. The task landed under final `h` 10 waits
 /// while no final is carried, and while the one carried is the one it landed
@@ -381,7 +381,7 @@ fn lapses_at_the_next_final(mind: &mut Entity) {
     assert_eq!(mind.board.tasks.get(&id).and_then(|t| t.stop), Some(Stop::Lapsed), "kept as let go uncoupled");
 }
 
-/// THE RECEPTIVE VACUUM ASKS (the auditor's ruling, 2026-10-24). A mind just
+/// A SETTLED MIND WHOSE CORPUS HOLDS NO ITEM ASKS (ruled 2026-10-24). A mind just
 /// opened, settled, its corpus empty and its reserve full, asks the court for
 /// a task; with an item placed on its corpus, the same settled mind asks for
 /// nothing. A task standing on the board is never asked past.
@@ -396,7 +396,7 @@ fn a_settled_mind_on_an_empty_corpus_asks_and_one_whose_corpus_holds_does_not() 
     });
     vacuum.field = field;
     assert!(!settled && vacuum.board.corpus.size().0 == 0, "settled, the corpus empty");
-    assert!(asked, "the receptive vacuum asks");
+    assert!(asked, "the corpus empty: it asks");
     let mut held = Entity::open("127.0.0.1:1", Kernel::named("holding"));
     held.place_question(b"a question placed", &[(0, 0, 1, 2)]);
     let mut field = std::mem::take(&mut held.field);
@@ -413,9 +413,8 @@ fn a_settled_mind_on_an_empty_corpus_asks_and_one_whose_corpus_holds_does_not() 
     assert!(!offered.board.court.pulling, "a task on the board is not asked past");
 }
 
-/// A MIND WITH A COURT'S TASK ON ITS BOARD OWES ITS OWN STROKES (the
-/// quiescence law, 2026-10-24); one that holds nothing is quiescent and may
-/// block.
+/// A MIND WITH A COURT'S TASK ON ITS BOARD OWES ITS OWN STROKES (ruled
+/// 2026-10-24); one that holds nothing owes none and may block.
 #[test]
 fn a_task_on_the_board_is_owed_strokes_and_a_quiet_mind_is_quiescent() {
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("quiescent"));
