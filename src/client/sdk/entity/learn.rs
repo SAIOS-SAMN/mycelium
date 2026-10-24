@@ -30,8 +30,11 @@ impl Entity {
             move |s| s.speak_keyed(&voice, dialogue::encode_task_request(&voice)),
             |me, body: io::Result<Vec<u8>>| {
                 me.board.court.pulling = false;
+                // The court's final point it landed under: the ground-state
+                // lapse reads the next one past it (`lapse_offers_at_ground`).
+                let landed = me.hypha.tuniversal().map(|p| p.h);
                 me.board.court.task = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b)).map(|env| {
-                    let offer = super::offer::Offer::of(&env.train);
+                    let offer = super::offer::Offer { landed, ..super::offer::Offer::of(&env.train) };
                     (env, offer)
                 });
                 // Landed on this mind, not yet taken in: attributed here.

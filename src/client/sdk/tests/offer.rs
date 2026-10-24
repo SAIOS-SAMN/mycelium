@@ -314,3 +314,59 @@ fn an_uncoupled_task_is_not_taken_and_lapses_at_its_second_return() {
     assert!(mind.board.court.task.is_none(), "uncoupled across a return: it lapses");
     assert_eq!(mind.board.offers_passed[PASSED_TASK], 1, "passed, said to the observer");
 }
+
+/// IN THE GROUND STATE AN UNCOUPLED TASK LAPSES AT THE COURT'S NEXT FINAL (the
+/// auditor's dual lapse, 2026-10-24). A mind with no orbit in motion has no
+/// return to wait across. The task landed under final `h` 10 waits while no
+/// final is carried, and while the one carried is the one it landed under;
+/// the next final past it lets it go — kept as lapsed by its citation,
+/// passed — with no return in between. Every stroke it waited is counted.
+#[test]
+fn in_the_ground_state_an_uncoupled_task_lapses_at_the_courts_next_final() {
+    use crate::chronometry::tuniversal::{Origin, TPoint};
+    use crate::client::sdk::entity::perceive::Stop;
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("ground lapse"));
+    let id = [6u8; 32];
+    let train = one_cell_steps();
+    let offer = Offer { landed: Some(10), ..Offer::of(&train) };
+    mind.board.court.task = Some((crate::anastome::dialogue::TaskEnvelope { id, train, tests: Vec::new() }, offer));
+    mind.note_task(&id, Reading::Task, |_| {});
+    // A final heard on the hypha's carrier, read back off its view once the
+    // carrier has published it.
+    let hear = |mind: &mut Entity, h: u64| {
+        let p = TPoint { origin: Origin::default(), h, lanes: [1, 0, 0, 0], k: 1 };
+        mind.ask(move |s| s.hear_point(Some(p)), |_, ()| {});
+        let mut polls = 0u32;
+        while mind.hypha.tuniversal().map(|p| p.h) != Some(h) && polls < (1 << 24) {
+            std::thread::yield_now();
+            polls += 1;
+        }
+        assert_eq!(mind.hypha.tuniversal().map(|p| p.h), Some(h), "the final is carried");
+    };
+    let mut field = std::mem::take(&mut mind.field);
+    field.think(|| mind.lapse_offers_at_ground());
+    assert!(mind.board.court.task.is_some(), "no final carried, no aperture measured: it waits");
+    hear(&mut mind, 10);
+    field.think(|| mind.lapse_offers_at_ground());
+    assert!(mind.board.court.task.as_ref().is_some_and(|(_, o)| o.waited == 2 && !o.crossed), "the final it landed under: it waits, two strokes counted, no return crossed");
+    assert_eq!(mind.board.offers_passed[PASSED_TASK], 0);
+    hear(&mut mind, 11);
+    field.think(|| mind.lapse_offers_at_ground());
+    mind.field = field;
+    assert!(mind.board.court.task.is_none(), "the court's next final: it lapses");
+    assert_eq!(mind.board.offers_passed[PASSED_TASK], 1, "passed, said to the observer");
+    assert_eq!(mind.board.tasks.get(&id).and_then(|t| t.stop), Some(Stop::Lapsed), "kept as let go uncoupled");
+}
+
+/// A MIND WITH A COURT'S TASK ON ITS BOARD OWES ITS OWN STROKES (the
+/// quiescence law, 2026-10-24); one that holds nothing is quiescent and may
+/// block.
+#[test]
+fn a_task_on_the_board_is_owed_strokes_and_a_quiet_mind_is_quiescent() {
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("quiescent"));
+    assert!(!mind.owes_strokes(), "nothing held: quiescent");
+    let train = one_cell_steps();
+    let offer = Offer::of(&train);
+    mind.board.court.task = Some((crate::anastome::dialogue::TaskEnvelope { id: [4; 32], train, tests: Vec::new() }, offer));
+    assert!(mind.owes_strokes(), "a task waiting: owed strokes");
+}

@@ -256,6 +256,9 @@ impl Entity {
         let returns = self.act_on_returns(&mut vent, bound, !occluded);
         // 5. THE NEXT SCENE, by the metabolism.
         if !occluded && !stopping() {
+            // In the ground state no return comes: the task waiting uncoupled
+            // lapses on the aperture or the court's next final.
+            self.lapse_offers_at_ground();
             self.at_law("the next scene asked for");
             self.pull_task();
         }

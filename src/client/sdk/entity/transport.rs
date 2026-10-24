@@ -35,13 +35,29 @@ impl Entity {
     /// strokes — blocked, all five voices held an uncoupled task from 01:15,
     /// none lapsed, `pull_task` asked nothing past it, and the three courts'
     /// K stood. A mind with no tension still blocks: it may idle.
+    ///
+    /// THE QUIESCENCE LAW (the auditor's ruling, 2026-10-24): the mind blocks
+    /// if and only if it is quiescent — nothing it holds needs its own
+    /// strokes to progress (`owes_strokes`); otherwise it rests at the
+    /// measured transport.
     pub fn rest(&self) {
-        let owed = self.strained() && !crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty();
-        let offered = self.board.court.task.is_some();
-        match self.board.court.dwelling() || self.board.feed_waits || self.board.question_waits || owed || offered {
+        match self.owes_strokes() {
             true => self.hypha.rest(self.transport_rtt()),
             false => self.hypha.block(),
         }
+    }
+
+    /// WHAT THE MIND HOLDS THAT WAITS ON ITS OWN STROKES: the court's dwell
+    /// on a pressed lane; a feed family or a question met and waiting on the
+    /// reserve; a lane run short under tension, regenerating; a court's task
+    /// on the board, taken in or lapsing as the field moves.
+    pub(crate) fn owes_strokes(&self) -> bool {
+        let dwell = self.board.court.dwelling();
+        let feed = self.board.feed_waits;
+        let questions = self.board.question_waits;
+        let reserve = self.strained() && !crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty();
+        let attention = self.board.court.task.is_some();
+        dwell || feed || questions || reserve || attention
     }
 
     /// The waker of the mind's winding: whatever sends on it ends a rest.

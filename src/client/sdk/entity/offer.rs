@@ -41,11 +41,15 @@ pub(crate) const PASSED: [&str; 1] = ["court task"];
 pub(crate) const PASSED_TASK: usize = 0;
 
 /// ONE OFFER STANDING AT A BOUNDARY: the charts its bodies stand on, read
-/// once where it landed, and whether it has waited across a return.
+/// once where it landed, whether it has waited across a return, the strokes
+/// it has waited in the ground state, and the court's final point `h` it
+/// landed under (`None`: no final carried yet).
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Offer {
     pub(crate) charts: Vec<Vec<u8>>,
     pub(crate) crossed: bool,
+    pub(crate) waited: u64,
+    pub(crate) landed: Option<u64>,
 }
 
 impl Offer {
@@ -58,7 +62,7 @@ impl Offer {
                 charts.insert(body.moduli.key().as_bytes(), ());
             }
         }
-        Offer { charts: charts.scoped().map(|(k, _)| k).collect(), crossed: false }
+        Offer { charts: charts.scoped().map(|(k, _)| k).collect(), crossed: false, waited: 0, landed: None }
     }
 }
 
@@ -91,12 +95,7 @@ impl Entity {
     pub(crate) fn lapse_offers(&mut self) {
         let task = self.board.court.task.as_ref().map(|(e, o)| (o.crossed, self.couples(&e.id, &o.charts)));
         match task {
-            Some((true, false)) => {
-                if let Some((e, _)) = self.board.court.task.take() {
-                    self.note_task(&e.id, super::perceive::Reading::Task, |t| t.stop = Some(super::perceive::Stop::Lapsed));
-                }
-                self.passed(PASSED_TASK);
-            }
+            Some((true, false)) => self.let_go_task(),
             Some(_) => {
                 if let Some((_, o)) = self.board.court.task.as_mut() {
                     o.crossed = true;
@@ -104,5 +103,50 @@ impl Entity {
             }
             None => {}
         }
+    }
+
+    /// THE DUAL LAPSE IN THE GROUND STATE (the auditor's ruling, 2026-10-24):
+    /// a field with no orbit in motion has no return to wait across — its
+    /// period is unbounded — so the court's task waiting uncoupled there
+    /// lapses when its wait passes the mind's aperture of strokes (one full
+    /// aperture of its measured transport, `physics::persist_dwell`), or at
+    /// the court's next final point past the one it landed under, whichever
+    /// comes first. Read once a stroke in the winding carrier's slots; a field
+    /// in motion keeps the return rule (`lapse_offers`), and an unmeasured
+    /// transport bounds the wait by the final alone.
+    pub(crate) fn lapse_offers_at_ground(&mut self) {
+        let ground = matches!(crate::transducer::mind::with_field(|f| f.orbits.focus().is_empty()), Ok(true));
+        if !ground {
+            return;
+        }
+        let aperture = self.transport_rtt().map(crate::physics::persist_dwell);
+        let finality = self.hypha.tuniversal().map(|p| p.h);
+        let coupled = match self.board.court.task.as_ref() {
+            Some((e, o)) => self.couples(&e.id, &o.charts),
+            None => return,
+        };
+        let Some((_, o)) = self.board.court.task.as_mut() else { return };
+        let _ = crate::physics::metabolism::step_or_refuse(&mut o.waited, 1);
+        if coupled {
+            return;
+        }
+        let past_aperture = matches!(aperture, Some(crate::physics::Lambda::Strokes(n)) if o.waited >= n);
+        let next_final = match (o.landed, finality) {
+            (Some(at), Some(now)) => now > at,
+            (None, Some(_)) => true,
+            (_, None) => false,
+        };
+        if past_aperture || next_final {
+            self.let_go_task();
+        }
+    }
+
+    /// The court's task let go uncoupled: kept as lapsed by its citation, and
+    /// passed, said to the observer.
+    fn let_go_task(&mut self) {
+        if let Some((e, _)) = self.board.court.task.take() {
+            self.note_task(&e.id, super::perceive::Reading::Task, |t| t.stop = Some(super::perceive::Stop::Lapsed));
+        }
+        self.passed(PASSED_TASK);
     }
 }

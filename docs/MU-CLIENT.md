@@ -2280,7 +2280,17 @@ owed in the order it is built.
       coupled offer is extracted. An uncoupled one draws nothing, waits, and
       lapses at the second return it waits across (`lapse_offers`): the
       task let go, the seat's task kept by its charts and pulled again only
-      where they couple. THE CORPUS IS MET WHERE THE MIND'S ORBITS STAND
+      where they couple. THE DUAL LAPSE (the auditor, 2026-10-24): in the
+      ground state — no orbit in motion, the return's period unbounded — the
+      court's task waiting uncoupled lapses when its wait passes the mind's
+      aperture of strokes (`physics::persist_dwell` of the measured
+      transport) or at the court's next final point past the one it landed
+      under, whichever is first (`lapse_offers_at_ground`). THE QUIESCENCE
+      LAW (the same ruling): the mind blocks if and only if nothing it holds
+      needs its own strokes to progress (`owes_strokes`: the dwell, a feed
+      family or question waiting on the reserve, a short lane under tension,
+      a court's task on the board); otherwise it rests at the measured
+      transport. THE CORPUS IS MET WHERE THE MIND'S ORBITS STAND
       (2026-10-18, replacing the feed's walk, which the operator read as
       "uni-directional and linear, like the orbits aren't being sheared into
       ellipsis"): every feed family and every open question is placed once
