@@ -25,11 +25,12 @@
 //! coordinates and is met where the mind's orbits stand (`focus`); a seat's
 //! task is kept by its charts and pulled again only where they couple.
 //!
-//! THE TENSION. The mind ASKS for an offer (`pull_task`) only where it holds
+//! THE TENSION. The mind ASKS for an offer (`pull_task`) where it holds
 //! strain it has not resolved: an open question (a residual chain, never a
 //! word), a demand on its plan, an orbit that rings, a reservoir that neither
-//! re-formed nor condensed (`strained`). A full reserve over a settled field
-//! with no question open is equilibrium; the mind rests.
+//! re-formed nor condensed (`strained`) — or where, settled, its corpus holds
+//! nothing (the receptive vacuum, 2026-10-24). A full reserve over a settled
+//! field whose corpus holds items is equilibrium; the mind rests.
 
 use crate::client::sdk::*;
 

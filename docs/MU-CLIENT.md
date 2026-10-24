@@ -2264,8 +2264,14 @@ owed in the order it is built.
     is a first-class equilibrium; no generate-and-test):
     - Tension (`Entity::strained`): a demand on the plan, a ringing orbit,
       or a reservoir uncondensed (`Field::strained`). The mind asks the court
-      for a task (`pull_task`) only under tension; a full reserve over a
-      settled field asks for nothing, and the winding rests.
+      for a task (`pull_task`) under tension, its reserve regenerated; a
+      full reserve over a settled field whose corpus holds items asks for
+      nothing, and the winding rests. THE RECEPTIVE VACUUM (the auditor,
+      2026-10-24): a settled mind whose corpus holds nothing — feed
+      exhausted, no question placed — asks too, its reserve regenerated; the
+      ground state is maximal receptive coupling, not exhaustion, and the
+      task is an offer that couples or lapses (the dual lapse below). A court
+      that sends no task leaves the board empty, and the mind quiescent.
     - The resonance filter (`entity/offer.rs`): a court task, a feed family
       and a task before a seat are offers, read once to the charts their
       bodies stand on (`Offer::of`, body moduli — the charts held thoughts

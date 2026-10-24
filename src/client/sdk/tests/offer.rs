@@ -14,15 +14,16 @@ fn one_cell_steps() -> Vec<(crate::arc::Grid, crate::arc::Grid)> {
     vec![(at(0), at(1))]
 }
 
-/// A SETTLED MIND ASKS FOR NOTHING; A STRAINED ONE HOLDS TENSION. A mind just
-/// opened holds no demand, no ringing orbit, no reservoir: it is in
-/// equilibrium, and the winding's ask for a scene (`pull_task`) posts
-/// nothing, its reserve full or not. The slide's two hours perceived, the
-/// relation between them never returns and stands on its plan: the mind now
-/// holds tension.
+/// A SETTLED MIND WITH ITS CORPUS HOLDING ASKS FOR NOTHING; A STRAINED ONE
+/// HOLDS TENSION. A mind just opened holds no demand, no ringing orbit, no
+/// reservoir; with an item standing on its corpus it is in equilibrium, and
+/// the winding's ask for a scene (`pull_task`) posts nothing. The slide's two
+/// hours perceived, the relation between them never returns and stands on
+/// its plan: the mind now holds tension.
 #[test]
 fn a_settled_mind_asks_for_nothing_and_a_strained_one_holds_tension() {
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("settled"));
+    mind.place_question(b"a question placed", &[(0, 0, 1, 2)]);
     let [first, second] = two_hours_of_a_slide();
     let mut field = std::mem::take(&mut mind.field);
     let (settled, asked, strained) = field.think(|| {
@@ -35,7 +36,7 @@ fn a_settled_mind_asks_for_nothing_and_a_strained_one_holds_tension() {
     });
     mind.field = field;
     assert!(!settled, "a mind just opened holds no strain");
-    assert!(!asked, "in equilibrium it asks for nothing");
+    assert!(!asked, "in equilibrium, its corpus holding, it asks for nothing");
     assert!(strained, "the slide's relation stands unbound: tension");
 }
 
@@ -69,13 +70,15 @@ fn an_offer_couples_only_to_what_the_mind_holds() {
 /// NOTHING (the operator, 2026-10-17: a string resonates because it is tuned,
 /// not because it rings). A mind whose language holds a word on the one-cell
 /// body's chart — and no thought, no plan, no orbit: what a restored genome
-/// is — holds no tension and asks the court for nothing; offered the one-cell
+/// is — holds no tension and, its corpus holding a question, asks the court
+/// for nothing; offered the one-cell
 /// family, it couples through its language and takes it in; offered the
 /// slide, on charts its language does not speak on, it couples to nothing.
 #[test]
 fn a_restored_mind_takes_an_offer_in_its_own_language_and_asks_for_nothing() {
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("restored"));
+    mind.place_question(b"a question placed", &[(0, 0, 1, 2)]);
     let [(x, y)] = <[_; 1]>::try_from(one_cell_steps()).expect("one pair");
     let mut field = std::mem::take(&mut mind.field);
     let (settled, asked) = field.think(|| {
@@ -356,6 +359,38 @@ fn in_the_ground_state_an_uncoupled_task_lapses_at_the_courts_next_final() {
     assert!(mind.board.court.task.is_none(), "the court's next final: it lapses");
     assert_eq!(mind.board.offers_passed[PASSED_TASK], 1, "passed, said to the observer");
     assert_eq!(mind.board.tasks.get(&id).and_then(|t| t.stop), Some(Stop::Lapsed), "kept as let go uncoupled");
+}
+
+/// THE RECEPTIVE VACUUM ASKS (the auditor's ruling, 2026-10-24). A mind just
+/// opened, settled, its corpus empty and its reserve full, asks the court for
+/// a task; with an item placed on its corpus, the same settled mind asks for
+/// nothing. A task standing on the board is never asked past.
+#[test]
+fn a_settled_mind_on_an_empty_corpus_asks_and_one_whose_corpus_holds_does_not() {
+    let mut vacuum = Entity::open("127.0.0.1:1", Kernel::named("vacuum"));
+    let mut field = std::mem::take(&mut vacuum.field);
+    let (settled, asked) = field.think(|| {
+        let settled = vacuum.strained();
+        vacuum.pull_task();
+        (settled, vacuum.board.court.pulling)
+    });
+    vacuum.field = field;
+    assert!(!settled && vacuum.board.corpus.size().0 == 0, "settled, the corpus empty");
+    assert!(asked, "the receptive vacuum asks");
+    let mut held = Entity::open("127.0.0.1:1", Kernel::named("holding"));
+    held.place_question(b"a question placed", &[(0, 0, 1, 2)]);
+    let mut field = std::mem::take(&mut held.field);
+    field.think(|| held.pull_task());
+    held.field = field;
+    assert!(!held.board.court.pulling, "its corpus holding: equilibrium, no ask");
+    let mut offered = Entity::open("127.0.0.1:1", Kernel::named("offered"));
+    let train = one_cell_steps();
+    let offer = Offer::of(&train);
+    offered.board.court.task = Some((crate::anastome::dialogue::TaskEnvelope { id: [3; 32], train, tests: Vec::new() }, offer));
+    let mut field = std::mem::take(&mut offered.field);
+    field.think(|| offered.pull_task());
+    offered.field = field;
+    assert!(!offered.board.court.pulling, "a task on the board is not asked past");
 }
 
 /// A MIND WITH A COURT'S TASK ON ITS BOARD OWES ITS OWN STROKES (the

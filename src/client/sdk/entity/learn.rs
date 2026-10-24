@@ -12,16 +12,24 @@ impl Entity {
     /// MU-CLIENT §4.12, §7.1 — THE MIND ASKS ONLY UNDER TENSION: where its
     /// field holds strain it has not resolved (`strained`), nothing waits to
     /// be taken in or is being perceived, and the reserve stands regenerated
-    /// on every lane. A full reserve over a settled field is equilibrium, and
-    /// asks for nothing.
+    /// on every lane. A full reserve over a settled field with the corpus
+    /// still holding items is equilibrium, and asks for nothing.
+    /// THE RECEPTIVE VACUUM (the auditor's ruling, 2026-10-24): a settled mind
+    /// whose corpus holds nothing — its feed exhausted, no question placed —
+    /// asks too, the reserve regenerated: the ground state is the state of
+    /// greatest receptive coupling, not exhaustion, and a task is an offer
+    /// that couples or lapses (`lapse_offers_at_ground`), never a command.
+    /// Asked under strain alone, voices 1–4 sat blocked at K 0 on empty feeds
+    /// with the court's registry unsolved beside them.
     pub(crate) fn pull_task(&mut self) {
         if self.board.court.pulling || self.board.court.task.is_some() || self.perceiving() {
             return;
         }
-        if !self.strained() {
+        if !crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty() {
             return;
         }
-        if !crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty() {
+        let vacuum = self.board.corpus.size().0 == 0;
+        if !self.strained() && !vacuum {
             return;
         }
         self.board.court.pulling = true;
