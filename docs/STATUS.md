@@ -19,7 +19,20 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## Voices carry on past their feeds (2026-10-24 01:03) — where it stands
+## A waiting task is owed strokes (2026-10-24 06:21) — where it stands
+Voices 1–5 on 8b7b8982 (06:00:53); courts, seats, netstratum unchanged. From
+01:15 to 06:00 the fleet stood: all five voices held tension and an uncoupled
+court task, and `rest` blocked them (not short) — the task lapses only at its
+second return, returns come only on the mind's own strokes, so none lapsed and
+`pull_task` asked nothing; the courts' K froze (a 121029, b 148959, c 116913),
+no final or fold for 4½ h. Now a court task on the board is an owed stroke:
+the mind rests on its measured transport. In 20 minutes after: 62–63 finals
+per court, 16 folds, K moving (b 149054); voice 1 lapsed its task and took 82
+feed families; the K-1819 voice passed 2 uncoupled tasks. Open: voices 2–4 sat
+at stroke ~51 in "admission: hearings priced" 20 minutes after restart (K 0,
+~15% CPU each), voice 5 at 90% CPU — the next read. Settled not re-counted.
+
+## Voices carry on past their feeds (2026-10-24 01:03)
 Voices 1–5 on 3fe72fde (00:02:46); netstratum-mind-1 on today's client
 (01:01); courts and seats unchanged. After the curiosity law woke them the
 voices had stalled: a lane spent on the families they took in (voice 4 at
