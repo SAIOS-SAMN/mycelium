@@ -28,11 +28,17 @@ impl Entity {
     /// TENSION ON A LANE RUN SHORT (2026-10-23): it asks the court only on a
     /// reserve regenerated on every lane, and the reserve regenerates on its
     /// own strokes — blocked, voice 4 sat short on G (7:0:56:7) with tension
-    /// and asked for nothing, its woken siblings likewise. A mind with no
-    /// tension still blocks: it may idle.
+    /// and asked for nothing, its woken siblings likewise. So is a mind with
+    /// a COURT'S TASK WAITING where it landed (2026-10-24): it is taken in
+    /// as the field moves, or lapses at the second return it waits across
+    /// uncoupled (`lapse_offers`), and the field moves only on the mind's
+    /// strokes — blocked, all five voices held an uncoupled task from 01:15,
+    /// none lapsed, `pull_task` asked nothing past it, and the three courts'
+    /// K stood. A mind with no tension still blocks: it may idle.
     pub fn rest(&self) {
         let owed = self.strained() && !crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty();
-        match self.board.court.dwelling() || self.board.feed_waits || self.board.question_waits || owed {
+        let offered = self.board.court.task.is_some();
+        match self.board.court.dwelling() || self.board.feed_waits || self.board.question_waits || owed || offered {
             true => self.hypha.rest(self.transport_rtt()),
             false => self.hypha.block(),
         }
