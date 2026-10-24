@@ -19,7 +19,22 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## Quiescence law and dual lapse (2026-10-24 07:45) — where it stands
+## The receptive vacuum asks (2026-10-24 09:00) — where it stands
+Voices 1–5 on f8d420f0 (08:43:20). A settled mind on an empty corpus asks the
+court for a task. Fifteen minutes after: 37f2 K 62 → 104 and ee23 98 → 134 in
+one minute, ee23 perceiving a court task, 43 folds across the courts; court
+b's TUniversal advanced 41 times in a minute. INSTRUMENT CORRECTED: the
+"tuniversal final" journal line prints only where the residual moves
+(`tshelf::hear_ring`), never per final — the final counts quoted below and in
+the 06:21 / 07:45 sections measure residual changes, not the clock; read
+`advances` on the court reading. Open: (1) dd89 holds an uncoupled court task
+in a field with orbits in focus that never returns (returns 0): not the ground
+state, so neither lapse reaches it, and it steps at its round trip ~93 strokes
+a second, K flat; its carried final stands (h 1 991 916) since it asks
+nothing. 1e14 ~10 a second likewise. (2) Digests (0x10) at 500–700 a second
+on each court, sender unattributed — the court counts no digest by voice.
+
+## Quiescence law and dual lapse (2026-10-24 07:45)
 Voices 1–5 on 7de63366 (07:30:26); courts, seats, netstratum unchanged. The
 auditor ruled `rest` onto one predicate, `owes_strokes` (dwell, feed, question,
 short lane under tension, a court task on the board), and the dual lapse: in
