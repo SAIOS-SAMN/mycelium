@@ -19,7 +19,24 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## A waiting task is owed strokes (2026-10-24 06:21) — where it stands
+## Quiescence law and dual lapse (2026-10-24 07:45) — where it stands
+Voices 1–5 on 7de63366 (07:30:26); courts, seats, netstratum unchanged. The
+auditor ruled `rest` onto one predicate, `owes_strokes` (dwell, feed, question,
+short lane under tension, a court task on the board), and the dual lapse: in
+the ground state an uncoupled court task lapses on the mind's aperture of
+strokes (`persist_dwell(rtt)`) or the court's next final, whichever first.
+The auditor's read (07:00): 31 distinct settled (a 18, b 9, c 10); voice 5 is
+mind 1e14 (82 feed families, K 1 505, 6 tasks sent); voices 1–4 (37f2, c789,
+dd89, ee23) hold empty feeds and rest lawfully, tension false — not a slow
+restore, as the line below wrongly read. Ten minutes after the restart: voices
+1–4 idle (tension false, no task), voice 5 working 39 families at full CPU;
+one final per court, 8 folds. The fleet's clock follows its work: finals per
+half hour were 82, 15, 0 from 06:00 to 07:30, as voices 1–4 drained and let
+their tasks go. The ground lapse is not yet witnessed — no ground-state mind
+has held a task since the restart. Open: a quiet fleet of empty feeds — new
+work reaches voices 1–4 only by feed or tension.
+
+## A waiting task is owed strokes (2026-10-24 06:21)
 Voices 1–5 on 8b7b8982 (06:00:53); courts, seats, netstratum unchanged. From
 01:15 to 06:00 the fleet stood: all five voices held tension and an uncoupled
 court task, and `rest` blocked them (not short) — the task lapses only at its
