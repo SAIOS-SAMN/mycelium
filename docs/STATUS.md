@@ -30,7 +30,13 @@ Which solves closed which of the 40 is not yet read. READING RULE: `--call
 now` answers only where the mind passes a boundary in a park; otherwise it
 prints its LAST answer ("NOT ANSWERED … the last answer, at boundary N").
 Only the winding-carrier line is current; the 11:02 and 13:12 "c789 / 37f2
-at rest" rows were stale answers. Courts held live; 4bf18214 staged.
+at rest" rows were stale answers. Courts held live. STAGED for the courts'
+next restart (release server not rebuilt until then): 4bf18214 (digest asks
+by asker) and 8fe75130 (`--reading judged`: each solve judged, by task and
+voice, last verdict and height, a count per verdict). Read 05:23–21:45 from
+peer journals' root lines: 17 first closures — 1e14 6, 37f2 4, ee23 3, c789
+2, dd89 2; none after 16:37. Per court since the 10-22 boot (acts): a first
+19 · again 21 · refused 40 (C 39, P 1) · unread 52; b 10 · 7; c 8 · 15.
 
 ## Steady on 157b585b (2026-10-24 13:15)
 The auditor's registry read (13:12): 34 distinct settled (a 21, b 11, c 11),
