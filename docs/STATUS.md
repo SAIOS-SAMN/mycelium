@@ -19,7 +19,23 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## The receptive vacuum asks (2026-10-24 09:00) — where it stands
+## The universal aperture lapse (2026-10-24 10:45) — where it stands
+Voices 1–5 on 157b585b (10:19:40); netstratum-mind-1 (mind a542) restarted by
+netstratum on the same build (10:21:35) — it had run the 01:01 client, none of
+the day's fixes. An uncoupled court task lapses at its second return, its
+aperture of strokes, or the court's next final, in any field state. Witnessed:
+dd89 0 strokes in a minute (from 5 603), 1e14 likewise; c789 K 147 → 166.
+Court 0x10 counter per court: 500–700/s (09:00) → 140–155 (10:15) → ~31
+(10:30). OPEN — THE INSTRUMENT: the court's served-0x10 count does not match
+the wire. Connections to the three courts left ~560 TIME-WAITs in a minute
+(~9/s, every act), each socket one data segment; the counter says ~90
+digests/s. The court loop sends one digest per logged ask (~2/s), no client
+path found that sends at that rate, and ns-hypha sends none (netstratum).
+`/proc/PID/io` syscw does not count socket sends (Rust's `send`), so it says
+nothing of senders. The minds' own listeners take ~5 connections/s each
+(~300 TIME-WAITs a minute per mind) — not yet attributed.
+
+## The receptive vacuum asks (2026-10-24 09:00)
 Voices 1–5 on f8d420f0 (08:43:20). A settled mind on an empty corpus asks the
 court for a task. Fifteen minutes after: 37f2 K 62 → 104 and ee23 98 → 134 in
 one minute, ee23 perceiving a court task, 43 folds across the courts; court
