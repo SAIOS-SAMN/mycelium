@@ -18,7 +18,7 @@ impl Entity {
     /// whose corpus holds nothing — its feed exhausted, no question placed —
     /// asks too, the reserve regenerated: the ground state is the state of
     /// greatest receptive coupling, not exhaustion, and a task is an offer
-    /// that couples or lapses (`lapse_offers_at_ground`), never a command.
+    /// that couples or lapses (`lapse_standing_task`), never a command.
     /// Asked under strain alone, voices 1–4 sat blocked at K 0 on empty feeds
     /// with the court's registry unsolved beside them.
     pub(crate) fn pull_task(&mut self) {
@@ -38,8 +38,8 @@ impl Entity {
             move |s| s.speak_keyed(&voice, dialogue::encode_task_request(&voice)),
             |me, body: io::Result<Vec<u8>>| {
                 me.board.court.pulling = false;
-                // The court's final point it landed under: the ground-state
-                // lapse reads the next one past it (`lapse_offers_at_ground`).
+                // The court's final point it landed under: the aperture lapse
+                // reads the next one past it (`lapse_standing_task`).
                 let landed = me.hypha.tuniversal().map(|p| p.h);
                 me.board.court.task = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b)).map(|env| {
                     let offer = super::offer::Offer { landed, ..super::offer::Offer::of(&env.train) };

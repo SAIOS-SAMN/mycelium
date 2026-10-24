@@ -2286,12 +2286,15 @@ owed in the order it is built.
       coupled offer is extracted. An uncoupled one draws nothing, waits, and
       lapses at the second return it waits across (`lapse_offers`): the
       task let go, the seat's task kept by its charts and pulled again only
-      where they couple. THE DUAL LAPSE (the auditor, 2026-10-24): in the
-      ground state — no orbit in motion, the return's period unbounded — the
-      court's task waiting uncoupled lapses when its wait passes the mind's
-      aperture of strokes (`physics::persist_dwell` of the measured
-      transport) or at the court's next final point past the one it landed
-      under, whichever is first (`lapse_offers_at_ground`). THE QUIESCENCE
+      where they couple. THE UNIVERSAL APERTURE LAPSE (the auditor,
+      2026-10-24; first ruled for the ground state alone, generalized the
+      same day when a field whose orbits stood in focus and never returned
+      held its task without end): no offer across the transport is held
+      unbounded — the court's task waiting uncoupled lapses at the first of
+      its second return, its wait passing the mind's aperture of strokes
+      (`physics::persist_dwell` of the measured transport), or the court's
+      next final point past the one it landed under
+      (`lapse_standing_task`). THE QUIESCENCE
       LAW (the same ruling): the mind blocks if and only if nothing it holds
       needs its own strokes to progress (`owes_strokes`: the dwell, a feed
       family or question waiting on the reserve, a short lane under tension,

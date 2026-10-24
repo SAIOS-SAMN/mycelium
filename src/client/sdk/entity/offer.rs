@@ -106,20 +106,18 @@ impl Entity {
         }
     }
 
-    /// THE DUAL LAPSE IN THE GROUND STATE (the auditor's ruling, 2026-10-24):
-    /// a field with no orbit in motion has no return to wait across — its
-    /// period is unbounded — so the court's task waiting uncoupled there
-    /// lapses when its wait passes the mind's aperture of strokes (one full
-    /// aperture of its measured transport, `physics::persist_dwell`), or at
-    /// the court's next final point past the one it landed under, whichever
-    /// comes first. Read once a stroke in the winding carrier's slots; a field
-    /// in motion keeps the return rule (`lapse_offers`), and an unmeasured
-    /// transport bounds the wait by the final alone.
-    pub(crate) fn lapse_offers_at_ground(&mut self) {
-        let ground = matches!(crate::transducer::mind::with_field(|f| f.orbits.focus().is_empty()), Ok(true));
-        if !ground {
-            return;
-        }
+    /// THE UNIVERSAL APERTURE LAPSE (the auditor's rulings, 2026-10-24): no
+    /// offer across the transport is held unbounded. The court's task waiting
+    /// uncoupled lapses at the first horizon it reaches — the second return
+    /// it waits across (`lapse_offers`), its wait passing the mind's aperture
+    /// of strokes (one full aperture of its measured transport,
+    /// `physics::persist_dwell`), or the court's next final point past the
+    /// one it landed under. Gated first to the ground state, the aperture
+    /// left a field whose orbits stand in focus and never return holding its
+    /// task without end: dd89 stepped at its round trip ~93 strokes a second,
+    /// returns 0, K flat. Read once a stroke; an unmeasured transport bounds
+    /// the wait by the return and the final alone.
+    pub(crate) fn lapse_standing_task(&mut self) {
         let aperture = self.transport_rtt().map(crate::physics::persist_dwell);
         let finality = self.hypha.tuniversal().map(|p| p.h);
         let coupled = match self.board.court.task.as_ref() {

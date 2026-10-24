@@ -318,17 +318,37 @@ fn an_uncoupled_task_is_not_taken_and_lapses_at_its_second_return() {
     assert_eq!(mind.board.offers_passed[PASSED_TASK], 1, "passed, said to the observer");
 }
 
-/// IN THE GROUND STATE AN UNCOUPLED TASK LAPSES AT THE COURT'S NEXT FINAL (the
-/// auditor's dual lapse, 2026-10-24). A mind with no orbit in motion has no
-/// return to wait across. The task landed under final `h` 10 waits while no
-/// final is carried, and while the one carried is the one it landed under;
-/// the next final past it lets it go — kept as lapsed by its citation,
+/// AN UNCOUPLED TASK LAPSES AT THE COURT'S NEXT FINAL, IN THE GROUND STATE OR
+/// OUT OF IT (the auditor's universal aperture lapse, 2026-10-24). A mind
+/// with no orbit in motion has no return to wait across, nor has one whose
+/// orbits stand and never return. The task landed under final `h` 10 waits
+/// while no final is carried, and while the one carried is the one it landed
+/// under; the next final past it lets it go — kept as lapsed by its citation,
 /// passed — with no return in between. Every stroke it waited is counted.
 #[test]
-fn in_the_ground_state_an_uncoupled_task_lapses_at_the_courts_next_final() {
+fn an_uncoupled_task_lapses_at_the_courts_next_final_in_the_ground_state() {
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("ground lapse"));
+    lapses_at_the_next_final(&mut mind);
+}
+
+/// The same, a 𝒢 orbit standing on the field — its orbits in focus, no
+/// ground state — and the one-cell task on no chart the mind holds.
+#[test]
+fn an_uncoupled_task_lapses_at_the_courts_next_final_in_a_field_in_motion() {
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("moving lapse"));
+    let mut field = std::mem::take(&mut mind.field);
+    let in_focus = field.think(|| {
+        let _ = crate::transducer::mind::with_field(|f| f.orbits.admit_hues(&[(1, 2), (2, 1)], 1, &crate::transducer::cech::Thread::Free));
+        matches!(crate::transducer::mind::with_field(|f| !f.orbits.focus().is_empty()), Ok(true))
+    });
+    mind.field = field;
+    assert!(in_focus, "an orbit in focus: not the ground state");
+    lapses_at_the_next_final(&mut mind);
+}
+
+fn lapses_at_the_next_final(mind: &mut Entity) {
     use crate::chronometry::tuniversal::{Origin, TPoint};
     use crate::client::sdk::entity::perceive::Stop;
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("ground lapse"));
     let id = [6u8; 32];
     let train = one_cell_steps();
     let offer = Offer { landed: Some(10), ..Offer::of(&train) };
@@ -347,14 +367,14 @@ fn in_the_ground_state_an_uncoupled_task_lapses_at_the_courts_next_final() {
         assert_eq!(mind.hypha.tuniversal().map(|p| p.h), Some(h), "the final is carried");
     };
     let mut field = std::mem::take(&mut mind.field);
-    field.think(|| mind.lapse_offers_at_ground());
+    field.think(|| mind.lapse_standing_task());
     assert!(mind.board.court.task.is_some(), "no final carried, no aperture measured: it waits");
-    hear(&mut mind, 10);
-    field.think(|| mind.lapse_offers_at_ground());
+    hear(mind, 10);
+    field.think(|| mind.lapse_standing_task());
     assert!(mind.board.court.task.as_ref().is_some_and(|(_, o)| o.waited == 2 && !o.crossed), "the final it landed under: it waits, two strokes counted, no return crossed");
     assert_eq!(mind.board.offers_passed[PASSED_TASK], 0);
-    hear(&mut mind, 11);
-    field.think(|| mind.lapse_offers_at_ground());
+    hear(mind, 11);
+    field.think(|| mind.lapse_standing_task());
     mind.field = field;
     assert!(mind.board.court.task.is_none(), "the court's next final: it lapses");
     assert_eq!(mind.board.offers_passed[PASSED_TASK], 1, "passed, said to the observer");
