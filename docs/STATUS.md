@@ -19,7 +19,20 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## Steady on 157b585b (2026-10-24 13:15) — where it stands
+## Evening (2026-10-24 21:00) — where it stands
+The auditor's 20:57 read: 40 distinct settled in the registries. Voice K off
+the winding-carrier line (current): ee23 7 533, dd89 7 519, 37f2 5 156, 1e14
+4 955, c789 4 519; a542 1 819 unchanged since 10:21; seat n1 K 6, n2–n4 0.
+Solves sent per mind (ee23 17, dd89 11, a542 10, c789 7, 1e14 7, 37f2 4) and
+lapses (51 across the fleet) are read off each mind's last answer, which
+can be thousands of boundaries stale — lower bounds, not current counts.
+Which solves closed which of the 40 is not yet read. READING RULE: `--call
+now` answers only where the mind passes a boundary in a park; otherwise it
+prints its LAST answer ("NOT ANSWERED … the last answer, at boundary N").
+Only the winding-carrier line is current; the 11:02 and 13:12 "c789 / 37f2
+at rest" rows were stale answers. Courts held live; 4bf18214 staged.
+
+## Steady on 157b585b (2026-10-24 13:15)
 The auditor's registry read (13:12): 34 distinct settled (a 21, b 11, c 11),
 from 31 at 07:00. K since 11:02: ee23 178 → 974 (dialect 527), dd89 150 → 433,
 1e14 7 → 288 (woke on the receptive vacuum); c789 217 and 37f2 99 at rest. The
