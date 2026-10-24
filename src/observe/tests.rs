@@ -34,6 +34,8 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         basis: 3,
         treasury: 2,
         served: vec![(0x03, 9), (0x39, 1)],
+        // The digest asks, by the voice each named.
+        digest_askers: vec![([1; 32], 7), ([2; 32], 3)],
         // TP1 — the glue's reopened rings, by what each cut, travel.
         reopened: [4, 5],
         // RM1 — the court's remainders by ℓ, ascending, and its torsion words.

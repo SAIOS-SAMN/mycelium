@@ -51,6 +51,7 @@ fn publish_standing(k: &mycelium::cognition::Kernel, mesh: &crate::exchange::Mes
         basis: k.basis_len() as u64,
         treasury: k.treasury_entry_count() as u64,
         served: observe::served(),
+        digest_askers: observe::digest_askers(),
         reopened: k.reopened(),
         remainders,
         torsion_words,

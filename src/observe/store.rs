@@ -127,6 +127,30 @@ pub fn served() -> Vec<(u8, u64)> {
         .collect()
 }
 
+/// THE DIGEST ASKS BY ASKER (read on the fleet 2026-10-24): the served count
+/// of `ACT_DIGESTS` stood near ten times what the wire carried, and no
+/// counter named who asked. Each ask decoded at the door is counted under the
+/// voice it names — a court's key or a mind's.
+static DIGEST_ASKERS: LazyLock<Mutex<Keyed<u64>>> = LazyLock::new(|| Mutex::new(Keyed::new()));
+
+/// Count one digest ask under the voice that asked it.
+pub fn note_digest_ask(voice: &[u8; 32]) {
+    let Ok(mut a) = DIGEST_ASKERS.lock() else { return };
+    let next = match a.get(voice) {
+        Some(n) => n.checked_add(1),
+        None => Some(1),
+    };
+    if let Some(n) = next {
+        a.insert(voice, n);
+    }
+}
+
+/// The digest asks, each asker with its count, ascending by key.
+pub fn digest_askers() -> Vec<([u8; 32], u64)> {
+    let Ok(a) = DIGEST_ASKERS.lock() else { return Vec::new() };
+    a.scoped().filter_map(|(k, n)| <[u8; 32]>::try_from(k.as_slice()).ok().map(|v| (v, *n))).collect()
+}
+
 /// PH5 — THE LAST PHASE WINDOW THIS PROCESS'S COURT WROTE, and the windows
 /// written: the instrument's copy, handed over where the court writes its
 /// line, so the court itself keeps no phase (45.9).

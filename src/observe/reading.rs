@@ -184,6 +184,9 @@ pub struct Court {
     pub basis: u64,
     pub treasury: u64,
     pub served: Vec<(u8, u64)>,
+    /// The digest asks by the voice each named, ascending by key
+    /// (`observe::note_digest_ask`).
+    pub digest_askers: Vec<([u8; 32], u64)>,
     // The head's stamp and the rulings count are the clock's (ACT1,
     // [`super::Clock`]), read there and never copied here (law 12).
     /// 78.26(6), TP1 — the closed rings of the cover's nerve a moved gauge
@@ -360,6 +363,11 @@ impl Court {
             out.push(kind);
             put_u64(out, n);
         }
+        crate::transducer::address::put_u32_count(out, self.digest_askers.len())?;
+        for (voice, n) in &self.digest_askers {
+            out.extend_from_slice(voice);
+            put_u64(out, *n);
+        }
         for n in self.reopened {
             put_u64(out, n);
         }
@@ -390,6 +398,16 @@ impl Court {
         for _ in 0..m {
             served.push((take_u8(b, p)?, take_u64(b, p)?));
         }
+        let a = take_u32(b, p)? as usize;
+        if !holds(b, *p, a, 40) {
+            return None;
+        }
+        let mut digest_askers = Vec::with_capacity(a);
+        for _ in 0..a {
+            let voice: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+            *p += 32;
+            digest_askers.push((voice, take_u64(b, p)?));
+        }
         let reopened = [take_u64(b, p)?, take_u64(b, p)?];
         let remainders = crate::transducer::cech::RemainderReading::take(b, p)?;
         let torsion_words = take_u64(b, p)?;
@@ -412,6 +430,7 @@ impl Court {
             basis,
             treasury,
             served,
+            digest_askers,
             reopened,
             remainders,
             torsion_words,

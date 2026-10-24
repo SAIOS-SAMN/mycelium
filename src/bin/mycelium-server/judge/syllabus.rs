@@ -20,6 +20,7 @@ pub(crate) fn digests(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let mesh = &door.mesh;
 
     let Some(dvoice) = dialogue::decode_digests_request(&frame.body) else { return };
+    mycelium::observe::note_digest_ask(&dvoice);
     // 78.153b — the voice's own ruled digests off the published reading, the
     // language's atlas off its snapshot taken by pointer: neither read under
     // the kernel, which `ruled_digests_for` walked whole per ask.

@@ -497,6 +497,10 @@ fn court(c: &Court) -> Vec<String> {
             true => format!("{DIM}nothing yet{RESET}"),
             false => served.join(" "),
         }),
+        format!("  {BOLD}digests by{RESET}  {}", match c.digest_askers.is_empty() {
+            true => format!("{DIM}nobody yet{RESET}"),
+            false => c.digest_askers.iter().map(|(v, n)| format!("{:02x}{:02x}{:02x}{:02x}…×{n}", v[0], v[1], v[2], v[3])).collect::<Vec<_>>().join(" "),
+        }),
         format!(
             "  {BOLD}remainders{RESET}  {} | basis words with a filed torsion {}",
             c.remainders.line(),
