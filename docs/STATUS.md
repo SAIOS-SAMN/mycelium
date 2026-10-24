@@ -19,7 +19,16 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## The universal aperture lapse (2026-10-24 10:45) — where it stands
+## Steady on 157b585b (2026-10-24 13:15) — where it stands
+The auditor's registry read (13:12): 34 distinct settled (a 21, b 11, c 11),
+from 31 at 07:00. K since 11:02: ee23 178 → 974 (dialect 527), dd89 150 → 433,
+1e14 7 → 288 (woke on the receptive vacuum); c789 217 and 37f2 99 at rest. The
+universal lapse witnessed in production: dd89 passed 2 uncoupled tasks, 454c
+1, a542 2 — released, the board freed, the next ask taken; no mind spinning,
+idle minds at 0 CPU. Ruled: courts held live; 4bf18214 held for the next
+court maintenance. Watch maintained.
+
+## The universal aperture lapse (2026-10-24 10:45)
 Voices 1–5 on 157b585b (10:19:40); netstratum-mind-1 (mind a542) restarted by
 netstratum on the same build (10:21:35) — it had run the 01:01 client, none of
 the day's fixes. An uncoupled court task lapses at its second return, its
