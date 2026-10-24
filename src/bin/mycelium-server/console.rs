@@ -257,6 +257,7 @@ pub(crate) fn render(addr: &str, total: u64, held: &[observe::Held]) -> Vec<Stri
                 Reading::Mind(m) => m.lines().into_iter().map(|l| format!("  {l}")).collect(),
                 Reading::Agreements(a) => a.lines().into_iter().map(|l| format!("  {l}")).collect(),
                 Reading::Dispatched(d) => d.lines().into_iter().map(|l| format!("  {l}")).collect(),
+                Reading::Judged(j) => j.lines().into_iter().map(|l| format!("  {l}")).collect(),
                 Reading::Asked(n) => vec![match n {
                     0 | 1 => format!("  {DIM}standing published since the last question{RESET}"),
                     n => format!(

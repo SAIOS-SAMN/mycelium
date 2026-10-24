@@ -386,6 +386,14 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 }
             }
         }
+        // The judged-solve observation (2026-10-24): the verdict under the
+        // task's citation and the voice the solve names, at the height it
+        // was paid, or the published height where nothing was.
+        let judged_at = match stamp.as_ref() {
+            Some((at, _)) => *at,
+            None => door.published.take().height(),
+        };
+        mycelium::observe::note_judged_solve(cite, svoice, code, judged_at);
         // The paid modes ride behind the receipt; modes that do not write
         // leave the receipt bare, never a guessed tail.
         let modes = stamp.as_ref().map(|(_, m)| m);

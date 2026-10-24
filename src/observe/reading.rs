@@ -34,12 +34,16 @@ pub const TAG_ASKED: u8 = 23;
 /// The auditor's dispatch observation (2026-10-22): every task a court
 /// dispatched, by its citation, to whom and at what height.
 pub const TAG_DISPATCHED: u8 = 24;
+/// The judged-solve observation (2026-10-24): every solve a court judged, by
+/// citation and voice, its verdicts and the height of the last.
+pub const TAG_JUDGED: u8 = 25;
 
 /// CQ1 — EVERY READING'S NAME, by its tag: the ONE statement the console's
 /// `--reading NAME` is read against (law 12).
-pub const READING_NAMES: [(&str, u8); 15] = [
+pub const READING_NAMES: [(&str, u8); 16] = [
     ("asked", TAG_ASKED),
     ("dispatched", TAG_DISPATCHED),
+    ("judged", TAG_JUDGED),
     ("mind", TAG_MIND),
     ("agreements", TAG_AGREEMENTS),
     ("carriers", TAG_CARRIERS),
@@ -763,6 +767,8 @@ pub enum Reading {
     Asked(u64),
     /// The tasks a court dispatched, by citation (`TAG_DISPATCHED`).
     Dispatched(Box<super::Dispatched>),
+    /// The solves a court judged, by citation and voice (`TAG_JUDGED`).
+    Judged(Box<super::JudgedSolves>),
 }
 
 impl Reading {
@@ -783,6 +789,7 @@ impl Reading {
             Reading::Agreements(_) => TAG_AGREEMENTS,
             Reading::Asked(_) => TAG_ASKED,
             Reading::Dispatched(_) => TAG_DISPATCHED,
+            Reading::Judged(_) => TAG_JUDGED,
         }
     }
 
@@ -820,6 +827,7 @@ impl Reading {
             (Reading::Asked(a), Reading::Asked(b)) => *a = *b,
             // The dispatches are read whole at the question; the later stands.
             (Reading::Dispatched(a), Reading::Dispatched(b)) => *a = b.clone(),
+            (Reading::Judged(a), Reading::Judged(b)) => *a = b.clone(),
             _ => return false,
         }
         true
@@ -860,6 +868,7 @@ impl Reading {
                 Some(())
             }
             Reading::Dispatched(r) => r.put(out),
+            Reading::Judged(r) => r.put(out),
         }
     }
 
@@ -882,6 +891,7 @@ impl Reading {
             TAG_AGREEMENTS => Some(Reading::Agreements(Box::new(super::Agreements::take(b, p)?))),
             TAG_ASKED => Some(Reading::Asked(take_u64(b, p)?)),
             TAG_DISPATCHED => Some(Reading::Dispatched(Box::new(super::Dispatched::take(b, p)?))),
+            TAG_JUDGED => Some(Reading::Judged(Box::new(super::JudgedSolves::take(b, p)?))),
             _ => None,
         }
     }

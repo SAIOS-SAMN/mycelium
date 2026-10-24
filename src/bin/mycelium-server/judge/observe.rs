@@ -129,6 +129,9 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             // The auditor's dispatch observation (2026-10-22): every task this
             // court dispatched, by citation, to whom and at what height.
             observe::replace(own, Reading::Dispatched(Box::new(observe::dispatched())));
+            // The judged-solve observation (2026-10-24): every solve this
+            // court judged, by citation and voice, its verdicts and height.
+            observe::replace(own, Reading::Judged(Box::new(observe::judged_solves())));
             // The body's share of the frame, exact, as `rows` reads it.
             let Some(budget) = mycelium::network::wire::frame_budget().checked_sub(64) else {
                 return;
