@@ -33,7 +33,14 @@ digests/s. The court loop sends one digest per logged ask (~2/s), no client
 path found that sends at that rate, and ns-hypha sends none (netstratum).
 `/proc/PID/io` syscw does not count socket sends (Rust's `send`), so it says
 nothing of senders. The minds' own listeners take ~5 connections/s each
-(~300 TIME-WAITs a minute per mind) — not yet attributed.
+(~300 TIME-WAITs a minute per mind) — the auditor reads it as the chatter
+layer's one-shot sends (`chatter::send`). STAGED, NOT DEPLOYED: 4bf18214
+counts digest asks by asker at the door and carries them in the court
+reading (`Court::digest_askers`) — the reading's wire layout changes, so the
+release server stays the 2026-10-22 build (a new console cannot read the
+live courts). Ruled: courts held live; it ships with their next restart,
+when one is due for its own reason — build the release server then, not
+before (a `cargo build --release` of every bin would rebuild it early).
 
 ## The receptive vacuum asks (2026-10-24 09:00)
 Voices 1–5 on f8d420f0 (08:43:20). A settled mind on an empty corpus asks the
