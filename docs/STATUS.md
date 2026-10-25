@@ -19,7 +19,20 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## Overnight (2026-10-25 04:30) — where it stands
+## Hearings paced, minds readable (2026-10-25 09:25) — where it stands
+Voices on ae03ad66 (09:00:22): the asker waits while a mind works
+(96b98b0f); a hearing reads its scene's charts and the mind's own sections
+once, and a stroke prices only its budget's worth of hearings (7 reads on
+the voices), the rest waiting with strokes owed (ae03ad66); hearing
+boundaries per kind (f374a585). Witnessed 09:20: every voice answers
+`tasks` fresh; hearing share of samples 30/30 → 15/30; boundaries/s per
+voice 0.5 → 1.9–12.5; tasks per 20 min ~107 → 142. Of the 142 since the
+restart: 61% fail leave-one-out (guard 3), 24% no rule, 11% vertex fit, 2%
+known. NEXT: reactions (an impulse at a meet: one clause over a pair, its
+extent read off the meet in Cl(4,1)(ℚ)) — mind and court both read clauses,
+so it ships with the court restart beside 4bf18214 and 8fe75130.
+
+## Overnight (2026-10-25 04:30)
 The auditor's 04:24 read: 41 distinct settled (a 24, b 12, c 18 per book),
 from 40 at 20:57 — one in 7½ hours, while voice K rose 29 682 → 73 399 (37f2
 19 854, ee23 16 672, c789 14 777, dd89 13 473, 1e14 8 623). a542
