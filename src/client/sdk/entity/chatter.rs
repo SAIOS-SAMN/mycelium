@@ -488,23 +488,35 @@ impl Entity {
     pub(crate) fn price_hearings(&mut self) {
         let Some(chat) = self.chat.as_ref() else { return };
         let works: Vec<FieldWork> = chat.pricing.try_iter().collect();
+        // Each work is a boundary of the winding carrier (ruled 2026-10-24):
+        // a batch read as one law held the observer's calls unanswered for
+        // minutes, and named no work.
         for w in works {
             match w {
                 // MU-CLIENT §7.1 R1 — the rings are read off the field, on
                 // the perception carrier; what they read is understood where
                 // it lands (`understand_read`). MU-CLIENT §5.5 — a word's
                 // evidence is read on its scene first (`converge`).
-                FieldWork::Hear { speaker, said, words, evidence } => self.hear_with_evidence(speaker, said, words, evidence),
-                FieldWork::Price(p) => self.price(p),
+                FieldWork::Hear { speaker, said, words, evidence } => {
+                    self.at_law("admission: a hearing (hear)");
+                    self.hear_with_evidence(speaker, said, words, evidence);
+                }
+                FieldWork::Price(p) => {
+                    self.at_law("admission: a hearing (price)");
+                    self.price(p);
+                }
                 // Agreed language is counted where the court's answer lands.
-                FieldWork::Speak { body, agreed } => self.ask(
-                    move |s| s.speak_nerve(body).ok().and_then(|reply| dialogue::decode_speech_reply(&reply)).is_some(),
-                    move |_, heard| {
-                        if heard && agreed {
-                            crate::observe::note_mind(|m| m.agreed += 1);
-                        }
-                    },
-                ),
+                FieldWork::Speak { body, agreed } => {
+                    self.at_law("admission: a hearing (speak)");
+                    self.ask(
+                        move |s| s.speak_nerve(body).ok().and_then(|reply| dialogue::decode_speech_reply(&reply)).is_some(),
+                        move |_, heard| {
+                            if heard && agreed {
+                                crate::observe::note_mind(|m| m.agreed += 1);
+                            }
+                        },
+                    );
+                }
             }
         }
     }
