@@ -465,3 +465,121 @@ fn the_court_solves_what_the_act_reader_read() {
         assert!(matches!(verdict, crate::cognition::SolveVerdict::Solved { .. }), "{name}: the court solves it on a pair it never saw: {verdict:?}");
     }
 }
+
+/// THE REACTIONS (ruled 2026-10-25): a body that falls until it meets the
+/// floor, three rows in one pair, two in another, one in the third; and a
+/// body that takes the hue of the body it touches, a different hue in each
+/// pair. Each is one relation where a fixed carriage or a fixed map fits
+/// each pair alone. The held-out pair — another distance, another hue — is
+/// re-derived, and the court, decoding the clauses, solves it.
+#[test]
+fn a_reaction_is_known_and_solved_on_a_pair_never_seen() {
+    use crate::transducer::sentence::form::clause::{Act, Paint};
+    let cases: Vec<(&str, Vec<(&[&str], &[&str])>, (&[&str], &[&str]))> = vec![
+        (
+            "a slide to contact",
+            vec![
+                (&["0100", "0000", "0000", "0000", "2222"], &["0000", "0000", "0000", "0100", "2222"]),
+                (&["0000", "0010", "0000", "0000", "2222"], &["0000", "0000", "0000", "0010", "2222"]),
+                (&["0000", "0000", "1000", "0000", "2222"], &["0000", "0000", "0000", "1000", "2222"]),
+            ],
+            (&["0001", "0000", "0000", "0000", "2222"], &["0000", "0000", "0000", "0001", "2222"]),
+        ),
+        (
+            "a partner's hue",
+            vec![
+                (&["300", "050", "000"], &["300", "030", "000"]),
+                (&["000", "050", "004"], &["000", "040", "004"]),
+                (&["006", "050", "000"], &["006", "060", "000"]),
+            ],
+            (&["000", "050", "700"], &["000", "070", "700"]),
+        ),
+    ];
+    for (name, fam, held) in cases {
+        let family: Vec<(Grid, Grid)> = fam.iter().map(|(x, y)| (grid(x), grid(y))).collect();
+        let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
+        let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
+        let reacted = rule.form.clauses.iter().any(|c| matches!(c.act, Act::Slide { .. } | Act::Repaint { paint: Paint::Of(_) }));
+        assert!(reacted, "{name}: stated as a reaction: {:?}", rule.form.clauses);
+        let s = speak_rule(&rule, &grid(held.0), &NoCrystal).expect("it speaks the held-out input");
+        assert_eq!(s.grid(), Some(grid(held.1)), "{name}: the held-out pair re-derived; clauses {:?}", rule.form.clauses);
+        let minted = match crate::transducer::family::mint_sentence_why(&rule, &family, &NoCrystal, 0) {
+            Ok(word) => word,
+            Err(why) => panic!("{name}: the rule mints over its family: {why:?}"),
+        };
+        let mut court = crate::cognition::Kernel::new();
+        let verdict = court.judge_solve(&minted, &[(grid(held.0), grid(held.1))]);
+        assert!(matches!(verdict, crate::cognition::SolveVerdict::Solved { .. }), "{name}: the court solves it on a pair it never saw: {verdict:?}");
+    }
+}
+
+/// A STACK SETTLES AS IT LANDS: two bodies in one column slide down to
+/// contact, the nearest the floor first, so the upper rests on the lower; a
+/// slide with nothing to meet stops at the border; a ray of no step is
+/// refused by name.
+#[test]
+fn a_slide_settles_a_stack_and_stops_at_the_border() {
+    use crate::transducer::family::statement::{speak_clauses, Unstated};
+    use crate::transducer::sentence::form::clause::{Act, Clause, Pred, Stop};
+    let say = |clause: &Clause, x: &[&str]| -> Result<Grid, Unstated> {
+        let x = grid(x);
+        let spoken = speak_clauses(std::slice::from_ref(clause), &x, &crate::transducer::family::perceive(&x))?;
+        let mut g: Grid = vec![vec![0; spoken.frame.1]; spoken.frame.0];
+        for (r, c, h) in spoken.painted {
+            g[usize::try_from(r).expect("on the grid")][usize::try_from(c).expect("on the grid")] = h;
+        }
+        Ok(g)
+    };
+    let fall = Clause { select: Pred::Hue(1), act: Act::Slide { ray: (1, 0), stop: Stop::Contact } };
+    assert_eq!(say(&fall, &["0100", "0000", "0100", "0000", "2222"]), Ok(grid(&["0000", "0000", "0100", "0100", "2222"])), "the lower lands on the floor, the upper on it");
+    assert_eq!(say(&fall, &["0100", "0000", "0000"]), Ok(grid(&["0000", "0000", "0100"])), "nothing met: the border");
+    let still = Clause { select: Pred::Hue(1), act: Act::Slide { ray: (0, 0), stop: Stop::Contact } };
+    assert_eq!(say(&still, &["0100"]), Err(Unstated::Still), "no step: refused by name");
+}
+
+/// A PARTNER OF TWO HUES IS NO ONE PARTNER: a body touching a body of 3 and
+/// one of 4 takes neither, refused by name; one touching nothing likewise.
+#[test]
+fn a_partners_hue_is_refused_where_no_one_hue_is_touched() {
+    use crate::transducer::family::statement::{speak_clauses, Unstated};
+    use crate::transducer::sentence::form::clause::{Act, Clause, Paint, Pred};
+    let take = Clause { select: Pred::Hue(5), act: Act::Repaint { paint: Paint::Of(Pred::All) } };
+    for x in [grid(&["300", "050", "004"]), grid(&["000", "050", "000"])] {
+        let spoken = speak_clauses(std::slice::from_ref(&take), &x, &crate::transducer::family::perceive(&x));
+        assert_eq!(spoken.err(), Some(Unstated::Unpartnered), "refused by name on {x:?}");
+    }
+}
+
+/// THE REACTIONS CROSS THE WIRE, AND NO FORM ALREADY MINTED MOVES: a slide, a
+/// repaint by a partner's hue and a line painted by one read back as written;
+/// a line painted its own hue or a named one writes the bytes it always did.
+#[test]
+fn reactions_read_back_and_old_lines_keep_their_bytes() {
+    use crate::transducer::sentence::form::clause::{put_clauses, take_clauses, Act, Clause, Paint, Pred, Stop};
+    let clauses = vec![
+        Clause { select: Pred::Hue(1), act: Act::Slide { ray: (1, -1), stop: Stop::Contact } },
+        Clause { select: Pred::Hue(5), act: Act::Repaint { paint: Paint::Of(Pred::Hue(3)) } },
+        Clause { select: Pred::All, act: Act::Extend { ray: (0, 1), paint: Paint::Of(Pred::All), stop: Stop::Border } },
+    ];
+    let mut bytes = Vec::new();
+    put_clauses(&mut bytes, &clauses);
+    let mut p = 0;
+    let back = take_clauses(&bytes, &mut p).expect("read back");
+    assert_eq!(p, bytes.len(), "every byte read");
+    let mut again = Vec::new();
+    put_clauses(&mut again, &back);
+    assert_eq!(again, bytes, "read back as written");
+    for (paint, tail) in [(Paint::Own, vec![0u8]), (Paint::Hue(7), vec![1u8, 7])] {
+        let mut b = Vec::new();
+        put_clauses(&mut b, &[Clause { select: Pred::All, act: Act::Extend { ray: (0, 1), paint, stop: Stop::Contact } }]);
+        let mut want = Vec::new();
+        put_clauses(&mut want, &[]);
+        let count = want.len();
+        let mut expected = b[..count].to_vec();
+        expected.push(0); // Pred::All
+        expected.extend_from_slice(&[3, 0, 1]);
+        expected.extend_from_slice(&tail);
+        expected.push(1); // Stop::Contact
+        assert_eq!(b[count..], expected[count..], "an extend writes the bytes it was first written with");
+    }
+}

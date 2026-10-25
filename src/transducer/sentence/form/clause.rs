@@ -154,11 +154,16 @@ pub enum Stop {
     Contact,
 }
 
-/// THE HUE A CREATED CELL TAKES: the cell it grows from, or one named.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// THE HUE A CREATED CELL TAKES: the cell it grows from, one named, or the
+/// hue of the body it touches that a predicate selects (ruled 2026-10-25 —
+/// a REACTION's hue: read off the partner, never fixed, so it holds where
+/// the partner's hue differs pair to pair). None selected, or bodies of two
+/// hues, is refused by name.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Paint {
     Own,
     Hue(u8),
+    Of(Pred),
 }
 
 /// WHERE A CARRIAGE'S MOTION IS READ: about the grid's frame, or about each
@@ -243,6 +248,16 @@ pub enum Act {
     /// before the clause. A pair already facing along a row or a column is no
     /// bend (that is `Connect`'s).
     Bend { to: Pred, paint: Paint },
+    /// A REACTION — THE IMPULSE (ruled 2026-10-25): each selected body
+    /// carried along the unit ray `ray` until its next step would leave the
+    /// grid or, at `Stop::Contact`, meet a painted cell; the bodies nearest
+    /// their stop first, so a stack settles as it lands. Its extent is read
+    /// off the meet, so it holds where the distance differs pair to pair —
+    /// a fixed carriage fits each pair and fails the held-out one.
+    Slide { ray: (i8, i8), stop: Stop },
+    /// A REACTION'S HUE: every cell of each selected body painted `paint`
+    /// (`Paint::Of`: the hue of the body it touches).
+    Repaint { paint: Paint },
 }
 
 /// ONE STATEMENT: a selection and what is done to it.
@@ -502,21 +517,14 @@ fn put_act(buf: &mut Vec<u8>, act: &Act) {
             });
             buf.push(*hue);
         }
+        // The paint in the bytes `put_paint` writes, which are the bytes an
+        // extend was first written with: no form already minted moves.
         Act::Extend { ray, paint, stop } => {
             buf.push(3);
             buf.extend_from_slice(&ray.0.to_le_bytes());
             buf.extend_from_slice(&ray.1.to_le_bytes());
-            match paint {
-                Paint::Own => buf.push(0),
-                Paint::Hue(h) => {
-                    buf.push(1);
-                    buf.push(*h);
-                }
-            }
-            buf.push(match stop {
-                Stop::Border => 0,
-                Stop::Contact => 1,
-            });
+            put_paint(buf, paint);
+            put_stop(buf, *stop);
         }
         Act::Copy { template } => {
             buf.push(4);
@@ -571,6 +579,16 @@ fn put_act(buf: &mut Vec<u8>, act: &Act) {
             put_pred(buf, to);
             put_paint(buf, paint);
         }
+        Act::Slide { ray, stop } => {
+            buf.push(14);
+            buf.extend_from_slice(&ray.0.to_le_bytes());
+            buf.extend_from_slice(&ray.1.to_le_bytes());
+            put_stop(buf, *stop);
+        }
+        Act::Repaint { paint } => {
+            buf.push(15);
+            put_paint(buf, paint);
+        }
     }
 }
 
@@ -581,6 +599,10 @@ fn put_paint(buf: &mut Vec<u8>, paint: &Paint) {
             buf.push(1);
             buf.push(*h);
         }
+        Paint::Of(pred) => {
+            buf.push(2);
+            put_pred(buf, pred);
+        }
     }
 }
 
@@ -588,6 +610,22 @@ fn take_paint(k: &[u8], p: &mut usize) -> Option<Paint> {
     match take_byte(k, p)? {
         0 => Some(Paint::Own),
         1 => Some(Paint::Hue(take_byte(k, p)?)),
+        2 => Some(Paint::Of(take_pred(k, p, 0)?)),
+        _ => None,
+    }
+}
+
+fn put_stop(buf: &mut Vec<u8>, stop: Stop) {
+    buf.push(match stop {
+        Stop::Border => 0,
+        Stop::Contact => 1,
+    });
+}
+
+fn take_stop(k: &[u8], p: &mut usize) -> Option<Stop> {
+    match take_byte(k, p)? {
+        0 => Some(Stop::Border),
+        1 => Some(Stop::Contact),
         _ => None,
     }
 }
@@ -616,17 +654,8 @@ fn take_act(k: &[u8], p: &mut usize) -> Option<Act> {
         3 => {
             let dr = i8::from_le_bytes([take_byte(k, p)?]);
             let dc = i8::from_le_bytes([take_byte(k, p)?]);
-            let paint = match take_byte(k, p)? {
-                0 => Paint::Own,
-                1 => Paint::Hue(take_byte(k, p)?),
-                _ => return None,
-            };
-            let stop = match take_byte(k, p)? {
-                0 => Stop::Border,
-                1 => Stop::Contact,
-                _ => return None,
-            };
-            Act::Extend { ray: (dr, dc), paint, stop }
+            let paint = take_paint(k, p)?;
+            Act::Extend { ray: (dr, dc), paint, stop: take_stop(k, p)? }
         }
         4 => Act::Copy { template: take_pred(k, p, 0)? },
         5 => Act::Crop(match take_byte(k, p)? {
@@ -680,6 +709,12 @@ fn take_act(k: &[u8], p: &mut usize) -> Option<Act> {
             Act::Tile { rows, cols, turns }
         }
         13 => Act::Bend { to: take_pred(k, p, 0)?, paint: take_paint(k, p)? },
+        14 => {
+            let dr = i8::from_le_bytes([take_byte(k, p)?]);
+            let dc = i8::from_le_bytes([take_byte(k, p)?]);
+            Act::Slide { ray: (dr, dc), stop: take_stop(k, p)? }
+        }
+        15 => Act::Repaint { paint: take_paint(k, p)? },
         _ => return None,
     })
 }

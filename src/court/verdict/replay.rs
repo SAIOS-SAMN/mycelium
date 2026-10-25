@@ -1154,6 +1154,7 @@ pub(crate) fn clauses_stated_from(
                 Unstated::Still => REFUSE_RULE_STILL,
                 Unstated::Nested => REFUSE_RULE_NESTED,
                 Unstated::Unframed => REFUSE_RULE_UNFRAMED,
+                Unstated::Unpartnered => REFUSE_RULE_UNPARTNERED,
             };
             return Err(Halt::Refused(Refusal::of_tape(reason, spoken)));
         }

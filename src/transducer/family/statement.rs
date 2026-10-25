@@ -38,6 +38,10 @@ pub enum Unstated {
     /// The input has not the frame the act names: no two equal panes it
     /// splits into, or a quarter turn of a tile that is not square.
     Unframed,
+    /// A hue read off a partner (`Paint::Of`) found no touched body the
+    /// predicate selects, or bodies of more than one hue; or a join, which
+    /// has two ends and no one partner, was asked for one.
+    Unpartnered,
 }
 
 /// THE SQUARE'S SYMMETRY `t` ON A GRID (`Act::Tile`'s codes): 0 itself, 1
@@ -211,6 +215,32 @@ impl<'a> Seen<'a> {
         out
     }
 
+    /// THE HUE OF `b`'S PARTNER (`Paint::Of`): the one hue every cell of the
+    /// bodies `b` touches that `pred` selects carries. None selected, or
+    /// cells of two hues among them, is refused by name.
+    fn partner_hue(&self, b: usize, pred: &Pred) -> Result<u8, Unstated> {
+        let partners = self.select(pred, &self.touching(b))?;
+        let mut hue: Option<u8> = None;
+        for &o in &partners {
+            for &(_, _, h) in &self.cells[o] {
+                match hue {
+                    Some(k) if k != h => return Err(Unstated::Unpartnered),
+                    _ => hue = Some(h),
+                }
+            }
+        }
+        hue.ok_or(Unstated::Unpartnered)
+    }
+
+    /// THE PAINT ON BODY `b`'s CELL OF HUE `h`.
+    fn painted(&self, with: &Paint, b: usize, h: u8) -> Result<u8, Unstated> {
+        match with {
+            Paint::Own => Ok(h),
+            Paint::Hue(k) => Ok(*k),
+            Paint::Of(pred) => self.partner_hue(b, pred),
+        }
+    }
+
     /// THE COORDINATE, READ EXACTLY: `Ok(None)` where it does not read on
     /// this body (a tally of a body of several hues), refused where it is not
     /// exact.
@@ -377,7 +407,7 @@ impl<'a> Seen<'a> {
 /// THE CELL A VERSOR CARRIES `(r, c)` ONTO, read where the sensor reads it —
 /// the compartment's centre — and only where it lands on a cell's centre
 /// in the frame it left: a centre between cells is off the lattice.
-fn carried(v: &Versor, r: usize, c: usize) -> Result<(i64, i64), Unstated> {
+pub(crate) fn carried(v: &Versor, r: usize, c: usize) -> Result<(i64, i64), Unstated> {
     let site = Site::of([
         i64::try_from(r).map_err(|_| Unstated::OffLattice)?,
         i64::try_from(c).map_err(|_| Unstated::OffLattice)?,
@@ -481,10 +511,7 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                 let before = canvas.clone();
                 for &b in &sel {
                     for &(r, c, h) in &seen.cells[b] {
-                        let colour = match with {
-                            Paint::Own => h,
-                            Paint::Hue(k) => *k,
-                        };
+                        let colour = seen.painted(with, b, h)?;
                         let (mut a, mut d) = (r, c);
                         while let Some((na, nd)) = seen.at(a, d, dr, dc) {
                             if *stop == Stop::Contact && before[na][nd] != crate::arc::ground() {
@@ -594,6 +621,10 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                 framed = Some(out);
             }
             Act::Connect { paint: with } => {
+                // A join has two ends, and no one partner to take a hue off.
+                if matches!(with, Paint::Of(_)) {
+                    return Err(Unstated::Unpartnered);
+                }
                 // Joined through what was ground BEFORE this clause, so no
                 // join of the clause blocks another.
                 let before = canvas.clone();
@@ -620,6 +651,7 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                                 let hue = match with {
                                     Paint::Hue(k) => Some(*k),
                                     Paint::Own => (lh == h).then_some(h),
+                                    Paint::Of(_) => None,
                                 };
                                 if let (true, Some(hue)) = (lo != o && i > li + 1, hue) {
                                     for m in li + 1..i {
@@ -637,6 +669,10 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                 }
             }
             Act::Bend { to, paint: with } => {
+                // A bend has two ends, and no one partner to take a hue off.
+                if matches!(with, Paint::Of(_)) {
+                    return Err(Unstated::Unpartnered);
+                }
                 // Bent through what was ground BEFORE this clause, so no bend
                 // of the clause blocks another.
                 let before = canvas.clone();
@@ -668,6 +704,7 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                                 (Some(a), Some(b)) if a == b => a,
                                 _ => continue,
                             },
+                            Paint::Of(_) => return Err(Unstated::Unpartnered),
                         };
                         let across: Vec<usize> = match col > fr {
                             true => (fr + 1..=col).collect(),
@@ -684,6 +721,84 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                     }
                 }
                 for (r, c, h) in joins {
+                    canvas[r][c] = h;
+                }
+            }
+            Act::Slide { ray, stop } => {
+                let (dr, dc) = (i64::from(ray.0), i64::from(ray.1));
+                // One step along a row, a column or a diagonal.
+                if (dr == 0 && dc == 0) || dr.abs() > 1 || dc.abs() > 1 {
+                    return Err(Unstated::Still);
+                }
+                // THE NEAREST THEIR STOP FIRST: a body's reach is its leading
+                // cell's along the ray. Each reach lands on the canvas as the
+                // nearer ones left it, so a stack settles as it lands; bodies
+                // of ONE reach land together, against the canvas as it stood
+                // before them — no order among them is chosen — and two of
+                // them landing on one cell is a tie, refused by name.
+                let reach = |b: usize| -> Option<i64> {
+                    seen.cells[b].iter().try_fold(None, |most: Option<i64>, &(r, c, _)| {
+                        let at = i64::try_from(r).ok()?.checked_mul(dr)?.checked_add(i64::try_from(c).ok()?.checked_mul(dc)?)?;
+                        Some(Some(match most {
+                            Some(m) if m >= at => m,
+                            _ => at,
+                        }))
+                    })?
+                };
+                let mut order: Vec<(i64, usize)> = Vec::with_capacity(sel.len());
+                for &b in &sel {
+                    order.push((reach(b).ok_or(Unstated::OffLattice)?, b));
+                }
+                #[expect(clippy::disallowed_methods, reason = "rule 4 — the slide's own order, content: the reach read off each body along the ray, nearest its stop first; one reach lands together")]
+                order.sort_by_key(|&(reach, _)| std::cmp::Reverse(reach));
+                let void = crate::arc::ground();
+                let mut at = 0usize;
+                while let Some(&(reach_here, _)) = order.get(at) {
+                    let group: Vec<usize> = order[at..].iter().take_while(|(r, _)| *r == reach_here).map(|&(_, b)| b).collect();
+                    at += group.len();
+                    for &b in &group {
+                        for &(r, c, _) in &seen.cells[b] {
+                            canvas[r][c] = void;
+                        }
+                    }
+                    let mut landed: Vec<(usize, usize, u8)> = Vec::new();
+                    for &b in &group {
+                        let cells = &seen.cells[b];
+                        // The furthest step every cell takes onto the grid —
+                        // and, at a contact stop, onto ground: the meet ends it.
+                        let lands = |k: i64| -> bool {
+                            cells.iter().all(|&(r, c, _)| match seen.at(r, c, k * dr, k * dc) {
+                                Some((a, d)) => *stop == Stop::Border || canvas[a][d] == void,
+                                None => false,
+                            })
+                        };
+                        let mut k: i64 = 0;
+                        while lands(k + 1) {
+                            k += 1;
+                        }
+                        for &(r, c, h) in cells {
+                            let (a, d) = seen.at(r, c, k * dr, k * dc).ok_or(Unstated::OffLattice)?;
+                            if landed.iter().any(|&(la, ld, _)| (la, ld) == (a, d)) {
+                                return Err(Unstated::Tie);
+                            }
+                            landed.push((a, d, h));
+                        }
+                    }
+                    for (a, d, h) in landed {
+                        canvas[a][d] = h;
+                    }
+                }
+            }
+            Act::Repaint { paint: with } => {
+                // Every partner read on the input, so no repaint of the clause
+                // changes what another reads.
+                let mut repainted: Vec<(usize, usize, u8)> = Vec::new();
+                for &b in &sel {
+                    for &(r, c, h) in &seen.cells[b] {
+                        repainted.push((r, c, seen.painted(with, b, h)?));
+                    }
+                }
+                for (r, c, h) in repainted {
                     canvas[r][c] = h;
                 }
             }
@@ -731,6 +846,15 @@ pub(crate) fn select_each(preds: &[Pred], x: &Grid, bodies: &[Body]) -> Vec<Opti
     let seen = Seen::of(x, bodies);
     let all = seen.all();
     preds.iter().map(|p| seen.select(p, &all).ok()).collect()
+}
+
+/// THE HUE EACH BODY'S PARTNERS CARRY, as `Paint::Of(Pred::All)` reads it on
+/// one scene: the one hue of every body it touches, `None` where it touches
+/// none or bodies of two hues. The act reading asks whether a recoloured
+/// body took its partner's hue.
+pub(crate) fn partner_hues(x: &Grid, bodies: &[Body]) -> Vec<Option<u8>> {
+    let seen = Seen::of(x, bodies);
+    (0..bodies.len()).map(|b| seen.partner_hue(b, &Pred::All).ok()).collect()
 }
 
 /// 78.167 C — the cells a region names about each ONE body of the scene, as

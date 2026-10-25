@@ -321,7 +321,7 @@ fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
             Step::Create(c) => {
                 flush(&mut pending, &mut out, &select);
                 let act = match c {
-                    Create::Extend { ray, paint, stop } => Act::Extend { ray: *ray, paint: *paint, stop: *stop },
+                    Create::Extend { ray, paint, stop } => Act::Extend { ray: *ray, paint: paint.clone(), stop: *stop },
                     Create::Copy { template } => Act::Copy { template: template.clone() },
                 };
                 out.push(Clause { select: select.clone(), act });

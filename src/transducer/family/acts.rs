@@ -429,6 +429,89 @@ fn carriages(form: &Form) -> Result<Vec<Clause>, Unread> {
     Ok(out)
 }
 
+/// A REACTION READ OFF A CARRIAGE (ruled 2026-10-25): a carriage that is one
+/// translation along a unit ray, with no hue map, whose bodies land where a
+/// slide to contact lands them on every pair, is the slide — its distance
+/// read off the meet, not fixed, so a pair whose distance differs is said
+/// too. A fixed carriage fits each pair and fails the held-out one.
+fn slide_of(c: &Clause, pairs: &[Pair<'_>]) -> Option<Clause> {
+    let Act::Carry { motion, about: About::Grid, gauge } = &c.act else { return None };
+    if !gauge.is_empty() {
+        return None;
+    }
+    // The translation, read off three cells it carries: one offset for all.
+    let off = |r: usize, cc: usize| -> Option<(i64, i64)> {
+        let (a, b) = statement::carried(motion, r, cc).ok()?;
+        Some((a.checked_sub(i64::try_from(r).ok()?)?, b.checked_sub(i64::try_from(cc).ok()?)?))
+    };
+    let o = off(0, 0)?;
+    if off(0, 1)? != o || off(1, 0)? != o {
+        return None;
+    }
+    // Along a row, a column or a diagonal: the unit ray and its length.
+    let n = match (o.0.abs(), o.1.abs()) {
+        (0, 0) => return None,
+        (a, 0) => a,
+        (0, b) => b,
+        (a, b) if a == b => a,
+        _ => return None,
+    };
+    let ray = (i8::try_from(o.0 / n).ok()?, i8::try_from(o.1 / n).ok()?);
+    let slide = Clause { select: c.select.clone(), act: Act::Slide { ray, stop: Stop::Contact } };
+    let same = pairs.iter().all(|p| {
+        let carried = statement::speak_clauses(std::slice::from_ref(c), p.x, &p.bodies).ok();
+        carried.is_some() && carried == statement::speak_clauses(std::slice::from_ref(&slide), p.x, &p.bodies).ok()
+    });
+    same.then_some(slide)
+}
+
+/// A REACTION READ OFF THE BODIES THAT LEFT THEIR PLACE (ruled 2026-10-25):
+/// each found again on the output — its own cells, its own hues — at an
+/// offset along a unit ray. The ONE ray every one of them is found along;
+/// `None` where none is shared, or more than one (no ray is chosen).
+fn slide_ray(r: &Reading<'_, '_>, gone: &[Vec<usize>]) -> Option<(i8, i8)> {
+    let mut shared: Vec<(i8, i8)> = RAYS.to_vec();
+    for (p, g) in r.pairs.iter().zip(gone) {
+        let rows = p.y.len();
+        let cols = match p.y.as_slice() {
+            [row, ..] => row.len(),
+            [] => 0,
+        };
+        let reach = i64::try_from(if rows > cols { rows } else { cols }).ok()?;
+        for &b in g {
+            let cells = cells_of(&p.bodies[b]);
+            shared.retain(|&(dr, dc)| {
+                (1..=reach).any(|k| {
+                    let by = (k * i64::from(dr), k * i64::from(dc));
+                    cells.iter().all(|&(i, j, h)| step(i, j, by, rows, cols).is_some_and(|(a, d)| at(p.y, a, d) == Some(h)))
+                })
+            });
+        }
+    }
+    let [ray] = shared.as_slice() else { return None };
+    Some(*ray)
+}
+
+/// A REACTION'S HUE READ OFF THE RECOLOURED (ruled 2026-10-25): on every
+/// pair, every recoloured body painted whole the one hue the bodies it
+/// touches carry (`statement::partner_hues`). A fixed map fits each pair and
+/// fails a held-out pair whose partner is another hue.
+fn takes_partners_hue(r: &Reading<'_, '_>, recoloured: &[Vec<usize>]) -> bool {
+    if recoloured.iter().all(Vec::is_empty) {
+        return false;
+    }
+    for (p, rc) in r.pairs.iter().zip(recoloured) {
+        let partners = statement::partner_hues(p.x, &p.bodies);
+        for &b in rc {
+            let Some(want) = partners.get(b).copied().flatten() else { return false };
+            if !cells_of(&p.bodies[b]).iter().all(|&(i, j, _)| at(p.y, i, j) == Some(want)) {
+                return false;
+            }
+        }
+    }
+    true
+}
+
 /// WHAT BECAME OF ONE BODY no carriage moves: kept where it stood, erased
 /// (every cell ground), recoloured (every cell painted, its hues moved by
 /// one map), or otherwise changed.
@@ -472,7 +555,16 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
     // stands only where every cell it changes, spoken alone on each pair, is
     // the output's — a motion read for a growth paints what the output never
     // shows, and the effect is read instead.
-    let carried: Vec<Clause> = carriages(form)?.into_iter().filter(|c| pairs.iter().all(|p| agrees(c, p))).collect();
+    // A carriage that is a slide to contact on every pair is stated as the
+    // slide (`slide_of`): the relation, where the fixed distance is a fit.
+    let carried: Vec<Clause> = carriages(form)?
+        .into_iter()
+        .filter(|c| pairs.iter().all(|p| agrees(c, p)))
+        .map(|c| match slide_of(&c, &pairs) {
+            Some(slide) => slide,
+            None => c,
+        })
+        .collect();
     let preds = predicates(&pairs);
     let sels = pairs.iter().map(|p| statement::select_each(&preds, p.x, &p.bodies)).collect();
     let mut r = Reading { pairs, preds, sels, budget };
@@ -533,6 +625,57 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
         true => part_clauses(&r.pairs, &moved_charts),
         false => None,
     };
+    // THE REACTIONS FIRST (ruled 2026-10-25): where the bodies that left
+    // their place slid along one ray to a meet, and where the recoloured took
+    // the hue of what they touch, the relations are stated — and stand where
+    // they re-derive every pair. A fixed erasure and a fixed map fit each
+    // pair too, and fail the held-out one; they are read after.
+    // A selection that does not separate leaves the relation unread, and the
+    // fixed reading below goes on as it did.
+    if on_parts.is_none() {
+        let mut reacted: Vec<Clause> = Vec::new();
+        let mut related = Some(false);
+        if erased.iter().any(|e| !e.is_empty()) {
+            related = match (r.separate(&erased, &still), slide_ray(&r, &erased)) {
+                (Some(select), Some(ray)) => {
+                    reacted.push(Clause { select, act: Act::Slide { ray, stop: Stop::Contact } });
+                    Some(true)
+                }
+                (Some(select), None) => {
+                    let void = crate::arc::ground();
+                    let ground = (0..crate::transducer::element::PALETTE).filter_map(|h| u8::try_from(h).ok()).filter(|&h| h != void).map(|h| (h, void)).collect();
+                    reacted.push(Clause { select, act: Act::Recolour(ground) });
+                    related
+                }
+                (None, _) => None,
+            };
+        }
+        if related.is_some() {
+            related = match (takes_partners_hue(&r, &recoloured), r.separate(&recoloured, &still)) {
+                (true, Some(select)) => {
+                    reacted.push(Clause { select, act: Act::Repaint { paint: Paint::Of(Pred::All) } });
+                    Some(true)
+                }
+                _ => {
+                    // The recolours as their fixed maps, class by class.
+                    let mut fixed = related;
+                    for (key, at) in classes.scoped() {
+                        match r.separate(at, &still) {
+                            Some(select) => reacted.push(Clause { select, act: Act::Recolour(map_of_class(&key)) }),
+                            None => fixed = None,
+                        }
+                    }
+                    fixed
+                }
+            };
+        }
+        if related == Some(true) {
+            reacted.extend(carried.iter().cloned());
+            if r.rederives(&reacted)? {
+                return Ok(reacted);
+            }
+        }
+    }
     let mut base: Vec<Clause> = Vec::new();
     match on_parts {
         Some(clauses) => base.extend(clauses),
