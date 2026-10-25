@@ -607,6 +607,29 @@ fn a_call_is_answered_at_the_carriers_next_boundary() {
     assert!(matches!(cut.as_slice(), [.., l] if l.contains("lines past the frame") && l.contains("from")), "and says what it left: {cut:?}");
 }
 
+/// THE ASKER WAITS WHILE THE CARRIER WORKS (ruled 2026-10-24). A call asked
+/// of a carrier working inside one law — not parked, no boundary passing —
+/// is still waiting several parks later, and is answered fresh at the
+/// carrier's next boundary.
+#[test]
+fn a_call_waits_while_the_carrier_works_inside_one_law() {
+    let line = "observe-test: a long law";
+    live::park(false);
+    let asker = std::thread::spawn(move || live::call(line));
+    std::thread::sleep(crate::physics::idle_park(None) * 8);
+    assert!(!asker.is_finished(), "eight parks inside one law, the carrier working: the asker waits");
+    live::enter("observe-test: the law after");
+    for w in live::wanted() {
+        let lines = match w == line {
+            true => vec!["answered after the long law".to_string()],
+            false => Vec::new(),
+        };
+        live::answer(&w, lines);
+    }
+    let out = asker.join().expect("the asker returns");
+    assert!(out.iter().any(|l| l.starts_with(line) && l.contains("answered at boundary")), "answered fresh at the next boundary: {out:?}");
+}
+
 /// THE AUDITOR'S DISPATCH OBSERVATION (2026-10-22): a task that leaves a
 /// court stands under its whole citation with the voice it last went to and
 /// the court's height then; dispatched again it is counted, the later voice

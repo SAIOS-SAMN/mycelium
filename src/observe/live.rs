@@ -51,6 +51,9 @@ pub struct Now {
     pub h: Option<u64>,
     /// The boundary its present stroke began at.
     pub stroke_boundary: u64,
+    /// Whether it is parked — resting or blocked between windings — rather
+    /// than working inside a law.
+    pub parked: bool,
 }
 
 struct Slot {
@@ -90,6 +93,12 @@ pub fn stroke_began(k: u64, h: Option<u64>) {
     s.now.k = k;
     s.now.h = h;
     s.now.stroke_boundary = s.now.boundary;
+}
+
+/// THE WINDING CARRIER PARKS (`true`, as it rests or blocks) OR WAKES.
+pub fn park(parked: bool) {
+    let Ok(mut s) = SLOT.0.lock() else { return };
+    s.now.parked = parked;
 }
 
 /// THE WINDING CARRIER ENTERS `law`.
@@ -169,9 +178,13 @@ fn standing(n: &Now) -> String {
 
 /// A CALL, ASKED: left for the winding carrier and waited on, a park at a
 /// time (`physics::idle_park`, law 9: the pace is strokes), FOR AS LONG AS
-/// THE CARRIER MOVES — a park in which it passed no boundary is a carrier
-/// held inside one law, and the asker is answered then with where it
-/// stands and the last answer the call had, said so.
+/// THE CARRIER WORKS — moving between laws, or inside one (ruled
+/// 2026-10-24: a hearing of ~2 s left every call unanswered when the asker
+/// gave up after one park). Only a park in which the carrier stood PARKED
+/// and passed no boundary ends the wait, answered with where it stands and
+/// the last answer the call had, said so; the ask itself wakes a parked
+/// mind. A wedged carrier is bounded by the asker's own process, never by
+/// a clock here.
 pub fn call(line: &str) -> Vec<String> {
     let Some(asked) = ask(line) else { return vec!["the observer's slot is poisoned".to_string()] };
     let (lock, woken) = &*SLOT;
@@ -183,7 +196,7 @@ pub fn call(line: &str) -> Vec<String> {
             Ok((g, _)) => g,
             Err(_) => return vec!["the observer's slot is poisoned".to_string()],
         };
-        if fresh(&s) || s.now.boundary == seen {
+        if fresh(&s) || (s.now.parked && s.now.boundary == seen) {
             break;
         }
         seen = s.now.boundary;

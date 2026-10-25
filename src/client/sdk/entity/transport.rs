@@ -22,10 +22,14 @@ impl Entity {
     /// at the measured transport. A seated mind's mail read is held at the
     /// relay and its landing wakes the mind (`read_mail_page`).
     pub fn rest(&self) {
+        // The observer's asker waits while the carrier works and stops at a
+        // park (`live::call`).
+        crate::observe::live::park(true);
         match self.owes_strokes() {
             true => self.hypha.rest(self.transport_rtt()),
             false => self.hypha.block(),
         }
+        crate::observe::live::park(false);
     }
 
     /// WHAT WAITS ON THE MIND'S OWN STROKES: the court's dwell on a pressed
