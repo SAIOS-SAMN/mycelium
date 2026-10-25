@@ -486,12 +486,26 @@ impl Entity {
     /// acts on it (`Carrier::priced`). Same word, two minds, two prices: each
     /// field is its own.
     pub(crate) fn price_hearings(&mut self) {
-        let Some(chat) = self.chat.as_ref() else { return };
-        let works: Vec<FieldWork> = chat.pricing.try_iter().collect();
-        // Each work is a boundary of the winding carrier (ruled 2026-10-24):
-        // a batch read as one law held the observer's calls unanswered for
-        // minutes, and named no work.
-        for w in works {
+        // ONE STROKE'S HEARINGS (ruled 2026-10-25): each work spends a read of
+        // the stroke's own budget, and where it runs out the rest wait in
+        // their channel for the next stroke (`hearings_wait`), so the winding
+        // goes on to the scene taken in — drained whole, a steady stream of
+        // ~2 s hearings held the voices in this law most of the night. Each
+        // work is a boundary of the winding carrier (ruled 2026-10-24).
+        let mut budget = self.physics.stroke();
+        self.board.hearings_wait = false;
+        loop {
+            // The budget spent, whatever is left waits; the next stroke finds
+            // the channel as it stands, empty or not.
+            if !budget.spend() {
+                self.board.hearings_wait = true;
+                break;
+            }
+            let next = match self.chat.as_ref() {
+                Some(chat) => chat.pricing.try_recv().ok(),
+                None => None,
+            };
+            let Some(w) = next else { break };
             match w {
                 // MU-CLIENT §7.1 R1 — the rings are read off the field, on
                 // the perception carrier; what they read is understood where
@@ -1011,6 +1025,15 @@ impl Entity {
 
 #[cfg(test)]
 impl Entity {
+    /// A conversation with no carrier behind it: the sender of its pricing
+    /// channel, for a claim to queue the field's work on.
+    pub(crate) fn pricing_for_test(&mut self) -> Sender<FieldWork> {
+        let (to, _inflow) = channel::<Inflow>();
+        let (field, pricing) = channel::<FieldWork>();
+        self.chat = Some(Chat { to, pricing, dir: std::path::PathBuf::new(), told: None, agreed: std::sync::Arc::new(std::sync::Mutex::new(Keyed::new())) });
+        field
+    }
+
     /// What the conversation transduced, taken in by this mind's field as
     /// its tick's admission does: inside the mind's own field, where its
     /// lexicon is.

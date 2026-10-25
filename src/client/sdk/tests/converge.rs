@@ -72,5 +72,20 @@ fn a_word_leaving_takes_its_scene_with_it() {
     assert_eq!(s.held(), (1, 1));
     s.forget(word.address().as_bytes());
     assert_eq!(s.held(), (0, 0));
-    assert!(s.family(&scene).is_none());
+    assert!(s.evidence(&scene).is_none());
+}
+
+/// A SCENE HELD CARRIES ITS CHARTS, READ ONCE (ruled 2026-10-25): the charts
+/// a hearing on it is heard by are the charts its bodies stand on
+/// (`Offer::of`), held with the family where the first word was held.
+#[test]
+fn a_scene_held_carries_the_charts_its_bodies_stand_on() {
+    let scene = [8u8; 32];
+    let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
+    let mut s = Scenes::default();
+    s.hold(&scene, &family, &slide(0, 2));
+    let (held, charts) = s.evidence(&scene).expect("held");
+    assert_eq!(held.len(), family.len(), "the family as held");
+    assert!(!charts.is_empty(), "a scene with bodies stands on charts");
+    assert_eq!(charts, crate::client::sdk::entity::offer::Offer::of(&family).charts, "the charts its bodies stand on");
 }

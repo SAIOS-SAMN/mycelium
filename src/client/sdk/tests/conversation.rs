@@ -457,3 +457,23 @@ fn a_question_is_answered_by_the_words_factors() {
     let atom = factors_of(&one, &[(1, 2)], b"word");
     assert!(matches!(atom.as_slice(), [a] if a.motion.projective_eq(&one) && a.gauge == vec![(1, 2)]), "an atom comes back whole: {atom:?}");
 }
+
+/// ONE STROKE PRICES WHAT ITS BUDGET HOLDS (ruled 2026-10-25). One more of
+/// the field's work queued than a stroke's budget reads: the stroke prices
+/// its budget's worth and leaves the rest waiting, and the mind owes strokes
+/// meanwhile; the next stroke prices what is left and owes none for it.
+#[test]
+fn a_stroke_prices_its_budgets_worth_of_hearings_and_the_rest_wait() {
+    use crate::client::sdk::entity::chatter::FieldWork;
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("pricing"));
+    let field = mind.pricing_for_test();
+    let reads = crate::physics::Physics::default().stroke().remaining();
+    assert!(reads > 0, "a stroke reads something");
+    for _ in 0..=reads {
+        field.send(FieldWork::Speak { body: Vec::new(), agreed: false }).expect("queued");
+    }
+    mind.price_hearings();
+    assert!(mind.board.hearings_wait && mind.owes_strokes(), "its budget's worth priced, one left: it waits, and strokes are owed");
+    mind.price_hearings();
+    assert!(!mind.board.hearings_wait && !mind.owes_strokes(), "the one left priced: nothing waits");
+}

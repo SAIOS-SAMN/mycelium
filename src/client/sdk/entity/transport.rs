@@ -36,10 +36,10 @@ impl Entity {
     /// lane; a feed family or a question met and waiting on the reserve; a
     /// lane run short under tension (the reserve regenerates only on
     /// strokes); a court's task on the board (it is taken in or lapses only
-    /// as strokes pass).
+    /// as strokes pass); hearings left queued past a stroke's budget.
     pub(crate) fn owes_strokes(&self) -> bool {
         let dwell = self.board.court.dwelling();
-        let feed = self.board.feed_waits;
+        let feed = self.board.feed_waits || self.board.hearings_wait;
         let questions = self.board.question_waits;
         let reserve = self.strained() && !crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty();
         let attention = self.board.court.task.is_some();

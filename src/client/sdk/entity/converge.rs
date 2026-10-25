@@ -35,10 +35,15 @@ pub(crate) enum Evident {
     Unread,
 }
 
-/// ONE SCENE THIS MIND SPOKE WORDS ON: its family and the words, by address.
+/// ONE SCENE THIS MIND SPOKE WORDS ON: its family, the charts its bodies
+/// stand on, and the words by address, each with its section on the family.
+/// The charts and every section are read once, where the scene or the word
+/// is held — a family does not move, and a hearing read them again for every
+/// word heard (ruled 2026-10-25: ~2 s a hearing on the fleet).
 struct SceneWords {
     family: Vec<crate::transducer::family::TrainPair>,
-    words: Keyed<Element>,
+    charts: Vec<Vec<u8>>,
+    words: Keyed<(Element, Local)>,
 }
 
 /// THE SCENES THIS MIND SPOKE WORDS ON, the scenes each word was spoken
@@ -58,9 +63,10 @@ pub(crate) struct Scenes {
     /// heard on it after — a family does not move (2026-10-22: one family
     /// pulled 49 times from one court as a peer said its word at each
     /// return, and another 18 times for the different words peers said on
-    /// it). One entry per scene, the corpus its bound. A pull that read
-    /// nothing is not kept: it is asked again.
-    pulled: Keyed<Vec<crate::transducer::family::TrainPair>>,
+    /// it). One entry per scene, the corpus its bound, with the charts its
+    /// bodies stand on, read once where it landed. A pull that read nothing
+    /// is not kept: it is asked again.
+    pulled: Keyed<(Vec<crate::transducer::family::TrainPair>, Vec<Vec<u8>>)>,
     /// The scenes whose pull is on the court's carrier now: a hearing on one
     /// meanwhile is let go, as a hearing that waited lapses — its speaker
     /// says it again — never pulled twice (8 pulls of one family before the
@@ -94,12 +100,14 @@ impl Scenes {
         let addr = word.address();
         match self.by_scene.get_mut(scene) {
             Some(s) => {
-                s.words.insert(&addr, word.clone());
+                let local = word_local(word, &s.family);
+                s.words.insert(&addr, (word.clone(), local));
             }
             None => {
                 let mut words = Keyed::new();
-                words.insert(&addr, word.clone());
-                self.by_scene.insert(scene, SceneWords { family: family.to_vec(), words });
+                words.insert(&addr, (word.clone(), word_local(word, family)));
+                let charts = super::offer::Offer::of(family).charts;
+                self.by_scene.insert(scene, SceneWords { family: family.to_vec(), charts, words });
             }
         }
         self.of_word.nested_insert(addr.as_bytes(), scene, ());
@@ -123,9 +131,13 @@ impl Scenes {
         }
     }
 
-    /// The family of a scene this mind spoke words on.
-    pub(crate) fn family(&self, scene: &[u8]) -> Option<&[crate::transducer::family::TrainPair]> {
-        self.by_scene.get(scene).map(|s| s.family.as_slice())
+    /// A scene's family and the charts its bodies stand on, as held: spoken
+    /// on, or pulled.
+    pub(crate) fn evidence(&self, scene: &[u8]) -> Option<(Vec<crate::transducer::family::TrainPair>, Vec<Vec<u8>>)> {
+        match self.by_scene.get(scene) {
+            Some(s) => Some((s.family.clone(), s.charts.clone())),
+            None => self.pulled.get(scene).cloned(),
+        }
     }
 
     /// How many scenes and words are held.
@@ -145,12 +157,12 @@ impl Scenes {
         }
         self.read[0] += 1;
         let addr = word.address();
-        let own: Vec<(Vec<u8>, Element)> = match self.by_scene.get(scene) {
-            Some(s) => s.words.scoped().map(|(a, w)| (a, w.clone())).collect(),
+        let own: Vec<(Vec<u8>, Element, Local)> = match self.by_scene.get(scene) {
+            Some(s) => s.words.scoped().map(|(a, (w, l))| (a, w.clone(), l.clone())).collect(),
             None => Vec::new(),
         };
-        for (at, mine) in own {
-            if mine.same_vertex(word) || !same_section(&heard, &word_local(&mine, family), family) {
+        for (at, mine, local) in own {
+            if mine.same_vertex(word) || !same_section(&heard, &local, family) {
                 continue;
             }
             let mut key = Vec::new();
@@ -164,11 +176,12 @@ impl Scenes {
 }
 
 /// THE CHARTS A HEARING IS HEARD BY IN THE GROUND STATE: the charts its
-/// evidence scene's bodies stand on (`Offer::of`), where the word is true
-/// there — a refuted or unread word wakes no resting mind.
-fn charts_heard(evident: Evident, family: &crate::transducer::family::Family) -> Vec<Vec<u8>> {
+/// evidence scene's bodies stand on (`Offer::of`, read once where the scene
+/// was held), where the word is true there — a refuted or unread word wakes
+/// no resting mind.
+fn charts_heard(evident: Evident, charts: Vec<Vec<u8>>) -> Vec<Vec<u8>> {
     match evident {
-        Evident::True => super::offer::Offer::of(family).charts,
+        Evident::True => charts,
         _ => Vec::new(),
     }
 }
@@ -193,10 +206,9 @@ impl Entity {
             return;
         };
         // A scene it spoke on, or one pulled before: read here.
-        let held = self.scenes.family(&ev.scene).or_else(|| self.scenes.pulled.get(&ev.scene).map(Vec::as_slice)).map(<[_]>::to_vec);
-        if let Some(family) = held {
+        if let Some((family, charts)) = self.scenes.evidence(&ev.scene) {
             let evident = self.scenes.read(&ev.scene, &word, &family, speaker);
-            let charts = charts_heard(evident, &family);
+            let charts = charts_heard(evident, charts);
             self.perceive_hearing_on(speaker, said, words, evident, charts);
             return;
         }
@@ -211,8 +223,9 @@ impl Entity {
             let (evident, charts) = match family {
                 Some(f) => {
                     let evident = me.scenes.read(&id, &word, &f, speaker);
-                    let charts = charts_heard(evident, &f);
-                    me.scenes.pulled.insert(id, f);
+                    let held = super::offer::Offer::of(&f).charts;
+                    let charts = charts_heard(evident, held.clone());
+                    me.scenes.pulled.insert(id, (f, held));
                     (evident, charts)
                 }
                 None => {
