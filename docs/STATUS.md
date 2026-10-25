@@ -19,7 +19,16 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## Evening (2026-10-24 21:00) — where it stands
+## Overnight (2026-10-25 04:30) — where it stands
+The auditor's 04:24 read: 41 distinct settled (a 24, b 12, c 18 per book),
+from 40 at 20:57 — one in 7½ hours, while voice K rose 29 682 → 73 399 (37f2
+19 854, ee23 16 672, c789 14 777, dd89 13 473, 1e14 8 623). a542
+(netstratum-mind-1) K 1 819 unchanged since its 10:21 restart. Voices up
+since 10:19 on 157b585b; courts since 10-22, held live. Staged: 4bf18214,
+8fe75130. Open: K rising without settlement — read when `judged` ships
+(what the voices send and how it is judged); a542's standing K.
+
+## Evening (2026-10-24 21:00)
 The auditor's 20:57 read: 40 distinct settled in the registries. Voice K off
 the winding-carrier line (current): ee23 7 533, dd89 7 519, 37f2 5 156, 1e14
 4 955, c789 4 519; a542 1 819 unchanged since 10:21; seat n1 K 6, n2–n4 0.
