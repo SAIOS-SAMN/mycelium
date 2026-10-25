@@ -19,7 +19,20 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## Hearings paced, minds readable (2026-10-25 09:25) — where it stands
+## Reactions built, held for the court maintenance (2026-10-25) — where it stands
+05390a96: `Act::Slide { ray, stop }` (carried along a unit ray to a meet,
+nearest first, one reach together) and `Paint::Of(pred)` with `Act::Repaint`
+(the touched partner's one hue, refused by name otherwise); the reader
+states them where they re-derive every pair, before the fixed reading.
+Claims: a fall of varying distance and a partner's varying hue each
+re-derive a held-out pair and the court solves it (613 family/court/
+sentence/client claims stand). HOLD: neither release binary is built — a
+court of the 10-22 build cannot decode a form carrying a reaction, so NO
+CLIENT RELEASE until the courts' maintenance ships the server with
+4bf18214, 8fe75130 and 05390a96 together; notify the peers before it.
+Voices run ae03ad66 (below).
+
+## Hearings paced, minds readable (2026-10-25 09:25)
 Voices on ae03ad66 (09:00:22): the asker waits while a mind works
 (96b98b0f); a hearing reads its scene's charts and the mind's own sections
 once, and a stroke prices only its budget's worth of hearings (7 reads on
