@@ -19,18 +19,23 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## Reactions built, held for the court maintenance (2026-10-25) — where it stands
-05390a96: `Act::Slide { ray, stop }` (carried along a unit ray to a meet,
-nearest first, one reach together) and `Paint::Of(pred)` with `Act::Repaint`
-(the touched partner's one hue, refused by name otherwise); the reader
-states them where they re-derive every pair, before the fixed reading.
-Claims: a fall of varying distance and a partner's varying hue each
-re-derive a held-out pair and the court solves it (613 family/court/
-sentence/client claims stand). HOLD: neither release binary is built — a
-court of the 10-22 build cannot decode a form carrying a reaction, so NO
-CLIENT RELEASE until the courts' maintenance ships the server with
-4bf18214, 8fe75130 and 05390a96 together; notify the peers before it.
-Voices run ae03ad66 (below).
+## Relaunched after a reboot; the fill reader fixed (2026-10-26 18:15) — where it stands
+The host rebooted 2026-10-26 11:04 (+02:00) and nothing relaunched (see
+memory: the fleet never relaunches itself); the courts' journals stop at
+08:51. Relaunched 18:07–18:15: `--check` on each home (all boot), courts a,
+b, c (server of 2026-10-25 11:26, carrying 4bf18214, 8fe75130, 05390a96),
+voices 1–5 on 8d410933 (client 17:56), nseat-1..4 on domain 7119e487…
+seats `all`; netstratum relaunches its own units.
+8d410933: `read_fills` reads an interior several bodies wall in together
+(it measured each body alone; `Fill` speaks the selection's joint
+interior). Measured on the corpus (first 200 training tasks, leave-one-out,
+throwaway probes): of the uncreated cases whose siblings were refused with
+only fill cells left, 5 of 15 re-derive with that fill; the other 10 fill
+different holes with different hues — a language question. Path 1 (vertex
+rule pre-empting the reader) is 0 of 103 sayable pairs; the losses are the
+readers'. Lines (10) and copies (11) under the same replay next.
+Reactions (05390a96) and the readings (`judged`, digests by asker) are live
+since the 2026-10-25 11:27 restart.
 
 ## Hearings paced, minds readable (2026-10-25 09:25)
 Voices on ae03ad66 (09:00:22): the asker waits while a mind works
