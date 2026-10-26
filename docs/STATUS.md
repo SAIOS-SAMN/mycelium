@@ -19,7 +19,20 @@ no length), HOLONOMIC (a loop's composite is its content). Every dimension an
 exponent; no constant — a number is read off the field or named undefined
 physics.
 
-## Relaunched after a reboot; the fill reader fixed (2026-10-26 18:15) — where it stands
+## The task first (2026-10-26 23:25) — where it stands
+Voices and seats on 5a94568f (22:52): the winding asks for the task at
+admission before any hearing is priced; no hearing is priced while a task
+waits, is asked for, or is perceived; unpriced hearings wait at most across
+one return and lapse unread (MU-CLIENT §4.13 at the conversation's door).
+Measured, host free of probes: 0f6135f6 (gate on the board alone) 48 tasks
+per 20 min on 37f2/ee23/c789/1e14, hearings 16 of 19 samples; 5a94568f 162
+in 24 min on the same four (≈134 per 20 min), hearings 9 of 28. dd89's
+second count came back stale. Copy probe: the 6 "copy" cases are no reader
+defect — the replay fitted each sibling with its own echo, which no rule
+states; 05f2a901 is a slide toward a partner (direction from the relation),
+a language question. Lines: 19 of 20 unanchored, a language question.
+
+## Relaunched after a reboot; the fill reader fixed (2026-10-26 18:15)
 The host rebooted 2026-10-26 11:04 (+02:00) and nothing relaunched (see
 memory: the fleet never relaunches itself); the courts' journals stop at
 08:51. Relaunched 18:07–18:15: `--check` on each home (all boot), courts a,
