@@ -470,7 +470,7 @@ fn a_stroke_prices_its_budgets_worth_of_hearings_and_the_rest_wait() {
     let reads = crate::physics::Physics::default().stroke().remaining();
     assert!(reads > 0, "a stroke reads something");
     for _ in 0..=reads {
-        field.send(FieldWork::Speak { body: Vec::new(), agreed: false }).expect("queued");
+        field.send(FieldWork::Hear { speaker: [1; 32], said: Vec::new(), words: Vec::new(), evidence: None }).expect("queued");
     }
     assert_eq!(mind.price_hearings(), reads, "its budget's worth priced");
     assert!(mind.board.hearings_wait && mind.owes_strokes(), "one left: it waits, and strokes are owed");
@@ -479,21 +479,44 @@ fn a_stroke_prices_its_budgets_worth_of_hearings_and_the_rest_wait() {
 }
 
 /// THE TASK FIRST (ruled 2026-10-26): while a court's task waits on the
-/// board, no hearing is priced — the work waits, and strokes are owed; with
-/// the board clear, it is priced.
+/// board, or is asked for, no hearing is priced — the work waits, and
+/// strokes are owed; with the pipeline clear, it is priced.
 #[test]
 fn a_waiting_task_defers_every_hearing() {
     use crate::client::sdk::entity::chatter::FieldWork;
     use crate::client::sdk::entity::offer::Offer;
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("task first"));
     let field = mind.pricing_for_test();
-    field.send(FieldWork::Speak { body: Vec::new(), agreed: false }).expect("queued");
+    field.send(FieldWork::Hear { speaker: [1; 32], said: Vec::new(), words: Vec::new(), evidence: None }).expect("queued");
     let train = vec![(vec![vec![1u8, 0], vec![0, 0]], vec![vec![0u8, 1], vec![0, 0]])];
     let offer = Offer::of(&train);
     mind.board.court.task = Some((crate::anastome::dialogue::TaskEnvelope { id: [2; 32], train, tests: Vec::new() }, offer));
     assert_eq!(mind.price_hearings(), 0, "a task on the board: no hearing priced");
     assert!(mind.board.hearings_wait && mind.owes_strokes(), "the hearing waits, and strokes are owed");
     mind.board.court.task = None;
-    assert_eq!(mind.price_hearings(), 1, "the board clear: the hearing is priced");
+    mind.board.court.pulling = true;
+    assert_eq!(mind.price_hearings(), 0, "a task asked for: no hearing priced");
+    mind.board.court.pulling = false;
+    assert_eq!(mind.price_hearings(), 1, "the pipeline clear: the hearing is priced");
     assert!(!mind.board.hearings_wait, "nothing waits");
+}
+
+/// A HEARING WAITS AT MOST ACROSS ONE RETURN AT THE DOOR TOO (MU-CLIENT §4.13,
+/// ruled 2026-10-26): one the task pipeline held unpriced crosses the first
+/// return and lapses unread at the second — the buffer is empty, and nothing
+/// is owed for it.
+#[test]
+fn an_unpriced_hearing_lapses_at_its_second_return() {
+    use crate::client::sdk::entity::chatter::FieldWork;
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("lapsing hearing"));
+    let field = mind.pricing_for_test();
+    field.send(FieldWork::Hear { speaker: [1; 32], said: Vec::new(), words: Vec::new(), evidence: None }).expect("queued");
+    mind.board.court.pulling = true;
+    assert_eq!(mind.price_hearings(), 0, "held: the task is asked for");
+    assert_eq!(mind.lapse_unpriced(), 0, "the first return: it crosses");
+    assert_eq!(mind.board.unpriced_crossed.len(), 1, "waiting across one return");
+    assert_eq!(mind.lapse_unpriced(), 1, "the second return: it lapses unread");
+    assert!(mind.board.unpriced.is_empty() && mind.board.unpriced_crossed.is_empty(), "the buffer is empty");
+    assert_eq!(mind.price_hearings(), 0, "nothing left to price");
+    assert!(!mind.board.hearings_wait, "nothing owed for it");
 }

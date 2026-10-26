@@ -486,35 +486,48 @@ impl Entity {
     /// acts on it (`Carrier::priced`). Same word, two minds, two prices: each
     /// field is its own.
     pub(crate) fn price_hearings(&mut self) -> usize {
-        // THE TASK FIRST (ruled 2026-10-26): while a court's task waits on the
-        // board, or the perception carrier works a scene, no hearing is
-        // priced — they wait in their channel, the mind owing strokes for
-        // them (`hearings_wait`), and the winding goes on to the scene. Peer
-        // dialogue fills the strokes the task pipeline leaves clear; it never
-        // stands in front of perception.
-        if self.board.court.task.is_some() || self.perceiving() {
-            self.board.hearings_wait = true;
-            return 0;
-        }
-        // ONE STROKE'S HEARINGS (ruled 2026-10-25): each work spends a read of
-        // the stroke's own budget, and where it runs out the rest wait in
-        // their channel for the next stroke (`hearings_wait`), so the winding
-        // goes on to the scene taken in — drained whole, a steady stream of
-        // ~2 s hearings held the voices in this law most of the night. Each
-        // work is a boundary of the winding carrier (ruled 2026-10-24).
-        let mut budget = self.physics.stroke();
-        self.board.hearings_wait = false;
-        let mut priced = 0usize;
+        // THE CONVERSATION'S DOOR, emptied: the mind's own speech for the
+        // court leaves at once — it is no hearing — and what it heard enters
+        // the sensory buffer, where it waits at most across one return
+        // (`lapse_unpriced`, MU-CLIENT §4.13).
         loop {
-            // The budget spent, whatever is left waits; the next stroke finds
-            // the channel as it stands, empty or not.
-            if !budget.spend() {
-                self.board.hearings_wait = true;
-                break;
-            }
             let next = match self.chat.as_ref() {
                 Some(chat) => chat.pricing.try_recv().ok(),
                 None => None,
+            };
+            match next {
+                Some(FieldWork::Speak { body, agreed }) => self.speak_agreed(body, agreed),
+                Some(w) => self.board.unpriced.push_back(w),
+                None => break,
+            }
+        }
+        // THE TASK FIRST (ruled 2026-10-26): while a court's task waits on the
+        // board, the task is asked for, or the perception carrier works a
+        // scene, no hearing is priced — it waits in the buffer, the mind
+        // owing strokes for it (`hearings_wait`), and lapses unread at its
+        // second return. Peer dialogue fills the strokes the task pipeline
+        // leaves clear; it never stands in front of perception.
+        let waiting = !self.board.unpriced.is_empty() || !self.board.unpriced_crossed.is_empty();
+        if self.board.court.task.is_some() || self.board.court.pulling || self.perceiving() {
+            self.board.hearings_wait = waiting;
+            return 0;
+        }
+        // ONE STROKE'S HEARINGS (ruled 2026-10-25): each work spends a read of
+        // the stroke's own budget, the oldest first, and where it runs out the
+        // rest wait in the buffer for the next stroke (`hearings_wait`). Each
+        // work is a boundary of the winding carrier (ruled 2026-10-24).
+        let mut budget = self.physics.stroke();
+        let mut priced = 0usize;
+        loop {
+            if self.board.unpriced_crossed.is_empty() && self.board.unpriced.is_empty() {
+                break;
+            }
+            if !budget.spend() {
+                break;
+            }
+            let next = match self.board.unpriced_crossed.pop_front() {
+                Some(w) => Some(w),
+                None => self.board.unpriced.pop_front(),
             };
             let Some(w) = next else { break };
             priced += 1;
@@ -531,21 +544,37 @@ impl Entity {
                     self.at_law("admission: a hearing (price)");
                     self.price(p);
                 }
-                // Agreed language is counted where the court's answer lands.
-                FieldWork::Speak { body, agreed } => {
-                    self.at_law("admission: a hearing (speak)");
-                    self.ask(
-                        move |s| s.speak_nerve(body).ok().and_then(|reply| dialogue::decode_speech_reply(&reply)).is_some(),
-                        move |_, heard| {
-                            if heard && agreed {
-                                crate::observe::note_mind(|m| m.agreed += 1);
-                            }
-                        },
-                    );
-                }
+                // The buffer holds no speech (the door posts it at once).
+                FieldWork::Speak { body, agreed } => self.speak_agreed(body, agreed),
             }
         }
+        self.board.hearings_wait = !self.board.unpriced.is_empty() || !self.board.unpriced_crossed.is_empty();
         priced
+    }
+
+    /// THE MIND'S OWN SPEECH FOR THE COURT, posted on its hypha carrier and
+    /// never waited on; agreed language is counted where the court's answer
+    /// lands.
+    fn speak_agreed(&mut self, body: Vec<u8>, agreed: bool) {
+        self.at_law("admission: speech for the court");
+        self.ask(
+            move |s| s.speak_nerve(body).ok().and_then(|reply| dialogue::decode_speech_reply(&reply)).is_some(),
+            move |_, heard| {
+                if heard && agreed {
+                    crate::observe::note_mind(|m| m.agreed += 1);
+                }
+            },
+        );
+    }
+
+    /// MU-CLIENT §4.13 AT THE CONVERSATION'S DOOR (ruled 2026-10-26): at the
+    /// mind's return, the unpriced hearings that already waited across the
+    /// last return lapse unread, and those that arrived in the traversal the
+    /// return closes cross it. Answers how many lapsed.
+    pub(crate) fn lapse_unpriced(&mut self) -> usize {
+        let crossed = std::mem::take(&mut self.board.unpriced);
+        let lapsed = std::mem::replace(&mut self.board.unpriced_crossed, crossed);
+        lapsed.len()
     }
 
     /// MU-CLIENT §4.13, §5.3 — A QUESTION LAPSES WHERE ITS RESIDUE'S ORBIT IS
