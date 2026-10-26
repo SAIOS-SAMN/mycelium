@@ -513,6 +513,32 @@ fn a_reaction_is_known_and_solved_on_a_pair_never_seen() {
     }
 }
 
+/// AN INTERIOR SEVERAL BODIES WALL IN TOGETHER IS A FILL: four bars meeting
+/// only at their corners close a hole no one of them closes, whose extent
+/// holds no ground, and whose halo reaches ground the truth leaves; it is
+/// filled with 4 in three pairs of three sizes. The fill is read off the
+/// bodies around it, together, as their joint interior; the held-out pair,
+/// another size, is re-derived, and the court solves it.
+#[test]
+fn a_hole_several_bodies_close_together_is_filled() {
+    let family: Vec<(&[&str], &[&str])> = vec![
+        (&["0110", "1001", "1001", "0110"], &["0110", "1441", "1441", "0110"]),
+        (&["011110", "100001", "100001", "100001", "011110"], &["011110", "144441", "144441", "144441", "011110"]),
+        (&["011110", "100001", "100001", "100001", "100001", "011110"], &["011110", "144441", "144441", "144441", "144441", "011110"]),
+    ];
+    let held: (&[&str], &[&str]) = (&["01110", "10001", "10001", "10001", "01110"], &["01110", "14441", "14441", "14441", "01110"]);
+    let clauses = knows(&family, held);
+    use crate::transducer::sentence::form::clause::{Act, Region};
+    assert!(clauses.iter().any(|c| matches!(c.act, Act::Fill { region: Region::Interior, .. })), "read as the joint interior: {clauses:?}");
+    let family: Vec<(Grid, Grid)> = family.iter().map(|(x, y)| (grid(x), grid(y))).collect();
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
+    let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
+    let minted = crate::transducer::family::mint_sentence_why(&rule, &family, &NoCrystal, 0).expect("the rule mints over its family");
+    let mut court = crate::cognition::Kernel::new();
+    let verdict = court.judge_solve(&minted, &[(grid(held.0), grid(held.1))]);
+    assert!(matches!(verdict, crate::cognition::SolveVerdict::Solved { .. }), "the court solves it on a pair it never saw: {verdict:?}");
+}
+
 /// A STACK SETTLES AS IT LANDS: two bodies in one column slide down to
 /// contact, the nearest the floor first, so the upper rests on the lower; a
 /// slide with nothing to meet stops at the border; a ray of no step is

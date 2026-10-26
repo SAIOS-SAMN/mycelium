@@ -874,18 +874,37 @@ fn read_fills(r: &Reading<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &
                 insert_sorted(&mut hues, h);
             }
             let read = match hues.as_slice() {
-                [hue] => regions.iter().zip(&by_region).find_map(|(&(tag, _), bodies_regions)| {
-                    let holders: Vec<usize> = bodies_regions
-                        .iter()
-                        .enumerate()
-                        .filter(|(_, rc)| rc.iter().any(|c| piece.iter().any(|&(i, j, _)| (i, j) == *c)))
-                        .map(|(b, _)| b)
-                        .collect();
-                    let union: Vec<(usize, usize)> = holders.iter().flat_map(|&b| bodies_regions[b].iter().copied()).collect();
-                    let covers = piece.iter().all(|&(i, j, _)| union.contains(&(i, j)));
-                    let within = union.iter().all(|c| all_cells.binary_search(c).is_ok());
-                    (!holders.is_empty() && covers && within).then_some(([tag, *hue], holders))
-                }),
+                [hue] => regions
+                    .iter()
+                    .zip(&by_region)
+                    .find_map(|(&(tag, _), bodies_regions)| {
+                        let holders: Vec<usize> = bodies_regions
+                            .iter()
+                            .enumerate()
+                            .filter(|(_, rc)| rc.iter().any(|c| piece.iter().any(|&(i, j, _)| (i, j) == *c)))
+                            .map(|(b, _)| b)
+                            .collect();
+                        let union: Vec<(usize, usize)> = holders.iter().flat_map(|&b| bodies_regions[b].iter().copied()).collect();
+                        let covers = piece.iter().all(|&(i, j, _)| union.contains(&(i, j)));
+                        let within = union.iter().all(|c| all_cells.binary_search(c).is_ok());
+                        (!holders.is_empty() && covers && within).then_some(([tag, *hue], holders))
+                    })
+                    // AN INTERIOR SEVERAL BODIES WALL IN TOGETHER (read on the
+                    // corpus 2026-10-26): a fill speaks the interior of its
+                    // whole selection, and a hole only two bodies close was
+                    // never read, each body's own interior measured alone. The
+                    // bodies around the piece, together, where their joint
+                    // interior covers it and lies within the created cells.
+                    .or_else(|| {
+                        let holders = statement::bodies_around(p.x, &p.bodies, &piece);
+                        if holders.len() < 2 {
+                            return None;
+                        }
+                        let union = statement::region_of_set(Region::Interior, p.x, &p.bodies, &holders);
+                        let covers = piece.iter().all(|&(i, j, _)| union.contains(&(i, j)));
+                        let within = union.iter().all(|c| all_cells.binary_search(c).is_ok());
+                        (covers && within).then_some(([0, *hue], holders))
+                    }),
                 _ => None,
             };
             match read {

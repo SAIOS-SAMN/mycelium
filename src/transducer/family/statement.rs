@@ -848,6 +848,31 @@ pub(crate) fn select_each(preds: &[Pred], x: &Grid, bodies: &[Body]) -> Vec<Opti
     preds.iter().map(|p| seen.select(p, &all).ok()).collect()
 }
 
+/// THE REGION SEVERAL BODIES NAME TOGETHER, as a fill selecting them speaks
+/// it (`Seen::region` over the set): their joint interior is every ground
+/// cell the set walls in, which no one of them may.
+pub(crate) fn region_of_set(region: Region, x: &Grid, bodies: &[Body], set: &[usize]) -> Vec<(usize, usize)> {
+    Seen::of(x, bodies).region(region, set)
+}
+
+/// The bodies of the scene owning a cell beside one of `cells`, corners
+/// included, each once, in the scene's order.
+pub(crate) fn bodies_around(x: &Grid, bodies: &[Body], cells: &[(usize, usize, u8)]) -> Vec<usize> {
+    let seen = Seen::of(x, bodies);
+    let mut out: Vec<usize> = Vec::new();
+    for &(r, c, _) in cells {
+        for (dr, dc) in AROUND {
+            if let Some(o) = seen.at(r, c, dr, dc).and_then(|(a, d)| seen.owner_at(a, d)) {
+                if !out.contains(&o) {
+                    out.push(o);
+                }
+            }
+        }
+    }
+    out.sort_unstable();
+    out
+}
+
 /// THE HUE EACH BODY'S PARTNERS CARRY, as `Paint::Of(Pred::All)` reads it on
 /// one scene: the one hue of every body it touches, `None` where it touches
 /// none or bodies of two hues. The act reading asks whether a recoloured
