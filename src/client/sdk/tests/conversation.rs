@@ -472,8 +472,28 @@ fn a_stroke_prices_its_budgets_worth_of_hearings_and_the_rest_wait() {
     for _ in 0..=reads {
         field.send(FieldWork::Speak { body: Vec::new(), agreed: false }).expect("queued");
     }
-    mind.price_hearings();
-    assert!(mind.board.hearings_wait && mind.owes_strokes(), "its budget's worth priced, one left: it waits, and strokes are owed");
-    mind.price_hearings();
-    assert!(!mind.board.hearings_wait && !mind.owes_strokes(), "the one left priced: nothing waits");
+    assert_eq!(mind.price_hearings(), reads, "its budget's worth priced");
+    assert!(mind.board.hearings_wait && mind.owes_strokes(), "one left: it waits, and strokes are owed");
+    assert_eq!(mind.price_hearings(), 1, "the one left priced");
+    assert!(!mind.board.hearings_wait && !mind.owes_strokes(), "nothing waits");
+}
+
+/// THE TASK FIRST (ruled 2026-10-26): while a court's task waits on the
+/// board, no hearing is priced — the work waits, and strokes are owed; with
+/// the board clear, it is priced.
+#[test]
+fn a_waiting_task_defers_every_hearing() {
+    use crate::client::sdk::entity::chatter::FieldWork;
+    use crate::client::sdk::entity::offer::Offer;
+    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("task first"));
+    let field = mind.pricing_for_test();
+    field.send(FieldWork::Speak { body: Vec::new(), agreed: false }).expect("queued");
+    let train = vec![(vec![vec![1u8, 0], vec![0, 0]], vec![vec![0u8, 1], vec![0, 0]])];
+    let offer = Offer::of(&train);
+    mind.board.court.task = Some((crate::anastome::dialogue::TaskEnvelope { id: [2; 32], train, tests: Vec::new() }, offer));
+    assert_eq!(mind.price_hearings(), 0, "a task on the board: no hearing priced");
+    assert!(mind.board.hearings_wait && mind.owes_strokes(), "the hearing waits, and strokes are owed");
+    mind.board.court.task = None;
+    assert_eq!(mind.price_hearings(), 1, "the board clear: the hearing is priced");
+    assert!(!mind.board.hearings_wait, "nothing waits");
 }

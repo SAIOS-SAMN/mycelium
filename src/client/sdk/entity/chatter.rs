@@ -485,7 +485,17 @@ impl Entity {
     /// later hearing closes. The price goes back to the conversation, which
     /// acts on it (`Carrier::priced`). Same word, two minds, two prices: each
     /// field is its own.
-    pub(crate) fn price_hearings(&mut self) {
+    pub(crate) fn price_hearings(&mut self) -> usize {
+        // THE TASK FIRST (ruled 2026-10-26): while a court's task waits on the
+        // board, or the perception carrier works a scene, no hearing is
+        // priced — they wait in their channel, the mind owing strokes for
+        // them (`hearings_wait`), and the winding goes on to the scene. Peer
+        // dialogue fills the strokes the task pipeline leaves clear; it never
+        // stands in front of perception.
+        if self.board.court.task.is_some() || self.perceiving() {
+            self.board.hearings_wait = true;
+            return 0;
+        }
         // ONE STROKE'S HEARINGS (ruled 2026-10-25): each work spends a read of
         // the stroke's own budget, and where it runs out the rest wait in
         // their channel for the next stroke (`hearings_wait`), so the winding
@@ -494,6 +504,7 @@ impl Entity {
         // work is a boundary of the winding carrier (ruled 2026-10-24).
         let mut budget = self.physics.stroke();
         self.board.hearings_wait = false;
+        let mut priced = 0usize;
         loop {
             // The budget spent, whatever is left waits; the next stroke finds
             // the channel as it stands, empty or not.
@@ -506,6 +517,7 @@ impl Entity {
                 None => None,
             };
             let Some(w) = next else { break };
+            priced += 1;
             match w {
                 // MU-CLIENT §7.1 R1 — the rings are read off the field, on
                 // the perception carrier; what they read is understood where
@@ -533,6 +545,7 @@ impl Entity {
                 }
             }
         }
+        priced
     }
 
     /// MU-CLIENT §4.13, §5.3 — A QUESTION LAPSES WHERE ITS RESIDUE'S ORBIT IS
