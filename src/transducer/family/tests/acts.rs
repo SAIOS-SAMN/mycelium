@@ -18,11 +18,17 @@ fn knows(family: &[(&[&str], &[&str])], held: (&[&str], &[&str])) -> Vec<crate::
     let family: Vec<(Grid, Grid)> = family.iter().map(|(x, y)| (grid(x), grid(y))).collect();
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
-    assert!(!rule.form.clauses.is_empty(), "the act is stated as clauses");
+    assert!(!rule.form.elements.is_empty(), "the act is stated as clauses");
     let s = speak_rule(&rule, &grid(held.0), &NoCrystal).expect("it speaks the held-out input");
     assert!(s.unreached.is_empty(), "every body spoken for: {:?}", s.unreached);
-    assert_eq!(s.grid(), Some(grid(held.1)), "the held-out pair re-derived; clauses {:?}", rule.form.clauses);
-    rule.form.clauses
+    assert_eq!(s.grid(), Some(grid(held.1)), "the held-out pair re-derived; elements {:?}", rule.form.elements);
+    glosses(&rule.form.elements)
+}
+
+/// The clauses naming a rule's elements: every element the act reader
+/// reads is a clause it read, so each has its gloss.
+fn glosses(elements: &[crate::transducer::sentence::form::rule_element::Lowered]) -> Vec<crate::transducer::sentence::form::clause::Clause> {
+    elements.iter().map(|l| crate::transducer::sentence::form::rule_element::gloss(l).expect("a read clause's element is named")).collect()
 }
 
 /// C1 — A VANISHED BODY: every body of one hue erased, the rest kept.
@@ -193,10 +199,10 @@ fn turned_echoes_and_bends_are_read_back_by_the_court() {
     ] {
         let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
         let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
-        assert!(!rule.form.clauses.is_empty(), "stated as clauses");
+        assert!(!rule.form.elements.is_empty(), "stated as clauses");
         let element = crate::transducer::sentence::as_element_form(&rule.form, [1, 0, 0, 0]).expect("the rule mints");
         let back = crate::transducer::sentence::from_element_form(&element).expect("the court decodes it");
-        assert_eq!(back.clauses.len(), rule.form.clauses.len(), "every clause read back");
+        assert_eq!(back.elements.len(), rule.form.elements.len(), "every clause read back");
         let again = crate::transducer::sentence::as_element_form(&back, [1, 0, 0, 0]).expect("the decoded rule mints");
         assert_eq!(again.address(), element.address(), "the clauses read back as they were read: one address");
     }
@@ -213,10 +219,10 @@ fn a_join_and_an_echo_are_read_back_by_the_court() {
     ] {
         let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
         let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
-        assert!(!rule.form.clauses.is_empty(), "stated as clauses");
+        assert!(!rule.form.elements.is_empty(), "stated as clauses");
         let element = crate::transducer::sentence::as_element_form(&rule.form, [1, 0, 0, 0]).expect("the rule mints");
         let back = crate::transducer::sentence::from_element_form(&element).expect("the court decodes it");
-        assert_eq!(back.clauses.len(), rule.form.clauses.len(), "every clause read back");
+        assert_eq!(back.elements.len(), rule.form.elements.len(), "every clause read back");
         let again = crate::transducer::sentence::as_element_form(&back, [1, 0, 0, 0]).expect("the decoded rule mints");
         assert_eq!(again.address(), element.address(), "the clauses read back as they were read: one address");
     }
@@ -264,7 +270,7 @@ fn panes_and_tiles_are_read_back_by_the_court() {
     ] {
         let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
         let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
-        assert!(!rule.form.clauses.is_empty(), "stated as clauses");
+        assert!(!rule.form.elements.is_empty(), "stated as clauses");
         let element = crate::transducer::sentence::as_element_form(&rule.form, [1, 0, 0, 0]).expect("the rule mints");
         let back = crate::transducer::sentence::from_element_form(&element).expect("the court decodes it");
         let again = crate::transducer::sentence::as_element_form(&back, [1, 0, 0, 0]).expect("the decoded rule mints");
@@ -455,7 +461,7 @@ fn the_court_solves_what_the_act_reader_read() {
         let family: Vec<(Grid, Grid)> = fam.iter().map(|(x, y)| (grid(x), grid(y))).collect();
         let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
         let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
-        assert!(!rule.form.clauses.is_empty(), "{name}: stated as clauses");
+        assert!(!rule.form.elements.is_empty(), "{name}: stated as clauses");
         let minted = match crate::transducer::family::mint_sentence_why(&rule, &family, &NoCrystal, 0) {
             Ok(word) => word,
             Err(why) => panic!("{name}: the rule mints over its family: {why:?}"),
@@ -499,10 +505,10 @@ fn a_reaction_is_known_and_solved_on_a_pair_never_seen() {
         let family: Vec<(Grid, Grid)> = fam.iter().map(|(x, y)| (grid(x), grid(y))).collect();
         let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
         let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
-        let reacted = rule.form.clauses.iter().any(|c| matches!(c.act, Act::Slide { .. } | Act::Repaint { paint: Paint::Of(_) }));
-        assert!(reacted, "{name}: stated as a reaction: {:?}", rule.form.clauses);
+        let reacted = glosses(&rule.form.elements).iter().any(|c| matches!(c.act, Act::Slide { .. } | Act::Repaint { paint: Paint::Of(_) }));
+        assert!(reacted, "{name}: stated as a reaction: {:?}", rule.form.elements);
         let s = speak_rule(&rule, &grid(held.0), &NoCrystal).expect("it speaks the held-out input");
-        assert_eq!(s.grid(), Some(grid(held.1)), "{name}: the held-out pair re-derived; clauses {:?}", rule.form.clauses);
+        assert_eq!(s.grid(), Some(grid(held.1)), "{name}: the held-out pair re-derived; elements {:?}", rule.form.elements);
         let minted = match crate::transducer::family::mint_sentence_why(&rule, &family, &NoCrystal, 0) {
             Ok(word) => word,
             Err(why) => panic!("{name}: the rule mints over its family: {why:?}"),

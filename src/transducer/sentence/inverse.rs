@@ -290,10 +290,10 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
     // 54.2, AT1 — THE REMAINDER BY ITS COORDINATES; the chain rides the
     // record and `from_element_form` places it from there.
     f.remainder_at = take_chain_at(k, &mut p)?;
-    // 78.143 — THE CLAUSES, where the key carries any, and then nothing: a
+    // 78.143 — THE ELEMENTS, where the key carries any, and then nothing: a
     // run of bytes after them is no form this build writes.
     if p < k.len() {
-        f.clauses = super::form::clause::take_clauses(k, &mut p)?;
+        f.elements = super::form::rule_element::take_elements(k, &mut p)?;
         if p != k.len() {
             return None;
         }

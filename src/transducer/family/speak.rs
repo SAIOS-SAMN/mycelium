@@ -593,8 +593,8 @@ fn speak_on_scene(
     // one they speak (a crop's, or the input's). A clause unstated here — a
     // tie the rule's order does not name, a coordinate that is not exact —
     // lays down no speech; the court refuses it by name before it reads one.
-    if !f.clauses.is_empty() {
-        let spoken = super::statement::speak_clauses(&f.clauses, x, bodies).ok()?;
+    if !f.elements.is_empty() {
+        let spoken = super::statement::speak_elements(&f.elements, x, bodies).ok()?;
         fy = spoken.frame;
         painted = spoken.painted;
         // 78.167 C — the clauses are the whole speech: what the vertices left
@@ -612,7 +612,7 @@ fn speak_on_scene(
     // A body the speech did not reach is named, never silent (rule 11). An
     // unfolded form fills the frame, and clauses paint a canvas that opens as
     // the input, so under either every body is spoken for.
-    let unreached: Vec<usize> = match unfolded || !f.clauses.is_empty() {
+    let unreached: Vec<usize> = match unfolded || !f.elements.is_empty() {
         true => Vec::new(),
         false => reached.iter().enumerate().filter(|(_, hit)| !**hit).map(|(i, _)| i).collect(),
     };

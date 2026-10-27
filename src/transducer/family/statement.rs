@@ -582,8 +582,7 @@ fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut [Vec<u8>]) ->
 /// ([`rule_element::lower`]) and the elements spoken. A run naming parts
 /// inside parts is refused by name.
 pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Spoken, Unstated> {
-    let lowered: Vec<Lowered> = clauses.iter().map(rule_element::lower).collect::<Option<_>>().ok_or(Unstated::Nested)?;
-    speak_elements(&lowered, x, bodies)
+    speak_elements(&rule_element::lower_all(clauses).ok_or(Unstated::Nested)?, x, bodies)
 }
 
 /// SPEAK THE ELEMENTS on `x`. The canvas opens as the input; each element

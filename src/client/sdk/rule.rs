@@ -349,10 +349,11 @@ fn clause_sentence(clauses: Vec<Clause>, family: &[(Grid, Grid)], crystal: &dyn 
     if clauses.is_empty() || family.is_empty() {
         return Err(NoRule::NoFamily);
     }
+    let elements = crate::transducer::sentence::form::rule_element::lower_all(&clauses).ok_or(NoRule::Unstated(family::statement::Unstated::Nested))?;
     for (x, _) in family {
-        family::statement::speak_clauses(&clauses, x, &family::perceive(x)).map_err(NoRule::Unstated)?;
+        family::statement::speak_elements(&elements, x, &family::perceive(x)).map_err(NoRule::Unstated)?;
     }
-    let mut form = Form { clauses, ..Form::default() };
+    let mut form = Form { elements, ..Form::default() };
     form.orbits = Form::orbits_of(&form.faces, &form.vertices);
     let read = family::form_deflation_read(&form, family, crystal, &crate::transducer::alphabet::Word::identity());
     if let Some(left) = read.remainders.iter().find(|r| !r.is_empty()) {

@@ -103,7 +103,7 @@ pub fn hue_step(from: u8, to: u8) -> u64 {
 pub fn grid_steps(rule: &Element, in_shape: (usize, usize), out_shape: (usize, usize)) -> Result<Vec<u64>, NotSteps> {
     let held = element::Held::of(rule.clone());
     let form = held.form().ok_or(NotSteps::NotASentence)?;
-    if !form.clauses.is_empty() {
+    if !form.elements.is_empty() {
         return Err(NotSteps::Clauses);
     }
     let words: Vec<_> = form

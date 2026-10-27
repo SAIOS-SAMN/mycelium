@@ -149,7 +149,7 @@ fn the_clauses_ride_the_address() {
     let steps = [Step::Select(Pred::Hue(5)), Step::Create(Create::Copy { template: Pred::Not(Box::new(Pred::Hue(5))) })];
     let rule = sentence(&steps, &train, &NoCrystal).expect("mints");
     let form = crate::transducer::sentence::from_address(&rule.address()).expect("the address decodes");
-    assert_eq!(form.clauses.len(), 1, "one clause, read back");
+    assert_eq!(form.elements.len(), 1, "one clause, read back");
     assert_eq!(crate::transducer::sentence::form_vertex_key(&form), rule.address(), "and written again it is the same address");
 }
 

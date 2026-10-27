@@ -280,7 +280,7 @@ pub(crate) fn ascertain_on(epi: &Epigenome, train: &Family, rule: &SentenceRule)
     // is one pair (guard 3); the family's rule is the act reader's clauses
     // (guard 1 — a vertex fit stays unknown); and it closes both pairs
     // exactly, no remainder, the grid each output (guard 2).
-    let unexempt = match (train.len() == 2, rule.form.clauses.is_empty()) {
+    let unexempt = match (train.len() == 2, rule.form.elements.is_empty()) {
         _ if failed.is_empty() => None,
         (false, _) => Some(Unexempt::Pairs),
         (true, true) => Some(Unexempt::Vertex),

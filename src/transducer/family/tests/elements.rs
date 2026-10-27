@@ -121,3 +121,87 @@ fn a_carriage_iterates_a_translation_and_refuses_a_turn() {
     };
     assert_eq!(drawn(speak_elements(&[spun], &x, &bodies)), Err(Unstated::Still));
 }
+
+// ---- THE ELEMENTS ON THE WIRE: the form writes its elements, an element an
+// act names in that act's bytes, one no act names under its own tag.
+
+fn written(elements: &[Lowered]) -> Vec<u8> {
+    let mut b = Vec::new();
+    crate::transducer::sentence::form::rule_element::put_elements(&mut b, elements);
+    b
+}
+
+fn read(bytes: &[u8]) -> Option<Vec<Lowered>> {
+    let mut p = 0;
+    let got = crate::transducer::sentence::form::rule_element::take_elements(bytes, &mut p)?;
+    (p == bytes.len()).then_some(got)
+}
+
+fn kept_slide() -> Lowered {
+    Lowered {
+        select: Pred::Hue(1),
+        parts: false,
+        element: RuleElement::Carriage(Carriage { motion: shift(1, 0), about: About::Grid, reach: Reach::Meet(Stop::Contact), trace: Trace::Keeps, paint: Paint::Own, gauge: Vec::new() }),
+    }
+}
+
+/// NO FORM ALREADY MINTED MOVES: a run of clauses, written as its elements,
+/// is the tape the clauses always wrote, and reads back as those elements.
+#[test]
+fn elements_an_act_names_write_the_clauses_bytes() {
+    let clauses = vec![
+        Clause { select: Pred::Hue(1), act: Act::Slide { ray: (1, 0), stop: Stop::Contact } },
+        Clause { select: Pred::Hue(5), act: Act::Repaint { paint: Paint::Of(Pred::Hue(3)) } },
+        Clause { select: Pred::All, act: Act::Carry { motion: rotator(&q(0), &q(1)), about: About::Body, gauge: vec![(2, 3)] } },
+        Clause { select: Pred::All, act: Act::Parts(Box::new(Act::Fill { region: Region::Halo, hue: 6 })) },
+    ];
+    let elements = crate::transducer::sentence::form::rule_element::lower_all(&clauses).expect("lowers");
+    let bytes = written(&elements);
+    assert_eq!(bytes, tape(&clauses), "the clauses' own bytes");
+    let back = read(&bytes).expect("reads back");
+    assert_eq!(written(&back), bytes, "read back as written");
+}
+
+/// AN ELEMENT NO ACT NAMES CROSSES THE WIRE: written under its own tag, read
+/// back as itself, carried on a form's address the court decodes, and
+/// spoken there as it was spoken here. A reader that knows only the acts
+/// refuses its tape.
+#[test]
+fn an_element_no_act_names_rides_the_address() {
+    let bytes = written(&[kept_slide()]);
+    let back = read(&bytes).expect("reads back");
+    assert_eq!(written(&back), bytes, "one tape");
+    let mut p = 0;
+    assert!(crate::transducer::sentence::form::clause::take_clauses(&bytes, &mut p).is_none(), "the acts' reader refuses it");
+    let form = crate::transducer::sentence::Form { elements: vec![kept_slide()], ..Default::default() };
+    let address = crate::transducer::sentence::form_vertex_key(&form);
+    let decoded = crate::transducer::sentence::from_address(&address).expect("the court decodes the form");
+    let x = grid(&["0100", "0000", "0000", "2222"]);
+    let bodies = crate::transducer::family::perceive(&x);
+    assert_eq!(drawn(speak_elements(&decoded.elements, &x, &bodies)), drawn(speak_elements(&[kept_slide()], &x, &bodies)), "spoken as it was said");
+    assert_eq!(crate::transducer::sentence::form_vertex_key(&decoded), address, "and written again, one address");
+}
+
+/// ONE TAPE PER ELEMENT: the element tag carrying a carriage an act names (a
+/// slide, whose tape is the slide's), or a carriage not written canonically
+/// (an iterated translation read about each body, which conjugates to the
+/// grid's), is no element's tape.
+#[test]
+fn the_element_tag_refuses_a_named_or_uncanonical_carriage() {
+    let base = written(&[kept_slide()]);
+    // The tape's tail: about, reach (Meet), stop, trace, paint (Own: one
+    // byte), the empty gauge's count.
+    let mut empty = Vec::new();
+    crate::transducer::address::put_key_count(&mut empty, 0);
+    let trace_at = base.len() - empty.len() - 2;
+    assert_eq!(base[trace_at], 1, "Trace::Keeps where the tail puts it");
+    let mut slide = base.clone();
+    slide[trace_at] = 0; // Trace::Clears — the slide's own element
+    assert!(read(&slide).is_none(), "a slide is written as a slide");
+    let about_at = trace_at - 3;
+    assert_eq!(base[about_at], 0, "About::Grid where the tail puts it");
+    let mut body = base.clone();
+    body[about_at] = 1; // About::Body
+    assert!(read(&body).is_none(), "an iterated translation is read about the grid");
+    assert!(read(&base).is_some(), "the canonical tape reads");
+}

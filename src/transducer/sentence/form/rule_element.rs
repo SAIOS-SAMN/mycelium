@@ -21,8 +21,12 @@
 //! (`Connect`, `Bend`), a body carried centre onto centre (`Copy`), and the
 //! frame acts (`Crop`, `Scale`, `Panes`, `Tile`).
 
-use super::clause::{About, Act, Clause, Extent, Paint, Pred, Region, Stop};
+use super::clause::{
+    put_act, put_gauge, put_paint, put_pred, put_stop, take_act, take_byte, take_gauge, take_paint, take_pred, take_stop, About, Act, Clause, Extent, Paint,
+    Pred, Region, Stop,
+};
 use crate::core::Q;
+use crate::transducer::address::{put_key_count, take_key_count};
 use crate::transducer::base::Site;
 use crate::transducer::cga::Mv;
 use crate::transducer::element;
@@ -156,6 +160,12 @@ pub fn lower(clause: &Clause) -> Option<Lowered> {
     Some(Lowered { select: clause.select.clone(), parts, element: lower_act(act)? })
 }
 
+/// A RUN OF CLAUSES AS ITS ELEMENTS, in the rule's order; `None` where one
+/// names parts inside parts.
+pub fn lower_all(clauses: &[Clause]) -> Option<Vec<Lowered>> {
+    clauses.iter().map(lower).collect()
+}
+
 fn gloss_carriage(t: &Carriage) -> Option<Act> {
     let own = t.paint == Paint::Own;
     let fixed = t.motion.projective_eq(&still());
@@ -174,12 +184,143 @@ fn gloss_carriage(t: &Carriage) -> Option<Act> {
     }
 }
 
+/// THE CARRIAGE AS ONE TAPE WRITES IT: where the frame it is read about does
+/// not move what it says — the identity, or a translation iterated, which
+/// every body's centre conjugates to itself — it is read about the grid;
+/// and one application sweeps as it keeps.
+fn canonical(t: &Carriage) -> Carriage {
+    let mut t = t.clone();
+    if matches!(t.reach, Reach::Meet(_)) || t.motion.projective_eq(&still()) {
+        t.about = About::Grid;
+    }
+    if t.reach == Reach::Once && t.trace == Trace::Sweeps {
+        t.trace = Trace::Keeps;
+    }
+    t
+}
+
+/// THE TAG AN ELEMENT NO ACT NAMES IS WRITTEN UNDER, in the act's place: past
+/// every act's tag, so a reader that knows only the acts refuses it.
+const UNGLOSSED: u8 = 16;
+
+fn put_unglossed(buf: &mut Vec<u8>, l: &Lowered, t: &Carriage) {
+    put_pred(buf, &l.select);
+    buf.push(UNGLOSSED);
+    buf.push(u8::from(l.parts));
+    let t = canonical(t);
+    t.motion.put_canonical(buf);
+    buf.push(match t.about {
+        About::Grid => 0,
+        About::Body => 1,
+    });
+    match t.reach {
+        Reach::Once => buf.push(0),
+        Reach::Meet(stop) => {
+            buf.push(1);
+            put_stop(buf, stop);
+        }
+    }
+    buf.push(match t.trace {
+        Trace::Clears => 0,
+        Trace::Keeps => 1,
+        Trace::Sweeps => 2,
+    });
+    put_paint(buf, &t.paint);
+    put_gauge(buf, &t.gauge);
+}
+
+fn take_unglossed(k: &[u8], p: &mut usize, select: Pred) -> Option<Lowered> {
+    let parts = match take_byte(k, p)? {
+        0 => false,
+        1 => true,
+        _ => return None,
+    };
+    let motion = Mv::from_bytes(k, p)?;
+    let about = match take_byte(k, p)? {
+        0 => About::Grid,
+        1 => About::Body,
+        _ => return None,
+    };
+    let reach = match take_byte(k, p)? {
+        0 => Reach::Once,
+        1 => Reach::Meet(take_stop(k, p)?),
+        _ => return None,
+    };
+    let trace = match take_byte(k, p)? {
+        0 => Trace::Clears,
+        1 => Trace::Keeps,
+        2 => Trace::Sweeps,
+        _ => return None,
+    };
+    let t = Carriage { motion, about, reach, trace, paint: take_paint(k, p)?, gauge: take_gauge(k, p)? };
+    // ONE TAPE PER ELEMENT: a carriage written other than canonically, or
+    // one an act names — whose tape is the act's — is no element's tape.
+    let c = canonical(&t);
+    let gauge_written = {
+        let mut g = t.gauge.clone();
+        g.sort_unstable();
+        g == t.gauge
+    };
+    if c.about != t.about || c.trace != t.trace || !gauge_written {
+        return None;
+    }
+    let l = Lowered { select, parts, element: RuleElement::Carriage(t) };
+    gloss(&l).is_none().then_some(l)
+}
+
+/// THE ELEMENTS AS THE FORM'S ADDRESS WRITES THEM, in the rule's own order
+/// (the order is content: a later element paints over an earlier one). An
+/// element an act names is written as that clause, byte for byte — so no
+/// form already minted moves its address — and one no act names under its
+/// own tag.
+pub(crate) fn put_elements(buf: &mut Vec<u8>, elements: &[Lowered]) {
+    put_key_count(buf, elements.len());
+    for l in elements {
+        match named(l) {
+            Ok(c) => {
+                put_pred(buf, &c.select);
+                put_act(buf, &c.act);
+            }
+            Err(t) => put_unglossed(buf, l, t),
+        }
+    }
+}
+
+/// The inverse of [`put_elements`]: an act's tape lowered to its element,
+/// an element's own tape read where no act names it. `None` where the bytes
+/// are no run of elements: a form whose statements do not read is no form
+/// (rule 11).
+pub(crate) fn take_elements(k: &[u8], p: &mut usize) -> Option<Vec<Lowered>> {
+    let n = take_key_count(k, p)?;
+    if n > k.len().checked_sub(*p)? {
+        return None;
+    }
+    let mut out = Vec::with_capacity(n);
+    for _ in 0..n {
+        let select = take_pred(k, p, 0)?;
+        let l = match k.get(*p) {
+            Some(&UNGLOSSED) => {
+                *p += 1;
+                take_unglossed(k, p, select)?
+            }
+            _ => lower(&Clause { select, act: take_act(k, p)? })?,
+        };
+        out.push(l);
+    }
+    Some(out)
+}
+
 /// THE ENGLISH OF AN ELEMENT: the clause that names what it does, `None`
 /// where no act names it. A gloss is a translation for readers; the
 /// element is what is said.
 pub fn gloss(l: &Lowered) -> Option<Clause> {
+    named(l).ok()
+}
+
+/// The clause naming the element, or the carriage no act names.
+fn named(l: &Lowered) -> Result<Clause, &Carriage> {
     let act = match &l.element {
-        RuleElement::Carriage(t) => gloss_carriage(t)?,
+        RuleElement::Carriage(t) => gloss_carriage(t).ok_or(t)?,
         RuleElement::Chain { region, hue } => Act::Fill { region: *region, hue: *hue },
         RuleElement::Join { corner: None, paint } => Act::Connect { paint: paint.clone() },
         RuleElement::Join { corner: Some(to), paint } => Act::Bend { to: to.clone(), paint: paint.clone() },
@@ -193,5 +334,5 @@ pub fn gloss(l: &Lowered) -> Option<Clause> {
         true => Act::Parts(Box::new(act)),
         false => act,
     };
-    Some(Clause { select: l.select.clone(), act })
+    Ok(Clause { select: l.select.clone(), act })
 }

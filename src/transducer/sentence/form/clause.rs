@@ -339,13 +339,13 @@ fn take_order(k: &[u8], p: &mut usize) -> Option<Order> {
     Some(o)
 }
 
-fn take_byte(k: &[u8], p: &mut usize) -> Option<u8> {
+pub(super) fn take_byte(k: &[u8], p: &mut usize) -> Option<u8> {
     let b = *k.get(*p)?;
     *p += 1;
     Some(b)
 }
 
-fn put_pred(buf: &mut Vec<u8>, pred: &Pred) {
+pub(super) fn put_pred(buf: &mut Vec<u8>, pred: &Pred) {
     match pred {
         Pred::All => buf.push(0),
         Pred::Hue(h) => {
@@ -408,7 +408,7 @@ fn put_pred(buf: &mut Vec<u8>, pred: &Pred) {
     }
 }
 
-fn take_pred(k: &[u8], p: &mut usize, depth: usize) -> Option<Pred> {
+pub(super) fn take_pred(k: &[u8], p: &mut usize, depth: usize) -> Option<Pred> {
     if depth > NESTING {
         return None;
     }
@@ -471,7 +471,7 @@ fn take_pred(k: &[u8], p: &mut usize, depth: usize) -> Option<Pred> {
     })
 }
 
-fn put_gauge(buf: &mut Vec<u8>, gauge: &[(u8, u8)]) {
+pub(super) fn put_gauge(buf: &mut Vec<u8>, gauge: &[(u8, u8)]) {
     let mut g = gauge.to_vec();
     g.sort_unstable();
     put_key_count(buf, g.len());
@@ -481,7 +481,7 @@ fn put_gauge(buf: &mut Vec<u8>, gauge: &[(u8, u8)]) {
     }
 }
 
-fn take_gauge(k: &[u8], p: &mut usize) -> Option<Vec<(u8, u8)>> {
+pub(super) fn take_gauge(k: &[u8], p: &mut usize) -> Option<Vec<(u8, u8)>> {
     let n = take_key_count(k, p)?;
     if n > k.len().checked_sub(*p)? {
         return None;
@@ -493,7 +493,7 @@ fn take_gauge(k: &[u8], p: &mut usize) -> Option<Vec<(u8, u8)>> {
     Some(g)
 }
 
-fn put_act(buf: &mut Vec<u8>, act: &Act) {
+pub(super) fn put_act(buf: &mut Vec<u8>, act: &Act) {
     match act {
         Act::Recolour(map) => {
             buf.push(0);
@@ -592,7 +592,7 @@ fn put_act(buf: &mut Vec<u8>, act: &Act) {
     }
 }
 
-fn put_paint(buf: &mut Vec<u8>, paint: &Paint) {
+pub(super) fn put_paint(buf: &mut Vec<u8>, paint: &Paint) {
     match paint {
         Paint::Own => buf.push(0),
         Paint::Hue(h) => {
@@ -606,7 +606,7 @@ fn put_paint(buf: &mut Vec<u8>, paint: &Paint) {
     }
 }
 
-fn take_paint(k: &[u8], p: &mut usize) -> Option<Paint> {
+pub(super) fn take_paint(k: &[u8], p: &mut usize) -> Option<Paint> {
     match take_byte(k, p)? {
         0 => Some(Paint::Own),
         1 => Some(Paint::Hue(take_byte(k, p)?)),
@@ -615,14 +615,14 @@ fn take_paint(k: &[u8], p: &mut usize) -> Option<Paint> {
     }
 }
 
-fn put_stop(buf: &mut Vec<u8>, stop: Stop) {
+pub(super) fn put_stop(buf: &mut Vec<u8>, stop: Stop) {
     buf.push(match stop {
         Stop::Border => 0,
         Stop::Contact => 1,
     });
 }
 
-fn take_stop(k: &[u8], p: &mut usize) -> Option<Stop> {
+pub(super) fn take_stop(k: &[u8], p: &mut usize) -> Option<Stop> {
     match take_byte(k, p)? {
         0 => Some(Stop::Border),
         1 => Some(Stop::Contact),
@@ -630,7 +630,7 @@ fn take_stop(k: &[u8], p: &mut usize) -> Option<Stop> {
     }
 }
 
-fn take_act(k: &[u8], p: &mut usize) -> Option<Act> {
+pub(super) fn take_act(k: &[u8], p: &mut usize) -> Option<Act> {
     Some(match take_byte(k, p)? {
         0 => Act::Recolour(take_gauge(k, p)?),
         1 => {
@@ -719,8 +719,12 @@ fn take_act(k: &[u8], p: &mut usize) -> Option<Act> {
     })
 }
 
-/// THE CLAUSES AS THE FORM'S ADDRESS WRITES THEM, in the rule's own order
-/// (the order is content: a later clause paints over an earlier one).
+/// THE CLAUSES AS THE FORM'S ADDRESS WROTE THEM, in the rule's own order
+/// (the order is content: a later clause paints over an earlier one). The
+/// form writes its elements now (`rule_element::put_elements`), an element
+/// an act names in exactly these bytes; this is the reference the claims
+/// hold them to.
+#[cfg(test)]
 pub(crate) fn put_clauses(buf: &mut Vec<u8>, clauses: &[Clause]) {
     put_key_count(buf, clauses.len());
     for c in clauses {
@@ -731,6 +735,7 @@ pub(crate) fn put_clauses(buf: &mut Vec<u8>, clauses: &[Clause]) {
 
 /// The inverse of [`put_clauses`]. `None` where the bytes are no run of
 /// clauses: a form whose statements do not read is no form (rule 11).
+#[cfg(test)]
 pub(crate) fn take_clauses(k: &[u8], p: &mut usize) -> Option<Vec<Clause>> {
     let n = take_key_count(k, p)?;
     if n > k.len().checked_sub(*p)? {

@@ -1137,15 +1137,15 @@ pub(crate) fn clauses_stated_from(
     meter: &mut Meter<'_>,
     from: usize,
 ) -> Step {
-    use crate::transducer::family::statement::{speak_clauses, Unstated};
-    if f.clauses.is_empty() {
+    use crate::transducer::family::statement::{speak_elements, Unstated};
+    if f.elements.is_empty() {
         return Ok(());
     }
     for (i, ((x, _), seen)) in family.iter().zip(frames).enumerate().skip(from) {
         if !meter.spend() {
             return Err(Halt::Spent(i));
         }
-        if let Err(why) = speak_clauses(&f.clauses, x, &seen.bodies) {
+        if let Err(why) = speak_elements(&f.elements, x, &seen.bodies) {
             let reason = match why {
                 Unstated::Tie => REFUSE_RULE_TIE,
                 Unstated::Inexact => REFUSE_RULE_INEXACT,

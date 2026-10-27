@@ -844,7 +844,7 @@ fn a_family_whose_rule_selects_that_body_extracts_a_rule_vertex_where_it_extract
     ];
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let rule = extract_rule(&family, &mut budget).expect("the family extracts");
-    assert!(!rule.form.clauses.is_empty(), "the rule states the selection as clauses: {:?}", rule.form.vertices);
+    assert!(!rule.form.elements.is_empty(), "the rule states the selection as clauses: {:?}", rule.form.vertices);
     assert!(
         rule.form.demand_vertices().next().is_none(),
         "zero demands where it extracted demands before: {:?}",

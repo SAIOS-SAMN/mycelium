@@ -36,7 +36,7 @@ fn rule_of(train: &[(crate::arc::Grid, crate::arc::Grid)]) -> crate::transducer:
 fn a_two_pair_clause_rule_is_undetermined_by_its_perspectives() {
     let train = mirrored(2);
     let rule = rule_of(&train);
-    assert!(!rule.form.clauses.is_empty(), "the act reader stated it as clauses");
+    assert!(!rule.form.elements.is_empty(), "the act reader stated it as clauses");
     let epi = Epigenome::new();
     let (outcome, _) = ascertain_on(&epi, &train, &rule);
     assert!(matches!(outcome, Ascertained::Undetermined), "undetermined by its one-pair perspectives: {outcome:?}");
@@ -48,7 +48,7 @@ fn a_two_pair_clause_rule_is_undetermined_by_its_perspectives() {
 fn a_vertex_fit_on_two_pairs_stays_unknown() {
     let train = mirrored(2);
     let mut rule = rule_of(&train);
-    rule.form.clauses.clear();
+    rule.form.elements.clear();
     let (outcome, _) = ascertain_on(&Epigenome::new(), &train, &rule);
     assert!(matches!(outcome, Ascertained::Unknown(Unexempt::Vertex)), "no clauses, no exemption — guard 1 named: {outcome:?}");
 }
@@ -62,7 +62,7 @@ fn a_clause_rule_that_does_not_close_its_pairs_is_not_undetermined() {
         (grid(&["0000", "3000", "0000", "0000"]), grid(&["0000", "3333", "0000", "0000"])),
         (grid(&["0000", "0000", "0030", "0000"]), grid(&["0000", "0000", "0033", "0000"])),
     ]);
-    assert!(!other.form.clauses.is_empty(), "the other family's rule is clauses too");
+    assert!(!other.form.elements.is_empty(), "the other family's rule is clauses too");
     let (outcome, _) = ascertain_on(&Epigenome::new(), &train, &other);
     assert!(matches!(outcome, Ascertained::Unknown(Unexempt::Unproven)), "unproven on these pairs — guard 2 named: {outcome:?}");
 }

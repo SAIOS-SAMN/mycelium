@@ -15,6 +15,7 @@ use super::finish::finish;
 use super::percept::{family_percept, Percept};
 use super::*;
 use crate::network::nerve::Keyed;
+use crate::transducer::sentence::form::rule_element::lower_all;
 
 /// Seven moves on the family's one form (chapter 21 as ruled in 52.5),
 /// under the stroke (L8w, rule 10): the family's frames perceived here, once.
@@ -62,10 +63,12 @@ fn extract_rule_on_ground(
         if family.len() < 2 {
             return None;
         }
+        // The clauses read are spoken as their elements, so a run that
+        // re-derived the pairs lowers.
         return match super::acts::read_acts(&Form::default(), family, budget) {
             Ok(clauses) => {
                 crate::observe::note_mind(|m| m.acts[0] += 1);
-                let form = Form { clauses, ..Form::default() };
+                let form = Form { elements: lower_all(&clauses)?, ..Form::default() };
                 finish(form, ((1, 1), (1, 1)), &[])
             }
             Err(u) => {
@@ -215,7 +218,7 @@ fn stated(
 ) -> crate::transducer::sentence::SentenceRule {
     // A coordinate separating bodies on ONE pair separates nothing: a scene's
     // form (one pair) is the vertices' alone.
-    if !rule.form.clauses.is_empty() || family.len() < 2 {
+    if !rule.form.elements.is_empty() || family.len() < 2 {
         return rule;
     }
     // SAID HONESTLY: the grid, every body reached, and no creation, merge or
@@ -229,8 +232,8 @@ fn stated(
     if says {
         return rule;
     }
-    match super::acts::read_acts(&rule.form, family, budget) {
-        Ok(clauses) => {
+    match super::acts::read_acts(&rule.form, family, budget).map(|clauses| lower_all(&clauses)) {
+        Ok(Some(elements)) => {
             crate::observe::note_mind(|m| m.acts[0] += 1);
             // THE CLAUSES ARE THE WHOLE SPEECH (78.143, `speak`): the form
             // stating them is them. The vertices the extraction read beside
@@ -239,8 +242,10 @@ fn stated(
             // court read every word vertex's carriage (read on the fleet
             // 2026-10-20: known rules refused at the mint, "an image body is
             // reached in part", "a lamina lands on the wrong hue").
-            rule.form = Form { clauses, ..Form::default() };
+            rule.form = Form { elements, ..Form::default() };
         }
+        // A run naming parts inside parts was never spoken, so never read.
+        Ok(None) => {}
         Err(u) => crate::observe::note_mind(|m| m.acts[u.slot()] += 1),
     }
     rule

@@ -1080,9 +1080,9 @@ assert!(!pf.is_closed(), "a sentence with demands is valid, never closed (2.2, 5
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the family extracts");
 let demands: Vec<_> = rule.form.demand_vertices().collect();
 assert!(
-    !rule.form.clauses.is_empty() && demands.is_empty(),
+    !rule.form.elements.is_empty() && demands.is_empty(),
     "the family's rule states the merge as clauses, owing nothing: {:?}",
-    rule.form.clauses
+    rule.form.elements
 );
 assert!(
     demands.iter().all(|(_, _, _, links)| !links.is_empty()),
