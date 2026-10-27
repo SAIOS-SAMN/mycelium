@@ -15,6 +15,7 @@ mod cover;
 mod cycle;
 mod deflation;
 mod derivation;
+mod elements;
 mod extraction;
 mod fibres;
 mod flux;

@@ -15,9 +15,8 @@
 
 use super::*;
 use crate::core::Q;
-use crate::transducer::sentence::form::clause::{
-    exact_root, About, Act, Clause, Cmp, Coord, Extent, Order, Paint, Pred, Region, Stop, Tie, Value,
-};
+use crate::transducer::sentence::form::clause::{exact_root, About, Clause, Cmp, Coord, Extent, Order, Paint, Pred, Region, Stop, Tie, Value};
+use crate::transducer::sentence::form::rule_element::{self, Carriage, Lowered, Reach, RuleElement, Trace};
 
 /// WHY A CLAUSE IS NOT STATED ON A SCENE, by name.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -428,14 +427,172 @@ fn mapped(map: &[(u8, u8)], h: u8) -> u8 {
     map.iter().find(|(f, _)| *f == h).map_or(h, |(_, t)| *t)
 }
 
+/// A landed cell past the frame is no cell of this grid and is not spoken on
+/// it, as a carried compartment past the frame is not.
+fn lay(canvas: &mut [Vec<u8>], r: i64, c: i64, h: u8) {
+    if let (Ok(r), Ok(c)) = (usize::try_from(r), usize::try_from(c)) {
+        if let Some(cell) = canvas.get_mut(r).and_then(|row| row.get_mut(c)) {
+            *cell = h;
+        }
+    }
+}
+
+/// SPEAK A CARRIAGE on the selection `sel` of `seen`, onto `canvas`.
+fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut [Vec<u8>]) -> Result<(), Unstated> {
+    let void = crate::arc::ground();
+    let colour = |b: usize, h: u8| -> Result<u8, Unstated> { Ok(mapped(&t.gauge, seen.painted(&t.paint, b, h)?)) };
+    match t.reach {
+        Reach::Once => {
+            // The identity carries every cell onto itself: no versor is
+            // applied to a cell it cannot move.
+            let fixed = t.motion.projective_eq(&rule_element::still());
+            let mut landed: Vec<(i64, i64, u8)> = Vec::new();
+            for &b in sel {
+                let v = match (fixed, t.about) {
+                    (true, _) => None,
+                    (false, About::Grid) => Some(t.motion.clone()),
+                    (false, About::Body) => {
+                        let [cr, cc] = seen.centre(b).ok_or(Unstated::OffLattice)?;
+                        let to = crate::transducer::cga::translator_at(&[cr.clone(), cc.clone()]);
+                        let from = crate::transducer::cga::translator_at(&[-cr, -cc]);
+                        Some(to.geo(&t.motion).geo(&from))
+                    }
+                };
+                for &(r, c, h) in &seen.cells[b] {
+                    let (tr, tc) = match &v {
+                        Some(v) => carried(v, r, c)?,
+                        None => (i64::try_from(r).map_err(|_| Unstated::OffLattice)?, i64::try_from(c).map_err(|_| Unstated::OffLattice)?),
+                    };
+                    landed.push((tr, tc, colour(b, h)?));
+                }
+            }
+            if t.trace == Trace::Clears {
+                for &b in sel {
+                    for &(r, c, _) in &seen.cells[b] {
+                        canvas[r][c] = void;
+                    }
+                }
+            }
+            for (r, c, h) in landed {
+                lay(canvas, r, c, h);
+            }
+        }
+        Reach::Meet(stop) => {
+            let (dr, dc) = rule_element::lattice_step(&t.motion).filter(|&s| s != (0, 0)).ok_or(Unstated::Still)?;
+            match t.trace {
+                Trace::Sweeps => {
+                    // A line stops at what was painted BEFORE this clause, so
+                    // no line of the clause stops another and the order the
+                    // bodies are read in is no part of what it says.
+                    let before = canvas.to_vec();
+                    for &b in sel {
+                        for &(r, c, h) in &seen.cells[b] {
+                            let colour = colour(b, h)?;
+                            let (mut a, mut d) = (r, c);
+                            while let Some((na, nd)) = seen.at(a, d, dr, dc) {
+                                if stop == Stop::Contact && before[na][nd] != void {
+                                    break;
+                                }
+                                canvas[na][nd] = colour;
+                                (a, d) = (na, nd);
+                            }
+                        }
+                    }
+                }
+                Trace::Clears | Trace::Keeps => {
+                    // THE NEAREST THEIR STOP FIRST: a body's reach is its
+                    // leading cell's along the ray. Each reach lands on the
+                    // canvas as the nearer ones left it, so a stack settles
+                    // as it lands; bodies of ONE reach land together, against
+                    // the canvas as it stood before them — no order among
+                    // them is chosen — and two of them landing on one cell is
+                    // a tie, refused by name.
+                    let reach = |b: usize| -> Option<i64> {
+                        seen.cells[b].iter().try_fold(None, |most: Option<i64>, &(r, c, _)| {
+                            let at = i64::try_from(r).ok()?.checked_mul(dr)?.checked_add(i64::try_from(c).ok()?.checked_mul(dc)?)?;
+                            Some(Some(match most {
+                                Some(m) if m >= at => m,
+                                _ => at,
+                            }))
+                        })?
+                    };
+                    let mut order: Vec<(i64, usize)> = Vec::with_capacity(sel.len());
+                    for &b in sel {
+                        order.push((reach(b).ok_or(Unstated::OffLattice)?, b));
+                    }
+                    #[expect(clippy::disallowed_methods, reason = "rule 4 — the slide's own order, content: the reach read off each body along the ray, nearest its stop first; one reach lands together")]
+                    order.sort_by_key(|&(reach, _)| std::cmp::Reverse(reach));
+                    let mut at = 0usize;
+                    while let Some(&(reach_here, _)) = order.get(at) {
+                        let group: Vec<usize> = order[at..].iter().take_while(|(r, _)| *r == reach_here).map(|&(_, b)| b).collect();
+                        at += group.len();
+                        for &b in &group {
+                            for &(r, c, _) in &seen.cells[b] {
+                                canvas[r][c] = void;
+                            }
+                        }
+                        let mut landed: Vec<(usize, usize, u8)> = Vec::new();
+                        for &b in &group {
+                            let cells = &seen.cells[b];
+                            // The furthest step every cell takes onto the
+                            // grid — and, at a contact stop, onto ground: the
+                            // meet ends it.
+                            let lands = |k: i64| -> bool {
+                                cells.iter().all(|&(r, c, _)| match seen.at(r, c, k * dr, k * dc) {
+                                    Some((a, d)) => stop == Stop::Border || canvas[a][d] == void,
+                                    None => false,
+                                })
+                            };
+                            let mut k: i64 = 0;
+                            while lands(k + 1) {
+                                k += 1;
+                            }
+                            for &(r, c, h) in cells {
+                                let (a, d) = seen.at(r, c, k * dr, k * dc).ok_or(Unstated::OffLattice)?;
+                                if landed.iter().any(|&(la, ld, _)| (la, ld) == (a, d)) {
+                                    return Err(Unstated::Tie);
+                                }
+                                landed.push((a, d, colour(b, h)?));
+                            }
+                        }
+                        for (a, d, h) in landed {
+                            canvas[a][d] = h;
+                        }
+                        // A carriage that keeps its source leaves it where
+                        // nothing landed on it.
+                        if t.trace == Trace::Keeps {
+                            for &b in &group {
+                                for &(r, c, h) in &seen.cells[b] {
+                                    if canvas[r][c] == void {
+                                        canvas[r][c] = h;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 /// SPEAK THE CLAUSES on `x`, whose bodies `bodies` are (the scene the form
-/// is spoken onto, perceived once). The canvas opens as the input; each
-/// clause selects on the input and paints the canvas; a crop sets the
-/// output's extent. A clause on parts (`Act::Parts`) selects among the
-/// scene's monochrome parts (`perceive_parts`), read once where one asks.
+/// is spoken onto, perceived once): each clause lowered to its element
+/// ([`rule_element::lower`]) and the elements spoken. A run naming parts
+/// inside parts is refused by name.
 pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Spoken, Unstated> {
+    let lowered: Vec<Lowered> = clauses.iter().map(rule_element::lower).collect::<Option<_>>().ok_or(Unstated::Nested)?;
+    speak_elements(&lowered, x, bodies)
+}
+
+/// SPEAK THE ELEMENTS on `x`. The canvas opens as the input; each element
+/// selects on the input and paints the canvas; a window sets the output's
+/// extent. An element on parts selects among the scene's monochrome parts
+/// (`perceive_parts`), read once where one asks.
+pub fn speak_elements(said: &[Lowered], x: &Grid, bodies: &[Body]) -> Result<Spoken, Unstated> {
     let whole = Seen::of(x, bodies);
-    let parts: Vec<Body> = match clauses.iter().any(|c| matches!(c.act, Act::Parts(_))) {
+    let parts: Vec<Body> = match said.iter().any(|l| l.parts) {
         true => perceive_parts(x),
         false => Vec::new(),
     };
@@ -443,87 +600,23 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
     let mut canvas: Vec<Vec<u8>> = x.clone();
     let mut window: Option<(usize, usize, usize, usize)> = None;
     let mut scale: Option<(u8, u8)> = None;
-    // A frame act's output stands in place of the canvas (`Panes`, `Tile`).
+    // A frame element's output stands in place of the canvas (`Panes`, `Tile`).
     let mut framed: Option<Grid> = None;
-    for clause in clauses {
-        let (seen, act) = match &clause.act {
-            Act::Parts(inner) => (&on_parts, inner.as_ref()),
-            act => (&whole, act),
+    for l in said {
+        let seen = match l.parts {
+            true => &on_parts,
+            false => &whole,
         };
         let all = seen.all();
-        let sel = seen.select(&clause.select, &all)?;
-        // A landed cell past the frame is no cell of this grid and is not
-        // spoken on it, as a carried compartment past the frame is not.
-        let paint = |canvas: &mut Vec<Vec<u8>>, r: i64, c: i64, h: u8| {
-            if let (Ok(r), Ok(c)) = (usize::try_from(r), usize::try_from(c)) {
-                if let Some(cell) = canvas.get_mut(r).and_then(|row| row.get_mut(c)) {
-                    *cell = h;
-                }
-            }
-        };
-        match act {
-            Act::Recolour(map) => {
-                for &b in &sel {
-                    for &(r, c, h) in &seen.cells[b] {
-                        canvas[r][c] = mapped(map, h);
-                    }
-                }
-            }
-            Act::Carry { motion, about, gauge } => {
-                let mut landed: Vec<(i64, i64, u8)> = Vec::new();
-                for &b in &sel {
-                    let v = match about {
-                        About::Grid => motion.clone(),
-                        About::Body => {
-                            let [cr, cc] = seen.centre(b).ok_or(Unstated::OffLattice)?;
-                            let to = crate::transducer::cga::translator_at(&[cr.clone(), cc.clone()]);
-                            let from = crate::transducer::cga::translator_at(&[-cr, -cc]);
-                            to.geo(motion).geo(&from)
-                        }
-                    };
-                    for &(r, c, h) in &seen.cells[b] {
-                        let (tr, tc) = carried(&v, r, c)?;
-                        landed.push((tr, tc, mapped(gauge, h)));
-                    }
-                }
-                for &b in &sel {
-                    for &(r, c, _) in &seen.cells[b] {
-                        canvas[r][c] = crate::arc::ground();
-                    }
-                }
-                for (r, c, h) in landed {
-                    paint(&mut canvas, r, c, h);
-                }
-            }
-            Act::Fill { region, hue } => {
+        let sel = seen.select(&l.select, &all)?;
+        match &l.element {
+            RuleElement::Carriage(t) => carriage(seen, t, &sel, &mut canvas)?,
+            RuleElement::Chain { region, hue } => {
                 for (r, c) in seen.region(*region, &sel) {
                     canvas[r][c] = *hue;
                 }
             }
-            Act::Extend { ray, paint: with, stop } => {
-                let (dr, dc) = (i64::from(ray.0), i64::from(ray.1));
-                if dr == 0 && dc == 0 {
-                    return Err(Unstated::Still);
-                }
-                // A line stops at what was painted BEFORE this clause, so no
-                // line of the clause stops another and the order the bodies
-                // are read in is no part of what it says.
-                let before = canvas.clone();
-                for &b in &sel {
-                    for &(r, c, h) in &seen.cells[b] {
-                        let colour = seen.painted(with, b, h)?;
-                        let (mut a, mut d) = (r, c);
-                        while let Some((na, nd)) = seen.at(a, d, dr, dc) {
-                            if *stop == Stop::Contact && before[na][nd] != crate::arc::ground() {
-                                break;
-                            }
-                            canvas[na][nd] = colour;
-                            (a, d) = (na, nd);
-                        }
-                    }
-                }
-            }
-            Act::Copy { template } => {
+            RuleElement::Stamp { template } => {
                 let chosen = seen.select(template, &all)?;
                 let [t] = chosen.as_slice() else { return Err(Unstated::NotOne) };
                 let t = *t;
@@ -544,10 +637,10 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                     }
                 }
                 for (r, c, h) in landed {
-                    paint(&mut canvas, r, c, h);
+                    lay(&mut canvas, r, c, h);
                 }
             }
-            Act::Crop(extent) => {
+            RuleElement::Window(extent) => {
                 let [b] = sel.as_slice() else { return Err(Unstated::NotOne) };
                 let cells: Vec<(usize, usize, u8)> = match extent {
                     Extent::Body => seen.cells[*b].clone(),
@@ -555,30 +648,8 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                 };
                 window = Some(extent_of(&cells).ok_or(Unstated::NotOne)?);
             }
-            Act::Scale { up, down } => scale = Some((*up, *down)),
-            Act::Parts(_) => return Err(Unstated::Nested),
-            Act::Echo { motion, about, gauge } => {
-                let mut landed: Vec<(i64, i64, u8)> = Vec::new();
-                for &b in &sel {
-                    let v = match about {
-                        About::Grid => motion.clone(),
-                        About::Body => {
-                            let [cr, cc] = seen.centre(b).ok_or(Unstated::OffLattice)?;
-                            let to = crate::transducer::cga::translator_at(&[cr.clone(), cc.clone()]);
-                            let from = crate::transducer::cga::translator_at(&[-cr, -cc]);
-                            to.geo(motion).geo(&from)
-                        }
-                    };
-                    for &(r, c, h) in &seen.cells[b] {
-                        let (tr, tc) = carried(&v, r, c)?;
-                        landed.push((tr, tc, mapped(gauge, h)));
-                    }
-                }
-                for (r, c, h) in landed {
-                    paint(&mut canvas, r, c, h);
-                }
-            }
-            Act::Panes { along_rows, gap, table, paint: hue } => {
+            RuleElement::Dilate { up, down } => scale = Some((*up, *down)),
+            RuleElement::Panes { along_rows, gap, table, paint: hue } => {
                 let void = crate::arc::ground();
                 let (n, other) = match along_rows {
                     true => (whole.rows, whole.cols),
@@ -602,7 +673,7 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                 };
                 framed = Some(out);
             }
-            Act::Tile { rows, cols, turns } => {
+            RuleElement::Tile { rows, cols, turns } => {
                 let (h, w) = (whole.rows, whole.cols);
                 let (rows, cols) = (usize::from(*rows), usize::from(*cols));
                 if turns.len() != rows * cols || rows == 0 || cols == 0 {
@@ -620,7 +691,7 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                 }
                 framed = Some(out);
             }
-            Act::Connect { paint: with } => {
+            RuleElement::Join { corner: None, paint: with } => {
                 // A join has two ends, and no one partner to take a hue off.
                 if matches!(with, Paint::Of(_)) {
                     return Err(Unstated::Unpartnered);
@@ -668,7 +739,7 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                     canvas[r][c] = h;
                 }
             }
-            Act::Bend { to, paint: with } => {
+            RuleElement::Join { corner: Some(to), paint: with } => {
                 // A bend has two ends, and no one partner to take a hue off.
                 if matches!(with, Paint::Of(_)) {
                     return Err(Unstated::Unpartnered);
@@ -721,84 +792,6 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
                     }
                 }
                 for (r, c, h) in joins {
-                    canvas[r][c] = h;
-                }
-            }
-            Act::Slide { ray, stop } => {
-                let (dr, dc) = (i64::from(ray.0), i64::from(ray.1));
-                // One step along a row, a column or a diagonal.
-                if (dr == 0 && dc == 0) || dr.abs() > 1 || dc.abs() > 1 {
-                    return Err(Unstated::Still);
-                }
-                // THE NEAREST THEIR STOP FIRST: a body's reach is its leading
-                // cell's along the ray. Each reach lands on the canvas as the
-                // nearer ones left it, so a stack settles as it lands; bodies
-                // of ONE reach land together, against the canvas as it stood
-                // before them — no order among them is chosen — and two of
-                // them landing on one cell is a tie, refused by name.
-                let reach = |b: usize| -> Option<i64> {
-                    seen.cells[b].iter().try_fold(None, |most: Option<i64>, &(r, c, _)| {
-                        let at = i64::try_from(r).ok()?.checked_mul(dr)?.checked_add(i64::try_from(c).ok()?.checked_mul(dc)?)?;
-                        Some(Some(match most {
-                            Some(m) if m >= at => m,
-                            _ => at,
-                        }))
-                    })?
-                };
-                let mut order: Vec<(i64, usize)> = Vec::with_capacity(sel.len());
-                for &b in &sel {
-                    order.push((reach(b).ok_or(Unstated::OffLattice)?, b));
-                }
-                #[expect(clippy::disallowed_methods, reason = "rule 4 — the slide's own order, content: the reach read off each body along the ray, nearest its stop first; one reach lands together")]
-                order.sort_by_key(|&(reach, _)| std::cmp::Reverse(reach));
-                let void = crate::arc::ground();
-                let mut at = 0usize;
-                while let Some(&(reach_here, _)) = order.get(at) {
-                    let group: Vec<usize> = order[at..].iter().take_while(|(r, _)| *r == reach_here).map(|&(_, b)| b).collect();
-                    at += group.len();
-                    for &b in &group {
-                        for &(r, c, _) in &seen.cells[b] {
-                            canvas[r][c] = void;
-                        }
-                    }
-                    let mut landed: Vec<(usize, usize, u8)> = Vec::new();
-                    for &b in &group {
-                        let cells = &seen.cells[b];
-                        // The furthest step every cell takes onto the grid —
-                        // and, at a contact stop, onto ground: the meet ends it.
-                        let lands = |k: i64| -> bool {
-                            cells.iter().all(|&(r, c, _)| match seen.at(r, c, k * dr, k * dc) {
-                                Some((a, d)) => *stop == Stop::Border || canvas[a][d] == void,
-                                None => false,
-                            })
-                        };
-                        let mut k: i64 = 0;
-                        while lands(k + 1) {
-                            k += 1;
-                        }
-                        for &(r, c, h) in cells {
-                            let (a, d) = seen.at(r, c, k * dr, k * dc).ok_or(Unstated::OffLattice)?;
-                            if landed.iter().any(|&(la, ld, _)| (la, ld) == (a, d)) {
-                                return Err(Unstated::Tie);
-                            }
-                            landed.push((a, d, h));
-                        }
-                    }
-                    for (a, d, h) in landed {
-                        canvas[a][d] = h;
-                    }
-                }
-            }
-            Act::Repaint { paint: with } => {
-                // Every partner read on the input, so no repaint of the clause
-                // changes what another reads.
-                let mut repainted: Vec<(usize, usize, u8)> = Vec::new();
-                for &b in &sel {
-                    for &(r, c, h) in &seen.cells[b] {
-                        repainted.push((r, c, seen.painted(with, b, h)?));
-                    }
-                }
-                for (r, c, h) in repainted {
                     canvas[r][c] = h;
                 }
             }

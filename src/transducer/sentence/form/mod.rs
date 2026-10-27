@@ -16,6 +16,7 @@ pub mod closure;
 pub mod contract;
 pub mod index;
 pub mod keys;
+pub mod rule_element;
 pub mod spectrum;
 pub mod vertex;
 
