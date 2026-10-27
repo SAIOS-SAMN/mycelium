@@ -121,6 +121,10 @@ impl Entity {
                 lanes(&pace.dwell_remaining)
             ),
             format!(
+                "answers not yet taken, by the path that takes them: {}",
+                self.hypha.waiting_by_path().iter().map(|(n, k)| format!("{k} {n}")).collect::<Vec<_>>().join(" · ")
+            ),
+            format!(
                 "asks in flight: quote {} · task {} · sync {} · syllabus {} · solves {} · a quote landed {} · a task landed {}",
                 pace.quoting,
                 pace.pulling,

@@ -31,10 +31,11 @@ type Job<S> = Box<dyn FnOnce(&mut S) + Send>;
 /// One exchange's field half: `true` once its answer landed and was taken.
 type Landing = Box<dyn FnMut(&mut Entity) -> bool>;
 
-/// ONE CARRIER: where its asks are posted, and the answers not yet taken.
+/// ONE CARRIER: where its asks are posted, and the answers not yet taken,
+/// each with the path of the field half that takes it (a reading).
 pub(crate) struct Carrier<S> {
     to: Sender<Job<S>>,
-    landings: VecDeque<Landing>,
+    landings: VecDeque<(&'static str, Landing)>,
 }
 
 impl<S: Send + 'static> Carrier<S> {
@@ -64,6 +65,19 @@ impl<S: Send + 'static> Carrier<S> {
     /// Answers posted and not yet taken.
     pub(crate) fn in_flight(&self) -> usize {
         self.landings.len()
+    }
+
+    /// THE ANSWERS NOT YET TAKEN, by the path that takes them, each with its
+    /// count, in the order each path first stands in the queue.
+    pub(crate) fn waiting_by_path(&self) -> Vec<(&'static str, usize)> {
+        let mut out: Vec<(&'static str, usize)> = Vec::new();
+        for (name, _) in &self.landings {
+            match out.iter_mut().find(|(n, _)| n == name) {
+                Some((_, k)) => *k += 1,
+                None => out.push((name, 1)),
+            }
+        }
+        out
     }
 }
 
@@ -183,6 +197,11 @@ impl Hypha {
         self.carrier.in_flight()
     }
 
+    /// The answers not yet taken, by the path that takes them.
+    pub(crate) fn waiting_by_path(&self) -> Vec<(&'static str, usize)> {
+        self.carrier.waiting_by_path()
+    }
+
     /// REST until a carrier lands an answer or the idle park over the
     /// measured round trip (`rtt`, in strokes) passes, whichever is first.
     pub(crate) fn rest(&self, rtt: Option<u64>) {
@@ -227,7 +246,7 @@ pub(crate) fn post<S: Send + 'static, R: Send + 'static>(
     // itself (`observe::live`) — a reading, never read back by cognition.
     let named = std::any::type_name_of_val(&then);
     let mut then = Some(then);
-    carrier.landings.push_back(Box::new(move |me| match rx.try_recv() {
+    carrier.landings.push_back((named, Box::new(move |me| match rx.try_recv() {
         Ok(r) => {
             if let Some(t) = then.take() {
                 crate::observe::live::enter(named);
@@ -237,7 +256,7 @@ pub(crate) fn post<S: Send + 'static, R: Send + 'static>(
         }
         Err(TryRecvError::Empty) => false,
         Err(TryRecvError::Disconnected) => true,
-    }));
+    })));
 }
 
 /// A CARRIER'S ANSWERS TAKEN, in the order they were asked: each that landed
@@ -246,9 +265,9 @@ pub(crate) fn post<S: Send + 'static, R: Send + 'static>(
 pub(crate) fn take_from<S>(me: &mut Entity, carrier: fn(&mut Entity) -> Option<&mut Carrier<S>>) {
     let Some(c) = carrier(me) else { return };
     let mut waiting = std::mem::take(&mut c.landings);
-    while let Some(mut landing) = waiting.pop_front() {
+    while let Some((name, mut landing)) = waiting.pop_front() {
         if !landing(me) {
-            waiting.push_front(landing);
+            waiting.push_front((name, landing));
             break;
         }
     }
