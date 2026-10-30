@@ -16,7 +16,7 @@
 //! WHAT IS EXACT AND WHAT IS NOT, stated rather than blurred. Byte buffers,
 //! slices and counts are exact. An exact rational is two arbitrary-precision
 //! integers whose heap footprint is their magnitude, and `bits()` is what
-//! the library will tell us about it, so a `Q` is counted as the bytes its
+//! the library reports about it, so a `Q` is counted as the bytes its
 //! numerator and denominator need plus the two headers — close, and never
 //! claimed as the allocator's own figure. The reconciliation against
 //! jemalloc's `allocated` is what says whether the difference matters.
@@ -44,7 +44,7 @@ pub trait Bytes {
 /// with `size_of::<Self>()` — a `Versor` is thirty-two `BigRational`s laid
 /// out in an array, so every header was counted twice. Calibrated on the
 /// allocator: the walk read 1.76x the allocator's figure on a thousand
-/// versors and 1.44x on a 713-vertex form, heavy where I had expected it
+/// versors and 1.44x on a 713-vertex form, heavy where it had been expected
 /// light.
 ///
 /// What is left is the magnitude: the limbs each integer needs, which is

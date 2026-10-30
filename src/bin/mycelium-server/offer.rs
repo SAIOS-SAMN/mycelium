@@ -152,11 +152,11 @@ pub(crate) fn offer(kernel: &Mutex<Kernel>, mesh: &Mesh, offers: Vec<(Address, V
                 // converges the word, and the ruling closes its orbit.
                 dialogue::Witnessed::Reached { vk, form } => {
                     let mut p = 0usize;
-                    let Some(theirs) = mycelium::transducer::element::Element::from_bytes(&form, &mut p) else {
+                    let Some(rederived) = mycelium::transducer::element::Element::from_bytes(&form, &mut p) else {
                         continue;
                     };
                     if let Ok(mut h) = crate::held::held!(kernel) {
-                        h.run(|k, reads| k.witness_rederived(&oaddr, vk, theirs, reads));
+                        h.run(|k, reads| k.witness_rederived(&oaddr, vk, rederived, reads));
                     }
                 }
             }

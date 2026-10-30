@@ -127,7 +127,7 @@ impl Kernel {
     /// nowhere (law 12), summed per lane and never across lanes (law 5).
     ///
     /// THE CITERS ARE COUNTED, NOT READ ONE BY ONE. This nested
-    /// `mine.scoped()` × `citers.scoped()` — a product of two
+    /// `discovered.scoped()` × `citers.scoped()` — a product of two
     /// carriers that only ever grow, one with the corpus and one with the
     /// mesh — and the inner loop added the SAME `mu` once per citer, which
     /// is `mu × citers`, arithmetic. The comment above it read "neither
@@ -144,11 +144,11 @@ impl Kernel {
     /// `mu × uses` and the lane sum are both checked. The product was an
     /// unchecked `*`, which wraps in a release build — an invented credit.
     pub fn use_credit(&self, voice: &[u8; 32]) -> Option<[u64; 4]> {
-        let Some(mine) = self.discovered_by.get(voice.as_slice()) else {
+        let Some(discovered) = self.discovered_by.get(voice.as_slice()) else {
             return Some([0; 4]);
         };
         let mut credit = [0u64; 4];
-        for (addr, ()) in mine.scoped() {
+        for (addr, ()) in discovered.scoped() {
             let Some(citers) = self.cited_by.get(&addr) else {
                 continue;
             };
@@ -226,13 +226,13 @@ impl Kernel {
     pub(crate) fn note_discovered(&mut self, addr: &[u8], who: [u8; 32]) {
         self.discoverers.insert(addr, who);
         match self.discovered_by.get_mut(who.as_slice()) {
-            Some(mine) => {
-                mine.insert(addr, ());
+            Some(discovered) => {
+                discovered.insert(addr, ());
             }
             None => {
-                let mut mine = crate::network::nerve::Keyed::new();
-                mine.insert(addr, ());
-                self.discovered_by.insert(who, mine);
+                let mut discovered = crate::network::nerve::Keyed::new();
+                discovered.insert(addr, ());
+                self.discovered_by.insert(who, discovered);
             }
         }
     }
@@ -241,9 +241,9 @@ impl Kernel {
     /// it holds no remaining addresses.
     pub(crate) fn forget_discoverer(&mut self, addr: &[u8]) {
         if let Some(who) = self.discoverers.remove(addr) {
-            let empty = if let Some(mine) = self.discovered_by.get_mut(who.as_slice()) {
-                mine.remove(addr);
-                mine.is_empty()
+            let empty = if let Some(discovered) = self.discovered_by.get_mut(who.as_slice()) {
+                discovered.remove(addr);
+                discovered.is_empty()
             } else {
                 false
             };
@@ -259,13 +259,13 @@ impl Kernel {
             crate::network::nerve::Keyed::new();
         for (addr, who) in self.discoverers.scoped() {
             match ndb.get_mut(who.as_slice()) {
-                Some(mine) => {
-                    mine.insert(&addr, ());
+                Some(discovered) => {
+                    discovered.insert(&addr, ());
                 }
                 None => {
-                    let mut mine = crate::network::nerve::Keyed::new();
-                    mine.insert(&addr, ());
-                    ndb.insert(*who, mine);
+                    let mut discovered = crate::network::nerve::Keyed::new();
+                    discovered.insert(&addr, ());
+                    ndb.insert(*who, discovered);
                 }
             }
         }

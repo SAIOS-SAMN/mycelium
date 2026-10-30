@@ -387,11 +387,11 @@ gate, fixture style, or naming scheme is refused the same way.
 names. Bodies name their laminae: key their sites. Faces name their vertices:
 walk a face's two ends. An orbit names its faces: walk them. A class vector
 names its occupied axes: try those. A chart names its fiber: read it. If
-the code you are about to write needs to look at everything to find the
+the code about to be written needs to look at everything to find the
 thing, the carrier is missing a key and that key is the first thing to
 write. If the code needs to pick one of several by a number, the doctrine
 says keep all of them. If the code needs a constant, the physics has a
-ratio you have not measured yet.
+ratio not yet measured.
 
 ## Vocabulary, fixed
 
@@ -635,7 +635,7 @@ is weighed. A **reading** is answered or refused by name; "fallback",
 "default" as an invented value, "lookup" and "unlock" name nothing here.
 **MOTION (ruled 2026-09-25).** Nothing in this
 engine walks or steps. The motions are celestial and mycelial and the
-words are theirs: a section is CARRIED (transported) along a transition;
+words are drawn from those motions: a section is CARRIED (transported) along a transition;
 an orbit CLOSES and RETURNS; a front ADVANCES by the orbit's own
 transitions and is HELD at a class; flux FLOWS through a filament; a mode
 WINDS; a mind REACHES a coordinate by its prefix. "Walk", "walked",
@@ -785,7 +785,7 @@ perception readers are offered to the court as (70, amended 2026-10-09).
 > - The Void is the Boundary Channel: Color 0 is not empty space; it is the e_∅ gauge reservoir (the point at infinity/sink). A body does not "vanish" into Color 0; its constructors transition into the e_∅ boundary condition. This must be tracked as a measurable flux, not deleted from memory.
 > - Merging is a Homological Connecting Map: proximity does not equal unity. Two touching bodies U and V merge into a single entity U∪V if and only if the transport holonomy around their shared contact face U∩V evaluates to the identity (Ω = id). If the holonomy is non-trivial, they remain distinct interacting bodies separated by curvature. The probe must evaluate the cycle holonomy to determine boundaries.
 >
-> **U14: The 17 Seed Letters.** Ruling: reseed. The minds must derive the alphabet organically from the vacuum. The 17 seed letters (identity, 90° turns, Pythagorean rotors) are training wheels. By hardcoding them, you artificially fix the primes 2, 5, 13 and restrict the initial phase space to compact rotations, starving the T-lane of parabolic translation right at genesis. If the minds possess the fundamental lattice reflections (the vectors) and the Clifford product, they possess the complete machinery to derive the Lie algebra so(4,1).
+> **U14: The 17 Seed Letters.** Ruling: reseed. The minds must derive the alphabet organically from the vacuum. The 17 seed letters (identity, 90° turns, Pythagorean rotors) are training wheels. Hardcoding them artificially fixes the primes 2, 5, 13 and restricts the initial phase space to compact rotations, starving the T-lane of parabolic translation right at genesis. If the minds possess the fundamental lattice reflections (the vectors) and the Clifford product, they possess the complete machinery to derive the Lie algebra so(4,1).
 > - Initiate the simulation with an empty alphabet.
 > - Allow the random collisions of empirical perception (the probes) to generate raw reflections.
 > - When a mind composes two reflections, the resulting Cayley rotor is formally adjoined to its lexicon via a Rank Step (Δrank(h) > 0).
@@ -1024,8 +1024,8 @@ two is filed where its test is.
 | physics | constrains | site | stands |
 |---|---|---|---|
 | **The harmonic return** (§0.0) | an elliptic mode returns at its read order or never | `physics/axioms/founding.rs` | governs |
-| **A.11** harmonic multipole completeness | a body's shape is its harmonics; the nucleus and the pencil | `physics/axioms/ours.rs`, `blade/` | governs; HL1 open |
-| **A.12** irreducible inversive extent `n/12` | a lamina's floor from `n` | `physics/axioms/ours.rs` | landed |
+| **A.11** harmonic multipole completeness | a body's shape is its harmonics; the nucleus and the pencil | `physics/axioms/native.rs`, `blade/` | governs; HL1 open |
+| **A.12** irreducible inversive extent `n/12` | a lamina's floor from `n` | `physics/axioms/native.rs` | landed |
 | **Five regimes** (65.1) | the inversive spectrum: finite, parabolic, boost, dilation, rosette; a pair's regime by `δ²` | `cga/gram.rs`, `cga/period.rs` | landed (78.14) |
 | **The held orbit and its elastic vent** (78.73, 78.75) | a turn's or boost's flow composed exactly on its plane, opening, closing nearer, or returning — the return the vent; an orbit is a return, never a tick (§0.0) | `cech/orbit.rs` (`OrbitRegistry`) | landed; the pivots on it are MU-CLIENT §4.5 |
 | **Time is distance along an orbit** (78.43) | a duration is the distance a body has advanced along its orbit, measured in transitions since it last returned, never a rate; an AGE is one return (the period ℓ, read as the lcm of the base's cycle lengths, never walked to a cap); an EON is the return of the composition (the lcm of the resonant periods); no index names a position on the fibre, no constant caps an orbit | `element/carrier.rs` (`torse`), `element/gauge.rs`, `sentence/class.rs` (`cycle_lengths`), `cech/`, `observe/` | PD1 landed; AE1 open (the ages and eons reading) |
@@ -1060,7 +1060,7 @@ two is filed where its test is.
 | physics | constrains | site | stands |
 |---|---|---|---|
 | **A.9** metric autonomy | each entity computes its own coherence; the horizon is per mind; metabolic relativity | `physics/axioms/imported.rs`; a mind's own field (MU-CLIENT §4.2) | governs; A18 open (REG1) |
-| **A.13** inversive momentum and the conjugate pair `K_i = I T_i I⁻¹` | a body can arrive from infinity; the carriage as momentum | `physics/axioms/ours.rs` (docketed) | OPEN (REG1: A13, PW1, FT1 the star field) |
+| **A.13** inversive momentum and the conjugate pair `K_i = I T_i I⁻¹` | a body can arrive from infinity; the carriage as momentum | `physics/axioms/native.rs` (docketed) | OPEN (REG1: A13, PW1, FT1 the star field) |
 | **A.14** whether is topological, what is conformal | contact by shared boundary cell; the interface as what | BQ2, `sentence/form/face.rs` | whether landed; what is BQ5b |
 | **A.15** dimension is data | `n` at intake; every count from it | `transducer/base.rs`, `cga/` (BQ1, BQ3, BQ4) | landed |
 
@@ -9285,7 +9285,7 @@ but `l = 1`. The collapse is doubled: `|p_i - P|^2` sums the axes per
 cell, then `sum` sums the cells. A single rational cannot orient anything.
 
 This is the same defect already ruled on at `bivector_squares` — "is the
-scalar collapsing our content into a single plane" — committed a second
+scalar collapsing the content into a single plane" — committed a second
 time in a new place.
 
 ### 55.3 Relative orientation, exactly, without eigendecomposition
@@ -9443,7 +9443,7 @@ each other. `R = 1 - v_b v_a` runs between `v^2 = -1` points: timelike,
 
 An authored generator is not a derivation. `McFarland_2026_v5_2` section
 "Worked Example" fits an ARC-AGI-2 rule by hand in its own text — guessing
-frequency rank, meeting a counterexample ("wait, let us recount"),
+frequency rank, meeting a counterexample and recounting,
 switching to connected-component cardinality, hitting a tie, and minting
 "geometric complexity" to close it. Its generator was not discovered by
 the algebra. Importing that method installs the author's cognition in the
@@ -9481,7 +9481,7 @@ Axioms A.1-A.10 are `ipsal-autic`'s, whose register marks A.1-A.4 as
 carried forward unchanged from the convergence-engine and A.5-A.10 as its
 own. They are NOT adopted wholesale: three are refused, and the refusals
 matter more than the imports because each would flatten something this
-engine measures. A.11 is ours.
+engine measures. A.11 is native to this register.
 
 ### 56.1 Imported
 
@@ -9516,7 +9516,7 @@ A.10  SYMBIOTIC CO-DIMENSIONALITY. Two manifolds of differing
       cohomological sense, not a pointer or a channel.
       Here: the meets are tethers. And the gradient must be LUMINAL —
       null, `L² = 0` — because on a null boundary the induced metric is
-      degenerate and the two interiors do not crush each other. Ours runs
+      degenerate and the two interiors do not crush each other. This engine's runs
       between `v² = -1` points: timelike, `mu > 0`. Naming it luminal was
       an error (55.7).
 ```
@@ -9536,7 +9536,7 @@ A.7   HOLONOMIC INVARIANT as written — closure in `H^1(X, Z)`, "closed
       torsion". That is the abelian, torsion-only picture. The hyperbolic
       sector never returns: `cosh(k beta) > 1` for all `k >= 1`, which is
       the measured `closes 0`. A.7 holds for the compact half alone, and
-      importing it whole asserts a closure we have measured to be absent.
+      importing it whole asserts a closure this engine has measured to be absent.
 
 A.6-bind-11   N = 11 EXACTLY, sourced to an architecture document. Their
       register is honest that it is a constitutional BINDING and not a
@@ -9544,7 +9544,7 @@ A.6-bind-11   N = 11 EXACTLY, sourced to an architecture document. Their
       register it arrives in.
 ```
 
-### 56.3 A.11 — Harmonic multipole completeness (ours)
+### 56.3 A.11 — Harmonic multipole completeness (native to this register)
 
 STATEMENT. The geometric state of a discrete spatial chart is completely
 and irreducibly characterised by its ascending harmonic multipoles in `Q`.
@@ -9776,7 +9776,7 @@ src/transducer/blade/frame.rs      Frame, relative_rotor, relative_double_angle
 src/transducer/family/cover.rs     the carried piece carries both supports
 src/transducer/family/pair.rs      meet_edge composes the frame
 src/transducer/element/letters.rs  the cone named where it is crossed
-src/physics/axioms/                A.1-A.13 in imported.rs, ours.rs and refused.rs;
+src/physics/axioms/                A.1-A.13 in imported.rs, native.rs and refused.rs;
                                    tests/ holds the reading that decides each
 ```
 
@@ -10029,7 +10029,7 @@ standing constraint forbids. The set of spheres at fixed inversive distance
 from a given sphere is a PENCIL, and a pencil is the orbit of a
 one-parameter transvection subgroup `exp(tB)`, `B = e_i ^ e_-`. That is the
 containment cylinder: an orbit coordinate, exact, non-Euclidean, and KEYED,
-so "which bodies share my sector" is a keyed read and nothing is
+so "which bodies share this body's sector" is a keyed read and nothing is
 enumerated.
 
 ### 59.5 Superposition, not probability; a kernel, not a prune
@@ -10865,7 +10865,7 @@ A.13, raised here, govern.
     ‖M̃_b^(m)‖² · (r_a²)^m  =  ‖M̃_a^(m)‖² · (r_b²)^m
 ```
 
-Register: `src/physics/axioms/ours.rs` (`A12_IRREDUCIBLE_INVERSIVE_EXTENT`).
+Register: `src/physics/axioms/native.rs` (`A12_IRREDUCIBLE_INVERSIVE_EXTENT`).
 
 **A.13 — inversive momentum and the conformal conjugate pair.** Translation
 and special conformal transformation are one generator seen from opposite
@@ -10882,7 +10882,7 @@ carriage between sections, `Π = I · g_{k→k+1}`, the `S` lane against the `T`
 lane between frames, never a derivative (law 1). The momentum half is built,
 `Π = M₂(B)` (78.52 Row 1; `src/physics/tensegrity.rs`, `momentum`,
 `external_torque`); the inversive half `K_i` stays docketed (REG1;
-`src/physics/axioms/ours.rs`, `A13_INVERSIVE_MOMENTUM_DOCKETED`).
+`src/physics/axioms/native.rs`, `A13_INVERSIVE_MOMENTUM_DOCKETED`).
 
 ### 66.3 What the corpus actually says
 
@@ -10949,7 +10949,7 @@ corpus.
 
 ### 67.3 Two vantages are what turn a perspective into a fact
 
-One voice saying "I cannot spell this" is a perspective and has no standing.
+One voice reporting "this cannot be spelled" is a perspective and has no standing.
 Two organs independently RE-DERIVING the same generator — `witness_rederived`
 -> `converge_witness` -> `home_install` — is how it becomes structural. That
 is law 6, and it is why the emission belongs to the distributed layer: the
@@ -12153,7 +12153,7 @@ candidates, and nothing from FT2 onward is built before both are ruled.
 Proof of useful work is a closure a court rules. Proof of work
 convergence is a failed closure that is classified, written in anastome,
 and handed to a mind that looks from a different perspective — or
-recorded as "we already tried this, from this angle". The result reduces
+recorded as "already tried, from this angle". The result reduces
 to what worked and what did not, according to the angle of the
 perspective that looked; if every mind has one perspective, every mind
 returns the same opinion.
@@ -12779,7 +12779,7 @@ Code: `src/transducer/address.rs` (`put_addr`), `src/chronometry/receipt.rs` (`C
 
 **No orbit collides.** Each kernel's orbit is the fibre over its key in its star's field (73.15), distinct by construction, with no assignment, slot or table. A collision is prevented, never named after the fact: at the orbit boundary, before the closing act is stamped, the orbit's frame is compared lane by lane, exactly, against the frames of the peers admitted at that tick; where it would coincide, the close is WITHHELD for one stroke (never evicted or re-slotted) while the planet takes a separating transport, and it closes one stroke on at a frame that differs. The distance between two planets' frames at a tick is the per-lane difference, sign-first and exact, never a root and never summed, and the count of orbits withheld for separation is a line of the clock.
 
-**As amended by §0.0.** An orbit is a return, a mode's flow on its plane returning where its point is the identity (78.73, 78.75); a tick is the host handing a node a turn, and a node's ledger `K` is a ledger coordinate, its cycles closed by name (OK1). OK1's former statement "a K-step is one orbit" is withdrawn for the ledger's `K`; clause 4, the stamp and the collision rule stand. Code: `src/chronometry/receipt.rs` (`Place`, `Stamp`), `src/chronometry/chain.rs` (`ReceiptChain::orbit_frame`, `ReceiptChain::collides`, `ReceiptChain::separation`), `src/observe/clock.rs` (`Orbits`), `src/physics/axioms/ours.rs`.
+**As amended by §0.0.** An orbit is a return, a mode's flow on its plane returning where its point is the identity (78.73, 78.75); a tick is the host handing a node a turn, and a node's ledger `K` is a ledger coordinate, its cycles closed by name (OK1). OK1's former statement "a K-step is one orbit" is withdrawn for the ledger's `K`; clause 4, the stamp and the collision rule stand. Code: `src/chronometry/receipt.rs` (`Place`, `Stamp`), `src/chronometry/chain.rs` (`ReceiptChain::orbit_frame`, `ReceiptChain::collides`, `ReceiptChain::separation`), `src/observe/clock.rs` (`Orbits`), `src/physics/axioms/native.rs`.
 
 ### 78.24 The ledger is a partial order carried as one, never a serialized tape
 
@@ -12788,7 +12788,7 @@ The ledger has several dimensions (the tick `h`, the four lanes `S:G:T:H`, `K`, 
 - **(a) The carrier.** The ledger is a `Keyed` structure over its own coordinates (A21, rule 9) whose key is the STAMP, coarsest first: the tick `h`, the signer `vk`, then `K` and the act's place `i` (78.23 as amended). A node holds the act's kind, the frame `S:G:T:H` it measured, its parents as stamps (the DAG's edges) and its citation (LD0). `fiber(h)` is everything the mesh did at one tick (its width), `fiber(h‖vk)` one signer at it; the frontier and DEPTH (L15) are read by prefix, never by an index keyed by bytes. A peer's receipt held as a parent is held once, at its own stamp.
 - **(b) The citation lands on that carrier.** A receipt IS the node at its stamp; the stamp is the key, not a printed field, and the console prints the key. EC1: a ruling's economy (release, demotion, slash) is applied on admitting the Ruling receipt, on the same carrier.
 - **(c) The hash.** `chain_hash` is per receipt, a Merkle DAG over the partial order: each hash is taken over the receipt's own canonical coordinates (stamp with `vk`, kind, frame, `prev`, parents' stamps and hashes, cites, operator hash), never over a concatenation in append order; the equivocation proof (two receipts by one key at one place with two hashes) is unchanged. The ledger is persisted as the trie, each key once as a path (LDG1), and restored as the trie.
-- **LD2, the design.** (P1) the stamp is written by its own `put_canonical`, integers big-endian so key order is numeric order; readers asking by signer and place read through one keyed relation over coordinates only, the signer's line `vk‖K‖i`, and every anchor a carrier persists or the wire sends is the stamp itself. (P2) a node is `{kind, frame, prev: (Stamp, hash), parents: [(Stamp, hash)], cites, operator_hash, chain_hash}`, a peer's node held once beside ours in one trie. (P3) the hash as in (c), `vk` included. (P4) `Cite` is a sum over what an act names (`Word { chart, class, at }`, `Root { at, hash }`, ...), and a Learned act is N word cites, never a blob. (2a) a form has no one class record, so its fiber is its chart alone (`chart_of`), class `None`, the admitting stamp the exact locator; a letter or word with a rotor carries its class record. (2b) `admitted_at: Stamp` is the locator, held on every row that holds a word (basis, provisional, cavity, pending; the voice's genome and epigenome), set by the act that first names the word, by the home receipt's stamp at an install from a peer's offer, by the syllabus stamp at teach, and copied when a word moves from provisional to basis. (2c) an act sealed after its word left its carrier reads the word's `admitted_at` and chart before the removal; no act cites by bytes a word it no longer holds. (P5) the ledger persists as its keys, each once, with the node behind each. (P6) order readers compare stamps, never `Vec` indices. (P7) the console prints `h:S:G:T:H:K.i` from the node. (P8) EC1's reading rides on it.
+- **LD2, the design.** (P1) the stamp is written by its own `put_canonical`, integers big-endian so key order is numeric order; readers asking by signer and place read through one keyed relation over coordinates only, the signer's line `vk‖K‖i`, and every anchor a carrier persists or the wire sends is the stamp itself. (P2) a node is `{kind, frame, prev: (Stamp, hash), parents: [(Stamp, hash)], cites, operator_hash, chain_hash}`, a peer's node held once beside the local node's own in one trie. (P3) the hash as in (c), `vk` included. (P4) `Cite` is a sum over what an act names (`Word { chart, class, at }`, `Root { at, hash }`, ...), and a Learned act is N word cites, never a blob. (2a) a form has no one class record, so its fiber is its chart alone (`chart_of`), class `None`, the admitting stamp the exact locator; a letter or word with a rotor carries its class record. (2b) `admitted_at: Stamp` is the locator, held on every row that holds a word (basis, provisional, cavity, pending; the voice's genome and epigenome), set by the act that first names the word, by the home receipt's stamp at an install from a peer's offer, by the syllabus stamp at teach, and copied when a word moves from provisional to basis. (2c) an act sealed after its word left its carrier reads the word's `admitted_at` and chart before the removal; no act cites by bytes a word it no longer holds. (P5) the ledger persists as its keys, each once, with the node behind each. (P6) order readers compare stamps, never `Vec` indices. (P7) the console prints `h:S:G:T:H:K.i` from the node. (P8) EC1's reading rides on it.
 - **Defects fixed by LD2.** (d1) the voice's chain was never persisted, so its `K` restarted at zero: it persists in its genome file with per-word stamps and restores under its own key only (the voice's ledger as amended by 78.49); (d2) what admission knows is what the ledger holds: per-signer heads are read off the ledger, never a separate struct; (d3) depth is rebuilt from every node by a relation cite-at → signers.
 - **Rows, not copies.** An award, a deflation and the coherence field (FLD1) are fields of the word's row (78.22), and one probed on an address no row holds is named and refused, never a copy; every removal path that drops a word sweeps its `admitted_at`, so no stamp entry outlives its word. A ledger is bound to its key and refused by name under another. The tape check (C4) is the build's own round trip on every carrier the build under check wrote; an older layout is refused by name, never migrated.
 
@@ -12973,7 +12973,7 @@ Code: `src/physics/metabolism.rs` (`step_or_refuse`), `src/economy/escrow.rs`, `
 Eons, ages and time are orbits, and time is distance measured. Three rulings:
 
 - **(1) No index.** A position along a fibre is not a coordinate of what stands there (rule 15 at the fibre): a cite is a body carried over a transport, and it says which assignment it is by writing the hues themselves, so every hypha that meets it reads the same word. The wire carries the body and nothing that names a position (`CiteWire` has no gauge index); in memory the cite carries the assignment itself; no reader holds a position for an assignment — the word's profile table holds the assignments under their gauge charge, and `holds_assignment` and `gauge_of` read them, never a position looked up after.
-- **(2) No cap: a constant is undefined physics.** A cap on an orbit (the retired `MAX_ORBIT = 32`) says "I do not know where this orbit returns, so I stop looking". The period of a base under a hue permutation `σ` is READ before the first revolution, never waited for: the lcm of the cycle lengths of the hues the base carries, from one producer. A section BELONGS to the cycle exactly when its hue map (`derive_hue_map(base, section)`) is a power of `σ`, decided on the cycles, so no reader generates members by traversal; members are enumerated only where a reader needs them all, to the period, never to a cap. The period's width is the permutation's own: a permutation of the u8 hue domain has order up to Landau's `g(256) ≈ 2⁵⁴`, so `TorsionCycle.period` is `u64`. Two constants that happen to agree (a cap of 32 above Landau's `g(10) = 30` for a ten-hue palette) do not restore a constant; a permutation naming a hue past the palette is refused by name. Every constant of this shape is a closure unknown with a number standing in, and the cure is to name the opposite operation (78.40(2)): for an orbit its period, for a fibre its shedding flux, for a sum its conservation.
+- **(2) No cap: a constant is undefined physics.** A cap on an orbit (the retired `MAX_ORBIT = 32`) says "where this orbit returns is unknown, so the search stops here". The period of a base under a hue permutation `σ` is READ before the first revolution, never waited for: the lcm of the cycle lengths of the hues the base carries, from one producer. A section BELONGS to the cycle exactly when its hue map (`derive_hue_map(base, section)`) is a power of `σ`, decided on the cycles, so no reader generates members by traversal; members are enumerated only where a reader needs them all, to the period, never to a cap. The period's width is the permutation's own: a permutation of the u8 hue domain has order up to Landau's `g(256) ≈ 2⁵⁴`, so `TorsionCycle.period` is `u64`. Two constants that happen to agree (a cap of 32 above Landau's `g(10) = 30` for a ten-hue palette) do not restore a constant; a permutation naming a hue past the palette is refused by name. Every constant of this shape is a closure unknown with a number standing in, and the cure is to name the opposite operation (78.40(2)): for an orbit its period, for a fibre its shedding flux, for a sum its conservation.
 - **(3) Time is distance along an orbit.** There is no clock; a tick is a frame and height is the count of acts on a line (78.21). A DURATION is the distance a body has advanced along its orbit, measured as the count of transitions it has been carried through since it last returned — never a coordinate carried beside it and never a rate. The `T` lane is that distance in receipts (16.16), one per act. An AGE is one return of an orbit: its period `ℓ`, the transitions until the body is where it stood; a mind's `K` counts its ages (the k-step is one orbit, 72.1d). An EON is the return of the composition: the lcm of the periods of the orbits in resonance (78.26(5), `Coherence::Closes(lcm)`), when every orbit in play has returned together, the planetary dialect's own return (GD1). Two minds' distance apart on TUniversal is a difference of distances travelled (78.21(1)), never elapsed seconds; a period declared by a constant, a duration read off a wall clock, or a rate (distance per second) is refused by name. Row AE1 reads, per orbit, the distance advanced and the period; per mind, its age count; per cell and per dialect, the eon's lcm and how far along it the composition stands.
 
 Code: `src/transducer/element/gauge.rs` (`orbit_period`, `derive_hue_map`, `matches_chain`, `assignments_by_profile`), `src/transducer/sentence/class.rs` (`hue_cycles`), `src/transducer/element/carrier.rs` (`TorsionCycle`, `torse`), `src/transducer/sentence/chain.rs` (`holds_assignment`, `gauge_of`), `src/anastome/dialogue/acts.rs` (`CiteWire`), `src/transducer/cech/orbit_algebra.rs` (`Coherence`).

@@ -9,7 +9,7 @@ use crate::transducer::address::Address;
 
 /// One organ's re-derivation of one object: the address it reached, and
 /// where it stood when it reached it. The address is the claim — two organs
-/// converge iff theirs are equal — and K and height place it causally
+/// converge iff their addresses are equal — and K and height place it causally
 /// (45.2, 45.4) so a witness's own chain can be checked against it.
 #[derive(Debug, Clone)]
 pub struct Rederivation {
@@ -275,19 +275,19 @@ mod tests {
         use num_traits::One;
         let v = element::translator_versor(2, 3);
         let neg = v.scale(&-BigRational::one());
-        let mine = element::of_versor(v);
-        let theirs = element::of_versor(neg);
+        let positive = element::of_versor(v);
+        let negated = element::of_versor(neg);
         assert_eq!(
-            mine.address(),
-            theirs.address(),
+            positive.address(),
+            negated.address(),
             "one address (17.2): the codec writes A4, not the sign"
         );
-        assert!(mine.same_vertex(&theirs), "and M1 agrees with it");
+        assert!(positive.same_vertex(&negated), "and M1 agrees with it");
 
         let mut c = Convergence::new();
-        let key = mine.address();
-        c.rederived(key.as_bytes(), [1; 32], Rederivation { object: mine, k: 1, height: 1 });
-        c.rederived(key.as_bytes(), [2; 32], Rederivation { object: theirs, k: 1, height: 1 });
+        let key = positive.address();
+        c.rederived(key.as_bytes(), [1; 32], Rederivation { object: positive, k: 1, height: 1 });
+        c.rederived(key.as_bytes(), [2; 32], Rederivation { object: negated, k: 1, height: 1 });
         assert_eq!(
             c.state(key.as_bytes(), &always),
             Converged::Witnessed { home: [1; 32], witness: [2; 32] },

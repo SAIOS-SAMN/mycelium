@@ -1,7 +1,8 @@
-// 56.3, 66, 78.23 — the axioms this engine states of itself: A.11, A.12,
+// 56.3, 66, 78.23 — the axioms native to this register, stated by the
+// engine of itself rather than imported: A.11, A.12,
 // A.13 docketed, and OK1.
 
-/// A.11 — HARMONIC MULTIPOLE COMPLETENESS (ours, 56.3).
+/// A.11 — HARMONIC MULTIPOLE COMPLETENESS (native, 56.3).
 ///
 /// The geometric state of a discrete spatial chart is completely and
 /// irreducibly characterised by its ascending harmonic multipoles in `ℚ`.
@@ -33,7 +34,7 @@ pub const A11_HARMONIC_MULTIPOLE_COMPLETENESS: &str =
     "a chart is characterised by its ascending harmonic multipoles; the \
      trace is scale alone and carries no orientation";
 
-/// A.12 — IRREDUCIBLE INVERSIVE EXTENT (ours, 66, ruled 2026-09-22).
+/// A.12 — IRREDUCIBLE INVERSIVE EXTENT (native, 66, ruled 2026-09-22).
 ///
 /// Every body occupies a strictly SPACELIKE conformal ray. The trace of its
 /// second moment, normalised by the zeroth, carries an irreducible floor:
@@ -71,7 +72,7 @@ pub const A12_IRREDUCIBLE_INVERSIVE_EXTENT: &str =
     "every body is spacelike with r² = Tr(I)/M₀ ≥ 1/6 > 0; the tower is \
      normalised by M₀, so harmonic order m carries degree m";
 
-/// A.13 — INVERSIVE MOMENTUM AND THE CONFORMAL CONJUGATE PAIR (ours, 66,
+/// A.13 — INVERSIVE MOMENTUM AND THE CONFORMAL CONJUGATE PAIR (native, 66,
 /// DOCKETED and NOT BUILT).
 ///
 /// Translation and special conformal are one generator seen from opposite
@@ -111,7 +112,7 @@ pub const A13_INVERSIVE_MOMENTUM_DOCKETED: &str =
     "docketed: K_i = I·T_i·I⁻¹ is unvoiced, so every motion fixes infinity; \
      momentum — inertia paired with the inter-frame carriage — is built (78.52)";
 
-/// OK1 — `K` COUNTS A NODE'S CYCLES CLOSED BY NAME (ours, 78.23 as amended,
+/// OK1 — `K` COUNTS A NODE'S CYCLES CLOSED BY NAME (native, 78.23 as amended,
 /// ruled 2026-09-24; restated 2026-10-12 under the founding principles).
 ///
 /// It was stated "a K-step is one orbit". That claim is withdrawn: an orbit

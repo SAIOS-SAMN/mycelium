@@ -35,13 +35,13 @@ fn turn_180(r: i64, c: i64) -> Element {
 fn two_different_words_with_one_section_converge() {
     let scene = [7u8; 32];
     let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
-    let (mine, theirs) = (slide(0, 2), turn_180(1, 4));
-    assert!(!mine.same_vertex(&theirs), "two constructions, not one");
+    let (held, heard) = (slide(0, 2), turn_180(1, 4));
+    assert!(!held.same_vertex(&heard), "two constructions, not one");
     let mut s = Scenes::default();
-    s.hold(&scene, &family, &mine);
-    assert_eq!(s.read(&scene, &theirs, &family, [9; 32]), Evident::True, "the 180° turn is true on the scene");
+    s.hold(&scene, &family, &held);
+    assert_eq!(s.read(&scene, &heard, &family, [9; 32]), Evident::True, "the 180° turn is true on the scene");
     assert_eq!(s.converged.len(), 1, "and converges with the slide: one section, two orbits");
-    assert_eq!(s.read(&scene, &mine, &family, [9; 32]), Evident::True);
+    assert_eq!(s.read(&scene, &held, &family, [9; 32]), Evident::True);
     assert_eq!(s.converged.len(), 1, "the slide heard back is one vertex read twice: no convergence");
 }
 

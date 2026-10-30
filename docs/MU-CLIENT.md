@@ -842,10 +842,10 @@ are read off that motion, never counted:
   mind understands it can say, and an agreement between two minds is their
   MUTUAL balance — each one's rings resonating in the other's.
   A heard ring is read twice, apart: as a SOUND — "does this sound like
-  something I have heard?" — against the MIND'S MEMORY of what it has heard,
+  something the mind has heard?" — against the MIND'S MEMORY of what it has heard,
   the rings it has heard by their size, familiar where it sounds whole or
   tilted inside one (memory is the mind's and is harmonically resonant; it
-  is never the ear's); and as a WORD — "is this a word I have heard?" —
+  is never the ear's); and as a WORD — "is this a word the mind has heard?" —
   against the mind's vocabulary, the words it deduced and reconstructed. A
   known word that sounds WHOLE in a heard ring is UNDERSTOOD. A known word
   that sounds TILTED is understood SHIFTED: it is carried round the heard

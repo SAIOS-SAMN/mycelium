@@ -44,11 +44,11 @@ fn precedes_implies_lower_height_and_concurrency_is_kept() {
     assert_eq!(mix.at_tick(0).len(), 3, "and stand at one tick with this chain's genesis: the width at h 0");
 }
 
-/// ORDERING TWO OF THIS CHAIN'S OWN NODES IS ONE READ, at any depth — our
-/// own nodes are a line and `K` orders them — and a budget with nothing
-/// left refuses rather than answering short (rule 11).
+/// ORDERING TWO OF THIS CHAIN'S OWN NODES IS ONE READ, at any depth — the
+/// chain's own nodes are a line and `K` orders them — and a budget with
+/// nothing left refuses rather than answering short (rule 11).
 #[test]
-fn ordering_our_own_is_one_read_at_any_depth_and_an_empty_budget_refuses() {
+fn ordering_the_chains_own_nodes_is_one_read_at_any_depth_and_an_empty_budget_refuses() {
     let mut c = ReceiptChain::with_vk([1; 32]);
     let mut all = Vec::new();
     for _ in 0..64 {
@@ -65,45 +65,46 @@ fn ordering_our_own_is_one_read_at_any_depth_and_an_empty_budget_refuses() {
     assert_eq!(c.precedes(r0, rn, &mut none), None, "unmeasured, not false");
 }
 
-/// A PEER NODE CUTS OUR LINE IN TWO PLACES and nowhere else: the greatest
-/// of our `K` it reaches, and the least of ours that reaches it.
+/// A PEER NODE CUTS THIS CHAIN'S OWN LINE IN TWO PLACES and nowhere else:
+/// the greatest of the chain's own `K` it reaches, and the least of the
+/// chain's own nodes that reaches it.
 #[test]
-fn a_peer_node_is_placed_by_where_it_cuts_our_own_line() {
+fn a_peer_node_is_placed_by_where_it_cuts_the_chains_own_line() {
     let mut c = ReceiptChain::with_vk([1; 32]);
-    let mine0 = step(&mut c, Vec::new());
+    let own0 = step(&mut c, Vec::new());
 
-    // A PEER THAT REACHES OUR FIRST NODE: it cites it as a parent.
+    // A PEER THAT REACHES THE CHAIN'S FIRST NODE: it cites it as a parent.
     let mut d = ReceiptChain::with_vk([3; 32]);
     step(&mut d, Vec::new());
-    d.admit(mine0.clone());
-    let over = step(&mut d, vec![cite(&mine0)]);
+    d.admit(own0.clone());
+    let over = step(&mut d, vec![cite(&own0)]);
     c.admit(over.clone());
     let mut b = budget(4);
-    assert_eq!(c.precedes(&mine0.stamp, &over.stamp, &mut b), Some(true), "ours is below a peer node that cites it");
+    assert_eq!(c.precedes(&own0.stamp, &over.stamp, &mut b), Some(true), "the chain's own node is below a peer node that cites it");
     let mut b = budget(4);
-    assert_eq!(c.precedes(&over.stamp, &mine0.stamp, &mut b), Some(false), "and the peer is not below ours");
+    assert_eq!(c.precedes(&over.stamp, &own0.stamp, &mut b), Some(false), "and the peer is not below the chain's own node");
 
-    // UNTIL WE CITE IT, a peer node is above nothing of ours.
+    // UNTIL THE CHAIN CITES IT, a peer node is above nothing of the chain's own.
     let mut e = ReceiptChain::with_vk([4; 32]);
     let apart = step(&mut e, Vec::new());
     c.admit(apart.clone());
     let mut b = budget(4);
-    assert_eq!(c.precedes(&apart.stamp, &mine0.stamp, &mut b), Some(false), "an uncited peer node precedes nothing of ours");
+    assert_eq!(c.precedes(&apart.stamp, &own0.stamp, &mut b), Some(false), "an uncited peer node precedes nothing of the chain's own");
     let mut b = budget(4);
-    assert_eq!(c.precedes(&mine0.stamp, &apart.stamp, &mut b), Some(false), "and nothing of ours precedes it");
+    assert_eq!(c.precedes(&own0.stamp, &apart.stamp, &mut b), Some(false), "and nothing of the chain's own precedes it");
     let mut b = budget(4);
     assert_eq!(c.precedes(&apart.stamp, &over.stamp, &mut b), Some(false), "two peers neither of which reaches the other are concurrent");
 
-    // ONCE WE CITE IT, every node of ours from that step on reaches it.
-    let mine1 = step(&mut c, vec![cite(&apart)]);
+    // ONCE THE CHAIN CITES IT, every node of its own from that step on reaches it.
+    let own1 = step(&mut c, vec![cite(&apart)]);
     let mut b = budget(4);
-    assert_eq!(c.precedes(&apart.stamp, &mine1.stamp, &mut b), Some(true), "the step that cited it is above it");
+    assert_eq!(c.precedes(&apart.stamp, &own1.stamp, &mut b), Some(true), "the step that cited it is above it");
     let mut b = budget(4);
-    assert_eq!(c.precedes(&apart.stamp, &mine0.stamp, &mut b), Some(false), "and the step before that still is not");
+    assert_eq!(c.precedes(&apart.stamp, &own0.stamp, &mut b), Some(false), "and the step before that still is not");
 }
 
-/// A FOLD RENUMBERS NOTHING (45.8, 78.24): a peer node's place against our
-/// line is our place, which a fold does not move, so a peer node reached
+/// A FOLD RENUMBERS NOTHING (45.8, 78.24): a peer node's place against this
+/// chain's own line is the chain's own place, which a fold does not move, so a peer node reached
 /// before the fold is reached by every node that survives it.
 #[test]
 fn a_fold_leaves_the_peer_placements_where_they_stood() {

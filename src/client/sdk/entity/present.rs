@@ -52,16 +52,16 @@ impl Entity {
             }
             self.epigenome.asked.insert(&key, ());
             let ask = dialogue::encode_presentation_request(&voice, &m);
-            self.ask(move |s| s.speak_keyed(&voice, ask), move |me, body| {
+            self.ask(move |s| s.speak_keyed(&voice, ask), move |entity, body| {
                 let Ok(body) = body else { return };
                 let Some((words, answer)) = dialogue::decode_presentation_reply(&body) else { return };
                 // The root of this act, the answer's landing (65.5).
-                let mut budget = me.physics.stroke();
+                let mut budget = entity.physics.stroke();
                 for t in &words {
-                    let _ = me.absorb_taught_at(&t.word, Some(t.at), &mut budget);
+                    let _ = entity.absorb_taught_at(&t.word, Some(t.at), &mut budget);
                 }
                 if answer.read && answer.composes && !answer.cites.is_empty() {
-                    me.epigenome.presented.insert(&key, answer.cites);
+                    entity.epigenome.presented.insert(&key, answer.cites);
                 }
             });
         }

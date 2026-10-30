@@ -218,12 +218,12 @@ fn check_home(home: &Path) -> ! {
                         println!("  fold: root {root:?} · asked at a close: {asked:?}");
                         // The first receipts past the root, and how many the
                         // witness page holds: where the cut can land.
-                        let me = scratch.chain().vk();
+                        let chain_vk = scratch.chain().vk();
                         let after = scratch.chain().root().map(|r| r.at);
                         if let (Some(top), Some((at_most, bytes))) = (scratch.chain().head_place(), Kernel::receipts_frame()) {
-                            let page = scratch.receipts_page(&me, after, top, at_most, bytes);
+                            let page = scratch.receipts_page(&chain_vk, after, top, at_most, bytes);
                             println!("  fold: the witness page holds {} receipts ({at_most} at most, {bytes} bytes)", page.len());
-                            for r in scratch.chain().line_between(&me, after, top, 6) {
+                            for r in scratch.chain().line_between(&chain_vk, after, top, 6) {
                                 let mut tape = Vec::new();
                                 let _ = r.write(&mut tape);
                                 println!("    {} {:?} parents {} cites {} tape {} bytes", r.stamp.place().print(), r.kind, r.parents.len(), r.cites.len(), tape.len());

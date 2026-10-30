@@ -570,7 +570,7 @@ impl Kernel {
     /// identity transition to itself: the first vantage every glue compares
     /// a peer's against.
     pub(crate) fn section_own(&mut self, inv: &crate::transducer::stalk::Invariant, addr: &crate::transducer::address::Address) {
-        let me = self.identity;
+        let own_vk = self.identity;
         let vol = self.volume_of_simplex(inv);
         let mut cx = match self.complexes.remove(&inv.key()) {
             Some(c) => c,
@@ -580,7 +580,7 @@ impl Kernel {
             Some(w) => section_of(w),
             None => (Rotor::identity(), element::identity_versor()),
         };
-        cx.set_section(me, crate::transducer::cech::Section { addr: addr.clone(), gamma, carriage }, vol);
+        cx.set_section(own_vk, crate::transducer::cech::Section { addr: addr.clone(), gamma, carriage }, vol);
         self.complexes.insert(inv.key(), cx);
     }
 
@@ -643,9 +643,9 @@ impl Kernel {
             if !budget.spend() {
                 return;
             }
-            let Some(mine) = self.provisional.get(h).cloned() else { continue };
+            let Some(held_form) = self.provisional.get(h).cloned() else { continue };
             let (k, ht) = (self.k_step(), self.height());
-            match self.converge_witness(h, peer, mine, k, ht) {
+            match self.converge_witness(h, peer, held_form, k, ht) {
                 crate::court::convergence::Converged::Witnessed { witness, .. } => self.home_install(h, witness, budget),
                 crate::court::convergence::Converged::Inexact { .. } | crate::court::convergence::Converged::AwaitingWitness => {}
             }

@@ -43,9 +43,9 @@ impl Local {
             .sites
             .iter()
             .enumerate()
-            .map(|(pi, mine)| {
+            .map(|(pi, held)| {
                 let mut left = Keyed::new();
-                for (k, ()) in mine.scoped() {
+                for (k, ()) in held.scoped() {
                     if !other.sites.get(pi).is_some_and(|o| o.contains(&k)) {
                         left.insert(k, ());
                     }
@@ -61,10 +61,10 @@ impl Local {
     pub fn union(sections: &[Local], pairs: usize) -> Local {
         let mut sites: Vec<Keyed<()>> = (0..pairs).map(|_| Keyed::new()).collect();
         for s in sections {
-            for (pi, theirs) in s.sites.iter().enumerate() {
-                if let Some(mine) = sites.get_mut(pi) {
-                    for (k, ()) in theirs.scoped() {
-                        mine.insert(k, ());
+            for (pi, section_sites) in s.sites.iter().enumerate() {
+                if let Some(united) = sites.get_mut(pi) {
+                    for (k, ()) in section_sites.scoped() {
+                        united.insert(k, ());
                     }
                 }
             }

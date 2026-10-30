@@ -357,7 +357,7 @@ pub(crate) fn tests_spoken(epi: &Epigenome, rule: &SentenceRule, tests: &[crate:
                 }
             }
             // Creation (3), merge (2) and reshape (4) say what happens to
-            // occupancy, and a demand of theirs spoke nothing.
+            // occupancy, and a demand of any of those three spoke nothing.
             let occupancy_unspoken = spoken.as_ref().is_some_and(|s| s.demanded[2] + s.demanded[3] + s.demanded[4] > 0);
             if occupancy_unspoken {
                 crate::observe::note_mind(|m| m.withheld_tests[1] += 1);
@@ -451,12 +451,12 @@ impl Entity {
         // unreached, is held as the open work it is.
         let mag = word.magnitude();
         let held = (form.clone(), frames.clone(), train.to_vec(), remainders.to_vec(), family.to_vec());
-        self.speak_with(std::slice::from_ref(&word), train, family, move |me, heard| match heard {
-            Ok(codes) if codes.as_slice() != [crate::anastome::dialogue::SPEECH_REFUSED] => me.physics_mut().syntropy(&mag),
+        self.speak_with(std::slice::from_ref(&word), train, family, move |entity, heard| match heard {
+            Ok(codes) if codes.as_slice() != [crate::anastome::dialogue::SPEECH_REFUSED] => entity.physics_mut().syntropy(&mag),
             _ => {
                 let (form, frames, train, remainders, family) = held;
-                let mut budget = me.physics.stroke();
-                me.hold_perceived(form, &frames, &train, &remainders, &family, &mut budget);
+                let mut budget = entity.physics.stroke();
+                entity.hold_perceived(form, &frames, &train, &remainders, &family, &mut budget);
             }
         });
         Some(mag)

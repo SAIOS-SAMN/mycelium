@@ -57,9 +57,9 @@ impl Entity {
         };
         let mut budget = self.physics.stroke();
         self.board.court.quoting = true;
-        self.ask(move |s| plan.ask(s, &mut budget), |me, q| {
-            me.board.court.quoting = false;
-            me.board.court.quoted = q.ok();
+        self.ask(move |s| plan.ask(s, &mut budget), |entity, q| {
+            entity.board.court.quoting = false;
+            entity.board.court.quoted = q.ok();
         });
     }
 }

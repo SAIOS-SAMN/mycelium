@@ -60,8 +60,8 @@ fn a_manifest_and_its_reading_travel_whole() {
     assert_eq!(decode_grant_reply(&encode_grant_reply(&refused)), Some(refused));
     let mut k = universe(true);
     let anchor = k.anchor();
-    let me = k.identity;
-    k.treasury.genesis(me, [100, 100, 100, 100], anchor);
+    let court_vk = k.identity;
+    k.treasury.genesis(court_vk, [100, 100, 100, 100], anchor);
     let granted = k.manifest(&s);
     assert_eq!(decode_grant_reply(&encode_grant_reply(&granted)), Some(granted));
     let reading = k.endowment_reading(&vk(&key(DOMAIN))).expect("reads");
@@ -79,16 +79,16 @@ fn a_manifest_and_its_reading_travel_whole() {
 fn a_founding_manifest_is_granted_from_what_the_court_earned() {
     let mut k = universe(true);
     let anchor = k.anchor();
-    let me = k.identity;
-    k.treasury.genesis(me, [100, 100, 100, 100], anchor);
+    let court_vk = k.identity;
+    k.treasury.genesis(court_vk, [100, 100, 100, 100], anchor);
     let reserve = vk(&key(RESERVE));
     let price = k.read_price().expect("a price");
-    let before = (k.treasury.balance_mu(&me), k.treasury.balance_mu(&reserve));
+    let before = (k.treasury.balance_mu(&court_vk), k.treasury.balance_mu(&reserve));
     let m = manifest(1);
     let Granted::Sealed { mu, founding, .. } = k.manifest(&signed(m.clone(), RESERVE)) else { panic!("granted") };
     assert!(founding, "the first is the founding grant");
     assert_eq!(mu, price.map(|p| p * 3), "three kinds of nuclei: three units of gas per lane at the read price");
-    let after = (k.treasury.balance_mu(&me), k.treasury.balance_mu(&reserve));
+    let after = (k.treasury.balance_mu(&court_vk), k.treasury.balance_mu(&reserve));
     assert_eq!(after.0, std::array::from_fn(|l| before.0[l] - mu[l]), "out of the court's earned balance");
     assert_eq!(after.1, std::array::from_fn(|l| before.1[l] + mu[l]), "into the reserve: a transfer, never a mint");
     let r = k.endowment_reading(&reserve_domain()).expect("reads");
@@ -127,8 +127,8 @@ fn a_grant_is_refused_by_name() {
 fn the_grants_survive_a_restart() {
     let mut k = universe(true);
     let anchor = k.anchor();
-    let me = k.identity;
-    k.treasury.genesis(me, [100, 100, 100, 100], anchor);
+    let court_vk = k.identity;
+    k.treasury.genesis(court_vk, [100, 100, 100, 100], anchor);
     assert!(matches!(k.manifest(&signed(manifest(1), RESERVE)), Granted::Sealed { .. }));
     let before = k.endowment_reading(&reserve_domain());
     let snap = k.snapshot();
@@ -163,8 +163,8 @@ fn a_growth_grant_is_sized_by_the_closures_judged_in_its_universe() {
     assert_eq!(booted.growth_size(&domain), Ok([4, 1, 2, 1]), "the size survives a restart");
     // A grant sealed takes the closures it answered.
     let anchor = k.anchor();
-    let me = k.identity;
-    k.treasury.genesis(me, [100, 100, 100, 100], anchor);
+    let court_vk = k.identity;
+    k.treasury.genesis(court_vk, [100, 100, 100, 100], anchor);
     assert!(matches!(k.manifest(&signed(manifest(1), RESERVE)), Granted::Sealed { founding: true, .. }));
     assert_eq!(k.growth_size(&domain), Err(GrantRefusal::NoNewClosures), "the closures before a grant are its own");
 }

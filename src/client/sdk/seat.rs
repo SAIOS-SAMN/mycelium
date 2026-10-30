@@ -55,13 +55,13 @@ pub enum HouseMail {
 }
 
 /// A MIND'S RAW MAIL TYPED: a piece that does not read as a TAKEN, PERCEPT
-/// or OUTCOME naming `me` — which the relay never serves — is an error by
-/// name, never skipped.
-pub(crate) fn mind_mail(me: [u8; 32], raw: Vec<Mail>) -> io::Result<Vec<MindMail>> {
+/// or OUTCOME naming `mind_vk` — which the relay never serves — is an error
+/// by name, never skipped.
+pub(crate) fn mind_mail(mind_vk: [u8; 32], raw: Vec<Mail>) -> io::Result<Vec<MindMail>> {
     let mut out = Vec::new();
     for m in raw {
         let post = m.post().ok_or_else(|| undecoded("mail piece"))?.post;
-        if post.mind() != Some(me) {
+        if post.mind() != Some(mind_vk) {
             return Err(undecoded("mail piece addressed to another"));
         }
         out.push(match post {
@@ -148,8 +148,8 @@ impl SeatHold {
 /// SEATS or names no such seat.
 pub(crate) fn seat_fns(listing: &SignedPost, seat: u32) -> Option<(u64, Vec<SeatFn>)> {
     let Post::Seats(seats) = &listing.post else { return None };
-    let mine = seats.seats.iter().find(|s| s.seat == seat)?;
-    Some((seats.epoch, mine.fns.clone()))
+    let listed = seats.seats.iter().find(|s| s.seat == seat)?;
+    Some((seats.epoch, listed.fns.clone()))
 }
 
 /// 78.158a SIT-ALL — EVERY SEAT A LISTING OFFERS, in the house's own
@@ -277,9 +277,9 @@ impl super::Session {
     /// a TAKEN, PERCEPT or OUTCOME naming this mind — which the relay never
     /// serves — is an error by name, never skipped.
     pub(crate) fn mail(&self, key: &SigningKey, after: u64, epoch: u64) -> io::Result<Result<MindRead, Refusal>> {
-        let me = key.verifying_key().to_bytes();
+        let mind_vk = key.verifying_key().to_bytes();
         match self.read_mail(key, after, epoch)? {
-            Ok(read) => mind_mail(me, read.mail).map(|mail| Ok(MindRead { epoch: read.epoch, seq: read.seq, mail })),
+            Ok(read) => mind_mail(mind_vk, read.mail).map(|mail| Ok(MindRead { epoch: read.epoch, seq: read.seq, mail })),
             Err(why) => Ok(Err(why)),
         }
     }

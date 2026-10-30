@@ -161,8 +161,8 @@ impl Scenes {
             Some(s) => s.words.scoped().map(|(a, (w, l))| (a, w.clone(), l.clone())).collect(),
             None => Vec::new(),
         };
-        for (at, mine, local) in own {
-            if mine.same_vertex(word) || !same_section(&heard, &local, family) {
+        for (at, held, local) in own {
+            if held.same_vertex(word) || !same_section(&heard, &local, family) {
                 continue;
             }
             let mut key = Vec::new();
@@ -217,23 +217,23 @@ impl Entity {
         }
         self.scenes.pulling.insert(id, ());
         let act = dialogue::encode_task_by_id(&self.hypha.kernel().voice(), &id);
-        self.ask(move |s| s.speak_keyed(&id, act), move |me, body: io::Result<Vec<u8>>| {
-            me.scenes.pulling.remove(&id);
+        self.ask(move |s| s.speak_keyed(&id, act), move |entity, body: io::Result<Vec<u8>>| {
+            entity.scenes.pulling.remove(&id);
             let family = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b)).map(|env| env.train);
             let (evident, charts) = match family {
                 Some(f) => {
-                    let evident = me.scenes.read(&id, &word, &f, speaker);
+                    let evident = entity.scenes.read(&id, &word, &f, speaker);
                     let held = super::offer::Offer::of(&f).charts;
                     let charts = charts_heard(evident, held.clone());
-                    me.scenes.pulled.insert(id, (f, held));
+                    entity.scenes.pulled.insert(id, (f, held));
                     (evident, charts)
                 }
                 None => {
-                    me.scenes.read[2] += 1;
+                    entity.scenes.read[2] += 1;
                     (Evident::Unread, Vec::new())
                 }
             };
-            me.perceive_hearing_on(speaker, said, words, evident, charts);
+            entity.perceive_hearing_on(speaker, said, words, evident, charts);
         });
     }
 }

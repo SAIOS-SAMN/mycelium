@@ -381,15 +381,15 @@ impl Entity {
                     true => Vec::new(),
                     false => task.clone(),
                 };
-                self.hold_for_return(&at, &scene, move |me| {
-                    me.ask(
+                self.hold_for_return(&at, &scene, move |entity| {
+                    entity.ask(
                         move |s| s.speak_nerve(body),
-                        move |me, reply| {
+                        move |entity, reply| {
                             for e in &sentences {
-                                me.speaking.remove(e.address().as_bytes());
+                                entity.speaking.remove(e.address().as_bytes());
                             }
-                            let codes = me.hear_speech(&sentences, codes, &fresh, reply, &train, &task);
-                            heard(me, codes);
+                            let codes = entity.hear_speech(&sentences, codes, &fresh, reply, &train, &task);
+                            heard(entity, codes);
                         },
                     );
                 });

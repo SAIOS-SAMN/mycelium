@@ -31,18 +31,18 @@ impl Entity {
         let voice = self.hypha.kernel().voice();
         self.ask(
             move |s| s.speak_keyed(&voice, dialogue::encode_task_request(&voice)),
-            |me, body: io::Result<Vec<u8>>| {
-                me.board.court.pulling = false;
+            |entity, body: io::Result<Vec<u8>>| {
+                entity.board.court.pulling = false;
                 // The court's final point it landed under: the aperture lapse
                 // reads the next one past it (`lapse_standing_task`).
-                let landed = me.hypha.tuniversal().map(|p| p.h);
-                me.board.court.task = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b)).map(|env| {
+                let landed = entity.hypha.tuniversal().map(|p| p.h);
+                entity.board.court.task = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b)).map(|env| {
                     let offer = super::offer::Offer { landed, ..super::offer::Offer::of(&env.train) };
                     (env, offer)
                 });
                 // Landed on this mind, not yet taken in: attributed here.
-                if let Some(id) = me.board.court.task.as_ref().map(|(e, _)| e.id) {
-                    me.note_task(&id, super::perceive::Reading::Task, |t| *t = super::perceive::TaskRead { taken: false, reading: t.reading, perspectives: None, stop: None });
+                if let Some(id) = entity.board.court.task.as_ref().map(|(e, _)| e.id) {
+                    entity.note_task(&id, super::perceive::Reading::Task, |t| *t = super::perceive::TaskRead { taken: false, reading: t.reading, perspectives: None, stop: None });
                 }
             },
         );
@@ -131,7 +131,7 @@ impl Entity {
         let mut at = vec![2u8];
         at.extend_from_slice(&id);
         // R2 — held for the return of a thought of the task's scene.
-        self.hold_for_return(&at, &id, move |me| me.post_solve(id, act, rule, outputs));
+        self.hold_for_return(&at, &id, move |entity| entity.post_solve(id, act, rule, outputs));
         Ok(())
     }
 
@@ -139,8 +139,8 @@ impl Entity {
     /// verdict filed where it lands.
     fn post_solve(&mut self, id: [u8; 32], act: Vec<u8>, rule: Element, outputs: Vec<Grid>) {
         crate::observe::note_mind(|m| m.perspective[6] += 1);
-        self.ask(move |s| s.speak_keyed(&id, act), move |me, body: io::Result<Vec<u8>>| {
-            me.board.court.solving.remove(&id);
+        self.ask(move |s| s.speak_keyed(&id, act), move |entity, body: io::Result<Vec<u8>>| {
+            entity.board.court.solving.remove(&id);
             // The court is not reachable: the solve stands as it stood.
             let Ok(body) = body else { return };
             // THE VOICE HEARS ITS VERDICT (the actions' physics): what the
@@ -162,7 +162,7 @@ impl Entity {
             // A refusal is remembered against the rule it refused, one per
             // task: the carrier is bounded by the tasks, and a new rule for
             // the task replaces it.
-            me.file_verdict(&id, &rule, &outputs, code);
+            entity.file_verdict(&id, &rule, &outputs, code);
         });
     }
 
@@ -194,9 +194,9 @@ impl Entity {
                 }
                 Ok::<_, io::Error>(body)
             },
-            |me, body| match body {
-                Ok(body) => me.fetch_discordant(&body),
-                Err(_) => me.board.court.syncing = false,
+            |entity, body| match body {
+                Ok(body) => entity.fetch_discordant(&body),
+                Err(_) => entity.board.court.syncing = false,
             },
         );
     }
@@ -247,19 +247,19 @@ impl Entity {
             .map(|d| dialogue::ChartOf { inv: d.inv.clone(), have: sheaf::have(&atlas, &d.inv) })
             .collect();
         let request = dialogue::encode_fetch(&voice, &charts, crate::network::wire::frame_budget());
-        self.ask(move |s| s.speak_keyed(&voice, request), move |me, body| {
-            me.board.court.syncing = false;
+        self.ask(move |s| s.speak_keyed(&voice, request), move |entity, body| {
+            entity.board.court.syncing = false;
             if let Ok(body) = body {
-                let brought = me.absorb_fetched(&body, &charts);
+                let brought = entity.absorb_fetched(&body, &charts);
                 // Each stratum asked that brought no word rests at the root
                 // it was asked at; one that brought any leaves the rest.
                 for (chart, root) in roots {
                     match brought.contains(&chart) {
                         true => {
-                            me.board.court.starved.remove(&chart);
+                            entity.board.court.starved.remove(&chart);
                         }
                         false => {
-                            me.board.court.starved.insert(&chart, (root, me.board.court.earned));
+                            entity.board.court.starved.insert(&chart, (root, entity.board.court.earned));
                         }
                     }
                 }
@@ -342,7 +342,7 @@ impl Entity {
                     // it as a demand vertex of a sentence. MU-CLIENT §4.13 —
                     // BY ITS COORDINATES: its stratum, the fetched word and
                     // the held word it was measured against; the transition
-                    // is theirs, re-derived where it is read.
+                    // is the pair's, re-derived where it is read.
                     let held = held.address();
                     self.obstructions.nested_insert(inv.key(), fetched.address().as_bytes(), held);
                 }
@@ -374,9 +374,9 @@ impl Entity {
                 }
                 used += bytes.len();
                 let (to, act) = (addr.clone(), dialogue::encode_adopt(&voice, &bytes));
-                self.ask(move |s| s.speak_keyed(&to, act), move |me, adopted| {
+                self.ask(move |s| s.speak_keyed(&to, act), move |entity, adopted| {
                     if adopted.is_ok() {
-                        me.file_taught(&word);
+                        entity.file_taught(&word);
                     }
                 });
             }
@@ -446,12 +446,12 @@ impl Entity {
                 }
                 pages
             },
-            move |me, pages: Vec<Vec<u8>>| {
-                me.board.court.schooling = false;
+            move |entity, pages: Vec<Vec<u8>>| {
+                entity.board.court.schooling = false;
                 for body in &pages {
-                    me.absorb_syllabus(body, empty);
+                    entity.absorb_syllabus(body, empty);
                 }
-                let _ = me.take_promoted();
+                let _ = entity.take_promoted();
             },
         );
     }

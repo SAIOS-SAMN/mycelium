@@ -53,7 +53,7 @@ impl Kernel {
 
     fn fold_head_reading(&self, carrying_work: bool) -> Option<Place> {
         let head = self.final_prefix_head()?;
-        let me = self.chain.vk();
+        let own_vk = self.chain.vk();
         let after = self.chain.root().map(|r| r.at);
         let (at_most, bytes) = Self::receipts_frame()?;
         // The page is served in line order: walked once, it names the last
@@ -61,7 +61,7 @@ impl Kernel {
         // it reached.
         use crate::chronometry::ActKind;
         let (mut cut, mut past, mut work, mut work_cut) = (None, after, false, false);
-        for r in self.receipts_page(&me, after, head, at_most, bytes) {
+        for r in self.receipts_page(&own_vk, after, head, at_most, bytes) {
             past = Some(r.stamp.place());
             match r.kind {
                 ActKind::Orbit => {
@@ -90,7 +90,7 @@ impl Kernel {
         // orbit's acts past the page (the lock audit, row 8). The same node
         // is found.
         self.chain
-            .first_between(&me, past, head, |r| r.kind == crate::chronometry::ActKind::Orbit)
+            .first_between(&own_vk, past, head, |r| r.kind == crate::chronometry::ActKind::Orbit)
             .map(|r| r.stamp.place())
     }
 

@@ -543,9 +543,9 @@ impl Entity {
                 crate::observe::live::enter_carrier("perception", "waiting for a scene");
                 Perceived { admission: field.into_admission(&from), ..read }
             },
-            |me, read| {
-                me.scene_landed();
-                me.admit_scene(read);
+            |entity, read| {
+                entity.scene_landed();
+                entity.admit_scene(read);
             },
         );
     }
@@ -625,15 +625,15 @@ impl Entity {
                 crate::observe::live::enter_carrier("perception", "waiting for a scene");
                 (reads, field.into_admission(&from))
             },
-            move |me, (reads, admission)| {
-                me.board.hearing = false;
+            move |entity, (reads, admission)| {
+                entity.board.hearing = false;
                 let before = crate::transducer::sentence::rung::lexicon();
                 if let Some(a) = admission {
-                    let mut budget = me.physics.stroke();
+                    let mut budget = entity.physics.stroke();
                     let _ = crate::transducer::mind::admit(a, &mut budget);
                 }
-                me.understand_read(speaker, said, reads, before, evident);
-                me.hear_next();
+                entity.understand_read(speaker, said, reads, before, evident);
+                entity.hear_next();
             },
         );
     }
@@ -651,9 +651,9 @@ impl Entity {
                 crate::observe::live::enter_carrier("perception", "waiting for a scene");
                 (judge, verdict)
             },
-            |me, (judge, verdict)| {
-                me.scene_landed();
-                me.admit_verdict(judge, verdict);
+            |entity, (judge, verdict)| {
+                entity.scene_landed();
+                entity.admit_verdict(judge, verdict);
             },
         );
     }

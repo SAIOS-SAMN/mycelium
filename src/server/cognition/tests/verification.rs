@@ -51,15 +51,15 @@ fn a_strained_court_and_its_witness_are_paid_out_of_the_release() {
     let at = k.anchor();
     let organs = [k.identity, witness];
     let paid = k.release_verified(addr.as_bytes(), held, &organs, at).expect("the claim releases");
-    let me = k.identity;
-    assert_eq!(k.treasury().balance_mu(&me), each, "this court is minted its share");
+    let court_vk = k.identity;
+    assert_eq!(k.treasury().balance_mu(&court_vk), each, "this court is minted its share");
     assert_eq!(k.treasury().balance_mu(&witness), each, "the witness is minted the same share");
     let rest: [u64; 4] = std::array::from_fn(|l| held[l] - 2 * each[l]);
     assert_eq!(paid, rest, "the closer is paid the rest");
     assert_eq!(k.treasury().balance_mu(&voice), rest);
     assert_eq!(k.treasury().minted(), Some(held), "issuance is exactly the release");
     assert!(k.treasury().audit().is_ok(), "the supply invariant holds");
-    let economy = k.treasury().economy(&me).expect("the economy reads");
+    let economy = k.treasury().economy(&court_vk).expect("the economy reads");
     assert_eq!(
         economy.paid[crate::economy::Arm::Powv.index()],
         std::array::from_fn::<u64, 4, _>(|l| 2 * each[l]),
@@ -83,10 +83,10 @@ fn the_share_is_read_on_the_capped_release_and_one_court_is_one_organ() {
     let each = crate::economy::verification_share(&base, &strain, crate::physics::reserve_max(), 1);
 
     let at = k.anchor();
-    let me = k.identity;
-    let organs = [me, me];
+    let court_vk = k.identity;
+    let organs = [court_vk, court_vk];
     let paid = k.release_verified(addr.as_bytes(), discharge, &organs, at).expect("the claim releases");
-    assert_eq!(k.treasury().balance_mu(&me), each, "one organ, one share");
+    assert_eq!(k.treasury().balance_mu(&court_vk), each, "one organ, one share");
     assert_eq!(paid, std::array::from_fn::<u64, 4, _>(|l| base[l] - each[l]), "the closer the rest of the capped base");
     assert_eq!(k.treasury().minted(), Some(base), "nothing above the discharge was issued");
     assert!(k.treasury().audit().is_ok());

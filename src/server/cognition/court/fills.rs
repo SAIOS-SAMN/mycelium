@@ -213,14 +213,14 @@ impl Kernel {
             return;
         }
         let vol = share;
-        let me = self.identity;
+        let own_vk = self.identity;
         for (a, _) in held.scoped() {
             // EC1: each drawn escrow is a Settled act of this court citing
             // the escrow's listing, sealed first; its POUW rows stand at it.
             if self.treasury.escrow_of(&a).is_none() {
                 continue;
             }
-            self.append_step(crate::chronometry::ActKind::Settled, &a, me);
+            self.append_step(crate::chronometry::ActKind::Settled, &a, own_vk);
             let anchor = self.anchor();
             for v in &parties {
                 let _ = self.treasury.draw_escrow(&a, *v, vol, anchor);
@@ -251,8 +251,8 @@ impl Kernel {
         if parties.is_empty() {
             return;
         }
-        let me = self.identity;
-        self.append_step(crate::chronometry::ActKind::Settled, rewrite, me);
+        let own_vk = self.identity;
+        self.append_step(crate::chronometry::ActKind::Settled, rewrite, own_vk);
         let anchor = self.anchor();
         for (who, mag) in parties {
             let _ = self.treasury.settle_torse(who, mag, anchor);
@@ -406,8 +406,8 @@ impl Kernel {
             _ => {}
         }
         let addr = rw.address();
-        let me = self.identity;
-        if !self.offer_rewrite(rw, me) {
+        let own_vk = self.identity;
+        if !self.offer_rewrite(rw, own_vk) {
             self.remainders_unoffered += 1;
             return None;
         }

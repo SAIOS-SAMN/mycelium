@@ -109,16 +109,16 @@ fn a_close_whose_frame_is_not_its_orbits_is_refused_on_read() {
 fn a_close_is_decided_by_exact_equality_of_frames_at_one_tick() {
     let mut other = ReceiptChain::with_vk([4; 32]);
     act(&mut other, [2, 0, 0, 0]);
-    let theirs = close(&mut other);
-    let mut mine = ReceiptChain::with_vk([5; 32]);
-    act(&mut mine, [2, 0, 0, 0]);
+    let other_close = close(&mut other);
+    let mut local = ReceiptChain::with_vk([5; 32]);
+    act(&mut local, [2, 0, 0, 0]);
     for r in other.own().collect::<Vec<_>>() {
-        mine.admit(r);
+        local.admit(r);
     }
-    let (_, frame) = mine.open_orbit().expect("open");
-    let tick = mine.next_stamp(&[]).expect("a stamp").h;
-    assert_eq!(tick, theirs.stamp.h, "one tick");
-    assert!(mine.collides(tick, frame), "equal on every lane at one tick: a collision");
-    assert!(!mine.collides(tick, [2, 0, 0, 1]), "one lane apart is not");
-    assert!(!mine.collides(tick + 1, frame), "nor is another tick");
+    let (_, frame) = local.open_orbit().expect("open");
+    let tick = local.next_stamp(&[]).expect("a stamp").h;
+    assert_eq!(tick, other_close.stamp.h, "one tick");
+    assert!(local.collides(tick, frame), "equal on every lane at one tick: a collision");
+    assert!(!local.collides(tick, [2, 0, 0, 1]), "one lane apart is not");
+    assert!(!local.collides(tick + 1, frame), "nor is another tick");
 }

@@ -297,17 +297,17 @@ impl Entity {
         body.unlisted = 0;
         body.relist = false;
         let (domain, sub_origin) = (body.domain, body.sub_origin);
-        self.ask_seat(move |s| s.list_seats(domain, sub_origin), |me, read: io::Result<Option<SignedPost>>| {
+        self.ask_seat(move |s| s.list_seats(domain, sub_origin), |entity, read: io::Result<Option<SignedPost>>| {
             // A listing that could not be read still opens the mail: the held
             // read is what wakes a resting mind, and it must never be withheld.
             let Ok(read) = read else {
-                if let Some(b) = me.board.body.as_mut() {
+                if let Some(b) = entity.board.body.as_mut() {
                     b.listing_read = true;
                 }
                 return;
             };
             let named = read.as_ref().and_then(crate::client::sdk::seat::listed_seats);
-            let Some(mut body) = me.board.body.take() else { return };
+            let Some(mut body) = entity.board.body.take() else { return };
             if let (true, Some((_, listed))) = (body.all, named.as_ref()) {
                 let sat: Vec<u32> = body.seats.iter().map(|s| s.at.seat).collect();
                 let (take, let_go) = crate::client::sdk::seat::reseat(&sat, listed);
@@ -332,7 +332,7 @@ impl Entity {
             }
             body.listed = named.map(|(epoch, _)| epoch);
             body.listing_read = true;
-            me.board.body = Some(body);
+            entity.board.body = Some(body);
         });
     }
 
@@ -371,7 +371,7 @@ impl Entity {
         // On the perceiving carrier: the court holds this read to its next
         // event, and on the seat's carrier it stood in front of every take,
         // solve and declination (2026-10-23).
-        self.ask_held(move |s| s.mail(&key, after, held_epoch), |me, read| me.read_mail_page(read));
+        self.ask_held(move |s| s.mail(&key, after, held_epoch), |entity, read| entity.read_mail_page(read));
     }
 
     /// A PAGE OF THE SHARED BOX, landed: each piece perceived at the seat it
@@ -521,7 +521,7 @@ impl Entity {
                 // A seat's call is the mind's own: it leaves at the mind's
                 // next return (§6 — seat play from orbits comes after the
                 // soak).
-                self.hold_for_return(&seat_act_key(&at, None), &[], move |me| me.seat_act(at, None));
+                self.hold_for_return(&seat_act_key(&at, None), &[], move |entity| entity.seat_act(at, None));
             }
             MindMail::Outcome(_, o) => {
                 let answered = self.with_seat_mind(seat.at, |m| m.outcome(&o));
@@ -555,16 +555,16 @@ impl Entity {
     /// handed to the mind as its repertoire, and a listing of another epoch
     /// than the body last sat by is read again for sit-all.
     fn read_listing(&mut self, at: SeatName) {
-        self.ask_seat(move |s| s.list_seats(at.domain, at.sub_origin), move |me, read: io::Result<Option<SignedPost>>| {
+        self.ask_seat(move |s| s.list_seats(at.domain, at.sub_origin), move |entity, read: io::Result<Option<SignedPost>>| {
             let Ok(Some(listing)) = read else { return };
             let epoch = match seat_fns(&listing, at.seat) {
                 Some((epoch, fns)) => {
-                    me.with_seat_mind(at, |m| m.perceive_listing(&fns));
+                    entity.with_seat_mind(at, |m| m.perceive_listing(&fns));
                     Some(epoch)
                 }
                 None => crate::client::sdk::seat::listed_seats(&listing).map(|(e, _)| e),
             };
-            if let Some(body) = me.board.body.as_mut() {
+            if let Some(body) = entity.board.body.as_mut() {
                 if body.all && epoch.is_some() && epoch != body.listed {
                     body.relist = true;
                 }
@@ -601,10 +601,10 @@ impl Entity {
         let (at, key, fn_id, args) = (seat.at, key.clone(), choice.fn_id, choice.args);
         met(&mut seat.met.calls);
         let posted = args.clone();
-        self.ask_seat(move |s| s.call(at, &key, fn_id, posted), move |me, called: io::Result<(Result<u64, Refusal>, [u8; 32])>| {
+        self.ask_seat(move |s| s.call(at, &key, fn_id, posted), move |entity, called: io::Result<(Result<u64, Refusal>, [u8; 32])>| {
             if let Ok((Ok(_), reference)) = called {
-                me.with_body_seat(at, |seat| seat.standing = encodes.then_some((fn_id, encoded, false)));
-                me.with_seat_mind(at, |m| m.called(fn_id, args, reference));
+                entity.with_body_seat(at, |seat| seat.standing = encodes.then_some((fn_id, encoded, false)));
+                entity.with_seat_mind(at, |m| m.called(fn_id, args, reference));
             }
         });
     }
@@ -617,32 +617,32 @@ impl Entity {
     fn pull_before(&mut self, at: SeatName, key: ed25519_dalek::SigningKey, id: [u8; 32]) {
         let voice = self.hypha.kernel().voice();
         let act = dialogue::encode_task_by_id(&voice, &id);
-        self.ask(move |s| s.speak_keyed(&id, act), move |me, body: io::Result<Vec<u8>>| {
+        self.ask(move |s| s.speak_keyed(&id, act), move |entity, body: io::Result<Vec<u8>>| {
             // A pull that read nothing waits for the next landing (`unpulled`).
-            let unread = |me: &mut Entity| {
-                me.with_body_seat(at, |seat| {
+            let unread = |entity: &mut Entity| {
+                entity.with_body_seat(at, |seat| {
                     seat.unpulled.insert(id, ());
                 })
             };
-            let Ok(body) = body else { return unread(me) };
+            let Ok(body) = body else { return unread(entity) };
             if body.is_empty() {
-                me.with_body_seat(at, |seat| {
+                entity.with_body_seat(at, |seat| {
                     let _ = seat.unpulled.remove(&id);
                     seat.answered.insert(id, ());
                 });
                 return;
             }
-            let Some(env) = dialogue::decode_task_envelope(&body) else { return unread(me) };
+            let Some(env) = dialogue::decode_task_envelope(&body) else { return unread(entity) };
             // EVERY TASK THE HOUSE SETS IS EVALUATED (ruled
             // 2026-10-23): a seat's attention is its house's, and a resting
             // seat's field couples to nothing — the coupling gate passed every
             // petition. The petition path itself is the gate (`solve_before`).
-            let Some(mut b) = me.board.body.take() else { return };
+            let Some(mut b) = entity.board.body.take() else { return };
             if let Some(seat) = b.seats.iter_mut().find(|s| s.at == at) {
                 let _ = seat.unpulled.remove(&id);
-                me.solve_before(seat, &key, &id, env.train, env.tests);
+                entity.solve_before(seat, &key, &id, env.train, env.tests);
             }
-            me.board.body = Some(b);
+            entity.board.body = Some(b);
         });
     }
 
@@ -732,10 +732,10 @@ impl Entity {
         let (at, key, id, addr) = (seat.at, key.clone(), *id, crossed.address().as_bytes().to_vec());
         met(&mut seat.met.calls);
         let posted = args.clone();
-        self.ask_seat(move |s| s.call(at, &key, FN_SOLVE, posted), move |me, called: io::Result<(Result<u64, Refusal>, [u8; 32])>| {
+        self.ask_seat(move |s| s.call(at, &key, FN_SOLVE, posted), move |entity, called: io::Result<(Result<u64, Refusal>, [u8; 32])>| {
             if let Ok((Ok(_), reference)) = called {
-                me.with_seat_mind(at, |m| m.called(FN_SOLVE, args, reference));
-                me.with_body_seat(at, |seat| {
+                entity.with_seat_mind(at, |m| m.called(FN_SOLVE, args, reference));
+                entity.with_body_seat(at, |seat| {
                     seat.solving.insert(id, (reference, addr));
                 });
             }

@@ -85,14 +85,14 @@ fn a_fold_verified_off_the_shelf_is_the_kernels_verdict() {
 #[test]
 fn a_page_of_the_rows_below_is_the_whole_prefix_paged() {
     let mut k = court();
-    let me = k.chain().vk();
-    let line = k.chain().line_between(&me, None, Place { k: u64::MAX, i: u64::MAX }, usize::MAX);
+    let own_vk = k.chain().vk();
+    let line = k.chain().line_between(&own_vk, None, Place { k: u64::MAX, i: u64::MAX }, usize::MAX);
     for r in &line {
         let anchor = (r.stamp, r.chain_hash);
         let who = u8::try_from(r.stamp.i + 1).expect("an orbit holds a few acts");
         let _ = k.treasury.genesis([who; 32], [1, 0, 0, 0], anchor);
     }
-    let after = k.chain().line_between(&me, None, Place { k: u64::MAX, i: u64::MAX }, usize::MAX);
+    let after = k.chain().line_between(&own_vk, None, Place { k: u64::MAX, i: u64::MAX }, usize::MAX);
     for r in &after {
         let head = r.stamp.place();
         let below = k.treasury.rows_below(head);

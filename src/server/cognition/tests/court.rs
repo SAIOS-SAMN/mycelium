@@ -563,13 +563,13 @@ fn a_witness_that_rederived_nothing_answers_with_nothing() {
 /// court's re-derivation, which is 1.7's byte exactness one level down.
 #[test]
 fn a_court_sections_what_it_ruled_itself_and_not_what_a_peer_sent() {
-    let me = [0x0au8; 32];
+    let own_vk = [0x0au8; 32];
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 
     // ITS OWN: perceived here, replayed here, ruled here on the stroke.
     let mut own = Kernel::new();
-    own.bind_identity(me);
+    own.bind_identity(own_vk);
     assert_eq!(speak_pair(&mut own, &a, &b, [1; 32]), Outcome::GermPending);
     assert_eq!(speak_pair(&mut own, &a, &b, [2; 32]), Outcome::GermPending);
     let spoken = own.provisional.scoped().next().unwrap().1.clone();
@@ -580,21 +580,21 @@ fn a_court_sections_what_it_ruled_itself_and_not_what_a_peer_sent() {
     );
     // 78.153: every stroke the docket's replay takes.
     own.court_settle();
-    let mine = own
+    let own_sec = own
         .own_section(&inv)
         .expect("the stroke ruled it, so this court holds it at its own vantage");
     assert!(
-        mine.same_vertex(&spoken),
+        own_sec.same_vertex(&spoken),
         "and the section is the word it reached, by vertex (M1), never by bytes"
     );
 
     // A PEER'S: the same word, arriving by glue. It is ruled into the
     // cover, and it is filed at the PEER's vantage, never at this one.
     let mut heard = Kernel::new();
-    heard.bind_identity(me);
+    heard.bind_identity(own_vk);
     let mut cover = crate::network::nerve::Cover::new();
     assert!(matches!(
-        fetched(&mut heard, &spoken, [0x0b; 32], me, &mut cover),
+        fetched(&mut heard, &spoken, [0x0b; 32], own_vk, &mut cover),
         Glue::Admitted
     ));
     assert!(

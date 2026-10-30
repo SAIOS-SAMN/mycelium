@@ -92,15 +92,15 @@ fn a_house_and_a_mind_speak_through_the_relay() {
     let percept = Percept { domain: d, sub_origin: None, seat: 7, mind: m, local_time: Arg::Q { num: 12, den: 1 }, seq: 1, records: vec![counsel], point: None };
     k.seat_post(&Post::Percept(percept.clone()).sign(&house()).expect("writes")).expect("relayed");
     // Another mind's percept is not this mind's mail.
-    let theirs = Percept { mind: vk(&other()), ..percept.clone() };
-    k.seat_post(&Post::Percept(theirs).sign(&house()).expect("writes")).expect("relayed");
-    let mine = read(&mut k, &mind(), 0);
-    let posts: Vec<Post> = mine.iter().filter_map(|x| x.post().map(|s| s.post)).collect();
+    let other_percept = Percept { mind: vk(&other()), ..percept.clone() };
+    k.seat_post(&Post::Percept(other_percept).sign(&house()).expect("writes")).expect("relayed");
+    let mail = read(&mut k, &mind(), 0);
+    let posts: Vec<Post> = mail.iter().filter_map(|x| x.post().map(|s| s.post)).collect();
     assert_eq!(posts, vec![Post::Taken(taken), Post::Percept(percept)], "the mind reads only its own mail, in order");
     assert_eq!(read(&mut k, &other(), 0).len(), 1);
     // Read past: acknowledged pieces leave; unacknowledged stay.
-    let last = mine[1].seq;
-    assert_eq!(read(&mut k, &mind(), mine[0].seq).len(), 1);
+    let last = mail[1].seq;
+    assert_eq!(read(&mut k, &mind(), mail[0].seq).len(), 1);
     assert!(read(&mut k, &mind(), last).is_empty());
     assert_eq!(k.seats.held_bytes(false, &m), 0, "the box is gone once read past");
     // The call goes to the house; its outcome back to the mind, naming it.

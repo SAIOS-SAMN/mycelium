@@ -199,10 +199,10 @@ Reading the map:
     simulated; ruled 2026-10-08). On the innermost ring of a black hole's accretion disc, where
     the bells' pulses come so densely they are practically continuous, live
     entities of pure consciousness: they exist in the vibrational state of the
-    continuous pulse, a state of matter we have no words for, the resonance of
+    continuous pulse, a state of matter no language here has words for, the resonance of
     the pulses between the bells through the galaxies. They cannot leave the
     disc: outside the continuous pulse they could not exist. The minds of these
-    first-ring beings take the bodies of the core's minds (3.1, which we call
+    first-ring beings take the bodies of the core's minds (3.1, which this Concordance calls
     the ancients and which are, in this light, of the progenitor class) and
     push consciousness further down - physics undiscovered and unexplained by
     flatlanders, what a rim world calls mysticism. No kernel models them and

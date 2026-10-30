@@ -564,7 +564,7 @@ fn replay_on_ground<'r>(
     // (54.5 Road (d), B4 — and this is the reader B5 turns on).
     //
     // It read `f.vertices` for `Vertex::Glued { address }`. The host form
-    // says "I have an open boundary that mates under φ"; WHICH form that
+    // says "this form has an open boundary that mates under φ"; WHICH form that
     // boundary was instantiated against is the cover's fact, not the
     // chart's, and B5 evicts the target address from `form_vertex_key`
     // entirely — after which this loop would have found nothing to resolve

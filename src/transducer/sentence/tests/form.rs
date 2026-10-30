@@ -641,9 +641,9 @@ fn a_sentence_chart_leads_with_axis_two_then_its_rank() {
     // bodies on a star instead of two: the rank is the same, the classes
     // are the same, and the chart does not widen by one coordinate.
     let wide = star_form(6, Vec::new());
-    let we = as_element_form(&wide, [1, 0, 0, 0]).expect("form element");
+    let wide_element = as_element_form(&wide, [1, 0, 0, 0]).expect("form element");
     assert_eq!(
-        stalk::invariant_of(&we),
+        stalk::invariant_of(&wide_element),
         inv,
         "a form of six vertices and one of two hold the same thing up to gauge"
     );

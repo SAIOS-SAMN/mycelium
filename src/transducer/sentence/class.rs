@@ -736,7 +736,7 @@ impl ClassVector {
 // `class_key` wrote for it. Nothing below is a remembered width: a
 // rational's two integers carry their own lengths, the plane block is
 // present or absent by its own tag, the hue cycle carries its count, and a
-// versor's sixteen coefficients carry theirs. So a key of another system
+// versor's sixteen coefficients carry their own. So a key of another system
 // fails at the coordinate it fails at, and the depth-one boundary is the
 // rotor's conjugacy stratum by parsing rather than by agreement.
 

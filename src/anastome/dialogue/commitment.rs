@@ -135,12 +135,12 @@ pub fn prove(records: &[Record], key: &[u8]) -> Option<Vec<[u8; 32]>> {
     for depth in 0..DEPTH {
         let split = on.partition_point(|(q, _)| !bit(q, depth));
         let (left, right) = on.split_at(split);
-        let (mine, other) = match bit(&p, depth) {
+        let (along, other) = match bit(&p, depth) {
             false => (left, right),
             true => (right, left),
         };
         siblings.push(fold(other, depth + 1));
-        on = mine;
+        on = along;
     }
     Some(siblings)
 }

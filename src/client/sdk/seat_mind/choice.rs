@@ -298,8 +298,8 @@ impl SeatMind {
         let dominates = |a: &[Q], b: &[Q]| a.iter().zip(b).all(|(x, y)| x >= y) && a.iter().zip(b).any(|(x, y)| x > y);
         let dominant: Vec<&(u16, &Experience, Vec<Q>)> = along
             .iter()
-            .filter(|(id, _, mine)| {
-                mine.iter().any(|x| x.is_positive()) && along.iter().filter(|(other, _, _)| other != id).all(|(_, _, theirs)| dominates(mine, theirs))
+            .filter(|(id, _, rates)| {
+                rates.iter().any(|x| x.is_positive()) && along.iter().filter(|(other, _, _)| other != id).all(|(_, _, other_rates)| dominates(rates, other_rates))
             })
             .collect();
         if let [(id, e, _)] = dominant.as_slice() {
@@ -316,7 +316,7 @@ impl SeatMind {
                 why: Why::Dominates { over, along: named },
             });
         }
-        let none_forward = along.iter().all(|(_, _, mine)| mine.iter().all(|x| !x.is_positive()));
+        let none_forward = along.iter().all(|(_, _, rates)| rates.iter().all(|x| !x.is_positive()));
         if none_forward {
             let untried = self.counsel.iter().find(|c| match self.experience(c.fn_id) {
                 Some(e) => e.read == 0 && !e.refused_only(),

@@ -12,7 +12,7 @@
 //! HELD, and those three readers wrote no line. Extended to them at the
 //! ruling of 2026-09-19. Each is a reader under rule 17 and
 //! each is now asked the same two questions as the seven moves — what
-//! coordinate did you write, and what did it cost.
+//! coordinate did the reader write, and what did it cost.
 //!
 //! A READER THAT CANNOT SAY WHAT IT SPENT PRINTS `-`, AND THAT IS THE
 //! READING. `speak`, `mint` and `hold` carry no `Budget` between them: the

@@ -78,8 +78,8 @@ fn frame(k: &Kernel) -> (KStepReceipt, SignedPrefix) {
 
 /// A court's own line between two places, as the court reads it.
 fn line(k: &Kernel, after: Option<Place>) -> Vec<KStepReceipt> {
-    let me = k.chain().vk();
-    k.chain().line_between(&me, after, Place { k: u64::MAX, i: u64::MAX }, usize::MAX)
+    let own_vk = k.chain().vk();
+    k.chain().line_between(&own_vk, after, Place { k: u64::MAX, i: u64::MAX }, usize::MAX)
 }
 
 /// One signer's axes on the replication reading.

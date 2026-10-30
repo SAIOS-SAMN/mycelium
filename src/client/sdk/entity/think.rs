@@ -927,17 +927,17 @@ impl Entity {
         // seals it and it leaves.
         let word = e.clone();
         let scene = family.to_vec();
-        self.speak_with(std::slice::from_ref(e), &[], family, move |me, _| {
-            let sealed = me.sealed.get(addr.as_bytes()).is_some();
+        self.speak_with(std::slice::from_ref(e), &[], family, move |entity, _| {
+            let sealed = entity.sealed.get(addr.as_bytes()).is_some();
             // Held where its dialect stands it, and only there: a word the
             // dialect no longer holds has nothing to be said again from.
-            let stands = me.epigenome.working_word(addr.as_bytes()).is_some();
-            match me.already_taught(&word) || sealed || !stands {
+            let stands = entity.epigenome.working_word(addr.as_bytes()).is_some();
+            match entity.already_taught(&word) || sealed || !stands {
                 true => {
-                    me.unheard.remove(addr.as_bytes());
+                    entity.unheard.remove(addr.as_bytes());
                 }
                 false => {
-                    me.unheard.insert(addr.as_bytes(), scene);
+                    entity.unheard.insert(addr.as_bytes(), scene);
                 }
             }
         });

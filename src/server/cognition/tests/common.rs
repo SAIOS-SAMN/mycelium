@@ -139,11 +139,11 @@ pub fn budget() -> crate::physics::Budget {
 /// fetch that rules nothing must have moved the replay, or the glue stalls
 /// and the claim fails. Answers the verdict the replay reached: what a claim
 /// about a glue's verdict asserts on, on any host.
-pub fn fetched(k: &mut Kernel, spoken: &Element, peer: [u8; 32], me: [u8; 32], cover: &mut crate::network::nerve::Cover) -> Glue {
+pub fn fetched(k: &mut Kernel, spoken: &Element, peer: [u8; 32], own_vk: [u8; 32], cover: &mut crate::network::nerve::Cover) -> Glue {
     loop {
         let before = k.court_replay_progress(spoken);
         let mut stroke = k.stroke();
-        if let Some(verdict) = k.glue_fetched_ruled(spoken.clone(), peer, me, cover, &mut stroke) {
+        if let Some(verdict) = k.glue_fetched_ruled(spoken.clone(), peer, own_vk, cover, &mut stroke) {
             return verdict;
         }
         assert_ne!(k.court_replay_progress(spoken), before, "an unread glue resumes where it stopped, or it stalls");

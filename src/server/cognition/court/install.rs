@@ -105,14 +105,14 @@ impl Kernel {
                 } else {
                     // 26 as ruled 2026-09-10: what this form closed is
                     // partly what the forms it CITED close inside it, and
-                    // that part is theirs. The shares come out of this
+                    // that part belongs to the cited forms. The shares come out of this
                     // install's own mint before the escrow's voices take
                     // the remainder — never out of the citing voice's
                     // balance, which paid zero whenever its own draw
                     // already occupied the lane (L8t).
                     //
                     // MU-CLIENT §5.4 (D2′) — and the WORDS it taught take
-                    // theirs after the words it cited: a held word's
+                    // their shares after the words it cited: a held word's
                     // discoverer its use, a new word's its base pay. What the
                     // escrow's voices take after both is the COMPOSITION
                     // PREMIUM — what the sentence discharged beyond its words.

@@ -102,21 +102,21 @@ pub struct Residual {
 #[derive(Debug, Clone)]
 pub struct Keepers {
     origin: Origin,
-    me: [u8; 32],
+    own_key: [u8; 32],
     lines: Keyed<Line>,
     /// The greatest point final in this court's view so far.
     held_final: Option<TPoint>,
 }
 
 impl Keepers {
-    /// The keepers at `origin`, `me` this court's own key.
-    pub fn new(origin: Origin, me: [u8; 32]) -> Keepers {
-        Keepers { origin, me, lines: Keyed::new(), held_final: None }
+    /// The keepers at `origin`, `own_key` this court's own key.
+    pub fn new(origin: Origin, own_key: [u8; 32]) -> Keepers {
+        Keepers { origin, own_key, lines: Keyed::new(), held_final: None }
     }
 
     /// This court's own key.
-    pub fn me(&self) -> [u8; 32] {
-        self.me
+    pub fn own_key(&self) -> [u8; 32] {
+        self.own_key
     }
 
     pub fn origin(&self) -> Origin {
@@ -152,7 +152,7 @@ impl Keepers {
     /// A reading `keep` did not keep is not held and never published:
     /// `Some(false)`, as a reading not due.
     pub fn read_own_kept(&mut self, sk: &ed25519_dalek::SigningKey, tick: Tick, keep: impl FnOnce(&LastSigned) -> bool) -> Option<bool> {
-        let (parent, due) = match self.line(&self.me).and_then(Line::newest) {
+        let (parent, due) = match self.line(&self.own_key).and_then(Line::newest) {
             None => ([0u8; 32], true),
             Some((at, r)) => (*at, tick.h > r.tick.h && tick.measure_moved(&r.tick)),
         };
@@ -162,7 +162,7 @@ impl Keepers {
         let cites: Vec<Cited> = self
             .keepers()
             .into_iter()
-            .filter(|k| *k != self.me)
+            .filter(|k| *k != self.own_key)
             .filter_map(|k| {
                 let (at, r) = self.line(&k)?.newest()?;
                 Some(Cited { keeper: k, reading: *at, h: r.tick.h })
@@ -173,7 +173,7 @@ impl Keepers {
         if !keep(&rec) {
             return Some(false);
         }
-        self.hold(self.me, rec.hash, rec.reading);
+        self.hold(self.own_key, rec.hash, rec.reading);
         Some(true)
     }
 
@@ -186,19 +186,19 @@ impl Keepers {
     pub fn resume(&mut self, rec: &LastSigned) -> bool {
         let r = &rec.reading;
         let fits = rec.origin == self.origin
-            && r.keeper == self.me
+            && r.keeper == self.own_key
             && r.verifies(&self.origin)
             && r.hash(&self.origin) == Some(rec.hash)
-            && self.line(&self.me).and_then(Line::newest).is_none_or(|(_, n)| n.tick.h < r.tick.h);
+            && self.line(&self.own_key).and_then(Line::newest).is_none_or(|(_, n)| n.tick.h < r.tick.h);
         if fits {
-            self.hold(self.me, rec.hash, r.clone());
+            self.hold(self.own_key, rec.hash, r.clone());
         }
         fits
     }
 
     /// This court's own ring: its newest readings, oldest first.
     pub fn own_ring(&self) -> Vec<TickReading> {
-        let Some(line) = self.line(&self.me) else { return Vec::new() };
+        let Some(line) = self.line(&self.own_key) else { return Vec::new() };
         let skip = line.readings.len().checked_sub(ring_len()).filter(|n| *n > 0);
         line.readings.iter().skip(skip.map_or(0, |n| n)).map(|(_, r)| r.clone()).collect()
     }
@@ -224,7 +224,7 @@ impl Keepers {
     /// passed a gap. A ring of this court's own key is not admitted from
     /// another.
     pub fn admit(&mut self, keeper: [u8; 32], ring: Vec<TickReading>) -> Result<Admitted, Refused> {
-        if keeper == self.me || ring.is_empty() {
+        if keeper == self.own_key || ring.is_empty() {
             return Ok(Admitted::Stale);
         }
         let mut hashes = Vec::with_capacity(ring.len());

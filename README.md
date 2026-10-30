@@ -154,7 +154,7 @@ directory, the ports and the number of tasks.
 - [Building and testing](#building-and-testing)
 - [Running a node](#running-a-node)
 - [Building a client with the SDK](#building-a-client-with-the-sdk)
-- [Developing with us](#developing-with-us)
+- [Developing Mycelium](#developing-mycelium)
 - [Versioning](#versioning)
 - [Documentation](#documentation) · [Glossary](GLOSSARY.md) · [Equations](docs/EQUATIONS.md)
 - [License](#license)
@@ -889,7 +889,7 @@ target/release/examples/sdk_client /srv/myc/v1 127.0.0.1:7610 8
 #   task da0dfd765fbe3521… not solved (final) — refused: form leaves a remainder on the family
 ```
 
-### Stating your own rules
+### Stating a client's own rules
 
 The SDK states rules in three ways, and the court replays each on withheld
 pairs:
@@ -913,7 +913,7 @@ pairs:
 
 ---
 
-## Developing with us
+## Developing Mycelium
 
 Mycelium is developed in the open, and contributions are welcome at every
 layer: the algebra, the courts, the economy, the SDK, the reference mind,
@@ -958,8 +958,8 @@ lands in the code:
     between states, automorphic bonds as stabilizers, crossings as
     isomorphisms between universes' readings.
 20. Chronometry: one clock for many universes, every universe's time
-    book of chronometric anchors kept by the hypha, a "where am I"
-    reading, and placing universes against each other by bracketing
+    book of chronometric anchors kept by the hypha, a position reading
+    (where a universe stands), and placing universes against each other by bracketing
     ([`docs/MU-CHRONOMETRY.md`](docs/MU-CHRONOMETRY.md)).
 21. Founding a universe: μ and elements through the manifest and its
     grant, the founding range Z ≤ 1700 of heavy kinds beyond the measured

@@ -162,11 +162,11 @@ fn three_charts_that_do_not_close_leave_a_relator_of_order_two() {
     // never introduced.
     let class = r.class_key().expect("the relator has a conjugacy class");
     for k in three_courts() {
-        let mine = relator_of(&holonomy(&t_ab, &t_bc, &t_ca).expect("the holonomy forms"))
+        let read = relator_of(&holonomy(&t_ab, &t_bc, &t_ca).expect("the holonomy forms"))
             .rotor()
             .class_key()
             .expect("each court reads the same triangle");
-        assert_eq!(mine, class, "three vantages, one class key");
+        assert_eq!(read, class, "three vantages, one class key");
         assert_eq!(k.adjoined(), 0, "and a RELATION is not an adjoined letter");
     }
 }
@@ -495,11 +495,11 @@ fn a_peers_retirement_is_replayed_here_and_applied_refused_or_waiting() {
     assert_eq!(b.clock(None).rulings[retired], [1, 1, 0, 0], "replayed and applied");
     assert!(!b.basis.contains(r_addr.as_bytes()), "the relator retired here");
     assert!(b.cavity_book.contains(r_addr.as_bytes()), "onto the cavity book, keeping its address");
-    let mine = b.chain().head().expect("b sealed").clone();
-    assert_eq!(mine.kind, ActKind::Ruling(Ruled::Retired), "b seals its own retirement");
+    let own_head = b.chain().head().expect("b sealed").clone();
+    assert_eq!(own_head.kind, ActKind::Ruling(Ruled::Retired), "b seals its own retirement");
     let [.., last] = line.as_slice() else { panic!("the peer's line") };
-    let theirs = last.stamp;
-    assert!(mine.parents.iter().any(|p| p.at == theirs), "with the peer's receipt among its parents");
+    let peer_stamp = last.stamp;
+    assert!(own_head.parents.iter().any(|p| p.at == peer_stamp), "with the peer's receipt among its parents");
 
     let lone = super::common::court_key("lone retirer");
     let mut e = Kernel::new();

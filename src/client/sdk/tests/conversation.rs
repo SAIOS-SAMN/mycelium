@@ -396,7 +396,7 @@ fn two_minds_form_a_shared_word_and_carry_it_to_the_court() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
-/// MU-CLIENT §4.9 — DOES THIS SOUND LIKE SOMETHING I HAVE HEARD: a ring read
+/// MU-CLIENT §4.9 — DOES THIS SOUND LIKE SOMETHING THE MIND HAS HEARD: a ring read
 /// against what the mind remembers hearing, never a vocabulary. With nothing heard
 /// a 180° turn is a NEW sound, on the outside. Having heard a ring of order
 /// three (the turn carrying `e₁ → e₂ → e₃`, `½(1 + e₂e₃ + e₃e₁ + e₁e₂)`), the

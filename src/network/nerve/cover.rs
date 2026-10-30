@@ -477,16 +477,16 @@ pub fn home(
                 // orders the two (law 5).
                 let short = |r: &[(u8, i64)]| r.iter().any(|(_, d)| *d < 0);
                 let spare = |r: &[(u8, i64)]| r.iter().any(|(_, d)| *d > 0);
-                let mine = room_reading(&room, broom, &lanes);
-                if !short(&mine) && spare(&mine) {
+                let candidate = room_reading(&room, broom, &lanes);
+                if !short(&candidate) && spare(&candidate) {
                     *best = Some((id, addr, room));
                 } else {
                     // The incumbent may not dominate either -- equal room, or
                     // each short on a lane the other is not. Neither is
                     // worse, so the chart's nearness decides, as a TIEBREAK
                     // and never as a measure.
-                    let theirs = room_reading(broom, &room, &lanes);
-                    if (short(&theirs) || !spare(&theirs)) && xor_nearer(&near, &id, bid) {
+                    let incumbent = room_reading(broom, &room, &lanes);
+                    if (short(&incumbent) || !spare(&incumbent)) && xor_nearer(&near, &id, bid) {
                         *best = Some((id, addr, room));
                     }
                 }

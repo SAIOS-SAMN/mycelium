@@ -134,14 +134,14 @@ fn family_rings(pairs: &[(Vec<Body>, Vec<Body>)], budget: &mut mycelium::physics
         .map(|(p, (ins, _))| {
             (0..ins.len())
                 .map(|i| {
-                    let mine: Vec<&Filament> = filaments[p].iter().filter(|f| f.0 == i).collect();
-                    if mine.is_empty() {
+                    let of_i: Vec<&Filament> = filaments[p].iter().filter(|f| f.0 == i).collect();
+                    if of_i.is_empty() {
                         return 2;
                     }
                     if pairs.len() < 2 {
                         return 3;
                     }
-                    for (a, b, v) in &mine {
+                    for (a, b, v) in &of_i {
                         for (q, (ins_q, outs_q)) in pairs.iter().enumerate() {
                             if q == p {
                                 continue;
@@ -187,16 +187,16 @@ fn ring_layer(
     }
     (0..ins.len())
         .map(|i| {
-            let mine: Vec<&(usize, usize, Vec<u8>, mycelium::transducer::cga::Mv)> = filaments.iter().filter(|f| f.0 == i).collect();
-            if mine.is_empty() {
+            let of_i: Vec<&(usize, usize, Vec<u8>, mycelium::transducer::cga::Mv)> = filaments.iter().filter(|f| f.0 == i).collect();
+            if of_i.is_empty() {
                 return 3;
             }
-            let with_body = mine.iter().any(|f| filaments.iter().any(|g| g.0 != i && g.1 != f.1 && g.2 == f.2));
+            let with_body = of_i.iter().any(|f| filaments.iter().any(|g| g.0 != i && g.1 != f.1 && g.2 == f.2));
             if with_body {
                 return 0;
             }
             let with_scene = match spores {
-                (Some(si), Some(so)) => mine.iter().any(|f| projective_ratio(&f.3.sandwich(si), so).is_some()),
+                (Some(si), Some(so)) => of_i.iter().any(|f| projective_ratio(&f.3.sandwich(si), so).is_some()),
                 _ => false,
             };
             match with_scene {

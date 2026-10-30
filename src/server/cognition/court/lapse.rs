@@ -111,11 +111,11 @@ impl Kernel {
     /// the door, its draw is unlisted, and the lapse is this court's own act
     /// (45.1), the listing cited as it stood (78.24 (2c)).
     fn lapse_listing(&mut self, addr: &[u8]) {
-        let me = self.identity;
+        let own_vk = self.identity;
         let cite = self.cite_of(addr);
         let _ = self.treasury.revoke_award(addr, crate::economy::escrow::Revocation::Drop);
         self.unlist(&Address::from(addr.to_vec()), false);
-        self.append_after_removal(crate::chronometry::ActKind::Lapse, addr, cite, me);
+        self.append_after_removal(crate::chronometry::ActKind::Lapse, addr, cite, own_vk);
     }
 
     /// A PROVISIONAL WORD NOTHING FLOWED TO, OR WHOSE ESCROW A CARRIAGE
@@ -124,7 +124,7 @@ impl Kernel {
     /// released as the demand it is (D) — it cites a word this court does
     /// not hold.
     pub(crate) fn lapse_word(&mut self, addr: &[u8]) {
-        let me = self.identity;
+        let own_vk = self.identity;
         let cite = self.cite_of(addr);
         let _ = self.treasury.revoke_award(addr, crate::economy::escrow::Revocation::Drop);
         self.forget_flux(addr);
@@ -133,7 +133,7 @@ impl Kernel {
         if self.pending.contains(addr) {
             self.unlist(addr, false);
         }
-        self.append_after_removal(crate::chronometry::ActKind::Lapse, addr, cite, me);
+        self.append_after_removal(crate::chronometry::ActKind::Lapse, addr, cite, own_vk);
         self.release_awaiting(addr);
     }
 

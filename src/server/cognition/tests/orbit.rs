@@ -25,8 +25,8 @@ fn a_court_close_that_would_collide_is_withheld_and_sealed_a_stroke_on() {
     let mut k = Kernel::new();
     assert_eq!(k.orbit(), Close::Nothing, "a cycle that acted on nothing closes nothing");
     k.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
-    let (_, ours) = k.chain.open_orbit().expect("the court's orbit is open");
-    for r in peer_orbit([9; 32], ours) {
+    let (_, own_frame) = k.chain.open_orbit().expect("the court's orbit is open");
+    for r in peer_orbit([9; 32], own_frame) {
         k.chain.admit(r);
     }
     assert_eq!(k.orbit(), Close::Withheld, "its frame met the peer's at one tick");
@@ -78,11 +78,11 @@ fn a_close_proposes_the_fold_only_where_a_return_or_rank_step_stands() {
 fn the_clock_names_the_per_lane_distance_at_the_last_close() {
     let mut k = Kernel::new();
     k.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
-    let (_, ours) = k.chain.open_orbit().expect("open");
-    let theirs = [ours[0] + 3, ours[1], ours[2], ours[3] + 1];
-    for r in peer_orbit([9; 32], theirs) {
+    let (_, own_frame) = k.chain.open_orbit().expect("open");
+    let peer_frame = [own_frame[0] + 3, own_frame[1], own_frame[2], own_frame[3] + 1];
+    for r in peer_orbit([9; 32], peer_frame) {
         k.chain.admit(r);
     }
     assert!(matches!(k.orbit(), Close::Sealed(_)), "frames apart: the close seals");
-    assert_eq!(k.clock(None).orbits.distance, vec![([9; 32], [-3, 0, 0, -1])], "ours less theirs, lane by lane");
+    assert_eq!(k.clock(None).orbits.distance, vec![([9; 32], [-3, 0, 0, -1])], "the court's own frame less the peer's, lane by lane");
 }

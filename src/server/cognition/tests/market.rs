@@ -404,7 +404,7 @@ let first_a = list(&mut ha, 4);
 let first_b = list(&mut hb, 4);
 assert_eq!(first_a, first_b);
 // Advance K on ha only — eight orbits, each an act and its close (OK1);
-// TUniversal stays the clock we set. The listing is spoken again in each
+// TUniversal stays the clock the test set. The listing is spoken again in each
 // orbit, so flux reaches it and it does not lapse by zero flux (78.37 (3)):
 // what moves it is T, which is the claim.
 for _ in 0..8 {

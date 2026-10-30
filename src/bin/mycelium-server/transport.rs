@@ -177,7 +177,7 @@ pub(crate) fn tell_peer_within(addr: &str, body: Vec<u8>, rtt_hint: u64) -> Opti
     // produced: an empty write, and a caller waiting on five bytes that
     // never came. Silence is a refusal and is counted as one.
     //
-    // The bound is STROKES, not seconds. My first cut set two 20-second
+    // The bound is STROKES, not seconds. The first cut set two 20-second
     // socket timeouts, which is a wall clock in a binary (law 9) and the
     // very sites B6 exists to remove. A socket cannot be handed a stroke,
     // so the READ is budgeted instead: non-blocking, one spend per attempt,
@@ -246,7 +246,7 @@ pub(crate) fn read_budgeted(s: &mut TcpStream, buf: &mut [u8], stall: usize) -> 
                 // scheduler passes, not transport: `transport_deadline(8)`
                 // is 64, and 64 yields pass in microseconds, so a peer that
                 // was merely slow to be scheduled was refused as silent.
-                // Measured on my own test, which passed alone and failed
+                // Measured on the transport's own test, which passed alone and failed
                 // beside its neighbours. What the budget bounds is a STALL
                 // -- consecutive polls that move no bytes -- so a peer
                 // trickling a large frame is never refused for being slow,

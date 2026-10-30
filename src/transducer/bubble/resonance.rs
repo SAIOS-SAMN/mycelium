@@ -399,7 +399,7 @@ struct Row {
     /// A.10.1 — this body's nucleus, and each of the other's bodies' on the
     /// chart, in their order: the frames a constellation is read on.
     nucleus: Option<Mv>,
-    theirs: Vec<Option<Mv>>,
+    other_nuclei: Vec<Option<Mv>>,
     /// Each of the other's bodies' mass: its sites (78.51(3)).
     their_mass: Vec<u64>,
     /// A.13 — this body and each of the other's as momentum reads them:
@@ -697,19 +697,19 @@ impl Contemplation {
     /// is filed: a pair's one transition as the edge the complex fills, a
     /// pair's several by class, each incoherence as a demand by class.
     pub(crate) fn perceive_cells(&mut self, key: &[u8], budget: &mut crate::physics::Budget) {
-        let Some(me) = self.bubbles.get(key) else { return };
+        let Some(this_bubble) = self.bubbles.get(key) else { return };
         let Some(ok) = self.ordinals.get(key).copied() else { return };
-        let charts: Vec<(Vec<u8>, Vec<Shape>)> = me.spores.scoped().map(|(c, b)| (c, b.clone())).collect();
+        let charts: Vec<(Vec<u8>, Vec<Shape>)> = this_bubble.spores.scoped().map(|(c, b)| (c, b.clone())).collect();
         // 78.56 III — ORBITS ARE STRICTLY INTRA-TASK: a perception meets only
         // perceptions of its own family on a chart. Paired across families,
         // an orbit balanced across disjoint tasks that share no Hamiltonian
         // (τ_ext ≠ 0 by construction), and no thought ever grounded on the
         // fleet; what tasks share lives in the genome, as words.
-        let family = me.family.clone();
+        let family = this_bubble.family.clone();
         // Each other idea's rows: per body of this one, its transitions to
         // the other's bodies in their arrival order, over every chart.
         let mut to: Keyed<Vec<Row>> = Keyed::new();
-        for (chart, mine) in &charts {
+        for (chart, own_shapes) in &charts {
             let fibre: Vec<(u16, Vec<u8>)> = self
                 .by_chart
                 .link(chart)
@@ -720,22 +720,22 @@ impl Contemplation {
                 .collect();
             let mut circuits: Vec<ChamberCircuit> = Vec::new();
             // The cell's bodies: this perception's and the fibre's on the chart.
-            let mut bodies = mine.len();
+            let mut bodies = own_shapes.len();
             for (o, other) in &fibre {
-                let Some(theirs) = self.bubbles.get(other).and_then(|b| b.spores.get(chart)).cloned() else { continue };
-                bodies += theirs.len();
-                for x in mine {
+                let Some(other_shapes) = self.bubbles.get(other).and_then(|b| b.spores.get(chart)).cloned() else { continue };
+                bodies += other_shapes.len();
+                for x in own_shapes {
                     let mut row = Row {
                         chart: chart.clone(),
-                        ts: Vec::with_capacity(theirs.len()),
-                        lanes: Vec::with_capacity(theirs.len()),
+                        ts: Vec::with_capacity(other_shapes.len()),
+                        lanes: Vec::with_capacity(other_shapes.len()),
                         nucleus: x.blade.vertex_nucleus(),
-                        theirs: theirs.iter().map(|y| y.blade.vertex_nucleus()).collect(),
-                        their_mass: theirs.iter().map(|y| y.blade.support.len() as u64).collect(),
+                        other_nuclei: other_shapes.iter().map(|y| y.blade.vertex_nucleus()).collect(),
+                        their_mass: other_shapes.iter().map(|y| y.blade.support.len() as u64).collect(),
                         body: crate::physics::tensegrity::body_of_shape(x),
-                        their_bodies: theirs.iter().map(crate::physics::tensegrity::body_of_shape).collect(),
+                        their_bodies: other_shapes.iter().map(crate::physics::tensegrity::body_of_shape).collect(),
                     };
-                    for y in &theirs {
+                    for y in &other_shapes {
                         match transition(x, y, budget) {
                             Ok(t) => {
                                 self.resonance.circuits += 1;
@@ -785,8 +785,8 @@ impl Contemplation {
             self.note_shear(&circuits);
         }
         self.file_thoughts(key, &to, budget);
-        for (chart, mine) in &charts {
-            if !self.perceive_strata(key, chart, mine, budget) {
+        for (chart, own_shapes) in &charts {
+            if !self.perceive_strata(key, chart, own_shapes, budget) {
                 return;
             }
         }
@@ -803,7 +803,7 @@ impl Contemplation {
     /// (`Surgery::factor`), and the deformation — its core's versor, by its
     /// class, on both charts — is a demand; at a finer axis no conformal
     /// motion carries them, counted apart. `false` where the stroke ran out.
-    fn perceive_strata(&mut self, key: &[u8], chart: &[u8], mine: &[Shape], budget: &mut crate::physics::Budget) -> bool {
+    fn perceive_strata(&mut self, key: &[u8], chart: &[u8], own_shapes: &[Shape], budget: &mut crate::physics::Budget) -> bool {
         let Some(here) = stalk::Invariant::from_key(chart) else { return true };
         let mut at = here.peel();
         while !at.0.is_empty() {
@@ -826,12 +826,12 @@ impl Contemplation {
                 at = at.peel();
                 continue;
             }
-            for (theirs_chart, other) in near {
-                let Some(there) = stalk::Invariant::from_key(&theirs_chart) else { continue };
+            for (other_chart, other) in near {
+                let Some(there) = stalk::Invariant::from_key(&other_chart) else { continue };
                 let axis = parting(&here, &there);
-                let Some(theirs) = self.bubbles.get(&other).and_then(|b| b.spores.get(&theirs_chart)).cloned() else { continue };
-                for x in mine {
-                    for y in &theirs {
+                let Some(other_shapes) = self.bubbles.get(&other).and_then(|b| b.spores.get(&other_chart)).cloned() else { continue };
+                for x in own_shapes {
+                    for y in &other_shapes {
                         if !topological(axis) {
                             self.resonance.apart += 1;
                             continue;
@@ -1027,19 +1027,19 @@ impl Contemplation {
             // perception carried, or every body of the other landed on.
             let (spectrum, unread) = spectrum_of(rows);
             self.resonance.unread_lines += unread;
-            let theirs = Self::their_bodies(rows);
+            let other_lands = Self::their_bodies(rows);
             let whole: Vec<&Line> = spectrum
                 .scoped()
                 .map(|(_, l)| l)
                 .filter(|l| {
                     (0..rows.len()).all(|i| l.carried.contains(&row_key(i)))
-                        || theirs.scoped().all(|(k, _)| l.lands.contains(&k))
+                        || other_lands.scoped().all(|(k, _)| l.lands.contains(&k))
                 })
                 .collect();
             match whole.as_slice() {
                 // ONE MOTION CARRIES THE WHOLE CONFIGURATION: the thought.
                 [line] => {
-                    self.note_unmatched(rows, &theirs, line);
+                    self.note_unmatched(rows, &other_lands, line);
                     match self.gate(rows, &line.t.versor, false, &tether_line(key, &other), budget) {
                         Ok(()) => {
                             self.note_ground(key, &other, rows, &line.t.versor, false, budget);
@@ -1074,7 +1074,7 @@ impl Contemplation {
                                 self.complex.index_congruent(&fill);
                             }
                         }
-                        self.note_unmatched(rows, &theirs, first);
+                        self.note_unmatched(rows, &other_lands, first);
                     }
                 }
                 // NO ONE MOTION CARRIES THE SCENE: the spectrum is kept, each
@@ -1166,11 +1166,11 @@ impl Contemplation {
             let [first, ..] = on.as_slice() else { continue };
             let [Some(t11), ..] = first.ts.as_slice() else { continue };
             // Each of the other's bodies at its first hour, with its mass.
-            let mut theirs: Vec<(Mv, Q)> = Vec::new();
-            for ((t, s), m) in first.ts.iter().zip(&first.theirs).zip(&first.their_mass) {
+            let mut other_frames: Vec<(Mv, Q)> = Vec::new();
+            for ((t, s), m) in first.ts.iter().zip(&first.other_nuclei).zip(&first.their_mass) {
                 let (Some(t), Some(s)) = (t, s) else { continue };
                 let m = Q::from_integer((*m).into());
-                theirs.push(match orbit {
+                other_frames.push(match orbit {
                     true => {
                         let back = t.versor.geo(&t11.versor.reverse());
                         (ray(back.reverse().sandwich(s)), m)
@@ -1182,10 +1182,10 @@ impl Contemplation {
             // first to arrive, arrival order being the orbit's content — in a
             // scene the barycentre of all. A centre that does not read (a
             // nucleus at infinity) leaves no frame standing.
-            let centres: Option<Vec<(Vec<Q>, Q)>> = match (orbit, theirs.as_slice()) {
+            let centres: Option<Vec<(Vec<Q>, Q)>> = match (orbit, other_frames.as_slice()) {
                 (true, [(s, m), ..]) => cga::base_at(s, usize::from(s.n())).map(|c| vec![(c, m.clone())]),
                 (true, []) => None,
-                (false, _) => theirs.iter().map(|(s, m)| cga::base_at(s, usize::from(s.n())).map(|c| (c, m.clone()))).collect(),
+                (false, _) => other_frames.iter().map(|(s, m)| cga::base_at(s, usize::from(s.n())).map(|c| (c, m.clone()))).collect(),
             };
             let Some(star) = centres.as_deref().and_then(barycentre) else {
                 return Err(Refusal::MonocularOrbit);
@@ -1194,10 +1194,10 @@ impl Contemplation {
                 return Err(Refusal::NoSuccession);
             };
             let before: Vec<_> = (0u64..)
-                .zip(&theirs)
+                .zip(&other_frames)
                 .map(|(m, (s, _))| hour(s, &r_hour, if orbit { m } else { 0 }))
                 .collect();
-            let next = if orbit { theirs.len() as u64 } else { 1 };
+            let next = if orbit { other_frames.len() as u64 } else { 1 };
             let mut after = before.clone();
             for r in &on {
                 let (Some(x), [Some(t), ..]) = (&r.nucleus, r.ts.as_slice()) else { continue };
@@ -1243,7 +1243,7 @@ impl Contemplation {
                 for r in &on {
                     let Some(x) = &r.nucleus else { continue };
                     let landed = generator.sandwich(x);
-                    if let Some((s, _)) = theirs.iter().find(|(s, _)| s.projective_eq(&landed)) {
+                    if let Some((s, _)) = other_frames.iter().find(|(s, _)| s.projective_eq(&landed)) {
                         bodies.push((s.clone(), x.clone()));
                     }
                     // A COLLISION OF BODIES (78.52 Row 2): this body, carried
@@ -1254,7 +1254,7 @@ impl Contemplation {
                     // bodies of one system, never a collision; one sphere
                     // twice is the landing itself.
                     let landed = ray(landed);
-                    for (s, _) in theirs.iter().filter(|(s, _)| !s.projective_eq(&landed)) {
+                    for (s, _) in other_frames.iter().filter(|(s, _)| !s.projective_eq(&landed)) {
                         let slot = match cga::pair_regime(&[s.clone(), landed.clone()], 0, 1) {
                             cga::PairRegime::Finite(_) => 0,
                             cga::PairRegime::Rosette => 1,
@@ -1354,14 +1354,14 @@ impl Contemplation {
         let bodies: Option<Vec<crate::physics::tensegrity::GroundBody>> = match orbit {
             true => {
                 let ([], [Some(nucleus), ..], [Some(body), ..]) =
-                    (rest, first.theirs.as_slice(), first.their_bodies.as_slice())
+                    (rest, first.other_nuclei.as_slice(), first.their_bodies.as_slice())
                 else {
                     return self.ungrounded(Ungrounded::Unplaced);
                 };
                 Some(vec![crate::physics::tensegrity::GroundBody { nucleus: nucleus.clone(), body: body.clone() }])
             }
             false => first
-                .theirs
+                .other_nuclei
                 .iter()
                 .zip(&first.their_bodies)
                 .map(|(s, b)| match (s, b) {
@@ -1373,7 +1373,7 @@ impl Contemplation {
                 .collect(),
         };
         let Some(bodies) = bodies else { return self.ungrounded(Ungrounded::Unplaced) };
-        let hours = if orbit { first.theirs.len() as u64 + 1 } else { 2 };
+        let hours = if orbit { first.other_nuclei.len() as u64 + 1 } else { 2 };
         let forward = if orbit { generator.clone() } else { generator.reverse() };
         match ground_of(bodies, &forward) {
             Ok(ground) => {
@@ -1448,7 +1448,7 @@ impl Contemplation {
     /// rate) and LIFT (the tilt, 78.46), each counted. `None` where no
     /// rotation of the pull carries it: the body was carried off the
     /// attractor (a slide away, a change of size, another body).
-    fn twisted_return(&mut self, held: super::idea::Grounded, mine: &[(&Mv, &crate::physics::tensegrity::Body)], power: &Mv) -> Option<super::idea::Grounded> {
+    fn twisted_return(&mut self, held: super::idea::Grounded, perceived: &[(&Mv, &crate::physics::tensegrity::Body)], power: &Mv) -> Option<super::idea::Grounded> {
         use crate::physics::tensegrity::{carried_body, GroundBody};
         let g = &held.ground;
         let centre = match crate::transducer::cga::centre_of(&g.generator, g.generator.n()) {
@@ -1461,10 +1461,10 @@ impl Contemplation {
         let lands = |tau: &Mv| {
             g.bodies.iter().all(|b| {
                 let q = tau.sandwich(&power.sandwich(&b.nucleus));
-                mine.iter().any(|(s, _)| s.projective_eq(&q))
+                perceived.iter().any(|(s, _)| s.projective_eq(&q))
             })
         };
-        let tau = mine.iter().find_map(|(s, _)| crate::transducer::cga::twist_about(&centre, &predicted_first, s, n).filter(|t| lands(t)))?;
+        let tau = perceived.iter().find_map(|(s, _)| crate::transducer::cga::twist_about(&centre, &predicted_first, s, n).filter(|t| lands(t)))?;
         // The twist read at hour 0: the ground sheared where its hours begin.
         let at_zero = power.reverse().geo(&tau).geo(power);
         let bodies: Option<Vec<GroundBody>> = g
@@ -1490,7 +1490,7 @@ impl Contemplation {
     fn read_ground(&mut self, key: &[u8], other: &[u8], rows: &[Row], budget: &mut crate::physics::Budget) -> Option<(Verdict, Mv)> {
         use crate::physics::tensegrity::{carried_body, coherence, external_torque, hour, metric_defect, Constellation, Refusal};
         let held = self.bubbles.get(other)?.ground.clone()?;
-        let mine: Vec<(&Mv, &crate::physics::tensegrity::Body)> = rows
+        let perceived: Vec<(&Mv, &crate::physics::tensegrity::Body)> = rows
             .iter()
             .filter(|r| r.chart == held.chart)
             .filter_map(|r| match (&r.nucleus, &r.body) {
@@ -1498,7 +1498,7 @@ impl Contemplation {
                 _ => None,
             })
             .collect();
-        if mine.len() != held.ground.bodies.len() {
+        if perceived.len() != held.ground.bodies.len() {
             return None;
         }
         let h = held.hours % held.ground.period;
@@ -1518,20 +1518,20 @@ impl Contemplation {
         // carried off the attractor, and the hours below read the slip.
         let exact = held.ground.bodies.iter().all(|base| {
             let predicted = power.sandwich(&base.nucleus);
-            mine.iter().any(|(s, _)| s.projective_eq(&predicted))
+            perceived.iter().any(|(s, _)| s.projective_eq(&predicted))
         });
         let grounded = match exact {
             true => held,
-            false => self.twisted_return(held, &mine, &power)?,
+            false => self.twisted_return(held, &perceived, &power)?,
         };
         let g = &grounded.ground;
         // Each body of the ground, at its predicted place, against the one of
         // this perception's bodies that stands there.
         let mut matched: Vec<(&crate::physics::tensegrity::GroundBody, &Mv, &crate::physics::tensegrity::Body)> =
-            Vec::with_capacity(mine.len());
+            Vec::with_capacity(perceived.len());
         for base in &g.bodies {
             let predicted = power.sandwich(&base.nucleus);
-            let (s, b) = mine.iter().find(|(s, _)| s.projective_eq(&predicted))?;
+            let (s, b) = perceived.iter().find(|(s, _)| s.projective_eq(&predicted))?;
             matched.push((base, s, b));
         }
         // THE HOURS BEFORE THIS ONE are the orbit's most recent return
@@ -1749,21 +1749,21 @@ impl Contemplation {
     /// The other's bodies on the charts the pair shares, by their landing
     /// keys.
     fn their_bodies(rows: &[Row]) -> Keyed<()> {
-        let mut theirs: Keyed<()> = Keyed::new();
+        let mut lands: Keyed<()> = Keyed::new();
         for row in rows {
             for j in 0..row.ts.len() {
-                theirs.insert(land_key(&row.chart, j), ());
+                lands.insert(land_key(&row.chart, j), ());
             }
         }
-        theirs
+        lands
     }
 
     /// WHAT THE SCENE MOTION LEAVES UNMATCHED: this perception's bodies it
     /// does not carry — this is the newer scene, so they APPEARED — and the
     /// other's bodies it lands nothing on, which VANISHED.
-    fn note_unmatched(&mut self, rows: &[Row], theirs: &Keyed<()>, line: &Line) {
+    fn note_unmatched(&mut self, rows: &[Row], other_lands: &Keyed<()>, line: &Line) {
         self.resonance.appeared += (0..rows.len()).filter(|&i| !line.carried.contains(&row_key(i))).count() as u64;
-        self.resonance.vanished += theirs.scoped().filter(|(k, _)| !line.lands.contains(k)).count() as u64;
+        self.resonance.vanished += other_lands.scoped().filter(|(k, _)| !line.lands.contains(k)).count() as u64;
     }
 
     /// ONE ORBIT OF A PAIR THAT HOLDS SEVERAL, KEPT BY ITS OWN COORDINATES

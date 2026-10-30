@@ -397,13 +397,13 @@ fn an_idea_meets_its_own_charts_and_not_their_siblings() {
     use crate::transducer::family::NoCrystal;
     use crate::transducer::sentence::{Form, Vertex};
     use crate::transducer::stalk::{Invariant, Stalks};
-    let mine = Invariant::counts(&[3, 5]);
+    let own = Invariant::counts(&[3, 5]);
     let sibling = Invariant::counts(&[3, 7]);
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane");
     let mut f = Form::default();
     let v = Vertex::word_on(
         Derivation::spelled(Word::from_letters(&[(q, false)])),
-        mine.clone(),
+        own.clone(),
         Box::new(element::identity_versor()),
         Vec::new(),
         [FRAME],
@@ -414,7 +414,7 @@ fn an_idea_meets_its_own_charts_and_not_their_siblings() {
 
     // Both charts hold a member, and both members read as sections.
     let mut atlas = Stalks::default();
-    atlas.admit(&mine, b"on-my-chart");
+    atlas.admit(&own, b"on-its-own-chart");
     atlas.admit(&sibling, b"on-the-sibling");
     let section_at = |_: &[u8]| {
         Some((
@@ -426,7 +426,7 @@ fn an_idea_meets_its_own_charts_and_not_their_siblings() {
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 12);
     let _ = b.expand_with(&atlas, &section_at, 0, &NoCrystal, &mut budget, &mut Default::default());
     assert!(
-        b.cover.contains(mine.key().as_bytes()),
+        b.cover.contains(own.key().as_bytes()),
         "the chart this idea's vertex stands on IS met, so the reading is not empty"
     );
     assert!(

@@ -168,7 +168,7 @@ impl Treasury {
     /// 26 AS RULED 2026-09-10 — THE USE OF A CITED GENERATOR IS A SHARE
     /// OF THE INSTALL'S OWN MINT, NEVER A TRANSFER. A citer's mint is
     /// what the citer closed, and part of what it closed is what the
-    /// forms it cited close inside it; that part is theirs. Drawn from
+    /// forms it cited close inside it; that part belongs to the cited forms. Drawn from
     /// the released award and minted to each cited form's own discoverer,
     /// the remainder to the escrow's voices.
     ///

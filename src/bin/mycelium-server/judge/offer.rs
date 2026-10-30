@@ -22,7 +22,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     else {
         return;
     };
-    let me = door.mesh.vk;
+    let witness = door.mesh.vk;
     // 47.2, BEFORE ANY CARRIER IS TOUCHED. `glue_fetched` below writes a
     // Čech section into THIS MESH'S OWN COVER at the vantage the frame
     // names, pushes cocycles, marks classes, admits into `ruled`, releases
@@ -42,7 +42,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
             home[0],
             home[1]
         );
-        match dialogue::encode_offer_reply(&dialogue::Witnessed::Refused { vk: me, why: why.as_bytes().to_vec() }) {
+        match dialogue::encode_offer_reply(&dialogue::Witnessed::Refused { vk: witness, why: why.as_bytes().to_vec() }) {
             Some(body) => answer(s, Frame { lane: frame.lane, body }),
             None => eprintln!("  court offer answer refused: the reason passes its u16"),
         }
@@ -97,7 +97,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
                 // signed: identity is content (law 2), so this is not the
                 // form that was offered whatever the frame says.
                 dialogue::Witnessed::Refused {
-                    vk: me,
+                    vk: witness,
                     why: mycelium::verdict::REFUSE_VERTEX_TAPE.as_bytes().to_vec(),
                 }
             }
@@ -152,7 +152,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
                         // door, and its one stroke — the hold's (78.153b) — is
                         // the filing's and the replay's draw, threaded to both.
                         let filed = k.file_admitted(&addr, section.receipt.stamp, budget);
-                        let w = witness_vantage(k, &mut cover, word, home, me, budget);
+                        let w = witness_vantage(k, &mut cover, word, home, witness, budget);
                         if filed && matches!(w, dialogue::Witnessed::Refused { .. }) {
                             k.drop_admitted(&addr);
                         }
@@ -160,11 +160,11 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
                     }),
                     // A court that cannot be read has judged nothing and
                     // says so: unmeasured is not a refusal of the offer.
-                    _ => dialogue::Witnessed::Unmeasured { vk: me },
+                    _ => dialogue::Witnessed::Unmeasured { vk: witness },
                 }
             }
             None => dialogue::Witnessed::Refused {
-                vk: me,
+                vk: witness,
                 why: mycelium::verdict::REFUSE_FORM_TAPE.as_bytes().to_vec(),
             },
         };
@@ -181,7 +181,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         Some(bytes) => {
             let _ = s.write_all(&bytes);
         }
-        None => match dialogue::encode_offer_reply(&dialogue::Witnessed::Unmeasured { vk: me }) {
+        None => match dialogue::encode_offer_reply(&dialogue::Witnessed::Unmeasured { vk: witness }) {
             Some(body) => answer(s, Frame { lane: frame.lane, body }),
             None => eprintln!("  court offer answer refused: the unmeasured reply does not frame"),
         },
@@ -218,15 +218,15 @@ pub(crate) fn witness_vantage(
     cover: &mut mycelium::network::nerve::Cover,
     word: mycelium::transducer::element::Element,
     home: [u8; 32],
-    me: [u8; 32],
+    witness: [u8; 32],
     budget: &mut mycelium::physics::Budget,
 ) -> dialogue::Witnessed {
     use mycelium::cognition::Glue;
-    let refused = |why: &str| dialogue::Witnessed::Refused { vk: me, why: why.as_bytes().to_vec() };
+    let refused = |why: &str| dialogue::Witnessed::Refused { vk: witness, why: why.as_bytes().to_vec() };
     // STD1 3c — a vantage reached on a word whose record does not write is
     // refused by name, never a vantage carrying no form.
     let reached = |word: &mycelium::transducer::element::Element| match word.to_bytes() {
-        Some(form) => dialogue::Witnessed::Reached { vk: me, form },
+        Some(form) => dialogue::Witnessed::Reached { vk: witness, form },
         None => refused("the word's record passes a length its field writes"),
     };
     // 78.153 — A REPLAY THE OFFER'S STROKE COULD NOT FINISH has re-derived
@@ -236,13 +236,13 @@ pub(crate) fn witness_vantage(
         return match k.court_replay(&word, budget) {
             mycelium::verdict::Replayed::Refused(r) => refused(r.reason),
             mycelium::verdict::Replayed::Clean => reached(&word),
-            mycelium::verdict::Replayed::Unread => dialogue::Witnessed::Unmeasured { vk: me },
+            mycelium::verdict::Replayed::Unread => dialogue::Witnessed::Unmeasured { vk: witness },
         };
     }
-    match k.glue_fetched_ruled(word.clone(), home, me, cover, budget) {
+    match k.glue_fetched_ruled(word.clone(), home, witness, cover, budget) {
         Some(Glue::Slashed(why)) => refused(why),
         Some(Glue::Admitted | Glue::Attached | Glue::Dialect | Glue::Held) => reached(&word),
-        None => dialogue::Witnessed::Unmeasured { vk: me },
+        None => dialogue::Witnessed::Unmeasured { vk: witness },
     }
 }
 
@@ -269,17 +269,17 @@ mod tests {
     fn a_replayed_offer_is_answered_with_the_form_reached_each_time_it_is_asked() {
         let kernel = std::sync::Mutex::new(mycelium::cognition::Kernel::new());
         let mut cover = mycelium::network::nerve::Cover::new();
-        let (home, me) = ([2u8; 32], [3u8; 32]);
+        let (home, witness) = ([2u8; 32], [3u8; 32]);
         let w = word();
         for _ in 0..2 {
             // Each offer is its own act: its root, one stroke — its hold's.
             let mut h = crate::held::held!(kernel).expect("the kernel");
             let dialogue::Witnessed::Reached { vk, form } =
-                h.run(|k, budget| witness_vantage(k, &mut cover, w.clone(), home, me, budget))
+                h.run(|k, budget| witness_vantage(k, &mut cover, w.clone(), home, witness, budget))
             else {
                 panic!("a replay that stood is a vantage");
             };
-            assert_eq!(vk, me);
+            assert_eq!(vk, witness);
             let mut p = 0usize;
             let back = mycelium::transducer::element::Element::from_bytes(&form, &mut p)
                 .expect("the reply carries the form");
@@ -295,18 +295,18 @@ mod tests {
     fn a_false_offer_is_refused_by_name_each_time_it_is_asked() {
         let kernel = std::sync::Mutex::new(mycelium::cognition::Kernel::new());
         let mut cover = mycelium::network::nerve::Cover::new();
-        let (home, me) = ([2u8; 32], [3u8; 32]);
+        let (home, witness) = ([2u8; 32], [3u8; 32]);
         let w = false_word();
-        let first = crate::held::held!(kernel).expect("the kernel").run(|k, budget| witness_vantage(k, &mut cover, w.clone(), home, me, budget));
+        let first = crate::held::held!(kernel).expect("the kernel").run(|k, budget| witness_vantage(k, &mut cover, w.clone(), home, witness, budget));
         let dialogue::Witnessed::Refused { vk, why } = first else {
             panic!("a replay that refused is a refusal");
         };
-        assert_eq!(vk, me);
+        assert_eq!(vk, witness);
         assert!(!why.is_empty(), "the refusal is named");
         let heard = crate::held::held!(kernel).expect("the kernel").run(|k, _| k.heard_contains(w.address().as_bytes()));
         assert!(heard, "and the address is marked heard");
         // The second offer is a second act: a stroke of its own.
-        let again = crate::held::held!(kernel).expect("the kernel").run(|k, budget| witness_vantage(k, &mut cover, w, home, me, budget));
+        let again = crate::held::held!(kernel).expect("the kernel").run(|k, budget| witness_vantage(k, &mut cover, w, home, witness, budget));
         assert!(
             matches!(again, dialogue::Witnessed::Refused { .. }),
             "heard is not a verdict: the second offer is replayed and refused again"

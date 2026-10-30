@@ -61,8 +61,8 @@ fn a_prefix_of_a_key_is_its_stratum() {
 ///
 /// `fiber` used to push the root and test each leaf against the prefix on
 /// the way out; it now reaches a subtree by the prefix and tests the leaves of that
-/// subtree. The second is the first only if the pruning is exact, and I
-/// changed the primitive on an ARGUMENT — that below a branch at bit `b`
+/// subtree. The second is the first only if the pruning is exact, and the
+/// primitive was changed on an ARGUMENT — that below a branch at bit `b`
 /// every key agrees on bits `[0, b)`, so one representative answers for
 /// the subtree. An argument is not a measurement, and the rule this stage
 /// paid for is that a function is read at its body.

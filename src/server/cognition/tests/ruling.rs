@@ -7,10 +7,10 @@ use crate::chronometry::{ActKind, Ruled};
 use crate::cognition::*;
 use crate::court::admission::Admitted;
 
-/// A court that docketed one word on its own book, bound to `me`.
-fn docketed(me: [u8; 32]) -> (Kernel, crate::transducer::address::Address) {
+/// A court that docketed one word on its own book, bound to `own_vk`.
+fn docketed(own_vk: [u8; 32]) -> (Kernel, crate::transducer::address::Address) {
     let mut k = Kernel::new();
-    k.bind_identity(me);
+    k.bind_identity(own_vk);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
     assert_eq!(super::common::speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
@@ -50,9 +50,9 @@ fn a_peers_ruling_applies_here_through_its_receipt() {
     let heard = super::common::admit_line(&mut b, &key, &line);
     assert!(heard.iter().all(|h| matches!(h, Admitted::Parent(_))), "a's line admits whole: {heard:?}");
     assert!(!b.provisional.contains(addr.as_bytes()), "the arm applied here: the word left b's docket");
-    let mine = b.chain().head().expect("b sealed").clone();
-    assert_eq!(mine.kind, ActKind::Ruling(Ruled::Upheld), "b seals its own ruling of the same arm");
-    assert!(mine.parents.iter().any(|p| p.at == ruling.stamp), "with a's receipt among its parents");
+    let own_head = b.chain().head().expect("b sealed").clone();
+    assert_eq!(own_head.kind, ActKind::Ruling(Ruled::Upheld), "b seals its own ruling of the same arm");
+    assert!(own_head.parents.iter().any(|p| p.at == ruling.stamp), "with a's receipt among its parents");
     assert_eq!(b.clock(None).rulings[upheld], [1, 1, 0, 0], "admitted and applied");
 
     let mut c = Kernel::new();
@@ -87,18 +87,18 @@ fn a_peers_stamp_aliases_the_one_word_on_its_fiber() {
     use crate::anastome::dialogue::RULING_UPHELD;
     let key = super::common::court_key("aliased ruler");
     let (mut a, addr) = docketed(key.vk_bytes());
-    let theirs = a.admitted_at(addr.as_bytes()).expect("a admitted it");
+    let a_stamp = a.admitted_at(addr.as_bytes()).expect("a admitted it");
     let (mut c, same) = docketed([0xc1; 32]);
     assert_eq!(addr, same, "one word, spoken alike at both courts");
-    let ours = c.admitted_at(addr.as_bytes()).expect("c admitted it");
-    assert_ne!(ours, theirs, "at two stamps: each court's own act");
+    let c_stamp = c.admitted_at(addr.as_bytes()).expect("c admitted it");
+    assert_ne!(c_stamp, a_stamp, "at two stamps: each court's own act");
     let before_ruling: Vec<_> = a.chain().own().collect();
     super::common::admit_line(&mut c, &key, &before_ruling);
-    assert_eq!(c.word_admitted_at(&theirs), Some(&addr), "a's stamp is an alias of the word here");
-    assert_eq!(c.admitted_at(addr.as_bytes()), Some(ours), "and c's own stamp still holds it");
+    assert_eq!(c.word_admitted_at(&a_stamp), Some(&addr), "a's stamp is an alias of the word here");
+    assert_eq!(c.admitted_at(addr.as_bytes()), Some(c_stamp), "and c's own stamp still holds it");
     let mut restored = Kernel::new();
     assert!(restored.restore(&c.snapshot()), "clean restore");
-    assert_eq!(restored.word_admitted_at(&theirs), Some(&addr), "the alias is re-derived at restore");
+    assert_eq!(restored.word_admitted_at(&a_stamp), Some(&addr), "the alias is re-derived at restore");
 
     assert!(a.apply_verdict(addr.as_bytes(), RULING_UPHELD), "a upholds it");
     let line: Vec<_> = a.chain().own().collect();
@@ -148,10 +148,10 @@ fn a_peers_later_admission_replaces_its_earlier_alias() {
     c.bind_identity([0xc3; 32]);
     let chart = crate::transducer::stalk::Invariant::counts(&[3, 1]);
     let addr = crate::transducer::address::Address::from_bytes([0x73u8; 3]);
-    let ours = Stamp::new(1, [0xc3; 32], crate::chronometry::Place { k: 0, i: 1 });
+    let own_stamp = Stamp::new(1, [0xc3; 32], crate::chronometry::Place { k: 0, i: 1 });
     let mut fiber = Vec::new();
-    Cite::Word { chart: chart.clone(), class: None, at: ours }.put_canonical(&mut fiber).expect("a citation");
-    c.file_fiber(&addr, ours, fiber);
+    Cite::Word { chart: chart.clone(), class: None, at: own_stamp }.put_canonical(&mut fiber).expect("a citation");
+    c.file_fiber(&addr, own_stamp, fiber);
     let key = super::common::court_key("twice-admitting peer");
     let mut peer = ReceiptChain::with_vk(key.vk_bytes());
     let mut stamps = Vec::new();

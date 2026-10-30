@@ -264,11 +264,11 @@ fn solve(wa: &[Mv], wb: &[Mv], n: usize) -> Option<Vec<Mv>> {
 /// `Incongruent(Base)`, a step reflecting in a null vector `NullStep`.
 fn versor_of(r: &[Mv], n: usize) -> Result<Mv, NoPose> {
     let n = u8::try_from(n).map_err(|_| NoPose::Incongruent(Incongruence::Base))?;
-    let us = cga::constructors_of_base_turn(r, n).map_err(|why| match why {
+    let reflectors = cga::constructors_of_base_turn(r, n).map_err(|why| match why {
         cga::TurnUnspelled::Axis(_) => NoPose::Incongruent(Incongruence::Base),
         cga::TurnUnspelled::NullStep(_) => NoPose::NullStep,
     })?;
-    Ok(us.iter().fold(Mv::scalar(Q::one()), |v, u| v.geo(u)))
+    Ok(reflectors.iter().fold(Mv::scalar(Q::one()), |v, u| v.geo(u)))
 }
 
 /// DOES THE MAP CARRY THE ONE TUBE ONTO THE OTHER, read by the algebra and

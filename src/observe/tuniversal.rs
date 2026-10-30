@@ -38,10 +38,10 @@ pub struct TStanding {
 
 /// Each keeper `k` holds, in key order, as the observer carries it.
 pub fn keepers_seen(k: &Keepers) -> Vec<KeeperSeen> {
-    let me = k.me();
+    let local = k.own_key();
     k.keepers()
         .into_iter()
-        .map(|key| KeeperSeen { key, own: key == me, newest: k.newest(&key).map(|r| r.tick), final_of: k.final_of(&key) })
+        .map(|key| KeeperSeen { key, own: key == local, newest: k.newest(&key).map(|r| r.tick), final_of: k.final_of(&key) })
         .collect()
 }
 

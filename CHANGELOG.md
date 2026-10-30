@@ -6,6 +6,17 @@ such change is named here.
 
 ## Unreleased
 
+### Naming
+- No first-person, second-person or ownership pronouns in filenames,
+  documentation, comments, test names or identifiers; each names the
+  thing it means. `src/physics/axioms/ours.rs` is renamed `native.rs`
+  (the axioms native to the register, beside `imported.rs`).
+  `Keepers::me` is `Keepers::own_key`; `LaneDelta`'s `only_ours` and
+  `only_theirs` are `only_local` and `only_peer`. Three chronometry tests
+  are renamed to name the chain's own line. MU-CHARTER Part I is written
+  in the third person, and the chronometry "where am I" reading is the
+  position reading.
+
 ### Documentation
 - Documentation audit (2026-10-30), every document checked against the
   code and cleared of development-network material (fleet readings,
@@ -55,7 +66,7 @@ such change is named here.
   - bookkeeping rules: anchor every committed state that matters, capture
     the whole point, never interpolate, never compare origins, keep the
     residual;
-  - the server's time service: a "where am I" reading with lag and an
+  - the server's time service: a position reading (where a universe stands) with lag and an
     unanchored-since report, and placing universes against each other by
     exact bracketing (specified);
   - lanes of attachment revised as optional, attachment being on the

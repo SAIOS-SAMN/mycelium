@@ -179,10 +179,10 @@ fn orbit_or_why(
 fn reflections_of(r: &super::LinearFunction) -> Result<Vec<Mv>, usize> {
     let mut rest: Vec<Mv> = r.images().to_vec();
     let gens: Vec<Mv> = r.masks().iter().map(|&m| Mv::blade(m, one())).collect();
-    let mut us = Vec::new();
+    let mut reflectors = Vec::new();
     loop {
         let steps: Vec<Mv> = rest.iter().zip(&gens).map(|(x, e)| x.sub(e)).collect();
-        let Some(open) = steps.iter().position(|u| !u.is_zero()) else { return Ok(us) };
+        let Some(open) = steps.iter().position(|u| !u.is_zero()) else { return Ok(reflectors) };
         let non_null = |u: &Mv| !u.is_zero() && !u.geo(u).scalar_part().is_zero();
         let single = steps.iter().find(|u| non_null(u)).cloned();
         let pair = || {
@@ -194,7 +194,7 @@ fn reflections_of(r: &super::LinearFunction) -> Result<Vec<Mv>, usize> {
         let Some(u) = single.or_else(pair) else { return Err(open) };
         let uu = u.geo(&u).scalar_part();
         reflect_all(&mut rest, &u, &uu);
-        us.push(u);
+        reflectors.push(u);
     }
 }
 
@@ -285,12 +285,12 @@ pub fn construct(residue: &Mv, budget: &mut crate::physics::Budget) -> Result<Co
     let mut shapes = Vec::with_capacity(ms.len());
     for (mode, m) in ms.iter().enumerate() {
         let r = super::LinearFunction::of_versor(&m.ray).ok_or(NotConstructed::NotVersor)?;
-        let us = reflections_of(&r).map_err(|column| NotConstructed::NullStep { mode, column })?;
+        let reflectors = reflections_of(&r).map_err(|column| NotConstructed::NullStep { mode, column })?;
         // THE CERTIFICATE: the meet of the reflecting hyperplanes — every
         // vector orthogonal to each `uᵢ`, `⟨uᵢ x⟩₀ = 0` — is exactly the
         // mode's fixed locus `ker(R − 1)`, and every vector of it is held.
         let meet_equations: Vec<Vec<Q>> =
-            us.iter().map(|u| r.masks().iter().map(|&k| u.geo(&Mv::blade(k, one())).scalar_part()).collect()).collect();
+            reflectors.iter().map(|u| r.masks().iter().map(|&k| u.geo(&Mv::blade(k, one())).scalar_part()).collect()).collect();
         let meet: Vec<Mv> =
             crate::core::span::solutions(meet_equations, r.masks().len()).iter().map(|v| r.vector(v)).collect();
         let fixed = r.shifted(&one()).kernel();
@@ -298,7 +298,7 @@ pub fn construct(residue: &Mv, budget: &mut crate::physics::Budget) -> Result<Co
         if meet.len() != fixed.len() || !on_locus {
             return Err(NotConstructed::MeetOffLocus { mode });
         }
-        shapes.push(us);
+        shapes.push(reflectors);
     }
     // A CONGRUENT THOUGHT: the constructors compose back to the residue (T1).
     let product = shapes.iter().flatten().fold(Mv::scalar(one()), |acc, u| acc.geo(u));

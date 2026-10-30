@@ -401,7 +401,7 @@ impl super::Kernel {
         let mut relay = self.seats.lock();
         let (epoch, seq) = (relay.epoch, relay.seq);
         let after = r.after_on(epoch, seq);
-        let mine = relay.read_box(&box_key(TO_MIND, &r.reader), after);
+        let to_mind = relay.read_box(&box_key(TO_MIND, &r.reader), after);
         let house = match house_of {
             Some(d) => relay.read_box(&box_key(TO_HOUSE, &d), after),
             None => Vec::new(),
@@ -411,8 +411,8 @@ impl super::Kernel {
         // own order, never a measurement. The reply holds both boxes, so
         // where both are near the bound it is cut at the frame budget and the
         // rest stands for the next read.
-        let mut out = Vec::with_capacity(mine.len() + house.len());
-        let (mut a, mut b) = (mine.into_iter().peekable(), house.into_iter().peekable());
+        let mut out = Vec::with_capacity(to_mind.len() + house.len());
+        let (mut a, mut b) = (to_mind.into_iter().peekable(), house.into_iter().peekable());
         let mut bytes = 0usize;
         loop {
             let take_a = match (a.peek(), b.peek()) {

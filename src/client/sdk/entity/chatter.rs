@@ -752,8 +752,9 @@ impl Entity {
                 // A known word in a sound nothing heard holds: understood as
                 // itself.
                 (Some(_), true) => (Some(ring.clone()), None, Vec::new(), 0),
-                // It sounds like something heard, and is no word I know —
-                // or it is part of an answer to my own question: WHAT DOES
+                // It sounds like something heard, and is no word the mind
+                // knows — or it is part of an answer to the mind's own
+                // question: WHAT DOES
                 // THAT MEAN, asked of what the mind does not know of it.
                 // A residue already asked about waits on that question: held,
                 // not asked again.
@@ -798,7 +799,7 @@ impl Entity {
         }
     }
 
-    /// MU-CLIENT §4.9 — DOES THIS SOUND LIKE SOMETHING I HAVE HEARD: a ring
+    /// MU-CLIENT §4.9 — DOES THIS SOUND LIKE SOMETHING THE MIND HAS HEARD: a ring
     /// read against what this mind remembers hearing, by its size, in the order sizes
     /// nest (`hearing::hear_across`) — WHOLE or TILTED where it sounds inside
     /// a heard ring (familiar), OUTER or LEFTOVER where it does not (a new
@@ -1025,8 +1026,8 @@ impl Entity {
         let said = (e.clone(), offered(e), family.to_vec());
         let mut at = vec![1u8];
         at.extend_from_slice(e.address().as_bytes());
-        self.hold_for_return(&at, family, move |me| {
-            if let Some(chat) = me.chat.as_ref() {
+        self.hold_for_return(&at, family, move |entity| {
+            if let Some(chat) = entity.chat.as_ref() {
                 let _ = chat.to.send(Inflow::Say(said.0, said.1, said.2));
             }
         });
@@ -1384,17 +1385,17 @@ impl Carrier {
         let mut key = speaker.to_vec();
         key.extend_from_slice(said);
         let Some(thought) = self.thoughts.remove(&key) else { return };
-        let mine: Vec<AckWord> = thought.words.iter().map(|(s, h)| chatter::loop_of(s, h)).collect();
+        let own_loops: Vec<AckWord> = thought.words.iter().map(|(s, h)| chatter::loop_of(s, h)).collect();
         // A word not understood closes no loop, and two readings of nothing
         // are no shared thought.
-        if !one_reading(&mine, acks) || !understood(&mine) {
+        if !one_reading(&own_loops, acks) || !understood(&own_loops) {
             return;
         }
         crate::observe::note_mind(|m| m.understood += 1);
         // Its price is the field's: the HOLD waits on it (`priced`). What the
         // two minds' resonance leaves is held in the field and the lexicon,
         // never filed by the carrier (S6).
-        let pricing = Pricing { loops: mine, answer: Answer::Hold { speaker: *speaker, said: said.to_vec() }, forms: Vec::new(), mutual: Vec::new(), distinct: true };
+        let pricing = Pricing { loops: own_loops, answer: Answer::Hold { speaker: *speaker, said: said.to_vec() }, forms: Vec::new(), mutual: Vec::new(), distinct: true };
         let _ = self.field.send(FieldWork::Price(pricing));
     }
 

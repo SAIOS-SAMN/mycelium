@@ -167,10 +167,10 @@ impl SeatMind {
         let favoured = self.reach();
         let along: Vec<Vec<Q>> = calls.iter().map(|c| favoured.iter().map(|(k, d)| d.along(&c.e.rate_at(k))).collect()).collect();
         let dominates = |a: &[Q], b: &[Q]| a.iter().zip(b).all(|(x, y)| x >= y) && a.iter().zip(b).any(|(x, y)| x > y);
-        let others = |i: usize| along.iter().enumerate().filter(move |(j, _)| *j != i).map(|(_, theirs)| theirs);
+        let others = |i: usize| along.iter().enumerate().filter(move |(j, _)| *j != i).map(|(_, other_rates)| other_rates);
         let dominant: Vec<usize> = (0..calls.len())
             .filter(|&i| match along.get(i) {
-                Some(mine) => mine.iter().any(|x| x.is_positive()) && others(i).all(|theirs| dominates(mine, theirs)),
+                Some(rates) => rates.iter().any(|x| x.is_positive()) && others(i).all(|other_rates| dominates(rates, other_rates)),
                 None => false,
             })
             .collect();

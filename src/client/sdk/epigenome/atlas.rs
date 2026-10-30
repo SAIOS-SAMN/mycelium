@@ -18,7 +18,7 @@ impl Epigenome {
     /// WHETHER THE GENOME HOLDS A WORD, asked of the INDEX — which is the
     /// question, and which stays true under Z11 whether or not the word is
     /// decoded. Every reader that means "does this mind know it" asks
-    /// here; a reader that means "can I read its form now" asks `word_at`.
+    /// here; a reader that means "can the mind read its form now" asks `word_at`.
     pub(crate) fn holds(&self, addr: &[u8]) -> bool {
         self.genome.contains(addr)
     }

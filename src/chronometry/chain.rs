@@ -32,8 +32,8 @@ pub struct ReceiptChain {
     vk: [u8; 32],
     /// The stamp of this chain's own last receipt.
     head: Option<Stamp>,
-    /// WHERE A PEER NODE STANDS AGAINST THIS CHAIN'S OWN LINE, by our
-    /// place, keyed by the peer's stamp (see [`Placed`]).
+    /// WHERE A PEER NODE STANDS AGAINST THIS CHAIN'S OWN LINE, by the
+    /// chain's own place, keyed by the peer's stamp (see [`Placed`]).
     placed: Keyed<Placed>,
     /// FOLDED RECEIPTS A CITATION RECALLED: `stamp → chain hash`, each one
     /// read back out of an archived era and proved there by its stamp and
@@ -97,17 +97,17 @@ mod line;
 mod node;
 pub use line::{replace_durably, LineWrite};
 
-/// A PEER NODE'S TWO COORDINATES against this chain's own line, as our
-/// place `(K, i)`. Our receipts are a line — the place orders them exactly
+/// A PEER NODE'S TWO COORDINATES against this chain's own line, as the
+/// chain's own place `(K, i)`. The chain's own receipts are a line — the place orders them exactly
 /// — so a peer node needs only say where it cuts it. `None` while
 /// unmeasured, which is not zero (rule 11). A fold removes receipts from
 /// the line and renumbers nothing: a place stays the coordinate it was.
 #[derive(Clone, Copy, Debug, Default)]
 struct Placed {
-    /// The GREATEST of our places the peer node reaches: `ours(a) ≺ p` iff
-    /// `a ≤ ours_in`.
-    ours_in: Option<Place>,
-    /// The LEAST of our places that reaches the peer node: `p ≺ ours(a)`
+    /// The GREATEST of the chain's own places the peer node reaches: `own(a) ≺ p` iff
+    /// `a ≤ own_in`.
+    own_in: Option<Place>,
+    /// The LEAST of the chain's own places that reaches the peer node: `p ≺ own(a)`
     /// iff `reach ≤ a`.
     reach: Option<Place>,
 }
@@ -262,14 +262,14 @@ impl ReceiptChain {
     }
 
     /// THE SEPARATION AT THIS CHAIN'S LAST CLOSE: per peer orbit closed at
-    /// the same tick, the per-lane signed distance from our frame to its —
-    /// sign first, exact, never a root and never summed (law 5).
+    /// the same tick, the per-lane signed distance from this chain's own
+    /// frame to its — sign first, exact, never a root and never summed (law 5).
     pub fn separation(&self) -> Vec<([u8; 32], [i128; 4])> {
-        let Some(ours) = self.last_close() else { return Vec::new() };
-        self.orbits_closed_at(ours.stamp.h)
+        let Some(own_close) = self.last_close() else { return Vec::new() };
+        self.orbits_closed_at(own_close.stamp.h)
             .into_iter()
             .filter(|(vk, _, _)| *vk != self.vk)
-            .map(|(vk, _, f)| (vk, std::array::from_fn(|l| i128::from(ours.mu[l]) - i128::from(f[l]))))
+            .map(|(vk, _, f)| (vk, std::array::from_fn(|l| i128::from(own_close.mu[l]) - i128::from(f[l]))))
             .collect()
     }
 
@@ -746,9 +746,9 @@ impl ReceiptChain {
         if r.stamp.vk == self.vk || self.nodes.contains(&key) || !r.kind.sealed() {
             return;
         }
-        let ours_in = self.ours_in_of(&r);
+        let own_in = self.own_in_of(&r);
         let reach = self.placed.get(&key).and_then(|p| p.reach);
-        self.placed.insert(&key, Placed { ours_in, reach });
+        self.placed.insert(&key, Placed { own_in, reach });
         self.file_on_line(&r.stamp);
         self.file_peer_root(&r);
         self.journal.filed(&key);
@@ -841,11 +841,11 @@ impl ReceiptChain {
         }
     }
 
-    /// THE GREATEST OF OUR OWN PLACES A PEER NODE REACHES. The descent runs
-    /// over the held nodes and stops at one of ours (the line settles it)
+    /// THE GREATEST OF THIS CHAIN'S OWN PLACES A PEER NODE REACHES. The descent runs
+    /// over the held nodes and stops at one of the chain's own (the line settles it)
     /// or at a peer node already placed; the held set bounds it (rule 10).
-    fn ours_in_of(&self, r: &KStepReceipt) -> Option<Place> {
-        let mut ours_in = None;
+    fn own_in_of(&self, r: &KStepReceipt) -> Option<Place> {
+        let mut own_in = None;
         let mut seen: Keyed<()> = Keyed::new();
         let mut stack: Vec<Stamp> = Self::edges(r).collect();
         let mut left = self.nodes.len() + 1;
@@ -860,18 +860,18 @@ impl ReceiptChain {
             }
             seen.insert(&key, ());
             if at.vk == self.vk {
-                ours_in = raise(ours_in, at.place());
+                own_in = raise(own_in, at.place());
                 continue;
             }
             if let Some(p) = self.placed.get(&key) {
-                if let Some(i) = p.ours_in {
-                    ours_in = raise(ours_in, i);
+                if let Some(i) = p.own_in {
+                    own_in = raise(own_in, i);
                 }
                 continue;
             }
             stack.extend(self.held_edges(&at));
         }
-        ours_in
+        own_in
     }
 
     /// OUR RECEIPT AT `k` REACHES EVERYTHING ITS PARENTS REACH: each peer
@@ -892,7 +892,7 @@ impl ReceiptChain {
                 Some(p) if p.reach.is_some() => continue,
                 Some(p) => p.reach = Some(k),
                 None => {
-                    self.placed.insert(&key, Placed { ours_in: None, reach: Some(k) });
+                    self.placed.insert(&key, Placed { own_in: None, reach: Some(k) });
                 }
             }
             let up = self.held_edges(&at);
@@ -1031,15 +1031,15 @@ impl ReceiptChain {
     /// `a ≺ b` (45.3): is `a` a proper ancestor of `b` in what this chain
     /// holds? `None` when the budget is spent or a stamp is not held —
     /// UNMEASURED order, held as unordered, never read as "does not
-    /// precede" (rule 11). Three of the four cases are comparisons of our
-    /// own `K`; only two peer nodes need a descent.
+    /// precede" (rule 11). Three of the four cases are comparisons of the
+    /// chain's own `K`; only two peer nodes need a descent.
     pub fn precedes(&self, a: &Stamp, b: &Stamp, budget: &mut Budget) -> Option<bool> {
         if !budget.spend() {
             return None;
         }
         match (self.stands(a)?, self.stands(b)?) {
             (Stands::Own(i), Stands::Own(j)) => Some(i < j),
-            (Stands::Own(i), Stands::Peer(p)) => Some(p.ours_in.is_some_and(|m| i <= m)),
+            (Stands::Own(i), Stands::Peer(p)) => Some(p.own_in.is_some_and(|m| i <= m)),
             (Stands::Peer(p), Stands::Own(j)) => Some(p.reach.is_some_and(|r| r <= j)),
             (Stands::Peer(_), Stands::Peer(_)) => Some(self.peer_reaches(b, a)),
         }
@@ -1095,8 +1095,8 @@ impl ReceiptChain {
             self.nodes.scoped().filter_map(|(key, _)| Stamp::from_key(&key)).filter(|at| at.vk != vk).collect();
         for at in peers {
             let Some(r) = self.node(&at) else { continue };
-            let ours_in = self.ours_in_of(&r);
-            self.placed.insert(at.key(), Placed { ours_in, reach: None });
+            let own_in = self.own_in_of(&r);
+            self.placed.insert(at.key(), Placed { own_in, reach: None });
         }
         let own: Vec<(Place, Vec<Parent>)> =
             self.own_stamps().into_iter().filter_map(|at| Some((at.place(), self.node_at(&at)?.parents.to_vec()))).collect();

@@ -14,7 +14,7 @@
 //! - its INPUTS: the input bodies standing on any of its sites; none is a
 //!   creation, one a single carriage, several a CONFLUENCE;
 //! - MASS: whether the output holds as many compartments as its inputs;
-//! - CENTRE: whether its barycentre is theirs, exact over ℚ;
+//! - CENTRE: whether its barycentre is the inputs', exact over ℚ;
 //! - THE INVERSE GENERATOR: the fascicle of the inputs' confluence sphere
 //!   and the output's, `V = C_B · C_in`, its regime read in the algebra
 //!   (`pair_regime`: a turn, a kiss, a boost); where the centres agree the

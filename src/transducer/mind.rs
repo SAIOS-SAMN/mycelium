@@ -150,21 +150,21 @@ pub(crate) fn admit(a: Admission, budget: &mut crate::physics::Budget) -> bool {
     for (circuits, lines) in &a.recorded.flux {
         let _ = crate::transducer::family::pairing::mark_flux(circuits, lines, budget);
     }
-    let _ = with(&LANES, |mine| {
-        for (row, add) in mine.iter_mut().zip(&a.lanes) {
+    let _ = with(&LANES, |held| {
+        for (row, add) in held.iter_mut().zip(&a.lanes) {
             for (slot, x) in row.iter_mut().zip(add) {
                 let _ = crate::physics::metabolism::step_or_refuse(slot, *x);
             }
         }
     });
-    let _ = with(&TAUGHT, |mine| mine.extend(a.taught));
-    let _ = with(&LEXICON, |mine| mine.absorb(a.lexicon));
+    let _ = with(&TAUGHT, |held| held.extend(a.taught));
+    let _ = with(&LEXICON, |held| held.absorb(a.lexicon));
     let mut parked = a.pending;
     let keys: Vec<Vec<u8>> = parked.scoped().map(|(k, _)| k).collect();
-    let _ = with(&PENDING, |mine| {
+    let _ = with(&PENDING, |held| {
         for k in keys {
-            if let (false, Some(p)) = (mine.contains(&k), parked.remove(&k)) {
-                mine.insert(&k, p);
+            if let (false, Some(p)) = (held.contains(&k), parked.remove(&k)) {
+                held.insert(&k, p);
             }
         }
     });

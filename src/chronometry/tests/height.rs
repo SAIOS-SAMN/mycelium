@@ -72,7 +72,7 @@ fn a_ledger_rehydrates_with_the_peer_nodes_its_line_cites() {
     let mut c = ReceiptChain::with_vk([1; 32]);
     step(&mut c, Vec::new());
     c.admit(head.clone());
-    let mine = step(&mut c, vec![cite(&head)]);
+    let citing = step(&mut c, vec![cite(&head)]);
     assert_eq!(c.head_height(), 1 + 1, "h = 1 + max(h(prev)=0, h(parent)=1)");
     let line: Vec<KStepReceipt> = c.own().collect();
     let all: Vec<KStepReceipt> = c.nodes().collect();
@@ -83,8 +83,8 @@ fn a_ledger_rehydrates_with_the_peer_nodes_its_line_cites() {
     assert_eq!(back.head_height(), 2, "the height is re-derived, not restored");
     assert_eq!(back.height_of(&cite(&head)), Some(1), "and the parent's with it");
     let mut budget = crate::physics::Physics::default().stroke_n(8);
-    assert_eq!(back.precedes(&head.stamp, &mine.stamp, &mut budget), Some(true), "the peer precedes the receipt that cited it");
-    assert_eq!(back.precedes(&mine.stamp, &head.stamp, &mut budget), Some(false), "and not the other way");
+    assert_eq!(back.precedes(&head.stamp, &citing.stamp, &mut budget), Some(true), "the peer precedes the receipt that cited it");
+    assert_eq!(back.precedes(&citing.stamp, &head.stamp, &mut budget), Some(false), "and not the other way");
 
     let tampered: Vec<KStepReceipt> = all
         .into_iter()

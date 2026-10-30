@@ -426,8 +426,8 @@ impl Kernel {
         let anchor = self.anchor();
         // A stake moves value from a balance and never creates any (§4), so
         // an identity bonded at genesis is FUNDED first and stakes from that
-        // -- MU-PRODUCT §4: "a genesis allocation funds our customer voice
-        // and bonds our hyphae". The allocation is its own ledger kind, so
+        // -- MU-PRODUCT §4: a genesis allocation funds the operator's
+        // customer voice and bonds the operator's hyphae. The allocation is its own ledger kind, so
         // §6 keeps seeded value and earned value separable; what is already
         // held is never re-allocated.
         let held = self.treasury.balance_mu(&who);

@@ -16,7 +16,7 @@ use std::net::TcpStream;
 
 pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(p) = dialogue::decode_fold(&frame.body) else { return };
-    let me = door.mesh.vk;
+    let witness = door.mesh.vk;
     let home = p.section.receipt.stamp.vk;
     let say = |s: &mut TcpStream, w: dialogue::FoldWitness| {
         if let Some(body) = dialogue::encode_fold_reply(&w) {
@@ -25,7 +25,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     };
     let refuse = |s: &mut TcpStream, why: &str| {
         eprintln!("  court fold refused {:02x}{:02x}…: {why}", home[0], home[1]);
-        say(s, dialogue::FoldWitness::Refused { vk: me, why: why.as_bytes().to_vec() });
+        say(s, dialogue::FoldWitness::Refused { vk: witness, why: why.as_bytes().to_vec() });
     };
     let origin = door.mesh.origin.lock().ok().and_then(|o| *o);
     // R5 (34.2): a witness with no origin says so by name, and an origin
@@ -50,7 +50,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
                 p.section.prefix.genesis[1],
                 p.section.prefix.epoch
             );
-            say(s, dialogue::FoldWitness::Refused { vk: me, why: why.as_bytes().to_vec() });
+            say(s, dialogue::FoldWitness::Refused { vk: witness, why: why.as_bytes().to_vec() });
             return;
         }
         refuse(s, why);
@@ -69,7 +69,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // left unanswered. The proof held for the home is this court's own
     // signed position over that root (`hold_era_proved`): what it said once,
     // it says again.
-    let held = crate::held::held!(door.kernel).ok().and_then(|mut h| h.run(|k, _| k.cosigned_root(&home, &p.root, &me)));
+    let held = crate::held::held!(door.kernel).ok().and_then(|mut h| h.run(|k, _| k.cosigned_root(&home, &p.root, &witness)));
     if let Some(section) = held {
         mycelium::observe::note_catchup(mycelium::observe::CatchupPath::FoldWitness, mycelium::observe::CatchupOutcome::Held);
         say(s, dialogue::FoldWitness::CoSigned { section: Box::new(section) });
@@ -79,18 +79,18 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // a home that cannot be reached leaves the fold unmeasured.
     let Some(dest) = door.mesh.addrs.lock().ok().and_then(|a| a.get(&home).cloned()) else {
         eprintln!("  court fold unmeasured {:02x}{:02x}…: home address unknown", home[0], home[1]);
-        say(s, dialogue::FoldWitness::Unmeasured { vk: me });
+        say(s, dialogue::FoldWitness::Unmeasured { vk: witness });
         learn_doors(&door.mesh, &door.join_peers, &door.router);
         return;
     };
-    let Some(receipts) = fetch_receipts(&door.mesh, &dest, &me, &home, p.after, p.root.at) else {
+    let Some(receipts) = fetch_receipts(&door.mesh, &dest, &witness, &home, p.after, p.root.at) else {
         eprintln!("  court fold unmeasured {:02x}{:02x}…: fetch receipts failed", home[0], home[1]);
-        say(s, dialogue::FoldWitness::Unmeasured { vk: me });
+        say(s, dialogue::FoldWitness::Unmeasured { vk: witness });
         return;
     };
-    let Some(rows) = fetch_rows(&door.mesh, &dest, &me, &home, p.after, p.root.at) else {
+    let Some(rows) = fetch_rows(&door.mesh, &dest, &witness, &home, p.after, p.root.at) else {
         eprintln!("  court fold unmeasured {:02x}{:02x}…: fetch rows failed", home[0], home[1]);
-        say(s, dialogue::FoldWitness::Unmeasured { vk: me });
+        say(s, dialogue::FoldWitness::Unmeasured { vk: witness });
         return;
     };
     let proposal = mycelium::cognition::Proposal { after: p.after, root: p.root, epochs: p.epochs.clone() };
@@ -106,8 +106,8 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
             static SEEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
             let n = SEEN.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
             if n.is_power_of_two() {
-                let ours = mycelium::economy::nets_of(&rows).map(|n| n.rows);
-                let differ = match &ours {
+                let fetched = mycelium::economy::nets_of(&rows).map(|n| n.rows);
+                let differ = match &fetched {
                     Ok(o) => o
                         .iter()
                         .zip(p.epochs.iter())
@@ -116,13 +116,13 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
                     Err(e) => Some(format!("nets refused: {e}")),
                 };
                 eprintln!(
-                    "  fold inexact ({n}) of {:02x}{:02x}…: rows fetched {} after {:?} root {:?}; parties ours {:?} proposed {}; first difference {differ:?}",
+                    "  fold inexact ({n}) of {:02x}{:02x}…: rows fetched {} after {:?} root {:?}; parties fetched {:?} proposed {}; first difference {differ:?}",
                     home[0],
                     home[1],
                     rows.len(),
                     p.after,
                     p.root.at,
-                    ours.as_ref().map(Vec::len),
+                    fetched.as_ref().map(Vec::len),
                     p.epochs.len()
                 );
             }
@@ -132,7 +132,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     }
     // The witness's own signed position over the root hash (47.1).
     let Some(section) = crate::admission::sign_position(&door.kernel, &door.mesh, &mycelium::transducer::stalk::Invariant::default(), &p.root.hash) else {
-        say(s, dialogue::FoldWitness::Unmeasured { vk: me });
+        say(s, dialogue::FoldWitness::Unmeasured { vk: witness });
         return;
     };
     // The era's first place is the first receipt the witness fetched and
@@ -142,7 +142,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         reason = "rule 15 — FIFO drain head: the prefix is fetched in line order, so its head is the era's first place"
     )]
     let Some(first) = receipts.first().map(|r| r.stamp.place()) else {
-        say(s, dialogue::FoldWitness::Unmeasured { vk: me });
+        say(s, dialogue::FoldWitness::Unmeasured { vk: witness });
         return;
     };
     // 78.147: the era is held with its root's proof — the home's signed
@@ -153,7 +153,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         h.run(|k, _| k.hold_era_proved(mycelium::chronometry::Era {
             root: p.root,
             signer: home,
-            witness: me,
+            witness,
             sig_home: p.section.sig,
             sig_witness: section.sig,
             identities: p.epochs.len() as u64,
@@ -202,7 +202,7 @@ pub(crate) fn learn_doors(mesh: &crate::exchange::Mesh, join: &[String], router:
 fn fetch_receipts(
     mesh: &crate::exchange::Mesh,
     dest: &str,
-    me: &[u8; 32],
+    witness: &[u8; 32],
     home: &[u8; 32],
     after: Option<Place>,
     upto: Place,
@@ -210,7 +210,7 @@ fn fetch_receipts(
     let mut out = Vec::new();
     let mut next = after;
     while next.is_none_or(|n| n < upto) {
-        let reply = tell_peer_measured(mesh, dest, dialogue::encode_receipts_request(me, home, next, upto)).map(|(r, _)| r);
+        let reply = tell_peer_measured(mesh, dest, dialogue::encode_receipts_request(witness, home, next, upto)).map(|(r, _)| r);
         let page = crate::backfill::page_of(reply, mycelium::observe::CatchupPath::FoldWitness)?;
         // The page arrives in line order, so its tail names the place the
         // next page opens after — the chain's order, not the order of
@@ -231,7 +231,7 @@ fn fetch_receipts(
 fn fetch_rows(
     mesh: &crate::exchange::Mesh,
     dest: &str,
-    me: &[u8; 32],
+    witness: &[u8; 32],
     home: &[u8; 32],
     from: Option<Place>,
     upto: Place,
@@ -239,7 +239,7 @@ fn fetch_rows(
     let mut out = Vec::new();
     let mut cursor = 0u64;
     loop {
-        let (reply, _) = tell_peer_measured(mesh, dest, dialogue::encode_rows_request(me, home, from, upto, cursor))?;
+        let (reply, _) = tell_peer_measured(mesh, dest, dialogue::encode_rows_request(witness, home, from, upto, cursor))?;
         if crate::transport::is_deferred(&reply) {
             return None;
         }

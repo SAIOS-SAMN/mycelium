@@ -67,9 +67,11 @@ to be comprehended, and external assets enter only over a bridge.
 
 ## 4. The first customer: ARC-AGI-2
 
-We are the first customer and the first operator. The loop:
+The Mycelium project is the first customer and the first operator. The
+loop:
 
-1. A genesis allocation funds our customer voice and bonds our hyphae.
+1. A genesis allocation funds the project's customer voice and bonds the
+   project's hyphae.
 2. Each ARC-AGI-2 task is posted as a demand, escrowed from that
    allocation at its home, accruing on T while open.
 3. Miners run the client, receive the starter genome, pull families,

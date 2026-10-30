@@ -64,13 +64,13 @@ impl Kernel {
     }
 
     /// 47.3 — THE CO-SIGNATURE THIS COURT ALREADY GAVE: where it holds `home`'s
-    /// fold at `root` with its own signed position as the witness (`me`),
+    /// fold at `root` with its own signed position as the witness (`own_vk`),
     /// that position — what the witness said once and says again when the
     /// same proposal is asked of it, never re-deriving a prefix it proved.
     /// `None` for another root, or a root whose witness was another court.
-    pub fn cosigned_root(&self, home: &[u8; 32], root: &crate::chronometry::Root, me: &[u8; 32]) -> Option<ReceiptSection> {
+    pub fn cosigned_root(&self, home: &[u8; 32], root: &crate::chronometry::Root, own_vk: &[u8; 32]) -> Option<ReceiptSection> {
         let proof = self.root_proofs.get(home)?;
-        (proof.root == *root && proof.witness.receipt.stamp.vk == *me).then(|| proof.witness.clone())
+        (proof.root == *root && proof.witness.receipt.stamp.vk == *own_vk).then(|| proof.witness.clone())
     }
 
     /// THE ROOTS' LEAF (`LEAF_ROOTS`): their count, then each proof; `None`

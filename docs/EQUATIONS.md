@@ -939,7 +939,7 @@ carries no orientation. Every body is spacelike with an irreducible
 extent, and the moment tower is normalised by `M₀`.
 
 Sources: MU-RECURSION 56.3 (A.11), 66 (A.12), 65.6, 68.3. Code:
-`src/physics/axioms/ours.rs` (`A11_HARMONIC_MULTIPOLE_COMPLETENESS`,
+`src/physics/axioms/native.rs` (`A11_HARMONIC_MULTIPOLE_COMPLETENESS`,
 `A12_IRREDUCIBLE_INVERSIVE_EXTENT`); `src/transducer/blade/body.rs::lift`.
 
 #### 4.7 Sections and the local discharge
@@ -1262,7 +1262,7 @@ inversive half as docketed. The breath (5.9) forms the transversion
 generator `b e_o` directly.
 
 Sources: MU-RECURSION 66 (A.13); MU-CLIENT §4.3. Code:
-`src/physics/axioms/ours.rs` (`A13_INVERSIVE_MOMENTUM_DOCKETED`).
+`src/physics/axioms/native.rs` (`A13_INVERSIVE_MOMENTUM_DOCKETED`).
 
 **Specified.** The inversive half (`K_i = I · T_i · I⁻¹` as a register
 axiom) is docketed, not built.
@@ -1640,7 +1640,7 @@ close frame      μ⃗ = Σ over the orbit's acts, per lane
 last seals nothing; a close whose frame is not its orbit's sum is refused.
 
 Sources: MU-RECURSION 78.23 (OK1), 78.24. Code:
-`src/physics/axioms/ours.rs` (`OK1_K_COUNTS_CLOSED_CYCLES`);
+`src/physics/axioms/native.rs` (`OK1_K_COUNTS_CLOSED_CYCLES`);
 `src/chronometry/chain.rs::append`.
 
 #### 8.4 The receipt chain hash

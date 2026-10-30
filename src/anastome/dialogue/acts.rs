@@ -514,10 +514,10 @@ impl Witnessed {
 /// outcome answered `0`: a node on another mesh, a signature that did not
 /// verify, a prefix naming another address, a poisoned lock, a chain GAP,
 /// a stale frame, an equivocation, and a ruling that simply found nothing
-/// to move. A gap means "send me the back-fill"; an equivocation is 47.4's
-/// burn proof, the mesh's only bond-slashing evidence; `REFUSE_ORIGIN`
-/// means "you are on another mesh". All three read identically to "your
-/// ruling did not land", so the sender's only recovery was blind retry and
+/// to move. A gap means "send the receiving court the back-fill"; an
+/// equivocation is 47.4's burn proof, the mesh's only bond-slashing
+/// evidence; `REFUSE_ORIGIN` means "the sender is on another mesh". All
+/// three read identically to "the sender's ruling did not land", so the sender's only recovery was blind retry and
 /// equivocation proofs died silently at the door (MU-STANDARDS §2.3: "every
 /// caller that needs to act recomputes what the bit threw away").
 pub enum Ruled {

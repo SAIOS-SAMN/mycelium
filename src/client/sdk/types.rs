@@ -345,7 +345,7 @@ pub struct GenomeEntry {
     /// is a set of COORDINATES (`unpivoted`), drained at the address.
     ///
     /// It replaced a positional watermark (`genome()[thought_gen..]`, a
-    /// tail of a vector) with an ordinal one and I called that a fix. It
+    /// tail of a vector) with an ordinal one, and that was called a fix. It
     /// was the same linear reflex in a different uniform.
     pub(crate) expression: u64,
 }
@@ -694,7 +694,7 @@ pub struct Entity {
     /// mind's memory, harmonically resonant, never a vocabulary and never the
     /// ear's (the ear is a tuned resonator that lifts signal from noise and
     /// keeps nothing past the moment). What a heard ring is read against to
-    /// answer "does this SOUND like something I have heard?" A ring heard
+    /// answer "does this SOUND like something the mind has heard?" A ring heard
     /// again is remembered once.
     pub(crate) remembered: crate::network::nerve::Keyed<Vec<(Vec<u8>, crate::transducer::cga::Mv)>>,
     /// MU-CLIENT §5.3 — THE QUESTIONS THIS MIND HAS OPEN: keyed by the mind

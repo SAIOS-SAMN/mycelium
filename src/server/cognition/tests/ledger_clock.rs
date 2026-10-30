@@ -60,8 +60,8 @@ assert_eq!(k.dialect_chain_len(), chain_before + 1, "the superseded one is kept"
 // cited, so neither frontier is below the other. Nothing supersedes.
 let mut k = Kernel::new();
 speak_pair(&mut k, &a, &b, [1; 32]);
-let mine = k.chain().head_stamp().expect("the mind has acted");
-k.push_cocycle_at(&inv, [1; 32], [2; 32], v1.clone(), ck1.clone(), Some(mine));
+let own_head = k.chain().head_stamp().expect("the mind has acted");
+k.push_cocycle_at(&inv, [1; 32], [2; 32], v1.clone(), ck1.clone(), Some(own_head));
 
 let key = super::common::court_key("peer");
 let mut peer = crate::chronometry::ReceiptChain::with_vk(key.vk_bytes());
@@ -132,9 +132,9 @@ assert_eq!(
 /// A court with one provisional word standing, ruled by two voices. The
 /// fixture 45.1's four acts each need, built through the constructors the
 /// production code exports (§3.4).
-fn docketed(me: [u8; 32]) -> (Kernel, crate::transducer::address::Address) {
+fn docketed(own_vk: [u8; 32]) -> (Kernel, crate::transducer::address::Address) {
     let mut k = Kernel::new();
-    k.bind_identity(me);
+    k.bind_identity(own_vk);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
     assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);

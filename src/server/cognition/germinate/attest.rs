@@ -63,11 +63,11 @@ impl Kernel {
     /// own address. The key is the docket's coordinate; the object is what
     /// convergence compares.
     pub(crate) fn converge_here_at(&mut self, addr: &Address, object: &Element, voice: [u8; 32]) {
-        let me = self.identity;
+        let own_vk = self.identity;
         let (k, h) = (self.k_step(), self.height());
         self.convergence.rederived(
             addr.as_bytes(),
-            me,
+            own_vk,
             crate::court::convergence::Rederivation { object: object.clone(), k, height: h },
         );
         self.convergence.used_by(addr.as_bytes(), voice);
@@ -89,8 +89,8 @@ impl Kernel {
             witness,
             crate::court::convergence::Rederivation { object: reached, k, height: h },
         );
-        let me = self.identity;
-        let bond = |v: &[u8; 32]| self.treasury.bond_of(v);
+        let own_vk = self.identity;
+        let bond =|v: &[u8; 32]| self.treasury.bond_of(v);
         let room = |v: &[u8; 32]| self.lane_room_of(v);
         // 47.3: a second VANTAGE, not a second copy. The witness is another
         // organ, bonded outside this home's delegation closure, with room on
@@ -98,8 +98,8 @@ impl Kernel {
         // test is identity and bond, and that limit is stated rather than
         // hidden behind a passing check.
         let independent = move |a: &[u8; 32], b: &[u8; 32]| -> bool {
-            a != b && (*a == me || *b == me) && {
-                let other = if *a == me { b } else { a };
+            a != b && (*a == own_vk || *b == own_vk) && {
+                let other = if *a == own_vk { b } else { a };
                 // A vantage whose room cannot be read is not a vantage
                 // with room: the count is broken, not spacious.
                 bond(other).is_some()

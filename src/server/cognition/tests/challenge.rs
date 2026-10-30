@@ -1,7 +1,7 @@
 // 78.125 — 2(c) THE CHALLENGE WINDOW: a fold's prefix reconstructed — upheld
 // or falsified — an availability demand and its default, an arbitrage booked
 // by its tier, and finality read recursively over every fold a fold nets.
-// 78.138 — the lines `A`, `P`, `Q` never touch the court: each fold of theirs
+// 78.138 — the lines `A`, `P`, `Q` never touch the court: each fold of those lines
 // is CARRIED INLINE in a fold of the domain's reserve `R`, and contested
 // where it stands inside it.
 
@@ -487,11 +487,11 @@ fn a_self_demand_withdrawn_reopens_the_window_once() {
     // An external challenger's demand is never withdrawn; a default closes it.
     let mut k = founded();
     let at = sealed(&mut k, f, &a);
-    let Challenged::Demanded { at: theirs, deadline, .. } = k.challenge(&Challenge::Demand { fold: at.clone() }.sign(&challenger())) else { panic!() };
-    assert_eq!(k.challenge(&Challenge::Withdraw { fold: at.clone(), demand: theirs }.sign(&a)), Challenged::Refused(ChallengeRefusal::NotTheDemand));
+    let Challenged::Demanded { at: external, deadline, .. } = k.challenge(&Challenge::Demand { fold: at.clone() }.sign(&challenger())) else { panic!() };
+    assert_eq!(k.challenge(&Challenge::Withdraw { fold: at.clone(), demand: external }.sign(&a)), Challenged::Refused(ChallengeRefusal::NotTheDemand));
     pass(&mut k, deadline);
     assert!(matches!(k.challenge(&Challenge::Default { fold: at.clone() }.sign(&challenger())), Challenged::Falsified { .. }));
-    assert_eq!(k.challenge(&Challenge::Withdraw { fold: at, demand: theirs }.sign(&a)), Challenged::Refused(ChallengeRefusal::Closed));
+    assert_eq!(k.challenge(&Challenge::Withdraw { fold: at, demand: external }.sign(&a)), Challenged::Refused(ChallengeRefusal::Closed));
 }
 
 /// A TIER'S LINE HEAD IS READ BACK: the zero head before it folds; its last

@@ -55,14 +55,14 @@ pub struct Perceived {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct LaneDelta {
     pub matched: u64,
-    pub only_ours: Vec<(Vec<u8>, u64)>,
-    pub only_theirs: Vec<(Vec<u8>, u64)>,
+    pub only_local: Vec<(Vec<u8>, u64)>,
+    pub only_peer: Vec<(Vec<u8>, u64)>,
 }
 
 impl LaneDelta {
     /// No divergence on this lane.
     pub fn congruent(&self) -> bool {
-        self.only_ours.is_empty() && self.only_theirs.is_empty()
+        self.only_local.is_empty() && self.only_peer.is_empty()
     }
 }
 
@@ -90,7 +90,7 @@ impl Comparison {
     /// THE CONVERGENCE — the inverse of the divergence: per lane, what this
     /// court lacks that its peer perceives. Holding it closes the lane.
     pub fn convergence(&self) -> [&[(Vec<u8>, u64)]; 4] {
-        std::array::from_fn(|i| self.lanes[i].only_theirs.as_slice())
+        std::array::from_fn(|i| self.lanes[i].only_peer.as_slice())
     }
 }
 
@@ -183,32 +183,32 @@ fn path_lanes(e: &Transport, budget: &mut crate::physics::Budget) -> Option<[Opt
 }
 
 /// COMPARE TWO PERCEIVED WORDS lane by lane, invariant for invariant.
-pub fn compare(ours: &Perceived, theirs: &Perceived) -> Comparison {
+pub fn compare(local: &Perceived, peer: &Perceived) -> Comparison {
     Comparison {
-        lanes: std::array::from_fn(|i| lane_delta(&ours.lanes[i], &theirs.lanes[i])),
-        unread: (ours.unread, theirs.unread),
+        lanes: std::array::from_fn(|i| lane_delta(&local.lanes[i], &peer.lanes[i])),
+        unread: (local.unread, peer.unread),
     }
 }
 
-fn lane_delta(ours: &Keyed<u64>, theirs: &Keyed<u64>) -> LaneDelta {
+fn lane_delta(local: &Keyed<u64>, peer: &Keyed<u64>) -> LaneDelta {
     let mut d = LaneDelta::default();
-    for (k, &n) in ours.scoped() {
-        let m = match theirs.get(&k) {
+    for (k, &n) in local.scoped() {
+        let m = match peer.get(&k) {
             Some(&m) => m,
             None => 0,
         };
         d.matched += n.min(m);
         if n > m {
-            d.only_ours.push((k.clone(), n - m));
+            d.only_local.push((k.clone(), n - m));
         }
     }
-    for (k, &m) in theirs.scoped() {
-        let n = match ours.get(&k) {
+    for (k, &m) in peer.scoped() {
+        let n = match local.get(&k) {
             Some(&n) => n,
             None => 0,
         };
         if m > n {
-            d.only_theirs.push((k.clone(), m - n));
+            d.only_peer.push((k.clone(), m - n));
         }
     }
     d

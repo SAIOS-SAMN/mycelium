@@ -483,7 +483,7 @@ today: the clock, final points on every act, the anchors and their
 checks, dilation per segment, crossing edges, and freshness at crossings.
 The track adds what keeps every client, game and kernel placed:
 
-1. **K1:** a "where am I" reading per universe: head anchor, lag in
+1. **K1:** a position reading per universe (where it stands): head anchor, lag in
    final-point advances, dilation, crossings, and an unanchored-since
    report.
 2. **K2:** placing a moment of one universe in another by bracketing

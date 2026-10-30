@@ -215,22 +215,22 @@ pub fn manifold(readings: &[(Relative, Vec<(u64, bool)>)]) -> Manifold {
     for (rel, runs) in readings {
         let mut moved = Moved::default();
         let all = |r: &Relative| -> Vec<(Q, Q, u8)> { r.accreted.iter().chain(&r.extinguished).cloned().collect() };
-        let mine = all(rel);
+        let edges = all(rel);
         moved.recognized = m.readings.iter().any(|h| h == rel);
         // The core narrows to what this reading shares; anything it drops or
         // brings beyond the core is an edge sharpened.
         let core_before = m.core.len();
         match m.readings.is_empty() {
             true => {
-                m.core = mine.clone();
+                m.core = edges.clone();
                 m.core_recolours = rel.recolours.clone();
             }
             false => {
-                m.core.retain(|x| mine.contains(x));
+                m.core.retain(|x| edges.contains(x));
                 m.core_recolours.retain(|x| rel.recolours.contains(x));
             }
         }
-        moved.sharpened = !m.readings.is_empty() && (m.core.len() < core_before || mine.len() > m.core.len());
+        moved.sharpened = !m.readings.is_empty() && (m.core.len() < core_before || edges.len() > m.core.len());
         // Resolution: the quantum refines where this reading's runs bring a
         // length the held quantum does not divide.
         let before = m.quantum;

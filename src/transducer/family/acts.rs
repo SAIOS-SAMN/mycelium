@@ -1238,10 +1238,10 @@ fn read_echoes(r: &Reading<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: 
     let shaped: Vec<&Weighed> = pieces.iter().filter(|(_, _, o)| !o.is_empty()).collect();
     let mut common: Option<Vec<Vec<u8>>> = None;
     for (_, _, offers) in &shaped {
-        let mine: Vec<Vec<u8>> = offers.iter().map(|(key, _)| key.clone()).collect();
+        let offered: Vec<Vec<u8>> = offers.iter().map(|(key, _)| key.clone()).collect();
         common = Some(match common {
-            None => mine,
-            Some(c) => c.into_iter().filter(|key| mine.contains(key)).collect(),
+            None => offered,
+            Some(c) => c.into_iter().filter(|key| offered.contains(key)).collect(),
         });
     }
     let read = match common.as_deref() {

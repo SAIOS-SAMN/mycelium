@@ -328,7 +328,7 @@ fn a_word_that_attests_nothing_says_so() {
 /// This is the coordinate reading of the eviction, one level up from
 /// `an_edge_stands_at_a_site_and_not_at_an_index`: not just that the two
 /// EDGES stand at one site, but that the two CITING FORMS reach one
-/// address. A host says "I have an open boundary that mates under φ at a
+/// address. A host says "this host holds an open boundary that mates under φ at a
 /// chart of this rank and this depth". Two hosts saying that say the same
 /// thing, and WHICH form each boundary was instantiated against is the
 /// cover's fact — incidence in `N(𝒰)` — and not a property of either

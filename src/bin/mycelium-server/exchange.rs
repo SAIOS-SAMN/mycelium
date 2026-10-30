@@ -782,7 +782,7 @@ impl Exchange {
                                     if n.is_power_of_two() {
                                         let here = local.iter().find(|l| l.inv.key() == s.inv.key()).map(|l| l.count);
                                         eprintln!(
-                                            "  discordant ({n}) with {:02x}{:02x}…: stratum {:02x?}… theirs {} ours {here:?}",
+                                            "  discordant ({n}) with {:02x}{:02x}…: stratum {:02x?}… peer {} local {here:?}",
                                             vk_peer[0],
                                             vk_peer[1],
                                             s.inv.key().iter().take(6).collect::<Vec<_>>(),
@@ -985,8 +985,8 @@ impl Exchange {
             // was reached, so an exchange that is working is quiet.
             // C6. H_genesis is the chain hash of the mesh's FIRST
             // RECEIPT (45.5). It cannot be read at boot: a fresh kernel
-            // has an empty chain, which is why the adoption I put there
-            // never fired and every node still printed `genesis
+            // has an empty chain, which is why the adoption formerly placed
+            // there never fired and every node still printed `genesis
             // unwritten`. It is adopted here, the first cycle after a
             // receipt exists, and written once.
             if !genesis_written.load(std::sync::atomic::Ordering::Relaxed) {
@@ -995,7 +995,7 @@ impl Exchange {
                 // to the mesh record once, so it survives a restart and
                 // is what 47.2 step 1 tests against from then on.
                 let held = mesh.origin.lock().ok().and_then(|o| *o);
-                let mine = if held.is_some() {
+                let adopted = if held.is_some() {
                     held
                 } else if mint_genesis {
                     // 78.153b — counted, as every take of the kernel is.
@@ -1007,7 +1007,7 @@ impl Exchange {
                     None
                 };
                 'genesis: {
-                    let Some((g, e)) = mine else { break 'genesis };
+                    let Some((g, e)) = adopted else { break 'genesis };
                     // A home whose path is not UTF-8 names no key file, and
                     // minting under the bare name would put this hypha's key
                     // in the working directory — a different key from the

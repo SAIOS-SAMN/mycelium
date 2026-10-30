@@ -592,7 +592,7 @@ impl Bubble {
         //
         // A Čech simplex is the OVERLAP of two sections, and two sections
         // overlap when they are sections over the same chart. A sibling of
-        // my chart that none of my vertices acts on is not an overlap; it
+        // this idea's chart that none of its vertices acts on is not an overlap; it
         // is a stranger, and `extend` asked about it would classify a
         // transition between bodies that share nothing. The cover is built
         // out of incidence in the sheaf, never out of adjacency in a trie,
@@ -609,10 +609,10 @@ impl Bubble {
         // EVERY MEMBER AGAINST EVERY SECTION, and both sections carry their
         // real carriage — without which `extend`'s `flat` is true by
         // construction and `Fill::Class` is unreachable.
-        let mine = self.sections();
-        let me = self.key();
+        let own_sections = self.sections();
+        let own_key = self.key();
         let vol = self.potential;
-        for (_, (chart, gamma_a, car_a)) in mine.scoped() {
+        for (_, (chart, gamma_a, car_a)) in own_sections.scoped() {
             let ck = chart.key();
             if self.cover.contains(&ck) {
                 continue;
@@ -624,7 +624,7 @@ impl Bubble {
             let mut met = false;
             for head in &members {
                 // A section does not overlap itself.
-                if head.as_slice() == me.as_bytes() {
+                if head.as_slice() == own_key.as_bytes() {
                     continue;
                 }
                 let Some((gamma_b, car_b)) = section_at(head.as_slice()) else {
@@ -635,11 +635,11 @@ impl Bubble {
                 // CHART, its vertices the sections' coordinates: an idea
                 // meeting another on two charts, or by two sections of one,
                 // is that many simplices and never one key.
-                let (mine_at, theirs_at) =
-                    (section_vertex(me.as_bytes(), chart, car_a), section_vertex(head, chart, &car_b));
+                let (own_at, far_at) =
+                    (section_vertex(own_key.as_bytes(), chart, car_a), section_vertex(head, chart, &car_b));
                 let simplex = Simplex {
                     vertices: {
-                        let mut v = vec![mine_at.clone(), theirs_at.clone()];
+                        let mut v = vec![own_at.clone(), far_at.clone()];
                         v.sort_unstable();
                         v
                     },
@@ -651,7 +651,7 @@ impl Bubble {
                     fill: Fill::Open,
                 };
                 let a = Section {
-                    addr: me.clone(),
+                    addr: own_key.clone(),
                     gamma: gamma_a.clone(),
                     carriage: car_a.clone(),
                 };
@@ -663,7 +663,7 @@ impl Bubble {
                 match cech::extend(&a, &b, &simplex) {
                     Fill::Filled(..) => {}
                     Fill::Congruent(_, g, ell) => {
-                        self.nerve.file_congruent(&mine_at, &theirs_at, *g, ell);
+                        self.nerve.file_congruent(&own_at, &far_at, *g, ell);
                     }
                     Fill::Class(_, r) => {
                         closed = false;

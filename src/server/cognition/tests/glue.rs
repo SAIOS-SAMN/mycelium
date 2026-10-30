@@ -253,25 +253,25 @@ use crate::transducer::stalk::Invariant;
 let mut k = Kernel::new();
 let here = Invariant::counts(&[1]);
 let elsewhere = Invariant::counts(&[2]);
-let mine = vec![0xA1u8; 32];
+let heard_here = vec![0xA1u8; 32];
 let other = vec![0xB2u8; 32];
-k.heard_mark(&mine, &here);
+k.heard_mark(&heard_here, &here);
 k.heard_mark(&other, &elsewhere);
 
 let have = k.fetch_have(&here);
-assert!(have.contains(&mine), "the address heard under this chart is held: {have:?}");
+assert!(have.contains(&heard_here), "the address heard under this chart is held: {have:?}");
     assert!(!have.contains(&other), "the address heard under another chart could never match a fetch here: {have:?}");
 
     // Re-marked under another chart, an address leaves the old fiber: an
     // index that only grows answers a stratum with addresses no longer heard
     // under it.
-    k.heard_mark(&mine, &elsewhere);
+    k.heard_mark(&heard_here, &elsewhere);
     let have = k.fetch_have(&here);
     assert!(
-        !have.contains(&mine),
+        !have.contains(&heard_here),
         "it moved charts and left this one's fiber: {have:?}"
     );
-    assert!(k.fetch_have(&elsewhere).contains(&mine), "and joined the other's");
+    assert!(k.fetch_have(&elsewhere).contains(&heard_here), "and joined the other's");
 }
 
 /// R76: A GLUED SPOKEN WORD SECTIONS AND EDGES WITH TRUE GEOMETRY.
@@ -279,13 +279,13 @@ assert!(have.contains(&mine), "the address heard under this chart is held: {have
 /// from the spoken element and transition.
 #[test]
 fn glue_records_true_geometric_section_and_edge_carriage() {
-    let me = [0x0au8; 32];
+    let own_vk = [0x0au8; 32];
     let peer_id = [0x0bu8; 32];
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 
     let mut own = Kernel::new();
-    own.bind_identity(me);
+    own.bind_identity(own_vk);
     assert_eq!(speak_pair(&mut own, &a, &b, [1; 32]), Outcome::GermPending);
     assert_eq!(speak_pair(&mut own, &a, &b, [2; 32]), Outcome::GermPending);
     let spoken = own.provisional.scoped().next().unwrap().1.clone();
@@ -295,7 +295,7 @@ fn glue_records_true_geometric_section_and_edge_carriage() {
     // (78.153: on every stroke the replay takes).
     own.court_settle();
     let cx = own.complexes().get(&inv.key()).expect("complex exists");
-    let own_sec = cx.sections.get(me.as_slice()).expect("own section exists");
+    let own_sec = cx.sections.get(own_vk.as_slice()).expect("own section exists");
     let exp_gamma = match spoken.carried_rotor() {
         Some(r) => r,
         None => crate::transducer::alphabet::Rotor::identity(),
@@ -309,9 +309,9 @@ fn glue_records_true_geometric_section_and_edge_carriage() {
 
     // A peer arrives with spoken
     let mut heard = Kernel::new();
-    heard.bind_identity(me);
+    heard.bind_identity(own_vk);
     let mut cover = crate::network::nerve::Cover::new();
-    let outcome = fetched(&mut heard, &spoken, peer_id, me, &mut cover);
+    let outcome = fetched(&mut heard, &spoken, peer_id, own_vk, &mut cover);
     assert!(matches!(outcome, Glue::Admitted));
 
     let cx_h = heard.complexes().get(&inv.key()).expect("complex exists");
@@ -329,12 +329,12 @@ fn glue_records_true_geometric_section_and_edge_carriage() {
 fn a_peers_sentence_is_read_against_this_courts_section() {
     use crate::observe::rep;
     use crate::transducer::sentence::{as_element_form, from_element_form, Transport};
-    let me = [0x1au8; 32];
+    let own_vk = [0x1au8; 32];
     let (same_peer, refracting_peer) = ([0x1bu8; 32], [0x1cu8; 32]);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
     let mut own = Kernel::new();
-    own.bind_identity(me);
+    own.bind_identity(own_vk);
     assert_eq!(speak_pair(&mut own, &a, &b, [1; 32]), Outcome::GermPending);
     assert_eq!(speak_pair(&mut own, &a, &b, [2; 32]), Outcome::GermPending);
     let spoken = own.provisional.scoped().next().unwrap().1.clone();
@@ -346,7 +346,7 @@ fn a_peers_sentence_is_read_against_this_courts_section() {
     let mut cover = crate::network::nerve::Cover::new();
     // 78.153: a stroke that holds the glue's replay.
     let mut glue = crate::physics::Physics::default().stroke_n(1 << 20);
-    let _ = own.glue_fetched(spoken.clone(), same_peer, me, &mut cover, &mut glue);
+    let _ = own.glue_fetched(spoken.clone(), same_peer, own_vk, &mut cover, &mut glue);
     assert_eq!(axes(same_peer).map(|a| a[rep::RELATION_SAME]), Some(1), "its own word is the same word: {:?}", axes(same_peer));
     assert_eq!(axes(same_peer).map(|a| a[rep::PERCEIVED_COHERENT]), Some(1), "and is coherent on all four lanes: {:?}", axes(same_peer));
     let paths = |a: [u64; crate::observe::REP_AXES]| (rep::GLUE_HEARD..=rep::GLUE_ADMITTED).map(|i| a[i]).sum::<u64>();
@@ -360,7 +360,7 @@ fn a_peers_sentence_is_read_against_this_courts_section() {
     .refract(&held)
     .and_then(|f| as_element_form(&f, spoken.magnitude()))
     .expect("the refracted sentence is a word");
-    let outcome = own.glue_fetched(moved, refracting_peer, me, &mut cover, &mut glue);
+    let outcome = own.glue_fetched(moved, refracting_peer, own_vk, &mut cover, &mut glue);
     assert_eq!(
         axes(refracting_peer).map(|a| a[rep::RELATION_REFRACTED]),
         Some(1),
@@ -377,7 +377,7 @@ fn a_peers_sentence_is_read_against_this_courts_section() {
 /// have-list carries it and the same shear is not read again.
 #[test]
 fn an_attached_word_is_held_and_not_read_again() {
-    let me = [0x2au8; 32];
+    let own_vk = [0x2au8; 32];
     let peer = [0x2bu8; 32];
     let word = |x: i64| {
         crate::transducer::element::from_connection(
@@ -390,17 +390,17 @@ fn an_attached_word_is_held_and_not_read_again() {
         .expect("a connection")
     };
     let mut own = Kernel::new();
-    own.bind_identity(me);
+    own.bind_identity(own_vk);
     let held = word(1);
     assert_eq!(own.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&held)), vec![crate::anastome::dialogue::SPEECH_STOOD]);
     own.court_stroke();
-    let theirs = word(2);
+    let peer_word = word(2);
     let mut cover = crate::network::nerve::Cover::new();
-    let outcome = fetched(&mut own, &theirs, peer, me, &mut cover);
+    let outcome = fetched(&mut own, &peer_word, peer, own_vk, &mut cover);
     if outcome == Glue::Attached {
-        assert!(own.word_at(theirs.address().as_bytes()).is_some(), "the attached word is held");
-        let inv = crate::transducer::stalk::invariant_of(&theirs);
-        assert!(own.fetch_have(&inv).iter().any(|a| a.as_slice() == theirs.address().as_bytes()), "and the next fetch's have-list carries it");
+        assert!(own.word_at(peer_word.address().as_bytes()).is_some(), "the attached word is held");
+        let inv = crate::transducer::stalk::invariant_of(&peer_word);
+        assert!(own.fetch_have(&inv).iter().any(|a| a.as_slice() == peer_word.address().as_bytes()), "and the next fetch's have-list carries it");
     } else {
         panic!("the fixture must attach: it glued {outcome:?}");
     }

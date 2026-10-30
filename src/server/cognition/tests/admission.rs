@@ -48,9 +48,9 @@ fn an_admitted_receipt_is_cited_and_carries_height_above_the_peers() {
     let a = vec![(0, 0, 1), (0, 1, 1)];
     let b = vec![(0, 0, 2), (0, 1, 2)];
     super::common::speak_pair(&mut k, &a, &b, [1; 32]);
-    let mine = k.height();
+    let local_h = k.height();
     let peer_h = peer[2].stamp.h;
-    assert!(mine < peer_h, "the peer is ahead: {mine} < {peer_h}");
+    assert!(local_h < peer_h, "the peer is ahead: {local_h} < {peer_h}");
     let head = peer[2].clone();
     assert!(
         matches!(k.admit_receipt(ORIGIN, super::common::verified(&pre(&head), &key), &head), Admitted::Gap { .. }),

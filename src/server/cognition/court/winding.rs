@@ -296,8 +296,8 @@ impl Kernel {
     /// ONE AGE COMPLETED: the `Return` act, sealed citing the ring's own key,
     /// and every draw and torsion the age accrued minted at its anchor.
     fn seal_return(&mut self, key: &[u8], w: &mut Winding) {
-        let me = self.identity;
-        self.append_step(crate::chronometry::ActKind::Return, key, me);
+        let own_vk = self.identity;
+        self.append_step(crate::chronometry::ActKind::Return, key, own_vk);
         let anchor = self.anchor();
         for d in std::mem::take(&mut w.draws) {
             for v in &d.parties {
@@ -539,8 +539,8 @@ impl Kernel {
         if closed.len() <= held.len() {
             return Some(false);
         }
-        let me = self.identity;
-        self.append_step(crate::chronometry::ActKind::RankStep, addr, me);
+        let own_vk = self.identity;
+        self.append_step(crate::chronometry::ActKind::RankStep, addr, own_vk);
         self.lie_basis.insert(chart, closed);
         self.mark_persist();
         Some(true)
@@ -695,8 +695,8 @@ impl Kernel {
         let t = crate::transducer::rewrite::LANE_TEMPORAL;
         crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.flux_transport, r.transport[t]);
         if self.flux_field.tubes.links() != before {
-            let me = self.identity;
-            self.append_step(crate::chronometry::ActKind::Reconnect, addr, me);
+            let own_vk = self.identity;
+            self.append_step(crate::chronometry::ActKind::Reconnect, addr, own_vk);
             crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.reconnections, 1);
         }
     }

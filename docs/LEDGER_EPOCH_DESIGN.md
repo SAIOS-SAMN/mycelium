@@ -95,7 +95,7 @@ it. The server's log lines (`src/bin/mycelium-server/fold.rs`,
   - `a_peer_receipt_citing_a_folded_receipt_is_admitted`;
   - `a_court_restores_from_its_line_and_the_snapshot_that_names_it`.
 - `src/chronometry/tests/shed.rs`:
-  `a_peer_fold_sheds_its_line_but_what_our_hot_line_cites`,
+  `a_peer_fold_sheds_its_line_but_what_the_chains_own_hot_line_cites`,
   `a_shed_receipt_is_a_hole_below_the_head_that_backfill_cannot_cross`.
 - `src/anastome/dialogue/tests/fold_wire.rs`:
   `the_fold_proposal_the_witness_answers_and_the_rows_round_trip`;

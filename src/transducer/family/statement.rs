@@ -131,16 +131,16 @@ impl<'a> Seen<'a> {
         let mut owner = vec![vec![None; cols]; rows];
         let mut cells = Vec::with_capacity(bodies.len());
         for (i, b) in bodies.iter().enumerate() {
-            let mut mine = Vec::with_capacity(b.compartments.len());
+            let mut owned = Vec::with_capacity(b.compartments.len());
             for l in &b.compartments {
                 let Some((r, c)) = on_grid(&l.site) else { continue };
                 let (Ok(r), Ok(c)) = (usize::try_from(r), usize::try_from(c)) else { continue };
                 if let Some(o) = owner.get_mut(r).and_then(|row| row.get_mut(c)) {
                     *o = Some(i);
-                    mine.push((r, c, l.hue));
+                    owned.push((r, c, l.hue));
                 }
             }
-            cells.push(mine);
+            cells.push(owned);
         }
         Seen { x, bodies, rows, cols, cells, owner }
     }

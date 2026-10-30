@@ -240,9 +240,9 @@ fn a_lane_with_no_cover_is_unmeasured_and_relocates_nothing() {
 fn the_cover_and_the_room_agree_by_construction() {
     let mut k = Kernel::new();
     k.set_lane_cap([7, 5, 3, 2]);
-    let me = k.identity;
-    let cover = k.lane_cover_of(&me).expect("a cap is a cover");
-    let room = k.lane_room_of(&me).expect("and the room under it");
+    let court_vk = k.identity;
+    let cover = k.lane_cover_of(&court_vk).expect("a cap is a cover");
+    let room = k.lane_room_of(&court_vk).expect("and the room under it");
     assert_eq!(cover, [7, 5, 3, 2]);
     for l in 0..4 {
         assert!(
@@ -260,11 +260,11 @@ fn the_cover_and_the_room_agree_by_construction() {
 fn a_room_that_does_not_read_is_counted_by_its_reason() {
     let mut k = Kernel::new();
     k.set_lane_cap([1, 1, 1, 1]);
-    let me = k.identity;
-    assert!(k.lane_room_of(&me).is_some(), "a voice drawing nothing has its cap");
+    let court_vk = k.identity;
+    assert!(k.lane_room_of(&court_vk).is_some(), "a voice drawing nothing has its cap");
     assert_eq!(k.room_refusals(), (0, 0));
-    k.drawn.insert(me, [2, 0, 0, 0]);
-    assert_eq!(k.lane_room_of(&me), None, "a lane drawn past its cover reads no room");
+    k.drawn.insert(court_vk, [2, 0, 0, 0]);
+    assert_eq!(k.lane_room_of(&court_vk), None, "a lane drawn past its cover reads no room");
     assert_eq!(k.room_refusals(), (1, 0), "counted as broken, and only as broken");
 }
 

@@ -252,19 +252,19 @@ impl<'a> ContinuousSupport<'a> {
                 unread.push(*p);
                 continue;
             };
-            let Some(theirs) = crate::transducer::base::plane_index(carriage.image).and_then(|ix| other.upper.get(ix))
+            let Some(other_upper) = crate::transducer::base::plane_index(carriage.image).and_then(|ix| other.upper.get(ix))
             else {
                 unread.push(*p);
                 continue;
             };
-            for (order, (mine, yours)) in [Harmonic::Three, Harmonic::Four].into_iter().zip(held.iter().zip(theirs)) {
+            for (order, (h_a, h_b)) in [Harmonic::Three, Harmonic::Four].into_iter().zip(held.iter().zip(other_upper)) {
                 // `h_b − Ad(h_a)`: the residue at its own scale, exact. A
                 // harmonic that vanishes is the zero vector there.
-                let c = match mine {
+                let c = match h_a {
                     Some(h) => carriage.carry(h, order),
                     None => zero.clone(),
                 };
-                let hb = match yours {
+                let hb = match h_b {
                     Some(h) => h,
                     None => &zero,
                 };

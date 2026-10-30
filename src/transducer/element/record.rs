@@ -71,7 +71,7 @@ impl Element {
         // cell complex and its key writes that complex out in full, so a
         // description beside it would be a second statement of the same
         // object (law 12). Words, connections and residual chains keep
-        // theirs: for them the description IS the content, read by
+        // the field: for them the description IS the content, read by
         // `letters`, `rewrite` and `residual` as the object itself.
         //
         // §10 — a layout change is a recut, and B7 is the recut.

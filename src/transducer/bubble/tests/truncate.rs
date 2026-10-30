@@ -98,11 +98,11 @@ fn per_component_truncation_agrees_with_the_whole_nerve() {
     let other: Vec<(usize, usize)> = RING.iter().map(|&(a, b)| (a + 5, b + 5)).chain([(5, 9)]).collect();
     let (mut c, vs) = nerve(10, &[RING.as_slice(), &[(0, 4)], other.as_slice()].concat(), [0; 4]);
     let whole = c.two_core();
-    let mut mine: Keyed<()> = Keyed::new();
+    let mut component: Keyed<()> = Keyed::new();
     for v in &vs[..5] {
-        mine.insert(v, ());
+        component.insert(v, ());
     }
-    let within = c.two_core_within(mine);
+    let within = c.two_core_within(component);
     for v in &vs[..5] {
         assert_eq!(within.contains(v), whole.contains(v), "one component's 2-core is the whole nerve's on it");
     }

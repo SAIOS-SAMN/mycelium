@@ -270,7 +270,7 @@ impl Entity {
             Some((t, k)) => (*t, k.to_vec()),
             None => return,
         };
-        let short = |me: &Entity, mag: &[u64; 4]| !crate::economy::lanes_short(&me.physics().reserve_shortfall(crate::physics::Physics::lanes_of(mag))).is_empty();
+        let short = |entity: &Entity, mag: &[u64; 4]| !crate::economy::lanes_short(&entity.physics().reserve_shortfall(crate::physics::Physics::lanes_of(mag))).is_empty();
         match tag {
             ITEM_FAMILY => {
                 let Some((path, task)) = self.board.feed.as_ref().and_then(|f| f.take(&key)) else {

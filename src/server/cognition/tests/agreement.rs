@@ -83,31 +83,31 @@ fn attests(k: &Kernel) -> usize {
 #[test]
 fn a_second_minds_hold_on_the_word_is_sealed_as_its_attestation() {
     let (speaker, hearer) = (key(1), key(2));
-    let me = speaker.verifying_key().to_bytes();
-    let them = hearer.verifying_key().to_bytes();
+    let speaker_vk = speaker.verifying_key().to_bytes();
+    let hearer_vk = hearer.verifying_key().to_bytes();
     let e = slide(0, 2);
     let addr = e.address();
-    let mut court = court_with(&[(&e, me)]);
+    let mut court = court_with(&[(&e, speaker_vk)]);
     let before = attests(&court);
 
-    let sealed = court.attest_agreements(&speech(me, &e, hold(&hearer, addr.as_bytes())));
+    let sealed = court.attest_agreements(&speech(speaker_vk, &e, hold(&hearer, addr.as_bytes())));
     let deviation = [1, 0, 0, 2].map(|n: i64| num_rational::BigRational::new(n.into(), 5.into()));
     assert_eq!(
         sealed,
-        vec![Attested { word: addr.as_bytes().to_vec(), by: them, deviation, converged: Vec::new() }],
+        vec![Attested { word: addr.as_bytes().to_vec(), by: hearer_vk, deviation, converged: Vec::new() }],
         "the hearer's attestation is sealed on the word, its signed deviation read"
     );
     assert_eq!(attests(&court), before + 1, "one Attest on the line");
-    assert!(court.attest_agreements(&speech(me, &e, hold(&hearer, addr.as_bytes()))).is_empty(), "sealed once");
+    assert!(court.attest_agreements(&speech(speaker_vk, &e, hold(&hearer, addr.as_bytes()))).is_empty(), "sealed once");
 
     let other = slide(0, 3);
-    assert!(court.attest_agreements(&speech(me, &e, hold(&hearer, other.address().as_bytes()))).is_empty(), "a HOLD on another word");
-    assert!(court.attest_agreements(&speech(me, &e, hold(&speaker, addr.as_bytes()))).is_empty(), "the speaker's own HOLD");
+    assert!(court.attest_agreements(&speech(speaker_vk, &e, hold(&hearer, other.address().as_bytes()))).is_empty(), "a HOLD on another word");
+    assert!(court.attest_agreements(&speech(speaker_vk, &e, hold(&speaker, addr.as_bytes()))).is_empty(), "the speaker's own HOLD");
     let mut forged = hold(&key(3), addr.as_bytes());
     let mid = forged.len() / 2;
     forged[mid] ^= 1;
-    assert!(court.attest_agreements(&speech(me, &e, forged)).is_empty(), "a forged frame");
-    assert!(court.attest_agreements(&speech(me, &other, hold(&hearer, other.address().as_bytes()))).is_empty(), "a word the court does not hold");
+    assert!(court.attest_agreements(&speech(speaker_vk, &e, forged)).is_empty(), "a forged frame");
+    assert!(court.attest_agreements(&speech(speaker_vk, &other, hold(&hearer, other.address().as_bytes()))).is_empty(), "a word the court does not hold");
     assert_eq!(attests(&court), before + 1, "nothing else sealed");
 }
 
@@ -118,14 +118,14 @@ fn a_second_minds_hold_on_the_word_is_sealed_as_its_attestation() {
 #[test]
 fn an_agreement_the_scene_refutes_is_not_sealed() {
     let (speaker, hearer) = (key(1), key(2));
-    let me = speaker.verifying_key().to_bytes();
+    let speaker_vk = speaker.verifying_key().to_bytes();
     let false_word = slide(1, 0);
-    let mut court = court_with(&[(&false_word, me)]);
+    let mut court = court_with(&[(&false_word, speaker_vk)]);
     let before = attests(&court);
-    assert!(court.attest_agreements(&speech(me, &false_word, hold(&hearer, false_word.address().as_bytes()))).is_empty(), "false on its scene");
+    assert!(court.attest_agreements(&speech(speaker_vk, &false_word, hold(&hearer, false_word.address().as_bytes()))).is_empty(), "false on its scene");
     let unbound = slide(0, 2);
     court.provisional.insert(unbound.address().as_bytes(), unbound.clone());
-    assert!(court.attest_agreements(&speech(me, &unbound, hold(&hearer, unbound.address().as_bytes()))).is_empty(), "bound to no family");
+    assert!(court.attest_agreements(&speech(speaker_vk, &unbound, hold(&hearer, unbound.address().as_bytes()))).is_empty(), "bound to no family");
     assert_eq!(attests(&court), before, "nothing sealed");
 }
 
@@ -138,23 +138,23 @@ fn an_agreement_the_scene_refutes_is_not_sealed() {
 #[test]
 fn two_words_with_one_section_on_the_scene_converge() {
     let (speaker, hearer, third) = (key(1), key(2), key(3));
-    let me = speaker.verifying_key().to_bytes();
-    let them = hearer.verifying_key().to_bytes();
+    let speaker_vk = speaker.verifying_key().to_bytes();
+    let hearer_vk = hearer.verifying_key().to_bytes();
     // `wrong` is true on a smaller section (the two sites it changed): its
     // own, not the slide's.
-    let (mine, theirs, wrong) = (slide(0, 2), turn_180(1, 4), slide(0, 1));
-    let mut court = court_with(&[(&mine, me), (&theirs, them), (&wrong, them)]);
+    let (spoken, heard_turn, wrong) = (slide(0, 2), turn_180(1, 4), slide(0, 1));
+    let mut court = court_with(&[(&spoken, speaker_vk), (&heard_turn, hearer_vk), (&wrong, hearer_vk)]);
     let before = attests(&court);
-    let sealed = court.attest_agreements(&speech(me, &mine, hold(&hearer, mine.address().as_bytes())));
+    let sealed = court.attest_agreements(&speech(speaker_vk, &spoken, hold(&hearer, spoken.address().as_bytes())));
     let [a] = sealed.as_slice() else { panic!("one attestation, got {sealed:?}") };
-    assert_eq!(a.converged, vec![theirs.address().as_bytes().to_vec()], "the 180° turn converged; the one-column slide, another section, did not");
+    assert_eq!(a.converged, vec![heard_turn.address().as_bytes().to_vec()], "the 180° turn converged; the one-column slide, another section, did not");
     assert_eq!(attests(&court), before + 2, "the hearer's Attest on the slide, the speaker's on the turn");
-    let _ = court.attest_agreements(&speech(me, &mine, hold(&hearer, mine.address().as_bytes())));
+    let _ = court.attest_agreements(&speech(speaker_vk, &spoken, hold(&hearer, spoken.address().as_bytes())));
     assert_eq!(attests(&court), before + 2, "sealed once");
 
     // The same 180° turn discovered by a third mind is not the hearer's own.
-    let mut other = court_with(&[(&mine, me), (&theirs, third.verifying_key().to_bytes())]);
-    let sealed = other.attest_agreements(&speech(me, &mine, hold(&hearer, mine.address().as_bytes())));
+    let mut other = court_with(&[(&spoken, speaker_vk), (&heard_turn, third.verifying_key().to_bytes())]);
+    let sealed = other.attest_agreements(&speech(speaker_vk, &spoken, hold(&hearer, spoken.address().as_bytes())));
     let [a] = sealed.as_slice() else { panic!("one attestation") };
     assert!(a.converged.is_empty(), "a word the attesting mind did not construct converges with nothing");
 }
@@ -167,19 +167,19 @@ fn two_words_with_one_section_on_the_scene_converge() {
 #[test]
 fn an_attestation_joins_the_hearer_to_the_words_claim() {
     let (speaker, hearer) = (key(1), key(2));
-    let me = speaker.verifying_key().to_bytes();
-    let them = hearer.verifying_key().to_bytes();
+    let speaker_vk = speaker.verifying_key().to_bytes();
+    let hearer_vk = hearer.verifying_key().to_bytes();
     let e = slide(0, 2);
     let addr = e.address();
     let bare = turn_180(1, 4);
-    let mut court = court_with(&[(&e, me), (&bare, me)]);
+    let mut court = court_with(&[(&e, speaker_vk), (&bare, speaker_vk)]);
     let anchor = court.anchor();
-    court.treasury.escrow_award(&addr, vec![me], [3, 0, 0, 1], anchor);
-    let _ = court.attest_agreements(&speech(me, &e, hold(&hearer, addr.as_bytes())));
+    court.treasury.escrow_award(&addr, vec![speaker_vk], [3, 0, 0, 1], anchor);
+    let _ = court.attest_agreements(&speech(speaker_vk, &e, hold(&hearer, addr.as_bytes())));
     let claim = court.treasury.escrow_of(addr.as_bytes()).expect("the claim stands");
-    assert_eq!(claim.voices, vec![me, them], "the speaker and the mind that agreed, both parties");
+    assert_eq!(claim.voices, vec![speaker_vk, hearer_vk], "the speaker and the mind that agreed, both parties");
     assert_eq!(claim.mu, [3, 0, 0, 1], "the measure is the speaker's, untouched");
 
-    let _ = court.attest_agreements(&speech(me, &bare, hold(&hearer, bare.address().as_bytes())));
+    let _ = court.attest_agreements(&speech(speaker_vk, &bare, hold(&hearer, bare.address().as_bytes())));
     assert!(court.treasury.escrow_of(bare.address().as_bytes()).is_none(), "no claim standing, no party joined, none invented");
 }

@@ -38,7 +38,7 @@ not the argument or the defense.
 - No `WHY_` prefix — the document's content explains why;
   the filename names the subject
 - No `HOW_TO_` prefix — same reason
-- Two to three words maximum. If you need more, the concept
+- Two to three words maximum. If a name needs more, the concept
   isn't distilled enough
 - Use `UPPER_SNAKE_CASE` for documentation files
 - Use `lower_snake_case` for source code files
@@ -68,7 +68,7 @@ peer — a researcher, developer, or student who is evaluating
 the work on its merits.
 
 **Rules:**
-- No commanding language ("you must," "you shall," "never do")
+- No commanding language ("must," "shall," "never do")
   — describe what works, not what to obey
 - No ecclesiastical language ("sacred," "holy," "divine,"
   "inviolable," "decree," "mandate") — these are design
@@ -76,12 +76,12 @@ the work on its merits.
 - No mythological language in active descriptions — mythology
   belongs in historical context (Layer 5 of the derivation
   tower) and is documented as methodology, not as current state
-- No defensive tone ("why we had to," "the reason this was
+- No defensive tone ("why it had to be done," "the reason this was
   necessary") — state the methodology and its evidence
 - Explain, don't persuade. The work either holds up to
   evaluation or it doesn't
-- "We invite you to evaluate it" not "Evaluate it" — the
-  reader decides, we don't instruct
+- "The work is open to evaluation" not "Evaluate it" — the
+  reader decides; the document does not instruct
 
 **Self-test:** Read the sentence aloud. If it sounds like a
 manifesto, a sermon, or a terms-of-service agreement, rewrite

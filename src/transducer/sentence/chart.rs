@@ -5,7 +5,7 @@
 //! `SentenceRule` a form is spoken as.
 //!
 //! AT1 (ii) — THE ADDRESS IS THE ATLAS WRITTEN OUT: the vertices in their own
-//! coordinates' order, the overlaps in theirs, each by what it is and never
+//! coordinates' order, the overlaps in their own order, each by what it is and never
 //! by a position in a list. What the key derives — the face words, the
 //! sections, the orbits — is not written.
 
@@ -135,7 +135,7 @@ pub fn rule_of_form(mut form: Form) -> SentenceRule {
 ///
 /// `TAG_FORM`, the base's `n` (71.2(1)), then the vertices — each by its own
 /// record, in the order of their coordinates, which is the carrier's key
-/// order — then the overlaps in theirs, each its key, its measured place and
+/// order — then the overlaps in their own order, each its key, its measured place and
 /// the pivot's factors where a pivot wrote one; the frame ratio; the opened
 /// axes' classes; and the remainder by its coordinates. Every count by its own
 /// spelling. Nothing the key derives is written: a face's word, the sections

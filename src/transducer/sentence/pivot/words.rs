@@ -90,8 +90,8 @@ pub fn acting_of_element(e: &Element) -> Vec<Transport> {
 /// words occupy no coordinate.
 ///
 /// A word is filed where it ACTS. That is the question the pivot asks: not
-/// "what does the sentence carrying this word hold" but "what do I hold that
-/// acts on this body and turns on this axis". A vertex acting on two charts
+/// "what does the sentence carrying this word hold" but "what does the pivot hold
+/// that acts on this body and turns on this axis". A vertex acting on two charts
 /// is admitted at both, because it speaks to bodies on both and one left out
 /// is a word the pivot can never be offered.
 pub fn admit_words_acting(index: &mut AxisIndex, f: &Form) {

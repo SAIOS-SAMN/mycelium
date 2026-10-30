@@ -426,12 +426,12 @@ fn pivot_orbit_discharges_held_word_and_vortices_a_pair() {
     // mind wrote about its own defect. Measured at 7e73a1d — `held true` on
     // 108 of 108 orbits against zero `horizon … seeded` lines in two hours.
     let mut f = chord_form(std::slice::from_ref(&q));
-    let mut mine = Keyed::new();
+    let mut held = Keyed::new();
     let r = q.rotor();
-    mine.insert(r.class_key().expect("q class"), (r, q.order(), Standing::Held));
+    held.insert(r.class_key().expect("q class"), (r, q.order(), Standing::Held));
     let snaps = f.pivot_orbit(
         [0x34; 32],
-        &mine,
+        &held,
         &crate::transducer::family::NoCrystal,
         &mut crate::physics::Physics::default().stroke_n(16),
         None,

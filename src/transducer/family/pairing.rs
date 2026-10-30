@@ -63,14 +63,14 @@ fn mark_lanes(on: Ledger, lanes: [bool; 4]) {
 /// contact. A sum past its carrier is refused and counted (rule 11).
 fn mark_measured(on: Ledger, lanes: [bool; 4], carried: u64) {
     use std::sync::atomic::Ordering::Relaxed;
-    let mine = crate::transducer::mind::with_lanes(|ledgers| {
+    let in_mind = crate::transducer::mind::with_lanes(|ledgers| {
         for (count, moved) in ledgers[on as usize].iter_mut().zip(lanes) {
             if moved {
                 let _ = crate::physics::metabolism::step_or_refuse(count, carried);
             }
         }
     });
-    if mine.is_ok() {
+    if in_mind.is_ok() {
         return;
     }
     for (count, moved) in COURT_ON[on as usize].iter().zip(lanes) {
@@ -167,8 +167,8 @@ pub(crate) fn mark_flux(
     // The thinking mind's own tubes, held across its ticks (78.71 (1)); else
     // the court's. A lock poisoned by a panic elsewhere reads this percept's
     // field into fresh tubes rather than none.
-    let mine = crate::transducer::mind::with_field(|field| transport_order(word_transports, circuits, field, budget)).ok();
-    let reading = match mine {
+    let in_mind = crate::transducer::mind::with_field(|field| transport_order(word_transports, circuits, field, budget)).ok();
+    let reading = match in_mind {
         Some(r) => r,
         None => match COURT_FIELD.lock() {
             Ok(mut field) => {
@@ -652,8 +652,8 @@ struct Gathered {
 }
 
 /// ONE CONTACT, AS THE FACE BUILT ALONG IT READS IT: the two bodies' pieces,
-/// the lesser first, their nuclei in the same order — the tether is theirs,
-/// two BODIES' (78.18(c)), never a member's union — the members standing on
+/// the lesser first, their nuclei in the same order — the tether belongs to
+/// the two BODIES (78.18(c)), never a member's union — the members standing on
 /// the lesser's side, so a face built between two members reads which body
 /// stands at each of its ends (CX1); the grade of the contact's largest
 /// shared cell; and the WITNESS, the shared boundary elements at their

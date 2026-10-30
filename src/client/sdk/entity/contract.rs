@@ -123,9 +123,9 @@ impl Entity {
             let addr = p.sentence.address();
             self.contractions.insert(&addr, p.certificate.clone());
             let (sentence, train, task) = (p.sentence.clone(), p.train.clone(), p.task.clone());
-            self.speak_with(std::slice::from_ref(&sentence), &train, &task, move |me, heard| {
+            self.speak_with(std::slice::from_ref(&sentence), &train, &task, move |entity, heard| {
                 if heard.is_err() {
-                    me.contracted.push(p);
+                    entity.contracted.push(p);
                 }
             });
         }
@@ -161,10 +161,10 @@ impl Entity {
             }
             let both = [o.form.clone(), o.citer.clone()];
             let (train, task) = (o.train.clone(), o.task.clone());
-            self.speak_with(&both, &train, &task, move |me, heard| {
+            self.speak_with(&both, &train, &task, move |entity, heard| {
                 // The court was not reachable: still owed.
                 if heard.is_err() {
-                    me.owed.push(o);
+                    entity.owed.push(o);
                 }
             });
         }

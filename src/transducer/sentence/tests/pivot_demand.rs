@@ -212,7 +212,7 @@ fn a_free_part_orbit_files_at_period_zero_beside_its_demand() {
     // is carried as a vertex, in the key, rather than hidden by a filing.
     assert!(!f.is_closed(), "and so the form is not closed");
     // THE DEMAND IS ON THE SNAPS, NOT YET ON THE FORM, and this asserted
-    // otherwise on my own reading rather than on the engine's. `pivot_orbit`
+    // otherwise on the test author's reading rather than on the engine's. `pivot_orbit`
     // REPORTS the obstruction it met; `Form::stand_demand` is what writes
     // the vertex, and the bubble calls it — `bubble/tests/demand.rs` is
     // where the vertex on the form is asserted, on both pivot paths.

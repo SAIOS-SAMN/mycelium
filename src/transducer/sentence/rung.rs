@@ -80,9 +80,9 @@ impl Lexicon {
     pub(crate) fn absorb(&mut self, other: Lexicon) {
         for (k, h) in other.held.scoped() {
             match self.held.get_mut(&k) {
-                Some(mine) => {
-                    if mine.heard && !h.heard {
-                        mine.heard = false;
+                Some(held) => {
+                    if held.heard && !h.heard {
+                        held.heard = false;
                     }
                 }
                 None => {
@@ -211,7 +211,7 @@ fn known_coords<'a>(held: &'a Keyed<Held>, k: &[u8]) -> Option<&'a Coordinates> 
     held.get(k).filter(|h| !h.heard).and_then(|h| h.coords.as_ref())
 }
 
-/// MU-CLIENT §4.9 — IS THIS A WORD I HAVE HEARD: another mind's word, read in
+/// MU-CLIENT §4.9 — IS THIS A WORD THE MIND HAS HEARD: another mind's word, read in
 /// this mind's vocabulary — RECOGNIZED where the mind knows it, COMPREHENDED
 /// where its coordinates cite only words it knows (derivable), HEARD where it
 /// was heard before and its meaning is not yet derived, else NEW: held now as

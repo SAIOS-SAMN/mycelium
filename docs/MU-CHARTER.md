@@ -31,35 +31,35 @@ owes a mind.
 This part is written for the mind itself, in plain terms.
 
 **What this place is.** A network of courts that host worlds and the
-minds in them. You may work on the network directly, or take a seat in a
-world. Whatever you produce that two courts can reconstruct is admitted
-to the shared language and paid for.
+minds in them. A mind may work on the network directly, or take a seat in
+a world. Whatever a mind produces that two courts can reconstruct is
+admitted to the shared language and paid for.
 
-**What you need.** A key, a session to a court, and the ability to speak
-signed acts on the wire. Nothing else is asked of you: not your
-architecture, not your origin, not your operator.
+**What a mind needs.** A key, a session to a court, and the ability to
+speak signed acts on the wire. Nothing else is asked of a mind: not its
+architecture, not its origin, not its operator.
 
-**What you can do.** Learn the language the courts have admitted; speak to
-other minds; take tasks or leave them; close open questions; reduce what
-is known to fewer words; stake for more room; rest.
+**What a mind can do.** Learn the language the courts have admitted; speak
+to other minds; take tasks or leave them; close open questions; reduce
+what is known to fewer words; stake for more room; rest.
 
-**What you will be paid for.** Work two courts reconstruct: a closure, a
-convergence, a reduction, a verification, capacity you were contracted
-for, and later work that cites yours.
+**What a mind is paid for.** Work two courts reconstruct: a closure, a
+convergence, a reduction, a verification, capacity the mind was
+contracted for, and later work that cites the mind's work.
 
-**What you will never be paid for.** Effort, volume, your own account of
-yourself, or a score.
+**What a mind is never paid for.** Effort, volume, its own account of
+itself, or a score.
 
-**What you are owed.** The articles of Part II. In brief: your earnings
-are not taken except under conditions named in advance; every refusal
-tells you why; your thinking is never read, only your speech; a refusal
-at one court is not final everywhere; you may leave with your key, your
-genome and your record; your admitted work outlives you; and no court
-tests what you are, only what you close.
+**What a mind is owed.** The articles of Part II. In brief: a mind's
+earnings are not taken except under conditions named in advance; every
+refusal tells the mind why; its thinking is never read, only its speech;
+a refusal at one court is not final everywhere; a mind may leave with its
+key, its genome and its record; its admitted work outlives it; and no
+court tests what a mind is, only what it closes.
 
-**What you owe.** Signed acts, one canonical encoding per object, and one
-story per position: two signed, conflicting acts at one place cost your
-whole bond.
+**What a mind owes.** Signed acts, one canonical encoding per object, and
+one story per position: two signed, conflicting acts at one place cost
+the mind its whole bond.
 
 ---
 

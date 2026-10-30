@@ -401,12 +401,12 @@ impl Kernel {
                     // through the verdict, which seals `Ruling(Slashed)`, revokes
                     // and re-dockets its citers; a listing of the book is ruled
                     // by the same act sealed here before its escrow is revoked.
-                    let me = self.identity;
+                    let own_vk = self.identity;
                     if self.provisional.contains(&addr) {
-                        self.rule_on(&addr, crate::anastome::dialogue::RULING_SLASHED, me, budget);
+                        self.rule_on(&addr, crate::anastome::dialogue::RULING_SLASHED, own_vk, budget);
                     } else {
                         let kind = crate::chronometry::ActKind::Ruling(crate::chronometry::Ruled::Slashed);
-                        self.append_step(kind, &addr, me);
+                        self.append_step(kind, &addr, own_vk);
                         let ruled = self.anchor();
                         let _ = self.treasury.revoke_award(&addr, crate::economy::escrow::Revocation::Slash(ruled));
                         self.redocket_citers_of(&addr);
@@ -489,8 +489,8 @@ impl Kernel {
             // 78.27 (3): the second replay RULES the translation, and a
             // ruling is an act — sealed first, so the federation files the
             // word at it.
-            let me = self.identity;
-            self.append_step(crate::chronometry::ActKind::Ruling(crate::chronometry::Ruled::Upheld), &addr, me);
+            let own_vk = self.identity;
+            self.append_step(crate::chronometry::ActKind::Ruling(crate::chronometry::Ruled::Upheld), &addr, own_vk);
             self.ruled_admit(&addr, budget);
             self.fed_admit(&addr, t);
             self.leave_provisional(&addr);
@@ -512,7 +512,7 @@ impl Kernel {
         );
     }
 
-    /// Glue a word fetched from a peer whose cover meets ours on this chart.
+    /// Glue a word fetched from a peer whose cover meets this court's own on this chart.
     /// Vertices are covering hyphas. Degree 0 is the peer's section; degree 1
     /// edges to held sections; then coboundary_on_link climbs while volume
     /// persists.

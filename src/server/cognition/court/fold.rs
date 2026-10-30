@@ -142,9 +142,9 @@ impl Kernel {
     /// (`last_transition`, kept as acts are sealed), and then folding the
     /// next page moves history the change already supersedes.
     fn fold_transitions(&mut self, head: Place) -> Result<(), &'static str> {
-        let me = self.chain.vk();
+        let own_vk = self.chain.vk();
         let root = self.chain.root().map(|r| r.at);
-        let prefix = self.chain.line_between(&me, root, head, usize::MAX);
+        let prefix = self.chain.line_between(&own_vk, root, head, usize::MAX);
         if !prefix.iter().any(|r| !matches!(r.kind, ActKind::Fold | ActKind::Orbit)) {
             return Err(REFUSE_FOLD_IDLE);
         }
@@ -154,7 +154,7 @@ impl Kernel {
             None => {
                 let at = self.chain.head_place().and_then(|h| {
                     self.chain
-                        .line_between(&me, root, h, usize::MAX)
+                        .line_between(&own_vk, root, h, usize::MAX)
                         .iter()
                         .rev()
                         .find(|r| r.kind.changes_algorithm())
@@ -215,9 +215,9 @@ impl Kernel {
         witness: &crate::anastome::dialogue::ReceiptSection,
     ) -> Result<FoldDone, &'static str> {
         let p = self.fold_pending.clone().ok_or(REFUSE_FOLD_OPEN)?;
-        let me = self.identity;
+        let own_vk = self.identity;
         let wk = witness.receipt.stamp.vk;
-        if wk == me {
+        if wk == own_vk {
             return Err(REFUSE_WITNESS_DEPENDENT);
         }
         crate::court::admission::verify_signature(&witness.prefix, &wk, &witness.sig)?;
@@ -241,8 +241,8 @@ impl Kernel {
         let first = cold.first().map_or(root.at, |r| r.stamp.place());
         // The Fold node cites the root it leaves the line on, by stamp and
         // hash (78.24): a fold names no word and measured nothing.
-        let at = Stamp::new(root.height, me, root.at);
-        self.append_cited(ActKind::Fold, vec![Cite::Root { at, hash: root.hash }], [0; 4], me);
+        let at = Stamp::new(root.height, own_vk, root.at);
+        self.append_cited(ActKind::Fold, vec![Cite::Root { at, hash: root.hash }], [0; 4], own_vk);
         // THE EPOCH ROWS STAND AT THE ROOT they net to (78.65): the balance
         // the folded prefix leaves is the root's, so the journal stays in
         // line order and the next fold's nets below its cut count them. At
@@ -265,7 +265,7 @@ impl Kernel {
         let count = cold.len() as u64;
         self.file_era(Era {
             root,
-            signer: me,
+            signer: own_vk,
             witness: wk,
             sig_home,
             sig_witness: witness.sig,
@@ -355,7 +355,8 @@ pub(crate) fn rows_range_of(
     // epoch rows and all since — so the witness is served exactly that
     // set. The span from `from` left the epoch rows out, and a fold
     // proposed after another was refused by every witness as not
-    // conserving: "rows fetched 0 … parties ours 0 proposed 8" (hypha b,
+    // conserving: the witness fetched 0 rows and netted 0 parties against
+    // the 8 proposed (hypha b,
     // epoch 115). A fold compacts the journal, so the set stays small.
     // 78.153b — the page alone cloned (`rows_below_page_of`), never every
     // row below the head for every page of them. The span's rows

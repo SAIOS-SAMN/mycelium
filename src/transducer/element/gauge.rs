@@ -410,7 +410,7 @@ impl Element {
     /// multiplicity on the fibre. One read; the axis is never read whole.
     ///
     /// THE ASSIGNMENTS THEMSELVES, never their positions (78.43(1)): a
-    /// position in `assignments()` is "the third thing I saw", and a reader
+    /// position in `assignments()` is "the third thing seen", and a reader
     /// that held one had to look the assignment up after. The table holds
     /// each assignment under its charge, and no reader holds a position.
     pub fn assignments_by_profile(&self, key: &[u8]) -> Vec<Vec<(u8, u8)>> {

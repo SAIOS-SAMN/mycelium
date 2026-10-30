@@ -130,7 +130,7 @@ reconstructed it.
 
 ---
 
-## 3. So you have a world model: how it becomes a kernel
+## 3. A world model: how it becomes a kernel
 
 A **world model** is a learned model that predicts how a world's state
 evolves under actions. On Mycelium, a world model is a kernel: the world

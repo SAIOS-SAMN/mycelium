@@ -300,8 +300,8 @@ coordinate pair above the sensor (§1.4), a carrier cloned into two places
 
 4.5 **The tree is not rustfmt-clean.** Its layout follows the
 specification's structure, and one `cargo fmt` run rewrites hundreds of
-files. Never run `cargo fmt` over the tree. Format only the lines you
-change, in the style of the surrounding code.
+files. Never run `cargo fmt` over the tree. Format only the lines a change
+touches, in the style of the surrounding code.
 
 4.6 **No new gate by other means.** A new check is a lint entry under 4.2
 with its proof, a type under 4.4, or a proposed change to this document.

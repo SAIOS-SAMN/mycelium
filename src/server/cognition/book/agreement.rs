@@ -123,11 +123,11 @@ impl Kernel {
             if self.discoverer_of(at.as_bytes()) != Some(peer) {
                 continue;
             }
-            let Some(theirs) = self.word_at(at.as_bytes()).or_else(|| self.provisional.get(at.as_bytes())).cloned() else { continue };
-            if !sectioned(&theirs) || theirs.same_vertex(word) {
+            let Some(peer_word) = self.word_at(at.as_bytes()).or_else(|| self.provisional.get(at.as_bytes())).cloned() else { continue };
+            if !sectioned(&peer_word) || peer_word.same_vertex(word) {
                 continue;
             }
-            let own = word_local(&theirs, family);
+            let own = word_local(&peer_word, family);
             if !empty(&heard.beyond(&own, family)) || !empty(&own.beyond(heard, family)) {
                 continue;
             }

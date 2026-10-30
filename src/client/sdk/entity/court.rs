@@ -160,15 +160,15 @@ impl Entity {
                     StrokeOutcome::add(&mut outcome.uttered, &mag);
                     self.ask(
                         move |s| s.probe(&target, std::slice::from_ref(&cite)),
-                        move |me, reading| {
+                        move |entity, reading| {
                             let Ok(reading) = reading else { return };
                             match reading.closure {
                                 crate::anastome::dialogue::ProbeClosure::Closed => {
-                                    me.physics_mut().relieve(&mag);
-                                    me.physics_mut().syntropy(&mag);
-                                    StrokeOutcome::add(&mut me.board.court.probed.closed, &mag);
+                                    entity.physics_mut().relieve(&mag);
+                                    entity.physics_mut().syntropy(&mag);
+                                    StrokeOutcome::add(&mut entity.board.court.probed.closed, &mag);
                                 }
-                                crate::anastome::dialogue::ProbeClosure::Residual(_) => me.physics_mut().bump(&mag),
+                                crate::anastome::dialogue::ProbeClosure::Residual(_) => entity.physics_mut().bump(&mag),
                                 crate::anastome::dialogue::ProbeClosure::Gone | crate::anastome::dialogue::ProbeClosure::Nothing => {}
                             }
                         },

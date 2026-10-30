@@ -7,9 +7,9 @@ use crate::anastome::dialogue::*;
 /// able to tell them apart. It was one byte, `applied as u8`, and every
 /// outcome answered `0`: another mesh, a bad signature, a chain gap, a
 /// stale frame, an equivocation, and a ruling that found nothing to move.
-/// A gap means "send me the back-fill" and an equivocation is 47.4's burn
-/// proof — the mesh's only bond-slashing evidence — and both read as "your
-/// ruling did not land".
+/// A gap means "send the receiving court the back-fill" and an
+/// equivocation is 47.4's burn proof — the mesh's only bond-slashing
+/// evidence — and both read as "the sender's ruling did not land".
 #[test]
 fn a_ruling_is_answered_with_the_arm_it_reached() {
     for r in [Ruled::Applied, Ruled::Inert] {

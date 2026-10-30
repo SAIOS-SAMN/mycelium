@@ -194,7 +194,7 @@ The hypha is the one place every universe's book is kept. On it, the
 server offers every client and kernel the same capacity to place itself
 and others.
 
-### 4.1 Where am I (Specified as one typed reading; its parts Built)
+### 4.1 Position: where a universe stands (Specified as one typed reading; its parts Built)
 
 For any domain, one reading returns:
 - its head anchor (`u`, final point, commitment hash);
@@ -308,7 +308,7 @@ each world stands (§4.1).
 
 | Phase | Delivers |
 |---|---|
-| **K1** | The "where am I" reading (§4.1), with lag and the unanchored-since report. |
+| **K1** | The position reading, where a universe stands (§4.1), with lag and the unanchored-since report. |
 | **K2** | Placing two universes by bracketing (§4.2). |
 | **K3** | The bridge-keeper pattern as a named form in `forms` (§2.1). |
 | **K4** | Optional lanes of attachment in anchors, with per-lane distance and dilation readings (§5). |

@@ -515,8 +515,8 @@ impl Kernel {
             self.withheld += 1;
             return Close::Withheld;
         }
-        let me = self.identity;
-        match self.seal_step(ActKind::Orbit, frame, me, |_| Vec::new()) {
+        let own_vk = self.identity;
+        match self.seal_step(ActKind::Orbit, frame, own_vk, |_| Vec::new()) {
             Some(r) => {
                 // The orbit closed: what nothing flowed to for a whole orbit
                 // lapses by `ZeroFlux` (78.37 (3)).

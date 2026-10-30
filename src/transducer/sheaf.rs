@@ -188,14 +188,14 @@ mod tests {
         assert_eq!(d.len(), 1, "one stratum disagrees");
         assert_eq!(d[0].inv, chart(&bar), "the bar's chart");
         assert_eq!(d[0].count, 2);
-        let mine = have(&es, &d[0].inv);
-        assert_eq!(mine, vec![bar.address()]);
+        let entity_has = have(&es, &d[0].inv);
+        assert_eq!(entity_has, vec![bar.address()]);
         let mut at_index: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
         for (i, w) in hypha.iter().enumerate() {
             at_index.insert(w.address(), i);
         }
         let at = |a: &[u8]| at_index.get(a).copied().and_then(|i| hypha.get(i));
-        let page = serve(&hs, at, &d[0].inv, &mine, 1 << 20);
+        let page = serve(&hs, at, &d[0].inv, &entity_has, 1 << 20);
         assert_eq!(page.len(), 1, "only the lacking word travels");
         let mut pos = 0usize;
         let learned = Element::from_bytes(&page[0], &mut pos).unwrap();
@@ -212,6 +212,6 @@ mod tests {
         let gd = digests(&atlas(&grown));
         assert!(discordant(&gd, &digests(&es2)).is_empty(), "the root is over the base");
         // A budget too small for one word serves nothing and never overflows.
-        assert!(serve(&hs, at, &d[0].inv, &mine, 8).is_empty());
+        assert!(serve(&hs, at, &d[0].inv, &entity_has, 8).is_empty());
     }
 }

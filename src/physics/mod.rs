@@ -763,7 +763,7 @@ mod tests {
     }
 
     /// PHY1 — WHAT CONTACTS DID, BOOKED ONCE: condensed contacts build order
-    /// on their lanes, refused ones press on theirs, and a second booking of
+    /// on their lanes, refused ones press on their own lanes, and a second booking of
     /// the same totals moves nothing — the mark is what was already booked.
     #[test]
     fn contacts_book_order_where_they_condensed_and_pressure_where_refused() {

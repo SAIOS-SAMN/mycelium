@@ -333,11 +333,11 @@ pub(crate) fn report(slice: &Slice) {
     let (cg, wg) = sum(&|t| t.glued);
     let (cd, wd) = sum(&|t| t.demands);
     let (cc, wc) = sum(&|t| u64::from(t.closed));
-    let (ce, we) = sum(&|t| u64::from(t.extracted));
+    let (cext, wext) = sum(&|t| u64::from(t.extracted));
     let (cx, wx) = sum(&|t| u64::from(t.exhausted));
     println!(
         "  delta totals words {cw}→{ww} glued {cg}→{wg} demands {cd}→{wd} \
-         closed {cc}→{wc} extracted {ce}→{we}"
+         closed {cc}→{wc} extracted {cext}→{wext}"
     );
     println!(
         "  delta tasks {} moved {moved} standable {} exhausted {cx}→{wx} stroke {DELTA_STROKE}",

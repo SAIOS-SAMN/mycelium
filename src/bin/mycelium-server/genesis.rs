@@ -269,17 +269,17 @@ mod tests {
     #[test]
     fn the_genesis_bonds_every_hypha_and_every_voice_at_the_cover() {
         let mut k = Kernel::new();
-        let (me, peer, other, voice) = ([1u8; 32], [2u8; 32], [3u8; 32], [9u8; 32]);
+        let (court, peer, other, voice) = ([1u8; 32], [2u8; 32], [3u8; 32], [9u8; 32]);
         let cover = [12u64, 3, 0, 20];
-        let genesis = Genesis { hypha: vec![(me, cover), (peer, cover), (other, cover)], voice: vec![(voice, [8, 8, 1, 8])] };
-        bond_genesis(&mut k, me, cover, &genesis, "t");
-        for who in [me, peer, other, voice] {
+        let genesis = Genesis { hypha: vec![(court, cover), (peer, cover), (other, cover)], voice: vec![(voice, [8, 8, 1, 8])] };
+        bond_genesis(&mut k, court, cover, &genesis, "t");
+        for who in [court, peer, other, voice] {
             assert_eq!(k.treasury().bond_of(&who), Some(cover), "{who:?} is bonded at the cover");
             assert_eq!(k.treasury().balance_mu(&who), cover, "{who:?} is funded the cover to spend");
         }
         assert!(k.treasury().audit().is_ok(), "and the allocation conserves");
         // Bonded again with another cover: what is held stands (§6).
-        bond_genesis(&mut k, me, [1, 1, 1, 1], &genesis, "t");
+        bond_genesis(&mut k, court, [1, 1, 1, 1], &genesis, "t");
         assert_eq!(k.treasury().bond_of(&peer), Some(cover));
         assert_eq!(k.treasury().balance_mu(&peer), cover, "and funded once, never again");
     }

@@ -96,7 +96,7 @@ pub(crate) struct Board {
     pub(crate) unpriced: std::collections::VecDeque<super::chatter::FieldWork>,
     pub(crate) unpriced_crossed: std::collections::VecDeque<super::chatter::FieldWork>,
     /// The scenes taken in off the feed, by citation: their speech leaves at
-    /// the mind's own return, not theirs (`speak_with`). Bounded by the
+    /// the mind's own return, not the scenes' (`speak_with`). Bounded by the
     /// families the feed held.
     pub(crate) feed_scenes: crate::network::nerve::Keyed<()>,
     /// MU-CLIENT §7.1 — THE OPEN QUESTIONS: residual chains a court taught or

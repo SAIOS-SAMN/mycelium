@@ -87,12 +87,12 @@ impl Element {
         // compared -- two spellings of one boundary reduce to one chain. A
         // chain with no canonical form is no boundary, and two of them are
         // not one vertex.
-        let (Some(mine), Some(theirs)) =
+        let (Some(this_chain), Some(other_chain)) =
             (canonical_chain(&self.sub), canonical_chain(&other.sub))
         else {
             return false;
         };
-        if mine != theirs {
+        if this_chain != other_chain {
             return false;
         }
         // 17.2 step 2: a rewrite is named by the forms it cites, and those

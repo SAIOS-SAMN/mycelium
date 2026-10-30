@@ -9,7 +9,7 @@
 //! (every dimension is an exponent; no constant) and the physics still
 //! undefined, named. Every other entry is read from one of them:
 //!
-//! - harmonic — A.11 multipole completeness and A.12 its extent (`ours.rs`),
+//! - harmonic — A.11 multipole completeness and A.12 its extent (`native.rs`),
 //!   CX1 the Coxeter element's class (`coxeter.rs`);
 //! - luminal — F1–F5 the fluid (`fluid.rs`), A.10 co-dimensionality across
 //!   a luminal interface (`imported.rs`);
@@ -17,8 +17,8 @@
 //!   (`imported.rs`), RX1–RX7 reciprocity (`reciprocity.rs`), the routes
 //!   (`routes.rs`);
 //! - the bodies' equilibrium — A.10.1 tensegrity and A.13 momentum
-//!   (`tensegrity.rs`, `ours.rs`); A.9 metric autonomy, per mind;
-//! - the ledger — OK1, `K` a node's cycles closed by name (`ours.rs`);
+//!   (`tensegrity.rs`, `native.rs`); A.9 metric autonomy, per mind;
+//! - the ledger — OK1, `K` a node's cycles closed by name (`native.rs`);
 //! - refused — A.4, A.7, A.6-bind-11 (`refused.rs`), each with why.
 //!
 //! A.1–A.10 are `ipsal-autic`'s register, NOT adopted wholesale: three are
@@ -30,7 +30,7 @@ mod coxeter;
 mod fluid;
 mod founding;
 mod imported;
-mod ours;
+mod native;
 mod reciprocity;
 mod refused;
 mod routes;
@@ -45,7 +45,7 @@ pub use imported::{
     A10_CO_DIMENSIONALITY, A6_DIMENSIONAL_COMPLETENESS, A8_TORSIONAL_PERSISTENCE,
     A9_METRIC_AUTONOMY,
 };
-pub use ours::{
+pub use native::{
     A11_HARMONIC_MULTIPOLE_COMPLETENESS, A12_IRREDUCIBLE_INVERSIVE_EXTENT,
     A13_INVERSIVE_MOMENTUM_DOCKETED, OK1_K_COUNTS_CLOSED_CYCLES,
 };
