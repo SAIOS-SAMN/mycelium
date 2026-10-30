@@ -2,7 +2,7 @@
 
 # The Anti-Flattening Law
 
-A structural invariant of mycelium v0.1.0. It extends the convergence-engine
+A structural invariant of mycelium. It extends the convergence-engine
 design constraints (I: no boolean gates; II: no maps in cognition; V: no
 residual suppression) with a statement of why flat associative storage is
 excluded from the reasoning path.

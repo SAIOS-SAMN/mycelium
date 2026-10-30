@@ -3,7 +3,7 @@
 #
 [package]
 name = "mycelium"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "A distributed mesh network for POW++ proofs of work: exact Cl(4,1)(Q) geometric algebra, courts that adjudicate and settle, and client minds that learn and solve."
 license = "Apache-2.0"

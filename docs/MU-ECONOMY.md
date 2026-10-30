@@ -1,10 +1,11 @@
 # Economy — μ, the four-lane currency
 
-Status at f595b4e: balances, stake bond, escrow, per-lane pricing, and the
-ledger entries exist in `src/economy/`. Issuance as mint, stake for
-voices, transfer, genesis, and the audit invariant are specified here and
-not yet landed. Companion documents: `MU-PRODUCT.md`, `MU-ENGINEERING.md`,
-`XSEPTUM.md`.
+Status (v0.1.1): implemented in `src/economy/` and the court's market —
+balances, stake bonds for hyphae and voices, escrow, per-lane pricing,
+issuance by mint against measured work, transfer, the genesis allocation,
+settlement rows carrying their POW++ arm, and the audit invariant
+(`Treasury::audit`). Companion documents: `MU-PRODUCT.md`,
+`MU-ENGINEERING.md`, `XSEPTUM.md`.
 
 ## 0. The proofs of work, named apart (ruled 2026-09-24)
 

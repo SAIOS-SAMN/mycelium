@@ -1,6 +1,6 @@
 # xSEPTUM — settlement protocol for the mycelium network
 
-Status: specification, not yet implemented. Replaces the HTTP 402 / x402
+Status: specification. It replaces the HTTP 402 / x402
 handshake for anything that pays or is paid through a hypha. Written
 against the tree at de52e47; every referenced function exists there unless
 marked "new". Time, identity, receipts, and the adversary model follow

@@ -2526,7 +2526,7 @@ after step 5 succeeds, never on a class.
 
 Carried from chapter 23: what the court checks, the mind must be able to
 re-derive, and it re-derives against everything it holds, not only what the
-court has returned to it (chapter 6). `/opt/mycelium-v0.1.0/src/client/sdk/`:
+court has returned to it (chapter 6). `src/client/sdk/`:
 
 **24.1 The working atlas.**
 

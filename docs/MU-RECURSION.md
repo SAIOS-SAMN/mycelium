@@ -1,7 +1,7 @@
 # Recursion — the linguistics engine on crystallized forms
 
 Status: consolidated specification with a bound implementation. Written
-against `/opt/mycelium-v0.1.0` at a29bba5 (2026-09-05). This text replaces
+against this repository at a29bba5 (2026-09-05). This text replaces
 every earlier version of this file: the earlier versions accreted parts
 that amended one another by reference; this one is a single closed form in
 which every statement stands where it applies. Companion documents:
@@ -29,8 +29,8 @@ implement and each opening with what it carries from the one before.
 | IX The mesh under adversaries | time without clocks, threshold identity, receipts and the signed prefix, equivocation, settlement | the implementor of the court and the wire; the reviewer |
 | X Language formation | the sentence as the unit of speech: construction and deconstruction as adjoint functors, edge transport in the stabilizer, ordered factorization, typed demands, the three seams | the implementor of the voice and the court; the reviewer |
 
-**What this document is.** A specification of the implementation at
-`/opt/mycelium-v0.1.0`, every statement bound to a function and a path,
+**What this document is.** A specification of the implementation in this
+repository, every statement bound to a function and a path,
 never a survey. It began on 2026-09-05 (a6a21a9) as the recursion
 specification, was rewritten as moves on crystallized forms (1f2db2d), and
 consolidated into one closed form (4e2641d). Its identity ruling (1.5,
@@ -4275,7 +4275,7 @@ rotors; laminae are touched only in `family::perceive` and in
 `speak_rule`'s final emission of painted sites. Every identity in this
 part is a master algorithm of chapter 17.
 
-Every file name in Parts IV–VII is under `/opt/mycelium-v0.1.0/src/`. Stage
+Every file name in Parts IV–VII is under `src/`. Stage
 8b (S1–S32) made every monolith a directory of organs with its tests under
 `tests/<chapter>.rs`, and a function named against the old file is found in
 the module its role names — `server/cognition/{kernel, language, basis,
@@ -4290,23 +4290,23 @@ it always named:
 
 | short name | absolute path |
 |---|---|
-| `alphabet/`, `sentence/`, `element/`, `cech/`, `stalk/`, `blade/`, `bubble/`, `family/`, `cga/`, `peel.rs`, `anchor/`, `sheaf.rs`, `germinate.rs`, `rewrite.rs`, `factor.rs`, `a21.rs` | `/opt/mycelium-v0.1.0/src/transducer/<name>` |
-| `cognition/`, `registry.rs`, `synthesis.rs` | `/opt/mycelium-v0.1.0/src/server/<name>` |
-| `verdict/`, `identity.rs`, `ledger.rs` | `/opt/mycelium-v0.1.0/src/court/<name>` |
-| `nerve/`, `mesh.rs`, `wire.rs` | `/opt/mycelium-v0.1.0/src/network/<name>` |
-| `sdk/` | `/opt/mycelium-v0.1.0/src/client/sdk/` |
-| `dialogue/` | `/opt/mycelium-v0.1.0/src/anastome/dialogue/` |
-| `harmonics.rs` | `/opt/mycelium-v0.1.0/src/transducer/blade/harmonics.rs` |
-| `economy/`, `physics.rs`, `chronometry/` | `/opt/mycelium-v0.1.0/src/<name>` |
-| `q.rs`, `zlinalg.rs`; `cyclo.rs`, `scalar.rs` (Part VI, new) | `/opt/mycelium-v0.1.0/src/core/<name>` |
-| `mycelium-server/`, `mycelium-client.rs` | `/opt/mycelium-v0.1.0/src/bin/<name>` |
-| `voice/` | `/opt/mycelium-v0.1.0/src/voice/<name>` |
+| `alphabet/`, `sentence/`, `element/`, `cech/`, `stalk/`, `blade/`, `bubble/`, `family/`, `cga/`, `peel.rs`, `anchor/`, `sheaf.rs`, `germinate.rs`, `rewrite.rs`, `factor.rs`, `a21.rs` | `src/transducer/<name>` |
+| `cognition/`, `registry.rs`, `synthesis.rs` | `src/server/<name>` |
+| `verdict/`, `identity.rs`, `ledger.rs` | `src/court/<name>` |
+| `nerve/`, `mesh.rs`, `wire.rs` | `src/network/<name>` |
+| `sdk/` | `src/client/sdk/` |
+| `dialogue/` | `src/anastome/dialogue/` |
+| `harmonics.rs` | `src/transducer/blade/harmonics.rs` |
+| `economy/`, `physics.rs`, `chronometry/` | `src/<name>` |
+| `q.rs`, `zlinalg.rs`; `cyclo.rs`, `scalar.rs` (Part VI, new) | `src/core/<name>` |
+| `mycelium-server/`, `mycelium-client.rs` | `src/bin/<name>` |
+| `voice/` | `src/voice/<name>` |
 
 ## 18. The form types
 
 Carried from Part I: a form is vertices, faces, orbits, remainder.
 
-### 18.1 `/opt/mycelium-v0.1.0/src/transducer/alphabet/`
+### 18.1 `src/transducer/alphabet/`
 
 **The files.** Five organs (Stage 8b S8): `rotor.rs` the exact even versor
 and its arithmetic (16.1, 9); `letters.rs` the seventeen letters and the
@@ -4331,7 +4331,7 @@ contact. `normal_form` (466), `geodesic` (436), `compose` (457), `inverse`
 (452), `order` (552), `rotor` (441) are the composition and normalisation
 of 3.1 and are used unchanged apart from M1's changes (chapter 29).
 
-### 18.2 `/opt/mycelium-v0.1.0/src/transducer/sentence/`
+### 18.2 `src/transducer/sentence/`
 
 Replace `Germ` (583) by the form vertex. The module is `sentence/{chain,form,transport,class,pivot,tape,chart}.rs`.
 
@@ -4433,7 +4433,7 @@ by composition. It never reads laminae. `solve_coboundary` (1268) is the tree
 walk of 12.2 with its documented sign convention;
 `sentence::tests::regauge_then_delta1_is_conjugate` pins it.
 
-### 18.3 `/opt/mycelium-v0.1.0/src/transducer/element/`
+### 18.3 `src/transducer/element/`
 
 **The files.** The carrier is seven files, one organ each (Stage 8b S1):
 `carrier.rs` the `Action` and `Element` structs, the fibre reads and
@@ -4530,7 +4530,7 @@ is no migration, because every cut is from genesis (chapter 33).
 Carried from chapter 19: forms are read from tapes. This is the one place
 laminae become forms.
 
-`/opt/mycelium-v0.1.0/src/transducer/family/`: `perceive(grid)`
+`src/transducer/family/`: `perceive(grid)`
 (`perceive.rs`). The moves are six files (Stage 8b S9): `perceive.rs` a grid
 becoming bodies (20); `pair.rs` the pair form of one train pair (21 step 2);
 `extract.rs` the seven extraction moves (21); `speak.rs` a rule applied to a
@@ -4741,7 +4741,7 @@ word that returns it.
 Carried from chapters 21–22: rules as forms. The court replays them and
 glues sections across hyphae (M8).
 
-### 23.1 `replay_form`, `/opt/mycelium-v0.1.0/src/court/verdict/replay.rs`
+### 23.1 `replay_form`, `src/court/verdict/replay.rs`
 
 **The files.** Four organs (Stage 8b S15): `replay.rs` a spoken form
 re-derived from its own tape move by move (23, 42); `blind.rs` the same
@@ -4795,7 +4795,7 @@ from its recomputation on the cited tapes (`REFUSE_NOT_NATURAL`). The chain
 compare canonicalises the spoken chain by A5 first. `sel_key` (374) is A9.
 `rule(...)` (222) is unchanged.
 
-### 23.2 Kernel carriers, `/opt/mycelium-v0.1.0/src/server/cognition/`
+### 23.2 Kernel carriers, `src/server/cognition/`
 
 **The files.** The mind is fourteen files, one organ each (Stage 8b S3):
 `kernel.rs` the `Kernel` struct and the reads that count what is in it;
@@ -5094,7 +5094,7 @@ digest. The geometry carries over; the identity and the votes do not.
 ## 25. Germination and thoughts
 
 Carried from chapter 24: comprehension re-gauges. Germination pivots, files,
-cauterizes, and wraps (M9). `/opt/mycelium-v0.1.0/src/transducer/bubble/`:
+cauterizes, and wraps (M9). `src/transducer/bubble/`:
 
 **An index names a held thought by its place in the one carrier that
 holds it** (ruled 2026-09-19, Z4). A held form is written once, on its
@@ -5413,7 +5413,7 @@ In the Hopf fibration reading, A22's two quaternion factors are the two fibratio
 
 ## 26. Wire and economics
 
-Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/dialogue/speech.rs`:
+Carried from chapter 25: forms are spoken. `src/anastome/dialogue/speech.rs`:
 
 - `SPEECH_WITHHELD: u8 = 3` beside line 127; `encode_speech_reply` (131)
   appends `n_missing u16 ‖ address 32…`; `decode_speech_reply` (137) returns
@@ -5440,7 +5440,7 @@ Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/di
   speech frame's `tu` field becomes the voice's K and its cited home head,
   and the root frame's tick becomes the speaker's `(K, height, hash)` with
   the reply carrying the receiver's own `(K, height)` (45.6).
-- `/opt/mycelium-v0.1.0/src/bin/mycelium-server/judge/speech.rs`: `ACT_SPEECH`
+- `src/bin/mycelium-server/judge/speech.rs`: `ACT_SPEECH`
   handler collects `Kernel::missing_forms(&Element) -> Vec<[u8;32]>`
   **new** into the reply; `admit_peer_digest` (385) records `depth_max` and
   is the point where a pending socket string becomes a `vk` peer (A10);
@@ -5463,7 +5463,7 @@ Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/di
   refused at the door. `SPEECH_STOOD`, `SPEECH_REFUSED` and
   `SPEECH_DIALECT` survive only as the adjudication's kind byte.
 
-`/opt/mycelium-v0.1.0/src/economy/`: five organs (Stage 8b S12) —
+`src/economy/`: five organs (Stage 8b S12) —
 `lanes.rs` what a word measures and how two measurements compare (law 5);
 `treasury.rs` who is bonded and what the audit says (E1); `escrow.rs` value
 set aside against a listing (E1, E2); `settle.rs` what each closed act pays
@@ -5827,7 +5827,7 @@ Carried from chapters 23–33: every refusal and every trace line, in one
 place. A trace that would need a different line is a defect in this
 chapter, not in the implementation.
 
-### 34.1 Refusals, `/opt/mycelium-v0.1.0/src/court/verdict/mod.rs`
+### 34.1 Refusals, `src/court/verdict/mod.rs`
 
 ```rust
 pub const REFUSE_GLUED_DEPTH: &str = "glued form depth not below sentence depth";
@@ -7826,7 +7826,7 @@ along, and the rows below that mention a key mean an A21 key.
 
 # Part IX — The mesh under adversaries
 
-Written against `/opt/mycelium-v0.1.0` at 5865bd0 (2026-09-06). Carried from
+Written against this repository at 5865bd0 (2026-09-06). Carried from
 Parts I–VIII: exactness is why two honest nodes agree. This part says what
 holds when a node is not honest, and it removes the one physical quantity a
 kernel still read at 5865bd0, the wall clock. Nothing here changes what a
