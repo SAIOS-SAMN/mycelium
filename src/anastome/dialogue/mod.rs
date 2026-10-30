@@ -12,6 +12,7 @@ pub mod cited;
 pub mod commitment;
 pub mod crossing;
 pub mod handoff;
+pub mod lease;
 pub mod cover;
 pub mod demand;
 pub mod docket;

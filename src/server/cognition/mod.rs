@@ -23,6 +23,7 @@ mod identity;
 mod kernel;
 mod keys;
 mod language;
+mod lease;
 mod ledger;
 mod market;
 mod mouth;
@@ -40,6 +41,7 @@ mod wire;
 
 pub use crate::transducer::sentence::{cited_pattern, replay_at, verify_at, Cite};
 pub use court::catchup::RootAdoption;
+pub use lease::LeaseReading;
 pub use court::fold::Proposal;
 pub use court::syllabus::{Asker, PageEnd, ServedPage};
 pub use court::task::SolveVerdict;

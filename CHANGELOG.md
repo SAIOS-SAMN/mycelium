@@ -19,12 +19,26 @@ such change is named here.
     ruling.
   - Ledger rows carry arm byte 4, and the court's `acts` reading counts
     "verifications".
-- `docs/MU-ECONOMY.md`: §5.1 specifies POWV, §8 its ratio, and §9 records
-  the implementation as of v0.1.2.
+- **Compute leases:** escrow against a provider's capacity, released by
+  proof (`docs/MU-ECONOMY.md` §5.2).
+  - A payer holds μ for a provider over named jobs for a window of court
+    heights.
+  - Each verified solve of a leased job pays the provider its measured
+    discharge out of the hold, capped by what is left, once per job.
+  - The remainder returns to the payer on close, when the jobs are done,
+    when the hold is spent, or when the window passes.
+  - On the wire: `ACT_WALLET` sub-kinds 3 (open) and 4 (close), signed by
+    the payer.
+  - `Treasury::draw_held` pays part of a hold.
+  - The court's `acts` reading counts "lease payments".
+- `docs/MU-ECONOMY.md`: §5.1 specifies POWV, §5.2 the compute lease, §8
+  POWV's ratio, and §9 records the implementation.
 
 ### Documentation
-- `ROADMAP.md` lays out ten development tracks in order:
+- `ROADMAP.md` lays out eleven development tracks in order:
   - the xSEPTUM Note;
+  - compute leases (built; verification leases and leases through the
+    Note next);
   - bond delegation;
   - membership after genesis;
   - multi-host deployment;

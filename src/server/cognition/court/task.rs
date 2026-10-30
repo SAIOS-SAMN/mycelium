@@ -228,6 +228,12 @@ impl Kernel {
             let organs = [self.identity];
             let _ = self.release_verified(addr.as_bytes(), pay, &organs, settled);
         }
+        // MU-ECONOMY §5.2 — a verified solve of a leased job pays its lease:
+        // the solve's measured discharge, out of the payer's hold.
+        if let Ok(job) = <[u8; 32]>::try_from(task) {
+            let at = self.anchor();
+            let _ = self.pay_lease(voice, &job, pay, at);
+        }
         self.acts.judge(if first { crate::observe::Judged::FirstClosure } else { crate::observe::Judged::ClosureAgain });
         if !first || pay.iter().all(|&x| x == 0) {
             return [0; 4];

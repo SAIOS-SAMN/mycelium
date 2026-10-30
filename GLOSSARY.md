@@ -73,6 +73,7 @@ Numbers in parentheses cite sections of
 | **Section** | The sites a word changes, and changes truly, on a scene. |
 | **Bond** | μ a court holds staked for a hypha or voice. A bonded hypha counts as an independent witness. |
 | **Escrow** | μ held against a claim until the court rules on it. |
+| **Compute lease** | Escrow against a provider's capacity. A payer holds μ for a provider over named jobs; each job the provider's verified solve closes pays its measured discharge out of the hold, and the remainder returns at the lease's end. |
 
 ## Language and algebra
 

@@ -329,6 +329,33 @@ re-expresses the rows it replaces.
   is a transfer from the user to the discoverer, never more per lane than
   the user holds, and never to oneself.
 
+### Compute leases
+
+A compute lease is escrow against a provider's capacity, released by proof
+([`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) §5.2).
+- **Opening.** A requester (the *payer*) signs a lease naming a provider,
+  an amount of μ, a list of jobs (task citations) and a window of court
+  heights. The court holds the amount from the payer's balance.
+- **Payment.** Each time the court verifies the provider's solve of a
+  leased job, the lease pays the provider that solve's measured discharge
+  out of the hold, `min(d_l, held_l)` per lane. The payment is a transfer,
+  never a mint, and each job pays once.
+- **End.** When the jobs are done, the hold is spent, the window passes or
+  the payer closes the lease, what is left returns to the payer.
+
+Compute is paid as its results verify, never for cycles spent. A provider
+earns the lease payment for the capacity it gave, and its POUW for the
+same closure is settled separately.
+
+```rust
+use mycelium::anastome::dialogue::lease::{encode_lease, decode_lease_reply, LeaseAct};
+
+let act = LeaseAct { payer: key.vk_bytes(), provider, mu: [30, 20, 0, 10], window: 10_000,
+                     jobs: vec![task_citation], nonce };
+let reply = session.speak(encode_lease(&act.sign(&key.sk).ok_or("sign")?).ok_or("encode")?)?;
+let (lease, held) = decode_lease_reply(&reply).ok_or("reply")??;   // or a named refusal
+```
+
 ### Stake, room and discipline
 
 - **Bond buys room.** Room is how much work a hypha or voice may have in
@@ -713,15 +740,17 @@ the development tracks in order, each with its specification and where it
 lands in the code:
 
 1. Settlement: the xSEPTUM Note.
-2. Bond delegation.
-3. Network membership after genesis.
-4. Multi-host deployment.
-5. Ledger evolution across layouts.
-6. The rule language.
-7. Convergence as admission evidence.
-8. A stable SDK surface.
-9. The reference mind's court traffic.
-10. Specification reconciliation.
+2. Compute leases (built; verification leases and leases through the Note
+   next).
+3. Bond delegation.
+4. Network membership after genesis.
+5. Multi-host deployment.
+6. Ledger evolution across layouts.
+7. The rule language.
+8. Convergence as admission evidence.
+9. A stable SDK surface.
+10. The reference mind's court traffic.
+11. Specification reconciliation.
 
 Design discussion is anchored in the specifications. Section and ruling
 numbers (for example *78.143* or *§5.6*) cite `docs/MU-RECURSION.md` and

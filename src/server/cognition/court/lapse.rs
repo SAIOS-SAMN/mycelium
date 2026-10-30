@@ -65,6 +65,9 @@ impl Kernel {
     /// a number standing in for an operation that exists, and it goes. The
     /// sweep takes one stroke and resumes where it stopped.
     pub(crate) fn lapse_silent(&mut self) {
+        // MU-ECONOMY §5.2 — leases whose window has passed end on the same
+        // stroke, what they hold returning to their payers.
+        let _ = self.lapse_leases();
         // At the first orbit no word has seen a whole orbit pass: nothing is
         // silent.
         let bound = self.k_step().checked_sub(1);

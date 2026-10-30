@@ -8,11 +8,27 @@
 
 use crate::door::Door;
 use crate::transport::answer;
+use mycelium::anastome::dialogue::lease::{decode_close, decode_lease, encode_lease_reply};
 use mycelium::anastome::dialogue::wallet::{decode_stake, decode_wallet, encode_stake_reply, encode_wallet_reply};
 use mycelium::network::wire::Frame;
 use std::net::TcpStream;
 
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
+    // MU-ECONOMY §5.2 — a compute lease opened or closed: a write, taken
+    // under the kernel and acknowledged only once durable, as a stake is.
+    let lease = match (decode_lease(&frame.body), decode_close(&frame.body)) {
+        (Some(open), _) => Some(crate::held::held!(door.kernel).map(|mut h| encode_lease_reply(&h.run(|k, _| k.open_lease(&open))))),
+        (None, Some(close)) => Some(crate::held::held!(door.kernel).map(|mut h| encode_lease_reply(&h.run(|k, _| k.close_lease(&close))))),
+        (None, None) => None,
+    };
+    if let Some(reply) = lease {
+        let Ok(body) = reply else { return };
+        if !crate::persist::durable(&door.kernel, &door.state_path) {
+            return;
+        }
+        answer(stream, Frame { lane: frame.lane, body });
+        return;
+    }
     if let Some(s) = decode_stake(&frame.body) {
         let body = match crate::held::held!(door.kernel) {
             // Reads the staker's own claims (a fiber), constant per claim.

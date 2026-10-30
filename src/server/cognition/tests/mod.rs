@@ -28,6 +28,7 @@ mod generator_pay;
 mod glue;
 mod letter;
 mod ledger_clock;
+mod lease;
 mod market;
 mod mint;
 mod verification;

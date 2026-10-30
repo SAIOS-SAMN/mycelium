@@ -333,6 +333,65 @@ apply at every POUW release site: the install, the glue, the solve and
 the docket ruling. Rows carry arm POWV, byte 4, and the court's reading
 counts them as "verifications".
 
+### 5.2 The compute lease (ruled 2026-10-30)
+
+A compute lease is escrow against capacity, released by proof. Compute is
+paid only as its results verify, never for cycles spent. The lease lets a
+requester reserve value for a provider's capacity in advance.
+
+**Opening.** A requester, the *payer*, signs a lease naming:
+- a *provider* (the voice whose capacity it reserves);
+- an amount `μ` on the four lanes;
+- a list of *jobs*: task citations, each paid at most once;
+- a *window* of the court's heights.
+
+The court holds `μ` from the payer's balance under the lease's name, as
+held value (§3.1, counted in the supply).
+
+**Payment.** Each time the court verifies the provider's solve of a leased
+job, the lease pays the provider out of the hold. This covers a first
+closure and a verified re-solve alike: in both cases the court's replay on
+the withheld pairs measured the discharge `d`. On each lane:
+
+```
+paid_l = min(d_l, held_l)
+```
+
+The payment is a transfer of value that already exists, never a mint, and
+the job is done. The provider's POUW for the same solve is settled
+separately (§3), so the lease pays for capacity reserved, while issuance
+pays for the work closed.
+
+**End.** The lease ends when its jobs are done, its hold is spent, its
+window passes (checked on the court stroke), or the payer closes it. At
+the end, what the hold has left returns to the payer.
+
+**Rules:**
+- A job is under at most one open lease per provider, so a verified solve
+  pays exactly one lease.
+- Payer and provider are distinct.
+- Every act is signed by the payer, with a nonce that is spent once.
+
+**Wire.** `ACT_WALLET` sub-kind 3 opens a lease and sub-kind 4 closes one,
+each signed under `"mycelium lease v1"` (`anastome/dialogue/lease.rs`).
+The reply is `[1][lease 32][μ]` or `[0][refusal]`. The refusals are:
+- `Unsigned`
+- `Spent`
+- `Malformed`
+- `Short`
+- `Oneself`
+- `Leased`
+- `Unknown`
+
+**Code:**
+- `Kernel::open_lease`, `close_lease`, `pay_lease` (called from
+  `pay_solve`) and `lapse_leases` (`server/cognition/lease.rs`);
+- `Treasury::draw_held` (`economy/pay.rs`);
+- the lease records in the court's atlas, with a derived index by provider
+  and job.
+
+The court's `acts` reading counts "lease payments".
+
 ## 6. The invariant
 
 On every lane, at every hypha, at every K:
@@ -539,6 +598,8 @@ Implemented in `src/economy/` and the court's market:
   `settle_convergence` (a mint for a demand closed by another mind).
 - POWV, the verifying courts' share of every POUW release (§5.1).
 - E3: held value (`economy/pay.rs`), counted in the supply.
+- The compute lease: escrow against a provider's capacity, paid per
+  verified job and refunded at its end (§5.2).
 
 **Discipline and room**
 - Slash on a failed replay, and the equivocation burn of the signer's

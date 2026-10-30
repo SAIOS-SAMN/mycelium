@@ -76,8 +76,13 @@ pub(crate) struct Atlas {
     pub(crate) ladder: Keyed<TPoint>,
     /// Claims drawn on stakes, by `staker ‖ claim id`.
     pub(crate) claims: Keyed<Claim>,
-    /// Stake acts taken, by `party ‖ nonce`: a resend moves nothing.
+    /// Stake and lease acts taken, by `party ‖ nonce`: a resend moves nothing.
     pub(crate) spent: Keyed<()>,
+    /// MU-ECONOMY §5.2 — the open compute leases, by name.
+    pub(crate) leases: Keyed<super::lease::Lease>,
+    /// The open lease naming each job, by `provider ‖ job`: derived from
+    /// `leases` (rebuilt where they are read back), never persisted.
+    pub(crate) lease_jobs: Keyed<[u8; 32]>,
     /// Moved at every entry sealed: the published reading's mark. Volatile.
     pub(crate) mark: u64,
 }
@@ -120,11 +125,17 @@ pub(crate) struct MappedPlace {
 
 impl Atlas {
     pub(crate) fn is_empty(&self) -> bool {
-        self.ledgers.is_empty() && self.records.is_empty() && self.edges.is_empty() && self.ladder.is_empty() && self.claims.is_empty() && self.spent.is_empty()
+        self.ledgers.is_empty()
+            && self.records.is_empty()
+            && self.edges.is_empty()
+            && self.ladder.is_empty()
+            && self.claims.is_empty()
+            && self.spent.is_empty()
+            && self.leases.is_empty()
     }
 
-    /// `[ledgers][records][edges][ladder][claims][spent]`, each counted, each
-    /// by its own key.
+    /// `[ledgers][records][edges][ladder][claims][spent][leases]`, each
+    /// counted, each by its own key.
     pub(crate) fn put(&self) -> Vec<u8> {
         let mut v = Vec::new();
         put_key_count(&mut v, self.ledgers.len());
@@ -158,7 +169,37 @@ impl Atlas {
         for (k, _) in self.spent.scoped() {
             put_key_bytes(&mut v, &k);
         }
+        put_key_count(&mut v, self.leases.len());
+        // A lease's name is 32 bytes, written bare and read back by `key32`.
+        for (k, l) in self.leases.scoped() {
+            v.extend_from_slice(&k);
+            l.put(&mut v);
+        }
         v
+    }
+
+    /// The key a lease's job is indexed under.
+    pub(crate) fn lease_job_key(provider: &[u8; 32], job: &[u8; 32]) -> Vec<u8> {
+        let mut k = provider.to_vec();
+        k.extend_from_slice(job);
+        k
+    }
+
+    /// A LEASE HELD, its jobs indexed.
+    pub(crate) fn hold_lease(&mut self, id: [u8; 32], lease: super::lease::Lease) {
+        for j in &lease.jobs {
+            self.lease_jobs.insert(Atlas::lease_job_key(&lease.provider, j), id);
+        }
+        self.leases.insert(id, lease);
+    }
+
+    /// A LEASE LET GO, its jobs' index with it.
+    pub(crate) fn drop_lease(&mut self, id: &[u8; 32]) -> Option<super::lease::Lease> {
+        let lease = self.leases.remove(id)?;
+        for j in &lease.jobs {
+            self.lease_jobs.remove(&Atlas::lease_job_key(&lease.provider, j));
+        }
+        Some(lease)
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Atlas> {
@@ -187,6 +228,11 @@ impl Atlas {
         }
         for _ in 0..take_key_count(b, p)? {
             a.spent.insert(take_key_bytes(b, p)?, ());
+        }
+        for _ in 0..take_key_count(b, p)? {
+            let id = key32(b, p)?;
+            let lease = super::lease::Lease::take(b, p)?;
+            a.hold_lease(id, lease);
         }
         Some(a)
     }

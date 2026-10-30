@@ -27,7 +27,24 @@ two-court replay, as words are installed. The track's pieces:
 - **Receipt-indexed Notes**, and **FROST voice groups** (threshold Ed25519
   group keys for voices).
 
-## 2. Economy: bond delegation
+## 2. Economy: compute leases
+
+**Built** in v0.2: [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) §5.2.
+
+A requester holds μ against a provider's capacity over named jobs. Each
+job the provider's verified solve closes pays its measured discharge out
+of the hold, and the remainder returns at the lease's end. The track
+continues with:
+
+- **Verification leases:** jobs that are replays rather than solves, so a
+  hypha's verification capacity can be reserved as a client's solving
+  capacity is.
+- **Leases through the Note:** a lease funded and released across courts
+  by the xSEPTUM Note (track 1), so the payer's home and the provider's
+  court need not be one.
+- **SDK helpers** for opening, reading and closing leases.
+
+## 3. Economy: bond delegation
 
 **Specified** in [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) §4.
 
@@ -35,7 +52,7 @@ A delegated hypha carries other parties' bond in its cover, shares its
 POWV with them, and shares their slash. This lands in `src/economy/` as a
 delegation carrier on the treasury, with the audit extended over it.
 
-## 3. Network membership
+## 4. Network membership
 
 A hypha named in the genesis allocation is bonded by every court.
 Admitting a hypha after genesis, with a bond every court holds, extends
@@ -46,7 +63,7 @@ the network beyond its founding set. The work includes:
 
 Lands in `src/bin/mycelium-server/admission.rs` and the court's treasury.
 
-## 4. Deployment
+## 5. Deployment
 
 Multi-host and wide-area operation of the mesh. Acts are signed with
 Ed25519 and verified on admission. The track adds:
@@ -55,13 +72,13 @@ Ed25519 and verified on admission. The track adds:
 - signed re-provisioning of a node's `bind` and `peers` after first boot;
 - deployment tooling for hosts beyond one machine.
 
-## 5. Ledger evolution
+## 6. Ledger evolution
 
 Ledger layout changes are adopted by a recut today. A migration path that
 reads a prior layout and writes the current one keeps court state across
 releases. Lands in `src/chronometry/` and the snapshot codecs.
 
-## 6. The rule language
+## 7. The rule language
 
 Rules are geometric elements (`src/transducer/sentence/form/rule_element.rs`).
 Elements without an English gloss travel under act tag 16. The track
@@ -73,14 +90,14 @@ grows what minds can state:
 Each reader is proved by re-deriving held-out pairs and by the court's
 replay.
 
-## 7. Convergence as admission evidence
+## 8. Convergence as admission evidence
 
 Two minds whose different words have the same section on one scene are a
 convergence (`docs/MU-CLIENT.md` §5.5). Courts already verify and seal
 convergences. The track makes convergence count as evidence in a word's
 admission and payment, keeping 47.3's rule that a vantage is a court.
 
-## 8. SDK
+## 9. SDK
 
 A stable, versioned client surface (`mycelium::sdk`), narrower than the
 crate's public API, with semantic-versioning guarantees. It includes:
@@ -88,7 +105,7 @@ crate's public API, with semantic-versioning guarantees. It includes:
 - rewrite elements (POWR) through the SDK;
 - examples for each POW++ arm.
 
-## 9. Reference mind
+## 10. Reference mind
 
 The reference mind (`mycelium-client`) runs its court asks on one carrier
 per boundary. The track bounds each carrier's outstanding asks per path,
@@ -96,7 +113,7 @@ so a mind's court traffic stays proportional to its work across restarts
 of the courts it speaks to. The `now` reading lists outstanding answers by
 path (`src/client/sdk/entity/hypha.rs`).
 
-## 10. Specification reconciliation
+## 11. Specification reconciliation
 
 [`docs/EQUATIONS.md`](docs/EQUATIONS.md) records three places where the
 specification's wording and the code differ:

@@ -92,9 +92,10 @@ pub const PROVISIONAL: [&str; 10] = [
 /// transport (C), a sentence's gluing (S), a demand closed by another mind
 /// (POWC, E2), an attesting mind joined to a word's claim (E3), a mint
 /// counted toward a universe's growth grant (E4), the verifying courts'
-/// share of a release (POWV, MU-ECONOMY §5.1). The observer's diagnosis;
-/// the witness is the ledger's mints.
-pub const PAYS: [&str; 8] = [
+/// share of a release (POWV, MU-ECONOMY §5.1), a compute lease paying its
+/// provider for a verified job (MU-ECONOMY §5.2). The observer's diagnosis;
+/// the witness is the ledger's rows.
+pub const PAYS: [&str; 9] = [
     "scenes on no family held",
     "word sections",
     "conjugate transports",
@@ -103,6 +104,7 @@ pub const PAYS: [&str; 8] = [
     "attestations joined to a claim",
     "mints counted toward a grant",
     "verifications",
+    "lease payments",
 ];
 /// What a court's solves came to: by verdict, refusals by kind (P D C I N ?),
 /// and (78.153c) the verdicts 78.149 and 78.153 added — NO WORK (a clean
@@ -246,7 +248,31 @@ pub struct Acts {
     /// MU-CLIENT §5.6 — each [`PAYS`] kind counted, and what it paid per lane
     /// (four lanes a kind, in [`PAYS`]'s order).
     pub pays: [u64; PAYS.len()],
-    pub pays_lanes: [u64; PAYS.len() * 4],
+    pub pays_lanes: PayLanes,
+}
+
+/// WHAT EACH [`PAYS`] KIND PAID, four lanes a kind in [`PAYS`]'s order: the
+/// flat array, read and written as it is (it dereferences to it).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PayLanes(pub [u64; PAYS.len() * 4]);
+
+impl Default for PayLanes {
+    fn default() -> Self {
+        PayLanes([0; PAYS.len() * 4])
+    }
+}
+
+impl std::ops::Deref for PayLanes {
+    type Target = [u64; PAYS.len() * 4];
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for PayLanes {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
 }
 
 /// The kinds a deferred word is read as, on [`Deferred::kind`].
@@ -329,7 +355,7 @@ impl Acts {
         // Phase 2's pays, after the rows: a reading written before them ends
         // at the rows and reads as none paid.
         put(out, &self.pays);
-        put(out, &self.pays_lanes);
+        put(out, &self.pays_lanes.0);
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Acts> {
@@ -365,8 +391,8 @@ impl Acts {
         // A reading that ends at its rows was written before Phase 2's pays:
         // none read, never a short read past the end.
         let (pays, pays_lanes) = match b.get(*p..) {
-            Some([]) | None => ([0; PAYS.len()], [0; PAYS.len() * 4]),
-            Some(_) => (take(b, p)?, take(b, p)?),
+            Some([]) | None => ([0; PAYS.len()], PayLanes::default()),
+            Some(_) => (take(b, p)?, PayLanes(take(b, p)?)),
         };
         Some(Acts { k, reserve, drawn, restored, refused, syllabus, fetch, judged, paid, colours, colours_derived, deferred, provisional, pays, pays_lanes })
     }
@@ -428,7 +454,7 @@ pub struct ActsTally {
     pub provisional: [u64; PROVISIONAL.len()],
     /// MU-CLIENT §5.6 — [`PAYS`], counted and per lane.
     pub pays: [u64; PAYS.len()],
-    pub pays_lanes: [u64; PAYS.len() * 4],
+    pub pays_lanes: PayLanes,
 }
 
 impl ActsTally {

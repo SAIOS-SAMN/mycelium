@@ -1467,6 +1467,22 @@ Sources: MU-ECONOMY §5.1, §8. Code:
 `::release_verified`; `src/economy/lanes.rs::yield_surface`;
 `src/physics/mod.rs::reserve_max`.
 
+#### 6.14 The compute lease
+
+```text
+open:     held = μ                                       moved from the payer's balance (held value, in the supply)
+per job:  paid_l = min(d_l, held_l)   held_l ← held_l − paid_l     d the provider's verified discharge on the job
+end:      refund = held                                  jobs done, hold spent, window passed, or closed
+supply:   unchanged throughout                           every movement is a transfer or a hold
+```
+
+A lease reserves value against a provider's capacity. Each verified solve
+of a leased job pays the provider out of the hold, at most once per job.
+
+Sources: MU-ECONOMY §5.2. Code: `src/server/cognition/lease.rs`
+(`Kernel::open_lease`, `pay_lease`, `close_lease`, `lapse_leases`);
+`src/economy/pay.rs::Treasury::draw_held`.
+
 ## 7. The metabolism
 
 #### 7.1 The reserve and its units

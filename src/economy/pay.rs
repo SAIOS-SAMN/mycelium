@@ -226,6 +226,41 @@ impl Treasury {
         Ok(h.mu)
     }
 
+    /// MU-ECONOMY §5.2 — DRAW PART of what `key` holds to `to`: per lane the
+    /// lesser of `mu` and what is held, paid on as a movement from the payer
+    /// (the `Transfer` pair); the hold keeps the rest, and leaves the held
+    /// carrier when nothing remains. Answers what moved — nothing where the
+    /// draw meets no lane the hold carries.
+    pub fn draw_held(&mut self, key: &[u8], to: [u8; 32], mu: [u64; 4], anchor: Anchor) -> Result<[u64; 4], Unpaid> {
+        let Some(h) = self.held.get(key).cloned() else { return Err(Unpaid::Unheld) };
+        if h.payer == to {
+            return Err(Unpaid::Oneself);
+        }
+        let short = crate::economy::shortfall(&mu, &h.mu);
+        let take: [u64; 4] = std::array::from_fn(|l| mu[l] - short[l]);
+        if take.iter().all(|&m| m == 0) {
+            return Err(Unpaid::Nothing);
+        }
+        if self.credited(&to, take).is_none() {
+            self.overflowed += 1;
+            return Err(Unpaid::Overflow);
+        }
+        let left: [u64; 4] = std::array::from_fn(|l| h.mu[l] - take[l]);
+        match left.iter().all(|&m| m == 0) {
+            true => {
+                self.held.remove(key);
+            }
+            false => {
+                self.held.insert(key, Held { mu: left, ..h.clone() });
+            }
+        }
+        // Back to the payer, then on as one transfer, as a release moves it.
+        let back = self.credit(h.payer, take);
+        debug_assert!(back, "the hold came out of this balance");
+        self.transfer(h.payer, to, take, anchor)?;
+        Ok(take)
+    }
+
     /// 78.133 — RELEASE what `key` holds IN PARTS, each to its recipient,
     /// whole or refused: the parts must sum to the hold exactly (`Split`),
     /// and every recipient's credit is read before anything moves — so all
