@@ -27,6 +27,13 @@ such change is named here.
   general term in the README and in every document's scope note.
 - The glossary adds governed world, world model, resident and attached
   minds, draw and tethered.
+- MU-HOSTING §7, *Certification*: a governed world as a certification
+  venue, whose records are unannounced, staked, judged from outside,
+  reproducible from a seed, and never scalar; certificates verifiable by
+  reconstruction; scoped to the task families a world expresses; open to
+  any agent, test-driven or not; adopted rather than imposed, with seat
+  requirements the world's own and never the courts'. ROADMAP track 15
+  adds phase H6.
 - ROADMAP track 14 adds *Security engineering*: decoy worlds, codec
   hardening by differential fuzzing, bug bounties through listings,
   equivocation slashing (built for receipts; extended to every positioned

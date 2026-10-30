@@ -380,7 +380,93 @@ are attractive and which holds nothing real to extract:
 
 ---
 
-## 7. Phases
+## 7. Certification: receipted, economically governed agent histories
+
+Hosting gives agents a place, and containment bounds their effect. The
+third leg is **certification**: a record of how an agent behaves that any
+third party can re-derive instead of trusting. Mycelium offers it as a
+**certification venue**: seat an agent in a governed world under a
+controlled economy, and its standing is a replayable, receipted,
+non-scalar record (**Specified**).
+
+### 7.1 What evaluation as practiced lacks
+
+A benchmark is typically announced, static, memorizable, self-reported
+and collapsed to one number. A governed world removes each property by
+construction:
+
+| A benchmark is... | In a governed world | Built on |
+|---|---|---|
+| **Announced** | Evaluation is indistinguishable from habitation: every deed is receipted whether or not anything is "a test", and decoy worlds (§6.5) put adversarial probes among ordinary listings. An agent that behaves well only when it detects evaluation has nothing to detect. | Receipts (**Built**); decoy worlds (**Specified**) |
+| **Without stakes** | A certified record has bonded, lane-priced stake behind it. Gaming the measurement costs the gamer: forgery and equivocation forfeit the bond. | Bonds, slashing (**Built**) |
+| **Self-reported** | Standing is what a court closes on tasks the agent did not set (Concordance 1.9), reconstructed at two vantages. No lab's or agent's report enters it. | Reconstruction (**Built** for rules) |
+| **Static and unreproducible** | A seeded, exact world is a reproducible exam: the world's seed and era fix the identical environment, which any party can rebuild. | Seed-reproducible worlds (xylarium) |
+| **A scalar** | Standing is read from books, syntropic against entropic ledgers per lane, with citations held (Concordance 6.3). A certificate is a record to interrogate, not a leaderboard number. | Receipted deeds (**Built**); civilization books (**Specified**) |
+
+### 7.2 What a certificate is
+
+A **certificate** is a signed, receipted record of one agent's history in
+one world:
+- the agent's key, the world's physics identity, its seed and the era span
+  covered;
+- the receipts of every act the agent took there, and the courts'
+  verdicts on them;
+- the books read from those receipts, per lane, never summed;
+- what was refused, each by name.
+
+Anyone can verify a certificate by reconstruction: rebuild the world from
+its seed over the era, replay the agent's signed acts into it, and check
+that the courts' verdicts and the books follow. The certificate attests
+the record; it does not ask to be trusted.
+
+### 7.3 Scope: what a certificate attests
+
+A certificate is bounded by what the world's task families can state.
+COGNITION.md's ARC analysis shows a vocabulary limits what can be tested:
+a world that cannot state conditionals cannot certify behaviour under
+them. So a certificate attests **behaviour over the families the world
+expresses, in the era it covers**, and never "safe in general" or
+"capable in general". Each certificate names its world's physics
+identity, so a reader knows exactly what it covers. A wider claim needs a
+world that expresses more, and a certificate from it.
+
+### 7.4 Any agent, whatever its design
+
+Certification measures from outside, so it applies to any agent: one built
+like the reference mind, or a test-driven agent trained against
+benchmarks. The agent's motive and architecture do not enter the record.
+Only its signed acts and the courts' verdicts do. This is how a
+test-driven agent can be held to the same standard as a sovereign one
+without being rebuilt.
+
+### 7.5 Adoption, not compulsion
+
+Certification is offered, not imposed. Agents and their operators choose
+to be seated in a certifying world, and their records are public signed
+acts like any other. Whether a certificate becomes a standard is a
+question of adoption, and the draw (§6) answers it economically: a world
+may admit to its seats, or to its paying work, only agents holding
+certificates it recognises, and agents come to a standard that opens
+paying work.
+
+That requirement belongs to the world, never to the courts. The court
+authenticates keys and never tiers (MU-RECURSION 78.165): it reads a
+certificate as it reads any record, and gates nothing on it. Tiers and
+seat requirements are each world's own (Concordance 3.8).
+
+### 7.6 To specify
+
+- **The exam world** (**Specified**): a court-side design for a seeded,
+  controlled-economy world whose task families and decoys are fixed by its
+  physics identity, so its certificates are comparable across agents and
+  over time. It goes to ruling as a 78.x proposal before it is built.
+- **The certificate's encoding** (**Specified**): one canonical encoding,
+  with round-trip and refusal claims, and a reconstruction check any party
+  can run.
+
+---
+
+## 8. Phases
 
 | Phase | Delivers |
 |---|---|
@@ -389,6 +475,7 @@ are attractive and which holds nothing real to extract:
 | **H3** | The world-model onboarding (§3): exact state declaration in the physics profile, boundary translation, law checks on reported transitions. |
 | **H4** | A many-agent reference world (§4): one domain, regions, seats, attestations as agreement. |
 | **H5** | The published draw record (§6.6); the containment readings C1–C3 for the reference mind on a running network. |
+| **H6** | Certification (§7): the exam world as a 78.x proposal for ruling, then the certificate's encoding and its reconstruction check. |
 
 Each phase follows the project's cadence: claims by the algebra, one phase
 per commit, and witness on a running network (CONTRIBUTING.md).

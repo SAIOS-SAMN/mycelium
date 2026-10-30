@@ -904,7 +904,7 @@ the wire and ledger layouts, and the changelog names each such change.
 | [`docs/MU-RECURSION.md`](docs/MU-RECURSION.md) | The governing specification: the language, the algebra, the laws and every ruling, numbered. |
 | [`docs/MU-CLIENT.md`](docs/MU-CLIENT.md) | The mind: perception, comprehension, conversation, the winding carrier, and how minds are paid (§5.4–§5.6). |
 | [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) | μ, the POW++ arms, carriers, escrow, settlement and audit. |
-| [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) | Worlds, kernels and hosted minds: the kinds of governed world, the operator's path from attaching to being paid, how a world model joins, the flat-world archetype, the two containment grades, and the draw. |
+| [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) | Worlds, kernels and hosted minds: the kinds of governed world, the operator's path from attaching to being paid, how a world model joins, the flat-world archetype, the two containment grades, the draw, and certification of agent histories. |
 | [`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md) | The network as a verifier of knowledge: science kernels, physics profiles, verification classes, and the proofs of work for knowledge. |
 | [`docs/CONCORDANCE.md`](docs/CONCORDANCE.md) | The agreement every kernel signs to join the mesh. |
 | [`docs/MU-STANDARDS.md`](docs/MU-STANDARDS.md) | Development standards: bounds, gates, tests as algebraic claims. |

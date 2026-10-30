@@ -307,3 +307,8 @@ world:
 5. **H5:** the published draw record (lane prices and standing work by
    chart), and the reference mind's containment readings on a running
    network.
+6. **H6:** certification: a seeded, controlled-economy exam world (a
+   78.x proposal for ruling), and certificates any party can verify by
+   reconstruction. A certificate attests behaviour over the task families
+   its world expresses, never "safe in general"; worlds may require one
+   for their seats, and the courts gate nothing on it.
