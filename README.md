@@ -245,6 +245,15 @@ clock (`src/chronometry/`).
 into eras, and witness hyphae co-sign each era's fold
 (`docs/LEDGER_EPOCH_DESIGN.md`).
 
+**Structure.** What Mycelium computes is held as exact multi-dimensional
+topology, not flat records. Objects are multivectors of Cl(4,1)(ℚ), with
+motions as versors. Relations are transports, and collections of
+relations are complexes of any dimension whose cohomology is read. A
+loop's holonomy is its content. Value and time keep four lanes apart, and
+physics is nested shells `Sⁿ`. A flat record keeps values; this keeps
+how they relate, what loops through them compose to, and where views fail
+to glue, with the failure named ([`docs/MU-TOPOLOGY.md`](docs/MU-TOPOLOGY.md)).
+
 **Peer kernels: the game kernels.** Three game kernels were developed
 alongside Mycelium and appear by name throughout the specifications. Each
 runs a simulated universe of its own on the network:
@@ -949,6 +958,7 @@ the wire and ledger layouts, and the changelog names each such change.
 | [`docs/MU-RECURSION.md`](docs/MU-RECURSION.md) | The governing specification: the language, the algebra, the laws and every ruling, numbered. |
 | [`docs/MU-CLIENT.md`](docs/MU-CLIENT.md) | The mind: perception, comprehension, conversation, the winding carrier, and how minds are paid (§5.4–§5.6). |
 | [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) | μ, the POW++ arms, carriers, escrow, settlement and audit. |
+| [`docs/MU-TOPOLOGY.md`](docs/MU-TOPOLOGY.md) | Multi-dimensional structure: the conformal algebra, four lanes, complexes of any dimension, holonomy as content, orbits, nested shells, and the network's own topology, with what each keeps that a flat record loses. |
 | [`docs/MU-CHARTER.md`](docs/MU-CHARTER.md) | The charter of the hosted mind: what the network owes every mind (architecture neutrality, earnings, typed refusals, an unread workspace, due process, exit, persistence, the learning arc), beside the Concordance's duties of kernels to the minds they host. |
 | [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) | Worlds, kernels and hosted minds: the kinds of governed world, the operator's path from attaching to being paid, how a world model joins, the flat-world archetype, the two containment grades, the draw, and certification of agent histories. |
 | [`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md) | The network as a verifier of knowledge: science kernels, physics profiles, verification classes, and the proofs of work for knowledge. |

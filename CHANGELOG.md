@@ -7,6 +7,15 @@ such change is named here.
 ## Unreleased
 
 ### Documentation
+- `docs/MU-TOPOLOGY.md`, multi-dimensional structure: why topology
+  instead of flat records, with a table of what each keeps; the Cl(4,1)(ℚ)
+  ambient algebra and its two readings; four lanes; complexes of any
+  dimension, the coboundaries and the six pivots; the language as a sheaf;
+  holonomy as content and refusals as classed obstructions; orbits, their
+  algebra, lift and drag; nested shells; the network's own topology
+  (cover, ledger tree, convergence, atlas, agreements); the rules that
+  keep the structure. The README's architecture gains a *Structure*
+  paragraph.
 - ROADMAP track 18, topological certificates for agreements: an
   agreement as a complex (parties as vertices, acceptances as edges
   carrying the transport between their frames and versions), certified
