@@ -7,6 +7,10 @@ such change is named here.
 ## Unreleased
 
 ### Documentation
+- `docs/THREE_BINARIES.md` removed: it was a 2026-09-02 design record
+  naming a `mycelium-court` binary that was never built. The binaries as
+  they are (server with its court, client, soak) are in the README's
+  *Architecture* section.
 - MU-HOSTING §3a, founding a universe: the manifest of nuclei per Z, the
   founding and growth grants drawn from the court's earnings, the
   endowment reading and the zero-sum element account (all built); the
