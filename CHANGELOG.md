@@ -4,6 +4,23 @@ Releases follow [semantic versioning](https://semver.org/). In the 0.x
 series, a minor version may change the wire and ledger layouts, and each
 such change is named here.
 
+## Unreleased
+
+### Documentation
+- The README's *POW++ for clients* section maps each proof (POUW, POWC,
+  POWR) to the client action that earns it, in the reference mind and
+  through the SDK.
+- The README's *Economics* section covers:
+  - principles, μ and its lanes;
+  - carriers and the eleven ledger row kinds;
+  - issuance: mint on closure capped at discharge, the recycled pool,
+    burn on retirement;
+  - escrow and payments;
+  - stake, room and discipline;
+  - pricing, gas and the connection tax;
+  - the supply invariant and its audit;
+  - genesis, and the economy readings.
+
 ## 0.1.2 — 2026-10-30
 
 ### Documentation and tooling

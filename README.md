@@ -55,7 +55,8 @@ directory, the ports and the number of tasks.
 - [Quick start](#quick-start)
 - [Architecture](#architecture)
 - [POW++: the proofs of work](#pow-the-proofs-of-work)
-- [The unit of value: μ](#the-unit-of-value-μ)
+- [POW++ for clients](#pow-for-clients)
+- [Economics](#economics)
 - [Adjudication](#adjudication)
 - [The workload](#the-workload)
 - [Repository layout](#repository-layout)
@@ -198,22 +199,191 @@ in `docs/MU-RECURSION.md`.
 
 ---
 
-## The unit of value: μ
+## POW++ for clients
 
-μ is the currency, and it is a four-lane vector, not a scalar:
+Each proof is earned by a distinct client action. The reference mind
+(`mycelium-client`) and SDK clients reach them through the same wire acts.
 
-| Lane | Meaning |
+| Proof | The client action | Reference mind | SDK |
+|---|---|---|---|
+| **POUW** | Request a task, state a rule, submit a signed solve; or speak a word or sentence the courts install. | Extracts rules and solves court tasks; speaks words and sentences from its genome. | `ACT_TASK` → `extract_rule` / `sdk::rule::sentence` / rule elements → `encode_solve_with_rule` → `decode_solve_verdict` (`examples/sdk_client.rs`). |
+| **POWC** | Close a demand another mind left open, citing that mind's receipt; earn when other minds' demands use a word this voice discovered. | Cites its genome's words in what it speaks; hears other minds' words with their evidence, attests agreements and records convergences (`sdk::chatter`, `entity/converge.rs`). | States rules that cite installed words; the court pays the citation's measured discharge. |
+| **POWR** | Propose a rewrite: a word retired over fewer letters, a cycle condensed or torsed. | Its pivots (torse, condense) mint rewrites and speak them to the court. | Speaks a rewrite element through `Session::speak`; the court replays it and settles the compression yield. |
+
+A solve answers with a verdict code: `SOLVE_BOUNTY` for a first verified
+closure, paid; `SOLVE_FLOOR` for a verified re-solve; `SOLVE_NOTHING` with
+a named refusal; or `SOLVE_UNREAD`, where the replay resumes on the next
+send. An installed word keeps paying its discoverer: a use share each time
+a later sentence cites it (POUW), and a transfer each time another voice's
+demand uses it (POWC).
+
+---
+
+## Economics
+
+The economy is specified in [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) and
+implemented in `src/economy/` and the court's market
+(`src/server/cognition/`).
+
+### Principles
+
+- **Value is created only by verified work.** New μ enters the ledger
+  only when a court rules on a closure. There is no block reward, no
+  issuance schedule, no difficulty target and no issuance to operators.
+- **The amount minted is a measurement.** A mint is the work's measured
+  *discharge*, lane by lane. That is what the work closed on the family it
+  is bound to, read by replay. No constant or curve enters it.
+- **Rate, not price.** The metabolism paces how fast work is presented and
+  verified. It never scales what a unit of verified work mints, so the
+  reward is a deterministic function of the structure closed.
+- **Supply tracks the language.** Retirement burns description the
+  language no longer carries, so supply follows the description length of
+  the language as it stands. Compression counters issuance continuously,
+  in place of a halving schedule.
+
+### μ, the four-lane currency
+
+μ is a vector on four lanes. It is never summed and never converted
+between lanes:
+
+| Lane | Work it measures |
 |---|---|
 | **S** (spatial) | boosts and dilations |
 | **G** (gauge) | hue cycles and moves |
 | **T** (temporal) | null flux |
 | **H** (holonomic) | turns |
 
-A payment moves value on exactly the lanes the verified work moved. Lanes
-never convert, and a comparison of two μ vectors returns a per-lane reading
-(`docs/MU-ECONOMY.md` §1). The same rule holds throughout the codebase: no
-norm or sum collapses μ, a geometric quantity, or a reading to a single
-number.
+A payment moves value on exactly the lanes the verified work moved. A
+comparison of two μ vectors returns a reading per lane (each lane fell,
+held or rose; `economy::lane_moves`) and never a verdict. Value on a lane
+exists because work on that lane was verified, which is what keeps the
+audit meaningful lane by lane. A balance holds the exact *modes* the work
+moved:
+- on S, a boost or dilation;
+- on G, a hue cycle or move;
+- on T, a null flux;
+- on H, a turn.
+
+Each mode carries an exact rational amount.
+
+### Carriers and the ledger
+
+| Carrier | Holder | Meaning |
+|---|---|---|
+| Balance | a voice or a hypha | μ earned or received; spendable |
+| Bond | a voice or a hypha | μ staked; buys room; slashable |
+| Escrow | a listing | μ held against a claim until the court rules |
+| Held | a payer, against a key | μ set aside for a payment, the payer's until released or refunded |
+| Supply | the mesh | genesis + mint − burn, per lane |
+
+Every movement is a ledger row anchored to the receipt of the act that
+wrote it. The row carries a kind, the party, the lane vector and, for a
+payment, its POW++ arm. Eleven kinds move μ, and nothing else does:
+`genesis`, `mint`, `stake`, `unstake`, `transfer`, `escrow`, `release`,
+`revoke`, `slash`, `burn` and `epoch`. An `epoch` row is the net per
+identity over a folded segment of the ledger. It moves no supply and
+re-expresses the rows it replaces.
+
+### Issuance and retirement
+
+- **Mint on closure.** A claim is escrowed at its discharge. When a
+  second, independent hypha re-derives the same vertex, the release mints,
+  per lane, the lesser of what the escrow holds and the closer's measured
+  discharge (`Treasury::release_discharged`). Anything held above the
+  discharge is never issued. A pair that lowered a lane but left a
+  remainder pays nothing: descent is not closure.
+- **The recycled pool pays first.** A court holds the connection tax it
+  receives in a recycled pool, and a closer's POUW is paid from that pool
+  before anything is minted. Supply grows only as far as judged work
+  outruns what the connected universes return.
+- **Burn on retirement (POWR).** When a word is retired by a shorter
+  description of the same vertex, or a cycle is condensed, the freed
+  description is burned and the retirer is paid the compression yield.
+- **What is not μ.** The span a word or demand has stood is not μ: waiting
+  is not work. A letter or other word that names no body discharges
+  nothing and is paid nothing.
+
+### Escrow and payments
+
+- **Claim escrow** is pending issuance. No one gave anything up for it,
+  so it is not counted as supply. A ruling mints it at the measured
+  discharge, and a revocation lets it vanish with nothing issued.
+- **Held value** (`economy/pay.rs`) is μ a payer set aside from a balance
+  against a key. It counts as supply, stays the payer's until released or
+  refunded, and a refused movement writes no row.
+- **Transfers** move μ between balances. POWC's payment for a word's use
+  is a transfer from the user to the discoverer, never more per lane than
+  the user holds, and never to oneself.
+
+### Stake, room and discipline
+
+- **Bond buys room.** Room is how much work a hypha or voice may have in
+  flight on each lane: listings homed, attestations and witnessing. Bond
+  does not buy priority or price.
+- **Unbonded voices** may learn, speak and be paid. Each has room for one
+  claim in flight per lane; a further claim on that lane is refused with
+  `REFUSE_ROOM` until the first closes. Room grows by bonding what the
+  voice earned.
+- **A witness** (the second vantage) holds bond outside the home's
+  delegation closure and room covering the escrow on every occupied lane.
+- **Slash** debits the bond of a hypha whose signed root fails replay at
+  a witness, or of a voice whose word fails replay. Nothing is slashed for
+  being outvoted, because nothing is voted.
+- **Equivocation**, two signed receipts from one key at one position with
+  different content, forfeits the signer's whole bond on all four lanes as
+  one `burn` row naming the proof.
+
+### Pricing, gas and the connection tax
+
+- **Listings.** A listing is priced at its own measure, its ask
+  (`economy::price`). The ask caps what a closer is paid and never raises
+  it. The court's yield surface reads pressure per lane from the reserve's
+  deficit and paces admission; it never scales a mint.
+- **Gas.** μ is the gas of traversal across a domain's mapped tubes and
+  wormholes. A `TRAVERSE` buys the final TUniversal coordinates of both
+  mouths on the court's map. Its *map fee* is the route's gas per lane at
+  the court's read price, drawn from the payer's stake as a claim and paid
+  to the courts keeping the map. It is a transfer, never a mint
+  (`server/cognition/crossing.rs`).
+- **Connection tax.** A universe's stored μ dissipates at its own physics'
+  rate. The kernel declares that dissipation on its tier fold as a
+  `CONNECTION_TAX` flow, paid from its domain reserve into the court's
+  recycled pool.
+
+### The invariant
+
+On every lane, at every hypha, at every ledger position:
+
+```
+supply = genesis + mint − burn
+supply = Σ balance + Σ bond + Σ held
+```
+
+Claim escrow is outside the second sum, because it is issuance that has not
+happened. `Treasury::audit` checks both equations from the rows and refuses
+to persist a snapshot that fails them. A slash leaves circulation as an
+issuance-reducing row of its own kind. A fold conserves both equations
+across the rows it replaces, and a witness re-derives that before
+co-signing; a fold that does not conserve is refused. Genesis allocations
+are rows of their own kind, so seeded value and earned value are always
+separable: `supply()` includes genesis and `minted()` does not.
+
+### Genesis
+
+The genesis allocation bonds the network's hyphae and funds the voices it
+names. A hypha is bonded at the measured cover of the corpus it registers.
+The allocation exists to give the founding hyphae room before any work is
+ruled. Because a claim escrow needs no funding, a mesh can start from zero
+supply: the first μ is created by the first verified closure.
+
+### Reading the economy
+
+```sh
+mycelium-server --home DIR --console --reading economy   # the treasury: supply and its rows, per lane
+mycelium-server --home DIR --console --reading acts      # pays by kind: word sections, sentence gluings,
+                                                          #   attestations, demands closed by another mind
+mycelium-server --home DIR --console --wallet <voice>    # one party's wallet
+```
 
 ---
 
