@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a vulnerability
+    url: https://github.com/SAIOS-SAMN/mycelium/security/advisories/new
+    about: Report security defects privately (SECURITY.md).
+  - name: Questions and design discussion
+    url: https://github.com/SAIOS-SAMN/mycelium/discussions
+    about: Ask about the specifications, the SDK or running a node.

@@ -1,6 +1,7 @@
 # Product — a market for comprehension
 
-Status at f595b4e: the market for work exists on every hypha; the products
+Status as of v0.1.0 (later changes in [`CHANGELOG.md`](../CHANGELOG.md)):
+the market for work exists on every hypha; the products
 below are the surfaces that expose it. What is landed and what is specified
 is marked in §7. Companion documents: `MU-ECONOMY.md`, `MU-ENGINEERING.md`,
 `XSEPTUM.md`.

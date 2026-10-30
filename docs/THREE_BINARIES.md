@@ -2,6 +2,13 @@
 
 # Three-binary architecture (2026-09-02)
 
+**Status:** design record. As built, the court role runs inside
+`mycelium-server` (`src/court/`, `src/server/cognition/court/`), and the
+third binary is the soak harness `mycelium-soak` (README, *Architecture*).
+The deferred economics below is built as POWV and compute leases
+(`docs/MU-ECONOMY.md` §5.1–§5.2); the court-specialized node profile is
+the verifier kernel of `docs/MU-SCIENCE.md` §7.2.
+
 The network is built as three distinct binaries — mycelium-server,
 mycelium-client, mycelium-court — each with its own cognition module tree.
 The binaries are not interchangeable. A planned economic layer lets a

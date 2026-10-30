@@ -113,6 +113,13 @@ so a mind's court traffic stays proportional to its work across restarts
 of the courts it speaks to. The `now` reading lists outstanding answers by
 path (`src/client/sdk/entity/hypha.rs`).
 
+**Open defect: the ask queue.** On a long-running network, a mind's
+outstanding court asks grew without bound while its work did not. The
+`now` reading's per-path listing (`waiting_by_path`, added in 0.1.1)
+locates the growth by path. The cause is not yet identified. The track's
+first phase reproduces the growth on a local network, names the path
+whose answers are not taken, and bounds it.
+
 ## 11. Specification reconciliation
 
 [`docs/EQUATIONS.md`](docs/EQUATIONS.md) records three places where the
@@ -164,3 +171,43 @@ Phases:
    reconstructed by two courts.
 7. **S7:** a Lean 4 kernel checker.
 8. **S8:** the Concordance's science-kernel profile.
+
+## 13. Peer kernels on the public mesh
+
+**Specified** in [`docs/CONCORDANCE.md`](docs/CONCORDANCE.md) (1.14, 2.2,
+2.10, A7).
+
+netstratum and xylarium run their own universes on the mesh and link the
+`forms` crate (README, *Peer kernels*). As their repositories become
+public, the track makes the boundary between the kernels a versioned,
+reviewable interface:
+- **Pinning by tag:** each peer kernel depends on Mycelium and `forms` at a
+  release tag, never at a local path or untagged commit.
+- **Compatibility statement:** each Mycelium release names the wire,
+  ledger and `forms` versions it serves, and the CHANGELOG names every
+  change a peer kernel must take up.
+- **Joint reads:** a law form lands by the Concordance's landing rule, with
+  both universes' readings reproduced as decoded exact values; the track
+  makes that read reproducible from the public repositories.
+- **Founding on a fresh mesh:** each peer kernel founds its domains on a
+  public network's genesis, with its physics profile sealed (track 12,
+  S4).
+
+## 14. Security review
+
+The paths that move value, slash bonds and finalize the ledger are
+reviewed against their specifications, by contributors outside the
+original development, with each finding resolved as a defect or a
+specification amendment. Reports go through [SECURITY.md](SECURITY.md).
+Review targets, in order:
+- **Admission:** Ed25519 verification of every signed act; canonical
+  decoding (one encoding per object) of every wire payload.
+- **Settlement:** each POW++ arm's mint, burn and share against
+  `docs/MU-ECONOMY.md`; the supply invariant's audit.
+- **Escrow and leases:** release, refund and lapse of held value.
+- **Discipline:** slashing and equivocation proofs (MU-RECURSION 47.3,
+  47.4).
+- **Ledger and clock:** receipt chains, co-signed folds, and TUniversal
+  finality.
+- **Resource bounds:** stroke budgets and frame budgets under adversarial
+  payloads.

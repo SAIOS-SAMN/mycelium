@@ -98,6 +98,11 @@ they build on each other. Each track names its specification and where it
 lands in the code. Open an issue on a track to coordinate before starting
 on it.
 
+## Security and conduct
+
+Report vulnerabilities privately, as [SECURITY.md](SECURITY.md) describes.
+The project's spaces follow the [code of conduct](CODE_OF_CONDUCT.md).
+
 ## License
 
 Contributions are accepted under the [Apache License, Version 2.0](LICENSE).

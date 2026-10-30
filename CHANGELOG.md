@@ -52,7 +52,26 @@ such change is named here.
   - verifier kernels, the verifier interface, wire, readings, bounds and
     adversarial cases;
   - phases S1–S8 (ROADMAP track 12).
-- `ROADMAP.md` lays out twelve development tracks in order:
+- MU-SCIENCE §3.0 cites the Concordance's nested-shell physics (1.14,
+  2.2, 2.10, A7) and the `forms` crate; physics profiles may select a
+  named law form.
+- `GLOSSARY.md` defines reconstruction, claims, verification classes,
+  verifier and science kernels, the peer kernels, and a *Physics* section
+  (L0, the universal library, law forms, shells, physics profiles and
+  identity, divergence, the physics atlas, ascension).
+- `docs/EQUATIONS.md` §9.6 states verification by reconstruction, and
+  §9.7 the V1 certificate checks.
+- The README introduces the peer kernels (netstratum, xylarium,
+  barren-realms) and lists every document in `docs/`.
+- `SECURITY.md` (private vulnerability reporting, scope, supported
+  versions), `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1), and issue
+  templates for defects, roadmap tracks and specification proposals.
+- Status lines in `MU-ENGINEERING.md`, `MU-PRODUCT.md` and
+  `THREE_BINARIES.md` now state what they describe and point to the
+  CHANGELOG for later changes. `STANDARDS.md` states its scope beside
+  `docs/MU-STANDARDS.md`.
+- `src/physics/laws.rs` documents six laws, including continuity.
+- `ROADMAP.md` lays out fourteen development tracks in order:
   - the xSEPTUM Note;
   - compute leases (built; verification leases and leases through the
     Note next);
@@ -63,9 +82,11 @@ such change is named here.
   - the rule language;
   - convergence as admission evidence;
   - the SDK surface;
-  - the reference mind's court traffic;
+  - the reference mind's court traffic, naming the open ask-queue defect;
   - specification reconciliation;
-  - verified knowledge: science kernels.
+  - verified knowledge: science kernels;
+  - peer kernels on the public mesh;
+  - security review.
 - The README's *POW++ for clients* section maps each proof (POUW, POWC,
   POWR) to the client action that earns it, in the reference mind and
   through the SDK.

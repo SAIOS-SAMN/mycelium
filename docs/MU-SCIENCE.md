@@ -127,9 +127,27 @@ those physics agree, where they diverge, and what each has proven.
 Every kernel that joins the network adheres to one universal library. It
 is the shared floor that makes the universes comparable.
 
+This section restates, for science kernels, the physics the Concordance
+already rules (Concordance 1.14, 2.2 and 2.10):
+- **The innermost shell** is Mycelium's: the universal law forms, in the
+  `forms` crate, over a universe's constants and exact in Cl(4,1)(ℚ), with
+  L0's register and verifier at its core. A form fixes no constant.
+- **Each universe's shell** is its own: its constants, its matter, its
+  composition of the forms, and any law it keeps for itself. It reaches the
+  core only through the seam and narrows, never widens (MU-RECURSION
+  78.87).
+- **Divergent paths are first-class** (Concordance A7). `forms` may host
+  several named forms of one law, and each universe's shell selects the
+  form it composes. L0's core is the intersection of the selections: a
+  form is L0's single law only where every universe selects it.
+
+A physics profile (§3.2) is the declared, sealed record of one universe's
+shell.
+
 | Component | What it fixes | Where |
 |---|---|---|
 | **The universal law register L0** | The laws every transition touching the network satisfies (§3.1) | `src/physics/laws.rs`, `ACT_LAWS` |
+| **The universal law forms** | The forms each universe composes over its own constants (Concordance 2.10) | `forms/` |
 | **The Concordance** | The agreement every kernel signs: units, topology, the economy between universes, breaches and convergence, conduct | `docs/CONCORDANCE.md` |
 | **The alphabet** | Seventeen Cayley letters, exact versors; the alphabet never grows | `docs/ALPHABET.md`, `src/transducer/alphabet/` |
 | **Anastome** | The wire: signed speech acts whose payloads are exact geometric objects, each with one canonical encoding | `src/anastome/` |
@@ -177,6 +195,8 @@ sealed at its domain's genesis. It states:
   includes L0 whole and unchanged.
 - **Basis.** Each law of the universe's own layer is either:
   - *adopted* from the reference library (by coordinate and version);
+  - *selected*: one of the named forms `forms` hosts for a law
+    (Concordance A7), composed over the universe's constants;
   - *amended*: a law of the reference library's layer above L0, under its
     coordinate with a new statement;
   - *new*: a fresh coordinate in the domain's namespace.

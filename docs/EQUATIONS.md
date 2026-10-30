@@ -18,7 +18,8 @@ specification's own wording. Equations that are specified but have no
 implementation are listed under subsections titled **Specified**.
 
 The governing specification is `docs/MU-RECURSION.md`. The mind is
-specified in `docs/MU-CLIENT.md` and the economy in `docs/MU-ECONOMY.md`.
+specified in `docs/MU-CLIENT.md`, the economy in `docs/MU-ECONOMY.md`, and
+verification of knowledge in `docs/MU-SCIENCE.md`.
 
 ## Contents
 
@@ -1793,6 +1794,50 @@ law.
 
 Sources: MU-RECURSION 78.59, 78.62 (L0). Code:
 `src/physics/laws.rs::Law::statement`, `LAWS`, `LAW_VERSION`.
+
+#### 9.6 Verification by reconstruction
+
+```text
+admit(c)   ⇔  ∀ vantage v ∈ {home, witness}:  R_v(coords(c), laws(π(c))) ≅ obj(c)
+              and  R_home(c) ≅ R_witness(c)
+≅          :  same_vertex for geometric objects; canonical equality of the decoded structure otherwise
+L0 ⊆ laws(π)     for every physics profile π;   a profile with  ¬(L0 ⊆ laws(π))  is refused (BreachesFloor)
+```
+
+`R_v` is vantage `v`'s own reconstruction of the claimed object from the
+claim's coordinates under its physics profile `π(c)`. Submitted proofs,
+certificates and programs guide `R_v` and are never adopted. Two different
+reconstruction methods that reach the same object admit the same claim at
+one address.
+
+Sources: MU-SCIENCE P1, P2, P5, §3.2, §5.0; MU-RECURSION 47.3. Code: rules
+(V0) through `src/court/verdict/` and §9.4's `measured_replay`.
+
+**Specified.** The verifier interface `reconstruct(claim, physics, budget)
+→ Verdict` (MU-SCIENCE §9.1), ROADMAP track 12, S1.
+
+#### 9.7 Certificate checks (V1)
+
+```text
+lp-optimum      x* optimal for  max cᵀx  s.t.  Ax ≤ b, x ≥ 0  over ℚ, with dual y*:
+                  Ax* ≤ b,  x* ≥ 0,  Aᵀy* ≥ c,  y* ≥ 0,  cᵀx* = bᵀy*
+sat             ∀ clause C:  ∃ literal ℓ ∈ C  with  α(ℓ) = true
+unsat           the DRAT proof derives the empty clause; every added clause is RUP or RAT
+factorization   n = ∏ pᵢ^eᵢ,  and each pᵢ has a valid Pratt certificate:
+                  ∃ a:  a^(pᵢ−1) ≡ 1 (mod pᵢ),  a^((pᵢ−1)/q) ≢ 1 (mod pᵢ)  for every prime q | pᵢ − 1,
+                  each such q certified recursively
+isomorphism     φ bijective and  R(x₁,…,x_k) ⇔ R'(φ(x₁),…,φ(x_k))  for every relation R
+```
+
+Each check reconstructs the conclusion from the certificate with exact
+integer or rational arithmetic, and costs far less than finding the
+answer. LP optimality follows from weak duality: a primal-feasible `x*`
+and dual-feasible `y*` with equal objectives are both optimal.
+
+Sources: MU-SCIENCE §5, V1.
+
+**Specified.** ROADMAP track 12, S2 (`lp-optimum`, `sat` and
+`factorization` first; `unsat` after).
 
 ---
 

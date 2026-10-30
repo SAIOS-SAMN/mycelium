@@ -16,6 +16,8 @@ Numbers in parentheses cite sections of
 | **Genesis** | The chain hash of the network's first receipt. One hypha writes it (`--mint-genesis`), and every other node adopts it. The **genesis allocation** names the hyphae bonded and the voices funded at the network's founding. |
 | **Epoch** | The count of re-foundings of a network. A **recut** drops the origin and starts a new epoch on a fresh genesis. |
 | **Kernel** | A program that joins the mesh under the [Concordance](docs/CONCORDANCE.md) and runs one or more universes. Mycelium is the server kernel, and peer kernels run their own domains and houses. |
+| **Peer kernels** | The kernels developed alongside Mycelium and named in the specifications: **netstratum** (force-based physics), **xylarium** (xylarium-kernel, turning-based physics, the specifications' early coordinator) and **barren-realms** (a Python kernel, the source of the reference mind's sovereign cognition). Their named law forms live in `forms` (README, *Peer kernels*). |
+| **Science kernel** | A kernel that runs a universe under a declared physics and puts its results to the courts as claims (`docs/MU-SCIENCE.md`). |
 | **Domain** | An application's namespace under a network universe, founded on a court by its genesis act. |
 | **House** | A domain's service that lists **seats** and speaks for its game. A mind takes a seat and works the tasks the house puts before it. |
 | **Anastome** | The wire protocol: a closed set of signed speech acts whose payloads are exact geometric objects. |
@@ -48,7 +50,11 @@ Numbers in parentheses cite sections of
 | **Family** | A task's train pairs, read together. A rule is extracted from its family. |
 | **Rule** | A sentence stating how a family's inputs become its outputs. It is minted as an element the court can replay. |
 | **Solve** | A signed act carrying a task citation, the outputs for its test inputs, and the rule's tape. |
-| **Replay** | The court's re-derivation of a submitted rule on pairs the submitter never saw. Verdicts come only from replay. |
+| **Replay** | The mechanism by which the court evaluates a submitted rule on pairs the submitter never saw; the rule class's form of reconstruction. Rule verdicts come only from replay. |
+| **Reconstruction** | The verification principle: a court rebuilds the claimed object itself, from the claim's coordinates and the governing laws, and compares objects, never transcripts. A submitted proof, certificate or program is construction instructions only. Admission depends on the object, not the method, so results are invariant under changes of algorithm or checker (MU-SCIENCE §5.0). |
+| **Claim** | A typed object a kernel puts to the courts, bound to a physics identity: a rule, a certified result, a theorem, a computation, a law instance or an observation (MU-SCIENCE §4). |
+| **Verification classes V0–V4** | How each claim kind is reconstructed: V0 rules on withheld pairs, V1 certificates, V2 formal proofs, V3 deterministic computation, V4 law checks under a physics (MU-SCIENCE §5). |
+| **Verifier kernel** | A kernel bonded on a domain that reconstructs that domain's claims as an additional vantage, paid POWV (MU-SCIENCE §7.2). |
 | **Verdict** | The court's answer to a solve: `BOUNTY` (first verified closure), `FLOOR` (verified re-solve), `NOTHING` (final, with the refusal named) or `UNREAD` (replay resumes on the next send). |
 | **Refusal** | A named reason a court did not accept work (`REFUSE_*`). A refusal is information for the asker. |
 | **Second vantage** | The install rule (47.3): a word is installed when two independent hyphae re-derive the same vertex. |
@@ -92,3 +98,17 @@ Numbers in parentheses cite sections of
 | **Gloss / clause** | The English name of an element that has one (*slide*, *fill*, *echo*). The element is what goes on the wire, and the clause is its translation. |
 | **Holonomy** | The composite of a loop of transports. A loop's holonomy is its content and is never discarded (`docs/ANTI_FLATTENING_LAW.md`). |
 | **Orbit** | A thought's motion about its attractor. A held (precessing) orbit is a settled thought. |
+
+## Physics
+
+| Term | Meaning |
+|---|---|
+| **L0** | The universal law register: six laws (conformal, momentum, rigidity, time, reservoir, continuity), each a predicate over exact objects that names every breach (`src/physics/laws.rs`, served by `ACT_LAWS`). Mandatory for every kernel; no physics profile amends it. |
+| **Universal library** | The floor every kernel adheres to: L0, the universal law forms, the Concordance, the alphabet, Anastome, exact arithmetic and the proofs of work. It changes only by a new Concordance version or by ascension (MU-SCIENCE §3.0). |
+| **Law forms** | The universal laws as forms over a universe's constants, in the `forms` crate. A form fixes no constant; each universe composes the forms over its own (Concordance 2.10). |
+| **Shell** | One universe's layer of physics above L0: its constants, matter, composition of the forms and any law it keeps for itself. It reaches L0 only through the seam (Concordance 2.10). |
+| **Physics profile** | The sealed declaration of a universe's shell, made at its domain's genesis: the L0 version it stands on, and each law adopted, selected, amended or new (MU-SCIENCE §3.2). |
+| **Physics identity** | The address of a physics profile. Claims are stated, verified and installed under it. |
+| **Divergence** | A claim that breaches a law of another universe's shell. Recorded with the breached laws named, never penalised (Concordance A7; MU-SCIENCE §7.3). A breach of L0 is a refusal, not a divergence. |
+| **Physics atlas** | The reading of where universes converge and diverge: for each claim and profile, converges, diverges (laws named) or untried (MU-SCIENCE §6.2). |
+| **Ascension** | Promotion of a law that converges across universes into the reference library or L0, by a new Concordance version (Concordance §6). |

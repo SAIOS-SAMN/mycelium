@@ -1,6 +1,7 @@
 # Engineering — the system as built and as specified
 
-Status at f595b4e. Every section names what is landed and what is not.
+Status as of v0.1.0. Every section names what is landed and what is not;
+later changes are recorded in [`CHANGELOG.md`](../CHANGELOG.md).
 Companion documents: `MU-ECONOMY.md`, `MU-PRODUCT.md`, `XSEPTUM.md`,
 `ALPHABET.md`, `enumeration-audit.md`.
 

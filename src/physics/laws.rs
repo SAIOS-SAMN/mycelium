@@ -2,7 +2,7 @@
 // verifier of a transition against it: what an uplinked kernel composes, the
 // court replays here, by the predicates the voice already perceives with.
 //
-//! L0 of 78.62. Five laws, each a typed entry with its coordinate (an address
+//! L0 of 78.62. Six laws, each a typed entry with its coordinate (an address
 //! under `TAG_LAW`), its version, its statement and the register axioms that
 //! bind it. A law is a PREDICATE over exact objects, never a generator (the
 //! star is the axioms). An amendment is a new version; a fork that changes a
@@ -12,7 +12,8 @@
 //! reader for perception and for the court): MR1's `motion_modes` for the
 //! conformal law, A.13's `external_torque` for momentum, the unit-weight
 //! pair products of `metric_defect` for rigidity (78.59: no flat square), the heights for time, and
-//! 78.58's `is_fibre_relation` for the reservoir. Every breach is named with
+//! 78.58's `is_fibre_relation` for the reservoir, and the recorded sources and
+//! sinks (78.89) for continuity. Every breach is named with
 //! its law — never only the first — and every quantity is exact over ℚ: no
 //! angle, root, logarithm or decimal is formed anywhere.
 
@@ -22,7 +23,8 @@ use num_rational::BigRational;
 
 type Q = BigRational;
 
-/// THE FIVE UNIVERSAL LAWS (78.59, Ruling 1), in the order 78.59 states them.
+/// THE SIX UNIVERSAL LAWS: the five of 78.59 (Ruling 1), in the order 78.59
+/// states them, and continuity (78.89, register version 3).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Law {
     /// Conformal kinematics in Cl(4,1) over ℚ: a motion is a versor whose

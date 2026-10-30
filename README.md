@@ -167,6 +167,25 @@ clock (`src/chronometry/`).
 into eras, and witness hyphae co-sign each era's fold
 (`docs/LEDGER_EPOCH_DESIGN.md`).
 
+**Peer kernels.** Other kernels were developed alongside Mycelium and
+appear by name throughout the specifications:
+- **netstratum:** a kernel running its own universe with a force-based
+  physics;
+- **xylarium** (xylarium-kernel): a Rust kernel running its own universe
+  with a turning-based physics, and the coordinator of the specifications
+  in their early development;
+- **barren-realms:** a Python kernel, the source of the sovereign
+  cognition the reference mind adopted.
+
+Each signs the [Concordance](docs/CONCORDANCE.md), founds its own domains,
+and links the `forms` crate at a pinned commit. Their named law forms
+(`forms::netstratum::*`, `forms::xylarium::*`) are the first instances of
+divergent physics on one mesh (Concordance A7). Their repositories are
+being prepared for public release. Until then, the specifications'
+references to them are design history, and nothing in this repository
+depends on them at build or run time. ROADMAP track 13 covers their
+integration.
+
 ---
 
 ## POW++: the proofs of work
@@ -767,11 +786,16 @@ lands in the code:
 7. The rule language.
 8. Convergence as admission evidence.
 9. A stable SDK surface.
-10. The reference mind's court traffic.
+10. The reference mind's court traffic, beginning with the ask-queue
+    defect.
 11. Specification reconciliation.
 12. Verified knowledge: science kernels that run their universes on their
     own physics and put their results to the courts
     ([`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md)).
+13. Peer kernels on the public mesh: pinning by tag, compatibility
+    statements, joint reads.
+14. Security review of admission, settlement, escrow, discipline, the
+    ledger and resource bounds ([`SECURITY.md`](SECURITY.md)).
 
 Design discussion is anchored in the specifications. Section and ruling
 numbers (for example *78.143* or *§5.6*) cite `docs/MU-RECURSION.md` and
@@ -802,11 +826,17 @@ the wire and ledger layouts, and the changelog names each such change.
 | [`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md) | The network as a verifier of knowledge: science kernels, physics profiles, verification classes, and the proofs of work for knowledge. |
 | [`docs/CONCORDANCE.md`](docs/CONCORDANCE.md) | The agreement every kernel signs to join the mesh. |
 | [`docs/MU-STANDARDS.md`](docs/MU-STANDARDS.md) | Development standards: bounds, gates, tests as algebraic claims. |
+| [`STANDARDS.md`](STANDARDS.md) | Organization-wide repository conventions: naming, layout, tone, git practice. |
+| [`SECURITY.md`](SECURITY.md), [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) | Reporting vulnerabilities; conduct in the project's spaces. |
 | [`docs/MU-ENGINEERING.md`](docs/MU-ENGINEERING.md), [`docs/MU-PRODUCT.md`](docs/MU-PRODUCT.md) | The system as built, and its product surfaces. |
 | [`docs/XSEPTUM.md`](docs/XSEPTUM.md) | Settlement protocol for payments through a hypha. |
 | [`docs/ALPHABET.md`](docs/ALPHABET.md), [`docs/MU-LEXICON.md`](docs/MU-LEXICON.md) | The alphabet; the shared vocabulary. |
+| [`docs/COGNITION.md`](docs/COGNITION.md) | The overlay of the engines: how each kernel's cognition maps onto the hypha-native mind. |
+| [`docs/THREE_BINARIES.md`](docs/THREE_BINARIES.md) | The server, client and soak binaries, and the boundaries between them. |
 | [`docs/LEDGER_EPOCH_DESIGN.md`](docs/LEDGER_EPOCH_DESIGN.md) | Ledger eras and folds. |
+| [`docs/CROSS_COMPLEX_DESIGN.md`](docs/CROSS_COMPLEX_DESIGN.md) | Cross-complex chains: the codomain aperture. |
 | [`docs/ANTI_FLATTENING_LAW.md`](docs/ANTI_FLATTENING_LAW.md) | Structure is never flattened to scalars or flat maps. |
+| [`docs/enumeration-audit.md`](docs/enumeration-audit.md) | The audit of every loop's index against the keyed-read rule. |
 | [`docs/MU-RECURSION-TASKS.md`](docs/MU-RECURSION-TASKS.md) | The task ledger: the roadmap against the specification. |
 | [`docs/proposals/`](docs/proposals/) | Design proposals. |
 

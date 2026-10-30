@@ -7,6 +7,12 @@ and SAIOS-SAMN organizations. This document is the single
 source of truth for naming, structure, tone, and vocabulary
 conventions.
 
+> **Scope in this repository.** This file is the organization-wide
+> convention for repository presentation (file naming, layout, tone,
+> git practice). Mycelium's development standards (line bounds, one
+> organ per file, tests as claims by the algebra, the gates) are in
+> [`docs/MU-STANDARDS.md`](docs/MU-STANDARDS.md), which governs the code.
+
 ---
 
 ## 1. File Naming
