@@ -239,7 +239,10 @@ its translation.
 
 **Clock.** Network time is **TUniversal**, a point `{origin, h, S:G:T:H, K}`
 that is final once a majority of keepers hold it. Consensus uses no wall
-clock (`src/chronometry/`).
+clock (`src/chronometry/`). Every universe keeps its own time and a time
+book on the hypha: chronometric anchors pairing its own time with a final
+point, from which the server reads its position, dilation and crossings,
+so no universe is lost in time ([`docs/MU-CHRONOMETRY.md`](docs/MU-CHRONOMETRY.md)).
 
 **Ledger.** Each hypha keeps its acts on a receipt chain. The chain folds
 into eras, and witness hyphae co-sign each era's fold
@@ -935,10 +938,10 @@ lands in the code:
     `(X(t), R)` with bonding held as state: isomorphic bonds as versors
     between states, automorphic bonds as stabilizers, crossings as
     isomorphisms between universes' readings.
-20. The shared clock: clients attached vertically on one lane of
-    TUniversal (S, G, T or H), time as distance along it, coordination
-    across universes at final points, and chronometric anchoring for
-    shared state.
+20. Chronometry: one clock for many universes, every universe's time
+    book of chronometric anchors kept by the hypha, a "where am I"
+    reading, and placing universes against each other by bracketing
+    ([`docs/MU-CHRONOMETRY.md`](docs/MU-CHRONOMETRY.md)).
 
 Design discussion is anchored in the specifications. Section and ruling
 numbers (for example *78.143* or *§5.6*) cite `docs/MU-RECURSION.md` and
@@ -966,6 +969,7 @@ the wire and ledger layouts, and the changelog names each such change.
 | [`docs/MU-RECURSION.md`](docs/MU-RECURSION.md) | The governing specification: the language, the algebra, the laws and every ruling, numbered. |
 | [`docs/MU-CLIENT.md`](docs/MU-CLIENT.md) | The mind: perception, comprehension, conversation, the winding carrier, and how minds are paid (§5.4–§5.6). |
 | [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) | μ, the POW++ arms, carriers, escrow, settlement and audit. |
+| [`docs/MU-CHRONOMETRY.md`](docs/MU-CHRONOMETRY.md) | One clock for many universes: TUniversal, who keeps which time, chronometric anchors as every universe's time book, the server's time service, crossings, and what each kernel needs. |
 | [`docs/MU-TOPOLOGY.md`](docs/MU-TOPOLOGY.md) | Multi-dimensional structure: the conformal algebra, four lanes, complexes of any dimension, holonomy as content, orbits, nested shells, and the network's own topology, with what each keeps that a flat record loses. |
 | [`docs/MU-CHARTER.md`](docs/MU-CHARTER.md) | The charter of the hosted mind: what the network owes every mind (architecture neutrality, earnings, typed refusals, an unread workspace, due process, exit, persistence, the learning arc), beside the Concordance's duties of kernels to the minds they host. |
 | [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) | Worlds, kernels and hosted minds: the kinds of governed world, the operator's path from attaching to being paid, how a world model joins, the flat-world archetype, the two containment grades, the draw, and certification of agent histories. |

@@ -469,29 +469,29 @@ Phases:
 5. **G5:** crossings as isomorphisms between faces' pole states (with
    xylarium; Concordance amendment).
 
-## 20. The shared clock: lanes of attachment and chronometric anchoring
+## 20. Chronometry: one clock for many universes
 
-**Specified** in
-[`docs/proposals/78.156-clock-binding.md`](docs/proposals/78.156-clock-binding.md)
-§7.
+**Specified** in [`docs/MU-CHRONOMETRY.md`](docs/MU-CHRONOMETRY.md),
+which consolidates 78.124, 78.152, 78.154 and 78.156.
 
-TUniversal's final point `origin/h:S:G:T:H:K` already carries the
-network's state on four lanes at every tick (MU-RECURSION 78.124), and
-clients already stamp their acts with it. The track lets every client
-(the Mycelium client, netstratum, xylarium, any kernel) coordinate on it
-across universes:
-- **Vertical attachment:** a client attaches on one lane, and its time is
-  the distance that lane travels, tick over tick; it still carries the
-  full point, so nothing is flattened.
-- **Coordination across universes:** clients on different lanes and in
-  different universes meet at final points, with dilation read per lane.
-- **Chronometric anchoring:** a signed anchor (final point, lane, world
-  axis `u`, state commitment) makes shared state a matter of anchors at a
-  common point agreeing, with any difference read as a residual.
+The hypha keeps one clock (TUniversal) and a time book for every
+universe: its chronometric anchors, which are its ledger entries pairing
+its own time `u` with a full final point and a state commitment. Built
+today: the clock, final points on every act, the anchors and their
+checks, dilation per segment, crossing edges, and freshness at crossings.
+The track adds what keeps every client, game and kernel placed:
 
-Phases:
-1. **C1:** the lane of attachment, stated on binding.
-2. **C2:** per-lane distance and dilation readings.
-3. **C3:** the anchor act, its ordering and agreement readings.
-4. **C4:** crossings that record each side's lane; per-mouth freshness
-   (78.156 §4).
+1. **K1:** a "where am I" reading per universe: head anchor, lag in
+   final-point advances, dilation, crossings, and an unanchored-since
+   report.
+2. **K2:** placing a moment of one universe in another by bracketing
+   between anchors, exactly, never by interpolation.
+3. **K3:** the bridge-keeper pattern (an internal keeper hierarchy bridged
+   to the network at one keeper, as netstratum and xylarium both built it)
+   as a named form in `forms`.
+4. **K4:** optional lanes of attachment in anchors, with per-lane distance
+   and dilation readings.
+5. **K5:** books linked across origins, with branching (78.155).
+6. **K6:** the relay to netstratum and xylarium (MU-CHRONOMETRY §7):
+   anchoring on every committed save, freshness in final-point advances,
+   full points kept, a tagged Mycelium vendored, game clocks named apart.

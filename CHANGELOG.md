@@ -7,6 +7,26 @@ such change is named here.
 ## Unreleased
 
 ### Documentation
+- `docs/MU-CHRONOMETRY.md`, one clock for many universes, consolidating
+  78.124, 78.152, 78.154 and 78.156:
+  - the clock and its fields;
+  - who keeps which time, and the bridge-keeper pattern both game kernels
+    built independently;
+  - chronometric anchors as each universe's time book, which is the
+    ledger entry, with its checks and readings (all built);
+  - bookkeeping rules: anchor every committed state that matters, capture
+    the whole point, never interpolate, never compare origins, keep the
+    residual;
+  - the server's time service: a "where am I" reading with lag and an
+    unanchored-since report, and placing universes against each other by
+    exact bracketing (specified);
+  - lanes of attachment revised as optional, attachment being on the
+    height through the bridge keeper;
+  - what netstratum and xylarium each need.
+
+  ROADMAP track 20 rewritten to it. 78.156's status corrected: items 1–4,
+  per-mouth freshness included, are built. MU-LEXICON adds collisions for
+  the lane letters, an in-game "TUniversal" and "anchor".
 - Proposal 78.156 (clock binding) §7, and ROADMAP track 20: the four
   lanes of the clock defined (spatial, gauge, temporal, holonomic; matter,
   value, duration, information in a fold); vertical attachment, in which a

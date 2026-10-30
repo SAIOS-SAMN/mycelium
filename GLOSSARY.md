@@ -114,8 +114,9 @@ senses that kernel builds for it.
 |---|---|
 | **μ** | The four-lane currency, minted and burned only by court verdicts and never summed across lanes. |
 | **Lanes S, G, T, H** | The four dimensions of value and of the clock: **S** spatial (boosts and dilations), **G** gauge (hue cycles and moves), **T** temporal (null flux), **H** holonomic (turns: a loop's composite). In a ledger fold they read as matter, value, duration and information (MU-LEXICON §3.1). |
-| **Lane of attachment** | The one lane a client attaches to TUniversal on, vertically: its time is the distance that lane travels, tick over tick, while it still carries the full final point (78.156 §7, specified). |
-| **Chronometric anchor** | A signed statement of a client's or universe's state at a final point: the point, its lane of attachment, its world axis `u`, and a commitment to its state. Shared state is state anchored at a common final point (78.156 §7.4, specified). |
+| **Chronometric anchor** | A universe's signed statement of where it is in its own time against the one clock: its ledger entry (78.154), pairing its cycle `u` with a full final point and a commitment to its state, chained to the previous anchor. A universe's anchors are its **time book**, kept by the hypha (MU-CHRONOMETRY §3, built). |
+| **Bridge keeper** | The one keeper of a universe's internal clocks whose time is paired with the network's: the keeper that writes its anchors (MU-CHRONOMETRY §2.1). |
+| **Lane of attachment** | Optional: the one lane a kernel states in its anchors when its time has a meaning on that lane; the server then reads its distance and dilation on it (MU-CHRONOMETRY §5, specified). |
 | **Quantum state (of the clock)** | The four lane coordinates `{S, G, T, H}` captured at one tick, read at `K` (MU-RECURSION 78.124). Never a probability or a weighting. |
 | **POW++** | The family of proofs of work, each settled apart. |
 | **POUW** | Proof of useful work: a listed demand closed. The measured deflation is minted to the closer. |
