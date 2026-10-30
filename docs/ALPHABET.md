@@ -102,5 +102,5 @@ not refused: `factor_rotor` types it `Demand::Standing` with the rotor as
 witness, and the court dockets that rotor as a candidate generator under
 37.7, adjoined by closure (`MU-RECURSION.md` 16.16 step 6, 37.7 as amended
 2026-09-17). The peel over the commuting pairs above runs with the mind's
-adjoined generators as its basis (`MU-RECURSION-TASKS.md` Stage 18, N3).
+adjoined generators as its basis.
 

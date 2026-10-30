@@ -987,10 +987,7 @@ the wire and ledger layouts, and the changelog names each such change.
 | [`docs/ALPHABET.md`](docs/ALPHABET.md), [`docs/MU-LEXICON.md`](docs/MU-LEXICON.md) | The alphabet; the shared vocabulary. |
 | [`docs/COGNITION.md`](docs/COGNITION.md) | The overlay of the engines: how the game kernels' simulated minds map onto the hypha-native client mind. |
 | [`docs/LEDGER_EPOCH_DESIGN.md`](docs/LEDGER_EPOCH_DESIGN.md) | Ledger eras and folds. |
-| [`docs/CROSS_COMPLEX_DESIGN.md`](docs/CROSS_COMPLEX_DESIGN.md) | Cross-complex chains: the codomain aperture. |
 | [`docs/ANTI_FLATTENING_LAW.md`](docs/ANTI_FLATTENING_LAW.md) | Structure is never flattened to scalars or flat maps. |
-| [`docs/enumeration-audit.md`](docs/enumeration-audit.md) | The audit of every loop's index against the keyed-read rule. |
-| [`docs/MU-RECURSION-TASKS.md`](docs/MU-RECURSION-TASKS.md) | The task ledger: the roadmap against the specification. |
 | [`docs/proposals/`](docs/proposals/) | Design proposals. |
 
 ---

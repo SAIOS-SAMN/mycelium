@@ -7,6 +7,12 @@ such change is named here.
 ## Unreleased
 
 ### Documentation
+- Documentation audit (2026-10-30). Removed: `docs/MU-RECURSION-TASKS.md`
+  (the development fleet's task ledger; ROADMAP.md is the one plan of
+  work and governs), `docs/enumeration-audit.md` (paths from a pre-split
+  tree), `docs/CROSS_COMPLEX_DESIGN.md` (an unimplemented design record)
+  and proposal 78.159 (an inventory of code that no longer exists; its
+  live idea, resident minds, is in MU-HOSTING §5.1).
 - `docs/THREE_BINARIES.md` removed: it was a 2026-09-02 design record
   naming a `mycelium-court` binary that was never built. The binaries as
   they are (server with its court, client, soak) are in the README's

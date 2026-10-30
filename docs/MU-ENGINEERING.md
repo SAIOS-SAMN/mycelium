@@ -7,7 +7,7 @@
 Status as of v0.1.0. Every section names what is landed and what is not;
 later changes are recorded in [`CHANGELOG.md`](../CHANGELOG.md).
 Companion documents: `MU-ECONOMY.md`, `MU-PRODUCT.md`, `XSEPTUM.md`,
-`ALPHABET.md`, `enumeration-audit.md`.
+`ALPHABET.md`.
 
 ## 1. Two binaries
 

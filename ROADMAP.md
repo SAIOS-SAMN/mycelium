@@ -8,8 +8,8 @@ Each names its specification, where it lands in the code, and how to take
 part. [CONTRIBUTING.md](CONTRIBUTING.md) covers the workflow; open an issue
 on a track to coordinate before starting.
 
-The detailed task ledger behind these tracks is
-[`docs/MU-RECURSION-TASKS.md`](docs/MU-RECURSION-TASKS.md).
+This file is the project's one plan of work: where it and an older
+document differ, this file governs.
 
 ## 1. Settlement: the xSEPTUM Note
 
