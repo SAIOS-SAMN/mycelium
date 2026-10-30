@@ -4,10 +4,12 @@
 >
 > **Components:** the hypha (its ledger, receipt chains and co-signed folds). No game term.
 
-Status: ruled 2026-09-09 and bound to `MU-RECURSION.md` 45.8, 45.9, 47.2,
-47.3 and `MU-ECONOMY.md` §2, §6. This replaces the SNF epoching draft of
-Item 4a; the boundary fold it described survives as the computation, and
-its trigger (a memory reading) and its file archive do not.
+Status: implemented. The fold is specified by `MU-RECURSION.md` 45.8,
+45.9, 47.2, 47.3 and 78.65 (finality per item) and by `MU-ECONOMY.md` §2
+and §6; where this document and those sections differ, they govern. The
+code is `src/economy/fold.rs` (the net and its conservation),
+`src/chronometry/era.rs` (an era and its cold segment) and
+`src/server/cognition/court/era.rs` (the eras a court holds).
 
 ## The problem it answers
 
@@ -19,12 +21,15 @@ history; a court asked about an old era would have to hold it all.
 
 ## When a chain folds
 
-Behind a **fully final prefix**: no listing, provisional word or escrow
-below the prefix's head, read off the kernel's own carriers, and the
-hypha's own room reading (the same reading that admits a draw). Never at
-a height interval, on memory alone, or on a wall clock (rule 5, law 9).
-An era is therefore per chain, as K is; the mesh's shared coordinate stays
-the height (45.7).
+**Finality is per item** (78.65). A fold moves what is closed, and nothing
+open holds it back: a listing or a provisional word below the cut stays
+citable by the stamp of the act that admitted it, through its era, and an
+escrow is a claim carried off the ledger, so none of them pins the fold.
+Each closes after the fold at the act that closes it. The fold's floor is
+the line's own last close, within one `ACT_RECEIPTS` frame. A fold is
+never triggered at a height interval, on memory alone, or on a wall clock
+(rule 5, law 9). An era is therefore per chain, as K is; the mesh's shared
+coordinate stays the height (45.7).
 
 ## What the fold writes
 
@@ -66,19 +71,33 @@ is never truncated behind a fold root it did not adopt.
 
 ## Refusals and lines
 
-`REFUSE_FOLD_OPEN`, `REFUSE_FOLD_INEXACT` (34.1); `court fold …`, `court
-fold witnessed …`, `court fold refused …`, `court era adopted …` (34.2).
+`REFUSE_FOLD_INEXACT` (34.1, `src/court/verdict/mod.rs`): a fold whose
+nets do not conserve writes nothing. `REFUSE_FOLD_OPEN` is still defined
+there, but since finality became per item (78.65) no fold path produces
+it. The server's log lines (`src/bin/mycelium-server/fold.rs`,
+`src/bin/mycelium-server/judge/fold.rs`) are `court fold witnessed …`,
+`court fold refused …` and `court fold unmeasured …`.
 
-## Tests before the first fold on a fleet
+## Tests of the fold
 
-- a prefix with an open listing is refused `REFUSE_FOLD_OPEN` and nothing
-  is written;
-- `epoch` rows conserve: `audit` holds before and after, and the net per
-  identity equals what the replaced rows moved, on every lane;
-- a tampered `epoch` row is `REFUSE_FOLD_INEXACT` at the witness;
-- heights and extents continue across the fold; an install receipt below
-  the fold still resolves;
-- a chain seeded from a fold root admits the next receipt and refuses one
-  that claims a height the fold does not re-derive;
-- a K-range fetch serves the archived prefix from the home and from the
-  witness, and a court replays an era from either.
+- `src/economy/tests/fold.rs`:
+  `a_fold_re_expresses_the_prefix_as_epoch_rows_and_conserves`, which also
+  shows a fold that does not conserve refused `REFUSE_FOLD_INEXACT` with
+  nothing written.
+- `src/server/cognition/tests/era.rs`:
+  - `a_fold_is_proposed_witnessed_and_committed_on_two_signatures`;
+  - `a_second_fold_verifies_on_the_rows_a_witness_fetches`;
+  - `the_epoch_rows_stand_at_the_root_and_the_next_cut_counts_them`;
+  - `a_fold_passes_an_open_listing_word_and_escrow_and_each_closes_after_it`;
+  - `after_a_fold_an_orbit_longer_than_a_page_folds_at_its_close`;
+  - `each_filed_era_reads_back_its_own_receipts`;
+  - `a_folded_line_read_from_its_fold_root_pages_no_earlier_era`;
+  - `a_peer_receipt_citing_a_folded_receipt_is_admitted`;
+  - `a_court_restores_from_its_line_and_the_snapshot_that_names_it`.
+- `src/chronometry/tests/shed.rs`:
+  `a_peer_fold_sheds_its_line_but_what_our_hot_line_cites`,
+  `a_shed_receipt_is_a_hole_below_the_head_that_backfill_cannot_cross`.
+- `src/anastome/dialogue/tests/fold_wire.rs`:
+  `the_fold_proposal_the_witness_answers_and_the_rows_round_trip`;
+  `src/anastome/dialogue/tests/receipts_range.rs`:
+  `the_receipts_request_and_reply_round_trip_within_the_budget`.

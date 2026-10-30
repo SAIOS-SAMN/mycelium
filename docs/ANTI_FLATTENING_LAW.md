@@ -17,8 +17,8 @@ excluded from the reasoning path.
    geometric contractions (V σ Ṽ), or boundary morphisms (∂₂Σ = Q) on the
    retained graded multivector manifold.
 3. Multi-dimensional perceptual axes (holonomy, harmonic spectrum, torsion,
-   scale) exist as intrinsic grades or fiber coordinates on the Cl(3,1)
-   blade, not as standalone `*_cells` lookup tables.
+   scale) exist as intrinsic grades or fiber coordinates on the Cl(4,1)
+   blade (clause 7), not as standalone `*_cells` lookup tables.
 4. An operation that collapses manifold curvature into a flat 0-dimensional
    scalar or hash comparison, bypassing geometric deduction, is a structural
    violation and is refused.
@@ -53,24 +53,26 @@ excluded from the reasoning path.
    cyclotomic element (law 4); no finite field enters cognition, and a prime
    that splits in the Hurwitz order — `3 + e₀₁ + e₀₂` of weight 11 — enters
    as a rotor over ℚ through 37.7, on no coordinate plane and by no modulus.
-9. **Cells are conformal, never planar (MU-RECURSION 78.30).** A cell is
-   the meet of its witnesses' sphere vectors at its own grade; a centroid
-   is A4's null point and never a constructor; a body's shape is A.11's
-   harmonic pencil (HL1), a toroid the orbit of a round under two
-   commuting modes read off MR1, and continuous support the harmonics'
-   moments; no pixel grid, planar slice or second shape carrier enters
-   cognition. A zero meet is `NoRound`, never `Congruent`.
-10. **The Coxeter reading is analytic over ℚ (78.14, 78.29(B), 78.30(6)).**
-   The Gram form is read by exact elimination with no iteration; the
-   pair invariant is `δ²` carried as numerator and denominator, never a
-   root; positive definite is finite, semidefinite affine, indefinite a
+9. **Cells are conformal, never planar (`MU-RECURSION.md` 78.30).** A cell
+   is the meet of its witnesses' sphere vectors at its own grade. A
+   centroid is a conformal null point (A4), never a constructor of a cell.
+   A body's shape is the harmonic pencil of its moments; a toroid is the
+   orbit of a round under two commuting modes read off the body's motion;
+   continuous support is the harmonics' moments. No pixel grid, planar
+   slice or second shape carrier enters cognition. A zero meet is refused
+   as `NoRound`, never read as congruence.
+10. **The Coxeter reading is analytic over ℚ (`MU-RECURSION.md` 78.14,
+   78.29(B), 78.30(6)).** The Gram form of a reflection system is read by
+   exact elimination with no iteration; the pair invariant is `δ²` carried
+   as numerator and denominator, never a root. A positive definite form is
+   a finite group, a semidefinite one affine, and an indefinite one a
    hyperbolic chamber under Vinberg's criterion; a non-crystallographic
    pair is an infinite-order mode, refused as a system and held as a
    mode.
-11. **Cells are keyed by their bodies' coordinates (A21, 78.10(a)),
-   never by a member key that names two bodies at once; and a held
-   stabilizer is never collapsed by choosing a representative (FR1c,
-   78.29(C)).**
+11. **Cells are keyed by their bodies' coordinates (A21, `MU-RECURSION.md`
+   78.10(a)), never by a member key that names two bodies at once; and a
+   held stabilizer is never collapsed by choosing one representative of
+   it (78.29(C)).**
 
 ## Rationale
 
@@ -83,14 +85,36 @@ Recognition therefore remains a geometric relation on the retained object: a
 versor carrying one blade to another, a contraction, or a boundary morphism,
 rather than a bucket dereference.
 
-## The sovereignty boundary (the one exception)
+## Digests at the transport boundary (the one exception)
 
-Constraint II permits standard-library maps below the sovereignty boundary:
-transport framing, the cold block store, and the append-only temporal ledger
-keyed by block height / K-step. These are I/O and persistence indices, not
-reasoning operands, and fall under clause 1's transport-encoding category.
+Clause 1 permits a digest as a transport encoding: wire framing, receipt
+chains and signatures, and the hash of bytes a party commits to. These
+are I/O and persistence indices, not reasoning operands. No path of the
+tree is exempt from the rest of the law, and no standard-library map is
+used anywhere: carriers are `Keyed` tries keyed by canonical coordinates,
+in persistence and transport as in cognition.
 
-Concretely, `src/core/chain/**` (block store, temporal ledger) and
-`src/network/**` (wire/gossip framing) may use maps as indices. The
-cognition path — the remainder of `src/core/` and all of `src/transducer/` —
-may not. The guard in `core::laws` enforces this by scanning those trees.
+## How the law is enforced
+
+- **By lint, in the gate** (`(cd xtask && cargo run)`; see
+  [MU-STANDARDS.md](MU-STANDARDS.md) §4):
+  - `clippy.toml` denies `HashMap`, `BTreeMap`, `HashSet` and `BTreeSet`
+    crate-wide (clauses 1–3), and `blake3::hash` and `blake3::Hasher::new`
+    (clause 1). A transport site that hashes bytes carries an
+    `#[expect(clippy::disallowed_methods, reason = "…")]` naming why.
+  - `Cargo.toml` denies `float_arithmetic`, `cast_precision_loss` and
+    `cast_possible_truncation`, so no quantity is approximated.
+  - `xtask/lint/euclidean.rs` refuses grid-indexing vocabulary in code
+    lines (Morton and Z-order curves, Hilbert curves, bit interleaving,
+    bounding boxes, quadtrees, octrees, k-d trees, R-trees, spatial hashes,
+    grid cells, voxels), the flat-box shapes of clauses 3 and 5. It reads
+    names, not structure.
+- **By type:** `Keyed::fiber` takes a `Prefix` that cannot be empty, and
+  the μ⃗ type `Mu` implements neither `PartialEq` nor `PartialOrd`, so a
+  four-lane reading cannot be collapsed to one comparison.
+- **By review:** everything else — a `bool` deciding a branch in
+  cognition (constraint I), a collapse to a scalar (clause 4), a
+  projection to a plane (clause 5), a loop's holonomy discarded (clause
+  6), a planar cell or a chosen representative (clauses 9 and 11) — is a
+  review rule, read against the
+  `MU-RECURSION.md` review checklist, item (m) above all.

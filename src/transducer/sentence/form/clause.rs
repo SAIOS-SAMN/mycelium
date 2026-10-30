@@ -3,7 +3,7 @@
 //! 78.143 — THE RULE LANGUAGE GROWS: SELECT, REGION, CREATE, COUNT, COMPARE.
 //!
 //! A word vertex says "every body of this exact chart moves by one motion and
-//! has its hues remapped" (COGNITION.md §1.2). A CLAUSE says it of the bodies
+//! has its hues remapped" (COGNITION.md §2.2). A CLAUSE says it of the bodies
 //! a PREDICATE selects — a typed predicate over each perceived body's own
 //! exact coordinates — and its act may RECOLOUR or CARRY them, FILL a region
 //! their boundary encloses, CREATE cells relative to them (a line to the

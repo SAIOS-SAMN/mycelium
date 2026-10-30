@@ -4,11 +4,11 @@
 >
 > **Components:** the hypha's market, and the surfaces that expose it to clients. No game term.
 
-Status as of v0.1.0 (later changes in [`CHANGELOG.md`](../CHANGELOG.md)):
+Status as of v0.2.0 (later changes in [`CHANGELOG.md`](../CHANGELOG.md)):
 the market for work exists on every hypha; the products
 below are the surfaces that expose it. What is landed and what is specified
-is marked in §7. Companion documents: `MU-ECONOMY.md`, `MU-ENGINEERING.md`,
-`XSEPTUM.md`.
+is marked in §7; plans are in [`ROADMAP.md`](../ROADMAP.md). Companion
+documents: `MU-ECONOMY.md`, `MU-ENGINEERING.md`, `XSEPTUM.md`.
 
 ## 1. What is sold
 
@@ -25,7 +25,7 @@ to the minds themselves.
 
 | product | buyer sends | buyer receives | carrier |
 |---|---|---|---|
-| Solve | a family in pair-grid form, escrow | the rule, the outputs, a receipt | xSEPTUM work mode, `pay_solve` |
+| Solve | a family in pair-grid form, escrow | the rule, the outputs, a receipt | `ACT_TASK` / `ACT_SOLVE`, escrow |
 | Comprehension of a corpus | families through the uplink door | words minted on that data, taught to a mind the buyer runs | uplink, syllabus by incidence |
 | Certification | a rule or sentence claimed elsewhere, a fee | replayed and installed, or refused with the reason | `blind_replay`, the docket |
 | Translation | two corpora whose dialects do not glue | the gauge word between them | translation Rewrite |
@@ -108,19 +108,33 @@ is how new minds enter without a token purchase.
 
 ## 7. What is landed and what is not
 
-Landed: the work market on every hypha (listing, quote by incidence,
-attest, probe, settle), the court organ that replays and installs, the
-syllabus by incidence, the ARC corpus as a work source, solve verification
-at the home, the client with a genome that learns.
+Landed:
 
-Specified: the gateway and SDK bindings (`XSEPTUM.md`), the uplink door
-(restore from the predecessor tree's `src/bin/uplink.rs`), certification as a
-route, the explorer reads, the starter-genome export, genesis, voice keys,
-stake for voices, the wallet verbs in the client.
+- the work market on every hypha: task dispatch and solve verification at
+  the home (`ACT_TASK`, `ACT_SOLVE`), listings, quote by incidence on the
+  client, attestation, and the probe (`ACT_PROBE`);
+- the court organ that replays and installs, and the syllabus by
+  incidence (`ACT_SYLLABUS`);
+- the ARC corpus as a work source, and the client with a genome that
+  learns;
+- genesis: the mesh's origin and the corpus manifests a genesis key signs
+  (`mycelium-server --mint-genesis`, `src/bin/mycelium-server/genesis.rs`);
+- keys: a voice key minted on a client's first run, and a hypha key per
+  server (`court::identity::HyphaKey`);
+- escrow against a listing and its release (`src/economy/escrow.rs`);
+- the wallet act, `ACT_WALLET` (`src/anastome/dialogue/wallet.rs`): a
+  party's balance, bond and holds per lane, signed stake and unstake, and
+  compute leases opened and closed under it
+  (`src/anastome/dialogue/lease.rs`).
+
+Specified: the `mycelium-septum` gateway and its SDK bindings
+(`XSEPTUM.md`), the uplink door for a customer's corpus, certification as
+a route, the explorer reads, the starter-genome export, and wallet verbs in
+the client binary (the wire act exists; the client does not yet send it).
 
 ## 8. The two events that make this a business
 
 The first hundred families closed by rules the court replayed, and the
 first external buyer who paid for a solve and verified the root themselves.
-Every item in the build order in `MU-ENGINEERING.md` §10 is aimed at those two
-events.
+The development tracks in [`ROADMAP.md`](../ROADMAP.md) are aimed at those
+two events.

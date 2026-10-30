@@ -577,8 +577,7 @@ ratios the physics already reads:
 (Accrual on T against standing extent stood on this list; it is retired by
 78.149 (a) — the span stood is not μ.)
 
-They are studied in the simulator (`MU-ENGINEERING.md` §9), never tuned on the
-wire.
+They are studied off the wire and never tuned on it.
 
 ## 9. Implementation (v0.2.0)
 

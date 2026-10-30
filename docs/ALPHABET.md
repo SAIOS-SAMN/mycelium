@@ -4,13 +4,14 @@
 >
 > **Components:** the shared algebra (`src/transducer/alphabet/`), used alike by the client and the court. No game term.
 
-Landed 2026-09-03. Source: `src/transducer/alphabet.rs`, `src/transducer/peel.rs`.
+Source: the `src/transducer/alphabet/` directory (letters, rotors, spelling,
+factoring) and `src/transducer/peel.rs`.
 
 ## The seventeen letters
 
 The alphabet is exactly seventeen generators on the Euclidean rank-4 chart
-`e0..e3`, immutable, restored from ipsal-autic v0.4 (`iae/src/transport/letters.rs`)
-and the convergence-engine's Law VIII:
+`e0..e3`, immutable, carried over from the letters of ipsal-autic v0.4
+and the convergence engine's Law VIII:
 
 | slots | content | planes |
 |---|---|---|

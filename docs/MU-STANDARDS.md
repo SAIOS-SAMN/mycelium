@@ -4,572 +4,399 @@
 >
 > **Components:** the development of this tree, every component alike. No game term.
 
-Status: binding on every agent that writes, reviews, or audits this tree,
-from 2026-09-07. `MU-RECURSION.md` holds the laws (what the engine is) and
-the coding rules 1–16 (what a diff may not contain). This document holds
-the development standard: how files are laid out, how things are named,
-how tests are written and organised, how commits are made and verified,
-which gates enforce which rules, and how an implementor and an auditor
-work with each other and with the maintainer. Where this document and a
-chapter of `MU-RECURSION.md` disagree, the chapter wins and this document
-is corrected.
+This is the development standard for every contribution to Mycelium: how
+files are laid out and named, how arithmetic and refusals are written, how
+tests are written and run, what the gate checks, and how commits and
+documents are made. [CONTRIBUTING.md](../CONTRIBUTING.md) summarises it
+and describes the contribution workflow.
 
-The reason for a written standard is stated once: an agent with no
-standard does its own work in its own way, and the result is a tree of
-one-off stand-ins, private gates, and tests that assert what their author
-found convenient. Every item below was written after such a one-off was
-found and removed.
+[`MU-RECURSION.md`](MU-RECURSION.md) holds the laws (what the engine is),
+the coding rules 1–17 (what a diff may not contain) and the review
+checklist applied to every diff. Where this document and a chapter of
+`MU-RECURSION.md` disagree, the chapter governs and this document is
+corrected.
 
 ## 1. Files and modules
 
-1.1 **Bound.** No source file exceeds 2500 lines (600 to Stage 8b, 800
-during it, 1200 from 2026-09-10; raised to 2500 by the ruling of
-2026-09-25 — the recorded ruling the 2026-09-19 raise lacked and was
-returned for). The bound is a gate
-(`xtask/lint/length.rs`) that fails the build and names the file and its
-count. The bound exists so that a reader, human or agent, reads a file
-whole in one pass; a file that has to be searched is a file that is not
-audited. The raise changes no other rule: an organ is still split where
-the document splits it (1.2), never where a number does, and the
-auditor still reads every changed file whole at audit.
+1.1 **The reading bound.** No source file under `src/` or `xtask/`
+exceeds 2500 lines. The gate checks it (§4.1) and names each file over the
+bound with its line count. There is no list of exceptions: a file over
+the bound is split before anything else lands in it. The bound exists so
+that a reviewer reads a file whole; it never decides where an organ is
+split (1.2).
 
-1.2 **One organ per file.** A file holds one bound of the document: the
-moves of one chapter, the codec of one act family, one carrier and its
-impls, one stratum of the mind. Its first line is a comment naming that
-chapter or act: `// 21 — extraction as moves, steps 1–7`. A file is named
-for what it holds in the document's vocabulary (`refract.rs`, `carriage.rs`,
-`admission.rs`, `lapse.rs`), never for its shape (`util`, `helpers`,
-`misc`, `common`, `types`, `part2`, `extra`).
+1.2 **One organ per file.** A file holds one bound of the specification:
+the moves of one chapter, the codec of one act family, one carrier and its
+impls, one stratum of the mind. A file is named for what it holds in the
+specification's vocabulary (`refract.rs`, `carriage.rs`, `admission.rs`,
+`lapse.rs`), never for its shape (`util`, `helpers`, `misc`, `common`,
+`types`, `part2`, `extra`). The one exception is a module's
+`tests/common.rs` (§3.3).
 
 1.3 **`mod.rs` holds declarations.** A `mod.rs` contains `mod`, `pub mod`,
-`pub use`, and nothing else. A `main.rs` of a binary contains argument
-parsing, the boot order, and the loop skeleton, and nothing else.
+`pub use` and `#[cfg(test)] mod tests;`, and nothing else. A binary's
+`main.rs` contains argument parsing, the boot order and the loop
+skeleton, and nothing else.
 
-1.4 **Sensor boundary.** The only files that may read or write a site's
-coordinates are named `sensor.rs` (or are `family::{extract_rule_with,
-speak_rule, orbit}` until S9 lands), and the functions are
-`element::sensor::{site_of, carry_center, carry_lamina}`,
-`element::letters::carriage`, `blade::carry::{carry, rotor_between,
-half_rotor}`, `blade::body::centroid`, `alphabet::letters::rotor_pair`,
-`cga::base` (law 11). Nothing else touches a site's integers, a centre's
-rationals, or a grid. This list is the review's, not a gate's (§4.4).
+1.4 **The sensor boundary** (law 11). Only the sensor reads or writes a
+site's integer coordinates. The permitted readers are the functions of
+`transducer::element::sensor` (`site_of`, `site_at`, `carry_center`,
+`carry_compartment`, `carry_site`, `carry_site_center`,
+`carry_compartment_site`, `pullback`), `transducer::element::letters::carriage`,
+`transducer::blade::carry::carry`, `Blade::centroid` in
+`transducer/blade/body.rs`, `transducer::alphabet::letters::rotor_pair`,
+the rotor transition `rotor_between` in `transducer/bubble/contemplation.rs`,
+and the base sites of `transducer::base`. Nothing else touches a site's
+integers, a centre's rationals or a grid. This is a review rule (§4.4),
+not a gate.
 
-1.5 **Binaries are modules.** `src/bin/<name>/` with `main.rs` and one file
-per act family or arm; the binaries are inside every gate's scope.
+1.5 **Binaries are modules.** A binary lives in `src/bin/<name>/` with a
+`main.rs` and one file per act family or arm (`mycelium-server`,
+`mycelium-client`, `mycelium-soak`). Binaries are inside the gate's scope.
 
 1.6 **Splits are move-only commits.** A split changes no line of any
 function body; only `use`, `mod`, `pub use` and `#[path]` lines are new.
-The suite count and the clippy count are identical before and after, both
-quoted in the message, and every document path that pointed into the split
-file is rebound in the same commit (§7.4). Four shapes are permitted inside
-a move-only commit and each is declared in the message: an `impl` block
-that cannot span files is opened again in the new file with the same
-methods; `super::` paths become `crate::` paths when a file moves down a
-level; a function that dispatched several acts in sequence becomes one
-function per act plus a `match` that dispatches and holds nothing else;
-a `main` that ran boot phases in sequence becomes one function per phase
-plus the ordered calls. Anything beyond these four is a code change and
-lands as its own commit.
+The test results and the clippy result are identical before and after,
+and every document path that pointed into the split file is rebound in
+the same commit (§7.3). Four shapes are permitted inside a move-only
+commit, each declared in the message:
 
-1.7 **No list of exceptions to the bound** (ruled 2026-09-12). A file
-over the bound fails the build and is split before anything else lands
-in it. `AWAITING_SPLIT` is retired with the gates (§4).
+- an `impl` block that cannot span files is opened again in the new file
+  with the same methods;
+- `super::` paths become `crate::` paths when a file moves down a level;
+- a function that dispatched several acts in sequence becomes one
+  function per act plus a `match` that dispatches and holds nothing else;
+- a `main` that ran boot phases in sequence becomes one function per
+  phase plus the ordered calls.
 
-## 2. Naming
+Anything beyond these four is a code change and lands as its own commit.
 
-2.1 **Types are nouns of the document.** `Form`, `Vertex`, `Transport`,
-`Refraction`, `Carriage`, `ClassVector`, `Receipt`, `Convergence`. A type
-named `Manager`, `Handler`, `Helper`, `Util`, `Data`, `Info`, `Context`,
-`Wrapper` is returned.
+## 2. Naming and code
 
-2.2 **Functions are verbs of the document's moves.** `glue`, `rebase`,
-`refract`, `pivot`, `regauge`, `unfold`, `orbit`, `speak`, `utter`,
-`comprehend`, `replay`, `docket`, `witness`, `lapse`, `shed`. A function
-name asserts an operation; its body performs that operation or refuses
-(checklist item (l)). `compute_*`, `derive_*`, `classify_*`, `extract_*`,
-`recover_*` are permitted only when the body computes, derives,
-classifies, extracts, or recovers the named object; a body that emits a
-label, a key, or a summary in its place is a stand-in and is returned.
+2.1 **Types are nouns of the specification.** `Form`, `Vertex`,
+`Transport`, `Refraction`, `Carriage`, `ClassVector`, `Receipt`. A type
+named `Manager`, `Handler`, `Helper`, `Util`, `Data`, `Info`, `Context` or
+`Wrapper` is not accepted. A tuple named by a `type` alias is not a named
+type: its coordinates get names.
+
+2.2 **Functions are verbs of the specification's moves.** `glue`,
+`rebase`, `refract`, `pivot`, `regauge`, `unfold`, `orbit`, `speak`,
+`comprehend`, `replay`, `witness`, `lapse`. A function name asserts an
+operation; its body performs that operation or refuses.
+`compute_*`, `derive_*`, `classify_*`, `extract_*` and `recover_*` are
+permitted only when the body computes, derives, classifies, extracts or
+recovers the named object; a body that emits a label, a key or a summary
+in its place is a stand-in.
 
 2.3 **Predicates and readers.** `is_*` and `has_*` return `bool` and are
-exposed at boundaries only; a `bool` is never branched on inside cognition
-(law I of the Anti-Flattening Law). `*_of` reads a coordinate from a
-carrier (`translator_of`, `class_of_vertex`). `rederive_*` recomputes from
-content. `key()` returns A21 bytes; `address()` returns the M2 composite;
-neither is ever a digest. A comparison of two polytonic objects — two μ⃗,
-two `Rank`, two `ClassVector`, two reserves — returns the reading, never a
-verdict: per-lane moves (`Fell`/`Held`/`Rose`), a shortfall per lane, a
-`RankMove`. A `bool` over four lanes is the maximal flattening: it keeps
-neither order nor lane, and every caller that needs to act recomputes what
-the bit threw away (`fits_book` → `log_room_refused` recomputing the room
-is the recorded instance). Ruled 2026-09-07, Stage 9.
+exposed at boundaries only; a `bool` is not branched on inside cognition
+(Anti-Flattening Law, constraint I). `*_of` reads a coordinate from a carrier.
+`rederive_*` recomputes from content. `key()` returns the object's
+canonical coordinates and `address()` its composite address; neither is a
+digest. A comparison of two polytonic objects (two μ⃗, two `Rank`, two
+`ClassVector`, two reserves) returns the reading, never a verdict:
+per-lane moves (`LaneMove`), a shortfall per lane. A `bool` over four lanes
+keeps neither order nor lane, and every caller that needs to act
+recomputes what the bit threw away.
 
 2.4 **Refusals.** A function that can refuse returns `Option<T>` when the
-cause is unique and documented at the call site, otherwise `Result<T,
-&'static str>` whose error is a `REFUSE_*` constant from chapter 34.1. New
-refusal strings are added to 34.1 in the same commit. `unwrap()`,
-`expect()`, `unwrap_or(default)`, `panic!`, and `unreachable!` do not
-appear in cognition outside tests; `unreachable!` where the type system
-already excludes the arm names the invariant in its message.
+cause is unique and documented at the call site, otherwise a `Result`
+whose error names the refusal: a `REFUSE_*` constant (MU-RECURSION
+chapter 34.1, `src/court/verdict/mod.rs`) or a typed refusal. A new
+refusal string enters chapter 34.1 in the same commit.
 
-THE SCOPE AND THE LAWFUL DEFAULT (agreed by Mycelium, netstratum and
-xylarium, 2026-10-21; xylarium's conduct notes, 9.6). "Cognition" names where the
-rule was first stated, not its bound: a coding standard binds every line a
-developer writes — a universe's physics kernel as much as a mind's code —
-and never limits what a mind may count or rank (ruled 2026-10-08).
-A default stands only where THE LAW ITSELF ASSIGNS THAT VALUE AT THAT
-POINT — the law's reading of absence: the empty sum is 0, the empty
-product 1, an empty enclosure holds nothing — named at its site (here an
-`#[expect(..., reason = "<the law>")]` the gate checks). Arithmetic
-convenience never qualifies: a division by zero is never lawfully 0 or 1
-unless the law names that value there; everything else is a refusal by
-name.
+*Cognition refuses, it does not abort.* `unwrap_used`, `expect_used`,
+`panic`, `unreachable`, `todo` and `unimplemented` are denied in
+`Cargo.toml`; `clippy.toml` allows `unwrap`, `expect` and `panic` inside
+`#[cfg(test)]`. An integration test crate under `tests/` is a crate of its
+own that those settings do not reach, so it opens with a root
+`#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, reason = "…")]`
+and allows nothing else. `unsafe_code` is denied.
 
-2.5 **Lanes.** μ⃗ lanes are addressed through `Lane::{S, G, T, H}` (or the
-four-element array with a named index constant), never a bare `[2]`.
+*The lawful default.* A default value stands only where the law itself
+assigns that value at that point (the empty sum is 0, the empty product
+1, an empty enclosure holds nothing), named at its site with an
+`#[expect(..., reason = "<the law>")]`. Arithmetic convenience never
+qualifies: a division by zero is never 0 or 1 unless the law names that
+value there. Everything else is a refusal by name. These rules bind every
+line a developer writes and never limit what a mind may count or rank
+([CONCORDANCE.md](CONCORDANCE.md) 1.10).
+
+2.5 **Lanes.** μ⃗ lanes are addressed by the named index constants
+(`LANE_S`, `LANE_G`, `LANE_T`, `LANE_H`), never a bare `[2]`.
 
 2.6 **Constants.** A literal constant is a wire tag (`*_TAG`, `ACT_*`), a
-carrier size (`*_LEN`, `*_WIDTH`, `*_BITS`), or a letter index. Any other
+carrier size (`*_LEN`, `*_WIDTH`, `*_BITS`) or a letter index. Any other
 number is measured or refused (rule 5); a constant named `*_MAX`,
-`*_FLOOR`, `*_CAP`, `KAPPA`, `QUORUM`, `MAX_*` is returned.
+`*_FLOOR`, `*_CAP`, `MAX_*` or `QUORUM` is not accepted.
 
 2.7 **Modules and paths.** `snake_case` files, one word or two joined by
-underscore, named for the chapter's object. The module path is the
-document's binding: `cognition::court::lapse`, `sentence::pivot::snap`.
+an underscore, named for the chapter's object. The module path is the
+specification's binding: `server::cognition`, `transducer::sentence::pivot`.
 
-2.8 **Headers and comments.** A file's header says what the file is, in
-the document's words, in at most three lines: the object it carries and
-the chapter that binds it. It carries no history — what was deleted, when,
-and why is in git and on the backtrack ledger — and no claim about the
-tree beyond the file. A header that calls the coefficient field "the
-scalar the engine counts in" states the collapse law 5 forbids: ℚ is the
-field the coordinates of a multivector are written over; the engine
-counts in μ⃗ per lane, in versors and blades, in ℤ-ranks.
+2.8 **Headers and comments.** A source file opens with the
+`AI-GENERATED CONTENT — see DISCLAIMER.md` header where the content was
+generated, then a header of at most three lines saying what the file is
+in the specification's words: the object it carries and the chapter that
+binds it. A comment states what the code does now and the chapter that
+says why. It carries no history, no measurement, no commit id, no
+deployment reading and no permission ("rule 1 allows this"): a comment
+cannot allow anything. What a line used to do is in git. A contributor who
+touches a function removes such comments from it in the same commit.
 
-The same rule binds every comment in a body (ruled 2026-09-12). A comment
-states what the code now does, in the document's words, and the chapter
-that says why. It carries no measurement, no commit id, no deployment reading,
-no "this was", no story of how the line was found, and no permission
-("rule 1 allows this"): a comment cannot allow anything, and the one that
-claimed to allow a pair loop was read by no tool and no reviewer while
-the loop took the deployment down. What a line used to do is in git; what it
-cost is on the ledger. The tree's prevailing inline style was the defect,
-not a limit on this section's reach: an agent that touches a file removes
-such comments from the functions it touches, in the same commit.
+2.9 **Exact arithmetic.** Every quantity is exact: ℚ, or the multivectors
+of Cl(4,1)(ℚ). `float_arithmetic`, `cast_precision_loss` and
+`cast_possible_truncation` are denied in `Cargo.toml`; a narrowing `as`
+stands only under an `#[expect]` naming where its bound comes from. A
+decimal approximation of an irrational is not served anywhere: in a value,
+a printed reading, a doc line or a test name. A turn is written in degrees
+where exact, otherwise as its rational point. No structure is projected to
+a scalar ([ANTI_FLATTENING_LAW.md](ANTI_FLATTENING_LAW.md)).
 
 ## 3. Tests
 
 3.1 **A test is a claim.** Its name is the claim in plain words, one claim
-per test, in the form the tree already uses:
-`a_versor_and_its_negation_are_one_vertex_and_two_addresses`,
-`one_vantage_dockets_escrows_and_mints_nothing_until_a_witness_rederives`,
+per test: `a_versor_and_its_negation_are_one_vertex_and_two_addresses`,
 `the_book_has_no_order`. Subject, verb, object; no `test_` prefix, no
-`_works`, `_ok`, `_basic`, `_simple`, `_case1`. A test named in chapter 39
-is named exactly as chapter 39 names it.
+`_works`, `_ok`, `_basic`, `_simple`, `_case1`. A test named in
+MU-RECURSION chapter 39 is named exactly as that chapter names it.
 
-3.2 **A test verifies the move, never the outcome** (rule 13). It asserts
-on content: `same_vertex`, `projective_eq`, coordinatewise equality of
-class vectors, decoded keys, spoken laminae, refusal strings, work counters
-at N versus 4N. It never asserts on tape bytes, letters, `to_bytes()`
-equality, counts standing in for properties, or `description()[i]` beyond
-the version byte.
+3.2 **Proved by the algebra.** A test asserts a law, a theorem or an
+algebraic identity on typed values the engine computes, by one of:
 
-3.3 **Layout.** Tests live in `<module>/tests/<function>.rs`, one file
-per function of the organ they prove, named for what the tests in it claim
-in the document's vocabulary (`sentence/tests/pivot.rs`,
-`sentence/tests/tape.rs`, `cognition/tests/ledger_clock.rs`,
-`admission/tests/receipts.rs`); the file's first line names the chapter
-the claims come from. A file is never named for a chapter number: a number
-says where the claim was read, not what it is, and the tree renames when
-the document renumbers (ruled 2026-09-08; f799557 and f179bdd carried the
-renaming). `tests/common.rs` is the one shared file per module and holds
-fixture constructors only (`grid`, `word`, `form_with_two_words`), named
-for what they build. A gate recognises a test file by the owning module's
-`#[cfg(test)] mod tests;` declaration — in its `mod.rs`, or in `main.rs`
-when the module is a binary (§1.5) — never by the file's name or
-directory; a file merely named `tests.rs`, or one under `tests/` that no
-module declares, is production code to every gate.
+- a **refusal by name**: the input that must be refused is refused with
+  the named reason;
+- a **fixed locus**: the object an operation must leave fixed is fixed;
+- a **replay or reconstruction**: the object re-derived from its record
+  equals the object (`decode(key) == object`);
+- an **exact identity** the specification states (`δ² = 0`, associativity
+  of the geometric product, projective equality of either sign), over
+  exact ℚ inputs.
 
-3.4 **Fixtures are built, never faked.** Addresses come from
-`Element::address()` of a constructed form, keys from `key()`, forms from
-`perceive`/`from_residual`/`extract_rule_with`. A hand-built `[1u8; 32]`
-address, a zero versor, or an identity gauge standing in for a real one is
-a stand-in and is returned; the only exception is a wire identifier
-(`vk`) where the identity is routing, never content.
+A test verifies the move, never the outcome (rule 13). It never asserts on
+tape bytes, `to_bytes()` equality, a printed string, a rendered line, a
+census diff or a count standing in for a property. A string may appear
+in an assertion's message, never as what is compared. A test that asserts
+nothing and prints is not a test.
 
-3.5 **Refusals and traces.** Every `REFUSE_*` string has a test that
-produces it. Every log line of chapter 34 has a trace test where the line
-can be produced in-process. The reading bound has a test of its own; a
-lint entry is proved once, at the commit that adds it (§4.2).
+3.3 **Layout.** Unit tests live in `<module>/tests/<name>.rs`, declared by
+the owning module's `#[cfg(test)] mod tests;`, one file per organ they
+prove, named for what its tests claim (`sentence/tests/pivot.rs`,
+`cognition/tests/ledger.rs`), never for a chapter number. A module's
+`tests/common.rs` holds fixture constructors only, named for what they
+build. Integration tests live in the crate's `tests/` directory.
 
-3.6 **Identities as properties.** The identities the document states
-(`δ² = 0`, associativity of the geometric product, projective equality
-either sign, `descends` as a product order, `dominant` uniqueness, A21
-`decode(key) == object`) are property tests over generated exact-ℚ inputs,
-in `<module>/tests/properties.rs`.
+3.4 **Fixtures are the engine's constructs.** Addresses come from
+`address()` of a constructed form, keys from `key()`, forms from the
+engine's own perception and extraction. No mock, fake, stub or double of
+an engine organ, and no carrier field set by hand to a value the engine
+would not produce. A hand-built `[1u8; 32]` address, a zero versor or an
+identity gauge standing in for a real one is a stand-in; the one exception
+is a wire identifier, where the identity is routing and not content.
+
+3.5 **Refusals have tests.** Every `REFUSE_*` string has a test that
+produces it. The reading bound has a test of its own
+(`xtask/lint/length.rs`). A new clippy lint entry is proved once, at the
+commit that adds it, by a scratch line the lint refuses, built and then
+removed.
+
+3.6 **Identities as properties.** An identity the specification states in
+general is a property test over generated exact-ℚ inputs, in
+`<module>/tests/properties.rs`.
 
 3.7 **What a test never does.** Sleep, read a clock, read the network,
-touch the file system outside a temp dir it creates, depend on another
-test, use `#[ignore]`, or be deleted when its claim still holds on the new
-carrier (rewrite it; a test is deleted only when its claim is false under
-the doctrine, and the commit message says which claim and why). A test
-that asserts a scene extracts as one form asserts a claim chapter 53
-makes false, and is rewritten to the charts' forms, never deleted (ruled
-2026-09-19).
+touch the file system outside a temporary directory it creates, depend on
+another test, or carry `#[ignore]` (the tree has none). A test that no
+longer holds under the specification is rewritten to the new claim or
+deleted in the commit that meets it, and the commit message names the
+claim it dropped. A test whose claim still holds on a new carrier is
+rewritten, never deleted.
 
-3.8 **Test deletion and weakening are review items.** The auditor lists
-removed test names and removed assertions not re-added on every landing;
-each needs a sentence in the message.
-
-3.8 **No ignored tests, and stale tests leave as they are met** (ruled
-2026-09-24). A test marked `#[ignore]` is not kept:
-it is a claim nobody checks, and §3.7 refuses it. A test is valid — it
-reads what the tree does now under the rulings that stand — or it is
-deleted, in the commit that meets it, with the claim it dropped named
-in the message. No test audit is opened for this and no development
-stops for it: the implementor removes a stale test when a change brings
-them to it, and the auditor returns a stale test found in a read.
-
-3.9 **No stand-ins; fixtures are the engine's constructs; the geometry is
-the engine's** (ruled 2026-09-26: a test asserts no stand-in for the
-engine's work, a harness is legitimate only as a construct of the engine,
-and the geometry tested is non-Euclidean).
-(a) A test asserts a law, a theorem or an algebraic identity ON TYPED
-VALUES THE ENGINE COMPUTES. It never asserts a printed string, a
-rendered line or a census diff, and a test that asserts nothing and
-prints is not a test: it is deleted. A classification a reader shows
-(FLATTENED, a regime, a kind) is a typed value on the reading, asserted
-there; the renderer shows it. A string may appear in an assertion's
-MESSAGE, never as what is compared. (b) A fixture is BUILT BY THE
-ENGINE'S OWN CONSTRUCTORS from its own inputs — grids, letters, words,
-reflections, the corpus — and run through the engine's own moves. No
-mock, fake, stub or double of an engine organ, and no carrier field set
-by hand to a value the engine would not produce. A corpus census is a
-legitimate construct only where it asserts a law over the real engine's
-run; its printed lines are the regression reading and never its claim.
-(c) THE GEOMETRY IS THE ENGINE'S, `Cl(n+1,1)(ℚ)`. No test and no code
+3.8 **The geometry is the engine's, `Cl(n+1,1)(ℚ)`.** No test and no code
 decides by a Euclidean oracle: no orthogonal matrix, no `Σx²`, no dot
 product and no `RMRᵀ` standing for an action or for the equality of two
-shapes (law 11: no matrix carries an action). Two bodies are related by
-the conformal versor between them, known by its action. Coordinates on
-ℤⁿ appear only at the sensor, where a site is read.
+shapes (rule 16: an action is an algebra element, never a matrix). Two
+bodies are related by the conformal versor between them, known by its
+action.
 
-## 4. Gates
+3.9 **Scoped suites.** A change runs the suites of the modules it
+touches, by filter, not the whole suite:
 
-Ruled 2026-09-12, replacing this section as written on
-2026-09-07 and amended on 2026-09-10. The line-matching gates of
-`xtask/lint/` are deleted: eighteen files that read source as text with
-every comment erased, six debt mechanisms for one idea, some two hundred
-hand-kept rows of file path and hit count, and a clique gate for two
-spellings written after the second clique. They passed both pair loops
-that took the deployment down, permitted the whole-carrier walk under one name
-while refusing it under another, and carried a red test of their own for
-a week because the gate command did not run it. A rule is checked where
-the compiler reads it, or it is a type, or it is a review item. Nothing
-in between exists again.
+```sh
+cargo test --release --lib -- <module path filter>...
+```
 
-4.1 **Two gates remain.** The reading bound (`xtask/lint/length.rs`: no
-source file over 2500 lines, no list of exceptions; a raise to 2500
-landed 2026-09-19 without a recorded ruling and was returned, and landed
-again 2026-09-25 on the recorded ruling — the constant and its test moved by the implementor
-as a named staging exception outside `src/`, like `Cargo.toml`'s and
-`clippy.toml`'s) and the warning gate
-(`cargo clippy --release --all-targets -- -D warnings`, rustc's warnings
-denied). `cd xtask && cargo run` runs the bound and then clippy and exits
-non-zero on either. There is no `build.rs`. Closing a warning by naming a
-tuple in a `type` alias is not closing it (§2.1): the coordinates get
-names, or the warning stands.
+A run is green only when its saved output contains no `FAILED`,
+`panicked` or `error` line. `scripts/ship-scoped <filter>...` runs clippy
+and the scoped tests in sequence under `CARGO_TARGET_DIR=target/gate`;
+past those two steps it rebuilds and restarts a locally managed
+deployment, which a contribution does not need.
 
-4.2 **The pattern rules are clippy configuration.** Every rule the
-compiler can read is a lint, denied crate-wide under `[lints.clippy]` in
-`Cargo.toml` or listed in `clippy.toml`, each entry carrying as its
-`reason` the rule it enforces:
+## 4. The gate
+
+4.1 **Running it.** The gate is the `gate` binary of `xtask/`:
+
+```sh
+(cd xtask && cargo run)
+```
+
+Setting `CARGO_TARGET_DIR` (for example `CARGO_TARGET_DIR=target/gate`) is
+optional and keeps the gate's build apart from a release build. There is
+no `build.rs`; the gate runs only from `xtask`. It takes two readings,
+reports both whatever the first said, and exits non-zero if either
+refuses:
+
+1. **The source checks** (`xtask/lint/`), over `src/` and `xtask/`:
+   - *the reading bound* (`lint/length.rs`): every `.rs` file over 2500
+     lines is named with its count;
+   - *the Euclidean vocabulary* (`lint/euclidean.rs`): a code line (not a
+     comment or attribute line) naming a grid-indexing shape is refused
+     with its reason: Morton and Z-order curves, Hilbert curves, bit
+     interleaving, bounding boxes (`bbox`, `bounding_box`, `aabb`),
+     subdivision trees (`quadtree`, `octree`, k-d trees, R-trees),
+     spatial hashes, grid cells and voxels. It reads names, not structure.
+2. **The warning gate** (`lint/warnings.rs`):
+   `cargo clippy --release --all-targets -- -D warnings`, every target,
+   tests included, rustc's warnings denied. A warning is a defect with a
+   line number.
+
+4.2 **The pattern rules are clippy configuration.** The crate-wide
+denials are in `Cargo.toml` under `[lints.rust]` and `[lints.clippy]`;
+`clippy.toml` lists the disallowed types and methods, each entry carrying
+as its `reason` the rule it enforces:
 
 | rule | lint |
 |---|---|
 | §2.4, no abort in cognition | `unwrap_used`, `expect_used`, `panic`, `unreachable`, `todo`, `unimplemented` |
-| law 2, rule 9: no map, no digest | `disallowed_types` for `HashMap`, `BTreeMap`, `HashSet`, `BTreeSet`; `disallowed_methods` for `blake3::hash` and `blake3::Hasher::new` |
-| law 9: no clock | `disallowed_types` for `Instant`, `SystemTime`, `Duration` |
-| rule 4: nothing chosen by a scalar IN ENGINE CODE (review discipline; never a limit on what a mind may compare — Concordance 1.10: a cognitive "largest" a mind states carries `#[expect(clippy::disallowed_methods, reason = "Concordance 1.10 — a comparison the rule names, ties included")]`) | `disallowed_methods` for `min_by`, `max_by`, `min_by_key`, `max_by_key`, `sort_by`, `sort_by_key`, `sort_unstable_by`, `sort_unstable_by_key`, `Iterator::max`, `Iterator::min` |
-| rule 11: no invented value | `disallowed_methods` for `unwrap_or`, `unwrap_or_else`, `unwrap_or_default`, `saturating_sub`, `saturating_mul` |
-| rule 15: no member by position | `disallowed_methods` for `slice::first`, `slice::last`, `core::iter::Iterator::nth` — the slice spellings are the ones clippy 1.95 resolves; `core::slice::<impl [T]>::first` does not, and the build says so in a warning |
-| rules 1, 8: no whole-carrier walk in cognition | `disallowed_methods` for every whole-carrier reader `Keyed` exposes (`keyed_persist_walk` and any entries-style walk); `fiber` is a type rule, 4.4 |
-| laws 1 and 4, 78.45: no approximation | `float_arithmetic`, `cast_precision_loss` (denied crate-wide in `Cargo.toml`; listed here 2026-09-25 on the ruling that the engine is built on precision — the tree measured float-free that day); a decimal served as a reading is the review item of 4.4 |
+| §2.9, exact arithmetic | `float_arithmetic`, `cast_precision_loss`, `cast_possible_truncation` |
+| law 2, rule 9: no map, no digest | `disallowed_types`: `HashMap`, `BTreeMap`, `HashSet`, `BTreeSet`; `disallowed_methods`: `blake3::hash`, `blake3::Hasher::new` |
+| law 9: no wall clock | `disallowed_types`: `Instant`, `SystemTime`, `Duration` |
+| rule 4: nothing chosen silently by a scalar in engine code | `disallowed_methods`: `Iterator::{max, min, max_by, min_by, max_by_key, min_by_key}`, `slice::{sort_by, sort_by_key, sort_unstable_by, sort_unstable_by_key}` |
+| rule 11: no invented value | `disallowed_methods`: `Option`/`Result` `unwrap_or`, `unwrap_or_else`, `unwrap_or_default`; `saturating_sub`, `saturating_add`, `saturating_mul` on the unsigned integers |
+| rule 15: no member by position | `disallowed_methods`: `slice::first`, `slice::last`, `Iterator::nth` |
 
-A lint fires on the item, in scope, with `#[cfg(test)]` handled by the
-compiler and not by a brace counter. Each entry is proved once, at the
-commit that adds it: a scratch line the lint refuses, built and then
-deleted, named in the message. An entry whose path clippy cannot name is
-not approximated by a text match; the rule it would have carried is
-listed in 4.4 as a review item, with the reason.
+Rule 4 binds engine code only. A comparison a mind's rule states (largest,
+rank, majority, in an order it names) carries
+`#[expect(clippy::disallowed_methods, reason = "Concordance 1.10 — …")]`.
 
-4.3 **Allowances are at the site and expire.** Where a denied lint fires
-and the site is right anyway, the site carries
-`#[expect(clippy::<lint>, reason = "<rule> — <why this site is the
-boundary>")]`. `expect` fails the build when the lint stops firing, so an
-allowance that allows nothing is a build failure and not a stale row.
-There is no module-level allowance (corrected 2026-09-12, the day it was
-written: `disallowed_methods` is one switch carrying law 2, rule 4, rule
-11 and rule 15 together, so a root `#![allow]` for "rule 11 only" allows
-a digest and a `min_by` in the same module and is a path table by another
-name). A codec that reads a tag byte by position carries an `expect` on
-that line naming rule 15; a reader that would default a missing field
-refuses instead, because a short frame read as zero is the clock-zero
-fault of law 9 and not a boundary. The count of `expect`s in a module is
-a measurement of that module and stays visible. There is no table of
-paths anywhere in the tree, and no file is named in any configuration.
-One scope statement, not an allowance: §2.4 binds cognition and never
-bound a test, and an integration test under `tests/` is a crate of its
-own that `allow-*-in-tests` cannot reach, so each such crate opens with
-`#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic,
-reason = "§2.4 binds cognition; this crate is a test")]`. `allow`, not
-`expect`: a test crate owes no abort. No other lint is allowed there.
+4.3 **Allowances are at the site.** Where a denied lint fires on a
+deliberate choice, the site carries
+`#[expect(clippy::<lint>, reason = "<rule> — <why this site>")]`.
+`expect` fails the build when the lint stops firing, so an allowance that
+allows nothing is a build failure. There is no module-level allowance
+(the one exception is the test-crate scope statement of §2.4), and no
+file is named in any configuration.
 
-4.4 **What the compiler cannot read is a type or a review item.** A pair
-loop over one carrier (rule 1), a count deciding a branch (rule 2), a loop
-without a budget or a boundary (rule 10), a coordinate pair above the
-sensor (law 11, §1.4), a carrier cloned into two places (rule 12), a
-matrix carrying an action (rule 16), a decimal approximation of an
-irrational served anywhere — in a value, a printed reading, a doc line
-or a test name; a turn is degrees where exact, else its rational point
-and its ℚ-protractor sector (law 4 as amended, 78.45) — and a chain
-composed into a word on the utterance path (law 8, 50.9) are read at
-review by the preamble's checklist on every diff. Where a type can hold the rule, it does, and
-the type is the gate: `Keyed::fiber` takes a prefix that cannot be
-empty, so a whole carrier is read in cognition only through
-`Keyed::cursor` under a `Budget`, and `ROOT` does not exist; μ⃗ is a type
-that implements neither `PartialEq` nor `PartialOrd`, so the only
-comparison of two lane vectors is `lane_moves` and a `bool` over two of
-them cannot be written; `from_residual` returns a listing key or a
-measure and never a value a frame can carry.
+4.4 **What the gate cannot read is a type or a review item.** Where a
+type can hold a rule, it does: `Keyed::fiber` takes a `Prefix`, which
+cannot be empty, so a whole carrier is read only through `Keyed::cursor`
+under a `Budget`; `Mu` implements neither `PartialEq` nor `PartialOrd`, so
+two lane vectors are compared only by `lane_moves`. Everything else is
+read at review against the coding rules and the review checklist of
+`MU-RECURSION.md`: a pair loop over one carrier (rule 1), a count deciding
+a branch (rule 2), a loop without a `Budget` or a boundary (rule 10), a
+coordinate pair above the sensor (§1.4), a carrier cloned into two places
+(rule 12), a matrix carrying an action (rule 16).
 
-4.5 **The ratchet is retired.** The `OWED` tables measured the debt of
-2026-09-10 by file. That debt is visible where it stands: a site under a
-denied lint is fixed, or carries its `expect` with its reason, or sits in
-a bytes module under 4.3. Nothing counts hits, nothing shrinks a row, and
-a file move moves nothing but the file.
+4.5 **The tree is not rustfmt-clean.** Its layout follows the
+specification's structure, and one `cargo fmt` run rewrites hundreds of
+files. Never run `cargo fmt` over the tree. Format only the lines you
+change, in the style of the surrounding code.
 
-4.6 **No new gate.** §8.5 stands. An agent that wants a check adds a lint
-entry under 4.2 with its proof, or a type under 4.4, or proposes a change
-to this document. A walker over source text is not written again for any
-reason, and a check that cannot be a lint or a type is a sentence in the
-checklist, not a file. Where `MU-RECURSION.md` or `MU-ENGINEERING.md`
-names "the enumeration gate", "the clock gate", "the blake3 gate", "the
-squaring gate", "the order gate" or "the panics gate", the name means the
-row of 4.2 or 4.4 that carries that rule.
+4.6 **No new gate by other means.** A new check is a lint entry under 4.2
+with its proof, a type under 4.4, or a proposed change to this document.
+A walker over source text beyond the two of 4.1 is not added. Where
+`MU-RECURSION.md` or `MU-ENGINEERING.md` names "the enumeration gate",
+"the clock gate", "the blake3 gate", "the squaring gate", "the order
+gate" or "the panics gate", the name means the row of 4.2 or the type or
+review item of 4.4 that carries that rule.
 
 ## 5. Commits
 
-5.1 **One phase per commit** (ruled 2026-09-22; before
-that date, one item). The unit of a landing is a phase: the rows of
-`MU-RECURSION-TASKS.md` that together make one claim the engine can be
-audited on, landed in one commit whose message names every row it
-carries with that row's own observable, quotes the suite and the gate,
-and lists every departure. A phase is not a bundle: a bundle is two
-claims in one commit, a phase is one claim across several rows, and a
-commit whose rows do not share a claim is returned and re-cut. Move-only
-splits stay their own commit (§1.6). A phase is audited as one landing
-under §6: every changed file read whole, each row's observable
-reproduced, the Owed ledger updated per row; a phase with one row
-unreproduced is a phase landed in part, and the next phase's message
-says so.
+5.1 **One phase per commit.** A phase is one claim the engine can be
+reviewed on: its code, its tests and its documentation together. A commit
+holding two claims is two commits. Move-only splits are their own commit
+(§1.6).
 
-5.2 **Message.** First line: `<id>: <claim in one sentence>.` Body: what
-changed and why it is doctrine (chapter numbers); the test names added,
-rewritten, or deleted, with the claim of each deleted one; the
-`test result` lines of the full suite; the clippy line; `xtask lint`
-line; the document paths rebound; every `pub(crate)` widening; every
-`#[allow]`; every departure from the directive as given (§8.3). A
-move-only commit says `move only` on its first line.
+5.2 **Message.** The first line states the change as a claim, in one
+sentence. A move-only commit says `move only` on its first line. The body
+gives what changed and why (with chapter numbers), the tests added,
+rewritten or deleted (with the claim of each deleted one), how it was
+verified (§6.1), the document paths rebound, and every `#[expect]` or
+`#[allow]` added.
 
 5.3 **Never committed.** Build artifacts (`target/`, `xtask/target/`),
-fleet state (`run/`, `var/` — the fleet's homes, `var/<unit>` under the
-repository since 2026-09-09; keys, mesh records and corpus manifests live
-there too and are configuration, not tracked), editor files, secrets.
-`.gitignore` covers them; a commit that adds one is amended before anything
-else lands.
+runtime state, keys and other secrets, and editor files. `.gitignore`
+covers them.
 
-5.4 **Pushing and history.** Nothing is pushed and no history is rewritten
-without the maintainer's approval. A commit that must be removed from history
-(an artifact, a secret) is reported, and the maintainer decides.
+5.4 **Corrections go forward.** A wrong change is corrected by a new
+commit that says what was wrong. Published history is not rewritten.
 
-5.5 **Docs commits.** A document change lands in its own commit the same
-day as the code it describes; a doctrine change (§9) lands before the code
-that implements it.
+## 6. Verification
 
-5.6 **Shared files.** `git commit --only <path>` commits the file as it
-stands in the working tree, not the hunk the item wrote. A documents file
-two agents edit (`MU-RECURSION-TASKS.md` above all) is named in a commit
-only after `git diff -- <path>` shows nothing but the item's own lines;
-otherwise the item's rows wait for their own commit and the other agent's
-pending edits are left alone. Four bundles on 2026-09-07 had this one
-cause.
+6.1 **Before a commit.** Run the scoped suites of the modules touched
+(§3.9), then the gate (§4.1). Quote the suites' `test result` lines and
+the gate's exit in the message. "Lint clean" alone is not green.
 
-5.7 **The ledger is kept, not appended** (ruled 2026-09-24: an
-append-only ledger grows without bound). `MU-RECURSION-TASKS.md`
-carries ONE live order. A row is an object the engine can be audited
-on; a reading is a line of the observer's row (CV5) and never a row of
-its own. A ruling that changes an object's statement amends that
-object's row; a new row is opened only for a new object. A row a later
-ruling supersedes is marked once in the superseded table with its
-successor and is not re-sequenced; a row that lands moves to the landed
-ledger with its commit and its audit. In `MU-RECURSION.md`, chapters run
-in numeric order within their parts, a ruling amends the chapter that
-governs its object (a new subsection only for a new object), and Part 0
-carries every master's statement, site and state, changed in the same
-commit as the ruling that moves it. A relay to the implementor names
-rows by the live ledger only.
+6.2 **A review reads the code.** A reviewer reads every changed file
+whole and checks the wiring (every new reader has a production caller and
+a producer feeding it, so nothing landed is a type, a line or a fixture
+standing in for a mechanism), the coding rules and the review checklist,
+and the carrier the change writes into and reads from: a write onto a
+retired carrier, or a positional read of a keyed one, is returned.
 
-## 6. Verification of a landing
-
-6.1 The implementor runs, in the foreground and in this order, on the
-commit as it will land: `RUSTFLAGS='-D warnings' cargo test --release`
-(every target), then `cd xtask && cargo run`, which runs the reading bound
-and then `cargo clippy --release --all-targets -- -D warnings` and exits
-non-zero on either. Both lines go in the message, the suite's `test
-result` lines and the gate's exit. "Lint clean" alone is not green.
-
-6.2 The auditor reads every changed file whole and verifies, on the code:
-(a) the wiring — every new reader has a production caller and a producer
-feeding it, and the path from the wire or the percept to the reading
-runs, so nothing landed is a type, a line or a fixture standing in for a
-mechanism; (b) the coding standards — checklist (a) through (t) and the
-laws, returned by rule number; (c) the trajectory — the change against
-its ruling AND against the carrier it writes into and every ruling that
-retired a carrier (§6.6). A landing is called verified only after that
-read; a report is never the object of an audit, the code is. THE AUDITOR
-DOES NOT RE-RUN THE SUITE, THE GATE AND THE CENSUS ON THE SAME MACHINE,
-TOOLCHAIN AND COMMIT the implementor quoted them from (ruled 2026-09-24):
-that reproduction confirms only that the report was
-not misquoted, which reading the quoted lines already does, and it is
-reserved for a commit whose report there is reason to doubt or that lands
-from a dirty tree.
-
-6.3 The cold-boot trace of chapter 40 for the item is reproduced before the
-next item lands (chapter 41's consolidation discipline). A landing that
-changes admission, the wire, or the market is followed by a whole-fleet
-recut before its readings are used.
-
-6.6 **A landing is checked against the carrier it writes into** (ruled
-2026-09-24; the audit fault at LD0 steps 4 and 5). A change that moves a field onto "a row" is audited against what
-the row lives in: LD0's per-word fields were landed onto rows of the
-MYC7 snapshot — a linear byte tape read by position in write order —
-after the tape had been retired (MU-RECURSION 1.9, K6, 54.5) and after
-LD2 had persisted the ledger as the trie, because each step was read
-against its own ruling and not against the carrier. From here the audit
-names, for every change, the carrier it writes to and reads from, and
-returns any write onto a retired carrier or any positional read of a
-keyed one; a ruling applies at every site of its shape.
-
-6.5 **A fleet reading is quoted against TUniversal height and `K`, never
-a wall clock** (ruled 2026-09-24, MU-RECURSION 78.21). "Up seven hours"
-and "written six hours ago" are not anchored; "head 16 739, K 2 928,
-ledger persisted at 16 700" is. The console's header places every source
-on TUniversal first, and a diagnostic, an audit or a relay that names a
-time names a height and a `K`.
-
-6.4 **Verification never writes.** A check reads: `git diff`, `git show`,
-`git log`, a build, a test run. `git checkout <rev> -- <path>` is a write
-that reverts the file it names, and it reverted a landed fix once
-(2026-09-07, F3f) while being used to "verify" it. A probe that must
-change source — a `panic!` to prove a test reaches an arm, an offending
-line to prove a gate fires — is made only in a detached worktree, never in
-the tree an agent is working in, and a worktree build that shares the
-target directory is followed by `touch build.rs && cargo build --release`
-from the working tree so the build script's cached path is that tree's.
-
-
-6.4 Fleet readings are taken on one binary: a fleet whose voices and
-hyphae run different commits produces no reading.
+6.3 **Verification never writes.** A check reads: `git diff`, `git show`,
+`git log`, a build, a test run. A probe that must change source (a line to
+prove a lint fires) is made in a separate worktree, never in the tree
+being committed.
 
 ## 7. Documentation binding
 
-7.1 Every function, path, and log line the document names exists at HEAD.
-Chapter 29's table by file and Part IV's absolute paths are updated in the
-same commit as any move.
+7.1 **The documents name what exists.** Every function, path and log line
+a document names exists at the commit that names it.
 
-7.2 A new refusal string enters 34.1, a new log line enters 34.2 or 34.3,
-a new test that proves a theorem enters 39 or 42, in the commit that adds
-it.
+7.2 A new refusal string enters MU-RECURSION 34.1, a new log line 34.2 or
+34.3, and a test that proves a theorem chapter 39 or 42, in the commit
+that adds it.
 
-7.3 A row of `MU-RECURSION-TASKS.md` is opened before work starts and
-closed by the auditor, not by the implementor; the implementor writes
-`landed (<commit>)` and the auditor writes `done` after reproduction.
+7.3 A move or a split rebinds every document path into the moved file in
+the same commit, and is not green until every `src/…` path the documents
+name exists.
 
-7.4 A split (§1.6) rebinds paths in the same commit and is not green until
-`grep -o 'src/[a-z_/]*\.rs' docs/MU-RECURSION.md | sort -u` names only
-files that exist.
+## 8. Contributions
 
-## 8. Agents
+8.1 **Instrumentation is its own commit.** A measurement that needs code
+lands as its own commit, named `instrumentation:`, containing trace lines
+only and no behaviour change.
 
-8.1 **The implementor** follows the directive order as given. A blocker
-found mid-order is reported with the evidence and the proposed reorder;
-the reorder is the auditor's or the maintainer's, not the implementor's. A
-measurement that needs code lands as its own commit, named
-`instrumentation:`, containing trace lines only and no behaviour change.
-Nothing outside the repository is changed (unit files, drop-ins,
-environment, cron, the maintainer's home directory) without asking first and saying
-what and why. Reverts are not a move; a wrong landing is corrected
-forward by a commit that says what was wrong.
+8.2 **No private infrastructure.** No contributor adds a gate, lint,
+fixture style, naming scheme, test harness, trace format or script that
+this document does not name. A needed addition is proposed as a change to
+this document first.
 
-8.2 **The auditor** reads code, not reports; reproduces every number;
-lists removed tests and removed assertions on every landing; greps the
-whole production tree for the ungated rules on every landing; checks the
-binaries and the machine (units, drop-ins, running binary versus HEAD);
-files findings as rows with file and line; rules only from the document
-and names the chapter.
+8.3 **Ambiguity is asked.** A contributor who cannot tell which of two
+readings a specification means asks, in the issue, before implementing
+either.
 
-8.3 **Reporting.** A report states, in this order: commits (id, claim,
-suite line, clippy line); what landed against which rows; what is open;
-every departure from the directive, named as a departure; every change
-outside the repository; what the fleet shows, on which commit, since when.
-A report that omits a departure is the departure.
+## 9. Specification changes
 
-8.4 **Ambiguity.** An agent that cannot tell which of two readings a
-directive means asks before implementing either; it does not implement
-one and mention the other.
+9.1 **Specifications govern behaviour.** The semantics of a chapter (what
+a move does, what a carrier holds, what the economy pays, what time is)
+change only by an amendment to the governing document (`MU-RECURSION.md`,
+`MU-CLIENT.md`, `MU-ECONOMY.md`, `XSEPTUM.md`), made before or with the
+code. A commit that changes specified behaviour otherwise is returned,
+however green.
 
-8.5 **No private infrastructure.** No agent adds its own gate, lint,
-fixture style, naming scheme, test harness, trace format, or script that
-this document and `MU-ENGINEERING.md` do not name. A needed addition is
-proposed as a change to this document first.
+9.2 **Proposals.** A change of behaviour starts as a proposal in
+[`docs/proposals/`](proposals/) and is amended into the governing
+document when it is accepted. A ruling amends the chapter that governs
+its object; a new subsection is opened only for a new object.
 
-8.6 **Cadence (ruled 2026-09-08).** The implementor never waits for the
-auditor. It runs the directive queue as given, end to end, one item per
-commit as §5 says, and reports at milestones — the end of a stage or
-phase, a ruling it needs, a blocker — not after each item. The auditor
-audits commit ranges, asynchronously, and files rows; a finding that
-returns a landing is corrected forward as the next item, never by
-stopping the queue. A ruling the implementor needs is asked in one line
-and the queue continues on every item the ruling does not touch. A
-report is the commit log (id, first line, the three gate lines) plus
-rulings asked plus departures; prose is for findings only. Stopping
-after one commit to report it is a departure (§8.3).
+## 10. Persisted layouts
 
-## 9. Doctrine changes
-
-The semantics of a chapter (what a move does, what a carrier holds, what
-the economy pays, what time is) change only by a maintainer's ruling
-recorded in `MU-RECURSION.md`, `MU-ECONOMY.md`, or `XSEPTUM.md` before
-the code changes. A commit that changes behaviour the document specifies
-otherwise is a doctrine change made in code and is returned, however
-green. The backtrack ledger in `MU-RECURSION-TASKS.md` records the cost of
-each such drift found after the fact.
-
-## 10. The recut
-
-The recut is a procedure the maintainer runs from a script in the
-repository (`scripts/recut`): stop 1–5 then c, b, a; wipe ledgers, genomes,
-thoughts, registry, court federation; keep keys, mesh, corpora; drop each
-hypha's origin (`--recut`, one run of the binary per hypha, which bumps the
-epoch under the signed mesh record); `--mint-genesis` on hypha a once;
-start a, b, c then 1–5.
-No flag of the recut lives in a unit file or a drop-in; a unit starts the
-binary with `--home` and nothing else.
-
-Ruled 2026-09-07: this is a development environment and nothing persisted
-survives a recut. A change to any persisted layout (tape, genome, ledger,
-snapshot section) is a recut, never a reader for the old layout; no
-migration or legacy reader exists in the tree before beta, and one that is
-found is deleted. Keys, the peer list and the corpora are configuration,
-not data, and stay.
+A change to a persisted layout (a snapshot, a line, a genome) gets a new
+layout tag. The superseded tag is refused by name, and no migration or
+reader for it is written: the tree holds no reader for `MYC7`, `MYT1`,
+`GEN4`, `GEN5` or `GEN6`. Keys, the mesh record and the corpus manifests
+are configuration, not state; the mesh record's `MSH1` is read and
+written back as `MSH2`. `MU-ENGINEERING.md` §8 lists the layouts.
