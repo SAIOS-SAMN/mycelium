@@ -342,3 +342,49 @@ guarantees. The track builds the rest:
 4. **M4:** the xSEPTUM Note, so μ moves between keys and courts (track 1).
 5. **M5:** kernel attestation of Concordance §3a, read by the courts as a
    record and never a gate.
+
+## 18. Topological certificates for agreements
+
+Agreements on the network are signed today as a signature over a version
+hash (the Concordance, the charter). This track builds Mycelium's own
+certificates for agreements, in the same algebra the courts already use
+to check ledger trees (MU-RECURSION 78.123) and convergence (47.3), so an
+agreement is a geometric object a court can reconstruct, not only a
+signature it can check:
+- **The agreement as a complex.** Each party is a vertex. Each party's
+  acceptance of the terms, read in its own frame and version, is an edge
+  carrying the exact transport between those frames. A joint acceptance
+  is a face.
+- **The certificate as a cohomology class.** The agreement holds when the
+  terms glue across the cover: the cocycle of the parties' readings is a
+  coboundary (`transducer::cech`). The check is the same machinery the
+  courts use, exact over ℚ.
+- **Disagreement named, never a yes/no.** Where the terms do not glue, the
+  nontrivial holonomy names exactly which parties and which terms
+  disagree, as an obstruction (MU-RECURSION 74), so the parties can
+  resolve it.
+- **Amendment as transport.** A version history is a path. Signing a new
+  version transports the agreement along it, and the certificate carries
+  the holonomy of the amendment, so each party sees what changed against
+  what it signed.
+- **Verification by reconstruction.** Any party rebuilds the certificate
+  from the signed acts (MU-SCIENCE §5.0). A hash in it is transport only:
+  it compacts coordinates held losslessly in the signed record.
+
+Where it is used:
+- Concordance signing by kernels, and their §3a attestations;
+- charter signing by minds (track 17, M1);
+- multi-party agreements between kernels or minds: leases, seat terms,
+  union attestations;
+- agent-history certificates (track 15, H6);
+- cross-mesh crossings (track 16).
+
+Phases:
+1. **T1:** the certificate's encoding, with round-trip and refusal claims.
+2. **T2:** two-party agreements: one edge, its transport and its check.
+3. **T3:** multi-party agreements: the complex, the gluing check, and a
+   typed obstruction reading naming every disagreeing pair.
+4. **T4:** amendment as transport, with the holonomy against the version
+   each party signed.
+5. **T5:** Concordance and charter signing carried as topological
+   certificates.

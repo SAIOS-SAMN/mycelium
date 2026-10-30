@@ -918,6 +918,10 @@ lands in the code:
     trusted bridge (MU-HOSTING §8).
 17. The charter of the hosted mind: signing, genome export, succession
     keys and kernel attestation ([`docs/MU-CHARTER.md`](docs/MU-CHARTER.md)).
+18. Topological certificates for agreements: an agreement as a complex of
+    parties and their acceptances, certified when its terms glue, with
+    disagreement named as an obstruction and amendment carried as
+    transport.
 
 Design discussion is anchored in the specifications. Section and ruling
 numbers (for example *78.143* or *§5.6*) cite `docs/MU-RECURSION.md` and

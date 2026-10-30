@@ -7,6 +7,14 @@ such change is named here.
 ## Unreleased
 
 ### Documentation
+- ROADMAP track 18, topological certificates for agreements: an
+  agreement as a complex (parties as vertices, acceptances as edges
+  carrying the transport between their frames and versions), certified
+  when the parties' readings glue as a coboundary in the courts' own Čech
+  machinery; disagreement named as an obstruction; amendment carried as
+  transport; any party reconstructs the certificate. To carry Concordance
+  and charter signing, kernel attestations, multi-party agreements,
+  agent-history certificates and cross-mesh crossings.
 - `docs/MU-CHARTER.md`, the charter of the hosted mind: the mind ↔
   network instrument beside the Concordance (kernel ↔ network). Part I
   speaks to an arriving mind in plain terms; Part II's articles, each

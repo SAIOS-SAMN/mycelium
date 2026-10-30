@@ -238,3 +238,4 @@ a machine-readable form, one canonical encoding with its hash, is
 | **M3** | The succession key (Article 7). |
 | **M4** | The xSEPTUM Note, so μ moves between keys and courts (Article 6; ROADMAP track 1). |
 | **M5** | Kernel attestation of Concordance §3a, read by the courts as a record, never a gate. |
+| **M6** | The charter signed as a topological certificate (ROADMAP track 18), so a mind sees what each amendment changed against the version it signed. |
