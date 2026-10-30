@@ -4,6 +4,19 @@ Releases follow [semantic versioning](https://semver.org/). In the 0.x
 series, a minor version may change the wire and ledger layouts, and each
 such change is named here.
 
+## 0.1.2 — 2026-10-30
+
+### Documentation and tooling
+- `scripts/quickstart` brings up a three-hypha network and an SDK client on
+  one machine.
+- `GLOSSARY.md` defines the terms of the code and the specifications.
+- `docs/EQUATIONS.md` collects the equations, formulas and master equations
+  in use, with their specification sections and code locations.
+- The README carries a quick start, a network topology diagram and a
+  task-to-payment sequence diagram.
+- The project name is written "Mycelium" in prose. Crate, binary and path
+  names stay `mycelium`.
+
 ## 0.1.1 — 2026-10-30
 
 ### Language
@@ -55,13 +68,6 @@ such change is named here.
   or `data/arc-agi-2` at the repository root).
 - Documentation is written in a specification register.
 - Added `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md` and `VERSION`.
-- `scripts/quickstart` brings up a three-hypha network and an SDK client on
-  one machine.
-- `GLOSSARY.md` defines the terms of the code and the specifications.
-- `docs/EQUATIONS.md` collects the equations, formulas and master equations
-  in use, with their specification sections and code locations.
-- The project name is written "Mycelium" in prose. Crate, binary and path
-  names stay `mycelium`.
 
 ## 0.1.0
 

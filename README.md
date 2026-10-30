@@ -1,6 +1,6 @@
 # Mycelium
 
-**Version 0.1.1** · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/EQUATIONS.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
+**Version 0.1.2** · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/EQUATIONS.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
 
 Mycelium is a distributed mesh network for **POW++**, a family of proofs of
 work in which the work proven is verified computation. The network's nodes
@@ -413,7 +413,7 @@ as `peers`, copy the corpus manifests (step 4), and start without
 - **systemd.** `ops/mycelium-{server,client}@.service` are user-unit
   templates; set the checkout path in them.
 
-### Node capabilities in 0.1.1
+### Node capabilities in 0.1.2
 
 | Capability | Verified |
 |---|---|
@@ -441,7 +441,7 @@ client of about 150 lines.
 
 ```toml
 [dependencies]
-mycelium = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.1.1" }
+mycelium = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.1.2" }
 ed25519-dalek = "2.1"
 ```
 
@@ -507,7 +507,7 @@ pairs:
 - **Rule elements:** `transducer::sentence::form::rule_element` states a
   rule directly as carriages, chains, joins and frames on a `Form`.
 
-### SDK surfaces in 0.1.1
+### SDK surfaces in 0.1.2
 
 | Surface | API | Verified |
 |---|---|---|
@@ -547,7 +547,7 @@ numbers (for example *78.143* or *§5.6*) cite `docs/MU-RECURSION.md` and
 ## Versioning
 
 The release version is recorded in [`VERSION`](VERSION), in the crate
-manifest (`Cargo.toml`), and as a git tag (`v0.1.1`).
+manifest (`Cargo.toml`), and as a git tag (`v0.1.2`).
 [`CHANGELOG.md`](CHANGELOG.md) lists what each release contains. Releases
 follow semantic versioning. In the 0.x series, a minor version may change
 the wire and ledger layouts, and the changelog names each such change.
