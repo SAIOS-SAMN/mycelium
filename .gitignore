@@ -4,3 +4,6 @@ state/
 xtask/target/
 run/
 /var/
+# Operating notes of the development fleet (status log, session notes,
+# soak transcripts, retired snapshots): kept beside the tree, not published.
+/notes/
