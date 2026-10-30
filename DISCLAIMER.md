@@ -73,7 +73,8 @@ This engine:
 - Runs as a network of nodes: its servers and clients
   exchange signed messages (Ed25519) over TCP with the
   peers an operator configures, and with no other service
-- Hosts games and simulated universes in which external
+- Hosts governed worlds (games, simulations, task
+  environments, world models) in which external
   AI agents are placed; the agents are the operators'
   own programs, connected through the client SDK
 - Does not collect personal data; a node stores only its

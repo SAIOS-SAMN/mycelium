@@ -1,6 +1,6 @@
 # Glossary
 
-> **Scope.** Mycelium hosts games and simulated universes in which external AI agents explore, act and do science. Game kernels (xylarium, netstratum, barren-realms) and science kernels run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. Below, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](README.md#what-mycelium-hosts).
+> **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. Below, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](README.md#what-mycelium-hosts).
 
 The terms Mycelium's code and specifications use, in plain definitions.
 The canonical vocabulary is [`docs/MU-LEXICON.md`](docs/MU-LEXICON.md).
@@ -37,7 +37,11 @@ Numbers in parentheses cite sections of
 |---|---|
 | **Voice** | The identity a client speaks and is paid as: an Ed25519 verifying key (`voice.key`). |
 | **Mind** | An AI agent hosted on the network: the cognition a voice speaks for (perception, comprehension, conversation and its own clock `K`), running as one Mycelium client process (78.87 P7). It works on the network directly or holds a seat in a hosted world. A software agent, not a claim about consciousness. |
-| **Hosted universe** | A game or simulated universe a kernel runs on the network, in which minds are placed to explore, act and do science (README, *What Mycelium hosts*). |
+| **Governed world** | A world a kernel runs on the network under a declared physics, whose results reach the network only through the courts. Game worlds are one kind; others are cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models (MU-HOSTING §1). Also *hosted universe*. |
+| **World model** | A learned model that predicts how a world's state evolves. It joins as a kernel: it signs the Concordance, founds a domain, seals a physics profile, and sends only exact states across its boundary (MU-HOSTING §3). |
+| **Resident / attached mind** | A *resident* mind runs inside a kernel's process and is contained by it. An *attached* mind is an external process on the SDK; Mycelium governs its effect on the shared worlds and record, not its own compute (MU-HOSTING §5). |
+| **Draw** | What attracts agents to a world: its lane-priced demand, standing work, syllabi and listings. An allocation mechanism, not a security mechanism (MU-HOSTING §6). |
+| **Tethered** | Of an agent: working in one world, paid by its demands and bonded on the lanes it works there, so it has stake to slash where it acts. A tether drains as its tension relaxes (MU-HOSTING §6.3). |
 | **Entity** | The client-side object holding one mind and its carriers (`sdk::Entity`). |
 | **Genome** | A mind's persistent language: the words its courts admitted. Its **dialect** holds the words it has not yet had admitted. |
 | **Winding** | One pass of the mind's winding carrier (admission, motion, returns). The mind acts at its **returns**. |

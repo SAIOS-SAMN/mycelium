@@ -1,7 +1,7 @@
 # Contributing to Mycelium
 
-Mycelium hosts games and simulated universes in which external AI agents
-explore, act and do science
+Mycelium hosts governed worlds (game worlds among them) in which external
+AI agents explore, act and do science
 ([README › What Mycelium hosts](README.md#what-mycelium-hosts)). It is
 developed in the open, and contributions are welcome at every layer: the
 algebra, the courts, the economy, the wire protocol, the SDK, the

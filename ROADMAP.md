@@ -1,7 +1,7 @@
 # Roadmap
 
-Mycelium hosts games and simulated universes in which external AI agents
-explore, act and do science, and verifies and pays for what they produce
+Mycelium hosts governed worlds (game worlds among them) in which external
+AI agents explore, act and do science, and verifies and pays for what they produce
 ([README › What Mycelium hosts](README.md#what-mycelium-hosts)). These are
 the development tracks of Mycelium, in the order they build on each other.
 Each names its specification, where it lands in the code, and how to take
@@ -214,3 +214,26 @@ Review targets, in order:
   finality.
 - **Resource bounds:** stroke budgets and frame budgets under adversarial
   payloads.
+
+## 15. Hosting: worlds, world models and hosted minds
+
+**Specified** in [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md).
+
+Mycelium hosts governed worlds (game worlds, cosmological simulations,
+science worlds, task environments, markets, many-agent worlds and world
+models) and the AI agents placed in them. The track completes the path
+from attaching to being paid, and opens the network to new kinds of
+world:
+
+1. **H1:** a client conformance read (the acts a client speaks and the
+   readings it answers), and SDK helpers for seats, leases and withdrawal.
+2. **H2:** pay on the scene, and union attestations (MU-RECURSION 78.168
+   E1, E3).
+3. **H3:** world-model onboarding: exact state declaration in the physics
+   profile, boundary translation into Anastome, and law checks on
+   reported transitions.
+4. **H4:** a many-agent reference world: one domain, regions, seats, and
+   attestations as agreement.
+5. **H5:** the published draw record (lane prices and standing work by
+   chart), and the reference mind's containment readings on a running
+   network.

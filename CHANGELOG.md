@@ -7,6 +7,26 @@ such change is named here.
 ## Unreleased
 
 ### Documentation
+- `docs/MU-HOSTING.md` (worlds, kernels and hosted minds; ROADMAP track
+  15):
+  - the kinds of governed world, game worlds being one;
+  - the operator's path from attaching to staking, producing and being
+    paid, written once;
+  - how a world model becomes a kernel;
+  - the flat-world archetype (agent social networks such as Moltbook) and
+    what a governed world refuses by construction;
+  - containment in two grades: resident minds contained by their kernel;
+    attached minds governed in their effect on the shared worlds and
+    record, not in their own compute; refusal by construction; the
+    sovereign, non-test-driven reference mind;
+  - the draw, as economics (lane-priced demand, standing work, syllabi,
+    listings) with its security side effects, and tethering.
+
+  Every item is marked built, written or specified.
+- "Governed worlds" replaces "games and simulated universes" as the
+  general term in the README and in every document's scope note.
+- The glossary adds governed world, world model, resident and attached
+  minds, draw and tethered.
 - The game kernels are named as such. `docs/COGNITION.md` opens with a
   reading note: xylarium is a world-simulation kernel, netstratum a game
   engine whose civilizations solve forged tasks, barren-realms a Python
