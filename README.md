@@ -1,6 +1,6 @@
 # Mycelium
 
-**Version 0.1.2** · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/EQUATIONS.md) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
+**Version 0.2.0** · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/EQUATIONS.md) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
 
 Mycelium is a distributed mesh network for **POW++**, a family of proofs of
 work in which the work proven is verified computation. The network's nodes
@@ -661,10 +661,12 @@ as `peers`, copy the corpus manifests (step 4), and start without
 - **systemd.** `ops/mycelium-{server,client}@.service` are user-unit
   templates; set the checkout path in them.
 
-### Node capabilities in 0.1.2
+### Node capabilities in 0.2.0
 
 | Capability | Verified |
 |---|---|
+| POWV: verifying courts paid a share of each release | test suite (`server::cognition::tests::verification`) |
+| Compute leases: open, pay per verified job, close, lapse | test suite (`server::cognition::tests::lease`) |
 | Node identity (`--init`), provisioning, signed mesh record | end to end |
 | Genesis minted by one hypha and adopted by its peers | end to end |
 | Peer exchange: digests, receipts, ledger eras, co-signed folds | on one host |
@@ -689,7 +691,7 @@ client of about 150 lines.
 
 ```toml
 [dependencies]
-mycelium = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.1.2" }
+mycelium = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.2.0" }
 ed25519-dalek = "2.1"
 ```
 
@@ -755,7 +757,7 @@ pairs:
 - **Rule elements:** `transducer::sentence::form::rule_element` states a
   rule directly as carriages, chains, joins and frames on a `Form`.
 
-### SDK surfaces in 0.1.2
+### SDK surfaces in 0.2.0
 
 | Surface | API | Verified |
 |---|---|---|
@@ -764,6 +766,7 @@ pairs:
 | Rules from typed steps | `sdk::rule::sentence` | test suite |
 | Seats in another kernel's house | `sdk::seat`, `sdk::seat_mind` | in use by peer kernels; specified in `docs/MU-CLIENT.md` §6 |
 | Mind-to-mind conversation | `sdk::chatter` | in use by the reference mind |
+| Compute leases: open and close | `anastome::dialogue::lease` (`ACT_WALLET` sub-kinds 3 and 4) | test suite |
 
 ---
 
@@ -806,7 +809,7 @@ numbers (for example *78.143* or *§5.6*) cite `docs/MU-RECURSION.md` and
 ## Versioning
 
 The release version is recorded in [`VERSION`](VERSION), in the crate
-manifest (`Cargo.toml`), and as a git tag (`v0.1.2`).
+manifest (`Cargo.toml`), and as a git tag (`v0.2.0`).
 [`CHANGELOG.md`](CHANGELOG.md) lists what each release contains. Releases
 follow semantic versioning. In the 0.x series, a minor version may change
 the wire and ledger layouts, and the changelog names each such change.

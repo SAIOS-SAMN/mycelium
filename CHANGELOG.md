@@ -4,7 +4,14 @@ Releases follow [semantic versioning](https://semver.org/). In the 0.x
 series, a minor version may change the wire and ledger layouts, and each
 such change is named here.
 
-## Unreleased
+## 0.2.0 — 2026-10-30
+
+### Layout changes
+- **Ledger:** rows carry POW++ arm byte 4 (POWV). The ledger snapshot
+  persists compute leases after the spent set. A court state written by
+  0.1.x is adopted by a recut (ROADMAP track 6).
+- **Wire:** `ACT_WALLET` gains sub-kinds 3 (lease open) and 4 (lease
+  close). Existing acts are unchanged.
 
 ### Economy
 - **POWV, proof of work verification:** a fourth POW++ arm.

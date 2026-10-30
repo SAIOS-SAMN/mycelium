@@ -29,7 +29,7 @@ two-court replay, as words are installed. The track's pieces:
 
 ## 2. Economy: compute leases
 
-**Built** in v0.2: [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) §5.2.
+**Built** in v0.2.0: [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) §5.2.
 
 A requester holds μ against a provider's capacity over named jobs. Each
 job the provider's verified solve closes pays its measured discharge out

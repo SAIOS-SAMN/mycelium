@@ -570,7 +570,7 @@ ratios the physics already reads:
 They are studied in the simulator (`MU-ENGINEERING.md` §9), never tuned on the
 wire.
 
-## 9. Implementation (v0.1.2)
+## 9. Implementation (v0.2.0)
 
 Implemented in `src/economy/` and the court's market:
 
