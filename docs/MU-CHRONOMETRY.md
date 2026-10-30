@@ -4,7 +4,7 @@
 
 > **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds* and *universes* are hosted simulations. Physical terms name the simulations' exact geometry. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
-> **Components:** the hypha (`mycelium-server`), which keeps the clock and every universe's time book (`src/chronometry/`, `src/server/cognition/atlas.rs`, `src/server/cognition/crossing.rs`); every client and kernel that binds to it (the Mycelium client, netstratum, xylarium, any other).
+> **Components:** the hypha (`mycelium-server`), which keeps the clock and every universe's time book (`src/chronometry/`, `src/server/cognition/atlas.rs`, `src/server/cognition/crossing.rs`); every client and kernel that binds to it.
 
 **Status:** specification, version 1 (2026-10-30). It consolidates the
 rulings on time (MU-RECURSION 78.124, 78.152, 78.154; proposal
@@ -95,15 +95,15 @@ fast, slow or unevenly. The hypha records; it never steers.
 
 ### 2.1 The bridge keeper
 
-Both game kernels that bind to the network today keep time the same way,
-independently (netstratum `engine/conductor/src/chronometry.rs`;
-xylarium-kernel `crates/xylarium/src/chronometry.rs`):
-- an internal hierarchy of keepers (epicenter, then core, mantle and rim
-  per galaxy), each running at a rate read from its place (`r / (r + M)`,
-  radius over radius plus enclosed mass), with its own light delay and its
-  slip residual kept;
-- **one bridge keeper**, the epicenter, the only one whose entries carry
-  the network's height.
+A world often needs more than one clock of its own: a simulation may run
+nested clocks at different rates (a galaxy's centre and its rim, for
+example), each with its own delay and drift. The pattern that keeps such a
+world placed on the network is:
+- an internal hierarchy of keepers, each running at the rate its place in
+  the world gives it, with its delay and its slip residual kept, never
+  averaged away;
+- **one bridge keeper**, the only one whose entries carry the network's
+  final point.
 
 This is the recommended pattern for any kernel (**Specified** as a named
 form in `forms`): keep whatever internal time the world needs, and bridge
@@ -272,15 +272,32 @@ time on arrival, and the receiver's next anchor records where.
 
 ---
 
-## 7. What each kernel needs to do
+## 7. Integrating a kernel's time: a checklist
 
-Read from the kernels' own trees (2026-10-30):
+For any kernel binding a world to the network:
 
-| Kernel | What it does | What it needs |
-|---|---|---|
-| **netstratum** (HEAD `c916737b`) | Free on its beat `u`; reads final points through `Session::tuniversal`; stamps percepts with `(TPoint, u)`; posts one ledger entry, at re-founding; internal keeper journal bridged at the epicenter | Anchor on every committed save, not only at re-founding, so the court can read its dilation; send mouth freshness in final-point advances (it sends spatial cells); record crossings' reconciliation edges; re-vendor Mycelium from a tagged release (its vendored copy points at a deleted worktree); rename its in-game odometer, also called TUniversal |
-| **xylarium-kernel** (HEAD `faa7243e`) | Free on its bell; pairs each commit's ring with a bare height through a `Link` trait; internal keeper chain bridged at the epicenter | An uplink that reads full final points and posts ledger entries; keep the whole point, not a bare height; name its own lane quantities apart from S, G, T, H |
-| **Mycelium client** | Bound; every act carries its point; seated sub-instances hold `(TPoint, u)` | The §4.1 reading, to place the worlds it is seated in |
+1. **Read final points** through `Session::tuniversal`, or ask a court
+   (`encode_clock_request`). Keep the whole point; never only its height.
+2. **Choose a bridge keeper** (§2.1) and give it the universe's axis `u`,
+   strictly rising.
+3. **Post an anchor on every committed state that matters** (§3.4), and
+   always before a crossing. A single anchor at founding gives the server
+   a position but no dilation and no history.
+4. **Stamp percepts with `(TPoint, u)`** for every seated mind, so each
+   mind places its sub-instance (seat wire v1.4).
+5. **State each mouth's freshness `N` in final-point advances** when
+   mapping it (78.154). Freshness in any other unit, such as distance in
+   the world, is not what the court counts.
+6. **Apply crossings in an anchor** (`applied`), so their reconciliation
+   edges close and their residuals can be read.
+7. **Name the world's own clocks and quantities apart** from the network's
+   (TUniversal, the lane letters S, G, T, H, "anchor"): MU-LEXICON §4.
+8. **Vendor Mycelium at a tagged release**, so the clock API a kernel
+   builds against is a published one.
+
+A client working on the network directly needs only item 1: every act it
+makes carries its final point. A client seated in worlds also reads where
+each world stands (§4.1).
 
 ---
 
@@ -293,4 +310,4 @@ Read from the kernels' own trees (2026-10-30):
 | **K3** | The bridge-keeper pattern as a named form in `forms` (§2.1). |
 | **K4** | Optional lanes of attachment in anchors, with per-lane distance and dilation readings (§5). |
 | **K5** | Books linked across origins, with branching (78.155). |
-| **K6** | Relay to netstratum and xylarium of §7, landed in their trees by them. |
+| **K6** | A conformance read for kernels: the §7 checklist as typed readings a kernel's operator runs against its own domain. |

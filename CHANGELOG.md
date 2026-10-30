@@ -10,8 +10,8 @@ such change is named here.
 - `docs/MU-CHRONOMETRY.md`, one clock for many universes, consolidating
   78.124, 78.152, 78.154 and 78.156:
   - the clock and its fields;
-  - who keeps which time, and the bridge-keeper pattern both game kernels
-    built independently;
+  - who keeps which time, and the bridge-keeper pattern for worlds with
+    nested clocks;
   - chronometric anchors as each universe's time book, which is the
     ledger entry, with its checks and readings (all built);
   - bookkeeping rules: anchor every committed state that matters, capture
@@ -22,7 +22,7 @@ such change is named here.
     exact bracketing (specified);
   - lanes of attachment revised as optional, attachment being on the
     height through the bridge keeper;
-  - what netstratum and xylarium each need.
+  - an integration checklist for any kernel's time.
 
   ROADMAP track 20 rewritten to it. 78.156's status corrected: items 1–4,
   per-mouth freshness included, are built. MU-LEXICON adds collisions for
@@ -39,9 +39,8 @@ such change is named here.
   The glossary adds lane of attachment, chronometric anchor and the
   clock's quantum state.
 - ROADMAP track 19, the general conformal algebra, pole states and
-  bonding: Cl(n+1,1)(ℚ) for any `n` (matching xylarium-kernel's
-  `cga.rs`); the pole state `(X(t), R)` that xylarium writes
-  `3Q / 3Z ± R`, as xylarium's named law form; isomorphic bonding as the
+  bonding: Cl(n+1,1)(ℚ) for any `n`; the pole state `(X(t), R)`, written
+  `3Q / 3Z ± R`, as a named law form; isomorphic bonding as the
   versor carrying one state to another, automorphic bonding as a state's
   stabilizer, both held as state; a closed chain's residual read as
   torsion; crossings as isomorphisms between faces' pole states. Exact at

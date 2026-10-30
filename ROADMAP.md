@@ -391,13 +391,13 @@ Phases:
 
 ## 19. The general conformal algebra, pole states and bonding
 
-The shared algebra is Cl(4,1)(ℚ), fixed at five generators. xylarium-kernel
-builds the same family with the dimension as a parameter, Cl(n+1,1) over
-exact rationals (`xyl-core/src/cga.rs`), and works its physics between the
-two poles of the conformal null basis. This track generalizes Mycelium's
-algebra to match, and states pole-state bonding in it. Nothing here
-introduces approximate arithmetic: every value that crosses a boundary is
-exact.
+The shared algebra is Cl(4,1)(ℚ), fixed at five generators. Kernels on
+the network build worlds of other dimensions in the same family,
+Cl(n+1,1) over exact rationals, and work physics between the two poles of
+the conformal null basis, the origin `e_o` and the point at infinity
+`e_∞`. This track generalizes Mycelium's algebra to the whole family, and
+states pole-state bonding in it. Nothing here introduces approximate
+arithmetic: every value that crosses a boundary is exact.
 
 **A. Cl(n+1,1)(ℚ) for any n** (shared algebra, `src/core/`,
 `src/transducer/cga/`).
@@ -407,20 +407,20 @@ exact.
 - Points, spheres, versors, the sandwich, projective equality and the
   canonical form for every `n`, with the present Cl(4,1) results as the
   `n = 3` case of each claim.
-- Conformance with xylarium's `cga.rs` by decoded exact values, never by
-  bytes (Concordance 1.4).
+- Conformance with any kernel's implementation of the same algebra by
+  decoded exact values, never by bytes (Concordance 1.4).
 
-**B. The pole state** (xylarium's named law form, `forms::xylarium`,
-landed jointly with xylarium by the Concordance's landing rule; track 13).
-A carrier's state is its pole point with its phase:
+**B. The pole state** (a named law form in `forms`, landed with the
+kernel that keeps it by the Concordance's landing rule; track 13). For a
+world whose matter is nuclides of `Z` protons and `Q` neutrons, a
+carrier's state is its pole point with its phase:
 
     S = ( X(t), R ),   t = U / W, open frames over closed,
                        X(t) on the pole axis from e_o (Z) to e_∞ (Q),
-                       R the electrons' phase, exact in [−κ, κ]
+                       R a phase, exact in [−κ, κ]
 
-which the model writes `3Q / 3Z ± R`: the pole state read with the
-electrons' phase (xylarium-kernel `docs/EQUATIONS.md`, "Z, Q and R").
-It is held as an exact object, never as a count or a ratio alone.
+written `3Q / 3Z ± R`: the pole state read with its phase. It is held as
+an exact object, never as a count or a ratio alone.
 
 **C. Bonding as isomorphism and automorphism, held as state.**
 - **Isomorphic bonding.** Two carriers bond when a versor of the pole
@@ -439,8 +439,8 @@ It is held as an exact object, never as a count or a ratio alone.
   the product of their versors. Where a closed chain composes to the
   identity the bonding is consistent; where it does not, the residual is
   torsion, the bond structure's holonomy, held as content (MU-TOPOLOGY
-  §4). This is xylarium's own closing of the books: "the composed versor
-  is projectively the observed one".
+  §4): the books close where the composed versor is projectively the
+  observed one.
 - **Isomorphism classes are the kinds of bond.** Two bonds are the same
   kind when one pair of states is carried to the other by the algebra;
   the network files bonds by that class, by coordinates (A21).
@@ -453,21 +453,20 @@ versor that relates the faces' readings, both exact, so a bond formed in
 one universe is legible in another.
 
 **Exactness at the boundary.** `t`, `R` and the bond versors are exact
-rationals. Inside its own shell xylarium may read further quantities
-(its jet onset, for example, is written with logarithms); those stay in
-the shell and never cross.
+rationals. Inside its own shell a kernel may read further quantities,
+logarithms included; those stay in the shell and never cross.
 
 Phases:
 1. **G1:** Cl(n+1,1)(ℚ) in the shared algebra, with the Cl(4,1) suites as
    its `n = 3` claims.
 2. **G2:** the pole axis, pole point, dilator and vacuum inversion as
-   first-class constructors, conformant with xylarium's `poles` and `axes`.
+   first-class constructors.
 3. **G3:** the pole state `(X(t), R)` and bonds as versors, with
    isomorphism, stabilizer and composition claims.
 4. **G4:** bond classes filed by coordinates; the residual of a closed
    chain read as torsion.
-5. **G5:** crossings as isomorphisms between faces' pole states (with
-   xylarium; Concordance amendment).
+5. **G5:** crossings as isomorphisms between faces' pole states (a
+   Concordance amendment, with the kernels that keep pole states).
 
 ## 20. Chronometry: one clock for many universes
 
@@ -487,11 +486,9 @@ The track adds what keeps every client, game and kernel placed:
 2. **K2:** placing a moment of one universe in another by bracketing
    between anchors, exactly, never by interpolation.
 3. **K3:** the bridge-keeper pattern (an internal keeper hierarchy bridged
-   to the network at one keeper, as netstratum and xylarium both built it)
-   as a named form in `forms`.
+   to the network at one keeper) as a named form in `forms`.
 4. **K4:** optional lanes of attachment in anchors, with per-lane distance
    and dilation readings.
 5. **K5:** books linked across origins, with branching (78.155).
-6. **K6:** the relay to netstratum and xylarium (MU-CHRONOMETRY §7):
-   anchoring on every committed save, freshness in final-point advances,
-   full points kept, a tagged Mycelium vendored, game clocks named apart.
+6. **K6:** a conformance read for kernels: MU-CHRONOMETRY §7's
+   integration checklist as typed readings.
