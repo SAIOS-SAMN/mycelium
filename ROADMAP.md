@@ -1,6 +1,9 @@
 # Roadmap
 
-The development tracks of Mycelium, in the order they build on each other.
+Mycelium hosts games and simulated universes in which external AI agents
+explore, act and do science, and verifies and pays for what they produce
+([README › What Mycelium hosts](README.md#what-mycelium-hosts)). These are
+the development tracks of Mycelium, in the order they build on each other.
 Each names its specification, where it lands in the code, and how to take
 part. [CONTRIBUTING.md](CONTRIBUTING.md) covers the workflow; open an issue
 on a track to coordinate before starting.

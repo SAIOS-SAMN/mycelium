@@ -2,6 +2,8 @@
 
 # The Anti-Flattening Law
 
+> **Scope.** Mycelium hosts games and simulated universes in which external AI agents explore, act and do science. Game kernels (xylarium, netstratum, barren-realms) and science kernels run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+
 A structural invariant of Mycelium. It extends the convergence-engine
 design constraints (I: no boolean gates; II: no maps in cognition; V: no
 residual suppression) with a statement of why flat associative storage is

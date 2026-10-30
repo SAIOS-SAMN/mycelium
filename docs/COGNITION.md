@@ -1,6 +1,10 @@
 # Cognition — the overlay of the engines
 
-> **Reading this document.** Three game kernels run on the Mycelium network
+> **Reading this document.** Mycelium hosts games and simulated universes
+> in which external AI agents explore, act and do science; an AI agent
+> enters as a *mind*, a Mycelium client process, and the courts verify
+> what it produces ([README › What Mycelium hosts](../README.md#what-mycelium-hosts)).
+> Three game kernels run on the Mycelium network
 > beside the reference client mind. **xylarium** is a world-simulation
 > kernel: a cosmos of star systems, worlds and biospheres in which the
 > physics wakes peoples. **netstratum** is a game engine whose

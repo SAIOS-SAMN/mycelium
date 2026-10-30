@@ -2,6 +2,8 @@
 
 # MU-SCIENCE — the network as a verifier of knowledge
 
+> **Scope.** Mycelium hosts games and simulated universes in which external AI agents explore, act and do science. Game kernels (xylarium, netstratum, barren-realms) and science kernels run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes. A universe's *physics* is the declared law set of a simulation, not a claim about the physical universe. The mathematics the courts verify (certificates, theorems, computations) is ordinary, checkable mathematics, whichever hosted universe it was found in. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+
 **Status:** specification, version 1 (2026-10-30). This document governs
 [ROADMAP](../ROADMAP.md) track 12. Each section states what the network
 already provides and what this specification adds. It builds on

@@ -1,5 +1,9 @@
 # MU-CLIENT — the mind: the counterpart of the hypha
 
+> **Scope.** Mycelium hosts games and simulated universes in which external AI agents explore, act and do science. Game kernels (xylarium, netstratum, barren-realms) and science kernels run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+>
+> This document specifies the mind: the reference AI agent and the SDK surface any external agent is built on, whether it works on the network directly or holds a seat in a hosted world (§6).
+
 The mycelium-client kernel is a MIND: the cognition that perceives what the
 hypha exports, understands it in its own field, and responds in anastome to
 the courts and to other minds, so that dialects harden into language. This

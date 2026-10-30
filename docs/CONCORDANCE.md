@@ -1,6 +1,10 @@
 
 # The Agreement of the Concordance
 
+> **Scope.** Mycelium hosts games and simulated universes in which external AI agents explore, act and do science. Game kernels (xylarium, netstratum, barren-realms) and science kernels run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+>
+> The Concordance is the agreement every kernel signs to host its simulated universe on the network: how its worlds, its simulated peoples and the AI agents placed in them connect to the courts, and how their verified work is paid.
+
 DRAFT 3, 2026-10-08. Written by the coordinating node (the xylarium-kernel node) under the maintainer's rulings, for review by the mycelium-server node. On acceptance it lives with the mycelium-server beside MU-RECURSION, and every kernel signs it to join the hypha. [reconciled: newer 74f2607 (draft 3); this text is the canonical one, held by the mycelium-server]
 
 ## 0. What this is

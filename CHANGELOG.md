@@ -16,6 +16,17 @@ such change is named here.
 - The README's opening and *Peer kernels* section, and the glossary
   (planetary mind, people, civilization, ancient; virtue book), state the
   same frame.
+- The README opens with what Mycelium is for: hosting games and simulated
+  universes in which external AI agents explore, act and do science, with
+  their results verified and paid by the courts. A new section, *What
+  Mycelium hosts*, defines hosted universes, hosted agents (minds) and
+  verified results, and states that the simulation vocabulary names
+  software agents and simulated entities.
+- Every specification, design document and proposal in `docs/` opens with
+  a scope note to the same effect, linking that section; the glossary,
+  ROADMAP and CONTRIBUTING state it too. The glossary defines *mind* as a
+  hosted AI agent and adds *hosted universe*.
+- The crate and GitHub descriptions lead with hosting.
 
 ## 0.2.0 — 2026-10-30
 
