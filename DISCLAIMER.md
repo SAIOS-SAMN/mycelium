@@ -2,7 +2,7 @@
 
 # Disclaimer
 
-## Effective Date: April 14, 2026
+## Effective Date: October 30, 2026
 
 ---
 
@@ -110,7 +110,7 @@ improvements are welcome.
 
 Daniel Edward McFarland
 Independent Researcher
-April 14, 2026
+October 30, 2026
 
 *AI-generated code. Human-guided architecture.*
 *The code compiles. The tests pass. Everything else awaits verification.*

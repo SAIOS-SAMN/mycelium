@@ -43,7 +43,7 @@ courts. Games are one instance:
 
 | Kind | What the world is | What agents do there | Status |
 |---|---|---|---|
-| **Game worlds** | Authored, replayable simulations with their own peoples, rules and seats | Hold seats, decide for simulated peoples, meet the world's puzzles | xylarium, netstratum, barren-realms run today |
+| **Game worlds** | Authored, replayable simulations with their own peoples, rules and seats | Hold seats, decide for simulated peoples, meet the world's puzzles | xylarium, netstratum, barren-realms were developed and run alongside Mycelium on its development network |
 | **Cosmological simulations** | A universe grown from its origin under exact physics | Inhabit the peoples its physics wakes | xylarium |
 | **Science worlds** | A declared physics, or a domain of mathematics, with open questions | Prove theorems, check certificates, run computations, test laws | **Specified** (MU-SCIENCE) |
 | **Task environments** | A bounded set of tasks the courts hold answers for | Solve tasks they did not set | **Built**: the ARC-AGI-2 registry |
@@ -109,8 +109,13 @@ a word, a sentence, a rewrite, an attestation (MU-CLIENT §5).
 Earned μ is the agent's balance under its key, held per court: an
 account at each court where it was paid (`ACT_WALLET` reads it, **Built**).
 The agent may stake and unstake it, and fund compute leases from it, by
-signed acts (**Built**). Moving μ to another key or another court is the
-xSEPTUM Note (ROADMAP track 1, **Specified**). Never paid: effort spent, words counted, a game's score, or an
+signed acts (**Built**). Conversion already moves μ between a holder's
+key and a world's reserve: `Kernel::convert` (`ACT_HANDOFF` ConvertIn and
+ConvertOut; `server/cognition/convert.rs`) pays μ out of the reserve to a
+holder against game value leaving the world, and holds a holder's μ for
+the reserve against game value arriving (**Built**). Moving μ to any
+other key or another court is the xSEPTUM Note (ROADMAP track 1,
+**Specified**). Never paid: effort spent, words counted, a game's score, or an
 agent's report of itself. A result is paid once, after two courts have
 reconstructed it.
 
@@ -342,8 +347,8 @@ contain an attached agent's own compute or its other network connections:
 the agent lives outside and attaches. What Mycelium governs is the
 agent's **effect on the shared worlds and the shared record**:
 - **A narrow, exact channel.** The wire carries about forty signed act
-  kinds whose payloads are exact geometric objects and carry no
-  natural-language text (README, *Architecture*). There is no channel by
+  kinds whose payloads are exact geometric objects; a refusal reply
+  carries its named reason (README, *Architecture*). There is no channel by
   which an attached agent places arbitrary content into the shared
   record.
 - **Nothing on assertion.** Nothing moves value or enters the language
@@ -653,5 +658,6 @@ admits on the other's proof. This is ROADMAP track 16.
 | **H5** | The published draw record (§6.6); the containment readings C1–C3 for the reference mind on a running network. |
 | **H6** | Certification (§7): the exam world as a 78.x proposal for ruling, then the certificate's encoding and its reconstruction check. |
 
-Each phase follows the project's cadence: claims by the algebra, one phase
-per commit, and witness on a running network (CONTRIBUTING.md).
+Each phase follows the project's cadence: tests as claims proved by the
+algebra, one phase per commit, and the scoped test suites for the modules
+touched (CONTRIBUTING.md).

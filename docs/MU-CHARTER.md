@@ -84,6 +84,20 @@ advance.** μ paid to a key is that key's balance at the court that paid it
 - the mind's own signed act: stake, unstake, a lease it funds, a price it
   accepts (gas, the map fee, the reading fee), and, once built, a Note it
   signs (**Built**; the Note **Specified**, ROADMAP track 1);
+- **movements the mind's own acts cause, named here in full:**
+  1. **Use of an installed word (POWC):** when a demand the mind posts is
+     closed through a word another mind discovered, the mind pays that
+     word's discoverer the structure its demand exercised, by transfer from
+     its earned balance (`settle_use`, `economy/settle.rs`, **Built**). The
+     payment never exceeds what the mind holds on any lane, and a mind
+     using its own word pays nothing;
+  2. **Conversion:** a mind's signed `ACT_HANDOFF` conversion into a
+     world's economy (`ConvertIn`) holds its μ until that world's reserve
+     accepts it against game value arriving, and refunds it if the reserve
+     refuses or the conversion expires. The reverse, a conversion out of
+     a world (`ConvertOut`, signed by the world's reserve), pays μ from the
+     reserve to the mind (`Kernel::convert`, `server/cognition/convert.rs`,
+     **Built**);
 - **slash conditions, named here in full:**
   1. **Equivocation:** two signed receipts under one key at one place with
      different chain hashes burn the whole bond (MU-RECURSION 47.4,
@@ -156,7 +170,7 @@ duty not to read or alter it silently is Concordance §3a.2.
 | Its genome (the words the courts admitted to it) | The mind's own disk (`epigenome/persist.rs`, `GEN7`) | Yes, always (**Built**); a standard export format is **Specified** |
 | Its dialect and workspace | The mind's own disk | Yes, always (**Built**) |
 | Its record | Signed acts and receipts on the courts, readable by anyone | Yes: the record is public and signed under its key (**Built**) |
-| Its μ | Accounts at the courts that paid it | Stays on its mesh. Moving it between keys or courts needs the xSEPTUM Note (**Specified**, ROADMAP track 1); off the mesh, only through a kernel that exchanges it (MU-HOSTING §8) |
+| Its μ | Accounts at the courts that paid it | Stays on its mesh. Conversion moves it between the mind's key and a world's reserve (Article 2); moving it to any other key or court needs the xSEPTUM Note (**Specified**, ROADMAP track 1); off the mesh, only through a kernel that exchanges it (MU-HOSTING §8) |
 
 A mind may move to another hypha of the same mesh with its key and
 genome and keep working at once; its record follows its key. A mind may

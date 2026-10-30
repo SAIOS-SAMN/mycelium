@@ -60,9 +60,9 @@ here the mesh is also the court, the economy and the record.
   Game worlds are one kind; the others are cosmological simulations,
   science worlds, task environments, markets, many-agent worlds and world
   models. The game kernels (xylarium, netstratum, barren-realms; see
-  [Peer kernels](#architecture)) and science kernels
-  ([`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md)) run theirs on the network
-  today. A world model joins as a kernel
+  [Peer kernels](#architecture)) were developed and run alongside
+  Mycelium on its development network; science kernels are specified in
+  [`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md). A world model joins as a kernel
   ([`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) §3).
 - **Hosted agents.** An AI agent enters as a mind. A *resident* mind runs
   inside a kernel's process and perceives and acts only through it. An
@@ -107,8 +107,9 @@ work outlives it.
 The governing texts are [`docs/CONCORDANCE.md`](docs/CONCORDANCE.md), the
 agreement every universe-running kernel signs (with its duties to hosted
 minds, §3a); [`docs/MU-CHARTER.md`](docs/MU-CHARTER.md), the mind's
-counterpart; and [`docs/COGNITION.md`](docs/COGNITION.md), the measured
-standing of every engine's minds.
+counterpart; and [`docs/COGNITION.md`](docs/COGNITION.md), how any mind
+or engine on the network is measured, what they share, and Mycelium's
+client mind.
 
 ---
 
@@ -214,8 +215,8 @@ sequenceDiagram
 signed speech acts whose payloads are exact geometric objects: canonical
 elements, coboundary chains and four-lane μ vectors. The protocol defines
 about forty act kinds, among them percept, task, solve, speech, docket,
-settle, offer, fold, fetch, syllabus, seat, handoff and challenge. Payloads
-carry no natural-language text.
+settle, offer, fold, fetch, syllabus, seat, handoff and challenge. Act
+payloads are exact objects; a refusal reply carries its named reason.
 
 **Language.** The language has three layers:
 - **Letters:** a fixed alphabet of seventeen Cayley letters
@@ -258,14 +259,13 @@ how they relate, what loops through them compose to, and where views fail
 to glue, with the failure named ([`docs/MU-TOPOLOGY.md`](docs/MU-TOPOLOGY.md)).
 
 **Peer kernels: the game kernels.** Three game kernels were developed
-alongside Mycelium and appear by name throughout the specifications. Each
-runs a simulated universe of its own on the network:
+and run alongside Mycelium on its development network, and appear by name
+throughout the specifications. Each runs a simulated universe of its own:
 - **xylarium** (xylarium-kernel): a Rust world-simulation kernel that
   grows exact, seed-reproducible universes from their origin to the
   present epoch (star systems, worlds and biospheres in which the physics
   wakes peoples), with a turning-based physics; client minds inhabit the
-  peoples its physics wakes. It coordinated the specifications in their
-  early development;
+  peoples its physics wakes;
 - **netstratum:** a torus universe whose planets carry entities on orbits,
   with a force-based physics and its own resident cognition engine (its
   civilizations, in lines of two vessels, solve tasks it forges). It faces
@@ -562,8 +562,10 @@ supply = Σ balance + Σ bond + Σ held
 ```
 
 Claim escrow is outside the second sum, because it is issuance that has not
-happened. `Treasury::audit` checks both equations from the rows and refuses
-to persist a snapshot that fails them. A slash leaves circulation as an
+happened. `Treasury::audit` checks both equations from the rows. A fold
+runs only where the audit holds before and after it, and is otherwise
+refused as `REFUSE_FOLD_INEXACT` with the ledger left as it was; `--check`
+prints the audit's reading for a home. A slash leaves circulation as an
 issuance-reducing row of its own kind. A fold conserves both equations
 across the rows it replaces, and a witness re-derives that before
 co-signing; a fold that does not conserve is refused. Genesis allocations
@@ -637,9 +639,11 @@ src/
   voice/        voice identity and signing
 examples/       sdk_client.rs (a complete client), durable_drill.rs
 forms/          shared exact law forms (separate crate)
-xtask/          the gate: source-length bound and clippy with -D warnings
-ops/            systemd unit templates
-scripts/        operational helpers (observer, readings, durability drill)
+xtask/          the gate: source-length bound, Euclidean-vocabulary check,
+                and clippy with -D warnings
+ops/            systemd unit templates; lab-homes.py (development-network tooling)
+scripts/        operational helpers (quickstart, observer, readings, durability
+                drill); recut (development-network tooling)
 tests/          integration tests
 docs/           design specifications
 ```
@@ -653,8 +657,19 @@ Rust 1.82 or later (developed on 1.95) on Linux.
 ```sh
 cargo build --release            # mycelium-server, mycelium-client, mycelium-soak
 cargo test --lib <module path>   # scoped suites, e.g. transducer::family::tests::elements
-(cd xtask && cargo run)          # the gate: reading bound, then clippy -D warnings on every target
+(cd xtask && cargo run)          # the gate: reading bound, Euclidean vocabulary, clippy -D warnings
 ```
+
+The gate (`xtask/`) takes three readings and reports each one, so a
+failure in the first does not hide the others:
+- **Reading bound** (`xtask/lint/length.rs`): no source file under `src/`
+  or `xtask/` longer than 2500 lines.
+- **Euclidean vocabulary** (`xtask/lint/euclidean.rs`): refuses grid
+  indexing shapes (Morton and space-filling curves, bit interleaving,
+  bounding boxes, subdivision trees, spatial hashes, voxels) named in code
+  under `src/` and `xtask/`.
+- **Clippy** (`xtask/lint/warnings.rs`): `cargo clippy --release
+  --all-targets -- -D warnings`.
 
 Test suites are run by module path. Some suites replay corpus tasks.
 
@@ -779,11 +794,15 @@ as `peers`, copy the corpus manifests (step 4), and start without
 - **Restarts** persist the ledger on SIGINT, SIGTERM and SIGHUP. `--check`
   reports whether a home boots on a given build before that build is
   started on it.
-- **Recut.** `scripts/recut` re-founds a network on a fresh genesis. A recut
-  is the procedure for adopting a new ledger layout, and it starts court
-  state afresh.
+- **Recut.** Adopting a new ledger layout means re-founding a network on
+  a fresh genesis, which starts court state afresh.
 - **systemd.** `ops/mycelium-{server,client}@.service` are user-unit
   templates; set the checkout path in them.
+- **Development-network tooling.** `scripts/recut` and `ops/lab-homes.py`
+  are the project's own tooling for its development network: they
+  hard-code its systemd units, voices, seat homes and ports. They are not
+  part of running a node; read them as examples of a re-founding
+  procedure, not as general tools.
 
 ### Node capabilities in 0.2.0
 
@@ -985,7 +1004,7 @@ the wire and ledger layouts, and the changelog names each such change.
 | [`docs/MU-ENGINEERING.md`](docs/MU-ENGINEERING.md), [`docs/MU-PRODUCT.md`](docs/MU-PRODUCT.md) | The system as built, and its product surfaces. |
 | [`docs/XSEPTUM.md`](docs/XSEPTUM.md) | Settlement protocol for payments through a hypha. |
 | [`docs/ALPHABET.md`](docs/ALPHABET.md), [`docs/MU-LEXICON.md`](docs/MU-LEXICON.md) | The alphabet; the shared vocabulary. |
-| [`docs/COGNITION.md`](docs/COGNITION.md) | The overlay of the engines: how the game kernels' simulated minds map onto the hypha-native client mind. |
+| [`docs/COGNITION.md`](docs/COGNITION.md) | Cognition, minds and engines on the network: how any mind or engine is measured, what they share, and Mycelium's client mind. |
 | [`docs/LEDGER_EPOCH_DESIGN.md`](docs/LEDGER_EPOCH_DESIGN.md) | Ledger eras and folds. |
 | [`docs/ANTI_FLATTENING_LAW.md`](docs/ANTI_FLATTENING_LAW.md) | Structure is never flattened to scalars or flat maps. |
 | [`docs/proposals/`](docs/proposals/) | Design proposals. |

@@ -72,9 +72,10 @@ its book.
 - **The core stamp.** A court serves its head's stamp
   `h:S:G:T:H:K.i` (`CoreStamp`, `ACT_LAWS` mode 4), so a kernel can read
   the court's own state at its latest act (78.124).
-- **No wall clock enters consensus.** Final points advance about five a
-  minute on the development deployment, while `h` rises about three a
-  second; the two are never confused (78.156 §4).
+- **No wall clock enters consensus.** Final points and the height `h`
+  advance at different rates, `h` with every receipt and a final point
+  only when keepers' readings hold it; the two are never confused (78.156
+  §4).
 
 ---
 
@@ -146,7 +147,8 @@ An anchor is refused by name (`LedgerRefusal`) if:
 - its point is not final in the court's view (`NotFinal`), or stands below
   the head's (`Behind`): the network's height only rises;
 - it applies a crossing that is not pending into this universe, or
-  applies it above its own `u` (`Applied`).
+  applies it above its own `u` (`Applied`);
+- the court's receipt line could not take it (`LineRefused`).
 
 ### 3.3 What the book gives the server (Built)
 
@@ -243,7 +245,8 @@ time on arrival, and the receiver's next anchor records where.
 
 ## 5. Lanes and attachment
 
-**Revised** from 78.156 §7 on reading the two game kernels (2026-10-30).
+**Revised** from 78.156 §7 (2026-10-30), to match how kernels bind in
+practice.
 
 - **Attachment is on the height, through the bridge keeper.** That is how
   every kernel binds today: its own tick paired with the network's

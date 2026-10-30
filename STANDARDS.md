@@ -11,7 +11,21 @@ conventions.
 > convention for repository presentation (file naming, layout, tone,
 > git practice). Mycelium's development standards (line bounds, one
 > organ per file, tests as claims by the algebra, the gates) are in
-> [`docs/MU-STANDARDS.md`](docs/MU-STANDARDS.md), which governs the code.
+> [`docs/MU-STANDARDS.md`](docs/MU-STANDARDS.md), which governs
+> development here.
+>
+> The following parts of this file do not bind this repository:
+> - **§3 and §4, where their vocabulary conflicts with the project's
+>   technical terms.** The CCL (`CCL.md`) belongs to another repository
+>   and does not govern this code. Terms such as *node*, *genome*,
+>   *witness*, *protocol* and *law* are defined technical terms here
+>   (see [GLOSSARY.md](GLOSSARY.md) and
+>   [`docs/MU-LEXICON.md`](docs/MU-LEXICON.md)) and are used as defined.
+> - **§5's per-file disclaimer requirement.** Not every `.md` file here
+>   carries the AI-generated header; [DISCLAIMER.md](DISCLAIMER.md) covers
+>   the whole repository.
+> - **§6's external references.** `references/REFERENCES.md` is not part
+>   of this repository; documents here cite their sources in place.
 
 ---
 

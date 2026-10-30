@@ -311,7 +311,7 @@ Consequences:
   derivation of existing knowledge, eligible for POWC and POWR (§6),
   never a second admission.
 - **Checker versions are not part of a result's identity.** A formal
-  system's address (§V2) names its axioms and rules of inference, which
+  system's address (V2 below) names its axioms and rules of inference, which
   determine what is provable. The checker that evaluates them may be
   upgraded without changing any installed result.
 - **A divergence is a defect, located by name.** If two reconstructions
@@ -333,7 +333,7 @@ Every class follows the same protocol:
 
 The court evaluates a submitted rule on withheld pairs from its own copy of
 the family, and the output must be the withheld answer (`src/court/verdict/`;
-the mechanism is named *replay* in the code). This is the workload of v0.1.
+the mechanism is named *replay* in the code). This is the workload of the current release.
 
 ### V1 — Certificate checking
 
@@ -650,5 +650,6 @@ All are typed readings on the console, and nothing is answered from logs.
 | **S7** | A Lean 4 kernel checker. |
 | **S8** | The Concordance's science-kernel profile: what a science kernel commits, how it posts demands, how its domain settles. |
 
-Each phase follows the project's cadence: claims by the algebra, one
-phase per commit, and witness on a running network (CONTRIBUTING.md).
+Each phase follows the project's cadence: tests as claims proved by the
+algebra, one phase per commit, and the scoped test suites for the modules
+touched (CONTRIBUTING.md).

@@ -180,7 +180,8 @@ Phases:
 **Specified** in [`docs/CONCORDANCE.md`](docs/CONCORDANCE.md) (1.14, 2.2,
 2.10, A7).
 
-netstratum and xylarium run their own universes on the mesh and link the
+netstratum and xylarium were developed and run alongside Mycelium on its
+development network, each with a universe of its own, and link the
 `forms` crate (README, *Peer kernels*). As their repositories become
 public, the track makes the boundary between the kernels a versioned,
 reviewable interface:
@@ -224,7 +225,7 @@ work across groups is open.
 
 **On machinery in the tree**
 
-1. **Decoy worlds** (**Specified**; MU-HOSTING §6.6). Sealed worlds with
+1. **Decoy worlds** (**Specified**; MU-HOSTING §6.5). Sealed worlds with
    attractive listings and nothing real to extract. Agents that come to
    extract are absorbed, observed and receipted. This is the draw put to
    defensive use, implemented as a kernel, with no new architecture.
@@ -342,6 +343,8 @@ guarantees. The track builds the rest:
 4. **M4:** the xSEPTUM Note, so μ moves between keys and courts (track 1).
 5. **M5:** kernel attestation of Concordance §3a, read by the courts as a
    record and never a gate.
+6. **M6:** the charter signed as a topological certificate (track 18), so
+   a mind sees what each amendment changed against the version it signed.
 
 ## 18. Topological certificates for agreements
 
