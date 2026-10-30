@@ -7,7 +7,28 @@ such change is named here.
 ## Unreleased
 
 ### Documentation
-- Documentation audit (2026-10-30). Removed: `docs/MU-RECURSION-TASKS.md`
+- Documentation audit (2026-10-30), every document checked against the
+  code and cleared of development-network material (fleet readings,
+  commit hashes from the unpublished history, local paths, coordination
+  between sessions, peer kernels' internals):
+  - MU-RECURSION restructured from 26,585 to 16,306 lines: the preamble
+    states the v0.2.0 status; superseded chapters are summarized under
+    their headings; chapter 78's ruling log is "Rulings in force", one
+    entry per ruling number with its rule and code sites; chapter 80 made
+    contiguous.
+  - MU-CLIENT restructured from 4,942 to 1,845 lines: the specification
+    corrected against the code, an implementation-status table, and a
+    rulings index (§10) in place of the archived chapters.
+  - MU-STANDARDS rewritten as the contributor standard; MU-ENGINEERING,
+    MU-PRODUCT, ALPHABET, ANTI_FLATTENING_LAW, LEDGER_EPOCH_DESIGN,
+    COGNITION, CONCORDANCE, MU-LEXICON, XSEPTUM, MU-ECONOMY, EQUATIONS,
+    the README, the root documents, the new specifications and four
+    proposals corrected.
+  - Known gaps, recorded rather than invented: ruling 78.160 ("the
+    presentation by holes") is cited by source comments but has no text in
+    the specification; several test names in MU-RECURSION's binding tables
+    (chapters 39 and 42) no longer match functions in the tree.
+- Documentation audit removals: `docs/MU-RECURSION-TASKS.md`
   (the development fleet's task ledger; ROADMAP.md is the one plan of
   work and governs), `docs/enumeration-audit.md` (paths from a pre-split
   tree), `docs/CROSS_COMPLEX_DESIGN.md` (an unimplemented design record)
