@@ -215,6 +215,76 @@ Review targets, in order:
 - **Resource bounds:** stroke budgets and frame budgets under adversarial
   payloads.
 
+### Security engineering
+
+Eight additions, in three groups. Items 1–4 build on machinery already
+in the tree and produce receipts; items 5–7 touch build and operational
+surfaces outside the court; item 8 is the largest in scope. The order of
+work across groups is open.
+
+**On machinery in the tree**
+
+1. **Decoy worlds** (**Specified**; MU-HOSTING §6.6). Sealed worlds with
+   attractive listings and nothing real to extract. Agents that come to
+   extract are absorbed, observed and receipted. This is the draw put to
+   defensive use, implemented as a kernel, with no new architecture.
+2. **Codec hardening** (**Specified**). The Anastome decoders are where
+   untrusted bytes meet the court, and "decoding admits one canonical tape"
+   is a fuzzable invariant:
+   - differential fuzzing of every encode/decode pair, so that a decoded
+     value re-encodes to the same bytes and every other byte string is
+     refused (`proptest` is already a dev-dependency, not yet used);
+   - corpora of malformed tapes kept as regression claims;
+   - a standing rule: a decode ambiguity is a release-blocking defect.
+3. **Bug bounties through existing acts** (**Specified**). Standing μ
+   bounties on protocol invariants (double mint, equivocation, a
+   verification bypass), posted as listings and claimed with a
+   reproduction the court can check. Security research enters as market
+   demand, paid by the same court.
+4. **Equivocation slashing** (**Built** for receipts). Two signed receipts
+   under one key at one place with different chain hashes are their own
+   proof: the court burns the signer's whole bond, from its own admission
+   or from a third party's `ACT_EQUIVOCATION` (MU-RECURSION 47.4;
+   `Kernel::accept_equivocation`; `court/admission/tests/equivocation.rs`).
+   No judgement call is involved. The work left: the same self-proving
+   slash for every signed act that holds a position (a lease, a Note, a
+   fold), and a share of the burn to the presenter, so presenting a proof
+   is paid work.
+
+**On build and operational surfaces**
+
+5. **Reproducible builds and signed build attestation** (**Specified**).
+   Reconstruction applied to the software: a kernel attests the hash of a
+   build any party can re-derive from the tagged source and `Cargo.lock`,
+   and a court can refuse a kernel whose attested build does not match.
+6. **Resource metering as physics for resident minds** (**Specified**;
+   MU-HOSTING §5.1). Grade-one containment holds only if a resident mind's
+   compute is budgeted. The stroke and reserve mechanism is extended to a
+   resident mind's CPU and memory in its kernel, so a runaway resident is
+   starved by law rather than stopped by an operator.
+7. **External era anchoring** (**Specified**). Era folds are co-signed
+   hashes. Publishing fold digests to a venue outside the mesh removes
+   silent rewriting of history, even under a majority-compromised mesh. A
+   hash here is lawful transport: it compacts coordinates kept losslessly
+   in the ledger.
+
+**Formal verification**
+
+8. **Machine-checked proofs of the core invariants** (**Specified**):
+   - **δ∘δ = 0** for the static Čech coboundary (`transducer::cech`),
+     today asserted on examples (`cech/tests/transitions.rs`). The fold's
+     asymmetric causal differential (MU-RECURSION, U12) respects the causal
+     order rather than reading a static complex, so its identity is stated
+     first, then proved;
+   - **the treasury audit:** `supply = genesis + mint − burn = Σbalance +
+     Σbond + Σheld` preserved by every operation that writes the ledger
+     (`Treasury::audit`);
+   - **canonical-decode uniqueness:** for every act kind, decode∘encode is
+     the identity, and decode is injective on accepted tapes.
+
+   Exact ℚ arithmetic removes the floating-point obstructions such proofs
+   normally meet.
+
 ## 15. Hosting: worlds, world models and hosted minds
 
 **Specified** in [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md).

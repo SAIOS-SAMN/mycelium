@@ -27,6 +27,15 @@ such change is named here.
   general term in the README and in every document's scope note.
 - The glossary adds governed world, world model, resident and attached
   minds, draw and tethered.
+- ROADMAP track 14 adds *Security engineering*: decoy worlds, codec
+  hardening by differential fuzzing, bug bounties through listings,
+  equivocation slashing (built for receipts; extended to every positioned
+  act), reproducible builds with signed attestation, resource metering for
+  resident minds, external era anchoring, and machine-checked proofs of
+  δ∘δ = 0, the treasury audit and canonical-decode uniqueness. MU-HOSTING
+  adds decoy worlds (§6.5) and states that grade-one containment needs a
+  resident mind's compute to be budgeted. SECURITY.md summarizes the
+  track.
 - The game kernels are named as such. `docs/COGNITION.md` opens with a
   reading note: xylarium is a world-simulation kernel, netstratum a game
   engine whose civilizations solve forged tasks, barren-realms a Python

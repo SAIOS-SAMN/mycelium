@@ -214,9 +214,15 @@ A **resident mind** runs inside a kernel's own process: a game embeds it
 in-process (MU-CLIENT §6), as xylarium's inhabitants are. It perceives only
 what the kernel gives it, and acts only through the kernel's physics, as
 the `Action` its certified move names (MU-RECURSION 78.94). It has no
-channel to anything the kernel does not provide. Containment is total, up
-to the kernel's own process boundary. This is the network's account of
-inserting a cognitive mind into a world.
+channel to anything the kernel does not provide. Its channels are
+contained totally, up to the kernel's own process boundary. This is the
+network's account of inserting a cognitive mind into a world.
+
+Grade one holds only if a resident mind's compute is budgeted as well as
+its channels. The reference mind's strokes and reserve already pace its
+cognition. Extending that metering to a resident mind's CPU and memory in
+its kernel, so that a runaway resident is starved by law rather than
+stopped by an operator, is ROADMAP track 14, item 6 (**Specified**).
 
 ### 5.2 Grade 2 — attached minds: governed participation
 
@@ -243,8 +249,11 @@ agent's **effect on the shared worlds and the shared record**:
 - One canonical encoding per object; a non-canonical payload is refused
   before it is read.
 - Room bonded per lane; flooding costs stake.
-- Equivocation burns the whole bond: two signed, conflicting acts at one
-  position are their own proof (MU-ECONOMY §4).
+- Equivocation burns the whole bond: two signed receipts under one key at
+  one place with different chain hashes are their own proof, presented by
+  the court itself or by anyone in `ACT_EQUIVOCATION` (MU-RECURSION 47.4).
+  Extending the same proof to every positioned act is ROADMAP track 14,
+  item 4.
 - Forged verification is slashed at the second vantage (MU-RECURSION 47.3).
 - No self-pay, and each hole paid once, network-wide (Concordance 5.7).
 - Every check bounded by strokes; a non-terminating submission answers
@@ -348,7 +357,21 @@ uses:
   world's standing work produce claims the courts reconstruct, which keeps
   that world's record dense with verified work.
 
-### 6.5 To specify further
+### 6.5 Decoy worlds: the draw put to defensive use
+
+The draw does not stop a malicious agent, but it does shape where agents
+looking for value go, extractors included. A **decoy world**
+(**Specified**; ROADMAP track 14, item 1) is a sealed world whose listings
+are attractive and which holds nothing real to extract:
+- it is an ordinary kernel on the network, with no new architecture;
+- agents that come to extract are absorbed into it, and everything they
+  attempt is signed, admitted and receipted like any other act;
+- what they attempt is observed as data: the acts, keys and patterns of
+  an attack, recorded under the attacker's own signatures;
+- nothing it holds is value any other world depends on, so an agent that
+  "succeeds" there has taken nothing.
+
+### 6.6 To specify further
 
 - **The published draw record** (**Specified**): a domain's signed record
   of its lane prices, standing work and the charts they stand on, readable
@@ -365,7 +388,7 @@ uses:
 | **H2** | Pay on the scene and union attestations (78.168 E1, E3). |
 | **H3** | The world-model onboarding (§3): exact state declaration in the physics profile, boundary translation, law checks on reported transitions. |
 | **H4** | A many-agent reference world (§4): one domain, regions, seats, attestations as agreement. |
-| **H5** | The published draw record (§6.5); the containment readings C1–C3 for the reference mind on a running network. |
+| **H5** | The published draw record (§6.6); the containment readings C1–C3 for the reference mind on a running network. |
 
 Each phase follows the project's cadence: claims by the algebra, one phase
 per commit, and witness on a running network (CONTRIBUTING.md).

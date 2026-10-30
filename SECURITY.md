@@ -48,6 +48,16 @@ Out of scope: denial of service by volume against a single node on an
 open port, and findings that depend on an operator's own key material
 being disclosed.
 
+## Security engineering
+
+The work that hardens these paths is ROADMAP track 14: decoy worlds, codec
+fuzzing (a decode ambiguity is a release-blocking defect), standing μ
+bounties on protocol invariants posted as listings, self-proving
+equivocation slashing (built for receipts), reproducible builds with
+signed build attestation, resource metering for resident minds, external
+anchoring of era folds, and machine-checked proofs of the core
+invariants.
+
 ## Supported versions
 
 Fixes are made on `main` and released as the next version. In the 0.x
