@@ -4,7 +4,7 @@
 
 > **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
-> **Components:** the network (hyphae and courts), kernels of every kind, and clients. §5 separates resident minds (inside a kernel's process) from attached minds (external SDK processes); §8 covers a kernel on two meshes.
+> **Components:** the network (hyphae and courts), kernels of every kind, and clients. §3a covers founding a universe (μ and elements); §5 separates resident minds (inside a kernel's process) from attached minds (external SDK processes); §8 covers a kernel on two meshes.
 
 **Status:** specification, version 1 (2026-10-30). This document governs
 [ROADMAP](../ROADMAP.md) track 15. It gathers in one place what the
@@ -177,9 +177,114 @@ without trusting its weights:
 
 ### 3.3 Its own agents
 
-A world model with its own internal agents faces the network as
-netstratum does: through an **empty client kernel** that fills only with
+A world model with its own internal agents faces the network through an
+**empty client kernel** that fills only with
 the words the courts admitted from its agents' work (Concordance 3.7).
+
+---
+
+## 3a. Founding a universe: μ and elements
+
+A new universe needs two things from the network to begin: μ, to pay for
+its first coordinates and crossings, and an account of the elements it
+is founded from. Both come from the hypha through one exchange, the
+**manifest and its grant** (MU-RECURSION 78.155b–c; `server/cognition/endowment.rs`).
+
+### 3a.1 The manifest (Built)
+
+A kernel that has founded a domain posts a **manifest** (`ACT_DOMAIN`
+sub-kind 17), signed by the domain's sitting reserve:
+- its **nuclei per Z**: the element kinds the universe is founded from,
+  each by its atomic number Z, in ascending order, each with a count that
+  is a positive integer of any size (a founding is astronomical);
+- a nonce, so two equal requests are two manifests.
+
+The hypha names elements by Z alone. A universe's own properties for each
+kind (its neutron counts, its seals, its chemistry) are its own physics,
+never the network's.
+
+### 3a.2 The grant (Built)
+
+The court answers a manifest with a **grant**, a transfer of μ to the
+domain's reserve:
+- **The founding grant** answers the first manifest after the domain's
+  origin. A manifest carrying `n` kinds of nuclei is granted the court's
+  read price for `n` units of gas on every lane: enough to stake for the
+  universe's first crossing's coordinates.
+- **A growth grant** answers each later manifest, sized by the measured
+  discharge of the closures the court judged in that universe since its
+  previous grant. With no closure judged there is no growth grant: a
+  universe's endowment grows only with the work done in it.
+- **One grant is in flight at a time:** the next waits until the
+  universe's ledger has applied the last.
+- **Every grant is drawn from what the court has earned** (its fees and
+  tolls), never minted. Genesis is earned-only; a grant the court's
+  earnings cannot cover is refused by name (`EndowmentShort`).
+
+Clients do not receive grants. A client earns μ from zero by verified work
+(§2), or is funded in a mesh's genesis allocation.
+
+### 3a.3 Reading the endowment (Built)
+
+A kernel reads its standing with the read-endowment act (`ACT_DOMAIN`
+sub-kind 18). The reply holds the court's earned μ per lane (what it can
+still grant), the founding and growth grants it has made to every
+universe, this domain's grants (each with its manifest, μ, kind and
+whether it is applied), and the nuclei this universe holds by its grants.
+
+### 3a.4 The element account (Built)
+
+The hypha holds no stock of elements. A universe holds the nuclei its
+granted manifests carry; the hypha's account is the negative of every
+universe's, so the network's total is zero by construction. Matter that
+crosses between universes is counted in nuclei per Z, and each side reads
+its mass under its own constants (Concordance 1.14, A8). Mass is never a
+network quantity: each kernel derives a universe's masses from its nuclei
+with its own physics.
+
+### 3a.5 The founding range: heavy elements beyond the measured table
+
+A realistic universe needs more than the elements measured on Earth. Its
+galactic cores hold kinds far heavier, and a core's **firmament**, the
+band of heavy kinds held at the core since the founding, is what holds
+the **core throat** open: the throat that is the universe's main uplink to
+the hypha, whose size is the mass committed to it (Concordance 2.6).
+- **The network's founding range is Z ≤ 1700** (**Specified**). A
+  manifest may name any kind up to Z 1700, well beyond the measured and
+  predicted tables, so a kernel can found a firmament of superheavy kinds.
+  The manifest format stays uncapped; the range is the founding rule.
+- **The bound is on Z, never on mass number.** The heaviest firmament
+  kinds carry mass numbers far above their Z; a bound on mass number would
+  cut the firmament off.
+- **Which heavy kinds a universe uses, and their properties**, are the
+  kernel's physics.
+
+### 3a.6 A firmament heavy enough for its galaxies (Specified; law owed)
+
+A universe's core must hold its galaxies. For a realistic distribution of
+elements, matter and mass across large galaxies, the founding must put
+enough mass in the core's firmament:
+- the core throat's committed mass is its firmament's mass;
+- a galaxy is supported where that mass holds the galaxy's pull on the
+  throat;
+- so the firmament's counts per Z set how many galaxies, and how large,
+  the core can carry.
+
+The law that gives those counts in closed form, from the number and size
+of galaxies a universe is to hold, is owed by the kernels that keep
+galactic cores, and is landed as a named form in `forms` when derived.
+Until then, a kernel sizes its firmament by its own physics and states
+it in its manifest.
+
+### 3a.7 A reference founding template (Specified)
+
+A new kernel should not have to write its own nucleosynthesis to found a
+realistic universe. The network plans a **reference founding template**:
+a named form in `forms` that produces counts per Z, from hydrogen through
+the heavy firmament kinds, with a realistic distribution across the light
+kinds and a firmament heavy enough for the galaxies requested (§3a.6). A
+kernel may select it, adapt it, or found from its own physics; it is
+never imposed (Concordance A7).
 
 ---
 

@@ -7,6 +7,13 @@ such change is named here.
 ## Unreleased
 
 ### Documentation
+- MU-HOSTING §3a, founding a universe: the manifest of nuclei per Z, the
+  founding and growth grants drawn from the court's earnings, the
+  endowment reading and the zero-sum element account (all built); the
+  founding range Z ≤ 1700 of heavy kinds beyond the measured table, bound
+  on Z and never on mass number; a firmament heavy enough to hold large
+  galaxies, its law owed by the kernels that keep galactic cores; a
+  reference founding template planned as a named form. ROADMAP track 21.
 - `docs/MU-CHRONOMETRY.md`, one clock for many universes, consolidating
   78.124, 78.152, 78.154 and 78.156:
   - the clock and its fields;

@@ -492,3 +492,26 @@ The track adds what keeps every client, game and kernel placed:
 5. **K5:** books linked across origins, with branching (78.155).
 6. **K6:** a conformance read for kernels: MU-CHRONOMETRY §7's
    integration checklist as typed readings.
+
+## 21. Founding a universe: μ, elements and the heavy firmament
+
+**Specified** in [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) §3a.
+
+Built today: the manifest (nuclei per Z, signed by the domain's reserve),
+the founding grant (the court's read price for the first coordinates),
+growth grants sized by the closures judged in the universe, the
+endowment reading, and the zero-sum element account. Every grant is drawn
+from what the court has earned, never minted. The track makes founding
+complete for any kernel, with a universe heavy enough at its core to hold
+large galaxies:
+
+1. **F1:** the founding range Z ≤ 1700 as a founding rule, refused by
+   name above it; the format stays uncapped.
+2. **F2:** the firmament law: the counts per Z a core's firmament needs to
+   hold N galaxies of a given size, derived by the kernels that keep
+   galactic cores and landed as a named form in `forms`.
+3. **F3:** the reference founding template: a named form producing counts
+   per Z from hydrogen through the heavy firmament kinds, realistic across
+   the light kinds and heavy enough at the core; selectable, never
+   imposed.
+4. **F4:** SDK helpers for posting a manifest and reading the endowment.

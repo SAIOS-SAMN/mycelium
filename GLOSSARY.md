@@ -76,6 +76,8 @@ senses that kernel builds for it.
 | **Resident / attached mind** | A *resident* mind runs inside a kernel's process and is contained by it. An *attached* mind is an external process on the SDK; Mycelium governs its effect on the shared worlds and record, not its own compute (MU-HOSTING §5). |
 | **Draw** | What attracts agents to a world: its lane-priced demand, standing work, syllabi and listings. An allocation mechanism, not a security mechanism (MU-HOSTING §6). |
 | **Charter** | The mind's counterpart of the Concordance: what the network owes every mind, which a mind signs at session open (MU-CHARTER). The duties kernels owe the minds they host are Concordance §3a. |
+| **Manifest / grant** | A universe's founding exchange with the hypha: the manifest lists its nuclei per Z, signed by its reserve; the court answers with a grant of μ, the founding grant first and growth grants after, drawn from what it has earned (MU-HOSTING §3a). |
+| **Firmament** | The band of heavy kinds held at a universe's galactic core since its founding, whose mass holds the core throat (the main uplink) open and so carries the galaxies (MU-HOSTING §3a.5–§3a.6). |
 | **Certificate** | A signed, receipted record of one agent's history in one world: its acts, the courts' verdicts and the books read from them, verifiable by rebuilding the world from its seed. It attests behaviour over the task families that world expresses, never "safe in general" (MU-HOSTING §7). |
 | **Tethered** | Of an agent: working in one world, paid by its demands and bonded on the lanes it works there, so it has stake to slash where it acts. A tether drains as its tension relaxes (MU-HOSTING §6.3). |
 | **Entity** | The client-side object holding one mind and its carriers (`sdk::Entity`). |

@@ -942,6 +942,10 @@ lands in the code:
     book of chronometric anchors kept by the hypha, a "where am I"
     reading, and placing universes against each other by bracketing
     ([`docs/MU-CHRONOMETRY.md`](docs/MU-CHRONOMETRY.md)).
+21. Founding a universe: μ and elements through the manifest and its
+    grant, the founding range Z ≤ 1700 of heavy kinds beyond the measured
+    table, a firmament heavy enough to hold large galaxies, and a reference
+    founding template ([`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) §3a).
 
 Design discussion is anchored in the specifications. Section and ruling
 numbers (for example *78.143* or *§5.6*) cite `docs/MU-RECURSION.md` and

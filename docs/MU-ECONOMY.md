@@ -669,9 +669,10 @@ currency, and it reaches a universe only as that universe's reserve:
   rate (Concordance 5.8). The dissipated value returns to the courts as
   the connection tax, a transfer and never a burn; μ held on the hypha
   (balance, bond, escrow) does not decay.
-- **A new world may receive a founding allotment** from the hypha's
-  reserve, a transfer and never a mint, so that a world can begin
-  (Concordance 5.7; `server/cognition/endowment.rs`).
+- **A new world receives a founding grant** answering its manifest of
+  nuclei, and growth grants sized by the closures judged in it, each a
+  transfer from what the court has earned and never a mint (Concordance
+  5.7; `server/cognition/endowment.rs`; MU-HOSTING §3a).
 
 ### 10.3 Why one connecting reserve
 
