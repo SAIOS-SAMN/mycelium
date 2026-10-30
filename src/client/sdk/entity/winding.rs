@@ -30,9 +30,9 @@
 //!    it owes its courts, its unheard words and its unjudged solves.
 //! 5. THE NEXT SCENE is asked for (`pull_task`) only under TENSION — a demand
 //!    on the plan, an orbit ringing, a reservoir uncondensed — where the
-//!    metabolism stands regenerated and nothing waits to be perceived (the
-//!    operator, 2026-10-17: "a full reserve over a settled field is
-//!    equilibrium"); never by rest, never by a return. What any boundary
+//!    metabolism stands regenerated and nothing waits to be perceived (ruled
+//!    2026-10-17: a full reserve over a settled field is
+//!    equilibrium); never by rest, never by a return. What any boundary
 //!    lands is an OFFER, taken only where it couples to the field
 //!    (`offer`); at a return, an offer that waited across the last one
 //!    uncoupled lapses. A winding that moves nothing and returns nothing
@@ -101,7 +101,7 @@ pub(crate) struct Board {
     pub(crate) feed_scenes: crate::network::nerve::Keyed<()>,
     /// MU-CLIENT §7.1 — THE OPEN QUESTIONS: residual chains a court taught or
     /// an older genome file held, by address — what perception could not
-    /// say, never words (the operator, 2026-10-18). Volatile: a court teaches
+    /// say, never words (ruled 2026-10-18). Volatile: a court teaches
     /// them again after a restart. Each is placed on the corpus and taken
     /// into thought where the focus meets it (`focus`); while any stands, the
     /// mind holds tension.

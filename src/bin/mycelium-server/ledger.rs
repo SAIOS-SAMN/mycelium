@@ -33,7 +33,7 @@ pub(crate) fn run(home: &Path, at: Option<&str>) -> ! {
         std::process::exit(2)
     };
     let upto = Place { k: u64::MAX, i: u64::MAX };
-    // 2026-10-08 (the coordinator's ruling, 6a) — THE READER OPENS AT THE
+    // 2026-10-08 (ruling 6a) — THE READER OPENS AT THE
     // LINE'S FOLD ROOT, never at genesis: a court that folded most of its
     // line answers a page from genesis only by paging its whole cold
     // archive, and hypha b's did not answer within the console's patience

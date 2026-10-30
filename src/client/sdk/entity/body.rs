@@ -7,7 +7,7 @@
 //! One mind may sit many seats (barren-realms, 2026-10-09): they share the
 //! mind's key and so one mailbox, read to its end page by page, each piece to
 //! the seat it names. A SEAT IS TAKEN ONLY WHERE THE HOUSE'S LATEST LISTING
-//! NAMES IT, once under that listing (MU-CLIENT §7.1, the operator
+//! NAMES IT, once under that listing (MU-CLIENT §7.1, ruled
 //! 2026-10-17): refused or unanswered, it waits for the house's next listing
 //! epoch; a call refused NOT THE HOLDER lets it go to be taken again (78.148,
 //! the stroke-count retry retired). The listing is read off the mind's own
@@ -469,7 +469,7 @@ impl Entity {
             }
         }
         self.board.body = Some(body);
-        // THE HOUSE'S PERCEPT IS ITS OWN EVENT (the auditor's ruling,
+        // THE HOUSE'S PERCEPT IS ITS OWN EVENT (ruled
         // 2026-10-22, option (a)): each task it sets before a seat is taken up
         // where the mail lands, the body back on the board — never held for a
         // return of the mind's, which a resting seat mind (K 0, no feed, no
@@ -633,7 +633,7 @@ impl Entity {
                 return;
             }
             let Some(env) = dialogue::decode_task_envelope(&body) else { return unread(me) };
-            // EVERY TASK THE HOUSE SETS IS EVALUATED (the auditor's ruling,
+            // EVERY TASK THE HOUSE SETS IS EVALUATED (ruled
             // 2026-10-23): a seat's attention is its house's, and a resting
             // seat's field couples to nothing — the coupling gate passed every
             // petition. The petition path itself is the gate (`solve_before`).
@@ -652,7 +652,7 @@ impl Entity {
     /// on the court-stamped words, then CALLED as fn 1 with the rule's tape,
     /// the outputs and its steps, on the seat's carrier. A rule the house
     /// refused is not posted again until its address changes. Read on the
-    /// task's own ground (the auditor's ruling, 2026-10-18): the tests are
+    /// task's own ground (ruled 2026-10-18): the tests are
     /// spoken and the sentence minted where the demonstrations name it.
     ///
     /// Where the reading stopped is kept on the task's attribution, and a
@@ -668,7 +668,7 @@ impl Entity {
         });
         if stop != Stop::Sent {
             seat.rested.insert(id, self.epigenome.atlas_root());
-            // THE DECLINATION (the auditor's ruling, 2026-10-23): a reading
+            // THE DECLINATION (ruled 2026-10-23): a reading
             // stopped short of a solve is said to the house, which frees the
             // seat at once — never left to its patience.
             if let Some(code) = stop.code() {

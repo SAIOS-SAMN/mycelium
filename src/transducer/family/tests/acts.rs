@@ -11,6 +11,9 @@ fn grid(rows: &[&str]) -> Grid {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
+/// A named case: its family's pairs and the held-out pair, each grid as rows.
+type Case<'a> = (&'a str, Vec<(&'a [&'a str], &'a [&'a str])>, (&'a [&'a str], &'a [&'a str]));
+
 /// The rule the family extracts, its clauses read, and its speech on the
 /// held-out input: exactly the held-out output, nothing unreached. The
 /// clauses it was read as.
@@ -122,7 +125,7 @@ fn a_family_echoing_its_bodies_is_known() {
     );
 }
 
-/// AN ECHO MIRRORED (the auditor's directive, 2026-10-20): every body
+/// AN ECHO MIRRORED (ruled 2026-10-20): every body
 /// repeated three columns over, mirrored across its own columns, the source
 /// kept. The piece is the body's shape under the square's symmetry the group
 /// reaches first; no symmetry is tried against the output.
@@ -140,7 +143,7 @@ fn a_family_echoing_its_bodies_mirrored_is_known() {
     assert!(clauses.iter().any(|c| matches!(c.act, Act::Echo { about: About::Body, .. })), "read as an echo about each body: {clauses:?}");
 }
 
-/// ECHOES AT TWO OFFSETS (the auditor's directive, 2026-10-20: multi-offset
+/// ECHOES AT TWO OFFSETS (ruled 2026-10-20: multi-offset
 /// stamps): every body repeated two rows below and two columns over. No one
 /// offset is offered by every echoed piece, so the one-offset reading leaves
 /// them; each offset every pair shows is its own echo.
@@ -159,7 +162,7 @@ fn a_family_echoing_its_bodies_at_two_offsets_is_known() {
     assert_eq!(echoes, 2, "one echo for each offset: {clauses:?}");
 }
 
-/// BODIES JOINED ROUND A CORNER (the auditor's directive, 2026-10-20:
+/// BODIES JOINED ROUND A CORNER (ruled 2026-10-20:
 /// Manhattan bent connectors): from the 2 along its row to the 3's column,
 /// and along that column to the 3, in hue 8 — the corner an empty cell. The
 /// bend is read off the piece: a run on a row and a run on a column meeting
@@ -385,7 +388,7 @@ fn a_family_recolouring_part_of_a_body_is_known() {
 /// first closure takes.
 #[test]
 fn the_court_solves_what_the_act_reader_read() {
-    let cases: Vec<(&str, Vec<(&[&str], &[&str])>, (&[&str], &[&str]))> = vec![
+    let cases: Vec<Case> = vec![
         (
             "tiles",
             vec![(&["12", "30"], &["1221", "3003", "3003", "1221"]), (&["40", "05"], &["4004", "0550", "0550", "4004"])],
@@ -481,7 +484,7 @@ fn the_court_solves_what_the_act_reader_read() {
 #[test]
 fn a_reaction_is_known_and_solved_on_a_pair_never_seen() {
     use crate::transducer::sentence::form::clause::{Act, Paint};
-    let cases: Vec<(&str, Vec<(&[&str], &[&str])>, (&[&str], &[&str]))> = vec![
+    let cases: Vec<Case> = vec![
         (
             "a slide to contact",
             vec![

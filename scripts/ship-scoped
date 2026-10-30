@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SHIP ON SCOPED GREEN (the operator, 2026-10-08: no full suites). One heavy-lock
+# SHIP ON SCOPED GREEN (ruled 2026-10-08: no full suites). One heavy-lock
 # hold: clippy on the crate, the scoped tests named as arguments, and — only if
 # both are clean — the release build, an in-place upgrade of hyphae a/b/c
 # (`--check` each home first; no recut, homes kept, never --mint-genesis) and a
@@ -31,10 +31,11 @@ inner() {
 }
 export -f inner
 export LOG
-# SHIP_NOLOCK=1 runs outside the shared heavy lock — only on the operator's
-# explicit word (2026-10-09: "break the lock and run your compile in parallel").
+# The shared heavy lock is `$HEAVY_LOCK`, by default xyl-heavy.lock under
+# `$XDG_RUNTIME_DIR`. SHIP_NOLOCK=1 runs outside it — only when explicitly
+# authorised (2026-10-09: the compile may run in parallel, outside the lock).
 if [ "${SHIP_NOLOCK:-0}" = "1" ]; then
   nice -n 10 bash -c 'inner "$@"' _ "$@"
 else
-  nice -n 10 flock -o -w 7200 /run/user/1000/xyl-heavy.lock bash -c 'inner "$@"' _ "$@"
+  nice -n 10 flock -o -w 7200 "${HEAVY_LOCK:-${XDG_RUNTIME_DIR:-/tmp}/xyl-heavy.lock}" bash -c 'inner "$@"' _ "$@"
 fi

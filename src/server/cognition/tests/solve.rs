@@ -195,7 +195,7 @@ fn a_no_work_verdict_is_counted_under_no_work() {
     assert!(k.acts_reading().lines()[3].contains("no work 1"), "and the console's line names it");
 }
 
-/// NO WORK, NO ACT (the operator, 2026-10-08: never give μ away for the
+/// NO WORK, NO ACT (ruled 2026-10-08: never give μ away for the
 /// possibility of falsification): a solve paid nothing releases no escrow,
 /// mints nothing, dockets and offers nothing — the zero is read before any
 /// of it, not after.

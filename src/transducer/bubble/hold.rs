@@ -14,8 +14,8 @@ use crate::transducer::sentence::{Form, Vertex};
 use crate::transducer::stalk;
 
 /// MU-CLIENT §4.3 — THE BREATHS A FORM HOLDS, every plane, across its
-/// motions, over every axis (the operator, 2026-10-21: the split "needs
-/// wider machinery"):
+/// motions, over every axis (ruled 2026-10-21: the split needs
+/// wider machinery than one plane):
 /// - WITHIN EACH MOTION: where it carries both a translation and a
 ///   transversion — what is carried forward meeting what is carried back
 ///   through the inversion — the breath of the two (`cga::breath`);
@@ -293,8 +293,8 @@ impl Contemplation {
                     // its residue the remainder a held word would have to
                     // carry. Only its rotation reached the candidates, and
                     // nothing was docketed: a form that was all demands
-                    // ("nothing in the form acts", 456 refusals on the fleet,
-                    // epoch 146) never reached the demand taker, so its
+                    // ("nothing in the form acts", 456 refusals observed on the
+                    // development deployment, epoch 146) never reached the demand taker, so its
                     // remainder never became a letter. Its class is its
                     // rotation's — the identity's where the transport turns
                     // nothing (a slide, a dilation: the motion letter).
@@ -364,8 +364,8 @@ impl Contemplation {
             // thought measures. They were the same number written in two
             // places and they disagreed: a bubble built here without a
             // draw — `hold`, a merge, the tape — still returned `volume`
-            // on its lapse, and the reserve INFLATED. Measured on the fleet
-            // at 3245041: `reserve [2194, 203, 88, 3382]` against a
+            // on its lapse, and the reserve INFLATED. Measured on the development
+            // deployment at 3245041: `reserve [2194, 203, 88, 3382]` against a
             // `reserve_max` of 88, with lane T at exactly 88 because
             // nothing draws or returns on it. One place draws, one place
             // records, the same number (law 12).

@@ -76,7 +76,7 @@ impl Axis {
     ///
     /// NO AXIS WAS TEMPORAL until 78.68: 16.16 read `𝒯` as the extent held
     /// in receipts alone, every `uncarried` vector had the shape
-    /// `[𝒮, 0, 0, 𝒽]`, and the 𝒯 lane never drew on the fleet. The chain's
+    /// `[𝒮, 0, 0, 𝒽]`, and the 𝒯 lane never drew on the development deployment. The chain's
     /// own `measure_lanes` still writes lane 2 as zero — a chain holds no
     /// clock — and that is the chain's reading, not the class vector's.
     pub fn lane(self) -> usize {

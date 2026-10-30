@@ -141,7 +141,7 @@ impl Kernel {
         [0; 4]
     }
 
-    /// 78.149 — μ IS DISCHARGE (the operator's escrow rulings, 2026-10-08).
+    /// 78.149 — μ IS DISCHARGE (the escrow rulings, 2026-10-08).
     /// THE ONE READER of what a word can be escrowed or paid, and every
     /// escrow and every release reads it, never the word's magnitude:
     ///

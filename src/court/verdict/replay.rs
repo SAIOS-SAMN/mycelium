@@ -422,7 +422,7 @@ pub fn replay_form_on(
 /// passed, and passing is a function of the word's content and of cited
 /// forms that are content-addressed, so it does not change between strokes.
 ///
-/// ON THE FAMILY'S OWN GROUND (the auditor's ruling, 2026-10-18), whatever
+/// ON THE FAMILY'S OWN GROUND (ruled 2026-10-18), whatever
 /// the caller opened: the voice extracts and mints a family there, and a
 /// court replaying it on another ground reads the family's ground as a
 /// remainder the form never spoke ("form leaves a remainder on the

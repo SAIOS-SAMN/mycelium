@@ -75,7 +75,7 @@ pub(crate) fn mind_mail(me: [u8; 32], raw: Vec<Mail>) -> io::Result<Vec<MindMail
 }
 
 /// 78.148, MU-CLIENT §7.1 — A MIND'S HOLD ON ITS SEAT, BY THE HOUSE'S OWN
-/// EVENTS (the operator, 2026-10-17: a stroke-count retry flooded a house
+/// EVENTS (ruled 2026-10-17: a stroke-count retry flooded a house
 /// that refused every take, ~360 takes a second, its TAKENs dropped at the
 /// relay's bound): whether its take is posted, whether the house answered
 /// it held, and the listing epoch it last posted or was refused under. A

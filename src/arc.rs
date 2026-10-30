@@ -26,7 +26,7 @@ pub fn grid_width(g: &[Vec<u8>]) -> usize {
     g.first().map_or(0, Vec::len)
 }
 
-/// THE SCENE'S AMBIENT GROUND Ω (the auditor's ruling, 2026-10-18): the hue
+/// THE SCENE'S AMBIENT GROUND Ω (ruled 2026-10-18): the hue
 /// the bodies of a family stand on — the void the eye does not see. A
 /// family that shows hue 0 on any grid of its demonstration pairs stands on
 /// hue 0. A family that never shows it is drawn on a canvas: its ground is
@@ -123,6 +123,19 @@ struct RawTask {
     train: Vec<RawPair>,
     #[serde(default)]
     test: Vec<RawPair>,
+}
+
+/// THE ARC-AGI-2 CORPUS A READER OPENS (the tests, the algebra's oracle):
+/// the `split` directory (`training` or `evaluation`) under
+/// `MYCELIUM_CORPUS` where it is set, else under `data/arc-agi-2` at the
+/// repository's root. The corpus is not vendored; a reader that finds no
+/// corpus says so.
+pub fn corpus(split: &str) -> String {
+    let root = match std::env::var("MYCELIUM_CORPUS") {
+        Ok(r) => r,
+        Err(_) => concat!(env!("CARGO_MANIFEST_DIR"), "/data/arc-agi-2").to_string(),
+    };
+    format!("{root}/{split}")
 }
 
 /// A parsed ARC task: the train family (input→output demonstrations) and the test

@@ -39,7 +39,7 @@ pub(crate) enum Evident {
 /// stand on, and the words by address, each with its section on the family.
 /// The charts and every section are read once, where the scene or the word
 /// is held — a family does not move, and a hearing read them again for every
-/// word heard (ruled 2026-10-25: ~2 s a hearing on the fleet).
+/// word heard (ruled 2026-10-25: ~2 s a hearing on the development deployment).
 struct SceneWords {
     family: Vec<crate::transducer::family::TrainPair>,
     charts: Vec<Vec<u8>>,

@@ -1,4 +1,4 @@
-// THE AMBIENT GROUND (the auditor's ruling, 2026-10-18): a family drawn on a
+// THE AMBIENT GROUND (ruled 2026-10-18): a family drawn on a
 // canvas of one hue is read with that hue as the void the eye does not see;
 // the channels are never relabelled (78.56 II).
 

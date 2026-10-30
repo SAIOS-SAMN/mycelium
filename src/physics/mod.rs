@@ -13,7 +13,7 @@
 /// of the hypha↔client exchange: syntropic events (settlements — order built,
 /// negentropy) and entropic events (pivots/backlog — disorder) net per lane into
 /// the order flux that paces serving and demand cadence.
-/// THE METABOLIC SCALE IS THE MACHINE'S, NOT OUR MYTHOLOGY (operator-ruled):
+/// THE METABOLIC SCALE IS THE MACHINE'S, NOT OUR MYTHOLOGY (as ruled):
 /// only the RATIOS are algebra, each read off the geometry — a full reserve
 /// holds one expansion stroke per vertex of the sensor base's unit cell
 /// (`2ⁿ`, every dimension an exponent); regeneration recovers half an
@@ -600,8 +600,8 @@ impl Physics {
             let Some(ceiling) = bond.checked_add(verified) else {
                 continue;
             };
-            // THE REFILL FOLLOWS THE WORK (ruled 2026-09-30, the operator's
-            // word): one regeneration unit, plus the work this lane verified
+            // THE REFILL FOLLOWS THE WORK (ruled
+            // 2026-09-30): one regeneration unit, plus the work this lane verified
             // in the orbit — a productive court teaches faster, an idle one
             // no faster, and the ceiling still bounds it. A fixed step
             // deferred 6 080 syllabus words in ten minutes against 56 served

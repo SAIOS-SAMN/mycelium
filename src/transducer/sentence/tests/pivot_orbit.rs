@@ -645,7 +645,7 @@ fn an_orbits_class_and_row_read_off_its_faces_and_the_axis_carrier() {
 /// did not: `pivot_orbit` took `lp.holonomy` for the horizon key and for the
 /// order that selects the `Discharge` branch, and `file_orbit` filed under
 /// `lp.holonomy.rotor().class_key()`. An orbit was judged by one object and
-/// filed under another, and on the fleet at e98e8a2 that meant 70311 orbits
+/// filed under another, and on the development deployment at e98e8a2 that meant 70311 orbits
 /// flat on the word, 284 finite edge composites over the same orbits, and
 /// zero torsion filed.
 ///

@@ -126,14 +126,15 @@ assert_eq!(booted.basis_len(), kept, "restore skips the leaked basis and rebuild
 
 /// A FEDERATION WORD WITH NO DISCOVERER is written as the federation's and
 /// adopted again at restore: its basis row is re-derived, never lost and
-/// never given a discoverer the ledger does not name (read on the fleet
+/// never given a discoverer the ledger does not name (observed on the development deployment,
 /// 2026-10-20: the same 9/12/13 words "refused" at every boot).
 #[test]
 fn a_federation_word_with_no_discoverer_is_restored_from_the_federation() {
 let mut k = Kernel::new();
 glue_pair(&mut k, &[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 1, 1), (1, 0, 1), (1, 1, 1)]);
 let kept = k.basis_len();
-let addr: Vec<u8> = k.court_federation.first().map(|(a, _)| a.as_bytes().to_vec()).expect("a ruled word");
+let [(ruled, _), ..] = k.court_federation.as_slice() else { panic!("a ruled word") };
+let addr: Vec<u8> = ruled.as_bytes().to_vec();
 k.forget_discoverer(&addr);
 assert!(k.discoverer_of(&addr).is_none(), "its discoverer is gone");
 let mut booted = Kernel::new();

@@ -207,7 +207,7 @@ fn each_filed_era_reads_back_its_own_receipts() {
     let _ = std::fs::remove_file(&path);
 }
 
-/// 2026-10-08 (the coordinator's 6a/6b) — A FOLDED LINE READ FROM ITS LAST FOLD
+/// 2026-10-08 (rulings 6a/6b) — A FOLDED LINE READ FROM ITS LAST FOLD
 /// ROOT PAGES NO ARCHIVE, AND THE SERVING COURT SAYS WHAT IT PAGED. Three
 /// folds archive the line's early orbits. Read from genesis, the page spends
 /// the cold archive (the serving reading counts the eras); read from the

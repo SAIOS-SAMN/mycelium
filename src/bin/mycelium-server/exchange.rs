@@ -189,7 +189,7 @@ pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: std::sync::mpsc::Receiver<(Strin
         // R2 (34.2): a peer's deferrals of the acts routed to it — demands
         // routed to a listing's home above all — are read once per
         // aperture of acts per peer, never per act: per act it was 376,000
-        // lines in one aperture on the fleet of 2026-09-09.
+        // lines in one aperture on the development deployment, 2026-09-09.
         let mut deferred: mycelium::network::nerve::Keyed<u64> = mycelium::network::nerve::Keyed::new();
         let aperture = u64::from(mycelium::physics::aperture_cycle());
         // 78.152b: pushed rings refused by a peer, counted, said at powers of
@@ -758,8 +758,8 @@ impl Exchange {
                                 }),
                                 Err(_) => continue,
                             };
-                            // AGREEMENT IS ON INSTALLED WORDS (ruled 2026-09-30,
-                            // the operator's word). The peer answers a court's
+                            // AGREEMENT IS ON INSTALLED WORDS (ruled
+                            // 2026-09-30). The peer answers a court's
                             // digests request with its language atlas — the
                             // words it installed — and this compared them with
                             // its own RULED cover, pending and attached words

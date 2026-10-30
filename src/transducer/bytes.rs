@@ -27,7 +27,7 @@
 //! condition on a versor and a fact of the algebra (A1), and the peel's
 //! Gaussian weight is a third thing again. A byte count is none of those,
 //! and three readings of one word is what §2.1 refuses; renamed from
-//! `Weigh`/`weigh` at the coordinator's ruling of 2026-09-19.
+//! `Weigh`/`weigh` by the ruling of 2026-09-19.
 
 use crate::transducer::element::{Element, Held, Versor};
 use crate::transducer::sentence::{Form, Vertex};

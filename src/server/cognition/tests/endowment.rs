@@ -139,7 +139,7 @@ fn the_grants_survive_a_restart() {
 }
 
 /// 78.155c — A GROWTH GRANT IS SIZED BY THE CLOSURES JUDGED IN ITS UNIVERSE
-/// (the operator, 2026-10-14). Before any closure there is no growth grant. A
+/// (ruled 2026-10-14). Before any closure there is no growth grant. A
 /// first closure by a key of the domain — any key it registered, membership
 /// never tier — grows the next growth grant by exactly its measured discharge;
 /// a closure by a key no domain names grows nothing; a second adds to it.

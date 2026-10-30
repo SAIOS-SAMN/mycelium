@@ -1,6 +1,6 @@
 // 78.119 — ACT_UPLINK: a kernel's settlement tier sends up its fold (78.62
-// step 3, the operator's ruling 2026-10-07: "admit folds, not every
-// transition").
+// step 3, ruled 2026-10-07: folds are admitted, not every
+// transition).
 //
 //! A TIER'S FOLD is its net positions per identity per lane over a prefix of
 //! its own line — `μ` never summed across lanes — its declared sources and
@@ -512,7 +512,7 @@ pub enum ChildRefusal {
     /// 78.138 — a carried line's signature does not verify over its fold.
     Unsigned,
     /// 78.138 — a carried line has no bond of its own posted: each answers
-    /// for its own work (the operator's ruling).
+    /// for its own work (as ruled).
     Unbonded,
     /// 78.138 — a carried line's own fold is not continuous, consumes a side
     /// it may not, or nets a child it may not.
@@ -545,7 +545,7 @@ pub enum Uplinked {
     ChildRefused { index: u32, why: ChildRefusal },
     /// 78.126 — the handoff side at `index` was not consumed, and why.
     HandoffRefused { index: u32, why: SideRefusal },
-    /// 78.125 (the coordinator's ruling) — a fold over its tier's current
+    /// 78.125 (as ruled) — a fold over its tier's current
     /// head whose commitments differ from the fold admitted there: an empty
     /// span claiming nets. (A fold byte-identical to it is answered with
     /// its original receipt, sealing nothing.)

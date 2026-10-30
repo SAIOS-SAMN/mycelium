@@ -1,6 +1,5 @@
-// 78.139 — A UNIVERSE ON THE COURT (the coordinator's rulings on (i-b); the
-// operator's: a galactic core is a larger wormhole, every horizon has its far
-// face). What a universe states of itself — its geometry (78.140: curved or
+// 78.139 — A UNIVERSE ON THE COURT (the rulings on (i-b), with: a galactic
+// core is a larger wormhole, every horizon has its far face). What a universe states of itself — its geometry (78.140: curved or
 // a torus), its parent face,
 // its ancients' basket, its join to its parent's core — held once each and
 // never edited; and the core tubes that join universes.
@@ -11,7 +10,7 @@
 //! unwitnessed (a root). Its SITTING RESERVE states, once each: its
 //! geometry where the origin did not (a v1 origin; legacy domains), its
 //! ancients' survival basket, and — a root — its JOIN to the parent's core
-//! once found. Existing domains keep working (the coordinator's grace): they
+//! once found. Existing domains keep working (a ruled grace): they
 //! originate before joining a core tube or converting.
 
 use super::Kernel;

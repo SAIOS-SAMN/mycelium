@@ -197,9 +197,9 @@ pub struct DeflationRead {
 }
 
 /// [`form_deflation_at`]'s one computation, whole — READ ON THE FAMILY'S
-/// GROUND (the auditor's ruling, 2026-10-18), whatever the caller opened:
+/// GROUND (ruled 2026-10-18), whatever the caller opened:
 /// a family whose ground is not 0 spoken on 0 leaves its whole ground as a
-/// remainder (read on the fleet 2026-10-20: 176 of the 1 000 training
+/// remainder (observed on the development deployment, 2026-10-20: 176 of the 1 000 training
 /// tasks, refused at the mint as "links remain and the form declares no
 /// demand").
 pub fn form_deflation_read(
@@ -426,7 +426,7 @@ pub(crate) fn deflation_pair_metered(
 /// that resolves its citations. A form with no measured deflation is not a
 /// word.
 ///
-/// LANE 𝒯 CARRIES NO SPAN (78.149 (a), the operator's ruling of
+/// LANE 𝒯 CARRIES NO SPAN (78.149 (a), the ruling of
 /// 2026-10-08): the span the bundle stood over is not μ — waiting is not
 /// work — and no minted magnitude carries it. `_stood` is the caller's
 /// reading of that span; the mint takes it and writes it nowhere. It stays
@@ -687,7 +687,7 @@ pub fn sentence_measure_why(
         if left != 0 {
             return Err(Refused::MintLinksWithoutDemand);
         }
-        // NO DISCHARGE, NO WORD (the operator, 2026-10-08: never give μ away
+        // NO DISCHARGE, NO WORD (ruled 2026-10-08: never give μ away
         // for the possibility of falsification). A span written into T made
         // a form that discharged nothing a non-zero magnitude, escrowed at
         // its price; no span is written now (78.149 (a)), and the work is

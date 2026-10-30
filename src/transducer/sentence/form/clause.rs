@@ -223,7 +223,7 @@ pub enum Act {
     /// the bodies KEPT where they stood — a carriage that leaves its source.
     /// About the grid, one motion for every body; about each body's own
     /// centre, a mirror or a turn of the body's own frame carried along
-    /// (the auditor's directive, 2026-10-20: rotated or mirrored echoes).
+    /// (ruled 2026-10-20: rotated or mirrored echoes).
     Echo { motion: Mv, about: About, gauge: Vec<(u8, u8)> },
     /// FRAME, THE PANES (78.167 Phase B, Step 4): the input split along its
     /// rows (`along_rows`) or its columns into two equal panes — a separator
@@ -240,7 +240,7 @@ pub enum Act {
     /// 90°, 5 of 270°, 6 the transpose, 7 the anti-transpose. A quarter turn,
     /// a transpose of an input that is not square is no block of its frame.
     Tile { rows: u8, cols: u8, turns: Vec<u8> },
-    /// CREATE, BETWEEN, ROUND A CORNER (the auditor's directive, 2026-10-20:
+    /// CREATE, BETWEEN, ROUND A CORNER (ruled 2026-10-20:
     /// Manhattan bent connectors): from each selected body standing on one
     /// row to each body `to` selects standing on one column, the path along
     /// the first body's row to the second's column — the corner — and along

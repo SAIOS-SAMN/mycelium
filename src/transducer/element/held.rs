@@ -94,7 +94,7 @@ impl Held {
                 // An adjoined generator counts whatever its rotor: a motion
                 // letter's rotor is the identity, which the seventeen spell,
                 // so the spelling test alone never counted one (3 737 motion
-                // letters on the fleet, none opened, epoch 146).
+                // letters on the development deployment, none opened, epoch 146).
                 crate::transducer::sentence::Vertex::Word { address, derivation, .. } => {
                     env.cite_for(address.as_bytes()).is_none()
                         && (derivation.is_adjoined()

@@ -207,7 +207,7 @@ fn mu_neither_certifies_nor_selects() {
 /// torsion there is — and that assertion was the whole defect in one line.
 /// `coheres` demanded holonomy ≡ 1 on every orbit, which is `H¹ = 0`, and
 /// since only closed forms are stood and only closed forms survive the
-/// court, curvature could not enter the genome. Measured on the fleet:
+/// court, curvature could not enter the genome. Measured on the development deployment:
 /// 1 870 extracted forms carried orbits, filed torsion was 0 bytes on every
 /// voice, `REFUSE_NOT_CLOSED` was 36 of 39 wire refusals.
 ///

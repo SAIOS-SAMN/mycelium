@@ -1,4 +1,4 @@
-// THE AUDITOR'S ATTRIBUTION READING (2026-10-22) — every court task that
+// THE ATTRIBUTION READING (ruled 2026-10-22) — every court task that
 // lands on a mind is kept by its whole citation: taken in or let go, and
 // where its comprehension stopped.
 

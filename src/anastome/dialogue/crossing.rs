@@ -1,6 +1,6 @@
 // 78.154 — TRAVERSE: a COORDINATE RETRIEVAL AND MAPPING act (MU-ECONOMY
-// §7.1; the operator, 2026-10-09: every wormhole traversal needs coordinates
-// from the hypha; 78.156 §4–5; the coordinator's refinements (1)–(3)). A
+// §7.1; ruled 2026-10-09: every wormhole traversal needs coordinates
+// from the hypha; 78.156 §4–5; refinements (1)–(3)). A
 // sub-kind of ACT_DOMAIN, never of the 78.128 handoff family: the handoff
 // family's TRAVERSE moves matter through the court, and the crossing — matter,
 // a ship, a fleet — happens in its own universe, never through the hypha.

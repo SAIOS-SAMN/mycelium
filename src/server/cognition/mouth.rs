@@ -1,7 +1,7 @@
 // 78.128 — A WORMHOLE BETWEEN DOMAINS: a mouth pair built by two domains'
 // reserves (the ancients), the only way anything crosses between universes
 // with no shared space; kept and tolled by its builders; its loops read as
-// curvature (the coordinator's rulings 2026-10-07).
+// curvature (ruled 2026-10-07).
 //
 //! A MOUTH PAIR is offered by one domain's reserve tier and accepted by the
 //! other's: X's black-hole mouth and Y's white-hole mouth, each placed in its
@@ -83,7 +83,7 @@ impl MouthHeld {
     }
 }
 
-/// 78.133 — A TOLL SPLIT AND HELD (the coordinator's rulings): a tariffed
+/// 78.133 — A TOLL SPLIT AND HELD (as ruled): a tariffed
 /// traversal's charge, divided at acceptance into its exact parts — each
 /// recipient's, the keeper's last — and held whole until the window `W` from
 /// the acceptance closes (paid out, every part together) or the traversal's
@@ -136,7 +136,7 @@ impl TollHeld {
     }
 }
 
-/// 78.135 — A THROAT'S BANK (the coordinator's rulings): the μ-S holding a
+/// 78.135 — A THROAT'S BANK (as ruled): the μ-S holding a
 /// tube open, held per FACE THAT FED IT under `throat_key(mouth, feeder)` —
 /// the offerer's `⌈m⌉` at the offer, the keeper's feeds after — the net
 /// change its feeds and draws made to the mass, and its count of bank acts.
@@ -573,7 +573,7 @@ impl Kernel {
                 let (dx, dy) = (self.tier_domain.get(&m.from_tier).copied(), self.tier_domain.get(&m.to_tier).copied());
                 let (Some(dx), Some(dy)) = (dx, dy) else { return refuse(R::Unbound) };
                 // 78.136 — THE PROGENITORS BUILD, THE ANCIENTS KEEP (the
-                // operator's progenitor play): the offerer is any tier of its
+                // progenitor play, as ruled): the offerer is any tier of its
                 // domain — a progenitor LINE building a road, or the reserve;
                 // the far end is accepted by its domain's reserve; and where a
                 // line builds, its own reserve keeps it. A reserve building

@@ -21,7 +21,7 @@ impl Form {
     /// `is_closed` calls this, only closed forms are stood
     /// (`epigenome::crystal`) and only closed forms survive the court
     /// (`REFUSE_NOT_CLOSED`), so the genome was by construction the
-    /// subspace where there is nothing to measure. Measured on the fleet:
+    /// subspace where there is nothing to measure. Measured on the development deployment:
     /// 1 870 extracted forms carried one to nine orbits, filed torsion was
     /// 0 bytes on every voice, and `REFUSE_NOT_CLOSED` was 36 of 39
     /// refusals on the wire.

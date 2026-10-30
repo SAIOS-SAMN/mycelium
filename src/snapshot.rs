@@ -52,7 +52,7 @@ pub fn persist<V, C: crate::network::nerve::Coordinate>(
 ///
 /// It cost something. A form's address is `form_vertex_key`, which writes
 /// every vertex, every member and every gauge, so it grows with the form: the
-/// largest pair form on the fleet at e98e8a2 held 677 vertices and 4030
+/// largest pair form on the development deployment at e98e8a2 held 677 vertices and 4030
 /// faces, and its address does not fit a `u16`. The snapshot dropped exactly
 /// one record per persist — 24 577 readings of
 /// `snapshot: 1 records could not be framed and were not written` across

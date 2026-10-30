@@ -1,9 +1,9 @@
-// 78.146 amended, MU-CLIENT §7.1 — A READ HELD TO THE COURT'S NEXT EVENT (the
-// operator, 2026-10-17): a seat reader's mail read with nothing filed past
+// 78.146 amended, MU-CLIENT §7.1 — A READ HELD TO THE COURT'S NEXT EVENT (ruled
+// 2026-10-17): a seat reader's mail read with nothing filed past
 // its cursor is answered not at once but at the court's next event — a post
 // filed on the relay, or the keeper signing its next TUniversal reading — so
-// a resting mind blocks on its own landing and the court is its clock. Read
-// on the fleet 2026-10-18 04:30: each resting mind read an empty box ~120
+// a resting mind blocks on its own landing and the court is its clock. Observed
+// on the development deployment, 2026-10-18 04:30: each resting mind read an empty box ~120
 // times a second, every read under the kernel's lock, court a at 98%.
 //
 //! ONE HELD READ PER READER, by its key: a reader that asks again while held

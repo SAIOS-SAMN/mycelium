@@ -214,7 +214,7 @@ impl Kernel {
     /// `comprehension 0/0 ... expansion 0/0` over `h N..N` — zero out of
     /// zero, which is the vacuous assertion at the instrument and not a
     /// measurement of anything. Hypha a wrote 25 598 of those in nine
-    /// minutes on the fleet at e98e8a2, 62 a second, because its caller
+    /// minutes on the development deployment at e98e8a2, 62 a second, because its caller
     /// paces on CIRCUITS and a docket small enough to fit one budget completes
     /// a circuit every stroke — so the pacing quantity was counting strokes,
     /// not work. The caller's own comment records that exact failure being

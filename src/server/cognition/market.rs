@@ -94,7 +94,7 @@ impl Kernel {
         self.forget_if_unheld(addr);
     }
 
-    /// GENOME SYNCHRONIZATION, commit step (operator-ruled: servers hold no
+    /// GENOME SYNCHRONIZATION, commit step (ruled: servers hold no
     /// dialects — one universal genome on the server plane, authored only
     /// by the court's finality). The caller (the deliberation worker) has
     /// already verified the blind replay and derivability OFF the lock on a

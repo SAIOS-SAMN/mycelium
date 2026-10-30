@@ -158,7 +158,7 @@ pub(crate) struct Ledgers {
     /// return parts to it). A final fold is never reversed — its window has
     /// closed and every fold it nets is final — so nothing else is needed.
     pub(crate) finals: Keyed<(Sealed, bool)>,
-    /// 78.125 (the coordinator's ruling) — each fold whose self-demand was
+    /// 78.125 (ruled) — each fold whose self-demand was
     /// withdrawn, by its stamp key: the height of the withdrawal, from which
     /// its evidence window stands reopened `W` — once per fold.
     pub(crate) withdrawn: Keyed<u64>,
@@ -659,7 +659,7 @@ impl Kernel {
         self.ledgers.head_at.insert(fold.tier, key);
     }
 
-    /// 78.125 (the coordinator's ruling) — A FOLD OVER ITS TIER'S CURRENT
+    /// 78.125 (ruled) — A FOLD OVER ITS TIER'S CURRENT
     /// HEAD, answered without sealing: byte-identical to the fold admitted
     /// there — the same prefix, rows, children and handoff sides — it is a
     /// RESEND, answered with that fold's original receipt; otherwise a
@@ -853,8 +853,8 @@ impl Kernel {
 
     /// 78.138 — A PROGENITOR LINE CARRIED INLINE, read whole before anything
     /// is sealed: its signature over its own fold, a tier of THIS domain, a
-    /// bond of ITS OWN posted (each answers for its own work — the
-    /// operator's ruling), a span that advances its line, the handoff sides
+    /// bond of ITS OWN posted (each answers for its own work, as
+    /// ruled), a span that advances its line, the handoff sides
     /// it consumes (once in all this admission), its continuity, its rows as
     /// its parent states them, and its own children planned in turn. Planned
     /// to be held at `path`, after its children. Refused by the top child's

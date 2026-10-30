@@ -1,8 +1,8 @@
 // A.10.1 — ORBITAL TENSEGRITY: coherence is the stationary equilibrium of a
 // constellation of at least two co-present congruent frames, circulating
 // under one generator, their attitudes balancing it and their mutual
-// inversive distances kept (ruled and amended 2026-09-28, the operator's
-// word; MU-RECURSION 78.51).
+// inversive distances kept (ruled and amended 2026-09-28;
+// MU-RECURSION 78.51).
 //
 //! The physics is composed of what the register already holds, never built
 //! beside it:
@@ -139,8 +139,8 @@ impl Defect {
     }
 }
 
-/// THE PAIR'S PRODUCT AT UNIT WEIGHT (78.59, the operator's ruling "fix the
-/// normalisation": no flat square). Each nucleus is read at unit weight
+/// THE PAIR'S PRODUCT AT UNIT WEIGHT (78.59, ruled: the normalisation is
+/// fixed, no flat square). Each nucleus is read at unit weight
 /// `ŝ = s / w`, `w = −⟨s e_∞⟩₀`, and the pair's invariant is `ŝ_a · ŝ_b =
 /// ⟨s_a s_b⟩₀ / (w_a w_b)` — first degree in each body, exact: for two points
 /// it is `−½` their squared distance, for spheres the power of the pair. An
@@ -395,7 +395,7 @@ pub struct GroundBody {
 }
 
 /// A THOUGHT'S GROUND (78.52): the constellation a thought holds — PRIVATE to
-/// the mind, never on the wire (the operator's word, 2026-09-28: a court
+/// the mind, never on the wire (ruled 2026-09-28: a court
 /// replays transcribed speech, not a mind's thinking). The CLASS of its
 /// generator, the PERIOD of its return, its BODIES at hour 0 in the order
 /// they arrived (one body or a scene's several), the generator `g`, and the

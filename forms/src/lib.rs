@@ -27,7 +27,7 @@
 //! map, fixed by each universe's own dynamic before any joint read. That map
 //! is itself a form ([`frame`]): an exact, invertible conformal map that
 //! bends, twists, stretches, expands and contracts — never a floor on a
-//! grid, which rounds a reading off and cannot be undone (the operator,
+//! grid, which rounds a reading off and cannot be undone (ruled
 //! 2026-10-21). Joint reads compare exact values.
 
 pub mod frame;

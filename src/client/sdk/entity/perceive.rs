@@ -16,8 +16,8 @@
 //! citation, the rule's speech is spoken, and a rule its perspectives know
 //! emits its solve once its replay is read here too.
 //!
-//! THE PACE IS THE MIND'S METABOLISM (the operator, 2026-10-15: "there should
-//! be internal metabolism in the mind"), AND ITS ATTENTION ITS OWN (2026-10-17):
+//! THE PACE IS THE MIND'S METABOLISM (ruled 2026-10-15: the mind has an
+//! internal metabolism), AND ITS ATTENTION ITS OWN (2026-10-17):
 //! a scene is taken where it couples to the field (`offer`) and the reserve
 //! has regenerated on the lanes it costs; a hearing is read where it couples;
 //! the carrier perceives one scene at a time (`court.rs`).
@@ -50,8 +50,8 @@ impl Reading {
     }
 }
 
-/// MU-CLIENT §7.1 — WHERE A SCENE'S COMPREHENSION STOPPED (the auditor's
-/// ruling, 2026-10-18: no solve witnessed; read where comprehension stops
+/// MU-CLIENT §7.1 — WHERE A SCENE'S COMPREHENSION STOPPED (ruled
+/// 2026-10-18: with no solve observed, read where comprehension stops
 /// before the rule's synthesis is touched). Each scene stops at exactly one:
 /// the furthest step of the path from its pairs to a solve the court judges.
 /// Why a held-out pair disagreed is the observer's `disagreed` reading.
@@ -196,8 +196,8 @@ impl TaskRead {
     }
 }
 
-/// ONE COURT TASK AS IT LANDED ON THIS MIND (the auditor's attribution
-/// reading, 2026-10-22): whether it was taken in or still waits to couple,
+/// ONE COURT TASK AS IT LANDED ON THIS MIND (the attribution
+/// reading, ruled 2026-10-22): whether it was taken in or still waits to couple,
 /// how it was last taken, what its perspectives said where the form engine
 /// closed a rule, and where its comprehension stopped — `None` while it waits,
 /// is on the perception carrier, or its solve is read at home. A reading,
@@ -333,8 +333,8 @@ pub(crate) enum Verdict {
 /// (`Field::lands`). Read on the thinking mind's field; with none standing in
 /// the slots, the lexicon alone.
 ///
-/// THE GROUND STATE HEARS ITS LANGUAGE'S CHARTS (the auditor's ruling on the
-/// ground state, 2026-10-18, extended to hearing by the operator 2026-10-23):
+/// THE GROUND STATE HEARS ITS LANGUAGE'S CHARTS (the ruling on the
+/// ground state, 2026-10-18, extended to hearing 2026-10-23):
 /// a field with no orbit in motion and none ringing is not deaf — a hearing
 /// whose evidence scene stands on a chart the mind's language speaks on
 /// (`speaks_on`, as `ground_focus` meets the corpus) couples. A restarted
@@ -412,7 +412,7 @@ fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &E
         Ascertained::Known => Some(rule),
         Ascertained::KnownByInversion(r) => Some(*r),
         // Undetermined by its perspectives: spoken and sent, the court the
-        // judge (the auditor's ruling, 2026-10-22).
+        // judge (ruled 2026-10-22).
         Ascertained::Undetermined => Some(rule),
         Ascertained::Unknown(_) => {
             read.stop = Stop::Unknown;
@@ -462,7 +462,7 @@ fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &E
 ///
 /// A rule the court already refused for this task is not sent again until
 /// the voice's rule for it changes; that is read where the verdict lands
-/// (`admit_verdict`). On the fleet (epoch 106) each voice sent ~600 solves
+/// (`admit_verdict`). On the development deployment (epoch 106) each voice sent ~600 solves
 /// the court refused, the same rules round after round, with none of these
 /// read.
 pub(crate) fn judge_on(epi: &Epigenome, j: &Judge) -> Verdict {
@@ -695,7 +695,7 @@ impl Entity {
     /// perspectives know the rule and it speaks every test whole, the solve
     /// minted at its span and read before it is sent. A scene its
     /// comprehension did not reach waits beside its thoughts. Admitted on
-    /// the scene's own ground, as it was perceived (the auditor's ruling,
+    /// the scene's own ground, as it was perceived (ruled
     /// 2026-10-18): every pair withheld, every speech and the solve's mint
     /// read the family there, never on a ground a single pair would name.
     fn admit_scene(&mut self, p: Perceived) {
@@ -781,7 +781,7 @@ impl Entity {
         note(&mut read);
         self.board.tasks.insert(id, read);
         // On the typed reading too, which the mind's post answers even while
-        // its carrier is parked (the auditor's ruling, 2026-10-22).
+        // its carrier is parked (ruled 2026-10-22).
         if let Some(seen) = <[u8; 32]>::try_from(id).ok().and_then(|c| read.seen(c)) {
             crate::observe::note_mind(|m| m.task(seen));
         }

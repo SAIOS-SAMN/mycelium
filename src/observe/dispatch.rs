@@ -1,4 +1,4 @@
-// THE AUDITOR'S DISPATCH OBSERVATION (2026-10-22) — every court task that
+// THE DISPATCH OBSERVATION (2026-10-22) — every court task that
 // leaves a court, by its whole citation: the voice it last went to, the
 // court's height when it left, and how often it has left. Written where the
 // door answers a voice's pull; read only at a question, and never read back

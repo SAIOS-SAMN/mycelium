@@ -147,7 +147,7 @@ for (x, y) in &family {
 assert!(expect.iter().any(|&x| x > 0), "the family has a coboundary to close");
 let decoded = crate::transducer::sentence::from_element_form(&spoken).expect("v2 form");
 let read = crate::transducer::family::form_deflation(&decoded, &family, &crate::transducer::family::NoCrystal).0;
-// 54a82051 (the operator: "pay the odometer, never the wall clock"): 𝒯 is
+// 54a82051 (ruled: 𝒯 pays the odometer, never the wall clock): 𝒯 is
 // the ground the closure covered — the null flux of the closing rule's
 // motions, which the sentence's own magnitude carries — and the chain
 // carries no 𝒯 of its own. S, G and H are the family's coboundary.
@@ -379,7 +379,7 @@ fn a_sentence_of_three_word_vertices_and_seven_demands_mints_on_its_closed_subco
     );
 }
 
-/// A SENTENCE IS TAUGHT AT ITS LEARNER'S EXPENSE (the operator,
+/// A SENTENCE IS TAUGHT AT ITS LEARNER'S EXPENSE (ruled
 /// 2026-09-30). An installed sentence served on a syllabus page is paid
 /// from the voice's balance, never from the court's reserve: the reserve
 /// stands where it stood, the voice pays the sentence's gluing step to the

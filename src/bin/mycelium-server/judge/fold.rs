@@ -61,7 +61,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         return;
     }
     // A ROOT THIS COURT ALREADY CO-SIGNED IS ANSWERED WITH THE CO-SIGNATURE IT
-    // HOLDS, never re-derived (read on the fleet 2026-10-15): a home waits an
+    // HOLDS, never re-derived (observed on the development deployment, 2026-10-15): a home waits an
     // aperture of its witness's measured round trip, a prefix's re-derivation
     // outlasts it, and the home asked the same proposal again every round —
     // a and c re-derived one root of b's 3 470 times each, 11 830 pages

@@ -104,7 +104,7 @@ syllabus by incidence, the ARC corpus as a work source, solve verification
 at the home, the client with a genome that learns.
 
 Specified: the gateway and SDK bindings (`XSEPTUM.md`), the uplink door
-(restore from `/opt/mycelium/src/bin/uplink.rs`), certification as a
+(restore from the predecessor tree's `src/bin/uplink.rs`), certification as a
 route, the explorer reads, the starter-genome export, genesis, voice keys,
 stake for voices, the wallet verbs in the client.
 

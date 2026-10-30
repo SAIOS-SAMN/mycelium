@@ -18,7 +18,7 @@ pub struct Economy {
     /// E3 — every identity the ledger holds value for: what it can spend,
     /// what it has staked, and what it has set aside, in identity order.
     pub accounts: Vec<Account>,
-    /// WHAT MOVED, BY KIND (the operator, 2026-09-30): the journal's rows
+    /// WHAT MOVED, BY KIND (ruled 2026-09-30): the journal's rows
     /// since its last fold, one [`Flow`] per name on [`FLOWS`]. A transfer
     /// is one flow per pair of rows, its vector once.
     pub flows: [Flow; FLOWS.len()],

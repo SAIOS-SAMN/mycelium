@@ -182,8 +182,8 @@ impl Entity {
     /// MU-CLIENT §3.1, §7.1 R4 — A TASK IS PERCEPTION, AND AN OFFER: a scene
     /// the court's registry sent is TAKEN IN where it couples to the mind
     /// (`offer`) and the mind's metabolism can carry it — the reserve
-    /// regenerated on the lanes it costs (the operator: "there should be
-    /// internal metabolism in the mind") — and perceived on the perception
+    /// regenerated on the lanes it costs (the mind's internal
+    /// metabolism) — and perceived on the perception
     /// carrier, off the field (R1): its colour, its hours under its citation
     /// (78.56 III), its rule spoken, and its comprehension, which may emit a
     /// solve (`entity/perceive.rs`). A scene that couples to nothing, or that
@@ -219,8 +219,8 @@ impl Entity {
     /// The gate read the WHOLE language's root, which the mind's dialect
     /// moves at nearly every return as it stands and sheds its own words: a
     /// waiting scene was read again whether or not anything new could speak
-    /// on it — 461 re-reads in an hour on one voice (read on the fleet
-    /// 2026-10-20), each holding the perception carrier from a new scene.
+    /// on it — 461 re-reads in an hour on one voice (observed on the
+    /// development deployment, 2026-10-20), each holding the perception carrier from a new scene.
     pub(crate) fn comprehend_waiting(&mut self) {
         let next = match self.comprehending.after(&self.comprehended_after).next() {
             Some((k, _)) => Some(k),
@@ -251,7 +251,7 @@ impl Entity {
     /// THE COURT'S LANGUAGE FLOWS IN, where the COURT'S language may have
     /// moved — its book rose since the last sync, a lane's dwell elapsed, or
     /// the mind holds no language — never because the mind's own motion moved
-    /// (the operator, 2026-10-18: a thought held or a dialect word stood is
+    /// (ruled 2026-10-18: a thought held or a dialect word stood is
     /// the mind's, and a sync brings nothing for it; counted, every family a
     /// large mind perceived re-ran a minutes-long sync) and never because a
     /// tick rested: discovery, the syllabus and the sheaf sync by discordant

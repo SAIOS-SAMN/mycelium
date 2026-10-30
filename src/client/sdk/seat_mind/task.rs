@@ -27,7 +27,7 @@ pub const KIND_TASK: u16 = 4;
 /// The function a seat solves a task by.
 pub const FN_SOLVE: u16 = 1;
 
-/// THE FUNCTION A SEAT DECLINES A TASK BY (the auditor's ruling, 2026-10-23):
+/// THE FUNCTION A SEAT DECLINES A TASK BY (ruled 2026-10-23):
 /// where its reading stops short of a solve, the seat says so — `[Key(the
 /// task's citation), Count(the stop)]`, the stop one past its place in
 /// `perceive::STOPS` — and the house frees the seat at once, never after its

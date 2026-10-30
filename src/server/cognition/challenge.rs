@@ -2,7 +2,7 @@
 // within `W` heights of its seal, reversed where it is falsified, and its
 // finality read — recursive over every fold it nets.
 //
-//! The coordinator's rulings (2026-10-07): `W` a law parameter shared by a
+//! The rulings of 2026-10-07: `W` a law parameter shared by a
 //! network universe; falsification REVERSES (the bond's slash waits for
 //! 2(e)); an arbitrage is discharged by a correction naming its holder, or
 //! dissolves with a reversed edge; FINALITY IS RECURSIVE — a fold is final
@@ -188,7 +188,7 @@ impl Kernel {
                     return refuse(R::Published);
                 }
                 if rec.demanded.is_some() {
-                    // A RESEND by the same filer (the coordinator's ruling) is
+                    // A RESEND by the same filer (as ruled) is
                     // answered with the original demand; another filer's is
                     // refused — one demand per fold.
                     let original = self
@@ -578,7 +578,7 @@ impl Kernel {
                 return Finality::Final { upheld: *upheld };
             }
             // A fold sealed before the tier-line law has no record and no
-            // line to replay: grandfathered (the coordinator's ruling).
+            // line to replay: grandfathered (as ruled).
             return match FoldAt::from_key(key).and_then(|at| self.sealed_fold(&at)) {
                 Some(_) => Finality::PreLine,
                 None => Finality::Unrecorded,

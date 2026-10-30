@@ -1,17 +1,15 @@
 // MU-STANDARDS 1.1 — THE READING BOUND: no source file over 2500 lines,
 // so a reviewer can read one whole.
 //
-// RAISED TO 2500 AND RETURNED, 2026-09-19. The raise landed at 3245041 on
-// a word the operator gave the implementor directly and which never passed
-// through the coordinator's console; every directive is relayed there, so
-// the raise had no standing however the word was meant, and it is
+// RAISED TO 2500 AND RETURNED, 2026-09-19. The raise landed at 3245041
+// without being ruled into MU-STANDARDS, so it had no standing and it is
 // restored here. The argument for it — that a bound which times an organ
-// split is deciding architecture by a number — is a case to be put through
-// the console, not a change to be made on the strength of it.
+// split is deciding architecture by a number — is a case to be ruled into
+// the standard, not a change to be made on the strength of it.
 //
-// RAISED TO 2500, 2026-09-25, THROUGH THE CONSOLE. The operator's word was
-// relayed verbatim to the coordinator and ruled into MU-STANDARDS 1.1 and
-// 4.1 before this changed — the passage the 2026-09-19 raise lacked. No
+// RAISED TO 2500, 2026-09-25, BY RULING. The change was ruled into
+// MU-STANDARDS 1.1 and 4.1 before this changed — the step the 2026-09-19
+// raise lacked. No
 // other rule moves: an organ is split where the document splits it (1.2),
 // never where a number does.
 

@@ -236,7 +236,7 @@ pub fn decode_receipts_request(body: &[u8]) -> Option<ReceiptsRequest> {
 /// stops: the reader asks for the K it is missing, is told nothing, and
 /// has no way to ask differently.
 ///
-/// Measured on the fleet at epoch 11: hypha a held receipts 0..2000 and
+/// Measured on the development deployment at epoch 11: hypha a held receipts 0..2000 and
 /// answered `1111..1111` with count 0, `1110..1112` with count 1 and
 /// `1109..1112` with count 2 — the page walking up to the oversized
 /// receipt and halting on it, so the back-fill could never pass K 1111 and

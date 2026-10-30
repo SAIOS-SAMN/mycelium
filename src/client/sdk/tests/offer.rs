@@ -67,7 +67,7 @@ fn an_offer_couples_only_to_what_the_mind_holds() {
 }
 
 /// A RESTORED MIND HEARS AN OFFER IN ITS OWN LANGUAGE, AND STILL ASKS FOR
-/// NOTHING (the operator, 2026-10-17: a string resonates because it is tuned,
+/// NOTHING (ruled 2026-10-17: a string resonates because it is tuned,
 /// not because it rings). A mind whose language holds a word on the one-cell
 /// body's chart — and no thought, no plan, no orbit: what a restored genome
 /// is — holds no tension and, its corpus holding a question, asks the court
@@ -131,7 +131,7 @@ fn feed_of(name: &str, families: &[(&str, Vec<(crate::arc::Grid, crate::arc::Gri
 }
 
 /// THE CORPUS IS MET WHERE THE MIND'S ORBITS STAND, never along a file's line
-/// (the operator, 2026-10-18). Two families wait in the feed, two cells
+/// (ruled 2026-10-18). Two families wait in the feed, two cells
 /// swapping hues 3 and 4 first in file order and two swapping 1 and 2 after
 /// it. A mind whose field holds no orbit and whose language speaks on no
 /// chart is never frozen (the curiosity law, 2026-10-23): it meets exactly one
@@ -170,7 +170,7 @@ fn the_corpus_is_met_where_the_minds_orbits_stand() {
     let _ = std::fs::remove_dir_all(&home);
 }
 
-/// THE GROUND STATE RESONATES WITH ITS LANGUAGE (the auditor's ruling,
+/// THE GROUND STATE RESONATES WITH ITS LANGUAGE (ruled
 /// 2026-10-18). A mind restored with a word on the swapped cells' charts and
 /// nothing else — no thought, no orbit in motion, none ringing — is at rest,
 /// not deaf: of the swap and the slide waiting in its feed, it meets the one
@@ -211,7 +211,7 @@ fn a_mind_at_rest_meets_what_its_language_speaks_on_and_the_admission_moves_its_
     let _ = std::fs::remove_dir_all(&home);
 }
 
-/// THE CORPUS CURIOSITY LAW (the auditor's ruling, 2026-10-23): where the
+/// THE CORPUS CURIOSITY LAW (ruled 2026-10-23): where the
 /// ground focus meets nothing, the vacuum couples to the nearest stratum — the
 /// corpus charts sharing the deepest exact prefix of axes with a chart the
 /// language speaks on, ties all held in key order; where none shares a leading
@@ -240,7 +240,7 @@ fn the_ground_state_couples_to_the_nearest_stratum_when_its_language_meets_nothi
     assert_eq!(held(&curiosity(&[], all.iter().cloned())), least, "a language on no chart: the least chart alone");
 }
 
-/// A RESIDUAL CHAIN IS AN OPEN QUESTION, NEVER A WORD (the operator,
+/// A RESIDUAL CHAIN IS AN OPEN QUESTION, NEVER A WORD (ruled
 /// 2026-10-18). A court teaches one: it is not learned into the genome, and
 /// stands on the mind's carrier of open questions, once however often taught;
 /// the mind, holding nothing else, now holds tension; placed on the corpus,

@@ -404,7 +404,7 @@ pub(super) fn family_percept(
             // least frame's map read at a frame that moved a hue the least
             // frame never held sent it nowhere, and the court refused the
             // vertex ("a lamina lands on the wrong hue", 6 of 8 carry
-            // refusals on the fleet, 2026-10-10). The claimed frames' maps are
+            // refusals on the development deployment, 2026-10-10). The claimed frames' maps are
             // merged as they agree, and that union is the member's gauge.
             let mut merged = crate::transducer::sentence::hue_table(&acting.gauge);
             for q in rep {
@@ -431,7 +431,7 @@ pub(super) fn family_percept(
                 acting.gauge = crate::transducer::sentence::hue_listing(&m);
             }
             // THE MEMBER CLAIMS ONLY THE FRAMES ITS GAUGE REPRODUCES (21 step
-            // 1, the operator 2026-10-18: the over-claim answered at the
+            // 1, ruled 2026-10-18: the over-claim answered at the
             // pivot, never by a filter of candidates). Agreeing with the
             // least frame's map was the test; the gauge the member holds is
             // the merged one, or — where two claimed frames disagree — the

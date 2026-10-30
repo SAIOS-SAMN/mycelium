@@ -488,8 +488,8 @@ mod tests {
         assert_eq!(again.overlay(&older), 0, "a CUR1 snapshot is not read at the u64 width");
     }
 
-    /// A TASK WIDER THAN THE U16 WALL IS SETTLED ACROSS A RESTART (read on
-    /// the fleet 2026-10-20: 12 of the 1 000 training tasks have content
+    /// A TASK WIDER THAN THE U16 WALL IS SETTLED ACROSS A RESTART (observed on
+    /// the development deployment, 2026-10-20: 12 of the 1 000 training tasks have content
     /// addresses past 65 535 bytes, and the address-keyed snapshot refused
     /// the whole book, so no court ever kept a settled task). Named by its
     /// citation, it snapshots, restores, and stays closed.
@@ -497,7 +497,7 @@ mod tests {
     fn a_task_wider_than_the_wall_stays_settled_across_a_restart() {
         // Many pairs of busy frames: each pair's listing key is written
         // into the task's address, so the address grows with them.
-        let busy = |s: u8| -> Grid { (0..30).map(|r| (0..30).map(|c| ((r * 7 + c * 3 + usize::from(s)) % 9) as u8 + 1).collect()).collect() };
+        let busy = |s: u8| -> Grid { (0..30).map(|r| (0..30).map(|c| u8::try_from((r * 7 + c * 3 + usize::from(s)) % 9).expect("a residue mod 9") + 1).collect()).collect() };
         let wide = Task { train: (0..12u8).map(|s| (busy(s), busy(s + 1))).collect(), test: vec![(busy(40), Vec::new())] };
         let mut reg = TaskRegistry::new();
         reg.register(toy_task());

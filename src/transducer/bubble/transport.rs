@@ -71,7 +71,7 @@ pub struct TransportTally {
 }
 
 /// The key of one arrival: the source, then the thought reached, each
-/// framed — MU-CLIENT §4.13, compacted to its 32-byte hash (the operator's
+/// framed — MU-CLIENT §4.13, compacted to its 32-byte hash (the
 /// ruling of 2026-10-16: a hash is valid where nothing is lost): the arrival
 /// holds its source and the thought reached itself, and every reader derives
 /// the key from the two it holds.

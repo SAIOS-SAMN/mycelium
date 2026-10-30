@@ -1,7 +1,7 @@
 // 78.52 ROW 2 — HYPHAL FASCICLES: a transition is no rigid vector; it is a
 // fascicle — two round dual spheres whose reflections, one then the other,
-// stream a body along a conformal streamline, `V = s₂ s₁` (ruled 2026-09-28,
-// the operator's word; the name ruled the same day).
+// stream a body along a conformal streamline, `V = s₂ s₁` (ruled 2026-09-28;
+// the name ruled the same day).
 //
 //! A FASCICLE `(s₁, s₂)` — two dual spheres, `sᵢ² = rᵢ² ∈ ℚ` (a plane is a
 //! sphere through `e_∞`, its square its normal's) — composes the versor

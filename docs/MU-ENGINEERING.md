@@ -154,7 +154,7 @@ gate (`cargo clippy --release --all-targets -- -D warnings` in
 the same foreground run as the suite); every gate's scope is the whole of
 `src/` including `src/bin/`, with allow-lists by file or function name and
 never by directory alone. Gates still owed for rules 2, 4, 10, 11 and 15
-are listed there and checked by the auditor's grep until they exist.
+are listed there and checked by a review grep until they exist.
 Work-counter tests assert that one fetched vertex, one held thought, one
 expansion, one quote, and one thirty-body assembly cost the same at N and
 4N.
@@ -177,7 +177,7 @@ court organ, and cover trie, a corpus as the work source, and genesis,
 stake, unstake, transfer, burn as the only external inputs. Reports supply
 per lane, stake ratio, velocity, slash count, home concentration, and the
 ledger invariant every stroke. Policy ratios are studied here before any
-change on the wire. Reference shape: `/opt/mycelium/src/wire/membrane.rs`.
+change on the wire. Reference shape: the predecessor tree's `src/wire/membrane.rs`.
 
 ## 10. Landing order to beta
 

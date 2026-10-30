@@ -38,7 +38,7 @@ assert_eq!(epi.genome_len(), 1, "comprehension never mutates the genome");
 // The word stands at the court's stamp that admitted it; one no court
 // admitted has no coordinates on the genome and is refused by name (78.27,
 // 78.49).
-// MU-CLIENT §7.1 (the operator, 2026-10-18): a RESIDUAL CHAIN is an open
+// MU-CLIENT §7.1 (ruled 2026-10-18): a RESIDUAL CHAIN is an open
 // question, never a word — this one is never written to the genome file,
 // counted by name, and a genome file that held one restores it as an open
 // question for the mind's carrier.
@@ -523,7 +523,7 @@ assert!(
 
 /// A taught record that fails replay is refused, not learned — the
 /// language's own reader (`Epigenome::learn`). And at the mind's boundary
-/// (MU-CLIENT §7.1, the operator 2026-10-18) a residual chain, fat or honest,
+/// (MU-CLIENT §7.1, ruled 2026-10-18) a residual chain, fat or honest,
 /// is never learned at all: it is an open question.
 #[test]
 fn taught_word_that_fails_replay_is_refused_not_learned() {

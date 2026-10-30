@@ -197,7 +197,7 @@ assert!(
 /// as zero — a chain carries no clock — so every family's 𝒯 cover is zero
 /// at registration, while the provisional book stands on the temporal lane
 /// by definition. Read as saturation, that evicted a listing every stroke at
-/// T=1 and drained the book: measured on the fleet as `cavity relocate …
+/// T=1 and drained the book: measured on the development deployment as `cavity relocate …
 /// T=1` on a continuous loop, `book 0 listings`, and every client receiving
 /// `0 clusters` to quote.
 #[test]

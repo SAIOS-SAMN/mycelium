@@ -1,4 +1,4 @@
-// 78.154 — THE LEDGER'S TWO DIGESTS (the coordinator's rulings, 2026-10-09;
+// 78.154 — THE LEDGER'S TWO DIGESTS (ruled 2026-10-09;
 // Concordance 1.13): a universe's STATE COMMITMENT, a sparse Merkle tree over
 // its canonical records, and the EVENTS DIGEST, a positional tree over the
 // input events applied since its parent entry. Each kernel names its own

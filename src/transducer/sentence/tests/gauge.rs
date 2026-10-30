@@ -270,7 +270,7 @@ fn a_gauge_is_a_map_on_the_hues_and_absence_is_the_identity() {
 
 /// TWO GAUGES COMPOSE OR THEY ARE TWO SECTIONS — and which one it is has to
 /// be readable, because dropping the difference is what made the largest
-/// vertex-body fault on the fleet.
+/// vertex-body fault on the development deployment.
 ///
 /// They compose where their hues do not meet, or meet and agree: one member
 /// speaks both listings, which is what 18.2's partial map means. Where they

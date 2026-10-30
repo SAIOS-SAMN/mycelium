@@ -25,7 +25,7 @@
 //! reads names, not structure. A key that inlines a cited sub-complex
 //! rather than naming its coordinate is the defect that inflated a word to
 //! 46 KB, and no vocabulary check sees it — that is a property test's job
-//! (`sentence/tests/properties.rs`), and the reading belongs on the fleet.
+//! (`sentence/tests/properties.rs`), and the reading belongs on a running deployment.
 
 use std::path::{Path, PathBuf};
 

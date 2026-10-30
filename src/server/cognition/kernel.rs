@@ -955,7 +955,7 @@ impl Kernel {
     /// A peer's receipt names its predecessor and parents by stamp and
     /// hash; one this court folded — its own, or a peer's era it witnessed
     /// — left the nodes for the archive, and admission read it as missing
-    /// for good: on the fleet, c's receipts citing a's receipt at (28, 21),
+    /// for good: on the development deployment, c's receipts citing a's receipt at (28, 21),
     /// folded long before, stopped c's line at every court ("head past it,
     /// no receipt held there", 2026-09-30). The signer's era over that place
     /// is paged, and the receipt with that stamp and hash, if it is there,
@@ -1060,7 +1060,7 @@ impl Kernel {
     /// THE MESH IS A DIRECTED ACYCLIC GRAPH, NOT ONE SIGNER'S LOG. This
     /// broke on anything that was not `Parent` or `Stale`, so a back-fill
     /// paging A's chain died the moment A's receipt cited B — which every
-    /// receipt on a live mesh does. On the fleet at epoch 10 that read
+    /// receipt on a live mesh does. On the development deployment at epoch 10 that read
     /// `backfill ce02… 940..940 admitted 0`, fifty-two times, forever.
     ///
     /// The page is admitted on the stroke of the chase that fetched it

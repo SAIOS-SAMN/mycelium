@@ -45,9 +45,9 @@ pub enum Law {
 /// THE REGISTER'S VERSION: an amendment raises it, and an address names the
 /// version it was read at. Version 2 (LV2, ruled 2026-10-03): momentum read
 /// at a dilation's ratio, as rigidity reads it. Version 3 (78.89, the
-/// operator's "proceed" on the recommendation): continuity, the white hole
+/// recommendation adopted): continuity, the white hole
 /// and the black hole published as sources and sinks. Version 4 (78.125, the
-/// coordinator's ruling on 2(c)): the challenge window, the register's first
+/// ruling on 2(c)): the challenge window, the register's first
 /// PARAMETER.
 pub const LAW_VERSION: u8 = 4;
 
@@ -243,8 +243,8 @@ pub struct Verdict {
     pub unmeasured: Vec<Unmeasured>,
 }
 
-/// 78.121 — A LAW UNREAD FOR WANT OF STROKE (the operator's ruling,
-/// 2026-10-07, on the coordinator's recommendation): which law, and the
+/// 78.121 — A LAW UNREAD FOR WANT OF STROKE (ruled
+/// 2026-10-07, on recommendation): which law, and the
 /// stroke reading it needs (`cga::modes_need`), or `None` where that need is
 /// past its carrier. It was a `Conformal` breach — a law broken that was
 /// never read.

@@ -38,7 +38,7 @@ fn a_scene_perceived_off_the_field_lands_and_its_escaping_thought_is_bound() {
 }
 
 /// MU-CLIENT §7.1 — EVERY SCENE STOPS EXACTLY ONCE, where its comprehension
-/// stopped (the auditor's ruling, 2026-10-18). The slide taken as a feed's
+/// stopped (ruled 2026-10-18). The slide taken as a feed's
 /// family and as a court's task each stops at one step of the path to a
 /// solve, read on the row of what it was taken as; the feed's family, which
 /// carries no test, never reaches a solve.
@@ -62,8 +62,8 @@ fn every_scene_taken_in_stops_once_on_its_own_reading() {
     assert_eq!(feed[sent], 0, "a feed's family carries no test: it sends no solve");
 }
 
-/// A WAITING SCENE RESTS UNTIL ITS OWN LANGUAGE MOVES (the auditor's
-/// directive, 2026-10-20: 461 re-reads in an hour on one voice). The
+/// A WAITING SCENE RESTS UNTIL ITS OWN LANGUAGE MOVES (ruled
+/// 2026-10-20: 461 re-reads in an hour on one voice). The
 /// language where the slide stands — its charts and the words filed on
 /// them — does not move when the mind gains a word on a chart the slide's
 /// bodies do not stand on, so the slide is not read again; it moves when a
@@ -134,8 +134,8 @@ fn a_hearing_unread_across_a_return_lapses() {
     assert_eq!(mind.board.hearings_crossed.len(), 2, "the two heard since cross in its place");
 }
 
-/// THE GROUND STATE HEARS ITS LANGUAGE'S CHARTS (the auditor's ground-state
-/// ruling, 2026-10-18, extended to hearing by the operator, 2026-10-23): a
+/// THE GROUND STATE HEARS ITS LANGUAGE'S CHARTS (the ground-state
+/// ruling, 2026-10-18, extended to hearing 2026-10-23): a
 /// mind at rest — no thought, no orbit, a language that holds a word on the
 /// one-cell body's chart — takes up a hearing whose evidence scene stands on
 /// that chart, and lets one standing only on charts its language does not

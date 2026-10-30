@@ -811,7 +811,7 @@ impl Bubble {
     /// `Bubble.torsion`, which is keyed by class and holds a `FiledOrbit`
     /// whose `chord` is a face index — and a demand's form has no faces for
     /// it to point at. The period is read and the candidate stands on it;
-    /// where it is filed is the operator's to rule.
+    /// where it is filed is an open ruling.
     pub(crate) fn dissolve_candidates(&mut self, budget: &mut crate::physics::Budget) {
         let Some(bundle) = self.bundle.clone() else {
             return;

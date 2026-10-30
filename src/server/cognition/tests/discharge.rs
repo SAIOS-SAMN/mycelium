@@ -1,4 +1,4 @@
-// 78.149 — μ IS DISCHARGE (the operator's escrow rulings, 2026-10-08): the
+// 78.149 — μ IS DISCHARGE (the escrow rulings, 2026-10-08): the
 // span a word stood is not μ, a claim is paid the closer's measured
 // discharge and never more, and a word that names no body escrows and is
 // paid nothing.

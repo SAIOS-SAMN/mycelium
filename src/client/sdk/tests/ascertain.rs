@@ -1,5 +1,5 @@
 // MU-CLIENT §4.4 — A RULE KNOWN BY ITS PERSPECTIVES, AND ONE UNDETERMINED BY
-// THEM (the auditor's ruling, 2026-10-22): on a two-pair family each sibling
+// THEM (ruled 2026-10-22): on a two-pair family each sibling
 // set is one pair, and the act reader states no clause from one pair, so a
 // clause rule proven on both pairs is undetermined by its perspectives — sent
 // for the court to judge — never refuted by a sibling that cannot speak it.

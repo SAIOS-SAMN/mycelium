@@ -4,8 +4,8 @@
 //! Radical conservation. An extraction cut off used to return `None`,
 //! discarding every pair form it had assembled along with the whole
 //! boundary of the family, and cached nothing — so the next stroke
-//! re-pulled the same family and discarded it identically. On the fleet
-//! that read 469 of 474 families extracted to nothing and 3763 idle
+//! re-pulled the same family and discarded it identically. On the
+//! development deployment that read 469 of 474 families extracted to nothing and 3763 idle
 //! strokes in a row. These tests run at the PRODUCTION budget; the file
 //! beside this one runs at `1 << 20`, which is why none of them saw it.
 
@@ -25,7 +25,7 @@ use crate::transducer::family::*;
 /// which is a claim of ignorance and not a claim about the family, and
 /// the form is not closed while it carries one.
 ///
-/// MEASURED ON THE FLEET, 2026-09-11: 469 of 474 families extracted to
+/// MEASURED ON THE DEVELOPMENT DEPLOYMENT, 2026-09-11: 469 of 474 families extracted to
 /// `None` under the production budget, every pair form assembled along
 /// the way discarded with them, and the same families re-pulled and
 /// re-discarded on the next stroke — 3763 idle strokes in a row, zero

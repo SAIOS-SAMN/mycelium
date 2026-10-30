@@ -25,8 +25,8 @@
 //! multivector is compared coefficient for coefficient and never only
 //! projectively.
 //!
-//! 78.148 — A VERSOR'S CHANGE IS THE VERSOR THAT CARRIES IT (the operator's
-//! field law): between consecutive beats the change of a multivector series
+//! 78.148 — A VERSOR'S CHANGE IS THE VERSOR THAT CARRIES IT (the field
+//! law): between consecutive beats the change of a multivector series
 //! is `c = v₊ · ṽ / ⟨v ṽ⟩₀`, the exact carrier with `c · v = v₊` — divided
 //! by the earlier value's weight (`weight_of`, read), so it is normalised
 //! exactly — or REFUSED where either value is no versor or the weight is

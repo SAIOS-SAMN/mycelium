@@ -137,7 +137,7 @@ assert!(
 );
 }
 
-/// LANE 𝒯 CARRIES NO SPAN (78.149 (a), the operator's ruling of
+/// LANE 𝒯 CARRIES NO SPAN (78.149 (a), the ruling of
 /// 2026-10-08, reversing R2).
 ///
 /// R2 wrote the span the bundle stood over into lane 2 of every minted

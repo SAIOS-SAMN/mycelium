@@ -190,7 +190,7 @@ fn a_cover_is_read_by_page_from_the_last_cursor_held() {
 
 /// 47.1, I33 — A PREFIX THAT DOES NOT FIT THE WIRE IS NOT FRAMED. The
 /// section's length is two bytes; a prefix carrying a hypha's whole cover
-/// (10,855 axes on the fleet of 2026-09-08) was written with a wrapped
+/// (10,855 axes on the development deployment, 2026-09-08) was written with a wrapped
 /// length, and every peer refused every digest whole while the hypha
 /// believed it spoke. `fits` says so before anything is signed, and
 /// `encode_receipt_section` refuses rather than wraps; a prefix of one

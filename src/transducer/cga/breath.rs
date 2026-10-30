@@ -1,10 +1,9 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! MU-CLIENT §4.3 — THE BREATH AND ITS PINCHES. The breath has two axes, if
-//! not more (the operator, 2026-10-21: "breath has two axis (if not more) —
-//! contract / dilate (inhale / exhale): you are looking for torsion on
-//! 'pinch' of that radial construct"; "pinch is not on the same axis:
-//! imagine an orthogonal pinch"; and the split "needs wider machinery" —
+//! not more (ruled 2026-10-21: the breath contracts and dilates, and torsion
+//! is sought on the pinch of that radial construct; the pinch lies on an
+//! orthogonal axis, not the same one; and the split needs wider machinery —
 //! every plane of a motion, across motions, beyond three axes). Where two
 //! generators meet — what the mind carries forward and what it carries back
 //! through the inversion, or any two motions it holds — their commutator is

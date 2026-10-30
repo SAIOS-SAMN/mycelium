@@ -1,6 +1,6 @@
-// 78.82 — RECONSTRUCTION BY HOLONOMY (HR1–HR4, the operator's word: "the
-// question is not to get exactness — it's to recreate the reconstruction via
-// holonomy"). The values stay exact; what must agree across a family is how
+// 78.82 — RECONSTRUCTION BY HOLONOMY (HR1–HR4: the aim
+// is not exactness alone but the reconstruction recreated through
+// holonomy). The values stay exact; what must agree across a family is how
 // they MOVE. A rule is the transport whose loops close across the pairs.
 //
 //! HR1 — THE FIELD. Every site of a scene by its coordinates on every axis:

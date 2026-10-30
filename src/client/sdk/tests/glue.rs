@@ -39,7 +39,7 @@ fn closed_form_and_body_chart() -> (Element, crate::transducer::stalk::Invariant
 /// `[components, …harmonics…]`, two coordinate systems that meet only at
 /// the empty root. The crystal answered the empty vector to every question
 /// the glue could ask, so no rule ever cited a held form and no citation
-/// was ever paid (26, 27): the fleet's "comprehending 0 of 2 listings".
+/// was ever paid (26, 27): the deployment's reading "comprehending 0 of 2 listings".
 #[test]
 fn a_stood_form_is_found_at_the_chart_of_the_body_it_carries() {
     let (e, chart) = closed_form_and_body_chart();
@@ -104,8 +104,8 @@ fn a_chart_the_mind_holds_no_body_on_answers_nothing() {
 /// 21 step 3, 28 (L8r): the body-chart index is DERIVED from the genome,
 /// so a mind that restores its genome answers `on_body` exactly as the
 /// mind that stood the form did. Left out of `uncrystallize`, the index
-/// was live only in a process that had never restarted — and every fleet
-/// client boots from its genome, so on the fleet the glue answered nothing
+/// was live only in a process that had never restarted — and every deployed
+/// client boots from its genome, so in deployment the glue answered nothing
 /// again after every start.
 #[test]
 fn a_restored_genome_answers_at_the_chart_of_the_bodies_it_carries() {

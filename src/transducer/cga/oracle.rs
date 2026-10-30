@@ -18,7 +18,6 @@ use num_rational::BigRational;
 
 /// The golden file, from the repository's root.
 pub const GOLDEN: &str = "src/transducer/cga/tests/oracle.golden";
-const CORPUS: &str = "data/arc-agi-2/training";
 /// The corpus slice the versors are harvested from, and how many distinct
 /// ones are read. A slice of the corpus, in the directory's sorted order.
 const TASKS: usize = 40;
@@ -105,7 +104,8 @@ fn fixtures() -> Vec<(String, Mv)> {
 /// Read in key order of their canonical bytes, so the slice is the corpus's
 /// content and not the order the extractor happened to meet them in.
 fn harvest() -> Vec<(String, Mv)> {
-    let Ok(dir) = std::fs::read_dir(CORPUS) else { return Vec::new() };
+    let corpus = crate::arc::corpus("training");
+    let Ok(dir) = std::fs::read_dir(&corpus) else { return Vec::new() };
     let mut names: Vec<String> = dir
         .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned()))
         .filter(|n| n.ends_with(".json"))
@@ -123,7 +123,7 @@ fn harvest() -> Vec<(String, Mv)> {
         }
     };
     for name in &names {
-        let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
+        let Ok(json) = std::fs::read_to_string(format!("{corpus}/{name}")) else { continue };
         let Some(task) = crate::arc::parse_task(&json) else { continue };
         let frames = crate::transducer::family::perceive_family(&task.train);
         let mut budget = physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));

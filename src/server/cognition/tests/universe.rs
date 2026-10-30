@@ -233,8 +233,8 @@ fn a_torus_face_reads_its_throat_flat_and_bounded_by_its_own_image() {
     assert!(matches!(booted.handoff(&Handoff::Draw { mouth: tube, mu_s: 1, seq: 1 }.sign(&reserve(5))), Handed::Sealed { .. }), "still a core: its far reserve keeps it");
 }
 
-/// THE COURT AUTHENTICATES KEYS, NEVER TIERS (the operator, 2026-10-14: "he
-/// who holds the keys may solve"): the court READS which keys are a founded
+/// THE COURT AUTHENTICATES KEYS, NEVER TIERS (ruled 2026-10-14: any holder
+/// of a key may solve): the court READS which keys are a founded
 /// domain's inner seats — tiers it registered that are not its sitting
 /// reserve, the ancients' house — and refuses none of them. A key no domain
 /// names is no inner seat; the house is none; a line is one until it is the

@@ -7,9 +7,9 @@
 # lost (which must be 0), the snapshot's bytes, and the wall time per round.
 #
 # It runs prebuilt binaries and builds nothing: build first, under the heavy
-# lock (the coordinator's standing grant), e.g.
+# lock, e.g.
 #   CARGO_TARGET_DIR=target/gate CARGO_BUILD_JOBS=4 nice -n 10 flock -o -w 3600 \
-#     /run/user/1000/xyl-heavy.lock cargo build --release --bin mycelium-server --example durable_drill
+#     "${XDG_RUNTIME_DIR:-/tmp}/xyl-heavy.lock" cargo build --release --bin mycelium-server --example durable_drill
 #
 # NEGATIVE CONTROL: a build with `--features drill-undurable` answers court
 # acts without the pre-reply sync; the same drill on it must LOSE acts, so

@@ -22,9 +22,11 @@
 
 use crate::transducer::sentence::{form_vertex_key, from_address, Form};
 
-/// The corpus this build reads. A tree without it skips rather than
-/// passing: an assertion over no data is not a reading (rule 11).
-pub(super) const CORPUS: &str = "data/arc-agi-2/training";
+/// The corpus this build reads (`arc::corpus`). A tree without it skips
+/// rather than passing: an assertion over no data is not a reading (rule 11).
+fn corpus() -> String {
+    crate::arc::corpus("training")
+}
 
 /// How many tasks to extract. The property is per-form and the count is
 /// only how much of the corpus one gate run affords.
@@ -126,8 +128,9 @@ fn same_complex(a: &Form, b: &Form) -> Result<(), String> {
 /// the corpus, and the address re-derives from the recovery.
 #[test]
 fn from_address_retracts_every_corpus_form() {
-    let Ok(dir) = std::fs::read_dir(CORPUS) else {
-        eprintln!("  retract: {CORPUS} does not read — no corpus, no reading");
+    let corpus = corpus();
+    let Ok(dir) = std::fs::read_dir(&corpus) else {
+        eprintln!("  retract: {corpus} does not read — no corpus, no reading");
         return;
     };
     let mut names: Vec<String> = dir
@@ -144,7 +147,7 @@ fn from_address_retracts_every_corpus_form() {
     let mut physics = crate::physics::Physics::default();
     let (mut seen, mut with_orbits) = (0usize, 0usize);
     for name in &names {
-        let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
+        let Ok(json) = std::fs::read_to_string(format!("{corpus}/{name}")) else { continue };
         let Some(task) = crate::arc::parse_task(&json) else { continue };
         let frames = crate::transducer::family::perceive_family(&task.train);
         let mut budget =
@@ -221,8 +224,9 @@ fn from_address_retracts_every_corpus_form() {
 /// decoder the court holds.
 #[test]
 fn the_decoded_form_agrees_with_the_extracted_on_every_reading_the_court_makes() {
-    let Ok(dir) = std::fs::read_dir(CORPUS) else {
-        eprintln!("  predicate guard: {CORPUS} does not read");
+    let corpus = corpus();
+    let Ok(dir) = std::fs::read_dir(&corpus) else {
+        eprintln!("  predicate guard: {corpus} does not read");
         return;
     };
     let mut names: Vec<String> = dir
@@ -245,7 +249,7 @@ fn the_decoded_form_agrees_with_the_extracted_on_every_reading_the_court_makes()
         }
     };
     for name in &names {
-        let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
+        let Ok(json) = std::fs::read_to_string(format!("{corpus}/{name}")) else { continue };
         let Some(task) = crate::arc::parse_task(&json) else { continue };
         let frames = crate::transducer::family::perceive_family(&task.train);
         let mut budget =
@@ -343,7 +347,8 @@ fn the_carrier_holds_its_own_invariants_without_the_oracle() {
     use crate::transducer::sentence::as_element_form;
 
     let mut forms: Vec<Form> = Vec::new();
-    if let Ok(dir) = std::fs::read_dir(CORPUS) {
+    let corpus = corpus();
+    if let Ok(dir) = std::fs::read_dir(&corpus) {
         let mut names: Vec<String> = dir
             .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned()))
             .filter(|n| n.ends_with(".json"))
@@ -353,7 +358,7 @@ fn the_carrier_holds_its_own_invariants_without_the_oracle() {
         let epi = crate::client::sdk::Epigenome::new();
         let mut physics = crate::physics::Physics::default();
         for name in &names {
-            let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
+            let Ok(json) = std::fs::read_to_string(format!("{corpus}/{name}")) else { continue };
             let Some(task) = crate::arc::parse_task(&json) else { continue };
             let frames = crate::transducer::family::perceive_family(&task.train);
             let mut budget =

@@ -75,7 +75,7 @@ fn a_peer_fold_sheds_its_line_but_what_our_hot_line_cites() {
 /// peer root names the place, and the very receipt, fetched back, is read
 /// STALE by admission — at or below a head nothing is admitted. A third
 /// court's frame citing that receipt as its parent can never be crossed:
-/// the mesh's split on the fleet, as the ledger reads it.
+/// the mesh's split on the development deployment, as the ledger reads it.
 #[test]
 fn a_shed_receipt_is_a_hole_below_the_head_that_backfill_cannot_cross() {
     let mut e = ReceiptChain::with_vk([4; 32]);

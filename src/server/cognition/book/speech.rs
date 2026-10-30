@@ -629,7 +629,7 @@ impl Kernel {
             for cite in cites {
                 let addr = &cite.addr;
                 if let Some(w) = self.basis.get(addr) {
-                    // 78.149 (the coordinator, 2026-10-08): a use pays the
+                    // 78.149 (ruled 2026-10-08): a use pays the
                     // used word's DISCHARGE, never its magnitude — a letter's
                     // holonomic unit earns nothing.
                     let mag = self.discharge_of(addr, w);

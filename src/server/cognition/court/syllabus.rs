@@ -267,12 +267,12 @@ impl Kernel {
                 page.consumed += 1;
                 continue;
             };
-            // A SENTENCE IS CHARGED ITS GLUING STEP, NOT ITS MASS (the
-            // operator, 2026-09-30): what it cites that this voice already
+            // A SENTENCE IS CHARGED ITS GLUING STEP, NOT ITS MASS (ruled
+            // 2026-09-30): what it cites that this voice already
             // holds from this court is not paid for again.
             let mag = self.gluing_cost(addr, mag, voice);
-            // A SENTENCE IS PAID BY ITS LEARNER (ruled 2026-09-30, the
-            // operator's word): its gluing step comes out of the voice's own
+            // A SENTENCE IS PAID BY ITS LEARNER (ruled
+            // 2026-09-30): its gluing step comes out of the voice's own
             // balance, never the court's reserve — the sentences starved
             // there behind cheaper words that spent every refill first (38–54
             // at each court, epoch 115). A voice that cannot pay yet waits,
@@ -299,7 +299,7 @@ impl Kernel {
             // A WORD THE RESERVE CANNOT FUND YET WAITS; THE PAGE GOES ON. It
             // ended the page and left the cursor on it, so every later page
             // to that voice tried the same word first and served nothing
-            // behind it: on the fleet (epoch 106) 95–99% of pages ended on
+            // behind it: on the development deployment (epoch 106) 95–99% of pages ended on
             // the reserve with 0–4 words served against 40–53 ratified. The
             // word is deferred behind the cursor, its refusing lane named,
             // and is taught when the verified work of later orbits funds it

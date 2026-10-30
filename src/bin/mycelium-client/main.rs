@@ -71,7 +71,7 @@ fn seats(args: &[String]) -> Result<Option<Seated>, String> {
     Ok(Some((domain, sub_origin, sit)))
 }
 
-/// THE OBSERVER'S CALL (the operator 2026-10-15; `observe::live`):
+/// THE OBSERVER'S CALL (ruled 2026-10-15; `observe::live`):
 /// `mycelium-client --call "<call>" [--mind HEX] [--rendezvous DIR]` asks
 /// every mind at the rendezvous (beside the home, or `DIR`) whose voice opens
 /// with `HEX`, prints each answer, and exits — 0 where any mind answered.

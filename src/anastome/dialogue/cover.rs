@@ -179,7 +179,7 @@ pub fn cover_signed_prefix(cover_roots: &[[u8; 32]; 4], ruled_root: &[u8; 32], r
 ///
 /// A DIGEST IS ROOTS, AND A COVER IS A PAGE (A4, owed since Stage 8c). The
 /// digest carried the whole chart list, so its size was the cover's size:
-/// on the fleet at 3d2987e a hypha holding 65 charts could not write one —
+/// on the development deployment at 3d2987e a hypha holding 65 charts could not write one —
 /// `charts 65 of which 12 wider than the axis count` — and 438 digests were
 /// refused on hypha a in five minutes while no cover propagated. Widening
 /// the field would be the same fault one order up (I33). The roots are four

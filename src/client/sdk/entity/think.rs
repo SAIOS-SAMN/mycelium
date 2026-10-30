@@ -195,7 +195,7 @@ impl Entity {
             }
             self.contemplation.release(&thought);
         }
-        // THE CLASSES THE CROSS KEPT, standing (the operator's ruling,
+        // THE CLASSES THE CROSS KEPT, standing (ruled
         // 2026-10-20): each hole holds its boundary and its vertices until
         // its seal, so the reading names how many stand.
         let cx = &self.contemplation.complex;
@@ -504,8 +504,8 @@ impl Entity {
 
     /// 37.7 — THE DOCKET TAKEN ON EVERY STROKE, on the stroke's own budget:
     /// a demand docketed is taken and constructed where it stands, not only
-    /// on a short or idle stroke (`expand_ideas`). A mind on the fleet
-    /// docketed 471 demands and took 1 (epoch 146): its reserve never fell
+    /// on a short or idle stroke (`expand_ideas`). A mind on the development
+    /// deployment docketed 471 demands and took 1 (epoch 146): its reserve never fell
     /// short, so the syntropic phase that alone took them never ran.
     pub(crate) fn take_docketed_demands(&mut self) -> Vec<Vec<u8>> {
         let mut budget = self.physics.stroke();
@@ -819,7 +819,7 @@ impl Entity {
         // 37.7 — ADJOIN WHAT THE ALPHABET CANNOT SPELL. A cover meet that
         // produced a rotor the seventeen have no letter for is the one place
         // a mind can CONSTRUCT a generator rather than receive one, and it
-        // was dropped at three sites. Measured across the fleet: every Word
+        // was dropped at three sites. Measured across the deployment: every Word
         // vertex and every edge transport of every admitted form carries the
         // identity — `turning 0` and `turning_edges 0`, totals, over 38 and
         // 44 admits — so `crystal.on_axis` answered 0 on every read and the

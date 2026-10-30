@@ -1,6 +1,6 @@
-// MU-CLIENT §4.12, §7.1 — THE OFFER AND THE MIND'S OWN ATTENTION (the operator,
-// 2026-10-17: "a sovereign mind treats tasks and percepts as sensory offers,
-// not commands"): what a boundary lands — a court's task, a family of the
+// MU-CLIENT §4.12, §7.1 — THE OFFER AND THE MIND'S OWN ATTENTION (ruled
+// 2026-10-17: a sovereign mind treats tasks and percepts as sensory offers,
+// not commands): what a boundary lands — a court's task, a family of the
 // feed, a task before a seat — is OFFERED, and the mind takes it only where
 // it couples to what its field holds. A field in equilibrium asks for
 // nothing.
@@ -13,7 +13,7 @@
 //! waiting on its comprehension), or where one of its charts is a chart a
 //! held thought stands on, a question on the plan covers, or the mind's
 //! LANGUAGE speaks on — a closed word of it filed under a body standing
-//! there (`Epigenome::speaks_on`; the operator, 2026-10-17: a string resonates
+//! there (`Epigenome::speaks_on`; ruled 2026-10-17: a string resonates
 //! because it is tuned to the frequency, not because it already rings; so a
 //! restored mind, whose thoughts and plan are volatile, still hears an offer
 //! in its own language). An offer that
@@ -36,8 +36,8 @@ use crate::client::sdk::*;
 
 /// The kinds of offer a mind passes, as the observer names them, each at its
 /// slot of `Board::offers_passed`.
-/// A seat passes nothing: its house's tasks are every one evaluated (the
-/// auditor's ruling, 2026-10-23), so the court's task is the one kind.
+/// A seat passes nothing: its house's tasks are every one evaluated (ruled
+/// 2026-10-23), so the court's task is the one kind.
 pub(crate) const PASSED: [&str; 1] = ["court task"];
 pub(crate) const PASSED_TASK: usize = 0;
 

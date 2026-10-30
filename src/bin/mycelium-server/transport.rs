@@ -141,7 +141,7 @@ pub(crate) fn tell_peer(addr: &str, body: Vec<u8>) -> Option<(Vec<u8>, u64)> {
 /// timeout (`note_rtt_ok`, `note_rtt_timeout`, into `mesh.rtt`) — and no
 /// ask ever read it: every `tell_peer` waited the literal 5, forty polls, so
 /// a peer answering from behind one court stroke was counted silent, and
-/// every back-fill page on the fleet went unanswered (the catch-up reading,
+/// every back-fill page on the development deployment went unanswered (the catch-up reading,
 /// 2026-09-30). This waits the deadline the peer's own wire measured, the
 /// literal only where none is measured yet, and records what it saw.
 pub(crate) fn tell_peer_measured(mesh: &Mesh, addr: &str, body: Vec<u8>) -> Option<(Vec<u8>, u64)> {

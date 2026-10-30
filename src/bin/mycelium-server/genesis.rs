@@ -242,7 +242,7 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
 /// E3 — AND EACH IS FUNDED ONE COVER TO SPEND beside the cover it stakes.
 /// The whole allocation went into the bond, so every balance stood at zero
 /// and nothing could pay: a POWC use pays from the demander's balance
-/// (`settle_use`), and on the fleet it paid nothing on every court (epoch
+/// (`settle_use`), and on the development deployment it paid nothing on every court (epoch
 /// 106). The synthetic economy stands in for the contracts until they are
 /// deployed; the allocation is the corpus's measured cover, never a number
 /// chosen here.

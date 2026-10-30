@@ -153,7 +153,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // A plain request is dispatched the next open task; 78.146, a request
         // naming a task's citation (wire v1.2) is answered that task, open or
         // settled, or nothing where this registry holds no such task.
-        // The auditor's dispatch observation (2026-10-22): each task that
+        // The dispatch observation (ruled 2026-10-22): each task that
         // leaves, by its citation, to the voice that asked, at this court's
         // height — read-only, never read back by the court.
         let sent = |cite: [u8; 32], voice: [u8; 32]| mycelium::observe::note_dispatch(cite, voice, door.published.take().height());
@@ -208,7 +208,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // Wire v1.2: the solve names its task by citation; the court reads
         // the task's content address off this book. A citation this book
         // holds no task for is refused by name below ("no such task").
-        // THE TASK'S GROUND (the auditor's ruling, 2026-10-18): the withheld
+        // THE TASK'S GROUND (ruled 2026-10-18): the withheld
         // pairs are read on the ground the task's demonstrations name, the
         // one the voice spoke them on — never on one the withheld pairs
         // would name alone.
@@ -244,13 +244,13 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             };
             dialogue::SolveRefusal { reason: reason.as_bytes().to_vec(), kind }
         };
-        // THE COURT AUTHENTICATES KEYS, NEVER TIERS (the operator, 2026-10-14:
-        // "he who holds the keys may solve"). A solve signed by an inner seat
+        // THE COURT AUTHENTICATES KEYS, NEVER TIERS (ruled 2026-10-14: any
+        // holder of a key may solve). A solve signed by an inner seat
         // of a founded domain is judged and paid as any key's: keeping the
         // house's key is the ancients' charge, and a tier reaching the hypha
         // directly is the game kernel's to answer. It is COUNTED, refusing
-        // nothing (`inner_seat`), so a kernel — or a stipulation the operator
-        // may rule — has the reading to act on.
+        // nothing (`inner_seat`), so a kernel — or a stipulation ruled
+        // later — has the reading to act on.
         // 78.153c — THE DOOR'S REFUSALS BEFORE ANY JUDGING, each counted on
         // its slot of the court's acts under the one hold the seat's check
         // already takes: 66 solves filed and none paid read as no verdict
@@ -440,7 +440,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             let charts = read.own_cover_charts();
             // A chart wider than the page's axis count is passed over by
             // the encoder, so the count of them is said here once, where
-            // the charts are this court's own: on the fleet at 3d2987e
+            // the charts are this court's own: on the development deployment at 3d2987e
             // this width took the whole digest down with it and the line
             // that named it was the only reason the cause was findable.
             let wide = charts.iter().filter(|(_, inv)| inv.0.len() > 255).count();

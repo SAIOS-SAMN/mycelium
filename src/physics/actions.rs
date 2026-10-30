@@ -1,7 +1,6 @@
-// 78.94 — EVERY ACT IS AN ACTION OF THE PHYSICS (the operator's word,
-// 2026-10-04: "any constant labeled "ACT" needs to get wrapped into physics as
-// "ACTIONS"" — "unify: go all forward with this and remediate from the
-// progenitor").
+// 78.94 — EVERY ACT IS AN ACTION OF THE PHYSICS (ruled
+// 2026-10-04: every constant labelled ACT is carried into the physics as an
+// ACTION, unified going forward and remediated from the progenitor).
 //
 //! One table for what happens in a universe: every action a party requests
 //! on the wire and every act a court seals on its line, each by ONE
@@ -111,7 +110,7 @@ pub enum Action {
     /// 78.152b — A KEEPER'S RING PUSHED: court to court, the keeper's newest
     /// TUniversal readings on their own act, heard at the door off the
     /// kernel, so the mesh's clock never waits on a court's load. Its byte
-    /// 0x23 stands beside the cover, offer and install (the operator's word,
+    /// 0x23 stands beside the cover, offer and install (ruled
     /// 2026-10-09: a free byte, WIRE-CHANGE, court to court only). Seals
     /// nothing.
     Tick,
@@ -148,7 +147,7 @@ pub enum Action {
 /// under an existing one, never a new byte. 78.145's seat relay is one
 /// exception, at 0x53 past the court's acts, by the wire the kernels agreed;
 /// 78.152b's keeper tick the other, at 0x23 among the courts' exchanges, by
-/// the operator's word.
+/// ruling (2026-10-09).
 pub const ACTIONS: [Action; 57] = [
     Action::Percept,
     Action::Gossip,

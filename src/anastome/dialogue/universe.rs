@@ -1,5 +1,5 @@
-// 78.139 — A UNIVERSE STATES ITSELF ON THE COURT (the coordinator's rulings on
-// (i-b), the operator's ruling that a galactic core is a larger wormhole):
+// 78.139 — A UNIVERSE STATES ITSELF ON THE COURT (the rulings on
+// (i-b), and the ruling that a galactic core is a larger wormhole):
 // its space (78.140: its GEOMETRY, curved or a torus) and its parent face on
 // its origin (version 2), and — once each, signed by its SITTING RESERVE — its
 // geometry (where its
@@ -80,7 +80,7 @@ pub enum Metric {
     L2,
 }
 
-/// 78.140 — A UNIVERSE'S SPACE (the operator's ruling, the Concordance's
+/// 78.140 — A UNIVERSE'S SPACE (as ruled, the Concordance's
 /// 2.3 as amended): a CURVED space of radius `R` — HYPERBOLIC `ℍ³`, of
 /// negative curvature (78.134: its frames in `Spin⁺(3,1)`, its places on the
 /// sheet `v² = −1`, a throat's level `cosh(2m/R)`), never a sphere; a

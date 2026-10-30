@@ -592,7 +592,7 @@ impl OrbitRegistry {
         self.orbits.scoped().any(|(_, o)| o.state.rings())
     }
 
-    /// MU-CLIENT §7.1 — THE FIELD'S FOCUS (the operator, 2026-10-18: the
+    /// MU-CLIENT §7.1 — THE FIELD'S FOCUS (ruled 2026-10-18: the
     /// corpus met where the mind's orbits stand, never along a file's line):
     /// the orbits the admissions since the last beat carried, or — none in
     /// motion — the orbits that ring; each with its lane, its key and the

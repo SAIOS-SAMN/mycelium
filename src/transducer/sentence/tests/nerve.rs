@@ -334,7 +334,7 @@ fn every_orbit_lifts_to_the_member_complex() {
 
 /// AND THE SPURIOUS CYCLES ARE GONE. `k` charts on one vertex are `k`
 /// parallel Frame-edges in the vertex graph and `k − 1` fundamental cycles
-/// that enclose nothing — measured on the fleet as an exact identity, the
+/// that enclose nothing — measured on the development deployment as an exact identity, the
 /// count of Frame-only orbits equalling `members − vertices` on all three
 /// voices (285 = 860 − 575, 266 = 702 − 436, 300 = 769 − 469).
 ///

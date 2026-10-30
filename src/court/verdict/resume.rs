@@ -106,7 +106,7 @@ impl Phase {
     }
 }
 
-/// WHERE A REPLAY STOPPED (78.153, the operator's option (A)): the phase,
+/// WHERE A REPLAY STOPPED (78.153, option (A) as ruled): the phase,
 /// the item inside it (which glued vertex, which edge, which pair, which
 /// certificate — the item's position in the form's own order), and the
 /// exact partials a later phase is built from — the pairs as the sensor read

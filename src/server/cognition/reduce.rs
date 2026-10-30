@@ -51,7 +51,7 @@ pub(crate) fn union_remainders(entries: &[FieldEntry]) -> Vec<(i64, i64, u8, u8)
 /// base chart is the one the listing was ADMITTED under (`atlas`), read by
 /// its address; it is lifted again only for a listing the atlas does not
 /// chart. It was lifted on every read — body, section moduli, towers — for
-/// every unprobed listing of every quote: on the fleet (epoch 106, hypha b
+/// every unprobed listing of every quote: on the development deployment (epoch 106, hypha b
 /// at 194% of a core, its standing frozen) every stack sample of the quote
 /// workers stood in `invariant_of` under this line.
 pub(crate) fn open_charts_of(

@@ -1,5 +1,5 @@
 // 78.120 — ACT_DOMAIN: a domain founded on a court (2(d), 78.62's GENESIS act;
-// the operator's word 2026-10-07: "proceed").
+// ruled 2026-10-07).
 //
 //! A DOMAIN'S GENESIS names the domain's key and the tier keys that settle for
 //! it, signed by the domain's key and sealed on the court's line
@@ -97,8 +97,8 @@ pub fn decode_domain(b: &[u8]) -> Option<SignedDomain> {
     (p == rest.len()).then_some(SignedDomain { genesis: DomainGenesis { domain, tiers }, sig })
 }
 
-/// 78.127 — THE DOMAIN'S RESERVE TIER DESIGNATED (2(e), the coordinator's
-/// rulings): the one tier of the domain whose μ balance on this court is its
+/// 78.127 — THE DOMAIN'S RESERVE TIER DESIGNATED (2(e), as
+/// ruled): the one tier of the domain whose μ balance on this court is its
 /// RESERVE — the only tier that converts game value against μ, and the one a
 /// falsified fold's slash draws from. Signed by the domain's key; a domain
 /// with none takes it at once, a redesignation from the reserve tier's next
@@ -198,7 +198,7 @@ const KIND_READ_BOND: u8 = 5;
 const KIND_ORIGIN: u8 = 6;
 const KIND_READ_ORIGIN: u8 = 7;
 
-/// 78.132 — A UNIVERSE'S ORIGIN (the coordinator's ruling: one network
+/// 78.132 — A UNIVERSE'S ORIGIN (as ruled: one network
 /// universe = one Big Bang = one domain, 78.86): the commitment — a 32-byte
 /// hash of the universe's Big Bang record (its seed, laws as ratios, drawn
 /// parameters, the parent bounce's mass and spin) — with the record's kind
@@ -327,7 +327,7 @@ pub fn decode_origin_reading(b: &[u8]) -> Option<Option<OriginReading>> {
     }
 }
 
-/// 78.129 — A TIER'S BOND (the coordinator's ruling): posted by the domain's
+/// 78.129 — A TIER'S BOND (as ruled): posted by the domain's
 /// RESERVE for one tier it backs — μ the ancients hold, escrowed under the
 /// tier's name — topped up by posting again (`mu: Some`), or WITHDRAWN
 /// (`mu: None`) once every fold of the tier is final. The tier that signed a

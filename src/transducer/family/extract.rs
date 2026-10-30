@@ -239,8 +239,8 @@ fn stated(
             // stating them is them. The vertices the extraction read beside
             // them speak nothing, and carried into the sentence they would
             // be claims on the frames the effect refuted — the mint and the
-            // court read every word vertex's carriage (read on the fleet
-            // 2026-10-20: known rules refused at the mint, "an image body is
+            // court read every word vertex's carriage (observed on the development
+            // deployment, 2026-10-20: known rules refused at the mint, "an image body is
             // reached in part", "a lamina lands on the wrong hue").
             rule.form = Form { elements, ..Form::default() };
         }

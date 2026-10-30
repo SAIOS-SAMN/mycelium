@@ -1,5 +1,5 @@
 // 78.126 — ACT_HANDOFF: matter, or a delivered word, crossing from one
-// domain to another on one court (2(b), the coordinator's rulings
+// domain to another on one court (2(b), ruled
 // 2026-10-07; 78.59 P2: matter does not net like money).
 //
 //! A unit of matter stands in exactly one place, so a crossing between
@@ -179,7 +179,7 @@ pub enum Handoff {
     Draw { mouth: [u8; 32], mu_s: u64, seq: u64 },
 }
 
-/// 78.128 — A WORMHOLE'S MOUTH PAIR (the coordinator's rulings 2026-10-07):
+/// 78.128 — A WORMHOLE'S MOUTH PAIR (ruled 2026-10-07):
 /// built by two domains' RESERVE tiers (the ancients), `from_tier` offering
 /// and `to_tier` accepting; X's black-hole mouth and Y's white-hole mouth,
 /// each placed in its domain's chart by an exact Cl(4,1) versor (a horizon
@@ -207,7 +207,7 @@ pub struct Mouth {
 // `tube.rs`.
 pub use super::tube::{decode_tube_reading, encode_tube_reading, is_euclidean_motion, is_spin_plus_31, place_in, Level, Tube, TubeReading};
 
-/// 78.133 — A MOUTH'S TARIFF (the coordinator's rulings): a wormhole carries
+/// 78.133 — A MOUTH'S TARIFF (as ruled): a wormhole carries
 /// S and H only, so each pays on its own lane — `rate_s` μ-S per unit of
 /// MASS leaving (`Σ|out S|`), `rate_h` μ-H per unit of INFORMATION leaving
 /// (`Σ|out H|`), each an exact rational `(n, d)`; G (value, the one
@@ -400,7 +400,7 @@ impl Mouth {
     }
 }
 
-/// 78.127 — A CONVERSION OUT (2(e), the coordinator's rulings): signed by
+/// 78.127 — A CONVERSION OUT (2(e), as ruled): signed by
 /// the domain's RESERVE tier, the game value `g` (on G) its in-game holder
 /// `identity` gives up, and the μ it receives on the court — `rate[l] · g` on
 /// every μ lane, exact and integral — paid from the reserve to the holder's

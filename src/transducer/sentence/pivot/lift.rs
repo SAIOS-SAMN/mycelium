@@ -1,10 +1,10 @@
-// 78.61 C1 (redefined 2026-10-01, the operator's word: "if the question comes
-// in two dimensions, we don't break our higher-dimensional perception to
-// rectify our minds in two dimensions") — A WORD LIFTED INTO PERCEPTION, and
+// 78.61 C1 (redefined 2026-10-01: a question posed in two dimensions is
+// answered in the higher-dimensional perception, never by reducing that
+// perception to two dimensions) — A WORD LIFTED INTO PERCEPTION, and
 // two words compared there, never as they are written; the comparison read
 // lane by lane on TUniversal {S, G, T, H}, coherence the congruence of the
-// four deltas (the operator: "inverse(DIVERGENCE) as CONVERGENCE in
-// COHERENCE(congruence(δ, δ, δ, δ))").
+// four deltas (the inverse of divergence read as convergence:
+// COHERENCE(congruence(δ, δ, δ, δ))).
 //
 //! A word arrives written in its speaker's charts — vertices keyed by its
 //! atlas, faces by its overlaps. Comparing two words as written judges the

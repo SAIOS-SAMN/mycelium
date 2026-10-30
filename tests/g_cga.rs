@@ -5,7 +5,7 @@
     reason = "§2.4 binds cognition; this crate is a test"
 )]
 //! Gate — the exact conformal geometric algebra (Cl(4,1), 51.2), the volumetric
-//! body (operator ruling 2026-08-30). The cure for dimensional volumetric
+//! body (ruled 2026-08-30). The cure for dimensional volumetric
 //! collapse: objects become spheres with volume, rigid motions become one versor
 //! sandwich, and — the thesis made arithmetic — the demand `Q = B·A⁻¹` only
 //! EXISTS once the object has volume, because a null point is non-invertible.

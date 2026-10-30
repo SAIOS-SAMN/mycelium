@@ -4,7 +4,7 @@
 //! A carrier that is filled and never emptied is the leak H1 named in the
 //! ledger: admission without its inverse. This reading counts every carrier
 //! the court holds — each by its entries, a nested carrier by the entries
-//! of what it nests — so one that grows per `K` names itself on the fleet.
+//! of what it nests — so one that grows per `K` names itself in a running deployment.
 //! The kernel's census takes itself apart field by field, so a carrier
 //! added to the court is counted here or the build refuses it.
 

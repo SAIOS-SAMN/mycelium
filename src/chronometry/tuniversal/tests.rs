@@ -333,7 +333,7 @@ fn a_keeper_restarted_from_its_record_never_signs_at_or_below_its_last() {
     assert_eq!(late.admit(a, ring), Ok(Admitted::Extended(2)));
 }
 
-/// A STRICT MAJORITY OF THE KEEPER SET (the coordinator, 2026-10-09): with
+/// A STRICT MAJORITY OF THE KEEPER SET (ruled 2026-10-09): with
 /// four keepers a point needs three — its own keeper and two others citing
 /// it. One citer, enough at three keepers, finalises nothing at four.
 #[test]

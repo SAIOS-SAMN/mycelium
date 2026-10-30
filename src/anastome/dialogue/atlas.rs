@@ -1,5 +1,5 @@
 // 78.154 — THE MAP AND THE LEDGER on the court (MU-ECONOMY §7.1, the
-// operator's and the coordinator's rulings 2026-10-09; 78.156): a universe's
+// rulings of 2026-10-09; 78.156): a universe's
 // LEDGER chain — its committed cycle `u` paired with the mesh's final point —
 // and its MAP — its mouths and segments placed in its own space, each at the
 // final point it was mapped at — posted by its DOMAIN RESERVE as sub-kinds of

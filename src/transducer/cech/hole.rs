@@ -16,7 +16,7 @@
 //!             thaw     ───►  the frozen class re-sealed        here
 //! ```
 //!
-//! HEAT AND COLD, THE THROAT'S TWO FACES (the operator's rulings,
+//! HEAT AND COLD, THE THROAT'S TWO FACES (ruled
 //! 2026-10-21): drain is heat, the continuum; condense is cold, the vacuum.
 //! Where a vertex's word has left, its boundary drains with it and the hole
 //! is cauterized — the class burned, its scar counted. Where the read-back
@@ -29,7 +29,7 @@
 //! has left — the hole is closed by heat, unpinning its boundary, its scar
 //! recorded; never left standing as a wound that pins for ever.
 //!
-//! THE CROSS (the operator's ruling, 2026-10-20): no descend without its
+//! THE CROSS (ruled 2026-10-20): no descend without its
 //! dipole ascend, its antipoles condense and drain, and the puncture. A
 //! descend opens the boundary cycle THROUGH a puncture — the class kept in
 //! the complex as a hole the boundary winds about, the chamber's content
@@ -406,9 +406,9 @@ impl Complex {
     }
 
     /// `freeze` — THE SEAL BY COLD, the vacuum's face of the throat
-    /// (the operator's rulings, 2026-10-21: heat belongs to the continuum and
-    /// its inverse is the vacuum's cold; "the vacuum hold the frozen
-    /// class"). Where a hole's class cannot be read back while its vertices
+    /// (ruled 2026-10-21: heat belongs to the continuum and
+    /// its inverse is the vacuum's cold; the vacuum holds the frozen
+    /// class). Where a hole's class cannot be read back while its vertices
     /// still stand — its boundary condensed, no longer closing as one — the
     /// class is FROZEN IN PLACE: the hole leaves its vertices' stars,
     /// unpinning its boundary, and the vacuum holds the class whole at its
@@ -451,7 +451,7 @@ impl Complex {
         Some(held)
     }
 
-    /// FROM COLD TO HEAT (the auditor's ruling, 2026-10-21): a frozen class
+    /// FROM COLD TO HEAT (ruled 2026-10-21): a frozen class
     /// one of whose vertices is shed can no longer thaw, so it is
     /// cauterized — the class burned, booked as a cauterization, its scar
     /// counted — and the vacuum lets it go. The vacuum is thereby bounded by

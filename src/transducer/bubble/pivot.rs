@@ -264,8 +264,8 @@ impl Contemplation {
     /// `seal` — the class the throat kept returns to a chamber over the
     /// standing boundary. Where the boundary no longer closes while its
     /// vertices stand, the class cannot be read back and is SEALED BY COLD
-    /// (the operator's rulings, 2026-10-21: the vacuum's face of the throat,
-    /// "the vacuum hold the frozen class"): frozen in place, the hole closed
+    /// (ruled 2026-10-21: the vacuum's face of the throat;
+    /// the vacuum holds the frozen class): frozen in place, the hole closed
     /// and its boundary unpinned, never left as a wound that pins for ever.
     /// At a class the vacuum holds, ascend is the THAW: the chamber returns
     /// where its boundary closes again. (Where a vertex's word has left, the

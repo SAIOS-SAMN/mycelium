@@ -54,7 +54,7 @@ pub(crate) fn rebuild_own_cover(read: &Published, mesh: &Mesh) -> [u64; 4] {
 /// 10,855 axes and an 86,926-byte prefix, the section's two-byte length
 /// wrapped, and every peer refused every digest of this hypha whole, so no
 /// origin was ever adopted and no receipt ever admitted (Stage 11 I33,
-/// read on the fleet of 2026-09-08).
+/// observed on the development deployment, 2026-09-08).
 ///
 /// `None` when this hypha has adopted no origin or holds no receipt yet: it
 /// has no causal position to sign from, and an act it cannot sign is one it
@@ -149,7 +149,7 @@ pub(crate) fn sign_cover_digest(kernel: &Mutex<Kernel>, shelf: &crate::published
 /// caller `continue`d on `false` and the exchange tally was never touched,
 /// so three courts read `court receipts … all zeros` while every digest
 /// was being dropped, and nothing in the journal could tell a refusal
-/// from a path that never ran. Measured on the fleet, epoch 10: 480 asks
+/// from a path that never ran. Measured on the development deployment, epoch 10: 480 asks
 /// across three hyphae, zero receipts admitted, and no line saying why.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum NoDigest {

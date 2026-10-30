@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# RECUT — 45.5's provisioning, run by the operator, owned by the repository.
+# RECUT — 45.5's provisioning, run by hand, owned by the repository.
 #
 # H_genesis is written ONCE by the first hypha started on a fresh state and
 # provisioned to every other node the way the bootstrap peer list is. That
@@ -11,7 +11,7 @@
 # Usage: scripts/recut [HOME_ROOT]        (default <repository>/var)
 #
 # The fleet's homes live under the repository, `var/<unit>` (2026-09-09:
-# moved out of the operator's home directory); keys, mesh records and corpus
+# moved out of a user's home directory); keys, mesh records and corpus
 # manifests are configuration and stay, everything else is state and goes.
 #
 # Order matters. Voices go down first so nothing speaks into a mesh that is
@@ -32,7 +32,7 @@ BIN="$REPO/target/release/mycelium-server"
 say() { printf '  recut: %s\n' "$*"; }
 
 # WHAT IS ABOUT TO BE WIPED, READ FIRST. A recut deletes every court's
-# history; the operator is entitled to see what each home holds and what
+# history; whoever runs it is entitled to see what each home holds and what
 # this build would do with it before the deletion, not after. `--check`
 # starts nothing and changes nothing it reports on. Exit 3 from it is "this
 # home will not boot on this build", which is the ordinary reading after a
@@ -115,7 +115,7 @@ else
 fi
 
 if [ "${PAUSE_BEFORE_START:-0}" = "1" ] || [ "${NO_START:-0}" = "1" ]; then
-  say "paused before starting fleet on operator directive"
+  say "paused before starting the mesh (PAUSE_BEFORE_START / NO_START set)"
   exit 0
 fi
 

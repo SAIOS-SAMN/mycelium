@@ -105,7 +105,7 @@ pub struct Contemplation {
     /// it cites (rule 1, rule 17).
     ///
     /// MU-CLIENT §4.13 — KEYED BY THE CITED ADDRESS'S 32-BYTE HASH
-    /// (`cited_at`), the operator's ruling (2026-10-16): a hash compacts
+    /// (`cited_at`), ruled 2026-10-16: a hash compacts
     /// coordinates where nothing is lost. Every reader comes with the
     /// address in hand and hashes it; the address itself stands on the
     /// citing bubble's `glues`, never copied a second time here. A cited

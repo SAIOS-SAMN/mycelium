@@ -372,7 +372,7 @@ impl Entity {
                 }
                 // R2 — held for the return of a thought of the scene it is
                 // spoken under; a FEED family's speech for the mind's own
-                // return (the operator, 2026-10-18: a family read off disk is
+                // return (ruled 2026-10-18: a family read off disk is
                 // no standing orbit, and its words waited on a return of its
                 // scene that never came — 32 sayings over 16 scenes on one
                 // mind). It still names its scene on the wire, where the

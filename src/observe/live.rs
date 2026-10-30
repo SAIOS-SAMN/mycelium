@@ -1,6 +1,6 @@
-// MU-CLIENT §4.4, §4.12, §7.2 — THE MIND SEEN AS IT STANDS (the operator
-// 2026-10-15: "build the observer into the mind so we can have an API to
-// read the live state and call functions : we can remove this later").
+// MU-CLIENT §4.4, §4.12, §7.2 — THE MIND SEEN AS IT STANDS (ruled
+// 2026-10-15: the observer is built into the mind as an API that reads the
+// live state and calls functions; it is removable later).
 //
 //! TWO THINGS, both served on the mind's post by the conversation's carrier,
 //! never by the winding carrier, so a mind held inside one law is still

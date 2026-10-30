@@ -529,7 +529,7 @@ impl Kernel {
                 // last close — never a hardware constant. The court never
                 // regenerated but on hearing a sentence, so its reserve
                 // settled near the floor and refused 95–99% of its syllabus
-                // pages on the fleet (epoch 106). A bond total that does not
+                // pages on the development deployment (epoch 106). A bond total that does not
                 // add up is unmeasured (STD1): the capacity is the verified
                 // work alone.
                 #[expect(

@@ -1,6 +1,6 @@
 // 78.127 — 2(e) μ CONVERSION on the court: a domain's RESERVE tier, and game
 // value exchanged against μ already credited to it — never minted by a rate
-// (the coordinator's rulings 2026-10-07).
+// (ruled 2026-10-07).
 //
 //! μ exists only as the hypha makes it, and moves only key to key, Σ = 0
 //! (`Treasury::pay`, `hold`, `release_held`, `refund_held`). A domain's
@@ -320,15 +320,15 @@ impl Kernel {
     /// WHETHER A KEY IS AN INNER SEAT OF ITS DOMAIN: a tier the domain itself
     /// registered that is not its sitting reserve — the ancients' house.
     ///
-    /// A READING, NEVER A GATE (the operator, 2026-10-14: "he who holds the
-    /// keys may solve"). The court authenticates a KEY, and whoever holds it
+    /// A READING, NEVER A GATE (ruled 2026-10-14: any holder of a key may
+    /// solve). The court authenticates a KEY, and whoever holds it
     /// is served and paid: keeping the house's key is the ancients' charge,
     /// and a tier reaching the hypha directly is the game kernel's to answer,
     /// with game-kernel repercussions. The court cannot know a tier — only
     /// what a domain declared of its own keys — so a refusal here bound only
     /// the kernels that would have relayed anyway. What it does is DETECT:
     /// the door counts the solves an inner seat signed, so a kernel, or a
-    /// stipulation the operator may later rule, has the reading to act on.
+    /// stipulation ruled later, has the reading to act on.
     pub fn inner_seat(&self, signer: &[u8; 32]) -> bool {
         self.tier_domain.get(signer).is_some_and(|d| self.reserve_of(d) != Some(*signer))
     }
@@ -505,8 +505,8 @@ impl Kernel {
         tier.is_some_and(|t| self.bond_of(&t).iter().any(|m| *m > 0))
     }
 
-    /// 78.129 — A TIER'S BOND POSTED OR WITHDRAWN (the coordinator's
-    /// ruling): signed by its domain's RESERVE, for a tier its genesis names.
+    /// 78.129 — A TIER'S BOND POSTED OR WITHDRAWN (as
+    /// ruled): signed by its domain's RESERVE, for a tier its genesis names.
     /// Posted, the reserve escrows `mu` more in the tier's name (a top-up of
     /// what it holds; a bond an earlier reserve posted returns to it, and the
     /// new reserve backs the whole). Withdrawn, it returns to the reserve —

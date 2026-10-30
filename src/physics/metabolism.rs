@@ -48,7 +48,7 @@ pub struct Metabolism {
     /// back (dimension 2, its scar recorded on the complex).
     pub cauterized: u64,
     /// ENTROPY at dimension 2 — a class a hole kept, killed by its `seal`
-    /// (the cross keeps every class it descends: the operator's ruling,
+    /// (the cross keeps every class it descends: ruled
     /// 2026-10-20).
     pub killed: u64,
     /// SYNTROPY at dimension 2 and above — a cell sealed by ANY fill (78.74,

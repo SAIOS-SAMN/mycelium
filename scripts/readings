@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # READINGS — what the fleet says about itself, taken from the artifacts and
-# not from a model of them. Run by the operator, owned by the repository.
+# not from a model of them. Run by hand, owned by the repository.
 #
 # Usage: scripts/readings [SINCE] [HOME_ROOT]
 #        SINCE defaults to `-5m` (journalctl's form); HOME_ROOT to <repo>/var

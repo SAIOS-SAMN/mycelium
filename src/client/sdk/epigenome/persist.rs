@@ -75,8 +75,8 @@ pub struct GenomeRefused {
 /// language (`Retire`, `Torse`, `Condense`; MU-CLIENT §5.4 S3), naming what
 /// it rewrote by full address — never a word of the language. The mind
 /// proposes rewrites and the court applies them; a rewrite a syllabus page
-/// carries back is no word this mind speaks or reads. Read on the fleet
-/// 2026-10-19 (byte census): 847 rewrites, ~50 KB each (an address of up to
+/// carries back is no word this mind speaks or reads. Observed on the
+/// development deployment, 2026-10-19 (byte census): 847 rewrites, ~50 KB each (an address of up to
 /// 64 KB written twice), were 88% of a 48 MB genome whose language was
 /// 4.9 MB.
 pub(crate) fn is_rewrite_act(e: &Element) -> bool {
@@ -85,11 +85,11 @@ pub(crate) fn is_rewrite_act(e: &Element) -> bool {
 
 /// WHETHER AN ELEMENT IS A RESIDUAL CHAIN: its address leads with the
 /// residual's tag AND it carries a chain — what perception could not say, an
-/// open question and never a word (the operator, 2026-10-18). The tag alone
+/// open question and never a word (ruled 2026-10-18). The tag alone
 /// also opens a rewrite, a letters word and a spatial action with no chain
 /// (`vertex::KIND_*`): those are words of the language, and read as questions
 /// they had no scene to be met at, stood open forever and held the mind in
-/// tension it could never resolve (read on the fleet 2026-10-18 15:34: 146–266
+/// tension it could never resolve (observed on the development deployment, 2026-10-18 15:34: 146–266
 /// open questions, none on the corpus).
 pub(crate) fn is_residual(e: &Element) -> bool {
     !e.sub().is_empty() && matches!(e.address().as_bytes(), [tag, ..] if *tag == crate::transducer::address::TAG_RESIDUAL)
@@ -233,7 +233,7 @@ impl Epigenome {
                 return None;
             }
             // MU-CLIENT §7.1 — A RESIDUAL CHAIN IS AN OPEN QUESTION, NEVER A
-            // WORD (the operator, 2026-10-18): one an older genome file
+            // WORD (ruled 2026-10-18): one an older genome file
             // holds is read whole and handed to the mind's carrier of open
             // questions, never admitted.
             if is_residual(&e) {

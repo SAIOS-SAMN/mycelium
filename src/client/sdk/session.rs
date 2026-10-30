@@ -622,8 +622,7 @@ impl Session {
         let bytes = frame.encode_at(Some(&carried)).ok_or_else(|| {
             io::Error::new(io::ErrorKind::InvalidData, format!("act body {len} bytes is over the wire budget of {} bytes", crate::network::wire::BODY_BUDGET))
         })?;
-        // A SEALING ACT IS NEVER SENT TWICE (78.125, the coordinator's
-        // ruling): a pooled stream is retried on a fresh one only where the
+        // A SEALING ACT IS NEVER SENT TWICE (ruling 78.125): a pooled stream is retried on a fresh one only where the
         // WRITE failed — the court cannot have read the act. Once the act is
         // written, a lost reply is an error to the caller, never a resend:
         // the first may have sealed, and a resend would seal it again.

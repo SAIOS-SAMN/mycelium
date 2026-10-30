@@ -1,4 +1,4 @@
-// 78.155b — THE HYPHA SPONSORS A UNIVERSE'S PACKAGE (the operator,
+// 78.155b — THE HYPHA SPONSORS A UNIVERSE'S PACKAGE (ruled
 // 2026-10-14: genesis stays earned-only; in the development sandbox the
 // hypha's reserve sponsors new universes' founding packages until a market
 // exists where μ is bought, staked and yields).
@@ -16,7 +16,7 @@
 //! FOUNDING GRANT is the physics: a manifest carrying `n` kinds of nuclei is
 //! granted the court's READ PRICE for `n` units of gas on every lane — enough
 //! to stake for its first crossing's coordinates. A GROWTH GRANT is the
-//! mathematics (78.155c, the operator 2026-10-14): the measured discharge of
+//! mathematics (78.155c, ruled 2026-10-14): the measured discharge of
 //! the closures the court judged in that universe since its previous grant
 //! (`closed_since_grant`); none judged, no growth grant. Either is a transfer
 //! from this court to the reserve, sealed as an act citing the manifest by
@@ -195,7 +195,7 @@ impl Kernel {
         }
         let founding = held.is_empty();
         let mu = match founding {
-            // THE FOUNDING GRANT, THE PHYSICS (the operator, 2026-10-14): the
+            // THE FOUNDING GRANT, THE PHYSICS (ruled 2026-10-14): the
             // variety of matter — the read price for one unit of gas per lane
             // per kind of nuclei the manifest counts.
             true => {
@@ -208,7 +208,7 @@ impl Kernel {
                 }
                 mu
             }
-            // 78.155c — A GROWTH GRANT, THE MATHEMATICS (the operator,
+            // 78.155c — A GROWTH GRANT, THE MATHEMATICS (ruled
             // 2026-10-14): the measured discharge of the closures the court
             // judged in this universe since its previous grant — the
             // endowment grows only as its minds develop traversable

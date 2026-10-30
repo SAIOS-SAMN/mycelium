@@ -10,7 +10,7 @@
 //! THE TRACE REACHED ONLY EXTRACTION, which is why the `1019…` stall had
 //! no instrument: a family is extracted, and then it is SPOKEN, MINTED and
 //! HELD, and those three readers wrote no line. Extended to them at the
-//! coordinator's ruling of 2026-09-19. Each is a reader under rule 17 and
+//! ruling of 2026-09-19. Each is a reader under rule 17 and
 //! each is now asked the same two questions as the seven moves — what
 //! coordinate did you write, and what did it cost.
 //!

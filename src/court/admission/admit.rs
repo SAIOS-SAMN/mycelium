@@ -37,7 +37,7 @@ pub enum Admitted {
     /// THE MESH IS A POSET, NOT A LOG. This arm was `Refused(REFUSE_
     /// RECEIPT)`, and `admit_backfill` broke on it, so a back-fill that
     /// paged one signer's linear chain died the moment that chain cited a
-    /// third party. Measured on the fleet at epoch 10: `court receipt
+    /// third party. Measured on the development deployment at epoch 10: `court receipt
     /// backfill ce02… 940..940 admitted 0`, fifty-two times, forever — the
     /// gap could not close by construction, so no peer receipt was ever
     /// admitted as a parent and no docket entry could reach a witness.

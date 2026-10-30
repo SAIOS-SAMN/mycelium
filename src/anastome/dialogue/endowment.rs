@@ -1,5 +1,5 @@
-// 78.155b — A UNIVERSE'S PACKAGE, AND THE GRANT THAT SPONSORS IT (the
-// operator, 2026-10-14: genesis stays earned-only; in the development sandbox
+// 78.155b — A UNIVERSE'S PACKAGE, AND THE GRANT THAT SPONSORS IT (ruled
+// 2026-10-14: genesis stays earned-only; in the development sandbox
 // the hypha sponsors new universes' founding packages until a market exists
 // where μ is bought, staked and yields). Two sub-kinds of ACT_DOMAIN.
 //

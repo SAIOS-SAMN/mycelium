@@ -1,5 +1,5 @@
-// 78.83 — TIME'S OWN CONGRUENCE (HR5, the operator's word: "time needs its own
-// congruence for hyperfluidity: because its axes act one at a time"). HR3
+// 78.83 — TIME'S OWN CONGRUENCE (HR5: time needs its own congruence for
+// hyperfluidity, because its axes act one at a time). HR3
 // froze time: two sites' transports closed a loop only where they were EQUAL,
 // so the same flow observed at two times — a ray of three and a ray of five
 // out of the same kind of source — read as two motions. A pair is a sample of

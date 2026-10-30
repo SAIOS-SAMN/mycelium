@@ -35,7 +35,7 @@ where
 /// frame is, and whether a chain could be paged AT ALL depended on what
 /// else the machine was doing.
 ///
-/// Measured on the fleet at epoch 11: hypha a holds every receipt from 0
+/// Measured on the development deployment at epoch 11: hypha a holds every receipt from 0
 /// to 2000 and could serve none of `1111..1112` — two receipts of ~5.5 KiB
 /// against a 4 KiB frame — so the back-fill stopped there and could never
 /// pass it. Receipts on either side, 1.9 KiB, served fine.

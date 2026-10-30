@@ -315,7 +315,7 @@ impl Keepers {
     /// reading under a parent chain it heads is held with it. `None` where no
     /// other keeper cites the keeper.
     ///
-    /// A STRICT MAJORITY OF THE KEEPER SET (the coordinator, 2026-10-09): 2 of
+    /// A STRICT MAJORITY OF THE KEEPER SET (ruled 2026-10-09): 2 of
     /// 3, 3 of 4, 3 of 5 — the keeper itself and enough others vouching for
     /// the tick. Two of four could finalise two conflicting points (a, b one
     /// way, c, d the other); a majority cannot. One keeper alone finalises

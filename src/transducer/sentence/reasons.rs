@@ -1,6 +1,6 @@
-// 78.92 — SPEECH THAT CARRIES ITS REASONS (the operator's word, 2026-10-04:
-// "what puts the development ahead … with humanizing the cognition and
-// optimizing for alignment" — "go").
+// 78.92 — SPEECH THAT CARRIES ITS REASONS (ruled 2026-10-04:
+// speech carries its reasons, so the cognition stays legible and its
+// alignment can be read).
 //
 //! A sentence already IS its reasons: its address is its form (law 2) and its
 //! receipts envelope carries the evidence the address excludes — the

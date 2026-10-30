@@ -1,5 +1,5 @@
-// 78.93 B1 — ACT_WALLET: every party holds a wallet (the operator, 2026-10-04:
-// "everyone needs accounts/wallets") — entities, kernels and humans alike,
+// 78.93 B1 — ACT_WALLET: every party holds a wallet (ruled 2026-10-04:
+// every party needs an account) — entities, kernels and humans alike,
 // each by its 32-byte key.
 //
 //! A wallet is FLAT by design: per court, a party's balance, bond and holds,

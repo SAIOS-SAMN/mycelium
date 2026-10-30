@@ -1,10 +1,9 @@
 # MU-LEXICON — the shared vocabulary (version 5)
 
-**Status: canonical** (78.122, 2026-10-07). The operator: "we need all of our systems to be aligned, and the
-server to define this terminology so that all future connections can use the same shared terminology: wormholes,
-blackholes, whiteholes, universes, realms, planets, stars." The server (mycelium) defines these terms; every
+**Status: canonical** (78.122, 2026-10-07). Every connected system uses one terminology, defined by the
+server, for wormholes, black holes, white holes, universes, realms, planets and stars. The server (mycelium) defines these terms; every
 kernel that connects — xylarium-kernel, barren-realms, any other — aligns to this file, and their copies point
-here. Drafted by the xylarium coordinator with barren-realms' corrections; subordinate, as every document in this
+here. Drafted by xylarium (the coordinating node) with barren-realms' corrections; subordinate, as every document in this
 tree is, to `MU-RECURSION.md`.
 
 An amendment raises the **version**. The register is served by address beside the law register (78.122: `ACT_LAWS`
@@ -79,7 +78,7 @@ neither renames nor claims them.
 ### 3.1 The fold lanes (version 2, 78.123 B)
 
 A fold's four lanes `S:G:T:H` mean the same in every domain, so folds of two domains can agree (union tiers, μ
-conversion). Agreed with the xylarium coordinator 2026-10-07; netstratum and xylarium already agreed on S and G.
+conversion). Agreed with xylarium (the coordinating node) 2026-10-07; netstratum and xylarium already agreed on S and G.
 
 | Term | Lane | Meaning |
 |---|---|---|

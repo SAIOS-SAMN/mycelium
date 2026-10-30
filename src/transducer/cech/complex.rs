@@ -72,15 +72,15 @@ pub struct Complex {
     /// that bore them, the class itself handed to the caller that burned it,
     /// never held here, so the record keeps its bound. Volatile.
     pub(crate) scars: u64,
-    /// THE VACUUM: holes SEALED BY COLD (the operator's ruling, 2026-10-21:
-    /// "the vacuum hold the frozen class") — a class whose read-back could
+    /// THE VACUUM: holes SEALED BY COLD (ruled 2026-10-21:
+    /// the vacuum holds the frozen class) — a class whose read-back could
     /// not be made while its vertices stood, frozen in place at its
     /// coordinate, whole: no longer a hole (it pins nothing), never burned,
     /// and thawed back into a chamber where a meet over the same vertices
     /// finds its boundary closing again. The continuum's seal (`cauterize`)
     /// burns and keeps a count; the vacuum holds what the continuum may not,
     /// so this carrier is not bounded by a count: it is BOUNDED BY THE FIELD
-    /// (the auditor's ruling, 2026-10-21) — a frozen class stands only while
+    /// (ruled 2026-10-21) — a frozen class stands only while
     /// every vertex it names stands, and passes from cold to heat
     /// (`cauterize_frozen`) the moment one is shed. Volatile.
     pub(crate) frozen: Keyed<Simplex>,

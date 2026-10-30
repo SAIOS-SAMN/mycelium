@@ -82,7 +82,7 @@ pub fn versor_of_reflections(vs: &[Mv]) -> Option<Mv> {
 }
 
 /// FINITE EVOLUTION OF A GENERATOR, EXACTLY OVER ℚ — the rational Cayley
-/// transform (54.7 R3, on the operator's ruling).
+/// transform (54.7 R3, as ruled).
 ///
 /// ```text
 ///     Ω = (1 − B)(1 + B)⁻¹  ∈  Spin⁺(3,1)(ℚ)

@@ -100,7 +100,7 @@ impl Remaining {
     }
 }
 
-/// WHAT REMAINS, READ IN ANY OBSERVER'S FRAME (the operator, 2026-10-21:
+/// WHAT REMAINS, READ IN ANY OBSERVER'S FRAME (ruled 2026-10-21:
 /// forms read in frames that bend, twist, stretch, expand and contract —
 /// never on a grid): its reading is the one-axis point it is, carried
 /// exactly by the frame form.

@@ -1,5 +1,5 @@
-// A COURT'S ACTS, READ (2026-09-29, the operator's word: diagnostics beyond
-// grep into the observer, for the servers).
+// A COURT'S ACTS, READ (ruled 2026-09-29: the servers' diagnostics are
+// carried into the observer rather than read by grep).
 //
 //! [`Acts`] — ONE COURT, a fixed table of named counters grouped by what it
 //! does, so the console reads one name table (law 12) and nothing is scraped
@@ -107,8 +107,8 @@ pub const PAYS: [&str; 7] = [
 /// replay that discharged nothing) and UNREAD (a stroke that ran out before
 /// the replay ruled) — and the door's refusals before any judging: unsigned,
 /// no such task, no rule carried; and, BESIDE them and refusing nothing, the
-/// solves an inner seat of a founded domain signed and was served (the
-/// operator, 2026-10-14: the court authenticates keys, never tiers).
+/// solves an inner seat of a founded domain signed and was served (ruled
+/// 2026-10-14: the court authenticates keys, never tiers).
 /// Named through [`Judged`], so no verdict has a name the table lacks.
 pub const JUDGED: [&str; 16] = [
     "first closures",
@@ -231,7 +231,7 @@ pub struct Acts {
     /// 78.55 — of the colour words it heard, those admitted by derivation
     /// from its ruled colour words rather than by a scene's evidence.
     pub colours_derived: u64,
-    /// THE WORDS THE RESERVE KEEPS FROM BEING TAUGHT (the operator,
+    /// THE WORDS THE RESERVE KEEPS FROM BEING TAUGHT (ruled
     /// 2026-09-30): each installed word a syllabus page deferred, what it
     /// is, what it costs, where the reserve fell short, and how often it was
     /// tried. "Deferred: reserve" counts attempts; a

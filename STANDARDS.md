@@ -145,7 +145,7 @@ carries the disclaimer.
 
 **No personal signatures on unreviewed content.** AI-generated
 documents must not include personal attribution blocks
-(name, title, date, signature) unless the operator has
+(name, title, date, signature) unless the maintainer has
 reviewed and GPG-signed the specific content. The disclaimer
 IS the attribution — it states what the content is and how
 it was produced.
@@ -203,10 +203,10 @@ directory structure outside the current repo.
 
 ## 9. Review Protocol
 
-All content is AI-generated until GPG-signed by the operator.
+All content is AI-generated until GPG-signed by the maintainer.
 The AI-GENERATED disclaimer communicates this to every reader.
-GPG signing is the operator's statement: "I have reviewed this
-and approve it."
+GPG signing is the maintainer's statement that the content has
+been reviewed and approved.
 
 Until signed:
 - The content represents AI output under human direction

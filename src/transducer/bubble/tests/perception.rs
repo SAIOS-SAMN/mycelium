@@ -468,8 +468,8 @@ fn a_slides_thought_escapes_and_is_filed_for_the_drive() {
     assert!(c.take_demands().is_empty(), "handed out once");
 
     // MU-CLIENT §7.1 R2 — THE SCENE OUTLIVES THE THOUGHT THAT PERCEIVED IT:
-    // the perceiving thoughts lapse before the taker runs (read on the fleet
-    // 2026-10-16 08:26: thoughts 0, the speech held for 18 scenes never left),
+    // the perceiving thoughts lapse before the taker runs (observed on the development
+    // deployment, 2026-10-16 08:26: thoughts 0, the speech held for 18 scenes never left),
     // and the demand still carries the scene its motion was perceived in.
     let mut c = Contemplation::new();
     hour(&mut c, &[&LA[..], &LB[..]].concat());

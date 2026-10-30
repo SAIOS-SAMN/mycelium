@@ -1,5 +1,5 @@
 // 78.74 — THE FIBRE AS A CAPACITOR, AND TORSION, WHICH DOES NO WORK (ruled
-// 2026-10-02, the operator's word: "record 78.74 and build it").
+// 2026-10-02; recorded as 78.74 and built).
 //
 //! A FIBRE joins two pivots `Pᵢ`, `Pⱼ` (conformal points, exact) carrying
 //! masses `mᵢ`, `mⱼ`. Nothing about its shape is declared; everything is

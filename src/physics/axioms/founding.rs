@@ -64,7 +64,7 @@ pub const OPEN_PHYSICS: [(&str, &str); 2] = [
     (
         "CHALLENGE_WINDOW = 1024",
         "law parameter of version 4, shared by every kernel of a network universe (78.125); its derivation — the heights a fold's \
-         challenge needs to reach every keeper and return — is a law amendment, read with the coordinator",
+         challenge needs to reach every keeper and return — is a law amendment, agreed under the Concordance",
     ),
     (
         "THROAT_GRID = 64",

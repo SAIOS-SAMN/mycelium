@@ -570,7 +570,7 @@ fn a_minds_reading_and_a_courts_agreements_read_back_exact() {
     assert!(named.contains("perspectives: undetermined") && named.ends_with("stopped: sent"), "{named}");
 }
 
-/// THE OBSERVER'S CALL (the operator 2026-10-15): a call travels whole, is
+/// THE OBSERVER'S CALL (ruled 2026-10-15): a call travels whole, is
 /// left for the winding carrier, and is answered at the next law boundary
 /// the carrier passes — the asker reads the carrier's standing beside the
 /// answer; its lines travel whole, and lines past the frame are said by
@@ -630,7 +630,7 @@ fn a_call_waits_while_the_carrier_works_inside_one_law() {
     assert!(out.iter().any(|l| l.starts_with(line) && l.contains("answered at boundary")), "answered fresh at the next boundary: {out:?}");
 }
 
-/// THE AUDITOR'S DISPATCH OBSERVATION (2026-10-22): a task that leaves a
+/// THE DISPATCH OBSERVATION (2026-10-22): a task that leaves a
 /// court stands under its whole citation with the voice it last went to and
 /// the court's height then; dispatched again it is counted, the later voice
 /// and height standing; and the reading travels whole.

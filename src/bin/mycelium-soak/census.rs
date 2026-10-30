@@ -8,8 +8,8 @@
 //! Three readings, each a yes or a no on exact integers, taken on the task
 //! files the journal's family ids map to through `registry::task_id`.
 //!
-//! THIS READS THE CORPUS AND CLAIMS NOTHING ABOUT THE FLEET. The operator's
-//! ruling stands: this binary does not reflect the live feed and no fleet
+//! THIS READS THE CORPUS AND CLAIMS NOTHING ABOUT THE FLEET. As
+//! ruled, this binary does not reflect the live feed and no fleet
 //! number may be taken from it. Every number below is a property of the
 //! ARC files on disk, which is why this instrument could be built while the
 //! fleet was cut and soaking — it depends on no reading of it.

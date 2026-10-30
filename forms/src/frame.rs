@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! THE FRAME AS A FORM (the operator, 2026-10-21: "fix the grid and upgrade
-//! to forms: forms bend, twist, stretch, expand, and contract"; both readings
+//! THE FRAME AS A FORM (ruled 2026-10-21: the grid is fixed and upgraded
+//! to forms, which bend, twist, stretch, expand and contract; both readings
 //! ruled — frame maps are conformal forms, and every law form is read under
 //! them). SELECTED BY EVERY UNIVERSE, so it stands at the core (2026-10-21):
 //! xylarium whole (its 11.0 (27)(Re6), the turn in degrees its 11.4b);
@@ -69,7 +69,7 @@ pub enum Refused {
     /// A turn's plane names an axis the reading does not have, or one axis
     /// twice.
     NoPlane,
-    /// A twist whose mirror is not an axis's (the auditor's ruling,
+    /// A twist whose mirror is not an axis's (ruled
     /// 2026-10-21): spatial frames turn and mirror only by the square's
     /// symmetries, quarter turns and axial reflections; a mirror at another
     /// slope would turn by a rational-cosine angle and shatter the lattice.
@@ -307,7 +307,7 @@ mod tests {
     /// TWO TWISTS ARE A TURN: reflections in the two axes' mirrors turn the
     /// plane by 180°, so a point goes to its antipode — exactly the turn of
     /// 180°; a twist keeps every distance from the origin. A mirror at any
-    /// other slope is refused by name (the auditor's ruling, 2026-10-21):
+    /// other slope is refused by name (ruled 2026-10-21):
     /// spatial frames are the square's symmetries.
     #[test]
     fn two_twists_are_a_turn() {

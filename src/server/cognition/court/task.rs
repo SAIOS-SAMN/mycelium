@@ -20,9 +20,8 @@ pub enum SolveVerdict {
     Unverifiable,
     /// Replayed clean but DISCHARGED NOTHING on the withheld pairs: no work,
     /// so no closure. Nothing is released, minted, docketed or offered, and
-    /// the task's first closure is not spent (the operator, 2026-10-08:
-    /// "we shouldn't be giving away mu incorrectly for the possibility of
-    /// falsification").
+    /// the task's first closure is not spent (ruled 2026-10-08: μ is never
+    /// paid out for the bare possibility of falsification).
     NoWork,
     /// 78.153 — NOT JUDGED YET: the act's one stroke ran out before the
     /// replay ruled. Nothing is refused, released or paid; where the replay
@@ -79,7 +78,7 @@ impl Kernel {
             // its rule and the withheld pairs it was given, never by a task's
             // binding. Dropping them all on each task listed restarted every
             // resumed solve from nothing, and the court answered UNREAD for
-            // ever: 30 of 36 solve verdicts on the fleet (2026-10-10).
+            // ever: 30 of 36 solve verdicts on the development deployment (2026-10-10).
             if self.task_family.get(task.as_ref()) != Some(&train) {
                 let mut tail = Vec::new();
                 crate::transducer::address::put_key_bytes(&mut tail, task.as_ref());

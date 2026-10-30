@@ -62,7 +62,7 @@ impl Kernel {
     /// boot REFUSES on it (X8): a `false` here is a whole court's memory —
     /// its basis, its chain, its treasury — and continuing without it
     /// means the next persist writes an empty court over the ledger that
-    /// would not read. Measured on the fleet at fc75a59: hypha b's 16 MB
+    /// would not read. Measured on the development deployment at fc75a59: hypha b's 16 MB
     /// ledger restored as nothing, ran two epochs reporting `basis=0 K=0`,
     /// and was overwritten, because the only line here was the one printed
     /// when it SUCCEEDED and the only branch taken was the one that

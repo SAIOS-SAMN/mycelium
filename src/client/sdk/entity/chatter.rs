@@ -303,7 +303,7 @@ fn offered(e: &Element) -> Vec<Spoken> {
 /// asked. `None` for a frame that is no question, which is conversation.
 fn observed(voice: &[u8; 32], q: &[u8]) -> Option<Vec<u8>> {
     use crate::observe::{self, ObserveAct, Reading, Source};
-    // A CALL (the operator 2026-10-15): answered by the mind out of what it
+    // A CALL (ruled 2026-10-15): answered by the mind out of what it
     // holds, where its winding carrier stands (`observe::live`).
     if let Some(line) = observe::live::decode_call(q) {
         let budget = crate::network::wire::frame_budget().checked_sub(64)?;
@@ -1168,7 +1168,7 @@ impl Carrier {
                     a.insert(&said, ());
                 }
                 // COURTS ADJUDICATE WORDS, NEVER SENTENCES (MU-CLIENT §5.4,
-                // the operator 2026-10-13): a sentence is a composition of the
+                // ruled 2026-10-13): a sentence is a composition of the
                 // dictionary's words, shared here between two minds; what
                 // reaches the court as agreed language is a word — an
                 // algorithm composing to its result — each by its own union.

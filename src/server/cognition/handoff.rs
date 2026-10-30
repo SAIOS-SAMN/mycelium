@@ -1,6 +1,6 @@
 // 78.126 — 2(b) MATTER HANDOFFS on the court: an offer held in flight, its
-// answer, and each side consumed by exactly one fold (the coordinator's
-// rulings 2026-10-07).
+// answer, and each side consumed by exactly one fold (ruled
+// 2026-10-07).
 //
 //! The court holds an offer whole — its nets are what a consuming fold's
 //! continuity and a replay read — from its seal until both sides are
@@ -384,7 +384,7 @@ impl Kernel {
                 }
                 // 78.128 — DOMAINS SHARE NO SPACE: nothing crosses between
                 // them but through an OPEN mouth pair joining these two, in
-                // either direction (the coordinator's ruling: physics, not
+                // either direction (ruled: physics, not
                 // policy) — unless the two are declared contiguous (a later
                 // act; none is).
                 match &h.handoff {
@@ -397,7 +397,7 @@ impl Kernel {
                     _ => return refuse(R::NoMouth),
                 }
                 if let Some(held) = self.handoffs.held.get(&id) {
-                    // A RESEND (the coordinator's ruling): the same offer —
+                    // A RESEND (as ruled): the same offer —
                     // its id is its content — answered with its original
                     // receipt and its state now; nothing sealed twice.
                     let original = self.handoffs.offered_at.get(&id).and_then(|k| Stamp::from_key(k)).and_then(|at| Some((at, self.chain.node(&at)?)));

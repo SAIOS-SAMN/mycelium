@@ -7,7 +7,7 @@
 //! refuses beyond small `k`. The circuit keeps the factors, never the product;
 //! a circuit with no held transition has ONE candidate, read by
 //! [`Refracted::single`]. T5's kernel over `𝔽₂` is the exact reader beyond,
-//! the operator's to order (78.18).
+//! not yet ordered (78.18).
 
 use super::*;
 

@@ -217,7 +217,7 @@ pub struct Release {
     pub pinned: u64,
 }
 
-/// WHAT A `descend` DID — THE CROSS (the operator's ruling, 2026-10-20: no
+/// WHAT A `descend` DID — THE CROSS (ruled 2026-10-20: no
 /// descend without its dipole ascend, its antipoles condense and drain, and
 /// the puncture).
 ///

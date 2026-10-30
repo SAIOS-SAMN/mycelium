@@ -14,8 +14,6 @@ use crate::cognition::{Kernel, SolveVerdict};
 use crate::transducer::element::Element;
 use crate::transducer::family::NoCrystal;
 
-const CORPUS: &str = "/opt/mycelium-v0.1.0/data/arc-agi-2/training";
-
 type Pairs = Vec<(Grid, Grid)>;
 
 fn grids(v: &serde_json::Value) -> Pairs {
@@ -31,7 +29,7 @@ fn grids(v: &serde_json::Value) -> Pairs {
 
 /// The task as written: its train pairs and its test pairs.
 fn task(id: &str) -> (Pairs, Pairs) {
-    let text = std::fs::read_to_string(format!("{CORPUS}/{id}.json")).expect("the corpus holds the task");
+    let text = std::fs::read_to_string(format!("{}/{id}.json", crate::arc::corpus("training"))).expect("the corpus holds the task");
     let v: serde_json::Value = serde_json::from_str(&text).expect("the task parses");
     (grids(&v["train"]), grids(&v["test"]))
 }

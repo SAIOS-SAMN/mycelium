@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # TIMELINE — D1's renderer: what each reader of one voice's stroke cost,
-# in order, from the journal and not from a model of it. Run by the
-# operator, owned by the repository.
+# in order, from the journal and not from a model of it. Run by
+# hand, owned by the repository.
 #
 # Usage: scripts/timeline UNIT [SINCE] [FAMILY]
 #        UNIT    a systemd --user unit (mycelium-client@4) or a file of
@@ -48,7 +48,7 @@ function flush_group(   i, n, worst, wi, held, rn, rat, rheld, rsp, rwr, rc) {
   # CONSECUTIVE RUNS OF ONE READER ARE ONE ROW. A reader entered four
   # thousand times is one move of the stroke, and printing it four thousand
   # times is a render that has to be grepped — which is the thing this
-  # script exists so the operator does not have to do. Order is kept: only
+  # script exists so a reader does not have to do. Order is kept: only
   # ADJACENT repeats collapse, so a reader entered, left, and entered again
   # is two rows and the shape of the stroke survives.
   n = 0

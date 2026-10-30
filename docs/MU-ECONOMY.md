@@ -6,7 +6,7 @@ voices, transfer, genesis, and the audit invariant are specified here and
 not yet landed. Companion documents: `MU-PRODUCT.md`, `MU-ENGINEERING.md`,
 `XSEPTUM.md`.
 
-## 0. The proofs of work, named apart (ruled 2026-09-24, the operator's word)
+## 0. The proofs of work, named apart (ruled 2026-09-24)
 
 POW++ is a FAMILY of proofs, each a distinct act with its own payment on
 the ledger, and no two share a name (MU-RECURSION 78.33):
@@ -24,11 +24,10 @@ and never one payment.
 
 ## 1. The unit
 
-**THE INVERSE-SISYPHUS PROTOCOL (the operator, 2026-10-11): nothing is
-squared.** "You're collapsing dimensionality and real math into scalars or
-lossy signals"; "are you trying to fit a square in a circle or morphing the
-circle to be a square?"; "this is the inverse-sisyphus protocol, you dont
-square anything." μ is not four counts. μ is the exact MODES the verified
+**THE INVERSE-SISYPHUS PROTOCOL (ruled 2026-10-11): nothing is
+squared.** No reading collapses dimensionality or exact mathematics into a
+scalar or a lossy signal, and no curved object is forced into a flat one
+or a flat one imposed on it. μ is not four counts. μ is the exact MODES the verified
 work moved, each on the lane its kind names, each with an exact rational
 amount: on S a boost or dilation (its generator's ray and its point and
 side, c and λ); on G a hue cycle or move; on T a null flux (its ray and its
@@ -99,7 +98,7 @@ H, a re-anchoring on S, an opened axis on H, a translation on G each mint
 the lane vector read on the carriers before and after, and each is refused
 when that vector is zero on every lane.
 
-**μ is discharge (ruled 2026-10-08, the operator; `MU-RECURSION.md`
+**μ is discharge (ruled 2026-10-08; `MU-RECURSION.md`
 78.149).** What a word can be escrowed or paid is its DISCHARGE — the lanes
 it closed, measured by replay on the family it is bound to — and nothing
 else. (a) The span a word stood (`t_extent`) is not μ: waiting is not work,
@@ -268,7 +267,7 @@ by the escrow, and pays it, discharging the escrow (§3.1) — the escrow was
 the claim, the mint is the payment, and nothing above the discharge is
 minted. Hyphae are paid the pool share priced into every listing they home.
 
-**No T-accrual (ruled 2026-10-08, the operator; 78.149 (a)).** This section
+**No T-accrual (ruled 2026-10-08; 78.149 (a)).** This section
 paid a hypha accrual on the temporal lane of demands it kept open, capped
 by the listing's magnitude. Waiting is not work: the span a demand stood is
 not μ, it is never minted, and nothing accrues for standing. The standing
@@ -337,7 +336,7 @@ entries above. The two meet at stake: bonding μ raises the room a client
 can work within, so a client that earns can breathe faster and a client
 that spends without earning runs down to the dwell. μ ON THE HYPHA — a
 balance, a stake, an escrow held by a court — never decays and never
-regenerates (the operator, 2026-10-09, amending "μ never decays" to the
+regenerates (ruled 2026-10-09, amending "μ never decays" to the
 hypha only). μ stored IN A UNIVERSE — a kernel's vaults and currency
 backing — decays at a very slow rate, as matter dissipates without
 recycling: DEMURRAGE, applied by each kernel at its own physics' rate, and
@@ -359,7 +358,7 @@ on the stake at the court's read price (emergent, never a published
 rate), and an unstake releases only after every claim drawn on it settles.
 A progenitor's in-universe wormhole haul pays the same gas.
 
-TWO CHARGES, NEVER MERGED (the operator, 2026-10-09; Concordance 5.8). The
+TWO CHARGES, NEVER MERGED (ruled 2026-10-09; Concordance 5.8). The
 MAP FEE is μ, the coordinates' gas, paid to the courts that keep the map
 (this section). The ROAD TOLL (Concordance 5.4) is paid to a tube's keeper
 and its progenitor builders, in the civilization's OWN money, booked
@@ -368,7 +367,7 @@ Progenitors hold their toll shares as their own, and gain μ from them and
 from haul contracts with the ancients; local money becomes μ only through an
 ancients' reserve (Concordance 5.3).
 
-EVERY WORMHOLE TRAVERSAL NEEDS COORDINATES FROM THE HYPHA (the operator,
+EVERY WORMHOLE TRAVERSAL NEEDS COORDINATES FROM THE HYPHA (ruled
 2026-10-09, corrected the same day; Concordance 5.9). Time is coordinates
 on a map, and the hypha makes the MAPS that lay the universes out on the
 TUniversal clock. The CROSSING — matter, a ship, a fleet — happens in its
@@ -392,8 +391,8 @@ universe, by its ORIGIN (genesis, epoch) —
   in the court unit (geometrized Mpc) and, for a mouth, its keeper (the
   road toll itself is not kept on the hypha: below);
 - WHO MAPS: the universe's DOMAIN RESERVE posts its mouths and segments as
-  signed MAP acts, and the court seals each at a final point (the
-  coordinator, under Concordance 4.1, 3.2, 7.1). Mapping is the reserve's
+  signed MAP acts, and the court seals each at a final point (ruled
+  under Concordance 4.1, 3.2, 7.1). Mapping is the reserve's
   authorisation: a wormhole is untraversable on the mesh until its reserve
   maps it, and a progenitor's new tube reaches the map only through its
   universe's reserve;
@@ -401,7 +400,7 @@ universe, by its ORIGIN (genesis, epoch) —
   by a later act; a TRAVERSE reads the map at the final point it cites, so
   the coordinates it buys are the ones the quorum agreed at that time.
 
-### 7.2 Dissipation recycles (78.154a, the operator, 2026-10-09)
+### 7.2 Dissipation recycles (78.154a, ruled 2026-10-09)
 
 Nothing lands nowhere (Concordance 1.3): demurrage is not destruction. What a
 universe's stored μ dissipates SPLITS IN TWO, exactly, lane by lane:
@@ -413,7 +412,7 @@ universe's stored μ dissipates SPLITS IN TWO, exactly, lane by lane:
   own physics' rate and declares it on its tier fold (78.119) as a FLOW to
   the hypha — flow kind CONNECTION_TAX, carried on the existing lanes
   S, G, T, H exactly as dissipated (no new lane: a lane names a physical
-  dimension, the tax is a purpose; the coordinator, Concordance 5.8) — paid from its domain reserve (78.127) — a transfer to the
+  dimension, the tax is a purpose; Concordance 5.8) — paid from its domain reserve (78.127) — a transfer to the
   courts, never a mint and never a burn.
 - THE MATTER STAYS IN THE UNIVERSE as INVERSE-μ (μ̄): the dissipated mass,
   with no μ value, held where it dissipated — a vault, a currency's backing,
@@ -431,7 +430,7 @@ cover is minted. Supply then grows only as far as judged work outruns what
 the universes return; the void takes nothing. (Burns that remain: slash and
 retirement, both already acts.)
 
-### 7.3 μ by union (78.161, the operator, 2026-10-10)
+### 7.3 μ by union (78.161, ruled 2026-10-10)
 
 μ is distributed to the minds that AGREED on a language through conversation,
 never by one voice's ratified dominance. Minds say their dialect to each

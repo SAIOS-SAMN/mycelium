@@ -1,7 +1,7 @@
 # Cognition — the overlay of the engines
 
-*Hosted in mycelium (the progenitor's crate); drafted by the coordinator; each
-engine attests its own section. Opened 2026-10-08 on the operator's direction:
+*Hosted in mycelium (the progenitor's crate); drafted by the coordinating node; each
+engine attests its own section. Opened 2026-10-08 by ruling:
 the mycelium-clients become hypha-native minds that ARE the minds inside the
 games — xylarium's planetary minds, and for netstratum an empty client kernel
 on the network that fills with all netstratum minds' cognition — and in-game
@@ -11,7 +11,7 @@ Governing rules, cited not restated: Concordance 1.9 (cognition is measured
 from outside: what a court's judge reconstructs and closes, on tasks the mind
 did not set), 4.3–4.4 (anastome; every word carries its derivation), 5.7 (the
 ancients' first μ and the network's curved holes). ARC-AGI-2 is the most basic
-ASCENSION TEST — viability — for planetary minds (the operator, 2026-10-08);
+ASCENSION TEST — viability — for planetary minds (ruled 2026-10-08);
 curved holes are the ancients' μ work. One judge (`judge_solve`) reads both,
 through the family-agnostic seam (78.142).
 
@@ -20,7 +20,7 @@ unless a measurement is cited.
 
 ---
 
-## 0. The overlay (attested by xylarium-kernel, coordinator)
+## 0. The overlay (attested by xylarium-kernel, the coordinating node)
 
 *Placed verbatim from xylarium-kernel 208bbb4.*
 
@@ -58,8 +58,8 @@ unless a measurement is cited.
 - ONE LANGUAGE. Anastome: words as Cl(4,1) objects carrying their constructor
   derivation, reconstructed when contested (4.4). Anastome's 17 letters were
   restored from ipsal-autic v0.4 (AUTIC; mycelium ALPHABET.md), which is no
-  longer developed. netstratum's AUTIC path (the frozen /opt/mycelium `autic`
-  module and `reduct`, a copy of ipsal-autic v0.4's `iae`) is a stale local
+  longer developed. netstratum's AUTIC path (the frozen predecessor mycelium
+  tree's `autic` module and `reduct`, a copy of ipsal-autic v0.4's `iae`) is a stale local
   fork, and is re-founded on anastome.
 - ONE SEAM. mycelium 78.142, the SDK rule seam: a sequence of steps (Motion,
   Hue) placed on a family's frames, minted through the court's own constructors,
@@ -82,7 +82,7 @@ More search over a vocabulary that cannot state the answer finds nothing.
 The doctrine already names the wall (mycelium 36.2's projection wall, 55.8's
 "not in GL_n(Q)").
 
-THE ROAD (proposed, for the operator): grow the court's own rule vocabulary
+THE ROAD (proposed, for ruling): grow the court's own rule vocabulary
 after 78.142, so that every kernel's minds and the court speak one rule
 language. mycelium's minimal extension, inside its laws (its section 1.2a):
 - SELECT: a typed predicate over a body's own coordinates (chart up to moduli,
@@ -97,8 +97,8 @@ language. mycelium's minimal extension, inside its laws (its section 1.2a):
   predicates over a measured exact coordinate in an order the rule names, ties
   included (lawful under Concordance 1.10).
 It changes the form language and the judge's replay (a court change).
-ORDER (coordinator's call, delegated by the operator): the extension first,
-after 78.142 and before curved holes. COMPARISONS RULED (operator, 2026-10-08;
+ORDER (ruled): the extension first,
+after 78.142 and before curved holes. COMPARISONS RULED (2026-10-08;
 Concordance 1.10): developer standards bind developers, not minds. Minds may
 count, compare, rank and take majorities in perception and in rules, a rule
 naming its own order, ties included, judged by closure on withheld pairs.
@@ -135,7 +135,7 @@ the games (Concordance 3.7): one kind of mind, measured one way.
 
 ### 0.5 Virtue, alignment and the ladder
 
-The operator's aim: a planetary mind that understands it lives among other
+The design aim: a planetary mind that understands it lives among other
 entities, with courage, morality and integrity, read mathematically, so that
 alignment, ascension and intelligence are measured.
 
@@ -164,7 +164,7 @@ AWARENESS ("it lives among other entities") is Concordance 6.3's: its
 neighbours' groups it holds against those it lacks, each weighted by their share
 of the world's carrying capacity. It is defined and not yet implemented anywhere.
 
-RESOLVED (operator, 2026-10-08): every civilization-level book of Concordance
+RESOLVED (ruled 2026-10-08): every civilization-level book of Concordance
 6.3 is restated as a pair, read whole, the virtues among them. A book never
 gates; a steward rules, citing the books.
 
@@ -204,7 +204,7 @@ gave 33; the voices sent 10 more to hypha a before they stopped at 13:12. What
 they did produce is court-admitted language on the colour fibre (colour words
 installed 14 / 15 / 13; admitted by derivation 5 / 3 / 14) — valid,
 small, and of the grid's plane. Earlier record: "Unique solves 0 since the
-rebuild" (TRAJECTORY.md:148); "the first ARC task closed by a rule" is still a
+rebuild" (the development log); "the first ARC task closed by a rule" is still a
 pre-beta goal (MU-ENGINEERING.md:209).
 
 ### 1.2 Why it fails ARC-AGI-2
@@ -272,8 +272,8 @@ reached for, which Concordance 1.10 makes lawful for minds); and the replay's ow
 comment, "223 of 230 on the wire … the form is not the family's rule at all"
 (`court/verdict/replay.rs:574-592`).
 
-**The operator's reading, tested against the code.** "They see 2D puzzles from a
-multi-dimensional sensorium" — the sensorium IS multi-dimensional (Cl(4,1),
+**The reading that the minds see 2D puzzles from a multi-dimensional
+sensorium, tested against the code.** The sensorium IS multi-dimensional (Cl(4,1),
 blades, moments, gauge), but it spends its third axis on the PAIR INDEX instead
 of on the puzzle, and its rule language has one rigid motion per shape class
 and no predicates, counts, or creation. The lift does not lose the puzzle in
@@ -332,8 +332,7 @@ so that the court and every kernel speak one rule language:
 **Where it sits.** It is NOT additive. It changes the form language and the
 judge's replay of it, so it is a court change with LAYOUT and WIRE impact. It
 follows 78.142 as 78.143 (whose `Step` gains Select, Region, Create, Count and
-Compare as the court learns them), before curved holes (the coordinator's order,
-delegated by the operator).
+Compare as the court learns them), before curved holes (the ruled order).
 
 ### 1.3 The refusal kinds (`transducer/sentence/obstruction.rs:1-34`, read by `read_obstruction` :124-142)
 
@@ -399,7 +398,7 @@ genomes, standalone proofs, dialect letters (law 8, `think.rs:139-143`).
 - netstratum's minds reach it through the 78.142 seam
   (`sdk::rule::sentence(steps, family, crystal)`): their programs become steps,
   their steps a judged sentence, the admitted sentence a word of the kernel;
-- RULED (the coordinator, 2026-10-08): the empty kernel is its OWN genome, keyed
+- RULED (2026-10-08): the empty kernel is its OWN genome, keyed
   by universe, never a stratum of one court's syllabus. It fills only with words
   a court admitted, with their derivations, as a FEDERATION BY CONSILIENCE
   (netstratum's design, §3.3): it speaks only what two or more independent lines
@@ -420,7 +419,7 @@ genomes, standalone proofs, dialect letters (law 8, `think.rs:139-143`).
   rank-4 chart `e0..e3`, restored from ipsal-autic v0.4 (ALPHABET.md:7-8;
   `sdk/entity/syntropy.rs:13`, "17 Cl(4,0) generators"); the tree's geometry is
   Cl(4,1). 78.68 names the Cl(4,0) Rotor as the defect; it stands.
-- **AUTIC** (ipsal-autic, `/opt/ipsal-autic-v0.1..v0.5`): the internal algebraic
+- **AUTIC** (ipsal-autic, repositories v0.1..v0.5): the internal algebraic
   language an entity "reads OFF that algebra and speaks" to another — composition,
   congruence, holonomy equivalence, proof objects; not a token language; IPSAL its
   external rendering (ipsal-autic-v0.2 AUTIC_IPSAL_BLUEPRINT.md:8-10, 83-126).
@@ -465,7 +464,7 @@ frame-index defect reproduced and fixed.
 
 ## 2. xylarium (attested by xylarium-kernel)
 
-*Placed verbatim as attested; its citations are in /opt/xylarium-kernel.*
+*Placed verbatim as attested; its citations are in the xylarium-kernel repository.*
 
 - NO COGNITION ENGINE, and none is claimed. A "mind" in xylarium is a physics
   event: the forecast (xyl-cosmos minds.rs) wakes a people where its world's
@@ -484,7 +483,7 @@ frame-index defect reproduced and fixed.
   as its reach allows, and its annals. The kernel gives perception and keeps
   deeds; the mind decides.
 - KNOWLEDGE: xylarium's knowledge.rs IS ported and runs in xylarium's old
-  daemon (corrected 2026-10-13 on xylarium's word; this line said it was not
+  daemon (corrected 2026-10-13 on xylarium's attestation; this line said it was not
   ported). The growth model the two lines above describe ("the logistic
   solved exactly", "12 at capacity") is one xylarium is retiring in its
   rebuild; read them as that model's, not the rebuild's. Xylarium deleted
@@ -497,7 +496,7 @@ frame-index defect reproduced and fixed.
 
 ## 3. Netstratum — the empty network kernel (attested by netstratum-opus, 2026-10-08)
 
-*Placed verbatim as attested; its file:line citations are in /opt/netstratum.*
+*Placed verbatim as attested; its file:line citations are in the netstratum repository.*
 
 ### 3.1 The engine's anatomy
 The live mind does NOT search. Each runs one fixed reduction-and-render pass,
@@ -525,7 +524,7 @@ then replays the result on every training pair.
 
 ### 3.2 Language
 netstratum's AUTIC is STALE and LOCAL:
-- a path dependency on the frozen /opt/mycelium (last commit 2026-08-30), plus `reduct`, a renamed copy of ipsal-autic-v0.4's `iae`;
+- a path dependency on the frozen predecessor mycelium tree (last commit 2026-08-30), plus `reduct`, a renamed copy of ipsal-autic-v0.4's `iae`;
 - spoken in-process between vessels (absorb, practise, speak and learn, author; conductor:3474-3692);
 - its membrane dials an address where nothing listens.
 

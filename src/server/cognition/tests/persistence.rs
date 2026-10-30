@@ -182,7 +182,7 @@ assert!(take_trie(&dup, &mut 0, "t", &[1]).is_none(), "a key the trie already ho
 /// end by parsing every record and trusting the result, so a record whose
 /// framing it reconstructed differently from the writer moved the position
 /// for good and every later refusal named an innocent section. Measured on
-/// the fleet at 83e3e30: hypha a announced 91 DEF1 records, framed 84 over
+/// the development deployment at 83e3e30: hypha a announced 91 DEF1 records, framed 84 over
 /// 298223 bytes, then read an address length of zero and a tag byte of 13;
 /// its true body was 345929 bytes, which the reader had no way to know. It
 /// refused 8.6 MB of a court's history and named a byte that was a
@@ -226,7 +226,7 @@ for wrong in [declared.wrapping_sub(1), declared.wrapping_add(1)] {
 ///
 /// A form's address is `form_vertex_key`, which writes every vertex, every
 /// member and every gauge, so it grows with the form. The largest pair form
-/// on the fleet at e98e8a2 held 677 vertices and 4030 faces, and its address
+/// on the development deployment at e98e8a2 held 677 vertices and 4030 faces, and its address
 /// does not fit a `u16`. Measured over that soak: 24 577 readings of
 /// `snapshot: 1 records could not be framed and were not written`, exactly
 /// one per persist, across sections of 47, 71, 96, 158, 162 and 171 records

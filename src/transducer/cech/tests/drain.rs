@@ -358,8 +358,8 @@ fn an_edge_beneath_a_reading_is_pinned() {
 
 /// T2b — THE LADDER BREATHES THROUGH THE CROSS: mint, seal, cross, read back.
 ///
-/// The test that proves the pairs close as one cross (the operator's
-/// ruling, 2026-10-20). A 1-cell enters a 2-cell and is pinned there. The
+/// The test that proves the pairs close as one cross (ruled
+/// 2026-10-20). A 1-cell enters a 2-cell and is pinned there. The
 /// chamber descends through the puncture: its class kept as a hole, its
 /// content handed down; the edge stays condensed under the kept class —
 /// it drains only where no class stands over it — and the class returns by

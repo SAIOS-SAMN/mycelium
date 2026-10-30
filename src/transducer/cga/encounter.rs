@@ -19,8 +19,8 @@
 //!
 //! WHERE AN INVERSE DOES NOT EXIST — the orbit's mode no blade with a non-zero
 //! square to split by, drag zero or null, gravity no versor — LIFT IS DRAG
-//! (the operator's ruling: "there is missing physics if lift has no
-//! inverse, it should be drag"). A force no split reads acts whole as drag.
+//! (as ruled: a lift with no inverse is missing physics; its inverse is
+//! drag). A force no split reads acts whole as drag.
 //! Nothing is approximated; every product and inverse is exact over ℚ.
 
 use super::multivector::Mv;

@@ -461,7 +461,7 @@ pub(super) fn pair_key(a: &[u8], b: &[u8]) -> Vec<u8> {
     let mut k = Vec::new();
     crate::transducer::address::put_key_bytes(&mut k, lo);
     crate::transducer::address::put_key_bytes(&mut k, hi);
-    // MU-CLIENT §4.13 — COMPACTED (the operator's ruling of 2026-10-16: a
+    // MU-CLIENT §4.13 — COMPACTED (the ruling of 2026-10-16: a
     // hash is valid where nothing is lost): every reader holds the two
     // thoughts' keys and derives the pair, and nothing reads the pair back
     // out of the key, so the two whole keys are its 32-byte hash.
@@ -1388,8 +1388,8 @@ impl Contemplation {
             // stands on as its cover, its motion the residue — for the demand
             // taker to bind (`take_demands`, the one taker). Demanding it
             // return would be squaring (78.168 §2); dropping it left every
-            // scene of slides with no thought at all (read on the fleet
-            // 2026-10-15: grounds 0, no return 17).
+            // scene of slides with no thought at all (observed on the development
+            // deployment, 2026-10-15: grounds 0, no return 17).
             // A motion the cell already docketed (an open cell's escape) is
             // that one demand. Either way it stands in the scene of the
             // perception that filed it (`Contemplation::demands_in_scene`).

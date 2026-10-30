@@ -698,8 +698,8 @@ pub(crate) fn edge_of(gamma: &Versor) -> Result<crate::transducer::sentence::Tra
     // and the failure to commute is the curvature this edge exists to
     // carry.
     //
-    // 78.97 — SUPERSEDED BY THE LAYERING (the operator, 2026-10-04: "you
-    // "see" rays through luminal"). An edge is what was SEEN: a body carried
+    // 78.97 — SUPERSEDED BY THE LAYERING (ruled 2026-10-04: what
+    // is seen are rays through the luminal). An edge is what was SEEN: a body carried
     // from one placement to the next, a ray on the luminal cone, and its
     // displacement's own generator is null — the conformal translator
     // `T(d)`, never a boost. A boost never returns, so every ring of seen

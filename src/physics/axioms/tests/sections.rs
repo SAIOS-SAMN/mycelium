@@ -144,7 +144,7 @@ fn tilted_quarter() -> Mv {
     t.geo(&r).geo(&t.reverse())
 }
 
-/// TILT AND AXIS (the operator: "rotation on a 3D object should be x,y,z").
+/// TILT AND AXIS (rotation on a 3D object is read about x, y and z).
 /// Three pivots in a TILTED plane fix their circle and its centre exactly;
 /// the turn that keeps the circle is the turn in the circle's own plane —
 /// about the axis the three points formulate, through the centre along

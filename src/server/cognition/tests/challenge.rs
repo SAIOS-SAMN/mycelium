@@ -452,8 +452,8 @@ fn the_windows_settle_and_a_pruned_child_still_reads_final_for_its_parent() {
     assert!(k.reconstructions.is_empty(), "a stream whose window closed is let go");
 }
 
-/// A SELF-DEMAND WITHDRAWN REOPENS THE WINDOW, ONCE (the coordinator's
-/// ruling): the tier demanded its own fold and let the deadline pass — it
+/// A SELF-DEMAND WITHDRAWN REOPENS THE WINDOW, ONCE (as
+/// ruled): the tier demanded its own fold and let the deadline pass — it
 /// reads blocked; withdrawn by the tier, naming its demand's receipt, the
 /// evidence window reopens `W` from the withdrawal, the fold reads
 /// provisional, and its evidence is upheld. Another key cannot withdraw it,
@@ -510,8 +510,8 @@ fn a_tiers_line_head_is_read_back_with_the_fold_that_set_it() {
     assert_eq!(booted.line_head(&vk(&a)), (f.prefix, Some(at)), "re-derived from the records");
 }
 
-/// A FOLD SEALED BEFORE THE LINE LAW IS GRANDFATHERED (the coordinator's
-/// ruling): no record, no line to reconstruct — final, unchallenged,
+/// A FOLD SEALED BEFORE THE LINE LAW IS GRANDFATHERED (as
+/// ruled): no record, no line to reconstruct — final, unchallenged,
 /// pre-line; a demand is refused, never defaulted; and a parent netting it
 /// reads final once its own window passes. A place naming no fold is
 /// unrecorded. (Only a fold the court sealed itself can be pre-line — a

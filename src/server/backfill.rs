@@ -257,7 +257,7 @@ pub fn chase(
     // REACHED IS READ OFF THE CHAIN, never off an empty frontier. The
     // frontier also empties where a page admitted nothing and named a
     // citation skipped as held, and its own range then skipped as asked —
-    // on the fleet, ~50k passes per court counted "reached" with nothing
+    // on the development deployment, ~50k passes per court counted "reached" with nothing
     // admitted and the head never cited (H2, 2026-10-03).
     let reached = held!(kernel).ok().and_then(|mut h| h.run(|k, _| k.known_head(&vk))).is_some_and(|(at, _)| at >= to);
     Pass { advanced, reached }
@@ -299,7 +299,7 @@ pub fn hear<E>(
     // EVERY HOLE THE FRAME NAMES IS CHASED, not only its own line's. A
     // frame whose own line is held can still cite a parent of ANOTHER
     // signer this court does not hold (`MissingParent`), and this chased
-    // only `Gap`: on the fleet, c's frames cited b's receipts a did not
+    // only `Gap`: on the development deployment, c's frames cited b's receipts a did not
     // hold, b's cited c's, and neither line ever advanced at a — "reached"
     // with nothing admitted, the tally reading both holes as one "gap"
     // (2026-09-30). Each hole is chased at most once per hearing, so a

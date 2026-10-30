@@ -604,8 +604,8 @@ fn the_seat_is_taken_by_the_houses_own_events() {
     assert!(h.may_take(Some(3)), "the house's next listing: posted again");
 }
 
-/// 78.148 — A VERSOR'S CHANGE IS THE VERSOR THAT CARRIES IT (the operator's
-/// field law): reflections alternating — odd versors, a bell's pulse — are
+/// 78.148 — A VERSOR'S CHANGE IS THE VERSOR THAT CARRIES IT (the field
+/// law): reflections alternating — odd versors, a bell's pulse — are
 /// carried by `e₂e₁` and `e₁e₂` in turn, an orbit of period 2; a steady
 /// motion's powers are carried by the motion itself every beat, an orbit of
 /// period 1 that is not standing still; a held versor is fixed; a null

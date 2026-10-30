@@ -29,7 +29,7 @@ pub struct Root {
 ///
 /// A fold that moved receipts from one in-memory `Vec` to another, and
 /// then wrote every one of them into the hot ledger on every persist, is
-/// not an eviction: it is a rename. Measured on the fleet, 2026-09-11,
+/// not an eviction: it is a rename. Measured on the development deployment, 2026-09-11,
 /// after genesis adoption unblocked folding — 71 folds on one court in a
 /// single boot, `ARC1` 3561 MiB of a 3567 MiB ledger, and two courts at
 /// 4146 MiB and 2343 MiB of resident memory within 106 seconds of restore.

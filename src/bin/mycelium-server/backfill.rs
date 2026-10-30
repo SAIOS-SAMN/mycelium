@@ -20,7 +20,7 @@ use mycelium::server::backfill::Ask;
 /// frontier entry went to `dest` — the peer whose digest reported the gap —
 /// so when a receipt of a cited a receipt of b, c asked A for B'S chain, and
 /// a serves another signer's receipts only as far as it happens to have
-/// admitted them itself. Measured on the fleet at epoch 11: `backfill ce02…
+/// admitted them itself. Measured on the development deployment at epoch 11: `backfill ce02…
 /// 76..76 admitted 0 cites 244b… K 75`, repeating, the chase never closing
 /// because the question was put to a node that could not answer it.
 ///

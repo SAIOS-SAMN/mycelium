@@ -131,7 +131,7 @@ pub const SEATS: [&str; 5] = ["understood", "asked", "shifted", "listened", "unh
 /// this mind, or not — in the order the counts are kept.
 pub const MUTUAL: [&str; 2] = ["balanced", "unbalanced"];
 
-/// ONE COURT TASK AS IT LANDED ON THIS MIND (the auditor's attribution
+/// ONE COURT TASK AS IT LANDED ON THIS MIND (the attribution
 /// reading, 2026-10-22, carried on the typed reading so a parked carrier
 /// never hides it): its citation, whole — the task's coordinates, kept
 /// losslessly — and four codes: taken in (1) or waiting to couple (0); how it

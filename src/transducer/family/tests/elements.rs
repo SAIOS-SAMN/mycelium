@@ -85,7 +85,7 @@ fn the_identity_carriage_is_the_hue_map() {
         let carry = Clause { select: Pred::All, act: Act::Carry { motion: Mv::scalar(q(1)), about, gauge: map.clone() } };
         assert_eq!(drawn(speak_clauses(std::slice::from_ref(&carry), &x, &bodies)), want, "the identity carried {about:?}");
         let glossed = gloss(&lower(&carry).expect("lowers")).expect("named");
-        assert_eq!(tape(&[glossed]), tape(&[recolour.clone()]), "its gloss is the recolour");
+        assert_eq!(tape(&[glossed]), tape(std::slice::from_ref(&recolour)), "its gloss is the recolour");
     }
 }
 

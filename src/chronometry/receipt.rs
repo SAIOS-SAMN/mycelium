@@ -909,9 +909,9 @@ impl KStepReceipt {
 /// height), the frame the act measured on the four lanes `{S, G, T, H}`, the
 /// signer's orbit and the act's place in it — what keeps the cores of
 /// domains and universes aligned, and what a kernel's own step clock is
-/// held to (the operator, 2026-10-07: "the server to start tracking time in
-/// TUniversal … through a 4 dimensional quantum state of {S,G,T,H} as time
-/// coordinates … pushed down as the orbital clock").
+/// held to (ruled 2026-10-07: the server tracks time in TUniversal, a
+/// four-dimensional state {S,G,T,H} taken as the time coordinates and
+/// pushed down as the orbital clock).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct CoreStamp {
     pub h: u64,
@@ -926,7 +926,7 @@ impl CoreStamp {
         CoreStamp { h: r.stamp.h, lanes: r.mu, k: r.stamp.k, i: r.stamp.i }
     }
 
-    /// THE FIXED-WIDTH WRITING, for people and logs (the operator's
+    /// THE FIXED-WIDTH WRITING, for people and logs (the ruled
     /// `XX:XX:XX:XX:XX:XX`): every field sixteen hex digits — never wrapping
     /// at its carrier, so text order is numeric order — the tick, the four
     /// lanes, then the orbit and place as `K.i`.

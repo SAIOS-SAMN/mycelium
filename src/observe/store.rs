@@ -127,7 +127,7 @@ pub fn served() -> Vec<(u8, u64)> {
         .collect()
 }
 
-/// THE DIGEST ASKS BY ASKER (read on the fleet 2026-10-24): the served count
+/// THE DIGEST ASKS BY ASKER (observed on the development deployment, 2026-10-24): the served count
 /// of `ACT_DIGESTS` stood near ten times what the wire carried, and no
 /// counter named who asked. Each ask decoded at the door is counted under the
 /// voice it names — a court's key or a mind's.

@@ -178,8 +178,8 @@ fn within(sel: &[usize], scope: &[usize]) -> Vec<usize> {
 /// each predicate of the list selects there, `None` where it is unstated:
 /// - the first of the list that, on every pair, selects within `scope`
 ///   exactly that pair's targets;
-/// - else THE TARGETS' OWN DESCRIPTION, read off them (the auditor's
-///   ruling, 2026-10-19: a composite derived from the difference between
+/// - else THE TARGETS' OWN DESCRIPTION, read off them (ruled
+///   2026-10-19: a composite derived from the difference between
 ///   targets and the rest, never iterated): of the predicates holding of
 ///   every target on every pair, each one, in the list's order, that
 ///   excludes something the ones before it kept — the meet of what the
@@ -715,7 +715,7 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
 
 /// 78.167 Phase B — CELLS CREATED: the cells the clauses so far leave unlike
 /// the output (the residue), and the acts their geometry is, read off it —
-/// never a candidate tried and re-derived (the auditor's rulings,
+/// never a candidate tried and re-derived (ruled
 /// 2026-10-19/20) — each reading composing its clauses and the next taking
 /// what is left:
 /// - where the bodies an act touched are its seeds, a COPY — its template the
@@ -740,7 +740,7 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
 fn created(r: &mut Reading<'_, '_>, base: Vec<Clause>, touched: &[Vec<usize>], every: &[Vec<usize>]) -> Result<Vec<Clause>, Unread> {
     // 78.167 Phase B, Step 1 — THE RESIDUE READ PIECE BY PIECE, each reading
     // composing its clauses onto the sentence and the next reading taking
-    // what is left (the auditor's ruling, 2026-10-20: one act over all the
+    // what is left (ruled 2026-10-20: one act over all the
     // created cells left 223 of 372 families unstateable by definition).
     let mut all = base;
     // A COPY onto the seeds the effect touched.
@@ -1342,7 +1342,7 @@ fn echo_of(key: &[u8]) -> Option<Act> {
     })
 }
 
-/// C2″ — ECHOES TURNED, AND AT SEVERAL OFFSETS (the auditor's directive,
+/// C2″ — ECHOES TURNED, AND AT SEVERAL OFFSETS (ruled
 /// 2026-10-20), read on what the one-offset echo left: a piece that is an
 /// input body's own shape under one of the square's symmetries — the
 /// group's first that gives it, itself before any turn — its hues by one
@@ -1533,7 +1533,7 @@ fn bend_of(piece: &[(usize, usize, u8)], p: &Pair<'_>, owner: &[Vec<Option<usize
     None
 }
 
-/// C3″ — BENT CONNECTORS READ OFF THEIR EFFECT (the auditor's directive,
+/// C3″ — BENT CONNECTORS READ OFF THEIR EFFECT (ruled
 /// 2026-10-20: Manhattan connectors round an empty corner): each piece that
 /// is a bend (`bend_of`) names its source and its target; the pieces of one
 /// hue are one clause, `Bend` painted that hue, on the sources they leave,

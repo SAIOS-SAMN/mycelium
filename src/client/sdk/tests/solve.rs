@@ -63,7 +63,7 @@ fn a_seats_solve_outcome_reads_learned_against_fn_one() {
     assert_eq!(m.outcome(&other), None);
 }
 
-/// THE DECLINATION (the auditor's ruling, 2026-10-23): a seat whose reading
+/// THE DECLINATION (ruled 2026-10-23): a seat whose reading
 /// stops short of a solve calls fn 2 with the task's citation and its stop's
 /// code, and the call travels whole through the codec the house reads — a
 /// function apart from the solve's.

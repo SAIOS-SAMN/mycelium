@@ -481,8 +481,8 @@ impl Complex {
     ///
     /// ALGEBRAIC AND CLIFFORD DESCENT: the exact conjugate dual of ASCEND —
     /// a categorical projection from the chamber back to its ring, the fill
-    /// handed back exactly — never numerical gradient optimization (the
-    /// auditor's ruling, 2026-10-20: the name is Grothendieck's and the
+    /// handed back exactly — never numerical gradient optimization (ruled
+    /// 2026-10-20: the name is Grothendieck's and the
     /// filtration's, and the pair ASCEND / DESCEND stands as the Concordance
     /// signs it; xylarium's ENFOLD is not adopted).
     ///
@@ -505,12 +505,11 @@ impl Complex {
     /// a complex with an empty 3-skeleton it is vacuously empty and never
     /// fires — which is exactly how `drain` behaved before 2-cells existed.
     ///
-    /// THE CROSS, OF EIGHT COMPONENTS (the operator's rulings, 2026-10-20: "you
-    /// cannot descend without the dipole ascend and antipole condense and
-    /// drain with the puncture"; and descent "can not be done without all of
-    /// the other pivotry components: ascent, trajectory, drag, velocity,
-    /// condense, drain, puncture, cauterize" — the auditor's adoption,
-    /// aligned with xylarium fc5b396). A descend never moves alone, and no
+    /// THE CROSS, OF EIGHT COMPONENTS (ruled 2026-10-20: no descent without
+    /// the dipole ascend and the antipoles condense and drain, with the
+    /// puncture; descent takes every other pivot component with it —
+    /// ascent, trajectory, drag, velocity, condense, drain, puncture,
+    /// cauterize — adopted in alignment with xylarium fc5b396). A descend never moves alone, and no
     /// other path takes a sealed chamber's class out: a chamber exists
     /// because a boundary holonomy CLOSED, and its descent is
     /// - THE PUNCTURE — the throat: the chamber opened into a hole that KEEPS
@@ -671,7 +670,7 @@ impl Complex {
                 out.scarred += 1;
             }
         }
-        // THE VACUUM BOUNDED BY THE FIELD (the auditor's ruling, 2026-10-21):
+        // THE VACUUM BOUNDED BY THE FIELD (ruled 2026-10-21):
         // a frozen class naming this vertex can no longer thaw, and passes
         // from cold to heat.
         for f in self.frozen_on(v) {
@@ -721,7 +720,7 @@ impl Complex {
     /// 78.74 — A VERTEX THAT MUST GO, VENTED: its star released through the
     /// pivots (`release_vertex`, every outcome booked on the ledger, every
     /// class it kept cauterized with its scar). A star still pinned is never
-    /// dropped (the operator's ruling, 2026-10-20): dropping it lost what it
+    /// dropped (ruled 2026-10-20): dropping it lost what it
     /// stood under without a record.
     pub fn vent_vertex(&mut self, v: &[u8]) -> Release {
         self.release_vertex(v)

@@ -719,7 +719,7 @@ fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
 /// `kappa.free_part()` alone gated the widening, and a free part is ONE way
 /// a cover can be too narrow, not the only one. A 90° turn is finite
 /// order — torsion, no prime exponent, not off-plane — so it has no free
-/// part and never saw the move at all. On the fleet at 769a17c every orbit
+/// part and never saw the move at all. On the development deployment at 769a17c every orbit
 /// with no candidate occupied `[Unit(0)]`, 60 of 60, every crystal read
 /// answered 0, 123 of 123, and not one had a free part.
 ///

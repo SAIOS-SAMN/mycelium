@@ -1,6 +1,6 @@
-// 78.75 IN n DIMENSIONS — THE WHITE-HOLE SOURCE AT ANY OBSERVED DIMENSION (the
-// operator, 2026-10-17: "n-dimensional source is valid, at the source we are
-// only limited by the observed dimensional capacity"). The organ `source`
+// 78.75 IN n DIMENSIONS — THE WHITE-HOLE SOURCE AT ANY OBSERVED DIMENSION (ruled
+// 2026-10-17: an n-dimensional source is valid, limited at the source only by
+// the observed dimensional capacity). The organ `source`
 // states in `Cl(4,1)`, read on the conformal model of ℚⁿ for whatever `n` the
 // caller observed — S⁶⁰, S³⁶⁰ — and its outflow answered plane by plane, so a
 // flow staged on many planes gives each its own founding phase (xylarium and

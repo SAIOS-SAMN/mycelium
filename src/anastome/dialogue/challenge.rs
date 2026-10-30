@@ -1,5 +1,5 @@
 // 78.125 — ACT_CHALLENGE: a sealed fold challenged within its window (2(c),
-// the coordinator's rulings 2026-10-07), and its finality read.
+// ruled 2026-10-07), and its finality read.
 //
 //! A fold's rows stay with its tier (LD0); its receipt commits to them. A
 //! challenge makes the commitment answerable, in four kinds:
@@ -97,7 +97,7 @@ pub enum Challenge {
     /// The next entries of a streamed publication, continuing its head. The
     /// part whose head reaches the cited prefix completes the reconstruction.
     Part { fold: FoldAt, entries: Vec<Entry> },
-    /// 78.125 (the coordinator's ruling) — A SELF-DEMAND WITHDRAWN by the
+    /// 78.125 (as ruled) — A SELF-DEMAND WITHDRAWN by the
     /// fold's own tier, named by the demand's receipt stamp: before any
     /// default is claimed, once per fold, reopening the evidence window for
     /// `W` from the withdrawal — sealed, a public record that the tier asked

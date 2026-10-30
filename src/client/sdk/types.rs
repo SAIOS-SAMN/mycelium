@@ -439,7 +439,7 @@ pub struct Epigenome {
     /// nothing was ever paid for one (26, 27).
     pub(crate) by_moduli: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// MU-CLIENT §7.1 — THE RESIDUAL CHAINS A RESTORED GENOME FILE HELD, by
-    /// address: a residual is an open question, never a word (the operator,
+    /// address: a residual is an open question, never a word (ruled
     /// 2026-10-18), so the restore files it here and the boot hands it to the
     /// mind's carrier at once (`Entity::restore_genome`) — empty after.
     pub(crate) restored_residuals: Vec<OpenResidual>,
@@ -545,7 +545,7 @@ pub struct Entity {
     /// Words this voice has spoken up for adoption: said once, the judge
     /// decided (installed, derivable, or refused). Membership is vertex
     /// equality, never the digest alone. MU-CLIENT §4.13 — KEYED BY THE
-    /// ADDRESS'S 32-BYTE HASH (`Entity::taught_key`, the operator's ruling of
+    /// ADDRESS'S 32-BYTE HASH (`Entity::taught_key`, ruled
     /// 2026-10-16: a hash compacts coordinates where nothing is lost), each
     /// with the stratum its vertex was filed under in `taught_at` — none for
     /// a sentence, which is one vertex by its address alone. The word itself
@@ -669,7 +669,7 @@ pub struct Entity {
     /// task: the rule and the outputs, asked again each stroke until the
     /// court rules, its replay resuming where its stroke ran out. Without it
     /// the task arm moved to the next task and the solve was never asked
-    /// again: 38 of 41 verdicts on the fleet were "unread" (2026-10-10).
+    /// again: 38 of 41 verdicts on the development deployment were "unread" (2026-10-10).
     /// MU-CLIENT §4.13 — one per task, released by the court's verdict:
     /// bounded by what the court holds unjudged.
     pub(crate) unread_solves: crate::network::nerve::Keyed<(Element, Vec<Grid>)>,

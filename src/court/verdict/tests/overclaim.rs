@@ -1,7 +1,7 @@
 // 23.1 step 3 against 21 step 1 — A MEMBER CLAIMS ONLY THE FRAMES ITS GAUGE
 // REPRODUCES: the mind's extraction, replayed by the court's own body check,
 // raises no vertex-body fault where the frames' hue maps differ (the
-// over-claim answered at the pivot, the operator 2026-10-18).
+// over-claim answered at the pivot, ruled 2026-10-18).
 
 use crate::transducer::family::{extract_rule, Grid};
 use crate::verdict::body::vertices_carry_frames;

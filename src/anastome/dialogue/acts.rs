@@ -131,8 +131,8 @@ impl Adjudication {
     }
 }
 
-// 0x0F was ACT_GENESIS, a basis page by cursor. RETIRED 2026-09-29 (the
-// operator's word): nothing sent it; the syllabus and the fetch carry every
+// 0x0F was ACT_GENESIS, a basis page by cursor. RETIRED 2026-09-29
+// (ruled): nothing sent it; the syllabus and the fetch carry every
 // ruled word to a new node, and a cursor into the basis's key order moved
 // under it at every ruling. An unknown tag is not answered.
 
@@ -367,7 +367,7 @@ pub struct ChartOf<A> {
 /// A chart as the receiver reads it, with addresses decoded.
 pub type Chart = ChartOf<Address>;
 
-/// THE SYLLABUS (distributed cognition, operator-ruled): court-ratified
+/// THE SYLLABUS (distributed cognition, as ruled): court-ratified
 /// vocabulary PUSHED to every enrolled voice on its next contact — teaching
 /// as an act of the network, not a passive download. The client asks with
 /// its voice; the hypha serves the ratified stream from that voice's cursor
@@ -614,8 +614,8 @@ pub const SOLVE_NOTHING: u8 = 0;
 /// 78.153 — NOT JUDGED YET: the court's stroke ran out before the replay
 /// ruled; asked again, the replay resumes where it stopped. A RETRY, never a
 /// refusal — distinct from SOLVE_NOTHING, which since 78.149 is final ("no
-/// work"): a house re-files on this code and drops on that one (the
-/// coordinator, 2026-10-09).
+/// work"): a house re-files on this code and drops on that one (ruled
+/// 2026-10-09).
 pub const SOLVE_UNREAD: u8 = 3;
 
 /// One link of a centered coboundary chain: `(row, col, before, after)`.

@@ -341,8 +341,8 @@ impl Kernel {
                 // (`prune_basis_to_ruled`): its basis row is re-derived, not
                 // refused. No discoverer is invented for it — the ledger
                 // names no voice — so it pays none. Only a basis word that
-                // stands nowhere else is refused (read on the fleet
-                // 2026-10-20: 9/12/13 at every boot, the same words).
+                // stands nowhere else is refused (observed on the development
+                // deployment, 2026-10-20: 9/12/13 at every boot, the same words).
                 if self.court_fed_index.get(addr).is_none() {
                     refused.undiscovered += 1;
                 }

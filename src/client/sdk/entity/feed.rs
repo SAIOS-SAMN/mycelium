@@ -6,8 +6,8 @@
 //! A feed file is retired when it has entered, so a restart does not present
 //! the same family twice; a family not met stays on disk.
 //!
-//! NO ORDER OF FILES (the operator, 2026-10-18: "feed walked sounds
-//! uni-directional and linear"): the folder is listed where a family ARRIVES
+//! NO ORDER OF FILES (ruled 2026-10-18: the feed is not walked in one
+//! linear direction): the folder is listed where a family ARRIVES
 //! (the kernel's file notice, waking the resting mind — no clock polls the
 //! folder) and at the first reading; each new family is handed out once to
 //! be placed at its coordinates, and taken back by its citation where the

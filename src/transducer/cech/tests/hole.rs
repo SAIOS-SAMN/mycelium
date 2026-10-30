@@ -1,7 +1,7 @@
 // 78.99 (2), (3), 62.1, 63.3 — THE PIVOTS COMPLETED AND THE BOARD: condense
 // is drain's inverse on content; puncture keeps the class in as a hole that
 // pins its boundary and refuses every pivot but seal; seal caps it; a descend
-// is the cross, through the puncture (the operator's ruling, 2026-10-20);
+// is the cross, through the puncture (ruled 2026-10-20);
 // pivots on cells sharing no vertex commute; the walk `d, a, s, d` reads as
 // ruled.
 
@@ -118,9 +118,9 @@ fn a_released_vertex_cauterizes_the_classes_it_cannot_read_back() {
     assert!(open.sections.get(ws[0].as_slice()).is_none() && open.scars() == 0, "and the vertex goes, unscarred");
 }
 
-/// THE READ-BACK THAT CANNOT BE MADE IS SEALED BY COLD (the operator's
-/// rulings, 2026-10-21: the vacuum's face of the throat, "the vacuum hold
-/// the frozen class"). A chamber crosses on the mind's complex and the meet
+/// THE READ-BACK THAT CANNOT BE MADE IS SEALED BY COLD (ruled
+/// 2026-10-21: the vacuum's face of the throat; the vacuum holds
+/// the frozen class). A chamber crosses on the mind's complex and the meet
 /// over the same vertices reads its class back whole — ascend at the hole,
 /// the seal. Crossed again, one pair of its boundary then stands as a
 /// remainder — a transition that does not realise — so, its vertices
@@ -167,7 +167,7 @@ fn a_frozen_class_thaws_where_its_boundary_closes_again() {
     assert_eq!(mind.complex.board(), sealed, "the chamber returned exactly");
 }
 
-/// THE VACUUM IS BOUNDED BY THE FIELD (the auditor's ruling, 2026-10-21): a
+/// THE VACUUM IS BOUNDED BY THE FIELD (ruled 2026-10-21): a
 /// frozen class stands only while every vertex it names stands. Shed one of
 /// its vertices and the class can no longer thaw: it passes from cold to
 /// heat — cauterized, its scar counted, the vacuum letting it go — and the

@@ -126,7 +126,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             // MU-CLIENT §5.5 — the agreed language this court attested, per
             // speaker → hearer, read off its own counters.
             observe::replace(own, Reading::Agreements(Box::new(observe::agreements())));
-            // The auditor's dispatch observation (2026-10-22): every task this
+            // The dispatch observation (ruled 2026-10-22): every task this
             // court dispatched, by citation, to whom and at what height.
             observe::replace(own, Reading::Dispatched(Box::new(observe::dispatched())));
             // The judged-solve observation (2026-10-24): every solve this

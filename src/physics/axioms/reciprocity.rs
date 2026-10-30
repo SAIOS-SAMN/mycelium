@@ -1,5 +1,5 @@
-// RX1–RX7 — THE TRANSPOSITION OF CONGRUENCE (ruled 2026-09-27 on the
-// operator's word): how much congruence is "enough" is no number but the
+// RX1–RX7 — THE TRANSPOSITION OF CONGRUENCE (ruled
+// 2026-09-27): how much congruence is "enough" is no number but the
 // identity of each order's affine group, read from both sides of a relation.
 // Each clause carries a test in `tests/reciprocity.rs`.
 

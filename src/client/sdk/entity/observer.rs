@@ -1,6 +1,6 @@
-// MU-CLIENT §4.4, §4.12, §7.2 — THE MIND ANSWERS ITS OBSERVER (the operator
-// 2026-10-15: "build the observer into the mind so we can have an API to read
-// the live state and call functions : we can remove this later"): the calls
+// MU-CLIENT §4.4, §4.12, §7.2 — THE MIND ANSWERS ITS OBSERVER (ruled
+// 2026-10-15: the observer is built into the mind as a provisional API that
+// reads its live state and calls its functions): the calls
 // `observe::live` leaves for the winding carrier, answered out of what the
 // mind holds at the law boundary the carrier passes.
 //
@@ -409,7 +409,7 @@ impl Entity {
     }
 
     /// THE COURT TASKS THAT LANDED ON THIS MIND whose citation begins with
-    /// `prefix` (the auditor's attribution reading, 2026-10-22), each by its
+    /// `prefix` (the attribution reading, ruled 2026-10-22), each by its
     /// whole citation.
     fn read_tasks(&self, prefix: &str) -> Vec<String> {
         let prefix = prefix.to_ascii_lowercase();

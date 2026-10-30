@@ -31,7 +31,7 @@ pub const TAG_MIND: u8 = 21;
 pub const TAG_AGREEMENTS: u8 = 22;
 /// The age of a court's published standing, in questions (`Reading::Asked`).
 pub const TAG_ASKED: u8 = 23;
-/// The auditor's dispatch observation (2026-10-22): every task a court
+/// The dispatch observation (2026-10-22): every task a court
 /// dispatched, by its citation, to whom and at what height.
 pub const TAG_DISPATCHED: u8 = 24;
 /// The judged-solve observation (2026-10-24): every solve a court judged, by
@@ -517,7 +517,7 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     // 78.65, 78.87 R2 — the citation into a closed era PROVED by the era's
     // own chain, walked from it up to the signer's fold root.
     ("folded_proved", "citations into a closed era proved by the era's chain up to its root"),
-    // 2026-10-08 — NO SILENT VERDICT (the coordinator's ruling on hypha c's
+    // 2026-10-08 — NO SILENT VERDICT (ruled on hypha c's
     // isolation): a citation of another signer's receipt this court does not
     // hold is counted apart from a hole in the signer's own line, and a
     // back-fill page that stops on one says so, under the CITED signer.

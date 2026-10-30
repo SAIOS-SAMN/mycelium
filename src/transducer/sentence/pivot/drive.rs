@@ -94,7 +94,7 @@ pub(crate) fn class_vectors_on(
 /// A face's word is the coboundary `w_j ∘ w_i⁻¹` of its two vertices' words,
 /// and a product of coboundaries around a cycle telescopes to the identity,
 /// so an orbit over coboundary faces alone is flat on the word for every
-/// input. Measured on the fleet at e98e8a2: 6535 pair forms, 70311 orbits,
+/// input. Measured on the development deployment at e98e8a2: 6535 pair forms, 70311 orbits,
 /// word holonomy flat 70311 — all of them — against 284 finite non-identity
 /// edge composites over the same orbits. The filer was keyed to the one
 /// place the curvature cannot appear, so nothing was ever filed.

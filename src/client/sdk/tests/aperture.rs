@@ -64,7 +64,7 @@ assert!(entity.close_cycle(1), "an orbit returned: the stroke closes");
 assert_eq!(entity.own_k(), 1, "the return stepped the clock once");
 assert_eq!(codes, vec![0xff], "and it is fresh, so an utterance would ask about it");
 
-// Standing the same form again is a USE of it (the operator, 2026-10-14: a
+// Standing the same form again is a USE of it (ruled 2026-10-14: a
 // mind repeating itself is mumbling, not acting): it is already taught, so
 // nothing would go on the wire at all. Nothing here read a k-step from
 // anyone else.

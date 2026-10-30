@@ -1,5 +1,5 @@
-// 78.133 — PER-UNIT AND SPLIT TOLLS on a wormhole (the coordinator's
-// rulings): mass pays on S, information on H, each floored; the charge split
+// 78.133 — PER-UNIT AND SPLIT TOLLS on a wormhole (as
+// ruled): mass pays on S, information on H, each floored; the charge split
 // to the keeper and its progenitor lines, every lane's parts summing to its
 // charge exactly; held from acceptance to the window's close, then paid
 // together — or, the traversal's OUT-side fold reversed, refunded together.

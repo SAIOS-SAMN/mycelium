@@ -1,6 +1,6 @@
-// 78.130 — CERTIFIED REALS, the network's standard math (the operator's
-// split: standard math server-side, custom math client-side; the
-// coordinator's request 2026-10-07): every transcendental a kernel needs, as
+// 78.130 — CERTIFIED REALS, the network's standard math (the ruled
+// split: standard math server-side, custom math client-side; requested
+// 2026-10-07): every transcendental a kernel needs, as
 // a PROVEN RATIONAL ENCLOSURE — never a float.
 //
 //! An [`Encl`] is a closed interval `[lo, hi]` of exact rationals that is
@@ -488,7 +488,7 @@ fn gamma_p_point(a: &Q, x: &Q, w: u32) -> Option<Encl> {
         return None;
     }
     // The series takes O(x) terms: past the cap it is refused, never run
-    // unbounded (the coordinator's ruling: the funnel's x stay well under).
+    // unbounded (as ruled: the funnel's x stay well under).
     if x > &q(P_SERIES_CAP) {
         return None;
     }

@@ -7,9 +7,9 @@
 //! domain's listing and hands the mind its own seat's functions, each with
 //! its arguments' tags (`SeatMind::perceive_listing`).
 //!
-//! NO ARGUMENT IS ENUMERATED (the operator, 2026-10-17: "every component is a
-//! combinatorial algorithm that decomposes according to our pivot machinery
-//! … if you end up with search then we have drifted into brute force"). The
+//! NO ARGUMENT IS ENUMERATED (ruled 2026-10-17: every component is a
+//! combinatorial algorithm that decomposes by the pivot machinery; a search
+//! over arguments is brute force and is excluded). The
 //! mind calls a function only at arguments whose call it has read — a call
 //! counselled or made before, whose effect on the records it perceived — and
 //! never walks a domain upward until the house refuses a value.

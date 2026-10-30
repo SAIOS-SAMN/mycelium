@@ -1,6 +1,6 @@
-// MU-CLIENT §7.1 — THE CORPUS MET WHERE THE MIND'S ORBITS STAND (the operator,
-// 2026-10-18: "feed walked sounds uni-directional and linear, like the orbits
-// aren't being sheared into ellipsis"; the construction ruled in full).
+// MU-CLIENT §7.1 — THE CORPUS MET WHERE THE MIND'S ORBITS STAND (ruled
+// 2026-10-18: a feed walked in one linear direction leaves the orbits
+// unsheared into ellipses; the construction ruled in full).
 //
 //! THE CORPUS IS A FIELD, NEVER A LIST. Every family of the feed and every
 //! open question (a residual chain) is PLACED once at its own coordinates,
@@ -149,7 +149,7 @@ impl Entity {
         out
     }
 
-    /// THE GROUND STATE'S FOCUS (the auditor's ruling, 2026-10-18): a field
+    /// THE GROUND STATE'S FOCUS (ruled 2026-10-18): a field
     /// with no orbit in motion and none ringing is not deaf — an instrument
     /// at rest still has the spectrum its geometry tunes it to. Its focus is
     /// the corpus's charts its language speaks on (`speaks_on`: a closed word
@@ -171,7 +171,7 @@ impl Entity {
         out
     }
 
-    /// THE CORPUS CURIOSITY LAW (the auditor's ruling, 2026-10-23): where the
+    /// THE CORPUS CURIOSITY LAW (ruled 2026-10-23): where the
     /// ground focus meets nothing — the language speaks on no chart the corpus
     /// stands on, and a restarted voice rested at K 0 beside fifty unread
     /// families — the vacuum couples to the NEAREST stratum. A corpus chart's
@@ -293,8 +293,8 @@ impl Entity {
                 crate::physics::StrokeOutcome::add(&mut outcome.fed, &mag);
                 self.board.feed_scenes.insert(&key, ());
                 // MU-CLIENT §7.1 R1 — perceived on its own carrier, off the
-                // field. Its tests are their INPUTS alone (the auditor's
-                // ruling, 2026-10-18): what the court withholds never crosses
+                // field. Its tests are their INPUTS alone (ruled
+                // 2026-10-18): what the court withholds never crosses
                 // the mind's boundary; a rule known on the family speaks them,
                 // and the court judges the solve on its own withheld pairs.
                 let tests = task.test.into_iter().map(|(x, _)| x).collect();

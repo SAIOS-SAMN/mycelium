@@ -6,29 +6,28 @@ the coding rules 1–16 (what a diff may not contain). This document holds
 the development standard: how files are laid out, how things are named,
 how tests are written and organised, how commits are made and verified,
 which gates enforce which rules, and how an implementor and an auditor
-work with each other and with the operator. Where this document and a
+work with each other and with the maintainer. Where this document and a
 chapter of `MU-RECURSION.md` disagree, the chapter wins and this document
 is corrected.
 
 The reason for a written standard is stated once: an agent with no
 standard does its own work in its own way, and the result is a tree of
-one-off costumes, private gates, and tests that assert what their author
+one-off stand-ins, private gates, and tests that assert what their author
 found convenient. Every item below was written after such a one-off was
 found and removed.
 
 ## 1. Files and modules
 
 1.1 **Bound.** No source file exceeds 2500 lines (600 to Stage 8b, 800
-during it, 1200 from 2026-09-10; raised to 2500 on 2026-09-25 on the
-operator's word relayed verbatim through the coordinator's console —
-"increase maximum file line size to 2500" — the passage the 2026-09-19
-raise lacked and was returned for). The bound is a gate
+during it, 1200 from 2026-09-10; raised to 2500 by the ruling of
+2026-09-25 — the recorded ruling the 2026-09-19 raise lacked and was
+returned for). The bound is a gate
 (`xtask/lint/length.rs`) that fails the build and names the file and its
 count. The bound exists so that a reader, human or agent, reads a file
 whole in one pass; a file that has to be searched is a file that is not
 audited. The raise changes no other rule: an organ is still split where
 the document splits it (1.2), never where a number does, and the
-coordinator still reads every changed file whole at audit.
+auditor still reads every changed file whole at audit.
 
 1.2 **One organ per file.** A file holds one bound of the document: the
 moves of one chapter, the codec of one act family, one carrier and its
@@ -86,7 +85,7 @@ name asserts an operation; its body performs that operation or refuses
 (checklist item (l)). `compute_*`, `derive_*`, `classify_*`, `extract_*`,
 `recover_*` are permitted only when the body computes, derives,
 classifies, extracts, or recovers the named object; a body that emits a
-label, a key, or a summary in its place is theatre and is returned.
+label, a key, or a summary in its place is a stand-in and is returned.
 
 2.3 **Predicates and readers.** `is_*` and `has_*` return `bool` and are
 exposed at boundaries only; a `bool` is never branched on inside cognition
@@ -110,10 +109,10 @@ appear in cognition outside tests; `unreachable!` where the type system
 already excludes the arm names the invariant in its message.
 
 THE SCOPE AND THE LAWFUL DEFAULT (agreed by mycelium, netstratum and
-xylarium, 2026-10-21; xylarium's CONDUCT 9.6). "Cognition" names where the
+xylarium, 2026-10-21; xylarium's conduct notes, 9.6). "Cognition" names where the
 rule was first stated, not its bound: a coding standard binds every line a
 developer writes — a universe's physics kernel as much as a mind's code —
-and never limits what a mind may count or rank (the operator, 2026-10-08).
+and never limits what a mind may count or rank (ruled 2026-10-08).
 A default stands only where THE LAW ITSELF ASSIGNS THAT VALUE AT THAT
 POINT — the law's reading of absence: the empty sum is 0, the empty
 product 1, an empty enclosure holds nothing — named at its site (here an
@@ -145,11 +144,11 @@ counts in μ⃗ per lane, in versors and blades, in ℤ-ranks.
 
 The same rule binds every comment in a body (ruled 2026-09-12). A comment
 states what the code now does, in the document's words, and the chapter
-that says why. It carries no measurement, no commit id, no fleet reading,
+that says why. It carries no measurement, no commit id, no deployment reading,
 no "this was", no story of how the line was found, and no permission
 ("rule 1 allows this"): a comment cannot allow anything, and the one that
 claimed to allow a pair loop was read by no tool and no reviewer while
-the loop took the fleet down. What a line used to do is in git; what it
+the loop took the deployment down. What a line used to do is in git; what it
 cost is on the ledger. The tree's prevailing inline style was the defect,
 not a limit on this section's reach: an agent that touches a file removes
 such comments from the functions it touches, in the same commit.
@@ -191,7 +190,7 @@ module declares, is production code to every gate.
 `Element::address()` of a constructed form, keys from `key()`, forms from
 `perceive`/`from_residual`/`extract_rule_with`. A hand-built `[1u8; 32]`
 address, a zero versor, or an identity gauge standing in for a real one is
-a costume and is returned; the only exception is a wire identifier
+a stand-in and is returned; the only exception is a wire identifier
 (`vk`) where the identity is routing, never content.
 
 3.5 **Refusals and traces.** Every `REFUSE_*` string has a test that
@@ -219,7 +218,7 @@ removed test names and removed assertions not re-added on every landing;
 each needs a sentence in the message.
 
 3.8 **No ignored tests, and stale tests leave as they are met** (ruled
-2026-09-24, the operator's word). A test marked `#[ignore]` is not kept:
+2026-09-24). A test marked `#[ignore]` is not kept:
 it is a claim nobody checks, and §3.7 refuses it. A test is valid — it
 reads what the tree does now under the rulings that stand — or it is
 deleted, in the commit that meets it, with the claim it dropped named
@@ -227,10 +226,10 @@ in the message. No test audit is opened for this and no development
 stops for it: the implementor removes a stale test when a change brings
 them to it, and the auditor returns a stale test found in a read.
 
-3.9 **No theatre; fixtures are the engine's constructs; the geometry is
-the engine's** (ruled 2026-09-26, the operator's word: "ensure there is
-no theatre going in our tests, that harnesses are legitimate only for our
-engine as constructs and that our geometry is non-euclidean").
+3.9 **No stand-ins; fixtures are the engine's constructs; the geometry is
+the engine's** (ruled 2026-09-26: a test asserts no stand-in for the
+engine's work, a harness is legitimate only as a construct of the engine,
+and the geometry tested is non-Euclidean).
 (a) A test asserts a law, a theorem or an algebraic identity ON TYPED
 VALUES THE ENGINE COMPUTES. It never asserts a printed string, a
 rendered line or a census diff, and a test that asserts nothing and
@@ -253,13 +252,13 @@ the conformal versor between them, known by its action. Coordinates on
 
 ## 4. Gates
 
-Ruled 2026-09-12 by the operator, replacing this section as written on
+Ruled 2026-09-12, replacing this section as written on
 2026-09-07 and amended on 2026-09-10. The line-matching gates of
 `xtask/lint/` are deleted: eighteen files that read source as text with
 every comment erased, six debt mechanisms for one idea, some two hundred
 hand-kept rows of file path and hit count, and a clique gate for two
 spellings written after the second clique. They passed both pair loops
-that took the fleet down, permitted the whole-carrier walk under one name
+that took the deployment down, permitted the whole-carrier walk under one name
 while refusing it under another, and carried a red test of their own for
 a week because the gate command did not run it. A rule is checked where
 the compiler reads it, or it is a type, or it is a review item. Nothing
@@ -267,9 +266,8 @@ in between exists again.
 
 4.1 **Two gates remain.** The reading bound (`xtask/lint/length.rs`: no
 source file over 2500 lines, no list of exceptions; a raise to 2500
-landed 2026-09-19 on a word that did not pass through the coordinator's
-console and was returned, and landed again 2026-09-25 on the same word
-relayed through it — the constant and its test moved by the implementor
+landed 2026-09-19 without a recorded ruling and was returned, and landed
+again 2026-09-25 on the recorded ruling — the constant and its test moved by the implementor
 as a named staging exception outside `src/`, like `Cargo.toml`'s and
 `clippy.toml`'s) and the warning gate
 (`cargo clippy --release --all-targets -- -D warnings`, rustc's warnings
@@ -292,7 +290,7 @@ compiler can read is a lint, denied crate-wide under `[lints.clippy]` in
 | rule 11: no invented value | `disallowed_methods` for `unwrap_or`, `unwrap_or_else`, `unwrap_or_default`, `saturating_sub`, `saturating_mul` |
 | rule 15: no member by position | `disallowed_methods` for `slice::first`, `slice::last`, `core::iter::Iterator::nth` — the slice spellings are the ones clippy 1.95 resolves; `core::slice::<impl [T]>::first` does not, and the build says so in a warning |
 | rules 1, 8: no whole-carrier walk in cognition | `disallowed_methods` for every whole-carrier reader `Keyed` exposes (`keyed_persist_walk` and any entries-style walk); `fiber` is a type rule, 4.4 |
-| laws 1 and 4, 78.45: no approximation | `float_arithmetic`, `cast_precision_loss` (denied crate-wide in `Cargo.toml`; listed here 2026-09-25 on the operator's rule that the engine is built on precision — the tree measured float-free that day); a decimal served as a reading is the review item of 4.4 |
+| laws 1 and 4, 78.45: no approximation | `float_arithmetic`, `cast_precision_loss` (denied crate-wide in `Cargo.toml`; listed here 2026-09-25 on the ruling that the engine is built on precision — the tree measured float-free that day); a decimal served as a reading is the review item of 4.4 |
 
 A lint fires on the item, in scope, with `#[cfg(test)]` handled by the
 compiler and not by a brace counter. Each entry is proved once, at the
@@ -358,7 +356,7 @@ row of 4.2 or 4.4 that carries that rule.
 
 ## 5. Commits
 
-5.1 **One phase per commit** (ruled 2026-09-22 by the operator; before
+5.1 **One phase per commit** (ruled 2026-09-22; before
 that date, one item). The unit of a landing is a phase: the rows of
 `MU-RECURSION-TASKS.md` that together make one claim the engine can be
 audited on, landed in one commit whose message names every row it
@@ -388,8 +386,8 @@ there too and are configuration, not tracked), editor files, secrets.
 else lands.
 
 5.4 **Pushing and history.** Nothing is pushed and no history is rewritten
-without the operator's word. A commit that must be removed from history
-(an artifact, a secret) is reported, and the operator decides.
+without the maintainer's approval. A commit that must be removed from history
+(an artifact, a secret) is reported, and the maintainer decides.
 
 5.5 **Docs commits.** A document change lands in its own commit the same
 day as the code it describes; a doctrine change (§9) lands before the code
@@ -403,8 +401,8 @@ otherwise the item's rows wait for their own commit and the other agent's
 pending edits are left alone. Four bundles on 2026-09-07 had this one
 cause.
 
-5.7 **The ledger is kept, not appended** (ruled 2026-09-24, the
-operator's word: "it has grown like a weed"). `MU-RECURSION-TASKS.md`
+5.7 **The ledger is kept, not appended** (ruled 2026-09-24: an
+append-only ledger grows without bound). `MU-RECURSION-TASKS.md`
 carries ONE live order. A row is an object the engine can be audited
 on; a reading is a line of the observer's row (CV5) and never a row of
 its own. A ruling that changes an object's statement amends that
@@ -437,8 +435,8 @@ its ruling AND against the carrier it writes into and every ruling that
 retired a carrier (§6.6). A landing is called verified only after that
 read; a report is never the object of an audit, the code is. THE AUDITOR
 DOES NOT RE-RUN THE SUITE, THE GATE AND THE CENSUS ON THE SAME MACHINE,
-TOOLCHAIN AND COMMIT the implementor quoted them from (ruled 2026-09-24,
-the operator's word): that reproduction confirms only that the report was
+TOOLCHAIN AND COMMIT the implementor quoted them from (ruled 2026-09-24):
+that reproduction confirms only that the report was
 not misquoted, which reading the quoted lines already does, and it is
 reserved for a commit whose report there is reason to doubt or that lands
 from a dirty tree.
@@ -449,8 +447,7 @@ changes admission, the wire, or the market is followed by a whole-fleet
 recut before its readings are used.
 
 6.6 **A landing is checked against the carrier it writes into** (ruled
-2026-09-24, the operator's word; the coordinator's fault at LD0 steps 4
-and 5). A change that moves a field onto "a row" is audited against what
+2026-09-24; the audit fault at LD0 steps 4 and 5). A change that moves a field onto "a row" is audited against what
 the row lives in: LD0's per-word fields were landed onto rows of the
 MYC7 snapshot — a linear byte tape read by position in write order —
 after the tape had been retired (MU-RECURSION 1.9, K6, 54.5) and after
@@ -503,11 +500,11 @@ files that exist.
 
 8.1 **The implementor** follows the directive order as given. A blocker
 found mid-order is reported with the evidence and the proposed reorder;
-the reorder is the auditor's or the operator's, not the implementor's. A
+the reorder is the auditor's or the maintainer's, not the implementor's. A
 measurement that needs code lands as its own commit, named
 `instrumentation:`, containing trace lines only and no behaviour change.
 Nothing outside the repository is changed (unit files, drop-ins,
-environment, cron, the operator's home) without asking first and saying
+environment, cron, the maintainer's home directory) without asking first and saying
 what and why. Reverts are not a move; a wrong landing is corrected
 forward by a commit that says what was wrong.
 
@@ -548,7 +545,7 @@ after one commit to report it is a departure (§8.3).
 ## 9. Doctrine changes
 
 The semantics of a chapter (what a move does, what a carrier holds, what
-the economy pays, what time is) change only by the operator's ruling
+the economy pays, what time is) change only by a maintainer's ruling
 recorded in `MU-RECURSION.md`, `MU-ECONOMY.md`, or `XSEPTUM.md` before
 the code changes. A commit that changes behaviour the document specifies
 otherwise is a doctrine change made in code and is returned, however
@@ -557,7 +554,7 @@ each such drift found after the fact.
 
 ## 10. The recut
 
-The recut is a procedure the operator runs from a script in the
+The recut is a procedure the maintainer runs from a script in the
 repository (`scripts/recut`): stop 1–5 then c, b, a; wipe ledgers, genomes,
 thoughts, registry, court federation; keep keys, mesh, corpora; drop each
 hypha's origin (`--recut`, one run of the binary per hypha, which bumps the

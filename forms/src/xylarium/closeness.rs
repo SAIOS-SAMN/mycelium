@@ -1,8 +1,9 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! THE TWO-SIDED CLOSENESS, IN SHARES (CONCORDANCE 2.10; xylarium's
-//! selection — its operator's ruling of 2026-10-20, THE FLAT RETIRED, spec
-//! aa9ab61: "this is flat squares: 't²' … antithetical"; the amplitude form
+//! selection — its ruling of 2026-10-20, THE FLAT RETIRED, spec
+//! aa9ab61: shares read as squares `t²` are flat and antithetical to the
+//! design; the amplitude form
 //! of ff0e817d, its shares the squares of half-angle points, is deleted, not
 //! kept beside this one). netstratum's closeness is its own, in degrees: a
 //! ruled divergence (A7).
@@ -165,7 +166,7 @@ mod tests {
     /// THE JOINT READ (the landing rule): xylarium's vector of 2026-10-20 —
     /// shares, phases, and the EXACT closeness it reads — reproduced bit for
     /// bit. No grid is read: the floors it sent beside them are its own
-    /// observer's, never a joint frame (the operator, 2026-10-21).
+    /// observer's, never a joint frame (ruled 2026-10-21).
     #[test]
     fn xylariums_read_is_reproduced() {
         type Row = (Vec<Q>, Vec<Q>, Vec<Q>, Q);

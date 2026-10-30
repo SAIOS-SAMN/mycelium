@@ -309,9 +309,9 @@ pub enum TermUnread {
     CosetUnbounded,
 }
 
-/// 78.97 — A CHORD IS HEARD, NOT TRAVERSED (the operator, 2026-10-04:
-/// "chords are harmonic - you cant "see" chords : you "see" rays through
-/// luminal - our layering is incorrect"). A chord is the overlap between two
+/// 78.97 — A CHORD IS HEARD, NOT TRAVERSED (ruled 2026-10-04:
+/// a chord is harmonic and is not seen; what is seen are rays through the
+/// luminal, and the earlier layering was incorrect). A chord is the overlap between two
 /// sections' PIECES — two copies of one piece, one spectrum sounded at two
 /// places (AT1, ruled (a): a piece-chart is a meet chord's end and nothing
 /// else). It is the harmonic eye's relation, an interval; nothing travels

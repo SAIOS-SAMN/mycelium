@@ -53,8 +53,8 @@ fn the_minds_k_counts_its_returns_and_is_not_persisted() {
 /// A REWRITE IS AN ACT ON THE LANGUAGE, NEVER A WORD OF IT. A syllabus page
 /// carrying a court's `Retire` back teaches the mind nothing: the genome does
 /// not take it, and its stratum is one the sheaf sync never fetches. Where a
-/// language holds one, the genome writer leaves it out by name (read on the
-/// fleet 2026-10-19: rewrites were 88% of a 48 MB genome).
+/// language holds one, the genome writer leaves it out by name (observed on the
+/// development deployment, 2026-10-19: rewrites were 88% of a 48 MB genome).
 #[test]
 fn a_rewrite_taught_is_never_a_word_of_the_genome() {
     let word = super::common::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);

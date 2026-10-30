@@ -1,4 +1,4 @@
-// 78.134 — A WORMHOLE AS A TUBE (the coordinator's rulings, the operator's
+// 78.134 — A WORMHOLE AS A TUBE (as ruled, under the
 // anti-flattening rule), moved from `handoff.rs` and, 78.140, given a
 // GEOMETRY per end: a curved face (`ℍ³` of radius `R`) or a flat TORUS face
 // (axis-aligned periods), each end's frame a motion of its own space and its
@@ -189,7 +189,7 @@ pub fn place_in(space: &Geometry, frame: &Mv) -> Option<Mv> {
     }
 }
 
-/// 78.140 — A THROAT'S LEVEL IN ONE FACE (the coordinator's ruling (i)):
+/// 78.140 — A THROAT'S LEVEL IN ONE FACE (ruling (i)):
 /// CURVED, the horosphere level `c = cosh(2m/R)` (the upper bound of its
 /// certified enclosure); FLAT, the sphere's RADIUS `2m` in the face's units
 /// and its RATIO `2m / L_min`, which a fitting throat keeps below `½`;

@@ -1,5 +1,5 @@
-// 78.76 — THE REMAINDER INVERTED: noise is signal missing an inversion (the
-// operator, 2026-10-02). What a form fails to speak of its scene is read as a
+// 78.76 — THE REMAINDER INVERTED: noise is signal missing an inversion (ruled
+// 2026-10-02). What a form fails to speak of its scene is read as a
 // scene of its own, perceived and extracted by the same eyes, and the
 // generators that produce it join the form — judged only by speech.
 //

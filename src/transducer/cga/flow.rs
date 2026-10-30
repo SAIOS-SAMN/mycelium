@@ -1,6 +1,6 @@
 // 78.75 — THE FLOW: a motion read as where it stands on its own one-parameter
-// flow, never as a step between two samples (the operator, 2026-10-03: "why
-// are you using steps in a continuous motion?").
+// flow, never as a step between two samples (ruled
+// 2026-10-03: a continuous motion is never read in steps).
 //
 //! Every mode of a motion lies on the flow its plane generates. On one simple
 //! plane `B`, with `k = B²` a rational scalar, the mode is the ray

@@ -353,7 +353,7 @@ pub(crate) fn peel_versor_with_target(
 /// standing arc's demand names the least prime of its norm outside the
 /// alphabet, found by trial division up to `√n` — and a reader that asks
 /// only whether a word spells dropped that prime unread: 76% of a family's
-/// hold on the fleet's stalled task (`50846271`, sampled) was spent finding
+/// hold on the development deployment's stalled task (`50846271`, sampled) was spent finding
 /// primes no caller kept. The arc is held here as its exact coordinates
 /// (its plane, `p`, `q`, the block, the target) and typed only by a caller
 /// that keeps the demand (law 12: never computed to be dropped).

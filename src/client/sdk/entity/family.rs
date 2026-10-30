@@ -93,7 +93,7 @@ pub(crate) enum Ascertained {
     /// Some held-out pair did not close: the rule fits, and is not known —
     /// with the first guard of the undetermined ruling it fails.
     Unknown(Unexempt),
-    /// UNDETERMINED BY ITS PERSPECTIVES (the auditor's ruling, 2026-10-22):
+    /// UNDETERMINED BY ITS PERSPECTIVES (ruled 2026-10-22):
     /// a clause rule the act reader stated over a TWO-pair family, proven on
     /// both pairs. Its siblings are one pair each, and the act reader states
     /// no clause from one pair ("a coordinate separating bodies on one pair
@@ -109,7 +109,7 @@ pub(crate) enum Ascertained {
 }
 
 /// WHY A RULE ITS PERSPECTIVES DID NOT KNOW IS NOT UNDETERMINED: the first of
-/// the ruling's three guards it fails (the auditor, 2026-10-22), read in the
+/// the ruling's three guards it fails (ruled 2026-10-22), read in the
 /// order the ruling is stated from the family outward.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Unexempt {
@@ -275,7 +275,7 @@ pub(crate) fn ascertain_on(epi: &Epigenome, train: &Family, rule: &SentenceRule)
             return (Ascertained::KnownByInversion(Box::new(rule)), lifts);
         }
     }
-    // THE TWO-PAIR CLAUSE RULE, UNDETERMINED (the auditor's ruling,
+    // THE TWO-PAIR CLAUSE RULE, UNDETERMINED (the ruling of
     // 2026-10-22, its three guards): exactly two pairs, so each sibling set
     // is one pair (guard 3); the family's rule is the act reader's clauses
     // (guard 1 — a vertex fit stays unknown); and it closes both pairs

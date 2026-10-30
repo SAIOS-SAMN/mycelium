@@ -113,7 +113,7 @@ fn a_heard_head_is_cited_once_its_gap_closes() {
 /// hearing it holds neither line: the chase closes b's own gap, finds d's
 /// receipt missing, chases d up to the place cited, and admits b's head as
 /// a parent. Before, `hear` chased only the frame's own line and returned
-/// on the missing parent — on the fleet, courts b's and c's lines, each
+/// on the missing parent — on the development deployment, courts b's and c's lines, each
 /// citing the other's receipts, never advanced at a.
 #[test]
 fn a_head_citing_another_signer_is_cited_once_that_signer_is_fetched() {
@@ -160,7 +160,7 @@ fn a_head_citing_another_signer_is_cited_once_that_signer_is_fetched() {
     assert!(c.lock().expect("c").known_head(&dvk).is_some(), "d's line was fetched for the citation");
 }
 
-/// NO SILENT VERDICT (2026-10-08, the coordinator's ruling on hypha c) — A
+/// NO SILENT VERDICT (ruled 2026-10-08, on hypha c) — A
 /// BACK-FILL PAGE THAT STOPS ON A MISSING PARENT SAYS SO. b's line cites d's
 /// head, and the court paging b holds nothing of d: the page admits b's own
 /// acts up to the citing receipt and stops there, handing the citation back.

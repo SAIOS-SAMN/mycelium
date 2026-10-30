@@ -218,7 +218,7 @@ impl Entity {
         // The outer index names what differs by address; a stratum the
         // fibre Čech already glued is not walked again, and a stratum of
         // residual chains — open questions the mind holds on its carrier and
-        // never as words (MU-CLIENT §7.1, the operator 2026-10-18) — differs
+        // never as words (MU-CLIENT §7.1, ruled 2026-10-18) — differs
         // from the court's by doctrine and is never fetched for it.
         let all: Vec<_> = sheaf::discordant(&remote, &local)
             .into_iter()
@@ -283,7 +283,7 @@ impl Entity {
             let _ = self.absorb_taught_at(&t.word, Some(t.at), &mut budget);
             // BROUGHT IS WHAT THE GENOME NOW HOLDS: a word that arrived and was
             // refused is sent again on the next fetch, so counting its arrival
-            // kept its stratum from ever resting (the auditor, 2026-10-22: court
+            // kept its stratum from ever resting (observed 2026-10-22: court
             // a still deferring ~12 000 words an hour after 98698aef).
             if let Some(w) = fetched.as_ref().filter(|w| self.epigenome.holds(w.address().as_bytes())) {
                 brought.insert(crate::transducer::stalk::invariant_of(w).key().as_bytes(), ());
@@ -548,7 +548,7 @@ impl Entity {
                 break;
             }
             // MU-CLIENT §7.1 — A RESIDUAL CHAIN IS AN OPEN QUESTION, NEVER A
-            // WORD (the operator, 2026-10-18): what the court teaches of one
+            // WORD (ruled 2026-10-18): what the court teaches of one
             // is filed on the mind's carrier of open questions, by address,
             // and never learned into the genome.
             if crate::client::sdk::epigenome::is_residual(&e) {
@@ -573,7 +573,8 @@ impl Entity {
             // only the court's stamp, filed below; replayed, comprehended and
             // pivoted again, every restart re-learned the mind's whole
             // language, a page per landing, and held the winding for minutes
-            // (read on the fleet 2026-10-16 07:38: every mind in
+            // (observed on the development deployment, 2026-10-16 07:38:
+            // every mind in
             // `pull_syllabus`'s landing).
             if self.epigenome.holds(e.address().as_bytes()) {
                 if let Some(at) = at {
@@ -586,7 +587,8 @@ impl Entity {
             // again — every sync fetches the stratum it stands in while its
             // citations are missing — it is the same Withheld reading, and
             // replayed and comprehended again it held the winding in the
-            // fetch's landing for minutes (read on the fleet 2026-10-16 08:21:
+            // fetch's landing for minutes (observed on the development deployment,
+            // 2026-10-16 08:21:
             // genome still, refused 0, the dialect up 294 in a minute).
             if let Some(d) = self.epigenome.dialect.get(e.address().as_bytes()).filter(|d| d.withheld) {
                 waiting.extend(d.missing.iter().cloned());
