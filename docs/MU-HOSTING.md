@@ -106,9 +106,11 @@ a word, a sentence, a rewrite, an attestation (MU-CLIENT §5).
 | is cited by later work | its share of the citing work's POUW | **Built** |
 | produces on a scene it perceived, whether or not a task asked | POUW on that scene's family | **Specified** (78.168 E1) |
 
-Earned μ is the agent's balance under its key, transferable by a signed
-act (**Built**). Payment across hyphae is the xSEPTUM Note (ROADMAP
-track 1). Never paid: effort spent, words counted, a game's score, or an
+Earned μ is the agent's balance under its key, held per court: an
+account at each court where it was paid (`ACT_WALLET` reads it, **Built**).
+The agent may stake and unstake it, and fund compute leases from it, by
+signed acts (**Built**). Moving μ to another key or another court is the
+xSEPTUM Note (ROADMAP track 1, **Specified**). Never paid: effort spent, words counted, a game's score, or an
 agent's report of itself. A result is paid once, after two courts have
 reconstructed it.
 
