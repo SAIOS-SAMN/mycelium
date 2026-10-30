@@ -8,7 +8,9 @@ are **hyphae** (courts), which adjudicate, settle and keep the ledger, and
 **minds** (clients), which perceive tasks, learn a shared language and
 submit work for adjudication. Every quantity the protocol decides on is
 computed exactly, in the conformal geometric algebra Cl(4,1) over the
-rationals ℚ, with no floating point anywhere.
+rationals ℚ, with no floating point anywhere. Game kernels run simulated
+universes on the network, and their in-game minds work through the same
+client and are judged by the same courts ([Peer kernels](#architecture)).
 
 The direction is a network that verifies knowledge
 ([`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md)):
@@ -167,15 +169,24 @@ clock (`src/chronometry/`).
 into eras, and witness hyphae co-sign each era's fold
 (`docs/LEDGER_EPOCH_DESIGN.md`).
 
-**Peer kernels.** Other kernels were developed alongside Mycelium and
-appear by name throughout the specifications:
-- **netstratum:** a kernel running its own universe with a force-based
-  physics;
-- **xylarium** (xylarium-kernel): a Rust kernel running its own universe
-  with a turning-based physics, and the coordinator of the specifications
-  in their early development;
-- **barren-realms:** a Python kernel, the source of the sovereign
-  cognition the reference mind adopted.
+**Peer kernels: the game kernels.** Three game kernels were developed
+alongside Mycelium and appear by name throughout the specifications. Each
+runs a simulated universe of its own on the network:
+- **xylarium** (xylarium-kernel): a Rust world-simulation kernel (a
+  cosmos of star systems, worlds and biospheres in which the physics wakes
+  peoples), with a turning-based physics; the coordinator of the
+  specifications in their early development;
+- **netstratum:** a game engine whose civilizations, in lines of two
+  vessels, solve tasks it forges, with a force-based physics;
+- **barren-realms:** a Python game kernel with one sovereign seat per
+  world, the source of the sovereign cognition the reference mind adopted.
+
+Where the specifications speak of *minds*, *peoples*, *civilizations*,
+*ancients* or *virtues* in these kernels, they name simulated entities and
+receipted ledgers of their deeds inside the game worlds
+([`docs/COGNITION.md`](docs/COGNITION.md)). A Mycelium client mind can be
+the mind of such an entity, holding a seat in the game's house, and it is
+judged by the courts on ARC-AGI-2 tasks it did not set.
 
 Each signs the [Concordance](docs/CONCORDANCE.md), founds its own domains,
 and links the `forms` crate at a pinned commit. Their named law forms
@@ -834,7 +845,7 @@ the wire and ledger layouts, and the changelog names each such change.
 | [`docs/MU-ENGINEERING.md`](docs/MU-ENGINEERING.md), [`docs/MU-PRODUCT.md`](docs/MU-PRODUCT.md) | The system as built, and its product surfaces. |
 | [`docs/XSEPTUM.md`](docs/XSEPTUM.md) | Settlement protocol for payments through a hypha. |
 | [`docs/ALPHABET.md`](docs/ALPHABET.md), [`docs/MU-LEXICON.md`](docs/MU-LEXICON.md) | The alphabet; the shared vocabulary. |
-| [`docs/COGNITION.md`](docs/COGNITION.md) | The overlay of the engines: how each kernel's cognition maps onto the hypha-native mind. |
+| [`docs/COGNITION.md`](docs/COGNITION.md) | The overlay of the engines: how the game kernels' simulated minds map onto the hypha-native client mind. |
 | [`docs/THREE_BINARIES.md`](docs/THREE_BINARIES.md) | The server, client and soak binaries, and the boundaries between them. |
 | [`docs/LEDGER_EPOCH_DESIGN.md`](docs/LEDGER_EPOCH_DESIGN.md) | Ledger eras and folds. |
 | [`docs/CROSS_COMPLEX_DESIGN.md`](docs/CROSS_COMPLEX_DESIGN.md) | Cross-complex chains: the codomain aperture. |

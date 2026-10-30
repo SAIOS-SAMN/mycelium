@@ -4,6 +4,19 @@ Releases follow [semantic versioning](https://semver.org/). In the 0.x
 series, a minor version may change the wire and ledger layouts, and each
 such change is named here.
 
+## Unreleased
+
+### Documentation
+- The game kernels are named as such. `docs/COGNITION.md` opens with a
+  reading note: xylarium is a world-simulation kernel, netstratum a game
+  engine whose civilizations solve forged tasks, barren-realms a Python
+  game kernel; *minds*, *peoples*, *civilizations* and *virtues* name
+  simulated entities and receipted in-game ledgers, and ARC-AGI-2 is the
+  external test they are judged on. §0.5 carries the same scope.
+- The README's opening and *Peer kernels* section, and the glossary
+  (planetary mind, people, civilization, ancient; virtue book), state the
+  same frame.
+
 ## 0.2.0 — 2026-10-30
 
 ### Layout changes

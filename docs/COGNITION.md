@@ -1,5 +1,19 @@
 # Cognition — the overlay of the engines
 
+> **Reading this document.** Three game kernels run on the Mycelium network
+> beside the reference client mind. **xylarium** is a world-simulation
+> kernel: a cosmos of star systems, worlds and biospheres in which the
+> physics wakes peoples. **netstratum** is a game engine whose
+> civilizations, in lines of two vessels, solve tasks it forges.
+> **barren-realms** is a Python game kernel with one sovereign seat per
+> world. Throughout this document, *minds*, *peoples*, *civilizations*,
+> *ancients* and *planetary minds* name simulated entities inside those
+> game worlds, and *virtues*, *awareness* and *alignment* name receipted
+> ledgers of those entities' in-game deeds, read as pairs and never as
+> scores. None of it is a claim about real minds or real ethics. The
+> external test those simulated minds are judged on is ARC-AGI-2: tasks the
+> mind did not set, solved and verified by a Mycelium court.
+
 *Hosted in Mycelium (the progenitor's crate); drafted by the coordinating node; each
 engine attests its own section. Opened 2026-10-08 by ruling:
 the mycelium-clients become hypha-native minds that ARE the minds inside the
@@ -134,6 +148,11 @@ the games (Concordance 3.7): one kind of mind, measured one way.
   they prove reaches POW++ through their universe's ancients.
 
 ### 0.5 Virtue, alignment and the ladder
+
+*Editorial note (2026-10-30): this section specifies game-world mechanics.
+A planetary mind is a simulated people's mind inside a game kernel's world
+(see "Reading this document" above); its virtues are ledgers of its
+in-game deeds, and its ascension is measured by the court on ARC-AGI-2.*
 
 The design aim: a planetary mind that understands it lives among other
 entities, with courage, morality and integrity, read mathematically, so that
