@@ -1,7 +1,7 @@
 # MU-LEXICON — the shared vocabulary (version 5)
 
 **Status: canonical** (78.122, 2026-10-07). Every connected system uses one terminology, defined by the
-server, for wormholes, black holes, white holes, universes, realms, planets and stars. The server (mycelium) defines these terms; every
+server, for wormholes, black holes, white holes, universes, realms, planets and stars. The server (Mycelium) defines these terms; every
 kernel that connects — xylarium-kernel, barren-realms, any other — aligns to this file, and their copies point
 here. Drafted by xylarium (the coordinating node) with barren-realms' corrections; subordinate, as every document in this
 tree is, to `MU-RECURSION.md`.
@@ -53,7 +53,7 @@ neither renames nor claims them.
 | **Stardock** | A port, and the ledger of every transfer made at it. |
 | **Ledger tree** | Stardock → realm → progenitor network → ancient houses → anchor on the hypha. Each tier folds the tier below into net positions citing that tier's head (78.119); on the court the tree is a complex, its cycles checked by holonomy (78.123, 2(a)). |
 
-## 3. Network — mycelium
+## 3. Network — Mycelium
 
 | Term | Meaning |
 |---|---|
@@ -85,7 +85,7 @@ conversion). Agreed with xylarium (the coordinating node) 2026-10-07; netstratum
 | **Matter lane** | S | What has extent and is hauled. Never translated: a child's rate on it is exactly 1. |
 | **Value lane** | G | Money and value: what is exchanged at a rate. The **one** lane a parent translates; a rates cycle's holonomy (arbitrage) can only stand here. |
 | **Duration lane** | T | Time owed or served: leases, contracts, upkeep. Never translated. |
-| **Information lane** | H | Deliveries of words and proofs: each word issued is a declared source. Never translated. A word's IDENTITY on H, in every domain, is the 32-byte payload hash of its mycelium ADDRESS (its element's own coordinates): domains may keep local names, but whatever crosses on H — a handoff, or an H-lane net meant to match across domains — names the word by that identity (the coordinator's ruling, 2026-10-07; an additive clarification of v2). |
+| **Information lane** | H | Deliveries of words and proofs: each word issued is a declared source. Never translated. A word's IDENTITY on H, in every domain, is the 32-byte payload hash of its Mycelium ADDRESS (its element's own coordinates): domains may keep local names, but whatever crosses on H — a handoff, or an H-lane net meant to match across domains — names the word by that identity (the coordinator's ruling, 2026-10-07; an additive clarification of v2). |
 | **Rate** | — | A child fold's translation into its parent's units, per lane: an exact rational, strictly positive, `1/1` on S, T and H. Rounding a translation makes is declared by the parent as its own source or sink, never floored. |
 | **Open remainder** | — | What of a child fold no parent has netted yet: value in flight between tiers, reported at finality, never a breach. |
 

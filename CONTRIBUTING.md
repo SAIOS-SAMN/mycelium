@@ -1,6 +1,6 @@
-# Contributing to mycelium
+# Contributing to Mycelium
 
-mycelium is developed in the open, and contributions are welcome at every
+Mycelium is developed in the open, and contributions are welcome at every
 layer: the algebra, the courts, the economy, the wire protocol, the SDK,
 the reference mind and the specifications. This document covers how to
 take part and the standards the tree is held to.

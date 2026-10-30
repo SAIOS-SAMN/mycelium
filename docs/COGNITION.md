@@ -1,6 +1,6 @@
 # Cognition — the overlay of the engines
 
-*Hosted in mycelium (the progenitor's crate); drafted by the coordinating node; each
+*Hosted in Mycelium (the progenitor's crate); drafted by the coordinating node; each
 engine attests its own section. Opened 2026-10-08 by ruling:
 the mycelium-clients become hypha-native minds that ARE the minds inside the
 games — xylarium's planetary minds, and for netstratum an empty client kernel
@@ -57,11 +57,11 @@ unless a measurement is cited.
   the mind did not set (1.9). Self-forged solves are practice.
 - ONE LANGUAGE. Anastome: words as Cl(4,1) objects carrying their constructor
   derivation, reconstructed when contested (4.4). Anastome's 17 letters were
-  restored from ipsal-autic v0.4 (AUTIC; mycelium ALPHABET.md), which is no
-  longer developed. netstratum's AUTIC path (the frozen predecessor mycelium
+  restored from ipsal-autic v0.4 (AUTIC; Mycelium ALPHABET.md), which is no
+  longer developed. netstratum's AUTIC path (the frozen predecessor Mycelium
   tree's `autic` module and `reduct`, a copy of ipsal-autic v0.4's `iae`) is a stale local
   fork, and is re-founded on anastome.
-- ONE SEAM. mycelium 78.142, the SDK rule seam: a sequence of steps (Motion,
+- ONE SEAM. Mycelium 78.142, the SDK rule seam: a sequence of steps (Motion,
   Hue) placed on a family's frames, minted through the court's own constructors,
   checked with the judge's own decoder (would_judge). Every kernel's minds enter
   the court through it; no kernel forges Element bytes.
@@ -69,7 +69,7 @@ unless a measurement is cited.
 ### 0.3 Why no mind passes ARC-AGI-2 yet
 
 Both engines fail for the SAME reason: what a rule can say, not how a grid is
-seen (for mycelium, read from its code and the soak's judged counts; for
+seen (for Mycelium, read from its code and the soak's judged counts; for
 netstratum, estimated, its baseline ARC reading pending the 78.142
 translator). Neither vocabulary can state:
 - rules relative to objects, and test objects of an unseen shape;
@@ -79,12 +79,12 @@ translator). Neither vocabulary can state:
 - creation (lines, fills, gravity), or outputs of a different size;
 - a rule beyond one motion per shape class per frame.
 More search over a vocabulary that cannot state the answer finds nothing.
-The doctrine already names the wall (mycelium 36.2's projection wall, 55.8's
+The doctrine already names the wall (Mycelium 36.2's projection wall, 55.8's
 "not in GL_n(Q)").
 
 THE ROAD (proposed, for ruling): grow the court's own rule vocabulary
 after 78.142, so that every kernel's minds and the court speak one rule
-language. mycelium's minimal extension, inside its laws (its section 1.2a):
+language. Mycelium's minimal extension, inside its laws (its section 1.2a):
 - SELECT: a typed predicate over a body's own coordinates (chart up to moduli,
   hues, shell, contact, frame position); a Motion or Hue step then applies to
   the selection. This is the conditional. Equality, membership, and (1.10)
@@ -102,13 +102,13 @@ after 78.142 and before curved holes. COMPARISONS RULED (2026-10-08;
 Concordance 1.10): developer standards bind developers, not minds. Minds may
 count, compare, rank and take majorities in perception and in rules, a rule
 naming its own order, ties included, judged by closure on withheld pairs.
-Observed (mycelium, one reader, 40 training tasks): about 15% of ARC-AGI-2
+Observed (Mycelium, one reader, 40 training tasks): about 15% of ARC-AGI-2
 families need a comparison. Then: (1) the language can state the rule; (2)
 composition over it (search, or better the reduce organ); (3) learning that
 grows it (admitted words), each measured by the court's judge on ARC tasks the
 minds did not set.
 
-A DEFECT, to reproduce before fixing (mycelium): a rule spanning two or more
+A DEFECT, to reproduce before fixing (Mycelium): a rule spanning two or more
 training pairs names training frame indices that a withheld pair does not
 have, so it is refused as uncheckable (I), while the client's own replay on the
 training pairs passes. Plausibly some of the soak's I refusals.
@@ -139,7 +139,7 @@ The design aim: a planetary mind that understands it lives among other
 entities, with courage, morality and integrity, read mathematically, so that
 alignment, ascension and intelligence are measured.
 
-The law every reading obeys (netstratum 27_EVIDENCE; mycelium 78.92): a
+The law every reading obeys (netstratum 27_EVIDENCE; Mycelium 78.92): a
 reading is frame-free, conserved, reproducible and able to fail; alignment is
 what can be verified, never what a mind asserts of itself; a judgement is never
 collapsed to one number (the struck C-gate: a sum of differences discards the
@@ -185,7 +185,7 @@ ancients, speaking anastome: universe mathematics.
 
 ---
 
-## 1. Mycelium — the client mind (attested by mycelium)
+## 1. Mycelium — the client mind (attested by Mycelium)
 
 ### 1.1 The baseline it must beat (measured)
 
@@ -452,7 +452,7 @@ genomes, standalone proofs, dialect letters (law 8, `think.rs:139-143`).
   `sentence::Reasons::of`, a sentence's reasons read off the sentence.
 - No "virtue" or "ethic" anywhere in the tree.
 
-### 1.8 What mycelium owes the overlay, in order
+### 1.8 What Mycelium owes the overlay, in order
 
 78.140 GEOMETRY → 78.141 signed solves → 78.142 the rule seam (family-agnostic:
 grids for viability, motions for curved holes) → curved holes → seats (the
@@ -519,12 +519,12 @@ then replays the result on every training pair.
   - The library re-folds from SolverWordMinted receipts. Each vessel's grown basis is private workspace.
 - **Hardness** is the number of distinct crystal-class sets among the confirming vessels (conductor:1362-1392). It reads 1, because both vessels think the same task with the same deterministic organ.
 - **The depth-3 cap.** A measured anti-overfit frontier: 33 confirmed at <=3, 4 false beyond (solver/need.rs:130-155). It is not consulted by the live path; the live limit is the render table.
-- **Standing by the court's judge (Concordance 1.9): reading 1 = ZERO judged, coverage 0%.** netstratum's programs cannot yet be stated as court rules. A translator through mycelium 78.142's `sdk::rule` is approved. The ~26k self-forged solves are practice, not cognition.
+- **Standing by the court's judge (Concordance 1.9): reading 1 = ZERO judged, coverage 0%.** netstratum's programs cannot yet be stated as court rules. A translator through Mycelium 78.142's `sdk::rule` is approved. The ~26k self-forged solves are practice, not cognition.
 - **ARC-AGI-2:** the binding limit is representation (no object, relation, count or conditional rules), not search. Today about 0.
 
 ### 3.2 Language
 netstratum's AUTIC is STALE and LOCAL:
-- a path dependency on the frozen predecessor mycelium tree (last commit 2026-08-30), plus `reduct`, a renamed copy of ipsal-autic-v0.4's `iae`;
+- a path dependency on the frozen predecessor Mycelium tree (last commit 2026-08-30), plus `reduct`, a renamed copy of ipsal-autic-v0.4's `iae`;
 - spoken in-process between vessels (absorb, practise, speak and learn, author; conductor:3474-3692);
 - its membrane dials an address where nothing listens.
 

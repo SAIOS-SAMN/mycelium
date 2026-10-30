@@ -55,6 +55,13 @@ such change is named here.
   or `data/arc-agi-2` at the repository root).
 - Documentation is written in a specification register.
 - Added `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md` and `VERSION`.
+- `scripts/quickstart` brings up a three-hypha network and an SDK client on
+  one machine.
+- `GLOSSARY.md` defines the terms of the code and the specifications.
+- `docs/EQUATIONS.md` collects the equations, formulas and master equations
+  in use, with their specification sections and code locations.
+- The project name is written "Mycelium" in prose. Crate, binary and path
+  names stay `mycelium`.
 
 ## 0.1.0
 

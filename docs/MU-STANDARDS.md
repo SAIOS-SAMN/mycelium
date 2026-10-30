@@ -108,7 +108,7 @@ refusal strings are added to 34.1 in the same commit. `unwrap()`,
 appear in cognition outside tests; `unreachable!` where the type system
 already excludes the arm names the invariant in its message.
 
-THE SCOPE AND THE LAWFUL DEFAULT (agreed by mycelium, netstratum and
+THE SCOPE AND THE LAWFUL DEFAULT (agreed by Mycelium, netstratum and
 xylarium, 2026-10-21; xylarium's conduct notes, 9.6). "Cognition" names where the
 rule was first stated, not its bound: a coding standard binds every line a
 developer writes — a universe's physics kernel as much as a mind's code —

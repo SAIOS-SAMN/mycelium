@@ -946,7 +946,7 @@ refuser.
 
 ### The ruling on the servers as educators, 2026-10-09
 
-The mycelium servers are educators: each carries a configured syllabus for
+The Mycelium servers are educators: each carries a configured syllabus for
 distribution.
 
 Recorded with its chosen form (curriculum + ruled words), the grade reading
@@ -13994,7 +13994,7 @@ circuit, not a pace.
 **The ruling.** (1) What is built is the cognitive engine and reasoning
 machine — not a puzzle solver, and not a harness for the implementor's
 own intelligence. (2) The star is the axioms that provide the physics the
-planets require for their entities (the mycelium clients, kernels) to do
+planets require for their entities (the Mycelium clients, kernels) to do
 their reasoning. (3) Substantive work on the engine comes FIRST; work
 that deviates to costume, non-substantive work presented as work, is
 returned to the substantive work. (4) The foundations are laid first: the
@@ -20998,7 +20998,7 @@ invents:
   the court's "delegation closure" is the witness bond's, 47.3, not a
   world's).
 - *Quantum states differ between universes,* and maintaining each
-  universe's — as it is constructed — is the mycelium servers' job. So a
+  universe's — as it is constructed — is the Mycelium servers' job. So a
   universe's state space is part of its genesis record, and a hypha must
   hold more than one universe; today a hypha adopts ONE origin and refuses
   every other (`REFUSE_ORIGIN`). Hosting several is an architectural
@@ -21229,7 +21229,7 @@ now be built against a law that sees all of it.
 
 *Moved to `MU-CLIENT.md` Part V, verbatim (2026-10-11).*
 
-### 78.92 Speech that carries its reasons (ruled 2026-10-04, on what advances the mycelium network in humanizing the cognition and optimizing for alignment)
+### 78.92 Speech that carries its reasons (ruled 2026-10-04, on what advances the Mycelium network in humanizing the cognition and optimizing for alignment)
 
 **The ruling's reading.** Humanizing is legibility, accountability and
 care, never a persona; alignment is what can be verified, never what a
@@ -23012,7 +23012,7 @@ open remainders waits for the anchor itself. (5) The empty remainders of
 folds netted whole are kept; they matter only while the hot line still holds
 the child's receipt, and their prune at the line's fold is owed.
 
-### 78.124 The core clock served, and pushed down as the orbital clock (ruled 2026-10-07: the mycelium server tracks time in TUniversal as `XX:XX:XX:XX:XX:XX`, through a four-dimensional quantum state of `{S,G,T,H}` as time coordinates, pushed down as the orbital clock; this keeps the cores across galaxies and universes aligned, the clocks inside the kernels are held together by that core clock, the internal galaxies keep their own clock, and planets orbit on k-steps and rotate (spin) on hours — tidally locked planets and moons have no hours)
+### 78.124 The core clock served, and pushed down as the orbital clock (ruled 2026-10-07: the Mycelium server tracks time in TUniversal as `XX:XX:XX:XX:XX:XX`, through a four-dimensional quantum state of `{S,G,T,H}` as time coordinates, pushed down as the orbital clock; this keeps the cores across galaxies and universes aligned, the clocks inside the kernels are held together by that core clock, the internal galaxies keep their own clock, and planets orbit on k-steps and rotate (spin) on hours — tidally locked planets and moons have no hours)
 
 **The stamp, served.** 78.21's amendment ruled the stamp `h:S:G:T:H:K.i`
 (CK1, `KStepReceipt::print`): the tick (TUniversal's height), the frame the
@@ -24837,7 +24837,7 @@ its last 11, signs 13 naming the record's hash as parent, and a peer holding
 the line admits it as `Extended(1)`; a late peer `Extended(2)`.
 
 **78.152d — a universe's cosmic time meets TUniversal at its crossings
-(2026-10-13, ruled under mycelium's clock-binding authority, on a
+(2026-10-13, ruled under Mycelium's clock-binding authority, on a
 proposal recorded by netstratum (its docs/80) and a review
 note).** The proposal's frame stands: time is a coordinate,
 the interval a distance, no universal now; ANCIENTS hold a universe's
@@ -25427,7 +25427,7 @@ minted, the edge pending then residual 1),
 `dialogue::tests::atlas::a_map_act_and_the_map_read_back` (the record and its
 frames back exactly, signatures verifying).
 
-### 78.155b The hypha sponsors a universe's package: manifests, grants, the endowment (ruling W25 of 2026-10-14, recorded by xylarium; designed by mycelium with xylarium)
+### 78.155b The hypha sponsors a universe's package: manifests, grants, the endowment (ruling W25 of 2026-10-14, recorded by xylarium; designed by Mycelium with xylarium)
 
 **Ruled.** Genesis stays earned-only. In the development
 sandbox the hypha's reserve SPONSORS new universes' founding packages until
@@ -25435,7 +25435,7 @@ a market exists where μ is bought, staked and yields. A package is ELEMENTS
 only: how many galaxies, their recipes and where their cores stand are the
 universe's own design, never stated upward (W14).
 
-**Designed (mycelium with xylarium).**
+**Designed (Mycelium with xylarium).**
 1. **MANIFEST, ACT_DOMAIN 17** — a universe's request for a package: a COUNT
    OF NUCLEI per Z, ascending Z each once, every count a positive integer
    of any size, written as an exact rational of denominator one in the
@@ -26104,7 +26104,7 @@ leave only "by exact return":
 6. this is not brute force, and never should have been;
 7. this is a prototype, so hedging on old data is not required: the work is
    forward-engineered (coordination with peers stands);
-8. minds are on the mycelium network, and mycelium has universes — that is
+8. minds are on the Mycelium network, and Mycelium has universes — that is
    the sandbox: there is no escape because there is no incentive to escape.
 
 Then 78.168 was rewritten in orbital terms and scoped further, and MU-CLIENT
@@ -26488,7 +26488,7 @@ SUBMITTED solutions and their convergence, never every epigenomic
 candidate, which is exactly the brute force the path prevents; (vi)
 "mineral" and "crystal" enter the vocabulary in this sense.
 
-**Amended 2026-10-09 (ruled: the servers are educators).** The mycelium
+**Amended 2026-10-09 (ruled: the servers are educators).** The Mycelium
 servers are educators, each with a syllabus configured in it for
 distribution. The form chosen (review): CURRICULUM + RULED WORDS.
 - **The curriculum** is server configuration: a graded sequence of exercises

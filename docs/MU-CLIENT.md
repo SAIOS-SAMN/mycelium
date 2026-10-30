@@ -2785,7 +2785,7 @@ mathematics that carries is the exact part of the third, and it is
 exactly the second and third eyes this section names; the rest is refused
 by name so it is not re-imported.
 
-| reading | the older engine | exact? | mycelium receiver |
+| reading | the older engine | exact? | Mycelium receiver |
 |---|---|---|---|
 | the body's conformal invariants | vision: `SymmetryGroup` elements and per-body shape | yes | `Harmonics` (seven invariants and the hue spectrum) — present, one caller |
 | **cohesion χ**, per lamina: same-hue neighbours over neighbours, a 0-cochain over the body's laminae | touch: `AdjacencyStructure`, `CohesionCluster` | yes, Q per lamina, no threshold | the touch eye of P2: a 0-cochain on the blade's laminae, its coboundary the body's seams |

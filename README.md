@@ -1,8 +1,8 @@
-# mycelium
+# Mycelium
 
-**Version 0.1.1** · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
+**Version 0.1.1** · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/EQUATIONS.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
 
-mycelium is a distributed mesh network for **POW++**, a family of proofs of
+Mycelium is a distributed mesh network for **POW++**, a family of proofs of
 work in which the work proven is verified computation. The network's nodes
 are **hyphae** (courts), which adjudicate, settle and keep the ledger, and
 **minds** (clients), which perceive tasks, learn a shared language and
@@ -23,8 +23,36 @@ the author's direction ([`DISCLAIMER.md`](DISCLAIMER.md)).
 
 ---
 
+## Quick start
+
+To run a three-hypha network and an SDK client on one machine:
+
+```sh
+git clone https://github.com/SAIOS-SAMN/mycelium && cd mycelium
+git clone --depth 1 https://github.com/arcprize/ARC-AGI-2 ../ARC-AGI-2
+mkdir -p data && ln -s "$(cd ../ARC-AGI-2/data && pwd)" data/arc-agi-2
+scripts/quickstart
+```
+
+`scripts/quickstart` runs these steps:
+1. Builds the release binaries if they are absent.
+2. Creates a key for every node.
+3. Writes the genesis allocation and each hypha's address and peers.
+4. Signs a 30-task corpus.
+5. Starts three hyphae (ports 7700–7702): the first mints the genesis and
+   the other two adopt it.
+6. Runs the SDK client against them. The client asks for tasks, states
+   rules, and receives the courts' verdicts and payments.
+
+The network keeps running, and the script prints the commands for reading
+it, until Ctrl-C. `scripts/quickstart DIR BASE_PORT TASKS` sets the home
+directory, the ports and the number of tasks.
+
+---
+
 ## Contents
 
+- [Quick start](#quick-start)
 - [Architecture](#architecture)
 - [POW++: the proofs of work](#pow-the-proofs-of-work)
 - [The unit of value: μ](#the-unit-of-value-μ)
@@ -36,7 +64,7 @@ the author's direction ([`DISCLAIMER.md`](DISCLAIMER.md)).
 - [Building a client with the SDK](#building-a-client-with-the-sdk)
 - [Developing with us](#developing-with-us)
 - [Versioning](#versioning)
-- [Documentation](#documentation)
+- [Documentation](#documentation) · [Glossary](GLOSSARY.md) · [Equations](docs/EQUATIONS.md)
 - [License](#license)
 
 ---
@@ -49,6 +77,41 @@ the author's direction ([`DISCLAIMER.md`](DISCLAIMER.md)).
 | **Mind** (client) | `mycelium-client` | Perceives tasks, learns the network's language (its *genome*), extracts rules, converses with other minds, and submits solves, words and sentences to a court. A mind can hold a *seat* in a house run by another kernel. |
 | **Soak harness** | `mycelium-soak` | Long-running load and durability runs against a mesh. |
 | **Law forms** | `forms/` (crate) | The exact law forms shared with the other kernels that join the mesh, depending only on exact rationals. |
+
+```mermaid
+flowchart LR
+    subgraph mesh["Mesh: one genesis"]
+        A["Hypha a<br/>court · ledger · registry"]
+        B["Hypha b<br/>court · ledger · registry"]
+        C["Hypha c<br/>court · ledger · registry"]
+        A <-- "digests · receipts · folds · TUniversal" --> B
+        B <-- "digests · receipts · folds · TUniversal" --> C
+        A <-- "digests · receipts · folds · TUniversal" --> C
+    end
+    M1["Mind<br/>mycelium-client"] -- "Anastome acts<br/>(signed)" --> A
+    M2["SDK client<br/>examples/sdk_client"] -- "task · solve" --> B
+    M1 <-. "chatter: say · hold · attest" .-> M3["Mind"]
+    M3 --> C
+    H["House<br/>(peer kernel)"] -- "seats · percepts" --> A
+```
+
+One unit of useful work, from task to payment:
+
+```mermaid
+sequenceDiagram
+    participant V as Client (voice key)
+    participant H as Hypha (court)
+    participant W as Peer hypha (witness)
+    V->>H: ACT_TASK (voice)
+    H-->>V: task envelope (train pairs, test inputs)
+    Note over V: extract rule · mint element · speak on tests
+    V->>H: ACT_SOLVE (outputs, rule tape, signature)
+    Note over H: replay the rule on withheld pairs
+    H-->>V: verdict: BOUNTY + μ paid · FLOOR · NOTHING (named refusal) · UNREAD
+    H->>W: offer (re-derive the vertex)
+    W-->>H: same vertex: second vantage, install
+    Note over H,W: POUW minted; shares to cited forms, taught words, voices
+```
 
 **Wire.** Nodes speak **Anastome** (`src/anastome/`), a closed set of
 signed speech acts whose payloads are exact geometric objects: canonical
@@ -458,7 +521,7 @@ pairs:
 
 ## Developing with us
 
-mycelium is developed in the open, and contributions are welcome at every
+Mycelium is developed in the open, and contributions are welcome at every
 layer: the algebra, the courts, the economy, the SDK, the reference mind,
 and the specifications. [CONTRIBUTING.md](CONTRIBUTING.md) covers the
 workflow, the standards and the gate.
@@ -495,6 +558,8 @@ the wire and ledger layouts, and the changelog names each such change.
 
 | Document | Subject |
 |---|---|
+| [`GLOSSARY.md`](GLOSSARY.md) | The terms of the code and the specifications, defined. |
+| [`docs/EQUATIONS.md`](docs/EQUATIONS.md) | Every equation, formula and master equation in use, with its specification section and code location. |
 | [`docs/MU-RECURSION.md`](docs/MU-RECURSION.md) | The governing specification: the language, the algebra, the laws and every ruling, numbered. |
 | [`docs/MU-CLIENT.md`](docs/MU-CLIENT.md) | The mind: perception, comprehension, conversation, the winding carrier, and how minds are paid (§5.4–§5.6). |
 | [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) | μ, the POW++ arms, carriers, escrow, settlement and audit. |
