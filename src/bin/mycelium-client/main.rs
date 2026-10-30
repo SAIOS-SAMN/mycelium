@@ -28,6 +28,7 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
             "--home" | "--call" | "--mind" | "--rendezvous" => i += 2,
             // 78.145 — `--seat <domain-hex>[/<sub-origin-hex>] <seat-id>[,…] | all`.
             "--seat" => i += 3,
+            "--init" => i += 1,
             a if a.starts_with("--") => return Err(format!("unknown flag {a}")),
             a => return Err(format!("unexpected argument {a}")),
         }
@@ -140,6 +141,14 @@ fn main() {
     let key_path = home.join("voice.key");
     let Some(key_name) = key_path.to_str() else { refuse("--home path is not UTF-8 and names no key file".to_string()) };
     let voice_key = HyphaKey::load_or_mint(key_name);
+    // A NEW MIND'S IDENTITY, minted and printed as the line the mesh's
+    // `genesis` allocation names it by; nothing is started.
+    if args.iter().any(|a| a == "--init") {
+        let vk = mycelium::court::identity::hex32(&voice_key.vk_bytes());
+        println!("{}: voice key {}… vk {vk}", home.display(), voice_key.prefix());
+        println!("genesis line: voice {vk} <S> <G> <T> <H>");
+        std::process::exit(0)
+    }
     let mesh_rec = match mesh::load_or_migrate_voice(&home, &voice_key) {
         Ok(m) => m,
         Err(why) => refuse(format!("boot refused: {why}")),

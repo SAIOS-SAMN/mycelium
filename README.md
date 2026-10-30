@@ -26,7 +26,8 @@ Cl(4,1) over the rationals ℚ, with no floating point anywhere.
 - [The workload](#the-workload)
 - [Repository layout](#repository-layout)
 - [Building and testing](#building-and-testing)
-- [Running a local mesh](#running-a-local-mesh)
+- [Running a node](#running-a-node)
+- [Building a client with the SDK](#building-a-client-with-the-sdk)
 - [Documentation](#documentation)
 - [Known issues](#known-issues)
 - [Where review is most useful](#where-review-is-most-useful)
@@ -230,40 +231,236 @@ methods (`clippy.toml`). The coding standards are in
 
 ---
 
-## Running a local mesh
+## Running a node
 
-The lab topology is three hyphae and five minds on one host:
+A node is a **hypha**: one `mycelium-server` process with its own home
+directory, holding the court, the ledger and a task registry. A network is
+a set of hyphae that share one **genesis**. The genesis is the chain hash
+of the network's first receipt, written once by one hypha and adopted by
+every other.
 
-| Node | Home directory | Address |
+### What a home holds
+
+| File | Written by | Content |
 |---|---|---|
-| Hypha `a` | `~/.mycelium/a` | `127.0.0.1:7500` |
-| Hypha `b` | `~/.mycelium/b` | `127.0.0.1:7501` |
-| Hypha `c` | `~/.mycelium/c` | `127.0.0.1:7502` |
-| Minds `1`–`5` | `~/.mycelium/1` … `5` | bootstrap to the hyphae |
+| `hypha.key` | `--init` | The node's Ed25519 seed (32 bytes). Its verifying key is the node's identity. Keep it private. |
+| `bind`, `peers`, `genesis` | the operator, before the first boot | Provisioning, read once on the first boot (see below). |
+| `mesh` | the node | The signed mesh record: bind, peers, genesis allocation, adopted origin, epoch. Built from the provisioning files on the first boot, which then removes those files. |
+| `corpora/*.manifest` | `--sign-corpus` | A signed task corpus this court registers. |
+| `ledger`, `line`, `eras`, `keeper/` | the node | The court's state: language, receipt chain, ledger eras, TUniversal keeper record. |
 
-`ops/lab-homes.py` writes each home's signed mesh record (it requires
-PyNaCl). The setup commands for the lab topology:
+### Bringing up a new network
 
-```sh
-python3 ops/lab-homes.py
-mycelium-server --home ~/.mycelium/a --mint-genesis   # once, on one hypha only
-mycelium-server --home ~/.mycelium/b                  # the others adopt genesis from a peer
-mycelium-server --home ~/.mycelium/c
-mycelium-client --home ~/.mycelium/1
-```
+The steps below were run end to end on 2026-10-30. Three hyphae and one
+client were on one host, and the SDK client solved and was paid for tasks
+on the resulting network.
 
-Observing a node:
+**1. Create an identity for every node.**
 
 ```sh
-mycelium-server --home DIR --check                        # verify a home restores exactly
-mycelium-server --home DIR --console --reading acts       # typed readings: acts, economy, court,
-                                                          #   judged, dispatched, clock, ...
-mycelium-client --home DIR --mind <prefix> --call now     # a mind's live reading
+mycelium-server --home /srv/myc/a --init     # prints:  genesis line: hypha <vk hex>
+mycelium-server --home /srv/myc/b --init
+mycelium-server --home /srv/myc/c --init
+mycelium-client --home /srv/myc/v1 --init    # prints:  genesis line: voice <vk hex> <S> <G> <T> <H>
 ```
 
-`ops/mycelium-{server,client}@.service` are systemd user-unit templates
-for the same topology. Edit `WorkingDirectory` and `ExecStart` to point at
-your checkout.
+**2. Write the genesis allocation.** Collect every printed line into one
+`genesis` file:
+- one `hypha <vk>` line for each court of the network;
+- one `voice <vk> S G T H` line for each client funded at genesis. The four
+  numbers are its μ allocation on the S, G, T and H lanes.
+
+Copy the identical file into every hypha's home. The hyphae named here are
+bonded by every court, so each counts as an independent witness
+([Adjudication](#adjudication)).
+
+```text
+hypha 44b00dee3eab19b73ca5f56bcc7ed4c45070fc2ae1dc2f4c319b0491888074d1
+hypha be643e831919d4eb8a9053d9eaa34aa2c77f85790f5b23135ff344fe93a0e75e
+hypha 5d10d3876c47bb51da7e2b6db7fda03f20f7b28835145dbe3810461a2fb0c7ff
+voice 1eac4511991e6918a46c8ab7494149a1178079fa62d4588ade049922948eb7bb 8 8 1 8
+```
+
+**3. Write each hypha's address and peers.** Each hypha's home needs:
+- `bind`: one line giving the address the hypha serves on. Use an address
+  its peers can reach. A home with no `bind` file binds an ephemeral
+  loopback port.
+- `peers`: the other hyphae's addresses, one per line.
+
+```sh
+echo 127.0.0.1:7610 > /srv/myc/a/bind
+printf '127.0.0.1:7611\n127.0.0.1:7612\n' > /srv/myc/a/peers
+# likewise for b and c
+```
+
+**4. Register a task corpus.** One hypha named in the genesis signs the
+corpus, and the manifest is copied to every hypha. Each court registers a
+corpus only if a genesis hypha's key signed its manifest. The manifest
+names the corpus directory by absolute path, and that path must exist on
+every host.
+
+```sh
+mycelium-server --home /srv/myc/a --sign-corpus /srv/corpus/arc-agi-2/training
+cp /srv/myc/a/corpora/training.manifest /srv/myc/b/corpora/
+cp /srv/myc/a/corpora/training.manifest /srv/myc/c/corpora/
+```
+
+**5. Start the network.** Exactly one hypha mints the genesis, once. Every
+other hypha adopts it from a peer.
+
+```sh
+mycelium-server --home /srv/myc/a --mint-genesis   # logs: court genesis <hash>… epoch 0 written
+mycelium-server --home /srv/myc/b
+mycelium-server --home /srv/myc/c
+```
+
+`--mint-genesis` is used only for this first start. Every later start,
+including a's, omits it.
+
+**6. Verify.**
+
+```sh
+mycelium-server --home /srv/myc/b --check   # mesh: …, peers 2, genesis ef0a…, epoch 0 — and "this home will boot"
+mycelium-server --home /srv/myc/a --console --reading court
+```
+
+`--check` reads a home without starting it: the key, the mesh record and
+its adopted genesis, the ledger, and whether the home will boot on this
+build. It exits 0 if the home will boot and 3 if it will not.
+
+### Joining an existing network
+
+A hypha joins an existing network by being named in the network's genesis
+allocation. Run steps 1–3 with the network's `genesis` file and its
+existing hyphae as `peers`, copy the corpus manifests (step 4), and start
+**without** `--mint-genesis`. The node adopts the network's genesis from
+its peers. Every hypha's `genesis` file must name the new node's key
+before those hyphae's first boot, so membership is fixed when the network
+is founded. See the status table below for nodes added later.
+
+### Operating a node
+
+- **Readings.** `mycelium-server --home DIR --console --reading <name>`
+  prints a typed reading: `acts`, `court`, `economy`, `judged`,
+  `dispatched`, `clock`, `memory`, `replication`, `agreements` and others.
+  `--at HOST:PORT` reads another hypha.
+- **Restarts** persist the ledger on SIGINT, SIGTERM and SIGHUP. Run
+  `--check` before starting a new build on an existing home.
+- **Ledger layout changes** are made as a *recut*: `scripts/recut` re-founds
+  the network on a fresh genesis and **deletes court state**. A build that
+  cannot read a home's ledger refuses to boot rather than overwrite it.
+- **systemd.** `ops/mycelium-{server,client}@.service` are user-unit
+  templates; set the checkout path in them.
+
+### Status of node operation
+
+| Capability | Status |
+|---|---|
+| Node identity (`--init`), provisioning, signed mesh record | **Finished**, verified end to end |
+| Genesis minted by one hypha and adopted by its peers | **Finished**, verified |
+| Peer exchange: digests, receipts, ledger eras, co-signed folds | **Finished**, verified on one host |
+| Corpus signing (`--sign-corpus`) and registration | **Finished**, verified |
+| Task dispatch to clients, solve adjudication by replay, payment | **Finished**, verified with the SDK client |
+| `--check` preflight, typed console readings | **Finished** |
+| **Adding a hypha after genesis.** It connects, exchanges digests and has its receipts admitted, but no court holds a bond for it, so it is never an independent witness and is not funded. | **Under review**: post-genesis bonding is not specified. |
+| **Multi-host / wide-area deployment.** Acts are Ed25519-signed and verified on admission, but the transport is plain TCP without encryption, and deployment has been exercised only on one host. | **Under review** |
+| **Changing a node's bind or peers after its first boot.** The provisioning files are read once into the signed record, and no command edits the record. | **Under review** |
+| Ledger layout migration without a recut | **Under review**: a layout change requires a recut. |
+
+---
+
+## Building a client with the SDK
+
+A client is any program that holds a voice key and speaks Anastome acts to
+a hypha. The SDK is the `mycelium` library crate's `sdk` module, together
+with the wire codecs in `anastome::dialogue` and the rule machinery in
+`transducer`. The reference mind (`mycelium-client`) is one client built
+on it. [`examples/sdk_client.rs`](examples/sdk_client.rs) is a complete
+minimal client in about 150 lines.
+
+### Dependency
+
+```toml
+[dependencies]
+mycelium = { git = "https://github.com/SAIOS-SAMN/mycelium" }   # or path = "../mycelium"
+ed25519-dalek = "2.1"
+```
+
+### The client loop
+
+```rust
+use mycelium::anastome::dialogue;
+use mycelium::court::identity::HyphaKey;
+use mycelium::sdk::{Kernel, Session};
+use mycelium::transducer::family::{extract_rule, mint_sentence_why, speak::speak_rule, NoCrystal};
+
+// 1. Identity: a voice key, minted once and kept (32-byte Ed25519 seed).
+let key = HyphaKey::load_or_mint("voice.key");
+// 2. Session: one hypha's address.
+let session = Session::open("127.0.0.1:7610", Kernel::from_key(key.sk.clone()));
+// 3. Work: ask the court for a task. The envelope carries train pairs and
+//    test inputs, never the test outputs. An empty reply means no work.
+let reply = session.speak(dialogue::encode_task_request(&key.vk_bytes()))?;
+let task = dialogue::decode_task_envelope(&reply).ok_or("no task")?;
+// 4. Rule: extract a rule from the train pairs, mint it as an element the
+//    court can replay, and speak it on each test input.
+let mut budget = mycelium::physics::Physics::default().stroke_n(1 << 20);
+let rule = extract_rule(&task.train, &mut budget).ok_or("no rule")?;
+let element = mint_sentence_why(&rule, &task.train, &NoCrystal, 0)?;
+let outputs: Vec<_> = task.tests.iter()
+    .map(|x| speak_rule(&rule, x, &NoCrystal).and_then(|s| s.grid()))
+    .collect::<Option<_>>().ok_or("rule does not speak a test")?;
+// 5. Solve: outputs and the rule's tape, signed by the voice the court pays.
+let solve = dialogue::encode_solve_with_rule(&key.sk, &task.id, &outputs,
+                                             Some(&element.to_bytes().ok_or("tape")?)).ok_or("solve")?;
+let verdict = session.speak(solve)?;
+let (code, paid_mu, refusal, _modes) = dialogue::decode_solve_verdict(&verdict).ok_or("verdict")?;
+```
+
+The verdict codes are:
+
+| Code | Meaning |
+|---|---|
+| `SOLVE_BOUNTY` | First verified closure of the task. The μ shown is paid. |
+| `SOLVE_FLOOR` | A verified re-solve of a task already closed. |
+| `SOLVE_NOTHING` | Final: the replay refused the rule. `refusal` names why, e.g. "form leaves a remainder on the family". |
+| `SOLVE_UNREAD` | The court's stroke ran out before the replay ruled. Send the same solve again and the replay resumes. |
+
+Running the example against a hypha:
+
+```sh
+cargo build --release --example sdk_client
+target/release/examples/sdk_client /srv/myc/v1 127.0.0.1:7610 8
+#   voice 1eac4511…
+#   task 65b0c3689cfe3a37… solved: first verified closure (bounty) — paid μ [0, 24, 0, 0]
+#   task da0dfd765fbe3521… not solved (final) — refused: form leaves a remainder on the family
+#   task 12897f8fa760a993… not sent: the rule does not mint over its family
+```
+
+### Stating your own rules
+
+A client is not limited to the bundled extractor. There are two other ways
+to state a rule:
+- **Typed steps.** `sdk::rule::sentence(&[Step], family, crystal)` mints a
+  rule from steps (select, create, crop, D4 symmetries, hue moves) and
+  refuses by name any rule that does not close its family.
+- **Rule elements.** A rule can be stated directly as geometric elements
+  (`transducer::sentence::form::rule_element`: carriages, chains, joins,
+  frames) on a `Form`.
+
+Either way, the court replays the rule on withheld pairs; the client's
+claim is never taken on trust.
+
+### Other surfaces
+
+| Surface | API | Status |
+|---|---|---|
+| Identity, session, task, solve, verdict | `sdk::{Kernel, Session}`, `anastome::dialogue` | **Finished**, verified end to end (`examples/sdk_client.rs`) |
+| Rule extraction, minting, speaking | `transducer::family::{extract_rule, mint_sentence_why, speak::speak_rule}` | **Finished** for the acts the extractor reads (about 9% of ARC-AGI-2 training tasks). Extending coverage is the open research problem. |
+| Rules from typed steps | `sdk::rule::sentence` | **Finished** |
+| Seats in another kernel's house | `sdk::seat`, `sdk::seat_mind` | **Finished**, used by the peer kernels. Its narrative documentation is in `docs/MU-CLIENT.md` §6, not in this README. |
+| Mind-to-mind conversation | `sdk::chatter` | **Under review**: the wire is stable, but the API carries the reference mind's internal types. |
+| API stability | crate `0.1.0` | **Under review**: no semantic-versioning guarantee yet. The public surface is wider than the SDK needs. |
 
 ---
 

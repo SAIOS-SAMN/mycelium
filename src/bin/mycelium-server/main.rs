@@ -60,13 +60,14 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
             || args[i] == "--why"
             || args[i] == "--wallet"
             || args[i] == "--rendezvous"
+            || args[i] == "--sign-corpus"
         {
             i += 2;
             continue;
         }
         // Valueless flags, checked here so an unknown one is still refused
         // rather than silently ignored (rule 11).
-        if args[i] == "--mint-genesis" || args[i] == "--recut" || args[i] == "--check" || args[i] == "--console" || args[i] == "--ledger" || args[i] == "--minds" {
+        if args[i] == "--mint-genesis" || args[i] == "--recut" || args[i] == "--check" || args[i] == "--console" || args[i] == "--ledger" || args[i] == "--minds" || args[i] == "--init" {
             i += 1;
             continue;
         }
@@ -277,6 +278,54 @@ fn check_home(home: &Path) -> ! {
     }
 }
 
+/// A NEW NODE'S IDENTITY, minted and printed: the home is created, its
+/// Ed25519 key minted (or read, where one is there), and the verifying key
+/// printed as the line the mesh's `genesis` allocation names it by. Nothing
+/// is bound or started. Exit 0.
+fn init_home(home: &Path) -> ! {
+    if let Err(e) = std::fs::create_dir_all(home.join("corpora")) {
+        eprintln!("mycelium-server --init: {}: {e}", home.display());
+        std::process::exit(2)
+    }
+    let key = HyphaKey::load_or_mint(&home.join("hypha.key").to_string_lossy());
+    let vk = mycelium::court::identity::hex32(&key.vk_bytes());
+    println!("{}: hypha key {}… vk {vk}", home.display(), key.prefix());
+    println!("genesis line: hypha {vk}");
+    std::process::exit(0)
+}
+
+/// A CORPUS SIGNED FOR REGISTRATION: the hash of every task file under
+/// `dir` (`genesis::corpus_hash`), signed by this home's key, written as
+/// `corpora/<dir name>.manifest` — the directory, the hash, the signature,
+/// one per line. A court registers a corpus whose manifest a key of the
+/// mesh's genesis signed (or, in a mesh with no genesis allocation, its own
+/// key). Exit 0 where the manifest is written.
+fn sign_corpus(home: &Path, dir: &str) -> ! {
+    let refuse = |why: String| -> ! {
+        eprintln!("mycelium-server --sign-corpus: {why}");
+        std::process::exit(2)
+    };
+    let Some(key) = HyphaKey::load_only(&home.join("hypha.key").to_string_lossy()) else {
+        refuse(format!("{} holds no key; run --init first", home.display()))
+    };
+    let dir = match std::fs::canonicalize(dir) {
+        Ok(d) => d,
+        Err(e) => refuse(format!("{dir}: {e}")),
+    };
+    let Some(hash) = genesis::corpus_hash(&dir) else { refuse(format!("{}: no corpus reads there", dir.display())) };
+    let Some(name) = dir.file_name().map(|n| n.to_string_lossy().into_owned()) else {
+        refuse(format!("{} names no directory", dir.display()))
+    };
+    let sig: String = key.sign(&hash).iter().map(|b| format!("{b:02x}")).collect();
+    let text = format!("{}\n{}\n{sig}\n", dir.display(), mycelium::court::identity::hex32(&hash));
+    let path = home.join("corpora").join(format!("{name}.manifest"));
+    if let Err(e) = std::fs::create_dir_all(home.join("corpora")).and_then(|()| std::fs::write(&path, text)) {
+        refuse(format!("{}: {e}", path.display()))
+    }
+    println!("{}: corpus {} hash {} signed by {}…", path.display(), dir.display(), mycelium::court::identity::hex32(&hash), key.prefix());
+    std::process::exit(0)
+}
+
 fn resolved_bind(local: std::net::SocketAddr) -> String {
     if local.ip().is_unspecified() {
         format!("127.0.0.1:{}", local.port())
@@ -324,6 +373,12 @@ fn main() {
     // answer it gives.
     if args.iter().any(|a| a == "--check") {
         check_home(&home);
+    }
+    if args.iter().any(|a| a == "--init") {
+        init_home(&home);
+    }
+    if let Some(dir) = flag(&args, "--sign-corpus") {
+        sign_corpus(&home, dir);
     }
     // §8.1 — THE CONSOLE ASKS AND EXITS, before anything is created, as the
     // check does: it reads a hypha (this home's own bind, or `--at`) and
