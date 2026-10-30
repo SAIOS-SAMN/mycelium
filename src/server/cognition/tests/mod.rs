@@ -30,6 +30,7 @@ mod letter;
 mod ledger_clock;
 mod market;
 mod mint;
+mod verification;
 mod orbit;
 mod persistence;
 mod phase;

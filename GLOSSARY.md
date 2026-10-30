@@ -67,6 +67,8 @@ Numbers in parentheses cite sections of
 | **POUW** | Proof of useful work: a listed demand closed. The measured deflation is minted to the closer. |
 | **POWC** | Proof of work convergence: a demand closed at another perspective, citing the first mind's receipt; a word paid by its use. |
 | **POWR** | Proof of work retirement: a re-expression over fewer letters; the freed description is burned and the retirer paid. |
+| **POWV** | Proof of work verification: the courts that verified a closure are paid a share of its release, per lane, read off their strain against their reserve. It is taken out of the release, never added to it. |
+| **Strain** | A court's yield surface on a lane: its reserve deficit plus entropic excess. It paces admission and sets the POWV share. |
 | **Deflation / discharge** | What a word or sentence closes on a family, measured per lane. It is the amount POUW mints. |
 | **Section** | The sites a word changes, and changes truly, on a scene. |
 | **Bond** | μ a court holds staked for a hypha or voice. A bonded hypha counts as an independent witness. |

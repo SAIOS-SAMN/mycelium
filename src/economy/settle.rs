@@ -159,6 +159,12 @@ impl Treasury {
         self.mint_to(voice, mu, anchor, Some(Arm::Pouw))
     }
 
+    /// POWV — a verifying court's share of a release (`economy::verify`),
+    /// minted to the court at the act that released the claim.
+    pub fn settle_verification(&mut self, organ: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+        self.mint_to(organ, mu, anchor, Some(Arm::Powv))
+    }
+
     /// 26 AS RULED 2026-09-10 — THE USE OF A CITED GENERATOR IS A SHARE
     /// OF THE INSTALL'S OWN MINT, NEVER A TRANSFER. A citer's mint is
     /// what the citer closed, and part of what it closed is what the

@@ -91,9 +91,10 @@ pub const PROVISIONAL: [&str; 10] = [
 /// pay by the measure that read it — a word's section (W), a conjugate's
 /// transport (C), a sentence's gluing (S), a demand closed by another mind
 /// (POWC, E2), an attesting mind joined to a word's claim (E3), a mint
-/// counted toward a universe's growth grant (E4). The observer's diagnosis;
+/// counted toward a universe's growth grant (E4), the verifying courts'
+/// share of a release (POWV, MU-ECONOMY §5.1). The observer's diagnosis;
 /// the witness is the ledger's mints.
-pub const PAYS: [&str; 7] = [
+pub const PAYS: [&str; 8] = [
     "scenes on no family held",
     "word sections",
     "conjugate transports",
@@ -101,6 +102,7 @@ pub const PAYS: [&str; 7] = [
     "demands closed by another mind",
     "attestations joined to a claim",
     "mints counted toward a grant",
+    "verifications",
 ];
 /// What a court's solves came to: by verdict, refusals by kind (P D C I N ?),
 /// and (78.153c) the verdicts 78.149 and 78.153 added — NO WORK (a clean

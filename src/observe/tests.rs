@@ -91,8 +91,8 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         // EC1 — a court's payments by proof of work, each arm on its own
         // lanes.
         Reading::Economy(Box::new(Economy {
-            paid: [[5, 0, 2, 0], [0, 1, 0, 0], [0; 4]],
-            burned: [[0; 4], [0; 4], [0, 0, 0, 3]],
+            paid: [[5, 0, 2, 0], [0, 1, 0, 0], [0; 4], [1, 0, 0, 2]],
+            burned: [[0; 4], [0; 4], [0, 0, 0, 3], [0; 4]],
             overflowed: 7,
             // E3 — each identity's standing travels with it.
             accounts: vec![crate::observe::Account {
@@ -274,7 +274,7 @@ fn the_acts_travel_whole() {
         colours_derived: 38,
         deferred: vec![crate::observe::Deferred { head: [1, 2, 3, 4, 5, 6, 7, 8], kind: 2, mag: [39, 40, 41, 42], short: [0, 43, 0, 0], tries: 44, learner: Some([9; 8]) }],
         provisional: [50, 51, 52, 53, 54, 55, 56, 57, 58, 59],
-        pays: [71, 72, 73, 74, 75, 76, 77],
+        pays: [71, 72, 73, 74, 75, 76, 77, 78],
         pays_lanes: std::array::from_fn(|i| 80 + i as u64),
     };
     reads_back(&[Reading::Acts(Box::new(acts))]);
@@ -293,6 +293,7 @@ fn every_pay_is_a_kind_of_its_table() {
         "demands closed by another mind",
         "attestations joined to a claim",
         "mints counted toward a grant",
+        "verifications",
     ]
     .iter()
     .enumerate()
@@ -302,7 +303,7 @@ fn every_pay_is_a_kind_of_its_table() {
         assert_eq!(&t.pays_lanes[i * 4..i * 4 + 4], &[1, 2, 3, i as u64], "{kind} carries its lanes");
     }
     t.pay("no such kind", [9; 4]);
-    assert_eq!(t.pays.iter().sum::<u64>(), 7, "a kind the table does not hold counts nothing");
+    assert_eq!(t.pays.iter().sum::<u64>(), 8, "a kind the table does not hold counts nothing");
 }
 
 /// EVERY NAME A PRODUCER COUNTS UNDER IS ITS TABLE'S: `count` is silent on a

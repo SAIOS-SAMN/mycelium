@@ -102,27 +102,31 @@ impl Entry {
 /// 78.33 — THE PROOF OF WORK A PAYMENT ROW CARRIES, named apart and never
 /// summed across: POUW, a closure ruled and its deflation minted to the
 /// closer; POWC, a cited generator paid by the use that cited it; POWR, a
-/// retirement's compression yield paid to the retirer. A row that moves
-/// no proof of work — genesis, a stake, an escrow, a revoke or slash, a
-/// burn, a fee, a subsidy — carries none.
+/// retirement's compression yield paid to the retirer; POWV, the share of
+/// a closure's mint paid to the hyphae whose replay verified it
+/// (`economy::verify`). A row that moves no proof of work — genesis, a
+/// stake, an escrow, a revoke or slash, a burn, a fee, a subsidy — carries
+/// none.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Arm {
     Pouw,
     Powc,
     Powr,
+    Powv,
 }
 
 impl Arm {
     /// Every arm, in the order the readings are carried.
-    pub const ALL: [Arm; 3] = [Arm::Pouw, Arm::Powc, Arm::Powr];
+    pub const ALL: [Arm; 4] = [Arm::Pouw, Arm::Powc, Arm::Powr, Arm::Powv];
 
-    /// The arm as its coordinate on the row: `1..=3`, `0` for none.
+    /// The arm as its coordinate on the row: `1..=4`, `0` for none.
     pub fn to_byte(arm: Option<Arm>) -> u8 {
         match arm {
             None => 0,
             Some(Arm::Pouw) => 1,
             Some(Arm::Powc) => 2,
             Some(Arm::Powr) => 3,
+            Some(Arm::Powv) => 4,
         }
     }
 
@@ -133,6 +137,7 @@ impl Arm {
             1 => Some(Arm::Pouw),
             2 => Some(Arm::Powc),
             3 => Some(Arm::Powr),
+            4 => Some(Arm::Powv),
             _ => return None,
         })
     }
@@ -143,6 +148,7 @@ impl Arm {
             Arm::Pouw => 0,
             Arm::Powc => 1,
             Arm::Powr => 2,
+            Arm::Powv => 3,
         }
     }
 
@@ -151,6 +157,7 @@ impl Arm {
             Arm::Pouw => "POUW",
             Arm::Powc => "POWC",
             Arm::Powr => "POWR",
+            Arm::Powv => "POWV",
         }
     }
 }
@@ -608,7 +615,7 @@ impl Treasury {
     /// names `court` is tuition.
     pub fn economy(&self, court: &[u8; 32]) -> Option<crate::observe::Economy> {
         let mut e = crate::observe::Economy::default();
-        let mut moved = [[0u64; 4]; 3];
+        let mut moved = [[0u64; 4]; Arm::ALL.len()];
         let mut credit = false;
         for row in &self.entries {
             let flow = match (row.kind, row.arm) {

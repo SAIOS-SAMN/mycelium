@@ -1,0 +1,108 @@
+# Roadmap
+
+The development tracks of Mycelium, in the order they build on each other.
+Each names its specification, where it lands in the code, and how to take
+part. [CONTRIBUTING.md](CONTRIBUTING.md) covers the workflow; open an issue
+on a track to coordinate before starting.
+
+The detailed task ledger behind these tracks is
+[`docs/MU-RECURSION-TASKS.md`](docs/MU-RECURSION-TASKS.md).
+
+## 1. Settlement: the xSEPTUM Note
+
+**Specified** in [`docs/XSEPTUM.md`](docs/XSEPTUM.md). Lands in
+`src/anastome/dialogue/` (acts), `src/economy/` (escrow and release) and
+`src/server/cognition/` (the home's admission).
+
+The Note carries value between voices through a hypha, released only on
+two-court replay, as words are installed. The track's pieces:
+
+- **Acts:** `SEPTUM_CHALLENGE`, `SEPTUM_NOTE`, `SEPTUM_RECEIPT`,
+  `SEPTUM_RELEASE`, `SEPTUM_REVOKE` and `SEPTUM_EQUIVOCATION` (0x30–0x35),
+  with their codecs and round-trip claims.
+- **Escrow keyed by `(listing, payer, K_payer)`.** A duplicate Note is
+  ignored, and a conflicting one is an equivocation proof.
+- **Two-signature release:** home and witness each sign, on the
+  second-vantage rule (47.3).
+- **Receipt-indexed Notes**, and **FROST voice groups** (threshold Ed25519
+  group keys for voices).
+
+## 2. Economy: bond delegation
+
+**Specified** in [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) §4.
+
+A delegated hypha carries other parties' bond in its cover, shares its
+POWV with them, and shares their slash. This lands in `src/economy/` as a
+delegation carrier on the treasury, with the audit extended over it.
+
+## 3. Network membership
+
+A hypha named in the genesis allocation is bonded by every court.
+Admitting a hypha after genesis, with a bond every court holds, extends
+the network beyond its founding set. The work includes:
+- a signed admission act;
+- bonding on every court;
+- the witness-independence test (47.3) for the new organ.
+
+Lands in `src/bin/mycelium-server/admission.rs` and the court's treasury.
+
+## 4. Deployment
+
+Multi-host and wide-area operation of the mesh. Acts are signed with
+Ed25519 and verified on admission. The track adds:
+- an encrypted transport;
+- address discovery beyond the provisioned `peers`;
+- signed re-provisioning of a node's `bind` and `peers` after first boot;
+- deployment tooling for hosts beyond one machine.
+
+## 5. Ledger evolution
+
+Ledger layout changes are adopted by a recut today. A migration path that
+reads a prior layout and writes the current one keeps court state across
+releases. Lands in `src/chronometry/` and the snapshot codecs.
+
+## 6. The rule language
+
+Rules are geometric elements (`src/transducer/sentence/form/rule_element.rs`).
+Elements without an English gloss travel under act tag 16. The track
+grows what minds can state:
+- readers that coin carriages, chains and joins directly from a family's
+  effect;
+- coverage of more of the ARC-AGI-2 corpus.
+
+Each reader is proved by re-deriving held-out pairs and by the court's
+replay.
+
+## 7. Convergence as admission evidence
+
+Two minds whose different words have the same section on one scene are a
+convergence (`docs/MU-CLIENT.md` §5.5). Courts already verify and seal
+convergences. The track makes convergence count as evidence in a word's
+admission and payment, keeping 47.3's rule that a vantage is a court.
+
+## 8. SDK
+
+A stable, versioned client surface (`mycelium::sdk`), narrower than the
+crate's public API, with semantic-versioning guarantees. It includes:
+- a conversation API for third-party clients;
+- rewrite elements (POWR) through the SDK;
+- examples for each POW++ arm.
+
+## 9. Reference mind
+
+The reference mind (`mycelium-client`) runs its court asks on one carrier
+per boundary. The track bounds each carrier's outstanding asks per path,
+so a mind's court traffic stays proportional to its work across restarts
+of the courts it speaks to. The `now` reading lists outstanding answers by
+path (`src/client/sdk/entity/hypha.rs`).
+
+## 10. Specification reconciliation
+
+[`docs/EQUATIONS.md`](docs/EQUATIONS.md) records three places where the
+specification's wording and the code differ:
+- the Gram pair invariant;
+- MU-RECURSION 52.1's rotor example;
+- three function names in MU-RECURSION chapter 10.
+
+Each becomes one documentation commit that brings the specification to
+the code.

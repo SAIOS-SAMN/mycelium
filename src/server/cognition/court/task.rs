@@ -224,7 +224,9 @@ impl Kernel {
             // 78.149 (b): the claim is paid the CLOSER'S measured discharge
             // on the withheld pairs, `pay`, lane-wise capped by what its
             // escrow held; nothing above the discharge is minted.
-            let _ = self.treasury.release_discharged(addr.as_bytes(), pay, settled);
+            // POWV: this court's replay on the withheld pairs verified it.
+            let organs = [self.identity];
+            let _ = self.release_verified(addr.as_bytes(), pay, &organs, settled);
         }
         self.acts.judge(if first { crate::observe::Judged::FirstClosure } else { crate::observe::Judged::ClosureAgain });
         if !first || pay.iter().all(|&x| x == 0) {

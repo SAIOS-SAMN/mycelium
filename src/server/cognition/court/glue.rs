@@ -476,7 +476,10 @@ impl Kernel {
         // 78.149 (b): the claim pays the word's measured discharge, the
         // escrow its cap; nothing above the discharge is minted.
         let discharge = self.discharge_of(addr.as_bytes(), spoken);
-        let _ = self.treasury.release_discharged(addr.as_bytes(), discharge, installed);
+        // POWV: this court and the peer whose re-derivation glued it verified
+        // the closure, and take their share before the closer is paid.
+        let organs = [self.identity, peer];
+        let _ = self.release_verified(addr.as_bytes(), discharge, &organs, installed);
         self.unlist(&addr, false);
         self.leave_provisional(&addr);
         self.court_upheld += 1;

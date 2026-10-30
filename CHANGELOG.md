@@ -6,7 +6,34 @@ such change is named here.
 
 ## Unreleased
 
+### Economy
+- **POWV, proof of work verification:** a fourth POW++ arm.
+  - The courts whose replay verified a closure take a share of its
+    release. That is the home, plus the witness or peer court on an
+    install or glue.
+  - The share is per lane: `⌊M_l · y_l / (y_l + R)⌋`, split equally among
+    the verifying courts, where `y_l` is the court's strain and `R` its
+    calibrated reserve.
+  - It is taken out of the release, so total issuance is unchanged.
+  - It applies at every POUW release site: install, glue, solve and docket
+    ruling.
+  - Ledger rows carry arm byte 4, and the court's `acts` reading counts
+    "verifications".
+- `docs/MU-ECONOMY.md`: §5.1 specifies POWV, §8 its ratio, and §9 records
+  the implementation as of v0.1.2.
+
 ### Documentation
+- `ROADMAP.md` lays out ten development tracks in order:
+  - the xSEPTUM Note;
+  - bond delegation;
+  - membership after genesis;
+  - multi-host deployment;
+  - ledger evolution;
+  - the rule language;
+  - convergence as admission evidence;
+  - the SDK surface;
+  - the reference mind's court traffic;
+  - specification reconciliation.
 - The README's *POW++ for clients* section maps each proof (POUW, POWC,
   POWR) to the client action that earns it, in the reference mind and
   through the SDK.

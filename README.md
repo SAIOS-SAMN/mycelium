@@ -1,6 +1,6 @@
 # Mycelium
 
-**Version 0.1.2** · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/EQUATIONS.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
+**Version 0.1.2** · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/EQUATIONS.md) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
 
 Mycelium is a distributed mesh network for **POW++**, a family of proofs of
 work in which the work proven is verified computation. The network's nodes
@@ -164,6 +164,7 @@ genesis, stake, escrow, revocation, slash, burn, fee and subsidy.
 | **POUW** | Proof of useful work | A listed demand is **closed**. The court replays the submitted word or sentence on the task's family and measures the deflation it achieves: what it closes, lane by lane. | **Mints** the measured deflation and pays it to the closer. | `economy/escrow.rs`, `economy/settle.rs`, `server/cognition/court/install.rs` |
 | **POWC** | Proof of work convergence | A demand one mind could not discharge is **closed at another perspective**: another mind's work, citing the first mind's receipt, discharges it. A word discovered by one mind and used by a later demand is the same relation. | **Mints** the citation's measured discharge to the closer (`settle_convergence`), and pays the cited discoverer by **transfer** from the user of the word (`settle_use`). | `economy/settle.rs` |
 | **POWR** | Proof of work retirement | A word or form is **re-expressed over fewer letters**, by retirement along a geodesic or by citation; a refinement bid is replayed with the retired word excluded. | **Burns** the freed description and pays the retirer the compression yield. | `economy/settle.rs` (`settle_rewrite`), `server/cognition/book/rewrite.rs` |
+| **POWV** | Proof of work verification | A closure is **verified**: a court replays the claim and measures its discharge, and on an install a second court re-derives the same vertex. | Pays each verifying court its **share of the release**, per lane, read off the court's strain against its reserve. The share is taken out of the release, so total issuance is unchanged. | `economy/verify.rs`, `server/cognition/court/verify.rs` |
 
 ### How POUW is divided on install
 
@@ -209,6 +210,11 @@ Each proof is earned by a distinct client action. The reference mind
 | **POUW** | Request a task, state a rule, submit a signed solve; or speak a word or sentence the courts install. | Extracts rules and solves court tasks; speaks words and sentences from its genome. | `ACT_TASK` → `extract_rule` / `sdk::rule::sentence` / rule elements → `encode_solve_with_rule` → `decode_solve_verdict` (`examples/sdk_client.rs`). |
 | **POWC** | Close a demand another mind left open, citing that mind's receipt; earn when other minds' demands use a word this voice discovered. | Cites its genome's words in what it speaks; hears other minds' words with their evidence, attests agreements and records convergences (`sdk::chatter`, `entity/converge.rs`). | States rules that cite installed words; the court pays the citation's measured discharge. |
 | **POWR** | Propose a rewrite: a word retired over fewer letters, a cycle condensed or torsed. | Its pivots (torse, condense) mint rewrites and speak them to the court. | Speaks a rewrite element through `Session::speak`; the court replays it and settles the compression yield. |
+
+**POWV is earned by node operators.** Every hypha that verifies a closure
+earns POWV. That covers the home that replays the claim, and on an install
+or glue the witness or peer court that re-derives it. Running a node
+([Running a node](#running-a-node)) is how a participant earns it.
 
 A solve answers with a verdict code: `SOLVE_BOUNTY` for a first verified
 closure, paid; `SOLVE_FLOOR` for a verified re-solve; `SOLVE_NOTHING` with
@@ -292,6 +298,14 @@ re-expresses the rows it replaces.
   discharge (`Treasury::release_discharged`). Anything held above the
   discharge is never issued. A pair that lowered a lane but left a
   remainder pays nothing: descent is not closure.
+- **Verification is paid out of the release (POWV).** The courts whose
+  replay verified a closure each take a share of its release, per lane:
+  `⌊M_l · y_l / (y_l + R)⌋`, split equally between them. Here `y_l` is the
+  court's strain on the lane (reserve deficit plus entropic excess) and `R`
+  its calibrated reserve. A court at rest takes nothing, and a lane at full
+  deficit pays verification half the lane. The closer is paid the rest, so
+  total issuance remains the measured discharge
+  ([`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) §5.1).
 - **The recycled pool pays first.** A court holds the connection tax it
   receives in a recycled pool, and a closer's POUW is paid from that pool
   before anything is minted. Supply grows only as far as judged work
@@ -694,19 +708,20 @@ pairs:
 Mycelium is developed in the open, and contributions are welcome at every
 layer: the algebra, the courts, the economy, the SDK, the reference mind,
 and the specifications. [CONTRIBUTING.md](CONTRIBUTING.md) covers the
-workflow, the standards and the gate.
+workflow, the standards and the gate. [ROADMAP.md](ROADMAP.md) lays out
+the development tracks in order, each with its specification and where it
+lands in the code:
 
-Active areas of development:
-
-- **Rule coverage.** The act reader states rules for a share of the
-  ARC-AGI-2 training corpus, and rule elements open the language beyond
-  the English-named acts. New element readers extend what minds can say.
-- **Network membership.** Bonding hyphae that join after genesis.
-- **Deployment.** Multi-host and wide-area operation of the mesh.
-- **Convergence.** Convergence of different-geometry words as admission
-  evidence (`docs/MU-CLIENT.md` §5.5).
-- **SDK.** A stable, versioned client surface narrower than the crate's
-  public API.
+1. Settlement: the xSEPTUM Note.
+2. Bond delegation.
+3. Network membership after genesis.
+4. Multi-host deployment.
+5. Ledger evolution across layouts.
+6. The rule language.
+7. Convergence as admission evidence.
+8. A stable SDK surface.
+9. The reference mind's court traffic.
+10. Specification reconciliation.
 
 Design discussion is anchored in the specifications. Section and ruling
 numbers (for example *78.143* or *§5.6*) cite `docs/MU-RECURSION.md` and
@@ -728,6 +743,7 @@ the wire and ledger layouts, and the changelog names each such change.
 
 | Document | Subject |
 |---|---|
+| [`ROADMAP.md`](ROADMAP.md) | The development tracks, in order, with their specifications. |
 | [`GLOSSARY.md`](GLOSSARY.md) | The terms of the code and the specifications, defined. |
 | [`docs/EQUATIONS.md`](docs/EQUATIONS.md) | Every equation, formula and master equation in use, with its specification section and code location. |
 | [`docs/MU-RECURSION.md`](docs/MU-RECURSION.md) | The governing specification: the language, the algebra, the laws and every ruling, numbered. |

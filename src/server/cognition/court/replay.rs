@@ -133,7 +133,9 @@ impl Kernel {
             // EC1: the claim is minted AT the Ruling act sealed above
             // (POUW), never at the act that escrowed it.
             let ruled = self.anchor();
-            let _ = self.treasury.release_discharged(addr, discharge, ruled);
+            // POWV: this court's replay ruled it.
+            let organs = [self.identity];
+            let _ = self.release_verified(addr, discharge, &organs, ruled);
             self.unlist(addr, false);
             self.mark_persist();
             true

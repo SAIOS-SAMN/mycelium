@@ -1444,6 +1444,29 @@ Sources: MU-ECONOMY §7.1, §7.2; MU-RECURSION 78.154, 78.154a; CONCORDANCE
 
 ---
 
+#### 6.13 POWV: the verifying courts' share of a release
+
+```text
+M_l   = min(escrow_l, discharge_l)                    the release's base, per lane
+y_l   = deficit_l + entropic_excess_l                 the verifying court's strain (yield surface)
+v_l   = ⌊ ⌊ M_l · y_l / (y_l + R) ⌋ / n ⌋              each of n distinct verifying courts
+closer_l = M_l − n · v_l
+Σ issued_l = M_l                                       issuance-neutral
+```
+
+Each court whose replay verified a closure is minted `v` as POWV: the
+home, plus the witness or peer that re-derived it on an install or glue.
+`R` is the court's calibrated reserve. A court at rest (`y = 0`) takes
+nothing, and a lane at full deficit (`y = R`) pays verification half the
+lane. What does not divide stays with the closer, and the total issued
+equals the base.
+
+Sources: MU-ECONOMY §5.1, §8. Code:
+`src/economy/verify.rs::verification_share`,
+`src/server/cognition/court/verify.rs::Kernel::pay_verification`,
+`::release_verified`; `src/economy/lanes.rs::yield_surface`;
+`src/physics/mod.rs::reserve_max`.
+
 ## 7. The metabolism
 
 #### 7.1 The reserve and its units

@@ -91,15 +91,12 @@ A warning is a defect with a line number. Where a denied lint fires on a
 deliberate choice, the site carries an `#[expect(…, reason = "…")]` that
 names its ground.
 
-## Areas of active development
+## The roadmap
 
-- **Rule coverage:** new rule-element readers, so that minds state rules
-  for more of the ARC-AGI-2 corpus.
-- **Network membership:** bonding hyphae that join after genesis.
-- **Deployment:** multi-host and wide-area operation.
-- **Convergence:** using different-geometry convergence as admission
-  evidence (`docs/MU-CLIENT.md` §5.5).
-- **SDK:** a stable, versioned client surface.
+[ROADMAP.md](ROADMAP.md) lays out the development tracks in the order
+they build on each other. Each track names its specification and where it
+lands in the code. Open an issue on a track to coordinate before starting
+on it.
 
 ## License
 

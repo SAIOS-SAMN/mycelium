@@ -1,7 +1,7 @@
 // 78.33, EC1 — THE ECONOMY BY PROOF OF WORK: what a court's ledger paid and
 // burned per arm, per lane, read off its journal at the question.
 //
-//! POUW, POWC and POWR are named apart and never summed across: a row that
+//! POUW, POWC, POWR and POWV are named apart and never summed across: a row that
 //! pays one carries it (`Entry.arm`), and the reading keeps each arm on its
 //! own four lanes. A row that is no proof of work — genesis, a stake, an
 //! escrow, a revoke or slash, a fee, a subsidy — is in none of them.
@@ -10,9 +10,9 @@
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Economy {
     /// What each arm paid out, per lane.
-    pub paid: [[u64; 4]; 3],
+    pub paid: [[u64; 4]; crate::economy::Arm::ALL.len()],
     /// What each arm burned, per lane.
-    pub burned: [[u64; 4]; 3],
+    pub burned: [[u64; 4]; crate::economy::Arm::ALL.len()],
     /// STD1 — the treasury's operations refused past their carrier.
     pub overflowed: u64,
     /// E3 — every identity the ledger holds value for: what it can spend,

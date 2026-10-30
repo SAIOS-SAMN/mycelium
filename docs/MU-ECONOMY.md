@@ -17,6 +17,7 @@ the ledger, and no two share a name (MU-RECURSION 78.33):
 | proof of useful work | **POUW** | a closure ruled: a listed demand closed, its deflation measured on closure (§3.2, 12.6, 23.9) | mints the measured deflation and pays the closer |
 | proof of work convergence | **POWC** | a refusal closed at another perspective: the question one mind refused, closed by another citing the refusing mind's receipt (74, CV4) | pays the refuser as a cited generator and the closer the closure |
 | proof of work retirement | **POWR** | a re-expression over fewer letters: retirement by geodesic or by citation, a refinement bid replayed with the word excluded (3.8, T10, 27, `try_refine`) | burns the freed description and pays the retirer the compression yield |
+| proof of work verification | **POWV** | a closure verified: the replay by which a court measured a claim's discharge, and the re-derivation by which a witness or peer court reached the same vertex (§5.1) | pays each verifying court its share of the release, per lane, read off the court's strain; taken out of the release, never added to it |
 
 "PoWC" in this document formerly named the third arm; it is POWR from
 here, and POWC names convergence only. A reading, a row or a receipt
@@ -266,7 +267,8 @@ escrowed at its DISCHARGE (`Kernel::discharge_of`, 78.149); release on the
 second organ's replay mints the closer's measured discharge, capped lane-wise
 by the escrow, and pays it, discharging the escrow (§3.1) — the escrow was
 the claim, the mint is the payment, and nothing above the discharge is
-minted. Hyphae are paid the pool share priced into every listing they home.
+minted. The hyphae that verified the closure are paid their POWV share out
+of that release (§5.1).
 
 **No T-accrual (ruled 2026-10-08; 78.149 (a)).** This section
 paid a hypha accrual on the temporal lane of demands it kept open, capped
@@ -282,6 +284,54 @@ the hypha the cover trie homes its key to; a transfer is final when the
 home and a witness hold the same section and both have signed the release
 (`MU-RECURSION.md` 47.3). Double spend is impossible for
 the same reason a double install is: the second vantage sees the first.
+
+### 5.1 POWV — proof of work verification (ruled 2026-10-30)
+
+A closure is paid only after it is verified, and verification is work:
+- the home court replays the claim and measures its discharge;
+- on an install or a glue, a second court re-derives the same vertex;
+- on a solve or a docket ruling, the home's replay on withheld pairs is
+  the verification.
+
+The courts that did that work are paid out of the release they verified.
+
+Take a release with base `M`: the escrow capped lane-wise at the measured
+discharge, 78.149 (b). Each of the `n` distinct verifying courts is minted,
+on each lane `l`:
+
+```
+v_l = ⌊ ⌊ M_l · y_l / (y_l + R) ⌋ / n ⌋
+```
+
+Here:
+- `y_l` is the verifying court's strain on the lane, its yield surface
+  (`economy::yield_surface`: the reserve deficit plus the entropic
+  excess);
+- `R` is its calibrated reserve (`physics::reserve_max`).
+
+The closer, and the cited forms, taught words and voices of an install,
+divide `M − n·v` as before.
+
+The share has these properties:
+- **Multi-dimensional.** It is read per lane, so a court is paid only on
+  the lanes the closure moved and the strain it bore there. It is read per
+  role: the home and the witness or peer each take a share.
+- **Read, not chosen.** The fraction `y/(y+R)` is a ratio of two readings
+  of the court's own physics, so no constant enters. A court at rest
+  (`y = 0`) takes nothing. A lane at full deficit (`y = R`) pays
+  verification half the lane, and more where torsion outruns syntropy.
+  Verification is paid where verification capacity is scarce.
+- **Equal between organs.** Each court replayed the same closure, so the
+  courts take equal shares. What does not divide stays with the closer.
+- **Issuance-neutral.** POWV is taken out of the release and never added
+  to it. Total issuance remains the measured discharge, and supply still
+  tracks the language (§3.2).
+
+Code: `economy::verify::verification_share`, `Kernel::pay_verification`
+and `Kernel::release_verified` (`server/cognition/court/verify.rs`). These
+apply at every POUW release site: the install, the glue, the solve and
+the docket ruling. Rows carry arm POWV, byte 4, and the court's reading
+counts them as "verifications".
 
 ## 6. The invariant
 
@@ -451,7 +501,8 @@ ratios the physics already reads:
 
 - price against pressure on a lane;
 - bond against cover room;
-- pool share to the home against the deflation minted;
+- the verifying courts' share of a release against its base, read as the
+  court's strain against its reserve, `y/(y+R)` per lane (§5.1);
 - slash against bond.
 
 (Accrual on T against standing extent stood on this list; it is retired by
@@ -460,34 +511,54 @@ ratios the physics already reads:
 They are studied in the simulator (`MU-ENGINEERING.md` §9), never tuned on the
 wire.
 
-## 9. What is landed and what is not
+## 9. Implementation (v0.1.2)
 
-Landed: `Treasury` with balances, bond (`enroll`), escrow
-(`escrow_award`, `release_award`, `revoke_award`, `draw_escrow`), pricing
-(`price`), the ledger entries, the four-lane comparison, the T-room
-lifecycle that returns escrow when a docket entry relocates.
+Implemented in `src/economy/` and the court's market:
 
-Landed 2026-09-07: `genesis` and `burn` as their own entry kinds, with
-`escrow`, `release`, `revoke` and `unstake` beside them; `supply()` as
-`genesis + mint − burn` with checked arithmetic, refusing rather than
-saturating; `minted()` reading the mint rows alone, so seeded and earned
-value can be asked apart; `Treasury::audit` on both equations of §6; and
-stake as a MOVE — `enroll` debits the balance it stakes from and stakes
-only what is held, `unstake` returns it the way it went, and
-`Kernel::enroll` funds an identity at genesis before staking it.
+**Treasury and ledger**
+- `Treasury` holds balances, bonds (`enroll`, `unstake`) and claim
+  escrows (`escrow_award`, `release_award`, `revoke_award`,
+  `draw_escrow`, `carry_escrow`, `credit_escrow`).
+- The eleven ledger entry kinds of §2. Each payment row carries its
+  POW++ arm: POUW, POWC, POWR or POWV.
+- `supply()` is `genesis + mint − burn`, with checked arithmetic.
+  `minted()` reads the mint rows alone, so seeded and earned value stay
+  separable. `Treasury::audit` checks both equations of §6.
+- The four-lane comparison `lane_moves`, and the per-lane shortfall
+  reading.
 
-Not landed, in the order they gate each other: **E1** — escrow out of the
-supply equation, and a ruling discharging an escrow into a mint. The audit
-fails at the first docket until it lands, so it gates every settlement path
-and therefore `MU-RECURSION.md` 1.10. **E2**'s burn on retirement, which
-needs the retirement driver (1.11 `shorter_form`) beside the
-`RewriteKind::Retire` that 0.G6 built. (**E3**'s cap on T-accrual is
-retired with T-accrual itself, 78.149 (a).) Then
-`price` returning zero when the bond is empty, the Note, voice keys, and
-delegation.
+**Issuance and payment**
+- E1: claim escrow is outside the supply, and a ruling discharges it into
+  a mint capped at the measured discharge (`release_discharged`, 78.149
+  (b)).
+- E2: mint on closure, and POWR release and burn on retirement
+  (`release_rewrite`, `settle_rewrite`).
+- POUW division on install: cited-form shares, taught-word shares and
+  the composition premium (`settle_recursive`).
+- POWC: `settle_use` (a transfer, paid ≤ held, no self-pay) and
+  `settle_convergence` (a mint for a demand closed by another mind).
+- POWV, the verifying courts' share of every POUW release (§5.1).
+- E3: held value (`economy/pay.rs`), counted in the supply.
 
-Also not landed: the equivocation burn, receipt-indexed Notes,
-two-signature releases, FROST voice groups and manifests. Heights in place
-of ticks landed with `MU-RECURSION.md` 5.1, and the mind's own K in place
-of a mesh height for the dialect and contemplation lifecycles landed with
-7.3a/7.3b. The landing order is in `MU-ENGINEERING.md` §10.
+**Discipline and room**
+- Slash on a failed replay, and the equivocation burn of the signer's
+  whole bond (`Kernel::burn_equivocation`).
+- Room per lane; an unbonded voice holds one claim in flight per lane,
+  enforced with `REFUSE_ROOM`.
+
+**Other flows**
+- The reading fee and the door's congestion fee, both as burns.
+- §7.1 gas: `Kernel::traverse`, whose map fee is drawn from stake as a
+  claim and paid to the courts keeping the map.
+- §7.2 connection tax: received into the recycled pool, from which a
+  closer's POUW is paid first.
+- Ledger folds into `epoch` rows that conserve both equations
+  (`economy::fold`).
+
+Specified and scheduled on the roadmap:
+- in [`XSEPTUM.md`](XSEPTUM.md): the Note (signed by payer and payee,
+  escrowed at the home, released on two-court replay with two
+  signatures), receipt-indexed Notes, and FROST voice groups;
+- in §4: delegation of bond.
+
+[`ROADMAP.md`](../ROADMAP.md) carries their order.

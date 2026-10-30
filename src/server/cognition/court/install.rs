@@ -83,7 +83,22 @@ impl Kernel {
                 }
                 self.retire_rewrite_inputs(&w, budget);
             } else {
-                let pay = self.verified_install_deflation(addr, &w);
+                let measured = self.verified_install_deflation(addr, &w);
+                // POWV: the base the install releases — the escrow capped at
+                // the measured deflation — pays this court and the witness
+                // whose re-derivation installed it their verification share
+                // first; the cited forms, taught words and voices divide the
+                // rest.
+                let pay = match self.treasury.escrow_of(addr).map(|e| e.mu) {
+                    Some(held) if measured.iter().any(|&x| x > 0) => {
+                        let above = crate::economy::shortfall(&held, &measured);
+                        let base: [u64; 4] = std::array::from_fn(|l| held[l] - above[l]);
+                        let organs = [self.identity, witness];
+                        let taken = self.pay_verification(base, &organs, installed);
+                        std::array::from_fn(|l| base[l] - taken[l])
+                    }
+                    _ => measured,
+                };
                 if pay.iter().all(|&x| x == 0) {
                     // Closes nothing: installed, and mints none.
                     let _ = self.treasury.revoke_award(addr, crate::economy::escrow::Revocation::Drop);
