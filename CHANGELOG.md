@@ -7,6 +7,17 @@ such change is named here.
 ## Unreleased
 
 ### Documentation
+- Proposal 78.156 (clock binding) §7, and ROADMAP track 20: the four
+  lanes of the clock defined (spatial, gauge, temporal, holonomic; matter,
+  value, duration, information in a fold); vertical attachment, in which a
+  client attaches on one lane and its time is that lane's distance tick
+  over tick, while carrying the full point; coordination across universes
+  at final points with dilation per lane; chronometric anchors (final
+  point, lane, world axis, state commitment) for shared state; "quantum
+  state" of the clock defined as the four-lane frame at `K`, never a
+  probability. 78.156's status corrected: its items 1–3 are in the tree.
+  The glossary adds lane of attachment, chronometric anchor and the
+  clock's quantum state.
 - ROADMAP track 19, the general conformal algebra, pole states and
   bonding: Cl(n+1,1)(ℚ) for any `n` (matching xylarium-kernel's
   `cga.rs`); the pole state `(X(t), R)` that xylarium writes

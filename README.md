@@ -935,6 +935,10 @@ lands in the code:
     `(X(t), R)` with bonding held as state: isomorphic bonds as versors
     between states, automorphic bonds as stabilizers, crossings as
     isomorphisms between universes' readings.
+20. The shared clock: clients attached vertically on one lane of
+    TUniversal (S, G, T or H), time as distance along it, coordination
+    across universes at final points, and chronometric anchoring for
+    shared state.
 
 Design discussion is anchored in the specifications. Section and ruling
 numbers (for example *78.143* or *§5.6*) cite `docs/MU-RECURSION.md` and
