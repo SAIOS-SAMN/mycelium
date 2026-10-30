@@ -8,8 +8,7 @@
 
 **Status: canonical** (78.122, 2026-10-07). Every connected system uses one terminology, defined by the
 server, for wormholes, black holes, white holes, universes, realms, planets and stars. The server (Mycelium) defines these terms; every
-kernel that connects — xylarium-kernel, barren-realms, any other — aligns to this file, and their copies point
-here. Drafted by xylarium (the coordinating node) with barren-realms' corrections; subordinate, as every document in this
+kernel that connects aligns to this file, and its copies point here. Subordinate, as every document in this
 tree is, to `MU-RECURSION.md`.
 
 An amendment raises the **version**. The register is served by address beside the law register (78.122: `ACT_LAWS`
@@ -33,7 +32,7 @@ neither renames nor claims them.
 
 ## 1. Physical — the spatial ladder
 
-(barren-realms `docs/SCALES.md` holds the working scales.)
+(Each game kernel states its own working scales.)
 
 | Term | Meaning |
 |---|---|
@@ -46,7 +45,7 @@ neither renames nor claims them.
 | **Star** | A system's stellar body (or bodies). |
 | **Body** | Anything that orbits: a **planet**, a **moon**, a **belt**, a **station**. |
 | **World** | *Informal only*: an inhabited or habitable body. Never a type or a wire name (§4). |
-| **Black hole** | A **sink** of mass and value: what continuity (L0, law version 3) lets absorb, at its place. |
+| **Black hole** | A **sink** of mass and value: what continuity (L0, in the law register since version 3; the register is now at version 4) lets absorb, at its place. |
 | **White hole** | A **source**: what continuity lets emit, at its place. In the game, the Einstein–Cartan bounce's outlet — returning the matter and information a black hole took, renewing the matter budget (a flow). It funds nothing: endowments are funded by passage tithes and, in the deep era, by the ancient houses' estates. |
 | **Wormhole** | A gateway (a throat) joining places the warp lanes do not, crossed at a **toll** to its keeper and a **tithe** for its upkeep (one passage's energy per lane-length it spans) to the progenitor line that keeps it, both in money. A progenitor's throat lies dormant until opened; a developed one needs upkeep. Settled in μ only where the ancients' tier touches the network. On the network, crossing one is a handoff between charts (78.59 P2). |
 | **Lane** | A warp connection between adjacent sectors. |
@@ -69,7 +68,7 @@ neither renames nor claims them.
 | Term | Meaning |
 |---|---|
 | **Network universe** | A genesis record, a law version and its causal clock (named apart from the physical Universe: no word in two vocabularies). One physical universe is recorded as one network universe (78.86: CREATE a subsidiary, or JOIN one). |
-| **Domain** | An application's namespace under a universe — xylarium is a domain — founded on a court by its genesis (`ACT_DOMAIN`, 78.120). Replaces "world" on the network. |
+| **Domain** | An application's namespace under a universe — a game kernel's world is a domain — founded on a court by its genesis (`ACT_DOMAIN`, 78.120). Replaces "world" on the network. |
 | **Tier** | A signing key that folds a ledger for a domain, named at the domain's genesis (78.120); its folds are admitted by continuity (`ACT_UPLINK`, 78.119). |
 | **Hypha, Court, Voice, Mind, Entity** | As `MU-RECURSION.md` defines them (78.87 R4). |
 | **Cohort** | Clients working on alike problems. Replaces the network's "galaxy" (78.59). |
@@ -82,21 +81,21 @@ neither renames nor claims them.
 | **Keeper** | (78.152 TU-1) One of the three hyphae a, b, c, a distinct court and key, keeping TUniversal: its READING is its head's height `h`, its court's cumulative issuance per lane `S:G:T:H`, and `K`, the orbits it closed, signed and linked to its previous reading by hash, citing the last reading it verified from each other keeper. |
 | **Final point** | (78.152 TU-3) A keeper's point held by two distinct keepers' verified readings — its own signature and another's citation. The final TUniversal is the greatest one in a court's view, never averaged; with two keepers down it does not advance. |
 | **TPoint** | (78.152 TU-5) A final point as a typed coordinate: `origin/h:S:G:T:H:K`, the origin the genesis hash and epoch, the six fields exact integers written in 16 lowercase hex digits each (`TPoint::print`, `TPoint::parse`). What every act, percept and mail carries (`Session::tuniversal`). |
-| **Sub-origin** | (version 5, 78.155 §5c, seat wire v1.4) A sub-universe of a domain's universe — netstratum's substratum — named by its 32-byte citation. A seat is named by (domain, sub-origin, seat id), the sub-origin absent for the domain's own universe; a post naming one is written under its sub-kind with the SCOPED bit (`0x80`), the sub-origin after the domain. |
+| **Sub-origin** | (version 5, 78.155 §5c, seat wire v1.4) A sub-universe of a domain's universe, named by its 32-byte citation. A seat is named by (domain, sub-origin, seat id), the sub-origin absent for the domain's own universe; a post naming one is written under its sub-kind with the SCOPED bit (`0x80`), the sub-origin after the domain. |
 | **Relay epoch** | (version 5, seat wire v1.4) A value the seat relay draws when it is made (never 0), so every hypha restart changes it. A READ-MAIL at sub-kind 8 names the epoch its cursor was read under and is answered with the relay's epoch and last sequence: a cursor of another epoch, or past the sequence, is a restart and acknowledges nothing — never progress. |
 | **Axis coordinate** | (version 5, 78.156) A universe's own time `u`, its committed cycle, FREE of TUniversal: a percept's `local_time`, carried beside the house's final point. A seated mind's sub-instance is located at (TPoint, u); the ratio of their advances is its experienced dilation, a reading, never an error. |
 
 ### 3.1 The fold lanes (version 2, 78.123 B)
 
 A fold's four lanes `S:G:T:H` mean the same in every domain, so folds of two domains can agree (union tiers, μ
-conversion). Agreed with xylarium (the coordinating node) 2026-10-07; netstratum and xylarium already agreed on S and G.
+conversion). Agreed with the connected kernels 2026-10-07.
 
 | Term | Lane | Meaning |
 |---|---|---|
 | **Matter lane** | S | What has extent and is hauled. Never translated: a child's rate on it is exactly 1. |
 | **Value lane** | G | Money and value: what is exchanged at a rate. The **one** lane a parent translates; a rates cycle's holonomy (arbitrage) can only stand here. |
 | **Duration lane** | T | Time owed or served: leases, contracts, upkeep. Never translated. |
-| **Information lane** | H | Deliveries of words and proofs: each word issued is a declared source. Never translated. A word's IDENTITY on H, in every domain, is the 32-byte payload hash of its Mycelium ADDRESS (its element's own coordinates): domains may keep local names, but whatever crosses on H — a handoff, or an H-lane net meant to match across domains — names the word by that identity (the coordinator's ruling, 2026-10-07; an additive clarification of v2). |
+| **Information lane** | H | Deliveries of words and proofs: each word issued is a declared source. Never translated. A word's IDENTITY on H, in every domain, is the 32-byte payload hash of its Mycelium ADDRESS (its element's own coordinates): domains may keep local names, but whatever crosses on H — a handoff, or an H-lane net meant to match across domains — names the word by that identity (ruled 2026-10-07; an additive clarification of v2). |
 | **Rate** | — | A child fold's translation into its parent's units, per lane: an exact rational, strictly positive, `1/1` on S, T and H. Rounding a translation makes is declared by the parent as its own source or sink, never floored. |
 | **Open remainder** | — | What of a child fold no parent has netted yet: value in flight between tiers, reported at finality, never a breach. |
 
@@ -107,7 +106,7 @@ conversion). Agreed with xylarium (the coordinating node) 2026-10-07; netstratum
 | **"World"** — the network's genesis act (78.120) meant an application; gameplay uses "world" for an inhabited body | The network's term is **Domain** (78.122): `Action::Domain`, `ACT_DOMAIN`, `DomainGenesis`, `Cite::Domain` — names only, the act byte `0x3E`, the cite tag and the snapshot leaf unchanged, no layout change. The genesis signing domain stays `"mycelium world genesis v1"`: domains founded before the rename were signed over it. In game code the term is **Body** / **Planet**; "world" stays informal. |
 | **"Realm"** for an application instance | Realm is civic only. The network's term is **Domain**. |
 | **"Galaxy" / "Star"** as network metaphors (78.59) | **Cohort** and **Allocation**. The physical galaxy and star keep their meaning; the algebra's star is untouched. |
-| **"Universe"** for a settled patch of sectors (the xylarium port's `World` type) | That type is a **Region**. Universe is reserved for the container of the 3-sphere's constants and its cluster tree. |
+| **"Universe"** as a game kernel's name for its type for a settled patch of sectors | That type is a **Region**. Universe is reserved for the container of the 3-sphere's constants and its cluster tree. |
 | **"Realm" tiers** in the ledger tree, today one per money's zone | They stay realm tiers; until stewardship is ported, a realm is approximated by a money's zone. |
 | **Lane letters S, G, T, H** (2026-10-30) | On the network they are TUniversal's and μ's lanes: spatial, gauge, temporal, holonomic (§3.1 for their fold reading). A kernel that uses the same letters for its own quantities names those quantities apart, never by the network's lane letters (MU-CHRONOMETRY §5). |
 | **"TUniversal"** for a game's own clock (2026-10-30) | TUniversal is the network's clock only (78.152). A game's own clock or counter takes another name. |

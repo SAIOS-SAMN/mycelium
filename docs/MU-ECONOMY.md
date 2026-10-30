@@ -4,7 +4,7 @@
 >
 > **Components:** the court on each hypha (treasury, settlement, the POW++ arms); clients and kernels appear as payers and payees. In-universe economies are each kernel's own (§10).
 
-Status (v0.1.1): implemented in `src/economy/` and the court's market —
+Status (v0.2.0): implemented in `src/economy/` and the court's market —
 balances, stake bonds for hyphae and voices, escrow, per-lane pricing,
 issuance by mint against measured work, transfer, the genesis allocation,
 settlement rows carrying their POW++ arm, and the audit invariant
@@ -20,7 +20,7 @@ the ledger, and no two share a name (MU-RECURSION 78.33):
 |---|---|---|---|
 | proof of useful work | **POUW** | a closure ruled: a listed demand closed, its deflation measured on closure (§3.2, 12.6, 23.9) | mints the measured deflation and pays the closer |
 | proof of work convergence | **POWC** | a refusal closed at another perspective: the question one mind refused, closed by another citing the refusing mind's receipt (74, CV4) | pays the refuser as a cited generator and the closer the closure |
-| proof of work retirement | **POWR** | a re-expression over fewer letters: retirement by geodesic or by citation, a refinement bid replayed with the word excluded (3.8, T10, 27, `try_refine`) | burns the freed description and pays the retirer the compression yield |
+| proof of work retirement | **POWR** | a re-expression over fewer letters: retirement by geodesic or by citation, a refinement bid replayed with the word excluded (3.8, T10, 27) | burns the freed description and pays the retirer the compression yield |
 | proof of work verification | **POWV** | a closure verified: the replay by which a court measured a claim's discharge, and the re-derivation by which a witness or peer court reached the same vertex (§5.1) | pays each verifying court its share of the release, per lane, read off the court's strain; taken out of the release, never added to it |
 
 "PoWC" in this document formerly named the third arm; it is POWR from
@@ -33,17 +33,24 @@ and never one payment.
 **THE INVERSE-SISYPHUS PROTOCOL (ruled 2026-10-11): nothing is
 squared.** No reading collapses dimensionality or exact mathematics into a
 scalar or a lossy signal, and no curved object is forced into a flat one
-or a flat one imposed on it. μ is not four counts. μ is the exact MODES the verified
+or a flat one imposed on it. μ is specified as the exact MODES the verified
 work moved, each on the lane its kind names, each with an exact rational
 amount: on S a boost or dilation (its generator's ray and its point and
 side, c and λ); on G a hue cycle or move; on T a null flux (its ray and its
 count in its tube's quantum); on H a turn (its plane's ray and its turn
-t/ℓ). A balance HOLDS its modes, keyed by their canonical coordinates
-(A21); a payment adds modes, a draw removes them or is refused naming the
-mode it lacks; nothing is projected to a count anywhere — not as a balance,
-not as a label, not on the wire, not on the console. Where this section and
-the sections below speak of `[u64; 4]`, that is the carrier being retired
-(the scope and order are in MU-RECURSION 78.162).
+t/ℓ). Under the specification a balance HOLDS its modes, keyed by their
+canonical coordinates (A21); a payment adds modes, a draw removes them or
+is refused naming the mode it lacks; nothing is projected to a count
+(MU-RECURSION 78.162).
+
+What is built today: the modes and their exact arithmetic are
+`economy::modes::Modes` (add, draw refused naming the mode, canonical
+codec). A closure's measured deflation reads its modes
+(`transducer/family/deflation.rs`), and a paid solve verdict carries them
+behind its receipt (`encode_solve_verdict`). Every carrier of value —
+balance, bond, escrow, held value, ledger row — still carries μ as
+`[u64; 4]`, one exact count per lane, and the sections below speak of that
+carrier. Moving the carriers to held modes is the open part of 78.162.
 
 μ is a vector on four lanes: spatial (S), gauge (G), temporal (T),
 holonomic (H). It is never summed and never converted across lanes. A
@@ -125,8 +132,10 @@ A **funded** escrow is a LIABILITY: a payer backed the claim from a balance,
 so the μ⃗ left that balance and is still in the mesh. It is counted in §6's
 carriers, and discharging it MOVES value — back to the payer on a
 revocation, to the payee on a release — and mints nothing. This is §5's
-requester escrow, and `escrow_from_balance` is the path that creates one:
-the payer is debited, not merely checked.
+requester escrow, and `Treasury::hold` (`economy/pay.rs`) is the path that
+creates one: the payer is debited, not merely checked, and the value sits
+in the held carrier until `release_held` pays it on or `refund_held`
+returns it.
 
 A **claim** escrow is pending issuance: nobody gave anything up for it, so
 the μ⃗ does not exist yet. It is not counted, and a ruling MINTS it at the
@@ -139,8 +148,8 @@ discharge (`Treasury::release_discharged`), and the excess is never issued.
 
 Counting all escrow as supply asserts value the mesh never created;
 counting none makes the audit hold by not looking. R9 stands as written —
-`Σ escrow` is the funded escrow — and `Treasury::funded` records, per
-listing, what was debited to create the award.
+`Σ escrow` is the funded escrow — and the held carrier records, per key,
+what was debited from which payer.
 
 This is what §4's "every claim is escrowed against its own deflation"
 means, and it dissolves the question of where the funds come from: nothing
@@ -159,9 +168,8 @@ or lapsed, and refused with `REFUSE_ROOM` naming the lane otherwise. Its
 room grows only by bonding what it earned. Identities are free
 (`MU-RECURSION.md` 47.3), so nothing funds an arriving identity: the
 genesis cover bonds the hyphae and the voices the mesh record names, and
-the faucet the tree carried — every arriving key funded at the genesis
-cover, measured as supply three times the seed after two ingests — is
-closed by this ruling. A recall shortfall is the same reading one act
+no arriving key is funded at the genesis cover: this ruling closes that
+faucet. A recall shortfall is the same reading one act
 later: the reading the voice asked for is served, the shortfall is recorded
 per lane, and the voice has no room for a further claim on a short lane
 until the claim in flight closes.
@@ -179,12 +187,12 @@ only (ruled 2026-09-07, `MU-RECURSION.md` 12.6 and 23.9): a pair pays the
 measure of the remainder it closed, before less after per lane, when its
 remainder is empty; a pair that lowered a lane and left a remainder pays
 nothing, because descent is not closure and certifies nothing
-(`form_descent`, `settle`; TASKS S9.5). Its counterpart: when a word
+(`economy/settle.rs`). Its counterpart: when a word
 retires by geodesic — a shorter description of the same vertex, or a word
 whose substance other words reproduce exactly (`MU-RECURSION.md` 3.8,
 chapter 27, T10) — or by condensation — the same closure with more reach
 or a shorter description, the reach read from the certificate
-(`MU-RECURSION.md` 3.8, TASKS S9.13; ruled 2026-09-08) — the description
+(`MU-RECURSION.md` 3.8; ruled 2026-09-08) — the description
 the language no longer carries is
 **burned**, while the retirer is paid the compression yield. Supply falls
 by the freed measure less that yield.
@@ -223,8 +231,8 @@ deflation closed per unit of
 metabolic time. It is continuous, self-limiting, and has no step anywhere,
 because no term in it is chosen.
 
-Prior art, recorded so it is not repeated: `emission.v1` in the predecessor
-tree (2026-08-28) reached the same shape — evidence-priced, per-event, no
+Prior art, recorded so it is not repeated: an earlier emission design
+(`emission.v1`) reached the same shape — evidence-priced, per-event, no
 clock and no height — and then wrote its curve as
 `(1 + 2·attempts + residual/8 + 4·siblings) · derivability-grade`. Five
 free constants (rule 5), ruled by its own text "a LIVE TEST PARAMETER, not
@@ -407,24 +415,22 @@ supply = Σ balance + Σ bond + Σ funded escrow
 
 A **claim** escrow is not in the second sum. It is a claim on issuance that
 has not happened (§3.1): counting it as supply reports value the mesh has
-not created, and the audit fails at the first docket — measured on this
-tree as `supply [18, 60, 0, 78]` against carriers `[18, 61, 0, 78]` after
-two ingests. A ruling discharges it into a mint, which enters both sums
+not created, and the audit fails at the first docket. A ruling discharges it into a mint, which enters both sums
 together; a revocation discharges it into nothing.
 
 A **funded** escrow is in it. The μ⃗ left a payer's balance and is still in
 the mesh, so a burn would not conserve without it (§3.1, and
 `MU-RECURSION.md` 42.2 R9, which states the equation this way). This
 section said "escrow is not in the second sum" without the distinction §3.1
-draws two paragraphs above it, and `Treasury::audit` has held `funded`
-apart from the claim escrow since it was written; the text is corrected to
-the ruling, not the code to the text.
+draws two paragraphs above it, and `Treasury::audit` has held the funded
+value (the held carrier) apart from the claim escrow since it was written;
+the text is corrected to the ruling, not the code to the text.
 
 **A slash is issuance leaving (ruled 2026-09-09).** A slash debits a bond
 and §2 lists no carrier that receives it, so `supply()` counts it as μ⃗
 leaving circulation exactly as 47.4's forfeiture does; it keeps its own
 kind so the ledger can still answer "was anyone slashed?" apart from "what
-was burned?". This is what the tree implements (I11a), now ruled.
+was burned?". This is what the code implements, now ruled.
 
 **Across a fold (ruled 2026-09-09, `MU-RECURSION.md` 45.8).** Both
 equations hold at the folded prefix before the fold and at the `epoch`
@@ -492,7 +498,7 @@ COORDINATE RETRIEVAL AND MAPPING act citing both mouths' final points, not
 a transport: it costs the MAP FEE — the route's gas per lane (§7.1), paid
 to the courts that keep the map — and nothing else. It holds between
 domains and within one universe alike (a progenitor network, a core-to-rim
-haul in xylarium). A mouth not yet final on the map is refused as not yet
+haul inside one game universe). A mouth not yet final on the map is refused as not yet
 at h; a crossing made without coordinates from the map is one the mesh
 cannot place.
 
@@ -554,8 +560,8 @@ court pays as it already pays (§3.2, 26 as ruled 2026-09-10): an installed
 sentence's mint is split across the discoverers of the ruled forms it cites,
 each its own form's verified deflation on the citer's family, lane by lane —
 so a mind whose agreed words other minds cite in closing sentences is paid at
-each closure. OWED after the server freeze: the agreed word's own install
-split across the minds whose AGREE attestations it carries.
+each closure. Not yet built: splitting the agreed word's own install
+across the minds whose AGREE attestations it carries.
 
 ## 8. Policy ratios
 

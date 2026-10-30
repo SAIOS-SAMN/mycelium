@@ -4,11 +4,16 @@
 >
 > **Components:** the hypha's settlement of payments between voices (specified). No game term.
 
-Status: specification. It replaces the HTTP 402 / x402
-handshake for anything that pays or is paid through a hypha. Written
-against the tree at de52e47; every referenced function exists there unless
+Status: specification. Of its acts only 0x35 EQUIVOCATION is built
+(`anastome/dialogue/equivocation.rs`, `ACT_EQUIVOCATION` in
+`anastome/dialogue/acts.rs`); 0x30–0x34 are reserved, and the rest of the
+protocol is ROADMAP track 1.
+
+It replaces the HTTP 402 / x402
+handshake for anything that pays or is paid through a hypha. It is written
+against the current tree; every referenced function exists unless
 marked "new". Time, identity, receipts, and the adversary model follow
-`MU-RECURSION.md` Part IX (chapters 45–49, written at 5865bd0); where this
+`MU-RECURSION.md` Part IX (chapters 45–49); where this
 text and that part differ, that part governs.
 
 ## 1. What it replaces and what it keeps
@@ -40,7 +45,7 @@ except what the pore admits. Here the pore is replay.
 - **μ⃗**: `[u64; 4]` magnitude on the four lanes.
 - **Escrow**: `Treasury::escrow_award(addr, voices, mu, anchor)`; released by `release_award`, revoked or slashed by `revoke_award`, drawn by `draw_escrow`.
 - **K**: a kernel's own receipt index (`Kernel::k_step`; `Session::voice().k()` for a voice). Orders events inside one kernel. No kernel reads a clock (MU-RECURSION 45).
-- **TUniversal**: the height of the mesh receipt ledger (MU-RECURSION 45.2), read from receipts. It measures how long a carrier has stood at one home and never orders two events across nodes. Lane 2 of μ⃗ is temporal extent in heights.
+- **TUniversal**: the network's one clock, a final point `origin/h:S:G:T:H:K` held by two of its three keepers' verified readings (MU-CHRONOMETRY §1; MU-RECURSION 78.152). The height `h` is one field of that point and is never confused with it. Lane 2 of μ⃗ (temporal) carries verified null-flux discharge, never the span a word or carrier stood: waiting is not μ (MU-ECONOMY §3, MU-RECURSION 78.149).
 - **Receipt prefix**: the bytes every signature covers (MU-RECURSION 47.1): genesis, epoch, previous receipt hash, K, height, chart, payload address.
 - **Λ(chart)**: the aperture of a chart in admitted receipts, `from_transport(rtt_floor, aperture_cycle())` measured in strokes; never a constant.
 - **Anchor**: `economy::Anchor`, the pricing anchor the treasury records with every entry.
@@ -53,12 +58,13 @@ except what the pore admits. Here the pore is replay.
 - **Witness**: second organ; supplies the replay and the second signature that release escrow. Its bond lies outside the home's delegation closure and its room covers the escrow on every occupied lane (MU-RECURSION 47.3).
 
 Any node may be payer and payee in different exchanges. Hyphas are never
-payees; they are paid by the pool share already priced into `economy::price`.
+payees in an exchange.
 
 ## 4. Value
 
-A price is `economy::price(&magnitude, &pressure, &pool)`: the pool share of
-the request's magnitude at the home's current pressure. A payee may quote a
+A price is `economy::price(&magnitude, &surface)`: the magnitude on each
+lane. The surface paces pressure and does not scale the price, so the price
+is the request's magnitude, lane by lane. A payee may quote a
 magnitude; the home prices it. No lane converts to another. A Note that
 does not cover the price on every lane the price occupies is refused with
 `INSUFFICIENT_LANE(l)`. A payer with balance on the wrong lanes cannot pay;
@@ -202,8 +208,8 @@ needs no second vantage, installing does.
 The home verifies both signatures under the common key, equal K, unequal
 hashes, and burns the signer's bond on all four lanes with one `burn` entry
 naming the proof (MU-RECURSION 47.4, MU-ECONOMY §4). Nothing is replayed.
-Reply, as landed (Stage 11 I21; `dialogue::Ruled`, the hypha's ruling
-reply): `Applied` when the bond burned, `Inert` when the same proof finds
+Reply, as built (`dialogue::Ruled`, the hypha's ruling reply;
+`Kernel::accept_equivocation`): `Applied` when the bond burned, `Inert` when the same proof finds
 no bond left to burn, `Refused` naming `REFUSE_SIGNATURE`, `REFUSE_ORIGIN`,
 `REFUSE_RECEIPT` (a receipt that disagrees with its prefix or does not
 re-derive its hash) or `REFUSE_NOT_EQUIVOCATION` when the two receipts do
@@ -315,20 +321,24 @@ Codes are typed variants in code, never bare integers in cognition.
 
 ## 10. Implementation map
 
+Built: act 0x35 (`src/anastome/dialogue/equivocation.rs`,
+`encode_equivocation`/`decode_equivocation`; the court's burn in
+`Kernel::accept_equivocation`).
+
 New:
 
-- `src/anastome/dialogue/`: acts 0x30–0x35, `encode_*`/`decode_*`; every
+- `src/anastome/dialogue/`: acts 0x30–0x34, `encode_*`/`decode_*`; every
   signed prefix is the receipt prefix of MU-RECURSION 47.1 followed by the
   act's fields (`challenge_signed_prefix`, `note_signed_prefix`,
   `receipt_signed_prefix`, `release_signed_prefix`).
 - `src/client/identity.rs`: `VoiceGroup` (FROST, RFC 9591) and the manifest
   receipt.
-- `src/economy.rs`: `Septum` ledger kind entries ("septum-escrow",
+- `src/economy/`: `Septum` ledger kind entries ("septum-escrow",
   "septum-release", "septum-revoke") on the existing `Entry`; no new
   balances.
 - `src/server/septum.rs`: the state machine keyed by `(listing_key, payer,
   K_payer)` in a `Keyed<Septum>`; `price_request`, `accept_note`,
-  `accept_receipt`, `accept_equivocation`, `expire(K)` called from the court
+  `accept_receipt`, `expire(K)` called from the court
   stroke under its budget; `witness_sign` for the second signature of a
   release.
 - `src/bin/mycelium-server/judge/`: one file per act family, dispatched by `judge/mod.rs`.
@@ -344,7 +354,7 @@ Existing, reused unchanged: `escrow_award`, `release_award`, `revoke_award`,
 `record_deflation`, `blind_replay`, `home_install`, `nerve::home`,
 `HyphaKey`, `Frame`.
 
-## 11. Tests to write before the first soak
+## 11. Tests the implementation must pass
 
 - Note with a short lane is refused with the lane named; never partially escrowed.
 - Expiry is by the home's K: there is no wall clock to advance; admitting `Λ` receipts past `k_home` revokes, and a home that admits nothing expires nothing.
@@ -356,7 +366,7 @@ Existing, reused unchanged: `escrow_award`, `release_award`, `revoke_award`,
 - A release with one signature, with a witness inside the home's delegation closure, or with witness room short on an occupied lane is refused with the code named and nothing is drawn.
 - A Note whose prefix names another genesis or epoch is refused ORIGIN before any carrier is touched (a carrier-touch counter at zero).
 - A Note whose `K_payer` skips the payer's known head is docketed RECEIPT_GAP and escrows nothing until the gap is back-filled.
-- `price` output is honoured: a payee-quoted `mu` above the pool share is refused at pricing.
+- `price` output is honoured: a payee-quoted `mu` above the home's price is refused at pricing.
 
 ## 12. What the wire must show
 

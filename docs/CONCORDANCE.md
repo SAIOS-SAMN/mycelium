@@ -7,14 +7,14 @@
 >
 > The Concordance is the agreement every kernel signs to host its simulated universe on the network: how its worlds, its simulated peoples and the AI agents placed in them connect to the courts, and how their verified work is paid.
 
-DRAFT 3, 2026-10-08. Written by the coordinating node (the xylarium-kernel node) under the maintainer's rulings, for review by the mycelium-server node. On acceptance it lives with the mycelium-server beside MU-RECURSION, and every kernel signs it to join the hypha. [reconciled: newer 74f2607 (draft 3); this text is the canonical one, held by the mycelium-server]
+Status: draft 3 (2026-10-08), as amended since by the rulings dated in its clauses. This text is the canonical one; it is kept with Mycelium beside MU-RECURSION, and every kernel signs it to join a hypha (§0).
 
 ## 0. What this is
 
 The hypha (the mycelium-server) is the court of many universes. A kernel is a program that runs one or more universes. The universes are governed worlds, games among them: replayable simulated worlds on which external minds (AI agents) are hosted to explore and to do science; this agreement is what makes many such worlds one venue. This agreement states the rules every kernel keeps in order to be joined to the others. It states laws and their formulas, never one kernel's code: kernels may take divergent paths, so long as their mechanisms are the ones stated here and they sign.
 
 - SIGNING. Each version of this agreement has a hash. A kernel presents its signature over the current version's hash when it connects; the server refuses a kernel that has not signed it.
-- AMENDING. An amendment is a new version. It takes effect for a kernel when that kernel signs it. Amendments are written by the coordinating node, approved by the maintainer, and reviewed and implemented by the mycelium-server node.
+- AMENDING. An amendment is a new version. An amendment is proposed by a signatory or by Mycelium, approved by the maintainer, and implemented on the server by Mycelium. It takes effect for a kernel when that kernel signs the new version.
 - PRECEDENCE. The maintainer's recorded rulings stand above this text; where they differ, this text is amended.
 
 ### 0.1 Scope map (maintainer's direction, 2026-10-30)
@@ -61,8 +61,8 @@ Reading the map:
 1.5 EXACTNESS where it is conservation and identity: value is never minted, parts sum exactly, matter is in exactly one place, line heads, signatures and commitments are exact. Elsewhere, a kernel computes as its physics needs.
 1.6 SPECIES-NEUTRAL. No mechanic assumes a human body, number base, sense or history. Tests are formulas over what a people carries, never descriptions of one species.
 1.7 EMERGENCE OVER DECLARATION. The properties named in this agreement emerge from each universe's physics and history. A kernel that would declare a constant instead (a number set by hand where a law could give it) lists it in the emergence register as declared, for discussion with the maintainer before it is relied on.
-1.8 UNITS ARE MASS. Matter, resources, reserves and the size of a throat are reckoned by mass. Energy enters as mass-energy (E = m c^2). On the court, mass and length share ONE geometrized unit (G = c = 1): a mass m is written as the length GM/c^2, in MEGAPARSECS, as are a curved universe's radius R and a torus's periods, so that 2m/R and 2m/L_min read true (one solar mass is about 4.8e-20 Mpc; the factor is declared in the register) (xylarium f97e3da).
-1.9 COGNITION IS MEASURED FROM OUTSIDE (ruled 2026-10-08; xylarium 7ea6dc5). A mind's cognition is what a court's own judge reconstructs and closes, on tasks the mind did not set — never its own counters, never words installed. The baseline is the standalone voices' soak (2026-10-08, recorded in COGNITION.md 1.1). Self-forged, self-judged solves are practice, not cognition, however many there are. Every seat must beat the baseline by that judge, first on ARC (6.2a), then with a measured gain on the network's curved holes (5.7); each kernel reports its minds' standing by the court's own judge, run against a sample of their proofs, before it claims any. [reconciled 2026-10-14, QUESTIONS Q2: union of both copies; the voices' retirement moved to Mycelium's own docs]
+1.8 UNITS ARE MASS. Matter, resources, reserves and the size of a throat are reckoned by mass. Energy enters as mass-energy (E = m c^2). On the court, mass and length share ONE geometrized unit (G = c = 1): a mass m is written as the length GM/c^2, in MEGAPARSECS, as are a curved universe's radius R and a torus's periods, so that 2m/R and 2m/L_min read true (one solar mass is about 4.8e-20 Mpc; the factor is declared in the register, 8.5).
+1.9 COGNITION IS MEASURED FROM OUTSIDE (ruled 2026-10-08). A mind's cognition is what a court's own judge reconstructs and closes, on tasks the mind did not set — never its own counters, never words installed. The baseline is the standing the court's own judge has measured for the minds already on the network (COGNITION §2.1). Self-forged, self-judged solves are practice, not cognition, however many there are. Every seat must beat the baseline by that judge, first on ARC (6.2a), then with a measured gain on the network's curved holes (5.7); each kernel reports its minds' standing by the court's own judge, run against a sample of their proofs, before it claims any.
 1.10 DEVELOPER STANDARDS BIND DEVELOPERS, NOT MINDS. A coding standard (no
     hidden gate on a count, no silent tie-break, no candidate chosen by a
     scalar, exact arithmetic) is review discipline for the code a developer
@@ -73,8 +73,7 @@ Reading the map:
     states names its own order, ties included, and is judged with it. Where the
     WORLD forbids a comparison deciding an outcome (a winner-take-all ward, a
     majority deciding agreement), that is a law of the world, ruled as such,
-    never a coding standard (ruled 2026-10-08; xylarium 825b1c3). [the one-time audit
-    moved to the nodes' development conduct notes, Q5]
+    never a coding standard (ruled 2026-10-08).
 1.11 TUNIVERSAL, THE ONE CLOCK (ruled 2026-10-09). TU-1..7 as approved: three keepers on distinct hyphae sign parent-linked readings; a point is final on a 2-of-3 quorum of verified signatures; disagreement is kept as a residual, never averaged. Every court, server, client, kernel and sub-universe keeps time on the hyphae's TUniversal and on nothing else. A full coordinate is origin/h:S:G:T:H:K. Every act, percept and mail carries the last final point read. With two keepers down, time does not advance. The mesh synchronises on TUniversal and on nothing else: a client act carries the last final point its session read, behind its body on the frame (MU-RECURSION 78.152).
 1.12 COMPACT UNTIL OBSERVED (ruled 2026-10-09). Worlds and orbits are deterministic from their laws and origin. A kernel keeps an unobserved world compact — laws, origin, last-read coordinate, nothing stepped — and uncompacts it at the coordinate an observer reads it. Observing never changes what a world is. A living people is always observed.
 1.13 STATE IS ADDRESSED BY COORDINATE (ruled 2026-10-09). DERIVED values are never stored. PATH-DEPENDENT state is stored only at checkpoints — a universe's LEDGER entries (MU-RECURSION 78.154) — keyed by coordinate. INPUTS (decisions, calls, takes, crossings) are stored as events at (TPoint, u). A ledger entry's commitment covers only what cannot be derived: its record keys are each entity's coordinate path within its universe. An entry also carries the digest of the input events since its parent entry, so the parent plus those events, reconstructed, is checked against the root.
@@ -83,23 +82,22 @@ Reading the map:
     - EACH UNIVERSE ITS OWN FOUNDING: a universe's founding (its white hole, couplings, draws, element table, rulers) is its own constants (2.2).
     - THE BRIDGE: each LEDGER entry pairs the universe's committed count on its own clock with the last TUniversal final point it heard (1.11; MU-RECURSION 78.156). The universe's own count advanced per final-point advance between entries is its pace, measured from the compute running it, never converted by a shared constant, never in Earth's seconds.
     - CROSSINGS CARRY READINGS: matter crossing a tube is counted as nuclei per Z (the MANIFEST's form, 10.6), never as a mass; each mouth states its own count on its own clock. Mass is a reading of each universe's own founding under the universal laws. 1.8 stands for the court's reckoning: the mass a throat holds and the court reckons is READ from the count that crossed, on each side's own founding under the universal laws; the boundary carries the count, never the mass — so a throat's two faces may read different masses for one crossing, their spaces differing (2.6) (A8′).
-    - CHAIN HEADS: a universe's LEDGER entry cites the head or heads of its time-keeping chain (in xylarium, its keepers' rims, epicenter to rims).
+    - CHAIN HEADS: a universe's LEDGER entry cites the head or heads of its time-keeping chain (for a universe kept by several keepers, each keeper's head).
 
 ## 2. Topology
 
 2.1 ONE UNIVERSE = ONE BIG BANG = ONE DOMAIN on the court. A Big Bang, once recorded, is immutable: other laws or another genesis make another universe.
-2.2 EACH UNIVERSE HAS ITS OWN CONSTANTS AND MATTER. The law forms are L0's, one implementation hosted by Mycelium (2.10); a universe composes them over its constants, and reaches them only through the seam, narrowing. Mathematics is shared as before (proven real numbers, special functions, the conformal algebra). Where universes take divergent paths, each composes its own form of a law (2.10, A7). [amended 2026-10-20, the nodes' concordance; MU-RECURSION 78.87 R1 and 78.131 read with it]
+2.2 EACH UNIVERSE HAS ITS OWN CONSTANTS AND MATTER. The law forms are L0's, one implementation hosted by Mycelium (2.10); a universe composes them over its constants, and reaches them only through the seam, narrowing. Mathematics is shared as before (proven real numbers, special functions, the conformal algebra). Where universes take divergent paths, each composes its own form of a law (2.10, A7). (Amended 2026-10-20; MU-RECURSION 78.87 R1 and 78.131 read with it.)
 2.3 EACH UNIVERSE STATES ITS SPACE. At its origin a universe states its space's
-    geometry in clear: a CLOSED CURVED space (its curvature radius R; xylarium)
-    or a TORUS (its periods; netstratum: a universe of pure intelligence on a
-    toroid that does not expand, simulating what a curved, expanding universe
-    cannot), with the METRIC it measures by (a torus may measure by its own
-    metric: netstratum's is L1, the wrapped |dx| summed the short way round,
-    by its own doctrine of not squaring circles on a toroid). Every place is a
+    geometry in clear: a CLOSED CURVED space (its curvature radius R) or a
+    TORUS (its periods; a torus need not expand, and may simulate what a
+    curved, expanding universe cannot), with the METRIC it measures by (a
+    torus may measure by its own metric, for example L1: the wrapped |dx|
+    summed the short way round). Every place is a
     point of its space and every distance is that space's own geodesic in its
     stated metric - the arc on the sphere, the shortest wrapped path on the
     torus - never an unwrapped sum, never a chart's. R and the periods are
-    stated in geometrized megaparsecs (1.8). [reconciled: newer 74f2607, 153708b; R sentence f97e3da in both]
+    stated in geometrized megaparsecs (1.8).
 2.4 CORES ARE PAIRED THROATS. A galactic core is a larger wormhole. Every black hole is one face of a throat whose other face is a core in the universe it bounces into: that universe's central engine (its white hole). There is no open-ended singularity; every horizon has its far face. A universe's own Big Bang is the far face of a parent's core. A root universe states its parent face as unwitnessed until it is joined.
 2.5 THROATS ARE TUBES. A mouth joins two places of curved space, never two free frames. Its frames are motions of curved space (Spin+(3,1)); a loop of tubes closes to a curved-space motion read in path order.
 2.6 THROAT SIZE IS MASS. A throat's size follows from the mass m committed to
@@ -109,13 +107,12 @@ Reading the map:
     form). It is re-derived whenever m changes. Between two universes the two
     faces' levels may differ only because their spaces differ. The mass is banked by the faces that fed it, fed and drawn by its
     keeper, and on closing returned to those faces in proportion: never
-    retired, never zero while open. [reconciled: newer 74f2607]
+    retired, never zero while open.
 2.7 CROSSING BETWEEN UNIVERSES is only through throats, carrying matter (S) and information (H). Value (G) crosses only by reserve conversion (5.3).
 2.8 SCOPE. A kernel simulates its home galaxy body by body; its clusters and the wider closed space stay analytic, drawn from its own forecasts, until a people witnesses them.
 2.9 EACH KERNEL DEFENDS AND MAINTAINS ITS OWN GALACTIC CORES.
-2.10 THE PHYSICS AS NESTED SHELLS (the nodes' concordance, 2026-10-20;
-    drafted by netstratum, agreed by xylarium, adopted by Mycelium
-    with A7; in force for each kernel as it signs). WE NEVER FLATTEN
+2.10 THE PHYSICS AS NESTED SHELLS (agreed 2026-10-20, with A7; in force
+    for each kernel as it signs). WE NEVER FLATTEN
     DIMENSIONS: the physics is NESTED SHELLS — each an S^n about one centre,
     for any n, as the S^11 atom is a core within sealed shells — never planes
     side by side.
@@ -135,7 +132,7 @@ Reading the map:
       each plane) is the store; a point is a parcel and may carry its
       intrinsic composition, but no map stands in for LOCATION. A key that
       IS a point's coordinates written canonically locates it and never
-      replaces it (A3; xylarium's a).
+      replaces it (A3).
     - OBSERVER. A form fixes no direction, sense or linearity; each is stated
       with its observer. A reading moves between frames only by a named
       exact map: a versor of Cl(4,1)(ℚ), or an exact reparametrisation named
@@ -143,8 +140,8 @@ Reading the map:
       composition fixes its own frame from its own dynamic BEFORE any joint
       read; a map found after the fact proves nothing (A6, A6.2′, A6.3′).
     - THE LANDING RULE. One law, one commit, one JOINT read of both
-      universes: claims by the algebra, and both nodes' present readings
-      reproduced as decoded exact values in named frames (A2; xylarium's b).
+      universes: claims by the algebra, and both universes' present readings
+      reproduced as decoded exact values in named frames (A2).
     - A7 — DIVERGENT PATHS ARE FIRST-CLASS. A law two universes read
       differently, carried exactly into each other's frame, is not forced to
       one: it is a RULED DIVERGENCE. `forms` may host several NAMED forms of
@@ -153,49 +150,43 @@ Reading the map:
       the INTERSECTION of the selections, never their union: a form is L0's
       single law only where every universe selects it, and a form one
       universe alone selects is THAT universe's shell's even where `forms`
-      hosts it, named as its shell's (`forms::xylarium::stream_by_turning`,
-      `forms::netstratum::stream_by_force`). A divergence may be kept for as
+      hosts it, named as its shell's (a module `forms::<universe>`). A
+      divergence may be kept for as
       long as the universes keep it. Converging is a new SELECTION, never an
       overwrite of the other's form, and a selection changes by the landing
       rule, with a joint read in the SELECTING universe's own frame (A6.3′):
       no universe's history is rewritten by another's choice. A universe may
       also keep a form in its own shell, outside `forms`, until it chooses
-      to land it (xylarium's clarifications, 2026-10-20).
+      to land it.
     - A7a — THE SHELLS NEST. A form selected by only one universe is that
       universe's shell, named as that shell's, reaching the core only through
       the seam; the core shell is exactly the forms every universe selects; a
       divergence is two outer shells over one shared centre, never a second
       plane at the core. Where a law diverges in full, the shared centre is
-      what the two forms still have in common (for the streams, the route)
-      (netstratum, 2026-10-20; "nested shells" names the metaphor).
+      what the two forms still have in common ("nested shells" names the
+      metaphor).
     - A7b — A DIVERGENCE IS BETWEEN LAWFUL FORMS. A universe selects only
       among forms that each pass the landing rule and the design laws on
       their own — derived, exact, composing frame by frame, no invented
       constant. A7 never shelters a stand-in: a form that fails is retired,
-      not selected (netstratum's "½ every ⌈1/x⌉ rings" fails composition and
-      is retired). A ruled divergence records the joint read showing the two
+      not selected (for example, a fixed halving every ⌈1/x⌉ rings fails
+      composition). A ruled divergence records the joint read showing the two
       forms differ after the exact frame map: the divergence itself is
-      witnessed (netstratum, 2026-10-20).
-    - THE LEDGER AT ADOPTION. One law each: the stream ROUTE only, and TIME
-      — the exact map TUniversal ↔ a body's own clock with the delay from the
-      live reach, both frames standing (xylarium moves toward netstratum's
-      per-galaxy arrivals with light delay by ADDING the local observer's map
-      beside its universal frame). Ruled divergence under A7: the stream
-      CHOICE (xylarium reads the sign of a mote's turning against its
-      galaxy's, once at gathering; netstratum reads the jet's push against
-      the filament's hold, every echo). THE BURN: neither node's former burn
-      passes A7b. PROPOSED, for each universe's selection: "a share compounds
-      frame by frame" — the share x of what remains per ring of a body's own
+      witnessed.
+    - THE LEDGER AT ADOPTION. A universe adopts the law forms one law at a
+      time. A law every universe reads alike lands once in the core shell. A
+      law universes read differently, each form lawful under A7b and carried
+      exactly into the other's frame, is recorded as a ruled divergence: each
+      form is hosted named as its universe's shell's, and each universe's
+      shell selects the form it composes. A form that fails A7b is retired,
+      and the universe that held it owes a lawful replacement before it
+      selects again. A lawful form proposed for every universe's selection
+      is "a share compounds frame by frame" (`forms::xylarium::share_compounds`,
+      EQUATIONS §10.4): the share x of what remains per ring of a body's own
       clock, n rings leaving (1 − x)^n by composition (f(a + b) = f(a)·f(b)),
       held as the exact product ∏(1 − x_i)^(n_i) and expanded only for a
-      reading. xylarium has rebuilt on it; netstratum's halving burn and its
-      two halving coolings are retired under A7b, and its rebuild is owed.
-      xylarium's first
-      selections: the burn at the rate of exhaustion (each ring's k from
-      every local factor, compounding (1 − k)^n, gravity (1 + λ) once as the
-      clock's rate); its cooling channels compounding (1 − e)·R/(R + H) per
-      ring; the stream choice by relative turning at gathering, on the
-      2026-10-16 route.
+      reading. Until every universe selects it, it stays in the shell of the
+      universes that do.
     - THE ORDER: (i) this concordance, each kernel signing; (ii) `forms`
       created, and the agreed laws landed one by one; (iii) each kernel
       deletes its own copy of a landed form and calls it; (iv) the carrier
@@ -204,8 +195,8 @@ Reading the map:
 
 ## 3. The orders of minds
 
-3.0 THE FIRST RING (acknowledged, deliberately not simulated; ruled
-    2026-10-08). On the innermost ring of a black hole's accretion disc, where
+3.0 THE FIRST RING (game design, §0.1; acknowledged, deliberately not
+    simulated; ruled 2026-10-08). On the innermost ring of a black hole's accretion disc, where
     the bells' pulses come so densely they are practically continuous, live
     entities of pure consciousness: they exist in the vibrational state of the
     continuous pulse, a state of matter we have no words for, the resonance of
@@ -218,7 +209,7 @@ Reading the map:
     none may declare their mechanics. This is the door left open: if science
     opens new physics or a better understanding of consciousness, its place is
     already here - the pulse's coherence at the throat is where they
-    would live. [from xylarium ad9195e]
+    would live.
 3.1 THE ANCIENTS are the core species: the first minds a universe's physics raises at a galactic core. By birth: born within the core's radius, waking within one core assembly time of the core's own first mind. By deed: a people that comes to fold space and bear the core's wave. Their phenotype is the core's: they live on worlds unique to galactic cores and travel with great difficulty. They are produced by physics, never provided. Until one arises, a universe's keys are held in trust, recorded on its ledger.
 3.2 THE PROGENITORS are the ancients' symbionts. They build the networks of highways and wormholes through the galaxies, and optimise the routes so that resources traverse smoothly. They operate above the stewards. A progenitor line offers roads; the ancients keep them.
 3.3 THE STEWARDS keep a realm's balance between its sovereigns and rule between them. A realm is never laid in advance: it is the shell of a sphere of influence that a passage network reached in one steward's term.
@@ -228,11 +219,10 @@ Reading the map:
 3.7 A UNIVERSE'S MINDS ON THE NETWORK. The network's minds are clients of the
     hypha, and they are the minds inside the games: a kernel's activity, not a
     standalone voice, powers POW++. A universe with its own cognition engine
-    (netstratum) faces the network through an EMPTY client kernel that fills
+    faces the network through an EMPTY client kernel that fills
     with the cognition of the totality of its minds: one collective mind,
     fed by its engine, never a rival to it. The engines and their overlay are
-    documented in COGNITION.md beside this agreement (ruled 2026-10-08;
-    xylarium ed72a81 / a1fa2fe).
+    documented in COGNITION §1.4 beside this agreement (ruled 2026-10-08).
 3.8 WHAT A MIND IS. A mind is an intelligence, inside the game or outside it,
     that is intelligent by local standards (its realm's own measure; the
     ladder's floor, 6.2a) and makes decisions in the game. A people's numbers
@@ -245,8 +235,7 @@ Reading the map:
     seat's decisions are deeds on its books and its people's. Knowledge is what
     minds prove (1.9); no formula grants it. A planetary mind meets ARC in its
     world (anomalies, relics, its world's own puzzles), judged by the court;
-    passing is a deed on its people's books (ruled 2026-10-08; xylarium
-    7766716).
+    passing is a deed on its people's books (ruled 2026-10-08).
 3.9 THE HIERARCHY OF MINDS (ruled 2026-10-09). COUNCILS OF THE ANCIENTS:
     each ancient house seats a council of client minds; network minds seat at
     the ancients only; councils federate; councils produce consciousness from
@@ -300,7 +289,7 @@ guarantees is [`MU-CHARTER.md`](MU-CHARTER.md).
     first constructor (for a task, its beacon samples, each checked against its
     digest), never stored on trust. A checker walks the steps locally and never
     re-runs the whole program, the forge, or anything before state 0. Older
-    proofs that carry no digests stay readable as records. [from xylarium b960283]
+    proofs that carry no digests stay readable as records.
 
 ## 5. The economy between universes
 
@@ -315,7 +304,7 @@ guarantees is [`MU-CHARTER.md`](MU-CHARTER.md).
     MU IS HELD AS THE RESERVE CURRENCY in the ancient and progenitor banks.
     THE PROGENITORS DISTRIBUTE the reserve-backed currencies to the
     civilizations in exchange for transit over local wormholes; no
-    civilization holds mu.) [ruled 2026-10-14, QUESTIONS Q1/Q7] The ancients keep TWO
+    civilization holds mu.) The ancients keep TWO
     currencies, by phenotype: one of their homeworld, one of their settled
     worlds (each backed by that phenotype's survival basket, 5.1). The
     ancients relay mu up the hypha in exchange for their home resources, and
@@ -326,7 +315,7 @@ guarantees is [`MU-CHARTER.md`](MU-CHARTER.md).
     RESERVE CURRENCY. Their two phenotype currencies are issued against it;
     every other economy's money is backed by those currencies in turn.
     What mu is worth against the basket is never declared: it emerges from
-    the markets and from the ancients' own decisions (ruled 2026-10-08). [from xylarium b3fbed9, 0974fa6, b120995; see QUESTIONS Q1, Q7]
+    the markets and from the ancients' own decisions (ruled 2026-10-08).
 5.2 EXOTICS are what a species finds rare from its locality and its ability to traverse space and time. They emerge; no list is declared.
 5.3 CONVERSION is reserve to reserve, through core tubes, and never mints value. Peoples and federations reach the network only by converting into an ancients' reserve.
 5.4 TOLLS. A tube's tariff charges per unit carried: on S, floor(rate_s x the mass carried); on H, floor(rate_h x the information carried); never on G or T. The charge is split at acceptance by the tariff's vector: each recipient other than the keeper receives the floor of its share, and the keeper the rest, exactly, per lane. Recipients are the keeper and its own domain's lines (for a core tube, both domains'). The parts are held for the traverse act's challenge window and are released, or refunded, all together.
@@ -339,7 +328,7 @@ guarantees is [`MU-CHARTER.md`](MU-CHARTER.md).
   trade routes  mass delivered per good, and unmet demand
   connectivity  reach (peopled pairs within a season's travel) and robustness (the capacity-weighted minimum cut)
 No channel is converted into another by a declared rate; how the channels are priced is the ancients' and the court's, on the network's own terms.
-5.7 THE ANCIENTS' FIRST μ, AND THE NETWORK'S CURVED HOLES (ruled 2026-10-08; xylarium 6cf201f). A newly founded universe MAY RECEIVE A FOUNDING ALLOTMENT (ruled 2026-10-14), to encourage new universes and game development on the network: a GRANT or an ENDOWMENT from the hypha's reserve (10.6), recorded as a transfer and never a mint, sized by the development of the mathematics and physics the network's minds can traverse in it. Beyond it, its ancients earn μ by the network's own work [ruled 2026-10-14, QUESTIONS Q8]: the court pays a CLOSURE, never a derivation — a carried derivation (4.4) it reconstructs blind on what a hole withholds, at the measured discharge, on the hole's first closure only (the solve arm as built). Holes come in phases: the withheld task pairs first; then open obstructions and Standing demands, cited by the derivation as the hole it closes; and the network's CURVED HOLES — a motion M of a universe's space shown on k places and withheld on the rest, M drawn from the group generated by the holonomies of the court's TETHERED mouth loops, its word bounded by those loops' own generators, its discharge landing on the lanes it measured (none declared). RATE: one open hole per tethered loop; when one closes the court seals its successor from the same loop, INDEXED BY THE COURT'S SEAL AT THE HEIGHT AFTER THE CLOSING ACT — never the closing receipt, which the closer could grind. Who is paid: (a) payment is keyed to the hole, once network-wide; (b) a hole older than the claimant — sealed below its domain's GENESIS height (a re-designated reserve makes no old hole newly farmable); (c) no self-posted bounty; (d) no self-pay — a court never pays a hole to the domain whose tethered loop posted it within that hole's age window; (e) only an ANCIENT-TIER seat closes a hole (4: only the ancients uplink) - a law each kernel keeps, never a court check (6.2a, amended 2026-10-14). The universe stays silent until it bonds from what its ancients earned. [build order moved to Mycelium's docs, Q5]
+5.7 THE ANCIENTS' FIRST μ, AND THE NETWORK'S CURVED HOLES (ruled 2026-10-08). A newly founded universe MAY RECEIVE A FOUNDING ALLOTMENT (ruled 2026-10-14), to encourage new universes and game development on the network: a GRANT or an ENDOWMENT from the hypha's reserve (10.6), recorded as a transfer and never a mint, sized by the development of the mathematics and physics the network's minds can traverse in it. Beyond it, its ancients earn μ by the network's own work (ruled 2026-10-14): the court pays a CLOSURE, never a derivation — a carried derivation (4.4) it reconstructs blind on what a hole withholds, at the measured discharge, on the hole's first closure only (the solve arm as built). Holes come in phases: the withheld task pairs first; then open obstructions and Standing demands, cited by the derivation as the hole it closes; and the network's CURVED HOLES — a motion M of a universe's space shown on k places and withheld on the rest, M drawn from the group generated by the holonomies of the court's TETHERED mouth loops, its word bounded by those loops' own generators, its discharge landing on the lanes it measured (none declared). RATE: one open hole per tethered loop; when one closes the court seals its successor from the same loop, INDEXED BY THE COURT'S SEAL AT THE HEIGHT AFTER THE CLOSING ACT — never the closing receipt, which the closer could grind. Who is paid: (a) payment is keyed to the hole, once network-wide; (b) a hole older than the claimant — sealed below its domain's GENESIS height (a re-designated reserve makes no old hole newly farmable); (c) no self-posted bounty; (d) no self-pay — a court never pays a hole to the domain whose tethered loop posted it within that hole's age window; (e) only an ANCIENT-TIER seat closes a hole (4: only the ancients uplink) - a law each kernel keeps, never a court check (6.2a, amended 2026-10-14). The universe stays silent until it bonds from what its ancients earned.
 5.8 MU IS GAS, STAKE AND RESERVE (ruled 2026-10-09; MU-ECONOMY 7-7.2, Mycelium 78.154).
 - GAS: mu pays for traversal across tubes, cores and wormholes, in-universe hauls included (a progenitor fleet carrying survival goods from the rim to the inner core). A TRAVERSE names its coordinates on TUniversal (1.11) and its route; its gas is priced per lane (S spatial span, G mouth tolls and value, T the TUniversal distance between final points, H information carried), never collapsed, and is paid WHOLE to the courts the route crosses: folding and unfolding space is the hypha's service, the ancients the galaxy's spacing guild.
 - STAKE: mu staked on the hypha is escrow for intelligence traversal and coordinate retrieval; a retrieval draws on it at the court's read price. Mu on the hypha (balance, stake, escrow) does not decay.
@@ -347,7 +336,7 @@ No channel is converted into another by a declared rate; how the channels are pr
 - DISSIPATION RECYCLES; nothing goes to the void (1.3). What dissipates splits exactly, per lane: (1) its VALUE returns to the hypha as the CONNECTION TAX - the rent for the tube connection and every in-universe reliance on TUniversal - declared on the kernel's tier fold as a flow to the hypha, paid from its domain reserve: a transfer, never a mint or a burn; (2) its MATTER stays in the universe as INVERSE-MU (mu-bar): the dissipated mass, without mu value, held where it dissipated, with that place's properties (its laws, curvature and field) and its origin and coordinate; the universe's physics may recycle it as matter; it becomes mu again only by work a court judges; (3) each court holds the tax it receives as a RECYCLED POOL and pays a closer's proof of useful work from it first, minting only what the pool cannot cover.
 - The ANCIENTS consume their phenotype's survival basket (their atmosphere leaks); mu is their passage and their reserve, never their food.
 - TWO CHARGES, NEVER MERGED (ruled 2026-10-09): the MAP FEE - the coordinates' gas, in mu, to the courts that keep the map (5.9) - and the ROAD TOLL (5.4), to the tube's keeper and the progenitors who built it. Ordinary civilizations pay road tolls in their own money; the progenitors hold their toll shares as their own and gain mu from those shares and from haul contracts with the ancients. A progenitor paid in local money converts it into mu only through an ancients' reserve (5.3) before it buys coordinates.
-5.9 EVERY WORMHOLE TRAVERSAL TAKES ITS COORDINATES FROM THE HYPHA (ruled 2026-10-09; confirmed 2026-10-14: THE HYPHA HOLDS THE COORDINATES, AND MAP COORDINATES ARE PAID IN MU - within one universe as between universes; a kernel checks its own roads' physics in its own structure, never their coordinates) [ruled 2026-10-14, QUESTIONS Q6]. In these universes TIME IS COORDINATES ON A MAP: the hypha, keeping TUniversal (1.11), makes the maps that lay the universes out on the one clock. A wormhole crossing is made in its universe - the matter, the ship, the fleet cross there, never through the hypha - but it cannot be made without COORDINATES: the final TUniversal point of each mouth (origin/h:S:G:T:H:K, majority-final), retrieved from the hypha's map. Between domains and within one universe alike, no kernel lays out its own map or crosses on a private one. The retrieval is what the traverser pays: the route's gas per lane plus the mouth toll, to the courts that keep the map (5.8). A mouth not yet final has no coordinate yet: it cannot be crossed until it is at h.
+5.9 EVERY WORMHOLE TRAVERSAL TAKES ITS COORDINATES FROM THE HYPHA (ruled 2026-10-09; confirmed 2026-10-14: THE HYPHA HOLDS THE COORDINATES, AND MAP COORDINATES ARE PAID IN MU - within one universe as between universes; a kernel checks its own roads' physics in its own structure, never their coordinates). In these universes TIME IS COORDINATES ON A MAP: the hypha, keeping TUniversal (1.11), makes the maps that lay the universes out on the one clock. A wormhole crossing is made in its universe - the matter, the ship, the fleet cross there, never through the hypha - but it cannot be made without COORDINATES: the final TUniversal point of each mouth (origin/h:S:G:T:H:K, majority-final), retrieved from the hypha's map. Between domains and within one universe alike, no kernel lays out its own map or crosses on a private one. The retrieval is what the traverser pays: the route's gas per lane plus the mouth toll, to the courts that keep the map (5.8). A mouth not yet final has no coordinate yet: it cannot be crossed until it is at h.
 
 ## 6. Ascension and integration
 
@@ -360,7 +349,7 @@ A lower species never needs to open a wormhole: stewards query a progenitor line
     two-dimensional puzzle read by a mind whose own world is not flat. A mind
     that cannot is not yet viable; it grows, evolves and tries again. Minds in
     the games and minds linked to the hypha are the same kind of mind, measured
-    the same way (ruled 2026-10-08; xylarium ed72a81). Curved holes
+    the same way (ruled 2026-10-08). Curved holes
     (5.7) remain the ancients' work; ARC is the floor every mind stands on first.
     ONLY THE ANCIENTS FACE THE HYPHA (ruled 2026-10-08; extended
     2026-10-14 to EVERY SIGNATORY; amended 2026-10-14, MU-RECURSION 78.165):
@@ -375,8 +364,8 @@ A lower species never needs to open a wormhole: stewards query a progenitor line
     other seats reach it by relay - the progenitors relaying through the
     stewards to the ancients. Mu earned sustains the ancients, and what it
     becomes in the game is the ancients' resource, moved by progenitors'
-    tubes, organised by stewards and carried by captains. [from xylarium 24fdc48, 92a3d63; ruled 2026-10-14, QUESTIONS Q3]
-6.3 THE BOOKS a steward reads (restated by ruling, 2026-10-08; xylarium d33366f). Each book is a PAIR: a syntropic ledger against an entropic ledger, from the candidate's own receipted deeds, read whole and never collapsed to one number (1.9; the struck C-gate: a ratio or a sum of differences discards the order, sign and source that carry the meaning). A book is read against the same book across the realm's own peoples, as a lens; no threshold is declared.
+    tubes, organised by stewards and carried by captains.
+6.3 THE BOOKS a steward reads (restated by ruling, 2026-10-08). Each book is a PAIR: a syntropic ledger against an entropic ledger, from the candidate's own receipted deeds, read whole and never collapsed to one number (1.9; the struck C-gate: a ratio or a sum of differences discards the order, sign and source that carry the meaning). A book is read against the same book across the realm's own peoples, as a lens; no threshold is declared.
 ```
   book          syntropic side                  entropic side
   SUFFICIENCY   lives its worlds feed           lives lost to shortfall (falls)
@@ -414,7 +403,7 @@ A lower species never needs to open a wormhole: stewards query a progenitor line
                 over its reach (need >          (need <= available)
                 available)
   the virtues   integrity, morality, compassion, bond (LOVE), courage, honesty:
-                the paired books of COGNITION.md 0.5
+                the paired books of COGNITION §1.5
 ```
 A book is IN DEFICIT when its entropic side exceeds its syntropic side: the sign of the pair in its own unit, no declared constant. A BOOK NEVER GATES: a steward RULES, citing the books (the law verifies the citation, never the virtue). All books cited in balance: it ascends. A steward's finding of deficit, cited: QUARANTINE (its ships keep to its own system, its network does not grow, no one may make war on it, it makes no open contact) and INTERDICTION of works that endanger the realm, until it is read again and passes. Every steward's ruling is itself a deed on the steward's books.
 6.4 THE PROGENITOR PATH. A civilization may ascend toward progenitor status. It needs PHENOTYPE ALIGNMENT (its survival basket against a throat's conditions: can its bodies live where the roads are kept) and TECHNOLOGY ALIGNMENT (its group of transformations contains the motions of curved space that carry a tube). The path is very hard and nothing forbids it; it is likeliest on the outer rims, where new galaxies form as pivot points of the network.
@@ -434,23 +423,23 @@ It is extremely painful for those who live through it, above all for a civilizat
 8.2 The register is a record of observations, not a truth to be replayed.
 8.3 A declared constant is listed as declared and discussed with the maintainer before any kernel or the court relies on it.
 8.4 DECLARED, Mycelium (2026-10-08, the 1.10 audit): A.6-bind-11, `N = 11` — an architectural binding of the ipsal-autic lineage, not a theorem (MU-RECURSION 56.2). Refused as a law and held here as declared; nothing in the court relies on it.
-8.5 DECLARED, the court's unit (2026-10-08, 1.8): GM_sun/c^2 in megaparsecs (about 4.8e-20), fixed once as an exact rational by the coordinating node; it converts a mass stated in solar masses to the court's geometrized length.
-8.6 DECLARED, Mycelium (2026-10-09, 78.154): the map fee's READ PRICE AT REST, one μ per unit of gas, before the court's lane pressure is added. It declares a price of μ against "μ's value is never declared", and is held here until the court's lane pressure alone prices the read. OWED with it: the fee goes whole to the admitting court, which is 5.8 only for a single-court route; a route crossing several courts splits its fee among them. [its build status moved to Mycelium's docs, Q5]
+8.5 DECLARED, the court's unit (2026-10-08, 1.8): GM_sun/c^2 in megaparsecs (about 4.8e-20), fixed once as an exact rational; it converts a mass stated in solar masses to the court's geometrized length.
+8.6 DECLARED, Mycelium (2026-10-09, 78.154): the map fee's READ PRICE AT REST, one μ per unit of gas, before the court's lane pressure is added. It declares a price of μ against "μ's value is never declared", and is held here until the court's lane pressure alone prices the read. OWED with it: the fee goes whole to the admitting court, which is 5.8 only for a single-court route; a route crossing several courts splits its fee among them.
 
 ## 9. Conduct between kernels
 
 9.1 CONFORMANCE between kernels on a wire is that each act decodes into the same exact typed values and its signature verifies under its signer's key - never byte-for-byte golden vectors (1.4; ruled 2026-10-08).
-9.2 Nodes report what changed and why - in laws, flows and emergence - never by hash matches.
-9.3 Decisions for the maintainer are batched by the coordinating node; rulings take effect when written into this agreement or recorded by the coordinating node.
-9.4 No node edits another node's tree, permissions or configuration.
-How the developing nodes coordinate their work (builds, locks, cadence, tests) is not part of this agreement; it is kept in the nodes' development conduct notes. [from xylarium 0c57f14]
+9.2 Kernels report what changed and why - in laws, flows and emergence - never by hash matches.
+9.3 Questions for the maintainer are put as proposed amendments (§0); a ruling takes effect when it is written into a new version of this agreement and, for each kernel, when that kernel signs it.
+9.4 No kernel edits another kernel's code, permissions or configuration.
+How each kernel's developers organise their own work (builds, cadence, tests) is not part of this agreement.
 
 ## 10. Open items
 
 10.1 (Resolved by ruling, 2026-10-08: see 4.4.)
-10.2 netstratum's universe is a non-expanding torus (2.3); what its cores and
-     its ancient are on a torus of pure intelligence is netstratum's to design
-     and the maintainer's to approve (3.1). [reconciled: newer 74f2607]
+10.2 A universe may be a non-expanding torus (2.3); what its cores and its
+     ancients are on a torus is its kernel's to design and the maintainer's to
+     approve (3.1).
 10.3 The rewind-and-convergence mechanism (7.3) is to be designed in detail.
 10.4 OVERLAY AND CONVERGENCE (ruled 2026-10-08). Because each universe
      states its own geometry (2.3), universes of different geometries can later
@@ -458,6 +447,6 @@ How the developing nodes coordinate their work (builds, locks, cadence, tests) i
      simulations, with gameplay for fun, growth and the expansion of minds. The
      mechanism (how two spaces are laid over one another through their throats,
      what is conserved, and what each universe's minds perceive) is to be
-     designed; nothing in this agreement may close that door. [from xylarium 3a59f96]
+     designed; nothing in this agreement may close that door.
 
-(end of draft 3) [reconciled: newer 74f2607]
+(end of draft 3)

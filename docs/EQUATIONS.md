@@ -19,7 +19,7 @@ A code source is a path under `src/` with the function or item that
 computes it (`path::function`). Where a specification states an equation
 that has no single computing function, the entry says so and quotes the
 specification's own wording. Equations that are specified but have no
-implementation are listed under subsections titled **Specified**.
+implementation are marked by a paragraph beginning **Specified.**
 
 The governing specification is `docs/MU-RECURSION.md`. The mind is
 specified in `docs/MU-CLIENT.md`, the economy in `docs/MU-ECONOMY.md`, and
@@ -1249,7 +1249,7 @@ F5  a motion's lanes are its modes: turn on 𝒽, boost or dilation on 𝒮, nul
 
 Sources: MU-RECURSION 78.71, 76.1. Code: `src/physics/axioms/fluid.rs`.
 
-#### Specified
+#### 5.17 The conformal conjugate pair
 
 ```text
 T_i = e_i ∧ e_∞   (fixes ∞)        K_i = e_i ∧ e_o   (fixes the origin)
@@ -1263,6 +1263,9 @@ generator `b e_o` directly.
 
 Sources: MU-RECURSION 66 (A.13); MU-CLIENT §4.3. Code:
 `src/physics/axioms/ours.rs` (`A13_INVERSIVE_MOMENTUM_DOCKETED`).
+
+**Specified.** The inversive half (`K_i = I · T_i · I⁻¹` as a register
+axiom) is docketed, not built.
 
 ---
 
@@ -1422,12 +1425,16 @@ a mode on H: a turn (its plane's ray);                                          
 two modes with one canonical coordinate add their amounts
 ```
 
-A balance holds the exact modes the verified work moved, keyed by their
-canonical coordinates; a draw removes them or is refused naming the mode it
-lacks.
+The exact modes the verified work moved, keyed by their canonical
+coordinates; a draw removes them or is refused naming the mode it lacks. A
+closure's measured deflation reads its modes, and a paid solve verdict
+carries them.
 
 Sources: MU-ECONOMY §1; MU-RECURSION 78.162; MU-CLIENT §5.6 (M). Code:
-`src/economy/modes.rs`.
+`src/economy/modes.rs`; `src/transducer/family/deflation.rs`.
+
+**Specified.** Balances, bonds and escrows holding modes; today they carry
+`[u64; 4]` per lane (MU-ECONOMY §1).
 
 #### 6.12 Gas, the map fee and the connection tax
 
@@ -1908,13 +1915,23 @@ a people's cost       = the history it lived since the anchor × the share of it
 the progenitors' cost = banked mass in proportion to the region's mass-energy × the time folded back   (7.3)
 ```
 
-Sources: CONCORDANCE 1.8, 7.3.
+Sources: CONCORDANCE 1.8, 7.3, 2.10.
 
-**Specified.** CONCORDANCE 2.10 proposes, for each universe's selection,
-that "a share compounds frame by frame": the share `x` of what remains per
-ring, `n` rings leaving `(1 − x)^n` by composition, with
-`f(a + b) = f(a)·f(b)`, held as the exact product `∏(1 − x_i)^(n_i)`. These
-are client-kernel laws; Mycelium states them in the Concordance.
+```text
+a share compounds frame by frame:
+  f(a + b) = f(a)·f(b),  f(1) = 1 − x   ⇒   n rings leave (1 − x)^n
+  remaining = ∏ (1 − x_i)^(n_i)          one factor per run of rings at one share
+```
+
+**Built**, as a named law form in the `forms` crate (CONCORDANCE 2.10):
+`forms/src/xylarium/share_compounds.rs` (`Remaining::whole`, `after`,
+`then`, `factors`, `reading`). The share `x` of what remains per ring of a
+body's own clock, over ℚ, the ring count over ℤ; the form holds the exact
+product and expands it only for a `reading`. A share below zero or not
+below one, and a ring count past its carrier, are refused by name. It is
+hosted in a universe's own shell (`forms::xylarium`), selected by that
+universe, and moves to the core shell only when every universe selects it.
+Mycelium hosts the form; a universe composes it.
 
 #### 10.5 The master equations, by name
 
