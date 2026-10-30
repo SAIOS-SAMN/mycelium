@@ -1,6 +1,8 @@
 # Enumeration audit
 
 > **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+>
+> **Components:** the code of this tree, client and hypha alike; a development audit. No game term.
 
 A loop is legitimate only when its index is a keyed read, a peel, a link,
 or a spend_unit budget from a keyed cursor. Fixed physical sizes (4 lanes,

@@ -3,6 +3,8 @@
 # #97 — Cross-complex chains: the codomain aperture
 
 > **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+>
+> **Components:** the shared algebra (`src/transducer/`), as the client's perception and the court's checks use it. No game term.
 
 Status: design (constraints ratified 2026-09-02); implementation phases A–C
 below. The enforcement line: any branch on ratio values, any

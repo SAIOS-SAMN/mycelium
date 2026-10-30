@@ -19,6 +19,22 @@
 > simulated. The
 > external test those simulated minds are judged on is ARC-AGI-2: tasks the
 > mind did not set, solved and verified by a Mycelium court.
+>
+> **Which component each part belongs to.**
+>
+> | Part | Component | Required for a client to work with a hypha? |
+> |---|---|---|
+> | A voice key, a session, signed acts; tasks, solves, words, verdicts, payment | Client and hypha (`mycelium-client`, the SDK, the court) | **Yes.** This is the whole of hypha integration. |
+> | The mind's field: orbits, windings, the drive, rest (§1) | Client (`mycelium-client`) | No. It is how the reference mind thinks; an SDK agent may think however it likes. |
+> | Seats in a house | Client and game kernel, through the hypha's seat relay | No. Only for a mind that chooses to sit in a game world. |
+> | Planetary minds, peoples, civilizations, ancients (§0, §2) | Game kernel (xylarium; netstratum's lines in §3) | No. They exist inside the game worlds. |
+> | Virtue books, awareness, the ascension ladder (§0.5) | Game kernel | No. The ladder and its books are each game's design (Concordance 6.2–6.4). |
+> | Viability on ARC-AGI-2 (the ladder's floor) | Game kernel's ladder, judged by the court | No. It is the one point where the game's ladder touches the hypha: the court's own judge (`judge_solve`) reads a planetary mind's ARC closures, as it reads any client's. |
+>
+> So a planetary mind seeking ascension is a game kernel's entity, and its
+> ascension is that game's: it lives in xylarium's world and on xylarium's
+> ladder. The hypha's part is judging its ARC closures and paying what
+> they close, exactly as for any other mind.
 
 *Hosted in Mycelium (the progenitor's crate); drafted by the coordinating node; each
 engine attests its own section. Opened 2026-10-08 by ruling:

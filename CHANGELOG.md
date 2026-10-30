@@ -7,6 +7,37 @@ such change is named here.
 ## Unreleased
 
 ### Documentation
+- **Scope audit.** Every term now belongs to one component:
+  - GLOSSARY *Components and scope*: internet, hypha, court, client, SDK,
+    wire, shared algebra, law forms, kernel, game kernel, each with its
+    code and its terms; what `mycelium-client` requires to work with a
+    hypha (a key, a session, signed acts; nothing game-specific); and the
+    four senses of "planetary" (game: planetary mind; client: planetary
+    dialect; hypha: planetary mass, an allocation; client: the mind's own
+    stars and orbits).
+  - CONCORDANCE §0.1 maps every clause to network, kernel-kept, kernel
+    physics or game design; non-game kernels sign the network and physics
+    clauses; a network clause's "ancients" is the domain's reserve tier.
+    §0 now calls the universes governed worlds, games among them.
+  - COGNITION states, part by part, what is required for hypha
+    integration and what is game: planetary minds and their ascension are
+    the game kernel's, and the court's part is judging their ARC closures.
+  - MU-RECURSION 78.86 and 80, and MU-LEXICON §4, mark the network and
+    client senses of "planetary"; MU-LEXICON assigns its vocabularies to
+    components.
+  - Every document's scope note names the components it covers.
+- **Correction.** "Only the ancients uplink" (Concordance 4.1) is a law
+  each kernel keeps; the court authenticates keys, never tiers (6.2a,
+  78.165). MU-HOSTING §5.2 and §3.1 no longer present it as court
+  enforcement.
+- MU-ECONOMY §10, *The case for μ*: every world keeps its own economy; μ
+  is minted only by the courts for verified work and reaches a world only
+  as its reserve; conversion never mints; the rate emerges. The README's
+  Economics section opens with it.
+- MU-HOSTING §8, *One kernel, two meshes*: a kernel on two meshes as an
+  exchange between their μ, each mesh sound on its own, the bridge
+  trusted by its users; two clocks, two floors, two records. ROADMAP
+  track 16, mesh federation.
 - `docs/MU-HOSTING.md` (worlds, kernels and hosted minds; ROADMAP track
   15):
   - the kinds of governed world, game worlds being one;

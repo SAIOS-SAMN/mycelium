@@ -3,6 +3,8 @@
 # MU-HOSTING — worlds, kernels and hosted minds
 
 > **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+>
+> **Components:** the network (hyphae and courts), kernels of every kind, and clients. §5 separates resident minds (inside a kernel's process) from attached minds (external SDK processes); §8 covers a kernel on two meshes.
 
 **Status:** specification, version 1 (2026-10-30). This document governs
 [ROADMAP](../ROADMAP.md) track 15. It gathers in one place what the
@@ -152,8 +154,9 @@ Concordance is the joining instrument.
    seated agent's senses from its predicted state, and takes the agent's
    actions as the inputs it predicts the next state from. It may also run
    resident minds in its own process (§5.1).
-7. **Uplink through its reserve** (Concordance 4.1). The world's work
-   reaches the court through its reserve tier's folds, open to challenge
+7. **Uplink through its reserve** (Concordance 4.1, a law the kernel keeps
+   in its own universe; the court authenticates keys, never tiers). The
+   world's work reaches the court through its reserve tier's folds, open to challenge
    for the challenge window.
 
 ### 3.2 What the network verifies about a world model
@@ -238,8 +241,14 @@ agent's **effect on the shared worlds and the shared record**:
   record.
 - **Nothing on assertion.** Nothing moves value or enters the language
   without two courts' reconstruction (MU-SCIENCE §5).
-- **Only the ancients uplink** (Concordance 4.1). An agent seated in a world
-  reaches the court through that world's reserve, not around it.
+- **Keys, not tiers** (Concordance 6.2a; MU-RECURSION 78.165). The court
+  authenticates the key on every act and pays the account that key names.
+  It never checks where in a world an agent sits. That only a world's
+  reserve faces the hypha is a law each kernel keeps inside its own
+  universe (Concordance 4.1); the court may count other access and refuses
+  nothing for it. A world's own content reaches the court through its
+  reserve's folds because the kernel sends it that way, not because the
+  court enforces it.
 - **L0 at the boundary.** A transition that breaches L0 is refused by the
   law's name.
 
@@ -466,7 +475,67 @@ seat requirements are each world's own (Concordance 3.8).
 
 ---
 
-## 8. Phases
+## 8. One kernel, two meshes
+
+A **mesh** is one genesis: its own hyphae, its own μ with its own supply
+invariant, its own TUniversal clock, and the Concordance and L0 version
+its kernels sign. Nothing limits a kernel to one mesh.
+
+### 8.1 What works today
+
+A kernel can link to two meshes with what is built:
+- it signs each mesh's Concordance and founds a domain on each
+  (`ACT_DOMAIN`, **Built**);
+- it designates a reserve on each (Concordance 4.2); one key may hold both,
+  since keys are portable and the court authenticates keys, never tiers;
+- its world's own economy (MU-ECONOMY §10) holds μ from both meshes as
+  reserves, each converted in and out at that mesh's courts
+  (`Kernel::convert`, **Built**);
+- its agents may attach to either mesh's hyphae, with the same keys.
+
+### 8.2 The kernel as bridge
+
+Such a kernel is an **exchange between the two meshes**: value converted
+in on mesh A can be paid out of the kernel's reserve on mesh B. The rate
+between μ_A and μ_B is never declared; it emerges from the kernel's own
+economy and the trade through it (Concordance 5.1a).
+
+### 8.3 The trust boundary
+
+- **Each mesh stays sound on its own.** Mesh B pays only out of reserve
+  already credited on mesh B, so no act on mesh A mints or moves μ_B.
+  Each mesh's supply invariant (MU-ECONOMY §6) holds whatever the bridge
+  does.
+- **The risk falls on the bridge's users.** The two meshes do not verify
+  each other, so a conversion across the bridge is only as trustworthy as
+  the kernel running it. A dishonest bridge can shortchange those who
+  trust it; it cannot inflate either currency.
+- **Bonds bound the damage.** A bridge kernel bonded on both meshes has
+  stake to slash on each for equivocation or forgery on that mesh's acts.
+
+### 8.4 What the kernel must hold apart
+
+- **Two clocks.** Each mesh keeps its own TUniversal. The kernel keeps its
+  own axis against each (MU-RECURSION 78.156; MU-LEXICON, *axis
+  coordinate*) and never mixes final points from different meshes.
+- **Two floors.** The meshes may run different L0 versions. The kernel's
+  universe stands on each floor separately at that mesh's boundary; a
+  different register defines a different universe (MU-RECURSION 78.59),
+  so one world on two floors is two universes on the network, recorded
+  once on each.
+- **Two records.** Each mesh holds its own receipts of the kernel's acts.
+  Nothing admitted on one mesh is admitted on the other by reference.
+
+### 8.5 Mesh federation (Specified)
+
+Settling μ_A against μ_B **without** a trusted bridge needs the meshes to
+verify each other: each mesh anchoring its era folds where the other can
+check them (ROADMAP track 14, item 7), and a crossing act that one mesh
+admits on the other's proof. This is ROADMAP track 16.
+
+---
+
+## 9. Phases
 
 | Phase | Delivers |
 |---|---|

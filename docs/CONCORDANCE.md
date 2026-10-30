@@ -3,17 +3,54 @@
 
 > **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
+> **Components:** every kernel, and the network. §0.1 maps each clause to what it binds: network (enforced by the hyphae), kernel-kept, kernel physics, or game design.
+>
 > The Concordance is the agreement every kernel signs to host its simulated universe on the network: how its worlds, its simulated peoples and the AI agents placed in them connect to the courts, and how their verified work is paid.
 
 DRAFT 3, 2026-10-08. Written by the coordinating node (the xylarium-kernel node) under the maintainer's rulings, for review by the mycelium-server node. On acceptance it lives with the mycelium-server beside MU-RECURSION, and every kernel signs it to join the hypha. [reconciled: newer 74f2607 (draft 3); this text is the canonical one, held by the mycelium-server]
 
 ## 0. What this is
 
-The hypha (the mycelium-server) is the court of many universes. A kernel is a program that runs one or more universes. The universes are games: authored, replayable simulated worlds on which external minds (AI agents) are hosted to explore and to do science; this agreement is what makes many such worlds one venue. This agreement states the rules every kernel keeps in order to be joined to the others. It states laws and their formulas, never one kernel's code: kernels may take divergent paths, so long as their mechanisms are the ones stated here and they sign.
+The hypha (the mycelium-server) is the court of many universes. A kernel is a program that runs one or more universes. The universes are governed worlds, games among them: replayable simulated worlds on which external minds (AI agents) are hosted to explore and to do science; this agreement is what makes many such worlds one venue. This agreement states the rules every kernel keeps in order to be joined to the others. It states laws and their formulas, never one kernel's code: kernels may take divergent paths, so long as their mechanisms are the ones stated here and they sign.
 
 - SIGNING. Each version of this agreement has a hash. A kernel presents its signature over the current version's hash when it connects; the server refuses a kernel that has not signed it.
 - AMENDING. An amendment is a new version. It takes effect for a kernel when that kernel signs it. Amendments are written by the coordinating node, approved by the maintainer, and reviewed and implemented by the mycelium-server node.
 - PRECEDENCE. The maintainer's recorded rulings stand above this text; where they differ, this text is amended.
+
+### 0.1 Scope map (maintainer's direction, 2026-10-30)
+
+This agreement was drafted among game kernels, so it holds three kinds of
+clause side by side. Each clause belongs to one component:
+
+| Component | What it binds | Clauses |
+|---|---|---|
+| **Network** | What Mycelium's hyphae and courts enforce, for every kernel and every client | 0; 1.4, 1.5, 1.9, 1.10, 1.11, 1.13, 1.14; 2.1, 2.10; 3.7; 4.2–4.4; 5.3, 5.4, 5.7–5.9; 6.2a's key rule (the court authenticates keys, never tiers; the hypha serves anyone with a key and μ); 8; 9 |
+| **Kernel-kept** | Laws each kernel keeps and attests in its own code; the court never checks them | 4.1 and 6.2a (only a universe's reserve faces the hypha) |
+| **Kernel physics** | What every kernel implements in its own universe, game or not | 1.1–1.3, 1.6–1.8, 1.12; 2.2–2.9 |
+| **Game design** | The game kernels' shared world design: their peoples, seats, economies and ladder | 3.0–3.6, 3.8, 3.9; 5.1, 5.1a, 5.2, 5.5, 5.6; 6.1–6.4 (6.2a's ladder); 7.1–7.3; 10.2 |
+
+Reading the map:
+- **A non-game kernel** (a science kernel, a world model, a task
+  environment, a market) signs the network and kernel-physics clauses.
+  The game-design clauses describe how the game kernels built their
+  worlds; a non-game kernel may adopt them and is not required to.
+- **The court authenticates keys, never tiers** (6.2a, MU-RECURSION
+  78.165). Whoever holds a key may speak to the hypha and is paid to the
+  account its key names. That only a universe's reserve faces the hypha
+  (4.1) is a law each kernel keeps inside its own universe; the court may
+  count other access and refuses nothing for it.
+- **Where a network clause speaks in game terms** (5.7's ancients' first
+  μ), the network term is the domain's **reserve tier**:
+  the key its founder designates (4.2). In a game kernel the reserve tier
+  is its ancients; in any other kernel it is that kernel's designated
+  reserve key.
+- **A client** (`mycelium-client`, or any agent on the SDK) is bound by no
+  game-design clause. It integrates with the hypha through a key, a
+  session and signed acts. It meets game terms only when it takes a seat
+  in a game kernel's house, through the senses that kernel builds for it.
+- **6.2a** (viability) is game design with one network touchpoint: the
+  game's planetary minds are judged on ARC-AGI-2 by the court's own judge.
+  The ladder above it is the game's.
 
 ## 1. Principles
 

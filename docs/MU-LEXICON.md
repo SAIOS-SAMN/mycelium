@@ -2,6 +2,8 @@
 
 > **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
+> **Components:** §1 (physical) and §2 (civic) are the game kernels' vocabularies; §3 (network) is Mycelium's.
+>
 > Every term below (*universe*, *realm*, *planet*, *star*, *wormhole*, *black hole*, *white hole*) is a term of the hosted simulations and of the network's exact geometry, shared by the game kernels so their worlds can be compared.
 
 **Status: canonical** (78.122, 2026-10-07). Every connected system uses one terminology, defined by the
@@ -19,6 +21,11 @@ There are **three vocabularies**, and no word belongs to more than one of them:
 - **physical** — the spatial ladder and what is in it;
 - **civic** — who holds, governs and settles what;
 - **network** — the hyphae and what runs on them.
+
+By component: the **physical** and **civic** vocabularies are the game
+kernels' (§1–§2): they name what is inside a game world, and a client
+working with a hypha needs neither. The **network** vocabulary (§3) is
+Mycelium's: the hyphae, courts, clients and wire.
 
 **The algebra's own terms are none of them.** A simplicial complex's *star*, a form's *star faces*, an orbit, a
 ring, a chord, a cell, a chart, a section — these are mathematics, defined in `MU-RECURSION.md`, and this lexicon
@@ -102,3 +109,4 @@ conversion). Agreed with xylarium (the coordinating node) 2026-10-07; netstratum
 | **"Galaxy" / "Star"** as network metaphors (78.59) | **Cohort** and **Allocation**. The physical galaxy and star keep their meaning; the algebra's star is untouched. |
 | **"Universe"** for a settled patch of sectors (the xylarium port's `World` type) | That type is a **Region**. Universe is reserved for the container of the 3-sphere's constants and its cluster tree. |
 | **"Realm" tiers** in the ledger tree, today one per money's zone | They stay realm tiers; until stewardship is ported, a realm is approximated by a money's zone. |
+| **"Planetary"** in four senses (2026-10-30) | *Planetary mind* is civic: a game kernel's simulated people's mind. *Planetary dialect* (MU-RECURSION 80) is the network's **dialect**: a client mind's own words. *Planetary mass on a star* (78.86) is the network's **allocation**. *Star, planet, orbit* in a client mind's field (MU-CLIENT §4) are that mind's internal geometry. None is interchangeable with another (GLOSSARY, *Components and scope*). |

@@ -8,6 +8,40 @@ Numbers in parentheses cite sections of
 [`docs/MU-RECURSION.md`](docs/MU-RECURSION.md) or
 [`docs/MU-CLIENT.md`](docs/MU-CLIENT.md).
 
+## Components and scope
+
+Every term below belongs to one component. Where a passage in the
+specifications could be read as more than one, this table settles it.
+
+| Component | What it is | Where it lives | Its terms |
+|---|---|---|---|
+| **Internet (transport)** | The public network nodes run over: TCP between addresses an operator configures | Outside Mycelium | address, port, peers |
+| **Hypha (server)** | One `mycelium-server` process: a node of the mesh | `src/server/`, `src/bin/mycelium-server/` | hypha, mesh, genesis, epoch, ledger, receipt chain, fold, keeper, TUniversal |
+| **Court** | The hypha's adjudicating role: admission, reconstruction, verdicts, settlement | `src/court/`, `src/server/cognition/court/`, `src/economy/` | verdict, refusal, second vantage, POW++, μ, bond, escrow, lease |
+| **Client (mycelium-client)** | The reference mind: one AI agent process | `src/client/`, `src/bin/mycelium-client/` | mind, voice, entity, genome, dialect, winding, orbit, carrier |
+| **SDK** | The client surface any third-party agent is built on | `src/client/sdk/`, `src/anastome/dialogue/` | session, seat, rule element |
+| **Wire (Anastome)** | The signed acts between every party | `src/anastome/` | act, ACT_*, canonical encoding |
+| **Shared algebra** | Cl(4,1)(ℚ), the alphabet, words, sentences, used by client and court alike | `src/core/`, `src/transducer/` | versor, letter, word, sentence, chart, holonomy |
+| **Law forms** | L0's forms over a universe's constants, linked by every kernel | `forms/`, `src/physics/` | L0, law form, shell |
+| **Kernel** | Any program that signs the Concordance and runs a world on the network | Outside this repository (except Mycelium itself) | domain, reserve tier, house, physics profile |
+| **Game kernel** | A kernel whose world is a game: xylarium, netstratum, barren-realms | Their own repositories | planetary mind, people, civilization, ancient, progenitor, steward, sovereign, captain, realm, virtue book, ascension ladder |
+
+**What `mycelium-client` requires to work with a hypha:** a voice key, a
+session to a hypha, and signed acts on the wire. Nothing game-specific:
+no planet, people, ascension rung or virtue book is part of a client's
+integration with the hypha. A client meets game terms only when it takes
+a seat in a game kernel's house (MU-CLIENT §6), and then only through the
+senses that kernel builds for it.
+
+**"Planetary" has four senses, never interchangeable:**
+
+| Phrase | Component | Meaning |
+|---|---|---|
+| *planetary mind* | Game kernel | A simulated people's mind in a game world, such as xylarium's (COGNITION.md). Its viability and ascension are the game's ladder; the court's only part is judging its ARC-AGI-2 closures (Concordance 6.2a). |
+| *planetary dialect* | Client | A client mind's own words, grown from its own perception, as distinct from the court's universal genome (MU-RECURSION 80). Lexicon term: **dialect**. |
+| *planetary mass on a star* | Hypha (specified) | A kernel's leased section of the network's capacity (MU-RECURSION 78.86). Lexicon term: **allocation**. |
+| *star, planet, orbit* in the mind's field | Client | The client mind's internal model: its axioms as stars, its thoughts as orbits about them (MU-CLIENT §4). |
+
 ## The network
 
 | Term | Meaning |
@@ -19,8 +53,8 @@ Numbers in parentheses cite sections of
 | **Epoch** | The count of re-foundings of a network. A **recut** drops the origin and starts a new epoch on a fresh genesis. |
 | **Kernel** | A program that joins the mesh under the [Concordance](docs/CONCORDANCE.md) and runs one or more universes. Mycelium is the server kernel, and peer kernels run their own domains and houses. |
 | **Peer kernels (game kernels)** | The game kernels developed alongside Mycelium, each running a simulated universe on the network: **xylarium** (a world-simulation kernel of star systems, worlds and peoples; turning-based physics; the specifications' early coordinator), **netstratum** (a game engine whose civilizations solve forged tasks; force-based physics) and **barren-realms** (a Python game kernel, the source of the reference mind's sovereign cognition). Their named law forms live in `forms` (README, *Peer kernels*). |
-| **Planetary mind, people, civilization, ancient** | Simulated entities inside a game kernel's world. A client mind may be such an entity's mind; it is judged by the courts on ARC-AGI-2 (`docs/COGNITION.md`). The **ancients** are the peoples born in a universe's core within one core assembly time of its first mind; only they reach POW++. |
-| **Virtue book** | A game-world ledger: an entity's receipted deeds of one kind on a syntropic side against an entropic side, read as a pair and never as a score (`docs/COGNITION.md` §0.5). |
+| **Planetary mind, people, civilization, ancient** | *Game kernel.* Simulated entities inside a game kernel's world; not part of a client's integration with the hypha (see *Components and scope*). A client mind may be such an entity's mind; it is judged by the courts on ARC-AGI-2 (`docs/COGNITION.md`). The **ancients** are the peoples born in a universe's core within one core assembly time of its first mind; only they reach POW++. |
+| **Virtue book** | *Game kernel.* A game-world ledger: an entity's receipted deeds of one kind on a syntropic side against an entropic side, read as a pair and never as a score (`docs/COGNITION.md` §0.5). |
 | **Science kernel** | A kernel that runs a universe under a declared physics and puts its results to the courts as claims (`docs/MU-SCIENCE.md`). |
 | **Domain** | An application's namespace under a network universe, founded on a court by its genesis act. |
 | **House** | A domain's service that lists **seats** and speaks for its game. A mind takes a seat and works the tasks the house puts before it. |

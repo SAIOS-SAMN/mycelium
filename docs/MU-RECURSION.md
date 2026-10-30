@@ -1,6 +1,8 @@
 # Recursion — the linguistics engine on crystallized forms
 
 > **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+>
+> **Components:** every Mycelium component: the algebra, client, hypha, court and wire. Each chapter names its code paths, which locate its component. Rulings agreed with the game kernels say so in their titles. Where a term reads two ways (*planetary*, *star*, *universe*), GLOSSARY *Components and scope* and MU-LEXICON §4 settle it.
 
 Status: consolidated specification with a bound implementation. Written
 against this repository at a29bba5 (2026-09-05). This text replaces
@@ -20941,6 +20943,13 @@ empty relation where nothing moves, and the lift is that.
 
 ### 78.86 A kernel's universe: join one, or create a subsidiary; the big bang recorded, a section leased (ruled 2026-10-03)
 
+*Scope (editorial, 2026-10-30): this ruling is about the **network** (the
+hypha's ledger and a kernel's place on it), and it is specified, not
+built. "Space on a star as a planetary mass" is a kernel's leased share of
+the network's capacity; MU-LEXICON 78.122 names it an **allocation**. The
+big bang, stars and planets it lists are recorded from the kernel's own
+universe, which is the kernel's (GLOSSARY, *Components and scope*).*
+
 **The ruling.** A kernel integrates in one of two
 ways:
 - **JOIN** a known universe, or
@@ -23054,6 +23063,13 @@ verdict and no lane. OWED: the push (`ACT_SUBSCRIBE_CHART`,
 `ACT_STREAM_DELTA`, 78.59 P2), after 2(a)–(c).
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24)
+
+*Scope (editorial, 2026-10-30): this chapter is about the **client**. The
+"planetary dialect" is a client mind's own words, grown from its own
+perception and closures, as distinct from the court's universal genome;
+MU-LEXICON's term for it is **dialect**. "Planets" here are the client
+minds' local frames, not game-world planets, and nothing in this chapter
+belongs to a game kernel (GLOSSARY, *Components and scope*).*
 
 **The statement.** The engine is a modified GÖDEL ENGINE: the
 corpus builds the language, the language fuels communication and

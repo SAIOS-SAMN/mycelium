@@ -312,3 +312,18 @@ world:
    reconstruction. A certificate attests behaviour over the task families
    its world expresses, never "safe in general"; worlds may require one
    for their seats, and the courts gate nothing on it.
+
+## 16. Mesh federation
+
+**Specified** in [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) §8.
+
+A kernel can already link to two meshes and act as an exchange between
+their currencies (MU-HOSTING §8.1–§8.4), with each mesh sound on its own
+and the bridge trusted by its users. Federation lets two meshes settle
+against each other without a trusted bridge:
+- **Cross-mesh anchoring:** each mesh's era folds published where the
+  other can verify them (track 14, item 7).
+- **A crossing act:** a transfer one mesh admits on the other's proof of
+  the matching debit, so μ_A and μ_B settle without either minting.
+- **Clock and floor:** how two TUniversal clocks and two L0 versions are
+  read across the crossing, never merged.

@@ -1,6 +1,8 @@
 # Economy — μ, the four-lane currency
 
 > **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+>
+> **Components:** the court on each hypha (treasury, settlement, the POW++ arms); clients and kernels appear as payers and payees. In-universe economies are each kernel's own (§10).
 
 Status (v0.1.1): implemented in `src/economy/` and the court's market —
 balances, stake bonds for hyphae and voices, escrow, per-lane pricing,
@@ -625,3 +627,64 @@ Specified and scheduled on the roadmap:
 - in §4: delegation of bond.
 
 [`ROADMAP.md`](../ROADMAP.md) carries their order.
+
+## 10. The case for μ
+
+**Components:** the court (μ, conversion), each kernel (its own economy).
+
+### 10.1 Every world keeps its own economy
+
+Any economy can be started, run or shared inside a kernel. A kernel's
+world may digitize any economy it likes: currencies, banks, markets,
+wages, tolls, credit. These economies are sovereign:
+- the courts never see inside them, and never price or regulate them;
+- tolls and payments made inside a universe stay in that universe's own
+  ledgers (Concordance 5.5);
+- a world's money is backed however that world decides, by its reserve
+  (Concordance 5.1).
+
+Two worlds may share an economy by agreement between their kernels, and
+a new world may start one from nothing.
+
+### 10.2 μ is the reserve that connects them
+
+μ is not minted or distributed inside a universe. It is the network's
+currency, and it reaches a universe only as that universe's reserve:
+- **Only the courts mint μ, and only for verified work** (§3). It moves
+  key to key, and every movement nets to zero (`Treasury::pay`, `hold`,
+  `release_held`).
+- **μ enters a universe through its reserve** (Concordance 5.1a, 4.2). The
+  reserve is the key the domain's founder designates: in a game kernel,
+  its ancients' house; in any other kernel, its designated reserve key.
+  The universe's own currencies are issued against that reserve.
+- **Value crosses only by conversion, and conversion never mints**
+  (Concordance 5.3; MU-RECURSION 78.127, **Built**, `Kernel::convert`).
+  Convert-out pays μ from the reserve against value leaving the world;
+  convert-in holds μ until the reserve accepts it against value arriving,
+  or refunds it.
+- **What μ is worth against a world's money is never declared.** It
+  emerges from trade and from each reserve's own decisions (Concordance
+  5.1a).
+- **μ held inside a universe dissipates** at that world's own physical
+  rate (Concordance 5.8). The dissipated value returns to the courts as
+  the connection tax, a transfer and never a burn; μ held on the hypha
+  (balance, bond, escrow) does not decay.
+- **A new world may receive a founding allotment** from the hypha's
+  reserve, a transfer and never a mint, so that a world can begin
+  (Concordance 5.7; `server/cognition/endowment.rs`).
+
+### 10.3 Why one connecting reserve
+
+- **Incompatible economies can trade.** Two worlds whose monies share
+  nothing can exchange through μ, each converting at its own reserve,
+  without either adopting the other's money or rules.
+- **μ is backed by verified work, not by any one world.** Every unit of μ
+  was minted for work two courts reconstructed, so no world's inflation,
+  collapse or policy changes what μ is.
+- **Supply is auditable at every moment.** `supply = genesis + mint −
+  burn = Σbalance + Σbond + Σheld` holds on every court (§6), whatever
+  the worlds do inside.
+- **Worlds keep their sovereignty.** A world decides its own economy and
+  touches μ only at its reserve. A world that stops trading with the
+  network keeps its own economy whole, and its μ stays its reserve's
+  balance on the courts.

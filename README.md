@@ -160,6 +160,12 @@ directory, the ports and the number of tasks.
 | **Soak harness** | `mycelium-soak` | Long-running load and durability runs against a mesh. |
 | **Law forms** | `forms/` (crate) | The exact law forms shared with the other kernels that join the mesh, depending only on exact rationals. |
 
+Each component's scope, and the terms that belong to it, are set out in
+[GLOSSARY › Components and scope](GLOSSARY.md#components-and-scope). A
+client works with a hypha through a key, a session and signed acts; game
+terms (planets, peoples, ascension) belong to the game kernels, and a
+client meets them only when it takes a seat in one.
+
 ```mermaid
 flowchart LR
     subgraph mesh["Mesh: one genesis"]
@@ -343,6 +349,27 @@ demand uses it (POWC).
 The economy is specified in [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) and
 implemented in `src/economy/` and the court's market
 (`src/server/cognition/`).
+
+### The case for μ
+
+Every hosted world keeps its own economy, and μ is the reserve that
+connects them (MU-ECONOMY §10):
+- **Any economy runs inside a kernel.** A world may start, digitize or
+  share any economy it likes (currencies, banks, markets, tolls), and the
+  courts never see inside it.
+- **μ is minted only by the courts, only for verified work.** It is not
+  minted or distributed inside a universe.
+- **μ reaches a world only as its reserve.** The world's own money is
+  issued against that reserve, and value crosses between a world and the
+  network only by conversion, which never mints. The rate is never
+  declared; it emerges from trade.
+- **So incompatible economies can trade** through μ, each converting at
+  its own reserve, and no world's policy changes what μ is.
+
+A kernel may link to two meshes, each with its own μ, and act as an
+exchange between them. Each mesh stays sound on its own; the bridge is
+trusted only by those who use it (MU-HOSTING §8). Settling two meshes
+without a trusted bridge is ROADMAP track 16.
 
 ### Principles
 
@@ -876,7 +903,10 @@ lands in the code:
 14. Security review of admission, settlement, escrow, discipline, the
     ledger and resource bounds ([`SECURITY.md`](SECURITY.md)).
 15. Hosting: the operator's path, world models as kernels, many-agent
-    worlds, and the draw ([`docs/MU-HOSTING.md`](docs/MU-HOSTING.md)).
+    worlds, the draw and certification
+    ([`docs/MU-HOSTING.md`](docs/MU-HOSTING.md)).
+16. Mesh federation: two meshes settling against each other without a
+    trusted bridge (MU-HOSTING §8).
 
 Design discussion is anchored in the specifications. Section and ruling
 numbers (for example *78.143* or *§5.6*) cite `docs/MU-RECURSION.md` and
