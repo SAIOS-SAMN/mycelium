@@ -7,6 +7,14 @@ such change is named here.
 ## Unreleased
 
 ### Documentation
+- ROADMAP track 19, the general conformal algebra, pole states and
+  bonding: Cl(n+1,1)(ℚ) for any `n` (matching xylarium-kernel's
+  `cga.rs`); the pole state `(X(t), R)` that xylarium writes
+  `3Q / 3Z ± R`, as xylarium's named law form; isomorphic bonding as the
+  versor carrying one state to another, automorphic bonding as a state's
+  stabilizer, both held as state; a closed chain's residual read as
+  torsion; crossings as isomorphisms between faces' pole states. Exact at
+  every boundary.
 - `docs/MU-TOPOLOGY.md`, multi-dimensional structure: why topology
   instead of flat records, with a table of what each keeps; the Cl(4,1)(ℚ)
   ambient algebra and its two readings; four lanes; complexes of any

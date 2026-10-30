@@ -66,6 +66,10 @@ to 5:
   under Niven's restriction, and a turn is a rational point or an exact
   fraction of 360°, never a decimal (2.21, 2.22).
 
+**Specified:** the general algebra Cl(n+1,1)(ℚ) for any `n`, with
+Cl(4,1) as its `n = 3` case, and bonding between pole states held as
+versors and stabilizers (ROADMAP track 19).
+
 The alphabet of seventeen letters is a fixed set of versors of this
 algebra; a word is their product, one exact versor whose meaning is the
 motion it performs (EQUATIONS §3; [`ALPHABET.md`](ALPHABET.md)).

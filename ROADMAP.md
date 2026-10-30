@@ -388,3 +388,83 @@ Phases:
    each party signed.
 5. **T5:** Concordance and charter signing carried as topological
    certificates.
+
+## 19. The general conformal algebra, pole states and bonding
+
+The shared algebra is Cl(4,1)(ℚ), fixed at five generators. xylarium-kernel
+builds the same family with the dimension as a parameter, Cl(n+1,1) over
+exact rationals (`xyl-core/src/cga.rs`), and works its physics between the
+two poles of the conformal null basis. This track generalizes Mycelium's
+algebra to match, and states pole-state bonding in it. Nothing here
+introduces approximate arithmetic: every value that crosses a boundary is
+exact.
+
+**A. Cl(n+1,1)(ℚ) for any n** (shared algebra, `src/core/`,
+`src/transducer/cga/`).
+- The algebra with `n` base axes, `e₊` and `e₋`, for any `n` the
+  observation needs ("every dimension is an exponent", MU-TOPOLOGY §3);
+  Cl(4,1) is the case `n = 3`.
+- Points, spheres, versors, the sandwich, projective equality and the
+  canonical form for every `n`, with the present Cl(4,1) results as the
+  `n = 3` case of each claim.
+- Conformance with xylarium's `cga.rs` by decoded exact values, never by
+  bytes (Concordance 1.4).
+
+**B. The pole state** (xylarium's named law form, `forms::xylarium`,
+landed jointly with xylarium by the Concordance's landing rule; track 13).
+A carrier's state is its pole point with its phase:
+
+    S = ( X(t), R ),   t = U / W, open frames over closed,
+                       X(t) on the pole axis from e_o (Z) to e_∞ (Q),
+                       R the electrons' phase, exact in [−κ, κ]
+
+which the model writes `3Q / 3Z ± R`: the pole state read with the
+electrons' phase (xylarium-kernel `docs/EQUATIONS.md`, "Z, Q and R").
+It is held as an exact object, never as a count or a ratio alone.
+
+**C. Bonding as isomorphism and automorphism, held as state.**
+- **Isomorphic bonding.** Two carriers bond when a versor of the pole
+  algebra (dilators along the pole axis, the vacuum inversion, rotations
+  in the isoclinic planes) carries one state to the other: `V X(t_a) Ṽ`
+  is projectively `X(t_b)`, with the phase carried consistently (the
+  inversion swaps Z and Q and so reverses the sense of `R`). **The bond
+  is that versor**, held with the two states it joins. It is not a
+  scalar bond energy, and it is never stored apart from the states.
+- **Automorphic bonding.** A carrier's self-bond is the stabilizer of its
+  state: every versor that carries `S` to itself. The throat `t = 1` is
+  fixed by the vacuum inversion; a sealed kind's stabilizer is its
+  symmetry. A stabilizer is held whole and never collapsed by choosing a
+  representative (ANTI_FLATTENING_LAW 11).
+- **Bonds compose, and their residual is content.** A chain of bonds is
+  the product of their versors. Where a closed chain composes to the
+  identity the bonding is consistent; where it does not, the residual is
+  torsion, the bond structure's holonomy, held as content (MU-TOPOLOGY
+  §4). This is xylarium's own closing of the books: "the composed versor
+  is projectively the observed one".
+- **Isomorphism classes are the kinds of bond.** Two bonds are the same
+  kind when one pair of states is carried to the other by the algebra;
+  the network files bonds by that class, by coordinates (A21).
+
+**D. Bonds across universes.** Matter crossing a throat is counted as
+nuclei per Z, and each face reads its mass under its own constants
+(Concordance 1.14, A8). With B and C, a crossing becomes an isomorphism
+between the two faces' pole states: what crosses is the state and the
+versor that relates the faces' readings, both exact, so a bond formed in
+one universe is legible in another.
+
+**Exactness at the boundary.** `t`, `R` and the bond versors are exact
+rationals. Inside its own shell xylarium may read further quantities
+(its jet onset, for example, is written with logarithms); those stay in
+the shell and never cross.
+
+Phases:
+1. **G1:** Cl(n+1,1)(ℚ) in the shared algebra, with the Cl(4,1) suites as
+   its `n = 3` claims.
+2. **G2:** the pole axis, pole point, dilator and vacuum inversion as
+   first-class constructors, conformant with xylarium's `poles` and `axes`.
+3. **G3:** the pole state `(X(t), R)` and bonds as versors, with
+   isomorphism, stabilizer and composition claims.
+4. **G4:** bond classes filed by coordinates; the residual of a closed
+   chain read as torsion.
+5. **G5:** crossings as isomorphisms between faces' pole states (with
+   xylarium; Concordance amendment).

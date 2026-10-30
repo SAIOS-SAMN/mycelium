@@ -931,6 +931,10 @@ lands in the code:
     parties and their acceptances, certified when its terms glue, with
     disagreement named as an obstruction and amendment carried as
     transport.
+19. The general conformal algebra Cl(n+1,1)(ℚ), and pole states
+    `(X(t), R)` with bonding held as state: isomorphic bonds as versors
+    between states, automorphic bonds as stabilizers, crossings as
+    isomorphisms between universes' readings.
 
 Design discussion is anchored in the specifications. Section and ruling
 numbers (for example *78.143* or *§5.6*) cite `docs/MU-RECURSION.md` and
