@@ -35,7 +35,19 @@ such change is named here.
   POWV's ratio, and §9 records the implementation.
 
 ### Documentation
-- `ROADMAP.md` lays out eleven development tracks in order:
+- `docs/MU-SCIENCE.md` specifies the network as a verifier of knowledge:
+  - science kernels and physics profiles (declared law registers, the
+    reference register, physics identity);
+  - the translation of claims into Anastome and its adjudication;
+  - verification classes: V0 replay, V1 certificates, V2 formal proofs,
+    V3 deterministic re-execution, V4 law checks under a physics;
+  - the proofs of work for knowledge (POUW, POWC across universes, POWR,
+    POWV, compute leases);
+  - interweaving universes and the physics atlas;
+  - verifier kernels, the verifier interface, wire, readings, bounds and
+    adversarial cases;
+  - phases S1–S8 (ROADMAP track 12).
+- `ROADMAP.md` lays out twelve development tracks in order:
   - the xSEPTUM Note;
   - compute leases (built; verification leases and leases through the
     Note next);
@@ -47,7 +59,8 @@ such change is named here.
   - convergence as admission evidence;
   - the SDK surface;
   - the reference mind's court traffic;
-  - specification reconciliation.
+  - specification reconciliation;
+  - verified knowledge: science kernels.
 - The README's *POW++ for clients* section maps each proof (POUW, POWC,
   POWR) to the client action that earns it, in the reference mind and
   through the SDK.

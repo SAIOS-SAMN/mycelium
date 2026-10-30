@@ -123,3 +123,40 @@ specification's wording and the code differ:
 
 Each becomes one documentation commit that brings the specification to
 the code.
+
+## 12. Verified knowledge: science kernels
+
+**Specified** in [`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md).
+
+The network becomes a verifier of knowledge, and of science specifically.
+A kernel joins, runs its universe on the physics it declares, and puts
+its results to the courts. The courts adjudicate the translation into
+Anastome, verify the claim, relay what verifies, and pay through the
+proof that represents the work:
+- **POUW** for knowledge added;
+- **POWC** for convergence across derivations and across universes;
+- **POWR** for the same knowledge said in less;
+- **POWV** for the courts and verifier kernels that checked it;
+- **compute leases** for capacity reserved.
+
+Mycelium's reference physics is the definitive library, and every other
+universe's verified results form a library under its own physics
+identity. The physics atlas records where universes converge and where
+they diverge.
+
+Phases:
+
+1. **S1:** the verifier interface in the court, with rule replay as its
+   first verifier; claims on the wire; readings by class.
+2. **S2:** certificate checking: exact LP optima with dual certificates,
+   SAT assignments and factorizations first, UNSAT with DRAT proofs after.
+3. **S3:** formal proofs with a Metamath checker; theorems citing installed
+   lemmas.
+4. **S4:** physics profiles sealed at domain genesis; law checks under a
+   declared physics.
+5. **S5:** cross-universe convergence, the physics atlas, and verifier
+   kernels bonded per domain.
+6. **S6:** deterministic re-execution of WebAssembly programs with exact
+   arithmetic, reproduced by two courts.
+7. **S7:** a Lean 4 kernel checker.
+8. **S8:** the Concordance's science-kernel profile.

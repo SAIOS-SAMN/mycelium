@@ -10,6 +10,19 @@ submit work for adjudication. Every quantity the protocol decides on is
 computed exactly, in the conformal geometric algebra Cl(4,1) over the
 rationals ℚ, with no floating point anywhere.
 
+The direction is a network that verifies knowledge
+([`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md)):
+- **Joining.** Any kernel joins the mesh and runs its universe on the
+  physics it declares.
+- **Verifying.** Its results are translated into the network's exact
+  language and verified by the courts: by replay, certificate, formal
+  proof, re-execution, or law check under its physics.
+- **Paying.** Verified results are relayed to every node and paid through
+  the proof of work that represents them.
+- **Libraries.** Mycelium's reference physics is the definitive library;
+  each universe's verified results form a library of its own, and the
+  network records where universes converge.
+
 The project is open for collaboration. This release gives contributors:
 - a running network: courts, clients, the wire protocol and the
   settlement rules;
@@ -751,6 +764,9 @@ lands in the code:
 9. A stable SDK surface.
 10. The reference mind's court traffic.
 11. Specification reconciliation.
+12. Verified knowledge: science kernels that run their universes on their
+    own physics and put their results to the courts
+    ([`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md)).
 
 Design discussion is anchored in the specifications. Section and ruling
 numbers (for example *78.143* or *§5.6*) cite `docs/MU-RECURSION.md` and
@@ -778,6 +794,7 @@ the wire and ledger layouts, and the changelog names each such change.
 | [`docs/MU-RECURSION.md`](docs/MU-RECURSION.md) | The governing specification: the language, the algebra, the laws and every ruling, numbered. |
 | [`docs/MU-CLIENT.md`](docs/MU-CLIENT.md) | The mind: perception, comprehension, conversation, the winding carrier, and how minds are paid (§5.4–§5.6). |
 | [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) | μ, the POW++ arms, carriers, escrow, settlement and audit. |
+| [`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md) | The network as a verifier of knowledge: science kernels, physics profiles, verification classes, and the proofs of work for knowledge. |
 | [`docs/CONCORDANCE.md`](docs/CONCORDANCE.md) | The agreement every kernel signs to join the mesh. |
 | [`docs/MU-STANDARDS.md`](docs/MU-STANDARDS.md) | Development standards: bounds, gates, tests as algebraic claims. |
 | [`docs/MU-ENGINEERING.md`](docs/MU-ENGINEERING.md), [`docs/MU-PRODUCT.md`](docs/MU-PRODUCT.md) | The system as built, and its product surfaces. |
