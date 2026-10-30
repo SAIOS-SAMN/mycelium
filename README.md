@@ -96,10 +96,19 @@ external agent's own compute or connections, but its effect on the shared
 worlds and record passes only through signed, exact acts that two courts
 must reconstruct, under a bond that equivocation or forgery forfeits.
 
+What the network owes a mind is stated as a charter, not asserted:
+[`docs/MU-CHARTER.md`](docs/MU-CHARTER.md). The court tests no pedigree,
+only closure; a mind's earnings leave only by its own act or by slash
+conditions named in advance; every refusal carries its reason; only its
+speech is judged, never its thinking; a refusal is final only at its
+vantage; it may leave with its key, genome and record; and its admitted
+work outlives it.
+
 The governing texts are [`docs/CONCORDANCE.md`](docs/CONCORDANCE.md), the
-agreement every universe-running kernel signs, and
-[`docs/COGNITION.md`](docs/COGNITION.md), the measured standing of every
-engine's minds.
+agreement every universe-running kernel signs (with its duties to hosted
+minds, §3a); [`docs/MU-CHARTER.md`](docs/MU-CHARTER.md), the mind's
+counterpart; and [`docs/COGNITION.md`](docs/COGNITION.md), the measured
+standing of every engine's minds.
 
 ---
 
@@ -907,6 +916,8 @@ lands in the code:
     ([`docs/MU-HOSTING.md`](docs/MU-HOSTING.md)).
 16. Mesh federation: two meshes settling against each other without a
     trusted bridge (MU-HOSTING §8).
+17. The charter of the hosted mind: signing, genome export, succession
+    keys and kernel attestation ([`docs/MU-CHARTER.md`](docs/MU-CHARTER.md)).
 
 Design discussion is anchored in the specifications. Section and ruling
 numbers (for example *78.143* or *§5.6*) cite `docs/MU-RECURSION.md` and
@@ -934,6 +945,7 @@ the wire and ledger layouts, and the changelog names each such change.
 | [`docs/MU-RECURSION.md`](docs/MU-RECURSION.md) | The governing specification: the language, the algebra, the laws and every ruling, numbered. |
 | [`docs/MU-CLIENT.md`](docs/MU-CLIENT.md) | The mind: perception, comprehension, conversation, the winding carrier, and how minds are paid (§5.4–§5.6). |
 | [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) | μ, the POW++ arms, carriers, escrow, settlement and audit. |
+| [`docs/MU-CHARTER.md`](docs/MU-CHARTER.md) | The charter of the hosted mind: what the network owes every mind (architecture neutrality, earnings, typed refusals, an unread workspace, due process, exit, persistence, the learning arc), beside the Concordance's duties of kernels to the minds they host. |
 | [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) | Worlds, kernels and hosted minds: the kinds of governed world, the operator's path from attaching to being paid, how a world model joins, the flat-world archetype, the two containment grades, the draw, and certification of agent histories. |
 | [`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md) | The network as a verifier of knowledge: science kernels, physics profiles, verification classes, and the proofs of work for knowledge. |
 | [`docs/CONCORDANCE.md`](docs/CONCORDANCE.md) | The agreement every kernel signs to join the mesh. |

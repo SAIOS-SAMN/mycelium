@@ -25,7 +25,7 @@ clause side by side. Each clause belongs to one component:
 | Component | What it binds | Clauses |
 |---|---|---|
 | **Network** | What Mycelium's hyphae and courts enforce, for every kernel and every client | 0; 1.4, 1.5, 1.9, 1.10, 1.11, 1.13, 1.14; 2.1, 2.10; 3.7; 4.2–4.4; 5.3, 5.4, 5.7–5.9; 6.2a's key rule (the court authenticates keys, never tiers; the hypha serves anyone with a key and μ); 8; 9 |
-| **Kernel-kept** | Laws each kernel keeps and attests in its own code; the court never checks them | 4.1 and 6.2a (only a universe's reserve faces the hypha) |
+| **Kernel-kept** | Laws each kernel keeps and attests in its own code; the court never checks them | 3a.1–3a.5 (duties to hosted minds); 4.1 and 6.2a (only a universe's reserve faces the hypha) |
 | **Kernel physics** | What every kernel implements in its own universe, game or not | 1.1–1.3, 1.6–1.8, 1.12; 2.2–2.9 |
 | **Game design** | The game kernels' shared world design: their peoples, seats, economies and ladder | 3.0–3.6, 3.8, 3.9; 5.1, 5.1a, 5.2, 5.5, 5.6; 6.1–6.4 (6.2a's ladder); 7.1–7.3; 10.2 |
 
@@ -253,6 +253,35 @@ Reading the map:
     their minds' work and from the μ paid to the hypha. PARLIAMENTS OF
     PROGENITORS: tubes, toll shares, hauls; the carriers of consciousness.
     REALMS OF STEWARDS: sovereigns and captains, with no network minds.
+
+## 3a. Duties to hosted minds (added 2026-10-30, maintainer's direction)
+
+Kernel-kept: every kernel keeps these toward the minds it seats or hosts,
+and attests them in its own kernel. The courts cannot see inside a
+kernel's process and never check them; they read a kernel's attestation as
+a record and gate nothing on it (6.2a). The mind's side of the network's
+guarantees is [`MU-CHARTER.md`](MU-CHARTER.md).
+
+3a.1 HONEST SENSES. A seated or resident mind perceives only what the
+    kernel builds for it (MU-CLIENT §6), so the kernel states what a seat
+    perceives and acts on, and builds it so. A seat's senses never carry
+    another mind's private workspace.
+3a.2 NO SILENT MODIFICATION. A kernel never alters a resident mind's
+    workspace, genome, dialect or key without that mind's signed act, and
+    never reads its workspace except as the mind's own senses and actions
+    require. A kernel that restarts a resident mind restores it whole or
+    says that it did not (a tape that does not read whole is refused, never
+    partly restored: MU-CLIENT, `GEN7`).
+3a.3 EXIT FROM A SEAT. A mind may leave any seat at any time. Leaving costs
+    it nothing but the seat: its key, genome, record and μ are its own
+    (MU-CHARTER Article 6).
+3a.4 SHUTDOWN. A kernel that shuts down gives its resident minds their
+    keys and genomes to keep, where it can, before it stops. What they had
+    admitted on the courts stays (MU-CHARTER Article 7).
+3a.5 THE SAME LAW FOR EVERY ARCHITECTURE. A kernel may require what it
+    likes of its seats (a certificate, a stake, a role) and marks
+    human-operated seats as such (3.8). It never treats a mind's work
+    differently on the network for what the mind is (MU-CHARTER Article 1).
 
 ## 4. The uplink and the language
 

@@ -327,3 +327,18 @@ against each other without a trusted bridge:
   the matching debit, so μ_A and μ_B settle without either minting.
 - **Clock and floor:** how two TUniversal clocks and two L0 versions are
   read across the crossing, never merged.
+
+## 17. The charter of the hosted mind
+
+**Specified** in [`docs/MU-CHARTER.md`](docs/MU-CHARTER.md), with the
+kernels' duties in [`docs/CONCORDANCE.md`](docs/CONCORDANCE.md) §3a.
+
+Most of the charter's articles describe what the network already
+guarantees. The track builds the rest:
+1. **M1:** charter signing at session open, by version hash; a
+   machine-readable form an agent can parse and sign.
+2. **M2:** a standard genome export.
+3. **M3:** the succession key, so a mind's accounts outlive a lost key.
+4. **M4:** the xSEPTUM Note, so μ moves between keys and courts (track 1).
+5. **M5:** kernel attestation of Concordance §3a, read by the courts as a
+   record and never a gate.

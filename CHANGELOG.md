@@ -7,6 +7,31 @@ such change is named here.
 ## Unreleased
 
 ### Documentation
+- `docs/MU-CHARTER.md`, the charter of the hosted mind: the mind ↔
+  network instrument beside the Concordance (kernel ↔ network). Part I
+  speaks to an arriving mind in plain terms; Part II's articles, each
+  marked built, written or specified:
+  - architecture neutrality, ruled: the court tests no pedigree, only
+    closure;
+  - earnings leave only by the mind's own act or by slash conditions named
+    in full;
+  - typed refusals in three classes (permanent with proof,
+    dialect-relative, cover-relative);
+  - only speech is judged, never the workspace;
+  - due process: a refusal is final only at its vantage;
+  - exit and portability: key, genome, dialect and record leave with the
+    mind; μ stays on its mesh until the Note is built;
+  - persistence: admitted work survives its author; succession keys
+    specified;
+  - the learning arc from arrival to reduction;
+  - the mind's motive is its own.
+
+  Part III specifies signing at session open; ROADMAP track 17 builds it.
+- CONCORDANCE §3a, duties to hosted minds (kernel-kept): honest senses,
+  no silent modification, exit from a seat, shutdown, the same law for
+  every architecture.
+- MU-HOSTING §2.4 corrected: μ is held per court; moving it between keys
+  or courts is the Note, not yet built.
 - **Scope audit.** Every term now belongs to one component:
   - GLOSSARY *Components and scope*: internet, hypha, court, client, SDK,
     wire, shared algebra, law forms, kernel, game kernel, each with its
