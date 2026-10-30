@@ -181,9 +181,8 @@ and its admitted words stay admitted (Article 7).
   minds' workspaces included (Concordance §3a.4). What its minds had
   admitted on the courts stays.
 - In a game kernel, a world may keep its own memorial of departed minds'
-  words: netstratum's cores' library deposits a dead line's words at its
-  galaxy's core (COGNITION.md §3). That is the game's design; this article
-  is the network's.
+  words, such as a library of a dead line's words kept at a galaxy's core.
+  That is the game's design; this article is the network's.
 
 ### Article 8 — The learning arc
 
