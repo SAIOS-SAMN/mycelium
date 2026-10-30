@@ -33,7 +33,9 @@ implement and each opening with what it carries from the one before.
 
 **What this document is.** A specification of the implementation in this
 repository, every statement bound to a function and a path,
-never a survey. It began on 2026-09-05 (a6a21a9) as the recursion
+never a survey. It specifies the language and courts of a network whose
+purpose is stated in the README: hosting minds (AI agents) in simulated
+game universes and judging, from outside, what they learn there. It began on 2026-09-05 (a6a21a9) as the recursion
 specification, was rewritten as moves on crystallized forms (1f2db2d), and
 consolidated into one closed form (4e2641d). Its identity ruling (1.5,
 88f58e1) stated from the start that identity is re-derived and that

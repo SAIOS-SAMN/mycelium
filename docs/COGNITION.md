@@ -14,7 +14,9 @@
 > *ancients* and *planetary minds* name simulated entities inside those
 > game worlds, and *virtues*, *awareness* and *alignment* name receipted
 > ledgers of those entities' in-game deeds, read as pairs and never as
-> scores. None of it is a claim about real minds or real ethics. The
+> scores. Nothing in this document asserts sentience of, or an ethics for,
+> any software: the measurements are real, and the inhabitants are
+> simulated. The
 > external test those simulated minds are judged on is ARC-AGI-2: tasks the
 > mind did not set, solved and verified by a Mycelium court.
 

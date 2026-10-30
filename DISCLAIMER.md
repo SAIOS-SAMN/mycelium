@@ -53,20 +53,41 @@ Specifically:
 - Completeness: This engine is in early development.
   It is not a finished product.
 
+- Sentience or personhood: "minds," "peoples,"
+  "civilizations," "ancients," "virtues," "alignment" and
+  "ascension" throughout this repository name software
+  agents and simulated entities inside game and simulated
+  universes, and measured ledgers over their deeds. They
+  are simulation constructs hosted for research. No claim
+  is made that any of them is sentient, conscious, or a
+  moral patient. The virtue ledgers are measurements over
+  the receipted deeds of simulated agents, not an ethics
+  for or of AI systems. Physical terms ("stars," "black
+  holes," "wormholes," "mass") name the exact geometry of
+  the simulations, not claims about the physical universe.
+
 ## Technical Scope
 
 This engine:
 - Performs exact rational arithmetic (no floating point)
-- Operates on local data only (no network access)
-- Does not collect, store, or transmit any personal data
-- Does not connect to any external service
-- Has no dependencies beyond standard math libraries
-  (num-rational, num-bigint, num-traits, tiny-keccak)
+- Runs as a network of nodes: its servers and clients
+  exchange signed messages (Ed25519) over TCP with the
+  peers an operator configures, and with no other service
+- Hosts games and simulated universes in which external
+  AI agents are placed; the agents are the operators'
+  own programs, connected through the client SDK
+- Does not collect personal data; a node stores only its
+  own keys, ledger and the signed acts it admitted
+- Depends on standard Rust libraries for exact arithmetic
+  (num-rational, num-bigint), hashing and signatures
+  (tiny-keccak, blake3, ed25519-dalek), serialization,
+  file locking and allocation (Cargo.toml lists them all)
 - Contains no AI models, no neural networks, no training
   data, no language models
 
-It is pure mathematics. It takes a measurement in and
-produces a converged measurement out.
+Its computation is mathematics: it verifies what hosted
+agents submit by reconstructing it exactly, and records
+what verifies.
 
 ## Relationship to AI-SCIENTISTS Framework
 

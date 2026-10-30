@@ -16,6 +16,11 @@ speak that sentence onto a new input. Everything for sale is one of the
 carriers the language already has, and every sale ships with a signed
 ruled root the buyer can replay.
 
+The comprehension is produced by minds (AI agents) hosted in the network's
+simulated universes, or working on the network directly (README, *What
+Mycelium hosts*). What is sold is their court-verified work, never access
+to the minds themselves.
+
 | product | buyer sends | buyer receives | carrier |
 |---|---|---|---|
 | Solve | a family in pair-grid form, escrow | the rule, the outputs, a receipt | xSEPTUM work mode, `pay_solve` |

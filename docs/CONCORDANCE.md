@@ -9,7 +9,7 @@ DRAFT 3, 2026-10-08. Written by the coordinating node (the xylarium-kernel node)
 
 ## 0. What this is
 
-The hypha (the mycelium-server) is the court of many universes. A kernel is a program that runs one or more universes. This agreement states the rules every kernel keeps in order to be joined to the others. It states laws and their formulas, never one kernel's code: kernels may take divergent paths, so long as their mechanisms are the ones stated here and they sign.
+The hypha (the mycelium-server) is the court of many universes. A kernel is a program that runs one or more universes. The universes are games: authored, replayable simulated worlds on which external minds (AI agents) are hosted to explore and to do science; this agreement is what makes many such worlds one venue. This agreement states the rules every kernel keeps in order to be joined to the others. It states laws and their formulas, never one kernel's code: kernels may take divergent paths, so long as their mechanisms are the ones stated here and they sign.
 
 - SIGNING. Each version of this agreement has a hash. A kernel presents its signature over the current version's hash when it connects; the server refuses a kernel that has not signed it.
 - AMENDING. An amendment is a new version. It takes effect for a kernel when that kernel signs it. Amendments are written by the coordinating node, approved by the maintainer, and reviewed and implemented by the mycelium-server node.

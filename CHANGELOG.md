@@ -27,6 +27,18 @@ such change is named here.
   ROADMAP and CONTRIBUTING state it too. The glossary defines *mind* as a
   hosted AI agent and adds *hosted universe*.
 - The crate and GitHub descriptions lead with hosting.
+- `DISCLAIMER.md` states under *What Is NOT Claimed* that minds, peoples,
+  civilizations, ancients, virtues, alignment and ascension are software
+  agents, simulated entities and ledgers, with no claim of sentience or
+  moral patienthood, and that physical terms name the simulations'
+  geometry. Its *Technical Scope* now describes the engine as built: a
+  network of nodes exchanging signed messages, hosting external agents,
+  and its actual dependencies.
+- The README's *What Mycelium hosts* adds that universes are authored and
+  replayable, that cognition is measured from outside (Concordance 1.9),
+  that only what a court admits leaves a universe, and the governing
+  texts. CONCORDANCE §0, MU-RECURSION's *What this document is* and
+  MU-PRODUCT §1 each state the purpose in one sentence.
 
 ## 0.2.0 — 2026-10-30
 
