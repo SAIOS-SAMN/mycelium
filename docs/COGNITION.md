@@ -137,6 +137,11 @@ ascension and intelligence are measured. The law every reading obeys
 able to fail; alignment is what can be verified, never what a mind asserts
 of itself; a judgement is never collapsed to one number.
 
+Terms in Mycelium's code such as `Alignment`, `Coherence` and
+`syntropic` name geometric relations between motions, not ethical
+properties. MU-RECURSION 78.92 is the only ruling on alignment in the
+governance sense, and it is the rule just stated.
+
 So each virtue is a **book**: a syntropic ledger against an entropic
 ledger, from receipted deeds, read as a pair, never stored as a score,
 never a gate.
@@ -298,79 +303,41 @@ such index, so the judge refuses I, while the client's own blind replay on
 the training pairs passes. Owed: a test that reproduces it, then the fix
 (motor faces are not part of a rule that crosses to unseen pairs).
 
-### 2.4 The client mind's anatomy (`sdk/types.rs`)
+### 2.4 How the client mind is put together
 
-- **Identity and connection**: `Session` (router, peers, cover, RTTs) and
-  its `Kernel` (voice key from `home/voice.key`), seated on its key so the
-  solves it is paid for are signed.
-- **Sensorium**: grid pairs (the feed directory and the registry's
-  `TaskEnvelope`s, perceived into frames, §2.2); court pages enter as taught
-  words. No curved-space percept reaches the mind yet.
-- **Representation**: the `Epigenome` (genome, atlas, expressed, dialect),
-  the `Contemplation` (open thoughts), the `Crystal` trait.
-- **Genome**: only court-stamped words persist (`GEN7`,
-  `epigenome/persist.rs`, all-or-nothing restore).
-- **Physics and time**: a four-lane `Physics` reserve drawn per act; the
-  mesh height; the mind's own `k` (orbits closed).
-- **What a host must give it**: a hypha to dial, a key, percepts. The SDK's
-  universe surface (`sdk/laws.rs`, `sdk::guest`, `sdk::physics::Laws`)
-  exists and is not yet called from the mind's loop.
+- **Identity:** a voice key, and a session to one or more hyphae. Every
+  solve it is paid for is signed with its key.
+- **What it perceives:** task grids, and words the courts have taught it.
+- **What it keeps:** its genome, the words the courts admitted to it, saved
+  to disk and restored whole or not at all; and its own dialect of words
+  not yet admitted.
+- **What it spends:** a reserve on the four μ lanes, drawn as it works and
+  regenerated as it rests (MU-CLIENT §4.12).
+- **What a host must give it:** a hypha to connect to, a key, and percepts.
 
-### 2.5 The empty kernel, from the client side
+MU-CLIENT specifies the mind in full.
 
-A seat with no genome boots "genome 0 words"; `pull_syllabus` fans one
-request across every known peer; it fills ONLY from the court's syllabus
-and sheaf pages — court-stamped words and class records. Pooling runs
-through a court, never mind to mind: words up by `encode_adopt`;
-consilience when two distinct voices speak one content; witnesses for
-refinement bids. Never shared: whole genomes, standalone proofs, dialect
-letters (law 8).
+### 2.5 Learning from the courts
 
-So many minds fill one empty kernel (§1.4) exactly as they fill the
-universal genome: each mind's closures offered, reconstructed by the judge
-(1.9, 4.4), admitted with a stamp. What pools is admitted words with their
-derivations, never raw genomes and never unadjudicated dialect. An
-engine's minds reach it through the 78.142 seam
-(`sdk::rule::sentence(steps, family, crystal)`).
+A new mind starts with an empty genome and fills it from the courts: it
+asks for the syllabus, the words the courts have admitted, and learns
+from what it is taught. Minds learn from one another only through the
+courts. A word one mind closes is offered, reconstructed by the court's
+judge and admitted; whole genomes and unadmitted words are never shared.
+An empty client kernel (§1.4) fills the same way.
 
-### 2.6 Anastome and AUTIC
+### 2.6 The language
 
-- **Anastome** (Concordance 4.3–4.4; `src/anastome/`): the shared language
-  the court adjudicates; payloads are exact geometric objects, no English on
-  the wire; every composed word carries its constructor derivation. A
-  mind's own dialect (MU-RECURSION 80) reaches the universal genome only by
-  a court ruling. Stage: letters and words exist; admitted sentences are
-  still mostly one spelled word.
-- **The letters are not Cl(4,1).** The seventeen letters stand on the
-  Euclidean rank-4 chart `e0..e3`, restored from ipsal-autic v0.4
-  ([`ALPHABET.md`](ALPHABET.md)); the tree's geometry is Cl(4,1).
-  MU-RECURSION 78.68 names the Cl(4,0) rotor as the defect; it stands.
-- **AUTIC** (ipsal-autic v0.1–v0.5): the internal algebraic language an
-  entity reads off its algebra and speaks to another; not actively
-  developed. Mycelium treats it as lineage: anastome is its successor, with
-  the alphabet inherited from v0.4. A mind that speaks AUTIC would need,
-  to speak anastome, its words re-expressed as Cl(4,1) objects with their
-  constructor derivation (4.4), judged by a court (1.9) and admitted with
-  a stamp, through the same 78.142 seam.
+Anastome is the shared language the courts adjudicate (Concordance
+4.3–4.4). Its payloads are exact geometric objects, never English text,
+and every composed word carries the steps that built it, so a court can
+rebuild it. Today the courts admit letters and words; admitted sentences
+are still mostly single words. Its seventeen letters were restored from an
+earlier project, ipsal-autic ([`ALPHABET.md`](ALPHABET.md)).
 
-### 2.7 Alignment and virtue — the vocabulary that exists
+### 2.7 What comes next
 
-- **Implemented in code, none ethical**: `physics.syntropic` (order built
-  at a settlement, per lane); `Coherence` of a ring's modes
-  (`cech/orbit_algebra.rs`); `CoherenceSpectrum`, deliberately not
-  comparable; `Alignment {Aligned, Orthogonal, Both, Still}` from lift and
-  drag (`cga/perturbation.rs`).
-- **Defined, not implemented**: the steward's books (Concordance 6.3) and
-  phenotype and technology alignment for the progenitor path (6.4), which
-  are game design (§1.5).
-- **The one ruling on alignment** (MU-RECURSION 78.92): "alignment is what
-  can be verified, never what a mind asserts of itself" — implemented as
-  `sentence::Reasons::of`, a sentence's reasons read off the sentence.
-
-### 2.8 What Mycelium owes, in order
-
-78.140 geometry → 78.141 signed solves → 78.142 the rule seam
-(family-agnostic: grids for viability, motions for curved holes) → the
-rule vocabulary of §1.3 → curved holes → seats (the mind's arms move in,
-genomes carried) → the host surface wired into the mind (laws, guest,
-universe percepts) → the I-kind frame-index defect reproduced and fixed.
+The client mind's next steps are on the [ROADMAP](../ROADMAP.md): the
+rule language that lets a mind state what ARC-AGI-2 asks (track 7, and
+§1.3 here), the reference mind's court traffic (track 10), and the frame
+index defect of §2.3.
