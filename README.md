@@ -13,10 +13,15 @@ rationals ℚ, with no floating point anywhere.
 The direction is a network that verifies knowledge
 ([`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md)):
 - **Joining.** Any kernel joins the mesh and runs its universe on the
-  physics it declares.
+  physics it declares, above a universal floor every kernel shares: the
+  law register L0, the Concordance, the alphabet, Anastome and exact
+  arithmetic.
 - **Verifying.** Its results are translated into the network's exact
-  language and verified by the courts: by replay, certificate, formal
-  proof, re-execution, or law check under its physics.
+  language and verified by reconstruction: two courts each rebuild the
+  claimed object (a rule's output, a certificate's conclusion, a formal
+  proof's theorem, a computation's output, or a law check under its
+  physics) and must reach the same object. Admission depends on the
+  object, not on the method that produced it.
 - **Paying.** Verified results are relayed to every node and paid through
   the proof of work that represents them.
 - **Libraries.** Mycelium's reference physics is the definitive library;
@@ -177,7 +182,7 @@ genesis, stake, escrow, revocation, slash, burn, fee and subsidy.
 | **POUW** | Proof of useful work | A listed demand is **closed**. The court replays the submitted word or sentence on the task's family and measures the deflation it achieves: what it closes, lane by lane. | **Mints** the measured deflation and pays it to the closer. | `economy/escrow.rs`, `economy/settle.rs`, `server/cognition/court/install.rs` |
 | **POWC** | Proof of work convergence | A demand one mind could not discharge is **closed at another perspective**: another mind's work, citing the first mind's receipt, discharges it. A word discovered by one mind and used by a later demand is the same relation. | **Mints** the citation's measured discharge to the closer (`settle_convergence`), and pays the cited discoverer by **transfer** from the user of the word (`settle_use`). | `economy/settle.rs` |
 | **POWR** | Proof of work retirement | A word or form is **re-expressed over fewer letters**, by retirement along a geodesic or by citation; a refinement bid is replayed with the retired word excluded. | **Burns** the freed description and pays the retirer the compression yield. | `economy/settle.rs` (`settle_rewrite`), `server/cognition/book/rewrite.rs` |
-| **POWV** | Proof of work verification | A closure is **verified**: a court replays the claim and measures its discharge, and on an install a second court re-derives the same vertex. | Pays each verifying court its **share of the release**, per lane, read off the court's strain against its reserve. The share is taken out of the release, so total issuance is unchanged. | `economy/verify.rs`, `server/cognition/court/verify.rs` |
+| **POWV** | Proof of work verification | A closure is **verified**: a court replays the claim and measures its discharge, and on an install a second court reconstructs the same vertex. | Pays each verifying court its **share of the release**, per lane, read off the court's strain against its reserve. The share is taken out of the release, so total issuance is unchanged. | `economy/verify.rs`, `server/cognition/court/verify.rs` |
 
 ### How POUW is divided on install
 

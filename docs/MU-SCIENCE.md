@@ -14,8 +14,8 @@ already provides and what this specification adds. It builds on
 
 ## 0. Purpose
 
-Mycelium's courts admit only what they can re-derive exactly, and they pay
-for it on the lanes the work moved. This specification extends that
+Mycelium's courts admit only what they can reconstruct exactly, and they
+pay for it on the lanes the work moved. This specification extends that
 discipline from the network's own workload to **knowledge in general**,
 and to **science specifically**. Any kernel may join the mesh, run its
 universe on the physics it chooses, and put its results to the courts.
@@ -24,9 +24,10 @@ The courts do three things with those results:
 
 1. **Adjudicate the translation** of the kernel's content into Anastome,
    the network's exact geometric language.
-2. **Verify** the translated claim by the means its kind admits: rule
-   replay, certificate checking, formal proof checking, deterministic
-   re-execution, or law checking under a declared physics.
+2. **Verify** the translated claim by reconstructing it, by the means its
+   kind admits: a rule's speech on withheld pairs, a conclusion from its
+   certificate, a theorem from its axioms, a computation's output, or a
+   transition's lawfulness under a declared physics.
 3. **Relay** what verifies to the network, as installed words, sentences
    and laws other kernels and minds can cite, and **pay** for it through
    the proof of work that best represents the work done.
@@ -40,38 +41,66 @@ those physics agree, where they diverge, and what each has proven.
 
 ## 1. Principles
 
-**P1 — Nothing is admitted on trust.** A claim enters the language only
-when courts have re-derived or checked it exactly. Re-derivation by two
-independent courts (the second-vantage rule, MU-RECURSION 47.3) applies to
-every verification class.
+**P1 — Verification is reconstruction.**
+- A claim enters the language only when courts have reconstructed the
+  claimed object themselves, from the claim's own coordinates and the
+  exact laws that govern it.
+- A submitted derivation (a proof, a certificate, a program, a rule's
+  tape) is evidence the court may follow as construction instructions.
+  The court never takes an intermediate state, an encoding or an
+  interpretation from the submitter.
+- The reconstructed object is compared with the claimed one by algebraic
+  identity (`same_vertex`: projective equality of versors, canonical
+  equality of discrete structures), never by matching bytes or steps.
+- Two independent courts must each reconstruct the same object (the
+  second-vantage rule, MU-RECURSION 47.3), in every verification class.
 
-**P2 — Value follows verification.**
+**P2 — What is verified is the object, not the method.**
+- Derivations, algorithms, provers and implementations change: a proof
+  is shortened, a checker is reimplemented, a computation is optimized.
+- Admitted knowledge is invariant under those changes. Two different
+  methods that reach the same object reach the same admitted knowledge,
+  at one address.
+- A reconstruction that yields a different object is a divergence. It is
+  never resolved by preferring one method's output. This is why the court
+  reconstructs rather than replays: replaying a method certifies that
+  method, while reconstructing the object certifies the result
+  independently of how it was reached.
+
+**P3 — Value follows verification.**
 - μ is minted only for closures a court verified, and the amount is the
   measured discharge on each lane (MU-ECONOMY §3).
 - Computation spent without a verified result is paid only through
   arrangements made in advance, such as compute leases (MU-ECONOMY §5.2),
   never by issuance.
 
-**P3 — Exactness.**
+**P4 — Exactness.**
 - Every admitted object is exact: ℚ, the multivectors of Cl(4,1)(ℚ), or a
   finite discrete structure with a canonical encoding.
 - Floating-point results are data a kernel may hold and commit. They are
   never admitted as verified knowledge unless restated exactly.
 
-**P4 — Physics is sovereign and declared.**
-- Every universe runs under a declared law register.
-- Mycelium's register is the reference. A kernel may adopt it, extend it,
-  or declare a register of its own.
-- A register that changes a law defines a new universe (MU-RECURSION
-  78.59, Ruling 1), never a breach of an existing one.
+**P5 — One universal floor; sovereign physics above it.**
+- Every kernel adheres to the universal library (§3.0): the universal law
+  register L0, the Concordance, the alphabet, Anastome and exact
+  arithmetic. L0 is held by the hyphae and is not overwritten by any
+  kernel (MU-RECURSION 78.87, P1).
+- Above that floor, each universe declares its own physics: laws it adopts
+  from the reference library, laws it amends, and laws it adds. This
+  layer is sovereign.
+- A universe layer that differs from another defines a different universe
+  (MU-RECURSION 78.59, Ruling 1), never a breach of an existing one.
+- Everything that crosses the network boundary (an uplink, a crossing,
+  value moved, a point on TUniversal) satisfies L0, whatever the
+  universe's own layer states.
 
-**P5 — Agreement is measured, not voted.**
-- Two universes agree on a claim where each re-derives it under its own
+**P6 — Agreement is measured, not voted.**
+- Two universes agree on a claim where each reconstructs it under its own
   physics.
 - Divergence is recorded as a named obstruction, which is information and
   never a penalty (MU-RECURSION, OB1–OB5).
 
-**P6 — One canonical encoding per object.**
+**P7 — One canonical encoding per object.**
 - Every object on the wire has exactly one encoding, and decoders refuse
   any other (the discipline of `rule_element::put_elements`).
 - A translation is faithful only if it round-trips.
@@ -82,18 +111,38 @@ every verification class.
 
 | Actor | Role | Exists today |
 |---|---|---|
-| **Court (hypha)** | Admits, verifies, settles, keeps the ledger, relays installed knowledge to peer courts. | Yes |
+| **Court (hypha)** | Admits, reconstructs, settles, keeps the ledger, relays installed knowledge to peer courts. | Yes |
 | **Kernel** | A program that runs one or more universes and joins under the Concordance: it founds a domain, posts ledger entries and maps, runs houses. | Yes (netstratum, xylarium) |
 | **Science kernel** | A kernel whose universe produces knowledge claims (statements, proofs, computations, laws) for verification. | This specification |
 | **Prover / solver** | A mind, SDK client or kernel service that produces claims: rules, proofs, certificates, reproducible computations. | Minds and SDK clients today |
-| **Verifier kernel** | A kernel bonded on a domain that re-derives that domain's claims under the domain's physics, as an additional vantage. | This specification |
+| **Verifier kernel** | A kernel bonded on a domain that reconstructs that domain's claims under the domain's physics, as an additional vantage. | This specification |
 | **Requester** | A party that posts an open question (a demand) and funds it, by escrowed bounty or compute lease. | Leases and held value today |
 
 ---
 
 ## 3. Physics as data: law registers and physics profiles
 
-### 3.1 The reference register
+### 3.0 The universal library
+
+Every kernel that joins the network adheres to one universal library. It
+is the shared floor that makes the universes comparable.
+
+| Component | What it fixes | Where |
+|---|---|---|
+| **The universal law register L0** | The laws every transition touching the network satisfies (§3.1) | `src/physics/laws.rs`, `ACT_LAWS` |
+| **The Concordance** | The agreement every kernel signs: units, topology, the economy between universes, breaches and convergence, conduct | `docs/CONCORDANCE.md` |
+| **The alphabet** | Seventeen Cayley letters, exact versors; the alphabet never grows | `docs/ALPHABET.md`, `src/transducer/alphabet/` |
+| **Anastome** | The wire: signed speech acts whose payloads are exact geometric objects, each with one canonical encoding | `src/anastome/` |
+| **Exact arithmetic** | ℚ and Cl(4,1)(ℚ); no floating point in anything admitted | Throughout |
+| **The proofs of work** | POUW, POWC, POWR, POWV and their settlement | `docs/MU-ECONOMY.md` |
+
+A kernel cannot amend the universal library unilaterally. It changes only
+in two ways:
+- by a new version of the Concordance, which takes effect for a kernel
+  when that kernel signs it;
+- by ascension of a law into L0 (§7.4).
+
+### 3.1 The universal law register L0
 
 The courts hold the universal law register L0
 (`src/physics/laws.rs`, served by `ACT_LAWS`). It has six typed laws:
@@ -115,15 +164,25 @@ A kernel already puts a composed transition to the court's verifier
 derived are named as open physics (`physics::axioms::OPEN_PHYSICS`), never
 assumed.
 
+L0 is mandatory for every kernel. Any transition that touches the network
+is checked against it, whatever universe it comes from. L0 is not part of
+any universe's sovereign layer and is not amended by a physics profile.
+
 ### 3.2 Physics profiles
 
-A **physics profile** is a universe's declared law register, sealed at its
-domain's genesis. It states:
+A **physics profile** is a universe's declared law layer *above L0*,
+sealed at its domain's genesis. It states:
 
-- **Basis.** Each law is either *adopted* from the reference register (by
-  coordinate and version), *amended* (the reference law's coordinate with
-  a new statement), or *new* (a fresh coordinate in the domain's
-  namespace).
+- **Floor.** The L0 version the universe stands on. Every profile
+  includes L0 whole and unchanged.
+- **Basis.** Each law of the universe's own layer is either:
+  - *adopted* from the reference library (by coordinate and version);
+  - *amended*: a law of the reference library's layer above L0, under its
+    coordinate with a new statement;
+  - *new*: a fresh coordinate in the domain's namespace.
+
+  A profile that states a law contradicting L0 is refused by name
+  (`BreachesFloor`) at the domain's genesis.
 - **Statement.** Each law is written in Anastome as a predicate over exact
   objects, the same form L0's laws take. A law with no verifier is admitted
   as an **axiom** of the universe: assumed there, checked nowhere else.
@@ -140,7 +199,8 @@ identity are under the same physics.
 
 ### 3.3 Definitive libraries
 
-Mycelium's reference register, its derived laws, and every theorem,
+Mycelium's reference physics (L0 and the reference layer above it), its
+derived laws, and every theorem,
 certificate and computation verified under it make up the
 **reference library**. Each science kernel's verified results make up a
 library under that kernel's physics identity. A library is the set of
@@ -156,10 +216,10 @@ Anastome, each bound to the physics identity it is stated under.
 
 | Claim kind | What it states | Anastome form | Verification class (§5) |
 |---|---|---|---|
-| **Rule** | A transformation of a task family | A sentence with rule elements | V0 replay |
+| **Rule** | A transformation of a task family | A sentence with rule elements | V0 rule |
 | **Certified result** | An answer with a certificate (SAT/UNSAT, optimum, factorization, isomorphism) | A statement form and a certificate payload with a canonical encoding | V1 certificate |
 | **Theorem** | A proposition and its formal proof in a declared formal system | A statement form, a proof object and the formal system's identity | V2 proof |
-| **Computation** | A deterministic program, its input and its output | A program address, an input commitment and an output form | V3 re-execution |
+| **Computation** | A deterministic program, its input and its output | A program address, an input commitment and an output form | V3 computation |
 | **Law instance** | A transition or trajectory claimed lawful under a physics | A transition in the form `ACT_LAWS` takes | V4 law check |
 | **Observation** | A measured datum with provenance | A signed ledger entry | Sealed, not verified (§4.3) |
 
@@ -168,7 +228,7 @@ Anastome, each bound to the physics identity it is stated under.
 Before a claim is verified, the court checks that it is a faithful object
 of its kind:
 - it decodes under exactly one canonical encoding, and re-encodes to the
-  same bytes (P6);
+  same bytes (P7);
 - its physics identity names a sealed profile;
 - its formal system or program is one the court holds by address;
 - it is signed by its submitter.
@@ -201,23 +261,62 @@ to* that observation, and its statement records the dependency.
 
 ## 5. Verification classes
 
-Every class follows the same court protocol:
-1. The home court checks the claim and measures its discharge.
-2. On install, a second, independent court re-derives it and must reach
-   the same vertex (47.3).
-3. Every check runs on the court's stroke budget. A check the stroke does
-   not finish answers *unread* and resumes on the next send, as solves do
-   today (`SOLVE_UNREAD`).
+### 5.0 Reconstruction
 
-### V0 — Rule replay (exists)
+Verification in every class is reconstruction (P1, P2). The court builds
+the claimed object itself, from the claim's coordinates and the laws that
+govern it, and compares what it built with what was claimed.
 
-The court replays a submitted rule on withheld pairs
-(`src/court/verdict/`). This is the workload of v0.1.
+| Class | What the court reconstructs | What the submission contributes |
+|---|---|---|
+| V0 rule | The rule's output on each withheld pair, from the court's own copy of the family | The rule, as a form to evaluate |
+| V1 certificate | The conclusion, from the certificate by the kind's exact check | The certificate, as a witness |
+| V2 proof | Each inference, from the declared axioms and the system's rules | The proof, as the order of inferences |
+| V3 computation | The output, by independent execution of the program on the committed input | The program and input, by address |
+| V4 law check | The value of each law predicate, on the court's own reading of the transition | The transition |
+
+Consequences:
+- **Comparison is by identity of the object.** Results are compared with
+  `same_vertex` or canonical equality of the decoded structure, never by
+  the bytes of a transcript or the sequence of steps.
+- **Methods may change; results do not.** A court may reconstruct with a
+  different algorithm, checker version or implementation from the
+  submitter's, or from another court's. Admission depends only on the
+  object reached. A shorter proof, a faster program or a new checker of
+  an installed result reconstructs to the same address and is a new
+  derivation of existing knowledge, eligible for POWC and POWR (§6),
+  never a second admission.
+- **Checker versions are not part of a result's identity.** A formal
+  system's address (§V2) names its axioms and rules of inference, which
+  determine what is provable. The checker that evaluates them may be
+  upgraded without changing any installed result.
+- **A divergence is a defect, located by name.** If two reconstructions
+  of one claim reach different objects, the claim is not installed and
+  the divergence is recorded with both objects. It is resolved by finding
+  which reconstruction breached the laws, never by preferring a method.
+
+### 5.1 The court protocol
+
+Every class follows the same protocol:
+1. The home court reconstructs the claim and measures its discharge.
+2. On install, a second, independent court reconstructs it and must reach
+   the same object (47.3).
+3. Every reconstruction runs on the court's stroke budget. One the stroke
+   does not finish answers *unread* and resumes on the next send, as
+   solves do today (`SOLVE_UNREAD`).
+
+### V0 — Rules (exists)
+
+The court evaluates a submitted rule on withheld pairs from its own copy of
+the family, and the output must be the withheld answer (`src/court/verdict/`;
+the mechanism is named *replay* in the code). This is the workload of v0.1.
 
 ### V1 — Certificate checking
 
-The claim carries an answer and a certificate whose check is much cheaper
-than finding the answer. Initial certificate kinds:
+The claim carries an answer and a certificate from which the conclusion is
+reconstructed far more cheaply than the answer was found. The check does
+not depend on how the answer or the certificate was produced. Initial
+certificate kinds:
 
 | Kind | Claim | Certificate | Check |
 |---|---|---|---|
@@ -238,17 +337,27 @@ proof object. The court runs the system's checker:
   canonical proof format.
 - **A Lean 4 kernel** checker later.
 
-The formal system is identified by its address: the checker's version and
-the axiom set. An axiom set may be a physics profile's axioms (§3.2), so a
-theorem can be proven *under a universe's physics*.
+The formal system is identified by its address: its axiom set and its
+rules of inference. The checker is an implementation of that system and is
+not part of the address, so a checker may be replaced or upgraded without
+changing what is installed. An axiom set may be a physics profile's axioms
+(§3.2), so a theorem can be proven *under a universe's physics*.
 
-### V3 — Deterministic re-execution
+The installed object is the statement, not the proof. Any valid proof of
+the same statement in the same system reconstructs to the same theorem.
+
+### V3 — Deterministic computation
 
 The claim names a program by address, commits to its input, and states its
 output. The program runs in a deterministic WebAssembly subset with exact
 integer and rational arithmetic, no floating point, no clock and no I/O,
-metered in strokes. Two independent courts re-execute it and must reach
-the same output (47.3).
+metered in strokes. Two independent courts each reconstruct the output by
+executing it, and must reach the same output (47.3).
+
+The installed object is the output, bound to the statement the program
+computes. A different program stated to compute the same function, on the
+same input, must reconstruct the same output. Where two programs disagree,
+at least one is wrong, and the divergence is recorded (§5.0).
 
 This is the general path by which arbitrary deterministic libraries
 become verified work. It is the most expensive class to verify, and POWV
@@ -257,8 +366,9 @@ pays the verifying courts accordingly (MU-ECONOMY §5.1).
 ### V4 — Law checking under a physics
 
 The claim states that a transition, trajectory or solution is lawful under
-a physics profile. The court evaluates each law of the profile on it, as
-`ACT_LAWS` does for L0 today, and names every breach with its law. A
+a physics profile. The court evaluates L0 and then each law of the
+profile's own layer on its own reading of the transition, as `ACT_LAWS`
+does for L0 today, and names every breach with its law. A
 transition lawful under one profile may breach another, which is the
 basis of cross-universe convergence (§7).
 
@@ -294,10 +404,11 @@ are three forms:
 - **Within a universe:** two different proofs or derivations (different
   vertices) of the same statement, as MU-CLIENT §5.5 defines convergence
   for words.
-- **Across universes:** a claim verified under physics P_A is re-derived
-  under physics P_B and holds there too. The claim *converges* between the
-  two universes. This answers the question a kernel asks of the network:
-  "does this converge with our own universe?"
+- **Across universes:** a claim verified under physics P_A is
+  reconstructed under physics P_B and holds there too. The claim
+  *converges* between the two universes. This answers the question a
+  kernel asks of the network: whether a result converges with its own
+  universe.
 - **Closure from another perspective:** a demand one universe could not
   close is closed by another universe's result, citing the first's
   receipt (MU-ECONOMY §0).
@@ -342,7 +453,7 @@ vantage for that domain's claims (§8.2) and takes POWV like any court.
 
 A requester may reserve a prover's or verifier's capacity in advance with
 a compute lease (MU-ECONOMY §5.2). Each verified job pays from the hold.
-This is how expensive science jobs (V2 proof searches, V3 re-executions)
+This is how expensive science jobs (V2 proof searches, V3 computations)
 are funded before they succeed, without issuing μ for unverified effort.
 
 ### 6.6 Summary
@@ -362,15 +473,17 @@ are funded before they succeed, without issuing μ for unverified effort.
 ### 7.1 A universe on its own physics
 
 A science kernel founds a domain (`ACT_DOMAIN`, exists) and seals its
-physics profile with it (§3.2). Its in-universe computation is its own:
-any library, any method. Its ledger entries are chained and sealed by the
+physics profile with it (§3.2): L0 whole, and its own layer above it. Its
+in-universe computation is its own: any library, any method. What it
+submits is judged by reconstruction (§5.0), so its choice of method never
+affects whether a result is admitted. Its ledger entries are chained and sealed by the
 courts (exists). Its claims are put to the courts under its physics
 identity (§4).
 
 ### 7.2 Growth: verifiers joining a universe
 
 As a universe's library grows, other kernels may join that universe *as
-verifiers*. They bond on its domain and re-derive its claims under its
+verifiers*. They bond on its domain and reconstruct its claims under its
 physics. Two rules keep the domain's verification independent:
 - the second vantage for that domain's claims must hold bond outside the
   home's delegation closure (47.3);
@@ -384,17 +497,24 @@ A verifier kernel earns:
 
 ### 7.3 Divergence
 
-A claim that breaches a law of another profile is a **divergence**. It is
-recorded with the breached laws named and is never slashed: each universe
-is sovereign over its physics. Divergences are the boundary of the
-physics atlas, and they are where a new law, an amendment, or a new
-universe is found.
+A claim that breaches a law of another profile's own layer is a
+**divergence**. It is recorded with the breached laws named and is never
+slashed: each universe is sovereign over the physics above L0. Divergences
+are the boundary of the physics atlas, and they are where a new law, an
+amendment, or a new universe is found.
+
+A transition that breaches L0 is not a divergence. It cannot cross the
+network boundary under any profile, and it is refused by the breached law's
+name, as `ACT_LAWS` refuses today.
 
 ### 7.4 Ascension and integration
 
 A law or theorem that converges across many universes is a candidate for
-the reference register. Admitting it follows Concordance §6 (ascension and
-integration): a new register version, adopted by kernels as they sign it.
+the reference library, and a law of the reference layer that every
+universe adopts is a candidate for L0. Either admission follows
+Concordance §6 (ascension and integration): a new version, adopted by
+kernels as they sign it. This is the only path by which the universal
+floor changes.
 
 ---
 
@@ -410,8 +530,8 @@ under.
 ### 8.2 Verifier bonding
 
 A verifier kernel bonds μ on the courts for a domain. Its bond buys room
-on that domain's claims (MU-ECONOMY §4) and is slashed if a re-derivation
-it signs fails replay at another vantage. Identities are free, and room is
+on that domain's claims (MU-ECONOMY §4) and is slashed if a reconstruction
+it signs is not reproduced at another vantage. Identities are free, and room is
 not.
 
 ---
@@ -428,11 +548,17 @@ trait Verifier {
     const KIND: ClaimKind;
     /// Decode, canonicalize and refuse by name (§4.1).
     fn admit(bytes) -> Result<Claim, Refusal>;
-    /// Check the claim on the court's stroke budget: verified with the
-    /// discharge it measures, refused by name, or unread (resume).
-    fn verify(claim, physics, budget) -> Verdict;
+    /// Reconstruct the claimed object on the court's stroke budget, from
+    /// the claim's coordinates under the physics: verified with the object
+    /// and the discharge it measures, refused by name, or unread (resume).
+    fn reconstruct(claim, physics, budget) -> Verdict;
 }
 ```
+
+A verdict carries the reconstructed object. The second vantage compares
+objects (`same_vertex`, or canonical equality of the decoded structure),
+never transcripts, so two courts may implement one class with different
+algorithms.
 
 Release and settlement are shared by every class:
 - `Kernel::release_verified` (POUW and POWV);
@@ -440,7 +566,7 @@ Release and settlement are shared by every class:
 - `settle_rewrite` (POWR);
 - `pay_lease` (leases).
 
-Rule replay (V0) is the first verifier on the interface.
+Rules (V0) are the first verifier on the interface.
 
 ### 9.2 Wire
 
@@ -471,7 +597,7 @@ All are typed readings on the console, and nothing is answered from logs.
   door. A long check answers unread and resumes.
 - Certificate and proof sizes are bounded by the frame budget; a larger
   object is submitted in pages under one claim address.
-- Re-execution (V3) is fuel-metered in strokes, with no host access.
+- Computation (V3) is fuel-metered in strokes, with no host access.
 
 ### 9.5 Adversarial cases
 
@@ -481,7 +607,8 @@ All are typed readings on the console, and nothing is answered from logs.
 | A non-terminating program or proof search | Bounded by strokes; unread, never hung. |
 | A forged verification | Refused at the second vantage (47.3); the signer's bond is slashed. |
 | Equivocation by a submitter or verifier | Two signed, conflicting acts at one position forfeit the whole bond (MU-ECONOMY §4). |
-| A hostile physics profile | Sovereign over its own universe. It cannot breach another's; divergence is recorded, never imposed. |
+| A hostile physics profile | Sovereign over its own layer only. A profile contradicting L0 is refused at genesis (`BreachesFloor`); it cannot breach another universe's layer, and divergence is recorded, never imposed. |
+| A submission tuned to one checker | Reconstruction does not depend on the submitter's method or on any one checker; a result reached only by one implementation's defect fails at the second vantage. |
 | Spam | Room per lane (MU-ECONOMY §4); an unbonded party holds one claim in flight per lane. |
 
 ---
@@ -490,12 +617,12 @@ All are typed readings on the console, and nothing is answered from logs.
 
 | Phase | Delivers |
 |---|---|
-| **S1** | The verifier interface (§9.1), with rule replay (V0) as its first verifier; the claim kind on the wire; readings by class. |
+| **S1** | The verifier interface (§9.1), with rules (V0) as its first verifier; verdicts that carry the reconstructed object; the claim kind on the wire; readings by class. |
 | **S2** | V1 certificates: `lp-optimum` (exact ℚ), `sat` and `factorization` first; `unsat` with DRAT after. |
 | **S3** | V2 formal proofs: a Metamath checker; theorem claims; citation of installed lemmas. |
-| **S4** | Physics profiles (§3.2) sealed at domain genesis; physics identity on claims; V4 law checks under a profile. |
+| **S4** | Physics profiles (§3.2) sealed at domain genesis on the L0 floor, with `BreachesFloor`; physics identity on claims; V4 law checks under a profile. |
 | **S5** | Cross-universe convergence (§6.2); the physics atlas reading; verifier kernels bonded per domain (§8.2). |
-| **S6** | V3 deterministic re-execution: the WebAssembly subset, fuel in strokes, two-court reproduction. |
+| **S6** | V3 deterministic computation: the WebAssembly subset, fuel in strokes, two-court reconstruction. |
 | **S7** | A Lean 4 kernel checker. |
 | **S8** | The Concordance's science-kernel profile: what a science kernel commits, how it posts demands, how its domain settles. |
 

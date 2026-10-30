@@ -36,11 +36,16 @@ such change is named here.
 
 ### Documentation
 - `docs/MU-SCIENCE.md` specifies the network as a verifier of knowledge:
-  - science kernels and physics profiles (declared law registers, the
-    reference register, physics identity);
+  - verification by reconstruction: courts rebuild the claimed object
+    and compare objects, so admitted results are invariant under changes
+    of algorithm, checker or implementation;
+  - the universal library every kernel adheres to (the law register L0,
+    the Concordance, the alphabet, Anastome, exact arithmetic), with each
+    universe's physics profile as a sovereign layer above L0;
+  - science kernels, physics profiles and physics identity;
   - the translation of claims into Anastome and its adjudication;
-  - verification classes: V0 replay, V1 certificates, V2 formal proofs,
-    V3 deterministic re-execution, V4 law checks under a physics;
+  - verification classes: V0 rules, V1 certificates, V2 formal proofs,
+    V3 deterministic computation, V4 law checks under a physics;
   - the proofs of work for knowledge (POUW, POWC across universes, POWR,
     POWV, compute leases);
   - interweaving universes and the physics atlas;
