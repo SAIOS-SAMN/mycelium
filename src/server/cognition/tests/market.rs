@@ -472,7 +472,7 @@ fn intake_prepared_computes_no_chart_under_hold() {
     assert!(!prepared.is_empty(), "the chain has a piece to list");
     assert_eq!(charts_read() - before, prepared.len() as u64, "each piece charted once, off the court");
     let before = charts_read();
-    assert!(k.intake_prepared(prepared), "the corpus intake lists the body");
+    assert!(k.intake_prepared(&prepared), "the corpus intake lists the body");
     assert_eq!(charts_read(), before, "the locked step read no chart");
     let target = k.quote().1[0].0.address();
     assert!(k.admitted_at(target.as_bytes()).is_some(), "the List act admitted the listing");

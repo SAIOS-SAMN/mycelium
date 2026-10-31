@@ -8,6 +8,7 @@ pub mod backfill;
 pub mod cognition;
 pub mod held;
 pub mod registry;
+pub mod route;
 pub mod synthesis;
 
 #[cfg(test)]

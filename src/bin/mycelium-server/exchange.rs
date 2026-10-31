@@ -6,7 +6,7 @@
 //! cycle: a court stroke, the intake, then one digest round-trip per peer.
 
 use crate::admission::{admit_peer_digest, admit_peer_receipt, rebuild_own_cover, AdmissionTally};
-use crate::door::{intake_corpus, relocate_corpus};
+use crate::door::{intake_corpus, relocate_corpus, route_corpus};
 use crate::persist::persist_if_due;
 use crate::syllabus::{syllabus_admit, Syllabus};
 use crate::transport::{note_rtt_ok, note_rtt_timeout, tell_peer};
@@ -323,6 +323,13 @@ impl Exchange {
                 let budget = mycelium::physics::expansion_unit() as usize;
                 while registry.lock().is_ok_and(|r| !r.intake_done()) {
                     intake_corpus(&court, &shelf, &mesh, &registry, budget);
+                    std::thread::yield_now();
+                }
+                // A COVER CHANGE RE-HOMES BY LOOKUP (mycelium#14): every
+                // task's routes are read on this thread, never the
+                // exchange's. A restored court took no intake, so its
+                // corpus is routed here, each task re-homed as it is.
+                while route_corpus(&court, &shelf, &mesh, &registry) {
                     std::thread::yield_now();
                 }
             });

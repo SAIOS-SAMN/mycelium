@@ -608,51 +608,29 @@ pub(crate) fn homes_here(mesh: &Mesh, shelf: &crate::published::Shelf, inv: &myc
     home(&c, inv, mag, &r, &a, Some((&mesh.vk, &room, &mesh.bind))).0 == mesh.vk
 }
 
+/// LIST A TASK ON ITS ROUTES (`mycelium::server::route`): each pair's
+/// listing homed by the chart and magnitude the intake read, and listed
+/// here from the pieces it read. Nothing is refined or charted here: the
+/// routes were read once, off the court and off the exchange thread
+/// (mycelium#14).
 pub(crate) fn list_task(
     court: &Mutex<Court>,
     shelf: &crate::published::Shelf,
     mesh: &Mesh,
-    cite: mycelium::registry::TaskCitation,
-    task: &mycelium::arc::Task,
+    walked: &mycelium::server::route::Walked,
     rehome: bool,
 ) {
     // Wire v1.2 — the court names a task by its CITATION, the name voices
     // speak it by (a solve, a colour word): its family and its listings are
     // bound under those 32 bytes, once. The registry hands the citation; the
     // task's content address is never formed here.
-    let tid = &cite[..];
+    let tid = &walked.citation[..];
     if let Ok(mut h) = crate::held::held!(court) {
-        h.run(|k, _| k.bind_task_family(tid, task.train.clone()));
+        h.run(|k, _| k.bind_task_family(tid, walked.task.train.clone()));
     }
-    for (a, b) in &task.train {
-        // The stroke the pair's own extents need (78.111): no lcm is capped.
-        let mut stroke = mycelium::physics::Physics::default().stroke_n(
-            match mycelium::transducer::family::refine::need_of(a, b) {
-                Some(n) => n,
-                None => 0,
-            },
-        );
-        let Ok(mycelium::arc::Refined { delta: mut chain, frame, .. }) =
-            mycelium::arc::refine_delta(a, b, &mut stroke)
-        else {
-            continue;
-        };
-        chain.sort_unstable();
-        // A chain with no A5 form cannot be addressed, so it is not routed
-        // and not taken in (U14).
-        let Some(residual) = mycelium::transducer::element::from_residual_framed(&chain, &frame)
-        else {
-            continue;
-        };
-        let inv = mycelium::transducer::stalk::invariant_of(&residual);
-        let addr = residual.address();
-        let here = homes_here(mesh, shelf, &inv, &residual.magnitude());
-        // The pieces and the pieces' charts are read here, with no court held;
-        // the lock below only commits them (`Court::intake_prepared`).
-        let prepared = match here {
-            true => mycelium::cognition::prepare_intake(&chain, &frame),
-            false => Vec::new(),
-        };
+    for route in walked.routes.iter() {
+        let addr = &route.address;
+        let here = homes_here(mesh, shelf, &route.chart, &route.magnitude);
         // THE INTAKE LETS THE QUEUE IN, as the court loop does: it took the
         // court once per listing for minutes after every restart and headed
         // the lock on all three hyphae (2026-10-09), deferring seats and
@@ -664,17 +642,18 @@ pub(crate) fn list_task(
         };
         h.run(|k, _| match here {
             true => {
-                if k.intake_prepared(prepared) {
+                if k.intake_prepared(&route.pieces) {
                     k.bind_listing_task(addr, tid);
                 }
             }
-            false if rehome => if k.has_listing(&addr) { k.relocate_listing(&addr) },
+            false if rehome => if k.has_listing(addr) { k.relocate_listing(addr) },
             false => {}
         });
     }
 }
 
-/// First-time listing under a stroke budget until the manifest is exhausted.
+/// First-time listing under a stroke budget until the manifest is exhausted:
+/// each task routed off the court, its routes kept, then listed.
 pub(crate) fn intake_corpus(
     court: &Mutex<Court>,
     shelf: &crate::published::Shelf,
@@ -682,16 +661,31 @@ pub(crate) fn intake_corpus(
     registry: &Mutex<mycelium::registry::TaskRegistry>,
     budget: usize,
 ) {
-    let batch = match registry.lock() {
-        Ok(mut r) => r.next_intake_batch(budget),
-        Err(_) => return,
-    };
-    for (tid, task) in batch {
-        list_task(court, shelf, mesh, tid, &task, false);
+    for walked in mycelium::server::route::intake_walk(registry, budget) {
+        list_task(court, shelf, mesh, &walked, false);
     }
 }
 
-/// Cover-change walk: re-home listings whose key no longer (or now) homes here.
+/// THE CORPUS A RESTORED COURT TOOK NO INTAKE OF, routed one task at a time
+/// and re-homed as a cover change re-homes it; `false` once every task is
+/// routed.
+pub(crate) fn route_corpus(
+    court: &Mutex<Court>,
+    shelf: &crate::published::Shelf,
+    mesh: &Mesh,
+    registry: &Mutex<mycelium::registry::TaskRegistry>,
+) -> bool {
+    match mycelium::server::route::route_next(registry) {
+        Some(walked) => {
+            list_task(court, shelf, mesh, &walked, true);
+            true
+        }
+        None => false,
+    }
+}
+
+/// Cover-change walk: re-home listings whose key no longer (or now) homes
+/// here, on the routes the intake kept — a lookup, never a reading.
 pub(crate) fn relocate_corpus(
     court: &Mutex<Court>,
     shelf: &crate::published::Shelf,
@@ -699,12 +693,8 @@ pub(crate) fn relocate_corpus(
     registry: &Mutex<mycelium::registry::TaskRegistry>,
     budget: usize,
 ) {
-    let batch = match registry.lock() {
-        Ok(mut r) => r.next_cover_batch(budget),
-        Err(_) => return,
-    };
-    for (tid, task) in batch {
-        list_task(court, shelf, mesh, tid, &task, true);
+    for walked in mycelium::server::route::cover_walk(registry, budget) {
+        list_task(court, shelf, mesh, &walked, true);
     }
 }
 
