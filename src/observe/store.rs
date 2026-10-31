@@ -350,7 +350,8 @@ pub enum ObserveAct {
     Query(Vec<u8>),
 }
 
-const MODE_QUERY: u8 = 0;
+/// `[ACT_OBSERVE][0]`: the query by prefix.
+pub const MODE_QUERY: u8 = 0;
 
 /// `None` where the prefix passes its four bytes (STD1 3c).
 pub fn encode_query(prefix: &[u8]) -> Option<Vec<u8>> {

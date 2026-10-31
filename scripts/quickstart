@@ -11,7 +11,8 @@
 #   TASKS      how many tasks the SDK client asks for (default 8)
 #
 # The ARC-AGI-2 corpus is read from $MYCELIUM_CORPUS or data/arc-agi-2; its
-# first 30 training tasks form the network's corpus.
+# first 30 training tasks form the network's corpus. The binaries are read
+# from $CARGO_TARGET_DIR (default target/).
 set -u
 cd "$(dirname "$0")/.." || exit 1
 ROOT=$(pwd)
@@ -19,9 +20,11 @@ DIR="${1:-${TMPDIR:-/tmp}/mycelium-quickstart}"
 BASE="${2:-7700}"
 TASKS="${3:-8}"
 CORPUS_ROOT="${MYCELIUM_CORPUS:-$ROOT/data/arc-agi-2}"
-SRV="$ROOT/target/release/mycelium-server"
-CLI="$ROOT/target/release/mycelium-client"
-EX="$ROOT/target/release/examples/sdk_client"
+TARGET="${CARGO_TARGET_DIR:-$ROOT/target}"
+SRV="$TARGET/release/mycelium-server"
+CLI="$TARGET/release/mycelium-client"
+EX="$TARGET/release/examples/client"
+CONF="$TARGET/release/examples/conformance"
 say() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 
 if [ ! -d "$CORPUS_ROOT/training" ]; then
@@ -32,9 +35,10 @@ if [ ! -d "$CORPUS_ROOT/training" ]; then
   exit 1
 fi
 
-if [ ! -x "$SRV" ] || [ ! -x "$CLI" ] || [ ! -x "$EX" ]; then
+if [ ! -x "$SRV" ] || [ ! -x "$CLI" ] || [ ! -x "$EX" ] || [ ! -x "$CONF" ]; then
   say "building (release)"
-  cargo build --release --bins --example sdk_client || exit 1
+  cargo build --release --bins || exit 1
+  cargo build --release -p mycelium-sdk --example client --example conformance || exit 1
 fi
 
 PIDS=()
@@ -98,16 +102,21 @@ if [ "$adopted" != 1 ]; then echo "b and c did not adopt the genesis; see $DIR/b
 say "5. the SDK client works $TASKS tasks on hypha a"
 "$EX" "$DIR/client" "127.0.0.1:$PORT_a" "$TASKS"
 
-say "6. the court's reading of what it judged"
+say "6. the client conformance suite on hypha b (MU-CONFORMANCE)"
+"$CONF" --endpoint "127.0.0.1:$PORT_b" --home "$DIR/conformance"
+
+say "7. the court's reading of what it judged"
 "$SRV" --console --home "$DIR/a" --reading judged 2>&1 | grep -vE 'OBSERVER|TUNIVERSAL|clock'
 
 say "the network is running"
 cat <<EOF
-  hyphae   127.0.0.1:$PORT_a  127.0.0.1:$PORT_b  127.0.0.1:$PORT_c   (logs: $DIR/{a,b,c}.log)
-  readings $SRV --console --home $DIR/a --reading court      (acts, economy, judged, dispatched, clock, ...)
-  client   $EX $DIR/client 127.0.0.1:$PORT_b 4
-  a mind   $CLI --home $DIR/mind      (write 127.0.0.1:$PORT_a to $DIR/mind/bootstrap first)
+  hyphae      127.0.0.1:$PORT_a  127.0.0.1:$PORT_b  127.0.0.1:$PORT_c   (logs: $DIR/{a,b,c}.log)
+  readings    $SRV --console --home $DIR/a --reading court      (acts, economy, judged, dispatched, clock, ...)
+  client      $EX $DIR/client 127.0.0.1:$PORT_b 4
+  conformance $CONF --endpoint 127.0.0.1:$PORT_c --home $DIR/conformance
+  a mind      $CLI --home $DIR/mind      (write 127.0.0.1:$PORT_a to $DIR/mind/bootstrap first)
 
 Ctrl-C stops the network.
 EOF
-while true; do sleep 3600; done
+# Waited on in the background, so Ctrl-C (or a TERM) reaches the trap at once.
+while true; do sleep 3600 & PIDS+=($!); wait $!; done

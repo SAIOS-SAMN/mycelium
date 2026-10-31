@@ -7,7 +7,8 @@
 //!
 //! 1. Identity — the voice's Ed25519 key, read from `<voice home>/voice.key`
 //!    or minted there (`mycelium-client --init` writes the same file).
-//! 2. Session — `Session::open` on a hypha's address.
+//! 2. Session — `Session::open` on a hypha's address; the law register read
+//!    (`ACT_LAWS` mode 0), which decodes only at the SDK's `LAW_VERSION`.
 //! 3. Work — `ACT_TASK` asks the court for a task; the envelope carries the
 //!    train pairs and the test inputs, never the test outputs.
 //! 4. Rule — the task's family read by the SDK's extractor
@@ -22,6 +23,7 @@
 //! Exit 0 where every task asked was answered by the court (solved or
 //! refused by name); 1 where the court could not be reached.
 
+use mycelium_sdk::laws;
 use mycelium_sdk::prelude::*;
 use mycelium_sdk::rule::{extract_rule, mint_sentence_why, speak_rule, Physics};
 use mycelium_sdk::task;
@@ -128,6 +130,18 @@ fn main() -> ExitCode {
     println!("voice {}", hex32(&voice.id()));
     // 2. SESSION: one hypha's address; the session learns the rest.
     let session = Session::open(endpoint, voice);
+    // THE LAW VERSION: the register the court judges by, read at the
+    // version this SDK pins to; another version is told apart, never read.
+    match session.speak(laws::encode_register_request()) {
+        Ok(reply) => match laws::decode_register_reply(&reply) {
+            Some(served) => println!("laws: version {}, {} laws", laws::LAW_VERSION, served.len()),
+            None => println!("laws: the hypha's register does not read at version {}", laws::LAW_VERSION),
+        },
+        Err(e) => {
+            eprintln!("laws: {e}");
+            return ExitCode::from(1);
+        }
+    }
     for _ in 0..tasks {
         match one_task(&session, &key) {
             Ok((_, Outcome::NoWork)) => {

@@ -42,7 +42,7 @@ neither renames nor claims them.
 | **Cluster** | Galaxies bound together by gravity. |
 | **Galaxy** | A disc and halo of stars, held by its **galactic core**: a paired throat whose size is its mass (Concordance 2.4–2.6). |
 | **Region** | A spatial cell of a galaxy's disc. |
-| **Star system** (system) | One sector holding a star (or stars) and its bodies, on exact orbits. |
+| **Star system** (served as `System`) | One sector holding a star (or stars) and its bodies, on exact orbits. |
 | **Sector** | One node of the warp graph: a system, or null space. |
 | **Star** | A system's stellar body (or bodies). |
 | **Body** | Anything that orbits: a **planet**, a **moon**, a **belt**, a **station**. |

@@ -270,11 +270,77 @@ pub enum LawsRequest {
     Clock,
     /// 78.125 — the register's parameters, at its version.
     Parameters,
+    /// MU-PRECURSORS §4 P5 — the client conformance statement
+    /// (`anastome::dialogue::conformance`).
+    Statement,
+    /// Concordance §0 — the agreement's hash, at this build.
+    Concordance,
+    /// Concordance §0 — a kernel's signature presented, as carried: read and
+    /// verified at the court, a malformed one refused by name.
+    Signature(Vec<u8>),
 }
 
-const MODE_LEXICON: u8 = 3;
-const MODE_CLOCK: u8 = 4;
-const MODE_PARAMETERS: u8 = 5;
+/// `[ACT_LAWS][7]`: the Concordance's hash.
+pub const MODE_CONCORDANCE: u8 = 7;
+/// `[ACT_LAWS][8][kernel key 32][hash 32][sig 64]`: a kernel's signature
+/// over the Concordance, presented.
+pub const MODE_SIGNATURE: u8 = 8;
+
+/// `[ACT_LAWS][7]`: the Concordance's hash, asked by address.
+pub fn encode_concordance_request() -> Vec<u8> {
+    vec![crate::anastome::dialogue::ACT_LAWS, MODE_CONCORDANCE]
+}
+
+/// The hash's reply: the 32 bytes.
+pub fn encode_concordance_reply() -> Vec<u8> {
+    super::concordance::CONCORDANCE_HASH.to_vec()
+}
+
+/// The hash a reply carries, read whole.
+pub fn decode_concordance_reply(b: &[u8]) -> Option<[u8; 32]> {
+    b.try_into().ok()
+}
+
+/// `[ACT_LAWS][8][signature]`: a kernel's signature presented.
+pub fn encode_signature_request(s: &super::concordance::ConcordanceSignature) -> Vec<u8> {
+    let mut out = vec![crate::anastome::dialogue::ACT_LAWS, MODE_SIGNATURE];
+    out.extend_from_slice(&s.to_bytes());
+    out
+}
+
+/// The court's verdict on a signature: `[0]` accepted, `[1][refusal]`.
+pub fn encode_signature_reply(verdict: Result<(), super::concordance::ConcordanceRefusal>) -> Vec<u8> {
+    match verdict {
+        Ok(()) => vec![0],
+        Err(r) => vec![1, r.byte()],
+    }
+}
+
+/// The verdict a reply carries, read whole.
+pub fn decode_signature_reply(b: &[u8]) -> Option<Result<(), super::concordance::ConcordanceRefusal>> {
+    match b {
+        [0] => Some(Ok(())),
+        [1, r] => Some(Err(super::concordance::ConcordanceRefusal::of(*r)?)),
+        _ => None,
+    }
+}
+
+/// `[ACT_LAWS][3]`: the shared lexicon.
+pub const MODE_LEXICON: u8 = 3;
+/// `[ACT_LAWS][4]`: the core clock.
+pub const MODE_CLOCK: u8 = 4;
+/// `[ACT_LAWS][5]`: the register's parameters.
+pub const MODE_PARAMETERS: u8 = 5;
+/// `[ACT_LAWS][6]`: the client conformance statement — an additive mode: a
+/// hypha that predates it answers nothing, as it answers any request it does
+/// not read.
+pub const MODE_STATEMENT: u8 = 6;
+
+/// `[ACT_LAWS][6]`: the client conformance statement, asked by address; the
+/// reply reads by `anastome::dialogue::conformance::decode_statement_reply`.
+pub fn encode_statement_request() -> Vec<u8> {
+    vec![crate::anastome::dialogue::ACT_LAWS, MODE_STATEMENT]
+}
 
 /// 78.125 — `[ACT_LAWS][5]`: the register's parameters, asked by address.
 pub fn encode_parameters_request() -> Vec<u8> {
@@ -383,9 +449,12 @@ pub fn decode_lexicon_reply(b: &[u8]) -> Option<(u8, Vec<ServedTerm>)> {
     (p == b.len()).then_some((version, terms))
 }
 
-const MODE_REGISTER: u8 = 0;
-const MODE_VERIFY: u8 = 1;
-const MODE_BATCH: u8 = 2;
+/// `[ACT_LAWS][0]`: the register.
+pub const MODE_REGISTER: u8 = 0;
+/// `[ACT_LAWS][1]`: one transition verified.
+pub const MODE_VERIFY: u8 = 1;
+/// `[ACT_LAWS][2]`: a batch of transitions verified.
+pub const MODE_BATCH: u8 = 2;
 
 /// 78.118 — `[ACT_LAWS][2][count][transition …]`: many transitions put to the
 /// laws in one frame (a domain's tiers batching up), each answered in the
@@ -439,6 +508,9 @@ pub fn decode_laws_request(body: &[u8]) -> Option<LawsRequest> {
         [act, MODE_LEXICON] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Lexicon),
         [act, MODE_CLOCK] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Clock),
         [act, MODE_PARAMETERS] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Parameters),
+        [act, MODE_STATEMENT] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Statement),
+        [act, MODE_CONCORDANCE] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Concordance),
+        [act, MODE_SIGNATURE, rest @ ..] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Signature(rest.to_vec())),
         [act, MODE_VERIFY, rest @ ..] if *act == crate::anastome::dialogue::ACT_LAWS => {
             let mut p = 0;
             let t = take_transition(rest, &mut p)?;

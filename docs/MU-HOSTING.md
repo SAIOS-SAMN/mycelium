@@ -147,7 +147,9 @@ reconstructed it.
 3. Address discovery and multi-host transport (ROADMAP track 5).
 4. A published **client conformance read**: the acts a client must speak
    and the readings it must answer, so any agent framework can attach
-   through a thin adapter.
+   through a thin adapter (**Built**: [MU-CONFORMANCE](MU-CONFORMANCE.md);
+   the statement served on `ACT_LAWS` mode 6, `mycelium_sdk::conformance`,
+   `sdk/examples/conformance.rs`).
 
 ---
 

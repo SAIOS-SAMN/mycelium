@@ -6,6 +6,7 @@ mod atlas;
 mod chatter;
 mod cited;
 mod commitment;
+mod conformance;
 mod equivocation;
 mod fold_wire;
 mod offer;

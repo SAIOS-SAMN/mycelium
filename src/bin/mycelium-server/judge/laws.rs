@@ -29,6 +29,16 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         LawsRequest::Parameters => mycelium::physics::laws::codec::encode_parameters_reply(),
         // 78.122 — the shared lexicon, at its version.
         LawsRequest::Lexicon => mycelium::physics::laws::codec::encode_lexicon_reply(),
+        // MU-PRECURSORS §4 P5 — the client conformance statement this tree
+        // publishes, the same object the SDK holds.
+        LawsRequest::Statement => mycelium::anastome::dialogue::conformance::encode_statement_reply(),
+        // Concordance §0 — the agreement's hash, and a kernel's signature over
+        // it verified: accepted or refused by name, recorded nowhere and
+        // required of no kernel in this release.
+        LawsRequest::Concordance => mycelium::physics::laws::codec::encode_concordance_reply(),
+        LawsRequest::Signature(b) => {
+            mycelium::physics::laws::codec::encode_signature_reply(mycelium::physics::laws::concordance::verify_concordance_bytes(&b))
+        }
         LawsRequest::Verify(t) => {
             // 78.116 — under the stroke the motion's modes need, never the
             // court's default: a verdict of the transition alone.

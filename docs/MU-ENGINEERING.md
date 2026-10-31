@@ -116,6 +116,16 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
   The receipts a court seals carry the court's own actions, in the court
   range from `COURT_RANGE` upward.
 
+  `ACT_LAWS` reads by mode (`physics::laws::codec::MODE_*`): 0 the
+  register, 1 and 2 verification, 3 the lexicon, 4 the core clock, 5 the
+  parameters, and, from v0.3.0, 6 the client conformance statement
+  ([MU-CONFORMANCE](MU-CONFORMANCE.md)), 7 the Concordance's hash and 8 a
+  kernel's signature over it, answered accepted or refused by name
+  (Concordance §0 SIGNING). Modes 6–8 are an additive wire change for the
+  minor release: no layout of an existing mode moves and `WIRE_VERSION`
+  stays `0x0104`; a hypha that predates them answers nothing to them, as it
+  answers any `ACT_LAWS` request it does not read.
+
 ## 5. Physics and time
 
 - `physics/` (`src/physics/`): reserve per lane calibrated per host;

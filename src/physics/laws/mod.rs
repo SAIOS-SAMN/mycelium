@@ -499,6 +499,7 @@ fn expansion_of(t: &Transition) -> Option<Q> {
 }
 
 pub mod codec;
+pub mod concordance;
 pub mod lexicon;
 
 #[cfg(test)]

@@ -11,6 +11,7 @@ pub mod challenge;
 pub mod chatter;
 pub mod cited;
 pub mod commitment;
+pub mod conformance;
 pub mod crossing;
 pub mod handoff;
 pub mod lease;

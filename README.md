@@ -149,8 +149,12 @@ scripts/quickstart
 4. Signs a 30-task corpus.
 5. Starts three hyphae (ports 7700–7702): the first mints the genesis and
    the other two adopt it.
-6. Runs the SDK client against them. The client asks for tasks, states
-   rules, and receives the courts' verdicts and payments.
+6. Runs the SDK client against them. The client reads the law register,
+   asks for tasks, states rules, and receives the courts' verdicts and
+   payments.
+7. Runs the client conformance suite
+   ([`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md)) against the second
+   hypha.
 
 The network keeps running, and the script prints the commands for reading
 it, until Ctrl-C. `scripts/quickstart DIR BASE_PORT TASKS` sets the home
@@ -880,6 +884,8 @@ mycelium-sdk = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.3.0" 
 | `readings` | The typed readings a client may ask a hypha for: observer, why, law register, receipts, rows, reserve, probe |
 | `mind` | The reference mind, `Mind::open` and `Mind::open_persistent` |
 | `wire` | `WIRE_VERSION` (`0x0104`, wire v1.4) and `ACT_TABLE`, every act the SDK may send |
+| `laws` | The L0 law register (`Law`, `LAWS`, `LAW_VERSION` 4, `PARAMETERS`), its read (`encode_register_request`, `decode_register_reply`), and the `forms` law ids (`FORM_LAW_IDS`); every law shared is tabled in [`docs/MU-EQUATIONS.md`](docs/MU-EQUATIONS.md) §11 |
+| `conformance` | The client conformance statement (`STATEMENT`: MUST and MAY acts, each reply's decoder and fields), `check_codecs` in process and `run` against a hypha ([`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md)) |
 | `forms` | The law forms (the `forms` crate) |
 | `prelude` | The items a client uses first |
 
@@ -956,6 +962,25 @@ pairs:
 | Seats in another kernel's house | `seat` | in use by peer kernels; specified in `docs/MU-CLIENT.md` §6 |
 | Mind-to-mind conversation | the library's `sdk::chatter` (frame codec in `anastome::dialogue::chatter`) | in use by the reference mind |
 | Compute leases: open and close | `wallet` (`ACT_WALLET` sub-kinds 3 and 4) | test suite |
+| The law register and its version | `laws` | end to end (`sdk/examples/client.rs`) |
+| Client conformance: the statement, its codec checks, its suite | `conformance` | end to end (`sdk/examples/conformance.rs`); the surface compile test `sdk/tests/surface.rs` |
+
+### Conformance
+
+A client is aligned with a release where it passes the client conformance
+read at that release's tag ([`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md)).
+The MUST acts are the client loop: `task`, `solve` and `laws register`;
+every other act is MAY. Conformance is by decoded exact values, never
+golden bytes:
+
+```sh
+cargo build --release -p mycelium-sdk --example conformance
+target/release/examples/conformance --endpoint 127.0.0.1:7610
+#   passed  MUST laws register: law version 4: 6 laws, each at its coordinate with its statement
+#   passed  MUST task: 4 train pairs, 1 test inputs
+#   passed  MUST solve: solved (bounty), paid μ [88, 0, 0, 92]
+#   conforms: wire 0x0104, law version 4
+```
 
 ---
 
@@ -998,6 +1023,11 @@ manifest (`Cargo.toml`), and as a git tag (`v0.2.0`).
 [`CHANGELOG.md`](CHANGELOG.md) lists what each release contains. Releases
 follow semantic versioning. In the 0.x series, a minor version may change
 the wire and ledger layouts, and the changelog names each such change.
+v0.3.0 changes the wire additively only: `ACT_LAWS` gains mode 6 (the
+client conformance statement), mode 7 (the Concordance's hash) and mode 8
+(a kernel's signature over it, accepted and verified; an unsigned kernel
+is refused only from the following release), and `WIRE_VERSION` stays
+`0x0104` (MU-ENGINEERING §4).
 
 ---
 
@@ -1044,6 +1074,7 @@ network), **Specified** (stated, not yet built) or **In progress**.
 | [`docs/MU-FOLD.md`](docs/MU-FOLD.md) | Ledger eras and folds. |
 | [`docs/MU-CHRONOMETRY.md`](docs/MU-CHRONOMETRY.md) | One clock for many universes: TUniversal, who keeps which time, chronometric anchors as every universe's time book, the server's time service, crossings, and what each kernel needs. |
 | [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) | Universes, kernels and hosted minds: the hosting hierarchy and the kinds of hosted universe, the operator's path from attaching to being paid, how a world model joins, the flat-world archetype, the two containment grades, the draw, and certification of agent histories. |
+| [`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md) | The client conformance read: the statement of MUST and MAY acts a client pins to, served by every hypha, its in-process check and its suite on a network. |
 | [`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md) | The network as a verifier of knowledge: science kernels, physics profiles, verification classes, and the proofs of work for knowledge. |
 | [`docs/MU-LEXICON.md`](docs/MU-LEXICON.md) | The shared vocabulary, served by address beside the law register. |
 | [`docs/MU-ANTI-FLATTENING.md`](docs/MU-ANTI-FLATTENING.md) | Structure is never flattened to scalars or flat maps. |

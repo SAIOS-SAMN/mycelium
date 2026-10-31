@@ -4,5 +4,6 @@
 
 mod codec;
 mod common;
+mod concordance;
 mod lexicon;
 mod verify;
