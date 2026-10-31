@@ -1,0 +1,171 @@
+// AI-GENERATED CONTENT — see DISCLAIMER.md.
+//
+// THE CONFORMANCE SUITE ON THE NETWORK: each MUST act spoken to a running
+// hypha, its reply decoded and its exact values checked, each failure
+// named; the served statement read against the statement held.
+
+use super::{Report, StatementRead, STATEMENT};
+use crate::rule::{extract_rule, mint_sentence_why, speak_rule, NoCrystal, Physics};
+use crate::session::Session;
+use crate::voice::{SigningKey, Voice};
+use mycelium::anastome::dialogue as d;
+use mycelium::physics::laws::codec as laws;
+
+/// How many times one solve is sent while the court answers it unread.
+const RESUMES: u32 = 16;
+
+fn laws_register(session: &Session) -> Result<String, String> {
+    let reply = session.speak(laws::encode_register_request()).map_err(|e| format!("no answer: {e}"))?;
+    let law_version = mycelium::physics::laws::LAW_VERSION;
+    let served = laws::decode_register_reply(&reply)
+        .ok_or_else(|| format!("{} bytes that do not decode as the register at law version {law_version}", reply.len()))?;
+    let held = mycelium::physics::laws::LAWS;
+    if served.len() != held.len() {
+        return Err(format!("{} laws served, {} held at law version {law_version}", served.len(), held.len()));
+    }
+    for (s, law) in served.iter().zip(held) {
+        if s.law != law || s.statement != law.statement() {
+            return Err(format!("law {} served as {:?}, not as held", law.index(), s.law));
+        }
+    }
+    Ok(format!("law version {law_version}: {} laws, each at its coordinate with its statement", served.len()))
+}
+
+fn laws_statement(session: &Session, report: &mut Report) {
+    let act = "laws statement";
+    let reply = match session.speak(laws::encode_statement_request()) {
+        Ok(r) => r,
+        Err(e) => return report.unread(act, format!("no answer (a hypha before the statement's mode answers none): {e}")),
+    };
+    let outcome = match d::conformance::decode_statement_reply(&reply) {
+        None => Err(format!("{} bytes that do not decode as a statement", reply.len())),
+        Some(read) if read == StatementRead::of(&STATEMENT) => Ok(format!("the served statement equals the SDK's: {} acts", read.acts.len())),
+        Some(read) => Err(format!(
+            "the served statement (wire 0x{:04x}, law version {}, {} acts) differs from the SDK's",
+            read.wire_version,
+            read.law_version,
+            read.acts.len()
+        )),
+    };
+    report.record(act, outcome);
+}
+
+/// The hypha's Concordance hash against the SDK's, and a signature over it
+/// presented and accepted (both MAY: a hypha before v0.3.0 answers neither).
+fn laws_concordance(session: &Session, key: &SigningKey, report: &mut Report) {
+    use mycelium::physics::laws::concordance::{ConcordanceSignature, CONCORDANCE_HASH};
+    let hash = match session.speak(laws::encode_concordance_request()) {
+        Ok(r) => r,
+        Err(e) => return report.unread("laws concordance", format!("no answer: {e}")),
+    };
+    let outcome = match laws::decode_concordance_reply(&hash) {
+        Some(h) if h == CONCORDANCE_HASH => Ok("the served hash equals the SDK's".to_string()),
+        Some(_) => Err("the served hash is another version of the Concordance".to_string()),
+        None => Err(format!("{} bytes that are no hash", hash.len())),
+    };
+    report.record("laws concordance", outcome);
+    let signed = ConcordanceSignature::sign(key, CONCORDANCE_HASH);
+    let outcome = match session.speak(laws::encode_signature_request(&signed)) {
+        Err(e) => return report.unread("laws signature", format!("no answer: {e}")),
+        Ok(r) => match laws::decode_signature_reply(&r) {
+            Some(Ok(())) => Ok("a signature over the hash, accepted".to_string()),
+            Some(Err(refusal)) => Err(format!("a good signature refused as {refusal:?}")),
+            None => Err(format!("{} bytes that are no verdict", r.len())),
+        },
+    };
+    report.record("laws signature", outcome);
+}
+
+/// The outputs a solve claims: the rule the SDK's extractor states, spoken
+/// on each test input, with its tape; or, where no rule stands, the test
+/// inputs themselves and no tape — a solve the court refuses by name, which
+/// still exercises the act and its verdict.
+fn outputs(envelope: &d::TaskEnvelope) -> (Vec<Vec<Vec<u8>>>, Option<Vec<u8>>) {
+    let mut budget = Physics::default().stroke_n(1 << 20);
+    let stated = extract_rule(&envelope.train, &mut budget).and_then(|rule| {
+        let element = mint_sentence_why(&rule, &envelope.train, &NoCrystal, 0).ok()?;
+        let outputs = envelope.tests.iter().map(|x| speak_rule(&rule, x, &NoCrystal).and_then(|s| s.grid())).collect::<Option<Vec<_>>>()?;
+        Some((outputs, Some(element.to_bytes()?)))
+    });
+    match stated {
+        Some(s) => s,
+        None => (envelope.tests.clone(), None),
+    }
+}
+
+fn solve(session: &Session, key: &SigningKey, envelope: &d::TaskEnvelope) -> Result<String, String> {
+    let (outputs, tape) = outputs(envelope);
+    let act = d::encode_solve_with_rule(key, &envelope.id, &outputs, tape.as_deref()).ok_or("the outputs pass the solve act's fields")?;
+    let mut asked = 0u32;
+    loop {
+        asked += 1;
+        let reply = session.speak(act.clone()).map_err(|e| format!("no answer: {e}"))?;
+        let (code, paid, refusal, _modes) =
+            d::decode_solve_verdict(&reply).ok_or_else(|| format!("{} bytes that do not decode as a verdict", reply.len()))?;
+        match code {
+            d::SOLVE_UNREAD if asked < RESUMES => continue,
+            d::SOLVE_UNREAD => return Ok(format!("not judged yet after {asked} asks (a verdict, read)")),
+            d::SOLVE_NOTHING if paid != [0; 4] => return Err(format!("a final refusal paid μ {paid:?}")),
+            d::SOLVE_NOTHING => {
+                let why = match refusal {
+                    Some(r) => String::from_utf8_lossy(&r.reason).into_owned(),
+                    None => "no reason named".to_string(),
+                };
+                return Ok(format!("not solved (final), refused: {why}"));
+            }
+            d::SOLVE_BOUNTY | d::SOLVE_FLOOR if refusal.is_some() => return Err(format!("code {code} pays and refuses at once")),
+            d::SOLVE_BOUNTY => return Ok(format!("solved (bounty), paid μ {paid:?}")),
+            d::SOLVE_FLOOR => return Ok(format!("solved again (floor), paid μ {paid:?}")),
+            other => return Err(format!("verdict code {other} is none of the four the statement names")),
+        }
+    }
+}
+
+fn task_by_citation(session: &Session, voice: &[u8; 32], envelope: &d::TaskEnvelope) -> Result<String, String> {
+    let reply = session.speak(d::encode_task_by_citation(voice, &envelope.id)).map_err(|e| format!("no answer: {e}"))?;
+    let again = d::decode_task_envelope(&reply).ok_or_else(|| format!("{} bytes that do not decode as an envelope", reply.len()))?;
+    if again.id != envelope.id || again.train != envelope.train || again.tests != envelope.tests {
+        return Err("the task asked by its citation is not the task given".to_string());
+    }
+    Ok("the task by its citation is the task given".to_string())
+}
+
+/// THE CONFORMANCE SUITE against the hypha at `endpoint`, spoken as the voice
+/// `key` seats: the law register read and checked, a task taken and its
+/// envelope decoded, a solve sent and its verdict decoded, and the served
+/// statement and the task by its citation read where the hypha answers them.
+/// Every MUST act passes, or its failure is named; a hypha that cannot be
+/// reached fails each act with the reason.
+pub fn run(endpoint: &str, key: &SigningKey) -> Report {
+    let mut report = Report::default();
+    let session = Session::open(endpoint, Voice::from_key(key.clone()));
+    let voice = key.verifying_key().to_bytes();
+    report.record("laws register", laws_register(&session));
+    laws_statement(&session, &mut report);
+    laws_concordance(&session, key, &mut report);
+    let reply = match session.speak(d::encode_task_request(&voice)) {
+        Ok(r) => r,
+        Err(e) => {
+            report.fail("task", format!("no answer: {e}"));
+            report.unread("solve", "no task to solve");
+            return report;
+        }
+    };
+    if reply.is_empty() {
+        report.unread("task", "the registry gave no task (an empty envelope: no work)");
+        report.unread("solve", "no task to solve");
+        return report;
+    }
+    let Some(envelope) = d::decode_task_envelope(&reply) else {
+        report.fail("task", format!("{} bytes that do not decode as an envelope", reply.len()));
+        report.unread("solve", "no task to solve");
+        return report;
+    };
+    match envelope.train.is_empty() || envelope.tests.is_empty() {
+        true => report.fail("task", "an envelope with no train pair or no test input"),
+        false => report.pass("task", format!("{} train pairs, {} test inputs", envelope.train.len(), envelope.tests.len())),
+    }
+    report.record("task by citation", task_by_citation(&session, &voice, &envelope));
+    report.record("solve", solve(&session, key, &envelope));
+    report
+}

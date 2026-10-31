@@ -841,7 +841,9 @@ mapping from the spaces world models already declare.
 - The SDK is the crate `mycelium-sdk` (`sdk/`), re-exporting the library's
   client surface in modules: `voice`, `session`, `task`, `rule`, `seat`,
   `wallet`, `readings`, `mind`, `wire` (`WIRE_VERSION`, `ACT_TABLE`),
-  `forms` and `prelude`. The library module `client::sdk` (re-exported as
+  `laws` (the L0 register at `LAW_VERSION`, the `forms` law ids),
+  `conformance` (the client conformance read, MU-CONFORMANCE), `forms`
+  and `prelude`. The library module `client::sdk` (re-exported as
   `mycelium::sdk`) is what it re-exports, with the wire codecs of
   `anastome::dialogue`, the voice key and the rule machinery.
 - `sdk/examples/client.rs` is the complete client, with `mycelium-sdk` as
@@ -917,16 +919,24 @@ the crate's public API. This section is the design of it.
 | Phase | Delivers | Accepted when |
 |---|---|---|
 | **P1: workspace** (Built) | A `[workspace]` with `mycelium`, `forms` and `mycelium-sdk` as members; `xtask` stays outside it. | The gate passes on the workspace; `forms` builds as a member; the server's and the SDK's builds share one lock file. |
-| **P2: the surface** | `mycelium-sdk` re-exporting §4.2's surface; the client example (`sdk/examples/client.rs`) ported to depend on it alone. | The example builds and runs end to end against a local network with `mycelium-sdk` as its only Mycelium dependency; a compile test imports every surface item. |
+| **P2: the surface** (Built) | `mycelium-sdk` re-exporting §4.2's surface; the client example (`sdk/examples/client.rs`) ported to depend on it alone. | The example builds and runs end to end against a local network with `mycelium-sdk` as its only Mycelium dependency; a compile test imports every surface item. |
 | **P3: features and dependencies** | The `server` feature on `mycelium`; the SDK's `noise`, `rules` and `seats` features. | The SDK builds with default features off and pulls none of the server-only crates; each feature builds alone. |
 | **P4: documentation and examples** | docs.rs documentation, the depths, one example per arm, a lease and a seat. | Every example builds; each POW++ example is paid on a local network (README › *Quick start*). |
-| **P5: conformance read** | The client conformance statement, served and in the repository; its suite. | The reference mind and the `client` example pass the suite; a client that omits a required act fails it by name. |
+| **P5: conformance read** (Built) | The client conformance statement, served and in the repository; its suite. | The reference mind and the `client` example pass the suite; a client that omits a required act fails it by name. |
 | **P6: publication** | `forms`, `mycelium` and `mycelium-sdk` on crates.io under Apache-2.0, with the compatibility statement in the CHANGELOG. | A fresh project depending on the published `mycelium-sdk` by version builds and runs the example. |
 | **P7: bindings** | A first binding in another language, on the conformance read. | The binding passes the conformance suite with exact values only. |
 
 **Track** 9 (with 15 H1 for the conformance read). **Effort** large.
-**Status** In progress: P1 Built; P2's surface and its example are in the
-tree, its compile test and live run not yet.
+**Status** In progress: P1, P2 and P5 Built; P3, P4, P6 and P7 Specified.
+P2: `sdk/tests/surface.rs` imports every surface item, one `use` per item,
+and `sdk/examples/client.rs` ran end to end on a local network from
+`scripts/quickstart` (the law register read at version 4, tasks solved and
+paid by bounty, others refused by name). P5: the statement
+([MU-CONFORMANCE](MU-CONFORMANCE.md)) is held in the repository and served
+by every hypha (`ACT_LAWS` mode 6); `sdk/tests/conformance.rs` claims that
+the client example and the reference mind conform in process and that a
+client omitting a MUST act fails by its name; `sdk/examples/conformance.rs`
+passed every MUST act against two hyphae of the same local network.
 
 ---
 

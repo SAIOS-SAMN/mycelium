@@ -25,6 +25,8 @@
 //! | [`readings`] | The typed readings a client may ask a hypha for |
 //! | [`mind`] | The reference mind, opened on a session |
 //! | [`wire`] | [`WIRE_VERSION`] and the [`ACT_TABLE`] the SDK may send |
+//! | [`laws`] | The L0 law register at its `LAW_VERSION`, its read, and the `forms` law ids |
+//! | [`conformance`] | The client conformance statement (MUST and MAY acts), its in-process check and its suite on a network |
 //! | [`forms`] | The law forms of the Concordance's nested shells |
 //! | [`prelude`] | The items a client uses first |
 //!
@@ -62,6 +64,8 @@
 
 #![deny(missing_docs)]
 
+pub mod conformance;
+pub mod laws;
 pub mod mind;
 pub mod prelude;
 pub mod readings;

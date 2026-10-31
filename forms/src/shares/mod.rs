@@ -10,5 +10,12 @@
 
 pub mod closeness;
 pub mod share_compounds;
+
+/// THE SHELL'S LAW ID, as the shared-law table names it (MU-EQUATIONS,
+/// *Shared laws*): one id for the shell's forms, closeness and compounding.
+pub const LAW_ID: &str = "FORMS-SHARES";
+
+/// The law's version: an amendment raises it.
+pub const LAW_VERSION: u16 = 1;
 #[cfg(test)]
 mod tests;

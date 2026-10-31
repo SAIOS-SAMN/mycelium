@@ -37,6 +37,7 @@ verification of knowledge in `docs/MU-SCIENCE.md`.
 8. [Time and the ledger](#8-time-and-the-ledger)
 9. [Adjudication](#9-adjudication)
 10. [Law parameters, named open physics and the master equations](#10-law-parameters-named-open-physics-and-the-master-equations)
+11. [Shared laws](#11-shared-laws)
 
 ---
 
@@ -1948,3 +1949,37 @@ MU-RECURSION 78.75 records the circuit closed through these equations: a
 ring is a sentence, each crossing read by what its transport holds, the
 voice speaking its rings, the rung recursing, and the court adjudicating by
 the same equation.
+
+## 11. Shared laws
+
+Every law the network serves or shares, by id and version: what a kernel
+or a client pins to. A law's id names it on every side; its version rises
+with an amendment, and a reading taken at one version is never read as
+another's. The table is checked in code: `mycelium_sdk::laws` re-exports
+the L0 register (`LAWS`, `LAW_VERSION`) and the `forms` crate's law ids
+(`forms::LAW_IDS`, as `FORM_LAW_IDS`), and the SDK's `tests/laws.rs`
+claims that every law reads back from its coordinate at the register's
+version, that the served register carries every law, and that each forms
+id is a hosted shell's own.
+
+| Id | Version | Canonical text | Implementation |
+|---|---|---|---|
+| L0 conformal kinematics (`TAG_LAW‖0‖4`) | 4 | `Law::statement`, MU-RECURSION 78.59; entry 9.5 | `src/physics/laws/mod.rs` (`verify`); served on `ACT_LAWS` mode 0 |
+| L0 momentum (`TAG_LAW‖1‖4`) | 4 | MU-RECURSION 78.59, LV2 | `src/physics/laws/mod.rs` (`verify`, `expansion_of`); `ACT_LAWS` mode 0 |
+| L0 metric rigidity (`TAG_LAW‖2‖4`) | 4 | MU-RECURSION 78.59 | `src/physics/laws/mod.rs` (`verify`); `ACT_LAWS` mode 0 |
+| L0 temporal monotonicity (`TAG_LAW‖3‖4`) | 4 | MU-RECURSION 78.59 | `src/physics/laws/mod.rs` (`verify`); `ACT_LAWS` mode 0 |
+| L0 conservative flow into e_∅ (`TAG_LAW‖4‖4`) | 4 | MU-RECURSION 78.59, 78.58 | `src/physics/laws/mod.rs` (`verify`); `ACT_LAWS` mode 0 |
+| L0 continuity (`TAG_LAW‖5‖4`) | 4 | MU-RECURSION 78.89 | `src/physics/laws/mod.rs` (`verify`, `verify_flux`); `ACT_LAWS` mode 0 |
+| L0 parameters (the challenge window) | 4 | MU-RECURSION 78.125; §10 | `src/physics/laws/mod.rs` (`PARAMETERS`); `ACT_LAWS` mode 5 |
+| Concordance (`CONCORDANCE_HASH`) | 3 (the agreement's version); identified by its hash | `docs/MU-CONCORDANCE.md`; hash = BLAKE3 of its exact bytes | `src/physics/laws/concordance.rs`, `build.rs`; served on `ACT_LAWS` mode 7, signatures on mode 8 |
+| `FORMS-FRAME` | 1 | `forms/src/frame.rs` (module documentation); Concordance 2.10, A6 | `forms::frame` (core shell) |
+| `FORMS-SHARES` | 1 | `forms/src/shares/mod.rs`; Concordance 2.10, A7a; §10.4 | `forms::shares::closeness`, `forms::shares::share_compounds` (outer shell) |
+| `LAW-WAVEFRONT` | 1 | netstratum `docs/111` §2–§3 ([netstratum#9](https://github.com/SAIOS-SAMN/netstratum/issues/9)) | netstratum; no Mycelium code |
+
+The six L0 laws share one register version (`LAW_VERSION`, 4): an
+amendment to any of them raises it for all, and the register is served
+whole (`ACT_LAWS` mode 0, `decode_register_reply`), decoding only at the
+version the reader holds. The `forms` ids are versioned per shell
+(`frame::LAW_VERSION`, `shares::LAW_VERSION`). A peer law is recorded by id
+and version only: its canonical text and its implementation stay with the
+kernel that states it, and Mycelium neither restates nor computes it.

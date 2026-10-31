@@ -146,14 +146,15 @@ crate's public API, with semantic-versioning guarantees. It includes:
 
 ### SDK packaging: publicly available SDKs
 
-**In progress** (P1 Built) in
+**In progress** (P1, P2 and P5 Built) in
 [MU-PRECURSORS §4](docs/MU-PRECURSORS.md#4-sdk-packaging-mycelium-sdk).
 Today the repository is a workspace of `mycelium`, `forms` and
 `mycelium-sdk` (`sdk/`) under one lock file; the SDK crate re-exports the
 library's client surface in modules (`voice`, `session`, `task`, `rule`,
-`seat`, `wallet`, `readings`, `mind`, `wire`, `forms`, `prelude`),
-`sdk/examples/client.rs` is the complete client on it alone, and the MSRV
-is 1.82.
+`seat`, `wallet`, `readings`, `mind`, `wire`, `laws`, `conformance`,
+`forms`, `prelude`), `sdk/examples/client.rs` is the complete client on it
+alone, the client conformance read is published
+([MU-CONFORMANCE](docs/MU-CONFORMANCE.md)), and the MSRV is 1.82.
 The track publishes SDKs open-source developers can depend on by version:
 a `mycelium-sdk` crate, a workspace member, re-exporting a narrow,
 versioned surface (identity, `Session`, tasks and solves, the rule seam,
@@ -167,7 +168,7 @@ after it.
 1. **P1, workspace (Built):** `mycelium`, `forms` and `mycelium-sdk` as
    members of one workspace, `xtask` outside it. *Accepted when* the gate
    passes on the workspace and the members share one lock file.
-2. **P2, the surface:** `mycelium-sdk` re-exporting the surface, and
+2. **P2, the surface (Built):** `mycelium-sdk` re-exporting the surface, and
    the client example (`sdk/examples/client.rs`) depending on it alone. *Accepted when* the
    example runs end to end against a local network and a compile test
    imports every surface item.
@@ -178,7 +179,8 @@ after it.
 4. **P4, documentation and examples:** docs.rs documentation with the
    depths, one example per POW++ arm, a lease and a seat. *Accepted when*
    each example is paid on a local network.
-5. **P5, the client conformance read:** the acts a client must speak and
+5. **P5, the client conformance read (Built;
+   [MU-CONFORMANCE](docs/MU-CONFORMANCE.md)):** the acts a client must speak and
    the readings it must answer, served by a hypha and kept in the
    repository, with its suite (track 15, H1). *Accepted when* the
    reference mind and the `client` example pass it and a client missing a required

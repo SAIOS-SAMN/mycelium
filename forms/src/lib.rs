@@ -35,6 +35,11 @@ pub mod shares;
 #[cfg(test)]
 mod tests;
 
+/// EVERY SHELL THIS CRATE HOSTS, `(law id, version)`, each read off the
+/// shell's own `LAW_ID` and `LAW_VERSION`: the rows the shared-law table
+/// (MU-EQUATIONS, *Shared laws*) names the forms by.
+pub const LAW_IDS: &[(&str, u16)] = &[(frame::LAW_ID, frame::LAW_VERSION), (shares::LAW_ID, shares::LAW_VERSION)];
+
 /// The exact rationals every form computes over (the same object as
 /// mycelium's own `core::Q`).
 pub type Q = num_rational::BigRational;

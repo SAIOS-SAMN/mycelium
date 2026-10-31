@@ -21,6 +21,52 @@ such change is named here.
   `mycelium-sdk` alone.
 - `anastome::dialogue::WIRE_VERSION` (`0x0104`, wire v1.4): the wire's
   version, `major << 8 | minor`.
+- The client conformance read (MU-PRECURSORS §4 P5, MU-HOSTING §2.5 item
+  4; `docs/MU-CONFORMANCE.md`): `anastome::dialogue::conformance::STATEMENT`
+  names every act a client speaks, MUST (`task`, `solve`,
+  `laws register`) or MAY, with the reply decoder and the exact fields
+  each reads back. Every hypha serves it on `ACT_LAWS` mode 6
+  (`LawsRequest::Statement`, `encode_statement_request`,
+  `decode_statement_reply`), an additive mode: the wire version is
+  unchanged. `mycelium_sdk::conformance` re-exports it with
+  `check_codecs` (in process: a client as the set of acts it speaks, each
+  round-tripped by decoded exact values, a missing MUST act failed by
+  name) and `run` (against a running hypha); `sdk/examples/conformance.rs`
+  runs both and prints the report. The `ACT_LAWS` modes are public
+  constants (`codec::MODE_*`), as is `observe::MODE_QUERY`.
+- Concordance §0 SIGNING: the hash is served and signatures are accepted
+  from v0.3.0; refusal of an unsigned kernel takes effect in the following
+  release. `physics::laws::concordance::CONCORDANCE_HASH` is BLAKE3 of the
+  exact bytes of `docs/MU-CONCORDANCE.md` at build time (`build.rs`; the
+  bytes embedded as `CONCORDANCE`), served on `ACT_LAWS` mode 7
+  (`encode_concordance_request`, `decode_concordance_reply`) and carried in
+  the conformance statement. A kernel presents a `ConcordanceSignature
+  { kernel_key, hash, sig }` on `ACT_LAWS` mode 8; the court answers
+  `verify_concordance_signature`'s verdict: accepted, or
+  `ConcordanceRefusal::{Mismatched, Unsigned, Malformed}`. Nothing is
+  recorded and no kernel is refused for lacking a signature: the domain
+  founding and attach acts read each frame whole, so a signature carried
+  on them would be refused by an earlier hypha, and they do not carry one
+  in this release. Additive wire change: `WIRE_VERSION` stays `0x0104`.
+- `mycelium_sdk::laws`: the L0 register (`Law`, `LAWS`, `LAW_VERSION`,
+  `PARAMETERS`, `law_at`), its read (`encode_register_request`,
+  `decode_register_reply`), the `forms` law ids (`FORM_LAW_IDS`), and the
+  Concordance's hash and signature (`CONCORDANCE_HASH`,
+  `ConcordanceSignature`, `verify_concordance_signature`,
+  `ConcordanceRefusal`, the mode 7 and 8 codecs).
+  `forms::LAW_IDS` names each shell by id and version (`FORMS-FRAME` v1,
+  `FORMS-SHARES` v1), read off each shell's own `LAW_ID` and
+  `LAW_VERSION`. MU-EQUATIONS §11, *Shared laws*, tables every law the
+  network serves or shares, peer laws by id only (`LAW-WAVEFRONT` v1).
+- `sdk/tests/surface.rs`: the SDK's surface claim, every public item
+  imported one `use` per item (P2). `sdk/examples/client.rs` and the
+  reference mind read the law register at start and print its version.
+- `scripts/quickstart` builds and runs `sdk/examples/client.rs` (its path
+  had stayed at the removed `examples/sdk_client`), runs the conformance
+  suite, reads the binaries from `$CARGO_TARGET_DIR`, and stops at once on
+  Ctrl-C or TERM.
+- `docs/MU-LEXICON.md` names the served term `System`, which the
+  lexicon's test reads.
 - The chatter frame's codec and framing move to Anastome
   (`anastome::dialogue::chatter`: `Chatter`, `Said`, the word types,
   `read_frame`, `write_frame`, `send`, `ask`); `sdk::chatter` re-exports

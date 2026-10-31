@@ -50,6 +50,13 @@
 use crate::Q;
 use num_traits::{One, Zero};
 
+/// THE SHELL'S LAW ID, as the shared-law table names it (MU-EQUATIONS,
+/// *Shared laws*).
+pub const LAW_ID: &str = "FORMS-FRAME";
+
+/// The law's version: an amendment raises it.
+pub const LAW_VERSION: u16 = 1;
+
 /// WHY A FRAME OR A READING CARRIED BY IT IS REFUSED, by name.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FrameRefusal {

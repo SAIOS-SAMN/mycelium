@@ -123,6 +123,22 @@ fn call_minds(args: &[String], home: &std::path::Path, line: &str) -> ! {
     std::process::exit(if answered { 0 } else { 2 })
 }
 
+/// THE LAW VERSION (MU-CONFORMANCE, a MUST act): the bootstrap hypha's law
+/// register, read at the version this build judges by. A register at another
+/// version is told apart and named, never read as this one; the mind runs on
+/// either way, its acts judged by the court it speaks to.
+fn read_laws(bootstrap: &str, key: &HyphaKey) {
+    use mycelium::physics::laws::{codec, LAW_VERSION};
+    let session = mycelium::sdk::Session::open(bootstrap, Voice::from_voice(key.verifying_bytes()));
+    match session.speak(codec::encode_register_request()) {
+        Ok(reply) => match codec::decode_register_reply(&reply) {
+            Some(served) => eprintln!("laws: version {LAW_VERSION}, {} laws", served.len()),
+            None => eprintln!("laws: the register at {bootstrap} does not read at version {LAW_VERSION}"),
+        },
+        Err(e) => eprintln!("laws: the register at {bootstrap} did not answer: {e}"),
+    }
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let refuse = |why: String| -> ! {
@@ -161,6 +177,7 @@ fn main() {
     // 78.141 — seated on its key: the solves it is paid for are signed.
     let (mut mind, genome) = Mind::open_persistent(&bootstrap, Voice::from_key(voice_key.sk.clone()), &genome_path);
     eprintln!("{genome}");
+    read_laws(&bootstrap, &voice_key);
     mind.set_height(mycelium::chronometry::Height::default());
     mind.discover();
     mind.keep_genome(genome_path);
