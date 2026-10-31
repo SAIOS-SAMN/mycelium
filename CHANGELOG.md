@@ -103,6 +103,11 @@ such change is named here.
   items; an item no frame carries is refused by name and the page ends
   before it. The pull still carries no cursor (a 37-byte pull would be
   read as the shortest deposit).
+- **A grid on the wire is bounded by its bytes** (D4.3): `read_grid`
+  admits any rectangle whose cells its tape carries, or the empty `0 × 0`,
+  and refuses rows without columns (a four-byte header once reserved
+  1.5 MB); the `1024` caps are gone. `push_grid` refuses ragged and
+  half-empty grids, whose tapes never read back.
 
 ### SDK
 - `mycelium_sdk::rule` gains `perceive_family`, `Frames` and

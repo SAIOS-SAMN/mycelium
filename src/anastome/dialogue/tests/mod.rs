@@ -10,6 +10,7 @@ mod conformance;
 mod equivocation;
 mod evidence;
 mod fold_wire;
+mod grid;
 mod offer;
 mod probe_reply;
 mod receipt_section;

@@ -143,7 +143,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 | D3.5 | `percepts_since >= 2` | `client/sdk/seat_mind/mind.rs:284` | seat liveness, learning | Medium | distance along the house's sequence `b − b₀ ≥ 2` (**Built** 2026-10-31; O1 read (a), `seq`) | yes | S | 10 |
 | D4.1 | `tell_peer_within(.., 5)` | `mycelium-server/transport.rs:136` | liveness | Medium | the mesh's measured floor; `Unmeasured` one aperture (**Built** 2026-10-31) | yes | M | 5 |
 | D4.2 | `take(32)` (evidence reply) | `mycelium-server/door.rs:125` | protocol size | Medium | fill to the frame budget by `σ(e)` (**Built** 2026-10-31; the cursor, O1, not built) | yes | S/M | 5 |
-| D4.3 | `h > 1024 \|\| w > 1024` | `anastome/dialogue/carrier.rs:106` | grid admission, memory | Medium | the bytes the tape carries; degenerate shapes refused | yes | S | 14 |
+| D4.3 | `h > 1024 \|\| w > 1024` | `anastome/dialogue/carrier.rs:106` | grid admission, memory | Medium | the bytes the tape carries; degenerate shapes refused (**Built** 2026-10-31; `0 × 0` admitted) | yes | S | 14 |
 | D4.4 | `NESTING = 32`, `depth > 16` | `sentence/form/clause.rs:273`, `anchor/codec.rs:70` | stack safety | High/Medium | the producer's depth, else iteration | yes | M/L | 14 |
 | D4.5 | `sync_channel(cores)`, `(cores/2).max(1)` | `mycelium-server/main.rs:751–902` | door liveness | Medium | `W = 1 + ⌈off/under⌉` from the lock book | yes | M | 5 |
 | D4.6 | `checked_sub(64)` | nine page sites | protocol size | Medium | each reply's own header length `H_kind` | no | S | 5 |
@@ -169,7 +169,7 @@ entry's derivation and needs no ruling unless marked.
 | 5 | `Confluence::reproduces` reads `false` for a check left unread past 400 sites: an unread check written as a refutation; **fixed** (2026-10-31): `Reproduces::Unread` | D3.4 | Low |
 | 6 | Six `tell_peer` sites bypass a peer's measured deadline; the rtt window is keyed by peer id at one site and by endpoint at another; five CLI sites pass `reserve_max()` as a round-trip hint; **fixed** (2026-10-31): every court ask reads its peer's patience under the voice key, the CLI asks read to the stream's end or the page loop's own floor | D4.1, D2.7 | Medium |
 | 7 | The evidence reply serves the first 32 items forever: no cursor, so item 33 onward is never served | D4.2 | Medium |
-| 8 | `push_grid` writes ragged and zero-width grids that `read_grid` cannot read back | D4.3 | Medium |
+| 8 | `push_grid` writes ragged and zero-width grids that `read_grid` cannot read back; **fixed** (2026-10-31): `push_grid` refuses them | D4.3 | Medium |
 | 9 | Recursive `Drop`, `Clone`, `PartialEq`, `Debug`, the encoders and `Selection::eval` of `Pred`/`Selection` overflow the stack at depths the bytes allow; the parse bound is the only guard | D4.4 | High |
 | 10 | The `−64` page reserve is not a signature (no reply at those sites carries one), and at four sites it double-counts a header the encoder already counts | D4.6 | Medium |
 | 11 | `gamma_p` at large `x` and `exp`/`powq` at large positive argument return proven but uninformative enclosures (an absolute grid on a value of scale `2^{±x·log₂e}`); to confirm by the fixtures named in D4.8 | D4.8 | Low (no caller) / Medium (`exp`) |
@@ -2514,6 +2514,15 @@ what the reply claims to carry).
 ---
 
 ### D4.3 `h > 1024 || w > 1024` — grid dimensions in `read_grid`
+
+**Status.** **Built** (2026-10-31, the live-readings ruling). `read_grid`
+admits `(h = 0 ∧ w = 0) ∨ (h ≥ 1 ∧ w ≥ 1 ∧ h·w ≤ L(p))` and nothing else;
+the two `1024`s are gone. `push_grid` refuses a ragged grid and one with
+rows but no columns. The empty `0 × 0` stays admitted (O1 read: it is the
+grid `push_grid` writes for an empty input, and it reads back). Tests
+(`anastome::dialogue::tests::grid`): `read_grid_admits_wide_grid_within_bytes`,
+`read_grid_refuses_rows_without_columns`, `push_grid_refuses_ragged_rows`.
+The text below is the derivation as specified.
 
 **Site.** `src/anastome/dialogue/carrier.rs:102–115`:
 
