@@ -6,6 +6,12 @@ such change is named here.
 
 ## Unreleased
 
+### SDK
+- `mycelium_sdk::rule` gains `perceive_family`, `Frames` and
+  `extraction_spend`, so a client sizes its own extraction stroke from the
+  family it reads (asked for by a peer kernel's offline extractor,
+  netstratum#10). Additive.
+
 ## 0.3.0-rc.2 — 2026-10-31 (release candidate)
 
 Kernels conform too: the peer kernels pinning rc.1 found the contract
