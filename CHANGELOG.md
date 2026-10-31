@@ -140,6 +140,16 @@ such change is named here.
   program. The lexicon's served civic terms are unchanged.
 
 ### Documentation
+- The change and release process: `main` is protected (pull requests
+  only, administrators included; force push and deletion refused), and
+  `MAINTAINERS.md` names who merges and who approves. `docs/MU-RELEASE.md`
+  specifies proposals, SemVer releases with candidates on a test mesh,
+  activation at a TUniversal final point, signed reproducible releases,
+  and forks that converge rather than split: a side declining a release
+  continues on a branch origin with a ledger of its own, and convergence,
+  collision and SUPERPOSE bring the branches back into alignment. CONTRIBUTING
+  gains the pull-request workflow and the release checklist; a pull-request
+  template; ROADMAP track 23.
 - One naming scheme for the specifications: every document under `docs/`
   is `MU-<NOUN>.md`, titled `# MU-<NOUN> — <subtitle>`. Renamed:
   `ALPHABET` → `MU-ALPHABET`, `COGNITION` → `MU-COGNITION`, `CONCORDANCE`

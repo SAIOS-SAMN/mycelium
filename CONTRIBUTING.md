@@ -28,16 +28,44 @@ take part and the standards the tree is held to.
 
 ## How to contribute
 
-- **Discuss first for behaviour changes.** Open an issue that names the
-  section of the specification the change touches. A change of behaviour
-  is a change of the specification, written as a proposal in
-  [`docs/proposals/`](docs/proposals/) and amended into the governing
-  document when it is accepted.
-- **Pull requests** carry one phase of work each: the code, its tests and
-  its documentation together. The gate must be green, and the scoped test
-  suites for the modules touched must pass.
-- **Reviews** read the code against the specification. A review comment
-  cites the section it holds the code to.
+`main` is protected: every change, a maintainer's included, arrives by
+pull request, and only the maintainers in [MAINTAINERS.md](MAINTAINERS.md)
+merge. The full process is [`docs/MU-RELEASE.md`](docs/MU-RELEASE.md)
+Part I.
+
+1. **Find or open an issue.** Each ROADMAP track and each known defect is
+   an issue; `good first issue` marks a contained starting point. A change
+   of behaviour opens a *proposal* issue naming the section of the
+   specification it touches.
+2. **Specification first.** A change of behaviour is a change of the
+   specification: written as a proposal in
+   [`docs/proposals/`](docs/proposals/) and amended into the governing
+   document when it is accepted. A change to the network contract (the
+   Concordance, the wire, the ledger layout, a law version) needs the
+   operator's approval.
+3. **Branch and pull request.** One phase of work per pull request: the
+   code, its tests and its documentation together, a CHANGELOG entry under
+   Unreleased, and the template's checklist filled in. The gate must be
+   green and the scoped test suites for the modules touched must pass.
+4. **Review and merge.** A review reads the code against the
+   specification and cites the section it holds the code to; a maintainer
+   merges once conversations are resolved. History on `main` is never
+   rewritten.
+
+## Releases
+
+Releases are SemVer tags `vX.Y.Z` with a GitHub Release whose notes are the
+CHANGELOG section ([`docs/MU-RELEASE.md`](docs/MU-RELEASE.md) Part II). The
+release checklist:
+- the gate green on the tagged tree, and the full test set run once with
+  its known exceptions named;
+- the CHANGELOG section final, every API, wire and ledger change named;
+- the release candidate `vX.Y.Z-rc.N` run on a test mesh of its own
+  genesis, and the run recorded in the release pull request;
+- where the release changes the network contract, its activation point
+  (`activates_at`, a TUniversal final point) stated;
+- the operator's authorization recorded in the release pull request; the
+  tag signed.
 
 ## Standards
 

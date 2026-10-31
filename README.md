@@ -1029,7 +1029,9 @@ network), **Specified** (stated, not yet built) or **In progress**.
 | Document | Subject |
 |---|---|
 | [`ROADMAP.md`](ROADMAP.md) | The development tracks, in order, each with its specification. |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | The contribution workflow, the standards in brief and the gate. |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | The contribution workflow, the release checklist, the standards in brief and the gate. |
+| [`MAINTAINERS.md`](MAINTAINERS.md) | Who merges to the protected `main`, and who approves changes to the network contract and releases. |
+| [`docs/MU-RELEASE.md`](docs/MU-RELEASE.md) | How changes land, how releases activate at a point of the clock, and how forks converge rather than split. |
 | [`docs/MU-STANDARDS.md`](docs/MU-STANDARDS.md) | Development standards: bounds, gates, tests as algebraic claims. |
 | [`STANDARDS.md`](STANDARDS.md) | Organization-wide repository conventions: naming, layout, tone, git practice. |
 | [`SECURITY.md`](SECURITY.md), [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) | Reporting vulnerabilities; conduct in the project's spaces. |
