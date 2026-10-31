@@ -139,7 +139,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 | D3.1 | `stroke_n(1 << 16)` | `client/sdk/rule.rs:402` | cognition (rule minting) | Medium | the stroke is `modes_need(linear)` (78.111; **Built**) | yes | S | 7 |
 | D3.2 | `MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600` | `transducer/family/refine.rs:40–41` | task identity, μ | High | metered by `need = R_h·R_w + 2·L_h·L_w` (**Built**, O1 (a)) | no | M | 7 |
 | D3.3 | `truncate(32)` | `transducer/anchor/derive.rs:182` | court admission (π*) | High | keep every carrying term, keyed; metered (**Built** 2026-10-31; O1 ruled (a): π* binds the whole common set) | yes | M | 7 |
-| D3.4 | `in_sites.len() <= 400` | `transducer/family/confluence.rs:162` | an instrument's reading | Low | `2·m` reads, keyed, tri-state | no | S | 10 |
+| D3.4 | `in_sites.len() <= 400` | `transducer/family/confluence.rs:162` | an instrument's reading | Low | `2·m` reads, keyed, tri-state (**Built** 2026-10-31) | no | S | 10 |
 | D3.5 | `percepts_since >= 2` | `client/sdk/seat_mind/mind.rs:284` | seat liveness, learning | Medium | distance along the house's sequence `b − b₀ ≥ 2` | yes | S | 10 |
 | D4.1 | `tell_peer_within(.., 5)` | `mycelium-server/transport.rs:136` | liveness | Medium | the mesh's measured floor; `Unmeasured` one aperture | yes | M | 5 |
 | D4.2 | `take(32)` (evidence reply) | `mycelium-server/door.rs:125` | protocol size | Medium | fill to the frame budget by `σ(e)` | yes | S/M | 5 |
@@ -166,7 +166,7 @@ entry's derivation and needs no ruling unless marked.
 | 2 | `encode_receipts_reply` admits the head receipt against `BODY_BUDGET`, not the caller's `budget`; with the 8-byte reading height appended, a lone receipt within 12 bytes of the budget builds a body `Frame::encode` refuses, and the asker reads silence on that receipt every time; **fixed** (2026-10-31): the head is admitted against the caller's budget, refused by name past it | D1.3 | Medium |
 | 3 | A pair refused by `MAX_LCM_*` makes `task_address` skip it (two tasks one identity, law 2) and `finish` drop it (remainders discarded, rule 7); **fixed**: the cap is gone, every pair refines under the stroke its extents need, `task_address` refuses a pair with no refinement and `finish` stands it as a demand | D3.2 | High |
 | 4 | `truncate(32)` can cut a term common to every evidence, so `derive_pi` binds another term or returns `None`: π* changes with the cut | D3.3 | High |
-| 5 | `Confluence::reproduces` reads `false` for a check left unread past 400 sites: an unread check written as a refutation | D3.4 | Low |
+| 5 | `Confluence::reproduces` reads `false` for a check left unread past 400 sites: an unread check written as a refutation; **fixed** (2026-10-31): `Reproduces::Unread` | D3.4 | Low |
 | 6 | Six `tell_peer` sites bypass a peer's measured deadline; the rtt window is keyed by peer id at one site and by endpoint at another; five CLI sites pass `reserve_max()` as a round-trip hint | D4.1, D2.7 | Medium |
 | 7 | The evidence reply serves the first 32 items forever: no cursor, so item 33 onward is never served | D4.2 | Medium |
 | 8 | `push_grid` writes ragged and zero-width grids that `read_grid` cannot read back | D4.3 | Medium |
@@ -2039,6 +2039,21 @@ checklist (r), 78.43(2) (a cap).
 ---
 
 ### D3.4 `in_sites.len() <= 400` — the confluence's reproduction check
+
+**Status.** **Built** (2026-10-31, the live-readings ruling).
+`Confluence::reproduces` is `Reproduces { Yes, No, Unread }`, read by
+`carried_onto`: the output's sites keyed once, each input's image read back
+to its lattice site (`cga::base_at`, `element::sensor::site_at`; a point off
+the lattice is `No`) and looked up, two reads a site on the pair's token,
+no cap; a spent token is `Unread`, never `No`. `luminal.rs` does not share
+the shape. The soak's printer counts `Yes` and `Unread` apart. Tests
+(`transducer::family::tests::confluence`):
+`confluence_reproduces_past_four_hundred_sites`,
+`confluence_reads_unread_on_spent_token`,
+`confluence_off_lattice_image_reads_no`, read on `carried_onto` (a 21×21
+body carried by a translation; the perception reads no equal-mass
+confluence of 441 sites from a pair, so the claim is proved on the reader
+the confluence calls). The text below is the derivation as specified.
 
 **Site.** `src/transducer/family/confluence.rs:162` (`read_pair`), with
 no comment:

@@ -56,7 +56,7 @@ pub struct Confluence {
     /// Where the centres agree: the dilation's exact ratio of the normalised
     /// squares, output over input.
     pub ratio: Option<Q>,
-    pub reproduces: bool,
+    pub reproduces: Reproduces,
     pub contains: bool,
     pub closes: Closes,
     pub unsaid: u64,
@@ -76,8 +76,56 @@ pub struct PairConfluence {
     pub confluence_sites: u64,
 }
 
+/// WHETHER THE INVERSE GENERATOR CARRIES THE INPUTS ONTO THE OUTPUT, read
+/// (MU-DERIVATIONS D3.4): `Yes`, `No`, or `Unread` where the token ended
+/// before every site was read — an unread check is never a refutation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Reproduces {
+    Yes,
+    No,
+    Unread,
+}
+
 fn point(r: i64, c: i64) -> Mv {
     cga::point_at(&[Q::from_integer(r.into()), Q::from_integer(c.into())])
+}
+
+/// A site's coordinates as a key: its row, then its column.
+fn site_key(r: i64, c: i64) -> [u8; 16] {
+    let mut k = [0u8; 16];
+    k[..8].copy_from_slice(&r.to_be_bytes());
+    k[8..].copy_from_slice(&c.to_be_bytes());
+    k
+}
+
+/// `v` carries every input site onto an output site: the output's sites
+/// keyed once, each input's image read back to its site (a lattice point,
+/// or no compartment of any frame) and looked up — two reads a site, `2·m`
+/// for `m` input sites, on the token (rules 1, 10, 17).
+pub(crate) fn carried_onto(v: &Mv, in_sites: &[(i64, i64)], out_sites: &[(i64, i64)], budget: &mut crate::physics::Budget) -> Reproduces {
+    let mut out: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    for &(r, c) in out_sites {
+        out.insert(site_key(r, c), ());
+    }
+    for &(r, c) in in_sites {
+        if !budget.spend() {
+            return Reproduces::Unread;
+        }
+        let img = v.sandwich(&point(r, c));
+        let Some(at) = cga::base_at(&img, 2) else { return Reproduces::No };
+        if !at.iter().all(num_rational::BigRational::is_integer) {
+            return Reproduces::No;
+        }
+        let Some(site) = crate::transducer::element::sensor::site_at(&at) else { return Reproduces::No };
+        let (Some(rr), Some(cc)) = (site.axis(0), site.axis(1)) else { return Reproduces::No };
+        if !budget.spend() {
+            return Reproduces::Unread;
+        }
+        if !out.contains(&site_key(rr, cc)) {
+            return Reproduces::No;
+        }
+    }
+    Reproduces::Yes
 }
 
 /// The confluence sphere of a set of compartments, and its mass.
@@ -155,15 +203,13 @@ pub fn read_pair(x: &Grid, y: &Grid, remainder: &[(i64, i64, u8, u8)], budget: &
             })
             .flatten();
         // The inverse generator carries the inputs' compartments onto the
-        // output's, point for point, or it does not.
+        // output's, point for point, or it does not — or the token ended
+        // first, and the check is unread, never a refutation (D3.4).
         let v = c_out.geo(&c_in);
-        let reproduces = m_in == m_out
-            && cga::is_versor(&v)
-            && in_sites.len() <= 400
-            && in_sites.iter().all(|&(r, c)| {
-                let img = v.sandwich(&point(r, c));
-                out_sites.iter().any(|&(rr, cc)| img.projective_eq(&point(rr, cc)))
-            });
+        let reproduces = match m_in == m_out && cga::is_versor(&v) {
+            false => Reproduces::No,
+            true => carried_onto(&v, &in_sites, &out_sites, budget),
+        };
         let contains = in_sites.iter().all(|s| out_sites.contains(s));
         let nuclei: Option<Vec<Mv>> = inputs
             .iter()

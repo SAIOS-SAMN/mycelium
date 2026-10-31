@@ -68,6 +68,11 @@ such change is named here.
   cut at 32 terms is gone. `derive_pi(family, withheld, budget)` returns
   the terms common to every training evidence as a superposition, judged
   by reconstruction on the withheld pairs, never a head chosen by key.
+- **The confluence's reproduction check is read, never capped** (D3.4):
+  `Confluence::reproduces` is `Reproduces { Yes, No, Unread }`; the
+  output's sites keyed once, each image read back to its lattice site,
+  `2·m` reads on the token; past 400 sites it reads, and a spent token
+  reads `Unread`, never `No`.
 
 ### SDK
 - `mycelium_sdk::rule` gains `perceive_family`, `Frames` and
