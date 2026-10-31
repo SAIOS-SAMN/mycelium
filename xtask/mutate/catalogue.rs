@@ -109,8 +109,16 @@ pub const CATALOGUE: &[Mutant] = &[
     Mutant {
         law: "law 2: a task's identity is never formed with a train pair skipped (MU-DERIVATIONS D3.2)",
         file: "src/server/registry.rs",
-        before: "refine_delta(a, b, &mut stroke) else {\n            return None;\n        };",
-        after: "refine_delta(a, b, &mut stroke) else {\n            continue;\n        };",
+        before: "Enclosed::of(g) else {\n                return None;\n            };",
+        after: "Enclosed::of(g) else {\n                continue;\n            };",
+        target: &["--lib"],
+        filter: "server::tests::registry::task_address",
+    },
+    Mutant {
+        law: "law 2: a train pair's member is both frames' full content (MU-DERIVATIONS D3.2, O3)",
+        file: "src/server/registry.rs",
+        before: "        for g in [a, b] {\n            let Ok(frame)",
+        after: "        for g in [b] {\n            let Ok(frame)",
         target: &["--lib"],
         filter: "server::tests::registry::task_address",
     },

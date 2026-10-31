@@ -4,7 +4,7 @@
 //! named by the listing identity of its train pairs and test inputs; the
 //! first verified solve takes the bounty and every replay the floor.
 
-use crate::arc::{refine_delta, Grid, Task};
+use crate::arc::{Grid, Task};
 use crate::network::nerve::Keyed;
 use crate::transducer::address::Address;
 
@@ -34,8 +34,8 @@ pub struct TaskRegistry {
     /// (citation, the task, state) — append-only, content-addressed. The
     /// task's full content address ([`task_address`]) is never held here:
     /// it is recomputed losslessly from the task it names, where a reader
-    /// needs its coordinates, and a 29×29 → 30×30 pair makes it megabytes
-    /// (an index copies the address it is keyed by).
+    /// needs its coordinates, and a task of busy frames makes it tens of
+    /// kilobytes (an index copies the address it is keyed by).
     tasks: Vec<(TaskCitation, Task, TaskState)>,
     /// 78.146, wire v1.2 — each task's CITATION, the 32 bytes that name it
     /// on every wire, to its position. Dispatch still walks the Vec;
@@ -57,38 +57,31 @@ pub struct TaskRegistry {
     routes: Keyed<crate::server::route::TaskRoutes>,
 }
 
-/// The boundary-root digest: identity from CONTENT — the train coboundaries
-/// (refined, so frames are part of identity) and the test inputs.
+/// A TASK'S IDENTITY IS ITS CONTENT (law 2): each train pair as BOTH
+/// frames' full content — the four periods and every band of each frame,
+/// its bodies' boundary records (`transduce::Enclosed::put_content`) — and
+/// each test input's painted chain. Two tasks that differ in any pair, by
+/// one site or by one period, are two tasks (MU-DERIVATIONS D3.2, O3): the
+/// pair's coboundary is no longer the member, because two pairs with one
+/// change on different ground, or one change read at different periods,
+/// are different content. Lossless: the bands partition each frame.
 ///
-/// Cut A persisted registries keyed the old digest; those ids are
-/// unreachable under this M2 form (listing keys of each train pair plus
-/// the test-input chain address). Cut B recuts from genesis — overlay of
-/// a Cut A snapshot is a miss, not a restore.
-/// `None` where a chain of this task has no A5 form. A task whose members
-/// cannot be addressed has no identity, and skipping one would give two
-/// different tasks one id (law 2).
-///
-/// `None` likewise where a train pair has no common refinement (an empty or
-/// ragged grid, or a need past `usize`): the identity is never formed with a
-/// member skipped. Each pair is refined under the stroke its own extents
-/// need (`refine::need_of`, 78.111), so no pair is refused for a stroke
-/// sized for something else and no lcm is capped (MU-DERIVATIONS D3.2).
+/// `None` where a member has no address: a train frame that is empty or
+/// ragged has no enclosure, and a test input chain with no A5 form has no
+/// address. Skipping one would give two different tasks one id (law 2).
+/// Nothing is refined and no stroke is drawn: the content is read at the
+/// sensor once.
 pub fn task_address(task: &Task) -> Option<Address> {
     let mut buf = vec![crate::transducer::address::TAG_TASK];
     for (a, b) in &task.train {
-        let mut stroke = crate::physics::Physics::default().stroke_n(
-            match crate::transducer::family::refine::need_of(a, b) {
-                Some(n) => n,
-                None => 0,
-            },
-        );
-        let Ok(crate::arc::Refined { delta: chain, frame, .. }) = refine_delta(a, b, &mut stroke) else {
-            return None;
-        };
-        crate::transducer::address::put_key_bytes(
-            &mut buf,
-            &crate::transducer::element::listing_key(&chain, &frame)?,
-        );
+        let mut pair = Vec::new();
+        for g in [a, b] {
+            let Ok(frame) = crate::transducer::family::transduce::Enclosed::of(g) else {
+                return None;
+            };
+            frame.put_content(&mut pair);
+        }
+        crate::transducer::address::put_key_bytes(&mut buf, &pair);
     }
     for (x, _) in &task.test {
         let chain: Vec<(i64, i64, u8, u8)> = x
