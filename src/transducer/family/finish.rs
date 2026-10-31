@@ -23,9 +23,20 @@ pub fn assignment_key(a: &crate::transducer::sentence::Acting) -> Vec<u8> {
 }
 
 /// The germ of one pair: what the input carries onto the output, as the
-/// links of the change. `None` for a pair with no scene.
-pub(crate) fn germ_of_pair(a: &Grid, b: &Grid) -> Option<crate::transducer::element::PlacedChain> {
-    let cochain = crate::transducer::family::refine::refine_delta(a, b)?;
+/// links of the change, on the pair's common refinement under the
+/// extraction's stroke. A pair the stroke does not refine (or that has no
+/// extent) is still a remainder (rule 7): its germ is the residue of the two
+/// grids read site for site (`speak::residual_of`), as the deflation
+/// measures an unrefined pair. `None` for a pair with no scene.
+pub(crate) fn germ_of_pair(
+    a: &Grid,
+    b: &Grid,
+    budget: &mut crate::physics::Budget,
+) -> Option<crate::transducer::element::PlacedChain> {
+    let cochain = match crate::transducer::family::refine::refine_delta(a, b, budget) {
+        Ok(chain) => chain,
+        Err(_) => super::speak::residual_of(Some(a), b),
+    };
     if cochain.is_empty() {
         return None;
     }
@@ -64,19 +75,36 @@ pub fn extraction_spend(family: &[(Grid, Grid)], frames: &super::perceive::Frame
         let next = n.saturating_add(reads);
         n = next;
     }
+    // THE REFINEMENTS (MU-DERIVATIONS D3.2): a pair of unequal extents is
+    // read on its common refinement, whose need is read off its four extents
+    // (`refine::need`), never capped. A site-for-site pair reads its own
+    // cells, already counted above.
+    for (a, b) in family {
+        let Ok(refn) = super::refine::of_grids(a, b) else { continue };
+        if refn.is_trivial() {
+            continue;
+        }
+        #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): the refinement needs of resident pairs are each a usize (`refine::need`, checked) and their sum cannot pass a 64-bit usize")]
+        let next = n.saturating_add(refn.need);
+        n = next;
+    }
     n
 }
 
 /// The tail of an extraction: the unreached frames ride the rule as the
 /// demands of 50.5, and the form is closed out with its depth, orbits and
 /// ratio. Its sections are its members' frames, already on it (AT1).
+/// Each unreached pair is refined under the extraction's stroke, which
+/// [`extraction_spend`] sized for it; one the stroke does not refine stands
+/// as the demand its site-for-site residue is ([`germ_of_pair`], rule 7).
 pub(crate) fn finish(
     mut form: Form,
     scale: ((usize, usize), (usize, usize)),
     unreached: &[(Grid, Grid)],
+    budget: &mut crate::physics::Budget,
 ) -> Option<SentenceRule> {
     for (a, b) in unreached {
-        let Some(germ) = germ_of_pair(a, b) else { continue };
+        let Some(germ) = germ_of_pair(a, b, budget) else { continue };
         let chart = crate::transducer::stalk::invariant(&germ);
         let multiplicity = crate::transducer::sentence::pieces(&germ).len();
         let kind = crate::transducer::sentence::Demand::Source { multiplicity };

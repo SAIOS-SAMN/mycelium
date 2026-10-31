@@ -90,8 +90,10 @@ let family = vec![(
     digits(&["1100", "0000"]),
     digits(&["0011", "0000"]),
 )];
+let need = crate::transducer::family::refine::need_of(&family[0].0, &family[0].1).expect("both extents stand");
 let crate::arc::Refined { delta: chain, frame, .. } =
-    crate::arc::refine_delta(&family[0].0, &family[0].1).expect("coboundary");
+    crate::arc::refine_delta(&family[0].0, &family[0].1, &mut crate::physics::Physics::default().stroke_n(need))
+        .expect("coboundary");
 assert!(k.intake(&chain, &frame), "the listing stands");
 let listing = k.pending.scoped().next().expect("listed").1.address();
 let task = [7u8; 32];
@@ -136,7 +138,10 @@ let spoken = crate::transducer::family::mint_sentence(&rule, &family, &crate::tr
 assert!(spoken.is_sentence());
 let mut expect = [0u64; 4];
 for (x, y) in &family {
-    let chain = crate::arc::refine_delta(x, y).expect("coboundary").delta;
+    let need = crate::transducer::family::refine::need_of(x, y).expect("both extents stand");
+    let chain = crate::arc::refine_delta(x, y, &mut crate::physics::Physics::default().stroke_n(need))
+        .expect("coboundary")
+        .delta;
     let lanes = crate::transducer::element::measure_lanes(&chain);
     for i in 0..4 {
         #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): the fixture family's chain measures cannot pass u64")]

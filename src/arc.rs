@@ -528,19 +528,21 @@ pub struct Refined {
 /// ρ⁻¹ onto K_out, then the ordinary per-site difference. Returns (chain on
 /// K_out, the pulled-back input — the scene π evaluates over, the measured
 /// frame). Total for all dims ≥ 1; equal frames yield exactly the planar
-/// delta. Support ≤ |K_out|.
-pub fn refine_delta(a: &Grid, b: &Grid) -> Option<Refined> {
-    let (hi, wi) = (a.len(), grid_width(a));
-    let (ho, wo) = (b.len(), grid_width(b));
-    if hi == 0 || wi == 0 || ho == 0 || wo == 0 {
-        return None;
-    }
-    if a.iter().any(|r| r.len() != wi) || b.iter().any(|r| r.len() != wo) {
-        return None; // ragged grids carry no complex
-    }
-    let refn = crate::transducer::family::refine::CommonRefinement::of(hi, wi, ho, wo)?;
-    let (pulled_back, _) = refn.refined(a, b)?;
-    let chain = refn.bipartite_cochain(a, b)?;
-    Some(Refined { delta: chain, pulled_back, frame: Frame::new(hi, wi, ho, wo) })
+/// delta. Support ≤ |K_lcm|.
+///
+/// Under the caller's stroke, sized by
+/// [`crate::transducer::family::refine::need_of`]: the cochain and the
+/// pulled-back input together spend at most that need, and a stroke that
+/// ends first refuses `Spent { need }` with nothing returned.
+pub fn refine_delta(
+    a: &Grid,
+    b: &Grid,
+    budget: &mut crate::physics::Budget,
+) -> Result<Refined, crate::transducer::family::refine::Unrefined> {
+    let refn = crate::transducer::family::refine::of_grids(a, b)?;
+    let pulled_back = refn.pulled_back(a, budget)?;
+    let chain = refn.bipartite_cochain(a, b, budget)?;
+    let (hi, wi, ho, wo) = (a.len(), grid_width(a), b.len(), grid_width(b));
+    Ok(Refined { delta: chain, pulled_back, frame: Frame::new(hi, wi, ho, wo) })
 }
 

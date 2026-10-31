@@ -625,8 +625,15 @@ pub(crate) fn list_task(
         h.run(|k, _| k.bind_task_family(tid, task.train.clone()));
     }
     for (a, b) in &task.train {
-        let Some(mycelium::arc::Refined { delta: mut chain, frame, .. }) =
-            mycelium::arc::refine_delta(a, b)
+        // The stroke the pair's own extents need (78.111): no lcm is capped.
+        let mut stroke = mycelium::physics::Physics::default().stroke_n(
+            match mycelium::transducer::family::refine::need_of(a, b) {
+                Some(n) => n,
+                None => 0,
+            },
+        );
+        let Ok(mycelium::arc::Refined { delta: mut chain, frame, .. }) =
+            mycelium::arc::refine_delta(a, b, &mut stroke)
         else {
             continue;
         };

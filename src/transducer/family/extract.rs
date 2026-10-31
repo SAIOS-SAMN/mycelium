@@ -69,7 +69,7 @@ fn extract_rule_on_ground(
             Ok(clauses) => {
                 crate::observe::note_mind(|m| m.acts[0] += 1);
                 let form = Form { elements: lower_all(&clauses)?, ..Form::default() };
-                finish(form, ((1, 1), (1, 1)), &[])
+                finish(form, ((1, 1), (1, 1)), &[], budget)
             }
             Err(u) => {
                 crate::observe::note_mind(|m| m.acts[u.slot()] += 1);
@@ -131,7 +131,7 @@ fn extract_rule_on_ground(
                 }
                 // One read per held form spoken over the family.
                 if !budget.spend() {
-                    return finish(form, scale, &unreached_pairs);
+                    return finish(form, scale, &unreached_pairs, budget);
                 }
                 let mut key = e.address().as_bytes().to_vec();
                 crate::transducer::address::put_key_bytes(&mut key, &placement_key);
@@ -193,7 +193,7 @@ fn extract_rule_on_ground(
     // 6. Contact: placement differs across frames, the ring to the Frame is
     // one value, and the word orbits (22).
     if !contact::contact_named_vertices(&mut form, family, &varying, budget) {
-        return finish(form, scale, &unreached_pairs);
+        return finish(form, scale, &unreached_pairs, budget);
     }
     trace::trace_carriage("extract/6 contact", &measured, &form);
     trace::trace("extract/7 coherence", trace::Wrote::Nothing, Some(budget));
@@ -202,7 +202,7 @@ fn extract_rule_on_ground(
     // derived from its ends and the pivot's factors, so there is no gauge
     // for a solve to choose and the orbits a form holds are its content.
     trace::trace("extract/8 finish", trace::Wrote::Nothing, Some(budget));
-    let rule = finish(form, scale, &unreached_pairs)?;
+    let rule = finish(form, scale, &unreached_pairs, budget)?;
     Some(stated(rule, family, crystal, budget))
 }
 

@@ -15,8 +15,69 @@
 //! and each output site an `s_out` block, both integer. On `K_lcm` the two
 //! grids are site-for-site and the transition is the ordinary chain the rest
 //! of the engine already reads.
+//!
+//! NO CAP ON THE LCM (78.43(2), MU-DERIVATIONS D3.2): `29 → 30` is the exact
+//! ratio `30/29` and has a finite refinement. What scales with the lcm is
+//! what is WRITTEN, so the builders spend one read per run pair compared and
+//! one per cell written, and the stroke a refinement needs is read off the
+//! four extents before any cell ([`need`]), as a construction's is read off
+//! its residue (78.111).
 
 use crate::transducer::family::perceive::Grid;
+
+/// WHY A PAIR HAS NO COMMON REFINEMENT, named. A refusal returns no chain
+/// and no grid: a refinement is atomic by rollback of its result (the rule
+/// 10 note in `physics/budget.rs`), never a truncated chain.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Unrefined {
+    /// A grid with no rows or no columns embeds in nothing.
+    Empty,
+    /// A grid whose rows disagree in length is not the extent it claims.
+    Ragged,
+    /// The stroke ended before the refinement did; `need` is the stroke the
+    /// four extents name ([`need`]).
+    Spent { need: usize },
+    /// The refinement's lcm or its need passes `usize`: no stroke this
+    /// carrier writes can name it.
+    Unbounded,
+}
+
+/// THE RUNS OF ONE AXIS, counted: the subdivision boundaries of both grids
+/// in `(0, L)` are the multiples of `L/a` and of `L/b`, `(a − 1) + (b − 1)`
+/// of them less the `gcd(a, b) − 1` they share, and the runs are one more:
+/// `R(a, b) = a + b − gcd(a, b)`. `None` past `usize`.
+pub fn runs_count(a: usize, b: usize) -> Option<usize> {
+    a.checked_add(b)?.checked_sub(num_integer::gcd(a, b))
+}
+
+/// `lcm(a, b)`, checked: `None` on a zero extent or past `usize`.
+fn lcm_of(a: usize, b: usize) -> Option<usize> {
+    if a == 0 || b == 0 {
+        return None;
+    }
+    a.checked_div(num_integer::gcd(a, b))?.checked_mul(b)
+}
+
+/// THE STROKE A REFINEMENT NEEDS, read off the four extents before any cell
+/// (MU-DERIVATIONS D3.2): `R_h·R_w` run pairs compared, and at most
+/// `L_h·L_w` cells written by the cochain and `L_h·L_w` by the pulled-back
+/// grid, so `need = R_h·R_w + 2·L_h·L_w` bounds every spend a refinement
+/// makes. `None` on a zero extent (no refinement, nothing to need) or past
+/// `usize`.
+pub fn need(h_in: usize, w_in: usize, h_out: usize, w_out: usize) -> Option<usize> {
+    let sites = lcm_of(h_in, h_out)?.checked_mul(lcm_of(w_in, w_out)?)?;
+    let compared = runs_count(h_in, h_out)?.checked_mul(runs_count(w_in, w_out)?)?;
+    compared.checked_add(sites.checked_mul(2)?)
+}
+
+/// THE NEED OF A PAIR OF GRIDS: [`need`] on the extents both grids claim.
+/// `None` where either has no extent (empty or ragged): the refinement
+/// refuses it by name before any read.
+pub fn need_of(grid_in: &Grid, grid_out: &Grid) -> Option<usize> {
+    let (h_in, w_in) = extent(grid_in)?;
+    let (h_out, w_out) = extent(grid_out)?;
+    need(h_in, w_in, h_out, w_out)
+}
 
 /// The embedding of two grids in the grids' common refinement. All four scales
 /// are exact integers — `lcm(a, b) / a` divides by construction — so nothing
@@ -29,40 +90,36 @@ pub struct CommonRefinement {
     pub scale_in: (usize, usize),
     /// Rows and columns of `K_lcm` per output site.
     pub scale_out: (usize, usize),
+    /// The stroke this refinement needs ([`need`]), read once at `of`.
+    pub need: usize,
 }
 
-/// THE MAXIMUM SITES IN A COMMON REFINEMENT COMPLEX (rule 10).
-/// Grids in the ARC sensor plane are at most 30×30. Real geometric
-/// homotheties (e.g. 2:3, 3:4, 1:2) have lcm ≤ 60 and |K_lcm| ≤ 3600.
-/// Incommensurate frame transitions (e.g. 29×30 with lcm = 870 and
-/// 756,900 coordinates) are not refinements on this base and refuse
-/// (rule 11) rather than exploding memory and economic pay.
-pub const MAX_LCM_AXIS: usize = 60;
-pub const MAX_LCM_SITES: usize = 3600;
-
 impl CommonRefinement {
-    /// `None` on an empty extent: a grid with no rows or no columns embeds in
-    /// nothing, and a refinement of it would be a complex invented for a
-    /// scene that is not there (rule 11).
-    ///
-    /// Also `None` when the least common multiple exceeds `MAX_LCM_AXIS` or
-    /// `MAX_LCM_SITES`: incommensurate grids have no finite common refinement
-    /// on this base and refuse under rule 10.
-    pub fn of(h_in: usize, w_in: usize, h_out: usize, w_out: usize) -> Option<CommonRefinement> {
+    /// `Empty` on an empty extent: a grid with no rows or no columns embeds
+    /// in nothing, and a refinement of it would be a complex invented for a
+    /// scene that is not there (rule 11). `Unbounded` where the lcm or the
+    /// need passes `usize`. No other refusal: the lcm is not capped.
+    pub fn of(h_in: usize, w_in: usize, h_out: usize, w_out: usize) -> Result<CommonRefinement, Unrefined> {
         if h_in == 0 || w_in == 0 || h_out == 0 || w_out == 0 {
-            return None;
+            return Err(Unrefined::Empty);
         }
-        let lcm_h = num_integer::lcm(h_in, h_out);
-        let lcm_w = num_integer::lcm(w_in, w_out);
-        if lcm_h > MAX_LCM_AXIS || lcm_w > MAX_LCM_AXIS || lcm_h * lcm_w > MAX_LCM_SITES {
-            return None;
-        }
-        Some(CommonRefinement {
+        let (Some(lcm_h), Some(lcm_w), Some(need)) =
+            (lcm_of(h_in, h_out), lcm_of(w_in, w_out), need(h_in, w_in, h_out, w_out))
+        else {
+            return Err(Unrefined::Unbounded);
+        };
+        Ok(CommonRefinement {
             lcm_h,
             lcm_w,
             scale_in: (lcm_h / h_in, lcm_w / w_in),
             scale_out: (lcm_h / h_out, lcm_w / w_out),
+            need,
         })
+    }
+
+    /// The refusal of a spent stroke, naming the stroke the extents need.
+    fn spent(&self) -> Unrefined {
+        Unrefined::Spent { need: self.need }
     }
 
     /// THE FRAME RATIO the refinement measures, as a pair of exact rationals
@@ -74,7 +131,7 @@ impl CommonRefinement {
         h_out: usize,
         w_out: usize,
     ) -> Option<(num_rational::BigRational, num_rational::BigRational)> {
-        Self::of(h_in, w_in, h_out, w_out)?;
+        Self::of(h_in, w_in, h_out, w_out).ok()?;
         let q = |n: usize, d: usize| {
             num_rational::BigRational::new(
                 num_bigint::BigInt::from(n),
@@ -129,25 +186,33 @@ impl CommonRefinement {
     /// reaches the rest of the engine as an ordinary chain and the curvature
     /// between the frames survives perception.
     ///
-    /// `None` where either grid is ragged: a row shorter than the frame says
-    /// the grid is not the extent it claims, and reading a hue past it would
-    /// be inventing one (rule 11).
+    /// `Ragged` where either grid is ragged: a row shorter than the frame
+    /// says the grid is not the extent it claims, and reading a hue past it
+    /// would be inventing one (rule 11).
+    ///
+    /// METERED, NEVER CAPPED (rule 10): one read per run pair compared and
+    /// one per cell written, at most `R_h·R_w + L_h·L_w`; a stroke that ends
+    /// first refuses `Spent { need }` and returns no chain.
     pub fn bipartite_cochain(
         &self,
         grid_in: &Grid,
         grid_out: &Grid,
-    ) -> Option<Vec<(i64, i64, u8, u8)>> {
+        budget: &mut crate::physics::Budget,
+    ) -> Result<Vec<(i64, i64, u8, u8)>, Unrefined> {
         let (s_r_in, s_c_in) = self.scale_in;
         let (s_r_out, s_c_out) = self.scale_out;
         let rows = Self::runs(self.lcm_h, s_r_in, s_r_out);
         let cols = Self::runs(self.lcm_w, s_c_in, s_c_out);
         let mut out = Vec::new();
         for &(r0, rn, r_in, r_out) in &rows {
-            let before_row = grid_in.get(r_in)?;
-            let after_row = grid_out.get(r_out)?;
+            let before_row = grid_in.get(r_in).ok_or(Unrefined::Ragged)?;
+            let after_row = grid_out.get(r_out).ok_or(Unrefined::Ragged)?;
             for &(c0, cn, c_in, c_out) in &cols {
-                let before = *before_row.get(c_in)?;
-                let after = *after_row.get(c_out)?;
+                if !budget.spend() {
+                    return Err(self.spent());
+                }
+                let before = *before_row.get(c_in).ok_or(Unrefined::Ragged)?;
+                let after = *after_row.get(c_out).ok_or(Unrefined::Ragged)?;
                 if before == after {
                     continue;
                 }
@@ -157,12 +222,15 @@ impl CommonRefinement {
                 // compression of what it says.
                 for r in r0..r0 + rn {
                     for c in c0..c0 + cn {
+                        if !budget.spend() {
+                            return Err(self.spent());
+                        }
                         out.push((r as i64, c as i64, before, after));
                     }
                 }
             }
         }
-        Some(out)
+        Ok(out)
     }
 }
 
@@ -174,52 +242,93 @@ impl CommonRefinement {
 /// a row taken by position is a choice about arrival order (rule 15), and
 /// here the question is whether they AGREE.
 pub fn extent(g: &Grid) -> Option<(usize, usize)> {
+    extent_or_refusal(g).ok()
+}
+
+/// [`extent`] with its refusal named: `Ragged` where the rows disagree,
+/// `Empty` where there is no row or no column.
+fn extent_or_refusal(g: &Grid) -> Result<(usize, usize), Unrefined> {
     let mut w: Option<usize> = None;
     for row in g {
         match w {
             None => w = Some(row.len()),
             Some(n) if n == row.len() => {}
-            Some(_) => return None,
+            Some(_) => return Err(Unrefined::Ragged),
         }
     }
-    let w = w?;
-    (!g.is_empty() && w > 0).then_some((g.len(), w))
+    match w {
+        Some(w) if w > 0 => Ok((g.len(), w)),
+        _ => Err(Unrefined::Empty),
+    }
+}
+
+/// THE COMMON REFINEMENT OF TWO GRIDS, read off the extents both claim:
+/// `Ragged` or `Empty` named before any read.
+pub fn of_grids(grid_in: &Grid, grid_out: &Grid) -> Result<CommonRefinement, Unrefined> {
+    let (hi, wi) = extent_or_refusal(grid_in)?;
+    let (ho, wo) = extent_or_refusal(grid_out)?;
+    CommonRefinement::of(hi, wi, ho, wo)
 }
 
 impl CommonRefinement {
+    /// ONE GRID ON `K_lcm` at its scale, one read per cell written; a stroke
+    /// that ends first refuses `Spent { need }` and returns no grid.
+    fn lift(
+        &self,
+        g: &Grid,
+        (sr, sc): (usize, usize),
+        budget: &mut crate::physics::Budget,
+    ) -> Result<Grid, Unrefined> {
+        let mut out: Grid = Vec::with_capacity(self.lcm_h);
+        for r in 0..self.lcm_h {
+            let src = g.get(r / sr).ok_or(Unrefined::Ragged)?;
+            let mut row = Vec::with_capacity(self.lcm_w);
+            for c in 0..self.lcm_w {
+                if !budget.spend() {
+                    return Err(self.spent());
+                }
+                row.push(*src.get(c / sc).ok_or(Unrefined::Ragged)?);
+            }
+            out.push(row);
+        }
+        Ok(out)
+    }
+
+    /// THE INPUT PULLED BACK ONTO `K_lcm`: [`Self::refined`]'s input half,
+    /// `L_h·L_w` reads.
+    pub fn pulled_back(&self, grid_in: &Grid, budget: &mut crate::physics::Budget) -> Result<Grid, Unrefined> {
+        self.lift(grid_in, self.scale_in, budget)
+    }
+
     /// BOTH GRIDS ON `K_lcm`, by exact block replication: an input site
     /// covers `s_in` rows and columns of the refinement and an output site
     /// covers `s_out`, so every coordinate of `K_lcm` takes the hue of the
     /// site whose block contains it. Nothing is sampled, averaged or
-    /// rounded — the division is exact by construction.
+    /// rounded — the division is exact by construction. One read per cell
+    /// written, `2·L_h·L_w`.
     ///
     /// This is what lets the refinement change nothing downstream: the pair
     /// that comes back is site-for-site, so the scene reading and everything
     /// after it read an ordinary equal-extent pair.
-    pub fn refined(&self, grid_in: &Grid, grid_out: &Grid) -> Option<(Grid, Grid)> {
-        let lift = |g: &Grid, (sr, sc): (usize, usize)| -> Option<Grid> {
-            let mut out: Grid = Vec::with_capacity(self.lcm_h);
-            for r in 0..self.lcm_h {
-                let src = g.get(r / sr)?;
-                let mut row = Vec::with_capacity(self.lcm_w);
-                for c in 0..self.lcm_w {
-                    row.push(*src.get(c / sc)?);
-                }
-                out.push(row);
-            }
-            Some(out)
-        };
-        Some((lift(grid_in, self.scale_in)?, lift(grid_out, self.scale_out)?))
+    pub fn refined(
+        &self,
+        grid_in: &Grid,
+        grid_out: &Grid,
+        budget: &mut crate::physics::Budget,
+    ) -> Result<(Grid, Grid), Unrefined> {
+        Ok((self.lift(grid_in, self.scale_in, budget)?, self.lift(grid_out, self.scale_out, budget)?))
     }
 }
 
 /// THE EXACT COBOUNDARY OF A PAIR: both grids embedded in the grids' common
-/// refinement K_lcm without sampling, rounding or interpolation.
-pub fn refine_delta(grid_in: &Grid, grid_out: &Grid) -> Option<Vec<(i64, i64, u8, u8)>> {
-    let (hi, wi) = extent(grid_in)?;
-    let (ho, wo) = extent(grid_out)?;
-    let refn = CommonRefinement::of(hi, wi, ho, wo)?;
-    refn.bipartite_cochain(grid_in, grid_out)
+/// refinement K_lcm without sampling, rounding or interpolation, under the
+/// caller's stroke (sized by [`need_of`]).
+pub fn refine_delta(
+    grid_in: &Grid,
+    grid_out: &Grid,
+    budget: &mut crate::physics::Budget,
+) -> Result<Vec<(i64, i64, u8, u8)>, Unrefined> {
+    of_grids(grid_in, grid_out)?.bipartite_cochain(grid_in, grid_out, budget)
 }
 
 /// THE FAMILY FRAME RATIO: the pair of exact rational scales (rh, rw) that

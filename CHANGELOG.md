@@ -6,6 +6,26 @@ such change is named here.
 
 ## Unreleased
 
+### Layout changes
+- Task addresses: a task with a pair past the former lcm cap (axis 60,
+  sites 3600) now has an address over every pair; such tasks' addresses
+  change. A court state written before this release is adopted by a recut
+  (ROADMAP track 6).
+
+### Cognition
+- The common refinement is metered, never capped (MU-DERIVATIONS D3.2):
+  `MAX_LCM_AXIS` and `MAX_LCM_SITES` are deleted. `refine::need` reads the
+  stroke a refinement needs off the four extents,
+  `R_h·R_w + 2·L_h·L_w` with `R(a, b) = a + b − gcd(a, b)`; the cochain
+  and the pulled-back grids take `&mut Budget` and refuse by name
+  (`Unrefined::{Empty, Ragged, Spent { need }, Unbounded}`), never with a
+  partial chain. Every caller sizes its stroke from `need_of`, so a
+  29×29 → 30×30 pair refines. `task_address` refuses (`None`) a task with
+  a pair that has no refinement rather than addressing the remaining
+  pairs (law 2); `extraction_spend` adds each non-trivial pair's need and
+  `finish` stands an unrefined pair as a demand (rule 7). The mutation
+  audit catalogue gains a mutant on `task_address`'s refusal arm.
+
 ### SDK
 - The repository is a Cargo workspace: `mycelium`, `forms` and the new
   `mycelium-sdk` (`sdk/`), under one lock file (`forms/Cargo.lock` is

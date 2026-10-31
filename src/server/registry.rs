@@ -59,15 +59,28 @@ pub struct TaskRegistry {
 /// `None` where a chain of this task has no A5 form. A task whose members
 /// cannot be addressed has no identity, and skipping one would give two
 /// different tasks one id (law 2).
+///
+/// `None` likewise where a train pair has no common refinement (an empty or
+/// ragged grid, or a need past `usize`): the identity is never formed with a
+/// member skipped. Each pair is refined under the stroke its own extents
+/// need (`refine::need_of`, 78.111), so no pair is refused for a stroke
+/// sized for something else and no lcm is capped (MU-DERIVATIONS D3.2).
 pub fn task_address(task: &Task) -> Option<Address> {
     let mut buf = vec![crate::transducer::address::TAG_TASK];
     for (a, b) in &task.train {
-        if let Some(crate::arc::Refined { delta: chain, frame, .. }) = refine_delta(a, b) {
-            crate::transducer::address::put_key_bytes(
-                &mut buf,
-                &crate::transducer::element::listing_key(&chain, &frame)?,
-            );
-        }
+        let mut stroke = crate::physics::Physics::default().stroke_n(
+            match crate::transducer::family::refine::need_of(a, b) {
+                Some(n) => n,
+                None => 0,
+            },
+        );
+        let Ok(crate::arc::Refined { delta: chain, frame, .. }) = refine_delta(a, b, &mut stroke) else {
+            return None;
+        };
+        crate::transducer::address::put_key_bytes(
+            &mut buf,
+            &crate::transducer::element::listing_key(&chain, &frame)?,
+        );
     }
     for (x, _) in &task.test {
         let chain: Vec<(i64, i64, u8, u8)> = x

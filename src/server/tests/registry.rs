@@ -78,6 +78,41 @@ fn overlay_restores_task_wider_than_u16_wall() {
     assert_eq!(reborn.close(&id), Some(Closure::Again), "and the restart does not re-open it");
 }
 
+/// LAW 2 — AN IDENTITY IS NEVER FORMED WITH A MEMBER SKIPPED: a train pair
+/// with no common refinement (a ragged grid) refuses the task's address,
+/// where it was passed over and the task named by its other pairs alone.
+#[test]
+fn task_address_refuses_unrefinable_pair() {
+    let mut task = toy_task();
+    assert!(task_address(&task).is_some(), "every member refines");
+    task.train.push((vec![vec![1, 1], vec![1]], vec![vec![2, 2], vec![2, 2]]));
+    assert!(task_address(&task).is_none(), "a member with no refinement leaves no identity");
+}
+
+/// MU-DERIVATIONS D3.2 — TWO TASKS DIFFERING ONLY IN A 29×29 → 30×30 PAIR
+/// ARE TWO TASKS. The pair's lcm is 870 per axis, past the former cap of
+/// 60, so it was skipped and both tasks were named by their other pairs:
+/// one address for two contents. It now refines, under the stroke its
+/// extents need, and the pair is a member of each address.
+#[test]
+fn task_address_separates_tasks_differing_in_incommensurate_pair() {
+    let coprime = |hue: u8| -> (Grid, Grid) {
+        let mut out: Grid = vec![vec![1; 30]; 30];
+        out[0][0] = hue;
+        (vec![vec![1; 29]; 29], out)
+    };
+    let with = |hue: u8| {
+        let mut task = toy_task();
+        task.train.push(coprime(hue));
+        task
+    };
+    let two = task_address(&with(2)).expect("a 29×29 → 30×30 pair refines");
+    let three = task_address(&with(3)).expect("a 29×29 → 30×30 pair refines");
+    assert!(two != three, "the tasks differ in one member, so their addresses do");
+    let without = task_address(&toy_task()).expect("the toy task refines");
+    assert!(two != without, "the pair is a member of the address, never passed over");
+}
+
 /// Dispatch rotates over the unsolved book and dries up when settled.
 #[test]
 fn dispatch_rotates_and_dries_up() {

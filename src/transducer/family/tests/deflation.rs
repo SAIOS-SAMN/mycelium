@@ -21,7 +21,13 @@ assert!(
 );
 assert_ne!(pay, [0; 4], "exact speak measures the closed delta");
 let before = element::measure_lanes(
-    &crate::transducer::family::refine::refine_delta(&x, &y).expect("delta"),
+    &crate::transducer::family::refine::refine_delta(
+        &x,
+        &y,
+        &mut crate::physics::Physics::default()
+            .stroke_n(crate::transducer::family::refine::need_of(&x, &y).expect("both extents stand")),
+    )
+    .expect("delta"),
 );
 assert_eq!(pay, before, "deflation of an empty remainder is the closed delta");
 // H1, 70.4 — `"23"` is ONE body of two hues once hue moves to the fibre,

@@ -7,7 +7,7 @@
 > **Components:** every numeric item and literal site under `src/`, `forms/src/` and `xtask/`; the register of open physics (`src/physics/axioms/founding.rs`) and its gate (`xtask/lint/`).
 
 **Status:** specification, version 1 (2026-10-31). Every entry is
-**Specified**; none is **Built**. Each entry states the number as it
+**Specified** but D3.2, which is **Built**. Each entry states the number as it
 stands, what it decides, why it is underived, a derivation exact over ℤ or
 ℚ (or, where the documents and the code do not settle one, the candidates
 and the reading that decides between them), and the scope of the change.
@@ -113,7 +113,7 @@ code locate a site when lines move.
 | D2.6 | calibration fallbacks | `physics/calibration.rs`, `mycelium-server/transport.rs` | liveness, scale | Medium | each arm a typed state, refused by name | yes | M | 14 |
 | D2.7 | `reserve_max()` as rtt hint | five server CLI sites | liveness | Medium | the measured floor of the page loop; the first ask a state | yes | S–M | 5 |
 | D3.1 | `stroke_n(1 << 16)` | `client/sdk/rule.rs:402` | cognition (rule minting) | Medium | the stroke is `modes_need(linear)` (78.111) | yes | S | 7 |
-| D3.2 | `MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600` | `transducer/family/refine.rs:40–41` | task identity, μ | High | metered by `need = R_h·R_w + 2·L_h·L_w`, or the run complex | yes | M/L | 7 |
+| D3.2 | `MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600` | `transducer/family/refine.rs:40–41` | task identity, μ | High | metered by `need = R_h·R_w + 2·L_h·L_w` (**Built**, O1 (a)) | no | M | 7 |
 | D3.3 | `truncate(32)` | `transducer/anchor/derive.rs:182` | court admission (π*) | High | keep every carrying term, keyed; metered | yes | M | 7 |
 | D3.4 | `in_sites.len() <= 400` | `transducer/family/confluence.rs:162` | an instrument's reading | Low | `2·m` reads, keyed, tri-state | no | S | 10 |
 | D3.5 | `percepts_since >= 2` | `client/sdk/seat_mind/mind.rs:284` | seat liveness, learning | Medium | distance along the house's sequence `b − b₀ ≥ 2` | yes | S | 10 |
@@ -140,7 +140,7 @@ entry's derivation and needs no ruling unless marked.
 |---|---|---|---|
 | 1 | `connection_chart` indexes `image[f as usize]` with `f` read from a word's description bytes and no bound check; a hue `f ≥ PALETTE` panics, an abort in cognition (MU-STANDARDS §2.4). The one caller, `invariant_of`, reaches it only after `is_connection` (whose `gauge_is_perm` refuses such a hue), so the panic was latent; **fixed**: the chart refuses the hue itself | D4.7 | Medium (latent) |
 | 2 | `encode_receipts_reply` admits the head receipt against `BODY_BUDGET`, not the caller's `budget`; with the 8-byte reading height appended, a lone receipt within 12 bytes of the budget builds a body `Frame::encode` refuses, and the asker reads silence on that receipt every time | D1.3 | Medium |
-| 3 | A pair refused by `MAX_LCM_*` makes `task_address` skip it (two tasks one identity, law 2) and `finish` drop it (remainders discarded, rule 7) | D3.2 | High |
+| 3 | A pair refused by `MAX_LCM_*` makes `task_address` skip it (two tasks one identity, law 2) and `finish` drop it (remainders discarded, rule 7); **fixed**: the cap is gone, every pair refines under the stroke its extents need, `task_address` refuses a pair with no refinement and `finish` stands it as a demand | D3.2 | High |
 | 4 | `truncate(32)` can cut a term common to every evidence, so `derive_pi` binds another term or returns `None`: π* changes with the cut | D3.3 | High |
 | 5 | `Confluence::reproduces` reads `false` for a check left unread past 400 sites: an unread check written as a refutation | D3.4 | Low |
 | 6 | Six `tell_peer` sites bypass a peer's measured deadline; the rtt window is keyed by peer id at one site and by endpoint at another; five CLI sites pass `reserve_max()` as a round-trip hint | D4.1, D2.7 | Medium |
@@ -1639,6 +1639,27 @@ stroke minted that is not the residue's).
 
 ### D3.2 `MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600` — the common refinement refused by a cap
 
+**Status.** **Built**, by O1 (a). Both constants are deleted.
+`refine::need(h_in, w_in, h_out, w_out)` is the closed form below, checked
+over `usize`; `refine::need_of` reads it off two grids. `CommonRefinement::of`
+refuses only `Unrefined::Empty` (and `Unbounded`, where the lcm or the need
+passes `usize`); `bipartite_cochain`, `pulled_back` and `refined` take
+`&mut Budget` and refuse `Ragged` or `Spent { need }` with nothing
+returned. Every caller sizes its stroke from `need_of` (the D3.1 / 78.111
+pattern); the extraction's stroke adds `need` per non-trivial pair
+(`extraction_spend`) and `finish` refines its unreached pairs from it,
+standing a pair it does not refine as the demand its site-for-site residue
+is. `task_address` returns `None` on any `Unrefined`. Tests:
+`transducer::family::tests::refine`
+(`common_refinement_reads_coprime_thirty`,
+`common_refinement_refuses_spent_stroke`, `runs_count_equals_sum_less_gcd`),
+`server::tests::registry` (`task_address_refuses_unrefinable_pair`,
+`task_address_separates_tasks_differing_in_incommensurate_pair`),
+`transducer::family::tests::budget`
+(`extraction_spend_includes_refinement_need`); a mutant on the refusal arm
+of `task_address` in `xtask/mutate/catalogue.rs`. The text below is the
+derivation as specified.
+
 **Site.** `src/transducer/family/refine.rs:40–41`, used at `:57`:
 
 ```rust
@@ -2920,7 +2941,9 @@ Each line names its entry and the reading or ruling that decides it.
     under 78.153b.
 21. **D3.2 O1** — whose token pays a refinement, or the run complex in
     place of the lcm lattice: decided by the corpus count of capped pairs
-    and whether any reader needs unit links.
+    and whether any reader needs unit links. **Ruled (a)** by the
+    operator, before v0.3.0, one ledger break; **Built**. The run complex
+    (c) stays open as a cheaper object, not as a defect.
 22. **D3.3 O1** — whether the court may bind a superposition of anchor
     terms (closes L9a): decided by whether two common terms ever differ on
     a withheld pair in the A9 replay.
@@ -2967,13 +2990,13 @@ is non-substantive and carries no release of its own.
 3. **Entries and phases with no open question blocking them:** D1.2
    Phase A (exact fit by refinement and by meet); D1.3 alignment to
    `B(k)` once O1 is read; D3.2's refusal in `task_address` (law 2) and
-   the demand in `finish`; D4.1's defects (the measured path, one key per
+   the demand in `finish` (**Built**, with D3.2's metering); D4.1's defects (the measured path, one key per
    peer, no reserve as rtt hint) with D2.7's page-loop window; D4.2's fill
    to the frame budget; D4.8's termination parts (a)–(d); D2.6's typed
    arms (`Calibration`, `Stall`, `NonZeroU64`).
 4. **Entries waiting on rulings and readings** (§7): each lands after its
    reading is taken and its ruling recorded: D1.1, D1.2 Phase B, D2.1–D2.3,
-   D2.5, D2.7's first ask, D3.2's metering, D3.3, D3.5, D4.1's prior,
+   D2.5, D2.7's first ask, D3.3, D3.5, D4.1's prior,
    D4.2's cursor, D4.4, D4.5, D4.8 (e).
 5. **Concordance amendments.** D1.1 is a law amendment, `LAW_VERSION`
    4 → 5 (Concordance §0 AMENDING), windows opened under v4 closing by v4.
