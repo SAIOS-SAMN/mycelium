@@ -11,7 +11,7 @@ example *MU-RECURSION 47.3* or *MU-ECONOMY §5.2*).
 
 **Reproduction.** The commands run, or the acts sent in order.
 
-**Reading observed.** The verdict, refusal or console reading (`scripts/readings`),
+**Reading observed.** The verdict, refusal or console reading (`mycelium-server --console --reading <name>`),
 as decoded exact values.
 
 **Reading expected.** What the specification requires.

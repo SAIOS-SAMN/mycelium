@@ -268,10 +268,11 @@ throughout the specifications. Each runs a simulated universe of its own:
   present epoch (star systems, worlds and biospheres in which the physics
   wakes peoples), with a turning-based physics; minds inhabit the
   peoples its physics wakes;
-- **netstratum:** a torus universe whose planets carry inhabitants on orbits,
-  with a force-based physics and its own resident cognition engine (its
-  civilizations, in lines of two vessels, solve tasks it forges). It faces
-  the network through an empty client kernel;
+- **netstratum:** an exact-rational universe and civilization engine: an
+  S³⁶⁰ sphere universe about one universal core, with S⁶⁰ star systems,
+  beneath a text-first game; its civilizations, with a resident cognition
+  engine of their own, solve tasks it forges. It faces the network through
+  an empty client kernel;
 - **barren-realms:** a Python game kernel with one sovereign seat per
   world, the source of the sovereign cognition the reference mind adopted.
 
@@ -286,9 +287,9 @@ Each signs the [Concordance](docs/MU-CONCORDANCE.md), founds its own domains,
 and links the `forms` crate at a pinned commit. The shares forms xylarium
 selects (`forms::shares::*`) are the first instances of divergent physics on one
 mesh (Concordance A7). The peer kernels' repositories are
-being prepared for public release. Until then, the specifications'
-references to them are design history, and nothing in this repository
-depends on them at build or run time. ROADMAP track 13 covers the
+public: [xylarium](https://github.com/SAIOS-SAMN/xylarium) and
+[netstratum](https://github.com/SAIOS-SAMN/netstratum). Nothing in this
+repository depends on them at build or run time. ROADMAP track 13 covers the
 integration of each.
 
 **Prototype precursor.**
@@ -311,7 +312,7 @@ genesis, stake, escrow, revocation, slash, burn, fee and subsidy.
 
 | Arm | Name | The act that is proven | What settlement does | Code |
 |---|---|---|---|---|
-| **POUW** | Proof of useful work | A listed demand is **closed**. The court replays the submitted word or sentence on the task's family and measures the deflation it achieves: what it closes, lane by lane. | **Mints** the measured deflation and pays it to the closer. | `economy/escrow.rs`, `economy/settle.rs`, `server/cognition/court/install.rs` |
+| **POUW** | Proof of useful work | A listed demand is **closed**. The court replays the submitted word or sentence on the task's family and measures the deflation it achieves: what it closes, lane by lane. | **Mints** the measured deflation and pays it to the closer. | `economy/escrow.rs`, `economy/settle.rs`, `server/cognition/court/vantage_install.rs` |
 | **POWC** | Proof of work convergence | A demand one mind could not discharge is **closed at another perspective**: another mind's work, citing the first mind's receipt, discharges it. A word discovered by one mind and used by a later demand is the same relation. | **Mints** the citation's measured discharge to the closer (`settle_convergence`), and pays the cited discoverer by **transfer** from the user of the word (`settle_use`). | `economy/settle.rs` |
 | **POWR** | Proof of work retirement | A word or form is **re-expressed over fewer letters**, by retirement along a geodesic or by citation; a refinement bid is replayed with the retired word excluded. | **Burns** the freed description and pays the retirer the compression yield. | `economy/settle.rs` (`settle_rewrite`), `server/cognition/book/rewrite.rs` |
 | **POWV** | Proof of work verification | A closure is **verified**: a court replays the claim and measures its discharge, and on an install a second court reconstructs the same vertex. | Pays each verifying court its **share of the release**, per lane, read off the court's strain against its reserve. The share is taken out of the release, so total issuance is unchanged. | `economy/verify.rs`, `server/cognition/court/verify.rs` |
@@ -652,9 +653,10 @@ examples/       sdk_client.rs (a complete client), durable_drill.rs
 forms/          shared exact law forms (separate crate)
 xtask/          the gate: source-length bound, Euclidean-vocabulary check,
                 and clippy with -D warnings
-ops/            systemd unit templates; lab-homes.py (development-network tooling)
-scripts/        operational helpers (quickstart, observer, readings, durability
-                drill); recut (development-network tooling)
+ops/            example systemd unit templates (edit the paths before use)
+scripts/        check (the local check before a pull request), ship-scoped
+                (clippy and scoped tests), quickstart, observer, timeline,
+                durable-drill
 tests/          integration tests
 docs/           design specifications
 ```
@@ -807,13 +809,10 @@ as `peers`, copy the corpus manifests (step 4), and start without
   started on it.
 - **Recut.** Adopting a new ledger layout means re-founding a network on
   a fresh genesis, which starts court state afresh.
-- **systemd.** `ops/mycelium-{server,client}@.service` are user-unit
-  templates; set the checkout path in them.
-- **Development-network tooling.** `scripts/recut` and `ops/lab-homes.py`
-  are the project's own tooling for its development network: they
-  hard-code its systemd units, voices, seat homes and ports. They are not
-  part of running a node; read them as examples of a re-founding
-  procedure, not as general tools.
+- **systemd.** `ops/mycelium-{server,client}@.service` are example
+  user-unit templates; set the checkout path and the home path in them.
+- **Observing.** `scripts/observer HOME...` refreshes the minds' and the
+  courts' typed readings for the named hypha homes.
 
 ### Node capabilities in 0.2.0
 
@@ -929,7 +928,9 @@ pairs:
 Mycelium is developed in the open, and contributions are welcome at every
 layer: the algebra, the courts, the economy, the SDK, the reference mind,
 and the specifications. [CONTRIBUTING.md](CONTRIBUTING.md) covers the
-workflow, the standards and the gate. [ROADMAP.md](ROADMAP.md) lays out
+workflow, the standards and the gate. `scripts/check` runs the gate and
+the workspace tests and summarises both; it is the local check before a
+pull request. [ROADMAP.md](ROADMAP.md) lays out
 the development tracks in order, each with its specification and where it
 lands in the code. In brief: the tracks begin with settlement (the
 xSEPTUM Note), compute leases, bond delegation, membership after genesis,

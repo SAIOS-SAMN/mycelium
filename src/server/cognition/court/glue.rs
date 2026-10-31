@@ -4,7 +4,7 @@
 //! A fetched word is replayed against this court's own tapes before it is
 //! admitted to anything. A witness that RE-DERIVED the object converges by
 //! `same_vertex` (M1), never by comparing the bytes it is spelled with.
-//! The install that convergence rests on is `install.rs`.
+//! The install that convergence rests on is `vantage_install.rs`.
 
 use crate::cognition::*;
 use crate::observe::replication;

@@ -138,6 +138,22 @@ such change is named here.
   `kernel` handles, lock and prose for the court's state are `court`
   (`Door::court`, `Exchange::court`); "kernel" there names only a world
   program. The lexicon's served civic terms are unchanged.
+- Files named by organ: `src/client/sdk/types.rs` is split into
+  `comprehension.rs`, `working_atlas.rs`, `genome.rs` (the dialect entry,
+  the genome carriers, `Epigenome`), `mind.rs` (`Mind`, `Owed`, `Pending`),
+  `concluded.rs`, `utterance.rs` and `quote.rs`; every `sdk::` path is
+  unchanged. `server/cognition/court/install.rs` is `vantage_install.rs`,
+  the second-vantage install, beside `Court::install_adopted` (genome
+  synchronisation) in `market.rs`.
+- Tooling: `scripts/check` is the local check before a pull request (the
+  gate and the workspace tests with `--no-fail-fast`, summarised, naming
+  the 17 corpus-dependent tests when `data/arc-agi-2` is absent).
+  `scripts/ship-scoped` runs clippy and the scoped tests only;
+  `scripts/observer` takes the hypha homes as arguments and
+  `scripts/durable-drill` its port as `PORT`. The development network's
+  own tooling is removed (`scripts/recut`, `scripts/readings`,
+  `ops/lab-homes.py`), and the `ops/*.service` units are marked as
+  examples to edit.
 
 ### Documentation
 - The change and release process: `main` is protected (pull requests

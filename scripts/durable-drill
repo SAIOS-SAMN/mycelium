@@ -1,23 +1,26 @@
 #!/usr/bin/env bash
 # DURABLE-DRILL — 78.137: a court act answered is on the disk. A hypha on a
-# fresh temporary home at :7590 (clear of the deployment's 7500–7502 and of
-# 7520–7529) is put court acts one round at a time and killed with SIGKILL
-# after each answered round — no persist on the way down — then started
-# again; after the last round every act is read back. Reports N, the acts
-# lost (which must be 0), the snapshot's bytes, and the wall time per round.
+# fresh temporary home at 127.0.0.1:$PORT is put court acts one round at a
+# time and killed with SIGKILL after each answered round — no persist on the
+# way down — then started again; after the last round every act is read
+# back. Reports N, the acts lost (which must be 0), the snapshot's bytes,
+# and the wall time per round.
 #
-# It runs prebuilt binaries and builds nothing: build first, under the heavy
-# lock, e.g.
-#   CARGO_TARGET_DIR=target/gate CARGO_BUILD_JOBS=4 nice -n 10 flock -o -w 3600 \
-#     "${XDG_RUNTIME_DIR:-/tmp}/xyl-heavy.lock" cargo build --release --bin mycelium-server --example durable_drill
+# It runs prebuilt binaries and builds nothing: build first, e.g.
+#   CARGO_TARGET_DIR=target/gate cargo build --release --bin mycelium-server --example durable_drill
 #
 # NEGATIVE CONTROL: a build with `--features drill-undurable` answers court
 # acts without the pre-reply sync; the same drill on it must LOSE acts, so
 # a green drill means something. Exit 1 is a loss, exit 0 none.
 #
 # Usage: scripts/durable-drill [N] [TARGET_DIR] [PREFILL_DOMAINS PREFILL_TIERS]
-#   (default 20, target/gate, no prefill; 21 × 1000 grows the snapshot to
-#   about :7520's 0.68 MB)
+#   N           rounds (default 20)
+#   TARGET_DIR  the cargo target directory holding the release binaries
+#               (default <repository>/target/gate)
+#   PREFILL_*   domains and tiers written before the rounds (default none;
+#               21 × 1000 grows the snapshot to about 0.68 MB)
+#   PORT        environment: the drill hypha's port (default 7590; it must
+#               be free)
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -25,9 +28,10 @@ N="${1:-20}"
 TARGET="${2:-$REPO/target/gate}"
 PREFILL_D="${3:-0}"
 PREFILL_T="${4:-0}"
+PORT="${PORT:-7590}"
 BIN="$TARGET/release/mycelium-server"
 CLIENT="$TARGET/release/examples/durable_drill"
-ADDR="127.0.0.1:7590"
+ADDR="127.0.0.1:$PORT"
 HOME_DIR="$(mktemp -d)"
 # Only a server this script started is killed: an unset PID must never become
 # `kill -9 0`, which signals the whole process group.
@@ -37,14 +41,14 @@ trap '[ -n "$PID" ] && kill -9 "$PID" 2>/dev/null; rm -rf "$HOME_DIR"' EXIT
 say() { printf '  durable-drill: %s\n' "$*"; }
 
 [ -x "$BIN" ] && [ -x "$CLIENT" ] || { say "build the server and the example first"; exit 2; }
-if (exec 3<>/dev/tcp/127.0.0.1/7590) 2>/dev/null; then say ":7590 is in use"; exit 2; fi
+if (exec 3<>/dev/tcp/127.0.0.1/"$PORT") 2>/dev/null; then say ":$PORT is in use"; exit 2; fi
 printf '%s\n' "$ADDR" > "$HOME_DIR/bind"
 
 start() {
   "$BIN" --home "$HOME_DIR" "$@" > "$HOME_DIR/server.log" 2>&1 &
   PID=$!
   for _ in $(seq 1 600); do
-    if (exec 3<>/dev/tcp/127.0.0.1/7590) 2>/dev/null; then return 0; fi
+    if (exec 3<>/dev/tcp/127.0.0.1/"$PORT") 2>/dev/null; then return 0; fi
     sleep 0.05
   done
   say "the hypha did not come up"; tail -20 "$HOME_DIR/server.log"; exit 1

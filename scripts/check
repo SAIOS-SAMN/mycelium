@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# CHECK — the one local check to run before a pull request: the gate
+# (`xtask`: the reading bound, the Euclidean-vocabulary check, clippy with
+# -D warnings) and the workspace tests, run to the end with
+# `--no-fail-fast`, then a summary of both.
+#
+# Usage: scripts/check [CARGO_TEST_ARGS...]
+#   Arguments are passed to `cargo test` after `--` (for example a test
+#   filter). CARGO_TARGET_DIR is honoured; a relative one is taken from the
+#   repository root. The test log is kept at $CHECK_LOG (default: a
+#   temporary file, named in the summary).
+#
+# KNOWN EXCEPTIONS. Seventeen tests replay tasks of the ARC-AGI-2 corpus,
+# read at data/arc-agi-2 or under $MYCELIUM_CORPUS. Without the corpus they
+# fail; the summary says whether the corpus was found, so those failures
+# can be told apart from a defect.
+#
+# Exit 0 when the gate and every test pass; 1 otherwise.
+set -eu
+
+REPO="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$REPO"
+
+if [ -n "${CARGO_TARGET_DIR:-}" ]; then
+  case "$CARGO_TARGET_DIR" in
+    /*) ;;
+    *) CARGO_TARGET_DIR="$REPO/$CARGO_TARGET_DIR" ;;
+  esac
+  export CARGO_TARGET_DIR
+fi
+
+LOG="${CHECK_LOG:-$(mktemp "${TMPDIR:-/tmp}/mycelium-check.XXXXXX")}"
+
+say() { printf 'check: %s\n' "$*"; }
+
+say "gate (cd xtask && cargo run --release)"
+gate=0
+(cd xtask && cargo run --release) || gate=$?
+
+say "workspace tests (cargo test --release --workspace --no-fail-fast)"
+tests=0
+cargo test --release --workspace --no-fail-fast -- "$@" >"$LOG" 2>&1 || tests=$?
+
+passed=0
+failed=0
+ignored=0
+while read -r p f i; do
+  passed=$((passed + p))
+  failed=$((failed + f))
+  ignored=$((ignored + i))
+done <<EOF
+$(sed -n 's/^test result: [A-Za-z]*\. \([0-9]*\) passed; \([0-9]*\) failed; \([0-9]*\) ignored.*/\1 \2 \3/p' "$LOG")
+EOF
+
+if [ -n "${MYCELIUM_CORPUS:-}" ] && [ -d "$MYCELIUM_CORPUS" ]; then
+  corpus="found at $MYCELIUM_CORPUS"
+elif [ -d "$REPO/data/arc-agi-2" ]; then
+  corpus="found at data/arc-agi-2"
+else
+  corpus="absent (data/arc-agi-2 missing, MYCELIUM_CORPUS unset): the 17 corpus-dependent tests are expected to fail"
+fi
+
+echo
+say "summary"
+if [ "$gate" -eq 0 ]; then
+  echo "  gate     green"
+else
+  echo "  gate     red (exit $gate)"
+fi
+echo "  tests    $passed passed, $failed failed, $ignored ignored (cargo exit $tests)"
+echo "  corpus   $corpus"
+echo "  log      $LOG"
+if [ "$failed" -gt 0 ]; then
+  echo "  failed:"
+  sed -n 's/^test \(.*\) \.\.\. FAILED$/    \1/p' "$LOG"
+fi
+if grep -q '^error' "$LOG"; then
+  echo "  build errors:"
+  grep '^error' "$LOG" | head -10 | sed 's/^/    /'
+fi
+
+if [ "$gate" -eq 0 ] && [ "$tests" -eq 0 ]; then
+  exit 0
+fi
+exit 1

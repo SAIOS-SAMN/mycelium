@@ -17,6 +17,10 @@ take part and the standards the tree is held to.
    cargo build --release
    (cd xtask && cargo run)        # the reading bound, the Euclidean check, clippy -D warnings
    ```
+   Before a pull request, run `scripts/check`: the gate and the workspace
+   tests (`--no-fail-fast`), with a summary of both. Without the ARC-AGI-2
+   corpus at `data/arc-agi-2`, 17 corpus-dependent tests fail, and the
+   summary says the corpus is absent.
 2. Bring up a local network and run the SDK client against it, following
    [README › Running a node](README.md#running-a-node) and
    [README › Building a client with the SDK](README.md#building-a-client-with-the-sdk).

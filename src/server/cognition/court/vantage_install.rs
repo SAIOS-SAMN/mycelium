@@ -2,9 +2,11 @@
 // citations an installed form notes, and the citers a slashed word
 // re-dockets.
 //
-//! Split from `glue.rs` (MU-STANDARDS 1.1, one organ per file): the glue
-//! converges two organs on one object there; the install that convergence
-//! rests on is here.
+//! A word reaches the genome by one of two installs: the vantage install
+//! here (`Court::home_install`, on a second vantage), and
+//! `Court::install_adopted` in `market.rs` (genome synchronisation). The
+//! glue in `glue.rs` converges two organs on one object; the install that
+//! convergence rests on is here.
 
 use crate::cognition::*;
 use crate::transducer::element::Element;
