@@ -77,7 +77,7 @@ fn three_courts() -> [Court; 3] {
 /// it the non-trivial fixture below would look like a fixture that chose
 /// its answer.
 #[test]
-fn glues_triangle_from_one_objects_germs() {
+fn glues_triangle_from_germs_of_one_object() {
     use crate::transducer::cech::{glues, holonomy, transition};
     // Three germs of one object, deliberately unequal and deliberately
     // not related by any pattern: what is claimed holds for any three.
@@ -102,7 +102,7 @@ fn glues_triangle_from_one_objects_germs() {
 /// the three courts reads that independently and each one's count of
 /// generators the engine opened stays at zero.
 #[test]
-fn glues_closing_triangle_adjoins_nothing() {
+fn glues_adjoins_nothing_for_closing_triangle() {
     use crate::transducer::cech::{glues, holonomy};
     let (t_ab, t_bc, t_ca) = (
         transport(&turn_90(1)),
@@ -136,7 +136,7 @@ fn glues_closing_triangle_adjoins_nothing() {
 /// content (law 2) and not a vantage. That is what makes the relator
 /// citable by a later form on any of them.
 #[test]
-fn holonomy_unclosed_triangle_leaves_order_two_relator() {
+fn holonomy_leaves_order_two_relator_on_unclosed_triangle() {
     use crate::transducer::cech::{glues, holonomy};
     let (t_ab, t_bc, t_ca) = (
         transport(&turn_90(1)),
@@ -187,7 +187,7 @@ fn holonomy_unclosed_triangle_leaves_order_two_relator() {
 /// `adjoined()` stays zero. What is new is not a generator, it is a
 /// RELATION between generators the courts already had.
 #[test]
-fn court_torsion_files_relator_at_own_period() {
+fn court_torsion_files_relator_at_period() {
     use crate::transducer::cech::holonomy;
     use crate::transducer::sentence::{form_torsion, Form, Vertex};
     let (t_ab, t_bc, t_ca) = (
@@ -359,7 +359,7 @@ fn install(k: &mut Court, voice: [u8; 32], w: &Element) {
 /// speaks `q²`: the structure changed, the result did not, which is what
 /// makes this convergence and not a vote.
 #[test]
-fn mint_rewrite_retire_reaches_one_address_on_two_courts() {
+fn mint_rewrite_retires_to_one_address_on_two_courts() {
     use crate::transducer::rewrite::{RewriteKind, RewritePayload};
     // The transport the triangle is built from, and the relator it left.
     let t = transport(&turn_90(1));

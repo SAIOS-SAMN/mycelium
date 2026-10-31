@@ -31,7 +31,7 @@ fn breath_splits_radial_axis_from_orthogonal_pinch() {
 
 /// `a ∥ b` BREATHES WITH NO PINCH; `a ⊥ b` PINCHES WITH NO BREATH.
 #[test]
-fn breath_parallel_breathes_orthogonal_pinches() {
+fn breath_breathes_parallel_and_pinches_orthogonal() {
     let along = breath(&[q(2), q(0), q(0)], &[q(3), q(0), q(0)], &mut budget()).expect("breathes");
     assert!(!along.radial.is_zero() && along.planes.is_empty() && along.twists().is_empty(), "parallel: radial only");
     let across = breath(&[q(1), q(0), q(0)], &[q(0), q(1), q(0)], &mut budget()).expect("breathes");
@@ -54,7 +54,7 @@ fn breath_reads_every_base_axis() {
 /// plane — the commutator of two rotations is a rotation, a pinch, with no
 /// radial part; a turn with itself commutes and breathes nothing.
 #[test]
-fn breathe_two_turns_pinch_third_plane() {
+fn breathe_pinches_third_plane_for_two_turns() {
     use crate::transducer::cga::{E1, E2, E3};
     let plane = |i: usize, j: usize| Mv::blade(i | j, q(1));
     let br = breathe(&plane(E1, E2), &plane(E2, E3), &mut budget()).expect("two turns breathe");
@@ -66,7 +66,7 @@ fn breathe_two_turns_pinch_third_plane() {
 /// THE RADIAL AXIS IS SIGNED: a pair turned against each other breathes
 /// the other way, its planes reversed with it.
 #[test]
-fn breath_radial_reverses_with_its_pair() {
+fn breath_reverses_radial_with_pair() {
     let (a, b) = ([q(1), q(1), q(0)], [q(2), q(0), q(1)]);
     let out = breath(&a, &b, &mut budget()).expect("breathes");
     let back = breath(&a, &[q(-2), q(0), q(-1)], &mut budget()).expect("breathes");

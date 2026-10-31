@@ -142,7 +142,7 @@ fn admit_line_files_no_alias_on_shared_fibre() {
 /// the later alias replaces the earlier, which leaves with its depth, so a
 /// word's aliases are bounded by its signers and not by the signers' acts.
 #[test]
-fn admit_line_later_admission_replaces_alias() {
+fn admit_line_replaces_alias_on_later_admission() {
     use crate::chronometry::{Cite, ReceiptChain, Stamp};
     let mut c = Court::new();
     c.bind_identity([0xc3; 32]);
@@ -198,7 +198,7 @@ fn apply_verdict_mints_upheld_claim_at_ruling() {
 /// a provisional word left unstamped, every fold prefix open behind it
 /// (court a, epoch 99: unstamped provisional 0 → 4, folded never).
 #[test]
-fn file_admitted_keeps_courts_own_stamp() {
+fn file_admitted_keeps_court_stamp() {
     use crate::chronometry::Stamp;
     let (mut k, addr) = docketed([0x5a; 32]);
     let own = k.admitted_at(addr.as_bytes()).expect("the docket admitted it at an act");
@@ -228,7 +228,7 @@ fn file_admitted_keeps_courts_own_stamp() {
 /// passed the check and spoke nothing at the citation. The two are one
 /// reader now: whatever the check admits, the speech speaks.
 #[test]
-fn resolve_form_and_by_address_agree_on_cavity_word() {
+fn resolve_form_agrees_with_by_address_on_cavity_word() {
     use crate::transducer::family::Crystal;
     let (mut k, addr) = docketed([0x5a; 32]);
     assert!(k.resolve_form(addr.as_bytes()).is_none(), "a provisional word resolves to nothing");

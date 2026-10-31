@@ -39,7 +39,7 @@ fn settle_use_pays_novelty_on_use_not_install() {
 /// The dimensional ledger: consilience splits the PRICED μ⃗ per lane (nonzero
 /// lanes never split to zero), and the torse coin books on the holonomic lane.
 #[test]
-fn settle_consilience_and_torse_settle_as_vectors() {
+fn settle_consilience_settles_with_torse_as_vectors() {
     let mut t = Treasury::new();
     t.enroll([1; 32], UNIT_BOND, at(0, [0; 32])); // capitalize before settling
     let anchor: Anchor = at(9, [1; 32]);
@@ -158,7 +158,7 @@ fn settle_consilience_split_never_invents_units() {
 /// still conserves. The arm that read a short debit here could not fire,
 /// and this is the reading it was standing in for.
 #[test]
-fn settle_recall_past_balance_pays_held_and_reads_short() {
+fn settle_recall_pays_held_and_reads_short_past_balance() {
     let mut t = Treasury::new();
     let a = at(1, [1; 32]);
     t.genesis([7; 32], [5, 2, 0, 0], a);
@@ -179,7 +179,7 @@ fn settle_recall_past_balance_pays_held_and_reads_short() {
 /// conserves after each. Each had an arm reading a short debit that could not
 /// fire; this is what stands in its place.
 #[test]
-fn use_enroll_and_burn_past_balance_move_what_is_held() {
+fn settle_use_moves_only_what_is_held() {
     let mut t = Treasury::new();
     let a = at(1, [1; 32]);
     t.genesis([1; 32], [3, 1, 0, 0], a);

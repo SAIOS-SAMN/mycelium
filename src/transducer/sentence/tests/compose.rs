@@ -41,7 +41,7 @@ fn compose_closes_at_holonomy_period() {
 /// teaches its holonomy, the one null motion (78.97, the one rule of 78.100
 /// D2). A sentence whose modes do not read teaches nothing.
 #[test]
-fn next_rung_teaches_translations_null_motion() {
+fn next_rung_teaches_null_motion_of_translations() {
     let t = cga::translator_at(&[q(1), q(0), q(0)]);
     let s = compose(&[Term { word: one(), transport: t.clone() }], &mut stroke()).expect("a sentence");
     assert_eq!(s.closure, Closure::Unbound, "a translation carries and never returns");
@@ -134,7 +134,7 @@ fn path_of(transitions: Vec<crate::transducer::sentence::circuit::CarriedTransit
 /// the identity, ℓ = 1. And the circuit's one reader (`composite`) is this
 /// product.
 #[test]
-fn terms_of_crossing_composes_word_and_displacement() {
+fn terms_of_composes_crossing_word_and_displacement() {
     use crate::transducer::sentence::compose::{omega_of, terms_of};
     let one_way = path_of(vec![crossing(true)]);
     let terms = terms_of(&one_way).expect("every transport read");
@@ -211,7 +211,7 @@ fn sentences_of_refuses_unrefracted_contact_after_decode() {
 /// decoded with the same candidates, whole: the court composes every route
 /// the voice composed, never the static read alone.
 #[test]
-fn from_element_form_keeps_contact_refraction_whole() {
+fn from_element_form_keeps_contact_refraction() {
     use super::common::{contact, stand_with_star, word_vertex_on};
     use crate::transducer::sentence::{Form, Refraction, Transport};
     let mut f = Form::default();
@@ -247,7 +247,7 @@ fn from_element_form_keeps_contact_refraction_whole() {
 /// — so a single sequence of terms is refused (`HeldCoset`) and the composer
 /// keeps every route.
 #[test]
-fn terms_of_reads_static_tether_refuses_held_coset() {
+fn terms_of_reads_static_tether_and_refuses_held_coset() {
     use crate::transducer::sentence::compose::{omega_of, terms_of, TermUnread};
     use crate::transducer::sentence::{HeldPose, Refraction, Transport};
     let tether = cga::translator_at(&[q(1), q(1), q(0)]);

@@ -102,7 +102,7 @@ fn admit_uplink_refuses_unsigned_fold() {
 /// after the domain's genesis, exactly the head receipt's tick, frame, orbit
 /// and place, served and read back whole, written sixteen hex digits a field.
 #[test]
-fn core_stamp_is_head_stamp_written_wide() {
+fn core_stamp_equals_head_stamp_written_wide() {
     use crate::physics::laws::codec::{decode_clock_reply, encode_clock_reply};
     assert_eq!(Court::new().core_stamp(), None, "no act, no head");
     let k = founded();
@@ -129,7 +129,7 @@ fn admit_uplink_refuses_unbound_tier() {
 /// genesis sealed by its keys; another key's signature, unordered tiers, a
 /// second founding and a tier another domain names are refused by name.
 #[test]
-fn admit_domain_founds_once_by_own_key() {
+fn admit_domain_founds_once_by_domain_key() {
     use crate::anastome::dialogue::domain::{Founded, DomainGenesis};
     let k = founded();
     let head = k.chain.head().expect("the genesis on the line");

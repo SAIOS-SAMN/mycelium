@@ -10,7 +10,7 @@
 //!
 //! STD1 — THE WRITER IS A FLAG, NEVER AN IGNORED TEST: `mycelium-soak
 //! --write-oracle-golden` writes the golden file ([`write_golden`]) on the
-//! carrier it stands for; the suite's `readings_reproduce_golden_oracle`
+//! carrier it stands for; the suite's `readings_agrees_with_golden_oracle`
 //! reads it and takes the readings again (§6.4: verification never writes).
 
 use super::{self as cga, Mv};

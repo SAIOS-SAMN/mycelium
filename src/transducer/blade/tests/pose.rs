@@ -79,7 +79,7 @@ fn relative_pose_turns_centrosymmetric_solid() {
 
 /// At one section, the pose is the sensor plane's reading.
 #[test]
-fn relative_pose_at_one_section_matches_relative_rotor() {
+fn relative_pose_agrees_with_relative_rotor_at_one_section() {
     let l = body(&L4);
     let turned = body(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (-1, 2, 0)]);
     let j = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
@@ -109,7 +109,7 @@ fn relative_pose_turns_flat_bodies_in_sensor_plane() {
 
 /// A body turning between two sections reads a pose whose plane contains e3.
 #[test]
-fn relative_pose_across_sections_lights_plane_with_e3() {
+fn relative_pose_lights_plane_with_e3_across_sections() {
     // L4 at one section, and L4 turned 90° in the plane of the row
     // and the succession axis, `(x₁, x₃) ↦ (−x₃, x₁)`: it now stands along
     // three sections. No turn of the sensor's plane relates them.

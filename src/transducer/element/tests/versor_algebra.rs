@@ -41,7 +41,7 @@ fn transition_carries_conformal_images_for_pullback() {
 /// Composition of elements is the geometric product of the elements' versors, and
 /// it is associative.
 #[test]
-fn compose_is_the_geometric_product() {
+fn compose_equals_geometric_product() {
     let a = elem_from_versor(translator_versor(1, 0));
     let b = elem_from_versor(translator_versor(0, 2));
     let c = elem_from_versor(translator_versor(3, 0));
@@ -59,7 +59,7 @@ fn compose_is_the_geometric_product() {
 
 /// A description composed with its reverse, on either side, is the identity.
 #[test]
-fn compose_with_reverse_is_identity() {
+fn compose_gives_identity_with_reverse() {
     let g = elem_from_versor(translator_versor(3, -2));
     let rev = g.reverse().expect("a versor description reads backward");
     assert!(g.compose(&rev).expect("forms").is_identity(), "g ∘ g̃ = e — the coboundary closes");
@@ -122,7 +122,7 @@ fn canonical_chain_is_idempotent_and_translation_free() {
 
 /// The carriage holds ρ once, with no second ρ beside it in the address.
 #[test]
-fn carriage_holds_rho_once() {
+fn carriage_keeps_rho_once() {
     let two = Q::from(BigInt::from(2));
     let car = crate::transducer::cga::dilator(&two);
     let w = from_connection(&crate::transducer::alphabet::Word::identity(), &car, &[], &Vec::new(), [1, 0, 0, 0]).expect("spells");
@@ -180,7 +180,7 @@ fn carriage_decomposes_into_dilator_and_translator() {
 /// turns `e₂` into a base axis has no base action and is refused, never
 /// projected.
 #[test]
-fn base_rotor_of_reads_back_versor_of_word() {
+fn base_rotor_of_round_trips_versor_of_word() {
     use crate::transducer::alphabet::{LetterId, Rotor, Word, SLOT_PLANES_SIX};
     use crate::transducer::cga;
     let q = |n: i64| Q::from(BigInt::from(n));

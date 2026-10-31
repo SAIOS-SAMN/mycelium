@@ -15,7 +15,7 @@ use crate::transducer::element::identity_versor;
 /// acts, and the class invariants are exactly what it preserves (15.3), so
 /// the cut is forced by the algebra.
 #[test]
-fn base_of_word_shared_by_conjugates_only() {
+fn base_of_is_shared_by_conjugates_only() {
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let sheet = PlaneForm::sheet_word();
     // A sheet conjugates a rotation to its inverse — a stated relator — so
@@ -48,7 +48,7 @@ fn base_of_word_shared_by_conjugates_only() {
 /// matching. Conjugacy says SOME element relates them; this answers whether
 /// the ALPHABET spells one, and proves it by the exact conjugation.
 #[test]
-fn solve_conjugator_re_derives_conjugation() {
+fn solve_conjugator_rederives_conjugation() {
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let sheet = PlaneForm::sheet_word();
     let conj = q.rebase(&sheet);
@@ -148,7 +148,7 @@ fn by_base_groups_sections_of_one_base() {
 /// answer carries the γ that shows it, because "redundant" without the
 /// transition is an assertion and with it is a re-derivation anyone replays.
 #[test]
-fn section_of_conjugate_names_transition() {
+fn section_of_names_transition_of_conjugate() {
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let sheet = PlaneForm::sheet_word();
     let conj = q.rebase(&sheet);
@@ -215,7 +215,7 @@ fn conjugation_separates_spelled_from_unrelated() {
 /// a solve returning one arbitrary element answers "unspellable" for a
 /// relation the seventeen can say from a different basepoint.
 #[test]
-fn conjugators_all_conjugate() {
+fn conjugators_offers_only_conjugating_versors() {
     use crate::transducer::alphabet::bundle::conjugators;
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let sheet = PlaneForm::sheet_word();

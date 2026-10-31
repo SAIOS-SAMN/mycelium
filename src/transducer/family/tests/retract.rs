@@ -343,7 +343,7 @@ fn from_address_agrees_on_every_court_reading() {
 /// fixture is a shape somebody chose and is where adjudication executes
 /// today, and a corpus form is whatever the scene turned out to be.
 #[test]
-fn form_vertex_key_holds_carrier_invariants() {
+fn form_vertex_key_keeps_carrier_invariants() {
     use crate::transducer::sentence::as_element_form;
 
     let mut forms: Vec<Form> = Vec::new();

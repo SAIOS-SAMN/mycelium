@@ -6,7 +6,7 @@ use crate::anastome::dialogue as d;
 /// party's actions stand below the court's range and a court's own at or
 /// above it, and a byte no action holds names nothing.
 #[test]
-fn action_of_reads_each_byte_back_once() {
+fn action_of_round_trips_each_byte() {
     for (i, a) in ACTIONS.iter().enumerate() {
         assert_eq!(Action::of(a.byte()), Some(*a), "{} reads back", String::from_utf8_lossy(a.name()));
         for b in &ACTIONS[i + 1..] {
@@ -30,7 +30,7 @@ fn action_of_reads_each_byte_back_once() {
 /// fold — the kinds a receipt carries; an observation never seals, answers
 /// to no law, and cannot be a node; a transition answers to every law.
 #[test]
-fn sealed_excludes_observations_and_transitions_answer_every_law() {
+fn sealed_excludes_observations_and_answers_every_law() {
     let sealed: Vec<Action> = ACTIONS.iter().copied().filter(|a| a.sealed()).collect();
     assert_eq!(sealed.len(), 21, "{sealed:?}");
     for a in ACTIONS {

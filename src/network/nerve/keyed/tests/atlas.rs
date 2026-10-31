@@ -21,7 +21,7 @@ fn chart() -> crate::transducer::stalk::Invariant {
 /// EVERY KIND OF VERTEX, every chart and an overlap between two, read
 /// back from its own bytes as itself: `x ≡ decode(encode(x))`.
 #[test]
-fn vertex_at_chart_at_overlap_decode_to_themselves() {
+fn vertex_at_round_trips_with_chart_and_overlap() {
     let vertices = [
         VertexAt::Frame,
         VertexAt::Word(class()),

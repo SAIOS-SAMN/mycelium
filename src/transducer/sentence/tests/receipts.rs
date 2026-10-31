@@ -36,7 +36,7 @@ fn shift(dx: i64, dy: i64) -> crate::transducer::element::Versor {
 /// off it. Before this, they came back off `Element.description` — the tape
 /// — and that is the whole reason the tape could not be retired.
 #[test]
-fn receipts_survive_element_record() {
+fn receipts_survives_element_record() {
     let a = leaf((0, 1));
     let a_at = address_of(&a);
     let mut host = Form::default();
@@ -107,7 +107,7 @@ fn set_receipts_keeps_address() {
 /// `ker(I − R)` as the twist — a pure dislocation, which is what a citation
 /// glued three units over IS.
 #[test]
-fn nerve_edge_screw_carries_citation_slip() {
+fn nerve_edge_carries_citation_slip_of_screw() {
     use num_traits::Zero;
     let a = leaf((0, 1));
     let a_at = address_of(&a);
@@ -201,7 +201,7 @@ fn nerve_edge_host_ignores_glue_order() {
 /// 0` ends it — by exterior-algebra arithmetic, with no bound anywhere in
 /// the code to enforce.
 #[test]
-fn nerve_round_grade_rises_until_sixth_chart() {
+fn nerve_round_raises_grade_until_sixth_chart() {
     use num_bigint::BigInt;
     use num_rational::BigRational;
     let q = |n: i64| BigRational::from(BigInt::from(n));
@@ -389,7 +389,7 @@ fn form_vertex_key_joins_hosts_citing_two_forms() {
 /// order on lengths there is no well-ordering argument, and a cycle is
 /// expressible.
 #[test]
-fn form_vertex_key_citation_size_ignores_cited_form() {
+fn form_vertex_key_ignores_size_of_cited_form() {
     let a = leaf((0, 1));
     let a_at = address_of(&a);
 
@@ -452,7 +452,7 @@ fn receipts_envelope_round_trips_wide_address() {
 /// bytes it always wrote (so every home written before reads as it did),
 /// and the section ends where the block ends.
 #[test]
-fn receipts_envelope_round_trips_conjugator_keeping_old_bytes() {
+fn receipts_envelope_round_trips_conjugator() {
     let addr = crate::transducer::address::Address::new(vec![5u8; 40]);
     let plain = ReceiptsEnvelope {
         derivations: vec![crate::transducer::element::DerivationCite {

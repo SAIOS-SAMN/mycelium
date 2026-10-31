@@ -170,9 +170,9 @@ constructor that refuses instead.
 
 **Acceptance claims.**
 - A frame written on one side of an XX session is read whole on the other
-  (replay; built as `initiate_completes_handshake_and_frames_round_trip`).
+  (replay; built as `initiate_completes_handshake_and_round_trips_frames`).
 - A changed static key on a pinned host is refused by name (built as
-  `pin_refuses_changed_peer_key_by_name`).
+  `pin_refuses_changed_peer_key`).
 - The first static key seen for a peer is the pinned one: a fixed locus
   across a reconnect.
 - A frame past the budget is refused by name at the reassembled length,
@@ -282,8 +282,8 @@ named-refusal law to a site that predates it.
 - A refused vertex filed later leaves no refusal at its key: a fixed locus.
 - Every vertex of a form is filed, refused or not a word: the three sets
   partition the form's vertices (in part built as
-  `learn_form_files_readable_form_whole` and
-  `learn_form_refuses_unreadable_word_by_name`).
+  `learn_form_files_readable_form` and
+  `learn_form_refuses_unreadable_word`).
 
 **Track** 7. **Effort** small. **Status** In progress (the reasons above
 are those being built; the final names are the code's).

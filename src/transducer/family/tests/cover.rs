@@ -77,7 +77,7 @@ fn compartments<T: Copy + Into<Compartment>>(v: &[T]) -> Vec<Compartment> {
 /// and the homeomorphic core's where the shapes differ by a surgery, which
 /// is the case an uncarried body is in.
 #[test]
-fn hold_form_reads_demand_candidates_from_own_bodies() {
+fn hold_form_reads_demand_candidates_from_bodies() {
     use crate::transducer::bubble::contemplation::Contemplation;
     let held = |ga: &[&str], gb: &[&str]| -> (usize, usize) {
         let f = measured(&grid(ga), &grid(gb));
@@ -557,7 +557,7 @@ fn cover_deformation_parks_and_resumes_across_strokes() {
 /// is a function of the form's orbits and not of the order the cover
 /// happened to read its meets in. Two builds of one pair agree exactly.
 #[test]
-fn scene_form_reads_stably_across_builds() {
+fn scene_form_is_invariant_under_rebuild() {
     let (a, b) = notched();
     let one = measured(&a, &b);
     let two = measured(&a, &b);

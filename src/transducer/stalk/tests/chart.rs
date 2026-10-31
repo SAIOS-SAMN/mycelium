@@ -74,7 +74,7 @@ fn key_prefix_is_coarser_stratum() {
 /// The chart is invariant under translation, rotation, reflection, and
 /// exact dilation, with no group enumeration.
 #[test]
-fn invariant_is_fixed_by_conformal_group() {
+fn invariant_is_invariant_under_conformal_group() {
     let l = chain(&[(0, 0), (1, 0), (2, 0), (2, 1)]);
     let base = invariant(&l);
     let moved = chain(&[(7, -3), (7, -2), (7, -1), (6, -1)]); // rotated + translated

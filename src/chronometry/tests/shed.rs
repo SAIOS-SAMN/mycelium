@@ -30,7 +30,7 @@ fn fold(c: &mut ReceiptChain, at: Place) -> KStepReceipt {
 /// the chain's own hot line cites stays until the chain's own fold lets it
 /// go, and the signer's line keeps the head admission reads.
 #[test]
-fn shed_folded_keeps_peer_nodes_own_hot_line_cites() {
+fn shed_folded_keeps_peer_nodes_hot_line_cites() {
     let mut e = ReceiptChain::with_signer([4; 32]);
     let e0 = step(&mut e, Vec::new());
     let e1 = step(&mut e, Vec::new());

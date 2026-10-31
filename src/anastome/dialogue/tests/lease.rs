@@ -8,7 +8,7 @@ fn key(b: u8) -> ed25519_dalek::SigningKey {
 /// written, neither reads as the other or as a stake, and a reply reads
 /// back with its lease, its lanes or its refusal.
 #[test]
-fn encode_lease_and_close_round_trip_signed() {
+fn encode_lease_round_trips_lease_and_close_signed() {
     let payer = key(1);
     let act = LeaseAct {
         payer: payer.verifying_key().to_bytes(),

@@ -60,7 +60,7 @@ fn theorem_at_reads_nilpotent_power_as_line() {
 /// bracket of any depth lies in the three-dimensional span, and the
 /// certificate is that finite check.
 #[test]
-fn saturated_holds_every_nested_bracket() {
+fn saturated_keeps_every_nested_bracket() {
     let t = Theorem::saturated(&[turn(E1 | E2), turn(E2 | E3)], &mut stroke()).expect("closes");
     assert!(matches!(&t.certificate, Certificate::Saturated { basis } if basis.len() == 3));
     assert!(t.check(&mut stroke()));
@@ -76,7 +76,7 @@ fn saturated_holds_every_nested_bracket() {
 /// keeps its certificate and still checks; a tampered certificate fails;
 /// a motion with no finite certificate is held open by name.
 #[test]
-fn conjugated_checks_and_forged_certificate_fails() {
+fn check_passes_conjugated_and_refuses_forged_certificate() {
     let r = turn(E1 | E2);
     let proof = compose(&[Term { word: r, transport: one() }], &mut stroke()).expect("a sentence");
     let t = Theorem::of(&proof).expect("closes");

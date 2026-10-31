@@ -5,7 +5,7 @@ use super::super::*;
 /// two-stroke ratio itself, a spend halves exactly, and the stroke floor
 /// is a positive measurement every park is at least one of.
 #[test]
-fn spend_unit_ratio_exact_and_stroke_floor_positive() {
+fn spend_unit_ratio_is_exact_and_stroke_floor_positive() {
     assert_eq!(spend_unit() * STROKES_PER_RESERVE, reserve_max(), "a whole number of spends");
     assert_eq!(u64::from(aperture_cycle()), STROKES_PER_RESERVE, "the aperture is the ratio");
     assert!(spend_unit() >= 2, "the reserve's floor leaves a spend the regeneration can halve");

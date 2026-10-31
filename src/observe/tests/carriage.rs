@@ -4,7 +4,7 @@ use super::common::*;
 /// LD1 — THE CARRIAGE TRAVELS WHOLE, each record filed under its carrier and
 /// kind in order, its largest kept.
 #[test]
-fn carriage_files_by_carrier_and_kind_and_reads_back() {
+fn carriage_files_by_carrier_and_kind_and_round_trips() {
     let mut c = Carriage::default();
     c.add(CARRIER_FRAME, 0x0d, 40);
     c.add(CARRIER_DELTA, 12, 900);

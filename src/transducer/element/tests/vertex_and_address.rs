@@ -75,7 +75,7 @@ fn compose_carries_rotor_and_transition_answers_one() {
 /// so the two are one address — the codec no longer writes the sign, and
 /// a differing address is a differing element.
 #[test]
-fn address_identifies_versor_with_its_negation() {
+fn address_identifies_versor_with_negation() {
     let q = |n: i64| num_rational::BigRational::from_integer(BigInt::from(n));
     let v = translator_versor(2, 3);
     let neg = v.scale(&q(-1));

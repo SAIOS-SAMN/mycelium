@@ -63,7 +63,7 @@ fn reciprocal_reads_every_transition_from_both_sides() {
 /// T2 — THE FIT ORDER IS SYMMETRIC, and the blow-up fits through three both
 /// ways, its residue at four transposed.
 #[test]
-fn certify_fit_order_is_symmetric() {
+fn certify_fit_is_symmetric_in_order() {
     let (a, b) = (l(), l_blown_up());
     let (ab, ba) = (
         certify(&a.blade, &b.blade, crate::transducer::base::GRID_PLANE).expect("fit"),

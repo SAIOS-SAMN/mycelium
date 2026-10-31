@@ -598,7 +598,7 @@ match located {
 /// Equal rotor, different ρ / σ / shift: three genome entries. Two
 /// spellings of one vertex still merge.
 #[test]
-fn learn_keeps_rho_sigma_shift_apart_and_merges_spellings() {
+fn learn_keeps_rho_sigma_and_shift_apart() {
 use crate::transducer::element::{from_connection, identity_versor, translator_versor};
 let id = crate::transducer::alphabet::Word::identity();
 let swap = from_connection(&id, &identity_versor(), &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).expect("swap");

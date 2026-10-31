@@ -1687,7 +1687,7 @@ discarded).
   ```
   (boundaries at multiples of `s_in` and of `s_out` in `(0, L)`:
   `(a − 1) + (b − 1) − (gcd(a, b) − 1)`, plus one; the test
-  `runs_bounded_by_grids_not_lcm` reads 6 for `3, 4`). The comparison
+  `runs_is_bounded_by_grids_not_lcm` reads 6 for `3, 4`). The comparison
   work is a boundary walk, `R_h·R_w ≤ (h_in + h_out)(w_in + w_out)`,
   which rule 10 already permits and which is ≤ 3 600 on 30×30, so the
   READ is never what the cap protects.

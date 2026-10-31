@@ -64,7 +64,7 @@ fn decoded(frame: &[u8]) -> SignedPost {
 /// signature verifies under its signer's key. No kernel is judged by
 /// reproducing bytes.
 #[test]
-fn fixed_posts_decode_to_values_and_verify() {
+fn fixed_posts_decodes_to_values_and_verifies() {
     let m = mind().verifying_key().to_bytes();
     let h = house().verifying_key().to_bytes();
     let call = decoded(&encode_post(&golden_call()).expect("writes"));
@@ -107,7 +107,7 @@ fn round_trip(s: &SignedPost) {
 
 /// EVERY SUB-KIND READS BACK WHOLE, and only whole.
 #[test]
-fn seat_posts_round_trip_whole() {
+fn seat_posts_round_trips() {
     let m = mind().verifying_key().to_bytes();
     let seats = Seats {
         domain: DOMAIN,
@@ -152,7 +152,7 @@ fn seat_posts_round_trip_whole() {
 /// A BIGQ PAST 64 BITS crosses exactly; an unreduced, zero-denominator or
 /// non-minimal one is refused; a flag is 0 or 1.
 #[test]
-fn arg_big_q_crosses_exactly_only_reduced() {
+fn arg_big_q_crosses_only_reduced() {
     let mut out = Vec::new();
     big().put(&mut out).expect("writes");
     let mut p = 0;
@@ -179,7 +179,7 @@ fn arg_big_q_crosses_exactly_only_reduced() {
 /// 78.146 — ARG TAG 6, BYTES: `[6][len u16][bytes]`, read back whole and only
 /// whole; a length past the run is refused; the empty run crosses.
 #[test]
-fn arg_bytes_crosses_whole() {
+fn arg_bytes_round_trips() {
     for run in [Vec::new(), vec![0xA5; 5], vec![0x5A; 65_535]] {
         let a = Arg::Bytes(run.clone());
         let mut out = Vec::new();
@@ -213,7 +213,7 @@ fn bytes_percept_decodes_to_values_and_verifies() {
 /// THE REPLIES: a post's `[1][seq]` or `[0][reason]`; the mail's count and
 /// pieces, its two-byte refusal told from an empty box; the listing or none.
 #[test]
-fn post_and_mail_replies_round_trip() {
+fn post_reply_round_trips_with_mail_reply() {
     assert_eq!(decode_post_reply(&encode_post_reply(Ok(42))), Some(Ok(42)));
     for why in [Refusal::Unsigned, Refusal::NotTheHouse, Refusal::Malformed, Refusal::UnknownDomain] {
         assert_eq!(decode_post_reply(&encode_post_reply(Err(why))), Some(Err(why)));
@@ -242,7 +242,7 @@ const SUB: [u8; 32] = [0x5c; 32];
 /// a scoped listing read names its sub-origin and a listing of another scope
 /// is not read as it.
 #[test]
-fn scoped_posts_decode_to_values_and_verify() {
+fn scoped_posts_decodes_to_values_and_verifies() {
     let m = mind().verifying_key().to_bytes();
     let h = house().verifying_key().to_bytes();
     let posts = [

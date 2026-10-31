@@ -10,7 +10,7 @@ use crate::transducer::cech::coefficient::Rates;
 /// Every challenge and every answer reads back whole, and a byte left over
 /// is no request.
 #[test]
-fn challenge_and_answers_round_trip_whole() {
+fn challenge_round_trips_with_answers() {
     let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
     let stamp = Stamp { h: 9, vk: [6u8; 32], k: 2, i: 1 };
     let entry = Entry { rows: vec![([1u8; 32], [0, 4, 0, 0])], declared: vec![([2u8; 32], [0, 4, 0, 0])] };
@@ -96,7 +96,7 @@ fn challenge_and_answers_round_trip_whole() {
 
 /// The register serves its challenge window at law version 4.
 #[test]
-fn parameters_reply_serves_challenge_window_at_version_4() {
+fn parameters_reply_serves_challenge_window() {
     use crate::physics::laws::codec::{decode_parameters_reply, encode_parameters_reply};
     let (version, params) = decode_parameters_reply(&encode_parameters_reply()).expect("reads whole");
     assert_eq!(version, 4);

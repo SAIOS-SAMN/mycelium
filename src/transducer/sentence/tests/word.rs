@@ -35,7 +35,7 @@ fn read_files_each_mode_under_own_law() {
 /// turn and the slide the screw is made of are words of its dictionary from
 /// then on — in a mind it had never known them before.
 #[test]
-fn hear_teaches_screw_and_its_mode_words() {
+fn hear_teaches_screw_and_mode_words() {
     use crate::transducer::sentence::compose::{compose, Term};
     use crate::transducer::sentence::rung::{hear, known};
     let along = cga::translator_at(&[q(0, 1), q(0, 1), q(1, 1)]);

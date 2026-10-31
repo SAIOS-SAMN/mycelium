@@ -63,7 +63,7 @@ fn record_origin_seals_once_never_edited() {
 /// THE WIRE: the origin and its read decode to what was encoded, a byte left
 /// over is none, and the replies and the reading round-trip.
 #[test]
-fn origin_act_and_read_round_trip_on_wire() {
+fn origin_act_round_trips_with_reading() {
     let signed = origin(9).sign(&domain());
     let frame = encode_origin(&signed);
     assert_eq!(decode_domain_request(&frame), Some(DomainRequest::Origin(signed)));

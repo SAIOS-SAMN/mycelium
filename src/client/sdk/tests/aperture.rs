@@ -181,7 +181,7 @@ fn hold_form_withholds_without_room_never_evicts() {
 /// RETURNS on the lapse, lane by lane, so the reserve is not a one-way
 /// ratchet: this is the exhale the breathing condition asked for.
 #[test]
-fn hold_form_draws_own_lanes_and_release_returns_them() {
+fn hold_form_draws_lanes_that_release_returns() {
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("escrow"));
     let before = entity.physics.reserve.lanes();
     assert_eq!(before[0], before[3], "the reserve begins as four copies of one number");

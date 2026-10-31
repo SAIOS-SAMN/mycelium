@@ -43,7 +43,7 @@ fn witness_vantage_reaches_offered_form_each_ask() {
 /// it is offered again, though this court has marked it heard: the
 /// heard mark is not a verdict, the replay is.
 #[test]
-fn witness_vantage_refuses_false_form_by_name_each_ask() {
+fn witness_vantage_refuses_false_form_each_ask() {
     let court = std::sync::Mutex::new(mycelium::cognition::Court::new());
     let mut cover = mycelium::network::nerve::Cover::new();
     let (home, witness) = ([2u8; 32], [3u8; 32]);

@@ -22,7 +22,7 @@ fn sections_short_of(rule: &crate::transducer::sentence::SentenceRule, frames: u
 /// One class in every pair is one vertex. Counts are not compared:
 /// 3, 4, 3 instances stay one class. A class in only some pairs is a section.
 #[test]
-fn extract_rule_by_class_with_sections() {
+fn extract_rule_with_groups_class_into_sections() {
 let family = vec![
     (squares(3, 1, 9), squares(3, 2, 9)),
     (squares(4, 1, 12), squares(4, 2, 12)),
@@ -147,7 +147,7 @@ fn edges_rederive_frames_applies_motor_to_whole_fibre() {
 /// A face that varies across the pairs is kept as sections and holds an
 /// orbit.
 #[test]
-fn extract_rule_with_keeps_varying_face_as_sections_with_orbit() {
+fn extract_rule_with_keeps_varying_face_as_sections() {
 let l_in = ["100000", "100000", "110000", "000000", "000330", "000000"];
 let turned_minus_90 = ["111000", "100000", "000000", "000000", "000550", "000000"];
 let turned_90 = ["001000", "111000", "000000", "000000", "000550", "000000"];
@@ -238,7 +238,7 @@ assert!(!snaps.is_empty(), "the pivot orbit reads the held orbit and answers");
 /// no section, no demand, and no correspondence pass anywhere in it; it
 /// closes the family and speaks a fourth frame.
 #[test]
-fn extract_rule_reads_translation_as_one_vertex_on_every_frame() {
+fn extract_rule_reads_translation_as_one_vertex() {
     let family = vec![
         (grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"])),
         (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),
@@ -598,7 +598,7 @@ assert_eq!(
 /// of the three charts. Spoken per class it was charts × frames speeches
 /// of one reading, under one spend per class.
 #[test]
-fn glue_speaks_once_per_placement_asks_once_per_chart() {
+fn glue_speaks_once_per_placement_and_chart() {
     use std::cell::Cell;
     let family = vec![
         (

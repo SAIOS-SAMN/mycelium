@@ -51,7 +51,7 @@ fn sigma() -> Mv {
 /// each pivot the source both open, the generators agree coefficient for
 /// coefficient — or both refuse.
 #[test]
-fn source_n_on_three_axes_equals_cl41_source() {
+fn source_n_equals_cl41_source_on_three_axes() {
     let s = sigma();
     let blade = |a: usize, b: usize, c: i64| Mv::blade(a, q(c, 1)).geo(&Mv::blade(b, q(1, 1)));
     let lift = blade(E1, E3, 1).add(&blade(E2, EP, 2)).add(&blade(E3, EM, -3)).add(&blade(E1, E2, 5));
@@ -118,7 +118,7 @@ fn outflow_planes_reads_each_plane_at_any_dimension() {
 /// geoid of square zero; a pivot off the geoid; a turn whose planes hold
 /// nothing of the pivot; an axis past the coordinates; two dimensions mixed.
 #[test]
-fn source_n_refuses_by_name() {
+fn source_n_refuses_non_null_point_and_still_plane() {
     let (sigma, p, l) = turned(61, 49, 7);
     let zero = vec![BigRational::zero(); 63];
     assert_eq!(NullPoint::new(zero.clone()), Err(OutflowRefusal::NotNull));

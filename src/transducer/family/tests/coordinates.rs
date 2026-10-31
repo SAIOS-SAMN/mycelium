@@ -29,7 +29,7 @@ fn quarter() -> Mv {
 /// cube at three quarters — the side the other way — and each is the turn's
 /// power, read off the windings. Every reading rebuilds its word.
 #[test]
-fn coordinates_of_turn_winds_one_hole() {
+fn coordinates_of_winds_one_hole_for_turn() {
     let w = quarter();
     let one = read(&w);
     assert_eq!(one.holes.len(), 1, "one plane, one hole");
@@ -54,7 +54,7 @@ fn coordinates_of_turn_winds_one_hole() {
 /// slide by one counted twice; a slide along another axis stands on another
 /// hole and is no power of the first.
 #[test]
-fn coordinates_of_slide_counts_along_hole() {
+fn coordinates_of_counts_slide_along_hole() {
     let t1 = cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)]);
     let t2 = cga::translator_at(&[q(2, 1), q(0, 1), q(0, 1)]);
     let ty = cga::translator_at(&[q(0, 1), q(1, 1), q(0, 1)]);

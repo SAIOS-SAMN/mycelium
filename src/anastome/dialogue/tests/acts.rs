@@ -8,7 +8,7 @@ use crate::anastome::dialogue::*;
 /// so the reader took a frame that ended inside the next field and refused
 /// the whole act while the sender believed it spoke.
 #[test]
-fn encode_refuses_count_past_its_field() {
+fn encode_refuses_count_past_field() {
     let voice = [3u8; 32];
     let charts: Vec<crate::transducer::stalk::Invariant> =
         (0..256u64).map(|i| crate::transducer::stalk::Invariant::counts(&[i])).collect();
@@ -38,7 +38,7 @@ fn encode_refuses_count_past_its_field() {
 
 /// Every act round-trips exactly — the calculus is closed and lossless.
 #[test]
-fn acts_round_trip_exactly() {
+fn acts_round_trips() {
     let chain = vec![(0i64, 0i64, 1u8, 4u8), (2, 3, 0, 7)];
     let voice = [9u8; 32];
     let solver = [7u8; 32];
@@ -132,7 +132,7 @@ fn acts_round_trip_exactly() {
 /// inline as its canonical coordinates, read back as the rotor it was; a
 /// page cut inside a record is refused whole, never shortened.
 #[test]
-fn class_page_round_trips_rotor_refuses_cut_page() {
+fn class_page_round_trips_and_refuses_cut_page() {
     let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane");
     let r = crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor();
     let page = ClassPage { key: r.class_key().expect("a class"), order: 4, rotor: r.clone() };

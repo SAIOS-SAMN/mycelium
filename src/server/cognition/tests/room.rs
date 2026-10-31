@@ -168,7 +168,7 @@ assert!(
 /// demands on two body charts; a second task of the same frame that shares
 /// one body lists only the body it adds, and the shared body is one listing.
 #[test]
-fn intake_lists_each_body_as_own_demand() {
+fn intake_lists_each_body_as_demand() {
 let mut k = Court::new();
 let a = vec![(0, 0, 1u8), (5, 5, 3u8)];
 let b = vec![(0, 0, 2u8), (5, 5, 4u8)];
@@ -272,7 +272,7 @@ fn lane_room_of_counts_broken_read_by_reason() {
 /// `discoverers`: admissions insert, removals and clears evict, and
 /// empty voice tries are pruned rather than leaked.
 #[test]
-fn discovered_by_stays_synchronized_with_discoverers() {
+fn court_keeps_discovered_by_synchronized() {
     let mut k = Court::new();
     let v1 = [1u8; 32];
     let v2 = [2u8; 32];

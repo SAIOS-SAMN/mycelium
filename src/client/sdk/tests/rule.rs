@@ -95,7 +95,7 @@ fn grid_motion_carries_every_site_to_index_image() {
 /// Every grid symmetry of a square, minted as a rule, is solved by the court
 /// on a pair the rule never saw.
 #[test]
-fn sentence_of_square_symmetry_solves_unseen_pair() {
+fn sentence_of_solves_unseen_pair_by_square_symmetry() {
     for kind in [
         Symmetry::Rotate90,
         Symmetry::Rotate180,
@@ -142,7 +142,7 @@ fn grid_motion_exchanges_non_square_shape() {
 /// A hue permutation, minted as a rule, is solved by the court on a pair the
 /// rule never saw.
 #[test]
-fn sentence_of_hue_permutation_solves_unseen_pair() {
+fn sentence_of_solves_unseen_pair_by_hue_permutation() {
     let map = [(1u8, 2u8), (2, 1)];
     let x = square_train();
     let rule = sentence(&[Step::Hue(map.to_vec())], &[(x.clone(), recolour(&map, &x))], &NoCrystal).expect("mints");
@@ -152,7 +152,7 @@ fn sentence_of_hue_permutation_solves_unseen_pair() {
 
 /// A motion followed by a recolour is minted and solved as one action.
 #[test]
-fn sentence_of_motion_then_recolour_solves_as_one() {
+fn sentence_of_solves_motion_then_recolour_as_one() {
     let map = [(1u8, 5u8)];
     let steps = [Step::grid_motion(Symmetry::Rotate180, (3, 3), (3, 3)).expect("fits"), Step::Hue(map.to_vec())];
     let then = |g: &Grid| recolour(&map, &apply(Symmetry::Rotate180, g));

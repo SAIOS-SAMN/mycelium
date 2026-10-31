@@ -311,7 +311,7 @@ fn compose_or_construct_speaks_ruled_composition_to_court() {
 /// read through words of its own that are not the speaker's: the same words
 /// are one derivation seen twice, and a hearer with none stood nowhere.
 #[test]
-fn vantage_reads_word_through_minds_own_words() {
+fn vantage_reads_word_through_mind_words() {
     use crate::transducer::sentence::rung::{distinct_vantage, learn_by, vantage};
     let (court, _speeches) = court();
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");

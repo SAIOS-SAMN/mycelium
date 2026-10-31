@@ -66,7 +66,7 @@ fn pay_lease_pays_each_job_once() {
 /// WHAT A LEASE HAS LEFT RETURNS TO ITS PAYER: on the payer's close, and on
 /// the window's passing at the court stroke.
 #[test]
-fn close_lease_and_lapse_return_remainder() {
+fn close_lease_returns_remainder_as_lapse_does() {
     let provider = [9u8; 32];
     let (mut k, payer, act) = court_and_lease([50, 40, 0, 30], [30, 20, 0, 10], provider, vec![[7; 32]], 1_000);
     let who = act.payer;
@@ -99,7 +99,7 @@ fn close_lease_and_lapse_return_remainder() {
 /// naming a job already leased to that provider — and a refused lease holds
 /// nothing.
 #[test]
-fn open_lease_refuses_by_name() {
+fn open_lease_refuses_unsigned_short_or_repeated_lease() {
     let provider = [9u8; 32];
     let (mut k, payer, act) = court_and_lease([10, 10, 10, 10], [5, 0, 0, 0], provider, vec![[7; 32]], 100);
     let who = act.payer;

@@ -24,7 +24,7 @@ use crate::transducer::element::{identity_versor as ident, same_versor};
 /// neither sentence has a versor at all and `Cl(3, 1)` cannot separate
 /// them. The rotors can.
 #[test]
-fn transition_between_sentences_answers_agreed_rotor() {
+fn transition_between_answers_agreed_rotor_for_sentences() {
     use crate::transducer::alphabet::{self, LetterId, Word};
     use crate::transducer::element::Element;
     use crate::transducer::sentence::{as_element_form, Form, Vertex};
@@ -104,7 +104,7 @@ fn transition_between_sentences_answers_agreed_rotor() {
 
 /// A TRANSITION is antisymmetric: `g_XY ∘ g_YX = 1` (`g_YX = g_XY⁻¹`).
 #[test]
-fn transition_and_reverse_cancel() {
+fn transition_cancels_with_reverse() {
     let (gx, gy) = (motion(3), motion(6));
     let f = transition(&gx, &gy).unwrap();
     let r = transition(&gy, &gx).unwrap();
@@ -113,7 +113,7 @@ fn transition_and_reverse_cancel() {
 
 /// Consilient charts glue: identical views form one sheaf.
 #[test]
-fn glues_consilient_charts() {
+fn glues_accepts_consilient_charts() {
     let g = motion(3);
     let id = transition(&g, &g).unwrap();
     assert!(id.is_identity());
@@ -122,7 +122,7 @@ fn glues_consilient_charts() {
 
 /// A global section always glues, since a coboundary satisfies δδ = 0.
 #[test]
-fn glues_global_section() {
+fn glues_reads_global_section() {
     let (ga, gb, gc) = (motion(3), motion(6), motion(9));
     let g_ab = transition(&ga, &gb).unwrap();
     let g_bc = transition(&gb, &gc).unwrap();
@@ -277,7 +277,7 @@ fn fill_is_gauge_or_class() {
 /// rotor here is the identity, so the rotor half of the holonomy closes
 /// exactly and the obstruction lives entirely in the carriage.
 #[test]
-fn fill_unclosed_placement_is_class_carrying_it() {
+fn fill_reads_unclosed_placement_as_class() {
     let mut c = Complex::new();
     let (a, b, cc) = (v(1), v(2), v(3));
     for x in [&a, &b, &cc] {
@@ -315,7 +315,7 @@ fn fill_unclosed_placement_is_class_carrying_it() {
 
 /// file_congruent writes the class-key index; court torsion reads it.
 #[test]
-fn congruent_is_read_by_class_key() {
+fn congruent_agrees_with_class_key() {
     let mut c = Complex::new();
     let q = turn_90();
     let ck = q.class_key().expect("90° turn class");
@@ -360,7 +360,7 @@ fn remember_refuses_simplex_without_vertices() {
 /// A fill is attempted once: a second fill answers `AlreadyFilled` and the
 /// stored fill stands.
 #[test]
-fn fill_is_attempted_once() {
+fn fill_attempts_once() {
     let mut c = Complex::new();
     let (a, b) = (v(1), v(2));
     c.set_section(&a, Section::at(a.clone(), Rotor::identity()), vol());

@@ -184,7 +184,7 @@ fn step_rank_reads_rederived_sentence_rings() {
 /// THE CARRIER READ BACK BY ITS OWN COORDINATES: period, winding, rewrite,
 /// accrued draws and torsion — the accrued pay is a claim, kept whole.
 #[test]
-fn winding_round_trips_whole() {
+fn winding_round_trips() {
     let w = Winding {
         ell: 4,
         m: 3,

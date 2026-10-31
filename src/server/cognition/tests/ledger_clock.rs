@@ -168,7 +168,7 @@ fn apply_verdict_seals_receipt_citing_word() {
 /// before the provisional is removed, which is the one point past which
 /// the book has moved on every path.
 #[test]
-fn apply_verdict_ruling_nothing_seals_nothing() {
+fn apply_verdict_seals_nothing_when_ruling_nothing() {
     use crate::anastome::dialogue::RULING_UPHELD;
     let (mut k, addr) = docketed([0x5a; 32]);
     assert!(k.apply_verdict(&addr, RULING_UPHELD), "the first lands");
@@ -180,7 +180,7 @@ fn apply_verdict_ruling_nothing_seals_nothing() {
 
 /// 45.1: a slash is a ruling on the other arm, and seals its own receipt.
 #[test]
-fn apply_verdict_slash_seals_receipt() {
+fn apply_verdict_seals_slash_receipt() {
     use crate::anastome::dialogue::RULING_SLASHED;
     let (mut k, addr) = docketed([0x5b; 32]);
     let before = k.chain().own_len();

@@ -18,7 +18,7 @@ use crate::transducer::stalk::{self, Stalks};
 /// orbit holds until it is filed. An orbit through a remainder edge is not
 /// evaluated.
 #[test]
-fn edge_holonomies_do_not_telescope() {
+fn edge_holonomies_never_telescopes() {
     let qw = Word::from_letters(&[(alphabet::LetterId::turn_90((0, 1)).unwrap(), false)]);
     let mut f = Form::default();
     // AT1 — THREE BODIES OF ONE WORD ARE ONE VERTEX WITH THREE MEMBERS (Q1),
@@ -197,7 +197,7 @@ fn coheres_refuses_infinite_order_orbit_filed_or_not() {
 
 /// The face of a missing vertex is none, while the frame is present.
 #[test]
-fn face_place_of_missing_vertex_is_none() {
+fn face_place_of_is_none_for_missing_vertex() {
     let f = Form::default();
     // AT1 — A FACE IS AN OVERLAP OF TWO CHARTS, and its place is read off
     // the two ends' vertices: a chart of a vertex the form does not hold
@@ -216,7 +216,7 @@ fn face_place_of_missing_vertex_is_none() {
 /// Glue and retract remap the faces, and a tampered placement refuses at
 /// replay.
 #[test]
-fn glue_retract_remaps_faces_and_placement_refuses() {
+fn glue_retract_remaps_faces_and_refuses_placement() {
     let w = Word::from_letters(&[(alphabet::LetterId::turn_90((0, 1)).unwrap(), false)]);
     let mut host = Form::default();
     // AT1 — TWO WORD VERTICES ARE TWO CLASSES (Q1): two vertices of one word
@@ -408,7 +408,7 @@ fn form_vertex_key_carries_ratio_and_sections() {
 /// What remains true, and is what this test is for: `depth_of` is one more
 /// than the DEEPEST citation, never a count of them.
 #[test]
-fn depth_of_is_one_plus_max_glued() {
+fn depth_of_equals_one_plus_max_glued() {
     let q = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
     let inner = closed_word_form(w.clone(), None);
@@ -536,7 +536,7 @@ fn deconstruct_at_records_multiplicity_per_body() {
 /// a transport and its inverse are a flat orbit, two translations are
 /// not.
 #[test]
-fn seam_defect_at_and_is_flat_locate_exactly() {
+fn seam_defect_at_agrees_with_is_flat() {
     let bar = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
     let bar_other = from_canonical(&germinate(&[(0, 0, 7u8), (0, 1, 7)], &[(0, 0, 8u8), (0, 1, 8)]).unwrap());
     let words = vec![bar, bar_other];
@@ -563,7 +563,7 @@ fn seam_defect_at_and_is_flat_locate_exactly() {
 
 /// Two word vertices and the frame star are a tree; the coboundary is exact.
 #[test]
-fn coheres_on_two_germ_tree() {
+fn coheres_is_true_on_two_germ_tree() {
     let f = star_form(2, Vec::new());
     // AT1 (Q1): two germs of one word are ONE vertex with two members.
     assert_eq!(f.vertices.len(), 2, "frame plus the one word class");
@@ -583,7 +583,7 @@ fn coheres_on_two_germ_tree() {
 /// Separated bodies meet by relative word: the star form holds no adjacency
 /// face between them.
 #[test]
-fn faces_hold_no_adjacency_between_separated_bodies() {
+fn faces_names_no_adjacency_between_separated_bodies() {
     let f = star_form(2, Vec::new());
     let word_word = f.faces.entries().filter(|(o, _)| !on_frame(o)).count();
     assert_eq!(word_word, 0, "separated bodies have no adjacency face");
@@ -598,7 +598,7 @@ fn on_frame(o: &coord::Overlap) -> bool {
 /// A row of three has faces by constancy: the faces are bounded per chart
 /// and a touching row has two adjacency faces.
 #[test]
-fn faces_on_row_of_three_follow_constancy() {
+fn faces_follows_constancy_on_row_of_three() {
     let tree = star_form(3, Vec::new());
     // THE BOUND IS PER CHART (AT1): three spokes of one word are one vertex
     // with three members, and an overlap relates one member pair.
@@ -622,7 +622,7 @@ fn faces_on_row_of_three_follow_constancy() {
 /// STRATUM (R5: the rank of a union is the sum of the parts). Nothing per
 /// vertex follows, so the chart's width does not grow with the object.
 #[test]
-fn invariant_of_sentence_leads_with_two_then_rank() {
+fn invariant_of_leads_with_two_then_rank() {
     let f = star_form(2, Vec::new());
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("form element");
     assert!(e.is_sentence());
@@ -699,7 +699,7 @@ fn same_vertex_excludes_placement() {
 /// Admitting words to an axis index costs work linear in the number of words, and
 /// an on-axis read costs the same whatever the index holds.
 #[test]
-fn admit_words_linear_and_on_axis_constant() {
+fn admit_words_keeps_linear_and_on_axis_words_constant() {
     use crate::network::nerve::work;
     let inv = stalk::Invariant::default();
     let w = Transport {

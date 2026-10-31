@@ -105,7 +105,7 @@ fn extraction_spend_reads_family_end_to_end() {
 /// by the atlas root, so the extraction runs again the moment this mind's
 /// language moves, which is the only thing that could spell more of it.
 #[test]
-fn extract_rule_cached_holds_partial_until_language_moves() {
+fn extract_rule_cached_keeps_partial_until_language_moves() {
     let family = vec![
         (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
         (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
@@ -157,7 +157,7 @@ fn extract_rule_cached_holds_partial_until_language_moves() {
 /// (the L8w test above) — so the spent-then-full shape 78.158 names has no
 /// fixture; the invariant it rests on is this one.
 #[test]
-fn extract_rule_cached_never_holds_none() {
+fn extract_rule_cached_never_keeps_none() {
     let root = crate::transducer::address::Address::new(vec![3u8]);
     let ph = &mut crate::physics::Physics::default();
     let one = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];

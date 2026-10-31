@@ -13,7 +13,7 @@ use crate::transducer::family::reconstruct::reconstruct;
 /// not equal. Emitting another hue lifts the light; recolouring the dot
 /// lifts the gauge.
 #[test]
-fn congruence_reads_two_lengths_as_one_flow_in_time() {
+fn congruence_reads_two_lengths_as_one_flow() {
     let short = flows(&grid(&["300000"]), &grid(&["344000"])).expect("one frame");
     let long = flows(&grid(&["300000"]), &grid(&["344400"])).expect("one frame");
     assert_eq!(congruence(&short[0], &long[0]), Congruence::InTime);

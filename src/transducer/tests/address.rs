@@ -63,7 +63,7 @@ fn from_key_decodes_rotor_and_versor_keys() {
 /// That is the half of A21 an undecodable key keeps. Chapter 1.7's argument
 /// against digests is that they keep equality and destroy every other
 /// operation; an address that cannot be decoded keeps equality AND keeps
-/// the prefix stratum (`is_proper_prefix_holds_for_no_sibling_keys`) and loses
+/// the prefix stratum (`is_proper_prefix_is_false_for_sibling_keys`) and loses
 /// the object. Better than a digest, and not what A21 §4 specifies.
 #[test]
 fn form_vertex_key_is_function_of_content() {
@@ -112,7 +112,7 @@ fn form_vertex_key_is_function_of_content() {
 
 /// No key is a proper prefix of a sibling key of the same tag.
 #[test]
-fn is_proper_prefix_holds_for_no_sibling_keys() {
+fn is_proper_prefix_is_false_for_sibling_keys() {
     let mut keys: Vec<Address> = sample_words().into_iter().map(|w| w.rotor().key()).collect();
     for w in sample_words() {
         keys.push(w.rotor().class_key().expect("class"));

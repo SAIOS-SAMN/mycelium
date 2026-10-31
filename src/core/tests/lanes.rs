@@ -5,7 +5,7 @@ use crate::core::lanes::{lanes_step, lanes_sum};
 /// A step one lane of which would pass its carrier moves no lane; one that
 /// fits moves all four.
 #[test]
-fn lanes_step_refuses_overflow_whole() {
+fn lanes_step_refuses_overflow() {
     let mut acc = [1, u64::MAX, 0, 0];
     assert!(!lanes_step(&mut acc, &[1, 1, 1, 1]), "one lane would pass its carrier");
     assert_eq!(acc, [1, u64::MAX, 0, 0], "no lane moved");

@@ -42,7 +42,7 @@ fn null_fluxes_reads_translation_not_turn() {
 /// one ray share the quantum of one unit and wind it twice and three times;
 /// a half-unit flux refines the quantum to a half and the windings double.
 #[test]
-fn tubes_windings_read_quantum_off_fluxes() {
+fn tubes_reads_winding_quantum_off_fluxes() {
     let f = |x: i64| null_fluxes(&translator(x, 0), &mut stroke()).expect("reads")[0].clone();
     let mut tubes = Tubes::new();
     assert!(tubes.admit(&f(2), 1) && tubes.admit(&f(3), 1));
@@ -60,7 +60,7 @@ fn tubes_windings_read_quantum_off_fluxes() {
 /// F3 — FROZEN IN: carrying a tube by a turn keeps it one tube with the same
 /// windings.
 #[test]
-fn tubes_carried_by_turn_keep_windings() {
+fn tubes_keeps_windings_under_turn() {
     let f = |x: i64| null_fluxes(&translator(x, 0), &mut stroke()).expect("reads")[0].clone();
     let g = turn();
     let carry = |v: &Mv| g.geo(v).geo(&g.reverse());
@@ -78,7 +78,7 @@ fn tubes_carried_by_turn_keep_windings() {
 /// second flux on the ray closes on it, relieving what stood open exactly;
 /// a finer flux refines the quantum and rescales what the tube held.
 #[test]
-fn tube_registry_admit_opens_then_closes_exactly() {
+fn tube_registry_admit_opens_then_closes() {
     let f = |x: i64| null_fluxes(&translator(x, 0), &mut stroke()).expect("reads")[0].clone();
     let g = f(1);
     let mut tubes = TubeRegistry::new();

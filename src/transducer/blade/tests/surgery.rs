@@ -59,7 +59,7 @@ fn detect_punctures_increasing_genus() {
 
 /// A bridge-merge surgery connects two components into one.
 #[test]
-fn detect_bridge_merge_connects_components() {
+fn detect_connects_components_by_bridge_merge() {
     // Two 1x2 blocks at rows 0 and 2
     let two_blocks = at_frame_0(&[
         (0, 0), (0, 1),
@@ -87,7 +87,7 @@ fn detect_bridge_merge_connects_components() {
 
 /// A split-cut surgery disconnects one component into two.
 #[test]
-fn detect_split_cut_disconnects_components() {
+fn detect_disconnects_components_by_split_cut() {
     let connected = at_frame_0(&[
         (0, 0), (0, 1),
         (1, 0),

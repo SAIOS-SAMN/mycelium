@@ -36,7 +36,7 @@ fn mesh(sk: &SigningKey) -> Mesh {
 /// the court loop's signing needs no digest, and the door hears a known
 /// peer's pushed ring, refuses a stranger's, and takes no court doing so.
 #[test]
-fn sign_tick_needs_no_digest_and_hear_tick_no_court() {
+fn sign_tick_needs_no_digest() {
     let (a, b) = (SigningKey::from_bytes(&[1; 32]), SigningKey::from_bytes(&[2; 32]));
     let (va, vb) = (a.verifying_key().to_bytes(), b.verifying_key().to_bytes());
     let m = mesh(&a);

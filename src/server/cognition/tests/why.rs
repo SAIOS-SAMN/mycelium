@@ -22,7 +22,7 @@ fn family() -> Vec<TrainPair> {
 /// crosses the wire whole; an act the court does not hold is answered as
 /// none, never as an empty one.
 #[test]
-fn why_answers_act_with_speakers_reasons() {
+fn why_answers_act_with_speaker_reasons() {
     let fam = family();
     let [(x, y)] = fam.as_slice() else { panic!("one pair") };
     let f = cipher_form(x, y);

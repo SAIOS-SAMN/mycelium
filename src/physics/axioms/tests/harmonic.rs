@@ -84,7 +84,7 @@ fn relative_rotor_mints_proper_turn_for_turn_90() {
 /// AND A BODY AGAINST ITSELF IS THE IDENTITY — the rotor is not
 /// invented where there is no turn.
 #[test]
-fn relative_rotor_of_body_against_itself_is_identity() {
+fn relative_rotor_is_identity_of_body_against_itself() {
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0)]);
     let theta = blade::relative_rotor(&l.blade, &l.blade, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a body carries onto itself");
     assert!(
@@ -255,7 +255,7 @@ fn deviatoric_covers_square_lattice_orders_except_c4() {
 /// (a square lattice forbids that) but that a generic body has a
 /// non-vanishing third moment which changes sign under `x -> -x`.
 #[test]
-fn even_harmonics_miss_point_reflection() {
+fn deviatoric_misses_point_reflection() {
     let body = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (0, 1, 0)]);
     // The same body reflected through the origin. Congruent to itself
     // under a 180° turn, and a 180° turn is what must be detected.
@@ -296,7 +296,7 @@ fn even_harmonics_miss_point_reflection() {
 /// sensor plane, which is what a refraction between two non-parallel
 /// facets is.
 #[test]
-fn bivector_is_simple_fails_only_off_sensor_plane() {
+fn bivector_is_simple_is_false_only_off_sensor_plane() {
     use crate::transducer::cga;
     let q = |n: i64| crate::core::Q::from_integer(n.into());
 
@@ -373,7 +373,7 @@ fn bivector_is_simple_fails_only_off_sensor_plane() {
 /// than cosmetic work. A second producer taking compartments as point masses
 /// would have collapsed the nucleus onto the cone.
 #[test]
-fn radius2_of_one_compartment_stays_off_cone() {
+fn radius2_stays_off_cone_for_one_compartment() {
     use crate::transducer::blade::sensor_plane as blade;
     let q = |n: i64| crate::core::Q::from_integer(n.into());
     let sixth = q(1) / q(6);

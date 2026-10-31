@@ -248,7 +248,7 @@ assert!(
 /// never match — it filtered nothing and cost wire, allocation and a read
 /// of a set that grows with peers × corpus.
 #[test]
-fn fetch_have_carries_only_this_charts_heard() {
+fn fetch_have_carries_only_heard_on_chart() {
 use crate::transducer::stalk::Invariant;
 let mut k = Court::new();
 let here = Invariant::counts(&[1]);

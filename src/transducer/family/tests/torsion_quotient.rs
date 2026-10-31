@@ -48,7 +48,7 @@ fn said(q: &crate::transducer::family::torsion_quotient::Quotient, a: &[u8], b: 
 /// point the lifted body reads (`Blade::vertex_point`). Sites of two bases,
 /// or none, give no pivot.
 #[test]
-fn vertex_point_is_sites_centroid() {
+fn vertex_point_equals_sites_centroid() {
     let sites = [Site::of([0, 0]), Site::of([0, 1])];
     let (point, n) = vertex_point(&sites).expect("two sites of one base");
     assert_eq!(n, 2);

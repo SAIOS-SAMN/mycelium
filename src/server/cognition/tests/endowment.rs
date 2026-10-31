@@ -51,7 +51,7 @@ fn signed(m: Manifest, by: u8) -> SignedManifest {
 /// endowment's reading likewise. A count that is no positive integer is no
 /// manifest.
 #[test]
-fn manifest_and_reading_round_trip_on_wire() {
+fn manifest_round_trips_with_reading() {
     let s = signed(manifest(1), RESERVE);
     let bytes = encode_manifest(&s).expect("it writes");
     assert_eq!(decode_domain_request(&bytes), Some(DomainRequest::Manifest(Box::new(s.clone()))));
@@ -107,7 +107,7 @@ fn reserve_domain() -> [u8; 32] {
 /// reserve; a domain with no origin; nuclei unordered or of a zero count; and
 /// a court that has earned too little — nothing moved, nothing minted.
 #[test]
-fn manifest_refuses_grant_by_name() {
+fn manifest_refuses_unsigned_malformed_or_short_grant() {
     let mut unoriginated = universe(false);
     assert_eq!(unoriginated.manifest(&signed(manifest(1), RESERVE)), Granted::Refused(GrantRefusal::NotAUniverse));
     let mut k = universe(true);

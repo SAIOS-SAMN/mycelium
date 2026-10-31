@@ -39,7 +39,7 @@ fn base_axis_refuses_past_masks_never_wraps() {
 /// one term, and the product reads the terms the two hold — `e₁e₄₀ · e₄₀ =
 /// e₁` exactly, at an `n` whose dense carrier would have held 2⁴² slots.
 #[test]
-fn mv_blade_at_large_n_is_one_term_multiplying_exactly() {
+fn mv_blade_is_one_term_at_large_n() {
     let e40 = Mv::blade(ax(40), q(1, 1));
     assert_eq!((e40.n(), e40.term_count()), (40, 1));
     let e1_40 = Mv::blade(ax(1) | ax(40), q(3, 2));
@@ -74,7 +74,7 @@ fn from_bytes_refuses_forged_n_before_sizing() {
 /// THE ALGEBRA AT n = 4: `2⁶` blades, fifteen planes, the signature's
 /// metric, the new axis at its own bit, and the n = 3 algebra inside it.
 #[test]
-fn algebra_at_n4_counts_its_own_and_holds_n3() {
+fn blades_counts_cl51_and_keeps_n3_row() {
     assert_eq!(blades(4), Some(64), "Cl(5,1) has 2^6 blades");
     assert_eq!(bivector_planes(4).len(), 15, "C(5,2) + 5 = 15 planes");
     assert_eq!(bivector_planes(3).len(), 10, "and the n = 3 row of the family is ten");

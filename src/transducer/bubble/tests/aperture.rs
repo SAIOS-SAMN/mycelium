@@ -57,7 +57,7 @@ fn lapse_with_retires_handed_set_never_by_age() {
 /// at one chart stay two (law 7) and the entries a chart can re-hold are the
 /// subtree under it.
 #[test]
-fn cavity_keys_under_reads_entries_at_own_chart() {
+fn cavity_keys_under_reads_entries_at_chart() {
     let mut c = Contemplation::new();
     c.set_now(10);
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
@@ -449,7 +449,7 @@ fn expand_with_covers_own_charts_not_siblings() {
 /// configuration space. The key IS the topology and the carriages (law 2),
 /// so a bubble found under it is that same form unchanged.
 #[test]
-fn hold_form_unchanged_keeps_moved_k_and_ages() {
+fn hold_form_keeps_moved_k_and_ages_when_unchanged() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
     use crate::transducer::sentence::{Form, Vertex};
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane");

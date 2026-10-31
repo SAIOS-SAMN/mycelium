@@ -36,7 +36,7 @@ fn pair(g: Rotor) -> (Complex, Vec<u8>) {
 /// and its dissolution has no topological consequence, so nothing is filed
 /// and the cell leaves every carrier that named it.
 #[test]
-fn drain_trivial_tether_to_vacuum() {
+fn drain_vents_trivial_tether_to_vacuum() {
     let (mut c, key) = pair(Rotor::identity());
     assert!(c.simplex(&key).is_some(), "the edge stands before the drain");
 
@@ -73,7 +73,7 @@ fn drain_cauterizes_strained_tether_with_class() {
 /// 78.74 — EVERY SEAL IS BOOKED: a membrane sealed by the climb's own `fill`
 /// — not `ascend` — counts on the ledger, once.
 #[test]
-fn fill_seal_is_booked_once() {
+fn fill_books_seal_once() {
     let mut c = Complex::new();
     let vs = [v(1), v(2), v(3)];
     for x in &vs {
@@ -158,7 +158,7 @@ fn face_over(m: &crate::transducer::cga::Mv) -> (Complex, Vec<u8>) {
 /// triangle holds no mode at all. Each reading is exact and is the face's
 /// own: the motion read back off the cell is the one its edge carried.
 #[test]
-fn census_reads_each_face_by_its_motion() {
+fn census_reads_each_face_by_motion() {
     let (flat, _) = face_over(&ident());
     let census = flat.census(&mut wide());
     assert!(census.len() >= 3, "vertices, edges and a face: {census:?}");
@@ -366,7 +366,7 @@ fn drain_refuses_edge_beneath_reading_as_pinned() {
 /// the seal, the dipole's read-back, to the same chamber. No ghost incidence
 /// is left in any star at any step.
 #[test]
-fn descend_then_seal_reads_back_without_ghost() {
+fn descend_round_trips_through_seal_without_ghost() {
     let mut c = Complex::new();
     let vs = [v(1), v(2), v(3)];
     for x in &vs {
@@ -429,7 +429,7 @@ fn descend_answers_only_at_dimension_two() {
 /// successful descents are different facts and are kept apart, as
 /// `Vacuum` and `Cauterized` are at degree 1.
 #[test]
-fn descend_unread_membrane_keeps_no_class() {
+fn descend_keeps_no_class_for_unread_membrane() {
     let mut c = Complex::new();
     let vs = [v(1), v(2), v(3)];
     for x in &vs {
@@ -454,7 +454,7 @@ fn descend_unread_membrane_keeps_no_class() {
 /// different facts, and answering one for both is the defect
 /// `CoboundaryOutcome` was split to avoid.
 #[test]
-fn drain_missing_cell_is_absent_not_pinned() {
+fn drain_reads_missing_cell_as_absent_not_pinned() {
     let mut c = Complex::new();
     let out = c.drain(&[9, 9, 9]);
     assert!(matches!(out, Drained::Absent), "no such 1-cell: {out:?}");

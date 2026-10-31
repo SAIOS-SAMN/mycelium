@@ -73,7 +73,7 @@ fn remainder_of(e: &Mind, w: &Element) -> (Remainder, bool) {
 /// constructors do not spell → unspelled, the class docketed as a Demand over
 /// both chains, no callus.
 #[test]
-fn stand_calluses_raises_callus_only_for_one_twist_two_vantages() {
+fn stand_calluses_raises_callus_only_across_two_vantages() {
     let (a, b, nested) = chains();
     let other_turn_90 = || {
         let q = crate::transducer::alphabet::LetterId::turn_90((0, 2)).expect("a plane");
@@ -178,7 +178,7 @@ fn cycle(r: Option<Remainder>) -> TorsionCycle {
 /// epigenome, the record comes back whole and the index is rebuilt from it.
 /// A second word whose remainder coincides is not filed over the first.
 #[test]
-fn record_cycle_remainder_survives_restart_and_reindexes() {
+fn record_cycle_keeps_remainder_through_restart() {
     let r = remainder(&[b"", b"c"]);
     let mut e = super::common::two_body_sentence([&[(1, 2)], &[(3, 4)]]);
     let addr = e.address();

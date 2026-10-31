@@ -15,7 +15,7 @@ fn cite(r: &KStepReceipt) -> Parent {
 
 /// The head's height is one plus the maximum of its predecessor's height and its parents' heights.
 #[test]
-fn head_height_is_one_plus_max_of_prev_and_parents() {
+fn head_height_equals_one_plus_max_of_parents() {
     let mut a = ReceiptChain::with_signer([1; 32]);
     step(&mut a, Vec::new());
     assert_eq!(a.head_height(), 0, "h(genesis) = 0");
@@ -37,7 +37,7 @@ fn head_height_is_one_plus_max_of_prev_and_parents() {
 /// re-derives it, and a peer's admission re-derives it too — the three
 /// readers of one rule. It stood at 0 wherever the line had no predecessor.
 #[test]
-fn append_first_act_citing_parent_stands_above_it() {
+fn append_stands_act_above_cited_parent() {
     let mut b = ReceiptChain::with_signer([2; 32]);
     for _ in 0..4 {
         step(&mut b, Vec::new());
@@ -105,7 +105,7 @@ fn from_nodes_rehydrates_only_with_cited_peer_nodes() {
 /// 78.24, 45.8 — THE LEDGER WRITTEN AS ITS LINE READS BACK AS ITSELF: every
 /// node once at its stamp, the line verified, the head where it was.
 #[test]
-fn from_line_reads_line_image_back_whole() {
+fn from_line_round_trips() {
     let mut peer = ReceiptChain::with_signer([2; 32]);
     let p0 = step(&mut peer, Vec::new());
     let mut c = ReceiptChain::with_signer([1; 32]);
