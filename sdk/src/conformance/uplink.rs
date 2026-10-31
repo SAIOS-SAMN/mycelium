@@ -116,7 +116,7 @@ fn domain_manifest(session: &Speaker, key: &SigningKey) -> Result<String, String
     let signed = super::probes::manifest(key.verifying_key().to_bytes()).sign(key).ok_or("the manifest does not sign")?;
     let reply = spoken(session, endowment::encode_manifest(&signed).ok_or("the manifest does not encode")?)?;
     match endowment::decode_grant_reply(&reply).ok_or_else(|| undecoded(&reply, "a grant"))? {
-        Granted::Sealed { mu, founding, .. } => Ok(format!("granted μ {mu:?}, founding {founding}")),
+        Granted::Sealed { mu, founding, .. } => Ok(format!("granted μ {mu}, founding {founding}")),
         Granted::Refused(r @ (GrantRefusal::Short | GrantRefusal::Granted | GrantRefusal::InFlight | GrantRefusal::NoNewClosures)) => {
             Ok(format!("refused by name, nothing moved: {r:?}"))
         }
@@ -141,7 +141,7 @@ fn domain_universe(session: &Speaker, domain: [u8; 32]) -> Result<String, String
 fn domain_endowment(session: &Speaker, domain: [u8; 32]) -> Result<String, String> {
     let reply = spoken(session, endowment::encode_endowment_read(domain))?;
     let read = endowment::decode_endowment_reading(&reply).ok_or_else(|| undecoded(&reply, "an endowment"))?;
-    Ok(format!("earned μ {:?}, {} grants to this universe", read.earned, read.grants.len()))
+    Ok(format!("earned μ {}, {} grants to this universe", read.earned, read.grants.len()))
 }
 
 /// The house's seats posted as its sitting reserve, the listing read back
