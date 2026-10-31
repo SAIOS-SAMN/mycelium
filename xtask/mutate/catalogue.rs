@@ -106,4 +106,12 @@ pub const CATALOGUE: &[Mutant] = &[
         target: &["--lib"],
         filter: "server::cognition::tests::lease",
     },
+    Mutant {
+        law: "law 2: a task's identity is never formed with a train pair skipped (MU-DERIVATIONS D3.2)",
+        file: "src/server/registry.rs",
+        before: "refine_delta(a, b, &mut stroke) else {\n            return None;\n        };",
+        after: "refine_delta(a, b, &mut stroke) else {\n            continue;\n        };",
+        target: &["--lib"],
+        filter: "server::tests::registry::task_address",
+    },
 ];

@@ -6,7 +6,7 @@
 //! the family IS: whether the scene is cut by a separator, whether the
 //! frames stand in integer ratio, whether the paint is one body or many.
 //! Three readings, each a yes or a no on exact integers, taken on the task
-//! files the journal's family ids map to through `registry::task_address`.
+//! files the journal's family ids map to through `registry::task_citation`.
 //!
 //! THIS READS THE CORPUS AND CLAIMS NOTHING ABOUT THE MESH. As
 //! ruled, this binary does not reflect the live feed and no mesh
@@ -191,13 +191,11 @@ fn read(task: &Task) -> Reading {
 
 /// The census. With no prefixes every task in the slice is read; with them,
 /// only the families the journal named — the prefixes the voice's
-/// `family ….` lines carry, mapped here through `task_address`.
+/// `family ….` lines carry, mapped here through `task_citation`.
 ///
 /// A PREFIX NAMES A STRATUM, NOT A TASK, AND THE CENSUS LISTS THE STRATUM.
-/// Measured over the training corpus: 2 bytes separate 120 of 1000 tasks,
-/// 4 bytes 299, 32 bytes 908, and only the whole address separates all
-/// 1000 — the id's leading bytes are the address tag and the length
-/// prefixes every `task_address` shares, so the discrimination is at the back.
+/// The id is the task's 32-byte citation; the census measures how many of
+/// its leading bytes separate the corpus rather than assuming it.
 /// Law 2 holds (no two tasks share an id) and no prefix is made to stand
 /// for one family: the journal prints four bytes because that is three
 /// times the reading two gave, and the census answers a prefix with every
@@ -209,12 +207,15 @@ pub(crate) fn report(dir: &str, names: &[String], want: &[String]) {
     for file in names {
         let Ok(json) = std::fs::read_to_string(format!("{dir}/{file}")) else { continue };
         let Some(task) = mycelium::arc::parse_task(&json) else { continue };
-        let Some(id) = mycelium::server::registry::task_address(&task) else { continue };
-        let hx: String = id.as_bytes().iter().map(|b| format!("{b:02x}")).collect();
+        // The registry's id, the task's 32-byte citation: an index keyed by
+        // the content address copies megabytes per task (a 29×29 → 30×30
+        // pair), and the citation is what a voice names the task by.
+        let Some(id) = mycelium::server::registry::task_citation(&task) else { continue };
+        let hx: String = id.iter().map(|b| format!("{b:02x}")).collect();
         if !want.is_empty() && !want.iter().any(|w| hx.starts_with(w.trim_end_matches('…'))) {
             continue;
         }
-        rows.insert(id.as_bytes(), (file.clone(), read(&task)));
+        rows.insert(id, (file.clone(), read(&task)));
     }
     let n = rows.len();
     // HOW MANY BYTES IT TAKES TO NAME ONE TASK, measured rather than

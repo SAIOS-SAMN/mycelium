@@ -27,15 +27,20 @@ pub enum Closure {
     Again,
 }
 
+/// A TASK'S NAME IN THE BOOK: its citation, 32 bytes.
+pub type TaskCitation = [u8; 32];
+
 pub struct TaskRegistry {
-    /// (task_address, the task, state) — append-only, content-addressed.
-    tasks: Vec<(Address, Task, TaskState)>,
-    /// Position of each id in `tasks`. Dispatch still walks the Vec;
+    /// (citation, the task, state) — append-only, content-addressed. The
+    /// task's full content address ([`task_address`]) is never held here:
+    /// it is recomputed losslessly from the task it names, where a reader
+    /// needs its coordinates, and a 29×29 → 30×30 pair makes it megabytes
+    /// (an index copies the address it is keyed by).
+    tasks: Vec<(TaskCitation, Task, TaskState)>,
+    /// 78.146, wire v1.2 — each task's CITATION, the 32 bytes that name it
+    /// on every wire, to its position. Dispatch still walks the Vec;
     /// lookup, overlay, and settle read here.
     by_id: Keyed<usize>,
-    /// 78.146, wire v1.2 — each task's CITATION (`citation`), the 32 bytes
-    /// that name it on every wire, to its position. Filled at register.
-    by_citation: Keyed<usize>,
     /// Dispatch cursor (rotates so pull requests spread across the book).
     cursor: usize,
     /// 78.153c — dispatches since the cursor's record was last taken
@@ -59,15 +64,28 @@ pub struct TaskRegistry {
 /// `None` where a chain of this task has no A5 form. A task whose members
 /// cannot be addressed has no identity, and skipping one would give two
 /// different tasks one id (law 2).
+///
+/// `None` likewise where a train pair has no common refinement (an empty or
+/// ragged grid, or a need past `usize`): the identity is never formed with a
+/// member skipped. Each pair is refined under the stroke its own extents
+/// need (`refine::need_of`, 78.111), so no pair is refused for a stroke
+/// sized for something else and no lcm is capped (MU-DERIVATIONS D3.2).
 pub fn task_address(task: &Task) -> Option<Address> {
     let mut buf = vec![crate::transducer::address::TAG_TASK];
     for (a, b) in &task.train {
-        if let Some(crate::arc::Refined { delta: chain, frame, .. }) = refine_delta(a, b) {
-            crate::transducer::address::put_key_bytes(
-                &mut buf,
-                &crate::transducer::element::listing_key(&chain, &frame)?,
-            );
-        }
+        let mut stroke = crate::physics::Physics::default().stroke_n(
+            match crate::transducer::family::refine::need_of(a, b) {
+                Some(n) => n,
+                None => 0,
+            },
+        );
+        let Ok(crate::arc::Refined { delta: chain, frame, .. }) = refine_delta(a, b, &mut stroke) else {
+            return None;
+        };
+        crate::transducer::address::put_key_bytes(
+            &mut buf,
+            &crate::transducer::element::listing_key(&chain, &frame)?,
+        );
     }
     for (x, _) in &task.test {
         let chain: Vec<(i64, i64, u8, u8)> = x
@@ -97,6 +115,14 @@ pub fn citation(id: &Address) -> [u8; 32] {
     crate::chronometry::payload_hash(id.as_bytes())
 }
 
+/// A TASK'S CITATION read off the task: its content address formed
+/// transiently and compacted to 32 bytes, the address itself dropped (a
+/// citation locates; the coordinates are the task's, kept whole in it).
+/// `None` where the task has no address ([`task_address`]).
+pub fn task_citation(task: &Task) -> Option<TaskCitation> {
+    task_address(task).map(|id| citation(&id))
+}
+
 // `task_tension` (the train's coboundary volume, the old first-solve
 // bounty) is retired: a solve is priced by what its rule discharges on the
 // withheld pairs (`Court::judge_solve`), never by the size of the train.
@@ -112,7 +138,6 @@ impl TaskRegistry {
         TaskRegistry {
             tasks: Vec::new(),
             by_id: Keyed::new(),
-            by_citation: Keyed::new(),
             cursor: 0,
             dispatched: 0,
             cover_cursor: 0,
@@ -123,7 +148,7 @@ impl TaskRegistry {
 
     /// Next `n` tasks for first-time listing. Empty once the manifest has
     /// been walked; cover changes re-home through [`next_cover_batch`].
-    pub fn next_intake_batch(&mut self, n: usize) -> Vec<(Address, Task)> {
+    pub fn next_intake_batch(&mut self, n: usize) -> Vec<(TaskCitation, Task)> {
         let len = self.tasks.len();
         if self.intake_done || len == 0 || n == 0 {
             return Vec::new();
@@ -138,7 +163,7 @@ impl TaskRegistry {
         let take = n.min(rest.len());
         let mut out = Vec::with_capacity(take);
         for (id, task, _) in rest.iter().take(take) {
-            out.push((id.clone(), task.clone()));
+            out.push((*id, task.clone()));
         }
         self.intake_cursor += take;
         if self.intake_cursor >= len {
@@ -152,7 +177,7 @@ impl TaskRegistry {
     }
 
     /// Next `n` tasks for a cover-change re-home stroke.
-    pub fn next_cover_batch(&mut self, n: usize) -> Vec<(Address, Task)> {
+    pub fn next_cover_batch(&mut self, n: usize) -> Vec<(TaskCitation, Task)> {
         let len = self.tasks.len();
         if len == 0 || n == 0 {
             return Vec::new();
@@ -163,13 +188,19 @@ impl TaskRegistry {
             let i = self.cover_cursor % len;
             self.cover_cursor = (self.cover_cursor + 1) % len;
             let (id, task, _) = &self.tasks[i];
-            out.push((id.clone(), task.clone()));
+            out.push((*id, task.clone()));
         }
         out
     }
 
     pub fn len(&self) -> usize {
         self.tasks.len()
+    }
+
+    /// THE KEYS THE BOOK'S INDEX HOLDS, as written: one citation per task,
+    /// read so that what an index entry copies is measured, never assumed.
+    pub fn index_keys(&self) -> Vec<Vec<u8>> {
+        self.by_id.scoped().map(|(k, _)| k).collect()
     }
     pub fn is_empty(&self) -> bool {
         self.tasks.is_empty()
@@ -195,23 +226,17 @@ impl TaskRegistry {
 
     /// REGISTER a task (idempotent by content — re-feeding under a new file
     /// name registers nothing). Returns the id, or `None` where a member of
-    /// the task has no A5 form and the task therefore has no identity.
-    pub fn register(&mut self, task: Task) -> Option<Address> {
-        let id = task_address(&task)?;
-        if !self.by_id.contains(id.as_bytes()) {
+    /// the task has no A5 form and the task therefore has no identity. The
+    /// id is the task's CITATION: its content address is formed only to be
+    /// compacted, and is never held by the book or its index.
+    pub fn register(&mut self, task: Task) -> Option<TaskCitation> {
+        let id = task_citation(&task)?;
+        if !self.by_id.contains(&id) {
             let i = self.tasks.len();
-            self.tasks.push((id.clone(), task, TaskState::Unsolved));
-            self.by_id.insert(&id, i);
-            self.by_citation.insert(citation(&id), i);
+            self.tasks.push((id, task, TaskState::Unsolved));
+            self.by_id.insert(id, i);
         }
         Some(id)
-    }
-
-    /// 78.146 — THE TASK A CITATION NAMES: its content address, the address
-    /// every court-side reading takes. `None` where this book holds none.
-    pub fn by_citation(&self, cite: &[u8; 32]) -> Option<Address> {
-        let &i = self.by_citation.get(cite)?;
-        self.tasks.get(i).map(|(id, _, _)| id.clone())
     }
 
     /// MU-CLIENT §5.4 (E1, finding 8) — EVERY FAMILY THIS BOOK HOLDS, by its
@@ -220,14 +245,14 @@ impl TaskRegistry {
     /// court restored from its snapshot reads its families here at boot,
     /// never from a copy kept beside them.
     pub fn families(&self) -> impl Iterator<Item = ([u8; 32], &[(Grid, Grid)])> {
-        self.tasks.iter().map(|(id, task, _)| (citation(id), task.train.as_slice()))
+        self.tasks.iter().map(|(id, task, _)| (*id, task.train.as_slice()))
     }
 
     /// DISPATCH a work envelope: the next Unsolved task, rotating so pulls
     /// spread across the book. None when everything settled.
     /// The tasks settled on this book — its proven roots.
-    pub fn settled_ids(&self) -> Vec<Address> {
-        self.tasks.iter().filter(|(_, _, s)| *s != TaskState::Unsolved).map(|(t, _, _)| t.clone()).collect()
+    pub fn settled_ids(&self) -> Vec<TaskCitation> {
+        self.tasks.iter().filter(|(_, _, s)| *s != TaskState::Unsolved).map(|(t, _, _)| *t).collect()
     }
 
     /// PRIORITIZE a task: the next dispatch starts at it. A proven root
@@ -244,7 +269,7 @@ impl TaskRegistry {
         }
     }
 
-    pub fn dispatch(&mut self) -> Option<(Address, &Task)> {
+    pub fn dispatch(&mut self) -> Option<(TaskCitation, &Task)> {
         let n = self.tasks.len();
         for k in 0..n {
             let i = (self.cursor + k) % n;
@@ -256,7 +281,7 @@ impl TaskRegistry {
                     self.dispatched = d;
                 }
                 let (id, task, _) = &self.tasks[i];
-                return Some((id.clone(), task));
+                return Some((*id, task));
             }
         }
         None
@@ -287,7 +312,7 @@ impl TaskRegistry {
         put_u32_count(&mut out, self.cursor)?;
         put_u32_count(&mut out, self.tasks.len())?;
         for (id, _, state) in &self.tasks {
-            out.extend_from_slice(&citation(id));
+            out.extend_from_slice(id);
             match state {
                 TaskState::Unsolved => {
                     out.push(0);
@@ -337,7 +362,7 @@ impl TaskRegistry {
             };
             p += 9;
             if settled == 1 {
-                if let Some(&i) = self.by_citation.get(cite) {
+                if let Some(&i) = self.by_id.get(cite) {
                     if let Some(entry) = self.tasks.get_mut(i) {
                         entry.2 = TaskState::Settled(count);
                         restored += 1;

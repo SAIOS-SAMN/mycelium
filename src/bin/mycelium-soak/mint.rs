@@ -190,10 +190,16 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         );
         for (i, (x, y)) in task.train.iter().enumerate() {
             // The pair as the trajectory sees it: the delta where the pair
-            // refines, and `refine_delta` answering None where it does
-            // not — reported as the engine's own reading and not
-            // re-derived here.
-            let refined = mycelium::arc::refine_delta(x, y);
+            // refines under the stroke its extents need, and the refusal
+            // `refine_delta` names where it does not — reported as the
+            // engine's own reading and not re-derived here.
+            let mut stroke = mycelium::physics::Physics::default().stroke_n(
+                match mycelium::transducer::family::refine::need_of(x, y) {
+                    Some(n) => n,
+                    None => 0,
+                },
+            );
+            let refined = mycelium::arc::refine_delta(x, y, &mut stroke);
             // A grid's width is its rows' common length, and the slice
             // pattern reads the row the shape is stated by without taking
             // a member by position (rule 15).
@@ -207,11 +213,11 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                 wide(x),
                 y.len(),
                 wide(y),
-                match refined {
-                    Some(_) => "some",
-                    None => "none",
+                match &refined {
+                    Ok(_) => "some".to_string(),
+                    Err(u) => format!("{u:?}"),
                 },
-                refined.as_ref().map(|r| measure_lanes(&r.delta)),
+                refined.as_ref().ok().map(|r| measure_lanes(&r.delta)),
             );
         }
 

@@ -6,6 +6,42 @@ such change is named here.
 
 ## Unreleased
 
+### Layout changes
+- Task addresses: a task with a pair past the former lcm cap (axis 60,
+  sites 3600) now has an address over every pair; such tasks' addresses
+  change. A court state written before this release is adopted by a recut
+  (ROADMAP track 6).
+- Task registry: a task is held and indexed by its 32-byte citation
+  (`registry::citation`, the name `ACT_TASK`, `ACT_SOLVE` and seat records
+  already carry), never by its content address, which a 29×29 → 30×30
+  pair makes about 13.6 MB and an index entry would copy. `register`,
+  `dispatch`, `next_intake_batch`, `next_cover_batch` and `settled_ids`
+  return `TaskCitation`; `by_citation` is removed (`task`, `withheld`,
+  `open`, `close` and `prioritize` take the citation);
+  `registry::task_citation` reads one off a task. The registry snapshot
+  (`CUR3`) already named tasks by citation and is unchanged.
+- **Wire:** `ACT_ROOT` names its task by citation (32 bytes in the address
+  slot, frame format unchanged); a hypha hears no root naming a task by
+  its content address, so peers must run this release together (recut).
+
+### Cognition
+- The common refinement is metered, never capped (MU-DERIVATIONS D3.2):
+  `MAX_LCM_AXIS` and `MAX_LCM_SITES` are deleted. `refine::need` reads the
+  stroke a refinement needs off the four extents,
+  `R_h·R_w + 2·L_h·L_w` with `R(a, b) = a + b − gcd(a, b)`; the cochain
+  and the pulled-back grids take `&mut Budget` and refuse by name
+  (`Unrefined::{Empty, Ragged, Spent { need }, Unbounded}`), never with a
+  partial chain. Every caller sizes its stroke from `need_of`, so a
+  29×29 → 30×30 pair refines. `task_address` refuses (`None`) a task with
+  a pair that has no refinement rather than addressing the remaining
+  pairs (law 2); `extraction_spend` adds each non-trivial pair's need and
+  `finish` stands an unrefined pair as a demand (rule 7). The mutation
+  audit catalogue gains a mutant on `task_address`'s refusal arm.
+- `rule::sentence` constructs a rule's linear part under the stroke its
+  modes need (`rule::construction_stroke`, `cga::modes_need`, 78.111) in
+  place of `stroke_n(1 << 16)` (MU-DERIVATIONS D3.1); a non-versor gets an
+  empty stroke and is refused `NotVersor` with no read spent.
+
 ### SDK
 - The repository is a Cargo workspace: `mycelium`, `forms` and the new
   `mycelium-sdk` (`sdk/`), under one lock file (`forms/Cargo.lock` is
@@ -95,7 +131,8 @@ such change is named here.
   guarded law has a test that catches its violation, run in a scratch
   worktree. Its first run found two guard gaps, now closed by tests: a
   signed prefix with trailing bytes, and a replayed lease open after its
-  lease closed. Current catalogue: 10 mutants, 10 killed.
+  lease closed. Current catalogue: 11 mutants, 11 killed (the eleventh
+  guards law 2 at `task_address`).
 - `learn_form` and `file_form` return `Learned`: every vertex is filed,
   refused with a named reason (`Unlearned`), or listed as carrying no
   motion; nothing is skipped silently.

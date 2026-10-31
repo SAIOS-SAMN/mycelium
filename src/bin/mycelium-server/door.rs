@@ -43,6 +43,13 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
     let Some((&kind, _rest)) = frame.body.split_first() else { return false };
     if kind == dialogue::ACT_ROOT {
         let Some((from, task, solver, spoken_at)) = dialogue::decode_root(&frame.body) else { return true };
+        // A ROOT NAMES ITS TASK BY CITATION (the 32 bytes every reading
+        // names it by): a task's content address is never framed, routed or
+        // indexed here. A root naming it any other way is not heard.
+        let Ok(task) = <[u8; 32]>::try_from(task.as_bytes()) else {
+            answer(s, Frame { lane: frame.lane, body: Vec::new() });
+            return true;
+        };
         // A poisoned router lock knows no peer; the root is not heard.
         if !door.router.lock().is_ok_and(|r| r.knows(&from)) {
             answer(s, Frame { lane: frame.lane, body: Vec::new() });
@@ -50,7 +57,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         }
         let hear = {
             let Ok(mut roots) = door.roots.lock() else { return true };
-            note_root(&mut roots, &task, solver, spoken_at)
+            note_root(&mut roots, task, solver, spoken_at)
         };
         match hear {
             RootHear::Known => {}
@@ -60,7 +67,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 // THE TASK BY ITS CITATION (wire v1.2), the name every other
                 // reading speaks it by: its address opens on the task tag, so
                 // two bytes of it named one task in ten of the corpus.
-                let cite = mycelium::registry::citation(&task);
+                let cite = task;
                 eprintln!(
                     "  ROOT heard from {:02x}: task {:02x}{:02x}{:02x}{:02x}… solved by voice {:02x}; {}",
                     from[0], cite[0], cite[1], cite[2], cite[3], solver[0],
@@ -70,7 +77,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             }
             RootHear::Second => {
                 rewind_syllabus(door);
-                let cite = mycelium::registry::citation(&task);
+                let cite = task;
                 eprintln!("  ROOT CONSILIENT task {:02x}{:02x}{:02x}{:02x}… two voices; syllabus rewound", cite[0], cite[1], cite[2], cite[3]);
                 speak_root_locked(&door.router, &door.nerve_tx, &door.id, &task, &solver, Some(from), spoken_at);
             }
@@ -83,7 +90,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         let reply = {
             let Ok(roots) = door.roots.lock() else { return true };
             dialogue::encode_root_reply(
-                roots.get(task.as_bytes()).and_then(|v| {
+                roots.get(&task).and_then(|v| {
                     // `get(task)` follows the task's prefix: the solvers standing on
                     // THIS task, and the first in key order is the reply.
                     v.scoped()
@@ -142,9 +149,9 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // tasks with no family; the task's long address passed the u16
         // wall, which the v1.2 citation removes). A plain request steps on
         // to the next open task, once round the book at most.
-        let envelope = |tid: &mycelium::transducer::address::Address, task: &mycelium::arc::Task| {
+        let envelope = |tid: &mycelium::registry::TaskCitation, task: &mycelium::arc::Task| {
             let tests: Vec<_> = task.test.iter().map(|(x, _)| x.clone()).collect();
-            let b = dialogue::encode_task_envelope(&mycelium::registry::citation(tid),&task.train, &tests);
+            let b = dialogue::encode_task_envelope(tid, &task.train, &tests);
             if b.is_none() {
                 eprintln!("  task passed over: its envelope does not fit its lengths");
             }
@@ -164,7 +171,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 for _ in 0..reg.len() {
                     let Some((tid, task)) = reg.dispatch() else { break };
                     if let Some(b) = envelope(&tid, task) {
-                        sent(mycelium::registry::citation(&tid), voice);
+                        sent(tid, voice);
                         body = b;
                         break;
                     }
@@ -180,7 +187,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             }
             (None, Some((voice, cite))) => {
                 let Ok(reg) = door.registry.lock() else { return true };
-                let found = reg.by_citation(&cite).and_then(|tid| reg.task(tid.as_bytes()).and_then(|task| envelope(&tid, task)));
+                let found = reg.task(&cite).and_then(|task| envelope(&cite, task));
                 match found {
                     Some(b) => {
                         sent(cite, voice);
@@ -214,18 +221,11 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // would name alone.
         let (tid, withheld, open, ground) = {
             let Ok(reg) = door.registry.lock() else { return true };
-            match reg.by_citation(&cite) {
-                Some(tid) => {
-                    let w = reg.withheld(&tid);
-                    let o = reg.open(&tid);
-                    let g = match reg.task(&tid) {
-                        Some(t) => mycelium::arc::ground_of(&t.train),
-                        None => 0,
-                    };
-                    (tid, w, o, g)
-                }
-                None => (mycelium::transducer::address::Address::new(cite.to_vec()), Vec::new(), None, 0),
-            }
+            let g = match reg.task(&cite) {
+                Some(t) => mycelium::arc::ground_of(&t.train),
+                None => 0,
+            };
+            (cite, reg.withheld(&cite), reg.open(&cite), g)
         };
         // THE SOLVE, JUDGED BY ITS ACTION AND PAID (the actions' physics): the
         // court replays the rule on the withheld pairs and prices what it
@@ -373,7 +373,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             // the syllabus; a later one is consilient already.
             let hear = {
                 let Ok(mut roots) = door.roots.lock() else { return true };
-                note_root(&mut roots, &tid, svoice, at)
+                note_root(&mut roots, tid, svoice, at)
             };
             match hear {
                 RootHear::Known => {}
@@ -612,21 +612,28 @@ pub(crate) fn list_task(
     court: &Mutex<Court>,
     shelf: &crate::published::Shelf,
     mesh: &Mesh,
-    tid: impl AsRef<[u8]>,
+    cite: mycelium::registry::TaskCitation,
     task: &mycelium::arc::Task,
     rehome: bool,
 ) {
     // Wire v1.2 — the court names a task by its CITATION, the name voices
     // speak it by (a solve, a colour word): its family and its listings are
-    // bound under those 32 bytes, once.
-    let cite = mycelium::registry::citation(&mycelium::transducer::address::Address::new(tid.as_ref().to_vec()));
+    // bound under those 32 bytes, once. The registry hands the citation; the
+    // task's content address is never formed here.
     let tid = &cite[..];
     if let Ok(mut h) = crate::held::held!(court) {
         h.run(|k, _| k.bind_task_family(tid, task.train.clone()));
     }
     for (a, b) in &task.train {
-        let Some(mycelium::arc::Refined { delta: mut chain, frame, .. }) =
-            mycelium::arc::refine_delta(a, b)
+        // The stroke the pair's own extents need (78.111): no lcm is capped.
+        let mut stroke = mycelium::physics::Physics::default().stroke_n(
+            match mycelium::transducer::family::refine::need_of(a, b) {
+                Some(n) => n,
+                None => 0,
+            },
+        );
+        let Ok(mycelium::arc::Refined { delta: mut chain, frame, .. }) =
+            mycelium::arc::refine_delta(a, b, &mut stroke)
         else {
             continue;
         };

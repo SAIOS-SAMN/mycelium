@@ -755,6 +755,12 @@ Each phase is one commit:
    slash and the challenger's bounty read off the defect, ruling 78.129
    amended forward (D2.1, D2.2).
 
+**Progress:** D3.2 is **Built** (NC3, ruled O1 (a)): the lcm cap is
+deleted, the common refinement is metered by the need its extents name,
+and `task_address` refuses an unrefined pair rather than skipping it.
+D3.1 is **Built** (NC1): a sentence's linear part is constructed under
+the stroke `modes_need` reads off it.
+
 The groups also serve existing tracks: the economy entries (D2.1–D2.7)
 tracks 3, 14 and 21; the cognition entries (D3.1–D3.5) tracks 7 and 10;
 the network entries (D1.3, D4.1–D4.7) tracks 5 and 14; the certified

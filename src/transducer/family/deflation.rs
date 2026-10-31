@@ -296,13 +296,27 @@ fn form_motions(form: &Form) -> Vec<(crate::transducer::cga::Mv, Vec<(u8, u8)>)>
     out
 }
 
+/// WHAT A PAIR DEMANDED BEFORE ANY FORM SPOKE: the exact cochain on the
+/// pair's common refinement, under the stroke its own extents need
+/// (`refine::need_of`, 78.111), so no lcm is capped; the raw residue of the
+/// two grids where the pair has no refinement (no extent). Both are
+/// measured on the pair.
+fn before_chain_of(x: &Grid, y: &Grid) -> Vec<(i64, i64, u8, u8)> {
+    use crate::transducer::family::refine::{need_of, refine_delta};
+    let mut stroke = crate::physics::Physics::default().stroke_n(match need_of(x, y) {
+        Some(n) => n,
+        None => 0,
+    });
+    match refine_delta(x, y, &mut stroke) {
+        Ok(chain) => chain,
+        Err(_) => residual_of(Some(x), y),
+    }
+}
+
 /// THE MASS A PAIR CARRIED: the 𝒮 measure of what its before side demanded
 /// moved (cells created or erased). `None` where the pair demanded nothing.
 fn pair_mass(x: &Grid, y: &Grid) -> Option<u64> {
-    let before_chain = match crate::transducer::family::refine::refine_delta(x, y) {
-        Some(chain) => chain,
-        None => residual_of(Some(x), y),
-    };
+    let before_chain = before_chain_of(x, y);
     let m = element::measure_lanes(&before_chain)[crate::transducer::sentence::presentation::LANE_S];
     (m > 0).then_some(m)
 }
@@ -345,10 +359,7 @@ fn pair_measure_read(
 ) -> ([u64; 4], crate::transducer::germinate::ResidualGerm, bool) {
     // The exact cochain where the pair refines on K_lcm; the raw residual
     // of the two grids where it does not. Both are measured on the pair.
-    let before_chain = match crate::transducer::family::refine::refine_delta(x, y) {
-        Some(chain) => chain,
-        None => residual_of(Some(x), y),
-    };
+    let before_chain = before_chain_of(x, y);
     // A speech that does not fit its own frame lays down no grid, so the
     // residual is measured against what the form actually said: nothing.
     let grid = spoken.and_then(|s| s.grid());
@@ -706,10 +717,7 @@ pub fn sentence_measure_why(
     // pairs and the remainders are in the family's own order, so the zip is
     // the pairing. `before_chain` is a fact about the pair, not the form.
     for ((x, y), after_chain) in family.iter().zip(remainders) {
-        let before_chain = match crate::transducer::family::refine::refine_delta(x, y) {
-            Some(chain) => chain,
-            None => residual_of(Some(x), y),
-        };
+        let before_chain = before_chain_of(x, y);
         let closed = crate::economy::deflation_of(&crate::economy::lane_moves(
             &element::measure_lanes(after_chain),
             &element::measure_lanes(&before_chain),

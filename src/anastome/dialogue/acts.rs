@@ -46,7 +46,7 @@ pub const ACT_EVIDENCE: u8 = Action::Evidence.byte();
 /// authoritative registry chooses; clients never arbitrate raw corpus.
 pub const ACT_TASK: u8 = Action::Task.byte();
 /// POUW settlement: a client submits predicted outputs for a dispatched
-/// task_address; the hypha verifies against its held answers — first verified
+/// task's citation; the hypha verifies against its held answers — first verified
 /// solve takes the bounty, replays collapse to the verification floor.
 pub const ACT_SOLVE: u8 = Action::Solve.byte();
 

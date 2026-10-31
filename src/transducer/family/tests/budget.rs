@@ -173,3 +173,23 @@ fn extract_rule_cached_never_keeps_none() {
     assert!(extract_rule_cached(&mut cache, b"two", &ratioless, root.clone(), &mut again, &NoCrystal, None).is_none());
     assert!(again.remaining() < 1 << 20, "asked again, the family is read again, never answered by the memo");
 }
+
+/// MU-DERIVATIONS D3.2 — THE EXTRACTION'S STROKE CARRIES EACH REFINEMENT IT
+/// READS: a pair of unequal extents adds the need its four extents name
+/// (`refine::need`), beside every cell of both frames and the contacts of
+/// the frames' bodies; a site-for-site pair adds nothing beyond its cells.
+#[test]
+fn extraction_spend_includes_refinement_need() {
+    let contacts = |frames: &Frames| -> usize {
+        frames.iter().map(|(i, o)| (i.len() + o.len()) * 3 * crate::transducer::blade::CANDIDATES_PER_PAIR).sum()
+    };
+    let scaled = vec![(grid(&["10", "00"]), grid(&["1100", "1100", "0000", "0000"]))];
+    let frames = perceive_family(&scaled);
+    let need = crate::transducer::family::refine::need(2, 2, 4, 4).expect("extents stand");
+    assert_eq!(need, 4 * 4 + 2 * 4 * 4, "R(2, 4) = 4 runs per axis, L = 4");
+    assert_eq!(extraction_spend(&scaled, &frames), 2 * 2 + 4 * 4 + contacts(&frames) + need);
+
+    let square = vec![(grid(&["10", "00"]), grid(&["01", "00"]))];
+    let frames = perceive_family(&square);
+    assert_eq!(extraction_spend(&square, &frames), 2 * 2 + 2 * 2 + contacts(&frames));
+}
