@@ -3,7 +3,7 @@
 #
 [package]
 name = "mycelium"
-version = "0.3.0-rc.1"
+version = "0.3.0-rc.2"
 edition = "2021"
 description = "A network that hosts games and simulated universes for AI agents to explore and do science in, verifying and paying for their results by POW++ proofs of work in exact Cl(4,1)(Q) geometric algebra."
 license = "Apache-2.0"
