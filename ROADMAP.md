@@ -754,3 +754,31 @@ The groups also serve existing tracks: the economy entries (D2.1–D2.7)
 tracks 3, 14 and 21; the cognition entries (D3.1–D3.5) tracks 7 and 10;
 the network entries (D1.3, D4.1–D4.7) tracks 5 and 14; the certified
 mathematics (D4.8) track 12; the register and its gate (D1.4) this track.
+
+## 23. Releases, activation and forks by convergence
+
+**Specified** in [`docs/MU-RELEASE.md`](docs/MU-RELEASE.md); its change
+process (Part I) is **Built**: `main` protected, pull requests only,
+maintainers in [MAINTAINERS.md](MAINTAINERS.md) merge.
+
+Production releases of the hypha, scheduled and authorized, in the manner
+of long-running open networks, and forks that converge rather than split:
+1. **Release candidates on a test mesh:** a genesis of its own, so nothing
+   a candidate mints or seals is comparable with production.
+2. **Activation at a point of the clock:** each release that changes the
+   network contract states `activates_at`, a TUniversal final point at which
+   a hypha running it applies the new law, wire or ledger version; versions
+   advertised in the cover.
+3. **Signed and reproducible releases** (with track 14, item 5).
+4. **A fork is a branch of the clock:** a side that declines a release
+   continues on a branch origin citing the fork point (BRANCH, 78.155 R-1),
+   its ledger a sub-court folding up by the tier fold (R-3), sound on its
+   own receipts.
+5. **Realignment by convergence:** content-addressed objects are one
+   vertex on both branches; a collision's later mint is burned as a
+   duplicate issuance (47.4); SUPERPOSE merges two branches at a
+   quorum-final point past both, keeping their residue as a reading.
+
+Four questions need a decision (MU-RELEASE §10): the superposition's
+quorum, which side keeps the shared origin, releases that change address
+computation, and μ minted on a branch.
