@@ -131,7 +131,8 @@ such change is named here.
   guarded law has a test that catches its violation, run in a scratch
   worktree. Its first run found two guard gaps, now closed by tests: a
   signed prefix with trailing bytes, and a replayed lease open after its
-  lease closed. Current catalogue: 10 mutants, 10 killed.
+  lease closed. Current catalogue: 11 mutants, 11 killed (the eleventh
+  guards law 2 at `task_address`).
 - `learn_form` and `file_form` return `Learned`: every vertex is filed,
   refused with a named reason (`Unlearned`), or listed as carrying no
   motion; nothing is skipped silently.
