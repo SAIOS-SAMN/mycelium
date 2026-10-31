@@ -14,10 +14,42 @@ impl Court {
     /// THE CITATION OF A WORD THIS COURT HOLDS: its fibre and the stamp of
     /// the act that admitted it. `None` where the word is not held, or no
     /// act has admitted it yet.
+    ///
+    /// The fibre filed at the admission is the citation's own key, so the
+    /// citation is read back off it: a word is charted where it is admitted,
+    /// never again under the court (mycelium#14). A word filed with no fibre
+    /// is charted here.
     pub(crate) fn cite_of(&self, address: &[u8]) -> Option<Cite> {
         let w = self.named_word(address)?;
         let at = *self.admitted_at.get(address)?;
-        Some(Cite::word(w, at))
+        match self.filed_cite(&at) {
+            Some(c) => Some(c),
+            None => Some(Cite::word(w, at)),
+        }
+    }
+
+    /// THE CITATION FILED AT AN ADMITTING STAMP, read back off its fibre key
+    /// (`file_fibre`): the chart and class record the admitting act read.
+    /// `None` where no fibre was filed at the stamp, or its key does not
+    /// read whole as a word's citation.
+    pub(crate) fn filed_cite(&self, at: &Stamp) -> Option<Cite> {
+        let key = self.fibre_key_at.get(&at.key())?;
+        let mut p = 0;
+        let cite = Cite::take_canonical(key, &mut p)?;
+        match (&cite, p == key.len()) {
+            (Cite::Word { .. }, true) => Some(cite),
+            _ => None,
+        }
+    }
+
+    /// THE CHART A HELD WORD WAS ADMITTED ON, read off its filed citation;
+    /// charted here only where nothing was filed.
+    pub(crate) fn chart_filed(&self, address: &[u8], w: &Element) -> crate::transducer::stalk::Invariant {
+        let filed = self.admitted_at.get(address).and_then(|at| self.filed_cite(at));
+        match filed {
+            Some(Cite::Word { chart, .. }) => chart,
+            _ => crate::transducer::stalk::invariant_of(w),
+        }
     }
 
     /// THE WORD AN ACT NAMES, on whichever row holds it: the basis, the
@@ -81,6 +113,21 @@ impl Court {
     /// A ruling that waited on the stamp is heard on the stroke of the act
     /// that files it (65.5), threaded here.
     pub fn file_admitted(&mut self, address: &Address, at: Stamp, budget: &mut crate::physics::Budget) -> bool {
+        self.file_admitted_charted(address, at, None, budget)
+    }
+
+    /// `file_admitted` with the word's chart already read where the caller
+    /// holds it (the act that sealed the admission, a restore that
+    /// re-derived it): the fibre is filed on that chart, and the word is
+    /// never charted again under the court (mycelium#14). `None` charts it
+    /// here.
+    pub fn file_admitted_charted(
+        &mut self,
+        address: &Address,
+        at: Stamp,
+        chart: Option<crate::transducer::stalk::Invariant>,
+        budget: &mut crate::physics::Budget,
+    ) -> bool {
         if self.admitted_at.contains(address) {
             return false;
         }
@@ -97,8 +144,12 @@ impl Court {
         // LD3-a: the word by its fibre, where a row holds it to read the
         // fibre off; a restore files it from T1's key instead.
         let fibre = self.named_word(address).and_then(|w| {
+            let cite = match chart {
+                Some(inv) => Cite::word_charted(w, inv, at),
+                None => Cite::word(w, at),
+            };
             let mut key = Vec::new();
-            Cite::word(w, at).put_canonical(&mut key)?;
+            cite.put_canonical(&mut key)?;
             Some(key)
         });
         if let Some(key) = fibre {
@@ -340,7 +391,14 @@ impl Court {
             // stroke is threaded to its seal, the stroke is minted here, the
             // one callee mint the ruling has not yet reached.
             let mut budget = self.physics.stroke();
-            self.file_admitted(&Address::from(address), r.stamp, &mut budget);
+            // The fibre is filed on the chart the seal cited, read off the
+            // receipt: never the word charted a second time under the court
+            // (mycelium#14).
+            let sealed = r.cites.iter().find_map(|c| match c {
+                Cite::Word { chart, .. } => Some(chart.clone()),
+                _ => None,
+            });
+            self.file_admitted_charted(&Address::from(address), r.stamp, sealed, &mut budget);
         }
     }
 

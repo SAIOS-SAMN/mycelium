@@ -1672,6 +1672,24 @@ is. `task_address` returns `None` on any `Unrefined`. Tests:
 of `task_address` in `xtask/mutate/catalogue.rs`. The text below is the
 derivation as specified.
 
+**Cost exposed by the uncapping (mycelium#14).** A pair the cap refused
+now refines, and its residue's chart (`invariant_of`, the exact moduli of
+`blade::body::section_moduli`) can take tens of seconds: one corpus task
+with pairs 18×19 → 7×9, 21×21 → 10×10 and 19×17 → 9×6 takes ≥ 19 s a
+pair. The listing charted each residue three times, the third under the
+court lock, and again on every cover change on the exchange thread, so a
+hypha held its court for minutes and its one logger went silent. **Fixed**
+by charting once: each task's routes (per pair the residue's address,
+chart, magnitude and listed pieces, `server::route`) are read on the
+intake's thread and kept by the task's citation; the locked step files
+the chart the seal cited (`Court::file_admitted_charted`), a held word's
+citation is read off its filed fibre, and a cover change re-homes by
+lookup. Tests: `server::cognition::tests::market`
+(`intake_prepared_computes_no_chart_under_hold`), `server::tests::route`
+(`relocate_corpus_recomputes_nothing_for_unchanged_registry`). The chart
+itself takes no stroke (rule 10), so a long one is not ended by a stroke;
+it runs off the court.
+
 **Site.** `src/transducer/family/refine.rs:40–41`, used at `:57`:
 
 ```rust

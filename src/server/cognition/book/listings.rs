@@ -223,7 +223,9 @@ impl Court {
                 }
             }
         }
-        let inv = crate::transducer::stalk::invariant_of(&elem);
+        // On the chart its listing was admitted on, read off the filed
+        // citation: a relocation charts nothing under the court (mycelium#14).
+        let inv = self.chart_filed(address, &elem);
         self.listing_atlas.admit_also(&inv, address);
         self.cavity_book.insert(address, elem);
         self.chill_field(address);

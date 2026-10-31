@@ -27,6 +27,23 @@ such change is named here.
 - `decode_task_envelope` refuses bytes after the last test input: read
   leniently, the deferral of a zero deficit decoded as an empty envelope.
 
+### Fixed
+- **A hypha held its court for minutes listing the corpus** (mycelium#14).
+  Once refinement was no longer capped, a corpus task whose residues take
+  ≥ 19 s each to chart (`invariant_of`) was charted three times a pair at
+  intake, the third time under the court lock (the List act's admission
+  re-charted the word to file its fibre), and again on every cover change
+  on the exchange thread, the court's one logger and stroker: every act
+  was deferred, the log went silent and SIGTERM waited on the court. Each
+  task's routes (per pair the residue's address, chart, magnitude and
+  listed pieces) are now read once on the intake's thread and kept in the
+  registry by the task's citation (`mycelium::server::route`); the locked
+  step files the chart the seal cited (`Court::file_admitted_charted`), a
+  held word's citation and the snapshot read the fibre filed at the
+  admission, and a cover change re-homes by lookup. `Court::intake_prepared`
+  borrows its pieces. A hypha logs `court corpus routed: N tasks` when its
+  intake's thread ends.
+
 ## 0.3.0-rc.2 — 2026-10-31 (release candidate)
 
 Kernels conform too: the peer kernels pinning rc.1 found the contract

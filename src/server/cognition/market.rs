@@ -348,7 +348,7 @@ impl Court {
     /// speakable or already listed is not listed again; the intake answers
     /// whether anything new was.
     pub fn intake(&mut self, chain: &[(i64, i64, u8, u8)], frame: &crate::arc::Frame) -> bool {
-        self.intake_prepared(prepare_intake(chain, frame))
+        self.intake_prepared(&prepare_intake(chain, frame))
     }
 
     /// THE COMMIT HALF OF THE INTAKE: pieces already read — each residual
@@ -356,8 +356,10 @@ impl Court {
     /// `prepare_intake`'s and takes no lock: hypha b, ten minutes after
     /// boot, held its court in `intake → list → invariant_of` in seven
     /// samples of ten while fold, quote and syllabus judges waited behind
-    /// it, 0.2–9 s each (gdb and the wire, 2026-09-30).
-    pub fn intake_prepared(&mut self, pieces: Vec<(Element, crate::transducer::stalk::Invariant)>) -> bool {
+    /// it, 0.2–9 s each (gdb and the wire, 2026-09-30). The pieces are
+    /// borrowed from where they are kept (`route::PairRoute`), and only a
+    /// piece listed here is copied.
+    pub fn intake_prepared(&mut self, pieces: &[(Element, crate::transducer::stalk::Invariant)]) -> bool {
         let mut listed = false;
         for (residual, chart) in pieces {
             let address = residual.address();
@@ -365,7 +367,7 @@ impl Court {
                 continue; // already speakable or already listed
             }
             self.stamp_standing(address);
-            self.book_list_charted(residual, chart);
+            self.book_list_charted(residual.clone(), chart.clone());
             listed = true;
         }
         listed

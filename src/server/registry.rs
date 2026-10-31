@@ -52,6 +52,9 @@ pub struct TaskRegistry {
     /// First-time intake cursor: walks the manifest once, then stops.
     intake_cursor: usize,
     intake_done: bool,
+    /// Each task's routes by its citation (`route::routes_of`), read once
+    /// off the court: a cover change re-homes by them (mycelium#14).
+    routes: Keyed<crate::server::route::TaskRoutes>,
 }
 
 /// The boundary-root digest: identity from CONTENT — the train coboundaries
@@ -143,7 +146,35 @@ impl TaskRegistry {
             cover_cursor: 0,
             intake_cursor: 0,
             intake_done: false,
+            routes: Keyed::new(),
         }
+    }
+
+    /// The routes kept for a task, by its citation.
+    pub fn routes(&self, id: &[u8]) -> Option<crate::server::route::TaskRoutes> {
+        self.routes.get(id).cloned()
+    }
+
+    /// KEEP A TASK'S ROUTES, read off this lock. Routes already kept stand
+    /// (a task's content is its identity, so a second reading is the same)
+    /// and are returned; a citation this book does not hold keeps nothing.
+    pub fn keep_routes(
+        &mut self,
+        id: TaskCitation,
+        routes: crate::server::route::TaskRoutes,
+    ) -> crate::server::route::TaskRoutes {
+        if let Some(kept) = self.routes.get(&id) {
+            return kept.clone();
+        }
+        if self.by_id.contains(&id) {
+            self.routes.insert(id, routes.clone());
+        }
+        routes
+    }
+
+    /// The first task this book holds no routes for, in manifest order.
+    pub fn unrouted(&self) -> Option<(TaskCitation, Task)> {
+        self.tasks.iter().find(|(id, _, _)| !self.routes.contains(id)).map(|(id, task, _)| (*id, task.clone()))
     }
 
     /// Next `n` tasks for first-time listing. Empty once the manifest has

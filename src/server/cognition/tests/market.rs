@@ -453,3 +453,33 @@ assert_eq!(
     "the quote's market view carries the same height"
 );
 }
+
+/// THE INTAKE'S LOCKED STEP CHARTS NOTHING (mycelium#14): the pieces are
+/// charted off the court (`prepare_intake`), and the step that commits
+/// them — the List act, its seal and the filing of the admission — reads
+/// those charts, never the word again. The listing's citation, its
+/// relocation onto the cavity and the snapshot read the citation filed at
+/// the admission.
+#[test]
+fn intake_prepared_computes_no_chart_under_hold() {
+    use crate::transducer::stalk::chart::charts_read;
+    let mut k = Court::new();
+    let a = vec![(0, 0, 1u8), (0, 1, 1), (1, 0, 3)];
+    let b = vec![(0, 0, 2u8)];
+    let chain = germinate(&a, &b).expect("the pair has a chain");
+    let before = charts_read();
+    let prepared = prepare_intake(&chain, &frame_of(&a, &b).expect("the extent fits"));
+    assert!(!prepared.is_empty(), "the chain has a piece to list");
+    assert_eq!(charts_read() - before, prepared.len() as u64, "each piece charted once, off the court");
+    let before = charts_read();
+    assert!(k.intake_prepared(&prepared), "the corpus intake lists the body");
+    assert_eq!(charts_read(), before, "the locked step read no chart");
+    let target = k.quote().1[0].0.address();
+    assert!(k.admitted_at(target.as_bytes()).is_some(), "the List act admitted the listing");
+    let before = charts_read();
+    assert!(k.cite_of(target.as_bytes()).is_some(), "the listing is cited");
+    k.relocate_listing(target.as_bytes());
+    assert!(!k.has_listing(target.as_bytes()), "the listing left the page for the cavity");
+    let _ = k.snapshot();
+    assert_eq!(charts_read(), before, "citation, relocation and snapshot read the filed chart");
+}

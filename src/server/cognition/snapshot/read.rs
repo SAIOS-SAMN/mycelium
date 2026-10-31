@@ -377,8 +377,11 @@ impl Court {
                 let held = leaf(leaves, LEAF_HELD)?;
                 let [members, record @ ..] = held else { return None };
                 let elem = whole(record, Element::from_bytes)?;
+                // Charted ONCE: the re-derived citation, the filing and the
+                // listing atlas read the one chart (mycelium#14).
+                let chart = crate::transducer::stalk::invariant_of(&elem);
                 let mut again = Vec::new();
-                Cite::word(&elem, admitted).put_canonical(&mut again)?;
+                Cite::word_charted(&elem, chart.clone(), admitted).put_canonical(&mut again)?;
                 if again != key {
                     return None;
                 }
@@ -389,7 +392,7 @@ impl Court {
                     // that address's, filed where the address's node is read.
                     continue;
                 }
-                court.file_admitted(&addr, admitted, &mut budget);
+                court.file_admitted_charted(&addr, admitted, Some(chart.clone()), &mut budget);
                 // The words by fibre, rebuilt from T1's own key; and RM1's
                 // remainders, rebuilt from the element's torsion record.
                 court.file_fibre(&addr, admitted, key.clone());
@@ -400,11 +403,11 @@ impl Court {
                 }
                 if members & MEMBER_LISTING != 0 {
                     court.on_page.insert(&addr, ());
-                    court.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), &addr);
+                    court.listing_atlas.admit(&chart, &addr);
                     court.pending.insert(&addr, elem.clone());
                 }
                 if members & MEMBER_CAVITY != 0 {
-                    court.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), &addr);
+                    court.listing_atlas.admit(&chart, &addr);
                     court.cavity_book.insert(&addr, elem.clone());
                 }
                 if members & MEMBER_FEDERATION != 0 {
