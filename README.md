@@ -289,6 +289,14 @@ references to them are design history, and nothing in this repository
 depends on them at build or run time. ROADMAP track 13 covers their
 integration.
 
+**Prototype precursor.**
+[convergence-engine](https://github.com/SAIOS-SAMN/convergence-engine) is
+the public prototype harness from which Mycelium grew, kept public as a
+record and a source. Mycelium keeps its exact rational arithmetic and its
+coboundary reduction; the components drawn from it, and what is not
+carried forward, are listed in
+[`docs/MU-PRECURSORS.md`](docs/MU-PRECURSORS.md).
+
 ---
 
 ## POW++: the proofs of work
@@ -931,7 +939,10 @@ lands in the code:
 6. Ledger evolution across layouts.
 7. The rule language.
 8. Convergence as admission evidence.
-9. A stable SDK surface.
+9. A stable SDK surface, and SDK packaging: a `mycelium-sdk` crate with
+   its own semantic versioning, published to crates.io, a client
+   conformance read, and bindings for other languages after it (planned;
+   [`docs/MU-PRECURSORS.md`](docs/MU-PRECURSORS.md) §4).
 10. The reference mind's court traffic, beginning with the ask-queue
     defect.
 11. Specification reconciliation.
@@ -966,6 +977,13 @@ lands in the code:
     table, a firmament heavy enough to hold large galaxies, and a reference
     founding template ([`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) §3a).
 
+Components brought over from precursor implementations (an encrypted
+transport, a mutation audit, integer homology, a chain-complex
+certificate kind, a fault-injection campaign, rule-language extensions
+and others) are specified in
+[`docs/MU-PRECURSORS.md`](docs/MU-PRECURSORS.md), each under the track it
+serves.
+
 Design discussion is anchored in the specifications. Section and ruling
 numbers (for example *78.143* or *§5.6*) cite `docs/MU-RECURSION.md` and
 `docs/MU-CLIENT.md` throughout the code.
@@ -999,6 +1017,7 @@ the wire and ledger layouts, and the changelog names each such change.
 | [`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md) | The network as a verifier of knowledge: science kernels, physics profiles, verification classes, and the proofs of work for knowledge. |
 | [`docs/CONCORDANCE.md`](docs/CONCORDANCE.md) | The agreement every kernel signs to join the mesh. |
 | [`docs/MU-STANDARDS.md`](docs/MU-STANDARDS.md) | Development standards: bounds, gates, tests as algebraic claims. |
+| [`docs/MU-PRECURSORS.md`](docs/MU-PRECURSORS.md) | Components carried forward from precursor implementations: for each, the gap, the design under Mycelium's laws, acceptance claims, track and status; SDK packaging; what is not carried forward. |
 | [`STANDARDS.md`](STANDARDS.md) | Organization-wide repository conventions: naming, layout, tone, git practice. |
 | [`SECURITY.md`](SECURITY.md), [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) | Reporting vulnerabilities; conduct in the project's spaces. |
 | [`docs/MU-ENGINEERING.md`](docs/MU-ENGINEERING.md), [`docs/MU-PRODUCT.md`](docs/MU-PRODUCT.md) | The system as built, and its product surfaces. |

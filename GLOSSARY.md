@@ -64,6 +64,9 @@ senses that kernel builds for it.
 | **Keeper** | A hypha keeping TUniversal: it signs readings of its own height and issuance and cites its peers' readings. |
 | **Receipt chain** | Each hypha's hash-chained record of the acts it admitted. |
 | **Era / fold** | A closed segment of the ledger. A **fold** cuts an era, and witness hyphae co-sign it. |
+| **Noise transport** | *Specified, in progress.* The TCP connection between two parties wrapped in a `Noise_XX_25519_ChaChaPoly_BLAKE2s` session: one static key per host, pinned on first use, a changed key refused by name. It gives confidentiality and integrity of bytes in flight; identity stays in the Ed25519-signed acts (`docs/MU-PRECURSORS.md` §3.1). |
+| **Mutation audit** | *Specified, in progress.* The gate's check that tests guard the laws they claim: each catalogued mutant (law, file, exact span, replacement, narrowest test) is applied in a scratch worktree and reported `killed`, `survived` or `stale` (`docs/MU-PRECURSORS.md` §3.2). |
+| **Fault-injection campaign** | *Specified.* A run of named faults on a chosen topology of hyphae, reproducible from a printed seed, after which an invariant auditor checks conservation, once-per-work payment, burn-implies-revocation and no refusal without a receipt (`docs/MU-PRECURSORS.md` §3.6). |
 
 ## Clients
 
@@ -86,7 +89,8 @@ senses that kernel builds for it.
 | **Carrier** | A thread holding one boundary of the mind (a court link, perception, a seat), whose answers the mind takes in order. |
 | **Stroke** | One bounded quantum of work under the metabolism's budget. Readers and replays spend strokes, never wall time. |
 | **Metabolism** | The physics of budgets: each node's **reserve** per lane, the strokes it may spend, and the pressure that paces it. |
-| **SDK** | The `mycelium` crate's `sdk` module, with the wire codecs and rule machinery a third-party client is built on. |
+| **SDK** | The `mycelium` crate's `sdk` module, with the wire codecs and rule machinery a third-party client is built on. A separately versioned `mycelium-sdk` crate is planned (ROADMAP track 9). |
+| **SDK tiers** | *Specified.* The SDK's four depths: Tier 0 run a node, Tier 1 bring a world (files through the file-feed door), Tier 2 bring a solver, Tier 3 bring physics (`docs/MU-PRECURSORS.md` §3.10). |
 
 ## Work and adjudication
 
@@ -149,6 +153,11 @@ senses that kernel builds for it.
 | **Gloss / clause** | The English name of an element that has one (*slide*, *fill*, *echo*). The element is what goes on the wire, and the clause is its translation. |
 | **Holonomy** | The composite of a loop of transports. A loop's holonomy is its content and is never discarded (`docs/ANTI_FLATTENING_LAW.md`). |
 | **Orbit** | A thought's motion about its attractor. A held (precessing) orbit is a settled thought. |
+| **Hermite normal form** | An integer matrix reduced by unimodular row operations to echelon form, with the transform that produced it. Decides membership in a lattice and gives a word's factorization over held words (`core::exponents`). |
+| **Smith normal form / invariant factors** | *Specified.* An integer matrix reduced by unimodular row and column operations to a diagonal `d₁ ∣ d₂ ∣ … ∣ d_r`, the **invariant factors**. Over ℚ[x], the invariant factors of `xI − f` classify a linear function up to similarity (its rational canonical form) (`docs/MU-PRECURSORS.md` §3.4). |
+| **Torsion** | Of homology over ℤ: the invariant factors greater than 1, the part of a homology group of finite order. A chain may bound over ℚ and not over ℤ; the torsion names why. Of a chain of bonds: the residual of a closed chain, held as content (ROADMAP track 19). |
+| **Chain-complex certificate** | *Specified.* A V1 claim declaring cell counts and sparse exact boundary maps with a witness chain, refused as `NotAComplex` where the maps do not compose to zero and as `OpenBoundary { cell }` where the witness does not close (`docs/MU-PRECURSORS.md` §3.5). |
+| **Refuse / wait** | *Specified.* The two non-accepting outcomes of reading a stream: **refuse**, the bytes can never become a valid act; **wait**, a valid act has begun and not finished, with the exact count of bytes still owed (`docs/MU-PRECURSORS.md` §3.7). |
 
 ## Physics
 

@@ -9,7 +9,10 @@ part. [CONTRIBUTING.md](CONTRIBUTING.md) covers the workflow; open an issue
 on a track to coordinate before starting.
 
 This file is the project's one plan of work: where it and an older
-document differ, this file governs.
+document differ, this file governs. Components brought over from
+precursor implementations are specified in
+[`docs/MU-PRECURSORS.md`](docs/MU-PRECURSORS.md) and listed below under
+the tracks they serve.
 
 ## 1. Settlement: the xSEPTUM Note
 
@@ -70,7 +73,12 @@ Lands in `src/bin/mycelium-server/admission.rs` and the court's treasury.
 
 Multi-host and wide-area operation of the mesh. Acts are signed with
 Ed25519 and verified on admission. The track adds:
-- an encrypted transport;
+- an encrypted transport (**In progress**;
+  [MU-PRECURSORS §3.1](docs/MU-PRECURSORS.md#31-noise-xx-encrypted-transport)):
+  TCP wrapped in `Noise_XX_25519_ChaChaPoly_BLAKE2s`, one static key per
+  host, trust-on-first-use pinning with a changed key refused by name,
+  and identity kept in the Ed25519-signed acts. It lands as
+  `src/network/noise.rs`, opt-in per peer at first;
 - address discovery beyond the provisioned `peers`;
 - signed re-provisioning of a node's `bind` and `peers` after first boot;
 - deployment tooling for hosts beyond one machine.
@@ -93,6 +101,29 @@ grows what minds can state:
 Each reader is proved by re-deriving held-out pairs and by the court's
 replay.
 
+Components from precursor implementations
+([MU-PRECURSORS](docs/MU-PRECURSORS.md) §3.3, §3.8, §3.9), each a court
+change landed with its codec, replay and claims:
+- **Named refusals in `learn_form`** (**In progress**, a defect fix):
+  every vertex of a learned form is filed, refused by name, or not a word.
+- **Act parameters measured per pair:** scale, tile and reduce by the
+  frames' measured ratio, translation by measurement; refused by name when
+  unmeasurable, with no silent tie-break.
+- **A template placed over a lattice:** the Hermite form of the placement
+  differences, the offset anchored to a selected body; no candidate
+  enumeration.
+- **First contact as a relation:** `Pred::FirstMet` and
+  `Act::Slide { toward }`, ties held whole, refused where the ray is not a
+  lattice unit, no toroidal wrap.
+- **Colour-role equivariance:** the gauge-orbit class with re-inflation,
+  and an equivariance check that reports where commutation breaks.
+- **Hue as a table** over a named measured coordinate, refused off the
+  table.
+- **Clauses learnable as vocabulary,** filed in the presentation on court
+  admission.
+- **Body fate as a typed precondition** of family extraction, with named
+  refusals.
+
 ## 8. Convergence as admission evidence
 
 Two minds whose different words have the same section on one scene are a
@@ -106,7 +137,56 @@ A stable, versioned client surface (`mycelium::sdk`), narrower than the
 crate's public API, with semantic-versioning guarantees. It includes:
 - a conversation API for third-party clients;
 - rewrite elements (POWR) through the SDK;
-- examples for each POW++ arm.
+- examples for each POW++ arm;
+- the SDK tiers, stated in its documentation: Tier 0 run a node, Tier 1
+  bring a world, Tier 2 bring a solver, Tier 3 bring physics
+  ([MU-PRECURSORS §3.10](docs/MU-PRECURSORS.md#310-sdk-tiers-and-a-file-feed-door)).
+
+### SDK packaging: publicly available SDKs
+
+**Specified** in
+[MU-PRECURSORS §4](docs/MU-PRECURSORS.md#4-sdk-packaging-mycelium-sdk).
+Today the SDK is a module of the one `mycelium` crate (`client::sdk`,
+re-exported as `mycelium::sdk`), `forms` is a separate crate in `forms/`,
+`examples/sdk_client.rs` is the complete client, and the MSRV is 1.82.
+The track publishes SDKs open-source developers can depend on by version:
+a `mycelium-sdk` crate, a workspace member, re-exporting a narrow,
+versioned surface (identity, `Session`, tasks and solves, the rule seam,
+seats, wallet and leases, readings), with semver guarantees separate from
+the server, a wire compatibility statement per release, minimal
+dependencies with feature flags (`noise`, `rules`, `seats`), docs.rs
+documentation, examples per POW++ arm, publication to crates.io under
+Apache-2.0, a client conformance read, and bindings for other languages
+after it.
+
+1. **P1, workspace:** `mycelium`, `forms` and `mycelium-sdk` as members of
+   one workspace, `xtask` outside it. *Accepted when* the gate passes on
+   the workspace and the members share one lock file.
+2. **P2, the surface:** `mycelium-sdk` re-exporting the surface, and
+   `examples/sdk_client.rs` depending on it alone. *Accepted when* the
+   example runs end to end against a local network and a compile test
+   imports every surface item.
+3. **P3, features and dependencies:** a default-on `server` feature on
+   `mycelium` holding the server-only dependencies, and the SDK's own
+   features. *Accepted when* the SDK builds with default features off and
+   pulls no server-only crate.
+4. **P4, documentation and examples:** docs.rs documentation with the
+   tiers, one example per POW++ arm, a lease and a seat. *Accepted when*
+   each example is paid on a local network.
+5. **P5, the client conformance read:** the acts a client must speak and
+   the readings it must answer, served by a hypha and kept in the
+   repository, with its suite (track 15, H1). *Accepted when* the
+   reference mind and `sdk_client` pass it and a client missing a required
+   act fails it by name. Conformance is by decoded exact values
+   (Concordance 1.4).
+6. **P6, publication:** `forms`, `mycelium` and `mycelium-sdk` on
+   crates.io under Apache-2.0, with the compatibility statement in the
+   CHANGELOG. *Accepted when* a fresh project builds the example from the
+   published crate by version.
+7. **P7, bindings:** a first binding in another language (for example
+   Python), built on the conformance read and the wire specification,
+   carrying exact values only. *Accepted when* it passes the conformance
+   suite.
 
 ## 10. Reference mind
 
@@ -132,7 +212,10 @@ specification's wording and the code differ:
 - three function names in MU-RECURSION chapter 10.
 
 Each becomes one documentation commit that brings the specification to
-the code.
+the code. A further documentation commit adds to `docs/EQUATIONS.md` the
+table of refused functionals (squared-norm coherence, scored-argmin
+search, ratios of scalar residuals, ε-bands), so that no port brings them
+over ([MU-PRECURSORS §3.11](docs/MU-PRECURSORS.md#311-documentation)).
 
 ## 12. Verified knowledge: science kernels
 
@@ -164,6 +247,14 @@ Phases:
    the wire; readings by class.
 2. **S2:** certificate checking: exact LP optima with dual certificates,
    SAT assignments and factorizations first, UNSAT with DRAT proofs after.
+   A **chain-complex certificate kind** joins them: geometry as data (cell
+   counts and sparse exact boundary maps), refused as `NotAComplex` where
+   the maps do not compose to zero and as `OpenBoundary { cell }` where the
+   witness does not close, fuel in court strokes, identity by decoded
+   coordinates, and payment through the POW++ lanes, never a cell-count
+   formula ([MU-PRECURSORS §3.5](docs/MU-PRECURSORS.md#35-chain-complex-checker-as-a-v1-certificate-kind)).
+   Integer homology (MU-PRECURSORS §3.4) serves its torsion and
+   integer-solvability checks.
 3. **S3:** formal proofs with a Metamath checker; theorems citing installed
    lemmas.
 4. **S4:** physics profiles sealed at domain genesis on the L0 floor; law
@@ -218,10 +309,12 @@ Review targets, in order:
 
 ### Security engineering
 
-Eight additions, in three groups. Items 1–4 build on machinery already
+Ten additions, in four groups. Items 1–4 build on machinery already
 in the tree and produce receipts; items 5–7 touch build and operational
-surfaces outside the court; item 8 is the largest in scope. The order of
-work across groups is open.
+surfaces outside the court; item 8 is the largest in scope; items 9 and
+10 test the tests and the mesh, and come from precursor implementations
+([MU-PRECURSORS](docs/MU-PRECURSORS.md)). The order of work across groups
+is open.
 
 **On machinery in the tree**
 
@@ -235,7 +328,14 @@ work across groups is open.
    - differential fuzzing of every encode/decode pair, so that a decoded
      value re-encodes to the same bytes and every other byte string is
      refused (`proptest` is already a dev-dependency, not yet used);
-   - corpora of malformed tapes kept as regression claims;
+   - corpora of malformed tapes kept as regression claims: must-refuse
+     cases asserted on the decoded result, never golden accept bytes
+     (Concordance 1.4)
+     ([MU-PRECURSORS §3.7](docs/MU-PRECURSORS.md#37-malformed-input-corpus-refuse-and-wait));
+   - a typed distinction between **refuse** (the bytes can never become an
+     act) and **wait** (an act has begun and not finished), with an exact
+     length bound: a length at the bound waits, one byte past it is
+     refused at the header;
    - a standing rule: a decode ambiguity is a release-blocking defect.
 3. **Bug bounties through existing acts** (**Specified**). Standing μ
    bounties on protocol invariants (double mint, equivocation, a
@@ -286,6 +386,28 @@ work across groups is open.
    Exact ℚ arithmetic removes the floating-point obstructions such proofs
    normally meet.
 
+**Test assurance**
+
+9. **Mutation audit** (**In progress**; MU-STANDARDS §4;
+   [MU-PRECURSORS §3.2](docs/MU-PRECURSORS.md#32-mutation-audit)).
+   `cargo run -- mutate` in `xtask` reads a catalogue of mutants (the law,
+   the file, the exact span, the replacement, the narrowest test that must
+   fail), applies each in a scratch worktree, and reports each as
+   `killed`, `survived` or `stale`. A surviving mutant is a law no test
+   notices; a stale one is re-anchored.
+10. **Fault-injection campaign and invariant auditor** (**Specified**;
+    [MU-PRECURSORS §3.6](docs/MU-PRECURSORS.md#36-fault-injection-campaign-and-invariant-auditor)).
+    Ten named fault classes (`InvalidSignature`, `Replay`,
+    `DoubleClaimRace`, `EquivocatingLedger`, `SybilSwarm`,
+    `RespellRaceSaturation`, `DrainedPurseDraw`,
+    `RestoreFromSnapshotSigner`, `MalformedName`, `GerminalFlood`) on four
+    topologies, each campaign reproducible from a printed seed, with exact
+    invariants audited after every campaign: conservation by ledger
+    replay, once per work across the mesh, every burn revokes, and no
+    refusal without a receipt. The auditor keeps its own independent view
+    of an accused node, and concurrent faults target separate nodes. It is
+    written against the current admission and treasury.
+
 ## 15. Hosting: worlds, world models and hosted minds
 
 **Specified** in [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md).
@@ -313,6 +435,22 @@ world:
    reconstruction. A certificate attests behaviour over the task families
    its world expresses, never "safe in general"; worlds may require one
    for their seats, and the courts gate nothing on it.
+
+Components from precursor implementations
+([MU-PRECURSORS](docs/MU-PRECURSORS.md) §3.10–§3.12):
+- **H1:** the client conformance read is SDK packaging's phase P5
+  (track 9).
+- **A file-feed door** on the operator's path: a client on
+  `sdk::{Kernel, Session}` that submits each task-shaped file dropped in a
+  directory as one claim and answers it beside the file, refusing by name
+  what does not decode (Tier 1, *bring a world*).
+- **H3:** a world-model onboarding checklist for MU-HOSTING §3.1 step 4,
+  drawn from a widely used world-model interface (state, action and
+  episode spaces): rational bounds and a unit map in place of float boxes.
+- **Wording on what determinism gives alignment** in MU-HOSTING: a hosted
+  agent's misalignment becomes detectable and auditable, not prevented.
+- **Renderer notes** for a future explorer of the network's readings,
+  rendered from decoded exact values.
 
 ## 16. Mesh federation
 
@@ -345,6 +483,12 @@ guarantees. The track builds the rest:
    record and never a gate.
 6. **M6:** the charter signed as a topological certificate (track 18), so
    a mind sees what each amendment changed against the version it signed.
+
+The charter also gains a statement of what determinism gives alignment:
+exact arithmetic, typed refusals and replayable records make a mind's
+effect on the shared record detectable and auditable; they do not
+prevent misalignment
+([MU-PRECURSORS §3.11](docs/MU-PRECURSORS.md#311-documentation)).
 
 ## 18. Topological certificates for agreements
 
@@ -391,6 +535,17 @@ Phases:
    each party signed.
 5. **T5:** Concordance and charter signing carried as topological
    certificates.
+
+Tools from precursor implementations
+([MU-PRECURSORS](docs/MU-PRECURSORS.md) §3.4, §3.9):
+- **Integer homology:** Smith normal form over ℤ (sparse, budgeted, with
+  its unimodular transforms), invariant factors and torsion, and integer
+  solvability of a chain. An agreement whose cocycle is a coboundary over
+  ℚ but not over ℤ is named with the invariant factor that obstructs it:
+  a torsion obstruction, beside the holonomy one.
+- **The representation functor:** chains add exactly as their transports
+  compose, so a question of composition is read by the integer machinery
+  above.
 
 ## 19. The general conformal algebra, pole states and bonding
 
@@ -467,7 +622,15 @@ Phases:
 3. **G3:** the pole state `(X(t), R)` and bonds as versors, with
    isomorphism, stabilizer and composition claims.
 4. **G4:** bond classes filed by coordinates; the residual of a closed
-   chain read as torsion.
+   chain read as torsion. Similarity classes serve it: the invariant
+   factors over ℚ[x] of a bond versor's linear function (the rational
+   canonical form, [MU-PRECURSORS §3.4](docs/MU-PRECURSORS.md#34-integer-homology-and-invariant-factors)).
+   Similarity is necessary, not sufficient, for conjugacy by a versor of
+   the pole algebra: bonds with different invariant factors are of
+   different kinds, and bonds with equal factors are then tested for
+   versor conjugacy. With them, an irrational mode's refusal
+   (`Undecomposed::Irrational`) names its irreducible factor, not only its
+   degree.
 5. **G5:** crossings as isomorphisms between faces' pole states (a
    Concordance amendment, with the kernels that keep pole states).
 
