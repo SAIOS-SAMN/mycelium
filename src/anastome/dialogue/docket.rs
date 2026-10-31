@@ -267,6 +267,54 @@ pub fn decode_evidence_deposit(body: &[u8]) -> Option<EvidenceDeposit> {
     Some((voice, items))
 }
 
+/// THE EVIDENCE REPLY'S HEADER: `[n u32]` ahead of the items.
+/// FORMAT: `encode_evidence_reply`'s count field, 4 bytes.
+pub const EVIDENCE_REPLY_HEADER: usize = 4;
+
+/// THE BYTES ONE ITEM TAKES ON THE REPLY, `σ(e)`, exact from the format:
+/// `2 + |address| + 4 + 16·|footprint| + 4 + 17·|scene|` (D4.2). `None` past
+/// the address's `u16` wall or the carrier.
+pub fn evidence_width<A: AsRef<[u8]>>(e: &EvidenceOf<A>) -> Option<usize> {
+    u16::try_from(e.addr.as_ref().len()).ok()?;
+    let fp = e.footprint.len().checked_mul(16)?;
+    let scene = e.scene.len().checked_mul(17)?;
+    (2 + e.addr.as_ref().len() + 4).checked_add(fp)?.checked_add(4)?.checked_add(scene)
+}
+
+/// WHERE AN EVIDENCE PAGE ENDED (D4.2): the store read to its end, the next
+/// item past the page's room, an item no frame can carry (refused by name,
+/// with its width — the page ends before it and it is reported, never
+/// skipped), or the stroke spent.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EvidencePageEnd {
+    Store,
+    Full,
+    /// Its width, `None` past the address's wall or the carrier.
+    Unframable { width: Option<usize> },
+    Spent,
+}
+
+/// THE EVIDENCE PAGE A REPLY CARRIES: the longest prefix of `store` whose
+/// items, behind the reply's header, fit `budget`, one read of the stroke an
+/// item; and where it ended. A filled page, never a count chosen beside it.
+pub fn evidence_page<A: AsRef<[u8]>>(store: &[EvidenceOf<A>], budget: usize, reads: &mut crate::physics::Budget) -> (usize, EvidencePageEnd) {
+    let mut used = EVIDENCE_REPLY_HEADER;
+    for (m, e) in store.iter().enumerate() {
+        if !reads.spend() {
+            return (m, EvidencePageEnd::Spent);
+        }
+        let width = match evidence_width(e) {
+            Some(w) if EVIDENCE_REPLY_HEADER.checked_add(w).is_some_and(|whole| whole <= budget) => w,
+            width => return (m, EvidencePageEnd::Unframable { width }),
+        };
+        match used.checked_add(width) {
+            Some(next) if next <= budget => used = next,
+            _ => return (m, EvidencePageEnd::Full),
+        }
+    }
+    (store.len(), EvidencePageEnd::Store)
+}
+
 /// evidence reply: `[n u32] ( [addr][nf u32][fp (r i64,c i64)·nf]
 /// [ns u32][scene (r i64,c i64,h u8)·ns] )…` — the selection fibre's birth
 /// evidence, count-guarded at every level.

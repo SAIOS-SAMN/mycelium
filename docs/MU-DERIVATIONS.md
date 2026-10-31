@@ -142,7 +142,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 | D3.4 | `in_sites.len() <= 400` | `transducer/family/confluence.rs:162` | an instrument's reading | Low | `2·m` reads, keyed, tri-state (**Built** 2026-10-31) | no | S | 10 |
 | D3.5 | `percepts_since >= 2` | `client/sdk/seat_mind/mind.rs:284` | seat liveness, learning | Medium | distance along the house's sequence `b − b₀ ≥ 2` (**Built** 2026-10-31; O1 read (a), `seq`) | yes | S | 10 |
 | D4.1 | `tell_peer_within(.., 5)` | `mycelium-server/transport.rs:136` | liveness | Medium | the mesh's measured floor; `Unmeasured` one aperture (**Built** 2026-10-31) | yes | M | 5 |
-| D4.2 | `take(32)` (evidence reply) | `mycelium-server/door.rs:125` | protocol size | Medium | fill to the frame budget by `σ(e)` | yes | S/M | 5 |
+| D4.2 | `take(32)` (evidence reply) | `mycelium-server/door.rs:125` | protocol size | Medium | fill to the frame budget by `σ(e)` (**Built** 2026-10-31; the cursor, O1, not built) | yes | S/M | 5 |
 | D4.3 | `h > 1024 \|\| w > 1024` | `anastome/dialogue/carrier.rs:106` | grid admission, memory | Medium | the bytes the tape carries; degenerate shapes refused | yes | S | 14 |
 | D4.4 | `NESTING = 32`, `depth > 16` | `sentence/form/clause.rs:273`, `anchor/codec.rs:70` | stack safety | High/Medium | the producer's depth, else iteration | yes | M/L | 14 |
 | D4.5 | `sync_channel(cores)`, `(cores/2).max(1)` | `mycelium-server/main.rs:751–902` | door liveness | Medium | `W = 1 + ⌈off/under⌉` from the lock book | yes | M | 5 |
@@ -2421,6 +2421,21 @@ path was written for).
 ---
 
 ### D4.2 `anchor_evidence().iter().take(32)` — the evidence reply's size
+
+**Status.** **Built** without the cursor (2026-10-31, the live-readings
+ruling). `docket::evidence_width` reads `σ(e)` off the format and
+`docket::evidence_page(store, budget, reads)` serves the longest prefix
+that fits the frame behind `EVIDENCE_REPLY_HEADER`, one read of the hold's
+stroke an item, naming where it ended (`EvidencePageEnd::{Store, Full,
+Unframable { width }, Spent}`); the door logs an unframable item by name
+and the page ends before it. `take(32)` is gone. The cursor (O1) is not
+built: it is neither additive nor cheap, since a 37-byte pull
+`[act][voice][after u32]` would collide with the shortest deposit
+`[act][voice][n u32 = 0]`, which the pull/deposit split by length cannot
+tell apart; so the page is still the store's first, now as large as the
+frame carries. Tests (`anastome::dialogue::tests::evidence`):
+`evidence_reply_fills_frame_budget`, `evidence_reply_refuses_unframable_item`.
+The text below is the derivation as specified.
 
 **Site.** `src/bin/mycelium-server/door.rs:123–126`:
 

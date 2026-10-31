@@ -97,6 +97,12 @@ such change is named here.
   `from_transport` two `NonZeroU64` (a zero rtt reads `Unmeasured`); the
   transport's round trip is `NonZeroU64` and its stall
   `Stall::{Strokes, Beyond, Unmeasured}`, a read refusing `Unmeasured`.
+- **The evidence pull's reply fills the frame** (D4.2): the longest prefix
+  of the store that fits the frame by each item's own width
+  (`docket::evidence_page`, `evidence_width`), in place of the first 32
+  items; an item no frame carries is refused by name and the page ends
+  before it. The pull still carries no cursor (a 37-byte pull would be
+  read as the shortest deposit).
 
 ### SDK
 - `mycelium_sdk::rule` gains `perceive_family`, `Frames` and

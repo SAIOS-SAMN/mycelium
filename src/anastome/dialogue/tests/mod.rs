@@ -8,6 +8,7 @@ mod cited;
 mod commitment;
 mod conformance;
 mod equivocation;
+mod evidence;
 mod fold_wire;
 mod offer;
 mod probe_reply;
