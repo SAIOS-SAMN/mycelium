@@ -27,6 +27,7 @@ mod luminal;
 mod solve;
 mod sporophore;
 mod mint;
+mod transduction;
 mod reconstruct;
 mod regime;
 mod volume;
@@ -354,6 +355,23 @@ fn main() {
             Ok(names) => census::report(dir, &names, &want),
             Err(e) => {
                 eprintln!("  census refused: {e}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
+    // O10 — `--transduction-census DIR`: every unequal-extent train pair
+    // of the corpus, classed by how its frames relate. It reads the corpus
+    // on disk and no mesh number is taken from it.
+    if matches!(argv.split_first(), Some((flag, _)) if flag == "--transduction-census") {
+        let Some(dir) = argv.get(1) else {
+            eprintln!("  transduction census refused: name the corpus directory");
+            std::process::exit(1);
+        };
+        match slice_names(dir, usize::MAX) {
+            Ok(names) => transduction::report(dir, &names),
+            Err(e) => {
+                eprintln!("  transduction census refused: {e}");
                 std::process::exit(1);
             }
         }

@@ -2,7 +2,9 @@
 // D3.2).
 
 mod enclosed;
+mod motion;
 mod record;
+mod relation;
 
 use crate::transducer::family::perceive::Grid;
 
