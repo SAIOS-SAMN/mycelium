@@ -174,3 +174,16 @@ fn poisson_quantile_reads_cdf_steps() {
     assert_eq!(poisson_quantile(&l, &q(9, 10), W), Some(5));
     assert_eq!(poisson_quantile(&l, &Q::one(), W), None, "u < 1");
 }
+
+/// D1.2 PHASE A — THE REFINEMENT ENDS ON A RATIONAL RADIUS: `π` refined past
+/// every rational it is set against, each on its true side — `3` and
+/// `333/106` below, `22/7` and `355/113` above (the last within `3·10⁻⁷` of
+/// it) — and an exact value meets itself as `Equal`.
+#[test]
+fn separates_terminates_on_rational_radius() {
+    use std::cmp::Ordering::{Equal, Greater, Less};
+    for (r, side) in [(q(3, 1), Less), (q(333, 106), Less), (q(22, 7), Greater), (q(355, 113), Greater)] {
+        assert_eq!(separates(&r, pi), Some(side), "{r}");
+    }
+    assert_eq!(separates(&q(1, 3), |_| Encl::exact(q(1, 3))), Some(Equal));
+}

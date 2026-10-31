@@ -5,7 +5,7 @@
 
 use crate::anastome::dialogue::tube::{decode_tube_reading, encode_tube_reading, is_spin_4, is_spin_plus_31, place_in, Level, TubeReading};
 use crate::anastome::dialogue::universe::Geometry;
-use crate::server::cognition::mouth::sphere_throat;
+use crate::server::cognition::mouth::{fits_in, sphere_throat};
 use crate::transducer::cga::{rotator_on_blade, sphere_pole, translator_at, Mv, E1, EM, EP};
 use num_rational::BigRational as Q;
 
@@ -68,18 +68,49 @@ fn place_in_sphere_refuses_foreign_motion() {
 
 /// A THROAT ON THE SPHERE IS A CAP SHORT OF THE ANTIPODE: a small throat's
 /// level is the lower bound of `cos(2m/R)` — below `1`, and at most the true
-/// cosine, so the cap is never undersized — and its ratio to `π` is below `1`,
-/// so it fits; a throat whose angular radius passes `π` would cover the
-/// sphere, and does not fit.
+/// cosine, so the cap is never undersized — and it fits; a throat whose
+/// angular radius passes `π` would cover the sphere, and does not fit.
 #[test]
 fn sphere_throat_fits_cap_short_of_antipode() {
     let r = q(17, 2);
-    let (level, ratio) = sphere_throat(&q(1, 1), &r).expect("a positive mass and radius");
+    let (level, _) = sphere_throat(&q(1, 1), &r).expect("a positive mass and radius");
     assert!(level < q(1, 1) && level > q(9, 10), "cos(4/17), from below: {level}");
-    assert!(Level::Sphere { level: level.clone(), ratio: ratio.clone() }.fits(), "4/17 is well short of π: {ratio}");
-    let (_, past) = sphere_throat(&q(14, 1), &r).expect("read");
-    assert!(!Level::Sphere { level: q(0, 1), ratio: past.clone() }.fits(), "56/17 passes π: {past}");
+    let space = Geometry::Sphere((17, 2));
+    assert_eq!(fits_in(&space, &q(1, 1)), Some(true), "4/17 is well short of π");
+    assert_eq!(fits_in(&space, &q(14, 1)), Some(false), "56/17 passes π");
     assert!(sphere_throat(&q(0, 1), &r).is_none() && sphere_throat(&q(1, 1), &q(0, 1)).is_none());
+    assert_eq!(fits_in(&space, &q(0, 1)), None, "no throat without mass");
+}
+
+/// D1.2 PHASE A — THE SPHERE FIT IS DECIDED PAST ANY GRID: an angular radius
+/// within `2⁻²⁰⁰` of `π` below it fits and one within it above does not,
+/// where the ratio on the former `2⁻⁶⁴` grid could not tell the first from the
+/// antipode.
+#[test]
+fn sphere_fit_is_decided_past_any_grid() {
+    use crate::core::certified::{pi, Encl};
+    let near = pi(200);
+    let space = Geometry::Sphere((2, 1));
+    // r = 2m/R = m on a sphere of radius 2.
+    assert_eq!(fits_in(&space, &near.lo), Some(true), "just short of π");
+    assert_eq!(fits_in(&space, &near.hi), Some(false), "just past π");
+    let ratio = Encl::exact(near.lo.clone()).div(&pi(64)).expect("π is no zero").hi;
+    assert!(ratio >= q(1, 1), "the former grid's ratio reads the fitting cap as past the antipode");
+}
+
+/// D1.2 PHASE A — THE FLAT FIT IS THE MEET WITH THE PERIOD IMAGE: the
+/// horizon sphere of radius `2m` is apart from its image under the shortest
+/// period `L` exactly where `2m/L < ½`; on `L = 4m` the two touch and do not
+/// fit; past it they cut.
+#[test]
+fn flat_fit_meet_equals_half_ratio() {
+    use crate::anastome::dialogue::universe::Metric;
+    let torus = |l: u64| Geometry::Torus { periods: vec![(l, 1), (3 * l, 1)], metric: Metric::L2 };
+    for (m, l) in [(q(1, 1), 5), (q(1, 1), 4), (q(1, 1), 3), (q(5, 2), 11), (q(5, 2), 10)] {
+        let half = q(1, 2);
+        let ratio = q(2, 1) * &m / q(i64::try_from(l).expect("small"), 1);
+        assert_eq!(fits_in(&torus(l), &m), Some(ratio < half), "m {m}, L {l}");
+    }
 }
 
 /// A SPHERE'S LEVEL TRAVELS WHOLE in a tube's reading, its kind its own.

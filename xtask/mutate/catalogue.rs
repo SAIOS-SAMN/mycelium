@@ -139,6 +139,22 @@ pub const CATALOGUE: &[Mutant] = &[
         filter: "server::cognition::tests::challenge::window",
     },
     Mutant {
+        law: "78.134 (MU-DERIVATIONS D1.2 Phase A): the sphere fit reads r's side of π by refinement, the right way round",
+        file: "src/core/certified.rs",
+        before: "        if r < &x.lo {\n            return Some(std::cmp::Ordering::Less);",
+        after: "        if r > &x.lo {\n            return Some(std::cmp::Ordering::Less);",
+        target: &["--lib"],
+        filter: "server::cognition::tests::sphere",
+    },
+    Mutant {
+        law: "78.140, 78.162 (5) (MU-DERIVATIONS D1.2 Phase A): a torus throat fits only APART from its period image",
+        file: "src/server/cognition/mouth.rs",
+        before: "!= crate::transducer::cga::Containment::Apart {",
+        after: "!= crate::transducer::cga::Containment::On {",
+        target: &["--lib"],
+        filter: "server::cognition::tests::sphere",
+    },
+    Mutant {
         law: "NO CONSTANT (MU-DERIVATIONS D1.4): a registered number keeps its class tag, or the numbers gate refuses the tree",
         file: "src/server/cognition/mouth.rs",
         before: "/// REGISTERED: THROAT_GRID\npub const THROAT_GRID",

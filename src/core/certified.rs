@@ -171,6 +171,33 @@ impl Encl {
     }
 }
 
+/// WHERE AN EXACT RATIONAL `r` STANDS AGAINST A REAL `x`, decided past any
+/// grid (MU-DERIVATIONS D1.2 Phase A): `x`'s enclosure `f(w)` is refined —
+/// `w` doubled from the bits that resolve `r` itself — until it separates
+/// from `r`: `Less` where `r < x`, `Greater` where `r > x`, `Equal` only where
+/// an exact enclosure meets `r`. For an irrational `x` the refinement ends at
+/// a precision bounded by `r`'s own size (`x`'s irrationality measure is
+/// finite: for `π`, `|π − p/q| > q^{−7.103}` past a finite `q₀`,
+/// Zeilberger–Zudilin), so no grid stands and none is capped. `None` only
+/// where the precision would pass its `u32` carrier: undecided, named.
+pub fn separates(r: &Q, f: impl Fn(u32) -> Encl) -> Option<std::cmp::Ordering> {
+    let size = |z: &BigInt| u32::try_from(z.bits()).ok();
+    let mut w = size(r.numer())?.checked_add(size(r.denom())?)?.checked_add(2)?;
+    loop {
+        let x = f(w);
+        if r < &x.lo {
+            return Some(std::cmp::Ordering::Less);
+        }
+        if r > &x.hi {
+            return Some(std::cmp::Ordering::Greater);
+        }
+        if x.lo == x.hi {
+            return Some(std::cmp::Ordering::Equal);
+        }
+        w = w.checked_mul(2)?;
+    }
+}
+
 /// `bits` of a rational's magnitude: enough guard to carry it.
 fn mag_bits(v: &Q) -> u32 {
     let n = v.abs().ceil().to_integer();

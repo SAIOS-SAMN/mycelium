@@ -126,7 +126,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 | Id | Constant | Site | Governs | Sev. | Derivation in one line | Open | Size | Track |
 |---|---|---|---|---|---|---|---|---|
 | D1.1 | `CHALLENGE_WINDOW = 1024` | `physics/laws/mod.rs:64` | finality, μ holds | High | the window ends at a sealed reach-and-return of every other keeper's citations (**Built** 2026-10-31, law version 5; O1 ruled every keeper) | yes | L | 22, 20 |
-| D1.2 | `THROAT_GRID = 64` | `server/cognition/mouth.rs:234` | tube admission | High | Phase A: exact fit by refinement and by meet; Phase B: the throat a round carried by its bank's modes | yes | S/M, L | 22, 19 |
+| D1.2 | `THROAT_GRID = 64` | `server/cognition/mouth.rs:234` | tube admission | High | Phase A: exact fit by refinement and by meet (**Built** 2026-10-31); Phase B: the throat a round carried by its bank's modes | yes | S/M, L | 22, 19 |
 | D1.3 | `BODY_BUDGET = 768 * 1024` | `network/wire.rs:9` | protocol size | Medium | `B(k) = 65519·k − 89`, `k` from the largest unit that cannot page | yes | S/M | 5, 14 |
 | D1.4 | the register and its gate | `physics/axioms/founding.rs:58–74` | NO CONSTANT | High | `OpenNumber` carrier; the `syn` gate NUMBERS (N1–N6) (**Built** 2026-10-31: N1–N5 enforced, N6 an inventory) | yes | M | 22 |
 | D2.1 | `held.mu[l] / 2` (slash) | `server/cognition/convert.rs:582` | μ, discipline | High | `cut = ⌊B·D/(B + D)⌋`, defect against bond | yes | M | 3, 14 |
@@ -398,6 +398,21 @@ holds).
 ---
 
 ### D1.2 `THROAT_GRID` — a throat's horizon level and fit, against its μ-S bank
+
+**Status.** Phase A **Built** (2026-10-31, the live-readings ruling; no law
+change). `server::cognition::mouth::fits_in(space, mass)` decides every
+face's fit, at offer and at every feed (`fits_both`): curved holds; a
+sphere face by `core::certified::separates(r, pi)` (π refined from the bits
+that resolve `r`, doubled until its enclosure leaves `r`); a torus face by
+`cga::containment(horizon, image) = Apart` against the image under every
+period (`translator_at` sandwich). `Level::fits` (a ratio) is deleted; the
+served `Level` stays a reading on `THROAT_GRID`, which stays REGISTERED
+until Phase B. Tests: `server::cognition::tests::sphere`
+(`sphere_fit_is_decided_past_any_grid`, `flat_fit_meet_equals_half_ratio`,
+`sphere_throat_fits_cap_short_of_antipode` rewritten onto `fits_in`),
+`core::tests::certified::separates_terminates_on_rational_radius`; two
+mutation entries (the refinement's direction, `Apart` in the flat fit).
+Phase B is not built. The text below is the derivation as specified.
 
 **Site.** `src/server/cognition/mouth.rs:234` —
 `pub const THROAT_GRID: u32 = 64;`, used at three sites:

@@ -267,7 +267,51 @@ pub fn flat_throat(m: &num_rational::BigRational, shortest_period: &num_rational
 /// 78.140 — whether a throat of `mass` fits both its faces (`None` where a
 /// level does not read).
 fn fits_both(t: &crate::anastome::dialogue::handoff::Tube, mass: &num_rational::BigRational) -> Option<bool> {
-    Some(level_in(&t.from_space, mass)?.fits() && level_in(&t.to_space, mass)?.fits())
+    Some(fits_in(&t.from_space, mass)? && fits_in(&t.to_space, mass)?)
+}
+
+/// 78.134, 78.140 — WHETHER A THROAT OF `mass` FITS A FACE, decided exactly
+/// and never on a grid (MU-DERIVATIONS D1.2 Phase A): a curved face always
+/// holds it; a sphere face holds the cap of angular radius `r = 2m/R` short of
+/// the antipode, `r < π`, decided by refining `π` until its enclosure leaves
+/// `r` (`certified::separates`); a torus face holds the horizon sphere of
+/// radius `2m` APART from its image under every period (`enclosure::
+/// containment`), the meet 78.162 (5) names, no ratio formed. `None` for a
+/// non-positive mass or radius, or a period that does not read.
+pub(crate) fn fits_in(space: &Geometry, mass: &num_rational::BigRational) -> Option<bool> {
+    use num_rational::BigRational as Q;
+    use num_traits::{Signed, Zero};
+    if !mass.is_positive() {
+        return None;
+    }
+    let two = Q::from_integer(2.into());
+    match space {
+        Geometry::Curved((n, d)) => (*n > 0 && *d > 0).then_some(true),
+        Geometry::Sphere((n, d)) => {
+            if *n == 0 || *d == 0 {
+                return None;
+            }
+            let r = &two * mass / Q::new((*n).into(), (*d).into());
+            Some(crate::core::certified::separates(&r, crate::core::certified::pi)? == std::cmp::Ordering::Less)
+        }
+        Geometry::Torus { periods, .. } => {
+            let rho = &two * mass;
+            let origin = vec![Q::zero(); periods.len()];
+            let horizon = crate::transducer::cga::sphere_at(&origin, &(&rho * &rho));
+            for (axis, (n, d)) in periods.iter().enumerate() {
+                if *d == 0 || *n == 0 {
+                    return None;
+                }
+                let mut step = origin.clone();
+                *step.get_mut(axis)? = Q::new((*n).into(), (*d).into());
+                let image = crate::transducer::cga::translator_at(&step).sandwich(&horizon);
+                if crate::transducer::cga::containment(&horizon, &image) != crate::transducer::cga::Containment::Apart {
+                    return Some(false);
+                }
+            }
+            Some(true)
+        }
+    }
 }
 
 impl Court {

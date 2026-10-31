@@ -43,6 +43,13 @@ such change is named here.
   hold the height they opened at, and a home written under version 4
   closes its windows by version 4 (`h₀ + 1024`). New log line
   `court windows closed through h {n} at h {m}`.
+- **A throat's fit is decided exactly** (D1.2 Phase A; no law change):
+  a sphere face by refining `π` until its enclosure leaves `2m/R`
+  (`core::certified::separates`), a torus face by the meet of the horizon
+  sphere with its image under every period (`Containment::Apart`), a
+  curved face always (`mouth::fits_in`). A cap within the old `2⁻⁶⁴` grid
+  of the antipode is no longer refused `TooWide`. `Level::fits` is removed:
+  a served `Level` is a reading, never the decision.
 
 ### SDK
 - `mycelium_sdk::rule` gains `perceive_family`, `Frames` and
