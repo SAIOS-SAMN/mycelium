@@ -346,6 +346,19 @@ impl Closure {
     }
 }
 
+#[cfg(test)]
+thread_local! {
+    /// The charts this thread has read through [`invariant_of`]: a claim
+    /// that a path charts nothing reads it before and after the path.
+    static CHARTS_READ: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+
+/// THE CHARTS THIS THREAD HAS READ through [`invariant_of`] (tests only).
+#[cfg(test)]
+pub(crate) fn charts_read() -> u64 {
+    CHARTS_READ.with(std::cell::Cell::get)
+}
+
 /// Measure the moduli of a chain's support (hues are fibre coordinates over
 /// the base point, not part of the geometry class).
 pub fn invariant(chain: &[Link]) -> Invariant {
@@ -370,6 +383,8 @@ pub fn invariant(chain: &[Link]) -> Invariant {
 /// neither — no support, no group component — has the empty chart:
 /// novelty, not a stratum.
 pub fn invariant_of(word: &element::Element) -> Invariant {
+    #[cfg(test)]
+    CHARTS_READ.with(|n| n.set(n.get() + 1));
     if word.is_rewrite() {
         return Invariant::counts(&[3]);
     }

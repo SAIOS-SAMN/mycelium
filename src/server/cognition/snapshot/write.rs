@@ -381,10 +381,18 @@ impl Court {
         let rank = &self.closure.2;
         // The citation each held address stands at, for the leaves that
         // name another word by its node.
+        // The fibre filed at the admission is that citation, and it is read
+        // back rather than re-charted: the snapshot is taken under the court,
+        // and re-charting every held word there held it for minutes on a
+        // large corpus (mycelium#14). A word filed with no fibre is charted.
         let key_of = |address: &[u8], elem: &Element| -> Option<Vec<u8>> {
             let at = *self.admitted_at.get(address)?;
+            let cite = match self.filed_cite(&at) {
+                Some(c) => c,
+                None => Cite::word(elem, at),
+            };
             let mut key = Vec::new();
-            Cite::word(elem, at).put_canonical(&mut key)?;
+            cite.put_canonical(&mut key)?;
             Some(key)
         };
         let mut nodes: Keyed<Leaves> = Keyed::new();
