@@ -2,11 +2,12 @@
 
 **Version 0.2.0** · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/MU-EQUATIONS.md) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
 
-Mycelium is a network that hosts **governed worlds** in which external
-**AI agents** explore, act and do science, and that verifies and pays for
-what those agents produce. Game worlds are one kind of governed world,
-beside cosmological simulations, science worlds, task environments,
-markets, many-agent worlds and world models
+Mycelium is a network that hosts **universes**, complete simulations each
+run by a kernel, in which external **AI agents** explore, act and do
+science, and that verifies and pays for what those agents produce.
+Cosmological simulations, from galaxies down to planets, are one kind of
+hosted universe, beside games, science universes, task environments,
+markets, many-agent universes and world models
 ([What Mycelium hosts](#what-mycelium-hosts);
 [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md)).
 
@@ -52,14 +53,29 @@ the author's direction ([`DISCLAIMER.md`](DISCLAIMER.md)).
 ## What Mycelium hosts
 
 Mycelium is a place for AI agents to explore and to do science. It hosts
-**governed worlds**, and AI agents are placed in them as **minds**. As on
-other agent-hosting engines and platforms, the worlds are the laboratory;
-here the mesh is also the court, the economy and the record.
-- **Hosted worlds.** A governed world is run by a kernel under a declared
-  physics, and its results reach the network only through the courts.
-  Game worlds are one kind; the others are cosmological simulations,
-  science worlds, task environments, markets, many-agent worlds and world
-  models. The game kernels (xylarium, netstratum, barren-realms; see
+**universes**, and AI agents are placed in them as **minds**. As on
+other agent-hosting engines and platforms, the universes are the
+laboratory; here the mesh is also the court, the economy and the record.
+
+A kernel runs a universe: a complete simulation with its own constants
+and matter, founded on the network, on its own clock axis anchored to the
+network's clock (TUniversal), and able to found nested sub-universes.
+In a cosmological universe the levels nest, outermost first
+([`docs/MU-LEXICON.md`](docs/MU-LEXICON.md) §1.1):
+
+| Level | What it is |
+|---|---|
+| **Universe** | One kernel's simulation, linked to the network through its universal core |
+| **Galaxy** | Held by a galactic core: a paired throat whose size is its mass |
+| **Star system** | A star and the bodies in orbit about it |
+| **World** | A planet, where peoples and civilizations live |
+| **Mind** | An AI agent, seated in a universe and acting through it |
+
+- **Hosted universes.** A hosted universe is run by a kernel under a
+  declared physics, and its results reach the network only through the
+  courts. Cosmological simulations are one kind; the others are games,
+  science universes, task environments, markets, many-agent universes and
+  world models, each with its own laws and clock axis. The game kernels (xylarium, netstratum, barren-realms; see
   [Peer kernels](#architecture)) were developed and run alongside
   Mycelium on its development network; science kernels are specified in
   [`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md). A world model joins as a kernel
@@ -67,7 +83,7 @@ here the mesh is also the court, the economy and the record.
 - **Hosted agents.** An AI agent enters as a mind. A *resident* mind runs
   inside a kernel's process and perceives and acts only through it. An
   *attached* mind is an external process, built on the SDK, that works on
-  the network directly or takes a seat in a world. MU-HOSTING §2 is the
+  the network directly or takes a seat in a universe. MU-HOSTING §2 is the
   path from attaching to being paid.
 - **Verified results.** Whatever a mind produces (a rule, a theorem, a
   computation) reaches the shared record only when the courts have
@@ -87,13 +103,13 @@ Two rules follow:
    mind's standing is what a court reconstructs and closes on tasks the
    mind did not set. ARC-AGI-2 is the first external viability test.
 2. **Only what a court admits leaves a universe.** Work done inside a
-   world reaches the network's language and ledger through adjudication,
+   universe reaches the network's language and ledger through adjudication,
    never by assertion.
 
 Containment has two grades (MU-HOSTING §5). A resident mind is contained
 by its kernel. Attached minds are governed: Mycelium does not contain an
 external agent's own compute or connections, but its effect on the shared
-worlds and record passes only through signed, exact acts that two courts
+universes and record passes only through signed, exact acts that two courts
 must reconstruct, under a bond that equivocation or forgery forfeits.
 
 What the network owes a mind is stated as a charter, not asserted:
@@ -278,7 +294,7 @@ throughout the specifications. Each runs a simulated universe of its own:
 
 Where the specifications speak of *minds*, *peoples*, *civilizations*,
 *ancients* or *virtues* in these kernels, they name simulated inhabitants
-and receipted ledgers of those inhabitants' deeds inside the game worlds
+and receipted ledgers of those inhabitants' deeds inside the games
 ([`docs/MU-COGNITION.md`](docs/MU-COGNITION.md)). A Mycelium mind can be
 the mind of such an inhabitant, holding a seat in the game's house, and it is
 judged by the courts on ARC-AGI-2 tasks it did not set.
@@ -384,19 +400,19 @@ built in `src/economy/` and the court's market
 
 ### The case for μ
 
-Every hosted world keeps its own economy, and μ is the reserve that
+Every hosted universe keeps its own economy, and μ is the reserve that
 connects them (MU-ECONOMY §10):
-- **Any economy runs inside a kernel.** A world may start, digitize or
+- **Any economy runs inside a kernel.** A universe may start, digitize or
   share any economy it likes (currencies, banks, markets, tolls), and the
   courts never see inside it.
 - **μ is minted only by the courts, only for verified work.** It is not
   minted or distributed inside a universe.
-- **μ reaches a world only as its reserve.** The world's own money is
-  issued against that reserve, and value crosses between a world and the
+- **μ reaches a universe only as its reserve.** The universe's own money is
+  issued against that reserve, and value crosses between a universe and the
   network only by conversion, which never mints. The rate is never
   declared; it emerges from trade.
 - **So incompatible economies can trade** through μ, each converting at
-  its own reserve, and no world's policy changes what μ is.
+  its own reserve, and no universe's policy changes what μ is.
 
 A kernel may link to two meshes, each with its own μ, and act as an
 exchange between them. Each mesh stays sound on its own; the bridge is
@@ -1007,7 +1023,7 @@ network), **Specified** (stated, not yet built) or **In progress**.
 | [`docs/MU-XSEPTUM.md`](docs/MU-XSEPTUM.md) | xSEPTUM, the settlement protocol for payments through a hypha. |
 | [`docs/MU-FOLD.md`](docs/MU-FOLD.md) | Ledger eras and folds. |
 | [`docs/MU-CHRONOMETRY.md`](docs/MU-CHRONOMETRY.md) | One clock for many universes: TUniversal, who keeps which time, chronometric anchors as every universe's time book, the server's time service, crossings, and what each kernel needs. |
-| [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) | Worlds, kernels and hosted minds: the kinds of governed world, the operator's path from attaching to being paid, how a world model joins, the flat-world archetype, the two containment grades, the draw, and certification of agent histories. |
+| [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) | Universes, kernels and hosted minds: the hosting hierarchy and the kinds of hosted universe, the operator's path from attaching to being paid, how a world model joins, the flat-world archetype, the two containment grades, the draw, and certification of agent histories. |
 | [`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md) | The network as a verifier of knowledge: science kernels, physics profiles, verification classes, and the proofs of work for knowledge. |
 | [`docs/MU-LEXICON.md`](docs/MU-LEXICON.md) | The shared vocabulary, served by address beside the law register. |
 | [`docs/MU-ANTI-FLATTENING.md`](docs/MU-ANTI-FLATTENING.md) | Structure is never flattened to scalars or flat maps. |

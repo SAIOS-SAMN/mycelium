@@ -50,7 +50,7 @@ being disclosed.
 
 ## Security engineering
 
-The work that hardens these paths is ROADMAP track 14: decoy worlds, codec
+The work that hardens these paths is ROADMAP track 14: decoy universes, codec
 fuzzing (a decode ambiguity is a release-blocking defect), standing μ
 bounties on protocol invariants posted as listings, self-proving
 equivocation slashing (built for receipts), reproducible builds with

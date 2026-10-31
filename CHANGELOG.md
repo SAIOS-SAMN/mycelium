@@ -51,7 +51,7 @@ such change is named here.
   read by the public `Voice::id()`, and `Session::kernel()` is
   `Session::voice()`; `cognition::Kernel`, the court's state, is
   `cognition::Court` (`src/server/cognition/state.rs`); `sdk::Entity` is
-  `sdk::Mind`. "Kernel" now names only a program that runs a world. The
+  `sdk::Mind`. "Kernel" now names only a program that runs a universe. The
   unused `mycelium::voice` module (a second `Voice`, used only by its own
   test) is removed; `sdk::Voice` is the one voice type.
 - One spelling, British, in identifiers, file names, comments, strings and
@@ -136,8 +136,8 @@ such change is named here.
   law instead of the peer kernel that met it, a domain's reserve tier and
   builder lines replace "ancients" and "progenitor lines", and the server's
   `kernel` handles, lock and prose for the court's state are `court`
-  (`Door::court`, `Exchange::court`); "kernel" there names only a world
-  program. The lexicon's served civic terms are unchanged.
+  (`Door::court`, `Exchange::court`); "kernel" there names only a program
+  that runs a universe. The lexicon's served civic terms are unchanged.
 - Files named by organ: `src/client/sdk/types.rs` is split into
   `comprehension.rs`, `working_atlas.rs`, `genome.rs` (the dialect entry,
   the genome carriers, `Epigenome`), `mind.rs` (`Mind`, `Owed`, `Pending`),
@@ -156,6 +156,17 @@ such change is named here.
   examples to edit.
 
 ### Documentation
+- A kernel runs a **universe**: "hosted universe" replaces "governed
+  world" for a kernel's simulation in every document, the shared *Scope*
+  sentence included, and "world" now means a planet. The hierarchy is
+  fixed vocabulary (MU-LEXICON §1.1): universe (linked to the network
+  through its universal core) → galaxy (held by a galactic core) → star
+  system → world, with a mind seated in a universe. MU-HOSTING opens from
+  hosted universes (§0–§1, kinds renamed: games, science universes,
+  many-agent universes; decoy and exam universes); README *What Mycelium
+  hosts* gives the hierarchy in one table; GLOSSARY adds Universe, Galaxy
+  (galactic core), Star system and World (a planet). The lexicon's served
+  register is unchanged.
 - The change and release process: `main` is protected (pull requests
   only, administrators included; force push and deletion refused), and
   `MAINTAINERS.md` names who merges and who approves. `docs/MU-RELEASE.md`

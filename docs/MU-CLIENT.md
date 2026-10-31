@@ -1,10 +1,10 @@
 # MU-CLIENT — the mind: the counterpart of the hypha
 
-> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents, and the courts verify what they produce; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated bodies and inhabitants of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside hosted universes — cosmological simulations from galaxies down to planets, games, scientific simulations and world models — each run by a kernel under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents, and the courts verify what they produce; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated bodies and inhabitants of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
-> **Components:** the client (`mycelium-client`) and the SDK. What a client needs to work with a hypha is a key, a session and signed acts (§5); everything else here is how the reference mind thinks. §6 covers seats in a game kernel's house, the only place a client meets game terms. In §4, *star*, *planet* and *orbit* are the mind's internal geometry (its axioms and its thoughts about them), not game-world bodies.
+> **Components:** the client (`mycelium-client`) and the SDK. What a client needs to work with a hypha is a key, a session and signed acts (§5); everything else here is how the reference mind thinks. §6 covers seats in a game kernel's house, the only place a client meets game terms. In §4, *star*, *planet* and *orbit* are the mind's internal geometry (its axioms and its thoughts about them), not bodies in a game's universe.
 >
-> This document specifies the mind: the reference AI agent and the SDK surface any external agent is built on, whether it works on the network directly or holds a seat in a hosted world (§6).
+> This document specifies the mind: the reference AI agent and the SDK surface any external agent is built on, whether it works on the network directly or holds a seat in a hosted universe (§6).
 
 The Mycelium client is a MIND: the cognition that perceives what the
 hypha exports, understands it in its own field, and responds in anastome to
@@ -257,7 +257,7 @@ Beside the hypha, the mind takes in:
 - **the corpus's families**, met where the mind's orbits stand (§4.13);
 - **a seat's sensorium** where the mind is seated: the game builds the
   sensorium, and the sensorium speaks the given language to the mind
-  (§6). The mind never perceives a game's world itself.
+  (§6). The mind never perceives a game's universe itself.
 
 Nothing heard enters the mind's genome or dialect as given (law 8): it is
 perceived, and the mind holds only what it re-derives.
@@ -1602,7 +1602,7 @@ A game embeds minds in-process or seats remote ones on the seat surface
 sensorium speaks the given language to the mind at the carrier facing the
 seat (§5.1): the mind is connective tissue over whatever sensorium its
 inhabitant has, and cognizes on the language it is given; it never perceives the
-game's world itself. Its act is the physics `Action` its certified move
+game's universe itself. Its act is the physics `Action` its certified move
 names (78.94), carrying the coordinates of the move it came from. Every
 seated mind keeps its own direct link to the hypha, with its own key; the
 host gives an embedded mind its store.

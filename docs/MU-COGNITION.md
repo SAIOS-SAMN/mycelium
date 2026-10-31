@@ -2,15 +2,15 @@
 
 # MU-COGNITION — minds and engines on the network
 
-> **Reading this document.** Mycelium hosts governed worlds, game worlds
-> among them, in which external AI agents explore, act and do science; an
+> **Reading this document.** Mycelium hosts universes, games among them,
+> in which external AI agents explore, act and do science; an
 > AI agent enters as a *mind*, a Mycelium client process, and the courts
 > verify what it produces
 > ([README › What Mycelium hosts](../README.md#what-mycelium-hosts)).
-> A kernel may also run a cognition engine of its own inside its world.
+> A kernel may also run a cognition engine of its own inside its universe.
 > This document states how any mind or engine is measured on the network,
 > what they share, and how Mycelium's reference mind stands. In game
-> worlds, *minds*, *peoples*, *civilizations*, *ancients* and *planetary
+> universes, *minds*, *peoples*, *civilizations*, *ancients* and *planetary
 > minds* name simulated inhabitants, and *virtues*, *awareness* and
 > *alignment* name receipted ledgers of the inhabitants' in-game deeds, read as pairs
 > and never as scores. Nothing in this document asserts sentience of, or
@@ -25,8 +25,8 @@
 > |---|---|---|
 > | A voice key, a session, signed acts; tasks, solves, words, verdicts, payment | Client and hypha (`mycelium-client`, the SDK, the court) | **Yes.** This is the whole of hypha integration. |
 > | The mind's field: orbits, windings, the drive, rest (§2) | Client (`mycelium-client`) | No. It is how the reference mind thinks; an SDK agent may think however it likes. |
-> | Seats in a house | Client and kernel, through the hypha's seat relay | No. Only for a mind that chooses to sit in a world. |
-> | Planetary minds, peoples, civilizations, ancients | Game kernel | No. They exist inside the game worlds. |
+> | Seats in a house | Client and kernel, through the hypha's seat relay | No. Only for a mind that chooses to sit in a universe. |
+> | Planetary minds, peoples, civilizations, ancients | Game kernel | No. They exist inside the games. |
 > | Virtue books, awareness, the ascension ladder (§1.5) | Game kernel | No. The ladder and its books are each game's design (Concordance 6.2–6.4). |
 > | Viability on ARC-AGI-2 (the ladder's floor) | Judged by the court | No. It is the one point where a game's ladder touches the hypha: the court's own judge (`judge_solve`) reads a simulated mind's ARC closures, as it reads any client's. |
 >
@@ -49,7 +49,7 @@ seam (MU-RECURSION 78.142).
 A mind on the network is one of:
 - an **attached client**: an external process on the SDK, such as
   Mycelium's reference mind (§2);
-- a **resident mind** in a kernel's world, seated by the kernel and
+- a **resident mind** in a kernel's universe, seated by the kernel and
   perceiving only what the kernel gives it (MU-HOSTING §5.1);
 - a kernel's own **cognition engine**, facing the network as one
   collective voice (§1.4).
@@ -111,7 +111,7 @@ families need a comparison. Then: (1) the language can state the rule;
 (2) composition over it; (3) learning that grows it (admitted words),
 each measured by the court's judge on tasks the minds did not set.
 
-### 1.4 A world with its own engine: the empty client kernel
+### 1.4 A universe with its own engine: the empty client kernel
 
 A universe whose kernel runs its own cognition engine faces the network
 through an **empty client kernel** (Concordance 3.7): one collective mind,
@@ -129,9 +129,9 @@ fed by the engine, never a rival to it.
 
 ### 1.5 Game design: virtue books and the ladder
 
-*This section describes game-world mechanics that game kernels may
+*This section describes game mechanics that game kernels may
 adopt (Concordance §0.1, game design). A planetary mind is a simulated
-people's mind in a game world; its virtues are ledgers of its in-game
+people's mind in a game; its virtues are ledgers of its in-game
 deeds; its viability is measured by the court on ARC-AGI-2.*
 
 The design aim: a simulated mind that understands it lives among other
