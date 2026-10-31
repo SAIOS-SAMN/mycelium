@@ -153,12 +153,13 @@ The gate is the `gate` binary of `xtask/`, run with
 `(cd xtask && cargo run)`; there is no `build.rs`. It takes two readings
 and reports both:
 
-1. the source checks of `xtask/lint/`, over `src/` and `xtask/`: the
+1. the source checks of `xtask/lint/`, over `src/`, `forms/src/`,
+   `sdk/src/` and `xtask/`: the
    reading bound (no `.rs` file over 2500 lines) and the Euclidean
    vocabulary (no code line naming a grid-indexing shape such as a Morton
    curve, a bounding box or a subdivision tree);
-2. the warning gate, `cargo clippy --release --all-targets -- -D warnings`,
-   with the crate-wide denials of `Cargo.toml` and the disallowed types and
+2. the warning gate, `cargo clippy --release --workspace --all-targets --
+   -D warnings`, over every workspace member, with the crate-wide denials of `Cargo.toml` and the disallowed types and
    methods of `clippy.toml`: maps and sets, digests (`blake3::hash`),
    wall-clock types (`Instant`, `SystemTime`, `Duration`), silent scalar
    choice, invented defaults, and members by position.

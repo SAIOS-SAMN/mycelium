@@ -157,7 +157,7 @@ pub(crate) fn run(home: &Path, at: Option<&str>, ask: &Ask) -> ! {
 /// readings rendered as a court's are. A mind that does not answer is said
 /// so, in place; exit 2 where none did.
 pub(crate) fn run_minds(dir: &Path, ask: &Ask) -> ! {
-    use mycelium::client::sdk::chatter;
+    use mycelium::anastome::dialogue::chatter;
     let tag = match ask.reading {
         None => None,
         Some(name) => observe::READING_NAMES.iter().find(|(n, _)| *n == name).map(|&(_, t)| t),

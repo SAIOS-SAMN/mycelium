@@ -5,7 +5,7 @@
 // vertex with the same section.
 
 use crate::anastome::dialogue::{self, Spoken};
-use crate::client::sdk::chatter::{AckWord, Chatter, Said};
+use crate::anastome::dialogue::chatter::{AckWord, Chatter, Said};
 use crate::cognition::book::agreement::Attested;
 use crate::cognition::*;
 

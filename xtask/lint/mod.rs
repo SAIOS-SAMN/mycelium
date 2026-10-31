@@ -1,5 +1,5 @@
-// MU-STANDARDS 4.1 — THE GATES THE COMPILER CANNOT READ, over `src/` and
-// `xtask/`: the reading bound (§4.1) and the Euclidean grid vocabulary
+// MU-STANDARDS 4.1 — THE GATES THE COMPILER CANNOT READ, over `src/`,
+// `forms/src/`, `sdk/src/` and `xtask/`: the reading bound (§4.1) and the Euclidean grid vocabulary
 // (law 2, rule 15, the Anti-Flattening Law). Every other rule is a clippy
 // lint (§4.2) or a type (§4.4).
 
@@ -21,9 +21,10 @@ pub fn run() -> Result<(), String> {
     } else {
         manifest.parent().ok_or("xtask has no parent")?.join("src")
     };
-    // The bound is about reading, so it covers the gate binary too.
+    // The bound is about reading, so it covers the gate binary and every
+    // workspace member's source too.
     let bounded: Vec<PathBuf> = match root.parent() {
-        Some(up) => vec![root.clone(), up.join("xtask")],
+        Some(up) => vec![root.clone(), up.join("forms/src"), up.join("sdk/src"), up.join("xtask")],
         None => vec![root.clone()],
     };
     let mut hits = Vec::new();

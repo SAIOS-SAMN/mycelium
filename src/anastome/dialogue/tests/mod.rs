@@ -3,6 +3,7 @@
 
 mod acts;
 mod atlas;
+mod chatter;
 mod cited;
 mod commitment;
 mod equivocation;

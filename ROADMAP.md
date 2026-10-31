@@ -146,11 +146,14 @@ crate's public API, with semantic-versioning guarantees. It includes:
 
 ### SDK packaging: publicly available SDKs
 
-**Specified** in
+**In progress** (P1 Built) in
 [MU-PRECURSORS §4](docs/MU-PRECURSORS.md#4-sdk-packaging-mycelium-sdk).
-Today the SDK is a module of the one `mycelium` crate (`client::sdk`,
-re-exported as `mycelium::sdk`), `forms` is a separate crate in `forms/`,
-`examples/sdk_client.rs` is the complete client, and the MSRV is 1.82.
+Today the repository is a workspace of `mycelium`, `forms` and
+`mycelium-sdk` (`sdk/`) under one lock file; the SDK crate re-exports the
+library's client surface in modules (`voice`, `session`, `task`, `rule`,
+`seat`, `wallet`, `readings`, `mind`, `wire`, `forms`, `prelude`),
+`sdk/examples/client.rs` is the complete client on it alone, and the MSRV
+is 1.82.
 The track publishes SDKs open-source developers can depend on by version:
 a `mycelium-sdk` crate, a workspace member, re-exporting a narrow,
 versioned surface (identity, `Session`, tasks and solves, the rule seam,
@@ -161,11 +164,11 @@ documentation, examples per POW++ arm, publication to crates.io under
 Apache-2.0, a client conformance read, and bindings for other languages
 after it.
 
-1. **P1, workspace:** `mycelium`, `forms` and `mycelium-sdk` as members of
-   one workspace, `xtask` outside it. *Accepted when* the gate passes on
-   the workspace and the members share one lock file.
+1. **P1, workspace (Built):** `mycelium`, `forms` and `mycelium-sdk` as
+   members of one workspace, `xtask` outside it. *Accepted when* the gate
+   passes on the workspace and the members share one lock file.
 2. **P2, the surface:** `mycelium-sdk` re-exporting the surface, and
-   `examples/sdk_client.rs` depending on it alone. *Accepted when* the
+   the client example (`sdk/examples/client.rs`) depending on it alone. *Accepted when* the
    example runs end to end against a local network and a compile test
    imports every surface item.
 3. **P3, features and dependencies:** a default-on `server` feature on
@@ -178,7 +181,7 @@ after it.
 5. **P5, the client conformance read:** the acts a client must speak and
    the readings it must answer, served by a hypha and kept in the
    repository, with its suite (track 15, H1). *Accepted when* the
-   reference mind and `sdk_client` pass it and a client missing a required
+   reference mind and the `client` example pass it and a client missing a required
    act fails it by name. Conformance is by decoded exact values
    (Concordance 1.4).
 6. **P6, publication:** `forms`, `mycelium` and `mycelium-sdk` on

@@ -230,7 +230,7 @@ impl super::Mind {
 
 impl super::Session {
     /// One signed post, answered by its sequence or the refusal by name.
-    pub(crate) fn seat_post(&self, s: &SignedPost) -> io::Result<Result<u64, Refusal>> {
+    pub fn seat_post(&self, s: &SignedPost) -> io::Result<Result<u64, Refusal>> {
         let reply = self.speak(encode_post(s).ok_or_else(unwritten)?)?;
         decode_post_reply(&reply).ok_or_else(|| undecoded("post"))
     }
@@ -239,13 +239,13 @@ impl super::Session {
     /// or (v1.4) at a sub-origin — with the house's signature
     /// (`SignedPost::signed_by` the reserve's key verifies it); `None` where
     /// none is listed.
-    pub(crate) fn list_seats(&self, domain: [u8; 32], sub_origin: Option<[u8; 32]>) -> io::Result<Option<SignedPost>> {
+    pub fn list_seats(&self, domain: [u8; 32], sub_origin: Option<[u8; 32]>) -> io::Result<Option<SignedPost>> {
         let reply = self.speak(encode_read_listing(&domain, sub_origin.as_ref()))?;
         decode_listing_reply(&reply, sub_origin.as_ref()).ok_or_else(|| undecoded("listing"))
     }
 
     /// A MIND TAKES A SEAT, signed by its own key.
-    pub(crate) fn take(&self, at: SeatName, key: &SigningKey) -> io::Result<Result<u64, Refusal>> {
+    pub fn take(&self, at: SeatName, key: &SigningKey) -> io::Result<Result<u64, Refusal>> {
         let mind = key.verifying_key().to_bytes();
         let s = Post::Take(Take { domain: at.domain, sub_origin: at.sub_origin, seat: at.seat, mind, nonce: nonce() }).sign(key).ok_or_else(unwritten)?;
         self.seat_post(&s)
@@ -253,7 +253,7 @@ impl super::Session {
 
     /// A SEATED MIND CALLS: answered by the relay's sequence, with the call's
     /// reference — what the house's outcome will name.
-    pub(crate) fn call(&self, at: SeatName, key: &SigningKey, fn_id: u16, args: Vec<Arg>) -> io::Result<(Result<u64, Refusal>, [u8; 32])> {
+    pub fn call(&self, at: SeatName, key: &SigningKey, fn_id: u16, args: Vec<Arg>) -> io::Result<(Result<u64, Refusal>, [u8; 32])> {
         let mind = key.verifying_key().to_bytes();
         let c = Call { domain: at.domain, sub_origin: at.sub_origin, seat: at.seat, mind, nonce: nonce(), fn_id, args };
         let s = Post::Call(c).sign(key).ok_or_else(unwritten)?;
@@ -267,7 +267,7 @@ impl super::Session {
     /// last sequence beside the pieces, so a cursor left on a restarted relay
     /// is told from progress (`MailRead::cursor`) and acknowledges nothing
     /// there.
-    pub(crate) fn read_mail(&self, key: &SigningKey, after: u64, epoch: u64) -> io::Result<Result<MailRead, Refusal>> {
+    pub fn read_mail(&self, key: &SigningKey, after: u64, epoch: u64) -> io::Result<Result<MailRead, Refusal>> {
         let reply = self.speak(encode_read_mail(&ReadMail::sign_standing(key, after, epoch, nonce())))?;
         decode_mail_reply_standing(&reply).ok_or_else(|| undecoded("mail"))
     }
@@ -276,7 +276,7 @@ impl super::Session {
     /// relay's standing (epoch, last sequence). A piece that does not read as
     /// a TAKEN, PERCEPT or OUTCOME naming this mind — which the relay never
     /// serves — is an error by name, never skipped.
-    pub(crate) fn mail(&self, key: &SigningKey, after: u64, epoch: u64) -> io::Result<Result<MindRead, Refusal>> {
+    pub fn mail(&self, key: &SigningKey, after: u64, epoch: u64) -> io::Result<Result<MindRead, Refusal>> {
         let mind_vk = key.verifying_key().to_bytes();
         match self.read_mail(key, after, epoch)? {
             Ok(read) => mind_mail(mind_vk, read.mail).map(|mail| Ok(MindRead { epoch: read.epoch, seq: read.seq, mail })),

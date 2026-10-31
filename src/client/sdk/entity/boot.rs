@@ -42,18 +42,18 @@ impl Mind {
 
     /// THE MIND OPENED toward the hypha at `endpoint`: its carrier discovers the
     /// nerve on its own thread before it carries the first ask.
-    pub(crate) fn open(endpoint: &str, voice: Voice) -> Self {
+    pub fn open(endpoint: &str, voice: Voice) -> Self {
         // The complex listens from the first pivot (MU-CLIENT §4.5): every
         // tether condensed and face sealed winds its strain into the field.
         let mut contemplation = crate::transducer::bubble::Contemplation::new();
         contemplation.complex.arm_outflow();
         // The seat's carrier lands on the mind's own waker: a house's percept
         // wakes the resting mind that is to take it up.
-        let hypha = super::hypha::Hypha::open(Session::open(endpoint,voice.clone()));
-        let seat = super::hypha::Hypha::open_beside(Session::open(endpoint,voice.clone()), hypha.waker());
+        let hypha = super::hypha::HyphaLink::open(Session::open(endpoint,voice.clone()));
+        let seat = super::hypha::HyphaLink::open_beside(Session::open(endpoint,voice.clone()), hypha.waker());
         // The held mail read on a carrier of its own, so it never stands in
         // front of a take, a solve or a declination.
-        let held = super::hypha::Hypha::open_beside(Session::open(endpoint,voice), hypha.waker());
+        let held = super::hypha::HyphaLink::open_beside(Session::open(endpoint,voice), hypha.waker());
         Mind {
             seat,
             held,
@@ -176,21 +176,18 @@ impl Mind {
     /// if present — the words a court admitted, each at its citation. The
     /// epigenome, the plan and the mind's K start empty: they are volatile,
     /// the mind's motion, never persisted (78.27, 78.49). An older file, or
-    /// one that does not read whole, is refused whole.
-    pub fn open_persistent(endpoint: &str, voice: Voice, genome_path: &str) -> Self {
+    /// one that does not read whole, is refused whole. What the file came to
+    /// is answered beside the mind ([`GenomeReading`]); the caller prints it.
+    pub fn open_persistent(endpoint: &str, voice: Voice, genome_path: &str) -> (Self, GenomeReading) {
         let mut e = Mind::open(endpoint, voice);
         let Ok(bytes) = std::fs::read(genome_path) else {
-            eprintln!("genome 0 words, epigenome empty");
-            return e;
+            return (e, GenomeReading::Absent);
         };
         if let Err(why) = e.restore_genome(&bytes) {
-            eprintln!("genome refused: {why}");
-            return e;
+            return (e, GenomeReading::Refused(why));
         }
-        let n = e.epigenome.genome_len();
-        let kb = bytes.len() / 1024;
-        eprintln!("genome {n} words (GEN7, {kb} KB), epigenome empty");
-        e
+        let words = e.epigenome.genome_len();
+        (e, GenomeReading::Restored { words, bytes: bytes.len() })
     }
 
     /// RESTORE A GENOME'S BYTES into this freshly opened mind: the words a
@@ -247,5 +244,31 @@ impl Mind {
     #[cfg(test)]
     pub(crate) fn voice(&self) -> &Voice {
         self.hypha.voice()
+    }
+}
+
+/// WHAT A GENOME FILE CAME TO at `Mind::open_persistent`: none on disk, refused
+/// whole by name, or restored. The library prints nothing; a binary prints
+/// this reading (`Display`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum GenomeReading {
+    /// No file at the path: the mind opens with no words.
+    Absent,
+    /// The file was refused whole; the reason names why.
+    Refused(String),
+    /// The file was restored: the words the genome holds and the file's
+    /// length in bytes.
+    Restored { words: usize, bytes: usize },
+}
+
+impl std::fmt::Display for GenomeReading {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            GenomeReading::Absent => write!(f, "genome 0 words, epigenome empty"),
+            GenomeReading::Refused(why) => write!(f, "genome refused: {why}"),
+            GenomeReading::Restored { words, bytes } => {
+                write!(f, "genome {words} words (GEN7, {} KB), epigenome empty", bytes / 1024)
+            }
+        }
     }
 }

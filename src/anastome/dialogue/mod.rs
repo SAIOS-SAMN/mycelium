@@ -8,6 +8,7 @@ pub mod acts;
 pub mod atlas;
 pub mod carrier;
 pub mod challenge;
+pub mod chatter;
 pub mod cited;
 pub mod commitment;
 pub mod crossing;

@@ -128,7 +128,7 @@ acts, verified on admission.
 
 **The gap.** In release 0.2.0, acts travel over plain TCP. The server door
 (`src/bin/mycelium-server/transport.rs`, `read_frame`) and the SDK session
-(`src/client/sdk/session.rs`, `src/client/sdk/chatter.rs`) read frames
+(`src/client/sdk/session.rs`, `src/anastome/dialogue/chatter.rs`) read frames
 from a `TcpStream` directly. `src/network/` holds `mesh.rs`, `nerve/` and
 `wire.rs`, and no encrypted channel. ROADMAP track 5 lists "an encrypted
 transport" as work to do. README › *Node capabilities in 0.2.0* records
@@ -736,7 +736,7 @@ claims without code.
 |---|---|---|
 | **Depth 0: run a node** | Nothing but a host | `mycelium-server`; earns POWV for verification (README › *Running a node*). |
 | **Depth 1: bring tasks** | Task-shaped files | The file-feed door submits each file as one claim. |
-| **Depth 2: bring a solver** | A program that states rules | A client on `sdk::{Voice, Session}` (`examples/sdk_client.rs`). |
+| **Depth 2: bring a solver** | A program that states rules | A client on `mycelium-sdk` (`sdk/examples/client.rs`). |
 | **Depth 3: bring physics** | A universe's law set | A kernel that signs the Concordance and seals a physics profile (MU-SCIENCE §3.2; MU-HOSTING §3.1). |
 
 **The gap.** Depths 0 and 2 exist (the server; the SDK and its example).
@@ -833,23 +833,23 @@ mapping from the spaces world models already declare.
 
 ### 4.1 The current state
 
-- `Cargo.toml` defines one package, `mycelium` 0.2.0, Apache-2.0,
-  `rust-version = "1.82"`, with three binaries (`mycelium-server`,
-  `mycelium-client`, `mycelium-soak`). There is no `[workspace]` section.
-- The SDK is a module: `client::sdk`, re-exported as `mycelium::sdk`
-  (`src/lib.rs`), with `Voice`, `Session`, `rule`, `seat`, `seat_mind`,
-  `chatter` and `types`.
-- A client also reaches past the SDK module: the wire codecs
-  (`anastome::dialogue`, including `lease` and `wallet`), the voice key
-  (`court::identity::HyphaKey`), and the rule machinery
-  (`transducer::family::{extract_rule, mint_sentence_why, speak}`,
-  `transducer::sentence::form::rule_element`).
-- `forms/` is a separate crate (`forms` 0.1.0, same MSRV) with its own
-  lock file, not a workspace member.
-- `examples/sdk_client.rs` (149 lines) is the complete client; README's
-  dependency line takes `mycelium` by git tag.
-- Anastome carries a layout version per act where one is defined (for
-  example `EQUIVOCATION_VERSION`); there is no single wire version number.
+- `Cargo.toml` is a workspace: the root package `mycelium` 0.2.0,
+  Apache-2.0, `rust-version = "1.82"`, with three binaries
+  (`mycelium-server`, `mycelium-client`, `mycelium-soak`), and the members
+  `forms` (0.1.0) and `mycelium-sdk` (0.3.0-dev), under one lock file and
+  one lint table (`[workspace.lints]`). `xtask` stays outside it.
+- The SDK is the crate `mycelium-sdk` (`sdk/`), re-exporting the library's
+  client surface in modules: `voice`, `session`, `task`, `rule`, `seat`,
+  `wallet`, `readings`, `mind`, `wire` (`WIRE_VERSION`, `ACT_TABLE`),
+  `forms` and `prelude`. The library module `client::sdk` (re-exported as
+  `mycelium::sdk`) is what it re-exports, with the wire codecs of
+  `anastome::dialogue`, the voice key and the rule machinery.
+- `sdk/examples/client.rs` is the complete client, with `mycelium-sdk` as
+  its only Mycelium dependency; README's dependency line takes
+  `mycelium-sdk` by git tag.
+- `anastome::dialogue::WIRE_VERSION` names the wire's version
+  (`major << 8 | minor`, v1.4); Anastome also carries a layout version per
+  act where one is defined (for example `EQUIVOCATION_VERSION`).
 - The library's dependency set includes crates used by the server and the
   reference mind (the allocator and its statistics, signal handling, file
   watching), some of them reached from library modules.
@@ -894,7 +894,7 @@ the crate's public API. This section is the design of it.
 - **Documentation on docs.rs.** Every re-exported item documented, with
   the depths (§3.10) on the crate's front page, and each example linked.
 - **Examples per POW++ arm:** POUW (task, rule, solve: today's
-  `sdk_client`), POWC (a rule citing installed words), POWR (a rewrite
+  `client` example), POWC (a rule citing installed words), POWR (a rewrite
   spoken through `Session::speak`), a lease (open, pay, close), and a seat.
   POWV is earned by running a node and is documented as Depth 0.
 - **Publication to crates.io** under Apache-2.0. crates.io requires every
@@ -916,16 +916,17 @@ the crate's public API. This section is the design of it.
 
 | Phase | Delivers | Accepted when |
 |---|---|---|
-| **P1: workspace** | A `[workspace]` with `mycelium`, `forms` and `mycelium-sdk` as members; `xtask` stays outside it. | The gate passes on the workspace; `forms` builds as a member; the server's and the SDK's builds share one lock file. |
-| **P2: the surface** | `mycelium-sdk` re-exporting §4.2's surface; `examples/sdk_client.rs` ported to depend on it alone. | The example builds and runs end to end against a local network with `mycelium-sdk` as its only Mycelium dependency; a compile test imports every surface item. |
+| **P1: workspace** (Built) | A `[workspace]` with `mycelium`, `forms` and `mycelium-sdk` as members; `xtask` stays outside it. | The gate passes on the workspace; `forms` builds as a member; the server's and the SDK's builds share one lock file. |
+| **P2: the surface** | `mycelium-sdk` re-exporting §4.2's surface; the client example (`sdk/examples/client.rs`) ported to depend on it alone. | The example builds and runs end to end against a local network with `mycelium-sdk` as its only Mycelium dependency; a compile test imports every surface item. |
 | **P3: features and dependencies** | The `server` feature on `mycelium`; the SDK's `noise`, `rules` and `seats` features. | The SDK builds with default features off and pulls none of the server-only crates; each feature builds alone. |
 | **P4: documentation and examples** | docs.rs documentation, the depths, one example per arm, a lease and a seat. | Every example builds; each POW++ example is paid on a local network (README › *Quick start*). |
-| **P5: conformance read** | The client conformance statement, served and in the repository; its suite. | The reference mind and `sdk_client` pass the suite; a client that omits a required act fails it by name. |
+| **P5: conformance read** | The client conformance statement, served and in the repository; its suite. | The reference mind and the `client` example pass the suite; a client that omits a required act fails it by name. |
 | **P6: publication** | `forms`, `mycelium` and `mycelium-sdk` on crates.io under Apache-2.0, with the compatibility statement in the CHANGELOG. | A fresh project depending on the published `mycelium-sdk` by version builds and runs the example. |
 | **P7: bindings** | A first binding in another language, on the conformance read. | The binding passes the conformance suite with exact values only. |
 
 **Track** 9 (with 15 H1 for the conformance read). **Effort** large.
-**Status** Specified.
+**Status** In progress: P1 Built; P2's surface and its example are in the
+tree, its compile test and live run not yet.
 
 ---
 

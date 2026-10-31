@@ -125,13 +125,14 @@ essentials:
 failure in one does not hide the others:
 
 1. **The reading bound** (`xtask/lint/length.rs`): no source file under
-   `src/` or `xtask/` longer than 2500 lines.
+   `src/`, `forms/src/`, `sdk/src/` or `xtask/` longer than 2500 lines.
 2. **The Euclidean check** (`xtask/lint/euclidean.rs`): refuses grid
    indexing shapes named in code (Morton and space-filling curves, bit
    interleaving, bounding boxes, subdivision trees, spatial hashes,
    voxels), with the reason for each.
 3. **Clippy** (`xtask/lint/warnings.rs`): `cargo clippy --release
-   --all-targets -- -D warnings`, with the project's disallowed types and
+   --workspace --all-targets -- -D warnings`, every workspace member, with
+   the project's disallowed types and
    methods (`clippy.toml`).
 
 A warning is a defect with a line number. Where a denied lint fires on a

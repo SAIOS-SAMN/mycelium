@@ -26,6 +26,7 @@ pub use aperture::*;
 pub use comprehension::*;
 pub use concluded::*;
 pub use entity::body::Sitting;
+pub use entity::boot::GenomeReading;
 /// The names a court task's reading is coded by, for the observer's typed
 /// reading (`observe::TaskSeen`).
 pub(crate) use entity::perceive::{PERSPECTIVES, READINGS, STOPS};

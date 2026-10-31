@@ -424,7 +424,7 @@ impl Mind {
         let (to, rx) = channel::<Inflow>();
         let deliver = to.clone();
         let voice = self.hypha.voice().id();
-        let post = chatter::Post::open(
+        let post = chatter::Post::listen(
             "127.0.0.1:0",
             move |f| {
                 let _ = deliver.send(Inflow::Frame(f));
@@ -1242,7 +1242,7 @@ impl Carrier {
     /// what it says. A frame that does not open, or this mind's own, is
     /// nothing.
     fn hear_frame(&mut self, f: &[u8]) {
-        let Some(c) = Chatter::open(f) else { return };
+        let Some(c) = Chatter::verify(f) else { return };
         if c.speaker == self.voice {
             return;
         }

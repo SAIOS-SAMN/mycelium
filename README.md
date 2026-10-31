@@ -205,7 +205,7 @@ flowchart LR
         A <-- "digests · receipts · folds · TUniversal" --> C
     end
     M1["Mind<br/>mycelium-client"] -- "Anastome acts<br/>(signed)" --> A
-    M2["SDK client<br/>examples/sdk_client"] -- "task · solve" --> B
+    M2["SDK client<br/>sdk/examples/client"] -- "task · solve" --> B
     M1 <-. "chatter: say · hold · attest" .-> M3["Mind"]
     M3 --> C
     H["House<br/>(peer kernel)"] -- "seats · percepts" --> A
@@ -374,7 +374,7 @@ Each proof is earned by a distinct client action. The reference mind
 
 | Proof | The client action | Reference mind | SDK |
 |---|---|---|---|
-| **POUW** | Request a task, state a rule, submit a signed solve; or speak a word or sentence the courts install. | Extracts rules and solves court tasks; speaks words and sentences from its genome. | `ACT_TASK` → `extract_rule` / `sdk::rule::sentence` / rule elements → `encode_solve_with_rule` → `decode_solve_verdict` (`examples/sdk_client.rs`). |
+| **POUW** | Request a task, state a rule, submit a signed solve; or speak a word or sentence the courts install. | Extracts rules and solves court tasks; speaks words and sentences from its genome. | `ACT_TASK` → `extract_rule` / `rule::sentence` / rule elements → `encode_solve_with_rule` → `decode_solve_verdict` (`sdk/examples/client.rs`). |
 | **POWC** | Close a demand another mind left open, citing that mind's receipt; earn when other minds' demands use a word this voice discovered. | Cites its genome's words in what it speaks; hears other minds' words with the evidence for each, attests agreements and records convergences (`sdk::chatter`, `entity/converge.rs`). | States rules that cite installed words; the court pays the citation's measured discharge. |
 | **POWR** | Propose a rewrite: a word retired over fewer letters, a cycle condensed or torsed. | Its pivots (torse, condense) mint rewrites and speak them to the court. | Speaks a rewrite element through `Session::speak`; the court replays it and settles the compression yield. |
 
@@ -665,8 +665,10 @@ src/
   transducer/   the algebra: Cl(4,1)(ℚ), alphabet, elements, sentences,
                 perception of grids (family/), rule elements
   voice/        voice identity and signing
-examples/       sdk_client.rs (a complete client), durable_drill.rs
-forms/          shared exact law forms (separate crate)
+examples/       durable_drill.rs
+forms/          shared exact law forms (workspace member crate)
+sdk/            mycelium-sdk: the client SDK crate, and examples/client.rs
+                (a complete client)
 xtask/          the gate: source-length bound, Euclidean-vocabulary check,
                 and clippy with -D warnings
 ops/            example systemd unit templates (edit the paths before use)
@@ -691,14 +693,15 @@ cargo test --lib <module path>   # scoped suites, e.g. transducer::family::tests
 
 The gate (`xtask/`) takes three readings and reports each one, so a
 failure in the first does not hide the others:
-- **Reading bound** (`xtask/lint/length.rs`): no source file under `src/`
-  or `xtask/` longer than 2500 lines.
+- **Reading bound** (`xtask/lint/length.rs`): no source file under `src/`,
+  `forms/src/`, `sdk/src/` or `xtask/` longer than 2500 lines.
 - **Euclidean vocabulary** (`xtask/lint/euclidean.rs`): refuses grid
   indexing shapes (Morton and space-filling curves, bit interleaving,
   bounding boxes, subdivision trees, spatial hashes, voxels) named in code
-  under `src/` and `xtask/`.
+  under the same directories.
 - **Clippy** (`xtask/lint/warnings.rs`): `cargo clippy --release
-  --all-targets -- -D warnings`.
+  --workspace --all-targets -- -D warnings`, over `mycelium`, `forms` and
+  `mycelium-sdk`.
 
 Test suites are run by module path. Some suites replay corpus tasks.
 
@@ -850,49 +853,64 @@ as `peers`, copy the corpus manifests (step 4), and start without
 ## Building a client with the SDK
 
 A client is any program that holds a voice key and speaks Anastome acts to
-a hypha. The SDK is the `mycelium` library crate's `sdk` module, together
-with the wire codecs in `anastome::dialogue` and the rule machinery in
-`transducer`. The reference mind (`mycelium-client`) is one client built
-on it. [`examples/sdk_client.rs`](examples/sdk_client.rs) is a complete
-client of about 150 lines.
+a hypha. The SDK is the `mycelium-sdk` crate (`sdk/`), a workspace member
+beside the `mycelium` library: one curated surface, every item the
+library's own, re-exported, so the server and the SDK cannot drift. The
+reference mind (`mycelium-client`) is one client built on the library.
+[`sdk/examples/client.rs`](sdk/examples/client.rs) is a complete client of
+about 150 lines, with `mycelium-sdk` as its only Mycelium dependency.
 
 ### Dependency
 
 ```toml
 [dependencies]
-mycelium = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.2.0" }
-ed25519-dalek = "2.1"
+mycelium-sdk = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.3.0" }
 ```
+
+### The modules
+
+| Module | What it carries |
+|---|---|
+| `voice` | `Voice`, the voice key (`VoiceKey`, `load_or_mint`), `SigningKey`, the mesh record of a voice home (`load_or_migrate_voice`) |
+| `session` | `Session` (`open`, `speak`, `speak_keyed`, `tuniversal`), `TransportAperture`, `TPoint` |
+| `task` | Task request and envelope; `encode_solve_with_rule`; `decode_solve_verdict` and the `SOLVE_*` codes |
+| `rule` | The rule seam: `Step`, `Create`, `Symmetry`, `NoRule`, `sentence`, the clause types; `extract_rule`, `mint_sentence_why`, `speak_rule`; `Crystal`, `NoCrystal`, `Element`, `Grid` |
+| `seat` | `SeatName`, `MindMail`, `MindRead`, the seat posts; `Session::{list_seats, take, call, mail, read_mail, seat_post}` |
+| `wallet` | Wallet read; stake and unstake; lease open, reply and close |
+| `readings` | The typed readings a client may ask a hypha for: observer, why, law register, receipts, rows, reserve, probe |
+| `mind` | The reference mind, `Mind::open` and `Mind::open_persistent` |
+| `wire` | `WIRE_VERSION` (`0x0104`, wire v1.4) and `ACT_TABLE`, every act the SDK may send |
+| `forms` | The law forms (the `forms` crate) |
+| `prelude` | The items a client uses first |
 
 ### The client loop
 
 ```rust
-use mycelium::anastome::dialogue;
-use mycelium::court::identity::HyphaKey;
-use mycelium::sdk::{Voice, Session};
-use mycelium::transducer::family::{extract_rule, mint_sentence_why, speak::speak_rule, NoCrystal};
+use mycelium_sdk::prelude::*;
+use mycelium_sdk::rule::{extract_rule, mint_sentence_why, speak_rule, Physics};
+use mycelium_sdk::task;
 
 // 1. Identity: a voice key, minted once and kept (32-byte Ed25519 seed).
-let key = HyphaKey::load_or_mint("voice.key");
+let (voice, key) = mycelium_sdk::voice::load_or_mint("voice.key");
 // 2. Session: one hypha's address.
-let session = Session::open("127.0.0.1:7610", Voice::from_key(key.sk.clone()));
+let session = Session::open("127.0.0.1:7610", voice);
 // 3. Work: the task envelope carries train pairs and test inputs; the test
 //    outputs stay with the court. An empty reply means no work is available.
-let reply = session.speak(dialogue::encode_task_request(&key.verifying_bytes()))?;
-let task = dialogue::decode_task_envelope(&reply).ok_or("no task")?;
+let reply = session.speak(task::encode_task_request(&key.verifying_key().to_bytes()))?;
+let envelope = task::decode_task_envelope(&reply).ok_or("no task")?;
 // 4. Rule: extracted from the train pairs, minted as an element the court
 //    can replay, and spoken on each test input.
-let mut budget = mycelium::physics::Physics::default().stroke_n(1 << 20);
-let rule = extract_rule(&task.train, &mut budget).ok_or("no rule")?;
-let element = mint_sentence_why(&rule, &task.train, &NoCrystal, 0)?;
-let outputs: Vec<_> = task.tests.iter()
+let mut budget = Physics::default().stroke_n(1 << 20);
+let rule = extract_rule(&envelope.train, &mut budget).ok_or("no rule")?;
+let element = mint_sentence_why(&rule, &envelope.train, &NoCrystal, 0)?;
+let outputs: Vec<_> = envelope.tests.iter()
     .map(|x| speak_rule(&rule, x, &NoCrystal).and_then(|s| s.grid()))
     .collect::<Option<_>>().ok_or("rule does not speak a test")?;
 // 5. Solve: the outputs and the rule's tape, signed by the voice the court pays.
-let solve = dialogue::encode_solve_with_rule(&key.sk, &task.id, &outputs,
-                                             Some(&element.to_bytes().ok_or("tape")?)).ok_or("solve")?;
+let solve = task::encode_solve_with_rule(&key, &envelope.id, &outputs,
+                                         Some(&element.to_bytes().ok_or("tape")?)).ok_or("solve")?;
 let verdict = session.speak(solve)?;
-let (code, paid, refusal, _modes) = dialogue::decode_solve_verdict(&verdict).ok_or("verdict")?;
+let (code, paid, refusal, _modes) = task::decode_solve_verdict(&verdict).ok_or("verdict")?;
 ```
 
 The verdict codes are:
@@ -907,8 +925,8 @@ The verdict codes are:
 Running the example against a hypha:
 
 ```sh
-cargo build --release --example sdk_client
-target/release/examples/sdk_client /srv/myc/v1 127.0.0.1:7610 8
+cargo build --release -p mycelium-sdk --example client
+target/release/examples/client /srv/myc/v1 127.0.0.1:7610 8
 #   voice 1eac4511…
 #   task 65b0c3689cfe3a37… solved: first verified closure (bounty) — paid μ [0, 24, 0, 0]
 #   task d9144a4bc81fd016… solved: first verified closure (bounty) — paid μ [88, 0, 0, 92]
@@ -919,23 +937,25 @@ target/release/examples/sdk_client /srv/myc/v1 127.0.0.1:7610 8
 
 The SDK states rules in three ways, and the court replays each on withheld
 pairs:
-- **The bundled extractor**, `transducer::family::extract_rule`, reads a
-  rule off a task's train pairs.
-- **Typed steps:** `sdk::rule::sentence(&[Step], family, crystal)` mints a
+- **The bundled extractor**, `rule::extract_rule`, reads a rule off a
+  task's train pairs.
+- **Typed steps:** `rule::sentence(&[Step], family, crystal)` mints a
   rule from steps (select, create, crop, D4 symmetries, hue moves).
-- **Rule elements:** `transducer::sentence::form::rule_element` states a
-  rule directly as carriages, chains, joins and frames on a `Form`.
+- **Rule elements:** the library's
+  `transducer::sentence::form::rule_element` states a rule directly as
+  carriages, chains, joins and frames on a `Form` (not yet in the SDK's
+  surface).
 
-### SDK surfaces in 0.2.0
+### SDK surfaces
 
 | Surface | API | Verified |
 |---|---|---|
-| Identity, session, task, solve, verdict | `sdk::{Voice, Session}`, `anastome::dialogue` | end to end (`examples/sdk_client.rs`) |
-| Rule extraction, minting, speaking | `transducer::family::{extract_rule, mint_sentence_why, speak::speak_rule}` | end to end |
-| Rules from typed steps | `sdk::rule::sentence` | test suite |
-| Seats in another kernel's house | `sdk::seat`, `sdk::seat_mind` | in use by peer kernels; specified in `docs/MU-CLIENT.md` §6 |
-| Mind-to-mind conversation | `sdk::chatter` | in use by the reference mind |
-| Compute leases: open and close | `anastome::dialogue::lease` (`ACT_WALLET` sub-kinds 3 and 4) | test suite |
+| Identity, session, task, solve, verdict | `voice`, `session`, `task` | end to end (`sdk/examples/client.rs`) |
+| Rule extraction, minting, speaking | `rule::{extract_rule, mint_sentence_why, speak_rule}` | end to end |
+| Rules from typed steps | `rule::sentence` | test suite |
+| Seats in another kernel's house | `seat` | in use by peer kernels; specified in `docs/MU-CLIENT.md` §6 |
+| Mind-to-mind conversation | the library's `sdk::chatter` (frame codec in `anastome::dialogue::chatter`) | in use by the reference mind |
+| Compute leases: open and close | `wallet` (`ACT_WALLET` sub-kinds 3 and 4) | test suite |
 
 ---
 

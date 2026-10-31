@@ -159,7 +159,8 @@ fn main() {
     };
     let genome_path = home.join("genome").to_string_lossy().into_owned();
     // 78.141 — seated on its key: the solves it is paid for are signed.
-    let mut mind = Mind::open_persistent(&bootstrap, Voice::from_key(voice_key.sk.clone()), &genome_path);
+    let (mut mind, genome) = Mind::open_persistent(&bootstrap, Voice::from_key(voice_key.sk.clone()), &genome_path);
+    eprintln!("{genome}");
     mind.set_height(mycelium::chronometry::Height::default());
     mind.discover();
     mind.keep_genome(genome_path);
