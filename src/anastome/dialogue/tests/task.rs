@@ -9,7 +9,7 @@
 
 use crate::anastome::dialogue::*;
 use crate::arc::Task;
-use crate::registry::{citation, TaskRegistry};
+use crate::registry::{citation, task_address, TaskRegistry};
 
 fn toy() -> Task {
     Task {
@@ -36,10 +36,10 @@ fn large() -> Task {
 fn task_by_citation_round_trips_with_envelope() {
     let voice = [4u8; 32];
     let mut reg = TaskRegistry::new();
-    let id = reg.register(toy()).expect("a grid pair's chain is A5's");
-    let cite = citation(&id);
-    assert_eq!(reg.by_citation(&cite), Some(id.clone()), "the citation resolves to the task");
-    assert_eq!(reg.by_citation(&[9u8; 32]), None, "an unknown citation names nothing");
+    let cite = reg.register(toy()).expect("a grid pair's chain is A5's");
+    assert_eq!(cite, citation(&task_address(&toy()).expect("addressed")), "the book's id is the citation");
+    assert!(reg.task(&cite).is_some_and(|t| t.train == toy().train && t.test == toy().test), "the citation resolves to the task");
+    assert!(reg.task(&[9u8; 32]).is_none(), "an unknown citation names nothing");
     let ask = encode_task_by_citation(&voice, &cite);
     assert_eq!(decode_task_by_citation(&ask), Some((voice, cite)), "the citation reads back whole");
     assert_eq!(decode_task_request(&ask), None, "a request by citation is no plain request");
@@ -50,7 +50,7 @@ fn task_by_citation_round_trips_with_envelope() {
     longer.push(0);
     assert_eq!(decode_task_by_citation(&longer), None, "a byte left over is no request");
     // The door's answer: the task the citation names, its test inputs only.
-    let task = reg.task(id.as_bytes()).expect("held");
+    let task = reg.task(&cite).expect("held");
     let tests: Vec<_> = task.test.iter().map(|(x, _)| x.clone()).collect();
     let env = decode_task_envelope(&encode_task_envelope(&cite, &task.train, &tests).expect("writes")).expect("reads");
     assert_eq!(env.id, cite, "the envelope names the task by its citation");
@@ -63,10 +63,11 @@ fn task_by_citation_round_trips_with_envelope() {
 #[test]
 fn citation_names_task_past_u16_wall() {
     let mut reg = TaskRegistry::new();
-    let id = reg.register(large()).expect("registers");
+    let id = task_address(&large()).expect("addressed");
     assert!(id.as_bytes().len() > usize::from(u16::MAX), "the content address passes the wall: {}", id.as_bytes().len());
-    let cite = citation(&id);
-    assert_eq!(reg.by_citation(&cite), Some(id), "named by 32 bytes, resolved court-side");
+    let cite = reg.register(large()).expect("registers");
+    assert_eq!(cite, citation(&id), "named by 32 bytes");
+    assert!(reg.task(&cite).is_some(), "resolved court-side");
     let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
     let solve = decode_solve(&encode_solve(&key, &cite, &[vec![vec![1]]]).expect("writes")).expect("reads");
     assert_eq!((solve.task, solve.signed), (cite, true), "a solve names it by the citation, signed");

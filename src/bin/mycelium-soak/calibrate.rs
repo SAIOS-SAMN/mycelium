@@ -47,8 +47,9 @@ pub(crate) fn find_id(dir: &str, names: &[String], want: &str) {
     for file in names {
         let Ok(json) = std::fs::read_to_string(format!("{dir}/{file}")) else { continue };
         let Some(task) = mycelium::arc::parse_task(&json) else { continue };
-        let Some(id) = mycelium::server::registry::task_address(&task) else { continue };
-        let hx: String = id.as_bytes().iter().take(2).map(|b| format!("{b:02x}")).collect();
+        // The registry names a task by its citation, the id a voice speaks.
+        let Some(id) = mycelium::server::registry::task_citation(&task) else { continue };
+        let hx: String = id.iter().take(2).map(|b| format!("{b:02x}")).collect();
         if hx != want {
             continue;
         }

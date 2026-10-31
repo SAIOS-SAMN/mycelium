@@ -251,8 +251,8 @@ impl Mind {
             // A task whose members have no A5 form has no identity to think
             // by. MU-CLIENT §5.4 (E1) — the scene is named by the court's own
             // name for it, its 32-byte CITATION.
-            let Some(id) = crate::registry::task_address(&task) else { continue };
-            let id = crate::registry::citation(&id).to_vec();
+            let Some(id) = crate::registry::task_citation(&task) else { continue };
+            let id = id.to_vec();
             let coords = coords_of(&task.train, crate::transducer::family::fibre_map(&task.train));
             if let Some(feed) = self.board.feed.as_mut() {
                 feed.file(&path, &id);

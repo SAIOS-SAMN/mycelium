@@ -11,6 +11,18 @@ such change is named here.
   sites 3600) now has an address over every pair; such tasks' addresses
   change. A court state written before this release is adopted by a recut
   (ROADMAP track 6).
+- Task registry: a task is held and indexed by its 32-byte citation
+  (`registry::citation`, the name `ACT_TASK`, `ACT_SOLVE` and seat records
+  already carry), never by its content address, which a 29×29 → 30×30
+  pair makes about 13.6 MB and an index entry would copy. `register`,
+  `dispatch`, `next_intake_batch`, `next_cover_batch` and `settled_ids`
+  return `TaskCitation`; `by_citation` is removed (`task`, `withheld`,
+  `open`, `close` and `prioritize` take the citation);
+  `registry::task_citation` reads one off a task. The registry snapshot
+  (`CUR3`) already named tasks by citation and is unchanged.
+- **Wire:** `ACT_ROOT` names its task by citation (32 bytes in the address
+  slot, frame format unchanged); a hypha hears no root naming a task by
+  its content address, so peers must run this release together (recut).
 
 ### Cognition
 - The common refinement is metered, never capped (MU-DERIVATIONS D3.2):

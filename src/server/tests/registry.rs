@@ -1,6 +1,5 @@
 use crate::arc::{Grid, Task};
 use crate::server::registry::*;
-use crate::transducer::address::Address;
 
 fn toy_task() -> Task {
     Task {
@@ -68,7 +67,9 @@ fn overlay_restores_task_wider_than_u16_wall() {
     let mut reg = TaskRegistry::new();
     reg.register(toy_task());
     let id = reg.register(wide.clone()).expect("the wide task has an identity");
-    assert!(id.as_bytes().len() > usize::from(u16::MAX), "the fixture passes the wall: {} bytes", id.as_bytes().len());
+    let address = task_address(&wide).expect("the wide task has an address");
+    assert!(address.as_bytes().len() > usize::from(u16::MAX), "the fixture passes the wall: {} bytes", address.as_bytes().len());
+    assert_eq!(id, citation(&address), "the book names it by its citation");
     assert_eq!(reg.close(&id), Some(Closure::First));
     let snap = reg.snapshot().expect("a book holding a task wider than the wall still snapshots");
     let mut reborn = TaskRegistry::new();
@@ -113,6 +114,47 @@ fn task_address_separates_tasks_differing_in_incommensurate_pair() {
     assert!(two != without, "the pair is a member of the address, never passed over");
 }
 
+/// A 29×29 → 30×30 train pair makes a task's content address megabytes,
+/// and an index copies the address it is keyed by. The book keys and holds
+/// the task by its 32-byte citation; the address is recomputed from the task
+/// where its coordinates are needed, never held.
+fn coprime_task() -> Task {
+    // Every site changes hue, so the chain holds every cell of K_lcm (870²).
+    let mut task = toy_task();
+    task.train.push((vec![vec![1; 29]; 29], vec![vec![2; 30]; 30]));
+    task
+}
+
+#[test]
+fn registry_indexes_by_citation_not_address() {
+    let task = coprime_task();
+    let address = task_address(&task).expect("the coprime pair refines");
+    assert!(address.as_bytes().len() > 1 << 20, "the fixture's address passes 1 MB: {} bytes", address.as_bytes().len());
+    let mut reg = TaskRegistry::new();
+    let id = reg.register(task).expect("registers");
+    assert_eq!(id, citation(&address));
+    assert_eq!(reg.index_keys(), vec![id.to_vec()], "the index holds the 32-byte citation and nothing wider");
+    assert_eq!(reg.dispatch().map(|(d, _)| d), Some(id), "dispatch names it by the citation");
+}
+
+/// THE CITATION IS THE TASK'S, NOT THE BOOK'S: registered, snapshotted,
+/// re-registered into a fresh book and overlaid, the task keeps the citation
+/// it was registered under, and the citation read off the task agrees.
+#[test]
+fn citation_of_task_is_stable_across_registry_round_trip() {
+    let mut reg = TaskRegistry::new();
+    let id = reg.register(toy_task()).expect("registers");
+    assert_eq!(reg.close(&id), Some(Closure::First));
+    let snap = reg.snapshot().expect("writes");
+    let mut reborn = TaskRegistry::new();
+    let again = reborn.register(toy_task()).expect("registers");
+    assert_eq!(again, id, "the same content, the same citation");
+    assert_eq!(task_citation(&toy_task()), Some(id), "read off the task alone");
+    assert_eq!(reborn.overlay(&snap), 1);
+    assert_eq!(reborn.open(&id), Some(false), "its state comes back under the citation");
+    assert_eq!(reborn.settled_ids(), vec![id]);
+}
+
 /// Dispatch rotates over the unsolved book and dries up when settled.
 #[test]
 fn dispatch_rotates_and_dries_up() {
@@ -141,7 +183,7 @@ fn restore_cursor_resumes_dispatch_after_restart() {
     };
     let book = || {
         let mut reg = TaskRegistry::new();
-        let ids: Vec<Address> = [toy_task(), other.clone(), third.clone()]
+        let ids: Vec<TaskCitation> = [toy_task(), other.clone(), third.clone()]
             .into_iter()
             .map(|t| reg.register(t).expect("a grid pair's chain is A5's"))
             .collect();
@@ -149,9 +191,9 @@ fn restore_cursor_resumes_dispatch_after_restart() {
     };
     let (mut reg, ids) = book();
     assert_eq!(ids.len(), 3);
-    assert_eq!(reg.dispatch().map(|(id, _)| id), Some(ids[0].clone()));
+    assert_eq!(reg.dispatch().map(|(id, _)| id), Some(ids[0]));
     assert_eq!(reg.cursor_due(2), None, "one dispatch is not a page of two");
-    assert_eq!(reg.dispatch().map(|(id, _)| id), Some(ids[1].clone()));
+    assert_eq!(reg.dispatch().map(|(id, _)| id), Some(ids[1]));
     let record = reg.cursor_due(2).expect("a page of two dispatches passed");
     assert_eq!(&record[..4], b"CURS");
     assert_eq!(record[4..8], 2u32.to_le_bytes(), "the cursor stands on the third task");
@@ -162,9 +204,9 @@ fn restore_cursor_resumes_dispatch_after_restart() {
     // THE RESTART: the corpus re-registered, the record restored.
     let (mut reborn, _) = book();
     assert!(reborn.restore_cursor(&record), "the record restores");
-    assert_eq!(reborn.dispatch().map(|(id, _)| id), Some(ids[2].clone()), "the next task, not the head");
+    assert_eq!(reborn.dispatch().map(|(id, _)| id), Some(ids[2]), "the next task, not the head");
     let (mut fresh, _) = book();
-    assert_eq!(fresh.dispatch().map(|(id, _)| id), Some(ids[0].clone()), "with no record, the head");
+    assert_eq!(fresh.dispatch().map(|(id, _)| id), Some(ids[0]), "with no record, the head");
 
     // ANOTHER BOOK'S RECORD, OR ANOTHER LAYOUT, RESTORES NOTHING.
     let mut small = TaskRegistry::new();

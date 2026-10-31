@@ -50,7 +50,9 @@ pub fn decode_peers_reply(body: &[u8]) -> Option<Vec<String>> {
     Some(out)
 }
 
-/// `None` where the task's address reaches its u16: the root is not
+/// The task is named by its 32-byte citation (`registry::citation`), the
+/// name every other act speaks it by; a hypha hears no root naming it any
+/// other way. `None` where the name reaches its u16: the root is not
 /// spoken (LD0).
 pub fn encode_root(voice: &[u8; 32], task: impl AsRef<[u8]>, solver: &[u8; 32], ticks: u64) -> Option<Vec<u8>> {
     let mut out = vec![ACT_ROOT];
