@@ -341,7 +341,7 @@ impl Court {
         Earned { draws, torse }
     }
 
-    /// 78.102 — AN OPEN SENTENCE IS HEARD (law 8 as the progenitor reads it):
+    /// 78.102 — AN OPEN SENTENCE IS HEARD (law 8 as the development reads it):
     /// every sentence a voice speaks, whatever its adjudication, has its rings
     /// re-derived by the master equation — the court verifying, never
     /// perceiving — and each word they teach by the one rule

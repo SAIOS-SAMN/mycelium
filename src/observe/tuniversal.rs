@@ -1,7 +1,7 @@
 // 78.152 TU-3, TU-4, TU-7 — THE COURT'S TUNIVERSAL STANDING ON THE OBSERVER:
 // the door's quorum-final point and its advances, each keeper as this court
 // holds it, and the clock's residual on the keeper triangle — read off the
-// door's shelf and the keepers, which live outside the kernel.
+// door's shelf and the keepers, which live outside the court.
 //
 //! A reading on the observer, never folded into the point (TU-4): the final
 //! point is the shelf's, each keeper's `final_of` is the keepers' own, the

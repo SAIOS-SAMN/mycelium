@@ -28,8 +28,8 @@ fn founded() -> Court {
     k
 }
 
-/// 78.138 — the domain founded and its one tier designated its RESERVE: the
-/// ancients, the only tier that uplinks.
+/// 78.138 — the domain founded and its one tier designated its RESERVE, the
+/// only tier that uplinks.
 fn reserved() -> Court {
     use crate::anastome::dialogue::domain::{Founded, Reservation};
     let mut k = founded();
@@ -38,7 +38,7 @@ fn reserved() -> Court {
     k
 }
 
-/// 78.138 — ONLY THE ANCIENTS UPLINK: before its domain designates it the
+/// 78.138 — ONLY THE RESERVE UPLINKS: before its domain designates it the
 /// reserve, the tier's fold is refused by name; designated, it is admitted.
 #[test]
 fn admit_uplink_refuses_tier_not_reserve() {

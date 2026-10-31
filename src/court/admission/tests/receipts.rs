@@ -40,7 +40,7 @@ fn prefix_for(r: &KStepReceipt) -> SignedPrefix {
     }
 }
 
-/// Admit on the receiver's ledger as the kernel does: a `Parent` is held.
+/// Admit on the receiver's ledger as the court does: a `Parent` is held.
 fn take(ledger: &mut ReceiptChain, r: &KStepReceipt) -> Admitted {
     let got = admit((G, E), &prefix_for(r), r, ledger);
     if let Admitted::Parent(_) = got {

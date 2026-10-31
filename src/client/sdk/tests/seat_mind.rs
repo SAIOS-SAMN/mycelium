@@ -45,8 +45,8 @@ fn percept(seq: u64, local_time: Arg, records: Vec<Record>) -> Percept {
     Percept { domain: verifying(&domain()), sub_origin: None, seat: 7, mind: verifying(&mind()), local_time, seq, records, point: None }
 }
 
-/// A SEAT KEEPS ITS BOUND (a sink keeps its bound; the 2026-10-09 growth of
-/// the xylarium seat minds to 400 MB): whatever a house sends, the values a
+/// A SEAT KEEPS ITS BOUND (a sink keeps its bound; seat minds once grew to
+/// 400 MB): whatever a house sends, the values a
 /// seat holds across all its series write within one frame, each series'
 /// oldest dropped and counted, and a series still reads its orbit on what it
 /// holds.
@@ -247,7 +247,7 @@ fn play(counsel: [(u16, i64); 2], beats: u64) -> (Vec<Decision>, i64) {
     let d = verifying(&domain());
     let mind_vk = verifying(&mind());
     let fns = vec![SeatFn { id: 1, tags: vec![] }, SeatFn { id: 2, tags: vec![] }];
-    let seats = Seats { domain: d, sub_origin: None, epoch: 1, seats: vec![Seat { seat: 7, role: Role::Steward, on: [6; 32], beat: Arg::Q { num: 1, den: 1 }, fns }] };
+    let seats = Seats { domain: d, sub_origin: None, epoch: 1, seats: vec![Seat { seat: 7, role: Role(2), on: [6; 32], beat: Arg::Q { num: 1, den: 1 }, fns }] };
     k.seat_post(&Post::Seats(seats).sign(&house()).expect("writes")).expect("listed");
     k.seat_post(&Post::Take(Take { domain: d, sub_origin: None, seat: 7, mind: mind_vk, nonce: [2; 32] }).sign(&mind()).expect("writes")).expect("relayed");
     k.seat_post(&Post::Taken(Taken { domain: d, sub_origin: None, seat: 7, mind: mind_vk, ok: true, reason: 0 }).sign(&house()).expect("writes")).expect("relayed");
@@ -404,7 +404,7 @@ fn decide_follows_worth_not_counsel_order() {
     assert_eq!(x, 1 - 5);
 }
 
-/// The listing the kernel's relay serves, read as the mind reads it: its
+/// The listing the court's relay serves, read as the mind reads it: its
 /// seat's functions.
 fn listed_fns(k: &Court, seat: u32) -> (u64, Vec<SeatFn>) {
     let body = k.seat_listing(&verifying(&domain()), None).expect("a listing is held");
@@ -413,7 +413,7 @@ fn listed_fns(k: &Court, seat: u32) -> (u64, Vec<SeatFn>) {
 }
 
 fn list(k: &mut Court, epoch: u64, fns: Vec<SeatFn>) {
-    let seats = Seats { domain: verifying(&domain()), sub_origin: None, epoch, seats: vec![Seat { seat: 7, role: Role::Steward, on: [6; 32], beat: Arg::Q { num: 1, den: 1 }, fns }] };
+    let seats = Seats { domain: verifying(&domain()), sub_origin: None, epoch, seats: vec![Seat { seat: 7, role: Role(2), on: [6; 32], beat: Arg::Q { num: 1, den: 1 }, fns }] };
     k.seat_post(&Post::Seats(seats).sign(&house()).expect("writes")).expect("listed");
 }
 
@@ -649,8 +649,8 @@ fn carrier_reads_versor_series_change_exactly() {
     assert_eq!(m.series(&at(22)).expect("held").orbit(), Some(Return::Fixed), "a held versor is carried by one: fixed");
 }
 
-/// NO FUNCTION IS PROBED BLIND (barren-realms, 2026-10-09: `handle` closes
-/// every throat; `forge` spends real energy). Counselled once and never
+/// NO FUNCTION IS PROBED BLIND (a house's function may close every throat
+/// or spend real energy). Counselled once and never
 /// called, on a later beat with no counsel the mind calls neither the
 /// counselled function nor any other: nothing is read, so it passes.
 #[test]

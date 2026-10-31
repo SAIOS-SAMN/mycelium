@@ -213,8 +213,8 @@ impl Court {
 }
 
 /// 78.151 — WHAT HOLDS A SIGNER'S LINE for a page to be read from: the
-/// court under its kernel, or the reading it published (`Published`), which
-/// the door reads without the kernel. One reader of a page over both, so
+/// court under its lock, or the reading it published (`Published`), which
+/// the door reads without the court. One reader of a page over both, so
 /// the two answer one question one way (law 12).
 pub(crate) trait LineHolder {
     /// The key this holder's own line is signed by.

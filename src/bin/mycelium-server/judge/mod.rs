@@ -3,7 +3,7 @@
 //! The percept, the gossiped percept, the demand and the routed demand are
 //! retired acts (law 8, ruled 2026-09-10): a court hears sentences and
 //! nothing else, so a frame carrying one is refused at the door with
-//! `REFUSE_NOT_A_SENTENCE` and nothing of it reaches the kernel. An act
+//! `REFUSE_NOT_A_SENTENCE` and nothing of it reaches the court. An act
 //! this dispatch does not know is not answered.
 
 pub(crate) mod equivocation;
@@ -37,12 +37,12 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 static REFUSE_COUNT: AtomicU64 = AtomicU64::new(0);
 
-/// 78.151 — THE READS THAT TAKE NO KERNEL, answered where the frame is read:
+/// 78.151 — THE READS THAT TAKE NO COURT, answered where the frame is read:
 /// a page of a line or a fold root (`ACT_RECEIPTS`), an account
 /// (`ACT_WALLET`) and the core clock (`ACT_LAWS` clock), off the court's
 /// published reading; a seat listing, off the relay's own lock; and
 /// (78.152b) a peer keeper's pushed ring (`ACT_TICK`), off the keepers' own
-/// lock. None waits behind a worker the kernel holds. `false` where the
+/// lock. None waits behind a worker the court holds. `false` where the
 /// frame is none of them: the caller judges it as before.
 pub(crate) fn serve_published(stream: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
     let tag = dialogue::act_tag(&frame.body);
@@ -56,7 +56,7 @@ pub(crate) fn serve_published(stream: &mut TcpStream, frame: &Frame, door: &Door
             rows::judge(stream, frame, door);
             true
         }
-        // 78.154 (4) — a stake act is a write: it reaches the kernel.
+        // 78.154 (4) — a stake act is a write: it reaches the court.
         Some(Action::Wallet) if mycelium::anastome::dialogue::wallet::decode_wallet(&frame.body).is_some() => {
             wallet::judge(stream, frame, door);
             true

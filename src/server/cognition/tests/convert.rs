@@ -49,7 +49,7 @@ fn designate(k: &mut Court, tier: &SigningKey, nonce: u8) -> Founded {
     k.designate_reserve(&Reservation { domain: verifying(&domain()), tier: verifying(tier), nonce: [nonce; 32] }.sign(&domain()))
 }
 
-/// 78.139 — the ancients' survival basket stated by the sitting reserve `x`.
+/// 78.139 — the survival basket stated by the sitting reserve `x`.
 fn basket(k: &mut Court) {
     use crate::anastome::dialogue::universe::{Statement, Stated};
     let s = Statement { domain: verifying(&domain()), stated: Stated::Basket(vec![(1, (1, 1)), (8, (8, 1))]) };
@@ -114,7 +114,7 @@ fn convert_out_pays_from_reserve_never_mints() {
         Handed::Refused(r) => r,
         other => panic!("refused: {other:?}"),
     };
-    assert_eq!(refused(&mut k, out(10, (1, 2), 1), &x()), HandoffRefusal::NoBasket, "78.139: no conversion before the ancients' basket");
+    assert_eq!(refused(&mut k, out(10, (1, 2), 1), &x()), HandoffRefusal::NoBasket, "78.139: no conversion before the reserve's basket");
     basket(&mut k);
     assert_eq!(refused(&mut k, out(10, (1, 3), 1), &x()), HandoffRefusal::Inexact, "10/3 is no integer");
     assert_eq!(refused(&mut k, ConvertOut { tier: verifying(&x2()), ..out(10, (1, 2), 1) }, &x2()), HandoffRefusal::NotReserve);

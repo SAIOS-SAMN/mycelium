@@ -14,13 +14,13 @@ use mycelium::cognition::Court;
 use mycelium::observe::{self, FoldOutcome};
 use std::sync::Mutex;
 
-pub(crate) fn fold_round(kernel: &Mutex<Court>, mesh: &Mesh) {
+pub(crate) fn fold_round(court: &Mutex<Court>, mesh: &Mesh) {
     // A proposal whose rows moved beneath it is dropped before it is
     // carried again (`pending_fold_stands`).
-    let Some(p) = crate::held::held!(kernel).ok().and_then(|mut h| h.run(|k, _| k.pending_fold_stands().then(|| k.fold_proposal().cloned()).flatten())) else {
+    let Some(p) = crate::held::held!(court).ok().and_then(|mut h| h.run(|k, _| k.pending_fold_stands().then(|| k.fold_proposal().cloned()).flatten())) else {
         return;
     };
-    let Some(section) = crate::admission::sign_position(kernel, mesh, &mycelium::transducer::stalk::Invariant::default(), &p.root.hash) else { return };
+    let Some(section) = crate::admission::sign_position(court, mesh, &mycelium::transducer::stalk::Invariant::default(), &p.root.hash) else { return };
     let proposal = dialogue::FoldProposal { after: p.after, root: p.root, epochs: p.epochs.clone(), section: section.clone() };
     let Some(body) = dialogue::encode_fold(&proposal) else { return };
     // 47.3: a witness holds bond — room on some lane — and is not this
@@ -46,7 +46,7 @@ pub(crate) fn fold_round(kernel: &Mutex<Court>, mesh: &Mesh) {
     // A witness that left this court's fold unmeasured at this K is not
     // carried it again until K moves: its answer is instant, and re-asked
     // every cycle it was a storm that starved the doors (2026-10-22).
-    let Some(k_now) = crate::held::held!(kernel).ok().map(|mut h| h.run(|k, _| k.k_step())) else { return };
+    let Some(k_now) = crate::held::held!(court).ok().map(|mut h| h.run(|k, _| k.k_step())) else { return };
     let paced = |witness: &[u8; 32]| mesh.fold_unmeasured_at.lock().is_ok_and(|m| m.get(witness) == Some(&k_now));
     let unmeasured = |witness: &[u8; 32]| {
         if let Ok(mut m) = mesh.fold_unmeasured_at.lock() {
@@ -54,7 +54,7 @@ pub(crate) fn fold_round(kernel: &Mutex<Court>, mesh: &Mesh) {
         }
     };
     // The round's stroke: a hold's, handed on whole (78.153b).
-    let Some(mut budget) = crate::held::held!(kernel).ok().map(|h| h.into_stroke()) else { return };
+    let Some(mut budget) = crate::held::held!(court).ok().map(|h| h.into_stroke()) else { return };
     for (vk, dest) in witnesses {
         if paced(&vk) {
             continue;
@@ -86,7 +86,7 @@ pub(crate) fn fold_round(kernel: &Mutex<Court>, mesh: &Mesh) {
         }
         match dialogue::decode_fold_reply(&reply) {
             Some(dialogue::FoldWitness::CoSigned { section: w }) => {
-                let Ok(mut h) = crate::held::held!(kernel) else { return };
+                let Ok(mut h) = crate::held::held!(court) else { return };
                 // 78.147: the root is kept with both signed positions, what a
                 // catch-up below it is answered with.
                 match h.run(|k, _| k.commit_fold_proved(&section, &w)) {
@@ -112,7 +112,7 @@ pub(crate) fn fold_round(kernel: &Mutex<Court>, mesh: &Mesh) {
                 // A witness that re-derived other nets: the proposal is not
                 // carried again as it stood.
                 if why == mycelium::verdict::REFUSE_FOLD_INEXACT.as_bytes() {
-                    if let Ok(mut h) = crate::held::held!(kernel) {
+                    if let Ok(mut h) = crate::held::held!(court) {
                         h.run(|k, _| k.drop_fold_proposal());
                     }
                     return;

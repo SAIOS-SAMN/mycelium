@@ -484,7 +484,7 @@ impl Complex {
     /// handed back exactly — never numerical gradient optimization (ruled
     /// 2026-10-20: the name is Grothendieck's and the
     /// filtration's, and the pair ASCEND / DESCEND stands as the Concordance
-    /// signs it; xylarium's ENFOLD is not adopted).
+    /// signs it; another name, ENFOLD, is not adopted).
     ///
     /// `drain` refuses with [`Drained::Pinned`] when an edge lies beneath a
     /// coface that has been READ, and names `descend` as the remedy. Until
@@ -509,7 +509,7 @@ impl Complex {
     /// the dipole ascend and the antipoles condense and drain, with the
     /// puncture; descent takes every other pivot component with it —
     /// ascent, trajectory, drag, velocity, condense, drain, puncture,
-    /// cauterize — adopted in alignment with xylarium fc5b396). A descend never moves alone, and no
+    /// cauterize). A descend never moves alone, and no
     /// other path takes a sealed chamber's class out: a chamber exists
     /// because a boundary holonomy CLOSED, and its descent is
     /// - THE PUNCTURE — the throat: the chamber opened into a hole that KEEPS

@@ -1924,13 +1924,13 @@ a share compounds frame by frame:
 ```
 
 **Built**, as a named law form in the `forms` crate (CONCORDANCE 2.10):
-`forms/src/xylarium/share_compounds.rs` (`Remaining::whole`, `after`,
+`forms/src/shares/share_compounds.rs` (`Remaining::whole`, `after`,
 `then`, `factors`, `reading`). The share `x` of what remains per ring of a
 body's own clock, over ℚ, the ring count over ℤ; the form holds the exact
 product and expands it only for a `reading`. A share below zero or not
 below one, and a ring count past its carrier, are refused by name. It is
-hosted in a universe's own shell (`forms::xylarium`), selected by that
-universe, and moves to the core shell only when every universe selects it.
+hosted in an outer shell named for its law (`forms::shares`), selected by
+the universes that compose it, and moves to the core shell only when every universe selects it.
 Mycelium hosts the form; a universe composes it.
 
 #### 10.5 The master equations, by name

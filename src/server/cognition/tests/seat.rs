@@ -45,7 +45,7 @@ fn founded() -> Court {
 }
 
 fn seats(epoch: u64) -> Seats {
-    let seat = Seat { seat: 7, role: Role::Steward, on: [6; 32], beat: Arg::Q { num: 1, den: 60 }, fns: vec![SeatFn { id: 3, tags: vec![2] }] };
+    let seat = Seat { seat: 7, role: Role(2), on: [6; 32], beat: Arg::Q { num: 1, den: 60 }, fns: vec![SeatFn { id: 3, tags: vec![2] }] };
     Seats { domain: verifying(&domain()), sub_origin: None, epoch, seats: vec![seat] }
 }
 
@@ -123,7 +123,7 @@ fn seat_post_relays_between_house_and_mind() {
 }
 
 /// 78.146 — A MIND'S OWN READ IS EXEMPT, ONCE PER WINDOW: a mind holding no
-/// μ at all reads its mail through the relay's own lock (no kernel, no
+/// μ at all reads its mail through the relay's own lock (no court, no
 /// reserve); a second read before new mail is not exempt (the door's ordinary
 /// rule answers it); new mail opens the window again; a forged read is
 /// refused; a reader with no box has nothing exempt.

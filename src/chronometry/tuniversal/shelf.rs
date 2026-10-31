@@ -1,6 +1,6 @@
 // 78.152 TU-7 — THE DOOR'S TUNIVERSAL SHELF: the greatest final point this
 // door has seen, kept beside the 78.151 published reading and OUTSIDE the
-// kernel, raised from the keepers' verified readings; and what speakers
+// court, raised from the keepers' verified readings; and what speakers
 // carried in, held apart as heard, never as final.
 
 use super::point::TPoint;
@@ -19,7 +19,7 @@ struct Held {
     acts: u64,
 }
 
-/// THE SHELF. A watchdog or the court loop reads it without the kernel.
+/// THE SHELF. A watchdog or the court loop reads it without the court.
 #[derive(Debug, Default)]
 pub struct TShelf {
     held: Mutex<Held>,

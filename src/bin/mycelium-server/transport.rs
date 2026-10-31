@@ -104,7 +104,7 @@ pub(crate) fn read_frame(s: &mut TcpStream) -> Option<Frame> {
     buf[..5].copy_from_slice(&head);
     s.read_exact(&mut buf[5..]).ok()?;
     // 78.152 TU-7: the point the speaker carried is heard at the door as the
-    // frame is read, beside the published reading and outside the kernel.
+    // frame is read, beside the published reading and outside the court.
     let (frame, point, _) = Frame::decode_at(&buf)?;
     // A SPEAKER THAT CARRIED A POINT IS ANSWERED WITH ONE; one that carried
     // none is answered as it spoke. A kernel still on a mycelium before 78.152
@@ -195,7 +195,7 @@ pub(crate) fn tell_peer_within(endpoint: &str, body: Vec<u8>, rtt_hint: u64) -> 
         | mycelium::physics::Lambda::Unmeasured => usize::MAX,
     };
     let mut head = [0u8; 5];
-    // THE ROUND TRIP IS MEASURED HERE (45.4, W9b): the strokes this kernel
+    // THE ROUND TRIP IS MEASURED HERE (45.4, W9b): the strokes this court
     // spent between the write and the first byte back, one stroke per poll
     // of the socket, the poll that found the byte included. It returned a
     // literal 1, so every rtt window held ones, `rtt_floor` was 1 on every

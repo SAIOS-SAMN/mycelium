@@ -33,7 +33,7 @@ pub(crate) fn answer_standing(k: &mycelium::cognition::Court, mesh: &crate::exch
     asked || first
 }
 
-/// THE COURT'S OWN STANDING, read off the kernel: what it holds, the
+/// THE COURT'S OWN STANDING, read off the court: what it holds, the
 /// allocator at its own K, its clock, economy, acts and carriage.
 fn publish_standing(k: &mycelium::cognition::Court, mesh: &crate::exchange::Mesh, own: Source) {
     // ACT1: the origin this court adopted.
@@ -62,7 +62,7 @@ fn publish_standing(k: &mycelium::cognition::Court, mesh: &crate::exchange::Mesh
         catchup: observe::catchups(),
         serve: observe::serves(),
         // 78.152 — the door's quorum-final point, the keepers and the
-        // residual, read off the shelf (a leaf lock) outside the kernel.
+        // residual, read off the shelf (a leaf lock) outside the court.
         tuniversal: crate::tshelf::standing(),
     };
     // ACT1 — this court on the clock; EC1 — its payments by proof of work;
@@ -85,12 +85,12 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(act) = observe::decode_act(&frame.body) else { return };
     match act {
         ObserveAct::Query(prefix) => {
-            // ONE HOLD ACROSS TWO QUESTIONS: the kernel held by the same take
+            // ONE HOLD ACROSS TWO QUESTIONS: the court held by the same take
             // at this question as at the last is named, with its site.
             static LAST: std::sync::Mutex<u64> = std::sync::Mutex::new(0);
             if let (Some((at, hold)), Ok(mut last)) = (crate::held::holding(), LAST.lock()) {
                 if *last == hold {
-                    eprintln!("  kernel lock {at} still held across two observer questions (hold {hold}, step {})", crate::held::stepping());
+                    eprintln!("  court lock {at} still held across two observer questions (hold {hold}, step {})", crate::held::stepping());
                 }
                 *last = hold;
             }
@@ -99,9 +99,9 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             // IT. The question is LEFT for the court stroke, which publishes
             // the standing at its end under the lock it already holds
             // (Phase 1 item 2); the reply is what the last stroke published.
-            // It read the standing here wherever the kernel was free — the
+            // It read the standing here wherever the court was free — the
             // economy over the whole journal, the acts, the remainders, the
-            // chain's carriage — holding the kernel and the asker while it
+            // chain's carriage — holding the court and the asker while it
             // did: on f6ec8a74 a answered 3 of 34 asks and c 8 of 34
             // (01:15–01:32, 2026-10-01), each refused at the console's
             // 0.5–0.7 s, and b, the lighter court, all 34.
@@ -120,7 +120,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             observe::replace(own, Reading::Replication(Box::new(observe::replication())));
             observe::replace(own, Reading::Adjudication(observe::adjudication()));
             // 78.145 — the seat relay, read on its own lock (never the
-            // kernel's): its standing and each domain's posts filed and
+            // court's): its standing and each domain's posts filed and
             // refused since boot.
             observe::replace(own, Reading::Relay(Box::new(door.seat_relay.reading())));
             // MU-CLIENT §5.5 — the agreed language this court attested, per

@@ -1,9 +1,9 @@
 // 78.151 — THE SHELF: the court's published reading, swapped whole by the
-// court stroke and read by the door without the kernel.
+// court stroke and read by the door without the court.
 //
 //! A reader takes the reading standing on the shelf — one pointer, cloned
 //! under a read lock held for that clone alone — and answers off it at its
-//! height. The court stroke publishes under the kernel it already holds and
+//! height. The court stroke publishes under the court it already holds and
 //! swaps the pointer under the write lock, held for the swap alone, so no
 //! reader ever sees a reading half-written. A write by any act is read at
 //! the next stroke's publication: a writer reading its own write lags it by
@@ -30,7 +30,7 @@ impl Shelf {
         }
     }
 
-    /// THE COURT STROKE'S PUBLICATION, under the kernel it holds: built off
+    /// THE COURT STROKE'S PUBLICATION, under the court it holds: built off
     /// the reading standing, swapped whole where anything moved, and its cost
     /// counted on the observer's serving reading.
     pub(crate) fn publish(&self, k: &mut Court) {

@@ -25,7 +25,7 @@ fn tell_peer_within_refuses_silent_peer_within_budget() {
 /// A PEER THAT ANSWERS IS READ WHOLE, AND ITS ROUND TRIP IS COUNTED IN
 /// STROKES (45.4, W9b). The transport returned a literal 1 for every reply,
 /// so no rtt window ever held a measurement and Λ could not move. The
-/// measure is the polls this kernel made between the write and the first
+/// measure is the polls this court made between the write and the first
 /// byte back, the poll that read it included: at least one stroke for any
 /// reply, never zero and never a floor. The deadline the caller passes is
 /// this host's own reserve, a measurement, so a responder that has merely

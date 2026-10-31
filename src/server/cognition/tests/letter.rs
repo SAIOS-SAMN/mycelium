@@ -581,7 +581,7 @@ fn letter_reading_flips_derivable_after_adjunction() {
     );
 }
 
-/// The letter a kernel docketed, as an address and the element under it:
+/// The letter a court docketed, as an address and the element under it:
 /// found by the vertex it carries — a generator citing nothing whose rotor
 /// is `r` — never by an index into the docket (rule 15).
 fn docketed_letter(
@@ -600,7 +600,7 @@ fn docketed_letter(
     })
 }
 
-/// True where this kernel holds `address` as a generator of its basis: the
+/// True where this court holds `address` as a generator of its basis: the
 /// word is installed, not merely docketed.
 fn basis_holds(k: &Court, address: &[u8]) -> bool {
     k.basis().iter().any(|w| w.address().as_bytes() == address)
@@ -626,7 +626,7 @@ fn witness_rederived_fresh_installs_letter_on_second_vantage() {
     let r = eleven();
 
     // THE WITNESS ORGAN'S OWN READING, reached from its own voice's demand
-    // on its own kernel — not a copy of the home's element.
+    // on its own court — not a copy of the home's element.
     let mut far = Court::new();
     far.set_court_voice([32u8; 32]);
     assert_eq!(

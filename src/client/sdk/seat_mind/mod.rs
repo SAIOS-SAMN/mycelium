@@ -562,7 +562,7 @@ pub struct SeatMind {
     pub(crate) repertoire: Vec<Own>,
     /// 78.148 — what each call, a function AT ITS ARGUMENTS, was seen to do
     /// (`own::call_key`). The mind calls only what it read here or was
-    /// counselled — never a blind probe (barren-realms, 2026-10-09: `handle`
+    /// counselled — never a blind probe (a house's `handle`
     /// closes every throat a line holds, `forge` spends ~1e21 J).
     pub(crate) own: Keyed<Experience>,
 }

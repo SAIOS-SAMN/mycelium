@@ -178,7 +178,7 @@ assert_eq!(
 );
 }
 
-/// §6, on a kernel that has actually moved value rather than a treasury in
+/// §6, on a court that has actually moved value rather than a treasury in
 /// isolation. This is the gate on 1.10: settlement paths may only be built
 /// where conservation is checkable, and `enroll` used to insert bond that
 /// was never issued, so the second equation failed at the first enrolment.

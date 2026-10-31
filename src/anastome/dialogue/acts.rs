@@ -153,7 +153,7 @@ pub const ACT_INSTALLED: u8 = Action::Installed.byte();
 /// 78.152b — A KEEPER'S RING PUSHED, court to court:
 /// `[ACT_TICK][keeper vk 32][ring]`, the ring in the cover digest's own codec
 /// (`chronometry::tuniversal::reading::put_ring`). Sent on the nerve when the
-/// keeper signs a reading in its court loop; heard at the door off the kernel.
+/// keeper signs a reading in its court loop; heard at the door off the court.
 /// Reply: one byte, `TICK_HEARD` or `TICK_REFUSED`. WIRE-CHANGE.
 pub const ACT_TICK: u8 = Action::Tick.byte();
 /// The ring was admitted, or held already.
@@ -681,7 +681,7 @@ pub struct Docket {
 /// hypha measured them. The court replays the utterance and measures for
 /// itself: two measurements of one deflation are the proof of convergence.
 /// The last field is the stamp of the act the settlement follows on the
-/// hypha's own line (78.27 (6)): its place orders it inside one kernel and
+/// hypha's own line (78.27 (6)): its place orders it inside one court and
 /// its tick is TUniversal, one coordinate for both.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Settlement {

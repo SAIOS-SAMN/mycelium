@@ -13,13 +13,13 @@ use std::net::TcpStream;
 
 /// One probe against one open listing (23.8, 26).
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
-    let kernel = &door.kernel;
+    let court = &door.court;
 
     let Some((pvoice, target, cites)) = dialogue::decode_probe(&frame.body) else { return };
-    let reading = mycelium::synthesis::probe(kernel, pvoice, &target, &cites);
+    let reading = mycelium::synthesis::probe(court, pvoice, &target, &cites);
     // A probe that moved the listing, or found it gone, releases the lease.
     if reading.moved() || reading.closure == dialogue::ProbeClosure::Gone {
-        if let Ok(mut h) = crate::held::held!(kernel) {
+        if let Ok(mut h) = crate::held::held!(court) {
             h.run(|k, _| k.release_t_lease(pvoice));
         }
     }

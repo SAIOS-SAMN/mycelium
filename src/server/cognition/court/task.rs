@@ -97,7 +97,7 @@ impl Court {
     /// pairs as it replays any sentence on its family (`blind_replay_at`
     /// with the family: its derivation re-derived, every pair closed — step
     /// 7, `REFUSE_NOT_CLOSED`); the rule's cited forms resolve through this
-    /// kernel's ruled cover. Clean, the rule is priced by what it
+    /// court's ruled cover. Clean, the rule is priced by what it
     /// discharges on those pairs, per lane (`measured_replay`, the deflation
     /// paid only where a pair closes); refused, the refusal names its
     /// reason, coordinate and obstruction kind (78.9). Grids are never
@@ -136,8 +136,8 @@ impl Court {
         verdict
     }
 
-    /// 78.153c — A VERDICT THE DOOR GAVE BEFORE ANY JUDGING (unsigned, not
-    /// an ancient, no such task, no rule carried), counted on its slot of
+    /// 78.153c — A VERDICT THE DOOR GAVE BEFORE ANY JUDGING (unsigned, an
+    /// inner seat, no such task, no rule carried), counted on its slot of
     /// this court's acts.
     pub fn note_judged(&mut self, verdict: crate::observe::Judged) {
         self.acts.judge(verdict);

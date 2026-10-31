@@ -59,7 +59,7 @@ impl Court {
     /// rebuilt the whole snapshot — every word of the basis walked — on each
     /// touch, and the glue touches twice per fetched word (`hold_glued`), so
     /// every word a peer's page carried walked the whole language under the
-    /// kernel (the lock audit, row 4). Where the snapshot stood current
+    /// court (the lock audit, row 4). Where the snapshot stood current
     /// before the touch, the word at `address` takes its new Arc at its own
     /// ordinal, its shape lifted afresh: every address holds the word a
     /// rebuild would give it, and the ordinals stand as admitted (a rebuild

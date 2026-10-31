@@ -1,5 +1,5 @@
 // 78.153b — THE HOLD'S ONE STROKE: a hold is taken with the court's stroke,
-// the only way in hands it beside the kernel, a metered read spends it on
+// the only way in hands it beside the court, a metered read spends it on
 // the holding thread's count, and a spent stroke ends metered work unread.
 
 use super::*;
@@ -10,9 +10,9 @@ use std::sync::Mutex;
 /// the stroke goes on whole with what it still grants.
 #[test]
 fn run_spends_holds_one_stroke() {
-    let kernel = Mutex::new(Court::new());
+    let court = Mutex::new(Court::new());
     let stroke = Court::new().stroke().remaining();
-    let mut h = held!(kernel).expect("the kernel");
+    let mut h = held!(court).expect("the court");
     assert_eq!(h.remaining(), stroke, "the hold is taken with one stroke of the court");
     let before = crate::physics::spent_here();
     assert!(h.run(|_, reads| reads.spend()), "a read granted");
@@ -20,17 +20,17 @@ fn run_spends_holds_one_stroke() {
     assert_eq!(h.remaining(), stroke - 1);
     let carried = h.into_stroke();
     assert_eq!(carried.remaining(), stroke - 1, "let go, the stroke goes on whole");
-    assert!(holding().is_none(), "and the kernel stands free");
+    assert!(holding().is_none(), "and the court stands free");
 }
 
 /// Every take through the guard is numbered in the book, the library's own
 /// as the binary's.
 #[test]
 fn holds_counts_every_take() {
-    let kernel = Mutex::new(Court::new());
+    let court = Mutex::new(Court::new());
     let before = holds();
-    drop(held!(kernel).expect("the kernel"));
-    drop(held!(kernel).expect("the kernel"));
+    drop(held!(court).expect("the court"));
+    drop(held!(court).expect("the court"));
     assert!(holds() >= before + 2, "two takes, two holds numbered");
 }
 
@@ -39,8 +39,8 @@ fn holds_counts_every_take() {
 /// confirmation reaches no stratum and leaves no cursor.
 #[test]
 fn run_on_spent_stroke_ends_work_unread() {
-    let kernel = Mutex::new(Court::new());
-    let mut h = held!(kernel).expect("the kernel");
+    let court = Mutex::new(Court::new());
+    let mut h = held!(court).expect("the court");
     h.run(|k, reads| {
         while reads.spend() {}
         // No tube is held: no row to read, the helicity exactly zero.

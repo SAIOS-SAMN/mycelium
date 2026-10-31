@@ -1,12 +1,10 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! THE TWO-SIDED CLOSENESS, IN SHARES (CONCORDANCE 2.10; xylarium's
-//! selection — its ruling of 2026-10-20, THE FLAT RETIRED, spec
-//! aa9ab61: shares read as squares `t²` are flat and antithetical to the
-//! design; the amplitude form
-//! of ff0e817d, its shares the squares of half-angle points, is deleted, not
-//! kept beside this one). netstratum's closeness is its own, in degrees: a
-//! ruled divergence (A7).
+//! THE TWO-SIDED CLOSENESS, IN SHARES (CONCORDANCE 2.10; THE FLAT RETIRED:
+//! shares read as squares `t²` are flat and antithetical to the design, so
+//! an amplitude form whose shares are the squares of half-angle points is
+//! deleted, not kept beside this one). A universe that reads closeness in
+//! degrees holds its own form: a ruled divergence (A7).
 //!
 //! THE LAW. A body's turning is shared among its completely orthogonal
 //! planes: shares `w_k ≥ 0`, summing to one. Two bodies are close in a plane
@@ -163,12 +161,12 @@ mod tests {
         assert_eq!(b.closeness(&b, &qs(&[(0, 1)])), Err(ClosenessRefusal::Unmatched));
     }
 
-    /// THE JOINT READ (the landing rule): xylarium's vector of 2026-10-20 —
+    /// THE JOINT READ (the landing rule): the selecting universe's vector —
     /// shares, phases, and the EXACT closeness it reads — reproduced bit for
-    /// bit. No grid is read: the floors it sent beside them are its own
-    /// observer's, never a joint frame (ruled 2026-10-21).
+    /// bit. No grid is read: floors sent beside them are the sender's own
+    /// observer's, never a joint frame.
     #[test]
-    fn closeness_reproduces_xylarium_vector() {
+    fn closeness_reproduces_selecting_universe_vector() {
         type Row = (Vec<Q>, Vec<Q>, Vec<Q>, Q);
         let rows: Vec<Row> = vec![
             (qs(&[(1, 1), (0, 1)]), qs(&[(1, 1), (0, 1)]), qs(&[(0, 1), (1, 3)]), Q::one()),

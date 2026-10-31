@@ -10,7 +10,7 @@ use super::*;
 
 /// The germ's canonical ADDRESS — a digest of its ANASTOME form. Used to match
 /// consilience receipts across voices; a wire/cache identity, never a reasoning
-/// operand (the kernel reasons on the element, addresses by this).
+/// operand (the court reasons on the element, addresses by this).
 pub fn germ_address(g: &Element) -> crate::transducer::address::Address {
     g.address()
 }

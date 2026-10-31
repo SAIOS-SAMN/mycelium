@@ -129,7 +129,7 @@ fn hear_speech_verifies_contraction_before_replay() {
 /// on its copy of the family and answers a typed adjudication through the
 /// codec; Voice A receives it, contracts, and utters S' citing the
 /// receipt; the loop is well founded and closes on a standing within a few
-/// rounds. Court 2 — a second kernel with its own identity and no shared
+/// rounds. Court 2 — a second court with its own identity and no shared
 /// runtime memory — replays the same serialized frame and reaches the same
 /// address and the same standing.
 #[test]

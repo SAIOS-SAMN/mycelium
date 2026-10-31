@@ -254,38 +254,23 @@ pub fn take_args(b: &[u8], p: &mut usize) -> Option<Vec<Arg>> {
     (0..n).map(|_| Arg::take(b, p)).collect()
 }
 
-/// A SEAT'S ROLE.
+/// A SEAT'S ROLE: an opaque tier of the house's domain, `0` to `9` on the
+/// wire. The hypha carries the byte and judges nothing by it; the game
+/// kernel names its tiers.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Role {
-    Progenitor,
-    /// The house's own seat.
-    Ancients,
-    Steward,
-    Sovereign,
-    /// An office, 4 to 9.
-    Office(u8),
-}
+pub struct Role(pub u8);
 
 impl Role {
     pub fn byte(self) -> u8 {
-        match self {
-            Role::Progenitor => 0,
-            Role::Ancients => 1,
-            Role::Steward => 2,
-            Role::Sovereign => 3,
-            Role::Office(o) => o,
-        }
+        self.0
     }
 
+    /// The tier `b`, refused past `9`.
     pub fn of(b: u8) -> Option<Role> {
-        Some(match b {
-            0 => Role::Progenitor,
-            1 => Role::Ancients,
-            2 => Role::Steward,
-            3 => Role::Sovereign,
-            4..=9 => Role::Office(b),
-            _ => return None,
-        })
+        match b {
+            0..=9 => Some(Role(b)),
+            _ => None,
+        }
     }
 }
 

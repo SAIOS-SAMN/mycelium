@@ -275,8 +275,8 @@ impl Verdict {
 /// default stroke — `reserve_max / 8`, seven reads on the laptop the first
 /// uplink ran on — the register's own reference turn (`3 + 4·e₁₂`, fourteen
 /// reads to split) was refused `Conformal: Undecomposed(Unbounded)`: a
-/// lawful motion read as a breach (found by the xylarium uplink,
-/// 2026-10-07). A kernel that verifies with this agrees with the court byte
+/// lawful motion read as a breach (found by a kernel's first uplink). A
+/// kernel that verifies with this agrees with the court byte
 /// for byte, whatever stroke it holds (law 12).
 pub fn verify_sized(t: &Transition) -> Verdict {
     let mut need = match crate::transducer::cga::modes_need(&t.motion) {

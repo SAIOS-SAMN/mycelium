@@ -81,7 +81,7 @@ impl Court {
         // 45.1: A RULING IS AN ADMITTED ACT. Every arm below moves the book
         // -- the word joins the ruled cover, or its award evaporates, or it
         // is excised and re-admitted as a cavity -- and none of it was a
-        // step of this kernel's clock, so the chain held no position for the
+        // step of this court's clock, so the chain held no position for the
         // act that changes the book most.
         //
         // Sealed HERE, at the one point past which the book has moved on
@@ -273,7 +273,7 @@ impl Court {
     }
 
     /// [`Court::court_stroke`] ON THE HOLD'S STROKE (78.153b): the binary's
-    /// court loop hands in the one stroke its kernel hold was taken with.
+    /// court loop hands in the one stroke its hold was taken with.
     pub fn court_stroke_on(&mut self, budget: &mut crate::physics::Budget) {
         // E4 — what every other act paid since the last stroke, counted
         // toward the grants (an install, a solve and a demand closure count

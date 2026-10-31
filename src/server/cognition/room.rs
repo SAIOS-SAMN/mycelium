@@ -12,7 +12,7 @@ use super::*;
 /// STD1 — WHY A ROOM READ DID NOT ANSWER, by its own name: a `None` never
 /// stands for two facts (78.26(4)). A lane drawn past its cover is a BROKEN
 /// count; a cover or a credit whose sum passes its carrier is PAST CARRIER.
-/// Each is counted on the kernel where the read answers `None`.
+/// Each is counted on the court where the read answers `None`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RoomRefusal {
     Broken,

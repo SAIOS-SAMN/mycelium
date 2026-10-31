@@ -107,9 +107,9 @@ impl FoldAt {
 }
 
 /// 78.138 — WHICH FOLD A PARENT NETS: one already on the court (`Sealed`,
-/// by where it stands), or a progenitor line's fold CARRIED INLINE — the
+/// by where it stands), or a builder line's fold CARRIED INLINE — the
 /// line's whole fold and its signature, its own children carried in it in
-/// turn. Lines never touch the court: the ancients carry them (the
+/// turn. Lines never touch the court: the reserve carries them (the
 /// Concordance, 4.1).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Child {
@@ -550,7 +550,7 @@ pub enum Uplinked {
     /// span claiming nets. (A fold byte-identical to it is answered with
     /// its original receipt, sealing nothing.)
     Repeated,
-    /// 78.138 — only the ancients uplink: the folding tier is not its
+    /// 78.138 — only the reserve uplinks: the folding tier is not its
     /// domain's reserve. A line's fold is carried in its reserve's.
     NotReserve,
     /// 78.154a — the fold's CONNECTION_TAX flow cannot be paid, and why.

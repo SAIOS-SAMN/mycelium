@@ -2,8 +2,8 @@
 // the door where the frame is read — before the work queue and on the
 // overflow path — so TUniversal never waits on this court's load.
 //
-//! The door takes no kernel here: `tshelf::hear_tick` is handed the mesh and
-//! the frame, never the kernel. Answered one byte.
+//! The door takes no court here: `tshelf::hear_tick` is handed the mesh and
+//! the frame, never the court. Answered one byte.
 
 use crate::door::Door;
 use crate::transport::answer;

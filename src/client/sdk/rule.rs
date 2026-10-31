@@ -378,9 +378,9 @@ fn clause_sentence(clauses: Vec<Clause>, family: &[(Grid, Grid)], crystal: &dyn 
 /// as the form's clauses instead ([`clause_sentence`], 78.143).
 ///
 /// PUBLIC FOR A CLIENT THAT STATES ITS OWN PROGRAMS IN THE MESH'S TONGUE
-/// (2026-10-22, reversing Strip 7 for this path): netstratum's `tongue`
-/// mints its solver programs as rule elements only through this
-/// constructor, never as forged bytes (its D10b).
+/// (2026-10-22, reversing Strip 7 for this path): such a client constructs
+/// its solver programs as rule elements only through this constructor,
+/// never as forged bytes.
 pub fn sentence(steps: &[Step], family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
     if let Some(clauses) = clauses_of(steps)? {
         return clause_sentence(clauses, family, crystal);

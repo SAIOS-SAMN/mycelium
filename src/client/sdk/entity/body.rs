@@ -4,7 +4,7 @@
 // mind's calls: its own call at each beat, and the solve of a task set
 // before a seat.
 //
-//! One mind may sit many seats (barren-realms, 2026-10-09): they share the
+//! One mind may sit many seats: they share the
 //! mind's key and so one mailbox, read to its end page by page, each piece to
 //! the seat it names. A SEAT IS TAKEN ONLY WHERE THE HOUSE'S LATEST LISTING
 //! NAMES IT, once under that listing (MU-CLIENT §7.1, ruled
@@ -317,7 +317,7 @@ impl Mind {
                 }
             }
             // A NEW LISTING EPOCH VOIDS EVERY HOLD (2026-10-23): a house that
-            // listed anew holds no seat for its earlier takers — netstratum's
+            // listed anew holds no seat for its earlier takers — a house's
             // restart gave seat 1 to n3 while n4, still reading itself the
             // holder, took nothing and its declination was refused "the
             // caller does not hold the seat". Each seat is let go, and taken

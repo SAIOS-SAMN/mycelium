@@ -65,11 +65,11 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // aperture of its witness's measured round trip, a prefix's re-derivation
     // outlasts it, and the home asked the same proposal again every round —
     // a and c re-derived one root of b's 3 470 times each, 11 830 pages
-    // fetched, the courts' doors and kernels taken by it and the courts' offers
+    // fetched, the courts' doors and locks taken by it and the courts' offers
     // left unanswered. The proof held for the home is this court's own
     // signed position over that root (`hold_era_proved`): what it said once,
     // it says again.
-    let held = crate::held::held!(door.kernel).ok().and_then(|mut h| h.run(|k, _| k.cosigned_root(&home, &p.root, &witness)));
+    let held = crate::held::held!(door.court).ok().and_then(|mut h| h.run(|k, _| k.cosigned_root(&home, &p.root, &witness)));
     if let Some(section) = held {
         mycelium::observe::note_catchup(mycelium::observe::CatchupPath::FoldWitness, mycelium::observe::CatchupOutcome::Held);
         say(s, dialogue::FoldWitness::CoSigned { section: Box::new(section) });
@@ -96,7 +96,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     let proposal = mycelium::cognition::Proposal { after: p.after, root: p.root, epochs: p.epochs.clone() };
     // 78.153b — re-derived off the published reading: the witness's bond is
     // the shelf's, the rest is what the home sent; the hash of every fetched
-    // receipt and the nets of every row no longer run under the kernel (the
+    // receipt and the nets of every row no longer run under the court (the
     // lock audit, row 11).
     let verdict = door.published.take().verify_fold(home, &proposal, &receipts, &rows);
     if let Err(why) = verdict {
@@ -131,7 +131,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         return;
     }
     // The witness's own signed position over the root hash (47.1).
-    let Some(section) = crate::admission::sign_position(&door.kernel, &door.mesh, &mycelium::transducer::stalk::Invariant::default(), &p.root.hash) else {
+    let Some(section) = crate::admission::sign_position(&door.court, &door.mesh, &mycelium::transducer::stalk::Invariant::default(), &p.root.hash) else {
         say(s, dialogue::FoldWitness::Unmeasured { vk: witness });
         return;
     };
@@ -148,8 +148,8 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // 78.147: the era is held with its root's proof — the home's signed
     // position verified above and this witness's own — so this court, the
     // root's second holder, answers a catch-up below it with it.
-    // OWED (78.153b): the era frame and its disk append stay under the kernel.
-    if let Ok(mut h) = crate::held::held!(door.kernel) {
+    // OWED (78.153b): the era frame and its disk append stay under the court.
+    if let Ok(mut h) = crate::held::held!(door.court) {
         h.run(|k, _| k.hold_era_proved(mycelium::chronometry::Era {
             root: p.root,
             signer: home,

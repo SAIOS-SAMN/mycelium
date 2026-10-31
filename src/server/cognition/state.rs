@@ -288,8 +288,8 @@ pub struct Court {
     /// Settlements the court has read; the SET2 section holds them.
     pub(crate) settlements_cold: Vec<crate::anastome::dialogue::Settlement>,
     /// Test height: when set, height() returns this instead of the chain head.
-    /// C6: a TEST knob, `None` on any live mesh. A kernel that can be told
-    /// its own height is a kernel whose time is an input (law 9), so the
+    /// C6: a TEST knob, `None` on any live mesh. A court that can be told
+    /// its own height is a court whose time is an input (law 9), so the
     /// SETTER is behind `cfg(test)` and nothing in production can reach it.
     pub(crate) height_override: Option<u64>,
     /// Set on home_install, glue Admitted, mint, and slash.
@@ -298,14 +298,14 @@ pub struct Court {
     /// the fold has shed them. Append-only, written once per fold, and
     /// never rewritten by a snapshot: the hot ledger carries only the era
     /// DESCRIPTORS, so persisting state does not re-serialise the whole
-    /// history. `None` on a kernel with no home — the fixture and the
+    /// history. `None` on a court with no home — the fixture and the
     /// tests — where a sealed era keeps its payload in hand as before.
     pub(crate) eras_path: Option<std::path::PathBuf>,
     /// 45.8 — THE LINE ON DISK: where the hot ledger is written in its own
     /// order (`chain/line.rs`), beside the snapshot, which then carries no
     /// receipt. `line_held` says the chain was read from a line, so the
     /// snapshot it is restored with names where that line stood and holds
-    /// none of it; a kernel without one carries its line in the snapshot,
+    /// none of it; a court without one carries its line in the snapshot,
     /// which is what a fixture wants.
     pub(crate) line_path: Option<std::path::PathBuf>,
     pub(crate) line_held: bool,
@@ -467,7 +467,7 @@ pub struct Court {
     /// edited — persisted after the reserves (`LEAF_DOMAINS`).
     pub(crate) origins: crate::network::nerve::Keyed<crate::anastome::dialogue::domain::OriginReading>,
     /// 78.139 — EACH UNIVERSE'S STATEMENTS: its curvature, its parent face,
-    /// its ancients' basket — each once — persisted after the origins
+    /// its reserve's basket — each once — persisted after the origins
     /// (`LEAF_DOMAINS`).
     pub(crate) universes: crate::network::nerve::Keyed<crate::anastome::dialogue::universe::Universe>,
     /// 78.154 — THE ATLAS: each universe's ledger chain and map, the
@@ -670,7 +670,7 @@ pub struct Court {
 }
 
 impl Court {
-    /// THE FIXTURE KERNEL (§3.4): a bootstrap identity `[0x11; 32]` funded
+    /// THE FIXTURE COURT (§3.4): a bootstrap identity `[0x11; 32]` funded
     /// and staked at the six-family cover below, so a test can list, quote
     /// and settle without registering a corpus. No production path calls
     /// it: the hypha boots by [`Court::boot`], whose cover is measured from
@@ -687,7 +687,7 @@ impl Court {
         k
     }
 
-    /// THE HYPHA'S KERNEL AS IT BOOTS: no identity until `bind_identity`, no
+    /// THE HYPHA'S COURT AS IT BOOTS: no identity until `bind_identity`, no
     /// cover until the corpus registers (`genesis::register_corpora` measures
     /// it and stakes the hypha's own key), nothing funded and nothing staked
     /// that the mesh record does not name.
@@ -770,7 +770,7 @@ impl Court {
     }
 
     /// BIND THE COLD SEGMENT a fold sheds into (45.8), and hold every era
-    /// it carries. Called at boot beside the ledger; a kernel without one
+    /// it carries. Called at boot beside the ledger; a court without one
     /// keeps a sealed era's receipts in hand, which is what a fixture
     /// wants and what a live court must not do.
     ///
@@ -1210,7 +1210,7 @@ impl Court {
         }
     }
 
-    /// C6: test only. Time is not an input to a kernel (law 9).
+    /// C6: test only. Time is not an input to a court (law 9).
     #[cfg(test)]
     pub fn set_height(&mut self, h: u64) {
         self.height_override = Some(h);
@@ -1224,7 +1224,7 @@ impl Court {
 
 }
 /// A FILED ERA'S RECEIPTS, read from its own span of the cold segment at
-/// `path` — what a court reads with its kernel and a published reading
+/// `path` — what a court reads under its lock and a published reading
 /// reads without it (78.151). `None` where the span does not read whole.
 pub(crate) fn read_era(path: &std::path::Path, at: crate::chronometry::Filed) -> Option<Vec<crate::chronometry::KStepReceipt>> {
     use std::os::unix::fs::FileExt;

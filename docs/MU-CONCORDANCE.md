@@ -176,11 +176,11 @@ Reading the map:
       time. A law every universe reads alike lands once in the core shell. A
       law universes read differently, each form lawful under A7b and carried
       exactly into the other's frame, is recorded as a ruled divergence: each
-      form is hosted named as its universe's shell's, and each universe's
+      form is hosted in an outer shell named for its law, and each universe's
       shell selects the form it composes. A form that fails A7b is retired,
       and the universe that held it owes a lawful replacement before it
       selects again. A lawful form proposed for every universe's selection
-      is "a share compounds frame by frame" (`forms::xylarium::share_compounds`,
+      is "a share compounds frame by frame" (`forms::shares::share_compounds`,
       MU-EQUATIONS §10.4): the share x of what remains per ring of a body's own
       clock, n rings leaving (1 − x)^n by composition (f(a + b) = f(a)·f(b)),
       held as the exact product ∏(1 − x_i)^(n_i) and expanded only for a

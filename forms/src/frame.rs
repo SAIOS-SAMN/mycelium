@@ -3,10 +3,10 @@
 //! THE FRAME AS A FORM (ruled 2026-10-21: the grid is fixed and upgraded
 //! to forms, which bend, twist, stretch, expand and contract; both readings
 //! ruled — frame maps are conformal forms, and every law form is read under
-//! them). SELECTED BY EVERY UNIVERSE, so it stands at the core (2026-10-21):
-//! xylarium whole (its 11.0 (27)(Re6), the turn in degrees its 11.4b);
-//! netstratum as the joint read's frame map and on its own degree
-//! coordinates, bend left out of its own geometry (A7). A reading moves between two observers' frames (A6) only by an
+//! them). SELECTED BY EVERY UNIVERSE, so it stands at the core: whole, or as
+//! the joint read's frame map and on a universe's own degree coordinates,
+//! with the bend left out of a geometry that is not flat (A7). A reading
+//! moves between two observers' frames (A6) only by an
 //! EXACT, INVERTIBLE conformal map of ℚⁿ, fixed before any joint read —
 //! never by a floor on a grid, which rounds a reading off and cannot be
 //! undone. A frame is composed of five moves:
@@ -20,8 +20,8 @@
 //!     TURN       (plane, degrees)                     an ordered turn, held as its angle
 //! ```
 //!
-//! THE TURN IN DEGREES (xylarium's and netstratum's rulings: angles in exact
-//! degrees, no half-angle tangents, no rational-cosine rotors): held as its
+//! THE TURN IN DEGREES (angles in exact degrees, no half-angle tangents, no
+//! rational-cosine rotors): held as its
 //! plane and its angle, undone by its negation, composed in one plane by
 //! adding degrees; it carries a position only where its cosine and sine are
 //! both rational — a whole number of 90° turns — and is refused by name
@@ -41,7 +41,7 @@
 //! is a rational number of degrees only at Niven's angles; so a frame does
 //! not carry an arbitrary rational-degree turning of positions, and does not
 //! claim to. A reading whose coordinates ARE angles in degrees (a sphere's
-//! place as its polar share and phases, netstratum's) is turned EXACTLY by a
+//! place as its polar share and phases) is turned EXACTLY by a
 //! stretch on its phase coordinate — Δ° added — and mirrored by a twist on
 //! it (θ ↦ −θ), with no stereographic chart; a bend is conformal only in
 //! flat coordinates, and a universe whose geometry is not flat leaves it
@@ -85,8 +85,8 @@ pub enum Move {
     Expand(Q),
     Contract(Q),
     Bend(Vec<Q>),
-    /// AN ORDERED TURN IN DEGREES (xylarium's "the flat retired",
-    /// netstratum's "laws as angles"): in the plane of axes `(i, j)`, from
+    /// AN ORDERED TURN IN DEGREES (the flat retired; laws as angles): in the
+    /// plane of axes `(i, j)`, from
     /// `i` toward `j`, by exactly `degrees` — held as the angle, never as a
     /// rational-cosine rotor or a half-angle tangent. Consecutive turns in
     /// one plane compose by adding the degrees.

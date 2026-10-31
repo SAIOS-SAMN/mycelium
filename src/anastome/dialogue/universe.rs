@@ -3,13 +3,13 @@
 // its space (78.140: its GEOMETRY, curved or a torus) and its parent face on
 // its origin (version 2), and — once each, signed by its SITTING RESERVE — its
 // geometry (where its
-// origin did not state it), its ancients' survival BASKET, and its JOIN to
+// origin did not state it), its reserve's survival BASKET, and its JOIN to
 // its parent's core once that core is found.
 //
 //! Every horizon has its far face: a universe's Big Bang is the far face of a
 //! parent's core, joined by a CORE TUBE (a mouth of kind 16, kept by both
 //! reserves). A root universe states its parent face UNWITNESSED until it is
-//! joined. The basket is the ancients': stated when they take up the
+//! joined. The basket is the reserve's: stated when it takes up the
 //! reserve, never at genesis, where nobody knows it.
 
 /// ACT_DOMAIN's sub-kind mark (as `domain.rs` writes it).
@@ -73,7 +73,7 @@ pub fn positive((n, d): (u64, u64)) -> bool {
 }
 
 /// 78.140 — A TORUS'S METRIC: L1 (the wrapped `|dx|` summed the short way
-/// round — netstratum's, which squares no circle on a toroid) or L2.
+/// round, which squares no circle on a toroid) or L2.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Metric {
     L1,
@@ -86,8 +86,8 @@ pub enum Metric {
 /// sheet `v² = −1`, a throat's level `cosh(2m/R)`), never a sphere; a
 /// closed SPHERE `S³` of radius `R` (2026-10-22: its frames in `Spin(4)`,
 /// its places on `v² = +1` about `e₊`, a throat's level `cos(2m/R)` — the
-/// kind netstratum's and xylarium's closed universes are, both declared
-/// `Curved` and so stated as hyperbolic before it existed); or a flat TORUS
+/// kind a closed universe is, which before it existed could be declared
+/// only `Curved` and so stated as hyperbolic); or a flat TORUS
 /// of axis-aligned periods (one to three) and its metric. Every distance is
 /// that space's own geodesic. `R` and the periods are lengths in GEOMETRIZED
 /// MEGAPARSECS (Concordance 1.8, 2.3): G = c = 1, the same unit a throat's
@@ -191,8 +191,8 @@ impl Genesis {
     }
 }
 
-/// THE ANCIENTS' SURVIVAL BASKET: one person-year of an ancient's survival at the
-/// core, by mass per element (`Z`, mass) — species-neutral, a molecule
+/// THE RESERVE'S SURVIVAL BASKET: one person-year of survival at the core
+/// for the people that holds the reserve, by mass per element (`Z`, mass) — species-neutral, a molecule
 /// stated as its elements' masses — in ascending `Z`, each once.
 pub type Basket = Vec<(u16, (u64, u64))>;
 
@@ -208,7 +208,7 @@ pub enum Stated {
     /// Its space, where its origin did not state it (a v1 origin, or none
     /// yet).
     Geometry(Geometry),
-    /// Its ancients' survival basket.
+    /// Its reserve's survival basket.
     Basket(Basket),
     /// Its join to its parent's core: a root's open core tube, by its id.
     Join([u8; 32]),

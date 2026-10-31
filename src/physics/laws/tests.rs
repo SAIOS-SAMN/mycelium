@@ -70,7 +70,7 @@ fn verify_admits_turn_carrying_its_bodies() {
 }
 
 /// 78.116 — THE VERDICT IS THE TRANSITION'S, NOT THE STROKE'S: under seven
-/// reads (the court's default stroke on the laptop the first xylarium uplink
+/// reads (the court's default stroke on the laptop the first kernel uplink
 /// ran against) the reference turn reads a false `Conformal` breach — its
 /// modes unsplit for want of stroke; under the stroke its own modes need it
 /// is admitted, as it is under any stroke that suffices.

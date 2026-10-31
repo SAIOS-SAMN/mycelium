@@ -16,7 +16,7 @@
 //! the presentation.
 //!
 //! THIS IS AN INSTRUMENT AND CHANGES NOTHING. It stands nothing into a
-//! kernel, opens no wire, reads no ledger and needs no mesh.
+//! court, opens no wire, reads no ledger and needs no mesh.
 
 use mycelium::client::sdk::Epigenome;
 use mycelium::transducer::element::{Element, Held};

@@ -1,8 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! A SHARE COMPOUNDS FRAME BY FRAME (CONCORDANCE 2.10; proposed by
-//! netstratum, selected by xylarium — 779a67f, its burn at the rate of
-//! exhaustion and its cooling channels).
+//! A SHARE COMPOUNDS FRAME BY FRAME (CONCORDANCE 2.10; for instance a burn
+//! at the rate of exhaustion, or a cooling channel).
 //!
 //! THE LAW. Where a universe's physics gives a share `x` of what REMAINS per
 //! ring of a body's own clock, `n` rings leave `(1 − x)^n`. It is derived,

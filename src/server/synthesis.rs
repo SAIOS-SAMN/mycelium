@@ -16,7 +16,7 @@ pub fn family_ratio(train: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, u
 }
 
 /// Work items for the server's deliberation worker — everything that would
-/// hold the kernel lock through deep reduction runs here, behind the
+/// hold the court lock through deep reduction runs here, behind the
 /// bounded queue, never on the request path.
 pub enum Deliberation {
     /// Genome synchronization: a court-ratified word to verify and install
@@ -187,7 +187,7 @@ pub fn adopt(
     // word replays pure, off the lock.
     //
     // 78.153 — the replay on the one stroke: unread is not adopted now and
-    // not refused; the next adoption resumes it (the kernel's cursor) where
+    // not refused; the next adoption resumes it (the court's cursor) where
     // the word replays under the lock, or starts it over where it is pure.
     let (replayed, mut budget) = match word.is_sentence() {
         true => {

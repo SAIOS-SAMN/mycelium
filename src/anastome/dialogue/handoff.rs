@@ -180,7 +180,7 @@ pub enum Handoff {
 }
 
 /// 78.128 — A WORMHOLE'S MOUTH PAIR (ruled 2026-10-07):
-/// built by two domains' RESERVE tiers (the ancients), `from_tier` offering
+/// built by two domains' RESERVE tiers, `from_tier` offering
 /// and `to_tier` accepting; X's black-hole mouth and Y's white-hole mouth,
 /// each placed in its domain's chart by an exact Cl(4,1) versor (a horizon
 /// sphere carried onto a sphere); the KEEPER — one of the two — takes a flat
@@ -823,7 +823,7 @@ pub enum HandoffRefusal {
     /// 78.127 — the reserve holds less μ than the conversion pays, on a lane.
     ReserveShort,
     /// 78.127 — `rate · g` is not an exact integer on every lane, or `g` is
-    /// not positive: rounding is the ancients' to declare on G.
+    /// not positive: rounding is the reserve's to declare on G.
     Inexact,
     /// 78.127 — the holder holds less μ than it offers.
     HolderShort,
@@ -840,7 +840,7 @@ pub enum HandoffRefusal {
     /// flat toll beside it.
     Untariffed(Untariffed),
     /// 78.133 — a share to a key that is neither the keeper nor one of its
-    /// progenitor lines.
+    /// builder lines.
     NotALine,
     /// 78.134 — a tube's frame is not a motion of curved space (not in
     /// `Spin⁺(3,1)`).
@@ -865,7 +865,7 @@ pub enum HandoffRefusal {
     NoGeometry,
     /// 78.139 — a core tube offered from a domain with no origin.
     NotAUniverse,
-    /// 78.139 — a conversion at a reserve whose ancients have stated no basket.
+    /// 78.139 — a conversion at a reserve that has stated no basket.
     NoBasket,
     /// 78.140 — a throat whose sphere would meet its own image in a torus
     /// face: its ratio `2m / L_min` not below `½`.

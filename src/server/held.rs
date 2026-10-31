@@ -123,7 +123,7 @@ pub fn stepping() -> &'static str {
 static WAITING: AtomicU64 = AtomicU64::new(0);
 static SERVED: AtomicU64 = AtomicU64::new(0);
 
-/// THE COURT LETS THE QUEUE IN BEFORE IT TAKES THE KERNEL AGAIN. The court
+/// THE COURT LETS THE QUEUE IN BEFORE IT TAKES THE COURT AGAIN. The court
 /// loop re-took the court the instant it let go — 14 806 times in five
 /// minutes on hypha c — and a std mutex is not fair, so a reflex worker
 /// woken by the release lost the race every time: the workers starved, the
@@ -153,7 +153,7 @@ fn with_site(book: &mut Book, at: &'static str, f: impl FnOnce(&mut Site)) {
     book.sites.push(s);
 }
 
-/// THE KERNEL, HELD BY ONE NAMED SITE, WITH THE HOLD'S ONE STROKE. Never a
+/// THE COURT, HELD BY ONE NAMED SITE, WITH THE HOLD'S ONE STROKE. Never a
 /// `Deref` to the court: [`Held::run`] is the way in, and it hands the
 /// stroke beside the court, so an input-sized read under the lock spends
 /// it (78.153b).
@@ -179,7 +179,7 @@ impl Held<'_> {
         self.stroke.remaining()
     }
 
-    /// LET GO OF THE KERNEL, KEEP THE STROKE: the hold's stroke handed on
+    /// LET GO OF THE COURT, KEEP THE STROKE: the hold's stroke handed on
     /// whole, for work paced by the court's metabolism off the lock — an
     /// offer round, a fold round, a catch-up's pages on the wire.
     pub fn into_stroke(mut self) -> Budget {
@@ -226,7 +226,7 @@ pub fn lock<'a>(m: &'a Mutex<Court>, at: &'static str) -> Result<Held<'a>, ()> {
                     with_site(&mut b, h, |s| {
                         s.blocked += 1;
                         if s.blocked.is_power_of_two() {
-                            eprintln!("  kernel lock {} blocked others {} (took {} waited {})", s.at, s.blocked, s.took, s.waited);
+                            eprintln!("  court lock {} blocked others {} (took {} waited {})", s.at, s.blocked, s.took, s.waited);
                         }
                     });
                 }

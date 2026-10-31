@@ -65,7 +65,7 @@ fn transcribe_these_reports_ineffable_word() {
 #[test]
 fn construct_and_adjoin_makes_ineffable_word_sayable() {
     use crate::transducer::sentence::rung::Taught;
-    let mut e = Mind::open("127.0.0.1:1", Voice::named("sovereign"));
+    let mut e = Mind::open("127.0.0.1:1", Voice::named("constructor"));
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
     let w = Mv::scalar(q(4)).add(&Mv::blade(E2 | E3, q(1))).widened(3);
     let mut budget = e.stroke();

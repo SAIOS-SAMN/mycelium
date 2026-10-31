@@ -1,6 +1,6 @@
 // 78.94 — EVERY ACT IS AN ACTION OF THE PHYSICS (ruled
 // 2026-10-04: every constant labelled ACT is carried into the physics as an
-// ACTION, unified going forward and remediated from the progenitor).
+// ACTION, unified going forward and remediated from the start).
 //
 //! One table for what happens in a universe: every action a party requests
 //! on the wire and every act a court seals on its line, each by ONE
@@ -109,7 +109,7 @@ pub enum Action {
     Fold,
     /// 78.152b — A KEEPER'S RING PUSHED: court to court, the keeper's newest
     /// TUniversal readings on a dedicated act, heard at the door off the
-    /// kernel, so the mesh's clock never waits on a court's load. Its byte
+    /// court, so the mesh's clock never waits on a court's load. Its byte
     /// 0x23 stands beside the cover, offer and install (ruled
     /// 2026-10-09: a free byte, WIRE-CHANGE, court to court only). Seals
     /// nothing.

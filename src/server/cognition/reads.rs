@@ -33,7 +33,7 @@ impl Court {
     }
 
     /// 78.124 — THE CORE CLOCK at this court: its head's stamp
-    /// `h:S:G:T:H:K.i`, or `None` before its first act. What a kernel's step
+    /// `h:S:G:T:H:K.i`, or `None` before its first act. What a court's step
     /// clock is held to.
     pub fn core_stamp(&self) -> Option<crate::chronometry::CoreStamp> {
         self.chain.head().map(|r| crate::chronometry::CoreStamp::of(&r))

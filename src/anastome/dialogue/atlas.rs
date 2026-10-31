@@ -421,8 +421,8 @@ pub fn local_record_citation(domain: &[u8; 32], local: &[u8; 32]) -> [u8; 32] {
 /// tube (78.140), never restated. A SEGMENT: its kind, its two places, its
 /// span in geometrized megaparsecs exact, and — a throat — its keeper (the
 /// road toll itself is in-universe, never here). A LOCAL THROAT: an
-/// in-universe throat (a progenitor tube, core to galaxy, a long haul) —
-/// its throat key, its keeper (the progenitor line's key, carried inline),
+/// in-universe throat (a line's tube, core to galaxy, a long haul) —
+/// its throat key, its keeper (the builder line's key, carried inline),
 /// its two ends' FRAMES and its `N`; both ends stand in the posting
 /// universe, each place read off its frame in the universe's declared
 /// geometry. No 78.128 act and no court bond: the map record is all of it.

@@ -11,12 +11,12 @@ use std::net::TcpStream;
 
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(fold) = decode_uplink(&frame.body) else { return };
-    let verdict = match crate::held::held!(door.kernel) {
+    let verdict = match crate::held::held!(door.court) {
         Ok(mut h) => h.run(|k, _| k.admit_uplink(&fold)),
         Err(_) => return,
     };
     // 78.137 — acknowledged only once durable.
-    if !crate::persist::durable(&door.kernel, &door.state_path) {
+    if !crate::persist::durable(&door.court, &door.state_path) {
         return;
     }
     answer(stream, Frame { lane: frame.lane, body: encode_uplink_reply(&verdict) });

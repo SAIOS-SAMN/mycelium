@@ -374,7 +374,7 @@ impl Court {
     /// fibre over `inv` the asker lacks — over `seed`, the ruled addresses
     /// coarsest chart first, where `inv` names no axes (the binary hands the
     /// published seed, read off the shelf, so no copy of every ruled address
-    /// is made under the kernel) — up to `budget` bytes. The reading of what
+    /// is made under the court) — up to `budget` bytes. The reading of what
     /// a peer is served (`read_fetched`) spends `reads`, the hold's stroke,
     /// never a stroke minted here. OWED: the walk over the fibre is keyed
     /// reads bounded by the stratum, and a word the asker cannot pay for is
@@ -677,7 +677,7 @@ impl Court {
     /// read of `reads`, and a spent stroke ends the reading at the strongest
     /// relation met so far. Unmetered, a fetch of a large chart solved the
     /// conjugators against every ruled word of the fibre, for every word it
-    /// served, under the kernel — hypha c held the kernel 20+ minutes at the
+    /// served, under the court — hypha c held the court 20+ minutes at the
     /// stratum fetch (`judge/syllabus.rs`), twice, and every act waited.
     fn relation_to(
         &self,

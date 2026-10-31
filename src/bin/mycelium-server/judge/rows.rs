@@ -14,8 +14,8 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         return;
     };
     let at_most = budget / mycelium::economy::Entry::TAPE;
-    // 78.153b — answered off the published reading, never under the kernel:
-    // a witness's fetch waited on the kernel behind a busy door, was
+    // 78.153b — answered off the published reading, never under the court:
+    // a witness's fetch waited on the court behind a busy door, was
     // deferred, and the fold went unmeasured (217–284 an hour per court,
     // epoch 147). The reading carries the journal at the head the receipts
     // were published at, so a witness's two fetches read one standing.

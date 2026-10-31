@@ -35,7 +35,7 @@ fn y() -> SigningKey {
 }
 
 /// Two domains on one court: X names `x` and `x2`, Y names `y`; the two
-/// reserves `x` and `y` (the ancients) have opened `the_mouth()` between them
+/// reserves `x` and `y` have opened `the_mouth()` between them
 /// — 78.128: nothing crosses between domains but through an open mouth.
 fn founded() -> Court {
     use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};

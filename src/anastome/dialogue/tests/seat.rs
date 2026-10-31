@@ -114,9 +114,9 @@ fn seat_posts_round_trip_whole() {
         sub_origin: None,
         epoch: 4,
         seats: vec![
-            Seat { seat: SEAT, role: Role::Steward, on: [6; 32], beat: Arg::Q { num: 1, den: 60 }, fns: vec![SeatFn { id: 3, tags: vec![0, 5, 1] }] },
-            Seat { seat: 8, role: Role::Office(9), on: [6; 32], beat: big(), fns: Vec::new() },
-            Seat { seat: 1, role: Role::Ancients, on: [1; 32], beat: Arg::Q { num: 1, den: 1 }, fns: Vec::new() },
+            Seat { seat: SEAT, role: Role(2), on: [6; 32], beat: Arg::Q { num: 1, den: 60 }, fns: vec![SeatFn { id: 3, tags: vec![0, 5, 1] }] },
+            Seat { seat: 8, role: Role(9), on: [6; 32], beat: big(), fns: Vec::new() },
+            Seat { seat: 1, role: Role(1), on: [1; 32], beat: Arg::Q { num: 1, den: 1 }, fns: Vec::new() },
         ],
     };
     round_trip(&Post::Seats(seats).sign(&house()).expect("writes"));
@@ -246,7 +246,7 @@ fn scoped_posts_decode_to_values_and_verify() {
     let m = mind().verifying_key().to_bytes();
     let h = house().verifying_key().to_bytes();
     let posts = [
-        (Post::Seats(Seats { domain: DOMAIN, sub_origin: Some(SUB), epoch: 4, seats: vec![Seat { seat: SEAT, role: Role::Steward, on: [6; 32], beat: Arg::Q { num: 1, den: 60 }, fns: vec![SeatFn { id: 3, tags: vec![0, 5] }] }] }), house(), h),
+        (Post::Seats(Seats { domain: DOMAIN, sub_origin: Some(SUB), epoch: 4, seats: vec![Seat { seat: SEAT, role: Role(2), on: [6; 32], beat: Arg::Q { num: 1, den: 60 }, fns: vec![SeatFn { id: 3, tags: vec![0, 5] }] }] }), house(), h),
         (Post::Take(Take { domain: DOMAIN, sub_origin: Some(SUB), seat: SEAT, mind: m, nonce: [4; 32] }), mind(), m),
         (Post::Taken(Taken { domain: DOMAIN, sub_origin: Some(SUB), seat: SEAT, mind: m, ok: true, reason: 0 }), house(), h),
         (Post::Percept(Percept { domain: DOMAIN, sub_origin: Some(SUB), seat: SEAT, mind: m, local_time: Arg::Q { num: 7, den: 3 }, seq: 2, records: Vec::new(), point: Some(golden_point()) }), house(), h),

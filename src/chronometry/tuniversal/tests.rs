@@ -174,7 +174,7 @@ fn final_point_holds_while_two_keepers_silent() {
     assert!(!m.read(0, tick(41, [39, 0, 0, 0], 39)));
 }
 
-/// The shelf advances without the kernel and wakes a parked reader.
+/// The shelf advances without the court and wakes a parked reader.
 #[test]
 fn tshelf_raise_final_wakes_parked_reader() {
     let shelf = std::sync::Arc::new(TShelf::new());

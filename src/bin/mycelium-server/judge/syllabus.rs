@@ -16,19 +16,19 @@ use crate::admission::sign_cover_digest;
 /// The section digests over this court's atlas, with the signed cover
 /// digest behind them (A19, 47.1).
 pub(crate) fn digests(stream: &mut TcpStream, frame: &Frame, door: &Door) {
-    let kernel = &door.kernel;
+    let court = &door.court;
     let mesh = &door.mesh;
 
     let Some(dvoice) = dialogue::decode_digests_request(&frame.body) else { return };
     mycelium::observe::note_digest_ask(&dvoice);
     // 78.153b — the voice's own ruled digests off the published reading, the
     // language's atlas off its snapshot taken by pointer: neither read under
-    // the kernel, which `ruled_digests_for` walked whole per ask.
+    // the court, which `ruled_digests_for` walked whole per ask.
     let read = door.published.take();
     let digests = match read.ruled_digests_for(&dvoice) {
         Some(d) => d.to_vec(),
         None => {
-            let stalks = match crate::held::held!(kernel) {
+            let stalks = match crate::held::held!(court) {
                 Ok(mut h) => h.run(|k, _| std::sync::Arc::clone(&k.language().stalks)),
                 Err(_) => return,
             };
@@ -40,7 +40,7 @@ pub(crate) fn digests(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         eprintln!("  digests reply refused: a chart or a root passes the field that carries it");
         return;
     };
-    body.extend(sign_cover_digest(kernel, &door.published, mesh));
+    body.extend(sign_cover_digest(court, &door.published, mesh));
     let reply = Frame { lane: frame.lane, body };
     answer(stream, reply);
 }
@@ -59,7 +59,7 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         cited(stream, frame, door, cvoice, &addrs);
         return;
     }
-    let kernel = &door.kernel;
+    let court = &door.court;
     let Some((fvoice, charts)) = dialogue::decode_fetch(&frame.body) else { return };
     // The body's share of the frame, exact.
     // The class records' own count (two bytes) is reserved with the head.
@@ -77,7 +77,7 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     };
     // 78.153b — the seed of an empty chart off the published reading.
     let read = door.published.take();
-    if let Ok(mut h) = crate::held::held!(kernel) {
+    if let Ok(mut h) = crate::held::held!(court) {
         h.run(|k, reads| {
         // A VOICE'S HAVE-LIST IS NEVER A VANTAGE (47.3, 1.7). `have` says
         // which words the voice already holds so the page carries only what
@@ -178,7 +178,7 @@ fn cited(stream: &mut TcpStream, frame: &Frame, door: &Door, cvoice: [u8; 32], a
     let Some(mut budget) = mycelium::network::wire::frame_budget().checked_sub(64) else { return };
     let mut words: Vec<dialogue::Taught> = Vec::new();
     if court {
-        if let Ok(mut h) = crate::held::held!(door.kernel) {
+        if let Ok(mut h) = crate::held::held!(door.court) {
             h.run(|k, reads| {
                 for a in addrs {
                     if words.len() == usize::from(u8::MAX) || !reads.spend() {
@@ -207,7 +207,7 @@ fn cited(stream: &mut TcpStream, frame: &Frame, door: &Door, cvoice: [u8; 32], a
 /// deconstruct it the asker lacks, within the frame's body budget.
 fn present(stream: &mut TcpStream, frame: &Frame, door: &Door, voice: [u8; 32], motion: &mycelium::transducer::cga::Mv) {
     let Some(budget) = mycelium::network::wire::frame_budget().checked_sub(64) else { return };
-    let Ok(mut h) = crate::held::held!(&door.kernel) else { return };
+    let Ok(mut h) = crate::held::held!(&door.court) else { return };
     let presented = h.run(|k, reads| k.present(voice, motion, budget, reads));
     drop(h);
     let Some(body) = dialogue::encode_presentation_reply(&presented.words, &presented.answer) else {

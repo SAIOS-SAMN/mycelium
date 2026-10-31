@@ -1,5 +1,5 @@
 // 78.151 — THE PUBLISHED READING: what a court's door serves without its
-// kernel, taken whole at the court stroke under the lock the stroke holds.
+// court, taken whole at the court stroke under the lock the stroke holds.
 
 use super::runs::{Copied, Runs};
 use crate::anastome::dialogue::RootProof;
@@ -105,7 +105,7 @@ impl PublishCost {
 }
 
 /// 78.151 — THE READING A COURT PUBLISHES at its stroke, read by its door
-/// without the kernel: each signer's hot line and fold root, its eras, the
+/// without the court: each signer's hot line and fold root, its eras, the
 /// root proofs, every account, and the core clock — all at one head
 /// (`height`). Immutable once built; the next publication shares every
 /// piece that did not move.
@@ -120,24 +120,24 @@ pub struct Published {
     pub(crate) proofs: Arc<Keyed<RootProof>>,
     pub(crate) proofs_mark: u64,
     pub(crate) accounts: Vec<Arc<Keyed<Holdings>>>,
-    /// 78.154 — each universe's ledger chain, shared with the kernel's
+    /// 78.154 — each universe's ledger chain, shared with the court's
     /// atlas until it grows, and the atlas's mark it was read at.
     pub(crate) ledgers: Keyed<Arc<Vec<crate::anastome::dialogue::atlas::HeldEntry>>>,
     pub(crate) atlas_mark: u64,
     /// 78.153b — the treasury's journal, shared with the last reading where
     /// its mark stands: a witness's `ACT_ROWS` is answered off it, never
-    /// under the kernel (a fold compacts the journal, so it stays small).
+    /// under the court (a fold compacts the journal, so it stays small).
     pub(crate) journal: Arc<Vec<crate::economy::Entry>>,
     pub(crate) journal_mark: u64,
     pub(crate) cost: PublishCost,
     /// 78.153b — THE COURT'S OWN READS (`Own`): its cover, room, bond, ruled
     /// cover and head receipt, read off the shelf by the door and the
-    /// exchange without the kernel.
+    /// exchange without the court.
     pub(crate) own: Own,
 }
 
 /// 78.153b — WHAT THE COURT READS OF ITSELF, published: each piece read at
-/// the stroke as the kernel answers it, and shared with the last reading
+/// the stroke as the court answers it, and shared with the last reading
 /// where it did not move.
 #[derive(Clone)]
 pub(crate) struct Own {
@@ -200,7 +200,7 @@ pub(crate) fn shard_of(party: &[u8; 32]) -> usize {
 }
 
 impl Court {
-    /// 78.151 — PUBLISH THE READING the door serves without the kernel, at
+    /// 78.151 — PUBLISH THE READING the door serves without the court, at
     /// this court's head: from `prev`, every piece that did not move is
     /// shared, a line that only grew at its end is extended by what it grew,
     /// and anything else is read again whole. `None` where nothing moved

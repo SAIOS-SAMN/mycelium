@@ -93,7 +93,7 @@ pub const MEMBER_SPOKEN: u8 = 16;
 
 /// T3 (LD3-b) — THE CARRIERS, EACH WITH ITS OWN COORDINATES.
 ///
-/// The eras held in hand — a kernel with no cold segment, a fixture — each
+/// The eras held in hand — a court with no cold segment, a fixture — each
 /// keyed by its root's stamp `h‖signer‖K‖i`: the root's height and place
 /// and the signer are the key; its hash, its witness, the two signatures,
 /// the identities it named, its first place and count, and its payload are

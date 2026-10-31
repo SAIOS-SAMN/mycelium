@@ -91,7 +91,7 @@ match mesh_rec.genesis {
 pub(crate) fn register_corpora(
     home: &Path,
     state_path: &str,
-    kernel: &Arc<Mutex<Court>>,
+    court: &Arc<Mutex<Court>>,
     registry: &Arc<Mutex<mycelium::registry::TaskRegistry>>,
     genesis: &Genesis,
     key: [u8; 32],
@@ -184,8 +184,8 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
 }
 {
     // Boot, before the door opens.
-    let Ok(mut h) = crate::held::held!(kernel) else {
-        eprintln!("[{tag}] kernel lock poisoned; no bond staked");
+    let Ok(mut h) = crate::held::held!(court) else {
+        eprintln!("[{tag}] court lock poisoned; no bond staked");
         return;
     };
     // MU-CLIENT §5.4 (E1, finding 8) — EVERY FAMILY THE BOOK HOLDS, bound by

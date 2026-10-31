@@ -127,7 +127,7 @@ fn reason_of(r: Refusal) -> Option<usize> {
 }
 
 /// 78.146 — THE RELAY ON ITS OWN LOCK, so a door can serve a mind's read
-/// without waiting on the court's cognition (`exempt_read`); the kernel holds
+/// without waiting on the court's cognition (`exempt_read`); the court holds
 /// it and speaks to it through the same lock.
 #[derive(Clone)]
 pub struct SharedRelay(std::sync::Arc<std::sync::Mutex<SeatRelay>>);
@@ -163,7 +163,7 @@ impl SharedRelay {
     /// 78.145, 78.151 — A DOMAIN'S LATEST SEATS (fields ‖ sig), in its own
     /// universe or (v1.4) at a sub-origin, or none, read on the relay's own
     /// lock: a listing is relay state, never the court's, so its read takes
-    /// no kernel.
+    /// no court.
     pub fn listing(&self, domain: &[u8; 32], sub_origin: Option<&[u8; 32]>) -> Option<Vec<u8>> {
         self.lock().listings.get(&listing_key(domain, sub_origin)).map(|(_, b)| b.clone())
     }

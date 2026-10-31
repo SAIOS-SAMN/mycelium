@@ -141,7 +141,7 @@ impl Convergence {
     /// Has this object converged? `independent` decides whether two organs
     /// are two vantages — 47.3's test: bond outside the home's delegation
     /// closure, room covering the escrow — and is the caller's, because only
-    /// the kernel holds the ledger that answers it.
+    /// the court holds the ledger that answers it.
     pub fn state(
         &self,
         object: &[u8],
