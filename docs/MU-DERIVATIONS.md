@@ -144,7 +144,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 | D4.1 | `tell_peer_within(.., 5)` | `mycelium-server/transport.rs:136` | liveness | Medium | the mesh's measured floor; `Unmeasured` one aperture (**Built** 2026-10-31) | yes | M | 5 |
 | D4.2 | `take(32)` (evidence reply) | `mycelium-server/door.rs:125` | protocol size | Medium | fill to the frame budget by `σ(e)` (**Built** 2026-10-31; the cursor, O1, not built) | yes | S/M | 5 |
 | D4.3 | `h > 1024 \|\| w > 1024` | `anastome/dialogue/carrier.rs:106` | grid admission, memory | Medium | the bytes the tape carries; degenerate shapes refused (**Built** 2026-10-31; `0 × 0` admitted) | yes | S | 14 |
-| D4.4 | `NESTING = 32`, `depth > 16` | `sentence/form/clause.rs:273`, `anchor/codec.rs:70` | stack safety | High/Medium | the producer's depth, else iteration | yes | M/L | 14 |
+| D4.4 | `NESTING = 32`, `depth > 16` | `sentence/form/clause.rs:273`, `anchor/codec.rs:70` | stack safety | High/Medium | the producer's depth, else iteration (**Built** 2026-10-31: (iii), both producers' depths closed forms) | yes | M/L | 14 |
 | D4.5 | `sync_channel(cores)`, `(cores/2).max(1)` | `mycelium-server/main.rs:751–902` | door liveness | Medium | `W = 1 + ⌈off/under⌉` from the lock book | yes | M | 5 |
 | D4.6 | `checked_sub(64)` | nine page sites | protocol size | Medium | each reply's own header length `H_kind` | no | S | 5 |
 | D4.7 | `0..10`, `>= 10` | `transducer/stalk/chart.rs:404–421` | cognition; an abort | High | `element::carrier::PALETTE`, guarded | no | S | 14 |
@@ -170,7 +170,7 @@ entry's derivation and needs no ruling unless marked.
 | 6 | Six `tell_peer` sites bypass a peer's measured deadline; the rtt window is keyed by peer id at one site and by endpoint at another; five CLI sites pass `reserve_max()` as a round-trip hint; **fixed** (2026-10-31): every court ask reads its peer's patience under the voice key, the CLI asks read to the stream's end or the page loop's own floor | D4.1, D2.7 | Medium |
 | 7 | The evidence reply serves the first 32 items forever: no cursor, so item 33 onward is never served | D4.2 | Medium |
 | 8 | `push_grid` writes ragged and zero-width grids that `read_grid` cannot read back; **fixed** (2026-10-31): `push_grid` refuses them | D4.3 | Medium |
-| 9 | Recursive `Drop`, `Clone`, `PartialEq`, `Debug`, the encoders and `Selection::eval` of `Pred`/`Selection` overflow the stack at depths the bytes allow; the parse bound is the only guard | D4.4 | High |
+| 9 | Recursive `Drop`, `Clone`, `PartialEq`, `Debug`, the encoders and `Selection::eval` of `Pred`/`Selection` overflow the stack at depths the bytes allow; the parse bound is the only guard; **fixed** (2026-10-31): the parse bound is the language's own height, which bounds every walker of a decoded tree | D4.4 | High |
 | 10 | The `−64` page reserve is not a signature (no reply at those sites carries one), and at four sites it double-counts a header the encoder already counts | D4.6 | Medium |
 | 11 | `gamma_p` at large `x` and `exp`/`powq` at large positive argument return proven but uninformative enclosures (an absolute grid on a value of scale `2^{±x·log₂e}`); to confirm by the fixtures named in D4.8 | D4.8 | Low (no caller) / Medium (`exp`) |
 | 12 | The yield surface adds a reserve deficit (reserve units, bounded by `R`) to an entropic excess (an event count, unbounded and unscaled); the same mismatch sits inside the POWV share. The soak reading in D2.3 decides whether it is material | D2.3 | High |
@@ -2591,6 +2591,25 @@ cells is refused, and the bound protects one case only, below).
 ---
 
 ### D4.4 `NESTING = 32`, `depth > 16` — decoder recursion bounds
+
+**Status.** **Built** by (iii) (2026-10-31, the live-readings ruling). O1
+read off the producers: `Selection` is minted only by the derive's closure,
+three levels deep (a base at most `ArgExt(Inter(Hue, Star(Hue)))`, four
+levels; a Level-2 step at most the enclosure's three more; Level 3 within
+it), so `anchor::SELECTION_HEIGHT = 4 + 3`; `Pred` is minted only by
+`family::acts` (atoms at most `Not(Touches(leaf))`, a description at most
+one meet), so `form::clause::PRED_HEIGHT = 3 + 1`. Both are closed forms,
+EXACT against their tests; `Selection::height` reads a term's levels. The
+decoders refuse a term deeper than its language mints (`depth >=` the
+height), which bounds every walker of a decoded tree at once. `NESTING`
+leaves the register; the `16` is gone. Tests:
+`transducer::anchor::tests::depth` (`derive_closure_height_equals_selection_height`,
+`sel_parse_survives_frame_length_nesting`: a frame of `Delta` opcodes on a
+2 MiB thread, refused), `transducer::sentence::form::tests::depth`
+(`take_pred_refuses_past_language_depth`, `take_pred_survives_frame_length_nesting`);
+a mutation entry on the selection refusal. A kernel whose own rule language
+mints deeper terms is refused at decode until the language's height is
+amended. The text below is the derivation as specified.
 
 **Site.** `src/transducer/sentence/form/clause.rs:270–273, 411–413`:
 

@@ -60,14 +60,15 @@ impl Selection {
         }
     }
 
-    /// Parse a term (untrusted input: depth-capped at 16, every read guarded —
-    /// a corrupt term is None, never a crash or an allocation bomb).
+    /// Parse a term (untrusted input: no deeper than the language mints,
+    /// `SELECTION_HEIGHT`, every read guarded — a corrupt term is None, never
+    /// a crash or an allocation bomb; D4.4 (iii)).
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Selection> {
         Selection::parse(b, pos, 0)
     }
 
     fn parse(b: &[u8], pos: &mut usize, depth: u8) -> Option<Selection> {
-        if depth > 16 {
+        if usize::from(depth) >= super::SELECTION_HEIGHT {
             return None;
         }
         let op = *b.get(*pos)?;

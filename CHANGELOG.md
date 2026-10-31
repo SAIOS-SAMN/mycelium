@@ -108,6 +108,12 @@ such change is named here.
   and refuses rows without columns (a four-byte header once reserved
   1.5 MB); the `1024` caps are gone. `push_grid` refuses ragged and
   half-empty grids, whose tapes never read back.
+- **A decoded term is no deeper than its language mints** (D4.4 (iii)):
+  `anchor::SELECTION_HEIGHT` (seven levels, the derive's closure) and
+  `form::clause::PRED_HEIGHT` (four, the acts vocabulary and one meet)
+  replace the decoders' `16` and `32`; a frame of nesting opcodes is
+  refused on a 2 MiB thread, and every walker of a decoded tree is bounded
+  with it. `NESTING` leaves the open-physics register.
 
 ### SDK
 - `mycelium_sdk::rule` gains `perceive_family`, `Frames` and

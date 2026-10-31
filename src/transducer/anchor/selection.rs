@@ -263,4 +263,26 @@ impl Selection {
             Selection::ArgExt(e, _) => 1 + e.size(),
         }
     }
+
+    /// Levels from the root to the deepest leaf: a leaf is one.
+    pub fn height(&self) -> usize {
+        match self {
+            Selection::Hue(_) => 1,
+            Selection::Comp(e, _) | Selection::Delta(e) | Selection::Star(e) | Selection::Ext(e, _) | Selection::ArgExt(e, _) => 1 + e.height(),
+            Selection::Inter(a, b) | Selection::Minus(a, b) | Selection::Flood(a, b) | Selection::Transport(a, b) => {
+                1 + a.height().max(b.height())
+            }
+        }
+    }
 }
+
+/// THE DEEPEST TERM THE LANGUAGE MINTS, in levels (MU-DERIVATIONS D4.4
+/// (iii)): the derive's closure (`anchor::derive::candidates`) is three
+/// levels — a base at most `ArgExt(Inter(Hue, Star(Hue)))` (four), a Level-2
+/// step at most the enclosure `Minus(t, Flood(Inter(t, δ·), t))` (three
+/// more), and a Level-3 step on a component projection, which stays within
+/// it. A decoded term deeper than any the producer mints is no word of the
+/// language and is refused, which bounds every walker of a decoded tree —
+/// `Drop`, `Clone`, the codec, `eval` — at once, with no stack measured.
+/// EXACT: derive_closure_height_equals_selection_height
+pub const SELECTION_HEIGHT: usize = 4 + 3;

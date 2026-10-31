@@ -267,11 +267,16 @@ pub struct Clause {
     pub act: Act,
 }
 
-/// THE DEEPEST NESTING A DECODED PREDICATE MAY HAVE: a tape arriving from a
-/// peer is bounded by its own bytes, and a recursion on it by this (§2.4 — a
-/// court that does not come back is a court an adversary stops).
-/// REGISTERED: NESTING
-const NESTING: usize = 32;
+/// THE DEEPEST PREDICATE THE LANGUAGE MINTS, in levels (MU-DERIVATIONS D4.4
+/// (iii)): the vocabulary (`family::acts`) is atoms whose deepest is
+/// `Not(Touches(leaf))` (three levels), and a description is at most one
+/// meet (`And`) of atoms, one level more. A decoded predicate deeper than any
+/// the producer mints is no word of the language and is refused, which
+/// bounds every walker of a decoded tree — `Drop`, `Clone`, the codec, the
+/// statement's evaluation — at once (§2.4: a court that does not come back
+/// is a court an adversary stops).
+/// EXACT: take_pred_refuses_past_language_depth
+pub(crate) const PRED_HEIGHT: usize = 3 + 1;
 
 fn put_coord(buf: &mut Vec<u8>, c: Coord) {
     let tag = match c {
@@ -410,7 +415,7 @@ pub(super) fn put_pred(buf: &mut Vec<u8>, pred: &Pred) {
 }
 
 pub(super) fn take_pred(k: &[u8], p: &mut usize, depth: usize) -> Option<Pred> {
-    if depth > NESTING {
+    if depth >= PRED_HEIGHT {
         return None;
     }
     let tag = take_byte(k, p)?;

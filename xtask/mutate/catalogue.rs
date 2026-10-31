@@ -163,6 +163,14 @@ pub const CATALOGUE: &[Mutant] = &[
         filter: "court::verdict::tests::selection",
     },
     Mutant {
+        law: "MU-STANDARDS §2.4 (MU-DERIVATIONS D4.4): a decoded selection term deeper than the language mints is refused, never an abort",
+        file: "src/transducer/anchor/codec.rs",
+        before: "        if usize::from(depth) >= super::SELECTION_HEIGHT {",
+        after: "        if false && usize::from(depth) >= super::SELECTION_HEIGHT {",
+        target: &["--lib"],
+        filter: "transducer::anchor::tests::depth",
+    },
+    Mutant {
         law: "NO CONSTANT (MU-DERIVATIONS D1.4): a registered number keeps its class tag, or the numbers gate refuses the tree",
         file: "src/server/cognition/mouth.rs",
         before: "/// REGISTERED: THROAT_GRID\npub const THROAT_GRID",

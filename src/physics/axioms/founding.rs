@@ -109,7 +109,7 @@ const SOAK_STROKE: &str = "Open: an instrument's stroke is the need of what it r
 /// UNDEFINED PHYSICS, NAMED: each number the tree still declares where a
 /// reading belongs, with what it decides, the sections that govern it and
 /// what will derive it (MU-DERIVATIONS D1.4).
-pub const OPEN_PHYSICS: [OpenNumber; 18] = [
+pub const OPEN_PHYSICS: [OpenNumber; 17] = [
     OpenNumber {
         name: "THROAT_GRID",
         value: "64",
@@ -151,16 +151,6 @@ pub const OPEN_PHYSICS: [OpenNumber; 18] = [
         derivation: "the term count of P(a, x) is N = max(0, ⌈2x − a⌉ − 1) + w₂ − 8, metered by the caller's Budget; the cap \
                      retires with the metered series",
         kind: OpenKind::Engineering,
-    },
-    OpenNumber {
-        name: "NESTING",
-        value: "32",
-        site: "src/transducer/sentence/form/clause.rs::NESTING",
-        governs: Governs::Admission,
-        doc: "MU-STANDARDS §2.4; MU-DERIVATIONS D4.4",
-        derivation: "Open (D4.4 O1): the producer's depth of a predicate (the language's own bound), else an iterative parse \
-                     and walk bounded by the bytes alone",
-        kind: OpenKind::Protocol,
     },
     OpenNumber {
         name: "CANDIDATES_PER_PAIR",
