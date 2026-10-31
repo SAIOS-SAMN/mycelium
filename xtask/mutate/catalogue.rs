@@ -155,6 +155,14 @@ pub const CATALOGUE: &[Mutant] = &[
         filter: "server::cognition::tests::sphere",
     },
     Mutant {
+        law: "A9 (MU-DERIVATIONS D3.3): π* holds only terms common to EVERY training evidence's carrying set",
+        file: "src/court/verdict/selection.rs",
+        before: "        if !rest.iter().all(|s| s.contains(&key)) {",
+        after: "        if false && !rest.iter().all(|s| s.contains(&key)) {",
+        target: &["--lib"],
+        filter: "court::verdict::tests::selection",
+    },
+    Mutant {
         law: "NO CONSTANT (MU-DERIVATIONS D1.4): a registered number keeps its class tag, or the numbers gate refuses the tree",
         file: "src/server/cognition/mouth.rs",
         before: "/// REGISTERED: THROAT_GRID\npub const THROAT_GRID",

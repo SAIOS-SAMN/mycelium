@@ -138,7 +138,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 | D2.7 | `reserve_max()` as rtt hint | five server CLI sites | liveness | Medium | the measured floor of the page loop; the first ask a state | yes | S–M | 5 |
 | D3.1 | `stroke_n(1 << 16)` | `client/sdk/rule.rs:402` | cognition (rule minting) | Medium | the stroke is `modes_need(linear)` (78.111; **Built**) | yes | S | 7 |
 | D3.2 | `MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600` | `transducer/family/refine.rs:40–41` | task identity, μ | High | metered by `need = R_h·R_w + 2·L_h·L_w` (**Built**, O1 (a)) | no | M | 7 |
-| D3.3 | `truncate(32)` | `transducer/anchor/derive.rs:182` | court admission (π*) | High | keep every carrying term, keyed; metered | yes | M | 7 |
+| D3.3 | `truncate(32)` | `transducer/anchor/derive.rs:182` | court admission (π*) | High | keep every carrying term, keyed; metered (**Built** 2026-10-31; O1 ruled (a): π* binds the whole common set) | yes | M | 7 |
 | D3.4 | `in_sites.len() <= 400` | `transducer/family/confluence.rs:162` | an instrument's reading | Low | `2·m` reads, keyed, tri-state | no | S | 10 |
 | D3.5 | `percepts_since >= 2` | `client/sdk/seat_mind/mind.rs:284` | seat liveness, learning | Medium | distance along the house's sequence `b − b₀ ≥ 2` | yes | S | 10 |
 | D4.1 | `tell_peer_within(.., 5)` | `mycelium-server/transport.rs:136` | liveness | Medium | the mesh's measured floor; `Unmeasured` one aperture | yes | M | 5 |
@@ -1920,6 +1920,24 @@ discarded).
 
 ### D3.3 `truncate(32)` — selector terms kept by the sort key
 
+**Status.** **Built** (ruled 2026-10-31, O1 (a): π* binds the WHOLE common
+set; L9a closed by that ruling). `derive_carrying_all(footprint, scene,
+&mut Budget) -> Result<Keyed<Selection>, CarryingRefusal>` keeps every
+carrying term of the closure, keyed by its A21 key; each evaluation spends
+one read per node of the term, and a spent token refuses the whole set
+(`CarryingRefusal::Unread { terms_read }`). `court::verdict::derive_pi(
+family, withheld, &mut Budget)` returns the terms common to every training
+set, read by key, as a superposition judged by the court's reconstruction
+over the withheld pairs (`carries_footprint`): every term that carries each
+withheld footprint stands, none is chosen by key. `truncate(32)` and both
+`#[expect(… owed to L9a)]` are gone. Tests:
+`transducer::anchor::tests::carrying` (`carrying_set_count_equals_closure`,
+`carrying_set_keeps_thirty_third_term`, `carrying_set_refuses_spent_token_whole`),
+`court::verdict::tests::selection`
+(`derive_pi_keeps_every_term_reconstructing_withheld`,
+`derive_pi_refuses_spent_token_whole`); a mutation entry on the
+intersection. The text below is the derivation as specified.
+
 **Site.** `src/transducer/anchor/derive.rs:182` (in
 `derive_carrying_all`):
 
@@ -3074,7 +3092,8 @@ Each line names its entry and the reading or ruling that decides it.
     (c) stays open as a cheaper object, not as a defect.
 22. **D3.3 O1** — whether the court may bind a superposition of anchor
     terms (closes L9a): decided by whether two common terms ever differ on
-    a withheld pair in the A9 replay.
+    a withheld pair in the A9 reconstruction. **Ruled (a)** (2026-10-31):
+    π* binds the whole common set, judged by reconstruction; **Built**.
 23. **D3.5 O1** — the seat's beat axis, `seq` or `u`: decided by the
     `answered_at` distance distribution per seat.
 24. **D3.5 O2** — whether a late outcome reforms rather than drops:

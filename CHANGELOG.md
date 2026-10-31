@@ -62,6 +62,12 @@ such change is named here.
   carry up to 63 bytes more within the same frame. `BODY_BUDGET` stays an
   open protocol parameter (a receipt's `u32`-counted fields have no `u16`
   wall) and is now served on `ACT_LAWS` mode 5 as "frame budget".
+- **π* binds the whole common set** (D3.3, ruled 2026-10-31; L9a closed).
+  `derive_carrying_all` keeps every carrying term, keyed, metered by a
+  `Budget` and refused whole when spent (`CarryingRefusal::Unread`); the
+  cut at 32 terms is gone. `derive_pi(family, withheld, budget)` returns
+  the terms common to every training evidence as a superposition, judged
+  by reconstruction on the withheld pairs, never a head chosen by key.
 
 ### SDK
 - `mycelium_sdk::rule` gains `perceive_family`, `Frames` and
