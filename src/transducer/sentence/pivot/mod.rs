@@ -18,6 +18,9 @@ pub mod trial;
 pub mod circuit;
 pub mod words;
 
+#[cfg(test)]
+mod tests;
+
 pub use census::*;
 pub use lift::{compare, lift, Comparison, LaneDelta, Perceived, LANES};
 pub use moves::*;

@@ -1,7 +1,8 @@
 // A9 — THE SELECTION TERM: the anchor a family derives, and the key that
 // names it.
 
-use super::*;
+use crate::network::nerve::Keyed;
+use crate::transducer::anchor::{derive_carrying_all, Selection};
 
 /// The term's A21 key. One carrier for it: [`Selection::key`], which the
 /// derivation orders by as well.

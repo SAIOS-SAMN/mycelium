@@ -3,6 +3,7 @@
 
 use super::common::*;
 use crate::transducer::family::*;
+use crate::transducer::stalk::Standing;
 
 /// LAW 12 — A GLUED VERTEX SPEAKS ITS CITED FORM ONTO THE SCENE THE SPEECH
 /// ALREADY PERCEIVED. A form citing the bar's shift twice speaks the grid

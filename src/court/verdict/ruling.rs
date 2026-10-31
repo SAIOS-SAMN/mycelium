@@ -2,6 +2,11 @@
 // between two chains that decides it.
 
 use super::*;
+use crate::anastome::dialogue;
+use crate::network::nerve::Keyed;
+use crate::transducer::cech;
+use crate::transducer::element::{self, Element, Versor};
+use crate::transducer::stalk::{self, Stalks};
 
 /// The deterministic outcome of ruling one candidate word — every arm
 /// names what the mathematics found; callers match these states

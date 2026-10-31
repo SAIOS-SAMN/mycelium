@@ -341,7 +341,7 @@ Built: act 0x35 (`src/anastome/dialogue/equivocation.rs`,
   `accept_receipt`, `expire(K)` called from the court
   stroke under its budget; `witness_sign` for the second signature of a
   release.
-- `src/bin/mycelium-server/judge/`: one file per act family, dispatched by `judge/mod.rs`.
+- `src/bin/mycelium-server/judge/`: one file per act family, dispatched by `judge/dispatch.rs`.
 - `src/client/sdk/`: `Session::septum_note`, `septum_receipt`,
   `septum_release`.
 - `src/bin/mycelium-septum.rs`: the HTTP adapter. Listens on a local port,

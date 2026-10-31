@@ -20,6 +20,9 @@ pub mod rule_element;
 pub mod spectrum;
 pub mod vertex;
 
+#[cfg(test)]
+mod tests;
+
 pub(crate) use axis::*;
 pub(crate) use vertex::demand_coordinates;
 pub use carrier::*;

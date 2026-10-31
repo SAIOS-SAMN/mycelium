@@ -8,6 +8,9 @@
 
 use super::replay::chord_orbits;
 use super::*;
+use crate::network::nerve::Keyed;
+use crate::transducer::element::{self, Element};
+use crate::transducer::sentence::Form;
 
 /// 54.5 — THE LABOUR, CHECKED AGAINST THE TERRAIN.
 ///

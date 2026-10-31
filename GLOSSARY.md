@@ -164,7 +164,7 @@ senses that kernel builds for it.
 
 | Term | Meaning |
 |---|---|
-| **L0** | The universal law register: six laws (conformal, momentum, rigidity, time, reservoir, continuity), each a predicate over exact objects that names every breach (`src/physics/laws.rs`, served by `ACT_LAWS`). Mandatory for every kernel; no physics profile amends it. |
+| **L0** | The universal law register: six laws (conformal, momentum, rigidity, time, reservoir, continuity), each a predicate over exact objects that names every breach (`src/physics/laws/mod.rs`, served by `ACT_LAWS`). Mandatory for every kernel; no physics profile amends it. |
 | **Universal library** | The floor every kernel adheres to: L0, the universal law forms, the Concordance, the alphabet, Anastome, exact arithmetic and the proofs of work. It changes only by a new Concordance version or by ascension (MU-SCIENCE §3.0). |
 | **Law forms** | The universal laws as forms over a universe's constants, in the `forms` crate. A form fixes no constant; each universe composes the forms over its own (Concordance 2.10). |
 | **Shell** | One universe's layer of physics above L0: its constants, matter, composition of the forms and any law it keeps for itself. It reaches L0 only through the seam (Concordance 2.10). |

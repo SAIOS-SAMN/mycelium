@@ -7,6 +7,11 @@
 
 use super::body::undeclared_remainder;
 use super::*;
+use crate::network::nerve::Keyed;
+use crate::transducer::element::{self, Element};
+use crate::transducer::sentence::{self, Form, Vertex};
+use crate::transducer::stalk;
+use crate::transducer::torsion_witness::{self, HolonomicOrbitWitness};
 
 /// Chapter 23.1: replay a crystallized form from its tape and the forms it
 /// cites. `resolve` is the hypha's ruled cover (a caller without one

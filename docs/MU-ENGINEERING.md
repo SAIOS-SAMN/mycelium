@@ -94,7 +94,7 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
   byte. The act constants and the frame layout of each are documented in
   [`src/anastome/dialogue/acts.rs`](../src/anastome/dialogue/acts.rs); the
   byte of each act is assigned by `Action::byte` in
-  [`src/physics/actions.rs`](../src/physics/actions.rs). The families are:
+  [`src/physics/actions/mod.rs`](../src/physics/actions/mod.rs). The families are:
   - client work and language: `ACT_TASK`, `ACT_SOLVE`, `ACT_SPEECH`,
     `ACT_SYLLABUS`, `ACT_ADOPT`, `ACT_DIGESTS`, `ACT_FETCH`, `ACT_PROBE`,
     `ACT_PEERS`;
@@ -186,7 +186,7 @@ tags in the code are:
 
 | tag | what | where |
 |---|---|---|
-| `MYT2` | a hypha's snapshot (the current layout) | `server/cognition/snapshot/mod.rs` |
+| `MYT2` | a hypha's snapshot (the current layout) | `server/cognition/snapshot/layout.rs` |
 | `MYL2` | a court's line | `chronometry/chain/line.rs` |
 | `MYE2` | a cold era segment | `chronometry/era.rs` |
 | `GEN7` | a mind's genome: the words a court admitted | `client/sdk/epigenome/persist.rs` |

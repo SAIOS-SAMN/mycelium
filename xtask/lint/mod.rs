@@ -6,6 +6,9 @@
 pub mod euclidean;
 pub mod length;
 
+#[cfg(test)]
+mod tests;
+
 use euclidean::lint_euclidean;
 use length::lint_file_length;
 

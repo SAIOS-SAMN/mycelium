@@ -220,7 +220,7 @@ The pipeline:
    for clauses that act on parts.
 3. **Extraction.** `extract_rule_with` and `extract_rule_on`
    (`src/transducer/family/extract.rs`). Where the pairs share one size
-   ratio (`family_ratio`, `src/transducer/family/mod.rs`), bodies are
+   ratio (`family_ratio`, `src/transducer/family/frame.rs`), bodies are
    grouped by chart and frame and each group is carried by one versor
    between the union of its input and output bodies (`versor_between` in
    `src/transducer/blade/carry.rs`) with one hue map; where no versor

@@ -102,7 +102,7 @@ recomputes what the bit threw away.
 2.4 **Refusals.** A function that can refuse returns `Option<T>` when the
 cause is unique and documented at the call site, otherwise a `Result`
 whose error names the refusal: a `REFUSE_*` constant (MU-RECURSION
-chapter 34.1, `src/court/verdict/mod.rs`) or a typed refusal. A new
+chapter 34.1, `src/court/verdict/refusals.rs`) or a typed refusal. A new
 refusal string enters chapter 34.1 in the same commit.
 
 *Cognition refuses, it does not abort.* `unwrap_used`, `expect_used`,
@@ -246,7 +246,7 @@ nothing and prints is not a test.
 
 3.3 **Layout.** Unit tests live in `<module>/tests/<name>.rs`, declared by
 the owning module's `#[cfg(test)] mod tests;`, one file per organ they
-prove, named for what its tests claim (`sentence/tests/pivot.rs`,
+prove, named for what its tests claim (`sentence/pivot/tests/orbit.rs`,
 `cognition/tests/ledger.rs`), never for a chapter number. A module's
 `tests/common.rs` holds fixture constructors only, named for what they
 build. Integration tests live in the crate's `tests/` directory.

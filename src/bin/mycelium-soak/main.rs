@@ -31,6 +31,9 @@ mod reconstruct;
 mod regime;
 mod volume;
 
+#[cfg(test)]
+mod tests;
+
 use mycelium::client::sdk::Epigenome;
 use mycelium::transducer::family::{extract_rule_with, mint_sentence};
 use mycelium::transducer::sentence::Vertex;

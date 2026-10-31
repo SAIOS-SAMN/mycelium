@@ -6,6 +6,8 @@
 //! and what it refuses on is the same list `replay.rs` refuses on.
 
 use super::*;
+use crate::transducer::element::{self, Element};
+use crate::transducer::sentence::Form;
 
 /// `blind_replay` with no cover behind it: a crystallized form that cites
 /// another refuses as unruled, because nothing here can resolve the

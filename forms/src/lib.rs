@@ -32,6 +32,8 @@
 
 pub mod frame;
 pub mod shares;
+#[cfg(test)]
+mod tests;
 
 /// The exact rationals every form computes over (the same object as
 /// mycelium's own `core::Q`).

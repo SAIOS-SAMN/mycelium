@@ -10,3 +10,5 @@
 
 pub mod closeness;
 pub mod share_compounds;
+#[cfg(test)]
+mod tests;

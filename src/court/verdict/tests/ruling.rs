@@ -1,7 +1,12 @@
 // 42, A9 — the ruling maps the federation, and the selection key is stable
 // under a change of debug representation.
 
+use crate::anastome::dialogue;
+use crate::network::nerve::Keyed;
+use crate::transducer::anchor::Selection;
+use crate::transducer::element;
 use crate::transducer::element::from_canonical;
+use crate::transducer::stalk::Stalks;
 use crate::transducer::germinate::germinate;
 use crate::verdict::*;
 use super::common::*;

@@ -4,6 +4,7 @@
 
 use super::common::*;
 use crate::transducer::family::*;
+use crate::transducer::stalk::Standing;
 
 /// THE SECTIONS AS THE PERCEPT FILED THEM: a member or a class standing on
 /// fewer frames than the family reached, summed over the frames each holds.

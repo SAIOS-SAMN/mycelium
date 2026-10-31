@@ -10,7 +10,6 @@ mod horizon;
 mod line;
 mod perception;
 mod persistence;
-mod pivot_cells;
 mod question;
 mod remainders;
 mod truncate;

@@ -5,6 +5,7 @@
 
 use super::common::*;
 use crate::transducer::family::*;
+use crate::transducer::stalk::Standing;
 
 /// A crystal holding two forms at two addresses, each citing the other.
 struct Mutual {

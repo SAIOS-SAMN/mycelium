@@ -7,6 +7,7 @@ mod modes;
 mod pay;
 mod settlement;
 mod surface;
+mod verify;
 
 /// A word's address, as an award is filed under it.
 pub(super) fn word(b: impl AsRef<[u8]>) -> crate::transducer::address::Address {

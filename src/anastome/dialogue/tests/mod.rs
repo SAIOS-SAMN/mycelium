@@ -15,6 +15,7 @@ mod uplink;
 mod domain;
 mod challenge;
 mod handoff;
+mod lease;
 mod seat;
 mod task;
 mod verdict;

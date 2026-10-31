@@ -5,6 +5,9 @@ version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0"
 publish = false
+# The gate's unit tests live in `tests/` as modules of the binary
+# (MU-STANDARDS 3.3); the crate has no integration tests.
+autotests = false
 
 [[bin]]
 # The binary NAMES WHAT IT DOES: it runs the gate — the reading bound and
