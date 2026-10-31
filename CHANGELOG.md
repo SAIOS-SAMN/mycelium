@@ -6,6 +6,26 @@ such change is named here.
 
 ## Unreleased
 
+### Carried forward from precursor implementations (MU-PRECURSORS)
+- `docs/MU-PRECURSORS.md`: the plan for every component brought over from
+  precursor implementations, each with its gap, design under the laws,
+  adaptations, acceptance claims, ROADMAP track and status, and the SDK
+  packaging plan (a published `mycelium-sdk` crate, a client conformance
+  read, bindings).
+- `src/network/noise.rs`: a Noise XX encrypted channel
+  (`Noise_XX_25519_ChaChaPoly_BLAKE2s`) with a static key per home and
+  trust-on-first-use pinning, built on `snow` with its pure-Rust resolver
+  only. Tested; not yet wired into the server, client or `sdk::Session`
+  (ROADMAP track 5).
+- `cd xtask && cargo run --release -- mutate`: a mutation audit that each
+  guarded law has a test that catches its violation, run in a scratch
+  worktree. Its first run found two guard gaps, now closed by tests: a
+  signed prefix with trailing bytes, and a replayed lease open after its
+  lease closed. Current catalogue: 10 mutants, 10 killed.
+- `learn_form` and `file_form` return `Learned`: every vertex is filed,
+  refused with a named reason (`Unlearned`), or listed as carrying no
+  motion; nothing is skipped silently.
+
 ### Naming
 - No first-person, second-person or ownership pronouns in filenames,
   documentation, comments, test names or identifiers; each names the

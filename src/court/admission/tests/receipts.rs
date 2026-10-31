@@ -70,6 +70,9 @@ fn the_signed_prefix_is_written_out_and_decodes() {
     assert_eq!(&b[84..92], &77u64.to_le_bytes(), "then height");
     assert_eq!(SignedPrefix::read(&b).as_ref(), Some(&p), "and it reads back");
     assert!(SignedPrefix::read(&b[..b.len() - 1]).is_none(), "a short prefix refuses whole");
+    let mut long = b.clone();
+    long.push(0);
+    assert!(SignedPrefix::read(&long).is_none(), "a prefix with bytes after it refuses whole: one encoding per prefix");
 }
 
 /// 47.2 step 1 runs BEFORE any carrier is touched: a frame from another

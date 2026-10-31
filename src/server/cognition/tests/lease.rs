@@ -70,12 +70,15 @@ fn a_lease_returns_its_remainder_on_close_and_on_lapse() {
     let provider = [9u8; 32];
     let (mut k, payer, act) = court_and_lease([50, 40, 0, 30], [30, 20, 0, 10], provider, vec![[7; 32]], 1_000);
     let who = act.payer;
-    let (id, _) = k.open_lease(&act.sign(&payer).expect("signs")).expect("the lease opens");
+    let opened = act.sign(&payer).expect("signs");
+    let (id, _) = k.open_lease(&opened).expect("the lease opens");
     let close = CloseLease { payer: who, lease: id, nonce: [3; 32] }.sign(&payer);
     assert_eq!(k.close_lease(&close), Ok((id, [30, 20, 0, 10])), "the whole hold returns");
     assert_eq!(k.treasury().balance_mu(&who), [50, 40, 0, 30], "the payer holds what it held before");
     assert!(k.leases().is_empty());
     assert_eq!(k.close_lease(&close), Err(LeaseRefusal::Spent), "a resend moves nothing");
+    assert_eq!(k.open_lease(&opened), Err(LeaseRefusal::Spent), "the closed lease's own signed open, resent, opens nothing");
+    assert_eq!(k.treasury().balance_mu(&who), [50, 40, 0, 30], "and holds nothing again");
 
     // A window of one height: passed once the court moves past it.
     let lapsing = LeaseAct { payer: who, provider, mu: [5, 0, 0, 0], window: 1, jobs: vec![[6; 32]], nonce: [4; 32] };
