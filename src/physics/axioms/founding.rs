@@ -109,7 +109,7 @@ const SOAK_STROKE: &str = "Open: an instrument's stroke is the need of what it r
 /// UNDEFINED PHYSICS, NAMED: each number the tree still declares where a
 /// reading belongs, with what it decides, the sections that govern it and
 /// what will derive it (MU-DERIVATIONS D1.4).
-pub const OPEN_PHYSICS: [OpenNumber; 18] = [
+pub const OPEN_PHYSICS: [OpenNumber; 17] = [
     OpenNumber {
         name: "POOL_DIVISOR",
         value: "2",
@@ -151,16 +151,6 @@ pub const OPEN_PHYSICS: [OpenNumber; 18] = [
         doc: "MU-DERIVATIONS D1.4 O2, §9",
         derivation: "Open (D1.4 O2): a cost and memory layout keyed by the first byte of a party's key; derived as shards per \
                      the published account count's growth, or kept as an engineering layout by ruling",
-        kind: OpenKind::Engineering,
-    },
-    OpenNumber {
-        name: "P_SERIES_CAP",
-        value: "10_000",
-        site: "src/core/certified.rs::P_SERIES_CAP",
-        governs: Governs::Reading,
-        doc: "MU-RECURSION 78.130, law 1; MU-DERIVATIONS D4.8 (a)",
-        derivation: "the term count of P(a, x) is N = max(0, ⌈2x − a⌉ − 1) + w₂ − 8, metered by the caller's Budget; the cap \
-                     retires with the metered series",
         kind: OpenKind::Engineering,
     },
     OpenNumber {

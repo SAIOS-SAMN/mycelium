@@ -124,6 +124,15 @@ such change is named here.
   (`ed25519_dalek::SIGNATURE_LENGTH`, RFC 8032 §5.1.6), and every page
   site reads its own reply's header (built with D1.3), never a `64`
   reserve standing for a signature no page carries.
+- **Certified series are metered, never capped** (D4.8; API change in
+  `core::certified`, callers are tests only). `gamma_p` and `erf` take a
+  `&mut Budget` and refuse `SeriesRefusal::Unmetered { needed }` up front
+  (`gamma_p_terms` is the exact bound); `P_SERIES_CAP` and the `14 000`
+  wall are gone, the erf tail read off its own bound. `poisson_quantile`
+  takes a `Budget`, doubles its precision from one that resolves
+  `e^{−λ}`, and answers `Quantile::{At, Sector}`. `exp` at a positive
+  argument and `P`'s prefactor carry their values' magnitudes, so
+  `exp(100)` and `P(1, 1000)` are within their grids.
 
 ### SDK
 - `mycelium_sdk::rule` gains `perceive_family`, `Frames` and

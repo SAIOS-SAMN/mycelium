@@ -148,7 +148,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 | D4.5 | `sync_channel(cores)`, `(cores/2).max(1)` | `mycelium-server/main.rs:751–902` | door liveness | Medium | `W = 1 + ⌈off/under⌉` from the lock book (**REGISTERED** 2026-10-31 as `POOL_DIVISOR`: the off-lock strokes are unmetered) | yes | M | 5 |
 | D4.6 | `checked_sub(64)` | nine page sites | protocol size | Medium | each reply's own header length `H_kind` (**Built** 2026-10-31, the sites with D1.3) | no | S | 5 |
 | D4.7 | `0..10`, `>= 10` | `transducer/stalk/chart.rs:404–421` | cognition; an abort | High | `element::carrier::PALETTE`, guarded (**Built** on main; verified 2026-10-31) | no | S | 14 |
-| D4.8 | `P_SERIES_CAP`, `14_000`, `w + 256`, guard bits, `stop_at` | `core/certified.rs` | certified mathematics | Low/Medium | term counts metered by `Budget`; guards per operation | yes | M/L | 12 |
+| D4.8 | `P_SERIES_CAP`, `14_000`, `w + 256`, guard bits, `stop_at` | `core/certified.rs` | certified mathematics | Low/Medium | term counts metered by `Budget`; guards per operation (**Built** 2026-10-31: (a)–(c), (e) for `exp` and `P`'s prefactor) | yes | M/L | 12 |
 
 Paths in the table are under `src/`; `mycelium-server/` is
 `src/bin/mycelium-server/`.
@@ -172,7 +172,7 @@ entry's derivation and needs no ruling unless marked.
 | 8 | `push_grid` writes ragged and zero-width grids that `read_grid` cannot read back; **fixed** (2026-10-31): `push_grid` refuses them | D4.3 | Medium |
 | 9 | Recursive `Drop`, `Clone`, `PartialEq`, `Debug`, the encoders and `Selection::eval` of `Pred`/`Selection` overflow the stack at depths the bytes allow; the parse bound is the only guard; **fixed** (2026-10-31): the parse bound is the language's own height, which bounds every walker of a decoded tree | D4.4 | High |
 | 10 | The `−64` page reserve is not a signature (no reply at those sites carries one), and at four sites it double-counts a header the encoder already counts; **fixed** (2026-10-31): each site reads its codec's own header | D4.6 | Medium |
-| 11 | `gamma_p` at large `x` and `exp`/`powq` at large positive argument return proven but uninformative enclosures (an absolute grid on a value of scale `2^{±x·log₂e}`); to confirm by the fixtures named in D4.8 | D4.8 | Low (no caller) / Medium (`exp`) |
+| 11 | `gamma_p` at large `x` and `exp`/`powq` at large positive argument return proven but uninformative enclosures (an absolute grid on a value of scale `2^{±x·log₂e}`); to confirm by the fixtures named in D4.8; **fixed** for `gamma_p` and `exp` (2026-10-31), `powq` open | D4.8 | Low (no caller) / Medium (`exp`) |
 | 12 | The yield surface adds a reserve deficit (reserve units, bounded by `R`) to an entropic excess (an event count, unbounded and unscaled); the same mismatch sits inside the POWV share. The soak reading in D2.3 decides whether it is material | D2.3 | High |
 | 13 | `transport_deadline` never returns `Lambda::Unmeasured`, so its `usize::MAX` arm is dead; `from_transport_counts_rtt_in_strokes` asserts a same-stroke reply reads 0, which the measurement cannot produce; **fixed** (2026-10-31): `Unmeasured` is live (the mesh prior, a zero rtt), the `usize::MAX` arm is gone, the assertion retired with the `NonZeroU64` type | D4.1, D2.6 | Low |
 
@@ -2944,6 +2944,34 @@ the naming.
 ---
 
 ### D4.8 Certified mathematics: `P_SERIES_CAP`, `w ≥ 14_000`, Poisson `w + 256`, guard bits, `stop_at`
+
+**Status.** **Built** for (a)–(c) and for (e) where a test asked it
+(2026-10-31, the live-readings ruling). (a): `gamma_p_terms` is the exact
+bound `max(0, ⌈2x − a⌉ − 1) + w₂ − 8`; `gamma_p` and `erf` take `&mut
+Budget`, refuse `SeriesRefusal::Unmetered { needed }` before a term where
+the token is short, spend one read a term; `P_SERIES_CAP` is deleted and
+leaves the register. (b): the erf tail is decided by its own bound,
+`e^{−v²} ≤ 2^{−⌊v²·ℓ⌋}` with `ℓ = 1/ln2.hi ≤ log₂e` and the certified `√π`,
+`[1 − T, 1]` where `T ≤ 2^{−w}`; no `14_000`, no refusal for large `w`.
+(c): `poisson_quantile` returns `Quantile::{At(k), Sector { lo, hi }}`,
+doubles its precision per round from `w + ⌈3λ/2⌉ + 32 + bits(λ)`, spends one
+read a term, and answers the undecided step's sector on a spent token; no
+`w + 256`. (e): `exp_point` carries the value's own magnitude (`⌈3v/2⌉`
+bits for `v > 0`), so `exp(100)` is within its grid; `P`'s prefactor is
+taken at `w + bits(S) + bits(a + 2) + 2`, read off the sum, and `ln Γ` at an
+integer or half-integer is exact through factorials
+(`ln_gamma_point`), so `P(1, 1000)` holds `1 − e^{−1000}` within its grid.
+Not built: (d) the width-relative stop (the `stop_at` margin stands, and
+(a)'s bound is for it), and (e)'s fixed-point guards for `ln2`, `pi`,
+`sin_cos`, `tan`, `powq`, `lgamma` and `planck` (O1, the width contract,
+open). Tests (`core::tests::certified`): `gamma_p_terms_equal_closed_form`,
+`gamma_p_refuses_short_budget_up_front`, `gamma_p_width_is_within_grid_at_large_x`,
+`erf_tail_branch_is_derived_without_cap` (`erf 101` at `w = 14 600`),
+`poisson_quantile_answers_sector_on_spent_budget`,
+`poisson_quantile_decides_at_large_lambda`,
+`exp_width_is_within_grid_at_positive_argument`; two mutation entries (the
+up-front refusal, the stop rule). The text below is the derivation as
+specified.
 
 **Site.** `src/core/certified.rs`:
 

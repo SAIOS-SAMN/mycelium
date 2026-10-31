@@ -171,6 +171,22 @@ pub const CATALOGUE: &[Mutant] = &[
         filter: "transducer::anchor::tests::depth",
     },
     Mutant {
+        law: "law 1 (MU-DERIVATIONS D4.8 (a)): a certified series short of its exact term bound is refused before a term is read",
+        file: "src/core/certified.rs",
+        before: "    if u64::try_from(budget.remaining()).is_ok_and(|have| have < needed) {",
+        after: "    if false && u64::try_from(budget.remaining()).is_ok_and(|have| have < needed) {",
+        target: &["--lib"],
+        filter: "core::tests::certified",
+    },
+    Mutant {
+        law: "78.130 (MU-DERIVATIONS D4.8 (d)): P's series stops only past its ratio bound and below the grid's stop",
+        file: "src/core/certified.rs",
+        before: "        if rho <= half && term.hi <= &sum.lo * &tiny {",
+        after: "        if rho <= half && term.hi <= sum.lo {",
+        target: &["--lib"],
+        filter: "core::tests::certified",
+    },
+    Mutant {
         law: "NO CONSTANT (MU-DERIVATIONS D1.4): a registered number keeps its class tag, or the numbers gate refuses the tree",
         file: "src/server/cognition/mouth.rs",
         before: "/// REGISTERED: THROAT_GRID\npub const THROAT_GRID",
