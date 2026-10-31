@@ -6,6 +6,14 @@ such change is named here.
 
 ## Unreleased
 
+## 0.3.0-rc.1 — 2026-10-31 (release candidate)
+
+The first contract release the peer kernels pin to: the `mycelium-sdk`
+client surface, the shared-law table, the client conformance read and the
+served Concordance hash (MU-CONFORMANCE), with the naming and layout of
+the whole tree made one. Run on a test mesh before the operator
+authorizes v0.3.0.
+
 ### Layout changes
 - Task addresses: a task with a pair past the former lcm cap (axis 60,
   sites 3600) now has an address over every pair; such tasks' addresses
