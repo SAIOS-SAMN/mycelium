@@ -147,7 +147,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 | D4.4 | `NESTING = 32`, `depth > 16` | `sentence/form/clause.rs:273`, `anchor/codec.rs:70` | stack safety | High/Medium | the producer's depth, else iteration (**Built** 2026-10-31: (iii), both producers' depths closed forms) | yes | M/L | 14 |
 | D4.5 | `sync_channel(cores)`, `(cores/2).max(1)` | `mycelium-server/main.rs:751–902` | door liveness | Medium | `W = 1 + ⌈off/under⌉` from the lock book (**REGISTERED** 2026-10-31 as `POOL_DIVISOR`: the off-lock strokes are unmetered) | yes | M | 5 |
 | D4.6 | `checked_sub(64)` | nine page sites | protocol size | Medium | each reply's own header length `H_kind` (**Built** 2026-10-31, the sites with D1.3) | no | S | 5 |
-| D4.7 | `0..10`, `>= 10` | `transducer/stalk/chart.rs:404–421` | cognition; an abort | High | `element::carrier::PALETTE`, guarded | no | S | 14 |
+| D4.7 | `0..10`, `>= 10` | `transducer/stalk/chart.rs:404–421` | cognition; an abort | High | `element::carrier::PALETTE`, guarded (**Built** on main; verified 2026-10-31) | no | S | 14 |
 | D4.8 | `P_SERIES_CAP`, `14_000`, `w + 256`, guard bits, `stop_at` | `core/certified.rs` | certified mathematics | Low/Medium | term counts metered by `Budget`; guards per operation | yes | M/L | 12 |
 
 Paths in the table are under `src/`; `mycelium-server/` is
@@ -2881,6 +2881,13 @@ constant whose name would mislead).
 ---
 
 ### D4.7 `0..10`, `>= 10` in `connection_chart` — the palette
+
+**Status.** **Built** on main, verified 2026-10-31: `connection_chart`
+sizes its image and its walk by `element::PALETTE` and refuses a hue at or
+past it before any write (`stalk/chart.rs`), no literal `10` remains, and
+`transducer::stalk::tests::chart::connection_chart_refuses_hue_past_palette`
+passes. `PALETTE` is tagged EXTERNAL (the ARC-AGI task format's colours
+0–9) by the numbers gate. The text below is the derivation as specified.
 
 **Site.** `src/transducer/stalk/chart.rs:404–421`:
 
