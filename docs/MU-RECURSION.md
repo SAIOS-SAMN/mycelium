@@ -15751,6 +15751,47 @@ is superseded by U13, and U11 is not built. See
 
 Moved to [MU-CLIENT.md](MU-CLIENT.md); see its Rulings index.
 
+### 78.160 The presentation by holes: a mind's residue deconstructed by its court
+
+*Stated from its implementation (2026-10-31); the ruling's original text
+was not held in this document.*
+
+A motion a mind cannot say is a **residue**: pressure on its language. The
+mind asks its court to deconstruct the residue over the words the court
+has ruled, and learns from the answer. Three parts:
+
+- **P1 — the court's presentation.** A court files the word vertices of
+  every ruled form under the **holes** their whole Cl(4,1) motions wind
+  about: its **presentation** (`Kernel` field, filled beside the
+  generators in `ruled_admit` and `file_form`, emptied in `basis_remove`
+  and `unfile_form`, re-derived at a restore by `refill_presentation`).
+  A mind's residue arrives as a sub-kind of `ACT_FETCH`
+  (`anastome/dialogue/present.rs`). The court reads the motion against
+  its presentation on the hold's stroke (`Kernel::present`,
+  `server/cognition/court/present.rs`) and answers with the generators,
+  each `(form, vertex, exponent)`, whose powers compose to the motion
+  exactly, and teaches each cited form the asker lacks, within the
+  frame's body budget and while the asker's balance pays for it. A motion
+  whose coordinates do not read is answered **unread**, by name. The
+  court's readings count the asks, the unread, the generators cited, the
+  exact compositions, the words taught and the learners too short to be
+  taught (`observe/acts.rs`).
+- **P2 — the mind asks.** Each word vertex of a form the mind extracted
+  whose whole motion no held word cites is a residue, and the mind asks
+  its court (`client/sdk/entity/present.rs`). The answers are kept by the
+  motion's canonical key (`presentation::motion_key`): volatile, never
+  persisted; their bound beside the genome's is owed.
+- **P3 — the answer read.** What a court answered a mind for a motion is
+  read back through the crystal (`Crystal::presented`;
+  `transducer/family/mod.rs`): the generators and exponents, or `None`
+  where no court has answered or for a crystal that asks no court.
+
+The mind's own **vocabulary** files every word it takes in by the holes
+its word vertices' whole motions wind about (`learn_form`), filed where it
+is admitted and unfiled where it retires: the language a motion is
+deconstructed over with no court asked. It is derived, never persisted
+(`client/sdk/types.rs`; MU-CLIENT §4.9).
+
 ### 78.161 Chatter: minds speak their dialect to each other, and μ is distributed by union
 
 Clients speak to each other in their dialects and share their perspective

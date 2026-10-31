@@ -55,10 +55,11 @@ such change is named here.
     COGNITION, CONCORDANCE, MU-LEXICON, XSEPTUM, MU-ECONOMY, EQUATIONS,
     the README, the root documents, the new specifications and four
     proposals corrected.
-  - Known gaps, recorded rather than invented: ruling 78.160 ("the
-    presentation by holes") is cited by source comments but has no text in
-    the specification; several test names in MU-RECURSION's binding tables
-    (chapters 39 and 42) no longer match functions in the tree.
+  - Ruling 78.160 ("the presentation by holes"), cited by source comments
+    but missing from the specification, is now stated in MU-RECURSION
+    chapter 78 from its implementation. Test names in MU-RECURSION's
+    binding tables (chapters 39 and 42) are brought to the tree with the
+    test-naming change.
 - Documentation audit removals: `docs/MU-RECURSION-TASKS.md`
   (the development fleet's task ledger; ROADMAP.md is the one plan of
   work and governs), `docs/enumeration-audit.md` (paths from a pre-split
