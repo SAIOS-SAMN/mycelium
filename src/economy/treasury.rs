@@ -162,10 +162,6 @@ impl Arm {
     }
 }
 
-/// Default operator bond when none is chosen — one unit on every lane (the
-/// count 1, the rational 1/1).
-pub const UNIT_BOND: [u64; 4] = [1, 1, 1, 1];
-
 #[derive(Debug, Clone)]
 pub struct Treasury {
     pub(crate) entries: Vec<Entry>,

@@ -10,7 +10,8 @@ use crate::economy::*;
 #[test]
 fn supply_sums_minted_deflations() {
     let mut t = Treasury::new();
-    t.enroll([1; 32], UNIT_BOND, at(0, [0; 32]));
+    let bond = [1; 4]; // a stake on every lane
+    t.enroll([1; 32], bond, at(0, [0; 32]));
     let d1 = [4u64, 2, 0, 2];
     let d2 = [0u64, 4, 6, 2];
     t.escrow_award(&word([8; 32]), vec![[1; 32], [2; 32]], d1, at(1, [1; 32]));
@@ -52,7 +53,8 @@ fn slash_debits_bond_and_mints_nothing() {
 #[test]
 fn treasury_round_trips_bonds_stakes_and_entries() {
     let mut t = Treasury::new();
-    t.enroll([3; 32], UNIT_BOND, at(0, [4; 32]));
+    let bond = [1; 4]; // a bond on every lane, to carry across the tries
+    t.enroll([3; 32], bond, at(0, [4; 32]));
     t.settle_subsidy([3; 32], [0, 0, 5, 0], at(1, [4; 32]));
     t.settle_recall([3; 32], &[0, 0, 3, 0], &[0; 4], at(2, [4; 32]));
     let back = super::round_trip(&t).expect("the treasury round-trips");

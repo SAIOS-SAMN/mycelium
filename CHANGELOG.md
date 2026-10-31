@@ -56,6 +56,8 @@ Holding the modes themselves (78.162) remains the next step.
   `1 + y_l` in raw reserve units, which priced the host's calibration. The
   map fee `g·p`, the retrieval `receipts·p_H` and the founding grant
   `kinds·p` are exact. `Court::read_price` returns a `Mu`.
+- **D2.4**: `economy::UNIT_BOND` is deleted; nothing in production read
+  it, and each test states its own bond.
 
 ### Layout changes
 - **Ledger and snapshot**: every ledger row's μ⃗, every award, and the

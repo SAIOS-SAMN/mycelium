@@ -17,7 +17,9 @@ fn germ() -> Element {
 #[test]
 fn settle_use_pays_novelty_on_use_not_install() {
     let mut t = Treasury::new();
-    t.enroll([1; 32], UNIT_BOND, at(0, [0; 32])); // genesis: the bond must exist
+    // The bond must exist: the smallest vector nonzero on every lane.
+    let bond = [1; 4];
+    t.enroll([1; 32], bond, at(0, [0; 32]));
     let g = germ();
     let anchor: Anchor = at(3, [7; 32]);
     assert!(magnitude(&g).iter().any(|&m| m >= 1), "a germinated pattern has cost on the lanes it moves");
@@ -42,7 +44,9 @@ fn settle_use_pays_novelty_on_use_not_install() {
 #[test]
 fn settle_consilience_settles_with_torse_as_vectors() {
     let mut t = Treasury::new();
-    t.enroll([1; 32], UNIT_BOND, at(0, [0; 32])); // capitalize before settling
+    // Capitalized before settling: the smallest vector nonzero on every lane.
+    let bond = [1; 4];
+    t.enroll([1; 32], bond, at(0, [0; 32]));
     let anchor: Anchor = at(9, [1; 32]);
     t.settle_consilience(&[[1; 32], [2; 32]], [0, 0, 5, 0], anchor);
     let half = Mu::counts([0, 0, 5, 0]).part(2).expect("halves");
