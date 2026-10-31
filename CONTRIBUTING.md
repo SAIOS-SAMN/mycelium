@@ -63,7 +63,11 @@ essentials:
 - Splits are move-only commits.
 
 **Tests**
-- A test is a claim, named in plain words, and proved by the algebra:
+- A test is named `<unit>_<behaviour>`: the function or type under test,
+  then what it does or refuses, in a few words with no articles (for
+  example `pay_lease_pays_each_job_once`). Its claim, in plain sentences,
+  is its `///` doc comment (MU-STANDARDS 3.1).
+- A test is a claim proved by the algebra:
   - a refusal by name,
   - a fixed locus,
   - a replay,

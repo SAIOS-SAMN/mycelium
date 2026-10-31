@@ -155,11 +155,27 @@ a scalar ([ANTI_FLATTENING_LAW.md](ANTI_FLATTENING_LAW.md)).
 
 ## 3. Tests
 
-3.1 **A test is a claim.** Its name is the claim in plain words, one claim
-per test: `a_versor_and_its_negation_are_one_vertex_and_two_addresses`,
-`the_book_has_no_order`. Subject, verb, object; no `test_` prefix, no
-`_works`, `_ok`, `_basic`, `_simple`, `_case1`. A test named in
-MU-RECURSION chapter 39 is named exactly as that chapter names it.
+3.1 **A test is a claim; its name names the unit and the behaviour.** One
+claim per test. The name is `<unit>_<behaviour>`:
+- **unit**: the function, type or act under test, spelled as the code
+  spells it (`pay_lease`, `signed_prefix`, `learn_form`, `noise_home`);
+- **behaviour**: a short verb phrase, what the unit does or refuses and
+  under which condition, in at most about six words.
+
+No articles (`a`, `an`, `the`), no narrative, no internal row ids, no
+first- or second-person words, no `test_` prefix, no `_works`, `_ok`,
+`_basic`, `_simple`, `_case1`. The module path supplies the area
+(`court::admission::tests::receipts::…`), so a name does not repeat it.
+The full claim, in plain sentences, is the test's `///` doc comment.
+
+| Name | |
+|---|---|
+| `pay_lease_pays_each_job_once` | names the unit and its behaviour |
+| `signed_prefix_round_trips_and_refuses_extra_bytes` | the round trip and the refusal |
+| `a_lease_pays_its_provider_for_each_verified_job_once` | not accepted: a sentence; the claim belongs in the doc comment |
+
+A test cited in MU-RECURSION is cited by its current name; a rename
+updates every citation in the same commit.
 
 3.2 **Proved by the algebra.** A test asserts a law, a theorem or an
 algebraic identity on typed values the engine computes, by one of:
