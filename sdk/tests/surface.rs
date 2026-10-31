@@ -50,6 +50,9 @@ use mycelium_sdk::task::SOLVE_UNREAD as _;
 
 // rule
 use mycelium_sdk::rule::extract_rule as _;
+use mycelium_sdk::rule::extraction_spend as _;
+use mycelium_sdk::rule::perceive_family as _;
+use mycelium_sdk::rule::Frames as _;
 use mycelium_sdk::rule::mint_sentence_why as _;
 use mycelium_sdk::rule::sentence as _;
 use mycelium_sdk::rule::speak_rule as _;

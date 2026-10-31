@@ -30,6 +30,13 @@ pub use mycelium::sdk::rule::{
 /// Read a rule off a family's train pairs, under a budget.
 pub use mycelium::transducer::family::extract_rule;
 
+/// Perceive a family's train pairs once: the frames an extraction reads.
+pub use mycelium::transducer::family::{perceive_family, Frames};
+
+/// The stroke an extraction needs, read off the family and its frames (the
+/// budget is sized by the object, never by a chosen number; 78.111).
+pub use mycelium::transducer::family::extraction_spend;
+
 /// Mint a rule as the element the court replays; the refusal named.
 pub use mycelium::transducer::family::mint_sentence_why;
 
