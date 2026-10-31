@@ -114,6 +114,11 @@ such change is named here.
   replace the decoders' `16` and `32`; a frame of nesting opcodes is
   refused on a 2 MiB thread, and every walker of a decoded tree is bounded
   with it. `NESTING` leaves the open-physics register.
+- **The door's pool split is named open** (D4.5): the halving of the
+  host's cores between readers and workers is the registered
+  `POOL_DIVISOR`, open until a worker act's off-lock strokes are metered;
+  the cores are read through the boot's calibration, never defaulted to
+  one.
 
 ### SDK
 - `mycelium_sdk::rule` gains `perceive_family`, `Frames` and

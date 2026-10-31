@@ -7,6 +7,13 @@
 #[global_allocator]
 static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
+/// THE SHARE OF THE HOST'S CORES EACH OF THE DOOR'S POOLS (readers,
+/// workers) TAKES, as a divisor (MU-DERIVATIONS D4.5): open until the
+/// off-lock strokes of a worker's act are metered beside the strokes under
+/// the court lock.
+/// REGISTERED: POOL_DIVISOR
+const POOL_DIVISOR: usize = 2;
+
 mod admission;
 mod backfill;
 mod console;
@@ -705,10 +712,13 @@ fn main() {
     // worker thread over a bounded channel, so the accept loop never blocks
     // behind deep projection. The bound is the machine's parallelism; a full
     // queue drops the send — speculation is optional, service is not.
-    let (synth_tx, synth_rx) = std::sync::mpsc::sync_channel::<mycelium::synthesis::Deliberation>(
-        // A host that does not say how many cores it has is one core.
-        std::thread::available_parallelism().map_or(1, |n| n.get()),
-    );
+    // The host's cores, as the boot's calibration read them (D2.6): a host
+    // that does not say was refused at boot, never run on one core.
+    let Some(cores) = mycelium::physics::cores_of(std::thread::available_parallelism()).ok().and_then(|n| usize::try_from(n.get()).ok()) else {
+        eprintln!("mycelium-server: the host no longer says how many cores it has (Uncalibrated::Cores)");
+        std::process::exit(2)
+    };
+    let (synth_tx, synth_rx) = std::sync::mpsc::sync_channel::<mycelium::synthesis::Deliberation>(cores);
     {
         let court = Arc::clone(&court);
         let tu = height;
@@ -754,8 +764,10 @@ fn main() {
     // over the language snapshot with no lock held — so the listener only
     // accepts and dispatches. Sized by the machine's parallelism; a full
     // pool defers the demand (the honest "come back", which clients retry).
-    // A host that does not say how many cores it has is one core.
-    let cores = std::thread::available_parallelism().map_or(1, |n| n.get());
+    // D4.5 — each pool's share of the cores is REGISTERED, not derived: the
+    // split `W = 1 + ⌈off/under⌉` reads the off-lock strokes of a worker's
+    // act, which no reading meters yet.
+    let pool = (cores / POOL_DIVISOR).max(1);
     let (reflex_tx, reflex_rx) = std::sync::mpsc::sync_channel::<ReflexJob>(cores);
     let reflex_rx = Arc::new(Mutex::new(reflex_rx));
     // 78.146 — the seat relay on its own lock, taken once the court is
@@ -827,7 +839,7 @@ fn main() {
     // honest "come back"), as a full reflex queue did.
     let (work_tx, work_rx) = std::sync::mpsc::sync_channel::<(TcpStream, Frame)>(cores);
     let work_rx = Arc::new(Mutex::new(work_rx));
-    for _ in 0..(cores / 2).max(1) {
+    for _ in 0..pool {
         let rx = Arc::clone(&reflex_rx);
         let door = door.clone();
         let work_tx = work_tx.clone();
@@ -870,7 +882,7 @@ fn main() {
             }
         });
     }
-    for _ in 0..(cores / 2).max(1) {
+    for _ in 0..pool {
         let rx = Arc::clone(&work_rx);
         let door = door.clone();
         let served = Arc::clone(&served);

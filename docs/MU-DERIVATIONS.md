@@ -145,7 +145,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 | D4.2 | `take(32)` (evidence reply) | `mycelium-server/door.rs:125` | protocol size | Medium | fill to the frame budget by `σ(e)` (**Built** 2026-10-31; the cursor, O1, not built) | yes | S/M | 5 |
 | D4.3 | `h > 1024 \|\| w > 1024` | `anastome/dialogue/carrier.rs:106` | grid admission, memory | Medium | the bytes the tape carries; degenerate shapes refused (**Built** 2026-10-31; `0 × 0` admitted) | yes | S | 14 |
 | D4.4 | `NESTING = 32`, `depth > 16` | `sentence/form/clause.rs:273`, `anchor/codec.rs:70` | stack safety | High/Medium | the producer's depth, else iteration (**Built** 2026-10-31: (iii), both producers' depths closed forms) | yes | M/L | 14 |
-| D4.5 | `sync_channel(cores)`, `(cores/2).max(1)` | `mycelium-server/main.rs:751–902` | door liveness | Medium | `W = 1 + ⌈off/under⌉` from the lock book | yes | M | 5 |
+| D4.5 | `sync_channel(cores)`, `(cores/2).max(1)` | `mycelium-server/main.rs:751–902` | door liveness | Medium | `W = 1 + ⌈off/under⌉` from the lock book (**REGISTERED** 2026-10-31 as `POOL_DIVISOR`: the off-lock strokes are unmetered) | yes | M | 5 |
 | D4.6 | `checked_sub(64)` | nine page sites | protocol size | Medium | each reply's own header length `H_kind` | no | S | 5 |
 | D4.7 | `0..10`, `>= 10` | `transducer/stalk/chart.rs:404–421` | cognition; an abort | High | `element::carrier::PALETTE`, guarded | no | S | 14 |
 | D4.8 | `P_SERIES_CAP`, `14_000`, `w + 256`, guard bits, `stop_at` | `core/certified.rs` | certified mathematics | Low/Medium | term counts metered by `Budget`; guards per operation | yes | M/L | 12 |
@@ -2708,6 +2708,18 @@ the process, a court stopped); Medium as a reading bound.
 ---
 
 ### D4.5 Server pool: `sync_channel(cores)`, `(cores/2).max(1)` readers and workers
+
+**Status.** **Registered**, not derived (2026-10-31, the live-readings
+ruling: "never invent a value"). The reading O1 names — strokes of a
+worker's act off the court lock against those under it — is not metered by
+anything in the tree, and metering it is an instrumentation phase of its
+own (MU-STANDARDS 8.1) whose soak reading then decides `W`. Until then the
+halving is lifted into `POOL_DIVISOR` in `mycelium-server/main.rs`, tagged
+`REGISTERED` and entered in `OPEN_PHYSICS` with this derivation; the
+cores the pools share are read through the boot's calibration
+(`physics::cores_of`, D2.6), never defaulted to one. No test claims the
+split (a census of a chosen divisor proves nothing). The text below is the
+derivation as specified.
 
 **Site.** `src/bin/mycelium-server/main.rs:751–752, 821–823, 866, 902`:
 

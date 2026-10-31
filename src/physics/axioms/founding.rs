@@ -109,7 +109,18 @@ const SOAK_STROKE: &str = "Open: an instrument's stroke is the need of what it r
 /// UNDEFINED PHYSICS, NAMED: each number the tree still declares where a
 /// reading belongs, with what it decides, the sections that govern it and
 /// what will derive it (MU-DERIVATIONS D1.4).
-pub const OPEN_PHYSICS: [OpenNumber; 17] = [
+pub const OPEN_PHYSICS: [OpenNumber; 18] = [
+    OpenNumber {
+        name: "POOL_DIVISOR",
+        value: "2",
+        site: "src/bin/mycelium-server/main.rs::POOL_DIVISOR",
+        governs: Governs::Liveness,
+        doc: "MU-DERIVATIONS D4.5",
+        derivation: "Open (D4.5 O1): the workers W = 1 + ⌈off/under⌉ (strokes of a worker's act off the court lock over those \
+                     under it, exact over ℚ, ceiled to threads), the readers the cores less W and the court thread, each \
+                     queue W deep; derived once the off-lock strokes are metered beside `physics::spent_here`",
+        kind: OpenKind::Engineering,
+    },
     OpenNumber {
         name: "THROAT_GRID",
         value: "64",
