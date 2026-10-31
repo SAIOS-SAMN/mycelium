@@ -69,7 +69,7 @@ fn curved(r: (u64, u64)) -> Geometry {
     Geometry::Curved(r)
 }
 
-/// A flat torus of periods 30 and 20 (its shortest 20), netstratum's L1.
+/// A flat torus of periods 30 and 20 (its shortest 20), in L1.
 fn torus() -> Geometry {
     Geometry::Torus { periods: vec![(30, 1), (20, 1)], metric: Metric::L1 }
 }
@@ -125,7 +125,7 @@ fn state_records_geometry_and_basket_once() {
     // The basket gates conversions at the reserve.
     let out = ConvertOut { tier: verifying(&reserve(4)), holder: [7; 32], identity: [8; 32], g: 4, rate: [(1, 2), (0, 1), (0, 1), (0, 1)], nonce: [1; 32] };
     let convert = |k: &mut Court, nonce: u8| k.handoff(&Handoff::ConvertOut(Box::new(ConvertOut { nonce: [nonce; 32], ..out.clone() })).sign(&reserve(4)));
-    assert_eq!(convert(&mut k, 1), Handed::Refused(HandoffRefusal::NoBasket), "the reserve unit is the ancients' basket");
+    assert_eq!(convert(&mut k, 1), Handed::Refused(HandoffRefusal::NoBasket), "the reserve unit is the reserve's basket");
     for bad in [Vec::new(), vec![(8, (3, 1)), (1, (2, 1))], vec![(1, (0, 1))]] {
         assert_eq!(state(&mut k, 4, Stated::Basket(bad), &reserve(4)), Founded::Malformed);
     }
@@ -155,7 +155,7 @@ fn record_origin_child_through_core_tube() {
     assert_eq!(k.record_origin(&Origin { version: 1, ..origin(4, Some(root())) }.sign(&domain(4))), Founded::Malformed, "version and fields agree");
     assert!(matches!(k.record_origin(&origin(4, Some(root())).sign(&domain(4))), Founded::Originated { .. }));
     let by_line = Mouth { from_tier: verifying(&line(4)), ..core_tube((2, 1)) };
-    assert_eq!(k.handoff(&Handoff::Mouth(Box::new(by_line)).sign(&line(4))), Handed::Refused(HandoffRefusal::NotReserve), "only the ancients offer a core");
+    assert_eq!(k.handoff(&Handoff::Mouth(Box::new(by_line)).sign(&line(4))), Handed::Refused(HandoffRefusal::NotReserve), "only the reserve offers a core");
     let bent = Mouth { tube: Some(Tube { from_space: curved((3, 1)), ..core_tube((2, 1)).tube.expect("a tube") }), ..core_tube((2, 1)) };
     assert_eq!(k.handoff(&Handoff::Mouth(Box::new(bent)).sign(&reserve(4))), Handed::Refused(HandoffRefusal::NoGeometry));
     let tube = open(&mut k, core_tube((2, 1)));
@@ -236,14 +236,14 @@ fn tube_of_reads_torus_face_flat_and_bounded() {
 /// THE COURT AUTHENTICATES KEYS, NEVER TIERS (ruled 2026-10-14: any holder
 /// of a key may solve): the court READS which keys are a founded
 /// domain's inner seats — tiers it registered that are not its sitting
-/// reserve, the ancients' house — and refuses none of them. A key no domain
+/// reserve, the house — and refuses none of them. A key no domain
 /// names is no inner seat; the house is none; a line is one until it is the
 /// sitting reserve; a hand-on pending its anchor changes nothing yet.
 #[test]
 fn inner_seat_reads_domain_lines_refusing_none() {
     let mut k = founded();
     assert!(!k.inner_seat(&[0xab; 32]), "a key no domain names is no inner seat");
-    assert!(!k.inner_seat(&verifying(&reserve(4))) && k.is_ancients_house(&verifying(&reserve(4))), "the ancients' house is none");
+    assert!(!k.inner_seat(&verifying(&reserve(4))) && k.is_sitting_reserve(&verifying(&reserve(4))), "the house is none");
     assert!(k.inner_seat(&verifying(&line(4))), "a line of the domain is one: read, not refused");
     // A hand-on is PENDING until its anchor passes: the sitting reserve stays
     // the house, and the named tier is still an inner seat.

@@ -311,7 +311,7 @@ impl Court {
 
     /// `append_step` with the named word's chart already read where the
     /// caller holds it: the cite reuses it instead of perceiving the word
-    /// again under the kernel.
+    /// again under the court.
     pub(super) fn append_step_charted(
         &mut self,
         kind: ActKind,
@@ -436,7 +436,7 @@ impl Court {
         let Some(domain) = self.tier_domain.get(&f.fold.tier).copied() else {
             return Uplinked::Unbound;
         };
-        // 78.138 — ONLY THE ANCIENTS UPLINK (the Concordance, 4.1): the
+        // 78.138 — ONLY THE RESERVE UPLINKS (the Concordance, 4.1): the
         // folding tier is its domain's reserve; a line's fold is carried in
         // its reserve's, and lines never touch the court.
         if self.reserve_of(&domain) != Some(f.fold.tier) {

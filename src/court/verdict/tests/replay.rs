@@ -1,8 +1,12 @@
 // 23, 42 — replay: a clean word replays, a false speech is named, and a
 // form whose rank or certificate does not re-derive is refused.
 
+use crate::anastome::dialogue;
 use crate::network::nerve::coord;
-use crate::transducer::element::Element;
+use crate::network::nerve::Keyed;
+use crate::transducer::element::{self, Element};
+use crate::transducer::sentence::{Form, Vertex};
+use crate::transducer::stalk::{self, Stalks};
 use crate::transducer::sentence::tests::common::{only_word, stand_with_star, FRAME};
 use crate::transducer::sentence::{Closes, ToralPeriod};
 use crate::verdict::*;

@@ -22,8 +22,4 @@ pub(crate) use trie::*;
 pub use walks::*;
 
 #[cfg(test)]
-mod tests {
-    mod atlas;
-    mod ondisk;
-    mod seek;
-}
+mod tests;

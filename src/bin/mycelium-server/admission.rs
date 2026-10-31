@@ -13,8 +13,8 @@ use std::sync::Mutex;
 
 /// THIS HYPHA'S OWN COVER AND ROOM onto the mesh, read off the published
 /// reading (78.153b): its charts and its room as the court stroke last
-/// published them, never the kernel — `lane_room`'s credit walk and the
-/// cover trie's walk ran under the kernel on every exchange cycle and every
+/// published them, never the court — `lane_room`'s credit walk and the
+/// cover trie's walk ran under the court on every exchange cycle and every
 /// digest asked. The room it admitted, `[0; 4]` where none reads.
 pub(crate) fn rebuild_own_cover(read: &Published, mesh: &Mesh) -> [u64; 4] {
     // A room that cannot be read is a broken count, and this hypha admits
@@ -61,16 +61,16 @@ pub(crate) fn rebuild_own_cover(read: &Published, mesh: &Mesh) -> [u64; 4] {
 /// does not make. `None` too when the prefix does not fit the wire
 /// (`SignedPrefix::fits`): a position that cannot be framed is not signed.
 pub(crate) fn sign_position(
-    kernel: &Mutex<Court>,
+    court: &Mutex<Court>,
     mesh: &Mesh,
     chart: &mycelium::transducer::stalk::Invariant,
     payload: &[u8],
 ) -> Option<dialogue::ReceiptSection> {
     let (genesis, epoch) = mesh.origin.lock().ok().and_then(|o| *o)?;
-    // Read on the kernel, constant in what it holds (one node unpacked):
+    // Read on the court, constant in what it holds (one node unpacked):
     // a signed position is the court's head AT SIGNING, so it stays off the
     // shelf, whose head may stand one stroke behind (78.153b).
-    let head = crate::held::held!(kernel).ok()?.run(|k, _| k.chain().head())?;
+    let head = crate::held::held!(court).ok()?.run(|k, _| k.chain().head())?;
     let prefix = mycelium::court::admission::SignedPrefix {
         genesis,
         epoch,
@@ -91,13 +91,13 @@ pub(crate) fn sign_position(
     Some(dialogue::ReceiptSection { prefix, sig, receipt: head })
 }
 
-pub(crate) fn sign_cover_digest(kernel: &Mutex<Court>, shelf: &crate::published::Shelf, mesh: &Mesh) -> Vec<u8> {
+pub(crate) fn sign_cover_digest(court: &Mutex<Court>, shelf: &crate::published::Shelf, mesh: &Mesh) -> Vec<u8> {
     // 78.153b — the cover, the room and the ruled root off the published
-    // reading; the keeper tick (78.152 TU-1) alone is read on the kernel.
+    // reading; the keeper tick (78.152 TU-1) alone is read on the court.
     let read = shelf.take();
     let room = rebuild_own_cover(&read, mesh);
     let ruled_root = read.ruled_root();
-    let tick = match crate::held::held!(kernel) {
+    let tick = match crate::held::held!(court) {
         Ok(mut h) => h.run(|k, _| k.keeper_tick()),
         Err(_) => return Vec::new(),
     };
@@ -135,7 +135,7 @@ pub(crate) fn sign_cover_digest(kernel: &Mutex<Court>, shelf: &crate::published:
     // peer can run 47.2 and cite this receipt as a parent of its next step.
     // A node with no genesis sends none: it has no origin to claim. The
     // digest is a root over the whole cover, so its prefix names no chart.
-    if let Some(bytes) = sign_position(kernel, mesh, &mycelium::transducer::stalk::Invariant::default(), &ruled_root)
+    if let Some(bytes) = sign_position(court, mesh, &mycelium::transducer::stalk::Invariant::default(), &ruled_root)
         .and_then(|sec| dialogue::encode_receipt_section(&sec.prefix, &sec.sig, &sec.receipt))
     {
         out.extend(bytes);
@@ -183,7 +183,7 @@ pub(crate) enum NoAdmission {
 /// given a key, so no call site can satisfy admission by verifying bytes
 /// and skipping the chain.
 pub(crate) fn admit_peer_receipt(
-    kernel: &Mutex<Court>,
+    court: &Mutex<Court>,
     mesh: &Mesh,
     body: &[u8],
 ) -> Result<mycelium::court::admission::Admitted, NoAdmission> {
@@ -223,7 +223,7 @@ pub(crate) fn admit_peer_receipt(
         .ok()
         .and_then(|o| *o)
         .ok_or(NoAdmission::NoOrigin)?;
-    let mut h = crate::held::held!(kernel).map_err(|_| NoAdmission::Malformed)?;
+    let mut h = crate::held::held!(court).map_err(|_| NoAdmission::Malformed)?;
     // OWED (78.153b): `recall_cited` reads a whole era per missing parent
     // (the lock audit, row 15), unmetered.
     Ok(h.run(|k, _| k.admit_receipt(origin, verified, &receipt)))

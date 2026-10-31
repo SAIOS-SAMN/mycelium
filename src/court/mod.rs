@@ -7,3 +7,6 @@ pub mod admission;
 pub mod convergence;
 pub mod identity;
 pub mod verdict;
+
+#[cfg(test)]
+mod tests;

@@ -1,4 +1,4 @@
-//! A CLOSED SPHERE'S POINTS (2026-10-22, proposed to netstratum and xylarium):
+//! A CLOSED SPHERE'S POINTS:
 //! the 3-sphere `S³` of `span(e₁, e₂, e₃, e₊)`, the vectors with `v² = +1`,
 //! its pole `e₊` — the mirror of the hyperboloid sheet (`v² = −1` about `e₋`,
 //! 54.7), whose motions are `Spin(4)`, the even versors fixing `e₋`.

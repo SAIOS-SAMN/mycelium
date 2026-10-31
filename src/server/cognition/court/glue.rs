@@ -689,7 +689,7 @@ impl Court {
     /// the stroke runs out the walk ends, and the reading says how many
     /// complexes it read of how many stand — a census of those, never one
     /// standing for the whole nerve. It walked every complex under the
-    /// kernel after each persist on a stroke of a default reserve (the lock
+    /// court after each persist on a stroke of a default reserve (the lock
     /// audit, row 13).
     pub fn nerve_census(&self, reads: &mut crate::physics::Budget) -> (Vec<crate::transducer::cech::DegreeCensus>, usize) {
         let mut out: Vec<crate::transducer::cech::DegreeCensus> = Vec::new();

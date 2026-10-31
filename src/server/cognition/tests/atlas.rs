@@ -396,7 +396,7 @@ fn torus_for_4(k: &mut Court) {
     assert!(matches!(k.state(&Statement { domain: domain(4), stated: Stated::Geometry(space) }.sign(&reserve(4))), Founded::Stated { .. }));
 }
 
-/// A local throat of domain 4 by the progenitor line `keeper`, its ends
+/// A local throat of domain 4 by the builder line `keeper`, its ends
 /// slid to `(32, −17)` and `(5, 4)`.
 fn local(keeper: [u8; 32], freshness: u64) -> MapRecord {
     MapRecord::LocalThroat { throat: [42; 32], keeper, frames: (slide(32, -17), slide(5, 4)), freshness }

@@ -92,7 +92,7 @@ impl Court {
     /// The listing still tensions the book and admits its chart, and its
     /// receipt names the hypha as the actor.
     /// The corpus's listing with its chart already read, outside the
-    /// kernel (`market::prepare_intake`): the lock commits, it never reads.
+    /// court (`market::prepare_intake`): the lock commits, it never reads.
     pub(crate) fn book_list_charted(&mut self, residual: Element, chart: crate::transducer::stalk::Invariant) {
         let actor = self.identity;
         self.list_charted(residual, chart, actor, None);

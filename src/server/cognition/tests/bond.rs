@@ -20,7 +20,7 @@ fn verifying(k: &SigningKey) -> [u8; 32] {
 fn domain() -> SigningKey {
     key(4)
 }
-/// The reserve (the ancients), and the tier it backs.
+/// The reserve, and the tier it backs.
 fn reserve() -> SigningKey {
     key(21)
 }

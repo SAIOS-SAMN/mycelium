@@ -3,8 +3,8 @@
 // name; 78.127 — or its reserve tier designated (`Court::designate_reserve`).
 // 78.154 — or a universe's LEDGER entry, its MAP, a TRAVERSE, and the
 // reads of each: each act handed the door's quorum-final point (78.152 TU-7), read off
-// the shelf outside the kernel; READ-LEDGER served off the published reading
-// (78.151), never the kernel.
+// the shelf outside the court; READ-LEDGER served off the published reading
+// (78.151), never the court.
 
 use crate::door::Door;
 use crate::transport::answer;
@@ -29,9 +29,9 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     if serve_ledger(stream, frame, door) {
         return;
     }
-    // The final point is read off the shelf before the kernel is taken.
+    // The final point is read off the shelf before the court is taken.
     let fin = crate::tshelf::final_point();
-    let body = match crate::held::held!(door.kernel) {
+    let body = match crate::held::held!(door.court) {
         // 78.153b — on the hold's stroke: a LEDGER entry's ladder pruning
         // spends it; MAP and TRAVERSE read what the frame carries; READ-MAP
         // walks one universe's records (a fibre), owed to the shelf.
@@ -61,7 +61,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         Err(_) => return,
     };
     // 78.137 — acknowledged only once durable.
-    if !crate::persist::durable(&door.kernel, &door.state_path) {
+    if !crate::persist::durable(&door.court, &door.state_path) {
         return;
     }
     answer(stream, Frame { lane: frame.lane, body });

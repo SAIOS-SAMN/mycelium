@@ -3,9 +3,9 @@
 // the observed dimensional capacity). The organ `source`
 // states in `Cl(4,1)`, read on the conformal model of ℚⁿ for whatever `n` the
 // caller observed — S⁶⁰, S³⁶⁰ — and its outflow answered plane by plane, so a
-// flow staged on many planes gives each its own founding phase (xylarium and
-// netstratum: on two planes the founding's capture splits kinds by parity, and
-// no world forms).
+// flow staged on many planes gives each its own founding phase (with one phase
+// shared on two planes, the founding's capture splits kinds by parity, and no
+// world forms).
 //
 //! EVERY OBJECT OF THE LAW IS OF GRADE ONE OR TWO: the pivot `P`, the geoid's
 //! vector `σ` and the velocity `v` are vectors; the lift `L`, its keeping part

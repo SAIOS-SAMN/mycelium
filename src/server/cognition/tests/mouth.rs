@@ -95,7 +95,7 @@ fn cargo(a: u8, b: u8, nonce: u8) -> Offer {
     }
 }
 
-/// THE BUILDERS ARE THE ANCIENTS, THE FRAMES REAL: a pair offered by a tier
+/// THE BUILDERS ARE THE RESERVES, THE FRAMES REAL: a pair offered by a tier
 /// that is not its domain's reserve, to a tier that is not the other's,
 /// within one domain, kept by a stranger, or with a zero frame — refused.
 #[test]
@@ -235,7 +235,7 @@ fn tube_of_reads_places_and_levels_on_curved_space() {
     assert!(to < from, "the flatter space's horizon sits at a lower level: the curvatures differ, not the builders");
 }
 
-/// THE PROGENITORS BUILD, THE ANCIENTS KEEP: a progenitor line offers a road
+/// THE LINES BUILD, THE RESERVE KEEPS: a builder line offers a road
 /// between two distinct places of its own domain, kept by its reserve and
 /// accepted by it, banking the throat from its own μ; matter crosses within
 /// the domain along it; and a line offers a tube to another domain, kept by
@@ -254,7 +254,7 @@ fn handoff_mouth_line_builds_road_reserve_keeps() {
     let id = road.citation();
     assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(road)).sign(&line)), Handed::Sealed { .. }), "a line offers a road");
     assert_eq!(k.treasury.balance_mu(&verifying(&line))[0], 1, "the builder banks the throat");
-    assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(4))), Handed::Sealed { state: State::Accepted, .. }), "its ancients accept");
+    assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(4))), Handed::Sealed { state: State::Accepted, .. }), "its reserve accepts");
     let within = Offer { from_tier: verifying(&line), to_tier: verifying(&reserve(4)), ..cargo(4, 4, 1) };
     assert!(matches!(k.handoff(&Handoff::Offer(Box::new(within.clone())).sign(&line)), Handed::Refused(HandoffRefusal::Unbound)), "no road, no handoff within");
     let along = Handoff::Traverse { offer: Box::new(within), mouth: id };

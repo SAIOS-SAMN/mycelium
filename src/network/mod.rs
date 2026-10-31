@@ -9,3 +9,6 @@ pub mod wire;
 pub mod noise;
 pub mod nerve;
 pub mod mesh;
+
+#[cfg(test)]
+mod tests;

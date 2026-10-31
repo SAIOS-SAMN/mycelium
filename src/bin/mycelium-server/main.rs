@@ -114,7 +114,7 @@ fn refuse_boot(tag: &str, what: &str) -> ! {
 /// has none and `load_or_migrate_hypha` re-saves a record it read under
 /// the old magic (X7) -- both are right at a boot and both would make
 /// this reading alter what it reports, so neither is used. The record is
-/// opened directly and the ledger is restored into a scratch kernel that
+/// opened directly and the ledger is restored into a scratch court that
 /// is dropped.
 ///
 /// Exit 0 where this home will boot, 3 where it will refuse -- distinct
@@ -430,14 +430,14 @@ fn main() {
     let height = mycelium::chronometry::Height::default();
     // I38: the hypha boots unfunded and unbonded; the corpus that registers
     // measures its cover and its own key is what stakes (rule 8). The
-    // fixture kernel funded `[0x11; 32]`, and every live ledger carried a
+    // fixture court funded `[0x11; 32]`, and every live ledger carried a
     // stake for a key the mesh record never named.
-    let kernel = Arc::new(Mutex::new(Court::boot()));
+    let court = Arc::new(Mutex::new(Court::boot()));
     // C6. `genesis` was written as [0u8; 32] and only ever printed, so the
     // boot line read `genesis 0000… epoch 2` on every node and said nothing.
     // 45.5: H_genesis is the CHAIN HASH OF THE MESH'S FIRST RECEIPT, written
     // once by the first hypha started on a fresh state. It is adopted here
-    // from this kernel's own chain the first time one exists, so the line is
+    // from this court's own chain the first time one exists, so the line is
     // a reading rather than a placeholder; a node that has admitted nothing
     // still has no genesis and says so. 47.2's REFUSE_ORIGIN check on it is
     // task 5.2 and is not claimed here.
@@ -447,7 +447,7 @@ fn main() {
     }
     genesis::announce(&mesh_rec, &tag);
     {
-        let k = Arc::clone(&kernel);
+        let k = Arc::clone(&court);
         let path = state_path.clone();
         // SIGINT, SIGTERM and SIGHUP alike (ctrlc's `termination`): systemd
         // stops and restarts a unit with SIGTERM, and a court stopped
@@ -475,14 +475,14 @@ fn main() {
     // them.
     {
         // Boot: one thread, before the door opens (bounded per hold).
-        let Ok(mut h) = crate::held::held!(kernel) else { refuse_boot(&tag, "kernel lock poisoned at the line") };
+        let Ok(mut h) = crate::held::held!(court) else { refuse_boot(&tag, "court lock poisoned at the line") };
         if let Err(why) = h.run(|k, _| k.bind_line(home.join("line")).and_then(|()| k.bind_eras(home.join("eras")))) {
             refuse_boot(&tag, &format!("{why}. `--check` on this home reports the same reading."));
         }
     }
     match std::fs::read(&state_path) {
         Ok(bytes) => {
-            let Ok(mut h) = crate::held::held!(kernel) else { refuse_boot(&tag, "kernel lock poisoned at restore") };
+            let Ok(mut h) = crate::held::held!(court) else { refuse_boot(&tag, "court lock poisoned at restore") };
             let (restored, basis, entries) = h.run(|k, _| (k.restore(&bytes), k.basis_len(), k.treasury_entry_count()));
             if !restored {
                 // A REFUSAL THAT NAMES THE ROAD. This named the fault and
@@ -534,7 +534,7 @@ fn main() {
     {
         let mut live: Vec<[u8; 32]> = genesis.hypha.iter().map(|(who, _)| *who).collect();
         live.extend(genesis.voice.iter().map(|(who, _)| *who));
-        let Ok(mut h) = crate::held::held!(kernel) else { refuse_boot(&tag, "kernel lock poisoned at genesis") };
+        let Ok(mut h) = crate::held::held!(court) else { refuse_boot(&tag, "court lock poisoned at genesis") };
         h.run(|k, _| {
         for (who, mu) in k.bind_live(&live) {
             eprintln!(
@@ -600,8 +600,8 @@ fn main() {
         r.insert(vk, addr.clone());
     }
     // 78.153b — the own cover is admitted off a published reading; at boot,
-    // before the door's shelf stands, one read of the kernel published here.
-    if let Some(boot) = crate::held::held!(kernel).ok().and_then(|mut h| h.run(|k, _| k.publish(None))) {
+    // before the door's shelf stands, one read of the court published here.
+    if let Some(boot) = crate::held::held!(court).ok().and_then(|mut h| h.run(|k, _| k.publish(None))) {
         rebuild_own_cover(&boot, &mesh);
     }
     for p in &join_peers {
@@ -624,7 +624,7 @@ fn main() {
     }
 
     let registry = Arc::new(Mutex::new(mycelium::registry::TaskRegistry::new()));
-    genesis::register_corpora(&home, &state_path, &kernel, &registry, &genesis, vk, &tag);
+    genesis::register_corpora(&home, &state_path, &court, &registry, &genesis, vk, &tag);
     let listener = match early_listener {
         Some(l) => l,
         None => match TcpListener::bind(&addr) {
@@ -647,10 +647,10 @@ fn main() {
         served: Keyed::new(),
     }));
     {
-        // Boot, before any other thread takes the kernel.
-        let seed = match crate::held::held!(kernel) {
+        // Boot, before any other thread takes the court.
+        let seed = match crate::held::held!(court) {
             Ok(mut h) => h.run(|k, _| k.syllabus_seed()),
-            Err(_) => refuse_boot(&tag, "kernel lock poisoned at syllabus seed"),
+            Err(_) => refuse_boot(&tag, "court lock poisoned at syllabus seed"),
         };
         let Ok(mut sy) = syllabus.lock() else { refuse_boot(&tag, "syllabus lock poisoned at seed") };
         // index: ruled strata, coarsest first
@@ -703,7 +703,7 @@ fn main() {
         std::thread::available_parallelism().map_or(1, |n| n.get()),
     );
     {
-        let kernel = Arc::clone(&kernel);
+        let court = Arc::clone(&court);
         let tu = height;
         let state_path = state_path.clone();
         std::thread::spawn(move || loop {
@@ -714,16 +714,16 @@ fn main() {
             {
                 match work {
                     mycelium::synthesis::Deliberation::Adopt(ratifier, word) => {
-                        // A poisoned kernel lock is no reading of the
+                        // A poisoned court lock is no reading of the
                         // volume; the two readings are taken or the line
                         // is not written.
                         let (Ok(before), Ok(())) =
-                            (crate::held::held!(kernel).map(|mut h| h.run(|k, _| k.volume())), Ok::<(), ()>(()))
+                            (crate::held::held!(court).map(|mut h| h.run(|k, _| k.volume())), Ok::<(), ()>(()))
                         else {
                             continue;
                         };
-                        let _ = mycelium::synthesis::adopt(&kernel, ratifier, &word);
-                        let Ok(after) = crate::held::held!(kernel).map(|mut h| h.run(|k, _| k.volume())) else {
+                        let _ = mycelium::synthesis::adopt(&court, ratifier, &word);
+                        let Ok(after) = crate::held::held!(court).map(|mut h| h.run(|k, _| k.volume())) else {
                             continue;
                         };
                         if after != before {
@@ -735,7 +735,7 @@ fn main() {
                                 ratifier[0],
                             );
                         }
-                        persist_if_due(&kernel, &state_path);
+                        persist_if_due(&court, &state_path);
                     }
                 }
             }
@@ -751,12 +751,12 @@ fn main() {
     let cores = std::thread::available_parallelism().map_or(1, |n| n.get());
     let (reflex_tx, reflex_rx) = std::sync::mpsc::sync_channel::<ReflexJob>(cores);
     let reflex_rx = Arc::new(Mutex::new(reflex_rx));
-    // 78.146 — the seat relay on its own lock, taken once the kernel is
-    // restored: a mind's exempt read is served without the kernel's lock.
+    // 78.146 — the seat relay on its own lock, taken once the court is
+    // restored: a mind's exempt read is served without the court's lock.
     // 78.151 — and the court's first published reading, which the door's
     // reads answer off until the court stroke publishes the next.
-    let Ok((seat_relay, first)) = crate::held::held!(kernel).map(|mut h| h.run(|k, _| (k.seat_relay(), k.publish(None)))) else {
-        eprintln!("the kernel's lock was poisoned before the door opened");
+    let Ok((seat_relay, first)) = crate::held::held!(court).map(|mut h| h.run(|k, _| (k.seat_relay(), k.publish(None)))) else {
+        eprintln!("the court's lock was poisoned before the door opened");
         return;
     };
     let Some(first) = first else {
@@ -768,7 +768,7 @@ fn main() {
     let door = Door {
         seat_relay,
         published: shelf.clone(),
-        kernel: Arc::clone(&kernel),
+        court: Arc::clone(&court),
         mesh: mesh.clone(),
         router: Arc::clone(&router),
         id,
@@ -782,7 +782,7 @@ fn main() {
         state_path: state_path.clone(),
     };
     Exchange {
-        kernel: Arc::clone(&kernel),
+        court: Arc::clone(&court),
         published: shelf,
         mesh: mesh.clone(),
         join: join_peers.clone(),
@@ -802,7 +802,7 @@ fn main() {
     // hypha, which is not a trace, it is a screen that hides every other
     // line the mesh writes -- the exchange's own lines were read as absent
     // when they were merely outnumbered a thousand to one. It also read
-    // `Instant::now()`, and a kernel reads no clock (law 9).
+    // `Instant::now()`, and a court reads no clock (law 9).
     //
     // The count speaks when it crosses a power of two: about twenty lines
     // per kind for the life of the process, dense where the behaviour is
@@ -811,10 +811,10 @@ fn main() {
         Arc::new(std::array::from_fn(|_| std::sync::atomic::AtomicU64::new(0)));
     // THE DOOR READS, THEN JUDGES (Phase 1 item 2, 2026-10-01). One pool
     // read each frame and judged it, so a query queued behind acts whose
-    // workers waited on the kernel: the console gave up at 0.6 s on a court
+    // workers waited on the court: the console gave up at 0.6 s on a court
     // whose stroke held the lock (c at 00:35:42 on 98fc7f8f, and a and c
     // through epoch 115). READERS take each connection off the listener's
-    // queue and read its one frame — they never touch the kernel — serving
+    // queue and read its one frame — they never touch the court — serving
     // an observation there and handing every other act, read, to the
     // WORKERS that judge it. A worker queue that is full defers the act (the
     // honest "come back"), as a full reflex queue did.
@@ -840,7 +840,7 @@ fn main() {
                 mycelium::observe::note_served(mycelium::anastome::dialogue::ACT_OBSERVE);
                 continue;
             }
-            // 78.151 — a read that takes no kernel is answered here.
+            // 78.151 — a read that takes no court is answered here.
             if judge::serve_published(&mut stream, &frame, &door) {
                 continue;
             }
@@ -889,14 +889,14 @@ fn main() {
     }
 
     // THE OBSERVER NEVER WAITS ON COGNITION — AT THE DOOR TOO. The observe
-    // judge reads the kernel only by `try_lock`, but a query never reached
-    // it: while every reflex worker waited on the kernel behind a court
+    // judge reads the court only by `try_lock`, but a query never reached
+    // it: while every reflex worker waited on the court behind a court
     // stroke, the listener deferred each connection before reading which
     // act it carried, and the console read "no reading" off hyphae b and c
     // for whole epochs (the 43-byte deferral, epoch 113). A full pool now
     // hands the connection to ONE overflow worker, which reads the frame:
     // an observation is served, every other act gets the deferral it got
-    // before. It takes no kernel lock, so it never queues behind cognition;
+    // before. It takes no court lock, so it never queues behind cognition;
     // it is one thread, so a flood spawns nothing. Full too, the listener
     // defers unread, as it did.
     let (overflow_tx, overflow_rx) = std::sync::mpsc::sync_channel::<ReflexJob>(cores);
@@ -911,7 +911,7 @@ fn main() {
                     mycelium::observe::note_served(mycelium::anastome::dialogue::ACT_OBSERVE);
                     continue;
                 }
-                // 78.151 — a read that takes no kernel is answered here.
+                // 78.151 — a read that takes no court is answered here.
                 if judge::serve_published(&mut stream, &frame, &door) {
                     continue;
                 }

@@ -328,7 +328,7 @@ pub fn decode_origin_reading(b: &[u8]) -> Option<Option<OriginReading>> {
 }
 
 /// 78.129 — A TIER'S BOND (as ruled): posted by the domain's
-/// RESERVE for one tier it backs — μ the ancients hold, escrowed under the
+/// RESERVE for one tier it backs — μ the reserve holds, escrowed under the
 /// tier's name — topped up by posting again (`mu: Some`), or WITHDRAWN
 /// (`mu: None`) once every fold of the tier is final. The tier that signed a
 /// lie is the one at stake: a falsified fold slashes half its bond.

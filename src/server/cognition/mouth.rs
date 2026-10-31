@@ -1,5 +1,5 @@
 // 78.128 — A WORMHOLE BETWEEN DOMAINS: a mouth pair built by two domains'
-// reserves (the ancients), the only way anything crosses between universes
+// reserves, the only way anything crosses between universes
 // with no shared space; kept and tolled by its builders; its loops read as
 // curvature (ruled 2026-10-07).
 //
@@ -404,7 +404,7 @@ impl Court {
     }
 
     /// 78.133 — A TARIFF'S RECIPIENTS: the keeper, and the tier keys its own
-    /// domain's genesis names (its progenitor lines) — never the traveller's
+    /// domain's genesis names (its builder lines) — never the traveller's
     /// domain, never a stranger.
     fn split_to_lines(&self, m: &Mouth, t: &crate::anastome::dialogue::handoff::Tariff) -> bool {
         let lines = self.tier_domain.get(&m.keeper).and_then(|d| self.domains.get(d));
@@ -572,9 +572,9 @@ impl Court {
                 }
                 let (dx, dy) = (self.tier_domain.get(&m.from_tier).copied(), self.tier_domain.get(&m.to_tier).copied());
                 let (Some(dx), Some(dy)) = (dx, dy) else { return refuse(R::Unbound) };
-                // 78.136 — THE PROGENITORS BUILD, THE ANCIENTS KEEP (the
-                // progenitor play, as ruled): the offerer is any tier of its
-                // domain — a progenitor LINE building a road, or the reserve;
+                // 78.136 — THE LINES BUILD, THE RESERVE KEEPS (as ruled):
+                // the offerer is any tier of its
+                // domain — a builder LINE building a road, or the reserve;
                 // the far end is accepted by its domain's reserve; and where a
                 // line builds, its own reserve keeps it. A reserve building
                 // across domains may name either reserve its keeper.
@@ -646,7 +646,7 @@ impl Court {
                     }
                 }
                 // 78.133 — a tariff well formed, no flat toll beside it, and
-                // its shares to the keeper and its progenitor lines only.
+                // its shares to the keeper and its builder lines only.
                 if let Some(t) = &m.tariff {
                     if let Err(why) = t.holds() {
                         return refuse(R::Untariffed(why));

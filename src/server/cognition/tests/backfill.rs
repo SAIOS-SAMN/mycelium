@@ -49,7 +49,7 @@ fn act(b: &mut crate::chronometry::ReceiptChain, n: u64) {
 /// stroke's budget ended short every time, the head re-admitted into
 /// another gap, no parent was ever cited, and the lag climbed 143, 215,
 /// 287, 359 — hypha c's 16 202 back-filled receipts and no parent, read in
-/// two kernels. With the aperture measured against the lag, every pass
+/// two courts. With the aperture measured against the lag, every pass
 /// reaches `K − 1` and cites the head.
 #[test]
 fn hear_cites_head_once_gap_closes() {

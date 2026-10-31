@@ -1477,7 +1477,7 @@ Sources: MU-ECONOMY §5.1, §8. Code:
 `src/economy/verify.rs::verification_share`,
 `src/server/cognition/court/verify.rs::Court::pay_verification`,
 `::release_verified`; `src/economy/lanes.rs::yield_surface`;
-`src/physics/mod.rs::reserve_max`.
+`src/physics/calibration.rs::reserve_max`.
 
 #### 6.14 The compute lease
 
@@ -1512,7 +1512,7 @@ The ratio is the vertex count of the sensor base's unit cell. The reserve
 ceiling is measured from the host, rounded to a whole number of strokes.
 
 Sources: MU-RECURSION 78.8, 45.7; MU-CLIENT §4.13. Code:
-`src/physics/mod.rs` (`STROKES_PER_RESERVE`, `RESERVE_FLOOR`,
+`src/physics/calibration.rs` (`STROKES_PER_RESERVE`, `RESERVE_FLOOR`,
 `reserve_max`, `spend_unit`, `regen_unit`, `aperture_cycle`).
 
 #### 7.2 Spend
@@ -1524,7 +1524,7 @@ cost_l = spend_unit  if the act moved lane l,  else 0      (drawn as one vector,
 A stroke that moved no lane draws nothing. A lane that cannot cover the
 draw refuses it by name and is charged what it still holds.
 
-Sources: MU-RECURSION 24.3, 78.73(1), PHY1. Code: `src/physics/mod.rs::Physics::spend`;
+Sources: MU-RECURSION 24.3, 78.73(1), PHY1. Code: `src/physics/stroke.rs::Physics::spend`;
 `src/physics/budget.rs::Reserve::draw`, `::drain`.
 
 #### 7.3 Regeneration
@@ -1545,7 +1545,7 @@ Two strokes re-earn one expansion. A court's reserve expands with useful
 work and contracts to its ceiling when idle.
 
 Sources: MU-RECURSION 78.56 IV, 24.3. Code:
-`src/physics/mod.rs::Physics::regenerate`, `::regenerate_within`.
+`src/physics/stroke.rs::Physics::regenerate`, `::regenerate_within`.
 
 #### 7.4 Pressure
 
@@ -1562,7 +1562,7 @@ Pressure is the per-lane backlog of unresolved demand; the metabolism
 rate is derived from it lane by lane.
 
 Sources: MU-RECURSION law 5, 12.6, 78.71(2), PHY1; MU-CLIENT §4.13. Code:
-`src/physics/mod.rs::Physics::bump`, `::relieve`, `::relax`,
+`src/physics/stroke.rs::Physics::bump`, `::relieve`, `::relax`,
 `::book_contacts`, `::book_flux`, `::metabolism_rate`, `::dwell`.
 
 #### 7.5 Order flux, deficit and shortfall
@@ -1575,7 +1575,7 @@ torse relief:  torsion_l −= spanned,  syntropic_l += spanned  on the active la
 ```
 
 Sources: MU-RECURSION S10, 45.7, S13.2, #34. Code:
-`src/physics/mod.rs::Physics::order_flux`, `::reserve_deficit`,
+`src/physics/stroke.rs::Physics::order_flux`, `::reserve_deficit`,
 `::reserve_shortfall`, `::torse_relief`.
 
 #### 7.6 Scheduler floor, idle park and transport horizons
@@ -1593,9 +1593,10 @@ The one scheduler floor is told to the operating system; every bound on
 work is counted in strokes or in final-point advances.
 
 Sources: MU-RECURSION 47.5, 45.7, 78.152, PH1. Code:
-`src/physics/mod.rs::stroke_floor`, `::idle_park`, `::from_transport`,
-`::persist_dwell`, `::transport_deadline`, `::digest_ceiling`,
-`Circuits::stroke`.
+`src/physics/calibration.rs::stroke_floor`, `::idle_park`,
+`src/physics/lambda.rs::from_transport`, `::persist_dwell`,
+`::transport_deadline`, `::digest_ceiling`,
+`src/physics/circuits.rs::Circuits::stroke`.
 
 ---
 
@@ -1612,7 +1613,7 @@ A kernel's TUniversal height is the height of its head receipt. Along the
 causal order heights strictly increase; two heights are compared only as an
 extent at one reader.
 
-Sources: MU-RECURSION 45.2. Code: `src/chronometry/chain.rs::height_over`,
+Sources: MU-RECURSION 45.2. Code: `src/chronometry/chain/mod.rs::height_over`,
 `ReceiptChain::next_stamp`.
 
 #### 8.2 Causal order
@@ -1625,7 +1626,7 @@ e ≺ e′  ⇔  F(e) ≤ F(e′) componentwise  and  F(e) ≠ F(e′)
 Two receipts neither of which precedes the other are concurrent, and
 concurrency is permanent.
 
-Sources: MU-RECURSION 45.3. Code: `src/chronometry/chain.rs::precedes`.
+Sources: MU-RECURSION 45.3. Code: `src/chronometry/chain/mod.rs::precedes`.
 
 #### 8.3 The stamp and K
 
@@ -1641,7 +1642,7 @@ last seals nothing; a close whose frame is not its orbit's sum is refused.
 
 Sources: MU-RECURSION 78.23 (OK1), 78.24. Code:
 `src/physics/axioms/native.rs` (`OK1_K_COUNTS_CLOSED_CYCLES`);
-`src/chronometry/chain.rs::append`.
+`src/chronometry/chain/mod.rs::append`.
 
 #### 8.4 The receipt chain hash
 
@@ -1804,7 +1805,7 @@ A law is a predicate over exact objects. Every breach is named with its
 law.
 
 Sources: MU-RECURSION 78.59, 78.62 (L0). Code:
-`src/physics/laws.rs::Law::statement`, `LAWS`, `LAW_VERSION`.
+`src/physics/laws/mod.rs::Law::statement`, `LAWS`, `LAW_VERSION`.
 
 #### 9.6 Verification by reconstruction
 
@@ -1872,7 +1873,7 @@ it.
 
 Sources: MU-RECURSION §0.0, 78.125, 78.134. Code:
 `src/physics/axioms/founding.rs::OPEN_PHYSICS`;
-`src/physics/laws.rs::CHALLENGE_WINDOW`, `PARAMETERS`;
+`src/physics/laws/mod.rs::CHALLENGE_WINDOW`, `PARAMETERS`;
 `src/server/cognition/mouth.rs::THROAT_GRID`.
 
 #### 10.2 Throat size is mass
@@ -1924,13 +1925,13 @@ a share compounds frame by frame:
 ```
 
 **Built**, as a named law form in the `forms` crate (CONCORDANCE 2.10):
-`forms/src/xylarium/share_compounds.rs` (`Remaining::whole`, `after`,
+`forms/src/shares/share_compounds.rs` (`Remaining::whole`, `after`,
 `then`, `factors`, `reading`). The share `x` of what remains per ring of a
 body's own clock, over ℚ, the ring count over ℤ; the form holds the exact
 product and expands it only for a `reading`. A share below zero or not
 below one, and a ring count past its carrier, are refused by name. It is
-hosted in a universe's own shell (`forms::xylarium`), selected by that
-universe, and moves to the core shell only when every universe selects it.
+hosted in an outer shell named for its law (`forms::shares`), selected by
+the universes that compose it, and moves to the core shell only when every universe selects it.
 Mycelium hosts the form; a universe composes it.
 
 #### 10.5 The master equations, by name

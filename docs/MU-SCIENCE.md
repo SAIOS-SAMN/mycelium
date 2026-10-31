@@ -150,7 +150,7 @@ shell.
 
 | Component | What it fixes | Where |
 |---|---|---|
-| **The universal law register L0** | The laws every transition touching the network satisfies (§3.1) | `src/physics/laws.rs`, `ACT_LAWS` |
+| **The universal law register L0** | The laws every transition touching the network satisfies (§3.1) | `src/physics/laws/mod.rs`, `ACT_LAWS` |
 | **The universal law forms** | The forms each universe composes over its own constants (Concordance 2.10) | `forms/` |
 | **The Concordance** | The agreement every kernel signs: units, topology, the economy between universes, breaches and convergence, conduct | `docs/MU-CONCORDANCE.md` |
 | **The alphabet** | Seventeen seed letters, exact rotations, which never change; letters for further primes are added only by court rulings (MU-ALPHABET §6) | `docs/MU-ALPHABET.md`, `src/transducer/alphabet/` |
@@ -167,7 +167,7 @@ in two ways:
 ### 3.1 The universal law register L0
 
 The courts hold the universal law register L0
-(`src/physics/laws.rs`, served by `ACT_LAWS`). It has six typed laws:
+(`src/physics/laws/mod.rs`, served by `ACT_LAWS`). It has six typed laws:
 
 1. conformal;
 2. momentum;

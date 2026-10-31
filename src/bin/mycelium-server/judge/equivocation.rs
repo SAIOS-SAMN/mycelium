@@ -61,7 +61,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         }
     };
     // A court that cannot be read has judged nothing and answers nothing.
-    let Ok(mut h) = crate::held::held!(door.kernel) else {
+    let Ok(mut h) = crate::held::held!(door.court) else {
         eprintln!(
             "  court equivocation unread {:02x}{:02x}… K {}: the court is not readable",
             proof.vk[0], proof.vk[1], proof.at.print()
@@ -70,7 +70,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     };
     let burned = h.run(|k, _| k.accept_equivocation(proof));
     drop(h);
-    // The burn line is the kernel's (34.2); the reply says whether anything
+    // The burn line is the court's (34.2); the reply says whether anything
     // left: the same proof again finds no bond and is inert.
     match burned {
         Some(_) => say(s, dialogue::Ruled::Applied),

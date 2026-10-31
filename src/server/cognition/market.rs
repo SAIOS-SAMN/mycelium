@@ -55,7 +55,7 @@ impl Court {
     }
 
     /// The chronometric anchor, public (settlement callers outside the
-    /// kernel — the registry's solve settlements — bind to the same chain).
+    /// court — the registry's solve settlements — bind to the same chain).
     pub fn anchor_pub(&self) -> crate::economy::Anchor {
         self.anchor()
     }
@@ -351,9 +351,9 @@ impl Court {
     }
 
     /// THE COMMIT HALF OF THE INTAKE: pieces already read — each residual
-    /// and its chart — listed under the kernel. The reading is
+    /// and its chart — listed under the court. The reading is
     /// `prepare_intake`'s and takes no lock: hypha b, ten minutes after
-    /// boot, held its kernel in `intake → list → invariant_of` in seven
+    /// boot, held its court in `intake → list → invariant_of` in seven
     /// samples of ten while fold, quote and syllabus judges waited behind
     /// it, 0.2–9 s each (gdb and the wire, 2026-09-30).
     pub fn intake_prepared(&mut self, pieces: Vec<(Element, crate::transducer::stalk::Invariant)>) -> bool {
@@ -371,7 +371,7 @@ impl Court {
     }
 }
 
-/// THE READING HALF OF THE INTAKE, with no kernel: the chain's pieces, each
+/// THE READING HALF OF THE INTAKE, with no court: the chain's pieces, each
 /// as its residual and its chart. A piece that cannot be addressed is a
 /// refusal that travels: never listed and never counted (U14).
 pub fn prepare_intake(

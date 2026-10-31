@@ -94,7 +94,7 @@ fn reseat_takes_new_seats_and_drops_gone() {
     use crate::anastome::dialogue::seat::{Arg, Post, Role, Seat, SeatFn, Seats};
     use crate::client::sdk::seat::{listed_seats, reseat};
     let house = ed25519_dalek::SigningKey::from_bytes(&[21; 32]);
-    let seat = |id: u32| Seat { seat: id, role: Role::Steward, on: [6; 32], beat: Arg::Q { num: 1, den: 1 }, fns: vec![SeatFn { id: 1, tags: vec![] }] };
+    let seat = |id: u32| Seat { seat: id, role: Role(2), on: [6; 32], beat: Arg::Q { num: 1, den: 1 }, fns: vec![SeatFn { id: 1, tags: vec![] }] };
     let listing = |epoch: u64, ids: &[u32]| {
         Post::Seats(Seats { domain: [4; 32], sub_origin: None, epoch, seats: ids.iter().map(|&i| seat(i)).collect() }).sign(&house).expect("writes")
     };

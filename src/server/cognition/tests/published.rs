@@ -1,5 +1,5 @@
 // 78.151 — THE PUBLISHED READING: the door's reads answered off what the court
-// stroke published, the same answers the kernel gives, at the height published.
+// stroke published, the same answers the court gives, at the height published.
 
 use crate::anastome::dialogue::{
     decode_receipts_answer, decode_receipts_answer_at, encode_receipts_reply, put_reading_height, ReceiptSection, ReceiptsAnswer,
@@ -62,7 +62,7 @@ fn read(a: ReceiptsAnswer) -> Result<Vec<KStepReceipt>, Place> {
     }
 }
 
-/// The kernel and its published reading answer every ask alike.
+/// The court and its published reading answer every ask alike.
 fn alike(k: &Court, p: &Published, signer: &[u8; 32], asks: &[(Option<Place>, Place, bool)]) {
     for &(after, upto, replay) in asks {
         assert_eq!(
@@ -75,9 +75,9 @@ fn alike(k: &Court, p: &Published, signer: &[u8; 32], asks: &[(Option<Place>, Pl
 
 /// A catch-up below the fold root is answered with the root, one from the
 /// root with the hot line, and an era replay with the archive — off the
-/// published reading exactly as off the kernel, at the height published.
+/// published reading exactly as off the court, at the height published.
 #[test]
-fn publish_serves_receipts_as_kernel_does() {
+fn publish_serves_receipts_as_court_does() {
     let (key, mut b) = court("published-b");
     let vk = key.verifying_bytes();
     strokes(&mut b, 4);
@@ -124,7 +124,7 @@ fn publish_lags_until_next_and_copies_growth() {
 }
 
 /// A PEER'S LINE, admitted in two pieces, is published as the court holds
-/// it: each piece read off the reading as off the kernel.
+/// it: each piece read off the reading as off the court.
 #[test]
 fn publish_serves_peer_line_admitted_in_pieces() {
     let (akey, mut a) = court("published-peer-a");
@@ -142,10 +142,10 @@ fn publish_serves_peer_line_admitted_in_pieces() {
     alike(&c, &p2, &avk, &[(None, FAR, false), (Some(Place::GENESIS), FAR, false)]);
 }
 
-/// A WALLET OFF THE READING is the kernel's wallet at the publication: an
+/// A WALLET OFF THE READING is the court's wallet at the publication: an
 /// unseen party reads zero, a payment made after it is read at the next.
 #[test]
-fn publish_wallet_matches_kernel_at_publication() {
+fn publish_wallet_matches_court_at_publication() {
     let (_, mut k) = court("published-wallet");
     strokes(&mut k, 1);
     let anchor = (Stamp::default(), [0u8; 32]);
@@ -155,7 +155,7 @@ fn publish_wallet_matches_kernel_at_publication() {
     k.treasury.hold(human, b"lease", [2, 0, 1, 0], anchor).expect("the human holds");
     let p1 = k.publish(None).expect("published");
     for who in [human, entity, unseen] {
-        assert_eq!(p1.wallet(&who), k.wallet(&who), "the account published is the kernel's");
+        assert_eq!(p1.wallet(&who), k.wallet(&who), "the account published is the court's");
     }
     k.treasury.pay(human, entity, [1, 1, 1, 0], anchor).expect("pays again");
     assert_ne!(p1.wallet(&entity), k.wallet(&entity), "a payment after the reading is not in it");

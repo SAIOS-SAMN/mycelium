@@ -1,12 +1,12 @@
 // 78.152 TU-7 — THIS DOOR'S TUNIVERSAL SHELF: one per process, beside the
-// 78.151 published reading and outside the kernel. The keepers' quorum raises
+// 78.151 published reading and outside the court. The keepers' quorum raises
 // its final point; every frame read at the door is heard on it; every reply
 // the door writes carries its final point.
 //
 //! THE KEEPERS (TU-1..4) are held here too, under the keepers' own lock, never
-//! nested with the kernel's: the court's tick is read under the kernel by the
+//! nested with the court's: the court's tick is read under the court by the
 //! court loop (78.152b) and the digest's signer and handed in after; a peer's
-//! ring — on its digest or pushed as `ACT_TICK` — is admitted with no kernel
+//! ring — on its digest or pushed as `ACT_TICK` — is admitted with no court
 //! at all.
 
 use crate::Mesh;
@@ -22,7 +22,7 @@ static KEEPERS: Mutex<Option<(Keepers, Residual)>> = Mutex::new(None);
 
 /// THE KEEPERS AS THE OBSERVER READS THEM: each keeper and the residual,
 /// copied whenever the keepers are touched. A leaf lock, held only for the
-/// copy, so the court stroke reads it under the kernel without waiting on a
+/// copy, so the court stroke reads it under the court without waiting on a
 /// ring's verification under the keepers' own lock.
 static SEEN: Mutex<(Vec<observe::KeeperSeen>, Residual)> =
     Mutex::new((Vec::new(), Residual { edges: Vec::new(), holonomy: None }));
@@ -149,7 +149,7 @@ pub(crate) fn standing() -> observe::TStanding {
 }
 
 /// THIS COURT'S RING FOR ITS DIGEST (TU-1, TU-2): its tick read (where the
-/// kernel gave one), a reading signed where the measure moved, and the
+/// court gave one), a reading signed where the measure moved, and the
 /// newest readings, oldest first. Empty before an origin is adopted.
 pub(crate) fn own_ring(mesh: &Mesh, tick: Option<Tick>) -> Vec<TickReading> {
     let Some(origin) = origin(mesh) else { return Vec::new() };
@@ -168,8 +168,8 @@ pub(crate) fn own_ring(mesh: &Mesh, tick: Option<Tick>) -> Vec<TickReading> {
 }
 
 /// 78.152b — THE COURT LOOP SIGNS ITS OWN READING: the tick read once per
-/// stroke under the kernel the loop already holds, handed in here after the
-/// kernel is dropped, and a reading signed wherever it is due — whether or
+/// stroke under the court the loop already holds, handed in here after the
+/// court is dropped, and a reading signed wherever it is due — whether or
 /// not any peer asked for a digest. Answers this court's ring where a
 /// reading was newly signed (the ring the nerve pushes as `ACT_TICK`), and
 /// `None` where nothing was due, no origin is adopted, or no tick was read.
@@ -202,9 +202,9 @@ pub(crate) enum TickRefusal {
 }
 
 /// 78.152b — A KEEPER'S RING PUSHED AS `ACT_TICK`, HEARD AT THE DOOR WITH NO
-/// KERNEL: read whole, its keeper a known peer court, then admitted exactly
+/// COURT: read whole, its keeper a known peer court, then admitted exactly
 /// as a digest's ring is (`hear_ring`). It takes the mesh's peer table, the
-/// origin and the keepers' own lock, one at a time, and never the kernel —
+/// origin and the keepers' own lock, one at a time, and never the court —
 /// it is not handed one.
 pub(crate) fn hear_tick(mesh: &Mesh, body: &[u8]) -> Result<Admitted, TickRefusal> {
     let (vk, ring) = mycelium::anastome::dialogue::decode_tick(body).ok_or(TickRefusal::Unreadable)?;

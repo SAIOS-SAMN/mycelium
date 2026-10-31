@@ -1,7 +1,7 @@
 // 78.64 H1 — THE CARRIER CENSUS: every carrier the court holds, counted by
 // its own members.
 //
-//! The kernel is taken apart field by field, with no rest pattern: a field
+//! The court is taken apart field by field, with no rest pattern: a field
 //! added to the court is either counted here or named here as what it is —
 //! a count, a cursor, a flag, a path — and a field that is neither does
 //! not build. A nested carrier is counted by the entries of what it nests.

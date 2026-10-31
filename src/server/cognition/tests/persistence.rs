@@ -5,7 +5,7 @@ use super::common::speak_pair;
 use crate::cognition::*;
 
 /// P7 — the germinated language survives restart: install two germs, snapshot,
-/// restore into a fresh kernel, and the restored kernel RECALLS them (no
+/// restore into a fresh court, and the restored court RECALLS them (no
 /// re-germination) with balances intact.
 /// A second vantage here is `glue_local`'s two fixture keys (§3.4's
 /// wire-identifier exception): this test proves nothing about 47.3's witness.

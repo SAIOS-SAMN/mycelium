@@ -14,9 +14,9 @@ use std::net::TcpStream;
 
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(request) = decode_challenge_request(&frame.body) else { return };
-    // The reads stay on the kernel (78.153b): finality, obstructions, tolls
+    // The reads stay on the court (78.153b): finality, obstructions, tolls
     // and line heads are not on the shelf yet, and the domain acts are 78.154's.
-    let body = match crate::held::held!(door.kernel) {
+    let body = match crate::held::held!(door.court) {
         Ok(mut h) => {
             let body = h.run(|k, _| match request {
                 ChallengeRequest::Signed(c) => Some(encode_challenge_reply(&k.challenge(&c))),
@@ -41,7 +41,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         Err(_) => return,
     };
     // 78.137 — acknowledged only once durable.
-    if !crate::persist::durable(&door.kernel, &door.state_path) {
+    if !crate::persist::durable(&door.court, &door.state_path) {
         return;
     }
     answer(stream, Frame { lane: frame.lane, body });

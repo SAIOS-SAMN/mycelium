@@ -13,6 +13,7 @@
 //! exact partials a later phase is built from, so the next stroke resumes.
 
 use super::*;
+use crate::transducer::sentence;
 
 /// WHAT A REPLAY ON ONE STROKE CAME TO. `#[must_use]`: a caller that drops
 /// it has neither ruled nor deferred the word.

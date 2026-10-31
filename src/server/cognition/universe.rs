@@ -1,7 +1,7 @@
 // 78.139 — A UNIVERSE ON THE COURT (the rulings on (i-b), with: a galactic
 // core is a larger wormhole, every horizon has its far face). What a universe states of itself — its geometry (78.140: curved or
 // a torus), its parent face,
-// its ancients' basket, its join to its parent's core — held once each and
+// its reserve's basket, its join to its parent's core — held once each and
 // never edited; and the core tubes that join universes.
 //
 //! A domain READS AS A UNIVERSE once it has an origin. Its origin of version
@@ -9,7 +9,7 @@
 //! bounced out of — open, a core tube, its far end in this domain — or
 //! unwitnessed (a root). Its SITTING RESERVE states, once each: its
 //! geometry where the origin did not (a v1 origin; legacy domains), its
-//! ancients' survival basket, and — a root — its JOIN to the parent's core
+//! reserve's survival basket, and — a root — its JOIN to the parent's core
 //! once found. Existing domains keep working (a ruled grace): they
 //! originate before joining a core tube or converting.
 
@@ -53,7 +53,7 @@ impl Court {
         self.universes.get(domain)?.geometry.as_ref()
     }
 
-    /// Whether the domain `tier` stands in has stated its ancients' basket.
+    /// Whether the domain `tier` stands in has stated its reserve's basket.
     pub(crate) fn basket_stated_for(&self, tier: &[u8; 32]) -> bool {
         self.tier_domain.get(tier).and_then(|d| self.universes.get(d)).is_some_and(|u| !u.basket.is_empty())
     }
@@ -104,7 +104,7 @@ impl Court {
     }
 
     /// 78.139 — A UNIVERSE'S STATEMENT, by its SITTING RESERVE, once each:
-    /// its geometry (well formed; where none is stated), its ancients' basket
+    /// its geometry (well formed; where none is stated), its reserve's basket
     /// (well formed; where none is stated), or its JOIN — an originated root
     /// naming an open core tube into it, its far space its geometry where one
     /// is stated. Sealed by its coordinates; never an edit.

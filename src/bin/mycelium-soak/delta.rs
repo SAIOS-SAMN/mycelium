@@ -16,7 +16,7 @@
 //! the presentation.
 //!
 //! THIS IS AN INSTRUMENT AND CHANGES NOTHING. It stands nothing into a
-//! kernel, opens no wire, reads no ledger and needs no mesh.
+//! court, opens no wire, reads no ledger and needs no mesh.
 
 use mycelium::client::sdk::Epigenome;
 use mycelium::transducer::element::{Element, Held};
@@ -48,9 +48,9 @@ pub(crate) struct TaskWalk {
     /// The vertices, by what they are: a word the mind can factor
     /// through, a glued citation of a form it holds, a demand it cannot
     /// spell.
-    words: u64,
-    glued: u64,
-    demands: u64,
+    pub(super) words: u64,
+    pub(super) glued: u64,
+    pub(super) demands: u64,
     /// 50.5's own order — RotorPrime, Standing, Source, Creation,
     /// TopologicalDeformation — which names what the alphabet could not
     /// spell and the eyes could not pair.
@@ -65,7 +65,7 @@ pub(crate) struct TaskWalk {
     axis: u64,
     /// Whether the form closed — the one thing that decides whether this
     /// task's rule could be stood at all (13.6, `Form::glue`).
-    closed: bool,
+    pub(super) closed: bool,
     /// The walk ended on its budget rather than on the bundle (L8w), so a
     /// starvation cannot be read as a smaller reading.
     exhausted: bool,
@@ -73,7 +73,7 @@ pub(crate) struct TaskWalk {
 
 impl TaskWalk {
     /// Read one task with the mind it is given, and stand nothing.
-    fn of(train: &mycelium::transducer::family::Family, epi: &Epigenome) -> TaskWalk {
+    pub(super) fn of(train: &mycelium::transducer::family::Family, epi: &Epigenome) -> TaskWalk {
         let mut w = TaskWalk::default();
         let mut physics = mycelium::physics::Physics::default();
         let mut budget = physics.stroke_n(DELTA_STROKE);
@@ -148,7 +148,7 @@ pub(crate) enum Stand {
 }
 
 impl Stand {
-    fn label(self) -> &'static str {
+    pub(super) fn label(self) -> &'static str {
         match self {
             Stand::NoRule => "no_rule",
             Stand::RuleOpen => "rule_open",
@@ -164,7 +164,7 @@ impl Stand {
 /// mind stands for the other tasks of the slice, and WHERE it stopped if
 /// it yields none. A form that is not closed is not citable (13.6) and
 /// standing it would be standing something no mind could factor through.
-fn standable(train: &mycelium::transducer::family::Family, epi: &Epigenome) -> (Option<Element>, Stand) {
+pub(super) fn standable(train: &mycelium::transducer::family::Family, epi: &Epigenome) -> (Option<Element>, Stand) {
     let mut physics = mycelium::physics::Physics::default();
     let mut budget = physics.stroke_n(DELTA_STROKE);
     let Some(rule) = extract_rule_with(train, epi, &mut budget) else {
@@ -379,69 +379,5 @@ pub(crate) fn report(slice: &Slice) {
             "  delta MOVED on {n} of {} tasks, against a mind holding up to {held}",
             pairs.len()
         ),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// Y1 — THE INSTRUMENT MUST BE ABLE TO SEE A DIFFERENCE, or its zero
-    /// on the corpus says nothing about the engine and everything about
-    /// itself. The corpus reads `standable 0`, so the twelve exercise only
-    /// the arm where no warm mind can be built; this builds the other arm
-    /// by hand.
-    ///
-    /// A mind is given one closed form and asked to read a family. The
-    /// same family is read by a mind holding nothing. `TaskWalk::of` is
-    /// the whole of what the delta compares, so proving it answers
-    /// differently for two different minds on one family is proving the
-    /// comparison is live — and proving it answers IDENTICALLY for two
-    /// identical minds is proving the reading is a function of the mind
-    /// and not of anything else in the walk.
-    #[test]
-    fn task_walk_of_is_function_of_given_mind() {
-        // A recolour: one body, one hue changed. The simplest family there
-        // is, built through the instrument's OWN public path so the test
-        // exercises what the walk exercises and nothing else.
-        let a = vec![vec![1u8, 1], vec![1, 1]];
-        let b = vec![vec![2u8, 2], vec![2, 2]];
-        let fam = vec![(a, b)];
-
-        let empty = Epigenome::new();
-        let cold = TaskWalk::of(&fam, &empty);
-        // TWO EMPTY MINDS READ ALIKE. Without this, a difference below
-        // could be noise in the walk rather than the mind.
-        let cold_again = TaskWalk::of(&fam, &Epigenome::new());
-        assert!(cold == cold_again, "one family, two identical minds, one reading");
-
-        // A mind holding this family's own closed form — the same form a
-        // warm mind is built out of on a real slice.
-        let (stand, why) = standable(&fam, &empty);
-        let Some(e) = stand else {
-            panic!(
-                "the simplest recolour yields a closed form, or nothing can ever be stood; \
-                 the chain stopped at {}",
-                why.label()
-            )
-        };
-        let mut warm = Epigenome::new();
-        assert!(
-            warm.stand_dialect_at(e, 1, 1).is_some(),
-            "the mind stands the form it is given, or this test proves nothing"
-        );
-        let hot = TaskWalk::of(&fam, &warm);
-
-        // THE INSTRUMENT SEES IT. What moves is the engine's business —
-        // a word vertex where there was a demand, a glued citation, a
-        // closure — and the assertion is that SOMETHING does, because a
-        // reading that cannot move is not a measurement.
-        assert!(
-            hot != cold,
-            "a mind holding the form reads the family differently from a mind holding nothing; \
-             cold words {} glued {} demands {} closed {}, warm words {} glued {} demands {} closed {}",
-            cold.words, cold.glued, cold.demands, cold.closed,
-            hot.words, hot.glued, hot.demands, hot.closed
-        );
     }
 }

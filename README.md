@@ -283,8 +283,8 @@ the mind of such an inhabitant, holding a seat in the game's house, and it is
 judged by the courts on ARC-AGI-2 tasks it did not set.
 
 Each signs the [Concordance](docs/MU-CONCORDANCE.md), founds its own domains,
-and links the `forms` crate at a pinned commit. xylarium's named law forms
-(`forms::xylarium::*`) are the first instances of divergent physics on one
+and links the `forms` crate at a pinned commit. The shares forms xylarium
+selects (`forms::shares::*`) are the first instances of divergent physics on one
 mesh (Concordance A7). The peer kernels' repositories are
 being prepared for public release. Until then, the specifications'
 references to them are design history, and nothing in this repository

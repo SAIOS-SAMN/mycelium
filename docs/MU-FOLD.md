@@ -71,7 +71,7 @@ is never truncated behind a fold root it did not adopt.
 
 ## Refusals and lines
 
-`REFUSE_FOLD_INEXACT` (34.1, `src/court/verdict/mod.rs`): a fold whose
+`REFUSE_FOLD_INEXACT` (34.1, `src/court/verdict/refusals.rs`): a fold whose
 nets do not conserve writes nothing. `REFUSE_FOLD_OPEN` is still defined
 there, but since finality became per item (78.65) no fold path produces
 it. The server's log lines (`src/bin/mycelium-server/fold.rs`,

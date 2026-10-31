@@ -188,7 +188,7 @@ pub struct MarketView {
     pub pressure: [u64; 4],
     pub pool: Option<[u64; 4]>,
     pub k_step: u64,
-    /// Receipt-chain head K — the kernel's own receipt index, packed on Quote.
+    /// Receipt-chain head K — the court's own receipt index, packed on Quote.
     pub head_k: u64,
     /// The chain's head height (45.2): the book's height the quote reply
     /// carries, so a voice paces on the ledger and never on a count.

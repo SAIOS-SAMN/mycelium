@@ -10,7 +10,11 @@
 //! chart, the face's two addresses, the chart with the links read.
 
 use super::*;
+use crate::network::nerve::Keyed;
+use crate::transducer::element::{self, Versor};
 use crate::transducer::family::{on_grid, perceive, Body, Grid, Compartment};
+use crate::transducer::sentence::{self, Form, Vertex};
+use crate::transducer::stalk;
 
 /// What one vertex does at one frame of the family's one body.
 pub(crate) enum Carried {

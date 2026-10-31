@@ -1,5 +1,5 @@
 // 21, 31 — the mind AS A CRYSTAL: what a family extraction may ask this
-// kernel for, and the trajectory a rule measures against what it holds.
+// court for, and the trajectory a rule measures against what it holds.
 //
 //! `Crystal` is the interface `family::extract_rule_with` speaks to. Every
 //! answer here is a read of the ruled cover; a miss is zero, because
@@ -34,7 +34,7 @@ impl crate::transducer::family::Crystal for Court {
     /// and carries no index by the moduli of the bodies its forms act on.
     /// It needs none yet — a court resolves a `Glued` vertex by address
     /// (32) and never re-derives a glue, so this read has no caller here;
-    /// the kernel is never the crystal `extract_rule_with` speaks to. When
+    /// the court is never the crystal `extract_rule_with` speaks to. When
     /// a court extracts, it gains the index the mind has (`by_moduli`), and
     /// this answers from it. Row L8s.
     fn on_body(
@@ -106,7 +106,7 @@ impl crate::transducer::family::Crystal for Court {
 
 impl Court {
     /// What a rule measures by speaking every train pair, its cited
-    /// forms resolved through this kernel's ruled cover. Any miss is zero:
+    /// forms resolved through this court's ruled cover. Any miss is zero:
     /// association with a listing is not a mint.
     pub(crate) fn measured_replay(&self, form: &Element, family: &crate::transducer::family::Family) -> [u64; 4] {
         self.measured_replay_at(

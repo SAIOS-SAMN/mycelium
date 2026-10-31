@@ -231,7 +231,7 @@ pub struct Court {
     pub serve: [u64; SERVE_AXES.len()],
     /// 78.152 — THE DOOR'S QUORUM-FINAL TUNIVERSAL POINT, its advances, the
     /// keepers as this court holds them and the residual (TU-3, TU-4, TU-7),
-    /// read off the shelf and the keepers outside the kernel.
+    /// read off the shelf and the keepers outside the court.
     pub tuniversal: super::TStanding,
 }
 

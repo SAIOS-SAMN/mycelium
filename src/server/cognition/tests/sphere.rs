@@ -1,6 +1,5 @@
-// A CLOSED SPHERE AS A UNIVERSE'S SPACE (2026-10-22, proposed to netstratum
-// and xylarium, both of whose universes are closed 3-spheres stated as the
-// hyperbolic `Curved`): `Geometry::Sphere(R)`, its motions `Spin(4)`, its
+// A CLOSED SPHERE AS A UNIVERSE'S SPACE (a closed 3-sphere is no longer
+// stated as the hyperbolic `Curved`): `Geometry::Sphere(R)`, its motions `Spin(4)`, its
 // places on `v² = +1` about `e₊`, a throat's cap level `cos(2m/R)` and its
 // fit short of the antipode.
 

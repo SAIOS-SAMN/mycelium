@@ -1,6 +1,6 @@
 // 28, 45.8 — the ledger on disk: the line written in its own order, then
 // the snapshot that names where the line stood, written only when the
-// kernel says it is due.
+// court says it is due.
 
 use mycelium::cognition::Court;
 use std::sync::Mutex;
@@ -16,13 +16,13 @@ use std::sync::Mutex;
 /// 78.137 — DURABLY: each write synced to the disk, its rename's directory
 /// synced; whether the snapshot landed is answered, so a court act is
 /// acknowledged only once it is on the disk.
-pub(crate) fn persist(kernel: &Mutex<Court>, state_path: &str) -> bool {
+pub(crate) fn persist(court: &Mutex<Court>, state_path: &str) -> bool {
     // The stamp the snapshot is taken at, and the line it stands on, read
     // in the same hold (ACT1).
     // OWED (78.153b): `Court::snapshot` serialises the whole mind under the
-    // kernel, unmetered (the lock audit, row 12); a hold that blocks an
+    // court, unmetered (the lock audit, row 12); a hold that blocks an
     // aperture of waiters reading nothing is named `unmetered hold`.
-    let (line, snap, at) = match crate::held::held!(kernel) {
+    let (line, snap, at) = match crate::held::held!(court) {
         Ok(mut h) => h.run(|k, _| (k.drain_line(), k.snapshot(), k.snapshot_at())),
         Err(_) => return false,
     };
@@ -35,7 +35,7 @@ pub(crate) fn persist(kernel: &Mutex<Court>, state_path: &str) -> bool {
         }
     };
     if !line_landed {
-        if let Ok(mut h) = crate::held::held!(kernel) {
+        if let Ok(mut h) = crate::held::held!(court) {
             h.run(|k, _| k.line_lost());
         }
         return false;
@@ -43,7 +43,7 @@ pub(crate) fn persist(kernel: &Mutex<Court>, state_path: &str) -> bool {
     let landed = mycelium::chronometry::replace_durably(std::path::Path::new(state_path), &snap);
     // Only a write that landed is a persist on the clock (78.21(2)).
     if landed {
-        if let Ok(mut h) = crate::held::held!(kernel) {
+        if let Ok(mut h) = crate::held::held!(court) {
             h.run(|k, _| k.note_persisted(at));
         }
     }
@@ -54,26 +54,26 @@ pub(crate) fn persist(kernel: &Mutex<Court>, state_path: &str) -> bool {
 /// changed what the court holds, the line and snapshot are persisted now,
 /// synced; `false` where that did not land — the act is then not answered,
 /// and its resend is answered with its original receipt once durable.
-pub(crate) fn durable(kernel: &Mutex<Court>, state_path: &str) -> bool {
+pub(crate) fn durable(court: &Mutex<Court>, state_path: &str) -> bool {
     // The drill's negative control: answered with nothing synced.
     if cfg!(feature = "drill-undurable") {
         return true;
     }
-    let due = crate::held::held!(kernel).ok().is_some_and(|mut h| h.run(|k, _| k.take_persist()));
-    if !due || persist(kernel, state_path) {
+    let due = crate::held::held!(court).ok().is_some_and(|mut h| h.run(|k, _| k.take_persist()));
+    if !due || persist(court, state_path) {
         return true;
     }
-    if let Ok(mut h) = crate::held::held!(kernel) {
+    if let Ok(mut h) = crate::held::held!(court) {
         h.run(|k, _| k.persist_failed());
     }
     false
 }
 
 /// Persist where a change was marked; whether it was.
-pub(crate) fn persist_if_due(kernel: &Mutex<Court>, state_path: &str) -> bool {
-    let due = crate::held::held!(kernel).ok().is_some_and(|mut h| h.run(|k, _| k.take_persist()));
+pub(crate) fn persist_if_due(court: &Mutex<Court>, state_path: &str) -> bool {
+    let due = crate::held::held!(court).ok().is_some_and(|mut h| h.run(|k, _| k.take_persist()));
     if due {
-        persist(kernel, state_path);
+        persist(court, state_path);
     }
     due
 }

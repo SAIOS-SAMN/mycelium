@@ -81,7 +81,7 @@ pub(crate) fn thread_on(lines: &mut Vec<Vec<u8>>, thread: &Thread) {
 }
 
 /// 78.73 — A FIELD HELD OVER TIME: 𝒯's tubes and the orbits of 𝒮, 𝒢 and
-/// 𝒽, one per mind (a voice's process, a court's kernel).
+/// 𝒽, one per mind (a voice's process, a court's state).
 #[derive(Clone, Debug, Default)]
 pub struct Field {
     pub tubes: super::flux::TubeRegistry,

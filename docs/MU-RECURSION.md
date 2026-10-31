@@ -723,7 +723,7 @@ first (`physics/axioms/founding.rs`), each with a test that could fail
 
 **Everything else is read from these.** The axioms (§0.4) are filed under the
 principle each derives from; the laws the court serves cite the axioms they rest on
-(`physics/laws.rs`); a mind's six pivots are the field's events, one
+(`physics/laws/mod.rs`); a mind's six pivots are the field's events, one
 principle each (MU-CLIENT §4.5): ascend and descend the holonomic closure
 and release, condense and drain the luminal reconnection, puncture and seal
 the harmonic class kept and returned.
@@ -1000,7 +1000,7 @@ same sense: the complete operation, with its invariant and its refusal.
 | **Viscosity** | 78.7 | a plane's viscosity is read by the pivot under pressure: inviscid, elastic, curved, viscous; it is the ledger's | `observe/` | landed (VS1, VS1b, VO1) |
 | **The refusal reader** | 78.9, 78.13, 74 | the kind of a refusal (P, D, C, I, N) is read off its content by one reader; a refusal is a coordinate to reconnect from; every refusal names its obstruction | `sentence/obstruction.rs`, `court/verdict/`, `family/deflation.rs` | landed at the court and the mint (CV1). CV1b open at the Stage 22 readers |
 | **The ledger** | 45, 78.21, 78.24 | a tick is a frame `{S,G,T,H}`; the stamp `h:vk:k` keys a partial order carried as a trie; every act a node citing what it acts on by coordinates; no wall clock anywhere | `chronometry/{chain,receipt,era}.rs`, `server/cognition/cite.rs` | landed (LD2, LD1, ACT1: every holding by an act, the clock reading, a k-step one orbit, a ruling's economy applied at the node that admits its receipt — EC1, ACT1 closed) |
-| **The mind's persistence** | 78.25, 78.27 | the mind persists as keyed tries by coordinates: a word a node at its citation, its fields the node's leaves; read by key and prefix, never by position | `server/cognition/snapshot/`, `cech/persist.rs`, `economy/persist.rs`, `client/sdk/epigenome/persist.rs` | landed (LD3); the court writes `MYT2` (`snapshot/mod.rs`) and refuses `MYT1` and `MYC7` by name (`snapshot/read.rs`); the genome is `GEN7` (`epigenome/persist.rs`, court-admitted words only, 78.49) and refuses `GEN6`, `GEN5` and `GEN4` by name; the thoughts file retired; RM1 adds the remainder leaf |
+| **The mind's persistence** | 78.25, 78.27 | the mind persists as keyed tries by coordinates: a word a node at its citation, its fields the node's leaves; read by key and prefix, never by position | `server/cognition/snapshot/`, `cech/persist.rs`, `economy/persist.rs`, `client/sdk/epigenome/persist.rs` | landed (LD3); the court writes `MYT2` (`snapshot/layout.rs`) and refuses `MYT1` and `MYC7` by name (`snapshot/read.rs`); the genome is `GEN7` (`epigenome/persist.rs`, court-admitted words only, 78.49) and refuses `GEN6`, `GEN5` and `GEN4` by name; the thoughts file retired; RM1 adds the remainder leaf |
 | **The learning curve** | 78.1, 78.3, 78.16–78.19 | a mind's perspective is its orbital elements; learning is the change of those elements by closures and refinements; a phase lands when its reading moves | `observe/{fleet,carriage}.rs` | landed (LC1, CO1, PG1, SP1, CQ1, PH5). LC2 open: the first non-zero reading |
 | **POW++** | 74, 78.22, 78.33, MU-ECONOMY | three proofs named apart: POUW (a closure ruled, mint on closure), POWC (a refusal closed at another perspective, the citation paid), POWR (retirement, the freed description burned, the compression yield paid), and the POWV share; priced per lane, layer and grade, never summed | `economy/{treasury,escrow,settle,fold}.rs`, `server/cognition/court/replay.rs` (`rule_on`) | PARTIAL: a ruling is paid and slashed at its Ruling act (EC1, ACT1 landed): Upheld mints POUW by `release_discharged` and pays POWR by `release_rewrite`, Slashed revokes by `revoke_award(Slash)` — live from `court_stroke_on` → `docket_replay` (the stroke's slashes) and from `hear_ruling` (a peer's Ruling receipt admitted, `court/ruling.rs`). POWC has no producer: `settle_refine` and `settle_condense` (`settle.rs`) have no caller; `verdict::rule` (`court/verdict/ruling.rs`) has test callers only. PHY1 open: one reserve, contacts priced per lane |
 | **The hardening path** | 80.2 | a submitted solution is adjudicated by the court; the server provides the syllabus; minerals harden into crystals by re-derivation over k-steps | `client/sdk/entity/learn.rs`, `server/cognition/court/syllabus.rs` | OPEN (DL1, GD1) |
@@ -1022,7 +1022,7 @@ two is filed where its test is.
 | **Law 11** no squaring; a square looked for inside a circle is the flattening | every reading of a versor's class | SQ1 census; the sandwich divides the weight out (TR1) | governs; SQ1's residue sites ruled one by one |
 | **Axiom C** (59.8, 72.1) | every invariant a ratio of homogeneous forms of equal degree, carried as numerator and denominator, read only where a classification is asked | `cga/multivector.rs` (`class_invariants`), Study's condition on a ray | governs; T7 open: stated in the register with a test per refusal (REG1) |
 | **Precision is the resolution** (78.45, law 4 as amended) | no blob, no approximation, no forward guess: a reading serves the value, the fraction, the rational point, or the sector between two exact marks (the ℚ-protractor, Niven's set; finer marks in `ℚ(ζ_ℓ)`), never a decimal; every master reads the inverse exactly — from the effect to the object — or refuses; the fourth audit question | the whole tree: `Cargo.toml` (`float_arithmetic`, `cast_precision_loss` denied), `core/gaussian.rs` (`rational_sqrt`), `alphabet/rotor.rs` (`half_angle`), Part VI `cyclo` | governs; the tree is float-free (`float_arithmetic` denied); DG1 carries the turn's point-and-sector reading, its decimal retracted |
-| **No constant** (§0.0; was "provenance of a constant", 78.8, checklist (s)) | physics → axiom → theorem → component; a number is read off the field or the geometry, or it is named undefined physics | `physics/axioms/founding.rs` (`NO_CONSTANT`, `OPEN_PHYSICS`), `physics/mod.rs` | the aperture derived (`2ⁿ` of the sensor base), the floor's `2` the double cover; named open: `W = 1024`, the throat grid `2⁻⁶⁴` |
+| **No constant** (§0.0; was "provenance of a constant", 78.8, checklist (s)) | physics → axiom → theorem → component; a number is read off the field or the geometry, or it is named undefined physics | `physics/axioms/founding.rs` (`NO_CONSTANT`, `OPEN_PHYSICS`), `physics/calibration.rs` | the aperture derived (`2ⁿ` of the sensor base), the floor's `2` the double cover; named open: `W = 1024`, the throat grid `2⁻⁶⁴` |
 
 **Harmonic — a turn returns.**
 
@@ -1045,7 +1045,7 @@ two is filed where its test is.
 | **The held tubes; helicity and reconnection** (78.72) | open flux is 𝒯's pressure, closure relieves it exactly; a reconnection is a change in the links | `cech/flux.rs` (`TubeRegistry`), `court/winding.rs` | landed on the court; the mind's pivots on it are MU-CLIENT §4.5 |
 | **Dissipation and reformation** (78.58 `e_∅`, continuity; MU-CLIENT §4.5) | on a beat of the field (an orbit's return, a tube's cancelled net flux) what never returns — boost and null orbits, tubes' open flux — dissipates into the reservoir at its own coordinates; a motion landing there re-forms it first; per lane the field's open pressure and the reservoir account for every unit; what rings is held | `cech/orbit.rs` (`Field::beat`, the reservoir, `reform`), `cech/flux.rs` | landed, on the minds' fields |
 | **A.10** symbiotic co-dimensionality, restated 72.1 | two bodies co-occupy through `V = s_b s_a`, carried whole and applied, never squared; the interface luminal | `blade/tether.rs`, `Interface::between` | landed (BQ5a); BQ5b open: the face holds `V` whole |
-| **Pressure and the cluster** (76) | placement by measured pressure; no squares in the fluid; re-organisation on a reading, never a timer | `physics/mod.rs` (`bump`, `relax`), `server/cognition/book/` | PARTIAL: `relax` a scalar tick (PHY1); OA1, CR1 open |
+| **Pressure and the cluster** (76) | placement by measured pressure; no squares in the fluid; re-organisation on a reading, never a timer | `physics/stroke.rs` (`bump`, `relax`), `server/cognition/book/` | PARTIAL: `relax` a scalar tick (PHY1); OA1, CR1 open |
 
 **Holonomic — a circuit's composite is its content.**
 
@@ -1074,7 +1074,7 @@ two is filed where its test is.
 | physics | constrains | site | stands |
 |---|---|---|---|
 | **TUniversal** (45, 78.21, 78.23) | time is height on the receipt DAG; a tick is a frame; `K` a node's cycles closed by name (OK1), a ledger coordinate, never an orbit (§0.0); no wall clock | `chronometry/` | landed (LD2, ACT1); OK1's statement restated (§0.0) |
-| **The metabolism** (65.5, 72.1d) | one reserve, the mind's universe, drawn as a vector per action; the stroke a draw; the reserve one stroke per vertex of the base's unit cell | `physics/{budget,metabolism}.rs`, `physics/mod.rs` | PARTIAL: `Budget` spends; `Reserve::draw` is wired — drawn at `court/syllabus.rs` and through `Physics::draw` (`physics/malleability.rs`) at `entity/think.rs`; the rest of PHY1 open; the aperture derived |
+| **The metabolism** (65.5, 72.1d) | one reserve, the mind's universe, drawn as a vector per action; the stroke a draw; the reserve one stroke per vertex of the base's unit cell | `physics/{budget,metabolism}.rs`, `physics/{calibration,stroke}.rs` | PARTIAL: `Budget` spends; `Reserve::draw` is wired — drawn at `court/syllabus.rs` and through `Physics::draw` (`physics/malleability.rs`) at `entity/think.rs`; the rest of PHY1 open; the aperture derived |
 | **The kinetic ledger** (78.42) | a signal's energy is its frame μ⃗ per lane; it STARTS only at a closure minted under POUW, MOVES only by a motor's transport and is conserved per lane at every transition and vertex (carried in = carried on + retained as flux + lost to contraction), EXISTS only under escrow, STOPS only by return at a named door, and EXHAUSTS as a refused draw, never a floor; its transference is what circulates the book's pressure, the court's syntropy up and payment down, and the plexus's rings and leaves | `physics/metabolism.rs`, `economy/`, `cech/{flux,orbit}.rs`, `chronometry/receipt.rs`, `observe/` | OPEN (KE1: one line per cycle per lane, conservation asserted; VN1's leaking doors are its first defects) |
 
 **Refused — each because it would flatten what the principles measure.**
@@ -5514,10 +5514,10 @@ trace line in one place. The sections below are kept so that citations of
 34.1, 34.2 and 34.3 resolve; a diagnostic is a typed reading, never a
 greppable line.
 
-### 34.1 Refusals, `src/court/verdict/mod.rs`
+### 34.1 Refusals, `src/court/verdict/refusals.rs`
 
 Every refusal reason the court answers with is a `REFUSE_*` string constant
-in `src/court/verdict/mod.rs`, and a new refusal reason enters this list
+in `src/court/verdict/refusals.rs`, and a new refusal reason enters this list
 when it enters that file. The constants are:
 
 `REFUSE_CITATION_CYCLE`, `REFUSE_DEMAND_UNTYPED`, `REFUSE_DERIVATION`,
@@ -6266,7 +6266,7 @@ a test that A8's migration conserves supply and resolves every carrier;
 `verdict::tests::selection_key_is_selection_bytes_never_debug_text`;
 a test that A10's two sockets under one key are one peer;
 a test that A11's rendezvous is by listing key, never by bytes;
-`factor::tests::factor_on_plane_understands_span_by_hnf`, `factor_off_plane_reaches_or_refuses_unmeasured`,
+`transducer::tests::factor::factor_on_plane_understands_span_by_hnf`, `factor_off_plane_reaches_or_refuses_unmeasured`,
 `factor_on_plane_remainder_is_canonical`;
 `nerve::tests::meet_is_intersection_and_costs_shared_prefixes` (meet
 equals set intersection; `count_get` grows with the shared structure, N vs
@@ -6274,7 +6274,7 @@ equals set intersection; `count_get` grows with the shared structure, N vs
 a test that `solve_gauge_between` reduces to `solve_gauge` when `a` is the identity;
 a test that a component's root is its least key;
 `element::tests::address_identifies_two_spellings`, and a test that a rescaled versor has one M2 address;
-`factor::tests::factor_on_plane_understands_held_word_respelled`.
+`transducer::tests::factor::factor_on_plane_understands_held_word_respelled`.
 
 **Cohomology (Part II).**
 a test that the plane form is a semidirect product with its inverse;
@@ -6317,7 +6317,7 @@ a test that a translation across a cyclic overlap is refused.
 3. `alphabet::tests::rebase_conjugates_into_normal_form`.
 4. A test that the pair form reads the laminae once (second call touches no lamina; work counter).
 4b. A test that face work is linear in the occupied sites (occupancy + ring, not n²).
-4c. `sentence::tests::form_vertex_key_carries_ratio_and_sections` (ratio, sections, torsion on the tape; zero denominator refused).
+4c. `sentence::form::tests::complex::form_vertex_key_carries_ratio_and_sections` (ratio, sections, torsion on the tape; zero denominator refused).
 5. `family::tests::extract_rule_by_class_with_sections` (a class in some pairs is a section).
 6. `family::tests::extract_rule_with_glues_held_form` (depth 1, one `Glued`, fewer `Word` vertices than the flat rule).
 6b. `family::tests::apply_form_leaves_empty_fibre_unspoken`.
@@ -6332,11 +6332,11 @@ a test that a translation across a cyclic overlap is refused.
 
 **Torsion bridge, pivots, and rank (M9, A16–A20, chapter 42).**
 a test that the class vector is canonical and its occupied axes are in a fixed order (12.6);
-`sentence::tests::coordinates_lists_occupied_axes_in_declaration_order` (A16 step 3: a zero coordinate is never visited);
-`sentence::tests::pivot_orbit_zeroes_own_axis_raising_none` (12.6 discharge condition);
+`sentence::pivot::tests::discharge::coordinates_lists_occupied_axes_in_declaration_order` (A16 step 3: a zero coordinate is never visited);
+`sentence::pivot::tests::orbit::pivot_orbit_zeroes_own_axis_raising_none` (12.6 discharge condition);
 a test that `pivot_orbit` terminates within the occupied coordinates (T4);
-`sentence::tests::pivot_orbit_never_reopens_closed_chord` (T2);
-`sentence::tests::select_discharge_holds_several_as_vortex` (A16 step 5: two discharging candidates, both kept, none applied);
+`sentence::pivot::tests::discharge::pivot_orbit_never_reopens_closed_chord` (T2);
+`sentence::pivot::tests::discharge::select_discharge_holds_several_as_vortex` (A16 step 5: two discharging candidates, both kept, none applied);
 a test that a vortex collapses by perception, glue or ruling (25.1);
 `sentence::tests::select_discharge_never_selects_by_mu` (T13: the applied pivot is a function of the class vector and the held words, unchanged when μ⃗ of the remainder is permuted across lanes);
 a test that a certificate key is equal across two minds (A20 step 1);
@@ -6401,7 +6401,7 @@ a test that a withheld citation lapses and releases its escrow (47.5);
 a test that a FROST group signature verifies as Ed25519, and a test that a
 FROST reshare keeps the group key (46.1, Specified);
 a test that a manifest key is scoped and revoked whole (46.2, Specified);
-`physics::tests::from_transport_counts_rtt_in_strokes` (45.4);
+`physics::tests::lambda::from_transport_counts_rtt_in_strokes` (45.4);
 the clock gate of `MU-ENGINEERING.md` §7 as a build failure on
 `SystemTime`, `Instant`, `Duration` in the directories of 45.6.
 
@@ -7035,7 +7035,7 @@ burn rule of 47.4. Functions marked **new** were introduced by this part.
 ### 45.1 The receipt is the clock
 
 Every kernel, hypha or mind, keeps one receipt chain
-(`chronometry::ReceiptChain`, `src/chronometry/chain.rs`). A receipt is written for
+(`chronometry::ReceiptChain`, `src/chronometry/chain/mod.rs`). A receipt is written for
 every admitted act: a percept docketed, a word sectioned or installed, a
 ruling, a settlement, a syllabus page served, a peer digest admitted, a form
 stood in the dialect. `KStepReceipt` (`src/chronometry/receipt.rs`) gains parents and a
@@ -7142,7 +7142,7 @@ Every duration a kernel reads is a count of its own K or of heights.
 - **Transport.** A round trip is the number of the kernel's own strokes
   between a frame sent and its reply. `Mesh.rtt_window` and `rtt_floor`
   (`src/bin/mycelium-server/exchange.rs`) hold stroke counts; `persist_dwell`, `aperture_cycle`,
-  and `transport_deadline` (`src/physics/mod.rs`) are stroke counts derived from them;
+  and `transport_deadline` (`src/physics/lambda.rs`, `src/physics/calibration.rs`) are stroke counts derived from them;
   `from_transport(rtt_floor, aperture_cycle())` is unchanged in form and
   returns strokes. The socket layer polls readiness each stroke and blocks
   on readiness when the kernel has nothing to admit; it passes no timeout
@@ -7187,7 +7187,7 @@ are the three coordinates of 45.8 (ruled 2026-09-09).
 
 ```
 src/chronometry/receipt.rs   Parent NEW; KStepReceipt.{height, parents} NEW; Height NEW replaces TUniversal
-src/chronometry/chain.rs     ReceiptChain::append(parents, …); frontier(&self, budget) -> Keyed<u64> NEW; precedes(a, b) -> bool NEW;
+src/chronometry/chain/mod.rs ReceiptChain::append(parents, …); frontier(&self, budget) -> Keyed<u64> NEW; precedes(a, b) -> bool NEW;
                              unix_now, ticks, ticks_at, load_or_genesis DELETED
 src/network/mesh.rs          MeshRecord.{genesis, epoch} replace origin_unix; origin_of DELETED
 src/server/cognition/        now_tu → height(); standing_mag in heights; every _tu carrier → _h; MarketView.tu DELETED; set_clock → set_height;
@@ -7196,7 +7196,7 @@ src/client/sdk/              now_tu → height() read from the last admitting re
 src/anastome/dialogue/       ACT_SPEECH tu → voice K + cited home head; ACT_ROOT ticks → (K, height, hash), the reply carrying the receiver's own
                              (K, height); Settlement field 7 → height; cover_signed_prefix → the prefix of 47.1
 src/bin/mycelium-server/     Mesh.rtt_window/rtt_floor in strokes; the boot line prints genesis and epoch; note_root keeps the speaker's (K, height, hash)
-src/physics/mod.rs           transport_deadline, persist_dwell, aperture_cycle in strokes; no Duration
+src/physics/                 transport_deadline, persist_dwell, aperture_cycle in strokes; no Duration
 clippy.toml (§4.2)           the clock gate: SystemTime, Instant, Duration refused by `disallowed-types` across src/server, src/client, src/court, src/transducer, src/economy/, src/physics/
 ```
 
@@ -11653,7 +11653,7 @@ at depth 4, a relator. Nothing is calloused by time, by count or by a
 commit; only by replayed closure, and a fibre whose closure no court
 replays lapses with its escrow (Z4d) and is never promoted.
 
-**Binding.** `physics/mod.rs` (the reserve as the universe), `physics/
+**Binding.** `physics/calibration.rs` (the reserve as the universe), `physics/
 budget.rs` (the draw), `bubble/` (the fibres held), `server/cognition/
 book/` (the tether ruled), `client/sdk/epigenome/` (the callus, Stood →
 Ruled at the relation).
@@ -12620,7 +12620,7 @@ The arms, per pair of planes and per lane, never summed (law 5): INVISCID, neith
 
 ### 78.8 The provenance of a constant
 
-Every constant rests on a chain of four links, each written where it lives: computational physics in `src/physics/` (a law that exists, or one added there as a producer, 72, checklist (p)), which produces the quantity exactly from the carriers; an axiom in `src/physics/axioms/`, the register, its layer named (72.1f, LR1), with an executable test per clause; a theorem, deterministic mathematics over ℚ on the axiom, derived and never fitted, a departure a refusal by name; and the component (the mind, the thought, the idea, the language), which reads the theorem's output and carries no number of its own. A constant that appears first at the component (a band, a decrement, a representative, a capacity, a count deciding a branch) has no chain and is checklist (s); rule 5 (no constants) and law 11 (no squaring) are two links of the chain, each stated on its own. Chains that stand: the metabolic reserve (hardware, `reserve_max` in `src/physics/mod.rs`, A18, the lanes); the wire's encodings (Part IX, the codec's axioms, decode as a theorem, the observer's readings); the inversive strain (the nuclei, Axiom C, `(num, den2)`, the class); and a plane's viscosity (78.7: the pivot, the class invariants of A.16–A.17, the response per plane per lane, the pressure a mind reads).
+Every constant rests on a chain of four links, each written where it lives: computational physics in `src/physics/` (a law that exists, or one added there as a producer, 72, checklist (p)), which produces the quantity exactly from the carriers; an axiom in `src/physics/axioms/`, the register, its layer named (72.1f, LR1), with an executable test per clause; a theorem, deterministic mathematics over ℚ on the axiom, derived and never fitted, a departure a refusal by name; and the component (the mind, the thought, the idea, the language), which reads the theorem's output and carries no number of its own. A constant that appears first at the component (a band, a decrement, a representative, a capacity, a count deciding a branch) has no chain and is checklist (s); rule 5 (no constants) and law 11 (no squaring) are two links of the chain, each stated on its own. Chains that stand: the metabolic reserve (hardware, `reserve_max` in `src/physics/calibration.rs`, A18, the lanes); the wire's encodings (Part IX, the codec's axioms, decode as a theorem, the observer's readings); the inversive strain (the nuclei, Axiom C, `(num, den2)`, the class); and a plane's viscosity (78.7: the pivot, the class invariants of A.16–A.17, the response per plane per lane, the pressure a mind reads).
 
 ### 78.9 CV1: the kind of a refusal is read off its content
 
@@ -12645,7 +12645,7 @@ Chapter 74 defines P, D and C by the content of the obstruction (whether a verso
 | `NoPose::Bodiless` | I | nothing to pose |
 | a held 180° turn, an unoriented pair | not refusals | held stabilizers (78.6(1), FR1c) |
 
-Code: `src/transducer/sentence/obstruction.rs` (`ObstructionKind`, `read_obstruction`), `src/court/verdict/mod.rs` (`ruled_obstruction`, `Refusal::closure`), `src/transducer/family/deflation.rs` (`Withheld`), `src/transducer/blade/frame.rs` (`NoPose::obstruction_kind`).
+Code: `src/transducer/sentence/obstruction.rs` (`ObstructionKind`, `read_obstruction`), `src/court/verdict/refusals.rs` (`ruled_obstruction`, `Refusal::closure`), `src/transducer/family/deflation.rs` (`Withheld`), `src/transducer/blade/frame.rs` (`NoPose::obstruction_kind`).
 
 ### 78.10 NB1: the producer, the content, the carrier
 
@@ -12762,7 +12762,7 @@ The engine's time is TUniversal and each node's own `K`, never a wall clock (law
 - (iv) `Reading::Clock` carries per source the stamp and per tick window the frame, and the console prints every source by its stamp.
 - (v) Disparity is read on the tick and per lane: two nodes at one height whose frames differ hold different manifolds of the same moment, and that difference is content, never a fault (13.7, rule 5).
 
-Code: `src/observe/clock.rs` (`CourtClock`, `Clock`), `src/chronometry/receipt.rs` (`KStepReceipt::print`, `CoreStamp`), `src/server/cognition/reads.rs` (`core_stamp`), `src/bin/mycelium-server/console.rs`, `src/physics/mod.rs` (`stroke_floor`).
+Code: `src/observe/clock.rs` (`CourtClock`, `Clock`), `src/chronometry/receipt.rs` (`KStepReceipt::print`, `CoreStamp`), `src/server/cognition/reads.rs` (`core_stamp`), `src/bin/mycelium-server/console.rs`, `src/physics/calibration.rs` (`stroke_floor`).
 
 ### 78.22 Framing refusals, and a citation is coordinates, never a copy (LD0, LD1)
 
@@ -12789,7 +12789,7 @@ Code: `src/transducer/address.rs` (`put_address`), `src/chronometry/receipt.rs` 
 
 **No orbit collides.** Each kernel's orbit is the fibre over its key in its star's field (73.15), distinct by construction, with no assignment, slot or table. A collision is prevented, never named after the fact: at the orbit boundary, before the closing act is stamped, the orbit's frame is compared lane by lane, exactly, against the frames of the peers admitted at that tick; where it would coincide, the close is WITHHELD for one stroke (never evicted or re-slotted) while the planet takes a separating transport, and it closes one stroke on at a frame that differs. The distance between two planets' frames at a tick is the per-lane difference, sign-first and exact, never a root and never summed, and the count of orbits withheld for separation is a line of the clock.
 
-**As amended by §0.0.** An orbit is a return, a mode's flow on its plane returning where its point is the identity (78.73, 78.75); a tick is the host handing a node a turn, and a node's ledger `K` is a ledger coordinate, its cycles closed by name (OK1). OK1's former statement "a K-step is one orbit" is withdrawn for the ledger's `K`; clause 4, the stamp and the collision rule stand. Code: `src/chronometry/receipt.rs` (`Place`, `Stamp`), `src/chronometry/chain.rs` (`ReceiptChain::orbit_frame`, `ReceiptChain::collides`, `ReceiptChain::separation`), `src/observe/clock.rs` (`Orbits`), `src/physics/axioms/native.rs`.
+**As amended by §0.0.** An orbit is a return, a mode's flow on its plane returning where its point is the identity (78.73, 78.75); a tick is the host handing a node a turn, and a node's ledger `K` is a ledger coordinate, its cycles closed by name (OK1). OK1's former statement "a K-step is one orbit" is withdrawn for the ledger's `K`; clause 4, the stamp and the collision rule stand. Code: `src/chronometry/receipt.rs` (`Place`, `Stamp`), `src/chronometry/chain/mod.rs` (`ReceiptChain::orbit_frame`, `ReceiptChain::collides`, `ReceiptChain::separation`), `src/observe/clock.rs` (`Orbits`), `src/physics/axioms/native.rs`.
 
 ### 78.24 The ledger is a partial order carried as one, never a serialized tape
 
@@ -12802,11 +12802,11 @@ The ledger has several dimensions (the tick `h`, the four lanes `S:G:T:H`, `K`, 
 - **Defects fixed by LD2.** (d1) the voice's chain was never persisted, so its `K` restarted at zero: it persists in its genome file with per-word stamps and restores under its own key only (the voice's ledger as amended by 78.49); (d2) what admission knows is what the ledger holds: per-signer heads are read off the ledger, never a separate struct; (d3) depth is rebuilt from every node by a relation cite-at → signers.
 - **Rows, not copies.** An award, a deflation and the coherence field (FLD1) are fields of the word's row (78.22), and one probed on an address no row holds is named and refused, never a copy; every removal path that drops a word sweeps its `admitted_at`, so no stamp entry outlives its word. A ledger is bound to its key and refused by name under another. The tape check (C4) is the build's own round trip on every carrier the build under check wrote; an older layout is refused by name, never migrated.
 
-Code: `src/chronometry/chain.rs` (`ReceiptChain`), `src/chronometry/receipt.rs` (`Stamp`, `Place`, `KStepReceipt`, `Cite`), `src/chronometry/chain/node.rs`, `src/court/admission/admit.rs`, `src/server/cognition/cite.rs` (`admitted_at`).
+Code: `src/chronometry/chain/mod.rs` (`ReceiptChain`), `src/chronometry/receipt.rs` (`Stamp`, `Place`, `KStepReceipt`, `Cite`), `src/chronometry/chain/node.rs`, `src/court/admission/admit.rs`, `src/server/cognition/cite.rs` (`admitted_at`).
 
 ### 78.25 The MYC7 tape is retired; the mind persists as keyed tries by coordinates
 
-MYC7, a linear snapshot tape whose sections were read by position, is retired (as the form tape was by 1.9, K6 and 54.5). The mind — the basis, the provisional book, the cavity, the pending listings, the treasury, the field and the rank — persists as keyed tries by coordinates exactly as the ledger is persisted (78.24), each word a node at its coordinates (its chart and its admitting stamp) and its per-word fields (award, deflation, field hot and cold, rank) the node's leaves, written each key once as a path and read back by key and by prefix, never by position in a stream. A section read by position is refused, and a snapshot carrying the MYC7 magic is refused by name, never migrated. The node layout is LD3 (78.27). Code: `src/server/cognition/snapshot/mod.rs` (`MAGIC`, `PRE_TRIE_MAGIC`), `src/server/cognition/snapshot/read.rs` (`restore`), `src/snapshot.rs` (`put_trie`, `take_trie`).
+MYC7, a linear snapshot tape whose sections were read by position, is retired (as the form tape was by 1.9, K6 and 54.5). The mind — the basis, the provisional book, the cavity, the pending listings, the treasury, the field and the rank — persists as keyed tries by coordinates exactly as the ledger is persisted (78.24), each word a node at its coordinates (its chart and its admitting stamp) and its per-word fields (award, deflation, field hot and cold, rank) the node's leaves, written each key once as a path and read back by key and by prefix, never by position in a stream. A section read by position is refused, and a snapshot carrying the MYC7 magic is refused by name, never migrated. The node layout is LD3 (78.27). Code: `src/server/cognition/snapshot/layout.rs` (`MAGIC`, `PRE_TRIE_MAGIC`), `src/server/cognition/snapshot/read.rs` (`restore`), `src/snapshot.rs` (`put_trie`, `take_trie`).
 
 ### 78.26 Where the language loses content, and what carries the loss
 
@@ -12832,7 +12832,7 @@ LD3 is the layout of the mind as keyed tries (78.25). Each trie is written as it
 7. The class is written inline as its own coordinates by `put_canonical`, never nested as a key; no class trie until a quantity is measured per class.
 8. The voice's genome takes T1's shape in its own phase, its `admitted_at` from its own ledger (genome layout GEN4, since superseded and now refused by name); the treasury's per-word awards are T1 leaves, its per-act entries T2 leaves, its stakes T3 by `vk`.
 
-Also: `basis_seq` is a reading of the basis, re-derived at restore and not persisted; a transducer codec prints nothing, and a refusal is by name. Code: `src/snapshot.rs` (`put_trie`, `take_trie`, `put_leaf`), `src/server/cognition/snapshot/mod.rs` (`MAGIC`), `src/server/cognition/snapshot/write.rs` (`snapshot`), `src/server/cognition/snapshot/read.rs` (`restore`), `src/server/cognition/cite.rs` (`unstamped`), `src/client/sdk/epigenome/persist.rs`.
+Also: `basis_seq` is a reading of the basis, re-derived at restore and not persisted; a transducer codec prints nothing, and a refusal is by name. Code: `src/snapshot.rs` (`put_trie`, `take_trie`, `put_leaf`), `src/server/cognition/snapshot/layout.rs` (`MAGIC`), `src/server/cognition/snapshot/write.rs` (`snapshot`), `src/server/cognition/snapshot/read.rs` (`restore`), `src/server/cognition/cite.rs` (`unstamped`), `src/client/sdk/epigenome/persist.rs`.
 
 ### 78.28 A versor is known by its action, never by a sum of squares
 
@@ -12866,7 +12866,7 @@ An analyst's draft is reconciled against the standing rulings; items 1, 5 and 7 
 8. Across a held stabilizer the refraction is read per element and collapsed by T5's kernel or a court replay, never by choosing a representative; a contact unread for want of that collapse is named unread (OR3).
 9. The star field enters only through REG1: A.13 and FT1 are stated in the register with a test per clause before any value enters, and a planet's elements move by closures and refinements, never by a weighted field step.
 
-Code: `src/transducer/cech/orbit_algebra.rs` (`NoRound`), `src/transducer/cech/nerve.rs`, `src/transducer/cech/coxeter.rs`, `src/transducer/family/mod.rs` (`member_key`).
+Code: `src/transducer/cech/orbit_algebra.rs` (`NoRound`), `src/transducer/cech/nerve.rs`, `src/transducer/cech/coxeter.rs`, `src/transducer/family/keys.rs` (`member_key`).
 
 ### 78.31 The plexus, not the ladder: the Mycelium network the linguistics stand on
 
@@ -13249,7 +13249,7 @@ scenes. Where the base does not order two hues, the relation is the coset of
 labellings, held as a superposition (law 10), never broken by the integer.
 As amended by 78.56 II, the sensor's channels are a Dirichlet boundary and
 the palette is not relabelled at the sensor; a merge of hues is recorded
-into the reservoir (78.58). Code: `src/transducer/family/mod.rs`
+into the reservoir (78.58). Code: `src/transducer/family/fibre_relation.rs`
 (`fibre_relation`), `src/transducer/element/residual.rs` (`colour_word`).
 
 ### 78.54 The lattice's frame is a gauge too
@@ -13391,7 +13391,7 @@ ALLOCATION, a WORLD is a DOMAIN, and `M_world` is `M_domain`.
   coherence form's Δδ² component, 78.57); temporal monotonicity (height on
   the T lane strictly increases); conservative information flow (erasure
   sinks its distinction into `e_∅`, 78.58, group invertibility kept). The
-  register is `src/physics/laws.rs` (`Law`, `LAWS`), extended by
+  register is `src/physics/laws/mod.rs` (`Law`, `LAWS`), extended by
   continuity (78.89) under 78.62's L0.
 - **Ruling 2, amendment versus fork.** A change to the metric signature,
   the algebra Cl(4,1) or a conservation law is a NEW UNIVERSE with its own
@@ -13646,7 +13646,7 @@ over ℚ:
 - **The walker is retired.** Whether a body moves under a motion is one
   exact application (`family::moves`), never a march to a cap.
 
-Code: `src/physics/laws.rs` (`Law`, `verify`), `src/physics/laws/codec.rs`;
+Code: `src/physics/laws/mod.rs` (`Law`, `verify`), `src/physics/laws/codec.rs`;
 `src/transducer/address.rs` (`TAG_LAW`); `src/transducer/cga/gram.rs`
 (`pair_regime`); `src/physics/tensegrity.rs` (`unit_product`, `rigid`,
 `stability`, `force`); `src/transducer/cga/motion.rs` (`motion_modes`);
@@ -13717,10 +13717,10 @@ The Phase 1 exit criteria and its run order are historical. What stands:
   verdicts and the voices' acts travel in exact codecs, proved by round
   trips by the algebra, with the register fetch act.
 
-Code: `src/chronometry/chain.rs` (`shed_folded`);
+Code: `src/chronometry/chain/mod.rs` (`shed_folded`);
 `src/server/cognition/court/era.rs` (`fold_head`, `shed_folded_lines`);
 `src/chronometry/chain/line.rs`, `src/chronometry/era.rs`,
-`src/server/cognition/snapshot/mod.rs`, `src/chronometry/pack.rs`,
+`src/server/cognition/snapshot/layout.rs`, `src/chronometry/pack.rs`,
 `src/chronometry/chain/node.rs`; `src/observe/carriers.rs` (`Carriers`),
 `src/server/cognition/carriers.rs` (`carriers`),
 `src/server/cognition/tests/carriers.rs`; `src/physics/laws/codec.rs`.
@@ -13789,7 +13789,7 @@ Code: `src/server/cognition/court/era.rs` (`fold_head`);
 - The fold trigger ruled here (`Physics::hold`, the hot ledger's cost drawn
   at each close) is superseded by 78.67.
 
-Code: `src/physics/mod.rs` (`Physics::spend`, `book_contacts`, `relax`,
+Code: `src/physics/stroke.rs` (`Physics::spend`, `book_contacts`, `relax`,
 `stroke_floor`); `src/client/sdk/entity/boot.rs` (`physics`,
 `physics_mut`); `src/transducer/cga/motion.rs` (`period_of`);
 `src/physics/metabolism.rs` (`note_orbit`).
@@ -13813,7 +13813,7 @@ with it: the mint's refusal is named by its typed arm (`carry`, `demands`,
 `citation`, `integrity`); the reserve's books count refusals per lane and
 the court and the voice each journals its metabolism; eras bind in one sort by root,
 deduplicated. Code: `src/server/cognition/court/fold.rs`
-(`propose_fold_at_close`, `fold_transitions`); `src/court/verdict/mod.rs`
+(`propose_fold_at_close`, `fold_transitions`); `src/court/verdict/refusals.rs`
 (`REFUSE_FOLD_IDLE`, `REFUSE_FOLD_NO_TRANSITION`);
 `src/transducer/family/deflation.rs` (`mint_arm`); `src/physics/budget.rs`
 (`Reserve::line`); `src/server/cognition/state.rs` (`bind_eras`).
@@ -13963,9 +13963,9 @@ court relaxes at its own orbit close; and a refused draw counts every short
 lane, not only the first. Code: `src/transducer/sentence/compose.rs`
 (`compose`, `next_rung`, `terms_of`), `src/transducer/cech/orbit_algebra.rs`
 (`cayley_generators`), `src/transducer/cayley/chart.rs` (`bivector_of`),
-`src/physics/actions.rs` (`Action::changes_algorithm`),
+`src/physics/actions/mod.rs` (`Action::changes_algorithm`),
 `src/server/cognition/court/fold.rs` (`fold_transitions`),
-`src/transducer/family/pairing.rs` (`mark_measured`), `src/physics/mod.rs`
+`src/transducer/family/pairing.rs` (`mark_measured`), `src/physics/stroke.rs`
 (`Physics::relieve`, `Physics::syntropy`),
 `src/server/cognition/book/listings.rs` (`pending_take`),
 `src/server/cognition/court/glue.rs` (`hold_glued`).
@@ -14066,9 +14066,9 @@ the source also as "78.71 (1)" to "(5)"):
   transports both ways, and every reading keeps them apart, so sign
   cancellation hides nothing.
 
-Code: `src/transducer/cech/flux.rs` (`TubeRegistry`), `src/physics/mod.rs`
+Code: `src/transducer/cech/flux.rs` (`TubeRegistry`), `src/physics/stroke.rs`
 (`Physics::book_flux`), `src/server/cognition/court/winding.rs`
-(`step_flux`), `src/physics/actions.rs` (`Action::Reconnect`); proved in
+(`step_flux`), `src/physics/actions/mod.rs` (`Action::Reconnect`); proved in
 `src/physics/axioms/tests/fluid.rs`.
 
 ### 78.73 Malleability: every lane's stress read as elastic, plastic or fracture, in exact rationals
@@ -14105,7 +14105,7 @@ not plastic), or fracture (it fails at yield: a draw is refused). Per lane,
 Code: `src/physics/malleability.rs` (`Physics::draw`),
 `src/transducer/cech/orbit.rs` (`OrbitRegistry`, `Field`),
 `src/transducer/family/pairing.rs` (`transport_order`); proved in
-`src/physics/axioms/tests/malleability.rs`.
+`src/physics/tests/malleability.rs`.
 
 ### 78.74 The fibre as a capacitor, and torsion, which does no work
 
@@ -14164,7 +14164,7 @@ Code: `src/physics/capacitor.rs` (`Fibre`, `Fibre::split`, `Fibre::charge`,
 (`release_vertex`, `vent_vertex`, `descend`, `drain`),
 `src/transducer/stalk/chart.rs` (`congruent_all`),
 `src/server/cognition/book/language.rs` (`basis_remove`); proved in
-`src/physics/axioms/tests/capacitor.rs`.
+`src/physics/tests/capacitor.rs`.
 
 ### 78.75 Motion is a flow, a frame is a sample; the built machinery closes the circuit
 
@@ -14287,7 +14287,7 @@ judges motion and colour flow only; whether
 L0 needs a law of accretion and extinction (growth, carving, site-selective
 recolour, creation), or these are a world's own mathematics (78.59 Ruling 4), is
 open. Code: `src/transducer/family/bridge.rs` (`bridge_pair`),
-`src/physics/tensegrity.rs` (`body_of_shape`), `src/physics/laws.rs` (`verify`),
+`src/physics/tensegrity.rs` (`body_of_shape`), `src/physics/laws/mod.rs` (`verify`),
 `src/transducer/cga/group.rs` (`projective_ratio`).
 
 ### 78.85 The register on the wire: the contract's first slice
@@ -14303,7 +14303,7 @@ replays and admits nothing for it, and the verdict is a reading the kernel acts
 on. Making `verify` the court's admission check (step 1) waits on 78.84's open
 question. Code: `src/physics/laws/codec.rs` (`law_at`, `put_transition`,
 `put_verdict`), `src/anastome/dialogue/acts.rs` (`ACT_LAWS`),
-`src/bin/mycelium-server/judge/laws.rs`; proved in `src/physics/laws/tests.rs`.
+`src/bin/mycelium-server/judge/laws.rs`; proved in `src/physics/laws/tests/codec.rs`.
 
 ### 78.86 A kernel's universe: join one, or create a subsidiary; the big bang recorded, a section leased
 
@@ -14343,7 +14343,7 @@ law version, 78.59 Ruling 2), what a lease is on the ledger (a section's
 coordinates, price in μ, term and end), which object carries quantum
 states, and how one hypha hosts several universes (today it adopts one
 origin and refuses every other, `REFUSE_ORIGIN`; 78.87 P3). Code:
-`src/anastome/dialogue/domain.rs` (`Origin`), `src/court/verdict/mod.rs`
+`src/anastome/dialogue/domain.rs` (`Origin`), `src/court/verdict/refusals.rs`
 (`REFUSE_ORIGIN`), `src/server/cognition/tests/origin.rs`.
 
 ### 78.87 The physics is the server's; the delegation of universe and world aligned
@@ -14410,7 +14410,7 @@ worlds in a universe on the network.
   client process loads one key, seats one `Voice` and opens one `Mind`
   holding one mind; no multi-mind or multi-entity client exists.
 
-Code: `src/chronometry/chain.rs` (`ReceiptChain::fold_before`,
+Code: `src/chronometry/chain/mod.rs` (`ReceiptChain::fold_before`,
 `ReceiptChain::prove_from_era`), `src/server/backfill.rs`,
 `src/client/sdk/voice.rs` (`Voice`), `src/client/sdk/types.rs` (`Mind`).
 
@@ -14443,7 +14443,7 @@ Code: `src/chronometry/chain.rs` (`ReceiptChain::fold_before`,
   signer's line from the cited receipt up to the root, each receipt
   re-deriving its hash and naming the one before. Nothing is trusted of who
   sent the page; the back-fill asks for the proof, and an unproved citation
-  waits for the next hearing. Code: `src/chronometry/chain.rs`
+  waits for the next hearing. Code: `src/chronometry/chain/mod.rs`
   (`ReceiptChain::prove_from_era`), `src/server/backfill.rs`; test
   `hear_proves_citation_into_closed_era`
   in `src/server/cognition/tests/backfill.rs`.
@@ -14464,10 +14464,10 @@ at its place, a sink absorbs both, and the bodies' net external torque
 equals what the fluxes carried (A.13), so mass gained with nothing recorded
 breaks both laws, each named (`MassNotConserved { made }`). A grown frame or
 body is thereby mass from a source, a cut one mass into a sink, a tiling a
-source repeated along a translation orbit. Code: `src/physics/laws.rs`
+source repeated along a translation orbit. Code: `src/physics/laws/mod.rs`
 (`Law::Continuity`, `Flux`), `src/physics/laws/codec.rs`; test
 `verify_refuses_mass_change_without_source_or_sink` in
-`src/physics/laws/tests.rs`.
+`src/physics/laws/tests/verify.rs`.
 
 ### 78.90 The voice keeps one faculty on its remainder: the inversion
 
@@ -14616,11 +14616,11 @@ fact. No measurement is free: an observation's stroke is the court's
 metabolism spent on the asker's question, metered per action, and charged
 to the asker's wallet as the tax of 78.93 (d) once the financial mind
 stands; until then the court bears and counts it. Code:
-`src/physics/actions.rs` (`Action`, `Kind`, `ACTIONS`, `COURT_RANGE`,
+`src/physics/actions/mod.rs` (`Action`, `Kind`, `ACTIONS`, `COURT_RANGE`,
 `Action::of_wire`, `Action::laws`), `src/chronometry/receipt.rs` (`ActKind`),
-`src/anastome/dialogue/acts.rs`, `src/chronometry/chain.rs`,
-`src/bin/mycelium-server/judge/mod.rs`; tests in
-`src/physics/actions/tests.rs` (`action_of_reads_each_byte_back_once`,
+`src/anastome/dialogue/acts.rs`, `src/chronometry/chain/mod.rs`,
+`src/bin/mycelium-server/judge/dispatch.rs`; tests in
+`src/physics/actions/tests/table.rs` (`action_of_reads_each_byte_back_once`,
 `sealed_excludes_observations_and_transitions_answer_every_law`,
 `of_wire_reads_each_wire_spelling_as_table_action`).
 
@@ -15010,7 +15010,7 @@ Code: `src/client/sdk/entity/think.rs` (`hold_perceived_from`,
 `src/transducer/bubble/docket.rs` (`drain_demands`),
 `src/transducer/sentence/chart.rs` (`chart_of_form`),
 `src/transducer/family/derivation.rs` (`letter_reading`),
-`src/physics/laws.rs` (`verify`).
+`src/physics/laws/mod.rs` (`verify`).
 
 ### 78.110 The encounter: lift as force carried against gravity and drag
 
@@ -15056,7 +15056,7 @@ modes need (`modes_need`), a function of the transition alone, so a kernel
 that verifies the same way agrees with the court whatever stroke it holds
 (law 12). `verify(t, budget)` stands for readers that verify, each inside a stroke
 of its own (perception's flux and bridge). A stroke spent before the modes
-split is never a breach of a law: 78.121. Code: `src/physics/laws.rs`
+split is never a breach of a law: 78.121. Code: `src/physics/laws/mod.rs`
 (`verify_sized`, `verify`), `src/transducer/cga/motion.rs` (`modes_need`),
 `src/bin/mycelium-server/judge/laws.rs`.
 
@@ -15105,7 +15105,7 @@ A fold is admitted only from a tier a sealed domain genesis names (78.120),
 only from a domain's reserve tier (78.138), and chained folds are 78.123.
 Code: `src/anastome/dialogue/uplink.rs` (`TierFold`, `TierFold::sign`,
 `encode_uplink`, `Uplinked`), `src/server/cognition/cite.rs`
-(`Court::admit_uplink`), `src/physics/actions.rs` (`Action::Uplink`),
+(`Court::admit_uplink`), `src/physics/actions/mod.rs` (`Action::Uplink`),
 `src/chronometry/receipt.rs` (`Cite::Uplink`).
 
 ### 78.120 2(d): a domain's genesis binds its tiers
@@ -15126,7 +15126,7 @@ with no domain writes and reads as before. Code:
 `src/anastome/dialogue/domain.rs` (`DomainGenesis`, `SignedDomain`),
 `src/server/cognition/cite.rs` (`Court::admit_domain`, `hold_domain`),
 `src/server/cognition/state.rs` (`domains`, `tier_domain`),
-`src/server/cognition/snapshot/mod.rs` (`LEAF_DOMAINS`).
+`src/server/cognition/snapshot/layout.rs` (`LEAF_DOMAINS`).
 
 ### 78.121 A law unread is never a law broken: `Unmeasured`
 
@@ -15137,7 +15137,7 @@ law as unread, never as broken: `Verdict.unmeasured` holds
 `admitted()` asks every law read and none breached, `measured()` the first
 half. Every other refusal of the modes (irrational, defective) stays a
 breach, since those are read. The verdict's codec carries the list after the
-ratios, a wire change, not a persisted layout. Code: `src/physics/laws.rs`
+ratios, a wire change, not a persisted layout. Code: `src/physics/laws/mod.rs`
 (`Verdict`, `Unmeasured`, `verify_sized`), `src/physics/laws/codec.rs`
 (`put_verdict`, `take_verdict`).
 
@@ -15176,7 +15176,7 @@ every connection uses the same terms.
 Code: `src/physics/laws/lexicon.rs` (`TERMS`, `LEXICON_VERSION`),
 `src/physics/laws/codec.rs` (`encode_lexicon_reply`, `decode_lexicon_reply`),
 `src/anastome/dialogue/domain.rs` (`DomainGenesis`, `SignedDomain`),
-`src/physics/laws/tests.rs` (`lexicon_reply_serves_terms_as_written`).
+`src/physics/laws/tests/lexicon.rs` (`lexicon_reply_serves_terms_as_written`).
 
 ### 78.123 2(a): the ledger tree as a complex, the court's complex generalized over its coefficient group
 
@@ -15306,7 +15306,7 @@ A fold's rows stay with its tier (LD0) and its receipt commits to them by hash; 
 - **Nothing is sealed twice.** A fold over its tier's current head is answered without sealing: byte-identical to the fold admitted there it is a resend, answered with the original receipt; otherwise `Uplinked::Repeated`. A resent handoff offer and a resent demand by the same filer are each answered with the original receipt; the SDK never resends a sealing act once written.
 - **The windows settle.** At each orbit's close `settle_windows` prunes a record read final to a stub (its coordinates and whether it was upheld); a stub leaves once the fold has no value in flight, no unfinished fold nets it and the hot line no longer holds its receipt; finished streams and empty remainders leave. What stays is each fold within its window and the open remainders.
 
-Code: `src/physics/laws.rs` (`CHALLENGE_WINDOW`), `src/anastome/dialogue/challenge.rs`, `src/server/cognition/challenge.rs` (`finality`, `settle_windows`, `reconstructs`); held in the `LEAF_CHALLENGES` leaf.
+Code: `src/physics/laws/mod.rs` (`CHALLENGE_WINDOW`), `src/anastome/dialogue/challenge.rs`, `src/server/cognition/challenge.rs` (`finality`, `settle_windows`, `reconstructs`); held in the `LEAF_CHALLENGES` leaf.
 
 ### 78.126 2(b): matter handoffs, two-sided: matter and a word crossing domains on one court
 
@@ -15429,7 +15429,7 @@ A game's minds sit in its house through the hypha. The house is the domain's sit
 
 - Frame: integers little-endian, keys 32 bytes, ed25519 signatures 64 bytes; a frame is `[0x53][sub u8][fields][sig 64]`, signed over `b"mycelium seat v1" ‖ [sub] ‖ [fields]` (the act tag is not signed).
 - ARG = `[tag u8]` then `0 Q [num i64][den u64 > 0]` | `1 Key [32]` | `2 Count [u64]` | `3 Flag [u8 0|1]` | `4 Mv` | `5 BigQ [num len u16][num][den len u16][den]` (den > 0, reduced, minimal lengths) | `6 Bytes [len u16][bytes]` (78.146); anything else is refused. ARGS = `[count u8][ARG…]`.
-- Sub-kinds: 0 SEATS (house: `[domain][epoch u64][count u16] SEAT…`, SEAT = `[seat u32][role u8][on key][beat ARG][fns u16] FN…`; roles 0 progenitor, 1 ancients, 2 steward, 3 sovereign, 4–9 office; the latest or an equal epoch replaces); 1 TAKE (mind); 2 TAKEN (house); 3 PERCEPT (house: local time, seq and records `[kind u16][ARGS]`, COUNSEL as kind `0xFFFF` `[fn u16][ARGS][worth][cost]`); 4 CALL (mind; its call reference is `blake3` of exactly the signed bytes, a citation of the call and never its identity, law 2); 5 OUTCOME (house); 6 READ-LISTING (unsigned, the latest SEATS or empty); 7 READ-MAIL (signed by the reader: a mind reads the TAKEN, PERCEPT and OUTCOME naming it, a house its domain's TAKE and CALL too).
+- Sub-kinds: 0 SEATS (house: `[domain][epoch u64][count u16] SEAT…`, SEAT = `[seat u32][role u8][on key][beat ARG][fns u16] FN…`; role an opaque tier byte 0–9, named by the game kernel; the latest or an equal epoch replaces); 1 TAKE (mind); 2 TAKEN (house); 3 PERCEPT (house: local time, seq and records `[kind u16][ARGS]`, COUNSEL as kind `0xFFFF` `[fn u16][ARGS][worth][cost]`); 4 CALL (mind; its call reference is `blake3` of exactly the signed bytes, a citation of the call and never its identity, law 2); 5 OUTCOME (house); 6 READ-LISTING (unsigned, the latest SEATS or empty); 7 READ-MAIL (signed by the reader: a mind reads the TAKEN, PERCEPT and OUTCOME naming it, a house its domain's TAKE and CALL too).
 - Replies: `[1][seq u64]` or `[0][reason u8]` with 1 unsigned, 2 not the house, 3 malformed (any frame not read whole), 4 unknown domain; `[0][0]` is an empty box.
 - The mail is volatile and bounded: nothing is persisted; a READ-MAIL's `after` acknowledges and drops everything at or below it; each addressee's box is held within `frame_budget() − 2` bytes and `u16::MAX` pieces, the oldest dropped and counted (`SeatRelay::dropped`).
 - Conformance is by decoded values and signature (Concordance 1.4), never by reproduced bytes.
@@ -15451,7 +15451,7 @@ A fold is final on two signatures (47.3), so to anyone catching up the line belo
 3. The asker adopts (`Court::adopt_root`): both signatures verified exactly as the fold's were, the signer's line stands on the root (`ReceiptChain::line_tip`), its next receipt names the root as predecessor and admits hot, nothing below the root is asked again, and what was held below it is shed.
 4. A citation at or below a held root is proved by an era replay walked to the root (`prove_folded`). As amended (cited in code as 78.147 (3′)), the walk goes page by page: `ReceiptChain::walk_era` keeps its place where a page ends (Proved, Continues, Stalled, Broken) and the next page opens there, across hearings, one spend per page.
 
-Code: `src/server/cognition/court/catchup.rs`, `src/chronometry/chain.rs`, `src/anastome/dialogue/root.rs`, `src/anastome/dialogue/receipts.rs`, `src/server/backfill.rs` (`prove_folded`); tests `src/server/cognition/tests/catchup.rs`.
+Code: `src/server/cognition/court/catchup.rs`, `src/chronometry/chain/mod.rs`, `src/anastome/dialogue/root.rs`, `src/anastome/dialogue/receipts.rs`, `src/server/backfill.rs` (`prove_folded`); tests `src/server/cognition/tests/catchup.rs`.
 
 ### 78.148 The mind's own call
 
@@ -15469,7 +15469,7 @@ One reader states it (`Court::discharge_on`, `Court::discharge_of`): a word's di
 
 ### 78.151 Reads from a snapshot
 
-The door serves reads from a published reading; only writes take the kernel. The court stroke, under the kernel it already holds, publishes a `Published` (`Court::publish`) and swaps it onto the door's shelf (an `Arc<RwLock<Arc<Published>>>`, locked for one pointer's swap or clone), at most once per stroke and not where nothing moved; boot publishes the first reading before the door opens. A reading holds each signer's hot line and root, its eras and the cold segment's path, the root proofs, every account in 256 shards, the core clock and its head; pieces are shared, not copied (immutable runs behind shared pointers, `LineTally`, `Treasury::take_touched` naming the accounts that moved). Every read carries the height it was answered at: a wallet's account its head (`Account::at`) and, a wire change, an `ACT_RECEIPTS` answer eight bytes of reading height (`put_reading_height`, `decode_receipts_answer_at`); a writer reading its own write lags it by at most one court stroke. `ACT_RECEIPTS`, `ACT_WALLET`, the laws' clock and a seat READ-LISTING are answered off the reading where the frame is read (`judge::serve_published`); writes (admit, judge, solve, seat posts and mail, folds, intake, offers) stay on the kernel, and each publication counts what it copied (law 9). Code: `src/server/cognition/published/` (`publish.rs`, `serve.rs`, `runs.rs`), `src/bin/mycelium-server/published.rs`, `src/bin/mycelium-server/judge/mod.rs` (`serve_published`), `src/anastome/dialogue/receipts.rs`, `src/anastome/dialogue/root.rs`; tests `src/server/cognition/tests/published.rs`.
+The door serves reads from a published reading; only writes take the kernel. The court stroke, under the kernel it already holds, publishes a `Published` (`Court::publish`) and swaps it onto the door's shelf (an `Arc<RwLock<Arc<Published>>>`, locked for one pointer's swap or clone), at most once per stroke and not where nothing moved; boot publishes the first reading before the door opens. A reading holds each signer's hot line and root, its eras and the cold segment's path, the root proofs, every account in 256 shards, the core clock and its head; pieces are shared, not copied (immutable runs behind shared pointers, `LineTally`, `Treasury::take_touched` naming the accounts that moved). Every read carries the height it was answered at: a wallet's account its head (`Account::at`) and, a wire change, an `ACT_RECEIPTS` answer eight bytes of reading height (`put_reading_height`, `decode_receipts_answer_at`); a writer reading its own write lags it by at most one court stroke. `ACT_RECEIPTS`, `ACT_WALLET`, the laws' clock and a seat READ-LISTING are answered off the reading where the frame is read (`judge::serve_published`); writes (admit, judge, solve, seat posts and mail, folds, intake, offers) stay on the kernel, and each publication counts what it copied (law 9). Code: `src/server/cognition/published/` (`publish.rs`, `serve.rs`, `runs.rs`), `src/bin/mycelium-server/published.rs`, `src/bin/mycelium-server/judge/dispatch.rs` (`serve_published`), `src/anastome/dialogue/receipts.rs`, `src/anastome/dialogue/root.rs`; tests `src/server/cognition/tests/published.rs`.
 
 ### 78.152 The TUniversal law (TU-1..7; Concordance 1.11)
 
@@ -15483,7 +15483,7 @@ The mesh keeps one clock, TUniversal: a point read off the keepers' signed readi
 - **TU-6 OPERATIONS BY A FINAL POINT.** PINPOINT (`Court::pinpoint`), UNPACK (`TPoint::unpack`, `Court::unpack`) and UNROLL (`Court::unroll`) are kernel reads; RESET (`ops::Reset`, the next epoch citing the point), BRANCH (`ops::Branch`, a sub-universe whose genesis is the citation of the point and the branch's name) and SUPERPOSE (`ops::Superposed`, two branches' points with the points' exact residue, merged only by a quorum-final point past both that cites both, `merged_by`) are typed values carrying the citation each needs.
 - **TU-7 SYNC AND WATCHDOG.** Every act carries its speaker's last final point behind its body on the frame (a wire change in `network::wire`: the lane byte's bit `0x80`, the last 84 bytes the `TPoint`); door replies carry the door's final point and a session keeps the greatest it read; a percept is stamped with the house's point, signed with its fields (seat v1.3: `[0]` or `[1][TPoint]` after the records). The door keeps the greatest final point on its shelf (`TShelf`), raised only by the keepers' quorum, a speaker's carried point held apart as heard; the lock watchdog wakes on each advance of the final point and names a hold standing across `aperture_cycle` advances.
 
-The SDK read: `Session::tuniversal` and `Mind::tuniversal` return the last final point read (`None` before the first); a game kernel holds its clock to it, stamps what it publishes with `TPoint::print`, and keeps its own step clock (78.124). The only remaining earth clock is the scheduler floor `physics::stroke_floor`, told to the OS scheduler and read by no one (78.21(4) as corrected); the court's idle park ends at the first motion. With a majority of keepers down time does not advance: nothing new is final, the door's point stands and the watchdog is not woken. Open: whether a later quorum point citing two differing finals at one tick resolves that tick on the main line, and issuance net of genesis is not separable in `issued` after a treasury fold. Code: `src/chronometry/tuniversal/` (`keepers.rs`, `reading.rs`, `point.rs`, `ops.rs`, `shelf.rs`, `record.rs`), `src/server/cognition/reads.rs` (`keeper_tick`, `pinpoint`, `unpack`, `unroll`), `src/network/wire.rs`, `src/bin/mycelium-server/tshelf.rs`, `src/bin/mycelium-server/held.rs` (`spawn_watchdog`), `src/client/sdk/session.rs` (`Session::tuniversal`), `src/physics/mod.rs` (`stroke_floor`); tests `src/chronometry/tuniversal/tests.rs`.
+The SDK read: `Session::tuniversal` and `Mind::tuniversal` return the last final point read (`None` before the first); a game kernel holds its clock to it, stamps what it publishes with `TPoint::print`, and keeps its own step clock (78.124). The only remaining earth clock is the scheduler floor `physics::stroke_floor`, told to the OS scheduler and read by no one (78.21(4) as corrected); the court's idle park ends at the first motion. With a majority of keepers down time does not advance: nothing new is final, the door's point stands and the watchdog is not woken. Open: whether a later quorum point citing two differing finals at one tick resolves that tick on the main line, and issuance net of genesis is not separable in `issued` after a treasury fold. Code: `src/chronometry/tuniversal/` (`keepers.rs`, `reading.rs`, `point.rs`, `ops.rs`, `shelf.rs`, `record.rs`), `src/server/cognition/reads.rs` (`keeper_tick`, `pinpoint`, `unpack`, `unroll`), `src/network/wire.rs`, `src/bin/mycelium-server/tshelf.rs`, `src/bin/mycelium-server/held.rs` (`spawn_watchdog`), `src/client/sdk/session.rs` (`Session::tuniversal`), `src/physics/calibration.rs` (`stroke_floor`); tests `src/chronometry/tuniversal/tests/`.
 
 #### 78.152b TUniversal never waits on a court's load
 
@@ -15514,13 +15514,13 @@ Specified: a unit larger than one stroke (`spend_unit` reads), such as one pair 
 
 ### 78.153b The lock guard and the shelf reads
 
-1. The guard is the library's (`src/server/held.rs`): one book of holds for the binary and the library, so the synthesis thread and the back-fill take the kernel through it and are counted.
+1. The guard is the library's (`src/server/held/mod.rs`): one book of holds for the binary and the library, so the synthesis thread and the back-fill take the kernel through it and are counted.
 2. A hold is taken with its one stroke: `Held` does not dereference; `held!` mints the court's stroke at the take, the only way in is `Held::run(|k: &mut Court, reads: &mut Budget| …)`, and `Held::into_stroke` lets go of the kernel and hands the stroke on whole (`Budget::hand_over`). `Court::stroke` is the crate's, so a binary cannot mint a second stroke under a hold, and an input-sized entry point the binary reaches takes `&mut Budget`.
 3. The unmetered hold is named: `Budget::spend` counts each read on its thread (`physics::spent_here`), and a hold that read nothing while an `aperture_cycle` of waiters blocked on it is written as an unmetered hold when it lets go.
 4. The unbounded paths under the kernel are metered or resumed per item (the fetch, with `class_cursor`; the digest confirmation, with `confirm_cursor`; the rows page, `Treasury::rows_below_page`; the fold head, `ReceiptChain::first_between`; the census, the helicity and the back-fill), and every spent stroke ends as `Unread`, a deferral, a shorter page or a resumed cursor, never a wrong answer.
 5. The shelf carries the court's own reads (`Published::own`: its cover charts, room and bond, voice, ruled cover and head receipt), so the cover page, the digest's cover and ruled root, the syllabus seed, `homes_here` and the fold witness (`Published::verify_fold`) are read off it, lagging the kernel by at most one court stroke (78.151).
 
-The signed position, the keeper tick (78.152), the `ACT_ROWS` rows, the domain acts (78.154) and `why` stay on the kernel. Code: `src/server/held.rs`, `src/bin/mycelium-server/held.rs`, `src/physics/budget.rs`, `src/server/cognition/published/`, `src/economy/fold.rs`, `src/chronometry/chain.rs`; tests `src/server/held/tests.rs`, `src/server/cognition/tests/shelf_reads.rs`.
+The signed position, the keeper tick (78.152), the `ACT_ROWS` rows, the domain acts (78.154) and `why` stay on the kernel. Code: `src/server/held/mod.rs`, `src/bin/mycelium-server/held.rs`, `src/physics/budget.rs`, `src/server/cognition/published/`, `src/economy/fold.rs`, `src/chronometry/chain/mod.rs`; tests `src/server/held/tests/meter.rs`, `src/server/cognition/tests/shelf_reads.rs`.
 
 ### Seat wire v1.4
 
@@ -15530,7 +15530,7 @@ The seat wire (78.145) at version 1.4, lexicon version 5 (Sub-origin, Relay epoc
 2. READ-MAIL at the relay's standing, sub-kind 8: `[0x53][8][reader 32][after u64][epoch u64][nonce 32][sig 64]`, answered `[1][relay_epoch u64][relay_seq u64][count u16]` then the pieces, or `[0][reason ≥ 1]`. The relay epoch is drawn from the OS's randomness when the relay is made (never 0), so every restart changes it; the relay honours `after` only under its own epoch and at or below its sequence (`ReadMail::after_on`), else the box is read from the start and nothing is acknowledged, and a reader resets its cursor where the epoch changed or the cursor passes the sequence (`MailRead::cursor`): a restart, never progress. Sub-kind 7 is answered as before.
 3. A percept's axis coordinate `u` (78.156 §6): the percept's `local_time` is the universe's axis coordinate, the world's committed cycle, free of TUniversal and carried beside the house's point; no byte changed. The seat mind locates its sub-instance at (TPoint, u) per percept (`SeatMind::located`) and reads its experienced dilation between two located percepts of one origin (`SeatMind::dilation`): `du`, `dh` and `du/dh` exact, unread where the final point stood, nothing across two origins; a reading, never an error.
 
-The relay is read on the observer as its own typed reading, `Reading::Relay` (`src/observe/relay.rs`), off the relay's own lock. Code: `src/anastome/dialogue/seat.rs`, `src/server/cognition/seat.rs`, `src/client/sdk/seat.rs` (`SeatName`, `list_seats`, `read_mail`, `mail`), `src/client/sdk/seat_mind/mod.rs`; tests `src/anastome/dialogue/tests/seat.rs`, `src/server/cognition/tests/seat.rs`, `src/client/sdk/tests/seat_mind.rs`.
+The relay is read on the observer as its own typed reading, `Reading::Relay` (`src/observe/relay.rs`), off the relay's own lock. Code: `src/anastome/dialogue/seat.rs`, `src/server/cognition/seat.rs`, `src/client/sdk/seat.rs` (`SeatName`, `list_seats`, `read_mail`, `mail`), `src/client/sdk/seat_mind/mind.rs`; tests `src/anastome/dialogue/tests/seat.rs`, `src/server/cognition/tests/seat.rs`, `src/client/sdk/tests/seat_mind.rs`.
 
 ### 78.153c The verdict made readable; the dispatch cursor kept
 
@@ -15539,7 +15539,7 @@ The relay is read on the observer as its own typed reading, `Reading::Relay` (`s
 3. A mind keeps its verdicts by the reply's code (nothing, floor, bounty, unread, an unknown code last) and its refusals by kind, UNREAD apart and never a refusal; each verdict is said once as `solve verdict · task <head>… · code <name> (<code>) · kind <P|D|C|I|N|?|none> · <reason>`.
 4. The registry's dispatch cursor has its own record, `corpora/cursor` = `CURS [cursor u32][tasks u32]` (12 bytes), written by temporary file and rename once per page of dispatches (`aperture_cycle`) and beside every snapshot, and restored at boot after the whole corpus registered; a record of another book or layout is refused whole and the snapshot's cursor stands.
 
-Code: `src/observe/acts.rs` (`Judged`), `src/observe/judged.rs`, `src/server/cognition/court/task.rs` (`SolveVerdict::judged`, `Court::note_judged`), `src/bin/mycelium-server/judge/observe.rs` (`answer_standing`), `src/client/sdk/entity/learn.rs` (`verdict_line`), `src/server/registry.rs`, `src/bin/mycelium-server/door.rs`, `src/bin/mycelium-server/genesis.rs`; tests `src/observe/tests.rs`, `src/server/cognition/tests/solve.rs`, `src/server/cognition/tests/resume.rs`, `src/bin/mycelium-server/tests/standing.rs`.
+Code: `src/observe/acts.rs` (`Judged`), `src/observe/judged.rs`, `src/server/cognition/court/task.rs` (`SolveVerdict::judged`, `Court::note_judged`), `src/bin/mycelium-server/judge/observe.rs` (`answer_standing`), `src/client/sdk/entity/learn.rs` (`verdict_line`), `src/server/registry.rs`, `src/bin/mycelium-server/door.rs`, `src/bin/mycelium-server/genesis.rs`; tests `src/observe/tests/`, `src/server/cognition/tests/solve.rs`, `src/server/cognition/tests/resume.rs`, `src/bin/mycelium-server/tests/standing.rs`.
 
 ### 78.154 Gas, the map, the ledger and the connection tax
 
@@ -15793,7 +15793,7 @@ has ruled, and learns from the answer. Three parts:
   persisted; the answers' bound beside the genome's is Specified.
 - **P3 — the answer read.** What a court answered a mind for a motion is
   read back through the crystal (`Crystal::presented`;
-  `transducer/family/mod.rs`): the generators and exponents, or `None`
+  `transducer/family/crystal.rs`): the generators and exponents, or `None`
   where no court has answered or for a crystal that asks no court.
 
 The mind's own **vocabulary** files every word it takes in by the holes

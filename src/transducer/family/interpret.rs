@@ -8,8 +8,8 @@
 //! The readers that once rode here — light, confluence, single changes, the
 //! recolour keys, the reconstructions by holonomy — were the builder's
 //! instruments over the corpus, reporting to the builder (78.90: the
-//! progenitor builds the mind's faculties, never his measuring tools into
-//! it). They stand in `mycelium-soak`, read off the same library functions,
+//! development builds the mind's faculties, never the builder's measuring
+//! tools into it). They stand in `mycelium-soak`, read off the same library functions,
 //! and no longer ride the mind's stroke.
 
 use super::invert::{invert_measured, Inversion, Painted};

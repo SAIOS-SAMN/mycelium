@@ -21,9 +21,9 @@ pub(crate) struct Door {
     /// 78.146 — the seat relay on its own lock (`judge::seat::serve_exempt`).
     pub(crate) seat_relay: mycelium::cognition::seat::SharedRelay,
     /// 78.151 — the court's published reading, which the door's reads
-    /// answer off without the kernel (`judge::serve_published`).
+    /// answer off without the court (`judge::serve_published`).
     pub(crate) published: crate::published::Shelf,
-    pub(crate) kernel: Arc<Mutex<Court>>,
+    pub(crate) court: Arc<Mutex<Court>>,
     pub(crate) mesh: Mesh,
     pub(crate) router: Arc<Mutex<Router>>,
     pub(crate) id: [u8; 32],
@@ -38,7 +38,7 @@ pub(crate) struct Door {
 }
 
 /// Control acts that used to run on the accept thread. The listener never
-/// holds the kernel lock; these run on a reflex worker.
+/// holds the court lock; these run on a reflex worker.
 pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
     let Some((&kind, _rest)) = frame.body.split_first() else { return false };
     if kind == dialogue::ACT_ROOT {
@@ -99,7 +99,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
     if kind == dialogue::ACT_EVIDENCE {
         if let Some((_dvoice, items)) = dialogue::decode_evidence_deposit(&frame.body) {
             let accepted = {
-                let Ok(mut h) = crate::held::held!(door.kernel) else { return true };
+                let Ok(mut h) = crate::held::held!(door.court) else { return true };
                 // Bounded by the deposit's own items, which the frame bounds.
                 h.run(|k, _| {
                     items
@@ -121,7 +121,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         }
         let Some(_evoice) = dialogue::decode_evidence_request(&frame.body) else { return true };
         let items: Vec<_> = {
-            let Ok(mut h) = crate::held::held!(door.kernel) else { return true };
+            let Ok(mut h) = crate::held::held!(door.court) else { return true };
             h.run(|k, _| k.anchor_evidence().iter().take(32).cloned().collect())
         };
         // LD0 — a reply whose address cannot be framed is refused whole,
@@ -138,7 +138,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // short: the voice would study a family this registry did not
         // dispatch. Nor is it answered empty — an empty body is "no work",
         // and a book with open tasks answered that while its cursor sat on
-        // a task it could not frame (barren-realms read 8 such pulls as
+        // a task it could not frame (a client read 8 such pulls as
         // tasks with no family; the task's long address passed the u16
         // wall, which the v1.2 citation removes). A plain request steps on
         // to the next open task, once round the book at most.
@@ -247,7 +247,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // THE COURT AUTHENTICATES KEYS, NEVER TIERS (ruled 2026-10-14: any
         // holder of a key may solve). A solve signed by an inner seat
         // of a founded domain is judged and paid as any key's: keeping the
-        // house's key is the ancients' charge, and a tier reaching the hypha
+        // house's key is the reserve's charge, and a tier reaching the hypha
         // directly is the game kernel's to answer. It is COUNTED, refusing
         // nothing (`inner_seat`), so a kernel — or a stipulation ruled
         // later — has the reading to act on.
@@ -257,7 +257,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // at all where every one of them stopped here.
         use mycelium::observe::Judged;
         let rule_carried = rule.is_some();
-        let pre: Option<Judged> = match crate::held::held!(door.kernel) {
+        let pre: Option<Judged> = match crate::held::held!(door.court) {
             Ok(mut h) => h.run(|k, _| {
                 if signed && k.inner_seat(&svoice) {
                     k.note_judged(Judged::InnerSeat);
@@ -275,7 +275,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 }
                 pre
             }),
-            // A poisoned kernel judges nothing, and answers nothing — as the
+            // A poisoned court judges nothing, and answers nothing — as the
             // judging below answers where its hold fails.
             Err(_) => return true,
         };
@@ -301,7 +301,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             ),
             (None, Some(first), Some(rule)) => {
                 let (verdict, offers) = {
-                    let Ok(mut h) = crate::held::held!(door.kernel) else { return true };
+                    let Ok(mut h) = crate::held::held!(door.court) else { return true };
                     // OWED (78.153b): the solve's replay mints its own stroke
                     // inside `judge_solve_on_stroke` (78.153, resumable).
                     h.run(|k, _| {
@@ -349,7 +349,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                     })
                 };
                 // The solving rule docketed is offered by the act that docketed it.
-                crate::offer::offer(&door.kernel, &door.mesh, offers);
+                crate::offer::offer(&door.court, &door.mesh, offers);
                 verdict
             }
         };
@@ -435,7 +435,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
     if kind == dialogue::ACT_COVER {
         if let Some((_voice, from)) = dialogue::decode_cover_request(&frame.body) {
             // 78.153b — this court's own charts off the published reading,
-            // never the cover trie walked and cloned under the kernel.
+            // never the cover trie walked and cloned under the court.
             let read = door.published.take();
             let charts = read.own_cover_charts();
             // A chart wider than the page's axis count is passed over by
@@ -486,7 +486,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // A PAGE IS A WINDOW, NOT A COPY OF THE BOOK: a slice from the voice's
         // cursor under the syllabus lock (checklist (j)).
         // 78.153b — the seed off the published reading, never every ruled
-        // address copied under the kernel per page asked.
+        // address copied under the court per page asked.
         let (cursor, window) = {
             let read = door.published.take();
             let Ok(mut sy) = door.syllabus.lock() else { return true };
@@ -500,7 +500,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // sealed as a Syllabus act and carries that stamp. Nothing is sealed
         // for a word that is not sent.
         let (page, classes) = {
-            let Ok(mut h) = crate::held::held!(door.kernel) else { return true };
+            let Ok(mut h) = crate::held::held!(door.court) else { return true };
             // The page is bounded by the window (one wire count); the whole
             // nerve's class records on the hold's stroke, resumed page to
             // page past the chart the last reading stopped at (78.153b).
@@ -597,7 +597,7 @@ fn rewind_syllabus(door: &Door) {
 /// of the cover: the listing is not taken here (§2.4, rule 11).
 ///
 /// 78.153b — this court's room read off the published reading: `lane_room`
-/// walked every word this court discovered (`use_credit`) under the kernel,
+/// walked every word this court discovered (`use_credit`) under the court,
 /// once per listing, and the intake after a restart headed the lock on all
 /// three hyphae (the lock audit, row 10).
 pub(crate) fn homes_here(mesh: &Mesh, shelf: &crate::published::Shelf, inv: &mycelium::transducer::stalk::Invariant, mag: &[u64; 4]) -> bool {
@@ -609,7 +609,7 @@ pub(crate) fn homes_here(mesh: &Mesh, shelf: &crate::published::Shelf, inv: &myc
 }
 
 pub(crate) fn list_task(
-    kernel: &Mutex<Court>,
+    court: &Mutex<Court>,
     shelf: &crate::published::Shelf,
     mesh: &Mesh,
     tid: impl AsRef<[u8]>,
@@ -621,7 +621,7 @@ pub(crate) fn list_task(
     // bound under those 32 bytes, once.
     let cite = mycelium::registry::citation(&mycelium::transducer::address::Address::new(tid.as_ref().to_vec()));
     let tid = &cite[..];
-    if let Ok(mut h) = crate::held::held!(kernel) {
+    if let Ok(mut h) = crate::held::held!(court) {
         h.run(|k, _| k.bind_task_family(tid, task.train.clone()));
     }
     for (a, b) in &task.train {
@@ -640,18 +640,18 @@ pub(crate) fn list_task(
         let inv = mycelium::transducer::stalk::invariant_of(&residual);
         let addr = residual.address();
         let here = homes_here(mesh, shelf, &inv, &residual.magnitude());
-        // The pieces and the pieces' charts are read here, with no kernel held;
+        // The pieces and the pieces' charts are read here, with no court held;
         // the lock below only commits them (`Court::intake_prepared`).
         let prepared = match here {
             true => mycelium::cognition::prepare_intake(&chain, &frame),
             false => Vec::new(),
         };
         // THE INTAKE LETS THE QUEUE IN, as the court loop does: it took the
-        // kernel once per listing for minutes after every restart and headed
+        // court once per listing for minutes after every restart and headed
         // the lock on all three hyphae (2026-10-09), deferring seats and
         // wallets behind it.
         crate::held::yield_to_waiters();
-        let mut h = match crate::held::held!(kernel) {
+        let mut h = match crate::held::held!(court) {
             Ok(g) => g,
             Err(_) => continue,
         };
@@ -669,7 +669,7 @@ pub(crate) fn list_task(
 
 /// First-time listing under a stroke budget until the manifest is exhausted.
 pub(crate) fn intake_corpus(
-    kernel: &Mutex<Court>,
+    court: &Mutex<Court>,
     shelf: &crate::published::Shelf,
     mesh: &Mesh,
     registry: &Mutex<mycelium::registry::TaskRegistry>,
@@ -680,13 +680,13 @@ pub(crate) fn intake_corpus(
         Err(_) => return,
     };
     for (tid, task) in batch {
-        list_task(kernel, shelf, mesh, tid, &task, false);
+        list_task(court, shelf, mesh, tid, &task, false);
     }
 }
 
 /// Cover-change walk: re-home listings whose key no longer (or now) homes here.
 pub(crate) fn relocate_corpus(
-    kernel: &Mutex<Court>,
+    court: &Mutex<Court>,
     shelf: &crate::published::Shelf,
     mesh: &Mesh,
     registry: &Mutex<mycelium::registry::TaskRegistry>,
@@ -697,7 +697,7 @@ pub(crate) fn relocate_corpus(
         Err(_) => return,
     };
     for (tid, task) in batch {
-        list_task(kernel, shelf, mesh, tid, &task, true);
+        list_task(court, shelf, mesh, tid, &task, true);
     }
 }
 

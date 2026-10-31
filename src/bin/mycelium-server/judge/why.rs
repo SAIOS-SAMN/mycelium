@@ -1,10 +1,10 @@
 // 78.92 (2) — ACT_WHY: why one act on this court's ledger stands, answered
-// from the kernel's own ledger and the words it holds (`Court::why`).
+// from the court's own ledger and the words it holds (`Court::why`).
 //
 //! A reading: nothing is admitted, no receipt is written and no book moves.
 //!
 //! THE DOOR NEVER WAITS ON COGNITION FOR IT. Where a worker is free the
-//! question is judged there, holding the kernel as every act does. Where the
+//! question is judged there, holding the court as every act does. Where the
 //! door is full, the question is LEFT for the court stroke (`serve_left`),
 //! which answers it under the lock it already holds (`answer_left`), and the
 //! next asking of the same question is served off that answer — the
@@ -26,8 +26,8 @@ static ANSWERED: Mutex<Option<(WhyAsk, Option<Why>)>> = Mutex::new(None);
 
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(ask) = decode_why(&frame.body) else { return };
-    let why = match crate::held::held!(door.kernel) {
-        // Stays on the kernel (78.153b): stamp→word and its Reasons are not
+    let why = match crate::held::held!(door.court) {
+        // Stays on the court (78.153b): stamp→word and its Reasons are not
         // on the shelf.
         Ok(mut h) => h.run(|k, _| k.why(ask)),
         Err(_) => return,
@@ -35,7 +35,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     answer(stream, Frame { lane: frame.lane, body: encode_why_reply(why.as_ref()) });
 }
 
-/// A WHY THAT REACHED A FULL DOOR, taken without the kernel: served off the
+/// A WHY THAT REACHED A FULL DOOR, taken without the court: served off the
 /// stroke's answer where the same question was answered, else left for the
 /// next stroke and deferred as every act a full door holds back is. Answers
 /// whether the frame was a why.

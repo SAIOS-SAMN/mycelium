@@ -348,7 +348,7 @@ fn ledgers_take_reads_gauge_steps_as_edges() {
     use crate::server::cognition::ledger::{vertex, Ledgers};
     use crate::transducer::address::{put_key_bytes, put_key_count};
     use crate::transducer::cech::coefficient::{Coefficient, Rates};
-    let (domain, realm, progenitor) = ([4u8; 32], vertex(&[21; 32], &[1; 32]), vertex(&[22; 32], &[2; 32]));
+    let (domain, realm, line) = ([4u8; 32], vertex(&[21; 32], &[1; 32]), vertex(&[22; 32], &[2; 32]));
     let rate = Rates::of([(1, 1), (5, 9), (1, 1), (1, 1)]).expect("positive");
     let leaf = |obstructions: usize| {
         let mut v = Vec::new();
@@ -358,7 +358,7 @@ fn ledgers_take_reads_gauge_steps_as_edges() {
         v.extend_from_slice(&domain);
         put_key_count(&mut v, 1);
         put_key_bytes(&mut v, &realm);
-        put_key_bytes(&mut v, &progenitor);
+        put_key_bytes(&mut v, &line);
         rate.put_canonical(&mut v);
         put_key_count(&mut v, obstructions);
         v
@@ -370,6 +370,6 @@ fn ledgers_take_reads_gauge_steps_as_edges() {
     let edges = read.edges.get(&domain).expect("its steps, as edges");
     assert!(matches!(edges.as_slice(), [e] if e.by.is_empty() && e.rate == rate));
     let gauge = read.gauges.get(&domain).expect("re-derived");
-    assert_eq!(gauge.find(&realm), Some((progenitor.clone(), rate.clone())), "the potential held");
+    assert_eq!(gauge.find(&realm), Some((line.clone(), rate.clone())), "the potential held");
     assert!(Ledgers::take(&leaf(1), &mut 0).is_none(), "a B′ obstruction is refused, never dropped");
 }

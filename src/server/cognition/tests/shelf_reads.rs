@@ -1,4 +1,4 @@
-// 78.153b — THE READS MOVED OFF THE KERNEL answer as the kernel answers: off
+// 78.153b — THE READS MOVED OFF THE COURT answer as the court answers: off
 // the published reading (the court's own cover, room, ruled cover, head
 // receipt, a fold's re-derivation), off a page of the journal's prefix, and
 // off the language snapshot touched in place — exact values, compared.
@@ -24,13 +24,13 @@ fn court() -> Court {
     k
 }
 
-/// THE COURT'S OWN READS OFF THE SHELF ARE THE KERNEL'S: its cover charts,
+/// THE COURT'S OWN READS OFF THE SHELF ARE THE LOCKED COURT'S: its cover charts,
 /// its room, the ruled root, the ruled digests to its own voice and none to
 /// another, the syllabus seed, and the head receipt — each the exact value
-/// the kernel answers at the publication; and a cover that did not move is
+/// the court answers at the publication; and a cover that did not move is
 /// shared with the last reading, not copied.
 #[test]
-fn publish_own_reads_match_kernel() {
+fn publish_own_reads_match_court() {
     let mut k = court();
     let voice = [0x7b; 32];
     k.court_voice = Some(voice);
@@ -52,11 +52,11 @@ fn publish_own_reads_match_kernel() {
     assert!(std::sync::Arc::ptr_eq(&p.own.cover, &q.own.cover), "the own cover did not move: shared");
 }
 
-/// A FOLD RE-DERIVED OFF THE SHELF IS THE KERNEL'S VERDICT: refused for want
-/// of bond as the kernel refuses it, and — bonded — standing or refused on
-/// the same prefix exactly as the kernel rules.
+/// A FOLD RE-DERIVED OFF THE SHELF IS THE COURT'S VERDICT: refused for want
+/// of bond as the court refuses it, and — bonded — standing or refused on
+/// the same prefix exactly as the court rules.
 #[test]
-fn verify_fold_off_shelf_matches_kernel() {
+fn verify_fold_off_shelf_matches_court() {
     let home = [0x5d; 32];
     let mut h = Court::new();
     h.bind_identity(home);

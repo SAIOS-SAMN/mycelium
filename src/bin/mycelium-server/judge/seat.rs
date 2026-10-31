@@ -23,12 +23,12 @@ fn mail_reply(r: &ReadMail, read: Result<MailRead, Refusal>) -> Option<Vec<u8>> 
 /// 78.146 — A MIND'S READ, SERVED WHERE THE DOOR WOULD DEFER IT: a full
 /// worker pool answers every act with the door's deficit, and reading one's
 /// own mail spends nothing — so a READ-MAIL is served off the relay's own
-/// lock (no kernel), once per window of the reader's mail
+/// lock (no court), once per window of the reader's mail
 /// (`SharedRelay::exempt_read`). `false` where the frame is no read, or the
 /// read is not exempt: the caller defers it as before. A task read, a
 /// wallet read and a seat post are served here too (2026-10-09).
 pub(crate) fn serve_exempt(stream: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
-    // A TASK READ takes the registry's lock and never the kernel's, so a
+    // A TASK READ takes the registry's lock and never the court's, so a
     // full pool waiting on cognition has no reason to defer it: a seated
     // mind's fetch of the task before its seat was deferred 2026-10-08 on
     // every hypha and no call was made. Served here, as observe is.
@@ -52,7 +52,7 @@ pub(crate) fn serve_exempt(stream: &mut TcpStream, frame: &Frame, door: &Door) -
 }
 
 /// 78.151 — A SEAT LISTING, read on the relay's own lock: relay state, never
-/// the court's, so no kernel is taken. `false` where the frame is no listing.
+/// the court's, so no court is taken. `false` where the frame is no listing.
 /// v1.4: at the sub-origin it names, where it names one.
 pub(crate) fn serve_listing(stream: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
     let Some(Ok(SeatRequest::ReadListing(domain, sub_origin))) = decode_seat_request(&frame.body) else { return false };
@@ -76,7 +76,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             serve_listing(stream, frame, door);
             return;
         }
-        Ok(SeatRequest::Post(s)) => match crate::held::held!(door.kernel) {
+        Ok(SeatRequest::Post(s)) => match crate::held::held!(door.court) {
             Ok(mut h) => {
                 let filed = h.run(|k, _| k.seat_post(&s));
                 drop(h);
@@ -89,7 +89,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             }
             Err(_) => return,
         },
-        Ok(SeatRequest::ReadMail(r)) => match crate::held::held!(door.kernel) {
+        Ok(SeatRequest::ReadMail(r)) => match crate::held::held!(door.court) {
             Ok(mut h) => {
                 let mail = h.run(|k, _| k.seat_mail(&r));
                 let Some(b) = mail_reply(&r, mail) else { return };

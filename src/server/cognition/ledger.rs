@@ -710,7 +710,7 @@ impl Court {
     /// 78.123 B — A FOLD THAT NETS CHILDREN, admitted once its signature,
     /// its binding and its aggregation have read (`admit_uplink`). Each
     /// child: a fold already on this court — its rows proving against its
-    /// commitment — or (78.138) a progenitor line's fold CARRIED INLINE, read
+    /// commitment — or (78.138) a builder line's fold CARRIED INLINE, read
     /// here in full (its signature, its domain, its own bond, its span, its
     /// sides, its continuity, and its own children in turn); of the same
     /// domain, and with included parts that fit what remains of it. Any
@@ -851,7 +851,7 @@ impl Court {
         Ok(nets)
     }
 
-    /// 78.138 — A PROGENITOR LINE CARRIED INLINE, read whole before anything
+    /// 78.138 — A BUILDER LINE CARRIED INLINE, read whole before anything
     /// is sealed: its signature over its own fold, a tier of THIS domain, a
     /// bond of ITS OWN posted (each answers for its own work, as
     /// ruled), a span that advances its line, the handoff sides

@@ -222,7 +222,7 @@ impl Court {
         let r = &s.reservation;
         // 78.136 — THE DOMAIN DESIGNATES ONCE, at founding; every succession
         // after is signed by the SITTING reserve — the trust passes to the
-        // ancients who arise, never back to the founder's key alone.
+        // reserve tier that arises, never back to the founder's key alone.
         let signer = match self.reserve_of(&r.domain) {
             Some(sitting) => sitting,
             None => r.domain,
@@ -311,18 +311,18 @@ impl Court {
         self.reserves.get(domain)?.current
     }
 
-    /// Whether `tier` is the SITTING RESERVE — the ancients' house — of a
-    /// founded domain.
-    pub fn is_ancients_house(&self, tier: &[u8; 32]) -> bool {
+    /// Whether `tier` is the SITTING RESERVE — the house — of a founded
+    /// domain.
+    pub fn is_sitting_reserve(&self, tier: &[u8; 32]) -> bool {
         self.tier_domain.get(tier).is_some_and(|d| self.reserve_of(d) == Some(*tier))
     }
 
     /// WHETHER A KEY IS AN INNER SEAT OF ITS DOMAIN: a tier the domain itself
-    /// registered that is not its sitting reserve — the ancients' house.
+    /// registered that is not its sitting reserve — the house.
     ///
     /// A READING, NEVER A GATE (ruled 2026-10-14: any holder of a key may
     /// solve). The court authenticates a KEY, and whoever holds it
-    /// is served and paid: keeping the house's key is the ancients' charge,
+    /// is served and paid: keeping the house's key is the reserve's charge,
     /// and a tier reaching the hypha directly is the game kernel's to answer,
     /// with game-kernel repercussions. The court cannot know a tier — only
     /// what a domain declared of its own keys — so a refusal here bound only
@@ -378,7 +378,7 @@ impl Court {
                 if h.who != c.tier || !self.is_reserve(&c.tier) {
                     return refuse(R::NotReserve);
                 }
-                // 78.139 — the reserve unit is the ancients' basket: none
+                // 78.139 — the reserve unit is the reserve's basket: none
                 // converted until it is stated.
                 if !self.basket_stated_for(&c.tier) {
                     return refuse(R::NoBasket);

@@ -224,7 +224,7 @@ impl Court {
     /// The mark still advances on an empty window: the next reading covers
     /// from here, not from the last one that happened to be non-empty.
     ///
-    /// 78.153 — ON A STROKE OF ITS OWN (hypha c held the kernel in
+    /// 78.153 — ON A STROKE OF ITS OWN (hypha c held the court in
     /// `court stroke: phase` on 2026-10-09: the reading cloned every ruled
     /// stratum's member addresses and walked the whole window). Every input
     /// of the reading spends a read: each stratum and chart read at the end,

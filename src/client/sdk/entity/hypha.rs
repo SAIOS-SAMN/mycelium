@@ -209,7 +209,7 @@ impl Hypha {
         while self.woken.try_recv().is_ok() {}
     }
 
-    /// MU-CLIENT §7.1 — SOVEREIGN REST: blocked until a carrier lands
+    /// MU-CLIENT §7.1 — A SEATED MIND'S REST: blocked until a carrier lands
     /// something — a court's answer, a held seat read the court answered at
     /// its next event, a hearing, an observer's call, the stop — and no clock
     /// in between.

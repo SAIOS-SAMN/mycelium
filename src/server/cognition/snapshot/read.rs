@@ -53,8 +53,8 @@ fn records<T>(v: &[u8], mut read: impl FnMut(&[u8], &mut usize) -> Option<T>) ->
 }
 
 impl Court {
-    /// P7 — RESTORE a snapshot into a fresh kernel. Returns `false` on a
-    /// bad magic or a trie that does not read whole, leaving the kernel
+    /// P7 — RESTORE a snapshot into a fresh court. Returns `false` on a
+    /// bad magic or a trie that does not read whole, leaving the court
     /// empty: nothing is partly restored.
     ///
     /// AND IT SAYS SO, naming the trie it stopped in and the byte it
@@ -99,19 +99,19 @@ impl Court {
         // of the tape's own tries and not a byte offset alone.
         let at = std::cell::Cell::new(COURT_TRIE);
         let mut pos = 4usize;
-        let load = |kernel: &mut Court, b: &[u8], pos: &mut usize| -> Option<()> {
+        let load = |court: &mut Court, b: &[u8], pos: &mut usize| -> Option<()> {
             // THE ACT'S ROOT (65.5): the restore is one act, and its one
             // stroke is what a ruling re-heard on a filed stamp draws on.
-            let mut budget = kernel.physics.stroke();
+            let mut budget = court.physics.stroke();
             // THE COURT: one node, the key this court signs as.
-            let court = take_trie(
+            let court_trie = take_trie(
                 b,
                 pos,
                 COURT_TRIE,
                 &[LEAF_HEAD, LEAF_ROOT, LEAF_LINE, LEAF_DOMAINS, LEAF_LEDGERS, LEAF_CHALLENGES, LEAF_HANDOFFS, LEAF_ROOTS, LEAF_ATLAS, LEAF_ENDOWMENT, LEAF_CLOSED],
             )?;
             let nodes: Vec<(Vec<u8>, crate::snapshot::Leaves)> =
-                court.scoped().map(|(k, l)| (k, l.clone())).collect();
+                court_trie.scoped().map(|(k, l)| (k, l.clone())).collect();
             let [(vk, leaves)] = nodes.as_slice() else { return None };
             let vk: [u8; 32] = vk.as_slice().try_into().ok()?;
             let head: [u8; 32] = leaf(leaves, LEAF_HEAD)?.try_into().ok()?;
@@ -145,66 +145,66 @@ impl Court {
                     Some((domains, reserves, origins, universes))
                 })?;
                 for (w, tiers) in domains {
-                    kernel.hold_domain(w, tiers);
+                    court.hold_domain(w, tiers);
                 }
                 for (w, r) in reserves {
-                    kernel.reserves.insert(w, r);
+                    court.reserves.insert(w, r);
                 }
                 for (w, o) in origins {
-                    kernel.origins.insert(w, o);
+                    court.origins.insert(w, o);
                 }
                 for (w, u) in universes {
-                    kernel.universes.insert(w, u);
+                    court.universes.insert(w, u);
                 }
             }
             // 78.123 B — the ledger trees; a home written before any chained
             // fold carries none.
             if let Some(v) = leaf(leaves, LEAF_LEDGERS) {
-                kernel.ledgers = whole(v, super::super::ledger::Ledgers::take)?;
+                court.ledgers = whole(v, super::super::ledger::Ledgers::take)?;
             }
             // 78.125 — the challenge windows; a home written before 2(c)
             // carries none.
             if let Some(v) = leaf(leaves, LEAF_CHALLENGES) {
-                let ledgers = &mut kernel.ledgers;
+                let ledgers = &mut court.ledgers;
                 whole(v, |b, p| ledgers.take_challenges(b, p))?;
             }
             // 78.126 — the handoffs; a home written before 2(b) carries none.
             if let Some(v) = leaf(leaves, LEAF_HANDOFFS) {
-                kernel.handoffs = whole(v, super::super::handoff::Handoffs::take)?;
+                court.handoffs = whole(v, super::super::handoff::Handoffs::take)?;
             }
             // 78.147 — the fold roots with the roots' proofs; a home written before
             // 78.147 carries none.
             if let Some(v) = leaf(leaves, LEAF_ROOTS) {
                 for proof in whole(v, Court::take_root_proofs)? {
-                    kernel.root_proofs.insert(proof.signer, proof);
+                    court.root_proofs.insert(proof.signer, proof);
                 }
-                kernel.proofs_mark = crate::chronometry::next_mark();
+                court.proofs_mark = crate::chronometry::next_mark();
             }
             // 78.154 — the atlas; a home written before 78.154 carries none.
             // 78.155b — the grants, where any was made; absent before it.
             if let Some(v) = leaf(leaves, LEAF_ENDOWMENT) {
                 for (domain, held) in whole(v, super::super::endowment::take_grants)? {
-                    kernel.grants.insert(domain, held);
+                    court.grants.insert(domain, held);
                 }
             }
             // 78.155c — the closures awaiting a growth grant; absent before it.
             if let Some(v) = leaf(leaves, LEAF_CLOSED) {
                 for (domain, closed) in whole(v, super::super::endowment::take_closed)? {
-                    kernel.closed_since_grant.insert(domain, closed);
+                    court.closed_since_grant.insert(domain, closed);
                 }
             }
             if let Some(v) = leaf(leaves, LEAF_ATLAS) {
-                kernel.atlas = whole(v, super::super::atlas::Atlas::take)?;
+                court.atlas = whole(v, super::super::atlas::Atlas::take)?;
             }
             // THE LINE THIS SNAPSHOT STANDS ON: in it, with the root it was
             // folded to; or on disk, held already, which must hold the stamp
             // the snapshot names — or have folded past it.
-            let line_held = kernel.line_held;
+            let line_held = court.line_held;
             let root = match (line_held, leaf(leaves, LEAF_ROOT), leaf(leaves, LEAF_LINE)) {
                 (false, Some(v), None) => Some(whole(v, crate::chronometry::Root::read)?),
                 (false, None, None) => None,
                 (true, None, named) => {
-                    if !kernel.chain.bind_signer(vk) {
+                    if !court.chain.bind_signer(vk) {
                         return None;
                     }
                     if let Some(v) = named {
@@ -214,14 +214,14 @@ impl Court {
                             *p += 32;
                             Some((at, hash))
                         })?;
-                        let held = kernel.chain.node(&stood).map(|r| r.chain_hash) == Some(hash);
-                        let folded = kernel.chain.root().is_some_and(|r| stood.place() <= r.at);
+                        let held = court.chain.node(&stood).map(|r| r.chain_hash) == Some(hash);
+                        let folded = court.chain.root().is_some_and(|r| stood.place() <= r.at);
                         if !held && !folded {
                             eprintln!("  ledger refused: the line does not hold the stamp the snapshot stood at");
                             return None;
                         }
                     }
-                    kernel.chain.root()
+                    court.chain.root()
                 }
                 _ => return None,
             };
@@ -256,7 +256,7 @@ impl Court {
                 // is cold, in the era that archived it.
                 let hash = match &receipt {
                     Some(r) => Some(r.chain_hash),
-                    None => kernel.chain.node(&stamp).map(|r| r.chain_hash),
+                    None => court.chain.node(&stamp).map(|r| r.chain_hash),
                 };
                 if hash.is_none() && stamp.vk != vk {
                     return None;
@@ -305,7 +305,7 @@ impl Court {
             // The line in the snapshot, rehydrated whole; the line on disk is
             // already held.
             let chain = match line_held {
-                true => std::mem::take(&mut kernel.chain),
+                true => std::mem::take(&mut court.chain),
                 false => crate::chronometry::ReceiptChain::from_nodes(root, vk, receipts)?,
             };
             // T1 — THE WORDS, by citation.
@@ -357,11 +357,11 @@ impl Court {
                 return None;
             }
 
-            kernel.court_head = head;
-            kernel.chain = chain;
-            kernel.treasury = crate::economy::Treasury::from_parts(stakes, balances, held, entries);
-            kernel.settlements_cold = settled;
-            kernel.dialect_chain = dialect;
+            court.court_head = head;
+            court.chain = chain;
+            court.treasury = crate::economy::Treasury::from_parts(stakes, balances, held, entries);
+            court.settlements_cold = settled;
+            court.dialect_chain = dialect;
 
             // THE WORDS, applied. Each node's element is read once and its
             // citation re-derived from it: a key that is not its element's
@@ -389,23 +389,23 @@ impl Court {
                     // that address's, filed where the address's node is read.
                     continue;
                 }
-                kernel.file_admitted(&addr, admitted, &mut budget);
+                court.file_admitted(&addr, admitted, &mut budget);
                 // The words by fibre, rebuilt from T1's own key; and RM1's
                 // remainders, rebuilt from the element's torsion record.
-                kernel.file_fibre(&addr, admitted, key.clone());
-                kernel.file_remainders(&addr, elem.remainders().map(|r| r.index_key()).collect());
+                court.file_fibre(&addr, admitted, key.clone());
+                court.file_remainders(&addr, elem.remainders().map(|r| r.index_key()).collect());
                 if members & MEMBER_BASIS != 0 {
                     let who: [u8; 32] = leaf(leaves, LEAF_DISCOVERER)?.try_into().ok()?;
-                    kernel.basis_insert(elem.clone(), who);
+                    court.basis_insert(elem.clone(), who);
                 }
                 if members & MEMBER_LISTING != 0 {
-                    kernel.on_page.insert(&addr, ());
-                    kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), &addr);
-                    kernel.pending.insert(&addr, elem.clone());
+                    court.on_page.insert(&addr, ());
+                    court.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), &addr);
+                    court.pending.insert(&addr, elem.clone());
                 }
                 if members & MEMBER_CAVITY != 0 {
-                    kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), &addr);
-                    kernel.cavity_book.insert(&addr, elem.clone());
+                    court.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), &addr);
+                    court.cavity_book.insert(&addr, elem.clone());
                 }
                 if members & MEMBER_FEDERATION != 0 {
                     // THE FEDERATION'S ORDER IS RE-DERIVED from the stamps
@@ -414,7 +414,7 @@ impl Court {
                     let mut order = ruled.key();
                     order.extend_from_slice(addr.as_bytes());
                     federation.insert(order, (addr.clone(), elem.clone()));
-                    kernel.fed_at.insert(&addr, ruled);
+                    court.fed_at.insert(&addr, ruled);
                 }
                 if let Some(v) = leaf(leaves, LEAF_PROVISIONAL) {
                     provisional.push((addr.clone(), v.to_vec()));
@@ -425,13 +425,13 @@ impl Court {
                     }
                 }
                 if let Some(v) = leaf(leaves, LEAF_DEFLATION) {
-                    kernel.deflations.insert(&addr, take_mu(v)?);
+                    court.deflations.insert(&addr, take_mu(v)?);
                 }
                 if let Some(v) = leaf(leaves, LEAF_FIELD_HOT) {
-                    kernel.field.insert(&addr, whole(v, take_field)?);
+                    court.field.insert(&addr, whole(v, take_field)?);
                 }
                 if let Some(v) = leaf(leaves, LEAF_FIELD_COLD) {
-                    kernel.field_cold.insert(&addr, whole(v, take_field)?);
+                    court.field_cold.insert(&addr, whole(v, take_field)?);
                 }
                 if let Some(v) = leaf(leaves, LEAF_RANK) {
                     let (inv, closure) = whole(v, |b, p| {
@@ -450,23 +450,23 @@ impl Court {
             }
             for (addr, key) in provisional {
                 let (_, spoken) = by_key.get(&key)?.clone();
-                kernel.provisional.insert(&addr, spoken);
+                court.provisional.insert(&addr, spoken);
             }
             crate::snapshot::persist(&federation, |_, (addr, elem)| {
-                kernel.court_fed_index.insert(addr, kernel.court_federation.len());
-                kernel.court_federation.push((addr.clone(), elem.clone()));
+                court.court_fed_index.insert(addr, court.court_federation.len());
+                court.court_federation.push((addr.clone(), elem.clone()));
             });
             for (addr, award) in awards {
-                kernel.treasury.restore_award(&addr, award);
+                court.treasury.restore_award(&addr, award);
             }
             // THE STAMP ALIASES, re-derived from the ledger's peer nodes
             // against the words just restored — never persisted. Only a node
             // that admits a word at its own stamp can alias one, and only
             // those are copied out of the ledger.
             let admits = |r: &KStepReceipt| r.cites.iter().any(|c| matches!(c, Cite::Word { at, .. } if *at == r.stamp));
-            let peers: Vec<KStepReceipt> = kernel.chain.admitted().into_iter().filter(|r| admits(r)).collect();
+            let peers: Vec<KStepReceipt> = court.chain.admitted().into_iter().filter(|r| admits(r)).collect();
             for r in &peers {
-                kernel.alias_admitting(r, &mut budget);
+                court.alias_admitting(r, &mut budget);
             }
             // THE RANK, its closures resolved by one T1 read each (78.27):
             // the prior measurement, continued incrementally and never read
@@ -474,8 +474,8 @@ impl Court {
             // restored, re-derived, never persisted.
             let mut rank = Rank::default();
             rank.basis_gen = u64::MAX;
-            rank.basis_seq = kernel.language().next_seq;
-            rank.retire_gen = kernel.retire_gen;
+            rank.basis_seq = court.language().next_seq;
+            rank.retire_gen = court.retire_gen;
             for (addr, inv, closure) in ranks {
                 let closed = match closure {
                     Some(key) => Some(by_key.get(&key)?.0.clone()),
@@ -484,7 +484,7 @@ impl Court {
                 rank.put_closure(&addr, closed);
                 rank.invariants.insert(&addr, inv);
             }
-            kernel.closure = (u64::MAX, u64::MAX, std::sync::Arc::new(rank));
+            court.closure = (u64::MAX, u64::MAX, std::sync::Arc::new(rank));
 
             // T3 — THE ERAS HELD IN HAND, each by its root's stamp: the
             // root's height, signer and place read off the key, the rest and
@@ -510,7 +510,7 @@ impl Court {
                     at: None,
                     receipts: whole(leaf(leaves, LEAF_PAYLOAD)?, crate::chronometry::Era::read_payload)?,
                 };
-                kernel.hold_filed(era);
+                court.hold_filed(era);
             }
             // T3 — THE COMPLEXES, each its own tries. A complex that does not
             // read is named by its key, so the refusal locates the object and
@@ -522,7 +522,7 @@ impl Court {
                     eprintln!("  ledger refused: the complex at {:02x?} does not read whole", key);
                     return None;
                 };
-                kernel.complexes.insert(Address::from(key), c);
+                court.complexes.insert(Address::from(key), c);
             }
             // T3 — THE COCYCLE ROWS: the class read back from its inline
             // coordinates, and the receipt each row stood at.
@@ -535,17 +535,17 @@ impl Court {
                     class_key: whole(leaf(leaves, LEAF_CLASS)?, crate::transducer::alphabet::Rotor::take_class_key)?,
                 };
                 if let Some(v) = leaf(leaves, LEAF_STOOD) {
-                    kernel.cocycle_receipt.insert(&key, whole(v, Stamp::take_canonical)?);
+                    court.cocycle_receipt.insert(&key, whole(v, Stamp::take_canonical)?);
                 }
                 // Chart index is rebuilt on next glue; hot row is enough.
-                kernel.cocycle_at.insert(Address::from(key), row);
+                court.cocycle_at.insert(Address::from(key), row);
             }
             // 78.68 — THE WINDING CARRIERS, each read whole or the snapshot
             // refuses: the pay they hold is a claim.
             at.set(WINDINGS_TRIE);
             for (key, leaves) in windings.scoped() {
                 let w = whole(leaf(leaves, LEAF_WINDING)?, crate::cognition::court::winding::Winding::take)?;
-                kernel.windings.insert(&key, w);
+                court.windings.insert(&key, w);
             }
             at.set(LIE_TRIE);
             for (key, leaves) in lie.scoped() {
@@ -558,41 +558,41 @@ impl Court {
                     }
                     Some(out)
                 })?;
-                kernel.lie_basis.insert(&key, basis);
+                court.lie_basis.insert(&key, basis);
             }
 
             // index: keyed field at restore (persistence snapshot, once)
-            let field_keys: Vec<Vec<u8>> = kernel.field.scoped().map(|(k, _)| k).collect();
+            let field_keys: Vec<Vec<u8>> = court.field.scoped().map(|(k, _)| k).collect();
             for addr in field_keys {
-                let Some(listing) = kernel.field.get(&addr).cloned() else { continue };
+                let Some(listing) = court.field.get(&addr).cloned() else { continue };
                 let mag = element::measure_lanes(&union_remainders(&listing.entries));
                 let lanes = crate::network::nerve::occupied_lanes(&mag);
                 for e in &listing.entries {
                     if !e.state.is_flat() {
-                        kernel.listing_atlas.admit_also(&e.chart, &addr);
+                        court.listing_atlas.admit_also(&e.chart, &addr);
                         for lane in &lanes {
-                            kernel.own_cover.admit(*lane, &e.chart, &addr);
+                            court.own_cover.admit(*lane, &e.chart, &addr);
                         }
                         let ck = e.chart.key();
-                        match kernel.chart_listings.get_mut(&ck) {
+                        match court.chart_listings.get_mut(&ck) {
                             Some(m) => {
                                 m.insert(&addr, ());
                             }
                             None => {
                                 let mut m = crate::network::nerve::Keyed::new();
                                 m.insert(&addr, ());
-                                kernel.chart_listings.insert(ck, m);
+                                court.chart_listings.insert(ck, m);
                             }
                         }
                     }
                 }
                 if listing.nonflat > 0 {
-                    kernel.open.insert(&addr, ());
-                    kernel.tension.insert(&addr, mag);
+                    court.open.insert(&addr, ());
+                    court.tension.insert(&addr, mag);
                 } else {
-                    kernel.field.remove(&addr);
-                    kernel.field_cold.insert(&addr, listing);
-                    kernel.tension.insert(&addr, [0; 4]);
+                    court.field.remove(&addr);
+                    court.field_cold.insert(&addr, listing);
+                    court.tension.insert(&addr, [0; 4]);
                 }
             }
             Some(())

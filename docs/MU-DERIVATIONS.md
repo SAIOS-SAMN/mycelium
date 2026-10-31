@@ -101,7 +101,7 @@ code locate a site when lines move.
 
 | Id | Constant | Site | Governs | Sev. | Derivation in one line | Open | Size | Track |
 |---|---|---|---|---|---|---|---|---|
-| D1.1 | `CHALLENGE_WINDOW = 1024` | `physics/laws.rs:64` | finality, μ holds | High | the window ends at a sealed reach-and-return of every other keeper's citations | yes | L | 22, 20 |
+| D1.1 | `CHALLENGE_WINDOW = 1024` | `physics/laws/mod.rs:64` | finality, μ holds | High | the window ends at a sealed reach-and-return of every other keeper's citations | yes | L | 22, 20 |
 | D1.2 | `THROAT_GRID = 64` | `server/cognition/mouth.rs:234` | tube admission | High | Phase A: exact fit by refinement and by meet; Phase B: the throat a round carried by its bank's modes | yes | S/M, L | 22, 19 |
 | D1.3 | `BODY_BUDGET = 768 * 1024` | `network/wire.rs:9` | protocol size | Medium | `B(k) = 65519·k − 89`, `k` from the largest unit that cannot page | yes | S/M | 5, 14 |
 | D1.4 | the register and its gate | `physics/axioms/founding.rs:58–74` | NO CONSTANT | High | `OpenNumber` carrier; the `syn` gate NUMBERS (N1–N6) | yes | M | 22 |
@@ -109,14 +109,14 @@ code locate a site when lines move.
 | D2.2 | `cut[l] / 2` (bounty) | `server/cognition/convert.rs:586` | μ, challenge incentive | High | `bounty = ⌊cut·D/(D + X)⌋` | yes | S | 3, 14 |
 | D2.3 | `surface + 1` (read price) | `server/cognition/crossing.rs:57–64` | μ, admission | High | `p = κ + y/R`, scale-free | yes | S | 21, 3 |
 | D2.4 | `UNIT_BOND = [1, 1, 1, 1]` | `economy/treasury.rs:163` | none (test fixture) | Low | deleted, not derived | no | S | 3 |
-| D2.5 | `kb >> 20`, `cores · (1 + GiB)` | `physics/mod.rs:41–91` | cognition reach, memory | Medium | the unit is the measured bytes per read `b`, not `2³⁰` | yes | M | 14 |
-| D2.6 | calibration fallbacks | `physics/mod.rs`, `mycelium-server/transport.rs` | liveness, scale | Medium | each arm a typed state, refused by name | yes | M | 14 |
+| D2.5 | `kb >> 20`, `cores · (1 + GiB)` | `physics/calibration.rs:31–80` | cognition reach, memory | Medium | the unit is the measured bytes per read `b`, not `2³⁰` | yes | M | 14 |
+| D2.6 | calibration fallbacks | `physics/calibration.rs`, `mycelium-server/transport.rs` | liveness, scale | Medium | each arm a typed state, refused by name | yes | M | 14 |
 | D2.7 | `reserve_max()` as rtt hint | five server CLI sites | liveness | Medium | the measured floor of the page loop; the first ask a state | yes | S–M | 5 |
 | D3.1 | `stroke_n(1 << 16)` | `client/sdk/rule.rs:402` | cognition (rule minting) | Medium | the stroke is `modes_need(linear)` (78.111) | yes | S | 7 |
 | D3.2 | `MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600` | `transducer/family/refine.rs:40–41` | task identity, μ | High | metered by `need = R_h·R_w + 2·L_h·L_w`, or the run complex | yes | M/L | 7 |
 | D3.3 | `truncate(32)` | `transducer/anchor/derive.rs:182` | court admission (π*) | High | keep every carrying term, keyed; metered | yes | M | 7 |
 | D3.4 | `in_sites.len() <= 400` | `transducer/family/confluence.rs:162` | an instrument's reading | Low | `2·m` reads, keyed, tri-state | no | S | 10 |
-| D3.5 | `percepts_since >= 2` | `client/sdk/seat_mind/mod.rs:807` | seat liveness, learning | Medium | distance along the house's sequence `b − b₀ ≥ 2` | yes | S | 10 |
+| D3.5 | `percepts_since >= 2` | `client/sdk/seat_mind/mind.rs:284` | seat liveness, learning | Medium | distance along the house's sequence `b − b₀ ≥ 2` | yes | S | 10 |
 | D4.1 | `tell_peer_within(.., 5)` | `mycelium-server/transport.rs:136` | liveness | Medium | the mesh's measured floor; `Unmeasured` one aperture | yes | M | 5 |
 | D4.2 | `take(32)` (evidence reply) | `mycelium-server/door.rs:125` | protocol size | Medium | fill to the frame budget by `σ(e)` | yes | S/M | 5 |
 | D4.3 | `h > 1024 \|\| w > 1024` | `anastome/dialogue/carrier.rs:106` | grid admission, memory | Medium | the bytes the tape carries; degenerate shapes refused | yes | S | 14 |
@@ -161,7 +161,7 @@ every node agrees on, and the register with its gate.
 
 ### D1.1 `CHALLENGE_WINDOW` — fold finality and the end of every held window
 
-**Site.** `src/physics/laws.rs:64` — `pub const CHALLENGE_WINDOW: u64 = 1024;`,
+**Site.** `src/physics/laws/mod.rs:64` — `pub const CHALLENGE_WINDOW: u64 = 1024;`,
 served as the register's one parameter (`laws.rs:68`,
 `PARAMETERS: [(&str, u64); 1] = [("challenge window", CHALLENGE_WINDOW)]`,
 `ACT_LAWS` mode 5). It is used in exactly one place,
@@ -309,7 +309,7 @@ holds).
 
 **Implementation scope.**
 
-- Files: `src/physics/laws.rs` (remove `CHALLENGE_WINDOW` from v5;
+- Files: `src/physics/laws/mod.rs` (remove `CHALLENGE_WINDOW` from v5;
   `PARAMETERS` becomes empty at v5, or a rule entry if `ACT_LAWS` mode 5
   must serve something); `src/server/cognition/challenge.rs`
   (`window_end` → `Court::window_closed(opened) -> Option<u64>`;
@@ -572,7 +572,7 @@ read (`wire.rs:171`, `noise.rs:399`, `transport.rs:88, 208`,
 (`synthesis.rs:122`, `− 34`), chatter
 (`client/sdk/entity/chatter.rs:309, 319`), learn (`learn.rs:249, 372`),
 the awaited-citations ask (`exchange.rs:881`), and the seat mind's series
-bound (`seat_mind/mod.rs:693`). A frame is
+bound (`seat_mind/mind.rs:170`). A frame is
 `[lane 1][len u32 LE 4][body][TPoint 84]?`
 (`TPoint::LEN = 32 + 4 + 8 + 4·8 + 8 = 84`). Under Noise a frame rides in
 plaintext chunks of `CHUNK = MESSAGE_MAX − TAG_LEN = 65535 − 16 = 65519`
@@ -735,7 +735,7 @@ specifies its carrier and its gate.
   pub struct OpenNumber {
       pub name: &'static str,        // the item's name, e.g. "CHALLENGE_WINDOW"
       pub value: &'static str,       // the initializer exactly as written, e.g. "1024", "768 * 1024"
-      pub site: &'static str,        // "src/physics/laws.rs::CHALLENGE_WINDOW"
+      pub site: &'static str,        // "src/physics/laws/mod.rs::CHALLENGE_WINDOW"
       pub governs: Governs,          // Finality | Admission | Mu | Liveness | ProtocolSize | Reading | Memory | Instrument
       pub doc: &'static str,         // the governing section, e.g. "MU-RECURSION 78.125; MU-EQUATIONS §10.1"
       pub derivation: &'static str,  // what will derive it, or "Open: …" with the candidates
@@ -1226,7 +1226,7 @@ Deleted, not derived.
 
 ### D2.5 `kb >> 20` and `cores · (1 + GiB)` — the reserve's memory term
 
-**Site.** `src/physics/mod.rs:41–50` (`read_mem_available_gib`:
+**Site.** `src/physics/calibration.rs:31–40` (`read_mem_available_gib`:
 `Some(kb >> 20)`, where `MemAvailable` is in KiB, so the result is whole
 GiB) and `:70–91` (`reserve_max`):
 
@@ -1313,7 +1313,7 @@ stroke) has a size of a GiB. The ratio algebra
 
 **Implementation scope.**
 
-- `src/physics/mod.rs` (`read_mem_available_gib` →
+- `src/physics/calibration.rs` (`read_mem_available_gib` →
   `read_mem_available_bytes`; `reserve_max` reads a `Calibration`); a new
   `physics::calibration` organ (`Calibration { cores, available, footprint }`,
   `Uncalibrated`).
@@ -1339,11 +1339,11 @@ stroke) has a size of a GiB. The ratio algebra
 
 | Fallback | Site | Code |
 |---|---|---|
-| one core | `src/physics/mod.rs:79` | `Err(_) => 1,` (`available_parallelism` refused) |
-| no GiB | `src/physics/mod.rs:83` | `None => cores,` (`MemAvailable` unread) |
-| one nanosecond | `src/physics/mod.rs:240` | `std::time::Duration::from_nanos(1)` (`CONFIG_HZ` unpublished) |
-| one stroke | `src/physics/mod.rs:255–256` | `Some(r) => r.max(1), None => 1,` (`idle_park`) |
-| one stroke | `src/physics/mod.rs:185` | `rtt.checked_mul(strokes.max(1))` (`from_transport`) |
+| one core | `src/physics/calibration.rs:69` | `Err(_) => 1,` (`available_parallelism` refused) |
+| no GiB | `src/physics/calibration.rs:73` | `None => cores,` (`MemAvailable` unread) |
+| one nanosecond | `src/physics/calibration.rs:142` | `std::time::Duration::from_nanos(1)` (`CONFIG_HZ` unpublished) |
+| one stroke | `src/physics/calibration.rs:157–158` | `Some(r) => r.max(1), None => 1,` (`idle_park`) |
+| one stroke | `src/physics/lambda.rs:24` | `rtt.checked_mul(strokes.max(1))` (`from_transport`) |
 | unbounded | `src/bin/mycelium-server/transport.rs:194–195` | `Lambda::BeyondTheLedger \| Lambda::Unmeasured => usize::MAX` |
 
 **Governs.**
@@ -1414,7 +1414,7 @@ memory). Low for the 1-stroke arms.
 
 **Implementation scope.**
 
-- `src/physics/mod.rs` (the calibration organ, `stroke_floor`,
+- `src/physics/calibration.rs` (the calibration organ, `stroke_floor`,
   `idle_park(Option<NonZeroU64>)`,
   `from_transport(NonZeroU64, NonZeroU64)`).
 - `src/bin/mycelium-server/transport.rs` (`read_budgeted(…, Stall)`,
@@ -1855,7 +1855,7 @@ checklist (r), 78.43(2) (a cap).
   (`derive_carrying_all → Result<Keyed<Selection>, Carrying>` with
   `&mut Budget`; `Selection::eval` metered), `src/court/verdict/selection.rs`
   (`derive_pi` over tries; L9a's head per the ruling), the caller in
-  `src/court/verdict/mod.rs`; both `#[expect(… owed to L9a)]` removed.
+  `src/court/verdict/selection.rs`; both `#[expect(… owed to L9a)]` removed.
 - Wire / ledger: π* may change for families whose common term ranked past
   32, a verdict change; the ledger moves forward only (a new verdict,
   never a rewrite). Concordance: L9a closed by ruling.
@@ -1947,7 +1947,7 @@ carriers (rule 1) with a reading inside it (rule 17).
 
 ### D3.5 `percepts_since >= 2` — a pending call let go
 
-**Site.** `src/client/sdk/seat_mind/mod.rs:807` (`read_pending`), with
+**Site.** `src/client/sdk/seat_mind/mind.rs:284` (`read_pending`), with
 `Pending.percepts_since` (`:541`) set to 0 at `called` (`:756`) and
 incremented per percept (`:787`):
 
@@ -2022,7 +2022,7 @@ counts as generations").
 
 **Implementation scope.**
 
-- `src/client/sdk/seat_mind/mod.rs` (`Pending.made_at`; `read_pending` by
+- `src/client/sdk/seat_mind/mind.rs` (`Pending.made_at`; `read_pending` by
   distance; `Perceived.abandoned` carrying the distance; the `Display`
   line), `src/client/sdk/tests/seat_mind.rs`.
 - Wire / ledger / snapshot: none on the wire; if `Pending` is in a
@@ -2059,7 +2059,7 @@ Symbols for this group, beyond §0.4:
 - `⌊ρ_p⌋ : Option<u64>` — `rtt_floor(mesh, p)`, the minimum of the last
   `A` samples in `mesh.rtt_window` (`transport.rs:307`).
 - `Λ(ρ) : Lambda` — `transport_deadline(ρ) = from_transport(ρ, A)`:
-  `Strokes(ρ·A)` or `BeyondTheLedger` (`physics/mod.rs:183, 266`).
+  `Strokes(ρ·A)` or `BeyondTheLedger` (`physics/lambda.rs:22, 32`).
 - `B : usize` — `wire::frame_budget() = BODY_BUDGET = 768·1024` bytes
   (`src/network/wire.rs:9, 49`).
 - `L(p) : usize` — the bytes remaining in a decoder's input at cursor
@@ -2109,7 +2109,7 @@ path was written for).
 
 - The quantity: the expected wait on a peer is a reading of the
   transport, `ρ_p` (45.4, W9b; `Lambda` already types its absence as
-  `Unmeasured`, `physics/mod.rs:173`). `transport_deadline` never returns
+  `Unmeasured`, `physics/lambda.rs:12`). `transport_deadline` never returns
   `Unmeasured` today (`from_transport` yields only `Strokes` or
   `BeyondTheLedger`), so the `Unmeasured → usize::MAX` arm at `:195` is
   dead, and the literal stands in for the state the type was built to
@@ -2450,7 +2450,7 @@ worker count beyond the lock's capacity adds waiters, not throughput.
 **Derivation.**
 
 - The quantity: contention on the court lock, already counted exactly by
-  the lock book (`src/server/held.rs`): per site `took`, `waited`,
+  the lock book (`src/server/held/mod.rs`): per site `took`, `waited`,
   `blocked`; `WAITING` (threads blocked now), `SERVED`; and the door's
   deferrals (each `work_tx` `Full`). No clock is needed; all are counts.
 - Candidate rule (workers): with `W` workers whose acts all take the
@@ -2988,9 +2988,9 @@ is non-substantive and carries no release of its own.
 **Class 1, exact (algebraic).** The value equals a reading of the algebra
 or the geometry, and a test is its claim; the gate's `EXACT:` tag names
 that test. Examples: `STROKES_PER_RESERVE = 1 << (FRAME_AXIS + 1)`
-(`src/physics/mod.rs:59`), the aperture `2^(FRAME_AXIS+1) = 8`, the sensor
+(`src/physics/calibration.rs:49`), the aperture `2^(FRAME_AXIS+1) = 8`, the sensor
 base's unit cell `2³` (MU-RECURSION §0.0); `RESERVE_FLOOR =
-STROKES_PER_RESERVE * 2 = 16` (`src/physics/mod.rs:65`), the `2` the
+STROKES_PER_RESERVE * 2 = 16` (`src/physics/calibration.rs:55`), the `2` the
 rotor's double cover; `CANDIDATES_PER_PAIR = 8`
 (`src/transducer/blade/carry.rs:74`) = 2 parities × 4 turns of the
 transition between two shapes; the keeper majority `need = ⌊n/2⌋`

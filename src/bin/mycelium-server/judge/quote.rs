@@ -14,10 +14,10 @@ use std::net::TcpStream;
 
 /// The market view for one voice, over the charts it named (23.8).
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
-    let kernel = &door.kernel;
+    let court = &door.court;
 
     let Some((qvoice, charts)) = dialogue::decode_quote_request(&frame.body) else { return };
-    let Some(quoted) = mycelium::synthesis::quote(kernel, qvoice, &charts) else {
+    let Some(quoted) = mycelium::synthesis::quote(court, qvoice, &charts) else {
         return;
     };
     let mycelium::synthesis::Quoted { surface, priced, k_step, cohesion, height } = quoted;
@@ -55,7 +55,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         None => 0,
     };
     if served > 0 {
-        if let Ok(mut h) = crate::held::held!(kernel) {
+        if let Ok(mut h) = crate::held::held!(court) {
             h.run(|k, _| k.grant_t_lease(qvoice));
         }
     }

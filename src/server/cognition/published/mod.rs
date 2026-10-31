@@ -1,5 +1,5 @@
 // 78.151 — THE PUBLISHED READING: what a court's door reads without its
-// kernel, published whole at the court stroke.
+// court, published whole at the court stroke.
 
 mod publish;
 mod runs;

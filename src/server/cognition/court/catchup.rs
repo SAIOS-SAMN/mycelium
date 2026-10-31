@@ -149,7 +149,7 @@ impl Court {
 }
 
 /// THE SERVING DOOR OF `ACT_RECEIPTS` over any holder of the line: the
-/// court under its kernel, or the reading it published (78.151).
+/// court under its lock, or the reading it published (78.151).
 pub(crate) fn serve_receipts(
     holder: &impl LineHolder,
     signer: &[u8; 32],

@@ -1,5 +1,5 @@
 // MU-CLIENT §4.12, §7.1 — THE OFFER AND THE MIND'S OWN ATTENTION (ruled
-// 2026-10-17: a sovereign mind treats tasks and percepts as sensory offers,
+// 2026-10-17: a seated mind treats tasks and percepts as sensory offers,
 // not commands): what a boundary lands — a court's task, a family of the
 // feed, a task before a seat — is OFFERED, and the mind takes it only where
 // it couples to what its field holds. A field in equilibrium asks for

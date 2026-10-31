@@ -1,6 +1,6 @@
 // 78.151 — THE READS A PUBLISHED READING ANSWERS: a page of a signer's line
 // or its fold root, a party's account, the core clock — each at the height
-// the reading was published at, and never with the kernel.
+// the reading was published at, and never with the court.
 
 use super::publish::Published;
 use crate::anastome::dialogue::wallet::Account;
@@ -65,7 +65,7 @@ impl Published {
     }
 
     /// `ACT_RECEIPTS` answered off this reading, as the court answers it
-    /// under its kernel (`Court::serve_receipts`): a range the reading does
+    /// under its lock (`Court::serve_receipts`): a range the reading does
     /// not yet reach is answered short, at its height.
     pub fn serve_receipts(&self, signer: &[u8; 32], after: Option<Place>, upto: Place, replay: bool, budget: usize, bytes: usize) -> ReceiptsAnswer {
         crate::cognition::court::catchup::serve_receipts(self, signer, after, upto, replay, budget, bytes)

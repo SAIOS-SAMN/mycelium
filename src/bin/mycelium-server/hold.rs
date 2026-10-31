@@ -4,7 +4,7 @@
 // filed on the relay, or the keeper signing its next TUniversal reading — so
 // a resting mind blocks on its own landing and the court is its clock. Observed
 // on the development deployment, 2026-10-18 04:30: each resting mind read an empty box ~120
-// times a second, every read under the kernel's lock, court a at 98%.
+// times a second, every read under the court's lock, court a at 98%.
 //
 //! ONE HELD READ PER READER, by its key: a reader that asks again while held
 //! has its earlier read answered at once, so the hold is bounded by the

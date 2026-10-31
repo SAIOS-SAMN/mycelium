@@ -126,6 +126,18 @@ such change is named here.
     `MeasuredMu`; `ObstructionKind::{Permanent, Dialect, Cover, Integrity,
     NoQuestion}` (were `P`, `D`, `C`, `I`, `N`; `label()` still prints the
     letter).
+- Peer and game terms leave the code (a 0.x API change; no wire byte,
+  persisted format or served string changes): the `forms` module
+  `forms::xylarium` is `forms::shares`, named for its law (the two-sided
+  closeness in shares and a share compounding frame by frame);
+  `seat::Role` is an opaque tier, `Role(pub u8)` with `byte()` and `of(u8)`
+  over the same bytes 0–9, whose names are the game kernel's;
+  `Court::is_ancients_house` is `is_sitting_reserve`. Comments state the
+  law instead of the peer kernel that met it, a domain's reserve tier and
+  builder lines replace "ancients" and "progenitor lines", and the server's
+  `kernel` handles, lock and prose for the court's state are `court`
+  (`Door::court`, `Exchange::court`); "kernel" there names only a world
+  program. The lexicon's served civic terms are unchanged.
 
 ### Documentation
 - One naming scheme for the specifications: every document under `docs/`

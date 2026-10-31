@@ -20,6 +20,9 @@ pub mod server;
 pub mod client;
 pub mod court;
 
+#[cfg(test)]
+mod tests;
+
 // Path stability across the component split: the historical flat module
 // paths (`mycelium::cognition`, `::sdk`, `::registry`, `::synthesis`,
 // `::verdict`) resolve to the role homes.

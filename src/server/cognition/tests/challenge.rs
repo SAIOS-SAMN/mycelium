@@ -34,7 +34,7 @@ fn tiers() -> (SigningKey, SigningKey, SigningKey) {
     (key(21), key(22), key(23))
 }
 
-/// The domain's reserve — its ancients, the only tier that uplinks.
+/// The domain's reserve — the only tier that uplinks.
 fn reserve() -> SigningKey {
     key(24)
 }
@@ -131,7 +131,7 @@ fn pass(k: &mut Court, h: u64) {
     }
 }
 
-/// ONLY THE ANCIENTS UPLINK (78.138): a line's fold put straight to the
+/// ONLY THE RESERVE UPLINKS (78.138): a line's fold put straight to the
 /// court is refused by name; carried in its reserve's, it stands.
 #[test]
 fn admit_uplink_refuses_line_not_carried_by_reserve() {

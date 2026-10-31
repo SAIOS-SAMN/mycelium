@@ -5,6 +5,7 @@ pub mod common;
 
 mod body;
 mod continuous;
+mod harmonics;
 mod moduli;
 mod pose;
 mod surgery;

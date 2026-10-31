@@ -20,12 +20,12 @@ use std::sync::Mutex;
 /// it occupies (42.6, 47.3's nerve distance one); a chart no peer covers has
 /// no eligible witness, and the word waits for a transition that concerns it
 /// — its extent, if nothing does, ends its orbit at its lapse.
-pub(crate) fn offer(kernel: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Vec<u8>)>) {
+pub(crate) fn offer(court: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Vec<u8>)>) {
     if offers.is_empty() {
         return;
     }
     // The round's stroke is the first hold's, handed on whole (78.153b).
-    let Some(mut offer_budget) = crate::held::held!(kernel).ok().map(|h| h.into_stroke()) else {
+    let Some(mut offer_budget) = crate::held::held!(court).ok().map(|h| h.into_stroke()) else {
         return;
     };
     let mut offered_out = 0usize;
@@ -42,7 +42,7 @@ pub(crate) fn offer(kernel: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Ve
         // An offer no hypha covers is counted, never silent: it waits for a
         // transition that concerns it.
         if witnesses.is_empty() {
-            if let Ok(mut h) = crate::held::held!(kernel) {
+            if let Ok(mut h) = crate::held::held!(court) {
                 h.run(|k, _| k.note_provisional("offers with no eligible witness"));
             }
             continue;
@@ -51,7 +51,7 @@ pub(crate) fn offer(kernel: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Ve
         // ADDRESS as the payload; a home with no origin or no receipt has no
         // position to sign from and offers nothing. The prefix's chart is
         // the offered word's (47.1), never the cover.
-        let Some(section) = crate::admission::sign_position(kernel, mesh, &inv, oaddr.as_bytes()) else {
+        let Some(section) = crate::admission::sign_position(court, mesh, &inv, oaddr.as_bytes()) else {
             continue;
         };
         for (vk, _) in witnesses.scoped() {
@@ -66,7 +66,7 @@ pub(crate) fn offer(kernel: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Ve
             };
             // A witness that answered this word has given its vantage, and
             // is not asked again (S12.4d).
-            let (answered, k_now) = match crate::held::held!(kernel) {
+            let (answered, k_now) = match crate::held::held!(court) {
                 Ok(mut h) => h.run(|k, _| {
                     (
                         matches!(
@@ -92,19 +92,19 @@ pub(crate) fn offer(kernel: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Ve
             }) else {
                 continue;
             };
-            if let Ok(mut h) = crate::held::held!(kernel) {
+            if let Ok(mut h) = crate::held::held!(court) {
                 h.run(|k, _| k.note_offered(oaddr.as_bytes(), witness, k_now));
             }
             let Some((reply, dt)) = tell_peer(&d, body) else {
                 crate::transport::note_rtt_timeout(mesh, d.as_bytes());
-                if let Ok(mut h) = crate::held::held!(kernel) {
+                if let Ok(mut h) = crate::held::held!(court) {
                     h.run(|k, _| k.note_provisional("offers a witness left unanswered"));
                 }
                 continue;
             };
             crate::transport::note_rtt_ok(mesh, d.as_bytes(), dt);
             offered_out += 1;
-            if let Ok(mut h) = crate::held::held!(kernel) {
+            if let Ok(mut h) = crate::held::held!(court) {
                 h.run(|k, _| k.note_provisional("offers sent to witnesses"));
             }
             // 23.8, I36 — A DEFERRAL IS IMPEDANCE, NEVER A VANTAGE: the
@@ -132,7 +132,7 @@ pub(crate) fn offer(kernel: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Ve
                         vk[1],
                         String::from_utf8_lossy(&why)
                     );
-                    if let Ok(mut h) = crate::held::held!(kernel) {
+                    if let Ok(mut h) = crate::held::held!(court) {
                         h.run(|k, _| {
                             k.note_witness_answered(oaddr.as_bytes(), vk);
                             k.note_provisional("witness refused");
@@ -144,7 +144,7 @@ pub(crate) fn offer(kernel: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Ve
                         "  court offer unmeasured {:02x}{:02x}… at {:02x}{:02x}…",
                         oaddr[0], oaddr[1], vk[0], vk[1]
                     );
-                    if let Ok(mut h) = crate::held::held!(kernel) {
+                    if let Ok(mut h) = crate::held::held!(court) {
                         h.run(|k, _| k.note_provisional("witness unmeasured"));
                     }
                 }
@@ -155,7 +155,7 @@ pub(crate) fn offer(kernel: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Ve
                     let Some(rederived) = mycelium::transducer::element::Element::from_bytes(&form, &mut p) else {
                         continue;
                     };
-                    if let Ok(mut h) = crate::held::held!(kernel) {
+                    if let Ok(mut h) = crate::held::held!(court) {
                         h.run(|k, reads| k.witness_rederived(&oaddr, vk, rederived, reads));
                     }
                 }

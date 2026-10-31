@@ -161,7 +161,7 @@ impl Treasury {
     /// THE TREASURY'S OWN TRIES (78.27, LD3): the stakes and the balances,
     /// each a trie keyed by the identity's `vk` with its μ⃗ as the one leaf.
     /// Its journal rows are not here — each is a leaf of the ledger node it
-    /// stands at (T2, the kernel's snapshot) — and its escrowed awards are
+    /// stands at (T2, the court's snapshot) — and its escrowed awards are
     /// not here — each is a leaf of its word's node (T1). The bond total is
     /// re-derived from the stakes at restore.
     ///

@@ -48,4 +48,7 @@ pub mod rewrite;
 /// MU-CLIENT §4.2 — a mind's own field, scoped to its tick.
 pub mod mind;
 
+#[cfg(test)]
+mod tests;
+
 pub use address::Address;

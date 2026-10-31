@@ -58,7 +58,7 @@ impl Court {
         // re-derivation, so it becomes this court's section on the chart.
         self.rule_own(address, budget);
         // 45.1: an install is an ADMITTED ACT, so it is a step of this
-        // kernel's clock and a receipt in its chain. Without one the book
+        // court's clock and a receipt in its chain. Without one the book
         // grew a ruled word at no position: nothing cited the peer receipts
         // admitted since the last step, and a reader replaying the chain
         // found the install nowhere in it. EC1: sealed BEFORE it pays, so

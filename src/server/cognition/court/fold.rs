@@ -59,7 +59,7 @@ impl Court {
     fn propose_fold_at(&mut self, head: Place) -> Result<Proposal, &'static str> {
         // 78.153b — the rows below the head read ONCE: the audit and the nets
         // `fold_reading` asks, the epochs, and the diagnostic below each read
-        // them again, three clones of the journal's prefix under the kernel
+        // them again, three clones of the journal's prefix under the court
         // at every close (the lock audit, row 8).
         let below = self.treasury.rows_below(head);
         self.treasury.audit().map_err(|_| REFUSE_FOLD_INEXACT)?;
@@ -335,9 +335,9 @@ impl Court {
 }
 
 /// THE ROWS READ over a journal held by the court `identity` — the one
-/// reading the kernel (`Court::rows_range`) and the published reading
+/// reading the court (`Court::rows_range`) and the published reading
 /// (`Published::rows_range`, which the door answers `ACT_ROWS` with, off
-/// the kernel) share.
+/// the court) share.
 pub(crate) fn rows_range_of(
     identity: &[u8; 32],
     entries: &[Entry],
@@ -371,7 +371,7 @@ pub(crate) fn rows_range_of(
 
 /// THE WITNESS'S RE-DERIVATION, read off what the home sent and whether
 /// this court holds bond (`REFUSE_WITNESS_ROOM` otherwise) — the one reader
-/// the kernel (`Court::verify_fold`) and the published reading (78.153b,
+/// the court (`Court::verify_fold`) and the published reading (78.153b,
 /// `Published::verify_fold`) share: the receipts fetched are the home's
 /// chain from the place after `after`, each re-deriving and linking to the
 /// one before, ending at the root; the rows' nets are the epochs proposed.

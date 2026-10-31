@@ -5,7 +5,7 @@
 //! replay only, 78.147), or what this court admitted of the signer, as many
 //! as fit the frame budget and never past a hole — or, for a catch-up below
 //! the signer's fold root, the root. 78.151: read off the court's published
-//! reading, never the kernel, with the reading's height behind the answer;
+//! reading, never the court, with the reading's height behind the answer;
 //! a range the reading does not yet reach is answered short at its height.
 
 use crate::door::Door;

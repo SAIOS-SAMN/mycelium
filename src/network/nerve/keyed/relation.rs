@@ -660,7 +660,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
     /// absence, not an empty key. This took `&[u8]` and spelled the
     /// absence `ROOT` — then converted it to `Option` on its own first
     /// line, which is the sentinel being translated one step later than it
-    /// should be (rule 11). Eight resume cursors in the kernel held a
+    /// should be (rule 11). Eight resume cursors in the court held a
     /// `Vec<u8>` that was empty until the first yield for the same reason.
     pub fn cursor<'a>(&'a self, from: Option<&[u8]>, budget: &'a mut crate::physics::Budget) -> Cursor<'a, V, C> {
         let from = from.map(|f| f.to_vec());
@@ -674,7 +674,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
             // 78.153 — IT BEGINS AT `from` BY SEEKING (lock audit, row 1b):
             // it walked every key at or before `from` and dropped them, free
             // of the budget, on every stroke — the whole docket prefix, under
-            // the kernel's lock. The walk now starts on `from`'s own path.
+            // the court's lock. The walk now starts on `from`'s own path.
             fibre: match from.as_deref() {
                 Some(f) => self.after(f),
                 None => self.scoped(),

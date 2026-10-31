@@ -4,7 +4,7 @@
 use mycelium::network::nerve::Keyed;
 
 /// Shared door state: the listener only accepts and try_sends; every act
-/// that needs the kernel runs on a reflex worker, snapshot / off-lock /
+/// that needs the court runs on a reflex worker, snapshot / off-lock /
 /// re-lock, never on the accept thread.
 pub(crate) struct Syllabus {
     pub(crate) order: Vec<Vec<u8>>,

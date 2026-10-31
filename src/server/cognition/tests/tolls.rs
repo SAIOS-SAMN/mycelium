@@ -1,6 +1,6 @@
 // 78.133 — PER-UNIT AND SPLIT TOLLS on a wormhole (as
 // ruled): mass pays on S, information on H, each floored; the charge split
-// to the keeper and its progenitor lines, every lane's parts summing to its
+// to the keeper and its builder lines, every lane's parts summing to its
 // charge exactly; held from acceptance to the window's close, then paid
 // together — or, the traversal's OUT-side fold reversed, refunded together.
 
@@ -22,7 +22,7 @@ fn verifying(k: &SigningKey) -> [u8; 32] {
     k.verifying_key().to_bytes()
 }
 
-/// Domain `d`'s key and its reserve tier; domain 4's progenitor line, 30.
+/// Domain `d`'s key and its reserve tier; domain 4's builder line, 30.
 fn domain(d: u8) -> SigningKey {
     key(d)
 }

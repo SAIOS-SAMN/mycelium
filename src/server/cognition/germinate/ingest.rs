@@ -193,7 +193,7 @@ impl Court {
         }
     }
 
-    /// The kernel's chain reduction: the shared decomposition over the
+    /// The court's chain reduction: the shared decomposition over the
     /// language snapshot (`normal_form`, A12, M6 step 4), which factors the
     /// chain through the held words and leaves the remainder as the demand.
     /// The header that stood here described a greedy over "the generator

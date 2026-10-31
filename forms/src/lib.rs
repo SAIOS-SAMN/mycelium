@@ -11,8 +11,8 @@
 //! WHERE A FORM STANDS (A7, A7a). The core shell — this crate's root — holds
 //! exactly the forms EVERY universe selects: L0's law is the intersection of
 //! the selections, never the selections' union. A form that one universe alone selects
-//! is that universe's shell even though this crate hosts it, and is named as
-//! that shell's (`forms::xylarium::…`, `forms::netstratum::…`). A divergence
+//! stands in an outer shell even though this crate hosts it, and the shell is
+//! named for its law, never for the universe (`forms::shares::…`). A divergence
 //! is two outer shells over one shared centre, never a second plane at the
 //! core; converging is a new selection, landed by the landing rule.
 //!
@@ -31,7 +31,9 @@
 //! 2026-10-21). Joint reads compare exact values.
 
 pub mod frame;
-pub mod xylarium;
+pub mod shares;
+#[cfg(test)]
+mod tests;
 
 /// The exact rationals every form computes over (the same object as
 /// mycelium's own `core::Q`).

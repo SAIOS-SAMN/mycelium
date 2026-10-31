@@ -1,7 +1,7 @@
 // 26, 50.9 — ACT_SPEECH: a voice stands sentences at the sentences' home court and
 // is answered an adjudication per sentence.
 //
-//! The speaker's frame is handed to the kernel whole (`hear_frame`): every
+//! The speaker's frame is handed to the court whole (`hear_frame`): every
 //! tape decoded there, every sentence heard in the order sent, and the
 //! reply one `Adjudication` per sentence — never an opaque byte. An act
 //! the door deferred is answered the deferral frame (23.8), which carries
@@ -17,14 +17,14 @@ use std::net::TcpStream;
 
 /// A voice speaks sentences to the court that homes them (26).
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
-    let kernel = &door.kernel;
+    let court = &door.court;
 
     let Some(act) = dialogue::decode_speech(&frame.body) else {
         return;
     };
     // THE HEARING IS THE TRANSITION THAT ADMITS: what it docketed, and what
     // the sentences waiting on a word carried, it offers when it returns.
-    let (heard, offers, attested) = match crate::held::held!(kernel) {
+    let (heard, offers, attested) = match crate::held::held!(court) {
         // OWED (78.153b): the hearing mints its strokes per sentence (the
         // lock audit, row 9); this hold's stroke is not yet threaded in.
         Ok(mut h) => h.run(|k, _| {
@@ -59,5 +59,5 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let reply = Frame { lane: frame.lane, body };
     answer(stream, reply);
     // The voice is answered first; the offers leave after, from this act.
-    crate::offer::offer(kernel, &door.mesh, offers);
+    crate::offer::offer(court, &door.mesh, offers);
 }

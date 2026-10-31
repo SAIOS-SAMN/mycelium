@@ -10,7 +10,7 @@
 //! one gap are paced by a stroke — one spend per page.
 //!
 //! The chase lives here, over a page source the caller hands in, so the
-//! server fetches over the wire and a test fetches from a second kernel's
+//! server fetches over the wire and a test fetches from a second court's
 //! ledger, and both run the one loop (ACT1-hold-b, LD0's defect 3b).
 
 use crate::anastome::dialogue::ReceiptsAnswer;
@@ -65,12 +65,12 @@ fn place_before(at: Place) -> Option<Place> {
 /// proof did not stand: the receipt waits for the next hearing, which asks
 /// again — nothing in a closed era moves, so the answer can only arrive.
 fn prove_folded(
-    kernel: &Mutex<Court>,
+    court: &Mutex<Court>,
     p: &crate::chronometry::Parent,
     budget: &mut crate::physics::Budget,
     fetch: &mut impl FnMut(&[u8; 32], Option<Place>, Place, Ask) -> Option<ReceiptsAnswer>,
 ) -> Option<bool> {
-    let root = held!(kernel).ok()?.run(|k, _| k.chain().peer_root(&p.at.vk))?;
+    let root = held!(court).ok()?.run(|k, _| k.chain().peer_root(&p.at.vk))?;
     if p.at.place() > root {
         return None;
     }
@@ -86,14 +86,14 @@ fn prove_folded(
         if !budget.spend() {
             return Some(false);
         }
-        let from = held!(kernel).ok()?.run(|k, _| k.era_walk_from(p));
-        let root = held!(kernel).ok()?.run(|k, _| k.chain().peer_root(&p.at.vk))?;
+        let from = held!(court).ok()?.run(|k, _| k.era_walk_from(p));
+        let root = held!(court).ok()?.run(|k, _| k.chain().peer_root(&p.at.vk))?;
         // THE ONE ERA-REPLAY ASK (78.147): the era's own receipts, from where
         // the walk stands to the root; a root answer proves no citation.
         let Some(ReceiptsAnswer::Page(page)) = fetch(&p.at.vk, place_before(from.at.place()), root, Ask::Replay) else {
             return Some(false);
         };
-        match held!(kernel).ok()?.run(|k, _| k.walk_folded(p, &page)) {
+        match held!(court).ok()?.run(|k, _| k.walk_folded(p, &page)) {
             crate::chronometry::EraWalk::Proved => {
                 note_replication(Some(p.at.vk), replication::FOLDED_PROVED, 1);
                 return Some(true);
@@ -107,12 +107,12 @@ fn prove_folded(
 /// 78.147 — A ROOT ANSWERED FOR A CATCH-UP, adopted on its two signatures
 /// at this node's origin: whether the line now stands on it. A root no
 /// origin can verify is refused and counted, never silent.
-fn adopt(kernel: &Mutex<Court>, origin: Origin, proof: &crate::anastome::dialogue::RootProof) -> bool {
+fn adopt(court: &Mutex<Court>, origin: Origin, proof: &crate::anastome::dialogue::RootProof) -> bool {
     let Some(origin) = origin else {
         note_replication(Some(proof.signer), replication::ROOT_REFUSED, 1);
         return false;
     };
-    held!(kernel).ok().is_some_and(|mut h| h.run(|k, _| k.adopt_root(origin, proof)) == RootAdoption::Adopted)
+    held!(court).ok().is_some_and(|mut h| h.run(|k, _| k.adopt_root(origin, proof)) == RootAdoption::Adopted)
 }
 
 /// Fetch and admit pages of `vk`'s receipts up to `to`, the place of the
@@ -138,7 +138,7 @@ fn adopt(kernel: &Mutex<Court>, origin: Origin, proof: &crate::anastome::dialogu
 /// signatures, and the signer's line is paged on from it, hot — nothing
 /// below a root this court holds is asked again (`known_head` reads it).
 pub fn chase(
-    kernel: &Mutex<Court>,
+    court: &Mutex<Court>,
     origin: Origin,
     signer: [u8; 32],
     to: Place,
@@ -150,7 +150,7 @@ pub fn chase(
     let mut frontier: Vec<([u8; 32], Place)> = vec![(signer, to)];
     let mut asked: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     while let Some((who, upto)) = frontier.pop() {
-        let held = match held!(kernel) {
+        let held = match held!(court) {
             Ok(mut h) => h.run(|k, _| k.known_head(&who).map(|(at, _)| at)),
             Err(_) => return short(advanced),
         };
@@ -183,7 +183,7 @@ pub fn chase(
             // range is asked again from it — the progress clears what was
             // asked, the budget still bounding the pass.
             Some(ReceiptsAnswer::Root(proof)) => {
-                if !adopt(kernel, origin, &proof) {
+                if !adopt(court, origin, &proof) {
                     return short(advanced);
                 }
                 advanced = true;
@@ -196,7 +196,7 @@ pub fn chase(
         // The page admitted on the chase's stroke, one read per receipt
         // (78.153b): a stroke spent mid-page keeps what it admitted, and the
         // next pass asks on from the head that moved.
-        let (n, missing) = match held!(kernel) {
+        let (n, missing) = match held!(court) {
             Ok(mut h) => h.run(|k, _| k.admit_backfill(&receipts, budget)),
             Err(_) => return short(advanced),
         };
@@ -214,7 +214,7 @@ pub fn chase(
                 // never fetched as a hole below the head (78.65): proved, the
                 // page that stopped on it is read again; unproved, the pass
                 // ends short and the next hearing asks.
-                match prove_folded(kernel, &p, budget, &mut fetch) {
+                match prove_folded(court, &p, budget, &mut fetch) {
                     Some(true) => {
                         asked = crate::network::nerve::Keyed::new();
                         frontier.push((who, upto));
@@ -227,7 +227,7 @@ pub fn chase(
                 // already stands past it: nothing (the line holds a hole
                 // below its head) or another receipt (a fork). The chase
                 // judged "held" by the head alone (Phase 1 diagnostic).
-                let past = held!(kernel).ok().and_then(|mut h| {
+                let past = held!(court).ok().and_then(|mut h| {
                     h.run(|k, _| {
                         let head = k.known_head(&p.at.vk).map(|(at, _)| at)?;
                         (head >= p.at.place()).then(|| k.chain().at(&p.at.vk, p.at.place()).map(|r| r.chain_hash == p.hash))
@@ -259,7 +259,7 @@ pub fn chase(
     // citation skipped as held, and its own range then skipped as asked —
     // on the development deployment, ~50k passes per court counted "reached" with nothing
     // admitted and the head never cited (H2, 2026-10-03).
-    let reached = held!(kernel).ok().and_then(|mut h| h.run(|k, _| k.known_head(&signer))).is_some_and(|(at, _)| at >= to);
+    let reached = held!(court).ok().and_then(|mut h| h.run(|k, _| k.known_head(&signer))).is_some_and(|(at, _)| at >= to);
     Pass { advanced, reached }
 }
 
@@ -289,7 +289,7 @@ pub fn chase(
 /// whether the head was then admitted as a PARENT — the one admission that
 /// advances this court's height (45.2).
 pub fn hear<E>(
-    kernel: &Mutex<Court>,
+    court: &Mutex<Court>,
     origin: Origin,
     mut admit: impl FnMut() -> Result<Admitted, E>,
     mut stroke: impl FnMut() -> Option<crate::physics::Budget>,
@@ -327,14 +327,14 @@ pub fn hear<E>(
         // root a chase adopted is what puts a citation inside an era.
         if let Ok(Admitted::MissingParent(p)) = &admitted {
             let p = *p;
-            let folded = held!(kernel).ok().and_then(|mut h| h.run(|k, _| k.chain().peer_root(&p.at.vk))).is_some_and(|root| p.at.place() <= root);
+            let folded = held!(court).ok().and_then(|mut h| h.run(|k, _| k.chain().peer_root(&p.at.vk))).is_some_and(|root| p.at.place() <= root);
             if folded && !chased.contains(&hole) {
                 note_replication(Some(p.at.vk), replication::FOLDED_PARENT, 1);
             }
             if folded && !proving.contains(&hole) {
                 proving.insert(&hole, ());
                 if let Some(mut budget) = stroke() {
-                    match prove_folded(kernel, &p, &mut budget, &mut fetch) {
+                    match prove_folded(court, &p, &mut budget, &mut fetch) {
                         Some(true) => {
                             admitted = admit();
                             continue;
@@ -351,7 +351,7 @@ pub fn hear<E>(
             // there — the line forked. Counted as the equivocation it is,
             // per signer, never read as a hole still open.
             if let Ok(Admitted::MissingParent(p)) = &admitted {
-                let held = held!(kernel).ok().and_then(|mut h| h.run(|k, _| k.chain().at(&p.at.vk, p.at.place()).map(|r| r.chain_hash)));
+                let held = held!(court).ok().and_then(|mut h| h.run(|k, _| k.chain().at(&p.at.vk, p.at.place()).map(|r| r.chain_hash)));
                 if held.is_some_and(|h| h != p.hash) {
                     note_replication(Some(p.at.vk), replication::BACKFILL_EQUIVOCATION, 1);
                 }
@@ -362,13 +362,13 @@ pub fn hear<E>(
         // The lag at the report, in orbits: the orbit after the hole's
         // place against the orbit after the head held. A head held past
         // the report is no lag, and none is set (rule 11: never floored).
-        let held = held!(kernel).ok().and_then(|mut h| h.run(|k, _| k.known_head(&vk))).map(|(at, _)| at);
+        let held = held!(court).ok().and_then(|mut h| h.run(|k, _| k.known_head(&vk))).map(|(at, _)| at);
         if let Some(l) = (to.k + 1).checked_sub(held.map_or(0, |h| h.k + 1)) {
             set_replication(vk, replication::LAG, l);
         }
         let mut pass = Pass { advanced: false, reached: false };
         while let Some(mut budget) = stroke() {
-            let step = chase(kernel, origin, vk, to, &mut budget, &mut fetch);
+            let step = chase(court, origin, vk, to, &mut budget, &mut fetch);
             pass = Pass { advanced: pass.advanced || step.advanced, reached: step.reached };
             // Continue only while a stroke moved the head held for the signer.
             if step.reached || !step.advanced {
