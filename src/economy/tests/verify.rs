@@ -22,6 +22,22 @@ fn verification_share_reads_strain_against_reserve_per_lane() {
     assert_eq!(share, [10, 5, 0, 0]);
 }
 
+/// THE SHARE IS EXACT, NEVER FLOORED: a mint of 7 on S at strain 1 against
+/// a reserve of 2, three organs, is 7·1/((1 + 2)·3) = 7/9 each — where the
+/// floor read ⌊⌊7/3⌋/3⌋ = 0 and paid verification nothing — and the closer
+/// keeps exactly 7 − 3·7/9 = 14/3.
+#[test]
+fn powv_share_is_exact() {
+    use crate::core::q::Q;
+    use num_bigint::BigInt;
+    let mint = Mu::counts([7, 0, 4, 0]);
+    let each = verification_share(&mint, &[1, 0, 2, 0], 2, 3);
+    let q = |n: i64, d: i64| Q::new(BigInt::from(n), BigInt::from(d));
+    assert_eq!(each, Mu::of([q(7, 9), q(0, 1), q(4, 6), q(0, 1)]).expect("non-negative"));
+    let organs = Mu::sum([&each, &each, &each]);
+    assert_eq!(mint.draw(&organs), Mu::of([q(14, 3), q(0, 1), q(2, 1), q(0, 1)]), "the closer the exact rest");
+}
+
 /// ONE ORGAN TAKES THE WHOLE VERIFICATION, AND NO SHARE PASSES WHAT IS
 /// MINTED: the organs' take never exceeds the mint on any lane, and what
 /// does not divide stays with the closer.

@@ -279,25 +279,27 @@ impl Tariff {
         }
     }
 
-    /// THE CHARGE for a passage: on S `⌊rate_s · mass⌋`, on H `⌊rate_h ·
-    /// information⌋`, G and T never — the remainder never charged, never
-    /// rounded up against the traveller. `None` where a denominator is zero
-    /// or a lane passes its carrier.
+    /// THE CHARGE for a passage: on S `rate_s · mass`, on H `rate_h ·
+    /// information`, exactly; G and T never. (Over counts each lane was
+    /// floored and the remainder never charged.) `None` where a denominator
+    /// is zero or what leaves passes its carrier.
     pub fn charge(&self, offer: &Offer) -> Option<crate::economy::Mu> {
-        let floor = |(n, d): (u64, u64), units: u64| -> Option<u64> {
+        use num_rational::BigRational as Q;
+        let rate = |(n, d): (u64, u64), units: u64| -> Option<Q> {
             if d == 0 {
                 return None;
             }
-            u64::try_from(u128::from(n).checked_mul(u128::from(units))? / u128::from(d)).ok()
+            Some(Q::new(n.into(), d.into()) * Q::from_integer(units.into()))
         };
-        Some(crate::economy::Mu::counts([floor(self.rate_s, leaving(offer, 0)?)?, 0, 0, floor(self.rate_h, leaving(offer, 3)?)?]))
+        let zero = Q::from_integer(0.into());
+        crate::economy::Mu::of([rate(self.rate_s, leaving(offer, 0)?)?, zero.clone(), zero, rate(self.rate_h, leaving(offer, 3)?)?]).ok()
     }
 
-    /// THE PARTS of a `charge`: each recipient but the `keeper` its `⌊share ·
-    /// charge⌋` per lane, the keeper the rest — so the parts sum to the
-    /// charge exactly, no dust. In the split's order, the keeper's part last;
-    /// a recipient whose part is zero on every lane is left out. `None` where
-    /// a share's floors pass the charge (shares not summing to one).
+    /// THE PARTS of a `charge`: each recipient but the `keeper` its `share ·
+    /// charge` per lane exactly, the keeper the rest — so the parts sum to the
+    /// charge exactly. In the split's order, the keeper's part last; a
+    /// recipient whose part is zero on every lane is left out. `None` where
+    /// the shares pass the charge (shares not summing to one).
     pub fn parts(&self, keeper: &[u8; 32], charge: &crate::economy::Mu) -> Option<Vec<([u8; 32], crate::economy::Mu)>> {
         use num_rational::BigRational as Q;
         let mut rest = charge.clone();
@@ -309,7 +311,7 @@ impl Tariff {
             if *d == 0 {
                 return None;
             }
-            let part = charge.scaled(&Q::new((*n).into(), (*d).into()))?.floor();
+            let part = charge.scaled(&Q::new((*n).into(), (*d).into()))?;
             rest = rest.draw(&part).ok()?;
             if !part.is_zero() {
                 out.push((*who, part));
@@ -396,7 +398,7 @@ impl Mouth {
 /// 78.127 — A CONVERSION OUT (2(e), as ruled): signed by
 /// the domain's RESERVE tier, the game value `g` (on G) its in-game holder
 /// `identity` gives up, and the μ it receives on the court — `rate[l] · g` on
-/// every μ lane, exact and integral — paid from the reserve to the holder's
+/// every μ lane, an exact rational — paid from the reserve to the holder's
 /// key `holder`. A rate never mints μ: the reserve must hold it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConvertOut {
@@ -471,21 +473,16 @@ impl ConvertOut {
         crate::chronometry::payload_hash(&b)
     }
 
-    /// The μ it pays on each lane, `rate · g` — `None` where a rate has a
-    /// zero denominator, `g` is not positive, or a lane is not an exact
-    /// integer that a lane carries.
+    /// The μ it pays on each lane, `rate · g` exactly — `None` where a rate
+    /// has a zero denominator or `g` is not positive. (Over counts a lane
+    /// that was not a whole number was refused.)
     pub fn mu(&self) -> Option<crate::economy::Mu> {
-        let g = u128::try_from(self.g).ok().filter(|g| *g > 0)?;
-        let mut mu = [0u64; 4];
-        for (m, (n, d)) in mu.iter_mut().zip(self.rate) {
-            let num = u128::from(n).checked_mul(g)?;
-            let d = u128::from(d);
-            if d == 0 || num % d != 0 {
-                return None;
-            }
-            *m = u64::try_from(num / d).ok()?;
+        use num_rational::BigRational as Q;
+        if self.g <= 0 || self.rate.iter().any(|(_, d)| *d == 0) {
+            return None;
         }
-        Some(crate::economy::Mu::counts(mu))
+        let g = Q::from_integer(self.g.into());
+        crate::economy::Mu::of(self.rate.map(|(n, d)| Q::new(n.into(), d.into()) * &g)).ok()
     }
 }
 
@@ -810,8 +807,8 @@ pub enum HandoffRefusal {
     NotReserve,
     /// 78.127 — the reserve holds less μ than the conversion pays, on a lane.
     ReserveShort,
-    /// 78.127 — `rate · g` is not an exact integer on every lane, or `g` is
-    /// not positive: rounding is the reserve's to declare on G.
+    /// 78.127 — a rate has a zero denominator, `g` is not positive, or the
+    /// conversion pays nothing on every lane.
     Inexact,
     /// 78.127 — the holder holds less μ than it offers.
     HolderShort,

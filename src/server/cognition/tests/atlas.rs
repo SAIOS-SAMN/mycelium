@@ -115,10 +115,16 @@ fn stake(k: &mut Court, staker: &SigningKey, mu: [u64; 4], unstake: bool, nonce:
     k.stake(&StakeAct { who: verifying(staker), unstake, mu: mu.into(), nonce: [nonce; 32] }.sign(staker)).n()
 }
 
-/// What `party`'s balance gained since `before`, as counts.
-fn gained(k: &Court, party: &[u8; 32], before: &crate::economy::Mu) -> [u64; 4] {
-    use crate::economy::tests::Counts;
-    k.treasury.balance_mu(party).draw(before).expect("the balance rose").n()
+/// What `party`'s balance gained since `before`, exactly.
+fn gained(k: &Court, party: &[u8; 32], before: &crate::economy::Mu) -> crate::economy::Mu {
+    k.treasury.balance_mu(party).draw(before).expect("the balance rose")
+}
+
+/// `n / d` on S and the counts `rest` on G, T, H: a fee whose S lane is a
+/// share of a unit.
+fn s_share(n: u64, d: usize, rest: [u64; 3]) -> crate::economy::Mu {
+    let s = crate::economy::Mu::counts([n, 0, 0, 0]).part(d).expect("a part");
+    s.add(&crate::economy::Mu::counts([0, rest[0], rest[1], rest[2]]))
 }
 
 /// A traverse from domain 4 at `fp(at)`, citing both mouths' points and
@@ -174,16 +180,17 @@ fn traverse_pays_exact_gas_to_map_keeper() {
     let Crossed::Sealed { crossing, gas, fee, price: priced, h, .. } = traverse(&mut k, m, 14, vec![ta, tb], Some([5, 2, 0, 3]), 1) else { panic!("crossed") };
     assert_eq!(gas, Gas { s: (11, 4), g: 2, t: 2, h: 3 }, "per lane, exact, never collapsed");
     assert_eq!(priced, price);
-    assert_eq!(fee, [2, 2, 2, 3], "⌊11/4⌋ on S, the rest whole");
-    assert_eq!(k.treasury.stake_of(&verifying(&payer)), Some([8, 8, 8, 7].into()), "drawn from the stake");
-    assert_eq!(k.claims_on(&verifying(&payer)), [2, 2, 2, 3], "held as a claim");
+    let exact = s_share(11, 4, [2, 2, 3]);
+    assert_eq!(fee, exact, "11/4 on S exactly, never floored; the rest whole");
+    assert_eq!(k.treasury.stake_of(&verifying(&payer)), crate::economy::Mu::counts([10; 4]).draw(&exact).ok(), "drawn from the stake");
+    assert_eq!(k.claims_on(&verifying(&payer)), exact, "held as a claim");
     assert_eq!(k.treasury.balance_mu(&court), court_before, "held, not yet paid");
     let edge = k.crossing_edge(&crossing).expect("the edge on the map");
     assert_eq!((edge.u_a, edge.u_entry, edge.u_applied, edge.residual()), (100, 7, None, None), "pending, never a disagreement");
     pass(&mut k, h + CHALLENGE_WINDOW);
     k.settle_windows();
     let paid = gained(&k, &court, &court_before);
-    assert_eq!(paid, [2, 2, 2, 3], "paid WHOLE to the court keeping the map");
+    assert_eq!(paid, exact, "paid WHOLE to the court keeping the map");
     assert_eq!(k.treasury.minted(), minted_before, "a transfer, never a mint");
     assert_eq!(k.claims_on(&verifying(&payer)), [0; 4]);
     assert!(k.treasury.audit().is_ok(), "both equations hold");
@@ -498,14 +505,15 @@ fn traverse_local_throat_pays_and_applies() {
     assert_eq!(k.traverse(&unmapped.sign(&payer), Some(fp(14))), Crossed::Refused(CrossRefusal::NoMouth), "a throat key never mapped");
     let Crossed::Sealed { crossing, gas, fee, h, .. } = k.traverse(&t.sign(&payer), Some(fp(14))) else { panic!("crossed") };
     assert_eq!(gas, Gas { s: (3, 2), g: 2, t: 0, h: 3 });
-    assert_eq!(fee, [1, 2, 0, 3], "⌊3/2⌋ on S");
-    assert_eq!(k.claims_on(&verifying(&payer)), [1, 2, 0, 3]);
+    let exact = s_share(3, 2, [2, 0, 3]);
+    assert_eq!(fee, exact, "3/2 on S exactly");
+    assert_eq!(k.claims_on(&verifying(&payer)), exact);
     let edge = k.crossing_edge(&crossing).expect("the edge");
     assert_eq!((edge.from, edge.to, edge.u_entry, edge.residual()), (domain(4), domain(4), 100, None), "pending, into its own universe");
     pass(&mut k, h + CHALLENGE_WINDOW);
     k.settle_windows();
     let paid = gained(&k, &court, &court_before);
-    assert_eq!(paid, [1, 2, 0, 3], "paid whole to the court keeping the map");
+    assert_eq!(paid, exact, "paid whole to the court keeping the map");
     assert_eq!(k.treasury.minted(), minted_before, "never a mint");
     assert!(matches!(commit(&mut k, 4, 101, 14, 14, vec![(crossing, 101)]), Ledgered::Sealed { .. }));
     assert_eq!(k.crossing_edge(&crossing).and_then(|e| e.residual()), Some(1), "applied at 101 against 100");

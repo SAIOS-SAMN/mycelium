@@ -119,12 +119,12 @@ impl Treasury {
         // holding. `.max(1)` is also a monetary constant, which MU-ECONOMY §8
         // says there are none of — a floor on a share is a price.
         //
-        // The share is the exact quotient. The remainder `mu[l] % n` is NOT
-        // minted: handing it to some of the voices and not others ranks them,
-        // and there is no coordinate on a voice that orders it (rule 4). So
-        // `n · share ≤ mu` on every lane, exactly, and a lane too small to
-        // divide pays nothing rather than inventing something to pay.
-        let share = mu.part(voices.len())?.floor();
+        // The share is the exact quotient `mu / n` over ℚ: every voice the
+        // same part, so no voice is ranked above another (rule 4), and
+        // `n · share = mu` on every lane — nothing invented, nothing left
+        // unminted. (Over counts it was `⌊mu / n⌋` and the remainder was
+        // never issued.)
+        let share = mu.part(voices.len())?;
         if share.is_zero() {
             // Nothing divides. The escrow is already removed and the row is
             // spent; minting zero is not a payment and is not written.
@@ -219,9 +219,9 @@ impl Treasury {
     /// completed and the overlap strips glued — distributed reassembly is
     /// substantially-more-useful work, paid ON TOP of the children's own
     /// settlements: μ⃗_composite = Σμ⃗(Wᵢ) + μ⃗_assembly(overlaps). Split per
-    /// lane across the reassembling voices, float-law bounded like every award.
+    /// lane across the reassembling voices, each the exact part `mu / n`.
     pub fn settle_assembly<A: AsRef<[u8]>>(&mut self, voices: &[A], mu: impl Into<Mu>, anchor: Anchor) {
-        let Some(share) = mu.into().part(voices.len()).map(|s| s.floor()) else {
+        let Some(share) = mu.into().part(voices.len()) else {
             return;
         };
         if share.is_zero() {
@@ -237,12 +237,12 @@ impl Treasury {
 
     /// PoWc — split the consilience award (the germ's μ⃗ PRICED at the moment's
     /// surface) across the attesting voices, per lane. The share is the exact
-    /// quotient `mu[l] / n` with no invented floor (rule 11).
+    /// quotient `mu[l] / n` over ℚ: the voices' shares sum to the award.
     pub fn settle_consilience(&mut self, voices: &[[u8; 32]], mu: impl Into<Mu>, anchor: Anchor) {
         if voices.len() < 2 {
             return;
         }
-        let Some(share) = mu.into().part(voices.len()).map(|s| s.floor()) else {
+        let Some(share) = mu.into().part(voices.len()) else {
             return;
         };
         if share.is_zero() {

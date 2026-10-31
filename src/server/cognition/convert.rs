@@ -567,22 +567,23 @@ impl Court {
     }
 
     /// 78.129 — THE SLASH OF A FALSIFIED FOLD: half the tier's bond, on each
-    /// lane, floored — the odd unit stays bonded — forfeited as ruled: half
-    /// to the challenger whose replay or default falsified it (the bounty: a
-    /// challenge needs a reason to be filed), half RETIRED from supply (POWR),
-    /// an odd unit to retirement. Drawn from whoever posted the bond; nothing
-    /// where the tier stands unbonded.
+    /// lane, exactly — forfeited as ruled: half of the cut to the challenger
+    /// whose replay or default falsified it (the bounty: a challenge needs a
+    /// reason to be filed), half RETIRED from supply (POWR). Drawn from
+    /// whoever posted the bond; nothing where the tier stands unbonded.
+    /// (Over counts the halves were floored and the odd unit stayed bonded
+    /// or went to retirement.)
     pub(crate) fn slash(&mut self, tier: &[u8; 32], challenger: [u8; 32], anchor: crate::economy::Anchor) -> crate::economy::Mu {
         use crate::economy::Mu;
         let key = bond_key(tier);
         let Some(held) = self.treasury.held_of(&key).cloned() else { return Mu::zero() };
         let Some(half) = held.mu.part(2) else { return Mu::zero() };
-        let (cut, kept) = held.mu.split_at(&half.floor());
+        let (cut, kept) = held.mu.split_at(&half);
         if cut.is_zero() {
             return cut;
         }
         let Some(half_cut) = cut.part(2) else { return Mu::zero() };
-        let (bounty, retired) = cut.split_at(&half_cut.floor());
+        let (bounty, retired) = cut.split_at(&half_cut);
         if self.treasury.refund_held(&key, anchor).is_err() {
             return Mu::zero();
         }

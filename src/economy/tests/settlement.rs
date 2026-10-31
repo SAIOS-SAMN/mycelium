@@ -36,20 +36,23 @@ fn settle_use_pays_novelty_on_use_not_install() {
     assert!(t.entries().iter().filter(|e| e.kind != Kind::Stake).all(|e| (e.at, e.receipt) == at(3, [7; 32])));
 }
 
-/// The dimensional ledger: consilience splits the PRICED μ⃗ per lane (nonzero
-/// lanes never split to zero), and the torse coin books on the holonomic lane.
+/// The dimensional ledger: consilience splits the PRICED μ⃗ per lane exactly
+/// (5 between two voices is 5/2 each, the whole award minted), and the torse
+/// coin books on the holonomic lane.
 #[test]
 fn settle_consilience_settles_with_torse_as_vectors() {
     let mut t = Treasury::new();
     t.enroll([1; 32], UNIT_BOND, at(0, [0; 32])); // capitalize before settling
     let anchor: Anchor = at(9, [1; 32]);
     t.settle_consilience(&[[1; 32], [2; 32]], [0, 0, 5, 0], anchor);
-    assert_eq!(t.balance_mu(&[1; 32]), [0, 0, 2, 0]);
-    assert_eq!(t.balance_mu(&[2; 32]), [0, 0, 2, 0]);
+    let half = Mu::counts([0, 0, 5, 0]).part(2).expect("halves");
+    assert_eq!(t.balance_mu(&[1; 32]), half);
+    assert_eq!(t.balance_mu(&[2; 32]), half);
+    assert_eq!(t.minted(), [0, 0, 5, 0], "the two halves are the award, nothing unminted");
     t.settle_torse([1; 32], [0, 0, 40, 0], anchor);
     assert_eq!(
-        t.balance_mu(&[1; 32]).n()[2],
-        42,
+        t.balance_mu(&[1; 32]),
+        half.add(&Mu::counts([0, 0, 40, 0])),
         "the torse coin mints the measured vector"
     );
     // The vector ledger round-trips with anchors intact.
@@ -134,22 +137,26 @@ fn release_rewrite_refuses_escrow_without_voice() {
     assert_eq!(t.escrowed_remaining(&addr), [8, 0, 0, 0], "the escrow stands");
 }
 
-/// Rule 11: a lane split cannot invent units. An award smaller than the number
-/// of voices does not floor to 1 per voice.
+/// Rule 11: a lane split cannot invent units, and over ℚ it loses none. One
+/// unit split across four voices is a quarter each — never one each (which
+/// minted three units nobody held) and never nothing (which left the unit
+/// unminted); the four parts are the unit.
 #[test]
 fn settle_consilience_split_never_invents_units() {
     let mut t = Treasury::new();
     let anchor: Anchor = at(1, [1; 32]);
-    // 1 unit on lane 2 split across 4 voices: integer quotient is 0, no floor to 1.
-    t.settle_consilience(&[[1; 32], [2; 32], [3; 32], [4; 32]], [0, 0, 1, 0], anchor);
-    assert_eq!(t.balance_mu(&[1; 32]), [0; 4]);
-    assert_eq!(t.balance_mu(&[2; 32]), [0; 4]);
-    assert_eq!(t.balance_mu(&[3; 32]), [0; 4]);
-    assert_eq!(t.balance_mu(&[4; 32]), [0; 4]);
+    let voices = [[1; 32], [2; 32], [3; 32], [4; 32]];
+    let quarter = Mu::counts([0, 0, 1, 0]).part(4).expect("quarters");
+    t.settle_consilience(&voices, [0, 0, 1, 0], anchor);
+    for v in &voices {
+        assert_eq!(t.balance_mu(v), quarter, "a quarter each");
+    }
+    assert_eq!(t.minted(), [0, 0, 1, 0], "the parts are the unit");
 
     // Same exact law for settle_assembly
-    t.settle_assembly(&[[1; 32], [2; 32], [3; 32], [4; 32]], [0, 0, 1, 0], anchor);
-    assert_eq!(t.balance_mu(&[1; 32]), [0; 4]);
+    t.settle_assembly(&voices, [0, 0, 1, 0], anchor);
+    assert_eq!(t.balance_mu(&[1; 32]), quarter.add(&quarter));
+    assert!(t.audit().is_ok(), "and both equations hold over ℚ");
 }
 
 /// STD1 — paid ≤ held, AND THE DEBIT SHORTS NOTHING. A recall and a door

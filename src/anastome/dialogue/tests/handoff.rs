@@ -163,7 +163,9 @@ fn encode_handoff_round_trips_conversions_and_reserve() {
     let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
     let out = ConvertOut { tier: [1u8; 32], holder: [2u8; 32], identity: [3u8; 32], g: 10, rate: [(1, 2), (0, 1), (3, 5), (0, 1)], nonce: [4u8; 32] };
     assert_eq!(out.mu(), Some([5, 0, 6, 0].into()));
-    assert_eq!(ConvertOut { rate: [(1, 3), (0, 1), (0, 1), (0, 1)], ..out.clone() }.mu(), None, "10/3 is no integer");
+    let third = crate::economy::Mu::counts([10, 0, 0, 0]).part(3).expect("thirds");
+    assert_eq!(ConvertOut { rate: [(1, 3), (0, 1), (0, 1), (0, 1)], ..out.clone() }.mu(), Some(third), "10/3 exactly, never refused for a share");
+    assert_eq!(ConvertOut { rate: [(1, 0), (0, 1), (0, 1), (0, 1)], ..out.clone() }.mu(), None, "a zero denominator is no rate");
     assert_eq!(ConvertOut { g: 0, ..out.clone() }.mu(), None);
     let inn = ConvertIn { holder: [2u8; 32], tier: [1u8; 32], identity: [3u8; 32], g: 7, mu: crate::economy::Mu::counts([3, 0, 1, 0]).part(2).expect("halves"), nonce: [9u8; 32] };
     assert_ne!(out.citation(), inn.citation());

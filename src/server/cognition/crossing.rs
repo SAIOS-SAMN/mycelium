@@ -35,10 +35,17 @@ pub(crate) fn claim_key(at: &[u8]) -> Vec<u8> {
     k
 }
 
-/// `⌊q · price⌋` exact, or `None` past the carrier.
-fn priced(q: &Q, price: u64) -> Option<u64> {
-    let f = (q * Q::from_integer(price.into())).floor();
-    u64::try_from(f.to_integer()).ok()
+/// THE MAP FEE, `g_l · p_l` on each lane exactly: the route's gas `gas`
+/// (S its exact span) at the read price `price`. Never floored: a span of
+/// 11/4 at a price of one is a fee of 11/4 on S.
+fn priced(span: &Q, gas: &Gas, price: &[u64; 4]) -> Mu {
+    let q = |n: u64| Q::from_integer(n.into());
+    let fee = [span * q(price[0]), q(gas.g) * q(price[1]), q(gas.t) * q(price[2]), q(gas.h) * q(price[3])];
+    // A span is a sum of non-negative segments, and every other factor a count.
+    match Mu::of(fee) {
+        Ok(fee) => fee,
+        Err(_) => Mu::zero(),
+    }
 }
 
 /// 78.154 (4) — WHY A COORDINATE RETRIEVAL WAS NOT SERVED.
@@ -173,9 +180,7 @@ impl Court {
         let ticks = t.point_a.h.abs_diff(t.point_b.h);
         let gas = Gas { s: (sn, sd), g: carried[1], t: ticks, h: carried[3] };
         let Some(price) = self.read_price() else { return refuse(R::Overflow) };
-        let fee = [priced(&span, price[0]), gas.g.checked_mul(price[1]), gas.t.checked_mul(price[2]), gas.h.checked_mul(price[3])];
-        let [Some(fs), Some(fg), Some(ft), Some(fh)] = fee else { return refuse(R::Overflow) };
-        let fee = Mu::counts([fs, fg, ft, fh]);
+        let fee = priced(&span, &gas, &price);
         if !fee.shortfall(&self.staked(&t.payer)).is_zero() {
             return refuse(R::Short);
         }

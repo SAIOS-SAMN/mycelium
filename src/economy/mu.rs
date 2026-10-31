@@ -215,11 +215,6 @@ impl Mu {
         }))
     }
 
-    /// Each lane's whole part, ⌊q⌋.
-    pub fn floor(&self) -> Mu {
-        Mu::new(std::array::from_fn(|l| self.0[l].floor()))
-    }
-
     /// EACH LANE'S WHOLE PART AS A COUNT, ⌊q⌋, for a comparison against
     /// counts: a count `n` fits under the amount `q` exactly where it fits
     /// under `⌊q⌋`, so the reading loses nothing a count can ask. `None`

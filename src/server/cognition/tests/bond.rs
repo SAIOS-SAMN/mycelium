@@ -51,8 +51,13 @@ fn bond(mu: Option<[u64; 4]>, nonce: u8) -> Bond {
 
 /// The tier's bond, as counts, where a bond was answered.
 fn bonded(f: Founded) -> Option<[u64; 4]> {
+    bonded_exactly(f).map(Counts::n)
+}
+
+/// The tier's bond, exactly, where a bond was answered.
+fn bonded_exactly(f: Founded) -> Option<crate::economy::Mu> {
     match f {
-        Founded::Bonded { bond, .. } => Some(bond.n()),
+        Founded::Bonded { bond, .. } => Some(bond),
         _ => None,
     }
 }
@@ -122,8 +127,8 @@ fn bond_posts_from_reserve_and_fold_reads_bonded() {
 
 /// A FALSIFIED FOLD SLASHES HALF THE BOND, AND NO BOND LEAVES WHILE A FOLD
 /// IT BACKS IS OPEN: withdrawal waits on the tier's open fold; the replay
-/// falsifies it — 7 bonded, 3 cut (the odd unit stays): 1 to the challenger,
-/// 2 retired, 4 still bonded; then, nothing outstanding, the bond withdraws
+/// falsifies it — 7 bonded, 7/2 cut exactly: 7/4 to the challenger, 7/4
+/// retired, 7/2 still bonded; then, nothing outstanding, the bond withdraws
 /// to the reserve.
 #[test]
 fn challenge_slashes_half_bond_and_withdrawal_waits() {
@@ -132,13 +137,16 @@ fn challenge_slashes_half_bond_and_withdrawal_waits() {
     let (f, line) = lying_fold();
     let at = carry(&mut k, f.clone(), 9).expect("carried");
     assert_eq!(k.bond(&bond(None, 2).sign(&reserve())), Founded::Outstanding, "a fold it backs is open");
-    let supply_before = k.treasury.balance_mu(&verifying(&reserve())).n()[0] + k.bond_of(&verifying(&tier())).n()[0];
+    let supply_before = k.treasury.balance_mu(&verifying(&reserve())).add(&k.bond_of(&verifying(&tier())));
     let evidence = Challenge::Evidence { fold: at, rows: f.rows.clone(), declared: Vec::new(), children: Vec::new(), entries: line };
     assert!(matches!(k.challenge(&evidence.sign(&challenger())), Challenged::Falsified { .. }));
-    assert_eq!(k.bond_of(&verifying(&tier())), [4, 0, 0, 0], "half slashed, the odd unit bonded");
-    assert_eq!(k.treasury.balance_mu(&verifying(&challenger())), [1, 0, 0, 0], "the bounty");
-    assert_eq!(k.treasury.balance_mu(&verifying(&reserve())).n()[0] + k.bond_of(&verifying(&tier())).n()[0], supply_before - 3, "3 left the reserve: 1 paid, 2 retired");
-    assert_eq!(bonded(k.bond(&bond(None, 2).sign(&reserve()))), Some([0, 0, 0, 0]), "nothing outstanding: withdrawn");
-    assert_eq!((k.bond_of(&verifying(&tier())), k.treasury.balance_mu(&verifying(&reserve()))).n(), ([0; 4], [7, 0, 0, 0]));
+    let seven = |d: usize| crate::economy::Mu::counts([7, 0, 0, 0]).part(d).expect("a part");
+    assert_eq!(k.bond_of(&verifying(&tier())), seven(2), "half slashed, exactly");
+    assert_eq!(k.treasury.balance_mu(&verifying(&challenger())), seven(4), "the bounty, half the cut");
+    let after = k.treasury.balance_mu(&verifying(&reserve())).add(&k.bond_of(&verifying(&tier())));
+    assert_eq!(supply_before.draw(&after), Ok(seven(2)), "7/2 left the reserve: 7/4 paid, 7/4 retired");
+    assert!(bonded_exactly(k.bond(&bond(None, 2).sign(&reserve()))).is_some_and(|b| b.is_zero()), "nothing outstanding: withdrawn");
+    assert_eq!(k.bond_of(&verifying(&tier())), [0; 4]);
+    assert_eq!(k.treasury.balance_mu(&verifying(&reserve())), crate::economy::Mu::counts([3, 0, 0, 0]).add(&seven(2)), "the kept half back to the reserve");
     assert_eq!(k.bond(&bond(None, 3).sign(&reserve())), Founded::Unbonded);
 }

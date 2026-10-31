@@ -102,8 +102,8 @@ fn designate_reserve_redesignates_at_reserve_fold() {
 }
 
 /// CONVERT-OUT PAYS FROM THE RESERVE, NEVER MINTS: 10 of game value at ½ μ
-/// each is exactly 5 μ, paid from the reserve to the holder; a rate that is
-/// not exact, a tier that is not the reserve, a conversion past the reserve
+/// each is exactly 5 μ, paid from the reserve to the holder; a rate over
+/// zero, a tier that is not the reserve, a conversion past the reserve
 /// — each refused; a resend answers with its receipt. The G side leaves the
 /// player's game value in the reserve tier's fold, once.
 #[test]
@@ -117,7 +117,7 @@ fn convert_out_pays_from_reserve_never_mints() {
     };
     assert_eq!(refused(&mut k, out(10, (1, 2), 1), &x()), HandoffRefusal::NoBasket, "78.139: no conversion before the reserve's basket");
     basket(&mut k);
-    assert_eq!(refused(&mut k, out(10, (1, 3), 1), &x()), HandoffRefusal::Inexact, "10/3 is no integer");
+    assert_eq!(refused(&mut k, out(10, (1, 0), 1), &x()), HandoffRefusal::Inexact, "a rate over zero is no rate");
     assert_eq!(refused(&mut k, ConvertOut { tier: verifying(&x2()), ..out(10, (1, 2), 1) }, &x2()), HandoffRefusal::NotReserve);
     assert_eq!(refused(&mut k, out(20, (1, 1), 1), &x()), HandoffRefusal::ReserveShort, "a rate never mints μ");
     let supply = k.treasury.balance_mu(&verifying(&x())).n()[0] + k.treasury.balance_mu(&verifying(&holder())).n()[0];
