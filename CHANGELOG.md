@@ -6,6 +6,14 @@ such change is named here.
 
 ## Unreleased
 
+### Live readings (MU-DERIVATIONS, ruled 2026-10-31)
+- **The principle, written down:** MU-STANDARDS 2.12 and MU-DERIVATIONS
+  §0.5. A governing quantity is a live reading of the current state,
+  derived once per change of its inputs and held keyed by them; the only
+  fixed values are names, invariants of the algebra and external formats;
+  a decision with magnitude is a graded reading; a refusal is named and
+  carries the reading that caused it.
+
 ### SDK
 - `mycelium_sdk::rule` gains `perceive_family`, `Frames` and
   `extraction_spend`, so a client sizes its own extraction stroke from the

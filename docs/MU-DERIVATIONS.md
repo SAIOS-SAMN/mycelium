@@ -95,6 +95,29 @@ code locate a site when lines move.
   1.11). Time is distance along an orbit: a height on TUniversal, a count
   of strokes, a distance along a sequence (78.43).
 
+### 0.5 Live readings, the principle every entry applies (ruled 2026-10-31)
+
+The operator's ruling: in an environment that is dynamic, never boolean
+and never static, fluidity is kept by deriving each required computation
+from the physics, never from a constant. Every entry below applies it, and
+MU-STANDARDS 2.12 binds it on every line written:
+
+- **A governing quantity is a live reading** of the current state, derived
+  once per change of its inputs and held keyed by those inputs. It is
+  never recomputed per use (mycelium#14: recomputing a reading on every use
+  stopped a court), and never served after its inputs moved.
+- **The only fixed values** are names (wire tags, codes, versions),
+  invariants of the algebra (each proved by a test, class EXACT), and
+  external formats (class FORMAT or EXTERNAL, citing the layout or the
+  standard). Anything else is a reading, or it is REGISTERED (D1.4) with
+  the question that will derive it.
+- **A decision with magnitude is a graded reading**: the decision returns
+  how far, how many or how late, and the threshold it is held against is a
+  reading of the same state.
+- **A refusal is named and carries the reading that caused it**: a
+  distance, a shortfall, a missing measurement, never a fallback number
+  and never an unnamed `None` in place of one.
+
 ---
 
 ## 1. Summary

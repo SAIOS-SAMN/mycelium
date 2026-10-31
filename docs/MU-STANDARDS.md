@@ -182,6 +182,33 @@ rewritten with "its", "the X's", a plural noun or another structure;
 "its" and "own" are allowed. Mathematical *I* and Roman numerals are not
 pronouns.
 
+2.12 **Live readings** (ruled 2026-10-31; beside the constants rule 2.6
+and MU-RECURSION §0.0's *No constant*). The environment is dynamic and not
+boolean: a quantity that governs a decision (a window, a deadline, a
+budget, a bound, a price, a pool) is a LIVE READING of the current state,
+derived from the physics, never a constant written at the site.
+
+- *Derived on change, held keyed by its inputs.* A reading is computed
+  once per change of the inputs it reads and held under those inputs'
+  coordinates; every use reads the held value. It is never recomputed per
+  use: recomputation on every read made one reading cost a court its
+  liveness (mycelium#14), and a held value whose inputs moved is stale and
+  is derived again, never served.
+- *What may be fixed.* Only names (wire tags, act bytes, codes, layout
+  versions), invariants of the algebra (each with the test that proves
+  it), and external formats (each citing its standard and clause). Every
+  other number is a reading, or it is NAMED in the open-physics register
+  (`physics::axioms::OPEN_PHYSICS`, MU-DERIVATIONS D1.4) with what will
+  derive it, and the numbers gate (§4.1) refuses it unnamed.
+- *A decision with magnitude is a graded reading.* Where the state admits
+  degrees (how far, how many, how late), the decision returns the graded
+  reading, and a threshold applied to it is a reading of the same state,
+  never a literal.
+- *A refusal is named and carries its cause.* A refusal names itself and
+  carries the reading that caused it (the distance, the shortfall, the
+  missing measurement), never a bare `None` standing in for a number that
+  was not read.
+
 ## 3. Tests
 
 3.1 **A test is a claim; its name names the unit and the behaviour.** One
