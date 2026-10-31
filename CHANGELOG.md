@@ -6,6 +6,12 @@ such change is named here.
 
 ## Unreleased
 
+## 0.3.0-rc.2 — 2026-10-31 (release candidate)
+
+Kernels conform too: the peer kernels pinning rc.1 found the contract
+covered only minds. rc.2 adds the KERNEL conformance profile and the SDK's
+`house` module, so a kernel pins `mycelium-sdk` alone.
+
 ### SDK
 - **Conformance profiles** (`docs/MU-CONFORMANCE.md`, version 2): the
   statement carries two profiles, `Profile::Mind` (MUST `task`, `solve`,

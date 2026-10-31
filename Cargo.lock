@@ -351,7 +351,7 @@ checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
 
 [[package]]
 name = "forms"
-version = "0.3.0-rc.1"
+version = "0.3.0-rc.2"
 dependencies = [
  "num-bigint",
  "num-rational",
@@ -520,7 +520,7 @@ checksum = "f8ca58f447f06ed17d5fc4043ce1b10dd205e060fb3ce5b979b8ed8e59ff3f79"
 
 [[package]]
 name = "mycelium"
-version = "0.3.0-rc.1"
+version = "0.3.0-rc.2"
 dependencies = [
  "blake3",
  "ctrlc",
@@ -546,7 +546,7 @@ dependencies = [
 
 [[package]]
 name = "mycelium-sdk"
-version = "0.3.0-rc.1"
+version = "0.3.0-rc.2"
 dependencies = [
  "ed25519-dalek",
  "forms",

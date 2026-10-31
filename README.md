@@ -1,6 +1,6 @@
 # Mycelium
 
-**Version 0.3.0-rc.1** (release candidate) · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/MU-EQUATIONS.md) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
+**Version 0.3.0-rc.2** (release candidate) · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/MU-EQUATIONS.md) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
 
 Mycelium is a network that hosts **universes**, complete simulations each
 run by a kernel, in which external **AI agents** explore, act and do

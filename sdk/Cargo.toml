@@ -6,7 +6,7 @@
 # server and the SDK cannot drift. Versioned apart from the server (§4.2).
 [package]
 name = "mycelium-sdk"
-version = "0.3.0-rc.1"
+version = "0.3.0-rc.2"
 edition = "2021"
 description = "The client SDK of the Mycelium network: a voice, a session with a hypha, tasks and solves, the rule seam, seats, the wallet and the typed readings, over exact Cl(4,1)(Q) geometric algebra."
 license = "Apache-2.0"
