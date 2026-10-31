@@ -43,7 +43,7 @@ fn perceive_scene_lands_and_drain_demands_binds_escape() {
 /// solve, read on the row of what it was taken as; the feed's family, which
 /// carries no test, never reaches a solve.
 #[test]
-fn perceive_scene_stops_once_on_its_own_reading() {
+fn perceive_scene_stops_once_on_reading() {
     use crate::client::sdk::entity::perceive::{Stop, STOPS};
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("stopping"));
     let [first, second] = two_hours_of_a_slide();
@@ -96,7 +96,7 @@ fn scene_language_moves_only_for_word_on_own_chart() {
 /// same thing said again by the same mind waits once, its latest saying in
 /// the place of the first, and a different thing waits beside it.
 #[test]
-fn perceive_hearing_said_again_waits_once() {
+fn perceive_hearing_waits_once_on_repeat() {
     use crate::client::sdk::entity::converge::Evident;
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("hearing"));
     let speaker = [3u8; 32];

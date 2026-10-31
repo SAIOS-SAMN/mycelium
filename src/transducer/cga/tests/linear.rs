@@ -14,7 +14,7 @@ fn motions() -> (Mv, Mv) {
 /// polynomial the traces of its powers give, applied to the function by
 /// Horner's rule, sends every vector to zero.
 #[test]
-fn linear_function_satisfies_own_characteristic_polynomial() {
+fn linear_function_satisfies_characteristic_polynomial() {
     let (turn, shift) = motions();
     for m in [turn, shift] {
         let r = LinearFunction::of_versor(&m).expect("a versor acts");
@@ -25,7 +25,7 @@ fn linear_function_satisfies_own_characteristic_polynomial() {
 /// THE TRACE IS CYCLIC: `tr(f ∘ g) = tr(g ∘ f)`, the vector derivative's
 /// reading of each composite, though the two composites differ.
 #[test]
-fn trace_of_composite_is_cyclic() {
+fn trace_is_cyclic_on_composite() {
     let (turn, shift) = motions();
     let (f, g) = (LinearFunction::of_versor(&turn).expect("acts"), LinearFunction::of_versor(&shift).expect("acts"));
     assert!(!f.after(&g).minus(&g.after(&f)).is_zero(), "the two do not commute");
@@ -36,7 +36,7 @@ fn trace_of_composite_is_cyclic() {
 /// `e₃`, `e₊` and `e₋` and nothing more, and every vector of the kernel is
 /// held by the action.
 #[test]
-fn kernel_of_turn_less_one_is_fixed_flat() {
+fn kernel_of_is_fixed_flat_for_turn_less_one() {
     let (turn, _) = motions();
     let r = LinearFunction::of_versor(&turn).expect("acts");
     let fixed = r.shifted(&q(1, 1)).kernel();
@@ -48,7 +48,7 @@ fn kernel_of_turn_less_one_is_fixed_flat() {
 /// motion (T1), the rays' values the roots of the characteristic polynomial of
 /// `(R + R⁻¹)/2`, and the (3, 4, 5) turn's value is `c = 3/5`, rational.
 #[test]
-fn motion_modes_read_off_action_compose_back() {
+fn motion_modes_composes_back_to_action() {
     let (turn, _) = motions();
     let modes = match motion_modes(&turn, &mut super::common::budget()) {
         Some(Ok(ms)) => ms,

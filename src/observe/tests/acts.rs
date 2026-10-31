@@ -3,7 +3,7 @@ use super::common::*;
 
 /// A COURT'S ACTS TRAVEL WHOLE (2026-09-29): every counter in its table.
 #[test]
-fn acts_reads_back_whole() {
+fn acts_round_trips() {
     let acts = Acts {
         k: 9,
         reserve: [1, 2, 3, 4],
@@ -27,7 +27,7 @@ fn acts_reads_back_whole() {
 /// MU-CLIENT §5.6 — EVERY PAY A PRODUCER NAMES IS A KIND OF ITS TABLE: each
 /// counted once with its lanes on its own slot.
 #[test]
-fn acts_tally_pay_counts_each_kind_on_own_slot() {
+fn acts_tally_pay_counts_each_kind_on_slot() {
     let mut t = crate::observe::ActsTally::default();
     for (i, kind) in [
         "scenes on no family held",
@@ -55,7 +55,7 @@ fn acts_tally_pay_counts_each_kind_on_own_slot() {
 /// name the table does not hold, so each name the producers use is pinned
 /// here, and a renamed slot fails this test rather than counting nothing.
 #[test]
-fn count_holds_every_producer_name_in_table() {
+fn count_names_every_producer_in_table() {
     fn holds<const N: usize>(table: &[&str; N], names: &[&str]) {
         for n in names {
             let mut slots = [0u64; N];

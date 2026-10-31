@@ -106,7 +106,7 @@ fn walked(sigma: &[(u8, u8)], base: &[(u8, u8)]) -> (u64, Vec<Vec<(u8, u8)>>) {
 /// (1) THE PERIOD READ OFF THE CYCLES is the walk's, on every one of the 42
 /// cycle types of the palette — and at most Landau's g(10) = 30.
 #[test]
-fn orbit_period_matches_walk_on_every_cycle_type() {
+fn orbit_period_agrees_with_walk_on_every_cycle_type() {
     let types = partitions(10, 10);
     assert_eq!(types.len(), 42, "the partitions of ten");
     let base = palette_base();
@@ -122,7 +122,7 @@ fn orbit_period_matches_walk_on_every_cycle_type() {
 /// member of every orbit is on it, the base is not, and every other cycle
 /// type's image of the base is on it exactly when the walk met it.
 #[test]
-fn on_orbit_matches_walk_on_every_cycle_type() {
+fn on_orbit_agrees_with_walk_on_every_cycle_type() {
     let base = palette_base();
     let types = partitions(10, 10);
     let images: Vec<Vec<(u8, u8)>> = types

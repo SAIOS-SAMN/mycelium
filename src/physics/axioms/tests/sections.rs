@@ -58,7 +58,7 @@ fn binds(s1: &Mv, s2: &Mv) -> Option<u32> {
 /// weighed lengths and masses; a section moved further, or carrying another
 /// mass, does not.
 #[test]
-fn switch_square_equal_for_congruent_sections() {
+fn switch_squares_equally_on_congruent_sections() {
     let a = geoid(at(0, 0), at(3, 4), 2, 2);
     let copy = geoid(at(10, 1), at(13, 5), 2, 2);
     let further = geoid(at(10, 1), at(16, 9), 2, 2);
@@ -151,7 +151,7 @@ fn tilted_quarter() -> Mv {
 /// u × w — and that axis is fixed pointwise. The same 90° in the x,y plane
 /// about the same centre moves the circle.
 #[test]
-fn turn_keeps_tilted_circle_about_its_own_axis() {
+fn turn_keeps_tilted_circle_about_axis() {
     let (c, u, w, a) = frame();
     let at3 = |d: [i64; 3], s: i64| p3(c[0] + s * d[0], c[1] + s * d[1], c[2] + s * d[2]);
     let (p1, p2, p3_) = (at3(u, 1), at3(w, 1), at3(u, -1));
@@ -183,7 +183,7 @@ fn turn_keeps_tilted_circle_about_its_own_axis() {
 /// - HYPERBOLIC — the capacitor step on the fibre through c from c + u to
 ///   c − u: the nucleus is driven along the field line: UNSTABLE.
 #[test]
-fn sigma_points_stable_only_under_axial_turn() {
+fn sigma_points_is_stable_only_under_axial_turn() {
     let (c, u, w, a) = frame();
     let third = |x: i64| BigRational::new(x.into(), 3.into());
     let centre = p3(c[0], c[1], c[2]);

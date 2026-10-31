@@ -64,7 +64,7 @@ fn get_answers_as_in_memory_carrier() {
 /// THE KEY SET IS WHAT A BOOT READS, and it is the carrier's own — the
 /// resident index under Z11 is exactly this, with no value loaded.
 #[test]
-fn keys_equal_carrier_key_set() {
+fn keys_equals_carrier_key_set() {
     let k = sample();
     let mut file = Vec::new();
     ondisk::write(&k, &mut file).expect("writes");
@@ -78,7 +78,7 @@ fn keys_equal_carrier_key_set() {
 /// AN EMPTY CARRIER SAYS SO. A file that holds nothing is a header and an
 /// absent root, not a zero length the reader has to interpret (rule 11).
 #[test]
-fn write_of_empty_carrier_holds_nothing() {
+fn write_of_writes_nothing_for_empty_carrier() {
     let k: Keyed<Vec<u8>> = Keyed::new();
     let mut file = Vec::new();
     ondisk::write(&k, &mut file).expect("writes");

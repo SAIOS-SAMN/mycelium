@@ -158,7 +158,7 @@ fn outcome_of_reads_empty_starved_search_as_starved() {
 /// holds two symmetries against the winner, and they are two — summing them
 /// would be a count deciding (rule 2).
 #[test]
-fn symmetries_holds_one_per_losing_candidate() {
+fn symmetries_keeps_one_per_losing_candidate() {
     let closed = ClassVector::of_word(&Word::identity()).expect("identity").class_key();
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let s = PlaneForm::sheet_word();

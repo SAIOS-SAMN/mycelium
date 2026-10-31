@@ -46,7 +46,7 @@ fn at(c: [i64; 3]) -> Vec<num_rational::BigRational> {
 /// axis, the second posed by the slide along it: the coupling commutes with
 /// the generator, the torque vanishes term by term and opens no plane.
 #[test]
-fn equilibrium_holds_for_frames_on_axis() {
+fn equilibrium_balances_frames_on_axis() {
     let (a, b) = (frame([0, 0, 0], one()), frame([0, 0, 2], translator_at(&at([0, 0, 2]))));
     let b_orbit = turn().grade(2);
     let v = coupling(&a, &b).grade(2);
@@ -107,7 +107,7 @@ fn torque_is_antisymmetric_and_zero_along_axis() {
 /// closes after the turn's own period — four hours — and a body's four hours
 /// are four distinct nuclei, the fifth its first again. No ruler, no step.
 #[test]
-fn succession_hours_close_after_turn_period() {
+fn succession_closes_hours_after_turn_period() {
     let (r12, r3p) = (rotator(&q(1, 1), &q(1, 1)), rotator_on_blade(&q(1, 1), &q(1, 1), E3 | crate::transducer::cga::EP));
     assert!(r12.geo(&r3p).sub(&r3p.geo(&r12)).is_zero(), "the two planes commute");
     let r = succession(&turn(), &at([0, 0, 0])).expect("the turn winds");
@@ -130,7 +130,7 @@ fn succession_hours_close_after_turn_period() {
 /// slide's hour rotor is the slide itself; the identity has no succession —
 /// it is reflexive, decided before any orbit is asked.
 #[test]
-fn succession_of_slide_is_slide_and_of_identity_none() {
+fn succession_keeps_slide_and_reads_identity_as_none() {
     let slide = translator_at(&at([1, 0, 0]));
     assert!(succession(&slide, &at([0, 0, 0])).is_some_and(|r| r.projective_eq(&slide)), "the slide is its own hour");
     assert_eq!(succession(&one(), &at([0, 0, 0])), None, "the identity has no succession");
@@ -145,7 +145,7 @@ fn succession_of_slide_is_slide_and_of_identity_none() {
 /// the torus's pole, `∝ e₊`; the half period (hour 2 of 4) carries it to
 /// `−e₊`, its own ray — a collapse the unit length of `e₃e₊` makes.
 #[test]
-fn equilibrium_balances_about_own_centroid_not_origin() {
+fn equilibrium_balances_about_centroid_not_origin() {
     let s = sphere_at(&at([1, 0, 0]), &q(2, 1));
     let r = succession(&turn(), &at([1, 0, 0])).expect("the turn winds");
     let unit = frame([1, 0, 0], one()).nucleus;
@@ -162,7 +162,7 @@ fn equilibrium_balances_about_own_centroid_not_origin() {
 /// hour 0 at rest and hour 1 on the succession centred there: balanced, and
 /// the turn keeps the pair's inversive distance.
 #[test]
-fn equilibrium_and_rigid_hold_for_synchronous_binary() {
+fn equilibrium_balances_synchronous_binary() {
     let star = barycentre(&[(at([1, 0, 0]), q(1, 1)), (at([-1, 0, 0]), q(1, 1))]).expect("the barycentre");
     assert_eq!(star.centre, at([0, 0, 0]));
     let r = succession(&turn(), &star.centre).expect("the turn winds");
@@ -195,7 +195,7 @@ fn equilibrium_refuses_tumble_and_rigid_refuses_drift() {
 /// told the mind one third of what is missing. The synchronous binary,
 /// turned rigidly with its momentum carried, closes: every component zero.
 #[test]
-fn coherence_files_every_defect_and_closes_only_at_zero() {
+fn coherence_closes_only_at_zero_defect() {
     let r = succession(&turn(), &at([0, 0, 0])).expect("the turn winds");
     let tumble = rotator_on_blade(&q(1, 1), &q(1, 1), E1 | E3);
     let frames = vec![frame([1, 0, 0], one()), frame([-1, 0, 0], one()), carried(&frame([1, 0, 0], one()), &tumble)];
@@ -233,7 +233,7 @@ fn coherence_files_every_defect_and_closes_only_at_zero() {
 /// external torque zero. The same body GROWN on the way — its moments
 /// `diag(3, 1)` — is not carried: the external torque stands.
 #[test]
-fn external_torque_zero_only_on_unforced_orbit() {
+fn external_torque_is_zero_only_on_unforced_orbit() {
     let d = |a: i64, b: i64| vec![vec![q(a, 1), zero()], vec![zero(), q(b, 1)]];
     let before = Body { centre: vec![q(1, 1), zero()], mass: q(4, 1), moments: d(2, 1) };
     let after = Body { centre: vec![zero(), q(-1, 1)], mass: q(4, 1), moments: d(1, 2) };
@@ -263,7 +263,7 @@ fn spin_of_is_set_by_star_place() {
 /// LAW IV · FORCE, PLANE BY PLANE (78.62). The turn about the axis moves no
 /// plane's torque; a slide across it opens one, and law II refuses it.
 #[test]
-fn force_keeps_axial_turn_and_opens_plane_for_slide() {
+fn force_keeps_axial_turn_and_opens_slide_plane() {
     let c = Constellation {
         frames: vec![frame([0, 0, 0], one()), frame([0, 0, 2], translator_at(&at([0, 0, 2])))],
         generator: turn(),

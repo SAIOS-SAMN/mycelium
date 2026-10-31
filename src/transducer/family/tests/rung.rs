@@ -95,7 +95,7 @@ fn sentences_of_hears_chord_rings_composes_rays() {
 /// where the boost left them unbound demands; and a nilpotent theorem teaches
 /// its open path as a word, spelled (the slide turns nothing).
 #[test]
-fn theorem_of_ray_ring_is_nilpotent() {
+fn theorem_of_is_nilpotent_on_ray_ring() {
     use crate::transducer::sentence::compose::sentences_of;
     use crate::transducer::sentence::theorem::{Certificate, Theorem};
     let slides = vec![
@@ -121,7 +121,7 @@ fn theorem_of_ray_ring_is_nilpotent() {
 /// NAMED AND HELD. A dilation by 2 is hyperbolic: its sentence is open, no
 /// certificate stands, and its holonomy is held as a word by name.
 #[test]
-fn hear_holds_hyperbolic_sentence_by_name() {
+fn hear_holds_hyperbolic_sentence() {
     let one = Mv::scalar(q(1, 1));
     let d = cga::dilator(&q(2, 1));
     let s = compose(&[Term { word: d, transport: one }], &mut stroke()).expect("a sentence");

@@ -23,7 +23,7 @@ fn lanes(nets: &[([u8; 32], [i128; 4])]) -> Lanes {
 /// THE LANE GROUP: exact sums per identity per lane, zeros leaving the one
 /// writing, the inverse the negation — and four lanes never summed into one.
 #[test]
-fn lanes_compose_sums_exactly_per_identity_per_lane() {
+fn lanes_composes_by_sum_per_lane() {
     let a = lanes(&[(who(1), [5, 0, 2, 0]), (who(2), [-5, 1, 0, 0])]);
     let b = lanes(&[(who(2), [5, -1, 0, 0]), (who(3), [0, 0, 0, 7])]);
     let sum = a.compose(&b).expect("within the carrier");
@@ -38,7 +38,7 @@ fn lanes_compose_sums_exactly_per_identity_per_lane() {
 /// obstructed by exactly that value, on exactly that lane, for exactly that
 /// identity.
 #[test]
-fn fill_ledger_triangle_glues_or_names_obstruction() {
+fn fill_glues_ledger_triangle_or_names_obstruction() {
     let mut c: Cover<Lanes> = Cover::new();
     c.set_edge(&v(1), &v(2), lanes(&[(who(7), [5, 0, 0, 0])])).expect("set");
     c.set_edge(&v(2), &v(3), lanes(&[(who(7), [3, 0, 0, 0])])).expect("set");
@@ -55,7 +55,7 @@ fn fill_ledger_triangle_glues_or_names_obstruction() {
 /// obstructs a triangle that holds it — and only a missing edge leaves a
 /// cycle unread, by name.
 #[test]
-fn fill_tetrahedron_glues_and_changed_edge_obstructs() {
+fn fill_glues_tetrahedron_and_obstructs_changed_edge() {
     // A potential on four ledgers: the edge a → b carries φ(b) − φ(a), so
     // every cycle closes.
     let phi = |b: u8| -> i128 { i128::from(b) * 10 };
@@ -77,7 +77,7 @@ fn fill_tetrahedron_glues_and_changed_edge_obstructs() {
 /// around a triangle compose to the identity ray — the cell glues; another
 /// third side obstructs it. One cover, two coefficient groups.
 #[test]
-fn fill_over_turned_reads_same_cover() {
+fn fill_is_invariant_under_turn() {
     let q = |n: i64| BigRational::from_integer(n.into());
     let turned = |s: i64, b: i64| Turned { rotor: Rotor::scalar(q(s)).add(&Rotor::blade(0b0011, q(b))), carriage: crate::transducer::element::identity_versor() };
     let (r, s) = (turned(2, 1), turned(3, 4));

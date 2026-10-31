@@ -30,7 +30,7 @@ fn boundary_measure_reads_four_lanes_never_sum() {
 /// could meet it. Measured before this on the one-body deformation P8
 /// leaves standing: one bubble, cover 0.
 #[test]
-fn hold_form_stands_demand_on_its_chart() {
+fn hold_form_stands_demand_on_chart() {
     use crate::transducer::sentence::{Demand, Form, Vertex};
     let bodies = vec![(0i64, 0i64, 1u8, 0u8), (0, 1, 1, 0)];
     let chart = crate::transducer::stalk::invariant(&bodies);
@@ -392,7 +392,7 @@ fn expand_all_crystallizes_closed_idea_and_releases_it() {
 /// Hold, expand, and the quote-chart peel of one thought do not grow
 /// with N unrelated atlas words.
 #[test]
-fn expand_all_work_independent_of_atlas_size() {
+fn expand_all_ignores_atlas_size() {
     use crate::network::nerve::work;
     use crate::transducer::element::from_canonical;
     use crate::transducer::germinate::germinate;

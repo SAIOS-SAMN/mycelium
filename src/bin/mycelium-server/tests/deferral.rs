@@ -32,7 +32,7 @@ fn is_deferred_reads_deferral_as_impedance_not_refusal() {
 /// outcome layout; a deferral with lanes is still a deferral; a frame that
 /// teaches, or carries a height, or is short, is not one.
 #[test]
-fn deferral_lanes_carry_door_deficit_per_lane() {
+fn deferral_lanes_carries_door_deficit_per_lane() {
     let code = mycelium::cognition::outcome_code(&mycelium::cognition::Outcome::GermPending);
     let deficit = [2u64, 0, 1, 0];
     let deferral = dialogue::encode_deferral(code, &deficit);

@@ -32,7 +32,7 @@ fn closeness_keeps_fixed_points() {
 /// REFUSED BY NAME: a negative share, shares not summing to one, planes
 /// unmatched.
 #[test]
-fn shares_of_and_closeness_refuse_by_name() {
+fn closeness_refuses_negative_unsummed_or_unmatched_shares() {
     assert_eq!(Shares::of(&qs(&[(-1, 3), (4, 3)])), Err(ClosenessRefusal::Negative));
     assert_eq!(Shares::of(&qs(&[(1, 2), (1, 3)])), Err(ClosenessRefusal::Unsummed));
     let (a, b) = (Shares::of(&qs(&[(1, 1)])).expect("a"), Shares::of(&qs(&[(1, 2), (1, 2)])).expect("b"));

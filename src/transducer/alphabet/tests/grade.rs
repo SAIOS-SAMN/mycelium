@@ -43,7 +43,7 @@ fn grade_sums_back_to_element() {
 /// A ROTOR OCCUPIES EVEN GRADES ONLY, which is what `Cl⁺(4,0)` means, and
 /// the two readings of that agree because there is one reader.
 #[test]
-fn grades_even_and_double_turn_carries_pseudoscalar() {
+fn grades_carries_pseudoscalar_on_even_double_turn() {
     let q01 = LetterId::turn_90((0, 1)).expect("90° turn");
     let q23 = LetterId::turn_90((2, 3)).expect("90° turn");
 
@@ -133,7 +133,7 @@ fn factor_rotor_spells_double_turn_and_refuses_odd() {
 /// THE ZERO MULTIVECTOR OCCUPIES NO GRADE and is not a versor: it has no
 /// weight, so it carries nothing and is not an element of the group.
 #[test]
-fn grades_of_zero_empty() {
+fn grades_of_is_empty_for_zero() {
     let z = Rotor::zero();
     assert!(z.grades().is_empty(), "zero occupies nothing, got {:?}", z.grades());
     assert!(z.weight().is_none(), "and it is not a versor");

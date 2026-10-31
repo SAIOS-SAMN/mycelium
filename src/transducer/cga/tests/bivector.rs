@@ -162,7 +162,7 @@ fn cayley_evolves_generator_to_versor_keeping_coupling() {
 /// factorization has no such ceiling, and this MEASURES the difference:
 /// a simple boost reads `I₂ = 0`, a coupled motion reads `I₂ ≠ 0`.
 #[test]
-fn versor_of_reflections_screw_has_nonzero_second_casimir() {
+fn versor_of_reflections_gives_screw_nonzero_second_casimir() {
     let z = q(0, 1);
     let v = |a: (i64, i64), b: (i64, i64), c: (i64, i64), p: (i64, i64), m: (i64, i64)| {
         reflector_vector(&q(a.0, a.1), &q(b.0, b.1), &q(c.0, c.1), &q(p.0, p.1), &q(m.0, m.1))

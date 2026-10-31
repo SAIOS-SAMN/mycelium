@@ -106,7 +106,7 @@ fn from_receipts_refuses_close_with_forged_frame() {
 /// signer's orbit closed at the same tick — no constant, no threshold. The
 /// withholding it decides is the court's (`server::cognition::tests::orbit`).
 #[test]
-fn collides_by_exact_frame_equality_at_one_tick() {
+fn collides_compares_exact_frames_at_one_tick() {
     let mut other = ReceiptChain::with_signer([4; 32]);
     act(&mut other, [2, 0, 0, 0]);
     let other_close = close(&mut other);

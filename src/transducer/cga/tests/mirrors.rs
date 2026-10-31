@@ -40,7 +40,7 @@ fn mirrors_between_reads_nucleus_offset_and_regime() {
 /// THE MIRRORS THAT BRACKET IT ARE THE GRID'S OWN GROUP: two parallel
 /// mirrors on an axis read `Ã₁`, affine; a lone mirror reads finite.
 #[test]
-fn base_mirror_brackets_read_affine_group() {
+fn base_mirror_brackets_reads_affine_group() {
     let planes: Vec<Mv> =
         [(1, 0), (1, 1), (2, 0), (3, 1), (3, 2)].iter().map(|&(a, k)| base_mirror(a, &q(k, 1)).expect("an axis of the base")).collect();
     let r = read_coxeter(&planes, &[], &mut budget());

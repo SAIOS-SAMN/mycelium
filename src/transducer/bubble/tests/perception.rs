@@ -497,7 +497,7 @@ fn drain_demands_hands_out_escaping_slide_once() {
 /// consolidates it, and the thought is congruent at ℓ = 4 — the two
 /// perceptions merge on its torsion axis.
 #[test]
-fn hold_perceived_consolidates_scene_turned_whole() {
+fn hold_perceived_consolidates_whole_turned_scene() {
     let mut c = Contemplation::new();
     scene(&mut c, &[&LA[..], &LB[..]].concat(), 7, 9);
     scene(&mut c, &turned(&[&LA[..], &LB[..]].concat()), 7, 9);

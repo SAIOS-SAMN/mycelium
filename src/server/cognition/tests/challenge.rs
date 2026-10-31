@@ -176,7 +176,7 @@ fn challenge_upholds_honest_fold_as_final_upheld() {
 /// the reserve fold that carried it unwinds (it refiles without the line),
 /// and the LINE's bond is slashed, never the reserve's.
 #[test]
-fn challenge_falsifies_fold_its_line_does_not_sum_to() {
+fn challenge_falsifies_fold_line_does_not_sum_to() {
     let (a, ..) = tiers();
     let mut k = founded();
     let e = a_entries();
@@ -261,7 +261,7 @@ fn finality_waits_on_netted_folds_and_unwinds_ancestors() {
 /// reconstruction falsifies it, `A`'s parts come back, and `Q` refiles all
 /// of `A`.
 #[test]
-fn challenge_falsified_parent_returns_child_netting() {
+fn challenge_returns_child_netting_of_falsified_parent() {
     let (a, p, q) = tiers();
     let mut k = founded();
     let a_at = sealed(&mut k, a_fold(), &a);
@@ -299,7 +299,7 @@ fn challenge_falsified_parent_returns_child_netting() {
 /// not on the cycle is no obstruction; `Q`'s tier names the holder and the
 /// gain, the obstruction is discharged, and `Q` reads final after its window.
 #[test]
-fn challenge_correction_books_arbitrage_by_closing_tier() {
+fn challenge_books_correction_arbitrage_by_closing_tier() {
     let (_, _, q) = tiers();
     let book = |at: &FoldAt, child: Vec<u8>| Challenge::Correction { fold: at.clone(), child, holder: who(7), amount: 3 };
     // Left open past the window: blocked, and too late to book.
@@ -498,7 +498,7 @@ fn challenge_withdraw_reopens_self_demand_once() {
 /// recorded fold's prefix and where that fold stands after — inside its
 /// reserve's receipt — the same after a restart, re-derived from the records.
 #[test]
-fn line_head_reads_back_with_setting_fold() {
+fn line_head_round_trips_with_setting_fold() {
     let (a, ..) = tiers();
     let mut k = founded();
     assert_eq!(k.line_head(&verifying(&a)), ([0; 32], None), "no fold: the zero head");

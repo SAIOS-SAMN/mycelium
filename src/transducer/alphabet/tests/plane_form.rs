@@ -69,7 +69,7 @@ fn plane_form_composes_and_inverts_exactly() {
 
 /// §52.1: conjugacy key is invariant on the four conjugation lines.
 #[test]
-fn conjugacy_key_invariant_on_four_conjugation_lines() {
+fn conjugacy_key_is_invariant_under_conjugation() {
     let q = LetterId::turn_90((0, 1)).unwrap();
     let r = Word::from_letters(&[(q, false), (q, false)]).form().unwrap();
     let r2 = Word::from_letters(&[(q, false)]).form().unwrap();

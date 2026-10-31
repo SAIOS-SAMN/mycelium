@@ -13,7 +13,7 @@ fn q(n: i64) -> BigRational {
 /// A body a 90° turn about the attractor from where it was predicted: the
 /// twist carries it there, holds the attractor still, and returns after four.
 #[test]
-fn twist_about_turn_90_holds_attractor() {
+fn twist_about_keeps_attractor_of_turn_90() {
     let centre = [q(2), q(2)];
     let (p, s) = (point_at(&[q(4), q(2)]), point_at(&[q(2), q(4)]));
     let tau = twist_about(&centre, &p, &s, 2).expect("a rotation of the pull");

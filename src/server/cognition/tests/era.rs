@@ -173,7 +173,7 @@ assert!(broken.chain().root().is_none() && broken.fold_proposal().is_none());
 /// binds the segment again holds both eras from the eras' descriptors alone,
 /// each answering its own range.
 #[test]
-fn bind_eras_reads_each_era_own_range() {
+fn bind_eras_reads_range_of_each_era() {
     let close = |k: u64| Place { k, i: 1 };
     let home = [0x5c; 32];
     let path = std::env::temp_dir().join(format!("mycelium-eras-{}-{}", std::process::id(), line!()));
@@ -215,7 +215,7 @@ fn bind_eras_reads_each_era_own_range() {
 /// it pages at most the one era that root closes, and every receipt it
 /// serves stands at or past that orbit.
 #[test]
-fn receipts_page_from_root_pages_no_earlier_era() {
+fn receipts_page_pages_no_era_before_root() {
     use crate::observe::{serves, ServeAxis};
     let home = [0x6d; 32];
     let mut k = Court::new();
@@ -343,7 +343,7 @@ fn admit_backfill_admits_citation_of_folded_receipt() {
 /// court refused its peers' folds as not conserving (epoch 115, thousands
 /// an hour).
 #[test]
-fn verify_fold_second_fold_on_fetched_rows() {
+fn verify_fold_verifies_second_fold_on_fetched_rows() {
     let home = [0x5c; 32];
     let mut k = Court::new();
     k.bind_identity(home);

@@ -100,7 +100,7 @@ fn beat_dissipates_wound_boost_one_beat_later() {
 /// stands at 90°, not home. Its age complete, it seals: its line let go by
 /// that cause, its strain held in the reservoir at its coordinates.
 #[test]
-fn beat_seals_orbit_carried_its_period_unreturned() {
+fn beat_seals_orbit_unreturned_after_period() {
     let mut field = Field::new();
     let half = Mv::blade(E1 | E2, q(1, 1));
     for step in [turn(E1 | E2), turn(E1 | E2), turn(E1 | E2), half] {
@@ -135,7 +135,7 @@ fn beat_never_seals_rosette() {
 /// lane the deficit does not press beats as before: the turn on another lane
 /// is untouched by a deficit on 𝒮 alone.
 #[test]
-fn beat_under_deficit_drags_ringing_orbit_on_its_lane() {
+fn beat_drags_ringing_orbit_under_deficit() {
     let mut field = Field::new();
     let _ = admit(&mut field, &[wound(turn(E1 | E2), b"the thought")]);
     let _ = admit(&mut field, &[line(turn(E1 | E3), 1)]);
@@ -157,7 +157,7 @@ fn beat_under_deficit_drags_ringing_orbit_on_its_lane() {
 /// home; the orbit it awaited has left, its eon has closed, and at that beat
 /// the record condenses to nothing, counted.
 #[test]
-fn reserved_record_condenses_when_its_eon_closes() {
+fn reserved_condenses_record_when_eon_closes() {
     let mut field = Field::new();
     let slide = |x: i64, y: i64| cga::translator_at(&[q(x, 1), q(y, 1), q(0, 1)]);
     let _ = admit(&mut field, &[line(turn(E1 | E3), 1), line(cga::dilator(&q(2, 1)), 1)]);
@@ -197,7 +197,7 @@ fn transport_order_lets_go_line_on_closed_tube() {
 /// holds a line through the beat it was admitted in, and lets it go,
 /// dissipated, at the next; dissipated, it holds nothing to thread.
 #[test]
-fn thread_holds_line_until_its_orbit_releases_it() {
+fn thread_keeps_line_until_orbit_releases_it() {
     let mut field = Field::new();
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
     let _ = admit(&mut field, &[line(turn(E1 | E2), 1)]);

@@ -2,7 +2,7 @@ use crate::network::wire::*;
 
 /// A frame decodes to itself on the lane it was encoded on.
 #[test]
-fn frame_round_trips_on_its_lane() {
+fn frame_round_trips() {
     let f = Frame { lane: Stratum::Gauge, body: vec![1, 2, 3, 9] };
     let (g, n) = Frame::decode(&f.encode().unwrap()).unwrap();
     assert_eq!(f, g);

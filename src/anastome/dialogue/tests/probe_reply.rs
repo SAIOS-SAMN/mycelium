@@ -18,7 +18,7 @@ fn versor(a: i64, b: i64) -> crate::transducer::cga::Mv {
 /// as its ray and one whose versor did not read, by name — and a reply with
 /// bytes past its reading is refused.
 #[test]
-fn probe_reply_round_trips_reading_refuses_trailing_bytes() {
+fn probe_reply_round_trips_and_refuses_trailing_bytes() {
     let readings = [
         ProbeReading { settled: [1, 0, 2, 0], closure: ProbeClosure::Closed, remaining: [0; 4] },
         ProbeReading { settled: [0, 3, 0, 0], closure: ProbeClosure::Residual(Some(versor(0, 3))), remaining: [0, 0, 1, 4] },

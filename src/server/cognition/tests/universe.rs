@@ -255,7 +255,7 @@ fn inner_seat_reads_domain_lines_refusing_none() {
 /// THE WIRE: an origin of version 2, every statement, the universe read and
 /// its reading, and a core tube read back whole; a byte left over is none.
 #[test]
-fn universe_acts_round_trip_on_wire() {
+fn universe_acts_round_trips() {
     use crate::anastome::dialogue::domain::{decode_domain_reply, decode_domain_request, encode_domain_reply, encode_origin, DomainRequest};
     use crate::anastome::dialogue::handoff::{decode_handoff_request, encode_handoff, HandoffRequest};
     use crate::anastome::dialogue::universe::{decode_universe_reading, encode_statement, encode_universe_read, encode_universe_reading, UniverseReading};

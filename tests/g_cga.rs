@@ -79,7 +79,7 @@ fn translator_at_moves_point_in_one_sandwich() {
 
 /// A sphere is a volumetric body: a base point lies on it iff X(p)·S = 0, exact.
 #[test]
-fn on_sphere_holds_exactly_on_surface() {
+fn on_sphere_is_true_on_surface() {
     let s = sphere(&q(0), &q(0), &q(0), &q(9)); // centre origin, r² = 9
     assert!(on_sphere(&point(&q(3), &q(0), &q(0)), &s), "(3,0,0) is on the r²=9 sphere");
     assert!(on_sphere(&point(&q(0), &q(3), &q(0)), &s), "(0,3,0) too");
@@ -120,7 +120,7 @@ fn is_versor_refuses_null_point_and_accepts_sphere() {
 /// ↦ (0,−1,0) with its scale absorbed by homogeneity (read back through `base`);
 /// and the same turn on `e1e3` carries the row axis onto the frame axis (51.2).
 #[test]
-fn rotator_sandwich_rotates_whole_body_exactly() {
+fn rotator_rotates_whole_body_in_one_sandwich() {
     let pi = rotator(&q(0), &q(1)); // e1e2 — a π rotation
     let turned = pi.sandwich(&point(&q(3), &q(2), &q(5)));
     assert_eq!(base(&turned), Some((q(-3), q(-2), q(5))), "π rotation sends x ↦ −x on its plane, k untouched");

@@ -12,7 +12,7 @@ fn inv(axes: &[u64]) -> Invariant {
 /// The cover's longest common prefix is the plane both hyphae cover, and a
 /// miss at the first axis is novel.
 #[test]
-fn fibre_reads_plane_and_first_axis_miss_as_novel() {
+fn fibre_reads_first_axis_miss_as_novel() {
     let mut c = Cover::new();
     let a = [1u8; 32];
     let b = [2u8; 32];
@@ -174,7 +174,7 @@ fn xor(a: &[u8; 32], b: &[u8; 32]) -> [u8; 32] {
     clippy::disallowed_methods,
     reason = "law 2, rule 4 — the fixture needs ids spread over the key space and a brute-force argmin to check the prefix read against; neither is cognition"
 )]
-fn closest_matches_brute_force_xor_argmin() {
+fn closest_agrees_with_brute_force_xor_argmin() {
     let ids: Vec<[u8; 32]> = (0u8..40).map(|k| *blake3::hash(&[k]).as_bytes()).collect();
     let mut r = Router::new();
     for (i, id) in ids.iter().enumerate() {
@@ -194,7 +194,7 @@ fn closest_matches_brute_force_xor_argmin() {
 /// destination set indexed by the size of the mesh is the one shape that
 /// section forbids, and it is what the exchange did.
 #[test]
-fn witnesses_are_covering_hyphae_not_every_peer() {
+fn witnesses_names_covering_hyphae_not_every_peer() {
     let home = [1u8; 32];
     let near = [2u8; 32];
     let far = [3u8; 32];

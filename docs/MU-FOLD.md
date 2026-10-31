@@ -86,18 +86,18 @@ it. The server's log lines (`src/bin/mycelium-server/fold.rs`,
   nothing written.
 - `src/server/cognition/tests/era.rs`:
   - `commit_fold_seals_on_two_signatures`;
-  - `verify_fold_second_fold_on_fetched_rows`;
+  - `verify_fold_verifies_second_fold_on_fetched_rows`;
   - `commit_fold_stands_epoch_rows_at_root`;
   - `propose_fold_passes_open_listing_and_escrow`;
   - `propose_fold_at_close_cuts_long_orbit_at_close`;
-  - `bind_eras_reads_each_era_own_range`;
-  - `receipts_page_from_root_pages_no_earlier_era`;
+  - `bind_eras_reads_range_of_each_era`;
+  - `receipts_page_pages_no_era_before_root`;
   - `admit_backfill_admits_citation_of_folded_receipt`;
   - `restore_agrees_with_bound_line`.
 - `src/chronometry/tests/shed.rs`:
-  `shed_folded_keeps_peer_nodes_own_hot_line_cites`,
+  `shed_folded_keeps_peer_nodes_hot_line_cites`,
   `shed_folded_leaves_hole_backfill_cannot_cross`.
 - `src/anastome/dialogue/tests/fold_wire.rs`:
-  `fold_witness_and_rows_round_trip`;
+  `fold_witness_round_trips_with_rows`;
   `src/anastome/dialogue/tests/receipts_range.rs`:
-  `receipts_request_and_reply_round_trip_within_budget`.
+  `receipts_request_round_trips_with_reply_within_budget`.

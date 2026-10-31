@@ -21,7 +21,7 @@ fn rational_roots_reads_each_root_once() {
 /// WHAT HAS NO RATIONAL ROOT IS REFUSED BY ITS DEGREE: `x³ − 2` whole, and
 /// `(x − 1)(x² − 2)` down to its quadratic after its rational root is read.
 #[test]
-fn rational_roots_refuses_irrational_factor_by_degree() {
+fn rational_roots_refuses_irrational_factor() {
     let cubic = [q(-2, 1), q(0, 1), q(0, 1), q(1, 1)];
     assert_eq!(rational_roots(&cubic, &mut budget()), Err(Undecomposed::Irrational(3)));
     // (x − 1)(x² − 2) = x³ − x² − 2x + 2.
@@ -95,7 +95,7 @@ fn rational_roots_reads_eighty_bit_roots_within_stroke() {
 /// exactly `roots_need(p)` reads every polynomial above to its end — roots
 /// or a refusal by degree, never `Unbounded`, at degree two to six.
 #[test]
-fn roots_need_suffices_to_read_every_polynomial() {
+fn roots_need_suffices_for_every_polynomial() {
     use crate::transducer::cga::modes::roots_need;
     let n = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1_000_003u64 * 1_000_033u64));
     let polys: Vec<Vec<num_rational::BigRational>> = vec![

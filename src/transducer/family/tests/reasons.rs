@@ -13,7 +13,7 @@ use crate::transducer::sentence::{as_element_form, Reasons, Vertex};
 /// the sentence's, not the speaker's story about it — and the reasons
 /// themselves travel whole.
 #[test]
-fn reasons_of_reads_same_reasons_after_decode() {
+fn reasons_of_round_trips() {
     let family = vec![
         (grid(&["11100", "00000", "00001"]), grid(&["22200", "00000", "00005"])),
         (grid(&["11110", "00000", "00011"]), grid(&["22220", "00000", "00055"])),

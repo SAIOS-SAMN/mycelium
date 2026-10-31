@@ -180,7 +180,7 @@ assert_eq!(
 /// word vertices struck out — a tape of the Frame and a demand, which the
 /// blind replay refuses as a chain (50.6, `REFUSE_NOT_A_SENTENCE`).
 #[test]
-fn glue_fetched_does_not_rerow_heard_slash() {
+fn glue_fetched_never_rerows_heard_slash() {
 let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 // The bar recoloured, a site painted beside it (50.5). H1b, 70.4 —
@@ -285,7 +285,7 @@ assert_eq!(k.heard_len(), 0, "a moved stratum root drops heard");
 /// index over the simplex's vertices, every hypha vertex measures zero and
 /// nothing fills although the chart holds two sections.
 #[test]
-fn listings_on_holds_open_listings_on_chart() {
+fn listings_on_reads_open_listings_on_chart() {
 use crate::transducer::address::Address;
 let mut k = Court::new();
 let inv = crate::transducer::stalk::Invariant::counts(&[7]);
@@ -421,7 +421,7 @@ assert_eq!((funded.words.len(), funded.deferred.len()), (1, 0), "the deferred wo
 /// the carrier: whatever the book holds, the two readings agree — including
 /// after a listing is re-bound at a new closure, and across a restore.
 #[test]
-fn closure_counts_agree_with_carrier() {
+fn closure_counts_agrees_with_carrier() {
 let walk = |r: &Rank| {
     let mut c = 0usize;
     let mut i = 0usize;

@@ -38,7 +38,7 @@ fn address_of(f: &Form) -> crate::transducer::address::Address {
 /// on the order the edges are written in. This one did, which is what makes
 /// it a serialisation artifact rather than a topological condition.
 #[test]
-fn glue_key_independent_of_arrival_order() {
+fn glue_key_ignores_arrival_order() {
     let a = leaf((0, 1));
     let a_at = address_of(&a);
 
@@ -312,7 +312,7 @@ fn glue_separates_isomorphic_boundaries_by_cover_only() {
 /// `orbit_words` yields one entry per (orbit, member path), so an orbit with no
 /// path contributes nothing and the count is the test.
 #[test]
-fn orbit_words_lift_every_orbit() {
+fn orbit_words_lifts_every_orbit() {
     let cases: Vec<(&str, Form)> = vec![
         ("a chord with a 90° turn", chord_form(&[word_turn_90()])),
         ("two chords of one class", chord_form(&[word_turn_90(), word_turn_90()])),
@@ -343,7 +343,7 @@ fn orbit_words_lift_every_orbit() {
 /// shape directly: one vertex standing on two charts, reached from the Frame
 /// at each, and nothing else.
 #[test]
-fn orbits_of_two_charts_one_vertex_is_empty() {
+fn orbits_of_is_empty_for_two_charts_one_vertex() {
     let mut f = Form::default();
     // Two members at two charts — the two members the deployment's split
     // vertices present, here as the smallest form that has them. AT1 (Q1):
@@ -364,7 +364,7 @@ fn orbits_of_two_charts_one_vertex_is_empty() {
 
 /// 54.4 — A VERTEX ON TWO CHARTS, AND THE CYCLE THROUGH BOTH OF THEM.
 ///
-/// `orbit_words_lift_every_orbit` runs on fixtures whose vertices
+/// `orbit_words_lifts_every_orbit` runs on fixtures whose vertices
 /// each act on ONE chart, where the member complex and the vertex graph
 /// coincide and the property is true for free. This is the shape the deployment
 /// actually has — 140 members on 74 vertices, every real orbit passing
@@ -375,7 +375,7 @@ fn orbits_of_two_charts_one_vertex_is_empty() {
 /// cycle of the vertex graph in any useful sense, but `(1,cA) → (2,cB) →
 /// (1,cA)` through two distinct faces is a genuine element of `Z₁(M)`.
 #[test]
-fn orbit_words_lift_cycle_through_split_vertex() {
+fn orbit_words_lifts_cycle_through_split_vertex() {
     let a = stalk::Invariant::counts(&[7]);
     let b = stalk::Invariant::counts(&[9]);
     let mut f = Form::default();

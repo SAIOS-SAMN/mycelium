@@ -26,7 +26,7 @@ fn modes(m: &Mv) -> Vec<cga::MotionMode> {
 /// the identity ray. The (3, 4, 5) turn is elliptic with no order: no power
 /// up to twice Niven's largest order returns it, and its winding is content.
 #[test]
-fn motion_modes_turn_returns_at_read_order_or_never() {
+fn motion_modes_returns_turn_at_read_order_or_never() {
     let ninety = Mv::scalar(q(1, 1)).add(&Mv::blade(E1 | E2, q(1, 1)));
     let [m] = modes(&ninety).try_into().expect("one mode");
     assert_eq!(m.kind, BivectorKind::Elliptic);
@@ -49,7 +49,7 @@ fn motion_modes_turn_returns_at_read_order_or_never() {
 /// CARRIES IT. A translation's holonomy carries one parabolic flux whose
 /// generator squares to zero; carried by a turn, it squares to zero still.
 #[test]
-fn null_fluxes_generator_stays_null_under_flow() {
+fn null_fluxes_keeps_generator_null_under_flow() {
     let slide = cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)]);
     let flux = crate::transducer::cech::flux::null_fluxes(&slide, &mut stroke()).expect("the modes read");
     let [b] = flux.as_slice() else { panic!("one null flux: {flux:?}") };
@@ -64,7 +64,7 @@ fn null_fluxes_generator_stays_null_under_flow() {
 /// same holonomy conjugated: its modes — the modes' kinds and invariants —
 /// are the loop's, never the frame's.
 #[test]
-fn motion_modes_of_holonomy_independent_of_base() {
+fn motion_modes_ignores_base_of_holonomy() {
     let turn = Mv::scalar(q(1, 1)).add(&Mv::blade(E1 | E3, q(1, 1)));
     let holonomy = cga::translator_at(&[q(0, 1), q(2, 1), q(0, 1)]).geo(&turn);
     let base = cga::translator_at(&[q(3, 1), q(-1, 1), q(0, 1)]);
@@ -79,7 +79,7 @@ fn motion_modes_of_holonomy_independent_of_base() {
 /// is a blade of grade `k`, for every grade the algebra holds; and the
 /// sensor base's unit cell has `2ⁿ` vertices for its `n` axes — the aperture.
 #[test]
-fn geo_of_k_generators_is_grade_k_blade() {
+fn geo_carries_k_generators_to_grade_k_blade() {
     let generators = [E1, E2, E3, EP, EM];
     let mut product = Mv::scalar(q(1, 1));
     let mut mask = 0usize;

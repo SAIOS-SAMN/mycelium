@@ -34,7 +34,7 @@ fn held(motions: &[Mv]) -> Vec<Mv> {
 /// third plane — never itself held — is inside. A boost leaves so(3): it is
 /// outside, and its coset is read.
 #[test]
-fn quotient_spanned_inside_unspanned_outside() {
+fn quotient_spans_inside_and_not_outside() {
     let h = held(&[turn(E1 | E2), turn(E2 | E3)]);
     assert_eq!(h.len(), 3, "[e₁₂, e₂₃] closes to so(3)");
     let third = quotient(&h, &turn(E1 | E3), &mut stroke()).expect("read");
@@ -49,7 +49,7 @@ fn quotient_spanned_inside_unspanned_outside() {
 /// orders gives one residue, and two motions that differ by something held
 /// are one class — the two residues agree.
 #[test]
-fn quotient_coset_independent_of_order_and_held() {
+fn quotient_ignores_order_of_coset() {
     let one = held(&[turn(E1 | E2), turn(E2 | E3)]);
     let other = held(&[turn(E2 | E3), turn(E1 | E2)]);
     let a = quotient(&one, &boost(), &mut stroke()).expect("read");
@@ -78,7 +78,7 @@ fn quotient_reads_null_slide_without_metric() {
 
 /// The identity has no generators: nothing inside, nothing outside.
 #[test]
-fn quotient_identity_has_no_generators() {
+fn quotient_gives_identity_no_generators() {
     let r = quotient(&[], &Mv::scalar(q(1)), &mut stroke()).expect("read");
     assert!(r.inside.is_empty() && r.spanned());
 }

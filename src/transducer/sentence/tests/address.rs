@@ -429,7 +429,7 @@ fn from_element_form_round_trips_nerve() {
 /// vertices — is real and is not the encoder's to shorten: 53.4's
 /// quantified citation removes it in kind, one citation per fibre (K2).
 #[test]
-fn glue_cites_whole_address_and_re_derives() {
+fn glue_cites_whole_address_and_rederives() {
     use crate::transducer::sentence::{as_element_form, from_element_form, Vertex};
     let q = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);

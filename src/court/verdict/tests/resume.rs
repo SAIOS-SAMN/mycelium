@@ -163,7 +163,7 @@ fn edges_rederive_frames_from_spends_short_stroke_never_refuses() {
 /// name, kind N, no reading of the word — and read whole on a caller's
 /// stroke as wide as the unit, which is left as it stood.
 #[test]
-fn to_completion_reads_unit_only_on_callers_wider_stroke() {
+fn to_completion_reads_unit_only_on_wider_stroke() {
     use crate::transducer::sentence::ObstructionKind;
     let (_, e) = good();
     let unit = usize::try_from(crate::physics::spend_unit()).expect("a stroke's reads fit a usize") + 1;

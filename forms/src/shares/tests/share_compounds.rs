@@ -25,7 +25,7 @@ fn after_compounds_share_exactly() {
 /// at one share are one run of `a + b`, held and read alike, however the
 /// history was cut.
 #[test]
-fn after_and_then_ignore_ring_grouping() {
+fn after_ignores_ring_grouping() {
     let x = q(2, 7);
     let at_once = Remaining::whole().after(&x, 12).expect("a share");
     let in_runs = Remaining::whole().after(&x, 5).and_then(|r| r.after(&x, 4)).and_then(|r| r.after(&x, 3)).expect("a share");
@@ -39,7 +39,7 @@ fn after_and_then_ignore_ring_grouping() {
 /// A SHARE READ AGAIN OPENS A NEW RUN, and the reading is the product of
 /// the runs: what changed is held as the body's history, never averaged.
 #[test]
-fn after_changed_share_opens_new_run() {
+fn after_opens_new_run_on_changed_share() {
     let r = Remaining::whole().after(&q(1, 2), 2).and_then(|r| r.after(&q(1, 3), 1)).expect("shares");
     assert_eq!(r.factors().len(), 2);
     assert_eq!(r.reading(), q(1, 4) * q(2, 3));
@@ -61,7 +61,7 @@ fn read_in_round_trips_through_frame() {
 /// REFUSED BY NAME: a negative share, a share that would take all that
 /// remains or more, and a count past its carrier — never clamped.
 #[test]
-fn after_refuses_by_name() {
+fn after_refuses_negative_whole_or_uncounted_share() {
     assert_eq!(Remaining::whole().after(&q(-1, 5), 1), Err(ShareRefusal::Negative));
     assert_eq!(Remaining::whole().after(&Q::one(), 1), Err(ShareRefusal::Whole));
     assert_eq!(Remaining::whole().after(&q(3, 2), 1), Err(ShareRefusal::Whole));

@@ -81,7 +81,7 @@ fn attests(k: &Court) -> usize {
 /// one the speaker signed itself, a forged frame, and a word the court does
 /// not hold seal nothing.
 #[test]
-fn attest_agreements_seals_second_minds_hold_once() {
+fn attest_agreements_seals_second_mind_hold_once() {
     let (speaker, hearer) = (key(1), key(2));
     let speaker_vk = speaker.verifying_key().to_bytes();
     let hearer_vk = hearer.verifying_key().to_bytes();

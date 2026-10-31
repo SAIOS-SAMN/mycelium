@@ -17,7 +17,7 @@ use super::common::*;
 /// An axis already holding this transport IS this axis, and a versor and
 /// its negation are one transport (1.5), so the comparison is projective.
 #[test]
-fn open_axis_twice_answers_one_seat() {
+fn open_axis_answers_one_seat_when_repeated() {
     let mut e = Element::identity();
     let v = translator_versor(3, 4);
     let first = e.open_axis(v.clone()).expect("a seat");

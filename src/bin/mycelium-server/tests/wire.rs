@@ -37,7 +37,7 @@ fn answer_refuses_frame_over_budget_writing_nothing() {
 /// And a frame within the budget is written whole, so the refusal above
 /// is not simply a write path that never works.
 #[test]
-fn answer_writes_frame_within_budget_whole() {
+fn answer_writes_frame_within_budget() {
     let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
     let addr = listener.local_addr().expect("addr").to_string();
     let reader = std::thread::spawn(move || {

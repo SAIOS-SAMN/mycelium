@@ -112,7 +112,7 @@ assert!(!k.apply_verdict(&addr.clone(), crate::anastome::dialogue::RULING_UPHELD
 /// A slashing verdict (failed blind replay — false speech) excises the word
 /// from the basis and debits the voices' earned balances into the pool.
 #[test]
-fn apply_verdict_slashed_excises_word() {
+fn apply_verdict_excises_slashed_word() {
 let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
@@ -202,7 +202,7 @@ assert_eq!(ruled_n(&k, &addrs), cap + 1, "later listings are not starved by alre
 /// through a speaker's index it is zero for every hypha vertex, so no
 /// section stands a vertex and nothing fills.
 #[test]
-fn volume_of_simplex_is_open_listings_on_chart() {
+fn volume_of_equals_open_listings_on_chart() {
 use crate::transducer::address::Address;
 use crate::transducer::stalk::{Closure, Invariant};
 let mut k = Court::new();
@@ -373,7 +373,7 @@ assert!(ruling.ruled_contains(&addr), "and the stroke rules it");
 /// `[0; 32]` alone, so the listing was bound to the empty task and every
 /// reader of the binding asked for the family the empty task has none of.
 #[test]
-fn perceive_sentence_without_task_binds_none() {
+fn perceive_sentence_binds_none_without_task() {
     let e = sentence_of(&[(0, 0, 1)], &[(0, 0, 2)]).expect("a recolour is a sentence");
     let addr = e.address();
     let mut k = Court::new();
@@ -503,7 +503,7 @@ fn glue_fetched_files_offer_at_home_vantage() {
 /// only confirm that a voice sent bytes it had seen before, which is byte
 /// exactness, the one failure this architecture cannot absorb."
 #[test]
-fn own_section_empty_without_rederivation() {
+fn own_section_is_empty_without_rederivation() {
     let home_vk = [1u8; 32];
     let witness_vk = [2u8; 32];
     let mut home = Court::new();
@@ -562,7 +562,7 @@ fn own_section_empty_without_rederivation() {
 /// sectioning that at this vantage would file the peer's tape as this
 /// court's re-derivation, which is 1.7's byte exactness one level down.
 #[test]
-fn own_section_holds_own_ruling_not_peer_word() {
+fn own_section_keeps_court_ruling_not_peer_word() {
     let own_vk = [0x0au8; 32];
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];

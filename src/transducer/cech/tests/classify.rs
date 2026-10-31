@@ -30,7 +30,7 @@ fn turn_90() -> Rotor {
 
 /// The identity is flat, and so is a scaled identity carriage.
 #[test]
-fn classify_identity_and_scaled_carriage_are_flat() {
+fn classify_reads_identity_and_scaled_carriage_as_flat() {
     assert!(
         matches!(classify(&Rotor::identity(), &ident(), CycleType::Identity), Fill::Filled(..)),
         "no rotation and no residue is flat"
@@ -49,7 +49,7 @@ fn classify_identity_and_scaled_carriage_are_flat() {
 /// identity rotor and calls the seam flat; a family carrying one shape to
 /// two separated copies produces exactly this transition.
 #[test]
-fn classify_translation_stands_with_placement() {
+fn classify_stands_translation_with_placement() {
     let t = cga::at_three::translator(&q(3), &q(-2), &q(0));
     assert!(
         crate::transducer::element::base_rotor_of(&t).is_ok_and(|r| r.is_identity()),
@@ -69,7 +69,7 @@ fn classify_translation_stands_with_placement() {
 /// as the scalar a peel divides out, so the block reads a pure scale as a
 /// rotation by nothing.
 #[test]
-fn classify_dilation_stands_with_scale() {
+fn classify_stands_dilation_with_scale() {
     let d = cga::dilator(&q(3));
     assert_eq!(rho_of(&d), Some(q(3)), "the dilation is read off the action");
     let Fill::Class(kappa, r) = classify(&Rotor::identity(), &d, CycleType::Identity) else {
@@ -82,7 +82,7 @@ fn classify_dilation_stands_with_scale() {
 /// A 90° turn with NO residue is the one thing that files: a torsion
 /// class at its own period.
 #[test]
-fn classify_residue_free_turn_90_files_at_period() {
+fn classify_files_residue_free_turn_90_at_period() {
     let Fill::Congruent(kappa, g, ell) = classify(&turn_90(), &ident(), CycleType::Identity) else {
         panic!("a residue-free finite rotation files");
     };
@@ -333,7 +333,7 @@ fn classify_fills_turned_cycle_and_files_twisted_residue() {
 /// the identity and not flat. `π₁₇` as a rotor: its arc is `15 + 8i`,
 /// whose norm is `17²`, and no product of the alphabet's primes reaches it.
 #[test]
-fn classify_unspellable_rotor_is_own_arm() {
+fn classify_reads_unspellable_rotor_as_own_arm() {
     let pi17 = Rotor::scalar(q(4)).add(&Rotor::blade(0b0011, q(1)));
     assert!(
         crate::transducer::alphabet::word_of_rotor(&pi17).is_none(),
@@ -359,7 +359,7 @@ fn classify_unspellable_rotor_is_own_arm() {
 /// sections carries the placements the charts actually hold and stands; the
 /// other is the same pair through `Section::at` and fills.
 #[test]
-fn extend_placed_sections_stand_and_identity_sections_fill() {
+fn extend_stands_placed_sections_and_fills_identity() {
     use crate::transducer::address::Address;
     use crate::transducer::cech::{extend, Section, Simplex};
     let addr_a = Address::from_bytes([1u8, 1]);

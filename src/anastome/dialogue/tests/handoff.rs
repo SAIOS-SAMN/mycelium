@@ -10,7 +10,7 @@ use crate::chronometry::Stamp;
 /// Every handoff act and every answer read back whole, and a fold's handoff
 /// sides are signed and written after its children.
 #[test]
-fn handoff_acts_and_answers_round_trip_whole() {
+fn handoff_round_trips_with_answers() {
     let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
     let offer = Offer {
         from_tier: [1u8; 32],
@@ -69,7 +69,7 @@ fn handoff_acts_and_answers_round_trip_whole() {
 /// 78.128 — a mouth pair, its close, a traversal and the loops read back
 /// whole; a traversal is the handoff its offer is.
 #[test]
-fn mouth_acts_and_loops_round_trip_whole() {
+fn mouth_round_trips_with_loops() {
     let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
     let one = crate::transducer::element::identity_versor();
     let mouth = Mouth {
@@ -158,7 +158,7 @@ fn mouth_acts_and_loops_round_trip_whole() {
 /// 78.127 — conversions out and in, and the reserve's designation, read back
 /// whole; `rate · g` exact or none; a genesis frame still reads as a genesis.
 #[test]
-fn conversions_and_reserve_round_trip_whole() {
+fn encode_handoff_round_trips_conversions_and_reserve() {
     use crate::anastome::dialogue::domain::{decode_domain_reply, decode_domain_request, encode_domain, encode_domain_reply, encode_reservation, DomainGenesis, DomainRequest, Founded, Reservation};
     let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
     let out = ConvertOut { tier: [1u8; 32], holder: [2u8; 32], identity: [3u8; 32], g: 10, rate: [(1, 2), (0, 1), (3, 5), (0, 1)], nonce: [4u8; 32] };

@@ -186,7 +186,7 @@ fn split_separates_torsion_doing_no_work_across_levels() {
 /// fix it (`P₁∧P₂∧P₃∧P₄`, its dual); a fifth off it leaves no common shape,
 /// read as the five points' outer product not vanishing.
 #[test]
-fn shape_of_pivot_sphere_kept_by_every_switch() {
+fn shape_of_survives_every_switch() {
     let pivots = [[q(1, 1), q(0, 1), q(0, 1)], [q(0, 1), q(1, 1), q(0, 1)], [q(-1, 1), q(0, 1), q(0, 1)], [q(0, 1), q(0, 1), q(1, 1)]];
     let masses = [q(2, 1), q(1, 1), q(5, 1), q(3, 7)];
     let pts: Vec<Mv> = pivots.iter().map(|p| cga::point_at(p)).collect();
@@ -228,7 +228,7 @@ fn shape_of_pivot_sphere_kept_by_every_switch() {
 /// twist about the tether's axis puts a positive squared torque on it, a
 /// level step (pure field) puts none.
 #[test]
-fn fibre_strength_capacity_and_torque_are_exact() {
+fn fibre_reads_strength_capacity_and_torque_exactly() {
     let c = cga::point_at(&[q(0, 1), q(0, 1), q(0, 1)]);
     let a = cga::point_at(&[q(3, 1), q(4, 1), q(0, 1)]);
     let b = cga::point_at(&[q(6, 1), q(8, 1), q(0, 1)]);
@@ -255,7 +255,7 @@ fn fibre_strength_capacity_and_torque_are_exact() {
 /// the 180° turn about that line through the fourth axis, which acts on every
 /// point of the base exactly as the mirror does, and that turn is torsion.
 #[test]
-fn fibre_reads_motion_by_flow_of_its_modes() {
+fn fibre_reads_motion_by_flow_of_modes() {
     let f = fibre(2, 1);
     let read = |m: &Mv| {
         let modes = crate::physics::capacitor::modes_of(m, 3, &mut crate::physics::Physics::default().stroke_n(1 << 16));
@@ -289,7 +289,7 @@ fn fibre_reads_motion_by_flow_of_its_modes() {
 /// from P and never leaves the manifold; its streamlines are circles through
 /// P (horocycles of the ball Σ bounds).
 #[test]
-fn fascicle_source_on_manifold_stays_inside_it() {
+fn fascicle_source_stays_inside_manifold() {
     let (sigma, p, u) = manifold();
     let f = Fascicle { first: sphere_through(&along(&p, &u, &q(1, 1)), &p), second: sphere_through(&along(&p, &u, &q(2, 1)), &p) };
     for s in [&f.first, &f.second] {
@@ -320,7 +320,7 @@ fn fascicle_source_on_manifold_stays_inside_it() {
 /// and the outward flow are one flow seen from either side of Σ, with P its
 /// source on both. Σ's own points stand.
 #[test]
-fn sandwich_in_manifold_switches_polarity_keeps_source() {
+fn sandwich_switches_polarity_and_keeps_source() {
     let (sigma, p, u) = manifold();
     let f = Fascicle { first: sphere_through(&along(&p, &u, &q(1, 1)), &p), second: sphere_through(&along(&p, &u, &q(2, 1)), &p) };
     let v = f.versor();

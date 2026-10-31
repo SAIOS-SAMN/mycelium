@@ -105,7 +105,7 @@ fn take_tries_round_trips_unread_fill_reason() {
 /// valid stream is flipped to an out-of-range tag in turn; not one of them
 /// may yield a complex that claims more open cells than the original wrote.
 #[test]
-fn take_tries_corrupt_byte_fabricates_no_open_cell() {
+fn take_tries_fabricates_no_open_cell_from_corrupt_byte() {
     let mut cx = Complex::new();
     cx.set_edge(v(1), v(2), turn_90(), identity_versor(), vol());
     let mut bytes = Vec::new();

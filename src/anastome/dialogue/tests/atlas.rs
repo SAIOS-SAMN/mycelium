@@ -65,7 +65,7 @@ fn ledger_entry_round_trips_and_verifies() {
 /// were, its wire `[2][throat 32][keeper 32][frame_0][frame_1][N]`, and its
 /// id the one derived from its throat key.
 #[test]
-fn map_act_and_reading_round_trip() {
+fn map_act_round_trips_with_reading() {
     use crate::anastome::dialogue::atlas::{local_record_citation, local_throat_citation};
     use crate::transducer::cga::{base_vector, translator_at, Mv};
     let n = |v: i64| num_rational::BigRational::from_integer(v.into());
@@ -124,7 +124,7 @@ fn map_act_and_reading_round_trip() {
 /// A TRAVERSE, its declarations and its answer read back whole; both
 /// declarations are signed over the crossing, never over the payer's act.
 #[test]
-fn traverse_round_trips_whole() {
+fn traverse_round_trips() {
     let mut t = Traverse {
         from: [6; 32],
         payer: key(40).verifying_key().to_bytes(),

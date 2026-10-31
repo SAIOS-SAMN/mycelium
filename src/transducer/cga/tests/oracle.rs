@@ -10,7 +10,7 @@ use crate::transducer::cga::oracle::{inputs, readings, GOLDEN};
 /// THE ALGEBRA REPRODUCES ITS ORACLE AT n = 3: every reading taken again
 /// and compared, line for line, with the golden file.
 #[test]
-fn readings_reproduce_golden_oracle() {
+fn readings_agrees_with_golden_oracle() {
     let Ok(golden) = std::fs::read_to_string(GOLDEN) else {
         panic!("{GOLDEN} does not read: the oracle has not been written (mycelium-soak --write-oracle-golden)")
     };

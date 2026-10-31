@@ -35,7 +35,7 @@ fn spelled_word_refuses_unspellable_rotor() {
 /// A rotor's class key is invariant under conjugation and under a positive
 /// scale, and `Word::class_key` is the rotor's conjugacy class.
 #[test]
-fn class_key_invariant_under_conjugation_and_scale() {
+fn class_key_is_invariant_under_conjugation_and_scale() {
     let q = LetterId::turn_90((0, 1)).unwrap();
     let w = Word::from_letters(&[(q, false)]);
     let r = w.rotor();
@@ -108,7 +108,7 @@ fn key_agrees_for_two_tapes_of_one_vertex() {
 /// share a key, a rotor and its negative normalise to one key, and `R` and
 /// `R·q` are distinct vertices.
 #[test]
-fn normalised_key_projective_either_sign() {
+fn normalised_key_is_projective_either_sign() {
     let q = LetterId::turn_90((0, 1)).unwrap();
     let r = Word::from_letters(&[(q, false)]).rotor();
     let q4 = Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);

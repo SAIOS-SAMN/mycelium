@@ -58,7 +58,7 @@ fn court_settle_lists_demands_and_rules_closed_subcomplex() {
 /// body pair admitted — is a pair the voice has no sentence for: nothing
 /// is spoken, nothing listed.
 #[test]
-fn speak_pair_unopened_pair_speaks_nothing() {
+fn speak_pair_speaks_nothing_for_unopened_pair() {
     let mut k = Court::new();
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, 1)];

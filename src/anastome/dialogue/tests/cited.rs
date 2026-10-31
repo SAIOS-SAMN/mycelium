@@ -8,7 +8,7 @@ use crate::transducer::address::Address;
 /// A citation ask reads back whole, and is never read as a fetch or a
 /// presentation ask, nor they as it.
 #[test]
-fn cited_request_round_trips_never_as_fetch_or_presentation() {
+fn cited_request_round_trips_never_as_fetch() {
     let voice = [7u8; 32];
     let addrs = vec![Address::from(vec![1u8; 5]), Address::from(vec![2u8; 40])];
     let ask = encode_cited_request(&voice, &addrs).expect("the ask frames");

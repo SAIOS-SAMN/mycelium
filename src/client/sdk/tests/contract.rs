@@ -164,7 +164,7 @@ fn receive_adjudication_drops_refused_sentence_from_dialect() {
 /// its family; a citation this mind sealed is owed to no court; and a
 /// citer the court admits is owed afresh next time.
 #[test]
-fn owe_citation_once_per_court_never_when_sealed() {
+fn owe_citation_owes_once_per_court_never_sealed() {
     let (family, cited) = two_bars();
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("owing"));
     entity.epigenome.stand_dialect_at(cited.clone(), 1, 1);

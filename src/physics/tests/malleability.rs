@@ -49,7 +49,7 @@ fn moved(a: crate::transducer::cech::flux::Admitted) -> (u64, u64, u64) {
 /// fixed angle, keyed by the angle, the three amounts stood on three orbits
 /// and none could ever return the others.
 #[test]
-fn admit_mode_composes_turns_of_any_amount_on_one_orbit() {
+fn admit_mode_composes_turns_of_any_amount() {
     let mode = |t: BigRational| -> cga::MotionMode {
         let [m] = modes(&turn_at(t)).try_into().expect("one mode: one plane");
         m
@@ -71,7 +71,7 @@ fn admit_mode_composes_turns_of_any_amount_on_one_orbit() {
 /// 78.73 (2) — A TURN AND ITS INVERSE RETURN AT ONCE: orientation is the
 /// winding's sign, read against the plane's reference.
 #[test]
-fn admit_mode_returns_turn_and_its_inverse() {
+fn admit_mode_returns_turn_and_inverse() {
     let [there] = modes(&turn()).try_into().expect("one mode");
     let [back] = modes(&turn().reverse()).try_into().expect("one mode");
     let mut orbits = OrbitRegistry::new();
@@ -116,7 +116,7 @@ fn admit_hues_returns_at_identity_composite() {
 /// 78.73 (1) — STAGNATION: a refused draw presses each short lane by the
 /// flow it blocked, and nothing else; the reserve stands as it was.
 #[test]
-fn draw_refused_presses_blocked_lane() {
+fn draw_presses_blocked_lane_on_refusal() {
     let mut p = crate::physics::Physics { reserve: crate::physics::Reserve::of([5, 0, 5, 1]), ..Default::default() };
     assert!(p.draw([1, 3, 0, 4]).is_err(), "𝒢 and 𝒽 cannot cover it");
     assert_eq!(p.pressure, [0, 3, 0, 3], "blocked: three on 𝒢, three past the one 𝒽 held");

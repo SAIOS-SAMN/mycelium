@@ -18,7 +18,7 @@ fn sites<T: Copy + Into<Site>>(v: &[T]) -> Vec<Site> {
 /// is the gauge the body CARRIES — `Blade.gauge` holds it as sorted
 /// `(hue, count)` relations — and not the body's identity.
 #[test]
-fn components_holds_two_hued_object_as_one_body() {
+fn components_reads_two_hued_object_as_one_body() {
     // A 2×2 block whose left column is hue 1 and right column hue 2.
     let scene = compartments(&[(0, 0, 0, 1u8), (1, 0, 0, 1), (0, 1, 0, 2), (1, 1, 0, 2)]);
     let comps = blade::components(&scene);
@@ -131,7 +131,7 @@ fn shared_cells_reads_every_neighbour_once_by_grade() {
 /// one grade higher, since the cubes now also agree on the new axis. The
 /// grade is the contact's own, read off the pair, never a kind looked up.
 #[test]
-fn contact_cells_grade_is_shared_cell_grade() {
+fn contact_cells_agrees_with_shared_cells_on_grade() {
     use crate::transducer::sentence::contact_cells;
     let grade = |a: Vec<i64>, b: Vec<i64>| -> Vec<usize> {
         let site = |a: Vec<i64>| Site::new(a).expect("a site within the algebra");

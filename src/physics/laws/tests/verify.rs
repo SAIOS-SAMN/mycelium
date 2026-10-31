@@ -6,7 +6,7 @@ use crate::transducer::cga::{point_at, sphere_at};
 /// The register holds every law, each at its own coordinate with a
 /// statement.
 #[test]
-fn laws_hold_each_law_at_its_own_coordinate() {
+fn laws_reads_each_law_at_own_coordinate() {
     let addresses: Vec<_> = LAWS.iter().map(|l| l.address()).collect();
     for (law, a) in LAWS.iter().zip(&addresses) {
         assert_eq!(a.as_bytes(), [crate::transducer::address::TAG_LAW, law.index(), LAW_VERSION].as_slice());
@@ -20,7 +20,7 @@ fn laws_hold_each_law_at_its_own_coordinate() {
 /// A turn that carries its bodies is admitted under every law, split into
 /// its modes and exchanging no torque.
 #[test]
-fn verify_admits_turn_carrying_its_bodies() {
+fn verify_admits_turn_carrying_bodies() {
     let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
     let v = verify(&t, &mut budget());
     assert!(v.admitted(), "{:?}", v.breaches);
@@ -34,7 +34,7 @@ fn verify_admits_turn_carrying_its_bodies() {
 /// modes unsplit for want of stroke; under the stroke its own modes need it
 /// is admitted, as it is under any stroke that suffices.
 #[test]
-fn verify_sized_admits_turn_short_stroke_leaves_unread() {
+fn verify_sized_leaves_turn_unread_on_short_stroke() {
     let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
     let short = verify(&t, &mut crate::physics::Physics::default().stroke_n(7));
     // 78.121 — a short stroke leaves the law UNREAD, never broken: no
@@ -51,7 +51,7 @@ fn verify_sized_admits_turn_short_stroke_leaves_unread() {
 /// Each law refuses the transition that breaks it, and every breach is
 /// named beside the others, not only the first.
 #[test]
-fn verify_names_every_breach_by_its_law() {
+fn verify_names_every_breach_by_law() {
     let laws_of = |v: &Verdict| v.breaches.iter().map(|(l, _)| *l).collect::<Vec<_>>();
     // TIME: the height stands still.
     let still = Transition { motion: turn(), heights: (8, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
@@ -110,7 +110,7 @@ fn verify_admits_points_and_similarity_reads_dilation() {
 /// lane, admitted. Two bodies whose momenta move by two ratios under one
 /// dilation stand to no one ratio: refused, as version 1 refused every
 /// dilation. A rigid motion is held to exact conservation as before
-/// (`verify_names_every_breach_by_its_law`).
+/// (`verify_names_every_breach_by_law`).
 #[test]
 fn verify_admits_dilation_momentum_up_to_one_ratio() {
     let d = crate::transducer::cga::dilator(&q(2));

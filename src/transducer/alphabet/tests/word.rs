@@ -87,7 +87,7 @@ fn compose_carries_no_scale_and_formed_stays_bounded() {
 /// A letter word is unchanged by the same operations: its rotor is its
 /// tape's product before and after.
 #[test]
-fn compose_of_letters_is_tape_product() {
+fn compose_equals_tape_product_of_letters() {
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn (0,1)"), false)]);
     let p = Word::from_letters(&[(LetterId::pythagorean_5((2, 3)).expect("(3,4,5) on (2,3)"), false)]);
     let both = q.compose(&p);

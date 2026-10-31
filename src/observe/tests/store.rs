@@ -168,7 +168,7 @@ fn source_of_key_names_source_and_tag() {
 /// A process's store folds what it produced and holds what it replaces as
 /// it stands; a query reads one source by its prefix.
 #[test]
-fn publish_folds_readings_and_replace_holds_them() {
+fn publish_folds_readings_and_replace_keeps_them() {
     let sample = |k: u64, allocated: u64| Memory {
         first_k: k,
         first_allocated: allocated,

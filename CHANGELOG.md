@@ -115,6 +115,18 @@ such change is named here.
   test that had no `///` doc comment gained one stating its claim; no
   test body changed. Every citation of a renamed test in the
   documentation and source comments names its current name.
+- Test names take the canonical claim verbs of MU-STANDARDS 3.1: 532 tests
+  renamed, no test body changed. The behaviour opens with a third-person
+  singular verb (`modes_splits_…`, `…_round_trips`); a refusal is
+  `refuses_<input>` without `_by_name`; a round trip is `round_trips`
+  without `_whole`, `_exactly` or `_on_wire`; `matches` is `agrees_with_…`
+  or `equals_…`; independence is `ignores_<input>`; invariance is
+  `is_invariant_under_<action>`. Task hashes, row ids, `test`, genitives
+  and redundant `its`/`own` leave the names (the `rule_language` tests are
+  named for the claims they prove), long names are shortened to the main claim, and
+  a dozen names whose leading word was not a function, type or act now
+  open with the unit under test. Every citation in the documentation and
+  source comments follows.
 - "their" joins the excluded words: about 900 comment, doc-comment and
   log-string sites name the party instead. `SideRefusal::NotYours` is
   `NotThisTier`; `witnesses_carry_their_primes` is `witnesses_carry_primes`.

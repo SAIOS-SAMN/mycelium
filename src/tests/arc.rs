@@ -25,7 +25,7 @@ fn envelope_dilation_carries_sites_between_extents() {
 /// A task's JSON parses into its train pairs and test inputs, and a
 /// withheld test output is empty.
 #[test]
-fn parse_task_reads_train_and_test_pairs() {
+fn parse_task_reads_train_and_withheld_pairs() {
     let json = r#"{"train":[{"input":[[0,1],[2,0]],"output":[[1,0],[0,2]]}],"test":[{"input":[[3]]}]}"#;
     let t = parse_task(json).expect("parses");
     assert_eq!(t.train.len(), 1);
@@ -75,7 +75,7 @@ fn family_cover_sums_pairs_lane_wise() {
 /// The Euclidean gcd is exact and the frame ratio is total, an empty
 /// frame reading `((0, 0), (0, 0))`.
 #[test]
-fn frame_ratio_total_over_exact_gcd() {
+fn frame_ratio_totals_over_exact_gcd() {
     assert_eq!(gcd(0, 0), 0);
     assert_eq!(gcd(12, 8), 4);
     assert_eq!(gcd(7, 0), 7);

@@ -189,7 +189,7 @@ fn handoff_mouth_refuses_split_beyond_keeper_and_lines() {
 /// short on a lane is refused and never debited. Accepted, the parts are
 /// HELD: the recipients' balances untouched, the recipients' line heads reading it.
 #[test]
-fn handoff_traverse_charges_own_lanes_and_refuses_short() {
+fn handoff_traverse_charges_lanes_and_refuses_short() {
     let mut k = founded();
     let m = open(&mut k, mouth(tariff()));
     let traveller = verifying(&reserve(5));

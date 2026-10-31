@@ -32,7 +32,7 @@ fn mesh_record_round_trips_and_verifies() {
 /// BYTE, so the tape says which it is rather than a reader inferring
 /// it, and 47.2's origin check can never meet the sentinel.
 #[test]
-fn genesis_none_reads_back_absent_not_zero() {
+fn mesh_record_round_trips_absent_genesis_as_none() {
     let key = HyphaKey::load_or_mint("/tmp/mycelium-mesh-nogen.key");
     let rec = MeshRecord {
         kind: HYPHA,
@@ -62,7 +62,7 @@ fn genesis_none_reads_back_absent_not_zero() {
 /// A bind nothing has written is ABSENT, and an address that is the
 /// empty string is a bind of no characters. Two different records.
 #[test]
-fn bind_none_reads_back_unbound_not_empty() {
+fn mesh_record_round_trips_unbound_as_none() {
     let key = HyphaKey::load_or_mint("/tmp/mycelium-mesh-nobind.key");
     let rec = MeshRecord {
         kind: HYPHA,
@@ -91,7 +91,7 @@ fn bind_none_reads_back_unbound_not_empty() {
 /// `open_at` refused every one of them, and the nodes — including the
 /// one-shot `--recut` runs — exited 2 at boot.
 #[test]
-fn open_reads_msh1_record_under_its_rules() {
+fn open_reads_msh1_record_under_msh1_rules() {
     let key = HyphaKey::load_or_mint("/tmp/mycelium-mesh-v1.key");
     // The MSH1 layout, written out: magic, kind, bind as a plain
     // length-prefixed string, peers, bootstrap, bonds, 32 genesis

@@ -32,7 +32,7 @@ fn slide(r: i64, c: i64) -> crate::transducer::element::Element {
 /// where it carried them: its section is each site it painted and each it
 /// vacated, and it is paid the pair's demand over them.
 #[test]
-fn word_local_section_is_every_changed_site() {
+fn word_local_covers_every_changed_site() {
     let family = vec![(
         grid(&["000000", "110000", "000000", "020000"]),
         grid(&["000000", "001100", "000000", "000200"]),
@@ -112,7 +112,7 @@ fn form_local_agrees_with_word_local_section() {
 /// itself is empty, beyond nothing it is whole, and what it pays is the
 /// demand over the sites left.
 #[test]
-fn beyond_is_difference_of_sites() {
+fn beyond_equals_difference_of_sites() {
     let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
     let all = sites(&[(0, 0), (0, 1), (0, 2), (0, 3)]);
     let half = sites(&[(0, 2), (0, 3)]);

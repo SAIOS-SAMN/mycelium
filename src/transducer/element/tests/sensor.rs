@@ -16,7 +16,7 @@ fn qn(n: i64, d: i64) -> crate::core::Q {
 /// the origin and away from it alike. The 90° turn keeps the lattice
 /// and carries one compartment onto one compartment, the one its centre lands in.
 #[test]
-fn carry_compartment_refuses_pythagorean_tilt_keeps_turn_90() {
+fn carry_compartment_refuses_pythagorean_tilt_and_keeps_turn_90() {
     let tilt = LetterId::pythagorean_5((0, 1)).expect("the (3,4,5) rotor on the sensor plane");
     let v = versor_of_word(&Word::from_letters(&[(tilt, false)])).expect("a base action");
     assert_eq!(carry_compartment(&v, 0, 0, 0), None, "a tilted image is no compartment");

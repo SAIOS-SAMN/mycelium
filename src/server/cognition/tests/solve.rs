@@ -200,7 +200,7 @@ fn judge_solve_counts_no_work_verdict() {
 /// mints nothing, dockets and offers nothing — the zero is read before any
 /// of it, not after.
 #[test]
-fn pay_solve_zero_discharge_acts_on_nothing() {
+fn pay_solve_acts_on_nothing_at_zero_discharge() {
     let mut k = Court::new();
     let rule = rule_over(&carried());
     let (task, voice) = ([5u8; 32], [9u8; 32]);

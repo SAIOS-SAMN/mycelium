@@ -834,7 +834,7 @@ pub struct Form {
     ///
     /// `CanonicalChain` alone would centre it and lose the placement the
     /// Čech complex reads for overlap, which is the reading
-    /// `hold_disjoint_remainders_share_no_triangle` asserts.
+    /// `hold_shares_no_triangle_between_disjoint_remainders` asserts.
     pub remainder: crate::transducer::element::PlacedChain,
     /// AT1, 54.5 ROAD (d) — THE REMAINDER'S COORDINATES where its chain is
     /// not held: a form read back from its address carries the chain's

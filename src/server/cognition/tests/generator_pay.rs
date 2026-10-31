@@ -59,7 +59,7 @@ fn generator_and_citer() -> (Element, Element) {
 /// not refused, and it is also not installed, so no generator is paid
 /// and no balance moves anywhere.
 #[test]
-fn perceive_speech_waiting_citer_pays_no_generator() {
+fn perceive_speech_pays_no_generator_for_waiting_citer() {
     let teacher = [1u8; 32];
     let speaker = [3u8; 32];
     let (g, citer) = generator_and_citer();

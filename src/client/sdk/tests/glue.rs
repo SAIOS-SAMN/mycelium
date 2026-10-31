@@ -145,7 +145,7 @@ fn on_body_answers_after_genome_restore() {
 /// never bytes (rule 3, 1.5): what must survive is the generator — the
 /// vertex it reaches — and not the letters that spell it.
 #[test]
-fn generators_under_survive_genome_restore() {
+fn generators_under_survives_genome_restore() {
     let (e, _) = closed_form_and_body_chart();
     let mut epi = Epigenome::new();
     epi.learn(&e.to_bytes().expect("the record writes"), &mut super::common::budget()).expect("the word enters the genome");

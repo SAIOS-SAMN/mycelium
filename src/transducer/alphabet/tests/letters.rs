@@ -67,7 +67,7 @@ fn alphabet_layout_derives_tabulated_values() {
 /// LAW VIII: seventeen letters, each a versor with its carried inverse
 /// exact — `Φ Φ⁻¹ = 1` for all of them, and no eighteenth slot.
 #[test]
-fn letter_carries_exact_inverse_for_all_seventeen() {
+fn letter_carries_exact_inverse_for_every_letter() {
     assert_eq!(LetterId::all().count(), 17);
     assert!(LetterId::try_new(17).is_none());
     for id in LetterId::all() {

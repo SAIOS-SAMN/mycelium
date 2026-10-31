@@ -31,7 +31,7 @@ fn tell_peer_within_refuses_silent_peer_within_budget() {
 /// this host's own reserve, a measurement, so a responder that has merely
 /// not been scheduled is not refused.
 #[test]
-fn tell_peer_within_reads_reply_whole_and_counts_strokes() {
+fn tell_peer_within_reads_reply_and_counts_strokes() {
     use std::io::{Read, Write};
     let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
     let addr = listener.local_addr().expect("addr").to_string();

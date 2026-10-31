@@ -3,7 +3,7 @@ use super::common::*;
 
 /// A point prints in one lowercase writing and parses back exactly, and its wire form takes back whole.
 #[test]
-fn tpoint_print_parses_back_exactly() {
+fn tpoint_print_round_trips() {
     let p = TPoint { origin: ORIGIN, h: 40_961, lanes: [3, u64::MAX, 0, 17], k: 812 };
     let text = p.print();
     assert_eq!(

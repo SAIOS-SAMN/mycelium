@@ -25,7 +25,7 @@ fn turn(mask: usize) -> Mv {
 /// neighbour on the same plane commutes: the drag is the whole force, `F·D⁻¹`
 /// the identity, and the lift `v·g⁻¹` the bounce itself — a rate, no plane.
 #[test]
-fn encounter_commuting_neighbour_changes_rate_never_tilts() {
+fn encounter_drags_commuting_neighbour_without_tilt() {
     let e = encounter(&turn(E1 | E2), &turn(E1 | E2), &mut stroke()).expect("read");
     assert!(!e.fell_to_drag, "every inverse exists");
     assert_eq!(e.drag, Mv::blade(E1 | E2, q(1)), "the force is all drag");
@@ -38,7 +38,7 @@ fn encounter_commuting_neighbour_changes_rate_never_tilts() {
 /// part, and the rest — anticommuting with the orbit's plane — carries a lift
 /// with a bivector part: a plane neither the orbit nor the drag turns in.
 #[test]
-fn encounter_anticommuting_part_tilts_orbit() {
+fn encounter_tilts_orbit_by_anticommuting_part() {
     let neighbour = Mv::scalar(one()).add(&Mv::blade(E1 | E2, q(1))).add(&Mv::blade(E2 | E3, q(1)));
     let e = encounter(&turn(E1 | E2), &neighbour, &mut stroke()).expect("read");
     assert!(!e.fell_to_drag);
@@ -51,7 +51,7 @@ fn encounter_anticommuting_part_tilts_orbit() {
 /// is the drag; and an orbit whose mode is null (a slide: no square to split
 /// by) takes the force whole as drag.
 #[test]
-fn encounter_lift_is_drag_without_inverse() {
+fn encounter_reads_lift_as_drag_without_inverse() {
     let orthogonal = encounter(&turn(E1 | E2), &turn(E2 | E3), &mut stroke()).expect("read");
     assert!(orthogonal.fell_to_drag, "no drag, no inverse");
     // Equality is projective and zero is no ray: the zero drag is read as
@@ -66,7 +66,7 @@ fn encounter_lift_is_drag_without_inverse() {
 /// A NEIGHBOUR WITH NO GENERATOR, OR AN ORBIT WHOSE MODES DO NOT READ, IS NOT
 /// ENCOUNTERED — refused by name, never read as no force.
 #[test]
-fn encounter_refuses_unread_neighbour_by_name() {
+fn encounter_refuses_unread_neighbour() {
     let mixed = Mv::scalar(one()).add(&Mv::blade(E1, q(1)));
     assert_eq!(encounter(&turn(E1 | E2), &mixed, &mut stroke()).err(), Some(Unencountered::NeighbourUnread));
 }

@@ -159,7 +159,7 @@ fn stand_demands_stands_rotor_prime_once() {
 /// its contact carries BOTH candidates `θ·V` — two distinct transports,
 /// never a representative — and the tally names a coset formed.
 #[test]
-fn contact_edge_holds_turn_180_as_coset() {
+fn contact_edge_reads_turn_180_as_coset() {
     let s4 = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)];
     let s = body(&s4);
     let turned = body(&s4.map(|(r, c, k)| (-c, r, k)));
@@ -188,7 +188,7 @@ fn contact_edge_holds_turn_180_as_coset() {
 /// fibre can complete the refraction. No refraction is asked, and none
 /// refused.
 #[test]
-fn contact_edge_static_carries_tether_and_pose() {
+fn contact_edge_carries_static_tether_and_pose() {
     let a = body(&[(0, 0, 0), (1, 0, 0), (0, 1, 0)]);
     let b = body(&[(2, 1, 0), (3, 1, 0), (2, 2, 0)]);
     let b_after = body(&[(2, 1, 0), (2, 2, 0), (1, 1, 0)]);

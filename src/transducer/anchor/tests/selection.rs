@@ -12,7 +12,7 @@ fn block() -> Vec<(i64, i64, u8)> {
 /// the centre of a block derives to Minus(Hue, Delta(Hue)) and re-evaluates
 /// exactly on a larger scene of the same species.
 #[test]
-fn derive_interior_transfers_to_larger_scene() {
+fn derive_transfers_interior_to_larger_scene() {
     let scene = block();
     let t = derive(&[(1, 1)], &scene).expect("derivable");
     assert_eq!(t.eval(&scene), vec![(1, 1)], "exact on its own evidence");
@@ -28,7 +28,7 @@ fn derive_interior_transfers_to_larger_scene() {
 
 /// The boundary ring derives as δ of the hue support.
 #[test]
-fn derive_coboundary_as_delta() {
+fn derive_reads_coboundary_as_delta() {
     let scene = block();
     let ring: Vec<(i64, i64)> =
         scene.iter().map(|(r, c, _)| (*r, *c)).filter(|&(r, c)| !(r == 1 && c == 1)).collect();
@@ -43,7 +43,7 @@ fn derive_coboundary_as_delta() {
 /// single exact evidence underdetermines; consensus across train pairs
 /// disambiguates in the pipeline.)
 #[test]
-fn eval_hue_interface_transfers() {
+fn eval_transfers_hue_interface() {
     let t = Selection::Inter(Box::new(Selection::Hue(1)), Box::new(Selection::Star(Box::new(Selection::Hue(2)))));
     let scene = vec![(0, 0, 1u8), (0, 1, 1), (0, 2, 2), (0, 3, 2)];
     assert_eq!(t.eval(&scene), vec![(0, 1)], "the hue-1 site touching hue 2");
@@ -96,7 +96,7 @@ fn eval_arg_ext_selects_unique_extremum() {
 /// included), the ring's hole is Hue(0) ∖ Flood(border∩Hue(0), Hue(0)) —
 /// and the derived term transfers to a different ring.
 #[test]
-fn derive_enclosure_transfers_to_wider_ring() {
+fn derive_transfers_enclosure_to_wider_ring() {
     // A 3×3 ring of hue 5 with a hue-0 hole, on a 5×5 full grid.
     let mut scene: Vec<(i64, i64, u8)> = Vec::new();
     for r in 0..5 {
@@ -123,7 +123,7 @@ fn derive_enclosure_transfers_to_wider_ring() {
 
 /// Extremal projection: the top row of a component derives via Ext.
 #[test]
-fn derive_top_row_via_ext() {
+fn derive_reads_top_row_via_ext() {
     let scene = block();
     let top: Vec<(i64, i64)> = vec![(0, 0), (0, 1), (0, 2)];
     let t = derive(&top, &scene).expect("derivable");

@@ -30,7 +30,7 @@ fn court() -> Court {
 /// the court answers at the publication; and a cover that did not move is
 /// shared with the last reading, not copied.
 #[test]
-fn publish_own_reads_match_court() {
+fn publish_agrees_with_court_on_reads() {
     let mut k = court();
     let voice = [0x7b; 32];
     k.court_voice = Some(voice);
@@ -56,7 +56,7 @@ fn publish_own_reads_match_court() {
 /// of bond as the court refuses it, and — bonded — standing or refused on
 /// the same prefix exactly as the court rules.
 #[test]
-fn verify_fold_off_shelf_matches_court() {
+fn verify_fold_agrees_with_court_off_shelf() {
     let home = [0x5d; 32];
     let mut h = Court::new();
     h.bind_identity(home);
@@ -136,7 +136,7 @@ fn class_records_on_resumes_round_nerve_by_asker() {
 /// A TOUCHED WORD IS REPLACED IN PLACE: the snapshot after the touch holds,
 /// at every address, the word a whole rebuild gives it.
 #[test]
-fn touch_at_matches_language_rebuild() {
+fn touch_at_agrees_with_language_rebuild() {
     let mut k = court();
     let _ = k.language();
     let addr = k.basis.scoped().next().map(|(a, _)| a).expect("a word held");

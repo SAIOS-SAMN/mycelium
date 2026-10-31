@@ -49,7 +49,7 @@ fn precedes_implies_lower_height_and_keeps_concurrency() {
 /// chain's own nodes are a line and `K` orders them — and a budget with
 /// nothing left refuses rather than answering short (rule 11).
 #[test]
-fn precedes_orders_own_nodes_in_one_read_and_refuses_empty_budget() {
+fn precedes_orders_line_nodes_and_refuses_empty_budget() {
     let mut c = ReceiptChain::with_signer([1; 32]);
     let mut all = Vec::new();
     for _ in 0..64 {
@@ -70,7 +70,7 @@ fn precedes_orders_own_nodes_in_one_read_and_refuses_empty_budget() {
 /// the greatest of the chain's own `K` it reaches, and the least of the
 /// chain's own nodes that reaches it.
 #[test]
-fn precedes_places_peer_node_by_its_cut_of_own_line() {
+fn precedes_places_peer_node_by_cut_of_line() {
     let mut c = ReceiptChain::with_signer([1; 32]);
     let own0 = step(&mut c, Vec::new());
 

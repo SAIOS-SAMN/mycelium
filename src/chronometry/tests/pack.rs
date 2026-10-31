@@ -29,7 +29,7 @@ fn read(b: &[u8]) -> Option<Vec<KStepReceipt>> {
 /// A COUNT IN SEVEN-BIT GROUPS reads back exactly, at every width, and a
 /// group past a `u64` refuses.
 #[test]
-fn take_var_reads_back_exactly_and_refuses_past_u64() {
+fn take_var_round_trips_and_refuses_past_u64() {
     for v in [0, 1, 127, 128, 300, 1 << 40, u64::MAX] {
         let mut b = Vec::new();
         put_var(&mut b, v);

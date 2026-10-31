@@ -8,7 +8,7 @@ use crate::transducer::family::*;
 /// A pair form has its frame and a word for the carried body, and nothing is
 /// held between readings: a second reading reads the same form.
 #[test]
-fn cipher_form_holds_nothing_between_readings() {
+fn cipher_form_keeps_nothing_between_readings() {
 let a = grid(&["1100", "0000"]);
 let b = grid(&["0011", "0000"]);
 let f1 = cipher_form(&a, &b);

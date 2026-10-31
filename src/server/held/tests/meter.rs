@@ -5,7 +5,7 @@ use std::sync::Mutex;
 /// through `run` spends it and is counted on the holding thread; let go,
 /// the stroke goes on whole with what it still grants.
 #[test]
-fn run_spends_holds_one_stroke() {
+fn run_spends_from_one_stroke_hold() {
     let court = Mutex::new(Court::new());
     let stroke = Court::new().stroke().remaining();
     let mut h = held!(court).expect("the court");
@@ -34,7 +34,7 @@ fn holds_counts_every_take() {
 /// helicity is `None`, the nerve census reads no complex, and the digest
 /// confirmation reaches no stratum and leaves no cursor.
 #[test]
-fn run_on_spent_stroke_ends_work_unread() {
+fn run_on_ends_work_unread_on_spent_stroke() {
     let court = Mutex::new(Court::new());
     let mut h = held!(court).expect("the court");
     h.run(|k, reads| {

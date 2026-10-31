@@ -29,7 +29,7 @@ fn topology_counts_components_and_holes() {
 /// A 2×2 square lifts to a blade with the exact centroid (½,½,0), positive
 /// extent, and an invertible spatial sphere — the body HAS volume.
 #[test]
-fn lift_square_is_invertible() {
+fn lift_is_invertible_on_square() {
     let b = lift(&compartments(&[(0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 1)]));
     assert_eq!(b.centroid(), Some(vec![qn(1, 2), qn(1, 2), q(0)]));
     assert!(b.radius2() > q(0), "the body has volume (off the null cone)");
@@ -40,7 +40,7 @@ fn lift_square_is_invertible() {
 
 /// A lone compartment still HAS volume (r² = 1/6) — no body is a null point.
 #[test]
-fn lift_lone_compartment_has_volume() {
+fn lift_gives_lone_compartment_volume() {
     let b = lift(&compartments(&[(3, 5, 7)]));
     assert_eq!(b.radius2(), qn(1, 6));
     assert!(b.is_invertible());
@@ -64,7 +64,7 @@ fn lift_lone_compartment_has_volume() {
 /// component count was exactly the region count — because it was the
 /// INTERNAL gauge structure of single objects, never contact at all.
 #[test]
-fn components_join_by_adjacency_across_hues() {
+fn components_joins_by_adjacency_across_hues() {
     let one = components(&compartments(&[(0, 0, 1), (0, 1, 2)]));
     assert_eq!(one.len(), 1, "adjacent compartments of two hues are ONE body, in two colours");
     let same = components(&compartments(&[(0, 0, 1), (0, 1, 1)]));
@@ -88,7 +88,7 @@ fn components_join_by_adjacency_across_hues() {
 /// invariant signature (the correspond key), sites aside — and so is the
 /// same square in another frame.
 #[test]
-fn invariant_shared_by_translate() {
+fn invariant_ignores_translation() {
     let a = lift(&compartments(&[(0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 1)]));
     let b = lift(&sites_with_hue(&[(4, 7, 1, 1), (4, 8, 1, 1), (5, 7, 1, 1), (5, 8, 1, 1)]));
     assert_eq!(a.invariant(), b.invariant(), "a translate is the same orbit");

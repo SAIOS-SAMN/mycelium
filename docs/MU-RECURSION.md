@@ -696,16 +696,16 @@ first (`physics/axioms/founding.rs`), each with a test that could fail
 
 | principle | the mode | what it says | test |
 |---|---|---|---|
-| **HARMONIC** | elliptic — a turn | it RETURNS at the order read off it (Niven: 1, 2, 3, 4, 6), or it never returns and its winding is content. Return is the elastic vent, the period, the class that comes back | `motion_modes_turn_returns_at_read_order_or_never` |
-| **LUMINAL** | parabolic — a null generator, `B² = 0` | it has no length, only its ray and its ratios on it; the flow keeps it null and its flux frozen in its tube. A boost is the luminal off the cone: two null rays and the expansion between them | `null_fluxes_generator_stays_null_under_flow` |
-| **HOLONOMIC** | the ring | what a circuit composes to is its content: moving its base point conjugates it and changes none of its modes | `motion_modes_of_holonomy_independent_of_base` |
+| **HARMONIC** | elliptic — a turn | it RETURNS at the order read off it (Niven: 1, 2, 3, 4, 6), or it never returns and its winding is content. Return is the elastic vent, the period, the class that comes back | `motion_modes_returns_turn_at_read_order_or_never` |
+| **LUMINAL** | parabolic — a null generator, `B² = 0` | it has no length, only its ray and its ratios on it; the flow keeps it null and its flux frozen in its tube. A boost is the luminal off the cone: two null rays and the expansion between them | `null_fluxes_keeps_generator_null_under_flow` |
+| **HOLONOMIC** | the ring | what a circuit composes to is its content: moving its base point conjugates it and changes none of its modes | `motion_modes_ignores_base_of_holonomy` |
 
 **Corollaries, binding every reader:**
 - **Every dimension is an exponent.** A grade is the count of orthogonal
   factors in a product; a cell's degree is its vertices less one; a base of
   `n` axes has `2ⁿ` vertices in its unit cell. No degree is capped: the
   complex climbs as far as its faces stand (A.6). Cohomology is not fixed at
-  two (`geo_of_k_generators_is_grade_k_blade`).
+  two (`geo_carries_k_generators_to_grade_k_blade`).
 - **No constant.** A number in the physics is read off the field or the
   geometry, or it is undefined physics, NAMED in the register's
   `OPEN_PHYSICS` with what will derive it until it is derived. The
@@ -3935,7 +3935,7 @@ class vector, chart invariants, listing keys, certificates and every
 `simplex_key`, `cocycle_key`, `selection_key`, the certificate key, and
 `Keyed<K>` keyed by `&[u8]` (variable length); `CLOSED_KEY` is deleted and
 closure is `ClassVector::is_zero`. Tests: `every_key_decodes_to_its_object`,
-`fibre_of_prefix_reads_its_stratum`, `no_blake3_in_cognition` (the gate),
+`fibre_of_reads_stratum_of_prefix`, `no_blake3_in_cognition` (the gate),
 `put_class_record_round_trips_key_and_order`.
 
 ## 17. Master algorithms
@@ -6253,21 +6253,21 @@ named.
 ## 39. Tests
 
 **Identity and algorithms (Part III).**
-`alphabet::tests::normalised_key_projective_either_sign` (`q⁴`, `1`, `−R`,
+`alphabet::tests::normalised_key_is_projective_either_sign` (`q⁴`, `1`, `−R`,
 `λR` share a key; `R` and `R·q` do not);
 a test that A2's run reduction shortens and preserves the key;
 a test that A2's reduction is deterministic under the budget;
 a test that A3's form is reduced and equality is read on the reduced form;
-`cga::tests::projective_eq_holds_either_sign_and_key`;
+`cga::tests::projective_eq_is_true_for_either_sign_and_key`;
 `element::tests::canonical_chain_is_idempotent_and_translation_free`;
 a test that A6 refuses overflow and keeps the sign;
 a test that A7's class axes are invariants, never a hash;
 a test that A8's migration conserves supply and resolves every carrier;
-`verdict::tests::selection_key_is_selection_bytes_never_debug_text`;
+`verdict::tests::selection_key_equals_selection_bytes_never_debug_text`;
 a test that A10's two sockets under one key are one peer;
 a test that A11's rendezvous is by listing key, never by bytes;
 `transducer::tests::factor::factor_on_plane_understands_span_by_hnf`, `factor_off_plane_reaches_or_refuses_unmeasured`,
-`factor_on_plane_remainder_is_canonical`;
+`factor_on_plane_gives_canonical_remainder`;
 `nerve::tests::meet_is_intersection_and_costs_shared_prefixes` (meet
 equals set intersection; `count_get` grows with the shared structure, N vs
 4N on the larger trie with the smaller fixed);
@@ -6302,9 +6302,9 @@ class keys);
 a test that a Leray artefact disappears when the cover is made good;
 a test that restriction commutes with `δ` (naturality);
 `cech::tests::naturality_mv_ladder_commutes`;
-`alphabet::tests::conjugacy_key_invariant_on_four_conjugation_lines`;
+`alphabet::tests::conjugacy_key_is_invariant_under_conjugation`;
 `alphabet::tests::conjugacy_key_agrees_iff_conjugate`;
-`alphabet::tests::class_key_invariant_under_conjugation_and_scale`;
+`alphabet::tests::class_key_is_invariant_under_conjugation_and_scale`;
 a test that refinement carries or discharges every class (no complex
 cloned; children's simplex counts sum to the parent's minus straddling);
 a test that refinement rolls back on `NOT_NATURAL`;
@@ -6313,12 +6313,12 @@ a test that a translation across a cyclic overlap is refused.
 
 **Forms (Part IV).**
 1. A test that the v2 form tape round-trips (Frame, Word, Glued, Rebased, Unfolded, contact word, faces, orbits).
-2. `sentence::tests::depth_of_is_one_plus_max_glued` and refusal at equal depth.
+2. `sentence::tests::depth_of_equals_one_plus_max_glued` and refusal at equal depth.
 3. `alphabet::tests::rebase_conjugates_into_normal_form`.
 4. A test that the pair form reads the laminae once (second call touches no lamina; work counter).
 4b. A test that face work is linear in the occupied sites (occupancy + ring, not n²).
 4c. `sentence::form::tests::complex::form_vertex_key_carries_ratio_and_sections` (ratio, sections, torsion on the tape; zero denominator refused).
-5. `family::tests::extract_rule_by_class_with_sections` (a class in some pairs is a section).
+5. `family::tests::extract_rule_with_groups_class_into_sections` (a class in some pairs is a section).
 6. `family::tests::extract_rule_with_glues_held_form` (depth 1, one `Glued`, fewer `Word` vertices than the flat rule).
 6b. `family::tests::apply_form_leaves_empty_fibre_unspoken`.
 7. `family::tests::extract_rule_with_unfolds_grow_to_frame` (one form, `Unfolded{Occupied}`, no step count on the tape).
@@ -6333,7 +6333,7 @@ a test that a translation across a cyclic overlap is refused.
 **Torsion bridge, pivots, and rank (M9, A16–A20, chapter 42).**
 a test that the class vector is canonical and its occupied axes are in a fixed order (12.6);
 `sentence::pivot::tests::discharge::coordinates_lists_occupied_axes_in_declaration_order` (A16 step 3: a zero coordinate is never visited);
-`sentence::pivot::tests::orbit::pivot_orbit_zeroes_own_axis_raising_none` (12.6 discharge condition);
+`sentence::pivot::tests::orbit::pivot_orbit_zeroes_axis_raising_none` (12.6 discharge condition);
 a test that `pivot_orbit` terminates within the occupied coordinates (T4);
 `sentence::pivot::tests::discharge::pivot_orbit_never_reopens_closed_chord` (T2);
 `sentence::pivot::tests::discharge::select_discharge_holds_several_as_vortex` (A16 step 5: two discharging candidates, both kept, none applied);
@@ -6376,7 +6376,7 @@ a test that a rule constant across frames has identity holonomy in `t`;
 a test that a `Cl(4,1)` sphere blade is projectively canonical.
 
 **Mesh under adversaries (Part IX).**
-`chronometry::tests::head_height_is_one_plus_max_of_prev_and_parents` (45.2);
+`chronometry::tests::head_height_equals_one_plus_max_of_parents` (45.2);
 `chronometry::tests::precedes_implies_lower_height_and_keeps_concurrency`
 (T15: two chains with no citations are concurrent at every height; a
 receipt citing both orders both before it and neither before the other);
@@ -6587,7 +6587,7 @@ other plane's coordinates and the placement fixed; a translation word acts
 on the placement residue alone; a glue of a closed form makes the orbit a
 boundary and zeroes the whole vector (T6); opening an axis removes the orbit
 (15.5). Code: `Form::class_vector` before and after each move. Proof:
-`pivot_orbit_zeroes_own_axis_raising_none`; the debug assertion of
+`pivot_orbit_zeroes_axis_raising_none`; the debug assertion of
 A18 on every trial.
 
 **T15 Causal order is exact and never totalised.** `e ≺ e'` iff the frontier
@@ -6668,7 +6668,7 @@ a test that a cube and a plane square have distinct charts.
 **R8 Keys never merge distinct vertices.** M1 (A1, A4) is injective on
 projective classes, so no two meanings share an address and no digest of a
 tape is a key (1.5, 17.1). Code: `Rotor::key`, `Mv::key`,
-`Element::address`. Proof: `normalised_key_projective_either_sign`,
+`Element::address`. Proof: `normalised_key_is_projective_either_sign`,
 `address_identifies_two_spellings`, and chapter 35's keyed-carrier invariant.
 
 **R9 Burn conserves supply.** Forfeiture on equivocation and the burn of a
@@ -6790,7 +6790,7 @@ asked. Every clause is decided exactly and replays on the court from the
 certificate (A20). T14 is the corollary that a move changes exactly its
 axis. Code: `pivot_orbit`, `Rank::moved`, `economy::lane_moves`,
 `PivotCertificate`. Proof:
-`pivot_orbit_zeroes_own_axis_raising_none`,
+`pivot_orbit_zeroes_axis_raising_none`,
 `pivot_certificate_replays_or_refuses`, `replay_form_replays_filed_torsion_without_taped_forest`.
 
 **T22 The vortex is two certified discharges.** If two trials on one orbit
@@ -8218,7 +8218,7 @@ beside `PivotCertificate`; tests: `receive_adjudication_contracts_form_and_seals
 `contract_turns_still_contact_word_into_demand`,
 `contract_drops_face_that_does_not_rederive`,
 `receive_adjudication_drops_refused_sentence_from_dialect`,
-`owe_citation_once_per_court_never_when_sealed`,
+`owe_citation_owes_once_per_court_never_sealed`,
 `read_speech_reply_admits_only_codes_sent` (a wait admits nothing).
 
 ### 50.10 The court adjudicates words; grammar is content (ruled 2026-09-22)
@@ -8670,7 +8670,7 @@ no shared runtime memory, each perceiving the same family as one body,
 reach the same form address and the same standing (50.9's intelligibility
 assertion on a three-axis body). Tests:
 `src/transducer/family/tests/extraction.rs`
-(`extract_rule_reads_translation_as_one_vertex_on_every_frame`,
+(`extract_rule_reads_translation_as_one_vertex`,
 `extract_rule_reaches_one_address_on_two_courts`).
 
 ### 51.11 What is NOT in this draft
@@ -8969,13 +8969,13 @@ Tests (39): `cayley::tests::bivector_of_round_trips_through_versor_of_bivector`,
 `bivector_of_dilators_adds_by_rational_law`,
 `bivector_of_refuses_turn_180_and_reflection`,
 `bivector_of_refuses_even_non_versor`,
-`bivector_of_product_adds_on_one_plane_only`,
+`bivector_of_adds_product_on_one_plane_only`,
 `bivector_of_reads_versor_between_shapes`;
 `sentence::tests::as_element_form_carries_filed_zero_as_open`,
 `pivot_orbit_files_free_part_open_beside_demand`;
 `verdict::tests::replay_form_accepts_edge_of_infinite_order`,
 `replay_form_refuses_free_orbit_and_wrong_period`;
-51.10's proofs 1 and 2 as `family::tests::extract_rule_reads_translation_as_one_vertex_on_every_frame`
+51.10's proofs 1 and 2 as `family::tests::extract_rule_reads_translation_as_one_vertex`
 and `extract_rule_reaches_one_address_on_two_courts`.
 
 ## 53. The cut: a scene is covered before it is one form (ruled 2026-09-19)
@@ -9822,7 +9822,7 @@ nerve/image    245 forms  0 shared                     0 triples
 `0 certified triples` on 252 of 252, on BOTH halves. No cell of either base
 stands in three charts, so there is no 2-simplex to certify and none is
 invented (rule 11). The reading is not vacuous: `cech::tests::nerve`
-carries the positive case, `read_nerve_shared_element_certifies_one_two_cell`.
+carries the positive case, `read_nerve_certifies_one_two_cell_for_shared_element`.
 
 ### 58.2 What that overturns, and what it leaves standing
 
@@ -14500,7 +14500,7 @@ it.
   the sentence's, not the speaker's story about it, an account that cannot
   drift from what was done. Code: `src/transducer/sentence/reasons.rs`
   (`Reasons::of`, `Reasons::says`); test
-  `reasons_of_reads_same_reasons_after_decode` in
+  `reasons_of_round_trips` in
   `src/transducer/family/tests/reasons.rs`.
 - **(2) The court's side: why an act stands.** `ACT_WHY` asks a court about
   one act on its ledger, a place `K.i` on its own line or a stamp on any
@@ -14518,7 +14518,7 @@ it.
   (`word_admitted_at`), `src/server/cognition/court/era.rs`
   (`receipts_page`), `src/bin/mycelium-server/judge/why.rs`,
   `src/bin/mycelium-server/why.rs`, `src/bin/mycelium-server/ledger.rs`;
-  test `why_answers_act_with_speakers_reasons` in
+  test `why_answers_act_with_speaker_reasons` in
   `src/server/cognition/tests/why.rs`.
 
 The verdict's stamp and refusals on the ledger follow in 78.93 B0. The human
@@ -14620,8 +14620,8 @@ stands; until then the court bears and counts it. Code:
 `Action::of_wire`, `Action::laws`), `src/chronometry/receipt.rs` (`ActKind`),
 `src/anastome/dialogue/acts.rs`, `src/chronometry/chain/mod.rs`,
 `src/bin/mycelium-server/judge/dispatch.rs`; tests in
-`src/physics/actions/tests/table.rs` (`action_of_reads_each_byte_back_once`,
-`sealed_excludes_observations_and_transitions_answer_every_law`,
+`src/physics/actions/tests/table.rs` (`action_of_round_trips_each_byte`,
+`sealed_excludes_observations_and_answers_every_law`,
 `of_wire_reads_each_wire_spelling_as_table_action`).
 
 ### 78.95 Words, not letters: the progenitor's board builds words, and advanced linguistics lives in the anastome
@@ -14712,7 +14712,7 @@ Code: `src/transducer/sentence/compose.rs` (`is_chord`, `sentences_of`,
 `src/transducer/sentence/rung.rs` (`hear`),
 `src/server/cognition/court/winding.rs`; tests
 `sentences_of_hears_chord_rings_composes_rays` and
-`theorem_of_ray_ring_is_nilpotent` in
+`theorem_of_is_nilpotent_on_ray_ring` in
 `src/transducer/family/tests/rung.rs`.
 
 ### 78.98 The nonlinear language: every word on its own law

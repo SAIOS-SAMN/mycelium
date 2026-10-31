@@ -53,7 +53,7 @@ fn commitment_ignores_record_order() {
 /// refused; a key past its u16 wall is refused, never widened; one record's
 /// root is its leaf folded up its own path against zero siblings.
 #[test]
-fn commitment_reads_empty_and_one_refuses_duplicate_or_wide() {
+fn commitment_refuses_duplicate_or_wide_records() {
     assert_eq!(commitment(&[]), Some(ZERO));
     assert_eq!(commitment(&[record("a", 1), record("a", 2)]), None, "a key twice is refused");
     let wide = (vec![0u8; usize::from(u16::MAX) + 1], vec![Arg::Count(1)]);
@@ -77,7 +77,7 @@ fn commitment_reads_empty_and_one_refuses_duplicate_or_wide() {
 /// an absent key's proof folds zero to it; a wrong value, a tampered
 /// sibling, a short proof, or a held key read as absent all fail.
 #[test]
-fn prove_verifies_inclusion_and_absence_fails_wrong_proof() {
+fn prove_verifies_inclusion_and_refuses_wrong_proof() {
     let all = records();
     let root = commitment(&all).expect("places");
     for (k, v) in &all {

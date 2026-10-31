@@ -42,7 +42,7 @@ assert!(k.quote().1.is_empty(), "the market cleared");
 /// drawn, escrowed or sealed (23.8, S9.6). A second voice's bond is its
 /// own; the hypha's identity is not the drawer.
 #[test]
-fn speak_pair_short_lane_refuses_and_dockets_nothing() {
+fn speak_pair_refuses_short_lane_and_dockets_nothing() {
 let a = vec![(0, 0, 1u8)];
 let b = vec![(0, 0, 2u8)];
 let c = vec![(1, 0, 3u8)];
@@ -97,7 +97,7 @@ assert_eq!(
 /// occupancy returns, and nothing is slashed. Through the orbit it was
 /// listed in and the one after it, it stands.
 #[test]
-fn orbit_lapse_releases_docket_draw() {
+fn orbit_releases_docket_draw_on_lapse() {
 let mut k = Court::new();
 let a = vec![(0, 0, 1u8)];
 let b = vec![(0, 0, 2u8)];
@@ -383,7 +383,7 @@ assert!(
 /// Two hyphas at different K relocate the same standing listing at the
 /// same TUniversal: T-room, never a stroke count.
 #[test]
-fn speak_pair_relocates_at_tuniversal_independent_of_k() {
+fn speak_pair_ignores_k_when_relocating() {
 // The L recoloured whole to `hue` (20 as ruled, L7). Two hues are two
 // sentences — the sentence is the rule, and a body's shape is quotiented
 // from its key (1.5), so the same recolour of another shape would be the
@@ -432,7 +432,7 @@ assert!(
 /// listings written: the height moves with the ledger while the book
 /// generation stands, and the quote's market view carries that height.
 #[test]
-fn book_height_is_chain_head_height() {
+fn book_height_equals_chain_head_height() {
 let mut k = Court::new();
 let a = vec![(0, 0, 1u8)];
 let b = vec![(0, 0, 2u8)];

@@ -74,7 +74,7 @@ fn gloss_inverts_lower_on_every_act() {
 /// about the grid or about each body — speaks what the recolour speaks, and
 /// its element glosses as the recolour.
 #[test]
-fn speak_clauses_identity_carriage_is_hue_map() {
+fn speak_clauses_reads_identity_carriage_as_hue_map() {
     let x = grid(&["110", "000", "033"]);
     let bodies = crate::transducer::family::perceive(&x);
     let map = vec![(1, 2), (3, 0)];
@@ -108,7 +108,7 @@ fn speak_elements_speaks_unnamed_carriage_without_gloss() {
 /// ITERATION READS A LATTICE TRANSLATION: a translator by `(2, −1)` is that
 /// step; a turn is no step, and a carriage iterating one is refused by name.
 #[test]
-fn lattice_step_iterates_translation_refuses_turn() {
+fn lattice_step_iterates_translation_and_refuses_turn() {
     assert_eq!(lattice_step(&shift(2, -1)), Some((2, -1)));
     let turn = rotator(&q(0), &q(1));
     assert_eq!(lattice_step(&turn), None, "a turn names no ray");

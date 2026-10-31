@@ -14,7 +14,7 @@ use super::common::*;
 /// The selection key is stable under a change of debug representation: it
 /// is the tagged `Selection::to_bytes`, never a digest or the debug text.
 #[test]
-fn selection_key_is_selection_bytes_never_debug_text() {
+fn selection_key_equals_selection_bytes_never_debug_text() {
     let s = Selection::Hue(3);
     let mut buf = Vec::new();
     s.to_bytes(&mut buf);

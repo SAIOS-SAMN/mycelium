@@ -168,7 +168,7 @@ assert!(
 /// what the form could not close is its demand vertices, spoken with the
 /// sentence (L5), or the idea's own work.
 #[test]
-fn withhold_form_stands_holds_idea_utters_nothing() {
+fn withhold_form_holds_idea_and_utters_nothing() {
 use crate::transducer::family::{extract_rule, form_deflation, NoCrystal};
 let family = vec![
     (vec![vec![1u8]], vec![vec![2u8]]),

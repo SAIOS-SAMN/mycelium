@@ -94,7 +94,7 @@ fn named_incidence_mints_corner_two_cell_with_meet() {
 /// member's two bodies collided (measured on the corpus); keyed by the bodies'
 /// pieces they stand apart (BD2).
 #[test]
-fn named_incidence_keeps_one_members_bodies_apart() {
+fn named_incidence_keeps_bodies_of_one_member_apart() {
     let mut k = crate::network::nerve::Keyed::new();
     k.insert(member(1), vec![Site::of([0, 0, 0]), Site::of([1, 1, 0])]);
     k.insert(member(2), vec![Site::of([1, 0, 1])]);
@@ -142,7 +142,7 @@ fn cell_algebras_crosses_cell_by_face_body_pair() {
 /// `V_ca V_bc V_ab = s_a s_c s_c s_b s_b s_a` is a scalar — the square the
 /// cell's meet does not take.
 #[test]
-fn shape_of_pairwise_loop_telescopes_to_scalar() {
+fn shape_of_telescopes_pairwise_loop_to_scalar() {
     let nucleus = |s: Vec<i64>| {
         crate::transducer::blade::shape_of(&[Site::new(s).expect("a fixture site within the algebra")]).blade.nucleus().expect("a nucleus")
     };

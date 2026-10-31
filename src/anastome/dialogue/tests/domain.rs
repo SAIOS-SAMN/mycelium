@@ -7,7 +7,7 @@ use crate::chronometry::Stamp;
 /// A signed genesis and every answer read back whole, and a byte left over
 /// is none.
 #[test]
-fn domain_genesis_and_answers_round_trip_whole() {
+fn domain_genesis_round_trips_with_answers() {
     let key = ed25519_dalek::SigningKey::from_bytes(&[2u8; 32]);
     let g = DomainGenesis { domain: key.verifying_key().to_bytes(), tiers: vec![[1u8; 32], [3u8; 32]] };
     let signed = g.sign(&key);
