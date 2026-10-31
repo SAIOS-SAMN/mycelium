@@ -73,6 +73,12 @@ such change is named here.
   output's sites keyed once, each image read back to its lattice site,
   `2·m` reads on the token; past 400 sites it reads, and a spent token
   reads `Unread`, never `No`.
+- **A seat mind lets a pending call go by beat distance** (D3.5): at the
+  first percept a whole beat past the call's (`beat − made_at ≥ 2`, the
+  dissipation rule), never at a count of percepts received; a redelivered
+  percept advances nothing, a gap dissipates at once.
+  `Perceived::abandoned` is `Option<(u16, u64)>`, the function and its
+  distance.
 
 ### SDK
 - `mycelium_sdk::rule` gains `perceive_family`, `Frames` and

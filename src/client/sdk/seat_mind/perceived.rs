@@ -29,8 +29,9 @@ pub struct Perceived {
     /// A call whose outcome this percept's records were read against: its
     /// function, and whether the house applied it.
     pub learned: Option<(u16, bool)>,
-    /// A call whose outcome never came within its beat.
-    pub abandoned: Option<u16>,
+    /// A call whose outcome never came through one whole beat: its function,
+    /// and the distance along the house's sequence it stood (D3.5).
+    pub abandoned: Option<(u16, u64)>,
     /// 78.156 — the sub-instance's experienced dilation since the percept
     /// before, where both were located (`SeatMind::located`).
     pub dilation: Option<Dilation>,
@@ -95,8 +96,8 @@ impl std::fmt::Display for Perceived {
         if let Some((fn_id, applied)) = self.learned {
             write!(f, " | learned fn {fn_id} (applied {applied})")?;
         }
-        if let Some(fn_id) = self.abandoned {
-            write!(f, " | fn {fn_id} unanswered within its beat")?;
+        if let Some((fn_id, distance)) = self.abandoned {
+            write!(f, " | fn {fn_id} unanswered through a whole beat (distance {distance})")?;
         }
         if let Some(d) = &self.dilation {
             write!(f, " | dilation {d}")?;

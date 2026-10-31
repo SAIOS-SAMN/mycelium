@@ -140,7 +140,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 | D3.2 | `MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600` | `transducer/family/refine.rs:40–41` | task identity, μ | High | metered by `need = R_h·R_w + 2·L_h·L_w` (**Built**, O1 (a)) | no | M | 7 |
 | D3.3 | `truncate(32)` | `transducer/anchor/derive.rs:182` | court admission (π*) | High | keep every carrying term, keyed; metered (**Built** 2026-10-31; O1 ruled (a): π* binds the whole common set) | yes | M | 7 |
 | D3.4 | `in_sites.len() <= 400` | `transducer/family/confluence.rs:162` | an instrument's reading | Low | `2·m` reads, keyed, tri-state (**Built** 2026-10-31) | no | S | 10 |
-| D3.5 | `percepts_since >= 2` | `client/sdk/seat_mind/mind.rs:284` | seat liveness, learning | Medium | distance along the house's sequence `b − b₀ ≥ 2` | yes | S | 10 |
+| D3.5 | `percepts_since >= 2` | `client/sdk/seat_mind/mind.rs:284` | seat liveness, learning | Medium | distance along the house's sequence `b − b₀ ≥ 2` (**Built** 2026-10-31; O1 read (a), `seq`) | yes | S | 10 |
 | D4.1 | `tell_peer_within(.., 5)` | `mycelium-server/transport.rs:136` | liveness | Medium | the mesh's measured floor; `Unmeasured` one aperture | yes | M | 5 |
 | D4.2 | `take(32)` (evidence reply) | `mycelium-server/door.rs:125` | protocol size | Medium | fill to the frame budget by `σ(e)` | yes | S/M | 5 |
 | D4.3 | `h > 1024 \|\| w > 1024` | `anastome/dialogue/carrier.rs:106` | grid admission, memory | Medium | the bytes the tape carries; degenerate shapes refused | yes | S | 14 |
@@ -2127,6 +2127,19 @@ carriers (rule 1) with a reading inside it (rule 17).
 ---
 
 ### D3.5 `percepts_since >= 2` — a pending call let go
+
+**Status.** **Built** (2026-10-31, the live-readings ruling), on the axis
+`SeatMind.beat` already reads (O1 (a), `Percept.seq`). `PendingCall.made_at`
+replaces `percepts_since`; `read_pending` lets a call go at the first
+percept with a whole beat between (`made_at < β < beat`, i.e.
+`beat − made_at ≥ 2`, the dissipation rule's own reading, MU-CLIENT §4.13),
+and `Perceived.abandoned` carries `(fn, distance)`. A percept at or before
+the call's beat advances nothing. Tests (`client::sdk::tests::seat_mind`):
+`pending_stands_through_its_own_beat`,
+`pending_dissipates_after_one_whole_beat`,
+`pending_gap_in_seq_dissipates_at_once`, `pending_ignores_redelivered_percept`.
+O1's `answered_at` reading and O2 stay open. The text below is the
+derivation as specified.
 
 **Site.** `src/client/sdk/seat_mind/mind.rs:284` (`read_pending`), with
 `Pending.percepts_since` (`:541`) set to 0 at `called` (`:756`) and
