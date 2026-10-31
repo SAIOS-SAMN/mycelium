@@ -122,7 +122,7 @@ fn scene_word(a: &[Vec<u8>], b: &[Vec<u8>]) -> (Vec<u8>, Vertex, Address) {
 
 /// A form whose every word reads is filed whole with no refusal.
 #[test]
-fn learn_form_files_readable_form_whole() {
+fn learn_form_files_readable_form() {
     use crate::transducer::sentence::generator_key;
     let one = (vec![vec![1u8, 0, 0, 0, 0, 0, 0]], vec![vec![0u8, 1, 0, 0, 0, 0, 0]]);
     let held = crate::transducer::family::cipher_form(&one.0, &one.1);
@@ -144,7 +144,7 @@ fn learn_form_files_readable_form_whole() {
 /// An unreadable word is refused by name at its coordinate, and the rest of
 /// the form is filed.
 #[test]
-fn learn_form_refuses_unreadable_word_by_name() {
+fn learn_form_refuses_unreadable_word() {
     use crate::transducer::sentence::generator_key;
     use crate::transducer::sentence::presentation::{LearnRefusal, Unlearned};
     let one = (vec![vec![1u8, 0, 0, 0, 0, 0, 0]], vec![vec![0u8, 1, 0, 0, 0, 0, 0]]);

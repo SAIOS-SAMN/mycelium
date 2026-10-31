@@ -6,7 +6,7 @@ use super::common::*;
 /// the Court reading carrying that standing — and a hand-built residual
 /// with signed lanes at the lane carrier's ends — reads back as itself.
 #[test]
-fn tstanding_reads_back_exactly_and_refuses_other_version() {
+fn tstanding_round_trips_and_refuses_other_version() {
     use crate::chronometry::tuniversal::{Edge, Keepers, Origin, Residual, TPoint, Tick};
     use ed25519_dalek::SigningKey;
     let origin = Origin { genesis: [0x6a; 32], epoch: 146 };

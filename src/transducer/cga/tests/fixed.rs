@@ -11,7 +11,7 @@ fn q(n: i64) -> BigRational {
 /// A turn about a point holds the point: the centre reads back as it,
 /// exactly, on the axis the turn leaves still.
 #[test]
-fn centre_of_turn_about_point_is_that_point() {
+fn centre_of_reads_turn_about_point_at_point() {
     let c = [q(1), q(2), q(0)];
     let neg: Vec<BigRational> = c.iter().map(|x| -x).collect();
     let turn = cga::rotator(&q(3), &q(4));
@@ -27,7 +27,7 @@ fn centre_of_turn_about_point_is_that_point() {
 /// A translation holds nothing finite and holds `e_∞`: its centre is at
 /// infinity. A multivector that is no versor has no action: refused.
 #[test]
-fn centre_of_translation_at_infinity_and_non_versor_unread() {
+fn centre_of_reads_translation_at_infinity_and_non_versor_unread() {
     let slide = cga::translator_at(&[q(2), q(0), q(0)]);
     assert!(matches!(cga::centre_of(&slide, 3), Centre::AtInfinity { .. }), "{:?}", cga::centre_of(&slide, 3));
     let not_a_versor = Mv::scalar(q(1)).add(&Mv::blade(cga::E1, q(1)));
@@ -76,7 +76,7 @@ fn centre_of_reads_rational_poles_and_names_irrational() {
 
 /// 73.1 — A TRANSLATION'S CENTRE IS AT INFINITY.
 #[test]
-fn centre_of_translation_is_at_infinity() {
+fn centre_of_reads_translation_at_infinity() {
     let slide = cga::translator_at(&[q(1), q(0), q(0)]);
     assert!(matches!(cga::centre_of(&slide, 3), Centre::AtInfinity { .. }));
 }

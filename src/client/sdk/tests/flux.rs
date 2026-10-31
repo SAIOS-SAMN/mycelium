@@ -57,7 +57,7 @@ fn vent_vertex_unwinds_wound_torsion() {
 /// returning, dissipates at the beat after — its line let go, the question
 /// lapsed, its residue bound by construction. No count of the mind's K.
 #[test]
-fn question_lapses_when_field_dissipates_its_residue() {
+fn question_lapses_when_field_dissipates_residue() {
     use crate::transducer::cech::Thread;
     use crate::transducer::family::pairing::{mark_flux, FieldLine};
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());

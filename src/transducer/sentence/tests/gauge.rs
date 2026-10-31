@@ -98,7 +98,7 @@ fn pivot_orbit_discharges_composed_hue_cycle() {
 
 /// Conjugate hue permutations are one cycle type and one Hue coordinate.
 #[test]
-fn cycle_type_of_conjugate_permutations_is_one() {
+fn cycle_type_of_agrees_on_conjugate_permutations() {
     let a = CycleType::of(&[(1, 2), (2, 1)]);
     let b = CycleType::of(&[(3, 4), (4, 3)]);
     assert_eq!(a, b, "cycle type is sorted lengths, not the listing");
@@ -121,7 +121,7 @@ fn cycle_type_of_conjugate_permutations_is_one() {
 /// length it replaced stood pinned at 255, one short, the type of a
 /// 255-cycle.
 #[test]
-fn cycle_type_of_every_hue_cycle_is_exact() {
+fn cycle_type_of_is_exact_for_every_hue_cycle() {
     let every: Vec<(u8, u8)> = (0..=255u8).map(|h| (h, h.wrapping_add(1))).collect();
     assert_eq!(CycleType::of(&every), CycleType::Type(vec![255]), "one 256-cycle");
     let short: Vec<(u8, u8)> = (0..=254u8).map(|h| (h, if h == 254 { 0 } else { h + 1 })).collect();
@@ -131,7 +131,7 @@ fn cycle_type_of_every_hue_cycle_is_exact() {
 /// The coboundary gauge matches by address: the same words in a different
 /// vertex order are one coboundary.
 #[test]
-fn coboundary_gauge_matches_by_address() {
+fn coboundary_gauge_agrees_with_address() {
     let q = Word::from_letters(&[(alphabet::LetterId::turn_90((0, 1)).unwrap(), false)]);
     // The 90° turn's class, the rebased vertex's own (AT1: a Rebased
     // vertex holds the class it had, beside its base's coordinate).
@@ -178,7 +178,7 @@ fn coboundary_gauge_matches_by_address() {
 /// Holonomy is oriented: a reversed chord stores the inverse word and reads
 /// the same class.
 #[test]
-fn orbit_word_on_reversed_chord_keeps_class() {
+fn orbit_word_on_keeps_class_of_reversed_chord() {
     let w = word_turn_90();
     // TWO ENDS ARE TWO SITES (§1.5), as in `chord_form`: two members of the
     // identity's class on charts `[1]` and `[2]`, each on the Frame's star.
@@ -260,7 +260,7 @@ fn hue_of_refuses_two_images_for_one_hue() {
 /// `(from, to)` it is that map's graph written out as points, and every
 /// question about it becomes a scan. The hue is the coordinate.
 #[test]
-fn hue_table_maps_hues_absence_is_identity() {
+fn hue_table_maps_hues_and_reads_absence_as_identity() {
     let t = hue_table(&[(1, 4), (9, 9)]).expect("a listing that names each hue once is a map");
     assert_eq!(t[1], Some(4), "a hue the listing moves");
     assert_eq!(t[9], Some(9), "a hue it carries to itself is still named");

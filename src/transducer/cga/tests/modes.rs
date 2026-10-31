@@ -18,7 +18,7 @@ fn kinds(b: &Mv) -> Vec<(BivectorKind, usize)> {
 /// parabolic — the pair the two-part closed form refused, since its open
 /// half is null.
 #[test]
-fn modes_split_screw_elliptic_and_parabolic() {
+fn modes_splits_screw_into_elliptic_and_parabolic() {
     let screw = rotator(&q(1, 1), &q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
     let ms = modes(&screw, &mut budget()).expect("the screw splits over ℚ");
     assert_eq!(
@@ -54,7 +54,7 @@ fn mode_order_closes_screw_turn_leaves_slip_open() {
 
 /// A DISPIRATION READS TWO: a turn and a boost on orthogonal planes.
 #[test]
-fn modes_split_dispiration_elliptic_and_hyperbolic() {
+fn modes_splits_dispiration_into_elliptic_and_hyperbolic() {
     let b = Mv::blade(E1 | E2, q(1, 1)).add(&Mv::blade(E3 | EM, q(1, 2)));
     assert_eq!(kinds(&b), vec![(BivectorKind::Elliptic, 1), (BivectorKind::Hyperbolic, 1)]);
 }
@@ -63,7 +63,7 @@ fn modes_split_dispiration_elliptic_and_hyperbolic() {
 /// read two elliptic modes; equal turns read ONE mode over two planes — an
 /// isoclinic pair, held whole, no split among its planes chosen.
 #[test]
-fn modes_hold_isoclinic_pair_as_one_mode() {
+fn modes_keeps_isoclinic_pair_as_one_mode() {
     let e34 = ax(3) | ax(4);
     let unequal = Mv::blade(E1 | E2, q(1, 1)).add(&Mv::blade(e34, q(2, 1)));
     assert_eq!(kinds(&unequal), vec![(BivectorKind::Elliptic, 1), (BivectorKind::Elliptic, 1)]);
@@ -75,7 +75,7 @@ fn modes_hold_isoclinic_pair_as_one_mode() {
 /// which no rational split reaches — refused with the factor's degree, never
 /// rounded onto a nearby split.
 #[test]
-fn modes_refuse_irrational_split_by_degree() {
+fn modes_refuses_irrational_split() {
     let b = Mv::blade(E1 | E2, q(1, 1))
         .add(&Mv::blade(E2 | E3, q(1, 1)))
         .add(&Mv::blade(ax(3) | ax(4), q(1, 1)));

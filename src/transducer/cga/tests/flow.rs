@@ -79,7 +79,7 @@ fn flow_point_returns_exactly_and_reads_nearness() {
 /// point composed with itself again and again stays exact and off its
 /// return, its numbers growing — content, never capped.
 #[test]
-fn flow_point_holds_pole_and_rosette_never_returns() {
+fn flow_point_keeps_pole_and_rosette_never_returns() {
     let b = plane(E1, E2);
     let half = FlowPoint::of_motion(&b).expect("the plane's own blade");
     assert_eq!(half.parameter(), None, "the 180° turn: no finite parameter");

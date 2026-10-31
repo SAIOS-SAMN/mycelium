@@ -26,7 +26,7 @@ fn from_transport_counts_rtt_in_strokes() {
 /// counts. One `None` over both would put an arithmetic fact and a
 /// missing measurement on one branch of the eviction path.
 #[test]
-fn from_transport_overflow_is_beyond_ledger_not_unmeasured() {
+fn from_transport_reads_overflow_as_beyond_ledger() {
     assert_eq!(
         from_transport(u64::MAX, 2),
         Lambda::BeyondTheLedger,

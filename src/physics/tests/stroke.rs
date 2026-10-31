@@ -4,7 +4,7 @@ use super::super::*;
 /// COUNTED, never pinned at a ceiling: the lane stands where it was and
 /// the ledger's `overflowed` rises.
 #[test]
-fn bump_past_carrier_is_refused_and_counted() {
+fn bump_refuses_past_carrier_and_counts() {
     let _ = metabolism::take_metabolism();
     let mut p = Physics::default();
     p.bump(&[u64::MAX, 0, 0, 0]);
@@ -58,7 +58,7 @@ fn relieve_lowers_pressure_per_lane() {
 /// excision every perceived change is a pattern until the mesh consolidates
 /// richer structure; the gauge/spatial lanes fill as those axes germinate.)
 #[test]
-fn lanes_of_germinated_recolour_is_gauge() {
+fn lanes_of_reads_germinated_recolour_as_gauge() {
     use crate::transducer::element::from_canonical;
     use crate::transducer::germinate::germinate;
     // A two-site recolour: hue transitions on a standing support are
@@ -152,7 +152,7 @@ fn spend_draws_moved_lanes_and_names_refusing_lane() {
 
 /// The metabolism is per-lane syntropic minus entropic — the order flux.
 #[test]
-fn order_flux_is_syntropic_minus_entropic_per_lane() {
+fn order_flux_equals_syntropic_minus_entropic_per_lane() {
     let mut p = Physics::default();
     p.syntropy(&[1, 0, 0, 0]); // built order on 𝒮
     p.syntropy(&[1, 0, 0, 0]);

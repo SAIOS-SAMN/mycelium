@@ -108,7 +108,7 @@ let class = form_torsion(&e)
 /// Chapter 23.7 on a v2 form: the court reads Form.torsion by the
 /// filed orbit's class key, never the element's empty section.
 #[test]
-fn court_torsion_files_v2_form_by_orbit_class() {
+fn court_torsion_files_form_by_orbit_class() {
 use crate::transducer::sentence::{carries_torsion, torsion_orbit_rotor};
 let (spoken, inv, class) = filed_v2_form();
 assert!(

@@ -102,7 +102,7 @@ fn act_kind_rides_tape_and_chain_hash() {
 /// 78.24 — A NODE NAMES WHAT IT ACTS ON BY COORDINATES: a word's chart and
 /// admitting stamp, a fold's root; each rides the tape and the hash.
 #[test]
-fn cites_ride_tape_and_chain_hash() {
+fn cites_rides_tape_and_chain_hash() {
     let at = Stamp { h: 4, vk: [3; 32], k: 9, i: 2 };
     let word = Cite::Word { chart: crate::transducer::stalk::Invariant::counts(&[1, 2]), class: None, at };
     let root = Cite::Root { at, hash: [5; 32] };

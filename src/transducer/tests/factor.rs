@@ -43,7 +43,7 @@ fn factor_on_plane_understands_span_by_hnf() {
 /// the same demand — and the part that did factor is kept, not thrown
 /// away with it.
 #[test]
-fn factor_on_plane_remainder_is_canonical() {
+fn factor_on_plane_gives_canonical_remainder() {
     let q01 = LetterId::turn_90((0, 1)).expect("plane");
     let p5 = LetterId::pythagorean_5((0, 1)).expect("plane");
     let basis = [pf(&w(&[(q01, false)]))];

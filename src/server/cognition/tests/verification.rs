@@ -17,7 +17,7 @@ fn court_with_claim(address: &Address, voice: [u8; 32], held: [u64; 4]) -> Court
 /// A COURT AT REST TAKES NOTHING: with its reserve full, a release pays the
 /// closer the whole of it and no verification row is written.
 #[test]
-fn release_verified_at_rest_pays_closer_whole() {
+fn release_verified_pays_closer_whole_at_rest() {
     let (addr, voice, witness) = (Address::from_bytes([51u8; 32]), [5u8; 32], [6u8; 32]);
     let held = [40, 20, 0, 8];
     let mut k = court_with_claim(&addr, voice, held);

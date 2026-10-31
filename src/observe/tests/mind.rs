@@ -5,7 +5,7 @@ use super::common::*;
 /// whole, the agreements' deviations exact rationals lane by lane, and a mind's
 /// reading stands under its own source.
 #[test]
-fn mind_and_agreements_read_back_exact() {
+fn mind_round_trips_with_agreements() {
     let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
     let mind = Mind {
         k: 9,

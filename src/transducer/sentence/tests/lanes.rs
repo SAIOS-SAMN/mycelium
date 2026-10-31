@@ -11,7 +11,7 @@ use crate::transducer::sentence::*;
 /// asserted, so a change to the assignment has to change this test and the
 /// doctrine together.
 #[test]
-fn axis_lane_matches_amended_table() {
+fn axis_lane_equals_amended_table() {
     for p in 0..6u8 {
         for axis in [Axis::Orientation(p), Axis::Unit(p), Axis::Prime5(p), Axis::Prime13(p)] {
             assert_eq!(axis.lane(), 3, "{} is holonomic on plane {p}", axis.label());
@@ -46,7 +46,7 @@ fn axis_lane_matches_amended_table() {
 /// gauge and no other. The lanes are read as four flags and never summed
 /// (law 5).
 #[test]
-fn class_vector_lanes_name_occupied_covers() {
+fn class_vector_lanes_names_occupied_covers() {
     let turn = ClassVector::of_word(&word_turn_90()).expect("a 90° turn is a versor");
     assert_eq!(
         turn.lanes(),
@@ -143,7 +143,7 @@ fn lane_chart_keys_lanes_disjointly() {
 /// carriage and filed the orbit `Congruent` — two readers, one carriage,
 /// opposite answers (law 12).
 #[test]
-fn occupies_placement_for_screw_not_base_point() {
+fn occupies_reads_placement_for_screw_not_base_point() {
     use crate::transducer::sentence::Axis;
     let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
     // In the turning plane: `(I − R)p = t` solves, so the translation is

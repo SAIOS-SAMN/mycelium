@@ -52,7 +52,7 @@ fn frame_inverse_composes_to_identity() {
 /// other slope is refused by name (ruled 2026-10-21):
 /// spatial frames are the square's symmetries.
 #[test]
-fn twist_twice_is_turn_of_180_degrees() {
+fn twist_composes_twice_to_turn_of_180_degrees() {
     let turn_180 = Frame::identity().then(Move::Twist(v(&[(1, 1), (0, 1)]))).then(Move::Twist(v(&[(0, 1), (1, 1)])));
     let x = v(&[(3, 5), (-2, 7)]);
     assert_eq!(turn_180.carry(&x), Ok(v(&[(-3, 5), (2, 7)])), "the antipode");
@@ -82,7 +82,7 @@ fn turn_carries_exactly_and_refuses_inexact_degrees() {
 /// REFUSED BY NAME: a bend's pole carried to infinity, a mirror of zero, a
 /// ratio not above one, axes unmatched — never rounded.
 #[test]
-fn move_apply_refuses_by_name() {
+fn move_apply_refuses_pole_and_unmatched_move() {
     // The pole of a bend by b is x = −b/|b|².
     assert_eq!(Move::Bend(v(&[(1, 2), (0, 1)])).apply(&v(&[(-2, 1), (0, 1)])), Err(FrameRefusal::AtPole));
     assert_eq!(Move::Twist(v(&[(0, 1), (0, 1)])).apply(&v(&[(1, 1), (1, 1)])), Err(FrameRefusal::NoMirror));

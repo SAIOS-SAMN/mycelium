@@ -70,7 +70,7 @@ fn tether_is_product_of_conformal_spheres() {
 /// position is gauge. Asserted on a motor with a turn AND a displacement, so
 /// the fixture is not a translation identity in disguise.
 #[test]
-fn tether_regime_invariant_under_common_motor() {
+fn tether_regime_is_invariant_under_common_motor() {
     let bodies = [
         blade::shape_of(&[(0, 0, 0), (1, 0, 0)]).blade,
         blade::shape_of(&[(4, 7, 0), (5, 7, 0), (4, 8, 0)]).blade,
@@ -110,7 +110,7 @@ fn tether_regime_invariant_under_common_motor() {
 /// is `λ` times an orthogonal map, the inner product picks up `λ² > 0`, and
 /// the sign the side is read from cannot invert.
 #[test]
-fn sandwich_by_negative_norm_motor_keeps_contact_side() {
+fn sandwich_keeps_contact_side_under_negative_norm_motor() {
     use crate::transducer::cga::{Mv, E1, EM};
     let motor = Mv::blade(E1, q(1)).geo(&Mv::blade(EM, q(1)));
     let lambda = motor.geo(&motor.reverse()).scalar_part();

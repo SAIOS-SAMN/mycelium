@@ -9,7 +9,7 @@ use num_traits::One;
 /// 90° turn on any plane — the sensor's or not — and a Pythagorean
 /// rotor, whose cosine is no root of unity.
 #[test]
-fn order_of_letter_is_one_four_or_infinite() {
+fn order_of_is_one_four_or_infinite_for_letter() {
     assert_eq!(Word::identity().order(), Order::Finite(1));
     let q01 = LetterId::turn_90((0, 1)).expect("the sensor 90° turn");
     assert_eq!(Word::from_letters(&[(q01, false)]).order(), Order::Finite(4));
@@ -39,7 +39,7 @@ fn order_of_letter_is_one_four_or_infinite() {
 /// 180° turn; the zero rotor has no order; and an even element that is no
 /// versor has no scalar power at all.
 #[test]
-fn order_of_turns_sharing_axis_is_three() {
+fn order_of_is_three_for_turns_sharing_axis() {
     let q01 = LetterId::turn_90((0, 1)).expect("90° turn on (0,1)");
     let q02 = LetterId::turn_90((0, 2)).expect("90° turn on (0,2)");
     let q23 = LetterId::turn_90((2, 3)).expect("90° turn on (2,3)");

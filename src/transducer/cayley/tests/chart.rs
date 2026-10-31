@@ -116,7 +116,7 @@ fn bivector_of_refuses_even_non_versor() {
 /// 1` — and across two planes that share an axis they do not: the product
 /// is the reading and the sum of the bivectors derives another versor.
 #[test]
-fn bivector_of_product_adds_on_one_plane_only() {
+fn bivector_of_adds_product_on_one_plane_only() {
     let o = q(1, 1);
     let a = cga::rotator(&q(2, 1), &o);
     let b = cga::rotator(&q(3, 1), &o);

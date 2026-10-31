@@ -164,7 +164,7 @@ fn admit_uplink_partitions_child_and_refuses_double_count() {
 /// commitment, one standing nowhere on this court, one folded in another
 /// domain — each refused by name, nothing sealed.
 #[test]
-fn admit_uplink_refuses_unproved_child_by_name() {
+fn admit_uplink_refuses_unproved_child() {
     use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
     let (a, p, _) = tiers();
     let mut k = founded();

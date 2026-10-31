@@ -121,7 +121,7 @@ fn dilation_reads_du_dh_exactly() {
 /// one value's point onto the other's, and two of each compose as the
 /// line's flow does — slides by sum, scales by product.
 #[test]
-fn change_between_is_slide_and_scale_of_line() {
+fn change_between_reads_line_as_slide_and_scale() {
     let c = Change::between(&q(3, 1), &q(7, 1)).expect("reads");
     assert_eq!(c.delta(), Some(q(4, 1)), "the slide stands at the difference");
     assert!(c.slide.versor().sandwich(&point_at(&[q(3, 1)])).projective_eq(&point_at(&[q(7, 1)])), "the slide carries 3 to 7");
@@ -144,7 +144,7 @@ fn change_between_is_slide_and_scale_of_line() {
 /// argument's position; its values read back as they were perceived, a
 /// multivector coefficient for coefficient.
 #[test]
-fn perceive_holds_records_as_series_read_back() {
+fn perceive_keeps_records_as_series() {
     let mut m = SeatMind::new(verifying(&domain()), 7);
     let unit = [9u8; 32];
     let motion = translator_at(&[q(1, 2), q(0, 1), q(2, 1)]);

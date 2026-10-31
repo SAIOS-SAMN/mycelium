@@ -53,7 +53,7 @@ fn prime_factor_factors_alphabet_primes() {
 /// always smaller than the divisor and the loop is bounded by the
 /// witness's own size.
 #[test]
-fn rem_smaller_than_divisor() {
+fn rem_is_smaller_than_divisor() {
     for (x, y) in [(g(17, 0), g(4, 1)), (g(100, 37), g(6, 5)), (g(-9, 14), g(3, 2))] {
         let r = x.rem(&y).expect("a nonzero divisor divides");
         assert!(r.norm() < y.norm(), "{r:?} is smaller than {y:?}");

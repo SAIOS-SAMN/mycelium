@@ -465,7 +465,7 @@ fn form_vertex_key_ignores_append_order() {
 /// and carries no chain, is refused rather than answered with an empty one
 /// — "not a chain" is not "a chain that says nothing" (rule 11).
 #[test]
-fn from_residual_and_from_address_refuse_each_other() {
+fn from_residual_round_trips_and_refuses_form_address() {
     use crate::transducer::element::from_residual as mint_residual;
     use crate::transducer::sentence::from_residual;
 

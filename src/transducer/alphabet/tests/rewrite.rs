@@ -19,7 +19,7 @@ fn budget(n: usize) -> crate::physics::Budget {
 /// would rewrite one operator into another — not a simplification but a
 /// corruption — and the whole system rests on it.
 #[test]
-fn rules_from_relators_holds_and_orients_downward() {
+fn rules_from_relators_keeps_relators_and_orients_downward() {
     let rules = rules_from_relators();
     assert!(!rules.is_empty(), "the stated relators orient into rules");
     for r in &rules {
@@ -57,7 +57,7 @@ fn rules_from_relators_omits_infinite_order_prime() {
 /// well-founded order; and the element it names is unchanged, which is
 /// re-derived from the rotor rather than assumed from the rules.
 #[test]
-fn reduce_descends_and_preserves_operator() {
+fn reduce_descends_and_keeps_operator() {
     let rules = rules_from_relators();
     let q = LetterId::turn_90((0, 1)).expect("90° turn");
     // Five 90° turns are one 90° turn: q⁴ = 1 is a stated relator.
@@ -87,7 +87,7 @@ fn reduce_descends_and_preserves_operator() {
 /// Every pair a rule makes with ITSELF by suffix-prefix overlap is the
 /// classic source, and it must be found or confluence cannot be checked.
 #[test]
-fn critical_pairs_found_between_overlapping_rules() {
+fn critical_pairs_finds_overlaps_between_rules() {
     let rules = rules_from_relators();
     let overlapping = rules
         .iter()

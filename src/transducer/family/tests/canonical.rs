@@ -9,7 +9,7 @@ use crate::transducer::stalk;
 
 /// An assignment key is one under every scaling of the carriage.
 #[test]
-fn assignment_key_invariant_under_carriage_scaling() {
+fn assignment_key_is_invariant_under_carriage_scaling() {
     let c = element::translator_versor(1, 2);
     let neg = c.scale(&num_rational::BigRational::from_integer(num_bigint::BigInt::from(-1)));
     let chart = stalk::Invariant::counts(&[3, 5]);

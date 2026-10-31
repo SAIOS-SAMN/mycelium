@@ -5,7 +5,7 @@ use num_rational::BigRational;
 /// A body sounds the same at every size, place, and orientation, and
 /// its harmonics are the atlas's axes.
 #[test]
-fn hear_invariant_under_motion() {
+fn hear_is_invariant_under_motion() {
     let l: Vec<(i64, i64, u8, u8)> = vec![(0, 0, 1, 2), (1, 0, 1, 2), (2, 0, 1, 2), (2, 1, 1, 2)];
     let moved: Vec<(i64, i64, u8, u8)> = vec![(7, -3, 1, 2), (7, -2, 1, 2), (7, -1, 1, 2), (6, -1, 1, 2)];
     let (a, b) = (hear(&l).unwrap(), hear(&moved).unwrap());
@@ -30,7 +30,7 @@ fn hear_invariant_under_motion() {
 /// the same three sections one frame apart read three components. A
 /// bar standing along `e₃` reads no chart a section reads.
 #[test]
-fn harmonics_of_stack_differ_from_its_shadow() {
+fn harmonics_of_separates_stack_from_shadow() {
     use crate::transducer::base::Site;
     let section: Vec<Site> = [(0, 0, 0), (0, 1, 0), (1, 0, 0)].into_iter().map(Site::from).collect();
     let at_frame = |k: i64| -> Vec<Site> {
@@ -72,7 +72,7 @@ fn harmonics_of_stack_differ_from_its_shadow() {
 /// encloses one 3-cavity, `β₃ = 1`, and a planar ring carried into ℤ⁴
 /// keeps its one tunnel.
 #[test]
-fn harmonics_axes_at_n_four_lead_with_n_and_betti() {
+fn harmonics_axes_lead_with_n_and_betti() {
     use crate::transducer::base::Site;
     use crate::transducer::stalk::ChartAxis;
     // A small body in ℤ⁴: an L on the grid plane standing in two cells

@@ -37,7 +37,7 @@ fn advance_height_only_advances_and_stamps_dialect() {
 /// an act moves no clock. It is volatile — the genome holds crystallized
 /// knowledge, not a clock — so a mind booted from a genome starts at zero.
 #[test]
-fn close_cycle_counts_returns_and_k_is_not_persisted() {
+fn close_cycle_counts_returns_without_persisting_k() {
     let mut e = Mind::open("127.0.0.1:1", Voice::named("no-words"));
     e.act();
     assert!(!e.close_cycle(0), "an act with no return closes nothing");
@@ -119,7 +119,7 @@ fn keep_genome_rewrites_file_restore_left_short() {
 /// refused by the writer by name — it is not crystallized knowledge until a
 /// court rules it. A genome that carried a voice's ledger is refused by name.
 #[test]
-fn genome_bytes_crystallize_word_only_at_court_stamp() {
+fn genome_bytes_crystallizes_word_only_at_court_stamp() {
     // A sentence of the language: a residual chain is an open question, never
     // a word (MU-CLIENT §7.1), and never reaches the genome.
     let word = super::common::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);

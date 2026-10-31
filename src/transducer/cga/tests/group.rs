@@ -10,7 +10,7 @@ use num_traits::Zero;
 /// reflector negates rows; both are versors; projective equality reads
 /// the scalar ratio and refuses non-proportional blades; bytes round-trip.
 #[test]
-fn dilator_and_reflector_act_exactly_as_versors() {
+fn dilator_acts_as_versor_like_reflector() {
     let d = dilator(&q(3, 2));
     assert!(is_versor(&d), "the dilator is a versor");
     let moved = d.sandwich(&point(&q(2, 1), &q(-4, 1), &q(6, 1)));
@@ -31,7 +31,7 @@ fn dilator_and_reflector_act_exactly_as_versors() {
 /// Projective equality holds under scaling by either sign, and the
 /// canonical key is one across those scalings.
 #[test]
-fn projective_eq_holds_either_sign_and_key() {
+fn projective_eq_is_true_for_either_sign_and_key() {
     let t = translator(&q(2, 1), &q(0, 1), &q(0, 1));
     assert!(t.projective_eq(&t.scale(&q(-3, 2))));
     assert_eq!(t.canonical().unwrap().key(), t.scale(&q(-3, 2)).canonical().unwrap().key());
@@ -104,7 +104,7 @@ fn mv_is_versor_agrees_with_scalar_norm_theorem() {
 /// origin among them — at its own weight. Read with the plain sandwich, the
 /// mirror sat at `−w` and the reading held only the normal.
 #[test]
-fn centre_of_reflection_holds_its_mirror() {
+fn centre_of_reads_mirror_of_reflection() {
     match centre_of(&reflector(), 3) {
         Centre::Fixed { dim, point } => {
             assert_eq!(dim, 4, "e₂, e₃, e₊, e₋: the mirror and the point at infinity");

@@ -128,7 +128,7 @@ assert_eq!(
 /// mesh's footprint grew quadratically in what it had learned. This is the
 /// N vs 4N counter of the enumeration audit, applied to a write.
 #[test]
-fn basis_insert_costs_same_at_n_and_4n() {
+fn basis_insert_costs_equally_at_n_and_4n() {
 use crate::network::nerve::work;
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;

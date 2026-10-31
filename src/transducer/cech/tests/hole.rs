@@ -128,7 +128,7 @@ fn release_vertex_cauterizes_unreadable_classes() {
 /// the vacuum whole, the hole closed and its boundary unpinned. Nothing is
 /// burned: no scar.
 #[test]
-fn ascend_freezes_class_it_cannot_read_back() {
+fn ascend_freezes_unreadable_class() {
     let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
     let (vs, key) = sealed_triangle(&mut mind.complex, 61, turn_90());
     assert!(matches!(mind.complex.descend(&key), Descended::Throat(_)), "the chamber crosses");
@@ -173,7 +173,7 @@ fn freeze_thaws_when_boundary_closes_again() {
 /// heat — cauterized, its scar counted, the vacuum letting it go — and the
 /// vertex goes.
 #[test]
-fn release_vertex_cauterizes_frozen_class_on_it() {
+fn release_vertex_cauterizes_frozen_class() {
     let mut c = Complex::new();
     let (vs, key) = sealed_triangle(&mut c, 81, turn_90());
     let Descended::Throat(_) = c.descend(&key) else { panic!("the chamber crosses") };
@@ -368,7 +368,7 @@ fn carry_moves_fibre_with_field() {
 /// it leaves is the board `p` alone leaves: the descent IS the puncture,
 /// with the content handed down.
 #[test]
-fn apply_descend_ascend_seal_descend_equals_puncture() {
+fn apply_composes_descend_ascend_seal_descend_to_puncture() {
     let mut c = Complex::new();
     let (vs, key) = sealed_triangle(&mut c, 1, turn_90());
     let sealed = c.board();
@@ -392,7 +392,7 @@ fn apply_descend_ascend_seal_descend_equals_puncture() {
 /// first handed the content down, `p` first kept it, and the descend then
 /// refuses at the hole.
 #[test]
-fn apply_independent_pivots_commute() {
+fn apply_commutes_independent_pivots() {
     let build = || {
         let mut c = Complex::new();
         let (a, ka) = sealed_triangle(&mut c, 1, turn_90());

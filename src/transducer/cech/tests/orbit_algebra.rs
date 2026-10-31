@@ -48,7 +48,7 @@ fn at(holonomies: Vec<Result<Mv, CircuitUnread>>) -> Vec<ChamberCircuit> {
 /// commutes with the round — congruent — and the 90° turn closes at
 /// four; the constructors close on the constructors' two rays.
 #[test]
-fn read_chamber_in_plane_turn_congruent_and_closes() {
+fn read_chamber_closes_in_plane_turn_as_congruent() {
     let (m, nuclei) = round();
     let turn = cga::rotator(&q(1, 1), &q(1, 1));
     let cell = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn)]), &[], &mut stroke());
@@ -81,7 +81,7 @@ fn read_chamber_refuses_carried_round_with_grade_mode_plane() {
 /// ray — a permutation of the two. A turn by `(3, 4, 5)` in the same plane
 /// keeps the round and carries every nucleus off the set.
 #[test]
-fn read_chamber_span_turn_keeps_round_not_constructors() {
+fn read_chamber_keeps_round_of_span_turn_not_constructors() {
     let (m, nuclei) = round();
     let turn_90 = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Ok(cga::rotator(&q(1, 1), &q(1, 1)))]), &[], &mut stroke());
     assert_eq!((turn_90.congruence.clone(), turn_90.permutes.clone()), (Congruence::Congruent, Permutes::All));
@@ -95,7 +95,7 @@ fn read_chamber_span_turn_keeps_round_not_constructors() {
 /// in `e₂₃` carries `e₁ ∧ e₂` to `−e₁ ∧ e₂`, and it permutes the
 /// constructors (`e₁` fixed, `e₂` onto its own ray).
 #[test]
-fn read_chamber_reversed_round_is_held_z2() {
+fn read_chamber_reads_reversed_round_as_z2() {
     let (m, nuclei) = round();
     let turn_180 = Mv::blade(E2 | E3, q(1, 1));
     let cell = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn_180)]), &[], &mut stroke());
@@ -108,7 +108,7 @@ fn read_chamber_reversed_round_is_held_z2() {
 /// zero, which commutes with everything — degeneration, not invariance. The
 /// Gram form reads the configuration in its place.
 #[test]
-fn read_chamber_zero_meet_is_no_round_reads_gram() {
+fn read_chamber_reads_gram_on_zero_meet() {
     let nuclei: Vec<Mv> = [E1, E2, E3, cga::EP, E1].iter().enumerate().map(|(i, &m)| Mv::blade(m, q(i as i64 + 1, 1))).collect();
     let m = meet_of(&nuclei).expect("the nuclei wedge");
     assert!(m.is_zero(), "dependent nuclei: the meet vanishes");
@@ -130,7 +130,7 @@ fn read_chamber_zero_meet_is_no_round_reads_gram() {
 /// ring whose hue did not read carries its residue and names why its class
 /// did not.
 #[test]
-fn read_chamber_holds_shear_and_escape_opens() {
+fn read_chamber_keeps_shear_and_opens_escape() {
     let (m, nuclei) = round();
     let rosette = cga::rotator(&q(3, 1), &q(4, 1));
     let held = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Ok(rosette.clone())]), &[], &mut stroke());
@@ -263,7 +263,7 @@ fn algebra_contains_own_products_not_other_plane() {
 /// spends it on the first product of the capacity's closure, and the
 /// refusal says which product it was.
 #[test]
-fn read_chamber_spent_capacity_names_product() {
+fn read_chamber_names_product_at_spent_capacity() {
     let (m, nuclei) = round();
     let turn = cga::rotator(&q(1, 1), &q(1, 1));
     let mut starved = crate::physics::Physics::default().stroke_n(0);
@@ -277,7 +277,7 @@ fn read_chamber_spent_capacity_names_product() {
 /// vector off it raises the grade to 2, and the grade is the same whatever
 /// order the vectors join in. Nothing is refused for its size.
 #[test]
-fn grade_of_exact_at_any_size_and_order() {
+fn grade_of_is_exact_at_any_size_and_order() {
     use crate::core::span::{grade_of, Span};
     use num_bigint::BigInt;
     let big = BigInt::from(1) << 200usize;
@@ -296,7 +296,7 @@ fn grade_of_exact_at_any_size_and_order() {
 /// reduce through the Hermite form to a zero residue: a generator is a
 /// combination of the generators.
 #[test]
-fn grade_of_and_reduce_against_exact_at_any_size() {
+fn grade_of_agrees_with_reduce_against_at_any_size() {
     use crate::core::span::{grade_of, vector_of};
     use num_traits::Zero;
     let m = i64::MAX;
@@ -335,7 +335,7 @@ fn lie_close_closes_under_commutator() {
 /// once — are each the orbit against the other as neighbour: two
 /// encounters, and the one met by the anticommuting part tilts.
 #[test]
-fn encounter_crossing_circuits_meet_both_ways() {
+fn encounter_meets_crossing_circuits_both_ways() {
     let one = Mv::scalar(q(1, 1));
     let turn = one.add(&Mv::blade(E1 | E2, q(1, 1)));
     let screwed = one.add(&Mv::blade(E1 | E2, q(1, 1))).add(&Mv::blade(E2 | E3, q(1, 1)));

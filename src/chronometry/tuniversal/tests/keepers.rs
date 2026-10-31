@@ -60,7 +60,7 @@ fn admit_refuses_forged_signature_and_broken_parent() {
 
 /// A disagreement between final points is held as an exact residual per lane and never averaged.
 #[test]
-fn residual_holds_disagreement_exactly_never_averaged() {
+fn residual_keeps_disagreement_never_averaged() {
     let mut m = Mesh::new();
     // a and b read at one tick, differing on S and G.
     m.read(0, tick(20, [10, 4, 0, 0], 5));
@@ -91,7 +91,7 @@ fn residual_holds_disagreement_exactly_never_averaged() {
 
 /// With two keepers silent, the final point does not advance.
 #[test]
-fn final_point_holds_while_two_keepers_silent() {
+fn final_point_survives_two_silent_keepers() {
     let mut m = Mesh::new();
     m.read(0, tick(10, [1, 0, 0, 0], 1));
     m.hear(1, 0).expect("admits");
@@ -115,7 +115,7 @@ fn final_point_holds_while_two_keepers_silent() {
 /// codec, read back whole, and admitted with the same outcome and the same
 /// final point as the digest's; a byte past the ring is no tick.
 #[test]
-fn decode_tick_admits_ring_as_digest_does() {
+fn decode_tick_agrees_with_digest_on_ring() {
     use crate::anastome::dialogue as d;
     let mut m = Mesh::new();
     m.read(0, tick(10, [4, 0, 0, 0], 1));

@@ -83,7 +83,7 @@ fn decode_laws_request_reads_register_and_verify() {
 /// transition's own verdict, in the order sent — the lawful turn admitted,
 /// the still height refused on time alone.
 #[test]
-fn batch_reply_carries_one_verdict_per_transition_in_order() {
+fn encode_batch_reply_round_trips_verdicts_in_order() {
     use super::super::codec::{decode_batch_reply, decode_laws_request, encode_batch_reply, encode_batch_request, LawsRequest};
     let lawful = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
     let still = Transition { heights: (8, 8), ..lawful.clone() };

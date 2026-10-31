@@ -99,7 +99,7 @@ fn cargo(a: u8, b: u8, nonce: u8) -> Offer {
 /// that is not its domain's reserve, to a tier that is not the other's,
 /// within one domain, kept by a stranger, or with a zero frame — refused.
 #[test]
-fn handoff_mouth_refuses_bad_builders_and_frames() {
+fn handoff_mouth_refuses_malformed_builders_and_frames() {
     let mut k = founded();
     let offer = |k: &mut Court, m: Mouth, by: &SigningKey| match k.handoff(&Handoff::Mouth(Box::new(m)).sign(by)) {
         Handed::Refused(r) => r,
@@ -269,7 +269,7 @@ fn handoff_mouth_line_builds_road_reserve_keeps() {
 /// returns to each face in proportion and never leaves it massless; closed,
 /// every face gets back what it holds, and no μ is lost.
 #[test]
-fn handoff_feed_and_draw_keep_throat_bank() {
+fn handoff_feed_keeps_throat_bank_with_draw() {
     use crate::server::cognition::mouth::throat_key;
     let mut k = founded();
     let (offerer, keeper) = (verifying(&reserve(4)), verifying(&reserve(5)));

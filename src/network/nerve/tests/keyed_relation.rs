@@ -36,7 +36,7 @@ fn keyed_binds_rebinds_and_unbinds_exactly() {
 /// A prefix of a key is its stratum, and the empty prefix is not a
 /// coordinate.
 #[test]
-fn fibre_of_prefix_reads_its_stratum() {
+fn fibre_of_reads_stratum_of_prefix() {
     let mut k: Keyed<u8> = Keyed::new();
     k.insert([1u8, 10, 0], 1);
     k.insert([1u8, 10, 1], 2);
@@ -81,7 +81,7 @@ fn fibre_of_prefix_reads_its_stratum() {
 /// end of a key, so a short key sits among long ones as though padded, and
 /// a representative shorter than the prefix answers for nothing.
 #[test]
-fn fibre_matches_filter_for_every_trie_shape() {
+fn fibre_agrees_with_filter_for_every_trie_shape() {
     // A spread of keys: shared prefixes, one a proper prefix of another,
     // lengths from one byte to four, and a byte value that differs only in
     // its lowest bit (adjacent branch points).
@@ -212,7 +212,7 @@ fn fibre_visits_own_subtree_not_carrier() {
 /// A key and its proper prefix are bound side by side, in either insertion
 /// order.
 #[test]
-fn insert_keeps_key_and_its_proper_prefix() {
+fn insert_keeps_key_and_proper_prefix() {
     let mut k: Keyed<u8> = Keyed::new();
     k.insert([1u8, 0], 1);
     k.insert([1u8], 2);

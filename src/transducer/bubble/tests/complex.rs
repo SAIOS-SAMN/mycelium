@@ -7,7 +7,7 @@ use crate::transducer::sentence::{RankAxis, RankMove};
 /// Two bubbles on one chart held from disjoint remainders share an edge,
 /// never a triangle: they stand as two bubbles with no 2-simplex.
 #[test]
-fn hold_disjoint_remainders_share_no_triangle() {
+fn hold_shares_no_triangle_between_disjoint_remainders() {
     let mut c = Contemplation::new();
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
     c.hold(vec![(5, 5, 3, 4), (5, 6, 3, 4)]);
@@ -313,7 +313,7 @@ fn release_thought_loses_rank_for_corner_not_leaf() {
 
 /// Two pivots on the same bubble with no new word leave fills unchanged.
 #[test]
-fn pivot_on_twice_without_new_word_leaves_fills() {
+fn pivot_on_leaves_fills_when_repeated_without_word() {
     use crate::transducer::element::{canonical_chain, from_canonical};
     let mut c = Contemplation::new();
     let rem = vec![(0, 0, 1, 2), (0, 1, 1, 2)];

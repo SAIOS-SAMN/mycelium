@@ -30,7 +30,7 @@ fn slide(x: i64, y: i64) -> Mv {
 /// A turn is held on H as its exact fraction of a full turn, and two turns
 /// of 90° are one turn of 180° on the same plane.
 #[test]
-fn of_motion_holds_turn_on_h_as_exact_fraction() {
+fn of_motion_reads_turn_on_h_as_exact_fraction() {
     let one = modes(&quarter());
     let [(m, a)] = one.modes().collect::<Vec<_>>()[..] else { panic!("one mode: {}", one.print()) };
     assert_eq!(m.lane(), H);
@@ -45,7 +45,7 @@ fn of_motion_holds_turn_on_h_as_exact_fraction() {
 
 /// A slide is held on T by its count, and its reverse is another mode.
 #[test]
-fn of_motion_holds_slide_on_t_by_count() {
+fn of_motion_reads_slide_on_t_by_count() {
     let two = modes(&slide(2, 0));
     let [(m, a)] = two.modes().collect::<Vec<_>>()[..] else { panic!("one mode: {}", two.print()) };
     assert_eq!(m.lane(), T);
@@ -88,7 +88,7 @@ fn take_draws_whole_or_refuses_naming_mode() {
 
 /// A holding travels the wire whole, and a zero amount does not read.
 #[test]
-fn modes_round_trip_and_refuse_zero_amount() {
+fn modes_round_trips_and_refuses_zero_amount() {
     let mut held = modes(&slide(2, 1));
     held.add(&modes(&quarter()));
     held.add(&Modes::of_gauge(&[(3, 0)], &q(5, 2)).expect("a merge is a map"));

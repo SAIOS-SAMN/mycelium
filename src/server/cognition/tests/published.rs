@@ -77,7 +77,7 @@ fn alike(k: &Court, p: &Published, signer: &[u8; 32], asks: &[(Option<Place>, Pl
 /// root with the hot line, and an era replay with the archive — off the
 /// published reading exactly as off the court, at the height published.
 #[test]
-fn publish_serves_receipts_as_court_does() {
+fn publish_agrees_with_court_on_receipts() {
     let (key, mut b) = court("published-b");
     let vk = key.verifying_bytes();
     strokes(&mut b, 4);
@@ -145,7 +145,7 @@ fn publish_serves_peer_line_admitted_in_pieces() {
 /// A WALLET OFF THE READING is the court's wallet at the publication: an
 /// unseen party reads zero, a payment made after it is read at the next.
 #[test]
-fn publish_wallet_matches_court_at_publication() {
+fn publish_wallet_agrees_with_court_at_publication() {
     let (_, mut k) = court("published-wallet");
     strokes(&mut k, 1);
     let anchor = (Stamp::default(), [0u8; 32]);

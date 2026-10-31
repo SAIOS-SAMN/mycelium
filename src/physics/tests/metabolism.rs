@@ -82,7 +82,7 @@ fn take_metabolism_counts_entropy_and_orbit_per_dimension() {
 /// order four reads closed at four; the same turn carried by a translation
 /// reads unbound, which the rotation's order alone counted closed.
 #[test]
-fn period_of_reads_motion_off_its_modes() {
+fn period_of_reads_motion_off_modes() {
     use crate::transducer::cga::{motion_modes, period_of, Period};
     use num_rational::BigRational;
     let quarter = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("a 90° turn");
@@ -118,7 +118,7 @@ fn period_of_reads_motion_off_its_modes() {
 /// lane is gone, so an action with a zero projection on a depleted lane
 /// is still affordable. That is the whole content of the anisotropy.
 #[test]
-fn draw_on_depleted_lane_preempts_no_other() {
+fn draw_preempts_no_other_lane_on_depleted_lane() {
     use crate::physics::Reserve;
 
     // A mind spent on scale and rich on gauge and translation — the

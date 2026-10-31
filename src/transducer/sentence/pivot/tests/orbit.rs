@@ -497,7 +497,7 @@ fn clear_gauges(f: &mut Form) {
 
 /// A pivot discharges only its own axis and raises no other coordinate.
 #[test]
-fn pivot_orbit_zeroes_own_axis_raising_none() {
+fn pivot_orbit_zeroes_axis_raising_none() {
     // T14: Placement.
     let mut f = chord_form(&[Word::identity()]);
     clear_gauges(&mut f);

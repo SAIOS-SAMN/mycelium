@@ -17,7 +17,7 @@ fn q(n: i64, d: i64) -> Q {
 /// itself, a positive radius holds and a zero one does not, and it is never
 /// the hyperbolic `Curved` of the same radius.
 #[test]
-fn geometry_sphere_round_trips_as_own_kind() {
+fn geometry_sphere_round_trips() {
     let s = Geometry::Sphere((17, 2));
     let mut b = Vec::new();
     s.put(&mut b);

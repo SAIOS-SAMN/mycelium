@@ -83,7 +83,7 @@ let _ = h.join();
 /// An empty cover routes by XOR-closest chart key over known hyphae,
 /// not the bootstrap seed.
 #[test]
-fn route_chart_on_empty_cover_routes_by_chart_key() {
+fn route_chart_routes_by_chart_key_on_empty_cover() {
 let mut s = Session::open("127.0.0.1:7500", Voice::named("fan"));
 s.know_hypha("127.0.0.1:7501", Voice::named("p1").id());
 s.know_hypha("127.0.0.1:7502", Voice::named("p2").id());

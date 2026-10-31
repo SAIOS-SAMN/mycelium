@@ -262,7 +262,7 @@ assert!(extract_rule(&disagree, &mut crate::physics::Physics::default().stroke_n
 
 /// A shift family extracts a rule and speaks the test.
 #[test]
-fn speak_rule_speaks_shift_family_test() {
+fn speak_rule_speaks_shift_family() {
 let family = vec![
     (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
     (grid(&["0000", "1100"]), grid(&["0000", "0011"])),

@@ -36,7 +36,7 @@ fn ratio_is_exact_rational() {
 /// common multiple. Coprime extents are where that matters: 3 and 4 have
 /// `lcm` 12, and the pair changes at six places, not twelve.
 #[test]
-fn runs_bounded_by_grids_not_lcm() {
+fn runs_is_bounded_by_grids_not_lcm() {
     let r = CommonRefinement::of(3, 1, 4, 1).expect("extents stand");
     assert_eq!(r.lcm_h, 12);
     let runs = CommonRefinement::runs(12, r.scale_in.0, r.scale_out.0);

@@ -237,7 +237,7 @@ for wrong in [declared.wrapping_sub(1), declared.wrapping_add(1)] {
 /// `snapshot::put_key` writes a `u64` length, as every other length on this
 /// tape has since MYC6, and is total.
 #[test]
-fn take_key_round_trips_key_past_wire_prefix() {
+fn take_key_round_trips_past_wire_prefix() {
 let long = vec![0xABu8; (u16::MAX as usize) + 64];
 assert!(
     crate::transducer::address::Address::from(long.clone()).cited().is_none(),
@@ -266,7 +266,7 @@ assert!(
 /// transition at the receipt it stood at; a transition that stood at no act
 /// is refused by name and does not come back.
 #[test]
-fn restore_returns_per_act_data_at_its_stamp() {
+fn restore_returns_per_act_data_at_stamp() {
 let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
@@ -328,7 +328,7 @@ assert_eq!(again, order, "the order re-derived from the ruling stamps");
 /// survives a restart on the listing's row; a field on a word no row holds
 /// is named and not written, and the tape does not grow by its address.
 #[test]
-fn snapshot_writes_field_only_on_its_words_row() {
+fn snapshot_writes_field_only_on_words_row() {
 let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];

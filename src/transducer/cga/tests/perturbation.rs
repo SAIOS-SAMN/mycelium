@@ -12,7 +12,7 @@ fn plane(a: usize, b: usize) -> Mv {
 /// The orbit turns on `e₁e₂`. A neighbour on the SAME plane is pure drag
 /// (aligned: it changes the rate, never the plane).
 #[test]
-fn lift_drag_same_plane_is_pure_drag() {
+fn lift_drag_reads_same_plane_as_pure_drag() {
     let b_o = plane(E1, E2);
     let b_n = plane(E1, E2).scale(&num_rational::BigRational::from_integer(3.into()));
     let split = lift_drag(&b_o, &b_n).expect("a blade with a non-zero square splits every bivector");
@@ -25,7 +25,7 @@ fn lift_drag_same_plane_is_pure_drag() {
 /// anticommutes with it: pure lift (orthogonal), its commutator a rotation
 /// in `e₁e₃`, a plane neither generator is (60.4).
 #[test]
-fn lift_drag_one_shared_axis_is_pure_lift() {
+fn lift_drag_reads_one_shared_axis_as_pure_lift() {
     let b_o = plane(E1, E2);
     let b_n = plane(E2, E3);
     let split = lift_drag(&b_o, &b_n).expect("splits");

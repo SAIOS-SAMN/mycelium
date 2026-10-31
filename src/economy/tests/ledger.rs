@@ -65,7 +65,7 @@ fn treasury_round_trips_bonds_stakes_and_entries() {
 /// The fold of MU-FOLD is admissible only where this holds
 /// at the prefix it folds, so this is the gate on 7.5.
 #[test]
-fn audit_holds_through_genesis_mint_and_burn() {
+fn audit_survives_genesis_mint_and_burn() {
     let mut t = Treasury::new();
     let a = at(1, [1; 32]);
     t.genesis([1; 32], [10, 10, 10, 10], a);
@@ -145,7 +145,7 @@ fn release_award_carries_escrowed_amount_unchanged() {
 
 /// A claim escrow is not supply until a ruling mints it.
 #[test]
-fn escrow_award_claim_is_not_supply_until_minted() {
+fn escrow_award_keeps_claim_out_of_supply_until_minted() {
     let mut t = Treasury::new();
     let a = at(1, [1; 32]);
     t.genesis([1; 32], [10, 0, 0, 0], a);
@@ -207,7 +207,7 @@ fn enroll_moves_value_and_never_creates_it() {
 /// bond and escrow — there is no pool among them — so what these take
 /// leaves circulation.
 #[test]
-fn fees_and_slash_leave_supply_with_carrier() {
+fn slash_conserves_supply_with_fees() {
     let mut t = Treasury::new();
     t.genesis([1; 32], [20, 20, 20, 20], at(0, [0; 32]));
     t.enroll([1; 32], [6, 6, 6, 6], at(1, [0; 32]));
@@ -273,7 +273,7 @@ fn fees_and_slash_leave_supply_with_carrier() {
 /// as long as the mesh runs (rule 10). The fold must agree with the whole
 /// read it replaces on every kind, and survive a restore.
 #[test]
-fn supply_fold_equals_whole_journal_read() {
+fn supply_fold_agrees_with_journal_read() {
     let (a, b) = ([0x11u8; 32], [0x22u8; 32]);
     let mut t = Treasury::new();
     assert_eq!(t.supply(), Some([0; 4]), "a fresh ledger has issued nothing, measured");

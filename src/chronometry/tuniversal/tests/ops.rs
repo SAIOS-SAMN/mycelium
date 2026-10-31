@@ -3,7 +3,7 @@ use super::common::*;
 
 /// Reset, branch and superpose cite the point they act on.
 #[test]
-fn ops_reset_branch_superpose_cite_point() {
+fn ops_cites_point_on_reset_branch_and_merge() {
     let p = TPoint { origin: ORIGIN, h: 30, lanes: [5, 1, 0, 2], k: 9 };
     let r = ops::Reset::at(p).expect("an epoch past");
     assert_eq!((r.epoch, r.cites), (147, ops::citation(&p)));

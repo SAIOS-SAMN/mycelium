@@ -174,7 +174,7 @@ fn admit_uplink_consumes_accepted_handoff_once_per_side() {
 /// Unanswered, expiry is the sender's to claim, only past the window, and
 /// the receiver answers only within it.
 #[test]
-fn handoff_refuse_or_expire_returns_to_sender() {
+fn handoff_returns_refused_or_expired_offer_to_sender() {
     let mut k = founded();
     let id = offered(&mut k, cargo());
     assert!(matches!(k.handoff(&Handoff::Refuse { id }.sign(&y())), Handed::Sealed { state: State::Returned, .. }));

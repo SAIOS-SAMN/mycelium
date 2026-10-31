@@ -114,7 +114,7 @@ fn boundary_is_flat_iff_identity_ray() {
 /// R5 — BASING IS CONJUGATION BY THE TREE TRANSPORT: at the root it moves
 /// nothing; elsewhere it moves the operator and keeps its class.
 #[test]
-fn basing_conjugates_by_tree_transport() {
+fn route_conjugates_under_basing_by_tree_transport() {
     let [g1, g2, g3, ..] = steps();
     let loop_t = route(&[&g1, &g2]);
     let based = |theta: &Mv| theta.geo(&loop_t).geo(&inv(theta));
@@ -179,7 +179,7 @@ fn loop_of_is_lassoed_product_of_curvatures() {
 /// turns — both cells curved, the cells' curvatures inverse, and the two routes
 /// agree. Agreement never proves the enclosed cells flat.
 #[test]
-fn loop_of_trivial_over_curved_relator_cells() {
+fn loop_of_is_trivial_over_curved_relator_cells() {
     let [.., g5] = steps();
     let sq = square(&one(), &one(), &one(), &one(), &g5);
     assert_eq!(loop_of(&sq.r, &sq.s), one(), "the routes agree");
@@ -192,7 +192,7 @@ fn loop_of_trivial_over_curved_relator_cells() {
 /// C1 (a, b) — ONE REFERENCE GIVES EVERY PAIR, AND INDEPENDENCE IS EACH
 /// READING TRIVIAL: `H(r₁, r₂) = H₂⁻¹ H₁` with no pairwise read.
 #[test]
-fn loop_of_one_reference_gives_every_pair() {
+fn loop_of_gives_every_pair_from_one_reference() {
     let [g1, g2, g3, g4, g5] = steps();
     let r0 = route(&[&g1, &g2]);
     let (r1, r2) = (route(&[&g3, &g2]), route(&[&g4, &g5]));
@@ -238,7 +238,7 @@ fn read_chamber_capacity_is_rank_of_action_algebra() {
 /// C1 (d) — THE SAME SHAPE INSIDE ONE GENERATOR: a motion's mode rays are
 /// routes each in its own right, and the rays compose back to the motion.
 #[test]
-fn motion_modes_rays_compose_to_motion() {
+fn motion_modes_composes_rays_to_motion() {
     let [g1, g2, ..] = steps();
     let screw = g1.geo(&cga::translator_at(&[q(0, 1), q(0, 1), q(1, 1)]));
     let Some(Ok(modes)) = cga::motion_modes(&screw, &mut stroke()) else { panic!("the screw splits") };
@@ -249,7 +249,7 @@ fn motion_modes_rays_compose_to_motion() {
 /// C2 (a) — CONJUGATION PRESERVES THE CLASS: minds basing one circuit each at
 /// its own point read one class.
 #[test]
-fn class_invariants_survive_basing() {
+fn class_invariants_survives_basing() {
     let [g1, g2, g3, g4, g5] = steps();
     let circuit = route(&[&g1, &g2, &g4]);
     let class = circuit.class_invariants();
@@ -294,7 +294,7 @@ fn constructor_orbit_refuses_closure_read_per_generator() {
 /// routes whose transports differ by `−1` read agreeing, though the sign is
 /// there to be read: the held `ℤ₂` is the coset's reading (78.6), not T1's.
 #[test]
-fn loop_of_is_blind_to_sign_between_routes() {
+fn loop_of_ignores_sign_between_routes() {
     let [g1, g2, ..] = steps();
     let turn_180 = Mv::blade(E1 | E2, q(1, 1));
     let r = route(&[&g1, &g2]);
@@ -306,7 +306,7 @@ fn loop_of_is_blind_to_sign_between_routes() {
 /// THE CONJECTURES ARE HELD OPEN IN THE REGISTER, each by the row that would
 /// decide it; none is stated among the theorems.
 #[test]
-fn route_conjectures_held_open_by_name() {
+fn route_conjectures_names_what_decides_each() {
     use crate::physics::axioms::{C1_RESOLUTION, C2_CONVERGENCE, ROUTE_CONJECTURES, T1_TWO_ROUTES, T2_DISCRETE_STOKES};
     let owed: Vec<&str> = ROUTE_CONJECTURES.iter().map(|(_, row)| *row).collect();
     assert!(owed.iter().all(|row| !row.is_empty()), "every conjecture names what would decide it");

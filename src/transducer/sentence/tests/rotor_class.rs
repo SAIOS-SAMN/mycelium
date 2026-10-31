@@ -313,7 +313,7 @@ fn apply_plane_block_refuses_offplane_word() {
 /// closed to coheres, pivot_orbit, is_cauterized, and the court. The
 /// sensor-plane abelianisation does not see it.
 #[test]
-fn offplane_turn_90_fourth_power_closes_for_every_reader() {
+fn word_closes_offplane_turn_90_at_fourth_power() {
     let q = alphabet::LetterId::turn_90((0, 2)).expect("90° turn");
     let w = Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
     assert!(w.is_identity(), "Φ⁴ is projectively 1");

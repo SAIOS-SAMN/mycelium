@@ -94,7 +94,7 @@ fn fibre_at_depth_answers_every_class_vector_under_stratum() {
 /// is not held". The schema fails at the coordinate it fails at and names
 /// the system.
 #[test]
-fn stratified_get_refuses_foreign_key_by_name() {
+fn stratified_get_refuses_foreign_key() {
     let mut held: Stratified<u8> = Stratified::new(ClassVector::class_schema());
     let chart = crate::transducer::stalk::Invariant::counts(&[1, 3, 5]).key();
 

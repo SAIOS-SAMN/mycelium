@@ -94,7 +94,7 @@ fn truncate_keeps_class_edge_and_glued_leaves() {
 /// nerve's 2-core: a leaf in another component stays until its own
 /// component changes, and per-component and whole-nerve readings agree.
 #[test]
-fn truncate_per_component_agrees_with_whole_nerve() {
+fn truncate_agrees_per_component_with_whole_nerve() {
     let other: Vec<(usize, usize)> = RING.iter().map(|&(a, b)| (a + 5, b + 5)).chain([(5, 9)]).collect();
     let (mut c, vs) = nerve(10, &[RING.as_slice(), &[(0, 4)], other.as_slice()].concat(), [0; 4]);
     let whole = c.two_core();

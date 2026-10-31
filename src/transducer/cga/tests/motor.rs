@@ -47,7 +47,7 @@ fn motor_action_names_contraction_by_rank() {
 /// (1 − I²) x = 2x` — the identity's action up to scale. It ACTS AS a
 /// versor; it IS not one — two facts under two names (MT1, ruled).
 #[test]
-fn motor_action_of_mixed_parity_is_identity() {
+fn motor_action_is_identity_for_mixed_parity() {
     let one_plus_i = Mv::scalar(q(1, 1)).widened(3).add(&Mv::blade(pseudo(3).expect("the pseudoscalar at n = 3"), q(1, 1)).widened(3));
     let a = Motor::new(&one_plus_i).action();
     assert!(a.acts_as_versor() && a.grade_preserving && a.algebra_rank == a.dim());

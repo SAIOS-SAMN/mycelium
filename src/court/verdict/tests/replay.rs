@@ -273,7 +273,7 @@ fn replay_form_refuses_unruled_glue_and_replays_resolved() {
 /// 34.1: a sentence whose tape does not parse whole is refused by name,
 /// never partly read. This is `REFUSE_FORM_TAPE`'s producing test (3.5).
 #[test]
-fn replay_form_refuses_unparsed_tape_by_name() {
+fn replay_form_refuses_unparsed_tape() {
     use crate::transducer::sentence::as_element_form;
     let e = as_element_form(&closed_turn_form(), [1, 0, 0, 0]).expect("tape");
     assert_eq!(replay_form(&e, &|_| None, &mut super::common::budget()), None, "the whole tape replays");

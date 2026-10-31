@@ -70,7 +70,7 @@ fn relative_rotor_determines_turn_180_across_dilation() {
 /// A square is `C₄`, so every 90° turn carries it onto itself and
 /// all four must be reachable.
 #[test]
-fn relative_rotor_holds_every_turn_90_of_square() {
+fn relative_rotor_reads_every_turn_90_of_square() {
     let sq = blade::shape_of(&[(0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0)]);
     assert!(blade::deviatoric(&sq.blade).is_none(), "isotropic at order 2");
     assert!(blade::quartic_harmonic(&sq.blade).is_some(), "the quartic orients it");
@@ -120,7 +120,7 @@ fn relative_rotor_carries_pythagorean_site_map() {
 /// and never absorbs. No lattice turn, no landing: the certificate's fit and
 /// the covariance above it.
 #[test]
-fn transitions_between_carry_blow_up_with_order_four_residue() {
+fn transitions_between_carries_blow_up_with_order_four_residue() {
     use crate::transducer::blade::{transitions_between, Harmonic};
     let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
@@ -148,7 +148,7 @@ fn transitions_between_carry_blow_up_with_order_four_residue() {
 /// one member, even, and the verification is the tower's — the centre, the
 /// second moment, the odd and quartic harmonics — never a compartment landing.
 #[test]
-fn carries_by_covariance_carries_chiral_l_onto_its_turn() {
+fn carries_by_covariance_carries_chiral_l_onto_turn() {
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let turned = blade::shape_of(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (1, 0, 0)]);
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
@@ -210,7 +210,7 @@ fn relative_rotor_refuses_unlike_pair_as_incongruent() {
 /// into existence — so this pins the GATES, which is what the code
 /// actually promises.
 #[test]
-fn dilation_certified_passes_reflection_odd_gate_reads_it() {
+fn dilation_certified_passes_reflection_through_odd_gate() {
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let s = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
     let j = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
@@ -288,7 +288,7 @@ fn relative_rotor_refuses_achiral_unlike_pair() {
 /// relation is read on the tower that certified: one ray for `Z`, the arc
 /// of `4 + i`, and the pose left open as `Oblique`.
 #[test]
-fn dilation_certifies_site_map_on_sites_and_reads_oblique() {
+fn dilation_certifies_site_map_and_reads_oblique() {
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let image = blade::shape_of(&[(0, 0, 0), (4, 1, 0), (8, 2, 0), (7, 6, 0)]);
     assert_eq!(blade::dilation(&l.blade, &image.blade), Ok(blade::Dilation::Sites), "the sites certify, the region does not");
@@ -324,7 +324,7 @@ fn dilation_certifies_site_map_on_sites_and_reads_oblique() {
 /// similarity carries one onto the other, and each tower names the first
 /// harmonic order at which they part.
 #[test]
-fn dilation_refuses_different_shape_at_order_on_both_towers() {
+fn dilation_refuses_different_shape_on_both_towers() {
     let image = blade::shape_of(&[(0, 0, 0), (4, 1, 0), (8, 2, 0), (7, 6, 0)]);
     let s = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
     let two = blade::TowerRefusal::At(blade::Harmonic::Two);

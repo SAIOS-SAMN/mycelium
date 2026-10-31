@@ -191,7 +191,7 @@ fn extract_rule_reads_bend_round_corner() {
 /// at two offsets and a bend, minted as the elements the court reads and
 /// decoded back, re-mint at one address.
 #[test]
-fn from_element_form_reads_back_echoes_and_bends() {
+fn from_element_form_round_trips_echoes_and_bends() {
     for family in [
         vec![(grid(&["1100000", "1000000", "0000000"]), grid(&["1101100", "1000100", "0000000"])), (grid(&["0000000", "0022000", "0020000"]), grid(&["0000000", "0022022", "0020002"]))],
         vec![(grid(&["1000", "0000", "0000", "0000"]), grid(&["1010", "0000", "1000", "0000"])), (grid(&["0000", "0200", "0000", "0000"]), grid(&["0000", "0202", "0000", "0200"]))],
@@ -215,7 +215,7 @@ fn from_element_form_reads_back_echoes_and_bends() {
 /// echo, minted as the elements the court reads and decoded back, carry the
 /// clauses they were read with — the court replays what the voice read.
 #[test]
-fn from_element_form_reads_back_join_and_echo() {
+fn from_element_form_round_trips_join_and_echo() {
     for family in [
         vec![(grid(&["10010", "00000", "00100"]), grid(&["13310", "00000", "00100"])), (grid(&["00000", "10001", "00000", "01000"]), grid(&["00000", "13331", "00000", "01000"]))],
         vec![(grid(&["120", "000", "000", "000"]), grid(&["120", "000", "120", "000"])), (grid(&["000", "033", "000", "000", "000"]), grid(&["000", "033", "000", "033", "000"]))],
@@ -266,7 +266,7 @@ fn extract_rule_reads_tiles_by_symmetries() {
 /// minted as the elements the court reads and decoded back, re-mint at one
 /// address.
 #[test]
-fn from_element_form_reads_back_panes_and_tiles() {
+fn from_element_form_round_trips_panes_and_tiles() {
     for family in [
         vec![(grid(&["10501", "01500"]), grid(&["22", "02"])), (grid(&["11500", "00501"]), grid(&["22", "02"])), (grid(&["00511", "10510"]), grid(&["22", "00"]))],
         vec![(grid(&["12", "30"]), grid(&["1221", "3003", "3003", "1221"])), (grid(&["40", "05"]), grid(&["4004", "0550", "0550", "4004"]))],
@@ -589,7 +589,7 @@ fn speak_clauses_refuses_partner_hue_without_one_partner() {
 /// repaint by a partner's hue and a line painted by one read back as written;
 /// a line painted its own hue or a named one writes the bytes it always did.
 #[test]
-fn put_clauses_round_trips_reactions_keeps_old_bytes() {
+fn put_clauses_round_trips_reactions() {
     use crate::transducer::sentence::form::clause::{put_clauses, take_clauses, Act, Clause, Paint, Pred, Stop};
     let clauses = vec![
         Clause { select: Pred::Hue(1), act: Act::Slide { ray: (1, -1), stop: Stop::Contact } },

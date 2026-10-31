@@ -71,7 +71,7 @@ fn hold_releases_to_payee_or_refunds_and_conserves() {
 /// a hold or refund nets within its payer, so the ledger's prefix folds to
 /// epoch rows that conserve — the payee's net is what it was paid.
 #[test]
-fn nets_of_nets_payments_and_holds_exactly() {
+fn nets_of_nets_payments_and_holds() {
     let mut t = funded();
     t.pay(A, B, [1, 1, 0, 1], at(2, [8; 32])).expect("paid");
     t.hold(A, b"k", [2, 0, 0, 0], at(3, [7; 32])).expect("held");

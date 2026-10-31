@@ -107,7 +107,7 @@ fn construct_spells_translation_and_dilation_composing_back() {
 
 /// No residue, nothing constructed; no versor, no action to spell.
 #[test]
-fn construct_refuses_identity_and_non_versor_by_name() {
+fn construct_refuses_identity_and_non_versor() {
     assert!(matches!(construct(&Mv::scalar(q(1, 1)), &mut budget()), Err(NotConstructed::NoResidue)));
     let cone = Mv::scalar(q(1, 1)).add(&Mv::blade(E1 | EM, q(1, 1)));
     assert!(matches!(construct(&cone, &mut budget()), Err(NotConstructed::NotVersor)));

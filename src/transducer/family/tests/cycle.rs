@@ -68,7 +68,7 @@ fn mutual() -> (Grid, Grid, Mutual, Form) {
 /// It recursed without end; the speech now names `b`, lays down no grid, and
 /// the deflation and the mint read the cycle by name.
 #[test]
-fn apply_form_refuses_mutual_citation_by_name() {
+fn apply_form_refuses_mutual_citation() {
     let (x, y, crystal, top) = mutual();
     let identity = crate::transducer::alphabet::Word::identity();
     let spoken = apply_form(&top, &x, &identity, &crystal).expect("the speech ends");

@@ -93,7 +93,7 @@ impl Form {
         // fresh host (`host == 0`) was exempt altogether, so two leaves could
         // always cite each other. It forbade not cycles but a second citation
         // deeper than the first — the 63d6e40 defect in its second home, and
-        // `glue_key_independent_of_arrival_order` is its reading.
+        // `glue_key_ignores_arrival_order` is its reading.
         //
         // WHAT STANDS IN ITS PLACE. Charts of an open cover do not own each
         // other; `U_i` citing `U_j` and `U_j` citing `U_i` is one overlap

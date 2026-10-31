@@ -47,7 +47,7 @@ fn pull_task_asks_nothing_settled_and_strained_holds_tension() {
 /// charts the mind's thoughts stand on — and a family of one cell, whose body
 /// stands on no chart the mind holds, couples to nothing.
 #[test]
-fn couples_only_to_what_mind_holds() {
+fn couples_reaches_only_what_mind_holds() {
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("coupling"));
     let train = two_hours_of_a_slide().to_vec();
     let (id, other) = ([9u8; 32], [8u8; 32]);
@@ -179,7 +179,7 @@ fn corpus_inflow_meets_corpus_at_field_orbits() {
 /// (a cycle, so its orbit does not seal at once), and the field's orbits —
 /// not the language — are the focus from then on.
 #[test]
-fn corpus_inflow_at_rest_meets_language_charts() {
+fn corpus_inflow_meets_language_charts_at_rest() {
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
     let [(x, y)] = <[_; 1]>::try_from(two_cells_swapped(1, 2)).expect("one pair");
     let home = feed_of("ground-state", &[("a-slide.json", two_hours_of_a_slide().to_vec()), ("b-cell.json", two_cells_swapped(1, 2))]);
@@ -282,7 +282,7 @@ fn absorb_taught_holds_residual_as_open_question() {
 /// met at, and read as a question it stood open forever. Only an element
 /// that carries a chain is one.
 #[test]
-fn is_residual_only_for_chain_under_tag() {
+fn is_residual_is_true_only_for_chain_under_tag() {
     use crate::client::sdk::epigenome::is_residual;
     let bare = crate::transducer::element::Element::identity();
     assert!(
@@ -326,7 +326,7 @@ fn task_inflow_leaves_uncoupled_task_to_lapse() {
 /// under; the next final past it lets it go — kept as lapsed by its citation,
 /// passed — with no return in between. Every stroke it waited is counted.
 #[test]
-fn lapse_standing_task_at_next_final_in_ground_state() {
+fn lapse_standing_task_lapses_in_ground_state() {
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("ground lapse"));
     lapses_at_the_next_final(&mut mind);
 }
@@ -334,7 +334,7 @@ fn lapse_standing_task_at_next_final_in_ground_state() {
 /// The same, a 𝒢 orbit standing on the field — its orbits in focus, no
 /// ground state — and the one-cell task on no chart the mind holds.
 #[test]
-fn lapse_standing_task_at_next_final_in_moving_field() {
+fn lapse_standing_task_lapses_in_moving_field() {
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("moving lapse"));
     let mut field = std::mem::take(&mut mind.field);
     let in_focus = field.think(|| {
@@ -416,7 +416,7 @@ fn pull_task_asks_only_on_empty_corpus() {
 /// A MIND WITH A COURT'S TASK ON ITS BOARD OWES ITS OWN STROKES (ruled
 /// 2026-10-24); one that holds nothing owes none and may block.
 #[test]
-fn owes_strokes_only_with_task_on_board() {
+fn owes_strokes_is_true_only_with_task_on_board() {
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("quiescent"));
     assert!(!mind.owes_strokes(), "nothing held: quiescent");
     let train = one_cell_steps();

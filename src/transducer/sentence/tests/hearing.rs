@@ -111,7 +111,7 @@ fn orbit_reads_perpendicular_light_as_pure_advance() {
 /// light from a star at a point, not at infinity (read live 2026-10-06: every
 /// space of the stalled task's rings is hyperbolic or the identity).
 #[test]
-fn orbit_meets_null_mode_dilated_carriage_has_none() {
+fn orbit_meets_null_mode_and_dilated_carriage_none() {
     let twist = cga::translator_at(&[q(0), q(0), q(1)]).geo(&turn_90(E1 | E2));
     let r = compose(&[Term { word: turn_90(E1 | E2), transport: twist }], &mut stroke()).expect("a ring");
     let met = orbit(&[&r], &mut stroke());
@@ -173,7 +173,7 @@ fn heard_against(m: &Mv, heard: &Mv) -> crate::transducer::sentence::hearing::Ec
 /// Niven point never returns: a carrier, larger than every returning ring —
 /// the OUTER ring, understood as it is; so is a slide.
 #[test]
-fn hear_across_seats_word_in_hearers_rings() {
+fn hear_across_seats_word_in_hearer_rings() {
     use crate::transducer::sentence::hearing::Seat;
     let quarter = turn_90(E1 | E2);
     let half = Mv::blade(E1 | E2, q(1));

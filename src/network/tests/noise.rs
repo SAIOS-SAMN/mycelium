@@ -90,7 +90,7 @@ fn message_lengths(mut seen: &[u8]) -> Vec<usize> {
 /// other's public key, and a pointed frame and its reply read back
 /// exactly, lane, body and point.
 #[test]
-fn initiate_completes_handshake_and_frames_round_trip() {
+fn initiate_completes_handshake_and_round_trips_frames() {
     let ((_da, a), (_db, b)) = (home(), home());
     let (ia, rb) = handshake(&a, &b, "127.0.0.1:7500", |s| s);
     let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
@@ -176,7 +176,7 @@ fn read_frame_refuses_tampered_ciphertext() {
 /// address presenting another key is refused by name, before the
 /// initiator's static key is sent, and the pin survives a reload.
 #[test]
-fn pin_refuses_changed_peer_key_by_name() {
+fn pin_refuses_changed_peer_key() {
     let ((da, a), (_db, b), (_dc, c)) = (home(), home(), home());
     let (ia, rb) = handshake(&a, &b, "10.0.0.2:7500", |s| s);
     assert!(ia.is_ok() && rb.is_ok());
@@ -201,7 +201,7 @@ fn pin_refuses_changed_peer_key_by_name() {
 /// The static key is minted once, `0600`, and reloads to the same key; a
 /// key file of another length is refused and left untouched.
 #[test]
-fn noise_home_key_persists_across_open() {
+fn noise_home_keeps_key_across_open() {
     use std::os::unix::fs::PermissionsExt;
     let (dir, a) = home();
     let again = NoiseHome::open(dir.path()).unwrap();

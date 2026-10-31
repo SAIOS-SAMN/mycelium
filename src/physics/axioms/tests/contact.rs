@@ -35,7 +35,7 @@ fn tether_class(a: &blade::Blade, b: &blade::Blade) -> crate::transducer::addres
 /// the cell the two cubes share, read by grade (BQ2), and that reading is
 /// asserted constant on the family.
 #[test]
-fn shared_cells_grade_constant_on_contact_family() {
+fn shared_cells_keeps_grade_on_contact_family() {
     let mut rank1: Vec<crate::transducer::address::Address> = Vec::new();
     let mut by_grade: Vec<Vec<usize>> = Vec::new();
     for n in 1..=6i64 {

@@ -40,7 +40,7 @@ fn pins(e: &Encl, reference: &str, name: &str) {
 /// The constants (π, e, ln 2, √2, sin 1, cos 1, lnΓ(½), erf 1, P(1, 1)) are
 /// enclosed to 2^-60, each enclosure holding the reference value.
 #[test]
-fn constants_enclosed_within_two_pow_minus_sixty() {
+fn enclosure_pins_constants_within_two_pow_minus_sixty() {
     pins(&pi(W), "3.14159265358979323846264338327950288419716939937510", "π");
     pins(&exp(&point(Q::one()), W), "2.71828182845904523536028747135266249775724709369995", "e");
     pins(&ln2(W), "0.69314718055994530941723212145817656807550013436025", "ln 2");
@@ -56,7 +56,7 @@ fn constants_enclosed_within_two_pow_minus_sixty() {
 /// `Γ(1) = Γ(2) = 1`, `Γ(x+1) = xΓ(x)`, `sin² + cos² = 1`, `sin π = 0` and
 /// erf is odd.
 #[test]
-fn exp_and_ln_invert_and_identities_hold() {
+fn exp_inverts_ln_and_satisfies_identities() {
     let v = q(7, 3);
     assert!(exp(&ln(&point(v.clone()), W).expect("ln"), W).contains(&v), "exp ∘ ln");
     let u = q(-5, 2);
@@ -82,7 +82,7 @@ fn exp_and_ln_invert_and_identities_hold() {
 /// The incomplete gamma `P` is monotone in `x` and tends to one, and is
 /// refused past its series cap rather than run unbounded.
 #[test]
-fn gamma_p_monotone_tends_to_one_and_refuses_past_cap() {
+fn gamma_p_rises_to_one_and_refuses_past_cap() {
     let a = point(q(2, 1));
     let low = gamma_p(&a, &point(Q::one()), W).expect("");
     let high = gamma_p(&a, &point(q(3, 1)), W).expect("");
@@ -100,7 +100,7 @@ fn gamma_p_monotone_tends_to_one_and_refuses_past_cap() {
 
 /// The same inputs give the same enclosure on any thread.
 #[test]
-fn enclosure_same_on_any_thread() {
+fn enclosure_ignores_thread() {
     let here = (pi(W), erf(&point(q(5, 7)), W), lgamma(&point(q(3, 2)), W));
     let there = std::thread::spawn(|| (pi(W), erf(&point(q(5, 7)), W), lgamma(&point(q(3, 2)), W))).join().expect("thread");
     assert_eq!(here, there, "bit for bit");
@@ -115,7 +115,7 @@ fn within(e: &Encl, lo: Q, hi: Q) -> bool {
 /// and tan pin the reference values, atan and acos meet the exact multiples of
 /// π, and acos refuses outside [−1, 1].
 #[test]
-fn hyperbolic_and_inverse_circular_enclose_references() {
+fn enclosure_pins_hyperbolic_and_inverse_circular_references() {
     pins(&sinh(&point(Q::one()), W), "1.17520119364380145688238185059560081515571798133409", "sinh 1");
     pins(&cosh(&point(Q::one()), W), "1.54308063481524377847790562075706168260152911236586", "cosh 1");
     pins(&tan(&point(Q::one()), W).expect("tan 1"), "1.55740772465490223050697480745836017308725077238152", "tan 1");
@@ -139,7 +139,7 @@ fn hyperbolic_and_inverse_circular_enclose_references() {
 /// The Planck tail is one at zero exactly, and its near and far series
 /// meet at one.
 #[test]
-fn planck_tail_is_one_at_zero_and_series_meet() {
+fn planck_tail_is_one_at_zero_and_agrees_with_series() {
     assert_eq!(planck_tail(&point(Q::zero()), W), Some(point(Q::one())), "F(0) = 1 exactly");
     // Small x: 1 − 15/π⁴·(x³/3 − x⁴/8 + …), at x = 1/10 ≈ 0.999953.
     let small = planck_tail(&point(q(1, 10)), W).expect("");
