@@ -17,59 +17,23 @@ pub fn magnitude(g: &Element) -> [u64; 4] {
     g.magnitude()
 }
 
-/// A lane vector (Law 5, §2.3, §4.4, X5).
-/// μ⃗ is a type implementing neither `PartialEq` nor `PartialOrd`.
-/// The one comparison is `lane_moves(after, before) -> [LaneMove; 4]`,
-/// and arithmetic is lane-wise `add` and `shortfall`.
-#[derive(Clone, Copy, Debug, Default)]
-pub struct Mu(pub [u64; 4]);
-
-impl Mu {
-    pub const ZERO: Self = Mu([0, 0, 0, 0]);
-
-    pub fn new(lanes: [u64; 4]) -> Self {
-        Mu(lanes)
-    }
-
-    pub fn lanes(&self) -> [u64; 4] {
-        self.0
-    }
-
-    pub fn get(&self, lane: usize) -> u64 {
-        self.0[lane]
-    }
-
-    /// Lane-wise, all lanes or none: `None` where a lane would pass its
-    /// carrier (STD1) — money never tops out silently.
-    pub fn add(&self, other: &Mu) -> Option<Mu> {
-        crate::core::lanes::lanes_add(self.0, other.0).map(Mu)
-    }
-
-    pub fn shortfall(&self, room: &Mu) -> Mu {
-        Mu(shortfall(&self.0, &room.0))
-    }
-
-    pub fn lane_moves(&self, before: &Mu) -> [LaneMove; 4] {
-        lane_moves(&self.0, &before.0)
-    }
-}
-
 /// WHAT ONE LANE DID between two measurements. Three states, and the
 /// amount travels inside the two that have one: a lane that fell by three
 /// and a lane that fell by one are not the same reading, and neither is a
-/// lane that held.
+/// lane that held. A measure's lanes move by counts (`u64`); μ's lanes by
+/// exact rationals (`Mu::lane_moves`).
 ///
 /// This is a READING and never a verdict (law 5, 12.6). Nothing in the
 /// engine certifies by a lane falling and nothing selects among certified
 /// discharges by any function of these four values.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum LaneMove {
+pub enum LaneMove<A = u64> {
     /// The lane fell by this much: `before − after`.
-    Fell(u64),
+    Fell(A),
     /// The lane did not move.
     Held,
     /// The lane rose by this much: `after − before`.
-    Rose(u64),
+    Rose(A),
 }
 
 impl LaneMove {

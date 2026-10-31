@@ -8,6 +8,7 @@ pub mod escrow;
 pub mod fold;
 pub mod lanes;
 pub mod modes;
+pub mod mu;
 pub mod pay;
 pub mod persist;
 pub mod settle;
@@ -17,6 +18,7 @@ pub mod verify;
 pub use fold::{nets_of, nets_read, Folded, Inexact, Nets};
 pub use verify::verification_share;
 pub use lanes::*;
+pub use mu::{Mu, MuRefusal};
 pub use pay::{Held, Unpaid, RECYCLED};
 pub use treasury::*;
 
