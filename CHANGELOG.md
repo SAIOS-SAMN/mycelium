@@ -6,6 +6,57 @@ such change is named here.
 
 ## Unreleased
 
+### SDK
+- **Conformance profiles** (`docs/MU-CONFORMANCE.md`, version 2): the
+  statement carries two profiles, `Profile::Mind` (MUST `task`, `solve`,
+  `laws register`, as before) and `Profile::Kernel`, a kernel's uplink
+  (MUST `laws register`, `laws statement`, `laws concordance`,
+  `laws signature`, `laws clock`, `laws verify`, `domain founding`,
+  `domain manifest`, `domain universe`; MAY `task`, `solve` and
+  `task by citation` for the minds a house seats, `laws batch`,
+  `laws lexicon`, `laws parameters`, `domain reserve`,
+  `domain designation`, `domain origin`, `domain origin reading`,
+  `domain statement`, `domain endowment`, `seat post`, `seat listing`,
+  `seat mail`, `wallet`). `Statement { …, profiles }` replaces
+  `Statement { …, acts }`; `acts`, `of_need` and `act` take a profile, and
+  `Statement::union(profiles)` is the acts of a client declaring several,
+  MUST where any declared profile makes it MUST. `check_codecs(profiles,
+  speaks)` and `run(endpoint, key, profiles)` check only the declared
+  profiles' acts; a kernel is never asked or failed by task or solve.
+  `Report` carries its profiles (`Report::of`, `Report::need`) and
+  conforms only where one is declared. Every act of both profiles has an
+  in-process round-trip check, the mind's MAY acts `quote`, `receipts`,
+  `rows`, `why`, `probe`, `peers`, `syllabus`, `speech`,
+  `domain reserve` and `seat mail` among them.
+- **Statement codec** (`ACT_LAWS` mode 6, wire version unchanged): after
+  the Concordance hash, `[0][FORM_PROFILES = 2][profile count]` then per
+  profile `[profile][acts]`. The v0.3.0-rc.1 single-profile form still
+  reads, as the mind profile alone; an rc.1 reader refuses the profiled
+  form whole (the zero count it reads is followed by bytes).
+- **`mycelium_sdk::house`**: the surface a kernel's uplink speaks, so a
+  kernel pins `mycelium-sdk` alone — domain founding (`DomainGenesis`,
+  `Founded`), the reserve, bond and origin; the universe (`Genesis`,
+  `Geometry`, `UniverseReading`, its statements); the endowment
+  (`Manifest`, `Granted`, `EndowmentReading`); the house side of seats
+  (`Post`, `Seats`, `HouseMail`, the listing and mail codecs,
+  `KIND_TASK`, `FN_SOLVE`, `FN_DECLINE`); laws verify and the batch
+  (`Transition`, `BodyState`, `Body`, `Verdict`, `Breach`, `Law`,
+  `verify_sized`, `encode_verify_request`, `decode_verify_reply`); the
+  clock (`CoreStamp`, `TPoint`); the Concordance signature; framing
+  (`Frame`, `Stratum`, `read_lane`, `split_point`, `BODY_BUDGET`) and
+  `HyphaKey`; and the wire modules `domain`, `universe`, `endowment`,
+  `seat`, `atlas`, `uplink`, `challenge`, `commitment` and `tuniversal`
+  whole. `task::decode_solve_receipt` and `readings::Vocabulary` join the
+  surface. `sdk/tests/surface.rs` imports every production path two peer
+  kernels' uplinks use.
+- `physics::laws::codec::{encode_verify_reply, decode_verify_reply}`: the
+  verify reply's one writer (the court answers with it) and its whole
+  reader.
+- `sdk/examples/house.rs`: a minimal house that signs the Concordance hash,
+  reads the clock, founds its domain and runs the kernel profile;
+  `sdk/examples/conformance.rs` takes `--profile mind|kernel|both`, and
+  `scripts/quickstart` runs both profiles and the house.
+
 ## 0.3.0-rc.1 — 2026-10-31 (release candidate)
 
 The first contract release the peer kernels pin to: the `mycelium-sdk`

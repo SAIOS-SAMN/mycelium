@@ -500,6 +500,21 @@ pub fn encode_verify_request(t: &Transition) -> Vec<u8> {
     out
 }
 
+/// The verify reply: the one verdict, as [`put_verdict`] writes it.
+pub fn encode_verify_reply(v: &Verdict) -> Vec<u8> {
+    let mut out = Vec::new();
+    put_verdict(&mut out, v);
+    out
+}
+
+/// The verdict a verify reply carries, read whole: bytes left over, or a
+/// verdict that does not read, is no reply.
+pub fn decode_verify_reply(b: &[u8]) -> Option<Verdict> {
+    let mut p = 0;
+    let v = take_verdict(b, &mut p)?;
+    (p == b.len()).then_some(v)
+}
+
 /// The request a frame carries, read whole: a verify request with bytes left
 /// over is no request.
 pub fn decode_laws_request(body: &[u8]) -> Option<LawsRequest> {

@@ -78,6 +78,25 @@ fn decode_laws_request_reads_register_and_verify() {
     assert!(served.iter().all(|s| s.statement == s.law.statement()));
 }
 
+/// THE VERIFY REPLY: one verdict, read whole — the lawful turn admitted and
+/// the still height refused on time, each decoding to the verdict ruled; a
+/// byte left over, or one short, is no reply.
+#[test]
+fn verify_reply_round_trips() {
+    use super::super::codec::{decode_verify_reply, encode_verify_reply};
+    let lawful = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
+    let still = Transition { heights: (8, 8), ..lawful.clone() };
+    for t in [lawful, still] {
+        let v = verify_sized(&t);
+        let bytes = encode_verify_reply(&v);
+        assert_eq!(decode_verify_reply(&bytes), Some(v));
+        let mut longer = bytes.clone();
+        longer.push(0);
+        assert_eq!(decode_verify_reply(&longer), None);
+        assert_eq!(decode_verify_reply(&bytes[..bytes.len() - 1]), None);
+    }
+}
+
 /// 78.118 — A BATCH: many transitions in one frame, read back whole and in
 /// order; a byte left over is no request; the reply carries each
 /// transition's own verdict, in the order sent — the lawful turn admitted,

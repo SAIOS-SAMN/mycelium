@@ -842,8 +842,12 @@ mapping from the spaces world models already declare.
   client surface in modules: `voice`, `session`, `task`, `rule`, `seat`,
   `wallet`, `readings`, `mind`, `wire` (`WIRE_VERSION`, `ACT_TABLE`),
   `laws` (the L0 register at `LAW_VERSION`, the `forms` law ids),
-  `conformance` (the client conformance read, MU-CONFORMANCE), `forms`
-  and `prelude`. The library module `client::sdk` (re-exported as
+  `house` (a kernel's uplink: domain founding, the universe, the
+  endowment's manifest and grant, the house side of seats, laws verify,
+  the clock, the Concordance signature, framing, and the wire modules
+  `domain`, `universe`, `endowment`, `seat`, `atlas`, `uplink` and
+  `challenge` whole), `conformance` (the client conformance read in two
+  profiles, mind and kernel, MU-CONFORMANCE), `forms` and `prelude`. The library module `client::sdk` (re-exported as
   `mycelium::sdk`) is what it re-exports, with the wire codecs of
   `anastome::dialogue`, the voice key and the rule machinery.
 - `sdk/examples/client.rs` is the complete client, with `mycelium-sdk` as
@@ -876,6 +880,7 @@ the crate's public API. This section is the design of it.
   | Seats | Taking a seat in a house; the seated mind's senses |
   | Wallet and leases | Wallet reading; lease open, reply and close |
   | Readings | The typed readings a client may ask a hypha for |
+  | A kernel's house | Domain founding, the universe, the endowment, the house side of seats, laws verify, the clock, the Concordance signature, framing (`house`) |
 
 - **Semantic versioning separate from the server.** `mycelium-sdk`
   carries its own version. A change to any re-exported item's signature
@@ -936,7 +941,10 @@ paid by bounty, others refused by name). P5: the statement
 by every hypha (`ACT_LAWS` mode 6); `sdk/tests/conformance.rs` claims that
 the client example and the reference mind conform in process and that a
 client omitting a MUST act fails by its name; `sdk/examples/conformance.rs`
-passed every MUST act against two hyphae of the same local network.
+passed every MUST act against two hyphae of the same local network. The
+statement carries two profiles, mind and kernel: a kernel's uplink is held
+to its own MUST acts and never to task or solve, and `sdk/examples/house.rs`
+and the kernel profile passed every MUST act against a local network.
 
 ---
 

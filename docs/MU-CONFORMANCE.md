@@ -4,44 +4,66 @@
 
 > **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside hosted universes — cosmological simulations from galaxies down to planets, games, scientific simulations and world models — each run by a kernel under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *universes* are hosted simulations. Physical terms name the simulations' exact geometry. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
-> **Components:** the statement (`src/anastome/dialogue/conformance.rs`), served by every hypha on `ACT_LAWS` mode 6; the SDK's `mycelium_sdk::conformance` (the in-process check and the suite on a network); the runnable `sdk/examples/conformance.rs`.
+> **Components:** the statement (`src/anastome/dialogue/conformance.rs`), served by every hypha on `ACT_LAWS` mode 6; the SDK's `mycelium_sdk::conformance` (the in-process check and the suite on a network) and `mycelium_sdk::house` (a kernel's uplink surface); the runnables `sdk/examples/conformance.rs` and `sdk/examples/house.rs`.
 
-**Status:** specification, version 1 (2026-10-31). This is the published
+**Status:** specification, version 2 (2026-10-31). This is the published
 client conformance read of [MU-HOSTING](MU-HOSTING.md) §2.5 item 4 and
 phase P5 of [MU-PRECURSORS](MU-PRECURSORS.md) §4.3. Each item is marked
-**Built** (in the tree, covered by its suites) or **Specified**.
+**Built** (in the tree, covered by its suites) or **Specified**. Version 2
+adds the kernel profile.
 
 ---
 
 ## 1. What alignment means
 
-A client (a mind, an adapter for an agent framework, a peer kernel's own
-client) is aligned with a Mycelium release where it passes this read at
-that release's tag: every MUST act it sends decodes at the hypha to the
-values it meant, and every reply it reads decodes to the fields the
-statement names. Conformance is by decoded exact values and signatures,
-never by golden bytes ([Concordance](MU-CONCORDANCE.md) 1.4, 9.1): two
-encoders that write the same values the same way pass alike, and no byte
-string is held as the expected answer.
+A client is aligned with a Mycelium release where it passes this read at
+that release's tag, for the profiles it declares: every MUST act of those
+profiles it sends decodes at the hypha to the values it meant, and every
+reply it reads decodes to the fields the statement names. Conformance is by
+decoded exact values and signatures, never by golden bytes
+([Concordance](MU-CONCORDANCE.md) 1.4, 9.1): two encoders that write the
+same values the same way pass alike, and no byte string is held as the
+expected answer.
+
+There are two kinds of client, and the statement has a **profile** for
+each:
+
+- **Mind** (`Profile::Mind`): a mind, or an adapter for an agent
+  framework. Its loop is attach, take a task, solve it, read the verdict,
+  and read the law register.
+- **Kernel** (`Profile::Kernel`): a kernel's uplink, its *house*. It signs
+  the Concordance, reads the register and the clock, puts the transitions
+  it composed to the court's verifier, founds its domain, records its
+  universe and asks its endowment, and lists and answers its seats. It
+  speaks task and solve only on behalf of the minds it seats, so they are
+  MAY for a kernel, and a kernel never fails by either name.
+
+A client declares one profile or both. A client declaring both (a house
+that also solves for its seated minds) is held to the MUST acts of both:
+an act is MUST where either declared profile makes it MUST.
 
 ## 2. The statement (**Built**)
 
 `mycelium_sdk::conformance::STATEMENT` is a typed, machine-readable
-`Statement { wire_version, law_version, concordance_hash, acts }`: the
+`Statement { wire_version, law_version, concordance_hash, profiles }`: the
 `concordance_hash` is BLAKE3 of the exact bytes of
 [MU-CONCORDANCE](MU-CONCORDANCE.md) at build time (Concordance §0
-SIGNING). Each `ActRequirement` names:
+SIGNING), and each `ProfileStatement { profile, acts }` names a profile's
+acts, each once. Each `ActRequirement` names:
 
 - `act`: the act's code on the wire, one of the SDK's `ACT_TABLE`;
 - `mode`: its sub-mode, where the act has one (`ACT_LAWS` modes,
   `ACT_OBSERVE` mode 0);
 - `name`: the act's name in `ACT_TABLE`, then the sub-mode's;
-- `need`: MUST or MAY;
+- `need`: MUST or MAY, in this profile;
 - `reply`: the decoder the reply is read by;
 - `fields`: the exact fields that decoder reads back.
 
-At this tree the statement stands at wire `0x0104` (v1.4) and law version
-4.
+`Statement::union(profiles)` is the acts of a client declaring
+`profiles`. At this tree the statement stands at wire `0x0104` (v1.4) and
+law version 4.
+
+### 2.1 The mind profile
 
 | Need | Act | Reply decoder | Fields read back |
 |---|---|---|---|
@@ -55,63 +77,132 @@ At this tree the statement stands at wire `0x0104` (v1.4) and law version
 | MAY | `probe`, `peers`, `syllabus`, `speech`, `domain reserve`, `seat mail` | as the statement names | as each decoder reads |
 
 The MUST acts are the client loop of README › *Building a client with the
-SDK*: attach (a session and a voice), take a task, solve it, read the
-verdict, and read the law register at the version the client pins to. The
-register decodes only at the reader's law version, so a hypha at another
-version is told apart by name. Every other act a client may send is MAY;
-the list is drawn from what the reference mind (`mycelium-client`) and
-`sdk/examples/client.rs` send and read.
+SDK*. The register decodes only at the reader's law version, so a hypha at
+another version is told apart by name. The MAY list is drawn from what the
+reference mind (`mycelium-client`) and `sdk/examples/client.rs` send and
+read.
+
+### 2.2 The kernel profile
+
+| Need | Act | Reply decoder | Fields read back |
+|---|---|---|---|
+| MUST | `laws register` (mode 0) | `decode_register_reply` | law version, laws |
+| MUST | `laws statement` (mode 6) | `decode_statement_reply` | wire version, law version, concordance hash, profiles, acts |
+| MUST | `laws concordance` (mode 7) | `decode_concordance_reply` | the Concordance's hash |
+| MUST | `laws signature` (mode 8) | `decode_signature_reply` | accepted, or the refusal by name |
+| MUST | `laws clock` (mode 4) | `decode_clock_reply` | the core stamp, or no head yet |
+| MUST | `laws verify` (mode 1, one transition) | `decode_verify_reply` | breaches by law, exchanged torques, modes, similarity, expansion, unmeasured laws |
+| MUST | `domain founding` (`ACT_DOMAIN` genesis) | `decode_domain_reply` | sealed stamp and receipt, or the refusal by name |
+| MUST | `domain manifest` (`ACT_DOMAIN` sub-kind 17) | `decode_grant_reply` | granted μ S:G:T:H, founding, stamp and receipt, or the refusal by name |
+| MUST | `domain universe` (`ACT_DOMAIN` sub-kind 11) | `decode_universe_reading` | originated, geometry, parent, basket |
+| MAY | `task`, `solve`, `task by citation` | as the mind profile's | as the mind profile's |
+| MAY | `laws batch` (mode 2), `laws lexicon`, `laws parameters` | `decode_batch_reply` and the readings' decoders | as each decoder reads |
+| MAY | `domain reserve`, `domain designation`, `domain origin`, `domain origin reading`, `domain statement`, `domain endowment` | `decode_reserve_reading`, `decode_domain_reply`, `decode_origin_reading`, `decode_endowment_reading` | as each decoder reads |
+| MAY | `seat post`, `seat listing`, `seat mail` | `decode_post_reply`, `decode_listing_reply`, `decode_mail_reply_standing` | the relay's sequence or refusal; the latest listing; the mail at the relay's standing |
+| MAY | `wallet` | `decode_wallet_reply` | court, balance, bond, held, stamp |
+
+The MUST acts are what a house does first on the network: it reads the
+register and the statement at its version, signs the Concordance's hash,
+reads the core clock, has a transition verified, founds its domain, asks
+its endowment by a manifest, and reads its universe back.
 
 ## 3. The statement served (**Built**)
 
 Every hypha answers `[ACT_LAWS][6]` with the statement's bytes:
-`[wire version u16 LE][law version][concordance hash 32][count]`, then per act
-`[act][0 | 1 mode][need][name][reply][field count][field …]`, each text
-length-prefixed by its own coordinate. A client in any language reads the
-statement whole (`decode_statement_reply`) and compares it with the
-statement it was built against. Modes 6, 7 and 8 are additive: the wire
-version is unchanged, and a hypha that predates them answers nothing to
-them, as it answers any `ACT_LAWS` request it does not read. From v0.3.0
-the Concordance's hash is served (mode 7) and a kernel's signature over it
-is accepted and verified (mode 8); refusal of an unsigned kernel takes
-effect in the following release.
+`[wire version u16 LE][law version][concordance hash 32][0][2][profile
+count]`, then per profile `[profile][act count]` and per act `[act][0 | 1
+mode][need][name][reply][field count][field …]`, each count and each text
+length by its own coordinate (LEB128, minimal). The two bytes `[0][2]` mark
+the profiled form (`FORM_PROFILES`): v0.3.0-rc.1 served a single act list
+with its count in that place, and wrote a zero count only as its last byte,
+so the two forms never read alike. `decode_statement_reply` reads either:
+the rc.1 form reads as the mind profile alone, and an rc.1 reader refuses a
+profiled statement whole rather than misreading it. A client in any
+language reads the statement whole and compares it with the statement it
+was built against.
+
+Modes 6, 7 and 8 are additive: the wire version is unchanged, and a hypha
+that predates them answers nothing to them, as it answers any `ACT_LAWS`
+request it does not read. From v0.3.0 the Concordance's hash is served
+(mode 7) and a kernel's signature over it is accepted and verified (mode
+8); refusal of an unsigned kernel takes effect in the following release.
 
 ## 4. The two reads (**Built**)
 
-**In process**, `conformance::check_codecs(speaks)`: a client is modelled
-as the set of acts it speaks. Each act it speaks is encoded as a client
-writes it and decoded as the hypha reads it, and each reply encoded as the
-hypha writes it and decoded as the client reads it, the same exact values
-at both ends. A MUST act the client does not speak fails by its name
-(`Finding::Failed { act, reason }`). The SDK's `tests/conformance.rs`
-claims that the client example and the reference mind conform, and that a
-client omitting any one MUST act fails by that act's name and no other.
+**In process**, `conformance::check_codecs(profiles, speaks)`: a client is
+modelled as the profiles it declares and the set of acts it speaks. Each
+act it speaks is encoded as a client writes it and decoded as the hypha
+reads it, and each reply encoded as the hypha writes it and decoded as the
+client reads it, the same exact values at both ends; every act of both
+profiles has such a check. A MUST act of a declared profile the client does
+not speak fails by its name (`Finding::Failed { act, reason }`); an act no
+declared profile names is never asked. The SDK's `tests/conformance.rs`
+claims that the client example and the reference mind conform as minds,
+that a house speaking only its uplink conforms as a kernel and is never
+held to task or solve, that a kernel omitting its domain founding fails by
+that name alone, and that a client omitting any one MUST act of its profile
+fails by that act's name and no other.
 
-**On a network**, `conformance::run(endpoint, key)`: against a running
-hypha, the law register is read and each law checked at its coordinate
-with its statement; a task is taken and its envelope decoded; a solve is
-sent, signed by the voice, and its verdict decoded and checked (a code of
-the four the statement names, a final refusal paying nothing, a payment
-naming no refusal); the served statement, the Concordance's hash, a
-signature over it and the task by its citation are read where the hypha
-answers them. Each finding is `Passed`, `Failed` with
-its reason, or `Unread` (no task to solve): a client conforms where every
-MUST act passed and none failed.
+**On a network**, `conformance::run(endpoint, key, profiles)`: against a
+running hypha, as the voice `key` seats. For every profile, the law
+register is read and each law checked at its coordinate with its
+statement, and the served statement, the Concordance's hash and a
+signature over it are read. For a mind, a task is taken and its envelope
+decoded, asked again by its citation, and solved: the solve signed by the
+voice and its verdict checked (a code of the four the statement names, a
+final refusal paying nothing, a payment naming no refusal). For a kernel,
+the house's domain is the voice's own key, its one tier the same key:
+
+- the core clock is read;
+- a lawful transition and a still one are verified, and each served verdict
+  must equal the verdict this build rules (`verify_sized`), exactly; a batch
+  of both is read the same way;
+- the domain is founded (sealed, or founded already by the same voice);
+  its reserve is read and, where it has none, its tier designated; its
+  origin is recorded at version 2 (a curved space, a root unwitnessed);
+- a manifest signed by the sitting reserve is sent: granted, or refused by
+  a name that is the court's standing (`Short`, `Granted`, `InFlight`,
+  `NoNewClosures`); a refusal that names the house's own act (`Unsigned`,
+  `NotReserve`, `NotAUniverse`, `NotFounded`, `Malformed`) fails;
+- the universe is read back, and must read as originated, in the geometry
+  and parent face its origin stated; the endowment is read;
+- the house posts its seats, reads the listing back equal to the post, and
+  reads its mail at the relay's standing.
+
+Each finding is `Passed`, `Failed` with its reason, or `Unread` (no task to
+solve, or a hypha that predates the act): a client conforms where it
+declared a profile, every MUST act of its profiles passed, and none failed.
+Run again with the same voice, the kernel suite reads the domain, reserve
+and origin it left and conforms again.
 
 ## 5. How a client runs it
 
 ```sh
-cargo build --release -p mycelium-sdk --example conformance
+cargo build --release -p mycelium-sdk --example conformance --example house
 target/release/examples/conformance --endpoint 127.0.0.1:7700 --home /tmp/conformance-voice
+target/release/examples/conformance --endpoint 127.0.0.1:7700 --home /tmp/house-voice --profile kernel
+target/release/examples/house /tmp/house-voice 127.0.0.1:7700
 ```
 
-The runnable prints the statement's MUST and MAY lists, the in-process
-report and the network report, and exits 0 where both conform.
-`scripts/quickstart` runs it against a fresh three-hypha network.
+`conformance` takes `--profile mind` (the default), `kernel` or `both`,
+prints the declared profiles' MUST and MAY lists, the in-process report and
+the network report, and exits 0 where both conform. `house` is a minimal
+kernel uplink on `mycelium-sdk` alone: it signs the Concordance's hash and
+presents it, reads the clock, founds its domain, and runs the kernel
+profile. `scripts/quickstart` runs both profiles and the house against a
+fresh three-hypha network.
+
+A kernel built on the SDK speaks through `mycelium_sdk::house`, which
+re-exports the house-side encoders, decoders and types: domain founding
+and the reserve, bond and origin; the universe and its statements; the
+endowment's manifest and grant; the house side of seats; laws verify and
+the batch; the clock; the Concordance signature; framing and `HyphaKey`;
+and the wire modules `domain`, `universe`, `endowment`, `seat`, `atlas`,
+`uplink` and `challenge` whole.
 
 A client written on another stack pins a Mycelium tag, reads the statement
-at that tag (from the SDK, or from a hypha with `ACT_LAWS` mode 6), and
-proves each MUST act the same way: its encoder's output decoded by the
-hypha's decoder, its decoder fed the hypha's replies, compared as exact
-values. A binding in another language (MU-PRECURSORS §4.3 P7,
-**Specified**) passes this read with exact values only.
+at that tag (from the SDK, or from a hypha with `ACT_LAWS` mode 6), takes
+the profile it is, and proves each MUST act the same way: its encoder's
+output decoded by the hypha's decoder, its decoder fed the hypha's replies,
+compared as exact values. A binding in another language (MU-PRECURSORS
+§4.3 P7, **Specified**) passes this read with exact values only.

@@ -10,7 +10,10 @@
 //! state a rule, submit the solve the court replays and pays, sit a seat in a
 //! house, and read its wallet and the hypha's typed readings. Every item is
 //! re-exported from the `mycelium` library, so the server and the SDK cannot
-//! drift; the SDK holds no protocol logic of its own.
+//! drift; the SDK holds no protocol logic of its own. A kernel's uplink (its
+//! house) speaks through the same SDK: [`house`] carries the domain, universe,
+//! endowment, seat, verification and Concordance surface it needs, and the
+//! conformance read's kernel profile checks it.
 //!
 //! ## Modules
 //!
@@ -26,7 +29,8 @@
 //! | [`mind`] | The reference mind, opened on a session |
 //! | [`wire`] | [`WIRE_VERSION`] and the [`ACT_TABLE`] the SDK may send |
 //! | [`laws`] | The L0 law register at its `LAW_VERSION`, its read, and the `forms` law ids |
-//! | [`conformance`] | The client conformance statement (MUST and MAY acts), its in-process check and its suite on a network |
+//! | [`house`] | A kernel's uplink (its house): domain founding, the universe, the endowment's manifest and grant, the house side of seats, laws verify, the clock, the Concordance signature, framing |
+//! | [`conformance`] | The client conformance statement (two profiles, mind and kernel, each with MUST and MAY acts), its in-process check and its suite on a network |
 //! | [`forms`] | The law forms of the Concordance's nested shells |
 //! | [`prelude`] | The items a client uses first |
 //!
@@ -65,6 +69,7 @@
 #![deny(missing_docs)]
 
 pub mod conformance;
+pub mod house;
 pub mod laws;
 pub mod mind;
 pub mod prelude;

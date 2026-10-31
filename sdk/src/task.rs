@@ -30,6 +30,9 @@ pub use mycelium::anastome::dialogue::{decode_grids, encode_grids};
 /// was named, and the modes the pay carried.
 pub use mycelium::anastome::dialogue::{decode_solve_verdict, SolveRefusal, SolveVerdictRead};
 
+/// The verdict's receipt alone: the code and the μ paid per lane.
+pub use mycelium::anastome::dialogue::decode_solve_receipt;
+
 /// The modes a paid verdict carries.
 pub use mycelium::economy::modes::Modes;
 

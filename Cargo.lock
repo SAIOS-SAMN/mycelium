@@ -551,6 +551,8 @@ dependencies = [
  "ed25519-dalek",
  "forms",
  "mycelium",
+ "num-bigint",
+ "num-rational",
 ]
 
 [[package]]
