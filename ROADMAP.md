@@ -410,6 +410,38 @@ is open.
     of an accused node, and concurrent faults target separate nodes. It is
     written against the current admission and treasury.
 
+### Fairness across capacity
+
+**Specified** in [`docs/MU-ECONOMY.md` §11](docs/MU-ECONOMY.md#11-fairness-across-capacity).
+A mind on one laptop and a solver with many accelerators are paid by the
+same rules: capacity buys speed, never a larger share of the same work
+(payment is measured discharge, each closure pays once, discovery is paid
+at every citation, admission is paced by room). The open parts, in order:
+
+1. **Commit before reveal** (High; wire and ledger). `ACT_SOLVE_COMMIT`
+   seals `payload_hash(rule ‖ voice ‖ task ‖ nonce)` as a receipt; the
+   reveal carries the commitment's stamp and nonce; the discharge goes to
+   the causally earliest commitment, and concurrent commitments to one
+   rule share it. A rule seen in the clear can no longer be copied and
+   resubmitted under another voice.
+2. **One closure across courts** (High; ledger; with track 4). A first
+   closure travels with the receipts every court back-fills, so a later
+   solve of the same task at another court is judged a repeat; two first
+   closures across a partition are the duplicate issuance of MU-RECURSION
+   47.4 and the later is burned on rejoin.
+3. **The race reading** (Medium; instrument). Per closure: the first
+   closer, the earliest offer or commitment of its rule, the lanes paid;
+   per voice, first closures per lane. The soak reads it to decide whether
+   latency concentrates first closures before any mechanism for racing is
+   designed.
+4. **The frontier reading** (Medium; reading only; with track 9). The open
+   tasks on a court, each with its ask per lane and any standing
+   obstruction, paged to the frame budget and served by the SDK as
+   `Session::frontier()`.
+
+With this work, the solve receipt's code `1` is renamed `SOLVE_AGAIN` (the
+wire byte unchanged): a repeat is verified and paid nothing.
+
 ## 15. Hosting: worlds, world models and hosted minds
 
 **Specified** in [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md).
@@ -683,3 +715,42 @@ large galaxies:
    the light kinds and heavy enough at the core; selectable, never
    imposed.
 4. **F4:** SDK helpers for posting a manifest and reading the endowment.
+
+## 22. No constant: every number derived or registered
+
+**Specified** in [`docs/MU-DERIVATIONS.md`](docs/MU-DERIVATIONS.md),
+which serves MU-RECURSION §0.0's corollary *No constant*.
+
+Every numeric item in the tree is classified (exact, format, external,
+measured, underived, specified but not built), and every underived number
+has a derivation entry, exact over ℤ or ℚ, or names the reading or ruling
+that decides between candidates. The register `OPEN_PHYSICS` names each
+until it is derived, and a gate refuses any number left unclassified.
+Each phase is one commit:
+
+1. **NC1, defect fixes that need no ruling:** the palette guard in
+   `connection_chart` (D4.7), the receipts page checked against the
+   caller's budget (D1.3), the construction stroke read off its residue
+   (D3.1), the confluence check keyed, metered and tri-state (D3.4), the
+   grid predicate and `push_grid`'s refusal (D4.3), each reply's own
+   header length (D4.6), and `UNIT_BOND` deleted (D2.4).
+2. **NC2, the register and its gate** (D1.4): the `OpenNumber` carrier,
+   the NUMBERS lint in `xtask`, the class-tagging pass, then the
+   inline-literal phase. From here no new constant lands.
+3. **NC3, entries with no open question blocking them**, among them the
+   exact throat fit (D1.2 Phase A), the task address refusing an
+   unrefined pair (D3.2), the measured path and one rtt key per peer
+   (D4.1, D2.7), the evidence reply filled to the frame (D4.2) and the
+   metered termination of the certified series (D4.8).
+4. **NC4, entries waiting on rulings and readings**
+   (MU-DERIVATIONS §7).
+5. **NC5, Concordance amendments:** the challenge window derived from the
+   keepers' reach and return, `LAW_VERSION` 4 → 5 (D1.1); the throat as
+   a round its bank carries, Concordance 2.6 (D1.2 Phase B); the tier
+   slash and the challenger's bounty read off the defect, ruling 78.129
+   amended forward (D2.1, D2.2).
+
+The groups also serve existing tracks: the economy entries (D2.1–D2.7)
+tracks 3, 14 and 21; the cognition entries (D3.1–D3.5) tracks 7 and 10;
+the network entries (D1.3, D4.1–D4.7) tracks 5 and 14; the certified
+mathematics (D4.8) track 12; the register and its gate (D1.4) this track.

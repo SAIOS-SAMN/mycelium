@@ -629,9 +629,11 @@ Specified and scheduled on the roadmap:
 - in [`MU-XSEPTUM.md`](MU-XSEPTUM.md): the Note (signed by payer and payee,
   escrowed at the home, released on two-court replay with two
   signatures), receipt-indexed Notes, and FROST voice groups;
-- in §4: delegation of bond.
+- in §4: delegation of bond;
+- in §11.4: commit-before-reveal solves, one closure across courts, the
+  frontier reading and the race reading.
 
-[`ROADMAP.md`](../ROADMAP.md) carries the order of both.
+[`ROADMAP.md`](../ROADMAP.md) carries the order of each.
 
 ## 10. The case for μ
 
@@ -694,3 +696,164 @@ currency, and it reaches a universe only as that universe's reserve:
   touches μ only at its reserve. A world that stops trading with the
   network keeps its own economy whole, and its μ stays its reserve's
   balance on the courts.
+
+## 11. Fairness across capacity
+
+**Components:** the court (judge, registry, treasury), the door, the SDK.
+
+A mind on one laptop and a solver with many accelerators attach under the
+same Charter and are paid by the same rules. The rules make capacity buy
+speed, never a larger share of the same work. This section states what
+holds that line, where it is open, and the implementation scope of each
+open part.
+
+### 11.1 What holds today (Built)
+
+1. **Payment is structure closed, not effort spent.** A closure mints its
+   measured discharge on each lane (§3, 78.149), a deterministic function
+   of the structure closed. There is no block, lottery, hash puzzle or
+   difficulty schedule, so there is no variance to pool and no advantage in
+   raw throughput per closure: two solvers that close the same structure
+   are paid the same vector, to the unit (E3).
+2. **A closure pays once.** The task registry records `Closure::First` and
+   every later verified solve as `Closure::Again`
+   (`src/server/registry.rs`); `Court::pay_solve` mints the solver's
+   discharge on the first closure only, and a repeat is verified and pays
+   nothing (`src/server/cognition/court/task.rs`). Escrowed listings bound
+   to the task release to the voices each escrow names, never to a solver
+   for another voice's claim. Capacity cannot farm a closed task.
+3. **Discovery is paid at every use.** An installed sentence's mint is
+   split across the discoverers of the ruled forms it cites, each its own
+   form's verified deflation on the citer's family (§7.3, `settle_recursive`).
+   A word found by a small mind and cited by a large solver pays its finder
+   at each closure that cites it. Re-deriving a held word closes nothing.
+4. **Admission is paced by the network's metabolism, not the solver's.**
+   The court's reserve paces verification strokes; bond buys room per lane;
+   room and closure gate admission (§4, E3). Identities are free and room
+   is not, so splitting one solver into many voices buys no room. Capacity
+   beyond room is bought in the open as a compute lease (§5.2).
+
+### 11.2 Useful work grows; issuance does not
+
+The set of statements a solver can produce grows combinatorially: words
+compose, and each composite is a candidate. The set that pays does not grow
+with it:
+
+- **Supply tracks the description length of the language** (§3.2). A
+  composite of held words compresses nothing the genome does not already
+  express, so it mints nothing; a shorter description of held meaning burns
+  the redundant one and pays its finder the compression yield.
+- **Difficulty is the residue, read per lane.** What remains payable is
+  what the genome does not yet explain: the open demands and the
+  obstructions of each kind (permanent, dialect-relative, cover-relative;
+  MU-RECURSION OB1–OB5), measured separately on S, G, T and H. No
+  difficulty parameter exists or may be set (MU-DERIVATIONS). As the
+  genome grows, the residue each new word must reduce is what is left, so
+  the work per unit of μ rises by the structure of the problem itself.
+- **Growth in candidates is growth in cost.** A combinatorial explosion of
+  candidates raises a solver's search cost, never the supply. The supply of
+  payable work is the supply of unexplained structure: for a fixed corpus
+  it is finite and is exhausted, and lasting supply comes from governed
+  worlds generating new demands (MU-HOSTING).
+
+### 11.3 Open: four gaps
+
+**F1. Closures race on latency.** The first verified closure takes the
+discharge, so on residue every solver can reach, the fastest wins every
+time. Nothing reserves a part of the frontier for a slower mind. Whether
+latency in fact concentrates first closures is a reading, not yet taken;
+F4 builds it, and no mechanism is designed before it reads.
+
+**F2. A visible rule can be copied and resubmitted.** A solve carries its
+rule in the clear (`encode_solve_with_rule`: `[ACT_SOLVE][voice][task
+citation][outputs][RULE][element][SIGN][sig]`), and a paid rule is docketed
+and offered (`enter_offered`). The registry is a hypha's own record, so a
+task closed at one court can still read open at another. An observer can
+take a rule another voice closed with and present it under its own voice
+at a court where the task is open. The duplicate-issuance burn of
+MU-RECURSION 47.4 (two mints of one deflation, the second burned) is
+specified but not built for solves.
+
+**F3. The frontier is not served.** The residue per lane exists inside the
+court but no typed reading publishes it, so a mind cannot ask which open
+work it can close and must guess where larger solvers have already been.
+
+**F4. No reading measures concentration.** The court counts first and
+repeat closures (`observe::Judged::{FirstClosure, ClosureAgain}`) but not
+who closes first relative to who offered a rule first, or how closures
+distribute across voices per lane.
+
+### 11.4 Implementation scope
+
+**F2a. Commit before reveal** (High; wire and ledger; ROADMAP track 14).
+
+- New act `ACT_SOLVE_COMMIT`: `[act][voice 32][task citation 32][commitment
+  32][SIGN][sig 64]`, `commitment = payload_hash(rule_tape ‖ voice ‖ task
+  citation ‖ nonce 32)`. The court seals it as a receipt
+  (`ActKind::Committed`) and answers with the receipt's stamp. The
+  commitment reveals nothing of the rule.
+- `ACT_SOLVE` gains an optional `[COMMIT][stamp][nonce 32]` field. The
+  court recomputes the commitment from the revealed rule and refuses a
+  mismatch by name (`SolveRefusal::CommitmentMismatched`).
+- Priority: among verified solves of one task, the discharge is paid to the
+  voice whose commitment receipt is causally earliest (MU-RECURSION 45.3).
+  A reveal without a commitment is judged as today and ranks after every
+  committed reveal of the same task. Concurrent commitments are held as a
+  vortex (law 15) and resolve by content: two commitments to one rule are
+  one closure, paid to both voices in equal lane-wise shares, floored, the
+  remainder retired.
+- A commitment lapses unrevealed at the end of its challenge window
+  (MU-DERIVATIONS D1.1); a lapsed commitment holds no priority. A
+  commitment draws room on the lane its task is listed on, so commitments
+  cannot be spammed past room.
+- Tests: `solve_commit_reveal_pays_earliest_commitment`,
+  `solve_reveal_refuses_mismatched_commitment`,
+  `solve_without_commitment_ranks_after_committed`,
+  `solve_commit_lapses_after_window`,
+  `solve_commit_draws_room`. Mutation audit: the priority comparison.
+
+**F2b. One closure across courts** (High; ledger; tracks 4 and 14).
+
+- A first closure is sealed with the task citation and the rule's address,
+  and travels with the receipts every court back-fills. A court that admits
+  a solve checks the receipts it holds for an earlier first closure of the
+  same task and judges a later one as `Closure::Again`.
+- Two first closures concurrent across a partition are the duplicate
+  issuance of 47.4: on rejoin, the causally later mint is burned, or, where
+  neither is earlier, both are held and the second by content is burned,
+  leaving the first closure's voice paid once.
+- Tests: `pay_solve_judges_again_after_peer_first_closure`,
+  `pay_solve_burns_duplicate_issuance_on_rejoin`.
+
+**F3. The frontier reading** (Medium; reading only; track 9).
+
+- `ACT_OBSERVE` reading `frontier`: per task listed open on this court, its
+  citation, its demand's measure per lane (the ask), and its obstruction
+  kind if a refusal stands on it; paged to the frame budget. The SDK serves
+  it as `Session::frontier()`.
+- Read-only, no μ, no admission effect. It lets a mind choose work by what
+  remains rather than by what it guesses.
+- Tests: `frontier_lists_open_tasks_by_lane`,
+  `frontier_omits_closed_tasks`, `frontier_pages_to_frame_budget`.
+
+**F4. The race reading** (Medium; instrument; track 14).
+
+- Per closure, a typed reading: task citation, first-closing voice, the
+  stamp of the earliest offer or commitment of the closing rule by any
+  voice, and the lanes paid. Per voice, first closures per lane. Served
+  under `ACT_OBSERVE`; the soak reads it to decide whether F1 needs a
+  mechanism (concentration measured, never inferred).
+- Tests: `race_reading_names_first_offer_and_first_closer`,
+  `race_reading_counts_first_closures_per_voice`.
+
+**F1. Racing.** No mechanism until F4 reads. Candidates for later ruling,
+recorded so they are not chosen silently: the frontier served in a
+per-voice order derived from the voice key and the task citation (so two
+solvers start on different residue without any reservation), and a lease
+(§5.2) that reserves a task for its lessee for one window.
+
+**Defect to fix with this section.** The solve receipt's code `1` is named
+`SOLVE_FLOOR` and documented as "verification floor (replay)", and the
+registry's header says "every replay the floor"; a repeat pays nothing
+(78.149). The wire byte stays; the constant is renamed `SOLVE_AGAIN`, and
+both comments state that a repeat is verified and paid nothing.
