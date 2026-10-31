@@ -103,28 +103,26 @@ fn bipartite_cochain_refuses_ragged_grid() {
 /// MU-DERIVATIONS D3.2 — 29×29 → 30×30 IS THE EXACT RATIO 30/29 and refines,
 /// no lcm capped. Its need is read off the four extents:
 /// `R = 29 + 30 − 1 = 58` runs per axis, `L = 870`, so
-/// `need = 58·58 + 2·870² = 1 517 164`. A pair that differs at every site
-/// spends exactly that need (the cochain writes every cell of `K_lcm` and
-/// the pulled-back input every cell again), and the chain is exact: one
-/// output site that changed is its own `29 × 29` block of `K_lcm`.
+/// `need = 58·58 + 870² = 760 264`. A pair that differs at every site
+/// spends exactly that need (the cochain compares every run pair and writes
+/// every cell of `K_lcm`), and the chain is exact: one output site that
+/// changed is its own `29 × 29` block of `K_lcm`.
 #[test]
 fn common_refinement_reads_coprime_thirty() {
     assert_eq!(runs_count(29, 30), Some(58));
-    assert_eq!(need(29, 29, 30, 30), Some(58 * 58 + 2 * 870 * 870));
-    assert_eq!(need(29, 29, 30, 30), Some(1_517_164));
+    assert_eq!(need(29, 29, 30, 30), Some(58 * 58 + 870 * 870));
+    assert_eq!(need(29, 29, 30, 30), Some(760_264));
     let r = CommonRefinement::of(29, 29, 30, 30).expect("30/29 is an exact ratio");
     assert_eq!((r.lcm_h, r.lcm_w, r.scale_in, r.scale_out), (870, 870, (30, 30), (29, 29)));
 
     // Every site differs: the whole need is spent, and nothing past it.
     let a: Grid = vec![vec![1; 29]; 29];
     let b: Grid = vec![vec![2; 30]; 30];
-    let mut whole = stroke(1_517_164);
+    let mut whole = stroke(760_264);
     let refined = crate::arc::refine_delta(&a, &b, &mut whole).expect("the need is the stroke");
     assert_eq!(whole.remaining(), 0, "a pair differing everywhere spends its need exactly");
     assert_eq!(refined.delta.len(), 870 * 870);
     assert!(refined.delta.iter().all(|&(_, _, before, after)| (before, after) == (1, 2)));
-    assert_eq!(refined.pulled_back.len(), 870);
-    assert!(refined.pulled_back.iter().all(|row| row.len() == 870 && row.iter().all(|&h| h == 1)));
 
     // One output site changed: its block of K_lcm and no other cell.
     let mut c: Grid = vec![vec![1; 30]; 30];
@@ -143,16 +141,16 @@ fn common_refinement_reads_coprime_thirty() {
 
 /// A STROKE ONE SHORT OF THE NEED REFUSES BY NAME, and returns no chain and
 /// no grid: the refinement is atomic by rollback of its result. On a 2×2 →
-/// 3×3 pair differing everywhere, `need = R(2, 3)² + 2·6² = 16 + 72 = 88`.
+/// 3×3 pair differing everywhere, `need = R(2, 3)² + 6² = 16 + 36 = 52`.
 #[test]
 fn common_refinement_refuses_spent_stroke() {
     let a: Grid = vec![vec![1; 2]; 2];
     let b: Grid = vec![vec![2; 3]; 3];
     let need = need_of(&a, &b).expect("both extents stand");
-    assert_eq!(need, 88);
+    assert_eq!(need, 52);
     assert!(matches!(
         crate::arc::refine_delta(&a, &b, &mut stroke(need - 1)),
-        Err(Unrefined::Spent { need: 88 })
+        Err(Unrefined::Spent { need: 52 })
     ));
     let mut whole = stroke(need);
     assert!(crate::arc::refine_delta(&a, &b, &mut whole).is_ok(), "the need suffices");

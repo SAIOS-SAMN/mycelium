@@ -458,18 +458,15 @@ pub fn family_cover(train: &[(Grid, Grid)]) -> Option<[u64; 4]> {
     any.then_some(cover)
 }
 
-// ── #97: THE CODOMAIN APERTURE — cross-complex chains ────────────────────────
+// ── #97: CROSS-COMPLEX CHAINS ────────────────────────────────────────────────
 //
 // A pair of complexes K_in (h_in × w_in) and K_out (h_out × w_out) is related
 // by the exact frame map ρ = (h_out/h_in, w_out/w_in) ∈ ℚ². The cross-frame
-// coboundary is supported on the codomain complex: every site of K_out reads
-// the input through ρ⁻¹ (the input site containing the output site's min
-// corner — the substrate's framing convention, the same min-corner quotient
-// every chain is centred by) and differs, or not, from the output. No common refinement
-// is materialized: the support is bounded by |K_out|, and ρ rides as the
-// word's frame fibre. Uniform for every ratio including (1,1), which is the
-// planar delta bit-for-bit. Banned surface: no branch anywhere on ratio
-// VALUES — the map is total.
+// coboundary is read on the common refinement K_lcm (`family::refine`): each
+// input site is an integer block of it and each output site another, and
+// the chain is the per-cell difference there, written cell by cell. Its
+// support is at most |K_lcm|, not |K_out|. Equal frames yield the planar
+// delta bit-for-bit, and ρ rides as the word's frame fibre.
 
 pub(super) fn gcd(a: usize, b: usize) -> usize {
     if b == 0 { a } else { gcd(b, a % b) }
@@ -517,32 +514,28 @@ pub struct Refined {
     /// The coboundary: the sites that changed, each with the hue it came
     /// from and the hue it went to.
     pub delta: Vec<(i64, i64, u8, u8)>,
-    /// The input pulled back onto the output complex — the scene π is
-    /// evaluated over, not the input as given.
-    pub pulled_back: Grid,
     /// The frame it was read in.
     pub frame: Frame,
 }
 
-/// THE CROSS-COMPLEX COBOUNDARY on the codomain: the input pulled back along
-/// ρ⁻¹ onto K_out, then the ordinary per-site difference. Returns (chain on
-/// K_out, the pulled-back input — the scene π evaluates over, the measured
-/// frame). Total for all dims ≥ 1; equal frames yield exactly the planar
-/// delta. Support ≤ |K_lcm|.
+/// THE CROSS-COMPLEX COBOUNDARY on the common refinement K_lcm: the
+/// per-cell difference of the two grids' block embeddings
+/// (`refine::bipartite_cochain`), with the measured frame. Total for all
+/// dims ≥ 1; equal frames yield exactly the planar delta. Support ≤
+/// |K_lcm|.
 ///
 /// Under the caller's stroke, sized by
-/// [`crate::transducer::family::refine::need_of`]: the cochain and the
-/// pulled-back input together spend at most that need, and a stroke that
-/// ends first refuses `Spent { need }` with nothing returned.
+/// [`crate::transducer::family::refine::need_of`]: the cochain spends at
+/// most that need, and a stroke that ends first refuses `Spent { need }`
+/// with nothing returned.
 pub fn refine_delta(
     a: &Grid,
     b: &Grid,
     budget: &mut crate::physics::Budget,
 ) -> Result<Refined, crate::transducer::family::refine::Unrefined> {
     let refn = crate::transducer::family::refine::of_grids(a, b)?;
-    let pulled_back = refn.pulled_back(a, budget)?;
     let chain = refn.bipartite_cochain(a, b, budget)?;
     let (hi, wi, ho, wo) = (a.len(), grid_width(a), b.len(), grid_width(b));
-    Ok(Refined { delta: chain, pulled_back, frame: Frame::new(hi, wi, ho, wo) })
+    Ok(Refined { delta: chain, frame: Frame::new(hi, wi, ho, wo) })
 }
 

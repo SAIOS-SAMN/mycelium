@@ -378,17 +378,6 @@ fn pair_measure_read(
     }
 }
 
-/// ONE PAIR OF THE DEFLATION, its pay and remainder alone.
-fn pair_measure(
-    form: &Form,
-    x: &Grid,
-    y: &Grid,
-    spoken: Option<&Speech>,
-) -> ([u64; 4], crate::transducer::germinate::ResidualGerm) {
-    let (closed, after_chain, _) = pair_measure_read(form, x, y, spoken);
-    (closed, after_chain)
-}
-
 /// 78.153 — ONE PAIR OF THE DEFLATION ON A STROKE: what the court's replay
 /// reads of pair `pi` (its remainder, and the citations unresolved or
 /// cycled there), or `Spent` where the stroke ran out inside the speech.
@@ -427,7 +416,11 @@ pub(crate) fn deflation_pair_metered(
         Some(s) => (s.unresolved.clone(), s.cycled.clone()),
         None => (Vec::new(), Vec::new()),
     };
-    let (_, remainder) = pair_measure(form, x, y, spoken.as_ref());
+    // The remainder alone: the speech against the observed output. What
+    // the pair demanded before any form spoke prices the pay, which the
+    // court's reconstruction does not read here.
+    let grid = spoken.as_ref().and_then(|s| s.grid());
+    let remainder = residual_of(grid.as_ref(), y);
     PairRead::Read { remainder, unresolved, cycled }
 }
 

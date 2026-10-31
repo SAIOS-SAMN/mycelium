@@ -60,14 +60,13 @@ fn lcm_of(a: usize, b: usize) -> Option<usize> {
 
 /// THE STROKE A REFINEMENT NEEDS, read off the four extents before any cell
 /// (MU-DERIVATIONS D3.2): `R_h·R_w` run pairs compared, and at most
-/// `L_h·L_w` cells written by the cochain and `L_h·L_w` by the pulled-back
-/// grid, so `need = R_h·R_w + 2·L_h·L_w` bounds every spend a refinement
-/// makes. `None` on a zero extent (no refinement, nothing to need) or past
-/// `usize`.
+/// `L_h·L_w` cells written by the cochain, so `need = R_h·R_w + L_h·L_w`
+/// bounds every spend a refinement makes. `None` on a zero extent (no
+/// refinement, nothing to need) or past `usize`.
 pub fn need(h_in: usize, w_in: usize, h_out: usize, w_out: usize) -> Option<usize> {
     let sites = lcm_of(h_in, h_out)?.checked_mul(lcm_of(w_in, w_out)?)?;
     let compared = runs_count(h_in, h_out)?.checked_mul(runs_count(w_in, w_out)?)?;
-    compared.checked_add(sites.checked_mul(2)?)
+    compared.checked_add(sites)
 }
 
 /// THE NEED OF A PAIR OF GRIDS: [`need`] on the extents both grids claim.
@@ -268,56 +267,6 @@ pub fn of_grids(grid_in: &Grid, grid_out: &Grid) -> Result<CommonRefinement, Unr
     let (hi, wi) = extent_or_refusal(grid_in)?;
     let (ho, wo) = extent_or_refusal(grid_out)?;
     CommonRefinement::of(hi, wi, ho, wo)
-}
-
-impl CommonRefinement {
-    /// ONE GRID ON `K_lcm` at its scale, one read per cell written; a stroke
-    /// that ends first refuses `Spent { need }` and returns no grid.
-    fn lift(
-        &self,
-        g: &Grid,
-        (sr, sc): (usize, usize),
-        budget: &mut crate::physics::Budget,
-    ) -> Result<Grid, Unrefined> {
-        let mut out: Grid = Vec::with_capacity(self.lcm_h);
-        for r in 0..self.lcm_h {
-            let src = g.get(r / sr).ok_or(Unrefined::Ragged)?;
-            let mut row = Vec::with_capacity(self.lcm_w);
-            for c in 0..self.lcm_w {
-                if !budget.spend() {
-                    return Err(self.spent());
-                }
-                row.push(*src.get(c / sc).ok_or(Unrefined::Ragged)?);
-            }
-            out.push(row);
-        }
-        Ok(out)
-    }
-
-    /// THE INPUT PULLED BACK ONTO `K_lcm`: [`Self::refined`]'s input half,
-    /// `L_h·L_w` reads.
-    pub fn pulled_back(&self, grid_in: &Grid, budget: &mut crate::physics::Budget) -> Result<Grid, Unrefined> {
-        self.lift(grid_in, self.scale_in, budget)
-    }
-
-    /// BOTH GRIDS ON `K_lcm`, by exact block replication: an input site
-    /// covers `s_in` rows and columns of the refinement and an output site
-    /// covers `s_out`, so every coordinate of `K_lcm` takes the hue of the
-    /// site whose block contains it. Nothing is sampled, averaged or
-    /// rounded — the division is exact by construction. One read per cell
-    /// written, `2·L_h·L_w`.
-    ///
-    /// This is what lets the refinement change nothing downstream: the pair
-    /// that comes back is site-for-site, so the scene reading and everything
-    /// after it read an ordinary equal-extent pair.
-    pub fn refined(
-        &self,
-        grid_in: &Grid,
-        grid_out: &Grid,
-        budget: &mut crate::physics::Budget,
-    ) -> Result<(Grid, Grid), Unrefined> {
-        Ok((self.lift(grid_in, self.scale_in, budget)?, self.lift(grid_out, self.scale_out, budget)?))
-    }
 }
 
 /// THE EXACT COBOUNDARY OF A PAIR: both grids embedded in the grids' common

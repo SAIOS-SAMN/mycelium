@@ -186,7 +186,7 @@ fn extraction_spend_includes_refinement_need() {
     let scaled = vec![(grid(&["10", "00"]), grid(&["1100", "1100", "0000", "0000"]))];
     let frames = perceive_family(&scaled);
     let need = crate::transducer::family::refine::need(2, 2, 4, 4).expect("extents stand");
-    assert_eq!(need, 4 * 4 + 2 * 4 * 4, "R(2, 4) = 4 runs per axis, L = 4");
+    assert_eq!(need, 4 * 4 + 4 * 4, "R(2, 4) = 4 runs per axis, L = 4");
     assert_eq!(extraction_spend(&scaled, &frames), 2 * 2 + 4 * 4 + contacts(&frames) + need);
 
     let square = vec![(grid(&["10", "00"]), grid(&["01", "00"]))];
