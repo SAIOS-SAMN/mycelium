@@ -369,6 +369,7 @@ pub fn lane_chart(
 /// The leading value that keeps a lane chart disjoint from a versor chart
 /// (leading 0) and from a residual chart. Content, and the one place the
 /// four covers' key spaces are separated.
+/// FORMAT: layout, the lane chart's leading offset.
 pub const LANE_TAG: u64 = 1 << 32;
 
 /// The generator index of each lane (42.6 as amended): four independent

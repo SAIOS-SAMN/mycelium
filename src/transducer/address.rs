@@ -9,28 +9,45 @@
 use std::ops::Deref;
 
 pub const TAG_ROTOR: u8 = 1;
+/// FORMAT: versor address tag byte.
 pub const TAG_VERSOR: u8 = 2;
+/// FORMAT: word address tag byte.
 pub const TAG_WORD: u8 = 3;
+/// FORMAT: form address tag byte.
 pub const TAG_FORM: u8 = 4;
+/// FORMAT: chart address tag byte.
 pub const TAG_CHART: u8 = 5;
+/// FORMAT: class address tag byte.
 pub const TAG_CLASS: u8 = 6;
+/// FORMAT: certificate address tag byte.
 pub const TAG_CERT: u8 = 7;
+/// FORMAT: listing address tag byte.
 pub const TAG_LISTING: u8 = 8;
+/// FORMAT: selection address tag byte.
 pub const TAG_SEL: u8 = 9;
+/// FORMAT: hue address tag byte.
 pub const TAG_HUE: u8 = 10;
+/// FORMAT: assignment address tag byte.
 pub const TAG_ASSIGN: u8 = 11;
+/// FORMAT: gauge address tag byte.
 pub const TAG_GAUGE: u8 = 12;
+/// FORMAT: plane address tag byte.
 pub const TAG_PLANE: u8 = 13;
 /// A simplex of a Čech complex, keyed by its vertices; the court's simplex
 /// key on a chart and a remainder's site key open with the same byte.
+/// FORMAT: simplex address tag byte.
 pub const TAG_SIMPLEX: u8 = 14;
+/// FORMAT: cocycle address tag byte.
 pub const TAG_COCYCLE: u8 = 15;
+/// FORMAT: task address tag byte.
 pub const TAG_TASK: u8 = 16;
+/// FORMAT: demand address tag byte.
 pub const TAG_DEMAND: u8 = 17;
 /// One demand vertex OF one listing (L8q): what a probe names when it
 /// answers a sentence rather than deflating it. 50.5 files one vertex per
 /// (kind, chart), so the listing's address alone cannot say which vertex
 /// a probe closes.
+/// FORMAT: demand-vertex address tag byte.
 pub const TAG_DEMAND_AT: u8 = 18;
 
 /// AN ELEMENT THAT IS NOT A CLOSED FORM: a residual 1-chain, a letter, a
@@ -48,6 +65,7 @@ pub const TAG_DEMAND_AT: u8 = 18;
 ///
 /// Two kinds, two tags. `from_address` reads `TAG_FORM` and refuses this
 /// one rather than misreading it.
+/// FORMAT: residual-chain address tag byte.
 pub const TAG_RESIDUAL: u8 = 19;
 
 /// §4.4 E8 — THE THREE ADDRESSES OF A COVER, DECLARED (ruled 2026-09-22).
@@ -60,11 +78,15 @@ pub const TAG_RESIDUAL: u8 = 19;
 /// a direction; a meet IS its two carriages unordered, because a seam does
 /// not — so each gets a tag and an invertible reading, and the carriers
 /// answer the coordinate instead of bytes.
+/// FORMAT: piece address tag byte.
 pub const TAG_PIECE: u8 = 20;
+/// FORMAT: carriage address tag byte.
 pub const TAG_CARRIAGE: u8 = 21;
+/// FORMAT: meet address tag byte.
 pub const TAG_MEET: u8 = 22;
 /// 78.62 — A LAW OF THE UNIVERSAL REGISTER: `TAG_LAW ‖ index ‖ version`,
 /// the coordinate an uplinking kernel fetches it by and a verdict cites.
+/// FORMAT: law address tag byte.
 pub const TAG_LAW: u8 = 23;
 
 /// Canonical A21 coordinates of a form, listing, or class. Coarse-first:

@@ -88,6 +88,7 @@ impl Bridge {
 }
 
 /// How many kinds of breach the register names: `breach_slot`'s range.
+/// FORMAT: one slot per `Breach` variant, the positions `breach_slot` writes.
 pub const BREACH_KINDS: usize = 11;
 
 fn breach_slot(b: &Breach) -> usize {

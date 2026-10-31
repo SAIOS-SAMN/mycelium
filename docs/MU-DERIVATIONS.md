@@ -7,7 +7,8 @@
 > **Components:** every numeric item and literal site under `src/`, `forms/src/` and `xtask/`; the register of open physics (`src/physics/axioms/founding.rs`) and its gate (`xtask/lint/`).
 
 **Status:** specification, version 1 (2026-10-31). Every entry is
-**Specified** but D3.1 and D3.2, which are **Built**. Each entry states the number as it
+**Specified** but those marked **Built** in §1 (D3.1, D3.2, and the entries
+built under the live-readings ruling of 2026-10-31, §0.5). Each entry states the number as it
 stands, what it decides, why it is underived, a derivation exact over ℤ or
 ℚ (or, where the documents and the code do not settle one, the candidates
 and the reading that decides between them), and the scope of the change.
@@ -127,7 +128,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 | D1.1 | `CHALLENGE_WINDOW = 1024` | `physics/laws/mod.rs:64` | finality, μ holds | High | the window ends at a sealed reach-and-return of every other keeper's citations | yes | L | 22, 20 |
 | D1.2 | `THROAT_GRID = 64` | `server/cognition/mouth.rs:234` | tube admission | High | Phase A: exact fit by refinement and by meet; Phase B: the throat a round carried by its bank's modes | yes | S/M, L | 22, 19 |
 | D1.3 | `BODY_BUDGET = 768 * 1024` | `network/wire.rs:9` | protocol size | Medium | `B(k) = 65519·k − 89`, `k` from the largest unit that cannot page | yes | S/M | 5, 14 |
-| D1.4 | the register and its gate | `physics/axioms/founding.rs:58–74` | NO CONSTANT | High | `OpenNumber` carrier; the `syn` gate NUMBERS (N1–N6) | yes | M | 22 |
+| D1.4 | the register and its gate | `physics/axioms/founding.rs:58–74` | NO CONSTANT | High | `OpenNumber` carrier; the `syn` gate NUMBERS (N1–N6) (**Built** 2026-10-31: N1–N5 enforced, N6 an inventory) | yes | M | 22 |
 | D2.1 | `held.mu[l] / 2` (slash) | `server/cognition/convert.rs:582` | μ, discipline | High | `cut = ⌊B·D/(B + D)⌋`, defect against bond | yes | M | 3, 14 |
 | D2.2 | `cut[l] / 2` (bounty) | `server/cognition/convert.rs:586` | μ, challenge incentive | High | `bounty = ⌊cut·D/(D + X)⌋` | yes | S | 3, 14 |
 | D2.3 | `surface + 1` (read price) | `server/cognition/crossing.rs:57–64` | μ, admission | High | `p = κ + y/R`, scale-free | yes | S | 21, 3 |
@@ -706,6 +707,19 @@ carrying 293 bytes. PH1 (MU-RECURSION) names it "the protocol carrier
 ---
 
 ### D1.4 The register and its gate — every underived number named until derived
+
+**Status.** **Built** (2026-10-31, the live-readings ruling, §0.5).
+`physics::axioms::{OpenNumber, Governs, OpenKind}` carry the register;
+`OPEN_PHYSICS` is `[OpenNumber; N]`. The numbers gate is
+`xtask/lint/numbers.rs` (N1–N5 enforced by the gate; N6 reported as an
+inventory by `gate inventory`), with the fixture tests of the scope below in
+`xtask/lint/tests/numbers.rs` (and `numbers_inventories_inline_literal_in_law_path`);
+`open_physics_entries_resolve_to_sites` replaces the `=`-only check. Every
+literal-bearing numeric item carries its class. Registered at the build
+beyond the two named before: `BODY_BUDGET` (D1.3 O1), `ACCOUNT_SHARDS`
+(O2), `P_SERIES_CAP` (D4.8), `NESTING` (D4.4), `CANDIDATES_PER_PAIR` (its
+`EXACT` test not yet written), and the soak instruments' strokes and
+calibration count. The mutation-audit entry stays as specified.
 
 **Site.** `src/physics/axioms/founding.rs:58–74`:
 

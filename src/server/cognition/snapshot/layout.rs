@@ -19,34 +19,44 @@ pub const PRE_TRIE_MAGIC: &[u8; 4] = b"MYC7";
 /// at when the snapshot was written, which the line must still hold.
 pub const COURT_TRIE: &str = "court";
 pub const LEAF_HEAD: u8 = 1;
+/// FORMAT: court-tree leaf position for the fold root.
 pub const LEAF_ROOT: u8 = 2;
+/// FORMAT: court-tree leaf position for the line.
 pub const LEAF_LINE: u8 = 3;
 /// 78.120 — the domains founded on this court, each with its tier keys; absent
 /// on a court that founded none (and on every home written before it).
+/// FORMAT: court-tree leaf position for domains.
 pub const LEAF_DOMAINS: u8 = 4;
 /// 78.123 B — the ledger trees: per child fold what remains of it, per domain
 /// its rates gauge and its open obstructions; absent where none is held.
+/// FORMAT: court-tree leaf position for ledger trees.
 pub const LEAF_LEDGERS: u8 = 5;
 /// 78.125 — the challenge windows: every fold recorded since 2(c), each
 /// tier's last head, the rates edges in the order sealed, the arbitrages
 /// booked; absent where none is held.
+/// FORMAT: court-tree leaf position for challenge windows.
 pub const LEAF_CHALLENGES: u8 = 6;
 /// 78.126 — the handoffs: each offer held while a side is open, and the sides
 /// each fold consumed; absent where none is held.
+/// FORMAT: court-tree leaf position for handoffs.
 pub const LEAF_HANDOFFS: u8 = 7;
 /// 78.147 — the fold roots this court holds, each with its two signatures, by
 /// signer; absent where none is held (and on every home written before it).
+/// FORMAT: court-tree leaf position for fold roots.
 pub const LEAF_ROOTS: u8 = 8;
 /// 78.154 — the atlas: each universe's ledger chain and map, the crossings'
 /// edges, the final points held, the claims on stakes; absent where none is
 /// held (and on every home written before it).
+/// FORMAT: court-tree leaf position for the atlas.
 pub const LEAF_ATLAS: u8 = 9;
 /// 78.155b — the grants this court made, each with its manifest; absent
 /// where none was made (and on every home written before it).
+/// FORMAT: court-tree leaf position for endowment grants.
 pub const LEAF_ENDOWMENT: u8 = 10;
 /// 78.155c — the closures judged in each universe since its last grant, by
 /// domain, per lane; absent where none is held (and on every home written
 /// before it).
+/// FORMAT: court-tree leaf position for closures.
 pub const LEAF_CLOSED: u8 = 11;
 
 /// T2 — THE LEDGER (78.24, 78.27): a node per stamp, the per-act data
@@ -55,8 +65,11 @@ pub const LEAF_CLOSED: u8 = 11;
 /// pre-genesis origin, the fold root, a folded act — is a BARE node.
 pub const LEDGER_TRIE: &str = "ledger";
 pub const LEAF_RECEIPT: u8 = 1;
+/// FORMAT: ledger-tree leaf position for entries.
 pub const LEAF_ENTRIES: u8 = 2;
+/// FORMAT: ledger-tree leaf position for settlements.
 pub const LEAF_SETTLEMENTS: u8 = 3;
+/// FORMAT: ledger-tree leaf position for dialect.
 pub const LEAF_DIALECT: u8 = 4;
 
 /// T1 — THE WORDS (78.27): a node per word, keyed by `Cite::Word{chart,
@@ -64,22 +77,34 @@ pub const LEAF_DIALECT: u8 = 4;
 /// held once with the rows it stands on and each per-word field.
 pub const WORDS_TRIE: &str = "words";
 pub const LEAF_HELD: u8 = 1;
+/// FORMAT: words-tree leaf position for discoverer.
 pub const LEAF_DISCOVERER: u8 = 2;
+/// FORMAT: words-tree leaf position for provisional.
 pub const LEAF_PROVISIONAL: u8 = 3;
+/// FORMAT: words-tree leaf position for award.
 pub const LEAF_AWARD: u8 = 4;
+/// FORMAT: words-tree leaf position for deflation.
 pub const LEAF_DEFLATION: u8 = 5;
+/// FORMAT: words-tree leaf position for field hot.
 pub const LEAF_FIELD_HOT: u8 = 6;
+/// FORMAT: words-tree leaf position for field cold.
 pub const LEAF_FIELD_COLD: u8 = 7;
+/// FORMAT: words-tree leaf position for rank.
 pub const LEAF_RANK: u8 = 8;
+/// FORMAT: words-tree leaf position for ruled.
 pub const LEAF_RULED: u8 = 9;
 
 /// The rows a word stands on, as HELD's membership: the basis, the listing
 /// book, the cavity, the federation, and — a sentence docketed under an
 /// address that is not its own — spoken.
 pub const MEMBER_BASIS: u8 = 1;
+/// FORMAT: bit flag for listing-book membership in the HELD byte.
 pub const MEMBER_LISTING: u8 = 2;
+/// FORMAT: bit flag for cavity membership in the HELD byte.
 pub const MEMBER_CAVITY: u8 = 4;
+/// FORMAT: bit flag for federation membership in the HELD byte.
 pub const MEMBER_FEDERATION: u8 = 8;
+/// FORMAT: bit flag for spoken membership in the HELD byte.
 pub const MEMBER_SPOKEN: u8 = 16;
 
 /// T3 (LD3-b) — THE CARRIERS, EACH WITH ITS OWN COORDINATES.
@@ -92,12 +117,19 @@ pub const MEMBER_SPOKEN: u8 = 16;
 /// written here.
 pub const ERAS_TRIE: &str = "eras";
 pub const LEAF_ROOT_HASH: u8 = 1;
+/// FORMAT: eras-tree leaf position for the witness.
 pub const LEAF_WITNESS: u8 = 2;
+/// FORMAT: eras-tree leaf position for the home signature.
 pub const LEAF_SIG_HOME: u8 = 3;
+/// FORMAT: eras-tree leaf position for the witness signature.
 pub const LEAF_SIG_WITNESS: u8 = 4;
+/// FORMAT: eras-tree leaf position for identities.
 pub const LEAF_IDENTITIES: u8 = 5;
+/// FORMAT: eras-tree leaf position for first.
 pub const LEAF_FIRST: u8 = 6;
+/// FORMAT: eras-tree leaf position for count.
 pub const LEAF_COUNT: u8 = 7;
+/// FORMAT: eras-tree leaf position for payload.
 pub const LEAF_PAYLOAD: u8 = 8;
 
 /// The complexes, each keyed by its own key; its node's one leaf is the
@@ -111,9 +143,13 @@ pub const LEAF_TRIES: u8 = 1;
 /// stamp of the receipt the row stood at — the tick it replaced.
 pub const COCYCLES_TRIE: &str = "cocycles";
 pub const LEAF_FROM: u8 = 1;
+/// FORMAT: cocycles-tree leaf position for the to-voice.
 pub const LEAF_TO: u8 = 2;
+/// FORMAT: cocycles-tree leaf position for class.
 pub const LEAF_CLASS: u8 = 3;
+/// FORMAT: cocycles-tree leaf position for gauge.
 pub const LEAF_GAUGE: u8 = 4;
+/// FORMAT: cocycles-tree leaf position for stood.
 pub const LEAF_STOOD: u8 = 5;
 
 /// 78.68 — THE WINDING CARRIERS, each keyed by `chart ‖ simplex`, its one

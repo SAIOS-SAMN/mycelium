@@ -11,7 +11,9 @@ use super::stalk::Invariant;
 /// Spatial, gauge, temporal, holonomic (shell).
 pub const LANE_SPATIAL: usize = 0;
 pub const LANE_GAUGE: usize = 1;
+/// FORMAT: lane enum position.
 pub const LANE_TEMPORAL: usize = 2;
+/// FORMAT: lane enum position.
 pub const LANE_SHELL: usize = 3;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

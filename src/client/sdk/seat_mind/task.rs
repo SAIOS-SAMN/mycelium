@@ -23,6 +23,7 @@ use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::Vertex;
 
 /// The record kind that puts a task before the seat.
+/// FORMAT: percept record kind.
 pub const KIND_TASK: u16 = 4;
 /// The function a seat solves a task by.
 pub const FN_SOLVE: u16 = 1;
@@ -32,6 +33,7 @@ pub const FN_SOLVE: u16 = 1;
 /// task's citation), Count(the stop)]`, the stop one past its place in
 /// `perceive::STOPS` — and the house frees the seat at once, never after its
 /// patience. Silence was ambiguous: in flight, or given up.
+/// FORMAT: seat function code.
 pub const FN_DECLINE: u16 = 2;
 
 /// The arguments of a declination: the task's citation and the stop's code.

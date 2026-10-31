@@ -12,6 +12,7 @@ impl Entry {
     /// 32]`, 154 bytes — the one layout the ledger, the snapshot and the
     /// wire (`ACT_ROWS`) share. The stamp is the act the row stands at
     /// (78.24); the arm the proof of work it pays (78.33).
+    /// FORMAT: row tape length, 154 bytes.
     pub const TAPE: usize = 1 + 1 + 32 + 32 + crate::chronometry::Stamp::LEN + 32;
 
     /// One tag per kind, and the match is exhaustive: a kind that could not
@@ -293,6 +294,8 @@ pub type Holds = crate::network::nerve::Keyed<super::pay::Held>;
 /// μ⃗ likewise.
 pub const LEAF_MU: u8 = 1;
 /// A hold's payer, the `vk` it was set aside from.
+/// FORMAT: leaf position of a hold's payer within its node.
 pub const LEAF_PAYER: u8 = 2;
 /// The act a hold was set aside at: its stamp, then that act's chain hash.
+/// FORMAT: leaf position of a hold's anchor within its node.
 pub const LEAF_ANCHOR: u8 = 3;

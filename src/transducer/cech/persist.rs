@@ -12,17 +12,24 @@ use crate::snapshot::{leaf, put_trie, take_trie, Leaves};
 /// ray, its placement as a ray.
 const SECTIONS: &str = "sections";
 const LEAF_ADDR: u8 = 1;
+/// FORMAT: trie leaf position.
 const LEAF_GAMMA: u8 = 2;
+/// FORMAT: trie leaf position.
 const LEAF_CARRIAGE: u8 = 3;
 
 /// The simplices trie: the simplex's key (`by_key`'s) → its degree, its
 /// vertices, its coefficient and carriage as rays, its volume and its fill.
 const SIMPLICES: &str = "simplices";
 const LEAF_DEGREE: u8 = 1;
+/// FORMAT: trie leaf position.
 const LEAF_VERTICES: u8 = 2;
+/// FORMAT: trie leaf position.
 const LEAF_COEFFICIENT: u8 = 3;
+/// FORMAT: trie leaf position.
 const LEAF_SIMPLEX_CARRIAGE: u8 = 4;
+/// FORMAT: trie leaf position.
 const LEAF_VOLUME: u8 = 5;
+/// FORMAT: trie leaf position.
 const LEAF_FILL: u8 = 6;
 
 /// The remainder trie: the key of each remainder edge, and no leaf.

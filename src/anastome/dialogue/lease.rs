@@ -17,8 +17,10 @@ use super::*;
 /// The domain a lease act is signed under.
 const LEASE: &[u8] = b"mycelium lease v1";
 /// `ACT_WALLET`'s sub-kind for opening a lease.
+/// FORMAT: sub-kind byte of ACT_WALLET for opening a lease.
 pub const KIND_OPEN: u8 = 3;
 /// `ACT_WALLET`'s sub-kind for closing one.
+/// FORMAT: sub-kind byte of ACT_WALLET for closing a lease.
 pub const KIND_CLOSE: u8 = 4;
 
 fn put_lanes(out: &mut Vec<u8>, v: &[u64; 4]) {

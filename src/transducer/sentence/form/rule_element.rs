@@ -201,6 +201,7 @@ fn canonical(t: &Carriage) -> Carriage {
 
 /// THE TAG AN ELEMENT NO ACT NAMES IS WRITTEN UNDER, in the act's place: past
 /// every act's tag, so a reader that knows only the acts refuses it.
+/// FORMAT: tape tag byte past the act tags.
 const UNGLOSSED: u8 = 16;
 
 fn put_unglossed(buf: &mut Vec<u8>, l: &Lowered, t: &Carriage) {

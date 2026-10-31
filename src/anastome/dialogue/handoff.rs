@@ -647,15 +647,25 @@ pub enum HandoffRequest {
     TubeRead([u8; 32]),
 }
 
+/// FORMAT: sub-kind byte of ACT_HANDOFF for a read.
 const KIND_READ: u8 = 4;
+/// FORMAT: sub-kind byte of ACT_HANDOFF for loops.
 const KIND_LOOPS: u8 = 10;
+/// FORMAT: sub-kind byte of ACT_HANDOFF for a tariffed mouth.
 const KIND_TARIFFED_MOUTH: u8 = 11;
+/// FORMAT: sub-kind byte of ACT_HANDOFF for a tube.
 const KIND_TUBE: u8 = 12;
+/// FORMAT: sub-kind byte of ACT_HANDOFF for a tube read.
 const KIND_TUBE_READ: u8 = 13;
+/// FORMAT: sub-kind byte of ACT_HANDOFF for a feed.
 const KIND_FEED: u8 = 14;
+/// FORMAT: sub-kind byte of ACT_HANDOFF for a draw.
 const KIND_DRAW: u8 = 15;
+/// FORMAT: sub-kind byte of ACT_HANDOFF for a core tube.
 const KIND_CORE_TUBE: u8 = 16;
+/// FORMAT: sub-kind byte of ACT_HANDOFF for a spaced tube.
 const KIND_SPACED_TUBE: u8 = 17;
+/// FORMAT: sub-kind byte of ACT_HANDOFF for a spaced core.
 const KIND_SPACED_CORE: u8 = 18;
 
 /// `[ACT_HANDOFF][13][mouth 32]`.

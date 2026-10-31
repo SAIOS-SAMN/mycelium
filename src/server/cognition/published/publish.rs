@@ -15,6 +15,7 @@ const END: Place = Place { k: u64::MAX, i: u64::MAX };
 
 /// The shards the accounts are held in, by the first byte of the party's
 /// key: a moved account copies its shard, never the whole.
+/// REGISTERED: ACCOUNT_SHARDS
 pub const ACCOUNT_SHARDS: usize = 256;
 
 /// One receipt as published, with the bytes of its tape.

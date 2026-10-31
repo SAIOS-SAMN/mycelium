@@ -13,6 +13,19 @@ such change is named here.
   fixed values are names, invariants of the algebra and external formats;
   a decision with magnitude is a graded reading; a refusal is named and
   carries the reading that caused it.
+- **The open-physics register and the numbers gate** (D1.4):
+  `physics::axioms::OPEN_PHYSICS` is now `[OpenNumber; N]` (name, value as
+  written, site, what it governs, governing sections, derivation, kind:
+  physics, protocol or engineering), re-exported with `Governs` and
+  `OpenKind`. The gate gains `xtask/lint/numbers.rs`, read with `syn`: every
+  literal-bearing numeric item carries one class tag (`EXACT:`, `FORMAT:`,
+  `EXTERNAL:`, `MEASURED:`, `REGISTERED:`), and the register agrees with its
+  sites (N1–N5); the inline literals of the law paths (N6) are an inventory
+  (`gate inventory`). Every literal-bearing item of the tree is tagged.
+  Registered beside the challenge window and the throat grid:
+  `BODY_BUDGET`, `ACCOUNT_SHARDS`, `P_SERIES_CAP`, `NESTING`,
+  `CANDIDATES_PER_PAIR`, and the soak instruments' strokes and calibration
+  count. A mutation-audit entry strips a registered tag.
 
 ### SDK
 - `mycelium_sdk::rule` gains `perceive_family`, `Frames` and

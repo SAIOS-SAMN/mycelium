@@ -231,6 +231,7 @@ pub fn sphere_throat(m: &num_rational::BigRational, radius: &num_rational::BigRa
 /// PHYSICS, NAMED (`physics::axioms::OPEN_PHYSICS`): an enclosure on a
 /// declared grid is an approximation; the throat is a `Cl(4,1)` round carried
 /// by its bank's modes, fit by meet, and this grid retires with it.
+/// REGISTERED: THROAT_GRID
 pub const THROAT_GRID: u32 = 64;
 
 /// 78.134 — A THROAT'S HORIZON LEVEL on curved space: the mouth's horizon

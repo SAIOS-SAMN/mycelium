@@ -15,6 +15,7 @@ pub struct Place {
 
 impl Place {
     /// A place's coordinates: the orbit, the act's place in it.
+    /// FORMAT: Place wire length.
     pub const LEN: usize = 8 + 8;
 
     /// A line's first place: the first act of its first orbit.
@@ -87,6 +88,7 @@ pub struct Stamp {
 
 impl Stamp {
     /// A stamp's coordinates: the tick, the key, the orbit, the place.
+    /// FORMAT: Stamp wire length.
     pub const LEN: usize = 8 + 32 + Place::LEN;
 
     /// The stamp of one act: its tick, its signer, its place on the line.
@@ -779,6 +781,7 @@ impl KStepReceipt {
     /// The least tape one node takes: its stamp, kind, frame, no
     /// predecessor, no parent, no citation, and the two hashes — what a
     /// reader allots one node when it bounds an untrusted count.
+    /// FORMAT: least tape length of one node.
     pub const MIN_TAPE: usize = Stamp::LEN + 1 + 32 + 1 + 4 + 4 + 32 + 32;
 
     /// SEAL a node: its chain hash taken over its own canonical

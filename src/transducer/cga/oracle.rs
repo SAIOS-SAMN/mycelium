@@ -20,10 +20,13 @@ use num_rational::BigRational;
 pub const GOLDEN: &str = "src/transducer/cga/tests/oracle.golden";
 /// The corpus slice the versors are harvested from, and how many distinct
 /// ones are read. A slice of the corpus, in the directory's sorted order.
+/// FORMAT: an input of the golden file's writing, the tasks it reads.
 const TASKS: usize = 40;
+/// FORMAT: an input of the golden file's writing, the versors it holds.
 const HARVEST: usize = 48;
 /// The reading budget the golden was written under: a fixture of the golden
 /// file, as its inputs are, so the split's reading is the same on every run.
+/// FORMAT: an input of the golden file's writing, its reading budget.
 const READ_BUDGET: usize = 1 << 16;
 
 fn q(n: i64, d: i64) -> BigRational {

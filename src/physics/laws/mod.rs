@@ -51,6 +51,7 @@ pub enum Law {
 /// and the black hole published as sources and sinks. Version 4 (78.125, the
 /// ruling on 2(c)): the challenge window, the register's first
 /// PARAMETER.
+/// FORMAT: register wire version.
 pub const LAW_VERSION: u8 = 4;
 
 /// 78.125 — THE CHALLENGE WINDOW, in mesh heights (never a wall clock): how
@@ -61,6 +62,7 @@ pub const LAW_VERSION: u8 = 4;
 /// (`physics::axioms::OPEN_PHYSICS`): a law parameter every kernel shares;
 /// its derivation — the heights a fold's challenge needs to reach every keeper
 /// and return — is a law amendment.
+/// REGISTERED: CHALLENGE_WINDOW
 pub const CHALLENGE_WINDOW: u64 = 1024;
 
 /// THE REGISTER'S PARAMETERS at its version, by name: served beside the laws

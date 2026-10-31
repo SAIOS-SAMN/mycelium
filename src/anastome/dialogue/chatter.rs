@@ -41,10 +41,13 @@ use crate::transducer::cga::Mv;
 use std::io::{self, Read, Write};
 use std::net::TcpStream;
 
+/// FORMAT: wire byte leading every chatter frame.
 pub const TAG: u8 = 0x43;
 pub const SAY: u8 = 0;
 pub const HEARD: u8 = 1;
+/// FORMAT: sub-kind byte of a chatter frame for an acknowledgement.
 pub const ACK: u8 = 2;
+/// FORMAT: sub-kind byte of a chatter frame for a hold.
 pub const HOLD: u8 = 3;
 const SIGNED: &[u8] = b"mycelium chatter v6";
 

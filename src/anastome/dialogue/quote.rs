@@ -98,6 +98,7 @@ fn outcome_head(code: u8, height: u64, pressure: &[u64; 4]) -> Vec<u8> {
 /// was ruled and the voice speaks again (`cognition::outcome_code` of a
 /// pending, deferred or awaiting outcome). A deferral is this code with no
 /// height and nothing taught.
+/// FORMAT: reply code for a pending outcome.
 pub const PENDING_CODE: u8 = 2;
 
 /// The deferral a full judge answers every act with (23.8, ruled

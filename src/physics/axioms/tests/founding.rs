@@ -97,11 +97,17 @@ fn geo_carries_k_generators_to_grade_k_blade() {
 }
 
 /// NO CONSTANT: every number the tree still declares where a reading belongs
-/// is named, with what derives it.
+/// is named at one site of the tree, with its value, its governing sections
+/// and what derives it; no two entries name one site. The numbers gate
+/// (`xtask lint::numbers`, N5) reads each site's item and its initializer.
 #[test]
-fn open_physics_names_value_and_derivation() {
-    for (number, derivation) in crate::physics::axioms::OPEN_PHYSICS {
-        assert!(number.contains('='), "{number} names its value");
-        assert!(!derivation.is_empty(), "{number} names what derives it");
+fn open_physics_entries_resolve_to_sites() {
+    let register = crate::physics::axioms::OPEN_PHYSICS;
+    for (i, n) in register.iter().enumerate() {
+        let (file, item) = n.site.split_once(".rs::").expect("a site is a file and an item");
+        assert!(file.starts_with("src/"), "{} sits in the tree", n.site);
+        assert!(item == n.name || item.ends_with(&format!("::{}", n.name)), "{} names its item", n.site);
+        assert!(!n.value.is_empty() && !n.doc.is_empty() && !n.derivation.is_empty(), "{} is whole", n.site);
+        assert!(register[i + 1..].iter().all(|m| m.site != n.site), "{} is named once", n.site);
     }
 }

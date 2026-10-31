@@ -9,6 +9,7 @@ use crate::transducer::alphabet::{Rotor, Word, Q};
 use super::*;
 
 /// Rank of the Euclidean chart the letters occupy (`e0..e3`).
+/// EXACT: alphabet_layout_derives_tabulated_values
 pub const LETTER_RANK: usize = 4;
 
 /// The sensor's plane inside the chart: rows on `e0`, columns on `e1`.
@@ -54,6 +55,7 @@ pub fn slot_plane(plane: (usize, usize)) -> Option<(u8, u8)> {
 /// count stated twice is a count that can disagree with itself, and the
 /// six here were spelled into a table, into its type, into the name
 /// `SLOT_PLANES_SIX`, and into every `p < 6` and `1..=6` that read it.
+/// EXACT: alphabet_layout_derives_tabulated_values
 pub const PAIR_PLANES: usize = LETTER_RANK * (LETTER_RANK - 1) / 2;
 
 /// The two-subsets in lexicographic order, which is slot order. Derived,
@@ -79,6 +81,7 @@ const fn pair_planes_of_rank() -> [(u8, u8); PAIR_PLANES] {
 /// identity, a 90° turn and a (3,4,5) rotor on every pair plane, and a
 /// (5,12,13) rotor on the planes that carry one. It was `17` written out,
 /// which is the same fact as the three tables below stated a fourth time.
+/// EXACT: alphabet_layout_derives_tabulated_values
 pub const CAYLEY_ALPHABET_LEN: usize = 1 + 2 * PAIR_PLANES + SLOT_PLANES_13.len();
 
 /// Opaque letter identifier. Range `0..17` at the constructor; a wire
@@ -97,6 +100,7 @@ pub(crate) const SLOT_PLANES_SIX: [(u8, u8); PAIR_PLANES] = pair_planes_of_rank(
 /// wherever that number was written out — `CAYLEY_ALPHABET_LEN` above, and
 /// `LetterId::pythagorean_13` answers the membership question for every
 /// reader that used to test `p < 4`.
+/// FORMAT: the chart's axis indices `e0..e3`, one pair per plane.
 pub(crate) const SLOT_PLANES_13: [(u8, u8); 4] = [(0, 1), (0, 2), (0, 3), (1, 2)];
 
 /// THE SENSOR PLANE as a pair, so a reader asking "is this the sensor's"
@@ -322,6 +326,7 @@ pub enum RelatorKind {
 /// order four on every pair plane, one commuting relation per
 /// complementary pair, the sheet's square, and the two prime letters of
 /// infinite order. It was `12`, which is those four facts added up by hand.
+/// EXACT: key_agrees_for_two_tapes_of_one_vertex
 pub(crate) const RELATOR_N: usize = PAIR_PLANES + PAIR_PLANES / 2 + 1 + 2;
 
 /// Grammar of the seventeen: 90° turns order four, complementary

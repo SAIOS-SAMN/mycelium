@@ -71,31 +71,44 @@ pub const SIGNED: &[u8] = b"mycelium seat v1";
 
 pub const SUB_SEATS: u8 = 0;
 pub const SUB_TAKE: u8 = 1;
+/// FORMAT: sub-kind byte for a seat taken.
 pub const SUB_TAKEN: u8 = 2;
+/// FORMAT: sub-kind byte for a percept.
 pub const SUB_PERCEPT: u8 = 3;
+/// FORMAT: sub-kind byte for a call.
 pub const SUB_CALL: u8 = 4;
+/// FORMAT: sub-kind byte for an outcome.
 pub const SUB_OUTCOME: u8 = 5;
+/// FORMAT: sub-kind byte for a listing read.
 pub const SUB_READ_LISTING: u8 = 6;
+/// FORMAT: sub-kind byte for a mail read.
 pub const SUB_READ_MAIL: u8 = 7;
 /// v1.4 — READ-MAIL answered with the relay's epoch and sequence.
+/// FORMAT: sub-kind byte for a mail-read standing.
 pub const SUB_READ_MAIL_STANDING: u8 = 8;
 /// v1.4 — THE SCOPED BIT: a post or listing read naming a sub-origin is
 /// written under its sub-kind with this bit set.
+/// FORMAT: bit set on a sub-kind byte to mark it scoped.
 pub const SCOPED: u8 = 0x80;
 
 /// A record kind: the house's counsel to the mind — the call the in-game
 /// mind would make, with its worth and cost.
+/// FORMAT: record-kind sentinel for counsel.
 pub const KIND_COUNSEL: u16 = 0xFFFF;
 
 /// 78.148 — A HOUSE'S REASONS, as its TAKEN and OUTCOME carry them (the
 /// house's own wire; zero is no reason). NOT THE HOLDER: the mind no longer
 /// holds the seat it calls from (a house restarted, the seat passed).
+/// FORMAT: reason code for not the holder.
 pub const REASON_NOT_THE_HOLDER: u16 = 3;
 /// The seat offers no such function (the listing moved).
+/// FORMAT: reason code for no such function.
 pub const REASON_NO_SUCH_FUNCTION: u16 = 4;
 /// The function exists and its arguments are outside its domain.
+/// FORMAT: reason code for bad arguments.
 pub const REASON_BAD_ARGUMENTS: u16 = 5;
 /// A valid call the house did not apply this beat.
+/// FORMAT: reason code for not applied.
 pub const REASON_NOT_APPLIED: u16 = 6;
 
 const TAG_Q: u8 = 0;
@@ -103,10 +116,15 @@ const TAG_KEY: u8 = 1;
 /// A Count's tag, as a listing's FN names its arguments (78.148: a
 /// function whose every argument is a Count or a Flag is the mind's to
 /// explore).
+/// FORMAT: argument tag for a count.
 pub const TAG_COUNT: u8 = 2;
+/// FORMAT: argument tag for a flag.
 pub const TAG_FLAG: u8 = 3;
+/// FORMAT: argument tag for a multivector.
 const TAG_MV: u8 = 4;
+/// FORMAT: argument tag for a rational past 64 bits.
 const TAG_BIGQ: u8 = 5;
+/// FORMAT: argument tag for a run of bytes.
 const TAG_BYTES: u8 = 6;
 
 /// ONE ARGUMENT, exact: a rational, a key, a count, a flag, a multivector of
@@ -997,6 +1015,7 @@ pub struct MailRead {
 
 impl MailRead {
     /// The bytes a sub-kind 8 reply takes before its pieces: `[1][epoch][seq][count]`.
+    /// FORMAT: mail-read reply header length, 19 bytes.
     pub const HEAD: usize = 1 + 8 + 8 + 2;
 
     /// WHERE A READER'S CURSOR STANDS against this relay: a cursor read under

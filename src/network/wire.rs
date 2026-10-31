@@ -6,6 +6,7 @@
 
 /// The MTU body budget: the wire's hard cap. A body exceeding it is refused
 /// (fragmentation is the caller's concern; the wire never silently truncates).
+/// REGISTERED: BODY_BUDGET
 pub const BODY_BUDGET: usize = 768 * 1024;
 
 /// Frame-integrity digest of served bytes (corpus files, signed manifests).
@@ -94,6 +95,7 @@ pub struct Frame {
 /// own byte with this bit set, and the frame's last `TPoint::LEN` bytes are
 /// the last FINAL point its speaker read. WIRE-CHANGE: a decoder older than
 /// 78.152 reads no lane in the byte and refuses the frame whole.
+/// FORMAT: lane byte flag bit.
 pub const POINTED: u8 = 0x80;
 
 /// A lane byte read: the lane, and whether the frame carries a point.

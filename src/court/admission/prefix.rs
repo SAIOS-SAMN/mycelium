@@ -66,6 +66,7 @@ impl SignedPrefix {
     }
 
     /// The fixed fields' bytes: origin, epoch, predecessor, place, height.
+    /// FORMAT: length of the signed prefix's fixed-field span.
     const FIXED: usize = 32 + 4 + 32 + 8 + 8 + 8;
 
     /// The signed bytes, or `None` where the chart or the payload passes its

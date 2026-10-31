@@ -114,4 +114,12 @@ pub const CATALOGUE: &[Mutant] = &[
         target: &["--lib"],
         filter: "server::tests::registry::task_address",
     },
+    Mutant {
+        law: "NO CONSTANT (MU-DERIVATIONS D1.4): a registered number keeps its class tag, or the numbers gate refuses the tree",
+        file: "src/server/cognition/mouth.rs",
+        before: "/// REGISTERED: THROAT_GRID\npub const THROAT_GRID",
+        after: "pub const THROAT_GRID",
+        target: &["--manifest-path", "xtask/Cargo.toml"],
+        filter: "numbers_refuses_nothing_in_tree",
+    },
 ];

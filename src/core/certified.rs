@@ -529,6 +529,7 @@ pub fn gamma_p(a: &Encl, x: &Encl, w: u32) -> Option<Encl> {
 }
 
 /// THE CAP on `P`'s series argument: `x ≤ 10⁴`, past which `P` is refused.
+/// REGISTERED: P_SERIES_CAP
 pub const P_SERIES_CAP: i64 = 10_000;
 
 /// `erf v = sign(v)·P(½, v²)` at an exact point. Past the series cap (`v² >

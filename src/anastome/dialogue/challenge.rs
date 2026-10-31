@@ -223,8 +223,11 @@ pub enum ChallengeRequest {
     LineHead([u8; 32]),
 }
 
+/// FORMAT: act kind byte for a finality read.
 const KIND_FINALITY: u8 = 4;
+/// FORMAT: act kind byte for an obstructions read.
 const KIND_OBSTRUCTIONS: u8 = 5;
+/// FORMAT: act kind byte for a line-head read.
 const KIND_LINE_HEAD: u8 = 8;
 
 /// `[ACT_CHALLENGE][8][tier 32]`.

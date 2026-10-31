@@ -10,6 +10,7 @@ use mycelium::client::sdk::Epigenome;
 use mycelium::transducer::family::incongruence::{contrast, difference, manifold, relative, reproduces, Cell};
 use mycelium::transducer::family::{extract_rule_with, form_deflation, perceive};
 
+/// REGISTERED: STROKE
 const STROKE: usize = 1 << 20;
 
 /// One reading of a subject: its input and output bodies, its relative

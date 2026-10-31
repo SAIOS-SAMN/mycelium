@@ -27,7 +27,9 @@ use crate::transducer::cga::Mv;
 use num_bigint::BigUint;
 use num_rational::BigRational as Q;
 
+/// FORMAT: sub-kind byte of ACT_DOMAIN for a manifest.
 pub const KIND_MANIFEST: u8 = 17;
+/// FORMAT: sub-kind byte of ACT_DOMAIN for an endowment read.
 pub const KIND_READ_ENDOWMENT: u8 = 18;
 const MANIFEST: &[u8] = b"mycelium manifest v1";
 

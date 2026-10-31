@@ -300,6 +300,7 @@ pub fn decode_receipts_reply(body: &[u8]) -> Option<Vec<crate::chronometry::KSte
 /// 78.151 (WIRE-CHANGE) — THE HEIGHT A READ WAS ANSWERED AT: a door that
 /// serves a read off its published reading writes that reading's height
 /// behind the answer, eight bytes, so the asker knows how fresh it is.
+/// FORMAT: reading-height field length, 8 bytes.
 pub const READING_HEIGHT_LEN: usize = 8;
 
 /// The published reading's height, written behind a read's answer.

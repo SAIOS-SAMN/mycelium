@@ -39,8 +39,11 @@ pub(super) fn window_end(h: u64) -> u64 {
 /// The outcome bytes `Cite::Challenge` carries.
 const DEMANDED: u8 = 0;
 const UPHELD: u8 = 1;
+/// FORMAT: outcome byte on `Cite::Challenge`.
 const FALSIFIED: u8 = 2;
+/// FORMAT: outcome byte on `Cite::Challenge`.
 const DISCHARGED: u8 = 3;
+/// FORMAT: outcome byte on `Cite::Challenge`.
 const WITHDRAWN: u8 = 4;
 
 fn zero() -> [Q; 4] {

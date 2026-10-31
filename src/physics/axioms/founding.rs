@@ -58,17 +58,236 @@ pub const DIMENSION_IS_EXPONENT: &str =
 pub const NO_CONSTANT: &str =
     "a number in the physics is read off the field or the geometry, or it is undefined physics named until it is derived";
 
+/// What a registered number decides (MU-DERIVATIONS §0.3, D1.4).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Governs {
+    Finality,
+    Admission,
+    Mu,
+    Liveness,
+    ProtocolSize,
+    Reading,
+    Memory,
+    Instrument,
+}
+
+/// Which process retires a registered number (MU-DERIVATIONS D1.4): a law
+/// amendment under the Concordance (`Physics`), the wire contract
+/// (`Protocol`), or MU-STANDARDS (`Engineering`: memory, cost, instruments).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OpenKind {
+    Physics,
+    Protocol,
+    Engineering,
+}
+
+/// ONE NUMBER STANDING WHERE A READING BELONGS, named until derived
+/// (MU-DERIVATIONS D1.4). The numbers gate (`xtask lint::numbers`, N5) reads
+/// every entry: its `site` is an item tagged `REGISTERED: <name>`, and its
+/// `value` is that item's initializer as written.
+#[derive(Debug, Clone, Copy)]
+pub struct OpenNumber {
+    /// The item's name.
+    pub name: &'static str,
+    /// The initializer exactly as `syn` prints it.
+    pub value: &'static str,
+    /// `<file>::[<owner>::]<NAME>`, the item's coordinates in the tree.
+    pub site: &'static str,
+    pub governs: Governs,
+    /// The governing sections.
+    pub doc: &'static str,
+    /// What will derive it, or `Open: …` with its candidates.
+    pub derivation: &'static str,
+    pub kind: OpenKind,
+}
+
+/// The soak's instruments stroke a family once under a stroke of `2²⁰`
+/// reads; one entry per instrument, all retired by one reading.
+const SOAK_STROKE: &str = "Open: an instrument's stroke is the need of what it reads (78.111, the D3.1 pattern), read off the \
+                           family it extracts; until each instrument sizes its own, the soak strokes under one chosen size";
+
 /// UNDEFINED PHYSICS, NAMED: each number the tree still declares where a
-/// reading belongs, with what it stands for and what will derive it.
-pub const OPEN_PHYSICS: [(&str, &str); 2] = [
-    (
-        "CHALLENGE_WINDOW = 1024",
-        "law parameter of version 4, shared by every kernel of a network universe (78.125); its derivation — the heights a fold's \
-         challenge needs to reach every keeper and return — is a law amendment, agreed under the Concordance",
-    ),
-    (
-        "THROAT_GRID = 64",
-        "the 2^-64 grid a throat's cosh horizon is enclosed on (78.134): an approximation; the throat is a Cl(4,1) round carried by \
-         its bank's modes, fit by meet, and the grid retires with it",
-    ),
+/// reading belongs, with what it decides, the sections that govern it and
+/// what will derive it (MU-DERIVATIONS D1.4).
+pub const OPEN_PHYSICS: [OpenNumber; 19] = [
+    OpenNumber {
+        name: "CHALLENGE_WINDOW",
+        value: "1024",
+        site: "src/physics/laws/mod.rs::CHALLENGE_WINDOW",
+        governs: Governs::Finality,
+        doc: "MU-RECURSION 78.125; MU-EQUATIONS §10.1; MU-DERIVATIONS D1.1",
+        derivation: "law parameter of version 4, shared by every kernel of a network universe (78.125); its derivation — the \
+                     heights a fold's challenge needs to reach every keeper and return — is a law amendment, agreed under the \
+                     Concordance",
+        kind: OpenKind::Physics,
+    },
+    OpenNumber {
+        name: "THROAT_GRID",
+        value: "64",
+        site: "src/server/cognition/mouth.rs::THROAT_GRID",
+        governs: Governs::Admission,
+        doc: "MU-RECURSION 78.134, 78.162 (5); MU-CONCORDANCE 2.6; MU-DERIVATIONS D1.2",
+        derivation: "the 2^-64 grid a throat's cosh horizon is enclosed on (78.134): an approximation; the throat is a Cl(4,1) \
+                     round carried by its bank's modes, fit by meet, and the grid retires with it",
+        kind: OpenKind::Physics,
+    },
+    OpenNumber {
+        name: "BODY_BUDGET",
+        value: "768 * 1024",
+        site: "src/network/wire.rs::BODY_BUDGET",
+        governs: Governs::ProtocolSize,
+        doc: "MU-RECURSION PH1; MU-DERIVATIONS D1.3",
+        derivation: "Open (D1.3 O1): B(k) = 65519·k − 89, whole Noise messages, with k read off the largest unit that cannot \
+                     page — derived only where every unpaged act's MAX_WIRE is finite",
+        kind: OpenKind::Protocol,
+    },
+    OpenNumber {
+        name: "ACCOUNT_SHARDS",
+        value: "256",
+        site: "src/server/cognition/published/publish.rs::ACCOUNT_SHARDS",
+        governs: Governs::Memory,
+        doc: "MU-DERIVATIONS D1.4 O2, §9",
+        derivation: "Open (D1.4 O2): a cost and memory layout keyed by the first byte of a party's key; derived as shards per \
+                     the published account count's growth, or kept as an engineering layout by ruling",
+        kind: OpenKind::Engineering,
+    },
+    OpenNumber {
+        name: "P_SERIES_CAP",
+        value: "10_000",
+        site: "src/core/certified.rs::P_SERIES_CAP",
+        governs: Governs::Reading,
+        doc: "MU-RECURSION 78.130, law 1; MU-DERIVATIONS D4.8 (a)",
+        derivation: "the term count of P(a, x) is N = max(0, ⌈2x − a⌉ − 1) + w₂ − 8, metered by the caller's Budget; the cap \
+                     retires with the metered series",
+        kind: OpenKind::Engineering,
+    },
+    OpenNumber {
+        name: "NESTING",
+        value: "32",
+        site: "src/transducer/sentence/form/clause.rs::NESTING",
+        governs: Governs::Admission,
+        doc: "MU-STANDARDS §2.4; MU-DERIVATIONS D4.4",
+        derivation: "Open (D4.4 O1): the producer's depth of a predicate (the language's own bound), else an iterative parse \
+                     and walk bounded by the bytes alone",
+        kind: OpenKind::Protocol,
+    },
+    OpenNumber {
+        name: "CANDIDATES_PER_PAIR",
+        value: "8",
+        site: "src/transducer/blade/carry.rs::CANDIDATES_PER_PAIR",
+        governs: Governs::Reading,
+        doc: "MU-RECURSION 65.5; MU-DERIVATIONS §9",
+        derivation: "two parities × the fourth harmonic's four 90° turns of a transition (65.5); EXACT once a test reads both \
+                     factors off the transition's held groups",
+        kind: OpenKind::Physics,
+    },
+    OpenNumber {
+        name: "N",
+        value: "1000",
+        site: "src/bin/mycelium-soak/calibrate.rs::N",
+        governs: Governs::Instrument,
+        doc: "MU-DERIVATIONS D1.4",
+        derivation: "Open: the count of objects held at once for a per-object footprint, past the allocator's granularity; \
+                     read off the allocator's measured granularity",
+        kind: OpenKind::Engineering,
+    },
+    OpenNumber {
+        name: "STROKE",
+        value: "1 << 20",
+        site: "src/bin/mycelium-soak/bridge.rs::STROKE",
+        governs: Governs::Instrument,
+        doc: "MU-DERIVATIONS D1.4, D3.1",
+        derivation: SOAK_STROKE,
+        kind: OpenKind::Engineering,
+    },
+    OpenNumber {
+        name: "STROKE",
+        value: "1 << 20",
+        site: "src/bin/mycelium-soak/confluence.rs::STROKE",
+        governs: Governs::Instrument,
+        doc: "MU-DERIVATIONS D1.4, D3.1",
+        derivation: SOAK_STROKE,
+        kind: OpenKind::Engineering,
+    },
+    OpenNumber {
+        name: "DELTA_STROKE",
+        value: "1 << 20",
+        site: "src/bin/mycelium-soak/delta.rs::DELTA_STROKE",
+        governs: Governs::Instrument,
+        doc: "MU-DERIVATIONS D1.4, D3.1",
+        derivation: SOAK_STROKE,
+        kind: OpenKind::Engineering,
+    },
+    OpenNumber {
+        name: "STROKE",
+        value: "1 << 20",
+        site: "src/bin/mycelium-soak/incongruence.rs::STROKE",
+        governs: Governs::Instrument,
+        doc: "MU-DERIVATIONS D1.4, D3.1",
+        derivation: SOAK_STROKE,
+        kind: OpenKind::Engineering,
+    },
+    OpenNumber {
+        name: "STROKE",
+        value: "1 << 20",
+        site: "src/bin/mycelium-soak/interpret.rs::STROKE",
+        governs: Governs::Instrument,
+        doc: "MU-DERIVATIONS D1.4, D3.1",
+        derivation: SOAK_STROKE,
+        kind: OpenKind::Engineering,
+    },
+    OpenNumber {
+        name: "STROKE",
+        value: "1 << 20",
+        site: "src/bin/mycelium-soak/invert.rs::STROKE",
+        governs: Governs::Instrument,
+        doc: "MU-DERIVATIONS D1.4, D3.1",
+        derivation: SOAK_STROKE,
+        kind: OpenKind::Engineering,
+    },
+    OpenNumber {
+        name: "STROKE",
+        value: "1 << 20",
+        site: "src/bin/mycelium-soak/luminal.rs::STROKE",
+        governs: Governs::Instrument,
+        doc: "MU-DERIVATIONS D1.4, D3.1",
+        derivation: SOAK_STROKE,
+        kind: OpenKind::Engineering,
+    },
+    OpenNumber {
+        name: "MINT_STROKE",
+        value: "1 << 20",
+        site: "src/bin/mycelium-soak/mint.rs::MINT_STROKE",
+        governs: Governs::Instrument,
+        doc: "MU-DERIVATIONS D1.4, D3.1",
+        derivation: SOAK_STROKE,
+        kind: OpenKind::Engineering,
+    },
+    OpenNumber {
+        name: "STROKE",
+        value: "1 << 20",
+        site: "src/bin/mycelium-soak/reconstruct.rs::STROKE",
+        governs: Governs::Instrument,
+        doc: "MU-DERIVATIONS D1.4, D3.1",
+        derivation: SOAK_STROKE,
+        kind: OpenKind::Engineering,
+    },
+    OpenNumber {
+        name: "STROKE",
+        value: "1 << 20",
+        site: "src/bin/mycelium-soak/sporophore.rs::STROKE",
+        governs: Governs::Instrument,
+        doc: "MU-DERIVATIONS D1.4, D3.1",
+        derivation: SOAK_STROKE,
+        kind: OpenKind::Engineering,
+    },
+    OpenNumber {
+        name: "STROKE",
+        value: "1 << 20",
+        site: "src/bin/mycelium-soak/volume.rs::STROKE",
+        governs: Governs::Instrument,
+        doc: "MU-DERIVATIONS D1.4, D3.1",
+        derivation: SOAK_STROKE,
+        kind: OpenKind::Engineering,
+    },
 ];

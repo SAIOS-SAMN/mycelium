@@ -26,6 +26,7 @@ pub struct TPoint {
 impl TPoint {
     /// The point's coordinates on the wire: the genesis, the epoch, `h`, the
     /// four lanes and `K`, integers little-endian.
+    /// FORMAT: TPoint wire length.
     pub const LEN: usize = 32 + 4 + 8 + 4 * 8 + 8;
 
     /// The six fields `h, S, G, T, H, K`, in the order they print.

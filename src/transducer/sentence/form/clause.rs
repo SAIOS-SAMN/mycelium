@@ -270,6 +270,7 @@ pub struct Clause {
 /// THE DEEPEST NESTING A DECODED PREDICATE MAY HAVE: a tape arriving from a
 /// peer is bounded by its own bytes, and a recursion on it by this (§2.4 — a
 /// court that does not come back is a court an adversary stops).
+/// REGISTERED: NESTING
 const NESTING: usize = 32;
 
 fn put_coord(buf: &mut Vec<u8>, c: Coord) {

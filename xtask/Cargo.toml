@@ -17,5 +17,12 @@ autotests = false
 name = "gate"
 path = "main.rs"
 
+[dependencies]
+# MU-DERIVATIONS D1.4 — the numbers gate reads items with `syn`, never raw
+# lines; `span-locations` gives each hit its line.
+syn = { version = "2", features = ["full", "visit"] }
+quote = "1"
+proc-macro2 = { version = "1", features = ["span-locations"] }
+
 [dev-dependencies]
 tempfile = "3"

@@ -52,6 +52,7 @@ pub const STROKES_PER_RESERVE: u64 = 1 << (crate::transducer::base::FRAME_AXIS +
 /// regeneration's half of it is a whole unit. The two is the rotor's double
 /// cover — `R` and `−R` are one motion, so a return is earned in halves —
 /// never a number of its own.
+/// EXACT: spend_unit_ratio_is_exact_and_stroke_floor_positive
 const RESERVE_FLOOR: u64 = STROKES_PER_RESERVE * 2;
 
 /// The calibrated reserve ceiling — measured, not declared: burst capacity

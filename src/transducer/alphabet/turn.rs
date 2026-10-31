@@ -36,6 +36,7 @@ pub enum Turn {
 /// THE ℚ-PROTRACTOR'S MARKS (78.45(3)): the angles in `[0°, 180°]` whose
 /// `cos²` is rational — Niven's set — each with its cosine's square and
 /// sign, in increasing angle.
+/// EXACT: turns_reads_infinite_turn_as_point_and_sector
 const MARKS: [(u32, (i64, i64), i8); 9] = [
     (0, (1, 1), 1),
     (30, (3, 4), 1),

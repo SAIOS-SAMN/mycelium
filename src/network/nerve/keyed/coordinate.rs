@@ -1096,9 +1096,13 @@ pub mod coord {
     impl VertexAt {
         pub const FRAME: u8 = 0;
         pub const WORD: u8 = 1;
+        /// FORMAT: VertexAt enum position.
         pub const REBASED: u8 = 2;
+        /// FORMAT: VertexAt enum position.
         pub const UNFOLDED: u8 = 3;
+        /// FORMAT: VertexAt enum position.
         pub const DEMAND: u8 = 4;
+        /// FORMAT: VertexAt enum position.
         pub const GLUED: u8 = 5;
     }
 
