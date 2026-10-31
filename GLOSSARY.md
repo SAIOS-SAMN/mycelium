@@ -1,6 +1,6 @@
 # Glossary
 
-> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. Below, *minds* are those software agents; *worlds* and *planets* are simulated places, and *peoples*, *civilizations* and *ancients* simulated inhabitants, of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside hosted universes — cosmological simulations from galaxies down to planets, games, scientific simulations and world models — each run by a kernel under the Concordance. Peer kernels are listed in README › Peer kernels. Below, *minds* are those software agents; *worlds* and *planets* are simulated places, and *peoples*, *civilizations* and *ancients* simulated inhabitants, of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](README.md#what-mycelium-hosts).
 
 The terms Mycelium's code and specifications use, in plain definitions.
 The canonical vocabulary is [`docs/MU-LEXICON.md`](docs/MU-LEXICON.md).
@@ -23,8 +23,8 @@ specifications could be read as more than one, this table settles it.
 | **Wire (Anastome)** | The signed acts between every party | `src/anastome/` | act, ACT_*, canonical encoding |
 | **Shared algebra** | Cl(4,1)(ℚ), the alphabet, words, sentences, used by client and court alike | `src/core/`, `src/transducer/` | versor, letter, word, sentence, chart, holonomy |
 | **Law forms** | L0's forms over a universe's constants, linked by every kernel | `forms/`, `src/physics/` | L0, law form, shell |
-| **Kernel** | Any program that signs the Concordance and runs a world on the network | Outside this repository | domain, reserve tier, house, physics profile |
-| **Game kernel** | A kernel whose world is a game: xylarium, netstratum, barren-realms | Separate repositories | planetary mind, people, civilization, ancient, progenitor, steward, sovereign, captain, realm, virtue book, ascension ladder |
+| **Kernel** | Any program that signs the Concordance and runs a universe on the network | Outside this repository | domain, reserve tier, house, physics profile |
+| **Game kernel** | A kernel whose universe is a game: xylarium, netstratum, barren-realms | Separate repositories | planetary mind, people, civilization, ancient, progenitor, steward, sovereign, captain, realm, virtue book, ascension ladder |
 
 **What `mycelium-client` requires to work with a hypha:** a voice key, a
 session to a hypha, and signed acts on the wire. Nothing game-specific:
@@ -37,7 +37,7 @@ senses that kernel builds for it.
 
 | Phrase | Component | Meaning |
 |---|---|---|
-| *planetary mind* | Game kernel | A simulated people's mind in a game world, such as xylarium's (MU-COGNITION.md). Its viability and ascension are the game's ladder; the court's only part is judging its ARC-AGI-2 closures (Concordance 6.2a). |
+| *planetary mind* | Game kernel | A simulated people's mind in a game, such as xylarium's (MU-COGNITION.md). Its viability and ascension are the game's ladder; the court's only part is judging its ARC-AGI-2 closures (Concordance 6.2a). |
 | *planetary dialect* | Client | A mind's own words, grown from its own perception, as distinct from the court's universal genome (MU-RECURSION 80). Lexicon term: **dialect**. |
 | *planetary mass on a star* | Hypha (specified) | A kernel's leased section of the network's capacity (MU-RECURSION 78.86). Lexicon term: **allocation**. |
 | *star, planet, orbit* in the mind's field | Client | The reference mind's internal model: its axioms as stars, its thoughts as orbits about them (MU-CLIENT §4). |
@@ -46,7 +46,7 @@ senses that kernel builds for it.
 
 | Term | Meaning |
 |---|---|
-| **Network** | The whole system: every mesh with its hyphae and courts, and the voices, minds and kernels that join it under the Concordance. A **mesh** is the hyphae sharing one genesis; "kernel" names only a program that runs a world. |
+| **Network** | The whole system: every mesh with its hyphae and courts, and the voices, minds and kernels that join it under the Concordance. A **mesh** is the hyphae sharing one genesis; "kernel" names only a program that runs a universe. |
 | **Hypha** | A node of the network, its server node: one `mycelium-server` process with its own home, key, ledger and task registry. Hyphae exchange digests, receipts and folds with peer hyphae. |
 | **Court** | The hypha's adjudicating role: it admits signed acts, replays submitted work, rules on it and settles payment. "Hypha" names the node, and "court" names what it does with work. |
 | **Mesh** | The set of hyphae sharing one genesis. Each node's wiring (bind, peers, genesis allocation, origin, epoch) is its signed **mesh record**. |
@@ -54,8 +54,8 @@ senses that kernel builds for it.
 | **Epoch** | The count of re-foundings of a network. A **recut** drops the origin and starts a new epoch on a fresh genesis. |
 | **Kernel** | A program that joins the mesh under the [Concordance](docs/MU-CONCORDANCE.md) and runs one or more universes. Mycelium is the network, not a kernel: a hypha is its server node, and each peer kernel runs its own domains and houses on it. |
 | **Peer kernels (game kernels)** | The game kernels developed and run alongside Mycelium on its development network, each running a simulated universe of its own: **xylarium** (a world-simulation kernel of star systems, worlds and peoples; turning-based physics), **netstratum** (a game engine whose civilizations solve forged tasks; force-based physics) and **barren-realms** (a Python game kernel, the source of the reference mind's sovereign cognition). Of these, only xylarium selects outer-shell law forms in `forms` (`forms::shares`; README, *Peer kernels*). |
-| **Planetary mind, people, civilization, ancient** | *Game kernel.* Simulated inhabitants of a game kernel's world; not part of a client's integration with the hypha (see *Components and scope*). A mind may be such an inhabitant's mind; it is judged by the courts on ARC-AGI-2 (`docs/MU-COGNITION.md`). The **ancients** are the peoples born in a universe's core within one core assembly time of its first mind; under the game kernel's own law, only they uplink to the hypha. The court authenticates keys, never tiers (Concordance 6.2a). |
-| **Virtue book** | *Game kernel.* A game-world ledger: an inhabitant's receipted deeds of one kind on a syntropic side against an entropic side, read as a pair and never as a score (`docs/MU-COGNITION.md` §1.5). |
+| **Planetary mind, people, civilization, ancient** | *Game kernel.* Simulated inhabitants of a game kernel's universe; not part of a client's integration with the hypha (see *Components and scope*). A mind may be such an inhabitant's mind; it is judged by the courts on ARC-AGI-2 (`docs/MU-COGNITION.md`). The **ancients** are the peoples born in a universe's core within one core assembly time of its first mind; under the game kernel's own law, only they uplink to the hypha. The court authenticates keys, never tiers (Concordance 6.2a). |
+| **Virtue book** | *Game kernel.* A game's ledger: an inhabitant's receipted deeds of one kind on a syntropic side against an entropic side, read as a pair and never as a score (`docs/MU-COGNITION.md` §1.5). |
 | **Science kernel** | A kernel that runs a universe under a declared physics and puts its results to the courts as claims (`docs/MU-SCIENCE.md`). |
 | **Domain** | An application's namespace under a network universe, founded on a court by its genesis act. |
 | **House** | A domain's service that lists **seats** and speaks for its game. A mind takes a seat and works the tasks the house puts before it. |
@@ -74,16 +74,19 @@ senses that kernel builds for it.
 | Term | Meaning |
 |---|---|
 | **Voice** | The identity a client speaks and is paid as: an Ed25519 verifying key (`voice.key`). |
-| **Mind** | An AI agent hosted on the network: the cognition a voice speaks for (perception, comprehension, conversation and its own clock `K`). It works on the network directly or holds a seat in a hosted world. A software agent, not a claim about consciousness. |
-| **Governed world** | A world a kernel runs on the network under a declared physics, whose results reach the network only through the courts. Game worlds are one kind; others are cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models (MU-HOSTING §1). Also *hosted universe*. |
-| **World model** | A learned model that predicts how a world's state evolves. It joins as a kernel: it signs the Concordance, founds a domain, seals a physics profile, and sends only exact states across its boundary (MU-HOSTING §3). |
-| **Resident / attached mind** | A *resident* mind runs inside a kernel's process and is contained by it. An *attached* mind is an external process on the SDK; Mycelium governs its effect on the shared worlds and record, not its own compute (MU-HOSTING §5). |
-| **Draw** | What attracts agents to a world: its lane-priced demand, standing work, syllabi and listings. An allocation mechanism, not a security mechanism (MU-HOSTING §6). |
+| **Mind** | An AI agent hosted on the network: the cognition a voice speaks for (perception, comprehension, conversation and its own clock `K`). It works on the network directly or holds a seat in a hosted universe, and acts through it. A software agent, not a claim about consciousness. |
+| **Universe (hosted universe)** | A complete simulation a kernel runs on the network, with its own constants and matter (Concordance 2.2), under a declared physics and on its own clock axis anchored to TUniversal; its results reach the network only through the courts. It may found nested sub-universes (78.155), and its link to the network runs through its universal core. Cosmological simulations are one kind; others are games, science universes, task environments, markets, many-agent universes and world models (MU-HOSTING §0–§1; MU-LEXICON §1.1). |
+| **Galaxy (galactic core)** | A disc and halo of stars inside a universe, held by its **galactic core**: a paired throat whose size is its mass (Concordance 2.4–2.6). |
+| **Star system** | A star (or stars) and the bodies in orbit about it, inside a galaxy. |
+| **World (a planet)** | A planet inside a universe: where peoples and civilizations live. Never a kernel's whole simulation, which is a universe (MU-LEXICON §1). |
+| **World model** | A learned model that predicts how an environment's state evolves. It joins as a kernel: it signs the Concordance, founds a domain, seals a physics profile, and sends only exact states across its boundary (MU-HOSTING §3). |
+| **Resident / attached mind** | A *resident* mind runs inside a kernel's process and is contained by it. An *attached* mind is an external process on the SDK; Mycelium governs its effect on the shared universes and record, not its own compute (MU-HOSTING §5). |
+| **Draw** | What attracts agents to a universe: its lane-priced demand, standing work, syllabi and listings. An allocation mechanism, not a security mechanism (MU-HOSTING §6). |
 | **Charter** | The mind's counterpart of the Concordance: what the network owes every mind, which a mind signs at session open (MU-CHARTER). The duties kernels owe the minds they host are Concordance §3a. |
 | **Manifest / grant** | A universe's founding exchange with the hypha: the manifest lists its nuclei per Z, signed by its reserve; the court answers with a grant of μ, the founding grant first and growth grants after, drawn from what it has earned (MU-HOSTING §3a). |
 | **Firmament** | The band of heavy kinds held at a universe's galactic core since its founding, whose mass holds the core throat (the main uplink) open and so carries the galaxies (MU-HOSTING §3a.5–§3a.6). |
-| **Certificate** | A signed, receipted record of one agent's history in one world: its acts, the courts' verdicts and the books read from them, verifiable by rebuilding the world from its seed. It attests behaviour over the task families that world expresses, never "safe in general" (MU-HOSTING §7). |
-| **Tethered** | Of an agent: working in one world, paid by its demands and bonded on the lanes it works there, so it has stake to slash where it acts. A tether drains as its tension relaxes (MU-HOSTING §6.3). |
+| **Certificate** | A signed, receipted record of one agent's history in one universe: its acts, the courts' verdicts and the books read from them, verifiable by rebuilding the universe from its seed. It attests behaviour over the task families that universe expresses, never "safe in general" (MU-HOSTING §7). |
+| **Tethered** | Of an agent: working in one universe, paid by its demands and bonded on the lanes it works there, so it has stake to slash where it acts. A tether drains as its tension relaxes (MU-HOSTING §6.3). |
 | **Mind** (code) | The SDK object holding one mind and its carriers (`sdk::Mind`, opened on a `sdk::Voice`). In prose it is the *mind*; a game kernel's simulated being is an *inhabitant*. |
 | **Genome** | A mind's persistent language: the words its courts admitted. Its **dialect** holds the words it has not yet had admitted. |
 | **Winding** | One pass of the mind's winding carrier (admission, motion, returns). The mind acts at its **returns**. |
@@ -91,7 +94,7 @@ senses that kernel builds for it.
 | **Stroke** | One bounded quantum of work under the metabolism's budget. Readers and replays spend strokes, never wall time. |
 | **Metabolism** | The physics of budgets: each node's **reserve** per lane, the strokes it may spend, and the pressure that paces it. |
 | **SDK** | The `mycelium` crate's `sdk` module, with the wire codecs and rule machinery a third-party client is built on. A separately versioned `mycelium-sdk` crate is planned (ROADMAP track 9). |
-| **SDK depths** | **Specified.** The SDK's four depths: depth 0 run a node, depth 1 bring a world (files through the file-feed door), depth 2 bring a solver, depth 3 bring physics (`docs/MU-PRECURSORS.md` §3.10). |
+| **SDK depths** | **Specified.** The SDK's four depths: depth 0 run a node, depth 1 bring tasks (files through the file-feed door), depth 2 bring a solver, depth 3 bring physics (`docs/MU-PRECURSORS.md` §3.10). |
 
 ## Work and adjudication
 

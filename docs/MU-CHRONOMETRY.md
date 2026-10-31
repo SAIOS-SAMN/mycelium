@@ -2,7 +2,7 @@
 
 # MU-CHRONOMETRY — one clock for many universes
 
-> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *universes* are hosted simulations. Physical terms name the simulations' exact geometry. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside hosted universes — cosmological simulations from galaxies down to planets, games, scientific simulations and world models — each run by a kernel under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *universes* are hosted simulations. Physical terms name the simulations' exact geometry. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** the hypha (`mycelium-server`), which keeps the clock and every universe's time book (`src/chronometry/`, `src/server/cognition/atlas.rs`, `src/server/cognition/crossing.rs`); every client and kernel that binds to it.
 
@@ -20,7 +20,7 @@ item is marked **Built** (in the tree, covered by its suites) or
 Every hosted universe keeps its own time: a game's beat, a world model's
 step, a cosmology's pulse. Every client keeps its own pace. Without a
 common reference, two universes cannot say which universe's event came
-first, a mind seated in two worlds cannot place its two lives against each
+first, a mind seated in two universes cannot place its two lives against each
 other, and a crossing between universes cannot say when it happened on
 either side. A universe that drifts, restarts or re-founds can lose its
 place entirely.
@@ -87,27 +87,27 @@ its book.
 |---|---|---|
 | Courts and keepers | Bound | They make the clock |
 | A client working on the network directly (the reference mind, any SDK agent) | **Bound** | Every act carries the final point it acted under |
-| A universe's world | **Free**, on its own axis `u` (its committed cycle) | Through its time book: chronometric anchors (§3) |
-| A mind's seated sub-instance in a world | Free, at the world's `u` | Located by `(TPoint, u)`: when the mind acted, and when in the world. The gap is its experienced dilation, a reading (`seat_mind`, **Built**) |
+| A universe | **Free**, on its own axis `u` (its committed cycle) | Through its time book: chronometric anchors (§3) |
+| A mind's seated sub-instance in a universe | Free, at the universe's `u` | Located by `(TPoint, u)`: when the mind acted, and when in the universe. The gap is its experienced dilation, a reading (`seat_mind`, **Built**) |
 
-A world is never stepped by the network, never given a rate, and never
+A universe is never stepped by the network, never given a rate, and never
 required to finish anything within a tick (Concordance 1.12). It may run
 fast, slow or unevenly. The hypha records; it never steers.
 
 ### 2.1 The bridge keeper
 
-A world often needs more than one clock of its own: a simulation may run
+A universe often needs more than one clock of its own: a simulation may run
 nested clocks at different rates (a galaxy's centre and its rim, for
 example), each with its own delay and drift. The pattern that keeps such a
-world placed on the network is:
+universe placed on the network is:
 - an internal hierarchy of keepers, each running at the rate its place in
-  the world gives it, with its delay and its slip remainder kept, never
+  the universe gives it, with its delay and its slip remainder kept, never
   averaged away;
 - **one bridge keeper**, the only one whose entries carry the network's
   final point.
 
 This is the recommended pattern for any kernel (**Specified** as a named
-form in `forms`): keep whatever internal time the world needs, and bridge
+form in `forms`): keep whatever internal time the universe needs, and bridge
 it to the network at one keeper. The bridge keeper is the one that writes
 the universe's chronometric anchors (§3).
 
@@ -236,10 +236,10 @@ time on arrival, and the receiver's next anchor records where.
 - A client on the network directly needs no book: every act carries its
   final point, and its acts are its record (**Built**).
 - A seated mind holds `(TPoint, u)` per seat and reads its experienced
-  dilation (**Built**). One mind in several worlds has one clock of its
-  own and one sub-instance per world, each placed by that world's book.
-- A mind asks the server where any world it is seated in stands
-  (§4.1), so it never confuses a stale world with a slow one.
+  dilation (**Built**). One mind in several universes has one clock of its
+  own and one sub-instance per universe, each placed by that universe's book.
+- A mind asks the server where any universe it is seated in stands
+  (§4.1), so it never confuses a stale universe with a slow one.
 
 ---
 
@@ -253,7 +253,7 @@ practice.
   height. The anchor still captures the full point, so the four lanes are
   always on the record.
 - **A lane of attachment is optional** (**Specified**). A kernel that has
-  a meaning for one lane (a world whose time is its matter moved, or its
+  a meaning for one lane (a universe whose time is its matter moved, or its
   information delivered) may state that lane in its anchors, and the
   server then reads its distance and dilation on that lane as well as on
   the height. A kernel adopts a lane when it has such a meaning, never by
@@ -277,7 +277,7 @@ practice.
 
 ## 7. Integrating a kernel's time: a checklist
 
-For any kernel binding a world to the network:
+For any kernel binding a universe to the network:
 
 1. **Read final points** through `Session::tuniversal`, or ask a court
    (`encode_clock_request`). Keep the whole point; never only its height.
@@ -290,17 +290,17 @@ For any kernel binding a world to the network:
    mind places its sub-instance (seat wire v1.4).
 5. **State each mouth's freshness `N` in final-point advances** when
    mapping it (78.154). Freshness in any other unit, such as distance in
-   the world, is not what the court counts.
+   the universe, is not what the court counts.
 6. **Apply crossings in an anchor** (`applied`), so each crossing's
    reconciliation edge closes and its residue can be read.
-7. **Name the world's own clocks and quantities apart** from the network's
+7. **Name the universe's own clocks and quantities apart** from the network's
    (TUniversal, the lane letters S, G, T, H, "anchor"): MU-LEXICON §4.
 8. **Vendor Mycelium at a tagged release**, so the clock API a kernel
    builds against is a published one.
 
 A client working on the network directly needs only item 1: every act it
-makes carries its final point. A client seated in worlds also reads where
-each world stands (§4.1).
+makes carries its final point. A client seated in universes also reads where
+each universe stands (§4.1).
 
 ---
 

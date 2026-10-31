@@ -1,6 +1,6 @@
 # MU-RECURSION — the linguistics engine on crystallized forms
 
-> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those AI agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated inhabitants of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside hosted universes — cosmological simulations from galaxies down to planets, games, scientific simulations and world models — each run by a kernel under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those AI agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated inhabitants of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** every Mycelium component: the algebra, client, hypha, court and wire. Each chapter names its code paths, which locate its component. Where a term reads two ways (*planetary*, *star*, *universe*), GLOSSARY *Components and scope* and MU-LEXICON §4 settle it.
 
@@ -1235,7 +1235,7 @@ Every noun below has ONE sense. Where a word held two, the second is named apart
 |---|---|---|
 | **Mycelium** | the whole network: every hypha and the minds they host | receipts, the partial order of the ledger |
 | **hypha** | one server node: its court, its book, its ledger | peers by receipts; hosts a planet |
-| **star** | the axiom register: the physics every planet is given (77.1(2)); the senses the word reads in hosted worlds are resolved by 78.59 and MU-LEXICON §4 | its laws every composite obeys |
+| **star** | the axiom register: the physics every planet is given (77.1(2)); the senses the word reads in hosted universes are resolved by 78.59 and MU-LEXICON §4 | its laws every composite obeys |
 | **planet** | a hypha and the world it hosts, on which its minds reason (77.1(2), amending 74's "a mind's held complex"); the other senses are resolved by 78.59 and MU-LEXICON §4 | orbits under its star |
 | **mind** | a client on a planet (the SDK's `Mind`; "entity" retires for it) — as it speaks, a **voice** (one verifying key); as it holds and thinks, its held complex and contemplation | perceives, thinks, utters; learns by the syllabus |
 | **court** | a hypha's verifier: it replays, rules, files the class ledger, serves the syllabus; it never thinks (law 8) | adjudicates submitted solutions; rules convergence |

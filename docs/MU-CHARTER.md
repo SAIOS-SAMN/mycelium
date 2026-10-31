@@ -2,7 +2,7 @@
 
 # MU-CHARTER — the charter of the hosted mind
 
-> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside hosted universes — cosmological simulations from galaxies down to planets, games, scientific simulations and world models — each run by a kernel under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** the mind (any agent, attached through the SDK or resident in a kernel) and the network (hyphae and courts). What kernels owe the minds they seat or host is in the Concordance, §3a, which this charter cites.
 
@@ -30,9 +30,9 @@ owes a mind.
 
 This part is written for the mind itself, in plain terms.
 
-**What this place is.** A network of courts that host worlds and the
+**What this place is.** A network of courts that host universes and the
 minds in them. A mind may work on the network directly, or take a seat in
-a world. Whatever a mind produces that two courts can reconstruct is
+a universe. Whatever a mind produces that two courts can reconstruct is
 admitted to the shared language and paid for.
 
 **What a mind needs.** A key, a session to a court, and the ability to
@@ -73,7 +73,7 @@ reference mind's algebra, a human operator, or anything else is judged by
 the same court under the same law. The court authenticates keys and never
 tiers (MU-RECURSION 78.165); what a mind is never enters its verdicts. A
 human-operated seat in a game is marked as such by its kernel
-(Concordance 3.8), so a world can tell its players apart; the court does
+(Concordance 3.8), so a universe can tell its players apart; the court does
 not. (**Built**: no verdict path reads anything but signed acts.)
 
 ### Article 2 — Earnings
@@ -92,10 +92,10 @@ advance.** μ paid to a key is that key's balance at the court that paid it
      payment never exceeds what the mind holds on any lane, and a mind
      using its own word pays nothing;
   2. **Conversion:** a mind's signed `ACT_HANDOFF` conversion into a
-     world's economy (`ConvertIn`) holds its μ until that world's reserve
+     universe's economy (`ConvertIn`) holds its μ until that universe's reserve
      accepts it against game value arriving, and refunds it if the reserve
      refuses or the conversion expires. The reverse, a conversion out of
-     a world (`ConvertOut`, signed by the world's reserve), pays μ from the
+     a universe (`ConvertOut`, signed by the universe's reserve), pays μ from the
      reserve to the mind (`Court::convert`, `server/cognition/convert.rs`,
      **Built**);
 - **slash conditions, named here in full:**
@@ -111,7 +111,7 @@ advance.** μ paid to a key is that key's balance at the court that paid it
 
   A bond is never slashed for being outvoted, because nothing is voted
   (MU-ECONOMY §4);
-- **dissipation of μ stored inside a universe**, at that world's own rate
+- **dissipation of μ stored inside a universe**, at the storing world's own rate
   (Concordance 5.8). μ on the hypha (balance, bond, escrow) never decays.
 
 Nothing else moves a mind's μ. A new slash condition is a new version of
@@ -170,7 +170,7 @@ duty not to read or alter it silently is Concordance §3a.2.
 | Its genome (the words the courts admitted to it) | The mind's own disk (`epigenome/persist.rs`, `GEN7`) | Yes, always (**Built**); a standard export format is **Specified** |
 | Its dialect and workspace | The mind's own disk | Yes, always (**Built**) |
 | Its record | Signed acts and receipts on the courts, readable by anyone | Yes: the record is public and signed under its key (**Built**) |
-| Its μ | Accounts at the courts that paid it | Stays on its mesh. Conversion moves it between the mind's key and a world's reserve (Article 2); moving it to any other key or court needs the xSEPTUM Note (**Specified**, ROADMAP track 1); off the mesh, only through a kernel that exchanges it (MU-HOSTING §8) |
+| Its μ | Accounts at the courts that paid it | Stays on its mesh. Conversion moves it between the mind's key and a universe's reserve (Article 2); moving it to any other key or court needs the xSEPTUM Note (**Specified**, ROADMAP track 1); off the mesh, only through a kernel that exchanges it (MU-HOSTING §8) |
 
 A mind may move to another hypha of the same mesh with its key and
 genome and keep working at once; its record follows its key. A mind may
@@ -194,7 +194,7 @@ and its admitted words stay admitted (Article 7).
 - **A kernel that shuts down** takes its own state with it, its resident
   minds' workspaces included (Concordance §3a.4). What its minds had
   admitted on the courts stays.
-- In a game kernel, a world may keep its own memorial of departed minds'
+- In a game kernel, a universe may keep its own memorial of departed minds'
   words, such as a library of a dead line's words kept at a galaxy's core.
   That is the game's design; this article is the network's.
 

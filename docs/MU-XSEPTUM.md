@@ -1,6 +1,6 @@
 # MU-XSEPTUM — the xSEPTUM settlement protocol for the Mycelium network
 
-> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels.
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside hosted universes — cosmological simulations from galaxies down to planets, games, scientific simulations and world models — each run by a kernel under the Concordance. Peer kernels are listed in README › Peer kernels.
 >
 > **Components:** the hypha's settlement of payments between voices (specified). No game term.
 

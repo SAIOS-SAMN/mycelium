@@ -2,7 +2,7 @@
 
 # MU-ALPHABET — letters, words and spelling
 
-> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside hosted universes — cosmological simulations from galaxies down to planets, games, scientific simulations and world models — each run by a kernel under the Concordance. Peer kernels are listed in README › Peer kernels. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** the shared algebra (`src/transducer/alphabet/`, `src/transducer/peel.rs`), used alike by the client and the court; letter admission on the court (`src/server/cognition/germinate/listing.rs`). No game term.
 

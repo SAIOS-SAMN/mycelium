@@ -2,7 +2,7 @@
 
 # MU-PRECURSORS — components carried forward from precursor implementations
 
-> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels.
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside hosted universes — cosmological simulations from galaxies down to planets, games, scientific simulations and world models — each run by a kernel under the Concordance. Peer kernels are listed in README › Peer kernels.
 >
 > **Components:** the wire and its transport, the gate (`xtask`), the shared algebra (`src/core/`, `src/transducer/`), the courts (verification, admission, settlement), the SDK, and the documentation. No game term.
 
@@ -735,7 +735,7 @@ claims without code.
 | Depth | What a developer brings | What runs |
 |---|---|---|
 | **Depth 0: run a node** | Nothing but a host | `mycelium-server`; earns POWV for verification (README › *Running a node*). |
-| **Depth 1: bring a world** | Task-shaped files | The file-feed door submits each file as one claim. |
+| **Depth 1: bring tasks** | Task-shaped files | The file-feed door submits each file as one claim. |
 | **Depth 2: bring a solver** | A program that states rules | A client on `sdk::{Voice, Session}` (`examples/sdk_client.rs`). |
 | **Depth 3: bring physics** | A universe's law set | A kernel that signs the Concordance and seals a physics profile (MU-SCIENCE §3.2; MU-HOSTING §3.1). |
 
