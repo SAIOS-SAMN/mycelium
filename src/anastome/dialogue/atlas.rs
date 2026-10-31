@@ -346,6 +346,11 @@ pub struct LedgerPage {
     pub more: bool,
 }
 
+/// THE LEDGER PAGE'S HEADER at its widest: `[more u8]` and the entries'
+/// count as `put_key_count` writes it, seven bits a byte over a `usize`.
+/// FORMAT: `encode_ledger_page`'s header, 1 byte and a seven-bit varint.
+pub const LEDGER_PAGE_HEADER: usize = 1 + (usize::BITS as usize).div_ceil(7);
+
 /// `[more u8][count][held entry …]`.
 pub fn encode_ledger_page(page: &LedgerPage) -> Vec<u8> {
     let mut out = vec![u8::from(page.more)];

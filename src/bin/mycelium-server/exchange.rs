@@ -899,10 +899,11 @@ impl Exchange {
                         // 2026-10-14 — THE CITATION ASKED BY ADDRESS: the
                         // words this court's waiting sentences cite and it has
                         // not ruled (`awaited_citations`), as many as one ask
-                        // and one reply's count carry. Nothing waits, nothing
-                        // is asked.
+                        // and one reply's count carry (the reply's `u8` count
+                        // wall); the addresses share the ask's frame with its
+                        // own header (D4.6). Nothing waits, nothing is asked.
                         let awaited = match crate::held::held!(court) {
-                            Ok(mut h) => h.run(|k, _| match mycelium::network::wire::frame_budget().checked_sub(64) {
+                            Ok(mut h) => h.run(|k, _| match mycelium::network::wire::frame_budget().checked_sub(mycelium::anastome::dialogue::CITED_REQUEST_HEADER) {
                                 Some(bytes) => k.awaited_citations(usize::from(u8::MAX), bytes),
                                 None => Vec::new(),
                             }),

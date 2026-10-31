@@ -148,6 +148,10 @@ pub fn decode_rows_request(body: &[u8]) -> Option<RowsRequest> {
     (p + 8 == body.len()).then_some(RowsRequest { voice, signer, from, upto, cursor })
 }
 
+/// THE ROWS REPLY'S HEADER: `[total u64][m u32]` ahead of the rows.
+/// FORMAT: `encode_rows_reply`'s header, 8 + 4 bytes.
+pub const ROWS_REPLY_HEADER: usize = 8 + 4;
+
 /// `[total u64][m u32][row…]`: as many of `rows` as fit `budget`. The total
 /// is the span's rows, the mesh's count; `m` is this page's, bounded by the
 /// frame's budget.

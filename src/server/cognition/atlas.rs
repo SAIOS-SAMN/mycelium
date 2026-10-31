@@ -619,9 +619,10 @@ impl Court {
     }
 }
 
-/// The bytes a ledger page may take: the frame's body less its header.
+/// The bytes a ledger page's entries may take: the frame's body less the
+/// page's own header (D4.6). A frame smaller than the header holds no entry.
 pub(crate) fn ledger_budget() -> usize {
-    match crate::network::wire::frame_budget().checked_sub(64) {
+    match crate::network::wire::frame_budget().checked_sub(crate::anastome::dialogue::atlas::LEDGER_PAGE_HEADER) {
         Some(b) => b,
         None => 0,
     }

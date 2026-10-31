@@ -132,10 +132,9 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             // The judged-solve observation (2026-10-24): every solve this
             // court judged, by citation and voice, its verdicts and height.
             observe::replace(own, Reading::Judged(Box::new(observe::judged_solves())));
-            // The body's share of the frame, exact, as `rows` reads it.
-            let Some(budget) = mycelium::network::wire::frame_budget().checked_sub(64) else {
-                return;
-            };
+            // The frame's whole body: `encode_reply` counts its own header
+            // against it (D4.6).
+            let budget = mycelium::network::wire::frame_budget();
             let Some(body) = observe::encode_reply(&observe::readings(&prefix), budget) else {
                 eprintln!("  observe reply refused: more readings held than four bytes count");
                 return;

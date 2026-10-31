@@ -16,8 +16,10 @@ use std::net::TcpStream;
 
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(req) = dialogue::decode_receipts_request(&frame.body) else { return };
-    // A budget smaller than a header serves nothing.
-    let Some((at_most, budget)) = mycelium::cognition::Court::receipts_frame() else {
+    // A budget smaller than the envelopes serves nothing: the page's tapes,
+    // and the reply's whole budget behind which the reading height rides.
+    let (Some((at_most, budget)), Some(reply)) = (mycelium::cognition::Court::receipts_frame(), mycelium::cognition::Court::receipts_reply_budget())
+    else {
         return;
     };
     let reading = door.published.take();
@@ -30,7 +32,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             if receipts.is_empty() {
                 mycelium::observe::note_serve(mycelium::observe::ServeAxis::EmptyPublished, 1);
             }
-            dialogue::encode_receipts_reply(&receipts, budget)
+            dialogue::encode_receipts_reply(&receipts, reply)
         }
         dialogue::ReceiptsAnswer::Root(proof) => match dialogue::encode_fold_root_reply(&proof) {
             Some(body) => body,

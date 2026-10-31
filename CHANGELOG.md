@@ -50,6 +50,18 @@ such change is named here.
   curved face always (`mouth::fits_in`). A cap within the old `2⁻⁶⁴` grid
   of the antipode is no longer refused `TooWide`. `Level::fits` is removed:
   a served `Level` is a reading, never the decision.
+- **Every page's envelope is its codec's own header** (D1.3, D4.6). Fixed:
+  `encode_receipts_reply` admitted its head receipt against `BODY_BUDGET`
+  rather than the caller's budget, so a receipt within the reading
+  height's 8 bytes of the frame built a body the frame refused; it is now
+  refused by name. The literal `64`, `66` and `34` reserves are replaced
+  by each reply's header (`RECEIPTS_REPLY_HEADER`, `ROWS_REPLY_HEADER`,
+  `SYLLABUS_REPLY_HEADER`, `CLASS_RECORDS_HEADER`, `CITED_REQUEST_HEADER`,
+  `QUOTE_REPLY_HEADER`, `LEDGER_PAGE_HEADER`, `presentation_answer_len`);
+  encoders that count their own header take the frame whole; a page may
+  carry up to 63 bytes more within the same frame. `BODY_BUDGET` stays an
+  open protocol parameter (a receipt's `u32`-counted fields have no `u16`
+  wall) and is now served on `ACT_LAWS` mode 5 as "frame budget".
 
 ### SDK
 - `mycelium_sdk::rule` gains `perceive_family`, `Frames` and

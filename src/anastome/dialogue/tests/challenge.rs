@@ -97,12 +97,13 @@ fn challenge_round_trips_with_answers() {
     assert_ne!(line_head([0; 32], &[entry.clone(), entry]), head, "each entry steps the head");
 }
 
-/// The register serves no parameter at law version 5: the challenge window
-/// is a sealed reach and return of every other keeper, not a number.
+/// The register serves at law version 5 the frame budget, the one open
+/// protocol number, and no challenge window: the window is a sealed reach
+/// and return of every other keeper, not a number.
 #[test]
-fn parameters_reply_serves_none_at_version_five() {
+fn parameters_reply_serves_frame_budget() {
     use crate::physics::laws::codec::{decode_parameters_reply, encode_parameters_reply};
     let (version, params) = decode_parameters_reply(&encode_parameters_reply()).expect("reads whole");
     assert_eq!(version, 5);
-    assert!(params.is_empty(), "{params:?}");
+    assert_eq!(params, vec![("frame budget".to_string(), crate::network::wire::BODY_BUDGET as u64)]);
 }

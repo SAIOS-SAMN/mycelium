@@ -125,9 +125,11 @@ pub const OPEN_PHYSICS: [OpenNumber; 18] = [
         value: "768 * 1024",
         site: "src/network/wire.rs::BODY_BUDGET",
         governs: Governs::ProtocolSize,
-        doc: "MU-RECURSION PH1; MU-DERIVATIONS D1.3",
-        derivation: "Open (D1.3 O1): B(k) = 65519·k − 89, whole Noise messages, with k read off the largest unit that cannot \
-                     page — derived only where every unpaged act's MAX_WIRE is finite",
+        doc: "MU-RECURSION PH1; MU-DERIVATIONS D1.3; served on ACT_LAWS mode 5 (PARAMETERS)",
+        derivation: "Open (D1.3 O1, read 2026-10-31: (b)): B(k) = 65519·k − 89, whole Noise messages, with k read off the \
+                     largest unit that cannot page — but a receipt's cites carry u32-counted fields (a class's cover, a \
+                     demand's), no u16 wall, so MAX_WIRE(receipt) is not finite; until those units page, the budget is an \
+                     open protocol parameter, served so every kernel reads it",
         kind: OpenKind::Protocol,
     },
     OpenNumber {

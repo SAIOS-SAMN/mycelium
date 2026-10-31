@@ -61,9 +61,9 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     }
     let court = &door.court;
     let Some((fvoice, charts)) = dialogue::decode_fetch(&frame.body) else { return };
-    // The body's share of the frame, exact.
-    // The class records' own count (two bytes) is reserved with the head.
-    let Some(mut budget) = mycelium::network::wire::frame_budget().checked_sub(64 + 2) else {
+    // The words' and records' share of the frame, exact: its body less the
+    // reply's count and the class records' count (D4.6).
+    let Some(mut budget) = mycelium::network::wire::frame_budget().checked_sub(dialogue::SYLLABUS_REPLY_HEADER + dialogue::CLASS_RECORDS_HEADER) else {
         return;
     };
     let mut words: Vec<dialogue::Taught> = Vec::new();
@@ -175,7 +175,7 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
 /// its own expense through the fetch, and is answered with nothing here.
 fn cited(stream: &mut TcpStream, frame: &Frame, door: &Door, cvoice: [u8; 32], addrs: &[mycelium::transducer::address::Address]) {
     let court = door.mesh.addrs.lock().is_ok_and(|a| a.get(&cvoice).is_some());
-    let Some(mut budget) = mycelium::network::wire::frame_budget().checked_sub(64) else { return };
+    let Some(mut budget) = mycelium::network::wire::frame_budget().checked_sub(dialogue::SYLLABUS_REPLY_HEADER) else { return };
     let mut words: Vec<dialogue::Taught> = Vec::new();
     if court {
         if let Ok(mut h) = crate::held::held!(door.court) {
@@ -206,7 +206,9 @@ fn cited(stream: &mut TcpStream, frame: &Frame, door: &Door, cvoice: [u8; 32], a
 /// over this court's presentation on the hold's stroke, and the words that
 /// deconstruct it the asker lacks, within the frame's body budget.
 fn present(stream: &mut TcpStream, frame: &Frame, door: &Door, voice: [u8; 32], motion: &mycelium::transducer::cga::Mv) {
-    let Some(budget) = mycelium::network::wire::frame_budget().checked_sub(64) else { return };
+    // The words' and the answer's share of the frame: its body less the
+    // reply's count; `present` keeps the answer's own width out of it.
+    let Some(budget) = mycelium::network::wire::frame_budget().checked_sub(dialogue::SYLLABUS_REPLY_HEADER) else { return };
     let Ok(mut h) = crate::held::held!(&door.court) else { return };
     let presented = h.run(|k, reads| k.present(voice, motion, budget, reads));
     drop(h);

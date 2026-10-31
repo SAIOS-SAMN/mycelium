@@ -65,9 +65,11 @@ pub const LAW_VERSION: u8 = 5;
 pub const CHALLENGE_WINDOW: u64 = 1024;
 
 /// THE REGISTER'S PARAMETERS at its version, by name: served beside the laws
-/// (`ACT_LAWS` mode 5). Version 5 has none: the window is a sealed reading,
-/// not a number.
-pub const PARAMETERS: [(&str, u64); 0] = [];
+/// (`ACT_LAWS` mode 5), so a kernel reads them from the court. The window is
+/// no parameter at version 5 (a sealed reading); the frame budget is the one
+/// protocol number every node agrees on, open (`OPEN_PHYSICS`,
+/// MU-DERIVATIONS D1.3 O1): served so a kernel reads it, never assumes it.
+pub const PARAMETERS: [(&str, u64); 1] = [("frame budget", crate::network::wire::BODY_BUDGET as u64)];
 
 /// Every law of the register, in its order.
 pub const LAWS: [Law; 6] = [Law::Conformal, Law::Momentum, Law::Rigidity, Law::Time, Law::Reservoir, Law::Continuity];

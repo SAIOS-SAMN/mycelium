@@ -1974,7 +1974,7 @@ id is a hosted shell's own.
 | L0 temporal monotonicity (`TAG_LAW‖3‖5`) | 5 | MU-RECURSION 78.59 | `src/physics/laws/mod.rs` (`verify`); `ACT_LAWS` mode 0 |
 | L0 conservative flow into e_∅ (`TAG_LAW‖4‖5`) | 5 | MU-RECURSION 78.59, 78.58 | `src/physics/laws/mod.rs` (`verify`); `ACT_LAWS` mode 0 |
 | L0 continuity (`TAG_LAW‖5‖5`) | 5 | MU-RECURSION 78.89 | `src/physics/laws/mod.rs` (`verify`, `verify_flux`); `ACT_LAWS` mode 0 |
-| L0 parameters (none at version 5: the challenge window is a sealed reach and return) | 5 | MU-RECURSION 78.125 as amended; §10 | `src/physics/laws/mod.rs` (`PARAMETERS`, empty); `ACT_LAWS` mode 5 |
+| L0 parameters (the frame budget, an open protocol parameter; the challenge window is a sealed reach and return, no parameter) | 5 | MU-RECURSION 78.125 as amended; MU-DERIVATIONS D1.3; §10 | `src/physics/laws/mod.rs` (`PARAMETERS`); `ACT_LAWS` mode 5 |
 | Concordance (`CONCORDANCE_HASH`) | 4 (the agreement's version); identified by its hash | `docs/MU-CONCORDANCE.md`; hash = BLAKE3 of its exact bytes | `src/physics/laws/concordance.rs`, `build.rs`; served on `ACT_LAWS` mode 7, signatures on mode 8 |
 | `FORMS-FRAME` | 1 | `forms/src/frame.rs` (module documentation); Concordance 2.10, A6 | `forms::frame` (core shell) |
 | `FORMS-SHARES` | 1 | `forms/src/shares/mod.rs`; Concordance 2.10, A7a; §10.4 | `forms::shares::closeness`, `forms::shares::share_compounds` (outer shell) |

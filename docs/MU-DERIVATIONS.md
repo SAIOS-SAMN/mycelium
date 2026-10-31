@@ -127,7 +127,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 |---|---|---|---|---|---|---|---|---|
 | D1.1 | `CHALLENGE_WINDOW = 1024` | `physics/laws/mod.rs:64` | finality, μ holds | High | the window ends at a sealed reach-and-return of every other keeper's citations (**Built** 2026-10-31, law version 5; O1 ruled every keeper) | yes | L | 22, 20 |
 | D1.2 | `THROAT_GRID = 64` | `server/cognition/mouth.rs:234` | tube admission | High | Phase A: exact fit by refinement and by meet (**Built** 2026-10-31); Phase B: the throat a round carried by its bank's modes | yes | S/M, L | 22, 19 |
-| D1.3 | `BODY_BUDGET = 768 * 1024` | `network/wire.rs:9` | protocol size | Medium | `B(k) = 65519·k − 89`, `k` from the largest unit that cannot page | yes | S/M | 5, 14 |
+| D1.3 | `BODY_BUDGET = 768 * 1024` | `network/wire.rs:9` | protocol size | Medium | `B(k) = 65519·k − 89`, `k` from the largest unit that cannot page (**Built** 2026-10-31: the defect fixed, every envelope its codec's header; O1 read (b): REGISTERED, served on `ACT_LAWS` mode 5) | yes | S/M | 5, 14 |
 | D1.4 | the register and its gate | `physics/axioms/founding.rs:58–74` | NO CONSTANT | High | `OpenNumber` carrier; the `syn` gate NUMBERS (N1–N6) (**Built** 2026-10-31: N1–N5 enforced, N6 an inventory) | yes | M | 22 |
 | D2.1 | `held.mu[l] / 2` (slash) | `server/cognition/convert.rs:582` | μ, discipline | High | `cut = ⌊B·D/(B + D)⌋`, defect against bond | yes | M | 3, 14 |
 | D2.2 | `cut[l] / 2` (bounty) | `server/cognition/convert.rs:586` | μ, challenge incentive | High | `bounty = ⌊cut·D/(D + X)⌋` | yes | S | 3, 14 |
@@ -163,7 +163,7 @@ entry's derivation and needs no ruling unless marked.
 | # | Defect | Entry | Severity |
 |---|---|---|---|
 | 1 | `connection_chart` indexes `image[f as usize]` with `f` read from a word's description bytes and no bound check; a hue `f ≥ PALETTE` panics, an abort in cognition (MU-STANDARDS §2.4). The one caller, `invariant_of`, reaches it only after `is_connection` (whose `gauge_is_perm` refuses such a hue), so the panic was latent; **fixed**: the chart refuses the hue itself | D4.7 | Medium (latent) |
-| 2 | `encode_receipts_reply` admits the head receipt against `BODY_BUDGET`, not the caller's `budget`; with the 8-byte reading height appended, a lone receipt within 12 bytes of the budget builds a body `Frame::encode` refuses, and the asker reads silence on that receipt every time | D1.3 | Medium |
+| 2 | `encode_receipts_reply` admits the head receipt against `BODY_BUDGET`, not the caller's `budget`; with the 8-byte reading height appended, a lone receipt within 12 bytes of the budget builds a body `Frame::encode` refuses, and the asker reads silence on that receipt every time; **fixed** (2026-10-31): the head is admitted against the caller's budget, refused by name past it | D1.3 | Medium |
 | 3 | A pair refused by `MAX_LCM_*` makes `task_address` skip it (two tasks one identity, law 2) and `finish` drop it (remainders discarded, rule 7); **fixed**: the cap is gone, every pair refines under the stroke its extents need, `task_address` refuses a pair with no refinement and `finish` stands it as a demand | D3.2 | High |
 | 4 | `truncate(32)` can cut a term common to every evidence, so `derive_pi` binds another term or returns `None`: π* changes with the cut | D3.3 | High |
 | 5 | `Confluence::reproduces` reads `false` for a check left unread past 400 sites: an unread check written as a refutation | D3.4 | Low |
@@ -620,6 +620,28 @@ Concordance amendment.
 ---
 
 ### D1.3 `BODY_BUDGET` — the mesh frame's body bound
+
+**Status.** **Built** as far as the reading allows (2026-10-31, the
+live-readings ruling). The defect (§2 item 2) is fixed: `encode_receipts_reply`
+admits the head receipt against the caller's budget and refuses one past
+it by name; the door's receipts reply budget is the frame less the reading
+height behind it (`Court::receipts_reply_budget`), the tapes' budget that
+less the reply's count (`Court::receipts_frame`). Every page envelope is its
+codec's own header, a FORMAT constant beside the encoder
+(`RECEIPTS_REPLY_HEADER`, `ROWS_REPLY_HEADER`, `SYLLABUS_REPLY_HEADER`,
+`CLASS_RECORDS_HEADER`, `CITED_REQUEST_HEADER`, `QUOTE_REPLY_HEADER`,
+`atlas::LEDGER_PAGE_HEADER`, `presentation_answer_len`): the literal `64`,
+`66` and `34` are gone, and the encoders that count their own header
+(rows, observe, the mind's chatter replies) take the frame whole. O1 read:
+a receipt carries `u32`-counted parents, cites and cover blobs, no `u16`
+wall, so `MAX_WIRE(receipt)` is not finite in the derivation's sense and
+candidate (b) holds: `BODY_BUDGET` stays REGISTERED as an open protocol
+parameter and is served on `ACT_LAWS` mode 5 (`PARAMETERS`: "frame
+budget"); the alignment to `B(k)` waits on those units paging. Tests:
+`anastome::dialogue::tests::receipts_range`
+(`encode_receipts_reply_refuses_head_over_budget`,
+`page_envelope_equals_codec_header`), `parameters_reply_serves_frame_budget`.
+The text below is the derivation as specified.
 
 **Site.** `src/network/wire.rs:9` —
 `pub const BODY_BUDGET: usize = 768 * 1024;`, served by `frame_budget()`
