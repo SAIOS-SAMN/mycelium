@@ -7,7 +7,7 @@
 > **Components:** every numeric item and literal site under `src/`, `forms/src/` and `xtask/`; the register of open physics (`src/physics/axioms/founding.rs`) and its gate (`xtask/lint/`).
 
 **Status:** specification, version 1 (2026-10-31). Every entry is
-**Specified** but D2.1, D2.2, D3.1 and D3.2, which are **Built**. Each entry states the number as it
+**Specified** but D2.1, D2.2, D2.3, D3.1 and D3.2, which are **Built**. Each entry states the number as it
 stands, what it decides, why it is underived, a derivation exact over ℤ or
 ℚ (or, where the documents and the code do not settle one, the candidates
 and the reading that decides between them), and the scope of the change.
@@ -107,7 +107,7 @@ code locate a site when lines move.
 | D1.4 | the register and its gate | `physics/axioms/founding.rs:58–74` | NO CONSTANT | High | `OpenNumber` carrier; the `syn` gate NUMBERS (N1–N6) | yes | M | 22 |
 | D2.1 | `held.mu[l] / 2` (slash) | `server/cognition/convert.rs:582` | μ, discipline | High | `cut = B·X/(B + X)`, exposure against bond (**Built**, ruled 2026-10-31) | no | M | 3, 14 |
 | D2.2 | `cut[l] / 2` (bounty) | `server/cognition/convert.rs:586` | μ, challenge incentive | High | `bounty = cut·D/(D + X)` (**Built**, ruled 2026-10-31) | no | S | 3, 14 |
-| D2.3 | `surface + 1` (read price) | `server/cognition/crossing.rs:57–64` | μ, admission | High | `p = κ + y/R`, scale-free | yes | S | 21, 3 |
+| D2.3 | `surface + 1` (read price) | `server/cognition/crossing.rs:57–64` | μ, admission | High | `p = 1 + y/R`, scale-free (**Built**, κ = 1 ruled 2026-10-31) | O2 | S | 21, 3 |
 | D2.4 | `UNIT_BOND = [1, 1, 1, 1]` | `economy/treasury.rs:163` | none (test fixture) | Low | deleted, not derived | no | S | 3 |
 | D2.5 | `kb >> 20`, `cores · (1 + GiB)` | `physics/calibration.rs:31–80` | cognition reach, memory | Medium | the unit is the measured bytes per read `b`, not `2³⁰` | yes | M | 14 |
 | D2.6 | calibration fallbacks | `physics/calibration.rs`, `mycelium-server/transport.rs` | liveness, scale | Medium | each arm a typed state, refused by name | yes | M | 14 |
@@ -1092,6 +1092,19 @@ honesty).
 ---
 
 ### D2.3 `read_price = surface + 1` — the court's price per unit of gas (map fee, retrieval, founding grant)
+
+**Status.** **Built** (ruled 2026-10-31: κ = 1, O1 (a); `R` from the
+calibration). `p_l = 1 + y_l / R`, an exact rational
+(`economy::read_price`, `Court::read_price -> Option<Mu>`); the map fee
+`g_l · p_l`, the retrieval `receipts · p_H` and the founding grant
+`kinds · p_l` are exact, with no floor (μ lanes are rational from v0.3.0,
+so "one floor per fee" below is none). O2 (the units inside `y`) stands
+open. Tests (`economy::tests::surface`): `read_price_is_one_at_rest`,
+`read_price_is_two_at_full_deficit`, `read_price_is_scale_free`; the
+founding grant reads `kinds · p_l` in
+`manifest_grants_founding_from_court_balance`, and the map fee's exact S
+lane in `traverse_pays_exact_gas_to_map_keeper`. Wire: the traverse reply
+carries the price as μ lanes (wire v2.0).
 
 **Site.** `src/server/cognition/crossing.rs:57–64`:
 

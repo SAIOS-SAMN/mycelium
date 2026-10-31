@@ -88,7 +88,8 @@ fn manifest_grants_founding_from_court_balance() {
     let m = manifest(1);
     let Granted::Sealed { mu, founding, .. } = k.manifest(&signed(m.clone(), RESERVE)) else { panic!("granted") };
     assert!(founding, "the first is the founding grant");
-    assert_eq!(mu, price.map(|p| p * 3), "three kinds of nuclei: three units of gas per lane at the read price");
+    let three = crate::core::q::Q::from_integer(3.into());
+    assert_eq!(Some(mu.clone()), price.scaled(&three), "three kinds of nuclei: three units of gas per lane at the read price");
     let after = (k.treasury.balance_mu(&court_vk), k.treasury.balance_mu(&reserve));
     assert_eq!(Ok(after.0), before.0.draw(&mu), "out of the court's earned balance");
     assert_eq!(after.1, before.1.add(&mu), "into the reserve: a transfer, never a mint");

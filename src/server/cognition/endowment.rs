@@ -186,16 +186,13 @@ impl Court {
         let mu = match founding {
             // THE FOUNDING GRANT, THE PHYSICS (ruled 2026-10-14): the
             // variety of matter — the read price for one unit of gas per lane
-            // per kind of nuclei the manifest counts.
+            // per kind of nuclei the manifest counts, `kinds · p_l` exactly
+            // (MU-DERIVATIONS D2.3).
             true => {
                 let Some(price) = self.read_price() else { return refuse(GrantRefusal::Overflow) };
-                let Ok(kinds) = u64::try_from(m.nuclei.len()) else { return refuse(GrantRefusal::Overflow) };
-                let mut mu = [0u64; 4];
-                for (x, p) in mu.iter_mut().zip(price) {
-                    let Some(v) = p.checked_mul(kinds) else { return refuse(GrantRefusal::Overflow) };
-                    *x = v;
-                }
-                Mu::counts(mu)
+                let kinds = crate::core::q::Q::from_integer(m.nuclei.len().into());
+                let Some(mu) = price.scaled(&kinds) else { return refuse(GrantRefusal::Overflow) };
+                mu
             }
             // 78.155c — A GROWTH GRANT, THE MATHEMATICS (ruled
             // 2026-10-14): the measured discharge of the closures the court

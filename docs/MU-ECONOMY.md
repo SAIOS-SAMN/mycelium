@@ -499,7 +499,10 @@ final is refused as not yet at h, never priced on a guess), H the
 information carried. μ STAKED on a hypha is escrow for intelligence
 traversal and coordinate retrieval, with no demurrage; a retrieval draws
 on the stake at the court's read price (emergent, never a published
-rate), and an unstake releases only after every claim drawn on it settles.
+rate: `p_l = 1 + y_l/R`, the court's strain against its reserve, exact,
+the `1` the identity from gas in the lane's court unit to μ — ruled
+2026-10-31, MU-DERIVATIONS D2.3), and an unstake releases only after every
+claim drawn on it settles.
 A progenitor's in-universe wormhole haul pays the same gas.
 
 TWO CHARGES, NEVER MERGED (ruled 2026-10-09; Concordance 5.8). The
@@ -592,7 +595,9 @@ across the minds whose AGREE attestations it carries.
 There are no monetary constants. The quantities that behave like policy are
 ratios the physics already reads:
 
-- price against pressure on a lane;
+- price against pressure on a lane: a listing's price is its own measure,
+  and the court's read price per unit of gas is `1 + y_l/R`, its strain
+  against its reserve (§7.1);
 - bond against cover room;
 - the verifying courts' share of a release against its base, read as the
   court's strain against its reserve, `y/(y+R)` per lane (§5.1);

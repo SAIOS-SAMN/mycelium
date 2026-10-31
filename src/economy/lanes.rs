@@ -136,6 +136,24 @@ pub fn yield_surface(p: &crate::physics::Physics) -> Option<[u64; 4]> {
     Some(out)
 }
 
+/// MU-DERIVATIONS D2.3 (ruled 2026-10-31, κ = 1) — THE COURT'S READ PRICE,
+/// μ per unit of gas on each lane: `p_l = 1 + y_l / R`, exact, `y` the
+/// court's strain (`yield_surface`) and `R` its calibrated reserve. At rest
+/// a unit of gas costs one μ — the identity from gas, measured in the
+/// lane's own court unit, to μ — and at full deficit (`y = R`) two; the same
+/// relative strain prices the same on every host, so the price reads the
+/// strain, never the hardware. `None` for a reserve of zero.
+pub fn read_price(surface: &[u64; 4], reserve: u64) -> Option<super::Mu> {
+    use crate::core::q::Q;
+    use num_bigint::BigInt;
+    if reserve == 0 {
+        return None;
+    }
+    let r = BigInt::from(reserve);
+    let price: [Q; 4] = std::array::from_fn(|l| Q::from_integer(1.into()) + Q::new(BigInt::from(surface[l]), r.clone()));
+    super::Mu::of(price).ok()
+}
+
 /// PRICE IS THE MAGNITUDE ON THE LANE: a verified word is worth what it
 /// deflated. The surface paces pressure, it does not scale the mint.
 pub fn price(mag: &[u64; 4], _surface: &[u64; 4]) -> [u64; 4] {

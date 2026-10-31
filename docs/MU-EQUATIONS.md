@@ -1301,17 +1301,22 @@ Sources: MU-RECURSION law 5, 12.6, 78.162; MU-ECONOMY §1. Code:
 ```text
 price(mag, surface) = mag                                         (per lane)
 surface_l = reserve_deficit_l + max(0, −order_flux_l)
-read price (map fee) = 1 + surface_l  per unit of gas
+read price p_l = 1 + surface_l / R   per unit of gas, exact     (R the calibrated reserve)
 ```
 
 Price is the magnitude on the lane: a verified word is worth what it
 deflated. The yield surface paces pressure and buys room; it never scales a
-mint. The court's read price for coordinate retrieval and traverse is one μ
-per unit of gas at rest plus the surface.
+mint. The court's read price for coordinate retrieval, traverse and the
+founding grant is one μ per unit of gas at rest and two at a full deficit
+(`surface = R`), the strain read against the reserve so the same relative
+strain prices the same on every host. The `1` is the identity from gas,
+measured in the lane's own court unit, to μ (κ = 1, ruled 2026-10-31).
+(Until v0.3.0 the price was `1 + surface_l`, in raw reserve units, so it
+read the host's calibration rather than its strain.)
 
-Sources: MU-ECONOMY §3.3, §5, §7.1; MU-RECURSION 24.3, 78.154. Code:
-`src/economy/lanes.rs::price`, `::yield_surface`;
-`src/server/cognition/crossing.rs` (`read_price`).
+Sources: MU-ECONOMY §3.3, §5, §7.1, §8; MU-RECURSION 24.3, 78.154;
+MU-DERIVATIONS D2.3. Code: `src/economy/lanes.rs::price`, `::yield_surface`,
+`::read_price`; `src/server/cognition/crossing.rs` (`Court::read_price`).
 
 #### 6.3 The shortfall
 
@@ -1476,8 +1481,9 @@ one exact rational per lane, `economy::Mu` (MU-ECONOMY §1).
 #### 6.12 Gas, the map fee and the connection tax
 
 ```text
-map fee_l = gas_l · (1 + surface_l)            exact; S priced on the route's span (a rational), G, T, H on gas
-retrieval fee = (0, 0, 0, units · (1 + surface_H))
+map fee_l = gas_l · p_l                        exact; S priced on the route's span (a rational), G, T, H on gas
+retrieval fee = (0, 0, 0, units · p_H)
+founding grant_l = kinds · p_l                 exact (p_l the read price, §6.2)
 tariff charge = (rate_s · mass out, 0, 0, rate_h · information out)      exact
 tariff part   = share · charge per recipient, the keeper the rest       exact; the parts sum to the charge
 convert-out μ_l = rate_l · g                                            exact

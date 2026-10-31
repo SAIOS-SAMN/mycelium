@@ -35,13 +35,14 @@ pub(crate) fn claim_key(at: &[u8]) -> Vec<u8> {
     k
 }
 
-/// THE MAP FEE, `g_l · p_l` on each lane exactly: the route's gas `gas`
-/// (S its exact span) at the read price `price`. Never floored: a span of
-/// 11/4 at a price of one is a fee of 11/4 on S.
-fn priced(span: &Q, gas: &Gas, price: &[u64; 4]) -> Mu {
+/// THE MAP FEE, `g_l · p_l` on each lane exactly (MU-DERIVATIONS D2.3): the
+/// route's gas `gas` (S its exact span) at the read price `price`. Never
+/// floored: a span of 11/4 at a price of one is a fee of 11/4 on S.
+fn priced(span: &Q, gas: &Gas, price: &Mu) -> Mu {
     let q = |n: u64| Q::from_integer(n.into());
-    let fee = [span * q(price[0]), q(gas.g) * q(price[1]), q(gas.t) * q(price[2]), q(gas.h) * q(price[3])];
-    // A span is a sum of non-negative segments, and every other factor a count.
+    let fee = [span * price.lane(0), q(gas.g) * price.lane(1), q(gas.t) * price.lane(2), q(gas.h) * price.lane(3)];
+    // A span is a sum of non-negative segments, a price is at least one, and
+    // every other factor a count.
     match Mu::of(fee) {
         Ok(fee) => fee,
         Err(_) => Mu::zero(),
@@ -60,15 +61,13 @@ pub enum Unretrieved {
 }
 
 impl Court {
-    /// THE COURT'S READ PRICE per lane: one μ a unit of gas at rest, and its
-    /// pressure on the lane above it. `None` where it passes its carrier.
-    pub fn read_price(&self) -> Option<[u64; 4]> {
+    /// THE COURT'S READ PRICE per lane, μ per unit of gas: `1 + y_l / R`,
+    /// exact, the court's strain against its calibrated reserve
+    /// (`economy::read_price`, MU-DERIVATIONS D2.3). `None` where the surface
+    /// passes its carrier.
+    pub fn read_price(&self) -> Option<Mu> {
         let surface = crate::economy::yield_surface(&self.physics)?;
-        let mut price = [0u64; 4];
-        for (p, s) in price.iter_mut().zip(surface) {
-            *p = s.checked_add(1)?;
-        }
-        Some(price)
+        crate::economy::read_price(&surface, crate::physics::reserve_max())
     }
 
     /// A claim drawn on `staker`'s stake for `fee`, its parts to this court,
@@ -193,7 +192,7 @@ impl Court {
         let edge = Edge { from: t.from, to, mouth: t.mouth, at: t.at, u_a: t.u_a, u_entry: t.u_b, u_applied: None };
         self.atlas.edges.insert(crossing, edge);
         self.mark_persist();
-        Crossed::Sealed { crossing, h: r.stamp.h, point: court, gas, price: Mu::counts(price), fee }
+        Crossed::Sealed { crossing, h: r.stamp.h, point: court, gas, price, fee }
     }
 
     /// 78.154 (4) — THE CLAIMS WHOSE WINDOW CLOSED, paid WHOLE to the courts
@@ -285,7 +284,8 @@ impl Court {
         let read = self.pinpoint(p);
         let units = u64::try_from(read.len()).map_err(|_| Unretrieved::Overflow)?;
         let price = self.read_price().ok_or(Unretrieved::Overflow)?;
-        let fee = Mu::counts([0, 0, 0, units.checked_mul(price[3]).ok_or(Unretrieved::Overflow)?]);
+        // One unit of information per receipt, on H, at the read price.
+        let fee = Mu::counts([0, 0, 0, units]).on_lanes(|l| l == 3).scaled(price.lane(3)).ok_or(Unretrieved::Overflow)?;
         if !fee.shortfall(&self.staked(&staker)).is_zero() {
             return Err(Unretrieved::Short);
         }

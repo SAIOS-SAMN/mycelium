@@ -51,6 +51,11 @@ Holding the modes themselves (78.162) remains the next step.
   reconstruction's bool now reads at zero); a default proves its whole
   exposure and pays half the cut. The rest is retired; supply falls by
   exactly that part.
+- **D2.3, the read price, κ = 1**: `p_l = 1 + y_l/R`, exact, the court's
+  strain against its calibrated reserve (`economy::read_price`); it was
+  `1 + y_l` in raw reserve units, which priced the host's calibration. The
+  map fee `g·p`, the retrieval `receipts·p_H` and the founding grant
+  `kinds·p` are exact. `Court::read_price` returns a `Mu`.
 
 ### Layout changes
 - **Ledger and snapshot**: every ledger row's μ⃗, every award, and the
