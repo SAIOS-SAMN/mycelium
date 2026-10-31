@@ -1,7 +1,7 @@
 // 45.2, law 9 — the court has no clock but the ledger, and the transport
 // is bounded in strokes.
 
-use crate::transport::tell_peer_within;
+use crate::transport::{tell_peer_within, Stall};
 
 
 /// A PEER THAT ACCEPTS AND SAYS NOTHING IS REFUSED, in strokes. This
@@ -17,7 +17,8 @@ fn tell_peer_within_refuses_silent_peer_within_budget() {
     // Accept and hold the connection open, writing nothing at all.
     let held = std::thread::spawn(move || listener.accept().map(|(s, _)| s));
 
-    let out = tell_peer_within(&addr, vec![0x10], 1);
+    // One aperture of strokes, `Λ(1)`: the stall an unmeasured mesh waits.
+    let out = tell_peer_within(&addr, vec![0x10], Stall::of(mycelium::physics::transport_deadline(1)));
     assert!(out.is_none(), "silence is a refusal, not an answer");
     drop(held.join());
 }
@@ -27,9 +28,9 @@ fn tell_peer_within_refuses_silent_peer_within_budget() {
 /// so no rtt window ever held a measurement and Λ could not move. The
 /// measure is the polls this court made between the write and the first
 /// byte back, the poll that read it included: at least one stroke for any
-/// reply, never zero and never a floor. The deadline the caller passes is
-/// this host's own reserve, a measurement, so a responder that has merely
-/// not been scheduled is not refused.
+/// reply, never zero and never a floor. Asked as a first ask is (D2.7), to
+/// the stream's own end, so a responder that has merely not been scheduled
+/// is not refused.
 #[test]
 fn tell_peer_within_reads_reply_and_counts_strokes() {
     use std::io::{Read, Write};
@@ -52,17 +53,9 @@ fn tell_peer_within_reads_reply_and_counts_strokes() {
         body
     });
 
-    // The deadline is this test's patience for the responder thread to be
-    // scheduled, not the measure: a poll is a yield, and on a host running a
-    // whole deployment at full CPU one reserve of yields passed before the
-    // responder ran once (read on 2026-09-08 with eight processes live). The
-    // patience is the host's own reserve squared — a measurement, never a
-    // literal — and the rtt read back is whatever it took.
-    let reserve = mycelium::physics::reserve_max();
-    let patience = reserve
-        .checked_mul(reserve)
-        .expect("the host's reserve squared fits the clock this test runs on");
-    let out = tell_peer_within(&addr, vec![0x10, 1, 2], patience);
+    // No count bounds the wait: the responder answers or closes, and the rtt
+    // read back is whatever it took.
+    let out = tell_peer_within(&addr, vec![0x10, 1, 2], Stall::Beyond);
     let (reply, rtt) = out.expect("a peer that answers is not silence");
     assert_eq!(reply, echo, "the reply is read whole");
     assert!(rtt >= 1, "a round trip takes at least the one poll that read it: {rtt}");

@@ -135,13 +135,13 @@ MU-STANDARDS 2.12 binds it on every line written:
 | D2.4 | `UNIT_BOND = [1, 1, 1, 1]` | `economy/treasury.rs:163` | none (test fixture) | Low | deleted, not derived | no | S | 3 |
 | D2.5 | `kb >> 20`, `cores · (1 + GiB)` | `physics/calibration.rs:31–80` | cognition reach, memory | Medium | the unit is the measured bytes per read `b`, not `2³⁰` | yes | M | 14 |
 | D2.6 | calibration fallbacks | `physics/calibration.rs`, `mycelium-server/transport.rs` | liveness, scale | Medium | each arm a typed state, refused by name | yes | M | 14 |
-| D2.7 | `reserve_max()` as rtt hint | five server CLI sites | liveness | Medium | the measured floor of the page loop; the first ask a state | yes | S–M | 5 |
+| D2.7 | `reserve_max()` as rtt hint | five server CLI sites | liveness | Medium | the measured floor of the page loop; the first ask a state (**Built** 2026-10-31: a CLI's first ask to the stream's end, a court's the mesh floor) | yes | S–M | 5 |
 | D3.1 | `stroke_n(1 << 16)` | `client/sdk/rule.rs:402` | cognition (rule minting) | Medium | the stroke is `modes_need(linear)` (78.111; **Built**) | yes | S | 7 |
 | D3.2 | `MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600` | `transducer/family/refine.rs:40–41` | task identity, μ | High | metered by `need = R_h·R_w + 2·L_h·L_w` (**Built**, O1 (a)) | no | M | 7 |
 | D3.3 | `truncate(32)` | `transducer/anchor/derive.rs:182` | court admission (π*) | High | keep every carrying term, keyed; metered (**Built** 2026-10-31; O1 ruled (a): π* binds the whole common set) | yes | M | 7 |
 | D3.4 | `in_sites.len() <= 400` | `transducer/family/confluence.rs:162` | an instrument's reading | Low | `2·m` reads, keyed, tri-state (**Built** 2026-10-31) | no | S | 10 |
 | D3.5 | `percepts_since >= 2` | `client/sdk/seat_mind/mind.rs:284` | seat liveness, learning | Medium | distance along the house's sequence `b − b₀ ≥ 2` (**Built** 2026-10-31; O1 read (a), `seq`) | yes | S | 10 |
-| D4.1 | `tell_peer_within(.., 5)` | `mycelium-server/transport.rs:136` | liveness | Medium | the mesh's measured floor; `Unmeasured` one aperture | yes | M | 5 |
+| D4.1 | `tell_peer_within(.., 5)` | `mycelium-server/transport.rs:136` | liveness | Medium | the mesh's measured floor; `Unmeasured` one aperture (**Built** 2026-10-31) | yes | M | 5 |
 | D4.2 | `take(32)` (evidence reply) | `mycelium-server/door.rs:125` | protocol size | Medium | fill to the frame budget by `σ(e)` | yes | S/M | 5 |
 | D4.3 | `h > 1024 \|\| w > 1024` | `anastome/dialogue/carrier.rs:106` | grid admission, memory | Medium | the bytes the tape carries; degenerate shapes refused | yes | S | 14 |
 | D4.4 | `NESTING = 32`, `depth > 16` | `sentence/form/clause.rs:273`, `anchor/codec.rs:70` | stack safety | High/Medium | the producer's depth, else iteration | yes | M/L | 14 |
@@ -167,7 +167,7 @@ entry's derivation and needs no ruling unless marked.
 | 3 | A pair refused by `MAX_LCM_*` makes `task_address` skip it (two tasks one identity, law 2) and `finish` drop it (remainders discarded, rule 7); **fixed**: the cap is gone, every pair refines under the stroke its extents need, `task_address` refuses a pair with no refinement and `finish` stands it as a demand | D3.2 | High |
 | 4 | `truncate(32)` can cut a term common to every evidence, so `derive_pi` binds another term or returns `None`: π* changes with the cut | D3.3 | High |
 | 5 | `Confluence::reproduces` reads `false` for a check left unread past 400 sites: an unread check written as a refutation; **fixed** (2026-10-31): `Reproduces::Unread` | D3.4 | Low |
-| 6 | Six `tell_peer` sites bypass a peer's measured deadline; the rtt window is keyed by peer id at one site and by endpoint at another; five CLI sites pass `reserve_max()` as a round-trip hint | D4.1, D2.7 | Medium |
+| 6 | Six `tell_peer` sites bypass a peer's measured deadline; the rtt window is keyed by peer id at one site and by endpoint at another; five CLI sites pass `reserve_max()` as a round-trip hint; **fixed** (2026-10-31): every court ask reads its peer's patience under the voice key, the CLI asks read to the stream's end or the page loop's own floor | D4.1, D2.7 | Medium |
 | 7 | The evidence reply serves the first 32 items forever: no cursor, so item 33 onward is never served | D4.2 | Medium |
 | 8 | `push_grid` writes ragged and zero-width grids that `read_grid` cannot read back | D4.3 | Medium |
 | 9 | Recursive `Drop`, `Clone`, `PartialEq`, `Debug`, the encoders and `Selection::eval` of `Pred`/`Selection` overflow the stack at depths the bytes allow; the parse bound is the only guard | D4.4 | High |
@@ -2263,6 +2263,29 @@ Symbols for this group, beyond §0.4:
 
 ### D4.1 `tell_peer_within(.., 5)` — the deadline of an unmeasured peer
 
+**Status.** **Built** with D2.7 (2026-10-31, the live-readings ruling).
+`tell_peer` and its `5` are gone. `tell_peer_within(endpoint, body, Stall)`
+takes a typed stall (`Stall::{Strokes, Beyond}`, `Stall::of(Λ)`);
+`transport::patience(mesh, voice)` reads a peer's own measured round trip
+under its voice key, else `prior(mesh)`: an aperture of `mesh_floor` (the
+least floor any peer's window holds), or `Lambda::Unmeasured`, now live,
+whose stall is one aperture. The six sites (the nerve sender, the digest
+exchange, cover pages, the cited fetch, the join, offers) and the fold's
+witness asks read that patience; `tell_peer_measured` keys its notes by
+`voice_at(mesh, endpoint)` (one key per peer, the voice; an endpoint whose
+voice is not yet known records nothing, and the join notes its seed once
+the digest names it). D2.7: the CLI's `--wallet`, `--why`, console and the
+ledger reader's first ask read to the stream's end (`Stall::Beyond`); the
+ledger page loop and its fold-root ask share an `AskWindow`, every later
+page asked at an aperture of the floor it measured. O1 (the handshake
+round trip as prior) stays open. Tests (`mycelium-server tests::patience`):
+`tell_peer_waits_mesh_floor_for_unmeasured_peer`,
+`tell_peer_empty_mesh_waits_one_aperture`, `rtt_window_keeps_one_key_per_peer`,
+`first_ask_has_no_numeric_deadline`, `page_loop_asks_at_measured_floor`,
+`cli_first_ask_reads_to_stream_end` (the D2.7 claims; `court_first_ask_reads_host_floor`
+is `tell_peer_waits_mesh_floor_for_unmeasured_peer`'s `patience(mesh, None)`).
+The text below is the derivation as specified.
+
 **Site.** `src/bin/mycelium-server/transport.rs:135–137` and the doc
 comment at `:166–169`:
 
@@ -3110,6 +3133,9 @@ Each line names its entry and the reading or ruling that decides it.
     decided by the parked thread's measured wakeup gap against both.
 19. **D2.7 O1** — the first ask's bound (stream end, host floor, loopback
     probe): decided by the first-ask measured rtt against the mesh floor.
+    **Built** (2026-10-31) as the entry's own split: a CLI's first ask to
+    the stream's end (a), a court's at the host floor (b), one aperture
+    where nothing is measured; the loopback probe (c) is not built.
 20. **D3.1 O1** — whether the construction stroke is drawn from the
     caller's token: decided by whether `sentence` is input-sized work
     under 78.153b.

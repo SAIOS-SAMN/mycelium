@@ -79,6 +79,16 @@ such change is named here.
   percept advances nothing, a gap dissipates at once.
   `Perceived::abandoned` is `Option<(u16, u64)>`, the function and its
   distance.
+- **A peer's patience is read off the transport** (D4.1, D2.7). The literal
+  `5` of `tell_peer` is gone: an unmeasured peer waits an aperture of the
+  mesh's measured floor, or one aperture where nothing is measured
+  (`Lambda::Unmeasured`, now live); the nerve sender, the digest exchange,
+  cover pages, the cited fetch, the join and offers read the peer's own
+  measured patience; the rtt windows are kept under one key per peer, its
+  voice. The server CLI (`--wallet`, `--why`, the console, `--ledger`)
+  no longer passes `reserve_max()` as a round trip: a first ask reads to
+  the stream's end, and the ledger's later pages wait an aperture of the
+  floor its own asks measured.
 
 ### SDK
 - `mycelium_sdk::rule` gains `perceive_family`, `Frames` and

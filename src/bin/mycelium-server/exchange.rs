@@ -9,7 +9,7 @@ use crate::admission::{admit_peer_digest, admit_peer_receipt, rebuild_own_cover,
 use crate::door::{intake_corpus, relocate_corpus, route_corpus};
 use crate::persist::persist_if_due;
 use crate::syllabus::{syllabus_admit, Syllabus};
-use crate::transport::{note_rtt_ok, note_rtt_timeout, tell_peer};
+use crate::transport::{note_rtt_ok, note_rtt_timeout, patience, tell_peer_measured, tell_peer_within};
 use mycelium::anastome::dialogue;
 use mycelium::cognition::Court;
 use mycelium::court::identity::HyphaKey;
@@ -197,9 +197,9 @@ pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: std::sync::mpsc::Receiver<(Strin
         let mut ticks_refused = 0u64;
         for (addr, body) in nerve_rx {
             let tick = dialogue::act_is(&body, dialogue::ACT_TICK);
-            match tell_peer(&addr, body) {
-                Some((reply, dt)) => {
-                    note_rtt_ok(&mesh_nerve, addr.as_bytes(), dt);
+            // D4.1 — at the peer's own measured patience, kept under its voice.
+            match tell_peer_measured(&mesh_nerve, &addr, body) {
+                Some((reply, _)) => {
                     // 23.8, I36: a full reflex pool's deferral is impedance,
                     // not a root reply that failed to decode.
                     if crate::transport::is_deferred(&reply) {
@@ -236,7 +236,6 @@ pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: std::sync::mpsc::Receiver<(Strin
                     }
                 }
                 None => {
-                    note_rtt_timeout(&mesh_nerve, addr.as_bytes());
                     // A silent keeper is read on the residual and the final
                     // point, not one line per pushed ring.
                     if !tick {
@@ -703,7 +702,7 @@ impl Exchange {
                     eprintln!("  court circuit exchange {d} {n} period {period}");
                 }
                 organ_budget -= 1;
-                match tell_peer(&d, req.clone()) {
+                match tell_peer_within(&d, req.clone(), patience(&mesh, Some(pid.as_slice()))) {
                     Some((reply, dt)) => {
                         reached += 1;
                         note_rtt_ok(&mesh, &pid, dt);
@@ -847,7 +846,7 @@ impl Exchange {
                                     eprintln!("  cover ask refused: the cursor passes its length field");
                                     break;
                                 };
-                                let Some((page, dt3)) = tell_peer(&d, ask) else {
+                                let Some((page, dt3)) = tell_peer_within(&d, ask, patience(&mesh, Some(pid.as_slice()))) else {
                                     note_rtt_timeout(&mesh, &pid);
                                     break;
                                 };
@@ -915,7 +914,7 @@ impl Exchange {
                         let Some(fetch) = dialogue::encode_cited_request(&mesh.vk, &awaited) else {
                             continue;
                         };
-                        match tell_peer(&d, fetch) {
+                        match tell_peer_within(&d, fetch, patience(&mesh, Some(pid.as_slice()))) {
                             Some((page, dt2)) => {
                                 note_rtt_ok(&mesh, &pid, dt2);
                                 if crate::transport::is_deferred(&page) {

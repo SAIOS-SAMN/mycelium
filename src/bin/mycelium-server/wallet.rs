@@ -36,7 +36,8 @@ pub(crate) fn run(home: &Path, at: Option<&str>, asked: &str) -> ! {
         println!("{RED}no address to ask{RESET}: pass --at ADDR, or --home a home whose mesh names its bind");
         std::process::exit(2)
     };
-    let Some((reply, _)) = crate::transport::tell_peer_within(&endpoint, encode_wallet(&who), mycelium::physics::reserve_max()) else {
+    // A one-shot first ask (D2.7): nothing measured, it reads to the stream's end.
+    let Some((reply, _)) = crate::transport::tell_peer_within(&endpoint, encode_wallet(&who), crate::transport::Stall::Beyond) else {
         println!("{RED}{endpoint} did not answer{RESET}: an account it cannot measure is not answered");
         std::process::exit(2)
     };

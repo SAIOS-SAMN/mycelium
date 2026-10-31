@@ -36,7 +36,7 @@ use crate::exchange::{note_root, speak_root_locked, Exchange, Mesh, RootHear};
 use crate::genesis::Genesis;
 use crate::persist::{persist, persist_if_due};
 use crate::syllabus::{syllabus_admit, Syllabus};
-use crate::transport::{answer, arm_deadline, note_rtt_ok, note_rtt_timeout, read_frame, tell_peer};
+use crate::transport::{answer, arm_deadline, note_rtt_ok, read_frame, rtt_floor, tell_peer_measured};
 use mycelium::cognition::Court;
 use mycelium::court::identity::HyphaKey;
 use mycelium::network::mesh::{self};
@@ -608,18 +608,19 @@ fn main() {
         if p == &addr {
             continue;
         }
-        match tell_peer(p, dialogue::encode_digests_request(&mesh.vk)) {
-            Some((reply, dt)) => {
-                note_rtt_ok(&mesh, p.as_bytes(), dt);
-                // 23.8, I36: a peer whose reflex pool is full at boot
-                // deferred; it is impedance, not a digest refused.
-                if crate::transport::is_deferred(&reply) {
-                    eprintln!("  court exchange deferred by {p}");
-                    continue;
-                }
-                let _ = admit_peer_digest(&mesh, &reply, &router);
+        // D4.1 — a seed asked at the mesh's measured prior; its round trip is
+        // kept under its voice once its digest names it (one key per peer).
+        if let Some((reply, dt)) = tell_peer_measured(&mesh, p, dialogue::encode_digests_request(&mesh.vk)) {
+            // 23.8, I36: a peer whose reflex pool is full at boot
+            // deferred; it is impedance, not a digest refused.
+            if crate::transport::is_deferred(&reply) {
+                eprintln!("  court exchange deferred by {p}");
+                continue;
             }
-            None => note_rtt_timeout(&mesh, p.as_bytes()),
+            let _ = admit_peer_digest(&mesh, &reply, &router);
+            if let Some(v) = crate::transport::voice_at(&mesh, p).filter(|v| rtt_floor(&mesh, v).is_none()) {
+                note_rtt_ok(&mesh, v, dt);
+            }
         }
     }
 

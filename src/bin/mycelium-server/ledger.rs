@@ -41,7 +41,11 @@ pub(crate) fn run(home: &Path, at: Option<&str>) -> ! {
     // names the last fold root's orbit; the line is read from that orbit's
     // start (the one era the root closes is paged, no other), and the
     // header says where it began.
-    let opened = fold_root_k(&endpoint, &vk);
+    // D2.7 — ONE WINDOW FOR THE ONE ENDPOINT: its first ask reads to the
+    // stream's end; every later page is asked at an aperture of the floor
+    // the earlier asks measured.
+    let mut window = crate::transport::AskWindow::default();
+    let opened = fold_root_k(&endpoint, &vk, &mut window);
     let mut after: Option<Place> = opened.and_then(|k| k.checked_sub(1)).map(|k| Place { k, i: u64::MAX });
     let mut by_action: Keyed<u64> = Keyed::new();
     let mut refused: Vec<Place> = Vec::new();
@@ -50,7 +54,7 @@ pub(crate) fn run(home: &Path, at: Option<&str>) -> ! {
         // 78.147: the reader is an era replay — the one ask the cold archive
         // answers; a catch-up below the fold root is answered with the root.
         let ask = encode_replay_request(&[0; 32], &vk, after, upto);
-        let Some((reply, _)) = crate::transport::tell_peer_within(&endpoint, ask, mycelium::physics::reserve_max()) else {
+        let Some(reply) = window.ask(&endpoint, ask) else {
             println!("{RED}{endpoint} stopped answering after {acts} acts{RESET}");
             break;
         };
@@ -102,13 +106,13 @@ pub(crate) fn run(home: &Path, at: Option<&str>) -> ! {
 /// The orbit of the court's last fold root, from its own clock reading
 /// (`CourtClock::folded`), or none where it has never folded or does not
 /// answer — then the line is read from genesis, as it always was.
-fn fold_root_k(endpoint: &str, court: &[u8; 32]) -> Option<u64> {
+fn fold_root_k(endpoint: &str, court: &[u8; 32], window: &mut crate::transport::AskWindow) -> Option<u64> {
     use mycelium::observe::{self, Clock, Reading};
     let mut prefix = vec![observe::SOURCE_COURT];
     prefix.extend_from_slice(court);
     prefix.push(observe::TAG_CLOCK);
     let query = observe::encode_query(&prefix)?;
-    let (reply, _) = crate::transport::tell_peer_within(endpoint, query, mycelium::physics::reserve_max())?;
+    let reply = window.ask(endpoint, query)?;
     let (_, held) = observe::decode_reply(&reply)?;
     held.into_iter().find_map(|(_, r)| match r {
         Reading::Clock(Clock::Court(c)) => c.folded.map(|(_, k)| k),

@@ -127,44 +127,135 @@ pub(crate) fn is_deferred(reply: &[u8]) -> bool {
     mycelium::anastome::dialogue::is_deferral(reply, mycelium::anastome::dialogue::PENDING_CODE)
 }
 
-/// Speak one act to a peer on the nerve, bounded by the transport deadline;
-/// the reply, if any, is not needed. Silence is the peer's impedance.
-pub(crate) fn tell_peer(endpoint: &str, body: Vec<u8>) -> Option<(Vec<u8>, u64)> {
-    tell_peer_within(endpoint, body, 5)
+/// HOW LONG AN ASK STALLS ON A PEER THAT SAYS NOTHING, a reading of the
+/// transport (MU-DERIVATIONS D2.6, D2.7, D4.1), never a chosen count.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Stall {
+    /// At most this many consecutive polls that move no byte.
+    Strokes(usize),
+    /// Until the stream's own end (end of file or reset): a one-shot ask
+    /// whose wait no measurement bounds, or a deadline past the ledger's
+    /// count. No poll counter.
+    Beyond,
 }
 
-/// SPEAK TO A PEER AT ITS OWN MEASURED PATIENCE (Phase 1 item 3). The mesh
-/// measured every peer's round trip and backed its deadline off on every
-/// timeout (`note_rtt_ok`, `note_rtt_timeout`, into `mesh.rtt`) — and no
-/// ask ever read it: every `tell_peer` waited the literal 5, forty polls, so
-/// a peer answering from behind one court stroke was counted silent, and
-/// every back-fill page on the development deployment went unanswered (the catch-up reading,
-/// 2026-09-30). This waits the deadline the peer's own wire measured, the
-/// literal only where none is measured yet, and records what it saw.
-pub(crate) fn tell_peer_measured(mesh: &Mesh, endpoint: &str, body: Vec<u8>) -> Option<(Vec<u8>, u64)> {
-    // An unmeasured wire is asked as `tell_peer` asks every wire; the first
-    // answer measures it.
-    let reply = match mesh.rtt.lock().ok().and_then(|m| m.get(endpoint.as_bytes()).copied()) {
-        Some(hint) => tell_peer_within(endpoint, body, hint),
-        None => tell_peer(endpoint, body),
-    };
-    match reply {
-        Some((reply, dt)) => {
-            note_rtt_ok(mesh, endpoint.as_bytes(), dt);
-            Some((reply, dt))
-        }
-        None => {
-            note_rtt_timeout(mesh, endpoint.as_bytes());
-            None
+impl Stall {
+    /// The stall an aperture `Λ` reads: its strokes; past the ledger, the
+    /// stream's own end; UNMEASURED (no wire of the mesh measured), one
+    /// aperture of strokes, `Λ(1)`, the instrument's own resolution times
+    /// the aperture — the one count the tree holds for a cycle with nothing
+    /// measured (the unmeasured arm of `exchange_due`).
+    pub(crate) fn of(l: mycelium::physics::Lambda) -> Stall {
+        match l {
+            mycelium::physics::Lambda::Strokes(n) => match usize::try_from(n) {
+                Ok(n) => Stall::Strokes(n),
+                Err(_) => Stall::Beyond,
+            },
+            mycelium::physics::Lambda::BeyondTheLedger => Stall::Beyond,
+            mycelium::physics::Lambda::Unmeasured => Stall::Strokes(mycelium::physics::aperture_cycle() as usize),
         }
     }
 }
 
-/// `tell_peer` with the transport measure the caller holds: `rtt_hint` is
-/// the peer's measured round trip in strokes, and the wait is an aperture
-/// of it (`transport_deadline`). A caller with no measurement passes the
-/// same floor the rtt window uses.
-pub(crate) fn tell_peer_within(endpoint: &str, body: Vec<u8>, rtt_hint: u64) -> Option<(Vec<u8>, u64)> {
+/// THE MESH'S MEASURED FLOOR: the least round trip any peer's window holds,
+/// in strokes — `rtt_floor` taken across the window's keys. `None` where no
+/// wire of the mesh is measured yet (at boot, or a lone court).
+#[expect(
+    clippy::disallowed_methods,
+    reason = "rule 4 — the floor of the mesh's windows is their extent: the least measured round trip, a reading, never a choice"
+)]
+pub(crate) fn mesh_floor(mesh: &Mesh) -> Option<u64> {
+    mesh.rtt_window.lock().ok()?.scoped().filter_map(|(_, ring)| ring.iter().copied().min()).min()
+}
+
+/// THE PRIOR OF A PEER THIS MESH HAS NOT MEASURED (D4.1): an aperture of the
+/// mesh's measured floor, so an unmeasured peer is asked at the floor the rtt
+/// window holds; `Lambda::Unmeasured` where nothing is measured.
+pub(crate) fn prior(mesh: &Mesh) -> mycelium::physics::Lambda {
+    match mesh_floor(mesh) {
+        Some(floor) => mycelium::physics::transport_deadline(floor),
+        None => mycelium::physics::Lambda::Unmeasured,
+    }
+}
+
+/// A PEER'S PATIENCE: an aperture of its own measured round trip, read under
+/// its voice key; the mesh's prior where it has none.
+pub(crate) fn patience(mesh: &Mesh, voice: Option<&[u8]>) -> Stall {
+    let hint = voice.and_then(|v| mesh.rtt.lock().ok().and_then(|m| m.get(v).copied()));
+    match hint {
+        Some(rtt) => Stall::of(mycelium::physics::transport_deadline(rtt)),
+        None => Stall::of(prior(mesh)),
+    }
+}
+
+/// A ONE-SHOT ASKER'S OWN WINDOW (D2.7): the last aperture of round trips it
+/// measured to one endpoint. Its first ask has nothing measured, so it reads
+/// to the stream's end (`Stall::Beyond`: the operator holds the process, and
+/// it ends with the peer); every later ask waits an aperture of the window's
+/// floor, exactly as `rtt_floor` reads the mesh's.
+#[derive(Debug, Default)]
+pub(crate) struct AskWindow {
+    rtts: Vec<u64>,
+}
+
+impl AskWindow {
+    /// The stall the next ask is made at.
+    #[expect(clippy::disallowed_methods, reason = "rule 4 — the floor of the window is that window's extent, a reading")]
+    pub(crate) fn stall(&self) -> Stall {
+        match self.rtts.iter().copied().min() {
+            Some(floor) => Stall::of(mycelium::physics::transport_deadline(floor)),
+            None => Stall::Beyond,
+        }
+    }
+
+    /// A measured round trip enters the window, the oldest leaving past an
+    /// aperture.
+    pub(crate) fn note(&mut self, rtt: u64) {
+        self.rtts.push(rtt);
+        if self.rtts.len() > mycelium::physics::aperture_cycle() as usize {
+            self.rtts.remove(0);
+        }
+    }
+
+    /// One ask at the window's stall, its round trip noted.
+    pub(crate) fn ask(&mut self, endpoint: &str, body: Vec<u8>) -> Option<Vec<u8>> {
+        let (reply, rtt) = tell_peer_within(endpoint, body, self.stall())?;
+        self.note(rtt);
+        Some(reply)
+    }
+}
+
+/// THE VOICE KEY OF THE PEER AT `endpoint`, as the mesh's address book holds
+/// it: ONE KEY PER PEER (D4.1) — the endpoint is a locator, the voice the
+/// coordinate its measurements are kept under. `None` for an endpoint whose
+/// voice the mesh has not yet learnt (a seed asked before its digest).
+pub(crate) fn voice_at(mesh: &Mesh, endpoint: &str) -> Option<[u8; 32]> {
+    let book = mesh.addrs.lock().ok()?;
+    book.scoped().find(|(_, e)| e.as_str() == endpoint).and_then(|(k, _)| <[u8; 32]>::try_from(k.as_slice()).ok())
+}
+
+/// SPEAK TO A PEER AT ITS OWN MEASURED PATIENCE (Phase 1 item 3; D4.1): the
+/// deadline its own wire measured, read under its voice key, or the mesh's
+/// measured prior where it has none; and what it saw is recorded under that
+/// key. An endpoint whose voice is not yet known is asked at the prior and
+/// records nothing: its measurement has no coordinate to stand at.
+pub(crate) fn tell_peer_measured(mesh: &Mesh, endpoint: &str, body: Vec<u8>) -> Option<(Vec<u8>, u64)> {
+    let voice = voice_at(mesh, endpoint);
+    let reply = tell_peer_within(endpoint, body, patience(mesh, voice.as_ref().map(|v| v.as_slice())));
+    if let Some(v) = voice {
+        match &reply {
+            Some((_, dt)) => note_rtt_ok(mesh, v, *dt),
+            None => note_rtt_timeout(mesh, v),
+        }
+    }
+    reply
+}
+
+/// Speak one act to a peer, its silence bounded by `stall` (an aperture of
+/// the peer's measured round trip, `patience`; or the stream's own end for a
+/// one-shot ask). The reply and its round trip in strokes, or `None`: the
+/// peer is silent.
+pub(crate) fn tell_peer_within(endpoint: &str, body: Vec<u8>, stall: Stall) -> Option<(Vec<u8>, u64)> {
     let mut s = std::net::TcpStream::connect(endpoint).ok()?;
     let _ = s.set_nodelay(true);
     // A PEER THAT SAYS NOTHING IS SILENT, NOT AUTHORITATIVE. `read_exact`
@@ -183,14 +274,6 @@ pub(crate) fn tell_peer_within(endpoint: &str, body: Vec<u8>, rtt_hint: u64) -> 
     // 78.152 TU-7: a court's act to a peer carries its door's final point.
     s.write_all(&frame.encode_at(crate::tshelf::final_point().as_ref())?).ok()?;
     s.set_nonblocking(true).ok()?;
-    // A deadline the ledger cannot count does not end the read; an
-    // unmeasured one has no deadline to spend either.
-    #[expect(clippy::cast_possible_truncation, reason = "site 4 — transport_deadline's strokes (rtt × aperture_cycle), a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
-    let stall = match mycelium::physics::transport_deadline(rtt_hint) {
-        mycelium::physics::Lambda::Strokes(n) => n as usize,
-        mycelium::physics::Lambda::BeyondTheLedger
-        | mycelium::physics::Lambda::Unmeasured => usize::MAX,
-    };
     let mut head = [0u8; 5];
     // THE ROUND TRIP IS MEASURED HERE (45.4, W9b): the strokes this court
     // spent between the write and the first byte back, one stroke per poll
@@ -223,9 +306,14 @@ pub(crate) fn tell_peer_within(endpoint: &str, body: Vec<u8>, rtt_hint: u64) -> 
 /// are the same answer to the caller: this peer is SILENT, which the
 /// exchange already counts as a refusal. It is never a partial buffer read
 /// as a short frame (rule 11). An empty buffer is filled by no poll and
-/// measures nothing, which reads as zero strokes.
-pub(crate) fn read_budgeted(s: &mut TcpStream, buf: &mut [u8], stall: usize) -> Option<u64> {
-    let fresh = || mycelium::physics::Physics::default().stroke_n(stall);
+/// measures nothing, which reads as zero strokes. Under `Stall::Beyond` no
+/// poll is counted: the read ends at the stream's own end (the boundary it
+/// walks), or filled.
+pub(crate) fn read_budgeted(s: &mut TcpStream, buf: &mut [u8], stall: Stall) -> Option<u64> {
+    let fresh = || match stall {
+        Stall::Strokes(n) => Some(mycelium::physics::Physics::default().stroke_n(n)),
+        Stall::Beyond => None,
+    };
     let mut budget = fresh();
     let mut got = 0usize;
     let mut polls = 0u64;
@@ -251,7 +339,7 @@ pub(crate) fn read_budgeted(s: &mut TcpStream, buf: &mut [u8], stall: usize) -> 
                 budget = fresh();
             }
             Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                if !budget.spend() {
+                if budget.as_mut().is_some_and(|b| !b.spend()) {
                     return None;
                 }
                 // A POLL COSTS THE PROCESSOR (the stroke-duration ruling).
