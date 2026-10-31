@@ -9,6 +9,7 @@ use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
 use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Mouth, Offer, Side, State, Tariff, Untariffed};
 use crate::anastome::dialogue::uplink::{TierFold, Uplinked};
 use crate::chronometry::ActKind;
+use crate::economy::tests::Counts;
 use crate::physics::laws::CHALLENGE_WINDOW;
 use crate::server::cognition::handoff::toll_key;
 use crate::server::cognition::Court;
@@ -70,7 +71,7 @@ fn mouth(t: Tariff) -> Mouth {
         keeper: verifying(&reserve(4)),
         from_frame: one.clone(),
         to_frame: one,
-        toll: [0; 4],
+        toll: [0; 4].into(),
         nonce: [4; 32],
         tariff: Some(t),
         tube: Some(crate::anastome::dialogue::handoff::Tube {
@@ -139,11 +140,9 @@ fn tariff_parts_sum_exactly_under_adversarial_shares() {
         let t = Tariff { rate_s: (1, 1), rate_h: (1, 1), split: s.clone() };
         assert_eq!(t.holds(), Ok(()), "{s:?}");
         for c in &charges {
-            let parts = t.parts(&keeper, c).expect("parts");
-            for lane in 0..4 {
-                let sum: u128 = parts.iter().map(|(_, p)| u128::from(p[lane])).sum();
-                assert_eq!(sum, u128::from(c[lane]), "lane {lane} of {c:?} under {s:?}");
-            }
+            let parts = t.parts(&keeper, &(*c).into()).expect("parts");
+            assert_eq!(crate::economy::Mu::sum(parts.iter().map(|(_, p)| p)), *c, "every lane of {c:?} under {s:?}");
+            let parts = parts.n();
             for (who, part) in parts.iter().filter(|(who, _)| *who != keeper) {
                 let (n, d) = s.iter().find(|(w, _)| w == who).map(|(_, f)| *f).expect("a recipient");
                 for lane in 0..4 {
@@ -176,7 +175,7 @@ fn handoff_mouth_refuses_split_beyond_keeper_and_lines() {
     assert_eq!(offer(&mut k, mouth(to_other)), Some(HandoffRefusal::NotALine), "the traveller's domain is not the keeper's");
     let stranger = Tariff { split: split(vec![([7; 32], (1, 3)), (verifying(&reserve(4)), (2, 3))]), ..tariff() };
     assert_eq!(offer(&mut k, mouth(stranger)), Some(HandoffRefusal::NotALine));
-    let flat = Mouth { toll: [1, 0, 0, 0], ..mouth(tariff()) };
+    let flat = Mouth { toll: [1, 0, 0, 0].into(), ..mouth(tariff()) };
     assert_eq!(offer(&mut k, flat), Some(HandoffRefusal::Untariffed(Untariffed::Flat)), "a mouth's toll is one law");
     let partial = Tariff { split: split(vec![(verifying(&line()), (1, 3)), (verifying(&reserve(4)), (1, 3))]), ..tariff() };
     assert_eq!(offer(&mut k, mouth(partial)), Some(HandoffRefusal::Untariffed(Untariffed::NotWhole)));
@@ -200,14 +199,14 @@ fn handoff_traverse_charges_lanes_and_refuses_short() {
     fund(&mut k, traveller, [0, 0, 0, 96]);
     for (s, h, nonce, charge) in [(7, 0, 2, [10, 0, 0, 0]), (0, 3, 3, [0, 0, 0, 15]), (7, 3, 4, [10, 0, 0, 15])] {
         let Handed::Sealed { id, .. } = traverse(&mut k, m, passage(s, h, nonce)) else { panic!("crossing") };
-        assert_eq!(k.treasury.held_of(&toll_key(&id)).map(|h| h.mu), Some(charge), "mass on S, information on H");
+        assert_eq!(k.treasury.held_of(&toll_key(&id)).map(|h| h.mu.clone()).n(), Some(charge), "mass on S, information on H");
     }
     assert_eq!(k.treasury.balance_mu(&traveller), [80, 9, 9, 70], "G and T never charged");
     let Handed::Sealed { id, .. } = traverse(&mut k, m, passage(7, 3, 5)) else { panic!() };
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(4))), Handed::Sealed { state: State::Accepted, .. }));
     assert_eq!(k.treasury.balance_mu(&verifying(&line())), [0; 4], "held, not paid");
-    assert_eq!(k.toll_held_for(&verifying(&line())), Some([3, 0, 0, 5]), "a third, floored");
-    assert_eq!(k.toll_held_for(&verifying(&reserve(4))), Some([7, 0, 0, 10]), "the keeper, the rest");
+    assert_eq!(k.toll_held_for(&verifying(&line())), [3, 0, 0, 5], "a third, floored");
+    assert_eq!(k.toll_held_for(&verifying(&reserve(4))), [7, 0, 0, 10], "the keeper, the rest");
 }
 
 /// THE PARTS ARE PAID TOGETHER WHEN THE WINDOW CLOSES: held across a
@@ -222,7 +221,7 @@ fn settle_windows_releases_toll_parts_together() {
     let Handed::Sealed { at: accepted, .. } = k.handoff(&Handoff::Accept { id }.sign(&reserve(4))) else { panic!() };
     let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
-    assert_eq!(booted.toll_held_for(&verifying(&line())), Some([3, 0, 0, 5]), "the toll held across a restart");
+    assert_eq!(booted.toll_held_for(&verifying(&line())), [3, 0, 0, 5], "the toll held across a restart");
     let mut k = booted;
     pass(&mut k, accepted.h + CHALLENGE_WINDOW - 1);
     k.settle_windows();
@@ -232,7 +231,7 @@ fn settle_windows_releases_toll_parts_together() {
     assert_eq!(k.treasury.balance_mu(&verifying(&line())), [3, 0, 0, 5]);
     assert_eq!(k.treasury.balance_mu(&verifying(&reserve(4))), [7, 0, 0, 10]);
     assert_eq!(k.treasury.balance_mu(&verifying(&reserve(5))), [0; 4]);
-    assert_eq!(k.toll_held_for(&verifying(&line())), Some([0; 4]), "released");
+    assert_eq!(k.toll_held_for(&verifying(&line())), [0; 4], "released");
     let cited = k.treasury.entries().iter().filter(|e| e.who == verifying(&line()) && e.at == traversed).count();
     assert_eq!(cited, 1, "the line's receipt ties back to the traverse act");
 }
@@ -256,12 +255,12 @@ fn challenge_default_refunds_toll_parts_together() {
     let Challenged::Demanded { deadline, .. } = k.challenge(&Challenge::Demand { fold: at.clone() }.sign(&key(60))) else { panic!() };
     pass(&mut k, accepted.h + CHALLENGE_WINDOW);
     k.settle_windows();
-    assert_eq!(k.toll_held_for(&verifying(&line())), Some([3, 0, 0, 5]), "the demand holds it past the window");
+    assert_eq!(k.toll_held_for(&verifying(&line())), [3, 0, 0, 5], "the demand holds it past the window");
     pass(&mut k, deadline);
     assert!(matches!(k.challenge(&Challenge::Default { fold: at.clone() }.sign(&key(60))), Challenged::Falsified { .. }));
     assert_eq!(k.finality(&at), Finality::Falsified);
     assert_eq!(k.treasury.balance_mu(&traveller), [10, 0, 0, 15], "every part back together");
-    assert_eq!(k.toll_held_for(&verifying(&line())), Some([0; 4]));
-    assert_eq!(k.toll_held_for(&verifying(&reserve(4))), Some([0; 4]));
+    assert_eq!(k.toll_held_for(&verifying(&line())), [0; 4]);
+    assert_eq!(k.toll_held_for(&verifying(&reserve(4))), [0; 4]);
     assert!(!k.fold_holds_toll(&at));
 }

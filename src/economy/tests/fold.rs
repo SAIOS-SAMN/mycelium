@@ -1,7 +1,7 @@
 // 45.8, §2, §6 across a fold — the prefix re-expressed as epoch rows, and
 // what a fold refuses.
 
-use super::{at, place};
+use super::{at, place, Counts};
 use crate::economy::*;
 use crate::verdict::REFUSE_FOLD_INEXACT;
 
@@ -27,10 +27,10 @@ fn fold_replaces_prefix_with_epoch_rows_and_conserves() {
 
     let folded = t.fold(place(5), a(7)).expect("a conserving prefix folds");
     assert_eq!(t.audit().expect("conserves after the fold"), before, "the supply is unchanged");
-    assert_eq!(folded, Folded { replaced: 6, rows: 2, net: [13, 10, 12, 10] });
+    assert_eq!(folded, Folded { replaced: 6, rows: 2, net: Mu::counts([13, 10, 12, 10]) });
     let epochs: Vec<&Entry> = t.entries().iter().filter(|e| e.kind == Kind::Epoch).collect();
     assert_eq!(
-        epochs.iter().map(|e| (e.who, e.mu)).collect::<Vec<_>>(),
+        epochs.iter().map(|e| (e.who, e.mu.clone())).collect::<Vec<_>>().n(),
         vec![([1; 32], [7, 10, 10, 10]), ([2; 32], [6, 0, 2, 0])],
         "identity 1: genesis less the transfer out, its stake netting nothing; identity 2: mint plus the transfer in less the burn"
     );
@@ -38,8 +38,8 @@ fn fold_replaces_prefix_with_epoch_rows_and_conserves() {
     assert_eq!(t.entries().len(), 3, "two epoch rows and the mint above the fold");
     assert_eq!((t.entries()[2].kind, t.entries()[2].who), (Kind::Mint, [3; 32]), "the row above the fold stands");
     assert_eq!(t.balance_mu(&[1; 32]), [5, 8, 8, 8], "the carriers did not move");
-    assert_eq!(t.bond_of(&[1; 32]), Some([2, 2, 2, 2]));
-    assert_eq!(t.minted(), Some([0, 0, 0, 5]), "the folded mints now stand in the epoch rows");
+    assert_eq!(t.bond_of(&[1; 32]).n(), Some([2, 2, 2, 2]));
+    assert_eq!(t.minted(), [0, 0, 0, 5], "the folded mints now stand in the epoch rows");
 
     let back = super::round_trip(&t).expect("the epoch rows read back");
     assert_eq!(back.entries(), t.entries());
@@ -51,7 +51,8 @@ fn fold_replaces_prefix_with_epoch_rows_and_conserves() {
 
     let mut broken = Treasury::new();
     broken.genesis([1; 32], [10, 0, 0, 0], a(1));
-    assert!(broken.credit([1; 32], [1, 0, 0, 0]), "a credit with room lands");
+    // A credit with no row: the carriers pass what the journal issued.
+    broken.credit([1; 32], &Mu::counts([1, 0, 0, 0]));
     assert_eq!(broken.fold(place(1), a(2)), Err(REFUSE_FOLD_INEXACT));
     assert_eq!(broken.entries().len(), 1, "a ledger that does not conserve writes nothing");
 }

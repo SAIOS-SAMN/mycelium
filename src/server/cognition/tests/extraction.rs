@@ -51,7 +51,7 @@ for a in addrs {
     let _ = k.apply_verdict(&a, crate::anastome::dialogue::RULING_UPHELD);
 }
 assert!(
-    k.treasury().balance_mu(&[9; 32])[1] > 0 || k.treasury().balance_mu(&[9; 32]).iter().any(|&m| m > 0),
+    !k.treasury().balance_mu(&[9; 32]).is_zero(),
     "absorbed discoverers still earn, on the lane"
 );
 }

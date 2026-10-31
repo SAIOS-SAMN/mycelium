@@ -157,14 +157,14 @@ fn admit_receipt_burns_bond_on_two_roots_at_one_k() {
     let bond = [3u64, 3, 3, 3];
     k.treasury_mut().genesis(liar, bond, before_genesis());
     k.treasury_mut().enroll(liar, bond, before_genesis());
-    assert_eq!(k.treasury().bond_of(&liar), Some(bond), "the liar is bonded");
+    assert_eq!(k.treasury().bond_of(&liar), Some(bond.into()), "the liar is bonded");
     let supply = k.treasury().supply().expect("measured");
     assert!(matches!(k.admit_receipt(ORIGIN, super::common::verified(&pre(&ra), &key), &ra), Admitted::Parent(_)));
     assert!(matches!(k.admit_receipt(ORIGIN, super::common::verified(&pre(&rb), &key), &rb), Admitted::Equivocation { .. }));
-    assert_eq!(k.treasury().bond_of(&liar), Some([0; 4]), "the bond is burned whole");
+    assert_eq!(k.treasury().bond_of(&liar), Some([0; 4].into()), "the bond is burned whole");
     assert_eq!(
-        k.treasury().supply().expect("still measured"),
-        std::array::from_fn(|l| supply[l] - bond[l]),
+        Ok(k.treasury().supply().expect("still measured")),
+        supply.draw(&bond.into()),
         "supply falls by exactly what left circulation"
     );
     assert!(k.treasury().audit().is_ok(), "and §6 holds through the forfeiture");
@@ -189,11 +189,11 @@ fn accept_equivocation_burns_bond_once() {
     assert!(k.known_head(&liar).is_none(), "this court heard neither truth itself");
     let proof = admit_equivocation(super::common::verified(&pre(&ra), &key), &ra, super::common::verified(&pre(&rb), &key), &rb)
         .expect("two signed roots at one K are the proof");
-    assert_eq!(k.accept_equivocation(proof), Some(bond), "the reply reports the bond that left");
-    assert_eq!(k.treasury().bond_of(&liar), Some([0; 4]), "burned whole");
+    assert_eq!(k.accept_equivocation(proof), Some(bond.into()), "the reply reports the bond that left");
+    assert_eq!(k.treasury().bond_of(&liar), Some([0; 4].into()), "burned whole");
     assert_eq!(
-        k.treasury().supply().expect("still measured"),
-        std::array::from_fn(|l| supply[l] - bond[l]),
+        Ok(k.treasury().supply().expect("still measured")),
+        supply.draw(&bond.into()),
         "supply falls by exactly what left circulation"
     );
     assert!(k.treasury().audit().is_ok(), "§6 holds through the forfeiture");

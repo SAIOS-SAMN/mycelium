@@ -30,7 +30,7 @@ fn fold_witness_round_trips_with_rows() {
     let p = FoldProposal {
         after,
         root,
-        epochs: vec![([1; 32], [1, 2, 3, 4]), ([2; 32], [0, 0, 7, 0])],
+        epochs: vec![([1; 32], [1, 2, 3, 4].into()), ([2; 32], crate::economy::Mu::counts([0, 0, 7, 0]).part(3).expect("three parts"))],
         section: section.clone(),
     };
     let body = encode_fold(&p).expect("frames");
@@ -71,7 +71,7 @@ fn fold_witness_round_trips_with_rows() {
         .map(|i| Entry {
             kind: Kind::Mint,
             who: [i; 32],
-            mu: [i as u64, 0, 0, 0],
+            mu: crate::economy::Mu::counts([u64::from(i), 0, 0, 0]).part(usize::from(i) + 1).expect("a part"),
             at: crate::chronometry::Stamp { h: 3, vk: [2; 32], k: 3, i: 0 },
             receipt: [0; 32],
             arm: [None, Some(crate::economy::Arm::Pouw), Some(crate::economy::Arm::Powr)][i as usize],
@@ -80,7 +80,7 @@ fn fold_witness_round_trips_with_rows() {
     let all = encode_rows_reply(7, &rows, 1 << 16).expect("the page counts");
     assert_eq!(decode_rows_reply(&all), Some((7, rows.clone())));
     // The header is the total (u64) and the page's count (u32).
-    let page = encode_rows_reply(7, &rows, 12 + 2 * Entry::TAPE).expect("the page counts");
+    let page = encode_rows_reply(7, &rows, 12 + rows[0].tape_len() + rows[1].tape_len()).expect("the page counts");
     assert_eq!(decode_rows_reply(&page).map(|(t, r)| (t, r.len())), Some((7, 2)), "a budget for two carries two");
     assert!(decode_rows_reply(&all[..all.len() - 1]).is_none(), "a short page refuses");
 }

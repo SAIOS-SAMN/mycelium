@@ -5,6 +5,7 @@
 use crate::anastome::dialogue::wallet::{decode_wallet, decode_wallet_reply, encode_wallet, encode_wallet_reply, Wallet};
 use crate::chronometry::Stamp;
 use crate::cognition::*;
+use crate::economy::tests::Counts;
 
 /// A human's key is allocated at genesis, pays an entity, and sets part
 /// aside against a key. Each party's wallet reads exactly what the carriers
@@ -24,20 +25,20 @@ fn wallet_reads_each_party_and_sums_to_supply() {
     assert_eq!(k.treasury.genesis(human, [10, 6, 4, 2], anchor), [10, 6, 4, 2]);
     k.treasury.pay(human, entity, [3, 1, 0, 1], anchor).expect("the human pays");
     k.treasury.hold(human, b"lease", [2, 0, 1, 0], anchor).expect("the human holds");
-    let h = k.wallet(&human).expect("measured");
-    assert_eq!((h.balance, h.bond, h.held), ([5, 5, 3, 1], [0; 4], [2, 0, 1, 0]));
-    let e = k.wallet(&entity).expect("measured");
-    assert_eq!((e.balance, e.held), ([3, 1, 0, 1], [0; 4]));
-    let u = k.wallet(&unseen).expect("measured");
-    assert_eq!(u.owned(), Some([0; 4]), "a party never seen holds nothing");
+    let h = k.wallet(&human);
+    assert_eq!((h.balance.clone(), h.bond.clone(), h.held.clone()).n(), ([5, 5, 3, 1], [0; 4], [2, 0, 1, 0]));
+    let e = k.wallet(&entity);
+    assert_eq!((e.balance.clone(), e.held.clone()).n(), ([3, 1, 0, 1], [0; 4]));
+    let u = k.wallet(&unseen);
+    assert_eq!(u.owned(), [0; 4], "a party never seen holds nothing");
     let after = k.treasury.audit().expect("the ledger conserves");
-    let issued: [u64; 4] = std::array::from_fn(|l| after[l] - before[l]);
-    let both = Wallet { who: human, accounts: vec![h, e], unanswered: 0 };
-    assert_eq!(both.owned(), Some(issued), "what the parties own is what was issued to them");
+    let issued = after.draw(&before).expect("issuance only rose");
+    let both = Wallet { who: human, accounts: vec![h.clone(), e], unanswered: 0 };
+    assert_eq!(both.owned(), issued, "what the parties own is what was issued to them");
     // The wire.
     assert_eq!(decode_wallet(&encode_wallet(&human)), Some(human));
     let reply = encode_wallet_reply(&h);
-    assert_eq!(decode_wallet_reply(&reply), Some(h));
+    assert_eq!(decode_wallet_reply(&reply), Some(h.clone()));
     assert!(decode_wallet_reply(&reply[..reply.len() - 1]).is_none(), "a truncated reply is no reply");
     assert_eq!(h.court, [1; 32], "the account names its court");
 }

@@ -30,6 +30,7 @@
 use super::Court;
 use crate::anastome::dialogue::endowment::{nuclei_hold, put_nuclei, take_manifest, EndowmentReading, GrantRead, GrantRefusal, Granted, Nuclei, SignedManifest, KIND_MANIFEST};
 use crate::chronometry::{ActKind, Cite, Stamp};
+use crate::economy::Mu;
 use crate::network::nerve::Keyed;
 use crate::transducer::address::{put_key_count, take_key_count};
 
@@ -39,7 +40,7 @@ use crate::transducer::address::{put_key_count, take_key_count};
 pub(crate) struct HeldGrant {
     pub(crate) manifest: SignedManifest,
     pub(crate) hash: [u8; 32],
-    pub(crate) mu: [u64; 4],
+    pub(crate) mu: Mu,
     pub(crate) founding: bool,
     pub(crate) at: Stamp,
     pub(crate) receipt: [u8; 32],
@@ -51,9 +52,7 @@ impl HeldGrant {
         put_nuclei(out, &m.nuclei)?;
         out.extend_from_slice(&m.nonce);
         out.extend_from_slice(&self.manifest.sig);
-        for x in self.mu {
-            out.extend_from_slice(&x.to_le_bytes());
-        }
+        self.mu.put(out);
         out.push(u8::from(self.founding));
         self.at.put_canonical(out);
         out.extend_from_slice(&self.receipt);
@@ -63,11 +62,7 @@ impl HeldGrant {
     fn take(domain: [u8; 32], b: &[u8], p: &mut usize) -> Option<HeldGrant> {
         let manifest = take_manifest(domain, b, p)?;
         let hash = manifest.manifest.hash()?;
-        let mut mu = [0u64; 4];
-        for x in &mut mu {
-            *x = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
-            *p += 8;
-        }
+        let mu = Mu::take_from(b, p)?;
         let founding = match *b.get(*p)? {
             0 => false,
             1 => true,
@@ -108,30 +103,24 @@ pub(crate) fn take_grants(b: &[u8], p: &mut usize) -> Option<Vec<([u8; 32], Vec<
 }
 
 /// 78.155c — the closures awaiting a growth grant written:
-/// `[domains][(domain 32, lanes 4 × u64) …]`, in domain order.
-pub(crate) fn put_closed(closed: &Keyed<[u64; 4]>) -> Vec<u8> {
+/// `[domains][(domain 32, μ⃗) …]`, in domain order, each μ⃗ four exact
+/// rational lanes (`Mu::put`).
+pub(crate) fn put_closed(closed: &Keyed<Mu>) -> Vec<u8> {
     let mut v = Vec::new();
     put_key_count(&mut v, closed.len());
-    for (domain, lanes) in closed.scoped() {
+    for (domain, mu) in closed.scoped() {
         v.extend_from_slice(&domain);
-        for x in lanes {
-            v.extend_from_slice(&x.to_le_bytes());
-        }
+        mu.put(&mut v);
     }
     v
 }
 
-pub(crate) fn take_closed(b: &[u8], p: &mut usize) -> Option<Vec<([u8; 32], [u64; 4])>> {
+pub(crate) fn take_closed(b: &[u8], p: &mut usize) -> Option<Vec<([u8; 32], Mu)>> {
     (0..take_key_count(b, p)?)
         .map(|_| {
             let domain: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
             *p += 32;
-            let mut lanes = [0u64; 4];
-            for x in &mut lanes {
-                *x = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
-                *p += 8;
-            }
-            Some((domain, lanes))
+            Some((domain, Mu::take_from(b, p)?))
         })
         .collect()
 }
@@ -206,7 +195,7 @@ impl Court {
                     let Some(v) = p.checked_mul(kinds) else { return refuse(GrantRefusal::Overflow) };
                     *x = v;
                 }
-                mu
+                Mu::counts(mu)
             }
             // 78.155c — A GROWTH GRANT, THE MATHEMATICS (ruled
             // 2026-10-14): the measured discharge of the closures the court
@@ -220,16 +209,16 @@ impl Court {
             },
         };
         let earned = self.treasury.balance_mu(&self.identity);
-        if !crate::economy::lanes_short(&crate::economy::shortfall(&mu, &earned)).is_empty() {
+        if !mu.shortfall(&earned).is_zero() {
             return refuse(GrantRefusal::Short);
         }
         let cite = Cite::Stated { domain: m.domain, kind: KIND_MANIFEST, body: hash };
         let Some(r) = self.seal_step(ActKind::Domain, [0; 4], reserve, |_| vec![cite.clone()]) else { return refuse(GrantRefusal::LineRefused) };
-        if self.treasury.pay(self.identity, reserve, mu, (r.stamp, r.chain_hash)).is_err() {
+        if self.treasury.pay(self.identity, reserve, mu.clone(), (r.stamp, r.chain_hash)).is_err() {
             return refuse(GrantRefusal::Short);
         }
         let mut now = held;
-        now.push(HeldGrant { manifest: s.clone(), hash, mu, founding, at: r.stamp, receipt: r.chain_hash });
+        now.push(HeldGrant { manifest: s.clone(), hash, mu: mu.clone(), founding, at: r.stamp, receipt: r.chain_hash });
         self.grants.insert(m.domain, now);
         // The closures a grant answered are its own: the next growth grant
         // counts only those judged after it.
@@ -241,9 +230,9 @@ impl Court {
     /// 78.155c — WHAT `domain`'S NEXT GROWTH GRANT MOVES: the measured
     /// discharge of the closures this court judged in that universe since its
     /// previous grant, exact per lane; refused by name where none was judged.
-    pub fn growth_size(&self, domain: &[u8; 32]) -> Result<[u64; 4], GrantRefusal> {
-        match self.closed_since_grant.get(domain).copied() {
-            Some(c) if c.iter().any(|&x| x > 0) => Ok(c),
+    pub fn growth_size(&self, domain: &[u8; 32]) -> Result<Mu, GrantRefusal> {
+        match self.closed_since_grant.get(domain) {
+            Some(c) if !c.is_zero() => Ok(c.clone()),
             _ => Err(GrantRefusal::NoNewClosures),
         }
     }
@@ -251,22 +240,21 @@ impl Court {
     /// 78.155b — WHAT THIS COURT CAN GRANT AND HAS GRANTED, read: its earned
     /// balance; the founding and growth grants made to every universe, per
     /// lane; `domain`'s grants with whether its ledger applied each; and the
-    /// nuclei that universe holds by its grants. Sealing nothing. `None`
-    /// where a total passes its carrier: refused whole, never capped.
+    /// nuclei that universe holds by its grants. Sealing nothing. The totals
+    /// are exact.
     pub fn endowment_reading(&self, domain: &[u8; 32]) -> Option<EndowmentReading> {
         let mut r = EndowmentReading { earned: self.treasury.balance_mu(&self.identity), ..EndowmentReading::default() };
         for (_, held) in self.grants.scoped() {
             for g in held {
-                let total = match g.founding {
-                    true => &mut r.founding,
-                    false => &mut r.growth,
-                };
-                *total = crate::core::lanes::lanes_add(*total, g.mu)?;
+                match g.founding {
+                    true => r.founding.step(&g.mu),
+                    false => r.growth.step(&g.mu),
+                }
             }
         }
         if let Some(held) = self.grants.get(domain) {
             for g in held {
-                r.grants.push(GrantRead { manifest: g.hash, mu: g.mu, founding: g.founding, applied: self.grant_applied(domain, &g.hash) });
+                r.grants.push(GrantRead { manifest: g.hash, mu: g.mu.clone(), founding: g.founding, applied: self.grant_applied(domain, &g.hash) });
                 r.nuclei = add_nuclei(&r.nuclei, &g.manifest.manifest.nuclei);
             }
         }

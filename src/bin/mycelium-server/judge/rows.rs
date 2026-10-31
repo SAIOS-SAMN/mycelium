@@ -13,7 +13,9 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(budget) = mycelium::network::wire::frame_budget().checked_sub(64) else {
         return;
     };
-    let at_most = budget / mycelium::economy::Entry::TAPE;
+    // At most as many rows as fit at a row's fewest bytes; the reply keeps
+    // those that fit at their own length, and says how many it carries.
+    let at_most = budget / mycelium::economy::Entry::MIN_TAPE;
     // 78.153b — answered off the published reading, never under the court:
     // a witness's fetch waited on the court behind a busy door, was
     // deferred, and the fold went unmeasured (217–284 an hour per court,

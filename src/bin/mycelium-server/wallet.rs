@@ -49,12 +49,9 @@ pub(crate) fn run(home: &Path, at: Option<&str>, asked: &str) -> ! {
         None => "before the court's first act".to_string(),
     };
     println!("{BOLD}═══ WALLET {}… ═══{RESET}  court {}…  {DIM}{stands}{RESET}", &hex(&who)[..8], &hex(&a.court)[..8]);
-    println!("  balance  S:G:T:H {:?}", a.balance);
-    println!("  bond     S:G:T:H {:?}", a.bond);
-    println!("  held     S:G:T:H {:?}", a.held);
-    match a.owned() {
-        Some(o) => println!("  {BOLD}owned{RESET}    S:G:T:H {o:?}"),
-        None => println!("  {RED}owned passes its carrier on a lane{RESET}"),
-    }
+    println!("  balance  S:G:T:H {}", a.balance);
+    println!("  bond     S:G:T:H {}", a.bond);
+    println!("  held     S:G:T:H {}", a.held);
+    println!("  {BOLD}owned{RESET}    S:G:T:H {}", a.owned());
     std::process::exit(0)
 }

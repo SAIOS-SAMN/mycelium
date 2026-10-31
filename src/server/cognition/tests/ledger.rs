@@ -59,7 +59,7 @@ fn found(k: &mut Court) {
     let anchor = k.anchor();
     k.treasury.genesis(verifying(&r), [3, 0, 0, 0], anchor);
     for (i, line) in [(0u8, &a), (1, &p), (2, &q)] {
-        let bond = Bond { domain: verifying(&domain), reserve: verifying(&r), tier: verifying(line), mu: Some([1, 0, 0, 0]), nonce: [i; 32] };
+        let bond = Bond { domain: verifying(&domain), reserve: verifying(&r), tier: verifying(line), mu: Some([1, 0, 0, 0].into()), nonce: [i; 32] };
         assert!(matches!(k.bond(&bond.sign(&r)), Founded::Bonded { .. }));
     }
 }

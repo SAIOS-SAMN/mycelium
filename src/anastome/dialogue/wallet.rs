@@ -3,24 +3,26 @@
 // each by its 32-byte key.
 //
 //! A wallet is FLAT by design: per court, a party's balance, bond and holds,
-//! each a per-lane vector `S:G:T:H`, never summed across lanes. It is a
-//! projection of the record, never a second record: every row it folds stands
-//! at an act on that court's line (`economy::Entry::at`), and the rows are
-//! served to peers and re-derived at every fold (`ACT_ROWS`, `ACT_FOLD`). So
-//! the reading carries where it stands — the court's head stamp when it was
-//! read — and a party's wallet across the universe is its account at every
-//! court, per lane, summed exactly or not at all.
+//! each a per-lane amount `S:G:T:H`, exact, never summed across lanes. It is
+//! a projection of the record, never a second record: every row it folds
+//! stands at an act on that court's line (`economy::Entry::at`), and the rows
+//! are served to peers and re-derived at every fold (`ACT_ROWS`, `ACT_FOLD`).
+//! So the reading carries where it stands — the court's head stamp when it
+//! was read — and a party's wallet across the universe is its account at
+//! every court, per lane, summed exactly. Every μ field is four exact
+//! rational lanes (`Mu::put`).
 
 use super::*;
 use crate::chronometry::Stamp;
+use crate::economy::Mu;
 
 /// ONE PARTY'S ACCOUNT AT ONE COURT, read at that court's head.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Account {
     pub court: [u8; 32],
-    pub balance: [u64; 4],
-    pub bond: [u64; 4],
-    pub held: [u64; 4],
+    pub balance: Mu,
+    pub bond: Mu,
+    pub held: Mu,
     /// The court's head when it was read: where the reading stands. `None`
     /// before the court's first act.
     pub at: Option<Stamp>,
@@ -28,9 +30,9 @@ pub struct Account {
 
 impl Account {
     /// Everything the party owns at this court, per lane: balance, bond and
-    /// holds. `None` where a lane would pass its carrier (rule 11).
-    pub fn owned(&self) -> Option<[u64; 4]> {
-        crate::core::lanes::lanes_add(crate::core::lanes::lanes_add(self.balance, self.bond)?, self.held)
+    /// holds, exactly.
+    pub fn owned(&self) -> Mu {
+        Mu::sum([&self.balance, &self.bond, &self.held])
     }
 }
 
@@ -44,10 +46,14 @@ pub struct Wallet {
 }
 
 impl Wallet {
-    /// What the party owns across the courts that answered, per lane.
-    /// `None` where a lane would pass its carrier.
-    pub fn owned(&self) -> Option<[u64; 4]> {
-        self.accounts.iter().try_fold([0u64; 4], |t, a| crate::core::lanes::lanes_add(t, a.owned()?))
+    /// What the party owns across the courts that answered, per lane,
+    /// exactly.
+    pub fn owned(&self) -> Mu {
+        let mut total = Mu::zero();
+        for a in &self.accounts {
+            total.step(&a.owned());
+        }
+        total
     }
 }
 
@@ -65,26 +71,12 @@ pub fn decode_wallet(body: &[u8]) -> Option<[u8; 32]> {
     body.get(1..33)?.try_into().ok()
 }
 
-fn put_lanes(out: &mut Vec<u8>, v: &[u64; 4]) {
-    for x in v {
-        out.extend_from_slice(&x.to_le_bytes());
-    }
-}
-
-fn take_lanes(b: &[u8], p: &mut usize) -> Option<[u64; 4]> {
-    let mut v = [0u64; 4];
-    for x in v.iter_mut() {
-        *x = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
-        *p += 8;
-    }
-    Some(v)
-}
-
+/// `[ACT_WALLET][court 32][balance μ⃗][bond μ⃗][held μ⃗][0 | 1 stamp]`.
 pub fn encode_wallet_reply(a: &Account) -> Vec<u8> {
     let mut out = vec![ACT_WALLET];
     out.extend_from_slice(&a.court);
     for v in [&a.balance, &a.bond, &a.held] {
-        put_lanes(&mut out, v);
+        v.put(&mut out);
     }
     match &a.at {
         None => out.push(0),
@@ -104,11 +96,13 @@ pub fn encode_wallet_reply(a: &Account) -> Vec<u8> {
 pub struct StakeAct {
     pub who: [u8; 32],
     pub unstake: bool,
-    pub mu: [u64; 4],
+    pub mu: Mu,
     pub nonce: [u8; 32],
 }
 
-const STAKE: &[u8] = b"mycelium stake v1";
+/// The stake's signed bytes name their layout: v2 writes μ as four exact
+/// rational lanes.
+const STAKE: &[u8] = b"mycelium stake v2";
 const KIND_STAKE: u8 = 1;
 const KIND_UNSTAKE: u8 = 2;
 
@@ -120,12 +114,12 @@ impl StakeAct {
         }
     }
 
-    /// `"mycelium stake v1" ‖ kind ‖ who ‖ mu ‖ nonce`.
+    /// `"mycelium stake v2" ‖ kind ‖ who ‖ μ⃗ ‖ nonce`.
     pub fn signed_bytes(&self) -> Vec<u8> {
         let mut out = STAKE.to_vec();
         out.push(self.kind());
         out.extend_from_slice(&self.who);
-        put_lanes(&mut out, &self.mu);
+        self.mu.put(&mut out);
         out.extend_from_slice(&self.nonce);
         out
     }
@@ -143,11 +137,11 @@ pub struct SignedStake {
     pub sig: [u8; 64],
 }
 
-/// `[ACT_WALLET][who 32][1 stake | 2 unstake][mu 4×u64][nonce 32][sig 64]`.
+/// `[ACT_WALLET][who 32][1 stake | 2 unstake][μ⃗][nonce 32][sig 64]`.
 pub fn encode_stake(s: &SignedStake) -> Vec<u8> {
     let mut out = encode_wallet(&s.act.who);
     out.push(s.act.kind());
-    put_lanes(&mut out, &s.act.mu);
+    s.act.mu.put(&mut out);
     out.extend_from_slice(&s.act.nonce);
     out.extend_from_slice(&s.sig);
     out
@@ -164,7 +158,7 @@ pub fn decode_stake(body: &[u8]) -> Option<SignedStake> {
         _ => return None,
     };
     let mut p = 34usize;
-    let mu = take_lanes(body, &mut p)?;
+    let mu = Mu::take_from(body, &mut p)?;
     let nonce: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
     let sig: [u8; 64] = body.get(p + 32..p + 96)?.try_into().ok()?;
     (p + 96 == body.len()).then_some(SignedStake { act: StakeAct { who, unstake, mu, nonce }, sig })
@@ -197,41 +191,37 @@ impl StakeRefusal {
     }
 }
 
-/// `[1][stake now 4×u64]` or `[0][reason]`.
-pub fn encode_stake_reply(r: &Result<[u64; 4], StakeRefusal>) -> Vec<u8> {
+/// `[1][stake now μ⃗]` or `[0][reason]`.
+pub fn encode_stake_reply(r: &Result<Mu, StakeRefusal>) -> Vec<u8> {
     match r {
         Ok(stake) => {
             let mut out = vec![1];
-            put_lanes(&mut out, stake);
+            stake.put(&mut out);
             out
         }
         Err(why) => vec![0, why.byte()],
     }
 }
 
-pub fn decode_stake_reply(b: &[u8]) -> Option<Result<[u64; 4], StakeRefusal>> {
+pub fn decode_stake_reply(b: &[u8]) -> Option<Result<Mu, StakeRefusal>> {
     match b {
         [0, code] => {
             let all = [StakeRefusal::Unsigned, StakeRefusal::Short, StakeRefusal::Claimed, StakeRefusal::Nothing, StakeRefusal::Spent];
             Some(Err(all.into_iter().find(|r| r.byte() == *code)?))
         }
-        [1, rest @ ..] => {
-            let mut p = 0;
-            let stake = take_lanes(rest, &mut p)?;
-            (p == rest.len()).then_some(Ok(stake))
-        }
+        [1, rest @ ..] => Mu::from_bytes(rest).ok().map(Ok),
         _ => None,
     }
 }
 
-/// The account, read whole or not at all.
+/// The account, read whole or not at all: every lane in lowest terms.
 pub fn decode_wallet_reply(body: &[u8]) -> Option<Account> {
     if !act_is(body, ACT_WALLET) {
         return None;
     }
     let court: [u8; 32] = body.get(1..33)?.try_into().ok()?;
     let mut p = 33usize;
-    let (balance, bond, held) = (take_lanes(body, &mut p)?, take_lanes(body, &mut p)?, take_lanes(body, &mut p)?);
+    let (balance, bond, held) = (Mu::take_from(body, &mut p)?, Mu::take_from(body, &mut p)?, Mu::take_from(body, &mut p)?);
     let flag = *body.get(p)?;
     p += 1;
     let at = match flag {

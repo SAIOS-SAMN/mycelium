@@ -87,7 +87,7 @@ fn acts_round_trips() {
         addr: listing.clone(),
         elem: vec![1, 2, 3],
         voices: vec![voice],
-        escrowed: [1, 2, 3, 4],
+        escrowed: crate::economy::Mu::counts([1, 2, 3, 4]).part(5).expect("fifths"),
         deflation: [0, 0, 7, 0],
         at: crate::chronometry::Place { k: 41, i: 1 },
     };

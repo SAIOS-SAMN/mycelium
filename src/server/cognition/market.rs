@@ -69,7 +69,7 @@ impl Court {
         voice: [u8; 32],
         mu: [u64; 4],
         anchor: crate::economy::Anchor,
-    ) -> [u64; 4] {
+    ) -> crate::economy::Mu {
         self.treasury.settle_solve(voice, mu, anchor)
     }
 
@@ -425,7 +425,8 @@ impl Court {
     /// ENROLL an identity with a per-lane bond. The hypha enrolls itself
     /// from genesis or from a restored stake; arriving voices stay unbonded
     /// until they bond from balance. Returns the vector added this call.
-    pub fn enroll(&mut self, party: [u8; 32], bond: [u64; 4]) -> [u64; 4] {
+    pub fn enroll(&mut self, party: [u8; 32], bond: impl Into<crate::economy::Mu>) -> crate::economy::Mu {
+        let bond = bond.into();
         let anchor = self.anchor();
         // A stake moves value from a balance and never creates any (§4), so
         // an identity bonded at genesis is FUNDED first and stakes from that
@@ -436,8 +437,8 @@ impl Court {
         let held = self.treasury.balance_mu(&party);
         // What genesis must seed is the shortfall of what is held against
         // the bond: nothing on a lane already at or above it.
-        let short = crate::economy::shortfall(&bond, &held);
-        if short.iter().any(|&x| x > 0) {
+        let short = bond.shortfall(&held);
+        if !short.is_zero() {
             self.treasury.genesis(party, short, anchor);
         }
         self.treasury.enroll(party, bond, anchor)
@@ -446,7 +447,7 @@ impl Court {
     /// E3 — A GENESIS ALLOCATION TO SPEND: `mu` onto `party`'s balance, its
     /// own ledger kind (§6 keeps seeded value separable from earned), at
     /// this court's head. Answers what landed.
-    pub fn fund(&mut self, party: [u8; 32], mu: [u64; 4]) -> [u64; 4] {
+    pub fn fund(&mut self, party: [u8; 32], mu: impl Into<crate::economy::Mu>) -> crate::economy::Mu {
         let anchor = self.anchor();
         self.treasury.genesis(party, mu, anchor)
     }
@@ -461,9 +462,9 @@ impl Court {
     /// mint (§6: seeded value and earned value stay separable; it was booked
     /// as a subsidy mint). A home whose allocation was booked as a mint before
     /// this keeps it, and is not allocated twice.
-    pub fn allocate(&mut self, party: [u8; 32], mu: [u64; 4]) -> [u64; 4] {
+    pub fn allocate(&mut self, party: [u8; 32], mu: impl Into<crate::economy::Mu>) -> crate::economy::Mu {
         if self.treasury.has_genesis(&party) || self.treasury.has_mint(&party) {
-            return [0; 4];
+            return crate::economy::Mu::zero();
         }
         let anchor = self.anchor();
         self.treasury.genesis(party, mu, anchor)

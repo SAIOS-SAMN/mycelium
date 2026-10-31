@@ -869,7 +869,7 @@ impl Court {
         if self.tier_domain.get(&fold.tier) != Some(&domain) {
             return Err(refuse(ChildRefusal::ForeignDomain));
         }
-        if self.bond_of(&fold.tier).iter().all(|m| *m == 0) {
+        if self.bond_of(&fold.tier).is_zero() {
             return Err(refuse(ChildRefusal::Unbonded));
         }
         if fold.rows != c.rows || fold.declared != c.declared {

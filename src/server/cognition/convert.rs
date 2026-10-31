@@ -55,7 +55,7 @@ pub(crate) struct Conversion {
     pub(crate) holder: [u8; 32],
     pub(crate) identity: [u8; 32],
     pub(crate) g: i128,
-    pub(crate) mu: [u64; 4],
+    pub(crate) mu: crate::economy::Mu,
     pub(crate) state: State,
     pub(crate) side: Option<Vec<u8>>,
     /// The receipt that sealed it, by its stamp key — a resend's answer.
@@ -89,9 +89,7 @@ impl Conversion {
             v.extend_from_slice(k);
         }
         v.extend_from_slice(&self.g.to_le_bytes());
-        for m in self.mu {
-            v.extend_from_slice(&m.to_le_bytes());
-        }
+        self.mu.put(v);
         match self.state {
             State::Offered { until } => {
                 v.push(0);
@@ -134,10 +132,7 @@ impl Conversion {
         let (tier, holder, identity) = (key(b, p)?, key(b, p)?, key(b, p)?);
         let g = i128::from_le_bytes(b.get(*p..*p + 16)?.try_into().ok()?);
         *p += 16;
-        let mut mu = [0u64; 4];
-        for m in &mut mu {
-            *m = u64_at(b, p)?;
-        }
+        let mu = crate::economy::Mu::take_from(b, p)?;
         let state = match byte(b, p)? {
             0 => State::Offered { until: u64_at(b, p)? },
             1 => State::Accepted,
@@ -259,7 +254,7 @@ impl Court {
         };
         let balance = match held.current {
             Some(t) => self.treasury.balance_mu(&t),
-            None => [0; 4],
+            None => crate::economy::Mu::zero(),
         };
         crate::anastome::dialogue::domain::ReserveReading { current: held.current, pending: held.pending, balance }
     }
@@ -347,8 +342,8 @@ impl Court {
     }
 
     /// Whether `party`'s balance holds `mu` on every lane.
-    fn covers(&self, party: &[u8; 32], mu: &[u64; 4]) -> bool {
-        crate::economy::lanes_short(&crate::economy::shortfall(mu, &self.treasury.balance_mu(party))).is_empty()
+    fn covers(&self, party: &[u8; 32], mu: &crate::economy::Mu) -> bool {
+        mu.shortfall(&self.treasury.balance_mu(party)).is_zero()
     }
 
     /// The reserve tier of the domain `tier` stands in, where `tier` is it.
@@ -384,7 +379,7 @@ impl Court {
                     return refuse(R::NoBasket);
                 }
                 let Some(mu) = c.mu() else { return refuse(R::Inexact) };
-                if mu.iter().all(|m| *m == 0) {
+                if mu.is_zero() {
                     return refuse(R::Inexact);
                 }
                 // THE RESERVE HOLDS IT — a rate never mints μ.
@@ -392,7 +387,7 @@ impl Court {
                     return refuse(R::ReserveShort);
                 }
                 let Some(r) = self.seal_handoff(h, id, 5) else { return refuse(R::LineRefused) };
-                if self.treasury.pay(c.tier, c.holder, mu, (r.stamp, r.chain_hash)).is_err() {
+                if self.treasury.pay(c.tier, c.holder, mu.clone(), (r.stamp, r.chain_hash)).is_err() {
                     return refuse(R::ReserveShort);
                 }
                 let held = Conversion { dir: Direction::Out, tier: c.tier, holder: c.holder, identity: c.identity, g: c.g, mu, state: State::Accepted, side: None, at: r.stamp.key() };
@@ -409,14 +404,14 @@ impl Court {
                 if !self.basket_stated_for(&c.tier) {
                     return refuse(R::NoBasket);
                 }
-                if c.g <= 0 || c.mu.iter().all(|m| *m == 0) {
+                if c.g <= 0 || c.mu.is_zero() {
                     return refuse(R::Inexact);
                 }
                 if !self.covers(&c.holder, &c.mu) {
                     return refuse(R::HolderShort);
                 }
                 let Some(r) = self.seal_handoff(h, id, 6) else { return refuse(R::LineRefused) };
-                if self.treasury.hold(c.holder, &id, c.mu, (r.stamp, r.chain_hash)).is_err() {
+                if self.treasury.hold(c.holder, &id, c.mu.clone(), (r.stamp, r.chain_hash)).is_err() {
                     return refuse(R::HolderShort);
                 }
                 let until = window_end(r.stamp.h);
@@ -426,7 +421,7 @@ impl Court {
                     holder: c.holder,
                     identity: c.identity,
                     g: c.g,
-                    mu: c.mu,
+                    mu: c.mu.clone(),
                     state: State::Offered { until },
                     side: None,
                     at: r.stamp.key(),
@@ -489,8 +484,11 @@ impl Court {
 
     /// 78.129 — A TIER'S BOND as it stands: the μ its domain's reserve holds
     /// escrowed in its name (zero where none is posted).
-    pub fn bond_of(&self, tier: &[u8; 32]) -> [u64; 4] {
-        self.treasury.held_of(&bond_key(tier)).map_or([0; 4], |h| h.mu)
+    pub fn bond_of(&self, tier: &[u8; 32]) -> crate::economy::Mu {
+        match self.treasury.held_of(&bond_key(tier)) {
+            Some(h) => h.mu.clone(),
+            None => crate::economy::Mu::zero(),
+        }
     }
 
     /// Whether the tier that sealed this fold stands bonded — what a finality
@@ -502,7 +500,7 @@ impl Court {
             (None, Some(((tier, ..), _))) => Some(*tier),
             (None, None) => self.sealed_fold(fold).map(|(tier, ..)| tier),
         };
-        tier.is_some_and(|t| self.bond_of(&t).iter().any(|m| *m > 0))
+        tier.is_some_and(|t| !self.bond_of(&t).is_zero())
     }
 
     /// 78.129 — A TIER'S BOND POSTED OR WITHDRAWN (as
@@ -526,18 +524,16 @@ impl Court {
         }
         let key = bond_key(&b.tier);
         let held = self.treasury.held_of(&key).cloned();
-        let kept = held.as_ref().filter(|h| h.payer == b.reserve).map_or([0; 4], |h| h.mu);
-        let after = match b.mu {
+        let kept = match held.as_ref().filter(|h| h.payer == b.reserve) {
+            Some(h) => h.mu.clone(),
+            None => crate::economy::Mu::zero(),
+        };
+        let after = match &b.mu {
             Some(mu) => {
-                if !self.covers(&b.reserve, &mu) {
+                if !self.covers(&b.reserve, mu) {
                     return Founded::Short;
                 }
-                let mut total = [0u64; 4];
-                for (t, (k, m)) in total.iter_mut().zip(kept.iter().zip(mu)) {
-                    let Some(sum) = k.checked_add(m) else { return Founded::Short };
-                    *t = sum;
-                }
-                total
+                kept.add(mu)
             }
             None => {
                 if held.is_none() {
@@ -546,16 +542,16 @@ impl Court {
                 if self.tier_outstanding(&b.tier) {
                     return Founded::Outstanding;
                 }
-                [0; 4]
+                crate::economy::Mu::zero()
             }
         };
-        let cite = Cite::Bond { domain: b.domain, tier: b.tier, mu: after };
+        let cite = Cite::Bond { domain: b.domain, tier: b.tier, mu: after.clone() };
         let Some(r) = self.seal_step(ActKind::Domain, [0; 4], b.reserve, |_| vec![cite.clone()]) else { return Founded::LineRefused };
         let anchor = (r.stamp, r.chain_hash);
         if held.is_some() {
             let _ = self.treasury.refund_held(&key, anchor);
         }
-        if after.iter().any(|m| *m > 0) && self.treasury.hold(b.reserve, &key, after, anchor).is_err() {
+        if !after.is_zero() && self.treasury.hold(b.reserve, &key, after.clone(), anchor).is_err() {
             return Founded::Short;
         }
         self.mark_persist();
@@ -576,24 +572,25 @@ impl Court {
     /// challenge needs a reason to be filed), half RETIRED from supply (POWR),
     /// an odd unit to retirement. Drawn from whoever posted the bond; nothing
     /// where the tier stands unbonded.
-    pub(crate) fn slash(&mut self, tier: &[u8; 32], challenger: [u8; 32], anchor: crate::economy::Anchor) -> [u64; 4] {
+    pub(crate) fn slash(&mut self, tier: &[u8; 32], challenger: [u8; 32], anchor: crate::economy::Anchor) -> crate::economy::Mu {
+        use crate::economy::Mu;
         let key = bond_key(tier);
-        let Some(held) = self.treasury.held_of(&key).cloned() else { return [0; 4] };
-        let cut: [u64; 4] = std::array::from_fn(|l| held.mu[l] / 2);
-        if cut.iter().all(|m| *m == 0) {
+        let Some(held) = self.treasury.held_of(&key).cloned() else { return Mu::zero() };
+        let Some(half) = held.mu.part(2) else { return Mu::zero() };
+        let (cut, kept) = held.mu.split_at(&half.floor());
+        if cut.is_zero() {
             return cut;
         }
-        let bounty: [u64; 4] = std::array::from_fn(|l| cut[l] / 2);
-        let retired: [u64; 4] = std::array::from_fn(|l| cut[l] - bounty[l]);
-        let kept: [u64; 4] = std::array::from_fn(|l| held.mu[l] - cut[l]);
+        let Some(half_cut) = cut.part(2) else { return Mu::zero() };
+        let (bounty, retired) = cut.split_at(&half_cut.floor());
         if self.treasury.refund_held(&key, anchor).is_err() {
-            return [0; 4];
+            return Mu::zero();
         }
-        if bounty.iter().any(|m| *m > 0) {
+        if !bounty.is_zero() {
             let _ = self.treasury.pay(held.payer, challenger, bounty, anchor);
         }
         let _ = self.treasury.burn(held.payer, retired, anchor);
-        if kept.iter().any(|m| *m > 0) {
+        if !kept.is_zero() {
             let _ = self.treasury.hold(held.payer, &key, kept, anchor);
         }
         self.mark_persist();

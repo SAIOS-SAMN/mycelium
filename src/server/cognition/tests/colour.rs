@@ -50,10 +50,10 @@ fn perceive_speech_admits_colour_theorem_by_composition() {
     // 78.56 IV — AND IT MINTS NOTHING: no claim stands for it, so its
     // install releases nothing; it earns only when cited to close residue.
     assert!(k.treasury().escrow_of(theorem.address().as_bytes()).is_none(), "a theorem holds no claim");
-    let minted = k.treasury().minted().expect("minted adds up");
+    let minted = k.treasury().minted();
     k.rule_all_provisionals();
     k.confirm_peer_holds_addrs(std::slice::from_ref(&theorem.address()), [2; 32]);
-    assert_eq!(k.treasury().minted().expect("minted adds up"), minted, "its admission mints nothing");
+    assert_eq!(k.treasury().minted(), minted, "its admission mints nothing");
     // A FORGED CITATION: the same citation on a word it does not compose to.
     let mut forged = colour_word(&[(3, 1)]).expect("a word");
     forged.set_receipts(crate::transducer::element::ReceiptsEnvelope {

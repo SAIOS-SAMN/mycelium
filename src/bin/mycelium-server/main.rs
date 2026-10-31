@@ -548,8 +548,8 @@ fn main() {
         }
         for (who, mu) in &genesis.voice {
             let paid = k.allocate(*who, *mu);
-            if paid.iter().any(|&x| x > 0) {
-                eprintln!("[{tag}] genesis voice {:02x}{:02x}… allocated {paid:?}", who[0], who[1]);
+            if !paid.is_zero() {
+                eprintln!("[{tag}] genesis voice {:02x}{:02x}… allocated {paid}", who[0], who[1]);
             }
         }
         });

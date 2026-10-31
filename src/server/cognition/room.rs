@@ -60,12 +60,24 @@ impl Court {
             return Ok(cap);
         }
         let credit = self.use_credit(voice).ok_or(RoomRefusal::PastCarrier)?;
-        let bond = match self.treasury.bond_of(voice) {
+        let bond = match self.bond_counts(voice)? {
             Some(b) => b,
             None if credit.iter().all(|&c| c == 0) => return Ok([0; 4]),
             None => [0; 4],
         };
         crate::core::lanes::lanes_add(bond, credit).ok_or(RoomRefusal::PastCarrier)
+    }
+
+    /// THE BOND AS ROOM COUNTS: each lane's whole part. A draw is a count
+    /// (a magnitude), and a count fits under an exact amount `q` exactly
+    /// where it fits under `⌊q⌋`, so room read on the whole part admits
+    /// every draw the exact bond admits and no other. `None` unbonded;
+    /// refused past its carrier.
+    fn bond_counts(&self, voice: &[u8; 32]) -> Result<Option<[u64; 4]>, RoomRefusal> {
+        match self.treasury.bond_of(voice) {
+            Some(b) => b.whole_counts().map(Some).ok_or(RoomRefusal::PastCarrier),
+            None => Ok(None),
+        }
     }
 
     /// `None` on a lane occupied beyond its cover: that is a broken count,
@@ -103,7 +115,7 @@ impl Court {
         // it, which is the whole of what E2 says a use is worth: the bond
         // is what a voice staked, the credit is what its language did.
         let credit = self.use_credit(voice).ok_or(RoomRefusal::PastCarrier)?;
-        let bond = match self.treasury.bond_of(voice) {
+        let bond = match self.bond_counts(voice)? {
             Some(b) => b,
             None if credit.iter().all(|&c| c == 0) => return Ok([0; 4]),
             None => [0; 4],
@@ -348,9 +360,9 @@ impl Court {
             Some(d) => *d,
             None => [0; 4],
         };
-        let owed = match self.recall_short.get(voice) {
-            Some(o) => *o,
-            None => [0; 4],
+        let owed: [bool; 4] = match self.recall_short.get(voice) {
+            Some(o) => std::array::from_fn(|l| !num_traits::Zero::is_zero(o.lane(l))),
+            None => [false; 4],
         };
         let bonded = self.lane_cap.is_some() || self.treasury.bond_of(voice).is_some();
         let room = self.lane_room_of(voice)?;
@@ -361,7 +373,7 @@ impl Court {
         let against = crate::economy::shortfall(draw, &room);
         Some(std::array::from_fn(|l| match (draw[l], bonded) {
             (0, _) => 0,
-            (d, _) if owed[l] > 0 && occ[l] > 0 => d,
+            (d, _) if owed[l] && occ[l] > 0 => d,
             (_, true) => against[l],
             (d, false) if occ[l] > 0 => d,
             (_, false) => 0,
@@ -373,23 +385,17 @@ impl Court {
     /// short lane while a claim of the voice is in flight there, and clears
     /// when that claim closes (`occupy`). Nothing is written for a recall
     /// that was paid in full.
-    pub(super) fn record_recall_short(&mut self, voice: [u8; 32], short: &[u64; 4]) {
-        if crate::economy::lanes_short(short).is_empty() {
+    pub(super) fn record_recall_short(&mut self, voice: [u8; 32], short: &crate::economy::Mu) {
+        if short.is_zero() {
             return;
         }
-        // A voice with no recorded shortfall owes nothing: absence.
-        let owed = match self.recall_short.get(&voice) {
-            Some(o) => *o,
-            None => [0; 4],
+        // A voice with no recorded shortfall owes nothing: absence. A lane
+        // not short adds zero, so the whole vector is the step, exactly.
+        let next = match self.recall_short.get(&voice) {
+            Some(o) => o.add(short),
+            None => short.clone(),
         };
-        // A lane not short adds zero, so the whole vector is the step. One
-        // past its carrier leaves what is owed where it stood, counted (STD1).
-        match crate::core::lanes::lanes_add(owed, *short) {
-            Some(next) => {
-                self.recall_short.insert(voice, next);
-            }
-            None => self.overflowed += 1,
-        }
+        self.recall_short.insert(voice, next);
     }
 
     /// THE CONGESTION DOOR (26, 48; S9.6b): the fee on a lane is the
@@ -413,10 +419,21 @@ impl Court {
         // cannot tell a lane half-paid from one wholly unpaid and reported
         // the whole deficit for a single unit short. `settle_door` now
         // returns that reading, so the door reads it instead of guessing it.
+        //
+        // THE DEFERRAL IS A RESERVE COUNT, NOT μ: the asker dwells on the
+        // reserve units the payment left uncovered. The fee is the deficit,
+        // a count; a balance holding a share of a unit covers that share, and
+        // the unit it did not cover whole is still a unit to dwell on — so
+        // each lane reads the shortfall's ceiling, which is the shortfall
+        // itself wherever the balance held whole units.
         let (_paid, short) = self.treasury.settle_door(voice, deficit, anchor);
         let held = self.physics.reserve.lanes();
         std::array::from_fn(|l| match held[l] == 0 {
-            true => short[l],
+            true => match u64::try_from(short.lane(l).ceil().to_integer()) {
+                Ok(units) => units,
+                // The shortfall is at most the fee, a `u64`.
+                Err(_) => deficit[l],
+            },
             false => 0,
         })
     }

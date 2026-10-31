@@ -69,8 +69,7 @@ impl Court {
             }
             // LIFT: the learner pays the word's magnitude from its own
             // account; a short learner is not taught it, and says so.
-            let short = crate::economy::shortfall(&mag, &self.treasury.balance_mu(&voice));
-            if !crate::economy::lanes_short(&short).is_empty() {
+            if !crate::economy::Mu::counts(mag).shortfall(&self.treasury.balance_mu(&voice)).is_zero() {
                 count(&mut self.acts.fetch, &FETCH, "presentation: learner short");
                 continue;
             }

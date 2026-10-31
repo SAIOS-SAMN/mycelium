@@ -59,7 +59,7 @@ fn founded() -> (Court, [u8; 32], [u8; 32]) {
         keeper: verifying(&reserve(4)),
         from_frame: one.clone(),
         to_frame: one,
-        toll: [0; 4],
+        toll: [0; 4].into(),
         nonce: [4; 32],
         tariff: None,
         tube: Some(tube),
@@ -111,7 +111,14 @@ fn commit(k: &mut Court, d: u8, u: u64, h: u64, fin: u64, applied: Vec<([u8; 32]
 }
 
 fn stake(k: &mut Court, staker: &SigningKey, mu: [u64; 4], unstake: bool, nonce: u8) -> Result<[u64; 4], StakeRefusal> {
-    k.stake(&StakeAct { who: verifying(staker), unstake, mu, nonce: [nonce; 32] }.sign(staker))
+    use crate::economy::tests::Counts;
+    k.stake(&StakeAct { who: verifying(staker), unstake, mu: mu.into(), nonce: [nonce; 32] }.sign(staker)).n()
+}
+
+/// What `party`'s balance gained since `before`, as counts.
+fn gained(k: &Court, party: &[u8; 32], before: &crate::economy::Mu) -> [u64; 4] {
+    use crate::economy::tests::Counts;
+    k.treasury.balance_mu(party).draw(before).expect("the balance rose").n()
 }
 
 /// A traverse from domain 4 at `fp(at)`, citing both mouths' points and
@@ -168,17 +175,17 @@ fn traverse_pays_exact_gas_to_map_keeper() {
     assert_eq!(gas, Gas { s: (11, 4), g: 2, t: 2, h: 3 }, "per lane, exact, never collapsed");
     assert_eq!(priced, price);
     assert_eq!(fee, [2, 2, 2, 3], "⌊11/4⌋ on S, the rest whole");
-    assert_eq!(k.treasury.stake_of(&verifying(&payer)), Some([8, 8, 8, 7]), "drawn from the stake");
-    assert_eq!(k.claims_on(&verifying(&payer)), Some([2, 2, 2, 3]), "held as a claim");
+    assert_eq!(k.treasury.stake_of(&verifying(&payer)), Some([8, 8, 8, 7].into()), "drawn from the stake");
+    assert_eq!(k.claims_on(&verifying(&payer)), [2, 2, 2, 3], "held as a claim");
     assert_eq!(k.treasury.balance_mu(&court), court_before, "held, not yet paid");
     let edge = k.crossing_edge(&crossing).expect("the edge on the map");
     assert_eq!((edge.u_a, edge.u_entry, edge.u_applied, edge.residual()), (100, 7, None, None), "pending, never a disagreement");
     pass(&mut k, h + CHALLENGE_WINDOW);
     k.settle_windows();
-    let paid: [u64; 4] = std::array::from_fn(|l| k.treasury.balance_mu(&court)[l] - court_before[l]);
+    let paid = gained(&k, &court, &court_before);
     assert_eq!(paid, [2, 2, 2, 3], "paid WHOLE to the court keeping the map");
     assert_eq!(k.treasury.minted(), minted_before, "a transfer, never a mint");
-    assert_eq!(k.claims_on(&verifying(&payer)), Some([0; 4]));
+    assert_eq!(k.claims_on(&verifying(&payer)), [0; 4]);
     assert!(k.treasury.audit().is_ok(), "both equations hold");
     assert!(matches!(commit(&mut k, 5, 9, 14, 14, vec![(crossing, 9)]), Ledgered::Sealed { .. }));
     let edge = k.crossing_edge(&crossing).expect("the edge");
@@ -330,17 +337,17 @@ fn settle_solve_pays_from_recycled_pool_before_mint() {
     };
     assert_eq!(k.admit_uplink(&tax([-3, 1, -2, 0], 1).sign(&reserve(4))), Uplinked::Tax(TaxRefusal::Source { lane: 1 }), "the tax only leaves");
     assert_eq!(k.admit_uplink(&tax([-4, 0, -2, 0], 1).sign(&reserve(4))), Uplinked::Tax(TaxRefusal::Short));
-    let minted_before = k.treasury.minted().expect("minted reads");
+    let minted_before = k.treasury.minted();
     assert!(matches!(k.admit_uplink(&tax([-3, 0, -2, 0], 1).sign(&reserve(4))), Uplinked::Admitted { .. }));
     assert_eq!(k.treasury.recycled(), [3, 0, 2, 0], "the dissipation returned to the hypha");
     assert_eq!(k.treasury.balance_mu(&tier), [0; 4], "paid from the reserve");
-    assert_eq!(k.treasury.minted(), Some(minted_before), "a transfer, never a mint");
+    assert_eq!(k.treasury.minted(), minted_before, "a transfer, never a mint");
     let closer = [70; 32];
     let anchor = k.anchor();
     assert_eq!(k.treasury.settle_solve(closer, [5, 1, 1, 0], anchor), [5, 1, 1, 0], "the closer paid whole");
     assert_eq!(k.treasury.balance_mu(&closer), [5, 1, 1, 0]);
     assert_eq!(k.treasury.recycled(), [0, 0, 1, 0], "the pool paid first");
-    let minted: [u64; 4] = std::array::from_fn(|l| k.treasury.minted().expect("reads")[l] - minted_before[l]);
+    let minted = k.treasury.minted().draw(&minted_before).expect("mint only rises");
     assert_eq!(minted, [2, 1, 0, 0], "only the remainder minted");
     assert!(k.treasury.audit().is_ok());
     let Some(_) = k.treasury.held_of(crate::economy::RECYCLED) else { panic!("the pool held by the court") };
@@ -369,14 +376,14 @@ fn stake_unstakes_only_after_claims_settle() {
     assert_eq!(stake(&mut k, &payer, [1, 0, 0, 0], true, 2), Err(StakeRefusal::Claimed), "a claim stands on the stake");
     let read = k.retrieve(verifying(&payer), &fp(10), Some(fp(12)), [1; 32]).expect("served");
     let units = read.len() as u64;
-    assert_eq!(k.claims_on(&verifying(&payer)), Some([0, 0, 2, 1 + units]), "one unit of information per receipt read");
+    assert_eq!(k.claims_on(&verifying(&payer)), [0, 0, 2, 1 + units], "one unit of information per receipt read");
     assert_eq!(k.retrieve(verifying(&payer), &fp(13), Some(fp(12)), [2; 32]), Err(crate::server::cognition::crossing::Unretrieved::NotFinal));
     pass(&mut k, h + CHALLENGE_WINDOW + 1);
     k.settle_windows();
-    assert_eq!(k.claims_on(&verifying(&payer)), Some([0; 4]), "settled");
+    assert_eq!(k.claims_on(&verifying(&payer)), [0; 4], "settled");
     let left = k.treasury.stake_of(&verifying(&payer)).expect("staked");
     assert_eq!(left, [4, 4, 2, 3 - units]);
-    assert_eq!(stake(&mut k, &payer, left, true, 3), Ok([0; 4]), "unstaked once every claim settled");
+    assert_eq!(stake(&mut k, &payer, left.to_counts().expect("whole"), true, 3), Ok([0; 4]), "unstaked once every claim settled");
     assert_eq!(k.treasury.balance_mu(&verifying(&payer)), left);
     assert!(k.treasury.audit().is_ok());
 }
@@ -492,12 +499,12 @@ fn traverse_local_throat_pays_and_applies() {
     let Crossed::Sealed { crossing, gas, fee, h, .. } = k.traverse(&t.sign(&payer), Some(fp(14))) else { panic!("crossed") };
     assert_eq!(gas, Gas { s: (3, 2), g: 2, t: 0, h: 3 });
     assert_eq!(fee, [1, 2, 0, 3], "⌊3/2⌋ on S");
-    assert_eq!(k.claims_on(&verifying(&payer)), Some([1, 2, 0, 3]));
+    assert_eq!(k.claims_on(&verifying(&payer)), [1, 2, 0, 3]);
     let edge = k.crossing_edge(&crossing).expect("the edge");
     assert_eq!((edge.from, edge.to, edge.u_entry, edge.residual()), (domain(4), domain(4), 100, None), "pending, into its own universe");
     pass(&mut k, h + CHALLENGE_WINDOW);
     k.settle_windows();
-    let paid: [u64; 4] = std::array::from_fn(|l| k.treasury.balance_mu(&court)[l] - court_before[l]);
+    let paid = gained(&k, &court, &court_before);
     assert_eq!(paid, [1, 2, 0, 3], "paid whole to the court keeping the map");
     assert_eq!(k.treasury.minted(), minted_before, "never a mint");
     assert!(matches!(commit(&mut k, 4, 101, 14, 14, vec![(crossing, 101)]), Ledgered::Sealed { .. }));

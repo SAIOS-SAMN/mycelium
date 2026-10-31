@@ -201,11 +201,11 @@ impl Court {
     /// discharged on the withheld pairs (`pay`), on the task's FIRST closure
     /// only: a repeat is verified and pays nothing — no floor, the decay is
     /// the discharge itself. Answers what the solver was paid, per lane.
-    pub fn pay_solve(&mut self, task: &[u8], voice: [u8; 32], rule: &Element, pay: [u64; 4], first: bool) -> [u64; 4] {
+    pub fn pay_solve(&mut self, task: &[u8], voice: [u8; 32], rule: &Element, pay: [u64; 4], first: bool) -> crate::economy::Mu {
         // NO WORK, NO ACT: the check stands before every release, mint,
         // docket and offer (see `SolveVerdict::NoWork`).
         if pay.iter().all(|&x| x == 0) {
-            return [0; 4];
+            return crate::economy::Mu::zero();
         }
         self.docket_connection(rule, voice);
         self.enter_offered(rule.address().as_bytes());
@@ -236,14 +236,12 @@ impl Court {
         }
         self.acts.judge(if first { crate::observe::Judged::FirstClosure } else { crate::observe::Judged::ClosureAgain });
         if !first || pay.iter().all(|&x| x == 0) {
-            return [0; 4];
+            return crate::economy::Mu::zero();
         }
         self.append_step(crate::chronometry::ActKind::Settled, task, voice);
         let settled = self.anchor();
         let paid = self.treasury.settle_solve(voice, pay, settled);
-        if let Some(total) = crate::core::lanes::lanes_add(self.acts.paid, paid) {
-            self.acts.paid = total;
-        }
+        self.acts.paid.step(&paid);
         self.grow_grants_by_paid();
         paid
     }
@@ -254,22 +252,19 @@ impl Court {
     /// another mind) is counted toward the next growth grant of the universe
     /// whose key was paid — membership, never tier (78.165). Where it was
     /// only first solves, a universe whose minds earned by words and
-    /// sentences no task named never grew. A sum past its carrier is refused
-    /// and counts nothing there rather than a capped amount (rule 11).
+    /// sentences no task named never grew. The sum is exact.
     pub(crate) fn grow_grants_by_paid(&mut self) {
         let paid = self.treasury.take_paid_out();
         let mut moved = false;
         for (who, mu) in paid {
             let Some(domain) = self.tier_domain.get(&who).copied() else { continue };
-            let held = match self.closed_since_grant.get(&domain) {
-                Some(h) => *h,
-                None => [0; 4],
+            let now = match self.closed_since_grant.get(&domain) {
+                Some(h) => h.add(&mu),
+                None => mu.clone(),
             };
-            if let Some(now) = crate::core::lanes::lanes_add(held, mu) {
-                self.closed_since_grant.insert(domain, now);
-                self.acts.pay("mints counted toward a grant", mu);
-                moved = true;
-            }
+            self.closed_since_grant.insert(domain, now);
+            self.acts.pay("mints counted toward a grant", mu);
+            moved = true;
         }
         if moved {
             self.mark_persist();
@@ -289,13 +284,13 @@ impl Court {
             syllabus: self.acts.syllabus,
             fetch: self.acts.fetch,
             judged: self.acts.judged,
-            paid: self.acts.paid,
+            paid: self.acts.paid.clone(),
             colours: self.basis.scoped().filter(|(_, w)| w.is_colour_word()).count() as u64,
             colours_derived: self.acts.colours_derived,
             deferred: self.deferred_reading(),
             provisional: self.acts.provisional,
             pays: self.acts.pays,
-            pays_lanes: self.acts.pays_lanes,
+            pays_lanes: self.acts.pays_lanes.clone(),
         }
     }
 

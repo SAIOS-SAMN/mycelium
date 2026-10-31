@@ -5,6 +5,7 @@ use crate::anastome::dialogue::domain::{decode_domain_request, DomainGenesis, Do
 use crate::anastome::dialogue::endowment::{
     decode_endowment_reading, decode_grant_reply, encode_endowment_read, encode_endowment_reading, encode_grant_reply, encode_manifest, GrantRefusal, Granted, Manifest, SignedManifest,
 };
+use crate::economy::tests::Counts;
 use crate::server::cognition::Court;
 use ed25519_dalek::SigningKey;
 use num_bigint::BigUint;
@@ -89,8 +90,8 @@ fn manifest_grants_founding_from_court_balance() {
     assert!(founding, "the first is the founding grant");
     assert_eq!(mu, price.map(|p| p * 3), "three kinds of nuclei: three units of gas per lane at the read price");
     let after = (k.treasury.balance_mu(&court_vk), k.treasury.balance_mu(&reserve));
-    assert_eq!(after.0, std::array::from_fn(|l| before.0[l] - mu[l]), "out of the court's earned balance");
-    assert_eq!(after.1, std::array::from_fn(|l| before.1[l] + mu[l]), "into the reserve: a transfer, never a mint");
+    assert_eq!(Ok(after.0), before.0.draw(&mu), "out of the court's earned balance");
+    assert_eq!(after.1, before.1.add(&mu), "into the reserve: a transfer, never a mint");
     let r = k.endowment_reading(&reserve_domain()).expect("reads");
     assert_eq!(r.founding, mu);
     assert_eq!(r.nuclei, m.nuclei, "the universe holds its manifest's nuclei");
@@ -153,14 +154,14 @@ fn growth_size_sums_closures_in_universe() {
     let rule = crate::transducer::element::from_residual(&vec![(0i64, 0i64, 1u8, 2u8)]).expect("a rule");
     let line = verifying(&key(47));
     let _ = k.pay_solve(b"task-a", line, &rule, [3, 0, 2, 1], true);
-    assert_eq!(k.growth_size(&domain), Ok([3, 0, 2, 1]), "the closure's measured discharge, a line's key counting for its universe");
+    assert_eq!(k.growth_size(&domain).n(), Ok([3, 0, 2, 1]), "the closure's measured discharge, a line's key counting for its universe");
     let _ = k.pay_solve(b"task-b", [0xee; 32], &rule, [9, 9, 9, 9], true);
-    assert_eq!(k.growth_size(&domain), Ok([3, 0, 2, 1]), "a key no domain names grows nothing here");
+    assert_eq!(k.growth_size(&domain).n(), Ok([3, 0, 2, 1]), "a key no domain names grows nothing here");
     let _ = k.pay_solve(b"task-c", verifying(&key(RESERVE)), &rule, [1, 1, 0, 0], true);
-    assert_eq!(k.growth_size(&domain), Ok([4, 1, 2, 1]), "a second closure adds, exact per lane");
+    assert_eq!(k.growth_size(&domain).n(), Ok([4, 1, 2, 1]), "a second closure adds, exact per lane");
     let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "clean restore");
-    assert_eq!(booted.growth_size(&domain), Ok([4, 1, 2, 1]), "the size survives a restart");
+    assert_eq!(booted.growth_size(&domain).n(), Ok([4, 1, 2, 1]), "the size survives a restart");
     // A grant sealed takes the closures it answered.
     let anchor = k.anchor();
     let court_vk = k.identity;
@@ -183,11 +184,11 @@ fn grow_grants_by_paid_grows_universe_grant() {
     let anchor = k.anchor();
     let _ = k.treasury.settle_convergence(line, [2, 0, 0, 1], anchor);
     k.grow_grants_by_paid();
-    assert_eq!(k.growth_size(&domain), Ok([2, 0, 0, 1]), "a POWC mint to a key of the universe");
+    assert_eq!(k.growth_size(&domain).n(), Ok([2, 0, 0, 1]), "a POWC mint to a key of the universe");
     k.treasury.mint_claim(&[line, [0xee; 32]], [4, 2, 0, 0], anchor);
     k.grow_grants_by_paid();
-    assert_eq!(k.growth_size(&domain), Ok([4, 1, 0, 1]), "a claim split two ways: the universe's key's half, exactly");
+    assert_eq!(k.growth_size(&domain).n(), Ok([4, 1, 0, 1]), "a claim split two ways: the universe's key's half, exactly");
     let _ = k.treasury.settle_convergence([0xee; 32], [9, 9, 9, 9], anchor);
     k.grow_grants_by_paid();
-    assert_eq!(k.growth_size(&domain), Ok([4, 1, 0, 1]), "a key no domain names grows nothing here");
+    assert_eq!(k.growth_size(&domain).n(), Ok([4, 1, 0, 1]), "a key no domain names grows nothing here");
 }

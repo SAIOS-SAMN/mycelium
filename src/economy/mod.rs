@@ -25,4 +25,4 @@ pub use treasury::*;
 use crate::transducer::element::Element;
 
 #[cfg(test)]
-mod tests;
+pub(crate) mod tests;

@@ -10,7 +10,7 @@ use crate::network::nerve::Keyed;
 use std::sync::{LazyLock, Mutex};
 
 /// The verdicts a solve is answered with, each at its wire code's slot of
-/// [`JudgedSolve::times`] (`dialogue::SOLVE_NOTHING` 0, `SOLVE_FLOOR` 1,
+/// [`JudgedSolve::times`] (`dialogue::SOLVE_NOTHING` 0, `SOLVE_AGAIN` 1,
 /// `SOLVE_BOUNTY` 2, `SOLVE_UNREAD` 3).
 pub const VERDICTS: [&str; 4] = ["nothing", "again", "first", "unread"];
 

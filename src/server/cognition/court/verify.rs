@@ -11,6 +11,7 @@
 //! the base, exactly as before.
 
 use crate::cognition::*;
+use crate::economy::Mu;
 
 impl Court {
     /// THE VERIFICATION OF A RELEASE PAID to `organs`, the courts whose
@@ -19,29 +20,27 @@ impl Court {
     /// `base` as POWV at `at`. Duplicate organs are one organ. Answers what
     /// the organs took together, per lane — zero where this court is at
     /// rest or its surface cannot be read.
-    pub(crate) fn pay_verification(&mut self, base: [u64; 4], organs: &[[u8; 32]], at: crate::economy::Anchor) -> [u64; 4] {
+    pub(crate) fn pay_verification(&mut self, base: &Mu, organs: &[[u8; 32]], at: crate::economy::Anchor) -> Mu {
         let mut distinct: Vec<[u8; 32]> = Vec::with_capacity(organs.len());
         for o in organs {
             if !distinct.contains(o) {
                 distinct.push(*o);
             }
         }
-        let Some(strain) = crate::economy::yield_surface(&self.physics) else { return [0; 4] };
-        let each = crate::economy::verification_share(&base, &strain, crate::physics::reserve_max(), distinct.len());
-        if each.iter().all(|&m| m == 0) {
-            return [0; 4];
+        let Some(strain) = crate::economy::yield_surface(&self.physics) else { return Mu::zero() };
+        let each = crate::economy::verification_share(base, &strain, crate::physics::reserve_max(), distinct.len());
+        if each.is_zero() {
+            return each;
         }
-        let mut taken = [0u64; 4];
+        // Each organ's share is at most `base / n` on its lane, so the sum
+        // of n of them is at most `base`.
+        let mut taken = Mu::zero();
         for organ in &distinct {
-            let paid = self.treasury.settle_verification(*organ, each, at);
-            for (t, p) in taken.iter_mut().zip(&paid) {
-                // Each organ's share is at most `base / n` on its lane, so the
-                // sum of n of them is at most `base`: it cannot pass the lane.
-                *t += p;
-            }
+            let paid = self.treasury.settle_verification(*organ, each.clone(), at);
+            taken.step(&paid);
         }
-        if taken.iter().any(|&m| m > 0) {
-            self.acts.pay("verifications", taken);
+        if !taken.is_zero() {
+            self.acts.pay("verifications", taken.clone());
         }
         taken
     }
@@ -57,12 +56,11 @@ impl Court {
         discharge: [u64; 4],
         organs: &[[u8; 32]],
         at: crate::economy::Anchor,
-    ) -> Option<[u64; 4]> {
-        let held = self.treasury.escrow_of(address)?.mu;
-        let above = crate::economy::shortfall(&held, &discharge);
-        let base: [u64; 4] = std::array::from_fn(|l| held[l] - above[l]);
-        let taken = self.pay_verification(base, organs, at);
-        let rest: [u64; 4] = std::array::from_fn(|l| base[l] - taken[l]);
+    ) -> Option<Mu> {
+        let base = self.treasury.escrow_of(address)?.mu.capped(&Mu::counts(discharge));
+        let taken = self.pay_verification(&base, organs, at);
+        // taken ≤ base on every lane: the organs' shares sum to at most it.
+        let rest = base.shortfall(&taken);
         self.treasury.release_discharged(address, rest, at)
     }
 }

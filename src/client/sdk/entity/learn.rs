@@ -54,7 +54,7 @@ impl Mind {
     /// the court's replay resumes where its stroke ran out).
     fn file_verdict(&mut self, id: &[u8; 32], rule: &Element, outputs: &[Grid], code: u8) {
         match code {
-            dialogue::SOLVE_BOUNTY | dialogue::SOLVE_FLOOR => {
+            dialogue::SOLVE_BOUNTY | dialogue::SOLVE_AGAIN => {
                 self.solve_refused.remove(id);
                 self.unread_solves.remove(id);
                 // Paid: a stratum starved for want of it may be fetched again.
@@ -101,7 +101,7 @@ impl Mind {
     /// SUBMIT A SOLVE: the sentence that spoke the outputs, with them. The
     /// court replays the RULE on its withheld pairs and pays what it
     /// discharges (the actions' physics): (SOLVE_BOUNTY, μ⃗) on the task's
-    /// first closure, (SOLVE_FLOOR, 0⃗) on a closure again, (SOLVE_NOTHING,
+    /// first closure, (SOLVE_AGAIN, 0⃗) on a closure again, (SOLVE_NOTHING,
     /// 0⃗) with the refusal otherwise. The verdict is filed where it lands
     /// (`file_verdict`); a court not reached leaves the solve as it stood.
     pub(crate) fn submit_solve_rule(&mut self, id: &[u8; 32], outputs: &[Grid], rule: &Element) -> io::Result<()> {
@@ -665,7 +665,7 @@ pub(crate) fn hex_prefix(address: &[u8]) -> String {
 }
 
 /// 78.153c — ONE SOLVE VERDICT, AS ONE LINE: the task by its citation's
-/// head, the reply's code by name (`SOLVE_NOTHING` 0, `SOLVE_FLOOR` 1,
+/// head, the reply's code by name (`SOLVE_NOTHING` 0, `SOLVE_AGAIN` 1,
 /// `SOLVE_BOUNTY` 2, `SOLVE_UNREAD` 3) and number, the refusal's kind by name
 /// (P D C I N, unclassified `?`; `none` where the reply carried no refusal)
 /// and its reason as the court wrote it.

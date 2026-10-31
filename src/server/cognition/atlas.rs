@@ -30,7 +30,7 @@ use std::sync::Arc;
 /// the act it was drawn at — what each part's rows cite.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Claim {
-    pub(crate) parts: Vec<([u8; 32], [u64; 4])>,
+    pub(crate) parts: Vec<([u8; 32], crate::economy::Mu)>,
     pub(crate) until: u64,
     pub(crate) at: Stamp,
     pub(crate) receipt: [u8; 32],
@@ -41,9 +41,7 @@ impl Claim {
         put_key_count(v, self.parts.len());
         for (who, mu) in &self.parts {
             v.extend_from_slice(who);
-            for m in mu {
-                v.extend_from_slice(&m.to_le_bytes());
-            }
+            mu.put(v);
         }
         v.extend_from_slice(&self.until.to_le_bytes());
         self.at.put_canonical(v);
@@ -53,7 +51,7 @@ impl Claim {
     fn take(b: &[u8], p: &mut usize) -> Option<Claim> {
         use crate::anastome::dialogue::atlas::{key32, u64_at};
         let parts = (0..take_key_count(b, p)?)
-            .map(|_| Some((key32(b, p)?, [u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?])))
+            .map(|_| Some((key32(b, p)?, crate::economy::Mu::take_from(b, p)?)))
             .collect::<Option<Vec<_>>>()?;
         let until = u64_at(b, p)?;
         let at = Stamp::take_canonical(b, p)?;

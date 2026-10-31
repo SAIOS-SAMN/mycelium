@@ -27,33 +27,25 @@ impl Treasury {
     /// paying itself transfers nothing (no wash trades). Returns the paid μ⃗.
     /// Two `transfer` entries share the anchor: first debits the demander,
     /// second credits the discoverer. Neither is a mint.
-    pub fn settle_use(&mut self, demander: [u8; 32], discoverer: [u8; 32], mag: [u64; 4], anchor: Anchor) -> [u64; 4] {
+    pub fn settle_use(&mut self, demander: [u8; 32], discoverer: [u8; 32], mag: impl Into<Mu>, anchor: Anchor) -> Mu {
         if demander == discoverer {
-            return [0; 4];
+            return Mu::zero();
         }
-        let held = self.balance_mu(&demander);
-        // paid ≤ held on every lane: it is clamped to the balance just read,
-        // and it is debited against that same balance below.
-        let paid: [u64; 4] = std::array::from_fn(|l| mag[l].min(held[l]));
-        if paid.iter().all(|&m| m == 0) {
+        // paid ≤ held on every lane: it is the ask divided at the balance
+        // just read, and it is debited against that same balance below.
+        let (paid, _) = self.balance_mu(&demander).split_at(&mag.into());
+        if paid.is_zero() {
             return paid;
         }
-        // STD1 — the discoverer's balance with the payment in it, read before
-        // anything moves: one with no room refuses the transfer, counted.
-        let Some(next) = self.credited(&discoverer, paid) else {
-            self.overflowed += 1;
-            return [0; 4];
-        };
         // The rows are written for μ⃗ that MOVED, after the debit — which
-        // cannot be short, by `paid ≤ held` (STD1: the arm that read a short
-        // debit could not fire, and it is gone).
-        let unmoved = self.debit(demander, paid);
-        debug_assert!(crate::economy::lanes_short(&unmoved).is_empty(), "paid ≤ held, debited against it");
+        // cannot be short, by `paid ≤ held`.
+        let drawn = self.debit(demander, &paid);
+        debug_assert!(drawn.is_ok(), "paid ≤ held, debited against it");
+        self.credit(discoverer, &paid);
         // POWC (78.33): a cited generator paid by the use that cited it.
         let arm = Some(Arm::Powc);
-        self.write(Entry { kind: Kind::Transfer, who: demander, mu: paid, at: anchor.0, receipt: anchor.1, arm });
-        self.write(Entry { kind: Kind::Transfer, who: discoverer, mu: paid, at: anchor.0, receipt: anchor.1, arm });
-        self.balances.insert(discoverer, next);
+        self.write(Entry { kind: Kind::Transfer, who: demander, mu: paid.clone(), at: anchor.0, receipt: anchor.1, arm });
+        self.write(Entry { kind: Kind::Transfer, who: discoverer, mu: paid.clone(), at: anchor.0, receipt: anchor.1, arm });
         paid
     }
 
@@ -62,7 +54,7 @@ impl Treasury {
     /// could not — pays the closer the citation's measured discharge, a mint
     /// carrying the POWC arm (78.33). The caller measures it and refuses
     /// self-pay; nothing here prices it.
-    pub fn settle_convergence(&mut self, closer: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+    pub fn settle_convergence(&mut self, closer: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
         self.mint_to(closer, mu, anchor, Some(Arm::Powc))
     }
 
@@ -70,7 +62,7 @@ impl Treasury {
     /// redundancy probe, bootstrap awards). Bounded by the pool, like all pay.
     /// No proof of work (78.33 as ruled): a subsidy is a policy ratio
     /// (MU-ECONOMY §8), and its row carries no arm.
-    pub fn settle_subsidy(&mut self, party: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+    pub fn settle_subsidy(&mut self, party: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
         self.mint_to(party, mu, anchor, None)
     }
 
@@ -113,14 +105,13 @@ impl Treasury {
     /// a mint with no party is a mint to nobody, and the escrow stands
     /// rather than being spent into the void. The mint stands at `at`, the
     /// act that released it (EC1), never at the escrow's.
-    pub fn release_rewrite(&mut self, address: &[u8], at: Anchor) -> Option<[u64; 4]> {
+    pub fn release_rewrite(&mut self, address: &[u8], at: Anchor) -> Option<Mu> {
         let row = self.escrowed.get(address)?;
         if row.voices.is_empty() {
             return None;
         }
-        let (voices, mu) = (row.voices.clone(), row.mu);
+        let (voices, mu) = (row.voices.clone(), row.mu.clone());
         self.escrowed.remove(address);
-        let n = voices.len() as u64;
         // THE SPLIT CANNOT EXCEED WHAT IT RELEASES. This read
         // `(mu[l] / n).max(1)`, so a lane holding less than one unit per
         // voice minted ONE to each of them: an escrow of 1 released to four
@@ -133,8 +124,8 @@ impl Treasury {
         // and there is no coordinate on a voice that orders it (rule 4). So
         // `n · share ≤ mu` on every lane, exactly, and a lane too small to
         // divide pays nothing rather than inventing something to pay.
-        let share: [u64; 4] = std::array::from_fn(|l| mu[l] / n);
-        if share.iter().all(|&m| m == 0) {
+        let share = mu.part(voices.len())?.floor();
+        if share.is_zero() {
             // Nothing divides. The escrow is already removed and the row is
             // spent; minting zero is not a payment and is not written.
             return Some(share);
@@ -142,26 +133,26 @@ impl Treasury {
         // POWR (78.33): the compression yield, standing at the act that
         // released it.
         for v in &voices {
-            self.mint_to(*v, share, at, Some(Arm::Powr));
+            self.mint_to(*v, share.clone(), at, Some(Arm::Powr));
         }
         Some(share)
     }
 
-    pub fn settle_refine(&mut self, bidder: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+    pub fn settle_refine(&mut self, bidder: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
         self.mint_to(bidder, mu, anchor, Some(Arm::Powr))
     }
 
-    pub fn settle_condense(&mut self, discoverer: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+    pub fn settle_condense(&mut self, discoverer: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
         self.mint_to(discoverer, mu, anchor, Some(Arm::Powr))
     }
 
-    pub fn settle_solve(&mut self, voice: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+    pub fn settle_solve(&mut self, voice: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
         self.mint_to(voice, mu, anchor, Some(Arm::Pouw))
     }
 
     /// POWV — a verifying court's share of a release (`economy::verify`),
     /// minted to the court at the act that released the claim.
-    pub fn settle_verification(&mut self, organ: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+    pub fn settle_verification(&mut self, organ: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
         self.mint_to(organ, mu, anchor, Some(Arm::Powv))
     }
 
@@ -196,39 +187,31 @@ impl Treasury {
         &mut self,
         escrow: &[u8],
         shares: &[([u8; 32], [u64; 4])],
-        pay: [u64; 4],
+        pay: &Mu,
         premium: Option<[u64; 4]>,
         anchor: Anchor,
-    ) -> [u64; 4] {
+    ) -> Mu {
         let Some(crate::economy::escrow::Escrowed { voices, mu, .. }) = self.release_award(escrow)
         else {
-            return [0; 4];
+            return Mu::zero();
         };
         // 50.5 (Y3): A sentence with word vertices and demand vertices mints
         // on its closed sub-complex: the amount is the deflation its closed
         // words achieved (`pay`) and nothing else, bounded by what was escrowed.
-        let mut left = std::array::from_fn(|l| pay[l].min(mu[l]));
+        let mut left = pay.capped(&mu);
         for (discoverer, share) in shares {
-            let paid: [u64; 4] = std::array::from_fn(|l| match share[l] < left[l] {
-                true => share[l],
-                false => left[l],
-            });
-            if paid.iter().all(|&m| m == 0) {
+            let (paid, rest) = left.split_at(&Mu::counts(*share));
+            if paid.is_zero() {
                 continue;
             }
-            for l in 0..4 {
-                left[l] -= paid[l];
-            }
+            left = rest;
             self.mint_to(*discoverer, paid, anchor, Some(Arm::Pouw));
         }
-        let taken: [u64; 4] = match premium {
-            Some(p) => std::array::from_fn(|l| match p[l] < left[l] {
-                true => p[l],
-                false => left[l],
-            }),
+        let taken = match premium {
+            Some(p) => Mu::counts(p).capped(&left),
             None => left,
         };
-        self.mint_claim(&voices, taken, anchor);
+        self.mint_claim(&voices, taken.clone(), anchor);
         taken
     }
 
@@ -237,41 +220,40 @@ impl Treasury {
     /// substantially-more-useful work, paid ON TOP of the children's own
     /// settlements: μ⃗_composite = Σμ⃗(Wᵢ) + μ⃗_assembly(overlaps). Split per
     /// lane across the reassembling voices, float-law bounded like every award.
-    pub fn settle_assembly<A: AsRef<[u8]>>(&mut self, voices: &[A], mu: [u64; 4], anchor: Anchor) {
-        if voices.is_empty() {
+    pub fn settle_assembly<A: AsRef<[u8]>>(&mut self, voices: &[A], mu: impl Into<Mu>, anchor: Anchor) {
+        let Some(share) = mu.into().part(voices.len()).map(|s| s.floor()) else {
             return;
-        }
-        let n = voices.len() as u64;
-        let share: [u64; 4] = std::array::from_fn(|l| mu[l] / n);
-        if share.iter().all(|&m| m == 0) {
+        };
+        if share.is_zero() {
             return;
         }
         for v in voices {
             let Ok(who) = <[u8; 32]>::try_from(v.as_ref()) else {
                 continue;
             };
-            self.mint_to(who, share, anchor, Some(Arm::Pouw));
+            self.mint_to(who, share.clone(), anchor, Some(Arm::Pouw));
         }
     }
 
     /// PoWc — split the consilience award (the germ's μ⃗ PRICED at the moment's
     /// surface) across the attesting voices, per lane. The share is the exact
     /// quotient `mu[l] / n` with no invented floor (rule 11).
-    pub fn settle_consilience(&mut self, voices: &[[u8; 32]], mu: [u64; 4], anchor: Anchor) {
+    pub fn settle_consilience(&mut self, voices: &[[u8; 32]], mu: impl Into<Mu>, anchor: Anchor) {
         if voices.len() < 2 {
             return;
         }
-        let n = voices.len() as u64;
-        let share: [u64; 4] = std::array::from_fn(|l| mu[l] / n);
-        if share.iter().all(|&m| m == 0) {
+        let Some(share) = mu.into().part(voices.len()).map(|s| s.floor()) else {
+            return;
+        };
+        if share.is_zero() {
             return;
         }
         for v in voices {
-            self.mint_to(*v, share, anchor, Some(Arm::Pouw));
+            self.mint_to(*v, share.clone(), anchor, Some(Arm::Pouw));
         }
     }
 
-    pub fn settle_torse(&mut self, discoverer: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+    pub fn settle_torse(&mut self, discoverer: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
         self.mint_to(discoverer, mu, anchor, Some(Arm::Pouw))
     }
 
@@ -308,27 +290,30 @@ impl Treasury {
         exercised: &[u64; 4],
         pressure: &[u64; 4],
         anchor: Anchor,
-    ) -> ([u64; 4], [u64; 4]) {
-        let held = self.balance_mu(&voice);
+    ) -> (Mu, Mu) {
         // The pressure surface comes from the caller's own physics, as it
         // does at every other `price` site in the tree. R2 passed `&[0; 4]`
         // -- a constant filling an argument so the call compiled, which is
         // rule 8's named shape, and the one call site in seven that did not
         // measure what it handed in.
-        let asked = super::price(exercised, pressure);
-        let short = super::shortfall(&asked, &held);
-        // paid ≤ held on every lane: it is the ask less what the balance
-        // lacked, and it is debited against that same balance below.
-        let paid: [u64; 4] = std::array::from_fn(|l| asked[l] - short[l]);
-        if paid.iter().all(|&m| m == 0) {
+        let asked = Mu::counts(super::price(exercised, pressure));
+        self.burn_fee(voice, &asked, anchor)
+    }
+
+    /// A FEE BURNED OUT OF A BALANCE: the part of `asked` the balance holds,
+    /// and the shortfall it lacked, per lane. The burn row is written for
+    /// μ⃗ that LEFT, after the debit — which cannot be short, by
+    /// `paid ≤ held`.
+    fn burn_fee(&mut self, voice: [u8; 32], asked: &Mu, anchor: Anchor) -> (Mu, Mu) {
+        let held = self.balance_mu(&voice);
+        let short = asked.shortfall(&held);
+        let (paid, _) = held.split_at(asked);
+        if paid.is_zero() {
             return (paid, short);
         }
-        // The burn row is written for μ⃗ that LEFT, after the debit — which
-        // cannot be short, by `paid ≤ held` (STD1: the arm that read a short
-        // debit could not fire, and it is gone).
-        let unmoved = self.debit(voice, paid);
-        debug_assert!(crate::economy::lanes_short(&unmoved).is_empty(), "paid ≤ held, debited against it");
-        self.write(Entry { kind: Kind::Burn, who: voice, mu: paid, at: anchor.0, receipt: anchor.1, arm: None });
+        let drawn = self.debit(voice, &paid);
+        debug_assert!(drawn.is_ok(), "paid ≤ held, debited against it");
+        self.write(Entry { kind: Kind::Burn, who: voice, mu: paid.clone(), at: anchor.0, receipt: anchor.1, arm: None });
         (paid, short)
     }
 
@@ -347,22 +332,10 @@ impl Treasury {
     pub fn settle_door(
         &mut self,
         voice: [u8; 32],
-        fee: [u64; 4],
+        fee: impl Into<Mu>,
         anchor: Anchor,
-    ) -> ([u64; 4], [u64; 4]) {
-        let held = self.balance_mu(&voice);
-        let short = super::shortfall(&fee, &held);
-        // paid ≤ held on every lane, as in `settle_recall`.
-        let paid: [u64; 4] = std::array::from_fn(|l| fee[l] - short[l]);
-        if paid.iter().all(|&m| m == 0) {
-            return (paid, short);
-        }
-        // The burn row is written for μ⃗ that LEFT, after the debit — which
-        // cannot be short, by `paid ≤ held` (STD1).
-        let unmoved = self.debit(voice, paid);
-        debug_assert!(crate::economy::lanes_short(&unmoved).is_empty(), "paid ≤ held, debited against it");
-        self.write(Entry { kind: Kind::Burn, who: voice, mu: paid, at: anchor.0, receipt: anchor.1, arm: None });
-        (paid, short)
+    ) -> (Mu, Mu) {
+        self.burn_fee(voice, &fee.into(), anchor)
     }
 
 }

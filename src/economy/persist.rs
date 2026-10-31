@@ -8,11 +8,23 @@
 use super::*;
 
 impl Entry {
-    /// One row's tape: `[tag u8][arm u8][who 32][μ⃗ 4×u64][stamp 56][receipt
-    /// 32]`, 154 bytes — the one layout the ledger, the snapshot and the
-    /// wire (`ACT_ROWS`) share. The stamp is the act the row stands at
-    /// (78.24); the arm the proof of work it pays (78.33).
-    pub const TAPE: usize = 1 + 1 + 32 + 32 + crate::chronometry::Stamp::LEN + 32;
+    /// One row's tape: `[tag u8][arm u8][who 32][μ⃗][stamp 56][receipt 32]`
+    /// — the one layout the ledger, the snapshot and the wire (`ACT_ROWS`)
+    /// share, its μ⃗ the exact rational lanes of [`Mu::put`]. The stamp is
+    /// the act the row stands at (78.24); the arm the proof of work it pays
+    /// (78.33).
+    ///
+    /// The fewest bytes a row can take: every lane zero, `0/1`, is eleven
+    /// bytes (a sign, an empty numerator, a one-limb denominator). A count
+    /// of rows a tape cannot hold at this length reserves nothing.
+    pub const MIN_TAPE: usize = 1 + 1 + 32 + 4 * 11 + crate::chronometry::Stamp::LEN + 32;
+
+    /// This row's tape length.
+    pub fn tape_len(&self) -> usize {
+        let mut out = Vec::new();
+        self.write(&mut out);
+        out.len()
+    }
 
     /// One tag per kind, and the match is exhaustive: a kind that could not
     /// be written would not compile, where a string match once fell
@@ -34,9 +46,7 @@ impl Entry {
         out.push(tag);
         out.push(Arm::byte(self.arm));
         out.extend_from_slice(&self.who);
-        for m in &self.mu {
-            out.extend_from_slice(&m.to_le_bytes());
-        }
+        self.mu.put(out);
         self.at.put_canonical(out);
         out.extend_from_slice(&self.receipt);
     }
@@ -67,11 +77,7 @@ impl Entry {
         *pos += 1;
         let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
         *pos += 32;
-        let mut mu = [0u64; 4];
-        for m in &mut mu {
-            *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-            *pos += 8;
-        }
+        let mu = Mu::take_from(b, pos)?;
         let at = crate::chronometry::Stamp::take_canonical(b, pos)?;
         let receipt: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
         *pos += 32;
@@ -80,7 +86,7 @@ impl Entry {
 }
 
 /// AN AWARD AS A FIELD OF ITS WORD'S ROW (78.22, LD0 step 4): `0`, or `1`
-/// then `[nv u32][voice 32·nv][μ⃗ 4×u64][stamp 48][receipt 32]`. The word's
+/// then `[nv u32][voice 32·nv][μ⃗][stamp 48][receipt 32]`. The word's
 /// row already carries its address, once; the award carries none. The one
 /// writing of it, for the snapshot and for LD1's measure.
 /// `None` where the voices' count passes its four bytes (STD1 3c).
@@ -95,9 +101,7 @@ pub fn put_award(out: &mut Vec<u8>, award: Option<&super::escrow::Escrowed>) -> 
     for v in &row.voices {
         out.extend_from_slice(v);
     }
-    for m in &row.mu {
-        out.extend_from_slice(&m.to_le_bytes());
-    }
+    row.mu.put(out);
     row.anchor.0.put_canonical(out);
     out.extend_from_slice(&row.anchor.1);
     Some(())
@@ -123,11 +127,7 @@ pub fn take_award(b: &[u8], pos: &mut usize) -> Option<Option<super::escrow::Esc
         voices.push(b.get(*pos..*pos + 32)?.try_into().ok()?);
         *pos += 32;
     }
-    let mut mu = [0u64; 4];
-    for m in &mut mu {
-        *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-        *pos += 8;
-    }
+    let mu = Mu::take_from(b, pos)?;
     let at = crate::chronometry::Stamp::take_canonical(b, pos)?;
     let r: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
     *pos += 32;
@@ -177,11 +177,7 @@ impl Treasury {
         for (name, carrier) in [(STAKES_TRIE, &self.stakes), (BALANCES_TRIE, &self.balances)] {
             let mut nodes: crate::network::nerve::Keyed<crate::snapshot::Leaves> = crate::network::nerve::Keyed::new();
             crate::snapshot::persist(carrier, |who, mu| {
-                let mut v = Vec::with_capacity(32);
-                for m in mu {
-                    v.extend_from_slice(&m.to_le_bytes());
-                }
-                nodes.insert(who, vec![(LEAF_MU, v)]);
+                nodes.insert(who, vec![(LEAF_MU, mu.to_bytes())]);
             });
             crate::snapshot::put_trie(out, name, &nodes);
         }
@@ -189,10 +185,7 @@ impl Treasury {
         // μ⃗, its payer, and the act it was set aside at.
         let mut nodes: crate::network::nerve::Keyed<crate::snapshot::Leaves> = crate::network::nerve::Keyed::new();
         crate::snapshot::persist(&self.held, |key, h| {
-            let mut mu = Vec::with_capacity(32);
-            for m in &h.mu {
-                mu.extend_from_slice(&m.to_le_bytes());
-            }
+            let mu = h.mu.to_bytes();
             let mut anchor = Vec::new();
             h.anchor.0.put_canonical(&mut anchor);
             anchor.extend_from_slice(&h.anchor.1);
@@ -205,19 +198,12 @@ impl Treasury {
     /// each keyed by a `vk` of 32 bytes carrying one μ⃗, and the held
     /// carrier, or refused whole.
     pub fn take_tries(b: &[u8], pos: &mut usize) -> Option<(ByVk, ByVk, Holds)> {
-        let mut read = |name: &str| -> Option<crate::network::nerve::Keyed<[u64; 4]>> {
+        let mut read = |name: &str| -> Option<crate::network::nerve::Keyed<Mu>> {
             let nodes = crate::snapshot::take_trie(b, pos, name, &[LEAF_MU])?;
             let mut out = crate::network::nerve::Keyed::new();
             for (who, leaves) in nodes.scoped() {
                 let who: [u8; 32] = who.as_slice().try_into().ok()?;
-                let v = crate::snapshot::leaf(leaves, LEAF_MU)?;
-                let mut mu = [0u64; 4];
-                for (l, m) in mu.iter_mut().enumerate() {
-                    *m = u64::from_le_bytes(v.get(l * 8..l * 8 + 8)?.try_into().ok()?);
-                }
-                if v.len() != 32 {
-                    return None;
-                }
+                let mu = Mu::from_bytes(crate::snapshot::leaf(leaves, LEAF_MU)?).ok()?;
                 out.insert(who, mu);
             }
             Some(out)
@@ -227,14 +213,7 @@ impl Treasury {
         let nodes = crate::snapshot::take_trie(b, pos, HELD_TRIE, &[LEAF_MU, LEAF_PAYER, LEAF_ANCHOR])?;
         let mut held = crate::network::nerve::Keyed::new();
         for (key, leaves) in nodes.scoped() {
-            let v = crate::snapshot::leaf(leaves, LEAF_MU)?;
-            if v.len() != 32 {
-                return None;
-            }
-            let mut mu = [0u64; 4];
-            for (l, m) in mu.iter_mut().enumerate() {
-                *m = u64::from_le_bytes(v.get(l * 8..l * 8 + 8)?.try_into().ok()?);
-            }
+            let mu = Mu::from_bytes(crate::snapshot::leaf(leaves, LEAF_MU)?).ok()?;
             let payer: [u8; 32] = crate::snapshot::leaf(leaves, LEAF_PAYER)?.try_into().ok()?;
             let a = crate::snapshot::leaf(leaves, LEAF_ANCHOR)?;
             let mut p = 0usize;
@@ -250,26 +229,25 @@ impl Treasury {
     /// order they stand. The bond total and the supply are re-derived; the
     /// awards come back off the awarded words' nodes (`restore_award`).
     pub fn from_parts(
-        stakes: crate::network::nerve::Keyed<[u64; 4]>,
-        balances: crate::network::nerve::Keyed<[u64; 4]>,
+        stakes: ByVk,
+        balances: ByVk,
         held: Holds,
         entries: Vec<Entry>,
     ) -> Treasury {
         let mut t = Treasury {
             entries,
-            bond_total: Some([0; 4]),
+            bond_total: Mu::zero(),
             stakes,
             escrowed: crate::network::nerve::Keyed::new(),
             balances,
             held,
-            overflowed: 0,
             touched: super::treasury::Touched::Every,
             journal_mark: 0,
             paid_out: Vec::new(),
             // Folded from the rows, since they arrived off disk and not
             // through `write`. This is the one O(journal) pass.
-            issued: None,
-            burned: None,
+            issued: Mu::zero(),
+            burned: Mu::zero(),
         };
         t.refresh_bond();
         t.refold_supply();
@@ -279,7 +257,7 @@ impl Treasury {
 
 /// A carrier keyed by an identity's `vk`, one μ⃗ per identity: the stakes,
 /// the balances.
-pub type ByVk = crate::network::nerve::Keyed<[u64; 4]>;
+pub type ByVk = crate::network::nerve::Keyed<Mu>;
 
 /// The stakes trie's name.
 pub const STAKES_TRIE: &str = "stakes";
@@ -289,8 +267,8 @@ pub const BALANCES_TRIE: &str = "balances";
 pub const HELD_TRIE: &str = "held";
 /// The held carrier, keyed by what each hold is against.
 pub type Holds = crate::network::nerve::Keyed<super::pay::Held>;
-/// The one leaf of a stake or balance node: its μ⃗, four lanes; a hold's
-/// μ⃗ likewise.
+/// The one leaf of a stake or balance node: its μ⃗, four exact lanes
+/// ([`Mu::put`]); a hold's μ⃗ likewise.
 pub const LEAF_MU: u8 = 1;
 /// A hold's payer, the `vk` it was set aside from.
 pub const LEAF_PAYER: u8 = 2;

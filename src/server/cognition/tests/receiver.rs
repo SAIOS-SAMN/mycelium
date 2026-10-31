@@ -30,7 +30,7 @@ fn speak_pair_binds_sentence_to_task_family_and_mints() {
     home.confirm_peer_holds(&peer.ruled_digests(), [2; 32]);
     assert!(home.basis_len() >= 1, "the home installs on the witness");
     assert!(
-        home.treasury().minted().expect("minted adds up").iter().any(|&x| x > 0),
+        !home.treasury().minted().is_zero(),
         "the install mints what the sentence closes on the pair the court bound"
     );
 }

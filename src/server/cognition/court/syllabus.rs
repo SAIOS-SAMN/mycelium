@@ -464,8 +464,7 @@ impl Court {
                     if self.taught_voice.contains(&taught_key(&address, &voice)) {
                         continue;
                     }
-                    let short = crate::economy::shortfall(&mag, &self.treasury.balance_mu(&voice));
-                    if !crate::economy::lanes_short(&short).is_empty() {
+                    if !crate::economy::Mu::counts(mag).shortfall(&self.treasury.balance_mu(&voice)).is_zero() {
                         crate::observe::count(&mut self.acts.fetch, &crate::observe::FETCH, "deferred: learner short");
                         continue;
                     }
@@ -580,12 +579,15 @@ impl Court {
     /// the frame's room, the Syllabus act sealed, and the gluing step paid
     /// from the voice to this court at that act. A step of nothing is free.
     fn serve_paid_by_learner(&mut self, address: &[u8], cost: [u64; 4], voice: [u8; 32], bytes: usize, used: usize) -> Learner {
-        let short = crate::economy::shortfall(&cost, &self.treasury.balance_mu(&voice));
+        let balance = self.treasury.balance_mu(&voice);
         // The short lane named is the first in (S, G, T, H) order — content
-        // order, as `Depleted` names it, never a priority.
-        if let [lane, ..] = crate::economy::lanes_short(&short).as_slice() {
+        // order, as `Depleted` names it, never a priority. The cost is a
+        // count, and a count passes an exact amount `q` exactly where it
+        // passes `⌊q⌋`, so the balance is read as its whole part.
+        if let [lane, ..] = crate::economy::Mu::counts(cost).shortfall(&balance).occupied().as_slice() {
             let lane = *lane;
-            let held = self.treasury.balance_mu(&voice)[lane];
+            // Short on this lane, the balance there is below a `u64` cost.
+            let Ok(held) = u64::try_from(balance.lane(lane).floor().to_integer()) else { return Learner::Missed };
             return Learner::Short(crate::physics::Depleted { lane, asked: cost[lane], held });
         }
         let Some(tape) = self.installed_word(address).and_then(|w| w.to_bytes()) else { return Learner::Missed };

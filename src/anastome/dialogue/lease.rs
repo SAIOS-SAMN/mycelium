@@ -13,28 +13,15 @@
 //! capacity, released by proof.
 
 use super::*;
+use crate::economy::Mu;
 
-/// The domain a lease act is signed under.
-const LEASE: &[u8] = b"mycelium lease v1";
+/// The domain a lease act is signed under: v2 writes μ as four exact
+/// rational lanes (`Mu::put`).
+const LEASE: &[u8] = b"mycelium lease v2";
 /// `ACT_WALLET`'s sub-kind for opening a lease.
 pub const KIND_OPEN: u8 = 3;
 /// `ACT_WALLET`'s sub-kind for closing one.
 pub const KIND_CLOSE: u8 = 4;
-
-fn put_lanes(out: &mut Vec<u8>, v: &[u64; 4]) {
-    for x in v {
-        out.extend_from_slice(&x.to_le_bytes());
-    }
-}
-
-fn take_lanes(b: &[u8], p: &mut usize) -> Option<[u64; 4]> {
-    let mut v = [0u64; 4];
-    for x in v.iter_mut() {
-        *x = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
-        *p += 8;
-    }
-    Some(v)
-}
 
 fn take32(b: &[u8], p: &mut usize) -> Option<[u8; 32]> {
     let v: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
@@ -48,21 +35,21 @@ fn take32(b: &[u8], p: &mut usize) -> Option<[u8; 32]> {
 pub struct LeaseAct {
     pub payer: [u8; 32],
     pub provider: [u8; 32],
-    pub mu: [u64; 4],
+    pub mu: Mu,
     pub window: u64,
     pub jobs: Vec<[u8; 32]>,
     pub nonce: [u8; 32],
 }
 
 impl LeaseAct {
-    /// `"mycelium lease v1" ‖ 3 ‖ payer ‖ provider ‖ mu ‖ window ‖ n ‖ jobs ‖
+    /// `"mycelium lease v2" ‖ 3 ‖ payer ‖ provider ‖ μ⃗ ‖ window ‖ n ‖ jobs ‖
     /// nonce`. `None` where the job count passes its field.
     pub fn signed_bytes(&self) -> Option<Vec<u8>> {
         let mut out = LEASE.to_vec();
         out.push(KIND_OPEN);
         out.extend_from_slice(&self.payer);
         out.extend_from_slice(&self.provider);
-        put_lanes(&mut out, &self.mu);
+        self.mu.put(&mut out);
         out.extend_from_slice(&self.window.to_le_bytes());
         crate::transducer::address::put_u8_count(&mut out, self.jobs.len())?;
         for j in &self.jobs {
@@ -91,14 +78,14 @@ pub struct SignedLease {
     pub sig: [u8; 64],
 }
 
-/// `[ACT_WALLET][payer 32][3][provider 32][mu 4×u64][window u64][n u8][job 32·n][nonce 32][sig 64]`.
+/// `[ACT_WALLET][payer 32][3][provider 32][μ⃗][window u64][n u8][job 32·n][nonce 32][sig 64]`.
 pub fn encode_lease(s: &SignedLease) -> Option<Vec<u8>> {
     let a = &s.act;
     let mut out = vec![ACT_WALLET];
     out.extend_from_slice(&a.payer);
     out.push(KIND_OPEN);
     out.extend_from_slice(&a.provider);
-    put_lanes(&mut out, &a.mu);
+    a.mu.put(&mut out);
     out.extend_from_slice(&a.window.to_le_bytes());
     crate::transducer::address::put_u8_count(&mut out, a.jobs.len())?;
     for j in &a.jobs {
@@ -117,7 +104,7 @@ pub fn decode_lease(body: &[u8]) -> Option<SignedLease> {
     let payer: [u8; 32] = body.get(1..33)?.try_into().ok()?;
     let mut p = 34usize;
     let provider = take32(body, &mut p)?;
-    let mu = take_lanes(body, &mut p)?;
+    let mu = Mu::take_from(body, &mut p)?;
     let window = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
     p += 8;
     let n = usize::from(*body.get(p)?);
@@ -140,7 +127,7 @@ pub struct CloseLease {
 }
 
 impl CloseLease {
-    /// `"mycelium lease v1" ‖ 4 ‖ payer ‖ lease ‖ nonce`.
+    /// `"mycelium lease v2" ‖ 4 ‖ payer ‖ lease ‖ nonce`.
     pub fn signed_bytes(&self) -> Vec<u8> {
         let mut out = LEASE.to_vec();
         out.push(KIND_CLOSE);
@@ -232,15 +219,15 @@ impl LeaseRefusal {
 
 /// WHAT A LEASE ACT CAME TO: the lease and its lanes (opened: what it holds;
 /// closed: what returned to the payer), or the refusal.
-pub type LeaseReply = Result<([u8; 32], [u64; 4]), LeaseRefusal>;
+pub type LeaseReply = Result<([u8; 32], Mu), LeaseRefusal>;
 
-/// `[1][lease 32][held 4×u64]` or `[0][reason]`.
+/// `[1][lease 32][held μ⃗]` or `[0][reason]`.
 pub fn encode_lease_reply(r: &LeaseReply) -> Vec<u8> {
     match r {
         Ok((lease, mu)) => {
             let mut out = vec![1];
             out.extend_from_slice(lease);
-            put_lanes(&mut out, mu);
+            mu.put(&mut out);
             out
         }
         Err(why) => vec![0, why.byte()],
@@ -253,7 +240,7 @@ pub fn decode_lease_reply(b: &[u8]) -> Option<LeaseReply> {
         [1, rest @ ..] => {
             let mut p = 0;
             let lease = take32(rest, &mut p)?;
-            let mu = take_lanes(rest, &mut p)?;
+            let mu = Mu::take_from(rest, &mut p)?;
             (p == rest.len()).then_some(Ok((lease, mu)))
         }
         _ => None,

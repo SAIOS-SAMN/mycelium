@@ -99,7 +99,7 @@ pub fn encode_docket_reply_paged(
         for v in &d.voices {
             item.extend_from_slice(v);
         }
-        push_mu(&mut item, &d.escrowed);
+        d.escrowed.put(&mut item);
         push_mu(&mut item, &d.deflation);
         d.at.put_canonical(&mut item);
         if out.len() + item.len() + settled_len > budget {
@@ -223,7 +223,7 @@ pub(crate) fn decode_dockets_at(body: &[u8]) -> Option<(Vec<Docket>, usize)> {
             voices.push(body.get(p..p + 32)?.try_into().ok()?);
             p += 32;
         }
-        let mu = read_mu(body, &mut p)?;
+        let mu = crate::economy::Mu::take_from(body, &mut p)?;
         let deflation = read_mu(body, &mut p)?;
         let at = crate::chronometry::Place::take_canonical(body, &mut p)?;
         out.push(Docket { addr, elem, voices, escrowed: mu, deflation, at });

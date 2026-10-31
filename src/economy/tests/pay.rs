@@ -3,8 +3,8 @@
 // equations of §6 hold through every movement, a refused movement writes no
 // row, and the held carrier survives the treasury's persisted form.
 
-use super::at;
-use crate::economy::{Kind, Treasury, Unpaid};
+use super::{at, Counts};
+use crate::economy::{Kind, Mu, Treasury, Unpaid};
 
 const A: [u8; 32] = [1; 32];
 const B: [u8; 32] = [2; 32];
@@ -25,10 +25,10 @@ fn pay_moves_between_balances_or_refuses() {
     let mut t = funded();
     let supply = t.audit().expect("the genesis conserves");
     t.pay(A, B, [3, 1, 0, 2], at(2, [8; 32])).expect("A holds it");
-    assert_eq!((t.balance_mu(&A), t.balance_mu(&B)), ([7, 3, 0, 4], [3, 1, 0, 2]));
+    assert_eq!((t.balance_mu(&A), t.balance_mu(&B)).n(), ([7, 3, 0, 4], [3, 1, 0, 2]));
     assert_eq!(t.audit(), Ok(supply), "a payment issues nothing and burns nothing");
     let rows = t.entries().len();
-    assert_eq!(t.pay(B, A, [4, 0, 0, 1], at(3, [7; 32])), Err(Unpaid::Short([1, 0, 0, 0])), "short on S by one");
+    assert_eq!(t.pay(B, A, [4, 0, 0, 1], at(3, [7; 32])), Err(Unpaid::Short(Mu::counts([1, 0, 0, 0]))), "short on S by one");
     assert_eq!(t.pay(A, A, [1, 0, 0, 0], at(3, [7; 32])), Err(Unpaid::Oneself));
     assert_eq!(t.pay(A, B, [0; 4], at(3, [7; 32])), Err(Unpaid::Nothing));
     assert_eq!(t.entries().len(), rows, "a refused payment writes no row");
@@ -46,25 +46,25 @@ fn hold_releases_to_payee_or_refunds_and_conserves() {
     let supply = t.audit().expect("the genesis conserves");
     t.hold(A, b"task", [5, 2, 0, 1], at(2, [8; 32])).expect("A holds it");
     assert_eq!(t.balance_mu(&A), [5, 2, 0, 5], "the hold left the balance");
-    assert_eq!(t.audit(), Ok(supply), "and the held carrier is counted");
+    assert_eq!(t.audit(), Ok(supply.clone()), "and the held carrier is counted");
     assert_eq!(t.hold(A, b"task", [1, 0, 0, 0], at(3, [7; 32])), Err(Unpaid::Taken));
     // THE ECONOMY READS IT, typed: A's standing with what it holds.
     let e = t.economy(&[0; 32]).expect("the reading adds up");
     let [a] = e.accounts.as_slice() else { panic!("one identity: {:?}", e.accounts) };
-    assert_eq!((a.who, a.balance, a.held), (A, [5, 2, 0, 5], [5, 2, 0, 1]));
-    assert_eq!(t.held_of(b"task").map(|h| (h.payer, h.mu)), Some((A, [5, 2, 0, 1])));
-    assert_eq!(t.release_held(b"task", B, at(3, [7; 32])), Ok([5, 2, 0, 1]));
-    assert_eq!((t.balance_mu(&A), t.balance_mu(&B)), ([5, 2, 0, 5], [5, 2, 0, 1]), "paid on to B");
+    assert_eq!((a.who, a.balance.clone().n(), a.held.clone().n()), (A, [5, 2, 0, 5], [5, 2, 0, 1]));
+    assert_eq!(t.held_of(b"task").map(|h| (h.payer, h.mu.clone().n())), Some((A, [5, 2, 0, 1])));
+    assert_eq!(t.release_held(b"task", B, at(3, [7; 32])).n(), Ok([5, 2, 0, 1]));
+    assert_eq!((t.balance_mu(&A), t.balance_mu(&B)).n(), ([5, 2, 0, 5], [5, 2, 0, 1]), "paid on to B");
     assert!(t.held_of(b"task").is_none(), "the hold is gone");
     assert_eq!(t.release_held(b"task", B, at(4, [6; 32])), Err(Unpaid::Unheld));
-    assert_eq!(t.audit(), Ok(supply));
+    assert_eq!(t.audit(), Ok(supply.clone()));
     // Refunded: back to the payer, whole.
     t.hold(A, b"bounty", [2, 0, 0, 2], at(4, [6; 32])).expect("A holds it");
-    assert_eq!(t.refund_held(b"bounty", at(5, [5; 32])), Ok([2, 0, 0, 2]));
+    assert_eq!(t.refund_held(b"bounty", at(5, [5; 32])).n(), Ok([2, 0, 0, 2]));
     assert_eq!(t.balance_mu(&A), [5, 2, 0, 5], "the refund returned it");
     assert_eq!(t.audit(), Ok(supply));
     // A short payer holds nothing.
-    assert_eq!(t.hold(B, b"more", [6, 0, 0, 0], at(5, [5; 32])), Err(Unpaid::Short([1, 0, 0, 0])));
+    assert_eq!(t.hold(B, b"more", [6, 0, 0, 0], at(5, [5; 32])), Err(Unpaid::Short(Mu::counts([1, 0, 0, 0]))));
 }
 
 /// THE FOLD READS THE MOVEMENTS EXACTLY. A release is one transfer pair and
@@ -77,7 +77,7 @@ fn nets_of_nets_payments_and_holds() {
     t.hold(A, b"k", [2, 0, 0, 0], at(3, [7; 32])).expect("held");
     t.release_held(b"k", B, at(4, [6; 32])).expect("released");
     let nets = crate::economy::nets_of(t.entries()).expect("the rows net exactly");
-    assert_eq!(nets.rows, vec![(A, [7, 3, 0, 5]), (B, [3, 1, 0, 1])], "each identity's net is its balance");
+    assert_eq!(nets.rows.n(), vec![(A, [7, 3, 0, 5]), (B, [3, 1, 0, 1])], "each identity's net is its balance");
     assert!(t.entries().iter().any(|e| e.kind == Kind::Escrow), "the hold stands as its row");
 }
 

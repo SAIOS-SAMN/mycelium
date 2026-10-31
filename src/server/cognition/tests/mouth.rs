@@ -5,6 +5,7 @@
 use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
 use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Level, Mouth, Offer, State, Tube};
 use crate::anastome::dialogue::universe::Geometry;
+use crate::economy::tests::Counts;
 use crate::server::cognition::Court;
 use crate::transducer::cga::Mv;
 use ed25519_dalek::SigningKey;
@@ -64,7 +65,7 @@ fn mouth(a: u8, b: u8, from_frame: Mv, to_frame: Mv, toll: [u64; 4]) -> Mouth {
         keeper: verifying(&reserve(a)),
         from_frame,
         to_frame,
-        toll,
+        toll: toll.into(),
         nonce: [a; 32],
         tariff: None,
         tube: Some(tube()),
@@ -136,9 +137,9 @@ fn handoff_traverse_pays_toll_to_keeper() {
     // Y to X, back through the mouth X built: the toll is X's to keep.
     let back = Handoff::Traverse { offer: Box::new(cargo(5, 4, 2)), mouth: id };
     let Handed::Sealed { id: crossing, .. } = k.handoff(&back.sign(&reserve(5))) else { panic!("crossing") };
-    assert_eq!(k.treasury.balance_mu(&verifying(&reserve(5)))[0], 7, "the toll escrowed from the sender");
+    assert_eq!(k.treasury.balance_mu(&verifying(&reserve(5))).n()[0],7, "the toll escrowed from the sender");
     assert!(matches!(k.handoff(&Handoff::Accept { id: crossing }.sign(&reserve(4))), Handed::Sealed { state: State::Accepted, .. }));
-    assert_eq!(k.treasury.balance_mu(&verifying(&reserve(4)))[0], 3, "paid to the keeper");
+    assert_eq!(k.treasury.balance_mu(&verifying(&reserve(4))).n()[0],3, "paid to the keeper");
 }
 
 /// CLOSED BY EITHER BUILDER, WHAT IS IN FLIGHT RETURNS: a crossing offered
@@ -152,10 +153,10 @@ fn handoff_close_returns_in_flight_crossing() {
     let id = open(&mut k, mouth(4, 5, one(), one(), [2, 0, 0, 0]), 4, 5);
     let go = Handoff::Traverse { offer: Box::new(cargo(4, 5, 1)), mouth: id };
     let Handed::Sealed { id: crossing, .. } = k.handoff(&go.sign(&reserve(4))) else { panic!() };
-    assert_eq!(k.treasury.balance_mu(&verifying(&reserve(4)))[0], 3);
+    assert_eq!(k.treasury.balance_mu(&verifying(&reserve(4))).n()[0],3);
     assert!(matches!(k.handoff(&Handoff::Close { id }.sign(&reserve(5))), Handed::Sealed { state: State::Returned, .. }), "either builder");
     assert_eq!(k.handoff_read(&crossing), Some((State::Returned, false, false)), "in flight, returned");
-    assert_eq!(k.treasury.balance_mu(&verifying(&reserve(4)))[0], 6, "its toll refunded, and the throat's bank back to its face");
+    assert_eq!(k.treasury.balance_mu(&verifying(&reserve(4))).n()[0],6, "its toll refunded, and the throat's bank back to its face");
     let again = Handoff::Traverse { offer: Box::new(cargo(4, 5, 2)), mouth: id };
     assert!(matches!(k.handoff(&again.sign(&reserve(4))), Handed::Refused(HandoffRefusal::NoMouth)));
 }
@@ -253,7 +254,7 @@ fn handoff_mouth_line_builds_road_reserve_keeps() {
     let road = Mouth { from_tier: verifying(&line), to_tier: verifying(&reserve(4)), keeper: verifying(&reserve(4)), ..mouth(4, 4, one(), away, [0; 4]) };
     let id = road.citation();
     assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(road)).sign(&line)), Handed::Sealed { .. }), "a line offers a road");
-    assert_eq!(k.treasury.balance_mu(&verifying(&line))[0], 1, "the builder banks the throat");
+    assert_eq!(k.treasury.balance_mu(&verifying(&line)).n()[0],1, "the builder banks the throat");
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(4))), Handed::Sealed { state: State::Accepted, .. }), "its reserve accepts");
     let within = Offer { from_tier: verifying(&line), to_tier: verifying(&reserve(4)), ..cargo(4, 4, 1) };
     assert!(matches!(k.handoff(&Handoff::Offer(Box::new(within.clone())).sign(&line)), Handed::Refused(HandoffRefusal::Unbound)), "no road, no handoff within");
@@ -277,12 +278,12 @@ fn handoff_feed_keeps_throat_bank_with_draw() {
     let anchor = k.anchor();
     k.treasury.genesis(offerer, [3, 0, 0, 0], anchor);
     let Handed::Sealed { id: no, .. } = k.handoff(&Handoff::Mouth(Box::new(refused)).sign(&reserve(4))) else { panic!() };
-    assert_eq!(k.treasury.balance_mu(&offerer)[0], 0, "⌈5/2⌉ = 3 banked at the offer");
+    assert_eq!(k.treasury.balance_mu(&offerer).n()[0],0, "⌈5/2⌉ = 3 banked at the offer");
     assert!(matches!(k.handoff(&Handoff::Refuse { id: no }.sign(&reserve(5))), Handed::Sealed { .. }));
-    assert_eq!(k.treasury.balance_mu(&offerer)[0], 3, "refused: the bank back to its face");
+    assert_eq!(k.treasury.balance_mu(&offerer).n()[0],3, "refused: the bank back to its face");
     let kept_by_far = Mouth { keeper, tube: Some(Tube { mass: (5, 2), ..tube() }), ..mouth(4, 5, one(), one(), [0; 4]) };
     let id = open(&mut k, kept_by_far, 4, 5);
-    assert_eq!(k.treasury.held_of(&throat_key(&id, &offerer)).map(|h| h.mu[0]), Some(3));
+    assert_eq!(k.treasury.held_of(&throat_key(&id, &offerer)).map(|h| h.mu.clone().n()[0]), Some(3));
     let before = k.tube_of(&id).expect("a tube").from_level;
     k.treasury.genesis(keeper, [4, 0, 0, 0], anchor);
     let act = |k: &mut Court, h: Handoff, by: &SigningKey| k.handoff(&h.sign(by));
@@ -301,12 +302,12 @@ fn handoff_feed_keeps_throat_bank_with_draw() {
     assert!(matches!(act(&mut k, Handoff::Draw { mouth: id, mu_s: 6, seq: 1 }, &reserve(5)), Handed::Sealed { .. }));
     // 6 of 7 in proportion to 3 : 4 — ⌊18/7⌋ = 2 and ⌊24/7⌋ = 3, the rest to
     // the keeper. The offerer holds 3 beside its 3 banked (`open` funds it).
-    assert_eq!(k.treasury.balance_mu(&offerer)[0], 3 + 2);
-    assert_eq!(k.treasury.balance_mu(&keeper)[0], 4);
+    assert_eq!(k.treasury.balance_mu(&offerer).n()[0],3 + 2);
+    assert_eq!(k.treasury.balance_mu(&keeper).n()[0],4);
     assert_eq!(k.tube_of(&id).map(|t| t.mass), Some((1, 2)), "13/2 − 6");
     assert!(matches!(act(&mut k, Handoff::Close { id }, &reserve(4)), Handed::Sealed { state: State::Returned, .. }));
-    assert_eq!(k.treasury.balance_mu(&offerer)[0], 3 + 3, "closed: every face its hold");
-    assert_eq!(k.treasury.balance_mu(&keeper)[0], 4, "no μ retired: 3 + 4 in, 3 + 4 out");
+    assert_eq!(k.treasury.balance_mu(&offerer).n()[0],3 + 3, "closed: every face its hold");
+    assert_eq!(k.treasury.balance_mu(&keeper).n()[0],4, "no μ retired: 3 + 4 in, 3 + 4 out");
     assert_eq!(k.tube_of(&id).map(|t| t.mass), Some((5, 2)), "the record keeps its committed mass, its bank let go");
 }
 

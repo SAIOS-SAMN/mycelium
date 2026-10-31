@@ -587,14 +587,15 @@ impl Court {
                 // last close — never a hardware constant. The court never
                 // regenerated but on hearing a sentence, so its reserve
                 // settled near the floor and refused 95–99% of its syllabus
-                // pages on the development deployment (epoch 106). A bond total that does not
-                // add up is unmeasured (STD1): the capacity is the verified
-                // work alone.
+                // pages on the development deployment (epoch 106). The
+                // reserve counts whole units, so the bonds enter as each
+                // lane's whole part; a whole part past its carrier is
+                // unmeasured (STD1): the capacity is the verified work alone.
                 #[expect(
                     clippy::manual_unwrap_or_default,
                     reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; an unmeasured bond total contributes nothing to the capacity, named"
                 )]
-                let bonds = match self.treasury.bond_total() {
+                let bonds = match self.treasury.bond_total().whole_counts() {
                     Some(b) => b,
                     None => [0; 4],
                 };

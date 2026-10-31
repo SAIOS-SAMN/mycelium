@@ -91,7 +91,7 @@ impl MouthHeld {
 /// The traverse act's stamp and receipt are what each part's rows cite.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct TollHeld {
-    pub(crate) parts: Vec<([u8; 32], [u64; 4])>,
+    pub(crate) parts: Vec<([u8; 32], crate::economy::Mu)>,
     pub(crate) until: u64,
     pub(crate) traverse: Stamp,
     pub(crate) receipt: [u8; 32],
@@ -102,9 +102,7 @@ impl TollHeld {
         crate::transducer::address::put_key_count(v, self.parts.len());
         for (who, mu) in &self.parts {
             v.extend_from_slice(who);
-            for m in mu {
-                v.extend_from_slice(&m.to_le_bytes());
-            }
+            mu.put(v);
         }
         v.extend_from_slice(&self.until.to_le_bytes());
         self.traverse.put_canonical(v);
@@ -121,11 +119,7 @@ impl TollHeld {
             .map(|_| {
                 let who: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
                 *p += 32;
-                let mut mu = [0u64; 4];
-                for m in &mut mu {
-                    *m = u64_at(b, p)?;
-                }
-                Some((who, mu))
+                Some((who, crate::economy::Mu::take_from(b, p)?))
             })
             .collect::<Option<Vec<_>>>()?;
         let until = u64_at(b, p)?;
@@ -282,10 +276,18 @@ impl Court {
         Some(num_rational::BigRational::new(n.into(), d.into()) + num_rational::BigRational::from_integer(adjusted.into()))
     }
 
-    /// 78.135 — the throat's bank per feeder, μ-S held now.
+    /// 78.135 — the throat's bank per feeder, μ-S held now. A throat is fed
+    /// and drawn in whole units of μ-S (`Handoff::Feed`, `Draw`), so each
+    /// hold's S lane is a whole count; a hold that is not reads as none.
     fn bank_of(&self, mouth: &[u8; 32]) -> Vec<([u8; 32], u64)> {
         let Some(th) = self.handoffs.throats.get(mouth) else { return Vec::new() };
-        th.feeders.iter().filter_map(|f| Some((*f, self.treasury.held_of(&throat_key(mouth, f))?.mu[0]))).collect()
+        th.feeders
+            .iter()
+            .filter_map(|f| {
+                let s = self.treasury.held_of(&throat_key(mouth, f))?.mu.lane(0).clone();
+                s.is_integer().then(|| u64::try_from(s.to_integer()).ok()).flatten().map(|n| (*f, n))
+            })
+            .collect()
     }
 
     /// 78.135 — A THROAT EMPTIED: every face's hold back to it, whole; the
@@ -343,8 +345,7 @@ impl Court {
         let total: u128 = bank.iter().map(|(_, m)| u128::from(*m)).sum();
         let mut parts: Vec<([u8; 32], u64)> = Vec::new();
         if feeding {
-            let short = crate::economy::shortfall(&[mu_s, 0, 0, 0], &self.treasury.balance_mu(&h.who));
-            if !crate::economy::lanes_short(&short).is_empty() {
+            if !crate::economy::Mu::counts([mu_s, 0, 0, 0]).shortfall(&self.treasury.balance_mu(&h.who)).is_zero() {
                 return refuse(R::HolderShort);
             }
             // 78.140 — fed, the throat still fits each torus face it opens in.
@@ -472,17 +473,15 @@ impl Court {
 
     /// 78.133 — the μ held in toll escrow toward `tier`, per lane: its parts
     /// not yet released, so its receipts are not final before release.
-    /// `None` where the sum passes its carrier.
-    pub fn toll_held_for(&self, tier: &[u8; 32]) -> Option<[u64; 4]> {
-        let mut held = [0u64; 4];
+    /// The sum is exact.
+    pub fn toll_held_for(&self, tier: &[u8; 32]) -> crate::economy::Mu {
+        let mut held = crate::economy::Mu::zero();
         for (_, t) in self.handoffs.tolls.scoped() {
             for (_, mu) in t.parts.iter().filter(|(who, _)| who == tier) {
-                for (h, m) in held.iter_mut().zip(mu) {
-                    *h = h.checked_add(*m)?;
-                }
+                held.step(mu);
             }
         }
-        Some(held)
+        held
     }
 
     /// 78.133 — whether a toll is held on `fold`: it consumed the OUT side of
@@ -536,7 +535,7 @@ impl Court {
             let _ = self.treasury.release_held(&key, m.keeper, anchor);
             return;
         };
-        let charge = self.treasury.held_of(&key).map(|h| h.mu);
+        let charge = self.treasury.held_of(&key).map(|h| h.mu.clone());
         let traverse = self.handoffs.offered_at.get(id).and_then(|k| Stamp::from_key(k)).and_then(|at| Some((at, self.chain.node(&at)?.chain_hash)));
         match (charge.and_then(|c| tariff.parts(&m.keeper, &c)), traverse) {
             (Some(parts), Some((at, receipt))) => {
@@ -651,7 +650,7 @@ impl Court {
                     if let Err(why) = t.holds() {
                         return refuse(R::Untariffed(why));
                     }
-                    if m.toll.iter().any(|x| *x > 0) {
+                    if !m.toll.is_zero() {
                         return refuse(R::Untariffed(crate::anastome::dialogue::handoff::Untariffed::Flat));
                     }
                     if !self.split_to_lines(m, t) {
@@ -661,8 +660,7 @@ impl Court {
                 // 78.135 — the throat held open by matter set aside: the
                 // offerer banks `⌈m⌉` μ-S, or the tube is not offered.
                 let Some(bank) = ceil_mass(t.mass) else { return refuse(R::MalformedTube) };
-                let short = crate::economy::shortfall(&[bank, 0, 0, 0], &self.treasury.balance_mu(&h.who));
-                if !crate::economy::lanes_short(&short).is_empty() {
+                if !crate::economy::Mu::counts([bank, 0, 0, 0]).shortfall(&self.treasury.balance_mu(&h.who)).is_zero() {
                     return refuse(R::HolderShort);
                 }
                 7

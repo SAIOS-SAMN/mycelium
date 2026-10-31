@@ -251,7 +251,7 @@ impl Court {
     /// Restrict stakes to the live genesis identities: a stake outside it
     /// is burned at this court's position (§6 holds, I38). Returns what
     /// left, per identity.
-    pub fn bind_live(&mut self, live: &[[u8; 32]]) -> Vec<([u8; 32], [u64; 4])> {
+    pub fn bind_live(&mut self, live: &[[u8; 32]]) -> Vec<([u8; 32], crate::economy::Mu)> {
         let anchor = self.anchor();
         self.treasury.bind_live(live, anchor)
     }

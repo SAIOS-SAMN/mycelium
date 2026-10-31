@@ -192,7 +192,7 @@ pub struct Mouth {
     pub keeper: [u8; 32],
     pub from_frame: crate::transducer::cga::Mv,
     pub to_frame: crate::transducer::cga::Mv,
-    pub toll: [u64; 4],
+    pub toll: crate::economy::Mu,
     pub nonce: [u8; 32],
     /// 78.133 — the per-unit toll and its split; `None` for a flat-toll
     /// mouth (78.128), whose toll is all the keeper's.
@@ -283,14 +283,14 @@ impl Tariff {
     /// information⌋`, G and T never — the remainder never charged, never
     /// rounded up against the traveller. `None` where a denominator is zero
     /// or a lane passes its carrier.
-    pub fn charge(&self, offer: &Offer) -> Option<[u64; 4]> {
+    pub fn charge(&self, offer: &Offer) -> Option<crate::economy::Mu> {
         let floor = |(n, d): (u64, u64), units: u64| -> Option<u64> {
             if d == 0 {
                 return None;
             }
             u64::try_from(u128::from(n).checked_mul(u128::from(units))? / u128::from(d)).ok()
         };
-        Some([floor(self.rate_s, leaving(offer, 0)?)?, 0, 0, floor(self.rate_h, leaving(offer, 3)?)?])
+        Some(crate::economy::Mu::counts([floor(self.rate_s, leaving(offer, 0)?)?, 0, 0, floor(self.rate_h, leaving(offer, 3)?)?]))
     }
 
     /// THE PARTS of a `charge`: each recipient but the `keeper` its `⌊share ·
@@ -298,26 +298,24 @@ impl Tariff {
     /// charge exactly, no dust. In the split's order, the keeper's part last;
     /// a recipient whose part is zero on every lane is left out. `None` where
     /// a share's floors pass the charge (shares not summing to one).
-    pub fn parts(&self, keeper: &[u8; 32], charge: &[u64; 4]) -> Option<Vec<([u8; 32], [u64; 4])>> {
-        let mut rest = *charge;
+    pub fn parts(&self, keeper: &[u8; 32], charge: &crate::economy::Mu) -> Option<Vec<([u8; 32], crate::economy::Mu)>> {
+        use num_rational::BigRational as Q;
+        let mut rest = charge.clone();
         let mut out = Vec::new();
         for (who, (n, d)) in &self.split {
             if who == keeper {
                 continue;
             }
-            let mut part = [0u64; 4];
-            for ((p, c), r) in part.iter_mut().zip(charge).zip(rest.iter_mut()) {
-                if *d == 0 {
-                    return None;
-                }
-                *p = u64::try_from(u128::from(*n).checked_mul(u128::from(*c))? / u128::from(*d)).ok()?;
-                *r = r.checked_sub(*p)?;
+            if *d == 0 {
+                return None;
             }
-            if part.iter().any(|m| *m > 0) {
+            let part = charge.scaled(&Q::new((*n).into(), (*d).into()))?.floor();
+            rest = rest.draw(&part).ok()?;
+            if !part.is_zero() {
                 out.push((*who, part));
             }
         }
-        if rest.iter().any(|m| *m > 0) {
+        if !rest.is_zero() {
             out.push((*keeper, rest));
         }
         Some(out)
@@ -340,9 +338,7 @@ impl Mouth {
         }
         self.from_frame.to_bytes(&mut out);
         self.to_frame.to_bytes(&mut out);
-        for m in self.toll {
-            out.extend_from_slice(&m.to_le_bytes());
-        }
+        self.toll.put(&mut out);
         out.extend_from_slice(&self.nonce);
         out
     }
@@ -380,10 +376,7 @@ impl Mouth {
         let (from_tier, to_tier, keeper) = (key32(b, p)?, key32(b, p)?, key32(b, p)?);
         let from_frame = crate::transducer::cga::Mv::from_bytes(b, p)?;
         let to_frame = crate::transducer::cga::Mv::from_bytes(b, p)?;
-        let mut toll = [0u64; 4];
-        for m in &mut toll {
-            *m = u64_at(b, p)?;
-        }
+        let toll = crate::economy::Mu::take_from(b, p)?;
         Some(Mouth { from_tier, to_tier, keeper, from_frame, to_frame, toll, nonce: key32(b, p)?, tariff: None, tube: None })
     }
 
@@ -424,7 +417,7 @@ pub struct ConvertIn {
     pub tier: [u8; 32],
     pub identity: [u8; 32],
     pub g: i128,
-    pub mu: [u64; 4],
+    pub mu: crate::economy::Mu,
     pub nonce: [u8; 32],
 }
 
@@ -481,7 +474,7 @@ impl ConvertOut {
     /// The μ it pays on each lane, `rate · g` — `None` where a rate has a
     /// zero denominator, `g` is not positive, or a lane is not an exact
     /// integer that a lane carries.
-    pub fn mu(&self) -> Option<[u64; 4]> {
+    pub fn mu(&self) -> Option<crate::economy::Mu> {
         let g = u128::try_from(self.g).ok().filter(|g| *g > 0)?;
         let mut mu = [0u64; 4];
         for (m, (n, d)) in mu.iter_mut().zip(self.rate) {
@@ -492,7 +485,7 @@ impl ConvertOut {
             }
             *m = u64::try_from(num / d).ok()?;
         }
-        Some(mu)
+        Some(crate::economy::Mu::counts(mu))
     }
 }
 
@@ -503,9 +496,7 @@ impl ConvertIn {
             out.extend_from_slice(k);
         }
         out.extend_from_slice(&self.g.to_le_bytes());
-        for m in self.mu {
-            out.extend_from_slice(&m.to_le_bytes());
-        }
+        self.mu.put(&mut out);
         out.extend_from_slice(&self.nonce);
         out
     }
@@ -513,10 +504,7 @@ impl ConvertIn {
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<ConvertIn> {
         let (holder, tier, identity) = (key32(b, p)?, key32(b, p)?, key32(b, p)?);
         let g = i128_at(b, p)?;
-        let mut mu = [0u64; 4];
-        for m in &mut mu {
-            *m = u64_at(b, p)?;
-        }
+        let mu = crate::economy::Mu::take_from(b, p)?;
         Some(ConvertIn { holder, tier, identity, g, mu, nonce: key32(b, p)? })
     }
 
