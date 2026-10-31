@@ -2,7 +2,7 @@
 
 # MU-DERIVATIONS — every number in the physics, derived or named until derived
 
-> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *universes* are hosted simulations. Physical terms name the simulations' exact geometry. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside hosted universes — cosmological simulations from galaxies down to planets, games, scientific simulations and world models — each run by a kernel under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *universes* are hosted simulations. Physical terms name the simulations' exact geometry. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** every numeric item and literal site under `src/`, `forms/src/` and `xtask/`; the register of open physics (`src/physics/axioms/founding.rs`) and its gate (`xtask/lint/`).
 

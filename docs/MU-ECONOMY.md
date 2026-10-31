@@ -1,6 +1,6 @@
 # MU-ECONOMY — μ, the four-lane currency
 
-> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *planets* are simulated places, and *peoples*, *civilizations* and *ancients* simulated inhabitants, of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside hosted universes — cosmological simulations from galaxies down to planets, games, scientific simulations and world models — each run by a kernel under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *planets* are simulated places, and *peoples*, *civilizations* and *ancients* simulated inhabitants, of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** the court on each hypha (treasury, settlement, the POW++ arms); clients and kernels appear as payers and payees. In-universe economies are each kernel's own (§10).
 
@@ -639,19 +639,19 @@ Specified and scheduled on the roadmap:
 
 **Components:** the court (μ, conversion), each kernel (its own economy).
 
-### 10.1 Every world keeps its own economy
+### 10.1 Every universe keeps its own economy
 
 Any economy can be started, run or shared inside a kernel. A kernel's
-world may digitize any economy it likes: currencies, banks, markets,
+universe may digitize any economy it likes: currencies, banks, markets,
 wages, tolls, credit. These economies are sovereign:
 - the courts never see inside them, and never price or regulate them;
 - tolls and payments made inside a universe stay in that universe's own
   ledgers (Concordance 5.5);
-- a world's money is backed however that world decides, by its reserve
+- a universe's money is backed however that universe decides, by its reserve
   (Concordance 5.1).
 
-Two worlds may share an economy by agreement between the two worlds' kernels, and
-a new world may start one from nothing.
+Two universes may share an economy by agreement between the two universes' kernels, and
+a new universe may start one from nothing.
 
 ### 10.2 μ is the reserve that connects them
 
@@ -666,34 +666,34 @@ currency, and it reaches a universe only as that universe's reserve:
   The universe's own currencies are issued against that reserve.
 - **Value crosses only by conversion, and conversion never mints**
   (Concordance 5.3; MU-RECURSION 78.127, **Built**, `Court::convert`).
-  Convert-out pays μ from the reserve against value leaving the world;
+  Convert-out pays μ from the reserve against value leaving the universe;
   convert-in holds μ until the reserve accepts it against value arriving,
   or refunds it.
-- **What μ is worth against a world's money is never declared.** It
+- **What μ is worth against a universe's money is never declared.** It
   emerges from trade and from each reserve's own decisions (Concordance
   5.1a).
-- **μ held inside a universe dissipates** at that world's own physical
+- **μ held inside a universe dissipates** at the storing world's own physical
   rate (Concordance 5.8). The dissipated value returns to the courts as
   the connection tax, a transfer and never a burn; μ held on the hypha
   (balance, bond, escrow) does not decay.
-- **A new world receives a founding grant** answering its manifest of
+- **A new universe receives a founding grant** answering its manifest of
   nuclei, and growth grants sized by the closures judged in it, each a
   transfer from what the court has earned and never a mint (Concordance
   5.7; `server/cognition/endowment.rs`; MU-HOSTING §3a).
 
 ### 10.3 Why one connecting reserve
 
-- **Incompatible economies can trade.** Two worlds whose monies share
+- **Incompatible economies can trade.** Two universes whose monies share
   nothing can exchange through μ, each converting at its own reserve,
   without either adopting the other's money or rules.
-- **μ is backed by verified work, not by any one world.** Every unit of μ
-  was minted for work two courts reconstructed, so no world's inflation,
+- **μ is backed by verified work, not by any one universe.** Every unit of μ
+  was minted for work two courts reconstructed, so no universe's inflation,
   collapse or policy changes what μ is.
 - **Supply is auditable at every moment.** `supply = genesis + mint −
   burn = Σbalance + Σbond + Σheld` holds on every court (§6), whatever
-  the worlds do inside.
-- **Every world keeps its sovereignty.** A world decides its own economy and
-  touches μ only at its reserve. A world that stops trading with the
+  the universes do inside.
+- **Every universe keeps its sovereignty.** A universe decides its own economy and
+  touches μ only at its reserve. A universe that stops trading with the
   network keeps its own economy whole, and its μ stays its reserve's
   balance on the courts.
 
@@ -753,8 +753,8 @@ with it:
 - **Growth in candidates is growth in cost.** A combinatorial explosion of
   candidates raises a solver's search cost, never the supply. The supply of
   payable work is the supply of unexplained structure: for a fixed corpus
-  it is finite and is exhausted, and lasting supply comes from governed
-  worlds generating new demands (MU-HOSTING).
+  it is finite and is exhausted, and lasting supply comes from hosted
+  universes generating new demands (MU-HOSTING).
 
 ### 11.3 Open: four gaps
 

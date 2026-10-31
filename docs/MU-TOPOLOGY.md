@@ -2,7 +2,7 @@
 
 # MU-TOPOLOGY — multi-dimensional structure
 
-> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents. Physical terms (*star*, *orbit*, *sphere*) name exact geometry. Nothing here is a claim about real minds or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside hosted universes — cosmological simulations from galaxies down to planets, games, scientific simulations and world models — each run by a kernel under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents. Physical terms (*star*, *orbit*, *sphere*) name exact geometry. Nothing here is a claim about real minds or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** the shared algebra (`src/core/`, `src/transducer/`), used by the client and the court alike; the hypha's network and ledger structures (`src/network/`, `src/chronometry/`); the law forms (`forms/`, `src/physics/`). No game term.
 

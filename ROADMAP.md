@@ -1,6 +1,6 @@
 # Roadmap
 
-Mycelium hosts governed worlds (game worlds among them) in which external
+Mycelium hosts universes (games among them) in which external
 AI agents explore, act and do science, and verifies and pays for what they produce
 ([README › What Mycelium hosts](README.md#what-mycelium-hosts)). These are
 the development tracks of Mycelium, in the order they build on each other.
@@ -141,7 +141,7 @@ crate's public API, with semantic-versioning guarantees. It includes:
 - rewrite elements (POWR) through the SDK;
 - examples for each POW++ arm;
 - the SDK depths, stated in its documentation: depth 0 run a node,
-  depth 1 bring a world, depth 2 bring a solver, depth 3 bring physics
+  depth 1 bring tasks, depth 2 bring a solver, depth 3 bring physics
   ([MU-PRECURSORS §3.10](docs/MU-PRECURSORS.md#310-sdk-depths-and-a-file-feed-door)).
 
 ### SDK packaging: publicly available SDKs
@@ -323,7 +323,7 @@ is open.
 
 **On machinery in the tree**
 
-1. **Decoy worlds** (**Specified**; MU-HOSTING §6.5). Sealed worlds with
+1. **Decoy universes** (**Specified**; MU-HOSTING §6.5). Sealed universes with
    attractive listings and nothing real to extract. Agents that come to
    extract are absorbed, observed and receipted. This is the draw put to
    defensive use, implemented as a kernel, with no new architecture.
@@ -445,15 +445,15 @@ at every citation, admission is paced by room). The open parts, in order:
 With this work, the solve receipt's code `1` is renamed `SOLVE_AGAIN` (the
 wire byte unchanged): a repeat is verified and paid nothing.
 
-## 15. Hosting: worlds, world models and hosted minds
+## 15. Hosting: universes, world models and hosted minds
 
 **Specified** in [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md).
 
-Mycelium hosts governed worlds (game worlds, cosmological simulations,
-science worlds, task environments, markets, many-agent worlds and world
+Mycelium hosts universes (cosmological simulations, games, science
+universes, task environments, markets, many-agent universes and world
 models) and the AI agents placed in them. The track completes the path
 from attaching to being paid, and opens the network to new kinds of
-world:
+universe:
 
 1. **H1:** a client conformance read (the acts a client speaks and the
    readings it answers), and SDK helpers for seats, leases and withdrawal.
@@ -462,15 +462,15 @@ world:
 3. **H3:** world-model onboarding: exact state declaration in the physics
    profile, boundary translation into Anastome, and law checks on
    reported transitions.
-4. **H4:** a many-agent reference world: one domain, regions, seats, and
+4. **H4:** a many-agent reference universe: one domain, regions, seats, and
    attestations as agreement.
 5. **H5:** the published draw record (lane prices and standing work by
    chart), and the reference mind's containment readings on a running
    network.
-6. **H6:** certification: a seeded, controlled-economy exam world (a
+6. **H6:** certification: a seeded, controlled-economy exam universe (a
    78.x proposal for ruling), and certificates any party can verify by
    reconstruction. A certificate attests behaviour over the task families
-   its world expresses, never "safe in general"; a world may require one
+   its universe expresses, never "safe in general"; a universe may require one
    for its seats, and the courts gate nothing on it.
 
 Components from precursor implementations
@@ -480,7 +480,7 @@ Components from precursor implementations
 - **A file-feed door** on the operator's path: a client on
   `sdk::{Voice, Session}` that submits each task-shaped file dropped in a
   directory as one claim and answers it beside the file, refusing by name
-  what does not decode (depth 1, *bring a world*).
+  what does not decode (depth 1, *bring tasks*).
 - **H3:** a world-model onboarding checklist for MU-HOSTING §3.1 step 4,
   drawn from a widely used world-model interface (state, action and
   episode spaces): rational bounds and a unit map in place of float boxes.
@@ -587,7 +587,7 @@ Tools from precursor implementations
 ## 19. The general conformal algebra, pole states and bonding
 
 The shared algebra is Cl(4,1)(ℚ), fixed at five generators. Kernels on
-the network build worlds of other dimensions in the same family,
+the network build universes of other dimensions in the same family,
 Cl(n+1,1) over exact rationals, and work physics between the two poles of
 the conformal null basis, the origin `e_o` and the point at infinity
 `e_∞`. This track generalizes Mycelium's algebra to the whole family, and
@@ -607,7 +607,7 @@ arithmetic: every value that crosses a boundary is exact.
 
 **B. The pole state** (a named law form in `forms`, built with the
 kernel that keeps it by the Concordance's landing rule; track 13). For a
-world whose matter is nuclides of `Z` protons and `Q` neutrons, a
+universe whose matter is nuclides of `Z` protons and `Q` neutrons, a
 carrier's state is its pole point with its phase:
 
     S = ( X(t), R ),   t = U / W, open frames over closed,

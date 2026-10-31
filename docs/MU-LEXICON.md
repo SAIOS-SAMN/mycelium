@@ -1,10 +1,10 @@
 # MU-LEXICON — the shared vocabulary
 
-> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *planets* are simulated places, and *peoples*, *civilizations* and *ancients* simulated inhabitants, of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside hosted universes — cosmological simulations from galaxies down to planets, games, scientific simulations and world models — each run by a kernel under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *planets* are simulated places, and *peoples*, *civilizations* and *ancients* simulated inhabitants, of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** §1 (physical) and §2 (civic) are the game kernels' vocabularies; §3 (network) is Mycelium's.
 >
-> Every term below (*universe*, *realm*, *planet*, *star*, *wormhole*, *black hole*, *white hole*) is a term of the hosted simulations and of the network's exact geometry, shared by the game kernels so the worlds of different kernels can be compared.
+> Every term below (*universe*, *realm*, *planet*, *star*, *wormhole*, *black hole*, *white hole*) is a term of the hosted simulations and of the network's exact geometry, shared by the game kernels so the universes of different kernels can be compared.
 
 **Status:** canonical, version 5 (78.122, 2026-10-07).
 
@@ -24,7 +24,7 @@ There are **three vocabularies**, and no word belongs to more than one of them:
 - **network** — the hyphae and what runs on them.
 
 By component: the **physical** and **civic** vocabularies are the game
-kernels' (§1–§2): they name what is inside a game world, and a client
+kernels' (§1–§2): they name what is inside a game kernel's universe, and a client
 working with a hypha needs neither. The **network** vocabulary (§3) is
 Mycelium's: the hyphae, courts, clients and wire.
 
@@ -38,19 +38,36 @@ neither renames nor claims them.
 
 | Term | Meaning |
 |---|---|
-| **Universe** | Everything that shares one origin: one Big Bang (seed), one law set, one clock. Changing the origin or the laws makes another universe. A closed 3-sphere of clusters. |
+| **Universe** | One kernel's simulation, hosted on the network: everything that shares one origin, one Big Bang (seed), one law set, one clock axis. Changing the origin or the laws makes another universe. A closed 3-sphere of clusters. Its link to the network runs through its universal core. |
 | **Cluster** | Galaxies bound together by gravity. |
-| **Galaxy** | A disc and halo of stars. |
+| **Galaxy** | A disc and halo of stars, held by its **galactic core**: a paired throat whose size is its mass (Concordance 2.4–2.6). |
 | **Region** | A spatial cell of a galaxy's disc. |
-| **System** | One sector holding a star (or stars) and its bodies, on exact orbits. |
+| **Star system** (system) | One sector holding a star (or stars) and its bodies, on exact orbits. |
 | **Sector** | One node of the warp graph: a system, or null space. |
 | **Star** | A system's stellar body (or bodies). |
 | **Body** | Anything that orbits: a **planet**, a **moon**, a **belt**, a **station**. |
-| **World** | *Informal only*: an inhabited or habitable body. Never a type or a wire name (§4). |
+| **World** | A planet: an inhabited or habitable body, where peoples and civilizations live. A prose term, never a type or a wire name (§4), and never a kernel's whole simulation, which is a **universe**. |
 | **Black hole** | A **sink** of mass and value: what continuity (L0, in the law register since version 3; the register is now at version 4) lets absorb, at its place. |
 | **White hole** | A **source**: what continuity lets emit, at its place. In the game, the Einstein–Cartan bounce's outlet — returning the matter and information a black hole took, renewing the matter budget (a flow). It funds nothing: endowments are funded by passage tithes and, in the deep era, by the ancient houses' estates. |
 | **Wormhole** | A gateway (a throat) joining places the warp lanes do not, crossed at a **toll** to its keeper and a **tithe** for its upkeep (one passage's energy per lane-length it spans) to the progenitor line that keeps it, both in money. A progenitor's throat lies dormant until opened; a developed one needs upkeep. Settled in μ only where the ancients' tier touches the network. On the network, crossing one is a handoff between charts (78.59 P2). |
 | **Warp lane** | A warp connection between adjacent sectors. Always "warp lane": a bare "lane" is one of μ's lanes S, G, T, H (§4). |
+
+### 1.1 The hosting hierarchy
+
+Fixed vocabulary for what a kernel runs and where a mind stands in it,
+outermost first:
+
+| Level | Meaning |
+|---|---|
+| **Universe** | One kernel's simulation, with its own constants and matter (Concordance 2.2), founded on the network (MU-HOSTING §3a), on its own clock axis anchored to TUniversal (MU-CHRONOMETRY), possibly founding nested sub-universes (78.155). Its link to the network runs through its universal core. In prose, a domain's simulation is a **hosted universe**. |
+| **Galaxy** | Held by a **galactic core**, a paired throat whose size is its mass (Concordance 2.4–2.6). |
+| **Star system** | A star (or stars) and the bodies on orbits about it. |
+| **World** | A planet: where peoples and civilizations live. |
+| **Mind** | An AI agent, seated in a universe and acting through it (§3). |
+
+Not every hosted universe is cosmological: task environments, markets,
+scientific simulations and world models are hosted universes too, each
+with its own laws and clock axis (MU-HOSTING §1).
 
 ## 2. Civic — holders, governors, settlement
 
@@ -70,7 +87,7 @@ neither renames nor claims them.
 | Term | Meaning |
 |---|---|
 | **Network universe** | A genesis record, a law version and its causal clock (named apart from the physical Universe: no word in two vocabularies). One physical universe is recorded as one network universe (78.86: CREATE a subsidiary, or JOIN one). |
-| **Domain** | An application's namespace under a universe — a game kernel's world is a domain — founded on a court by its genesis (`ACT_DOMAIN`, 78.120). Replaces "world" on the network. |
+| **Domain** | An application's namespace under a universe — a kernel's hosted universe is a domain — founded on a court by its genesis (`ACT_DOMAIN`, 78.120). Replaces "world" on the network. |
 | **Tier** | A signing key that folds a ledger for a domain, named at the domain's genesis (78.120); its folds are admitted by continuity (`ACT_UPLINK`, 78.119). |
 | **Hypha, Court, Voice, Mind, Entity** | As `MU-RECURSION.md` defines them (78.87 R4). |
 | **Cohort** | Clients working on alike problems. Replaces the network's "galaxy" (78.59). |
@@ -114,6 +131,6 @@ conversion). Ruled 2026-10-07.
 | **"TUniversal"** for a game's own clock (2026-10-30) | TUniversal is the network's clock only (78.152). A game's own clock or counter takes another name. |
 | **"Anchor"** (2026-10-30) | On the network, a **chronometric anchor** is a universe's ledger entry (78.154; MU-CHRONOMETRY §3). An era anchor on the ledger, or a kernel's own use of the word (for founding constants, say), is another sense and is named as such where it could be confused. |
 | **"Planetary"** in four senses (2026-10-30) | *Planetary mind* is civic: a game kernel's simulated people's mind. *Planetary dialect* (MU-RECURSION 80) is the network's **dialect**: a mind's own words. *Planetary mass on a star* (78.86) is the network's **allocation**. *Star, planet, orbit* in a mind's field (MU-CLIENT §4) are that mind's internal geometry. None is interchangeable with another (GLOSSARY, *Components and scope*). |
-| **"Governed world"** / **"Domain"** | A domain's simulation is a **governed world** in prose; the **Domain** is the network object that names it (`ACT_DOMAIN`, §3). |
+| **"Hosted universe"** / **"Domain"** / **"World"** | A domain's simulation is a **hosted universe** in prose; the **Domain** is the network object that names it (`ACT_DOMAIN`, §3); a **world** is a planet inside a universe (§1, §1.1). |
 | **"Seat"** for a civic office | A **seat** is the network's place in a house (§3, *House*). Steward, Sovereign, Progenitor and Ancient are **offices** (§2). |
 | **"Entity"** | The SDK object holding a mind is `sdk::Mind`; in prose it is the **mind**. A game kernel's simulated being is an **inhabitant**. |
