@@ -26,12 +26,13 @@ use crate::transducer::address::{put_key_bytes, put_key_count, take_key_bytes, t
 use std::sync::Arc;
 
 /// 78.154 (4) — A CLAIM DRAWN ON A STAKE: the fee held from it, the parts
-/// it pays (each court and its part), the height its window closes at, and
-/// the act it was drawn at — what each part's rows cite.
+/// it pays (each court and its part), the height its window opened at (it
+/// closes at a sealed reach and return, 78.125, law version 5), and the act
+/// it was drawn at — what each part's rows cite.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Claim {
     pub(crate) parts: Vec<([u8; 32], [u64; 4])>,
-    pub(crate) until: u64,
+    pub(crate) opened: u64,
     pub(crate) at: Stamp,
     pub(crate) receipt: [u8; 32],
 }
@@ -45,7 +46,7 @@ impl Claim {
                 v.extend_from_slice(&m.to_le_bytes());
             }
         }
-        v.extend_from_slice(&self.until.to_le_bytes());
+        v.extend_from_slice(&self.opened.to_le_bytes());
         self.at.put_canonical(v);
         v.extend_from_slice(&self.receipt);
     }
@@ -55,9 +56,9 @@ impl Claim {
         let parts = (0..take_key_count(b, p)?)
             .map(|_| Some((key32(b, p)?, [u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?])))
             .collect::<Option<Vec<_>>>()?;
-        let until = u64_at(b, p)?;
+        let opened = u64_at(b, p)?;
         let at = Stamp::take_canonical(b, p)?;
-        Some(Claim { parts, until, at, receipt: key32(b, p)? })
+        Some(Claim { parts, opened, at, receipt: key32(b, p)? })
     }
 }
 

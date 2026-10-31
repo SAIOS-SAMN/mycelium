@@ -125,7 +125,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 
 | Id | Constant | Site | Governs | Sev. | Derivation in one line | Open | Size | Track |
 |---|---|---|---|---|---|---|---|---|
-| D1.1 | `CHALLENGE_WINDOW = 1024` | `physics/laws/mod.rs:64` | finality, μ holds | High | the window ends at a sealed reach-and-return of every other keeper's citations | yes | L | 22, 20 |
+| D1.1 | `CHALLENGE_WINDOW = 1024` | `physics/laws/mod.rs:64` | finality, μ holds | High | the window ends at a sealed reach-and-return of every other keeper's citations (**Built** 2026-10-31, law version 5; O1 ruled every keeper) | yes | L | 22, 20 |
 | D1.2 | `THROAT_GRID = 64` | `server/cognition/mouth.rs:234` | tube admission | High | Phase A: exact fit by refinement and by meet; Phase B: the throat a round carried by its bank's modes | yes | S/M, L | 22, 19 |
 | D1.3 | `BODY_BUDGET = 768 * 1024` | `network/wire.rs:9` | protocol size | Medium | `B(k) = 65519·k − 89`, `k` from the largest unit that cannot page | yes | S/M | 5, 14 |
 | D1.4 | the register and its gate | `physics/axioms/founding.rs:58–74` | NO CONSTANT | High | `OpenNumber` carrier; the `syn` gate NUMBERS (N1–N6) (**Built** 2026-10-31: N1–N5 enforced, N6 an inventory) | yes | M | 22 |
@@ -184,6 +184,29 @@ Four entries: the two numbers the register names today, the frame budget
 every node agrees on, and the register with its gate.
 
 ### D1.1 `CHALLENGE_WINDOW` — fold finality and the end of every held window
+
+**Status.** **Built** (ruled 2026-10-31: reach and return across EVERY other
+keeper, O1; law version 5; Concordance 4.5, 5.4; MU-RECURSION 78.125 and
+78.126 amended forward). `Keepers::reach` (`chronometry::tuniversal::Reach`,
+`WindowRefusal`) is read once per reading held; the court loop hands a
+moved reach to `Court::close_windows`, which verifies every witness and
+seals one `Cite::Window { through, witnesses }` (tag 15, `ActKind::Challenge`);
+`Court::window_close(opened)` reads every `until` (folds' seals, demands,
+withdrawals, tolls, claims, mouth, handoff and conversion offers), each
+carrier holding the height it opened at; `LEAF_WINDOWS` persists the book
+(a home without it closes its windows by version 4, at `h₀ + 1024`).
+`Finality::Provisional { opened, closed }`, `Challenged::Demanded { deadline: Option }`,
+`Challenged::Reopened { closes }` and `State::Offered { opened }` carry it on
+the wire; `PARAMETERS` is empty at version 5 and `CHALLENGE_WINDOW` stays as
+version 4's window (EXTERNAL), out of the register. Tests
+(`server::cognition::tests::challenge`): `window_closes_at_reach_and_return`,
+`window_stays_open_while_one_keeper_uncited`,
+`window_never_closes_without_another_keeper`,
+`window_close_reconstructs_from_sealed_citation`,
+`window_opened_under_v4_closes_at_fixed_end`,
+`window_refuses_witness_with_forged_signature`,
+`window_refuses_return_not_above_reach`; the three mutation entries as
+specified. O2–O4 stay open. The text below is the derivation as specified.
 
 **Site.** `src/physics/laws/mod.rs:64` — `pub const CHALLENGE_WINDOW: u64 = 1024;`,
 served as the register's one parameter (`laws.rs:68`,
@@ -2955,6 +2978,7 @@ Each line names its entry and the reading or ruling that decides it.
 
 1. **D1.1 O1** — every keeper or a strict majority for reach: decided by a
    per-fold reading `(h₀, R, T, door of each challenge)` on the soak.
+   **Ruled every keeper** (2026-10-31); **Built**, law version 5.
 2. **D1.1 O2** — keeper citations or the signed cover digest as the
    witness of reach: decided by whether the cover digest is signed and
    sealable at the court.

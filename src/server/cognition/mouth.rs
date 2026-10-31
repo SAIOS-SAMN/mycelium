@@ -14,7 +14,6 @@
 //! the identity is two routes disagreeing about how one universe lands in
 //! another — curvature, RECORDED (served as loops), never refused.
 
-use super::challenge::window_end;
 use super::handoff::toll_key;
 use super::Court;
 use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Level, Loop, Mouth, SignedHandoff, State, TubeReading};
@@ -40,9 +39,9 @@ impl MouthHeld {
         // The flat writing: a tariff is stored beside it (`Handoffs::put`).
         v.extend_from_slice(&self.mouth.legacy_bytes());
         match self.state {
-            State::Offered { until } => {
+            State::Offered { opened } => {
                 v.push(0);
-                v.extend_from_slice(&until.to_le_bytes());
+                v.extend_from_slice(&opened.to_le_bytes());
             }
             State::Accepted => v.push(1),
             State::Returned => v.push(2),
@@ -67,7 +66,7 @@ impl MouthHeld {
         let tag = *b.get(*p)?;
         *p += 1;
         let state = match tag {
-            0 => State::Offered { until: u64_at(b, p)? },
+            0 => State::Offered { opened: u64_at(b, p)? },
             1 => State::Accepted,
             2 => State::Returned,
             _ => return None,
@@ -85,14 +84,15 @@ impl MouthHeld {
 
 /// 78.133 — A TOLL SPLIT AND HELD (as ruled): a tariffed
 /// traversal's charge, divided at acceptance into its exact parts — each
-/// recipient's, the keeper's last — and held whole until the window `W` from
-/// the acceptance closes (paid out, every part together) or the traversal's
-/// OUT-side fold is reversed (back to the traveller, every part together).
-/// The traverse act's stamp and receipt are what each part's rows cite.
+/// recipient's, the keeper's last — and held whole until the window the
+/// acceptance opened at `opened` closes (paid out, every part together) or
+/// the traversal's OUT-side fold is reversed (back to the traveller, every
+/// part together). The traverse act's stamp and receipt are what each part's
+/// rows cite.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct TollHeld {
     pub(crate) parts: Vec<([u8; 32], [u64; 4])>,
-    pub(crate) until: u64,
+    pub(crate) opened: u64,
     pub(crate) traverse: Stamp,
     pub(crate) receipt: [u8; 32],
 }
@@ -106,7 +106,7 @@ impl TollHeld {
                 v.extend_from_slice(&m.to_le_bytes());
             }
         }
-        v.extend_from_slice(&self.until.to_le_bytes());
+        v.extend_from_slice(&self.opened.to_le_bytes());
         self.traverse.put_canonical(v);
         v.extend_from_slice(&self.receipt);
     }
@@ -128,11 +128,11 @@ impl TollHeld {
                 Some((who, mu))
             })
             .collect::<Option<Vec<_>>>()?;
-        let until = u64_at(b, p)?;
+        let opened = u64_at(b, p)?;
         let traverse = Stamp::take_canonical(b, p)?;
         let receipt: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
         *p += 32;
-        Some(TollHeld { parts, until, traverse, receipt })
+        Some(TollHeld { parts, opened, traverse, receipt })
     }
 }
 
@@ -456,7 +456,7 @@ impl Court {
                         .is_some_and(|s| matches!(self.finality(&s), crate::anastome::dialogue::challenge::Finality::Final { .. })),
                     _ => true,
                 };
-                head >= t.until && settled
+                self.window_closed(t.opened, head) && settled
             })
             .map(|(k, t)| (k, t.clone()))
             .collect();
@@ -541,7 +541,7 @@ impl Court {
         let traverse = self.handoffs.offered_at.get(id).and_then(|k| Stamp::from_key(k)).and_then(|at| Some((at, self.chain.node(&at)?.chain_hash)));
         match (charge.and_then(|c| tariff.parts(&m.keeper, &c)), traverse) {
             (Some(parts), Some((at, receipt))) => {
-                let held = TollHeld { parts, until: window_end(anchor.0.h), traverse: at, receipt };
+                let held = TollHeld { parts, opened: anchor.0.h, traverse: at, receipt };
                 self.handoffs.tolls.insert(id, held);
             }
             // Parts that do not read are no toll: back to the traveller.
@@ -680,13 +680,13 @@ impl Court {
             }
             Handoff::Accept { .. } | Handoff::Refuse { .. } | Handoff::Expire { .. } => {
                 let Some(held) = self.handoffs.mouths.get(&id) else { return refuse(R::UnknownId) };
-                let State::Offered { until } = held.state else { return refuse(R::Answered) };
+                let State::Offered { opened } = held.state else { return refuse(R::Answered) };
                 let expiring = matches!(h.handoff, Handoff::Expire { .. });
                 let filer = if expiring { held.mouth.from_tier } else { held.mouth.to_tier };
                 if h.who != filer {
                     return refuse(R::NotTheTier);
                 }
-                if expiring != (head >= until) {
+                if expiring != self.window_closed(opened, head) {
                     return refuse(R::Window);
                 }
                 match h.handoff {
@@ -702,8 +702,8 @@ impl Court {
         let anchor = (r.stamp, r.chain_hash);
         let state = match (&h.handoff, kind) {
             (Handoff::Mouth(m), _) => {
-                let until = window_end(r.stamp.h);
-                let held = MouthHeld { mouth: m.as_ref().clone(), state: State::Offered { until }, opened: None, at: r.stamp.key() };
+                let offered = r.stamp.h;
+                let held = MouthHeld { mouth: m.as_ref().clone(), state: State::Offered { opened: offered }, opened: None, at: r.stamp.key() };
                 self.handoffs.mouths.insert(id, held);
                 // 78.135 — the offerer's bank, the throat's first face.
                 if let Some(bank) = m.tube.as_ref().and_then(|t| ceil_mass(t.mass)) {
@@ -711,7 +711,7 @@ impl Court {
                         self.handoffs.throats.insert(id, Throat { feeders: vec![h.who], adjusted: 0, acts: 0 });
                     }
                 }
-                State::Offered { until }
+                State::Offered { opened: offered }
             }
             (_, 1) => {
                 let mut superseded = None;

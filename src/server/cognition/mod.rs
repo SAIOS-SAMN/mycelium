@@ -37,6 +37,7 @@ mod state;
 mod universe;
 mod wallet;
 mod why;
+mod window;
 mod wire;
 
 pub use crate::transducer::sentence::{cited_pattern, replay_at, verify_at, Cite};

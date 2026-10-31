@@ -1859,22 +1859,26 @@ Sources: MU-SCIENCE §5, V1.
 #### 10.1 Named open physics
 
 ```text
-CHALLENGE_WINDOW = 1024     heights a fold stands open to an availability demand, a replay or a correction
 THROAT_GRID      = 64       the 2⁻⁶⁴ grid a throat's horizon level is enclosed on
-LAW_VERSION      = 4
+LAW_VERSION      = 5
 ```
 
 The founding principles admit no constant: a number in the physics is read
 off the field or the geometry, or it is named in `OPEN_PHYSICS` with what
-will derive it. The challenge window's derivation is a law amendment (the
-heights a fold's challenge needs to reach every keeper and return). The
-throat grid is an enclosure on a declared grid; the throat is a `Cl(4,1)`
-round carried by its bank's modes, fit by meet, and the grid retires with
-it.
+will derive it (MU-DERIVATIONS D1.4 lists every entry). The challenge
+window is derived (law version 5, 2026-10-31): a window opened at `h₀`
+closes at the height of the first sealed `Cite::Window` whose reach is at
+or above `h₀`, the reach being the least height every other keeper's signed
+readings cite this court at, each keeper having read again after
+(MU-DERIVATIONS D1.1). A window opened under version 4 closes at
+`h₀ + 1024` (`CHALLENGE_WINDOW`, version 4's). The throat grid is an
+enclosure on a declared grid; the throat is a `Cl(4,1)` round carried by
+its bank's modes, fit by meet, and the grid retires with it.
 
 Sources: MU-RECURSION §0.0, 78.125, 78.134. Code:
 `src/physics/axioms/founding.rs::OPEN_PHYSICS`;
 `src/physics/laws/mod.rs::CHALLENGE_WINDOW`, `PARAMETERS`;
+`src/server/cognition/window.rs::window_close`;
 `src/server/cognition/mouth.rs::THROAT_GRID`.
 
 #### 10.2 Throat size is mass
@@ -1964,14 +1968,14 @@ id is a hosted shell's own.
 
 | Id | Version | Canonical text | Implementation |
 |---|---|---|---|
-| L0 conformal kinematics (`TAG_LAW‖0‖4`) | 4 | `Law::statement`, MU-RECURSION 78.59; entry 9.5 | `src/physics/laws/mod.rs` (`verify`); served on `ACT_LAWS` mode 0 |
-| L0 momentum (`TAG_LAW‖1‖4`) | 4 | MU-RECURSION 78.59, LV2 | `src/physics/laws/mod.rs` (`verify`, `expansion_of`); `ACT_LAWS` mode 0 |
-| L0 metric rigidity (`TAG_LAW‖2‖4`) | 4 | MU-RECURSION 78.59 | `src/physics/laws/mod.rs` (`verify`); `ACT_LAWS` mode 0 |
-| L0 temporal monotonicity (`TAG_LAW‖3‖4`) | 4 | MU-RECURSION 78.59 | `src/physics/laws/mod.rs` (`verify`); `ACT_LAWS` mode 0 |
-| L0 conservative flow into e_∅ (`TAG_LAW‖4‖4`) | 4 | MU-RECURSION 78.59, 78.58 | `src/physics/laws/mod.rs` (`verify`); `ACT_LAWS` mode 0 |
-| L0 continuity (`TAG_LAW‖5‖4`) | 4 | MU-RECURSION 78.89 | `src/physics/laws/mod.rs` (`verify`, `verify_flux`); `ACT_LAWS` mode 0 |
-| L0 parameters (the challenge window) | 4 | MU-RECURSION 78.125; §10 | `src/physics/laws/mod.rs` (`PARAMETERS`); `ACT_LAWS` mode 5 |
-| Concordance (`CONCORDANCE_HASH`) | 3 (the agreement's version); identified by its hash | `docs/MU-CONCORDANCE.md`; hash = BLAKE3 of its exact bytes | `src/physics/laws/concordance.rs`, `build.rs`; served on `ACT_LAWS` mode 7, signatures on mode 8 |
+| L0 conformal kinematics (`TAG_LAW‖0‖5`) | 5 | `Law::statement`, MU-RECURSION 78.59; entry 9.5 | `src/physics/laws/mod.rs` (`verify`); served on `ACT_LAWS` mode 0 |
+| L0 momentum (`TAG_LAW‖1‖5`) | 5 | MU-RECURSION 78.59, LV2 | `src/physics/laws/mod.rs` (`verify`, `expansion_of`); `ACT_LAWS` mode 0 |
+| L0 metric rigidity (`TAG_LAW‖2‖5`) | 5 | MU-RECURSION 78.59 | `src/physics/laws/mod.rs` (`verify`); `ACT_LAWS` mode 0 |
+| L0 temporal monotonicity (`TAG_LAW‖3‖5`) | 5 | MU-RECURSION 78.59 | `src/physics/laws/mod.rs` (`verify`); `ACT_LAWS` mode 0 |
+| L0 conservative flow into e_∅ (`TAG_LAW‖4‖5`) | 5 | MU-RECURSION 78.59, 78.58 | `src/physics/laws/mod.rs` (`verify`); `ACT_LAWS` mode 0 |
+| L0 continuity (`TAG_LAW‖5‖5`) | 5 | MU-RECURSION 78.89 | `src/physics/laws/mod.rs` (`verify`, `verify_flux`); `ACT_LAWS` mode 0 |
+| L0 parameters (none at version 5: the challenge window is a sealed reach and return) | 5 | MU-RECURSION 78.125 as amended; §10 | `src/physics/laws/mod.rs` (`PARAMETERS`, empty); `ACT_LAWS` mode 5 |
+| Concordance (`CONCORDANCE_HASH`) | 4 (the agreement's version); identified by its hash | `docs/MU-CONCORDANCE.md`; hash = BLAKE3 of its exact bytes | `src/physics/laws/concordance.rs`, `build.rs`; served on `ACT_LAWS` mode 7, signatures on mode 8 |
 | `FORMS-FRAME` | 1 | `forms/src/frame.rs` (module documentation); Concordance 2.10, A6 | `forms::frame` (core shell) |
 | `FORMS-SHARES` | 1 | `forms/src/shares/mod.rs`; Concordance 2.10, A7a; §10.4 | `forms::shares::closeness`, `forms::shares::share_compounds` (outer shell) |
 | `LAW-WAVEFRONT` | 1 | netstratum `docs/111` §2–§3 ([netstratum#9](https://github.com/SAIOS-SAMN/netstratum/issues/9)) | netstratum; no Mycelium code |

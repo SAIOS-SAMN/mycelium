@@ -109,18 +109,7 @@ const SOAK_STROKE: &str = "Open: an instrument's stroke is the need of what it r
 /// UNDEFINED PHYSICS, NAMED: each number the tree still declares where a
 /// reading belongs, with what it decides, the sections that govern it and
 /// what will derive it (MU-DERIVATIONS D1.4).
-pub const OPEN_PHYSICS: [OpenNumber; 19] = [
-    OpenNumber {
-        name: "CHALLENGE_WINDOW",
-        value: "1024",
-        site: "src/physics/laws/mod.rs::CHALLENGE_WINDOW",
-        governs: Governs::Finality,
-        doc: "MU-RECURSION 78.125; MU-EQUATIONS §10.1; MU-DERIVATIONS D1.1",
-        derivation: "law parameter of version 4, shared by every kernel of a network universe (78.125); its derivation — the \
-                     heights a fold's challenge needs to reach every keeper and return — is a law amendment, agreed under the \
-                     Concordance",
-        kind: OpenKind::Physics,
-    },
+pub const OPEN_PHYSICS: [OpenNumber; 18] = [
     OpenNumber {
         name: "THROAT_GRID",
         value: "64",

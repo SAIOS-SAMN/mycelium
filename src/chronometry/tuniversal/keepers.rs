@@ -4,6 +4,7 @@
 // the residual the keepers' disagreement leaves on the keeper triangle (TU-4).
 
 use super::point::{Origin, TPoint};
+use super::reach::{KeeperLine, Reach, WindowRefusal};
 use super::reading::{Cited, Tick, TickReading};
 use super::record::LastSigned;
 use crate::network::nerve::Keyed;
@@ -106,12 +107,24 @@ pub struct Keepers {
     lines: Keyed<Line>,
     /// The greatest point final in this court's view so far.
     held_final: Option<TPoint>,
+    /// 78.125 (law version 5) — HOW FAR EVERY OTHER KEEPER HAS CARRIED THIS
+    /// COURT AND RETURNED: read once per reading held (its inputs) and held,
+    /// never re-read per use (MU-STANDARDS 2.12).
+    reach: Result<Reach, WindowRefusal>,
 }
 
 impl Keepers {
     /// The keepers at `origin`, `own_key` this court's own key.
     pub fn new(origin: Origin, own_key: [u8; 32]) -> Keepers {
-        Keepers { origin, own_key, lines: Keyed::new(), held_final: None }
+        Keepers { origin, own_key, lines: Keyed::new(), held_final: None, reach: Err(WindowRefusal::NoOtherKeeper) }
+    }
+
+    /// 78.125 (law version 5) — THIS COURT'S REACH, as last read off the
+    /// readings held: how far every other keeper has carried it and
+    /// returned, with each one's witness; refused by name where a keeper has
+    /// not, or no other keeper is held.
+    pub fn reach(&self) -> &Result<Reach, WindowRefusal> {
+        &self.reach
     }
 
     /// This court's own key.
@@ -356,6 +369,14 @@ impl Keepers {
                 self.held_final = Some(p);
             }
         }
+        let lines: Vec<KeeperLine<'_>> = self
+            .lines
+            .scoped()
+            .filter_map(|(k, l)| {
+                Some(KeeperLine { keeper: <[u8; 32]>::try_from(k.as_slice()).ok()?, readings: l.readings.iter().map(|(_, r)| r).collect() })
+            })
+            .collect();
+        self.reach = Reach::of(self.origin, self.own_key, lines);
     }
 
     fn candidate(&self) -> Option<TPoint> {

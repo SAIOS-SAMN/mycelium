@@ -628,8 +628,9 @@ pub struct SignedHandoff {
 /// WHERE A HANDOFF STANDS.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum State {
-    /// Offered, in flight, awaiting the receiver until `until` (a height).
-    Offered { until: u64 },
+    /// Offered, in flight, awaiting the receiver while the window the offer
+    /// opened at `opened` (a height) stands open (78.125, law version 5).
+    Offered { opened: u64 },
     Accepted,
     Returned,
 }
@@ -892,9 +893,9 @@ pub enum Handed {
 
 fn put_state(out: &mut Vec<u8>, s: &State) {
     match s {
-        State::Offered { until } => {
+        State::Offered { opened } => {
             out.push(0);
-            out.extend_from_slice(&until.to_le_bytes());
+            out.extend_from_slice(&opened.to_le_bytes());
         }
         State::Accepted => out.push(1),
         State::Returned => out.push(2),
@@ -906,9 +907,9 @@ fn take_state(b: &[u8], p: &mut usize) -> Option<State> {
     *p += 1;
     Some(match tag {
         0 => {
-            let until = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+            let opened = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
             *p += 8;
-            State::Offered { until }
+            State::Offered { opened }
         }
         1 => State::Accepted,
         2 => State::Returned,

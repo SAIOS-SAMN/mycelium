@@ -6,9 +6,9 @@
 //! continuity and a replay read — from its seal until both sides are
 //! consumed by folds read final (`settle_windows` lets it go then: a final
 //! fold is never reversed, so no side can be un-consumed). The answer window
-//! is the law's `W`, the one finality clock.
+//! is the one finality clock: the window the offer opened, closed by a sealed
+//! reach and return of every other keeper (78.125, law version 5).
 
-use super::challenge::window_end;
 use super::Court;
 use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Offer, Side, SignedHandoff, State};
 use crate::anastome::dialogue::uplink::{Net, SideRefusal, TierFold};
@@ -119,9 +119,9 @@ impl Handoffs {
             v.extend_from_slice(&h.offer.bytes());
             v.extend_from_slice(&h.sealed.to_le_bytes());
             match h.state {
-                State::Offered { until } => {
+                State::Offered { opened } => {
                     v.push(0);
-                    v.extend_from_slice(&until.to_le_bytes());
+                    v.extend_from_slice(&opened.to_le_bytes());
                 }
                 State::Accepted => v.push(1),
                 State::Returned => v.push(2),
@@ -231,7 +231,7 @@ impl Handoffs {
             let tag = *b.get(*p)?;
             *p += 1;
             let state = match tag {
-                0 => State::Offered { until: u64_at(b, p)? },
+                0 => State::Offered { opened: u64_at(b, p)? },
                 1 => State::Accepted,
                 2 => State::Returned,
                 _ => return None,
@@ -410,14 +410,14 @@ impl Court {
             }
             Handoff::Accept { .. } | Handoff::Refuse { .. } | Handoff::Expire { .. } => {
                 let Some(held) = self.handoffs.held.get(&id) else { return refuse(R::UnknownId) };
-                let State::Offered { until } = held.state else { return refuse(R::Answered) };
+                let State::Offered { opened } = held.state else { return refuse(R::Answered) };
                 let expiring = matches!(h.handoff, Handoff::Expire { .. });
                 let filer = if expiring { held.offer.from_tier } else { held.offer.to_tier };
                 if h.who != filer {
                     return refuse(R::NotTheTier);
                 }
                 // Answered within the window; expired only past it.
-                if expiring != (head >= until) {
+                if expiring != self.window_closed(opened, head) {
                     return refuse(R::Window);
                 }
                 Some(match h.handoff {
@@ -467,8 +467,8 @@ impl Court {
         let anchor = (r.stamp, r.chain_hash);
         let now = match (state, &h.handoff) {
             (None, Handoff::Offer(o) | Handoff::Traverse { offer: o, .. }) => {
-                let until = window_end(r.stamp.h);
-                let held = Held { offer: o.as_ref().clone(), sealed: r.stamp.h, state: State::Offered { until }, out: None, inn: None };
+                let opened = r.stamp.h;
+                let held = Held { offer: o.as_ref().clone(), sealed: r.stamp.h, state: State::Offered { opened }, out: None, inn: None };
                 self.handoffs.held.insert(id, held);
                 self.handoffs.offered_at.insert(id, r.stamp.key());
                 if let Handoff::Traverse { mouth, .. } = &h.handoff {
@@ -477,7 +477,7 @@ impl Court {
                         let _ = self.treasury.hold(o.from_tier, &toll_key(&id), toll, anchor);
                     }
                 }
-                State::Offered { until }
+                State::Offered { opened }
             }
             (Some(s), _) => {
                 if let Some(held) = self.handoffs.held.get_mut(&id) {

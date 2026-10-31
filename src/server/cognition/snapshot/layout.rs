@@ -58,6 +58,11 @@ pub const LEAF_ENDOWMENT: u8 = 10;
 /// before it).
 /// FORMAT: court-tree leaf position for closures.
 pub const LEAF_CLOSED: u8 = 11;
+/// 78.125 (law version 5) — the window book: the height version 5 holds
+/// from and the sealed window closes; absent on every home written under law
+/// version 4, whose windows close by version 4.
+/// FORMAT: court-tree leaf position for the window book.
+pub const LEAF_WINDOWS: u8 = 12;
 
 /// T2 — THE LEDGER (78.24, 78.27): a node per stamp, the per-act data
 /// standing at it, and the act's receipt where the line is in the snapshot.

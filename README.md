@@ -888,7 +888,7 @@ mycelium-sdk = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.3.0" 
 | `readings` | The typed readings a client may ask a hypha for: observer, why, law register, receipts, rows, reserve, probe |
 | `mind` | The reference mind, `Mind::open` and `Mind::open_persistent` |
 | `wire` | `WIRE_VERSION` (`0x0104`, wire v1.4) and `ACT_TABLE`, every act the SDK may send |
-| `laws` | The L0 law register (`Law`, `LAWS`, `LAW_VERSION` 4, `PARAMETERS`), its read (`encode_register_request`, `decode_register_reply`), and the `forms` law ids (`FORM_LAW_IDS`); every law shared is tabled in [`docs/MU-EQUATIONS.md`](docs/MU-EQUATIONS.md) §11 |
+| `laws` | The L0 law register (`Law`, `LAWS`, `LAW_VERSION` 5, `PARAMETERS`), its read (`encode_register_request`, `decode_register_reply`), and the `forms` law ids (`FORM_LAW_IDS`); every law shared is tabled in [`docs/MU-EQUATIONS.md`](docs/MU-EQUATIONS.md) §11 |
 | `house` | A kernel's uplink (its house): domain founding (`DomainGenesis`, `Founded`), the reserve and origin, the universe (`Genesis`, `Geometry`, `UniverseReading`), the endowment (`Manifest`, `Granted`, `EndowmentReading`), the house side of seats (`Post`, `Seats`, `HouseMail`, the listing and mail codecs), laws verify (`Transition`, `Verdict`, `verify_sized`, `encode_verify_request`, `decode_verify_reply`), the clock (`CoreStamp`, `TPoint`), the Concordance signature (`ConcordanceSignature`, `CONCORDANCE_HASH`), framing (`Frame`, `Stratum`) and `HyphaKey`; the wire modules `domain`, `universe`, `endowment`, `seat`, `atlas`, `uplink`, `challenge` whole |
 | `conformance` | The client conformance statement (`STATEMENT`: two profiles, `Profile::Mind` and `Profile::Kernel`, each with MUST and MAY acts, each reply's decoder and fields), `check_codecs` in process and `run` against a hypha, each for the profiles a client declares ([`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md)) |
 | `forms` | The law forms (the `forms` crate) |
@@ -1002,10 +1002,10 @@ to both. Conformance is by decoded exact values, never golden bytes:
 ```sh
 cargo build --release -p mycelium-sdk --example conformance
 target/release/examples/conformance --endpoint 127.0.0.1:7610
-#   passed  MUST laws register: law version 4: 6 laws, each at its coordinate with its statement
+#   passed  MUST laws register: law version 5: 6 laws, each at its coordinate with its statement
 #   passed  MUST task: 4 train pairs, 1 test inputs
 #   passed  MUST solve: solved (bounty), paid μ [88, 0, 0, 92]
-#   conforms (profile mind): wire 0x0104, law version 4
+#   conforms (profile mind): wire 0x0104, law version 5
 target/release/examples/conformance --endpoint 127.0.0.1:7610 --profile kernel
 ```
 

@@ -8,8 +8,7 @@ use crate::anastome::dialogue::challenge::{Challenge, Challenged, Finality};
 use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
 use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Mouth, Offer, Side, State, Tariff, Untariffed};
 use crate::anastome::dialogue::uplink::{TierFold, Uplinked};
-use crate::chronometry::ActKind;
-use crate::physics::laws::CHALLENGE_WINDOW;
+use super::common::close_through;
 use crate::server::cognition::handoff::toll_key;
 use crate::server::cognition::Court;
 use ed25519_dalek::SigningKey;
@@ -114,11 +113,6 @@ fn fund(k: &mut Court, party: [u8; 32], mu: [u64; 4]) {
     k.treasury.genesis(party, mu, anchor);
 }
 
-fn pass(k: &mut Court, h: u64) {
-    while k.chain.head_height() < h {
-        k.append_step(ActKind::List, [1; 32], [2; 32]);
-    }
-}
 
 /// THE PARTS SUM TO THE CHARGE EXACTLY, NO DUST, under adversarial shares:
 /// thirds, sevenths, shares within one part in 10⁹ of whole, shares of
@@ -224,10 +218,10 @@ fn settle_windows_releases_toll_parts_together() {
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.toll_held_for(&verifying(&line())), Some([3, 0, 0, 5]), "the toll held across a restart");
     let mut k = booted;
-    pass(&mut k, accepted.h + CHALLENGE_WINDOW - 1);
+    assert!(k.window_close(accepted.h).is_err(), "no keeper has carried the acceptance yet");
     k.settle_windows();
     assert_eq!(k.treasury.balance_mu(&verifying(&line())), [0; 4], "the window stands");
-    pass(&mut k, accepted.h + CHALLENGE_WINDOW);
+    close_through(&mut k, accepted.h).expect("the acceptance's window closes");
     k.settle_windows();
     assert_eq!(k.treasury.balance_mu(&verifying(&line())), [3, 0, 0, 5]);
     assert_eq!(k.treasury.balance_mu(&verifying(&reserve(4))), [7, 0, 0, 10]);
@@ -247,17 +241,17 @@ fn challenge_default_refunds_toll_parts_together() {
     let traveller = verifying(&reserve(5));
     fund(&mut k, traveller, [10, 0, 0, 15]);
     let Handed::Sealed { id, .. } = traverse(&mut k, m, passage(7, 3, 1)) else { panic!() };
-    let Handed::Sealed { at: accepted, .. } = k.handoff(&Handoff::Accept { id }.sign(&reserve(4))) else { panic!() };
+    assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(4))), Handed::Sealed { .. }), "accepted");
     let leaving = vec![([1; 32], [-7, 0, 0, -3])];
     let fold = TierFold { tier: traveller, prefix: [1; 32], rows: leaving, declared: Vec::new(), children: Vec::new(), handoffs: vec![(id, Side::Out)] };
     let Uplinked::Admitted { at, .. } = k.admit_uplink(&fold.sign(&reserve(5))) else { panic!("the OUT side consumed") };
     let at = crate::anastome::dialogue::uplink::FoldAt::sealed(at);
     assert!(k.fold_holds_toll(&at), "the toll rides on the fold");
-    let Challenged::Demanded { deadline, .. } = k.challenge(&Challenge::Demand { fold: at.clone() }.sign(&key(60))) else { panic!() };
-    pass(&mut k, accepted.h + CHALLENGE_WINDOW);
+    let Challenged::Demanded { at: asked, .. } = k.challenge(&Challenge::Demand { fold: at.clone() }.sign(&key(60))) else { panic!() };
+    close_through(&mut k, at.stamp.h).expect("the acceptance's and the fold's windows close");
     k.settle_windows();
     assert_eq!(k.toll_held_for(&verifying(&line())), Some([3, 0, 0, 5]), "the demand holds it past the window");
-    pass(&mut k, deadline);
+    close_through(&mut k, asked.h).expect("the demand's window closes");
     assert!(matches!(k.challenge(&Challenge::Default { fold: at.clone() }.sign(&key(60))), Challenged::Falsified { .. }));
     assert_eq!(k.finality(&at), Finality::Falsified);
     assert_eq!(k.treasury.balance_mu(&traveller), [10, 0, 0, 15], "every part back together");

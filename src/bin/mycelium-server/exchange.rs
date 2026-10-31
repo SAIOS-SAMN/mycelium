@@ -385,14 +385,28 @@ impl Exchange {
         // 78.153c — whether this court's standing (its acts among it) has
         // been published since boot.
         let mut standing_published = false;
+        // 78.125 (law version 5) — the change of the keepers' reach this
+        // court was last handed.
+        let mut reach_seen = 0u64;
         loop {
             std::thread::yield_now();
             crate::held::yield_to_waiters();
+            // The keepers' reach of this court, read off the keepers' own
+            // lock before the court's, where it moved.
+            let reach = crate::tshelf::reach_moved(&mut reach_seen);
             if let Ok(mut h) = crate::held::held!(court) {
                 let (offers, deficit, tick) = h.run(|k, reads| {
                     crate::held::step("court stroke");
                     // 78.153b — the stroke the hold was taken with.
                     k.court_stroke_on(reads);
+                    // 78.125 (law version 5) — the windows the reach closes,
+                    // sealed once.
+                    if let Some(r) = &reach {
+                        crate::held::step("close windows");
+                        if let (Some(sealed), Ok(x)) = (k.close_windows(r), r) {
+                            eprintln!("  court windows closed through h {} at h {}", x.through, sealed.stamp.h);
+                        }
+                    }
                     // A question the observer left while this stroke held the
                     // court is answered under the lock already held.
                     crate::held::step("answer standing");

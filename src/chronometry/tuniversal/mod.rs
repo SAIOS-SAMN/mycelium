@@ -9,6 +9,7 @@
 pub mod keepers;
 pub mod ops;
 pub mod point;
+pub mod reach;
 pub mod reading;
 pub mod record;
 pub mod shelf;
@@ -18,6 +19,7 @@ mod tests;
 
 pub use keepers::{Admitted, Edge, KeeperRefusal, Keepers, Residual};
 pub use point::{Origin, TPoint};
+pub use reach::{KeeperLine, Reach, WindowRefusal, Witness};
 pub use reading::{Cited, Tick, TickReading};
 pub use record::{LastSigned, Recorded};
 pub use shelf::{Seen, TShelf};

@@ -456,6 +456,10 @@ pub struct Court {
     /// restated, the line's head and sums so far. Volatile: a restart opens a
     /// publication again; its entries are never held (LD0).
     pub(crate) reconstructions: crate::network::nerve::Keyed<super::challenge::Reconstruction>,
+    /// 78.125 (law version 5) — THE WINDOW BOOK: the height version 5 holds
+    /// from, and each sealed close of the challenge windows (`Cite::Window`)
+    /// — persisted on the court's own node (`LEAF_WINDOWS`).
+    pub(crate) windows: super::window::WindowBook,
     /// 78.126 — THE HANDOFFS: each offer held while a side is open, and the
     /// sides each fold consumed — persisted on the court's own node
     /// (`LEAF_HANDOFFS`).

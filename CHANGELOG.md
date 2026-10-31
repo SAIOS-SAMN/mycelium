@@ -26,6 +26,23 @@ such change is named here.
   `BODY_BUDGET`, `ACCOUNT_SHARDS`, `P_SERIES_CAP`, `NESTING`,
   `CANDIDATES_PER_PAIR`, and the soak instruments' strokes and calibration
   count. A mutation-audit entry strips a registered tag.
+- **The challenge window is a sealed reach and return** (D1.1; law
+  version 5, `LAW_VERSION` 4 → 5; Concordance 4.5 and 5.4, agreement
+  version 4; MU-RECURSION 78.125 and 78.126 amended forward). A window
+  closes once every other keeper's signed reading cites the court at or
+  above its opening and that keeper has read again: the court seals one
+  `Cite::Window` (receipt tag 15) naming the witnesses, and every window
+  opened at or below the reach reads closed at that height
+  (`Court::window_close`, `Court::close_windows`,
+  `chronometry::tuniversal::{Reach, WindowRefusal}`). A lone court closes
+  nothing (`NoOtherKeeper`). Wire: `Finality::Provisional { opened, closed }`,
+  `Challenged::Demanded { deadline: Option<u64> }`,
+  `Challenged::Reopened { closes: Option<u64> }`,
+  `State::Offered { opened }`; `ACT_LAWS` mode 5 serves no parameter.
+  Layout: the court's node gains `LEAF_WINDOWS`; tolls, claims and offers
+  hold the height they opened at, and a home written under version 4
+  closes its windows by version 4 (`h₀ + 1024`). New log line
+  `court windows closed through h {n} at h {m}`.
 
 ### SDK
 - `mycelium_sdk::rule` gains `perceive_family`, `Frames` and

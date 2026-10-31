@@ -17,7 +17,6 @@
 //! RECYCLED POOL, from which a closer's POUW is paid first (`mint_to`).
 
 use super::atlas::record_key;
-use super::challenge::window_end;
 use super::Court;
 use crate::anastome::dialogue::atlas::MapRecord;
 use crate::anastome::dialogue::crossing::{CrossRefusal, Crossed, Edge, Gas, Side, SignedTraverse};
@@ -72,7 +71,7 @@ impl Court {
         let mut at = staker.to_vec();
         at.extend_from_slice(id);
         self.treasury.claim_stake(staker, &claim_key(&at), fee, (r.stamp, r.chain_hash)).ok()?;
-        let claim = super::atlas::Claim { parts: vec![(self.identity, fee)], until: window_end(r.stamp.h), at: r.stamp, receipt: r.chain_hash };
+        let claim = super::atlas::Claim { parts: vec![(self.identity, fee)], opened: r.stamp.h, at: r.stamp, receipt: r.chain_hash };
         self.atlas.claims.insert(at, claim);
         Some(())
     }
@@ -195,7 +194,8 @@ impl Court {
     /// they name, each part's rows citing the act that drew it. Claims paid.
     pub(crate) fn release_claims(&mut self) -> usize {
         let head = self.chain.head_height();
-        let due: Vec<(Vec<u8>, super::atlas::Claim)> = self.atlas.claims.scoped().filter(|(_, c)| head >= c.until).map(|(k, c)| (k, c.clone())).collect();
+        let due: Vec<(Vec<u8>, super::atlas::Claim)> =
+            self.atlas.claims.scoped().filter(|(_, c)| self.window_closed(c.opened, head)).map(|(k, c)| (k, c.clone())).collect();
         let mut paid = 0;
         for (k, c) in due {
             if self.treasury.release_split(&claim_key(&k), &c.parts, (c.at, c.receipt)).is_ok() {

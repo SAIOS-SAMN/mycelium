@@ -61,7 +61,7 @@ acts, each once. Each `ActRequirement` names:
 
 `Statement::union(profiles)` is the acts of a client declaring
 `profiles`. At this tree the statement stands at wire `0x0104` (v1.4) and
-law version 4.
+law version 5.
 
 ### 2.1 The mind profile
 

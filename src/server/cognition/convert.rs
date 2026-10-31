@@ -14,7 +14,6 @@
 //! challenger's bounty, half retired (POWR) — the hook is wired and moves
 //! nothing until bonds price it.
 
-use super::challenge::window_end;
 use super::Court;
 use crate::anastome::dialogue::domain::{Founded, SignedReservation};
 use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Side, SignedHandoff, State};
@@ -93,9 +92,9 @@ impl Conversion {
             v.extend_from_slice(&m.to_le_bytes());
         }
         match self.state {
-            State::Offered { until } => {
+            State::Offered { opened } => {
                 v.push(0);
-                v.extend_from_slice(&until.to_le_bytes());
+                v.extend_from_slice(&opened.to_le_bytes());
             }
             State::Accepted => v.push(1),
             State::Returned => v.push(2),
@@ -139,7 +138,7 @@ impl Conversion {
             *m = u64_at(b, p)?;
         }
         let state = match byte(b, p)? {
-            0 => State::Offered { until: u64_at(b, p)? },
+            0 => State::Offered { opened: u64_at(b, p)? },
             1 => State::Accepted,
             2 => State::Returned,
             _ => return None,
@@ -419,7 +418,7 @@ impl Court {
                 if self.treasury.hold(c.holder, &id, c.mu, (r.stamp, r.chain_hash)).is_err() {
                     return refuse(R::HolderShort);
                 }
-                let until = window_end(r.stamp.h);
+                let opened = r.stamp.h;
                 let held = Conversion {
                     dir: Direction::In,
                     tier: c.tier,
@@ -427,22 +426,22 @@ impl Court {
                     identity: c.identity,
                     g: c.g,
                     mu: c.mu,
-                    state: State::Offered { until },
+                    state: State::Offered { opened },
                     side: None,
                     at: r.stamp.key(),
                 };
                 self.hold_conversion(id, held);
-                Handed::Sealed { at: r.stamp, receipt: r.chain_hash, id, state: State::Offered { until } }
+                Handed::Sealed { at: r.stamp, receipt: r.chain_hash, id, state: State::Offered { opened } }
             }
             Handoff::Accept { .. } | Handoff::Refuse { .. } | Handoff::Expire { .. } => {
                 let Some(held) = self.handoffs.conversions.get(&id).cloned() else { return refuse(R::UnknownId) };
-                let State::Offered { until } = held.state else { return refuse(R::Answered) };
+                let State::Offered { opened } = held.state else { return refuse(R::Answered) };
                 let expiring = matches!(h.handoff, Handoff::Expire { .. });
                 let filer = if expiring { held.holder } else { held.tier };
                 if h.who != filer {
                     return refuse(R::NotTheTier);
                 }
-                if expiring != (head >= until) {
+                if expiring != self.window_closed(opened, head) {
                     return refuse(R::Window);
                 }
                 let kind = match h.handoff {

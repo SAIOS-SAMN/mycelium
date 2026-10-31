@@ -7,8 +7,8 @@
 
 use crate::anastome::dialogue::challenge::{line_head, Challenge, ChallengeRefusal, Challenged, Entry, Finality};
 use crate::anastome::dialogue::uplink::{Child, ChildNet, FoldAt, Net, TierFold, Uplinked};
-use crate::chronometry::{ActKind, Cite, Stamp};
-use crate::physics::laws::CHALLENGE_WINDOW;
+use super::common::close_through;
+use crate::chronometry::{Cite, Stamp};
 use crate::server::cognition::Court;
 use crate::transducer::cech::coefficient::Coefficient;
 use ed25519_dalek::SigningKey;
@@ -124,13 +124,6 @@ fn evidence(f: &TierFold, at: &FoldAt, entries: Vec<Entry>) -> Challenge {
     Challenge::Evidence { fold: at.clone(), rows: f.rows.clone(), declared: f.declared.clone(), children: f.children.clone(), entries }
 }
 
-/// The court's line carried past `h` by acts of its own.
-fn pass(k: &mut Court, h: u64) {
-    while k.chain.head_height() < h {
-        k.append_step(ActKind::List, [1; 32], [2; 32]);
-    }
-}
-
 /// ONLY THE RESERVE UPLINKS (78.138): a line's fold put straight to the
 /// court is refused by name; carried in its reserve's, it stands.
 #[test]
@@ -162,8 +155,8 @@ fn challenge_upholds_honest_fold_as_final_upheld() {
     let Challenged::Upheld { prefix, .. } = k.challenge(&evidence(&f, &at, a_entries()).sign(&challenger())) else { panic!("upheld") };
     let head = k.chain.head().expect("sealed");
     assert_eq!(head.cites, vec![Cite::Challenge { fold: at.clone(), kind: 1, outcome: 1, evidence: prefix }], "the upheld prefix on the receipt");
-    assert_eq!(k.finality(&at), Finality::Provisional { until: at.stamp.h + CHALLENGE_WINDOW });
-    pass(&mut k, at.stamp.h + CHALLENGE_WINDOW);
+    assert_eq!(k.finality(&at), Finality::Provisional { opened: at.stamp.h, closed: None });
+    close_through(&mut k, at.stamp.h).expect("the window closes, sealed");
     assert_eq!(k.finality(&at), Finality::Final { upheld: true });
     let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "the windows restore");
@@ -190,13 +183,15 @@ fn challenge_falsifies_fold_line_does_not_sum_to() {
     assert_eq!(k.finality(&FoldAt::sealed(at.stamp)), Finality::Unwound, "the reserve refiles without the line");
     assert_eq!(k.bond_of(&verifying(&a)), [2, 0, 0, 0], "the line's own bond slashed by half");
     assert_eq!(k.bond_of(&verifying(&reserve())), reserve_bond, "never the reserve's");
-    pass(&mut k, at.stamp.h + CHALLENGE_WINDOW);
+    let head = k.chain.head_height();
+    assert!(close_through(&mut k, head).is_none(), "a falsified fold holds no window to close");
     assert_eq!(k.finality(&at), Finality::Falsified, "never final");
 }
 
-/// AVAILABILITY: a demand gives the tier `W` heights from the demand; a second
-/// demand and an early default are refused; unanswered, the default
-/// falsifies. Answered in time, the default is refused — it was published.
+/// AVAILABILITY: a demand gives the tier the window the demand opens, open
+/// until every other keeper has carried it and returned; a second demand and
+/// an early default are refused; unanswered, the default falsifies. Answered
+/// in time, the default is refused — it was published.
 #[test]
 fn challenge_default_falsifies_unpublished_demand() {
     let (a, ..) = tiers();
@@ -205,14 +200,14 @@ fn challenge_default_falsifies_unpublished_demand() {
     let at = sealed(&mut k, f.clone(), &a);
     let demand = || Challenge::Demand { fold: at.clone() };
     let Challenged::Demanded { at: asked, deadline, .. } = k.challenge(&demand().sign(&challenger())) else { panic!("demanded") };
-    assert_eq!(deadline, asked.h + CHALLENGE_WINDOW);
+    assert_eq!(deadline, None, "open until the keepers carry the demand and return");
     // A resend by the same filer is answered with the original; another
     // filer's demand is refused — one demand per fold.
     let Challenged::Demanded { at: again, .. } = k.challenge(&demand().sign(&challenger())) else { panic!("resent") };
     assert_eq!(again, asked, "the original demand, nothing sealed twice");
     assert_eq!(k.challenge(&demand().sign(&key(41))), Challenged::Refused(ChallengeRefusal::Demanded));
     assert_eq!(k.challenge(&Challenge::Default { fold: at.clone() }.sign(&challenger())), Challenged::Refused(ChallengeRefusal::NotDue));
-    pass(&mut k, deadline);
+    close_through(&mut k, asked.h).expect("the demand's window closes");
     assert_eq!(k.finality(&at), Finality::Blocked, "the default is due and unclaimed: never final");
     assert!(matches!(k.challenge(&Challenge::Default { fold: at.clone() }.sign(&challenger())), Challenged::Falsified { .. }));
     assert_eq!(k.finality(&at), Finality::Falsified);
@@ -220,9 +215,9 @@ fn challenge_default_falsifies_unpublished_demand() {
     // Answered in time: the tier publishes, and no default stands.
     let mut k = founded();
     let at = sealed(&mut k, f.clone(), &a);
-    let Challenged::Demanded { deadline, .. } = k.challenge(&Challenge::Demand { fold: at.clone() }.sign(&challenger())) else { panic!() };
+    let Challenged::Demanded { at: asked, .. } = k.challenge(&Challenge::Demand { fold: at.clone() }.sign(&challenger())) else { panic!() };
     assert!(matches!(k.challenge(&evidence(&f, &at, a_entries()).sign(&a)), Challenged::Upheld { .. }), "the tier publishes");
-    pass(&mut k, deadline);
+    close_through(&mut k, asked.h).expect("the windows close");
     assert_eq!(k.challenge(&Challenge::Default { fold: at.clone() }.sign(&challenger())), Challenged::Refused(ChallengeRefusal::Published));
     assert_eq!(k.finality(&at), Finality::Final { upheld: true });
 }
@@ -248,10 +243,10 @@ fn finality_waits_on_netted_folds_and_unwinds_ancestors() {
     let (pf, p_line) = p_over(&a_at);
     let p_at = sealed(&mut k, pf.clone(), &p);
     assert!(matches!(k.challenge(&evidence(&pf, &p_at, p_line).sign(&challenger())), Challenged::Upheld { .. }), "own entries only");
-    let Challenged::Demanded { deadline, .. } = k.challenge(&Challenge::Demand { fold: a_at.clone() }.sign(&challenger())) else { panic!() };
-    pass(&mut k, p_at.stamp.h + CHALLENGE_WINDOW);
+    let Challenged::Demanded { at: asked, .. } = k.challenge(&Challenge::Demand { fold: a_at.clone() }.sign(&challenger())) else { panic!() };
+    close_through(&mut k, p_at.stamp.h).expect("P's window closes");
     assert_eq!(k.finality(&p_at), Finality::Blocked, "its own window passed, but a fold it nets is not final");
-    pass(&mut k, deadline);
+    close_through(&mut k, asked.h).expect("the demand's window closes");
     let reply = k.challenge(&Challenge::Default { fold: a_at.clone() }.sign(&challenger()));
     assert!(matches!(reply, Challenged::Falsified { unwound: 3, .. }), "P and the two carrying reserve folds: {reply:?}");
     assert_eq!((k.finality(&a_at), k.finality(&p_at)), (Finality::Falsified, Finality::Unwound));
@@ -307,7 +302,7 @@ fn challenge_books_correction_arbitrage_by_closing_tier() {
     let (q_at, child) = arbitrage(&mut k);
     assert_eq!(k.challenge(&book(&q_at, child.clone()).sign(&challenger())), Challenged::Refused(ChallengeRefusal::NotTheTier));
     assert_eq!(k.challenge(&book(&q_at, vec![9; 64]).sign(&q)), Challenged::Refused(ChallengeRefusal::NoObstruction));
-    pass(&mut k, q_at.stamp.h + CHALLENGE_WINDOW);
+    close_through(&mut k, q_at.stamp.h).expect("Q's window closes");
     assert_eq!(k.finality(&q_at), Finality::Blocked, "an open arbitrage at its fold");
     assert_eq!(k.challenge(&book(&q_at, child).sign(&q)), Challenged::Refused(ChallengeRefusal::Closed), "booked within the window");
     // Booked within the window: discharged, and final.
@@ -315,7 +310,7 @@ fn challenge_books_correction_arbitrage_by_closing_tier() {
     let (q_at, child) = arbitrage(&mut k);
     assert!(matches!(k.challenge(&book(&q_at, child).sign(&q)), Challenged::Discharged { .. }));
     assert!(k.open_obstructions(&domain()).is_empty(), "discharged");
-    pass(&mut k, q_at.stamp.h + CHALLENGE_WINDOW);
+    close_through(&mut k, q_at.stamp.h).expect("Q's window closes");
     assert_eq!(k.finality(&q_at), Finality::Final { upheld: false }, "unchallenged, every fold it nets final");
 }
 
@@ -424,13 +419,12 @@ fn orbit_prunes_final_child_and_parent_reads_final() {
     let (a, p, _) = tiers();
     let mut k = founded();
     let a_at = sealed(&mut k, a_fold(), &a);
-    pass(&mut k, a_at.stamp.h + CHALLENGE_WINDOW / 2);
     let (pf, _) = p_over(&a_at);
     let p_at = sealed(&mut k, pf.clone(), &p);
     let open = Challenge::Open { fold: p_at.clone(), rows: pf.rows.clone(), declared: Vec::new(), children: pf.children.clone() };
     assert!(matches!(k.challenge(&open.sign(&challenger())), Challenged::Streaming { .. }));
     // A's window closes; P's stands.
-    pass(&mut k, a_at.stamp.h + CHALLENGE_WINDOW);
+    close_through(&mut k, a_at.stamp.h).expect("A's window closes");
     let _ = k.orbit();
     assert!(!k.ledgers.records.contains(&a_at.key()), "A's record pruned");
     assert!(k.ledgers.finals.contains(&a_at.key()), "to a stub its unfinished parent names");
@@ -440,14 +434,14 @@ fn orbit_prunes_final_child_and_parent_reads_final() {
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.finality(&a_at), Finality::Final { upheld: false }, "the stub read final across the restart");
     // P's window closes: final through its pruned child.
-    pass(&mut booted, p_at.stamp.h + CHALLENGE_WINDOW);
+    close_through(&mut booted, p_at.stamp.h).expect("P's window closes");
     assert_eq!(booted.finality(&p_at), Finality::Final { upheld: false }, "the parent reads final through the stub");
     let _ = booted.orbit();
     assert!(booted.ledgers.records.is_empty(), "every record final and pruned");
     assert_eq!(booted.finality(&a_at), Finality::Final { upheld: false });
     assert_eq!(booted.finality(&p_at), Finality::Final { upheld: false });
     // The stream on the original court: its window closed, it is let go.
-    pass(&mut k, p_at.stamp.h + CHALLENGE_WINDOW);
+    close_through(&mut k, p_at.stamp.h).expect("P's window closes");
     let _ = k.orbit();
     assert!(k.reconstructions.is_empty(), "a stream whose window closed is let go");
 }
@@ -455,8 +449,8 @@ fn orbit_prunes_final_child_and_parent_reads_final() {
 /// A SELF-DEMAND WITHDRAWN REOPENS THE WINDOW, ONCE (as
 /// ruled): the tier demanded its own fold and let the deadline pass — it
 /// reads blocked; withdrawn by the tier, naming its demand's receipt, the
-/// evidence window reopens `W` from the withdrawal, the fold reads
-/// provisional, and its evidence is upheld. Another key cannot withdraw it,
+/// evidence window reopens at the withdrawal, the fold reads provisional
+/// through it, and its evidence is upheld. Another key cannot withdraw it,
 /// another stamp is not the demand, a second withdrawal is refused; an
 /// external challenger's demand is never withdrawn, and a default claimed
 /// closes the fold.
@@ -466,15 +460,15 @@ fn challenge_withdraw_reopens_self_demand_once() {
     let mut k = founded();
     let f = a_fold();
     let at = sealed(&mut k, f.clone(), &a);
-    let Challenged::Demanded { at: demand, deadline, .. } = k.challenge(&Challenge::Demand { fold: at.clone() }.sign(&a)) else { panic!("demanded") };
-    pass(&mut k, deadline);
+    let Challenged::Demanded { at: demand, .. } = k.challenge(&Challenge::Demand { fold: at.clone() }.sign(&a)) else { panic!("demanded") };
+    close_through(&mut k, demand.h).expect("the demand's window closes");
     assert_eq!(k.finality(&at), Finality::Blocked, "the self-demand's deadline passed unanswered");
     let withdraw = |d: Stamp| Challenge::Withdraw { fold: at.clone(), demand: d };
     assert_eq!(k.challenge(&withdraw(demand).sign(&challenger())), Challenged::Refused(ChallengeRefusal::NotTheTier));
     assert_eq!(k.challenge(&withdraw(at.stamp).sign(&a)), Challenged::Refused(ChallengeRefusal::NotTheDemand));
-    let Challenged::Reopened { until, at: w, .. } = k.challenge(&withdraw(demand).sign(&a)) else { panic!("reopened") };
-    assert_eq!(until, w.h + CHALLENGE_WINDOW);
-    assert_eq!(k.finality(&at), Finality::Provisional { until }, "provisional through the reopened window");
+    let Challenged::Reopened { closes, at: w, .. } = k.challenge(&withdraw(demand).sign(&a)) else { panic!("reopened") };
+    assert_eq!(closes, None, "the reopened window stands open");
+    assert_eq!(k.finality(&at), Finality::Provisional { opened: w.h, closed: None }, "provisional through the reopened window");
     assert_eq!(k.challenge(&withdraw(demand).sign(&a)), Challenged::Refused(ChallengeRefusal::Withdrawn), "a second chance is one");
     assert!(matches!(k.challenge(&evidence(&f, &at, a_entries()).sign(&a)), Challenged::Upheld { .. }), "the evidence it owed");
     // Once per fold.
@@ -487,9 +481,9 @@ fn challenge_withdraw_reopens_self_demand_once() {
     // An external challenger's demand is never withdrawn; a default closes it.
     let mut k = founded();
     let at = sealed(&mut k, f, &a);
-    let Challenged::Demanded { at: external, deadline, .. } = k.challenge(&Challenge::Demand { fold: at.clone() }.sign(&challenger())) else { panic!() };
+    let Challenged::Demanded { at: external, .. } = k.challenge(&Challenge::Demand { fold: at.clone() }.sign(&challenger())) else { panic!() };
     assert_eq!(k.challenge(&Challenge::Withdraw { fold: at.clone(), demand: external }.sign(&a)), Challenged::Refused(ChallengeRefusal::NotTheDemand));
-    pass(&mut k, deadline);
+    close_through(&mut k, external.h).expect("the demand's window closes");
     assert!(matches!(k.challenge(&Challenge::Default { fold: at.clone() }.sign(&challenger())), Challenged::Falsified { .. }));
     assert_eq!(k.challenge(&Challenge::Withdraw { fold: at, demand: external }.sign(&a)), Challenged::Refused(ChallengeRefusal::Closed));
 }
@@ -530,7 +524,143 @@ fn finality_grandfathers_pre_line_fold() {
     let p_line = vec![Entry { rows: vec![(who(1), g(-8)), (who(2), g(8))], declared: Vec::new() }];
     let pf = fold(&p, &p_line, vec![(who(1), g(12))], Vec::new(), vec![whole(&rf, &r_at, 2)]);
     let p_at = sealed(&mut k, pf, &p);
-    pass(&mut k, p_at.stamp.h + CHALLENGE_WINDOW);
+    close_through(&mut k, p_at.stamp.h).expect("P's window closes");
     assert_eq!(k.finality(&p_at), Finality::Final { upheld: false }, "a grandfathered child is final");
     assert_eq!(k.finality(&FoldAt { stamp: Stamp { h: 7, ..at }, path: vec![0] }), Finality::Unrecorded);
+}
+
+/// Two other keepers of `court`: the keepers' keys, and each one's line citing the
+/// court at `carried` (the first) and at `carried + gap` (the second).
+fn keepers_citing(court: [u8; 32], carried: u64, gap: u64) -> Vec<([u8; 32], Vec<crate::chronometry::tuniversal::TickReading>)> {
+    use super::common::keeper_line;
+    let (x, y) = (key(61), key(62));
+    vec![(verifying(&x), keeper_line(&x, court, carried, 1)), (verifying(&y), keeper_line(&y, court, carried + gap, 5))]
+}
+
+use super::common::reach_over as reach_of;
+
+/// 78.125, LAW VERSION 5 — A WINDOW CLOSES AT REACH AND RETURN: every other
+/// keeper cites the court at or above the opening and reads again; the reach
+/// is the least height they carried it to (here the first keeper's, the
+/// second carrying it further), and one sealed `Cite::Window` closes every
+/// window opened at or below it at that receipt's height. A window opened
+/// above the reach stays open, naming the reach.
+#[test]
+fn window_closes_at_reach_and_return() {
+    let (a, p, _) = tiers();
+    let mut k = founded();
+    let at = sealed(&mut k, a_fold(), &a);
+    let lines = keepers_citing(k.identity, at.stamp.h, 3);
+    let reach = reach_of(k.identity, &lines);
+    assert_eq!(reach.as_ref().map(|r| r.through), Ok(at.stamp.h), "the least height every other keeper carried");
+    let (pf, _) = p_over(&at);
+    let p_at = sealed(&mut k, pf, &p);
+    let r = k.close_windows(&reach).expect("sealed");
+    assert!(matches!(r.cites.as_slice(), [Cite::Window { through, witnesses }] if *through == at.stamp.h && witnesses.len() == 4));
+    assert_eq!(k.window_close(at.stamp.h), Ok(r.stamp.h));
+    assert_eq!(k.finality(&at), Finality::Final { upheld: false });
+    assert_eq!(k.window_close(p_at.stamp.h), Err(crate::chronometry::tuniversal::WindowRefusal::Unreached { reach: at.stamp.h }));
+    assert!(matches!(k.finality(&p_at), Finality::Provisional { closed: None, .. }));
+}
+
+/// A WINDOW STANDS OPEN WHILE ONE KEEPER HAS NOT CARRIED IT: the second
+/// keeper read twice but never cited the court; the reach is refused naming
+/// it, nothing is sealed, and the fold reads provisional with no close.
+#[test]
+fn window_stays_open_while_one_keeper_uncited() {
+    use crate::chronometry::tuniversal::WindowRefusal;
+    let (a, ..) = tiers();
+    let mut k = founded();
+    let at = sealed(&mut k, a_fold(), &a);
+    let mut lines = keepers_citing(k.identity, at.stamp.h, 0);
+    let silent = key(62);
+    lines[1].1 = super::common::keeper_line(&silent, [0x77; 32], at.stamp.h, 5);
+    let reach = reach_of(k.identity, &lines);
+    assert_eq!(reach, Err(WindowRefusal::Unwitnessed { keeper: verifying(&silent) }));
+    assert!(k.close_windows(&reach).is_none(), "nothing sealed");
+    assert_eq!(k.window_close(at.stamp.h), Err(WindowRefusal::Unwitnessed { keeper: verifying(&silent) }));
+    assert_eq!(k.finality(&at), Finality::Provisional { opened: at.stamp.h, closed: None });
+}
+
+/// A LONE COURT CLOSES NOTHING (TU-3: one keeper alone finalises nothing):
+/// with no keeper but the court, the reach is refused `NoOtherKeeper`, and a
+/// court never handed a reach reads the same.
+#[test]
+fn window_never_closes_without_another_keeper() {
+    use crate::chronometry::tuniversal::WindowRefusal;
+    let (a, ..) = tiers();
+    let mut k = founded();
+    let at = sealed(&mut k, a_fold(), &a);
+    assert_eq!(k.window_close(at.stamp.h), Err(WindowRefusal::NoOtherKeeper), "never handed a reach");
+    let own = super::common::keeper_line(&key(63), k.identity, at.stamp.h, 1);
+    let reach = reach_of(k.identity, &[(k.identity, own)]);
+    assert_eq!(reach, Err(WindowRefusal::NoOtherKeeper));
+    assert!(k.close_windows(&reach).is_none());
+    assert_eq!(k.window_close(at.stamp.h), Err(WindowRefusal::NoOtherKeeper));
+    assert_eq!(k.finality(&at), Finality::Provisional { opened: at.stamp.h, closed: None });
+}
+
+/// A CLOSE RECONSTRUCTS FROM ITS SEALED CITATION: booted from the snapshot,
+/// the court holds the `Cite::Window` receipt and reads every window's close
+/// and every fold's finality exactly as before.
+#[test]
+fn window_close_reconstructs_from_sealed_citation() {
+    let (a, ..) = tiers();
+    let mut k = founded();
+    let at = sealed(&mut k, a_fold(), &a);
+    let r = close_through(&mut k, at.stamp.h).expect("sealed");
+    let mut booted = Court::new();
+    assert!(booted.restore(&k.snapshot()), "restores");
+    assert_eq!(booted.chain.node(&r.stamp).map(|n| n.cites.clone()), Some(r.cites.clone()), "the close on the line");
+    assert_eq!(booted.window_close(at.stamp.h), k.window_close(at.stamp.h));
+    assert_eq!(booted.finality(&at), Finality::Final { upheld: false });
+}
+
+/// A WINDOW OPENED UNDER LAW VERSION 4 CLOSES BY VERSION 4: a home read
+/// without a window book holds version 5 from its head, and a fold sealed
+/// below it closes at its seal plus 1024 heights, with no keeper's reach.
+#[test]
+fn window_opened_under_v4_closes_at_fixed_end() {
+    use crate::physics::laws::CHALLENGE_WINDOW;
+    let (a, ..) = tiers();
+    let mut k = founded();
+    let at = sealed(&mut k, a_fold(), &a);
+    k.read_v4_windows();
+    let end = at.stamp.h + CHALLENGE_WINDOW;
+    assert_eq!(k.window_close(at.stamp.h), Ok(end));
+    assert_eq!(k.finality(&at), Finality::Provisional { opened: at.stamp.h, closed: Some(end) });
+    while k.chain.head_height() < end {
+        k.append_step(crate::chronometry::ActKind::List, [1; 32], [2; 32]);
+    }
+    assert_eq!(k.finality(&at), Finality::Final { upheld: false });
+}
+
+/// A FORGED WITNESS IS REFUSED: a return reading whose signature does not
+/// verify under its keeper closes nothing, refused naming the keeper.
+#[test]
+fn window_refuses_witness_with_forged_signature() {
+    use crate::chronometry::tuniversal::WindowRefusal;
+    let (a, ..) = tiers();
+    let mut k = founded();
+    let at = sealed(&mut k, a_fold(), &a);
+    let mut reach = reach_of(k.identity, &keepers_citing(k.identity, at.stamp.h, 0)).expect("witnessed");
+    reach.witnesses[0].back.sig[0] ^= 1;
+    let keeper = reach.witnesses[0].back.keeper;
+    assert!(k.close_windows(&Ok(reach)).is_none(), "nothing sealed");
+    assert_eq!(k.window_close(at.stamp.h), Err(WindowRefusal::Unsigned { keeper }));
+}
+
+/// A RETURN NOT ABOVE THE REACH IS REFUSED: a witness whose return is its
+/// reach reading itself proves no return, refused naming the keeper.
+#[test]
+fn window_refuses_return_not_above_reach() {
+    use crate::chronometry::tuniversal::WindowRefusal;
+    let (a, ..) = tiers();
+    let mut k = founded();
+    let at = sealed(&mut k, a_fold(), &a);
+    let mut reach = reach_of(k.identity, &keepers_citing(k.identity, at.stamp.h, 0)).expect("witnessed");
+    reach.witnesses[0].back = reach.witnesses[0].reach.clone();
+    let keeper = reach.witnesses[0].reach.keeper;
+    assert!(k.close_windows(&Ok(reach)).is_none(), "nothing sealed");
+    assert_eq!(k.window_close(at.stamp.h), Err(WindowRefusal::Mismatched { keeper }));
 }
