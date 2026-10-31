@@ -2,7 +2,7 @@
 
 # MU-EQUATIONS — equations of the Mycelium network
 
-> **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *planets* are simulated places, and *peoples*, *civilizations* and *ancients* simulated inhabitants, of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** all of them; each entry's code path locates its component (GLOSSARY, *Components and scope*). §10.4 is the Concordance's game-kernel formulas, marked as such.
 
@@ -210,7 +210,7 @@ a ~ b  ⇔  a = λ b for some λ ∈ ℚ×
 canonical(X) = s · X / |X_first|,   s = ±1 so that the first coefficient is +1
 ```
 
-Two rays are equal by proportion of their coefficients, read by cross
+Two rays are equal by proportion of the rays' coefficients, read by cross
 multiplication against one pivot slot; no product is formed. The canonical
 writing (A4) divides by the absolute value of the first non-zero
 coefficient in mask order and fixes its sign to `+1`. It carries a value
@@ -255,7 +255,7 @@ fascicle (s₁, s₂):   V = s₂ s₁,     V Ṽ = s₁² s₂²
                      Ad_V(X) = V X Ṽ / (s₁² s₂²)
 
 streamline, read off B = s₁ ∧ s₂:
-   B B < 0   elliptic    (the spheres cut; the stream turns about their circle)
+   B B < 0   elliptic    (the spheres cut; the stream turns about the spheres' circle)
    B B = 0   parabolic   (the spheres kiss; the stream fixes the contact)
    B B > 0   hyperbolic  (the spheres are apart; the stream breathes)
 
@@ -326,7 +326,7 @@ even inverse:  w = u ũ = s + Q  (Q a 4-vector),  w̄ = s − Q
 `B` is the Cayley bivector a versor is derived from: the derivation is
 two products and one even inverse, with no exponential, logarithm or root.
 The chart is projective (`V` and `λV` have one bivector). It refuses at
-`⟨V⟩₀ = 0` (the half turn and every odd versor) and where `1 + B` has no
+`⟨V⟩₀ = 0` (the 180° turn and every odd versor) and where `1 + B` has no
 inverse. The inverse chart reads a holonomy at its canonical ray,
 normalized by `√(H H̃)`, which must be a rational square. The read of `B`
 on each kind of plane, as 52.1 states it:
@@ -440,7 +440,7 @@ composite along every axis:                     Ω = Ω₁ Ω₂ ⋯ Ω_{n+1}
 holonomy of a geodesic bigon:                   C = a b ã b̃
 ```
 
-Conformal translators `eᵢ ∧ e_∞` commute; transvections do not. Their
+Conformal translators `eᵢ ∧ e_∞` commute; transvections do not. The transvections'
 group commutator is a rotation whose class (`I₁ < 0`, elliptic) is the
 sectional curvature being non-zero, read off the geometry and never
 carried as a constant.
@@ -522,7 +522,7 @@ rational turn (Niven):           finite order ∈ {1, 2, 3, 4, 6}
 ```
 
 A finite-order motion has a minimal polynomial that is a product of
-distinct cyclotomics; it closes at the lcm of their orders. A rational
+distinct cyclotomics; it closes at the lcm of the cyclotomics' orders. A rational
 rotor whose cosine is not one of Niven's values never closes: the `(3,4,5)`
 rotor's `cos θ = −7/25` is dense on its circle.
 
@@ -666,7 +666,7 @@ append:  W ← W · λ   (or W · λ⁻¹)
 ```
 
 A word's rotor is the product of its letters; two words are equal when
-their rotors are projectively equal, never when their tapes are.
+the words' rotors are projectively equal, never when the words' tapes are.
 
 Sources: MU-RECURSION 1.5, law 2, 78.68; MU-ALPHABET.md "Words". Code:
 `src/transducer/alphabet/word.rs::Word::push`, `::rotor`, `::key`.
@@ -732,7 +732,7 @@ Sources: MU-RECURSION 50.4, A22, 36.3, 37.7, law 6; MU-ALPHABET.md. Code:
 
 ```text
 C(w) = [W],    W = λ₁ λ₂ ⋯ λ_L ∈ P Spin⁺(4,1)(ℚ)
-     = [ ∏_j V_j^{m_j} ]     (V_j the commuting mode factors of W, m_j their windings)
+     = [ ∏_j V_j^{m_j} ]     (V_j the commuting mode factors of W, m_j the windings)
 
 per mode j:
    elliptic    V_j^{ℓ_j} ~ 1         m_j ∈ ℤ/ℓ_j      t₃ = (t₁ + t₂)/(1 − t₁t₂)
@@ -790,7 +790,7 @@ a crossing against the face:  {Ã, Ã c̃ A};   a ring's holonomy  Ω = ∏ cᵢ
 ```
 
 A sentence is the path-ordered product of its words and the transports
-between their charts. In the first chart the words' Cayley bivectors close
+between the words' charts. In the first chart the words' Cayley bivectors close
 under the commutator to the sentence's holonomy algebra, whose rank is its
 curvature's dimension. A closed sentence's open path is a shortcut word of
 the next rung.
@@ -948,7 +948,7 @@ Sources: MU-RECURSION 56.3 (A.11), 66 (A.12), 65.6, 68.3. Code:
 section(W, pair)  = the sites W's speech changed on the pair, where nothing it changed is false
 pay(W)            = deflation of the pair's demand over section(W, pair), summed over pairs
 pay(conjugate)    = shortfall( local(g W g̃), local(W) )            (per lane, never negative)
-premium(sentence) = sites closed by the sentence  \  ∪ sites closed by its words on their own sections
+premium(sentence) = sites closed by the sentence  \  ∪ sites closed by its words, each on its own section
 ```
 
 A word is decompressed onto each pair of its family and measured on its
@@ -986,7 +986,7 @@ walk of 12.2).
 flat  ⇔  δ¹g = 1 on every orbit
 ```
 
-The holonomy of an orbit. Flatness is coherence (`Form::coheres`). A loop
+The holonomy of an orbit. Flatness is coherence (`Form::coheres`). A ring
 that is not flat is held with its class vector; its curvature is content.
 
 Sources: MU-RECURSION 10.3, 11, 12.6; MU-ANTI-FLATTENING item 6. Code:
@@ -1027,7 +1027,7 @@ Sources: MU-RECURSION 10.5.
 ```text
 R1  T(r) = g_k ⋯ g₁                    a route's transport; the reversed route carries the inverse
 R4  F(σ) = T(∂σ)                       σ flat  ⇔  F(σ) is the identity ray (±1 one ray)
-R5  ρ(ℓ) = θ T(ℓ) θ⁻¹                  every loop based by the tree transport
+R5  ρ(ℓ) = θ T(ℓ) θ⁻¹                  every ring based by the tree transport
 T1  H(r, s) = T(s)⁻¹ T(r)              two routes agree  ⇔  H(r, s) ~ 1
 T2  H(r, s) = the lassoed product of the enclosed curvatures, in boundary order
 C1  H(rᵢ, rⱼ) = Hⱼ⁻¹ Hᵢ                 n readings against one reference give every pair
@@ -1035,7 +1035,7 @@ C1  H(rᵢ, rⱼ) = Hⱼ⁻¹ Hᵢ                 n readings against one refere
 
 The converse of T2 fails on a relator: non-trivial curvatures can multiply
 to the identity. Conjugation preserves `I₁`, `I₂` and the kind (C2), so
-minds basing one circuit at their own points agree on its class.
+minds that each base one circuit at its own point agree on the circuit's class.
 
 Sources: MU-RECURSION 79.1, 79.2, 54.7 Axiom A, EQ1. Code:
 `src/physics/axioms/routes.rs` (`R1_CARRIER` … `C2_CONVERGENCE`).
@@ -1052,7 +1052,7 @@ linking trajectory:   M_i = g_i M_{i−1} g̃_i
 
 A cell's comprehension is the bracket-closed ℚ-algebra of its circuits'
 generators (the Ambrose–Singer holonomy algebra); its rank is the cell's
-dimensional capacity. The modes close jointly at the lcm of their finite
+dimensional capacity. The modes close jointly at the lcm of the modes' finite
 orders.
 
 Sources: MU-RECURSION 78.11 (ruled 2026-09-23). Code:
@@ -1116,7 +1116,7 @@ translation against transversion:   breath(a, b) = breathe(a e_∞, b e_o)
 [P_a, K_b] ∝ ⟨a, b⟩ D + M_ab       (M_ab a rotation in the plane a ∧ b)
 ```
 
-Any two generators breathe their commutator: its coefficient on the
+Any two generators breathe the pair's commutator: its coefficient on the
 dilation generator (contraction and dilation) and its remaining planes by
 kind. `a ∥ b` breathes with no pinch; `a ⊥ b` pinches with no breath. The
 silence between words is the pseudoscalar `I = e₁e₂e₃e₊e₋`, with `I² = −1`.
@@ -1146,7 +1146,7 @@ coupling           V_ij = θ_j θ̃_i,     B_ij = ⟨V_ij⟩₂
 torque             τ = ½ [B, G]
 net torque         τ = Σ_{i<j} ½ [B_ij, B_orbit]       equilibrium ⇔ τ = 0 coefficient by coefficient
 unit product       ŝ_a · ŝ_b = ⟨s_a s_b⟩₀ / (w_a w_b),   w = −⟨s e_∞⟩₀
-                   (for two points, −½ their squared distance)
+                   (for two points, −½ the points' squared distance)
 hour rotor         R_hour = T_c (R₁₂ R₃₊) T̃_c,   R₁₂ = s + b e₁e₂,  R₃₊ = s + b e₃e₊
 momentum           Π = M₂(B),   M₂(e_a ∧ e_b) = Σ_k (C_ka e_k ∧ e_b − C_kb e_k ∧ e_a)
 carried            Π_{m+1} = g Π_m g̃ / (g g̃)
@@ -1422,10 +1422,10 @@ a mode on S: a boost or dilation (its generator's ray, its rational point and si
 a mode on G: a hue cycle or move;                                               amount = times moved
 a mode on T: a null flux (its ray, its side);                                   amount = count along the ray
 a mode on H: a turn (its plane's ray);                                          amount = t/ℓ of 360°
-two modes with one canonical coordinate add their amounts
+two modes with one canonical coordinate add the two amounts
 ```
 
-The exact modes the verified work moved, keyed by their canonical
+The exact modes the verified work moved, each keyed by its canonical
 coordinates; a draw removes them or is refused naming the mode it lacks. A
 closure's measured deflation reads its modes, and a paid solve verdict
 carries them.
@@ -1691,15 +1691,15 @@ nothing. A point once final stays final.
 Sources: MU-RECURSION 78.152 TU-3, 78.152c; CONCORDANCE 1.11. Code:
 `src/chronometry/tuniversal/keepers.rs::Keepers::final_of`, `::final_point`.
 
-#### 8.7 The clock's residual
+#### 8.7 The clock's residue
 
 ```text
 edge(a, b) = point_b − point_a   per lane, at the greatest tick both keepers share
-residual   = edge(a, b) + edge(b, c) + edge(c, a)     (key order round the keeper triangle)
+residue    = edge(a, b) + edge(b, c) + edge(c, a)     (key order round the keeper triangle)
 ```
 
 A disagreement is a 1-cochain on the keeper triangle and its holonomy is
-the residual; it is never averaged into the point. Read at one common tick
+the residue; it is never averaged into the point. Read at one common tick
 it is zero.
 
 Sources: MU-RECURSION 78.152 TU-4. Code:
@@ -1714,7 +1714,7 @@ heights continue:  the next receipt's prev hash is the fold root's hash
 ```
 
 A fold compresses a fully final prefix to the net per identity per lane.
-Closed circulation loops vanish in the net exactly. A fold that does not
+Closed circulation rings vanish in the net exactly. A fold that does not
 conserve writes nothing.
 
 Sources: MU-FOLD.md; MU-ECONOMY §2, §6; MU-RECURSION 45.8,
@@ -1735,7 +1735,7 @@ otherwise:  equal M1 letter coordinates,
             A5-equal canonical chain
 ```
 
-Two organs converge when their re-derived objects are the same vertex of
+Two organs converge when the organs' re-derived objects are the same vertex of
 the Cayley graph, a question about the algebra and not the encoding: a
 carriage and its negation are one vertex and two byte strings.
 
@@ -1896,7 +1896,7 @@ Sources: CONCORDANCE 2.6; MU-RECURSION 78.134, 78.140. Code:
 ```text
 HARMONIC   an elliptic mode returns at its read order (Niven: 1, 2, 3, 4, 6) or never
 LUMINAL    a parabolic mode is null: B² = 0, no length, only its ray and ratios
-HOLONOMIC  a closed loop's composite is its content; moving its base point conjugates it
+HOLONOMIC  a ring's composite is its content; moving its base point conjugates it
 corollaries:  every dimension is an exponent (a base of n axes has 2ⁿ vertices in its unit cell);
               no constant
 ```
@@ -1907,7 +1907,7 @@ mind makes is read from one of the three.
 Sources: MU-RECURSION §0.0, 56. Code: `src/physics/axioms/founding.rs`,
 `src/physics/axioms/mod.rs`.
 
-#### 10.4 Concordance formulas shared with the client kernels
+#### 10.4 Concordance formulas shared with the game kernels
 
 ```text
 E = m c²;  G = c = 1;  masses as lengths in Mpc            (1.8)

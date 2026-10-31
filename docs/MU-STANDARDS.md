@@ -1,6 +1,6 @@
 # MU-STANDARDS — how this tree is developed
 
-> **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *planets* are simulated places, and *peoples*, *civilizations* and *ancients* simulated inhabitants, of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** the development of this tree, every component alike. No game term.
 
@@ -153,6 +153,33 @@ a printed reading, a doc line or a test name. A turn is written in degrees
 where exact, otherwise as its rational point. No structure is projected to
 a scalar ([MU-ANTI-FLATTENING.md](MU-ANTI-FLATTENING.md)).
 
+2.10 **The code vocabulary.** One spelling per concept across the tree:
+
+- *Refusals*: a refusal type is an `<Object>Refusal` enum with named
+  variants (`Not<State>`, `Unknown<Noun>`, `Short { lane }`, `Repeated`,
+  `Mismatched`, `Malformed`, `Unsigned`); a free-text reason is a
+  `REFUSE_*` constant (§2.4). Never `Error`, `Fail`, `Failed` or `Bad*`.
+  A struct of counts is a `*Tally`.
+- *Identity*: `address` / `Address` is an object's composite coordinates;
+  `key` its store coordinates; `citation` a 32-byte payload hash (in
+  place of `id()`); `endpoint` a TCP address string (never `addr`).
+- *Codecs*: `put_*` and `take_*` write and read byte carriers;
+  `encode_*` and `decode_*` are wire acts; a one-byte enum has `byte()`
+  and `of(u8)`; removal from a queue is `drain_*`.
+- *Readers*: `<object>_of` reads a coordinate (§2.3); `<object>_reading`
+  returns a typed reading.
+- *Economy*: the court's `pay_<arm>` calls the economy's `settle_<arm>`,
+  which calls `mint_to`. "Mint" names μ only.
+- *Spelling*: British (`fibre`, `centre`, `colour`, `neighbour`,
+  `favour`); compounds are `off_plane`, `non_versor`.
+
+2.11 **Person words.** No file name, identifier, comment, doc line, test
+name or log string carries a person or possessive word: I, me, my, mine,
+we, us, our, ours, you, your, yours, their, theirs. A sentence is
+rewritten with "its", "the X's", a plural noun or another structure;
+"its" and "own" are allowed. Mathematical *I* and Roman numerals are not
+pronouns.
+
 ## 3. Tests
 
 3.1 **A test is a claim; its name names the unit and the behaviour.** One
@@ -163,10 +190,30 @@ claim per test. The name is `<unit>_<behaviour>`:
   under which condition, in at most about six words.
 
 No articles (`a`, `an`, `the`), no narrative, no internal row ids, no
-first- or second-person words, no `test_` prefix, no `_works`, `_ok`,
+person or possessive words (listed below), no `test_` prefix, no `_works`, `_ok`,
 `_basic`, `_simple`, `_case1`. The module path supplies the area
 (`court::admission::tests::receipts::…`), so a name does not repeat it.
 The full claim, in plain sentences, is the test's `///` doc comment.
+
+The person and possessive words a name never carries are I, me, my,
+mine, we, us, our, ours, you, your, yours, their and theirs; a name
+carries no task hash either.
+
+The behaviour opens with a third-person singular verb (`pays`, `refuses`,
+`keeps`). These verbs carry the standard claims, one spelling each:
+
+- `refuses_<input>`: the input is refused by name (never `_by_name`);
+- `round_trips`: decoding the encoding gives the object back (never
+  `_whole`, `_exactly` or `_on_wire`; `reads_back` and `parses_back` are
+  retired);
+- `ignores_<input>`: the input leaves the result unchanged;
+- `is_invariant_under_<action>`: the action leaves the reading fixed;
+- `agrees_with_<route>`: two routes reach the same object;
+- `equals_<closed form>`: the result is the stated closed form
+  (`matches` is retired);
+- `keeps`, `fixes`, `survives_<event>`, `conserves_<quantity>`: what an
+  operation leaves held;
+- an adjective claim takes `is_` (`is_exact`, `is_invariant_under_…`).
 
 | Name | |
 |---|---|
@@ -331,8 +378,8 @@ review item of 4.4 that carries that rule.
 
 5.1 **One phase per commit.** A phase is one claim the engine can be
 reviewed on: its code, its tests and its documentation together. A commit
-holding two claims is two commits. Move-only splits are their own commit
-(§1.6).
+holding two claims is two commits. Each move-only split is a commit of
+its own (§1.6).
 
 5.2 **Message.** The first line states the change as a claim, in one
 sentence. A move-only commit says `move only` on its first line. The body

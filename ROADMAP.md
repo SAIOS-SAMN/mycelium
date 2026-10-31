@@ -27,7 +27,7 @@ two-court replay, as words are installed. The track's pieces:
 
 - **Acts:** `SEPTUM_CHALLENGE`, `SEPTUM_NOTE`, `SEPTUM_RECEIPT`,
   `SEPTUM_RELEASE`, `SEPTUM_REVOKE` and `SEPTUM_EQUIVOCATION` (0x30–0x35),
-  with their codecs and round-trip claims.
+  each with its codec and round-trip claims.
 - **Escrow keyed by `(listing, payer, K_payer)`.** A duplicate Note is
   ignored, and a conflicting one is an equivocation proof.
 - **Two-signature release:** home and witness each sign, on the
@@ -57,8 +57,8 @@ continues with:
 **Specified** in [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) §4.
 
 A delegated hypha carries other parties' bond in its cover, shares its
-POWV with them, and shares their slash. This lands in `src/economy/` as a
-delegation carrier on the treasury, with the audit extended over it.
+POWV with those parties, and shares each party's slash. This lands in
+`src/economy/` as a delegation holding on the treasury, with the audit extended over it.
 
 ## 4. Network membership
 
@@ -114,7 +114,7 @@ change built with its codec, replay and claims:
 - **A template placed over a lattice:** the Hermite form of the placement
   differences, the offset anchored to a selected body; no candidate
   enumeration.
-- **First contact as a relation:** `Pred::FirstMet` and
+- **First contact as a relation:** `Pred::FirstMet` (proposed) and
   `Act::Slide { toward }`, ties held whole, refused where the ray is not a
   lattice unit, no toroidal wrap.
 - **Colour-role equivariance:** the gauge-orbit class with re-inflation,
@@ -140,9 +140,9 @@ crate's public API, with semantic-versioning guarantees. It includes:
 - a conversation API for third-party clients;
 - rewrite elements (POWR) through the SDK;
 - examples for each POW++ arm;
-- the SDK tiers, stated in its documentation: Tier 0 run a node, Tier 1
-  bring a world, Tier 2 bring a solver, Tier 3 bring physics
-  ([MU-PRECURSORS §3.10](docs/MU-PRECURSORS.md#310-sdk-tiers-and-a-file-feed-door)).
+- the SDK depths, stated in its documentation: depth 0 run a node,
+  depth 1 bring a world, depth 2 bring a solver, depth 3 bring physics
+  ([MU-PRECURSORS §3.10](docs/MU-PRECURSORS.md#310-sdk-depths-and-a-file-feed-door)).
 
 ### SDK packaging: publicly available SDKs
 
@@ -173,7 +173,7 @@ after it.
    features. *Accepted when* the SDK builds with default features off and
    pulls no server-only crate.
 4. **P4, documentation and examples:** docs.rs documentation with the
-   tiers, one example per POW++ arm, a lease and a seat. *Accepted when*
+   depths, one example per POW++ arm, a lease and a seat. *Accepted when*
    each example is paid on a local network.
 5. **P5, the client conformance read:** the acts a client must speak and
    the readings it must answer, served by a hypha and kept in the
@@ -273,10 +273,10 @@ Phases:
 **Specified** in [`docs/MU-CONCORDANCE.md`](docs/MU-CONCORDANCE.md) (1.14, 2.2,
 2.10, A7).
 
-netstratum and xylarium were developed and run alongside Mycelium on its
-development network, each with a universe of its own, and link the
-`forms` crate (README, *Peer kernels*). As their repositories become
-public, the track makes the boundary between the kernels a versioned,
+The peer kernels (listed in README › Peer kernels) were developed and run
+alongside Mycelium on its development network, each with a universe of
+its own, and link the `forms` crate. As each peer kernel's repository
+becomes public, the track makes the boundary between the kernels a versioned,
 reviewable interface:
 - **Pinning by tag:** each peer kernel depends on Mycelium and `forms` at a
   release tag, never at a local path or untagged commit.
@@ -293,7 +293,7 @@ reviewable interface:
 ## 14. Security review
 
 The paths that move value, slash bonds and finalize the ledger are
-reviewed against their specifications, by contributors outside the
+each reviewed against its specification, by contributors outside the
 original development, with each finding resolved as a defect or a
 specification amendment. Reports go through [SECURITY.md](SECURITY.md).
 Review targets, in order:
@@ -345,8 +345,8 @@ is open.
    reproduction the court can check. Security research enters as market
    demand, paid by the same court.
 4. **Equivocation slashing** (**Built** for receipts). Two signed receipts
-   under one key at one place with different chain hashes are their own
-   proof: the court burns the signer's whole bond, from its own admission
+   under one key at one place with different chain hashes are
+   self-proving: the court burns the signer's whole bond, from its own admission
    or from a third party's `ACT_EQUIVOCATION` (MU-RECURSION 47.4;
    `Kernel::accept_equivocation`; `court/admission/tests/equivocation.rs`).
    No judgement call is involved. The work left: the same self-proving
@@ -435,8 +435,8 @@ world:
 6. **H6:** certification: a seeded, controlled-economy exam world (a
    78.x proposal for ruling), and certificates any party can verify by
    reconstruction. A certificate attests behaviour over the task families
-   its world expresses, never "safe in general"; worlds may require one
-   for their seats, and the courts gate nothing on it.
+   its world expresses, never "safe in general"; a world may require one
+   for its seats, and the courts gate nothing on it.
 
 Components from precursor implementations
 ([MU-PRECURSORS](docs/MU-PRECURSORS.md) §3.10–§3.12):
@@ -445,7 +445,7 @@ Components from precursor implementations
 - **A file-feed door** on the operator's path: a client on
   `sdk::{Kernel, Session}` that submits each task-shaped file dropped in a
   directory as one claim and answers it beside the file, refusing by name
-  what does not decode (Tier 1, *bring a world*).
+  what does not decode (depth 1, *bring a world*).
 - **H3:** a world-model onboarding checklist for MU-HOSTING §3.1 step 4,
   drawn from a widely used world-model interface (state, action and
   episode spaces): rational bounds and a unit map in place of float boxes.
@@ -459,7 +459,7 @@ Components from precursor implementations
 **Specified** in [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) §8.
 
 A kernel can already link to two meshes and act as an exchange between
-their currencies (MU-HOSTING §8.1–§8.4), with each mesh sound on its own
+the two meshes' currencies (MU-HOSTING §8.1–§8.4), with each mesh sound on its own
 and the bridge trusted by its users. Federation lets two meshes settle
 against each other without a trusted bridge:
 - **Cross-mesh anchoring:** each mesh's era folds published where the
@@ -521,7 +521,7 @@ signature it can check:
   it compacts coordinates held losslessly in the signed record.
 
 Where it is used:
-- Concordance signing by kernels, and their §3a attestations;
+- Concordance signing by kernels, and each kernel's §3a attestations;
 - charter signing by minds (track 17, M1);
 - multi-party agreements between kernels or minds: leases, seat terms,
   union attestations;
@@ -545,8 +545,8 @@ Tools from precursor implementations
   solvability of a chain. An agreement whose cocycle is a coboundary over
   ℚ but not over ℤ is named with the invariant factor that obstructs it:
   a torsion obstruction, beside the holonomy one.
-- **The representation functor:** chains add exactly as their transports
-  compose, so a question of composition is read by the integer machinery
+- **The representation functor:** chains add exactly as the chains'
+  transports compose, so a question of composition is read by the integer machinery
   above.
 
 ## 19. The general conformal algebra, pole states and bonding
@@ -595,10 +595,10 @@ an exact object, never as a count or a ratio alone.
   fixed by the vacuum inversion; a sealed kind's stabilizer is its
   symmetry. A stabilizer is held whole and never collapsed by choosing a
   representative (MU-ANTI-FLATTENING 11).
-- **Bonds compose, and their residual is content.** A chain of bonds is
-  the product of their versors. Where a closed chain composes to the
-  identity the bonding is consistent; where it does not, the residual is
-  torsion, the bond structure's holonomy, held as content (MU-TOPOLOGY
+- **Bonds compose, and the residue of a closed chain is content.** A
+  chain of bonds is the product of the bonds' versors. Where a closed
+  chain composes to the identity the bonding is consistent; where it does
+  not, the residue is torsion, the bond structure's holonomy, held as content (MU-TOPOLOGY
   §4): the books close where the composed versor is projectively the
   observed one.
 - **Isomorphism classes are the kinds of bond.** Two bonds are the same
@@ -623,7 +623,7 @@ Phases:
    first-class constructors.
 3. **G3:** the pole state `(X(t), R)` and bonds as versors, with
    isomorphism, stabilizer and composition claims.
-4. **G4:** bond classes filed by coordinates; the residual of a closed
+4. **G4:** bond classes filed by coordinates; the residue of a closed
    chain read as torsion. Similarity classes serve it: the invariant
    factors over ℚ[x] of a bond versor's linear function (the rational
    canonical form, [MU-PRECURSORS §3.4](docs/MU-PRECURSORS.md#34-integer-homology-and-invariant-factors)).
@@ -644,8 +644,8 @@ which consolidates 78.124, 78.152, 78.154 and 78.156.
 The hypha keeps one clock (TUniversal) and a time book for every
 universe: its chronometric anchors, which are its ledger entries pairing
 its own time `u` with a full final point and a state commitment. Built
-today: the clock, final points on every act, the anchors and their
-checks, dilation per segment, crossing edges, and freshness at crossings.
+today: the clock, final points on every act, the anchors and the
+checks on them, dilation per segment, crossing edges, and freshness at crossings.
 The track adds what keeps every client, game and kernel placed:
 
 1. **K1:** a position reading per universe (where it stands): head anchor, lag in

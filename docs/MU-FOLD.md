@@ -1,6 +1,6 @@
 # MU-FOLD — eras of the ledger
 
-> **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *planets* are simulated places, and *peoples*, *civilizations* and *ancients* simulated inhabitants, of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** the hypha (its ledger, receipt chains and co-signed folds). No game term.
 
@@ -13,7 +13,7 @@ code is `src/economy/fold.rs` (the net and its conservation),
 
 ## The problem it answers
 
-`Treasury.entries` and every kernel's receipt chain are append-only. The
+`Treasury.entries` and every court's receipt chain are append-only. The
 hot ledger grows with everything the mesh ever did, where the value the
 mesh holds is the net per identity, the ruled cover and the proofs the
 compensation rests on. A late joiner would have to admit the whole
@@ -35,7 +35,7 @@ coordinate stays the height (45.7).
 
 1. The net per identity per lane over the prefix, one `epoch` row per
    identity with a nonzero net (`MU-ECONOMY.md` §2), anchored to the fold
-   receipt. Closed circulation loops vanish in the net exactly; that is
+   receipt. Closed circulation rings vanish in the net exactly; that is
    the compression, and it is a sum, never a choice.
 2. A receipt of kind `fold` (45.1) citing the archived prefix's head hash;
    heights continue across it and the chain never breaks.

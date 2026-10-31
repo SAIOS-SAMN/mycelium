@@ -1,6 +1,6 @@
 # MU-XSEPTUM — the xSEPTUM settlement protocol for the Mycelium network
 
-> **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels.
 >
 > **Components:** the hypha's settlement of payments between voices (specified). No game term.
 
@@ -37,9 +37,9 @@ except what the pore admits. Here the pore is replay.
 
 ## 2. Terms
 
-- **Voice**: a 32-byte identity of a client kernel (`Session::kernel().voice()`), a FROST group key over Ed25519 (new, §8; MU-RECURSION 46.1).
+- **Voice**: a 32-byte identity of a mind (`Session::kernel().voice()`), a FROST group key over Ed25519 (new, §8; MU-RECURSION 46.1).
 - **Hypha**: a server; identity is its ed25519 verifying key (`court::identity::HyphaKey`).
-- **Listing key**: `listing_key(chain, frame)`, the framed residual address of a demand; every priced request is a listing at exactly one home hypha.
+- **Listing key**: `listing_key(chain, frame)`, the framed residue address of a demand; every priced request is a listing at exactly one home hypha.
 - **Home**: the hypha the cover trie homes the listing to (`nerve::home`).
 - **Witness**: any other hypha whose cover meets the listing's chart; the second organ.
 - **μ⃗**: `[u64; 4]` magnitude on the four lanes.
@@ -74,7 +74,7 @@ it can work instead (§6.3).
 
 All frames use `network::wire::Frame { lane, body }` with the first body
 byte the act. Reserved acts (new; verify against `anastome/dialogue/acts.rs`
-before landing, 0x20–0x22 are taken by COVER/OFFER/INSTALLED):
+before building, 0x20–0x22 are taken by COVER/OFFER/INSTALLED):
 
 | act | name | direction |
 |---|---|---|
@@ -285,7 +285,7 @@ learning it: the reply is signed by the home and the payee returns it in
 - Hyphas: `HyphaKey::load_or_mint`, existing; a FROST group key
   (MU-RECURSION 46.1) when the hypha has more than one operator, the wire
   unchanged.
-- Voices: new `client::identity::VoiceGroup`, a FROST group key over
+- Voices (**Specified**, ROADMAP track 1): new `client::identity::VoiceGroup`, a FROST group key over
   Ed25519 (RFC 9591, the `frost-ed25519` crate), shares held by the mind's
   eyes and persisted beside the genome (`<kernel>.shares`, 0600). The voice
   id is the group verifying key, so a signature names its voice with no
@@ -325,7 +325,7 @@ Built: act 0x35 (`src/anastome/dialogue/equivocation.rs`,
 `encode_equivocation`/`decode_equivocation`; the court's burn in
 `Kernel::accept_equivocation`).
 
-New:
+**Specified** — planned paths:
 
 - `src/anastome/dialogue/`: acts 0x30–0x34, `encode_*`/`decode_*`; every
   signed prefix is the receipt prefix of MU-RECURSION 47.1 followed by the
@@ -342,7 +342,7 @@ New:
   stroke under its budget; `witness_sign` for the second signature of a
   release.
 - `src/bin/mycelium-server/judge/`: one file per act family, dispatched by `judge/mod.rs`.
-- `src/client/sdk.rs`: `Session::septum_note`, `septum_receipt`,
+- `src/client/sdk/`: `Session::septum_note`, `septum_receipt`,
   `septum_release`.
 - `src/bin/mycelium-septum.rs`: the HTTP adapter. Listens on a local port,
   maps `402` and the three headers to frames, holds no state beyond the

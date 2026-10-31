@@ -2,7 +2,7 @@
 
 # MU-TOPOLOGY — multi-dimensional structure
 
-> **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents. Physical terms (*star*, *orbit*, *sphere*) name exact geometry. Nothing here is a claim about real minds or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents. Physical terms (*star*, *orbit*, *sphere*) name exact geometry. Nothing here is a claim about real minds or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** the shared algebra (`src/core/`, `src/transducer/`), used by the client and the court alike; the hypha's network and ledger structures (`src/network/`, `src/chronometry/`); the law forms (`forms/`, `src/physics/`). No game term.
 
@@ -19,7 +19,7 @@ equations are collected in [`MU-EQUATIONS.md`](MU-EQUATIONS.md).
 Most systems store what they compute as flat records: rows, vectors,
 key–value maps, scores. A flat record keeps values and loses relations.
 Two objects can be compared for equality; how one turns into the other,
-what a loop through several of them composes to, and what dimension a
+what a circuit through several of them composes to, and what dimension a
 relation lives in are gone once they are filed.
 
 Mycelium holds structure as exact topology instead. Every object is a
@@ -35,7 +35,7 @@ What that buys:
 | Structure | A flat representation keeps | Mycelium also keeps |
 |---|---|---|
 | A motion between two states | Before and after | The versor that carries one to the other, its kind (rotation, translation, dilation, transvection) and its period |
-| A loop of relations | Each relation alone | The loop's holonomy: what going round composes to, which is the loop's content |
+| A ring of relations | Each relation alone | The ring's holonomy: what a circuit round it composes to, which is the ring's content |
 | A set of overlapping views | Each view | Whether the views glue into one consistent whole, and where they do not (the obstruction, by class) |
 | Agreement between parties | A count of signatures | Which parties and which terms agree, and the exact disagreement where they do not |
 | Value | A number | Four lanes kept apart, each the exact modes the work moved |
@@ -59,8 +59,8 @@ to 5:
   geometric product (2.3, 2.8–2.11).
 - **Two readings of one group.** `Spin(4,1)` is the conformal group of the
   base and also the isometry group of hyperbolic 4-space. In the second
-  reading translations (transvections) do not commute, and their
-  commutator is a rotation scaled by the curvature, so curvature is read
+  reading translations (transvections) do not commute, and the
+  commutator of two is a rotation scaled by the curvature, so curvature is read
   off motions rather than assumed (2.15–2.17; MU-ANTI-FLATTENING 7).
 - **Periods are exact.** A rotation's order is read as a cyclotomic period
   under Niven's restriction, and a turn is a rational point or an exact
@@ -71,7 +71,7 @@ Cl(4,1) as its `n = 3` case, and bonding between pole states held as
 versors and stabilizers (ROADMAP track 19).
 
 The alphabet of seventeen letters is a fixed set of versors of this
-algebra; a word is their product, one exact versor whose meaning is the
+algebra; a word is a product of letters, one exact versor whose meaning is the
 motion it performs (MU-EQUATIONS §3; [`MU-ALPHABET.md`](MU-ALPHABET.md)).
 
 ---
@@ -96,7 +96,7 @@ never a verdict on the whole.
 
 Relations are held as simplicial and Čech complexes over covers:
 - **Cochains and the coboundary.** Values on vertices, transports on
-  edges, and their composites on faces; the coboundary `δ⁰` reads a
+  edges, and the transports' composites on faces; the coboundary `δ⁰` reads a
   0-cochain's differences, `δ¹` reads curvature (a face whose transports
   do not compose to the identity), and the Bianchi identity `δ²` is the
   consistency of curvature across cells (5.1–5.4).
@@ -122,10 +122,10 @@ Relations are held as simplicial and Čech complexes over covers:
 
 **Built** (MU-EQUATIONS 5.5; MU-ANTI-FLATTENING 6).
 
-A loop of transports composes to its holonomy. A flat loop composes to
-the identity; a curved loop does not, and **what it composes to is its
-meaning**, never an error to be removed:
-- a loop that is not flat is held with its class, and a free part of its
+A circuit of transports around a ring composes to the ring's holonomy. A
+flat ring composes to the identity; a curved ring does not, and **what it
+composes to is its meaning**, never an error to be removed:
+- a ring that is not flat is held with its class, and a free part of its
   holonomy is a candidate new generator of the language, adjoined only by
   two courts' re-derivation (MU-RECURSION 37.7);
 - curvature is read as holonomy along routes, so two paths between the
@@ -138,13 +138,13 @@ meaning**, never an error to be removed:
 
 ---
 
-## 5. Orbits and their algebra
+## 5. Orbits and the orbit algebra
 
 **Built** (MU-EQUATIONS 5.6–5.8, 5.15; MU-CLIENT §4).
 
 Motion that recurs is an orbit, and orbits carry structure flat
 iteration cannot:
-- **The orbit algebra of a cell.** A cell's circuits generate a
+- **The orbit algebra of a chamber.** A chamber's circuits generate a
   bracket-closed algebra; comprehension is that algebra, not a single
   sandwich (`cech/orbit_algebra.rs`; MU-RECURSION 78.11).
 - **Lift and drag.** A neighbouring motion splits exactly against an
@@ -153,7 +153,7 @@ iteration cannot:
   from them, never stored (MU-RECURSION 78.46).
 - **Time is distance along an orbit.** Age is one return, not an index or
   a capped counter (MU-RECURSION 78.43).
-- **Thoughts are orbits.** In the client mind, a thought is an orbit about
+- **Thoughts are orbits.** In the reference mind, a thought is an orbit about
   an axiom; a settled thought is one that comes round precessing, bound,
   and nothing forces it to close exactly (MU-CLIENT §4.12).
 
@@ -161,8 +161,8 @@ iteration cannot:
 
 ## 6. Nested shells: physics in any dimension
 
-**Built** for L0 and `forms`; the shells of other universes are their
-kernels' (Concordance 2.10; MU-SCIENCE §3.0).
+**Built** for L0 and `forms`; each other universe's shell is its
+kernel's (Concordance 2.10; MU-SCIENCE §3.0).
 
 The physics is held as nested shells, each a sphere `Sⁿ` about one
 centre, for any `n`, never planes side by side:
@@ -171,7 +171,7 @@ centre, for any `n`, never planes side by side:
 - each universe's shell is its own, reaching the core only through the
   seam, and narrowing, never widening;
 - where universes read a law differently, each composes its own named
-  form, and L0's core is the intersection of their selections.
+  form, and L0's core is the intersection of the universes' selections.
 
 ---
 
@@ -194,8 +194,9 @@ same algebra:
 - **The physics atlas** records, per claim and per universe, where
   universes converge and where they diverge, with the breached laws named
   (MU-SCIENCE §6.2, **Specified**).
-- **Agreements as complexes.** An agreement's parties are vertices, their
-  acceptances edges carrying the transport between their frames, and its
+- **Agreements as complexes.** An agreement's parties are vertices, the
+  parties' acceptances edges carrying the transport between the parties'
+  frames, and its
   certificate is the class showing the terms glue (ROADMAP track 18,
   **Specified**).
 
@@ -210,7 +211,7 @@ same algebra:
    ([`MU-ANTI-FLATTENING.md`](MU-ANTI-FLATTENING.md)).
 3. **Hashes are transport.** A hash compacts coordinates kept losslessly
    elsewhere; it locates, and is never identity.
-4. **Curvature is kept.** A loop's holonomy is content; nothing gauges it
+4. **Curvature is kept.** A ring's holonomy is content; nothing gauges it
    away.
 5. **Lanes are kept apart.** Four lanes, never summed.
 6. **Dimension is read, never fixed.** Only what is observed limits the

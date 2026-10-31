@@ -1,13 +1,13 @@
 # MU-ECONOMY — μ, the four-lane currency
 
-> **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *planets* are simulated places, and *peoples*, *civilizations* and *ancients* simulated inhabitants, of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** the court on each hypha (treasury, settlement, the POW++ arms); clients and kernels appear as payers and payees. In-universe economies are each kernel's own (§10).
 
 **Status:** specification, release 0.2.0. **Built** in `src/economy/` and the court's market:
 balances, stake bonds for hyphae and voices, escrow, per-lane pricing,
 issuance by mint against measured work, transfer, the genesis allocation,
-settlement rows carrying their POW++ arm, and the audit invariant
+settlement rows each carrying its POW++ arm, and the audit invariant
 (`Treasury::audit`). Companion documents: `MU-PRODUCT.md`,
 `MU-ENGINEERING.md`, `MU-XSEPTUM.md`.
 
@@ -38,19 +38,19 @@ work moved, each on the lane its kind names, each with an exact rational
 amount: on S a boost or dilation (its generator's ray and its point and
 side, c and λ); on G a hue cycle or move; on T a null flux (its ray and its
 count in its tube's quantum); on H a turn (its plane's ray and its turn
-t/ℓ). Under the specification a balance HOLDS its modes, keyed by their
+t/ℓ). Under the specification a balance HOLDS its modes, each keyed by its
 canonical coordinates (A21); a payment adds modes, a draw removes them or
 is refused naming the mode it lacks; nothing is projected to a count
 (MU-RECURSION 78.162).
 
-What is built today: the modes and their exact arithmetic are
+What is built today: the modes and the exact arithmetic on them are
 `economy::modes::Modes` (add, draw refused naming the mode, canonical
 codec). A closure's measured deflation reads its modes
 (`transducer/family/deflation.rs`), and a paid solve verdict carries them
-behind its receipt (`encode_solve_verdict`). Every carrier of value —
-balance, bond, escrow, held value, ledger row — still carries μ as
+behind its receipt (`encode_solve_verdict`). Every holding of value —
+balance, bond, escrow, held value, ledger row — still holds μ as
 `[u64; 4]`, one exact count per lane, and the sections below speak of that
-carrier. Moving the carriers to held modes is the open part of 78.162.
+holding. Moving the holdings to held modes is the open part of 78.162.
 
 μ is a vector on four lanes: spatial (S), gauge (G), temporal (T),
 holonomic (H). It is never summed and never converted across lanes. A
@@ -65,16 +65,16 @@ lane was verified; if lanes converted, a lane with no verified work could
 carry value minted on another, and the audit in §6 would no longer say what
 the mesh did.
 
-## 2. Carriers
+## 2. Holdings
 
-| carrier | holder | meaning |
+| holding | holder | meaning |
 |---|---|---|
 | balance | a voice or hypha | μ earned or received, spendable |
 | bond | a voice or hypha | μ staked; sizes cover room; slashable |
 | escrow | a listing | μ held against a claim until the court rules |
 | supply | the mesh | genesis plus mint minus burn, per lane |
 
-Every change to a carrier is a ledger entry with a kind, the party, the
+Every change to a holding is a ledger entry with a kind, the party, the
 lane vector, the K-step and height of the receipt that wrote it, and the
 receipt. Entry kinds: `genesis`, `mint`, `stake`, `unstake`, `transfer`,
 `escrow`, `release`, `revoke`, `slash`, `burn`, and `epoch`. Nothing else moves μ. No
@@ -130,11 +130,11 @@ An escrow is one of two things and the invariant needs them apart.
 
 A **funded** escrow is a LIABILITY: a payer backed the claim from a balance,
 so the μ⃗ left that balance and is still in the mesh. It is counted in §6's
-carriers, and discharging it MOVES value — back to the payer on a
+holdings, and discharging it MOVES value — back to the payer on a
 revocation, to the payee on a release — and mints nothing. This is §5's
 requester escrow, and `Treasury::hold` (`economy/pay.rs`) is the path that
 creates one: the payer is debited, not merely checked, and the value sits
-in the held carrier until `release_held` pays it on or `refund_held`
+in the held holding until `release_held` pays it on or `refund_held`
 returns it.
 
 A **claim** escrow is pending issuance: nobody gave anything up for it, so
@@ -148,7 +148,7 @@ discharge (`Treasury::release_discharged`), and the excess is never issued.
 
 Counting all escrow as supply asserts value the mesh never created;
 counting none makes the audit hold by not looking. R9 stands as written —
-`Σ escrow` is the funded escrow — and the held carrier records, per key,
+`Σ escrow` is the funded escrow — and the held holding records, per key,
 what was debited from which payer.
 
 This is what §4's "every claim is escrowed against its own deflation"
@@ -186,7 +186,7 @@ Issuance is the measured deflation, above — and it is read **on closure**
 only (ruled 2026-09-07, `MU-RECURSION.md` 12.6 and 23.9): a pair pays the
 measure of the remainder it closed, before less after per lane, when its
 remainder is empty; a pair that lowered a lane and left a remainder pays
-nothing, because descent is not closure and certifies nothing
+nothing, because deflation short of closure is not closure and certifies nothing
 (`economy/settle.rs`). Its counterpart: when a word
 retires by geodesic — a shorter description of the same vertex, or a word
 whose substance other words reproduce exactly (`MU-RECURSION.md` 3.8,
@@ -205,9 +205,9 @@ supply → the description length of the language as it currently stands
 
 and not the integral of everything it has ever held. Supply cannot grow
 without new observation, and it falls when the engine expresses what it
-already knows more compactly. PoUW mints when structure is understood;
+already knows more compactly. POUW mints when structure is understood;
 POWR — proof of work retirement, named apart from proof of work convergence on 2026-09-24 (MU-RECURSION 78.33) — burns when the same meaning is re-expressed over fewer letters. The
-seventeen letters are the floor: a language reduced to its axioms and their
+seventeen letters are the floor: a language reduced to its axioms and the axioms'
 combinations carries the least supply that can express it.
 
 This is why no halving is needed and none is permitted. A schedule exists
@@ -279,7 +279,7 @@ escrowed at its DISCHARGE (`Kernel::discharge_of`, 78.149); release on the
 second organ's replay mints the closer's measured discharge, capped lane-wise
 by the escrow, and pays it, discharging the escrow (§3.1) — the escrow was
 the claim, the mint is the payment, and nothing above the discharge is
-minted. The hyphae that verified the closure are paid their POWV share out
+minted. The hyphae that verified the closure are each paid a POWV share out
 of that release (§5.1).
 
 **No T-accrual (ruled 2026-10-08; 78.149 (a)).** This section
@@ -423,11 +423,11 @@ the mesh, so a burn would not conserve without it (§3.1, and
 `MU-RECURSION.md` 42.2 R9, which states the equation this way). This
 section said "escrow is not in the second sum" without the distinction §3.1
 draws two paragraphs above it, and `Treasury::audit` has held the funded
-value (the held carrier) apart from the claim escrow since it was written;
+value (the held holding) apart from the claim escrow since it was written;
 the text is corrected to the ruling, not the code to the text.
 
 **A slash is issuance leaving (ruled 2026-09-09).** A slash debits a bond
-and §2 lists no carrier that receives it, so `supply()` counts it as μ⃗
+and §2 lists no holding that receives it, so `supply()` counts it as μ⃗
 leaving circulation exactly as 47.4's forfeiture does; it keeps its own
 kind so the ledger can still answer "was anyone slashed?" apart from "what
 was burned?". This is what the code implements, now ruled.
@@ -483,7 +483,7 @@ MAP FEE is μ, the coordinates' gas, paid to the courts that keep the map
 (this section). The ROAD TOLL (Concordance 5.4) is paid to a tube's keeper
 and its progenitor builders, in the civilization's OWN money, booked
 in-universe by the kernels — never on the hypha and never by TRAVERSE.
-Progenitors hold their toll shares as their own, and gain μ from them and
+Each progenitor holds its toll shares as its own, and gains μ from them and
 from haul contracts with the ancients; local money becomes μ only through an
 ancients' reserve (Concordance 5.3).
 
@@ -553,8 +553,8 @@ retirement, both already acts.)
 ### 7.3 μ by union (78.161, ruled 2026-10-10)
 
 μ is distributed to the minds that AGREED on a language through conversation,
-never by one voice's ratified dominance. Minds say their dialect to each
-other; a hearer re-derives each word on its own perception, lane by lane, and
+never by one voice's ratified dominance. Each mind says its dialect to the
+others; a hearer re-derives each word on its own perception, lane by lane, and
 a word two minds re-derive coherently is agreed and goes to the court. The
 court pays as it already pays (§3.2, 26 as ruled 2026-09-10): an installed
 sentence's mint is split across the discoverers of the ruled forms it cites,
@@ -631,7 +631,7 @@ Specified and scheduled on the roadmap:
   signatures), receipt-indexed Notes, and FROST voice groups;
 - in §4: delegation of bond.
 
-[`ROADMAP.md`](../ROADMAP.md) carries their order.
+[`ROADMAP.md`](../ROADMAP.md) carries the order of both.
 
 ## 10. The case for μ
 
@@ -648,7 +648,7 @@ wages, tolls, credit. These economies are sovereign:
 - a world's money is backed however that world decides, by its reserve
   (Concordance 5.1).
 
-Two worlds may share an economy by agreement between their kernels, and
+Two worlds may share an economy by agreement between the two worlds' kernels, and
 a new world may start one from nothing.
 
 ### 10.2 μ is the reserve that connects them
@@ -690,7 +690,7 @@ currency, and it reaches a universe only as that universe's reserve:
 - **Supply is auditable at every moment.** `supply = genesis + mint −
   burn = Σbalance + Σbond + Σheld` holds on every court (§6), whatever
   the worlds do inside.
-- **Worlds keep their sovereignty.** A world decides its own economy and
+- **Every world keeps its sovereignty.** A world decides its own economy and
   touches μ only at its reserve. A world that stops trading with the
   network keeps its own economy whole, and its μ stays its reserve's
   balance on the courts.

@@ -1,12 +1,12 @@
 # MU-ENGINEERING — the system as built and as specified
 
-> **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *planets* are simulated places, and *peoples*, *civilizations* and *ancients* simulated inhabitants, of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** the hypha and client binaries as built. No game term.
 
 **Status:** overview, release 0.2.0. §1, the wire description in §4, and
 §5–§8 are checked against the code. §2, §3 and the rest of §4 describe the language, the
-court organ and the mesh at the level of their modules;
+court organ and the mesh module by module;
 where a part is specified and not wired, the section says so. Later
 changes are recorded in [`CHANGELOG.md`](../CHANGELOG.md); plans are in
 [`ROADMAP.md`](../ROADMAP.md). Companion documents: `MU-ECONOMY.md`,
@@ -33,12 +33,12 @@ corpus manifests (configuration) and the ledger or genome it writes
   immutable Cayley letters as exact Cl(4,0) rotors. Words are oriented
   tapes; spelling is a peel; a motion the alphabet cannot spell is a
   remainder, never a word.
-- **Element** (`transducer/element/`): a word. Residual germs carry a
+- **Element** (`transducer/element/`): a word. Residue germs carry a
   chain; connections carry a letter tape, a dilation, a placement, a gauge
   map, and an optional remainder; sentences carry germs on germinated axes
   with faces as transitions and holonomy as torsion; rewrites and
-  translations carry their tapes. The address measures the tape. A
-  residual chain is never a word on the wire, the book or the genome: it
+  translations each carry a tape. The address measures the tape. A
+  residue chain is never a word on the wire, the book or the genome: it
   is the remainder of a sentence and travels only as a typed demand
   vertex of one (`MU-RECURSION.md` chapter 50).
 - **Sentence** (`transducer/sentence/`): a nerve of germs with a Čech
@@ -54,9 +54,9 @@ corpus manifests (configuration) and the ledger or genome it writes
 - **The eye is a cover** (`MU-RECURSION.md` 24.4): specified, not yet
   wired. At least two senses over every sample — luminal (blades and
   carriages), harmonic (conformal invariants), holonomic (transitions and
-  their holonomy around loops of bodies) — as cochains whose cocycle is
-  checked at perception; the residual is the demand, with its verdict and
-  axes named, and only a novel residual reaches the book. Today the senses
+  the transitions' holonomy around rings of bodies) — as cochains whose
+  cocycle is checked at perception; the residue is the demand, with its
+  verdict and axes named, and only a novel residue reaches the book. Today the senses
   run as a pipeline.
 
 ## 3. The court organ
@@ -82,7 +82,7 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
 ## 4. The mesh
 
 - **Cover trie** (`network/nerve/cover.rs`): per lane, a trie of chart
-  prefixes to the hyphae whose active work covers them. Home is the fiber
+  prefixes to the hyphae whose active work covers them. Home is the fibre
   intersection on every occupied lane, then per-lane room, then identity.
 - **Digest exchange**: signed cover and ruled roots; fetch of discordant
   strata; paced per peer by that peer's Λ counted in the court's own K
@@ -91,7 +91,7 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
   asker (`MU-RECURSION.md` 45.7, 23.8).
 - **Roots**: solved families announced by key, keyed by task and solver.
 - **Wire** (`anastome/dialogue/`, `network/wire.rs`): one frame, one act
-  byte. The act constants and their frame layouts are documented in
+  byte. The act constants and the frame layout of each are documented in
   [`src/anastome/dialogue/acts.rs`](../src/anastome/dialogue/acts.rs); the
   byte of each act is assigned by `Action::byte` in
   [`src/physics/actions.rs`](../src/physics/actions.rs). The families are:
@@ -113,7 +113,7 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
     `ACT_TEACH`, `ACT_SETTLE`, `ACT_DOCKET`, `ACT_DEMAND_ROUTED`), whose
     bytes stand only so the door can refuse them by name.
 
-  The receipts a court seals carry actions of their own, in the court
+  The receipts a court seals carry the court's own actions, in the court
   range from `COURT_RANGE` upward.
 
 ## 5. Physics and time
@@ -122,10 +122,10 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
   `Budget` (`physics/budget.rs`) is a linear token minted only by
   `Physics::stroke` and consumed by every cursor and expansion; no
   duration is derived from a reserve count.
-- K is a kernel's own receipt index and orders events inside that kernel.
+- K is a court's own receipt index and orders events inside that court.
   TUniversal is the height of the mesh receipt ledger, read from receipts;
   it measures how long a carrier has stood at one home and never orders two
-  events across nodes. No kernel reads a wall clock, a unix clock, or a
+  events across nodes. No court and no mind reads a wall clock, a unix clock, or a
   timer; every duration is a count of strokes or heights (`MU-RECURSION.md`
   Part IX). Lane 2 of μ⃗ is temporal extent in heights.
 - Lanes: S spatial, G gauge, T temporal, H holonomic. Sections and torsion
@@ -180,8 +180,8 @@ fetched vertex, one held thought and one meet cost.
 
 ## 8. Persistence and continuity
 
-A hypha's snapshot and a mind's genome are written as keyed tries by
-their own coordinates and read back by key, never by position. The layout
+A hypha's snapshot and a mind's genome are each written as a keyed trie
+by its own coordinates and read back by key, never by position. The layout
 tags in the code are:
 
 | tag | what | where |
@@ -200,5 +200,5 @@ positional tape) and `MYT1` for the snapshot, `GEN4`, `GEN5` and `GEN6` for
 the genome. The one exception is the mesh record, which is configuration:
 an `MSH1` record is read and written back as `MSH2`. Ledgers and genomes
 are rewritten atomically; a restore rebuilds the basis from the lettered
-federation and drops what does not replay. Within one layout, residuals,
+federation and drops what does not replay. Within one layout, residues,
 thoughts, and dialects are never deleted (`MU-STANDARDS.md` §10).

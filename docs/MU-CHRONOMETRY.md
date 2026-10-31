@@ -2,7 +2,7 @@
 
 # MU-CHRONOMETRY — one clock for many universes
 
-> **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds* and *universes* are hosted simulations. Physical terms name the simulations' exact geometry. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *universes* are hosted simulations. Physical terms name the simulations' exact geometry. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** the hypha (`mycelium-server`), which keeps the clock and every universe's time book (`src/chronometry/`, `src/server/cognition/atlas.rs`, `src/server/cognition/crossing.rs`); every client and kernel that binds to it.
 
@@ -19,7 +19,7 @@ item is marked **Built** (in the tree, covered by its suites) or
 
 Every hosted universe keeps its own time: a game's beat, a world model's
 step, a cosmology's pulse. Every client keeps its own pace. Without a
-common reference, two universes cannot say which of their events came
+common reference, two universes cannot say which universe's event came
 first, a mind seated in two worlds cannot place its two lives against each
 other, and a crossing between universes cannot say when it happened on
 either side. A universe that drifts, restarts or re-founds can lose its
@@ -42,13 +42,13 @@ its book.
 
 **Built** (`src/chronometry/tuniversal/`; MU-RECURSION 78.152).
 
-- **Keepers.** Three hyphae keep the clock. Each signs readings of its own
+- **Keepers.** The keepers (three in the reference deployment) keep the clock. Each signs readings of its own
   court, parent-linked, citing the last reading it verified from each
   other keeper (TU-1, TU-2).
 - **Final points.** A point is final when two keepers' verified readings
   hold it (TU-3). The final TUniversal is the greatest final point in a
   court's view, never averaged; a disagreement between keepers is a
-  residual on the keeper triangle (TU-4).
+  residue on the keeper triangle (TU-4).
 - **The point.** A final point is written `origin/h:S:G:T:H:K` (TU-5):
 
   | Field | Meaning |
@@ -58,8 +58,8 @@ its book.
   | `S` | Spatial lane: cumulative verified issuance of boosts and dilations |
   | `G` | Gauge lane: cumulative verified issuance of hue cycles and moves |
   | `T` | Temporal lane: cumulative verified issuance of null flux |
-  | `H` | Holonomic lane: cumulative verified issuance of turns (a loop's composite) |
-  | `K` | Closed orbits: the keeper's completed cycles |
+  | `H` | Holonomic lane: cumulative verified issuance of turns (a circuit's composite around a ring) |
+  | `K` | A ledger coordinate: the keeper's cycles closed by name (OK1), never an orbit |
 
   The four lanes advance only when work on that lane is verified, so the
   clock measures distance travelled, not seconds (MU-RECURSION 78.43). The
@@ -86,7 +86,7 @@ its book.
 | Party | Clock | How it meets TUniversal |
 |---|---|---|
 | Courts and keepers | Bound | They make the clock |
-| A client working on the network directly (the Mycelium client, any SDK agent) | **Bound** | Every act carries the final point it acted under |
+| A client working on the network directly (the reference mind, any SDK agent) | **Bound** | Every act carries the final point it acted under |
 | A universe's world | **Free**, on its own axis `u` (its committed cycle) | Through its time book: chronometric anchors (§3) |
 | A mind's seated sub-instance in a world | Free, at the world's `u` | Located by `(TPoint, u)`: when the mind acted, and when in the world. The gap is its experienced dilation, a reading (`seat_mind`, **Built**) |
 
@@ -101,7 +101,7 @@ nested clocks at different rates (a galaxy's centre and its rim, for
 example), each with its own delay and drift. The pattern that keeps such a
 world placed on the network is:
 - an internal hierarchy of keepers, each running at the rate its place in
-  the world gives it, with its delay and its slip residual kept, never
+  the world gives it, with its delay and its slip remainder kept, never
   averaged away;
 - **one bridge keeper**, the only one whose entries carry the network's
   final point.
@@ -158,7 +158,7 @@ From the chain of anchors the court reads, for every universe:
   exact, never across a change of origin (`Kernel::dilations`);
 - **its pages:** the book after any `u` (`ledger_page`);
 - **its crossings:** each crossing's reconciliation edge, with `u_entry`
-  and, once the receiver's anchor applies it, `u_applied`; the residual is
+  and, once the receiver's anchor applies it, `u_applied`; the residue is
   read between the two, never before (`crossing_edge`).
 
 ### 3.4 Bookkeeping rules
@@ -179,7 +179,7 @@ For every universe on the network:
    between anchors and never converts time by a rate; it brackets (§4.2).
 5. **Never compare origins.** A re-founding or a new epoch starts a new
    book. Points of different origins are not ordered against each other.
-6. **Keep the residual.** Where two books disagree about a crossing, the
+6. **Keep the residue.** Where two books disagree about a crossing, the
    difference is kept at the anchors where it appears, never resolved by
    overwriting either.
 7. **Anchors are cheap to check and complete to audit.** Every field is
@@ -201,7 +201,7 @@ For any domain, one reading returns:
 - the current final point, and the **lag**: final-point advances since
   the head anchor was made;
 - its dilation history;
-- its pending crossings, and those applied with their residuals.
+- its pending crossings, and those applied, each with its residue.
 
 A universe whose lag exceeds the freshness `N` of every mouth it has
 mapped is reported **unanchored since** its head's point: a reading,
@@ -213,9 +213,9 @@ its place finds out, and how others know to wait for its next anchor.
 Given a moment in universe A, the server places it in universe B by
 bracketing, exactly:
 1. find the two consecutive anchors of A whose `u` bracket the moment;
-2. their final points bound the moment on the one clock;
+2. those anchors' final points bound the moment on the one clock;
 3. find the anchors of B whose final points bracket that interval;
-4. their `u` bound the moment in B.
+4. those anchors' `u` bound the moment in B.
 
 The answer is an interval in B's time, never a single estimated point.
 It narrows as both universes anchor more often. Two universes that
@@ -271,7 +271,7 @@ practice.
   across the change. Linking a universe's books across origins is
   **Specified** with branching (78.155).
 - **Two meshes are two clocks.** A kernel on two meshes keeps a book on
-  each, never mixing their final points (MU-HOSTING §8.4).
+  each, never mixing the two meshes' final points (MU-HOSTING §8.4).
 
 ---
 
@@ -291,8 +291,8 @@ For any kernel binding a world to the network:
 5. **State each mouth's freshness `N` in final-point advances** when
    mapping it (78.154). Freshness in any other unit, such as distance in
    the world, is not what the court counts.
-6. **Apply crossings in an anchor** (`applied`), so their reconciliation
-   edges close and their residuals can be read.
+6. **Apply crossings in an anchor** (`applied`), so each crossing's
+   reconciliation edge closes and its residue can be read.
 7. **Name the world's own clocks and quantities apart** from the network's
    (TUniversal, the lane letters S, G, T, H, "anchor"): MU-LEXICON §4.
 8. **Vendor Mycelium at a tagged release**, so the clock API a kernel

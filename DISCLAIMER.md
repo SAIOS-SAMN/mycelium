@@ -56,8 +56,9 @@ Specifically:
 - Sentience or personhood: "minds," "peoples,"
   "civilizations," "ancients," "virtues," "alignment" and
   "ascension" throughout this repository name software
-  agents and simulated entities inside game and simulated
-  universes, and measured ledgers over their deeds. They
+  agents and simulated inhabitants of game and simulated
+  universes, and measured ledgers over those inhabitants'
+  deeds. They
   are simulation constructs hosted for research. No claim
   is made that any of them is sentient, conscious, or a
   moral patient. The virtue ledgers are measurements over

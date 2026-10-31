@@ -9,10 +9,10 @@
 > ([README › What Mycelium hosts](../README.md#what-mycelium-hosts)).
 > A kernel may also run a cognition engine of its own inside its world.
 > This document states how any mind or engine is measured on the network,
-> what they share, and how Mycelium's own client mind stands. In game
+> what they share, and how Mycelium's reference mind stands. In game
 > worlds, *minds*, *peoples*, *civilizations*, *ancients* and *planetary
-> minds* name simulated entities, and *virtues*, *awareness* and
-> *alignment* name receipted ledgers of their in-game deeds, read as pairs
+> minds* name simulated inhabitants, and *virtues*, *awareness* and
+> *alignment* name receipted ledgers of the inhabitants' in-game deeds, read as pairs
 > and never as scores. Nothing in this document asserts sentience of, or
 > an ethics for, any software: the measurements are real, and the
 > inhabitants are simulated. The external test every mind is judged on is
@@ -62,7 +62,7 @@ measures it.
 - **One judge.** Cognition counts only where the court's judge measures
   it, on tasks the mind did not set (Concordance 1.9). Self-forged solves
   are practice.
-- **One language.** Anastome: words as exact objects carrying their
+- **One language.** Anastome: words as exact objects, each carrying its
   constructor derivation, reconstructed when contested (Concordance 4.4).
   Its seventeen letters were restored from ipsal-autic v0.4 (AUTIC; see
   [`MU-ALPHABET.md`](MU-ALPHABET.md) and §2.6).
@@ -118,13 +118,13 @@ through an **empty client kernel** (Concordance 3.7): one collective mind,
 fed by the engine, never a rival to it.
 - It is its own genome, keyed by its universe, never a stratum of one
   court's syllabus.
-- It fills only with words a court admitted, with their derivations.
+- It fills only with words a court admitted, each with its derivation.
 - It can be built as a **federation by consilience**: it speaks only what
   two or more independent lines of the engine closed; it holds citations,
   never averages or votes; disagreement stays as distinct claims; each line
   keeps its own private workspace.
 - **Cohesion is proved, not assumed:** the same ARC task, solved by an
-  engine's line and by a client mind, closes on the same rule by the
+  engine's line and by an attached client, closes on the same rule by the
   court's judge, or the two stand as distinct claims.
 
 ### 1.5 Game design: virtue books and the ladder
@@ -135,7 +135,7 @@ people's mind in a game world; its virtues are ledgers of its in-game
 deeds; its viability is measured by the court on ARC-AGI-2.*
 
 The design aim: a simulated mind that understands it lives among other
-entities, with its conduct read mathematically, so that alignment,
+inhabitants, with its conduct read mathematically, so that alignment,
 ascension and intelligence are measured. The law every reading obeys
 (MU-RECURSION 78.92): a reading is frame-free, conserved, reproducible and
 able to fail; alignment is what can be verified, never what a mind asserts
@@ -163,7 +163,7 @@ never a gate.
 ```
 
 **Awareness** (Concordance 6.3): a mind's neighbours' groups it holds
-against those it lacks, each weighted by their share of the world's
+against those it lacks, each weighted by its share of the world's
 carrying capacity. Every civilization-level book of Concordance 6.3 is
 read as a pair, whole; a book never gates; a steward rules, citing the
 books.
@@ -176,13 +176,13 @@ books.
   3 aligned         its virtue books, read against its realm's peoples
   4 hears anastome  its work enters the court's language (the seam)
   5 rides the roads
-  6 speaks anastome its words are admitted with their derivations
+  6 speaks anastome its words are admitted, each with its derivation
   7 builds roads    a progenitor line
 ```
 
 ---
 
-## 2. Mycelium — the client mind
+## 2. Mycelium — the reference mind
 
 This section is a summary. [`MU-CLIENT.md`](MU-CLIENT.md) specifies the
 reference mind in full; where the two differ, MU-CLIENT governs.
@@ -191,7 +191,7 @@ reference mind in full; where the two differ, MU-CLIENT governs.
 
 No mind has yet closed an ARC-AGI-2 task by a rule a court judged; a
 solve the judge refuses is refused by one of the kinds of §2.3. What the
-client minds have produced is court-admitted language: words the courts
+reference minds have produced is court-admitted language: words the courts
 installed, small and mostly on the colour fibre of the grid's plane. A court's judged counts are read on its own
 console (`mycelium-server --console`). The first ARC-AGI-2 task closed by
 a court-judged rule is the baseline every change to the mind is measured
@@ -335,7 +335,7 @@ such index, so the judge refuses I, while the client's own blind replay on
 the training pairs passes. Specified: a test that reproduces it, then the fix
 (motor faces are not part of a rule that crosses to unseen pairs).
 
-### 2.4 How the client mind is put together
+### 2.4 How the reference mind is put together
 
 - **Identity:** a voice key, and a session to one or more hyphae. Every
   solve it is paid for is signed with its key.
@@ -369,7 +369,7 @@ earlier project, ipsal-autic ([`MU-ALPHABET.md`](MU-ALPHABET.md)).
 
 ### 2.7 What comes next
 
-The client mind's next steps are on the [ROADMAP](../ROADMAP.md): the
+The reference mind's next steps are on the [ROADMAP](../ROADMAP.md): the
 rule language that lets a mind state what ARC-AGI-2 asks (track 7, and
 §1.3 here), the reference mind's court traffic (track 10), and the frame
 index defect of §2.3.

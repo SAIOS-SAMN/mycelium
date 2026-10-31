@@ -2,9 +2,9 @@
 
 # MU-SCIENCE — the network as a verifier of knowledge
 
-> **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes. A universe's *physics* is the declared law set of a simulation, not a claim about the physical universe. The mathematics the courts verify (certificates, theorems, computations) is ordinary, checkable mathematics, whichever hosted universe it was found in. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *planets* are simulated places, and *peoples*, *civilizations* and *ancients* simulated inhabitants, of hosted universes. A universe's *physics* is the declared law set of a simulation, not a claim about the physical universe. The mathematics the courts verify (certificates, theorems, computations) is ordinary, checkable mathematics, whichever hosted universe it was found in. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
-> **Components:** the courts (verification, settlement) and science kernels (their own universes, outside this repository). No game term.
+> **Components:** the courts (verification, settlement) and science kernels (each with its own universes, outside this repository). No game term.
 
 **Status:** specification, version 1 (2026-10-30). This document governs
 [ROADMAP](../ROADMAP.md) track 12. Each section states what the network
@@ -47,7 +47,7 @@ those physics agree, where they diverge, and what each has proven.
 
 **P1 — Verification is reconstruction.**
 - A claim enters the language only when courts have reconstructed the
-  claimed object themselves, from the claim's own coordinates and the
+  claimed object independently, from the claim's own coordinates and the
   exact laws that govern it.
 - A submitted derivation (a proof, a certificate, a program, a rule's
   tape) is evidence the court may follow as construction instructions.
@@ -116,7 +116,7 @@ those physics agree, where they diverge, and what each has proven.
 | Actor | Role | Exists today |
 |---|---|---|
 | **Court (hypha)** | Admits, reconstructs, settles, keeps the ledger, relays installed knowledge to peer courts. | Yes |
-| **Kernel** | A program that runs one or more universes and joins under the Concordance: it founds a domain, posts ledger entries and maps, runs houses. | Yes (netstratum, xylarium) |
+| **Kernel** | A program that runs one or more universes and joins under the Concordance: it founds a domain, posts ledger entries and maps, runs houses. | Yes (examples: the peer kernels netstratum, xylarium; README › Peer kernels) |
 | **Science kernel** | A kernel whose universe produces knowledge claims (statements, proofs, computations, laws) for verification. | This specification |
 | **Prover / solver** | A mind, SDK client or kernel service that produces claims: rules, proofs, certificates, reproducible computations. | Minds and SDK clients today |
 | **Verifier kernel** | A kernel bonded on a domain that reconstructs that domain's claims under the domain's physics, as an additional vantage. | This specification |
@@ -156,7 +156,7 @@ shell.
 | **The alphabet** | Seventeen seed letters, exact rotations, which never change; letters for further primes are added only by court rulings (MU-ALPHABET §6) | `docs/MU-ALPHABET.md`, `src/transducer/alphabet/` |
 | **Anastome** | The wire: signed speech acts whose payloads are exact geometric objects, each with one canonical encoding | `src/anastome/` |
 | **Exact arithmetic** | ℚ and Cl(4,1)(ℚ); no floating point in anything admitted | Throughout |
-| **The proofs of work** | POUW, POWC, POWR, POWV and their settlement | `docs/MU-ECONOMY.md` |
+| **The proofs of work** | POUW, POWC, POWR, the POWV share, and the settlement of each | `docs/MU-ECONOMY.md` |
 
 A kernel cannot amend the universal library unilaterally. It changes only
 in two ways:
@@ -401,7 +401,7 @@ basis of cross-universe convergence (§7).
 ## 6. The proofs of work for knowledge
 
 Every verified claim is paid through the POW++ arm that best represents
-the work. The arms and their ledger rows are those of MU-ECONOMY §0.
+the work. The arms and the ledger rows of each are those of MU-ECONOMY §0.
 
 ### 6.1 POUW — useful work: knowledge added
 
@@ -416,7 +416,7 @@ measure.
 
 **Settlement.**
 - The mint is the measured discharge.
-- Cited lemmas and laws take their shares first (MU-ECONOMY §5).
+- Each cited lemma and law takes its share first (MU-ECONOMY §5).
 - The verifying courts take POWV.
 - The prover takes the rest.
 

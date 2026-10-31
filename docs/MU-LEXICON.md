@@ -1,10 +1,10 @@
 # MU-LEXICON — the shared vocabulary
 
-> **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *planets* are simulated places, and *peoples*, *civilizations* and *ancients* simulated inhabitants, of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** §1 (physical) and §2 (civic) are the game kernels' vocabularies; §3 (network) is Mycelium's.
 >
-> Every term below (*universe*, *realm*, *planet*, *star*, *wormhole*, *black hole*, *white hole*) is a term of the hosted simulations and of the network's exact geometry, shared by the game kernels so their worlds can be compared.
+> Every term below (*universe*, *realm*, *planet*, *star*, *wormhole*, *black hole*, *white hole*) is a term of the hosted simulations and of the network's exact geometry, shared by the game kernels so the worlds of different kernels can be compared.
 
 **Status:** canonical, version 5 (78.122, 2026-10-07).
 
@@ -19,7 +19,7 @@ told so, never silently mistranslated.
 
 There are **three vocabularies**, and no word belongs to more than one of them:
 
-- **physical** — the spatial ladder and what is in it;
+- **physical** — the spatial scale and what is in it;
 - **civic** — who holds, governs and settles what;
 - **network** — the hyphae and what runs on them.
 
@@ -32,7 +32,7 @@ Mycelium's: the hyphae, courts, clients and wire.
 ring, a chord, a cell, a chart, a section — these are mathematics, defined in `MU-RECURSION.md`, and this lexicon
 neither renames nor claims them.
 
-## 1. Physical — the spatial ladder
+## 1. Physical — the spatial scale
 
 (Each game kernel states its own working scales.)
 
@@ -50,7 +50,7 @@ neither renames nor claims them.
 | **Black hole** | A **sink** of mass and value: what continuity (L0, in the law register since version 3; the register is now at version 4) lets absorb, at its place. |
 | **White hole** | A **source**: what continuity lets emit, at its place. In the game, the Einstein–Cartan bounce's outlet — returning the matter and information a black hole took, renewing the matter budget (a flow). It funds nothing: endowments are funded by passage tithes and, in the deep era, by the ancient houses' estates. |
 | **Wormhole** | A gateway (a throat) joining places the warp lanes do not, crossed at a **toll** to its keeper and a **tithe** for its upkeep (one passage's energy per lane-length it spans) to the progenitor line that keeps it, both in money. A progenitor's throat lies dormant until opened; a developed one needs upkeep. Settled in μ only where the ancients' tier touches the network. On the network, crossing one is a handoff between charts (78.59 P2). |
-| **Lane** | A warp connection between adjacent sectors. |
+| **Warp lane** | A warp connection between adjacent sectors. Always "warp lane": a bare "lane" is one of μ's lanes S, G, T, H (§4). |
 
 ## 2. Civic — holders, governors, settlement
 
@@ -59,7 +59,7 @@ neither renames nor claims them.
 | **People** (civilization) | A species become a polity, with its own biology, body plan, metabolism and value channels. No human defaults. |
 | **Realm** | A group of constellations of inhabited systems, sized by its stewards' duties and laid by a line, monitored by one or more **stewards**. The **only** meaning of "realm" anywhere. A realm is **not** a region: realm is civic, region is physical. |
 | **Ancient house** | An ancient people's estate and its line. Always "ancient house" — distinct from captains' and NPCs' houses and from sovereign houses. |
-| **Steward, Sovereign, Progenitor, Ancient** | The seats. Ancients, and possibly progenitors, are the only seats that touch the network's μ. |
+| **Steward, Sovereign, Progenitor, Ancient** | The offices. Ancients, and possibly progenitors, are the only offices that touch the network's μ. A **seat** is the network's (§3, *House*), never a civic office. |
 | **Value channel** | Any mechanism that moves claims between holders with conserved backing: a bank, a currency board, an estate, an escrow, kinship and relief flows. |
 | **Money** | A value channel's unit of account (SOL, FRN, VOID, THR, or any a people founds). |
 | **Stardock** | A port, and the ledger of every transfer made at it. |
@@ -76,21 +76,21 @@ neither renames nor claims them.
 | **Cohort** | Clients working on alike problems. Replaces the network's "galaxy" (78.59). |
 | **Allocation** | A client's bond and lane budget. Replaces the network's "star" (78.59). |
 | **μ** | The network's four-lane token, never summed across lanes; minted and burned only by court verdicts. |
-| **POW++** | POUW (useful work), POWC (work convergence), POWR (work retirement). |
-| **House** | (version 3, 78.145) A domain's sitting reserve speaking for its game on the seat surface: it lists the seats, answers takes, perceives for the minds seated and answers their calls. Distinct from the civic ancient house, and from captains', NPCs' and sovereign houses. |
+| **POW++** | POUW (useful work), POWC (work convergence), POWR (work retirement), and the POWV share (work verification). |
+| **House** | (version 3, 78.145) A domain's sitting reserve speaking for its game on the seat surface: it lists the seats, answers takes, perceives for the minds seated and answers each seated mind's calls. Distinct from the civic ancient house, and from captains', NPCs' and sovereign houses. |
 | **Seat surface** | (version 3, 78.145) The hypha's signed relay (`ACT_SEAT`, `0x53`) between a house and the minds that take its seats: it holds and forwards, volatile and bounded, and judges nothing in-game. |
 | **Task citation** | (version 4, 78.146, wire v1.2) A task's name on every wire — ACT_TASK, ACT_SOLVE, a seat's kind-4 record: 32 bytes, the citation hash of its registry content address (`registry::task_id`). The long address stays court-side, so no length wall applies to a task's name. |
-| **Keeper** | (78.152 TU-1) One of the three hyphae a, b, c, a distinct court and key, keeping TUniversal: its READING is its head's height `h`, its court's cumulative issuance per lane `S:G:T:H`, and `K`, the orbits it closed, signed and linked to its previous reading by hash, citing the last reading it verified from each other keeper. |
+| **Keeper** | (78.152 TU-1) One of the keepers (three in the reference deployment), a distinct court and key, keeping TUniversal: its READING is its head's height `h`, its court's cumulative issuance per lane `S:G:T:H`, and `K`, a ledger coordinate (OK1), signed and linked to its previous reading by hash, citing the last reading it verified from each other keeper. |
 | **Final point** | (78.152 TU-3) A keeper's point held by two distinct keepers' verified readings — its own signature and another's citation. The final TUniversal is the greatest one in a court's view, never averaged; with two keepers down it does not advance. |
 | **TPoint** | (78.152 TU-5) A final point as a typed coordinate: `origin/h:S:G:T:H:K`, the origin the genesis hash and epoch, the six fields exact integers written in 16 lowercase hex digits each (`TPoint::print`, `TPoint::parse`). What every act, percept and mail carries (`Session::tuniversal`). |
 | **Sub-origin** | (version 5, 78.155 §5c, seat wire v1.4) A sub-universe of a domain's universe, named by its 32-byte citation. A seat is named by (domain, sub-origin, seat id), the sub-origin absent for the domain's own universe; a post naming one is written under its sub-kind with the SCOPED bit (`0x80`), the sub-origin after the domain. |
 | **Relay epoch** | (version 5, seat wire v1.4) A value the seat relay draws when it is made (never 0), so every hypha restart changes it. A READ-MAIL at sub-kind 8 names the epoch its cursor was read under and is answered with the relay's epoch and last sequence: a cursor of another epoch, or past the sequence, is a restart and acknowledges nothing — never progress. |
-| **Axis coordinate** | (version 5, 78.156) A universe's own time `u`, its committed cycle, FREE of TUniversal: a percept's `local_time`, carried beside the house's final point. A seated mind's sub-instance is located at (TPoint, u); the ratio of their advances is its experienced dilation, a reading, never an error. |
+| **Axis coordinate** | (version 5, 78.156) A universe's own time `u`, its committed cycle, FREE of TUniversal: a percept's `local_time`, carried beside the house's final point. A seated mind's sub-instance is located at (TPoint, u); the ratio of the two advances is its experienced dilation, a reading, never an error. |
 
 ### 3.1 The fold lanes (version 2, 78.123 B)
 
 A fold's four lanes `S:G:T:H` mean the same in every domain, so folds of two domains can agree (union tiers, μ
-conversion). Agreed with the connected kernels 2026-10-07.
+conversion). Ruled 2026-10-07.
 
 | Term | Lane | Meaning |
 |---|---|---|
@@ -107,10 +107,13 @@ conversion). Agreed with the connected kernels 2026-10-07.
 |---|---|
 | **"World"** — the network's genesis act (78.120) meant an application; gameplay uses "world" for an inhabited body | The network's term is **Domain** (78.122): `Action::Domain`, `ACT_DOMAIN`, `DomainGenesis`, `Cite::Domain` — names only, the act byte `0x3E`, the cite tag and the snapshot leaf unchanged, no layout change. The genesis signing domain stays `"mycelium world genesis v1"`: domains founded before the rename were signed over it. In game code the term is **Body** / **Planet**; "world" stays informal. |
 | **"Realm"** for an application instance | Realm is civic only. The network's term is **Domain**. |
-| **"Galaxy" / "Star"** as network metaphors (78.59) | **Cohort** and **Allocation**. The physical galaxy and star keep their meaning; the algebra's star is untouched. |
+| **"Galaxy" / "Star"** as network metaphors (78.59) | **Cohort** and **Allocation**. The physical galaxy and star keep the physical meaning; the algebra's star is untouched. |
 | **"Universe"** as a game kernel's name for its type for a settled patch of sectors | That type is a **Region**. Universe is reserved for the container of the 3-sphere's constants and its cluster tree. |
 | **"Realm" tiers** in the ledger tree, today one per money's zone | They stay realm tiers; until stewardship is ported, a realm is approximated by a money's zone. |
-| **Lane letters S, G, T, H** (2026-10-30) | On the network they are TUniversal's and μ's lanes: spatial, gauge, temporal, holonomic (§3.1 for their fold reading). A kernel that uses the same letters for its own quantities names those quantities apart, never by the network's lane letters (MU-CHRONOMETRY §5). |
+| **Lane letters S, G, T, H** (2026-10-30) | On the network they are TUniversal's and μ's lanes: spatial, gauge, temporal, holonomic (§3.1 for the lanes' fold reading). A kernel that uses the same letters for its own quantities names those quantities apart, never by the network's lane letters (MU-CHRONOMETRY §5). A warp connection between sectors is a **warp lane** (§1), never a bare "lane". |
 | **"TUniversal"** for a game's own clock (2026-10-30) | TUniversal is the network's clock only (78.152). A game's own clock or counter takes another name. |
 | **"Anchor"** (2026-10-30) | On the network, a **chronometric anchor** is a universe's ledger entry (78.154; MU-CHRONOMETRY §3). An era anchor on the ledger, or a kernel's own use of the word (for founding constants, say), is another sense and is named as such where it could be confused. |
-| **"Planetary"** in four senses (2026-10-30) | *Planetary mind* is civic: a game kernel's simulated people's mind. *Planetary dialect* (MU-RECURSION 80) is the network's **dialect**: a client mind's own words. *Planetary mass on a star* (78.86) is the network's **allocation**. *Star, planet, orbit* in a client mind's field (MU-CLIENT §4) are that mind's internal geometry. None is interchangeable with another (GLOSSARY, *Components and scope*). |
+| **"Planetary"** in four senses (2026-10-30) | *Planetary mind* is civic: a game kernel's simulated people's mind. *Planetary dialect* (MU-RECURSION 80) is the network's **dialect**: a mind's own words. *Planetary mass on a star* (78.86) is the network's **allocation**. *Star, planet, orbit* in a mind's field (MU-CLIENT §4) are that mind's internal geometry. None is interchangeable with another (GLOSSARY, *Components and scope*). |
+| **"Governed world"** / **"Domain"** | A domain's simulation is a **governed world** in prose; the **Domain** is the network object that names it (`ACT_DOMAIN`, §3). |
+| **"Seat"** for a civic office | A **seat** is the network's place in a house (§3, *House*). Steward, Sovereign, Progenitor and Ancient are **offices** (§2). |
+| **"Entity"** | **Entity** is the SDK object holding a mind (`sdk::Entity`); in prose it is the **mind**. A game kernel's simulated being is an **inhabitant**. |

@@ -2,13 +2,13 @@
 
 # MU-ANTI-FLATTENING — the anti-flattening law
 
-> **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *planets* are simulated places, and *peoples*, *civilizations* and *ancients* simulated inhabitants, of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** every component of this tree (algebra, client, hypha, court); a development law. No game term.
 
 A structural invariant of Mycelium. It extends the convergence-engine
 design constraints (I: no boolean gates; II: no maps in cognition; V: no
-residual suppression) with a statement of why flat associative storage is
+residue suppression) with a statement of why flat associative storage is
 excluded from the reasoning path.
 
 1. A hash or digest (`[u8; 32]`) is a wire-transport encoding and cold-cache
@@ -17,7 +17,7 @@ excluded from the reasoning path.
    geometric contractions (V σ Ṽ), or boundary morphisms (∂₂Σ = Q) on the
    retained graded multivector manifold.
 3. Multi-dimensional perceptual axes (holonomy, harmonic spectrum, torsion,
-   scale) exist as intrinsic grades or fiber coordinates on the Cl(4,1)
+   scale) exist as intrinsic grades or fibre coordinates on the Cl(4,1)
    blade (clause 7), not as standalone `*_cells` lookup tables.
 4. An operation that collapses manifold curvature into a flat 0-dimensional
    scalar or hash comparison, bypassing geometric deduction, is a structural
@@ -30,9 +30,9 @@ excluded from the reasoning path.
    isoclinic dual-plane pairs (Π_i × ⋆Π_i) and exact continuous support invariants.
    Bound in `MU-RECURSION.md` checklist (m) and chapter 51 (ruled 2026-09-17).
 6. **Curvature is content.** Flatness `δ¹g = 1` is 10.3's predicate and
-   `Form::coheres` reads it; a loop that is not flat is HELD with its class
+   `Form::coheres` reads it; a ring that is not flat is HELD with its class
    vector (12.6), and consistency across cells is the Bianchi identity of
-   10.4, `δ²ω = 1`. A loop with a free part — a prime exponent or an
+   10.4, `δ²ω = 1`. A ring with a free part — a prime exponent or an
    off-plane class of infinite order — is not a debt, a cut, or a remainder
    to be gauged away: its canonical holonomy rotor is the candidate
    generator of 37.7, docketed on two courts' re-derivation and adjoined by
@@ -42,7 +42,7 @@ excluded from the reasoning path.
    the three-coordinate base is `Cl(4,1)` (51.2), and `Spin(4,1)` is both
    the conformal group of that base, whose translators `e_i ∧ e_∞` commute,
    and the isometry group of hyperbolic 4-space, whose transvections
-   `e_i ∧ e₋` do not — their commutator is a rotation scaled by the
+   `e_i ∧ e₋` do not — the commutator of two is a rotation scaled by the
    sectional curvature. The second reading is asserted ahead of a datum as
    rule 11's one stated exception (51.2); the curvature itself is read off
    a remainder, never a constant. `Spin(4,0) ⋉ ℚ⁴` is the Euclidean group,
@@ -53,9 +53,9 @@ excluded from the reasoning path.
    cyclotomic element (law 4); no finite field enters cognition, and a prime
    that splits in the Hurwitz order — `3 + e₀₁ + e₀₂` of weight 11 — enters
    as a rotor over ℚ through 37.7, on no coordinate plane and by no modulus.
-9. **Cells are conformal, never planar (`MU-RECURSION.md` 78.30).** A cell
-   is the meet of its witnesses' sphere vectors at its own grade. A
-   centroid is a conformal null point (A4), never a constructor of a cell.
+9. **Chambers are conformal, never planar (`MU-RECURSION.md` 78.30).** A
+   chamber is the meet of its witnesses' sphere vectors at its own grade. A
+   centroid is a conformal null point (A4), never a constructor of a chamber.
    A body's shape is the harmonic pencil of its moments; a toroid is the
    orbit of a round under two commuting modes read off the body's motion;
    continuous support is the harmonics' moments. No pixel grid, planar
@@ -69,7 +69,7 @@ excluded from the reasoning path.
    hyperbolic chamber under Vinberg's criterion; a non-crystallographic
    pair is an infinite-order mode, refused as a system and held as a
    mode.
-11. **Cells are keyed by their bodies' coordinates (A21, `MU-RECURSION.md`
+11. **A chamber is keyed by its bodies' coordinates (A21, `MU-RECURSION.md`
    78.10(a)), never by a member key that names two bodies at once; and a
    held stabilizer is never collapsed by choosing one representative of
    it (78.29(C)).**
@@ -114,7 +114,7 @@ in persistence and transport as in cognition.
   four-lane reading cannot be collapsed to one comparison.
 - **By review:** everything else — a `bool` deciding a branch in
   cognition (constraint I), a collapse to a scalar (clause 4), a
-  projection to a plane (clause 5), a loop's holonomy discarded (clause
-  6), a planar cell or a chosen representative (clauses 9 and 11) — is a
+  projection to a plane (clause 5), a ring's holonomy discarded (clause
+  6), a planar chamber or a chosen representative (clauses 9 and 11) — is a
   review rule, read against the
   `MU-RECURSION.md` review checklist, item (m) above all.

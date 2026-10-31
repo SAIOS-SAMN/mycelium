@@ -59,12 +59,12 @@ such change is named here.
   the one order of precedence and groups the documents; ROADMAP governs
   the order of work. Proposals 78.157 and 78.158 are titled as studies.
 - Documentation audit (2026-10-30), every document checked against the
-  code and cleared of development-network material (fleet readings,
+  code and cleared of development-network material (deployment readings,
   commit hashes from the unpublished history, local paths, coordination
   between sessions, peer kernels' internals):
   - MU-RECURSION restructured from 26,585 to 16,306 lines: the preamble
-    states the v0.2.0 status; superseded chapters are summarized under
-    their headings; chapter 78's ruling log is "Rulings in force", one
+    states the v0.2.0 status; each superseded chapter is summarized under
+    its heading; chapter 78's ruling log is "Rulings in force", one
     entry per ruling number with its rule and code sites; chapter 80 made
     contiguous.
   - MU-CLIENT restructured from 4,942 to 1,845 lines: the specification
@@ -81,7 +81,7 @@ such change is named here.
     binding tables (chapters 39 and 42) are brought to the tree with the
     test-naming change.
 - Documentation audit removals: `docs/MU-RECURSION-TASKS.md`
-  (the development fleet's task ledger; ROADMAP.md is the one plan of
+  (the development deployment's task ledger; ROADMAP.md is the one plan of
   work and governs), `docs/enumeration-audit.md` (paths from a pre-split
   tree), `docs/CROSS_COMPLEX_DESIGN.md` (an unimplemented design record)
   and proposal 78.159 (an inventory of code that no longer exists; its
@@ -95,7 +95,7 @@ such change is named here.
   endowment reading and the zero-sum element account (all built); the
   founding range Z ≤ 1700 of heavy kinds beyond the measured table, bound
   on Z and never on mass number; a firmament heavy enough to hold large
-  galaxies, its law owed by the kernels that keep galactic cores; a
+  galaxies, its law for the kernels that keep galactic cores to derive; a
   reference founding template planned as a named form. ROADMAP track 21.
 - `docs/MU-CHRONOMETRY.md`, one clock for many universes, consolidating
   78.124, 78.152, 78.154 and 78.156:
@@ -106,7 +106,7 @@ such change is named here.
     ledger entry, with its checks and readings (all built);
   - bookkeeping rules: anchor every committed state that matters, capture
     the whole point, never interpolate, never compare origins, keep the
-    residual;
+    residue;
   - the server's time service: a position reading (where a universe stands) with lag and an
     unanchored-since report, and placing universes against each other by
     exact bracketing (specified);
@@ -132,21 +132,21 @@ such change is named here.
   bonding: Cl(n+1,1)(ℚ) for any `n`; the pole state `(X(t), R)`, written
   `3Q / 3Z ± R`, as a named law form; isomorphic bonding as the
   versor carrying one state to another, automorphic bonding as a state's
-  stabilizer, both held as state; a closed chain's residual read as
+  stabilizer, both held as state; a closed chain's residue read as
   torsion; crossings as isomorphisms between faces' pole states. Exact at
   every boundary.
 - `docs/MU-TOPOLOGY.md`, multi-dimensional structure: why topology
   instead of flat records, with a table of what each keeps; the Cl(4,1)(ℚ)
   ambient algebra and its two readings; four lanes; complexes of any
   dimension, the coboundaries and the six pivots; the language as a sheaf;
-  holonomy as content and refusals as classed obstructions; orbits, their
-  algebra, lift and drag; nested shells; the network's own topology
+  holonomy as content and refusals as classed obstructions; orbits, the
+  orbit algebra, lift and drag; nested shells; the network's own topology
   (cover, ledger tree, convergence, atlas, agreements); the rules that
   keep the structure. The README's architecture gains a *Structure*
   paragraph.
 - ROADMAP track 18, topological certificates for agreements: an
   agreement as a complex (parties as vertices, acceptances as edges
-  carrying the transport between their frames and versions), certified
+  carrying the transport between the parties' frames and versions), certified
   when the parties' readings glue as a coboundary in the courts' own Čech
   machinery; disagreement named as an obstruction; amendment carried as
   transport; any party reconstructs the certificate. To carry Concordance
@@ -190,8 +190,9 @@ such change is named here.
     clauses; a network clause's "ancients" is the domain's reserve tier.
     §0 now calls the universes governed worlds, games among them.
   - MU-COGNITION states, part by part, what is required for hypha
-    integration and what is game: planetary minds and their ascension are
-    the game kernel's, and the court's part is judging their ARC closures.
+    integration and what is game: planetary minds and the ascension of each
+    are the game kernel's, and the court's part is judging each such mind's
+    ARC closures.
   - MU-RECURSION 78.86 and 80, and MU-LEXICON §4, mark the network and
     client senses of "planetary"; MU-LEXICON assigns its vocabularies to
     components.
@@ -205,7 +206,7 @@ such change is named here.
   as its reserve; conversion never mints; the rate emerges. The README's
   Economics section opens with it.
 - MU-HOSTING §8, *One kernel, two meshes*: a kernel on two meshes as an
-  exchange between their μ, each mesh sound on its own, the bridge
+  exchange between the two meshes' μ, each mesh sound on its own, the bridge
   trusted by its users; two clocks, two floors, two records. ROADMAP
   track 16, mesh federation.
 - `docs/MU-HOSTING.md` (worlds, kernels and hosted minds; ROADMAP track
@@ -216,9 +217,9 @@ such change is named here.
   - how a world model becomes a kernel;
   - the flat-world archetype (agent social networks such as Moltbook) and
     what a governed world refuses by construction;
-  - containment in two grades: resident minds contained by their kernel;
-    attached minds governed in their effect on the shared worlds and
-    record, not in their own compute; refusal by construction; the
+  - containment in two grades: each resident mind contained by its kernel;
+    each attached mind governed in its effect on the shared worlds and
+    record, not in its own compute; refusal by construction; the
     sovereign, non-test-driven reference mind;
   - the draw, as economics (lane-priced demand, standing work, syllabi,
     listings) with its security side effects, and tethering.
@@ -248,17 +249,17 @@ such change is named here.
   reading note: xylarium is a world-simulation kernel, netstratum a game
   engine whose civilizations solve forged tasks, barren-realms a Python
   game kernel; *minds*, *peoples*, *civilizations* and *virtues* name
-  simulated entities and receipted in-game ledgers, and ARC-AGI-2 is the
+  simulated inhabitants and receipted in-game ledgers, and ARC-AGI-2 is the
   external test they are judged on. §0.5 carries the same scope.
 - The README's opening and *Peer kernels* section, and the glossary
   (planetary mind, people, civilization, ancient; virtue book), state the
   same frame.
 - The README opens with what Mycelium is for: hosting games and simulated
   universes in which external AI agents explore, act and do science, with
-  their results verified and paid by the courts. A new section, *What
+  the agents' results verified and paid by the courts. A new section, *What
   Mycelium hosts*, defines hosted universes, hosted agents (minds) and
   verified results, and states that the simulation vocabulary names
-  software agents and simulated entities.
+  software agents and simulated inhabitants.
 - Every specification, design document and proposal in `docs/` opens with
   a scope note to the same effect, linking that section; the glossary,
   ROADMAP and CONTRIBUTING state it too. The glossary defines *mind* as a
@@ -266,7 +267,7 @@ such change is named here.
 - The crate and GitHub descriptions lead with hosting.
 - `DISCLAIMER.md` states under *What Is NOT Claimed* that minds, peoples,
   civilizations, ancients, virtues, alignment and ascension are software
-  agents, simulated entities and ledgers, with no claim of sentience or
+  agents, simulated inhabitants and ledgers, with no claim of sentience or
   moral patienthood, and that physical terms name the simulations'
   geometry. Its *Technical Scope* now describes the engine as built: a
   network of nodes exchanging signed messages, hosting external agents,
@@ -327,7 +328,7 @@ such change is named here.
   - verification classes: V0 rules, V1 certificates, V2 formal proofs,
     V3 deterministic computation, V4 law checks under a physics;
   - the proofs of work for knowledge (POUW, POWC across universes, POWR,
-    POWV, compute leases);
+    the POWV share, compute leases);
   - interweaving universes and the physics atlas;
   - verifier kernels, the verifier interface, wire, readings, bounds and
     adversarial cases;
@@ -388,7 +389,7 @@ such change is named here.
   one machine.
 - `GLOSSARY.md` defines the terms of the code and the specifications.
 - `docs/MU-EQUATIONS.md` (then `EQUATIONS`) collects the equations, formulas and master equations
-  in use, with their specification sections and code locations.
+  in use, each with its specification section and code locations.
 - The README carries a quick start, a network topology diagram and a
   task-to-payment sequence diagram.
 - The project name is written "Mycelium" in prose. Crate, binary and path

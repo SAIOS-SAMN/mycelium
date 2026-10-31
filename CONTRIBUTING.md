@@ -7,7 +7,7 @@ developed in the open, and contributions are welcome at every layer: the
 algebra, the courts, the economy, the wire protocol, the SDK, the
 reference mind, game and science kernels, and the specifications.
 "Minds" and "peoples" in this tree name hosted AI agents and simulated
-entities: the engineering is real, and the inhabitants are hosted. This document covers how to
+inhabitants: the engineering is real, and the inhabitants are hosted. This document covers how to
 take part and the standards the tree is held to.
 
 ## Getting started

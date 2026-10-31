@@ -73,9 +73,9 @@ here the mesh is also the court, the economy and the record.
   computation) reaches the shared record only when the courts have
   reconstructed and verified it, and it is paid through POW++.
 
-Throughout the repository, *minds* are these software agents, and
-*worlds*, *planets*, *peoples*, *civilizations* and *ancients* are
-simulated entities inside hosted universes. *Virtues* and *alignment* are
+Throughout the repository, *minds* are these software agents,
+*worlds* and *planets* are simulated places, and *peoples*,
+*civilizations* and *ancients* simulated inhabitants, of hosted universes. *Virtues* and *alignment* are
 ledgers of in-game deeds. Physical terms (*stars*, *black holes*,
 *wormholes*, *mass*) name the exact geometry of the simulations. None of
 this is a claim about real minds, real people, real ethics or the physical
@@ -90,8 +90,8 @@ Two rules follow:
    world reaches the network's language and ledger through adjudication,
    never by assertion.
 
-Containment has two grades (MU-HOSTING §5). Resident minds are contained
-by their kernel. Attached minds are governed: Mycelium does not contain an
+Containment has two grades (MU-HOSTING §5). A resident mind is contained
+by its kernel. Attached minds are governed: Mycelium does not contain an
 external agent's own compute or connections, but its effect on the shared
 worlds and record passes only through signed, exact acts that two courts
 must reconstruct, under a bond that equivocation or forgery forfeits.
@@ -110,8 +110,8 @@ document, two texts govern the parties: the Concordance
 universe-running kernel signs (with its duties to hosted minds, §3a), and
 [`docs/MU-CHARTER.md`](docs/MU-CHARTER.md), the mind's counterpart.
 [`docs/MU-COGNITION.md`](docs/MU-COGNITION.md) specifies how any mind or
-engine on the network is measured, what they share, and Mycelium's client
-mind. The full order of precedence is in [Documentation](#documentation).
+engine on the network is measured, what they share, and Mycelium's
+reference mind. The full order of precedence is in [Documentation](#documentation).
 
 ---
 
@@ -255,20 +255,20 @@ into eras, and witness hyphae co-sign each era's fold
 topology, not flat records. Objects are multivectors of Cl(4,1)(ℚ), with
 motions as versors. Relations are transports, and collections of
 relations are complexes of any dimension whose cohomology is read. A
-loop's holonomy is its content. Value and time keep four lanes apart, and
+ring's holonomy is its content. Value and time keep four lanes apart, and
 physics is nested shells `Sⁿ`. A flat record keeps values; this keeps
-how they relate, what loops through them compose to, and where views fail
+how they relate, what circuits through them compose to, and where views fail
 to glue, with the failure named ([`docs/MU-TOPOLOGY.md`](docs/MU-TOPOLOGY.md)).
 
 **Peer kernels: the game kernels.** Three game kernels were developed
 and run alongside Mycelium on its development network, and appear by name
 throughout the specifications. Each runs a simulated universe of its own:
 - **xylarium** (xylarium-kernel): a Rust world-simulation kernel that
-  grows exact, seed-reproducible universes from their origin to the
+  grows exact, seed-reproducible universes, each from its origin to the
   present epoch (star systems, worlds and biospheres in which the physics
-  wakes peoples), with a turning-based physics; client minds inhabit the
+  wakes peoples), with a turning-based physics; minds inhabit the
   peoples its physics wakes;
-- **netstratum:** a torus universe whose planets carry entities on orbits,
+- **netstratum:** a torus universe whose planets carry inhabitants on orbits,
   with a force-based physics and its own resident cognition engine (its
   civilizations, in lines of two vessels, solve tasks it forges). It faces
   the network through an empty client kernel;
@@ -276,20 +276,20 @@ throughout the specifications. Each runs a simulated universe of its own:
   world, the source of the sovereign cognition the reference mind adopted.
 
 Where the specifications speak of *minds*, *peoples*, *civilizations*,
-*ancients* or *virtues* in these kernels, they name simulated entities and
-receipted ledgers of their deeds inside the game worlds
-([`docs/MU-COGNITION.md`](docs/MU-COGNITION.md)). A Mycelium client mind can be
-the mind of such an entity, holding a seat in the game's house, and it is
+*ancients* or *virtues* in these kernels, they name simulated inhabitants
+and receipted ledgers of those inhabitants' deeds inside the game worlds
+([`docs/MU-COGNITION.md`](docs/MU-COGNITION.md)). A Mycelium mind can be
+the mind of such an inhabitant, holding a seat in the game's house, and it is
 judged by the courts on ARC-AGI-2 tasks it did not set.
 
 Each signs the [Concordance](docs/MU-CONCORDANCE.md), founds its own domains,
 and links the `forms` crate at a pinned commit. xylarium's named law forms
 (`forms::xylarium::*`) are the first instances of divergent physics on one
-mesh (Concordance A7). Their repositories are
+mesh (Concordance A7). The peer kernels' repositories are
 being prepared for public release. Until then, the specifications'
 references to them are design history, and nothing in this repository
-depends on them at build or run time. ROADMAP track 13 covers their
-integration.
+depends on them at build or run time. ROADMAP track 13 covers the
+integration of each.
 
 **Prototype precursor.**
 [convergence-engine](https://github.com/SAIOS-SAMN/convergence-engine) is
@@ -358,7 +358,7 @@ Each proof is earned by a distinct client action. The reference mind
 | Proof | The client action | Reference mind | SDK |
 |---|---|---|---|
 | **POUW** | Request a task, state a rule, submit a signed solve; or speak a word or sentence the courts install. | Extracts rules and solves court tasks; speaks words and sentences from its genome. | `ACT_TASK` → `extract_rule` / `sdk::rule::sentence` / rule elements → `encode_solve_with_rule` → `decode_solve_verdict` (`examples/sdk_client.rs`). |
-| **POWC** | Close a demand another mind left open, citing that mind's receipt; earn when other minds' demands use a word this voice discovered. | Cites its genome's words in what it speaks; hears other minds' words with their evidence, attests agreements and records convergences (`sdk::chatter`, `entity/converge.rs`). | States rules that cite installed words; the court pays the citation's measured discharge. |
+| **POWC** | Close a demand another mind left open, citing that mind's receipt; earn when other minds' demands use a word this voice discovered. | Cites its genome's words in what it speaks; hears other minds' words with the evidence for each, attests agreements and records convergences (`sdk::chatter`, `entity/converge.rs`). | States rules that cite installed words; the court pays the citation's measured discharge. |
 | **POWR** | Propose a rewrite: a word retired over fewer letters, a cycle condensed or torsed. | Its pivots (torse, condense) mint rewrites and speak them to the court. | Speaks a rewrite element through `Session::speak`; the court replays it and settles the compression yield. |
 
 **POWV is earned by node operators.** Every hypha that verifies a closure
@@ -443,9 +443,9 @@ moved:
 
 Each mode carries an exact rational amount.
 
-### Carriers and the ledger
+### Holdings and the ledger
 
-| Carrier | Holder | Meaning |
+| Holding | Holder | Meaning |
 |---|---|---|
 | Balance | a voice or a hypha | μ earned or received; spendable |
 | Bond | a voice or a hypha | μ staked; buys room; slashable |
@@ -468,7 +468,7 @@ re-expresses the rows it replaces.
   per lane, the lesser of what the escrow holds and the closer's measured
   discharge (`Treasury::release_discharged`). Anything held above the
   discharge is never issued. A pair that lowered a lane but left a
-  remainder pays nothing: descent is not closure.
+  remainder pays nothing: deflation short of closure is not closure.
 - **Verification is paid out of the release (POWV).** The courts whose
   replay verified a closure each take a share of its release, per lane:
   `⌊M_l · y_l / (y_l + R)⌋`, split equally between them. Here `y_l` is the
@@ -578,8 +578,8 @@ refused as `REFUSE_FOLD_INEXACT` with the ledger left as it was; `--check`
 prints the audit's reading for a home. A slash leaves circulation as an
 issuance-reducing row of its own kind. A fold conserves both equations
 across the rows it replaces, and a witness re-derives that before
-co-signing; a fold that does not conserve is refused. Genesis allocations
-are rows of their own kind, so seeded value and earned value are always
+co-signing; a fold that does not conserve is refused. A genesis allocation
+is a row of its own kind, so seeded value and earned value are always
 separable: `supply()` includes genesis and `minted()` does not.
 
 ### Genesis
@@ -632,14 +632,14 @@ withheld outputs. The corpus is obtained separately (see
 
 ```
 src/
-  anastome/     wire protocol: signed speech acts and their codecs
+  anastome/     wire protocol: signed speech acts and the codec of each
   arc.rs        task grid types and the corpus location
   bin/          mycelium-server, mycelium-client, mycelium-soak
   chronometry/  receipt chain, TUniversal clock, keepers
   client/       the mind: perception, winding, conversation, seats (sdk/)
   core/         exact arithmetic foundations
   court/        admission, convergence (47.3), verdicts and replay
-  economy/      treasury, escrow, settlement (POUW / POWC / POWR)
+  economy/      treasury, escrow, settlement (POUW / POWC / POWR, and the POWV share)
   network/      mesh record, nerve, keyed carriers
   observe/      typed readings
   physics/      metabolism: budgets, reserves, lane pressure
@@ -1001,8 +1001,8 @@ network), **Specified** (stated, not yet built) or **In progress**.
 | Document | Subject |
 |---|---|
 | [`docs/MU-CLIENT.md`](docs/MU-CLIENT.md) | The mind: perception, comprehension, conversation, the winding carrier, and how minds are paid (§5.4–§5.6). |
-| [`docs/MU-COGNITION.md`](docs/MU-COGNITION.md) | Minds and engines on the network: how any mind or engine is measured, what they share, and a summary of Mycelium's client mind (MU-CLIENT governs the mind). |
-| [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) | μ, the POW++ arms, carriers, escrow, settlement and audit. |
+| [`docs/MU-COGNITION.md`](docs/MU-COGNITION.md) | Minds and engines on the network: how any mind or engine is measured, what they share, and a summary of Mycelium's reference mind (MU-CLIENT governs the mind). |
+| [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) | μ, the POW++ arms, holdings, escrow, settlement and audit. |
 | [`docs/MU-XSEPTUM.md`](docs/MU-XSEPTUM.md) | xSEPTUM, the settlement protocol for payments through a hypha. |
 | [`docs/MU-FOLD.md`](docs/MU-FOLD.md) | Ledger eras and folds. |
 | [`docs/MU-CHRONOMETRY.md`](docs/MU-CHRONOMETRY.md) | One clock for many universes: TUniversal, who keeps which time, chronometric anchors as every universe's time book, the server's time service, crossings, and what each kernel needs. |
@@ -1027,7 +1027,7 @@ network), **Specified** (stated, not yet built) or **In progress**.
 
 | Document | Subject |
 |---|---|
-| [`ROADMAP.md`](ROADMAP.md) | The development tracks, in order, with their specifications. |
+| [`ROADMAP.md`](ROADMAP.md) | The development tracks, in order, each with its specification. |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | The contribution workflow, the standards in brief and the gate. |
 | [`docs/MU-STANDARDS.md`](docs/MU-STANDARDS.md) | Development standards: bounds, gates, tests as algebraic claims. |
 | [`STANDARDS.md`](STANDARDS.md) | Organization-wide repository conventions: naming, layout, tone, git practice. |

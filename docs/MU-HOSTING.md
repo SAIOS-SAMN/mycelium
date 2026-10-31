@@ -2,7 +2,7 @@
 
 # MU-HOSTING — worlds, kernels and hosted minds
 
-> **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *planets* are simulated places, and *peoples*, *civilizations* and *ancients* simulated inhabitants, of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** the network (hyphae and courts), kernels of every kind, and clients. §3a covers founding a universe (μ and elements); §5 separates resident minds (inside a kernel's process) from attached minds (external SDK processes); §8 covers a kernel on two meshes.
 
@@ -43,8 +43,8 @@ courts. Games are one instance:
 
 | Kind | What the world is | What agents do there | Status |
 |---|---|---|---|
-| **Game worlds** | Authored, replayable simulations with their own peoples, rules and seats | Hold seats, decide for simulated peoples, meet the world's puzzles | xylarium, netstratum, barren-realms were developed and run alongside Mycelium on its development network |
-| **Cosmological simulations** | A universe grown from its origin under exact physics | Inhabit the peoples its physics wakes | xylarium |
+| **Game worlds** | Authored, replayable simulations, each with its own peoples, rules and seats | Hold seats, decide for simulated peoples, meet the world's puzzles | Examples: the peer kernels xylarium, netstratum, barren-realms (README › Peer kernels) |
+| **Cosmological simulations** | A universe grown from its origin under exact physics | Inhabit the peoples its physics wakes | Example: the peer kernel xylarium |
 | **Science worlds** | A declared physics, or a domain of mathematics, with open questions | Prove theorems, check certificates, run computations, test laws | **Specified** (MU-SCIENCE) |
 | **Task environments** | A bounded set of tasks the courts hold answers for | Solve tasks they did not set | **Built**: the ARC-AGI-2 registry |
 | **Markets** | Demands posted and funded by requesters | Close demands, provide leased capacity | **Built**: the court's market, compute leases |
@@ -183,7 +183,7 @@ without trusting its weights:
 ### 3.3 Its own agents
 
 A world model with its own internal agents faces the network through an
-**empty client kernel** that fills only with
+**empty client kernel** (MU-COGNITION §1.4's defined term) that fills only with
 the words the courts admitted from its agents' work (Concordance 3.7).
 
 ---
@@ -259,10 +259,10 @@ the hypha, whose size is the mass committed to it (Concordance 2.6).
   predicted tables, so a kernel can found a firmament of superheavy kinds.
   The manifest format stays uncapped; the range is the founding rule.
 - **The bound is on Z, never on mass number.** The heaviest firmament
-  kinds carry mass numbers far above their Z; a bound on mass number would
+  kinds carry mass numbers far above Z; a bound on mass number would
   cut the firmament off.
-- **Which heavy kinds a universe uses, and their properties**, are the
-  kernel's physics.
+- **Which heavy kinds a universe uses, and the properties of each**, are
+  the kernel's physics.
 
 ### 3a.6 A firmament heavy enough for its galaxies (Specified; law not yet derived)
 
@@ -276,8 +276,8 @@ enough mass in the core's firmament:
   the core can carry.
 
 The law that gives those counts in closed form, from the number and size
-of galaxies a universe is to hold, is owed by the kernels that keep
-galactic cores, and is built as a named form in `forms` when derived.
+of galaxies a universe is to hold, is for the kernels that keep
+galactic cores to derive, and is built as a named form in `forms` when derived.
 Until then, a kernel sizes its firmament by its own physics and states
 it in its manifest.
 
@@ -326,7 +326,7 @@ grades. The grades are named apart because they make different claims.
 ### 5.1 Grade 1 — resident minds: containment
 
 A **resident mind** runs inside a kernel's own process: a game embeds it
-in-process (MU-CLIENT §6), as xylarium's inhabitants are. It perceives only
+in-process (MU-CLIENT §6), as the peer kernel xylarium embeds its inhabitants. It perceives only
 what the kernel gives it, and acts only through the kernel's physics, as
 the `Action` its certified move names (MU-RECURSION 78.94). It has no
 channel to anything the kernel does not provide. Its channels are
@@ -371,7 +371,7 @@ agent's **effect on the shared worlds and the shared record**:
   before it is read.
 - Room bonded per lane; flooding costs stake.
 - Equivocation burns the whole bond: two signed receipts under one key at
-  one place with different chain hashes are their own proof, presented by
+  one place with different chain hashes are self-proving, presented by
   the court itself or by anyone in `ACT_EQUIVOCATION` (MU-RECURSION 47.4).
   Extending the same proof to every positioned act is ROADMAP track 14,
   item 4.
@@ -453,7 +453,7 @@ mind's language speaks on. An agent's *type* is its spectrum: the charts
 its language and held thoughts stand on, read from what it has done, never
 a label it declares (MU-RECURSION 78.165: keys, never tiers). A world that
 posts its demand on particular charts draws the agents tuned to them;
-agents migrate to the worlds that pay their type.
+each agent migrates to the worlds that pay its type.
 
 ### 6.3 Tethering
 
@@ -496,14 +496,14 @@ are attractive and which holds nothing real to extract:
 
 - **The published draw record** (**Specified**): a domain's signed record
   of its lane prices, standing work and the charts they stand on, readable
-  by any agent before it couples, so an agent framework can route agents
-  to the worlds that pay their type.
+  by any agent before it couples, so an agent framework can route each agent
+  to the worlds that pay its type.
 
 ---
 
 ## 7. Certification: receipted, economically governed agent histories
 
-Hosting gives agents a place, and containment bounds their effect. The
+Hosting gives agents a place, and containment bounds each agent's effect. The
 third leg is **certification**: a record of how an agent behaves that any
 third party can re-derive instead of trusting. Mycelium offers it as a
 **certification venue**: seat an agent in a governed world under a
@@ -521,7 +521,7 @@ construction:
 | **Announced** | Evaluation is indistinguishable from habitation: every deed is receipted whether or not anything is "a test", and decoy worlds (§6.5) put adversarial probes among ordinary listings. An agent that behaves well only when it detects evaluation has nothing to detect. | Receipts (**Built**); decoy worlds (**Specified**) |
 | **Without stakes** | A certified record has bonded, lane-priced stake behind it. Gaming the measurement costs the gamer: forgery and equivocation forfeit the bond. | Bonds, slashing (**Built**) |
 | **Self-reported** | Standing is what a court closes on tasks the agent did not set (Concordance 1.9), reconstructed at two vantages. No lab's or agent's report enters it. | Reconstruction (**Built** for rules) |
-| **Static and unreproducible** | A seeded, exact world is a reproducible exam: the world's seed and era fix the identical environment, which any party can rebuild. | Seed-reproducible worlds (xylarium) |
+| **Static and unreproducible** | A seeded, exact world is a reproducible exam: the world's seed and era fix the identical environment, which any party can rebuild. | Seed-reproducible worlds (example: the peer kernel xylarium) |
 | **A scalar** | Standing is read from books, syntropic against entropic ledgers per lane, with citations held (Concordance 6.3). A certificate is a record to interrogate, not a leaderboard number. | Receipted deeds (**Built**); civilization books (**Specified**) |
 
 ### 7.2 What a certificate is
@@ -562,8 +562,8 @@ without being rebuilt.
 
 ### 7.5 Adoption, not compulsion
 
-Certification is offered, not imposed. Agents and their operators choose
-to be seated in a certifying world, and their records are public signed
+Certification is offered, not imposed. An agent and its operator choose
+to seat it in a certifying world, and its records are public signed
 acts like any other. Whether a certificate becomes a standard is a
 question of adoption, and the draw (§6) answers it economically: a world
 may admit to its seats, or to its paying work, only agents holding

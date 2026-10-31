@@ -2,7 +2,7 @@
 
 # MU-PRECURSORS — components carried forward from precursor implementations
 
-> **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds* and *universes* are simulations hosted on the network. Nothing here is a claim about real minds or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels.
 >
 > **Components:** the wire and its transport, the gate (`xtask`), the shared algebra (`src/core/`, `src/transducer/`), the courts (verification, admission, settlement), the SDK, and the documentation. No game term.
 
@@ -23,7 +23,7 @@ component is and how it is accepted. It builds on
 ## 0. Purpose
 
 Mycelium was preceded by several implementations that explored parts of
-the same design. Some of their components solved problems Mycelium still
+the same design. Some of those implementations' components solved problems Mycelium still
 has open. This document records, for each such component:
 
 - **What it is**, in Mycelium's terms.
@@ -57,7 +57,7 @@ Mycelium's current types, admission path and treasury.
    decoded coordinates.
 5. **Named refusals.** Every input a component cannot accept is refused
    with a reason the caller can act on; nothing is dropped silently, and
-   nothing aborts (`unwrap_used`, `panic` and their siblings are denied).
+   nothing aborts (`unwrap_used`, `panic` and the lints beside them are denied).
 6. **Tests as claims by the algebra.** A refusal by name, a fixed locus, a
    replay or reconstruction, or an exact identity (MU-STANDARDS 3.2). No
    golden bytes (Concordance 1.4), no census diffs, no thresholds.
@@ -85,7 +85,7 @@ Mycelium's current types, admission path and treasury.
 
 | Precursor | What Mycelium draws from it |
 |---|---|
-| **A predecessor Mycelium implementation** | The Noise XX transport and its pinning; the fault-injection campaign and its invariant auditor; the SDK tiers and the file-feed door. |
+| **A predecessor Mycelium implementation** | The Noise XX transport and its pinning; the fault-injection campaign and its invariant auditor; the SDK depths and the file-feed door. |
 | **An earlier settlement-layer prototype** | Smith normal form over ℤ, integer homology and the free and torsion parts; the declared chain-complex checker; the malformed-input conformance corpus and its refuse/wait distinction; the falsification scripts the mutation audit generalizes; the representation of homology as a coefficient-change functor. |
 | **ipsal-autic, the language project the alphabet came from** | Act parameters measured per pair; templates placed over a lattice; first contact as a relation; colour-role equivariance and the class quotient; the representation functor (chains add as transports compose); the table of refused functionals. |
 | **convergence-engine, the public prototype harness** ([github.com/SAIOS-SAMN/convergence-engine](https://github.com/SAIOS-SAMN/convergence-engine)) | The rational canonical form over ℚ[x] (invariant factors of a linear map); exact rational arithmetic and coboundary reduction, already kept (§7). |
@@ -108,7 +108,7 @@ Mycelium's current types, admission path and treasury.
 | 3.7 | Malformed-input corpus; refuse and wait | 14 | Small | Specified |
 | 3.8 | Rule-language extensions | 7 | Large | Specified |
 | 3.9 | Body fate precondition; representation functor | 7, 18 | Medium | Specified |
-| 3.10 | SDK tiers and a file-feed door | 9, 15 | Medium | Specified |
+| 3.10 | SDK depths and a file-feed door | 9, 15 | Medium | Specified |
 | 3.11 | Documentation: refused functionals, alignment, renderer | 11, 15, 17 | Small | Specified |
 | 3.12 | World-model onboarding reference | 15 (H3) | Small | Specified |
 | 4 | SDK packaging (`mycelium-sdk`) | 9 | Large | Specified |
@@ -169,14 +169,17 @@ static key. The predecessor's `expect` on the handshake pattern is a
 constructor that refuses instead.
 
 **Acceptance claims.**
-- `a_frame_round_trips_through_an_xx_session`: a frame written on one side
-  is read whole on the other (replay).
-- `a_changed_static_key_on_a_pinned_host_is_refused`: refusal by name.
-- `the_first_static_key_seen_is_the_pinned_one`: fixed locus across a
-  reconnect.
-- `a_frame_past_the_budget_is_refused_before_its_body_is_held`: refusal by
-  name at the reassembled length.
-- `a_signed_act_is_admitted_through_the_tunnel_and_an_unsigned_one_is_not`:
+- A frame written on one side of an XX session is read whole on the other
+  (replay; built as `initiate_completes_handshake_and_frames_round_trip`).
+- A changed static key on a pinned host is refused by name (built as
+  `pin_refuses_changed_peer_key_by_name`).
+- The first static key seen for a peer is the pinned one: a fixed locus
+  across a reconnect.
+- A frame past the budget is refused by name at the reassembled length,
+  before its body is held (built as
+  `write_frame_refuses_over_budget_before_sending` and
+  `read_frame_refuses_head_past_budget`).
+- A signed act is admitted through the tunnel and an unsigned one is not:
   the tunnel adds nothing to identity.
 
 **Track** 5. **Effort** medium. **Status** In progress: being built as
@@ -228,12 +231,11 @@ worktree, and adds the `stale` verdict so a moved span is reported rather
 than read as a surviving law.
 
 **Acceptance claims.**
-- `a_mutant_whose_test_fails_is_killed` and
-  `a_mutant_whose_test_passes_survived`, on a fixture catalogue against a
-  fixture crate.
-- `a_span_not_in_the_file_is_stale`: refusal by name, never counted as
+- A mutant whose test fails is `killed`, and one whose test passes has
+  `survived`, on a fixture catalogue against a fixture crate.
+- A span not in the file is `stale`: a refusal by name, never counted as
   killed.
-- `the_working_tree_is_unchanged_after_an_audit`: fixed locus.
+- The working tree is unchanged after an audit: a fixed locus.
 - A first catalogue covering at least the treasury audit
   (`Treasury::audit`), canonical decoding of one act, second-vantage
   equality (`same_vertex`) and a clause's tie rule, every entry `killed`.
@@ -275,14 +277,16 @@ caller cannot tell which vertices were dropped, or why.
 named-refusal law to a site that predates it.
 
 **Acceptance claims.**
-- `an_inert_vertex_is_refused_by_name`.
-- `a_vertex_whose_coordinates_do_not_read_carries_the_readers_reason`.
-- `a_refused_vertex_filed_later_leaves_no_refusal_at_its_key`: fixed locus.
-- `every_vertex_of_a_form_is_filed_refused_or_no_word`: the three sets
-  partition the form's vertices.
+- An inert vertex is refused by name.
+- A vertex whose coordinates do not read carries the reader's reason.
+- A refused vertex filed later leaves no refusal at its key: a fixed locus.
+- Every vertex of a form is filed, refused or not a word: the three sets
+  partition the form's vertices (in part built as
+  `learn_form_files_readable_form_whole` and
+  `learn_form_refuses_unreadable_word_by_name`).
 
 **Track** 7. **Effort** small. **Status** In progress (the reasons above
-are those being built; their final names are the code's).
+are those being built; the final names are the code's).
 
 ### 3.4 Integer homology and invariant factors
 
@@ -296,7 +300,7 @@ are those being built; their final names are the code's).
 2. **Rational canonical form over ℚ[x].** For a linear function `f`, the
    invariant factors `p₁ | p₂ | … | p_k` of `xI − f` over ℚ[x], whose
    product is the characteristic polynomial. Two linear functions are
-   similar over ℚ exactly when their invariant factors agree.
+   similar over ℚ exactly when the invariant factors of the two agree.
 
 **The gap.**
 - No Smith normal form, invariant factor or elementary divisor appears in
@@ -343,7 +347,7 @@ are those being built; their final names are the code's).
   functions is **necessary, not sufficient**, for conjugacy by a versor of
   the pole algebra: two bonds with different invariant factors are of
   different kinds, and two with equal factors are then tested for versor
-  conjugacy. The residual of a closed chain of bonds is read as torsion
+  conjugacy. The residue of a closed chain of bonds is read as torsion
   (G4).
 - **Track 12, MU-SCIENCE V1:** homology computations and integer
   solvability as certificate checks (§3.5).
@@ -359,20 +363,20 @@ factors; Mycelium keeps the factors as the class and acts on
 `LinearFunction` images, with no matrix type.
 
 **Acceptance claims.**
-- `each_invariant_factor_divides_the_next`: exact identity on `D`.
-- `u_a_v_is_d_with_u_and_v_unimodular`: reconstruction, and `det U`,
+- Each invariant factor divides the next: an exact identity on `D`.
+- `U A V = D` with `U` and `V` unimodular: reconstruction, and `det U`,
   `det V` are ±1.
-- `the_product_of_the_invariant_factors_is_the_characteristic_polynomial`:
-  exact identity over ℚ[x], against `LinearFunction::characteristic`.
-- `invariant_factors_are_unchanged_under_versor_conjugation`: fixed locus,
+- The product of the invariant factors is the characteristic polynomial:
+  an exact identity over ℚ[x], against `LinearFunction::characteristic`.
+- Invariant factors are unchanged under versor conjugation: a fixed locus,
   for `f` and `V f V⁻¹` over versors of Cl(4,1)(ℚ).
-- `a_chain_solvable_over_q_but_not_over_z_is_named`: refusal by name, on a
+- A chain solvable over ℚ but not over ℤ is named: a refusal by name, on a
   boundary matrix with torsion 2.
-- `the_torsion_of_the_real_projective_plane_is_two`: exact identity on a
+- The torsion of the real projective plane is 2: an exact identity on a
   minimal triangulation of ℝP².
-- `an_irrational_mode_names_its_irreducible_factor`: refusal by name,
+- An irrational mode names its irreducible factor: a refusal by name,
   replacing the degree-only reading.
-- `a_reduction_past_its_budget_is_refused_unbounded`.
+- A reduction past its budget is refused as `Unbounded`.
 
 **Track** 18, 19 and 12. **Effort** medium. **Status** Specified.
 
@@ -401,12 +405,13 @@ declared by a claim.
   `OpenBoundary { cell }`, naming the first `(k−1)`-cell whose signed flux
   does not cancel.
 - **Optional check (iii):** with §3.4, the witness's class in `H_k` over ℤ,
-  and whether two witnesses are homologous (their difference a boundary).
+  and whether two witnesses are homologous (the difference of the two a
+  boundary).
 - **Fuel is court strokes.** Every multiplication and every cancellation
   spends from the court's stroke budget; an unfinished check is unread and
   resumes on the next send.
 - **Identity by decoded coordinates.** Two claims are the same claim when
-  their decoded complexes and witnesses are equal as structures; a digest
+  the claims' decoded complexes and witnesses are equal as structures; a digest
   of the encoding compacts it for transport only.
 - **Payment through POW++.** The verdict carries the reconstructed object
   and its discharge, and settles through the existing lanes (POUW for the
@@ -416,18 +421,19 @@ declared by a claim.
 **Adaptations from the precursor.** The earlier settlement-layer
 prototype implemented the same two checks with fuel as an internal
 counter, identified work by its canonical bytes, and priced it by a
-formula of its own. Mycelium keeps the two checks and their refusal names,
+formula of its own. Mycelium keeps the two checks and the checks' refusal names,
 spends court strokes, identifies by decoded structure, and pays only
 through the POW++ arms.
 
 **Acceptance claims.**
-- `a_declaration_whose_boundaries_do_not_compose_to_zero_is_not_a_complex`.
-- `an_open_witness_names_its_leaking_cell`.
-- `a_kirchhoff_loop_on_a_ring_closes`: a 1-cycle on an `n`-ring, exact.
-- `a_non_canonical_declaration_is_refused_before_escrow`.
-- `two_encodings_of_one_complex_are_one_claim`: reconstruction by decoded
+- A declaration whose boundaries do not compose to zero is refused as not a
+  complex.
+- An open witness names its leaking cell.
+- A Kirchhoff cycle on a ring closes: a 1-cycle on an `n`-ring, exact.
+- A non-canonical declaration is refused before escrow.
+- Two encodings of one complex are one claim: reconstruction by decoded
   coordinates.
-- `a_check_past_its_budget_is_unread_and_resumes`.
+- A check past its budget is unread and resumes on the next send.
 
 **Track** 12 (S2). **Effort** medium. **Status** Specified.
 
@@ -436,7 +442,7 @@ through the POW++ arms.
 **What it is.** A harness that runs a mesh of hyphae in one process (or on
 one host), injects named faults on chosen topologies, and audits exact
 invariants after every campaign. A campaign is reproducible from a printed
-seed: the fleet size, the topology, the fault list and the seed are its
+seed: the mesh size, the topology, the fault list and the seed are its
 whole description.
 
 **The gap.** `tests/` holds two integration suites (`alpha_plan.rs`,
@@ -489,7 +495,7 @@ not a fault campaign.
   violation becomes a regression claim.
 
 **Adaptations from the precursor.** The predecessor implementation
-defined these fault classes, ran them on a twelve-node fleet with fixed
+defined these fault classes, ran them on a twelve-node mesh with fixed
 test keys, and audited its treasury by parsing ledger lines as text and
 comparing lines byte for byte. Mycelium rewrites the harness against its
 current admission (`src/court/admission/`) and treasury
@@ -499,14 +505,13 @@ auditor's independent view, and disjoint targets) are kept as design
 rules.
 
 **Acceptance claims.**
-- One claim per fault class, each named for what the court must do, for
-  example `a_replayed_act_moves_value_once`,
-  `an_equivocating_ledger_forfeits_the_whole_bond`,
-  `a_restored_signer_re_signing_a_consumed_position_is_named`,
-  `a_malformed_name_leaves_a_receipt`.
-- `conservation_holds_after_every_campaign`: exact identity per lane.
-- `a_campaign_reproduces_from_its_printed_seed`: replay.
-- `a_lie_routed_through_the_accused_is_still_detected`: the auditor's
+- One claim per fault class, each stating what the court must do, for
+  example: a replayed act moves value once; an equivocating ledger
+  forfeits the whole bond; a restored signer re-signing a consumed
+  position is named; a malformed name leaves a receipt.
+- Conservation holds after every campaign: an exact identity per lane.
+- A campaign reproduces from its printed seed: replay.
+- A lie routed through the accused is still detected: the auditor's
   independent view.
 
 **Track** 14. **Effort** large. **Status** Specified.
@@ -551,10 +556,10 @@ and wait cases as decoded claims and drops the stored accept bytes. The
 of acts, and `skip` is not adopted.
 
 **Acceptance claims.**
-- `a_ratio_not_in_lowest_terms_is_refused_not_repaired`.
-- `a_length_at_the_bound_waits_and_one_past_it_is_refused`.
-- `a_truncated_act_waits_for_exactly_the_bytes_it_owes`.
-- `every_corpus_case_is_refused_with_its_named_reason`.
+- A ratio not in lowest terms is refused, never repaired.
+- A length at the bound waits, and one byte past it is refused.
+- A truncated act waits for exactly the bytes it owes.
+- Every corpus case is refused with its named reason.
 
 **Track** 14 (codec hardening). **Effort** small. **Status** Specified.
 
@@ -587,21 +592,21 @@ it.
   clause is refused by name on that pair. Where two readings of the
   parameter are possible on a pair, the clause is refused, never broken
   by a silent tie.
-- *Claims:* `a_scale_by_the_frames_ratio_holds_where_the_ratio_differs_pair_to_pair`;
-  `a_non_integer_frame_ratio_is_refused_by_name`.
+- *Claims:* a scale by the frames' ratio holds where the ratio differs
+  pair to pair; a non-integer frame ratio is refused by name.
 
 **(b) A template placed over a lattice.**
 - *Gap:* `Act::Copy { template }` places one template centre onto centre
   on each selected body. A template repeated over a lattice of positions
   (a skew lattice included) is not stated.
 - *Design:* the lattice is read from the placement differences of the
-  witnessed copies as their Hermite normal form (`core::exponents`,
+  witnessed copies as the differences' Hermite normal form (`core::exponents`,
   exact over ℤ at any size), and its offset is anchored to a body a
   predicate selects. Membership of a position is decided by reduction
   against the form. No candidate positions are enumerated; a single
   witnessed copy mints no lattice and is refused by name.
-- *Claims:* `a_skew_lattice_is_read_whole_from_its_placement_differences`;
-  `a_lone_witness_mints_no_lattice`.
+- *Claims:* a skew lattice is read whole from its placement differences;
+  a lone witness mints no lattice.
 
 **(c) First contact as a relation, and a slide toward a partner.**
 - *Gap:* `Pred::Touches` reads contact that already holds; `Act::Slide`
@@ -615,9 +620,8 @@ it.
   one of them is the partner), never reduced to one. Where the ray to the
   partner is not a lattice unit, the slide is refused by name. The grid
   has a border: there is no toroidal wrap.
-- *Claims:* `a_body_slides_to_its_first_met_partner`;
-  `partners_at_one_distance_are_held_whole`;
-  `a_ray_that_is_not_a_lattice_unit_is_refused`.
+- *Claims:* a body slides to its first-met partner; partners at one
+  distance are held whole; a ray that is not a lattice unit is refused.
 
 **(d) Colour-role equivariance.**
 - *Gap:* `Act::Recolour` and the gauges of `Carry` and `Echo` are fixed hue
@@ -628,12 +632,12 @@ it.
   to the exact scene. A rule stated on the class is applied on each pair
   through that pair's trivialization. An equivariance check reads whether
   a rule's image map commutes with the hue permutation and, where it does
-  not, reports the first site where commutation breaks: a residual, never
+  not, reports the first site where commutation breaks: a residue, never
   a boolean alone. A rule that names an absolute hue is gauge-fixed, and
   the check says so.
-- *Claims:* `the_class_quotient_re_inflates_to_the_scene`;
-  `an_equivariant_rule_holds_under_every_palette_of_its_class`;
-  `a_gauge_fixed_rule_names_where_commutation_breaks`.
+- *Claims:* the class quotient re-inflates to the scene; an equivariant
+  rule holds under every palette of its class; a gauge-fixed rule names
+  where commutation breaks.
 
 **(e) Hue as a table over a named measured coordinate.**
 - *Gap:* `Paint::Of(Pred)` reads a hue off a touched partner. A hue that
@@ -644,8 +648,8 @@ it.
   is off the table is refused by name, never given a default. Counts and
   ranks enter only as predicates or table keys the rule names, with ties
   as named (Concordance 1.10).
-- *Claims:* `a_hue_table_paints_by_the_named_coordinate`;
-  `a_value_off_the_table_is_refused`.
+- *Claims:* a hue table paints by the named coordinate; a value off the
+  table is refused.
 
 **Clauses learnable as vocabulary.**
 - *Gap:* `Presentation` (`src/transducer/sentence/presentation.rs`)
@@ -656,8 +660,8 @@ it.
   the presentation at its address with its admission, and is spoken on a
   later family by citation. An unadmitted clause stays in the mind's
   dialect.
-- *Claims:* `an_admitted_clause_is_spoken_by_citation`;
-  `an_unadmitted_clause_stays_in_the_dialect`.
+- *Claims:* an admitted clause is spoken by citation; an unadmitted
+  clause stays in the dialect.
 
 **Adaptations from the precursor.** ipsal-autic, the language project the
 alphabet came from, held measured holes (including hues named by majority
@@ -676,13 +680,13 @@ closure on families it did not see, never by the task it closed.
 
 **What it is.** Two pieces of the family reader's mathematics:
 1. **Body fate as a typed precondition.** Before a rule is extracted from
-   a family, each pair's bodies are given their fate (carried, created,
+   a family, each pair's bodies are each given a fate (carried, created,
    vanished, deformed, gathered), and the family is read only where the
    fates are consistent across its pairs. Where they are not, extraction
    is refused with the pair and the body that breaks consistency named.
 2. **The representation functor.** Chains of movements are represented as
    transports such that adding chains corresponds exactly to composing
-   their transports. It turns a question about composition into one about
+   the chains' transports. It turns a question about composition into one about
    addition, which the integer machinery of §3.4 answers.
 
 **The gap.** `src/transducer/family/flux.rs` reads each percept's
@@ -713,31 +717,31 @@ Mycelium builds it on its versors and `LinearFunction`, and records the
 chart's linearization as a coordinate of the result, not as a constant.
 
 **Acceptance claims.**
-- `a_family_whose_pairs_disagree_on_a_fate_is_refused_naming_the_body`.
-- `a_family_with_consistent_fates_passes_the_precondition_unchanged`:
+- A family whose pairs disagree on a fate is refused, naming the body.
+- A family with consistent fates passes the precondition unchanged: a
   fixed locus.
-- `chains_add_exactly_as_their_transports_compose`: exact identity.
-- `the_product_of_two_ideal_members_is_zero`: exact identity.
+- Chains add exactly as the chains' transports compose: an exact identity.
+- The product of two members of the ideal is zero: an exact identity.
 
 **Track** 7 (fate precondition) and 18 (functor). **Effort** medium.
 **Status** Specified.
 
-### 3.10 SDK tiers and a file-feed door
+### 3.10 SDK depths and a file-feed door
 
 **What it is.** A statement of the SDK's depths, so a developer finds the
 shallowest one that serves, and a door that turns task-shaped files into
 claims without code.
 
-| Tier | What a developer brings | What runs |
+| Depth | What a developer brings | What runs |
 |---|---|---|
-| **Tier 0: run a node** | Nothing but a host | `mycelium-server`; earns POWV for verification (README › *Running a node*). |
-| **Tier 1: bring a world** | Task-shaped files | The file-feed door submits each file as one claim. |
-| **Tier 2: bring a solver** | A program that states rules | A client on `sdk::{Kernel, Session}` (`examples/sdk_client.rs`). |
-| **Tier 3: bring physics** | A universe's law set | A kernel that signs the Concordance and seals a physics profile (MU-SCIENCE §3.2; MU-HOSTING §3.1). |
+| **Depth 0: run a node** | Nothing but a host | `mycelium-server`; earns POWV for verification (README › *Running a node*). |
+| **Depth 1: bring a world** | Task-shaped files | The file-feed door submits each file as one claim. |
+| **Depth 2: bring a solver** | A program that states rules | A client on `sdk::{Kernel, Session}` (`examples/sdk_client.rs`). |
+| **Depth 3: bring physics** | A universe's law set | A kernel that signs the Concordance and seals a physics profile (MU-SCIENCE §3.2; MU-HOSTING §3.1). |
 
-**The gap.** Tiers 0 and 2 exist (the server; the SDK and its example).
+**The gap.** Depths 0 and 2 exist (the server; the SDK and its example).
 No door reads files into claims; a developer with tasks and no solver
-writes a client. The tiers are not stated in the SDK's documentation.
+writes a client. The depths are not stated in the SDK's documentation.
 
 **Design.**
 - **The door** is a small client on `sdk::{Kernel, Session}`: it watches
@@ -759,11 +763,11 @@ Mycelium's door refuses by name at every step, and never seconds: install
 remains the second vantage's (47.3).
 
 **Acceptance claims.**
-- `a_file_dropped_in_the_feed_is_one_claim_answered_beside_it`.
-- `a_file_that_does_not_decode_is_refused_by_name`.
-- `a_restarted_door_resumes_by_asking_the_court`: replay.
+- A file dropped in the feed is one claim, answered beside it.
+- A file that does not decode is refused by name.
+- A restarted door resumes by asking the court: replay.
 
-**Track** 9 (tiers in the SDK documentation) and 15 (the door, on the
+**Track** 9 (depths in the SDK documentation) and 15 (the door, on the
 operator's path, MU-HOSTING §2). **Effort** medium. **Status** Specified.
 
 ### 3.11 Documentation
@@ -776,9 +780,9 @@ Three documentation pieces, each a documentation commit.
 
    | Refused form | Why refused | Mycelium's replacement |
    |---|---|---|
-   | A squared-norm coherence `Σ ‖Δ_ik − (Δ_ij + Δ_jk)‖²` | Collapses a structured residual to one scalar, read by its approach to zero | The per-triple residual held whole; the cocycle read (`transducer::cech`) |
+   | A squared-norm coherence `Σ ‖Δ_ik − (Δ_ij + Δ_jk)‖²` | Collapses a structured residue to one scalar, read by its approach to zero | The per-triple residue held whole; the cocycle read (`transducer::cech`) |
    | A scored-argmin search `argmin_A ‖Π(AΔA⁻¹) − Δ_t‖²` | Selects by score | Canonicalize and difference: the transport is derived, not searched |
-   | A ratio of consecutive scalar residuals as a convergence rate | Re-imports the scalar coherence | Per-lane differences of consecutive exact readings; containment where content is not comparable |
+   | A ratio of consecutive scalar residues as a convergence rate | Re-imports the scalar coherence | Per-lane differences of consecutive exact readings; containment where content is not comparable |
    | An ε-band ("within a tolerance") | Approximation | Exact equality or a named refusal |
 
 2. **What determinism gives alignment**, for
@@ -802,7 +806,7 @@ Three documentation pieces, each a documentation commit.
 **What it is.** A checklist for MU-HOSTING §3.1 step 4 ("declare the state
 space exactly"), drawn from a widely used world-model interface: the
 Gymnasium-style spaces such libraries declare for observations and actions
-(discrete, multi-discrete, box, image and dictionary spaces), and their
+(discrete, multi-discrete, box, image and dictionary spaces), and the interface's
 episode protocol (reset with a seed, step, close).
 
 **The gap.** MU-HOSTING §3.1 step 4 requires that states cross the boundary
@@ -888,16 +892,16 @@ the crate's public API. This section is the design of it.
     off);
   - `seats`: seats and the seated mind.
 - **Documentation on docs.rs.** Every re-exported item documented, with
-  the tiers (§3.10) on the crate's front page, and each example linked.
+  the depths (§3.10) on the crate's front page, and each example linked.
 - **Examples per POW++ arm:** POUW (task, rule, solve: today's
   `sdk_client`), POWC (a rule citing installed words), POWR (a rewrite
   spoken through `Session::speak`), a lease (open, pay, close), and a seat.
-  POWV is earned by running a node and is documented as Tier 0.
+  POWV is earned by running a node and is documented as Depth 0.
 - **Publication to crates.io** under Apache-2.0. crates.io requires every
   dependency to be published, so `mycelium` (the library, with its
   binaries) and `forms` are published at matching versions with the SDK.
 - **A client conformance read.** A machine-readable statement of the acts
-  a client must speak (with their layouts) and the readings it must
+  a client must speak (with the acts' layouts) and the readings it must
   answer, served by a hypha and kept in the repository, with a conformance
   suite any client runs against a local network. This is the published
   conformance read of MU-HOSTING §2.5 item 4 and track 15 H1. Conformance
@@ -915,7 +919,7 @@ the crate's public API. This section is the design of it.
 | **P1: workspace** | A `[workspace]` with `mycelium`, `forms` and `mycelium-sdk` as members; `xtask` stays outside it. | The gate passes on the workspace; `forms` builds as a member; the server's and the SDK's builds share one lock file. |
 | **P2: the surface** | `mycelium-sdk` re-exporting §4.2's surface; `examples/sdk_client.rs` ported to depend on it alone. | The example builds and runs end to end against a local network with `mycelium-sdk` as its only Mycelium dependency; a compile test imports every surface item. |
 | **P3: features and dependencies** | The `server` feature on `mycelium`; the SDK's `noise`, `rules` and `seats` features. | The SDK builds with default features off and pulls none of the server-only crates; each feature builds alone. |
-| **P4: documentation and examples** | docs.rs documentation, the tiers, one example per arm, a lease and a seat. | Every example builds; each POW++ example is paid on a local network (README › *Quick start*). |
+| **P4: documentation and examples** | docs.rs documentation, the depths, one example per arm, a lease and a seat. | Every example builds; each POW++ example is paid on a local network (README › *Quick start*). |
 | **P5: conformance read** | The client conformance statement, served and in the repository; its suite. | The reference mind and `sdk_client` pass the suite; a client that omits a required act fails it by name. |
 | **P6: publication** | `forms`, `mycelium` and `mycelium-sdk` on crates.io under Apache-2.0, with the compatibility statement in the CHANGELOG. | A fresh project depending on the published `mycelium-sdk` by version builds and runs the example. |
 | **P7: bindings** | A first binding in another language, on the conformance read. | The binding passes the conformance suite with exact values only. |

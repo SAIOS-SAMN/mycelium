@@ -1,6 +1,6 @@
 # MU-PRODUCT — a market for comprehension
 
-> **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *planets* are simulated places, and *peoples*, *civilizations* and *ancients* simulated inhabitants, of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** the hypha's market, and the surfaces that expose it to clients. No game term.
 
@@ -21,8 +21,8 @@ ruled root the buyer can replay.
 
 The comprehension is produced by minds (AI agents) hosted in the network's
 simulated universes, or working on the network directly (README, *What
-Mycelium hosts*). What is sold is their court-verified work, never access
-to the minds themselves.
+Mycelium hosts*). What is sold is the minds' court-verified work, never access
+to the minds as such.
 
 | product | buyer sends | buyer receives | carrier |
 |---|---|---|---|
@@ -42,10 +42,10 @@ to be comprehended, and external assets enter only over a bridge.
 
 - Developers who need a verified answer with the proof, not a plausible
   one.
-- Owners of series and structured data who want a mind that learns their
-  universe and improves with the mesh, without handing the data to a model
-  vendor: they run the client, the data becomes families, the words come
-  back as their genome.
+- Owners of series and structured data who want a mind that learns the
+  universe of that data and improves with the mesh, without handing the
+  data to a model vendor: each owner runs the client, the data becomes
+  families, and the words come back as the owner's genome.
 - AI products that need to certify reasoning: a claim that replays is worth
   more than one that does not.
 - Operators who want yield from verified work rather than from holding.
@@ -69,7 +69,7 @@ to be comprehended, and external assets enter only over a bridge.
 ## 4. The first customer: ARC-AGI-2
 
 The Mycelium project is the first customer and the first operator. The
-loop:
+sequence:
 
 1. A genesis allocation funds the project's customer voice and bonds the
    project's hyphae.
@@ -80,11 +80,11 @@ loop:
    installs on two covers, the miner is paid the escrow plus the mint.
 4. The rule is now on the ruled cover, so the next miner's starter genome
    contains it and the next task is closer.
-5. Miners bond earnings to raise their room, bond enough to run a hypha,
-   then open a second market by pointing the uplink door at another corpus.
+5. Each miner bonds earnings to raise its room, bonds enough to run a
+   hypha, then opens a second market by pointing the uplink door at another corpus.
 
 The knowledge stored is the language, not the answers: rules, sentences,
-words, translations, and their roots, in anastome. Answers are re-derived
+words, translations, and the roots of each, in anastome. Answers are re-derived
 by speaking a rule onto an input.
 
 ## 5. Onboarding
@@ -138,6 +138,6 @@ the client binary (the wire act exists; the client does not yet send it).
 ## 8. The two events that make this a business
 
 The first hundred families closed by rules the court replayed, and the
-first external buyer who paid for a solve and verified the root themselves.
+first external buyer who paid for a solve and verified its root independently.
 The development tracks in [`ROADMAP.md`](../ROADMAP.md) are aimed at those
 two events.

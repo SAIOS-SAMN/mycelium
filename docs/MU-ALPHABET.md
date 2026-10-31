@@ -2,7 +2,7 @@
 
 # MU-ALPHABET — letters, words and spelling
 
-> **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
+> **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside governed worlds — games, scientific simulations and world models run by kernels under the Concordance. Peer kernels are listed in README › Peer kernels. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** the shared algebra (`src/transducer/alphabet/`, `src/transducer/peel.rs`), used alike by the client and the court; letter admission on the court (`src/server/cognition/germinate/listing.rs`). No game term.
 
@@ -50,21 +50,21 @@ columns on `e1`.
 | Slots | Letter | Planes | What it does on its plane |
 |---|---|---|---|
 | 0 | identity | none | nothing |
-| 1–6 | `1 + e_ij`, inverse `(1 − e_ij)/2` | all six | a quarter turn, 90° |
+| 1–6 | `1 + e_ij`, inverse `(1 − e_ij)/2` | all six | a 90° turn |
 | 7–12 | `3/5 + 4/5 e_ij` | all six | the rotation by the rational point `(3² − 4², 2·3·4)/5² = (−7, 24)/25` |
 | 13–16 | `5/13 + 12/13 e_ij` | `(0,1) (0,2) (0,3) (1,2)` | the rotation by the rational point `(5² − 12², 2·5·12)/13² = (−119, 120)/169` |
 
 A rotation is written by its **rational point** `(cos, sin)` with exact
-rational coordinates, never as an angle in decimals. The quarter-turn
+rational coordinates, never as an angle in decimals. The 90°
 letters cover the rotations of the square; the (3,4,5) and (5,12,13)
 letters are the rational rotations of infinite order through the primes 5
 and 13.
 
 The letters satisfy a fixed set of relations and no others
 (`alphabet/letters.rs`, `relators`):
-- a quarter turn has order four;
+- a 90° turn has order four;
 - rotors on one plane commute;
-- a half turn on a plane sharing one axis with a sensor-plane rotation
+- a 180° turn on a plane sharing one axis with a sensor-plane rotation
   inverts it;
 - the (3,4,5) and (5,12,13) letters have infinite order;
 - letters on **complementary** planes commute (§7.1); letters on planes
@@ -81,10 +81,10 @@ words, never a table of cases:
 
 | Motion of the grid | Word |
 |---|---|
-| 90° turn | one quarter-turn letter on the sensor plane |
-| 180° turn | two quarter-turn letters on the sensor plane |
-| a flip (mirror) of the sensor plane | a half turn through a third axis: two quarter-turn letters on plane `(1,2)` |
-| a transpose | the product of a quarter turn and a flip |
+| 90° turn | one 90° letter on the sensor plane |
+| 180° turn | two 90° letters on the sensor plane |
+| a flip (mirror) of the sensor plane | a 180° turn through a third axis: two 90° letters on plane `(1,2)` |
+| a transpose | the product of a 90° turn and a flip |
 
 A flip is not a separate kind of letter. On the sensor plane it reads as a
 mirror; in the algebra it is an even rotor through a third axis. Its parity
@@ -108,13 +108,12 @@ and nothing is tried and checked.
 3. **Prime 13.** The same with `3 + 2i`: each division is one (5,12,13)
    letter.
 4. **Unit turns.** What is left is a unit (`1, i, −1, −i`): zero to three
-   quarter-turn letters.
+   90° letters.
 5. **Check.** The spelled word's own rotation is read back on the same
    plane and must equal the motion.
 
 **Example.** The rotation by `(−7, 24)/25` spells as one (3,4,5) letter;
-followed by a quarter turn it spells as that letter and one quarter-turn
-letter. Rebuilding either word from its letters gives back exactly the
+followed by a 90° turn it spells as that letter and one 90° letter. Rebuilding either word from its letters gives back exactly the
 rotation it spelled.
 
 Code: `src/transducer/alphabet/spelling.rs` (`spell`, `spell_on`),
@@ -123,7 +122,7 @@ Code: `src/transducer/alphabet/spelling.rs` (`spell`, `spell_on`),
 ## 5. Motions that cannot be spelled
 
 A rotation whose Gaussian integer has a prime other than those over 5 and
-13, or an odd power of the half-turn generator, has no word in the seed.
+13, or an odd power of the 180°-turn generator, has no word in the seed.
 It is never approximated, rounded or replaced by the nearest letter:
 - the connection is not minted (`element::from_connection` answers `None`);
 - the mind holds the motion as an open thought, its **remainder**;
@@ -202,7 +201,7 @@ are Euclidean rotors on the chart `e0..e3`; carrying them into the triad
 is open work, and with ROADMAP track 19 (the conformal algebra
 `Cl(n+1,1)(ℚ)` for any `n`) the letters are restated in that algebra. The
 seed's meaning (the same seventeen rotations on the same planes) does not
-change; their carrier does.
+change; the carrier of those rotations does.
 
 ## 9. Where the code is
 

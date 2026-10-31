@@ -15,7 +15,7 @@ conventions.
 > development here.
 >
 > The following parts of this file do not bind this repository:
-> - **§3 and §4, where their vocabulary conflicts with the project's
+> - **§3 and §4, where the vocabulary of those sections conflicts with the project's
 >   technical terms.** The CCL (`CCL.md`) belongs to another repository
 >   and does not govern this code. Terms such as *node*, *genome*,
 >   *witness*, *protocol* and *law* are defined technical terms here
@@ -25,7 +25,7 @@ conventions.
 >   carries the AI-generated header; [DISCLAIMER.md](DISCLAIMER.md) covers
 >   the whole repository.
 > - **§6's external references.** `references/REFERENCES.md` is not part
->   of this repository; documents here cite their sources in place.
+>   of this repository; each document here cites its sources in place.
 
 ---
 
