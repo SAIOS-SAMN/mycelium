@@ -12575,7 +12575,7 @@ report's per-form sentences) beside substantive ones is trimmed.
 
 ## 78. Rulings in force
 
-This chapter lists the rulings numbered 78.1–78.168, one entry per number, each stating the rule as it stands and the code that carries it, or naming the ruling that superseded it. Rulings amend the chapters that govern the objects ruled on; where a ruling and an earlier chapter differ, the ruling governs. Rulings concerning the mind moved to [MU-CLIENT.md](MU-CLIENT.md) and are listed in its Rulings index. Numbers 79.1–79.3 label subsections of 78.59.
+This chapter lists the rulings numbered 78.1–78.169, one entry per number, each stating the rule as it stands and the code that carries it, or naming the ruling that superseded it. Rulings amend the chapters that govern the objects ruled on; where a ruling and an earlier chapter differ, the ruling governs. Rulings concerning the mind moved to [MU-CLIENT.md](MU-CLIENT.md) and are listed in its Rulings index. Numbers 79.1–79.3 label subsections of 78.59.
 
 ### 78.1 What learning is, in the engine's own terms
 
@@ -13294,7 +13294,9 @@ Code: `src/transducer/element/residual.rs` (`compose_fibre`,
   at the envelope's own centre (a grid's circumscribed sphere, centre the
   extent's midpoint, `r² = (h² + w²)/4`); where `r²_out / r²_in` is not a
   rational square no site corresponds (78.45) and the pair witnesses
-  nothing.
+  nothing. *Superseded by 78.169 (O4): a change of extent is a re-period of
+  each circle of turns, carried by no versor; the envelope dilation squares
+  and halves, and is not read.*
 - **Orientation.** The dihedral poses are a gauge iff the scene carries no
   polar vector. The polar vector is the transition displacement of the
   centre of mass, `Δr_CM = r_CM(out) − r_CM(in)`, with
@@ -16167,6 +16169,73 @@ another mind; the minds' own readings are diagnosis, never the witness.
 Rulings pending: 78.149(c) (§5), and whether an escaping orbit dissipated to the
 reservoir counts as bound for the drive (as scoped, yes: it is held at its
 coordinates and reforms).
+
+### 78.169 The transduction: no lattice past the sensor
+
+Ruled by the operator on 2026-10-31 (MU-DERIVATIONS D3.2, which it
+rewrites). "The rigidity and loss comes from the transformation to the
+lattice rather than the transduction of state space." Two frames of unequal
+extent are related by transduction in turns, never by a common lattice;
+the common refinement `K_lcm` is deleted, and no reader forms an lcm.
+
+1. **LIFT → ACT → PROJECT.** The grid is an embedded section of the state
+   space, not the space. Each axis of a frame is a circle of turns held as
+   fractions in `ℚ/ℤ`, `r/h`: never `(cos, sin)`, never `e_∞`, never a
+   squared norm, no normalisation constant. The frame's own extents are the
+   only numbers; the seams are held, never wrapped. Per-site values are
+   legitimate only at the two ends: the sensor's read and the speech of an
+   output grid; in between the state is bodies and motions.
+2. **A body is held by its boundary, never its interior**: its bands, the
+   maximal runs of one hue whose boundary turns stand on both circles, at a
+   cost of its perimeter. Two frames relate body to body: the incidences of
+   the bodies' band arcs under the motion, compared by exact integer
+   cross-multiplication, at most `(h + h′ − gcd)(w + w′ − gcd)`. A body not
+   carried whole (split or merged) is named `Mixed`, never a fallback to
+   cells.
+3. **An anisotropic scale is a re-period of each circle**: no versor carries
+   it (a versor's differential is a scalar times an orthogonal map). The
+   motions keeping the seams are the eight signed swaps of the two circles;
+   a 90° turn and a transpose between frames of different extent are exact
+   on turns, with the one obstruction named at projection
+   (`OffSite`). A shear, or a letter whose images on the sensor's plane are
+   not signed generators, is `Oblique`.
+4. **Verification is reconstruction**: the court's measured reconstruction
+   and the client's deflation read one residue through one function, on
+   the output's sites, so before and after are one unit.
+
+The operator's rulings on the entry's open questions, all of 2026-10-31:
+
+- **O1 — μ is a share of the frame.** Wired after the μ lanes carry
+  rationals; until then the share is exposed as an exact `Q` beside today's
+  count (`transduce::family_share`, `Transduction::share`), so the switch
+  is one call site per reader.
+- **O2 — (b)**: each circle is centred by its least boundary turn.
+- **O3 — identity is both frames' full content**, `h·w + h′·w′` with the
+  four periods: `[[1]] → [[2, 2]]` and `[[1, 1]] → [[2, 2]]` are two tasks.
+  Every task address changes (a ledger break).
+- **O4 — 78.56's Extent clause is superseded** by the re-period (its
+  envelope dilation squares and halves).
+- **O5 — refuse `Seam`**: a relation that would wrap a circle is refused;
+  a cover is read as `k` sub-enclosures, not one map of the circle.
+- **O6** — percept meets across unequal enclosures read through incidences
+  under the re-period.
+- **O7 — refuse `Mixed`.**
+- **O8** — the turn-native chart: its own entry, not in this ruling's work.
+- **O9** — decided by reading: the readers of demand links read metric
+  (carriages and transports between a demand's two sides, the chart's
+  moduli), so the payload carries both sites (a), never merged-partition
+  links.
+- **O10** — decided by reading: a typed census of the corpus's
+  unequal-extent train pairs classed by relation (`mycelium-soak
+  --transduction-census`), reported in D3.2.
+- **O11** — Concordance 2.3 binds a universe's stated space, not the
+  sensor's worksheet; a clarifying note is added there.
+- **O12** — shares on `S^n`, `n ≥ 2`: not in this ruling's work.
+
+Code: `src/transducer/family/transduce/` (`Turn`, `Enclosure`, `Enclosed`,
+`Transduction`, `SignedSwap`, `relation_of`, `TransductionRefusal`);
+`src/server/registry.rs` (`task_address`); `src/transducer/family/deflation.rs`
+(`unspoken_residue`).
 
 ## 80. The planetary dialect: a modified Gödel engine
 

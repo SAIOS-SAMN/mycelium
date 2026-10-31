@@ -98,6 +98,12 @@ Reading the map:
     stated metric - the arc on the sphere, the shortest wrapped path on the
     torus - never an unwrapped sum, never a chart's. R and the periods are
     stated in geometrized megaparsecs (1.8).
+    *Note (ruled 2026-10-31, MU-RECURSION 78.169):* this clause binds a
+    universe's stated space. It does not bind the sensor's worksheet, the
+    section a mind reads a scene on: each axis of a frame is a circle of
+    turns whose seam is held and never wrapped, measured by the product of
+    its two circles' turn measures, and nothing there is a place of a
+    universe.
 2.4 CORES ARE PAIRED THROATS. A galactic core is a larger wormhole. Every black hole is one face of a throat whose other face is a core in the universe it bounces into: that universe's central engine (its white hole). There is no open-ended singularity; every horizon has its far face. A universe's own Big Bang is the far face of a parent's core. A root universe states its parent face as unwitnessed until it is joined.
 2.5 THROATS ARE TUBES. A mouth joins two places of curved space, never two free frames. Its frames are motions of curved space (Spin+(3,1)); a ring of tubes closes to a curved-space motion read in path order.
 2.6 THROAT SIZE IS MASS. A throat's size follows from the mass m committed to

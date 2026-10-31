@@ -126,6 +126,18 @@ change built with its codec, replay and claims:
 - **Body fate as a typed precondition** of family extraction, with named
   refusals.
 
+**Progress — frames of unequal extent** (MU-DERIVATIONS D3.2, MU-RECURSION
+78.169): **Built**: the transduction (`transducer::family::transduce`): a
+frame as two circles of turns, each body held by its bands, the incidences
+of two frames under the re-period, the eight signed swaps as the motions,
+projection refusing `OffSite`, and the relation census of the corpus
+(O10). The deflation, the court's measured reconstruction and the demands
+of unreached pairs read a pair's unspoken residue on the output's sites.
+**In progress**: μ as the share of the frame (O1, after the rational
+lanes); the turn-native chart that lists a pair of unequal enclosures (O8);
+percept meets through incidences (O6); the incidence payload of a demand
+whose input does not land (O9 (a)).
+
 ## 8. Convergence as admission evidence
 
 Two minds whose different words have the same section on one scene are a
@@ -755,9 +767,12 @@ Each phase is one commit:
    slash and the challenger's bounty read off the defect, ruling 78.129
    amended forward (D2.1, D2.2).
 
-**Progress:** D3.2 is **Built** (NC3, ruled O1 (a)): the lcm cap is
-deleted, the common refinement is metered by the need its extents name,
-and `task_address` refuses an unrefined pair rather than skipping it.
+**Progress:** D3.2 is **Built** (NC3, ruled O1 (a)), and then rewritten as
+the transduction (MU-RECURSION 78.169): the lcm cap and the common
+refinement are both deleted, two frames are related by the bodies' bands
+in turns under a need of `R_h·R_w`, and `task_address` names a task by both
+frames' full content, refusing a pair with no enclosure rather than
+skipping it.
 D3.1 is **Built** (NC1): a sentence's linear part is constructed under
 the stroke `modes_need` reads off it.
 

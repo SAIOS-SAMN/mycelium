@@ -27,6 +27,45 @@ such change is named here.
 - `decode_task_envelope` refuses bytes after the last test input: read
   leniently, the deferral of a zero deficit decoded as an empty envelope.
 
+### Layout changes
+- **Task addresses change again, for every task: full content**
+  (MU-RECURSION 78.169, O3). A train pair is written as both frames' full
+  content — the four periods and every band of each frame — instead of the
+  listing key of its coboundary on the common refinement. Two tasks that
+  differ in any pair, by one site or one period, now have two addresses:
+  `[[1]] → [[2, 2]]` and `[[1, 1]] → [[2, 2]]` shared one. A court state
+  written before this change is adopted by a recut from genesis.
+- **The Concordance hash changes**: MU-CONCORDANCE 2.3 gains a note (O11)
+  that the clause binds a universe's stated space, not the sensor's
+  worksheet. A kernel signs the new hash.
+
+### Cognition
+- **Two frames are related by transduction in turns, never by a common
+  lattice** (MU-DERIVATIONS D3.2, MU-RECURSION 78.169). New organ
+  `transducer::family::transduce`: a frame's axes are two circles of
+  turns (`Turn`, `Enclosure`), a frame is held by its bodies' bands
+  (`Enclosed`), a pair by the incidences of its bands under the re-period
+  of each circle (`Transduction`, need `R_h·R_w` with `R(a, b) = a + b −
+  gcd(a, b)`), the motions keeping the seams are the eight signed swaps
+  (`SignedSwap`), and a projection onto an output frame refuses a turn
+  that lands on no boundary (`OffSite`). Refusals are
+  `TransductionRefusal`. `CommonRefinement`, `refine_delta` (both),
+  `arc::Refined` and `Unrefined` are deleted; on `0b148d64` pair 0
+  (`18 × 19 → 7 × 9`) the pair is 143 bands and 226 incidences, where
+  `K_lcm` wrote 21 546 cells and charted for ≥ 19 s.
+- The deflation, the court's measured reconstruction and the demand of an
+  unreached pair read the pair's unspoken residue — the identity's speech
+  against the observed output — on the output's sites, the unit of the
+  form's remainder (a `K_lcm` before was subtracted from an output-native
+  after). `declare_unspoken` reads the input's hue on the output's sites
+  through the re-period, never off a shared corner.
+- A pair of unequal enclosures has no intake route and adds no count to a
+  family's magnitude until the turn-native chart (O8) and μ as a share of
+  the frame (O1); `transduce::family_share` reads the exact share beside
+  the count.
+- `mycelium-soak --transduction-census DIR` classes every unequal-extent
+  train pair of a corpus by relation (O10).
+
 ### Fixed
 - **A hypha held its court for minutes listing the corpus** (mycelium#14).
   Once refinement was no longer capped, a corpus task whose residues take

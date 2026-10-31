@@ -45,8 +45,8 @@ fn signed_swaps_are_the_seam_keeping_actions() {
 fn signed_swap_reads_the_alphabet_letters() {
     use crate::transducer::alphabet::{LetterId, Word, PLANE_COL, PLANE_ROW};
     let plane = (PLANE_ROW, PLANE_COL);
-    let quarter = Word::from_letters(&[(LetterId::turn_90(plane).expect("a letter"), false)]);
-    let read = SignedSwap::of_word(&quarter).expect("a 90° letter is a signed swap");
+    let turn = Word::from_letters(&[(LetterId::turn_90(plane).expect("a letter"), false)]);
+    let read = SignedSwap::of_word(&turn).expect("a 90° letter is a signed swap");
     assert!(read == SignedSwap::TURN_90 || read == SignedSwap::TURN_270, "{read:?}");
     let twice = Word::from_letters(&[(LetterId::turn_90(plane).expect("a letter"), false); 2]);
     assert_eq!(SignedSwap::of_word(&twice), Ok(SignedSwap::TURN_180));
