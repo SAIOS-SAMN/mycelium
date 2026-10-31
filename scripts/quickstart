@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # QUICK START — a Mycelium network on one machine: three hyphae (courts) and
 # one SDK client, provisioned and started from nothing, the client solving
-# tasks the courts adjudicate and pay. The network keeps running until
+# tasks the courts adjudicate and pay; then the conformance read of both
+# profiles, and a kernel's house founding a domain. The network keeps running until
 # Ctrl-C, then every process stops; the homes stay in DIR for inspection.
 #
 # Usage: scripts/quickstart [DIR] [BASE_PORT] [TASKS]
@@ -25,6 +26,7 @@ SRV="$TARGET/release/mycelium-server"
 CLI="$TARGET/release/mycelium-client"
 EX="$TARGET/release/examples/client"
 CONF="$TARGET/release/examples/conformance"
+HOUSE="$TARGET/release/examples/house"
 say() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 
 if [ ! -d "$CORPUS_ROOT/training" ]; then
@@ -35,10 +37,10 @@ if [ ! -d "$CORPUS_ROOT/training" ]; then
   exit 1
 fi
 
-if [ ! -x "$SRV" ] || [ ! -x "$CLI" ] || [ ! -x "$EX" ] || [ ! -x "$CONF" ]; then
+if [ ! -x "$SRV" ] || [ ! -x "$CLI" ] || [ ! -x "$EX" ] || [ ! -x "$CONF" ] || [ ! -x "$HOUSE" ]; then
   say "building (release)"
   cargo build --release --bins || exit 1
-  cargo build --release -p mycelium-sdk --example client --example conformance || exit 1
+  cargo build --release -p mycelium-sdk --example client --example conformance --example house || exit 1
 fi
 
 PIDS=()
@@ -102,10 +104,14 @@ if [ "$adopted" != 1 ]; then echo "b and c did not adopt the genesis; see $DIR/b
 say "5. the SDK client works $TASKS tasks on hypha a"
 "$EX" "$DIR/client" "127.0.0.1:$PORT_a" "$TASKS"
 
-say "6. the client conformance suite on hypha b (MU-CONFORMANCE)"
+say "6. the conformance suite on hypha b (MU-CONFORMANCE): the mind profile, then the kernel profile"
 "$CONF" --endpoint "127.0.0.1:$PORT_b" --home "$DIR/conformance"
+"$CONF" --endpoint "127.0.0.1:$PORT_b" --home "$DIR/kernel-conformance" --profile kernel
 
-say "7. the court's reading of what it judged"
+say "7. a kernel's house on hypha c: the Concordance signed, the clock read, a domain founded"
+"$HOUSE" "$DIR/house" "127.0.0.1:$PORT_c"
+
+say "8. the court's reading of what it judged"
 "$SRV" --console --home "$DIR/a" --reading judged 2>&1 | grep -vE 'OBSERVER|TUNIVERSAL|clock'
 
 say "the network is running"
@@ -113,7 +119,8 @@ cat <<EOF
   hyphae      127.0.0.1:$PORT_a  127.0.0.1:$PORT_b  127.0.0.1:$PORT_c   (logs: $DIR/{a,b,c}.log)
   readings    $SRV --console --home $DIR/a --reading court      (acts, economy, judged, dispatched, clock, ...)
   client      $EX $DIR/client 127.0.0.1:$PORT_b 4
-  conformance $CONF --endpoint 127.0.0.1:$PORT_c --home $DIR/conformance
+  conformance $CONF --endpoint 127.0.0.1:$PORT_c --home $DIR/conformance [--profile mind|kernel|both]
+  a house     $HOUSE $DIR/house 127.0.0.1:$PORT_a
   a mind      $CLI --home $DIR/mind      (write 127.0.0.1:$PORT_a to $DIR/mind/bootstrap first)
 
 Ctrl-C stops the network.

@@ -11,7 +11,7 @@
 use crate::door::Door;
 use crate::transport::answer;
 use mycelium::network::wire::Frame;
-use mycelium::physics::laws::codec::{decode_laws_request, encode_register_reply, put_verdict, LawsRequest};
+use mycelium::physics::laws::codec::{decode_laws_request, encode_register_reply, LawsRequest};
 use std::net::TcpStream;
 
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
@@ -42,10 +42,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         LawsRequest::Verify(t) => {
             // 78.116 — under the stroke the motion's modes need, never the
             // court's default: a verdict of the transition alone.
-            let verdict = mycelium::physics::laws::verify_sized(&t);
-            let mut out = Vec::new();
-            put_verdict(&mut out, &verdict);
-            out
+            mycelium::physics::laws::codec::encode_verify_reply(&mycelium::physics::laws::verify_sized(&t))
         }
         // 78.118 — each transition of the batch, in the order sent.
         LawsRequest::Batch(ts) => {

@@ -1,10 +1,11 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-// THE CONFORMANCE SUITE ON THE NETWORK: each MUST act spoken to a running
-// hypha, its reply decoded and its exact values checked, each failure
-// named; the served statement read against the statement held.
+// THE CONFORMANCE SUITE ON THE NETWORK: each MUST act of the declared
+// profiles spoken to a running hypha, its reply decoded and its exact values
+// checked, each failure named; the served statement read against the
+// statement held.
 
-use super::{Report, StatementRead, STATEMENT};
+use super::{Profile, Report, StatementRead, STATEMENT};
 use crate::rule::{extract_rule, mint_sentence_why, speak_rule, NoCrystal, Physics};
 use crate::session::Session;
 use crate::voice::{SigningKey, Voice};
@@ -39,19 +40,20 @@ fn laws_statement(session: &Session, report: &mut Report) {
     };
     let outcome = match d::conformance::decode_statement_reply(&reply) {
         None => Err(format!("{} bytes that do not decode as a statement", reply.len())),
-        Some(read) if read == StatementRead::of(&STATEMENT) => Ok(format!("the served statement equals the SDK's: {} acts", read.acts.len())),
+        Some(read) if read == StatementRead::of(&STATEMENT) => Ok(format!("the served statement equals the SDK's: {} profiles", read.profiles.len())),
         Some(read) => Err(format!(
-            "the served statement (wire 0x{:04x}, law version {}, {} acts) differs from the SDK's",
+            "the served statement (wire 0x{:04x}, law version {}, {} profiles) differs from the SDK's",
             read.wire_version,
             read.law_version,
-            read.acts.len()
+            read.profiles.len()
         )),
     };
     report.record(act, outcome);
 }
 
 /// The hypha's Concordance hash against the SDK's, and a signature over it
-/// presented and accepted (both MAY: a hypha before v0.3.0 answers neither).
+/// presented and accepted (MAY for a mind, MUST for a kernel: a hypha before
+/// v0.3.0 answers neither, and they are unread there).
 fn laws_concordance(session: &Session, key: &SigningKey, report: &mut Report) {
     use mycelium::physics::laws::concordance::{ConcordanceSignature, CONCORDANCE_HASH};
     let hash = match session.speak(laws::encode_concordance_request()) {
@@ -130,42 +132,54 @@ fn task_by_citation(session: &Session, voice: &[u8; 32], envelope: &d::TaskEnvel
     Ok("the task by its citation is the task given".to_string())
 }
 
-/// THE CONFORMANCE SUITE against the hypha at `endpoint`, spoken as the voice
-/// `key` seats: the law register read and checked, a task taken and its
-/// envelope decoded, a solve sent and its verdict decoded, and the served
-/// statement and the task by its citation read where the hypha answers them.
-/// Every MUST act passes, or its failure is named; a hypha that cannot be
-/// reached fails each act with the reason.
-pub fn run(endpoint: &str, key: &SigningKey) -> Report {
-    let mut report = Report::default();
-    let session = Session::open(endpoint, Voice::from_key(key.clone()));
+/// The mind's loop: a task taken and its envelope decoded, the task asked by
+/// its citation, a solve sent and its verdict decoded.
+fn mind_loop(session: &Session, key: &SigningKey, report: &mut Report) {
     let voice = key.verifying_key().to_bytes();
-    report.record("laws register", laws_register(&session));
-    laws_statement(&session, &mut report);
-    laws_concordance(&session, key, &mut report);
     let reply = match session.speak(d::encode_task_request(&voice)) {
         Ok(r) => r,
         Err(e) => {
             report.fail("task", format!("no answer: {e}"));
-            report.unread("solve", "no task to solve");
-            return report;
+            return report.unread("solve", "no task to solve");
         }
     };
     if reply.is_empty() {
         report.unread("task", "the registry gave no task (an empty envelope: no work)");
-        report.unread("solve", "no task to solve");
-        return report;
+        return report.unread("solve", "no task to solve");
     }
     let Some(envelope) = d::decode_task_envelope(&reply) else {
         report.fail("task", format!("{} bytes that do not decode as an envelope", reply.len()));
-        report.unread("solve", "no task to solve");
-        return report;
+        return report.unread("solve", "no task to solve");
     };
     match envelope.train.is_empty() || envelope.tests.is_empty() {
         true => report.fail("task", "an envelope with no train pair or no test input"),
         false => report.pass("task", format!("{} train pairs, {} test inputs", envelope.train.len(), envelope.tests.len())),
     }
-    report.record("task by citation", task_by_citation(&session, &voice, &envelope));
-    report.record("solve", solve(&session, key, &envelope));
+    report.record("task by citation", task_by_citation(session, &voice, &envelope));
+    report.record("solve", solve(session, key, &envelope));
+}
+
+/// THE CONFORMANCE SUITE against the hypha at `endpoint`, spoken as the voice
+/// `key` seats, for a client declaring `profiles`: the law register read and
+/// checked, the served statement, the Concordance's hash and a signature over
+/// it; for a mind, a task taken, asked by its citation and solved; for a
+/// kernel, the acts of its uplink (`Profile::Kernel`: the clock, transitions
+/// verified, a domain founded on the voice's key and its universe endowed
+/// and read, its seats posted). A kernel is never asked task or solve unless
+/// it also declares the mind profile. Every MUST act of a declared profile
+/// passes, or its failure is named; a hypha that cannot be reached fails
+/// each act with the reason.
+pub fn run(endpoint: &str, key: &SigningKey, profiles: &[Profile]) -> Report {
+    let mut report = Report::of(profiles);
+    let session = Session::open(endpoint, Voice::from_key(key.clone()));
+    report.record("laws register", laws_register(&session));
+    laws_statement(&session, &mut report);
+    laws_concordance(&session, key, &mut report);
+    if profiles.contains(&Profile::Kernel) {
+        super::uplink::run(&session, key, &mut report);
+    }
+    if profiles.contains(&Profile::Mind) {
+        mind_loop(&session, key, &mut report);
+    }
     report
 }

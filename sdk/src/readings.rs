@@ -28,6 +28,8 @@ pub use mycelium::physics::laws::codec::{
     decode_clock_reply, decode_lexicon_reply, decode_parameters_reply, encode_clock_request, encode_lexicon_request,
     encode_parameters_request, ServedTerm,
 };
+/// The vocabulary a lexicon term belongs to.
+pub use mycelium::physics::laws::lexicon::Vocabulary;
 
 /// A court's receipts over a span, and the place a span is named by.
 pub use mycelium::anastome::dialogue::{decode_receipts_reply, encode_receipts_request};

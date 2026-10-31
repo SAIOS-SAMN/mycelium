@@ -1,8 +1,9 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-// THE CONFORMANCE REPORT: one finding per act checked, each named.
+// THE CONFORMANCE REPORT: one finding per act checked, each named, read
+// against the profiles the client declared.
 
-use super::{Need, STATEMENT};
+use super::{Need, Profile, STATEMENT};
 
 /// WHAT ONE ACT'S CHECK CAME TO, named by the act's statement name.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -46,20 +47,36 @@ impl Finding {
     }
 }
 
-/// THE REPORT: every finding, in the order the acts were checked.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+/// THE REPORT: the profiles the client declared, and every finding, in the
+/// order the acts were checked.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Report {
+    /// The profiles the client declared: the MUST acts of all of them,
+    /// together, are what it is held to.
+    pub profiles: Vec<Profile>,
     /// Every finding, one per act checked.
     pub findings: Vec<Finding>,
 }
 
 impl Report {
-    /// Whether the client conforms: every MUST act of the statement passed,
-    /// and no act failed.
+    /// An empty report for a client declaring `profiles`.
+    pub fn of(profiles: &[Profile]) -> Report {
+        Report { profiles: profiles.to_vec(), findings: Vec::new() }
+    }
+
+    /// The need the declared profiles give an act, or none where none of
+    /// them names it.
+    pub fn need(&self, act: &str) -> Option<Need> {
+        STATEMENT.union(&self.profiles).into_iter().find(|a| a.name == act).map(|a| a.need)
+    }
+
+    /// Whether the client conforms: it declared a profile, every MUST act of
+    /// the profiles it declared passed, and no act failed.
     pub fn conforms(&self) -> bool {
         let none_failed = !self.findings.iter().any(|f| matches!(f, Finding::Failed { .. }));
-        let musts_passed = STATEMENT.of_need(Need::Must).all(|a| self.findings.iter().any(|f| f.act() == a.name && f.passed()));
-        none_failed && musts_passed
+        let musts = STATEMENT.union(&self.profiles);
+        let musts_passed = musts.iter().filter(|a| a.need == Need::Must).all(|a| self.findings.iter().any(|f| f.act() == a.name && f.passed()));
+        !self.profiles.is_empty() && none_failed && musts_passed
     }
 
     /// Every failure, `(act, reason)`, in order.
@@ -94,7 +111,7 @@ impl Report {
 impl std::fmt::Display for Report {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for finding in &self.findings {
-            let need = match STATEMENT.act(finding.act()).map(|a| a.need) {
+            let need = match self.need(finding.act()) {
                 Some(Need::Must) => "MUST",
                 Some(Need::May) => "MAY ",
                 None => "    ",
@@ -109,6 +126,13 @@ impl std::fmt::Display for Report {
             true => "conforms",
             false => "does not conform",
         };
-        writeln!(f, "{verdict}: wire 0x{:04x}, law version {}", STATEMENT.wire_version, STATEMENT.law_version)
+        let profiles: Vec<&str> = self.profiles.iter().map(|p| p.name()).collect();
+        writeln!(
+            f,
+            "{verdict} (profile {}): wire 0x{:04x}, law version {}",
+            profiles.join(" + "),
+            STATEMENT.wire_version,
+            STATEMENT.law_version
+        )
     }
 }
