@@ -371,7 +371,7 @@ fn seed_horizon_collapses_vortex_by_matching_certificate() {
         before: before.clone(),
         after: after.clone(),
         rank_move: RankMove::Discharged { from: RankAxis::Torsion },
-        mu: crate::transducer::sentence::Mu::Unmeasured,
+        mu: crate::transducer::sentence::MeasuredMu::Unmeasured,
         by: PivotBy::Word {
             face: chord(),
             word: Box::new(w.clone()),
@@ -390,7 +390,7 @@ fn seed_horizon_collapses_vortex_by_matching_certificate() {
         before: before.clone(),
         after: after.clone(),
         rank_move: RankMove::Discharged { from: RankAxis::Torsion },
-        mu: crate::transducer::sentence::Mu::Unmeasured,
+        mu: crate::transducer::sentence::MeasuredMu::Unmeasured,
         by: PivotBy::Word {
             face: chord(),
             word: Box::new(sheet),

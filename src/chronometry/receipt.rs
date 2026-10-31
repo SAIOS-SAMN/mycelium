@@ -90,8 +90,8 @@ impl Stamp {
     pub const LEN: usize = 8 + 32 + Place::LEN;
 
     /// The stamp of one act: its tick, its signer, its place on the line.
-    pub fn new(h: u64, vk: [u8; 32], at: Place) -> Stamp {
-        Stamp { h, vk, k: at.k, i: at.i }
+    pub fn new(h: u64, signer: [u8; 32], at: Place) -> Stamp {
+        Stamp { h, vk: signer, k: at.k, i: at.i }
     }
 
     /// Where the act stands on its signer's line.
@@ -130,9 +130,9 @@ impl Stamp {
 
     /// The signer's own line, keyed by `vk‖K‖i`: the relation the range
     /// readers ask by (78.24 P1). A coordinate, never the act.
-    pub fn line_key(vk: &[u8; 32], at: Place) -> Vec<u8> {
+    pub fn line_key(signer: &[u8; 32], at: Place) -> Vec<u8> {
         let mut out = Vec::with_capacity(32 + Place::LEN);
-        out.extend_from_slice(vk);
+        out.extend_from_slice(signer);
         at.put_canonical(&mut out);
         out
     }

@@ -148,11 +148,11 @@ impl Court {
             return Some([0; 4]);
         };
         let mut credit = [0u64; 4];
-        for (addr, ()) in discovered.scoped() {
-            let Some(citers) = self.cited_by.get(&addr) else {
+        for (address, ()) in discovered.scoped() {
+            let Some(citers) = self.cited_by.get(&address) else {
                 continue;
             };
-            let Some(form) = self.word_at(&addr) else {
+            let Some(form) = self.word_at(&address) else {
                 continue;
             };
             let mu = form.magnitude();
@@ -195,7 +195,7 @@ impl Court {
         // never off the tape, which a rebuilt vertex always spells.
         self.ruled_addrs
             .scoped()
-            .filter_map(|(addr, ())| self.held_word(&addr).map(|h| h.generators_opened()))
+            .filter_map(|(address, ())| self.held_word(&address).map(|h| h.generators_opened()))
             .sum()
     }
 
@@ -210,8 +210,8 @@ impl Court {
     /// rotation with no placement or dilation left over.
     pub fn simplices_filled(&self) -> u64 {
         let mut n = 0u64;
-        for (addr, ()) in self.ruled_addrs.scoped() {
-            let Some(f) = self.held_word(&addr).and_then(|e| e.form()) else {
+        for (address, ()) in self.ruled_addrs.scoped() {
+            let Some(f) = self.held_word(&address).and_then(|e| e.form()) else {
                 continue;
             };
             // The form's torsion carrier holds one entry per filled simplex,
@@ -223,26 +223,26 @@ impl Court {
 
     /// Record a discovery on both readings at once, so `discoverers` and
     /// its inverse cannot disagree.
-    pub(crate) fn note_discovered(&mut self, addr: &[u8], who: [u8; 32]) {
-        self.discoverers.insert(addr, who);
-        match self.discovered_by.get_mut(who.as_slice()) {
+    pub(crate) fn note_discovered(&mut self, address: &[u8], discoverer: [u8; 32]) {
+        self.discoverers.insert(address, discoverer);
+        match self.discovered_by.get_mut(discoverer.as_slice()) {
             Some(discovered) => {
-                discovered.insert(addr, ());
+                discovered.insert(address, ());
             }
             None => {
                 let mut discovered = crate::network::nerve::Keyed::new();
-                discovered.insert(addr, ());
-                self.discovered_by.insert(who, discovered);
+                discovered.insert(address, ());
+                self.discovered_by.insert(discoverer, discovered);
             }
         }
     }
 
     /// Remove a discovery from both readings, pruning the voice entry if
     /// it holds no remaining addresses.
-    pub(crate) fn forget_discoverer(&mut self, addr: &[u8]) {
-        if let Some(who) = self.discoverers.remove(addr) {
+    pub(crate) fn forget_discoverer(&mut self, address: &[u8]) {
+        if let Some(who) = self.discoverers.remove(address) {
             let empty = if let Some(discovered) = self.discovered_by.get_mut(who.as_slice()) {
-                discovered.remove(addr);
+                discovered.remove(address);
                 discovered.is_empty()
             } else {
                 false
@@ -257,14 +257,14 @@ impl Court {
     pub(crate) fn rebuild_discovered_by(&mut self) {
         let mut ndb: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>> =
             crate::network::nerve::Keyed::new();
-        for (addr, who) in self.discoverers.scoped() {
+        for (address, who) in self.discoverers.scoped() {
             match ndb.get_mut(who.as_slice()) {
                 Some(discovered) => {
-                    discovered.insert(&addr, ());
+                    discovered.insert(&address, ());
                 }
                 None => {
                     let mut discovered = crate::network::nerve::Keyed::new();
-                    discovered.insert(&addr, ());
+                    discovered.insert(&address, ());
                     ndb.insert(*who, discovered);
                 }
             }

@@ -113,7 +113,7 @@ impl Court {
                 };
                 note_verdict_of(&refused);
                 // CV1 — a tape that does not parse is integrity (78.9).
-                crate::observe::note_obstruction(crate::transducer::sentence::ObstructionKind::I);
+                crate::observe::note_obstruction(crate::transducer::sentence::ObstructionKind::Integrity);
                 out.push(refused);
                 continue;
             }

@@ -53,7 +53,7 @@ pub(crate) fn transport_class(v: &Vertex) -> Option<TransportClass> {
 
 /// The key of one frame of the family by its index, for a carrier keyed
 /// per frame: the frame is the corpus's coordinate (51.1).
-pub(crate) fn pair_idx_key(i: u16) -> Vec<u8> {
+pub(crate) fn pair_index_key(i: u16) -> Vec<u8> {
     let mut k = vec![0u8];
     k.extend_from_slice(&i.to_le_bytes());
     k

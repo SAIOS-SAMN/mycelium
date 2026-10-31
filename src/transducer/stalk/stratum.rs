@@ -51,18 +51,18 @@ impl Stratum {
         n
     }
 
-    pub(crate) fn admit(&mut self, axes: &[ChartAxis], addr: &[u8]) {
+    pub(crate) fn admit(&mut self, axes: &[ChartAxis], address: &[u8]) {
         match axes.split_first() {
             None => {
-                self.members.insert(addr, ());
+                self.members.insert(address, ());
             }
             Some((a, rest)) => {
                 let key = axis_key(a);
                 match self.branches.get_mut(&key) {
-                    Some(s) => s.admit(rest, addr),
+                    Some(s) => s.admit(rest, address),
                     None => {
                         let mut s = Stratum::default();
-                        s.admit(rest, addr);
+                        s.admit(rest, address);
                         self.branches.insert(key, s);
                     }
                 }
@@ -87,16 +87,16 @@ impl Stratum {
     }
 
     /// Drop one member along its own chart path; strata left empty are pruned.
-    pub(crate) fn remove(&mut self, axes: &[ChartAxis], addr: &[u8]) {
+    pub(crate) fn remove(&mut self, axes: &[ChartAxis], address: &[u8]) {
         match axes.split_first() {
             None => {
-                self.members.remove(addr);
+                self.members.remove(address);
             }
             Some((a, rest)) => {
                 let key = axis_key(a);
                 let empty = {
                     let Some(s) = self.branches.get_mut(&key) else { return };
-                    s.remove(rest, addr);
+                    s.remove(rest, address);
                     s.is_empty()
                 };
                 if empty {

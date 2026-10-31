@@ -149,8 +149,8 @@ fn to_bytes_writes_rotor_not_spelling() {
     // What the tape holds after the citations and the residue is a ROTOR.
     let mut expect = Vec::new();
     crate::transducer::address::put_key_count(&mut expect, 1);
-    crate::transducer::address::put_addr(&mut expect, addr(1)).expect("form");
-    crate::transducer::address::put_addr(&mut expect, addr(2)).expect("vertex");
+    crate::transducer::address::put_address(&mut expect, addr(1)).expect("form");
+    crate::transducer::address::put_address(&mut expect, addr(2)).expect("vertex");
     expect.extend_from_slice(&2i64.to_le_bytes());
     Word::identity().put_whole(&mut expect);
     // A rotor follows, and one byte says so: "no citations" no longer

@@ -334,7 +334,7 @@ impl Court {
         // door refused is counted too (LD0). The court's own rewrite sits at
         // one chart, its complex's; a chain of several is a mind's.
         let site = match (crate::transducer::rewrite::Rewrite::from_element(&rewrite), at.as_slice()) {
-            (Some(rw), [chart]) => Some((chart.clone(), rw.after.addr().as_bytes().to_vec())),
+            (Some(rw), [chart]) => Some((chart.clone(), rw.after.address().as_bytes().to_vec())),
             _ => None,
         };
         let congruent = site.as_ref().is_some_and(|(chart, after)| {
@@ -370,7 +370,7 @@ impl Court {
     /// each counted by its own name, where nothing is priced (`unpriced`),
     /// the mint refuses — a name past its wall (`unminted`) — or the book
     /// does not take it (`unoffered`).
-    pub(crate) fn mint_torse_at(
+    pub(crate) fn construct_torse_at(
         &mut self,
         inv: &crate::transducer::stalk::Invariant,
         simplex: &[u8],

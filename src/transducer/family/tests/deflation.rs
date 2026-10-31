@@ -251,7 +251,7 @@ fn mint_sentence_why_refuses_form_where_nothing_acts() {
     let rule = crate::transducer::sentence::rule_of_form(crate::transducer::sentence::Form::default());
     let refused = mint_sentence_why(&rule, &[], &NoCrystal, 0).err();
     assert_eq!(refused, Some(ObstructionRefusal::MintNothingActs));
-    assert_eq!(refused.map(ObstructionRefusal::kind), Some(ObstructionKind::N));
+    assert_eq!(refused.map(ObstructionRefusal::kind), Some(ObstructionKind::NoQuestion));
 }
 
 /// 78.158a U1 — THE MINT'S REFUSAL NAMED WHOLE, on the solve paths as on
@@ -273,7 +273,7 @@ fn mint_refusal_line_names_arm_proof_kind_demands() {
     assert_eq!(mint_refusal_line(why, &f), "mint refused (integrity): nothing in the form acts [N] demands [creation]");
     for (r, line) in [
         (
-            ObstructionRefusal::MintVertexNotCarried(ObstructionKind::C, "a lamina lands on the wrong hue"),
+            ObstructionRefusal::MintVertexNotCarried(ObstructionKind::Cover, "a lamina lands on the wrong hue"),
             "mint refused (carry): a lamina lands on the wrong hue [C] demands [creation]",
         ),
         (ObstructionRefusal::MintLinksWithoutDemand, "mint refused (demands): links remain and the form declares no demand [I] demands [creation]"),

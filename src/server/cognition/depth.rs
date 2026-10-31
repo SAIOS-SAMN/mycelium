@@ -35,9 +35,9 @@ fn commits(kind: crate::chronometry::ActKind) -> bool {
 /// Signer ‖ kind, both written out (A21): the coordinate an attestation
 /// is named by. Two acts of one signer on one address at two kinds are
 /// two entries and one signer, which is what `depth_of` reads.
-fn attestor_key(vk: &[u8; 32], kind: crate::chronometry::ActKind) -> Vec<u8> {
+fn attestor_key(attestor: &[u8; 32], kind: crate::chronometry::ActKind) -> Vec<u8> {
     let mut k = Vec::with_capacity(33);
-    k.extend_from_slice(vk);
+    k.extend_from_slice(attestor);
     k.push(kind.byte());
     k
 }
@@ -87,8 +87,8 @@ impl Court {
 
     /// L15 — THE DEPTH OF A WORD THIS COURT HOLDS, read at the stamp that
     /// admitted it. Zero where it holds none.
-    pub fn depth_of(&self, addr: &[u8]) -> usize {
-        match self.admitted_at(addr) {
+    pub fn depth_of(&self, address: &[u8]) -> usize {
+        match self.admitted_at(address) {
             Some(at) => self.depth_at(&at),
             None => 0,
         }
@@ -145,8 +145,8 @@ impl Court {
     /// Never a total and never an average (law 5).
     pub fn generators_by_depth(&self) -> Vec<(usize, u64)> {
         let mut rows: crate::network::nerve::Keyed<u64> = crate::network::nerve::Keyed::new();
-        for (addr, ()) in self.ruled_addrs.scoped() {
-            let d = self.depth_of(&addr);
+        for (address, ()) in self.ruled_addrs.scoped() {
+            let d = self.depth_of(&address);
             let key = (d as u64).to_be_bytes().to_vec();
             match rows.get_mut(&key) {
                 Some(n) => *n += 1,

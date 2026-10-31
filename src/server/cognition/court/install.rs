@@ -18,15 +18,15 @@ impl Court {
     /// The install is inside the act that witnessed it and draws on that
     /// act's stroke (65.5), threaded to the basis, the ruling, the inputs a
     /// rewrite retires and the sentences re-heard after the close.
-    pub(crate) fn home_install(&mut self, addr: &[u8], witness: [u8; 32], budget: &mut crate::physics::Budget) {
+    pub(crate) fn home_install(&mut self, address: &[u8], witness: [u8; 32], budget: &mut crate::physics::Budget) {
         // THE ORBIT CLOSES WHOLE BEFORE WHAT WAITED ON IT IS HEARD. Ruling the
         // word re-hears its citers, and it did so before this act released the
         // word's own draw — so a citer spoken by the same voice met a room
         // still full and was deferred, and the deferral was dropped: the
         // sentence was neither heard nor waiting. The waiting sentences are
         // held across the close and heard after it.
-        let waiting = self.awaiting.remove(addr);
-        let held = self.word_at(addr).cloned().or_else(|| self.provisional.get(addr).cloned());
+        let waiting = self.awaiting.remove(address);
+        let held = self.word_at(address).cloned().or_else(|| self.provisional.get(address).cloned());
         // L8y: the voice whose draw this address occupies is `drawers`,
         // and where `pending_take` already cleared it the speaker recorded
         // when the sentence was heard stands. Written as `[0; 32]`, every
@@ -35,11 +35,11 @@ impl Court {
         // (26).
         let drawn = self
             .drawers
-            .get(addr)
+            .get(address)
             .copied()
-            .or_else(|| self.discoverer_of(addr));
+            .or_else(|| self.discoverer_of(address));
         let mut federated = None;
-        if self.basis.get(addr).is_none() {
+        if self.basis.get(address).is_none() {
             if let Some(w) = held.as_ref() {
                 if !(w.is_connection() && w.letters().is_none()) {
                     match drawn {
@@ -56,7 +56,7 @@ impl Court {
         }
         // 13.9: the home's install is its OWN word, ruled on a witness's
         // re-derivation, so it becomes this court's section on the chart.
-        self.rule_own(addr, budget);
+        self.rule_own(address, budget);
         // 45.1: an install is an ADMITTED ACT, so it is a step of this
         // kernel's clock and a receipt in its chain. Without one the book
         // grew a ruled word at no position: nothing cited the peer receipts
@@ -64,32 +64,32 @@ impl Court {
         // found the install nowhere in it. EC1: sealed BEFORE it pays, so
         // every row the install pays stands at it; 78.27 (3): and before
         // the federation files the word, so the word stands at it.
-        self.append_step(crate::chronometry::ActKind::Install, addr, witness);
+        self.append_step(crate::chronometry::ActKind::Install, address, witness);
         if let Some(w) = federated {
-            self.fed_admit(addr, w);
+            self.fed_admit(address, w);
         }
         // MU-CLIENT §5.4 (A) — THE WORDS IT TEACHES ENTER THE LANGUAGE: a
         // sentence is the court's evidence and section; what its closed
         // rings teach is installed beside it as words, each on its own act.
         let word_shares = match &held {
-            Some(w) if !w.is_rewrite() => self.install_taught_words(addr, w, drawn, witness, budget),
+            Some(w) if !w.is_rewrite() => self.install_taught_words(address, w, drawn, witness, budget),
             _ => Vec::new(),
         };
         let installed = self.anchor();
         if let Some(w) = held {
             if w.is_rewrite() {
-                if self.treasury.release_rewrite(addr, installed).is_none() {
+                if self.treasury.release_rewrite(address, installed).is_none() {
                     return;
                 }
                 self.retire_rewrite_inputs(&w, budget);
             } else {
-                let measured = self.verified_install_deflation(addr, &w);
+                let measured = self.verified_install_deflation(address, &w);
                 // POWV: the base the install releases — the escrow capped at
                 // the measured deflation — pays this court and the witness
                 // whose re-derivation installed it each a verification share
                 // first; the cited forms, taught words and voices divide the
                 // rest.
-                let pay = match self.treasury.escrow_of(addr).map(|e| e.mu) {
+                let pay = match self.treasury.escrow_of(address).map(|e| e.mu) {
                     Some(held) if measured.iter().any(|&x| x > 0) => {
                         let above = crate::economy::shortfall(&held, &measured);
                         let base: [u64; 4] = std::array::from_fn(|l| held[l] - above[l]);
@@ -101,7 +101,7 @@ impl Court {
                 };
                 if pay.iter().all(|&x| x == 0) {
                     // Closes nothing: installed, and mints none.
-                    let _ = self.treasury.revoke_award(addr, crate::economy::escrow::Revocation::Drop);
+                    let _ = self.treasury.revoke_award(address, crate::economy::escrow::Revocation::Drop);
                 } else {
                     // 26 as ruled 2026-09-10: what this form closed is
                     // partly what the forms it CITED close inside it, and
@@ -116,7 +116,7 @@ impl Court {
                     // discoverer its use, a new word's its base pay. What the
                     // escrow's voices take after both is the COMPOSITION
                     // PREMIUM — what the sentence discharged beyond its words.
-                    let mut shares = self.cited_shares(addr, &w, pay);
+                    let mut shares = self.cited_shares(address, &w, pay);
                     let word_shares_paid = word_shares.clone();
                     shares.extend(word_shares);
                     // MU-CLIENT §5.6 (S) — a sentence's voices take its
@@ -125,11 +125,11 @@ impl Court {
                     let premium = match crate::transducer::sentence::from_element_form(&w).is_some_and(|f| !f.faces.is_empty()) {
                         true => {
                             let words = crate::cognition::book::speech::words_of_sentence(&w, budget);
-                            Some(self.gluing_of(addr, &w, &words))
+                            Some(self.gluing_of(address, &w, &words))
                         }
                         false => None,
                     };
-                    let taken = self.treasury.settle_recursive(addr, &shares, pay, premium, installed);
+                    let taken = self.treasury.settle_recursive(address, &shares, pay, premium, installed);
                     // The pays by kind, for the observer (MU-CLIENT §5.6).
                     let kind = match (premium.is_some(), w.is_connection(), self.conjugate_of(&w).is_some()) {
                         (true, _, _) => "sentence gluings",
@@ -147,18 +147,18 @@ impl Court {
                 }
             }
         } else {
-            let _ = self.treasury.revoke_award(addr, crate::economy::escrow::Revocation::Drop);
+            let _ = self.treasury.revoke_award(address, crate::economy::escrow::Revocation::Drop);
         }
-        self.unlist(addr, false);
-        self.leave_provisional(addr);
+        self.unlist(address, false);
+        self.leave_provisional(address);
         self.court_upheld += 1;
         self.mark_persist();
-        if let Some(w) = self.word_at(addr).cloned() {
-            self.note_form_citations(addr, &w);
+        if let Some(w) = self.word_at(address).cloned() {
+            self.note_form_citations(address, &w);
         }
         if let Some(bucket) = waiting {
-            self.awaiting.insert(addr, bucket);
-            self.rehear_awaiting(addr, budget);
+            self.awaiting.insert(address, bucket);
+            self.rehear_awaiting(address, budget);
         }
     }
 
@@ -174,17 +174,17 @@ impl Court {
     /// in the order the words were taught.
     fn install_taught_words(
         &mut self,
-        addr: &[u8],
+        address: &[u8],
         w: &Element,
         drawn: Option<[u8; 32]>,
         witness: [u8; 32],
         budget: &mut crate::physics::Budget,
     ) -> Vec<([u8; 32], [u64; 4])> {
-        let task = self.speech_task.get(addr).or_else(|| self.listing_task.get(addr)).cloned();
+        let task = self.speech_task.get(address).or_else(|| self.listing_task.get(address)).cloned();
         let mut shares = Vec::new();
         for word in crate::cognition::book::speech::words_of_sentence(w, budget) {
             let at = word.address();
-            let discharge = self.cited_deflation(addr, &word, &crate::transducer::alphabet::Word::identity());
+            let discharge = self.cited_deflation(address, &word, &crate::transducer::alphabet::Word::identity());
             let who = match self.basis.get(at.as_bytes()).is_some() {
                 true => self.discoverer_of(at.as_bytes()),
                 false => {
@@ -233,13 +233,13 @@ impl Court {
             None => [0; 32],
         };
         let mut added = 0usize;
-        for (addr, w) in sentences {
-            let drawn = self.discoverer_of(&addr);
+        for (address, w) in sentences {
+            let drawn = self.discoverer_of(&address);
             let mut budget = self.physics.stroke();
             let held = |k: &Court, word: &Element| k.basis.get(word.address().as_bytes()).is_some();
             let words = crate::cognition::book::speech::words_of_sentence(&w, &mut budget);
             let new = words.iter().filter(|word| !held(self, word)).count();
-            let _ = self.install_taught_words(&addr, &w, drawn, witness, &mut budget);
+            let _ = self.install_taught_words(&address, &w, drawn, witness, &mut budget);
             added += new;
         }
         if added > 0 {
@@ -263,7 +263,7 @@ impl Court {
     /// ONE SHARE PER CITED VERDICT, not per citation: a form cited by two
     /// vertices closes what it closes once. Keyed by the cited address,
     /// so the second citation of one address is not a second share.
-    fn cited_shares(&self, addr: &[u8], w: &Element, pay: [u64; 4]) -> Vec<([u8; 32], [u64; 4])> {
+    fn cited_shares(&self, address: &[u8], w: &Element, pay: [u64; 4]) -> Vec<([u8; 32], [u64; 4])> {
         if pay.iter().all(|&m| m == 0) {
             return Vec::new();
         }
@@ -277,24 +277,24 @@ impl Court {
         let mut out = Vec::new();
         let take = |k: &mut crate::network::nerve::Keyed<()>,
                     out: &mut Vec<([u8; 32], [u64; 4])>,
-                    form_addr: &crate::transducer::address::Address,
+                    form_address: &crate::transducer::address::Address,
                     placement: &crate::transducer::alphabet::Word| {
-            if k.contains(form_addr.as_bytes()) {
+            if k.contains(form_address.as_bytes()) {
                 return;
             }
-            k.insert(form_addr.clone(), ());
-            if !self.ruled_contains(form_addr.as_bytes()) {
+            k.insert(form_address.clone(), ());
+            if !self.ruled_contains(form_address.as_bytes()) {
                 return;
             }
-            let Some(held) = self.word_at(form_addr.as_bytes()).cloned() else {
+            let Some(held) = self.word_at(form_address.as_bytes()).cloned() else {
                 return;
             };
-            let Some(who) = self.discoverer_of(form_addr.as_bytes()) else {
+            let Some(who) = self.discoverer_of(form_address.as_bytes()) else {
                 return;
             };
             // The cited form's own deflation, measured on the CITER's
             // family: what it closes inside this sentence.
-            let share = self.cited_deflation(addr, &held, placement);
+            let share = self.cited_deflation(address, &held, placement);
             if share.iter().all(|&m| m == 0) {
                 return;
             }
@@ -354,7 +354,7 @@ impl Court {
         }
     }
 
-    pub(crate) fn note_form_citations(&mut self, addr: &[u8], w: &Element) {
+    pub(crate) fn note_form_citations(&mut self, address: &[u8], w: &Element) {
         // BOTH READINGS COME OFF THE ENVELOPE (54.5 Road (d), B4). This
         // decoded the form to read it for citations and for certificates,
         // and NEITHER is geometry: a citation is a 1-simplex of the nerve
@@ -367,28 +367,28 @@ impl Court {
         // address per cited address, so a form cited by two vertices of one
         // sentence is one use of one verdict and two sentences citing it are
         // two — which is what `use_credit` counts.
-        for address in env.cited_addresses() {
-            match self.cited_by.get_mut(&address) {
+        for cited in env.cited_addresses() {
+            match self.cited_by.get_mut(&cited) {
                 Some(bucket) => {
-                    bucket.insert(addr, ());
+                    bucket.insert(address, ());
                 }
                 None => {
                     let mut bucket = crate::network::nerve::Keyed::new();
-                    bucket.insert(addr, ());
-                    self.cited_by.insert(address, bucket);
+                    bucket.insert(address, ());
+                    self.cited_by.insert(cited, bucket);
                 }
             }
         }
         for cert in &env.certificates {
             let k = cert.key();
-            match self.replay_memo.get_mut(addr) {
+            match self.replay_memo.get_mut(address) {
                 Some(bucket) => {
                     bucket.insert(k, (true, self.chain.head_place()));
                 }
                 None => {
                     let mut bucket = crate::network::nerve::Keyed::new();
                     bucket.insert(k, (true, self.chain.head_place()));
-                    self.replay_memo.insert(addr, bucket);
+                    self.replay_memo.insert(address, bucket);
                 }
             }
         }

@@ -156,7 +156,7 @@ impl Move {
                 if i == j || *i >= x.len() || *j >= x.len() {
                     return Err(FrameRefusal::NoPlane);
                 }
-                let (c, s) = quarter_turn(degrees).ok_or(FrameRefusal::Inexact)?;
+                let (c, s) = exact_cos_sin(degrees).ok_or(FrameRefusal::Inexact)?;
                 let mut out = x.to_vec();
                 let (xi, xj) = (x[*i].clone(), x[*j].clone());
                 out[*i] = &xi * &c - &xj * &s;
@@ -171,7 +171,7 @@ impl Move {
 /// whole number of 90° turns. `None` everywhere else (Niven: a
 /// rational-degree angle has rational cosine and sine together only at the
 /// multiples of 90°).
-fn quarter_turn(degrees: &Q) -> Option<(Q, Q)> {
+fn exact_cos_sin(degrees: &Q) -> Option<(Q, Q)> {
     let quarters = degrees / Q::from_integer(90.into());
     if !quarters.is_integer() {
         return None;
@@ -311,10 +311,10 @@ mod tests {
     /// spatial frames are the square's symmetries.
     #[test]
     fn twist_twice_is_turn_of_180_degrees() {
-        let half_turn = Frame::identity().then(Move::Twist(v(&[(1, 1), (0, 1)]))).then(Move::Twist(v(&[(0, 1), (1, 1)])));
+        let turn_180 = Frame::identity().then(Move::Twist(v(&[(1, 1), (0, 1)]))).then(Move::Twist(v(&[(0, 1), (1, 1)])));
         let x = v(&[(3, 5), (-2, 7)]);
-        assert_eq!(half_turn.carry(&x), Ok(v(&[(-3, 5), (2, 7)])), "the antipode");
-        assert_eq!(half_turn.carry(&x), Move::Turn { plane: (0, 1), degrees: q(180, 1) }.apply(&x), "the turn of 180°");
+        assert_eq!(turn_180.carry(&x), Ok(v(&[(-3, 5), (2, 7)])), "the antipode");
+        assert_eq!(turn_180.carry(&x), Move::Turn { plane: (0, 1), degrees: q(180, 1) }.apply(&x), "the turn of 180°");
         let one = Move::Twist(v(&[(0, 1), (3, 1)])).apply(&x).expect("reflected");
         assert_eq!(dot(&one, &one), dot(&x, &x), "a twist keeps the distance");
         assert_eq!(Move::Twist(v(&[(2, 1), (1, 1)])).apply(&x), Err(FrameRefusal::NotAxial), "a mirror off the axes: refused");

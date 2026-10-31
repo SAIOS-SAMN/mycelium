@@ -353,7 +353,7 @@ fn pivot_certificate_replays_or_refuses() {
         rank_move: crate::transducer::sentence::RankMove::Discharged {
             from: crate::transducer::sentence::RankAxis::Torsion,
         },
-        mu: crate::transducer::sentence::Mu::Unmeasured,
+        mu: crate::transducer::sentence::MeasuredMu::Unmeasured,
         by: PivotBy::Word {
             face: star,
             word: Box::new(Word::identity()),

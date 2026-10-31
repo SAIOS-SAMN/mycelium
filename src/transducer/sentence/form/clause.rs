@@ -65,7 +65,7 @@ pub enum Coord {
 
 /// A COMPARISON THE RULE NAMES.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Cmp {
+pub enum Comparison {
     Eq,
     Less,
     Greater,
@@ -108,7 +108,7 @@ pub enum Pred {
     /// The body stands on this chart — its class up to moduli.
     Chart(stalk::Invariant),
     /// COUNT: the coordinate compared with a value.
-    Cmp { coord: Coord, cmp: Cmp, to: Value },
+    Cmp { coord: Coord, cmp: Comparison, to: Value },
     /// COMPARE: the bodies at the `place`-th distinct value of the coordinate
     /// in the named order (0 the extremum), ties as named.
     Rank { coord: Coord, order: Order, place: u32, tie: Tie },
@@ -122,7 +122,7 @@ pub enum Pred {
 impl Pred {
     /// The coordinate equals `n` exactly.
     pub fn count(coord: Coord, n: i64) -> Pred {
-        Pred::Cmp { coord, cmp: Cmp::Eq, to: Value::Integer(n) }
+        Pred::Cmp { coord, cmp: Comparison::Eq, to: Value::Integer(n) }
     }
 
     /// The extremum of the coordinate in the named order, ties as named.
@@ -360,9 +360,9 @@ pub(super) fn put_pred(buf: &mut Vec<u8>, pred: &Pred) {
             buf.push(3);
             put_coord(buf, *coord);
             buf.push(match cmp {
-                Cmp::Eq => 0,
-                Cmp::Less => 1,
-                Cmp::Greater => 2,
+                Comparison::Eq => 0,
+                Comparison::Less => 1,
+                Comparison::Greater => 2,
             });
             match to {
                 Value::Integer(n) => {
@@ -420,9 +420,9 @@ pub(super) fn take_pred(k: &[u8], p: &mut usize, depth: usize) -> Option<Pred> {
         3 => {
             let coord = take_coord(k, p)?;
             let cmp = match take_byte(k, p)? {
-                0 => Cmp::Eq,
-                1 => Cmp::Less,
-                2 => Cmp::Greater,
+                0 => Comparison::Eq,
+                1 => Comparison::Less,
+                2 => Comparison::Greater,
                 _ => return None,
             };
             let to = match take_byte(k, p)? {

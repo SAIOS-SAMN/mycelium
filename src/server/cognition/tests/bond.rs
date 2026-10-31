@@ -13,7 +13,7 @@ fn key(b: u8) -> SigningKey {
     SigningKey::from_bytes(&[b; 32])
 }
 
-fn vk(k: &SigningKey) -> [u8; 32] {
+fn verifying(k: &SigningKey) -> [u8; 32] {
     k.verifying_key().to_bytes()
 }
 
@@ -33,19 +33,19 @@ fn challenger() -> SigningKey {
 
 fn founded() -> Court {
     let mut k = Court::new();
-    let mut tiers = vec![vk(&reserve()), vk(&tier())];
+    let mut tiers = vec![verifying(&reserve()), verifying(&tier())];
     tiers.sort_unstable();
-    let g = DomainGenesis { domain: vk(&domain()), tiers };
+    let g = DomainGenesis { domain: verifying(&domain()), tiers };
     assert!(matches!(k.admit_domain(&g.sign(&domain())), Founded::Sealed { .. }));
-    let r = Reservation { domain: vk(&domain()), tier: vk(&reserve()), nonce: [0; 32] };
+    let r = Reservation { domain: verifying(&domain()), tier: verifying(&reserve()), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&r.sign(&domain())), Founded::Reserved { .. }));
     let anchor = k.anchor();
-    k.treasury.genesis(vk(&reserve()), [10, 0, 0, 0], anchor);
+    k.treasury.genesis(verifying(&reserve()), [10, 0, 0, 0], anchor);
     k
 }
 
 fn bond(mu: Option<[u64; 4]>, nonce: u8) -> Bond {
-    Bond { domain: vk(&domain()), reserve: vk(&reserve()), tier: vk(&tier()), mu, nonce: [nonce; 32] }
+    Bond { domain: verifying(&domain()), reserve: verifying(&reserve()), tier: verifying(&tier()), mu, nonce: [nonce; 32] }
 }
 
 /// The tier's fold whose rows its line does not sum to: `w1` 5, `w2` −5 on
@@ -53,7 +53,7 @@ fn bond(mu: Option<[u64; 4]>, nonce: u8) -> Bond {
 fn lying_fold() -> (TierFold, Vec<Entry>) {
     let line = vec![Entry { rows: vec![([1; 32], [4, 0, 0, 0]), ([2; 32], [-4, 0, 0, 0])], declared: Vec::new() }];
     let f = TierFold {
-        tier: vk(&tier()),
+        tier: verifying(&tier()),
         prefix: line_head([0; 32], &line),
         rows: vec![([1; 32], [5, 0, 0, 0]), ([2; 32], [-5, 0, 0, 0])],
         declared: Vec::new(),
@@ -75,7 +75,7 @@ fn carry(k: &mut Court, f: TierFold, nonce: u8) -> Result<FoldAt, Uplinked> {
         included_declared: Vec::new(),
         rate: [(1, 1); 4],
     };
-    let carrier = TierFold { tier: vk(&reserve()), prefix: [nonce; 32], rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
+    let carrier = TierFold { tier: verifying(&reserve()), prefix: [nonce; 32], rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
     match k.admit_uplink(&carrier.sign(&reserve())) {
         Uplinked::Chained { at, .. } => Ok(FoldAt { stamp: at, path: vec![0] }),
         other => Err(other),
@@ -92,23 +92,23 @@ fn bond_posts_from_reserve_and_fold_reads_bonded() {
     let refused = carry(&mut k, lying_fold().0, 8);
     assert_eq!(refused, Err(Uplinked::ChildRefused { index: 0, why: crate::anastome::dialogue::uplink::ChildRefusal::Unbonded }), "each answers for its own work");
     let refused = |k: &mut Court, b: Bond, by: &SigningKey| k.bond(&b.sign(by));
-    assert_eq!(refused(&mut k, Bond { reserve: vk(&tier()), ..bond(Some([1, 0, 0, 0]), 1) }, &tier()), Founded::NotReserve);
+    assert_eq!(refused(&mut k, Bond { reserve: verifying(&tier()), ..bond(Some([1, 0, 0, 0]), 1) }, &tier()), Founded::NotReserve);
     assert_eq!(refused(&mut k, bond(Some([1, 0, 0, 0]), 1), &tier()), Founded::Unsigned);
     assert_eq!(refused(&mut k, Bond { tier: [9; 32], ..bond(Some([1, 0, 0, 0]), 1) }, &reserve()), Founded::NotATier);
     assert_eq!(refused(&mut k, bond(Some([11, 0, 0, 0]), 1), &reserve()), Founded::Short, "only from what the reserve holds");
     assert!(matches!(k.bond(&bond(Some([4, 0, 0, 0]), 1).sign(&reserve())), Founded::Bonded { bond: [4, 0, 0, 0], .. }));
     assert!(matches!(k.bond(&bond(Some([3, 0, 0, 0]), 2).sign(&reserve())), Founded::Bonded { bond: [7, 0, 0, 0], .. }), "topped up");
-    assert_eq!((k.bond_of(&vk(&tier())), k.treasury.balance_mu(&vk(&reserve()))), ([7, 0, 0, 0], [3, 0, 0, 0]));
+    assert_eq!((k.bond_of(&verifying(&tier())), k.treasury.balance_mu(&verifying(&reserve()))), ([7, 0, 0, 0], [3, 0, 0, 0]));
     let (f, _) = lying_fold();
     let at = carry(&mut k, f, 9).expect("carried, the line bonded");
     assert!(k.fold_bonded(&at), "a fold of a bonded tier");
-    let Uplinked::Admitted { at: bare, .. } = k.admit_uplink(&TierFold { prefix: [3; 32], rows: Vec::new(), tier: vk(&reserve()), ..lying_fold().0 }.sign(&reserve())) else {
+    let Uplinked::Admitted { at: bare, .. } = k.admit_uplink(&TierFold { prefix: [3; 32], rows: Vec::new(), tier: verifying(&reserve()), ..lying_fold().0 }.sign(&reserve())) else {
         panic!("admitted")
     };
     assert!(!k.fold_bonded(&FoldAt::sealed(bare)), "an unbacked fold reads unbonded");
     let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
-    assert_eq!(booted.bond_of(&vk(&tier())), [7, 0, 0, 0], "the bond held across a restart");
+    assert_eq!(booted.bond_of(&verifying(&tier())), [7, 0, 0, 0], "the bond held across a restart");
 }
 
 /// A FALSIFIED FOLD SLASHES HALF THE BOND, AND NO BOND LEAVES WHILE A FOLD
@@ -123,13 +123,13 @@ fn challenge_slashes_half_bond_and_withdrawal_waits() {
     let (f, line) = lying_fold();
     let at = carry(&mut k, f.clone(), 9).expect("carried");
     assert_eq!(k.bond(&bond(None, 2).sign(&reserve())), Founded::Outstanding, "a fold it backs is open");
-    let supply_before = k.treasury.balance_mu(&vk(&reserve()))[0] + k.bond_of(&vk(&tier()))[0];
+    let supply_before = k.treasury.balance_mu(&verifying(&reserve()))[0] + k.bond_of(&verifying(&tier()))[0];
     let evidence = Challenge::Evidence { fold: at, rows: f.rows.clone(), declared: Vec::new(), children: Vec::new(), entries: line };
     assert!(matches!(k.challenge(&evidence.sign(&challenger())), Challenged::Falsified { .. }));
-    assert_eq!(k.bond_of(&vk(&tier())), [4, 0, 0, 0], "half slashed, the odd unit bonded");
-    assert_eq!(k.treasury.balance_mu(&vk(&challenger())), [1, 0, 0, 0], "the bounty");
-    assert_eq!(k.treasury.balance_mu(&vk(&reserve()))[0] + k.bond_of(&vk(&tier()))[0], supply_before - 3, "3 left the reserve: 1 paid, 2 retired");
+    assert_eq!(k.bond_of(&verifying(&tier())), [4, 0, 0, 0], "half slashed, the odd unit bonded");
+    assert_eq!(k.treasury.balance_mu(&verifying(&challenger())), [1, 0, 0, 0], "the bounty");
+    assert_eq!(k.treasury.balance_mu(&verifying(&reserve()))[0] + k.bond_of(&verifying(&tier()))[0], supply_before - 3, "3 left the reserve: 1 paid, 2 retired");
     assert!(matches!(k.bond(&bond(None, 2).sign(&reserve())), Founded::Bonded { bond: [0, 0, 0, 0], .. }), "nothing outstanding: withdrawn");
-    assert_eq!((k.bond_of(&vk(&tier())), k.treasury.balance_mu(&vk(&reserve()))), ([0; 4], [7, 0, 0, 0]));
+    assert_eq!((k.bond_of(&verifying(&tier())), k.treasury.balance_mu(&verifying(&reserve()))), ([0; 4], [7, 0, 0, 0]));
     assert_eq!(k.bond(&bond(None, 3).sign(&reserve())), Founded::Unbonded);
 }

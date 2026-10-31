@@ -23,7 +23,7 @@ pub(crate) fn persist(kernel: &Mutex<Court>, state_path: &str) -> bool {
     // kernel, unmetered (the lock audit, row 12); a hold that blocks an
     // aperture of waiters reading nothing is named `unmetered hold`.
     let (line, snap, at) = match crate::held::held!(kernel) {
-        Ok(mut h) => h.run(|k, _| (k.take_line(), k.snapshot(), k.snapshot_at())),
+        Ok(mut h) => h.run(|k, _| (k.drain_line(), k.snapshot(), k.snapshot_at())),
         Err(_) => return false,
     };
     let line_landed = match line {

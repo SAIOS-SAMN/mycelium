@@ -30,29 +30,29 @@ impl Stalks {
         s
     }
 
-    /// Place `addr` in the stratum over `inv`.
-    pub fn admit(&mut self, inv: &Invariant, addr: impl AsRef<[u8]>) {
-        let addr = addr.as_ref();
-        self.charts.insert(addr, inv.clone());
-        self.root.admit(&inv.0, addr);
+    /// Place `address` in the stratum over `inv`.
+    pub fn admit(&mut self, inv: &Invariant, address: impl AsRef<[u8]>) {
+        let address = address.as_ref();
+        self.charts.insert(address, inv.clone());
+        self.root.admit(&inv.0, address);
     }
 
     /// A second chart for the same address (the remainder face). The base
     /// chart in `charts` is not overwritten.
-    pub fn admit_also(&mut self, inv: &Invariant, addr: impl AsRef<[u8]>) {
-        let addr = addr.as_ref();
-        if self.charts.get(addr).is_some_and(|c| c == inv) {
+    pub fn admit_also(&mut self, inv: &Invariant, address: impl AsRef<[u8]>) {
+        let address = address.as_ref();
+        if self.charts.get(address).is_some_and(|c| c == inv) {
             return;
         }
-        self.root.admit(&inv.0, addr);
+        self.root.admit(&inv.0, address);
     }
 
-    /// Retract `addr` from one stratum without touching its base chart.
-    pub fn retract(&mut self, inv: &Invariant, addr: &[u8]) {
-        if self.charts.get(addr).is_some_and(|c| c == inv) {
+    /// Retract `address` from one stratum without touching its base chart.
+    pub fn retract(&mut self, inv: &Invariant, address: &[u8]) {
+        if self.charts.get(address).is_some_and(|c| c == inv) {
             return;
         }
-        self.root.remove(&inv.0, addr);
+        self.root.remove(&inv.0, address);
     }
 
     /// The stratum over `inv`: every held address whose base point could
@@ -102,20 +102,20 @@ impl Stalks {
     }
 
     /// The chart a held address sits on.
-    pub fn chart_of(&self, addr: &[u8]) -> Option<&Invariant> {
-        self.charts.get(addr)
+    pub fn chart_of(&self, address: &[u8]) -> Option<&Invariant> {
+        self.charts.get(address)
     }
 
-    /// The relation removed the word at `addr`: one path, nothing shifts.
-    pub fn remove(&mut self, addr: &[u8]) {
-        if let Some(inv) = self.charts.remove(addr) {
-            self.root.remove(&inv.0, addr);
+    /// The relation removed the word at `address`: one path, nothing shifts.
+    pub fn remove(&mut self, address: &[u8]) {
+        if let Some(inv) = self.charts.remove(address) {
+            self.root.remove(&inv.0, address);
         }
     }
 
     /// Whether this address is charted here.
-    pub fn contains(&self, addr: &[u8]) -> bool {
-        self.charts.contains(addr)
+    pub fn contains(&self, address: &[u8]) -> bool {
+        self.charts.contains(address)
     }
 
     pub fn clear(&mut self) {
@@ -170,11 +170,11 @@ impl Stalks {
     /// stratum by the new axes. Prefix only: other charts are untouched.
     pub fn split_stratum(&mut self, inv: &Invariant, mut coordinate_of: impl FnMut(&[u8]) -> Vec<ChartAxis>) {
         let members = self.fibre(inv);
-        for addr in members {
-            let next = Self::refine_axes(inv, &coordinate_of(&addr));
-            self.root.remove(&inv.0, &addr);
-            self.root.admit(&next.0, &addr);
-            self.charts.insert(&addr, next);
+        for address in members {
+            let next = Self::refine_axes(inv, &coordinate_of(&address));
+            self.root.remove(&inv.0, &address);
+            self.root.admit(&next.0, &address);
+            self.charts.insert(&address, next);
         }
     }
 }

@@ -527,17 +527,17 @@ impl Presentation {
     /// its spelling at its carriage (`element::conformal_of`) and its hue map
     /// its sigma, filed at its own address as both form and vertex. What does
     /// not read (no letters, no base action) is not filed.
-    pub fn learn_letter(&mut self, addr: &Address, e: &crate::transducer::element::Element, ruled: bool) -> bool {
+    pub fn learn_letter(&mut self, address: &Address, e: &crate::transducer::element::Element, ruled: bool) -> bool {
         let Some(l) = e.letters() else { return false };
         let Some(motion) = crate::transducer::element::conformal_of(&l.spelling.word, &l.carriage) else { return false };
-        self.file_motion(addr, motion, l.sigma, ruled)
+        self.file_motion(address, motion, l.sigma, ruled)
     }
 
     /// ONE MOTION AND HUE MAP FILED AS A GENERATOR at its own address, as
     /// both form and vertex: under the holes its modes wind about (read on
     /// the stroke they need) and the modes of its hue map. `false` where it
     /// does not read, or moves nothing on either.
-    fn file_motion(&mut self, addr: &Address, motion: Mv, gauge: Vec<(u8, u8)>, ruled: bool) -> bool {
+    fn file_motion(&mut self, address: &Address, motion: Mv, gauge: Vec<(u8, u8)>, ruled: bool) -> bool {
         let coords = match is_still(&motion) {
             true => Coordinates { holes: Vec::new() },
             false => {
@@ -553,14 +553,14 @@ impl Presentation {
         if coords.holes.is_empty() && modes.is_empty() {
             return false;
         }
-        let key = super::generator_key(addr, addr);
-        self.admit(&key, &modes, Generator { form: addr.clone(), vertex: addr.clone(), motion, coords, gauge, ruled });
+        let key = super::generator_key(address, address);
+        self.admit(&key, &modes, Generator { form: address.clone(), vertex: address.clone(), motion, coords, gauge, ruled });
         true
     }
 
     /// The mirror of [`Presentation::learn_letter`].
-    pub fn unfile_letter(&mut self, addr: &Address) {
-        self.retire(&super::generator_key(addr, addr));
+    pub fn unfile_letter(&mut self, address: &Address) {
+        self.retire(&super::generator_key(address, address));
     }
 
     /// 78.161 — READ A WORD OVER WHAT IS HELD, LANE BY LANE ([`Reading`]): its

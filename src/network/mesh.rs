@@ -101,8 +101,8 @@ fn take_str(b: &[u8], p: &mut usize) -> Option<String> {
     String::from_utf8(s.to_vec()).ok()
 }
 
-fn put_bond(out: &mut Vec<u8>, who: &[u8; 32], bond: &[u64; 4]) {
-    out.extend_from_slice(who);
+fn put_bond(out: &mut Vec<u8>, party: &[u8; 32], bond: &[u64; 4]) {
+    out.extend_from_slice(party);
     for x in bond {
         out.extend_from_slice(&x.to_le_bytes());
     }
@@ -252,16 +252,16 @@ impl MeshRecord {
         Some(b)
     }
 
-    pub fn open(bytes: &[u8], vk: &[u8; 32]) -> Option<Self> {
-        Self::open_layout(bytes, vk).map(|(rec, _)| rec)
+    pub fn open(bytes: &[u8], key: &[u8; 32]) -> Option<Self> {
+        Self::open_layout(bytes, key).map(|(rec, _)| rec)
     }
 
     /// The record and the layout it was read under, both verified under the
     /// node's own key.
-    pub fn open_layout(bytes: &[u8], vk: &[u8; 32]) -> Option<(Self, Layout)> {
+    pub fn open_layout(bytes: &[u8], key: &[u8; 32]) -> Option<(Self, Layout)> {
         let (rec, p, layout) = Self::decode_layout(bytes)?;
         let sig: [u8; 64] = bytes.get(p..p + 64)?.try_into().ok()?;
-        if !identity::verify(vk, &bytes[..p], &sig) {
+        if !identity::verify(key, &bytes[..p], &sig) {
             return None;
         }
         Some((rec, layout))
@@ -280,9 +280,9 @@ impl MeshRecord {
         std::fs::rename(&tmp, path)
     }
 
-    pub fn load(home: &Path, vk: &[u8; 32]) -> Option<Self> {
+    pub fn load(home: &Path, key: &[u8; 32]) -> Option<Self> {
         let bytes = std::fs::read(home.join("mesh")).ok()?;
-        Self::open(&bytes, vk)
+        Self::open(&bytes, key)
     }
 
     /// The record at `home/mesh`, told apart from its absence: `Ok(None)`
@@ -290,14 +290,14 @@ impl MeshRecord {
     /// this key cannot open. Reading the second as the first wrote a fresh
     /// record over a node's peers, genesis and epoch — a configuration
     /// refusal spelled as a first boot.
-    pub fn open_at(home: &Path, vk: &[u8; 32]) -> Result<Option<(Self, Layout)>, String> {
+    pub fn open_at(home: &Path, key: &[u8; 32]) -> Result<Option<(Self, Layout)>, String> {
         let path = home.join("mesh");
         let bytes = match std::fs::read(&path) {
             Ok(b) => b,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
             Err(e) => return Err(format!("{} unreadable: {e}", path.display())),
         };
-        match Self::open_layout(&bytes, vk) {
+        match Self::open_layout(&bytes, key) {
             Some(rec) => Ok(Some(rec)),
             None => Err(format!(
                 "{} does not open under this node's key: it is another node's record, \
@@ -406,7 +406,7 @@ fn resave_legacy(
 /// them. `Err` is a CONFIGURATION REFUSAL with its reason: a home that
 /// holds a record this key cannot open is not a home that holds none.
 pub fn load_or_migrate_hypha(home: &Path, key: &HyphaKey) -> Result<MeshRecord, String> {
-    let vk = key.vk_bytes();
+    let vk = key.verifying_bytes();
     if let Some((rec, layout)) = MeshRecord::open_at(home, &vk)? {
         resave_legacy(home, key, &rec, layout)?;
         drop_loose(
@@ -457,7 +457,7 @@ pub fn load_or_migrate_hypha(home: &Path, key: &HyphaKey) -> Result<MeshRecord, 
 /// Load `home/mesh` for a voice, or write it once from bootstrap/tuniversal.
 /// `Err` is a configuration refusal, as for a hypha.
 pub fn load_or_migrate_voice(home: &Path, key: &HyphaKey) -> Result<MeshRecord, String> {
-    let vk = key.vk_bytes();
+    let vk = key.verifying_bytes();
     if let Some((rec, layout)) = MeshRecord::open_at(home, &vk)? {
         resave_legacy(home, key, &rec, layout)?;
         drop_loose_voice(home);
@@ -505,9 +505,9 @@ fn migrate_registry(home: &Path) {
     let _ = std::fs::remove_file(&old);
 }
 
-fn migrate_genome(home: &Path, vk: &[u8; 32]) {
+fn migrate_genome(home: &Path, key: &[u8; 32]) {
     let dest = home.join("genome");
-    let named = home.join(format!("{}.genome", identity::hex32(vk)));
+    let named = home.join(format!("{}.genome", identity::hex32(key)));
     if !dest.exists() && named.exists() {
         let _ = std::fs::rename(&named, &dest);
     }
@@ -534,7 +534,7 @@ mod tests {
             epoch: 2,
         };
         let bytes = rec.signed_bytes(&key).expect("the record fits its lengths");
-        let back = MeshRecord::open(&bytes, &key.vk_bytes()).expect("verify");
+        let back = MeshRecord::open(&bytes, &key.verifying_bytes()).expect("verify");
         assert_eq!(back.bind, rec.bind);
         assert_eq!(back.peers, rec.peers);
         assert_eq!(back.hypha[0].1, [8, 8, 1, 8]);
@@ -562,17 +562,17 @@ mod tests {
             epoch: 2,
         };
         let bytes = rec.signed_bytes(&key).expect("the record fits its lengths");
-        let back = MeshRecord::open(&bytes, &key.vk_bytes()).expect("verify");
+        let back = MeshRecord::open(&bytes, &key.verifying_bytes()).expect("verify");
         assert_eq!(back.genesis, None, "unwritten stays unwritten");
 
         let written = MeshRecord { genesis: Some([9; 32]), ..rec };
-        let back = MeshRecord::open(&written.signed_bytes(&key).expect("fits"), &key.vk_bytes()).expect("verify");
+        let back = MeshRecord::open(&written.signed_bytes(&key).expect("fits"), &key.verifying_bytes()).expect("verify");
         assert_eq!(back.genesis, Some([9; 32]), "a written one survives");
 
         // The sentinel it replaces: a genesis that IS all zeros is a
         // genesis, and reads back as one. MSH1 could not say this.
         let zeros = MeshRecord { genesis: Some([0; 32]), ..written };
-        let back = MeshRecord::open(&zeros.signed_bytes(&key).expect("fits"), &key.vk_bytes()).expect("verify");
+        let back = MeshRecord::open(&zeros.signed_bytes(&key).expect("fits"), &key.verifying_bytes()).expect("verify");
         assert_eq!(back.genesis, Some([0; 32]), "a zero origin is an origin");
     }
 
@@ -591,11 +591,11 @@ mod tests {
             genesis: None,
             epoch: 0,
         };
-        let back = MeshRecord::open(&rec.signed_bytes(&key).expect("fits"), &key.vk_bytes()).expect("verify");
+        let back = MeshRecord::open(&rec.signed_bytes(&key).expect("fits"), &key.verifying_bytes()).expect("verify");
         assert_eq!(back.bind, None, "unbound stays unbound");
 
         let empty = MeshRecord { bind: Some(String::new()), ..rec };
-        let back = MeshRecord::open(&empty.signed_bytes(&key).expect("fits"), &key.vk_bytes()).expect("verify");
+        let back = MeshRecord::open(&empty.signed_bytes(&key).expect("fits"), &key.verifying_bytes()).expect("verify");
         assert_eq!(back.bind, Some(String::new()), "an empty address is an address");
     }
 
@@ -628,7 +628,7 @@ mod tests {
         let mut signed = v1.clone();
         signed.extend_from_slice(&sig);
 
-        let back = MeshRecord::open(&signed, &key.vk_bytes()).expect("the old record opens");
+        let back = MeshRecord::open(&signed, &key.verifying_bytes()).expect("the old record opens");
         assert_eq!(back.bind, Some("127.0.0.1:7500".into()), "the bind survives");
         assert_eq!(back.peers, vec!["127.0.0.1:7501".to_string()], "and the peers");
         assert_eq!(back.hypha, vec![([5; 32], [1, 2, 3, 4])], "and the genesis bonds");
@@ -655,7 +655,7 @@ mod tests {
         // magic and reads back with the presence bytes.
         let re = back.signed_bytes(&key).expect("fits");
         assert_eq!(re.get(0..4), Some(&MAGIC[..]), "saved under the current magic");
-        let again = MeshRecord::open(&re, &key.vk_bytes()).expect("and opens");
+        let again = MeshRecord::open(&re, &key.verifying_bytes()).expect("and opens");
         assert_eq!(again.bind, back.bind);
         assert_eq!(again.genesis, back.genesis);
         assert_eq!(again.peers, back.peers);
@@ -705,7 +705,7 @@ mod tests {
         let now = std::fs::read(home.join("mesh")).expect("still on disk");
         assert_eq!(now.get(0..4), Some(&MAGIC[..]), "and the boot wrote it back as MSH2");
         assert_eq!(
-            MeshRecord::open_layout(&now, &key.vk_bytes()).map(|(_, l)| l),
+            MeshRecord::open_layout(&now, &key.verifying_bytes()).map(|(_, l)| l),
             Some(Layout::Current),
             "read as the current layout from here on"
         );

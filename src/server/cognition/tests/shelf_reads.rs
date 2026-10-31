@@ -85,7 +85,7 @@ fn verify_fold_off_shelf_matches_kernel() {
 #[test]
 fn rows_below_page_pages_whole_prefix() {
     let mut k = court();
-    let own_vk = k.chain().vk();
+    let own_vk = k.chain().signer();
     let line = k.chain().line_between(&own_vk, None, Place { k: u64::MAX, i: u64::MAX }, usize::MAX);
     for r in &line {
         let anchor = (r.stamp, r.chain_hash);

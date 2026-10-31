@@ -77,7 +77,7 @@ impl PivotBy {
 
 /// μ⃗ on a certificate: measured over the bundle, or unmeasured.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Mu {
+pub enum MeasuredMu {
     Measured { before: [u64; 4], after: [u64; 4] },
     Unmeasured,
 }
@@ -120,7 +120,7 @@ pub struct PivotCertificate {
     /// leaving them here invited a later reader to do its own comparison.
     pub rank_move: RankMove,
     /// μ⃗ of the form over the bundle before and after the move.
-    pub mu: Mu,
+    pub mu: MeasuredMu,
     pub by: PivotBy,
 }
 
@@ -183,12 +183,12 @@ impl PivotCertificate {
     fn put_record(&self, out: &mut Vec<u8>) -> Option<()> {
         put_overlap(out, &self.chord);
         out.push(self.axis.byte());
-        crate::transducer::address::put_addr(out, &self.before)?;
-        crate::transducer::address::put_addr(out, &self.after)?;
+        crate::transducer::address::put_address(out, &self.before)?;
+        crate::transducer::address::put_address(out, &self.after)?;
         put_rank_move(&self.rank_move, out);
         match &self.mu {
-            Mu::Unmeasured => out.push(0),
-            Mu::Measured { before, after } => {
+            MeasuredMu::Unmeasured => out.push(0),
+            MeasuredMu::Measured { before, after } => {
                 out.push(1);
                 for m in before.iter().chain(after) {
                     out.extend_from_slice(&m.to_le_bytes());
@@ -235,13 +235,13 @@ impl PivotCertificate {
         let chord = take_overlap(b, pos)?;
         let axis = Axis::of(*b.get(*pos)?)?;
         *pos += 1;
-        let before = crate::transducer::address::take_addr(b, pos)?;
-        let after = crate::transducer::address::take_addr(b, pos)?;
+        let before = crate::transducer::address::take_address(b, pos)?;
+        let after = crate::transducer::address::take_address(b, pos)?;
         let rank_move = take_rank_move(b, pos)?;
         let mu_tag = *b.get(*pos)?;
         *pos += 1;
         let mu = match mu_tag {
-            0 => Mu::Unmeasured,
+            0 => MeasuredMu::Unmeasured,
             1 => {
                 let mut before = [0u64; 4];
                 let mut after = [0u64; 4];
@@ -249,7 +249,7 @@ impl PivotCertificate {
                     *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                     *pos += 8;
                 }
-                Mu::Measured { before, after }
+                MeasuredMu::Measured { before, after }
             }
             _ => return None,
         };
@@ -430,7 +430,7 @@ impl At {
     /// address behind its u16. `None` where an address reaches the u16 wall
     /// — a blob where a citation belongs — and nothing is written then (LD0).
     pub fn to_bytes(&self, out: &mut Vec<u8>) -> Option<()> {
-        use crate::transducer::address::put_addr;
+        use crate::transducer::address::put_address;
         let mut rec = Vec::new();
         match self {
             At::Vertex { vertex, chart } => {
@@ -456,7 +456,7 @@ impl At {
             }
             At::Tape(a) => {
                 rec.push(3);
-                put_addr(&mut rec, a)?;
+                put_address(&mut rec, a)?;
             }
         }
         out.append(&mut rec);
@@ -493,7 +493,7 @@ impl At {
                 }
                 At::Chart(inv, links)
             }
-            3 => At::Tape(crate::transducer::address::take_addr(b, pos)?),
+            3 => At::Tape(crate::transducer::address::take_address(b, pos)?),
             _ => return None,
         })
     }
@@ -522,8 +522,8 @@ impl Contraction {
     pub fn to_bytes(&self, out: &mut Vec<u8>) -> Option<()> {
         let mut rec = vec![self.kind.byte()];
         self.at.to_bytes(&mut rec)?;
-        crate::transducer::address::put_addr(&mut rec, &self.before)?;
-        crate::transducer::address::put_addr(&mut rec, &self.after)?;
+        crate::transducer::address::put_address(&mut rec, &self.before)?;
+        crate::transducer::address::put_address(&mut rec, &self.after)?;
         rec.extend_from_slice(&self.receipt);
         out.append(&mut rec);
         Some(())
@@ -533,8 +533,8 @@ impl Contraction {
         let kind = RefusalKind::of(*b.get(*pos)?)?;
         *pos += 1;
         let at = At::from_bytes(b, pos)?;
-        let before = crate::transducer::address::take_addr(b, pos)?;
-        let after = crate::transducer::address::take_addr(b, pos)?;
+        let before = crate::transducer::address::take_address(b, pos)?;
+        let after = crate::transducer::address::take_address(b, pos)?;
         let receipt: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
         *pos += 32;
         Some(Contraction { kind, at, before, after, receipt })

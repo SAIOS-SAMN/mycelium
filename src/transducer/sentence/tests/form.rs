@@ -356,7 +356,7 @@ fn form_vertex_key_carries_ratio_and_sections() {
     b.ratio = ((2, 1), (2, 1));
     let mut c = closed_word_form(w.clone(), None);
     // 54.7 — A SECTION IS FILED AT A SECTION COORDINATE, not at arbitrary
-    // bytes. It stood at `form_addr(7)`, two bytes that spell no stratum of
+    // bytes. It stood at `form_address(7)`, two bytes that spell no stratum of
     // this system, and the carrier accepted them because it took bytes.
     let class = coord::SectionAt::Class(coord::Transport {
         kind: crate::transducer::peel::ShellKind::Whole,
@@ -419,23 +419,23 @@ fn depth_of_is_one_plus_max_glued() {
     assert_eq!(outer.depth_of(), Some(1));
     assert_eq!(outer.depth, 1);
     let mut wrap = Form::default();
-    wrap.glue(&outer, form_addr(2), Word::identity(), [0, 0, 0, 1]).expect("glue depth 1 into depth 0");
+    wrap.glue(&outer, form_address(2), Word::identity(), [0, 0, 0, 1]).expect("glue depth 1 into depth 0");
     assert_eq!(wrap.depth_of(), Some(2));
     // A CITATION AT EQUAL DEPTH, AND ONE DEEPER, both stand: the nerve has
     // no stratification and the depth that comes back is the deepest of
     // them, read off the citations themselves.
     let outer_copy = outer.clone();
     outer
-        .glue(&outer_copy, form_addr(3), Word::identity(), [0, 0, 0, 1])
+        .glue(&outer_copy, form_address(3), Word::identity(), [0, 0, 0, 1])
         .expect("a citation at equal depth is a citation");
     assert_eq!(outer.depth_of(), Some(2), "the equal-depth citation is one deep, so the host is two");
     outer
-        .glue(&wrap, form_addr(4), Word::identity(), [0, 0, 0, 1])
+        .glue(&wrap, form_address(4), Word::identity(), [0, 0, 0, 1])
         .expect("a citation of a deeper form is a citation");
     assert_eq!(outer.depth_of(), Some(3), "and the deepest citation is what depth reads");
     let mut again = Form::default();
     again.glue(&inner, a0.clone(), Word::identity(), [0, 0, 0, 1]).unwrap();
-    again.glue(&inner, form_addr(5), Word::identity(), [0, 0, 0, 1]).expect("another depth-0 glue");
+    again.glue(&inner, form_address(5), Word::identity(), [0, 0, 0, 1]).expect("another depth-0 glue");
     assert_eq!(again.depth_of(), Some(1), "max glued depth, not a count");
 }
 

@@ -6,7 +6,7 @@
 //! per axis, in structural order and never summed; two selections of equal
 //! size are not equal readings (law 5).
 
-use crate::transducer::anchor::Sel;
+use crate::transducer::anchor::Selection;
 
 /// The exact spectral signature of a selected region within a scene.
 /// Vec-of-relations for the hue tally (Law II — never a keyed map).
@@ -132,9 +132,9 @@ pub fn mismatch(a: &Signature, b: &Signature) -> [u64; 4] {
 /// vortex and are all returned. Empty input → empty (no candidate, no
 /// invention).
 pub fn beam_minima(
-    candidates: &[Sel],
+    candidates: &[Selection],
     witnesses: &[crate::transducer::anchor::Evidence],
-) -> Vec<Sel> {
+) -> Vec<Selection> {
     if candidates.len() <= 1 || witnesses.is_empty() {
         return candidates.to_vec();
     }
@@ -198,8 +198,8 @@ mod tests {
         // Candidate A selects EVERYTHING painted (carries fp, but drags the
         // alien site); candidate B selects exactly the hue-1 support, so B
         // is no worse on any lane and better on some.
-        let a = Sel::Hue(255);
-        let b = Sel::Hue(1);
+        let a = Selection::Hue(255);
+        let b = Selection::Hue(1);
         assert_eq!(a.eval(&scene).len(), 3);
         assert_eq!(b.eval(&scene).len(), 2);
         let witnesses = vec![(footprint, scene)];
@@ -229,8 +229,8 @@ mod tests {
             (vec![(0i64, 0i64), (0, 1)], s1),
             (vec![(0i64, 0i64), (0, 1)], s2),
         ];
-        let one = Sel::Hue(1);
-        let two = Sel::Hue(2);
+        let one = Selection::Hue(1);
+        let two = Selection::Hue(2);
         let held = beam_minima(&[one.clone(), two.clone()], &witnesses);
         assert_eq!(
             held.len(),

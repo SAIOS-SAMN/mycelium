@@ -25,32 +25,32 @@ use crate::transducer::element::Versor;
 /// THE KIND OF AN OBSTRUCTION (74, 78.9).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ObstructionKind {
-    P,
-    D,
-    C,
-    I,
-    N,
+    Permanent,
+    Dialect,
+    Cover,
+    Integrity,
+    NoQuestion,
     Unclassified,
 }
 
 impl ObstructionKind {
     pub const ALL: [ObstructionKind; 6] = [
-        ObstructionKind::P,
-        ObstructionKind::D,
-        ObstructionKind::C,
-        ObstructionKind::I,
-        ObstructionKind::N,
+        ObstructionKind::Permanent,
+        ObstructionKind::Dialect,
+        ObstructionKind::Cover,
+        ObstructionKind::Integrity,
+        ObstructionKind::NoQuestion,
         ObstructionKind::Unclassified,
     ];
 
     /// The kind by its letter, as the lines print it.
     pub fn label(self) -> &'static str {
         match self {
-            ObstructionKind::P => "P",
-            ObstructionKind::D => "D",
-            ObstructionKind::C => "C",
-            ObstructionKind::I => "I",
-            ObstructionKind::N => "N",
+            ObstructionKind::Permanent => "P",
+            ObstructionKind::Dialect => "D",
+            ObstructionKind::Cover => "C",
+            ObstructionKind::Integrity => "I",
+            ObstructionKind::NoQuestion => "N",
             ObstructionKind::Unclassified => "unclassified",
         }
     }
@@ -58,11 +58,11 @@ impl ObstructionKind {
     /// Its place in [`ObstructionKind::ALL`], the counters' axis.
     pub fn index(self) -> usize {
         match self {
-            ObstructionKind::P => 0,
-            ObstructionKind::D => 1,
-            ObstructionKind::C => 2,
-            ObstructionKind::I => 3,
-            ObstructionKind::N => 4,
+            ObstructionKind::Permanent => 0,
+            ObstructionKind::Dialect => 1,
+            ObstructionKind::Cover => 2,
+            ObstructionKind::Integrity => 3,
+            ObstructionKind::NoQuestion => 4,
             ObstructionKind::Unclassified => 5,
         }
     }
@@ -88,11 +88,11 @@ pub enum ClosureObstruction {
 impl ClosureObstruction {
     pub fn kind(&self) -> ObstructionKind {
         match self {
-            ClosureObstruction::Permanent { .. } => ObstructionKind::P,
-            ClosureObstruction::Dialect { .. } => ObstructionKind::D,
-            ClosureObstruction::Cover { .. } => ObstructionKind::C,
-            ClosureObstruction::Integrity => ObstructionKind::I,
-            ClosureObstruction::NoQuestion => ObstructionKind::N,
+            ClosureObstruction::Permanent { .. } => ObstructionKind::Permanent,
+            ClosureObstruction::Dialect { .. } => ObstructionKind::Dialect,
+            ClosureObstruction::Cover { .. } => ObstructionKind::Cover,
+            ClosureObstruction::Integrity => ObstructionKind::Integrity,
+            ClosureObstruction::NoQuestion => ObstructionKind::NoQuestion,
             ClosureObstruction::Unclassified => ObstructionKind::Unclassified,
         }
     }
@@ -207,14 +207,14 @@ pub enum ObstructionRefusal {
 impl ObstructionRefusal {
     /// Its kind (78.9).
     pub fn kind(self) -> ObstructionKind {
-        use ObstructionKind::{C, I, N};
+        use ObstructionKind::{Cover, Integrity, NoQuestion};
         match self {
             ObstructionRefusal::MintVertexNotCarried(k, _) | ObstructionRefusal::RotorMintsNoGenerator(k) => k,
-            ObstructionRefusal::MintNothingActs | ObstructionRefusal::TrialNoQuestion => N,
+            ObstructionRefusal::MintNothingActs | ObstructionRefusal::TrialNoQuestion => NoQuestion,
             ObstructionRefusal::TrialNotDischarged
             | ObstructionRefusal::TrialPathsDisagree
             | ObstructionRefusal::TrialLaneRose
-            | ObstructionRefusal::TrialUnclosed => C,
+            | ObstructionRefusal::TrialUnclosed => Cover,
             ObstructionRefusal::MintLinksWithoutDemand
             | ObstructionRefusal::MintLinksUndeclared
             | ObstructionRefusal::MintNoTape
@@ -226,7 +226,7 @@ impl ObstructionRefusal {
             | ObstructionRefusal::OwedToEveryCourt
             | ObstructionRefusal::FaceEndNotVertex
             | ObstructionRefusal::FacePlaceNotRederived
-            | ObstructionRefusal::FacePlaceUnderived => I,
+            | ObstructionRefusal::FacePlaceUnderived => Integrity,
         }
     }
 
@@ -260,11 +260,11 @@ impl ObstructionRefusal {
     /// The obstruction it is, for a refusal that carries one (78.9).
     pub fn obstruction(self) -> ClosureObstruction {
         match self.kind() {
-            ObstructionKind::P => ClosureObstruction::Permanent { proof: self.proof() },
-            ObstructionKind::D => ClosureObstruction::Dialect { coset: Vec::new(), chart: None },
-            ObstructionKind::C => ClosureObstruction::Cover { cocycle: Vec::new() },
-            ObstructionKind::I => ClosureObstruction::Integrity,
-            ObstructionKind::N => ClosureObstruction::NoQuestion,
+            ObstructionKind::Permanent => ClosureObstruction::Permanent { proof: self.proof() },
+            ObstructionKind::Dialect => ClosureObstruction::Dialect { coset: Vec::new(), chart: None },
+            ObstructionKind::Cover => ClosureObstruction::Cover { cocycle: Vec::new() },
+            ObstructionKind::Integrity => ClosureObstruction::Integrity,
+            ObstructionKind::NoQuestion => ClosureObstruction::NoQuestion,
             ObstructionKind::Unclassified => ClosureObstruction::Unclassified,
         }
     }

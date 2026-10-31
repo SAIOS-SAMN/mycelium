@@ -163,7 +163,7 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     // The words a peer court's fetch carried away, under the court that
     // asked: only on a reply the wire took.
     if written && matches!(asker, mycelium::cognition::Asker::Court(_)) {
-        mycelium::observe::note_replication(Some(fvoice), mycelium::observe::rep::FETCH_SERVED, words.len() as u64);
+        mycelium::observe::note_replication(Some(fvoice), mycelium::observe::replication::FETCH_SERVED, words.len() as u64);
     }
 }
 
@@ -198,7 +198,7 @@ fn cited(stream: &mut TcpStream, frame: &Frame, door: &Door, cvoice: [u8; 32], a
         return;
     };
     if crate::transport::answer_written(stream, Frame { lane: frame.lane, body }) && court {
-        mycelium::observe::note_replication(Some(cvoice), mycelium::observe::rep::FETCH_SERVED, words.len() as u64);
+        mycelium::observe::note_replication(Some(cvoice), mycelium::observe::replication::FETCH_SERVED, words.len() as u64);
     }
 }
 

@@ -19,12 +19,12 @@ impl crate::transducer::family::Crystal for Court {
         self.ruled
             .fibre(class)
             .into_iter()
-            .filter_map(|addr| {
+            .filter_map(|address| {
                 // The court's ruled word, read off the word it HOLDS (L16):
                 // the form is a field of the basis entry and this read
                 // parses nothing.
                 // Z4 item 3: references into the one held word.
-                let held = self.held_word(&addr)?;
+                let held = self.held_word(&address)?;
                 Some((held.element(), held.form()?, crate::transducer::stalk::Standing::Ruled))
             })
             .collect()
@@ -65,15 +65,15 @@ impl crate::transducer::family::Crystal for Court {
     /// at the citation: the whole family read as undeclared remainder.
     fn by_address(
         &self,
-        addr: &[u8],
+        address: &[u8],
     ) -> Option<(&Element, std::borrow::Cow<'_, crate::transducer::sentence::Form>)> {
         // An installed word holds its form, decoded once where it was placed.
-        if let Some(held) = self.held_word(addr).filter(|_| self.ruled_contains(addr)) {
+        if let Some(held) = self.held_word(address).filter(|_| self.ruled_contains(address)) {
             return Some((held.element(), std::borrow::Cow::Borrowed(held.form()?)));
         }
         // A word the cavity retired is ruled and held there as its element
         // alone: its form is derived from its address here, where it is read.
-        let e = self.cavity_book.get(addr)?;
+        let e = self.cavity_book.get(address)?;
         Some((e, std::borrow::Cow::Owned(crate::transducer::sentence::from_element_form(e)?)))
     }
 
@@ -168,7 +168,7 @@ impl Court {
     /// reading and not a floor.
     pub(crate) fn discharge_on(
         &self,
-        addr: &[u8],
+        address: &[u8],
         word: &Element,
         family: Option<&crate::transducer::family::Family>,
     ) -> [u64; 4] {
@@ -188,7 +188,7 @@ impl Court {
             // A connection bound to no family is measured by the listing it
             // stands for on the book, and by nothing where it stands for none
             // (26: association with a listing is not a mint).
-            (false, false, _) => match self.book_elem(addr) {
+            (false, false, _) => match self.book_element(address) {
                 Some(e) => e.chain_magnitude(),
                 None => [0; 4],
             },
@@ -237,9 +237,9 @@ impl Court {
     /// composition's motions covered, is the composition's whole: a word
     /// measured by its sites carries none, so none of it is the words'.
     /// Nothing where it is bound to no family, or closes nothing.
-    pub(crate) fn gluing_of(&self, addr: &[u8], sentence: &Element, words: &[Element]) -> [u64; 4] {
+    pub(crate) fn gluing_of(&self, address: &[u8], sentence: &Element, words: &[Element]) -> [u64; 4] {
         use crate::transducer::family::local::{form_local, word_local, Local};
-        let task = self.speech_task.get(addr).or_else(|| self.listing_task.get(addr));
+        let task = self.speech_task.get(address).or_else(|| self.listing_task.get(address));
         let Some(family) = task.and_then(|t| self.task_family.get(t.as_bytes())) else { return [0; 4] };
         let Some(form) = crate::transducer::sentence::from_element_form(sentence) else { return [0; 4] };
         let here = crate::transducer::alphabet::Word::identity();
@@ -257,9 +257,9 @@ impl Court {
     /// [`Court::discharge_on`] over the family the word is BOUND to — the
     /// task it was spoken for, or the listing it answers — which is the
     /// family its install measures.
-    pub(crate) fn discharge_of(&self, addr: &[u8], word: &Element) -> [u64; 4] {
-        let task = self.speech_task.get(addr).or_else(|| self.listing_task.get(addr));
+    pub(crate) fn discharge_of(&self, address: &[u8], word: &Element) -> [u64; 4] {
+        let task = self.speech_task.get(address).or_else(|| self.listing_task.get(address));
         let family = task.and_then(|t| self.task_family.get(t.as_bytes()));
-        self.discharge_on(addr, word, family.map(Vec::as_slice))
+        self.discharge_on(address, word, family.map(Vec::as_slice))
     }
 }

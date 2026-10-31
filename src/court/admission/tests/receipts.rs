@@ -16,8 +16,8 @@ fn at(n: u64) -> Place {
 /// A signer's line of `frames.len()` steps, each measuring its lane and
 /// naming the parents given for it: real nodes, heights that re-derive,
 /// hashes that link.
-fn line(vk: [u8; 32], frames: &[(u64, Vec<Parent>)]) -> Vec<KStepReceipt> {
-    let mut c = ReceiptChain::with_vk(vk);
+fn line(signer: [u8; 32], frames: &[(u64, Vec<Parent>)]) -> Vec<KStepReceipt> {
+    let mut c = ReceiptChain::with_signer(signer);
     frames
         .iter()
         .map(|(lane, parents)| {
@@ -81,7 +81,7 @@ fn signed_prefix_round_trips_and_refuses_extra_bytes() {
 #[test]
 fn admit_refuses_foreign_genesis_or_epoch_first() {
     let r = line([1; 32], &[(1, vec![])]).remove(0);
-    let mut ledger = ReceiptChain::with_vk([9; 32]);
+    let mut ledger = ReceiptChain::with_signer([9; 32]);
     let mut foreign = prefix_for(&r);
     foreign.genesis = [8; 32];
     assert_eq!(admit((G, E), &foreign, &r, &ledger), Admitted::Refused(REFUSE_ORIGIN));
@@ -99,7 +99,7 @@ fn admit_refuses_foreign_genesis_or_epoch_first() {
 #[test]
 fn admit_dockets_gap_until_backfilled() {
     let rs = line([1; 32], &[(1, vec![]), (2, vec![]), (3, vec![])]);
-    let mut ledger = ReceiptChain::with_vk([9; 32]);
+    let mut ledger = ReceiptChain::with_signer([9; 32]);
     assert!(matches!(take(&mut ledger, &rs[0]), Admitted::Parent(_)));
     assert_eq!(
         take(&mut ledger, &rs[2]),
@@ -116,7 +116,7 @@ fn admit_dockets_gap_until_backfilled() {
 #[test]
 fn admit_gaps_unseen_signer_to_genesis() {
     let rs = line([2; 32], &[(1, vec![]), (2, vec![])]);
-    let ledger = ReceiptChain::with_vk([9; 32]);
+    let ledger = ReceiptChain::with_signer([9; 32]);
     assert_eq!(admit((G, E), &prefix_for(&rs[1]), &rs[1], &ledger), Admitted::Gap { vk: [2; 32], from: None, to: at(0) });
 }
 
@@ -128,7 +128,7 @@ fn admit_gaps_unseen_signer_to_genesis() {
 #[test]
 fn admit_refuses_predecessor_receipt_does_not_follow() {
     let rs = line([1; 32], &[(1, vec![]), (2, vec![])]);
-    let ledger = ReceiptChain::with_vk([9; 32]);
+    let ledger = ReceiptChain::with_signer([9; 32]);
     let refused = |r: &KStepReceipt| admit((G, E), &prefix_for(r), r, &ledger);
     let mut leap = rs[1].clone();
     leap.stamp.k += 1;
@@ -153,7 +153,7 @@ fn admit_refuses_predecessor_receipt_does_not_follow() {
 fn admit_refuses_height_that_does_not_rederive() {
     let peer = line([3; 32], &[(1, vec![])]).remove(0);
     // The signer held the peer when it cited it.
-    let mut signer = ReceiptChain::with_vk([1; 32]);
+    let mut signer = ReceiptChain::with_signer([1; 32]);
     let r0 = signer.append(crate::chronometry::ActKind::List, [1, 0, 0, 0], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
     signer.admit(peer.clone());
     let r1 = signer
@@ -161,7 +161,7 @@ fn admit_refuses_height_that_does_not_rederive() {
         .expect("appends")
         .clone();
     let rs = [r0, r1];
-    let mut ledger = ReceiptChain::with_vk([9; 32]);
+    let mut ledger = ReceiptChain::with_signer([9; 32]);
     assert!(matches!(take(&mut ledger, &rs[0]), Admitted::Parent(_)));
     assert_eq!(
         admit((G, E), &prefix_for(&rs[1]), &rs[1], &ledger),
@@ -185,7 +185,7 @@ fn admit_refuses_height_that_does_not_rederive() {
 fn admit_reads_duplicate_stale_second_hash_equivocation() {
     let rs = line([1; 32], &[(1, vec![]), (2, vec![])]);
     let fork = line([1; 32], &[(9, vec![])]).remove(0);
-    let mut ledger = ReceiptChain::with_vk([9; 32]);
+    let mut ledger = ReceiptChain::with_signer([9; 32]);
     assert!(matches!(take(&mut ledger, &rs[0]), Admitted::Parent(_)));
     assert!(matches!(take(&mut ledger, &rs[1]), Admitted::Parent(_)));
     let stale = take(&mut ledger, &rs[0]);
@@ -204,7 +204,7 @@ fn admit_reads_duplicate_stale_second_hash_equivocation() {
 #[test]
 fn admit_reads_restored_ledger() {
     let rs = line([1; 32], &[(1, vec![]), (2, vec![]), (3, vec![])]);
-    let mut ledger = ReceiptChain::with_vk([9; 32]);
+    let mut ledger = ReceiptChain::with_signer([9; 32]);
     ledger.append(crate::chronometry::ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("its own genesis");
     assert!(matches!(take(&mut ledger, &rs[0]), Admitted::Parent(_)));
     let tape = ledger.line_image().expect("writes");
@@ -232,8 +232,8 @@ fn court_key() -> crate::court::identity::HyphaKey {
 #[test]
 fn admit_signature_verifies_only_own_prefix() {
     let court = court_key();
-    let vk = court.vk_bytes();
-    let stranger = crate::court::identity::HyphaKey::vk_from_name("stranger");
+    let vk = court.verifying_bytes();
+    let stranger = crate::court::identity::HyphaKey::voice_from_name("stranger");
     let r = line(vk, &[(1, Vec::new())]).remove(0);
     let p = prefix_for(&r);
     let sig = court.sign(&p.bytes().expect("the prefix frames"));

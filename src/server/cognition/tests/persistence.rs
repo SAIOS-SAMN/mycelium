@@ -218,7 +218,7 @@ for wrong in [declared.wrapping_sub(1), declared.wrapping_add(1)] {
 
 /// AN ADDRESS THE WIRE'S PREFIX CANNOT HOLD STILL GOES ON THE LOCAL TAPE.
 ///
-/// `put_addr` writes a `u16` length and refuses an address over 65 535 bytes
+/// `put_address` writes a `u16` length and refuses an address over 65 535 bytes
 /// by writing NOTHING — never truncating. That is a wire constraint: the
 /// citation prefix of 47.1 is part of the protocol and `Cited` is the type
 /// that proves an address fits it. The ledger and the genome are not the
@@ -278,7 +278,7 @@ let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("a 90° tu
 let g = rotor_versor(&crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor()).expect("a versor");
 k.dialect_chain.push((b"stood".to_vec(), g.clone(), Some(head)));
 k.dialect_chain.push((b"unstamped".to_vec(), g, None));
-let origin = crate::chronometry::Stamp::new(0, k.chain().vk(), crate::chronometry::Place::GENESIS);
+let origin = crate::chronometry::Stamp::new(0, k.chain().signer(), crate::chronometry::Place::GENESIS);
 assert!(k.treasury().entries().iter().any(|e| e.at == origin && e.receipt == [0; 32]), "the boot's rows stand at the origin");
 let snap = k.snapshot();
 let mut back = Court::new();

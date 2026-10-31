@@ -21,7 +21,7 @@ fn close(c: &mut ReceiptChain) -> KStepReceipt {
 /// Fold `c` at its last close and seal the `Fold` node citing the root.
 fn fold(c: &mut ReceiptChain, at: Place) -> KStepReceipt {
     let (_, root) = c.fold_before(at).expect("the orbit folds");
-    let cites = vec![Cite::Root { at: Stamp::new(root.height, c.vk(), root.at), hash: root.hash }];
+    let cites = vec![Cite::Root { at: Stamp::new(root.height, c.signer(), root.at), hash: root.hash }];
     c.append(ActKind::Fold, [0; 4], cites, [9; 32], Vec::new()).expect("the fold node").clone()
 }
 
@@ -31,13 +31,13 @@ fn fold(c: &mut ReceiptChain, at: Place) -> KStepReceipt {
 /// go, and the signer's line keeps the head admission reads.
 #[test]
 fn shed_folded_keeps_peer_nodes_own_hot_line_cites() {
-    let mut e = ReceiptChain::with_vk([4; 32]);
+    let mut e = ReceiptChain::with_signer([4; 32]);
     let e0 = step(&mut e, Vec::new());
     let e1 = step(&mut e, Vec::new());
     let shut = close(&mut e);
     let folded = fold(&mut e, shut.stamp.place());
 
-    let mut c = ReceiptChain::with_vk([1; 32]);
+    let mut c = ReceiptChain::with_signer([1; 32]);
     for r in [&e0, &e1, &shut] {
         c.admit(r.clone());
     }
@@ -78,12 +78,12 @@ fn shed_folded_keeps_peer_nodes_own_hot_line_cites() {
 /// the mesh's split on the development deployment, as the ledger reads it.
 #[test]
 fn shed_folded_leaves_hole_backfill_cannot_cross() {
-    let mut e = ReceiptChain::with_vk([4; 32]);
+    let mut e = ReceiptChain::with_signer([4; 32]);
     let e0 = step(&mut e, Vec::new());
     step(&mut e, Vec::new());
     let shut = close(&mut e);
     let folded = fold(&mut e, shut.stamp.place());
-    let mut c = ReceiptChain::with_vk([1; 32]);
+    let mut c = ReceiptChain::with_signer([1; 32]);
     for r in e.line_between(&[4; 32], None, folded.stamp.place(), 64) {
         c.admit(r);
     }

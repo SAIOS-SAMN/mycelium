@@ -516,8 +516,8 @@ pub fn from_translation(
     if crate::transducer::address::tag_of(&d) == Some(CONNECTION_TAG) {
         d[0] = TRANSLATION_TAG;
     }
-    crate::transducer::address::put_addr(&mut d, a)?;
-    crate::transducer::address::put_addr(&mut d, b)?;
+    crate::transducer::address::put_address(&mut d, a)?;
+    crate::transducer::address::put_address(&mut d, b)?;
     e.set_description(d);
     Some(e)
 }

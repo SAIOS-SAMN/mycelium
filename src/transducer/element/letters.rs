@@ -830,8 +830,8 @@ impl Element {
         // by trying every offset for a pair that consumes the tail.
         let b = self.description();
         let (_, mut q) = self.connection_head()?;
-        let a = crate::transducer::address::take_addr(b, &mut q)?;
-        let c = crate::transducer::address::take_addr(b, &mut q)?;
+        let a = crate::transducer::address::take_address(b, &mut q)?;
+        let c = crate::transducer::address::take_address(b, &mut q)?;
         (q == b.len()).then_some((a, c))
     }
 

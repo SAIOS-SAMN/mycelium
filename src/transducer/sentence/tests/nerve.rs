@@ -21,7 +21,7 @@ fn leaf(plane: (u8, u8)) -> Form {
     closed_word_form(Word::from_letters(&[(q, false)]), None)
 }
 
-fn addr_of(f: &Form) -> crate::transducer::address::Address {
+fn address_of(f: &Form) -> crate::transducer::address::Address {
     as_element_form(f, [1, 0, 0, 0]).expect("tape").address()
 }
 
@@ -40,12 +40,12 @@ fn addr_of(f: &Form) -> crate::transducer::address::Address {
 #[test]
 fn glue_key_independent_of_arrival_order() {
     let a = leaf((0, 1));
-    let a_at = addr_of(&a);
+    let a_at = address_of(&a);
 
     // `b` is a form one level deeper: it cites `a`.
     let mut b = Form::default();
     b.glue(&a, a_at.clone(), Word::identity(), [0, 0, 0, 1]).expect("b cites a");
-    let b_at = addr_of(&b);
+    let b_at = address_of(&b);
     assert_eq!(a.depth_of(), Some(0), "a cites nothing");
     assert_eq!(b.depth_of(), Some(1), "b cites a depth-0 form");
 
@@ -98,7 +98,7 @@ fn glue_under_admits_mutual_citation() {
     use crate::transducer::element::{identity_versor, translator_versor};
     let a = leaf((0, 1));
     let b = leaf((0, 3));
-    let (a_at, b_at) = (addr_of(&a), addr_of(&b));
+    let (a_at, b_at) = (address_of(&a), address_of(&b));
 
     let mut u = a.clone();
     u.glue_under(&b, b_at, Word::identity(), [0, 0, 0, 1], translator_versor(3, 0))
@@ -153,7 +153,7 @@ fn glue_under_triangle_closes_or_carries_holonomy() {
         let mut e = charts[i].clone();
         e.glue_under(
             &charts[j],
-            addr_of(&charts[j]),
+            address_of(&charts[j]),
             Word::identity(),
             [0, 0, 0, 1],
             phi.clone(),
@@ -239,7 +239,7 @@ fn glue_separates_isomorphic_boundaries_by_cover_only() {
     // The same own-cells, citing two different forms at the same place.
     let cite = |s: &Form| -> Form {
         let mut g = leaf((0, 1));
-        g.glue(s, addr_of(s), Word::identity(), [0, 0, 0, 1]).expect("cites");
+        g.glue(s, address_of(s), Word::identity(), [0, 0, 0, 1]).expect("cites");
         g
     };
     let (g1, g2) = (cite(&x), cite(&y));

@@ -342,7 +342,7 @@ impl Court {
         if !crate::court::identity::verify(&h.who, &h.handoff.signed_bytes(&h.who), &h.sig) {
             return refuse(R::Unsigned);
         }
-        let id = h.handoff.id();
+        let id = h.handoff.citation();
         // 78.127 — a conversion, or an answer to one, is the convert path.
         let answers_conversion = matches!(h.handoff, Handoff::Accept { .. } | Handoff::Refuse { .. } | Handoff::Expire { .. })
             && self.handoffs.conversions.contains(&id);

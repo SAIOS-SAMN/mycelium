@@ -149,11 +149,11 @@ impl Deref for Address {
 pub struct Cited(Address);
 
 impl Cited {
-    pub fn addr(&self) -> &Address {
+    pub fn address(&self) -> &Address {
         &self.0
     }
 
-    pub fn into_addr(self) -> Address {
+    pub fn into_address(self) -> Address {
         self.0
     }
 }
@@ -183,7 +183,7 @@ impl Address {
 
 /// Write a citation. TOTAL: the type is the proof that the length fits.
 pub fn put_cited(out: &mut Vec<u8>, c: &Cited) {
-    let b = c.addr().as_bytes();
+    let b = c.address().as_bytes();
     #[expect(clippy::cast_possible_truncation, reason = "the u16 prefix's bound is the Cited type: its only constructor, Address::cited, refuses by u16::try_from any address longer than u16::MAX")]
     out.extend_from_slice(&(b.len() as u16).to_le_bytes());
     out.extend_from_slice(b);
@@ -192,7 +192,7 @@ pub fn put_cited(out: &mut Vec<u8>, c: &Cited) {
 /// Read a citation. What comes back went through the same u16 prefix, so
 /// it writes back whole.
 pub fn take_cited(b: &[u8], p: &mut usize) -> Option<Cited> {
-    take_addr(b, p)?.cited()
+    take_address(b, p)?.cited()
 }
 
 impl AsRef<[u8]> for Address {
@@ -465,15 +465,15 @@ pub fn take_bytes(b: &[u8], p: &mut usize) -> Option<Vec<u8>> {
 /// writing nothing; every caller refuses its whole write by name. A field
 /// of a key uses [`put_key_bytes`] (ruled (d)).
 #[must_use]
-pub fn put_addr(out: &mut Vec<u8>, addr: impl AsRef<[u8]>) -> Option<()> {
-    let addr = addr.as_ref();
-    let n = u16::try_from(addr.len()).ok()?;
+pub fn put_address(out: &mut Vec<u8>, address: impl AsRef<[u8]>) -> Option<()> {
+    let address = address.as_ref();
+    let n = u16::try_from(address.len()).ok()?;
     out.extend_from_slice(&n.to_le_bytes());
-    out.extend_from_slice(addr);
+    out.extend_from_slice(address);
     Some(())
 }
 
-pub fn take_addr(b: &[u8], p: &mut usize) -> Option<Address> {
+pub fn take_address(b: &[u8], p: &mut usize) -> Option<Address> {
     let n = u16::from_le_bytes(b.get(*p..*p + 2)?.try_into().ok()?) as usize;
     *p += 2;
     if n > b.len().checked_sub(*p)? {
@@ -486,13 +486,13 @@ pub fn take_addr(b: &[u8], p: &mut usize) -> Option<Address> {
 
 /// A19 class record: class key ‖ order (0 = infinite, else ℓ).
 pub fn put_class_record(out: &mut Vec<u8>, class_key: impl AsRef<[u8]>, order: u32) -> Option<()> {
-    put_addr(out, class_key)?;
+    put_address(out, class_key)?;
     out.extend_from_slice(&order.to_le_bytes());
     Some(())
 }
 
 pub fn take_class_record(b: &[u8], p: &mut usize) -> Option<(Address, u32)> {
-    let key = take_addr(b, p)?;
+    let key = take_address(b, p)?;
     let order = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
     *p += 4;
     Some((key, order))

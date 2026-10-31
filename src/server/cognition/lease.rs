@@ -81,7 +81,7 @@ impl Court {
     /// what it holds.
     pub fn open_lease(&mut self, s: &SignedLease) -> Result<([u8; 32], [u64; 4]), LeaseRefusal> {
         let a = &s.act;
-        let (Some(bytes), Some(id)) = (a.signed_bytes(), a.id()) else { return Err(LeaseRefusal::Malformed) };
+        let (Some(bytes), Some(id)) = (a.signed_bytes(), a.citation()) else { return Err(LeaseRefusal::Malformed) };
         if !crate::court::identity::verify(&a.payer, &bytes, &s.sig) {
             return Err(LeaseRefusal::Unsigned);
         }

@@ -5,7 +5,7 @@ use crate::anastome::dialogue::*;
 
 /// A root under one key, measuring `lane`: two lanes, two roots at K 0.
 fn section(lane: u64, sig: u8) -> ReceiptSection {
-    let mut c = crate::chronometry::ReceiptChain::with_vk([0x5c; 32]);
+    let mut c = crate::chronometry::ReceiptChain::with_signer([0x5c; 32]);
     let r = c
         .append(crate::chronometry::ActKind::List, [lane, 0, 0, 0], Vec::new(), [0; 32], Vec::new())
         .expect("appends")

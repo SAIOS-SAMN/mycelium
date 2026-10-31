@@ -245,7 +245,7 @@ The pipeline:
    paints the canvas.
 5. **Minting and submission.** Where the rule speaks every test input
    whole (`tests_spoken` in `src/client/sdk/entity/family.rs`), the client
-   mints it (`mint_solve`, the same file, which calls `mint_sentence_why`
+   constructs it (`construct_solve`, the same file, which calls `mint_sentence_why`
    in `src/transducer/family/deflation.rs`). Before it is sent, `judge_on`
    (`src/client/sdk/entity/perceive.rs`) strips the overlaps between
    different frames (`crossing` in `src/client/sdk/rule.rs`) and replays

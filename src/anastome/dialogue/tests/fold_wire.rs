@@ -10,7 +10,7 @@ use crate::economy::{Entry, Kind};
 /// round-trip, and a short frame refuses.
 #[test]
 fn fold_witness_and_rows_round_trip() {
-    let mut c = ReceiptChain::with_vk([6; 32]);
+    let mut c = ReceiptChain::with_signer([6; 32]);
     let head = c.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
     let root = Root { at: Place { k: 4, i: 2 }, hash: [5; 32], height: 9 };
     let section = ReceiptSection {

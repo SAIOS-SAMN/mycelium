@@ -177,7 +177,7 @@ fn to_completion_reads_unit_only_on_callers_wider_stroke() {
     };
     let unread = crate::verdict::blind::to_completion(&e, &mut stroke(1), &mut run);
     assert_eq!(unread.as_ref().map(|r| r.reason), Some(REFUSE_UNREAD), "no default stroke reads the unit");
-    assert_eq!(unread.map(|r| r.obstruction.kind()), Some(ObstructionKind::N), "and that is no reading of the word");
+    assert_eq!(unread.map(|r| r.obstruction.kind()), Some(ObstructionKind::NoQuestion), "and that is no reading of the word");
     let mut wide = stroke(unit);
     assert_eq!(crate::verdict::blind::to_completion(&e, &mut wide, &mut run), None, "the caller's stroke reads it");
     assert_eq!(wide.remaining(), unit, "and is left as it stood");

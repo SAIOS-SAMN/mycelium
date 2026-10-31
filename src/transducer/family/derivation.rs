@@ -80,9 +80,9 @@ impl LetterReading {
         use crate::transducer::sentence::ObstructionKind;
         match self {
             LetterReading::Derivable => None,
-            LetterReading::Unspelled => Some(ObstructionKind::D),
+            LetterReading::Unspelled => Some(ObstructionKind::Dialect),
             LetterReading::Unread => Some(ObstructionKind::Unclassified),
-            LetterReading::NoVersor => Some(ObstructionKind::P),
+            LetterReading::NoVersor => Some(ObstructionKind::Permanent),
         }
     }
 }

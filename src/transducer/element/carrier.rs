@@ -475,7 +475,7 @@ pub struct Element {
     /// selection term restricting WHERE this word's substance applies on a
     /// scene. None = ⊤, the unconstrained carrier (pure topological actions,
     /// and every word born before selection entered the language).
-    pub(crate) anchor: Option<crate::transducer::anchor::Sel>,
+    pub(crate) anchor: Option<crate::transducer::anchor::Selection>,
     /// THE CONNECTION — for every assignment spoken on this fibre (the base's
     /// own, a section, a torsion-orbit member), the versors V ∈ Spin(4,1)(ℚ)
     /// under which a sibling was observed and carried into this frame:
@@ -669,13 +669,13 @@ impl Element {
 
     /// The centred coboundary chain (empty for pure-algebra elements).
     /// The anchor fibre — None is ⊤ (the unconstrained carrier).
-    pub fn anchor(&self) -> Option<&crate::transducer::anchor::Sel> {
+    pub fn anchor(&self) -> Option<&crate::transducer::anchor::Selection> {
         self.anchor.as_ref()
     }
 
     /// Bind the anchor fibre (germination writes it at birth; the court's
     /// refinement rebinds it).
-    pub fn with_anchor(mut self, pi: crate::transducer::anchor::Sel) -> Self {
+    pub fn with_anchor(mut self, pi: crate::transducer::anchor::Selection) -> Self {
         self.anchor = Some(pi);
         self
     }

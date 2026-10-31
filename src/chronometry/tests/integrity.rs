@@ -6,7 +6,7 @@ use crate::chronometry::*;
 /// The ledger is the temporal authority and tamper-evident: K moves only at an orbit's close, and any changed byte of its line is refused or read as torn.
 #[test]
 fn receipt_chain_clocks_k_and_refuses_changed_bytes() {
-    let mut c = ReceiptChain::with_vk([1; 32]);
+    let mut c = ReceiptChain::with_signer([1; 32]);
     assert_eq!(c.next_step_index(), 0, "genesis K = 0");
     c.append(ActKind::List, [1, 0, 0, 0], Vec::new(), [9; 32], Vec::new()).expect("genesis");
     c.append(ActKind::List, [2, 0, 0, 0], Vec::new(), [9; 32], Vec::new()).expect("second");
@@ -40,7 +40,7 @@ fn receipt_chain_clocks_k_and_refuses_changed_bytes() {
 /// longer re-derives, and a byte that names no kind refuses the read.
 #[test]
 fn act_kind_rides_tape_and_chain_hash() {
-    let mut c = ReceiptChain::with_vk([1; 32]);
+    let mut c = ReceiptChain::with_signer([1; 32]);
     c.append(ActKind::List, [0; 4], Vec::new(), [9; 32], Vec::new()).expect("genesis");
     let r = c.append(ActKind::Install, [0; 4], Vec::new(), [9; 32], Vec::new()).expect("second").clone();
     assert_eq!(r.kind, ActKind::Install);
@@ -106,7 +106,7 @@ fn cites_ride_tape_and_chain_hash() {
     let at = Stamp { h: 4, vk: [3; 32], k: 9, i: 2 };
     let word = Cite::Word { chart: crate::transducer::stalk::Invariant::counts(&[1, 2]), class: None, at };
     let root = Cite::Root { at, hash: [5; 32] };
-    let mut c = ReceiptChain::with_vk([1; 32]);
+    let mut c = ReceiptChain::with_signer([1; 32]);
     let r = c
         .append(ActKind::Ruling(Ruled::Retired), [0; 4], vec![word.clone(), root.clone()], [9; 32], Vec::new())
         .expect("seals")

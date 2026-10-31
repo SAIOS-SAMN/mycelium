@@ -227,7 +227,7 @@ impl Court {
         if !self.closed_since_grant.is_empty() {
             leaves.push((LEAF_CLOSED, super::super::endowment::put_closed(&self.closed_since_grant)));
         }
-        nodes.insert(self.chain.vk(), leaves);
+        nodes.insert(self.chain.signer(), leaves);
         put_trie(out, COURT_TRIE, &nodes);
     }
 
@@ -318,24 +318,24 @@ impl Court {
     /// held once with the rows it stands on, and each per-word field a leaf.
     fn put_words(&self, out: &mut Vec<u8>, refused: &mut SnapshotTally) {
         let mut drafts: Keyed<Draft> = Keyed::new();
-        let hold = |drafts: &mut Keyed<Draft>, refused: &mut SnapshotTally, row: usize, addr: &[u8], elem: &Element, member: u8| {
-            if !self.admitted_at.contains(addr) {
+        let hold = |drafts: &mut Keyed<Draft>, refused: &mut SnapshotTally, row: usize, address: &[u8], elem: &Element, member: u8| {
+            if !self.admitted_at.contains(address) {
                 refused.unstamped[row] += 1;
                 return;
             }
-            if elem.address().as_bytes() != addr {
+            if elem.address().as_bytes() != address {
                 refused.misaddressed += 1;
                 return;
             }
-            match drafts.get_mut(addr) {
+            match drafts.get_mut(address) {
                 Some(d) => d.members |= member,
                 None => {
-                    drafts.insert(addr, Draft { elem: elem.clone(), members: member, provisional: None });
+                    drafts.insert(address, Draft { elem: elem.clone(), members: member, provisional: None });
                 }
             }
         };
-        crate::snapshot::persist(&self.basis, |addr, held| {
-            if self.admitted_at.contains(addr) && self.discoverer_of(addr).is_none() {
+        crate::snapshot::persist(&self.basis, |address, held| {
+            if self.admitted_at.contains(address) && self.discoverer_of(address).is_none() {
                 // A FEDERATION WORD THE BASIS ADOPTED stands written as the
                 // federation's, and the restore adopts it again from there
                 // (`prune_basis_to_ruled`): its basis row is re-derived, not
@@ -343,35 +343,35 @@ impl Court {
                 // names no voice — so it pays none. Only a basis word that
                 // stands nowhere else is refused (observed on the development
                 // deployment, 2026-10-20: 9/12/13 at every boot, the same words).
-                if self.court_fed_index.get(addr).is_none() {
+                if self.court_fed_index.get(address).is_none() {
                     refused.undiscovered += 1;
                 }
                 return;
             }
-            hold(&mut drafts, refused, 0, addr, held.element(), MEMBER_BASIS);
+            hold(&mut drafts, refused, 0, address, held.element(), MEMBER_BASIS);
         });
-        crate::snapshot::persist(&self.pending, |addr, elem| hold(&mut drafts, refused, 2, addr, elem, MEMBER_LISTING));
-        crate::snapshot::persist(&self.cavity_book, |addr, elem| hold(&mut drafts, refused, 3, addr, elem, MEMBER_CAVITY));
-        for (addr, elem) in &self.court_federation {
-            if self.admitted_at.contains(addr.as_bytes()) && !self.fed_at.contains(addr.as_bytes()) {
+        crate::snapshot::persist(&self.pending, |address, elem| hold(&mut drafts, refused, 2, address, elem, MEMBER_LISTING));
+        crate::snapshot::persist(&self.cavity_book, |address, elem| hold(&mut drafts, refused, 3, address, elem, MEMBER_CAVITY));
+        for (address, elem) in &self.court_federation {
+            if self.admitted_at.contains(address.as_bytes()) && !self.fed_at.contains(address.as_bytes()) {
                 refused.unruled += 1;
                 continue;
             }
-            hold(&mut drafts, refused, 4, addr.as_bytes(), elem, MEMBER_FEDERATION);
+            hold(&mut drafts, refused, 4, address.as_bytes(), elem, MEMBER_FEDERATION);
         }
         // THE PROVISIONAL ROW (78.27 (2)): where the docketed sentence is the
         // word at its address, the word's node carries it; where it stands
         // under another address, it is its own node, SPOKEN, and the node at
         // the address cites it.
-        crate::snapshot::persist(&self.provisional, |addr, spoken| {
-            if !self.admitted_at.contains(addr) {
+        crate::snapshot::persist(&self.provisional, |address, spoken| {
+            if !self.admitted_at.contains(address) {
                 refused.unstamped[1] += 1;
                 return;
             }
-            match drafts.get_mut(addr) {
+            match drafts.get_mut(address) {
                 Some(d) => d.provisional = Some(spoken.clone()),
-                None if spoken.address().as_bytes() == addr => {
-                    drafts.insert(addr, Draft { elem: spoken.clone(), members: 0, provisional: Some(spoken.clone()) });
+                None if spoken.address().as_bytes() == address => {
+                    drafts.insert(address, Draft { elem: spoken.clone(), members: 0, provisional: Some(spoken.clone()) });
                 }
                 // Docketed away from its address with nothing held there:
                 // the address has no element to cite it by.
@@ -381,16 +381,16 @@ impl Court {
         let rank = &self.closure.2;
         // The citation each held address stands at, for the leaves that
         // name another word by its node.
-        let key_of = |addr: &[u8], elem: &Element| -> Option<Vec<u8>> {
-            let at = *self.admitted_at.get(addr)?;
+        let key_of = |address: &[u8], elem: &Element| -> Option<Vec<u8>> {
+            let at = *self.admitted_at.get(address)?;
             let mut key = Vec::new();
             Cite::word(elem, at).put_canonical(&mut key)?;
             Some(key)
         };
         let mut nodes: Keyed<Leaves> = Keyed::new();
         let mut held: Keyed<()> = Keyed::new();
-        crate::snapshot::persist(&drafts, |addr, d| {
-            let Some(key) = key_of(addr, &d.elem) else {
+        crate::snapshot::persist(&drafts, |address, d| {
+            let Some(key) = key_of(address, &d.elem) else {
                 refused.unciteable += 1;
                 return;
             };
@@ -404,7 +404,7 @@ impl Court {
                 refused.unwritable += 1;
                 return;
             };
-            held.insert(addr, ());
+            held.insert(address, ());
             // This node's leaves, each filed at its kind's own place; each
             // kind is written once below.
             let mut leaves: Leaves = Vec::new();
@@ -416,31 +416,31 @@ impl Court {
             h.extend_from_slice(&record);
             leaf(LEAF_HELD, h);
             if d.members & MEMBER_BASIS != 0 {
-                if let Some(who) = self.discoverer_of(addr) {
+                if let Some(who) = self.discoverer_of(address) {
                     leaf(LEAF_DISCOVERER, who.to_vec());
                 }
             }
-            if let Some(award) = self.treasury.escrow_of(addr) {
+            if let Some(award) = self.treasury.escrow_of(address) {
                 let mut v = Vec::new();
                 match crate::economy::persist::put_award(&mut v, Some(award)) {
                     Some(()) => leaf(LEAF_AWARD, v),
                     None => refused.unwritable += 1,
                 }
             }
-            if let Some(mag) = self.deflations.get(addr) {
+            if let Some(mag) = self.deflations.get(address) {
                 let mut v = Vec::new();
                 put_mu(&mut v, mag);
                 leaf(LEAF_DEFLATION, v);
             }
-            for (kind, f) in [(LEAF_FIELD_HOT, self.field.get(addr)), (LEAF_FIELD_COLD, self.field_cold.get(addr))] {
+            for (kind, f) in [(LEAF_FIELD_HOT, self.field.get(address)), (LEAF_FIELD_COLD, self.field_cold.get(address))] {
                 if let Some(f) = f {
                     let mut v = Vec::new();
                     put_field(&mut v, f);
                     leaf(kind, v);
                 }
             }
-            let closure = rank.closure_carrier().get(addr);
-            let inv = rank.invariants.get(addr);
+            let closure = rank.closure_carrier().get(address);
+            let inv = rank.invariants.get(address);
             if closure.is_some() || inv.is_some() {
                 let mut v = Vec::new();
                 let root = crate::transducer::stalk::Invariant::default();
@@ -465,7 +465,7 @@ impl Court {
                 leaf(LEAF_RANK, v);
             }
             if d.members & MEMBER_FEDERATION != 0 {
-                if let Some(at) = self.fed_at.get(addr) {
+                if let Some(at) = self.fed_at.get(address) {
                     let mut v = Vec::new();
                     at.put_canonical(&mut v);
                     leaf(LEAF_RULED, v);
@@ -474,9 +474,9 @@ impl Court {
             // The docketed sentence: its own node where it is the word
             // here, a SPOKEN node of its own where it is not.
             if let Some(spoken) = &d.provisional {
-                let spoken_key = match spoken.address().as_bytes() == addr {
+                let spoken_key = match spoken.address().as_bytes() == address {
                     true => Some(key.clone()),
-                    false => key_of(addr, spoken),
+                    false => key_of(address, spoken),
                 };
                 match spoken_key {
                     Some(sk) => {

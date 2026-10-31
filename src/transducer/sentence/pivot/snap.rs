@@ -85,16 +85,16 @@ impl Snap {
     }
 }
 
-pub(crate) fn mu_deflation(mu: &crate::transducer::sentence::form::Mu) -> [u64; 4] {
+pub(crate) fn mu_deflation(mu: &crate::transducer::sentence::form::MeasuredMu) -> [u64; 4] {
     match mu {
         // The DEFLATION a move measured: what each lane fell by, and
         // nothing on a lane that did not fall. A lane that ROSE is not a
         // deflation of zero — `lanes_risen` is where a rise is read — so
         // the empty difference is the reading here.
-        crate::transducer::sentence::form::Mu::Measured { before, after } => {
+        crate::transducer::sentence::form::MeasuredMu::Measured { before, after } => {
             crate::economy::shortfall(before, after)
         }
-        crate::transducer::sentence::form::Mu::Unmeasured => [0; 4],
+        crate::transducer::sentence::form::MeasuredMu::Unmeasured => [0; 4],
     }
 }
 
@@ -155,7 +155,7 @@ pub fn symmetries(win: &PivotCertificate, held: &[PivotCertificate]) -> Vec<crat
 /// proofs of one orbit (23.9) rather than one proof twice.
 pub(crate) fn obstruction(a: &PivotCertificate, b: &PivotCertificate) -> Obstruction {
     let lanes = match (&a.mu, &b.mu) {
-        (Mu::Measured { after: x, .. }, Mu::Measured { after: y, .. }) => {
+        (MeasuredMu::Measured { after: x, .. }, MeasuredMu::Measured { after: y, .. }) => {
             Some(crate::economy::lane_moves(y, x))
         }
         _ => None,

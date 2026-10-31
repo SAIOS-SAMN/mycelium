@@ -13,7 +13,7 @@ fn key(b: u8) -> SigningKey {
     SigningKey::from_bytes(&[b; 32])
 }
 
-fn vk(k: &SigningKey) -> [u8; 32] {
+fn verifying(k: &SigningKey) -> [u8; 32] {
     k.verifying_key().to_bytes()
 }
 
@@ -23,14 +23,14 @@ const RESERVE: u8 = 27;
 /// A domain founded with its reserve designated; originated where `origin`.
 fn universe(origin: bool) -> Court {
     let mut k = Court::new();
-    let mut tiers = vec![vk(&key(RESERVE)), vk(&key(47))];
+    let mut tiers = vec![verifying(&key(RESERVE)), verifying(&key(47))];
     tiers.sort_unstable();
-    let g = DomainGenesis { domain: vk(&key(DOMAIN)), tiers };
+    let g = DomainGenesis { domain: verifying(&key(DOMAIN)), tiers };
     assert!(matches!(k.admit_domain(&g.sign(&key(DOMAIN))), Founded::Sealed { .. }));
-    let r = Reservation { domain: vk(&key(DOMAIN)), tier: vk(&key(RESERVE)), nonce: [0; 32] };
+    let r = Reservation { domain: verifying(&key(DOMAIN)), tier: verifying(&key(RESERVE)), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&r.sign(&key(DOMAIN))), Founded::Reserved { .. }));
     if origin {
-        let o = Origin { domain: vk(&key(DOMAIN)), kind: 1, version: 1, commitment: [DOMAIN; 32], universe: None };
+        let o = Origin { domain: verifying(&key(DOMAIN)), kind: 1, version: 1, commitment: [DOMAIN; 32], universe: None };
         assert!(matches!(k.record_origin(&o.sign(&key(DOMAIN))), Founded::Originated { .. }));
     }
     k
@@ -39,7 +39,7 @@ fn universe(origin: bool) -> Court {
 /// A package of hydrogen, carbon and iron nuclei, counted astronomically.
 fn manifest(nonce: u8) -> Manifest {
     let big = |e: u32| BigUint::from(10u8).pow(e);
-    Manifest { domain: vk(&key(DOMAIN)), nuclei: vec![(1, big(60)), (6, big(58)), (26, big(55))], nonce: [nonce; 32] }
+    Manifest { domain: verifying(&key(DOMAIN)), nuclei: vec![(1, big(60)), (6, big(58)), (26, big(55))], nonce: [nonce; 32] }
 }
 
 fn signed(m: Manifest, by: u8) -> SignedManifest {
@@ -55,7 +55,7 @@ fn manifest_and_reading_round_trip_on_wire() {
     let s = signed(manifest(1), RESERVE);
     let bytes = encode_manifest(&s).expect("it writes");
     assert_eq!(decode_domain_request(&bytes), Some(DomainRequest::Manifest(Box::new(s.clone()))));
-    assert_eq!(decode_domain_request(&encode_endowment_read(vk(&key(DOMAIN)))), Some(DomainRequest::ReadEndowment(vk(&key(DOMAIN)))));
+    assert_eq!(decode_domain_request(&encode_endowment_read(verifying(&key(DOMAIN)))), Some(DomainRequest::ReadEndowment(verifying(&key(DOMAIN)))));
     let refused = Granted::Refused(GrantRefusal::InFlight);
     assert_eq!(decode_grant_reply(&encode_grant_reply(&refused)), Some(refused));
     let mut k = universe(true);
@@ -64,7 +64,7 @@ fn manifest_and_reading_round_trip_on_wire() {
     k.treasury.genesis(court_vk, [100, 100, 100, 100], anchor);
     let granted = k.manifest(&s);
     assert_eq!(decode_grant_reply(&encode_grant_reply(&granted)), Some(granted));
-    let reading = k.endowment_reading(&vk(&key(DOMAIN))).expect("reads");
+    let reading = k.endowment_reading(&verifying(&key(DOMAIN))).expect("reads");
     assert_eq!(decode_endowment_reading(&encode_endowment_reading(&reading).expect("writes")), Some(reading));
 }
 
@@ -81,7 +81,7 @@ fn manifest_grants_founding_from_court_balance() {
     let anchor = k.anchor();
     let court_vk = k.identity;
     k.treasury.genesis(court_vk, [100, 100, 100, 100], anchor);
-    let reserve = vk(&key(RESERVE));
+    let reserve = verifying(&key(RESERVE));
     let price = k.read_price().expect("a price");
     let before = (k.treasury.balance_mu(&court_vk), k.treasury.balance_mu(&reserve));
     let m = manifest(1);
@@ -100,7 +100,7 @@ fn manifest_grants_founding_from_court_balance() {
 }
 
 fn reserve_domain() -> [u8; 32] {
-    vk(&key(DOMAIN))
+    verifying(&key(DOMAIN))
 }
 
 /// A GRANT IS REFUSED BY NAME: signed by another key than the sitting
@@ -151,12 +151,12 @@ fn growth_size_sums_closures_in_universe() {
     let domain = reserve_domain();
     assert_eq!(k.growth_size(&domain), Err(GrantRefusal::NoNewClosures), "no closure judged: no growth grant");
     let rule = crate::transducer::element::from_residual(&vec![(0i64, 0i64, 1u8, 2u8)]).expect("a rule");
-    let line = vk(&key(47));
+    let line = verifying(&key(47));
     let _ = k.pay_solve(b"task-a", line, &rule, [3, 0, 2, 1], true);
     assert_eq!(k.growth_size(&domain), Ok([3, 0, 2, 1]), "the closure's measured discharge, a line's key counting for its universe");
     let _ = k.pay_solve(b"task-b", [0xee; 32], &rule, [9, 9, 9, 9], true);
     assert_eq!(k.growth_size(&domain), Ok([3, 0, 2, 1]), "a key no domain names grows nothing here");
-    let _ = k.pay_solve(b"task-c", vk(&key(RESERVE)), &rule, [1, 1, 0, 0], true);
+    let _ = k.pay_solve(b"task-c", verifying(&key(RESERVE)), &rule, [1, 1, 0, 0], true);
     assert_eq!(k.growth_size(&domain), Ok([4, 1, 2, 1]), "a second closure adds, exact per lane");
     let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "clean restore");
@@ -179,7 +179,7 @@ fn growth_size_sums_closures_in_universe() {
 fn grow_grants_by_paid_grows_universe_grant() {
     let mut k = universe(true);
     let domain = reserve_domain();
-    let line = vk(&key(47));
+    let line = verifying(&key(47));
     let anchor = k.anchor();
     let _ = k.treasury.settle_convergence(line, [2, 0, 0, 1], anchor);
     k.grow_grants_by_paid();

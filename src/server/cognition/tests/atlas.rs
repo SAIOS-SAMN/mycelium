@@ -6,7 +6,7 @@
 // the payer's stake and paid whole to the court; the reserve's connection
 // tax fills the recycled pool, which pays a closer's POUW before any mint.
 
-use crate::anastome::dialogue::atlas::{local_record_id, local_throat_id, LedgerEntry, LedgerRefusal, Ledgered, MapAct, MapRecord, MapRefusal, Mapped, Segment};
+use crate::anastome::dialogue::atlas::{local_record_citation, local_throat_citation, LedgerEntry, LedgerRefusal, Ledgered, MapAct, MapRecord, MapRefusal, Mapped, Segment};
 use crate::anastome::dialogue::crossing::{CrossRefusal, Crossed, Declaration, Gas, Side, Traverse};
 use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
 use crate::anastome::dialogue::handoff::{Handed, Handoff, Mouth, State, Tube};
@@ -24,12 +24,12 @@ fn key(b: u8) -> SigningKey {
     SigningKey::from_bytes(&[b; 32])
 }
 
-fn vk(k: &SigningKey) -> [u8; 32] {
+fn verifying(k: &SigningKey) -> [u8; 32] {
     k.verifying_key().to_bytes()
 }
 
 fn domain(d: u8) -> [u8; 32] {
-    vk(&key(d))
+    verifying(&key(d))
 }
 
 fn reserve(d: u8) -> SigningKey {
@@ -46,17 +46,17 @@ fn fp(h: u64) -> TPoint {
 fn founded() -> (Court, [u8; 32], [u8; 32]) {
     let mut k = Court::new();
     for d in [4u8, 5] {
-        let g = DomainGenesis { domain: domain(d), tiers: vec![vk(&reserve(d))] };
+        let g = DomainGenesis { domain: domain(d), tiers: vec![verifying(&reserve(d))] };
         assert!(matches!(k.admit_domain(&g.sign(&key(d))), Founded::Sealed { .. }));
-        let r = Reservation { domain: domain(d), tier: vk(&reserve(d)), nonce: [0; 32] };
+        let r = Reservation { domain: domain(d), tier: verifying(&reserve(d)), nonce: [0; 32] };
         assert!(matches!(k.designate_reserve(&r.sign(&key(d))), Founded::Reserved { .. }));
     }
     let one = crate::transducer::element::identity_versor();
     let tube = Tube { mass: (1, 1), from_space: Geometry::Curved((1, 1)), to_space: Geometry::Curved((1, 1)), supersedes: None, core: false };
     let m = Mouth {
-        from_tier: vk(&reserve(4)),
-        to_tier: vk(&reserve(5)),
-        keeper: vk(&reserve(4)),
+        from_tier: verifying(&reserve(4)),
+        to_tier: verifying(&reserve(5)),
+        keeper: verifying(&reserve(4)),
         from_frame: one.clone(),
         to_frame: one,
         toll: [0; 4],
@@ -64,17 +64,17 @@ fn founded() -> (Court, [u8; 32], [u8; 32]) {
         tariff: None,
         tube: Some(tube),
     };
-    fund(&mut k, vk(&reserve(4)), [1, 0, 0, 0]);
-    let id = m.id();
+    fund(&mut k, verifying(&reserve(4)), [1, 0, 0, 0]);
+    let id = m.citation();
     assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(4))), Handed::Sealed { .. }));
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(5))), Handed::Sealed { state: State::Accepted, .. }));
-    let keeper = vk(&reserve(4));
+    let keeper = verifying(&reserve(4));
     (k, id, keeper)
 }
 
-fn fund(k: &mut Court, who: [u8; 32], mu: [u64; 4]) {
+fn fund(k: &mut Court, party: [u8; 32], mu: [u64; 4]) {
     let anchor = k.anchor();
-    k.treasury.genesis(who, mu, anchor);
+    k.treasury.genesis(party, mu, anchor);
 }
 
 fn pass(k: &mut Court, h: u64) {
@@ -110,8 +110,8 @@ fn commit(k: &mut Court, d: u8, u: u64, h: u64, fin: u64, applied: Vec<([u8; 32]
     k.ledger(&e.sign(&reserve(d)), Some(fp(fin)))
 }
 
-fn stake(k: &mut Court, who: &SigningKey, mu: [u64; 4], unstake: bool, nonce: u8) -> Result<[u64; 4], StakeRefusal> {
-    k.stake(&StakeAct { who: vk(who), unstake, mu, nonce: [nonce; 32] }.sign(who))
+fn stake(k: &mut Court, staker: &SigningKey, mu: [u64; 4], unstake: bool, nonce: u8) -> Result<[u64; 4], StakeRefusal> {
+    k.stake(&StakeAct { who: verifying(staker), unstake, mu, nonce: [nonce; 32] }.sign(staker))
 }
 
 /// A traverse from domain 4 at `fp(at)`, citing both mouths' points and
@@ -121,12 +121,12 @@ fn traverse(k: &mut Court, m: [u8; 32], at: u64, route: Vec<[u8; 32]>, carried: 
     let head = |k: &Court, d: u8| k.atlas.head(&domain(d)).map_or(([0; 32], 0), |e| (e.hash, e.entry.u));
     let ((entry_a, u_a), (entry_b, u_b)) = (head(k, 4), head(k, 5));
     let point = |k: &Court, d: u8, side: u8| {
-        let id = crate::server::cognition::atlas::mouth_id(&domain(d), &m, side);
+        let id = crate::server::cognition::atlas::mouth_citation(&domain(d), &m, side);
         k.atlas.records.get(&crate::server::cognition::atlas::record_key(&domain(d), &id)).map_or(fp(0), |r| r.point)
     };
     let (point_a, point_b) = (point(k, 4, 0), point(k, 5, 1));
     let payer = key(60);
-    let mut t = Traverse { from: domain(4), payer: vk(&payer), mouth: m, side: 0, at: fp(at), point_a, point_b, entry_a, u_a, entry_b, u_b, route, debit: None, credit: None, nonce: [nonce; 32] };
+    let mut t = Traverse { from: domain(4), payer: verifying(&payer), mouth: m, side: 0, at: fp(at), point_a, point_b, entry_a, u_a, entry_b, u_b, route, debit: None, credit: None, nonce: [nonce; 32] };
     if let Some(lanes) = carried {
         t.debit = Some(Declaration { lanes, sig: reserve(4).sign(&t.debit_bytes(&lanes)).to_bytes() });
         t.credit = Some(Declaration { lanes, sig: reserve(5).sign(&t.credit_bytes(&lanes)).to_bytes() });
@@ -157,7 +157,7 @@ fn traverse_pays_exact_gas_to_map_keeper() {
     assert!(matches!(commit(&mut k, 4, 100, 12, 12, Vec::new()), Ledgered::Sealed { .. }));
     assert!(matches!(commit(&mut k, 5, 7, 12, 12, Vec::new()), Ledgered::Sealed { .. }));
     let payer = key(60);
-    fund(&mut k, vk(&payer), [10, 10, 10, 10]);
+    fund(&mut k, verifying(&payer), [10, 10, 10, 10]);
     assert_eq!(stake(&mut k, &payer, [10, 10, 10, 10], false, 1), Ok([10, 10, 10, 10]));
     let court = k.identity;
     let court_before = k.treasury.balance_mu(&court);
@@ -168,8 +168,8 @@ fn traverse_pays_exact_gas_to_map_keeper() {
     assert_eq!(gas, Gas { s: (11, 4), g: 2, t: 2, h: 3 }, "per lane, exact, never collapsed");
     assert_eq!(priced, price);
     assert_eq!(fee, [2, 2, 2, 3], "⌊11/4⌋ on S, the rest whole");
-    assert_eq!(k.treasury.stake_of(&vk(&payer)), Some([8, 8, 8, 7]), "drawn from the stake");
-    assert_eq!(k.claims_on(&vk(&payer)), Some([2, 2, 2, 3]), "held as a claim");
+    assert_eq!(k.treasury.stake_of(&verifying(&payer)), Some([8, 8, 8, 7]), "drawn from the stake");
+    assert_eq!(k.claims_on(&verifying(&payer)), Some([2, 2, 2, 3]), "held as a claim");
     assert_eq!(k.treasury.balance_mu(&court), court_before, "held, not yet paid");
     let edge = k.crossing_edge(&crossing).expect("the edge on the map");
     assert_eq!((edge.u_a, edge.u_entry, edge.u_applied, edge.residual()), (100, 7, None, None), "pending, never a disagreement");
@@ -178,7 +178,7 @@ fn traverse_pays_exact_gas_to_map_keeper() {
     let paid: [u64; 4] = std::array::from_fn(|l| k.treasury.balance_mu(&court)[l] - court_before[l]);
     assert_eq!(paid, [2, 2, 2, 3], "paid WHOLE to the court keeping the map");
     assert_eq!(k.treasury.minted(), minted_before, "a transfer, never a mint");
-    assert_eq!(k.claims_on(&vk(&payer)), Some([0; 4]));
+    assert_eq!(k.claims_on(&verifying(&payer)), Some([0; 4]));
     assert!(k.treasury.audit().is_ok(), "both equations hold");
     assert!(matches!(commit(&mut k, 5, 9, 14, 14, vec![(crossing, 9)]), Ledgered::Sealed { .. }));
     let edge = k.crossing_edge(&crossing).expect("the edge");
@@ -243,7 +243,7 @@ fn traverse_refuses_one_sided_or_unequal_declarations() {
         let (a, b) = (k.atlas.head(&domain(4)).expect("A"), k.atlas.head(&domain(5)).expect("B"));
         Traverse {
             from: domain(4),
-            payer: vk(&payer),
+            payer: verifying(&payer),
             mouth: m,
             side: 0,
             at: fp(10),
@@ -318,7 +318,7 @@ fn ledger_chains_refuses_forks_and_reads_dilation() {
 #[test]
 fn settle_solve_pays_from_recycled_pool_before_mint() {
     let (mut k, _, _) = founded();
-    let tier = vk(&reserve(4));
+    let tier = verifying(&reserve(4));
     fund(&mut k, tier, [3, 0, 2, 0]);
     let tax = |lanes: [i128; 4], prefix: u8| TierFold {
         tier,
@@ -355,11 +355,11 @@ fn settle_solve_pays_from_recycled_pool_before_mint() {
 fn stake_unstakes_only_after_claims_settle() {
     let (mut k, m, _) = founded();
     let payer = key(60);
-    fund(&mut k, vk(&payer), [4, 4, 4, 4]);
+    fund(&mut k, verifying(&payer), [4, 4, 4, 4]);
     assert_eq!(stake(&mut k, &payer, [5, 0, 0, 0], false, 1), Err(StakeRefusal::Short));
     assert_eq!(stake(&mut k, &payer, [4, 4, 4, 4], false, 1), Ok([4, 4, 4, 4]));
     assert_eq!(stake(&mut k, &payer, [0, 0, 0, 1], false, 1), Err(StakeRefusal::Spent), "a resend moves nothing");
-    assert_eq!(k.treasury.balance_mu(&vk(&payer)), [0; 4]);
+    assert_eq!(k.treasury.balance_mu(&verifying(&payer)), [0; 4]);
     assert!(matches!(map(&mut k, 4, 10, mouth(m, 0, 3)), Mapped::Sealed { .. }));
     assert!(matches!(map(&mut k, 5, 12, mouth(m, 1, 3)), Mapped::Sealed { .. }));
     assert!(matches!(commit(&mut k, 4, 1, 10, 12, Vec::new()), Ledgered::Sealed { .. }));
@@ -367,17 +367,17 @@ fn stake_unstakes_only_after_claims_settle() {
     let Crossed::Sealed { fee, h, .. } = traverse(&mut k, m, 12, Vec::new(), Some([0, 0, 0, 1]), 1) else { panic!("crossed") };
     assert_eq!(fee, [0, 0, 2, 1], "T: the mouths mapped two ticks apart");
     assert_eq!(stake(&mut k, &payer, [1, 0, 0, 0], true, 2), Err(StakeRefusal::Claimed), "a claim stands on the stake");
-    let read = k.retrieve(vk(&payer), &fp(10), Some(fp(12)), [1; 32]).expect("served");
+    let read = k.retrieve(verifying(&payer), &fp(10), Some(fp(12)), [1; 32]).expect("served");
     let units = read.len() as u64;
-    assert_eq!(k.claims_on(&vk(&payer)), Some([0, 0, 2, 1 + units]), "one unit of information per receipt read");
-    assert_eq!(k.retrieve(vk(&payer), &fp(13), Some(fp(12)), [2; 32]), Err(crate::server::cognition::crossing::Unretrieved::NotFinal));
+    assert_eq!(k.claims_on(&verifying(&payer)), Some([0, 0, 2, 1 + units]), "one unit of information per receipt read");
+    assert_eq!(k.retrieve(verifying(&payer), &fp(13), Some(fp(12)), [2; 32]), Err(crate::server::cognition::crossing::Unretrieved::NotFinal));
     pass(&mut k, h + CHALLENGE_WINDOW + 1);
     k.settle_windows();
-    assert_eq!(k.claims_on(&vk(&payer)), Some([0; 4]), "settled");
-    let left = k.treasury.stake_of(&vk(&payer)).expect("staked");
+    assert_eq!(k.claims_on(&verifying(&payer)), Some([0; 4]), "settled");
+    let left = k.treasury.stake_of(&verifying(&payer)).expect("staked");
     assert_eq!(left, [4, 4, 2, 3 - units]);
     assert_eq!(stake(&mut k, &payer, left, true, 3), Ok([0; 4]), "unstaked once every claim settled");
-    assert_eq!(k.treasury.balance_mu(&vk(&payer)), left);
+    assert_eq!(k.treasury.balance_mu(&verifying(&payer)), left);
     assert!(k.treasury.audit().is_ok());
 }
 
@@ -431,8 +431,8 @@ fn map_local_throat_reads_ends_exactly() {
     let mut material = domain(4).to_vec();
     material.extend_from_slice(&[42; 32]);
     let lid = blake3::derive_key("mycelium local throat v1", &material);
-    assert_eq!(local_throat_id(&domain(4), &[42; 32]), lid, "the derived mouth id");
-    assert_eq!(record, local_record_id(&domain(4), &lid));
+    assert_eq!(local_throat_citation(&domain(4), &[42; 32]), lid, "the derived mouth id");
+    assert_eq!(record, local_record_citation(&domain(4), &lid));
     let read = k.map_reading(&domain(4));
     let entry = read.iter().find(|e| matches!(e.held.record, MapRecord::LocalThroat { .. })).expect("read");
     let [p0, p1] = entry.places.as_slice() else { panic!("both ends") };
@@ -458,18 +458,18 @@ fn traverse_local_throat_pays_and_applies() {
     torus_for_4(&mut k);
     let line = [77; 32];
     assert!(matches!(map(&mut k, 4, 10, local(line, 3)), Mapped::Sealed { .. }));
-    let lid = local_throat_id(&domain(4), &[42; 32]);
+    let lid = local_throat_citation(&domain(4), &[42; 32]);
     let seg = MapRecord::Segment { kind: Segment::Throat, a: (lid, 0), b: (lid, 1), span: (3, 2), keeper: Some(line) };
     let Mapped::Sealed { record: seg, .. } = map(&mut k, 4, 10, seg) else { panic!("its throat") };
     let Ledgered::Sealed { entry, .. } = commit(&mut k, 4, 100, 12, 12, Vec::new()) else { panic!("committed") };
     let payer = key(60);
-    fund(&mut k, vk(&payer), [10, 10, 10, 10]);
+    fund(&mut k, verifying(&payer), [10, 10, 10, 10]);
     assert_eq!(stake(&mut k, &payer, [10, 10, 10, 10], false, 1), Ok([10, 10, 10, 10]));
     let court = k.identity;
     let (court_before, minted_before) = (k.treasury.balance_mu(&court), k.treasury.minted());
     let mut t = Traverse {
         from: domain(4),
-        payer: vk(&payer),
+        payer: verifying(&payer),
         mouth: lid,
         side: 0,
         at: fp(14),
@@ -487,12 +487,12 @@ fn traverse_local_throat_pays_and_applies() {
     let lanes = [5, 2, 0, 3];
     t.debit = Some(Declaration { lanes, sig: reserve(4).sign(&t.debit_bytes(&lanes)).to_bytes() });
     t.credit = Some(Declaration { lanes, sig: reserve(4).sign(&t.credit_bytes(&lanes)).to_bytes() });
-    let unmapped = Traverse { mouth: local_throat_id(&domain(4), &[43; 32]), ..t.clone() };
+    let unmapped = Traverse { mouth: local_throat_citation(&domain(4), &[43; 32]), ..t.clone() };
     assert_eq!(k.traverse(&unmapped.sign(&payer), Some(fp(14))), Crossed::Refused(CrossRefusal::NoMouth), "a throat key never mapped");
     let Crossed::Sealed { crossing, gas, fee, h, .. } = k.traverse(&t.sign(&payer), Some(fp(14))) else { panic!("crossed") };
     assert_eq!(gas, Gas { s: (3, 2), g: 2, t: 0, h: 3 });
     assert_eq!(fee, [1, 2, 0, 3], "⌊3/2⌋ on S");
-    assert_eq!(k.claims_on(&vk(&payer)), Some([1, 2, 0, 3]));
+    assert_eq!(k.claims_on(&verifying(&payer)), Some([1, 2, 0, 3]));
     let edge = k.crossing_edge(&crossing).expect("the edge");
     assert_eq!((edge.from, edge.to, edge.u_entry, edge.residual()), (domain(4), domain(4), 100, None), "pending, into its own universe");
     pass(&mut k, h + CHALLENGE_WINDOW);

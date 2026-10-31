@@ -28,7 +28,7 @@ fn reading(strata: &[(&[u8], usize)], sections: &[(&[u8], usize)]) -> CoverReadi
 /// covers read the same phase (13.7).
 #[test]
 fn phase_over_reads_kinds_and_cover_at_window_ends() {
-    let mut c = ReceiptChain::with_vk([1; 32]);
+    let mut c = ReceiptChain::with_signer([1; 32]);
     for kind in [
         ActKind::List,
         ActKind::List,
@@ -40,7 +40,7 @@ fn phase_over_reads_kinds_and_cover_at_window_ends() {
     ] {
         c.append(kind, [0; 4], Vec::new(), [9; 32], Vec::new()).expect("appends");
     }
-    let mut peer = ReceiptChain::with_vk([2; 32]);
+    let mut peer = ReceiptChain::with_signer([2; 32]);
     let cited = peer.append(ActKind::List, [0; 4], Vec::new(), [9; 32], Vec::new()).expect("appends").clone();
     c.admit(cited.clone());
     c.append(

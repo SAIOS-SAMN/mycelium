@@ -1035,7 +1035,7 @@ the mind's own rings: the carrier of the mind's own motion, on its own
 circuit over its field, beside the carriers facing its counterparties
 (§5.1). As built, `Mind::wind` (`client/sdk/entity/winding.rs`) moves the
 orbits, binds the escaping ones through the docket's one taker
-(`take_demands`), and acts at each thought's own return (`act_on_returns`,
+(`drain_demands`), and acts at each thought's own return (`act_on_returns`,
 `act_at_return`); the long laws run on the perception carrier, off the field
 (`client/sdk/entity/perceive.rs`). A relation that never returns is
 docketed as the demand it is (`note_ground` → `docket_demand`) and bound by
@@ -1655,7 +1655,7 @@ is abbreviated `entity/`, and `transducer/` is abbreviated `t/`.
 | the winding carrier; outflow at returns; K counts returns | §4.4, §4.12, §4.13 | `entity/winding.rs` (`Mind::wind`, `act_on_returns`, `act_at_return`, `hold_for_return`); `entity/boot.rs` (`close_cycle`) |
 | a ground's winding `m mod ℓ`; a grounded thought on its own line | §4.4(2) | `t/bubble/merge.rs` (`Contemplation::closing_ground`); `t/bubble/line.rs` |
 | the twist by the pull; slips worked at the return | §4.4(3) | `t/cga/twist.rs` (`twist_about`); `t/cga/fixed.rs` (`centre_of`); `t/bubble/resonance.rs` (`twisted_return`, `work_slips`); `t/bubble/returned.rs` (`work_returned`) |
-| the drive: the docket's one taker; deliberation | §4.12 | `t/bubble/resonance.rs` (`note_ground`); `t/bubble/docket.rs` (`docket_demand`, `take_demands`); `entity/think.rs` (`compose_or_construct`) |
+| the drive: the docket's one taker; deliberation | §4.12 | `t/bubble/resonance.rs` (`note_ground`); `t/bubble/docket.rs` (`docket_demand`, `drain_demands`); `entity/think.rs` (`compose_or_construct`) |
 | the vortex collapsed by a new perception | §4.8 | `t/bubble/resonance.rs` (`carry_vortices_round`); `t/bubble/contemplation.rs` (`collapse_on`) |
 | the pivot cross and the throat's two faces | §4.5 | `t/cech/coboundary.rs` (`Complex::descend`, `ascend`, `drain`); `t/cech/hole.rs` (`cauterize`, `freeze`, `thaw`, `cauterize_frozen`); `t/cech/board.rs` |
 | the breath, every plane | §4.3 | `t/cga/breath.rs` (`breath`, `breathe`) |

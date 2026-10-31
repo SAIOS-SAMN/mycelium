@@ -517,7 +517,7 @@ impl Chatter {
 /// delivered at once to the carrier that converses (MU-CLIENT §5.1), which
 /// sleeps until one arrives — no inbox polled, no clock.
 pub struct Post {
-    addr: String,
+    endpoint: String,
 }
 
 /// One frame off a connection: `[len u32 LE][frame]`, within the wire's one
@@ -547,7 +547,7 @@ impl Post {
         A: Fn(&[u8]) -> Option<Vec<u8>> + Send + Clone + 'static,
     {
         let listener = TcpListener::bind(listen)?;
-        let addr = listener.local_addr()?.to_string();
+        let endpoint = listener.local_addr()?.to_string();
         std::thread::Builder::new().name("chatter-post".into()).spawn(move || {
             for conn in listener.incoming() {
                 let Ok(mut s) = conn else { continue };
@@ -563,11 +563,11 @@ impl Post {
                 });
             }
         })?;
-        Ok(Post { addr })
+        Ok(Post { endpoint })
     }
 
-    pub fn addr(&self) -> &str {
-        &self.addr
+    pub fn endpoint(&self) -> &str {
+        &self.endpoint
     }
 }
 
@@ -580,14 +580,14 @@ fn write_frame(s: &mut TcpStream, frame: &[u8]) -> io::Result<()> {
 }
 
 /// SEND one frame to a peer, on its own connection.
-pub fn send(addr: &str, frame: &[u8]) -> io::Result<()> {
-    let mut s = TcpStream::connect(addr)?;
+pub fn send(endpoint: &str, frame: &[u8]) -> io::Result<()> {
+    let mut s = TcpStream::connect(endpoint)?;
     write_frame(&mut s, frame)
 }
 
 /// ASK a mind's post one question and read its answer, on one connection.
-pub fn ask(addr: &str, question: &[u8]) -> io::Result<Vec<u8>> {
-    let mut s = TcpStream::connect(addr)?;
+pub fn ask(endpoint: &str, question: &[u8]) -> io::Result<Vec<u8>> {
+    let mut s = TcpStream::connect(endpoint)?;
     write_frame(&mut s, question)?;
     read_frame(&mut s)
 }
@@ -597,28 +597,28 @@ fn hex(b: &[u8]) -> String {
 }
 
 /// FILE THIS MIND'S ADDRESS at the rendezvous, under its voice.
-pub fn publish(dir: &std::path::Path, voice: &[u8; 32], addr: &str) -> io::Result<()> {
+pub fn publish(dir: &std::path::Path, voice: &[u8; 32], endpoint: &str) -> io::Result<()> {
     std::fs::create_dir_all(dir)?;
     let tmp = dir.join(format!(".{}.tmp", hex(voice)));
-    std::fs::write(&tmp, addr.as_bytes())?;
+    std::fs::write(&tmp, endpoint.as_bytes())?;
     std::fs::rename(tmp, dir.join(hex(voice)))
 }
 
 /// ONE MIND'S ADDRESS at the rendezvous, by its voice: where an answer to it
 /// is sent. `None` where it filed none.
 pub fn peer_of(dir: &std::path::Path, voice: &[u8; 32]) -> Option<String> {
-    let addr = std::fs::read_to_string(dir.join(hex(voice))).ok()?;
-    let addr = addr.trim().to_string();
-    (!addr.is_empty()).then_some(addr)
+    let endpoint = std::fs::read_to_string(dir.join(hex(voice))).ok()?;
+    let endpoint = endpoint.trim().to_string();
+    (!endpoint.is_empty()).then_some(endpoint)
 }
 
 /// A RENDEZVOUS ENTRY NOTHING LISTENS AT is removed: the mind that filed
 /// it is gone (a refused connection says so exactly), and a frame sent there
 /// again would only be refused again.
-pub fn forget(dir: &std::path::Path, addr: &str) {
+pub fn forget(dir: &std::path::Path, endpoint: &str) {
     let Ok(entries) = std::fs::read_dir(dir) else { return };
     for e in entries.flatten() {
-        if std::fs::read_to_string(e.path()).is_ok_and(|a| a.trim() == addr) {
+        if std::fs::read_to_string(e.path()).is_ok_and(|a| a.trim() == endpoint) {
             let _ = std::fs::remove_file(e.path());
         }
     }
@@ -635,17 +635,17 @@ pub fn peers(dir: &std::path::Path, voice: &[u8; 32]) -> Vec<String> {
             if name == own || name.starts_with('.') {
                 continue;
             }
-            if let Ok(addr) = std::fs::read_to_string(e.path()) {
-                let addr = addr.trim().to_string();
-                if !addr.is_empty() {
-                    at.insert(addr.clone().as_bytes(), addr);
+            if let Ok(endpoint) = std::fs::read_to_string(e.path()) {
+                let endpoint = endpoint.trim().to_string();
+                if !endpoint.is_empty() {
+                    at.insert(endpoint.clone().as_bytes(), endpoint);
                 }
             }
         }
     }
     if let Ok(list) = std::env::var("MYCELIUM_CHATTER_PEERS") {
-        for addr in list.split(',').map(str::trim).filter(|a| !a.is_empty()) {
-            at.insert(addr.as_bytes(), addr.to_string());
+        for endpoint in list.split(',').map(str::trim).filter(|a| !a.is_empty()) {
+            at.insert(endpoint.as_bytes(), endpoint.to_string());
         }
     }
     at.scoped().map(|(_, a)| a.clone()).collect()
@@ -765,10 +765,10 @@ mod tests {
             |q: &[u8]| (q == b"?").then(|| b"!".to_vec()),
         )
         .expect("listen");
-        assert_eq!(ask(post.addr(), b"?").expect("answered"), b"!", "a question is answered on its own connection");
+        assert_eq!(ask(post.endpoint(), b"?").expect("answered"), b"!", "a question is answered on its own connection");
         let k = key(3);
         let c = Chatter { speaker: k.verifying_key().to_bytes(), point: None, said: Said::Say { said: vec![9; 100], words: vec![], evidence: None } };
-        send(post.addr(), &c.sign(&k).expect("signed")).expect("sent");
+        send(post.endpoint(), &c.sign(&k).expect("signed")).expect("sent");
         let heard = rx.recv().expect("delivered");
         assert_eq!(Chatter::open(&heard), Some(c));
     }

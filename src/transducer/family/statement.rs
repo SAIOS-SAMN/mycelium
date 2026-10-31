@@ -15,7 +15,7 @@
 
 use super::*;
 use crate::core::Q;
-use crate::transducer::sentence::form::clause::{exact_root, About, Clause, Cmp, Coord, Extent, Order, Paint, Pred, Region, Stop, Tie, Value};
+use crate::transducer::sentence::form::clause::{exact_root, About, Clause, Comparison, Coord, Extent, Order, Paint, Pred, Region, Stop, Tie, Value};
 use crate::transducer::sentence::form::rule_element::{self, Carriage, Lowered, Reach, RuleElement, Trace};
 
 /// WHY A CLAUSE IS NOT STATED ON A SCENE, by name.
@@ -290,9 +290,9 @@ impl<'a> Seen<'a> {
                 for &b in domain {
                     let Some(v) = self.read(*coord, b)? else { continue };
                     let holds = match cmp {
-                        Cmp::Eq => v == to,
-                        Cmp::Less => v < to,
-                        Cmp::Greater => v > to,
+                        Comparison::Eq => v == to,
+                        Comparison::Less => v < to,
+                        Comparison::Greater => v > to,
                     };
                     if holds {
                         out.push(b);

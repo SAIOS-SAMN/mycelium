@@ -33,22 +33,22 @@ fn large() -> Task {
 /// A task is asked and answered by its citation, and the envelope carries
 /// test inputs only, never the held answers.
 #[test]
-fn task_by_id_round_trips_citation_and_envelope() {
+fn task_by_citation_round_trips_with_envelope() {
     let voice = [4u8; 32];
     let mut reg = TaskRegistry::new();
     let id = reg.register(toy()).expect("a grid pair's chain is A5's");
     let cite = citation(&id);
     assert_eq!(reg.by_citation(&cite), Some(id.clone()), "the citation resolves to the task");
     assert_eq!(reg.by_citation(&[9u8; 32]), None, "an unknown citation names nothing");
-    let ask = encode_task_by_id(&voice, &cite);
-    assert_eq!(decode_task_by_id(&ask), Some((voice, cite)), "the citation reads back whole");
+    let ask = encode_task_by_citation(&voice, &cite);
+    assert_eq!(decode_task_by_citation(&ask), Some((voice, cite)), "the citation reads back whole");
     assert_eq!(decode_task_request(&ask), None, "a request by citation is no plain request");
     let plain = encode_task_request(&voice);
     assert_eq!(decode_task_request(&plain), Some(voice));
-    assert_eq!(decode_task_by_id(&plain), None, "a plain request names no task");
+    assert_eq!(decode_task_by_citation(&plain), None, "a plain request names no task");
     let mut longer = ask.clone();
     longer.push(0);
-    assert_eq!(decode_task_by_id(&longer), None, "a byte left over is no request");
+    assert_eq!(decode_task_by_citation(&longer), None, "a byte left over is no request");
     // The door's answer: the task the citation names, its test inputs only.
     let task = reg.task(id.as_bytes()).expect("held");
     let tests: Vec<_> = task.test.iter().map(|(x, _)| x.clone()).collect();

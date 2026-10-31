@@ -7,15 +7,15 @@ use crate::verdict::*;
 use super::common::*;
 
 /// The selection key is stable under a change of debug representation: it
-/// is the tagged `Sel::to_bytes`, never a digest or the debug text.
+/// is the tagged `Selection::to_bytes`, never a digest or the debug text.
 #[test]
-fn sel_key_is_sel_bytes_never_debug_text() {
-    let s = Sel::Hue(3);
+fn selection_key_is_selection_bytes_never_debug_text() {
+    let s = Selection::Hue(3);
     let mut buf = Vec::new();
     s.to_bytes(&mut buf);
-    let k = sel_key(&s);
+    let k = selection_key(&s);
     assert_eq!(k.as_bytes()[0], crate::transducer::address::TAG_SEL);
-    assert_eq!(&k.as_bytes()[1..], buf.as_slice(), "the key is Sel::to_bytes, never a digest");
+    assert_eq!(&k.as_bytes()[1..], buf.as_slice(), "the key is Selection::to_bytes, never a digest");
     assert_ne!(k.as_bytes(), format!("{s:?}").as_bytes());
 }
 

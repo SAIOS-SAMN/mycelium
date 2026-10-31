@@ -90,8 +90,8 @@ impl Packer {
 
     /// A signer, defined in the stream where it is not yet: the first a
     /// stream defines is the key the stream is written for.
-    pub fn signer(&mut self, out: &mut Vec<u8>, vk: &[u8; 32]) {
-        Self::index(&mut self.signers, out, SIGNER, vk);
+    pub fn signer(&mut self, out: &mut Vec<u8>, signer: &[u8; 32]) {
+        Self::index(&mut self.signers, out, SIGNER, signer);
     }
 
     /// An index, defined in the stream where it is first used.

@@ -74,7 +74,7 @@ fn speak_word_goes_on_while_court_is_slow() {
     let act = speeches.recv().expect("the speech reached the court");
     assert_eq!(act.voice, Voice::named("unwaiting").id(), "spoken by the mind");
     assert_eq!(mind.hypha.in_flight(), 1, "its answer is in flight");
-    mind.take_answers();
+    mind.drain_answers();
     assert_eq!(mind.hypha.in_flight(), 1, "the court has not answered: nothing lands");
     assert!(mind.sealed_at(said.address().as_bytes()).is_none(), "and no verdict is in the mind");
     release.send(()).expect("the court is released");
@@ -130,7 +130,7 @@ fn body_tick_holds_silent_house_on_seat_carriers() {
     });
     let mut mind = Mind::open(&addr, Voice::named("seated"));
     let key = ed25519_dalek::SigningKey::from_bytes(&[7; 32]);
-    mind.sit([5; 32], None, crate::client::sdk::entity::body::Sit::Seats(vec![1]), key);
+    mind.sit([5; 32], None, crate::client::sdk::entity::body::Sitting::Seats(vec![1]), key);
     mind.body_tick();
     assert_eq!(mind.seat.in_flight(), 1, "the take waits on the seat's carrier");
     assert_eq!(mind.held.in_flight(), 1, "the first page waits on the perceiving carrier, apart from the take");

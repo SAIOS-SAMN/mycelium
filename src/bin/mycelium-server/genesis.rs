@@ -94,7 +94,7 @@ pub(crate) fn register_corpora(
     kernel: &Arc<Mutex<Court>>,
     registry: &Arc<Mutex<mycelium::registry::TaskRegistry>>,
     genesis: &Genesis,
-    vk: [u8; 32],
+    key: [u8; 32],
     tag: &str,
 ) {
 let genesis_vks: Vec<[u8; 32]> = genesis.hypha.iter().map(|(v, _)| *v).collect();
@@ -118,7 +118,7 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
             eprintln!("[{tag}] corpus {} hash mismatch", corpus_dir.display());
             continue;
         }
-        let signers: Vec<[u8; 32]> = if genesis_vks.is_empty() { vec![vk] } else { genesis_vks.clone() };
+        let signers: Vec<[u8; 32]> = if genesis_vks.is_empty() { vec![key] } else { genesis_vks.clone() };
         let signed = signers.iter().any(|s| mycelium::court::identity::verify(s, &want, &sig));
         if !signed {
             eprintln!("[{tag}] corpus {} signature refused", corpus_dir.display());
@@ -207,12 +207,12 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
     eprintln!("[{tag}] families bound: {bound} by citation");
     if cover_measured {
         k.set_genesis_cover(cover);
-        bond_genesis(k, vk, cover, genesis, tag);
-    } else if k.treasury().bond_of(&vk).is_none() {
+        bond_genesis(k, key, cover, genesis, tag);
+    } else if k.treasury().bond_of(&key).is_none() {
         eprintln!("[{tag}] unbonded; the corpus did not measure a cover");
     }
     let room = k.lane_room();
-    let bond = k.treasury().bond_of(&vk);
+    let bond = k.treasury().bond_of(&key);
     eprintln!(
         "[{tag}] room {room:?} = bond {bond:?} − occupancy {:?}",
         k.occupancy()
@@ -246,10 +246,10 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
 /// 106). The synthetic economy stands in for the contracts until they are
 /// deployed; the allocation is the corpus's measured cover, never a number
 /// chosen here.
-pub(crate) fn bond_genesis(k: &mut Court, vk: [u8; 32], cover: [u64; 4], genesis: &Genesis, tag: &str) {
-    if k.treasury().bond_of(&vk).is_none() {
-        let staked = k.enroll(vk, cover);
-        k.fund(vk, cover);
+pub(crate) fn bond_genesis(k: &mut Court, voice: [u8; 32], cover: [u64; 4], genesis: &Genesis, tag: &str) {
+    if k.treasury().bond_of(&voice).is_none() {
+        let staked = k.enroll(voice, cover);
+        k.fund(voice, cover);
         eprintln!("[{tag}] genesis bond {cover:?}; staked {staked:?}");
     }
     for (who, _) in genesis.hypha.iter().chain(genesis.voice.iter()) {

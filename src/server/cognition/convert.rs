@@ -40,7 +40,7 @@ pub(crate) struct Reserve {
 
 /// WHICH WAY μ MOVED.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Dir {
+pub(crate) enum Direction {
     /// μ out of the reserve; game value leaves (a G sink).
     Out,
     /// μ into the reserve; game value arrives (a G source).
@@ -50,7 +50,7 @@ pub(crate) enum Dir {
 /// ONE CONVERSION HELD while its G side is open.
 #[derive(Clone, Debug)]
 pub(crate) struct Conversion {
-    pub(crate) dir: Dir,
+    pub(crate) dir: Direction,
     pub(crate) tier: [u8; 32],
     pub(crate) holder: [u8; 32],
     pub(crate) identity: [u8; 32],
@@ -66,8 +66,8 @@ impl Conversion {
     /// The nets its G side carries into the reserve tier's fold.
     pub(crate) fn nets(&self) -> Vec<Net> {
         let g = match self.dir {
-            Dir::Out => -self.g,
-            Dir::In => self.g,
+            Direction::Out => -self.g,
+            Direction::In => self.g,
         };
         vec![(self.identity, [0, g, 0, 0])]
     }
@@ -75,15 +75,15 @@ impl Conversion {
     /// Which side of a fold's refs it is consumed as.
     pub(crate) fn side_kind(&self) -> Side {
         match self.dir {
-            Dir::Out => Side::Out,
-            Dir::In => Side::In,
+            Direction::Out => Side::Out,
+            Direction::In => Side::In,
         }
     }
 
     pub(crate) fn put(&self, v: &mut Vec<u8>) {
         v.push(match self.dir {
-            Dir::Out => 0,
-            Dir::In => 1,
+            Direction::Out => 0,
+            Direction::In => 1,
         });
         for k in [&self.tier, &self.holder, &self.identity] {
             v.extend_from_slice(k);
@@ -127,8 +127,8 @@ impl Conversion {
             Some(x)
         };
         let dir = match byte(b, p)? {
-            0 => Dir::Out,
-            1 => Dir::In,
+            0 => Direction::Out,
+            1 => Direction::In,
             _ => return None,
         };
         let (tier, holder, identity) = (key(b, p)?, key(b, p)?, key(b, p)?);
@@ -346,9 +346,9 @@ impl Court {
         }
     }
 
-    /// Whether `who`'s balance holds `mu` on every lane.
-    fn covers(&self, who: &[u8; 32], mu: &[u64; 4]) -> bool {
-        crate::economy::lanes_short(&crate::economy::shortfall(mu, &self.treasury.balance_mu(who))).is_empty()
+    /// Whether `party`'s balance holds `mu` on every lane.
+    fn covers(&self, party: &[u8; 32], mu: &[u64; 4]) -> bool {
+        crate::economy::lanes_short(&crate::economy::shortfall(mu, &self.treasury.balance_mu(party))).is_empty()
     }
 
     /// The reserve tier of the domain `tier` stands in, where `tier` is it.
@@ -362,7 +362,7 @@ impl Court {
     pub(crate) fn convert(&mut self, h: &SignedHandoff) -> Handed {
         use HandoffRefusal as R;
         let refuse = Handed::Refused;
-        let id = h.handoff.id();
+        let id = h.handoff.citation();
         let head = self.chain.head_height();
         // A RESEND is answered with its original receipt: nothing twice.
         if matches!(h.handoff, Handoff::ConvertOut(_) | Handoff::ConvertIn(_)) {
@@ -395,7 +395,7 @@ impl Court {
                 if self.treasury.pay(c.tier, c.holder, mu, (r.stamp, r.chain_hash)).is_err() {
                     return refuse(R::ReserveShort);
                 }
-                let held = Conversion { dir: Dir::Out, tier: c.tier, holder: c.holder, identity: c.identity, g: c.g, mu, state: State::Accepted, side: None, at: r.stamp.key() };
+                let held = Conversion { dir: Direction::Out, tier: c.tier, holder: c.holder, identity: c.identity, g: c.g, mu, state: State::Accepted, side: None, at: r.stamp.key() };
                 self.hold_conversion(id, held);
                 Handed::Sealed { at: r.stamp, receipt: r.chain_hash, id, state: State::Accepted }
             }
@@ -421,7 +421,7 @@ impl Court {
                 }
                 let until = window_end(r.stamp.h);
                 let held = Conversion {
-                    dir: Dir::In,
+                    dir: Direction::In,
                     tier: c.tier,
                     holder: c.holder,
                     identity: c.identity,

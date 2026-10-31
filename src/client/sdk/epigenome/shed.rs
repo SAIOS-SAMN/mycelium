@@ -8,8 +8,8 @@ impl Epigenome {
     /// mind's OWN K (45.4). The height beside it is standing extent and is
     /// left alone; the lifecycle is the mind's, and a mind that hears
     /// nothing still thinks.
-    pub(crate) fn touch(&mut self, addr: &[u8], now_k: u64) {
-        if let Some(d) = self.dialect.get_mut(addr) {
+    pub(crate) fn touch(&mut self, address: &[u8], now_k: u64) {
+        if let Some(d) = self.dialect.get_mut(address) {
             d.last_used_k = now_k;
             #[expect(clippy::disallowed_methods, reason = "rule 11 — one per use: a u64 of events cannot pass 2⁶⁴")]
             let n = d.uses.saturating_add(1);

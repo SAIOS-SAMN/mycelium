@@ -205,10 +205,10 @@ impl NerveEdge {
     }
 
     /// EVERY LENGTH HERE IS A `u32`, AND THAT IS THE FIX FOR A REAL
-    /// REFUSAL. `put_addr` is the WIRE embedding — `len16 + bytes` — and it
+    /// REFUSAL. `put_address` is the WIRE embedding — `len16 + bytes` — and it
     /// refuses an address over 65 535 bytes rather than truncating it. A
     /// form's address is its coordinates written out, and a 1 655-vertex
-    /// form's address measures 10 MB, so `put_addr` would have refused the
+    /// form's address measures 10 MB, so `put_address` would have refused the
     /// serialization of every citation of a real form.
     ///
     /// Refused, not corrupted — but the failure would have surfaced as an

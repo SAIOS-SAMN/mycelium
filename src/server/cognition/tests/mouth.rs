@@ -14,7 +14,7 @@ fn key(b: u8) -> SigningKey {
     SigningKey::from_bytes(&[b; 32])
 }
 
-fn vk(k: &SigningKey) -> [u8; 32] {
+fn verifying(k: &SigningKey) -> [u8; 32] {
     k.verifying_key().to_bytes()
 }
 
@@ -30,14 +30,14 @@ fn reserve(d: u8) -> SigningKey {
 fn founded() -> Court {
     let mut k = Court::new();
     for d in [4u8, 5, 6] {
-        let mut tiers = vec![vk(&reserve(d))];
+        let mut tiers = vec![verifying(&reserve(d))];
         if d == 4 {
-            tiers.push(vk(&key(30)));
+            tiers.push(verifying(&key(30)));
             tiers.sort_unstable();
         }
-        let g = DomainGenesis { domain: vk(&domain(d)), tiers };
+        let g = DomainGenesis { domain: verifying(&domain(d)), tiers };
         assert!(matches!(k.admit_domain(&g.sign(&domain(d))), Founded::Sealed { .. }));
-        let r = Reservation { domain: vk(&domain(d)), tier: vk(&reserve(d)), nonce: [0; 32] };
+        let r = Reservation { domain: verifying(&domain(d)), tier: verifying(&reserve(d)), nonce: [0; 32] };
         assert!(matches!(k.designate_reserve(&r.sign(&domain(d))), Founded::Reserved { .. }));
     }
     k
@@ -59,9 +59,9 @@ fn tube() -> Tube {
 
 fn mouth(a: u8, b: u8, from_frame: Mv, to_frame: Mv, toll: [u64; 4]) -> Mouth {
     Mouth {
-        from_tier: vk(&reserve(a)),
-        to_tier: vk(&reserve(b)),
-        keeper: vk(&reserve(a)),
+        from_tier: verifying(&reserve(a)),
+        to_tier: verifying(&reserve(b)),
+        keeper: verifying(&reserve(a)),
         from_frame,
         to_frame,
         toll,
@@ -76,8 +76,8 @@ fn mouth(a: u8, b: u8, from_frame: Mv, to_frame: Mv, toll: [u64; 4]) -> Mouth {
 fn open(k: &mut Court, m: Mouth, a: u8, b: u8) -> [u8; 32] {
     let bank = m.tube.as_ref().map_or(0, |t| t.mass.0.div_ceil(t.mass.1));
     let anchor = k.anchor();
-    k.treasury.genesis(vk(&reserve(a)), [bank, 0, 0, 0], anchor);
-    let id = m.id();
+    k.treasury.genesis(verifying(&reserve(a)), [bank, 0, 0, 0], anchor);
+    let id = m.citation();
     assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(a))), Handed::Sealed { .. }));
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(b))), Handed::Sealed { state: State::Accepted, .. }));
     id
@@ -86,8 +86,8 @@ fn open(k: &mut Court, m: Mouth, a: u8, b: u8) -> [u8; 32] {
 /// One of matter from domain `a`'s reserve to `b`'s.
 fn cargo(a: u8, b: u8, nonce: u8) -> Offer {
     Offer {
-        from_tier: vk(&reserve(a)),
-        to_tier: vk(&reserve(b)),
+        from_tier: verifying(&reserve(a)),
+        to_tier: verifying(&reserve(b)),
         out_nets: vec![([1; 32], [-1, 0, 0, 0])],
         in_nets: vec![([2; 32], [1, 0, 0, 0])],
         charter: [0; 32],
@@ -107,9 +107,9 @@ fn handoff_mouth_refuses_bad_builders_and_frames() {
     };
     // 78.136 — a line builds, but its own reserve keeps; the far end is the
     // other domain's reserve.
-    let line_kept_by_other = Mouth { from_tier: vk(&key(30)), keeper: vk(&reserve(5)), ..mouth(4, 5, one(), one(), [0; 4]) };
+    let line_kept_by_other = Mouth { from_tier: verifying(&key(30)), keeper: verifying(&reserve(5)), ..mouth(4, 5, one(), one(), [0; 4]) };
     assert_eq!(offer(&mut k, line_kept_by_other, &key(30)), HandoffRefusal::NotKeeper);
-    let to_a_line = Mouth { to_tier: vk(&key(30)), ..mouth(5, 4, one(), one(), [0; 4]) };
+    let to_a_line = Mouth { to_tier: verifying(&key(30)), ..mouth(5, 4, one(), one(), [0; 4]) };
     assert_eq!(offer(&mut k, to_a_line, &reserve(5)), HandoffRefusal::NotReserve, "accepted by the far domain's reserve");
     let same_place = mouth(4, 4, turn(), turn(), [0; 4]);
     assert_eq!(offer(&mut k, same_place, &reserve(4)), HandoffRefusal::Unbound, "a road joins two distinct places");
@@ -127,7 +127,7 @@ fn handoff_mouth_refuses_bad_builders_and_frames() {
 fn handoff_traverse_pays_toll_to_keeper() {
     let mut k = founded();
     let anchor = k.anchor();
-    k.treasury.genesis(vk(&reserve(5)), [10, 0, 0, 0], anchor);
+    k.treasury.genesis(verifying(&reserve(5)), [10, 0, 0, 0], anchor);
     assert!(matches!(k.handoff(&Handoff::Offer(Box::new(cargo(4, 5, 1))).sign(&reserve(4))), Handed::Refused(HandoffRefusal::NoMouth)));
     let id = open(&mut k, mouth(4, 5, one(), turn(), [3, 0, 0, 0]), 4, 5);
     let other = open(&mut k, mouth(5, 6, one(), one(), [0; 4]), 5, 6);
@@ -136,9 +136,9 @@ fn handoff_traverse_pays_toll_to_keeper() {
     // Y to X, back through the mouth X built: the toll is X's to keep.
     let back = Handoff::Traverse { offer: Box::new(cargo(5, 4, 2)), mouth: id };
     let Handed::Sealed { id: crossing, .. } = k.handoff(&back.sign(&reserve(5))) else { panic!("crossing") };
-    assert_eq!(k.treasury.balance_mu(&vk(&reserve(5)))[0], 7, "the toll escrowed from the sender");
+    assert_eq!(k.treasury.balance_mu(&verifying(&reserve(5)))[0], 7, "the toll escrowed from the sender");
     assert!(matches!(k.handoff(&Handoff::Accept { id: crossing }.sign(&reserve(4))), Handed::Sealed { state: State::Accepted, .. }));
-    assert_eq!(k.treasury.balance_mu(&vk(&reserve(4)))[0], 3, "paid to the keeper");
+    assert_eq!(k.treasury.balance_mu(&verifying(&reserve(4)))[0], 3, "paid to the keeper");
 }
 
 /// CLOSED BY EITHER BUILDER, WHAT IS IN FLIGHT RETURNS: a crossing offered
@@ -148,14 +148,14 @@ fn handoff_traverse_pays_toll_to_keeper() {
 fn handoff_close_returns_in_flight_crossing() {
     let mut k = founded();
     let anchor = k.anchor();
-    k.treasury.genesis(vk(&reserve(4)), [5, 0, 0, 0], anchor);
+    k.treasury.genesis(verifying(&reserve(4)), [5, 0, 0, 0], anchor);
     let id = open(&mut k, mouth(4, 5, one(), one(), [2, 0, 0, 0]), 4, 5);
     let go = Handoff::Traverse { offer: Box::new(cargo(4, 5, 1)), mouth: id };
     let Handed::Sealed { id: crossing, .. } = k.handoff(&go.sign(&reserve(4))) else { panic!() };
-    assert_eq!(k.treasury.balance_mu(&vk(&reserve(4)))[0], 3);
+    assert_eq!(k.treasury.balance_mu(&verifying(&reserve(4)))[0], 3);
     assert!(matches!(k.handoff(&Handoff::Close { id }.sign(&reserve(5))), Handed::Sealed { state: State::Returned, .. }), "either builder");
     assert_eq!(k.handoff_read(&crossing), Some((State::Returned, false, false)), "in flight, returned");
-    assert_eq!(k.treasury.balance_mu(&vk(&reserve(4)))[0], 6, "its toll refunded, and the throat's bank back to its face");
+    assert_eq!(k.treasury.balance_mu(&verifying(&reserve(4)))[0], 6, "its toll refunded, and the throat's bank back to its face");
     let again = Handoff::Traverse { offer: Box::new(cargo(4, 5, 2)), mouth: id };
     assert!(matches!(k.handoff(&again.sign(&reserve(4))), Handed::Refused(HandoffRefusal::NoMouth)));
 }
@@ -192,7 +192,7 @@ fn mouth_loops_records_turning_loop() {
 /// two free frames, open, between `a` and `b`.
 fn legacy(k: &mut Court, a: u8, b: u8, from_frame: Mv) -> [u8; 32] {
     let m = Mouth { tube: None, ..mouth(a, b, from_frame, one(), [0; 4]) };
-    let id = m.id();
+    let id = m.citation();
     let held = crate::server::cognition::mouth::MouthHeld { mouth: m, state: State::Accepted, opened: Some(k.chain.head_height()), at: Vec::new() };
     k.handoffs.mouths.insert(id, held);
     id
@@ -245,21 +245,21 @@ fn handoff_mouth_line_builds_road_reserve_keeps() {
     let mut k = founded();
     let line = key(30);
     let anchor = k.anchor();
-    k.treasury.genesis(vk(&line), [2, 0, 0, 0], anchor);
+    k.treasury.genesis(verifying(&line), [2, 0, 0, 0], anchor);
     // Two distinct places: the pole, and one step along a geodesic from it.
     let n = |v: i64| num_rational::BigRational::from_integer(v.into());
     let step = crate::transducer::cga::hyperbolic_compartment(&[n(1), n(0), n(0)], &n(2)).expect("on the sheet");
     let away = crate::transducer::cga::geodesic_transvection(&crate::transducer::cga::hyperboloid_pole(), &step).expect("a transvection");
-    let road = Mouth { from_tier: vk(&line), to_tier: vk(&reserve(4)), keeper: vk(&reserve(4)), ..mouth(4, 4, one(), away, [0; 4]) };
-    let id = road.id();
+    let road = Mouth { from_tier: verifying(&line), to_tier: verifying(&reserve(4)), keeper: verifying(&reserve(4)), ..mouth(4, 4, one(), away, [0; 4]) };
+    let id = road.citation();
     assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(road)).sign(&line)), Handed::Sealed { .. }), "a line offers a road");
-    assert_eq!(k.treasury.balance_mu(&vk(&line))[0], 1, "the builder banks the throat");
+    assert_eq!(k.treasury.balance_mu(&verifying(&line))[0], 1, "the builder banks the throat");
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(4))), Handed::Sealed { state: State::Accepted, .. }), "its ancients accept");
-    let within = Offer { from_tier: vk(&line), to_tier: vk(&reserve(4)), ..cargo(4, 4, 1) };
+    let within = Offer { from_tier: verifying(&line), to_tier: verifying(&reserve(4)), ..cargo(4, 4, 1) };
     assert!(matches!(k.handoff(&Handoff::Offer(Box::new(within.clone())).sign(&line)), Handed::Refused(HandoffRefusal::Unbound)), "no road, no handoff within");
     let along = Handoff::Traverse { offer: Box::new(within), mouth: id };
     assert!(matches!(k.handoff(&along.sign(&line)), Handed::Sealed { .. }), "along the road");
-    let across = Mouth { from_tier: vk(&line), keeper: vk(&reserve(4)), nonce: [8; 32], ..mouth(4, 5, one(), one(), [0; 4]) };
+    let across = Mouth { from_tier: verifying(&line), keeper: verifying(&reserve(4)), nonce: [8; 32], ..mouth(4, 5, one(), one(), [0; 4]) };
     assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(across)).sign(&line)), Handed::Sealed { .. }), "a line builds across, its reserve keeping");
 }
 
@@ -272,7 +272,7 @@ fn handoff_mouth_line_builds_road_reserve_keeps() {
 fn handoff_feed_and_draw_keep_throat_bank() {
     use crate::server::cognition::mouth::throat_key;
     let mut k = founded();
-    let (offerer, keeper) = (vk(&reserve(4)), vk(&reserve(5)));
+    let (offerer, keeper) = (verifying(&reserve(4)), verifying(&reserve(5)));
     let refused = Mouth { tube: Some(Tube { mass: (5, 2), ..tube() }), nonce: [3; 32], ..mouth(4, 5, one(), one(), [0; 4]) };
     let anchor = k.anchor();
     k.treasury.genesis(offerer, [3, 0, 0, 0], anchor);

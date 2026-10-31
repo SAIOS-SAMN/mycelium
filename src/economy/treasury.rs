@@ -259,11 +259,11 @@ impl Treasury {
         Treasury::default()
     }
 
-    /// The balance `who` would hold after a credit of `mu`, or `None` where
+    /// The balance `party` would hold after a credit of `mu`, or `None` where
     /// a lane would pass its carrier (STD1). Read before anything moves, so
     /// an operation that cannot land moves nothing.
-    pub(crate) fn credited(&self, who: &[u8; 32], mu: [u64; 4]) -> Option<[u64; 4]> {
-        crate::core::lanes::lanes_add(self.balance_of(who), mu)
+    pub(crate) fn credited(&self, party: &[u8; 32], mu: [u64; 4]) -> Option<[u64; 4]> {
+        crate::core::lanes::lanes_add(self.balance_of(party), mu)
     }
 
     /// CREDIT, WHOLE OR REFUSED: a balance that would pass its carrier on
@@ -272,11 +272,11 @@ impl Treasury {
     /// it belongs to is written, so a refused credit leaves no row and §6
     /// holds.
     #[must_use]
-    pub(crate) fn credit(&mut self, who: [u8; 32], mu: [u64; 4]) -> bool {
-        match self.credited(&who, mu) {
+    pub(crate) fn credit(&mut self, party: [u8; 32], mu: [u64; 4]) -> bool {
+        match self.credited(&party, mu) {
             Some(b) => {
-                self.balances.insert(who, b);
-                self.touch(&who);
+                self.balances.insert(party, b);
+                self.touch(&party);
                 true
             }
             None => {
@@ -296,21 +296,21 @@ impl Treasury {
     /// reading is a broken clamp; it is returned rather than floored
     /// because a floor burns the difference against §6's equation.
     #[must_use]
-    pub(crate) fn debit(&mut self, who: [u8; 32], mu: [u64; 4]) -> [u64; 4] {
-        let b = self.balance_of(&who);
+    pub(crate) fn debit(&mut self, party: [u8; 32], mu: [u64; 4]) -> [u64; 4] {
+        let b = self.balance_of(&party);
         let short = crate::economy::shortfall(&mu, &b);
         if !crate::economy::lanes_short(&short).is_empty() {
             return short;
         }
-        self.balances.insert(who, std::array::from_fn(|l| b[l] - mu[l]));
-        self.touch(&who);
+        self.balances.insert(party, std::array::from_fn(|l| b[l] - mu[l]));
+        self.touch(&party);
         short
     }
 
-    /// 78.151 — `who`'s account moved: named for the next publisher.
-    fn touch(&mut self, who: &[u8; 32]) {
+    /// 78.151 — `party`'s account moved: named for the next publisher.
+    fn touch(&mut self, party: &[u8; 32]) {
         if let Touched::Parties(p) = &mut self.touched {
-            p.insert(who, ());
+            p.insert(party, ());
         }
     }
 
@@ -324,11 +324,11 @@ impl Treasury {
     /// of its own.
     pub(crate) fn parties(&self) -> crate::network::nerve::Keyed<()> {
         let mut out = crate::network::nerve::Keyed::new();
-        crate::snapshot::persist(&self.balances, |who, _| {
-            out.insert(who, ());
+        crate::snapshot::persist(&self.balances, |party, _| {
+            out.insert(party, ());
         });
-        crate::snapshot::persist(&self.stakes, |who, _| {
-            out.insert(who, ());
+        crate::snapshot::persist(&self.stakes, |party, _| {
+            out.insert(party, ());
         });
         crate::snapshot::persist(&self.held, |_, h| {
             out.insert(h.payer, ());
@@ -353,12 +353,12 @@ impl Treasury {
         parties
             .scoped()
             .filter_map(|(k, _)| <[u8; 32]>::try_from(k.as_slice()).ok())
-            .map(|who| {
-                let holds = match held.get(&who) {
+            .map(|party| {
+                let holds = match held.get(&party) {
                     Some(s) => *s,
                     None => Some([0; 4]),
                 };
-                (who, holds.map(|h| (self.balance_of(&who), self.staked(&who), h)))
+                (party, holds.map(|h| (self.balance_of(&party), self.staked(&party), h)))
             })
             .collect()
     }
@@ -367,8 +367,8 @@ impl Treasury {
     /// when the recorded stake is below `bond`. Pool is the sum of bonds;
     /// leftover escrow history does not enter it. Returns the vector added
     /// this call.
-    pub fn enroll(&mut self, who: [u8; 32], bond: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        let held = self.staked(&who);
+    pub fn enroll(&mut self, party: [u8; 32], bond: [u64; 4], anchor: Anchor) -> [u64; 4] {
+        let held = self.staked(&party);
         // The top-up IS the shortfall of what is staked against the bond,
         // and that reading already exists: zero where the lane meets it.
         let asked = crate::economy::shortfall(&bond, &held);
@@ -379,19 +379,19 @@ impl Treasury {
         // the first enrolment. A stake MOVES value between two carriers of
         // one identity; it never creates any. What the balance cannot cover
         // is not staked, so an identity stakes what it holds and no more.
-        let bal = self.balance_mu(&who);
+        let bal = self.balance_mu(&party);
         // add ≤ bal on every lane: it is clamped to the balance just read,
         // and it is debited against that same balance — which cannot be
         // short (STD1: the arm that read a short debit could not fire).
         let add: [u64; 4] = std::array::from_fn(|l| asked[l].min(bal[l]));
         if add.iter().any(|&x| x > 0) {
-            let unmoved = self.debit(who, add);
+            let unmoved = self.debit(party, add);
             debug_assert!(crate::economy::lanes_short(&unmoved).is_empty(), "add ≤ bal, debited against it");
             let next: [u64; 4] = std::array::from_fn(|l| held[l] + add[l]);
-            self.stakes.insert(who, next);
-            self.write(Entry { kind: Kind::Stake, who, mu: add, at: anchor.0, receipt: anchor.1, arm: None });
-        } else if self.stakes.get(&who).is_none() {
-            self.stakes.insert(who, held);
+            self.stakes.insert(party, next);
+            self.write(Entry { kind: Kind::Stake, who: party, mu: add, at: anchor.0, receipt: anchor.1, arm: None });
+        } else if self.stakes.get(&party).is_none() {
+            self.stakes.insert(party, held);
         }
         self.refresh_bond();
         add
@@ -403,20 +403,20 @@ impl Treasury {
     /// holds that rule (MU-PRODUCT §5: unstake when no escrow names the
     /// voice). Conservation holds because the μ⃗ moves between two carriers
     /// of one identity, exactly as staking it did.
-    pub fn unstake(&mut self, who: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        let held = self.staked(&who);
+    pub fn unstake(&mut self, party: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+        let held = self.staked(&party);
         let back: [u64; 4] = std::array::from_fn(|l| mu[l].min(held[l]));
         if back.iter().all(|&x| x == 0) {
             return back;
         }
         // The credit first: a balance with no room refuses the unstake, and
         // the bond stays where it was.
-        if !self.credit(who, back) {
+        if !self.credit(party, back) {
             return [0; 4];
         }
         let next: [u64; 4] = std::array::from_fn(|l| held[l] - back[l]);
-        self.stakes.insert(who, next);
-        self.write(Entry { kind: Kind::Unstake, who, mu: back, at: anchor.0, receipt: anchor.1, arm: None });
+        self.stakes.insert(party, next);
+        self.write(Entry { kind: Kind::Unstake, who: party, mu: back, at: anchor.0, receipt: anchor.1, arm: None });
         self.refresh_bond();
         back
     }
@@ -433,13 +433,13 @@ impl Treasury {
     }
 
     /// Bond recorded for an identity, if enrolled. None is unbonded.
-    pub fn bond_of(&self, who: &[u8; 32]) -> Option<[u64; 4]> {
-        self.stakes.get(who).copied()
+    pub fn bond_of(&self, party: &[u8; 32]) -> Option<[u64; 4]> {
+        self.stakes.get(party).copied()
     }
 
     /// Bond recorded for an identity, if enrolled.
-    pub fn stake_of(&self, who: &[u8; 32]) -> Option<[u64; 4]> {
-        self.bond_of(who)
+    pub fn stake_of(&self, party: &[u8; 32]) -> Option<[u64; 4]> {
+        self.bond_of(party)
     }
 
     /// Sum of live stakes; `None` where it does not add up (STD1).
@@ -457,17 +457,17 @@ impl Treasury {
     /// hypha of the 2026-09-08 soak (I38).
     pub fn bind_live(&mut self, live: &[[u8; 32]], anchor: Anchor) -> Vec<([u8; 32], [u64; 4])> {
         let mut drop: Vec<([u8; 32], [u64; 4])> = Vec::new();
-        crate::snapshot::persist(&self.stakes, |who, mu| {
-            let Ok(w) = <[u8; 32]>::try_from(who) else { return };
+        crate::snapshot::persist(&self.stakes, |party, mu| {
+            let Ok(w) = <[u8; 32]>::try_from(party) else { return };
             if !live.contains(&w) {
                 drop.push((w, *mu));
             }
         });
         let mut burned = Vec::with_capacity(drop.len());
-        for (who, mu) in drop {
-            let took = self.burn(who, mu, anchor);
-            self.stakes.remove(&who);
-            burned.push((who, took));
+        for (party, mu) in drop {
+            let took = self.burn(party, mu, anchor);
+            self.stakes.remove(&party);
+            burned.push((party, took));
         }
         self.refresh_bond();
         burned
@@ -665,17 +665,17 @@ impl Treasury {
         // E3 — EVERY IDENTITY'S STANDING, off the carriers themselves: one
         // account per identity holding a balance, a bond or a hold.
         let mut accounts: crate::network::nerve::Keyed<crate::observe::Account> = crate::network::nerve::Keyed::new();
-        let mut at = |who: &[u8], f: &mut dyn FnMut(&mut crate::observe::Account)| {
-            let Ok(w) = <[u8; 32]>::try_from(who) else { return };
-            let mut a = match accounts.get(who) {
+        let mut at = |party: &[u8], f: &mut dyn FnMut(&mut crate::observe::Account)| {
+            let Ok(w) = <[u8; 32]>::try_from(party) else { return };
+            let mut a = match accounts.get(party) {
                 Some(a) => a.clone(),
                 None => crate::observe::Account { who: w, ..Default::default() },
             };
             f(&mut a);
-            accounts.insert(who, a);
+            accounts.insert(party, a);
         };
-        crate::snapshot::persist(&self.balances, |who, mu| at(who, &mut |a| a.balance = *mu));
-        crate::snapshot::persist(&self.stakes, |who, mu| at(who, &mut |a| a.bond = *mu));
+        crate::snapshot::persist(&self.balances, |party, mu| at(party, &mut |a| a.balance = *mu));
+        crate::snapshot::persist(&self.stakes, |party, mu| at(party, &mut |a| a.bond = *mu));
         let mut short = false;
         crate::snapshot::persist(&self.held, |_, h| {
             at(&h.payer, &mut |a| match crate::core::lanes::lanes_add(a.held, h.mu) {
@@ -693,15 +693,15 @@ impl Treasury {
     /// A finite, signed allocation at genesis. Its own kind, never a mint:
     /// §6 requires seeded value and earned value to stay separable, and a
     /// testnet differs from the beta only in this term.
-    pub fn genesis(&mut self, who: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+    pub fn genesis(&mut self, party: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
         if mu.iter().all(|&x| x == 0) {
             return [0; 4];
         }
         // The credit first: a balance with no room writes no row (STD1).
-        if !self.credit(who, mu) {
+        if !self.credit(party, mu) {
             return [0; 4];
         }
-        self.write(Entry { kind: Kind::Genesis, who, mu, at: anchor.0, receipt: anchor.1, arm: None });
+        self.write(Entry { kind: Kind::Genesis, who: party, mu, at: anchor.0, receipt: anchor.1, arm: None });
         mu
     }
 
@@ -709,9 +709,9 @@ impl Treasury {
     /// on each lane; supply falls by exactly what left, so §6 holds through
     /// it (R9). Returns the vector actually burned — never more than was
     /// held, and nothing is redistributed.
-    pub fn burn(&mut self, who: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        let bond = self.staked(&who);
-        let bal = self.balance_mu(&who);
+    pub fn burn(&mut self, party: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+        let bond = self.staked(&party);
+        let bal = self.balance_mu(&party);
         let from_bond: [u64; 4] = std::array::from_fn(|l| mu[l].min(bond[l]));
         // from_bal ≤ bal on every lane: it is clamped to the balance just
         // read, and it is debited against that same balance below.
@@ -723,16 +723,16 @@ impl Treasury {
         }
         if from_bond.iter().any(|&x| x > 0) {
             let next: [u64; 4] = std::array::from_fn(|l| bond[l] - from_bond[l]);
-            self.stakes.insert(who, next);
+            self.stakes.insert(party, next);
             self.refresh_bond();
         }
         // The debit cannot be short, by `from_bal ≤ bal` (STD1: the arm that
         // read a short debit could not fire, and it is gone).
         if from_bal.iter().any(|&x| x > 0) {
-            let unmoved = self.debit(who, from_bal);
+            let unmoved = self.debit(party, from_bal);
             debug_assert!(crate::economy::lanes_short(&unmoved).is_empty(), "from_bal ≤ bal, debited against it");
         }
-        self.write(Entry { kind: Kind::Burn, who, mu: took, at: anchor.0, receipt: anchor.1, arm: None });
+        self.write(Entry { kind: Kind::Burn, who: party, mu: took, at: anchor.0, receipt: anchor.1, arm: None });
         took
     }
 
@@ -781,13 +781,13 @@ impl Treasury {
         Ok(issued)
     }
 
-    /// A MINT to `who`, standing at the act that minted it and carrying the
+    /// A MINT to `party`, standing at the act that minted it and carrying the
     /// proof of work it pays (78.33) — none for a subsidy.
-    pub(crate) fn mint_to(&mut self, who: [u8; 32], mu: [u64; 4], anchor: Anchor, arm: Option<Arm>) -> [u64; 4] {
-        let paid = self.mint_to_paying(who, mu, anchor, arm);
+    pub(crate) fn mint_to(&mut self, party: [u8; 32], mu: [u64; 4], anchor: Anchor, arm: Option<Arm>) -> [u64; 4] {
+        let paid = self.mint_to_paying(party, mu, anchor, arm);
         // E4 — a proof of work paid is a payment the growth grant counts.
         if matches!(arm, Some(Arm::Pouw) | Some(Arm::Powc)) && paid.iter().any(|&x| x > 0) {
-            self.paid_out.push((who, paid));
+            self.paid_out.push((party, paid));
         }
         paid
     }
@@ -798,7 +798,7 @@ impl Treasury {
         std::mem::take(&mut self.paid_out)
     }
 
-    fn mint_to_paying(&mut self, who: [u8; 32], mu: [u64; 4], anchor: Anchor, arm: Option<Arm>) -> [u64; 4] {
+    fn mint_to_paying(&mut self, party: [u8; 32], mu: [u64; 4], anchor: Anchor, arm: Option<Arm>) -> [u64; 4] {
         if mu.iter().all(|&x| x == 0) {
             return [0; 4];
         }
@@ -806,7 +806,7 @@ impl Treasury {
         // what the universes returned as connection tax pays the closure,
         // and only what the pool cannot cover is minted.
         let pooled = match arm {
-            Some(Arm::Pouw) => self.draw_pool(who, mu, anchor, arm),
+            Some(Arm::Pouw) => self.draw_pool(party, mu, anchor, arm),
             _ => [0; 4],
         };
         let rest: [u64; 4] = std::array::from_fn(|l| mu[l] - pooled[l]);
@@ -814,25 +814,25 @@ impl Treasury {
             return pooled;
         }
         // The credit first: a balance with no room mints nothing (STD1).
-        if !self.credit(who, rest) {
+        if !self.credit(party, rest) {
             return pooled;
         }
-        self.write(Entry { kind: Kind::Mint, who, mu: rest, at: anchor.0, receipt: anchor.1, arm });
+        self.write(Entry { kind: Kind::Mint, who: party, mu: rest, at: anchor.0, receipt: anchor.1, arm });
         mu
     }
 
     /// The POLYTONIC BALANCE — per-lane orientation-weighted sums; there is no
     /// scalar balance. Mint grows supply; the stake bond is independent.
-    pub fn balance_mu(&self, who: &[u8; 32]) -> [u64; 4] {
-        self.balance_of(who)
+    pub fn balance_mu(&self, party: &[u8; 32]) -> [u64; 4] {
+        self.balance_of(party)
     }
 
     /// THE READING OF ABSENCE (0.11c): a party the ledger has never seen
     /// holds nothing on every lane, and that zero is a measurement of the
     /// carrier rather than a value put in place of one. Every balance,
     /// stake and escrow read passes through here.
-    fn balance_of(&self, who: &[u8; 32]) -> [u64; 4] {
-        match self.balances.get(who) {
+    fn balance_of(&self, party: &[u8; 32]) -> [u64; 4] {
+        match self.balances.get(party) {
             Some(b) => *b,
             None => [0; 4],
         }
@@ -842,8 +842,8 @@ impl Treasury {
     /// seen it — the same reading of absence. `stake_of` above answers
     /// WHETHER there is a bond; this answers HOW MUCH, and an unseen party
     /// holds zero on every lane.
-    fn staked(&self, who: &[u8; 32]) -> [u64; 4] {
-        match self.stakes.get(who) {
+    fn staked(&self, party: &[u8; 32]) -> [u64; 4] {
+        match self.stakes.get(party) {
             Some(s) => *s,
             None => [0; 4],
         }
@@ -854,14 +854,14 @@ impl Treasury {
     /// and what it holds against keys, per lane. A party the ledger has never
     /// seen holds zero on every lane — the reading of absence. `None` where
     /// its holds would pass the holds' carrier (rule 11).
-    pub fn account(&self, who: &[u8; 32]) -> Option<([u64; 4], [u64; 4], [u64; 4])> {
+    pub fn account(&self, party: &[u8; 32]) -> Option<([u64; 4], [u64; 4], [u64; 4])> {
         let mut held = Some([0u64; 4]);
         crate::snapshot::persist(&self.held, |_, h| {
-            if &h.payer == who {
+            if &h.payer == party {
                 held = held.and_then(|t| crate::core::lanes::lanes_add(t, h.mu));
             }
         });
-        Some((self.balance_of(who), self.staked(who), held?))
+        Some((self.balance_of(party), self.staked(party), held?))
     }
 
     pub fn entries(&self) -> &[Entry] {
@@ -897,13 +897,13 @@ impl Treasury {
     }
 
     /// Whether a mint entry already stands for this identity.
-    pub fn has_mint(&self, who: &[u8; 32]) -> bool {
-        self.entries.iter().any(|e| e.kind == Kind::Mint && e.who == *who)
+    pub fn has_mint(&self, party: &[u8; 32]) -> bool {
+        self.entries.iter().any(|e| e.kind == Kind::Mint && e.who == *party)
     }
 
-    /// Whether `who` holds a genesis allocation row (§6: seeded, never earned).
-    pub fn has_genesis(&self, who: &[u8; 32]) -> bool {
-        self.entries.iter().any(|e| e.kind == Kind::Genesis && e.who == *who)
+    /// Whether `party` holds a genesis allocation row (§6: seeded, never earned).
+    pub fn has_genesis(&self, party: &[u8; 32]) -> bool {
+        self.entries.iter().any(|e| e.kind == Kind::Genesis && e.who == *party)
     }
 
 }

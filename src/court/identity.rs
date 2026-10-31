@@ -40,7 +40,7 @@ impl HyphaKey {
         Some(HyphaKey { sk, vk })
     }
 
-    pub fn vk_bytes(&self) -> [u8; 32] {
+    pub fn verifying_bytes(&self) -> [u8; 32] {
         self.vk.to_bytes()
     }
 
@@ -61,7 +61,7 @@ impl HyphaKey {
     /// Verifying key of the voice seated at `name`. Tests only, with
     /// `seed_from_name`.
     #[cfg(test)]
-    pub fn vk_from_name(name: &str) -> [u8; 32] {
+    pub fn voice_from_name(name: &str) -> [u8; 32] {
         let seed = Self::seed_from_name(name);
         let sk = SigningKey::from_bytes(&seed);
         sk.verifying_key().to_bytes()
@@ -69,7 +69,7 @@ impl HyphaKey {
 
     /// Log tag and ledger prefix: first two bytes of the verifying key.
     pub fn prefix(&self) -> String {
-        let b = self.vk_bytes();
+        let b = self.verifying_bytes();
         format!("{:02x}{:02x}", b[0], b[1])
     }
 
@@ -106,8 +106,8 @@ pub fn parse_hex64(s: &str) -> Option<[u8; 64]> {
     Some(out)
 }
 
-pub fn verify(vk: &[u8; 32], msg: &[u8], sig: &[u8; 64]) -> bool {
-    let Ok(key) = VerifyingKey::from_bytes(vk) else {
+pub fn verify(signer: &[u8; 32], msg: &[u8], sig: &[u8; 64]) -> bool {
+    let Ok(key) = VerifyingKey::from_bytes(signer) else {
         return false;
     };
     let sig = Signature::from_bytes(sig);

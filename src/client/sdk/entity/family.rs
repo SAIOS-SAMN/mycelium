@@ -479,9 +479,9 @@ impl Mind {
         crate::observe::note_mind(|m| m.perspective[5] += 1);
     }
 
-    /// THE SENTENCE A SOLVE CARRIES: the rule minted at its span, or `None`
-    /// where the span is unmeasurable or the mint refuses.
-    pub(crate) fn mint_solve(&mut self, rule: &SentenceRule, train: &Family) -> Option<Element> {
+    /// THE SENTENCE A SOLVE CARRIES: the rule constructed at its span, or `None`
+    /// where the span is unmeasurable or the construction refuses.
+    pub(crate) fn construct_solve(&mut self, rule: &SentenceRule, train: &Family) -> Option<Element> {
         let span = self.span_of(&rule.form)?.span();
         crate::transducer::family::mint_sentence_why(rule, train, &self.epigenome, span).ok()
     }

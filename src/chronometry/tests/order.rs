@@ -16,7 +16,7 @@ fn cite(r: &KStepReceipt) -> Parent {
 /// Precedence implies a lower height, and two geneses of two signers stay concurrent.
 #[test]
 fn precedes_implies_lower_height_and_keeps_concurrency() {
-    let mut c = ReceiptChain::with_vk([1; 32]);
+    let mut c = ReceiptChain::with_signer([1; 32]);
     let r0 = step(&mut c, Vec::new());
     let r1 = step(&mut c, Vec::new());
     let r2 = step(&mut c, Vec::new());
@@ -30,12 +30,12 @@ fn precedes_implies_lower_height_and_keeps_concurrency() {
     // TWO GENESES OF TWO SIGNERS ARE TWO NODES: the signer is a coordinate
     // of the stamp and in the hash, so the same act sealed by two chains
     // is two receipts.
-    let mut d = ReceiptChain::with_vk([3; 32]);
+    let mut d = ReceiptChain::with_signer([3; 32]);
     let d0 = step(&mut d, Vec::new());
-    let mut e = ReceiptChain::with_vk([4; 32]);
+    let mut e = ReceiptChain::with_signer([4; 32]);
     let e0 = step(&mut e, Vec::new());
     assert_ne!(d0.chain_hash, e0.chain_hash, "two signers, two nodes");
-    let mut mix = ReceiptChain::with_vk([1; 32]);
+    let mut mix = ReceiptChain::with_signer([1; 32]);
     step(&mut mix, Vec::new());
     mix.admit(d0.clone());
     mix.admit(e0.clone());
@@ -50,7 +50,7 @@ fn precedes_implies_lower_height_and_keeps_concurrency() {
 /// nothing left refuses rather than answering short (rule 11).
 #[test]
 fn precedes_orders_own_nodes_in_one_read_and_refuses_empty_budget() {
-    let mut c = ReceiptChain::with_vk([1; 32]);
+    let mut c = ReceiptChain::with_signer([1; 32]);
     let mut all = Vec::new();
     for _ in 0..64 {
         all.push(step(&mut c, Vec::new()));
@@ -71,11 +71,11 @@ fn precedes_orders_own_nodes_in_one_read_and_refuses_empty_budget() {
 /// chain's own nodes that reaches it.
 #[test]
 fn precedes_places_peer_node_by_its_cut_of_own_line() {
-    let mut c = ReceiptChain::with_vk([1; 32]);
+    let mut c = ReceiptChain::with_signer([1; 32]);
     let own0 = step(&mut c, Vec::new());
 
     // A PEER THAT REACHES THE CHAIN'S FIRST NODE: it cites it as a parent.
-    let mut d = ReceiptChain::with_vk([3; 32]);
+    let mut d = ReceiptChain::with_signer([3; 32]);
     step(&mut d, Vec::new());
     d.admit(own0.clone());
     let over = step(&mut d, vec![cite(&own0)]);
@@ -86,7 +86,7 @@ fn precedes_places_peer_node_by_its_cut_of_own_line() {
     assert_eq!(c.precedes(&over.stamp, &own0.stamp, &mut b), Some(false), "and the peer is not below the chain's own node");
 
     // UNTIL THE CHAIN CITES IT, a peer node is above nothing of the chain's own.
-    let mut e = ReceiptChain::with_vk([4; 32]);
+    let mut e = ReceiptChain::with_signer([4; 32]);
     let apart = step(&mut e, Vec::new());
     c.admit(apart.clone());
     let mut b = budget(4);
@@ -109,8 +109,8 @@ fn precedes_places_peer_node_by_its_cut_of_own_line() {
 /// before the fold is reached by every node that survives it.
 #[test]
 fn fold_before_keeps_peer_placements() {
-    let mut c = ReceiptChain::with_vk([1; 32]);
-    let mut e = ReceiptChain::with_vk([4; 32]);
+    let mut c = ReceiptChain::with_signer([1; 32]);
+    let mut e = ReceiptChain::with_signer([4; 32]);
     let peer = step(&mut e, Vec::new());
     step(&mut c, Vec::new());
     c.admit(peer.clone());

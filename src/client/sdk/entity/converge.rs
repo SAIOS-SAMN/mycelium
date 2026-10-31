@@ -97,30 +97,30 @@ impl Scenes {
         if scene.is_empty() || family.is_empty() || !sectioned(word) {
             return;
         }
-        let addr = word.address();
+        let address = word.address();
         match self.by_scene.get_mut(scene) {
             Some(s) => {
                 let local = word_local(word, &s.family);
-                s.words.insert(&addr, (word.clone(), local));
+                s.words.insert(&address, (word.clone(), local));
             }
             None => {
                 let mut words = Keyed::new();
-                words.insert(&addr, (word.clone(), word_local(word, family)));
+                words.insert(&address, (word.clone(), word_local(word, family)));
                 let charts = super::offer::Offer::of(family).charts;
                 self.by_scene.insert(scene, SceneWords { family: family.to_vec(), charts, words });
             }
         }
-        self.of_word.nested_insert(addr.as_bytes(), scene, ());
+        self.of_word.nested_insert(address.as_bytes(), scene, ());
     }
 
     /// A WORD LEAVING: out of every scene it was held on, and a scene left
     /// with no word leaves with it.
-    pub(crate) fn forget(&mut self, addr: &[u8]) {
-        let Some(scenes) = self.of_word.remove(addr) else { return };
+    pub(crate) fn forget(&mut self, address: &[u8]) {
+        let Some(scenes) = self.of_word.remove(address) else { return };
         for (scene, ()) in scenes.scoped() {
             let gone = match self.by_scene.get_mut(&scene) {
                 Some(s) => {
-                    s.words.remove(addr);
+                    s.words.remove(address);
                     s.words.is_empty()
                 }
                 None => false,
@@ -156,7 +156,7 @@ impl Scenes {
             return Evident::Refuted;
         }
         self.read[0] += 1;
-        let addr = word.address();
+        let address = word.address();
         let own: Vec<(Vec<u8>, Element, Local)> = match self.by_scene.get(scene) {
             Some(s) => s.words.scoped().map(|(a, (w, l))| (a, w.clone(), l.clone())).collect(),
             None => Vec::new(),
@@ -167,7 +167,7 @@ impl Scenes {
             }
             let mut key = Vec::new();
             crate::transducer::address::put_key_bytes(&mut key, scene);
-            crate::transducer::address::put_key_bytes(&mut key, addr.as_bytes());
+            crate::transducer::address::put_key_bytes(&mut key, address.as_bytes());
             key.extend_from_slice(&at);
             self.converged.insert(key, speaker);
         }
@@ -216,7 +216,7 @@ impl Mind {
             return;
         }
         self.scenes.pulling.insert(id, ());
-        let act = dialogue::encode_task_by_id(&self.hypha.voice().id(), &id);
+        let act = dialogue::encode_task_by_citation(&self.hypha.voice().id(), &id);
         self.ask(move |s| s.speak_keyed(&id, act), move |entity, body: io::Result<Vec<u8>>| {
             entity.scenes.pulling.remove(&id);
             let family = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b)).map(|env| env.train);

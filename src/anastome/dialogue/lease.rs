@@ -74,7 +74,7 @@ impl LeaseAct {
 
     /// THE LEASE'S NAME: the payload hash of its signed bytes. `None` where
     /// they do not write.
-    pub fn id(&self) -> Option<[u8; 32]> {
+    pub fn citation(&self) -> Option<[u8; 32]> {
         Some(crate::chronometry::payload_hash(&self.signed_bytes()?))
     }
 
@@ -289,7 +289,7 @@ mod tests {
         assert!(super::super::wallet::decode_stake(&bytes).is_none(), "nor as a stake");
         assert!(crate::court::identity::verify(&act.payer, &act.signed_bytes().expect("writes"), &signed.sig), "the payer's signature verifies");
 
-        let close = CloseLease { payer: act.payer, lease: act.id().expect("named"), nonce: [4; 32] }.sign(&payer);
+        let close = CloseLease { payer: act.payer, lease: act.citation().expect("named"), nonce: [4; 32] }.sign(&payer);
         let cbytes = encode_close(&close);
         assert_eq!(decode_close(&cbytes), Some(close), "the close reads back");
         assert!(decode_lease(&cbytes).is_none(), "and never as a lease");

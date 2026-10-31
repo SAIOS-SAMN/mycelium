@@ -15,7 +15,7 @@ use crate::chronometry::{Era, Place};
 use crate::cognition::court::era::{line_page, LineHolder};
 use crate::cognition::court::fold::FoldDone;
 use crate::cognition::Court;
-use crate::observe::{note_replication, note_serve, rep, ServeAxis};
+use crate::observe::{note_replication, note_serve, replication, ServeAxis};
 
 /// WHAT A ROOT ANSWER DID HERE: adopted, the line already standing at or
 /// past it, or refused by the reason its proof did not stand.
@@ -114,7 +114,7 @@ impl Court {
             false => proof.verify(origin),
         };
         if let Err(why) = verdict {
-            note_replication(Some(proof.signer), rep::ROOT_REFUSED, 1);
+            note_replication(Some(proof.signer), replication::ROOT_REFUSED, 1);
             return RootAdoption::Refused(why);
         }
         // A proof that stands is held whether or not the line needed it, so
@@ -123,7 +123,7 @@ impl Court {
         if !self.chain.adopt_root(proof.parent()) {
             return RootAdoption::Held;
         }
-        note_replication(Some(proof.signer), rep::ROOT_ADOPTED, 1);
+        note_replication(Some(proof.signer), replication::ROOT_ADOPTED, 1);
         self.shed_folded_lines();
         self.mark_persist();
         RootAdoption::Adopted

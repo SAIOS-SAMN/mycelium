@@ -47,16 +47,16 @@ fn zero() -> [Q; 4] {
     std::array::from_fn(|_| Q::from_integer(0.into()))
 }
 
-/// `v` added to what `who` is expected to hold.
-fn bump(expected: &mut Keyed<[Q; 4]>, who: &[u8; 32], v: [Q; 4]) {
-    let mut held = match expected.remove(who) {
+/// `v` added to what `party` is expected to hold.
+fn bump(expected: &mut Keyed<[Q; 4]>, party: &[u8; 32], v: [Q; 4]) {
+    let mut held = match expected.remove(party) {
         Some(h) => h,
         None => zero(),
     };
     for (h, x) in held.iter_mut().zip(v) {
         *h += x;
     }
-    expected.insert(who, held);
+    expected.insert(party, held);
 }
 
 /// The entries' own sums, rows and declared, added to `(rows, declared)` —
@@ -94,10 +94,10 @@ impl Reconstruction {
 
 /// A replay's key: the fold, then the filer — so no filer's publication can
 /// reset another's.
-fn replay_key(fold: &[u8], who: &[u8; 32]) -> Vec<u8> {
+fn replay_key(fold: &[u8], filer: &[u8; 32]) -> Vec<u8> {
     let mut k = Vec::with_capacity(fold.len() + 40);
     crate::transducer::address::put_key_bytes(&mut k, fold);
-    k.extend_from_slice(who);
+    k.extend_from_slice(filer);
     k
 }
 

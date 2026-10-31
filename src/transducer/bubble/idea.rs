@@ -87,7 +87,7 @@ pub(crate) fn held_since(now: u64, moved_k: u64) -> Option<u64> {
 
 /// The address of a chain A5 has accepted. Total: the type is the proof,
 /// so there is nothing here to refuse.
-pub(crate) fn remainder_addr(
+pub(crate) fn remainder_address(
     remainder: &element::CanonicalChain,
 ) -> crate::transducer::address::Address {
     element::from_canonical(remainder).address()
@@ -100,7 +100,7 @@ pub(crate) fn idea_key(f: &Form) -> crate::transducer::address::Address {
 
 /// The form's magnitude: its remainder's measure and what its glued vertices
 /// carry, per lane; `None` where the sum would pass its carrier (STD1).
-pub(crate) fn form_mag(f: &Form) -> Option<[u64; 4]> {
+pub(crate) fn form_magnitude(f: &Form) -> Option<[u64; 4]> {
     let glued = f.vertices.scoped().filter_map(|(_, v)| match v {
         Vertex::Glued { magnitude, .. } => Some(*magnitude),
         _ => None,
@@ -457,7 +457,7 @@ impl Bubble {
                 k.extend(super::resonance::spores_key(&self.spores));
                 crate::transducer::address::Address::from(k)
             }
-            None => remainder_addr(&self.remainder),
+            None => remainder_address(&self.remainder),
         }
     }
 

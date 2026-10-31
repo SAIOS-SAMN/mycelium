@@ -14,7 +14,7 @@ fn key(b: u8) -> SigningKey {
     SigningKey::from_bytes(&[b; 32])
 }
 
-fn vk(k: &SigningKey) -> [u8; 32] {
+fn verifying(k: &SigningKey) -> [u8; 32] {
     k.verifying_key().to_bytes()
 }
 
@@ -49,23 +49,23 @@ fn found(k: &mut Court) {
     use crate::anastome::dialogue::domain::{Bond, DomainGenesis, Founded, Reservation};
     let (a, p, q) = tiers();
     let r = reserve();
-    let mut ts = vec![vk(&a), vk(&p), vk(&q), vk(&r)];
+    let mut ts = vec![verifying(&a), verifying(&p), verifying(&q), verifying(&r)];
     ts.sort_unstable();
     let domain = key(4);
-    let genesis = DomainGenesis { domain: vk(&domain), tiers: ts };
+    let genesis = DomainGenesis { domain: verifying(&domain), tiers: ts };
     assert!(matches!(k.admit_domain(&genesis.sign(&domain)), Founded::Sealed { .. }));
-    let reservation = Reservation { domain: vk(&domain), tier: vk(&r), nonce: [0; 32] };
+    let reservation = Reservation { domain: verifying(&domain), tier: verifying(&r), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&reservation.sign(&domain)), Founded::Reserved { .. }));
     let anchor = k.anchor();
-    k.treasury.genesis(vk(&r), [3, 0, 0, 0], anchor);
+    k.treasury.genesis(verifying(&r), [3, 0, 0, 0], anchor);
     for (i, line) in [(0u8, &a), (1, &p), (2, &q)] {
-        let bond = Bond { domain: vk(&domain), reserve: vk(&r), tier: vk(line), mu: Some([1, 0, 0, 0]), nonce: [i; 32] };
+        let bond = Bond { domain: verifying(&domain), reserve: verifying(&r), tier: verifying(line), mu: Some([1, 0, 0, 0]), nonce: [i; 32] };
         assert!(matches!(k.bond(&bond.sign(&r)), Founded::Bonded { .. }));
     }
 }
 
 fn fold(tier: &SigningKey, prefix: u8, rows: Vec<Net>, declared: Vec<Net>, children: Vec<ChildNet>) -> TierFold {
-    TierFold { tier: vk(tier), prefix: [prefix; 32], rows, declared, children, handoffs: Vec::new() }
+    TierFold { tier: verifying(tier), prefix: [prefix; 32], rows, declared, children, handoffs: Vec::new() }
 }
 
 /// `A`'s fold: `w1` +10, `w2` −4 on G, and the 6 it made declared by `w9`.
@@ -86,7 +86,7 @@ fn carry(k: &mut Court, f: TierFold, by: &SigningKey) -> Uplinked {
     };
     let mut prefix = [7u8; 32];
     prefix[..8].copy_from_slice(&k.chain.head_height().to_be_bytes());
-    let carrier = TierFold { tier: vk(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
+    let carrier = TierFold { tier: verifying(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
     k.admit_uplink(&carrier.sign(&reserve()))
 }
 
@@ -178,9 +178,9 @@ fn admit_uplink_refuses_unproved_child_by_name() {
     let lost = part(&child, &nowhere, child.rows.clone(), child.declared.clone(), 1, 1);
     assert_eq!(carry(&mut k, parent(lost), &p), Uplinked::ChildRefused { index: 0, why: ChildRefusal::NotOnLine });
     let (other, x) = (key(5), key(30));
-    let genesis = DomainGenesis { domain: vk(&other), tiers: vec![vk(&x)] };
+    let genesis = DomainGenesis { domain: verifying(&other), tiers: vec![verifying(&x)] };
     assert!(matches!(k.admit_domain(&genesis.sign(&other)), Founded::Sealed { .. }));
-    let reservation = Reservation { domain: vk(&other), tier: vk(&x), nonce: [0; 32] };
+    let reservation = Reservation { domain: verifying(&other), tier: verifying(&x), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&reservation.sign(&other)), Founded::Reserved { .. }));
     let foreign = fold(&x, 1, child.rows.clone(), child.declared.clone(), Vec::new());
     let Uplinked::Admitted { at: there, .. } = k.admit_uplink(&foreign.clone().sign(&x)) else { panic!("its own reserve's") };
@@ -224,7 +224,7 @@ fn admit_uplink_seals_unclosed_rate_cycle_provisional() {
         let Uplinked::Chained { at: r_at, provisional: sealed_provisional, obstructions, .. } = reply else { panic!("{reply:?}") };
         assert_eq!((sealed_provisional, obstructions), (provisional, u32::from(provisional)), "rate {rate}");
         // As served: the open arbitrages of the domain.
-        let open = k.open_obstructions(&vk(&key(4)));
+        let open = k.open_obstructions(&verifying(&key(4)));
         match provisional {
             false => assert!(open.is_empty()),
             true => {
@@ -255,7 +255,7 @@ fn admit_uplink_reads_rate_moving_between_epochs_as_final() {
         let reply = carry(&mut k, parent, &p);
         assert!(matches!(reply, Uplinked::Chained { provisional: false, obstructions: 0, .. }), "rate {rate}: {reply:?}");
     }
-    assert!(k.open_obstructions(&vk(&key(4))).is_empty(), "nothing docketed");
+    assert!(k.open_obstructions(&verifying(&key(4))).is_empty(), "nothing docketed");
 }
 
 /// 78.138 — A LINE CARRYING A LINE, NEVER FLATTENED: `P`'s fold carries
@@ -279,15 +279,15 @@ fn admit_uplink_carries_nested_line_in_one_receipt() {
     let parent = fold(&p, 2, vec![(who(1), g(12))], Vec::new(), vec![inner]);
     let Uplinked::Chained { at, open_remainders: 1, .. } = carry(&mut k, parent, &p) else { panic!("one receipt") };
     let (a_at, p_at) = (FoldAt { stamp: at, path: vec![0, 0] }, FoldAt { stamp: at, path: vec![0] });
-    assert_eq!(k.ledgers.records.get(&a_at.key()).map(|r| r.tier), Some(vk(&a)), "A inside P inside the reserve's receipt");
-    assert_eq!(k.ledgers.records.get(&p_at.key()).map(|r| r.tier), Some(vk(&p)));
-    assert_eq!(k.line_head(&vk(&a)), (child.prefix, Some(a_at)), "A's line advanced, never touching the court");
+    assert_eq!(k.ledgers.records.get(&a_at.key()).map(|r| r.tier), Some(verifying(&a)), "A inside P inside the reserve's receipt");
+    assert_eq!(k.ledgers.records.get(&p_at.key()).map(|r| r.tier), Some(verifying(&p)));
+    assert_eq!(k.line_head(&verifying(&a)), (child.prefix, Some(a_at)), "A's line advanced, never touching the court");
     let empty_span = fold(&p, 2, Vec::new(), Vec::new(), Vec::new());
     assert_eq!(carry(&mut k, empty_span, &p), Uplinked::ChildRefused { index: 0, why: ChildRefusal::Repeated }, "a span over its own head");
     let unbonded = key(31);
     let forged = fold(&q, 9, Vec::new(), Vec::new(), Vec::new()).sign(&unbonded);
     let carried = ChildNet { rows: Vec::new(), declared: Vec::new(), child: Child::Carried(Box::new(forged)), included_rows: Vec::new(), included_declared: Vec::new(), rate: [(1, 1); 4] };
-    let carrier = TierFold { tier: vk(&reserve()), prefix: [8; 32], rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
+    let carrier = TierFold { tier: verifying(&reserve()), prefix: [8; 32], rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
     assert_eq!(k.admit_uplink(&carrier.sign(&reserve())), Uplinked::ChildRefused { index: 0, why: ChildRefusal::Unsigned });
 }
 
@@ -295,7 +295,7 @@ fn admit_uplink_carries_nested_line_in_one_receipt() {
 fn co_sign(name: &str, root_hash: [u8; 32]) -> crate::anastome::dialogue::ReceiptSection {
     use crate::chronometry::{ActKind, ReceiptChain};
     let key = super::common::court_key(name);
-    let mut c = ReceiptChain::with_vk(key.vk_bytes());
+    let mut c = ReceiptChain::with_signer(key.verifying_bytes());
     let head = c.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
     let prefix = crate::court::admission::SignedPrefix {
         genesis: [7; 32],

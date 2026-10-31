@@ -37,7 +37,7 @@ fn same(file: &[u8], c: &ReceiptChain) {
 /// step is the chain.
 #[test]
 fn line_write_appends_in_order_and_reads_back_as_chain() {
-    let mut c = ReceiptChain::with_vk([1; 32]);
+    let mut c = ReceiptChain::with_signer([1; 32]);
     let mut file = Vec::new();
     step(&mut c, Vec::new());
     let first = c.line_write().expect("writes").expect("the first write");
@@ -47,7 +47,7 @@ fn line_write_appends_in_order_and_reads_back_as_chain() {
     assert_eq!(c.line_write(), Ok(None), "nothing moved, nothing written");
 
     // A peer's line, admitted.
-    let mut e = ReceiptChain::with_vk([4; 32]);
+    let mut e = ReceiptChain::with_signer([4; 32]);
     let e0 = step(&mut e, Vec::new());
     let e1 = step(&mut e, Vec::new());
     for _ in 0..4 {
@@ -70,7 +70,7 @@ fn line_write_appends_in_order_and_reads_back_as_chain() {
     // The peer's fold sheds its line here: what left is named.
     let eshut = close(&mut e);
     let (_, root) = e.fold_before(eshut.stamp.place()).expect("the peer folds");
-    let cites = vec![Cite::Root { at: Stamp::new(root.height, e.vk(), root.at), hash: root.hash }];
+    let cites = vec![Cite::Root { at: Stamp::new(root.height, e.signer(), root.at), hash: root.hash }];
     let efold = e.append(ActKind::Fold, [0; 4], cites, [9; 32], Vec::new()).expect("the fold node").clone();
     for _ in 0..4 {
         step(&mut c, Vec::new());
@@ -89,7 +89,7 @@ fn line_write_appends_in_order_and_reads_back_as_chain() {
 /// is the whole.
 #[test]
 fn line_write_is_whole_once_left_nodes_reach_standing() {
-    let mut c = ReceiptChain::with_vk([1; 32]);
+    let mut c = ReceiptChain::with_signer([1; 32]);
     let mut file = Vec::new();
     for _ in 0..6 {
         step(&mut c, Vec::new());
@@ -109,7 +109,7 @@ fn line_write_is_whole_once_left_nodes_reach_standing() {
 /// frames before it, says so, and its next write is the whole.
 #[test]
 fn from_line_names_torn_last_frame_and_keeps_earlier_frames() {
-    let mut c = ReceiptChain::with_vk([1; 32]);
+    let mut c = ReceiptChain::with_signer([1; 32]);
     let mut file = Vec::new();
     step(&mut c, Vec::new());
     land(&mut file, c.line_write().expect("writes").expect("the first write"));

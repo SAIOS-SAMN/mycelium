@@ -35,7 +35,7 @@ pub fn push_cites(out: &mut Vec<u8>, cites: &[CiteWire]) -> Option<()> {
     let mut framed = Vec::new();
     crate::transducer::address::put_u32_count(&mut framed, cites.len())?;
     for c in cites {
-        crate::transducer::address::put_addr(&mut framed, &c.addr)?;
+        crate::transducer::address::put_address(&mut framed, &c.addr)?;
         framed.push(c.standing);
         c.transport.to_bytes(&mut framed);
         push_chain(&mut framed, &c.body)?;
@@ -52,7 +52,7 @@ pub fn read_cites(b: &[u8], p: &mut usize) -> Option<Vec<CiteWire>> {
     }
     let mut out = Vec::with_capacity(n);
     for _ in 0..n {
-        let addr = crate::transducer::address::take_addr(b, p)?;
+        let addr = crate::transducer::address::take_address(b, p)?;
         let standing = *b.get(*p)?;
         *p += 1;
         let g = crate::transducer::element::Versor::from_bytes(b, p)?;

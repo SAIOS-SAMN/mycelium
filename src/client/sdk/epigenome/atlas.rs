@@ -11,16 +11,16 @@ impl Epigenome {
     /// THE HELD WORD AT AN ADDRESS. Under Z11 the index says whether the
     /// genome HOLDS a word (`holds`) and this says whether it is decoded
     /// and here; today every held word is resident, so the two agree.
-    pub(crate) fn word_at(&self, addr: &[u8]) -> Option<&Held> {
-        self.resident.get(addr).map(|w| &w.held)
+    pub(crate) fn word_at(&self, address: &[u8]) -> Option<&Held> {
+        self.resident.get(address).map(|w| &w.held)
     }
 
     /// WHETHER THE GENOME HOLDS A WORD, asked of the INDEX — which is the
     /// question, and which stays true under Z11 whether or not the word is
     /// decoded. Every reader that means "does this mind know it" asks
     /// here; a reader that means "can the mind read its form now" asks `word_at`.
-    pub(crate) fn holds(&self, addr: &[u8]) -> bool {
-        self.genome.contains(addr)
+    pub(crate) fn holds(&self, address: &[u8]) -> bool {
+        self.genome.contains(address)
     }
 
     /// Working-atlas root: concatenated A21 stratum roots of genome ∪ dialect.
@@ -82,34 +82,34 @@ impl Epigenome {
     /// only because the cited form is closed, and `Form::glue` refuses an
     /// unclosed one.
     pub(crate) fn moduli_admit(&mut self, e: &Held) {
-        let addr = e.address();
+        let address = e.address();
         for chart in body_charts_of(e) {
-            self.by_moduli.nested_insert(chart.key(), &addr, ());
+            self.by_moduli.nested_insert(chart.key(), &address, ());
         }
         for (key, vertex) in act_keys_of(e) {
-            let at = crate::transducer::sentence::generator_key(&addr, &vertex);
-            self.by_act.nested_insert(key, at, (addr.clone(), vertex));
+            let at = crate::transducer::sentence::generator_key(&address, &vertex);
+            self.by_act.nested_insert(key, at, (address.clone(), vertex));
         }        // 1.8: the form's word vertices are the generators it contributes
         // to this mind's presentation.
         if let Some(f) = e.form().cloned() {
-            crate::transducer::sentence::admit_generators(&mut self.generators, &addr, &f);
-            crate::transducer::sentence::admit_generators_by_lane(&mut self.lanes, &addr, &f);
+            crate::transducer::sentence::admit_generators(&mut self.generators, &address, &f);
+            crate::transducer::sentence::admit_generators_by_lane(&mut self.lanes, &address, &f);
         }
     }
 
     /// Empty what `moduli_admit` filled: a word that sheds, is retired, or
     /// is promoted leaves the index with the stratum it left.
     pub(crate) fn moduli_retract(&mut self, e: &Held) {
-        let addr = e.address();
+        let address = e.address();
         for chart in body_charts_of(e) {
             if let Some(bucket) = self.by_moduli.get_mut(chart.key().as_bytes()) {
-                bucket.remove(&addr);
+                bucket.remove(&address);
             }
         }
         for (key, vertex) in act_keys_of(e) {
             let empty = match self.by_act.get_mut(&key) {
                 Some(bucket) => {
-                    bucket.remove(&crate::transducer::sentence::generator_key(&addr, &vertex));
+                    bucket.remove(&crate::transducer::sentence::generator_key(&address, &vertex));
                     bucket.is_empty()
                 }
                 None => false,
@@ -119,19 +119,19 @@ impl Epigenome {
             }
         }
         if let Some(f) = e.form() {
-            crate::transducer::sentence::retract_generators(&mut self.generators, &addr, f);
-            crate::transducer::sentence::retract_generators_by_lane(&mut self.lanes, &addr, f);
+            crate::transducer::sentence::retract_generators(&mut self.generators, &address, f);
+            crate::transducer::sentence::retract_generators_by_lane(&mut self.lanes, &address, f);
         }
     }
 
     /// The standing of a held address, read in the strata's own order
     /// (24.1): Ruled, then Stood. A word this epigenome does not hold has
     /// no standing here.
-    pub(crate) fn standing_of(&self, addr: &[u8]) -> Option<Standing> {
-        if self.genome.contains(addr) {
+    pub(crate) fn standing_of(&self, address: &[u8]) -> Option<Standing> {
+        if self.genome.contains(address) {
             return Some(Standing::Ruled);
         }
-        if self.dialect.contains(addr) {
+        if self.dialect.contains(address) {
             return Some(Standing::Stood);
         }
         None
@@ -256,9 +256,9 @@ impl Epigenome {
 
     /// A word on the working language: genome first, then dialect. Both
     /// strata hold a `Held`, so the form is read and never decoded here.
-    pub fn working_word(&self, addr: &[u8]) -> Option<&Held> {
-        self.word_at(addr)
-            .or_else(|| self.dialect.get(addr).map(|d| &d.sentence))
+    pub fn working_word(&self, address: &[u8]) -> Option<&Held> {
+        self.word_at(address)
+            .or_else(|| self.dialect.get(address).map(|d| &d.sentence))
     }
 
     /// THE ADDRESSES STANDING ON ONE CHART (21 step 3) — the stratum, as
@@ -330,12 +330,12 @@ impl Epigenome {
     /// agreeing on an address and not on a vertex is the case it exists
     /// for. A caller then took a held word for the one it was holding.
     pub(crate) fn same_vertex_in_dialect(&self, e: &Element) -> Option<Vec<u8>> {
-        let addr = e.address();
-        let d = self.dialect.get(addr.as_bytes())?;
+        let address = e.address();
+        let d = self.dialect.get(address.as_bytes())?;
         if !d.sentence.same_vertex(e) {
             return None;
         }
-        Some(addr.into_vec())
+        Some(address.into_vec())
     }
 
     /// The genome slot at this form's address, WHEN IT IS THIS VERTEX.
@@ -343,11 +343,11 @@ impl Epigenome {
     /// carrier: a slot that names a word the genome has since moved is not
     /// a smaller answer, it is no answer (rule 11).
     pub(crate) fn same_vertex_in_genome(&self, e: &Element) -> Option<Vec<u8>> {
-        let addr = e.address();
-        if !self.resident.get(addr.as_bytes()).is_some_and(|w| w.held.same_vertex(e)) {
+        let address = e.address();
+        if !self.resident.get(address.as_bytes()).is_some_and(|w| w.held.same_vertex(e)) {
             return None;
         }
-        Some(addr.into_vec())
+        Some(address.into_vec())
     }
 
     /// Deconstruct a chain over the working language: genome and dialect,

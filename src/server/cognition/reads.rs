@@ -97,7 +97,7 @@ impl Court {
                 None => [0; 7],
             },
         };
-        let own = self.chain.vk();
+        let own = self.chain.signer();
         let at = i64::try_from(head[0]).ok();
         let peers = self
             .chain
@@ -217,8 +217,8 @@ impl Court {
         self.court_demands_listed
     }
 
-    pub fn offered(&self, addr: &[u8]) -> bool {
-        self.in_flight(addr)
+    pub fn offered(&self, address: &[u8]) -> bool {
+        self.in_flight(address)
     }
 
     pub fn dialect_len(&self) -> usize {

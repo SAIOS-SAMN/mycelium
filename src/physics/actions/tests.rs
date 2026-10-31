@@ -48,7 +48,7 @@ fn sealed_excludes_observations_and_transitions_answer_every_law() {
             }
         }
     }
-    let mut chain = crate::chronometry::ReceiptChain::with_vk([3; 32]);
+    let mut chain = crate::chronometry::ReceiptChain::with_signer([3; 32]);
     let op = [0u8; 32];
     assert!(chain.append(Action::Why, [0; 4], Vec::new(), op, Vec::new()).is_none(), "an observation writes no node");
     assert!(chain.append(Action::Speech, [0; 4], Vec::new(), op, Vec::new()).is_none(), "a request is not its sealed outcome");

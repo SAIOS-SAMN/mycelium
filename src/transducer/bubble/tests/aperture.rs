@@ -270,7 +270,7 @@ fn sections_keys_opposite_sign_carriages_as_one() {
 fn pivot_on_collapses_vortex_and_adjoins_symmetry() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
     use crate::transducer::sentence::{
-        Axis, ClassVector, Form, Mu, PivotBy, PivotCertificate, RankMove, Side, Vertex,
+        Axis, ClassVector, Form, MeasuredMu, PivotBy, PivotCertificate, RankMove, Side, Vertex,
     };
     use crate::transducer::stalk::Invariant;
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane");
@@ -314,7 +314,7 @@ fn pivot_on_collapses_vortex_and_adjoins_symmetry() {
         before: before.clone(),
         after: after.clone(),
         rank_move: RankMove::Equal,
-        mu: Mu::Unmeasured,
+        mu: MeasuredMu::Unmeasured,
         by: PivotBy::Word { face: face.clone(), word: Box::new(w.clone()), side: Side::Right },
     };
     let mut vortex = crate::network::nerve::Keyed::new();

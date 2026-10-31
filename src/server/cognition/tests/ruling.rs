@@ -33,7 +33,7 @@ fn docketed(own_vk: [u8; 32]) -> (Court, crate::transducer::address::Address) {
 fn admit_line_applies_peer_ruling_through_receipt() {
     use crate::anastome::dialogue::RULING_UPHELD;
     let key = super::common::court_key("ruler");
-    let (mut a, addr) = docketed(key.vk_bytes());
+    let (mut a, addr) = docketed(key.verifying_bytes());
     let at = a.admitted_at(addr.as_bytes()).expect("the docket admitted it at an act");
     let word = a.provisional.get(addr.as_bytes()).cloned().expect("provisional");
     assert!(a.apply_verdict(addr.as_bytes(), RULING_UPHELD), "a upholds it");
@@ -86,7 +86,7 @@ fn admit_line_applies_peer_ruling_through_receipt() {
 fn admit_line_aliases_peer_stamp_to_one_word() {
     use crate::anastome::dialogue::RULING_UPHELD;
     let key = super::common::court_key("aliased ruler");
-    let (mut a, addr) = docketed(key.vk_bytes());
+    let (mut a, addr) = docketed(key.verifying_bytes());
     let a_stamp = a.admitted_at(addr.as_bytes()).expect("a admitted it");
     let (mut c, same) = docketed([0xc1; 32]);
     assert_eq!(addr, same, "one word, spoken alike at both courts");
@@ -128,7 +128,7 @@ fn admit_line_files_no_alias_on_shared_fibre() {
     }
     assert_eq!(c.fibre_read(&chart, &None).len(), 2, "two words on the fibre");
     let key = super::common::court_key("ambiguous peer");
-    let mut peer = ReceiptChain::with_vk(key.vk_bytes());
+    let mut peer = ReceiptChain::with_signer(key.verifying_bytes());
     let at = peer.next_stamp(&[]).expect("its first stamp");
     let cite = Cite::Word { chart: chart.clone(), class: None, at };
     peer.append(ActKind::List, [0; 4], vec![cite], [0; 32], Vec::new()).expect("it admits by its own act");
@@ -153,7 +153,7 @@ fn admit_line_later_admission_replaces_alias() {
     Cite::Word { chart: chart.clone(), class: None, at: own_stamp }.put_canonical(&mut fibre).expect("a citation");
     c.file_fibre(&addr, own_stamp, fibre);
     let key = super::common::court_key("twice-admitting peer");
-    let mut peer = ReceiptChain::with_vk(key.vk_bytes());
+    let mut peer = ReceiptChain::with_signer(key.verifying_bytes());
     let mut stamps = Vec::new();
     for _ in 0..2 {
         let at = peer.next_stamp(&[]).expect("its next stamp");

@@ -35,7 +35,7 @@ fn decode_receipt_section_reads_past_cover_digest() {
     let ring = keepers.own_ring();
     assert_eq!(ring.len(), 2);
 
-    let mut chain = crate::chronometry::ReceiptChain::with_vk(vk);
+    let mut chain = crate::chronometry::ReceiptChain::with_signer(vk);
     let head = chain.append(crate::chronometry::ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
     let prefix = crate::court::admission::SignedPrefix {
         genesis: [8; 32],
@@ -197,7 +197,7 @@ fn encode_cover_page_resumes_from_last_cursor() {
 /// chart frames and reads back.
 #[test]
 fn encode_receipt_section_refuses_prefix_past_wire() {
-    let mut chain = crate::chronometry::ReceiptChain::with_vk([6u8; 32]);
+    let mut chain = crate::chronometry::ReceiptChain::with_signer([6u8; 32]);
     let head = chain.append(crate::chronometry::ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
     let prefix = |chart: Vec<u8>| crate::court::admission::SignedPrefix {
         genesis: [8; 32],

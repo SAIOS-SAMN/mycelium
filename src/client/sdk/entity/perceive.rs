@@ -718,7 +718,7 @@ impl Mind {
         // 78.55, the language's closure under its colour words.
         if let Some(word) = p.colour {
             let addr = word.address();
-            if !self.already_taught_addr(addr.as_bytes()) && !self.epigenome.holds(addr.as_bytes()) {
+            if !self.already_taught_address(addr.as_bytes()) && !self.epigenome.holds(addr.as_bytes()) {
                 self.speak_with(std::slice::from_ref(&word), &train, &id, |_, _| {});
             }
         }
@@ -744,7 +744,7 @@ impl Mind {
         self.note_task(&id, reading, |t| t.perspectives = p.perspectives);
         let scene = Scene { id, train, tests, reading };
         match p.known {
-            Some((rule, Some(outputs))) if reading != Reading::Feed || !scene.tests.is_empty() => match self.mint_solve(&rule, &scene.train) {
+            Some((rule, Some(outputs))) if reading != Reading::Feed || !scene.tests.is_empty() => match self.construct_solve(&rule, &scene.train) {
                 Some(minted) => self.judge_solve(Judge { scene, outputs, rule: minted }),
                 None => {
                     self.stopped(&scene.id, reading, Stop::Unminted);

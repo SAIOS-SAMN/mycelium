@@ -16,7 +16,7 @@ fn derive_interior_transfers_to_larger_scene() {
     let scene = block();
     let t = derive(&[(1, 1)], &scene).expect("derivable");
     assert_eq!(t.eval(&scene), vec![(1, 1)], "exact on its own evidence");
-    assert!(matches!(t, Sel::Minus(_, _)), "the interior DERIVES as K ∖ δK: {t:?}");
+    assert!(matches!(t, Selection::Minus(_, _)), "the interior DERIVES as K ∖ δK: {t:?}");
     // Transfer: a 5×5 block of the same hue — the SAME TERM selects the
     // new interior with no re-derivation (selection is language).
     let big: Vec<(i64, i64, u8)> =
@@ -34,7 +34,7 @@ fn derive_coboundary_as_delta() {
         scene.iter().map(|(r, c, _)| (*r, *c)).filter(|&(r, c)| !(r == 1 && c == 1)).collect();
     let t = derive(&ring, &scene).expect("derivable");
     assert_eq!(t.eval(&scene).len(), 8);
-    assert!(matches!(t, Sel::Delta(_)), "δK, derived: {t:?}");
+    assert!(matches!(t, Selection::Delta(_)), "δK, derived: {t:?}");
 }
 
 /// The hue-interface TERM K_h ∩ star(K_o) — the relative frontier composed
@@ -44,7 +44,7 @@ fn derive_coboundary_as_delta() {
 /// disambiguates in the pipeline.)
 #[test]
 fn eval_hue_interface_transfers() {
-    let t = Sel::Inter(Box::new(Sel::Hue(1)), Box::new(Sel::Star(Box::new(Sel::Hue(2)))));
+    let t = Selection::Inter(Box::new(Selection::Hue(1)), Box::new(Selection::Star(Box::new(Selection::Hue(2)))));
     let scene = vec![(0, 0, 1u8), (0, 1, 1), (0, 2, 2), (0, 3, 2)];
     assert_eq!(t.eval(&scene), vec![(0, 1)], "the hue-1 site touching hue 2");
     let moved = vec![(5, 5, 1u8), (6, 5, 1), (7, 5, 2)];
@@ -57,23 +57,23 @@ fn eval_hue_interface_transfers() {
 /// Serde round-trips every operator exactly; hostile bytes refuse cleanly.
 #[test]
 fn from_bytes_round_trips_and_refuses_hostile_bytes() {
-    let t = Sel::Minus(
-        Box::new(Sel::ArgExt(Box::new(Sel::Hue(3)), 0)),
-        Box::new(Sel::Flood(
-            Box::new(Sel::Inter(Box::new(Sel::Hue(0)), Box::new(Sel::Delta(Box::new(Sel::Hue(255)))))),
-            Box::new(Sel::Transport(Box::new(Sel::Hue(0)), Box::new(Sel::Star(Box::new(Sel::Ext(Box::new(Sel::Comp(Box::new(Sel::Hue(1)), 2)), 3)))))),
+    let t = Selection::Minus(
+        Box::new(Selection::ArgExt(Box::new(Selection::Hue(3)), 0)),
+        Box::new(Selection::Flood(
+            Box::new(Selection::Inter(Box::new(Selection::Hue(0)), Box::new(Selection::Delta(Box::new(Selection::Hue(255)))))),
+            Box::new(Selection::Transport(Box::new(Selection::Hue(0)), Box::new(Selection::Star(Box::new(Selection::Ext(Box::new(Selection::Comp(Box::new(Selection::Hue(1)), 2)), 3)))))),
         )),
     );
     let mut buf = Vec::new();
     t.to_bytes(&mut buf);
     let mut pos = 0;
-    assert_eq!(Sel::from_bytes(&buf, &mut pos), Some(t), "every operator survives the wire");
+    assert_eq!(Selection::from_bytes(&buf, &mut pos), Some(t), "every operator survives the wire");
     assert_eq!(pos, buf.len(), "the parse consumes exactly the term");
     // Hostile: unknown opcode, truncation, and a depth bomb all refuse.
-    assert_eq!(Sel::from_bytes(&[200], &mut 0), None);
-    assert_eq!(Sel::from_bytes(&buf[..buf.len() - 1], &mut 0), None);
+    assert_eq!(Selection::from_bytes(&[200], &mut 0), None);
+    assert_eq!(Selection::from_bytes(&buf[..buf.len() - 1], &mut 0), None);
     let bomb = vec![2u8; 64]; // Delta(Delta(Delta(... unterminated
-    assert_eq!(Sel::from_bytes(&bomb, &mut 0), None, "depth cap holds");
+    assert_eq!(Selection::from_bytes(&bomb, &mut 0), None, "depth cap holds");
 }
 
 /// The LARGEST component selects by order invariant — uniquely, with ties
@@ -81,9 +81,9 @@ fn from_bytes_round_trips_and_refuses_hostile_bytes() {
 #[test]
 fn eval_arg_ext_selects_unique_extremum() {
     let scene = vec![(0, 0, 3u8), (0, 1, 3), (0, 2, 3), (5, 5, 3)];
-    let t = Sel::ArgExt(Box::new(Sel::Hue(3)), 0);
+    let t = Selection::ArgExt(Box::new(Selection::Hue(3)), 0);
     assert_eq!(t.eval(&scene), vec![(0, 0), (0, 1), (0, 2)], "the three-site body wins");
-    let small = Sel::ArgExt(Box::new(Sel::Hue(3)), 1);
+    let small = Selection::ArgExt(Box::new(Selection::Hue(3)), 1);
     assert_eq!(small.eval(&scene), vec![(5, 5)], "the isolated site is the argmin");
     let moved = vec![(9, 9, 3u8), (2, 0, 3), (2, 1, 3)];
     assert_eq!(t.eval(&moved), vec![(2, 0), (2, 1)], "the same term, the new largest");

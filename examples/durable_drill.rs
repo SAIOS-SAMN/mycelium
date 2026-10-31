@@ -23,8 +23,8 @@ fn keys(i: u64) -> (ed25519_dalek::SigningKey, ed25519_dalek::SigningKey) {
     (ed25519_dalek::SigningKey::from_bytes(&d), ed25519_dalek::SigningKey::from_bytes(&t))
 }
 
-fn act(addr: &str, i: u64) -> ExitCode {
-    let s = Session::open(addr, Voice::from_voice([9; 32]));
+fn act(endpoint: &str, i: u64) -> ExitCode {
+    let s = Session::open(endpoint, Voice::from_voice([9; 32]));
     let (domain, tier) = keys(i);
     let (dv, tv) = (domain.verifying_key().to_bytes(), tier.verifying_key().to_bytes());
     let genesis = DomainGenesis { domain: dv, tiers: vec![tv] }.sign(&domain);
@@ -51,8 +51,8 @@ fn act(addr: &str, i: u64) -> ExitCode {
 /// The home grown to a court's size before the drill: `domains` founded with
 /// `tiers` tier keys each (32 bytes a key), from a seed space no drill
 /// domain uses.
-fn prefill(addr: &str, domains: u64, tiers: u64) -> ExitCode {
-    let s = Session::open(addr, Voice::from_voice([9; 32]));
+fn prefill(endpoint: &str, domains: u64, tiers: u64) -> ExitCode {
+    let s = Session::open(endpoint, Voice::from_voice([9; 32]));
     for d in 0..domains {
         let mut seed = [5u8; 32];
         seed[..8].copy_from_slice(&d.to_le_bytes());
@@ -76,8 +76,8 @@ fn prefill(addr: &str, domains: u64, tiers: u64) -> ExitCode {
     ExitCode::SUCCESS
 }
 
-fn check(addr: &str, n: u64) -> ExitCode {
-    let s = Session::open(addr, Voice::from_voice([9; 32]));
+fn check(endpoint: &str, n: u64) -> ExitCode {
+    let s = Session::open(endpoint, Voice::from_voice([9; 32]));
     let mut lost = 0u64;
     for i in 0..n {
         let (domain, tier) = keys(i);
@@ -98,10 +98,10 @@ fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().collect();
     let number = |k: usize| args.get(k).and_then(|a| a.parse::<u64>().ok());
     match (args.get(1).map(String::as_str), args.get(2), number(3)) {
-        (Some("act"), Some(addr), Some(i)) => act(addr, i),
-        (Some("check"), Some(addr), Some(n)) => check(addr, n),
-        (Some("prefill"), Some(addr), Some(d)) => match number(4) {
-            Some(t) => prefill(addr, d, t),
+        (Some("act"), Some(endpoint), Some(i)) => act(endpoint, i),
+        (Some("check"), Some(endpoint), Some(n)) => check(endpoint, n),
+        (Some("prefill"), Some(endpoint), Some(d)) => match number(4) {
+            Some(t) => prefill(endpoint, d, t),
             None => ExitCode::FAILURE,
         },
         _ => {

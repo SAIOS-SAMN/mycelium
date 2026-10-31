@@ -4,7 +4,7 @@
 
 use crate::anastome::dialogue::ReceiptsAnswer;
 use crate::cognition::*;
-use crate::observe::rep;
+use crate::observe::replication;
 
 /// The origin every fixture frame is signed at.
 const ORIGIN: crate::server::backfill::Origin = Some(([7; 32], 2));
@@ -54,8 +54,8 @@ fn act(b: &mut crate::chronometry::ReceiptChain, n: u64) {
 #[test]
 fn hear_cites_head_once_gap_closes() {
     let key = super::common::court_key("backfill-b");
-    let vk = key.vk_bytes();
-    let mut b = crate::chronometry::ReceiptChain::with_vk(vk);
+    let vk = key.verifying_bytes();
+    let mut b = crate::chronometry::ReceiptChain::with_signer(vk);
     // c has acted on its own line, as a running court has: its height is
     // then `1 + max(prev, parents)` (45.2).
     let mut c0 = Court::new();
@@ -69,12 +69,12 @@ fn hear_cites_head_once_gap_closes() {
     for _ in 0..4 {
         act(&mut b, rate);
         let (head, pre) = head_of(&b);
-        let fetch = |who: &[u8; 32],
+        let fetch = |signer: &[u8; 32],
                      after: Option<crate::chronometry::Place>,
                      upto: crate::chronometry::Place,
                      _: crate::server::backfill::Ask|
          -> Option<ReceiptsAnswer> {
-            (*who == vk).then(|| ReceiptsAnswer::Page(b.line_between(who, after, upto, usize::try_from(PAGE).expect("PAGE is the constant 8"))))
+            (*signer == vk).then(|| ReceiptsAnswer::Page(b.line_between(signer, after, upto, usize::try_from(PAGE).expect("PAGE is the constant 8"))))
         };
         let heard: Result<_, ()> = crate::server::backfill::hear(
             &c,
@@ -86,19 +86,19 @@ fn hear_cites_head_once_gap_closes() {
         let _ = heard;
         let r = crate::observe::replication();
         let axes = r.signers.iter().find(|(s, _)| *s == vk).map(|(_, a)| *a).expect("b is heard");
-        lags.push(axes[rep::LAG]);
+        lags.push(axes[replication::LAG]);
     }
     let r = crate::observe::replication();
     let axes = r.signers.iter().find(|(s, _)| *s == vk).map(|(_, a)| *a).expect("b is heard");
     eprintln!(
         "chase on b: gap reported {} reached {} budget {} parent after {} lag by exchange {lags:?}",
-        axes[rep::GAP],
-        axes[rep::BACKFILL_REACHED],
-        axes[rep::BACKFILL_BUDGET],
-        axes[rep::PARENT_AFTER_BACKFILL]
+        axes[replication::GAP],
+        axes[replication::BACKFILL_REACHED],
+        axes[replication::BACKFILL_BUDGET],
+        axes[replication::PARENT_AFTER_BACKFILL]
     );
-    assert!(axes[rep::BACKFILL_REACHED] > 0, "a pass reaches the reported K − 1");
-    assert!(axes[rep::PARENT_AFTER_BACKFILL] > 0, "and the head is cited as a parent (45.2)");
+    assert!(axes[replication::BACKFILL_REACHED] > 0, "a pass reaches the reported K − 1");
+    assert!(axes[replication::PARENT_AFTER_BACKFILL] > 0, "and the head is cited as a parent (45.2)");
     assert!(lags.windows(2).all(|w| w[1] <= w[0]), "and the lag does not grow: {lags:?}");
     // 45.2: the parent is what advances c's height. c's next act cites b's
     // head and stands above it.
@@ -118,12 +118,12 @@ fn hear_cites_head_once_gap_closes() {
 #[test]
 fn hear_fetches_cited_signer_then_cites_head() {
     let key = super::common::court_key("backfill-cites-b");
-    let vk = key.vk_bytes();
-    let dvk = super::common::court_key("backfill-cites-d").vk_bytes();
-    let mut d = crate::chronometry::ReceiptChain::with_vk(dvk);
+    let vk = key.verifying_bytes();
+    let dvk = super::common::court_key("backfill-cites-d").verifying_bytes();
+    let mut d = crate::chronometry::ReceiptChain::with_signer(dvk);
     act(&mut d, 2);
     let dh = d.head().expect("d has acted").clone();
-    let mut b = crate::chronometry::ReceiptChain::with_vk(vk);
+    let mut b = crate::chronometry::ReceiptChain::with_signer(vk);
     act(&mut b, 1);
     // b holds d's line, as a court holds what it heard, and cites its head.
     for r in d.line_between(&dvk, None, dh.stamp.place(), 64) {
@@ -141,13 +141,13 @@ fn hear_fetches_cited_signer_then_cites_head() {
     let mut c0 = Court::new();
     c0.append_step(crate::chronometry::ActKind::Attest, [0xAA; 40], [1; 32]);
     let c = std::sync::Mutex::new(c0);
-    let fetch = |who: &[u8; 32], after: Option<crate::chronometry::Place>, upto: crate::chronometry::Place, _| {
+    let fetch = |signer: &[u8; 32], after: Option<crate::chronometry::Place>, upto: crate::chronometry::Place, _| {
         let line = match () {
-            _ if *who == vk => &b,
-            _ if *who == dvk => &d,
+            _ if *signer == vk => &b,
+            _ if *signer == dvk => &d,
             _ => return None,
         };
-        Some(ReceiptsAnswer::Page(line.line_between(who, after, upto, 64)))
+        Some(ReceiptsAnswer::Page(line.line_between(signer, after, upto, 64)))
     };
     let heard: Result<_, ()> = crate::server::backfill::hear(
         &c,
@@ -171,12 +171,12 @@ fn hear_fetches_cited_signer_then_cites_head() {
 #[test]
 fn admit_backfill_counts_missing_parent_under_cited_signer() {
     use crate::chronometry::{ActKind, Parent, ReceiptChain};
-    let vk = super::common::court_key("missing-parent-b").vk_bytes();
-    let dvk = super::common::court_key("missing-parent-d").vk_bytes();
-    let mut d = ReceiptChain::with_vk(dvk);
+    let vk = super::common::court_key("missing-parent-b").verifying_bytes();
+    let dvk = super::common::court_key("missing-parent-d").verifying_bytes();
+    let mut d = ReceiptChain::with_signer(dvk);
     act(&mut d, 3);
     let dh = d.head().expect("d has acted").clone();
-    let mut b = ReceiptChain::with_vk(vk);
+    let mut b = ReceiptChain::with_signer(vk);
     act(&mut b, 1);
     for r in d.line_between(&dvk, None, dh.stamp.place(), 64) {
         b.admit(r.clone());
@@ -191,9 +191,9 @@ fn admit_backfill_counts_missing_parent_under_cited_signer() {
     assert_eq!(n, page.len() - 1, "b's own acts before the citing receipt are admitted");
     let r = crate::observe::replication();
     let on_d = r.signers.iter().find(|(s, _)| *s == dvk).map(|(_, a)| *a).expect("the cited signer is read");
-    assert_eq!(on_d[rep::BACKFILL_MISSING_PARENT], 1, "the stop is counted once, under d");
-    assert_eq!(on_d[rep::BACKFILL_MISSING_UNROOTED], 1, "c holds no fold root for d: no era proof can run");
-    assert_eq!(on_d[rep::MISSING_DEPTH], dh.stamp.k + 1, "nothing of d held: the cited orbit stands K + 1 past it");
+    assert_eq!(on_d[replication::BACKFILL_MISSING_PARENT], 1, "the stop is counted once, under d");
+    assert_eq!(on_d[replication::BACKFILL_MISSING_UNROOTED], 1, "c holds no fold root for d: no era proof can run");
+    assert_eq!(on_d[replication::MISSING_DEPTH], dh.stamp.k + 1, "nothing of d held: the cited orbit stands K + 1 past it");
 }
 
 /// H2 (78.65, 78.87 R2) — A CITATION INTO A PEER'S CLOSED ERA IS PROVED BY THE
@@ -208,8 +208,8 @@ fn admit_backfill_counts_missing_parent_under_cited_signer() {
 #[test]
 fn hear_proves_citation_into_closed_era() {
     use crate::chronometry::{ActKind, Cite, Parent, ReceiptChain, Stamp};
-    let evk = super::common::court_key("closed-era-e").vk_bytes();
-    let mut e = ReceiptChain::with_vk(evk);
+    let evk = super::common::court_key("closed-era-e").verifying_bytes();
+    let mut e = ReceiptChain::with_signer(evk);
     act(&mut e, 1);
     let shut = e.head().expect("e closed its orbit");
     // e's line as it stood before the fold: what its era archives and serves.
@@ -230,17 +230,17 @@ fn hear_proves_citation_into_closed_era() {
     let c = std::sync::Mutex::new(c0);
     // d's head cites e's first receipt, inside the closed era.
     let dkey = super::common::court_key("closed-era-d");
-    let dvk = dkey.vk_bytes();
-    let mut d = ReceiptChain::with_vk(dvk);
+    let dvk = dkey.verifying_bytes();
+    let mut d = ReceiptChain::with_signer(dvk);
     d.admit(e0.clone());
     d.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![Parent { at: e0.stamp, hash: e0.chain_hash }]).expect("d cites e0");
     let (head, pre) = head_of(&d);
-    let fetch = |who: &[u8; 32], after: Option<crate::chronometry::Place>, upto: crate::chronometry::Place, _| {
+    let fetch = |signer: &[u8; 32], after: Option<crate::chronometry::Place>, upto: crate::chronometry::Place, _| {
         match () {
-            _ if *who == evk => Some(ReceiptsAnswer::Page(
+            _ if *signer == evk => Some(ReceiptsAnswer::Page(
                 era.iter().filter(|r| after.is_none_or(|a| a < r.stamp.place()) && r.stamp.place() <= upto).cloned().collect(),
             )),
-            _ if *who == dvk => Some(ReceiptsAnswer::Page(d.line_between(who, after, upto, 64))),
+            _ if *signer == dvk => Some(ReceiptsAnswer::Page(d.line_between(signer, after, upto, 64))),
             _ => None,
         }
     };
@@ -254,5 +254,5 @@ fn hear_proves_citation_into_closed_era() {
     assert!(matches!(heard, Ok(crate::court::admission::Admitted::Parent(_))), "d's head is cited: {heard:?}");
     let r = crate::observe::replication();
     let on_e = r.signers.iter().find(|(s, _)| *s == evk).map(|(_, a)| *a).expect("e is read");
-    assert!(on_e[rep::FOLDED_PARENT] > 0 && on_e[rep::FOLDED_PROVED] > 0, "counted as a citation into a closed era, and proved");
+    assert!(on_e[replication::FOLDED_PARENT] > 0 && on_e[replication::FOLDED_PROVED] > 0, "counted as a citation into a closed era, and proved");
 }

@@ -374,7 +374,7 @@ pub fn occupied_lanes(mag: &[u64; 4]) -> Vec<u8> {
     }
 }
 
-fn addr_of(
+fn endpoint_of(
     id: &[u8; 32],
     addrs: &Keyed<String>,
     self_id: Option<(&[u8; 32], &[u64; 4], &str)>,
@@ -465,9 +465,9 @@ pub fn home(
         None => Keyed::new(),
     };
     let mut best: Option<([u8; 32], String, [u64; 4])> = None;
-    let consider = |best: &mut Option<([u8; 32], String, [u64; 4])>, id: [u8; 32], addr: String, room: [u64; 4]| {
+    let consider = |best: &mut Option<([u8; 32], String, [u64; 4])>, id: [u8; 32], endpoint: String, room: [u64; 4]| {
         match best {
-            None => *best = Some((id, addr, room)),
+            None => *best = Some((id, endpoint, room)),
             Some((bid, _, broom)) => {
                 // The room reading on the occupied lanes (16.11 step 5,
                 // `room_reading`), read rather than asked: the candidate
@@ -479,7 +479,7 @@ pub fn home(
                 let spare = |r: &[(u8, i64)]| r.iter().any(|(_, d)| *d > 0);
                 let candidate = room_reading(&room, broom, &lanes);
                 if !short(&candidate) && spare(&candidate) {
-                    *best = Some((id, addr, room));
+                    *best = Some((id, endpoint, room));
                 } else {
                     // The incumbent may not dominate either -- equal room, or
                     // each short on a lane the other is not. Neither is
@@ -487,7 +487,7 @@ pub fn home(
                     // and never as a measure.
                     let incumbent = room_reading(broom, &room, &lanes);
                     if (short(&incumbent) || !spare(&incumbent)) && xor_nearer(&near, &id, bid) {
-                        *best = Some((id, addr, room));
+                        *best = Some((id, endpoint, room));
                     }
                 }
             }
@@ -500,7 +500,7 @@ pub fn home(
         let Some(vk) = <[u8; 32]>::try_from(id.as_slice()).ok() else { continue };
         if let Some(room) = room_of(&vk) {
             if fits(&room) {
-                if let Some(a) = addr_of(&vk, addrs, self_id) {
+                if let Some(a) = endpoint_of(&vk, addrs, self_id) {
                     consider(&mut best, vk, a, room);
                 }
             }

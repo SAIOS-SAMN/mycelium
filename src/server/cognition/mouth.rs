@@ -556,7 +556,7 @@ impl Court {
     pub(crate) fn mouth_act(&mut self, h: &SignedHandoff) -> Handed {
         use HandoffRefusal as R;
         let refuse = Handed::Refused;
-        let id = h.handoff.id();
+        let id = h.handoff.citation();
         let head = self.chain.head_height();
         let kind = match &h.handoff {
             Handoff::Mouth(m) => {

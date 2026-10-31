@@ -55,7 +55,7 @@ pub fn decode_peers_reply(body: &[u8]) -> Option<Vec<String>> {
 pub fn encode_root(voice: &[u8; 32], task: impl AsRef<[u8]>, solver: &[u8; 32], ticks: u64) -> Option<Vec<u8>> {
     let mut out = vec![ACT_ROOT];
     out.extend_from_slice(voice);
-    put_addr(&mut out, task)?;
+    put_address(&mut out, task)?;
     out.extend_from_slice(solver);
     out.extend_from_slice(&ticks.to_le_bytes());
     Some(out)
@@ -67,7 +67,7 @@ pub fn decode_root(body: &[u8]) -> Option<([u8; 32], Address, [u8; 32], u64)> {
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
     let mut p = 33usize;
-    let task = take_addr(body, &mut p)?;
+    let task = take_address(body, &mut p)?;
     let solver: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
     p += 32;
     let ticks = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
@@ -192,8 +192,8 @@ pub fn encode_cover_digest(
     room: &[u64; 4],
     cover_roots: &[[u8; 32]; 4],
     ruled_root: &[u8; 32],
-    vk: &[u8; 32],
-    addr: &str,
+    key: &[u8; 32],
+    endpoint: &str,
     ring: &[crate::chronometry::tuniversal::TickReading],
     sig: &[u8; 64],
 ) -> Option<Vec<u8>> {
@@ -205,11 +205,11 @@ pub fn encode_cover_digest(
         out.extend_from_slice(r);
     }
     out.extend_from_slice(ruled_root);
-    out.extend_from_slice(vk);
+    out.extend_from_slice(key);
     // A bind address longer than its length field is not shortened to fit:
     // a digest signed over a truncated address names a door that is not
     // this one, and every peer that dialled it would be dialling nothing.
-    crate::transducer::address::put_u8_bytes(&mut out, addr.as_bytes())?;
+    crate::transducer::address::put_u8_bytes(&mut out, endpoint.as_bytes())?;
     crate::chronometry::tuniversal::reading::put_ring(&mut out, ring)?;
     out.extend_from_slice(sig);
     Some(out)
@@ -366,8 +366,8 @@ pub fn decode_cover_request(body: &[u8]) -> Option<([u8; 32], Vec<u8>)> {
 /// control would skip whatever it happened to place before that cursor and
 /// serve the rest forever. Canonical key order, rule 15's first entry.
 pub fn encode_cover_page(
-    vk: &[u8; 32],
-    addr: &str,
+    key: &[u8; 32],
+    endpoint: &str,
     charts: &[(u8, crate::transducer::stalk::Invariant)],
     from: &[u8],
     budget: usize,
@@ -376,8 +376,8 @@ pub fn encode_cover_page(
     keys.sort_unstable();
     keys.dedup();
     let mut out = vec![ACT_COVER];
-    out.extend_from_slice(vk);
-    crate::transducer::address::put_u8_bytes(&mut out, addr.as_bytes())?;
+    out.extend_from_slice(key);
+    crate::transducer::address::put_u8_bytes(&mut out, endpoint.as_bytes())?;
     let count_at = out.len();
     out.extend_from_slice(&0u32.to_le_bytes());
     let mut served = 0u32;

@@ -23,11 +23,11 @@ impl Crystal for Mutual {
     fn speak_form(&self, f: &Form, x: &Grid, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
         apply_form(f, x, placement, self)
     }
-    fn by_address(&self, addr: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
-        if addr == self.a.0.as_bytes() {
+    fn by_address(&self, address: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
+        if address == self.a.0.as_bytes() {
             return Some((&self.e, std::borrow::Cow::Borrowed(&self.a.1)));
         }
-        (addr == self.b.0.as_bytes()).then(|| (&self.e, std::borrow::Cow::Borrowed(&self.b.1)))
+        (address == self.b.0.as_bytes()).then(|| (&self.e, std::borrow::Cow::Borrowed(&self.b.1)))
     }
     fn on_axis(&self, _chart: &Invariant, _axis: crate::transducer::sentence::Axis) -> Vec<crate::transducer::alphabet::Word> {
         Vec::new()
@@ -79,7 +79,7 @@ fn apply_form_refuses_mutual_citation_by_name() {
     // The court's replay on the same crystal: every phase before the
     // speech passes or is read, and the speech refuses by the cycle's name.
     let word = crate::transducer::sentence::as_element_form(&top, [1, 0, 0, 0]).expect("tape");
-    let resolve = |addr: &[u8]| crystal.by_address(addr).map(|(_, f)| f);
+    let resolve = |address: &[u8]| crystal.by_address(address).map(|(_, f)| f);
     let mut cursor = crate::verdict::ReplayCursor::default();
     let out = crate::verdict::replay_resume(
         &word,

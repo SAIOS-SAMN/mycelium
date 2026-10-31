@@ -47,10 +47,10 @@ pub(crate) fn fold_round(kernel: &Mutex<Court>, mesh: &Mesh) {
     // carried it again until K moves: its answer is instant, and re-asked
     // every cycle it was a storm that starved the doors (2026-10-22).
     let Some(k_now) = crate::held::held!(kernel).ok().map(|mut h| h.run(|k, _| k.k_step())) else { return };
-    let paced = |vk: &[u8; 32]| mesh.fold_unmeasured_at.lock().is_ok_and(|m| m.get(vk) == Some(&k_now));
-    let unmeasured = |vk: &[u8; 32]| {
+    let paced = |witness: &[u8; 32]| mesh.fold_unmeasured_at.lock().is_ok_and(|m| m.get(witness) == Some(&k_now));
+    let unmeasured = |witness: &[u8; 32]| {
         if let Ok(mut m) = mesh.fold_unmeasured_at.lock() {
-            m.insert(vk, k_now);
+            m.insert(witness, k_now);
         }
     };
     // The round's stroke: a hold's, handed on whole (78.153b).

@@ -111,7 +111,7 @@ pub fn bind_a_thought(mind: &mut crate::client::sdk::Mind, scene: &[u8]) -> u64 
         for g in &docketed {
             crate::transducer::sentence::rung::learn_by(g, &[]);
         }
-        let bound = mind.take_demands(&mut b);
+        let bound = mind.drain_demands(&mut b);
         mind.act_on_returns(&mut b, bound, true)
     });
     mind.field = field;

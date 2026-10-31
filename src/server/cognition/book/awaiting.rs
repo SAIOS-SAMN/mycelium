@@ -67,11 +67,11 @@ impl Court {
         s: &Element,
         form: &crate::transducer::address::Address,
     ) {
-        let addr = s.address();
+        let address = s.address();
         let entry = (voice, crate::transducer::address::Address::from(task), s.clone());
         match self.awaiting.get_mut(form.as_bytes()) {
             Some(bucket) => {
-                if bucket.iter().any(|(_, _, held)| held.address() == addr) {
+                if bucket.iter().any(|(_, _, held)| held.address() == address) {
                     return;
                 }
                 bucket.push(entry);
@@ -148,7 +148,7 @@ impl Court {
             if out.len() >= room {
                 break;
             }
-            // A ruled form, or one past the two-byte length `put_addr` frames
+            // A ruled form, or one past the two-byte length `put_address` frames
             // an address in (the wall, never widened), is not asked.
             if self.ruled_contains(&form) || form.len() > usize::from(u16::MAX) {
                 continue;
@@ -165,9 +165,9 @@ impl Court {
     /// provisional or a dialect word is not language, and is not served), at
     /// the stamp that admitted it. `None` where it holds none, or its record
     /// does not write (STD1 3c).
-    pub fn taught_installed(&self, addr: &[u8]) -> Option<crate::anastome::dialogue::Taught> {
-        let word = self.installed_word(addr)?;
-        let at = self.admitted_at(addr)?;
+    pub fn taught_installed(&self, address: &[u8]) -> Option<crate::anastome::dialogue::Taught> {
+        let word = self.installed_word(address)?;
+        let at = self.admitted_at(address)?;
         Some(crate::anastome::dialogue::Taught { at, word: word.to_bytes()? })
     }
 

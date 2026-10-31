@@ -62,15 +62,15 @@ impl Court {
     /// The same, where the object is DOCKETED under a key that is not its
     /// own address. The key is the docket's coordinate; the object is what
     /// convergence compares.
-    pub(crate) fn converge_here_at(&mut self, addr: &Address, object: &Element, voice: [u8; 32]) {
+    pub(crate) fn converge_here_at(&mut self, address: &Address, object: &Element, voice: [u8; 32]) {
         let own_vk = self.identity;
         let (k, h) = (self.k_step(), self.height());
         self.convergence.rederived(
-            addr.as_bytes(),
+            address.as_bytes(),
             own_vk,
             crate::court::convergence::Rederivation { object: object.clone(), k, height: h },
         );
-        self.convergence.used_by(addr.as_bytes(), voice);
+        self.convergence.used_by(address.as_bytes(), voice);
     }
 
     /// A WITNESS HYPHA re-derived `object` and reached `reached`. Equal to

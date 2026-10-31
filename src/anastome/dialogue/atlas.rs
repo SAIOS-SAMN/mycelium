@@ -390,7 +390,7 @@ impl Segment {
 }
 
 /// A MAPPED PLACE: a 78.128 mouth pair by its id, or a LOCAL THROAT by its
-/// derived mouth id (`local_throat_id`), and its side (0 and 1 its two ends;
+/// derived mouth id (`local_throat_citation`), and its side (0 and 1 its two ends;
 /// a mouth pair's 0 the offering end, 1 the accepting end).
 pub type Place = ([u8; 32], u8);
 
@@ -398,7 +398,7 @@ const LOCAL_THROAT: &str = "mycelium local throat v1";
 
 /// 78.154 — A LOCAL THROAT'S MOUTH ID, derived and never posted:
 /// `derive_key("mycelium local throat v1", domain ‖ throat key)`.
-pub fn local_throat_id(domain: &[u8; 32], throat: &[u8; 32]) -> [u8; 32] {
+pub fn local_throat_citation(domain: &[u8; 32], throat: &[u8; 32]) -> [u8; 32] {
     let mut m = domain.to_vec();
     m.extend_from_slice(throat);
     blake3::derive_key(LOCAL_THROAT, &m)
@@ -406,7 +406,7 @@ pub fn local_throat_id(domain: &[u8; 32], throat: &[u8; 32]) -> [u8; 32] {
 
 /// The id a local throat's record is held under, from its derived mouth id:
 /// the citation hash of `"map record" ‖ domain ‖ [2] ‖ local id`.
-pub fn local_record_id(domain: &[u8; 32], local: &[u8; 32]) -> [u8; 32] {
+pub fn local_record_citation(domain: &[u8; 32], local: &[u8; 32]) -> [u8; 32] {
     let mut b = b"map record".to_vec();
     b.extend_from_slice(domain);
     b.push(2);
@@ -512,9 +512,9 @@ impl MapRecord {
 
     /// THE RECORD'S ID: its universe, and a mouth by its place, a segment by
     /// its kind and its two places, a local throat by its derived mouth id
-    /// (`local_record_id`) — what a later act supersedes, and what a route
+    /// (`local_record_citation`) — what a later act supersedes, and what a route
     /// names (one throat mapped by both universes is two records).
-    pub fn id(&self, domain: &[u8; 32]) -> [u8; 32] {
+    pub fn citation(&self, domain: &[u8; 32]) -> [u8; 32] {
         let mut b = b"map record".to_vec();
         b.extend_from_slice(domain);
         match self {
@@ -528,7 +528,7 @@ impl MapRecord {
                 put_place(&mut b, a);
                 put_place(&mut b, bb);
             }
-            MapRecord::LocalThroat { throat, .. } => return local_record_id(domain, &local_throat_id(domain, throat)),
+            MapRecord::LocalThroat { throat, .. } => return local_record_citation(domain, &local_throat_citation(domain, throat)),
         }
         crate::chronometry::payload_hash(&b)
     }

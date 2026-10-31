@@ -21,7 +21,7 @@ pub use selection::*;
 
 use crate::anastome::dialogue;
 use crate::network::nerve::Keyed;
-use crate::transducer::anchor::{derive_carrying_all, Sel};
+use crate::transducer::anchor::{derive_carrying_all, Selection};
 use crate::transducer::cech;
 use crate::transducer::element::{self, Element, Versor};
 use crate::transducer::sentence::{self, Form, Vertex};

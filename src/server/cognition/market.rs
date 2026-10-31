@@ -7,8 +7,8 @@
 use super::*;
 
 impl Court {
-    pub fn is_home_listing(&self, addr: &[u8], closest_is_self: bool) -> bool {
-        let _ = addr;
+    pub fn is_home_listing(&self, address: &[u8], closest_is_self: bool) -> bool {
+        let _ = address;
         closest_is_self
     }
 
@@ -17,26 +17,26 @@ impl Court {
     /// is a coordinate of every stamp and in every hash (78.24), so a
     /// ledger that has sealed under another key keeps it, and says so:
     /// binding comes before a court's first act.
-    pub fn bind_identity(&mut self, vk: [u8; 32]) {
-        self.identity = vk;
-        let was = self.chain.vk();
-        if self.chain.bind_vk(vk) {
+    pub fn bind_identity(&mut self, key: [u8; 32]) {
+        self.identity = key;
+        let was = self.chain.signer();
+        if self.chain.bind_signer(key) {
             // LD3-a: rows written before the first act stand at the line's
             // pre-genesis origin, which is keyed by the line's key; a line
             // rebound before it sealed anything moves its origin, and the
             // rows standing there move with it — so every row stands on
             // this court's own line.
-            if was != vk {
-                let origin = |key| crate::chronometry::Stamp::new(0, key, crate::chronometry::Place::GENESIS);
-                self.treasury.rebind_origin(origin(was), origin(vk));
+            if was != key {
+                let origin = |signer| crate::chronometry::Stamp::new(0, signer, crate::chronometry::Place::GENESIS);
+                self.treasury.rebind_origin(origin(was), origin(key));
             }
         } else {
             eprintln!(
                 "  court ledger keeps its key: it sealed under {:02x}{:02x}… before {:02x}{:02x}… was bound",
-                self.chain.vk()[0],
-                self.chain.vk()[1],
-                vk[0],
-                vk[1]
+                self.chain.signer()[0],
+                self.chain.signer()[1],
+                key[0],
+                key[1]
             );
         }
     }
@@ -64,7 +64,7 @@ impl Court {
     /// against held answers). Pays the registered task tension, pool-funded
     /// and law-bounded; the anti-replay collapse happened upstream —
     /// this pays whatever the registry ruled (bounty or floor).
-    pub fn treasury_settle_solve(
+    pub fn settle_solve(
         &mut self,
         voice: [u8; 32],
         mu: [u64; 4],
@@ -81,7 +81,7 @@ impl Court {
     /// not invented. A word left on no row takes its stamp with it.
     pub(crate) fn seal_retirement(
         &mut self,
-        addr: &[u8],
+        address: &[u8],
         retired: Option<crate::chronometry::Cite>,
         rewrite: Option<Address>,
         speakers: &[Address],
@@ -89,9 +89,9 @@ impl Court {
     ) {
         let mut cites: Vec<crate::chronometry::Cite> = retired.into_iter().collect();
         cites.extend(rewrite.iter().chain(speakers).filter_map(|a| self.cite_of(a.as_bytes())));
-        let mu = self.frame_of(addr);
+        let mu = self.frame_of(address);
         self.append_cited(crate::chronometry::ActKind::Ruling(crate::chronometry::Ruled::Retired), cites, mu, author);
-        self.forget_if_unheld(addr);
+        self.forget_if_unheld(address);
     }
 
     /// GENOME SYNCHRONIZATION, commit step (ruled: servers hold no
@@ -117,12 +117,12 @@ impl Court {
                 }
             }
         }
-        let addr = word.address();
-        if self.basis.contains(&addr) {
+        let address = word.address();
+        if self.basis.contains(&address) {
             // The address is held: the arriving placement's fibre merges into
             // the bundle (sections, connection) — the genome converges in
             // volume, not only in vocabulary.
-            let added = match self.word_mut(&addr) {
+            let added = match self.word_mut(&address) {
                 Some(w) => w.update(|e| e.merge_fibre(word)),
                 None => 0,
             };
@@ -130,10 +130,10 @@ impl Court {
             for _ in 0..added {
                 self.physics.plastic([false, true, false, false]);
             }
-            self.touch_at(&addr);
+            self.touch_at(&address);
             // Presence is not finality: an unruled connection stays on the
             // docket until the court measures it.
-            if (word.is_connection() || word.is_sentence() || word.is_rewrite()) && !self.ruled_contains(&addr) {
+            if (word.is_connection() || word.is_sentence() || word.is_rewrite()) && !self.ruled_contains(&address) {
                 self.docket_connection(word, ratifier);
             }
             return Adoption::Known;
@@ -150,11 +150,11 @@ impl Court {
         self.basis_push(word.clone(), ratifier, budget);
         // ACT1-hold (78.27 Q1): the adoption is an act on this court's own
         // line by the ratifier, and it admits the word it holds.
-        self.append_step(crate::chronometry::ActKind::Adopted, &addr, ratifier);
+        self.append_step(crate::chronometry::ActKind::Adopted, &address, ratifier);
         // A word the court itself teaches is finalized language: it joins
         // the ruled cover on arrival.
         if self.court_voice == Some(ratifier) {
-            self.ruled_admit(&addr, budget);
+            self.ruled_admit(&address, budget);
         }
         self.physics.syntropy(&word.magnitude()); // convergence is order built
         Adoption::Installed
@@ -272,12 +272,12 @@ impl Court {
         let now = self.height();
         let mut p = self.pressure_sum;
         p[2] = 0;
-        for (addr, _) in self.pending.scoped() {
+        for (address, _) in self.pending.scoped() {
             // A pressure that omits a listing is not the book's pressure. A
             // listing whose extent cannot be read leaves the whole lane
             // unmeasured, so the standing reading holds and the generation
             // is not advanced — the next measurement re-reads it.
-            let Some(t) = self.t_extent(&addr, now) else {
+            let Some(t) = self.t_extent(&address, now) else {
                 return;
             };
             // STD1 — and a lane whose extent passes its carrier is unmeasured
@@ -293,11 +293,11 @@ impl Court {
     }
 
     /// The deflation a provisional word's install measured on the book.
-    pub fn deflation_of(&self, addr: &[u8]) -> Option<[u64; 4]> {
-        self.deflations.get(addr).copied()
+    pub fn deflation_of(&self, address: &[u8]) -> Option<[u64; 4]> {
+        self.deflations.get(address).copied()
     }
 
-    /// Measure and record what installing `addr` settles on the book: the
+    /// Measure and record what installing `address` settles on the book: the
     /// magnitude of the listed demand at that address, or nothing.
     pub(super) fn record_deflation(&mut self, word: Address, listing: Address, own: [u64; 4]) {
         // The demand a percept settles is the listing of its whole chain;
@@ -306,7 +306,7 @@ impl Court {
         // consilienced at this home from routed demands whose listing never
         // stood here (or was evicted) deflated at least its own measure —
         // never a fabricated zero for the court to slash.
-        let on = |addr: &Address| self.book_elem(addr.as_bytes()).map(|p| p.magnitude());
+        let on = |address: &Address| self.book_element(address.as_bytes()).map(|p| p.magnitude());
         let Some(deflation) = on(&listing).or_else(|| on(&word)).or_else(|| {
             own.iter().any(|&x| x > 0).then_some(own)
         }) else {
@@ -359,11 +359,11 @@ impl Court {
     pub fn intake_prepared(&mut self, pieces: Vec<(Element, crate::transducer::stalk::Invariant)>) -> bool {
         let mut listed = false;
         for (residual, chart) in pieces {
-            let addr = residual.address();
-            if self.basis.contains(&addr) || self.pending.contains(&addr) {
+            let address = residual.address();
+            if self.basis.contains(&address) || self.pending.contains(&address) {
                 continue; // already speakable or already listed
             }
-            self.stamp_standing(addr);
+            self.stamp_standing(address);
             self.book_list_charted(residual, chart);
             listed = true;
         }
@@ -398,20 +398,20 @@ impl Court {
     /// repeatedly confirm locally is what the mesh promotes. Bounded, deduped.
     pub fn deposit_evidence(
         &mut self,
-        addr: Address,
+        address: Address,
         fp: Vec<(i64, i64)>,
         scene: Vec<(i64, i64, u8)>,
     ) -> bool {
         if fp.is_empty() {
             return false;
         }
-        let key = footprint_key(&addr, &fp, &scene);
+        let key = footprint_key(&address, &fp, &scene);
         if self.evidence_at.contains(&key) {
             return false;
         }
         self.evidence_at.insert(key, ());
         self.anchor_evidence.push(crate::transducer::anchor::EvidenceOf {
-            addr,
+            addr: address,
             footprint: fp,
             scene,
         });
@@ -422,7 +422,7 @@ impl Court {
     /// ENROLL an identity with a per-lane bond. The hypha enrolls itself
     /// from genesis or from a restored stake; arriving voices stay unbonded
     /// until they bond from balance. Returns the vector added this call.
-    pub fn enroll(&mut self, who: [u8; 32], bond: [u64; 4]) -> [u64; 4] {
+    pub fn enroll(&mut self, party: [u8; 32], bond: [u64; 4]) -> [u64; 4] {
         let anchor = self.anchor();
         // A stake moves value from a balance and never creates any (§4), so
         // an identity bonded at genesis is FUNDED first and stakes from that
@@ -430,22 +430,22 @@ impl Court {
         // customer voice and bonds the operator's hyphae. The allocation is its own ledger kind, so
         // §6 keeps seeded value and earned value separable; what is already
         // held is never re-allocated.
-        let held = self.treasury.balance_mu(&who);
+        let held = self.treasury.balance_mu(&party);
         // What genesis must seed is the shortfall of what is held against
         // the bond: nothing on a lane already at or above it.
         let short = crate::economy::shortfall(&bond, &held);
         if short.iter().any(|&x| x > 0) {
-            self.treasury.genesis(who, short, anchor);
+            self.treasury.genesis(party, short, anchor);
         }
-        self.treasury.enroll(who, bond, anchor)
+        self.treasury.enroll(party, bond, anchor)
     }
 
-    /// E3 — A GENESIS ALLOCATION TO SPEND: `mu` onto `who`'s balance, its
+    /// E3 — A GENESIS ALLOCATION TO SPEND: `mu` onto `party`'s balance, its
     /// own ledger kind (§6 keeps seeded value separable from earned), at
     /// this court's head. Answers what landed.
-    pub fn fund(&mut self, who: [u8; 32], mu: [u64; 4]) -> [u64; 4] {
+    pub fn fund(&mut self, party: [u8; 32], mu: [u64; 4]) -> [u64; 4] {
         let anchor = self.anchor();
-        self.treasury.genesis(who, mu, anchor)
+        self.treasury.genesis(party, mu, anchor)
     }
 
     /// EC1 — THIS COURT'S ECONOMY: its ledger by arm, by kind, each
@@ -458,11 +458,11 @@ impl Court {
     /// mint (§6: seeded value and earned value stay separable; it was booked
     /// as a subsidy mint). A home whose allocation was booked as a mint before
     /// this keeps it, and is not allocated twice.
-    pub fn allocate(&mut self, who: [u8; 32], mu: [u64; 4]) -> [u64; 4] {
-        if self.treasury.has_genesis(&who) || self.treasury.has_mint(&who) {
+    pub fn allocate(&mut self, party: [u8; 32], mu: [u64; 4]) -> [u64; 4] {
+        if self.treasury.has_genesis(&party) || self.treasury.has_mint(&party) {
             return [0; 4];
         }
         let anchor = self.anchor();
-        self.treasury.genesis(who, mu, anchor)
+        self.treasury.genesis(party, mu, anchor)
     }
 }

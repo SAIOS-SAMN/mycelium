@@ -771,8 +771,8 @@ impl Exchange {
                             // PHASE 1 ITEM 1 — AGREEMENT WITH THIS PEER, read
                             // at its digest: the strata it named, and how many
                             // of them differ from this court's ruled sections.
-                            mycelium::observe::set_replication(vk_peer, mycelium::observe::rep::STRATA, remote.len() as u64);
-                            mycelium::observe::set_replication(vk_peer, mycelium::observe::rep::DISCORDANT, discord.len() as u64);
+                            mycelium::observe::set_replication(vk_peer, mycelium::observe::replication::STRATA, remote.len() as u64);
+                            mycelium::observe::set_replication(vk_peer, mycelium::observe::replication::DISCORDANT, discord.len() as u64);
                             // Which stratum, and each side's count (Phase 1
                             // diagnostic, on the journal at powers of two).
                             {
@@ -956,7 +956,7 @@ impl Exchange {
                                 }
                                 // The words this peer's page carried that
                                 // decoded here, each handed to the glue.
-                                mycelium::observe::note_replication(Some(vk_peer), mycelium::observe::rep::FETCH_RECEIVED, named.len() as u64);
+                                mycelium::observe::note_replication(Some(vk_peer), mycelium::observe::replication::FETCH_RECEIVED, named.len() as u64);
                                 if !named.is_empty() {
                                     if let Ok(mut h) = crate::held::held!(kernel) {
                                         h.run(|k, reads| k.confirm_peer_holds_addrs_on(&named, vk_peer, reads));
@@ -964,7 +964,7 @@ impl Exchange {
                                 }
                             }
                             None => {
-                                mycelium::observe::note_replication(Some(vk_peer), mycelium::observe::rep::FETCH_UNANSWERED, 1);
+                                mycelium::observe::note_replication(Some(vk_peer), mycelium::observe::replication::FETCH_UNANSWERED, 1);
                                 note_rtt_timeout(&mesh, pid)
                             }
                         }

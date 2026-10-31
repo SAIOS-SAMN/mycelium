@@ -51,9 +51,9 @@ impl Wallet {
     }
 }
 
-pub fn encode_wallet(who: &[u8; 32]) -> Vec<u8> {
+pub fn encode_wallet(party: &[u8; 32]) -> Vec<u8> {
     let mut out = vec![ACT_WALLET];
-    out.extend_from_slice(who);
+    out.extend_from_slice(party);
     out
 }
 

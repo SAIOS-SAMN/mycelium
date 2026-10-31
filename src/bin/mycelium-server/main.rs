@@ -127,7 +127,7 @@ fn check_home(home: &Path) -> ! {
         println!("{name}: no key — a home that has never booted; it will mint one and start fresh");
         std::process::exit(0)
     };
-    let vk = key.vk_bytes();
+    let vk = key.verifying_bytes();
     let tag = key.prefix();
     println!("{name}: key {tag}… vk {}", mycelium::court::identity::hex32(&vk));
 
@@ -218,7 +218,7 @@ fn check_home(home: &Path) -> ! {
                         println!("  fold: root {root:?} · asked at a close: {asked:?}");
                         // The first receipts past the root, and how many the
                         // witness page holds: where the cut can land.
-                        let chain_vk = scratch.chain().vk();
+                        let chain_vk = scratch.chain().signer();
                         let after = scratch.chain().root().map(|r| r.at);
                         if let (Some(top), Some((at_most, bytes))) = (scratch.chain().head_place(), Court::receipts_frame()) {
                             let page = scratch.receipts_page(&chain_vk, after, top, at_most, bytes);
@@ -288,7 +288,7 @@ fn init_home(home: &Path) -> ! {
         std::process::exit(2)
     }
     let key = HyphaKey::load_or_mint(&home.join("hypha.key").to_string_lossy());
-    let vk = mycelium::court::identity::hex32(&key.vk_bytes());
+    let vk = mycelium::court::identity::hex32(&key.verifying_bytes());
     println!("{}: hypha key {}… vk {vk}", home.display(), key.prefix());
     println!("genesis line: hypha {vk}");
     std::process::exit(0)
@@ -418,7 +418,7 @@ fn main() {
     // The key lives under the home the operator named; a home that is not
     // UTF-8 is spelled lossily, never swapped for a relative default.
     let hypha_key = HyphaKey::load_or_mint(&home.join("hypha.key").to_string_lossy());
-    let vk = hypha_key.vk_bytes();
+    let vk = hypha_key.verifying_bytes();
     let id = vk;
     let tag = hypha_key.prefix();
     let mut mesh_rec = match mesh::load_or_migrate_hypha(&home, &hypha_key) {

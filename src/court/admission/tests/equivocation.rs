@@ -18,8 +18,8 @@ fn court_key(name: &str) -> crate::court::identity::HyphaKey {
 
 /// The first receipt of a fresh chain under `vk`, measuring `lane` on its
 /// frame: two such chains under one key are two roots at K 0.
-fn first_receipt(vk: [u8; 32], lane: u64) -> KStepReceipt {
-    let mut c = ReceiptChain::with_vk(vk);
+fn first_receipt(signer: [u8; 32], lane: u64) -> KStepReceipt {
+    let mut c = ReceiptChain::with_signer(signer);
     c.append(crate::chronometry::ActKind::List, [lane, 0, 0, 0], Vec::new(), [0; 32], Vec::new()).expect("appends").clone()
 }
 
@@ -39,7 +39,7 @@ fn prefix_for(r: &KStepReceipt) -> SignedPrefix {
 /// caller holds 47.2 step 2.
 fn signed<'a>(prefix: &'a SignedPrefix, key: &crate::court::identity::HyphaKey) -> Verified<'a> {
     let sig = key.sign(&prefix.bytes().expect("the prefix frames"));
-    verify_signature(prefix, &key.vk_bytes(), &sig).expect("a key verifies its own signature")
+    verify_signature(prefix, &key.verifying_bytes(), &sig).expect("a key verifies its own signature")
 }
 
 /// Two receipts under one key at one K with two chain hashes, each signed
@@ -48,7 +48,7 @@ fn signed<'a>(prefix: &'a SignedPrefix, key: &crate::court::identity::HyphaKey) 
 #[test]
 fn admit_equivocation_proves_two_hashes_at_one_place() {
     let key = court_key("liar");
-    let vk = key.vk_bytes();
+    let vk = key.verifying_bytes();
     let (ra, rb) = (first_receipt(vk, 1), first_receipt(vk, 2));
     assert_eq!(ra.stamp.place(), rb.stamp.place(), "one place");
     assert_ne!(ra.chain_hash, rb.chain_hash, "two roots");
@@ -63,7 +63,7 @@ fn admit_equivocation_proves_two_hashes_at_one_place() {
 #[test]
 fn admit_equivocation_refuses_duplicate_two_signers_or_two_k() {
     let key = court_key("liar");
-    let vk = key.vk_bytes();
+    let vk = key.verifying_bytes();
     let ra = first_receipt(vk, 1);
     let pa = prefix_for(&ra);
     assert_eq!(
@@ -72,14 +72,14 @@ fn admit_equivocation_refuses_duplicate_two_signers_or_two_k() {
         "one receipt twice is a duplicate, not a proof"
     );
     let honest = court_key("honest");
-    let rc = first_receipt(honest.vk_bytes(), 2);
+    let rc = first_receipt(honest.verifying_bytes(), 2);
     let pc = prefix_for(&rc);
     assert_eq!(
         admit_equivocation(signed(&pa, &key), &ra, signed(&pc, &honest), &rc).err(),
         Some(REFUSE_NOT_EQUIVOCATION),
         "two signers are two chains"
     );
-    let mut c = ReceiptChain::with_vk(vk);
+    let mut c = ReceiptChain::with_signer(vk);
     let r0 = c.append(crate::chronometry::ActKind::List, [1, 0, 0, 0], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
     let r1 = c.append(crate::chronometry::ActKind::List, [2, 0, 0, 0], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
     let (p0, p1) = (prefix_for(&r0), prefix_for(&r1));
@@ -97,7 +97,7 @@ fn admit_equivocation_refuses_duplicate_two_signers_or_two_k() {
 #[test]
 fn admit_equivocation_refuses_self_disagreeing_half() {
     let key = court_key("liar");
-    let vk = key.vk_bytes();
+    let vk = key.verifying_bytes();
     let (ra, rb) = (first_receipt(vk, 1), first_receipt(vk, 2));
     let (pa, pb) = (prefix_for(&ra), prefix_for(&rb));
     let mut forged = rb.clone();

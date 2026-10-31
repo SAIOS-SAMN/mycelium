@@ -13,7 +13,7 @@ use ed25519_dalek::SigningKey;
 fn key(b: u8) -> SigningKey {
     SigningKey::from_bytes(&[b; 32])
 }
-fn vk(k: &SigningKey) -> [u8; 32] {
+fn verifying(k: &SigningKey) -> [u8; 32] {
     k.verifying_key().to_bytes()
 }
 fn domain() -> SigningKey {
@@ -35,22 +35,22 @@ fn other() -> SigningKey {
 /// A domain founded with two tiers, `house` its sitting reserve.
 fn founded() -> Court {
     let mut k = Court::new();
-    let mut tiers = vec![vk(&house()), vk(&tier())];
+    let mut tiers = vec![verifying(&house()), verifying(&tier())];
     tiers.sort_unstable();
-    let g = DomainGenesis { domain: vk(&domain()), tiers };
+    let g = DomainGenesis { domain: verifying(&domain()), tiers };
     assert!(matches!(k.admit_domain(&g.sign(&domain())), Founded::Sealed { .. }));
-    let r = Reservation { domain: vk(&domain()), tier: vk(&house()), nonce: [1; 32] }.sign(&domain());
+    let r = Reservation { domain: verifying(&domain()), tier: verifying(&house()), nonce: [1; 32] }.sign(&domain());
     assert!(matches!(k.designate_reserve(&r), Founded::Reserved { now: true, .. }));
     k
 }
 
 fn seats(epoch: u64) -> Seats {
     let seat = Seat { seat: 7, role: Role::Steward, on: [6; 32], beat: Arg::Q { num: 1, den: 60 }, fns: vec![SeatFn { id: 3, tags: vec![2] }] };
-    Seats { domain: vk(&domain()), sub_origin: None, epoch, seats: vec![seat] }
+    Seats { domain: verifying(&domain()), sub_origin: None, epoch, seats: vec![seat] }
 }
 
-fn read(k: &mut Court, who: &SigningKey, after: u64) -> Vec<Mail> {
-    k.seat_mail(&ReadMail::sign(who, after, [0; 32])).expect("signed").mail
+fn read(k: &mut Court, reader: &SigningKey, after: u64) -> Vec<Mail> {
+    k.seat_mail(&ReadMail::sign(reader, after, [0; 32])).expect("signed").mail
 }
 
 /// THE WHOLE SURFACE ON ONE COURT: only the house lists; a mind takes; the
@@ -61,8 +61,8 @@ fn read(k: &mut Court, who: &SigningKey, after: u64) -> Vec<Mail> {
 #[test]
 fn seat_post_relays_between_house_and_mind() {
     let mut k = founded();
-    let d = vk(&domain());
-    let m = vk(&mind());
+    let d = verifying(&domain());
+    let m = verifying(&mind());
     // Listing: only the sitting reserve; an unfounded domain is unknown.
     assert_eq!(k.seat_post(&Post::Seats(seats(1)).sign(&tier()).expect("writes")), Err(Refusal::NotTheHouse), "a tier not sitting is not the house");
     assert_eq!(k.seat_post(&Post::Seats(seats(1)).sign(&mind()).expect("writes")), Err(Refusal::NotTheHouse));
@@ -92,7 +92,7 @@ fn seat_post_relays_between_house_and_mind() {
     let percept = Percept { domain: d, sub_origin: None, seat: 7, mind: m, local_time: Arg::Q { num: 12, den: 1 }, seq: 1, records: vec![counsel], point: None };
     k.seat_post(&Post::Percept(percept.clone()).sign(&house()).expect("writes")).expect("relayed");
     // Another mind's percept is not this mind's mail.
-    let other_percept = Percept { mind: vk(&other()), ..percept.clone() };
+    let other_percept = Percept { mind: verifying(&other()), ..percept.clone() };
     k.seat_post(&Post::Percept(other_percept).sign(&house()).expect("writes")).expect("relayed");
     let mail = read(&mut k, &mind(), 0);
     let posts: Vec<Post> = mail.iter().filter_map(|x| x.post().map(|s| s.post)).collect();
@@ -118,7 +118,7 @@ fn seat_post_relays_between_house_and_mind() {
     assert_eq!(back[0].post().map(|s| s.post), Some(Post::Outcome(outcome)));
     // An unsigned read is refused.
     let mut forged = ReadMail::sign(&mind(), 0, [0; 32]);
-    forged.reader = vk(&other());
+    forged.reader = verifying(&other());
     assert_eq!(k.seat_mail(&forged), Err(Refusal::Unsigned));
 }
 
@@ -130,8 +130,8 @@ fn seat_post_relays_between_house_and_mind() {
 #[test]
 fn exempt_read_serves_once_per_window() {
     let mut k = founded();
-    let d = vk(&domain());
-    let m = vk(&mind());
+    let d = verifying(&domain());
+    let m = verifying(&mind());
     let relay = k.seat_relay();
     let percept = |seq| Percept { domain: d, sub_origin: None, seat: 7, mind: m, local_time: Arg::Q { num: 1, den: 1 }, seq, records: Vec::new(), point: None };
     assert_eq!(relay.exempt_read(&ReadMail::sign(&mind(), 0, [0; 32])), None, "no box, nothing exempt");
@@ -145,7 +145,7 @@ fn exempt_read_serves_once_per_window() {
     let served = relay.exempt_read(&ReadMail::sign(&mind(), first, [9; 32])).expect("new mail opens the window").expect("signed").mail;
     assert_eq!(served.iter().map(|x| x.seq).collect::<Vec<_>>(), vec![second], "what `after` acknowledged left");
     let mut forged = ReadMail::sign(&mind(), 0, [7; 32]);
-    forged.reader = vk(&other());
+    forged.reader = verifying(&other());
     assert_eq!(relay.exempt_read(&forged), Some(Err(Refusal::Unsigned)));
     // The court's own read still reads the same box, through the same lock.
     assert_eq!(read(&mut k, &mind(), first).len(), 1);
@@ -160,8 +160,8 @@ fn exempt_read_serves_once_per_window() {
 #[test]
 fn filed_past_holds_read_with_nothing_new() {
     let mut k = founded();
-    let d = vk(&domain());
-    let m = vk(&mind());
+    let d = verifying(&domain());
+    let m = verifying(&mind());
     let relay = k.seat_relay();
     let percept = |seq| Percept { domain: d, sub_origin: None, seat: 7, mind: m, local_time: Arg::Q { num: 1, den: 1 }, seq, records: Vec::new(), point: None };
     let first = k.seat_post(&Post::Percept(percept(1)).sign(&house()).expect("writes")).expect("relayed");
@@ -183,8 +183,8 @@ fn filed_past_holds_read_with_nothing_new() {
 #[test]
 fn seat_listing_keys_by_sub_origin_with_epoch() {
     let mut k = founded();
-    let d = vk(&domain());
-    let m = vk(&mind());
+    let d = verifying(&domain());
+    let m = verifying(&mind());
     let sub = [0x5c; 32];
     let own = Post::Seats(seats(1)).sign(&house()).expect("writes");
     let scoped = Post::Seats(Seats { sub_origin: Some(sub), ..seats(1) }).sign(&house()).expect("writes");
@@ -222,7 +222,7 @@ fn seat_listing_keys_by_sub_origin_with_epoch() {
     // A forged standing read is refused; a v1.3 read signed for sub-kind 7
     // does not verify as sub-kind 8.
     let mut forged = ReadMail::sign_standing(&mind(), 0, epoch, [4; 32]);
-    forged.reader = vk(&other());
+    forged.reader = verifying(&other());
     assert_eq!(k.seat_mail(&forged), Err(Refusal::Unsigned));
     let mut moved = ReadMail::sign(&mind(), 0, [5; 32]);
     moved.standing = Some(epoch);
@@ -240,8 +240,8 @@ fn seat_listing_keys_by_sub_origin_with_epoch() {
 fn relay_reading_counts_filed_and_refused_posts() {
     use crate::observe::{Reading, RelayPosts};
     let mut k = founded();
-    let d = vk(&domain());
-    let m = vk(&mind());
+    let d = verifying(&domain());
+    let m = verifying(&mind());
     let relay = k.seat_relay();
     for signer in [tier(), mind()] {
         assert_eq!(k.seat_post(&Post::Seats(seats(1)).sign(&signer).expect("writes")), Err(Refusal::NotTheHouse));
@@ -275,8 +275,8 @@ fn relay_reading_counts_filed_and_refused_posts() {
 #[test]
 fn seat_post_keeps_mailbox_bound() {
     let mut k = founded();
-    let d = vk(&domain());
-    let m = vk(&mind());
+    let d = verifying(&domain());
+    let m = verifying(&mind());
     // A percept of ~64 KiB of records.
     let records: Vec<Record> = (0..250).map(|i| Record::Plain { kind: i, args: (0..30).map(|j| Arg::Key([j; 32])).collect() }).collect();
     let mut posted = 0u64;

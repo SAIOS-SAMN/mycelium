@@ -15,7 +15,7 @@ fn cert(axis: Axis, word: Word, after: crate::transducer::address::Address) -> P
         before: ClassVector::of_word(&word_turn_90()).expect("class").class_key(),
         after,
         rank_move: RankMove::Equal,
-        mu: Mu::Unmeasured,
+        mu: MeasuredMu::Unmeasured,
         by: PivotBy::Word { face: some_overlap(), word: Box::new(word), side: Side::Right },
     }
 }

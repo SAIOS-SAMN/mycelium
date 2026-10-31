@@ -230,7 +230,7 @@ fn crossing_drops_training_frames_so_withheld_pair_solves() {
     // THE DEFECT: the extracted word, judged as it stands, is refused I.
     let (verdict, seam) = judged(&spoken, &withheld);
     match &verdict {
-        SolveVerdict::Refused(r) => assert_eq!(r.obstruction.kind(), ObstructionKind::I, "refused for a training frame: {r:?}"),
+        SolveVerdict::Refused(r) => assert_eq!(r.obstruction.kind(), ObstructionKind::Integrity, "refused for a training frame: {r:?}"),
         other => panic!("the extracted word carries its training frames: {other:?}"),
     }
     assert!(matches!(seam, Err(NoRule::Refused(_))), "the seam agrees: {seam:?}");

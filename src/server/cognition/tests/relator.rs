@@ -454,7 +454,7 @@ fn retirement_line(
     cites: Vec<crate::chronometry::Cite>,
 ) -> Vec<crate::chronometry::KStepReceipt> {
     use crate::chronometry::{ActKind, ReceiptChain, Ruled};
-    let mut line = ReceiptChain::with_vk(key.vk_bytes());
+    let mut line = ReceiptChain::with_signer(key.verifying_bytes());
     line.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("an act");
     line.append(ActKind::Ruling(Ruled::Retired), [0; 4], cites, [0; 32], Vec::new()).expect("the retirement");
     line.own().collect()

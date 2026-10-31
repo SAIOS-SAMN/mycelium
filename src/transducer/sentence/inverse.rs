@@ -445,15 +445,15 @@ use crate::network::nerve::coord;
 /// names the forms it rewrites and nothing else, so this refuses it rather
 /// than returning an empty chain, which would read as "a word that says
 /// nothing" instead of "not a chain" (rule 11).
-pub fn from_residual(addr: &[u8]) -> Option<Vec<Link>> {
+pub fn from_residual(address: &[u8]) -> Option<Vec<Link>> {
     let mut p = 0usize;
-    match addr {
+    match address {
         [tag, ..] if *tag == crate::transducer::address::TAG_RESIDUAL => p += 1,
         // A form's address is not a chain's, and reading one as the other
         // is the collision this pair exists to end.
         _ => return None,
     }
-    let block = crate::transducer::address::take_key_bytes(addr, &mut p)?;
+    let block = crate::transducer::address::take_key_bytes(address, &mut p)?;
     let mut q = 0usize;
     // The shape leads, and the slice pattern reads that coordinate rather
     // than taking a member by position (rule 15).

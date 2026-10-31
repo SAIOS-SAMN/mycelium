@@ -19,13 +19,13 @@ pub(crate) fn orbit_key(chart: &crate::transducer::stalk::Invariant, voice: &[u8
 }
 
 /// Canonical key of one evidence row: address, sorted footprint, sorted scene.
-pub(crate) fn footprint_key(addr: &[u8], fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<u8> {
+pub(crate) fn footprint_key(address: &[u8], fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<u8> {
     let mut points = fp.to_vec();
     points.sort_unstable();
     let mut painted = scene.to_vec();
     painted.sort_unstable();
     let mut buf = Vec::new();
-    crate::transducer::address::put_key_bytes(&mut buf, addr);
+    crate::transducer::address::put_key_bytes(&mut buf, address);
     crate::transducer::address::put_key_count(&mut buf, points.len());
     for &(r, c) in &points {
         buf.extend_from_slice(&r.to_le_bytes());

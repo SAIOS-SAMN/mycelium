@@ -40,20 +40,20 @@ impl Mind {
         self.ask(move |s| s.discover_budgeted(&mut budget), |_, ()| {});
     }
 
-    /// THE MIND OPENED toward the hypha at `addr`: its carrier discovers the
+    /// THE MIND OPENED toward the hypha at `endpoint`: its carrier discovers the
     /// nerve on its own thread before it carries the first ask.
-    pub(crate) fn open(addr: &str, voice: Voice) -> Self {
+    pub(crate) fn open(endpoint: &str, voice: Voice) -> Self {
         // The complex listens from the first pivot (MU-CLIENT §4.5): every
         // tether condensed and face sealed winds its strain into the field.
         let mut contemplation = crate::transducer::bubble::Contemplation::new();
         contemplation.complex.arm_outflow();
         // The seat's carrier lands on the mind's own waker: a house's percept
         // wakes the resting mind that is to take it up.
-        let hypha = super::hypha::Hypha::open(Session::open(addr, voice.clone()));
-        let seat = super::hypha::Hypha::open_beside(Session::open(addr, voice.clone()), hypha.waker());
+        let hypha = super::hypha::Hypha::open(Session::open(endpoint,voice.clone()));
+        let seat = super::hypha::Hypha::open_beside(Session::open(endpoint,voice.clone()), hypha.waker());
         // The held mail read on a carrier of its own, so it never stands in
         // front of a take, a solve or a declination.
-        let held = super::hypha::Hypha::open_beside(Session::open(addr, voice), hypha.waker());
+        let held = super::hypha::Hypha::open_beside(Session::open(endpoint,voice), hypha.waker());
         Mind {
             seat,
             held,
@@ -177,8 +177,8 @@ impl Mind {
     /// epigenome, the plan and the mind's K start empty: they are volatile,
     /// the mind's motion, never persisted (78.27, 78.49). An older file, or
     /// one that does not read whole, is refused whole.
-    pub fn open_persistent(addr: &str, voice: Voice, genome_path: &str) -> Self {
-        let mut e = Mind::open(addr, voice);
+    pub fn open_persistent(endpoint: &str, voice: Voice, genome_path: &str) -> Self {
+        let mut e = Mind::open(endpoint, voice);
         let Ok(bytes) = std::fs::read(genome_path) else {
             eprintln!("genome 0 words, epigenome empty");
             return e;

@@ -763,7 +763,7 @@ fn pivot_orbit_certifies_held_word_on_family() {
         "the orbit's finite order left torsion and an axis opened"
     );
     assert!(
-        matches!(certificate.mu, Mu::Measured { .. }),
+        matches!(certificate.mu, MeasuredMu::Measured { .. }),
         "pressure was measured on the constructed family"
     );
     assert!(
@@ -796,7 +796,7 @@ fn pivot_orbit_holds_two_discharges_as_vortex() {
     assert!(!f.vortex.is_empty(), "the form holds the vortex candidates");
     for cert in held {
         assert!(
-            matches!(cert.mu, Mu::Measured { .. }),
+            matches!(cert.mu, MeasuredMu::Measured { .. }),
             "each candidate's pressure was measured on the constructed family"
         );
         assert_eq!(

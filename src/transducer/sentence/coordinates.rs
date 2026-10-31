@@ -129,10 +129,10 @@ impl Hole {
     fn from_parts(generator: &Mv, kind: BivectorKind, planes: usize, c: Q, lambda: Q, order: Option<u32>) -> Option<Hole> {
         let canonical = generator.canonical()?;
         let (at, _) = canonical.terms().next()?;
-        let half_turn = c == -Q::one();
+        let turn_180 = c == -Q::one();
         // λ against the canonical ray: the generator is `μ·K̂` with `μ` its
         // coefficient at the canonical's first slot, so `λ·generator = λμ·K̂`.
-        let lambda = match half_turn {
+        let lambda = match turn_180 {
             true => Q::one(),
             false => lambda * generator.coeff(at),
         };

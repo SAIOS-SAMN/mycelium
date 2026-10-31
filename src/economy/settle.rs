@@ -70,8 +70,8 @@ impl Treasury {
     /// redundancy probe, bootstrap awards). Bounded by the pool, like all pay.
     /// No proof of work (78.33 as ruled): a subsidy is a policy ratio
     /// (MU-ECONOMY §8), and its row carries no arm.
-    pub fn settle_subsidy(&mut self, who: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        self.mint_to(who, mu, anchor, None)
+    pub fn settle_subsidy(&mut self, party: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+        self.mint_to(party, mu, anchor, None)
     }
 
     /// Yield of an optimisation, read on the carriers as a lane vector.
@@ -113,13 +113,13 @@ impl Treasury {
     /// a mint with no party is a mint to nobody, and the escrow stands
     /// rather than being spent into the void. The mint stands at `at`, the
     /// act that released it (EC1), never at the escrow's.
-    pub fn release_rewrite(&mut self, addr: &[u8], at: Anchor) -> Option<[u64; 4]> {
-        let row = self.escrowed.get(addr)?;
+    pub fn release_rewrite(&mut self, address: &[u8], at: Anchor) -> Option<[u64; 4]> {
+        let row = self.escrowed.get(address)?;
         if row.voices.is_empty() {
             return None;
         }
         let (voices, mu) = (row.voices.clone(), row.mu);
-        self.escrowed.remove(addr);
+        self.escrowed.remove(address);
         let n = voices.len() as u64;
         // THE SPLIT CANNOT EXCEED WHAT IT RELEASES. This read
         // `(mu[l] / n).max(1)`, so a lane holding less than one unit per

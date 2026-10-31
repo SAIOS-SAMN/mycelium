@@ -161,7 +161,7 @@ pub fn encode_quote_reply_within(height: u64, surface: &[u64; 4], k: u64, items:
         if out.len() + item_len > budget {
             break;
         }
-        put_addr(&mut out, addr)?;
+        put_address(&mut out, addr)?;
         push_mu(&mut out, mu);
         // The listing whole, length-prefixed as a chain's links are.
         crate::transducer::address::put_bytes(&mut out, element)?;
@@ -189,7 +189,7 @@ pub fn decode_quote_reply(body: &[u8]) -> Option<(u64, [u64; 4], u64, Vec<WorkIt
     p += 1;
     let mut items = Vec::with_capacity(n);
     for _ in 0..n {
-        let addr = take_addr(body, &mut p)?;
+        let addr = take_address(body, &mut p)?;
         let mu = read_mu(body, &mut p)?;
         // The listing whole, refused before it is allocated if the count
         // does not fit what is left (an untrusted length, as everywhere).

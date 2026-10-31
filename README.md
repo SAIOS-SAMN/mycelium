@@ -521,7 +521,7 @@ same closure is settled separately.
 ```rust
 use mycelium::anastome::dialogue::lease::{encode_lease, decode_lease_reply, LeaseAct};
 
-let act = LeaseAct { payer: key.vk_bytes(), provider, mu: [30, 20, 0, 10], window: 10_000,
+let act = LeaseAct { payer: key.verifying_bytes(), provider, mu: [30, 20, 0, 10], window: 10_000,
                      jobs: vec![task_citation], nonce };
 let reply = session.speak(encode_lease(&act.sign(&key.sk).ok_or("sign")?).ok_or("encode")?)?;
 let (lease, held) = decode_lease_reply(&reply).ok_or("reply")??;   // or a named refusal
@@ -863,7 +863,7 @@ let key = HyphaKey::load_or_mint("voice.key");
 let session = Session::open("127.0.0.1:7610", Voice::from_key(key.sk.clone()));
 // 3. Work: the task envelope carries train pairs and test inputs; the test
 //    outputs stay with the court. An empty reply means no work is available.
-let reply = session.speak(dialogue::encode_task_request(&key.vk_bytes()))?;
+let reply = session.speak(dialogue::encode_task_request(&key.verifying_bytes()))?;
 let task = dialogue::decode_task_envelope(&reply).ok_or("no task")?;
 // 4. Rule: extracted from the train pairs, minted as an element the court
 //    can replay, and spoken on each test input.
@@ -1011,6 +1011,7 @@ network), **Specified** (stated, not yet built) or **In progress**.
 | [`docs/MU-LEXICON.md`](docs/MU-LEXICON.md) | The shared vocabulary, served by address beside the law register. |
 | [`docs/MU-ANTI-FLATTENING.md`](docs/MU-ANTI-FLATTENING.md) | Structure is never flattened to scalars or flat maps. |
 | [`docs/MU-PRECURSORS.md`](docs/MU-PRECURSORS.md) | Components carried forward from precursor implementations: for each, the gap, the design under Mycelium's laws, acceptance claims, track and status; SDK packaging; what is not carried forward. |
+| [`docs/MU-DERIVATIONS.md`](docs/MU-DERIVATIONS.md) | Every number in the physics, derived or named until derived: the classes of constant, a derivation entry per underived number, the defects found while deriving, the open questions and the order of work. |
 
 ### Overviews and reference
 

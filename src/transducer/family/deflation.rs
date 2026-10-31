@@ -94,8 +94,8 @@ impl Withheld {
     pub fn obstruction_kind(&self) -> crate::transducer::sentence::ObstructionKind {
         use crate::transducer::sentence::ObstructionKind;
         match self {
-            Withheld::OrbitObstruction { .. } | Withheld::CoboundaryResidue { .. } => ObstructionKind::C,
-            Withheld::Acyclic { .. } | Withheld::NoTrajectory => ObstructionKind::N,
+            Withheld::OrbitObstruction { .. } | Withheld::CoboundaryResidue { .. } => ObstructionKind::Cover,
+            Withheld::Acyclic { .. } | Withheld::NoTrajectory => ObstructionKind::NoQuestion,
         }
     }
 
@@ -485,7 +485,7 @@ pub fn mint_arm(why: crate::transducer::sentence::ObstructionRefusal) -> &'stati
 /// say that every vertex was a demand, nor which.
 pub fn mint_refusal_line(why: crate::transducer::sentence::ObstructionRefusal, form: &crate::transducer::sentence::Form) -> String {
     let kinds: Vec<&'static str> = form.demand_vertices().map(|(_, kind, _, _)| kind.label()).collect();
-    format!("mint refused ({}): {} [{:?}] demands [{}]", mint_arm(why), why.proof(), why.kind(), kinds.join(", "))
+    format!("mint refused ({}): {} [{}] demands [{}]", mint_arm(why), why.proof(), why.kind().label(), kinds.join(", "))
 }
 
 fn mint_or_refuse(

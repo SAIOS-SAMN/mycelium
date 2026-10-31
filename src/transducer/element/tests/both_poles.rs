@@ -112,7 +112,7 @@ fn conformal_factors_reads_inversion_cell_as_kind_d() {
         chart: None,
         proof: "an inverting holonomy",
     });
-    assert_eq!(kind.kind(), crate::transducer::sentence::ObstructionKind::D, "the letter the inversion is");
+    assert_eq!(kind.kind(), crate::transducer::sentence::ObstructionKind::Dialect, "the letter the inversion is");
 }
 
 /// What is no conformal motion is refused by name.

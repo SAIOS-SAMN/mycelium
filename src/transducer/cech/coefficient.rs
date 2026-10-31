@@ -137,8 +137,8 @@ impl Lanes {
     }
 
     /// One identity's net — zero where it holds none.
-    pub fn net_of(&self, who: &[u8; 32]) -> [i128; 4] {
-        match self.nets.binary_search_by(|(w, _)| w.cmp(who)) {
+    pub fn net_of(&self, party: &[u8; 32]) -> [i128; 4] {
+        match self.nets.binary_search_by(|(w, _)| w.cmp(party)) {
             Ok(i) => self.nets[i].1,
             Err(_) => [0; 4],
         }

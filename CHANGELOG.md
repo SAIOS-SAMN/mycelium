@@ -93,6 +93,39 @@ such change is named here.
     and stake refusals; `Action::to_byte` folds into `Action::byte`, and
     its filtered decoders are `Action::of_wire` (was `of_tag`) and
     `Action::of_sealed` (was `from_byte`).
+- Identity words and abbreviations follow the code vocabulary (a 0.x API
+  change; no wire byte, persisted format, served string or constant
+  changes):
+  - a TCP address string is an `endpoint`: `Session`'s, `Post`'s,
+    `Mind::open`'s, `tell_peer*` and the router's parameters and fields,
+    `Post::endpoint()` (was `addr()`) and the console's `endpoint` (was
+    `address`);
+  - a word address is an `address`: about 160 `addr` parameters, and
+    `put_address`, `take_address`, `Cited::address`, `Cited::into_address`
+    (were `put_addr`, `take_addr`, `addr`, `into_addr`);
+  - keys: `HyphaKey::verifying_bytes` (was `vk_bytes`),
+    `HyphaKey::voice_from_name` (was `vk_from_name`);
+    `ReceiptChain::signer`, `with_signer`, `bind_signer` (were `vk`,
+    `with_vk`, `bind_vk`) name the key a line is signed by;
+    `Witnessed::vantage` (was `vk`); `vk`/`who` parameters name the role
+    (`signer`, `party`, `keeper`, `filer`, `hearer`, `witness`, `key`);
+  - a 32-byte payload hash is a citation: `citation()` (was `id()`) on the
+    handoff acts, `LeaseAct` and `MapRecord`; `local_throat_citation`,
+    `local_record_citation`, `mouth_citation`,
+    `encode_task_by_citation`/`decode_task_by_citation`; the registry's
+    content address is `registry::task_address` (was `task_id`);
+  - a queue read empty is `drain_*`: `drain_answers`,
+    `drain_seat_answers`, `drain_demands`, `Court::drain_line`;
+    `Court::settle_solve` (was `treasury_settle_solve`); a rule element
+    built is `construct_solve`, `construct_torse_at` (were `mint_*`);
+  - abbreviations spelled out: `anchor::Selection` and
+    `anchor/selection.rs` (were `Sel`, `sel.rs`), `selection_key`,
+    `observe::replication` (was `rep`), `Comparison`, `Direction`,
+    `sdk::Sitting`, `book_element`, `pair_index_key`, `form_magnitude`,
+    forms' `exact_cos_sin` (was `quarter_turn`), the certificate's
+    `MeasuredMu`; `ObstructionKind::{Permanent, Dialect, Cover, Integrity,
+    NoQuestion}` (were `P`, `D`, `C`, `I`, `N`; `label()` still prints the
+    letter).
 
 ### Documentation
 - One naming scheme for the specifications: every document under `docs/`
@@ -324,6 +357,31 @@ such change is named here.
   that only what a court admits leaves a universe, and the governing
   texts. MU-CONCORDANCE §0, MU-RECURSION's *What this document is* and
   MU-PRODUCT §1 each state the purpose in one sentence.
+- `docs/MU-DERIVATIONS.md`, every number in the physics derived or named
+  until derived (MU-RECURSION §0.0, *No constant*): six classes of
+  constant; 24 derivation entries in four groups (the open-physics
+  register and law parameters, economy ratios and calibration, bounds on
+  cognition, network bounds and certified mathematics), each with its
+  formula, boundary, open questions and implementation scope; the
+  register's carrier and a `syn` gate that refuses an unclassified
+  number; 32 open questions with the reading that decides each; and the
+  order of work, ROADMAP track 22. It lists thirteen defects found while
+  deriving, among them a panic on a hue past the palette in
+  `connection_chart`, a receipts page checked against the frame budget
+  rather than the caller's, a task address formed with a pair skipped
+  (law 2), a selector truncation that can change the anchor term,
+  unbounded recursion in the `Pred`/`Sel` walkers, a page reserve of 64
+  bytes that is no signature, and an evidence reply that never pages.
+- MU-ECONOMY §11, fairness across capacity: why a mind on one machine and
+  a solver with many accelerators are paid by the same rules (payment is
+  measured discharge, each closure pays once, discovery is paid at every
+  citation, admission is paced by room), why the growth of solvable
+  statements is growth in search cost and never in supply (difficulty is
+  the residue per lane), four open gaps (racing on latency, copying a rule
+  seen in the clear, no served frontier, no concentration reading), and
+  the implementation scope of each. ROADMAP track 14 gains *Fairness
+  across capacity*: commit before reveal, one closure across courts, the
+  race reading and the frontier reading.
 
 ## 0.2.0 — 2026-10-30
 

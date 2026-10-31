@@ -27,7 +27,7 @@ fn read_obstruction_reads_kind_off_content() {
 
     let spelled = cga::rotator(&q(0), &q(1));
     let c = read_obstruction(Content::Holonomy { versor: Some(&spelled), chart: None, proof: "unused" });
-    assert_eq!(c.kind(), ObstructionKind::C, "a spelled versor whose closure refused is cover-relative");
+    assert_eq!(c.kind(), ObstructionKind::Cover, "a spelled versor whose closure refused is cover-relative");
 
     let links = [(1, 2, 0, 3)];
     assert_eq!(read_obstruction(Content::Residue(&links)), ClosureObstruction::Cover { cocycle: links.to_vec() });
@@ -51,10 +51,10 @@ fn ruled_obstruction_carries_ruled_kind_per_code() {
         REFUSE_PERIOD_UNDERIVED,
         REFUSE_MV_INEXACT,
     ] {
-        assert_eq!(ruled_obstruction(code).kind(), ObstructionKind::I, "{code}");
+        assert_eq!(ruled_obstruction(code).kind(), ObstructionKind::Integrity, "{code}");
     }
-    assert_eq!(ruled_obstruction(REFUSE_GLUED_UNRULED).kind(), ObstructionKind::D);
-    assert_eq!(ruled_obstruction(REFUSE_NOT_NATURAL).kind(), ObstructionKind::C);
+    assert_eq!(ruled_obstruction(REFUSE_GLUED_UNRULED).kind(), ObstructionKind::Dialect);
+    assert_eq!(ruled_obstruction(REFUSE_NOT_NATURAL).kind(), ObstructionKind::Cover);
     for code in [REFUSE_ORBIT, REFUSE_NOT_CLOSED, REFUSE_VERTEX_BODY, REFUSE_EDGE] {
         assert_eq!(ruled_obstruction(code).kind(), ObstructionKind::Unclassified, "{code} is read by content");
     }
@@ -70,10 +70,10 @@ fn obstruction_kind_classifies_withheld_and_pose_arms() {
     use crate::transducer::blade::NoPose;
     use crate::transducer::family::Withheld;
     let chord = crate::transducer::sentence::tests::common::some_overlap();
-    assert_eq!(Withheld::OrbitObstruction { chord, key: [0, 0] }.obstruction_kind(), ObstructionKind::C);
-    assert_eq!(Withheld::CoboundaryResidue { links: 1, pairs: 1 }.obstruction_kind(), ObstructionKind::C);
-    assert_eq!(Withheld::Acyclic { links: 0, pairs: 0 }.obstruction_kind(), ObstructionKind::N);
-    assert_eq!(Withheld::NoTrajectory.obstruction_kind(), ObstructionKind::N);
+    assert_eq!(Withheld::OrbitObstruction { chord, key: [0, 0] }.obstruction_kind(), ObstructionKind::Cover);
+    assert_eq!(Withheld::CoboundaryResidue { links: 1, pairs: 1 }.obstruction_kind(), ObstructionKind::Cover);
+    assert_eq!(Withheld::Acyclic { links: 0, pairs: 0 }.obstruction_kind(), ObstructionKind::NoQuestion);
+    assert_eq!(Withheld::NoTrajectory.obstruction_kind(), ObstructionKind::NoQuestion);
     use crate::transducer::blade::{Harmonic, Incongruence, TowerRefusal};
     let at = TowerRefusal::At;
     for p in [
@@ -87,9 +87,9 @@ fn obstruction_kind_classifies_withheld_and_pose_arms() {
         NoPose::Isotropy,
         NoPose::Irrational,
     ] {
-        assert_eq!(p.obstruction_kind(), Some(ObstructionKind::P), "{p:?}");
+        assert_eq!(p.obstruction_kind(), Some(ObstructionKind::Permanent), "{p:?}");
     }
-    assert_eq!(NoPose::Oblique.obstruction_kind(), Some(ObstructionKind::D));
-    assert_eq!(NoPose::Bodiless.obstruction_kind(), Some(ObstructionKind::I));
+    assert_eq!(NoPose::Oblique.obstruction_kind(), Some(ObstructionKind::Dialect));
+    assert_eq!(NoPose::Bodiless.obstruction_kind(), Some(ObstructionKind::Integrity));
     assert_eq!(NoPose::Unoriented.obstruction_kind(), None, "a held stabilizer, not a refusal");
 }

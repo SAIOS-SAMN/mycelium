@@ -216,7 +216,7 @@ pub struct Contemplation {
     /// MU-CLIENT §5.4 (E1), §7.1 R2 — THE SCENE EACH DEMAND WAS PERCEIVED
     /// IN, by its residue's canonical ray: filed by the perception that filed
     /// the demand (`demands_in_scene`, whichever reader docketed it) and
-    /// handed out with it (`take_demands`) — so its binding is a return of a
+    /// handed out with it (`drain_demands`) — so its binding is a return of a
     /// thought of that scene and what was held for the scene's return leaves,
     /// whether or not the perceiving thought still stands. Volatile, as the
     /// docket.
@@ -405,19 +405,19 @@ impl Contemplation {
     /// THE KEY A CITED ADDRESS IS FILED UNDER in the citation fibration: its
     /// 32-byte hash — the address compacted, located exactly by every reader
     /// that holds it (`cited`).
-    pub(crate) fn cited_at(addr: &[u8]) -> [u8; 32] {
-        crate::chronometry::payload_hash(addr)
+    pub(crate) fn cited_at(address: &[u8]) -> [u8; 32] {
+        crate::chronometry::payload_hash(address)
     }
 
-    /// Whether a held thought cites `addr`.
-    pub(crate) fn cites(&self, addr: &[u8]) -> bool {
-        self.cited.get(&Self::cited_at(addr)).is_some_and(|m| !m.is_empty())
+    /// Whether a held thought cites `address`.
+    pub(crate) fn cites(&self, address: &[u8]) -> bool {
+        self.cited.get(&Self::cited_at(address)).is_some_and(|m| !m.is_empty())
     }
 
-    pub fn glues_word(&self, addr: &[u8]) -> bool {
+    pub fn glues_word(&self, address: &[u8]) -> bool {
         self.bubbles
             .scoped()
-            .any(|(_, b)| b.glues.contains(addr))
+            .any(|(_, b)| b.glues.contains(address))
     }
 
     /// Record that idea `bubble` glued crystallized form `word`.
@@ -1046,7 +1046,7 @@ impl Contemplation {
         let Some(remainder) = element::place_chain(&remainder) else {
             return;
         };
-        let key = remainder_addr(&remainder);
+        let key = remainder_address(&remainder);
         let inv = stalk::invariant(&remainder);
         let cover = cover_of(&inv);
         // The volume is the remainder's own measure (L7b): a T extent of
@@ -1168,7 +1168,7 @@ impl Contemplation {
         if !f.is_cauterized() {
             return None;
         }
-        let mag = form_mag(f)?;
+        let mag = form_magnitude(f)?;
         if mag.iter().all(|&x| x == 0) {
             return None;
         }
@@ -1207,7 +1207,7 @@ impl Contemplation {
                 }
                 (pay, b.family.clone())
             }
-            None => (form_mag(f)?, Vec::new()),
+            None => (form_magnitude(f)?, Vec::new()),
         };
         let e = sentence::as_element_form(f, mag)?;
         let retire = b.glued_by.is_empty();

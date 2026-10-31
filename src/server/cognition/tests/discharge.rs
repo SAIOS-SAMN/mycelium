@@ -55,7 +55,7 @@ fn mint_sentence_escrows_discharge_not_span() {
     assert_eq!(stood.magnitude(), d, "a closed sentence's magnitude is its discharge, 𝒯 included");
 
     let mut k = Court::new();
-    let task = crate::registry::task_id(&crate::arc::Task { train: family.clone(), test: Vec::new() }).expect("a task");
+    let task = crate::registry::task_address(&crate::arc::Task { train: family.clone(), test: Vec::new() }).expect("a task");
     k.bind_task_family(&task, family);
     assert_eq!(
         k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&stood)),

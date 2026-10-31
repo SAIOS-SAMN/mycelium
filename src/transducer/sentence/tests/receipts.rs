@@ -18,7 +18,7 @@ fn leaf(plane: (u8, u8)) -> Form {
     closed_word_form(Word::from_letters(&[(q, false)]), None)
 }
 
-fn addr_of(f: &Form) -> crate::transducer::address::Address {
+fn address_of(f: &Form) -> crate::transducer::address::Address {
     as_element_form(f, [1, 0, 0, 0]).expect("tape").address()
 }
 
@@ -38,7 +38,7 @@ fn shift(dx: i64, dy: i64) -> crate::transducer::element::Versor {
 #[test]
 fn receipts_survive_element_record() {
     let a = leaf((0, 1));
-    let a_at = addr_of(&a);
+    let a_at = address_of(&a);
     let mut host = Form::default();
     host.glue_append_under(&a, a_at.clone(), Word::identity(), [0, 0, 0, 1], shift(3, 0))
         .expect("host cites a");
@@ -69,7 +69,7 @@ fn receipts_survive_element_record() {
 #[test]
 fn set_receipts_keeps_address() {
     let a = leaf((0, 1));
-    let a_at = addr_of(&a);
+    let a_at = address_of(&a);
     let mut host = Form::default();
     host.glue_append_under(&a, a_at, Word::identity(), [0, 0, 0, 1], shift(1, 0))
         .expect("host cites a");
@@ -110,7 +110,7 @@ fn set_receipts_keeps_address() {
 fn nerve_edge_screw_carries_citation_slip() {
     use num_traits::Zero;
     let a = leaf((0, 1));
-    let a_at = addr_of(&a);
+    let a_at = address_of(&a);
     let mut host = Form::default();
     host.glue_append_under(&a, a_at, Word::identity(), [0, 0, 0, 1], shift(3, 0))
         .expect("host cites a");
@@ -158,8 +158,8 @@ fn nerve_edge_host_ignores_glue_order() {
     // placed where its place derives, or not at all).
     let a = leaf((0, 1));
     let b = leaf((0, 3));
-    let a_at = addr_of(&a);
-    let b_at = addr_of(&b);
+    let a_at = address_of(&a);
+    let b_at = address_of(&b);
     assert_ne!(a_at, b_at, "two leaves at two planes are two forms");
 
     let sites = |first: (&Form, crate::transducer::address::Address),
@@ -343,8 +343,8 @@ fn form_vertex_key_joins_hosts_citing_two_forms() {
     // reason.
     let a = leaf((0, 1));
     let b = leaf((0, 3));
-    let a_at = addr_of(&a);
-    let b_at = addr_of(&b);
+    let a_at = address_of(&a);
+    let b_at = address_of(&b);
     assert_ne!(a_at, b_at, "two leaves at two planes are two forms");
 
     let cite = |f: &Form, at: crate::transducer::address::Address| {
@@ -391,7 +391,7 @@ fn form_vertex_key_joins_hosts_citing_two_forms() {
 #[test]
 fn form_vertex_key_citation_size_ignores_cited_form() {
     let a = leaf((0, 1));
-    let a_at = addr_of(&a);
+    let a_at = address_of(&a);
 
     let cite = |f: &Form, at: crate::transducer::address::Address| {
         let mut host = Form::default();
@@ -402,7 +402,7 @@ fn form_vertex_key_citation_size_ignores_cited_form() {
         host
     };
     let one = cite(&a, a_at.clone());
-    let one_at = addr_of(&one);
+    let one_at = address_of(&one);
     assert!(
         one_at.as_bytes().len() > a_at.as_bytes().len(),
         "a form that cites is larger than the leaf it cites — it has more cells"
@@ -419,10 +419,10 @@ fn form_vertex_key_citation_size_ignores_cited_form() {
 /// A CITED ADDRESS IS NOT BOUNDED BY 64 KB, and the codec must not be
 /// either.
 ///
-/// `put_addr` is the wire embedding — `len16 + bytes` — and refuses an
+/// `put_address` is the wire embedding — `len16 + bytes` — and refuses an
 /// address it cannot fit. A form's address is its coordinates written out
 /// (law 2) and a 1 655-vertex form's runs to 10 MB, so an envelope written
-/// with `put_addr` would have refused every citation of a real form and
+/// with `put_address` would have refused every citation of a real form and
 /// come back attesting nothing. The envelope uses the key-field embedding
 /// (u32) throughout.
 #[test]

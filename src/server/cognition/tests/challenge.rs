@@ -17,7 +17,7 @@ fn key(b: u8) -> SigningKey {
     SigningKey::from_bytes(&[b; 32])
 }
 
-fn vk(k: &SigningKey) -> [u8; 32] {
+fn verifying(k: &SigningKey) -> [u8; 32] {
     k.verifying_key().to_bytes()
 }
 
@@ -44,7 +44,7 @@ fn challenger() -> SigningKey {
 }
 
 fn domain() -> [u8; 32] {
-    vk(&key(4))
+    verifying(&key(4))
 }
 
 /// The domain founded with its three lines and its reserve, the reserve
@@ -54,17 +54,17 @@ fn founded() -> Court {
     use crate::anastome::dialogue::domain::{Bond, DomainGenesis, Founded, Reservation};
     let (a, p, q) = tiers();
     let r = reserve();
-    let mut ts = vec![vk(&a), vk(&p), vk(&q), vk(&r)];
+    let mut ts = vec![verifying(&a), verifying(&p), verifying(&q), verifying(&r)];
     ts.sort_unstable();
     let mut k = Court::new();
     let genesis = DomainGenesis { domain: domain(), tiers: ts };
     assert!(matches!(k.admit_domain(&genesis.sign(&key(4))), Founded::Sealed { .. }));
-    let reservation = Reservation { domain: domain(), tier: vk(&r), nonce: [0; 32] };
+    let reservation = Reservation { domain: domain(), tier: verifying(&r), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&reservation.sign(&key(4))), Founded::Reserved { .. }));
     let anchor = k.anchor();
-    k.treasury.genesis(vk(&r), [12, 0, 0, 0], anchor);
+    k.treasury.genesis(verifying(&r), [12, 0, 0, 0], anchor);
     for (i, line) in [(0u8, &a), (1, &p), (2, &q)] {
-        let bond = Bond { domain: domain(), reserve: vk(&r), tier: vk(line), mu: Some([4, 0, 0, 0]), nonce: [i; 32] };
+        let bond = Bond { domain: domain(), reserve: verifying(&r), tier: verifying(line), mu: Some([4, 0, 0, 0]), nonce: [i; 32] };
         assert!(matches!(k.bond(&bond.sign(&r)), Founded::Bonded { .. }));
     }
     k
@@ -73,7 +73,7 @@ fn founded() -> Court {
 /// A fold whose prefix is the head its tier line's `entries` reach from the
 /// zero head (the tier's first fold).
 fn fold(tier: &SigningKey, entries: &[Entry], rows: Vec<Net>, declared: Vec<Net>, children: Vec<ChildNet>) -> TierFold {
-    TierFold { tier: vk(tier), prefix: line_head([0; 32], entries), rows, declared, children, handoffs: Vec::new() }
+    TierFold { tier: verifying(tier), prefix: line_head([0; 32], entries), rows, declared, children, handoffs: Vec::new() }
 }
 
 /// `A`'s line: one entry — `w1` +10, `w2` −4 on G, the 6 made declared by `w9`.
@@ -101,7 +101,7 @@ fn sealed(k: &mut Court, f: TierFold, by: &SigningKey) -> FoldAt {
     };
     let mut prefix = [5u8; 32];
     prefix[..8].copy_from_slice(&k.chain.head_height().to_be_bytes());
-    let carrier = TierFold { tier: vk(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
+    let carrier = TierFold { tier: verifying(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
     match k.admit_uplink(&carrier.sign(&reserve())) {
         Uplinked::Chained { at, .. } => FoldAt { stamp: at, path: vec![0] },
         other => panic!("carried: {other:?}"),
@@ -183,13 +183,13 @@ fn challenge_falsifies_fold_its_line_does_not_sum_to() {
     let lie = fold(&a, &e, vec![(who(1), g(9)), (who(2), g(-3))], e[0].declared.clone(), Vec::new());
     assert_eq!(lie.continuity(), Ok(()), "continuity alone does not catch it");
     let at = sealed(&mut k, lie.clone(), &a);
-    let reserve_bond = k.bond_of(&vk(&reserve()));
+    let reserve_bond = k.bond_of(&verifying(&reserve()));
     let reply = k.challenge(&evidence(&lie, &at, e).sign(&challenger()));
     assert!(matches!(reply, Challenged::Falsified { unwound: 1, .. }), "the carrying reserve fold unwound: {reply:?}");
     assert_eq!(k.finality(&at), Finality::Falsified);
     assert_eq!(k.finality(&FoldAt::sealed(at.stamp)), Finality::Unwound, "the reserve refiles without the line");
-    assert_eq!(k.bond_of(&vk(&a)), [2, 0, 0, 0], "the line's own bond slashed by half");
-    assert_eq!(k.bond_of(&vk(&reserve())), reserve_bond, "never the reserve's");
+    assert_eq!(k.bond_of(&verifying(&a)), [2, 0, 0, 0], "the line's own bond slashed by half");
+    assert_eq!(k.bond_of(&verifying(&reserve())), reserve_bond, "never the reserve's");
     pass(&mut k, at.stamp.h + CHALLENGE_WINDOW);
     assert_eq!(k.finality(&at), Finality::Falsified, "never final");
 }
@@ -283,7 +283,7 @@ fn challenge_falsified_parent_returns_child_netting() {
         };
         let mut prefix = [6u8; 32];
         prefix[0] = nonce;
-        let carrier = TierFold { tier: vk(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
+        let carrier = TierFold { tier: verifying(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
         k.admit_uplink(&carrier.sign(&reserve()))
     };
     assert!(matches!(refile(&mut k, 1), Uplinked::ChildRefused { .. }), "consumed by P");
@@ -334,10 +334,10 @@ fn arbitrage(k: &mut Court) -> (FoldAt, Vec<u8>) {
         rate: [(1, 1), (n, 1), (1, 1), (1, 1)],
     };
     let p_fold =
-        TierFold { tier: vk(&p), prefix: [2; 32], rows: vec![(who(1), g(6))], declared: Vec::new(), children: vec![half(2)], handoffs: Vec::new() };
+        TierFold { tier: verifying(&p), prefix: [2; 32], rows: vec![(who(1), g(6))], declared: Vec::new(), children: vec![half(2)], handoffs: Vec::new() };
     let p_at = sealed(k, p_fold.clone(), &p);
     let q_fold = TierFold {
-        tier: vk(&q),
+        tier: verifying(&q),
         prefix: [3; 32],
         rows: vec![(who(1), g(9))],
         declared: Vec::new(),
@@ -501,13 +501,13 @@ fn challenge_withdraw_reopens_self_demand_once() {
 fn line_head_reads_back_with_setting_fold() {
     let (a, ..) = tiers();
     let mut k = founded();
-    assert_eq!(k.line_head(&vk(&a)), ([0; 32], None), "no fold: the zero head");
+    assert_eq!(k.line_head(&verifying(&a)), ([0; 32], None), "no fold: the zero head");
     let f = a_fold();
     let at = sealed(&mut k, f.clone(), &a);
-    assert_eq!(k.line_head(&vk(&a)), (f.prefix, Some(at.clone())));
+    assert_eq!(k.line_head(&verifying(&a)), (f.prefix, Some(at.clone())));
     let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
-    assert_eq!(booted.line_head(&vk(&a)), (f.prefix, Some(at)), "re-derived from the records");
+    assert_eq!(booted.line_head(&verifying(&a)), (f.prefix, Some(at)), "re-derived from the records");
 }
 
 /// A FOLD SEALED BEFORE THE LINE LAW IS GRANDFATHERED (as
@@ -520,7 +520,7 @@ fn line_head_reads_back_with_setting_fold() {
 fn finality_grandfathers_pre_line_fold() {
     let (_, p, _) = tiers();
     let mut k = founded();
-    let rf = TierFold { tier: vk(&reserve()), ..a_fold() };
+    let rf = TierFold { tier: verifying(&reserve()), ..a_fold() };
     let Uplinked::Admitted { at, .. } = k.admit_uplink(&rf.clone().sign(&reserve())) else { panic!("the reserve's own") };
     let r_at = FoldAt::sealed(at);
     // As sealed before 2(c): admitted, held by its coordinates, never recorded.

@@ -45,12 +45,12 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
 }
 
 /// The seated domain, its sub-origin where one is named, and the seats sat.
-type Seated = ([u8; 32], Option<[u8; 32]>, mycelium::sdk::Sit);
+type Seated = ([u8; 32], Option<[u8; 32]>, mycelium::sdk::Sitting);
 
 /// THE SEATS `--seat` NAMES: `<domain-hex>[/<sub-origin-hex>] <seat-id>[,…]`
 /// or `… all`; none where the flag is absent.
 fn seats(args: &[String]) -> Result<Option<Seated>, String> {
-    use mycelium::sdk::Sit;
+    use mycelium::sdk::Sitting;
     let Some(at) = args.iter().position(|a| a == "--seat") else { return Ok(None) };
     let (Some(d), Some(s)) = (args.get(at + 1), args.get(at + 2)) else {
         return Err("--seat takes <domain-hex>[/<sub-origin-hex>] <seat-id>[,<seat-id>…] | all".to_string());
@@ -66,8 +66,8 @@ fn seats(args: &[String]) -> Result<Option<Seated>, String> {
         None => None,
     };
     let sit = match s.as_str() {
-        "all" => Sit::All,
-        list => Sit::Seats(list.split(',').map(|one| one.trim().parse::<u32>().map_err(|e| format!("--seat: {one} is not a seat id: {e}"))).collect::<Result<_, _>>()?),
+        "all" => Sitting::All,
+        list => Sitting::Seats(list.split(',').map(|one| one.trim().parse::<u32>().map_err(|e| format!("--seat: {one} is not a seat id: {e}"))).collect::<Result<_, _>>()?),
     };
     Ok(Some((domain, sub_origin, sit)))
 }
@@ -144,7 +144,7 @@ fn main() {
     // A NEW MIND'S IDENTITY, minted and printed as the line the mesh's
     // `genesis` allocation names it by; nothing is started.
     if args.iter().any(|a| a == "--init") {
-        let vk = mycelium::court::identity::hex32(&voice_key.vk_bytes());
+        let vk = mycelium::court::identity::hex32(&voice_key.verifying_bytes());
         println!("{}: voice key {}… vk {vk}", home.display(), voice_key.prefix());
         println!("genesis line: voice {vk} <S> <G> <T> <H>");
         std::process::exit(0)

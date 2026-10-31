@@ -119,7 +119,7 @@ pub(crate) fn offer(kernel: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Ve
             let Some(w) = dialogue::decode_offer_reply(&reply) else {
                 continue;
             };
-            if w.vk() == mesh.vk {
+            if w.vantage() == mesh.vk {
                 continue;
             }
             match w {

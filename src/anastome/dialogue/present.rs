@@ -60,8 +60,8 @@ pub fn encode_presentation_reply(words: &[Taught], a: &PresentationAnswer) -> Op
     out.push(u8::from(a.read));
     crate::transducer::address::put_u16_count(&mut out, a.cites.len())?;
     for (form, vertex, e) in &a.cites {
-        put_addr(&mut out, form)?;
-        put_addr(&mut out, vertex)?;
+        put_address(&mut out, form)?;
+        put_address(&mut out, vertex)?;
         out.extend_from_slice(&e.to_le_bytes());
     }
     out.push(u8::from(a.composes));
@@ -88,8 +88,8 @@ pub fn decode_presentation_reply(body: &[u8]) -> Option<(Vec<Taught>, Presentati
     let n = crate::transducer::address::take_u16_count(body, &mut p)?;
     let mut cites = Vec::with_capacity(n.min(64));
     for _ in 0..n {
-        let form = take_addr(body, &mut p)?;
-        let vertex = take_addr(body, &mut p)?;
+        let form = take_address(body, &mut p)?;
+        let vertex = take_address(body, &mut p)?;
         let e = i64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
         p += 8;
         cites.push((form, vertex, e));

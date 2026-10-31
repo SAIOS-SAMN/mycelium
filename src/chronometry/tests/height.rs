@@ -16,12 +16,12 @@ fn cite(r: &KStepReceipt) -> Parent {
 /// The head's height is one plus the maximum of its predecessor's height and its parents' heights.
 #[test]
 fn head_height_is_one_plus_max_of_prev_and_parents() {
-    let mut a = ReceiptChain::with_vk([1; 32]);
+    let mut a = ReceiptChain::with_signer([1; 32]);
     step(&mut a, Vec::new());
     assert_eq!(a.head_height(), 0, "h(genesis) = 0");
     step(&mut a, Vec::new());
     assert_eq!(a.head_height(), 1, "h = 1 + h(prev)");
-    let mut b = ReceiptChain::with_vk([2; 32]);
+    let mut b = ReceiptChain::with_signer([2; 32]);
     step(&mut b, Vec::new());
     step(&mut b, Vec::new());
     let bh = step(&mut b, Vec::new());
@@ -38,24 +38,24 @@ fn head_height_is_one_plus_max_of_prev_and_parents() {
 /// readers of one rule. It stood at 0 wherever the line had no predecessor.
 #[test]
 fn append_first_act_citing_parent_stands_above_it() {
-    let mut b = ReceiptChain::with_vk([2; 32]);
+    let mut b = ReceiptChain::with_signer([2; 32]);
     for _ in 0..4 {
         step(&mut b, Vec::new());
     }
     let parent = b.head().expect("b has acted").clone();
     assert_eq!(parent.stamp.h, 3);
-    let mut c = ReceiptChain::with_vk([3; 32]);
+    let mut c = ReceiptChain::with_signer([3; 32]);
     c.admit(parent.clone());
     let first = step(&mut c, vec![cite(&parent)]);
     assert_eq!((first.stamp.k, first.stamp.h), (0, 3 + 1), "K 0, and one above the parent it cites");
     assert!(c.verify_chain_integrity(), "the ledger re-derives it");
-    let mut d = ReceiptChain::with_vk([4; 32]);
+    let mut d = ReceiptChain::with_signer([4; 32]);
     d.admit(parent);
     assert!(
         matches!(crate::court::admission::admit_backfilled(&first, &d), crate::court::admission::Admitted::Parent(_)),
         "and a peer admits it at that height"
     );
-    let mut g = ReceiptChain::with_vk([5; 32]);
+    let mut g = ReceiptChain::with_signer([5; 32]);
     assert_eq!(step(&mut g, Vec::new()).stamp.h, 0, "a first act citing nothing is at 0");
 }
 
@@ -66,11 +66,11 @@ fn append_first_act_citing_parent_stands_above_it() {
 /// node whose content was changed refuses the rehydration.
 #[test]
 fn from_nodes_rehydrates_only_with_cited_peer_nodes() {
-    let mut peer = ReceiptChain::with_vk([2; 32]);
+    let mut peer = ReceiptChain::with_signer([2; 32]);
     step(&mut peer, Vec::new());
     let head = step(&mut peer, Vec::new());
 
-    let mut c = ReceiptChain::with_vk([1; 32]);
+    let mut c = ReceiptChain::with_signer([1; 32]);
     step(&mut c, Vec::new());
     c.admit(head.clone());
     let citing = step(&mut c, vec![cite(&head)]);
@@ -106,9 +106,9 @@ fn from_nodes_rehydrates_only_with_cited_peer_nodes() {
 /// node once at its stamp, the line verified, the head where it was.
 #[test]
 fn from_line_reads_line_image_back_whole() {
-    let mut peer = ReceiptChain::with_vk([2; 32]);
+    let mut peer = ReceiptChain::with_signer([2; 32]);
     let p0 = step(&mut peer, Vec::new());
-    let mut c = ReceiptChain::with_vk([1; 32]);
+    let mut c = ReceiptChain::with_signer([1; 32]);
     step(&mut c, Vec::new());
     c.admit(p0.clone());
     step(&mut c, vec![cite(&p0)]);
@@ -125,9 +125,9 @@ fn from_line_reads_line_image_back_whole() {
 /// another hash, is unmeasured.
 #[test]
 fn height_of_finds_held_nodes_at_stamps() {
-    let mut peer = ReceiptChain::with_vk([2; 32]);
+    let mut peer = ReceiptChain::with_signer([2; 32]);
     let p0 = step(&mut peer, Vec::new());
-    let mut c = ReceiptChain::with_vk([1; 32]);
+    let mut c = ReceiptChain::with_signer([1; 32]);
     step(&mut c, Vec::new());
     step(&mut c, Vec::new());
     c.admit(p0.clone());

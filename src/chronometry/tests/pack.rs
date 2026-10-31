@@ -44,8 +44,8 @@ fn take_var_reads_back_exactly_and_refuses_past_u64() {
 /// stamp, height, predecessor and hash re-derived, none carried.
 #[test]
 fn packer_round_trips_two_cross_citing_lines() {
-    let mut a = ReceiptChain::with_vk([1; 32]);
-    let mut b = ReceiptChain::with_vk([2; 32]);
+    let mut a = ReceiptChain::with_signer([1; 32]);
+    let mut b = ReceiptChain::with_signer([2; 32]);
     let a0 = step(&mut a, Vec::new());
     let b0 = step(&mut b, Vec::new());
     a.admit(b0.clone());
@@ -69,7 +69,7 @@ fn packer_round_trips_two_cross_citing_lines() {
 /// every node after it re-derives from the one before.
 #[test]
 fn packer_names_first_predecessor_of_mid_line_run() {
-    let mut a = ReceiptChain::with_vk([1; 32]);
+    let mut a = ReceiptChain::with_signer([1; 32]);
     let line: Vec<KStepReceipt> = (0..5).map(|_| step(&mut a, Vec::new())).collect();
     let mut packer = Packer::new();
     let mut stream = Vec::new();
@@ -85,16 +85,16 @@ fn packer_names_first_predecessor_of_mid_line_run() {
 /// place is empty.
 #[test]
 fn node_reads_as_sealed_once_predecessor_left() {
-    let mut e = ReceiptChain::with_vk([4; 32]);
+    let mut e = ReceiptChain::with_signer([4; 32]);
     let e0 = step(&mut e, Vec::new());
     let shut = {
         let (_, frame) = e.open_orbit().expect("open");
         e.append(ActKind::Orbit, frame, Vec::new(), [9; 32], Vec::new()).expect("the close")
     };
     let (_, root) = e.fold_before(shut.stamp.place()).expect("folds");
-    let cites = vec![Cite::Root { at: Stamp::new(root.height, e.vk(), root.at), hash: root.hash }];
+    let cites = vec![Cite::Root { at: Stamp::new(root.height, e.signer(), root.at), hash: root.hash }];
     let fold = e.append(ActKind::Fold, [0; 4], cites, [9; 32], Vec::new()).expect("the fold node");
-    let mut c = ReceiptChain::with_vk([1; 32]);
+    let mut c = ReceiptChain::with_signer([1; 32]);
     step(&mut c, Vec::new());
     for r in [&e0, &shut, &fold] {
         c.admit(r.clone());

@@ -28,36 +28,36 @@ pub(crate) fn run(home: &Path, at: Option<&str>, asked: &str) -> ! {
         println!("{RED}--why takes a place K.i on the hypha's own line{RESET}, not {asked}");
         std::process::exit(2)
     };
-    let Some(addr) = crate::console::address(home, at) else {
+    let Some(endpoint) = crate::console::endpoint(home, at) else {
         println!("{RED}no address to ask{RESET}: pass --at ADDR, or --home a home whose mesh names its bind");
         std::process::exit(2)
     };
-    let Some((reply, _)) = crate::transport::tell_peer_within(&addr, encode_why(WhyAsk::Own(p)), mycelium::physics::reserve_max())
+    let Some((reply, _)) = crate::transport::tell_peer_within(&endpoint, encode_why(WhyAsk::Own(p)), mycelium::physics::reserve_max())
     else {
-        println!("{RED}{addr} did not answer{RESET}");
+        println!("{RED}{endpoint} did not answer{RESET}");
         std::process::exit(2)
     };
     let why = match decode_why_reply(&reply) {
         Some(Some(w)) => w,
         Some(None) => {
-            println!("{addr} holds no act at {}", p.print());
+            println!("{endpoint} holds no act at {}", p.print());
             std::process::exit(1)
         }
         // 78.92 — THE DOOR WAS FULL: the question is left for the court's
         // next stroke, which answers it under its own lock; asked again, the
         // answer is served.
         None if mycelium::anastome::dialogue::is_deferral(&reply, mycelium::cognition::outcome_code(&mycelium::cognition::Outcome::GermPending)) => {
-            println!("{addr}'s door was full: the question is left for its next stroke — ask again for the answer");
+            println!("{endpoint}'s door was full: the question is left for its next stroke — ask again for the answer");
             std::process::exit(3)
         }
         None => {
-            println!("{RED}{addr} answered with no why this build reads{RESET} ({} bytes)", reply.len());
+            println!("{RED}{endpoint} answered with no why this build reads{RESET} ({} bytes)", reply.len());
             std::process::exit(2)
         }
     };
     let kind = String::from_utf8_lossy(why.kind.name());
     println!(
-        "{BOLD}═══ WHY {} ═══{RESET}  {addr}  {DIM}{kind} at h {} · frame {:?}{RESET}",
+        "{BOLD}═══ WHY {} ═══{RESET}  {endpoint}  {DIM}{kind} at h {} · frame {:?}{RESET}",
         why.at.place().print(),
         why.at.h,
         why.mu

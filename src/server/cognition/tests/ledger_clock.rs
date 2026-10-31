@@ -64,7 +64,7 @@ let own_head = k.chain().head_stamp().expect("the mind has acted");
 k.push_cocycle_at(&inv, [1; 32], [2; 32], v1.clone(), ck1.clone(), Some(own_head));
 
 let key = super::common::court_key("peer");
-let mut peer = crate::chronometry::ReceiptChain::with_vk(key.vk_bytes());
+let mut peer = crate::chronometry::ReceiptChain::with_signer(key.verifying_bytes());
 let pr = peer.append(crate::chronometry::ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
 let pre = crate::court::admission::SignedPrefix {
     genesis: [7; 32],
@@ -289,7 +289,7 @@ assert_eq!(k.clock(None).persisted, Some(at));
 
 // A peer's line: the last height admitted from it, and the gap.
 let key = super::common::court_key("peer");
-let mut peer = crate::chronometry::ReceiptChain::with_vk(key.vk_bytes());
+let mut peer = crate::chronometry::ReceiptChain::with_signer(key.verifying_bytes());
 let pr = peer.append(crate::chronometry::ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
 let pre = crate::court::admission::SignedPrefix {
     genesis: [7; 32],
@@ -306,6 +306,6 @@ assert!(matches!(
 ));
 let c = k.clock(None);
 let own_h = i64::try_from(c.head[0]).expect("a height");
-assert_eq!(c.peers, vec![(key.vk_bytes(), pr.stamp.h, own_h - i64::try_from(pr.stamp.h).expect("a height"))]);
+assert_eq!(c.peers, vec![(key.verifying_bytes(), pr.stamp.h, own_h - i64::try_from(pr.stamp.h).expect("a height"))]);
 assert_eq!(c.rulings, [[0; 4]; 4], "a List is no ruling");
 }

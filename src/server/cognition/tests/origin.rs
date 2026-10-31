@@ -15,7 +15,7 @@ fn key(b: u8) -> SigningKey {
     SigningKey::from_bytes(&[b; 32])
 }
 
-fn vk(k: &SigningKey) -> [u8; 32] {
+fn verifying(k: &SigningKey) -> [u8; 32] {
     k.verifying_key().to_bytes()
 }
 
@@ -25,13 +25,13 @@ fn domain() -> SigningKey {
 
 fn founded() -> Court {
     let mut k = Court::new();
-    let g = DomainGenesis { domain: vk(&domain()), tiers: vec![vk(&key(21))] };
+    let g = DomainGenesis { domain: verifying(&domain()), tiers: vec![verifying(&key(21))] };
     assert!(matches!(k.admit_domain(&g.sign(&domain())), Founded::Sealed { .. }));
     k
 }
 
 fn origin(commitment: u8) -> Origin {
-    Origin { domain: vk(&domain()), kind: 1, version: 3, commitment: [commitment; 32], universe: None }
+    Origin { domain: verifying(&domain()), kind: 1, version: 3, commitment: [commitment; 32], universe: None }
 }
 
 /// AN ORIGIN IS THE DOMAIN'S, ONCE: another key's signature, a domain not
@@ -41,10 +41,10 @@ fn origin(commitment: u8) -> Origin {
 #[test]
 fn record_origin_seals_once_never_edited() {
     let mut k = founded();
-    let d = vk(&domain());
+    let d = verifying(&domain());
     assert_eq!(k.origin_of(&d), None, "a domain founded from keys alone has no origin");
     assert_eq!(k.record_origin(&origin(9).sign(&key(5))), Founded::Unsigned);
-    let stranger = Origin { domain: vk(&key(5)), ..origin(9) }.sign(&key(5));
+    let stranger = Origin { domain: verifying(&key(5)), ..origin(9) }.sign(&key(5));
     assert_eq!(k.record_origin(&stranger), Founded::NotFounded);
     let Founded::Originated { at, receipt } = k.record_origin(&origin(9).sign(&domain())) else { panic!("sealed") };
     let head = k.chain.head().expect("the origin on the line");
@@ -70,7 +70,7 @@ fn origin_act_and_read_round_trip_on_wire() {
     let mut long = frame;
     long.push(0);
     assert_eq!(decode_domain_request(&long), None, "a byte left over is none");
-    let d = vk(&domain());
+    let d = verifying(&domain());
     assert_eq!(decode_domain_request(&encode_origin_read(d)), Some(DomainRequest::ReadOrigin(d)));
     let mut k = founded();
     let sealed = k.record_origin(&origin(9).sign(&domain()));

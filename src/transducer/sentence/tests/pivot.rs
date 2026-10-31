@@ -71,13 +71,13 @@ fn select_discharge_never_selects_by_mu() {
     fn perm(m: [u64; 4]) -> [u64; 4] {
         [m[2], m[1], m[0], m[3]]
     }
-    fn perm_mu(mu: Mu) -> Mu {
+    fn perm_mu(mu: MeasuredMu) -> MeasuredMu {
         match mu {
-            Mu::Measured { before, after } => Mu::Measured {
+            MeasuredMu::Measured { before, after } => MeasuredMu::Measured {
                 before,
                 after: perm(after),
             },
-            Mu::Unmeasured => Mu::Unmeasured,
+            MeasuredMu::Unmeasured => MeasuredMu::Unmeasured,
         }
     }
     let mut lp = loose.clone();
@@ -177,8 +177,8 @@ fn select_discharge_never_selects_by_mu() {
     assert!(held.len() >= 2, "q and q⁻¹ both discharge: {held:?}");
     let (mu0, mu1) = match (&held[0].mu, &held[1].mu) {
         (
-            Mu::Measured { before: b0, after: a0 },
-            Mu::Measured { after: a1, .. },
+            MeasuredMu::Measured { before: b0, after: a0 },
+            MeasuredMu::Measured { after: a1, .. },
         ) => {
             assert_eq!(b0[2], 3, "T is the extent passed in");
             assert_eq!(a0[2], 3);

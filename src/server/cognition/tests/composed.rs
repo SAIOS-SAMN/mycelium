@@ -47,7 +47,7 @@ fn home_install_holds_sentence_words_in_language() {
     for family in [vec![(grid(&["11"]), grid(&["22"]))], vec![(grid(&["10", "11"]), grid(&["11", "10"]))]] {
         let Some(rule) = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)) else { continue };
         let Some(spoken) = mint_sentence(&rule, &family, &NoCrystal, 0) else { continue };
-        let task = crate::registry::task_id(&crate::arc::Task { train: family.clone(), test: Vec::new() }).expect("a task identity");
+        let task = crate::registry::task_address(&crate::arc::Task { train: family.clone(), test: Vec::new() }).expect("a task identity");
         k.bind_task_family(&task, family);
         let codes = k.perceive_speech(speaker, task.as_bytes(), std::slice::from_ref(&spoken));
         assert_eq!(codes, vec![crate::anastome::dialogue::SPEECH_STOOD], "the sentence stands");

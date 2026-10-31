@@ -285,7 +285,7 @@ shape is not reviewed further; it is returned.
 | 3 | **Equality is `same_vertex`, `projective_eq`, or class-vector equality.** `==` on `Element`, `Versor`, a tape, a `Word` outside M1, or a struct that contains one is byte identity and forks or merges meanings; equality of two digests is the same fault one step removed. | `old == g` on a versor; `self.word == other.word`; `#[derive(PartialEq)]` on a type holding rotors or chains; `address() == address()` as the test of sameness; `x.class_key() == y.class_key()` | `a.same_vertex(&b)`; `r.projective_eq(&s)` (either sign); `x.class_vector() == y.class_vector()` coordinatewise on exact ℚ; an address compare only where the address is the intended identity (a citation) and the address is the M2 composite of A21 |
 | 4 | **Nothing is chosen by a scalar.** No `min_by`, `max_by`, `sort_by` over candidates, no "lowest order first", no "closest", no threshold. | `chords.sort_by_key(order)` then take the first; `candidates.iter().min_by_key(cost)`; `if remainder.len() < best` | read the class vector, list its occupied axes in the fixed order (12.6), try each, keep every certified discharge, hold incomparable ones as a vortex; dominance on μ⃗ certifies after the fact and never selects |
 | 5 | **No literal durations, no counts as generations, no free constants.** A number that is not a letter exponent, a rational read from the data, a site coordinate, or a physical size of a carrier is a constant someone will have to remove. | `Duration::from_secs(1)`; `SystemTime::now()` or `Instant::now()` read by a kernel; `gen = genome_len + dialect_len`; `depth.min(8)`; `ratio: ((1,1),(1,1))` as a placeholder; `m = 1024` | a ratio of measured transport, the round trip counted in the kernel's own strokes (`from_transport(rtt_floor, aperture_cycle())`, 45.4); a root of content (the stalk digest of the working atlas); the value the tape carries; refuse when the value is not there |
-| 6 | **Keys are canonical coordinates written out, never a digest of them, never bytes or pointers.** A memo, an address, a class, or a cache keyed by a hash of anything mathematical, of a tape, a serialisation, a file path, or a pointer is identity by bytes in disguise; hashing the canonical form is the same fault with a better excuse, because the key can no longer be read, composed, restricted, or peeled (1.7, A21). A cached key stored beside the coordinates it was computed from is the same fault again: it goes stale on the first mutation and the object and its name diverge. | `blake3(canonical coefficients)` as `Rotor::key`, `Mv::key`, `Word::class_key`, `ClassVector::class_key`, `Element::address`, `Invariant::key`, `listing_key`; `blake3(path)`; `a_ptr == b_ptr`; `format!("{s:?}")` hashed | the coordinates themselves, length-prefixed, in the fixed order of A21: the eight reduced rationals of the canonical rotor (M1), the M2 composite of a form, the chart's axes, the class vector, the canonical chain of a listing, `Sel::to_bytes`; a `Keyed` trie over those bytes, where a prefix is a stratum |
+| 6 | **Keys are canonical coordinates written out, never a digest of them, never bytes or pointers.** A memo, an address, a class, or a cache keyed by a hash of anything mathematical, of a tape, a serialisation, a file path, or a pointer is identity by bytes in disguise; hashing the canonical form is the same fault with a better excuse, because the key can no longer be read, composed, restricted, or peeled (1.7, A21). A cached key stored beside the coordinates it was computed from is the same fault again: it goes stale on the first mutation and the object and its name diverge. | `blake3(canonical coefficients)` as `Rotor::key`, `Mv::key`, `Word::class_key`, `ClassVector::class_key`, `Element::address`, `Invariant::key`, `listing_key`; `blake3(path)`; `a_ptr == b_ptr`; `format!("{s:?}")` hashed | the coordinates themselves, length-prefixed, in the fixed order of A21: the eight reduced rationals of the canonical rotor (M1), the M2 composite of a form, the chart's axes, the class vector, the canonical chain of a listing, `Selection::to_bytes`; a `Keyed` trie over those bytes, where a prefix is a stratum |
 | 7 | **Meaning is never demoted to "fibre" to make a key stable.** If two tapes that mean different things get one key, the key is wrong, whatever the comment says. | dropping the bundle's agreed shift or a contact from a sentence key because "placement is a fibre coordinate" | a body's absolute position is quotiented; a relative placement inside a sentence is a face and is identity; contact is on the form and in its key (chapter 1.5) |
 | 8 | **No shims with placeholders.** A wrapper that fills a field with a constant so a call compiles is a defect that will ship. | `sentence_rule_of` with `ratio: ((1,1),(1,1))` and empty sections; `set_magnitude([0,0,0,1])` | carry the field on the tape and read it; measure the magnitude by speaking the form over its bundle; if the value cannot be measured, the form is not spoken |
 | 9 | **Carriers are `Keyed` or `Vec` of relations.** `HashMap`, `BTreeMap`, `HashSet` do not appear in cognition; a flat map keyed by a digest collapses a dimension, and a `Keyed` trie keyed by a digest is a `HashMap` in disguise. | `HashMap<Key, Vec<Candidate>>` buckets; `std::collections::*` in a transducer or kernel file; `Keyed<[u8; 32]>` over `blake3(...)` | `Keyed<V>` (PATRICIA over the canonical coordinate bytes of A21, so `fibre(prefix)` reads a stratum), `Keyed<Keyed<()>>` for incidence, `Vec<(a, b, relation)>` for a relational field |
@@ -712,7 +712,9 @@ first (`physics/axioms/founding.rs`), each with a test that could fail
   reserve's aperture, declared `8`, is the sensor base's unit cell `2³`; the
   reserve floor's `2` is the rotor's double cover. Named open: the challenge
   window `W = 1024` (a law parameter every kernel shares, 78.125) and the
-  throat grid `2⁻⁶⁴` (an enclosure, 78.134).
+  throat grid `2⁻⁶⁴` (an enclosure, 78.134). Every number in the tree is
+  classified, and every underived one carries a derivation entry, in
+  [MU-DERIVATIONS](MU-DERIVATIONS.md).
 - **An orbit is a return** — a mode's flow on its plane, composed exactly,
   returning where its point is the identity (78.73, 78.75). A tick is the
   host handing a node a turn; a node's `K` is a ledger coordinate, its
@@ -1003,7 +1005,7 @@ same sense: the complete operation, with its invariant and its refusal.
 | **POW++** | 74, 78.22, 78.33, MU-ECONOMY | three proofs named apart: POUW (a closure ruled, mint on closure), POWC (a refusal closed at another perspective, the citation paid), POWR (retirement, the freed description burned, the compression yield paid), and the POWV share; priced per lane, layer and grade, never summed | `economy/{treasury,escrow,settle,fold}.rs`, `server/cognition/court/replay.rs` (`rule_on`) | PARTIAL: a ruling is paid and slashed at its Ruling act (EC1, ACT1 landed): Upheld mints POUW by `release_discharged` and pays POWR by `release_rewrite`, Slashed revokes by `revoke_award(Slash)` — live from `court_stroke_on` → `docket_replay` (the stroke's slashes) and from `hear_ruling` (a peer's Ruling receipt admitted, `court/ruling.rs`). POWC has no producer: `settle_refine` and `settle_condense` (`settle.rs`) have no caller; `verdict::rule` (`court/verdict/ruling.rs`) has test callers only. PHY1 open: one reserve, contacts priced per lane |
 | **The hardening path** | 80.2 | a submitted solution is adjudicated by the court; the server provides the syllabus; minerals harden into crystals by re-derivation over k-steps | `client/sdk/entity/learn.rs`, `server/cognition/court/syllabus.rs` | OPEN (DL1, GD1) |
 | **The planetary dialect** | 80 | a constructor is a letter of the local dialect; minds speak to minds by offers; the court rules what converges (n → 1) | `transducer/alphabet/`, `family/derivation`, `anastome/`, `client/sdk/entity/think.rs` (`construct_and_adjoin`) | PARTIAL: a residue the mind cannot say is constructed and its rotation adjoined as the mind's own letter (`construct_and_adjoin`, called from `client/sdk/entity/perceive.rs` and from `compose_or_construct_on` in `client/sdk/entity/think.rs`). AL1 open: the odd constructor as a letter and the mode-first peel — the slice's S1 (U15's triad) closes both. SP2 is part of the client's objective (MU-CLIENT §1 item 6, §5.5): minds speak to minds to harden language from the minds' dialects; the frames run (chatter, 78.161, 78.163), hearing in the hearer's own shells with its windings and pivots is owed (MU-CLIENT §5.3, §7.1); DL1 open; the Gödel step's backlog read first (GD1) |
-| **The coherent mind** | 78.37 | held superpositions fold back along the plexus, the ring deciding all four: a fixed section transported one edge per k-step and stopped by holonomy, classifying and never deleting; truncation to the unique 2-core, every class preserved, no matching chosen; flux per lane over one `K` deciding what lapses, `ZeroFlux` by name; a remainder's home a leaf on the word (`κ` inline, `g` a ray, `ℓ`), re-filled on a coincident class by an act; imagination as obstructions constructed, never candidates (Cartan–Dieudonné on the residue, on CS2's demand arm) | `bubble/{contemplation,shed,drive}.rs`, `cech/complex.rs`, `economy/escrow.rs`, `client/sdk/epigenome/persist.rs`, `observe/` | in the tree (TP1, TC1, FX1, RM1); the demand taker landed (`take_demands`, 78.109 C1). FX1's edge-credit tables RETIRED: the flux is the mind's field, threaded on the complex's lines; an orbit's return or a tube's cancelled net flux releases what relaxed, and the mind drains and descends there (MU-CLIENT §4.5) |
+| **The coherent mind** | 78.37 | held superpositions fold back along the plexus, the ring deciding all four: a fixed section transported one edge per k-step and stopped by holonomy, classifying and never deleting; truncation to the unique 2-core, every class preserved, no matching chosen; flux per lane over one `K` deciding what lapses, `ZeroFlux` by name; a remainder's home a leaf on the word (`κ` inline, `g` a ray, `ℓ`), re-filled on a coincident class by an act; imagination as obstructions constructed, never candidates (Cartan–Dieudonné on the residue, on CS2's demand arm) | `bubble/{contemplation,shed,drive}.rs`, `cech/complex.rs`, `economy/escrow.rs`, `client/sdk/epigenome/persist.rs`, `observe/` | in the tree (TP1, TC1, FX1, RM1); the demand taker landed (`drain_demands`, 78.109 C1). FX1's edge-credit tables RETIRED: the flux is the mind's field, threaded on the complex's lines; an orbit's return or a tube's cancelled net flux releases what relaxed, and the mind drains and descends there (MU-CLIENT §4.5) |
 
 ## 0.4 The physics over them
 
@@ -1460,7 +1462,7 @@ given where the site still exists):
 | cognition kernel (`composite_parent_id`, `section_address`) | hash links in given order, uncentred; assignment unsorted | A5, M2 |
 | sentence module (`from_element`) | trusted the germ address stored in the tape | recompute (A8 step 2) |
 | `src/transducer/blade/body.rs` (`ratio_axes`) | dropped the sign, saturated to `u64::MAX`; under `moduli ==`, `moduli.key()`, `Invariant::key`, `connection_chart` | A6 |
-| `src/court/verdict/selection.rs` (`sel_key`) | hash of `format!("{s:?}")` | A9 |
+| `src/court/verdict/selection.rs` (`selection_key`) | hash of `format!("{s:?}")` | A9 |
 | `src/bin/mycelium-server/judge/` (percept rendezvous) | percept rendezvous by `hash(pbytes[32..])` | A11 |
 | `src/court/verdict/blind.rs` (`blind_replay`) | compared the spoken chain without canonicalising it | A5 |
 | cognition kernel carrier restore, `src/economy/persist.rs`, client loaders | restored carriers under stored byte addresses after the address rule changed, without a migration | A8, M3 |
@@ -1479,7 +1481,7 @@ in one landing (chapter 41, 0.11):
 | `src/transducer/sentence/form/keys.rs` (`hue_section_key`, `vertex_transport_key`, `class_key_of_versor`) | blake3 over conjugacy ‖ gauge | the conjugacy coordinates ‖ the gauge |
 | `src/transducer/sentence/chart.rs` (`form_vertex_key`); `src/transducer/family/correspondence.rs` (`TransportClass::key`) | blake3 over kind ‖ class | kind ‖ class coordinates |
 | `src/transducer/sentence/form/certificate.rs` (certificate key); `Form.certificates`, `torsion`, `vortex`, `horizon` indices | keyed by digests | keyed by the class vector and the move (16.20) |
-| `src/transducer/cech/simplex.rs` (`simplex_key`); `src/server/cognition/cocycle.rs` (`cocycle_key`); `src/court/verdict/selection.rs` (`sel_key`); `src/server/cognition/keys.rs` (`chart_simplex_key`) | digests of sorted vertex keys and terms | the sorted vertex keys concatenated; `Sel::to_bytes` itself |
+| `src/transducer/cech/simplex.rs` (`simplex_key`); `src/server/cognition/cocycle.rs` (`cocycle_key`); `src/court/verdict/selection.rs` (`selection_key`); `src/server/cognition/keys.rs` (`chart_simplex_key`) | digests of sorted vertex keys and terms | the sorted vertex keys concatenated; `Selection::to_bytes` itself |
 | `sentence/*` `placement: (ℚ, ℚ)`, `Transport.shift`, `Rebased.shift`, `PivotBy::Placement.shift`, `Form.placements`, the 12.6 placement residue | ℚ² carried as cognition (law 11) | the carriage versor (A4) and the translator component of the holonomy versor |
 
 Allowed, and why: hypha and voice identity by verifying key; signatures;
@@ -1487,7 +1489,7 @@ receipt chains and the chains' hashes; cover and ruled roots as digests of the
 bytes sent; file integrity in persistence. Each names bytes that were
 sent or stored, so a receiver can ask for them and verify who sent them,
 and none is read as the identity of anything mathematical.
-`registry::task_id` and the client's family id are listing identities and
+`registry::task_address` and the client's family id are listing identities and
 become the canonical chains they name. `solve_gauge`'s chord `!=` is
 already projective because `Rotor`'s `PartialEq` is `projective_eq`.
 
@@ -3477,15 +3479,15 @@ escrow released to its payers.
 
 ### 16.9 A9 — Canonical selection serialisation
 
-`Sel` (`src/transducer/anchor/sel.rs`) is a term algebra: `Hue(u8)`, `Comp(Sel, u8)`,
-`Delta(Sel)`, `Star(Sel)`, `Ext(Sel, u8)`, `Inter(Sel, Sel)`,
-`Minus(Sel, Sel)`, `Flood(Sel, Sel)`, `ArgExt(Sel, u8)`. `Sel::to_bytes`
+`Selection` (`src/transducer/anchor/selection.rs`) is a term algebra: `Hue(u8)`, `Comp(Selection, u8)`,
+`Delta(Selection)`, `Star(Selection)`, `Ext(Selection, u8)`, `Inter(Selection, Selection)`,
+`Minus(Selection, Selection)`, `Flood(Selection, Selection)`, `ArgExt(Selection, u8)`. `Selection::to_bytes`
 writes the variant's tag byte (`0..=8` in that order) then its fields in
-declaration order, a `u8` as one byte, a `Sel` recursively. The grammar is
+declaration order, a `u8` as one byte, a `Selection` recursively. The grammar is
 prefix-free, so no length prefixes; fixed little-endian integers as
 everywhere in the tree. `Inter` is not reordered: `A ∩ B` and `B ∩ A` are
 distinct terms with one support, and `derive_pi` looks for a common term;
-a normal form for `Sel` is a separate move. `verdict::sel_key` =
+a normal form for `Selection` is a separate move. `verdict::selection_key` =
 `to_bytes` itself, the prefix-free term bytes, never a digest of them; the
 `format!("{s:?}")` form is deleted.
 
@@ -3892,7 +3894,7 @@ class vector, chart invariants, listing keys, certificates and every
 
 1. **Encoding.** A key is a byte string: a tag byte naming the object kind
    (rotor, versor, word form, sentence form, chart, class vector,
-   certificate, listing, `Sel`), then its coordinates in the fixed order
+   certificate, listing, `Selection`), then its coordinates in the fixed order
    the object's chapter states, coarse stratum first. A rational is
    `put_q` (sign byte, `u32`-length little-endian numerator, `u32`-length
    denominator); an integer is fixed little-endian; a vector is a `u32`
@@ -3930,7 +3932,7 @@ class vector, chart invariants, listing keys, certificates and every
 
 **Binding.** `Rotor::key`, `Mv::key`, `Word::class_key`,
 `ClassVector::key`, `Element::address`, `listing_key`, `Invariant::key`,
-`simplex_key`, `cocycle_key`, `sel_key`, the certificate key, and
+`simplex_key`, `cocycle_key`, `selection_key`, the certificate key, and
 `Keyed<K>` keyed by `&[u8]` (variable length); `CLOSED_KEY` is deleted and
 closure is `ClassVector::is_zero`. Tests: `every_key_decodes_to_its_object`,
 `fibre_of_prefix_reads_its_stratum`, `no_blake3_in_cognition` (the gate),
@@ -4684,7 +4686,7 @@ The translation arm of `blind_replay` recomputes 13.9 step 5 blind for a
 across an overlap whose fetched tapes fail (A1) for either hypha
 (`REFUSE_OVERLAP_CYCLIC`), and refuses a spoken class whose key differs
 from its recomputation on the cited tapes (`REFUSE_NOT_NATURAL`). The chain
-compare canonicalises the spoken chain by A5 first. `sel_key` is A9.
+compare canonicalises the spoken chain by A5 first. `selection_key` is A9.
 `rule(...)` is unchanged.
 
 ### 23.2 Court carriers, `src/server/cognition/`
@@ -6261,7 +6263,7 @@ a test that A3's form is reduced and equality is read on the reduced form;
 a test that A6 refuses overflow and keeps the sign;
 a test that A7's class axes are invariants, never a hash;
 a test that A8's migration conserves supply and resolves every carrier;
-`verdict::tests::sel_key_is_sel_bytes_never_debug_text`;
+`verdict::tests::selection_key_is_selection_bytes_never_debug_text`;
 a test that A10's two sockets under one key are one peer;
 a test that A11's rendezvous is by listing key, never by bytes;
 `factor::tests::factor_on_plane_understands_span_by_hnf`, `factor_off_plane_reaches_or_refuses_unmeasured`,
@@ -7010,7 +7012,7 @@ along, and the rows below that mention a key mean an A21 key.
 | chains as `Z³` support sets with summed coefficients and stripped zeros | links are `(r,c,before,after)` in `Z² × hue²` (the further coordinates ride on the pose, 51.3, 38.1); conflicting sites are refused, hues never summed | A5 (16.5) |
 | 31-bit numerator/denominator in one word; Stern–Brocot for total order | half the range for no gain; no operation needs axis order today | A6 keeps two exact limbs with refusal (16.6) |
 | refinement axis from area, boundary length, second-moment trace `(a²/w, p²/w)` | those are body moduli (`Harmonics`); the class axis uses the class rotor's scalar and pseudoscalar parts | A7 (16.7) |
-| `Sel = (predicate, stratum, harmonic_bound)`, LEB128 | `Sel` is the term algebra of `src/transducer/anchor/sel.rs` (`Sel`); fixed little-endian as everywhere | A9 (16.9) |
+| `Selection = (predicate, stratum, harmonic_bound)`, LEB128 | `Selection` is the term algebra of `src/transducer/anchor/selection.rs` (`Selection`); fixed little-endian as everywhere | A9 (16.9) |
 | Noise handshake, `P¹(F_25519)` | there is no handshake; trust is the ed25519 signature on the cover digest | A10 (16.10) |
 | rendezvous trie traversal by the A7 class axes | a percept has no class; routing is by the body chart (M4 step 1) | A11 (16.11) |
 | exponent groups as a direct product of finite cyclic groups solved mod `N` | the plane group is `(Z/4 × Z^k) ⋊ Z/2`; HNF or SNF over ℤ with `4e_u` as a relator | A12 (16.12) |
@@ -12603,7 +12605,7 @@ The contact edge is `g = (θ_bθ_a⁻¹)·V`, with `θ` each body's pose read ag
 2. **A static contact carries its tether.** `V` is content at one frame and the refraction `θ_bθ_a⁻¹` is content across a transition, so a piece at one frame forms its edge with `V` and the refraction unread by name (`static`), never read from the union's rigidity and never set to the identity (rule 11, checklist (m)); the geometric and gauge parts of a circuit's holonomy are read apart and never summed. As amended by 78.18(a), each end's pose is kept on the edge as far as it was read.
 3. **Integrity is not an obstruction.** A refusal for signature, receipt, fold or room refuses nothing about a closure; it is a fourth arm, `I`, never offered to another perspective and never counted as unclassified, while P, D and C classify closure refusals (78.9).
 
-Code: `src/transducer/sentence/transport.rs` (`Refraction::Coset`, `Refraction::Static`, `HeldPose`), `src/transducer/sentence/pivot/circuit.rs`, `src/transducer/sentence/obstruction.rs` (`ObstructionKind::I`).
+Code: `src/transducer/sentence/transport.rs` (`Refraction::Coset`, `Refraction::Static`, `HeldPose`), `src/transducer/sentence/pivot/circuit.rs`, `src/transducer/sentence/obstruction.rs` (`ObstructionKind::Integrity`).
 
 ### 78.7 Bending faces: a plane's viscosity read by the pivot
 
@@ -12774,7 +12776,7 @@ Code: `src/observe/clock.rs` (`CourtClock`, `Clock`), `src/chronometry/receipt.r
 - **Persistence.** The receipt chain is the record; the ledger, registry and eras are derived from it (law 12), and a restart replays the chain from a snapshot's height to the head.
 - **EC1.** A ruling's release, demotion or slash is applied by the node that admits its Ruling receipt (78.24(b)).
 
-Code: `src/transducer/address.rs` (`put_addr`), `src/chronometry/receipt.rs` (`Cite`), `src/observe/carriage.rs` (`Carriage`), `src/economy/persist.rs`, `src/economy/escrow.rs`.
+Code: `src/transducer/address.rs` (`put_address`), `src/chronometry/receipt.rs` (`Cite`), `src/observe/carriage.rs` (`Carriage`), `src/economy/persist.rs`, `src/economy/escrow.rs`.
 
 ### 78.23 A k-step is one orbit of a planet around its star
 
@@ -14998,14 +15000,14 @@ the court replays against the laws and answers typed, and never simulates
   (`Mind::construct_and_adjoin`): spelled as constructors certified on
   each mode's fixed locus and composing back (T1), or refused by why; once
   constructed, its rotation is adjoined as the mind's own letter on its
-  chart. The pivot's docketed demands are taken once each (`take_demands`)
+  chart. The pivot's docketed demands are taken once each (`drain_demands`)
   on the least chart of the demands' cover, and a taught word no held letter
   spells takes the same road.
 
 Code: `src/client/sdk/entity/think.rs` (`hold_perceived_from`,
 `transcribe_these`, `adjoin_letters`, `construct_and_adjoin`),
 `src/transducer/cga/constructors.rs` (`construct`),
-`src/transducer/bubble/docket.rs` (`take_demands`),
+`src/transducer/bubble/docket.rs` (`drain_demands`),
 `src/transducer/sentence/chart.rs` (`chart_of_form`),
 `src/transducer/family/derivation.rs` (`letter_reading`),
 `src/physics/laws.rs` (`verify`).

@@ -309,10 +309,10 @@ impl NoPose {
             | NoPose::Isotropy
             | NoPose::Irrational
             | NoPose::NullStep
-            | NoPose::Uncarried(_) => Some(ObstructionKind::P),
+            | NoPose::Uncarried(_) => Some(ObstructionKind::Permanent),
             NoPose::Ungauged => Some(ObstructionKind::Unclassified),
-            NoPose::Oblique => Some(ObstructionKind::D),
-            NoPose::Bodiless => Some(ObstructionKind::I),
+            NoPose::Oblique => Some(ObstructionKind::Dialect),
+            NoPose::Bodiless => Some(ObstructionKind::Integrity),
             // A cut by the stroke is no reading of the pair at all.
             NoPose::Unoriented | NoPose::Unbounded => None,
         }

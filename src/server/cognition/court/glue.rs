@@ -7,7 +7,7 @@
 //! The install that convergence rests on is `install.rs`.
 
 use crate::cognition::*;
-use crate::observe::rep;
+use crate::observe::replication;
 use crate::transducer::address::Address;
 use crate::transducer::alphabet::Rotor;
 use crate::transducer::element::{self, Element, Versor};
@@ -96,7 +96,7 @@ impl Court {
         cover: &mut crate::network::nerve::Cover,
         budget: &mut crate::physics::Budget,
     ) -> Option<Glue> {
-        let addr = spoken.address();
+        let address = spoken.address();
         let inv = crate::transducer::stalk::invariant_of(&spoken);
         // 78.71 — A WORD HELD, HEARD AGAIN FROM THE SAME PEER, IS NO NEW
         // EVIDENCE. Only dialect and slashed words were marked heard, so a
@@ -111,19 +111,19 @@ impl Court {
         // last word glued from it on that chart, so reading the section missed
         // every earlier word from the same peer (c re-admitted 635 in five
         // minutes after the first cut of this stop).
-        let mut heard_key = addr.as_bytes().to_vec();
+        let mut heard_key = address.as_bytes().to_vec();
         heard_key.extend_from_slice(&peer);
         let from_this_peer = self.glued_from.contains(&heard_key);
-        if from_this_peer && self.ruled_contains(&addr) {
-            crate::observe::note_replication(Some(peer), rep::GLUE_HEARD, 1);
+        if from_this_peer && self.ruled_contains(&address) {
+            crate::observe::note_replication(Some(peer), replication::GLUE_HEARD, 1);
             return Some(Glue::Held);
         }
-        match self.glue_stop(&spoken, &addr, budget) {
+        match self.glue_stop(&spoken, &address, budget) {
             Some(Stop::Unread) => {
-                crate::observe::note_replication(Some(peer), rep::GLUE_UNREAD, 1);
+                crate::observe::note_replication(Some(peer), replication::GLUE_UNREAD, 1);
                 return None;
             }
-            Some(stop) => return Some(self.stopped(stop, &spoken, addr, peer)),
+            Some(stop) => return Some(self.stopped(stop, &spoken, address, peer)),
             None => {}
         }
         let mut cx = match self.complexes.remove(&inv.key()) {
@@ -133,11 +133,11 @@ impl Court {
         // 78.75 — the court listens to its pivots on every chart it glues.
         cx.arm_outflow();
         let vol0 = self.volume_of_simplex(&inv);
-        write_peer_section(&mut cx, &spoken, &addr, peer, vol0);
+        write_peer_section(&mut cx, &spoken, &address, peer, vol0);
         let held = cx.sections.get(self_id.as_slice()).and_then(|s| self.word_at(&s.addr).cloned());
         let standing = match &held {
             Some(rep) => {
-                self.read_against_section(rep, &spoken, &addr, peer, budget);
+                self.read_against_section(rep, &spoken, &address, peer, budget);
                 self.stand(rep, &spoken, &inv, self_id, peer)
             }
             None => Standing::Member,
@@ -149,21 +149,21 @@ impl Court {
         self.complexes.insert(inv.key(), cx);
         // 78.75 — what the link's fills sealed, and what earlier releases on
         // the chart handed back, read into the field and the chart's algebra.
-        self.book_outflow(&inv, addr.as_bytes(), budget);
+        self.book_outflow(&inv, address.as_bytes(), budget);
         if let Standing::Refused(why) = standing {
-            return Some(self.refuse(addr, &inv, peer, rep::GLUE_GATE_REFUSED, why));
+            return Some(self.refuse(address, &inv, peer, replication::GLUE_GATE_REFUSED, why));
         }
         if let Some(why) = self.court_torsion(&spoken, &inv, self_id, peer) {
-            return Some(self.refuse(addr, &inv, peer, rep::GLUE_TORSION_REFUSED, why));
+            return Some(self.refuse(address, &inv, peer, replication::GLUE_TORSION_REFUSED, why));
         }
         let outcome = self.settle(fills, &standing, &inv, peer, budget);
         crate::observe::note_replication(
             Some(peer),
             match &outcome {
-                Glue::Admitted => rep::GLUE_ADMITTED,
-                Glue::Attached => rep::GLUE_ATTACHED,
-                Glue::Dialect | Glue::Slashed(_) => rep::GLUE_CLASS_DIALECT,
-                Glue::Held => rep::GLUE_HEARD,
+                Glue::Admitted => replication::GLUE_ADMITTED,
+                Glue::Attached => replication::GLUE_ATTACHED,
+                Glue::Dialect | Glue::Slashed(_) => replication::GLUE_CLASS_DIALECT,
+                Glue::Held => replication::GLUE_HEARD,
             },
             1,
         );
@@ -172,10 +172,10 @@ impl Court {
         }
         match (&outcome, standing, held) {
             (Glue::Admitted | Glue::Attached, Standing::Placed(v), Some(rep)) => {
-                self.hold_glued(&spoken, addr, peer, Some((rep.address(), v)), budget);
+                self.hold_glued(&spoken, address, peer, Some((rep.address(), v)), budget);
             }
-            (Glue::Admitted | Glue::Attached, _, _) => self.hold_glued(&spoken, addr, peer, None, budget),
-            (Glue::Dialect | Glue::Slashed(_), _, _) => self.heard_mark(addr, &inv),
+            (Glue::Admitted | Glue::Attached, _, _) => self.hold_glued(&spoken, address, peer, None, budget),
+            (Glue::Dialect | Glue::Slashed(_), _, _) => self.heard_mark(address, &inv),
             (Glue::Held, _, _) => {}
         }
         Some(outcome)
@@ -183,8 +183,8 @@ impl Court {
 
     /// THE STOPS, in order: heard, the replay's refusal, an unproven colour
     /// word, a missing citation. `None` where the word goes on to the cover.
-    fn glue_stop(&mut self, spoken: &Element, addr: &Address, budget: &mut crate::physics::Budget) -> Option<Stop> {
-        if self.heard.contains(addr) {
+    fn glue_stop(&mut self, spoken: &Element, address: &Address, budget: &mut crate::physics::Budget) -> Option<Stop> {
+        if self.heard.contains(address) {
             return Some(Stop::Heard);
         }
         match self.court_replay(spoken, budget) {
@@ -196,7 +196,7 @@ impl Court {
             return Some(Stop::ColourUnproven);
         }
         let cites_unheld = |s: &Element| {
-            s.receipts().nerve.iter().any(|e| &e.target != addr && self.word_at(e.target.as_bytes()).is_none())
+            s.receipts().nerve.iter().any(|e| &e.target != address && self.word_at(e.target.as_bytes()).is_none())
         };
         (spoken.is_sentence() && cites_unheld(spoken)).then_some(Stop::CitationMissing)
     }
@@ -204,23 +204,23 @@ impl Court {
     /// A STOP'S VERDICT, counted on its path: a heard word and an unproven
     /// colour word wait as dialect; a refused replay and a missing citation
     /// are marked heard.
-    fn stopped(&mut self, stop: Stop, spoken: &Element, addr: Address, peer: [u8; 32]) -> Glue {
+    fn stopped(&mut self, stop: Stop, spoken: &Element, address: Address, peer: [u8; 32]) -> Glue {
         let inv = crate::transducer::stalk::invariant_of(spoken);
         match stop {
             Stop::Heard => {
-                crate::observe::note_replication(Some(peer), rep::GLUE_HEARD, 1);
+                crate::observe::note_replication(Some(peer), replication::GLUE_HEARD, 1);
                 Glue::Dialect
             }
-            Stop::Replay(why) => self.refuse(addr, &inv, peer, rep::GLUE_REPLAY_REFUSED, why),
+            Stop::Replay(why) => self.refuse(address, &inv, peer, replication::GLUE_REPLAY_REFUSED, why),
             // Not ruled this stroke: nothing heard, nothing refused.
             Stop::Unread => Glue::Dialect,
             Stop::ColourUnproven => {
-                crate::observe::note_replication(Some(peer), rep::GLUE_COLOUR_UNPROVEN, 1);
+                crate::observe::note_replication(Some(peer), replication::GLUE_COLOUR_UNPROVEN, 1);
                 Glue::Dialect
             }
             Stop::CitationMissing => {
-                self.heard_mark(addr, &inv);
-                crate::observe::note_replication(Some(peer), rep::GLUE_CITATION_MISSING, 1);
+                self.heard_mark(address, &inv);
+                crate::observe::note_replication(Some(peer), replication::GLUE_CITATION_MISSING, 1);
                 Glue::Dialect
             }
         }
@@ -228,8 +228,8 @@ impl Court {
 
     /// A REFUSAL: the word marked heard on its chart, the path counted, the
     /// reason carried.
-    fn refuse(&mut self, addr: Address, inv: &crate::transducer::stalk::Invariant, peer: [u8; 32], axis: usize, why: &'static str) -> Glue {
-        self.heard_mark(addr, inv);
+    fn refuse(&mut self, address: Address, inv: &crate::transducer::stalk::Invariant, peer: [u8; 32], axis: usize, why: &'static str) -> Glue {
+        self.heard_mark(address, inv);
         crate::observe::note_replication(Some(peer), axis, 1);
         Glue::Slashed(why)
     }
@@ -239,25 +239,25 @@ impl Court {
     /// (one Γ, a conjugate, an unspellable conjugator, or distinct), and the
     /// two lifted into perception and compared lane by lane on TUniversal
     /// {S, G, T, H} — coherent, unread, or the lanes that diverge.
-    fn read_against_section(&self, rep: &Element, spoken: &Element, addr: &Address, peer: [u8; 32], budget: &mut crate::physics::Budget) {
+    fn read_against_section(&self, rep: &Element, spoken: &Element, address: &Address, peer: [u8; 32], budget: &mut crate::physics::Budget) {
         use crate::transducer::sentence::{compare, from_element_form, lift, relation, Relation};
         let (Some(h), Some(o)) = (from_element_form(rep), from_element_form(spoken)) else { return };
-        let axis = match (&rep.address() == addr, relation(&h, &o)) {
-            (true, _) => rep::RELATION_SAME,
-            (false, Relation::Refracted(_)) => rep::RELATION_REFRACTED,
-            (false, Relation::Conjugate(_)) => rep::RELATION_CONJUGATE,
-            (false, Relation::Unspellable(_)) => rep::RELATION_UNSPELLABLE,
-            (false, Relation::Unrelated) => rep::RELATION_DISTINCT,
+        let axis = match (&rep.address() == address, relation(&h, &o)) {
+            (true, _) => replication::RELATION_SAME,
+            (false, Relation::Refracted(_)) => replication::RELATION_REFRACTED,
+            (false, Relation::Conjugate(_)) => replication::RELATION_CONJUGATE,
+            (false, Relation::Unspellable(_)) => replication::RELATION_UNSPELLABLE,
+            (false, Relation::Unrelated) => replication::RELATION_DISTINCT,
         };
         crate::observe::note_replication(Some(peer), axis, 1);
         let c = compare(&lift(&h, budget), &lift(&o, budget));
         match (c.coherent(), c.unread) {
-            (true, _) => crate::observe::note_replication(Some(peer), rep::PERCEIVED_COHERENT, 1),
+            (true, _) => crate::observe::note_replication(Some(peer), replication::PERCEIVED_COHERENT, 1),
             (false, (0, 0)) => {}
-            (false, _) => crate::observe::note_replication(Some(peer), rep::PERCEIVED_UNREAD, 1),
+            (false, _) => crate::observe::note_replication(Some(peer), replication::PERCEIVED_UNREAD, 1),
         }
         for lane in c.diverging() {
-            crate::observe::note_replication(Some(peer), rep::RESIDUE_S + lane, 1);
+            crate::observe::note_replication(Some(peer), replication::RESIDUE_S + lane, 1);
         }
     }
 
@@ -436,7 +436,7 @@ impl Court {
     /// its identity dislocation; an Install act on this court's line, the
     /// peer its witness; the ruled cover and the federation; the released
     /// claim minted at that Install (EC1, POUW).
-    fn hold_glued(&mut self, spoken: &Element, addr: Address, peer: [u8; 32], placed: Option<(Address, Versor)>, budget: &mut crate::physics::Budget) {
+    fn hold_glued(&mut self, spoken: &Element, address: Address, peer: [u8; 32], placed: Option<(Address, Versor)>, budget: &mut crate::physics::Budget) {
         let asg = element::assignment(spoken.sub());
         if let Some((rep, v)) = placed {
             if let Some(w) = self.word_mut(&rep) {
@@ -445,15 +445,15 @@ impl Court {
             }
         }
         // Whether the language gains a word here, read before it is held.
-        let entered = !self.ruled_contains(&addr);
-        if let (None, false) = (self.basis.get(&addr), spoken.is_connection() && spoken.letters().is_none()) {
+        let entered = !self.ruled_contains(&address);
+        if let (None, false) = (self.basis.get(&address), spoken.is_connection() && spoken.letters().is_none()) {
             self.basis_push(spoken.clone(), peer, budget);
         }
-        if let Some(w) = self.word_mut(&addr) {
+        if let Some(w) = self.word_mut(&address) {
             w.update(|e| e.record_dislocation(asg, element::identity_versor(), element::FIBRE_SPATIAL));
-            self.touch_at(&addr);
+            self.touch_at(&address);
         }
-        self.append_step(crate::chronometry::ActKind::Install, &addr, peer);
+        self.append_step(crate::chronometry::ActKind::Install, &address, peer);
         // 78.69 — A GENERATOR ENTERED THE PRESENTATION: the order the
         // language gained, booked on every lane the word carries — its
         // standing extent on 𝒯 among them, which no producer of order on
@@ -470,18 +470,18 @@ impl Court {
             // (`Court::step_flux`), against the court's held tubes.
             self.physics.syntropy(&spoken.magnitude());
         }
-        self.ruled_admit(&addr, budget);
-        self.fed_admit(&addr, spoken.clone());
+        self.ruled_admit(&address, budget);
+        self.fed_admit(&address, spoken.clone());
         let installed = self.anchor();
         // 78.149 (b): the claim pays the word's measured discharge, the
         // escrow its cap; nothing above the discharge is minted.
-        let discharge = self.discharge_of(addr.as_bytes(), spoken);
+        let discharge = self.discharge_of(address.as_bytes(), spoken);
         // POWV: this court and the peer whose re-derivation glued it verified
         // the closure, and each takes its share before the closer is paid.
         let organs = [self.identity, peer];
-        let _ = self.release_verified(addr.as_bytes(), discharge, &organs, installed);
-        self.unlist(&addr, false);
-        self.leave_provisional(&addr);
+        let _ = self.release_verified(address.as_bytes(), discharge, &organs, installed);
+        self.unlist(&address, false);
+        self.leave_provisional(&address);
         self.court_upheld += 1;
         self.mark_persist();
     }
@@ -526,20 +526,20 @@ impl Court {
             let members = self.ruled.fibre(&d.inv);
             if crate::transducer::sheaf::stratum_root(&members) == d.root {
                 let held: Vec<Vec<u8>> = members.into_iter().filter(|a| self.provisional.contains(a)).collect();
-                for addr in held {
-                    self.home_install(&addr, peer, budget);
+                for address in held {
+                    self.home_install(&address, peer, budget);
                 }
             }
             let drop: Vec<Vec<u8>> = match self.heard_at.get(d.inv.key().as_bytes()) {
                 None => Vec::new(),
                 Some(here) => here
                     .scoped()
-                    .filter(|(addr, _)| self.heard.get(addr).is_some_and(|(_, stored)| stored != &d.root))
-                    .map(|(addr, _)| addr)
+                    .filter(|(address, _)| self.heard.get(address).is_some_and(|(_, stored)| stored != &d.root))
+                    .map(|(address, _)| address)
                     .collect(),
             };
-            for addr in drop {
-                self.heard_forget(&addr);
+            for address in drop {
+                self.heard_forget(&address);
             }
         }
         // Round once: the next digest starts from the first stratum.
@@ -549,8 +549,8 @@ impl Court {
     /// Deflation a form may mint: its DISCHARGE on the bound family
     /// (`discharge_of`, 78.149, the one reader every escrow and release
     /// takes). Association with a listing is not a mint.
-    pub(crate) fn verified_install_deflation(&self, addr: &[u8], form: &Element) -> [u64; 4] {
-        self.discharge_of(addr, form)
+    pub(crate) fn verified_install_deflation(&self, address: &[u8], form: &Element) -> [u64; 4] {
+        self.discharge_of(address, form)
     }
 
     /// 47.3, 13.9: WHAT THIS COURT HOLDS OF ITS OWN ON A CLASS — the Čech
@@ -569,18 +569,18 @@ impl Court {
     /// on a chart is its section there, at its own vantage, with the
     /// identity transition to itself: the first vantage every glue compares
     /// a peer's against.
-    pub(crate) fn section_own(&mut self, inv: &crate::transducer::stalk::Invariant, addr: &crate::transducer::address::Address) {
+    pub(crate) fn section_own(&mut self, inv: &crate::transducer::stalk::Invariant, address: &crate::transducer::address::Address) {
         let own_vk = self.identity;
         let vol = self.volume_of_simplex(inv);
         let mut cx = match self.complexes.remove(&inv.key()) {
             Some(c) => c,
             None => crate::transducer::cech::Complex::new(),
         };
-        let (gamma, carriage) = match self.word_at(addr) {
+        let (gamma, carriage) = match self.word_at(address) {
             Some(w) => section_of(w),
             None => (Rotor::identity(), element::identity_versor()),
         };
-        cx.set_section(own_vk, crate::transducer::cech::Section { addr: addr.clone(), gamma, carriage }, vol);
+        cx.set_section(own_vk, crate::transducer::cech::Section { addr: address.clone(), gamma, carriage }, vol);
         self.complexes.insert(inv.key(), cx);
     }
 
@@ -730,12 +730,12 @@ impl Court {
     /// until they return), tethers drain where no class stands over them
     /// (vacuum, or cauterized with the tethers' record) — so the complex no longer
     /// only accretes, and never loses a class it sealed.
-    pub(crate) fn release_vantages(&mut self, inv: &crate::transducer::stalk::Invariant, addr: &[u8]) {
+    pub(crate) fn release_vantages(&mut self, inv: &crate::transducer::stalk::Invariant, address: &[u8]) {
         let Some(cx) = self.complexes.get_mut(&inv.key()) else { return };
         // 78.75 — what the release hands back is held for the chart's next
         // read under a stroke (`book_outflow`).
         cx.arm_outflow();
-        let vantages: Vec<Vec<u8>> = cx.sections.scoped().filter(|(_, s)| s.addr.as_bytes() == addr).map(|(v, _)| v).collect();
+        let vantages: Vec<Vec<u8>> = cx.sections.scoped().filter(|(_, s)| s.addr.as_bytes() == address).map(|(v, _)| v).collect();
         for v in vantages {
             let r = cx.release_vertex(&v);
             let t = &mut self.released_cells;
@@ -754,9 +754,9 @@ impl Court {
 }
 
 /// THE PEER'S SECTION on the chart, at the peer's key.
-fn write_peer_section(cx: &mut crate::transducer::cech::Complex, spoken: &Element, addr: &Address, peer: [u8; 32], vol0: [u64; 4]) {
+fn write_peer_section(cx: &mut crate::transducer::cech::Complex, spoken: &Element, address: &Address, peer: [u8; 32], vol0: [u64; 4]) {
     let (gamma, carriage) = section_of(spoken);
-    cx.set_section(peer, crate::transducer::cech::Section { addr: addr.clone(), gamma, carriage }, vol0);
+    cx.set_section(peer, crate::transducer::cech::Section { addr: address.clone(), gamma, carriage }, vol0);
 }
 
 /// THE COVER'S VERTICES on the chart: this court, the peer, and every hypha

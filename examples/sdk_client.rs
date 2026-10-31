@@ -125,7 +125,7 @@ fn main() -> ExitCode {
     }
     // 1. IDENTITY: the voice's key, the same file the reference mind keeps.
     let key = HyphaKey::load_or_mint(&format!("{home}/voice.key"));
-    println!("voice {}", hex32(&key.vk_bytes()));
+    println!("voice {}", hex32(&key.verifying_bytes()));
     // 2. SESSION: one hypha's address; the session learns the rest.
     let session = Session::open(addr, Voice::from_key(key.sk.clone()));
     for _ in 0..tasks {

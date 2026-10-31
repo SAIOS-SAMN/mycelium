@@ -35,7 +35,7 @@ pub struct DocketReading {
 }
 
 /// 78.109 C1 — ONE DEMAND HANDED OUT: its residue, the charts of its cover,
-/// and the scenes of the thoughts standing on them (`take_demands`).
+/// and the scenes of the thoughts standing on them (`drain_demands`).
 pub(crate) struct TakenDemand {
     pub(crate) residue: Option<crate::transducer::cga::Mv>,
     pub(crate) charts: Vec<crate::transducer::stalk::Invariant>,
@@ -148,7 +148,7 @@ impl Contemplation {
     /// the families of the thoughts standing on its cover's charts now
     /// (`by_chart`) — so what binds it is spoken under the scene its evidence
     /// is in, and its binding is a return of a thought of that scene.
-    pub(crate) fn take_demands(&mut self) -> Vec<TakenDemand> {
+    pub(crate) fn drain_demands(&mut self) -> Vec<TakenDemand> {
         let mut out = Vec::new();
         for (k, c) in self.docket_open.scoped().chain(self.docket.scoped()) {
             let Cite::Demand { residue, cover, .. } = &c else { continue };

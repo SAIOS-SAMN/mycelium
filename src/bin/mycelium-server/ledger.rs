@@ -27,8 +27,8 @@ pub(crate) fn run(home: &Path, at: Option<&str>) -> ! {
         println!("{RED}{} holds no key this build reads{RESET}", home.display());
         std::process::exit(2)
     };
-    let vk = key.vk_bytes();
-    let Some(addr) = crate::console::address(home, at) else {
+    let vk = key.verifying_bytes();
+    let Some(endpoint) = crate::console::endpoint(home, at) else {
         println!("{RED}no address to ask{RESET}: pass --at ADDR, or --home a home whose mesh names its bind");
         std::process::exit(2)
     };
@@ -41,7 +41,7 @@ pub(crate) fn run(home: &Path, at: Option<&str>) -> ! {
     // names the last fold root's orbit; the line is read from that orbit's
     // start (the one era the root closes is paged, no other), and the
     // header says where it began.
-    let opened = fold_root_k(&addr, &vk);
+    let opened = fold_root_k(&endpoint, &vk);
     let mut after: Option<Place> = opened.and_then(|k| k.checked_sub(1)).map(|k| Place { k, i: u64::MAX });
     let mut by_action: Keyed<u64> = Keyed::new();
     let mut refused: Vec<Place> = Vec::new();
@@ -50,8 +50,8 @@ pub(crate) fn run(home: &Path, at: Option<&str>) -> ! {
         // 78.147: the reader is an era replay — the one ask the cold archive
         // answers; a catch-up below the fold root is answered with the root.
         let ask = encode_replay_request(&[0; 32], &vk, after, upto);
-        let Some((reply, _)) = crate::transport::tell_peer_within(&addr, ask, mycelium::physics::reserve_max()) else {
-            println!("{RED}{addr} stopped answering after {acts} acts{RESET}");
+        let Some((reply, _)) = crate::transport::tell_peer_within(&endpoint, ask, mycelium::physics::reserve_max()) else {
+            println!("{RED}{endpoint} stopped answering after {acts} acts{RESET}");
             break;
         };
         let Some(page) = decode_receipts_reply(&reply) else {
@@ -85,7 +85,7 @@ pub(crate) fn run(home: &Path, at: Option<&str>) -> ! {
         Some(k) => format!("from orbit {k} (the line's last fold root) to head; the archive below it is not read here"),
         None => "genesis to head (no fold)".to_string(),
     };
-    println!("{BOLD}═══ LEDGER {}… ═══{RESET}  {addr}  {DIM}{acts} acts over {pages} pages, {span}{RESET}", &hex(&vk)[..8]);
+    println!("{BOLD}═══ LEDGER {}… ═══{RESET}  {endpoint}  {DIM}{acts} acts over {pages} pages, {span}{RESET}", &hex(&vk)[..8]);
     // The court's whole verifying key (public): the party `--wallet` reads.
     println!("  court key   {}", hex(&vk));
     for (k, n) in by_action.scoped() {
@@ -102,13 +102,13 @@ pub(crate) fn run(home: &Path, at: Option<&str>) -> ! {
 /// The orbit of the court's last fold root, from its own clock reading
 /// (`CourtClock::folded`), or none where it has never folded or does not
 /// answer — then the line is read from genesis, as it always was.
-fn fold_root_k(addr: &str, vk: &[u8; 32]) -> Option<u64> {
+fn fold_root_k(endpoint: &str, court: &[u8; 32]) -> Option<u64> {
     use mycelium::observe::{self, Clock, Reading};
     let mut prefix = vec![observe::SOURCE_COURT];
-    prefix.extend_from_slice(vk);
+    prefix.extend_from_slice(court);
     prefix.push(observe::TAG_CLOCK);
     let query = observe::encode_query(&prefix)?;
-    let (reply, _) = crate::transport::tell_peer_within(addr, query, mycelium::physics::reserve_max())?;
+    let (reply, _) = crate::transport::tell_peer_within(endpoint, query, mycelium::physics::reserve_max())?;
     let (_, held) = observe::decode_reply(&reply)?;
     held.into_iter().find_map(|(_, r)| match r {
         Reading::Clock(Clock::Court(c)) => c.folded.map(|(_, k)| k),

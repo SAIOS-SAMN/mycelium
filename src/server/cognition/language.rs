@@ -121,25 +121,25 @@ pub struct Language {
 
 impl Language {
     /// THE WORD AT AN ADDRESS — the reading's own contract (law 2).
-    pub fn word_at(&self, addr: &[u8]) -> Option<&Element> {
-        self.words.get(addr).map(|w| w.held.element())
+    pub fn word_at(&self, address: &[u8]) -> Option<&Element> {
+        self.words.get(address).map(|w| w.held.element())
     }
 
     /// The held word at an address: the element AND the form its tape
     /// decodes to (L16), for a reader that needs the form.
-    pub fn held_at(&self, addr: &[u8]) -> Option<&crate::transducer::element::Held> {
-        self.words.get(addr).map(|w| w.held.as_ref())
+    pub fn held_at(&self, address: &[u8]) -> Option<&crate::transducer::element::Held> {
+        self.words.get(address).map(|w| w.held.as_ref())
     }
 
     /// The shape of the word at an address, lifted on first use.
-    pub fn shape_at(&self, addr: &[u8]) -> Option<&crate::transducer::blade::Shape> {
-        let w = self.words.get(addr)?;
+    pub fn shape_at(&self, address: &[u8]) -> Option<&crate::transducer::blade::Shape> {
+        let w = self.words.get(address)?;
         w.shape.get_or_init(|| element::shape_of_chain(w.held.sub())).as_ref()
     }
 
     /// Whether this snapshot holds a word at an address.
-    pub fn holds(&self, addr: &[u8]) -> bool {
-        self.words.contains(addr)
+    pub fn holds(&self, address: &[u8]) -> bool {
+        self.words.contains(address)
     }
 
     pub fn len(&self) -> usize {
@@ -242,12 +242,12 @@ impl Rank {
     /// Bind a listing's closure and keep the counts with it. The two are
     /// one fact written once (law 12): nothing else may touch `closure`,
     /// which is why it is private.
-    pub fn put_closure(&mut self, addr: &[u8], closed: Option<crate::transducer::address::Address>) {
+    pub fn put_closure(&mut self, address: &[u8], closed: Option<crate::transducer::address::Address>) {
         // A rebind carries its old reading out of the count first. A count
         // at zero holding an entry is a broken count and stays at zero,
         // which is `Keyed::remove`'s own treatment (rule 11: no floor).
         let was_closed = closed.is_some();
-        match self.closure.insert(addr, closed) {
+        match self.closure.insert(address, closed) {
             Some(Some(_)) => {
                 if let Some(n) = self.closed.checked_sub(1) {
                     self.closed = n;
@@ -269,8 +269,8 @@ impl Rank {
 
     /// One listing's base point: `Some(None)` is a listing measured and
     /// not closed, `None` a listing this reading does not hold at all.
-    pub fn closure_of(&self, addr: &[u8]) -> Option<&Option<crate::transducer::address::Address>> {
-        self.closure.get(addr)
+    pub fn closure_of(&self, address: &[u8]) -> Option<&Option<crate::transducer::address::Address>> {
+        self.closure.get(address)
     }
 
     /// Listings measured, closed and open. The reading `cohesion_over`

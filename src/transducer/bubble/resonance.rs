@@ -1386,7 +1386,7 @@ impl Contemplation {
             // ORBIT, NEVER NOTHING: no ground (it has no period to wind), and
             // it is DOCKETED as the demand it is — its class, the chart it
             // stands on as its cover, its motion the residue — for the demand
-            // taker to bind (`take_demands`, the one taker). Demanding it
+            // taker to bind (`drain_demands`, the one taker). Demanding it
             // return would be squaring (78.168 §2); dropping it left every
             // scene of slides with no thought at all (observed on the development
             // deployment, 2026-10-15: grounds 0, no return 17).

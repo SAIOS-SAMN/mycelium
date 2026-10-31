@@ -61,10 +61,10 @@ fn draw_epoch() -> u64 {
 const TO_MIND: u8 = 0;
 const TO_HOUSE: u8 = 1;
 
-fn box_key(to: u8, who: &[u8; 32]) -> [u8; 33] {
+fn box_key(to: u8, addressee: &[u8; 32]) -> [u8; 33] {
     let mut k = [0u8; 33];
     k[0] = to;
-    k[1..].copy_from_slice(who);
+    k[1..].copy_from_slice(addressee);
     k
 }
 
@@ -168,8 +168,8 @@ impl SharedRelay {
         self.lock().listings.get(&listing_key(domain, sub_origin)).map(|(_, b)| b.clone())
     }
 
-    pub fn held_bytes(&self, to_house: bool, who: &[u8; 32]) -> usize {
-        self.lock().held_bytes(to_house, who)
+    pub fn held_bytes(&self, to_house: bool, addressee: &[u8; 32]) -> usize {
+        self.lock().held_bytes(to_house, addressee)
     }
 
     pub fn dropped(&self) -> u64 {
@@ -275,8 +275,8 @@ impl SeatRelay {
     }
 
     /// The pieces held for one addressee (the bound's reading).
-    pub fn held_bytes(&self, to_house: bool, who: &[u8; 32]) -> usize {
-        let key = box_key(if to_house { TO_HOUSE } else { TO_MIND }, who);
+    pub fn held_bytes(&self, to_house: bool, addressee: &[u8; 32]) -> usize {
+        let key = box_key(if to_house { TO_HOUSE } else { TO_MIND }, addressee);
         self.mail.get(&key).map_or(0, |b| b.bytes)
     }
 

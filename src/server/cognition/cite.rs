@@ -14,17 +14,17 @@ impl Court {
     /// THE CITATION OF A WORD THIS COURT HOLDS: its fibre and the stamp of
     /// the act that admitted it. `None` where the word is not held, or no
     /// act has admitted it yet.
-    pub(crate) fn cite_of(&self, addr: &[u8]) -> Option<Cite> {
-        let w = self.named_word(addr)?;
-        let at = *self.admitted_at.get(addr)?;
+    pub(crate) fn cite_of(&self, address: &[u8]) -> Option<Cite> {
+        let w = self.named_word(address)?;
+        let at = *self.admitted_at.get(address)?;
         Some(Cite::word(w, at))
     }
 
     /// THE WORD AN ACT NAMES, on whichever row holds it: the basis, the
     /// cavity, provisional, the listing book, or the court's federation.
-    pub(crate) fn named_word(&self, addr: &[u8]) -> Option<&Element> {
-        self.word_at(addr).or_else(|| self.pending.get(addr)).or_else(|| {
-            let i = *self.court_fed_index.get(addr)?;
+    pub(crate) fn named_word(&self, address: &[u8]) -> Option<&Element> {
+        self.word_at(address).or_else(|| self.pending.get(address)).or_else(|| {
+            let i = *self.court_fed_index.get(address)?;
             self.court_federation.get(i).map(|(_, w)| w)
         })
     }
@@ -33,15 +33,15 @@ impl Court {
     /// (78.24, R6): an entry nothing holds a word for is a copy of nothing.
     /// Called where a removal may have been the word's last row, after any
     /// act that cites it.
-    pub(crate) fn forget_if_unheld(&mut self, addr: &[u8]) {
-        if self.named_word(addr).is_none() {
-            self.drop_admitted(addr);
+    pub(crate) fn forget_if_unheld(&mut self, address: &[u8]) {
+        if self.named_word(address).is_none() {
+            self.drop_admitted(address);
         }
     }
 
     /// The stamp a held word was admitted at.
-    pub fn admitted_at(&self, addr: &[u8]) -> Option<Stamp> {
-        self.admitted_at.get(addr).copied()
+    pub fn admitted_at(&self, address: &[u8]) -> Option<Stamp> {
+        self.admitted_at.get(address).copied()
     }
 
     /// LD3-1 — HELD WITHOUT A STAMP, BY ROW (78.27 Q1): the words each row
@@ -80,36 +80,36 @@ impl Court {
     ///
     /// A ruling that waited on the stamp is heard on the stroke of the act
     /// that files it (65.5), threaded here.
-    pub fn file_admitted(&mut self, addr: &Address, at: Stamp, budget: &mut crate::physics::Budget) -> bool {
-        if self.admitted_at.contains(addr) {
+    pub fn file_admitted(&mut self, address: &Address, at: Stamp, budget: &mut crate::physics::Budget) -> bool {
+        if self.admitted_at.contains(address) {
             return false;
         }
-        self.admitted_at.insert_shared(addr.shared(), at);
-        self.held_at.insert(at.key(), addr.clone());
+        self.admitted_at.insert_shared(address.shared(), at);
+        self.held_at.insert(at.key(), address.clone());
         // THE ADMISSION IS THE FIRST FLUX (78.37 (3)): the word is filed where
         // it lapses by the stamp just given, and a provisional word's orbit
         // opens at it — the act that admits it offers it.
         let key = at.key();
         self.file_flux(&key);
-        if self.provisional.contains(addr) {
-            self.enter_flight(addr.as_bytes(), &key);
+        if self.provisional.contains(address) {
+            self.enter_flight(address.as_bytes(), &key);
         }
         // LD3-a: the word by its fibre, where a row holds it to read the
         // fibre off; a restore files it from T1's key instead.
-        let fibre = self.named_word(addr).and_then(|w| {
+        let fibre = self.named_word(address).and_then(|w| {
             let mut key = Vec::new();
             Cite::word(w, at).put_canonical(&mut key)?;
             Some(key)
         });
         if let Some(key) = fibre {
-            self.file_fibre(addr, at, key);
+            self.file_fibre(address, at, key);
         }
         // RM1: and its remainders, by where each was perceived.
-        let keys: Vec<Vec<u8>> = match self.named_word(addr) {
+        let keys: Vec<Vec<u8>> = match self.named_word(address) {
             Some(w) => w.remainders().map(|r| r.index_key()).collect(),
             None => Vec::new(),
         };
-        self.file_remainders(addr, keys);
+        self.file_remainders(address, keys);
         // EC1: a peer's ruling that waited on this stamp is heard now.
         self.rehear_rulings(&at, budget);
         true
@@ -117,29 +117,29 @@ impl Court {
 
     /// FILE A WORD AT ITS FIBRE KEY — T1's own key — beside its admitting
     /// stamp.
-    pub(crate) fn file_fibre(&mut self, addr: &Address, at: Stamp, key: Vec<u8>) {
+    pub(crate) fn file_fibre(&mut self, address: &Address, at: Stamp, key: Vec<u8>) {
         self.fibre_key_at.insert(at.key(), key.clone());
-        self.word_fibres.insert(key, addr.clone());
+        self.word_fibres.insert(key, address.clone());
     }
 
     /// RM1 — FILE A WORD'S REMAINDERS at the remainders' index keys (the residue's
     /// chart ‖ κ, read off its torsion record). One remainder per class at a
     /// chart: a key already standing for another word is not filed over and
     /// is counted.
-    pub(crate) fn file_remainders(&mut self, addr: &Address, keys: Vec<Vec<u8>>) {
+    pub(crate) fn file_remainders(&mut self, address: &Address, keys: Vec<Vec<u8>>) {
         let mut filed = Vec::new();
         for k in keys {
             match self.remainder_fibres.get(&k) {
-                Some(a) if a == addr => filed.push(k),
+                Some(a) if a == address => filed.push(k),
                 Some(_) => self.remainders_coincident += 1,
                 None => {
-                    self.remainder_fibres.insert(&k, addr.clone());
+                    self.remainder_fibres.insert(&k, address.clone());
                     filed.push(k);
                 }
             }
         }
         if !filed.is_empty() {
-            self.remainder_keys.insert(addr.as_bytes(), filed);
+            self.remainder_keys.insert(address.as_bytes(), filed);
         }
     }
 
@@ -167,8 +167,8 @@ impl Court {
         key.truncate(key.len() - Stamp::LEN);
         let mut out: crate::network::nerve::Keyed<Address> = crate::network::nerve::Keyed::new();
         if let Some(hits) = self.word_fibres.fibre_at(&key) {
-            for (_, addr) in hits {
-                out.insert(addr.as_bytes(), addr.clone());
+            for (_, address) in hits {
+                out.insert(address.as_bytes(), address.clone());
             }
         }
         out.scoped().map(|(_, a)| a.clone()).collect()
@@ -217,8 +217,8 @@ impl Court {
     }
 
     /// A word left every row: its admitting stamp leaves with it.
-    pub fn drop_admitted(&mut self, addr: &[u8]) {
-        if let Some(at) = self.admitted_at.remove(addr) {
+    pub fn drop_admitted(&mut self, address: &[u8]) {
+        if let Some(at) = self.admitted_at.remove(address) {
             // Filed nowhere: no flux, no orbit in flight.
             let key = at.key();
             self.forget_flux_at(&key);
@@ -231,19 +231,19 @@ impl Court {
             }
         }
         // Its remainders leave the index by the keys it filed.
-        if let Some(keys) = self.remainder_keys.remove(addr) {
+        if let Some(keys) = self.remainder_keys.remove(address) {
             for k in keys {
                 self.remainder_fibres.remove(&k);
             }
         }
         // Its aliases leave with it, and the depth read at each.
-        if let Some(stamps) = self.aliases.remove(addr) {
+        if let Some(stamps) = self.aliases.remove(address) {
             for at in stamps {
                 self.held_at.remove(&at.key());
                 self.attestors.remove(&at.key());
             }
         }
-        self.drop_word_fields(addr);
+        self.drop_word_fields(address);
     }
 
     /// WHAT THE COURT HELD OF A WORD THAT LEFT: the deflation its install
@@ -251,17 +251,17 @@ impl Court {
     /// at, the organs' re-derivations of it, the task its sentence was
     /// bound to, the task its listing paid, and what it taught each voice
     /// of it — the per-word fields the snapshot already refuses as orphans.
-    fn drop_word_fields(&mut self, addr: &[u8]) {
-        self.deflations.remove(addr);
-        self.field.remove(addr);
-        self.field_cold.remove(addr);
-        self.standing_h.remove(addr);
-        self.convergence.forget(addr);
-        self.speech_task.remove(addr);
-        if let Some(task) = self.listing_task.remove(addr) {
+    fn drop_word_fields(&mut self, address: &[u8]) {
+        self.deflations.remove(address);
+        self.field.remove(address);
+        self.field_cold.remove(address);
+        self.standing_h.remove(address);
+        self.convergence.forget(address);
+        self.speech_task.remove(address);
+        if let Some(task) = self.listing_task.remove(address) {
             let emptied = match self.task_listings.get_mut(task.as_bytes()) {
                 Some(listings) => {
-                    listings.retain(|l| l.as_bytes() != addr);
+                    listings.retain(|l| l.as_bytes() != address);
                     listings.is_empty()
                 }
                 None => false,
@@ -270,8 +270,8 @@ impl Court {
                 self.task_listings.remove(task.as_bytes());
             }
         }
-        let width = addr.len() + 32;
-        let taught: Vec<Vec<u8>> = match self.taught_voice.fibre_at(addr) {
+        let width = address.len() + 32;
+        let taught: Vec<Vec<u8>> = match self.taught_voice.fibre_at(address) {
             Some(fibre) => fibre.map(|(key, ())| key).filter(|key| key.len() == width).collect(),
             None => Vec::new(),
         };
@@ -287,8 +287,8 @@ impl Court {
     /// sealed without a frame (ACT1, 78.27 Q1(a)). It read `word_at`, which
     /// does not read the listing book or the federation, so every List act
     /// on a held listing read no frame (ACT1-reading's return R1).
-    pub(crate) fn frame_of(&mut self, addr: &[u8]) -> [u64; 4] {
-        match self.named_word(addr) {
+    pub(crate) fn frame_of(&mut self, address: &[u8]) -> [u64; 4] {
+        match self.named_word(address) {
             Some(w) => w.magnitude(),
             None => {
                 self.unframed += 1;
@@ -305,8 +305,8 @@ impl Court {
     /// WHAT THE ACT MEASURED is read here from this court's own carriers at
     /// the address (45.1, law 12), never handed in; an act naming a word
     /// this court no longer holds measured nothing, and says so.
-    pub(super) fn append_step(&mut self, kind: ActKind, addr: impl AsRef<[u8]>, voice: [u8; 32]) {
-        self.append_step_charted(kind, addr, voice, None);
+    pub(super) fn append_step(&mut self, kind: ActKind, address: impl AsRef<[u8]>, voice: [u8; 32]) {
+        self.append_step_charted(kind, address, voice, None);
     }
 
     /// `append_step` with the named word's chart already read where the
@@ -315,15 +315,15 @@ impl Court {
     pub(super) fn append_step_charted(
         &mut self,
         kind: ActKind,
-        addr: impl AsRef<[u8]>,
+        address: impl AsRef<[u8]>,
         voice: [u8; 32],
         chart: Option<crate::transducer::stalk::Invariant>,
     ) {
-        let addr = addr.as_ref();
-        let mu = self.frame_of(addr);
-        let held = self.cite_of(addr);
+        let address = address.as_ref();
+        let mu = self.frame_of(address);
+        let held = self.cite_of(address);
         let admits = match &held {
-            None => self.named_word(addr).cloned(),
+            None => self.named_word(address).cloned(),
             Some(_) => None,
         };
         let written = self.seal_step(kind, mu, voice, |at| match (&held, &admits, &chart) {
@@ -340,7 +340,7 @@ impl Court {
             // stroke is threaded to its seal, the stroke is minted here, the
             // one callee mint the ruling has not yet reached.
             let mut budget = self.physics.stroke();
-            self.file_admitted(&Address::from(addr), r.stamp, &mut budget);
+            self.file_admitted(&Address::from(address), r.stamp, &mut budget);
         }
     }
 
@@ -348,11 +348,11 @@ impl Court {
     /// citation read before the removal; what the act measured is read at
     /// the address now, which is zero where nothing holds it. A word that
     /// no row holds any more leaves its admitting stamp with it.
-    pub(super) fn append_after_removal(&mut self, kind: ActKind, addr: &[u8], cite: Option<Cite>, voice: [u8; 32]) {
-        let mu = self.frame_of(addr);
+    pub(super) fn append_after_removal(&mut self, kind: ActKind, address: &[u8], cite: Option<Cite>, voice: [u8; 32]) {
+        let mu = self.frame_of(address);
         let at = cite.as_ref().and_then(Cite::at);
         self.append_cited(kind, cite.into_iter().collect(), mu, voice);
-        self.forget_if_unheld(addr);
+        self.forget_if_unheld(address);
         // Depth is read only where a word stands: the act sealed after its
         // word left files none at the stamp no word stands at.
         if let Some(at) = at {

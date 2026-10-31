@@ -17,7 +17,7 @@ impl Court {
         // its root, and an act asked about stands where it stands whether or
         // not a fold has passed it — read through the one reader the
         // back-fill pages by (`receipts_page`), bounded to exactly that place.
-        let own = self.chain.vk();
+        let own = self.chain.signer();
         let (vk, p) = match ask {
             WhyAsk::Own(p) => (own, p),
             WhyAsk::Of(s) => (s.vk, s.place()),
@@ -59,7 +59,7 @@ impl Court {
     /// ONE ARCHIVED ACT AT ITS PLACE on a signer's line, through the page
     /// reader: the page from the place just before it up to it, one act long.
     /// `None` where no act stands there in what this court holds.
-    fn archived_at(&self, vk: &[u8; 32], p: crate::chronometry::Place) -> Option<crate::chronometry::KStepReceipt> {
+    fn archived_at(&self, signer: &[u8; 32], p: crate::chronometry::Place) -> Option<crate::chronometry::KStepReceipt> {
         use crate::chronometry::Place;
         let before = match (p.k, p.i) {
             (_, i) if i > 0 => Some(Place { k: p.k, i: i - 1 }),
@@ -67,7 +67,7 @@ impl Court {
             _ => None,
         };
         let (_, bytes) = Court::receipts_frame()?;
-        match self.receipts_page(vk, before, p, 1, bytes).as_slice() {
+        match self.receipts_page(signer, before, p, 1, bytes).as_slice() {
             [r] if r.stamp.place() == p => Some(r.clone()),
             _ => None,
         }

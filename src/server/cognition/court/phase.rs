@@ -252,7 +252,7 @@ impl Court {
         let mut read = false;
         if let Some((m0, at_h0)) = self.phase_mark.take() {
             if let (Some(m1), true) = (mark, m0 < mark) {
-                let vk = self.chain.vk();
+                let vk = self.chain.signer();
                 // One read a receipt: the window is asked for one more than
                 // the stroke holds, and a window that fills it is unread.
                 let room = budget.remaining();

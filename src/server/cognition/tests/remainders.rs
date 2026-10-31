@@ -58,7 +58,7 @@ fn hear_refill_fills_congruent_simplex_once() {
         .to_vec();
     k.complexes.insert(inv.key().as_bytes(), cx);
     let words = vec![Address::from(a.clone()), Address::from(b.clone())];
-    let rw = k.mint_torse_at(&inv, &simplex, (Box::new(kappa.clone()), Box::new(g.clone()), 4), &words).expect("minted");
+    let rw = k.construct_torse_at(&inv, &simplex, (Box::new(kappa.clone()), Box::new(g.clone()), 4), &words).expect("minted");
     let rewrite = k.named_word(rw.as_bytes()).expect("the rewrite stands").clone();
     let rw_at = *k.admitted_at.get(rw.as_bytes()).expect("admitted by the court's act");
     // The spelling word: the 90° turn spelled, acting at the complex's chart.
@@ -104,7 +104,7 @@ fn hear_refill_fills_congruent_simplex_once() {
     // chart holds none): the act replays whole, the record is answered, and
     // only the write is skipped, counted `unsited`.
     let inv2 = crate::transducer::stalk::Invariant::counts(&[3, 4]);
-    let rw2 = k.mint_torse_at(&inv2, b"no simplex here", (Box::new(kappa.clone()), Box::new(g.clone()), 4), &words).expect("minted");
+    let rw2 = k.construct_torse_at(&inv2, b"no simplex here", (Box::new(kappa.clone()), Box::new(g.clone()), 4), &words).expect("minted");
     let rewrite2 = k.named_word(rw2.as_bytes()).expect("stands").clone();
     let rw2_at = *k.admitted_at.get(rw2.as_bytes()).expect("admitted");
     let receipt2 = KStepReceipt {
@@ -129,7 +129,7 @@ fn hear_refill_fills_congruent_simplex_once() {
 /// at chart ‖ κ; snapshotted and restored, the record comes back with the
 /// element and the index is rebuilt from it.
 #[test]
-fn mint_torse_at_keeps_remainder_through_restart() {
+fn construct_torse_at_keeps_remainder_through_restart() {
     use crate::transducer::alphabet::{LetterId, Word};
     use crate::transducer::address::Address;
     let g = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("the sensor plane"), false)]).rotor();
@@ -144,7 +144,7 @@ fn mint_torse_at_keeps_remainder_through_restart() {
     let words = vec![Address::from(vec![1u8; 8]), Address::from(vec![2u8; 8])];
     let simplex = b"the simplex's own key".to_vec();
     let rw = k
-        .mint_torse_at(&inv, &simplex, (Box::new(kappa.clone()), Box::new(g.clone()), 4), &words)
+        .construct_torse_at(&inv, &simplex, (Box::new(kappa.clone()), Box::new(g.clone()), 4), &words)
         .expect("the Torse rewrite is minted and offered");
     let key = crate::transducer::element::Remainder { class: Box::new(kappa), at: vec![inv.key().into_vec()], answered: None }
         .index_key();
@@ -152,7 +152,7 @@ fn mint_torse_at_keeps_remainder_through_restart() {
     let (r, _) = k.remainders();
     assert_eq!((r.refused, r.unpriced, r.unminted, r.unoffered), (0, 0, 0, 0), "{}", r.line());
     // A period of one prices nothing: counted by its own name, never folded.
-    assert!(k.mint_torse_at(&inv, b"another", (Box::new(crate::transducer::sentence::ClassVector::of_rotor(
+    assert!(k.construct_torse_at(&inv, b"another", (Box::new(crate::transducer::sentence::ClassVector::of_rotor(
         &crate::transducer::alphabet::Rotor::identity(),
         crate::transducer::element::identity_versor(),
         crate::transducer::sentence::CycleType::Identity,

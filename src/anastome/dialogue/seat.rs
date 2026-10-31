@@ -694,9 +694,9 @@ pub struct SignedPost {
 }
 
 impl SignedPost {
-    /// Whether `vk` signed it.
-    pub fn signed_by(&self, vk: &[u8; 32]) -> bool {
-        self.post.signed_bytes().is_some_and(|m| crate::court::identity::verify(vk, &m, &self.sig))
+    /// Whether `signer` signed it.
+    pub fn signed_by(&self, signer: &[u8; 32]) -> bool {
+        self.post.signed_bytes().is_some_and(|m| crate::court::identity::verify(signer, &m, &self.sig))
     }
 
     /// The post's fields and signature — what the relay holds and serves

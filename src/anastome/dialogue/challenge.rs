@@ -185,9 +185,9 @@ impl Challenge {
     }
 
     /// The bytes the filer signs: the domain, the filer, the kind, the body.
-    pub fn signed_bytes(&self, who: &[u8; 32]) -> Vec<u8> {
+    pub fn signed_bytes(&self, filer: &[u8; 32]) -> Vec<u8> {
         let mut out = SIGNED.to_vec();
-        out.extend_from_slice(who);
+        out.extend_from_slice(filer);
         out.push(self.kind());
         self.put_body(&mut out);
         out

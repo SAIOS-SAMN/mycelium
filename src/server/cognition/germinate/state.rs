@@ -100,7 +100,7 @@ impl Court {
     pub(crate) fn anchor(&self) -> crate::economy::Anchor {
         let at = match self.chain.head_stamp() {
             Some(s) => s,
-            None => crate::chronometry::Stamp::new(0, self.chain.vk(), crate::chronometry::Place::GENESIS),
+            None => crate::chronometry::Stamp::new(0, self.chain.signer(), crate::chronometry::Place::GENESIS),
         };
         (at, self.chain.head_hash())
     }

@@ -11,7 +11,7 @@ use super::*;
 pub fn encode_probe(voice: &[u8; 32], target: impl AsRef<[u8]>, cites: &[CiteWire]) -> Option<Vec<u8>> {
     let mut out = vec![ACT_PROBE];
     out.extend_from_slice(voice);
-    put_addr(&mut out, target)?;
+    put_address(&mut out, target)?;
     push_cites(&mut out, cites)?;
     Some(out)
 }
@@ -22,7 +22,7 @@ pub fn decode_probe(body: &[u8]) -> Option<([u8; 32], Address, Vec<CiteWire>)> {
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
     let mut p = 33usize;
-    let target = take_addr(body, &mut p)?;
+    let target = take_address(body, &mut p)?;
     let cites = read_cites(body, &mut p)?;
     Some((voice, target, cites))
 }

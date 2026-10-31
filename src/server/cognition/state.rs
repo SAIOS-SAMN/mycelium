@@ -753,7 +753,7 @@ impl Court {
     /// where no line is bound or nothing moved, `Err` where a node does not
     /// write — and then the snapshot must not be written either, since it
     /// names where the line stood.
-    pub fn take_line(&mut self) -> Result<Option<(std::path::PathBuf, crate::chronometry::LineWrite)>, &'static str> {
+    pub fn drain_line(&mut self) -> Result<Option<(std::path::PathBuf, crate::chronometry::LineWrite)>, &'static str> {
         let Some(path) = self.line_path.clone() else { return Ok(None) };
         Ok(self.chain.line_write()?.map(|w| (path, w)))
     }
@@ -1102,14 +1102,14 @@ impl Court {
                 // orbit stands past the head held for it. This counted
                 // nothing, and hid hypha c's isolation behind `backfill_budget`.
                 crate::court::admission::Admitted::MissingParent(p) => {
-                    use crate::observe::rep;
-                    crate::observe::note_replication(Some(p.at.vk), rep::BACKFILL_MISSING_PARENT, 1);
+                    use crate::observe::replication;
+                    crate::observe::note_replication(Some(p.at.vk), replication::BACKFILL_MISSING_PARENT, 1);
                     if self.chain.peer_root(&p.at.vk).is_none() {
-                        crate::observe::note_replication(Some(p.at.vk), rep::BACKFILL_MISSING_UNROOTED, 1);
+                        crate::observe::note_replication(Some(p.at.vk), replication::BACKFILL_MISSING_UNROOTED, 1);
                     }
                     let held = self.known_head(&p.at.vk).map(|(at, _)| at.k);
                     if let Some(depth) = (p.at.k + 1).checked_sub(held.map_or(0, |h| h + 1)) {
-                        crate::observe::set_replication(p.at.vk, rep::MISSING_DEPTH, depth);
+                        crate::observe::set_replication(p.at.vk, replication::MISSING_DEPTH, depth);
                     }
                     return (n, Some(p));
                 }
@@ -1117,11 +1117,11 @@ impl Court {
                 // break for every other outcome, and hypha a's chase of b's
                 // line read "reached" beside a flat admitted count.
                 other => {
-                    use crate::observe::rep;
+                    use crate::observe::replication;
                     let axis = match other {
-                        crate::court::admission::Admitted::Gap { .. } => Some(rep::BACKFILL_UNLINKED),
-                        crate::court::admission::Admitted::Refused(_) => Some(rep::BACKFILL_REFUSED),
-                        crate::court::admission::Admitted::Equivocation { .. } => Some(rep::BACKFILL_EQUIVOCATION),
+                        crate::court::admission::Admitted::Gap { .. } => Some(replication::BACKFILL_UNLINKED),
+                        crate::court::admission::Admitted::Refused(_) => Some(replication::BACKFILL_REFUSED),
+                        crate::court::admission::Admitted::Equivocation { .. } => Some(replication::BACKFILL_EQUIVOCATION),
                         _ => None,
                     };
                     if let Some(axis) = axis {
@@ -1172,17 +1172,17 @@ impl Court {
     /// both hold the two verified signatures 47.4 asks for. `Some` is the
     /// vector that left circulation, `None` a signer with nothing left to
     /// burn, for which nothing is written.
-    fn burn_equivocation(&mut self, vk: [u8; 32], at: crate::chronometry::Place) -> Option<[u64; 4]> {
-        let bond = self.treasury.bond_of(&vk)?;
+    fn burn_equivocation(&mut self, signer: [u8; 32], at: crate::chronometry::Place) -> Option<[u64; 4]> {
+        let bond = self.treasury.bond_of(&signer)?;
         let anchor = self.anchor();
-        let burned = self.treasury.burn(vk, bond, anchor);
+        let burned = self.treasury.burn(signer, bond, anchor);
         if crate::economy::lanes_short(&burned).is_empty() {
             return None;
         }
         eprintln!(
             "  court equivocation {:02x}{:02x}… K {} burned {burned:?}",
-            vk[0],
-            vk[1],
+            signer[0],
+            signer[1],
             at.print()
         );
         Some(burned)
@@ -1197,8 +1197,8 @@ impl Court {
     /// the node at the top of that signer's line in the ledger.
     /// 78.147: the line's tip — a fold root adopted past every node held is
     /// where the line stands, and nothing below it is asked again.
-    pub fn known_head(&self, vk: &[u8; 32]) -> Option<(crate::chronometry::Place, [u8; 32])> {
-        self.chain.line_tip(vk).map(|p| (p.at.place(), p.hash))
+    pub fn known_head(&self, signer: &[u8; 32]) -> Option<(crate::chronometry::Place, [u8; 32])> {
+        self.chain.line_tip(signer).map(|p| (p.at.place(), p.hash))
     }
 
     pub fn height(&self) -> u64 {

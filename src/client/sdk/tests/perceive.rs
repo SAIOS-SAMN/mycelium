@@ -18,7 +18,7 @@ use crate::client::sdk::*;
 /// the language holds no word for it. The binding is a return of a thought of
 /// that scene: K moves by it.
 #[test]
-fn perceive_scene_lands_and_take_demands_binds_escape() {
+fn perceive_scene_lands_and_drain_demands_binds_escape() {
     let id = [9u8; 32];
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("perceiving"));
     let [first, second] = two_hours_of_a_slide();
@@ -27,7 +27,7 @@ fn perceive_scene_lands_and_take_demands_binds_escape() {
         mind.perceive_scene(Scene { id: id.to_vec(), train: vec![first, second], tests: Vec::new(), reading: Reading::Task });
         mind.settle_perception();
         let mut b = budget();
-        let bound = mind.take_demands(&mut b);
+        let bound = mind.drain_demands(&mut b);
         let returned = mind.act_on_returns(&mut b, bound.clone(), true);
         (bound, returned, mind.own_k())
     });

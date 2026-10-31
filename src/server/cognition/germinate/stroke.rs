@@ -38,8 +38,8 @@ impl Court {
         {
             let from = self.syntropic_cursor.clone();
             let mut cur = self.open.cursor(from.as_deref(), &mut budget);
-            for (addr, _) in &mut cur {
-                let Some(listing) = self.field.get(&addr) else {
+            for (address, _) in &mut cur {
+                let Some(listing) = self.field.get(&address) else {
                     continue;
                 };
                 for e in &listing.entries {
@@ -58,11 +58,11 @@ impl Court {
         }
         // index: ruled cover fibre
         let ruled: Vec<Vec<u8>> = self.ruled_addrs.scoped().map(|(a, _)| a).collect();
-        for addr in &ruled {
+        for address in &ruled {
             if !budget.spend() {
                 break;
             }
-            if let Some(w) = self.word_at(addr) {
+            if let Some(w) = self.word_at(address) {
                 jobs.push((crate::transducer::stalk::invariant_of(w), [true; 4]));
             }
         }
@@ -96,15 +96,15 @@ impl Court {
         if t_stale {
             self.relocate_t_exhausted();
         }
-        for addr in &ruled {
+        for address in &ruled {
             if !budget.spend() {
                 break;
             }
-            let Some(candidate) = self.basis.get(addr).map(|w| (**w).clone()) else {
+            let Some(candidate) = self.basis.get(address).map(|w| (**w).clone()) else {
                 continue;
             };
-            if matches!(self.reduce_excluding(&candidate, Some(addr.as_slice()), &mut budget), NormalForm::Decomposed(_)) {
-                self.retire_redundant(addr, &mut budget);
+            if matches!(self.reduce_excluding(&candidate, Some(address.as_slice()), &mut budget), NormalForm::Decomposed(_)) {
+                self.retire_redundant(address, &mut budget);
             }
         }
         if idle {
@@ -121,13 +121,13 @@ impl Court {
     /// The whole stroke under one lock (the reflex and test paths).
     pub(crate) fn optimize(&mut self) {
         self.syntropic_stroke();
-        if let Some(addr) = self.condense_stroke() {
-            let Some(candidate) = self.basis.get(&addr).map(|w| (**w).clone()) else {
+        if let Some(address) = self.condense_stroke() {
+            let Some(candidate) = self.basis.get(&address).map(|w| (**w).clone()) else {
                 return;
             };
             let mut budget = self.physics.stroke();
-            if let NormalForm::Decomposed(_) = self.reduce_excluding(&candidate, Some(addr.as_bytes()), &mut budget) {
-                self.retire_redundant(&addr, &mut budget);
+            if let NormalForm::Decomposed(_) = self.reduce_excluding(&candidate, Some(address.as_bytes()), &mut budget) {
+                self.retire_redundant(&address, &mut budget);
             }
         }
     }
@@ -145,15 +145,15 @@ impl Court {
     /// found it decomposable). Returns the cards retired (0 or 1): the word
     /// may have gone, or gained a fibre, while the probe ran. On the stroke
     /// of the act that probed it (65.5).
-    pub fn retire_redundant(&mut self, addr: &[u8], budget: &mut crate::physics::Budget) -> usize {
-        let Some(held) = self.basis.get(addr).map(|w| (**w).clone()) else { return 0 };
+    pub fn retire_redundant(&mut self, address: &[u8], budget: &mut crate::physics::Budget) -> usize {
+        let Some(held) = self.basis.get(address).map(|w| (**w).clone()) else { return 0 };
         if !held.sections().is_empty() || crate::transducer::sentence::carries_torsion(&held) {
             return 0;
         }
         let mag = held.magnitude();
-        let elem = self.basis_remove(addr);
-        self.ruled_admit(addr, budget);
-        self.cavity_book.insert(addr, elem);
+        let elem = self.basis_remove(address);
+        self.ruled_admit(address, budget);
+        self.cavity_book.insert(address, elem);
         self.physics.syntropy(&mag);
         1
     }
@@ -165,13 +165,13 @@ impl Court {
         let mut budget = self.physics.stroke();
         // The cursor circuits the basis (S13.3): past the last word it
         // continues from the first, so `None` here is an empty basis.
-        let Some((addr, word)) = self.basis.cursor(self.optimize_cursor.as_deref(), &mut budget).next()
+        let Some((address, word)) = self.basis.cursor(self.optimize_cursor.as_deref(), &mut budget).next()
         else {
             self.optimize_cursor = None;
             return None;
         };
-        let own = crate::transducer::address::Address::from(addr.as_slice());
-        self.optimize_cursor = Some(addr);
+        let own = crate::transducer::address::Address::from(address.as_slice());
+        self.optimize_cursor = Some(address);
         let word = (**word).clone();
         if !word.sub().is_empty() {
             let inv = crate::transducer::stalk::invariant_of(&word);

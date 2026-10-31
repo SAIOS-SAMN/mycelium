@@ -14,7 +14,7 @@ use super::*;
 /// be framed: an offer without its signed position is not spoken.
 pub fn encode_offer(o: &Offer) -> Option<Vec<u8>> {
     let mut out = vec![ACT_OFFER];
-    put_addr(&mut out, &o.addr)?;
+    put_address(&mut out, &o.addr)?;
     out.extend_from_slice(&o.home);
     crate::transducer::address::put_bytes(&mut out, &o.elem)?;
     crate::transducer::address::put_u32_count(&mut out, o.voices.len())?;
@@ -35,7 +35,7 @@ pub fn decode_offer(body: &[u8]) -> Option<Offer> {
         return None;
     }
     let mut p = 1usize;
-    let addr = take_addr(body, &mut p)?;
+    let addr = take_address(body, &mut p)?;
     let home: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
     p += 32;
     let elen = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
@@ -107,7 +107,7 @@ pub fn decode_installed(body: &[u8]) -> Option<Installed> {
         return None;
     }
     let mut p = 1usize;
-    let addr = take_addr(body, &mut p)?;
+    let addr = take_address(body, &mut p)?;
     let elen = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
     let elem = body.get(p..p + elen)?.to_vec();

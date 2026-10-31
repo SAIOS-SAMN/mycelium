@@ -6,7 +6,7 @@
 
 pub mod codec;
 pub mod derive;
-pub mod sel;
+pub mod selection;
 
 pub use derive::*;
 
@@ -29,7 +29,7 @@ pub struct EvidenceOf<A> {
 
 /// Evidence carried with the address that produced it.
 pub type AddressedEvidence = EvidenceOf<crate::transducer::address::Address>;
-pub use sel::*;
+pub use selection::*;
 
 use super::blade::components;
 

@@ -111,8 +111,8 @@ impl Offer {
         Some(Offer { from_tier, to_tier, out_nets, in_nets, charter: key(b, p)?, nonce: key(b, p)? })
     }
 
-    /// THE HANDOFF'S ID: the hash of its one writing.
-    pub fn id(&self) -> [u8; 32] {
+    /// THE HANDOFF'S CITATION: the hash of its one writing.
+    pub fn citation(&self) -> [u8; 32] {
         crate::chronometry::payload_hash(&self.bytes())
     }
 
@@ -387,7 +387,7 @@ impl Mouth {
         Some(Mouth { from_tier, to_tier, keeper, from_frame, to_frame, toll, nonce: key32(b, p)?, tariff: None, tube: None })
     }
 
-    pub fn id(&self) -> [u8; 32] {
+    pub fn citation(&self) -> [u8; 32] {
         let mut b = b"mouth".to_vec();
         b.extend_from_slice(&self.bytes());
         crate::chronometry::payload_hash(&b)
@@ -471,8 +471,8 @@ impl ConvertOut {
         Some(ConvertOut { tier, holder, identity, g, rate, nonce: key32(b, p)? })
     }
 
-    /// Its id: the hash of its one writing, under its own domain.
-    pub fn id(&self) -> [u8; 32] {
+    /// Its citation: the hash of its one writing, under its own domain.
+    pub fn citation(&self) -> [u8; 32] {
         let mut b = b"convert out".to_vec();
         b.extend_from_slice(&self.bytes());
         crate::chronometry::payload_hash(&b)
@@ -520,7 +520,7 @@ impl ConvertIn {
         Some(ConvertIn { holder, tier, identity, g, mu, nonce: key32(b, p)? })
     }
 
-    pub fn id(&self) -> [u8; 32] {
+    pub fn citation(&self) -> [u8; 32] {
         let mut b = b"convert in".to_vec();
         b.extend_from_slice(&self.bytes());
         crate::chronometry::payload_hash(&b)
@@ -590,21 +590,21 @@ impl Handoff {
     }
 
     /// The handoff it names. A traversal is the handoff its offer is.
-    pub fn id(&self) -> [u8; 32] {
+    pub fn citation(&self) -> [u8; 32] {
         match self {
-            Handoff::Offer(o) | Handoff::Traverse { offer: o, .. } => o.id(),
+            Handoff::Offer(o) | Handoff::Traverse { offer: o, .. } => o.citation(),
             Handoff::Accept { id } | Handoff::Refuse { id } | Handoff::Expire { id } | Handoff::Close { id } => *id,
-            Handoff::ConvertOut(c) => c.id(),
-            Handoff::ConvertIn(c) => c.id(),
-            Handoff::Mouth(m) => m.id(),
+            Handoff::ConvertOut(c) => c.citation(),
+            Handoff::ConvertIn(c) => c.citation(),
+            Handoff::Mouth(m) => m.citation(),
             Handoff::Feed { mouth, .. } | Handoff::Draw { mouth, .. } => *mouth,
         }
     }
 
     /// The bytes the filer signs.
-    pub fn signed_bytes(&self, who: &[u8; 32]) -> Vec<u8> {
+    pub fn signed_bytes(&self, filer: &[u8; 32]) -> Vec<u8> {
         let mut out = SIGNED.to_vec();
-        out.extend_from_slice(who);
+        out.extend_from_slice(filer);
         out.push(self.kind());
         self.put_body(&mut out);
         out

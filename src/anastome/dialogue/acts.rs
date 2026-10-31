@@ -37,7 +37,7 @@ pub const ACT_EVIDENCE: u8 = Action::Evidence.byte();
 /// authoritative registry chooses; clients never arbitrate raw corpus.
 pub const ACT_TASK: u8 = Action::Task.byte();
 /// POUW settlement: a client submits predicted outputs for a dispatched
-/// task_id; the hypha verifies against its held answers — first verified
+/// task_address; the hypha verifies against its held answers — first verified
 /// solve takes the bounty, replays collapse to the verification floor.
 pub const ACT_SOLVE: u8 = Action::Solve.byte();
 
@@ -497,8 +497,8 @@ pub enum Witnessed {
 }
 
 impl Witnessed {
-    /// The key that answered, on every arm.
-    pub fn vk(&self) -> [u8; 32] {
+    /// The vantage that answered, on every arm.
+    pub fn vantage(&self) -> [u8; 32] {
         match self {
             Witnessed::Reached { vk, .. }
             | Witnessed::Refused { vk, .. }
@@ -709,8 +709,8 @@ pub struct Settlement {
 pub const RULING_UPHELD: u8 = 1;
 pub const RULING_DEMOTED: u8 = 2;
 pub const RULING_SLASHED: u8 = 0;
-// 3 and 4 are RETIRED (EC1, 2026-09-24): REBIND carried π* (a Sel term) and
-// ATTACHED carried a base and a transport g — a Sel term or a versor on a
+// 3 and 4 are RETIRED (EC1, 2026-09-24): REBIND carried π* (a Selection term) and
+// ATTACHED carried a base and a transport g — a Selection term or a versor on a
 // node is a blob where a coordinate belongs, and neither had a producer.
 // Attachment returns with its producer (an inter-form 2-cell attached along
 // a round) as a cite of the base by its stamp and g as a class record. The

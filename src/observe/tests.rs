@@ -2,14 +2,14 @@
 
 use super::*;
 
-fn vk(b: u8) -> [u8; 32] {
+fn party(b: u8) -> [u8; 32] {
     [b; 32]
 }
 
 /// A court's readings held under its key, written as a query reply and read
 /// back: every one as itself.
 fn reads_back(all: &[Reading]) {
-    let entries: Vec<(Vec<u8>, Reading)> = all.iter().map(|r| (Source::Court(vk(7)).key(r.tag()), r.clone())).collect();
+    let entries: Vec<(Vec<u8>, Reading)> = all.iter().map(|r| (Source::Court(party(7)).key(r.tag()), r.clone())).collect();
     let reply = encode_reply(&entries, usize::MAX).expect("the reply writes");
     let total = u32::try_from(entries.len()).expect("a few readings");
     assert_eq!(decode_reply(&reply), Some((total, entries)));
@@ -74,7 +74,7 @@ fn encode_reply_round_trips_every_reading() {
         k: 13,
         head: [40, 1, 0, 2, 0, 12, 3],
         genesis: Some(([9; 32], 2)),
-        peers: vec![(vk(1), 37, 3), (vk(2), 44, -4)],
+        peers: vec![(party(1), 37, 3), (party(2), 44, -4)],
         persisted: Some((38, 11)),
         folded: None,
         unframed: 5,
@@ -82,7 +82,7 @@ fn encode_reply_round_trips_every_reading() {
         rulings: [[3, 1, 1, 1], [0; 4], [2, 2, 0, 0], [1, 0, 1, 0]],
         // F5 — each reason in its own slot travels.
         ruling_refusals: [[1, 0, 0], [0; 3], [0; 3], [0, 2, 3]],
-        orbits: Orbits { withheld: 2, distance: vec![(vk(1), [-3, 0, 5, -1])] },
+        orbits: Orbits { withheld: 2, distance: vec![(party(1), [-3, 0, 5, -1])] },
     }));
     let all = vec![
         Reading::Memory(memory),
@@ -96,7 +96,7 @@ fn encode_reply_round_trips_every_reading() {
             overflowed: 7,
             // E3 — each identity's standing travels with it.
             accounts: vec![crate::observe::Account {
-                who: vk(9),
+                who: party(9),
                 balance: [3, 1, 0, 2],
                 bond: [12, 3, 0, 20],
                 held: [1, 0, 0, 0],
@@ -107,7 +107,7 @@ fn encode_reply_round_trips_every_reading() {
         })),
     ];
     reads_back(&all);
-    let entries: Vec<(Vec<u8>, Reading)> = all.iter().map(|r| (Source::Court(vk(7)).key(r.tag()), r.clone())).collect();
+    let entries: Vec<(Vec<u8>, Reading)> = all.iter().map(|r| (Source::Court(party(7)).key(r.tag()), r.clone())).collect();
     // A reply that cannot hold them all says how many were held.
     let short = encode_reply(&entries, 64).expect("the reply writes");
     let (total, sent) = decode_reply(&short).expect("a short reply still decodes");
@@ -124,14 +124,14 @@ fn encode_reply_round_trips_every_reading() {
 #[test]
 fn encode_reply_round_trips_replication_and_adjudication() {
     let mut axes = [0u64; REP_AXES];
-    axes[rep::BACKFILL] = 7;
-    axes[rep::STALE] = 2;
-    axes[rep::BACKFILL_BUDGET] = 3;
-    axes[rep::LAG] = 540;
+    axes[replication::BACKFILL] = 7;
+    axes[replication::STALE] = 2;
+    axes[replication::BACKFILL_BUDGET] = 3;
+    axes[replication::LAG] = 540;
     let mut unattributed = [0u64; REP_AXES];
-    unattributed[rep::DIGEST_UNREADABLE] = 1;
+    unattributed[replication::DIGEST_UNREADABLE] = 1;
     reads_back(&[
-        Reading::Replication(Box::new(Replication { signers: vec![(vk(3), axes), (vk(4), [0; REP_AXES])], unattributed })),
+        Reading::Replication(Box::new(Replication { signers: vec![(party(3), axes), (party(4), [0; REP_AXES])], unattributed })),
         Reading::Adjudication(Adjudication {
             ratified: 5,
             stood: 9,
@@ -144,22 +144,22 @@ fn encode_reply_round_trips_replication_and_adjudication() {
         }),
     ]);
     assert_eq!(REPLICATION_AXES.len(), REP_AXES, "the axes and the counters agree");
-    assert_eq!(REPLICATION_AXES[rep::LAG].0, "lag", "the last axis is the lag, a level");
+    assert_eq!(REPLICATION_AXES[replication::LAG].0, "lag", "the last axis is the lag, a level");
 }
 
 /// The replication counters keep each signer apart, and a frame that named
 /// no signer apart from all of them; the verdicts count by kind.
 #[test]
 fn replication_counts_per_signer_and_verdicts_by_kind() {
-    let signer = vk(0xb1);
+    let signer = party(0xb1);
     let before = replication();
-    let held = |r: &Replication| r.signers.iter().find(|(k, _)| *k == signer).map(|(_, a)| a[rep::BACKFILL]);
-    note_replication(Some(signer), rep::BACKFILL, 4);
-    note_replication(Some(signer), rep::BACKFILL, 1);
-    note_replication(None, rep::DIGEST_SIGNATURE, 1);
+    let held = |r: &Replication| r.signers.iter().find(|(k, _)| *k == signer).map(|(_, a)| a[replication::BACKFILL]);
+    note_replication(Some(signer), replication::BACKFILL, 4);
+    note_replication(Some(signer), replication::BACKFILL, 1);
+    note_replication(None, replication::DIGEST_SIGNATURE, 1);
     let after = replication();
     assert_eq!(held(&after), Some(held(&before).map_or(5, |b| b + 5)));
-    assert!(after.unattributed[rep::DIGEST_SIGNATURE] > before.unattributed[rep::DIGEST_SIGNATURE]);
+    assert!(after.unattributed[replication::DIGEST_SIGNATURE] > before.unattributed[replication::DIGEST_SIGNATURE]);
     note_replication(Some(signer), 99, 1);
     assert_eq!(held(&replication()), held(&after), "an axis past the list counts nothing");
     let a0 = adjudication();
@@ -174,7 +174,7 @@ fn replication_counts_per_signer_and_verdicts_by_kind() {
 /// A key names its source and what the reading answers.
 #[test]
 fn source_of_key_names_source_and_tag() {
-    let s = Source::Court(vk(1));
+    let s = Source::Court(party(1));
     assert_eq!(Source::of_key(&s.key(TAG_MEMORY)), Some((s, TAG_MEMORY)));
     assert_eq!(Source::of_key(&[9; 34]), None, "an unknown source kind");
 }
@@ -193,14 +193,14 @@ fn publish_folds_readings_and_replace_holds_them() {
         peak_resident: 1,
         samples: 1,
     };
-    let own = Source::Court(vk(0xa1));
+    let own = Source::Court(party(0xa1));
     assert!(publish(own, Reading::Memory(sample(1, 10))));
     assert!(publish(own, Reading::Memory(sample(2, 20))));
     let held = readings(&own.prefix());
     assert_eq!(held.len(), 1);
     let Reading::Memory(m) = &held[0].1 else { panic!("a memory reading") };
     assert_eq!((m.first_k, m.last_k, m.samples), (1, 2, 2), "the producer's readings fold");
-    let replaced = Source::Court(vk(0xa2));
+    let replaced = Source::Court(party(0xa2));
     assert!(replace(replaced, Reading::Memory(sample(5, 50))));
     assert!(replace(replaced, Reading::Memory(sample(5, 50))));
     let Reading::Memory(m) = &readings(&replaced.prefix())[0].1 else { panic!("a memory reading") };
@@ -424,7 +424,7 @@ fn of_chain_measures_nodes_by_kind_flat_in_word() {
     // it are the same shape apart from the word each cites. (78.94: kinds a
     // court seals; the stood and learned kinds of the voices' chains are
     // sealed by nothing.)
-    let mut chain = ReceiptChain::with_vk([3; 32]);
+    let mut chain = ReceiptChain::with_signer([3; 32]);
     chain.append(ActKind::Attest, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends");
     chain.append(ActKind::List, [0; 4], vec![cite(&small)], [0; 32], Vec::new()).expect("appends");
     chain.append(ActKind::List, [0; 4], vec![cite(&large)], [0; 32], Vec::new()).expect("appends");
@@ -476,12 +476,12 @@ fn tstanding_reads_back_exactly_and_refuses_other_version() {
     let built = TStanding {
         final_point: Some(TPoint { origin, h: u64::MAX, lanes: [u64::MAX, 0, 1, 2], k: 7 }),
         advances: u64::MAX,
-        keepers: vec![KeeperSeen { key: vk(4), own: true, newest: None, final_of: None }],
+        keepers: vec![KeeperSeen { key: party(4), own: true, newest: None, final_of: None }],
         residual: Residual {
             edges: vec![
-                Edge { from: vk(4), to: vk(5), h: 20, delta: [-3, 5, 0, i128::MIN] },
-                Edge { from: vk(5), to: vk(6), h: 21, delta: [i128::MAX, -1, 2, 0] },
-                Edge { from: vk(4), to: vk(6), h: 20, delta: [1, 1, -1, 0] },
+                Edge { from: party(4), to: party(5), h: 20, delta: [-3, 5, 0, i128::MIN] },
+                Edge { from: party(5), to: party(6), h: 21, delta: [i128::MAX, -1, 2, 0] },
+                Edge { from: party(4), to: party(6), h: 20, delta: [1, 1, -1, 0] },
             ],
             holonomy: Some([-4, 3, 3, -9]),
         },
@@ -559,11 +559,11 @@ fn mind_and_agreements_read_back_exact() {
         tasks: vec![TaskSeen { citation: [0x7b; 32], taken: 1, reading: 0, perspectives: 3, stop: 15 }],
     };
     let agreements = Agreements {
-        pairs: vec![Agreed { speaker: vk(1), hearer: vk(2), agreed: 3, whole: 2, deviation: [q(1, 2), q(0, 1), q(0, 1), q(0, 1)] }],
+        pairs: vec![Agreed { speaker: party(1), hearer: party(2), agreed: 3, whole: 2, deviation: [q(1, 2), q(0, 1), q(0, 1), q(0, 1)] }],
     };
     reads_back(&[Reading::Mind(Box::new(mind.clone())), Reading::Agreements(Box::new(agreements))]);
-    let key = Source::Mind(vk(3)).key(TAG_MIND);
-    assert_eq!(Source::of_key(&key), Some((Source::Mind(vk(3)), TAG_MIND)), "a mind's reading stands under the mind");
+    let key = Source::Mind(party(3)).key(TAG_MIND);
+    assert_eq!(Source::of_key(&key), Some((Source::Mind(party(3)), TAG_MIND)), "a mind's reading stands under the mind");
     assert!(mind.lines().iter().any(|l| l.contains("deviation closed 1/2:0:0:3/7")), "the deviation is printed exact");
     // A court task travels by its whole citation and is named on the console:
     // taken, read as a task, undetermined by its perspectives, sent.
@@ -639,11 +639,11 @@ fn live_call_waits_while_carrier_works_inside_law() {
 #[test]
 fn note_dispatch_keeps_latest_voice_by_citation() {
     let cite = [0xf2; 32];
-    note_dispatch(cite, vk(1), 40);
-    note_dispatch(cite, vk(2), 41);
+    note_dispatch(cite, party(1), 40);
+    note_dispatch(cite, party(2), 41);
     let d = dispatched();
     let s = d.sent.iter().find(|s| s.citation == cite).copied().expect("kept by its citation");
-    assert_eq!((s.voice, s.height, s.times), (vk(2), 41, 2), "the later voice and height stand; dispatched twice");
+    assert_eq!((s.voice, s.height, s.times), (party(2), 41, 2), "the later voice and height stand; dispatched twice");
     reads_back(&[Reading::Dispatched(Box::new(d.clone()))]);
     assert!(d.lines().iter().any(|l| l.contains(&"f2".repeat(32)) && l.contains("at height 41")), "named whole");
 }
@@ -657,14 +657,14 @@ fn note_dispatch_keeps_latest_voice_by_citation() {
 fn note_judged_solve_keeps_verdicts_by_task_and_voice() {
     use crate::anastome::dialogue::{SOLVE_BOUNTY, SOLVE_FLOOR, SOLVE_UNREAD};
     let cite = [0xe7; 32];
-    note_judged_solve(cite, vk(1), SOLVE_UNREAD, 50);
-    note_judged_solve(cite, vk(1), SOLVE_BOUNTY, 52);
-    note_judged_solve(cite, vk(2), SOLVE_FLOOR, 60);
-    note_judged_solve(cite, vk(2), 9, 61);
+    note_judged_solve(cite, party(1), SOLVE_UNREAD, 50);
+    note_judged_solve(cite, party(1), SOLVE_BOUNTY, 52);
+    note_judged_solve(cite, party(2), SOLVE_FLOOR, 60);
+    note_judged_solve(cite, party(2), 9, 61);
     let j = judged_solves();
-    let one = j.solves.iter().find(|s| s.citation == cite && s.voice == vk(1)).copied().expect("kept by task and voice");
+    let one = j.solves.iter().find(|s| s.citation == cite && s.voice == party(1)).copied().expect("kept by task and voice");
     assert_eq!((one.verdict, one.height, one.times), (SOLVE_BOUNTY, 52, [0, 0, 1, 1]), "the last verdict and height stand; each verdict counted at its code");
-    let two = j.solves.iter().find(|s| s.citation == cite && s.voice == vk(2)).copied().expect("another voice apart");
+    let two = j.solves.iter().find(|s| s.citation == cite && s.voice == party(2)).copied().expect("another voice apart");
     assert_eq!((two.verdict, two.height, two.times), (SOLVE_FLOOR, 60, [0, 1, 0, 0]), "a code past the verdicts is not recorded");
     reads_back(&[Reading::Judged(Box::new(j.clone()))]);
     assert!(j.lines().iter().any(|l| l.contains(&"e7".repeat(32)) && l.contains("last first at height 52")), "named whole");

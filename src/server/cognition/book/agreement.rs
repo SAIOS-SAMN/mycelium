@@ -60,22 +60,22 @@ impl Court {
             let Some(frame) = frame else { continue };
             let mut p = 0usize;
             let Some(e) = Element::from_bytes(tape, &mut p) else { continue };
-            let addr = e.address();
+            let address = e.address();
             let Some(Chatter { speaker: peer, said: Said::Hold { said, deviation, .. }, .. }) = Chatter::open(frame) else { continue };
-            if said.as_slice() != addr.as_bytes() || peer == act.voice {
+            if said.as_slice() != address.as_bytes() || peer == act.voice {
                 continue;
             }
-            if self.word_at(addr.as_bytes()).is_none() && self.provisional.get(addr.as_bytes()).is_none() {
+            if self.word_at(address.as_bytes()).is_none() && self.provisional.get(address.as_bytes()).is_none() {
                 continue;
             }
-            let key = attestation_key(addr.as_bytes(), &peer);
+            let key = attestation_key(address.as_bytes(), &peer);
             if self.attested.contains(&key) {
                 continue;
             }
             // THE WORD ON ITS SCENE: the family it is bound to, its section
             // there. Bound to none, or true nowhere on it: no evidence, and
             // no attestation.
-            let task = self.speech_task.get(addr.as_bytes()).or_else(|| self.listing_task.get(addr.as_bytes())).cloned();
+            let task = self.speech_task.get(address.as_bytes()).or_else(|| self.listing_task.get(address.as_bytes())).cloned();
             let family = task.as_ref().and_then(|t| self.task_family.get(t.as_bytes())).cloned();
             let (Some(task), Some(family)) = (task, family.filter(|_| sectioned(&e))) else { continue };
             let heard = word_local(&e, &family);
@@ -83,19 +83,19 @@ impl Court {
                 continue;
             }
             self.attested.insert(key, ());
-            self.append_step(crate::chronometry::ActKind::Attest, addr.as_bytes(), peer);
+            self.append_step(crate::chronometry::ActKind::Attest, address.as_bytes(), peer);
             // MU-CLIENT §5.6 (E3) — THE UNION'S ATTESTATION PAYS: the mind that
             // agreed is a party to the word's claim, as a second speaker of it
             // is (`list_sentence`), so its install pays every mind that agreed.
             // A word already installed was paid at its install, once.
-            if self.provisional.contains(&addr) && self.treasury.escrow_of(addr.as_bytes()).is_some() {
-                self.convergence.used_by(addr.as_bytes(), peer);
+            if self.provisional.contains(&address) && self.treasury.escrow_of(address.as_bytes()).is_some() {
+                self.convergence.used_by(address.as_bytes(), peer);
                 let anchor = self.anchor();
-                self.treasury.escrow_award(&addr, vec![peer], [0; 4], anchor);
+                self.treasury.escrow_award(&address, vec![peer], [0; 4], anchor);
                 self.acts.pay("attestations joined to a claim", [0; 4]);
             }
             let converged = self.converge_on(&task, &family, &e, &heard, peer, act.voice);
-            sealed.push(Attested { word: addr.as_bytes().to_vec(), by: peer, deviation, converged });
+            sealed.push(Attested { word: address.as_bytes().to_vec(), by: peer, deviation, converged });
         }
         sealed
     }
@@ -144,9 +144,9 @@ impl Court {
 }
 
 /// An attestation's key: the word's address, then the attesting mind.
-fn attestation_key(addr: &[u8], peer: &[u8; 32]) -> Vec<u8> {
-    let mut k = Vec::with_capacity(addr.len() + 32);
-    crate::transducer::address::put_key_bytes(&mut k, addr);
+fn attestation_key(address: &[u8], peer: &[u8; 32]) -> Vec<u8> {
+    let mut k = Vec::with_capacity(address.len() + 32);
+    crate::transducer::address::put_key_bytes(&mut k, address);
     k.extend_from_slice(peer);
     k
 }

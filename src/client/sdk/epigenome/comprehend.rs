@@ -14,21 +14,21 @@ impl Epigenome {
     /// identity, so removing one word renamed all the others. At a
     /// coordinate a word leaves and nothing else moves.
     #[cfg(test)]
-    pub(crate) fn retire(&mut self, addr: &[u8]) -> bool {
-        let Some(_entry) = self.genome.remove(addr) else {
+    pub(crate) fn retire(&mut self, address: &[u8]) -> bool {
+        let Some(_entry) = self.genome.remove(address) else {
             return false;
         };
         // The index and the payload leave together at one coordinate. A
         // word whose index entry is gone and whose payload is not is a
         // genome that holds what it cannot read (law 2).
-        let Some(word) = self.resident.remove(addr) else {
+        let Some(word) = self.resident.remove(address) else {
             return false;
         };
         let gone = word.held.address();
         // A retired word is no longer work: its coordinate leaves the
         // pending set with it; its remainders leave the index.
-        self.unpivoted.remove(addr);
-        self.drop_remainders(addr);
+        self.unpivoted.remove(address);
+        self.drop_remainders(address);
         self.axis_retract(&word.held);
         self.moduli_retract(&word.held);
         match word.held.form() {
@@ -162,7 +162,7 @@ impl Epigenome {
             // THE OBSTRUCTIONS ARE A COCHAIN (chapter 13), keyed by the held
             // word each stands against.
             //
-            // This kept ONE — `held.address() < *addr`, the lowest address —
+            // This kept ONE — `held.address() < *address`, the lowest address —
             // and dropped every other transition it had already measured. An
             // address is an identity and not a rank (1.5), so that comparison
             // ordered the fibre by a coordinate that carries no order, and a
@@ -366,7 +366,7 @@ impl Epigenome {
         budget: &mut crate::physics::Budget,
     ) -> Option<Comprehension> {
         let e = Element::from_bytes(taught, pos)?;
-        let addr = e.address();
+        let address = e.address();
         let resolve = |a: &[u8]| {
             // The resolver reads the form off the HELD element (L16):
             // a citation resolved twice parses the tape once.
@@ -442,7 +442,7 @@ impl Epigenome {
                 }
                 None => self.admit_word(crate::transducer::element::Held::of(e), uses),
             }
-            self.promoted.push(addr.into_vec());
+            self.promoted.push(address.into_vec());
             return Some(heard);
         }
         let arrived = e.clone();
@@ -451,7 +451,7 @@ impl Epigenome {
         // A word already at this coordinate is replaced in place; its
         // expression and admission ordinal are what this mind measured
         // about it and do not reset because the tape arrived again.
-        match self.resident.get_mut(&addr) {
+        match self.resident.get_mut(&address) {
             Some(w) => {
                 w.held = held;
                 w.shape = std::sync::OnceLock::new();
@@ -498,9 +498,9 @@ impl Epigenome {
     /// A cited tape that just arrived: withheld sentences naming it
     /// re-comprehend. The waiting-on index is the read.
     pub(crate) fn resolve_withheld(&mut self, arrived: &Element, budget: &mut crate::physics::Budget) {
-        let addr = arrived.address();
-        let citing: Vec<Vec<u8>> = match self.waiting_on.remove(&addr) {
-            // `waiting_on.remove(&addr)` is the read by the key: these are the
+        let address = arrived.address();
+        let citing: Vec<Vec<u8>> = match self.waiting_on.remove(&address) {
+            // `waiting_on.remove(&address)` is the read by the key: these are the
             // words that were waiting on THIS address, and all of them
             // are released by its arrival.
             Some(citers) => citers
@@ -522,7 +522,7 @@ impl Epigenome {
             match heard {
                 Comprehension::Withheld { missing } => {
                     for m in &old_missing {
-                        if m.as_slice() != addr.as_bytes() {
+                        if m.as_slice() != address.as_bytes() {
                             self.retract_waiter(m, &sa);
                         }
                     }
@@ -535,7 +535,7 @@ impl Epigenome {
                 }
                 Comprehension::Understood(_) | Comprehension::Admitted | Comprehension::Dialect(_) => {
                     for m in &old_missing {
-                        if m.as_slice() != addr.as_bytes() {
+                        if m.as_slice() != address.as_bytes() {
                             self.retract_waiter(m, &sa);
                         }
                     }

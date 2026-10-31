@@ -444,7 +444,7 @@ fn hold_perceived_fills_scene_motion_as_class() {
 /// hands it out under the scene its thoughts stand in. Never made to return
 /// (squaring), never let go.
 #[test]
-fn take_demands_hands_out_escaping_slide_once() {
+fn drain_demands_hands_out_escaping_slide_once() {
     let draw = |cells: &[(usize, usize)], shift: usize| -> Vec<String> {
         (0..7).map(|r| (0..9).map(|col| if col >= shift && cells.contains(&(r, col - shift)) { '1' } else { '0' }).collect()).collect()
     };
@@ -459,13 +459,13 @@ fn take_demands_hands_out_escaping_slide_once() {
     hour(&mut c, &[slid(&LA, 1), slid(&LB, 1)].concat());
     assert_eq!((c.resonance.scene_motions, c.resonance.grounds[0]), (1, 0), "one scene motion, no ground: {}", c.resonance.line());
     assert!(c.resonance.grounds[1] > 0, "no return: {}", c.resonance.line());
-    let taken = c.take_demands();
+    let taken = c.drain_demands();
     let slides: Vec<&crate::transducer::bubble::docket::TakenDemand> =
         taken.iter().filter(|d| d.residue.as_ref().is_some_and(|r| !crate::transducer::sentence::presentation::is_still(r))).collect();
     assert!(!slides.is_empty(), "the escaping orbit docketed with the motion that carries it: {}", c.resonance.line());
     assert!(slides.iter().all(|d| !d.charts.is_empty()), "on the chart it stands on");
     assert!(slides.iter().all(|d| d.families == vec![b"the scene".to_vec()]), "under the scene its thoughts were perceived in");
-    assert!(c.take_demands().is_empty(), "handed out once");
+    assert!(c.drain_demands().is_empty(), "handed out once");
 
     // MU-CLIENT §7.1 R2 — THE SCENE OUTLIVES THE THOUGHT THAT PERCEIVED IT:
     // the perceiving thoughts lapse before the taker runs (observed on the development
@@ -479,7 +479,7 @@ fn take_demands_hands_out_escaping_slide_once() {
         c.bubbles.remove(&k);
     }
     let filed = c.demand_scenes.len();
-    let taken = c.take_demands();
+    let taken = c.drain_demands();
     let slides: Vec<&crate::transducer::bubble::docket::TakenDemand> =
         taken.iter().filter(|d| d.residue.as_ref().is_some_and(|r| !crate::transducer::sentence::presentation::is_still(r))).collect();
     assert!(!slides.is_empty(), "the escaping orbit is still docketed");

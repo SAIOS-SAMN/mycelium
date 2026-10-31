@@ -25,7 +25,7 @@ fn q(n: i64, d: i64) -> Q {
 fn key(b: u8) -> SigningKey {
     SigningKey::from_bytes(&[b; 32])
 }
-fn vk(k: &SigningKey) -> [u8; 32] {
+fn verifying(k: &SigningKey) -> [u8; 32] {
     k.verifying_key().to_bytes()
 }
 fn domain() -> SigningKey {
@@ -42,7 +42,7 @@ fn mind() -> SigningKey {
 }
 
 fn percept(seq: u64, local_time: Arg, records: Vec<Record>) -> Percept {
-    Percept { domain: vk(&domain()), sub_origin: None, seat: 7, mind: vk(&mind()), local_time, seq, records, point: None }
+    Percept { domain: verifying(&domain()), sub_origin: None, seat: 7, mind: verifying(&mind()), local_time, seq, records, point: None }
 }
 
 /// A SEAT KEEPS ITS BOUND (a sink keeps its bound; the 2026-10-09 growth of
@@ -52,7 +52,7 @@ fn percept(seq: u64, local_time: Arg, records: Vec<Record>) -> Percept {
 /// holds.
 #[test]
 fn perceive_bounds_seat_values_to_one_frame() {
-    let mut m = SeatMind::new(vk(&domain()), 7);
+    let mut m = SeatMind::new(verifying(&domain()), 7);
     // Many series of wide quantities, each value some hundreds of bytes as it
     // writes: the seat's frame, shared among them, holds a few beats of each.
     let wide = BigInt::from(3u8).pow(2_000);
@@ -94,7 +94,7 @@ fn dilation_reads_du_dh_exactly() {
     let origin = Origin { genesis: [6; 32], epoch: 156 };
     let at = |h: u64| TPoint { origin, h, lanes: [1, 0, 0, 0], k: 1 };
     let located = |seq: u64, u: Arg, h: u64| Percept { point: Some(at(h)), ..percept(seq, u, vec![]) };
-    let mut m = SeatMind::scoped(vk(&domain()), Some([3; 32]), 7);
+    let mut m = SeatMind::scoped(verifying(&domain()), Some([3; 32]), 7);
     assert_eq!(m.sub_origin, Some([3; 32]));
     let r = m.perceive(&located(1, Arg::Q { num: 1, den: 1 }, 100));
     assert_eq!((r.dilation, m.dilation()), (None, None), "one location: no advance yet");
@@ -145,7 +145,7 @@ fn change_between_is_slide_and_scale_of_line() {
 /// multivector coefficient for coefficient.
 #[test]
 fn perceive_holds_records_as_series_read_back() {
-    let mut m = SeatMind::new(vk(&domain()), 7);
+    let mut m = SeatMind::new(verifying(&domain()), 7);
     let unit = [9u8; 32];
     let motion = translator_at(&[q(1, 2), q(0, 1), q(2, 1)]);
     let beats: Vec<Vec<Record>> = (0..4i64)
@@ -197,7 +197,7 @@ fn perceive_holds_records_as_series_read_back() {
 /// time is read off the beats (local time ½ a beat: three beats are 3/2).
 #[test]
 fn orbit_reads_periodic_record_at_exact_period() {
-    let mut m = SeatMind::new(vk(&domain()), 7);
+    let mut m = SeatMind::new(verifying(&domain()), 7);
     let cycle = [0i64, 1, 3];
     let mut last = Perceived::default();
     for beat in 1..=12u64 {
@@ -227,11 +227,11 @@ fn orbit_reads_periodic_record_at_exact_period() {
 /// A domain founded with two tiers, `house` its sitting reserve.
 fn founded() -> Court {
     let mut k = Court::new();
-    let mut tiers = vec![vk(&house()), vk(&tier())];
+    let mut tiers = vec![verifying(&house()), verifying(&tier())];
     tiers.sort_unstable();
-    let g = DomainGenesis { domain: vk(&domain()), tiers };
+    let g = DomainGenesis { domain: verifying(&domain()), tiers };
     assert!(matches!(k.admit_domain(&g.sign(&domain())), Founded::Sealed { .. }));
-    let r = Reservation { domain: vk(&domain()), tier: vk(&house()), nonce: [1; 32] }.sign(&domain());
+    let r = Reservation { domain: verifying(&domain()), tier: verifying(&house()), nonce: [1; 32] }.sign(&domain());
     assert!(matches!(k.designate_reserve(&r), Founded::Reserved { now: true, .. }));
     k
 }
@@ -244,8 +244,8 @@ fn founded() -> Court {
 /// end.
 fn play(counsel: [(u16, i64); 2], beats: u64) -> (Vec<Decision>, i64) {
     let mut k = founded();
-    let d = vk(&domain());
-    let mind_vk = vk(&mind());
+    let d = verifying(&domain());
+    let mind_vk = verifying(&mind());
     let fns = vec![SeatFn { id: 1, tags: vec![] }, SeatFn { id: 2, tags: vec![] }];
     let seats = Seats { domain: d, sub_origin: None, epoch: 1, seats: vec![Seat { seat: 7, role: Role::Steward, on: [6; 32], beat: Arg::Q { num: 1, den: 1 }, fns }] };
     k.seat_post(&Post::Seats(seats).sign(&house()).expect("writes")).expect("listed");
@@ -407,13 +407,13 @@ fn decide_follows_worth_not_counsel_order() {
 /// The listing the kernel's relay serves, read as the mind reads it: its
 /// seat's functions.
 fn listed_fns(k: &Court, seat: u32) -> (u64, Vec<SeatFn>) {
-    let body = k.seat_listing(&vk(&domain()), None).expect("a listing is held");
+    let body = k.seat_listing(&verifying(&domain()), None).expect("a listing is held");
     let listing = decode_listing_reply(&body, None).expect("decodes").expect("one SEATS");
     crate::client::sdk::seat::seat_fns(&listing, seat).expect("the seat is listed")
 }
 
 fn list(k: &mut Court, epoch: u64, fns: Vec<SeatFn>) {
-    let seats = Seats { domain: vk(&domain()), sub_origin: None, epoch, seats: vec![Seat { seat: 7, role: Role::Steward, on: [6; 32], beat: Arg::Q { num: 1, den: 1 }, fns }] };
+    let seats = Seats { domain: verifying(&domain()), sub_origin: None, epoch, seats: vec![Seat { seat: 7, role: Role::Steward, on: [6; 32], beat: Arg::Q { num: 1, den: 1 }, fns }] };
     k.seat_post(&Post::Seats(seats).sign(&house()).expect("writes")).expect("listed");
 }
 
@@ -427,8 +427,8 @@ fn list(k: &mut Court, epoch: u64, fns: Vec<SeatFn>) {
 /// the values the mind called, the records, and the mind.
 fn play_own(beats: u64, counselled: u64) -> (Vec<Decision>, Vec<u64>, [i64; 3], SeatMind) {
     let mut k = founded();
-    let d = vk(&domain());
-    let mind_vk = vk(&mind());
+    let d = verifying(&domain());
+    let mind_vk = verifying(&mind());
     list(&mut k, 1, vec![SeatFn { id: 2, tags: vec![TAG_COUNT] }]);
     k.seat_post(&Post::Take(Take { domain: d, sub_origin: None, seat: 7, mind: mind_vk, nonce: [2; 32] }).sign(&mind()).expect("writes")).expect("relayed");
     k.seat_post(&Post::Taken(Taken { domain: d, sub_origin: None, seat: 7, mind: mind_vk, ok: true, reason: 0 }).sign(&house()).expect("writes")).expect("relayed");
@@ -539,13 +539,13 @@ fn perceive_listing_sets_repertoire() {
     list(&mut k, 3, vec![SeatFn { id: 1, tags: vec![6, 6] }, SeatFn { id: 2, tags: vec![TAG_COUNT] }, SeatFn { id: 5, tags: vec![TAG_FLAG] }]);
     let (epoch, fns) = listed_fns(&k, 7);
     assert_eq!(epoch, 3);
-    let mut m = SeatMind::new(vk(&domain()), 7);
+    let mut m = SeatMind::new(verifying(&domain()), 7);
     m.perceive_listing(&fns);
     assert_eq!(m.repertoire().iter().map(|o| o.id).collect::<Vec<_>>(), vec![1, 2, 5]);
     m.perceive(&percept(1, Arg::Count(1), vec![]));
     assert_eq!(m.decide(), Decision::NothingToCall, "a repertoire held, nothing read: the mind passes");
     m.called(2, vec![Arg::Count(0)], [1; 32]);
-    let refusal = Outcome { domain: vk(&domain()), sub_origin: None, seat: 7, mind: vk(&mind()), call: [1; 32], applied: false, reason: REASON_NO_SUCH_FUNCTION, deed: [0; 32] };
+    let refusal = Outcome { domain: verifying(&domain()), sub_origin: None, seat: 7, mind: verifying(&mind()), call: [1; 32], applied: false, reason: REASON_NO_SUCH_FUNCTION, deed: [0; 32] };
     assert_eq!(m.outcome(&refusal), Some(2));
     assert_eq!(m.repertoire().iter().map(|o| o.id).collect::<Vec<_>>(), vec![1, 5], "no such function: gone until the listing is read again");
     m.perceive_listing(&fns);
@@ -563,7 +563,7 @@ fn perceive_listing_sets_repertoire() {
 fn seat_hold_takes_seat_on_house_events() {
     use crate::client::sdk::seat::SeatHold;
     let mut k = founded();
-    let (d, mind_vk) = (vk(&domain()), vk(&mind()));
+    let (d, mind_vk) = (verifying(&domain()), verifying(&mind()));
     list(&mut k, 1, vec![SeatFn { id: 2, tags: vec![TAG_COUNT] }]);
     let mut h = SeatHold::default();
     assert!(!h.may_take(None), "no listing names the seat: no take");
@@ -620,7 +620,7 @@ fn carrier_reads_versor_series_change_exactly() {
     assert!(c.sub(&e2.geo(&e1)).is_zero(), "and it is e2 e1");
     assert_eq!(carrier(&point_at(&[q(1, 1), q(0, 1), q(0, 1)]), &e1).map(|_| ()), None, "a null point is no versor: refused");
     let r = translator_at(&[q(1, 2), q(0, 1), q(0, 1)]);
-    let mut m = SeatMind::new(vk(&domain()), 7);
+    let mut m = SeatMind::new(verifying(&domain()), 7);
     let mut power = r.clone();
     for beat in 1..=6u64 {
         let bell = match beat % 2 {
@@ -655,7 +655,7 @@ fn carrier_reads_versor_series_change_exactly() {
 /// counselled function nor any other: nothing is read, so it passes.
 #[test]
 fn decide_probes_no_function_blind() {
-    let mut m = SeatMind::new(vk(&domain()), 7);
+    let mut m = SeatMind::new(verifying(&domain()), 7);
     m.perceive_listing(&[SeatFn { id: 13, tags: vec![TAG_COUNT] }, SeatFn { id: 2, tags: vec![TAG_COUNT] }]);
     let counsel = Record::Counsel { fn_id: 13, args: vec![Arg::Count(1)], worth: Arg::Count(1), cost: Arg::Count(0) };
     m.perceive(&percept(1, Arg::Count(1), vec![counsel]));

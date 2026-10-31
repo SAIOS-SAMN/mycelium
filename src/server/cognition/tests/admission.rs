@@ -21,8 +21,8 @@ fn pre(r: &crate::chronometry::KStepReceipt) -> SignedPrefix {
 }
 
 /// A signer's line of `n` steps, each measuring its own lane.
-fn peer_line(vk: [u8; 32], n: u64) -> Vec<crate::chronometry::KStepReceipt> {
-    let mut c = crate::chronometry::ReceiptChain::with_vk(vk);
+fn peer_line(signer: [u8; 32], n: u64) -> Vec<crate::chronometry::KStepReceipt> {
+    let mut c = crate::chronometry::ReceiptChain::with_signer(signer);
     (0..n)
         .map(|i| {
             c.append(crate::chronometry::ActKind::List, [i + 1, 0, 0, 0], Vec::new(), [0; 32], Vec::new())
@@ -43,7 +43,7 @@ fn before_genesis() -> crate::economy::Anchor {
 fn admit_receipt_cites_and_climbs_above_peer_height() {
     use crate::court::admission::Admitted;
     let key = super::common::court_key("peer");
-    let peer = peer_line(key.vk_bytes(), 3);
+    let peer = peer_line(key.verifying_bytes(), 3);
     let mut k = Court::new();
     let a = vec![(0, 0, 1), (0, 1, 1)];
     let b = vec![(0, 0, 2), (0, 1, 2)];
@@ -64,7 +64,7 @@ fn admit_receipt_cites_and_climbs_above_peer_height() {
         );
     }
     assert_eq!(k.pending_parents(), 3, "three admitted, none cited yet");
-    assert_eq!(k.known_head(&key.vk_bytes()), Some((head.stamp.place(), head.chain_hash)));
+    assert_eq!(k.known_head(&key.verifying_bytes()), Some((head.stamp.place(), head.chain_hash)));
     let c = vec![(0, 0, 5), (0, 1, 5)];
     super::common::speak_pair(&mut k, &a, &c, [2; 32]);
     assert_eq!(k.pending_parents(), 0, "the step consumed them");
@@ -86,16 +86,16 @@ fn bind_identity_seals_under_key_and_refuses_rebind() {
     assert!(k.chain().own().count() > 0, "the mind sealed nodes");
     assert!(k.chain().own().all(|r| r.stamp.vk == [0xab; 32]), "under the key bound before its first act");
     k.bind_identity([0xcd; 32]);
-    assert_eq!(k.chain().vk(), [0xab; 32], "a sealed ledger keeps the key it sealed under");
+    assert_eq!(k.chain().signer(), [0xab; 32], "a sealed ledger keeps the key it sealed under");
     assert!(k.chain().verify_chain_integrity(), "and its line still verifies");
 
     let key = super::common::court_key("peer");
-    let r = peer_line(key.vk_bytes(), 1).remove(0);
+    let r = peer_line(key.verifying_bytes(), 1).remove(0);
     assert!(matches!(
         k.admit_receipt(ORIGIN, super::common::verified(&pre(&r), &key), &r),
         crate::court::admission::Admitted::Parent(_)
     ));
-    assert_eq!(k.known_head(&key.vk_bytes()).map(|h| h.0), Some(crate::chronometry::Place::GENESIS), "the peer's author stands");
+    assert_eq!(k.known_head(&key.verifying_bytes()).map(|h| h.0), Some(crate::chronometry::Place::GENESIS), "the peer's author stands");
 }
 
 /// A receipt whose origin is not this node's touches nothing.
@@ -103,13 +103,13 @@ fn bind_identity_seals_under_key_and_refuses_rebind() {
 fn admit_receipt_refuses_foreign_origin() {
     use crate::court::admission::{Admitted, REFUSE_ORIGIN};
     let key = super::common::court_key("peer");
-    let r = peer_line(key.vk_bytes(), 1).remove(0);
+    let r = peer_line(key.verifying_bytes(), 1).remove(0);
     let mut k = Court::new();
     let mut foreign = pre(&r);
     foreign.genesis = [1; 32];
     assert_eq!(k.admit_receipt(ORIGIN, super::common::verified(&foreign, &key), &r), Admitted::Refused(REFUSE_ORIGIN));
     assert_eq!(k.pending_parents(), 0);
-    assert!(k.known_head(&key.vk_bytes()).is_none());
+    assert!(k.known_head(&key.verifying_bytes()).is_none());
 }
 
 /// 47.2 CHECKS ONE SIGNER (A2): a receipt naming one key, carried under a
@@ -120,21 +120,21 @@ fn admit_receipt_refuses_signature_by_other_key() {
     use crate::court::admission::{Admitted, REFUSE_RECEIPT};
     let victim = super::common::court_key("victim");
     let forger = super::common::court_key("forger");
-    let r = peer_line(victim.vk_bytes(), 1).remove(0);
+    let r = peer_line(victim.verifying_bytes(), 1).remove(0);
     let mut k = Court::new();
     assert_eq!(
         k.admit_receipt(ORIGIN, super::common::verified(&pre(&r), &forger), &r),
         Admitted::Refused(REFUSE_RECEIPT),
         "the signature verified under the forger; the receipt names the victim"
     );
-    assert!(k.known_head(&victim.vk_bytes()).is_none(), "and the victim's head is untouched");
+    assert!(k.known_head(&victim.verifying_bytes()).is_none(), "and the victim's head is untouched");
     assert!(matches!(k.admit_receipt(ORIGIN, super::common::verified(&pre(&r), &victim), &r), Admitted::Parent(_)));
 }
 
 /// Two roots under one key at one K, each measuring its own lane.
 fn two_roots(liar: [u8; 32]) -> (crate::chronometry::KStepReceipt, crate::chronometry::KStepReceipt) {
     let a = peer_line(liar, 1).remove(0);
-    let mut c = crate::chronometry::ReceiptChain::with_vk(liar);
+    let mut c = crate::chronometry::ReceiptChain::with_signer(liar);
     let b = c
         .append(crate::chronometry::ActKind::List, [9, 0, 0, 0], Vec::new(), [0; 32], Vec::new())
         .expect("appends")
@@ -149,7 +149,7 @@ fn two_roots(liar: [u8; 32]) -> (crate::chronometry::KStepReceipt, crate::chrono
 fn admit_receipt_burns_bond_on_two_roots_at_one_k() {
     use crate::court::admission::Admitted;
     let key = super::common::court_key("liar");
-    let liar = key.vk_bytes();
+    let liar = key.verifying_bytes();
     let (ra, rb) = two_roots(liar);
     assert_eq!(ra.stamp.k, rb.stamp.k, "one K");
     assert_ne!(ra.chain_hash, rb.chain_hash, "two roots");
@@ -179,7 +179,7 @@ fn admit_receipt_burns_bond_on_two_roots_at_one_k() {
 fn accept_equivocation_burns_bond_once() {
     use crate::court::admission::admit_equivocation;
     let key = super::common::court_key("liar");
-    let liar = key.vk_bytes();
+    let liar = key.verifying_bytes();
     let (ra, rb) = two_roots(liar);
     let mut k = Court::new();
     let bond = [3u64, 3, 3, 3];
@@ -209,7 +209,7 @@ fn accept_equivocation_burns_bond_once() {
 fn admit_backfill_closes_gap_as_receipts_arrive() {
     use crate::court::admission::Admitted;
     let key = super::common::court_key("peer");
-    let vk = key.vk_bytes();
+    let vk = key.verifying_bytes();
     let peer = peer_line(vk, 4);
     let head = peer[3].clone();
     let place = |n: usize| peer[n].stamp.place();

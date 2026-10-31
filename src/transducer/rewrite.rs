@@ -131,14 +131,14 @@ impl Rewrite {
                 class.put_canonical(&mut out);
             }
             RewritePayload::Translation { a, b, gauge } => {
-                crate::transducer::address::put_addr(&mut out, a)?;
-                crate::transducer::address::put_addr(&mut out, b)?;
+                crate::transducer::address::put_address(&mut out, a)?;
+                crate::transducer::address::put_address(&mut out, b)?;
                 gauge.put_canonical(&mut out);
             }
             RewritePayload::Retire { cites, freed } => {
                 put_key_count(&mut out, cites.len());
                 for a in cites {
-                    crate::transducer::address::put_addr(&mut out, a)?;
+                    crate::transducer::address::put_address(&mut out, a)?;
                 }
                 for m in freed {
                     out.extend_from_slice(&m.to_le_bytes());
@@ -218,8 +218,8 @@ impl Rewrite {
                 RewritePayload::AxisOpen { class, degree }
             }
             RewriteKind::Translation => {
-                let a = crate::transducer::address::take_addr(b, &mut pos)?;
-                let baddr = crate::transducer::address::take_addr(b, &mut pos)?;
+                let a = crate::transducer::address::take_address(b, &mut pos)?;
+                let baddr = crate::transducer::address::take_address(b, &mut pos)?;
                 let gauge = Versor::from_bytes(b, &mut pos)?;
                 RewritePayload::Translation { a, b: baddr, gauge }
             }
@@ -227,7 +227,7 @@ impl Rewrite {
                 let n = take_key_count(b, &mut pos)?;
                 let mut cites = Vec::with_capacity(n.min(b.len()));
                 for _ in 0..n {
-                    cites.push(crate::transducer::address::take_addr(b, &mut pos)?);
+                    cites.push(crate::transducer::address::take_address(b, &mut pos)?);
                 }
                 let mut freed = [0u64; 4];
                 for m in &mut freed {
@@ -474,7 +474,7 @@ pub fn replay(e: &Element) -> Option<&'static str> {
             if cites.is_empty() {
                 return Some("retirement cites nothing that speaks it");
             }
-            if cites.iter().any(|c| rw.before.iter().any(|b| b.addr() == c)) {
+            if cites.iter().any(|c| rw.before.iter().any(|b| b.address() == c)) {
                 return Some("retirement cites the word it retires");
             }
             // The result is unchanged: a retirement moves the structure and
@@ -600,7 +600,7 @@ mod tests {
         assert!(replay(&e).is_none(), "it re-derives from its own tape");
         let back = Rewrite::from_element(&e).expect("round trip");
         assert_eq!(back.claimed, freed, "the yield is the measure, not a constant");
-        assert_eq!(back.after.addr(), &word, "the vertex it names is the one it retires");
+        assert_eq!(back.after.address(), &word, "the vertex it names is the one it retires");
         match back.payload {
             RewritePayload::Retire { ref cites, freed: f } => {
                 assert_eq!(cites, &vec![speaker], "the cites survive the tape");

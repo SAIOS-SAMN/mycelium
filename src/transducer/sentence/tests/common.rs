@@ -25,7 +25,7 @@ pub fn contact(a: i64, b: i64, grade: u8) -> Interface {
     Interface::between(&sa, &sb, grade).expect("two spheres tether")
 }
 
-pub fn form_addr(n: u8) -> crate::transducer::address::Address {
+pub fn form_address(n: u8) -> crate::transducer::address::Address {
     crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, n])
 }
 
@@ -284,7 +284,7 @@ pub fn cert(axis: Axis, mu: [u64; 4]) -> PivotCertificate {
         before: Word::identity().class_key().expect("identity"),
         after: Word::identity().class_key().expect("identity"),
         rank_move: RankMove::Equal,
-        mu: Mu::Measured {
+        mu: MeasuredMu::Measured {
             before: [0; 4],
             after: mu,
         },

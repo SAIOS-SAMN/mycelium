@@ -157,7 +157,7 @@ for l in (0..4).filter(|&l| l != t) {
 }
 assert_eq!(read[t], spoken.magnitude()[t], "𝒯: the ground the closure covered, as the sentence carries it");
 let mut k = Court::new();
-let task = crate::registry::task_id(&crate::arc::Task {
+let task = crate::registry::task_address(&crate::arc::Task {
     train: family.clone(),
     test: Vec::new(),
 })
@@ -359,7 +359,7 @@ fn mint_sentence_mints_closed_subcomplex_deflation() {
     );
 
     let mut k = Court::new();
-    let task = crate::registry::task_id(&crate::arc::Task {
+    let task = crate::registry::task_address(&crate::arc::Task {
         train: family.clone(),
         test: Vec::new(),
     })
@@ -393,7 +393,7 @@ fn serve_syllabus_charges_learner_not_reserve() {
     let rule = crate::transducer::family::extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extract");
     let spoken = crate::transducer::family::mint_sentence(&rule, &family, &crate::transducer::family::NoCrystal, 0).expect("mint");
     let mut k = Court::new();
-    let task = crate::registry::task_id(&crate::arc::Task { train: family.clone(), test: Vec::new() }).expect("a task");
+    let task = crate::registry::task_address(&crate::arc::Task { train: family.clone(), test: Vec::new() }).expect("a task");
     k.bind_task_family(&task, family);
     let addr = spoken.address();
     assert_eq!(k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&spoken)), vec![crate::anastome::dialogue::SPEECH_STOOD]);

@@ -62,7 +62,7 @@ fn depth_of_counts_two_signers_as_two() {
     // A SECOND ORGAN, with its own verifying key, committing to the same
     // word — cited by the stamp that admitted it (78.24).
     let at = k.admitted_at(addr.as_bytes()).expect("the word was admitted here");
-    let mut peer = crate::chronometry::ReceiptChain::with_vk([7; 32]);
+    let mut peer = crate::chronometry::ReceiptChain::with_signer([7; 32]);
     let r = peer
         .append(ActKind::Install, [0; 4], vec![cite(at)], [0; 32], Vec::new())
         .expect("the peer's receipt");
@@ -94,7 +94,7 @@ fn depth_at_counts_repeat_signer_once() {
     let at = crate::chronometry::Stamp { h: 3, vk: [4; 32], k: 2, i: 0 };
     // A word stands at the stamp: depth is read only where one does.
     k.held_at.insert(at.key(), crate::transducer::address::Address::from(vec![9]));
-    let mut peer = crate::chronometry::ReceiptChain::with_vk([7; 32]);
+    let mut peer = crate::chronometry::ReceiptChain::with_signer([7; 32]);
     for kind in [ActKind::Install, ActKind::Ruling(crate::chronometry::Ruled::Upheld)] {
         let r = peer.append(kind, [0; 4], vec![cite(at)], [0; 32], Vec::new()).expect("a receipt");
         k.note_attestor(&r);
@@ -109,7 +109,7 @@ fn depth_at_counts_repeat_signer_once() {
 fn note_attestor_files_only_where_word_stands() {
     let mut k = Court::new();
     let at = crate::chronometry::Stamp { h: 3, vk: [4; 32], k: 2, i: 0 };
-    let mut peer = crate::chronometry::ReceiptChain::with_vk([7; 32]);
+    let mut peer = crate::chronometry::ReceiptChain::with_signer([7; 32]);
     let r = peer.append(ActKind::Install, [0; 4], vec![cite(at)], [0; 32], Vec::new()).expect("a receipt");
     k.note_attestor(&r);
     assert!(k.attestors.is_empty(), "no word stands at the stamp, and nothing is filed there");
@@ -126,7 +126,7 @@ fn depth_at_ignores_acts_about_word() {
     let at = crate::chronometry::Stamp { h: 5, vk: [4; 32], k: 4, i: 0 };
     // A word stands at the stamp: depth is read only where one does.
     k.held_at.insert(at.key(), crate::transducer::address::Address::from(vec![9]));
-    let mut mind = crate::chronometry::ReceiptChain::with_vk([8; 32]);
+    let mut mind = crate::chronometry::ReceiptChain::with_signer([8; 32]);
     for kind in [ActKind::List, ActKind::Settled, ActKind::Attest] {
         let r = mind.append(kind, [0; 4], vec![cite(at)], [0; 32], Vec::new()).expect("a receipt");
         k.note_attestor(&r);

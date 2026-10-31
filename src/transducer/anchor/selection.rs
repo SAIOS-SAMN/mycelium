@@ -1,7 +1,7 @@
 // A9 — THE SELECTION TERM: what a footprint selects on a scene, and how it
 // reads it.
 //
-//! `Sel` is a recursive selection over a scene: a hue, a delta, a
+//! `Selection` is a recursive selection over a scene: a hue, a delta, a
 //! difference, a ring. It is EVALUATED against a scene and never guessed
 //! at; where it selects nothing it says so.
 
@@ -10,40 +10,40 @@ use super::*;
 /// A term of the selection algebra. Constructors = operators, arguments =
 /// measured coordinates (hue byte, substrate axis index, component ordinal).
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Sel {
+pub enum Selection {
     /// K_h — the support of hue `h`; 255 is the whole occupied support.
     Hue(u8),
     /// The k-th connected component of the term's support (canonical order:
     /// by least site) — connectivity read along edges.
-    Comp(Box<Sel>, u8),
+    Comp(Box<Selection>, u8),
     /// δ — the coboundary: sites of the support with an edge-neighbour
     /// outside it.
-    Delta(Box<Sel>),
+    Delta(Box<Selection>),
     /// The star (the edge dilation): every site adjacent to the support,
     /// support included.
-    Star(Box<Sel>),
+    Star(Box<Selection>),
     /// Extremal projection onto a substrate axis: sites achieving the
     /// extremum. axis 0..4 = min-row, max-row, min-col, max-col.
-    Ext(Box<Sel>, u8),
+    Ext(Box<Selection>, u8),
     /// ∩ — algebraic intersection of supports.
-    Inter(Box<Sel>, Box<Sel>),
+    Inter(Box<Selection>, Box<Selection>),
     /// ∖ — set difference of supports.
-    Minus(Box<Sel>, Box<Sel>),
+    Minus(Box<Selection>, Box<Selection>),
     /// Connected closure: the sites of the second support edge-reachable
     /// from the first (seed ∩ within, grown through within) — pure Level-0
     /// connectivity, the operator that composes enclosure:
     /// enclosed(K) = K ∖ Flood(K ∩ δ(whole), K).
-    Flood(Box<Sel>, Box<Sel>),
+    Flood(Box<Selection>, Box<Selection>),
     /// ORDER-INVARIANT component selection: of the support's connected
     /// components, the one UNIQUELY extremizing a measured C₀ invariant.
     /// Code 0..4 = (max |K|, min |K|, max L1 extent diameter, min diameter).
     /// A tie selects NOTHING — no unique extremum, no selection (exactness,
     /// never a coin flip).
-    ArgExt(Box<Sel>, u8),
+    ArgExt(Box<Selection>, u8),
     /// SITE TRANSPORT intersection: a ∩ Shift_d(b) where d is the exact
     /// least-corner difference extrema(a) − extrema(b) — the offset is
     /// DERIVED from the two supports at evaluation time, never a parameter.
-    Transport(Box<Sel>, Box<Sel>),
+    Transport(Box<Selection>, Box<Selection>),
 }
 
 pub(crate) fn sorted(mut v: Vec<(i64, i64)>) -> Vec<(i64, i64)> {
@@ -73,7 +73,7 @@ pub(crate) fn neighbours((r, c): (i64, i64)) -> [(i64, i64); 4] {
     [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]
 }
 
-impl Sel {
+impl Selection {
     /// EVALUATE the term over a scene (the percept's painted sites) to its
     /// support set — exact, deterministic, replayable on any scene.
     ///
@@ -88,14 +88,14 @@ impl Sel {
     )]
     pub fn eval(&self, scene: &[(i64, i64, u8)]) -> Vec<(i64, i64)> {
         match self {
-            Sel::Hue(h) => sorted(
+            Selection::Hue(h) => sorted(
                 scene
                     .iter()
                     .filter(|(_, _, x)| *h == 255 || *x == *h)
                     .map(|(r, c, _)| (*r, *c))
                     .collect(),
             ),
-            Sel::Comp(e, k) => {
+            Selection::Comp(e, k) => {
                 let sup = e.eval(scene);
                 // The scene is one grid's: its sites stand in frame 0.
                 let mut comps: Vec<Vec<(i64, i64)>> = planar_components(&sup);
@@ -122,11 +122,11 @@ impl Sel {
                     None => Vec::new(),
                 }
             }
-            Sel::Delta(e) => {
+            Selection::Delta(e) => {
                 let sup = e.eval(scene);
                 sup.iter().copied().filter(|&p| neighbours(p).iter().any(|q| !has(&sup, *q))).collect()
             }
-            Sel::Star(e) => {
+            Selection::Star(e) => {
                 let sup = e.eval(scene);
                 let mut out = sup.clone();
                 for &p in &sup {
@@ -134,7 +134,7 @@ impl Sel {
                 }
                 sorted(out)
             }
-            Sel::Ext(e, axis) => {
+            Selection::Ext(e, axis) => {
                 let sup = e.eval(scene);
                 if sup.is_empty() {
                     return sup;
@@ -155,15 +155,15 @@ impl Sel {
                     _ => sup.into_iter().filter(|(_, c)| *c == m).collect(),
                 }
             }
-            Sel::Inter(a, b) => {
+            Selection::Inter(a, b) => {
                 let (sa, sb) = (a.eval(scene), b.eval(scene));
                 sa.into_iter().filter(|p| has(&sb, *p)).collect()
             }
-            Sel::Minus(a, b) => {
+            Selection::Minus(a, b) => {
                 let (sa, sb) = (a.eval(scene), b.eval(scene));
                 sa.into_iter().filter(|p| !has(&sb, *p)).collect()
             }
-            Sel::ArgExt(e, code) => {
+            Selection::ArgExt(e, code) => {
                 let sup = e.eval(scene);
                 let comps: Vec<Vec<(i64, i64)>> = planar_components(&sup);
                 if comps.is_empty() {
@@ -204,7 +204,7 @@ impl Sel {
                     _ => Vec::new(), // tie: no unique extremum, no selection
                 }
             }
-            Sel::Transport(a, b) => {
+            Selection::Transport(a, b) => {
                 let (sa, sb) = (a.eval(scene), b.eval(scene));
                 if sa.is_empty() || sb.is_empty() {
                     return Vec::new();
@@ -220,7 +220,7 @@ impl Sel {
                     sorted(sb.iter().map(|(r, c)| (r + dr, c + dc)).collect());
                 sa.into_iter().filter(|p| has(&shifted, *p)).collect()
             }
-            Sel::Flood(seed, within) => {
+            Selection::Flood(seed, within) => {
                 let (sd, w) = (seed.eval(scene), within.eval(scene));
                 let mut reached: Vec<(i64, i64)> =
                     sd.into_iter().filter(|p| has(&w, *p)).collect();
@@ -255,12 +255,12 @@ impl Sel {
     /// Node count — the term's cost (minimality prefers shallow derivations).
     pub fn size(&self) -> usize {
         match self {
-            Sel::Hue(_) => 1,
-            Sel::Comp(e, _) | Sel::Delta(e) | Sel::Star(e) | Sel::Ext(e, _) => 1 + e.size(),
-            Sel::Inter(a, b) | Sel::Minus(a, b) | Sel::Flood(a, b) | Sel::Transport(a, b) => {
+            Selection::Hue(_) => 1,
+            Selection::Comp(e, _) | Selection::Delta(e) | Selection::Star(e) | Selection::Ext(e, _) => 1 + e.size(),
+            Selection::Inter(a, b) | Selection::Minus(a, b) | Selection::Flood(a, b) | Selection::Transport(a, b) => {
                 1 + a.size() + b.size()
             }
-            Sel::ArgExt(e, _) => 1 + e.size(),
+            Selection::ArgExt(e, _) => 1 + e.size(),
         }
     }
 }

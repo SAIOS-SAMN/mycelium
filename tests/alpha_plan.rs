@@ -229,7 +229,7 @@ fn snapshot_writes_myt2_and_refuses_older_layouts() {
     let family = vec![(grid(&["11"]), grid(&["22"]))];
     let rule = extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour extracts");
     let spoken = mint_sentence(&rule, &family, &NoCrystal, 0).expect("a sentence");
-    let task = mycelium::registry::task_id(&mycelium::arc::Task { train: family.clone(), test: Vec::new() })
+    let task = mycelium::registry::task_address(&mycelium::arc::Task { train: family.clone(), test: Vec::new() })
         .expect("a grid pair's chain is A5's, so the task has an identity");
     k.bind_task_family(&task, family);
     let codes = k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&spoken));

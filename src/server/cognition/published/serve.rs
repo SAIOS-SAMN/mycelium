@@ -75,11 +75,11 @@ impl Published {
     /// it, standing at this reading's head: a party it holds no account of
     /// holds zero on every lane (the reading of absence); `None` where the
     /// party's holds pass the holds' carrier.
-    pub fn wallet(&self, who: &[u8; 32]) -> Option<Account> {
+    pub fn wallet(&self, party: &[u8; 32]) -> Option<Account> {
         let at = self.head;
         let court = self.court;
-        let shard = self.accounts.get(super::publish::shard_of(who))?;
-        match shard.get(who) {
+        let shard = self.accounts.get(super::publish::shard_of(party))?;
+        match shard.get(party) {
             Some(Some((balance, bond, held))) => Some(Account { court, balance: *balance, bond: *bond, held: *held, at }),
             Some(None) => None,
             None => Some(Account { court, balance: [0; 4], bond: [0; 4], held: [0; 4], at }),

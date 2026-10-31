@@ -32,19 +32,19 @@ impl Mind {
     ) -> Contracted {
         use crate::transducer::family::{form_deflation, mint_sentence};
         use crate::transducer::sentence::{form_vertex_key, rule_of_form};
-        let addr = spoken.address();
+        let address = spoken.address();
         // 78.49: the refusal is an act of this mind at its own K; the address
         // is sealed in the utterance index. The court sealed the refusal.
         let k = self.act();
-        self.sealed.insert(&addr, k);
+        self.sealed.insert(&address, k);
         // 24.2: the dialect is what this mind spoke THAT STOOD. The refused
         // sentence stood there before it was uttered and did not stand at
         // the court; it leaves, so no form glues it and no sentence cites
         // it again — a citer of a sealed address waits at every court.
-        self.epigenome.drop_dialect(addr.as_bytes());
-        self.owed_tries.remove(addr.as_bytes());
+        self.epigenome.drop_dialect(address.as_bytes());
+        self.owed_tries.remove(address.as_bytes());
         // MU-CLIENT §5.5 — refused, it is no word of this mind's on any scene.
-        self.scenes.forget(addr.as_bytes());
+        self.scenes.forget(address.as_bytes());
         let Some(mut form) = crate::transducer::sentence::from_element_form(spoken) else {
             return self.quiescent(spoken, train, budget);
         };
@@ -66,7 +66,7 @@ impl Mind {
             return self.quiescent(spoken, train, budget);
         }
         let after = form_vertex_key(&form);
-        let certificate = Contraction { kind, at: at.clone(), before: addr.clone(), after: after.clone(), receipt };
+        let certificate = Contraction { kind, at: at.clone(), before: address.clone(), after: after.clone(), receipt };
         let rems = form_deflation(&form, train, &self.epigenome).1;
         // The form is handed over (Z4 item 1) and what this arm needs of it
         // afterwards is read from the value it still has here, before the
@@ -87,8 +87,8 @@ impl Mind {
         // No measured trajectory and no demand: the contraction is held with
         // its certificate and nothing is uttered.
         if let Some(sentence) = minted {
-            let minted_addr = sentence.address();
-            self.contractions.insert(&minted_addr, certificate.clone());
+            let minted_address = sentence.address();
+            self.contractions.insert(&minted_address, certificate.clone());
             self.contracted.push(Pending { sentence, train: train.to_vec(), task: task.to_vec(), certificate });
         }
         Contracted::Moved
@@ -120,8 +120,8 @@ impl Mind {
     pub(crate) fn speak_contracted(&mut self) {
         let pending = std::mem::take(&mut self.contracted);
         for p in pending {
-            let addr = p.sentence.address();
-            self.contractions.insert(&addr, p.certificate.clone());
+            let address = p.sentence.address();
+            self.contractions.insert(&address, p.certificate.clone());
             let (sentence, train, task) = (p.sentence.clone(), p.train.clone(), p.task.clone());
             self.speak_with(std::slice::from_ref(&sentence), &train, &task, move |entity, heard| {
                 if heard.is_err() {
@@ -193,7 +193,7 @@ impl Mind {
         task: &[u8],
     ) -> Result<(), crate::transducer::sentence::ObstructionRefusal> {
         use crate::transducer::sentence::ObstructionRefusal;
-        let addr = citer.address();
+        let address = citer.address();
         if self.sealed.get(form.as_bytes()).is_some() {
             return Err(ObstructionRefusal::CitedSealed.noted());
         }
@@ -201,15 +201,15 @@ impl Mind {
             return Err(ObstructionRefusal::CitedNotHeld.noted());
         };
         let courts = self.hypha.courts();
-        let tried = match self.owed_tries.get(addr.as_bytes()) {
+        let tried = match self.owed_tries.get(address.as_bytes()) {
             Some(n) => *n,
             None => 0,
         };
         if tried >= courts {
-            self.owed_tries.remove(addr.as_bytes());
+            self.owed_tries.remove(address.as_bytes());
             return Err(ObstructionRefusal::OwedToEveryCourt.noted());
         }
-        self.owed_tries.insert(addr.as_bytes(), tried + 1);
+        self.owed_tries.insert(address.as_bytes(), tried + 1);
         self.owed.push(crate::client::sdk::Owed {
             form: cited,
             citer: citer.clone(),
@@ -223,8 +223,8 @@ impl Mind {
     /// form it was minted from, read by the minted sentence's address or its
     /// form's vertex key.
     pub(crate) fn certificate_for(&self, e: &Element) -> Option<Contraction> {
-        let addr = e.address();
-        if let Some(c) = self.contractions.get(&addr).cloned() {
+        let address = e.address();
+        if let Some(c) = self.contractions.get(&address).cloned() {
             return Some(c);
         }
         let k = crate::transducer::sentence::form_vertex_key(
@@ -235,8 +235,8 @@ impl Mind {
 
     /// The K at which this mind sealed a refused address, if it did.
     #[cfg(test)]
-    pub(crate) fn sealed_at(&self, addr: &[u8]) -> Option<u64> {
-        self.sealed.get(addr).copied()
+    pub(crate) fn sealed_at(&self, address: &[u8]) -> Option<u64> {
+        self.sealed.get(address).copied()
     }
 
     /// The contracted sentences waiting to be uttered, taken.

@@ -159,29 +159,29 @@ impl Treasury {
     /// aside under `key` — leaving the stake (an Unstake row) and held (an
     /// Escrow row) until it is released to the courts it pays. Whole or
     /// refused: a stake short on a lane moves nothing.
-    pub fn claim_stake(&mut self, who: [u8; 32], key: &[u8], mu: [u64; 4], anchor: Anchor) -> Result<(), Unpaid> {
+    pub fn claim_stake(&mut self, party: [u8; 32], key: &[u8], mu: [u64; 4], anchor: Anchor) -> Result<(), Unpaid> {
         if mu.iter().all(|&m| m == 0) {
             return Err(Unpaid::Nothing);
         }
         if self.held.contains(key) {
             return Err(Unpaid::Taken);
         }
-        let staked = self.stake_of(&who).map_or([0; 4], |s| s);
+        let staked = self.stake_of(&party).map_or([0; 4], |s| s);
         let short = crate::economy::shortfall(&mu, &staked);
         if !crate::economy::lanes_short(&short).is_empty() {
             return Err(Unpaid::Short(short));
         }
-        if self.credited(&who, mu).is_none() {
+        if self.credited(&party, mu).is_none() {
             self.overflowed += 1;
             return Err(Unpaid::Overflow);
         }
         let next: [u64; 4] = std::array::from_fn(|l| staked[l] - mu[l]);
-        self.stakes.insert(who, next);
+        self.stakes.insert(party, next);
         self.refresh_bond();
-        let landed = self.credit(who, mu);
+        let landed = self.credit(party, mu);
         debug_assert!(landed, "the credit was read as landing");
-        self.write(Entry { kind: Kind::Unstake, who, mu, at: anchor.0, receipt: anchor.1, arm: None });
-        self.hold(who, key, mu, anchor)
+        self.write(Entry { kind: Kind::Unstake, who: party, mu, at: anchor.0, receipt: anchor.1, arm: None });
+        self.hold(party, key, mu, anchor)
     }
 
     /// HOLD: `mu` of `payer`'s balance set aside under `key`, whole or

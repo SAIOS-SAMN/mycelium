@@ -16,7 +16,7 @@ use crate::verdict::{
 /// signed by the key its name derives.
 fn co_sign(name: &str, root_hash: [u8; 32]) -> ReceiptSection {
     let key = super::common::court_key(name);
-    let mut c = ReceiptChain::with_vk(key.vk_bytes());
+    let mut c = ReceiptChain::with_signer(key.verifying_bytes());
     let head = c.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
     let prefix = SignedPrefix {
         genesis: [7; 32],
@@ -265,7 +265,7 @@ fn restore_agrees_with_bound_line() {
         k.bind_eras(eras.clone()).expect("the segment binds");
     };
     let persist = |k: &mut Court| -> Vec<u8> {
-        if let Some((path, w)) = k.take_line().expect("the line writes") {
+        if let Some((path, w)) = k.drain_line().expect("the line writes") {
             assert!(w.land(&path), "the line lands");
         }
         k.snapshot()
@@ -324,8 +324,8 @@ fn admit_backfill_admits_citation_of_folded_receipt() {
     let p = k.propose_fold().expect("a final prefix");
     k.commit_fold([3; 64], &co_sign("w", p.root.hash)).expect("sealed");
     assert!(k.chain().at(&home, cited.stamp.place()).is_none(), "the cited receipt left the nodes for the archive");
-    let dvk = super::common::court_key("folded-cite-d").vk_bytes();
-    let mut d = ReceiptChain::with_vk(dvk);
+    let dvk = super::common::court_key("folded-cite-d").verifying_bytes();
+    let mut d = ReceiptChain::with_signer(dvk);
     d.admit(cited.clone());
     d.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![crate::chronometry::Parent { at: cited.stamp, hash: cited.chain_hash }])
         .expect("d cites the court's receipt");
@@ -449,7 +449,7 @@ fn propose_fold_passes_open_listing_and_escrow() {
     k.orbit();
     let p2 = k.propose_fold().expect("the line folds again");
     let fetched = k.rows_range(&home, p2.after, p2.root.at, 0, usize::MAX).1;
-    let line = k.chain().vk();
+    let line = k.chain().signer();
     let receipts = k.receipts_range(&line, p2.after, p2.root.at, 100);
     assert!(!receipts.is_empty(), "the witness is served the prefix");
     assert_eq!(Court::new().verify_fold(line, &p2, &receipts, &fetched), Ok(()), "and its witness re-derives it");

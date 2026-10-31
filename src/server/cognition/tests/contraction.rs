@@ -42,7 +42,7 @@ fn sentence_over(family: &[TrainPair]) -> Element {
 }
 
 fn task_of(family: &[TrainPair]) -> Address {
-    crate::registry::task_id(&crate::arc::Task { train: family.to_vec(), test: Vec::new() })
+    crate::registry::task_address(&crate::arc::Task { train: family.to_vec(), test: Vec::new() })
         .expect("a grid pair's chain is A5's, so the task has an identity")
 }
 

@@ -15,7 +15,7 @@ const FAR: Place = Place { k: u64::MAX, i: u64::MAX };
 fn court(name: &str) -> (HyphaKey, Court) {
     let key = super::common::court_key(name);
     let mut k = Court::new();
-    k.bind_identity(key.vk_bytes());
+    k.bind_identity(key.verifying_bytes());
     (key, k)
 }
 
@@ -48,7 +48,7 @@ fn fold(k: &mut Court, key: &HyphaKey) {
     let head = k.chain().head().expect("the court acted");
     let home = position(key, &head, p.root.hash.to_vec());
     let wkey = super::common::court_key("published-witness");
-    let mut wc = ReceiptChain::with_vk(wkey.vk_bytes());
+    let mut wc = ReceiptChain::with_signer(wkey.verifying_bytes());
     let wh = wc.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends");
     let witness = position(&wkey, &wh, p.root.hash.to_vec());
     k.commit_fold_proved(&home, &witness).expect("two signatures seal the fold");
@@ -79,7 +79,7 @@ fn alike(k: &Court, p: &Published, signer: &[u8; 32], asks: &[(Option<Place>, Pl
 #[test]
 fn publish_serves_receipts_as_kernel_does() {
     let (key, mut b) = court("published-b");
-    let vk = key.vk_bytes();
+    let vk = key.verifying_bytes();
     strokes(&mut b, 4);
     fold(&mut b, &key);
     strokes(&mut b, 3);
@@ -98,7 +98,7 @@ fn publish_serves_receipts_as_kernel_does() {
 #[test]
 fn publish_lags_until_next_and_copies_growth() {
     let (key, mut b) = court("published-lag");
-    let vk = key.vk_bytes();
+    let vk = key.verifying_bytes();
     strokes(&mut b, 3);
     let p1 = b.publish(None).expect("published");
     let head1 = b.chain().head_stamp().expect("acted").place();
@@ -128,7 +128,7 @@ fn publish_lags_until_next_and_copies_growth() {
 #[test]
 fn publish_serves_peer_line_admitted_in_pieces() {
     let (akey, mut a) = court("published-peer-a");
-    let avk = akey.vk_bytes();
+    let avk = akey.verifying_bytes();
     strokes(&mut a, 4);
     let line = a.chain().line_between(&avk, None, FAR, usize::MAX);
     let (first, rest) = line.split_at(3);
@@ -173,7 +173,7 @@ fn publish_wallet_matches_kernel_at_publication() {
 fn decode_receipts_answer_at_reads_trailing_height() {
     let (key, mut b) = court("published-wire");
     strokes(&mut b, 2);
-    let line = b.chain().line_between(&key.vk_bytes(), None, FAR, usize::MAX);
+    let line = b.chain().line_between(&key.verifying_bytes(), None, FAR, usize::MAX);
     let bare = encode_receipts_reply(&line, 1 << 16);
     let mut body = bare.clone();
     put_reading_height(&mut body, 41);

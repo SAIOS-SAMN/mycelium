@@ -55,12 +55,12 @@ pub(crate) fn union_remainders(entries: &[FieldEntry]) -> Vec<(i64, i64, u8, u8)
 /// at 194% of a core, its standing frozen) every stack sample of the quote
 /// workers stood in `invariant_of` under this line.
 pub(crate) fn open_charts_of(
-    addr: &[u8],
+    address: &[u8],
     listing: &Element,
     field: &crate::network::nerve::Keyed<ListingField>,
     atlas: &crate::transducer::stalk::Stalks,
 ) -> Vec<crate::transducer::stalk::Invariant> {
-    match field.get(addr) {
+    match field.get(address) {
         Some(f) if f.nonflat > 0 => f
             .entries
             .iter()
@@ -68,7 +68,7 @@ pub(crate) fn open_charts_of(
             .map(|e| e.chart.clone())
             .collect(),
         Some(f) if !f.entries.is_empty() => Vec::new(),
-        _ => match atlas.chart_of(addr) {
+        _ => match atlas.chart_of(address) {
             Some(base) => vec![base.clone()],
             None => vec![crate::transducer::stalk::invariant_of(listing)],
         },
@@ -124,24 +124,24 @@ pub fn rank_over(
     let mut invariants = crate::network::nerve::Keyed::new();
     match reuse {
         false => {
-            for (addr, p) in pending.scoped() {
-                invariants.insert(&addr, crate::transducer::stalk::invariant_of(p));
-                out.put_closure(&addr, locate(p, budget));
+            for (address, p) in pending.scoped() {
+                invariants.insert(&address, crate::transducer::stalk::invariant_of(p));
+                out.put_closure(&address, locate(p, budget));
             }
         }
         true => {
-            for (addr, p) in pending.scoped() {
+            for (address, p) in pending.scoped() {
                 // The prior reading where it holds this listing; the
                 // listing's own invariant where it does not. Both are
                 // measured on the word.
-                let inv = match prior.invariants.get(&addr) {
+                let inv = match prior.invariants.get(&address) {
                     Some(i) => i.clone(),
                     None => crate::transducer::stalk::invariant_of(p),
                 };
-                invariants.insert(&addr, inv);
-                match prior.closure_of(&addr) {
-                    Some(c) => out.put_closure(&addr, c.clone()),
-                    None => out.put_closure(&addr, locate(p, budget)),
+                invariants.insert(&address, inv);
+                match prior.closure_of(&address) {
+                    Some(c) => out.put_closure(&address, c.clone()),
+                    None => out.put_closure(&address, locate(p, budget)),
                 }
             }
             if !moved.is_empty() {
@@ -149,9 +149,9 @@ pub fn rank_over(
                 // filed on it: `link` follows the keyed prefix, so this is a
                 // coordinate read and not a second pass over the book.
                 for (ck, _) in moved.scoped() {
-                    for (addr, _) in chart_listings.link(&ck) {
-                        if let Some(p) = pending.get(&addr) {
-                            out.put_closure(&addr, locate(p, budget));
+                    for (address, _) in chart_listings.link(&ck) {
+                        if let Some(p) = pending.get(&address) {
+                            out.put_closure(&address, locate(p, budget));
                         }
                     }
                 }
@@ -220,15 +220,15 @@ pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Pri
             } else {
                 listing_atlas.fibre(chart)
             };
-            for addr in addrs {
-                if !on_page.contains(&addr) || seen.contains(&addr) {
+            for address in addrs {
+                if !on_page.contains(&address) || seen.contains(&address) {
                     continue;
                 }
-                if spoken.get(&addr).is_some_and(|voices| voices.contains(voice)) {
+                if spoken.get(&address).is_some_and(|voices| voices.contains(voice)) {
                     continue;
                 }
-                let Some(p) = pending.get(&addr) else { continue };
-                let open = open_charts_of(&addr, p, field, listing_atlas);
+                let Some(p) = pending.get(&address) else { continue };
+                let open = open_charts_of(&address, p, field, listing_atlas);
                 let mut open_set: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
                 for c in &open {
                     open_set.insert(c.key(), ());
@@ -259,7 +259,7 @@ pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Pri
                     return;
                 }
                 used += wire;
-                seen.insert(&addr, ());
+                seen.insert(&address, ());
                 // The listing's own measure, its ask (78.149 (b)): a cap on
                 // what a closer is paid, never the span it stood (a).
                 let mu = crate::economy::price(&p.magnitude(), pressure);

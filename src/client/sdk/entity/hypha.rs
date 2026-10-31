@@ -299,7 +299,7 @@ impl Mind {
     }
 
     /// THE COURT'S ANSWERS TAKEN, in the order they were asked.
-    pub(crate) fn take_answers(&mut self) {
+    pub(crate) fn drain_answers(&mut self) {
         take_from(self, |e| Some(&mut e.hypha.carrier));
     }
 
@@ -315,7 +315,7 @@ impl Mind {
 
     /// THE HOUSE'S ANSWERS TAKEN off the seat's carrier and the perceiving
     /// carrier, each in the order asked.
-    pub(crate) fn take_seat_answers(&mut self) {
+    pub(crate) fn drain_seat_answers(&mut self) {
         take_from(self, |e| Some(&mut e.seat.carrier));
         take_from(self, |e| Some(&mut e.held.carrier));
     }
@@ -326,7 +326,7 @@ impl Mind {
     pub(crate) fn settle(&mut self) {
         while self.hypha.in_flight() > 0 {
             let before = self.hypha.in_flight();
-            self.take_answers();
+            self.drain_answers();
             if self.hypha.in_flight() == before {
                 self.hypha.wait_landing();
             }

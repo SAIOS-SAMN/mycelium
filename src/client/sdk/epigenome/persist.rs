@@ -122,25 +122,25 @@ impl Epigenome {
     /// FILE A WORD'S ADMITTING STAMP (78.24 (2b), 78.49): the court's stamp
     /// for a word it admitted — a syllabus page's. A word admitted once keeps
     /// its stamp.
-    pub(crate) fn file_admitted(&mut self, addr: &crate::transducer::address::Address, at: crate::chronometry::Stamp) {
-        if !self.admitted_at.contains(addr) {
-            self.admitted_at.insert_shared(addr.shared(), at);
+    pub(crate) fn file_admitted(&mut self, address: &crate::transducer::address::Address, at: crate::chronometry::Stamp) {
+        if !self.admitted_at.contains(address) {
+            self.admitted_at.insert_shared(address.shared(), at);
         }
     }
 
     /// The court's stamp a word this mind holds was admitted at.
-    pub(crate) fn admitted_at(&self, addr: &[u8]) -> Option<crate::chronometry::Stamp> {
-        self.admitted_at.get(addr).copied()
+    pub(crate) fn admitted_at(&self, address: &[u8]) -> Option<crate::chronometry::Stamp> {
+        self.admitted_at.get(address).copied()
     }
 
-    /// 78.158a, 78.157 §3a — A COURT-STAMPED WORD: the held word at `addr`
+    /// 78.158a, 78.157 §3a — A COURT-STAMPED WORD: the held word at `address`
     /// where a court admitted it (its stamp filed, `admitted_at`), and none
     /// otherwise — never a dialect word, never a word learned with no stamp.
     /// The resolver a home check replays through, so a rule passes at home
     /// only on citations the court holds (`rule::would_judge_with`).
-    pub(crate) fn court_word(&self, addr: &[u8]) -> Option<&crate::transducer::element::Held> {
-        match self.admitted_at.contains(addr) {
-            true => self.word_at(addr),
+    pub(crate) fn court_word(&self, address: &[u8]) -> Option<&crate::transducer::element::Held> {
+        match self.admitted_at.contains(address) {
+            true => self.word_at(address),
             false => None,
         }
     }
@@ -255,8 +255,8 @@ impl Epigenome {
         // AN EMPTY WORDS TRIE IS A GENOME WITH NO WORDS, not a refusal.
         self.genome = crate::network::nerve::Keyed::new();
         self.admitted_at = crate::network::nerve::Keyed::new();
-        for (addr, at) in admitted {
-            self.file_admitted(&addr, at);
+        for (address, at) in admitted {
+            self.file_admitted(&address, at);
         }
         self.resident = crate::network::nerve::Keyed::new();
         self.unpivoted = crate::network::nerve::Keyed::new();

@@ -23,7 +23,7 @@ fn close(c: &mut ReceiptChain) -> KStepReceipt {
 #[test]
 fn append_moves_k_only_at_close() {
     assert!(!crate::physics::axioms::OK1_K_COUNTS_CLOSED_CYCLES.is_empty());
-    let mut c = ReceiptChain::with_vk([1; 32]);
+    let mut c = ReceiptChain::with_signer([1; 32]);
     assert!(c.open_orbit().is_none(), "nothing acted, nothing to close");
     let a0 = act(&mut c, [1, 0, 2, 0]);
     let a1 = act(&mut c, [0, 3, 0, 0]);
@@ -60,7 +60,7 @@ fn append_moves_k_only_at_close() {
 /// height that does not re-derive is.
 #[test]
 fn from_receipts_refuses_close_with_forged_frame() {
-    let mut b = ReceiptChain::with_vk([2; 32]);
+    let mut b = ReceiptChain::with_signer([2; 32]);
     let a0 = act(&mut b, [1, 1, 0, 0]);
     let forged = KStepReceipt::seal(
         crate::chronometry::Stamp::new(a0.stamp.h + 1, [2; 32], Place { k: 0, i: 1 }),
@@ -77,10 +77,10 @@ fn from_receipts_refuses_close_with_forged_frame() {
         ReceiptChain::from_receipts(vec![a0.clone(), forged.clone()]).is_none(),
         "the integrity check re-derives the frame and refuses the line"
     );
-    let mut peer = ReceiptChain::with_vk([3; 32]);
+    let mut peer = ReceiptChain::with_signer([3; 32]);
     peer.admit(a0);
     assert_eq!(admit_backfilled(&forged, &peer), Admitted::Refused(REFUSE_RECEIPT), "and admission refuses it");
-    let mut honest = ReceiptChain::with_vk([2; 32]);
+    let mut honest = ReceiptChain::with_signer([2; 32]);
     act(&mut honest, [1, 1, 0, 0]);
     let shut = close(&mut honest);
     assert!(matches!(admit_backfilled(&shut, &peer), Admitted::Parent(_)), "the true close admits");
@@ -107,10 +107,10 @@ fn from_receipts_refuses_close_with_forged_frame() {
 /// withholding it decides is the court's (`server::cognition::tests::orbit`).
 #[test]
 fn collides_by_exact_frame_equality_at_one_tick() {
-    let mut other = ReceiptChain::with_vk([4; 32]);
+    let mut other = ReceiptChain::with_signer([4; 32]);
     act(&mut other, [2, 0, 0, 0]);
     let other_close = close(&mut other);
-    let mut local = ReceiptChain::with_vk([5; 32]);
+    let mut local = ReceiptChain::with_signer([5; 32]);
     act(&mut local, [2, 0, 0, 0]);
     for r in other.own().collect::<Vec<_>>() {
         local.admit(r);

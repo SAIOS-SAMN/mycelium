@@ -10,7 +10,7 @@ fn key(n: u8) -> SigningKey {
     SigningKey::from_bytes(&[n; 32])
 }
 
-fn vk(k: &SigningKey) -> [u8; 32] {
+fn verifying(k: &SigningKey) -> [u8; 32] {
     k.verifying_key().to_bytes()
 }
 
@@ -29,7 +29,7 @@ struct Mesh {
 impl Mesh {
     fn new() -> Mesh {
         let keys = [key(1), key(2), key(3)];
-        let courts = [Keepers::new(ORIGIN, vk(&keys[0])), Keepers::new(ORIGIN, vk(&keys[1])), Keepers::new(ORIGIN, vk(&keys[2]))];
+        let courts = [Keepers::new(ORIGIN, verifying(&keys[0])), Keepers::new(ORIGIN, verifying(&keys[1])), Keepers::new(ORIGIN, verifying(&keys[2]))];
         Mesh { keys, courts }
     }
 
@@ -40,7 +40,7 @@ impl Mesh {
     /// Court `to` admits `from`'s ring, as a digest carries it.
     fn hear(&mut self, to: usize, from: usize) -> Result<Admitted, KeeperRefusal> {
         let ring = self.courts[from].own_ring();
-        let keeper = vk(&self.keys[from]);
+        let keeper = verifying(&self.keys[from]);
         self.courts[to].admit(keeper, ring)
     }
 }
@@ -77,13 +77,13 @@ fn final_point_needs_two_of_three_keepers() {
     // own citing it — two keepers.
     assert!(m.read(1, tick(12, [0, 5, 0, 0], 3)));
     let a10 = TPoint { origin: ORIGIN, h: 10, lanes: [4, 0, 0, 0], k: 1 };
-    assert_eq!(m.courts[1].final_of(&vk(&m.keys[0])), Some(a10));
+    assert_eq!(m.courts[1].final_of(&verifying(&m.keys[0])), Some(a10));
     assert_eq!(m.courts[1].final_point(), Some(a10));
     // c hears both: a's reading is final in c's view on b's citation, and
     // b's point is not (nobody cites b).
     assert_eq!(m.hear(2, 0), Ok(Admitted::Anchored));
     assert_eq!(m.hear(2, 1), Ok(Admitted::Anchored));
-    assert_eq!(m.courts[2].final_of(&vk(&m.keys[1])), None);
+    assert_eq!(m.courts[2].final_of(&verifying(&m.keys[1])), None);
     assert_eq!(m.courts[2].final_point(), Some(a10));
     // c reads, citing a and b: b's point at 12 is final in c's view.
     assert!(m.read(2, tick(14, [0, 0, 6, 0], 2)));
@@ -91,7 +91,7 @@ fn final_point_needs_two_of_three_keepers() {
     assert_eq!(m.courts[2].final_point(), Some(b12), "the greatest final point");
     // a hears c: c cites a's 10, so a's point is final in a's own view too.
     assert_eq!(m.hear(0, 2), Ok(Admitted::Anchored));
-    assert_eq!(m.courts[0].final_of(&vk(&m.keys[0])), Some(a10));
+    assert_eq!(m.courts[0].final_of(&verifying(&m.keys[0])), Some(a10));
 }
 
 /// A forged signature, an altered lane, a broken parent and another universe's reading are refused, and the honest line still extends.
@@ -103,19 +103,19 @@ fn admit_refuses_forged_signature_and_broken_parent() {
     assert_eq!(m.hear(1, 0), Ok(Admitted::Anchored));
     // A reading signed by c's key presented as a's.
     let forged = TickReading::sign(&m.keys[2], &ORIGIN, tick(20, [9, 0, 0, 0], 1), [0; 32], Vec::new()).expect("writes");
-    let as_a = TickReading { keeper: vk(&m.keys[0]), ..forged };
-    assert_eq!(m.courts[1].admit(vk(&m.keys[0]), vec![as_a.clone()]), Err(KeeperRefusal::Signature));
+    let as_a = TickReading { keeper: verifying(&m.keys[0]), ..forged };
+    assert_eq!(m.courts[1].admit(verifying(&m.keys[0]), vec![as_a.clone()]), Err(KeeperRefusal::Signature));
     // A lane altered after signing.
     let mut altered = m.courts[0].own_ring().into_iter().next_back().expect("a reading");
     altered.tick.lanes[0] = 3;
-    assert_eq!(m.courts[1].admit(vk(&m.keys[0]), vec![altered]), Err(KeeperRefusal::Signature));
+    assert_eq!(m.courts[1].admit(verifying(&m.keys[0]), vec![altered]), Err(KeeperRefusal::Signature));
     // Signed by a, naming a parent that is not its last reading.
     let broken = TickReading::sign(&m.keys[0], &ORIGIN, tick(12, [3, 0, 0, 0], 1), [0xee; 32], Vec::new()).expect("writes");
-    assert_eq!(m.courts[1].admit(vk(&m.keys[0]), vec![broken]), Err(KeeperRefusal::BrokenParent));
+    assert_eq!(m.courts[1].admit(verifying(&m.keys[0]), vec![broken]), Err(KeeperRefusal::BrokenParent));
     // Another universe's reading does not verify here.
     let elsewhere = Origin { genesis: [1; 32], epoch: 146 };
     let r = TickReading::sign(&m.keys[0], &elsewhere, tick(13, [3, 0, 0, 0], 1), [0; 32], Vec::new()).expect("writes");
-    assert_eq!(m.courts[1].admit(vk(&m.keys[0]), vec![r]), Err(KeeperRefusal::Signature));
+    assert_eq!(m.courts[1].admit(verifying(&m.keys[0]), vec![r]), Err(KeeperRefusal::Signature));
     // And the honest line still extends.
     m.read(0, tick(14, [4, 0, 0, 0], 2));
     assert_eq!(m.hear(1, 0), Ok(Admitted::Extended(1)));
@@ -133,7 +133,7 @@ fn residual_holds_disagreement_exactly_never_averaged() {
     }
     // c cites both: both are final at h 20, and they differ.
     m.read(2, tick(21, [0, 0, 0, 1], 1));
-    let (a, b) = (vk(&m.keys[0]), vk(&m.keys[1]));
+    let (a, b) = (verifying(&m.keys[0]), verifying(&m.keys[1]));
     let pa = TPoint { origin: ORIGIN, h: 20, lanes: [10, 4, 0, 0], k: 5 };
     let pb = TPoint { origin: ORIGIN, h: 20, lanes: [7, 9, 0, 0], k: 5 };
     assert_eq!((m.courts[2].final_of(&a), m.courts[2].final_of(&b)), (Some(pa), Some(pb)));
@@ -230,7 +230,7 @@ fn decode_tick_admits_ring_as_digest_does() {
     m.read(0, tick(11, [5, 0, 0, 0], 2));
     assert_eq!(m.hear(1, 0), Ok(Admitted::Anchored));
     m.read(1, tick(12, [0, 5, 0, 0], 3));
-    let (a, b) = (vk(&m.keys[0]), vk(&m.keys[1]));
+    let (a, b) = (verifying(&m.keys[0]), verifying(&m.keys[1]));
     let ring = m.courts[1].own_ring();
     // On a digest, as `sign_cover_digest` writes it.
     let digest = d::encode_cover_digest(&[0; 4], &[[0; 32]; 4], &[0; 32], &b, "127.0.0.1:1", &ring, &[0; 64]).expect("a digest writes");
@@ -242,7 +242,7 @@ fn decode_tick_admits_ring_as_digest_does() {
     assert_eq!((keeper, &pushed), (b, &ring), "the keeper and its ring, exactly");
     assert_eq!(pushed, from_digest, "one codec");
     // Two courts that knew a, one hearing b's digest, one b's tick.
-    let mut by_digest = Keepers::new(ORIGIN, vk(&m.keys[2]));
+    let mut by_digest = Keepers::new(ORIGIN, verifying(&m.keys[2]));
     let mut by_tick = by_digest.clone();
     for k in [&mut by_digest, &mut by_tick] {
         assert_eq!(k.admit(a, m.courts[0].own_ring()), Ok(Admitted::Anchored));
@@ -264,7 +264,7 @@ fn decode_tick_admits_ring_as_digest_does() {
 #[test]
 fn resume_never_signs_at_or_below_last_height() {
     let mut m = Mesh::new();
-    let a = vk(&m.keys[0]);
+    let a = verifying(&m.keys[0]);
     let mut kept = None;
     assert_eq!(m.courts[0].read_own_kept(&m.keys[0], tick(10, [4, 0, 0, 0], 1), |r| {
         kept = Some(r.clone());
@@ -317,7 +317,7 @@ fn resume_never_signs_at_or_below_last_height() {
     let mut restarted = Keepers::new(ORIGIN, a);
     let elsewhere = Keepers::new(Origin { genesis: [1; 32], epoch: 146 }, a);
     assert!(!elsewhere.clone().resume(&back), "a record of another origin is no floor there");
-    assert!(!Keepers::new(ORIGIN, vk(&m.keys[1])).resume(&back), "nor another keeper's");
+    assert!(!Keepers::new(ORIGIN, verifying(&m.keys[1])).resume(&back), "nor another keeper's");
     assert!(restarted.resume(&back));
     // At or below the last signed height, nothing is signed — with the
     // measure moved or not.
@@ -334,7 +334,7 @@ fn resume_never_signs_at_or_below_last_height() {
     assert_eq!(m.courts[1].newest(&a).map(|r| r.tick.h), Some(13));
     // A peer that missed the last reading before the restart takes it from
     // the ring and extends too: the ring carries it.
-    let mut late = Keepers::new(ORIGIN, vk(&m.keys[2]));
+    let mut late = Keepers::new(ORIGIN, verifying(&m.keys[2]));
     let before: Vec<TickReading> = m.courts[0].own_ring().into_iter().take(1).collect();
     assert_eq!(late.admit(a, before), Ok(Admitted::Anchored));
     assert_eq!(late.admit(a, ring), Ok(Admitted::Extended(2)));
@@ -346,10 +346,10 @@ fn resume_never_signs_at_or_below_last_height() {
 #[test]
 fn final_of_needs_three_of_four_keepers() {
     let keys = [key(1), key(2), key(3), key(4)];
-    let mut ks: Vec<Keepers> = keys.iter().map(|k| Keepers::new(ORIGIN, vk(k))).collect();
+    let mut ks: Vec<Keepers> = keys.iter().map(|k| Keepers::new(ORIGIN, verifying(k))).collect();
     let hear = |ks: &mut Vec<Keepers>, to: usize, from: usize| {
         let ring = ks[from].own_ring();
-        ks[to].admit(vk(&keys[from]), ring)
+        ks[to].admit(verifying(&keys[from]), ring)
     };
     // c and d read before hearing a: the readings of c and d cite nothing of a.
     assert!(ks[2].read_own(&keys[2], tick(5, [1, 0, 0, 0], 1)).expect("writes"));
@@ -361,12 +361,12 @@ fn final_of_needs_three_of_four_keepers() {
     assert_eq!(hear(&mut ks, 1, 0), Ok(Admitted::Anchored));
     assert!(ks[1].read_own(&keys[1], tick(12, [0, 5, 0, 0], 3)).expect("writes"));
     assert_eq!(hear(&mut ks, 0, 1), Ok(Admitted::Anchored));
-    assert_eq!(ks[0].final_of(&vk(&keys[0])), None, "a and b are two of four: no majority");
+    assert_eq!(ks[0].final_of(&verifying(&keys[0])), None, "a and b are two of four: no majority");
     // c hears a and cites it: a, b, c are three of four.
     assert_eq!(hear(&mut ks, 2, 0), Ok(Admitted::Anchored));
     assert!(ks[2].read_own(&keys[2], tick(14, [1, 0, 6, 0], 2)).expect("writes"));
     // a already holds c's line: the new reading extends it.
     assert!(matches!(hear(&mut ks, 0, 2), Ok(Admitted::Extended(_))), "c's line grows by its new reading");
     let a10 = TPoint { origin: ORIGIN, h: 10, lanes: [4, 0, 0, 0], k: 1 };
-    assert_eq!(ks[0].final_of(&vk(&keys[0])), Some(a10), "three of four is a majority");
+    assert_eq!(ks[0].final_of(&verifying(&keys[0])), Some(a10), "three of four is a majority");
 }

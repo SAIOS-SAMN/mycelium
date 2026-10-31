@@ -29,7 +29,7 @@ fn why_answers_act_with_speakers_reasons() {
     let mag = sentence_measure(&f, &fam, &NoCrystal, 0).expect("every body is spoken");
     let s = as_element_form(&f, mag).expect("a sentence");
     let spoken = Reasons::of(&s).expect("the speaker's reasons");
-    let task = crate::registry::task_id(&crate::arc::Task { train: fam.clone(), test: Vec::new() }).expect("a task");
+    let task = crate::registry::task_address(&crate::arc::Task { train: fam.clone(), test: Vec::new() }).expect("a task");
     let mut k = Court::new();
     k.bind_identity([1; 32]);
     k.bind_task_family(&task, fam);
@@ -75,7 +75,7 @@ fn why_answers_refusal_act_on_ledger() {
     let f = cipher_form(x, y);
     let mag = sentence_measure(&f, &voice_fam, &NoCrystal, 0).expect("every body is spoken");
     let s = as_element_form(&f, mag).expect("a sentence");
-    let task = crate::registry::task_id(&crate::arc::Task { train: court_fam.clone(), test: Vec::new() }).expect("a task");
+    let task = crate::registry::task_address(&crate::arc::Task { train: court_fam.clone(), test: Vec::new() }).expect("a task");
     let mut k = Court::new();
     k.bind_identity([2; 32]);
     k.bind_task_family(&task, court_fam);

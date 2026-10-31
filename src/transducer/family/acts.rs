@@ -20,7 +20,7 @@
 //! perspective's own test — and otherwise it is refused by name ([`Unread`]).
 
 use super::*;
-use crate::transducer::sentence::form::clause::{About, Act, Clause, Cmp, Coord, Extent, Order, Paint, Pred, Region, Stop, Tie, Value};
+use crate::transducer::sentence::form::clause::{About, Act, Clause, Comparison, Coord, Extent, Order, Paint, Pred, Region, Stop, Tie, Value};
 
 /// WHY NO ACT WAS READ, by name (rule 11).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -161,7 +161,7 @@ fn predicates(pairs: &[Pair<'_>]) -> Vec<Pred> {
     }
     for (coord, list) in [Coord::Shell, Coord::Height, Coord::Width, Coord::Hues].into_iter().zip(&counts) {
         for &n in list {
-            out.push(Pred::Cmp { coord, cmp: Cmp::Eq, to: Value::Integer(n) });
+            out.push(Pred::Cmp { coord, cmp: Comparison::Eq, to: Value::Integer(n) });
         }
     }
     out

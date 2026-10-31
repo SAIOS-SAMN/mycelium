@@ -272,8 +272,8 @@ impl Derivation {
         // value, so it has no width wall; only a citation's u16 refuses.
         crate::transducer::address::put_key_count(out, self.generators.len());
         for (form, vertex, e) in &self.generators {
-            crate::transducer::address::put_addr(out, form)?;
-            crate::transducer::address::put_addr(out, vertex)?;
+            crate::transducer::address::put_address(out, form)?;
+            crate::transducer::address::put_address(out, vertex)?;
             out.extend_from_slice(&e.to_le_bytes());
         }
         // The residue whole, a formed residue's action with it (LD0 step 6).
@@ -301,8 +301,8 @@ impl Derivation {
         // allocates nothing and decides nothing (rules 2, 11).
         let mut generators = Vec::new();
         for _ in 0..n {
-            let form = crate::transducer::address::take_addr(b, pos)?;
-            let vertex = crate::transducer::address::take_addr(b, pos)?;
+            let form = crate::transducer::address::take_address(b, pos)?;
+            let vertex = crate::transducer::address::take_address(b, pos)?;
             let e = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
             *pos += 8;
             generators.push((form, vertex, e));

@@ -104,14 +104,14 @@ impl Court {
     }
 
     fn list_charted(&mut self, residual: Element, inv: crate::transducer::stalk::Invariant, actor: [u8; 32], drawer: Option<[u8; 32]>) {
-        let addr = residual.address();
+        let address = residual.address();
         let mag = residual.magnitude();
         // A LISTING IS DRAWN ONCE (§3.1 as ruled, S13.15): an address
         // already on the page keeps its drawer and its occupancy, so a
         // second vantage on it neither doubles the occupancy nor takes the
         // drawer over — which left the first voice's room drawn for good
         // when the install released the second's instead.
-        let already = self.pending.contains(&addr);
+        let already = self.pending.contains(&address);
         // STD1 — the lanes its draw would stand at, read before anything is
         // written: a draw past a lane's carrier refuses the listing whole,
         // counted on the court.
@@ -120,7 +120,7 @@ impl Court {
             false => {
                 let occupant = match drawer {
                     Some(v) => Some(v),
-                    None => self.drawers.get(&addr).copied(),
+                    None => self.drawers.get(&address).copied(),
                 };
                 let Some(o) = self.occupied_by(occupant, &mag) else {
                     self.overflowed += 1;
@@ -130,32 +130,32 @@ impl Court {
                 Some(o)
             }
         };
-        self.stamp_standing(&addr);
+        self.stamp_standing(&address);
         self.physics.bump(&mag);
-        self.listing_atlas.admit(&inv, &addr);
-        self.tension.insert(&addr, mag);
-        self.on_page.insert(&addr, ());
+        self.listing_atlas.admit(&inv, &address);
+        self.tension.insert(&address, mag);
+        self.on_page.insert(&address, ());
         if let (Some(voice), false) = (drawer, already) {
-            self.drawers.insert(&addr, voice);
+            self.drawers.insert(&address, voice);
         }
         if let Some(o) = occupied {
-            self.occupy(&addr, &mag, o);
+            self.occupy(&address, &mag, o);
         }
         // A word listed again leaves the cavity it was relocated to.
-        self.cavity_book.remove(&addr);
-        self.pending.insert(&addr, residual);
+        self.cavity_book.remove(&address);
+        self.pending.insert(&address, residual);
         self.book_gen += 1;
-        self.append_step_charted(crate::chronometry::ActKind::List, &addr, actor, Some(inv));
+        self.append_step_charted(crate::chronometry::ActKind::List, &address, actor, Some(inv));
     }
 
-    pub(crate) fn pending_take(&mut self, addr: &[u8]) -> Option<Element> {
-        let elem = self.pending.remove(addr)?;
+    pub(crate) fn pending_take(&mut self, address: &[u8]) -> Option<Element> {
+        let elem = self.pending.remove(address)?;
         let mag = elem.magnitude();
-        self.vacate(addr, &mag);
-        self.drawers.remove(addr);
+        self.vacate(address, &mag);
+        self.drawers.remove(address);
         self.physics.relieve(&mag);
         // 78.69: and the pressure its witnesses raised for it, exactly.
-        if let Some(raised) = self.witnessed.remove(addr) {
+        if let Some(raised) = self.witnessed.remove(address) {
             self.physics.relieve(&raised);
         }
         Some(elem)
@@ -163,23 +163,23 @@ impl Court {
 
     /// True closure of the whole listing: the thought glued. Leaves the
     /// page and the listing atlas (the word, if any, lives on the language).
-    pub(crate) fn unlist(&mut self, addr: &[u8], as_cavity: bool) {
+    pub(crate) fn unlist(&mut self, address: &[u8], as_cavity: bool) {
         if as_cavity {
-            self.relocate_cavity(addr);
+            self.relocate_cavity(address);
             return;
         }
-        if let Some(elem) = self.pending_take(addr) {
+        if let Some(elem) = self.pending_take(address) {
             let _ = elem;
         }
-        if let Some(listing) = self.field.remove(addr) {
+        if let Some(listing) = self.field.remove(address) {
             for e in &listing.entries {
                 if !e.state.is_flat() {
-                    self.listing_atlas.retract(&e.chart, addr);
+                    self.listing_atlas.retract(&e.chart, address);
                     // Off the chart it was open on.
                     let ck = e.chart.key();
                     let emptied = match self.chart_listings.get_mut(&ck) {
                         Some(on) => {
-                            on.remove(addr);
+                            on.remove(address);
                             on.is_empty()
                         }
                         None => false,
@@ -189,44 +189,44 @@ impl Court {
                     }
                 }
             }
-            self.field_cold.insert(addr, listing);
+            self.field_cold.insert(address, listing);
         }
         // Off the docket and the cover its open charts stood on.
-        self.open.remove(addr);
-        self.own_cover.retract_hypha(addr);
+        self.open.remove(address);
+        self.own_cover.retract_hypha(address);
         self.own_cover_gen = self.own_cover_gen.wrapping_add(1);
-        self.listing_atlas.remove(addr);
-        self.tension.remove(addr);
-        self.forget_spoken(addr);
-        self.quote_frontier.remove(addr);
-        self.on_page.remove(addr);
-        self.flat_orbits.remove(addr);
+        self.listing_atlas.remove(address);
+        self.tension.remove(address);
+        self.forget_spoken(address);
+        self.quote_frontier.remove(address);
+        self.on_page.remove(address);
+        self.flat_orbits.remove(address);
         self.book_gen += 1;
         // An unlisted word no other row holds leaves its admitting stamp
         // (78.24); an act that cites it after reads the citation first.
-        self.forget_if_unheld(addr);
+        self.forget_if_unheld(address);
     }
 
     /// Relocate a listing off the quote page onto the cavity atlas. The
     /// element, field, and charts stay; pressure re-measures without it.
-    pub(crate) fn relocate_cavity(&mut self, addr: &[u8]) {
-        let Some(elem) = self.pending_take(addr) else {
+    pub(crate) fn relocate_cavity(&mut self, address: &[u8]) {
+        let Some(elem) = self.pending_take(address) else {
             return;
         };
-        self.on_page.remove(addr);
-        self.quote_frontier.remove(addr);
-        self.forget_spoken(addr);
-        if let Some(listing) = self.field.get(addr) {
+        self.on_page.remove(address);
+        self.quote_frontier.remove(address);
+        self.forget_spoken(address);
+        if let Some(listing) = self.field.get(address) {
             for e in &listing.entries {
                 if !e.state.is_flat() {
-                    self.listing_atlas.admit_also(&e.chart, addr);
+                    self.listing_atlas.admit_also(&e.chart, address);
                 }
             }
         }
         let inv = crate::transducer::stalk::invariant_of(&elem);
-        self.listing_atlas.admit_also(&inv, addr);
-        self.cavity_book.insert(addr, elem);
-        self.chill_field(addr);
+        self.listing_atlas.admit_also(&inv, address);
+        self.cavity_book.insert(address, elem);
+        self.chill_field(address);
         self.book_gen += 1;
     }
 
@@ -257,13 +257,13 @@ impl Court {
     }
 
     /// Open (non-flat) charts of a listing, or its base chart if unprobed.
-    pub fn open_charts(&self, addr: &[u8]) -> Vec<crate::transducer::stalk::Invariant> {
+    pub fn open_charts(&self, address: &[u8]) -> Vec<crate::transducer::stalk::Invariant> {
         let listing = self
             .pending
-            .get(addr)
-            .or_else(|| self.cavity_book.get(addr));
+            .get(address)
+            .or_else(|| self.cavity_book.get(address));
         match listing {
-            Some(p) => open_charts_of(addr, p, &self.field, &self.listing_atlas),
+            Some(p) => open_charts_of(address, p, &self.field, &self.listing_atlas),
             None => Vec::new(),
         }
     }
@@ -274,8 +274,8 @@ impl Court {
     }
 
     #[cfg(test)]
-    pub(crate) fn stagnant_of(&self, addr: &[u8]) -> [u64; 4] {
-        let Some(listing) = self.field.get(addr) else {
+    pub(crate) fn stagnant_of(&self, address: &[u8]) -> [u64; 4] {
+        let Some(listing) = self.field.get(address) else {
             return [0; 4];
         };
         let mut s = [0u64; 4];
@@ -295,22 +295,22 @@ impl Court {
         self.drain_unreachable();
     }
 
-    /// If the fibre over `addr` names exactly one other word a versor
+    /// If the fibre over `address` names exactly one other word a versor
     /// relates, absorb the card into the bundle and pay the absorbed
     /// discoverer the condense yield. Returns the surviving address.
     pub(crate) fn condense_on(
         &mut self,
-        addr: &[u8],
+        address: &[u8],
         budget: &mut crate::physics::Budget,
     ) -> crate::transducer::address::Address {
-        let Some(word) = self.word_at(addr).cloned() else {
-            return crate::transducer::address::Address::from_bytes(addr);
+        let Some(word) = self.word_at(address).cloned() else {
+            return crate::transducer::address::Address::from_bytes(address);
         };
         if word.is_sentence() {
             let inv = crate::transducer::stalk::invariant_of(&word);
-            let members: Vec<Vec<u8>> = self.stalks.fibre(&inv).iter().filter(|&a| a != addr).cloned().collect();
+            let members: Vec<Vec<u8>> = self.stalks.fibre(&inv).iter().filter(|&a| a != address).cloned().collect();
             if let Some(na) = crate::transducer::sentence::from_element_form(&word) {
-                let mut survivor = crate::transducer::address::Address::from_bytes(addr);
+                let mut survivor = crate::transducer::address::Address::from_bytes(address);
                 for sib in members {
                     // THE SIBLING'S FORM OFF THE HELD WORD (L16): the
                     // sibling is installed, so its form is a field and this
@@ -335,7 +335,7 @@ impl Court {
         // survivor rule (a bundle keeps the fibre), never a first-wins pick,
         // and the copies become one bundle where they stood refused.
         let related: Vec<crate::transducer::address::Address> = if word.is_connection() {
-            match crate::transducer::stalk::congruent(&self.stalks, |a| if a == addr { None } else { self.word_at(a) }, &word, budget) {
+            match crate::transducer::stalk::congruent(&self.stalks, |a| if a == address { None } else { self.word_at(a) }, &word, budget) {
                 Some((sib, _)) => vec![sib],
                 None => Vec::new(),
             }
@@ -343,7 +343,7 @@ impl Court {
             // No tether is measured between held words: the words' chains are
             // centred, so a distance between them is the canonical form's
             // (see `condense_stroke`).
-            crate::transducer::stalk::congruent_all(&self.stalks, |a| if a == addr { None } else { self.word_at(a) }, &word, budget)
+            crate::transducer::stalk::congruent_all(&self.stalks, |a| if a == address { None } else { self.word_at(a) }, &word, budget)
                 .into_iter()
                 .map(|(sib, _)| sib)
                 .collect()
@@ -351,7 +351,7 @@ impl Court {
         if related.len() > 1 {
             crate::physics::metabolism::step_or_refuse(&mut self.multiplicity_condensed, 1);
         }
-        let mut survivor = crate::transducer::address::Address::from_bytes(addr);
+        let mut survivor = crate::transducer::address::Address::from_bytes(address);
         for sib in related {
             survivor = self.absorb_pair(survivor, sib, budget);
         }
@@ -432,15 +432,15 @@ impl Court {
         clippy::disallowed_methods,
         reason = "rule 4 — least by (sigma, period) is lexicographic key order over content, so two courts speak the same torse of one word"
     )]
-    pub(crate) fn torse_at(&mut self, addr: &[u8]) {
-        let spanned = match self.word_mut(addr) {
+    pub(crate) fn torse_at(&mut self, address: &[u8]) {
+        let spanned = match self.word_mut(address) {
             Some(w) => w.update(|e| e.torse()),
             None => return,
         };
         if spanned == 0 {
             return;
         }
-        let Some(after) = self.basis.get(addr).map(|w| (**w).clone()) else {
+        let Some(after) = self.basis.get(address).map(|w| (**w).clone()) else {
             return;
         };
         let lanes = after.lanes();
@@ -461,7 +461,7 @@ impl Court {
             return;
         };
         let payload = crate::transducer::rewrite::RewritePayload::Torse { generator, period };
-        if let Some(disc) = self.discoverer_of(addr) {
+        if let Some(disc) = self.discoverer_of(address) {
             let _ = self.mint_rewrite(
                 crate::transducer::rewrite::RewriteKind::Torse,
                 std::slice::from_ref(&after),
@@ -470,7 +470,7 @@ impl Court {
                 disc,
             );
         }
-        self.touch_at(addr);
+        self.touch_at(address);
     }
 
     /// Redundancy probe on the admitted word's own stratum: a plain card
@@ -516,22 +516,22 @@ impl Court {
             }
         }
         let addrs: Vec<Vec<u8>> = candidates.scoped().map(|(a, _)| a).collect();
-        for addr in addrs {
-            let Some(held) = self.basis.get(&addr) else {
+        for address in addrs {
+            let Some(held) = self.basis.get(&address) else {
                 continue;
             };
             if !held.sections().is_empty() || crate::transducer::sentence::carries_torsion(held) {
                 continue;
             }
-            if self.provisional.contains(&addr) {
+            if self.provisional.contains(&address) {
                 continue;
             }
             let candidate = (**held).clone();
-            if !self.basis_derives(&candidate, &addr) {
+            if !self.basis_derives(&candidate, &address) {
                 continue;
             }
             // G6: IT MINTS A RETIREMENT. This minted `Refine { chart, axis:
-            // addr[0] }` — the first byte of an A21 address is the tag
+            // address[0] }` — the first byte of an A21 address is the tag
             // naming the object KIND, so every such rewrite claimed one
             // axis and chapter 35's "no axis is a hash fragment" fell to a
             // fragment of an address. G6 replaced that shape at
@@ -552,17 +552,17 @@ impl Court {
             );
             // 78.24 (2c): the word is cited as it stood, read before it
             // moves.
-            let retired = self.cite_of(&addr);
+            let retired = self.cite_of(&address);
             // A RETIREMENT KEEPS THE ADDRESS (27): the word leaves the
             // language and stays resolvable for replay, so a citation of it
             // still reads. `basis_remove` alone is not retirement in any
             // reading — it is forgetting.
-            self.relocate_cavity(&addr);
+            self.relocate_cavity(&address);
             self.physics.syntropy(&candidate.magnitude());
             // EC1, as ruled: this retirement is the court's own ruling, and
             // the court authors it.
             let court = self.identity;
-            self.seal_retirement(&addr, retired, rewrite, &cites, court);
+            self.seal_retirement(&address, retired, rewrite, &cites, court);
         }
     }
 
@@ -638,20 +638,20 @@ impl Court {
 
     /// The word at an address, read by its coordinate. Restored keys are
     /// the coordinates that were written; an older file is refused.
-    pub fn word_at(&self, addr: &[u8]) -> Option<&Element> {
+    pub fn word_at(&self, address: &[u8]) -> Option<&Element> {
         self.basis
-            .get(addr)
+            .get(address)
             .map(|w| w.element())
-            .or_else(|| self.cavity_book.get(addr))
-            .or_else(|| self.provisional.get(addr))
+            .or_else(|| self.cavity_book.get(address))
+            .or_else(|| self.provisional.get(address))
     }
 
     /// THE HELD WORD THIS COURT INSTALLED (L16): the element AND the form
     /// its tape decoded to, for a reader that needs the form. The basis
     /// alone — a cavity and a provisional are elements this court has not
     /// installed, and `word_at` falls through to them on purpose.
-    pub(crate) fn held_word(&self, addr: &[u8]) -> Option<&crate::transducer::element::Held> {
-        self.basis.get(addr).map(|w| w.as_ref())
+    pub(crate) fn held_word(&self, address: &[u8]) -> Option<&crate::transducer::element::Held> {
+        self.basis.get(address).map(|w| w.as_ref())
     }
 
     /// The word this court INSTALLED, never a provisional one. `word_at`
@@ -659,8 +659,8 @@ impl Court {
     /// cavity on purpose; the teaching path must not, because a taught word
     /// is crystallized on the receiver (24.1). Chapter 23.2 states the same
     /// rule for `resolve_form`: provisional and dialect return `None`.
-    pub(crate) fn installed_word(&self, addr: &[u8]) -> Option<&Element> {
-        self.basis.get(addr).map(|w| w.element())
+    pub(crate) fn installed_word(&self, address: &[u8]) -> Option<&Element> {
+        self.basis.get(address).map(|w| w.element())
     }
 
     /// A word the court finalized here joins the ruled cover (keyed admit).
@@ -674,7 +674,7 @@ impl Court {
     ///
     /// The ruling is inside an act, and the re-hearing it wakes draws on that
     /// act's stroke (65.5), threaded here.
-    pub(crate) fn ruled_admit(&mut self, addr: &[u8], budget: &mut crate::physics::Budget) {
+    pub(crate) fn ruled_admit(&mut self, address: &[u8], budget: &mut crate::physics::Budget) {
         // WHETHER THIS ADDRESS ACTUALLY ENTERED THE RULED COVER. The
         // re-hearing below was unconditional, and the insert is not: a
         // court asked to rule an address whose word it does not hold does
@@ -687,7 +687,7 @@ impl Court {
         // A ruling that did not happen is not a ruling, and nothing is
         // reheard on it.
         let mut ruled = false;
-        if let Some(w) = self.word_at(addr) {
+        if let Some(w) = self.word_at(address) {
             let inv = crate::transducer::stalk::invariant_of(w);
             let words = crate::transducer::sentence::acting_of_element(w);
             // 1.8: a ruled form's word vertices are the generators this
@@ -699,7 +699,7 @@ impl Court {
             // `ruled_admit` runs BEFORE the word is installed on some paths
             // (L16).
             let form = crate::transducer::sentence::from_element_form(w);
-            self.ruled.admit(&inv, addr);
+            self.ruled.admit(&inv, address);
             // A WORD IS FILED WHERE IT ACTS. This filed at `inv`, the
             // SENTENCE's own chart — `chart_of_form`, leading `2`, a
             // projection of what the form holds — while `candidates_for`
@@ -720,14 +720,14 @@ impl Court {
                 }
             }
             if let Some(f) = form {
-                let a = crate::transducer::address::Address::from(addr.to_vec());
+                let a = crate::transducer::address::Address::from(address.to_vec());
                 let mut ix = std::mem::take(&mut self.generators);
                 crate::transducer::sentence::admit_generators(&mut ix, &a, &f);
                 self.generators = ix;
                 // 78.160 P1 — and under the holes its motions wind about.
                 self.presentation.file_form(&a, &f, budget);
             }
-            self.ruled_addrs.insert(addr, ());
+            self.ruled_addrs.insert(address, ());
             self.refresh_ruled_root();
             ruled = true;
         }
@@ -739,16 +739,16 @@ impl Court {
         if ruled {
             // 78.68 — the word's circuits join its chart's holonomy algebra;
             // a new dimension is one RankStep act.
-            self.step_rank(addr, budget);
+            self.step_rank(address, budget);
             // 78.73 — PLASTIC: the language took a generator on the lanes
             // the word occupies.
-            if let Some(lanes) = self.word_at(addr).map(|w| w.lanes()) {
+            if let Some(lanes) = self.word_at(address).map(|w| w.lanes()) {
                 self.physics.plastic(lanes);
             }
             // 78.71, 78.73 — and its field against this court's tubes and
             // orbits.
-            self.step_flux(addr, budget);
-            self.rehear_awaiting(addr, budget);
+            self.step_flux(address, budget);
+            self.rehear_awaiting(address, budget);
         }
     }
 
@@ -757,15 +757,15 @@ impl Court {
     /// own vantage (13.9, 13.10). The stroke's own ruling, the home's
     /// install, and an upheld verdict are the three; a peer's glued word is
     /// not one of them.
-    pub(crate) fn rule_own(&mut self, addr: &[u8], budget: &mut crate::physics::Budget) {
-        self.ruled_admit(addr, budget);
-        let Some(w) = self.word_at(addr) else { return };
+    pub(crate) fn rule_own(&mut self, address: &[u8], budget: &mut crate::physics::Budget) {
+        self.ruled_admit(address, budget);
+        let Some(w) = self.word_at(address) else { return };
         let inv = crate::transducer::stalk::invariant_of(w);
-        self.section_own(&inv, &crate::transducer::address::Address::from(addr.to_vec()));
+        self.section_own(&inv, &crate::transducer::address::Address::from(address.to_vec()));
     }
 
-    pub(crate) fn ruled_contains(&self, addr: &[u8]) -> bool {
-        self.ruled_addrs.contains(addr)
+    pub(crate) fn ruled_contains(&self, address: &[u8]) -> bool {
+        self.ruled_addrs.contains(address)
     }
 
     /// A crystallized form this hypha has ruled, or retired to the cavity,
@@ -774,16 +774,16 @@ impl Court {
     /// Read through the court's one reader of its held words
     /// ([`crate::transducer::family::Crystal::by_address`]), so the citation
     /// check and the speech that follows it can never disagree.
-    pub fn resolve_form(&self, addr: &[u8]) -> Option<crate::transducer::sentence::Form> {
-        crate::transducer::family::Crystal::by_address(self, addr).map(|(_, f)| f.into_owned())
+    pub fn resolve_form(&self, address: &[u8]) -> Option<crate::transducer::sentence::Form> {
+        crate::transducer::family::Crystal::by_address(self, address).map(|(_, f)| f.into_owned())
     }
 
     /// 78.153 — [`Court::resolve_form`] BORROWED where the court holds the
     /// form decoded (an installed word): the replay reads a cited form and
     /// keeps nothing, so it clones nothing. A cavity word is still decoded
     /// from its address at the read.
-    pub fn resolve_form_ref(&self, addr: &[u8]) -> Option<std::borrow::Cow<'_, crate::transducer::sentence::Form>> {
-        crate::transducer::family::Crystal::by_address(self, addr).map(|(_, f)| f)
+    pub fn resolve_form_ref(&self, address: &[u8]) -> Option<std::borrow::Cow<'_, crate::transducer::sentence::Form>> {
+        crate::transducer::family::Crystal::by_address(self, address).map(|(_, f)| f)
     }
 
     /// THE DOCKET (Step 5): every provisional word, exported for the court's
@@ -796,23 +796,23 @@ impl Court {
     pub fn dockets_since(&self, since_k: u64) -> Vec<Docketed> {
         self.provisional
             .scoped()
-            .filter_map(|(addr, spoken)| {
+            .filter_map(|(address, spoken)| {
                 // Where the provisional stands is the act that admitted it
                 // (78.24); one admitted AT the court's "since" is served, as
                 // the act it names is the one the court heard last.
-                let k = self.admitted_at(&addr)?.k;
+                let k = self.admitted_at(&address)?.k;
                 if k < since_k && since_k > 0 {
                     return None;
                 }
-                let held = self.treasury.escrow_of(&addr)?;
+                let held = self.treasury.escrow_of(&address)?;
                 // A word whose deflation is unmeasured is not served: the
                 // court rules what was measured, never a fabricated zero.
-                let deflation = self.deflation_of(&addr)?;
+                let deflation = self.deflation_of(&address)?;
                 if deflation.iter().all(|&x| x == 0) {
                     return None;
                 }
                 Some(Docketed {
-                    addr: Address::from(addr),
+                    addr: Address::from(address),
                     spoken: spoken.clone(),
                     voices: held.voices.clone(),
                     escrowed: held.mu,

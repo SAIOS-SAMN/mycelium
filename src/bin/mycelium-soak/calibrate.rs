@@ -47,7 +47,7 @@ pub(crate) fn find_id(dir: &str, names: &[String], want: &str) {
     for file in names {
         let Ok(json) = std::fs::read_to_string(format!("{dir}/{file}")) else { continue };
         let Some(task) = mycelium::arc::parse_task(&json) else { continue };
-        let Some(id) = mycelium::server::registry::task_id(&task) else { continue };
+        let Some(id) = mycelium::server::registry::task_address(&task) else { continue };
         let hx: String = id.as_bytes().iter().take(2).map(|b| format!("{b:02x}")).collect();
         if hx != want {
             continue;

@@ -211,8 +211,8 @@ impl Court {
 
     /// The claims standing on `who`'s stake, per lane; `None` past the
     /// carrier.
-    pub fn claims_on(&self, who: &[u8; 32]) -> Option<[u64; 4]> {
-        let Some(fibre) = self.atlas.claims.fibre_at(who) else { return Some([0; 4]) };
+    pub fn claims_on(&self, party: &[u8; 32]) -> Option<[u64; 4]> {
+        let Some(fibre) = self.atlas.claims.fibre_at(party) else { return Some([0; 4]) };
         let mut total = [0u64; 4];
         for (_, c) in fibre {
             for (_, mu) in &c.parts {

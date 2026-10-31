@@ -25,7 +25,7 @@ fn receipts_request_and_reply_round_trip_within_budget() {
         "a span from the line's start"
     );
 
-    let mut c = ReceiptChain::with_vk([2; 32]);
+    let mut c = ReceiptChain::with_signer([2; 32]);
     for lane in 1..=3u64 {
         c.append(ActKind::List, [lane, 0, 0, 0], Vec::new(), [0; 32], Vec::new()).expect("appends");
     }

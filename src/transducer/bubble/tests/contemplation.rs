@@ -289,7 +289,7 @@ fn hold_form_keeps_glued_open_orbit() {
         form.certificates.len(),
         form.torsion.len()
     );
-    let mag = crate::transducer::bubble::idea::form_mag(form).expect("the form's measure reads");
+    let mag = crate::transducer::bubble::idea::form_magnitude(form).expect("the form's measure reads");
     if mag.iter().any(|&x| x > 0) && form.is_cauterized() {
         let e = sentence::as_element_form(form, mag).expect("spoken tape");
         assert!(
@@ -304,7 +304,7 @@ fn hold_form_keeps_glued_open_orbit() {
 #[test]
 fn hold_form_carries_bundle_and_remainder() {
     use crate::transducer::alphabet::Word;
-    use crate::transducer::family::pair_idx_key;
+    use crate::transducer::family::pair_index_key;
     use crate::transducer::sentence::{Form, Vertex};
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
@@ -329,7 +329,7 @@ fn hold_form_carries_bundle_and_remainder() {
         b.bundle.as_ref().is_some_and(|t| t.len() == 1),
         "the idea carries the train"
     );
-    let links = b.remainders.get(&pair_idx_key(0)).expect("pair remainder");
+    let links = b.remainders.get(&pair_index_key(0)).expect("pair remainder");
     assert_eq!(links.len(), 1, "remainder is keyed by pair");
     assert!(
         b.remainder.is_empty(),

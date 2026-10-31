@@ -195,8 +195,8 @@ fn era_ref(e: &Era) -> EraRef {
 }
 
 /// The shard a party's account is held in.
-pub(crate) fn shard_of(who: &[u8; 32]) -> usize {
-    usize::from(who[0])
+pub(crate) fn shard_of(party: &[u8; 32]) -> usize {
+    usize::from(party[0])
 }
 
 impl Court {
@@ -253,7 +253,7 @@ impl Court {
         }
         Some(Published {
             head,
-            court: self.chain.vk(),
+            court: self.chain.signer(),
             identity: self.identity,
             clock: self.core_stamp(),
             lines,
@@ -349,9 +349,9 @@ impl Court {
     }
 
     /// One signer's hot line read whole.
-    fn read_line(&self, vk: &[u8; 32], tally: LineTally, standing: Option<Place>, cost: &mut PublishCost) -> Line {
+    fn read_line(&self, signer: &[u8; 32], tally: LineTally, standing: Option<Place>, cost: &mut PublishCost) -> Line {
         let mut run = Runs::default();
-        cost.receipts(run.extend(self.chain.line_between(vk, None, END, usize::MAX).into_iter().map(kept).collect(), |k| k.tape));
+        cost.receipts(run.extend(self.chain.line_between(signer, None, END, usize::MAX).into_iter().map(kept).collect(), |k| k.tape));
         Line { tally, standing, run }
     }
 

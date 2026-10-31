@@ -53,8 +53,8 @@ impl Crystal for Held {
     ) -> Option<Speech> {
         apply_form(f, x, placement, self)
     }
-    fn by_address(&self, addr: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
-        (addr == self.e.address().as_bytes()).then(|| (&self.e, std::borrow::Cow::Borrowed(&self.f)))
+    fn by_address(&self, address: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
+        (address == self.e.address().as_bytes()).then(|| (&self.e, std::borrow::Cow::Borrowed(&self.f)))
     }
     fn on_axis(
         &self,
@@ -327,7 +327,7 @@ fn glue_fetched_records_true_section_geometry() {
 /// refraction (the instrument the court-triangle balance is read from).
 #[test]
 fn glue_fetched_reads_peer_sentence_against_own_section() {
-    use crate::observe::rep;
+    use crate::observe::replication;
     use crate::transducer::sentence::{as_element_form, from_element_form, Transport};
     let own_vk = [0x1au8; 32];
     let (same_peer, refracting_peer) = ([0x1bu8; 32], [0x1cu8; 32]);
@@ -347,9 +347,9 @@ fn glue_fetched_reads_peer_sentence_against_own_section() {
     // 78.153: a stroke that holds the glue's replay.
     let mut glue = crate::physics::Physics::default().stroke_n(1 << 20);
     let _ = own.glue_fetched(spoken.clone(), same_peer, own_vk, &mut cover, &mut glue);
-    assert_eq!(axes(same_peer).map(|a| a[rep::RELATION_SAME]), Some(1), "its own word is the same word: {:?}", axes(same_peer));
-    assert_eq!(axes(same_peer).map(|a| a[rep::PERCEIVED_COHERENT]), Some(1), "and is coherent on all four lanes: {:?}", axes(same_peer));
-    let paths = |a: [u64; crate::observe::REP_AXES]| (rep::GLUE_HEARD..=rep::GLUE_ADMITTED).map(|i| a[i]).sum::<u64>();
+    assert_eq!(axes(same_peer).map(|a| a[replication::RELATION_SAME]), Some(1), "its own word is the same word: {:?}", axes(same_peer));
+    assert_eq!(axes(same_peer).map(|a| a[replication::PERCEIVED_COHERENT]), Some(1), "and is coherent on all four lanes: {:?}", axes(same_peer));
+    let paths = |a: [u64; crate::observe::REP_AXES]| (replication::GLUE_HEARD..=replication::GLUE_ADMITTED).map(|i| a[i]).sum::<u64>();
     assert_eq!(axes(same_peer).map(paths), Some(1), "the word left the glue by exactly one path: {:?}", axes(same_peer));
     let held = from_element_form(&spoken).expect("a sentence");
     let moved = Transport {
@@ -362,12 +362,12 @@ fn glue_fetched_reads_peer_sentence_against_own_section() {
     .expect("the refracted sentence is a word");
     let outcome = own.glue_fetched(moved, refracting_peer, own_vk, &mut cover, &mut glue);
     assert_eq!(
-        axes(refracting_peer).map(|a| a[rep::RELATION_REFRACTED]),
+        axes(refracting_peer).map(|a| a[replication::RELATION_REFRACTED]),
         Some(1),
         "a translation of it reads as a refraction ({outcome:?}): {:?}",
         axes(refracting_peer)
     );
-    assert_eq!(axes(refracting_peer).map(|a| a[rep::PERCEIVED_COHERENT]), Some(1), "and is coherent with it: {:?}", axes(refracting_peer));
+    assert_eq!(axes(refracting_peer).map(|a| a[replication::PERCEIVED_COHERENT]), Some(1), "and is coherent with it: {:?}", axes(refracting_peer));
 }
 
 /// 78.63 — AN ATTACHED WORD IS HELD. A peer's word the same as this court's

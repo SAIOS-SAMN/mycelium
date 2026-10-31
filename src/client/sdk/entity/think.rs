@@ -330,12 +330,12 @@ impl Mind {
     /// as any residue is. No vote, weight or argmin. And what a
     /// vortex carried round on a new perception left when it collapsed — a
     /// symmetry the mind measured (Expansion 4) — is adjoined as its letters.
-    pub(crate) fn take_demands(&mut self, budget: &mut crate::physics::Budget) -> Vec<Vec<u8>> {
+    pub(crate) fn drain_demands(&mut self, budget: &mut crate::physics::Budget) -> Vec<Vec<u8>> {
         let kept = std::mem::take(&mut self.contemplation.vortex_symmetries);
         if !kept.is_empty() {
             self.adjoin_letters(&kept, budget);
         }
-        let taken = self.contemplation.take_demands();
+        let taken = self.contemplation.drain_demands();
         let mut bound: Vec<Vec<u8>> = Vec::new();
         let mut separating: Vec<(crate::transducer::cga::Mv, crate::transducer::stalk::Invariant, Vec<Vec<u8>>)> = Vec::new();
         for (i, a) in taken.iter().enumerate() {
@@ -509,7 +509,7 @@ impl Mind {
     /// short, so the syntropic phase that alone took them never ran.
     pub(crate) fn take_docketed_demands(&mut self) -> Vec<Vec<u8>> {
         let mut budget = self.physics.stroke();
-        self.take_demands(&mut budget)
+        self.drain_demands(&mut budget)
     }
 
     /// 78.52 — TRANSCRIPTION, AGAINST THIS MIND'S OWN LETTERS (78.47 (i)). A

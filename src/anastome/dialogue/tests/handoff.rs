@@ -21,7 +21,7 @@ fn handoff_acts_and_answers_round_trip_whole() {
         nonce: [9u8; 32],
     };
     assert_eq!(offer.conserves(), Ok(()));
-    let id = offer.id();
+    let id = offer.citation();
     for h in [Handoff::Offer(Box::new(offer)), Handoff::Accept { id }, Handoff::Refuse { id }, Handoff::Expire { id }] {
         let signed = h.sign(&key);
         let mut asked = encode_handoff(&signed);
@@ -88,20 +88,20 @@ fn mouth_acts_and_loops_round_trip_whole() {
     // flat mouth's id is what it was.
     let tariff = Tariff { rate_s: (3, 2), rate_h: (1, 7), split: vec![([1u8; 32], (2, 3)), ([5u8; 32], (1, 3))] };
     let tariffed = Mouth { toll: [0; 4], tariff: Some(tariff.clone()), ..mouth.clone() };
-    assert_ne!(tariffed.id(), Mouth { tariff: None, ..tariffed.clone() }.id(), "the tariff is in the id");
+    assert_ne!(tariffed.citation(), Mouth { tariff: None, ..tariffed.clone() }.citation(), "the tariff is in the id");
     let changed = Tariff { split: vec![([1u8; 32], (1, 2)), ([5u8; 32], (1, 2))], ..tariff };
-    assert_ne!(tariffed.id(), Mouth { tariff: Some(changed), ..tariffed.clone() }.id(), "a new split is a new mouth");
+    assert_ne!(tariffed.citation(), Mouth { tariff: Some(changed), ..tariffed.clone() }.citation(), "a new split is a new mouth");
     let signed = Handoff::Mouth(Box::new(tariffed.clone())).sign(&key);
     assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
     // 78.134 — a tube is its own kind, with or without its tariff; its tube
     // in its id; the tube read and its reading back whole.
     let tube = Tube { mass: (3, 2), from_space: Geometry::Curved((1, 1)), to_space: Geometry::Curved((5, 3)), supersedes: Some([7u8; 32]), core: false };
     let tubed = Mouth { tube: Some(tube.clone()), ..tariffed.clone() };
-    assert_ne!(tubed.id(), tariffed.id(), "the tube is in the id");
+    assert_ne!(tubed.citation(), tariffed.citation(), "the tube is in the id");
     // 78.140 — a tube with a torus end its own kind and tag, core or not.
     let torus = Geometry::Torus { periods: vec![(10, 1), (6, 1)], metric: Metric::L1 };
     let spaced = Mouth { tube: Some(Tube { to_space: torus.clone(), ..tube.clone() }), ..tubed.clone() };
-    assert_ne!(spaced.id(), tubed.id(), "the space is in the id");
+    assert_ne!(spaced.citation(), tubed.citation(), "the space is in the id");
     let spaced_core = Mouth { tube: Some(Tube { from_space: torus, core: true, ..tube.clone() }), ..tubed.clone() };
     for m in [tubed.clone(), Mouth { tariff: None, ..tubed.clone() }, spaced, spaced_core] {
         let signed = Handoff::Mouth(Box::new(m)).sign(&key);
@@ -110,7 +110,7 @@ fn mouth_acts_and_loops_round_trip_whole() {
     assert_eq!(decode_handoff_request(&encode_tube_read([3u8; 32])), Some(HandoffRequest::TubeRead([3u8; 32])));
     // 78.135 — the throat's bank acts, read back whole.
     for h in [Handoff::Feed { mouth: [3u8; 32], mu_s: 9, seq: 2 }, Handoff::Draw { mouth: [3u8; 32], mu_s: 1, seq: 3 }] {
-        assert_eq!(h.id(), [3u8; 32], "a bank act names its mouth");
+        assert_eq!(h.citation(), [3u8; 32], "a bank act names its mouth");
         let signed = h.sign(&key);
         assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
     }
@@ -125,14 +125,14 @@ fn mouth_acts_and_loops_round_trip_whole() {
     assert_eq!(decode_tube_reading(&encode_tube_reading(None)), Some(None));
     assert!(is_spin_plus_31(&one) && !is_spin_plus_31(&crate::transducer::cga::Mv::zero()));
     let offer = Offer { from_tier: [1u8; 32], to_tier: [2u8; 32], out_nets: vec![([3u8; 32], [-1, 0, 0, 0])], in_nets: vec![([4u8; 32], [1, 0, 0, 0])], charter: [0u8; 32], nonce: [9u8; 32] };
-    let traverse = Handoff::Traverse { offer: Box::new(offer.clone()), mouth: mouth.id() };
-    assert_eq!(traverse.id(), offer.id(), "a traversal is the handoff its offer is");
-    for h in [Handoff::Mouth(Box::new(mouth.clone())), Handoff::Close { id: mouth.id() }, traverse] {
+    let traverse = Handoff::Traverse { offer: Box::new(offer.clone()), mouth: mouth.citation() };
+    assert_eq!(traverse.citation(), offer.citation(), "a traversal is the handoff its offer is");
+    for h in [Handoff::Mouth(Box::new(mouth.clone())), Handoff::Close { id: mouth.citation() }, traverse] {
         let signed = h.sign(&key);
         assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
     }
     assert_eq!(decode_handoff_request(&encode_loops_read()), Some(HandoffRequest::Loops));
-    let loops = vec![Loop { mouth: mouth.id(), holonomy: one.clone(), tethered: true }, Loop { mouth: [6u8; 32], holonomy: one, tethered: false }];
+    let loops = vec![Loop { mouth: mouth.citation(), holonomy: one.clone(), tethered: true }, Loop { mouth: [6u8; 32], holonomy: one, tethered: false }];
     assert_eq!(decode_loops_reply(&encode_loops_reply(&loops)), Some(loops));
     for r in [
         HandoffRefusal::NoMouth,
@@ -166,7 +166,7 @@ fn conversions_and_reserve_round_trip_whole() {
     assert_eq!(ConvertOut { rate: [(1, 3), (0, 1), (0, 1), (0, 1)], ..out.clone() }.mu(), None, "10/3 is no integer");
     assert_eq!(ConvertOut { g: 0, ..out.clone() }.mu(), None);
     let inn = ConvertIn { holder: [2u8; 32], tier: [1u8; 32], identity: [3u8; 32], g: 7, mu: [3, 0, 0, 0], nonce: [9u8; 32] };
-    assert_ne!(out.id(), inn.id());
+    assert_ne!(out.citation(), inn.citation());
     for h in [Handoff::ConvertOut(Box::new(out)), Handoff::ConvertIn(Box::new(inn))] {
         let signed = h.sign(&key);
         assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));

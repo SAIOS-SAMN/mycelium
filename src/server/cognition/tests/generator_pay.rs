@@ -241,12 +241,12 @@ fn hear_frame_on_credits_each_teacher_of_two_derivations() {
 
     // One court teaches both generators; each mind learns its own.
     let mut school = Court::new();
-    let taught = |k: &mut Court, fam: &[crate::transducer::family::TrainPair], who: [u8; 32], task: [u8; 32]| {
+    let taught = |k: &mut Court, fam: &[crate::transducer::family::TrainPair], voice: [u8; 32], task: [u8; 32]| {
         let f = cipher_form(&fam[0].0, &fam[0].1);
         let mag = sentence_measure(&f, fam, &NoCrystal, 0).expect("the bar is spoken");
         let e = as_element_form(&f, mag).expect("a tape");
         k.bind_task_family(task, fam.to_vec());
-        install_on(k, who, &e, &task);
+        install_on(k, voice, &e, &task);
         e
     };
     let g_a = taught(&mut school, &bar_turn_90(), teacher_a, [11u8; 32]);

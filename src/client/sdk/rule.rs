@@ -31,7 +31,7 @@ use crate::transducer::sentence::{self, Form};
 use crate::transducer::sentence::{Acting, Vertex};
 pub use crate::transducer::family::statement::Unstated;
 pub use crate::transducer::sentence::form::clause::{
-    About, Act, Clause, Cmp, Coord, Extent, Order, Paint, Pred, Region, Stop, Tie, Value,
+    About, Act, Clause, Comparison, Coord, Extent, Order, Paint, Pred, Region, Stop, Tie, Value,
 };
 
 /// ONE STEP OF A RULE: a motion of the base, or a map of the hue fibre —

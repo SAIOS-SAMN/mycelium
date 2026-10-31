@@ -15,7 +15,7 @@
 
 use super::Court;
 use crate::anastome::dialogue::atlas::{
-    dilation, local_record_id, local_throat_id, HeldEntry, HeldRecord, LedgerPage, LedgerRefusal, Ledgered, MapEntry, MapRecord, MapRefusal, Mapped, Place, Segment, SignedLedger, SignedMap,
+    dilation, local_record_citation, local_throat_citation, HeldEntry, HeldRecord, LedgerPage, LedgerRefusal, Ledgered, MapEntry, MapRecord, MapRefusal, Mapped, Place, Segment, SignedLedger, SignedMap,
     KIND_LEDGER, KIND_MAP,
 };
 use crate::anastome::dialogue::crossing::Edge;
@@ -106,9 +106,9 @@ pub(crate) fn record_key(domain: &[u8; 32], id: &[u8; 32]) -> Vec<u8> {
     k
 }
 
-/// The id a mouth's record is held under on its universe's map.
-pub(crate) fn mouth_id(domain: &[u8; 32], mouth: &[u8; 32], side: u8) -> [u8; 32] {
-    MapRecord::Mouth { place: (*mouth, side), freshness: 0 }.id(domain)
+/// The citation a mouth's record is held under on its universe's map.
+pub(crate) fn mouth_citation(domain: &[u8; 32], mouth: &[u8; 32], side: u8) -> [u8; 32] {
+    MapRecord::Mouth { place: (*mouth, side), freshness: 0 }.citation(domain)
 }
 
 /// 78.154 — A MAPPED PLACE, ONE READING FOR BOTH KINDS (a 78.128 mouth's
@@ -452,7 +452,7 @@ impl Court {
     /// A LOCAL THROAT `local` (its derived mouth id) on `domain`'s map, as
     /// held.
     pub(crate) fn local_throat(&self, domain: &[u8; 32], local: &[u8; 32]) -> Option<&HeldRecord> {
-        let held = self.atlas.records.get(&record_key(domain, &local_record_id(domain, local)))?;
+        let held = self.atlas.records.get(&record_key(domain, &local_record_citation(domain, local)))?;
         match held.record {
             MapRecord::LocalThroat { .. } => Some(held),
             MapRecord::Mouth { .. } | MapRecord::Segment { .. } => None,
@@ -468,7 +468,7 @@ impl Court {
         if *side > 1 {
             return None;
         }
-        if let Some(held) = self.atlas.records.get(&record_key(domain, &mouth_id(domain, id, *side))) {
+        if let Some(held) = self.atlas.records.get(&record_key(domain, &mouth_citation(domain, id, *side))) {
             let MapRecord::Mouth { freshness, .. } = held.record else { return None };
             let mouth = &self.handoffs.mouths.get(id)?.mouth;
             let place = mouth.places().map(|(f, t)| match side {
@@ -579,7 +579,7 @@ impl Court {
                 }
             }
         }
-        let id = a.record.id(&a.domain);
+        let id = a.record.citation(&a.domain);
         let key = record_key(&a.domain, &id);
         if self.atlas.records.get(&key).is_some_and(|h| h.point.origin == a.point.origin && a.point.h < h.point.h) {
             return refuse(R::Behind);
@@ -604,7 +604,7 @@ impl Court {
                 let places = match &held.record {
                     MapRecord::Mouth { place: p, .. } => place(p).into_iter().collect(),
                     MapRecord::LocalThroat { throat, .. } => {
-                        let local = local_throat_id(domain, throat);
+                        let local = local_throat_citation(domain, throat);
                         match (place(&(local, 0)), place(&(local, 1))) {
                             (Some(p0), Some(p1)) => vec![p0, p1],
                             _ => Vec::new(),

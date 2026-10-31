@@ -18,7 +18,7 @@ fn key(b: u8) -> SigningKey {
     SigningKey::from_bytes(&[b; 32])
 }
 
-fn vk(k: &SigningKey) -> [u8; 32] {
+fn verifying(k: &SigningKey) -> [u8; 32] {
     k.verifying_key().to_bytes()
 }
 
@@ -37,14 +37,14 @@ fn line() -> SigningKey {
 fn founded() -> Court {
     let mut k = Court::new();
     for d in [4u8, 5] {
-        let mut tiers = vec![vk(&reserve(d))];
+        let mut tiers = vec![verifying(&reserve(d))];
         if d == 4 {
-            tiers.push(vk(&line()));
+            tiers.push(verifying(&line()));
             tiers.sort_unstable();
         }
-        let g = DomainGenesis { domain: vk(&domain(d)), tiers };
+        let g = DomainGenesis { domain: verifying(&domain(d)), tiers };
         assert!(matches!(k.admit_domain(&g.sign(&domain(d))), Founded::Sealed { .. }));
-        let r = Reservation { domain: vk(&domain(d)), tier: vk(&reserve(d)), nonce: [0; 32] };
+        let r = Reservation { domain: verifying(&domain(d)), tier: verifying(&reserve(d)), nonce: [0; 32] };
         assert!(matches!(k.designate_reserve(&r.sign(&domain(d))), Founded::Reserved { .. }));
     }
     k
@@ -59,15 +59,15 @@ fn split(mut parts: Vec<([u8; 32], (u64, u64))>) -> Vec<([u8; 32], (u64, u64))> 
 /// 3/2 μ-S per unit of mass, 5 μ-H per unit of information; a third to the
 /// line, two thirds to the keeper (domain 4's reserve).
 fn tariff() -> Tariff {
-    Tariff { rate_s: (3, 2), rate_h: (5, 1), split: split(vec![(vk(&line()), (1, 3)), (vk(&reserve(4)), (2, 3))]) }
+    Tariff { rate_s: (3, 2), rate_h: (5, 1), split: split(vec![(verifying(&line()), (1, 3)), (verifying(&reserve(4)), (2, 3))]) }
 }
 
 fn mouth(t: Tariff) -> Mouth {
     let one = crate::transducer::element::identity_versor();
     Mouth {
-        from_tier: vk(&reserve(4)),
-        to_tier: vk(&reserve(5)),
-        keeper: vk(&reserve(4)),
+        from_tier: verifying(&reserve(4)),
+        to_tier: verifying(&reserve(5)),
+        keeper: verifying(&reserve(4)),
         from_frame: one.clone(),
         to_frame: one,
         toll: [0; 4],
@@ -86,8 +86,8 @@ fn mouth(t: Tariff) -> Mouth {
 fn open(k: &mut Court, m: Mouth) -> [u8; 32] {
     // The throat's bank, funded first so balances read as before.
     let anchor = k.anchor();
-    k.treasury.genesis(vk(&reserve(4)), [1, 0, 0, 0], anchor);
-    let id = m.id();
+    k.treasury.genesis(verifying(&reserve(4)), [1, 0, 0, 0], anchor);
+    let id = m.citation();
     assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(4))), Handed::Sealed { .. }));
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(5))), Handed::Sealed { state: State::Accepted, .. }));
     id
@@ -96,8 +96,8 @@ fn open(k: &mut Court, m: Mouth) -> [u8; 32] {
 /// `s` of matter and `h` of information from domain 5 to domain 4.
 fn passage(s: i128, h: i128, nonce: u8) -> Offer {
     Offer {
-        from_tier: vk(&reserve(5)),
-        to_tier: vk(&reserve(4)),
+        from_tier: verifying(&reserve(5)),
+        to_tier: verifying(&reserve(4)),
         out_nets: vec![([1; 32], [-s, 0, 0, -h])],
         in_nets: vec![([2; 32], [s, 0, 0, h])],
         charter: [0; 32],
@@ -109,9 +109,9 @@ fn traverse(k: &mut Court, mouth: [u8; 32], o: Offer) -> Handed {
     k.handoff(&Handoff::Traverse { offer: Box::new(o), mouth }.sign(&reserve(5)))
 }
 
-fn fund(k: &mut Court, who: [u8; 32], mu: [u64; 4]) {
+fn fund(k: &mut Court, party: [u8; 32], mu: [u64; 4]) {
     let anchor = k.anchor();
-    k.treasury.genesis(who, mu, anchor);
+    k.treasury.genesis(party, mu, anchor);
 }
 
 fn pass(k: &mut Court, h: u64) {
@@ -172,15 +172,15 @@ fn handoff_mouth_refuses_split_beyond_keeper_and_lines() {
         Handed::Refused(r) => Some(r),
         _ => None,
     };
-    let to_other = Tariff { split: split(vec![(vk(&reserve(5)), (1, 3)), (vk(&reserve(4)), (2, 3))]), ..tariff() };
+    let to_other = Tariff { split: split(vec![(verifying(&reserve(5)), (1, 3)), (verifying(&reserve(4)), (2, 3))]), ..tariff() };
     assert_eq!(offer(&mut k, mouth(to_other)), Some(HandoffRefusal::NotALine), "the traveller's domain is not the keeper's");
-    let stranger = Tariff { split: split(vec![([7; 32], (1, 3)), (vk(&reserve(4)), (2, 3))]), ..tariff() };
+    let stranger = Tariff { split: split(vec![([7; 32], (1, 3)), (verifying(&reserve(4)), (2, 3))]), ..tariff() };
     assert_eq!(offer(&mut k, mouth(stranger)), Some(HandoffRefusal::NotALine));
     let flat = Mouth { toll: [1, 0, 0, 0], ..mouth(tariff()) };
     assert_eq!(offer(&mut k, flat), Some(HandoffRefusal::Untariffed(Untariffed::Flat)), "a mouth's toll is one law");
-    let partial = Tariff { split: split(vec![(vk(&line()), (1, 3)), (vk(&reserve(4)), (1, 3))]), ..tariff() };
+    let partial = Tariff { split: split(vec![(verifying(&line()), (1, 3)), (verifying(&reserve(4)), (1, 3))]), ..tariff() };
     assert_eq!(offer(&mut k, mouth(partial)), Some(HandoffRefusal::Untariffed(Untariffed::NotWhole)));
-    fund(&mut k, vk(&reserve(4)), [1, 0, 0, 0]);
+    fund(&mut k, verifying(&reserve(4)), [1, 0, 0, 0]);
     assert_eq!(offer(&mut k, mouth(tariff())), None, "the keeper and its line, its throat banked");
 }
 
@@ -192,7 +192,7 @@ fn handoff_mouth_refuses_split_beyond_keeper_and_lines() {
 fn handoff_traverse_charges_own_lanes_and_refuses_short() {
     let mut k = founded();
     let m = open(&mut k, mouth(tariff()));
-    let traveller = vk(&reserve(5));
+    let traveller = verifying(&reserve(5));
     fund(&mut k, traveller, [100, 9, 9, 4]);
     let before = k.treasury.balance_mu(&traveller);
     assert_eq!(traverse(&mut k, m, passage(0, 3, 1)), Handed::Refused(HandoffRefusal::HolderShort), "15 μ-H against 4");
@@ -205,9 +205,9 @@ fn handoff_traverse_charges_own_lanes_and_refuses_short() {
     assert_eq!(k.treasury.balance_mu(&traveller), [80, 9, 9, 70], "G and T never charged");
     let Handed::Sealed { id, .. } = traverse(&mut k, m, passage(7, 3, 5)) else { panic!() };
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(4))), Handed::Sealed { state: State::Accepted, .. }));
-    assert_eq!(k.treasury.balance_mu(&vk(&line())), [0; 4], "held, not paid");
-    assert_eq!(k.toll_held_for(&vk(&line())), Some([3, 0, 0, 5]), "a third, floored");
-    assert_eq!(k.toll_held_for(&vk(&reserve(4))), Some([7, 0, 0, 10]), "the keeper, the rest");
+    assert_eq!(k.treasury.balance_mu(&verifying(&line())), [0; 4], "held, not paid");
+    assert_eq!(k.toll_held_for(&verifying(&line())), Some([3, 0, 0, 5]), "a third, floored");
+    assert_eq!(k.toll_held_for(&verifying(&reserve(4))), Some([7, 0, 0, 10]), "the keeper, the rest");
 }
 
 /// THE PARTS ARE PAID TOGETHER WHEN THE WINDOW CLOSES: held across a
@@ -217,23 +217,23 @@ fn handoff_traverse_charges_own_lanes_and_refuses_short() {
 fn settle_windows_releases_toll_parts_together() {
     let mut k = founded();
     let m = open(&mut k, mouth(tariff()));
-    fund(&mut k, vk(&reserve(5)), [10, 0, 0, 15]);
+    fund(&mut k, verifying(&reserve(5)), [10, 0, 0, 15]);
     let Handed::Sealed { id, at: traversed, .. } = traverse(&mut k, m, passage(7, 3, 1)) else { panic!() };
     let Handed::Sealed { at: accepted, .. } = k.handoff(&Handoff::Accept { id }.sign(&reserve(4))) else { panic!() };
     let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
-    assert_eq!(booted.toll_held_for(&vk(&line())), Some([3, 0, 0, 5]), "the toll held across a restart");
+    assert_eq!(booted.toll_held_for(&verifying(&line())), Some([3, 0, 0, 5]), "the toll held across a restart");
     let mut k = booted;
     pass(&mut k, accepted.h + CHALLENGE_WINDOW - 1);
     k.settle_windows();
-    assert_eq!(k.treasury.balance_mu(&vk(&line())), [0; 4], "the window stands");
+    assert_eq!(k.treasury.balance_mu(&verifying(&line())), [0; 4], "the window stands");
     pass(&mut k, accepted.h + CHALLENGE_WINDOW);
     k.settle_windows();
-    assert_eq!(k.treasury.balance_mu(&vk(&line())), [3, 0, 0, 5]);
-    assert_eq!(k.treasury.balance_mu(&vk(&reserve(4))), [7, 0, 0, 10]);
-    assert_eq!(k.treasury.balance_mu(&vk(&reserve(5))), [0; 4]);
-    assert_eq!(k.toll_held_for(&vk(&line())), Some([0; 4]), "released");
-    let cited = k.treasury.entries().iter().filter(|e| e.who == vk(&line()) && e.at == traversed).count();
+    assert_eq!(k.treasury.balance_mu(&verifying(&line())), [3, 0, 0, 5]);
+    assert_eq!(k.treasury.balance_mu(&verifying(&reserve(4))), [7, 0, 0, 10]);
+    assert_eq!(k.treasury.balance_mu(&verifying(&reserve(5))), [0; 4]);
+    assert_eq!(k.toll_held_for(&verifying(&line())), Some([0; 4]), "released");
+    let cited = k.treasury.entries().iter().filter(|e| e.who == verifying(&line()) && e.at == traversed).count();
     assert_eq!(cited, 1, "the line's receipt ties back to the traverse act");
 }
 
@@ -244,7 +244,7 @@ fn settle_windows_releases_toll_parts_together() {
 fn challenge_default_refunds_toll_parts_together() {
     let mut k = founded();
     let m = open(&mut k, mouth(tariff()));
-    let traveller = vk(&reserve(5));
+    let traveller = verifying(&reserve(5));
     fund(&mut k, traveller, [10, 0, 0, 15]);
     let Handed::Sealed { id, .. } = traverse(&mut k, m, passage(7, 3, 1)) else { panic!() };
     let Handed::Sealed { at: accepted, .. } = k.handoff(&Handoff::Accept { id }.sign(&reserve(4))) else { panic!() };
@@ -256,12 +256,12 @@ fn challenge_default_refunds_toll_parts_together() {
     let Challenged::Demanded { deadline, .. } = k.challenge(&Challenge::Demand { fold: at.clone() }.sign(&key(60))) else { panic!() };
     pass(&mut k, accepted.h + CHALLENGE_WINDOW);
     k.settle_windows();
-    assert_eq!(k.toll_held_for(&vk(&line())), Some([3, 0, 0, 5]), "the demand holds it past the window");
+    assert_eq!(k.toll_held_for(&verifying(&line())), Some([3, 0, 0, 5]), "the demand holds it past the window");
     pass(&mut k, deadline);
     assert!(matches!(k.challenge(&Challenge::Default { fold: at.clone() }.sign(&key(60))), Challenged::Falsified { .. }));
     assert_eq!(k.finality(&at), Finality::Falsified);
     assert_eq!(k.treasury.balance_mu(&traveller), [10, 0, 0, 15], "every part back together");
-    assert_eq!(k.toll_held_for(&vk(&line())), Some([0; 4]));
-    assert_eq!(k.toll_held_for(&vk(&reserve(4))), Some([0; 4]));
+    assert_eq!(k.toll_held_for(&verifying(&line())), Some([0; 4]));
+    assert_eq!(k.toll_held_for(&verifying(&reserve(4))), Some([0; 4]));
     assert!(!k.fold_holds_toll(&at));
 }

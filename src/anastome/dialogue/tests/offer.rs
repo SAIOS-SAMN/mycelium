@@ -3,8 +3,8 @@
 
 use crate::anastome::dialogue::*;
 
-fn section_at(payload: &[u8], vk: [u8; 32]) -> ReceiptSection {
-    let mut c = crate::chronometry::ReceiptChain::with_vk(vk);
+fn section_at(payload: &[u8], signer: [u8; 32]) -> ReceiptSection {
+    let mut c = crate::chronometry::ReceiptChain::with_signer(signer);
     let r = c.append(crate::chronometry::ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
     ReceiptSection {
         prefix: crate::court::admission::SignedPrefix {
@@ -81,7 +81,7 @@ fn offer_reply_round_trips_three_arms_with_key() {
     let form = vec![1u8, 2, 3, 4, 5];
     let w = decode_offer_reply(&encode_offer_reply(&Witnessed::Reached { vk, form: form.clone() }).expect("frames"))
         .expect("an answer parses whole");
-    assert_eq!(w.vk(), vk, "the vantage is the key the witness names");
+    assert_eq!(w.vantage(), vk, "the vantage is the key the witness names");
     match w {
         Witnessed::Reached { form: got, .. } => assert_eq!(got, form),
         _ => panic!("the arm it was encoded as"),
@@ -94,7 +94,7 @@ fn offer_reply_round_trips_three_arms_with_key() {
         matches!(none, Witnessed::Unmeasured { .. }),
         "unmeasured is its own arm, neither agreeing nor refusing"
     );
-    assert_eq!(none.vk(), vk, "and it still names the key that answered");
+    assert_eq!(none.vantage(), vk, "and it still names the key that answered");
 
     // REFUSED: the 34.1 constant travels, not the fact that there was one.
     let why = crate::court::verdict::REFUSE_NOT_CLOSED;

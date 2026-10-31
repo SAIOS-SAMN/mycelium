@@ -59,7 +59,7 @@ pub fn encode_docket_reply_paged(
         // LD0 — an item whose address cannot be framed is not served, and
         // the page ends there as it ends at the budget: the drain takes the
         // items served in order, so none is skipped past (rule 11).
-        if put_addr(&mut item, &s.listing).is_none() {
+        if put_address(&mut item, &s.listing).is_none() {
             eprintln!("  docket settlement refused: its listing's address cannot be framed");
             break;
         }
@@ -86,7 +86,7 @@ pub fn encode_docket_reply_paged(
     let mut words = 0usize;
     for d in dockets {
         let mut item = Vec::with_capacity(112 + d.elem.len() + 32 * d.voices.len());
-        if put_addr(&mut item, &d.addr).is_none() {
+        if put_address(&mut item, &d.addr).is_none() {
             eprintln!("  docket word refused: its address cannot be framed");
             break;
         }
@@ -140,7 +140,7 @@ pub fn decode_settlements(body: &[u8]) -> Vec<Settlement> {
     p += 4;
     let mut out = Vec::new();
     for _ in 0..n {
-        let Some(listing) = take_addr(body, &mut p) else { break };
+        let Some(listing) = take_address(body, &mut p) else { break };
         let Some(chain) = read_chain(body, &mut p) else { break };
         let Some(voice) = body.get(p..p + 32).and_then(|b| b.try_into().ok()) else { break };
         p += 32;
@@ -162,7 +162,7 @@ pub fn decode_cavities(body: &[u8]) -> Vec<Vec<u8>> {
     };
     p += 4;
     for _ in 0..ns {
-        if take_addr(body, &mut p).is_none() {
+        if take_address(body, &mut p).is_none() {
             return Vec::new();
         }
         let Some(_) = read_chain(body, &mut p) else { return Vec::new() };
@@ -205,7 +205,7 @@ pub(crate) fn decode_dockets_at(body: &[u8]) -> Option<(Vec<Docket>, usize)> {
     }
     let mut out = Vec::with_capacity(n);
     for _ in 0..n {
-        let addr = take_addr(body, &mut p)?;
+        let addr = take_address(body, &mut p)?;
         let el = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
         p += 4;
         if el > body.len().checked_sub(p)? {
@@ -279,7 +279,7 @@ pub fn encode_evidence_reply<A: AsRef<[u8]>>(
     let mut out = Vec::new();
     put_u32_count(&mut out, items.len())?;
     for EvidenceOf { addr, footprint, scene } in items {
-        put_addr(&mut out, addr)?;
+        put_address(&mut out, addr)?;
         put_u32_count(&mut out, footprint.len())?;
         for (r, c) in footprint {
             out.extend_from_slice(&r.to_le_bytes());
@@ -304,7 +304,7 @@ pub fn decode_evidence_reply(body: &[u8]) -> Option<Vec<EvidenceItem>> {
     }
     let mut out = Vec::with_capacity(n);
     for _ in 0..n {
-        let addr = take_addr(body, &mut p)?;
+        let addr = take_address(body, &mut p)?;
         let nf = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
         p += 4;
         if nf > body.len().checked_sub(p)? / 16 {
@@ -411,7 +411,7 @@ pub fn decode_teach(body: &[u8]) -> Option<Vec<u8>> {
 /// court made.
 pub fn encode_settle(germ: impl AsRef<[u8]>, voices: &[[u8; 32]], mu: &[u64; 4]) -> Option<Vec<u8>> {
     let mut out = vec![ACT_SETTLE];
-    put_addr(&mut out, germ)?;
+    put_address(&mut out, germ)?;
     crate::transducer::address::put_u8_count(&mut out, voices.len())?;
     for v in voices {
         out.extend_from_slice(v);
@@ -425,7 +425,7 @@ pub fn decode_settle(body: &[u8]) -> Option<(Address, Vec<[u8; 32]>, [u64; 4])> 
         return None;
     }
     let mut p = 1usize;
-    let germ = take_addr(body, &mut p)?;
+    let germ = take_address(body, &mut p)?;
     let n = *body.get(p)? as usize; // u8 — bounded by construction
     p += 1;
     let mut voices = Vec::with_capacity(n);

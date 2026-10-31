@@ -26,14 +26,14 @@ impl Router {
         Router::default()
     }
 
-    pub fn insert(&mut self, id: impl AsRef<[u8]>, addr: String) {
+    pub fn insert(&mut self, id: impl AsRef<[u8]>, endpoint: String) {
         let id = id.as_ref().to_vec();
         let mut node = self;
         for depth in 0..XOR_BITS {
             let b = xor_bit(&id, depth);
             node = node.children[b].get_or_insert_with(|| Box::new(Router::new()));
         }
-        node.leaf = Some((id, addr));
+        node.leaf = Some((id, endpoint));
     }
 
     /// The contact XOR-closest to `key` — O(bits), never O(N). A chart

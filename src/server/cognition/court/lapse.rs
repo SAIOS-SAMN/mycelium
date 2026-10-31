@@ -29,11 +29,11 @@ impl Court {
     /// carries nothing on any lane is no circulation and moves nothing: only
     /// a flux `Φ` non-zero on some lane re-files the word. A word not yet
     /// admitted is filed by its admission (`file_admitted`).
-    pub(crate) fn note_flux(&mut self, addr: &[u8], flux: [u64; 4]) {
+    pub(crate) fn note_flux(&mut self, address: &[u8], flux: [u64; 4]) {
         if flux.iter().all(|&l| l == 0) {
             return;
         }
-        if let Some(at) = self.stamp_key(addr) {
+        if let Some(at) = self.stamp_key(address) {
             self.file_flux(&at);
         }
     }
@@ -46,8 +46,8 @@ impl Court {
     }
 
     /// The word left the book or the docket: it is filed nowhere.
-    pub(crate) fn forget_flux(&mut self, addr: &[u8]) {
-        if let Some(at) = self.stamp_key(addr) {
+    pub(crate) fn forget_flux(&mut self, address: &[u8]) {
+        if let Some(at) = self.stamp_key(address) {
             self.forget_flux_at(&at);
         }
     }
@@ -87,19 +87,19 @@ impl Court {
             due.push((k, at.to_vec()));
         }
         for (k, at) in due {
-            let Some(addr) = self.word_of_stamp(&at) else {
+            let Some(address) = self.word_of_stamp(&at) else {
                 self.forget_flux_at(&at);
                 continue;
             };
             let silent = bound.is_some_and(|b| k < b);
-            match (self.provisional.contains(addr.as_bytes()), self.pending.contains(addr.as_bytes())) {
+            match (self.provisional.contains(address.as_bytes()), self.pending.contains(address.as_bytes())) {
                 (true, _) if silent => {
                     self.forget_flux_at(&at);
-                    self.lapse_word(addr.as_bytes());
+                    self.lapse_word(address.as_bytes());
                 }
                 (false, true) if silent => {
                     self.forget_flux_at(&at);
-                    self.lapse_listing(addr.as_bytes());
+                    self.lapse_listing(address.as_bytes());
                 }
                 (false, false) => self.forget_flux_at(&at),
                 _ => {}
@@ -110,12 +110,12 @@ impl Court {
     /// A LISTING NOTHING FLOWED TO FOR A WHOLE ORBIT: its escrow returns at
     /// the door, its draw is unlisted, and the lapse is this court's own act
     /// (45.1), the listing cited as it stood (78.24 (2c)).
-    fn lapse_listing(&mut self, addr: &[u8]) {
+    fn lapse_listing(&mut self, address: &[u8]) {
         let own_vk = self.identity;
-        let cite = self.cite_of(addr);
-        let _ = self.treasury.revoke_award(addr, crate::economy::escrow::Revocation::Drop);
-        self.unlist(&Address::from(addr.to_vec()), false);
-        self.append_after_removal(crate::chronometry::ActKind::Lapse, addr, cite, own_vk);
+        let cite = self.cite_of(address);
+        let _ = self.treasury.revoke_award(address, crate::economy::escrow::Revocation::Drop);
+        self.unlist(&Address::from(address.to_vec()), false);
+        self.append_after_removal(crate::chronometry::ActKind::Lapse, address, cite, own_vk);
     }
 
     /// A PROVISIONAL WORD NOTHING FLOWED TO, OR WHOSE ESCROW A CARRIAGE
@@ -123,18 +123,18 @@ impl Court {
     /// the word leaves the docket, and every sentence that waited on it is
     /// released as the demand it is (D) — it cites a word this court does
     /// not hold.
-    pub(crate) fn lapse_word(&mut self, addr: &[u8]) {
+    pub(crate) fn lapse_word(&mut self, address: &[u8]) {
         let own_vk = self.identity;
-        let cite = self.cite_of(addr);
-        let _ = self.treasury.revoke_award(addr, crate::economy::escrow::Revocation::Drop);
-        self.forget_flux(addr);
-        self.leave_provisional(addr);
+        let cite = self.cite_of(address);
+        let _ = self.treasury.revoke_award(address, crate::economy::escrow::Revocation::Drop);
+        self.forget_flux(address);
+        self.leave_provisional(address);
         // A word listed on the book as well leaves it in the same act.
-        if self.pending.contains(addr) {
-            self.unlist(addr, false);
+        if self.pending.contains(address) {
+            self.unlist(address, false);
         }
-        self.append_after_removal(crate::chronometry::ActKind::Lapse, addr, cite, own_vk);
-        self.release_awaiting(addr);
+        self.append_after_removal(crate::chronometry::ActKind::Lapse, address, cite, own_vk);
+        self.release_awaiting(address);
     }
 
     /// THE LISTINGS A SIMPLEX IS OVER (13.9, 47.3; R6): the open listings

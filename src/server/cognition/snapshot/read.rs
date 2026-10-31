@@ -204,7 +204,7 @@ impl Court {
                 (false, Some(v), None) => Some(whole(v, crate::chronometry::Root::read)?),
                 (false, None, None) => None,
                 (true, None, named) => {
-                    if !kernel.chain.bind_vk(vk) {
+                    if !kernel.chain.bind_signer(vk) {
                         return None;
                     }
                     if let Some(v) = named {
@@ -663,7 +663,7 @@ impl Court {
                 // The listing's own magnitude where the book still holds it,
                 // the spoken word's where it does not. Both are measured on
                 // a word; neither stands in for the other (rule 11).
-                let mag = match self.book_elem(&addr) {
+                let mag = match self.book_element(&addr) {
                     Some(p) => p.magnitude(),
                     None => spoken.magnitude(),
                 };

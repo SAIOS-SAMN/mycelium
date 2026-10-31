@@ -97,7 +97,7 @@ fn edges_rederive_frames_refuses_forged_frame_axis_motor() {
     use crate::transducer::sentence::ObstructionKind;
     assert_eq!(refusal.reason, crate::verdict::REFUSE_EDGE);
     assert!(
-        matches!(refusal.obstruction.kind(), ObstructionKind::C | ObstructionKind::D),
+        matches!(refusal.obstruction.kind(), ObstructionKind::Cover | ObstructionKind::Dialect),
         "the deviation's kind is read: {:?}",
         refusal.obstruction
     );
@@ -511,8 +511,8 @@ impl Crystal for Held {
     ) -> Option<Speech> {
         apply_form(f, x, placement, self)
     }
-    fn by_address(&self, addr: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
-        if addr == self.e.address().as_bytes() {
+    fn by_address(&self, address: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
+        if address == self.e.address().as_bytes() {
             Some((&self.e, std::borrow::Cow::Borrowed(&self.f)))
         } else {
             None
@@ -647,8 +647,8 @@ fn glue_speaks_once_per_placement_asks_once_per_chart() {
             self.speeches.set(self.speeches.get() + 1);
             apply_form(f, x, placement, self)
         }
-        fn by_address(&self, addr: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
-            (addr == self.e.address().as_bytes()).then(|| (&self.e, std::borrow::Cow::Borrowed(&self.f)))
+        fn by_address(&self, address: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
+            (address == self.e.address().as_bytes()).then(|| (&self.e, std::borrow::Cow::Borrowed(&self.f)))
         }
         fn on_axis(&self, _chart: &Invariant, _axis: crate::transducer::sentence::Axis) -> Vec<crate::transducer::alphabet::Word> {
             Vec::new()
@@ -722,8 +722,8 @@ fn by_address_returns_citation_without_cloning() {
         fn speak_form(&self, f: &Form, x: &Grid, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
             apply_form(f, x, placement, self)
         }
-        fn by_address(&self, addr: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
-            (addr == self.e.address().as_bytes()).then(|| (&self.e, std::borrow::Cow::Borrowed(&self.f)))
+        fn by_address(&self, address: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
+            (address == self.e.address().as_bytes()).then(|| (&self.e, std::borrow::Cow::Borrowed(&self.f)))
         }
         fn on_axis(&self, _chart: &Invariant, _axis: crate::transducer::sentence::Axis) -> Vec<crate::transducer::alphabet::Word> {
             Vec::new()

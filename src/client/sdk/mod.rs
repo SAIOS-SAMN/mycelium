@@ -17,7 +17,7 @@ pub mod types;
 pub mod voice;
 
 pub use aperture::*;
-pub use entity::body::Sit;
+pub use entity::body::Sitting;
 /// The names a court task's reading is coded by, for the observer's typed
 /// reading (`observe::TaskSeen`).
 pub(crate) use entity::perceive::{PERSPECTIVES, READINGS, STOPS};

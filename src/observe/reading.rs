@@ -549,7 +549,7 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
 pub const REP_AXES: usize = 54;
 
 /// The axes of [`REPLICATION_AXES`] by name, for the sites that count them.
-pub mod rep {
+pub mod replication {
     pub const PARENT: usize = 0;
     pub const BACKFILL: usize = 1;
     pub const GAP: usize = 2;

@@ -600,10 +600,10 @@ fn docketed_letter(
     })
 }
 
-/// True where this kernel holds `addr` as a generator of its basis: the
+/// True where this kernel holds `address` as a generator of its basis: the
 /// word is installed, not merely docketed.
-fn basis_holds(k: &Court, addr: &[u8]) -> bool {
-    k.basis().iter().any(|w| w.address().as_bytes() == addr)
+fn basis_holds(k: &Court, address: &[u8]) -> bool {
+    k.basis().iter().any(|w| w.address().as_bytes() == address)
 }
 
 /// P11, 37.7 / LAW 6 — A LETTER IS OPENED ON ONE VANTAGE AND RULED ON TWO.

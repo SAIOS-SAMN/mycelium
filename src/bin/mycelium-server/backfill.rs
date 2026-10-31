@@ -33,9 +33,9 @@ pub(crate) fn fetch<'a>(
     mesh: &'a Mesh,
     dest: &'a str,
 ) -> impl FnMut(&[u8; 32], Option<Place>, Place, Ask) -> Option<dialogue::ReceiptsAnswer> + 'a {
-    move |who: &[u8; 32], after: Option<Place>, upto: Place, ask: Ask| {
+    move |signer: &[u8; 32], after: Option<Place>, upto: Place, ask: Ask| {
         let at = match mesh.addrs.lock() {
-            Ok(a) => a.get(who).cloned(),
+            Ok(a) => a.get(signer).cloned(),
             Err(_) => None,
         };
         let to_ask: &str = match &at {
@@ -45,8 +45,8 @@ pub(crate) fn fetch<'a>(
         // 78.147: a catch-up, answered below the signer's fold root with the
         // root; an era replay, the one ask the cold archive answers.
         let req = match ask {
-            Ask::CatchUp => dialogue::encode_receipts_request(&mesh.vk, who, after, upto),
-            Ask::Replay => dialogue::encode_replay_request(&mesh.vk, who, after, upto),
+            Ask::CatchUp => dialogue::encode_receipts_request(&mesh.vk, signer, after, upto),
+            Ask::Replay => dialogue::encode_replay_request(&mesh.vk, signer, after, upto),
         };
         answer_of(crate::transport::tell_peer_measured(mesh, to_ask, req).map(|(reply, _)| reply))
     }

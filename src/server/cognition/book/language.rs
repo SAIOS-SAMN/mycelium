@@ -13,31 +13,31 @@ impl Court {
         (self.court_voice.as_ref() == Some(voice)).then(|| crate::transducer::sheaf::digests(&self.ruled))
     }
 
-    /// Remove the word at `addr` from the basis, its discoverer, and its stalk.
-    pub(crate) fn basis_remove(&mut self, addr: &[u8]) -> Element {
-        let Some(held) = self.basis.get(addr).map(|w| w.element().clone()) else {
+    /// Remove the word at `address` from the basis, its discoverer, and its stalk.
+    pub(crate) fn basis_remove(&mut self, address: &[u8]) -> Element {
+        let Some(held) = self.basis.get(address).map(|w| w.element().clone()) else {
             return Element::identity();
         };
         self.unindex_word(&held);
         let inv = crate::transducer::stalk::invariant_of(&held);
         // 78.74 — the vantages this word stood as release the vantages' cells.
-        self.release_vantages(&inv, addr);
+        self.release_vantages(&inv, address);
         let words = crate::transducer::sentence::acting_of_element(&held);
         crate::transducer::sentence::retract_words(&mut self.axis_index, &inv, &words);
         // 78.160 P1 — and the holes its generators stood on.
         if let Some(f) = crate::transducer::sentence::from_element_form(&held) {
-            self.presentation.unfile_form(&crate::transducer::address::Address::from(addr.to_vec()), &f);
+            self.presentation.unfile_form(&crate::transducer::address::Address::from(address.to_vec()), &f);
         }
-        self.forget_discoverer(addr);
-        std::sync::Arc::make_mut(&mut self.stalks).remove(addr);
-        self.ruled.remove(addr);
-        if self.ruled_addrs.remove(addr).is_some() {
+        self.forget_discoverer(address);
+        std::sync::Arc::make_mut(&mut self.stalks).remove(address);
+        self.ruled.remove(address);
+        if self.ruled_addrs.remove(address).is_some() {
             self.refresh_ruled_root();
         }
         self.basis_gen += 1;
         self.retire_gen += 1;
-        self.basis.remove(addr);
-        self.language_drop(addr);
+        self.basis.remove(address);
+        self.language_drop(address);
         held
     }
 
@@ -60,21 +60,21 @@ impl Court {
     /// touch, and the glue touches twice per fetched word (`hold_glued`), so
     /// every word a peer's page carried walked the whole language under the
     /// kernel (the lock audit, row 4). Where the snapshot stood current
-    /// before the touch, the word at `addr` takes its new Arc at its own
+    /// before the touch, the word at `address` takes its new Arc at its own
     /// ordinal, its shape lifted afresh: every address holds the word a
     /// rebuild would give it, and the ordinals stand as admitted (a rebuild
     /// renumbers them by address). A snapshot already behind the basis, a
     /// retirement since, or a word the snapshot does not hold is rebuilt as
     /// before.
-    pub(crate) fn touch_at(&mut self, addr: &[u8]) {
+    pub(crate) fn touch_at(&mut self, address: &[u8]) {
         let current = self.language_gen == self.basis_gen && self.retire_gen == self.language.retire_gen;
         self.basis_gen += 1;
-        let held = self.basis.get(addr).map(std::sync::Arc::clone);
-        match (current, held, self.language.words.get(addr).map(|w| w.seq)) {
+        let held = self.basis.get(address).map(std::sync::Arc::clone);
+        match (current, held, self.language.words.get(address).map(|w| w.seq)) {
             (true, Some(held), Some(seq)) => {
                 let stalks = std::sync::Arc::clone(&self.stalks);
                 let lang = std::sync::Arc::make_mut(&mut self.language);
-                lang.words.insert(addr, LanguageWord { held, shape: std::sync::OnceLock::new(), seq });
+                lang.words.insert(address, LanguageWord { held, shape: std::sync::OnceLock::new(), seq });
                 lang.stalks = stalks;
                 self.language_gen = self.basis_gen;
             }
@@ -100,9 +100,9 @@ impl Court {
         let mut words: crate::network::nerve::Keyed<LanguageWord> =
             crate::network::nerve::Keyed::new();
         let mut seq = 0u64;
-        for (addr, w) in self.basis.scoped() {
+        for (address, w) in self.basis.scoped() {
             words.insert(
-                &addr,
+                &address,
                 LanguageWord {
                     held: std::sync::Arc::clone(w),
                     shape: std::sync::OnceLock::new(),
@@ -125,11 +125,11 @@ impl Court {
     /// A word leaves the snapshot. It used to rebuild the vector, re-key
     /// the whole index and discard every shape lifted so far, because a
     /// removal renumbered everything after the hole.
-    pub(crate) fn language_drop(&mut self, addr: &[u8]) {
+    pub(crate) fn language_drop(&mut self, address: &[u8]) {
         let stalks = std::sync::Arc::clone(&self.stalks);
         let retire_gen = self.retire_gen;
         let lang = std::sync::Arc::make_mut(&mut self.language);
-        lang.words.remove(addr);
+        lang.words.remove(address);
         lang.stalks = stalks;
         lang.retire_gen = retire_gen;
         self.language_gen = self.basis_gen;
@@ -139,9 +139,9 @@ impl Court {
         &mut self,
         word: std::sync::Arc<crate::transducer::element::Held>,
     ) {
-        let addr = word.address();
+        let address = word.address();
         let inv = crate::transducer::stalk::invariant_of(word.element());
-        std::sync::Arc::make_mut(&mut self.stalks).admit(&inv, &addr);
+        std::sync::Arc::make_mut(&mut self.stalks).admit(&inv, &address);
         if self.retire_gen != self.language.retire_gen {
             self.language_rebuild();
             return;
@@ -162,7 +162,7 @@ impl Court {
         // One vertex, one coordinate: a word already at this address is
         // replaced with its lifted shape, keeping the ordinal it was
         // admitted at; a new one takes the next ordinal.
-        let seq = match lang.words.get(&addr) {
+        let seq = match lang.words.get(&address) {
             Some(w) => w.seq,
             None => {
                 let s = lang.next_seq;
@@ -172,7 +172,7 @@ impl Court {
                 s
             }
         };
-        lang.words.insert(&addr, LanguageWord { held: word, shape: std::sync::OnceLock::new(), seq });
+        lang.words.insert(&address, LanguageWord { held: word, shape: std::sync::OnceLock::new(), seq });
         self.language_gen = self.basis_gen;
     }
 

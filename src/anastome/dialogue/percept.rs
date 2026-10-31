@@ -21,7 +21,7 @@ pub fn decode_task_request(body: &[u8]) -> Option<[u8; 32]> {
 /// 32]` — answered with that task's envelope, or an empty body where the
 /// registry holds no such task. A task is named on the wire by its 32-byte
 /// citation (`registry::citation`), never its content address.
-pub fn encode_task_by_id(voice: &[u8; 32], citation: &[u8; 32]) -> Vec<u8> {
+pub fn encode_task_by_citation(voice: &[u8; 32], citation: &[u8; 32]) -> Vec<u8> {
     let mut out = encode_task_request(voice);
     out.extend_from_slice(citation);
     out
@@ -29,7 +29,7 @@ pub fn encode_task_by_id(voice: &[u8; 32], citation: &[u8; 32]) -> Vec<u8> {
 
 /// A task-by-citation request read whole, or none (a plain request is 33
 /// bytes and reads as [`decode_task_request`]).
-pub fn decode_task_by_id(body: &[u8]) -> Option<([u8; 32], [u8; 32])> {
+pub fn decode_task_by_citation(body: &[u8]) -> Option<([u8; 32], [u8; 32])> {
     if !act_is(body, ACT_TASK) || body.len() != 65 {
         return None;
     }

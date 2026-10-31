@@ -284,7 +284,7 @@ fn form_vertex_key_ignores_citations_and_certificates() {
         before: crate::transducer::address::Address::from_bytes([1u8]),
         after: ClassVector::of_word(&Word::identity()).expect("identity is a versor").class_key(),
         rank_move: RankMove::Discharged { from: RankAxis::Torsion },
-        mu: Mu::Unmeasured,
+        mu: MeasuredMu::Unmeasured,
         by: PivotBy::Word { face: some_overlap(), word: Box::new(Word::identity()), side: Side::Left },
     };
     c.certificates.insert(cert.key(), cert);

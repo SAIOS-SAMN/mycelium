@@ -234,7 +234,7 @@ impl ReceiptChain {
                 // The key the line is written for is the stream's first
                 // signer.
                 if chain.is_none() {
-                    chain = Some(ReceiptChain::with_vk(unpacker.first_signer()?));
+                    chain = Some(ReceiptChain::with_signer(unpacker.first_signer()?));
                 }
                 let c = chain.as_mut()?;
                 match record {

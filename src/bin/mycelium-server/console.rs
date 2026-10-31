@@ -39,15 +39,15 @@ const GREEN: &str = "\x1b[92m";
 const YELLOW: &str = "\x1b[93m";
 const RED: &str = "\x1b[91m";
 
-/// The address the console asks: `--at`, or the bind this home's own mesh
+/// The endpoint the console asks: `--at`, or the bind this home's own mesh
 /// record names. `None` where neither reads.
-pub(crate) fn address(home: &Path, at: Option<&str>) -> Option<String> {
+pub(crate) fn endpoint(home: &Path, at: Option<&str>) -> Option<String> {
     if let Some(a) = at {
         return Some(a.to_string());
     }
     let key = mycelium::court::identity::HyphaKey::load_only(&home.join("hypha.key").to_string_lossy())?;
     let bytes = std::fs::read(home.join("mesh")).ok()?;
-    let (rec, _) = mycelium::network::mesh::MeshRecord::open_layout(&bytes, &key.vk_bytes())?;
+    let (rec, _) = mycelium::network::mesh::MeshRecord::open_layout(&bytes, &key.verifying_bytes())?;
     rec.bind
 }
 
@@ -114,7 +114,7 @@ pub(crate) fn run(home: &Path, at: Option<&str>, ask: &Ask) -> ! {
             std::process::exit(2)
         }
     };
-    let Some(addr) = address(home, at) else {
+    let Some(endpoint) = endpoint(home, at) else {
         println!("{RED}no address to ask{RESET}: pass --at ADDR, or --home a home whose mesh names its bind");
         std::process::exit(2)
     };
@@ -127,12 +127,12 @@ pub(crate) fn run(home: &Path, at: Option<&str>, ask: &Ask) -> ! {
     // busy for longer read "did not answer" — hyphae b and c at 12:04 while
     // they verified a burst of fold prefixes. The console's patience is a
     // full reserve of polls.
-    let Some((reply, _)) = crate::transport::tell_peer_within(&addr, query, mycelium::physics::reserve_max()) else {
-        println!("{RED}{addr} did not answer{RESET}");
+    let Some((reply, _)) = crate::transport::tell_peer_within(&endpoint, query, mycelium::physics::reserve_max()) else {
+        println!("{RED}{endpoint} did not answer{RESET}");
         std::process::exit(2)
     };
     let Some((total, mut held)) = observe::decode_reply(&reply) else {
-        println!("{RED}{addr} answered with no reading this build reads{RESET} ({} bytes)", reply.len());
+        println!("{RED}{endpoint} answered with no reading this build reads{RESET} ({} bytes)", reply.len());
         std::process::exit(2)
     };
     // What the frame budget cut stays said after the kind is kept.
@@ -144,10 +144,10 @@ pub(crate) fn run(home: &Path, at: Option<&str>, ask: &Ask) -> ! {
         held.retain(|(k, _)| Source::of_key(k).is_some_and(|(_, tag)| tag == t || tag == observe::TAG_ASKED));
     }
     let Some(total) = (held.len() as u64).checked_add(cut) else {
-        println!("{RED}{addr} answered a total past any count{RESET}");
+        println!("{RED}{endpoint} answered a total past any count{RESET}");
         std::process::exit(2)
     };
-    for line in render(&addr, total, &held) {
+    for line in render(&endpoint, total, &held) {
         println!("{line}");
     }
     std::process::exit(0)
@@ -171,8 +171,8 @@ pub(crate) fn run_minds(dir: &Path, ask: &Ask) -> ! {
             .flatten()
             .filter_map(|e| {
                 let name = e.file_name().to_string_lossy().into_owned();
-                let addr = std::fs::read_to_string(e.path()).ok()?.trim().to_string();
-                (!name.starts_with('.') && !addr.is_empty()).then_some((name, addr))
+                let endpoint = std::fs::read_to_string(e.path()).ok()?.trim().to_string();
+                (!name.starts_with('.') && !endpoint.is_empty()).then_some((name, endpoint))
             })
             .collect(),
         Err(e) => {
@@ -183,16 +183,16 @@ pub(crate) fn run_minds(dir: &Path, ask: &Ask) -> ! {
     entries.sort();
     let mut held: Vec<observe::Held> = Vec::new();
     let mut silent: Vec<String> = Vec::new();
-    for (voice, addr) in &entries {
-        match chatter::ask(addr, &query) {
+    for (voice, endpoint) in &entries {
+        match chatter::ask(endpoint, &query) {
             Ok(reply) => match observe::decode_reply(&reply) {
                 Some((_, readings)) => held.extend(readings),
                 None => silent.push(format!(
-                    "{RED}mind {voice:.8}… at {addr} answered with no reading this build reads{RESET} ({} bytes)",
+                    "{RED}mind {voice:.8}… at {endpoint} answered with no reading this build reads{RESET} ({} bytes)",
                     reply.len()
                 )),
             },
-            Err(e) => silent.push(format!("{RED}mind {voice:.8}… at {addr} did not answer{RESET}: {e}")),
+            Err(e) => silent.push(format!("{RED}mind {voice:.8}… at {endpoint} did not answer{RESET}: {e}")),
         }
     }
     if let Some(t) = tag {
@@ -206,8 +206,8 @@ pub(crate) fn run_minds(dir: &Path, ask: &Ask) -> ! {
     std::process::exit(if answered { 0 } else { 2 })
 }
 
-fn short(vk: &[u8; 32]) -> String {
-    format!("{:02x}{:02x}{:02x}{:02x}…", vk[0], vk[1], vk[2], vk[3])
+fn short(key: &[u8; 32]) -> String {
+    format!("{:02x}{:02x}{:02x}{:02x}…", key[0], key[1], key[2], key[3])
 }
 
 /// Every source's readings gathered under it, in key order (courts first,
@@ -224,10 +224,10 @@ fn by_source(held: &[observe::Held]) -> Vec<(Source, Vec<Reading>)> {
     out
 }
 
-pub(crate) fn render(addr: &str, total: u64, held: &[observe::Held]) -> Vec<String> {
+pub(crate) fn render(endpoint: &str, total: u64, held: &[observe::Held]) -> Vec<String> {
     let sources = by_source(held);
     let mut lines = vec![format!(
-        "{CYAN}{BOLD}═══ MYCELIUM OBSERVER ═══{RESET}  {addr}  {DIM}{} readings of {total} held, {} sources{RESET}",
+        "{CYAN}{BOLD}═══ MYCELIUM OBSERVER ═══{RESET}  {endpoint}  {DIM}{} readings of {total} held, {} sources{RESET}",
         held.len(),
         sources.len()
     )];
@@ -552,10 +552,10 @@ fn axes_line(names: &[(&str, &str)], values: &[u64]) -> String {
 /// REPLICATION PER SIGNER (CV5): what this court did with each signer's
 /// receipts, by axis, and what no signer could be read off.
 fn replication(r: &observe::Replication) -> Vec<String> {
-    use observe::{rep, REPLICATION_AXES};
+    use observe::{replication, REPLICATION_AXES};
     let mut out = vec![format!("  {BOLD}replication{RESET} {} signers heard", r.signers.len())];
     for (vk, axes) in &r.signers {
-        let admitted = axes[rep::PARENT] + axes[rep::BACKFILL];
+        let admitted = axes[replication::PARENT] + axes[replication::BACKFILL];
         let colour = match admitted {
             0 => YELLOW,
             _ => GREEN,

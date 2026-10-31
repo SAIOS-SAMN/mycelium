@@ -157,7 +157,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // leaves, by its citation, to the voice that asked, at this court's
         // height — read-only, never read back by the court.
         let sent = |cite: [u8; 32], voice: [u8; 32]| mycelium::observe::note_dispatch(cite, voice, door.published.take().height());
-        let body = match (dialogue::decode_task_request(&frame.body), dialogue::decode_task_by_id(&frame.body)) {
+        let body = match (dialogue::decode_task_request(&frame.body), dialogue::decode_task_by_citation(&frame.body)) {
             (Some(voice), _) => {
                 let Ok(mut reg) = door.registry.lock() else { return true };
                 let mut body = Vec::new();
@@ -235,11 +235,11 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         let refused = |reason: &str, kind: mycelium::transducer::sentence::ObstructionKind| {
             use mycelium::transducer::sentence::ObstructionKind as K;
             let kind = match kind {
-                K::P => 0,
-                K::D => 1,
-                K::C => 2,
-                K::I => 3,
-                K::N => 4,
+                K::Permanent => 0,
+                K::Dialect => 1,
+                K::Cover => 2,
+                K::Integrity => 3,
+                K::NoQuestion => 4,
                 K::Unclassified => 5,
             };
             dialogue::SolveRefusal { reason: reason.as_bytes().to_vec(), kind }
@@ -286,17 +286,17 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                     Judged::NoSuchTask => "no such task on this book",
                     _ => "a solve carries its rule: a raster is no proof of a motion",
                 };
-                (dialogue::SOLVE_NOTHING, [0; 4], Some(refused(reason, mycelium::transducer::sentence::ObstructionKind::I)), None)
+                (dialogue::SOLVE_NOTHING, [0; 4], Some(refused(reason, mycelium::transducer::sentence::ObstructionKind::Integrity)), None)
             }
             // `pre` read these two already (it names them above); the
             // pattern says so to the compiler, by the same reasons.
             (None, None, _) => {
-                (dialogue::SOLVE_NOTHING, [0; 4], Some(refused("no such task on this book", mycelium::transducer::sentence::ObstructionKind::I)), None)
+                (dialogue::SOLVE_NOTHING, [0; 4], Some(refused("no such task on this book", mycelium::transducer::sentence::ObstructionKind::Integrity)), None)
             }
             (None, Some(_), None) => (
                 dialogue::SOLVE_NOTHING,
                 [0; 4],
-                Some(refused("a solve carries its rule: a raster is no proof of a motion", mycelium::transducer::sentence::ObstructionKind::I)),
+                Some(refused("a solve carries its rule: a raster is no proof of a motion", mycelium::transducer::sentence::ObstructionKind::Integrity)),
                 None,
             ),
             (None, Some(first), Some(rule)) => {
@@ -318,13 +318,13 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                         mycelium::cognition::SolveVerdict::NotARule => (
                             dialogue::SOLVE_NOTHING,
                             [0; 4],
-                            Some(refused("the rule is no sentence", mycelium::transducer::sentence::ObstructionKind::I)),
+                            Some(refused("the rule is no sentence", mycelium::transducer::sentence::ObstructionKind::Integrity)),
                             None,
                         ),
                         mycelium::cognition::SolveVerdict::NoWork => (
                             dialogue::SOLVE_NOTHING,
                             [0; 4],
-                            Some(refused("the rule discharges no work on the withheld pairs: nothing is closed or paid", mycelium::transducer::sentence::ObstructionKind::N)),
+                            Some(refused("the rule discharges no work on the withheld pairs: nothing is closed or paid", mycelium::transducer::sentence::ObstructionKind::NoQuestion)),
                             None,
                         ),
                         // 78.153 — not judged yet: the court's stroke ran out
@@ -334,14 +334,14 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                             [0; 4],
                             Some(refused(
                                 "not judged yet: the court's stroke ran out before the replay ruled; ask again and it resumes",
-                                mycelium::transducer::sentence::ObstructionKind::N,
+                                mycelium::transducer::sentence::ObstructionKind::NoQuestion,
                             )),
                             None,
                         ),
                         mycelium::cognition::SolveVerdict::Unverifiable => (
                             dialogue::SOLVE_NOTHING,
                             [0; 4],
-                            Some(refused("the task withholds no answer to replay against", mycelium::transducer::sentence::ObstructionKind::N)),
+                            Some(refused("the task withholds no answer to replay against", mycelium::transducer::sentence::ObstructionKind::NoQuestion)),
                             None,
                         ),
                     };

@@ -16,7 +16,7 @@
 //!
 //! MU-CLIENT §5.1, §6 — THE SEAT'S OWN CARRIER: every exchange with the house
 //! (a listing, a take, a page of mail, a call) is POSTED on the seat's carrier
-//! (`ask_seat`) and answered where it lands (`take_seat_answers`), so a slow
+//! (`ask_seat`) and answered where it lands (`drain_seat_answers`), so a slow
 //! house holds that carrier and never the mind. A task before a seat is
 //! pulled on the court's carrier the same way. The seat's acts are the
 //! mind's, made at its returns (MU-CLIENT §4.4(4)).
@@ -28,7 +28,7 @@ use crate::client::sdk::seat_mind::Decision;
 use crate::client::sdk::*;
 
 /// WHICH SEATS THE BODY SITS: these, or every seat the domain lists.
-pub enum Sit {
+pub enum Sitting {
     Seats(Vec<u32>),
     All,
 }
@@ -156,9 +156,9 @@ impl Seat {
 impl Mind {
     /// SIT A GAME'S SEATS: `sit` in `domain` (and its sub-origin, v1.4), by
     /// `key`, this mind's own.
-    pub fn sit(&mut self, domain: [u8; 32], sub_origin: Option<[u8; 32]>, sit: Sit, key: ed25519_dalek::SigningKey) {
+    pub fn sit(&mut self, domain: [u8; 32], sub_origin: Option<[u8; 32]>, sit: Sitting, key: ed25519_dalek::SigningKey) {
         let (seats, all) = match sit {
-            Sit::Seats(ids) => {
+            Sitting::Seats(ids) => {
                 let mut seats: Vec<Seat> = Vec::new();
                 for seat in ids {
                     if !seats.iter().any(|s| s.at.seat == seat) {
@@ -167,7 +167,7 @@ impl Mind {
                 }
                 (seats, false)
             }
-            Sit::All => (Vec::new(), true),
+            Sitting::All => (Vec::new(), true),
         };
         self.board.body = Some(Body {
             seats,
@@ -192,7 +192,7 @@ impl Mind {
     /// the shared box's first page asked where no reading of it is in flight.
     /// Nothing here waits on the house.
     pub(crate) fn body_tick(&mut self) {
-        self.take_seat_answers();
+        self.drain_seat_answers();
         let Some(mut body) = self.board.body.take() else { return };
         // The house's listing, read off the mind's own relay: which seats it
         // names, under which epoch — what a take waits on (MU-CLIENT §7.1).
@@ -616,7 +616,7 @@ impl Mind {
     /// couple.
     fn pull_before(&mut self, at: SeatName, key: ed25519_dalek::SigningKey, id: [u8; 32]) {
         let voice = self.hypha.voice().id();
-        let act = dialogue::encode_task_by_id(&voice, &id);
+        let act = dialogue::encode_task_by_citation(&voice, &id);
         self.ask(move |s| s.speak_keyed(&id, act), move |entity, body: io::Result<Vec<u8>>| {
             // A pull that read nothing waits for the next landing (`unpulled`).
             let unread = |entity: &mut Mind| {
@@ -704,7 +704,7 @@ impl Mind {
         let _ = self.speak_form(&rule, &train, &frames, id, &mut budget);
         let outs: Option<Vec<crate::arc::Grid>> = tests.iter().map(|x| crate::transducer::family::speak_rule(&rule, x, &self.epigenome).filter(|s| s.remainder.is_empty()).and_then(|s| s.grid())).collect();
         let Some(outs) = outs else { return Some(Stop::TestsUnspoken) };
-        let Some(minted) = self.mint_solve(&rule, &train) else { return Some(Stop::Unminted) };
+        let Some(minted) = self.construct_solve(&rule, &train) else { return Some(Stop::Unminted) };
         let Ok(crossed) = crate::client::sdk::rule::crossing(&minted, &train, &self.epigenome) else { return Some(Stop::Uncrossed) };
         if seat.refused.get(id).is_some_and(|(_, addr)| addr.as_slice() == crossed.address().as_bytes()) {
             return Some(Stop::RefusedBefore);

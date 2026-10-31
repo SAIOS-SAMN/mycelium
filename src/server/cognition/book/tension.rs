@@ -8,23 +8,23 @@
 use crate::cognition::*;
 
 impl Court {
-    pub(crate) fn recompute_tension(&mut self, addr: &[u8]) {
-        let t = if self.open.contains(addr) {
+    pub(crate) fn recompute_tension(&mut self, address: &[u8]) {
+        let t = if self.open.contains(address) {
             self.field
-                .get(addr)
+                .get(address)
                 .filter(|f| f.nonflat > 0)
                 .map(|f| element::measure_lanes(&union_remainders(&f.entries)))
         } else {
-            self.book_elem(addr)
+            self.book_element(address)
                 .map(|p| p.magnitude())
-                .or_else(|| self.cavity_book.get(addr).map(|e| e.magnitude()))
+                .or_else(|| self.cavity_book.get(address).map(|e| e.magnitude()))
         };
         match t {
             Some(t) => {
-                self.tension.insert(addr, t);
+                self.tension.insert(address, t);
             }
             None => {
-                self.tension.remove(addr);
+                self.tension.remove(address);
             }
         }
     }
@@ -35,7 +35,7 @@ impl Court {
     )]
     pub(crate) fn write_field(
         &mut self,
-        addr: &[u8],
+        address: &[u8],
         chart: crate::transducer::stalk::Invariant,
         state: crate::transducer::stalk::Closure,
         remainder: Vec<(i64, i64, u8, u8)>,
@@ -46,7 +46,7 @@ impl Court {
         // A listing with no field yet stands on an empty one; this is
         // where its first entry is written.
         let mut listing =
-            match self.field.get(addr).cloned().or_else(|| self.field_cold.remove(addr)) {
+            match self.field.get(address).cloned().or_else(|| self.field_cold.remove(address)) {
                 Some(f) => f,
                 None => ListingField::default(),
             };
@@ -92,9 +92,9 @@ impl Court {
                 (&e.state, &state),
                 (Closure::Twisted(_) | Closure::Class(..) | Closure::Cavity, Closure::Flat)
             ) {
-                let base = self.listing_atlas.chart_of(addr).cloned();
+                let base = self.listing_atlas.chart_of(address).cloned();
                 if base.as_ref() != Some(&chart) {
-                    self.listing_atlas.retract(&chart, addr);
+                    self.listing_atlas.retract(&chart, address);
                 }
             }
             let was_flat = e.state.is_flat();
@@ -127,16 +127,16 @@ impl Court {
             });
         }
         if listing.nonflat > 0 {
-            self.open.insert(addr, ());
-            self.field.insert(addr, listing);
+            self.open.insert(address, ());
+            self.field.insert(address, listing);
         } else {
-            self.open.remove(addr);
-            self.field_cold.insert(addr, listing);
-            self.field.remove(addr);
+            self.open.remove(address);
+            self.field_cold.insert(address, listing);
+            self.field.remove(address);
         }
         // A listing with no recorded tension stands at what this reading
         // just measured on it.
-        let mag = match self.tension.get(addr) {
+        let mag = match self.tension.get(address) {
             Some(t) => *t,
             None => *after,
         };
@@ -144,9 +144,9 @@ impl Court {
         // index: the four lanes
         for lane in &lanes {
             if now_flat {
-                self.own_cover.retract(*lane, &chart, addr);
+                self.own_cover.retract(*lane, &chart, address);
             } else {
-                self.own_cover.admit(*lane, &chart, addr);
+                self.own_cover.admit(*lane, &chart, address);
             }
         }
         // 78.153b: the shelf copies the charts again only where they moved.
@@ -157,27 +157,27 @@ impl Court {
         match self.chart_listings.get_mut(&ck) {
             Some(m) => {
                 if now_flat {
-                    m.remove(addr);
+                    m.remove(address);
                 } else {
-                    m.insert(addr, ());
+                    m.insert(address, ());
                 }
             }
             None if !now_flat => {
                 let mut m = crate::network::nerve::Keyed::new();
-                m.insert(addr, ());
+                m.insert(address, ());
                 self.chart_listings.insert(ck, m);
             }
             None => {}
         }
-        self.recompute_tension(addr);
+        self.recompute_tension(address);
     }
 
     /// The remainder face of a listing: the unique non-flat chart. Several
     /// open charts are the field, not a representative.
-    pub fn face_of(&self, addr: &[u8]) -> Option<&crate::transducer::stalk::Invariant> {
+    pub fn face_of(&self, address: &[u8]) -> Option<&crate::transducer::stalk::Invariant> {
         self.field
-            .get(addr)
-            .or_else(|| self.field_cold.get(addr))
+            .get(address)
+            .or_else(|| self.field_cold.get(address))
             .and_then(|f| {
                 if f.nonflat == 0 {
                     return None;

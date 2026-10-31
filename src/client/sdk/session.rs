@@ -10,7 +10,7 @@ use super::*;
 /// keep-alives per destination so a quote/probe/attest does not open a new
 /// TCP handshake for every act.
 pub struct Session {
-    pub(crate) addr: String,
+    pub(crate) endpoint: String,
     pub(crate) voice: Voice,
     /// Consecutive failed exchanges per hypha address.
     pub(crate) resistance: RefCell<crate::network::nerve::Keyed<u64>>,
@@ -46,17 +46,17 @@ pub struct Session {
 
 impl Session {
     /// Point a voice at a hypha address (e.g. `"127.0.0.1:7500"`).
-    pub fn open(addr: &str, voice: Voice) -> Self {
+    pub fn open(endpoint: &str, voice: Voice) -> Self {
         let mut router = crate::network::nerve::Router::new();
-        router.insert(voice.id(), addr.to_string());
+        router.insert(voice.id(), endpoint.to_string());
         Session {
-            addr: addr.to_string(),
+            endpoint: endpoint.to_string(),
             voice,
             resistance: RefCell::new(crate::network::nerve::Keyed::new()),
             router: RefCell::new(router),
             peers: {
                 let mut p = crate::network::nerve::Keyed::new();
-                p.insert(addr.as_bytes(), addr.to_string());
+                p.insert(endpoint.as_bytes(), endpoint.to_string());
                 p
             },
             strokes: std::cell::Cell::new(0),
@@ -94,7 +94,7 @@ impl Session {
     /// stands among, then take a cover digest from every learned address
     /// so the first quote already has the trie.
     pub(crate) fn discover(&mut self) {
-        self.ask_peers(&self.addr.clone());
+        self.ask_peers(&self.endpoint.clone());
         let known = self.peers();
         for a in known {
             self.ask_peers(&a);
@@ -107,7 +107,7 @@ impl Session {
         if !budget.spend() {
             return;
         }
-        self.ask_peers(&self.addr.clone());
+        self.ask_peers(&self.endpoint.clone());
         let known = self.peers();
         if known.is_empty() {
             return;
@@ -127,8 +127,8 @@ impl Session {
         }
     }
 
-    pub(crate) fn ask_peers(&mut self, addr: &str) {
-        let Ok(body) = self.exchange_at(addr, dialogue::encode_peers_request(&self.voice.id())) else {
+    pub(crate) fn ask_peers(&mut self, endpoint: &str) {
+        let Ok(body) = self.exchange_at(endpoint, dialogue::encode_peers_request(&self.voice.id())) else {
             return;
         };
         // A reply that does not decode names no peers, and none are
@@ -147,12 +147,12 @@ impl Session {
     pub(crate) fn refresh_covers(&mut self) {
         let addrs = self.peers();
         let voice = self.voice.id();
-        for addr in addrs {
-            let Ok(body) = self.exchange_at(&addr, dialogue::encode_digests_request(&voice)) else {
+        for endpoint in addrs {
+            let Ok(body) = self.exchange_at(&endpoint, dialogue::encode_digests_request(&voice)) else {
                 continue;
             };
             if self.absorb_digest(&body) {
-                self.fetch_cover(&addr);
+                self.fetch_cover(&endpoint);
             }
         }
     }
@@ -225,7 +225,7 @@ impl Session {
             cover_roots,
             ruled_root,
             vk,
-            bind: addr,
+            bind: endpoint,
             sig,
             // The keeper ring is the courts' (78.152): a voice reads the
             // final point off its door's replies, never off one keeper.
@@ -245,8 +245,8 @@ impl Session {
         let moved = self.last_roots.borrow().get(&vk) != Some(&now);
         self.last_roots.borrow_mut().insert(vk, now);
         self.rooms.borrow_mut().insert(vk, room);
-        self.addrs.borrow_mut().insert(vk, addr.clone());
-        self.router.borrow_mut().insert(vk, addr);
+        self.addrs.borrow_mut().insert(vk, endpoint.clone());
+        self.router.borrow_mut().insert(vk, endpoint);
         moved
     }
 
@@ -254,7 +254,7 @@ impl Session {
     /// carries the four roots and no charts (A4), so this is the only way a
     /// voice's trie is filled. The first page retracts what was held for
     /// that hypha, since the page is its own statement of what it holds.
-    pub(crate) fn fetch_cover(&self, addr: &str) {
+    pub(crate) fn fetch_cover(&self, endpoint: &str) {
         let mut from: Vec<u8> = Vec::new();
         // Rule 10: the bound is the transport aperture in strokes, the
         // measure this session paces its other acts by -- never "until the
@@ -268,7 +268,7 @@ impl Session {
             let Some(ask) = crate::anastome::dialogue::encode_cover_request(&self.voice.id(), &from) else {
                 return;
             };
-            let Ok(page) = self.exchange_at(addr, ask) else {
+            let Ok(page) = self.exchange_at(endpoint, ask) else {
                 return;
             };
             let Some((cover, more)) = crate::anastome::dialogue::decode_cover_page(&page) else {
@@ -295,29 +295,29 @@ impl Session {
 
 
     #[cfg(test)]
-    pub(crate) fn add_peer(&mut self, addr: &str) {
-        if self.peers.contains(addr.as_bytes()) {
+    pub(crate) fn add_peer(&mut self, endpoint: &str) {
+        if self.peers.contains(endpoint.as_bytes()) {
             return;
         }
-        self.peers.insert(addr.as_bytes(), addr.to_string());
+        self.peers.insert(endpoint.as_bytes(), endpoint.to_string());
     }
 
     /// A known hypha: contact string on the socket table, verifying key on
     /// the XOR nerve. Empty-cover routing is closest(chart key) among vks.
     #[cfg(test)]
-    pub(crate) fn know_hypha(&mut self, addr: &str, vk: [u8; 32]) {
-        self.add_peer(addr);
-        self.router.borrow_mut().insert(vk, addr.to_string());
+    pub(crate) fn know_hypha(&mut self, endpoint: &str, key: [u8; 32]) {
+        self.add_peer(endpoint);
+        self.router.borrow_mut().insert(key, endpoint.to_string());
     }
 
     /// Speak an act carrying a key to that key's home. Public with `speak`:
     /// a client house (78.145) speaks the court's acts through the public
     /// dialogue codecs on these two (2026-10-22, reversing Strip 7 here).
     pub fn speak_keyed(&self, key: &[u8], act_body: Vec<u8>) -> io::Result<Vec<u8>> {
-        let Some(addr) = self.route(key) else {
+        let Some(endpoint) = self.route(key) else {
             return Err(io::Error::new(io::ErrorKind::NotConnected, "unmeasured route"));
         };
-        self.exchange_at(&addr, act_body)
+        self.exchange_at(&endpoint, act_body)
     }
 
     pub(crate) fn voice(&self) -> &Voice {
@@ -336,25 +336,25 @@ impl Session {
     /// stratum, not by the worst of them. `z_at` reads any other wire, and
     /// `occluded_at` decides one.
     pub(crate) fn impedance(&self) -> u64 {
-        self.z_at(&self.addr)
+        self.z_at(&self.endpoint)
     }
 
     pub(crate) fn rtt(&self) -> Option<u64> {
-        self.rtt_of(&self.addr)
+        self.rtt_of(&self.endpoint)
     }
 
-    pub(crate) fn rtt_of(&self, addr: &str) -> Option<u64> {
-        self.rtt.borrow().get(addr.as_bytes()).copied()
+    pub(crate) fn rtt_of(&self, endpoint: &str) -> Option<u64> {
+        self.rtt.borrow().get(endpoint.as_bytes()).copied()
     }
 
     #[expect(
         clippy::disallowed_methods,
         reason = "rule 4 — the floor of the RTT window is that window's extent, a measured reading of the samples it holds"
     )]
-    pub(crate) fn rtt_ok(&self, addr: &str, sample: u64) {
+    pub(crate) fn rtt_ok(&self, endpoint: &str, sample: u64) {
         let n = crate::physics::aperture_cycle() as usize;
         let mut windows = self.rtt_window.borrow_mut();
-        let mut w = windows.get(addr.as_bytes()).cloned().unwrap_or_default();
+        let mut w = windows.get(endpoint.as_bytes()).cloned().unwrap_or_default();
         w.push(sample);
         if w.len() > n {
             w.remove(0);
@@ -365,7 +365,7 @@ impl Session {
         let (Some(floor), _) = (w.iter().copied().min(), ()) else {
             return;
         };
-        windows.insert(addr.as_bytes(), w);
+        windows.insert(endpoint.as_bytes(), w);
         // A dwell the ledger cannot count caps nothing, and the sample
         // stands as measured.
         let cap = match crate::physics::persist_dwell(floor) {
@@ -373,18 +373,18 @@ impl Session {
             crate::physics::Lambda::BeyondTheLedger => u64::MAX,
             crate::physics::Lambda::Unmeasured => return,
         };
-        self.rtt.borrow_mut().insert(addr.as_bytes(), sample.min(cap));
+        self.rtt.borrow_mut().insert(endpoint.as_bytes(), sample.min(cap));
     }
 
     #[expect(
         clippy::disallowed_methods,
         reason = "rule 4 — the floor of the RTT window is that window's extent; a peer with no window has no floor and refuses"
     )]
-    pub(crate) fn rtt_timeout(&self, addr: &str) {
+    pub(crate) fn rtt_timeout(&self, endpoint: &str) {
         let Some(floor) = self
             .rtt_window
             .borrow()
-            .get(addr.as_bytes())
+            .get(endpoint.as_bytes())
             .and_then(|w| w.iter().copied().min())
         else {
             return;
@@ -399,25 +399,25 @@ impl Session {
         let mut m = self.rtt.borrow_mut();
         // A backed-off dwell that does not fit is not a dwell this peer
         // was measured at; the standing reading holds (rule 11).
-        if let Some(cur) = m.get(addr.as_bytes()).copied() {
+        if let Some(cur) = m.get(endpoint.as_bytes()).copied() {
             if let Some(backed) = cur.checked_mul(ratio) {
-                m.insert(addr.as_bytes(), backed.min(cap));
+                m.insert(endpoint.as_bytes(), backed.min(cap));
             }
         }
     }
 
-    pub(crate) fn z_at(&self, addr: &str) -> u64 {
+    pub(crate) fn z_at(&self, endpoint: &str) -> u64 {
         // A peer the carrier has no resistance for has met none: the
         // reading of absence (0.11c).
-        match self.resistance.borrow().get(addr.as_bytes()) {
+        match self.resistance.borrow().get(endpoint.as_bytes()) {
             Some(z) => *z,
             None => 0,
         }
     }
 
-    pub(crate) fn occluded_at(&self, addr: &str) -> bool {
+    pub(crate) fn occluded_at(&self, endpoint: &str) -> bool {
         let cycle = crate::physics::aperture_cycle() as u64;
-        self.z_at(addr) >= cycle
+        self.z_at(endpoint) >= cycle
     }
 
     /// The perceived transport aperture, derived from the impedance at the
@@ -509,11 +509,11 @@ impl Session {
         let mut pass = 0u8;
         while pass < 2 {
             for i in 0..npeers {
-                let addr = peer_list[(start + i) % npeers].clone();
-                if any_open && self.occluded_at(&addr) {
+                let endpoint = peer_list[(start + i) % npeers].clone();
+                if any_open && self.occluded_at(&endpoint) {
                     continue;
                 }
-                match self.exchange_at(&addr, act_body.clone()) {
+                match self.exchange_at(&endpoint, act_body.clone()) {
                     Ok(body) => return Ok(body),
                     Err(e) => last_err = e,
                 }
@@ -536,13 +536,13 @@ impl Session {
     }
 
     pub(crate) fn exchange(&self, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
-        self.exchange_at(&self.addr.clone(), act_body)
+        self.exchange_at(&self.endpoint.clone(), act_body)
     }
 
     /// One exchange with a named hypha on the nerve; the impedance is
     /// measured on the wire as a whole.
-    pub(crate) fn exchange_at(&self, addr: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
-        let out = self.exchange_inner(addr, act_body);
+    pub(crate) fn exchange_at(&self, endpoint: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
+        let out = self.exchange_inner(endpoint, act_body);
         // A full reflex pool answers every act with the deferral shape (the
         // pending outcome and four zero lanes): the judge's measured
         // impedance, which the aperture reads as resistance (23.8, S13.4).
@@ -571,17 +571,17 @@ impl Session {
                             }
                         }
                     }
-                    r.insert(addr.as_bytes(), 0);
+                    r.insert(endpoint.as_bytes(), 0);
                 }
                 _ => {
                     // A peer with no entry in this carrier has met no
                     // resistance: the reading of absence, zero by the
                     // carrier's own definition and not a floor.
-                    let cur = match r.get(addr.as_bytes()) {
+                    let cur = match r.get(endpoint.as_bytes()) {
                         Some(z) => *z,
                         None => 0,
                     };
-                    r.insert(addr.as_bytes(), cur + 1);
+                    r.insert(endpoint.as_bytes(), cur + 1);
                 }
             }
         }
@@ -605,7 +605,7 @@ impl Session {
         out
     }
 
-    pub(crate) fn exchange_inner(&self, addr: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
+    pub(crate) fn exchange_inner(&self, endpoint: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         let frame = Frame { lane: Stratum::Spatial, body: act_body };
         // A body past the wire's one budget is refused here, by name, before
         // a byte is sent (78.125): a large publication is streamed in parts.
@@ -627,29 +627,29 @@ impl Session {
         // written, a lost reply is an error to the caller, never a resend:
         // the first may have sealed, and a resend would seal it again.
         let mut pool = self.streams.borrow_mut();
-        if let Some(s) = pool.get_mut(addr.as_bytes()) {
+        if let Some(s) = pool.get_mut(endpoint.as_bytes()) {
             match s.write_all(&bytes) {
                 Ok(()) => {
                     let read = self.read_reply(s);
                     if read.is_err() {
-                        pool.remove(addr.as_bytes());
+                        pool.remove(endpoint.as_bytes());
                     }
                     match &read {
-                        Ok(_) => self.rtt_ok(addr, 1),
-                        Err(e) if e.kind() == io::ErrorKind::TimedOut || e.kind() == io::ErrorKind::WouldBlock => self.rtt_timeout(addr),
+                        Ok(_) => self.rtt_ok(endpoint, 1),
+                        Err(e) if e.kind() == io::ErrorKind::TimedOut || e.kind() == io::ErrorKind::WouldBlock => self.rtt_timeout(endpoint),
                         Err(_) => {}
                     }
                     return read;
                 }
                 Err(_) => {
-                    pool.remove(addr.as_bytes());
+                    pool.remove(endpoint.as_bytes());
                 }
             }
         }
-        let mut s = match TcpStream::connect(addr) {
+        let mut s = match TcpStream::connect(endpoint) {
             Ok(s) => s,
             Err(e) => {
-                self.rtt_timeout(addr);
+                self.rtt_timeout(endpoint);
                 return Err(e);
             }
         };
@@ -657,11 +657,11 @@ impl Session {
         let body = match self.roundtrip(&mut s, &bytes) {
             Ok(b) => b,
             Err(e) => {
-                self.rtt_timeout(addr);
+                self.rtt_timeout(endpoint);
                 return Err(e);
             }
         };
-        self.rtt_ok(addr, 1);
+        self.rtt_ok(endpoint, 1);
         Ok(body)
     }
 

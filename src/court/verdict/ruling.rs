@@ -107,7 +107,7 @@ pub fn rule(
     federation: &[(crate::transducer::address::Address, Element)],
     index: &Keyed<usize>,
     stalks: &Stalks,
-    addr: &[u8],
+    address: &[u8],
     spoken: Option<&Element>,
     deflation: Option<&[u64; 4]>,
     budget: &mut crate::physics::Budget,
@@ -127,7 +127,7 @@ pub fn rule(
     if let Some(reason) = blind_replay(spoken, budget) {
         return Ruling::Slashed(reason);
     }
-    match index.get(addr).and_then(|&i| federation.get(i)) {
+    match index.get(address).and_then(|&i| federation.get(i)) {
         Some((_, held)) => {
             // ČECH ON THE OVERLAP: the federated view and the spoken view
             // of one object are two charts. When the held view is a group
@@ -153,7 +153,7 @@ pub fn rule(
             // STD1 — a closure whose counts pass the carrier is refused by
             // name, never read as the transition it could not close.
             let group_view = match group_view {
-                Some(g) => match unique_other_on_fibre(stalks, index, federation, spoken, addr) {
+                Some(g) => match unique_other_on_fibre(stalks, index, federation, spoken, address) {
                     Some(i) => {
                         let z = &federation[i].1;
                         match (cech::transition(spoken, z), cech::transition(z, held)) {
@@ -216,7 +216,7 @@ pub fn rule(
             // on the arm, and an empty fibre admits new geometry. Never an
             // empty-support Attached.
             if spoken.is_connection() {
-                let representative = unique_other_on_fibre(stalks, index, federation, spoken, addr);
+                let representative = unique_other_on_fibre(stalks, index, federation, spoken, address);
                 return match representative.map(|i| (i, cech::transition(&federation[i].1, spoken))) {
                     None | Some((_, None)) => Ruling::Admitted(spoken.clone()),
                     Some((base, Some(g))) => match (g.axes().as_slice(), g.sub()) {
@@ -231,7 +231,7 @@ pub fn rule(
                 };
             }
             let at = |a: &[u8]| index.get(a).and_then(|&i| federation.get(i)).map(|(_, e)| e);
-            let congruent = stalk::congruent(stalks, at, spoken, budget).filter(|(a, _)| a.as_bytes() != addr);
+            let congruent = stalk::congruent(stalks, at, spoken, budget).filter(|(a, _)| a.as_bytes() != address);
             match congruent.and_then(|(a, g)| index.get(&a).map(|&base| (base, g))) {
                 Some((base, g)) => Ruling::Attached { base, g },
                 None => Ruling::Admitted(spoken.clone()),

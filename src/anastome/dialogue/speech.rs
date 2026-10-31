@@ -74,7 +74,7 @@ pub fn encode_speech_spoken(
 ) -> Option<Vec<u8>> {
     let mut out = vec![ACT_SPEECH];
     out.extend_from_slice(voice);
-    put_addr(&mut out, task)?;
+    put_address(&mut out, task)?;
     out.extend_from_slice(&tu.to_le_bytes());
     crate::transducer::address::put_u32_count(&mut out, sentences.len())?;
     for s in sentences {
@@ -97,7 +97,7 @@ pub fn decode_speech(body: &[u8]) -> Option<SpeechAct> {
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
     let mut pos = 33usize;
-    let task = take_addr(body, &mut pos)?;
+    let task = take_address(body, &mut pos)?;
     let tu = u64::from_le_bytes(body.get(pos..pos + 8)?.try_into().ok()?);
     pos += 8;
     let n = u32::from_le_bytes(body.get(pos..pos + 4)?.try_into().ok()?) as usize;
@@ -150,7 +150,7 @@ pub fn encode_speech_reply(adjudications: &[Adjudication]) -> Option<Vec<u8>> {
             // A wait NAMES the form it waits on; one whose address does
             // not fit its prefix names nothing, and the reply is refused
             // rather than sent with the field dropped.
-            Adjudication::Awaiting { form } => put_addr(&mut out, form)?,
+            Adjudication::Awaiting { form } => put_address(&mut out, form)?,
             _ => {
                 if let Some(r) = a.receipt() {
                     out.extend_from_slice(&r);
@@ -189,7 +189,7 @@ pub fn decode_speech_reply(body: &[u8]) -> Option<Vec<Adjudication>> {
         // A wait carries the cited address where a verdict carries its
         // receipt, so the shape is read from the code and never assumed.
         if code == SPEECH_DIALECT {
-            let form = take_addr(body, &mut pos)?;
+            let form = take_address(body, &mut pos)?;
             out.push(Adjudication::Awaiting { form });
             continue;
         }

@@ -8,7 +8,7 @@ use super::*;
 /// never a blind sweep. Preference: exact evaluation (eval == footprint),
 /// then the smallest strict carrier (footprint ⊂ eval, minimal support then
 /// minimal term). None only when the footprint is empty.
-pub fn derive(footprint: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Option<Sel> {
+pub fn derive(footprint: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Option<Selection> {
     if footprint.is_empty() {
         return None;
     }
@@ -16,8 +16,8 @@ pub fn derive(footprint: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Option<Sel>
     let terms = candidates(&fp, scene);
 
     // Minimal exact term first; else the smallest strict carrier.
-    let mut exact: Option<&Sel> = None;
-    let mut carrier: Option<(&Sel, usize)> = None;
+    let mut exact: Option<&Selection> = None;
+    let mut carrier: Option<(&Selection, usize)> = None;
     for t in &terms {
         let sup = t.eval(scene);
         if sup == fp {
@@ -39,7 +39,7 @@ pub fn derive(footprint: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Option<Sel>
 /// The DIRECTED candidate closure for a footprint: Level-1 bases measured from
 /// the footprint's own hues, then the recursive Level-2/3 composition (δ, ∖,
 /// component projection, extremal projection, hue interfaces).
-pub(crate) fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel> {
+pub(crate) fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Selection> {
     // Level-1 bases, DIRECTED: the whole support plus exactly the hues the
     // footprint touches (measured from the data, not enumerated blindly).
     let mut hues: Vec<u8> = scene
@@ -49,8 +49,8 @@ pub(crate) fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel
         .collect();
     hues.sort_unstable();
     hues.dedup();
-    let mut terms: Vec<Sel> = vec![Sel::Hue(255)];
-    terms.extend(hues.iter().map(|&h| Sel::Hue(h)));
+    let mut terms: Vec<Selection> = vec![Selection::Hue(255)];
+    terms.extend(hues.iter().map(|&h| Selection::Hue(h)));
     // Interfaces the footprint's hues form with the other hues present.
     let mut others: Vec<u8> = scene.iter().map(|(_, _, h)| *h).collect();
     others.sort_unstable();
@@ -58,9 +58,9 @@ pub(crate) fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel
     for &h in &hues {
         for &o in &others {
             if o != h {
-                terms.push(Sel::Inter(
-                    Box::new(Sel::Hue(h)),
-                    Box::new(Sel::Star(Box::new(Sel::Hue(o)))),
+                terms.push(Selection::Inter(
+                    Box::new(Selection::Hue(h)),
+                    Box::new(Selection::Star(Box::new(Selection::Hue(o)))),
                 ));
             }
         }
@@ -68,69 +68,69 @@ pub(crate) fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel
 
     // ORDER-INVARIANT selections join the bases before the closure, so
     // "the boundary of the largest component" etc. compose naturally.
-    let arg_bases: Vec<Sel> = terms
+    let arg_bases: Vec<Selection> = terms
         .iter()
-        .flat_map(|t| (0..4).map(|code| Sel::ArgExt(Box::new(t.clone()), code)))
+        .flat_map(|t| (0..4).map(|code| Selection::ArgExt(Box::new(t.clone()), code)))
         .collect();
     terms.extend(arg_bases);
     // Site transports between the footprint's hues and the others.
     for &h in &hues {
         for &o in &others {
             if o != h {
-                terms.push(Sel::Transport(Box::new(Sel::Hue(h)), Box::new(Sel::Hue(o))));
+                terms.push(Selection::Transport(Box::new(Selection::Hue(h)), Box::new(Selection::Hue(o))));
             }
         }
     }
 
     // Level-2 closure over each base: component projection (only components
     // meeting the footprint), coboundary, interior, extremal projections.
-    let mut grown: Vec<Sel> = Vec::new();
+    let mut grown: Vec<Selection> = Vec::new();
     for t in &terms {
         let sup = t.eval(scene);
         if fp.iter().any(|p| has(&sup, *p)) {
-            // `Sel::Comp` names a component in ONE BYTE, so a support with
+            // `Selection::Comp` names a component in ONE BYTE, so a support with
             // more components than that has terms this algebra cannot
             // spell: they are not derived rather than folded onto index
             // 255, which would name a different component.
-            let Ok(n_comps) = u8::try_from(super::sel::planar_components(&sup).len()) else {
+            let Ok(n_comps) = u8::try_from(super::selection::planar_components(&sup).len()) else {
                 continue;
             };
             for k in 0..n_comps {
-                let comp = Sel::Comp(Box::new(t.clone()), k);
+                let comp = Selection::Comp(Box::new(t.clone()), k);
                 let cs = comp.eval(scene);
                 if fp.iter().any(|p| has(&cs, *p)) {
                     grown.push(comp);
                 }
             }
-            grown.push(Sel::Delta(Box::new(t.clone())));
-            grown.push(Sel::Minus(Box::new(t.clone()), Box::new(Sel::Delta(Box::new(t.clone())))));
+            grown.push(Selection::Delta(Box::new(t.clone())));
+            grown.push(Selection::Minus(Box::new(t.clone()), Box::new(Selection::Delta(Box::new(t.clone())))));
             for axis in 0..4 {
-                grown.push(Sel::Ext(Box::new(t.clone()), axis));
+                grown.push(Selection::Ext(Box::new(t.clone()), axis));
             }
             // The star and the HALO (star ∖ support): "the sites around".
-            grown.push(Sel::Star(Box::new(t.clone())));
-            grown.push(Sel::Minus(
-                Box::new(Sel::Star(Box::new(t.clone()))),
+            grown.push(Selection::Star(Box::new(t.clone())));
+            grown.push(Selection::Minus(
+                Box::new(Selection::Star(Box::new(t.clone()))),
                 Box::new(t.clone()),
             ));
             // ENCLOSURE, composed: t ∖ Flood(t ∩ δ(whole), t) — the part of t
             // unreachable from the scene's own border (the topological holes).
-            let border = Sel::Delta(Box::new(Sel::Hue(255)));
-            let reach = Sel::Flood(
-                Box::new(Sel::Inter(Box::new(t.clone()), Box::new(border))),
+            let border = Selection::Delta(Box::new(Selection::Hue(255)));
+            let reach = Selection::Flood(
+                Box::new(Selection::Inter(Box::new(t.clone()), Box::new(border))),
                 Box::new(t.clone()),
             );
-            grown.push(Sel::Minus(Box::new(t.clone()), Box::new(reach)));
+            grown.push(Selection::Minus(Box::new(t.clone()), Box::new(reach)));
         }
     }
     // Level-3: coboundary/interior/extrema of the component projections (the
     // recursive step — δ and ∖ applied to already-composed terms).
-    let mut deeper: Vec<Sel> = Vec::new();
-    for t in grown.iter().filter(|t| matches!(t, Sel::Comp(_, _))) {
-        deeper.push(Sel::Delta(Box::new(t.clone())));
-        deeper.push(Sel::Minus(Box::new(t.clone()), Box::new(Sel::Delta(Box::new(t.clone())))));
+    let mut deeper: Vec<Selection> = Vec::new();
+    for t in grown.iter().filter(|t| matches!(t, Selection::Comp(_, _))) {
+        deeper.push(Selection::Delta(Box::new(t.clone())));
+        deeper.push(Selection::Minus(Box::new(t.clone()), Box::new(Selection::Delta(Box::new(t.clone())))));
         for axis in 0..4 {
-            deeper.push(Sel::Ext(Box::new(t.clone()), axis));
+            deeper.push(Selection::Ext(Box::new(t.clone()), axis));
         }
     }
     terms.extend(grown);
@@ -147,12 +147,12 @@ pub(crate) fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel
 /// intersection, the same move consilience makes across voices). A carrier
 /// that is not exact still confines the word to its subcomplex — the replay
 /// gate downstream decides whether confined speech reproduces the evidence.
-pub fn derive_carrying_all(footprint: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel> {
+pub fn derive_carrying_all(footprint: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Selection> {
     if footprint.is_empty() {
         return Vec::new();
     }
     let fp = sorted(footprint.to_vec());
-    let mut ranked: Vec<(usize, crate::transducer::address::Address, Sel)> = candidates(&fp, scene)
+    let mut ranked: Vec<(usize, crate::transducer::address::Address, Selection)> = candidates(&fp, scene)
         .into_iter()
         .filter_map(|t| {
             let sup = t.eval(scene);
@@ -177,7 +177,7 @@ pub fn derive_carrying_all(footprint: &[(i64, i64)], scene: &[(i64, i64, u8)]) -
         reason = "rule 4 — a choice by node count then key, consumed by truncate(32); owed to L9a"
     )]
     ranked.sort_by_key(|a| (a.0, a.1.clone()));
-    let mut out: Vec<Sel> = ranked.into_iter().map(|(_, _, t)| t).collect();
+    let mut out: Vec<Selection> = ranked.into_iter().map(|(_, _, t)| t).collect();
     out.dedup();
     out.truncate(32);
     out

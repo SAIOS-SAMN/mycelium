@@ -42,7 +42,7 @@ pub fn persist<V, C: crate::network::nerve::Coordinate>(
 /// A KEY ON A LOCAL TAPE: `len u64 ‖ bytes`, and TOTAL — there is no length
 /// a key can have that this cannot write.
 ///
-/// [`crate::transducer::address::put_addr`] writes a `u16` length and refuses
+/// [`crate::transducer::address::put_address`] writes a `u16` length and refuses
 /// an address longer than 65 535 bytes by writing NOTHING, which is a wire
 /// constraint: the citation prefix of 47.1 is part of the protocol and
 /// [`crate::transducer::address::Cited`] is the type that proves an address

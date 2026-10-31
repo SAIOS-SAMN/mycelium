@@ -90,14 +90,14 @@ impl Mind {
     /// THE KEY AN UTTERANCE RECEIPT IS FILED UNDER: its address's 32-byte
     /// hash — the address compacted, located exactly by every reader that
     /// holds it (`taught_up`).
-    pub(crate) fn taught_key(addr: &[u8]) -> [u8; 32] {
-        crate::chronometry::payload_hash(addr)
+    pub(crate) fn taught_key(address: &[u8]) -> [u8; 32] {
+        crate::chronometry::payload_hash(address)
     }
 
     /// File an uttered word in both indices at once: by address, and in
     /// the stratum its vertex lies in.
     pub(crate) fn file_taught(&mut self, word: &Element) {
-        let addr = word.address();
+        let address = word.address();
         // A word with no stratum (a chain A5 refuses) is filed by address
         // alone: there is no vertex for another spelling to share. A
         // SENTENCE is one vertex by its address alone (`same_vertex`), which
@@ -107,27 +107,27 @@ impl Mind {
             false => vertex_stratum(word),
         };
         if let Some(at) = &at {
-            self.taught_at.nested_insert(at, &addr, ());
+            self.taught_at.nested_insert(at, &address, ());
         }
         // An admitted citer is owed to no court any more.
-        self.owed_tries.remove(addr.as_bytes());
-        self.taught_up.insert(Self::taught_key(addr.as_bytes()), at);
+        self.owed_tries.remove(address.as_bytes());
+        self.taught_up.insert(Self::taught_key(address.as_bytes()), at);
     }
 
     /// The utterance receipt of a word that left the dialect leaves both
     /// indices with it (S12.6a): by address, and in its vertex stratum.
-    pub(crate) fn forget_utterance(&mut self, addr: &[u8]) {
+    pub(crate) fn forget_utterance(&mut self, address: &[u8]) {
         // MU-CLIENT §5.5 — and the scenes it was spoken under let it go.
-        self.scenes.forget(addr);
+        self.scenes.forget(address);
         // MU-CLIENT §4.13 — a word the dialect shed is not said again.
-        self.unheard.remove(addr);
-        let Some(at) = self.taught_up.remove(&Self::taught_key(addr)) else {
+        self.unheard.remove(address);
+        let Some(at) = self.taught_up.remove(&Self::taught_key(address)) else {
             return;
         };
         if let Some(at) = at {
             let empty = match self.taught_at.get_mut(&at) {
                 Some(inner) => {
-                    inner.remove(addr);
+                    inner.remove(address);
                     inner.is_empty()
                 }
                 None => false,
@@ -470,9 +470,9 @@ impl Mind {
         let mut codes = vec![0xffu8; sentences.len()];
         let mut open: Vec<usize> = Vec::new();
         for (i, e) in sentences.iter().enumerate() {
-            let addr = e.address();
+            let address = e.address();
             // Refused at a K this mind sealed: never uttered again.
-            match self.sealed.get(&addr) {
+            match self.sealed.get(&address) {
                 Some(_) => codes[i] = dialogue::SPEECH_REFUSED,
                 None => open.push(i),
             }
@@ -531,12 +531,12 @@ impl Mind {
                     break 'pairs;
                 }
                 let Some(w) = crate::transducer::element::derived_colour_word(first, after) else { continue };
-                let addr = w.address();
+                let address = w.address();
                 // A theorem the court refused is sealed here and never
                 // proposed again (it would be counted and not sent).
-                if !self.already_taught_addr(addr.as_bytes())
-                    && !self.epigenome.holds(addr.as_bytes())
-                    && self.sealed.get(&addr).is_none()
+                if !self.already_taught_address(address.as_bytes())
+                    && !self.epigenome.holds(address.as_bytes())
+                    && self.sealed.get(&address).is_none()
                 {
                     theorem = Some(w);
                     break 'pairs;
@@ -548,14 +548,14 @@ impl Mind {
         }
     }
 
-    pub(crate) fn already_taught_addr(&self, addr: &[u8]) -> bool {
-        self.taught_up.contains(&Self::taught_key(addr))
+    pub(crate) fn already_taught_address(&self, address: &[u8]) -> bool {
+        self.taught_up.contains(&Self::taught_key(address))
     }
 
     /// Already uttered this operator: same vertex on the working atlas
     /// or already sent up, not the same digest. A dialect hit is a use.
     pub(crate) fn already_taught(&mut self, word: &Element) -> bool {
-        if self.already_taught_addr(word.address().as_bytes()) {
+        if self.already_taught_address(word.address().as_bytes()) {
             return true;
         }
         // THE STRATUM, THEN THE EXACT TEST, never a walk of every word this
@@ -636,8 +636,8 @@ impl Mind {
     }
 
     #[cfg(test)]
-    pub(crate) fn uttered(&self, addr: &[u8]) -> bool {
-        self.already_taught_addr(addr)
+    pub(crate) fn uttered(&self, address: &[u8]) -> bool {
+        self.already_taught_address(address)
     }
 
 }

@@ -69,9 +69,9 @@ impl ReceiptChain {
     }
 
     /// The stamp of the node a signer holds at one place.
-    pub(super) fn stamp_at(&self, vk: &[u8; 32], at: Place) -> Option<Stamp> {
-        let h = *self.lines.get(&Stamp::line_key(vk, at))?;
-        Some(Stamp::new(h, *vk, at))
+    pub(super) fn stamp_at(&self, signer: &[u8; 32], at: Place) -> Option<Stamp> {
+        let h = *self.lines.get(&Stamp::line_key(signer, at))?;
+        Some(Stamp::new(h, *signer, at))
     }
 
     /// The predecessor a node names, as a citation.

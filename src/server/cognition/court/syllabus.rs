@@ -5,8 +5,8 @@ use crate::cognition::*;
 
 /// WHAT THIS COURT TAUGHT A VOICE, keyed by the word then the voice: the
 /// word's marks are its own fibre, and leave with it.
-pub(crate) fn taught_key(addr: &[u8], voice: &[u8; 32]) -> Vec<u8> {
-    let mut key = addr.to_vec();
+pub(crate) fn taught_key(address: &[u8], voice: &[u8; 32]) -> Vec<u8> {
+    let mut key = address.to_vec();
     key.extend_from_slice(voice);
     key
 }
@@ -250,7 +250,7 @@ impl Court {
     fn serve_syllabus_page(&mut self, candidates: &[Vec<u8>], voice: [u8; 32], bytes: usize) -> ServedPage {
         let mut page = ServedPage::default();
         let mut used = 0usize;
-        for addr in candidates {
+        for address in candidates {
             if page.words.len() == usize::from(u8::MAX) {
                 page.end = PageEnd::Count;
                 return page;
@@ -259,18 +259,18 @@ impl Court {
             // cannot fund is never serialized. Every page to every voice
             // wrote each deferred word out whole and threw the tape away.
             let Some((mag, kind)) = self
-                .installed_word(addr)
+                .installed_word(address)
                 .filter(|w| !(w.is_connection() && w.letters().is_none()))
                 .map(|w| (w.magnitude(), deferred_kind(w)))
             else {
-                page.missed.push(addr.clone());
+                page.missed.push(address.clone());
                 page.consumed += 1;
                 continue;
             };
             // A SENTENCE IS CHARGED ITS GLUING STEP, NOT ITS MASS (ruled
             // 2026-09-30): what it cites that this voice already
             // holds from this court is not paid for again.
-            let mag = self.gluing_cost(addr, mag, voice);
+            let mag = self.gluing_cost(address, mag, voice);
             // A SENTENCE IS PAID BY ITS LEARNER (ruled
             // 2026-09-30): its gluing step comes out of the voice's own
             // balance, never the court's reserve — the sentences starved
@@ -278,20 +278,20 @@ impl Court {
             // at each court, epoch 115). A voice that cannot pay yet waits,
             // its own shortfall named; a word is still paid by the reserve.
             if kind == SENTENCE {
-                match self.serve_paid_by_learner(addr, mag, voice, bytes, used) {
+                match self.serve_paid_by_learner(address, mag, voice, bytes, used) {
                     Learner::Served(taught, width) => {
                         used += width;
                         page.words.push(taught);
                     }
                     Learner::Short(depleted) => {
-                        self.note_deferred(addr, kind, mag, &depleted, Some(voice));
-                        page.deferred.push((addr.clone(), depleted));
+                        self.note_deferred(address, kind, mag, &depleted, Some(voice));
+                        page.deferred.push((address.clone(), depleted));
                     }
                     Learner::Frame => {
                         page.end = PageEnd::Frame;
                         return page;
                     }
-                    Learner::Missed => page.missed.push(addr.clone()),
+                    Learner::Missed => page.missed.push(address.clone()),
                 }
                 page.consumed += 1;
                 continue;
@@ -310,21 +310,21 @@ impl Court {
             // it is tried again when the reserve can pay it. Re-drawing it on
             // every page to every voice counted 40 829 refusals on 𝒮 in five
             // minutes at hypha a — one standing fact, re-counted.
-            if self.deferred_words.contains(addr) && !self.physics.reserve.covers(&mag) {
+            if self.deferred_words.contains(address) && !self.physics.reserve.covers(&mag) {
                 page.consumed += 1;
                 continue;
             }
             // 78.73 (1): the flow a refused draw blocked presses the lane.
             if let Err(depleted) = self.physics.draw(mag) {
-                self.note_deferred(addr, kind, mag, &depleted, None);
-                page.deferred.push((addr.clone(), depleted));
+                self.note_deferred(address, kind, mag, &depleted, None);
+                page.deferred.push((address.clone(), depleted));
                 page.consumed += 1;
                 continue;
             }
             // Paid: now the tape, and the frame's room for it.
-            let Some(tape) = self.installed_word(addr).and_then(|w| w.to_bytes()) else {
+            let Some(tape) = self.installed_word(address).and_then(|w| w.to_bytes()) else {
                 self.physics.reserve.restore(mag);
-                page.missed.push(addr.clone());
+                page.missed.push(address.clone());
                 page.consumed += 1;
                 continue;
             };
@@ -334,16 +334,16 @@ impl Court {
                 page.end = PageEnd::Frame;
                 return page;
             }
-            self.deferred_words.remove(addr);
-            let Some(at) = self.note_served(addr, voice) else {
+            self.deferred_words.remove(address);
+            let Some(at) = self.note_served(address, voice) else {
                 // Not sealed: the draw is returned and the word missed.
                 self.physics.reserve.restore(mag);
-                page.missed.push(addr.clone());
+                page.missed.push(address.clone());
                 page.consumed += 1;
                 continue;
             };
             used += width;
-            self.taught_voice.insert(taught_key(addr, &voice), ());
+            self.taught_voice.insert(taught_key(address, &voice), ());
             // Each draw came out of one reserve, so the page's total is
             // bounded by it; past the carrier it is counted, never wrapped.
             match crate::core::lanes::lanes_add(page.drawn, mag) {
@@ -413,9 +413,9 @@ impl Court {
             fibre = self.ruled.fibre(inv);
             &fibre
         };
-        for addr in addrs {
-            let addr = addr.clone();
-            if held.contains(&addr) {
+        for address in addrs {
+            let address = address.clone();
+            if held.contains(&address) {
                 continue;
             }
             // THE GENOME BOUNDARY. A taught word becomes GENOME on the
@@ -427,13 +427,13 @@ impl Court {
             // as the genome's crystallized one. The installed word is the
             // one in `basis`; a ruled address whose word never left
             // provisional is not yet language and is not served.
-            let Some(w) = self.installed_word(&addr) else { continue };
+            let Some(w) = self.installed_word(&address) else { continue };
             if w.is_connection() && w.letters().is_none() {
                 continue; // letterless history is never taught
             }
             // The word with the stamp that admitted it (78.24 (2b)): a word
             // no act admitted has no locator and is not taught.
-            let Some(at) = self.admitted_at(&addr) else { continue };
+            let Some(at) = self.admitted_at(&address) else { continue };
             // A word whose record does not write is not taught (STD1 3c).
             let Some(bytes) = w.to_bytes() else { continue };
             let mag = w.magnitude();
@@ -461,7 +461,7 @@ impl Court {
                     // is the learner's word; what it was taught is this
                     // court's, and a list that leaves a word out paid for it
                     // on every fetch.
-                    if self.taught_voice.contains(&taught_key(&addr, &voice)) {
+                    if self.taught_voice.contains(&taught_key(&address, &voice)) {
                         continue;
                     }
                     let short = crate::economy::shortfall(&mag, &self.treasury.balance_mu(&voice));
@@ -475,7 +475,7 @@ impl Court {
                             eprintln!("  fetch: a learner's payment refused after its balance was read: {why:?}");
                         }
                     }
-                    self.taught_voice.insert(taught_key(&addr, &voice), ());
+                    self.taught_voice.insert(taught_key(&address, &voice), ());
                 }
                 // A PEER COURT'S EXCHANGE draws on this court's reserve per
                 // lane, as it did: no ruling yet says what one court pays
@@ -497,7 +497,7 @@ impl Court {
                     // word stands to among the words the asking court said it
                     // holds, and what it would cost as (held, Γ) where it is
                     // refracted.
-                    self.read_fetched(&addr, &held, bytes.len(), reads);
+                    self.read_fetched(&address, &held, bytes.len(), reads);
                 }
             }
             out.push(crate::anastome::dialogue::Taught { at, word: bytes });
@@ -533,9 +533,9 @@ impl Court {
     /// Answers the stamp the Syllabus node took — the stamp the page
     /// carries beside the word (78.24 (2b)) — or `None` where it could not
     /// be sealed, and the word is not served.
-    pub fn note_served(&mut self, addr: &[u8], to: [u8; 32]) -> Option<crate::chronometry::Stamp> {
+    pub fn note_served(&mut self, address: &[u8], to: [u8; 32]) -> Option<crate::chronometry::Stamp> {
         let before = self.chain.next_place();
-        self.append_step(crate::chronometry::ActKind::Syllabus, addr, to);
+        self.append_step(crate::chronometry::ActKind::Syllabus, address, to);
         self.chain.at_place(before).map(|r| r.stamp)
     }
 
@@ -543,9 +543,9 @@ impl Court {
     /// admitted it, for a page that seals no act of its own (a genesis
     /// page, a chart fetch). `None` where the word is not held or no act
     /// has admitted it, or its record does not write (STD1 3c).
-    pub fn taught(&self, addr: &[u8]) -> Option<crate::anastome::dialogue::Taught> {
-        let at = self.admitted_at(addr)?;
-        Some(crate::anastome::dialogue::Taught { at, word: self.word_at(addr)?.to_bytes()? })
+    pub fn taught(&self, address: &[u8]) -> Option<crate::anastome::dialogue::Taught> {
+        let at = self.admitted_at(address)?;
+        Some(crate::anastome::dialogue::Taught { at, word: self.word_at(address)?.to_bytes()? })
     }
 
     /// What this court already holds in the stratum over `inv`, sent with a
@@ -579,7 +579,7 @@ impl Court {
     /// read first — a short voice waits, nothing written — then the tape and
     /// the frame's room, the Syllabus act sealed, and the gluing step paid
     /// from the voice to this court at that act. A step of nothing is free.
-    fn serve_paid_by_learner(&mut self, addr: &[u8], cost: [u64; 4], voice: [u8; 32], bytes: usize, used: usize) -> Learner {
+    fn serve_paid_by_learner(&mut self, address: &[u8], cost: [u64; 4], voice: [u8; 32], bytes: usize, used: usize) -> Learner {
         let short = crate::economy::shortfall(&cost, &self.treasury.balance_mu(&voice));
         // The short lane named is the first in (S, G, T, H) order — content
         // order, as `Depleted` names it, never a priority.
@@ -588,13 +588,13 @@ impl Court {
             let held = self.treasury.balance_mu(&voice)[lane];
             return Learner::Short(crate::physics::Depleted { lane, asked: cost[lane], held });
         }
-        let Some(tape) = self.installed_word(addr).and_then(|w| w.to_bytes()) else { return Learner::Missed };
+        let Some(tape) = self.installed_word(address).and_then(|w| w.to_bytes()) else { return Learner::Missed };
         let width = crate::chronometry::Stamp::LEN + 4 + tape.len();
         if used + width > bytes {
             return Learner::Frame;
         }
-        self.deferred_words.remove(addr);
-        let Some(at) = self.note_served(addr, voice) else { return Learner::Missed };
+        self.deferred_words.remove(address);
+        let Some(at) = self.note_served(address, voice) else { return Learner::Missed };
         if cost.iter().any(|&c| c > 0) {
             let anchor = self.anchor();
             if let Err(why) = self.treasury.pay(voice, self.identity, cost, anchor) {
@@ -607,9 +607,9 @@ impl Court {
         // already taught this learner, read before it joins them.
         // The reading's own stroke: its reads metered (`relation_to`).
         let mut reads = self.physics.stroke();
-        let anchor = self.anchor_of(addr, voice, &mut reads);
+        let anchor = self.anchor_of(address, voice, &mut reads);
         crate::observe::count(&mut self.acts.syllabus, &crate::observe::SYLLABUS, anchor);
-        self.taught_voice.insert(taught_key(addr, &voice), ());
+        self.taught_voice.insert(taught_key(address, &voice), ());
         Learner::Served(crate::anastome::dialogue::Taught { at, word: tape }, width)
     }
 
@@ -624,7 +624,7 @@ impl Court {
     /// (the conjugators solved over ℚ, the refraction's address compared),
     /// never a byte count; a lower bound, since the learner's own speech and
     /// other courts' words are not read.
-    fn anchor_of(&self, addr: &[u8], voice: [u8; 32], reads: &mut crate::physics::Budget) -> &'static str {
+    fn anchor_of(&self, address: &[u8], voice: [u8; 32], reads: &mut crate::physics::Budget) -> &'static str {
         const READS: [&str; 6] = [
             "sentences: refracted (held, Γ)",
             "sentences: conjugate, carriage apart",
@@ -633,7 +633,7 @@ impl Court {
             "sentences: chart only",
             "sentences: unanchored",
         ];
-        READS[self.relation_to(addr, |held| self.taught_voice.contains(&taught_key(held, &voice)), reads).0]
+        READS[self.relation_to(address, |held| self.taught_voice.contains(&taught_key(held, &voice)), reads).0]
     }
 
     /// 78.100 PS1 (2) — ONE WORD SERVED TO A PEER COURT, READ: its relation
@@ -642,7 +642,7 @@ impl Court {
     /// bytes it would take as (held, Γ): the anchor's address, then the
     /// transport's word by its letter tape, its carriage by its coefficients
     /// and its gauge two bytes a pair. A measure, never a gate.
-    fn read_fetched(&mut self, addr: &[u8], have: &crate::network::nerve::Keyed<()>, whole: usize, reads: &mut crate::physics::Budget) {
+    fn read_fetched(&mut self, address: &[u8], have: &crate::network::nerve::Keyed<()>, whole: usize, reads: &mut crate::physics::Budget) {
         use crate::observe::{count, count_by, FETCH};
         const WORDS: [&str; 6] = [
             "words: refracted (held, Γ)",
@@ -652,7 +652,7 @@ impl Court {
             "words: chart only",
             "words: unanchored",
         ];
-        let (read, refracted) = self.relation_to(addr, |h| have.contains(h), reads);
+        let (read, refracted) = self.relation_to(address, |h| have.contains(h), reads);
         count(&mut self.acts.fetch, &FETCH, WORDS[read]);
         count_by(&mut self.acts.fetch, &FETCH, "bytes served", whole as u64);
         if let Some((anchor, gamma)) = refracted {
@@ -666,14 +666,14 @@ impl Court {
         }
     }
 
-    /// 78.60, 78.100 PS1 (2) — THE STRONGEST RELATION `addr` STANDS IN TO A
+    /// 78.60, 78.100 PS1 (2) — THE STRONGEST RELATION `address` STANDS IN TO A
     /// WORD THIS COURT HOLDS ON ITS CHART THAT `holds` NAMES, as its place on
     /// the six readings (refracted, conjugate, unspellable conjugator, rotor
     /// per vertex δγ, chart only, unanchored), with the anchor and the
     /// transport where it is refracted. Exact: the conjugators solved over
     /// ℚ, the refraction's address compared.
     ///
-    /// METERED (2026-10-09): each held word read against `addr` spends one
+    /// METERED (2026-10-09): each held word read against `address` spends one
     /// read of `reads`, and a spent stroke ends the reading at the strongest
     /// relation met so far. Unmetered, a fetch of a large chart solved the
     /// conjugators against every ruled word of the fibre, for every word it
@@ -681,20 +681,20 @@ impl Court {
     /// stratum fetch (`judge/syllabus.rs`), twice, and every act waited.
     fn relation_to(
         &self,
-        addr: &[u8],
+        address: &[u8],
         holds: impl Fn(&[u8]) -> bool,
         reads: &mut crate::physics::Budget,
     ) -> (usize, Option<(Vec<u8>, crate::transducer::sentence::Transport)>) {
         use crate::transducer::sentence::chart::{chart_of, coboundary_gauge};
         use crate::transducer::sentence::Relation;
-        let Some(word) = self.installed_word(addr) else { return (5, None) };
+        let Some(word) = self.installed_word(address) else { return (5, None) };
         let (Some(inv), Some(form)) = (chart_of(word), crate::transducer::sentence::from_element_form(word)) else {
             return (5, None);
         };
         // The strongest relation met so far, as its place on the readings.
         let mut best = 5usize;
         for held in self.ruled.fibre(&inv) {
-            if held.as_slice() == addr || !holds(&held) {
+            if held.as_slice() == address || !holds(&held) {
                 continue;
             }
             if !reads.spend() {
@@ -718,7 +718,7 @@ impl Court {
         (best, None)
     }
 
-    /// WHAT TEACHING `addr` TO `voice` COSTS: a word its magnitude whole; a
+    /// WHAT TEACHING `address` TO `voice` COSTS: a word its magnitude whole; a
     /// sentence its magnitude less that of every distinct word it cites
     /// which this court has already served this voice, lane by lane — the
     /// gluing step. The syllabus measured on epoch 115 deferred about twenty
@@ -730,12 +730,12 @@ impl Court {
         clippy::manual_unwrap_or_default,
         reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a lane the held words carry whole has no gluing step, named at the arm"
     )]
-    fn gluing_cost(&self, addr: &[u8], mag: [u64; 4], voice: [u8; 32]) -> [u64; 4] {
-        let Some(w) = self.installed_word(addr).filter(|w| w.is_sentence()) else { return mag };
+    fn gluing_cost(&self, address: &[u8], mag: [u64; 4], voice: [u8; 32]) -> [u64; 4] {
+        let Some(w) = self.installed_word(address).filter(|w| w.is_sentence()) else { return mag };
         let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         let mut held = [0u64; 4];
         for c in w.receipts().cited_addresses() {
-            if c.as_bytes() == addr || seen.contains(c.as_bytes()) {
+            if c.as_bytes() == address || seen.contains(c.as_bytes()) {
                 continue;
             }
             seen.insert(c.as_bytes(), ());
@@ -758,9 +758,9 @@ impl Court {
 
     /// A word a syllabus page could not pay for, filed under its address:
     /// its kind and cost, the lane that fell short, and one more try.
-    fn note_deferred(&mut self, addr: &[u8], kind: u8, mag: [u64; 4], depleted: &crate::physics::Depleted, learner: Option<[u8; 32]>) {
+    fn note_deferred(&mut self, address: &[u8], kind: u8, mag: [u64; 4], depleted: &crate::physics::Depleted, learner: Option<[u8; 32]>) {
         let mut head = [0u8; 8];
-        for (h, b) in head.iter_mut().zip(addr) {
+        for (h, b) in head.iter_mut().zip(address) {
             *h = *b;
         }
         // A draw is refused only where the lane held less than was asked, so
@@ -770,14 +770,14 @@ impl Court {
             *s = gap;
         }
         // A count past the carrier stands where it was (never wrapped).
-        let tries = match self.deferred_words.get(addr).map(|d| d.tries.checked_add(1)) {
+        let tries = match self.deferred_words.get(address).map(|d| d.tries.checked_add(1)) {
             Some(Some(t)) => t,
             Some(None) => u64::MAX,
             None => 1,
         };
         // The learner named by the head of its key, as the word is.
         let learner = learner.map(|v| std::array::from_fn(|i| v[i]));
-        self.deferred_words.insert(addr, crate::observe::Deferred { head, kind, mag, short, tries, learner });
+        self.deferred_words.insert(address, crate::observe::Deferred { head, kind, mag, short, tries, learner });
     }
 
     /// The deferred words in the order the words' addresses have — never ordered

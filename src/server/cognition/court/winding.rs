@@ -250,7 +250,7 @@ impl Court {
             self.pay_simplex_volume(inv, addrs);
             let rewrite = match held {
                 Some(rw) => Some(rw),
-                None => remainder.and_then(|r| self.mint_torse_at(inv, simplex, r, addrs)),
+                None => remainder.and_then(|r| self.construct_torse_at(inv, simplex, r, addrs)),
             };
             if let Some(rw) = &rewrite {
                 self.pay_torse(addrs, rw.as_bytes());
@@ -262,7 +262,7 @@ impl Court {
         let Some(mut w) = self.windings.get(&key).cloned().filter(|w| w.ell != 0) else {
             // THE FIRST CLOSE: new work, settled at its own acts.
             self.pay_simplex_volume(inv, addrs);
-            let rewrite = remainder.and_then(|r| self.mint_torse_at(inv, simplex, r, addrs));
+            let rewrite = remainder.and_then(|r| self.construct_torse_at(inv, simplex, r, addrs));
             if let Some(rw) = &rewrite {
                 self.pay_torse(addrs, rw.as_bytes());
             }
@@ -393,7 +393,7 @@ impl Court {
         }
     }
 
-    /// 78.68 — A RANK STEP, RE-DERIVED: the word at `addr` just entered the
+    /// 78.68 — A RANK STEP, RE-DERIVED: the word at `address` just entered the
     /// ruled cover. A voice reports a new dimension by speaking the form that
     /// carries it, and the court re-derives it from what crossed the wire:
     /// the form's circuits (`circuits_of`, re-derived from its address), each
@@ -404,8 +404,8 @@ impl Court {
     /// there. Where its rank rose, one `RankStep` act is sealed, citing the
     /// word; where it did not, nothing is written. A refusal of the read is
     /// counted by why and writes nothing.
-    pub(crate) fn step_rank(&mut self, addr: &[u8], budget: &mut crate::physics::Budget) {
-        let Some(w) = self.word_at(addr) else { return };
+    pub(crate) fn step_rank(&mut self, address: &[u8], budget: &mut crate::physics::Budget) {
+        let Some(w) = self.word_at(address) else { return };
         // A ruled word that is no sentence — a residual word, a connection —
         // carries no circuit: counted by that name (LD0), never silent.
         let Some(form) = crate::transducer::sentence::from_element_form(w) else {
@@ -414,7 +414,7 @@ impl Court {
         };
         let inv = crate::transducer::stalk::invariant_of(w);
         let chart = inv.key();
-        let voice = self.discoverer_of(addr);
+        let voice = self.discoverer_of(address);
         // 78.69, 78.75 — THE COURT RE-DERIVES THE SENTENCES BY THE MASTER
         // EQUATION. The form's rings — its orbits and the vacua beside them —
         // composed as `Ω = ∏ cᵢ A(wᵢ)`, each word carried into the first chart
@@ -510,7 +510,7 @@ impl Court {
             crate::physics::metabolism::step_or_refuse(why, 1);
             return;
         }
-        match self.close_rank(&chart, &gens, addr, budget) {
+        match self.close_rank(&chart, &gens, address, budget) {
             Some(true) => self.winding_tally.rank_steps += 1,
             Some(false) => self.winding_tally.rank_held += 1,
             None => self.winding_tally.rank_unread += 1,
@@ -519,14 +519,14 @@ impl Court {
 
     /// 78.68, 78.75 — THE CHART'S HOLONOMY ALGEBRA TAKES NEW GENERATORS: closed
     /// under the commutator with what the court holds on `chart`; where its
-    /// rank rose, one `RankStep` act is sealed citing `addr` and the closed
+    /// rank rose, one `RankStep` act is sealed citing `address` and the closed
     /// basis held. `Some(true)` a step, `Some(false)` held already, `None` the
     /// closure refused (the stroke spent).
     fn close_rank(
         &mut self,
         chart: &crate::transducer::address::Address,
         gens: &[crate::transducer::cga::Mv],
-        addr: &[u8],
+        address: &[u8],
         budget: &mut crate::physics::Budget,
     ) -> Option<bool> {
         // A chart with no algebra held yet holds the zero algebra: nothing
@@ -540,7 +540,7 @@ impl Court {
             return Some(false);
         }
         let own_vk = self.identity;
-        self.append_step(crate::chronometry::ActKind::RankStep, addr, own_vk);
+        self.append_step(crate::chronometry::ActKind::RankStep, address, own_vk);
         self.lie_basis.insert(chart, closed);
         self.mark_persist();
         Some(true)
@@ -556,7 +556,7 @@ impl Court {
     pub(crate) fn book_outflow(
         &mut self,
         inv: &crate::transducer::stalk::Invariant,
-        addr: &[u8],
+        address: &[u8],
         budget: &mut crate::physics::Budget,
     ) {
         // The court's field is read FREE of the complex's lines: its pivots'
@@ -579,7 +579,7 @@ impl Court {
             })
             .collect();
         crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.outflow, lines.len() as u64);
-        self.book_field(&lines, addr, budget);
+        self.book_field(&lines, address, budget);
         // 78.60 (2), 78.69 — EACH FACE OF THE NERVE IS A SENTENCE: the holonomy
         // of the transitions around a cycle of vantages, `Ω = ∏ Γ`, composed by
         // the master equation as one term; where it is a relation of the
@@ -611,7 +611,7 @@ impl Court {
         if gens.is_empty() {
             return;
         }
-        if let Some(true) = self.close_rank(&inv.key(), &gens, addr, budget) {
+        if let Some(true) = self.close_rank(&inv.key(), &gens, address, budget) {
             self.winding_tally.rank_steps += 1;
             self.winding_tally.outflow_rank_steps += 1;
         }
@@ -629,8 +629,8 @@ impl Court {
     /// RECONNECTION. Where the tubes' helicity — `Σ net_a net_b ⟨G_a G_b⟩₀` —
     /// moved, the field's topology changed: one `Reconnect` act is sealed,
     /// citing the word, a transition of the algorithm (78.68, 78.71 (4)).
-    pub(crate) fn step_flux(&mut self, addr: &[u8], budget: &mut crate::physics::Budget) {
-        let Some(w) = self.word_at(addr) else { return };
+    pub(crate) fn step_flux(&mut self, address: &[u8], budget: &mut crate::physics::Budget) {
+        let Some(w) = self.word_at(address) else { return };
         let Some(form) = crate::transducer::sentence::from_element_form(w) else { return };
         // The court holds no body's compartments for a word: `sub` is the
         // coboundary chain, empty for an algebra word, and weighed the
@@ -663,19 +663,19 @@ impl Court {
                 line: crate::transducer::cech::orbit::Thread::Free,
             });
         }
-        self.book_field(&lines, addr, budget);
+        self.book_field(&lines, address, budget);
     }
 
     /// 78.71, 78.73, 78.75 — THE ONE DOOR INTO THE COURT'S FIELD: field lines
     /// read by the lines' modes through `transport_order` into the court's tubes
     /// and orbits, booked as order, pressure and relief per lane, with a
-    /// `Reconnect` act citing `addr` where the links moved. A word's field
+    /// `Reconnect` act citing `address` where the links moved. A word's field
     /// lines enter here (`step_flux`), and so does a face's content — its
     /// one Cl(4,1) motor — when the nerve seals it (`read_fills`).
     pub(crate) fn book_field(
         &mut self,
         lines: &[crate::transducer::family::pairing::FieldLine],
-        addr: &[u8],
+        address: &[u8],
         budget: &mut crate::physics::Budget,
     ) {
         if lines.is_empty() {
@@ -696,7 +696,7 @@ impl Court {
         crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.flux_transport, r.transport[t]);
         if self.flux_field.tubes.links() != before {
             let own_vk = self.identity;
-            self.append_step(crate::chronometry::ActKind::Reconnect, addr, own_vk);
+            self.append_step(crate::chronometry::ActKind::Reconnect, address, own_vk);
             crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.reconnections, 1);
         }
     }

@@ -46,7 +46,7 @@ impl Epigenome {
     /// coincides with one standing is not filed over it and is counted. A
     /// remainder newly filed is first RECEIVED against every remainder of its
     /// class at any chart.
-    pub(crate) fn file_remainders(&mut self, addr: &Address, e: &Element) {
+    pub(crate) fn file_remainders(&mut self, address: &Address, e: &Element) {
         let mut keys = Vec::new();
         // Each remainder with the ray of the cycle it rides (PD1, law 12):
         // the ray is the holonomy cycle's generator, not a copy on the
@@ -56,40 +56,40 @@ impl Epigenome {
         for (r, ray) in e.remainder_rays() {
             let k = r.index_key();
             match self.remainder_fibres.get(&k) {
-                Some(a) if a == addr => keys.push(k),
+                Some(a) if a == address => keys.push(k),
                 Some(_) => self.remainders_coincident += 1,
                 None => {
                     if let Some(ray) = ray {
-                        self.receive(addr, r, ray);
+                        self.receive(address, r, ray);
                     }
-                    self.remainder_fibres.insert(&k, addr.clone());
+                    self.remainder_fibres.insert(&k, address.clone());
                     keys.push(k);
                 }
             }
         }
         if !keys.is_empty() {
-            self.remainder_keys.insert(addr.as_bytes(), keys);
+            self.remainder_keys.insert(address.as_bytes(), keys);
         }
     }
 
     /// The element a word this mind holds is, resident or dialect.
-    pub(crate) fn element_of(&self, addr: &[u8]) -> Option<&Element> {
-        match self.resident.get(addr) {
+    pub(crate) fn element_of(&self, address: &[u8]) -> Option<&Element> {
+        match self.resident.get(address) {
             Some(w) => Some(w.held.element()),
-            None => self.dialect.get(addr).map(|d| d.sentence.element()),
+            None => self.dialect.get(address).map(|d| d.sentence.element()),
         }
     }
 
-    /// RM1 — THE RECEPTOR: a remainder `r` of the word at `addr`, read
+    /// RM1 — THE RECEPTOR: a remainder `r` of the word at `address`, read
     /// against every remainder of its class standing at another chart — one
     /// prefix read under κ. A chain nested in the other is one vantage at a
     /// finer depth, counted; two incomparable chains are two vantages: one
     /// ray (projectively) raises a callus, once per κ per pair of chains;
     /// differing rays are DISCORDANT, counted, and no ray is chosen
     /// (checklist (r)).
-    fn receive(&mut self, addr: &Address, r: &Remainder, r_ray: &crate::transducer::alphabet::Rotor) {
+    fn receive(&mut self, address: &Address, r: &Remainder, r_ray: &crate::transducer::alphabet::Rotor) {
         // RM1 (c): an answered remainder is evidence, not a question.
-        if self.answered(addr.as_bytes(), r) {
+        if self.answered(address.as_bytes(), r) {
             self.calluses.answered += 1;
             return;
         }
@@ -99,7 +99,7 @@ impl Epigenome {
             None => Vec::new(),
         };
         for (key, other) in standing {
-            if other == *addr {
+            if other == *address {
                 continue;
             }
             let Some(chain) = Remainder::chain_of_key(&key) else {
@@ -145,7 +145,7 @@ impl Epigenome {
                 class: r.class.clone(),
                 ray: Box::new(r_ray.clone()),
                 chains: [r.at.clone(), chain],
-                words: [addr.clone(), other],
+                words: [address.clone(), other],
             });
         }
     }
@@ -165,18 +165,18 @@ impl Epigenome {
 
     /// A WORD LEFT, where it stands neither resident nor dialect: its
     /// remainders leave the index by the keys it filed.
-    pub(crate) fn drop_remainders(&mut self, addr: &[u8]) {
-        if self.genome.contains(addr) || self.dialect.contains(addr) {
+    pub(crate) fn drop_remainders(&mut self, address: &[u8]) {
+        if self.genome.contains(address) || self.dialect.contains(address) {
             return;
         }
-        if let Some(keys) = self.remainder_keys.remove(addr) {
+        if let Some(keys) = self.remainder_keys.remove(address) {
             for k in keys {
                 self.remainder_fibres.remove(&k);
             }
         }
         // Its re-fill marks leave with it: they stand under its address.
         let mut word = Vec::new();
-        crate::transducer::address::put_key_bytes(&mut word, addr);
+        crate::transducer::address::put_key_bytes(&mut word, address);
         let marks: Vec<Vec<u8>> = match self.refilled.fibre_at(&word) {
             Some(f) => f.map(|(k, _)| k).collect(),
             None => Vec::new(),
@@ -213,15 +213,15 @@ impl Epigenome {
         let Some(fibre) = self.remainder_fibres.fibre_at(&prefix) else { return Vec::new() };
         let hits: Vec<(Vec<u8>, Address)> = fibre.map(|(k, a)| (k, a.clone())).collect();
         let mut out = Vec::new();
-        for (key, addr) in hits {
+        for (key, address) in hits {
             let Some(chain) = Remainder::chain_of_key(&key) else { continue };
-            let open = self.element_of(addr.as_bytes()).and_then(|e| {
+            let open = self.element_of(address.as_bytes()).and_then(|e| {
                 e.remainder_rays()
-                    .find(|(o, _)| *o.class == *class && o.at == chain && !self.answered(addr.as_bytes(), o))
+                    .find(|(o, _)| *o.class == *class && o.at == chain && !self.answered(address.as_bytes(), o))
                     .and_then(|(_, ray)| ray.cloned())
             });
             if let Some(ray) = open {
-                out.push((addr, chain, ray));
+                out.push((address, chain, ray));
             }
         }
         out
@@ -229,17 +229,17 @@ impl Epigenome {
 
     /// A remainder's key among this mind's re-fills: the word, then the
     /// remainder's own key.
-    fn refill_key(addr: &[u8], r: &Remainder) -> Vec<u8> {
+    fn refill_key(address: &[u8], r: &Remainder) -> Vec<u8> {
         let mut k = Vec::new();
-        crate::transducer::address::put_key_bytes(&mut k, addr);
+        crate::transducer::address::put_key_bytes(&mut k, address);
         crate::transducer::address::put_key_bytes(&mut k, &r.index_key());
         k
     }
 
     /// IS A REMAINDER ANSWERED (78.49): on its record by a court's seal, or
     /// re-spelled by this mind.
-    pub(crate) fn answered(&self, addr: &[u8], r: &Remainder) -> bool {
-        r.answered.is_some() || self.refilled.contains(&Self::refill_key(addr, r))
+    pub(crate) fn answered(&self, address: &[u8], r: &Remainder) -> bool {
+        r.answered.is_some() || self.refilled.contains(&Self::refill_key(address, r))
     }
 
     /// RM1 (c), 78.49 — THIS MIND RE-SPELLED a held word's open remainder of
@@ -248,17 +248,17 @@ impl Epigenome {
     /// where the word's record carries no open remainder there.
     pub(crate) fn mark_refilled(
         &mut self,
-        addr: &[u8],
+        address: &[u8],
         class: &crate::transducer::sentence::ClassVector,
         at: &[Vec<u8>],
         spelling: &Address,
     ) -> bool {
-        let open = self.element_of(addr).and_then(|e| {
-            e.remainder_rays().find(|(o, _)| *o.class == *class && o.at == at && !self.answered(addr, o)).map(|(o, _)| o.clone())
+        let open = self.element_of(address).and_then(|e| {
+            e.remainder_rays().find(|(o, _)| *o.class == *class && o.at == at && !self.answered(address, o)).map(|(o, _)| o.clone())
         });
         match open {
             Some(r) => {
-                self.refilled.insert(Self::refill_key(addr, &r), spelling.clone());
+                self.refilled.insert(Self::refill_key(address, &r), spelling.clone());
                 true
             }
             None => false,

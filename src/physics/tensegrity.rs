@@ -421,7 +421,7 @@ impl Ground {
         // and ground on its chart — no form stands for it.
         let mut k = vec![crate::transducer::address::TAG_CLASS];
         crate::transducer::address::put_key_bytes(&mut k, chart);
-        crate::transducer::address::put_addr(&mut k, &self.class)?;
+        crate::transducer::address::put_address(&mut k, &self.class)?;
         k.extend_from_slice(&self.period.to_le_bytes());
         for b in &self.bodies {
             b.nucleus.put_canonical(&mut k);

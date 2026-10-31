@@ -110,7 +110,7 @@ pub fn encode_fetch<A: AsRef<[u8]>>(
         let mut rec = Vec::new();
         let framed = push_invariant(&mut rec, inv)
             .and_then(|()| crate::transducer::address::put_u32_count(&mut rec, have.len()))
-            .and_then(|()| have.iter().try_for_each(|a| put_addr(&mut rec, a)));
+            .and_then(|()| have.iter().try_for_each(|a| put_address(&mut rec, a)));
         if framed.is_none() {
             eprintln!("  fetch chart refused: a chart or an address it holds cannot be framed");
             continue;
@@ -143,7 +143,7 @@ pub fn decode_fetch(body: &[u8]) -> Option<([u8; 32], Vec<Chart>)> {
         }
         let mut have = Vec::with_capacity(n);
         for _ in 0..n {
-            have.push(take_addr(body, &mut p)?);
+            have.push(take_address(body, &mut p)?);
         }
         charts.push(Chart { inv, have });
     }

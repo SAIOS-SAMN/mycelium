@@ -180,7 +180,7 @@ impl Form {
             return Err(ObstructionRefusal::TrialRankInadmissible);
         }
         let mu = match mu_before {
-            None => Mu::Unmeasured,
+            None => MeasuredMu::Unmeasured,
             Some((pairs_before, before)) => {
                 let (pairs_before, before) = (pairs_before, *before);
                 // THE BUNDLE IS SPOKEN THROUGH A WHOLE FORM, so this is
@@ -219,7 +219,7 @@ impl Form {
                 if !risen.is_empty() {
                     return Err(ObstructionRefusal::TrialLaneRose);
                 }
-                Mu::Measured { before, after }
+                MeasuredMu::Measured { before, after }
             }
         };
         // 78.46(4′), LAW 10 — NO OTHER COORDINATE ROSE, read on the cells:

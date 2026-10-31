@@ -222,17 +222,17 @@ pub(crate) fn hear_tick(mesh: &Mesh, body: &[u8]) -> Result<Admitted, TickRefusa
 /// admitted, a refusal counted by name, the final point raised (TU-3), and
 /// the residual (TU-4) written to the journal where it moved. `None` before
 /// an origin is adopted.
-pub(crate) fn hear_ring(mesh: &Mesh, vk: [u8; 32], ring: Vec<TickReading>) -> Option<Result<Admitted, KeeperRefusal>> {
+pub(crate) fn hear_ring(mesh: &Mesh, keeper: [u8; 32], ring: Vec<TickReading>) -> Option<Result<Admitted, KeeperRefusal>> {
     let origin = origin(mesh)?;
     with_keepers(mesh, origin, |k, last| {
-        let out = k.admit(vk, ring);
+        let out = k.admit(keeper, ring);
         match out {
-            Ok(Admitted::Anchored) => eprintln!("  court tuniversal keeper {:02x}{:02x}… anchored", vk[0], vk[1]),
+            Ok(Admitted::Anchored) => eprintln!("  court tuniversal keeper {:02x}{:02x}… anchored", keeper[0], keeper[1]),
             Ok(Admitted::Extended(_) | Admitted::Stale) => {}
             Err(why) => {
                 let n = REFUSED.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
                 if n.is_power_of_two() {
-                    eprintln!("  court tuniversal ring refused ({n}) from {:02x}{:02x}…: {why:?}", vk[0], vk[1]);
+                    eprintln!("  court tuniversal ring refused ({n}) from {:02x}{:02x}…: {why:?}", keeper[0], keeper[1]);
                 }
             }
         }

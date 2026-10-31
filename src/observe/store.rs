@@ -197,7 +197,7 @@ pub fn note_replication(signer: Option<[u8; 32]>, axis: usize, n: u64) {
 }
 
 /// SET a LEVEL on one axis for `signer` — the lag at the last report
-/// ([`super::rep::LAG`]) — which is where the signer stands now, not a
+/// ([`super::replication::LAG`]) — which is where the signer stands now, not a
 /// count to be summed.
 pub fn set_replication(signer: [u8; 32], axis: usize, v: u64) {
     let Ok(mut r) = REPLICATION.lock() else { return };

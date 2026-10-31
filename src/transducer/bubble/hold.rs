@@ -214,7 +214,7 @@ impl Contemplation {
                 clippy::cast_possible_truncation,
                 reason = "AT1 debt — a slot number of the form's Vec (a pair's remainder, one per pair); the atlas row replaces the slot by the chart's coordinates"
             )]
-            rem_keyed.insert(crate::transducer::family::pair_idx_key(i as u16), r.clone());
+            rem_keyed.insert(crate::transducer::family::pair_index_key(i as u16), r.clone());
             if r.is_empty() {
                 continue;
             }

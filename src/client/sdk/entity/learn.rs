@@ -188,8 +188,8 @@ impl Mind {
                 // is asked for its cover at the address this voice's own key
                 // routed to -- the same hypha that answered, by the same route.
                 if s.absorb_digest(&body) {
-                    if let Some(addr) = s.route(&voice) {
-                        s.fetch_cover(&addr);
+                    if let Some(address) = s.route(&voice) {
+                        s.fetch_cover(&address);
                     }
                 }
                 Ok::<_, io::Error>(body)
@@ -356,11 +356,11 @@ impl Mind {
         // and installs what it cannot already derive.
         let mut used = 0usize;
         'strata: for dialogue::ChartOf { have: held, .. } in charts {
-            for addr in held {
-                if self.already_taught_addr(addr) {
+            for address in held {
+                if self.already_taught_address(address) {
                     continue; // spoken for adoption once; the judge decided
                 }
-                let Some(word) = self.epigenome.word_at(addr).cloned() else { continue };
+                let Some(word) = self.epigenome.word_at(address).cloned() else { continue };
                 if self.already_taught(&word) {
                     continue;
                 }
@@ -373,7 +373,7 @@ impl Mind {
                     break 'strata;
                 }
                 used += bytes.len();
-                let (to, act) = (addr.clone(), dialogue::encode_adopt(&voice, &bytes));
+                let (to, act) = (address.clone(), dialogue::encode_adopt(&voice, &bytes));
                 self.ask(move |s| s.speak_keyed(&to, act), move |entity, adopted| {
                     if adopted.is_ok() {
                         entity.file_taught(&word);
@@ -552,10 +552,10 @@ impl Mind {
             // is filed on the mind's carrier of open questions, by address,
             // and never learned into the genome.
             if crate::client::sdk::epigenome::is_residual(&e) {
-                let addr = e.address();
-                if !self.board.open_residuals.contains(addr.as_bytes()) {
-                    self.board.open_residuals.insert(addr.as_bytes(), e.sub().to_vec());
-                    self.place_question(addr.as_bytes(), e.sub());
+                let address = e.address();
+                if !self.board.open_residuals.contains(address.as_bytes()) {
+                    self.board.open_residuals.insert(address.as_bytes(), e.sub().to_vec());
+                    self.place_question(address.as_bytes(), e.sub());
                 }
                 self.board.residual_strata.insert(crate::transducer::stalk::invariant_of(&e).key().as_bytes(), ());
                 continue;
@@ -660,8 +660,8 @@ impl Mind {
 /// An address as the journal prints it: the first six bytes of its whole
 /// digest (`payload_hash`), as the client's `fam_id` labels a task — a
 /// label to read the line by, never a key (78.113).
-pub(crate) fn hex_prefix(addr: &[u8]) -> String {
-    crate::chronometry::payload_hash(addr).iter().take(6).map(|b| format!("{b:02x}")).collect::<String>() + "…"
+pub(crate) fn hex_prefix(address: &[u8]) -> String {
+    crate::chronometry::payload_hash(address).iter().take(6).map(|b| format!("{b:02x}")).collect::<String>() + "…"
 }
 
 /// 78.153c — ONE SOLVE VERDICT, AS ONE LINE: the task by its citation's

@@ -253,7 +253,7 @@ fn spoken_of(f: &crate::transducer::sentence::Form) -> Vec<Spoken> {
 /// A form none of whose rings composes is said as its words, each a
 /// filament; a word spelled by letters is one filament.
 fn rings_of(e: &Element) -> Vec<Spoken> {
-    let addr = e.address();
+    let address = e.address();
     match crate::transducer::sentence::from_element_form(e) {
         Some(f) => {
             let mut budget = crate::physics::Physics::default().stroke();
@@ -276,7 +276,7 @@ fn rings_of(e: &Element) -> Vec<Spoken> {
                 .collect()
         }
         None => match e.letters().and_then(|l| Some((crate::transducer::element::conformal_of(&l.spelling.word, &l.carriage)?, l.sigma))) {
-            Some((motion, gauge)) => vec![filament(addr.as_bytes().to_vec(), motion, gauge)],
+            Some((motion, gauge)) => vec![filament(address.as_bytes().to_vec(), motion, gauge)],
             None => Vec::new(),
         },
     }
@@ -431,8 +431,8 @@ impl Mind {
             },
             move |q: &[u8]| observed(&voice, q),
         )?;
-        let addr = post.addr().to_string();
-        chatter::publish(dir, &voice, &addr)?;
+        let endpoint = post.endpoint().to_string();
+        chatter::publish(dir, &voice, &endpoint)?;
         #[cfg(test)]
         let agreed = std::sync::Arc::new(std::sync::Mutex::new(Keyed::new()));
         let (field, pricing) = channel::<FieldWork>();
@@ -465,7 +465,7 @@ impl Mind {
             #[cfg(test)]
             agreed,
         });
-        Ok(addr)
+        Ok(endpoint)
     }
 
     /// 78.112 H5 — THE FIELD PRICES WHAT ITS CONVERSATION UNDERSTOOD: each
@@ -481,7 +481,7 @@ impl Mind {
     /// the thought converged. Where an echo never returns, the cell is OPEN
     /// and that echo is a DEMAND on the charts where the hearing stood, its
     /// holonomy the residue (78.114): deviation feeds construction, and the
-    /// mind's constructors (`take_demands`) expand its thought there until a
+    /// mind's constructors (`drain_demands`) expand its thought there until a
     /// later hearing closes. The price goes back to the conversation, which
     /// acts on it (`Carrier::priced`). Same word, two minds, two prices: each
     /// field is its own.
@@ -1094,9 +1094,9 @@ impl Mind {
 
 #[cfg(test)]
 impl Chat {
-    /// Whether the thing this mind said at `addr` is agreed language.
-    pub(crate) fn agreed(&self, addr: &[u8]) -> bool {
-        self.agreed.lock().is_ok_and(|a| a.contains(addr))
+    /// Whether the thing this mind said at `address` is agreed language.
+    pub(crate) fn agreed(&self, address: &[u8]) -> bool {
+        self.agreed.lock().is_ok_and(|a| a.contains(address))
     }
 }
 
@@ -1107,9 +1107,9 @@ impl Carrier {
             Inflow::Frame(f) => self.hear_frame(&f),
             Inflow::Say(e, words, family) => self.say(&e, words, family),
             Inflow::Wait(e, words, family) => {
-                let addr = e.address();
-                if !self.waiting.contains(addr.as_bytes()) {
-                    self.waiting.insert(&addr, (e.clone(), false, family.clone()));
+                let address = e.address();
+                if !self.waiting.contains(address.as_bytes()) {
+                    self.waiting.insert(&address, (e.clone(), false, family.clone()));
                 }
                 self.say(&e, words, family);
             }
@@ -1213,12 +1213,12 @@ impl Carrier {
     /// offered it from, to every mind at the rendezvous. Said once; its union
     /// is then read.
     fn say(&mut self, e: &Element, words: Vec<Spoken>, family: Vec<u8>) {
-        let addr = e.address();
-        if self.union.contains(addr.as_bytes()) {
+        let address = e.address();
+        if self.union.contains(address.as_bytes()) {
             return;
         }
         // SAID ONCE: what this mind said before is not said again.
-        if self.said.contains(addr.as_bytes()) {
+        if self.said.contains(address.as_bytes()) {
             crate::observe::note_mind(|m| m.repeats[0] += 1);
             return;
         }
@@ -1232,9 +1232,9 @@ impl Carrier {
             (Ok(scene), true) => e.to_bytes().map(|word| chatter::Evidence { scene: scene.to_vec(), word }),
             _ => None,
         };
-        let Some(frame) = self.frame(Said::Say { said: addr.as_bytes().to_vec(), words: words.clone(), evidence }) else { return };
-        self.union.insert(&addr, Union { said: e.clone(), spoken: words, acked: Keyed::new(), shared: false, crossed: false, family });
-        self.said.insert(&addr, ());
+        let Some(frame) = self.frame(Said::Say { said: address.as_bytes().to_vec(), words: words.clone(), evidence }) else { return };
+        self.union.insert(&address, Union { said: e.clone(), spoken: words, acked: Keyed::new(), shared: false, crossed: false, family });
+        self.said.insert(&address, ());
         self.send(&frame, None);
     }
 
@@ -1299,7 +1299,7 @@ impl Carrier {
     /// ANOTHER MIND SAID BACK WHAT IT DERIVED of something this one said:
     /// every word's loop said → heard read by its physics, sent back as the
     /// ACK, and kept until that mind HOLDs the same loops.
-    fn heard_back(&mut self, who: &[u8; 32], said: &[u8], words: &[HeardWord]) {
+    fn heard_back(&mut self, hearer: &[u8; 32], said: &[u8], words: &[HeardWord]) {
         // What was said: a thing this mind stood, or an answer it gave.
         let spoken = match (self.union.get(said), self.answered.get(said)) {
             (Some(u), _) => u.spoken.clone(),
@@ -1343,7 +1343,7 @@ impl Carrier {
             };
             let question = question_key(said, &h.vertex);
             if let (Some(frame), Some(to)) =
-                (self.frame(Said::Say { said: question.clone(), words: factors.clone(), evidence: None }), chatter::peer_of(&self.dir, who))
+                (self.frame(Said::Say { said: question.clone(), words: factors.clone(), evidence: None }), chatter::peer_of(&self.dir, hearer))
             {
                 self.send(&frame, Some(&to));
                 self.answered.insert(&question, (factors, false));
@@ -1353,7 +1353,7 @@ impl Carrier {
         let acks: Vec<AckWord> =
             words.iter().filter_map(|h| spoken.iter().find(|s| s.vertex == h.vertex).map(|s| chatter::loop_of(s, h))).collect();
         let frame = self.frame(Said::Ack { said: said.to_vec(), words: acks.clone() });
-        let to = chatter::peer_of(&self.dir, who);
+        let to = chatter::peer_of(&self.dir, hearer);
         // TWO VANTAGES (MU-CLIENT §5.3): every word the hearer derived, read
         // from a vantage of its own, distinct from the one this mind offered;
         // a word read from the offered vantage, or from none, is one
@@ -1371,7 +1371,7 @@ impl Carrier {
         }
         let Some(u) = self.union.get_mut(said) else { return };
         let held: Vec<crate::transducer::cga::Mv> = words.iter().flat_map(|h| h.held.iter().cloned()).collect();
-        u.acked.insert(who, (acks, held, distinct));
+        u.acked.insert(hearer, (acks, held, distinct));
         if let (Some(frame), Some(to)) = (frame, to) {
             self.send(&frame, Some(&to));
         }
@@ -1406,9 +1406,9 @@ impl Carrier {
     /// with the hearer's rings for MUTUAL balance: where the echoes
     /// converge here too, it is spoken to the court carrying the hearer's
     /// signed HOLD, once.
-    fn held_back(&mut self, who: &[u8; 32], said: &[u8], holds: &[AckWord], frame: &[u8]) {
+    fn held_back(&mut self, hearer: &[u8; 32], said: &[u8], holds: &[AckWord], frame: &[u8]) {
         let Some(u) = self.union.get_mut(said) else { return };
-        let Some((sent, mutual, distinct)) = u.acked.remove(who) else { return };
+        let Some((sent, mutual, distinct)) = u.acked.remove(hearer) else { return };
         if !one_reading(&sent, holds) || !understood(&sent) {
             return;
         }

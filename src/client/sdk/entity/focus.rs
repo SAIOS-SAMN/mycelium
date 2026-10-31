@@ -118,11 +118,11 @@ fn coords_of(train: &crate::transducer::family::Family, fibre: Option<Vec<(u8, u
 impl Mind {
     /// AN OPEN QUESTION PLACED on the corpus: its residual chain's scene read
     /// to its bodies' charts, and its hue map's 𝒢 orbit.
-    pub(crate) fn place_question(&mut self, addr: &[u8], chain: &[(i64, i64, u8, u8)]) {
+    pub(crate) fn place_question(&mut self, address: &[u8], chain: &[(i64, i64, u8, u8)]) {
         let Some((x, y)) = crate::transducer::family::scene_of_chain(chain) else { return };
         let fibre = crate::transducer::family::hue_map_of_chain(chain);
         let coords = coords_of(&[(x, y)], (!fibre.is_empty()).then_some(fibre));
-        self.board.corpus.place(tagged(ITEM_QUESTION, addr), coords);
+        self.board.corpus.place(tagged(ITEM_QUESTION, address), coords);
     }
 
     /// THE FIELD'S FOCUS AS CORPUS COORDINATES (the module's rule); in its
@@ -251,7 +251,7 @@ impl Mind {
             // A task whose members have no A5 form has no identity to think
             // by. MU-CLIENT §5.4 (E1) — the scene is named by the court's own
             // name for it, its 32-byte CITATION.
-            let Some(id) = crate::registry::task_id(&task) else { continue };
+            let Some(id) = crate::registry::task_address(&task) else { continue };
             let id = crate::registry::citation(&id).to_vec();
             let coords = coords_of(&task.train, crate::transducer::family::fibre_map(&task.train));
             if let Some(feed) = self.board.feed.as_mut() {

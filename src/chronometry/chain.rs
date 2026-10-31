@@ -154,12 +154,12 @@ impl ReceiptChain {
         ReceiptChain::default()
     }
 
-    pub fn with_vk(vk: [u8; 32]) -> Self {
-        ReceiptChain { vk, ..ReceiptChain::default() }
+    pub fn with_signer(signer: [u8; 32]) -> Self {
+        ReceiptChain { vk: signer, ..ReceiptChain::default() }
     }
 
     /// The key this chain signs as.
-    pub fn vk(&self) -> [u8; 32] {
+    pub fn signer(&self) -> [u8; 32] {
         self.vk
     }
 
@@ -186,14 +186,14 @@ impl ReceiptChain {
 
     /// THE ACTS OF ONE ORBIT of a signer's line, in line order: the line
     /// relation read by the prefix `vk‖K`, never by counting places.
-    fn orbit_acts(&self, vk: &[u8; 32], k: u64) -> Vec<(Stamp, &node::Node)> {
-        let mut prefix = vk.to_vec();
+    fn orbit_acts(&self, signer: &[u8; 32], k: u64) -> Vec<(Stamp, &node::Node)> {
+        let mut prefix = signer.to_vec();
         prefix.extend_from_slice(&k.to_be_bytes());
         let Some(orbit) = self.lines.fibre_at(&prefix) else { return Vec::new() };
         orbit
             .filter_map(|(key, &h)| {
                 let mut p = 32usize;
-                let at = Stamp::new(h, *vk, Place::take_canonical(&key, &mut p)?);
+                let at = Stamp::new(h, *signer, Place::take_canonical(&key, &mut p)?);
                 Some((at, self.node_at(&at)?))
             })
             .collect()
@@ -203,9 +203,9 @@ impl ReceiptChain {
     /// frames its acts measured before `before` — lanes never mixed (law
     /// 5), a close's own frame never counted in. `None` where a lane passes
     /// its u64: an unmeasured frame, never a saturated one (rule 11).
-    pub fn orbit_frame(&self, vk: &[u8; 32], k: u64, before: Place) -> Option<[u64; 4]> {
+    pub fn orbit_frame(&self, signer: &[u8; 32], k: u64, before: Place) -> Option<[u64; 4]> {
         let mut frame = [0u64; 4];
-        for (at, n) in self.orbit_acts(vk, k) {
+        for (at, n) in self.orbit_acts(signer, k) {
             if at.place() >= before || n.kind == ActKind::Orbit {
                 continue;
             }
@@ -298,8 +298,8 @@ impl ReceiptChain {
     }
 
     /// The node a signer holds at one place, through the line relation.
-    pub fn at(&self, vk: &[u8; 32], at: Place) -> Option<KStepReceipt> {
-        self.node(&self.stamp_at(vk, at)?)
+    pub fn at(&self, signer: &[u8; 32], at: Place) -> Option<KStepReceipt> {
+        self.node(&self.stamp_at(signer, at)?)
     }
 
     /// This chain's own receipt at one place.
@@ -310,12 +310,12 @@ impl ReceiptChain {
     /// The stamps of a signer's line between two places: strictly after
     /// `after` (from the line's start where `None`) up to and including
     /// `upto`, in line order, at most `n`.
-    fn line_stamps(&self, vk: &[u8; 32], after: Option<Place>, upto: Place, n: usize) -> Vec<Stamp> {
-        let Some(line) = self.lines.fibre_at(vk) else { return Vec::new() };
+    fn line_stamps(&self, signer: &[u8; 32], after: Option<Place>, upto: Place, n: usize) -> Vec<Stamp> {
+        let Some(line) = self.lines.fibre_at(signer) else { return Vec::new() };
         line.filter_map(|(key, &h)| {
             let mut p = 32usize;
             let at = Place::take_canonical(&key, &mut p)?;
-            (after.is_none_or(|a| a < at) && at <= upto).then_some(Stamp::new(h, *vk, at))
+            (after.is_none_or(|a| a < at) && at <= upto).then_some(Stamp::new(h, *signer, at))
         })
         .take(n)
         .collect()
@@ -325,20 +325,20 @@ impl ReceiptChain {
     /// `after` (from the line's start where `None`) up to and including
     /// `upto`, in line order, at most `n` — read off the line relation by
     /// the signer's prefix, never by counting places.
-    pub fn line_between(&self, vk: &[u8; 32], after: Option<Place>, upto: Place, n: usize) -> Vec<KStepReceipt> {
-        self.line_stamps(vk, after, upto, n).iter().filter_map(|at| self.node(at)).collect()
+    pub fn line_between(&self, signer: &[u8; 32], after: Option<Place>, upto: Place, n: usize) -> Vec<KStepReceipt> {
+        self.line_stamps(signer, after, upto, n).iter().filter_map(|at| self.node(at)).collect()
     }
 
     /// 78.153b — THE FIRST NODE `pred` HOLDS OF on a signer's line strictly
     /// after `after` up to and including `upto`, in line order: the nodes
     /// unpacked one at a time until it is met, never the span read whole
     /// first ([`ReceiptChain::line_between`]'s nodes, the first that holds).
-    pub fn first_between(&self, vk: &[u8; 32], after: Option<Place>, upto: Place, pred: impl Fn(&KStepReceipt) -> bool) -> Option<KStepReceipt> {
-        let line = self.lines.fibre_at(vk)?;
+    pub fn first_between(&self, signer: &[u8; 32], after: Option<Place>, upto: Place, pred: impl Fn(&KStepReceipt) -> bool) -> Option<KStepReceipt> {
+        let line = self.lines.fibre_at(signer)?;
         line.filter_map(|(key, &h)| {
             let mut p = 32usize;
             let at = Place::take_canonical(&key, &mut p)?;
-            (after.is_none_or(|a| a < at) && at <= upto).then_some(Stamp::new(h, *vk, at))
+            (after.is_none_or(|a| a < at) && at <= upto).then_some(Stamp::new(h, *signer, at))
         })
         .filter_map(|at| self.node(&at))
         .find(|r| pred(r))
@@ -346,8 +346,8 @@ impl ReceiptChain {
 
     /// A SIGNER'S HEAD as this ledger holds it: the node at the greatest
     /// place on its line.
-    pub fn line_head(&self, vk: &[u8; 32]) -> Option<KStepReceipt> {
-        self.at(vk, *self.tops.get(vk)?)
+    pub fn line_head(&self, signer: &[u8; 32]) -> Option<KStepReceipt> {
+        self.at(signer, *self.tops.get(signer)?)
     }
 
     /// Every signer this ledger holds a line of, this chain's own
@@ -369,8 +369,8 @@ impl ReceiptChain {
     /// 78.151 — A LINE MOVED: a node filed new on it or a node gone from
     /// it, counted, and the line marked. A count past 2⁶⁴ is not counted
     /// further; the mark still moves.
-    fn tally(&mut self, vk: &[u8; 32], filed: bool, left: bool) {
-        let mut t = match self.tallies.get(vk) {
+    fn tally(&mut self, signer: &[u8; 32], filed: bool, left: bool) {
+        let mut t = match self.tallies.get(signer) {
             Some(t) => *t,
             None => LineTally::default(),
         };
@@ -385,13 +385,13 @@ impl ReceiptChain {
             }
         }
         t.mark = next_mark();
-        self.tallies.insert(vk, t);
+        self.tallies.insert(signer, t);
     }
 
     /// 78.151 — a signer's line as a publisher reads it; the default (no
     /// node, no mark) where the line was never filed.
-    pub fn line_tally(&self, vk: &[u8; 32]) -> LineTally {
-        match self.tallies.get(vk) {
+    pub fn line_tally(&self, signer: &[u8; 32]) -> LineTally {
+        match self.tallies.get(signer) {
             Some(t) => *t,
             None => LineTally::default(),
         }
@@ -458,8 +458,8 @@ impl ReceiptChain {
     /// THE ROOT A PEER'S OWN FOLD ARCHIVED ITS LINE TO, as this ledger holds
     /// its `Fold` node — the place at or below which `shed_folded` cut that
     /// signer's line. `None` where no fold of the signer is held.
-    pub fn peer_root(&self, vk: &[u8; 32]) -> Option<Place> {
-        self.peer_roots.get(vk).map(|r| r.at.place())
+    pub fn peer_root(&self, signer: &[u8; 32]) -> Option<Place> {
+        self.peer_roots.get(signer).map(|r| r.at.place())
     }
 
     /// A CITATION INTO A PEER'S CLOSED ERA, PROVED BY ITS CHAIN (78.65,
@@ -538,9 +538,9 @@ impl ReceiptChain {
     /// or the root its signer's fold archived the line to where that root
     /// stands past every node held and its height reads (an adopted root,
     /// `adopt_root`). `None` where neither is held.
-    pub fn line_tip(&self, vk: &[u8; 32]) -> Option<Parent> {
-        let head = self.line_head(vk).map(|r| Parent { at: r.stamp, hash: r.chain_hash });
-        let root = self.peer_roots.get(vk).copied().filter(|r| self.height_of(r).is_some());
+    pub fn line_tip(&self, signer: &[u8; 32]) -> Option<Parent> {
+        let head = self.line_head(signer).map(|r| Parent { at: r.stamp, hash: r.chain_hash });
+        let root = self.peer_roots.get(signer).copied().filter(|r| self.height_of(r).is_some());
         match (head, root) {
             (Some(h), Some(r)) if r.at.place() > h.at.place() => Some(r),
             (Some(h), _) => Some(h),
@@ -727,14 +727,14 @@ impl ReceiptChain {
     /// coordinate of every stamp and in every hash, so a chain that has
     /// sealed under another key cannot be rebound: `false` then, and the
     /// chain keeps the key it has.
-    pub fn bind_vk(&mut self, vk: [u8; 32]) -> bool {
-        if self.vk == vk {
+    pub fn bind_signer(&mut self, signer: [u8; 32]) -> bool {
+        if self.vk == signer {
             return true;
         }
         if self.head.is_some() || self.root.is_some() {
             return false;
         }
-        self.vk = vk;
+        self.vk = signer;
         true
     }
 
@@ -1046,13 +1046,13 @@ impl ReceiptChain {
     }
 
     /// REHYDRATE THE LEDGER from its persisted nodes: this chain's own
-    /// line (the nodes signed by `vk`) and the peer nodes it admitted, on
+    /// line (the nodes signed by `signer`) and the peer nodes it admitted, on
     /// the root it stands on. Every node re-derives its own hash, the line
     /// verifies whole, and the peer placements are re-derived rather than
     /// persisted. `None` refuses the whole ledger, and a stamp met twice
     /// refuses it.
-    pub fn from_nodes(root: Option<Root>, vk: [u8; 32], nodes: Vec<KStepReceipt>) -> Option<ReceiptChain> {
-        let mut c = ReceiptChain::with_vk(vk);
+    pub fn from_nodes(root: Option<Root>, signer: [u8; 32], nodes: Vec<KStepReceipt>) -> Option<ReceiptChain> {
+        let mut c = ReceiptChain::with_signer(signer);
         c.root = root;
         for r in nodes {
             c.hold(r)?;

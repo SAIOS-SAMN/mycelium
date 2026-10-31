@@ -15,7 +15,7 @@ fn key(b: u8) -> SigningKey {
     SigningKey::from_bytes(&[b; 32])
 }
 
-fn vk(k: &SigningKey) -> [u8; 32] {
+fn verifying(k: &SigningKey) -> [u8; 32] {
     k.verifying_key().to_bytes()
 }
 
@@ -40,19 +40,19 @@ fn y() -> SigningKey {
 fn founded() -> Court {
     use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
     let mut k = Court::new();
-    let mut xs = vec![vk(&x()), vk(&x2())];
+    let mut xs = vec![verifying(&x()), verifying(&x2())];
     xs.sort_unstable();
-    for (d, tiers, reserve) in [(key(4), xs, x()), (key(5), vec![vk(&y())], y())] {
-        let g = DomainGenesis { domain: vk(&d), tiers };
+    for (d, tiers, reserve) in [(key(4), xs, x()), (key(5), vec![verifying(&y())], y())] {
+        let g = DomainGenesis { domain: verifying(&d), tiers };
         assert!(matches!(k.admit_domain(&g.sign(&d)), Founded::Sealed { .. }));
-        let r = Reservation { domain: vk(&d), tier: vk(&reserve), nonce: [0; 32] };
+        let r = Reservation { domain: verifying(&d), tier: verifying(&reserve), nonce: [0; 32] };
         assert!(matches!(k.designate_reserve(&r.sign(&d)), Founded::Reserved { now: true, .. }));
     }
     // The throat's bank (78.135), funded first.
     let anchor = k.anchor();
-    k.treasury.genesis(vk(&x()), [1, 0, 0, 0], anchor);
+    k.treasury.genesis(verifying(&x()), [1, 0, 0, 0], anchor);
     assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(the_mouth())).sign(&x())), Handed::Sealed { .. }));
-    assert!(matches!(k.handoff(&Handoff::Accept { id: the_mouth().id() }.sign(&y())), Handed::Sealed { state: State::Accepted, .. }));
+    assert!(matches!(k.handoff(&Handoff::Accept { id: the_mouth().citation() }.sign(&y())), Handed::Sealed { state: State::Accepted, .. }));
     k
 }
 
@@ -61,19 +61,19 @@ fn the_mouth() -> Mouth {
     let one = crate::transducer::element::identity_versor();
     let curved = crate::anastome::dialogue::universe::Geometry::Curved((1, 1));
     let tube = crate::anastome::dialogue::handoff::Tube { mass: (1, 1), from_space: curved.clone(), to_space: curved, supersedes: None, core: false };
-    Mouth { from_tier: vk(&x()), to_tier: vk(&y()), keeper: vk(&x()), from_frame: one.clone(), to_frame: one, toll: [0; 4], nonce: [0; 32], tariff: None, tube: Some(tube) }
+    Mouth { from_tier: verifying(&x()), to_tier: verifying(&y()), keeper: verifying(&x()), from_frame: one.clone(), to_frame: one, toll: [0; 4], nonce: [0; 32], tariff: None, tube: Some(tube) }
 }
 
 /// The offer through the mouth.
 fn through(o: Offer) -> Handoff {
-    Handoff::Traverse { offer: Box::new(o), mouth: the_mouth().id() }
+    Handoff::Traverse { offer: Box::new(o), mouth: the_mouth().citation() }
 }
 
 /// Five of matter and one word, from X's `w1` to Y's `w8`.
 fn cargo() -> Offer {
     Offer {
-        from_tier: vk(&x()),
-        to_tier: vk(&y()),
+        from_tier: verifying(&x()),
+        to_tier: verifying(&y()),
         out_nets: vec![(who(1), [-5, 0, 0, -1])],
         in_nets: vec![(who(8), [5, 0, 0, 1])],
         charter: [0; 32],
@@ -89,7 +89,7 @@ fn offered(k: &mut Court, o: Offer) -> [u8; 32] {
 }
 
 fn fold(tier: &SigningKey, prefix: u8, rows: Vec<Net>, handoffs: Vec<([u8; 32], Side)>) -> TierFold {
-    TierFold { tier: vk(tier), prefix: [prefix; 32], rows, declared: Vec::new(), children: Vec::new(), handoffs }
+    TierFold { tier: verifying(tier), prefix: [prefix; 32], rows, declared: Vec::new(), children: Vec::new(), handoffs }
 }
 
 fn pass(k: &mut Court, h: u64) {
@@ -117,7 +117,7 @@ fn handoff_refuses_unconserved_offer() {
     let unordered = Offer { out_nets: vec![(who(2), [-1, 0, 0, 0]), (who(1), [-4, 0, 0, -1])], ..cargo() };
     assert_eq!(refused(&mut k, unordered, &x()), HandoffRefusal::Unbalanced(Unbalanced::Unordered));
     assert_eq!(refused(&mut k, cargo(), &y()), HandoffRefusal::NotTheTier, "the sender files the offer");
-    let at_home = Offer { to_tier: vk(&x2()), ..cargo() };
+    let at_home = Offer { to_tier: verifying(&x2()), ..cargo() };
     assert_eq!(refused(&mut k, at_home.clone(), &x()), HandoffRefusal::NotTheMouth, "within a domain only along its own road (78.136)");
     assert!(
         matches!(k.handoff(&Handoff::Offer(Box::new(at_home)).sign(&x())), Handed::Refused(HandoffRefusal::Unbound)),

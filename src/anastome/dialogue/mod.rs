@@ -52,7 +52,7 @@ pub use root::*;
 pub use speech::*;
 pub use syllabus::*;
 
-use crate::transducer::address::{put_addr, take_addr, Address};
+use crate::transducer::address::{put_address, take_address, Address};
 
 #[cfg(test)]
 mod tests;

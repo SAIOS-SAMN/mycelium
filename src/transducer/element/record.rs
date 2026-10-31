@@ -355,7 +355,7 @@ impl Element {
         let anchor = match b.get(*pos) {
             Some(1) => {
                 *pos += 1;
-                Some(crate::transducer::anchor::Sel::from_bytes(b, pos)?)
+                Some(crate::transducer::anchor::Selection::from_bytes(b, pos)?)
             }
             Some(0) => {
                 *pos += 1;

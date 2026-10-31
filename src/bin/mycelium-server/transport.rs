@@ -132,8 +132,8 @@ pub(crate) fn is_deferred(reply: &[u8]) -> bool {
 
 /// Speak one act to a peer on the nerve, bounded by the transport deadline;
 /// the reply, if any, is not needed. Silence is the peer's impedance.
-pub(crate) fn tell_peer(addr: &str, body: Vec<u8>) -> Option<(Vec<u8>, u64)> {
-    tell_peer_within(addr, body, 5)
+pub(crate) fn tell_peer(endpoint: &str, body: Vec<u8>) -> Option<(Vec<u8>, u64)> {
+    tell_peer_within(endpoint, body, 5)
 }
 
 /// SPEAK TO A PEER AT ITS OWN MEASURED PATIENCE (Phase 1 item 3). The mesh
@@ -144,20 +144,20 @@ pub(crate) fn tell_peer(addr: &str, body: Vec<u8>) -> Option<(Vec<u8>, u64)> {
 /// every back-fill page on the development deployment went unanswered (the catch-up reading,
 /// 2026-09-30). This waits the deadline the peer's own wire measured, the
 /// literal only where none is measured yet, and records what it saw.
-pub(crate) fn tell_peer_measured(mesh: &Mesh, addr: &str, body: Vec<u8>) -> Option<(Vec<u8>, u64)> {
+pub(crate) fn tell_peer_measured(mesh: &Mesh, endpoint: &str, body: Vec<u8>) -> Option<(Vec<u8>, u64)> {
     // An unmeasured wire is asked as `tell_peer` asks every wire; the first
     // answer measures it.
-    let reply = match mesh.rtt.lock().ok().and_then(|m| m.get(addr.as_bytes()).copied()) {
-        Some(hint) => tell_peer_within(addr, body, hint),
-        None => tell_peer(addr, body),
+    let reply = match mesh.rtt.lock().ok().and_then(|m| m.get(endpoint.as_bytes()).copied()) {
+        Some(hint) => tell_peer_within(endpoint, body, hint),
+        None => tell_peer(endpoint, body),
     };
     match reply {
         Some((reply, dt)) => {
-            note_rtt_ok(mesh, addr.as_bytes(), dt);
+            note_rtt_ok(mesh, endpoint.as_bytes(), dt);
             Some((reply, dt))
         }
         None => {
-            note_rtt_timeout(mesh, addr.as_bytes());
+            note_rtt_timeout(mesh, endpoint.as_bytes());
             None
         }
     }
@@ -167,8 +167,8 @@ pub(crate) fn tell_peer_measured(mesh: &Mesh, addr: &str, body: Vec<u8>) -> Opti
 /// the peer's measured round trip in strokes, and the wait is an aperture
 /// of it (`transport_deadline`). A caller with no measurement passes the
 /// same floor the rtt window uses.
-pub(crate) fn tell_peer_within(addr: &str, body: Vec<u8>, rtt_hint: u64) -> Option<(Vec<u8>, u64)> {
-    let mut s = std::net::TcpStream::connect(addr).ok()?;
+pub(crate) fn tell_peer_within(endpoint: &str, body: Vec<u8>, rtt_hint: u64) -> Option<(Vec<u8>, u64)> {
+    let mut s = std::net::TcpStream::connect(endpoint).ok()?;
     let _ = s.set_nodelay(true);
     // A PEER THAT SAYS NOTHING IS SILENT, NOT AUTHORITATIVE. `read_exact`
     // with no bound makes a peer that writes nothing an unbounded wait, and

@@ -142,7 +142,7 @@ impl Court {
     /// (`last_transition`, kept as acts are sealed), and then folding the
     /// next page moves history the change already supersedes.
     fn fold_transitions(&mut self, head: Place) -> Result<(), &'static str> {
-        let own_vk = self.chain.vk();
+        let own_vk = self.chain.signer();
         let root = self.chain.root().map(|r| r.at);
         let prefix = self.chain.line_between(&own_vk, root, head, usize::MAX);
         if !prefix.iter().any(|r| !matches!(r.kind, ActKind::Fold | ActKind::Orbit)) {

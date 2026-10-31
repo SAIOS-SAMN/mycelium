@@ -11,12 +11,12 @@ use crate::transducer::germinate::germinate;
 /// (no tail) parse to the ⊤ carrier — full backward compatibility.
 #[test]
 fn from_bytes_round_trips_anchor_and_defaults_top() {
-    use crate::transducer::anchor::Sel;
+    use crate::transducer::anchor::Selection;
     let g = crate::transducer::element::canonical_chain(&[(0, 0, 1, 2), (0, 1, 1, 2)])
         .expect("one entry per position is A5's chain");
     let plain = from_canonical(&g);
     assert!(plain.anchor().is_none(), "born ⊤ until germination binds");
-    let pi = Sel::Minus(Box::new(Sel::Hue(1)), Box::new(Sel::Delta(Box::new(Sel::Hue(1)))));
+    let pi = Selection::Minus(Box::new(Selection::Hue(1)), Box::new(Selection::Delta(Box::new(Selection::Hue(1)))));
     let anchored = plain.clone().with_anchor(pi.clone());
     let bytes = anchored.to_bytes().expect("the record writes");
     let mut pos = 0;

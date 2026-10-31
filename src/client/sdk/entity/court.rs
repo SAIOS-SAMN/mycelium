@@ -79,7 +79,7 @@ impl Mind {
     /// taken, in the order it was asked, and what the probes it answered
     /// closed and pressed is this tick's.
     pub(crate) fn court_inflow(&mut self, outcome: &mut StrokeOutcome) {
-        self.take_answers();
+        self.drain_answers();
         let probed = std::mem::take(&mut self.board.court.probed);
         StrokeOutcome::add(&mut outcome.closed, &probed.closed);
     }

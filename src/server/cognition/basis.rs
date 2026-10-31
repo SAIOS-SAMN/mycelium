@@ -25,22 +25,22 @@ impl Court {
     ///
     /// A provisional word stands from the tick of the act that admitted it
     /// (78.24); any other word from its standing stamp.
-    pub(crate) fn t_extent(&self, addr: &[u8], now: u64) -> Option<u64> {
-        let admitted = match self.provisional.contains(addr) {
-            true => self.admitted_at(addr).map(|s| s.h),
+    pub(crate) fn t_extent(&self, address: &[u8], now: u64) -> Option<u64> {
+        let admitted = match self.provisional.contains(address) {
+            true => self.admitted_at(address).map(|s| s.h),
             false => None,
         };
-        let Some(then) = admitted.or_else(|| self.standing_h.get(addr).copied()) else {
+        let Some(then) = admitted.or_else(|| self.standing_h.get(address).copied()) else {
             return Some(0);
         };
         now.checked_sub(then)
     }
 
-    pub(crate) fn stamp_standing(&mut self, addr: impl AsRef<[u8]>) {
-        let addr = addr.as_ref();
+    pub(crate) fn stamp_standing(&mut self, address: impl AsRef<[u8]>) {
+        let address = address.as_ref();
         let h = self.height();
-        if self.standing_h.get(addr).is_none() {
-            self.standing_h.insert(addr, h);
+        if self.standing_h.get(address).is_none() {
+            self.standing_h.insert(address, h);
         }
     }
 
@@ -60,47 +60,47 @@ impl Court {
         crate::transducer::sheaf::stratum_root(&self.ruled.fibre(inv))
     }
 
-    /// Whether this court has marked `addr` heard. A heard mark says the
+    /// Whether this court has marked `address` heard. A heard mark says the
     /// glue ran once for this address on this court; it is not a verdict,
     /// and a reader that needs one replays (`court_replay`).
-    pub fn heard_contains(&self, addr: &[u8]) -> bool {
-        self.heard.contains(addr)
+    pub fn heard_contains(&self, address: &[u8]) -> bool {
+        self.heard.contains(address)
     }
 
-    pub(crate) fn heard_mark(&mut self, addr: impl AsRef<[u8]>, inv: &crate::transducer::stalk::Invariant) {
-        let addr = addr.as_ref();
+    pub(crate) fn heard_mark(&mut self, address: impl AsRef<[u8]>, inv: &crate::transducer::stalk::Invariant) {
+        let address = address.as_ref();
         let root = self.stratum_root_of(inv);
         let chart = inv.key().into_vec();
         // Re-marked under another chart, the address leaves the old chart's
         // fibre: an index that only ever grows would answer a stratum with
         // addresses that are no longer heard under it.
-        if let Some((was, _)) = self.heard.get(addr) {
+        if let Some((was, _)) = self.heard.get(address) {
             if was != &chart {
                 let was = was.clone();
                 if let Some(inner) = self.heard_at.get_mut(&was) {
-                    inner.remove(addr);
+                    inner.remove(address);
                 }
             }
         }
-        self.heard_at.nested_insert(chart.clone(), addr, ());
-        self.heard.insert(addr, (chart, root));
+        self.heard_at.nested_insert(chart.clone(), address, ());
+        self.heard.insert(address, (chart, root));
     }
 
     /// An address is no longer heard: it leaves both the set and the chart
     /// fibre that indexes it.
-    pub(crate) fn heard_forget(&mut self, addr: &[u8]) {
-        if let Some((chart, _)) = self.heard.remove(addr) {
+    pub(crate) fn heard_forget(&mut self, address: &[u8]) {
+        if let Some((chart, _)) = self.heard.remove(address) {
             if let Some(inner) = self.heard_at.get_mut(&chart) {
-                inner.remove(addr);
+                inner.remove(address);
             }
         }
     }
 
-    pub(crate) fn chill_field(&mut self, addr: &[u8]) {
-        if let Some(listing) = self.field.remove(addr) {
-            self.field_cold.insert(addr, listing);
+    pub(crate) fn chill_field(&mut self, address: &[u8]) {
+        if let Some(listing) = self.field.remove(address) {
+            self.field_cold.insert(address, listing);
         }
-        self.open.remove(addr);
+        self.open.remove(address);
     }
 
     /// Relocate the largest-T standing carriers on a saturated temporal lane.
@@ -117,8 +117,8 @@ impl Court {
         let mut best: Option<(Vec<u8>, u64)> = None;
         let mut unmeasured = false;
         let mut past_carrier = false;
-        let mut consider = |addr: Vec<u8>| {
-            let Some(t) = self.t_extent(&addr, now) else {
+        let mut consider = |address: Vec<u8>| {
+            let Some(t) = self.t_extent(&address, now) else {
                 unmeasured = true;
                 return;
             };
@@ -128,7 +128,7 @@ impl Court {
             }
             match best {
                 Some((_, bt)) if t <= bt => {}
-                _ => best = Some((addr, t)),
+                _ => best = Some((address, t)),
             }
         };
         // THE T LANE'S OWN LISTINGS, and the provisionals standing beside
@@ -137,11 +137,11 @@ impl Court {
         // book, whose whole content stands on the temporal lane by
         // definition. A carrier omitted here is a carrier the saturated
         // lane is never relieved of.
-        for (addr, _) in self.lane_listings[2].scoped() {
-            consider(addr);
+        for (address, _) in self.lane_listings[2].scoped() {
+            consider(address);
         }
-        for (addr, _) in self.provisional.scoped() {
-            consider(addr);
+        for (address, _) in self.provisional.scoped() {
+            consider(address);
         }
         // A lane holding a listing whose extent cannot be measured is not a
         // saturated lane; it is an unread one, and nothing is relocated
@@ -195,72 +195,72 @@ impl Court {
         }
         // The T-room is exhausted: the standing word of greatest T moves to
         // the cavity.
-        let Some((addr, _)) = best else {
+        let Some((address, _)) = best else {
             return;
         };
-        self.relocate_standing(&addr);
+        self.relocate_standing(&address);
     }
 
-    pub(crate) fn relocate_standing(&mut self, addr: &[u8]) {
-        let _ = self.treasury.revoke_award(addr, crate::economy::escrow::Revocation::Drop);
-        if self.pending.contains(addr) {
-            self.relocate_cavity(addr);
-            self.leave_provisional(addr);
-        } else if let Some(w) = self.leave_provisional(addr) {
+    pub(crate) fn relocate_standing(&mut self, address: &[u8]) {
+        let _ = self.treasury.revoke_award(address, crate::economy::escrow::Revocation::Drop);
+        if self.pending.contains(address) {
+            self.relocate_cavity(address);
+            self.leave_provisional(address);
+        } else if let Some(w) = self.leave_provisional(address) {
             // The word moves from the docket to the cavity: one element, moved.
             let inv = crate::transducer::stalk::invariant_of(&w);
-            self.listing_atlas.admit(&inv, addr);
-            self.cavity_book.insert(addr, w);
-            self.chill_field(addr);
+            self.listing_atlas.admit(&inv, address);
+            self.cavity_book.insert(address, w);
+            self.chill_field(address);
         }
-        if self.lane_listings[2].contains(addr) {
+        if self.lane_listings[2].contains(address) {
             // The lane lists it, so the lane carries it; a lane at zero
             // listing something is a broken count and stays at zero.
             if let Some(next) = self.occupancy[2].checked_sub(1) {
                 self.occupancy[2] = next;
             }
-            self.lane_listings[2].remove(addr);
+            self.lane_listings[2].remove(address);
         }
-        self.standing_h.remove(addr);
+        self.standing_h.remove(address);
     }
 
-    pub(crate) fn discoverer_of(&self, addr: &[u8]) -> Option<[u8; 32]> {
-        self.discoverers.get(addr).copied()
+    pub(crate) fn discoverer_of(&self, address: &[u8]) -> Option<[u8; 32]> {
+        self.discoverers.get(address).copied()
     }
 
     /// A held word, to change. `Held::update` is the only way through it:
     /// the element is mutated and the form re-decoded together, so a form
     /// cannot describe a tape the element no longer has (L16).
-    pub(crate) fn word_mut(&mut self, addr: &[u8]) -> Option<&mut crate::transducer::element::Held> {
-        self.basis.get_mut(addr).map(std::sync::Arc::make_mut)
+    pub(crate) fn word_mut(&mut self, address: &[u8]) -> Option<&mut crate::transducer::element::Held> {
+        self.basis.get_mut(address).map(std::sync::Arc::make_mut)
     }
 
-    pub(crate) fn book_elem(&self, addr: &[u8]) -> Option<&Element> {
-        self.pending.get(addr)
+    pub(crate) fn book_element(&self, address: &[u8]) -> Option<&Element> {
+        self.pending.get(address)
     }
 
     /// WHETHER THE LIVE SNAPSHOT HOLDS A WORD AT THIS ADDRESS. It was
     /// `live_slot -> Option<usize>` and every one of its four callers threw
     /// the slot away and kept the `is_some`.
-    pub(crate) fn is_live(&self, addr: &[u8]) -> bool {
-        self.language.holds(addr)
+    pub(crate) fn is_live(&self, address: &[u8]) -> bool {
+        self.language.holds(address)
     }
 
     pub(crate) fn index_word(&mut self, w: &Element) {
-        let addr = w.address();
+        let address = w.address();
         if let Some(k) = action_index_key(w) {
-            self.by_action.insert(k, addr.clone());
+            self.by_action.insert(k, address.clone());
         }
         if !w.sub().is_empty() {
             let inv = crate::transducer::stalk::invariant_of(w);
-            self.by_footprint.nested_insert(chart_footprint_key(&inv, w.sub()), addr, ());
+            self.by_footprint.nested_insert(chart_footprint_key(&inv, w.sub()), address, ());
         }
     }
 
     pub(crate) fn unindex_word(&mut self, w: &Element) {
-        let addr = w.address();
+        let address = w.address();
         if let Some(k) = action_index_key(w) {
-            if self.by_action.get(&k).is_some_and(|a| a.as_bytes() == addr.as_bytes()) {
+            if self.by_action.get(&k).is_some_and(|a| a.as_bytes() == address.as_bytes()) {
                 self.by_action.remove(&k);
             }
         }
@@ -268,7 +268,7 @@ impl Court {
             let inv = crate::transducer::stalk::invariant_of(w);
             let fk = chart_footprint_key(&inv, w.sub());
             if let Some(inner) = self.by_footprint.get_mut(&fk) {
-                inner.remove(addr.as_bytes());
+                inner.remove(address.as_bytes());
             }
         }
     }
@@ -308,13 +308,13 @@ impl Court {
     }
 
     /// A listing takes its lanes, at what `occupied_by` read.
-    pub(crate) fn occupy(&mut self, addr: impl AsRef<[u8]>, mag: &[u64; 4], o: Occupied) {
-        let addr = addr.as_ref();
+    pub(crate) fn occupy(&mut self, address: impl AsRef<[u8]>, mag: &[u64; 4], o: Occupied) {
+        let address = address.as_ref();
         self.occupancy = o.occupancy;
         self.pressure_sum = o.pressure;
         for (l, &m) in mag.iter().enumerate() {
             if m > 0 {
-                self.lane_listings[l].insert(addr, ());
+                self.lane_listings[l].insert(address, ());
             }
         }
         if let Some((v, d)) = o.drawn {
@@ -323,9 +323,9 @@ impl Court {
     }
 
     /// A listing leaves its lanes: each by exactly what it occupied.
-    pub(crate) fn vacate(&mut self, addr: impl AsRef<[u8]>, mag: &[u64; 4]) {
-        let addr = addr.as_ref();
-        let voice = self.drawers.get(addr).copied();
+    pub(crate) fn vacate(&mut self, address: impl AsRef<[u8]>, mag: &[u64; 4]) {
+        let address = address.as_ref();
+        let voice = self.drawers.get(address).copied();
         for (l, &m) in mag.iter().enumerate() {
             // The listing occupied this lane by exactly `m`, so the
             // release is exact; a lane holding less than it releases is
@@ -334,7 +334,7 @@ impl Court {
                 self.occupancy[l] = next;
             }
             if m > 0 {
-                self.lane_listings[l].remove(addr);
+                self.lane_listings[l].remove(address);
             }
             if let Some(next) = self.pressure_sum[l].checked_sub(m) {
                 self.pressure_sum[l] = next;
@@ -421,14 +421,14 @@ impl Court {
     /// fallback cursor walk insert this way so a snapshot does not condense
     /// the language it is loading.
     pub(crate) fn basis_insert(&mut self, word: Element, discoverer: [u8; 32]) {
-        let addr = word.address();
+        let address = word.address();
         self.index_word(&word);
         // A word installed again leaves the cavity it was retired to.
-        self.cavity_book.remove(&addr);
+        self.cavity_book.remove(&address);
         // ONE DECODE, HERE, where the court places the word (L16).
         let arc = std::sync::Arc::new(crate::transducer::element::Held::of(word));
-        self.basis.insert(&addr, std::sync::Arc::clone(&arc));
-        self.note_discovered(&addr, discoverer);
+        self.basis.insert(&address, std::sync::Arc::clone(&arc));
+        self.note_discovered(&address, discoverer);
         self.basis_gen += 1;
         self.language_append_arc(arc);
     }
@@ -441,17 +441,17 @@ impl Court {
     /// lagged the carrier -- slot 0 is a real word, and it is not this one.
     /// No caller read either return (rule 11).
     pub(crate) fn basis_push(&mut self, word: Element, discoverer: [u8; 32], budget: &mut crate::physics::Budget) {
-        let addr = word.address();
+        let address = word.address();
         self.basis_insert(word, discoverer);
-        self.syntropic_on_admit(addr, budget);
+        self.syntropic_on_admit(address, budget);
     }
 
     /// Path 2 at admit: the atlas names the sibling a versor relates, the
     /// stratum names a word the new generator derives. Fallback consolidate
     /// still walks the cursor when these reads are empty. On the stroke of
     /// the act that admits the word (65.5): every caller is inside one.
-    pub(crate) fn syntropic_on_admit(&mut self, addr: Address, budget: &mut crate::physics::Budget) {
-        let survivor = self.condense_on(&addr, budget);
+    pub(crate) fn syntropic_on_admit(&mut self, address: Address, budget: &mut crate::physics::Budget) {
+        let survivor = self.condense_on(&address, budget);
         self.refine_stratum(&survivor);
         self.holonomy_orbit(&survivor);
         self.drain_unreachable();
@@ -461,8 +461,8 @@ impl Court {
     /// gauge transitions condenses through torse_at; an open orbit stays
     /// free; an orbit that fails to close on a Twisted chart germinates a
     /// fibre on a fresh axis seeded with the failing transition.
-    pub(crate) fn holonomy_orbit(&mut self, addr: &[u8]) {
-        let Some(word) = self.basis.get(addr) else {
+    pub(crate) fn holonomy_orbit(&mut self, address: &[u8]) {
+        let Some(word) = self.basis.get(address) else {
             return;
         };
         let trans = word.transitions().to_vec();
@@ -510,27 +510,27 @@ impl Court {
             }
         }
         if torse {
-            self.torse_at(addr);
+            self.torse_at(address);
         }
         if let Some(fail) = germinate {
-            self.germinate_fibre(addr, &fail);
+            self.germinate_fibre(address, &fail);
         }
     }
 
-    pub(crate) fn germinate_fibre(&mut self, addr: &[u8], fail: &element::Versor) {
-        let Some(word) = self.basis.get(addr).map(|w| (**w).clone()) else {
+    pub(crate) fn germinate_fibre(&mut self, address: &[u8], fail: &element::Versor) {
+        let Some(word) = self.basis.get(address).map(|w| (**w).clone()) else {
             return;
         };
         let Some(seed) = word.versor() else {
             let asg = element::assignment(word.sub());
-            if let Some(w) = self.word_mut(addr) {
+            if let Some(w) = self.word_mut(address) {
                 w.update(|e| e.record_dislocation(asg, fail.clone(), element::FIBRE_SPATIAL));
             }
-            self.touch_at(addr);
+            self.touch_at(address);
             return;
         };
         let asg = element::assignment(word.sub());
-        let axis = match self.word_mut(addr) {
+        let axis = match self.word_mut(address) {
             // ONE `update`, not two: opening the axis and recording the
             // dislocation on it are one change to the word, and a re-decode
             // between them would file the dislocation against a form that
@@ -547,7 +547,7 @@ impl Court {
             self.overflowed += 1;
             return;
         }
-        self.touch_at(addr);
+        self.touch_at(address);
     }
 
     pub fn prune_basis_to_ruled(&mut self) -> usize {
@@ -555,22 +555,22 @@ impl Court {
         let mut nd = crate::network::nerve::Keyed::new();
         let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         // Walk the federation once through the fed index; peel the live word.
-        for (addr, elem) in &self.court_federation {
+        for (address, elem) in &self.court_federation {
             if elem.is_connection() && elem.letters().is_none() {
                 continue;
             }
-            if seen.contains(addr) {
+            if seen.contains(address) {
                 continue;
             }
-            seen.insert(addr, ());
-            if let Some(w) = self.basis.get(addr) {
-                nb.insert(addr, std::sync::Arc::clone(w));
-                if let Some(d) = self.discoverer_of(addr) {
-                    nd.insert(addr, d);
+            seen.insert(address, ());
+            if let Some(w) = self.basis.get(address) {
+                nb.insert(address, std::sync::Arc::clone(w));
+                if let Some(d) = self.discoverer_of(address) {
+                    nd.insert(address, d);
                 }
             } else {
                 nb.insert(
-                    addr,
+                    address,
                     std::sync::Arc::new(crate::transducer::element::Held::of(elem.clone())),
                 );
             }
@@ -587,7 +587,7 @@ impl Court {
         let dropped = self
             .basis
             .scoped()
-            .filter(|(addr, _)| nb.get(addr).is_none())
+            .filter(|(address, _)| nb.get(address).is_none())
             .count();
         self.basis = nb;
         self.discoverers = nd;
@@ -606,12 +606,12 @@ impl Court {
             .scoped()
             .map(|(a, w)| (a, std::sync::Arc::clone(w)))
             .collect();
-        for (addr, w) in &held {
+        for (address, w) in &held {
             self.index_word(w);
             let inv = crate::transducer::stalk::invariant_of(w);
-            stalks.admit(&inv, addr);
-            ruled.admit(&inv, addr);
-            self.ruled_addrs.insert(addr, ());
+            stalks.admit(&inv, address);
+            ruled.admit(&inv, address);
+            self.ruled_addrs.insert(address, ());
         }
         self.stalks = std::sync::Arc::new(stalks);
         self.ruled = ruled;
@@ -629,8 +629,8 @@ impl Court {
         let strata = self.ruled.strata();
         let mut held = Vec::new();
         for (inv, addrs) in strata {
-            for addr in addrs {
-                if let Some(w) = self.word_at(&addr) {
+            for address in addrs {
+                if let Some(w) = self.word_at(&address) {
                     held.push((
                         inv.clone(),
                         crate::transducer::sentence::acting_of_element(w),
@@ -718,15 +718,15 @@ impl Court {
     /// RULED coordinate. A word ruled before this court sealed any act has
     /// no act to stand at and is filed without one; the snapshot refuses it
     /// by name and counts it.
-    pub(crate) fn fed_admit(&mut self, addr: &[u8], spoken: Element) {
-        if self.court_fed_index.get(addr).is_some() {
+    pub(crate) fn fed_admit(&mut self, address: &[u8], spoken: Element) {
+        if self.court_fed_index.get(address).is_some() {
             return;
         }
         if let Some(at) = self.chain.head_stamp() {
-            self.fed_at.insert(addr, at);
+            self.fed_at.insert(address, at);
         }
-        self.court_fed_index.insert(addr, self.court_federation.len());
-        self.court_federation.push((Address::from(addr), spoken));
+        self.court_fed_index.insert(address, self.court_federation.len());
+        self.court_federation.push((Address::from(address), spoken));
     }
 
     /// Active cover: the identity fibre (so Čech overlap is non-empty after
@@ -749,13 +749,13 @@ impl Court {
     }
 
     /// Whether this address still stands on the quote book.
-    pub fn has_listing(&self, addr: &[u8]) -> bool {
-        self.pending.contains(addr)
+    pub fn has_listing(&self, address: &[u8]) -> bool {
+        self.pending.contains(address)
     }
 
     /// Relocate one listing onto the cavity atlas. The address is kept.
-    pub fn relocate_listing(&mut self, addr: &[u8]) {
-        self.relocate_cavity(addr);
+    pub fn relocate_listing(&mut self, address: &[u8]) {
+        self.relocate_cavity(address);
     }
 
     /// Relocate restored demands whose chart no longer homes here. Never dropped.
@@ -776,18 +776,18 @@ impl Court {
     /// relocated or lapsed — and the offer it stood under leaves with it, at
     /// the transition that closed its orbit and nowhere else: the ruling
     /// returns it.
-    pub(crate) fn leave_provisional(&mut self, addr: &[u8]) -> Option<Element> {
-        if let Some(at) = self.stamp_key(addr) {
+    pub(crate) fn leave_provisional(&mut self, address: &[u8]) -> Option<Element> {
+        if let Some(at) = self.stamp_key(address) {
             self.leave_flight(&at);
         }
-        self.provisional.remove(addr)
+        self.provisional.remove(address)
     }
 
     /// The word's admitting stamp as the key every in-flight index files it
     /// under: its coordinate on the ledger, a fixed few bytes, where the
     /// address itself is held once, by `held_at`.
-    pub(crate) fn stamp_key(&self, addr: &[u8]) -> Option<Vec<u8>> {
-        self.admitted_at.get(addr).map(crate::chronometry::Stamp::key)
+    pub(crate) fn stamp_key(&self, address: &[u8]) -> Option<Vec<u8>> {
+        self.admitted_at.get(address).map(crate::chronometry::Stamp::key)
     }
 
     /// The word a stamp admitted, read back through `held_at`.
@@ -812,24 +812,24 @@ impl Court {
     /// act, sent by that act's caller when it returns. Nothing later scans
     /// for pending offers. A word whose admitting act has not sealed yet is
     /// opened by that act (`file_admitted`).
-    pub(crate) fn enter_offered(&mut self, addr: &[u8]) {
-        let Some(at) = self.stamp_key(addr) else { return };
-        self.enter_flight(addr, &at);
+    pub(crate) fn enter_offered(&mut self, address: &[u8]) {
+        let Some(at) = self.stamp_key(address) else { return };
+        self.enter_flight(address, &at);
     }
 
     /// The orbit opens at the word's stamp: filed under its chart, which is
     /// read here once and kept beside the stamp so leaving reads it by key.
-    pub(crate) fn enter_flight(&mut self, addr: &[u8], at: &[u8]) {
-        let Some(w) = self.provisional.get(addr) else { return };
+    pub(crate) fn enter_flight(&mut self, address: &[u8], at: &[u8]) {
+        let Some(w) = self.provisional.get(address) else { return };
         let chart = crate::transducer::stalk::invariant_of(w).key().into_vec();
         self.offered.nested_insert(&chart, at, ());
         self.flight.insert(at, chart);
         self.emitted.insert(at, ());
     }
 
-    /// Whether the word at `addr` is in flight — read by its stamp's key.
-    pub(crate) fn in_flight(&self, addr: &[u8]) -> bool {
-        self.stamp_key(addr).is_some_and(|at| self.flight.contains(&at))
+    /// Whether the word at `address` is in flight — read by its stamp's key.
+    pub(crate) fn in_flight(&self, address: &[u8]) -> bool {
+        self.stamp_key(address).is_some_and(|at| self.flight.contains(&at))
     }
 
     /// THE OFFERS THE TRANSITION JUST TAKEN EMITTED, each with its records —
@@ -841,11 +841,11 @@ impl Court {
         let emitted = std::mem::take(&mut self.emitted);
         let mut out: Vec<(Address, Vec<u8>)> = Vec::new();
         for (at, ()) in emitted.scoped() {
-            let Some(addr) = self.word_of_stamp(&at) else { continue };
-            let Some(record) = self.provisional.get(addr.as_bytes()).and_then(Element::to_bytes) else {
+            let Some(address) = self.word_of_stamp(&at) else { continue };
+            let Some(record) = self.provisional.get(address.as_bytes()).and_then(Element::to_bytes) else {
                 continue;
             };
-            out.push((addr, record));
+            out.push((address, record));
         }
         out
     }
@@ -854,15 +854,15 @@ impl Court {
     /// transports its frame to the word's escrow, and carries the word — a
     /// transition concerning it. A word this court does not hold in flight
     /// takes no pressure here.
-    pub(crate) fn press(&mut self, addr: &[u8], frame: [u64; 4]) {
-        if !self.in_flight(addr) {
+    pub(crate) fn press(&mut self, address: &[u8], frame: [u64; 4]) {
+        if !self.in_flight(address) {
             return;
         }
-        if self.treasury.credit_escrow(addr, frame).is_none() {
+        if self.treasury.credit_escrow(address, frame).is_none() {
             self.overflowed += 1;
         }
-        self.note_flux(addr, frame);
-        self.carry(addr);
+        self.note_flux(address, frame);
+        self.carry(address);
     }
 
     /// A TRANSITION CARRIES A WORD IN FLIGHT: its offer is emitted again, and
@@ -875,16 +875,16 @@ impl Court {
     /// measure carries an ask or a holonomic unit at its first carriage. A
     /// word that discharges nothing draws nothing, moves no flux, and lapses
     /// as silent (ZeroFlux, 78.37 (3)).
-    pub(crate) fn carry(&mut self, addr: &[u8]) {
-        let Some(frame) = self.provisional.get(addr).map(|w| self.discharge_of(addr, w)) else { return };
-        match self.treasury.carry_escrow(addr, frame) {
+    pub(crate) fn carry(&mut self, address: &[u8]) {
+        let Some(frame) = self.provisional.get(address).map(|w| self.discharge_of(address, w)) else { return };
+        match self.treasury.carry_escrow(address, frame) {
             Some(Ok(_)) => {
-                self.note_flux(addr, frame);
-                if let Some(at) = self.stamp_key(addr) {
+                self.note_flux(address, frame);
+                if let Some(at) = self.stamp_key(address) {
                     self.emitted.insert(&at, ());
                 }
             }
-            Some(Err(_)) => self.lapse_word(addr),
+            Some(Err(_)) => self.lapse_word(address),
             None => {}
         }
     }
@@ -899,26 +899,26 @@ impl Court {
         }
     }
 
-    /// What the offer of `addr` stands at for `witness` (S12.4d): `None`
+    /// What the offer of `address` stands at for `witness` (S12.4d): `None`
     /// until it has been offered to that witness.
-    pub fn offer_standing(&self, addr: &[u8], witness: &[u8; 32]) -> Option<crate::cognition::OfferStanding> {
-        let at = self.stamp_key(addr)?;
+    pub fn offer_standing(&self, address: &[u8], witness: &[u8; 32]) -> Option<crate::cognition::OfferStanding> {
+        let at = self.stamp_key(address)?;
         self.offered_to.get(&at).and_then(|w| w.get(witness)).copied()
     }
 
-    /// The offer of `addr` went to `witness` at this court's K `k`; it
+    /// The offer of `address` went to `witness` at this court's K `k`; it
     /// stands pending there until the witness answers or its Λ elapses.
-    pub fn note_offered(&mut self, addr: &[u8], witness: [u8; 32], k: u64) {
-        if let Some(at) = self.stamp_key(addr) {
+    pub fn note_offered(&mut self, address: &[u8], witness: [u8; 32], k: u64) {
+        if let Some(at) = self.stamp_key(address) {
             self.offered_to.nested_insert(at, witness, crate::cognition::OfferStanding::Pending { k });
         }
     }
 
-    /// `witness` answered the offer of `addr` with a vantage of its own —
+    /// `witness` answered the offer of `address` with a vantage of its own —
     /// the section it reached, or the refusal it named — and is not asked
     /// again for this word.
-    pub fn note_witness_answered(&mut self, addr: &[u8], witness: [u8; 32]) {
-        if let Some(at) = self.stamp_key(addr) {
+    pub fn note_witness_answered(&mut self, address: &[u8], witness: [u8; 32]) {
+        if let Some(at) = self.stamp_key(address) {
             self.offered_to.nested_insert(at, witness, crate::cognition::OfferStanding::Answered);
         }
     }

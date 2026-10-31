@@ -53,7 +53,7 @@ impl Court {
 
     fn fold_head_reading(&self, carrying_work: bool) -> Option<Place> {
         let head = self.final_prefix_head()?;
-        let own_vk = self.chain.vk();
+        let own_vk = self.chain.signer();
         let after = self.chain.root().map(|r| r.at);
         let (at_most, bytes) = Self::receipts_frame()?;
         // The page is served in line order: walked once, it names the last

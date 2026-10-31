@@ -7,7 +7,7 @@
 //! Request: `[ACT_FETCH][voice 32][0xFFFF_FFFE][n u16]{[addr]}·n` — the
 //! marker stands where a fetch writes its chart count, a count no fetch can
 //! carry, and is not the presentation's (`0xFFFF_FFFF`), so none of the three
-//! reads as another. Addresses are `put_addr`'s, read whole.
+//! reads as another. Addresses are `put_address`'s, read whole.
 //!
 //! Reply: the syllabus page shape (`encode_syllabus_reply`): each asked word
 //! the peer installed, at the stamp that admitted it; a word it does not hold
@@ -26,7 +26,7 @@ pub fn encode_cited_request(voice: &[u8; 32], addrs: &[Address]) -> Option<Vec<u
     out.extend_from_slice(&CITED.to_le_bytes());
     crate::transducer::address::put_u16_count(&mut out, addrs.len())?;
     for a in addrs {
-        put_addr(&mut out, a)?;
+        put_address(&mut out, a)?;
     }
     Some(out)
 }
@@ -50,7 +50,7 @@ pub fn decode_cited_request(body: &[u8]) -> Option<([u8; 32], Vec<Address>)> {
     }
     let mut addrs = Vec::with_capacity(n);
     for _ in 0..n {
-        addrs.push(take_addr(body, &mut p)?);
+        addrs.push(take_address(body, &mut p)?);
     }
     (p == body.len()).then_some((voice, addrs))
 }

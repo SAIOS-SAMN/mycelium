@@ -32,16 +32,16 @@ pub(crate) fn run(home: &Path, at: Option<&str>, asked: &str) -> ! {
         println!("{RED}--wallet takes a party's whole key, 64 hex digits{RESET}");
         std::process::exit(2)
     };
-    let Some(addr) = crate::console::address(home, at) else {
+    let Some(endpoint) = crate::console::endpoint(home, at) else {
         println!("{RED}no address to ask{RESET}: pass --at ADDR, or --home a home whose mesh names its bind");
         std::process::exit(2)
     };
-    let Some((reply, _)) = crate::transport::tell_peer_within(&addr, encode_wallet(&who), mycelium::physics::reserve_max()) else {
-        println!("{RED}{addr} did not answer{RESET}: an account it cannot measure is not answered");
+    let Some((reply, _)) = crate::transport::tell_peer_within(&endpoint, encode_wallet(&who), mycelium::physics::reserve_max()) else {
+        println!("{RED}{endpoint} did not answer{RESET}: an account it cannot measure is not answered");
         std::process::exit(2)
     };
     let Some(a) = decode_wallet_reply(&reply) else {
-        println!("{RED}{addr} answered with no wallet this build reads{RESET} ({} bytes)", reply.len());
+        println!("{RED}{endpoint} answered with no wallet this build reads{RESET} ({} bytes)", reply.len());
         std::process::exit(2)
     };
     let stands = match a.at {

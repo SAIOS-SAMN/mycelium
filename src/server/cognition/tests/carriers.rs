@@ -33,7 +33,7 @@ fn lapse_word_leaves_no_carrier_grown() {
     let family = vec![(grid(&["11"]), grid(&["22"]))];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour extracts");
     let spoken = mint_sentence(&rule, &family, &NoCrystal, 0).expect("a sentence");
-    let task = crate::registry::task_id(&crate::arc::Task { train: family.clone(), test: Vec::new() })
+    let task = crate::registry::task_address(&crate::arc::Task { train: family.clone(), test: Vec::new() })
         .expect("a grid pair's chain is A5's, so the task has an identity");
     k.bind_task_family(&task, family);
     let before = table(&k.carriers());

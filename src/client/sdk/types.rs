@@ -224,11 +224,11 @@ impl<'a> WorkingAtlas<'a> {
     ) -> (crate::transducer::stalk::Invariant, LaneMembers) {
         let (at, held) = self.stratum(inv);
         let mut lanes: LaneMembers = [Vec::new(), Vec::new(), Vec::new(), Vec::new()];
-        for (addr, st) in held {
-            let Some(cv) = class_of(&addr) else { continue };
+        for (address, st) in held {
+            let Some(cv) = class_of(&address) else { continue };
             for (l, occupied) in cv.lanes().into_iter().enumerate() {
                 if occupied {
-                    lanes[l].push((addr.clone(), st));
+                    lanes[l].push((address.clone(), st));
                 }
             }
         }
@@ -261,15 +261,15 @@ impl<'a> WorkingAtlas<'a> {
 
     /// The standing of an address on a chart: the chart is the coordinate
     /// the read happens at, in every stratum.
-    pub fn standing_of(&self, addr: &[u8], inv: &crate::transducer::stalk::Invariant) -> Option<Standing> {
-        if self.genome.chart_of(addr) == Some(inv) {
+    pub fn standing_of(&self, address: &[u8], inv: &crate::transducer::stalk::Invariant) -> Option<Standing> {
+        if self.genome.chart_of(address) == Some(inv) {
             return Some(Standing::Ruled);
         }
-        if self.dialect.chart_of(addr) == Some(inv) {
+        if self.dialect.chart_of(address) == Some(inv) {
             return Some(Standing::Stood);
         }
         let on_chart = |v: &crate::transducer::sentence::Vertex| {
-            matches!(v, crate::transducer::sentence::Vertex::Word { address, .. } if address.as_bytes() == addr)
+            matches!(v, crate::transducer::sentence::Vertex::Word { address: held, .. } if held.as_bytes() == address)
         };
         if self.held.is_some_and(|held| held.held_at(inv).into_iter().any(on_chart)) {
             return Some(Standing::Held);

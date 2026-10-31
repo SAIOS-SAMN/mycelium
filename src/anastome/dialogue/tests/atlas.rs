@@ -66,7 +66,7 @@ fn ledger_entry_round_trips_and_verifies() {
 /// id the one derived from its throat key.
 #[test]
 fn map_act_and_reading_round_trip() {
-    use crate::anastome::dialogue::atlas::{local_record_id, local_throat_id};
+    use crate::anastome::dialogue::atlas::{local_record_citation, local_throat_citation};
     use crate::transducer::cga::{base_vector, translator_at, Mv};
     let n = |v: i64| num_rational::BigRational::from_integer(v.into());
     let (f0, f1) = (translator_at(&[n(32), n(-17), n(0)]), translator_at(&[n(5), n(4), n(0)]));
@@ -95,8 +95,8 @@ fn map_act_and_reading_round_trip() {
     let mut material = [6u8; 32].to_vec();
     material.extend_from_slice(&[4; 32]);
     let lid = blake3::derive_key("mycelium local throat v1", &material);
-    assert_eq!(local_throat_id(&[6; 32], &[4; 32]), lid);
-    assert_eq!(local.id(&[6; 32]), local_record_id(&[6; 32], &lid), "held under its derived mouth id");
+    assert_eq!(local_throat_citation(&[6; 32], &[4; 32]), lid);
+    assert_eq!(local.citation(&[6; 32]), local_record_citation(&[6; 32], &lid), "held under its derived mouth id");
     assert_eq!(decode_domain_request(&encode_map_read([6; 32])), Some(DomainRequest::ReadMap([6; 32])));
     let places = |r: &MapRecord| match r {
         MapRecord::Mouth { .. } => vec![base_vector(&[n(1), n(2)])],

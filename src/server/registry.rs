@@ -28,7 +28,7 @@ pub enum Closure {
 }
 
 pub struct TaskRegistry {
-    /// (task_id, the task, state) — append-only, content-addressed.
+    /// (task_address, the task, state) — append-only, content-addressed.
     tasks: Vec<(Address, Task, TaskState)>,
     /// Position of each id in `tasks`. Dispatch still walks the Vec;
     /// lookup, overlay, and settle read here.
@@ -59,7 +59,7 @@ pub struct TaskRegistry {
 /// `None` where a chain of this task has no A5 form. A task whose members
 /// cannot be addressed has no identity, and skipping one would give two
 /// different tasks one id (law 2).
-pub fn task_id(task: &Task) -> Option<Address> {
+pub fn task_address(task: &Task) -> Option<Address> {
     let mut buf = vec![crate::transducer::address::TAG_TASK];
     for (a, b) in &task.train {
         if let Some(crate::arc::Refined { delta: chain, frame, .. }) = refine_delta(a, b) {
@@ -197,7 +197,7 @@ impl TaskRegistry {
     /// name registers nothing). Returns the id, or `None` where a member of
     /// the task has no A5 form and the task therefore has no identity.
     pub fn register(&mut self, task: Task) -> Option<Address> {
-        let id = task_id(&task)?;
+        let id = task_address(&task)?;
         if !self.by_id.contains(id.as_bytes()) {
             let i = self.tasks.len();
             self.tasks.push((id.clone(), task, TaskState::Unsolved));
