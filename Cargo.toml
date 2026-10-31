@@ -29,6 +29,17 @@ blake3 = "1.8"
 ed25519-dalek = { version = "2.1", features = ["rand_core"] }
 rand_core = { version = "0.6", features = ["getrandom"] }
 getrandom = "0.2"
+# The encrypted channel (src/network/noise.rs): Noise_XX_25519_ChaChaPoly_BLAKE2s.
+# No default features: snow's `std` feature names `ring/std`, which pulls the
+# ring C build. The pure-Rust RustCrypto resolver set is all XX needs.
+snow = { version = "0.10.0", default-features = false, features = [
+    "default-resolver",
+    "use-chacha20poly1305",
+    "use-blake2",
+    "use-sha2",
+    "use-curve25519",
+    "use-getrandom",
+] }
 # File locking
 fs2 = "0.4"
 tikv-jemallocator = { version = "0.6.1", features = ["stats"] }
