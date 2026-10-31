@@ -12,7 +12,7 @@ use crate::anastome::dialogue;
 /// as a word of its own — the residual utterance the soak of 2026-09-09
 /// read as garbage.)
 #[test]
-fn a_withheld_remainder_is_never_a_word() {
+fn withhold_form_stands_no_remainder_as_word() {
     use super::common::closed_turn;
     use crate::client::sdk::*;
     use crate::transducer::element::{canonical_chain, from_canonical};
@@ -47,7 +47,7 @@ fn a_withheld_remainder_is_never_a_word() {
 /// words that are one vertex must land in one stratum. That is what this
 /// asserts, since it is the property a wrong key would break silently.
 #[test]
-fn one_vertex_lies_in_one_stratum_however_it_is_spelled() {
+fn vertex_stratum_is_one_per_vertex_however_spelled() {
     use crate::transducer::alphabet::{LetterId, Word};
     use crate::transducer::element::{from_connection, identity_versor, translator_versor};
 
@@ -120,7 +120,7 @@ fn one_vertex_lies_in_one_stratum_however_it_is_spelled() {
 /// a word lost to a short frame. Rule 11 and checklist (i), and the value
 /// it invented was the favourable one.
 #[test]
-fn a_code_the_hypha_did_not_send_is_not_an_outcome() {
+fn read_speech_reply_admits_only_codes_sent() {
     // Three sentences went on the wire; the reply answers about one.
     let mut codes = vec![0xff, 0xff, 0xff];
     let admitted = read_speech_reply(&mut codes, &[dialogue::SPEECH_STOOD]);
@@ -177,7 +177,7 @@ fn a_code_the_hypha_did_not_send_is_not_an_outcome() {
 /// mind's dialect, carrying its return; the thought itself never does.
 /// Nothing stands before the return. It waits on no word from anywhere.
 #[test]
-fn a_mind_speaks_its_closed_thought_into_its_own_dialect() {
+fn act_on_returns_speaks_closed_thought_into_dialect() {
     use crate::client::sdk::*;
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
     let grid = |rows: &[&str]| -> Vec<Vec<u8>> { rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect() };

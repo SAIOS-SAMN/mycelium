@@ -138,7 +138,7 @@ fn generated() -> Vec<(&'static str, Form)> {
 /// last was given a place and the first kept a stale index every face at
 /// that end pointed through.
 #[test]
-fn two_vertices_at_one_coordinate_are_one_vertex() {
+fn form_vertex_key_merges_vertices_at_one_coordinate() {
     let mut f = Form::default();
     for _ in 0..3 {
         stand_with_star(&mut f, &word_vertex_on(9, Word::identity(), stalk::Invariant::counts(&[7])));
@@ -176,7 +176,7 @@ fn two_vertices_at_one_coordinate_are_one_vertex() {
 /// DECODER` was read as a wall rather than as an unwritten inverse, and the
 /// tape carried the key's content a second time because of it.
 #[test]
-fn from_address_recovers_every_form_it_addresses() {
+fn from_address_inverts_form_vertex_key() {
     for (what, f) in generated() {
         let key = form_vertex_key(&f);
         let Some(back) = from_address(&key) else {
@@ -197,7 +197,7 @@ fn from_address_recovers_every_form_it_addresses() {
 /// is calling those bytes a coordinate — which is exactly what is being
 /// refused here, and the line now reads as the assertion it is.
 #[test]
-fn a_key_that_is_not_one_is_refused() {
+fn from_address_refuses_foreign_and_truncated_keys() {
     use crate::transducer::address::Address;
     assert!(from_address(&Address::new(Vec::new())).is_none(), "no bytes, no form");
     assert!(
@@ -231,7 +231,7 @@ fn a_key_that_is_not_one_is_refused() {
 /// here so a future writer cannot quietly make identity depend on
 /// evidence — which would fork one word into one address per presentation.
 #[test]
-fn evidence_is_not_identity() {
+fn form_vertex_key_ignores_citations_and_certificates() {
     let q = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
     let cited = crate::transducer::address::Address::from_bytes([9u8; 8]);
@@ -316,7 +316,7 @@ fn evidence_is_not_identity() {
 /// `O(1)` per citation whatever the cited form's size, so carrying it does
 /// not re-inline what 1.7 keeps whole.
 #[test]
-fn a_citation_carries_the_morphism_it_acts_under() {
+fn glue_under_keys_and_recovers_morphism() {
     use crate::transducer::element::{identity_versor, translator_versor};
     let q = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
@@ -373,7 +373,7 @@ fn a_citation_carries_the_morphism_it_acts_under() {
 /// key it cannot parse yields no form, and `TAG_RESIDUAL` and `TAG_FORM`
 /// were split precisely so one decoder cannot be handed the other's bytes.
 #[test]
-fn a_sentence_is_known_by_its_tag_and_carries_no_tape() {
+fn as_element_form_tags_sentence_without_tape() {
     let q = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let inner = closed_word_form(Word::from_letters(&[(q, false)]), None);
     let e = as_element_form(&inner, [1, 0, 0, 0]).expect("mints");
@@ -411,7 +411,7 @@ fn a_sentence_is_known_by_its_tag_and_carries_no_tape() {
 /// `Frame`, `Rebased` and `Unfolded` vertices have no derived address of
 /// their own yet, and until they do a face cannot be `(A_i, A_j)`.
 #[test]
-fn the_address_is_independent_of_vertex_append_order() {
+fn form_vertex_key_ignores_append_order() {
     let q01 = alphabet::LetterId::turn_90((0, 1)).expect("q");
     let q23 = alphabet::LetterId::turn_90((2, 3)).expect("q");
     let mk = |ids: [alphabet::LetterId; 2]| {
@@ -465,7 +465,7 @@ fn the_address_is_independent_of_vertex_append_order() {
 /// and carries no chain, is refused rather than answered with an empty one
 /// — "not a chain" is not "a chain that says nothing" (rule 11).
 #[test]
-fn a_form_and_a_residual_refuse_each_others_decoder() {
+fn from_residual_and_from_address_refuse_each_other() {
     use crate::transducer::element::from_residual as mint_residual;
     use crate::transducer::sentence::from_residual;
 
@@ -529,7 +529,7 @@ fn a_form_and_a_residual_refuse_each_others_decoder() {
 /// is a ruling (torsion enters the key, which is a layout change and so a
 /// recut; or 54.5's value carries it), never a decoder inventing a theorem.
 #[test]
-fn the_address_does_not_carry_the_filing() {
+fn form_vertex_key_omits_filed_torsion() {
     let mut f = chord_form(&[word_turn_90()]);
     assert!(!f.orbits.is_empty(), "the fixture must have an orbit, or nothing is being tested");
     let mut filed = 0usize;
@@ -577,11 +577,11 @@ fn the_address_does_not_carry_the_filing() {
 ///
 /// The filer now solves for the fixed point through
 /// [`crate::transducer::cech::classify`], whose own gate is proved in
-/// `cech::tests::classify::a_turn_about_a_point_files_and_a_screw_stands`.
+/// `cech::tests::classify::classify_files_point_turn_and_stands_screw`.
 /// This asserts the FILER reaches it — that the two are connected, which is
 /// what was missing — by reading the periods off both arms of that gate.
 #[test]
-fn the_filer_reaches_the_fixed_point_gate() {
+fn classify_files_turn_at_four_and_screw_at_zero() {
     use crate::transducer::cech::{classify, Fill};
     use crate::transducer::cga;
     use crate::transducer::element::identity_versor;
@@ -616,7 +616,7 @@ fn the_filer_reaches_the_fixed_point_gate() {
 /// over ℚ. Two unit spheres tangent at `(1,0,0)`; two of radius 5 crossing
 /// in the circle `x = 3, y² + z² = 16`. A point off the witness moves.
 #[test]
-fn the_interface_fixes_the_witness_of_its_contact() {
+fn interface_between_fixes_contact_witness() {
     use crate::transducer::cga::{point_at, sphere_at};
     let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
     let applied = |i: &Interface, p: &crate::transducer::cga::Mv| i.v.geo(p).geo(&i.v.reverse());
@@ -639,7 +639,7 @@ fn the_interface_fixes_the_witness_of_its_contact() {
 /// them and the inverse returns them (the A21 property on the interface).
 /// Another `V`, or another grade, is another form; `λV` is the same one.
 #[test]
-fn a_face_carries_its_interface_through_its_address() {
+fn from_address_recovers_face_interface() {
     let mut f = star_form(2, vec![(1, 2, Word::identity())]);
     // The chord the fixture wrote, by its overlap: the orbit's chord is never
     // a star overlap (AT1).

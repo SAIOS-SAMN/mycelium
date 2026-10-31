@@ -31,7 +31,7 @@ fn l_blown_up() -> blade::Shape {
 /// RX1's TRANSPOSITION `f̄`: `⟨f̄(x) y⟩₀ = ⟨x f(y)⟩₀` on every pair of
 /// generators, and a versor's action is orthogonal, `f̄ ∘ f = 1`.
 #[test]
-fn rx1_the_adjoint_is_the_transposition_and_a_versors_action_is_orthogonal() {
+fn adjoint_is_transposition_and_versor_action_orthogonal() {
     let m = translator_at(&[q(1, 2), q(-3, 1), q(2, 1)]).geo(&rotator(&q(2, 1), &q(1, 1)).widened(3));
     let f = LinearFunction::of_versor(&m).expect("a versor acts");
     let ft = f.adjoint();
@@ -49,7 +49,7 @@ fn rx1_the_adjoint_is_the_transposition_and_a_versors_action_is_orthogonal() {
 /// from `b` to `a`, one order, the residue transposed — for a turn, and for a
 /// blow-up whose fit leaves a residue at order four.
 #[test]
-fn t1_every_exact_transition_reads_the_same_from_both_sides() {
+fn reciprocal_reads_every_transition_from_both_sides() {
     let turned = blade::shape_of(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (1, 0, 0)]);
     for (a, b) in [(l(), turned), (l(), l_blown_up())] {
         let (ab, ba) = (coset(&a, &b), coset(&b, &a));
@@ -63,7 +63,7 @@ fn t1_every_exact_transition_reads_the_same_from_both_sides() {
 /// T2 — THE FIT ORDER IS SYMMETRIC, and the blow-up fits through three both
 /// ways, its residue at four transposed.
 #[test]
-fn t2_the_fit_order_reads_the_same_both_ways() {
+fn certify_fit_order_is_symmetric() {
     let (a, b) = (l(), l_blown_up());
     let (ab, ba) = (
         certify(&a.blade, &b.blade, crate::transducer::base::GRID_PLANE).expect("fit"),

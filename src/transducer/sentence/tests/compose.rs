@@ -27,7 +27,7 @@ fn stroke() -> crate::physics::Budget {
 /// ℓ = 1. One 90° turn alone, carried back to itself, closes at its order:
 /// four.
 #[test]
-fn a_sentence_closes_at_the_period_of_its_holonomy() {
+fn compose_closes_at_holonomy_period() {
     let r = turn(E1 | E2);
     let back = Term { word: r.reverse(), transport: one() };
     let s = compose(&[Term { word: r.clone(), transport: one() }, back], &mut stroke()).expect("a sentence");
@@ -41,7 +41,7 @@ fn a_sentence_closes_at_the_period_of_its_holonomy() {
 /// teaches its holonomy, the one null motion (78.97, the one rule of 78.100
 /// D2). A sentence whose modes do not read teaches nothing.
 #[test]
-fn a_translated_sentence_is_open_and_teaches_its_null_motion() {
+fn next_rung_teaches_translations_null_motion() {
     let t = cga::translator_at(&[q(1), q(0), q(0)]);
     let s = compose(&[Term { word: one(), transport: t.clone() }], &mut stroke()).expect("a sentence");
     assert_eq!(s.closure, Closure::Unbound, "a translation carries and never returns");
@@ -58,7 +58,7 @@ fn a_translated_sentence_is_open_and_teaches_its_null_motion() {
 /// written in its own chart as `g W g̃`, is read in the first chart as `W`
 /// itself — the same motion seen from two charts is one generator (§1).
 #[test]
-fn every_word_is_carried_into_the_first_chart() {
+fn compose_carries_every_word_into_first_chart() {
     let w = turn(E1 | E2);
     let g = turn(E2 | E3);
     let seen = g.geo(&w).geo(&g.reverse());
@@ -71,7 +71,7 @@ fn every_word_is_carried_into_the_first_chart() {
 /// THE CURVATURE IS THE CARRIED WORDS' ALGEBRA: two turns on planes that
 /// share an axis do not commute and close to so(3), rank 3.
 #[test]
-fn a_sentence_reads_the_rank_of_its_carried_words() {
+fn compose_reads_rank_of_carried_words() {
     let s = compose(
         &[Term { word: turn(E1 | E2), transport: one() }, Term { word: turn(E2 | E3), transport: one() }],
         &mut stroke(),
@@ -85,7 +85,7 @@ fn a_sentence_reads_the_rank_of_its_carried_words() {
 /// rung does — here the 90° turn's sentence teaches the turn itself, and the
 /// next rung's sentence of that word closes at four again.
 #[test]
-fn a_closed_sentence_teaches_a_word_of_the_next_rung() {
+fn next_rung_teaches_closed_sentences_open_path() {
     let r = turn(E1 | E2);
     let s = compose(&[Term { word: r.clone(), transport: one() }], &mut stroke()).expect("a sentence");
     let words = next_rung(&[s]);
@@ -134,7 +134,7 @@ fn path_of(transitions: Vec<crate::transducer::sentence::circuit::CarriedTransit
 /// the identity, ℓ = 1. And the circuit's one reader (`composite`) is this
 /// product.
 #[test]
-fn a_rings_crossing_is_one_motion_word_and_displacement_together() {
+fn terms_of_crossing_composes_word_and_displacement() {
     use crate::transducer::sentence::compose::{omega_of, terms_of};
     let one_way = path_of(vec![crossing(true)]);
     let terms = terms_of(&one_way).expect("every transport read");
@@ -178,7 +178,7 @@ fn a_rings_crossing_is_one_motion_word_and_displacement_together() {
 /// CT2); decoded from the wire it is the same form, and the court reads it
 /// refused too — no static read is invented at the decode.
 #[test]
-fn a_contact_the_mind_could_not_refract_is_refused_alike_at_the_court() {
+fn sentences_of_refuses_unrefracted_contact_after_decode() {
     use super::common::{contact, stand_with_star, word_vertex_on};
     use crate::transducer::sentence::compose::{sentences_of, RingUnread, TermUnread};
     use crate::transducer::sentence::Form;
@@ -211,7 +211,7 @@ fn a_contact_the_mind_could_not_refract_is_refused_alike_at_the_court() {
 /// decoded with the same candidates, whole: the court composes every route
 /// the voice composed, never the static read alone.
 #[test]
-fn a_contacts_refraction_crosses_the_wire_whole() {
+fn from_element_form_keeps_contact_refraction_whole() {
     use super::common::{contact, stand_with_star, word_vertex_on};
     use crate::transducer::sentence::{Form, Refraction, Transport};
     let mut f = Form::default();
@@ -247,7 +247,7 @@ fn a_contacts_refraction_crosses_the_wire_whole() {
 /// — so a single sequence of terms is refused (`HeldCoset`) and the composer
 /// keeps every route.
 #[test]
-fn a_contact_is_read_by_its_static_tether_or_its_held_coset() {
+fn terms_of_reads_static_tether_refuses_held_coset() {
     use crate::transducer::sentence::compose::{omega_of, terms_of, TermUnread};
     use crate::transducer::sentence::{HeldPose, Refraction, Transport};
     let tether = cga::translator_at(&[q(1), q(1), q(0)]);

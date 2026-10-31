@@ -125,7 +125,7 @@ fn pass(k: &mut Kernel, h: u64) {
 /// `u64::MAX`, a split with no keeper share — every lane's parts sum to its
 /// charge, each non-keeper part is exactly its floor, the keeper's last.
 #[test]
-fn a_split_sums_exactly_under_adversarial_rationals() {
+fn tariff_parts_sum_exactly_under_adversarial_shares() {
     let (a, b, keeper) = ([1u8; 32], [2u8; 32], [9u8; 32]);
     let splits = [
         vec![(a, (1, 3)), (b, (1, 3)), (keeper, (1, 3))],
@@ -166,7 +166,7 @@ fn a_split_sums_exactly_under_adversarial_rationals() {
 /// the other domain's tier or to a stranger, a flat toll beside the tariff,
 /// shares not whole — each refused at the offer.
 #[test]
-fn a_tariffed_mouth_splits_only_to_its_keeper_and_its_lines() {
+fn handoff_mouth_refuses_split_beyond_keeper_and_lines() {
     let mut k = founded();
     let offer = |k: &mut Kernel, m: Mouth| match k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(4))) {
         Handed::Refused(r) => Some(r),
@@ -189,7 +189,7 @@ fn a_tariffed_mouth_splits_only_to_its_keeper_and_its_lines() {
 /// short on a lane is refused and never debited. Accepted, the parts are
 /// HELD: the recipients' balances untouched, their line heads reading it.
 #[test]
-fn every_passage_pays_on_its_own_lanes_and_a_short_lane_is_refused() {
+fn handoff_traverse_charges_own_lanes_and_refuses_short() {
     let mut k = founded();
     let m = open(&mut k, mouth(tariff()));
     let traveller = vk(&reserve(5));
@@ -214,7 +214,7 @@ fn every_passage_pays_on_its_own_lanes_and_a_short_lane_is_refused() {
 /// restart; before `W` from the acceptance nothing moves; after it, every
 /// part at once, each part's rows citing the traverse act.
 #[test]
-fn the_parts_are_released_together_when_the_window_closes() {
+fn settle_windows_releases_toll_parts_together() {
     let mut k = founded();
     let m = open(&mut k, mouth(tariff()));
     fund(&mut k, vk(&reserve(5)), [10, 0, 0, 15]);
@@ -241,7 +241,7 @@ fn the_parts_are_released_together_when_the_window_closes() {
 /// fold consumed the passage leaving; demanded, it holds the toll past the
 /// window; defaulted, it is reversed, and every part returns at once.
 #[test]
-fn an_out_fold_reversed_refunds_every_part_together() {
+fn challenge_default_refunds_toll_parts_together() {
     let mut k = founded();
     let m = open(&mut k, mouth(tariff()));
     let traveller = vk(&reserve(5));

@@ -34,7 +34,7 @@ fn edges(c: &Complex, vs: &[Vec<u8>]) -> Vec<Option<(Rotor, crate::transducer::e
 /// dipole's only read-back — to the SAME fill over the SAME boundary; the
 /// ledger counts two seals and one kill, and never nets them.
 #[test]
-fn ascend_seals_descend_crosses_and_the_seal_reads_back_the_same_content() {
+fn ascend_then_seal_reads_back_same_content() {
     for third in [Rotor::identity(), turn_90()] {
         let _ = crate::physics::metabolism::take_metabolism();
         let (mut c, vs) = triangle(third);
@@ -62,7 +62,7 @@ fn ascend_seals_descend_crosses_and_the_seal_reads_back_the_same_content() {
 /// NO BOUNDARY, NO ASCENT: a missing edge is `Absent` by name, never a cell
 /// sealed over a hole.
 #[test]
-fn ascend_over_a_missing_edge_is_absent() {
+fn ascend_over_missing_edge_is_absent() {
     let (mut c, vs) = triangle(Rotor::identity());
     let edge = simplex_key(&sorted_verts([&vs[0], &vs[2]]));
     assert!(matches!(c.drain(edge.as_bytes()), Drained::Vacuum));
@@ -72,7 +72,7 @@ fn ascend_over_a_missing_edge_is_absent() {
 /// A CELL WITH NO VOLUME IS NOT MINTED — by `ascend` as by the climb: the
 /// volume is read off the chart, never written as a constant.
 #[test]
-fn ascend_over_a_cell_with_no_volume_is_absent() {
+fn ascend_without_volume_is_absent() {
     let (mut c, vs) = triangle(Rotor::identity());
     assert!(matches!(c.ascend(&vs, |_| [0; 4]), Ascended::Absent), "no volume on any lane, no cell");
     let Ascended::Sealed(_) = c.ascend(&vs, |_| vol()) else { panic!("with its volume read, it seals") };

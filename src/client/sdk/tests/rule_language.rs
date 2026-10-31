@@ -61,20 +61,20 @@ fn solves(id: &str, steps: &[Step]) {
 
 /// 00d62c1b — every background region the shapes enclose is filled yellow.
 #[test]
-fn fill_the_enclosed_regions_00d62c1b() {
+fn sentence_fills_enclosed_regions_00d62c1b() {
     solves("00d62c1b", &[Step::Select(Pred::All), Step::Region(Region::Interior), Step::Hue(vec![(0, 4)])]);
 }
 
 /// a5313dff — the same fill in blue, a body inside the enclosure on its rim.
 #[test]
-fn fill_the_enclosed_regions_a5313dff() {
+fn sentence_fills_enclosed_regions_a5313dff() {
     solves("a5313dff", &[Step::Select(Pred::All), Step::Region(Region::Interior), Step::Hue(vec![(0, 1)])]);
 }
 
 /// 178fcbfb — red seeds extend to the border along their column; blue and
 /// green seeds along their row, over the red.
 #[test]
-fn extend_lines_to_the_border_178fcbfb() {
+fn sentence_extends_lines_to_border_178fcbfb() {
     let line = |dr: i8, dc: i8| Step::Create(Create::Extend { ray: (dr, dc), paint: Paint::Own, stop: Stop::Border });
     solves(
         "178fcbfb",
@@ -92,7 +92,7 @@ fn extend_lines_to_the_border_178fcbfb() {
 /// 88a10436 — the one many-hued body is copied, centre on centre, onto the
 /// grey seed, which it replaces.
 #[test]
-fn copy_the_template_onto_the_seed_88a10436() {
+fn sentence_copies_template_onto_seed_88a10436() {
     solves(
         "88a10436",
         &[Step::Select(Pred::Hue(5)), Step::Create(Create::Copy { template: Pred::Not(Box::new(Pred::Hue(5))) })],
@@ -101,7 +101,7 @@ fn copy_the_template_onto_the_seed_88a10436() {
 
 /// 1cf80156 — the output is the extent of the one body.
 #[test]
-fn crop_to_the_one_body_1cf80156() {
+fn sentence_crops_to_one_body_1cf80156() {
     solves("1cf80156", &[Step::Select(Pred::All), Step::Crop(Extent::Body)]);
 }
 
@@ -111,7 +111,7 @@ fn crop_to_the_one_body_1cf80156() {
 /// μ⃗ is not a word, refused by the mint's own name (a reading, not a fault
 /// of the clause).
 #[test]
-fn a_scale_alone_speaks_every_pair_and_mints_no_word_c59eb873() {
+fn sentence_of_scale_alone_mints_no_word_c59eb873() {
     use crate::transducer::sentence::form::clause::{Act, Clause};
     let (train, test) = task("c59eb873");
     let clauses = [Clause { select: Pred::All, act: Act::Scale { up: 2, down: 1 } }];
@@ -133,7 +133,7 @@ fn a_scale_alone_speaks_every_pair_and_mints_no_word_c59eb873() {
 
 /// A crop with no single body to keep is refused by name.
 #[test]
-fn a_crop_of_two_bodies_is_refused_by_name() {
+fn sentence_refuses_crop_of_two_bodies() {
     let (train, _) = task("be94b721");
     let got = sentence(&[Step::Select(Pred::All), Step::Crop(Extent::Body)], &train, &NoCrystal);
     assert!(matches!(got, Err(NoRule::Unstated(Unstated::NotOne))), "refused by name: {got:?}");
@@ -142,7 +142,7 @@ fn a_crop_of_two_bodies_is_refused_by_name() {
 /// The clauses round-trip through the address the court decodes: the word
 /// the seam mints is read back by the decoder with every clause.
 #[test]
-fn the_clauses_ride_the_address() {
+fn from_address_reads_back_minted_clauses() {
     let (train, _) = task("88a10436");
     let steps = [Step::Select(Pred::Hue(5)), Step::Create(Create::Copy { template: Pred::Not(Box::new(Pred::Hue(5))) })];
     let rule = sentence(&steps, &train, &NoCrystal).expect("mints");
@@ -160,13 +160,13 @@ fn erase() -> Vec<(u8, u8)> {
 
 /// be94b721 — the output is the extent of the LARGEST body; a tie refused.
 #[test]
-fn crop_to_the_largest_body_be94b721() {
+fn sentence_crops_to_largest_body_be94b721() {
     solves("be94b721", &[Step::Select(Pred::extremum(Coord::Shell, Order::Greatest, Tie::Refuse)), Step::Crop(Extent::Body)]);
 }
 
 /// 6e82a1ae — a body of 4 cells turns blue, of 3 red, of 2 green: exact counts.
 #[test]
-fn recolour_by_exact_size_6e82a1ae() {
+fn sentence_recolours_by_exact_size_6e82a1ae() {
     solves(
         "6e82a1ae",
         &[
@@ -182,7 +182,7 @@ fn recolour_by_exact_size_6e82a1ae() {
 
 /// d2abd087 — a body of six cells turns red, every other blue.
 #[test]
-fn recolour_by_a_count_and_its_complement_d2abd087() {
+fn sentence_recolours_by_count_and_complement_d2abd087() {
     let six = Pred::count(Coord::Shell, 6);
     solves(
         "d2abd087",
@@ -192,7 +192,7 @@ fn recolour_by_a_count_and_its_complement_d2abd087() {
 
 /// 08ed6ac7 — the bars recoloured by the rank of their height, tallest first.
 #[test]
-fn recolour_by_rank_08ed6ac7() {
+fn sentence_recolours_by_rank_08ed6ac7() {
     let mut steps = Vec::new();
     for (place, hue) in [(0u32, 1u8), (1, 2), (2, 3), (3, 4)] {
         steps.push(Step::Select(Pred::Rank { coord: Coord::Height, order: Order::Greatest, place, tie: Tie::Refuse }));
@@ -203,7 +203,7 @@ fn recolour_by_rank_08ed6ac7() {
 
 /// a61f2674 — the tallest bar blue, the shortest red, every other erased.
 #[test]
-fn keep_the_extremes_a61f2674() {
+fn sentence_keeps_extremes_a61f2674() {
     let tallest = Pred::extremum(Coord::Height, Order::Greatest, Tie::Refuse);
     let shortest = Pred::extremum(Coord::Height, Order::Least, Tie::Refuse);
     solves(
@@ -222,7 +222,7 @@ fn keep_the_extremes_a61f2674() {
 /// 00dbd492 — each square frame's interior filled by its width: 5 cyan,
 /// 7 yellow, 9 green; the dot inside each stays inside it.
 #[test]
-fn fill_each_interior_by_its_frame_s_width_00dbd492() {
+fn sentence_fills_interior_by_frame_width_00dbd492() {
     let mut steps = Vec::new();
     for (w, hue) in [(5i64, 8u8), (7, 4), (9, 3)] {
         steps.push(Step::Select(Pred::count(Coord::Width, w)));
@@ -234,7 +234,7 @@ fn fill_each_interior_by_its_frame_s_width_00dbd492() {
 
 /// 42a50994 — a lone cell that touches no other body is erased.
 #[test]
-fn erase_the_cells_touching_nothing_42a50994() {
+fn sentence_erases_cells_touching_nothing_42a50994() {
     solves(
         "42a50994",
         &[Step::Select(Pred::And(vec![Pred::count(Coord::Shell, 1), Pred::count(Coord::Contacts, 0)])), Step::Hue(erase())],
@@ -245,7 +245,7 @@ fn erase_the_cells_touching_nothing_42a50994() {
 /// bodies tie for the largest; and at the court, a rule minted where no tie
 /// stood, judged on a pair where one does.
 #[test]
-fn an_unnamed_tie_is_refused_by_name() {
+fn sentence_refuses_unnamed_tie_by_name() {
     let largest = || Step::Select(Pred::extremum(Coord::Shell, Order::Greatest, Tie::Refuse));
     let g = |rows: &[&str]| -> Grid { rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect() };
     let tied = vec![(g(&["11000", "00000", "00022"]), g(&["11"]))];
@@ -272,7 +272,7 @@ fn an_unnamed_tie_is_refused_by_name() {
 /// lane is never a rule's coordinate, and a radius is read only where it is
 /// a rational. At the seam, and at the court.
 #[test]
-fn a_predicate_on_a_coordinate_that_is_not_exact_is_refused_by_name() {
+fn sentence_refuses_inexact_coordinate_by_name() {
     let g = |rows: &[&str]| -> Grid { rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect() };
     let family = vec![(g(&["110", "000", "000"]), g(&["220", "000", "000"]))];
     let lane = sentence(&[Step::Select(Pred::count(Coord::Lane(0), 1)), Step::Hue(vec![(1, 2)])], &family, &NoCrystal);

@@ -18,7 +18,7 @@ fn reads_back(all: &[Reading]) {
 /// Every reading written by its codec reads back as itself, and a query
 /// reply carries them whole.
 #[test]
-fn every_reading_reads_back_as_itself_through_the_act() {
+fn encode_reply_round_trips_every_reading() {
     let memory = Memory {
         first_k: 1,
         first_allocated: 10,
@@ -122,7 +122,7 @@ fn every_reading_reads_back_as_itself_through_the_act() {
 
 /// CV5 — replication per signer and adjudication by kind travel whole.
 #[test]
-fn replication_and_adjudication_read_back_as_themselves() {
+fn encode_reply_round_trips_replication_and_adjudication() {
     let mut axes = [0u64; REP_AXES];
     axes[rep::BACKFILL] = 7;
     axes[rep::STALE] = 2;
@@ -173,7 +173,7 @@ fn replication_counts_per_signer_and_verdicts_by_kind() {
 
 /// A key names its source and what the reading answers.
 #[test]
-fn a_key_names_its_source_and_its_reading() {
+fn source_of_key_names_source_and_tag() {
     let s = Source::Court(vk(1));
     assert_eq!(Source::of_key(&s.key(TAG_MEMORY)), Some((s, TAG_MEMORY)));
     assert_eq!(Source::of_key(&[9; 34]), None, "an unknown source kind");
@@ -182,7 +182,7 @@ fn a_key_names_its_source_and_its_reading() {
 /// A process's store folds what it produced and holds what it replaces as
 /// it stands; a query reads one source by its prefix.
 #[test]
-fn the_store_folds_its_own_readings_and_holds_replaced_ones_as_they_stand() {
+fn publish_folds_readings_and_replace_holds_them() {
     let sample = |k: u64, allocated: u64| Memory {
         first_k: k,
         first_allocated: allocated,
@@ -209,7 +209,7 @@ fn the_store_folds_its_own_readings_and_holds_replaced_ones_as_they_stand() {
 
 /// PH5 — a court's phase travels whole, and the later window stands.
 #[test]
-fn a_courts_phase_reads_back_whole() {
+fn phase_reads_back_and_later_window_stands() {
     let phase = Phase { windows: 3, h0: 986, h1: 989, held: 1, sections: 1, strata: 2, installed: 1, ..Phase::default() };
     reads_back(&[Reading::Phase(phase.clone())]);
     let mut earlier = Reading::Phase(Phase::default());
@@ -220,7 +220,7 @@ fn a_courts_phase_reads_back_whole() {
 /// LD1 — THE CARRIAGE TRAVELS WHOLE, each record filed under its carrier and
 /// kind in order, its largest kept.
 #[test]
-fn the_carriage_reads_back_whole_filed_by_carrier_and_kind() {
+fn carriage_files_by_carrier_and_kind_and_reads_back() {
     let mut c = Carriage::default();
     c.add(CARRIER_FRAME, 0x0d, 40);
     c.add(CARRIER_DELTA, 12, 900);
@@ -238,7 +238,7 @@ fn the_carriage_reads_back_whole_filed_by_carrier_and_kind() {
 /// address. An award on a 70 000-byte word weighs what one on a 3-byte word
 /// does, and the treasury's own snapshot carries no award at all.
 #[test]
-fn an_award_is_measured_flat_in_its_word() {
+fn treasury_carriage_measures_award_flat_in_word() {
     use crate::transducer::address::Address;
     let mut t = crate::economy::Treasury::new();
     let a = (crate::chronometry::Stamp { h: 1, vk: [0; 32], k: 1, i: 0 }, [1u8; 32]);
@@ -259,7 +259,7 @@ fn an_award_is_measured_flat_in_its_word() {
 
 /// A COURT'S ACTS TRAVEL WHOLE (2026-09-29): every counter in its table.
 #[test]
-fn the_acts_travel_whole() {
+fn acts_reads_back_whole() {
     let acts = Acts {
         k: 9,
         reserve: [1, 2, 3, 4],
@@ -283,7 +283,7 @@ fn the_acts_travel_whole() {
 /// MU-CLIENT §5.6 — EVERY PAY A PRODUCER NAMES IS A KIND OF ITS TABLE: each
 /// counted once with its lanes on its own slot.
 #[test]
-fn every_pay_is_a_kind_of_its_table() {
+fn acts_tally_pay_counts_each_kind_on_own_slot() {
     let mut t = crate::observe::ActsTally::default();
     for (i, kind) in [
         "scenes on no family held",
@@ -311,7 +311,7 @@ fn every_pay_is_a_kind_of_its_table() {
 /// name the table does not hold, so each name the producers use is pinned
 /// here, and a renamed slot fails this test rather than counting nothing.
 #[test]
-fn every_counted_name_is_its_table_s() {
+fn count_holds_every_producer_name_in_table() {
     fn holds<const N: usize>(table: &[&str; N], names: &[&str]) {
         for n in names {
             let mut slots = [0u64; N];
@@ -383,7 +383,7 @@ fn every_counted_name_is_its_table_s() {
 /// `Judged::slot` is a bijection onto `JUDGED`, in its order, and a verdict
 /// counted lands exactly there — so no name is dropped as "no work" was.
 #[test]
-fn every_judged_verdict_is_one_slot_of_the_table() {
+fn judged_slot_is_bijection_onto_judged_table() {
     let mut seen = [false; JUDGED.len()];
     for (i, j) in Judged::ALL.iter().enumerate() {
         assert_eq!(j.slot(), i, "{j:?} sits in the table's order");
@@ -406,7 +406,7 @@ fn every_judged_verdict_is_one_slot_of_the_table() {
 /// of the word: the citation is the word's fiber and admitting stamp, never
 /// a copy of it.
 #[test]
-fn a_ledgers_nodes_are_measured_by_act_kind_and_flat_in_the_word() {
+fn of_chain_measures_nodes_by_kind_flat_in_word() {
     use crate::chronometry::{ActKind, Cite, ReceiptChain, Stamp};
     let small = crate::transducer::element::from_canonical(
         &crate::transducer::germinate::germinate(&[(0, 0, 1u8)], &[(0, 0, 2u8)]).expect("a small word"),
@@ -441,7 +441,7 @@ fn a_ledgers_nodes_are_measured_by_act_kind_and_flat_in_the_word() {
 /// the Court reading carrying that standing — and a hand-built residual
 /// with signed lanes at their carrier's ends — reads back as itself.
 #[test]
-fn a_courts_tuniversal_standing_reads_back_exactly() {
+fn tstanding_reads_back_exactly_and_refuses_other_version() {
     use crate::chronometry::tuniversal::{Edge, Keepers, Origin, Residual, TPoint, Tick};
     use ed25519_dalek::SigningKey;
     let origin = Origin { genesis: [0x6a; 32], epoch: 146 };
@@ -508,7 +508,7 @@ fn a_courts_tuniversal_standing_reads_back_exactly() {
 /// whole, their deviations exact rationals lane by lane, and a mind's
 /// reading stands under its own source.
 #[test]
-fn a_minds_reading_and_a_courts_agreements_read_back_exact() {
+fn mind_and_agreements_read_back_exact() {
     let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
     let mind = Mind {
         k: 9,
@@ -578,7 +578,7 @@ fn a_minds_reading_and_a_courts_agreements_read_back_exact() {
 /// answer; its lines travel whole, and lines past the frame are said by
 /// their count and where to ask from.
 #[test]
-fn a_call_is_answered_at_the_carriers_next_boundary() {
+fn live_call_is_answered_at_next_boundary() {
     let line = "observe-test: thoughts";
     let q = live::encode_call(line).expect("the call writes");
     assert_eq!(live::decode_call(&q).as_deref(), Some(line), "the call reads back");
@@ -614,7 +614,7 @@ fn a_call_is_answered_at_the_carriers_next_boundary() {
 /// is still waiting several parks later, and is answered fresh at the
 /// carrier's next boundary.
 #[test]
-fn a_call_waits_while_the_carrier_works_inside_one_law() {
+fn live_call_waits_while_carrier_works_inside_law() {
     let line = "observe-test: a long law";
     live::park(false);
     let asker = std::thread::spawn(move || live::call(line));
@@ -637,7 +637,7 @@ fn a_call_waits_while_the_carrier_works_inside_one_law() {
 /// the court's height then; dispatched again it is counted, the later voice
 /// and height standing; and the reading travels whole.
 #[test]
-fn a_dispatched_task_stands_under_its_citation_and_reads_back() {
+fn note_dispatch_keeps_latest_voice_by_citation() {
     let cite = [0xf2; 32];
     note_dispatch(cite, vk(1), 40);
     note_dispatch(cite, vk(2), 41);
@@ -654,7 +654,7 @@ fn a_dispatched_task_stands_under_its_citation_and_reads_back() {
 /// solve of the same task stands apart; a code past the verdicts is not
 /// recorded; and the reading travels whole.
 #[test]
-fn a_judged_solve_stands_under_its_task_and_voice_and_reads_back() {
+fn note_judged_solve_keeps_verdicts_by_task_and_voice() {
     use crate::anastome::dialogue::{SOLVE_BOUNTY, SOLVE_FLOOR, SOLVE_UNREAD};
     let cite = [0xe7; 32];
     note_judged_solve(cite, vk(1), SOLVE_UNREAD, 50);

@@ -272,7 +272,7 @@ mod tests {
     /// written, neither reads as the other or as a stake, and a reply reads
     /// back with its lease, its lanes or its refusal.
     #[test]
-    fn a_lease_and_its_close_read_back_as_signed() {
+    fn encode_lease_and_close_round_trip_signed() {
         let payer = key(1);
         let act = LeaseAct {
             payer: payer.verifying_key().to_bytes(),

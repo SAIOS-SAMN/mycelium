@@ -124,7 +124,7 @@ fn pivot(form: Form, offered: &Word) -> crate::transducer::sentence::PivotTally 
 /// raises the cell's algebra: REACHED. Note only: the pivot makes the same
 /// move with the reading as without it.
 #[test]
-fn a_pivot_reads_its_move_against_the_cells_its_orbit_crosses() {
+fn pivot_orbit_read_tallies_move_against_crossed_cell() {
     let w = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("a 90° turn on e12"), false)]);
     let e23 = Word::from_letters(&[(LetterId::turn_90((1, 3)).expect("a 90° turn on e23"), false)]);
 

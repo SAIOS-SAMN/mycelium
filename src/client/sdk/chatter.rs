@@ -659,8 +659,10 @@ mod tests {
         ed25519_dalek::SigningKey::from_bytes(&[b; 32])
     }
 
+    /// Every sub-kind reads back whole once signed, a forged frame does not
+    /// verify, and a key other than the speaker's signs nothing.
     #[test]
-    fn every_sub_kind_reads_back_signed_and_a_forged_one_does_not() {
+    fn open_reads_signed_frame_and_refuses_forged() {
         let k = key(7);
         let speaker = k.verifying_key().to_bytes();
         let point = TPoint { h: 9, lanes: [1, 2, 3, 4], k: 5, ..TPoint::default() };
@@ -727,7 +729,7 @@ mod tests {
     /// word the hearer could not read closes nothing; and both minds read one
     /// loop, projectively.
     #[test]
-    fn the_loop_said_heard_carries_what_the_hearers_language_did_to_the_thought() {
+    fn loop_of_carries_what_hearer_did_to_thought() {
         use crate::transducer::cga::{E1, E2};
         let q = |n: i64| num_rational::BigRational::from_integer(n.into());
         let turn = Mv::scalar(q(1)).add(&Mv::blade(E1 | E2, q(1))).widened(3);
@@ -750,8 +752,10 @@ mod tests {
         assert!(same_loop(&exact, &loop_of(&said, &heard(Some(turn.scale(&q(3))), swap))), "one loop, read projectively by both minds");
     }
 
+    /// A frame sent to a post is delivered to its carrier, and a question is
+    /// answered on its own connection.
     #[test]
-    fn a_frame_sent_to_a_post_is_delivered() {
+    fn post_delivers_sent_frame_and_answers_question() {
         let (tx, rx) = std::sync::mpsc::channel::<Vec<u8>>();
         let post = Post::open(
             "127.0.0.1:0",
@@ -769,8 +773,10 @@ mod tests {
         assert_eq!(Chatter::open(&heard), Some(c));
     }
 
+    /// The rendezvous names every other mind's address and never the mind's
+    /// own.
     #[test]
-    fn the_rendezvous_names_every_other_mind() {
+    fn peers_names_every_other_mind() {
         let dir = std::env::temp_dir().join(format!("chatter-rv-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         publish(&dir, &[1; 32], "127.0.0.1:1").expect("published");

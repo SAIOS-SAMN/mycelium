@@ -42,7 +42,7 @@ fn sentence_with(d: Derivation, tag: u8) -> Element {
 /// cited address is ruled, the waiting sentence is heard without the voice
 /// having to speak it a second time.
 #[test]
-fn a_sentence_citing_an_unruled_form_waits_and_is_reheard_when_it_is_ruled() {
+fn perceive_speech_defers_unruled_citation_until_ruled() {
     let mut k = Kernel::new();
     let generator = sentence_with(Derivation::spelled(turn_90(1)), 1);
     let g_addr = generator.address();
@@ -97,7 +97,7 @@ fn a_sentence_citing_an_unruled_form_waits_and_is_reheard_when_it_is_ruled() {
 /// reads the cited address off the reply, which is what tells it which
 /// form to utter first (chapter 6's depth order).
 #[test]
-fn one_frame_adjudicates_a_stood_sentence_and_a_waiting_one_apart() {
+fn hear_speech_adjudicates_stood_and_awaiting_apart() {
     use crate::anastome::dialogue::{self, Adjudication};
     let mut k = Kernel::new();
     let generator = sentence_with(Derivation::spelled(turn_90(1)), 1);
@@ -163,7 +163,7 @@ fn one_frame_adjudicates_a_stood_sentence_and_a_waiting_one_apart() {
 /// wait on is heard, kept, and gone from the docket — so its presence
 /// after the call is the reading (§3.2: the move, never the outcome).
 #[test]
-fn a_ruling_that_did_not_happen_rehears_nothing() {
+fn ruled_admit_absent_word_rehears_nothing() {
     let mut k = Kernel::new();
     // An address this court holds no word at, and a sentence with nothing
     // to wait on, docketed under it.
@@ -226,7 +226,7 @@ fn a_ruling_that_did_not_happen_rehears_nothing() {
 /// The claim is the coordinate: the word answers at the chart its vertex
 /// acts on.
 #[test]
-fn a_ruled_word_is_filed_at_the_chart_its_vertex_acts_on() {
+fn rule_all_provisionals_files_word_at_vertex_chart() {
     use crate::transducer::sentence::{on_axis_of, ClassVector};
     use crate::transducer::stalk::Invariant;
     let chart = Invariant::counts(&[1, 7, 11]);
@@ -296,7 +296,7 @@ fn citer_of(word: &Element, tag: u8) -> Element {
 /// closes the orbit, the word leaves the offered set, and the sentence that
 /// waited (D) is heard, stands, and is itself witnessed and ruled.
 #[test]
-fn a_pressured_word_is_witnessed_and_ruled_and_its_citer_is_upheld() {
+fn witness_rederived_fresh_rules_pressured_word_and_citer() {
     let mut k = Kernel::new();
     let word = sentence_with(Derivation::spelled(turn_90(1)), 1);
     let w = word.address();
@@ -349,7 +349,7 @@ fn a_pressured_word_is_witnessed_and_ruled_and_its_citer_is_upheld() {
 /// sentence that waited on it is released as the demand it is (D), refused
 /// by name and recorded.
 #[test]
-fn a_word_nothing_flows_to_for_an_orbit_lapses_and_its_citer_is_released_as_d() {
+fn orbit_lapses_zero_flux_word_and_releases_citer() {
     let mut k = Kernel::new();
     let word = sentence_with(Derivation::spelled(turn_90(1)), 1);
     let w = word.address();
@@ -385,7 +385,7 @@ fn a_word_nothing_flows_to_for_an_orbit_lapses_and_its_citer_is_released_as_d() 
 /// inside it: a voice that speaks one sentence twice waits once, and the
 /// bucket does not grow with repetition (rule 10).
 #[test]
-fn one_sentence_waiting_twice_is_docketed_once() {
+fn await_citation_dockets_repeated_sentence_once() {
     let mut k = Kernel::new();
     let g_addr = sentence_with(Derivation::spelled(turn_90(1)), 1).address();
     let citer = sentence_with(

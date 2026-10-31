@@ -7,7 +7,7 @@ use num_traits::Zero;
 /// Asserted on the algebra rather than on a comment, because the whole
 /// hyperbolic sector depends on the sign.
 #[test]
-fn a4_is_refused_the_metric_is_indefinite() {
+fn em_squares_negative_so_metric_is_indefinite() {
     use crate::transducer::cga;
     let em = crate::transducer::element::Versor::blade(cga::EM, crate::core::Q::from_integer(1.into()));
     let sq = em.geo(&em).scalar_part();
@@ -25,7 +25,7 @@ fn a4_is_refused_the_metric_is_indefinite() {
 /// rapidity. Every finite boost lies strictly inside; the boundary is
 /// luminal. A displacement one step inside the cone must still read.
 #[test]
-fn the_transvection_chart_covers_finite_boosts_and_ends_at_the_cone() {
+fn cayley_covers_finite_boosts_and_refuses_cone() {
     use crate::core::Q;
     use crate::transducer::cga;
     let q = |n: i64, d: i64| Q::new(n.into(), d.into());

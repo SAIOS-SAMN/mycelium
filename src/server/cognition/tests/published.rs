@@ -77,7 +77,7 @@ fn alike(k: &Kernel, p: &Published, signer: &[u8; 32], asks: &[(Option<Place>, P
 /// root with the hot line, and an era replay with the archive — off the
 /// published reading exactly as off the kernel, at the height published.
 #[test]
-fn the_published_reading_answers_receipts_as_the_kernel_does() {
+fn publish_serves_receipts_as_kernel_does() {
     let (key, mut b) = court("published-b");
     let vk = key.vk_bytes();
     strokes(&mut b, 4);
@@ -96,7 +96,7 @@ fn the_published_reading_answers_receipts_as_the_kernel_does() {
 /// height it was published at. Published again from it, the reading reaches
 /// the head — and only what grew was copied.
 #[test]
-fn a_reading_lags_the_kernel_until_the_next_publication_and_copies_what_grew() {
+fn publish_lags_until_next_and_copies_growth() {
     let (key, mut b) = court("published-lag");
     let vk = key.vk_bytes();
     strokes(&mut b, 3);
@@ -126,7 +126,7 @@ fn a_reading_lags_the_kernel_until_the_next_publication_and_copies_what_grew() {
 /// A PEER'S LINE, admitted in two pieces, is published as the court holds
 /// it: each piece read off the reading as off the kernel.
 #[test]
-fn a_peers_line_admitted_in_pieces_is_published_as_held() {
+fn publish_serves_peer_line_admitted_in_pieces() {
     let (akey, mut a) = court("published-peer-a");
     let avk = akey.vk_bytes();
     strokes(&mut a, 4);
@@ -145,7 +145,7 @@ fn a_peers_line_admitted_in_pieces_is_published_as_held() {
 /// A WALLET OFF THE READING is the kernel's wallet at the publication: an
 /// unseen party reads zero, a payment made after it is read at the next.
 #[test]
-fn a_wallet_off_the_reading_is_the_kernel_wallet_at_the_publication() {
+fn publish_wallet_matches_kernel_at_publication() {
     let (_, mut k) = court("published-wallet");
     strokes(&mut k, 1);
     let anchor = (Stamp::default(), [0u8; 32]);
@@ -170,7 +170,7 @@ fn a_wallet_off_the_reading_is_the_kernel_wallet_at_the_publication() {
 /// the height behind it reads back with it; one without it (a door that
 /// writes none) reads back with none; any other tail refuses.
 #[test]
-fn the_reading_height_rides_behind_a_receipts_answer() {
+fn decode_receipts_answer_at_reads_trailing_height() {
     let (key, mut b) = court("published-wire");
     strokes(&mut b, 2);
     let line = b.chain().line_between(&key.vk_bytes(), None, FAR, usize::MAX);

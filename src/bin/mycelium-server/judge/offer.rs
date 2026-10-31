@@ -266,7 +266,7 @@ mod tests {
     /// The vantage is the form the witness replayed, reaching the offered
     /// address — asked once and asked again.
     #[test]
-    fn a_replayed_offer_is_answered_with_the_form_reached_each_time_it_is_asked() {
+    fn witness_vantage_reaches_offered_form_each_ask() {
         let kernel = std::sync::Mutex::new(mycelium::cognition::Kernel::new());
         let mut cover = mycelium::network::nerve::Cover::new();
         let (home, witness) = ([2u8; 32], [3u8; 32]);
@@ -292,7 +292,7 @@ mod tests {
     /// it is offered again, though this court has marked it heard: the
     /// heard mark is not a verdict, the replay is.
     #[test]
-    fn a_false_offer_is_refused_by_name_each_time_it_is_asked() {
+    fn witness_vantage_refuses_false_form_by_name_each_ask() {
         let kernel = std::sync::Mutex::new(mycelium::cognition::Kernel::new());
         let mut cover = mycelium::network::nerve::Cover::new();
         let (home, witness) = ([2u8; 32], [3u8; 32]);

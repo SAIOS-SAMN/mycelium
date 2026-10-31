@@ -16,7 +16,7 @@ fn budget() -> crate::physics::Budget {
 /// spheres concentric, the generator a dilation with an exact ratio — and
 /// the dilation does not carry two cells onto five.
 #[test]
-fn a_bridged_pair_reads_as_a_confluence_of_two() {
+fn read_pair_reads_bridged_pair_as_confluence() {
     let x = grid(&["10001"]);
     let y = grid(&["11111"]);
     let rem = vec![(0, 1, 0, 1), (0, 2, 0, 1), (0, 3, 0, 1)];
@@ -32,7 +32,7 @@ fn a_bridged_pair_reads_as_a_confluence_of_two() {
 /// CREATION AND SINGLE CARRIAGE: an output body on no input is a creation;
 /// one on exactly one input is a single carriage.
 #[test]
-fn creation_and_single_carriage_are_told_apart() {
+fn read_pair_tells_creation_from_single_carriage() {
     let x = grid(&["100", "000"]);
     let y = grid(&["110", "002"]);
     let rem = vec![(0, 1, 0, 1), (1, 2, 0, 2)];

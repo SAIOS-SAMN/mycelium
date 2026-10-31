@@ -10,7 +10,7 @@ use num_traits::Zero;
 /// reflector negates rows; both are versors; projective equality reads
 /// the scalar ratio and refuses non-proportional blades; bytes round-trip.
 #[test]
-fn rational_versors_act_exactly_and_are_verified_in_closed_form() {
+fn dilator_and_reflector_act_exactly_as_versors() {
     let d = dilator(&q(3, 2));
     assert!(is_versor(&d), "the dilator is a versor");
     let moved = d.sandwich(&point(&q(2, 1), &q(-4, 1), &q(6, 1)));
@@ -28,8 +28,10 @@ fn rational_versors_act_exactly_and_are_verified_in_closed_form() {
     assert_eq!(Mv::from_bytes(&bytes, &mut pos), Some(composed));
 }
 
+/// Projective equality holds under scaling by either sign, and the
+/// canonical key is one across those scalings.
 #[test]
-fn a4_projective_eq_either_sign_and_key() {
+fn projective_eq_holds_either_sign_and_key() {
     let t = translator(&q(2, 1), &q(0, 1), &q(0, 1));
     assert!(t.projective_eq(&t.scale(&q(-3, 2))));
     assert_eq!(t.canonical().unwrap().key(), t.scale(&q(-3, 2)).canonical().unwrap().key());
@@ -43,7 +45,7 @@ fn a4_projective_eq_either_sign_and_key() {
 /// row axis onto the frame axis exactly, and a body in one frame at
 /// `k = 0` is carried there and nowhere else by a plane motion.
 #[test]
-fn the_frame_axis_is_a_base_coordinate() {
+fn translator_treats_frame_axis_as_base_coordinate() {
     let (z, o) = (q(0, 1), q(1, 1));
     let t1 = translator(&q(2, 1), &z, &z);
     let t3 = translator(&z, &z, &q(5, 1));
@@ -68,7 +70,7 @@ fn the_frame_axis_is_a_base_coordinate() {
 /// `m m̃` not a scalar: the pseudoscalar clause refuses it), `1 + I` (every
 /// generator to zero), a null vector, and zero.
 #[test]
-fn the_action_reader_agrees_with_the_theorem_it_implies() {
+fn mv_is_versor_agrees_with_scalar_norm_theorem() {
     use crate::transducer::cga::multivector::pseudo;
     let old = |m: &Mv| {
         let p = m.geo(&m.reverse());
@@ -102,7 +104,7 @@ fn the_action_reader_agrees_with_the_theorem_it_implies() {
 /// origin among them — at its own weight. Read with the plain sandwich, the
 /// mirror sat at `−w` and the reading held only the normal.
 #[test]
-fn a_reflection_holds_its_mirror() {
+fn centre_of_reflection_holds_its_mirror() {
     match centre_of(&reflector(), 3) {
         Centre::Fixed { dim, point } => {
             assert_eq!(dim, 4, "e₂, e₃, e₊, e₋: the mirror and the point at infinity");

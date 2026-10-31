@@ -143,7 +143,7 @@ mod tests {
     /// separates: one member added moves it, which is what discordance
     /// reads.
     #[test]
-    fn a_stratum_root_is_a_root_and_not_its_population() {
+    fn stratum_root_is_fixed_width_over_set() {
         let small: Vec<Vec<u8>> = (0..2u16).map(|i| i.to_le_bytes().to_vec()).collect();
         let large: Vec<Vec<u8>> = (0..2000u16).map(|i| i.to_le_bytes().to_vec()).collect();
         assert_eq!(stratum_root(&small).len(), 32, "a root is thirty-two bytes");
@@ -173,7 +173,7 @@ mod tests {
     /// that stratum; the fetch carries only the lacking word; after learning
     /// it the digests agree everywhere.
     #[test]
-    fn discordance_names_the_stratum_and_the_fetch_closes_it() {
+    fn discordant_names_stratum_and_serve_closes_it() {
         let bar = word(&[(0, 0, 1), (0, 1, 1)], &[(0, 0, 2), (0, 1, 2)]);
         let bar_hue = word(&[(0, 0, 3), (0, 1, 3)], &[(0, 0, 4), (0, 1, 4)]);
         let square = word(

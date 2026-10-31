@@ -27,8 +27,10 @@ fn slide(x: i64, y: i64) -> Mv {
     cga::translator_at(&[q(x, 1), q(y, 1), q(0, 1)])
 }
 
+/// A turn is held on H as its exact fraction of a full turn, and two turns
+/// of 90° are one turn of 180° on the same plane.
 #[test]
-fn a_turn_is_held_on_h_as_its_exact_fraction_of_a_full_turn_and_two_quarters_are_one_half() {
+fn of_motion_holds_turn_on_h_as_exact_fraction() {
     let one = modes(&quarter());
     let [(m, a)] = one.modes().collect::<Vec<_>>()[..] else { panic!("one mode: {}", one.print()) };
     assert_eq!(m.lane(), H);
@@ -41,8 +43,9 @@ fn a_turn_is_held_on_h_as_its_exact_fraction_of_a_full_turn_and_two_quarters_are
     assert_eq!(half.amount_of(&both[0].0), Some(&q(1, 2)), "the turn's square is a half turn on the same plane");
 }
 
+/// A slide is held on T by its count, and its reverse is another mode.
 #[test]
-fn a_slide_is_held_on_t_by_its_count_and_its_reverse_is_another_mode() {
+fn of_motion_holds_slide_on_t_by_count() {
     let two = modes(&slide(2, 0));
     let [(m, a)] = two.modes().collect::<Vec<_>>()[..] else { panic!("one mode: {}", two.print()) };
     assert_eq!(m.lane(), T);
@@ -58,8 +61,9 @@ fn a_slide_is_held_on_t_by_its_count_and_its_reverse_is_another_mode() {
     assert_ne!(back, two, "the reverse slide runs the other side: another mode, never a negative amount");
 }
 
+/// A draw takes whole or refuses, naming the mode and both amounts.
 #[test]
-fn a_draw_takes_whole_or_refuses_naming_the_mode_and_both_amounts() {
+fn take_draws_whole_or_refuses_naming_mode() {
     let mut held = modes(&slide(3, 0));
     held.add(&Modes::of_gauge(&[(1, 2), (2, 1)], &q(1, 1)).expect("a swap is a map"));
     let ask_too_much = {
@@ -82,8 +86,9 @@ fn a_draw_takes_whole_or_refuses_naming_the_mode_and_both_amounts() {
     assert_eq!(held.on_lane(G).count(), 1, "the hue swap is untouched");
 }
 
+/// A holding travels the wire whole, and a zero amount does not read.
 #[test]
-fn a_holding_travels_the_wire_whole_and_a_zero_amount_does_not_read() {
+fn modes_round_trip_and_refuse_zero_amount() {
     let mut held = modes(&slide(2, 1));
     held.add(&modes(&quarter()));
     held.add(&Modes::of_gauge(&[(3, 0)], &q(5, 2)).expect("a merge is a map"));

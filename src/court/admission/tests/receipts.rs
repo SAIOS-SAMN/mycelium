@@ -51,7 +51,7 @@ fn take(ledger: &mut ReceiptChain, r: &KStepReceipt) -> Admitted {
 
 /// The prefix is 47.1's bytes in 47.1's order, and it reads back whole.
 #[test]
-fn the_signed_prefix_is_written_out_and_decodes() {
+fn signed_prefix_round_trips_and_refuses_extra_bytes() {
     let p = SignedPrefix {
         genesis: G,
         epoch: E,
@@ -79,7 +79,7 @@ fn the_signed_prefix_is_written_out_and_decodes() {
 /// genesis or another epoch is refused on the origin, and the ledger holds
 /// nothing of it.
 #[test]
-fn prefix_refuses_foreign_genesis_or_epoch_before_carriers() {
+fn admit_refuses_foreign_genesis_or_epoch_first() {
     let r = line([1; 32], &[(1, vec![])]).remove(0);
     let mut ledger = ReceiptChain::with_vk([9; 32]);
     let mut foreign = prefix_for(&r);
@@ -97,7 +97,7 @@ fn prefix_refuses_foreign_genesis_or_epoch_before_carriers() {
 /// predecessor, and nothing is acted on until the missing receipts are
 /// fetched. The back-fill closes it and the next step admits normally.
 #[test]
-fn receipt_gap_backfills_before_acting() {
+fn admit_dockets_gap_until_backfilled() {
     let rs = line([1; 32], &[(1, vec![]), (2, vec![]), (3, vec![])]);
     let mut ledger = ReceiptChain::with_vk([9; 32]);
     assert!(matches!(take(&mut ledger, &rs[0]), Admitted::Parent(_)));
@@ -114,7 +114,7 @@ fn receipt_gap_backfills_before_acting() {
 /// A first sighting of a signer past its genesis is a gap back to its
 /// genesis.
 #[test]
-fn a_signer_first_seen_mid_chain_is_a_gap_to_its_genesis() {
+fn admit_gaps_unseen_signer_to_genesis() {
     let rs = line([2; 32], &[(1, vec![]), (2, vec![])]);
     let ledger = ReceiptChain::with_vk([9; 32]);
     assert_eq!(admit((G, E), &prefix_for(&rs[1]), &rs[1], &ledger), Admitted::Gap { vk: [2; 32], from: None, to: at(0) });
@@ -126,7 +126,7 @@ fn a_signer_first_seen_mid_chain_is_a_gap_to_its_genesis() {
 /// not follow, or another signer's, or none past genesis, is refused
 /// before the ledger's head is read.
 #[test]
-fn a_receipt_names_a_predecessor_it_follows() {
+fn admit_refuses_predecessor_receipt_does_not_follow() {
     let rs = line([1; 32], &[(1, vec![]), (2, vec![])]);
     let ledger = ReceiptChain::with_vk([9; 32]);
     let refused = |r: &KStepReceipt| admit((G, E), &prefix_for(r), r, &ledger);
@@ -150,7 +150,7 @@ fn a_receipt_names_a_predecessor_it_follows() {
 /// predecessor and the parents the receipt names at their stamps. A parent
 /// this ledger does not hold is the hole it names, never height 0.
 #[test]
-fn claimed_height_that_does_not_rederive_is_refused() {
+fn admit_refuses_height_that_does_not_rederive() {
     let peer = line([3; 32], &[(1, vec![])]).remove(0);
     // The signer held the peer when it cited it.
     let mut signer = ReceiptChain::with_vk([1; 32]);
@@ -182,7 +182,7 @@ fn claimed_height_that_does_not_rederive_is_refused() {
 /// STALE. A different chain hash at a place already held is an
 /// equivocation proof (47.4).
 #[test]
-fn a_duplicate_is_stale_and_a_second_hash_at_one_k_is_equivocation() {
+fn admit_reads_duplicate_stale_second_hash_equivocation() {
     let rs = line([1; 32], &[(1, vec![]), (2, vec![])]);
     let fork = line([1; 32], &[(9, vec![])]).remove(0);
     let mut ledger = ReceiptChain::with_vk([9; 32]);
@@ -202,7 +202,7 @@ fn a_duplicate_is_stale_and_a_second_hash_at_one_k_is_equivocation() {
 /// written and read back admits the next node of a signer as a parent and
 /// one past the head as a gap, with nothing persisted beside it.
 #[test]
-fn admission_after_a_restore_reads_the_restored_ledger() {
+fn admit_reads_restored_ledger() {
     let rs = line([1; 32], &[(1, vec![]), (2, vec![]), (3, vec![])]);
     let mut ledger = ReceiptChain::with_vk([9; 32]);
     ledger.append(crate::chronometry::ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("its own genesis");
@@ -230,7 +230,7 @@ fn court_key() -> crate::court::identity::HyphaKey {
 /// claims. The admitting case is a real ed25519 signature over the real
 /// prefix bytes.
 #[test]
-fn a_frame_is_admitted_only_under_a_signature_over_its_own_prefix() {
+fn admit_signature_verifies_only_own_prefix() {
     let court = court_key();
     let vk = court.vk_bytes();
     let stranger = crate::court::identity::HyphaKey::vk_from_name("stranger");

@@ -46,7 +46,7 @@ fn signed<'a>(prefix: &'a SignedPrefix, key: &crate::court::identity::HyphaKey) 
 /// and each one claim with its prefix, are the proof, and the proof names
 /// the signer and the K the court burns against.
 #[test]
-fn one_signer_one_k_two_hashes_both_verified_is_the_proof() {
+fn admit_equivocation_proves_two_hashes_at_one_place() {
     let key = court_key("liar");
     let vk = key.vk_bytes();
     let (ra, rb) = (first_receipt(vk, 1), first_receipt(vk, 2));
@@ -61,7 +61,7 @@ fn one_signer_one_k_two_hashes_both_verified_is_the_proof() {
 /// on one chain is a chain. None is an equivocation, and each says so by
 /// the name 34.1 gives it.
 #[test]
-fn a_duplicate_two_signers_or_two_k_are_not_a_proof() {
+fn admit_equivocation_refuses_duplicate_two_signers_or_two_k() {
     let key = court_key("liar");
     let vk = key.vk_bytes();
     let ra = first_receipt(vk, 1);
@@ -95,7 +95,7 @@ fn a_duplicate_two_signers_or_two_k_are_not_a_proof() {
 /// signature under another key than the receipt names is `REFUSE_RECEIPT`,
 /// as `admit` refuses the same disagreement on a single frame.
 #[test]
-fn a_half_that_disagrees_with_itself_is_refused_as_a_receipt() {
+fn admit_equivocation_refuses_self_disagreeing_half() {
     let key = court_key("liar");
     let vk = key.vk_bytes();
     let (ra, rb) = (first_receipt(vk, 1), first_receipt(vk, 2));

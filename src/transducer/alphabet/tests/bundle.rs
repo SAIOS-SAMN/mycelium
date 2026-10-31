@@ -15,7 +15,7 @@ use crate::transducer::element::identity_versor;
 /// acts, and the class invariants are exactly what it preserves (15.3), so
 /// the cut is forced by the algebra.
 #[test]
-fn conjugate_words_share_a_base_and_unrelated_ones_do_not() {
+fn base_of_word_shared_by_conjugates_only() {
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let sheet = PlaneForm::sheet_word();
     // A sheet conjugates a rotation to its inverse — a stated relator — so
@@ -48,7 +48,7 @@ fn conjugate_words_share_a_base_and_unrelated_ones_do_not() {
 /// matching. Conjugacy says SOME element relates them; this answers whether
 /// the ALPHABET spells one, and proves it by the exact conjugation.
 #[test]
-fn the_conjugator_is_solved_and_re_derived() {
+fn solve_conjugator_re_derives_conjugation() {
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let sheet = PlaneForm::sheet_word();
     let conj = q.rebase(&sheet);
@@ -77,7 +77,7 @@ fn the_conjugator_is_solved_and_re_derived() {
 /// the classes rather than about the alphabet — which is why the class test
 /// comes first.
 #[test]
-fn words_of_two_classes_have_no_conjugator() {
+fn solve_conjugator_refuses_two_classes() {
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let turn_180 =Word::from_letters(&[
         (LetterId::turn_90((0, 1)).expect("90° turn"), false),
@@ -93,7 +93,7 @@ fn words_of_two_classes_have_no_conjugator() {
 /// coordinate; dropping either would make the bundle unreconstructible, and
 /// the fibre's lanes are separate carriers (law 5).
 #[test]
-fn the_projection_carries_the_base_and_the_fibre() {
+fn project_carries_base_and_fibre() {
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let hue = vec![(1u8, 2u8)];
     let s = project(&q, &identity_versor(), &hue, Some(&q)).expect("a versor projects");
@@ -114,7 +114,7 @@ fn the_projection_carries_the_base_and_the_fibre() {
 /// sections group together; a third of another base does not join them.
 /// This is the count that stops growing with the contexts.
 #[test]
-fn sections_of_one_base_group_and_another_base_does_not_join_them() {
+fn by_base_groups_sections_of_one_base() {
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let sheet = PlaneForm::sheet_word();
     let conj = q.rebase(&sheet);
@@ -148,7 +148,7 @@ fn sections_of_one_base_group_and_another_base_does_not_join_them() {
 /// answer carries the γ that shows it, because "redundant" without the
 /// transition is an assertion and with it is a re-derivation anyone replays.
 #[test]
-fn a_conjugate_of_a_held_word_is_a_section_and_names_its_transition() {
+fn section_of_conjugate_names_transition() {
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let sheet = PlaneForm::sheet_word();
     let conj = q.rebase(&sheet);
@@ -181,7 +181,7 @@ fn a_conjugate_of_a_held_word_is_a_section_and_names_its_transition() {
 /// separating them is what lets an unspellable transition reach the mint
 /// instead of being dropped.
 #[test]
-fn a_conjugation_says_whether_the_alphabet_can_spell_it() {
+fn conjugation_separates_spelled_from_unrelated() {
     use crate::transducer::alphabet::bundle::{conjugation, Conjugation};
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let sheet = PlaneForm::sheet_word();
@@ -215,7 +215,7 @@ fn a_conjugation_says_whether_the_alphabet_can_spell_it() {
 /// a solve returning one arbitrary element answers "unspellable" for a
 /// relation the seventeen can say from a different basepoint.
 #[test]
-fn every_offered_conjugator_actually_conjugates() {
+fn conjugators_all_conjugate() {
     use crate::transducer::alphabet::bundle::conjugators;
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let sheet = PlaneForm::sheet_word();
@@ -239,7 +239,7 @@ fn every_offered_conjugator_actually_conjugates() {
 /// offers only the even members, read off the grade, and still offers
 /// some: `e₀₂` conjugates `c + s·e₀₁` to `c − s·e₀₁`.
 #[test]
-fn every_offered_conjugator_is_even() {
+fn conjugators_offers_only_even_elements() {
     use crate::transducer::alphabet::bundle::conjugators;
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let (a, b) = (q.rotor().normalised(), q.inverse().rotor().normalised());
@@ -262,7 +262,7 @@ fn every_offered_conjugator_is_even() {
 /// The trivial fibre is the coordinate a base stands at over itself: the
 /// identity conjugator, an identity carriage, no recolour.
 #[test]
-fn the_trivial_fibre_is_the_base_over_itself() {
+fn trivial_fibre_is_identity_coordinate() {
     let f = trivial_fibre();
     assert!(f.gauge.is_some_and(|g| g.is_identity()));
     assert!(f.hue.is_empty());

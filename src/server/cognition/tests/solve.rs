@@ -31,7 +31,7 @@ fn rule_over(family: &[TrainPair]) -> Element {
 /// replay's, clean, and the price is what the rule discharges there — not
 /// zero, and not a grid compared.
 #[test]
-fn a_rule_that_closes_the_withheld_pairs_is_solved_and_priced_by_its_discharge() {
+fn judge_solve_prices_closing_rule_by_discharge() {
     let mut k = Kernel::new();
     let rule = rule_over(&carried());
     match k.judge_solve(&rule, &carried()) {
@@ -49,7 +49,7 @@ fn a_rule_that_closes_the_withheld_pairs_is_solved_and_priced_by_its_discharge()
 /// A rule that does not carry a withheld pair is REFUSED by the replay,
 /// with its reason and kind — the coordinate the voice learns from.
 #[test]
-fn a_rule_that_leaves_a_pair_open_is_refused_by_the_replay() {
+fn judge_solve_refuses_rule_leaving_pair_open() {
     let mut k = Kernel::new();
     let rule = rule_over(&carried());
     match k.judge_solve(&rule, &recoloured()) {
@@ -66,7 +66,7 @@ fn a_rule_that_leaves_a_pair_open_is_refused_by_the_replay() {
 /// 1 names channel 1 the same. (78.53 relabelled the palette at the sensor;
 /// 78.56 II supersedes it.)
 #[test]
-fn a_task_and_its_palette_permuted_are_two_scenes_at_the_detector() {
+fn parse_task_reads_permuted_palette_as_other_scene() {
     let json = |a: u8, b: u8, c: u8| {
         format!(
             r#"{{"train":[{{"input":[[{a},{a},0,{b},0,0,0]],"output":[[0,0,{a},{a},0,{b},0]]}}],
@@ -94,7 +94,7 @@ fn a_task_and_its_palette_permuted_are_two_scenes_at_the_detector() {
 /// momentum, and its orientation is physical: turned, it reads differently.
 /// Repainted, any task is other colours at the detector (78.56 II).
 #[test]
-fn a_task_in_every_frame_reads_one_word_and_one_verdict() {
+fn judge_solve_reads_reframed_task_as_one_verdict() {
     type Pairs = Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>;
     type Frame<'a> = &'a dyn Fn(&Vec<Vec<u8>>) -> Vec<Vec<u8>>;
     let json = |train: &Pairs, test: &Pairs| {
@@ -155,7 +155,7 @@ fn a_task_in_every_frame_reads_one_word_and_one_verdict() {
 /// POUW: the task's FIRST closure mints the solver what its rule discharged;
 /// a closure AGAIN is verified and pays nothing — no floor.
 #[test]
-fn the_first_closure_mints_the_discharge_and_a_closure_again_pays_nothing() {
+fn pay_solve_mints_first_closure_only() {
     let mut k = Kernel::new();
     let rule = rule_over(&carried());
     let SolveVerdict::Solved { pay, .. } = k.judge_solve(&rule, &carried()) else { panic!("solved") };
@@ -174,7 +174,7 @@ fn the_first_closure_mints_the_discharge_and_a_closure_again_pays_nothing() {
 /// no-work verdict was dropped. A refusal and an unverifiable solve each
 /// land on their own slot beside it.
 #[test]
-fn a_no_work_verdict_is_counted_under_no_work() {
+fn judge_solve_counts_no_work_verdict() {
     use crate::observe::{Judged, JUDGED};
     let mut k = Kernel::new();
     let rule = rule_over(&carried());
@@ -200,7 +200,7 @@ fn a_no_work_verdict_is_counted_under_no_work() {
 /// mints nothing, dockets and offers nothing — the zero is read before any
 /// of it, not after.
 #[test]
-fn a_solve_that_discharges_nothing_acts_on_nothing() {
+fn pay_solve_zero_discharge_acts_on_nothing() {
     let mut k = Kernel::new();
     let rule = rule_over(&carried());
     let (task, voice) = ([5u8; 32], [9u8; 32]);

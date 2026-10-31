@@ -72,7 +72,7 @@ pub(crate) fn piece_at(footprint: &[crate::transducer::base::Site]) -> Option<Pi
 ///
 /// Widening the class to separate them would fix the count and destroy
 /// correspondence. The translation belongs at the member level, which is
-/// where `orbits_of` already builds: `every_orbit_lifts_to_the_member_complex`.
+/// where `orbits_of` already builds: `orbit_words_lift_every_orbit`.
 /// THE FOOTPRINT RIDES THE CHORD (54.7, ruled 2026-09-21).
 ///
 /// MEASURED: `classify_cover`'s gate keys a meet's end by

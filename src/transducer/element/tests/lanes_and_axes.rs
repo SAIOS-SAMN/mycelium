@@ -17,7 +17,7 @@ use super::common::*;
 /// An axis already holding this transport IS this axis, and a versor and
 /// its negation are one transport (1.5), so the comparison is projective.
 #[test]
-fn opening_one_axis_twice_is_one_axis() {
+fn open_axis_twice_answers_one_seat() {
     let mut e = Element::identity();
     let v = translator_versor(3, 4);
     let first = e.open_axis(v.clone()).expect("a seat");
@@ -46,7 +46,7 @@ fn opening_one_axis_twice_is_one_axis() {
 /// germ on the residual lane — the description that used to be discarded. Its
 /// magnitude is nonzero there, so the POW++ gate admits it.
 #[test]
-fn a_residual_germinates_as_a_coboundary_germ() {
+fn germinate_keeps_residual_as_coboundary_germ() {
     // (0,1): 2→9 with the rest fixed — not a rigid motion; a pure residual.
     let a = [(0, 0, 1u8), (0, 1, 2), (1, 0, 3)];
     let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)];
@@ -70,7 +70,7 @@ fn a_residual_germinates_as_a_coboundary_germ() {
 /// the tally to zero — but the CHAIN keeps it a real, non-identity germ with
 /// exact magnitude, and its reverse is a distinct word.
 #[test]
-fn a_bidirectional_swap_does_not_collapse_to_zero() {
+fn germinate_keeps_canceling_swap_nonidentity() {
     let a = [(0, 0, 1u8), (0, 1, 1), (1, 0, 1)]; // L
     let b = [(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]; // bar
     let l_to_bar = from_canonical(&germinate(&a, &b).unwrap());
@@ -91,7 +91,7 @@ fn a_bidirectional_swap_does_not_collapse_to_zero() {
 /// Multi-axial: distinct axes compose INDEPENDENTLY (no cross-talk, no cap on
 /// how many axes germinate). A germinated fiber extends without disturbing others.
 #[test]
-fn axes_are_independent_and_extensible() {
+fn compose_keeps_axes_independent_and_extensible() {
     let mut spatial = elem_from_versor(translator_versor(1, 0));
     let mut germ = Element::identity();
     germ.open_axis(translator_versor(0, 1)).expect("a seat");
@@ -111,7 +111,7 @@ fn axes_are_independent_and_extensible() {
 /// LEFT: a new transport is refused, never pinned onto the last seat, and
 /// the word is as it was. A transport it already seats still answers.
 #[test]
-fn an_axis_past_the_last_seat_is_refused() {
+fn open_axis_refuses_past_last_seat() {
     let mut e = Element::identity();
     let last = translator_versor(1, 1);
     e.action.germinated.push((u16::MAX, last.clone()));
@@ -128,7 +128,7 @@ fn an_axis_past_the_last_seat_is_refused() {
 /// it are its own. This binds the two halves: the chain does not invent a
 /// span, and whatever the chain holds, 𝒯 stays the mint's to supply.
 #[test]
-fn a_chain_measures_three_lanes_and_never_the_span() {
+fn measure_lanes_never_claims_span() {
     // Compartments appearing and vanishing are spatial; a hue change is gauge.
     let appears = measure_lanes(&[(0, 0, 0, 1), (1, 1, 0, 1)]);
     assert!(appears[0] > 0, "compartments that appear are spatial");
@@ -145,8 +145,10 @@ fn a_chain_measures_three_lanes_and_never_the_span() {
     assert_eq!(measure_lanes(&[])[2], 0, "and an empty one is not either");
 }
 
+/// The reduction magnitude agrees exactly with the axes (law 12), for an
+/// off-plane rotor and for letters with a σ permutation.
 #[test]
-fn reduction_magnitude_has_law_12_parity_with_axes_for_offplane_and_letters() {
+fn reduction_magnitude_agrees_with_axes() {
     use crate::transducer::alphabet::{LetterId, Word};
     // An off-plane rotor on plane (2, 3)
     let w = Word::from_letters(&[(LetterId::turn_90((2, 3)).expect("offplane 90° turn"), false)]);

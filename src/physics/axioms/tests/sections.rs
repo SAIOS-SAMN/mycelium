@@ -58,7 +58,7 @@ fn binds(s1: &Mv, s2: &Mv) -> Option<u32> {
 /// weighed lengths and masses; a section moved further, or carrying another
 /// mass, does not.
 #[test]
-fn two_sections_overlay_where_their_geoids_are_congruent() {
+fn switch_square_equal_for_congruent_sections() {
     let a = geoid(at(0, 0), at(3, 4), 2, 2);
     let copy = geoid(at(10, 1), at(13, 5), 2, 2);
     let further = geoid(at(10, 1), at(16, 9), 2, 2);
@@ -75,7 +75,7 @@ fn two_sections_overlay_where_their_geoids_are_congruent() {
 /// one dimension up where it is a flip, twists about the fibre joining the
 /// sources and does no work; a section slid instead lifts a source.
 #[test]
-fn two_sections_cohere_where_their_carriages_differ_by_torsion() {
+fn fibre_reads_coherent_sections_as_torsion() {
     let (p1, p2) = (at(0, 0), at(3, 4));
     let joining = Fibre::new(p1, p2, q(2, 1), q(2, 1)).expect("two sources");
     let v1 = Mv::scalar(q(1, 1));
@@ -97,7 +97,7 @@ fn two_sections_cohere_where_their_carriages_differ_by_torsion() {
 /// the round off itself. Order alone does not say a transport returns on
 /// the manifold: the centre the three points formulate does.
 #[test]
-fn three_pivots_formulate_the_centre_a_turn_returns_about() {
+fn round_centre_is_where_turn_keeps_round() {
     let (p1, p2, p3) = (at(0, 0), at(4, 0), at(0, 2));
     let round = p1.wedge_vector(1, &p2).wedge_vector(2, &p3);
     let centre = round.geo(&cga::e_inf()).geo(&round);
@@ -151,7 +151,7 @@ fn tilted_quarter() -> Mv {
 /// u × w — and that axis is fixed pointwise. The same 90° in the x,y plane
 /// about the same centre moves the circle.
 #[test]
-fn a_turn_on_a_3d_object_is_about_its_own_tilted_axis() {
+fn turn_keeps_tilted_circle_about_its_own_axis() {
     let (c, u, w, a) = frame();
     let at3 = |d: [i64; 3], s: i64| p3(c[0] + s * d[0], c[1] + s * d[1], c[2] + s * d[2]);
     let (p1, p2, p3_) = (at3(u, 1), at3(w, 1), at3(u, -1));
@@ -183,7 +183,7 @@ fn a_turn_on_a_3d_object_is_about_its_own_tilted_axis() {
 /// - HYPERBOLIC — the capacitor step on the fibre through c from c + u to
 ///   c − u: the nucleus is driven along the field line: UNSTABLE.
 #[test]
-fn the_nucleus_and_its_sigma_points_are_stable_only_under_the_turn_about_their_axis() {
+fn sigma_points_stable_only_under_axial_turn() {
     let (c, u, w, a) = frame();
     let third = |x: i64| BigRational::new(x.into(), 3.into());
     let centre = p3(c[0], c[1], c[2]);
@@ -256,7 +256,7 @@ fn the_nucleus_and_its_sigma_points_are_stable_only_under_the_turn_about_their_a
 /// finite order bind at its period; two that stand apart breathe (a boost)
 /// and never bind.
 #[test]
-fn two_geoids_entangle_into_cohesion_where_they_cut_at_a_finite_angle() {
+fn fascicle_binds_geoids_cut_at_finite_angle() {
     // Equal masses: each geoid is its fibre's bisecting plane. The planes
     // x = 1 and y = 1 cut at 90°.
     let vertical = geoid(at(0, 0), at(2, 0), 1, 1).switch();

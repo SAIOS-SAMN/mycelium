@@ -13,8 +13,9 @@ fn cite(r: &KStepReceipt) -> Parent {
     Parent { at: r.stamp, hash: r.chain_hash }
 }
 
+/// The head's height is one plus the maximum of its predecessor's height and its parents' heights.
 #[test]
-fn height_is_one_plus_max_of_prev_and_parents() {
+fn head_height_is_one_plus_max_of_prev_and_parents() {
     let mut a = ReceiptChain::with_vk([1; 32]);
     step(&mut a, Vec::new());
     assert_eq!(a.head_height(), 0, "h(genesis) = 0");
@@ -36,7 +37,7 @@ fn height_is_one_plus_max_of_prev_and_parents() {
 /// re-derives it, and a peer's admission re-derives it too — the three
 /// readers of one rule. It stood at 0 wherever the line had no predecessor.
 #[test]
-fn a_new_lines_first_act_citing_a_parent_stands_above_it() {
+fn append_first_act_citing_parent_stands_above_it() {
     let mut b = ReceiptChain::with_vk([2; 32]);
     for _ in 0..4 {
         step(&mut b, Vec::new());
@@ -64,7 +65,7 @@ fn a_new_lines_first_act_citing_a_parent_stands_above_it() {
 /// ledger with it rehydrates with every height and order back, and a peer
 /// node whose content was changed refuses the rehydration.
 #[test]
-fn a_ledger_rehydrates_with_the_peer_nodes_its_line_cites() {
+fn from_nodes_rehydrates_only_with_cited_peer_nodes() {
     let mut peer = ReceiptChain::with_vk([2; 32]);
     step(&mut peer, Vec::new());
     let head = step(&mut peer, Vec::new());
@@ -104,7 +105,7 @@ fn a_ledger_rehydrates_with_the_peer_nodes_its_line_cites() {
 /// 78.24, 45.8 — THE LEDGER WRITTEN AS ITS LINE READS BACK AS ITSELF: every
 /// node once at its stamp, the line verified, the head where it was.
 #[test]
-fn the_ledger_written_as_its_line_reads_back_whole() {
+fn from_line_reads_line_image_back_whole() {
     let mut peer = ReceiptChain::with_vk([2; 32]);
     let p0 = step(&mut peer, Vec::new());
     let mut c = ReceiptChain::with_vk([1; 32]);
@@ -123,7 +124,7 @@ fn the_ledger_written_as_its_line_reads_back_whole() {
 /// ones it admitted alike — and a stamp it does not hold, or holds under
 /// another hash, is unmeasured.
 #[test]
-fn a_ledgers_nodes_are_found_at_their_stamps() {
+fn height_of_finds_held_nodes_at_their_stamps() {
     let mut peer = ReceiptChain::with_vk([2; 32]);
     let p0 = step(&mut peer, Vec::new());
     let mut c = ReceiptChain::with_vk([1; 32]);

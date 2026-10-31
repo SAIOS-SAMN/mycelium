@@ -23,7 +23,7 @@ use crate::transducer::stalk::{self, Standing};
 /// is backward on `(a, b)`, the translation is inverted, and the orbit
 /// stands with nothing unread.
 #[test]
-fn a_face_between_two_charts_of_one_vertex_is_crossed_by_its_member_pair() {
+fn paths_carried_crosses_self_face_by_member_pair() {
     use crate::network::nerve::coord::{ChartAt, Overlap};
     let (a, b) = (stalk::Invariant::counts(&[7]), stalk::Invariant::counts(&[9]));
     let mut f = Form::default();
@@ -82,7 +82,7 @@ fn a_face_between_two_charts_of_one_vertex_is_crossed_by_its_member_pair() {
 /// same fixture with the carriage the face derived keeps its orbit, so the
 /// refusal is the cone's and nothing else's.
 #[test]
-fn a_carriage_on_the_light_cone_leaves_its_orbit_unread() {
+fn cycles_of_leaves_null_carriage_orbit_unread() {
     use crate::transducer::cga::{Mv, E1, EM};
     use crate::network::nerve::coord::ChartAt;
     let build = |on_the_cone: bool| {
@@ -143,7 +143,7 @@ fn a_carriage_on_the_light_cone_leaves_its_orbit_unread() {
 /// inverted orientation or an unnormalised versor in the tree — and this
 /// is the assertion that would catch it.
 #[test]
-fn basing_a_cycle_conjugates_it_and_preserves_both_casimirs() {
+fn orbit_based_at_preserves_both_casimirs() {
     let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
     let f = edge_chord_form(std::slice::from_ref(&w));
@@ -188,7 +188,7 @@ fn basing_a_cycle_conjugates_it_and_preserves_both_casimirs() {
 /// fired, and that is indistinguishable from Axiom A being absent unless
 /// it is asserted.
 #[test]
-fn every_cycle_carries_a_transport_to_the_forms_basepoint() {
+fn orbit_based_at_carries_every_cycle_to_basepoint() {
     let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let h = crate::transducer::alphabet::LetterId::turn_90((0, 3)).expect("90° turn on another plane");
     let f = edge_chord_form(&[
@@ -294,8 +294,11 @@ impl crate::transducer::family::Crystal for Hold {
     }
 }
 
+/// The pivot orbit discharges on a held word with a certificate that
+/// replays, holds a word and its inverse as a vortex, and files a
+/// court-ruled class silently.
 #[test]
-fn pivot_orbit_discharges_held_word_and_vortices_a_pair() {
+fn pivot_orbit_discharges_held_word_and_vortices_pair() {
     let q = word_turn_90();
     let qinv = q.inverse();
     // AT1: this test exercises the pivot itself — the certificate names the
@@ -350,7 +353,7 @@ fn pivot_orbit_discharges_held_word_and_vortices_a_pair() {
     // `tampered.certificates` — the DECODED form's — and a form recovered
     // from its address carries none: a certificate is what one mind's
     // stroke did against one budget, which does not factor through the
-    // geometry, so `evidence_is_not_identity` keeps it out of the key.
+    // geometry, so `form_vertex_key_ignores_citations_and_certificates` keeps it out of the key.
     // ONE CERTIFICATE, and the slice pattern says so rather than taking the
     // first of several (rule 15).
     let [cert] = e.receipts().certificates.as_slice() else {
@@ -443,8 +446,10 @@ fn pivot_orbit_discharges_held_word_and_vortices_a_pair() {
     );
 }
 
+/// A pivot writes the chord transport only: no vertex moves and every tree
+/// face re-derives.
 #[test]
-fn pivot_writes_the_chord_transport_only() {
+fn pivot_orbit_writes_chord_transport_only() {
     let q = word_turn_90();
     let mut f = chord_form(std::slice::from_ref(&q));
     let verts_before = f.vertices.clone();
@@ -490,8 +495,9 @@ fn clear_gauges(f: &mut Form) {
     }
 }
 
+/// A pivot discharges only its own axis and raises no other coordinate.
 #[test]
-fn pivot_discharges_only_its_axis_and_raises_none() {
+fn pivot_orbit_zeroes_own_axis_raising_none() {
     // T14: Placement.
     let mut f = chord_form(&[Word::identity()]);
     clear_gauges(&mut f);
@@ -586,7 +592,7 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
 /// the trial uses. A trial that answered differently from the form it
 /// trials would certify a move the form does not make.
 #[test]
-fn an_orbits_class_and_row_read_off_its_faces_and_the_axis_carrier() {
+fn class_vectors_on_agrees_with_form_readers() {
     use crate::transducer::sentence::pivot::drive::class_vectors_on;
     use crate::transducer::sentence::{orbit_row_on, opened_axis_on};
     let f = chord_form(&[word_turn_90(), word_turn_180(), Word::identity()]);
@@ -653,7 +659,7 @@ fn an_orbits_class_and_row_read_off_its_faces_and_the_axis_carrier() {
 /// the word holonomy is the identity, and a 90° turn on the one face
 /// that does not touch the Frame.
 #[test]
-fn an_orbit_flat_on_the_word_files_under_its_edge_composite() {
+fn file_orbit_files_under_edge_composite() {
     let q = word_turn_90();
     // The ends are two SITES: one chart each (54.2) — one vertex of the
     // identity's class with a member on each (AT1 Q1). Every face word
@@ -726,7 +732,7 @@ fn an_orbit_flat_on_the_word_files_under_its_edge_composite() {
 /// Y2 (16.16, 12.6, 3.9, 25.1): A held orbit with a held word on that axis discharges
 /// and certifies on a constructed family.
 #[test]
-fn a_held_orbit_with_a_held_word_discharges_and_certifies() {
+fn pivot_orbit_certifies_held_word_on_family() {
     let q = word_turn_90();
     let mut f = chord_form(std::slice::from_ref(&q));
     let family = vec![(vec![vec![0u8; 4]; 4], vec![vec![0u8; 4]; 4])];
@@ -769,7 +775,7 @@ fn a_held_orbit_with_a_held_word_discharges_and_certifies() {
 /// Y2 (16.16, 12.6, 3.9, 25.1): Two candidate words discharging the orbit are held as a vortex
 /// on a constructed family.
 #[test]
-fn two_certified_discharges_are_held_as_a_vortex() {
+fn pivot_orbit_holds_two_discharges_as_vortex() {
     let q = word_turn_90();
     let qinv = q.inverse();
     let mut f = chord_form(std::slice::from_ref(&q));
@@ -811,7 +817,7 @@ fn two_certified_discharges_are_held_as_a_vortex() {
 /// once per coordinate it coarsened through — `n·d` prefix reads to answer one
 /// axis, over an index whose own type is the bundle.
 #[test]
-fn a_forms_base_chart_is_five_coordinates_however_many_orbits_it_holds() {
+fn chart_of_form_stays_five_coordinates_wide() {
     use crate::transducer::sentence::chart_of_form;
     let many = chord_form(&[word_turn_90(), word_turn_180(), Word::identity()]);
     assert!(many.orbits.len() >= 3, "a form carrying several orbits: {}", many.orbits.len());
@@ -853,7 +859,7 @@ fn a_forms_base_chart_is_five_coordinates_however_many_orbits_it_holds() {
 /// with it. The first assertion here is exactly that move: admitted now,
 /// refused before.
 #[test]
-fn a_falling_coordinate_is_not_a_rise() {
+fn rises_against_admits_falling_coordinate() {
     use crate::transducer::sentence::{Axis, ClassVector};
     let of = |w: &Word| ClassVector::of_word(w).expect("a word carries a class");
     // Measured, not assumed: a 90° turn stands on `Unit(0)`, a 180°

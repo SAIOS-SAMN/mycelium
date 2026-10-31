@@ -8,7 +8,7 @@ use super::super::*;
 /// 90° turn between two that share no chart. ℓ 2 once, ℓ 4 three times;
 /// two classes, the 90° turn's across two charts; one unplaced; no re-fill.
 #[test]
-fn the_minds_remainders_are_read_at_the_chart_their_thoughts_share() {
+fn meet_graph_reads_remainders_at_shared_chart() {
     use crate::transducer::alphabet::{LetterId, Word};
     let turn = |n: usize| {
         let q = LetterId::turn_90((0, 1)).expect("the sensor plane");

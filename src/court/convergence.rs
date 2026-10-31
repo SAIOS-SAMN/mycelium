@@ -226,7 +226,7 @@ mod tests {
     /// and whether that was caught depended on where the disagreeing organ
     /// happened to sit.
     #[test]
-    fn a_disagreeing_organ_refuses_even_after_an_independent_pair() {
+    fn state_refuses_disagreeing_organ_after_independent_pair() {
         let mut c = Convergence::new();
         // The first two agree and are independent: under the old walk this
         // returned `Witnessed` before the third was ever compared.
@@ -243,7 +243,7 @@ mod tests {
     /// One vantage dockets. The object waits for a witness, and waiting is
     /// its own state — not a count that has not reached two.
     #[test]
-    fn one_organ_awaits_a_witness() {
+    fn state_awaits_witness_for_one_organ() {
         let mut c = Convergence::new();
         assert!(c.rederived(&[9u8], [1; 32], r(9)));
         assert_eq!(c.state(&[9u8], &always), Converged::AwaitingWitness);
@@ -253,7 +253,7 @@ mod tests {
     /// not_reach_quorum`; the claim survives the carrier and the thing that
     /// cannot be duplicated is an ORGAN, not a mouth.
     #[test]
-    fn a_duplicate_organ_does_not_converge() {
+    fn rederived_counts_duplicate_organ_once() {
         let mut c = Convergence::new();
         assert!(c.rederived(&[9u8], [1; 32], r(9)));
         assert!(!c.rederived(&[9u8], [1; 32], r(9)), "one organ, one vantage");
@@ -270,7 +270,7 @@ mod tests {
     /// M1 test and the address agree. An organ that derived the negated
     /// sign holds the same vertex and is not called inexact.
     #[test]
-    fn differently_spelled_rederivations_converge() {
+    fn state_converges_differently_spelled_rederivations() {
         use num_rational::BigRational;
         use num_traits::One;
         let v = element::translator_versor(2, 3);
@@ -303,7 +303,7 @@ mod tests {
 
     /// Two organs reaching one address is the admission condition.
     #[test]
-    fn an_independent_witness_rederivation_installs() {
+    fn state_witnesses_independent_rederivation() {
         let mut c = Convergence::new();
         c.rederived(&[9u8], [1; 32], r(9));
         c.rederived(&[9u8], [2; 32], r(9));
@@ -321,7 +321,7 @@ mod tests {
     /// Two organs re-deriving one object to DIFFERENT addresses is not a
     /// disagreement for a third to settle. It is inconsistent data.
     #[test]
-    fn disagreeing_rederivations_refuse_mv_inexact() {
+    fn state_refuses_disagreeing_rederivations_as_inexact() {
         let mut c = Convergence::new();
         c.rederived(&[9u8], [1; 32], r(9));
         c.rederived(&[9u8], [2; 32], r(8));
@@ -334,7 +334,7 @@ mod tests {
     /// A second voice uttering the same residual is a USE and a settlement
     /// party. It never moves the object toward admission.
     #[test]
-    fn a_second_voice_is_a_use_never_a_gate() {
+    fn used_by_records_party_never_witness() {
         let mut c = Convergence::new();
         c.rederived(&[9u8], [1; 32], r(9));
         c.used_by(&[9u8], [7; 32]);

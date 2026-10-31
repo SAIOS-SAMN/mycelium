@@ -13,7 +13,7 @@ use crate::transducer::stalk;
 /// reader finds the contraction at that coordinate; a coordinate the form
 /// does not hold contracts nothing.
 #[test]
-fn a_still_orbit_contracts_its_contact_word_to_a_demand() {
+fn contract_turns_still_contact_word_into_demand() {
     let mut f = closed_word_form(word_turn_90(), Some(Contact { anchor: 0, ring: 1 }));
     let word = only_word(&f);
     let Some(Vertex::Word { contact: Some(_), .. }) = f.vertices.at(&word) else {
@@ -55,7 +55,7 @@ fn a_still_orbit_contracts_its_contact_word_to_a_demand() {
 /// still act, the court's reader finds no face between the two, and the
 /// same coordinate contracts nothing a second time.
 #[test]
-fn a_face_that_does_not_rederive_is_dropped_by_its_contraction() {
+fn contract_drops_face_that_does_not_rederive() {
     let mut f = chord_form(&[word_turn_90()]);
     assert_eq!(f.orbits.len(), 1, "the chord closes one orbit");
     // THE FACE IS NAMED BY ITS ENDS' OWN COORDINATES (54.2, AT1). The
@@ -99,7 +99,7 @@ fn a_face_that_does_not_rederive_is_dropped_by_its_contraction() {
 /// and a mixed coordinate mounts a demand over the silent links ALONE,
 /// never over the ones the form got wrong.
 #[test]
-fn a_demand_declares_silence_and_a_wrong_remainder_contracts_to_nothing() {
+fn contract_mounts_demand_on_silent_links_only() {
     use crate::transducer::sentence::Demand;
     let chart = crate::transducer::stalk::Invariant::counts(&[3, 5]);
     let silent = |r: i64| (r, 0i64, 0u8, 4u8);

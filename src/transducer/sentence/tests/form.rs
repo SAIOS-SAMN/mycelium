@@ -18,7 +18,7 @@ use crate::transducer::stalk::{self, Stalks};
 /// orbit holds until it is filed. An orbit through a remainder edge is not
 /// evaluated.
 #[test]
-fn orbit_holonomy_in_the_stabilizer_does_not_telescope() {
+fn edge_holonomies_do_not_telescope() {
     let qw = Word::from_letters(&[(alphabet::LetterId::turn_90((0, 1)).unwrap(), false)]);
     let mut f = Form::default();
     // AT1 — THREE BODIES OF ONE WORD ARE ONE VERTEX WITH THREE MEMBERS (Q1),
@@ -149,7 +149,7 @@ fn orbit_holonomy_in_the_stabilizer_does_not_telescope() {
 /// speaker's attestation, where it prices the yield and says whether the
 /// stroke finished.
 #[test]
-fn an_orbit_of_infinite_order_files_at_period_zero_and_does_not_cohere() {
+fn coheres_refuses_infinite_order_orbit_filed_or_not() {
     let w = infinite();
     assert_eq!(w.order(), alphabet::Order::Infinite, "the (3,4,5) rotor has no period");
     let mut f = edge_chord_form(std::slice::from_ref(&w));
@@ -195,8 +195,9 @@ fn an_orbit_of_infinite_order_files_at_period_zero_and_does_not_cohere() {
     assert!(g.is_cauterized(), "filed as open under the holonomy's class, it is");
 }
 
+/// The face of a missing vertex is none, while the frame is present.
 #[test]
-fn face_of_a_missing_vertex_is_none() {
+fn face_place_of_missing_vertex_is_none() {
     let f = Form::default();
     // AT1 — A FACE IS AN OVERLAP OF TWO CHARTS, and its place is read off
     // the two ends' vertices: a chart of a vertex the form does not hold
@@ -212,6 +213,8 @@ fn face_of_a_missing_vertex_is_none() {
     );
 }
 
+/// Glue and retract remap the faces, and a tampered placement refuses at
+/// replay.
 #[test]
 fn glue_retract_remaps_faces_and_placement_refuses() {
     let w = Word::from_letters(&[(alphabet::LetterId::turn_90((0, 1)).unwrap(), false)]);
@@ -313,7 +316,7 @@ fn glue_retract_remaps_faces_and_placement_refuses() {
 /// The bundle's agreed shift is meaning: two translations of one linear
 /// block are two vertices.
 #[test]
-fn two_shifts_are_two_addresses() {
+fn as_element_form_separates_two_shifts() {
     let letter = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(letter, false)]);
     let mut a = closed_word_form(w.clone(), None);
@@ -345,7 +348,7 @@ fn two_shifts_are_two_addresses() {
 /// wherever it is written. Put on the FORM, it needs no offset at all and
 /// asks the one decoder that remains.
 #[test]
-fn ratio_and_sections_are_on_the_form_key() {
+fn form_vertex_key_carries_ratio_and_sections() {
     let letter = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(letter, false)]);
     let a = closed_word_form(w.clone(), None);
@@ -405,7 +408,7 @@ fn ratio_and_sections_are_on_the_form_key() {
 /// What remains true, and is what this test is for: `depth_of` is one more
 /// than the DEEPEST citation, never a count of them.
 #[test]
-fn depth_is_one_plus_max_glued() {
+fn depth_of_is_one_plus_max_glued() {
     let q = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
     let inner = closed_word_form(w.clone(), None);
@@ -442,7 +445,7 @@ fn depth_is_one_plus_max_glued() {
 /// leaves the unknown body as the residual, and refuses to cite a word
 /// with itself.
 #[test]
-fn a_chain_deconstructs_into_its_words_and_residual() {
+fn deconstruct_at_cites_words_and_leaves_residual() {
     let bar = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
     let dot = from_canonical(&germinate(&[(0, 0, 3u8)], &[(0, 0, 4u8)]).unwrap());
     let bar_other = from_canonical(&germinate(&[(0, 0, 7u8), (0, 1, 7)], &[(0, 0, 8u8), (0, 1, 8)]).unwrap());
@@ -492,8 +495,10 @@ fn a_chain_deconstructs_into_its_words_and_residual() {
     assert!(s.cites.is_empty() && !s.is_closed(), "no word but itself speaks it");
 }
 
+/// Deconstruction records its multiplicity per body: the chain and each
+/// cited body keep their own width.
 #[test]
-fn deconstruct_multiplicity_is_per_body() {
+fn deconstruct_at_records_multiplicity_per_body() {
     let bar = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
     let dot = from_canonical(&germinate(&[(0, 0, 3u8)], &[(0, 0, 4u8)]).unwrap());
     let words = vec![bar, dot];
@@ -531,7 +536,7 @@ fn deconstruct_multiplicity_is_per_body() {
 /// a transport and its inverse are a flat orbit, two translations are
 /// not.
 #[test]
-fn seams_and_holonomy_are_located_exactly() {
+fn seam_defect_at_and_is_flat_locate_exactly() {
     let bar = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
     let bar_other = from_canonical(&germinate(&[(0, 0, 7u8), (0, 1, 7)], &[(0, 0, 8u8), (0, 1, 8)]).unwrap());
     let words = vec![bar, bar_other];
@@ -558,7 +563,7 @@ fn seams_and_holonomy_are_located_exactly() {
 
 /// Two word vertices and the frame star are a tree; the coboundary is exact.
 #[test]
-fn a_two_germ_nerve_is_a_tree_and_closes() {
+fn coheres_on_two_germ_tree() {
     let f = star_form(2, Vec::new());
     // AT1 (Q1): two germs of one word are ONE vertex with two members.
     assert_eq!(f.vertices.len(), 2, "frame plus the one word class");
@@ -575,8 +580,10 @@ fn a_two_germ_nerve_is_a_tree_and_closes() {
     assert!(f.coheres(), "a tree coheres");
 }
 
+/// Separated bodies meet by relative word: the star form holds no adjacency
+/// face between them.
 #[test]
-fn separated_bodies_meet_by_relative_word() {
+fn faces_hold_no_adjacency_between_separated_bodies() {
     let f = star_form(2, Vec::new());
     let word_word = f.faces.entries().filter(|(o, _)| !on_frame(o)).count();
     assert_eq!(word_word, 0, "separated bodies have no adjacency face");
@@ -588,8 +595,10 @@ fn on_frame(o: &coord::Overlap) -> bool {
     o.from == coord::ChartAt::Frame || o.to == coord::ChartAt::Frame
 }
 
+/// A row of three has faces by constancy: the faces are bounded per chart
+/// and a touching row has two adjacency faces.
 #[test]
-fn a_row_of_three_has_faces_by_constancy() {
+fn faces_on_row_of_three_follow_constancy() {
     let tree = star_form(3, Vec::new());
     // THE BOUND IS PER CHART (AT1): three spokes of one word are one vertex
     // with three members, and an overlap relates one member pair.
@@ -613,7 +622,7 @@ fn a_row_of_three_has_faces_by_constancy() {
 /// STRATUM (R5: the rank of a union is the sum of the parts). Nothing per
 /// vertex follows, so the chart's width does not grow with the object.
 #[test]
-fn a_sentence_chart_leads_with_axis_two_then_its_rank() {
+fn invariant_of_sentence_leads_with_two_then_rank() {
     let f = star_form(2, Vec::new());
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("form element");
     assert!(e.is_sentence());
@@ -649,8 +658,9 @@ fn a_sentence_chart_leads_with_axis_two_then_its_rank() {
     );
 }
 
+/// Face constancy is the word, not the versor.
 #[test]
-fn face_constancy_is_the_word_not_the_versor() {
+fn face_word_carries_constancy_not_versor() {
     let a = star_form(2, vec![(1, 2, Word::identity())]);
     let b = star_form(2, vec![(1, 2, Word::identity())]);
     // THE WORD IS DERIVED on each overlap (AT1 Q2), and read there.
@@ -661,8 +671,10 @@ fn face_constancy_is_the_word_not_the_versor() {
     let _ = as_element_form(&a, [1, 0, 0, 0]).expect("rule element");
 }
 
+/// A word-constant triangle keeps its cycle, and every orbit's word is the
+/// identity.
 #[test]
-fn word_constant_triangle_keeps_its_cycle() {
+fn orbit_word_on_keeps_word_constant_triangle() {
     let f = star_form(3, vec![(1, 2, Word::identity()), (2, 3, Word::identity()), (1, 3, Word::identity())]);
     assert!(!f.orbits.is_empty(), "a triangle has an orbit");
     assert!(f
@@ -672,8 +684,10 @@ fn word_constant_triangle_keeps_its_cycle() {
     let _ = as_element_form(&f, [1, 0, 0, 0]).expect("rule element");
 }
 
+/// Placement is not the sentence vertex: one form minted twice is one
+/// vertex at one address.
 #[test]
-fn placement_is_not_the_sentence_vertex() {
+fn same_vertex_excludes_placement() {
     let f = star_form(2, Vec::new());
     assert!(!f.faces.is_empty(), "the frame star relates the two words");
     let e1 = as_element_form(&f, [1, 0, 0, 0]).expect("e1");
@@ -682,8 +696,10 @@ fn placement_is_not_the_sentence_vertex() {
     assert_eq!(e1.address(), e2.address());
 }
 
+/// Admitting words to an axis index costs work linear in their number, and
+/// an on-axis read costs the same whatever the index holds.
 #[test]
-fn axis_index_admit_is_linear_on_axis_is_constant() {
+fn admit_words_linear_and_on_axis_constant() {
     use crate::network::nerve::work;
     let inv = stalk::Invariant::default();
     let w = Transport {
@@ -712,8 +728,9 @@ fn axis_index_admit_is_linear_on_axis_is_constant() {
     assert_eq!(g8, g32, "on_axis get cost is independent of N: {g8} vs {g32}");
 }
 
+/// An orbit's chord is never a star face.
 #[test]
-fn chord_is_never_a_star_face() {
+fn orbit_chord_is_never_star_face() {
     let f = chord_form(&[word_turn_90(), word_turn_180()]);
     assert_eq!(f.orbits.len(), 2, "two chords, two orbits");
     for lp in &f.orbits {
@@ -728,7 +745,7 @@ fn chord_is_never_a_star_face() {
 /// whole form; a chart no vertex is on names nothing, and a Demand vertex on a
 /// chart is not a word there.
 #[test]
-fn a_chart_names_the_word_vertices_on_it() {
+fn by_class_names_word_vertices_on_chart() {
     let (near, far) = (stalk::Invariant::counts(&[3, 5]), stalk::Invariant::counts(&[7]));
     let mut f = Form::default();
     // AT1 (Q1): three words of ONE class would be one vertex, so the three
@@ -780,7 +797,7 @@ fn a_chart_names_the_word_vertices_on_it() {
 /// Asked with the reader's own key — `transport_class(v).key()` — because an
 /// index a reader cannot address with the key it builds is not an index.
 #[test]
-fn a_transport_class_names_the_word_vertices_of_that_class() {
+fn by_transport_names_word_vertices_across_charts() {
     let (near, far) = (stalk::Invariant::counts(&[3, 5]), stalk::Invariant::counts(&[7]));
     let mut f = Form::default();
     // Two words of one class on two charts, and a third of a DIFFERENT class
@@ -867,7 +884,7 @@ fn a_transport_class_names_the_word_vertices_of_that_class() {
 /// and a form that glues — so a `Glued` vertex's cited address, which IS
 /// in the key, comes back through the inverse.
 #[test]
-fn a_form_is_recovered_from_its_key() {
+fn from_address_recovers_form_from_key() {
     use crate::transducer::sentence::{form_vertex_key, from_address};
     let q = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
@@ -928,7 +945,7 @@ fn a_form_is_recovered_from_its_key() {
 /// evidence, being what the form does not close; and a face's EDGE comes
 /// back as the transport it is, where only its presence was keyed.
 #[test]
-fn the_key_carries_the_demand_the_remainder_and_the_edge() {
+fn from_address_recovers_demand_and_remainder_coordinates() {
     use crate::transducer::sentence::{form_vertex_key, from_address, Vertex};
     let mut f = Form::default();
     // A demand standing for two bodies, and a remainder the form does not

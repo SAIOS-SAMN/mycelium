@@ -72,7 +72,7 @@ fn hear(k: &mut Kernel, frame: &[u8]) -> Vec<u8> {
 /// that receipt which is not the contraction is refused as a malformed
 /// complex at its tape, and the court's record of the refusal stands.
 #[test]
-fn the_court_verifies_a_contraction_before_it_replays_the_sentence() {
+fn hear_speech_verifies_contraction_before_replay() {
     let f_v = voice_family();
     let f_1 = court_family();
     let s = sentence_over(&f_v);
@@ -133,7 +133,7 @@ fn the_court_verifies_a_contraction_before_it_replays_the_sentence() {
 /// runtime memory — replays the same serialized frame and reaches the same
 /// address and the same standing.
 #[test]
-fn two_courts_of_distinct_identity_reach_one_standing_through_the_codec() {
+fn hear_frame_on_reaches_one_standing_on_two_courts() {
     let f_v = voice_family();
     let f_1 = court_family();
     let task = task_of(&f_1);

@@ -17,8 +17,10 @@ fn family() -> Vec<(crate::arc::Grid, crate::arc::Grid)> {
     ]
 }
 
+/// A voice keeps home a solve its own train refutes: the rule replayed on a
+/// train it does not speak is refused at home, as the court would refuse it.
 #[test]
-fn a_voice_keeps_home_a_solve_its_own_train_refutes() {
+fn judge_on_keeps_home_solve_its_train_refutes() {
     let train = family();
     let rule = crate::transducer::family::extract_rule(&train, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("the family extracts");
@@ -46,7 +48,7 @@ fn a_voice_keeps_home_a_solve_its_own_train_refutes() {
 /// outcome naming that reference as fn 1's — never `fn None` — and the
 /// next percept reads it learned: (1, applied).
 #[test]
-fn a_seats_solve_outcome_reads_learned_against_fn_one() {
+fn outcome_reads_seat_solve_learned_against_fn_one() {
     use crate::anastome::dialogue::seat::{Arg, Outcome, Percept};
     use crate::client::sdk::seat_mind::task::FN_SOLVE;
     let (domain, mind, reference) = ([4u8; 32], [30u8; 32], [9u8; 32]);
@@ -68,7 +70,7 @@ fn a_seats_solve_outcome_reads_learned_against_fn_one() {
 /// code, and the call travels whole through the codec the house reads — a
 /// function apart from the solve's.
 #[test]
-fn a_declination_names_its_task_and_its_stop() {
+fn decline_args_name_task_and_stop() {
     use crate::anastome::dialogue::seat::{put_args, take_args, Arg};
     use crate::client::sdk::seat_mind::task::{decline_args, FN_DECLINE, FN_SOLVE};
     assert_ne!(FN_DECLINE, FN_SOLVE, "a declination is no solve");
@@ -88,7 +90,7 @@ fn a_declination_names_its_task_and_its_stop() {
 /// the seats new to it and lets go the seats gone from it; an explicit list
 /// the listing agrees with changes nothing.
 #[test]
-fn a_listing_of_n_seats_sits_n_and_a_relisting_adds_and_drops() {
+fn reseat_takes_new_seats_and_drops_gone() {
     use crate::anastome::dialogue::seat::{Arg, Post, Role, Seat, SeatFn, Seats};
     use crate::client::sdk::seat::{listed_seats, reseat};
     let house = ed25519_dalek::SigningKey::from_bytes(&[21; 32]);

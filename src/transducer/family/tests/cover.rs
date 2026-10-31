@@ -77,7 +77,7 @@ fn compartments<T: Copy + Into<Compartment>>(v: &[T]) -> Vec<Compartment> {
 /// and the homeomorphic core's where the shapes differ by a surgery, which
 /// is the case an uncarried body is in.
 #[test]
-fn a_demands_candidate_transport_is_read_from_the_bodies_it_stands_for() {
+fn hold_form_reads_demand_candidates_from_own_bodies() {
     use crate::transducer::bubble::contemplation::Contemplation;
     let held = |ga: &[&str], gb: &[&str]| -> (usize, usize) {
         let f = measured(&grid(ga), &grid(gb));
@@ -148,7 +148,7 @@ fn measured(a: &Grid, b: &Grid) -> crate::transducer::sentence::Form {
 /// composite onto its image, so this vertex came from the cover and not
 /// from a whole-body quotient.
 #[test]
-fn a_covers_pieces_are_one_vertex_per_transport_class() {
+fn scene_form_groups_pieces_by_transport_class() {
     let (a, b) = four_bodies();
     let f = measured(&a, &b);
     let words: Vec<&Vertex> =
@@ -169,7 +169,7 @@ fn a_covers_pieces_are_one_vertex_per_transport_class() {
 /// peel cut this block into shells and the form held five word vertices for
 /// a scene with one body in it.
 #[test]
-fn one_body_that_does_not_carry_whole_is_a_demand_and_not_a_listing() {
+fn scene_form_demands_uncarried_body_without_listing() {
     let (a, b) = notched();
     let f = measured(&a, &b);
     let (ia, ib) = (perceive(&a), perceive(&b));
@@ -197,7 +197,7 @@ fn one_body_that_does_not_carry_whole_is_a_demand_and_not_a_listing() {
 /// Two bodies that meet only at a corner stay two pieces: the component is
 /// hue-blind, not adjacency-blind.
 #[test]
-fn a_polychrome_body_is_one_piece_of_the_cover() {
+fn pieces_of_keeps_polychrome_body_whole() {
     use crate::network::nerve::{coord, Coordinate};
     let block = compartments(&[(0, 0, 0, 1u8), (1, 0, 0, 1), (0, 1, 0, 2), (1, 1, 0, 2)]);
     let pieces = crate::transducer::family::pieces::pieces_of(&block);
@@ -243,7 +243,7 @@ fn a_polychrome_body_is_one_piece_of_the_cover() {
 /// `decode(encode(x)) == x`, and it is asserted here on the value rather
 /// than on a byte pair.
 #[test]
-fn a_meets_address_gives_back_its_two_ends() {
+fn meet_decode_round_trips_and_refuses_truncation() {
     use crate::network::nerve::{coord, Coordinate};
     use crate::transducer::peel::ShellKind;
     use crate::transducer::base::Site;
@@ -314,7 +314,7 @@ fn a_meets_address_gives_back_its_two_ends() {
 /// faces and that every orbit it does stand names a live chord over at
 /// least two vertices — the structural claim, on the form the scene keeps.
 #[test]
-fn the_scenes_faces_are_its_own_incidence_not_the_covers_meets() {
+fn scene_form_chords_name_live_faces() {
     let (a, b) = four_bodies();
     let f = measured(&a, &b);
     assert!(!f.faces.is_empty(), "the scene's form carries its own incidence");
@@ -354,7 +354,7 @@ fn the_scenes_faces_are_its_own_incidence_not_the_covers_meets() {
 /// rotation closes at and the chord it closes on. Nothing else is a filled
 /// simplex, and a form that filled none carries none.
 #[test]
-fn a_filled_simplex_is_a_filed_orbit_at_its_own_period() {
+fn scene_form_evaluates_every_orbit() {
     let (a, b) = four_bodies();
     let f = measured(&a, &b);
     // WHAT THIS FIXTURE ACTUALLY CONTAINS, asserted, because every check below
@@ -459,7 +459,7 @@ fn a_filled_simplex_is_a_filed_orbit_at_its_own_period() {
 /// dissolves only when the uncarried volume is the zero vector on every
 /// lane AND no orbit over its pieces stands.
 #[test]
-fn an_uncarried_remainder_leaves_the_deformation_standing() {
+fn scene_form_keeps_deformation_for_uncarried_remainder() {
     let (a, b) = notched();
     let f = measured(&a, &b);
     let stands = f
@@ -489,7 +489,7 @@ fn an_uncarried_remainder_leaves_the_deformation_standing() {
 /// stroke, not a queue starving a latecomer, and the reading to take from
 /// it is that the stroke is too small for this scene.
 #[test]
-fn a_cover_that_ends_is_parked_and_the_next_stroke_resumes_it() {
+fn cover_deformation_parks_and_resumes_across_strokes() {
     use crate::transducer::family::cover::cover_deformation;
     use crate::transducer::family::cursor;
     let (ga, gb) = four_bodies();
@@ -557,7 +557,7 @@ fn a_cover_that_ends_is_parked_and_the_next_stroke_resumes_it() {
 /// is a function of the form's orbits and not of the order the cover
 /// happened to read its meets in. Two builds of one pair agree exactly.
 #[test]
-fn the_reading_is_the_forms_and_is_stable() {
+fn scene_form_reads_stably_across_builds() {
     let (a, b) = notched();
     let one = measured(&a, &b);
     let two = measured(&a, &b);
@@ -585,7 +585,7 @@ fn measured_cover(a: &Grid, b: &Grid) -> crate::transducer::family::cover::Cover
 /// carried, and what no versor carries reports as a demand; a deformation
 /// the pullback reaches carries the pieces that stand in place.
 #[test]
-fn cover_attempts_are_placed_times_unplaced() {
+fn cover_deformation_propagates_only_from_placed_pieces() {
     // TWO BODIES THAT DO NOT MEET. No compartment of the input stands under any
     // compartment of the image, so the pullback names no preimage and places
     // nothing; with nothing placed there is nothing to propagate.
@@ -617,7 +617,7 @@ fn cover_attempts_are_placed_times_unplaced() {
 /// orbit anyway — it telescopes over the sensor-plane words a pair form
 /// composes — which is the flat reading this refuses to make.
 #[test]
-fn a_pure_coboundary_form_yields_no_evaluated_orbit() {
+fn edge_holonomies_refuses_orbit_without_edges() {
     use crate::transducer::alphabet::Word;
     use crate::transducer::sentence::Form;
     use crate::transducer::sentence::tests::common::{stand_with_star, FRAME};
@@ -683,7 +683,7 @@ fn a_pure_coboundary_form_yields_no_evaluated_orbit() {
 /// class reading "one" is the same number as one piece reading "one" — so
 /// the classes are compared coordinatewise.
 #[test]
-fn a_forms_word_vertices_are_bounded_by_its_transport_classes() {
+fn scene_form_bounds_words_by_transport_classes() {
     let (a, b) = four_bodies();
     let f = measured(&a, &b);
     let classes: Vec<crate::network::nerve::coord::Transport> = f
@@ -722,7 +722,7 @@ fn a_forms_word_vertices_are_bounded_by_its_transport_classes() {
 /// turns, or it is not a standing reading at all — and that the rotor it
 /// carries is the one measured and not a representative.
 #[test]
-fn a_filed_orbit_with_no_chord_leaves_as_a_standing_demand() {
+fn standing_of_types_turning_rotor_refuses_identity() {
     use crate::transducer::alphabet::{standing_of, LetterId, Word};
     use crate::transducer::sentence::Demand;
     // The 90° turn is a versor that turns, so it has a standing

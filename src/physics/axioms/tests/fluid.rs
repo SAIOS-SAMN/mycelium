@@ -31,7 +31,7 @@ fn turn() -> Mv {
 /// generator squaring to zero; one whose boundary composes to a turn carries
 /// none on 𝒯 (its curvature is 𝒽's).
 #[test]
-fn a_translation_is_null_flux_and_a_turn_is_none() {
+fn null_fluxes_reads_translation_not_turn() {
     let flux = null_fluxes(&translator(1, 0), &mut stroke()).expect("the modes read");
     assert_eq!(flux.len(), 1, "one null mode");
     assert!(flux[0].geo(&flux[0]).is_zero(), "its generator squares to zero: no length");
@@ -42,7 +42,7 @@ fn a_translation_is_null_flux_and_a_turn_is_none() {
 /// one ray share the quantum of one unit and wind it twice and three times;
 /// a half-unit flux refines the quantum to a half and the windings double.
 #[test]
-fn a_tubes_quantum_is_the_generator_of_its_fluxes() {
+fn tubes_windings_read_quantum_off_fluxes() {
     let f = |x: i64| null_fluxes(&translator(x, 0), &mut stroke()).expect("reads")[0].clone();
     let mut tubes = Tubes::new();
     assert!(tubes.admit(&f(2), 1) && tubes.admit(&f(3), 1));
@@ -60,7 +60,7 @@ fn a_tubes_quantum_is_the_generator_of_its_fluxes() {
 /// F3 — FROZEN IN: carrying a tube by a turn keeps it one tube with the same
 /// windings.
 #[test]
-fn a_tube_carried_by_the_flow_keeps_its_windings() {
+fn tubes_carried_by_turn_keep_windings() {
     let f = |x: i64| null_fluxes(&translator(x, 0), &mut stroke()).expect("reads")[0].clone();
     let g = turn();
     let carry = |v: &Mv| g.geo(v).geo(&g.reverse());
@@ -78,7 +78,7 @@ fn a_tube_carried_by_the_flow_keeps_its_windings() {
 /// second flux on the ray closes on it, relieving what stood open exactly;
 /// a finer flux refines the quantum and rescales what the tube held.
 #[test]
-fn a_held_tube_opens_then_closes_and_relieves_exactly() {
+fn tube_registry_admit_opens_then_closes_exactly() {
     let f = |x: i64| null_fluxes(&translator(x, 0), &mut stroke()).expect("reads")[0].clone();
     let g = f(1);
     let mut tubes = TubeRegistry::new();
@@ -98,7 +98,7 @@ fn a_held_tube_opens_then_closes_and_relieves_exactly() {
 /// 78.71 (5) — NET IS NOT TRANSPORT: flux there and back on one ray nets to
 /// zero and transports both ways. Sign cancellation hides nothing.
 #[test]
-fn flux_there_and_back_nets_zero_and_transports_both() {
+fn tube_registry_totals_net_zero_transport_both_ways() {
     let f = |x: i64| null_fluxes(&translator(x, 0), &mut stroke()).expect("reads")[0].clone();
     let mut tubes = TubeRegistry::new();
     let g = f(1);
@@ -113,7 +113,7 @@ fn flux_there_and_back_nets_zero_and_transports_both() {
 /// link (helicity zero); a screw — a turn coupled to a slide along its axis —
 /// does.
 #[test]
-fn a_carried_registry_keeps_its_windings_and_helicity() {
+fn tube_registry_carried_keeps_windings_and_helicity() {
     let mut b = stroke();
     let mut tubes = TubeRegistry::new();
     for x in [1, 2, 3] {
@@ -141,7 +141,7 @@ fn a_carried_registry_keeps_its_windings_and_helicity() {
 /// that reads every row answers the helicity exactly, one short answers
 /// `None` — unread, never the partial sum.
 #[test]
-fn the_helicity_on_a_stroke_is_whole_or_unread() {
+fn helicity_on_answers_whole_or_unread() {
     let mut b = stroke();
     let mut tubes = TubeRegistry::new();
     for x in [1, 2, 3] {
@@ -163,7 +163,7 @@ fn the_helicity_on_a_stroke_is_whole_or_unread() {
 /// moves the origin along a chord, and is still a turn — 𝒽, never 𝒯. A
 /// pure translation is 𝒯.
 #[test]
-fn a_turn_about_another_centre_is_not_a_translation() {
+fn carriage_lanes_reads_off_centre_turn_as_turn() {
     use crate::transducer::family::pairing::carriage_lanes;
     let t = translator(3, 1);
     let off_centre = t.geo(&turn()).geo(&t.reverse());

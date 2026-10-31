@@ -11,8 +11,11 @@ fn germ() -> Element {
     from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap())
 }
 
+/// Novelty pays on use and not on existence: an install pays nothing, and
+/// each real use transfers its magnitude from the demander to the
+/// discoverer.
 #[test]
-fn novelty_pays_on_use_not_on_existence() {
+fn settle_use_pays_novelty_on_use_not_install() {
     let mut t = Treasury::new();
     t.enroll([1; 32], UNIT_BOND, at(0, [0; 32])); // genesis: the bond must exist
     let g = germ();
@@ -36,7 +39,7 @@ fn novelty_pays_on_use_not_on_existence() {
 /// The dimensional ledger: consilience splits the PRICED μ⃗ per lane (nonzero
 /// lanes never split to zero), and the torse coin books on the holonomic lane.
 #[test]
-fn consilience_and_torse_settle_as_vectors() {
+fn settle_consilience_and_torse_settle_as_vectors() {
     let mut t = Treasury::new();
     t.enroll([1; 32], UNIT_BOND, at(0, [0; 32])); // capitalize before settling
     let anchor: Anchor = at(9, [1; 32]);
@@ -56,7 +59,7 @@ fn consilience_and_torse_settle_as_vectors() {
 
 /// A release with an empty stake bond still pays the measured vector.
 #[test]
-fn release_mints_when_the_bond_is_empty() {
+fn mint_claim_pays_when_bond_is_empty() {
     let mut t = Treasury::new();
     let addr = [7u8; 32];
     t.escrow_award(&super::word(addr), vec![[1; 32], [2; 32]], [4, 0, 2, 0], at(1, [9; 32]));
@@ -74,7 +77,7 @@ fn release_mints_when_the_bond_is_empty() {
 /// that fell by one are different readings, and a lane that held is a third
 /// thing rather than a zero. Nothing here decides anything.
 #[test]
-fn a_lane_move_is_read_per_lane() {
+fn lane_moves_reads_each_lane_with_amount() {
     use crate::economy::LaneMove::{Fell, Held, Rose};
     let fell = lane_moves(&[0, 0, 0, 0], &[1, 0, 0, 0]);
     assert_eq!(fell, [Fell(1), Held, Held, Held], "the fall is on its lane, by its amount");
@@ -101,7 +104,7 @@ fn a_lane_move_is_read_per_lane() {
 /// Paying `voices.first()` paid one of several who did the work, chosen
 /// by the order they arrived in.
 #[test]
-fn a_released_rewrite_pays_every_voice_the_escrow_names() {
+fn release_rewrite_pays_every_named_voice() {
     let mut t = Treasury::new();
     let addr = [3u8; 32];
     t.escrow_award(&super::word(addr), vec![[1; 32]], [8, 0, 4, 0], at(1, [1; 32]));
@@ -122,7 +125,7 @@ fn a_released_rewrite_pays_every_voice_the_escrow_names() {
 /// A mint with no payee is a mint to nobody: an escrow naming no voice
 /// is not released and stands (rule 11 — the old fallback invented one).
 #[test]
-fn an_escrow_with_no_voice_is_not_released() {
+fn release_rewrite_refuses_escrow_without_voice() {
     let mut t = Treasury::new();
     let addr = [4u8; 32];
     t.escrow_award(&super::word(addr), Vec::new(), [8, 0, 0, 0], at(1, [1; 32]));
@@ -133,7 +136,7 @@ fn an_escrow_with_no_voice_is_not_released() {
 /// Rule 11: a lane split cannot invent units. An award smaller than the number
 /// of voices does not floor to 1 per voice.
 #[test]
-fn settlement_split_never_invents_units_below_voice_count() {
+fn settle_consilience_split_never_invents_units() {
     let mut t = Treasury::new();
     let anchor: Anchor = at(1, [1; 32]);
     // 1 unit on lane 2 split across 4 voices: integer quotient is 0, no floor to 1.
@@ -155,7 +158,7 @@ fn settlement_split_never_invents_units_below_voice_count() {
 /// still conserves. The arm that read a short debit here could not fire,
 /// and this is the reading it was standing in for.
 #[test]
-fn a_fee_past_the_balance_pays_what_is_held_and_the_debit_shorts_nothing() {
+fn settle_recall_past_balance_pays_held_and_reads_short() {
     let mut t = Treasury::new();
     let a = at(1, [1; 32]);
     t.genesis([7; 32], [5, 2, 0, 0], a);
@@ -176,7 +179,7 @@ fn a_fee_past_the_balance_pays_what_is_held_and_the_debit_shorts_nothing() {
 /// conserves after each. Each had an arm reading a short debit that could not
 /// fire; this is what stands in its place.
 #[test]
-fn a_use_an_enrolment_and_a_burn_past_the_balance_move_what_is_held() {
+fn use_enroll_and_burn_past_balance_move_what_is_held() {
     let mut t = Treasury::new();
     let a = at(1, [1; 32]);
     t.genesis([1; 32], [3, 1, 0, 0], a);
@@ -200,7 +203,7 @@ fn a_use_an_enrolment_and_a_burn_past_the_balance_move_what_is_held() {
 /// the discharge is not minted anywhere — a claim on issuance that never
 /// issues (E1).
 #[test]
-fn a_claim_held_above_the_closers_discharge_is_paid_the_discharge_and_no_more() {
+fn release_discharged_pays_lesser_of_escrow_and_discharge() {
     let mut t = Treasury::new();
     let addr = [5u8; 32];
     t.escrow_award(&super::word(addr), vec![[1; 32]], [9, 4, 0, 2], at(1, [1; 32]));

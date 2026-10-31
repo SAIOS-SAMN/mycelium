@@ -49,7 +49,7 @@ fn steps() -> [Mv; 5] {
 /// R1 — A ROUTE IS THE ORDERED PRODUCT OF ITS STEPS, THE REVERSED ROUTE ITS
 /// INVERSE; transports are even, constructors odd with `v² ≠ 0`.
 #[test]
-fn r1_a_route_is_its_ordered_product_and_the_reverse_carries_the_inverse() {
+fn route_is_ordered_product_and_reverse_is_inverse() {
     let [g1, g2, g3, ..] = steps();
     let t = route(&[&g1, &g2, &g3]);
     let back = route(&[&inv(&g3), &inv(&g2), &inv(&g1)]);
@@ -68,7 +68,7 @@ fn r1_a_route_is_its_ordered_product_and_the_reverse_carries_the_inverse() {
 /// and a generator carries a constructor to a constructor of the same
 /// square.
 #[test]
-fn r2_constructors_build_generators_and_generators_carry_constructors() {
+fn versor_of_reflections_builds_and_carry_keeps_constructors() {
     let (a, b) = (Mv::blade(E1, q(1, 1)), Mv::blade(E1, q(1, 1)).add(&Mv::blade(E2, q(1, 1))));
     let v = cga::versor_of_reflections(&[b.clone(), a.clone()]).expect("two reflections compose a versor");
     assert_eq!(v, b.geo(&a), "the tether is the product of its constructors");
@@ -82,7 +82,7 @@ fn r2_constructors_build_generators_and_generators_carry_constructors() {
 /// R3 — LOCALITY: a cell is the members standing at its witness, nothing
 /// more; a member standing at another element is another cell's.
 #[test]
-fn r3_a_cell_is_the_members_standing_at_its_witness() {
+fn cells_over_groups_members_by_witness() {
     use crate::network::nerve::coord::Compartment;
     use crate::transducer::base::Site;
     let at = |x: i64| Compartment { site: Site::of([x, 0, 0]) };
@@ -102,7 +102,7 @@ fn r3_a_cell_is_the_members_standing_at_its_witness() {
 /// two 180° turns on one plane compose to `−1`, which is flat; a boundary
 /// that turns is not.
 #[test]
-fn r4_a_cell_is_flat_iff_its_boundary_is_the_identity_ray() {
+fn boundary_is_flat_iff_identity_ray() {
     let turn_180 = Mv::blade(E1 | E2, q(1, 1));
     let boundary = route(&[&turn_180, &turn_180]);
     assert_eq!(boundary.scalar_part(), q(-1, 1), "the boundary composes to −1 exactly");
@@ -114,7 +114,7 @@ fn r4_a_cell_is_flat_iff_its_boundary_is_the_identity_ray() {
 /// R5 — BASING IS CONJUGATION BY THE TREE TRANSPORT: at the root it moves
 /// nothing; elsewhere it moves the operator and keeps its class.
 #[test]
-fn r5_basing_conjugates_by_the_tree_transport() {
+fn basing_conjugates_by_tree_transport() {
     let [g1, g2, g3, ..] = steps();
     let loop_t = route(&[&g1, &g2]);
     let based = |theta: &Mv| theta.geo(&loop_t).geo(&inv(theta));
@@ -127,7 +127,7 @@ fn r5_basing_conjugates_by_the_tree_transport() {
 /// same motion factored through an extra step agree; a different motion
 /// does not.
 #[test]
-fn t1_two_routes_agree_iff_their_loop_is_trivial() {
+fn loop_of_is_trivial_iff_routes_agree() {
     let [g1, g2, g3, g4, _] = steps();
     let r = route(&[&g1, &g2]);
     let s = route(&[&g1, &g4, &inv(&g4), &g2]);
@@ -165,7 +165,7 @@ fn square(ab: &Mv, bc: &Mv, ad: &Mv, dc: &Mv, ac: &Mv) -> Square {
 /// corner to the basepoint by its lasso, in the boundary's order — and not
 /// in the other order, since the curvatures do not commute.
 #[test]
-fn t2_the_loop_is_the_lassoed_product_of_the_enclosed_curvatures() {
+fn loop_of_is_lassoed_product_of_curvatures() {
     let [g1, g2, g3, g4, g5] = steps();
     let sq = square(&g1, &g2, &g3, &g4, &g5);
     let f2 = inv(&sq.lasso).geo(&sq.f2_at_c).geo(&sq.lasso);
@@ -179,7 +179,7 @@ fn t2_the_loop_is_the_lassoed_product_of_the_enclosed_curvatures() {
 /// turns — both cells curved, their curvatures inverse, and the two routes
 /// agree. Agreement never proves the enclosed cells flat.
 #[test]
-fn t2_converse_fails_on_a_relator() {
+fn loop_of_trivial_over_curved_relator_cells() {
     let [.., g5] = steps();
     let sq = square(&one(), &one(), &one(), &one(), &g5);
     assert_eq!(loop_of(&sq.r, &sq.s), one(), "the routes agree");
@@ -192,7 +192,7 @@ fn t2_converse_fails_on_a_relator() {
 /// C1 (a, b) — ONE REFERENCE GIVES EVERY PAIR, AND INDEPENDENCE IS EACH
 /// READING TRIVIAL: `H(r₁, r₂) = H₂⁻¹ H₁` with no pairwise read.
 #[test]
-fn c1_one_reference_gives_every_pair() {
+fn loop_of_one_reference_gives_every_pair() {
     let [g1, g2, g3, g4, g5] = steps();
     let r0 = route(&[&g1, &g2]);
     let (r1, r2) = (route(&[&g3, &g2]), route(&[&g4, &g5]));
@@ -209,7 +209,7 @@ fn c1_one_reference_gives_every_pair() {
 /// planes the octahedral group's algebra, `M₃(ℚ) ⊕ ℚ`, rank ten, and they
 /// are coupled.
 #[test]
-fn c1_capacity_is_the_rank_of_the_actions_algebra() {
+fn read_chamber_capacity_is_rank_of_action_algebra() {
     let read = |hs: Vec<Mv>| {
         use crate::network::nerve::coord::{ChartAt, Overlap, VertexAt};
         use crate::transducer::cech::ChamberCircuit;
@@ -238,7 +238,7 @@ fn c1_capacity_is_the_rank_of_the_actions_algebra() {
 /// C1 (d) — THE SAME SHAPE INSIDE ONE GENERATOR: a motion's mode rays are
 /// routes of their own, and they compose back to the motion.
 #[test]
-fn c1_the_mode_split_is_the_same_shape() {
+fn motion_modes_rays_compose_to_motion() {
     let [g1, g2, ..] = steps();
     let screw = g1.geo(&cga::translator_at(&[q(0, 1), q(0, 1), q(1, 1)]));
     let Some(Ok(modes)) = cga::motion_modes(&screw, &mut stroke()) else { panic!("the screw splits") };
@@ -249,7 +249,7 @@ fn c1_the_mode_split_is_the_same_shape() {
 /// C2 (a) — CONJUGATION PRESERVES THE CLASS: minds basing one circuit at
 /// their own points read one class.
 #[test]
-fn c2_based_readings_converge_on_the_class() {
+fn class_invariants_survive_basing() {
     let [g1, g2, g3, g4, g5] = steps();
     let circuit = route(&[&g1, &g2, &g4]);
     let class = circuit.class_invariants();
@@ -263,7 +263,7 @@ fn c2_based_readings_converge_on_the_class() {
 /// `e₁ + e₂`, and in `e₁ + e₂` then `e₂`, compose one 90° turn —
 /// synonyms, one theorem with two proofs.
 #[test]
-fn c2_many_constructor_chains_compose_one_versor() {
+fn versor_of_reflections_composes_chains_to_one_versor() {
     let (a, b, c) = (Mv::blade(E1, q(1, 1)), Mv::blade(E1, q(1, 1)).add(&Mv::blade(E2, q(1, 1))), Mv::blade(E2, q(1, 1)));
     let first = cga::versor_of_reflections(&[a, b.clone()]).expect("a versor");
     let second = cga::versor_of_reflections(&[b, c]).expect("a versor");
@@ -278,7 +278,7 @@ fn c2_many_constructor_chains_compose_one_versor() {
 /// "Every mode elliptic of finite order" must be read on the group, not on
 /// its generators, and stays a conjecture.
 #[test]
-fn conjecture_the_orbit_closure_is_refused_read_per_generator() {
+fn constructor_orbit_refuses_closure_read_per_generator() {
     let [g1, .., g5] = steps();
     for g in [&g1, &g5] {
         let Some(Ok(ms)) = cga::motion_modes(g, &mut stroke()) else { panic!("a 90° turn splits") };
@@ -294,7 +294,7 @@ fn conjecture_the_orbit_closure_is_refused_read_per_generator() {
 /// routes whose transports differ by `−1` read agreeing, though the sign is
 /// there to be read: the held `ℤ₂` is the coset's reading (78.6), not T1's.
 #[test]
-fn conjecture_the_sign_between_two_routes_is_not_read_by_t1() {
+fn loop_of_is_blind_to_sign_between_routes() {
     let [g1, g2, ..] = steps();
     let turn_180 = Mv::blade(E1 | E2, q(1, 1));
     let r = route(&[&g1, &g2]);
@@ -306,7 +306,7 @@ fn conjecture_the_sign_between_two_routes_is_not_read_by_t1() {
 /// THE CONJECTURES ARE HELD OPEN IN THE REGISTER, each by the row that would
 /// decide it; none is stated among the theorems.
 #[test]
-fn the_conjectures_are_held_open_by_name() {
+fn route_conjectures_held_open_by_name() {
     use crate::physics::axioms::{C1_RESOLUTION, C2_CONVERGENCE, ROUTE_CONJECTURES, T1_TWO_ROUTES, T2_DISCRETE_STOKES};
     let owed: Vec<&str> = ROUTE_CONJECTURES.iter().map(|(_, row)| *row).collect();
     assert!(owed.iter().all(|row| !row.is_empty()), "every conjecture names what would decide it");

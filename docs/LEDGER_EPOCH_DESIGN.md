@@ -81,23 +81,23 @@ it. The server's log lines (`src/bin/mycelium-server/fold.rs`,
 ## Tests of the fold
 
 - `src/economy/tests/fold.rs`:
-  `a_fold_re_expresses_the_prefix_as_epoch_rows_and_conserves`, which also
+  `fold_replaces_prefix_with_epoch_rows_and_conserves`, which also
   shows a fold that does not conserve refused `REFUSE_FOLD_INEXACT` with
   nothing written.
 - `src/server/cognition/tests/era.rs`:
-  - `a_fold_is_proposed_witnessed_and_committed_on_two_signatures`;
-  - `a_second_fold_verifies_on_the_rows_a_witness_fetches`;
-  - `the_epoch_rows_stand_at_the_root_and_the_next_cut_counts_them`;
-  - `a_fold_passes_an_open_listing_word_and_escrow_and_each_closes_after_it`;
-  - `after_a_fold_an_orbit_longer_than_a_page_folds_at_its_close`;
-  - `each_filed_era_reads_back_its_own_receipts`;
-  - `a_folded_line_read_from_its_fold_root_pages_no_earlier_era`;
-  - `a_peer_receipt_citing_a_folded_receipt_is_admitted`;
-  - `a_court_restores_from_its_line_and_the_snapshot_that_names_it`.
+  - `commit_fold_seals_on_two_signatures`;
+  - `verify_fold_second_fold_on_fetched_rows`;
+  - `commit_fold_stands_epoch_rows_at_root`;
+  - `propose_fold_passes_open_listing_and_escrow`;
+  - `propose_fold_at_close_cuts_long_orbit_at_close`;
+  - `bind_eras_reads_each_era_own_range`;
+  - `receipts_page_from_root_pages_no_earlier_era`;
+  - `admit_backfill_admits_citation_of_folded_receipt`;
+  - `restore_agrees_with_bound_line`.
 - `src/chronometry/tests/shed.rs`:
-  `a_peer_fold_sheds_its_line_but_what_the_chains_own_hot_line_cites`,
-  `a_shed_receipt_is_a_hole_below_the_head_that_backfill_cannot_cross`.
+  `shed_folded_keeps_peer_nodes_own_hot_line_cites`,
+  `shed_folded_leaves_hole_backfill_cannot_cross`.
 - `src/anastome/dialogue/tests/fold_wire.rs`:
-  `the_fold_proposal_the_witness_answers_and_the_rows_round_trip`;
+  `fold_witness_and_rows_round_trip`;
   `src/anastome/dialogue/tests/receipts_range.rs`:
-  `the_receipts_request_and_reply_round_trip_within_the_budget`.
+  `receipts_request_and_reply_round_trip_within_budget`.

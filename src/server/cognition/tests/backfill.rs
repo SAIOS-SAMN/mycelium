@@ -52,7 +52,7 @@ fn act(b: &mut crate::chronometry::ReceiptChain, n: u64) {
 /// two kernels. With the aperture measured against the lag, every pass
 /// reaches `K − 1` and cites the head.
 #[test]
-fn a_heard_head_is_cited_once_its_gap_closes() {
+fn hear_cites_head_once_gap_closes() {
     let key = super::common::court_key("backfill-b");
     let vk = key.vk_bytes();
     let mut b = crate::chronometry::ReceiptChain::with_vk(vk);
@@ -116,7 +116,7 @@ fn a_heard_head_is_cited_once_its_gap_closes() {
 /// on the missing parent — on the development deployment, courts b's and c's lines, each
 /// citing the other's receipts, never advanced at a.
 #[test]
-fn a_head_citing_another_signer_is_cited_once_that_signer_is_fetched() {
+fn hear_fetches_cited_signer_then_cites_head() {
     let key = super::common::court_key("backfill-cites-b");
     let vk = key.vk_bytes();
     let dvk = super::common::court_key("backfill-cites-d").vk_bytes();
@@ -169,7 +169,7 @@ fn a_head_citing_another_signer_is_cited_once_that_signer_is_fetched() {
 /// this court holds d's fold root, and the depth of the cited orbit past the
 /// head held for d (nothing held: the orbit after the cited one).
 #[test]
-fn a_back_fill_page_stopped_on_a_missing_parent_is_counted_under_the_cited_signer() {
+fn admit_backfill_counts_missing_parent_under_cited_signer() {
     use crate::chronometry::{ActKind, Parent, ReceiptChain};
     let vk = super::common::court_key("missing-parent-b").vk_bytes();
     let dvk = super::common::court_key("missing-parent-d").vk_bytes();
@@ -206,7 +206,7 @@ fn a_back_fill_page_stopped_on_a_missing_parent_is_counted_under_the_cited_signe
 /// re-deriving and naming the one before, ending at the root's stamp and
 /// hash — holds the citation proved, and admits d's head as a parent.
 #[test]
-fn a_citation_into_a_closed_era_is_proved_by_its_chain_and_the_head_is_cited() {
+fn hear_proves_citation_into_closed_era() {
     use crate::chronometry::{ActKind, Cite, Parent, ReceiptChain, Stamp};
     let evk = super::common::court_key("closed-era-e").vk_bytes();
     let mut e = ReceiptChain::with_vk(evk);

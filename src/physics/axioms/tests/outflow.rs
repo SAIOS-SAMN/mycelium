@@ -51,7 +51,7 @@ fn sigma() -> Mv {
 /// each pivot the source both open, the generators agree coefficient for
 /// coefficient — or both refuse.
 #[test]
-fn on_three_axes_the_organ_is_the_cl41_source() {
+fn source_n_on_three_axes_equals_cl41_source() {
     let s = sigma();
     let blade = |a: usize, b: usize, c: i64| Mv::blade(a, q(c, 1)).geo(&Mv::blade(b, q(1, 1)));
     let lift = blade(E1, E3, 1).add(&blade(E2, EP, 2)).add(&blade(E3, EM, -3)).add(&blade(E1, E2, 5));
@@ -93,7 +93,7 @@ fn turned(n: usize, m: usize, root: i64) -> (Vector, NullPoint, Bivector) {
 /// `λᵢ` — so every plane the pivot stands in turns at its own phase, and a
 /// plane it holds nothing of reads zero.
 #[test]
-fn each_plane_has_its_own_outflow_at_any_observed_dimension() {
+fn outflow_planes_reads_each_plane_at_any_dimension() {
     for (n, m, root) in [(61usize, 49usize, 7i64), (361, 361, 19)] {
         let (sigma, p, l) = turned(n, m, root);
         let planes = outflow_planes(&sigma, &p, &l).expect("a source");
@@ -118,7 +118,7 @@ fn each_plane_has_its_own_outflow_at_any_observed_dimension() {
 /// geoid of square zero; a pivot off the geoid; a turn whose planes hold
 /// nothing of the pivot; an axis past the coordinates; two dimensions mixed.
 #[test]
-fn the_law_refuses_by_name() {
+fn source_n_refuses_by_name() {
     let (sigma, p, l) = turned(61, 49, 7);
     let zero = vec![BigRational::zero(); 63];
     assert_eq!(NullPoint::new(zero.clone()), Err(Refused::NotNull));

@@ -12,7 +12,7 @@ use crate::transducer::family::invert::{invert_remainder, remainder_scene, Paint
 /// body. A cell the form painted where the scene holds nothing is an erasure,
 /// counted and never painted. Every pair is kept, the frames the family's own.
 #[test]
-fn the_remainder_is_painted_as_its_sites_or_its_bodies() {
+fn remainder_scene_paints_sites_or_bodies() {
     let x = grid(&["000", "000"]);
     let y = grid(&["220", "000"]);
     // The form spoke (0, 0) right, missed (0, 1), and painted (1, 2) wrongly.
@@ -31,7 +31,7 @@ fn the_remainder_is_painted_as_its_sites_or_its_bodies() {
 /// A FORM THAT SPEAKS ITS FAMILY WHOLE HAS NOTHING TO INVERT: no remainder,
 /// no inversion.
 #[test]
-fn a_form_that_speaks_its_family_whole_inverts_nothing() {
+fn invert_remainder_inverts_nothing_for_whole_speech() {
     let family = vec![
         (grid(&["1100000", "0000000", "0002000", "0002200"]), grid(&["1100000", "0000000", "0000020", "0000022"])),
         (grid(&["0000110", "0000000", "0200000", "0220000"]), grid(&["0000110", "0000000", "0002000", "0002200"])),

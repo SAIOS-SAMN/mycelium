@@ -13,7 +13,7 @@ use crate::transducer::family::reconstruct::reconstruct;
 /// not equal. Emitting another hue lifts the light; recolouring the dot
 /// lifts the gauge.
 #[test]
-fn a_ray_at_two_lengths_is_one_flow_at_two_times() {
+fn congruence_reads_two_lengths_as_one_flow_in_time() {
     let short = flows(&grid(&["300000"]), &grid(&["344000"])).expect("one frame");
     let long = flows(&grid(&["300000"]), &grid(&["344400"])).expect("one frame");
     assert_eq!(congruence(&short[0], &long[0]), Congruence::InTime);
@@ -30,7 +30,7 @@ fn a_ray_at_two_lengths_is_one_flow_at_two_times() {
 /// carried; in time (HR5) the free ray's time is the one every other pair
 /// agreed on, and every pair left out is rebuilt.
 #[test]
-fn a_free_ray_runs_the_time_its_observations_agree_on() {
+fn reconstruct_in_time_runs_free_ray_agreed_time() {
     let family = vec![
         (grid(&["0300000", "0000000"]), grid(&["0344000", "0000000"])),
         (grid(&["0000000", "3000000"]), grid(&["0000000", "3440000"])),

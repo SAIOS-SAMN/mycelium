@@ -114,7 +114,7 @@ fn source<'a>(
 /// admitted as a parent — c's next act stands above it. Nothing below the
 /// root is asked again, and no era is paged to answer.
 #[test]
-fn a_court_behind_a_fold_adopts_the_root_and_cites_the_head() {
+fn hear_adopts_root_and_cites_head_behind_fold() {
     let (bkey, mut b) = court("catchup-b");
     let bvk = bkey.vk_bytes();
     strokes(&mut b, 1);
@@ -164,7 +164,7 @@ fn a_court_behind_a_fold_adopts_the_root_and_cites_the_head() {
 /// or over another root does not stand.
 #[test]
 #[expect(clippy::disallowed_methods, reason = "rule 15 — an era replay is read in its own order, and its first act is the era's opening: the order is content")]
-fn a_catch_up_below_the_root_is_answered_with_the_root_not_cold_pages() {
+fn serve_receipts_answers_below_root_with_root() {
     let (bkey, mut b) = court("catchup-serve-b");
     let bvk = bkey.vk_bytes();
     strokes(&mut b, 4);
@@ -226,7 +226,7 @@ fn a_catch_up_below_the_root_is_answered_with_the_root_not_cold_pages() {
 /// root, and d's head is cited — b's line is never asked as a catch-up below
 /// the root it holds.
 #[test]
-fn a_citation_into_a_held_era_is_proved_not_chased() {
+fn hear_proves_citation_into_held_era() {
     let (bkey, mut b) = court("catchup-era-b");
     let bvk = bkey.vk_bytes();
     strokes(&mut b, 3);
@@ -280,7 +280,7 @@ fn a_citation_into_a_held_era_is_proved_not_chased() {
 /// for another root, or as another key than the one that co-signed, it holds
 /// no answer and the prefix is re-derived as before.
 #[test]
-fn a_root_already_cosigned_is_answered_with_the_cosignature_held() {
+fn cosigned_root_answers_with_held_cosignature() {
     let (bkey, mut b) = court("catchup-cosigned-b");
     let bvk = bkey.vk_bytes();
     strokes(&mut b, 3);
@@ -305,7 +305,7 @@ fn a_root_already_cosigned_is_answered_with_the_cosignature_held() {
 /// page's end and the next page opens there; the citation is proved and d's
 /// head cited, every ask of b's line an era replay, more than one of them.
 #[test]
-fn a_citation_into_an_era_longer_than_a_page_is_proved_page_by_page() {
+fn hear_proves_long_era_page_by_page() {
     let (bkey, mut b) = court("catchup-long-era-b");
     let bvk = bkey.vk_bytes();
     strokes(&mut b, 12);
@@ -356,7 +356,7 @@ fn a_citation_into_an_era_longer_than_a_page_is_proved_page_by_page() {
 /// heads.
 #[test]
 #[expect(clippy::disallowed_methods, reason = "rule 15 — a line is read in its own order, and its last receipt is the head the hearing resumes after: the order is content")]
-fn cross_citing_lines_both_advance_from_their_roots() {
+fn hear_advances_cross_citing_lines_from_roots() {
     let (akey, mut a) = court("catchup-cross-a");
     let (bkey, mut b) = court("catchup-cross-b");
     let (avk, bvk) = (akey.vk_bytes(), bkey.vk_bytes());

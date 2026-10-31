@@ -9,7 +9,7 @@ use crate::client::sdk::*;
 /// expressing the same residual again adds none — the reading counts what
 /// stands, never what was asked.
 #[test]
-fn a_fresh_entity_holds_nothing_and_an_expression_is_one_word_once() {
+fn carriers_count_one_word_per_expression_once() {
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("carriers"));
     assert_eq!(entity.carriers(), [0; 10], "a fresh entity holds nothing unreported");
     let residual = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2)];

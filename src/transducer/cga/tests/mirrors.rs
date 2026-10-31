@@ -12,7 +12,7 @@ use crate::transducer::cga::*;
 /// `x₂ = 0` (offset 0, the plane through its centre: orthogonal, order two).
 /// With `ρ² = 1` the same mirrors cut it at 60°, a turn of order three.
 #[test]
-fn a_nucleus_reads_its_offset_against_the_mirrors_it_stands_between() {
+fn mirrors_between_reads_nucleus_offset_and_regime() {
     let centre = [q(1, 2), q(0, 1), q(3, 2)];
     let read = |r2| {
         mirrors_between(&sphere_at(&centre, &r2), 3)
@@ -40,7 +40,7 @@ fn a_nucleus_reads_its_offset_against_the_mirrors_it_stands_between() {
 /// THE MIRRORS THAT BRACKET IT ARE THE GRID'S OWN GROUP: two parallel
 /// mirrors on an axis read `Ã₁`, affine; a lone mirror reads finite.
 #[test]
-fn the_bracketing_mirrors_read_the_grids_affine_group() {
+fn base_mirror_brackets_read_affine_group() {
     let planes: Vec<Mv> =
         [(1, 0), (1, 1), (2, 0), (3, 1), (3, 2)].iter().map(|&(a, k)| base_mirror(a, &q(k, 1)).expect("an axis of the base")).collect();
     let r = read_coxeter(&planes, &[], &mut budget());

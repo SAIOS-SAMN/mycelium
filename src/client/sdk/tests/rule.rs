@@ -67,7 +67,7 @@ fn square_withheld() -> Grid {
 /// (a 3 × 3 for the shape-keeping ones), lands exactly on the site the
 /// index map names.
 #[test]
-fn each_symmetry_carries_every_site_to_its_index_image() {
+fn grid_motion_carries_every_site_to_index_image() {
     use crate::transducer::base::Site;
     for kind in [
         Symmetry::Rotate90,
@@ -92,8 +92,10 @@ fn each_symmetry_carries_every_site_to_its_index_image() {
     }
 }
 
+/// Every grid symmetry of a square, minted as a rule, is solved by the court
+/// on a pair the rule never saw.
 #[test]
-fn every_grid_symmetry_of_a_square_is_solved_on_a_pair_it_never_saw() {
+fn sentence_of_square_symmetry_solves_unseen_pair() {
     for kind in [
         Symmetry::Rotate90,
         Symmetry::Rotate180,
@@ -114,8 +116,10 @@ fn every_grid_symmetry_of_a_square_is_solved_on_a_pair_it_never_saw() {
     }
 }
 
+/// A turn and the transpose take a non-square grid to its exchange, and a
+/// shape the symmetry does not fit is no motion.
 #[test]
-fn a_turn_and_the_transpose_take_a_non_square_grid_to_its_exchange() {
+fn grid_motion_exchanges_non_square_shape() {
     for kind in [Symmetry::Rotate90, Symmetry::Transpose] {
         let x = grid(&["120", "100"]);
         let y = apply(kind, &x);
@@ -135,8 +139,10 @@ fn a_turn_and_the_transpose_take_a_non_square_grid_to_its_exchange() {
     assert!(Step::grid_motion(Symmetry::FlipH, (2, 3), (3, 2)).is_none());
 }
 
+/// A hue permutation, minted as a rule, is solved by the court on a pair the
+/// rule never saw.
 #[test]
-fn a_hue_permutation_is_solved_on_a_pair_it_never_saw() {
+fn sentence_of_hue_permutation_solves_unseen_pair() {
     let map = [(1u8, 2u8), (2, 1)];
     let x = square_train();
     let rule = sentence(&[Step::Hue(map.to_vec())], &[(x.clone(), recolour(&map, &x))], &NoCrystal).expect("mints");
@@ -144,8 +150,9 @@ fn a_hue_permutation_is_solved_on_a_pair_it_never_saw() {
     assert_solved(&rule, &[(w.clone(), recolour(&map, &w))], "hue permutation");
 }
 
+/// A motion followed by a recolour is minted and solved as one action.
 #[test]
-fn a_motion_then_a_recolour_is_solved_as_one_action() {
+fn sentence_of_motion_then_recolour_solves_as_one() {
     let map = [(1u8, 5u8)];
     let steps = [Step::grid_motion(Symmetry::Rotate180, (3, 3), (3, 3)).expect("fits"), Step::Hue(map.to_vec())];
     let then = |g: &Grid| recolour(&map, &apply(Symmetry::Rotate180, g));
@@ -155,8 +162,10 @@ fn a_motion_then_a_recolour_is_solved_as_one_action() {
     assert_solved(&rule, &[(w.clone(), then(&w))], "motion then recolour");
 }
 
+/// A step with no inverse is no rule: a mixed-parity element is refused by
+/// name as not a versor.
 #[test]
-fn a_step_with_no_inverse_is_no_rule() {
+fn sentence_refuses_step_with_no_inverse() {
     use crate::transducer::cga::{E1, E2};
     let one = || num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     // Mixed parity: a scalar plus a vector has no versor action.
@@ -171,7 +180,7 @@ fn a_step_with_no_inverse_is_no_rule() {
 /// action differs (`a.sub(&b)` is not zero), and the seam and the court
 /// refuse it where the plain motion is solved.
 #[test]
-fn a_dilation_composed_with_a_motion_is_refused_where_the_motion_is_solved() {
+fn judge_solve_refuses_dilated_motion_and_solves_plain() {
     let x = square_train();
     let y = apply(Symmetry::Rotate180, &x);
     let Some(Step::Motion(m)) = Step::grid_motion(Symmetry::Rotate180, (3, 3), (3, 3)) else { panic!("fits") };
@@ -203,7 +212,7 @@ fn a_dilation_composed_with_a_motion_is_refused_where_the_motion_is_solved() {
 /// (`rule::crossing`) carries no overlap between two training frames, still
 /// replays on its training pairs, and is solved on the withheld pair.
 #[test]
-fn an_extracted_rule_judged_on_one_withheld_pair_is_not_refused_for_a_training_frame() {
+fn crossing_drops_training_frames_so_withheld_pair_solves() {
     use crate::transducer::sentence::ObstructionKind;
     let train = vec![
         (grid(&["1100", "0000"]), grid(&["0022", "0000"])),
@@ -242,7 +251,7 @@ fn an_extracted_rule_judged_on_one_withheld_pair_is_not_refused_for_a_training_f
 /// the court's to rule, and the court's `judge_solve` — resuming its replay
 /// on its own strokes by its cursor — rules the same word.
 #[test]
-fn a_home_replay_no_stroke_reads_is_unjudged_and_the_court_rules_the_word() {
+fn of_refusal_reads_unread_as_unjudged() {
     let train = vec![
         (grid(&["1100", "0000"]), grid(&["0022", "0000"])),
         (grid(&["0000", "1100"]), grid(&["0000", "0022"])),
@@ -266,7 +275,7 @@ fn a_home_replay_no_stroke_reads_is_unjudged_and_the_court_rules_the_word() {
 /// court's stamp files the same word, the citation resolves and the home
 /// check goes on to the replay.
 #[test]
-fn a_rule_citing_a_word_no_court_admitted_is_not_judged_clean_at_home() {
+fn would_judge_refuses_citation_no_court_admitted() {
     use crate::client::sdk::Epigenome;
     use crate::transducer::family::{cipher_form, sentence_measure};
     let family = vec![

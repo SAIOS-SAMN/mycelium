@@ -10,7 +10,7 @@ use crate::transport::exchange_due;
 /// when these roots move. It was never re-asked short of the roots moving,
 /// and a peer silent while it booted was cut off for good (2026-09-30).
 #[test]
-fn a_peer_is_asked_again_only_after_its_lambda_or_when_the_roots_moved() {
+fn exchange_due_waits_for_lambda_unless_roots_moved() {
     let aperture = u64::from(mycelium::physics::aperture_cycle());
     assert!(exchange_due(None, 5, None, false), "never asked: due");
     assert!(!exchange_due(Some(5), 6, Some(4), false), "asked at K 5, Λ 4, K 6: not due");

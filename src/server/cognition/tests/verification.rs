@@ -17,7 +17,7 @@ fn court_with_claim(addr: &Address, voice: [u8; 32], held: [u64; 4]) -> Kernel {
 /// A COURT AT REST TAKES NOTHING: with its reserve full, a release pays the
 /// closer the whole of it and no verification row is written.
 #[test]
-fn a_court_at_rest_pays_the_closer_the_whole_release() {
+fn release_verified_at_rest_pays_closer_whole() {
     let (addr, voice, witness) = (Address::from_bytes([51u8; 32]), [5u8; 32], [6u8; 32]);
     let held = [40, 20, 0, 8];
     let mut k = court_with_claim(&addr, voice, held);
@@ -38,7 +38,7 @@ fn a_court_at_rest_pays_the_closer_the_whole_release() {
 /// share per lane as POWV, the closer the rest as POUW, the two together
 /// exactly the base the claim released, and the ledger's invariant holds.
 #[test]
-fn a_strained_court_and_its_witness_are_paid_out_of_the_release() {
+fn release_verified_shares_strained_release_with_witness() {
     let (addr, voice, witness) = (Address::from_bytes([52u8; 32]), [7u8; 32], [8u8; 32]);
     let held = [40, 20, 0, 8];
     let mut k = court_with_claim(&addr, voice, held);
@@ -72,7 +72,7 @@ fn a_strained_court_and_its_witness_are_paid_out_of_the_release() {
 /// a discharge below the escrow is the base the share is read on, and a
 /// witness that is this court itself takes one share, not two.
 #[test]
-fn the_share_is_read_on_the_capped_release_and_one_court_is_one_organ() {
+fn release_verified_shares_capped_base_once_per_organ() {
     let (addr, voice) = (Address::from_bytes([53u8; 32]), [9u8; 32]);
     let held = [40, 20, 0, 8];
     let discharge = [10, 30, 0, 8];

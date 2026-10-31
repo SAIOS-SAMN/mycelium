@@ -4,8 +4,10 @@
 use crate::anastome::dialogue::*;
 use crate::chronometry::{ActKind, Place, ReceiptChain};
 
+/// The receipts request and reply round-trip, a reply is a page within its
+/// budget, and a short one refuses.
 #[test]
-fn the_receipts_request_and_reply_round_trip_within_the_budget() {
+fn receipts_request_and_reply_round_trip_within_budget() {
     let (after, upto) = (Some(Place { k: 3, i: 1 }), Place { k: 9, i: 0 });
     let req = encode_receipts_request(&[1; 32], &[2; 32], after, upto);
     assert_eq!(decode_receipts_request(&req), Some(ReceiptsRequest { voice: [1; 32], signer: [2; 32], after, upto, replay: false }));

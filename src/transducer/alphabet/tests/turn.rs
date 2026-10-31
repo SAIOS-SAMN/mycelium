@@ -14,7 +14,7 @@ fn turns(w: &Word) -> [Turn; 2] {
 /// The identity turns 0°, and the letter on the sensor plane turns 90° in
 /// its plane — exact, 90° of the full 360°, `360·1/4`.
 #[test]
-fn a_finite_turn_is_its_exact_degrees() {
+fn degrees_exact_for_finite_turn() {
     let [a, b] = turns(&Word::identity());
     assert_eq!((a.degrees(), b.degrees()), (Some(q(0, 1)), Some(q(0, 1))), "the identity turns 0°");
     let l = LetterId::turn_90((0, 1)).expect("the sensor letter");
@@ -31,7 +31,7 @@ fn a_finite_turn_is_its_exact_degrees() {
 /// `cos² 90° = 0` with `cos < 0`, so the turn lies strictly between 90° and
 /// 120°. No decimal exists in the reading.
 #[test]
-fn an_infinite_turn_is_its_point_and_its_sector() {
+fn turns_reads_infinite_turn_as_point_and_sector() {
     let l = LetterId::pythagorean_5((0, 1)).expect("the (3,4,5) letter");
     let [a, _] = turns(&Word::from_letters(&[(l, false)]));
     assert_eq!(a, Turn::Point { cos: q(-7, 25), sin_sq: q(576, 625) });
@@ -48,7 +48,7 @@ fn an_infinite_turn_is_its_point_and_its_sector() {
 /// (2·14161 = 28322 < 28561) and above 1/4, with `cos < 0` — between 120°
 /// and 135°.
 #[test]
-fn the_sector_reads_the_sign_and_the_square() {
+fn sector_reads_cosine_sign_and_square() {
     let l = LetterId::pythagorean_13((0, 1)).expect("the (5,12,13) letter");
     let [a, _] = turns(&Word::from_letters(&[(l, false)]));
     let Turn::Point { cos, .. } = &a else { panic!("an infinite-order turn is a point: {a:?}") };

@@ -36,8 +36,9 @@ fn moved(sigma: &[(u8, u8)], mag: [u64; 4]) -> Element {
         .unwrap()
 }
 
+/// Two tapes of one normal form have one key: four quarter-turn letters and the identity word share a key and a matrix.
 #[test]
-fn normal_form_two_tapes_one_key() {
+fn word_key_is_one_for_two_spellings() {
     let q = LetterId::turn_90((0, 1)).unwrap();
     let a = Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
     let b = Word::identity();
@@ -47,8 +48,9 @@ fn normal_form_two_tapes_one_key() {
     assert!(relators().iter().any(|r| r.kind == RelatorKind::Turn90OrderFour));
 }
 
+/// The element record round-trips within its size bound, and a record under an old magic is refused.
 #[test]
-fn the_record_round_trip_and_size() {
+fn element_record_round_trips_and_refuses_old_magic() {
     let w = conn(&[(1, 2)], vec![(0, 0, 1u8, 2)], [1, 1, 0, 0]);
     let b = w.to_bytes().expect("the record writes");
     assert_eq!(b[0], Element::RECORD_MAGIC);
@@ -77,8 +79,9 @@ fn the_record_round_trip_and_size() {
     }
 }
 
+/// Faces by constancy: three squares carried by one recolour are one vertex joined to the frame, and the rule speaks them all.
 #[test]
-fn faces_by_constancy_three_squares() {
+fn extract_rule_joins_three_squares_in_one_vertex() {
     let train_in = grid(&["11011", "11011", "00000", "11000", "11000"]);
     let train_out: Grid = train_in
         .iter()
@@ -134,8 +137,9 @@ fn faces_by_constancy_three_squares() {
     let _ = mint_sentence(&rule, &family, &NoCrystal, 0);
 }
 
+/// A spoken rule recolours the square it was extracted on, leaving no remainder.
 #[test]
-fn speak_rule_recolours_or_conflicts() {
+fn speak_rule_recolours_single_square() {
     let train_in = grid(&["1100", "0000"]);
     let train_out = grid(&["2200", "0000"]);
     let family = vec![(train_in.clone(), train_out.clone())];
@@ -145,8 +149,9 @@ fn speak_rule_recolours_or_conflicts() {
     assert_eq!(spoken.grid(), Some(train_out));
 }
 
+/// A speech act is one frame that decodes back, and its reply carries each adjudication with where its word stands.
 #[test]
-fn speech_act_one_frame() {
+fn encode_speech_round_trips_in_one_frame() {
     let w = conn(&[(1, 2), (2, 1)], Vec::new(), [1, 1, 0, 0]);
     let body = dialogue::encode_speech(&[1u8; 32], [2u8; 32], 7, &[w.to_bytes().expect("the record writes")]).expect("the task frames");
     let act = dialogue::decode_speech(&body).expect("decode");
@@ -163,8 +168,9 @@ fn speech_act_one_frame() {
     assert_eq!(dialogue::decode_speech_reply(&reply), Some(both.to_vec()));
 }
 
+/// Perceived speech is refused with a reason when the chain is unframed, and a replay-clean word stands.
 #[test]
-fn perceive_speech_refuses_with_a_reason() {
+fn perceive_speech_refuses_unframed_chain() {
     let mut k = Kernel::new();
     let mut bad = mycelium::transducer::element::from_canonical(
         &mycelium::transducer::element::canonical_chain(&[(0, 0, 1u8, 2)])
@@ -182,8 +188,9 @@ fn perceive_speech_refuses_with_a_reason() {
     assert_eq!(codes, vec![dialogue::SPEECH_STOOD], "a replay-clean word stands");
 }
 
+/// A single recolour is a one-morphism sentence: one word vertex carrying the gauge, and the form closed.
 #[test]
-fn a_single_recolour_is_a_one_morphism_sentence() {
+fn extract_rule_closes_single_recolour_as_one_word() {
     let train_in = grid(&["1100", "0000"]);
     let train_out = grid(&["2200", "0000"]);
     let family = vec![(train_in, train_out)];
@@ -215,7 +222,7 @@ fn a_single_recolour_is_a_one_morphism_sentence() {
 /// it do not re-read: MYT1 and MYC7 are refused by name, an older one as
 /// what it is.
 #[test]
-fn hypha_snapshot_is_myt2() {
+fn snapshot_writes_myt2_and_refuses_older_layouts() {
     let mut k = Kernel::new();
     // A voice's sentence for a recolour, spoken through the one door an
     // utterance has (law 8): a listing on the book to snapshot.
@@ -249,8 +256,9 @@ fn hypha_snapshot_is_myt2() {
 // itself rather than whether two ideas agree; agreement is the transition
 // between their transports being the identity, a reading of the two.
 
+/// A sentence spoken once at its home is stood once, with one code back.
 #[test]
-fn mint_once_on_home_install() {
+fn perceive_speech_answers_one_code_per_sentence() {
     let mut k = Kernel::new();
     let w = moved(&[(1, 2), (2, 1)], [2, 1, 0, 0]);
     let codes = k.perceive_speech([9; 32], &[0; 32], std::slice::from_ref(&w));

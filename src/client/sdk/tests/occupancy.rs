@@ -16,7 +16,7 @@ fn grid(rows: &[&str]) -> Grid {
 /// unreached (ground), painted a cell the truth holds as ground, and left the
 /// created cell ground.
 #[test]
-fn a_wrong_speech_is_read_by_its_causes() {
+fn occupancy_causes_reads_wrong_speech_by_cause() {
     let x = grid(&["100", "000", "002"]);
     let y = grid(&["000", "030", "002"]);
     // The body at index 1 is the bottom-right one (perception reads bodies
@@ -40,7 +40,7 @@ fn a_wrong_speech_is_read_by_its_causes() {
 /// shape the family never showed: that body is unreached, and named so —
 /// never silently absent from the speech.
 #[test]
-fn a_speech_names_the_bodies_it_did_not_reach() {
+fn speak_rule_names_unreached_bodies() {
     let family = vec![
         (grid(&["1000", "0000", "0000"]), grid(&["0000", "1000", "0000"])),
         (grid(&["0000", "0100", "0000"]), grid(&["0000", "0000", "0100"])),
@@ -60,7 +60,7 @@ fn a_speech_names_the_bodies_it_did_not_reach() {
 /// showed, the whole answer is withheld (the bar held as a question), never
 /// sent with the bar silently erased.
 #[test]
-fn a_speech_with_an_unreached_body_is_withheld() {
+fn tests_spoken_withholds_speech_with_unreached_body() {
     use crate::client::sdk::*;
     let family = vec![
         (grid(&["1000", "0000", "0000"]), grid(&["0000", "1000", "0000"])),

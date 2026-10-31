@@ -20,7 +20,7 @@ fn by(v: &element::Versor, n: i64, d: i64) -> element::Versor {
 /// One class key for one carriage ray, and the key still reads back to
 /// that ray (law 2: reversible, content).
 #[test]
-fn a_class_key_is_one_under_every_scaling_of_the_carriage() {
+fn class_key_ignores_carriage_scale() {
     let c = element::translator_versor(0, 3);
     let neg = by(&c, -1, 1);
     assert!(same_versor(&c, &neg), "one projective element");
@@ -41,7 +41,7 @@ fn a_class_key_is_one_under_every_scaling_of_the_carriage() {
 
 /// One vertex address for one member carriage ray.
 #[test]
-fn a_form_address_is_one_under_every_scaling_of_a_members_carriage() {
+fn form_vertex_key_ignores_member_carriage_scale() {
     let form_with = |car: element::Versor| -> Form {
         let mut f = Form::default();
         stand_with_star(
@@ -71,7 +71,7 @@ fn a_form_address_is_one_under_every_scaling_of_a_members_carriage() {
 /// One certificate key for one move: a pivot by `T` and by `−T` is one pivot
 /// (A20), and an axis opened on a seed ray is one opening.
 #[test]
-fn a_certificate_key_is_one_under_every_scaling_of_its_versor() {
+fn pivot_certificate_key_ignores_versor_scale() {
     let t = element::translator_versor(2, 3);
     let placed = |translator: element::Versor| PivotCertificate {
         by: PivotBy::Placement { face: some_overlap(), translator },
@@ -94,7 +94,7 @@ fn a_certificate_key_is_one_under_every_scaling_of_its_versor() {
 /// action across the tape, where the letters alone wrote it as the
 /// identity.
 #[test]
-fn a_certificate_is_written_as_its_rays() {
+fn pivot_certificate_to_bytes_writes_rays() {
     let t = element::translator_versor(2, 3);
     let bytes = |c: &PivotCertificate| {
         let mut out = Vec::new();

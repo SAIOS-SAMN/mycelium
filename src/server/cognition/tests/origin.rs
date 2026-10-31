@@ -39,7 +39,7 @@ fn origin(commitment: u8) -> Origin {
 /// name; the first is sealed by its coordinates, read back with its stamp and
 /// receipt, and restored.
 #[test]
-fn a_universes_origin_is_recorded_once_by_its_domain_and_never_edited() {
+fn record_origin_seals_once_never_edited() {
     let mut k = founded();
     let d = vk(&domain());
     assert_eq!(k.origin_of(&d), None, "a domain founded from keys alone has no origin");
@@ -63,7 +63,7 @@ fn a_universes_origin_is_recorded_once_by_its_domain_and_never_edited() {
 /// THE WIRE: the origin and its read decode to what was encoded, a byte left
 /// over is none, and the replies and the reading round-trip.
 #[test]
-fn the_origin_act_and_its_read_round_trip_on_the_wire() {
+fn origin_act_and_read_round_trip_on_wire() {
     let signed = origin(9).sign(&domain());
     let frame = encode_origin(&signed);
     assert_eq!(decode_domain_request(&frame), Some(DomainRequest::Origin(signed)));

@@ -14,7 +14,7 @@ use crate::cognition::*;
 /// that is merely CONCURRENT with it — neither receipt's frontier below the
 /// other's — is kept on the chain beside it, and nothing is chosen.
 #[test]
-fn cocycle_supersedes_by_causal_order_and_keeps_concurrent() {
+fn push_cocycle_at_supersedes_by_causal_order() {
 use crate::transducer::alphabet::{LetterId, Word};
 let inv = crate::transducer::stalk::Invariant::counts(&[1]);
 // Two words on the sensor plane: one 90° turn and two. Both keep
@@ -101,7 +101,7 @@ assert_eq!(
 /// Standing T is a height difference on the home chain; a witness
 /// re-derives it from the receipts (T16).
 #[test]
-fn extent_replays_from_the_home_chain() {
+fn t_extent_replays_from_home_chain() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
@@ -150,7 +150,7 @@ fn docketed(own_vk: [u8; 32]) -> (Kernel, crate::transducer::address::Address) {
 /// word to the ruled cover, or evaporated its award, or excised it as a
 /// cavity, at no position in the chain that is supposed to record it.
 #[test]
-fn a_ruling_seals_a_receipt_at_the_word_it_ruled() {
+fn apply_verdict_seals_receipt_citing_word() {
     use crate::anastome::dialogue::RULING_UPHELD;
     let (mut k, addr) = docketed([0x5a; 32]);
     let before = k.chain().own_len();
@@ -168,7 +168,7 @@ fn a_ruling_seals_a_receipt_at_the_word_it_ruled() {
 /// before the provisional is removed, which is the one point past which
 /// the book has moved on every path.
 #[test]
-fn a_ruling_that_rules_nothing_seals_nothing() {
+fn apply_verdict_ruling_nothing_seals_nothing() {
     use crate::anastome::dialogue::RULING_UPHELD;
     let (mut k, addr) = docketed([0x5a; 32]);
     assert!(k.apply_verdict(&addr, RULING_UPHELD), "the first lands");
@@ -180,7 +180,7 @@ fn a_ruling_that_rules_nothing_seals_nothing() {
 
 /// 45.1: a slash is a ruling on the other arm, and seals its own receipt.
 #[test]
-fn a_slash_seals_a_receipt() {
+fn apply_verdict_slash_seals_receipt() {
     use crate::anastome::dialogue::RULING_SLASHED;
     let (mut k, addr) = docketed([0x5b; 32]);
     let before = k.chain().own_len();
@@ -193,7 +193,7 @@ fn a_slash_seals_a_receipt() {
 /// receipt nothing sealed, so the K it named was whatever the last
 /// unrelated act had left there.
 #[test]
-fn a_syllabus_page_served_seals_a_receipt() {
+fn note_served_seals_receipt() {
     let (mut k, addr) = docketed([0x5a; 32]);
     let before = k.chain().own_len();
     k.note_served(&addr, [3; 32]);
@@ -207,7 +207,7 @@ fn a_syllabus_page_served_seals_a_receipt() {
 /// own step — so the install is one step and one per new word, and the
 /// sentence's own step cites it by its admitting stamp.
 #[test]
-fn an_install_seals_a_receipt_at_the_installed_address() {
+fn home_install_seals_receipt_per_word() {
     let (mut k, addr) = docketed([0x5c; 32]);
     let held = k.word_at(addr.as_bytes()).cloned().or_else(|| k.provisional.get(addr.as_bytes()).cloned()).expect("docketed");
     let words = crate::cognition::book::speech::words_of_sentence(&held, &mut crate::physics::Physics::default().stroke_n(1 << 20));
@@ -227,7 +227,7 @@ fn an_install_seals_a_receipt_at_the_installed_address() {
 /// this court's own act, sealed after the orbit close that lapsed it by
 /// zero flux (78.37 (3)).
 #[test]
-fn a_lapsed_citation_seals_a_receipt() {
+fn orbit_seals_lapsed_citation_receipt() {
     let mut k = Kernel::new();
     k.bind_identity([0x5d; 32]);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
@@ -254,7 +254,7 @@ fn a_lapsed_citation_seals_a_receipt() {
 /// sealed on a word nothing measures is counted as sealed without a frame,
 /// and a word held with no act is counted held without a stamp, by row.
 #[test]
-fn a_court_reads_itself_on_the_clock() {
+fn clock_reads_head_stamp_and_counts() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let mut k = Kernel::new();

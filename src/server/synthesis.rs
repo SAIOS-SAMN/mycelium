@@ -250,7 +250,7 @@ mod tests {
     /// a word the language already derives reads Derivable; tampered
     /// speech is Refused with the failed axis named.
     #[test]
-    fn adoption_maps_every_state_deterministically() {
+    fn adopt_maps_every_state_deterministically() {
         use crate::cognition::{Adoption, Kernel};
         let k = std::sync::Mutex::new(Kernel::new());
         let court = [0xAB; 32];

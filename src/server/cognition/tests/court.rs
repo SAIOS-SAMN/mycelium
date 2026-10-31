@@ -45,7 +45,7 @@ assert!(blind_replay(&empty, &mut super::common::budget()).is_some(), "no eviden
 /// vantage has answered and is not asked again; a word that leaves the
 /// docket takes its standings with it.
 #[test]
-fn an_offer_stands_pending_until_the_witness_answers() {
+fn offer_standing_pends_until_witness_answers() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8), (0, 1, 2)];
@@ -85,7 +85,7 @@ assert_eq!(
 /// (20 as ruled, 50.1), and a second vantage on it is a use of that
 /// address, never a second listing.
 #[test]
-fn installs_are_provisional_until_verdict() {
+fn apply_verdict_releases_escrowed_award_once() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
@@ -112,7 +112,7 @@ assert!(!k.apply_verdict(&addr.clone(), crate::anastome::dialogue::RULING_UPHELD
 /// A slashing verdict (failed blind replay — false speech) excises the word
 /// from the basis and debits the voices' earned balances into the pool.
 #[test]
-fn a_slashing_verdict_excises_and_debits() {
+fn apply_verdict_slashed_excises_word() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
@@ -130,7 +130,7 @@ assert!(k.dockets().is_empty());
 /// The forged word is the spoken sentence with its word vertices struck
 /// out: a tape of the Frame and a demand, refused as a chain (50.6).
 #[test]
-fn court_organ_glue_on_replay_not_on_signatures() {
+fn glue_fetched_admits_by_replay_not_signature() {
 let mut home = Kernel::new();
 let mut peer = Kernel::new();
 let mut third = Kernel::new();
@@ -158,7 +158,7 @@ assert!(
 /// Adopt writes a field entry and a deflation so the stroke can rule
 /// a client-minted connection. Ruled listings do not starve later ones.
 #[test]
-fn adopt_reaches_the_docket_and_stroke_skips_ruled() {
+fn court_stroke_skips_ruled_adopted_listings() {
 use crate::transducer::element::from_connection;
 fn conn(shift: i64) -> Element {
     from_connection(
@@ -202,7 +202,7 @@ assert_eq!(ruled_n(&k, &addrs), cap + 1, "later listings are not starved by alre
 /// through a speaker's index it is zero for every hypha vertex, so no
 /// section stands a vertex and nothing fills.
 #[test]
-fn a_simplex_volume_is_the_open_listings_on_its_chart() {
+fn volume_of_simplex_is_open_listings_on_chart() {
 use crate::transducer::address::Address;
 use crate::transducer::stalk::{Closure, Invariant};
 let mut k = Kernel::new();
@@ -228,7 +228,7 @@ assert_eq!(k.volume_of_simplex(&Invariant::counts(&[9])), [0; 4], "a chart with 
 /// circuit — where a cursor that resumed after the last key it served and
 /// stopped at the end of the order never reached it.
 #[test]
-fn the_docket_is_a_circuit_and_reaches_a_listing_admitted_below_the_cursor() {
+fn court_stroke_circuit_reaches_listing_below_cursor() {
 use crate::transducer::element::from_connection;
 fn conn(shift: i64) -> Element {
     from_connection(
@@ -275,7 +275,7 @@ assert!(docket.period() >= 1, "the period is measured in strokes: {docket:?}");
 
 /// The home installs when a peer's ruled digest holds the stratum.
 #[test]
-fn home_installs_when_peer_ruled_root_gains_the_address() {
+fn confirm_peer_holds_installs_on_peer_ruled_root() {
 let mut home = Kernel::new();
 let mut peer = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
@@ -298,7 +298,7 @@ assert!(home.provisional.is_empty(), "the provisional leaves the home");
 /// A peer have-list that names a ruled provisional is the second organ:
 /// the home installs without waiting for a digest-root match.
 #[test]
-fn home_installs_on_a_have_list_naming_a_ruled_provisional() {
+fn confirm_peer_holds_addrs_installs_ruled_provisional() {
 let mut home = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
@@ -325,7 +325,7 @@ assert!(home.provisional.is_empty(), "the docket clears on install");
 /// Before this the stroke replayed with no family, so closure was checked
 /// only at speech and never again.
 #[test]
-fn the_court_stroke_refuses_a_form_that_leaves_a_remainder_on_its_family() {
+fn court_settle_slashes_form_leaving_remainder() {
 use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
 let grid = |rows: &[&str]| -> crate::arc::Grid {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
@@ -373,7 +373,7 @@ assert!(ruling.ruled_contains(&addr), "and the stroke rules it");
 /// `[0; 32]` alone, so the listing was bound to the empty task and every
 /// reader of the binding asked for the family the empty task has none of.
 #[test]
-fn a_sentence_spoken_with_no_task_binds_no_task() {
+fn perceive_sentence_without_task_binds_none() {
     let e = sentence_of(&[(0, 0, 1)], &[(0, 0, 2)]).expect("a recolour is a sentence");
     let addr = e.address();
     let mut k = Kernel::new();
@@ -398,7 +398,7 @@ fn a_sentence_spoken_with_no_task_binds_no_task() {
 /// listed under the sentence rather than the sentence refused for saying
 /// less than the whole.
 #[test]
-fn a_sentence_declaring_its_unspoken_remainder_is_heard_and_its_demand_listed() {
+fn perceive_sentence_lists_declared_remainder_demand() {
     use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
     let grid = |rows: &[&str]| -> crate::arc::Grid {
         rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
@@ -423,7 +423,7 @@ fn a_sentence_declaring_its_unspoken_remainder_is_heard_and_its_demand_listed() 
 /// once the genesis bonds it at the cover (MU-PRODUCT §4). On 0fd41ca no
 /// court bonded any other hypha, so every answered offer waited forever.
 #[test]
-fn a_bonded_hypha_is_a_second_vantage_and_an_unbonded_one_is_not() {
+fn converge_witness_requires_bonded_hypha() {
     use crate::court::convergence::Converged;
     let mut k = Kernel::new();
     let peer = [2u8; 32];
@@ -451,7 +451,7 @@ fn a_bonded_hypha_is_a_second_vantage_and_an_unbonded_one_is_not() {
 /// with itself and agrees every time — an agreement manufactured by writing
 /// the answer into the place the question is asked.
 #[test]
-fn a_witness_glues_an_offer_at_the_homes_vantage() {
+fn glue_fetched_files_offer_at_home_vantage() {
     let home_vk = [1u8; 32];
     let witness_vk = [2u8; 32];
     let mut home = Kernel::new();
@@ -503,7 +503,7 @@ fn a_witness_glues_an_offer_at_the_homes_vantage() {
 /// only confirm that a voice sent bytes it had seen before, which is byte
 /// exactness, the one failure this architecture cannot absorb."
 #[test]
-fn a_witness_that_rederived_nothing_answers_with_nothing() {
+fn own_section_empty_without_rederivation() {
     let home_vk = [1u8; 32];
     let witness_vk = [2u8; 32];
     let mut home = Kernel::new();
@@ -562,7 +562,7 @@ fn a_witness_that_rederived_nothing_answers_with_nothing() {
 /// sectioning that at this vantage would file the peer's tape as this
 /// court's re-derivation, which is 1.7's byte exactness one level down.
 #[test]
-fn a_court_sections_what_it_ruled_itself_and_not_what_a_peer_sent() {
+fn own_section_holds_own_ruling_not_peer_word() {
     let own_vk = [0x0au8; 32];
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];

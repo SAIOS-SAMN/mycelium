@@ -29,7 +29,7 @@ fn read(b: &[u8]) -> Option<Vec<KStepReceipt>> {
 /// A COUNT IN SEVEN-BIT GROUPS reads back exactly, at every width, and a
 /// group past a `u64` refuses.
 #[test]
-fn a_count_reads_back_exactly_and_past_its_width_refuses() {
+fn take_var_reads_back_exactly_and_refuses_past_u64() {
     for v in [0, 1, 127, 128, 300, 1 << 40, u64::MAX] {
         let mut b = Vec::new();
         put_var(&mut b, v);
@@ -43,7 +43,7 @@ fn a_count_reads_back_exactly_and_past_its_width_refuses() {
 /// TWO LINES CITING EACH OTHER, PACKED, READ BACK AS THEY WERE: every
 /// stamp, height, predecessor and hash re-derived, none carried.
 #[test]
-fn two_lines_citing_each_other_read_back_as_they_were() {
+fn packer_round_trips_two_cross_citing_lines() {
     let mut a = ReceiptChain::with_vk([1; 32]);
     let mut b = ReceiptChain::with_vk([2; 32]);
     let a0 = step(&mut a, Vec::new());
@@ -68,7 +68,7 @@ fn two_lines_citing_each_other_read_back_as_they_were() {
 /// A STREAM THAT STARTS MID-LINE names its first predecessor whole, and
 /// every node after it re-derives from the one before.
 #[test]
-fn a_run_from_mid_line_names_its_first_predecessor() {
+fn packer_names_first_predecessor_of_mid_line_run() {
     let mut a = ReceiptChain::with_vk([1; 32]);
     let line: Vec<KStepReceipt> = (0..5).map(|_| step(&mut a, Vec::new())).collect();
     let mut packer = Packer::new();
@@ -84,7 +84,7 @@ fn a_run_from_mid_line_names_its_first_predecessor() {
 /// was: the predecessor it named by place is named by citation once the
 /// place is empty.
 #[test]
-fn a_node_whose_predecessor_left_reads_as_it_was() {
+fn node_reads_as_sealed_once_predecessor_left() {
     let mut e = ReceiptChain::with_vk([4; 32]);
     let e0 = step(&mut e, Vec::new());
     let shut = {

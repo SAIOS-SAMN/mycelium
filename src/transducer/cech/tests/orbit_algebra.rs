@@ -48,7 +48,7 @@ fn at(holonomies: Vec<Result<Mv, CircuitUnread>>) -> Vec<ChamberCircuit> {
 /// commutes with the round — congruent — and the 90° turn closes at
 /// four; the constructors close on their two rays.
 #[test]
-fn a_turn_in_the_rounds_plane_is_congruent_and_closes() {
+fn read_chamber_in_plane_turn_congruent_and_closes() {
     let (m, nuclei) = round();
     let turn = cga::rotator(&q(1, 1), &q(1, 1));
     let cell = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn)]), &[], &mut stroke());
@@ -61,7 +61,7 @@ fn a_turn_in_the_rounds_plane_is_congruent_and_closes() {
 /// grade, the failing circuit and mode, the mode's class and plane, and the
 /// bracket — the direction the round is carried.
 #[test]
-fn a_turn_that_carries_the_round_refuses_with_grade_mode_and_plane() {
+fn read_chamber_refuses_carried_round_with_grade_mode_plane() {
     let (m, nuclei) = round();
     let across = cga::rotator_on_blade(&q(1, 1), &q(1, 1), E2 | E3);
     let cell = read_chamber(2, Some(&m), Some(&nuclei), &at(vec![Ok(Mv::scalar(q(1, 1))), Ok(across)]), &[], &mut stroke());
@@ -81,7 +81,7 @@ fn a_turn_that_carries_the_round_refuses_with_grade_mode_and_plane() {
 /// ray — a permutation of the two. A turn by `(3, 4, 5)` in the same plane
 /// keeps the round and carries every nucleus off the set.
 #[test]
-fn a_turn_inside_the_span_keeps_the_round_and_not_the_constructors() {
+fn read_chamber_span_turn_keeps_round_not_constructors() {
     let (m, nuclei) = round();
     let turn_90 = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Ok(cga::rotator(&q(1, 1), &q(1, 1)))]), &[], &mut stroke());
     assert_eq!((turn_90.congruence.clone(), turn_90.permutes.clone()), (Congruence::Congruent, Permutes::All));
@@ -95,7 +95,7 @@ fn a_turn_inside_the_span_keeps_the_round_and_not_the_constructors() {
 /// in `e₂₃` carries `e₁ ∧ e₂` to `−e₁ ∧ e₂`, and it permutes the
 /// constructors (`e₁` fixed, `e₂` onto its own ray).
 #[test]
-fn a_reversed_round_reads_the_held_z2() {
+fn read_chamber_reversed_round_is_held_z2() {
     let (m, nuclei) = round();
     let turn_180 = Mv::blade(E2 | E3, q(1, 1));
     let cell = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn_180)]), &[], &mut stroke());
@@ -108,7 +108,7 @@ fn a_reversed_round_reads_the_held_z2() {
 /// zero, which commutes with everything — degeneration, not invariance. The
 /// Gram form reads the configuration in its place.
 #[test]
-fn a_zero_meet_is_no_round_and_the_gram_reads_in_its_place() {
+fn read_chamber_zero_meet_is_no_round_reads_gram() {
     let nuclei: Vec<Mv> = [E1, E2, E3, cga::EP, E1].iter().enumerate().map(|(i, &m)| Mv::blade(m, q(i as i64 + 1, 1))).collect();
     let m = meet_of(&nuclei).expect("the nuclei wedge");
     assert!(m.is_zero(), "dependent nuclei: the meet vanishes");
@@ -130,7 +130,7 @@ fn a_zero_meet_is_no_round_and_the_gram_reads_in_its_place() {
 /// ring whose hue did not read carries its residue and names why its class
 /// did not.
 #[test]
-fn a_shear_is_held_and_an_escape_holds_the_cell_open() {
+fn read_chamber_holds_shear_and_escape_opens() {
     let (m, nuclei) = round();
     let rosette = cga::rotator(&q(3, 1), &q(4, 1));
     let held = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Ok(rosette.clone())]), &[], &mut stroke());
@@ -177,7 +177,7 @@ fn a_shear_is_held_and_an_escape_holds_the_cell_open() {
 /// holonomic (no kind); a circuit refused at the cone luminal (C); one unread
 /// for another reason is on the refusals and not here.
 #[test]
-fn the_rings_through_a_cell_read_by_resonance_level_and_kind() {
+fn read_chamber_counts_rings_by_resonance_and_kind() {
     let (m, nuclei) = round();
     let identity = Mv::scalar(q(1, 1));
     let turn_90 = cga::rotator(&q(1, 1), &q(1, 1));
@@ -219,7 +219,7 @@ fn the_rings_through_a_cell_read_by_resonance_level_and_kind() {
 /// read; the nuclei unread; the capacity of a cell no circuit crosses the
 /// same.
 #[test]
-fn unread_circuits_a_missing_round_and_no_circuit_are_named() {
+fn read_chamber_names_unread_circuit_round_and_none() {
     let (m, nuclei) = round();
     let unread = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Err(CircuitUnread::NotRigid)]), &[], &mut stroke());
     assert_eq!((unread.congruence, unread.coherence), (Congruence::Unread { unread: 1 }, Coherence::Unread));
@@ -242,7 +242,7 @@ fn unread_circuits_a_missing_round_and_no_circuit_are_named() {
 /// action, and not the action of a turn in another plane; a cell whose
 /// capacity did not read contains nothing it can say.
 #[test]
-fn a_cells_algebra_contains_its_own_products_and_no_other_plane() {
+fn algebra_contains_own_products_not_other_plane() {
     let (m, nuclei) = round();
     // Both turns in the one algebra the wider of them stands in.
     let across = cga::rotator_on_blade(&q(1, 1), &q(1, 1), E2 | E3);
@@ -263,7 +263,7 @@ fn a_cells_algebra_contains_its_own_products_and_no_other_plane() {
 /// spends it on the first product of the capacity's closure, and the
 /// refusal says which product it was.
 #[test]
-fn a_spent_capacity_names_the_product_it_ran_out_at() {
+fn read_chamber_spent_capacity_names_product() {
     let (m, nuclei) = round();
     let turn = cga::rotator(&q(1, 1), &q(1, 1));
     let mut starved = crate::physics::Physics::default().stroke_n(0);
@@ -277,7 +277,7 @@ fn a_spent_capacity_names_the_product_it_ran_out_at() {
 /// vector off it raises the grade to 2, and the grade is the same whatever
 /// order the vectors join in. Nothing is refused for its size.
 #[test]
-fn the_span_reads_its_grade_at_any_size_and_in_any_order() {
+fn grade_of_exact_at_any_size_and_order() {
     use crate::core::span::{grade_of, Span};
     use num_bigint::BigInt;
     let big = BigInt::from(1) << 200usize;
@@ -296,7 +296,7 @@ fn the_span_reads_its_grade_at_any_size_and_in_any_order() {
 /// reduce through the Hermite form to a zero residue: a generator is a
 /// combination of the generators.
 #[test]
-fn the_grade_and_the_factorisation_read_any_size() {
+fn grade_of_and_reduce_against_exact_at_any_size() {
     use crate::core::span::{grade_of, vector_of};
     use num_traits::Zero;
     let m = i64::MAX;
@@ -315,7 +315,7 @@ fn the_grade_and_the_factorisation_read_any_size() {
 /// `e₃₊`, commute and close to rank 2. A held algebra re-closed with a
 /// generator it already spans gains nothing.
 #[test]
-fn the_holonomy_algebra_closes_under_the_commutator() {
+fn lie_close_closes_under_commutator() {
     let one = BigRational::from_integer(1.into());
     let e12 = Mv::blade(E1 | E2, one.clone());
     let e23 = Mv::blade(E2 | E3, one.clone());
@@ -335,7 +335,7 @@ fn the_holonomy_algebra_closes_under_the_commutator() {
 /// once — are each the orbit against the other as neighbour: two
 /// encounters, and the one met by the anticommuting part tilts.
 #[test]
-fn the_circuits_crossing_a_cell_meet_both_ways() {
+fn encounter_crossing_circuits_meet_both_ways() {
     let one = Mv::scalar(q(1, 1));
     let turn = one.add(&Mv::blade(E1 | E2, q(1, 1)));
     let screwed = one.add(&Mv::blade(E1 | E2, q(1, 1))).add(&Mv::blade(E2 | E3, q(1, 1)));

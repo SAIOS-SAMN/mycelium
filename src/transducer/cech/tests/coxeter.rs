@@ -27,7 +27,7 @@ fn plane(axis: usize, d: i64) -> Mv {
 /// balanced, independent, definite — FINITE by the theorem, and the check
 /// counts the group's twenty-four elements.
 #[test]
-fn a3s_simple_roots_read_finite_by_the_theorem() {
+fn read_coxeter_a3_simple_roots_finite_by_theorem() {
     let roots = [v(&[(E1, 1), (E2, -1)]), v(&[(E2, 1), (E3, -1)]), v(&[(E2, 1), (E3, 1)])];
     let r = read_coxeter(&roots, &[], &mut stroke());
     assert_eq!(r.components, vec![(vec![0, 1, 2], ComponentClass::Finite)]);
@@ -37,7 +37,7 @@ fn a3s_simple_roots_read_finite_by_the_theorem() {
 /// A₂'S THREE ROOTS ARE NOT A SYSTEM — dependent — so the theorem does not
 /// read them and the worklist certifies: finite, of order six.
 #[test]
-fn a2s_three_roots_are_certified_finite_of_order_six_by_the_check() {
+fn read_coxeter_a2_three_roots_certified_order_six() {
     let (a, b) = (v(&[(E1, 1), (E2, -1)]), v(&[(E2, 1), (E3, -1)]));
     let c = a.add(&b);
     let r = read_coxeter(&[a, b, c], &[], &mut stroke());
@@ -48,7 +48,7 @@ fn a2s_three_roots_are_certified_finite_of_order_six_by_the_check() {
 /// THE CUBE'S CORNER — three orthogonal mirrors — READS FINITE `ℤ₂³`; ITS
 /// SIX FACE PLANES READ AFFINE, one `Ã₁` per axis.
 #[test]
-fn a_cube_corner_reads_finite_and_its_six_faces_read_affine() {
+fn read_coxeter_cube_corner_finite_faces_affine() {
     let corner = [plane(E1, 0), plane(E2, 0), plane(E3, 0)];
     let r = read_coxeter(&corner, &[], &mut stroke());
     assert!(r.components.iter().all(|(_, k)| *k == ComponentClass::Finite));
@@ -70,7 +70,7 @@ fn a_cube_corner_reads_finite_and_its_six_faces_read_affine() {
 /// its spacings, no generator pair chosen: mirrors at 0, 1, 2 step 2; at 0,
 /// 1/2, 1 step 1; a mirror written at another scale reads the same.
 #[test]
-fn a_parallel_family_reads_affine_with_twice_the_gcd_of_its_spacings() {
+fn read_coxeter_parallel_family_affine_at_twice_gcd() {
     let at = |ks: &[(i64, i64)]| -> Vec<Mv> {
         ks.iter().map(|&(n, d)| Mv::blade(E1, q(1, 1)).add(&cga::e_inf().scale(&q(n, d)))).collect()
     };
@@ -88,7 +88,7 @@ fn a_parallel_family_reads_affine_with_twice_the_gcd_of_its_spacings() {
 /// A ROSETTE PAIR IS REFUSED BY ITS PAIR AND BY ITS PRODUCT: a double-angle point off the crystallographic set, and
 /// the product of the two reflections is a turn of no admitted order.
 #[test]
-fn a_rosette_pair_reads_an_infinite_order_product() {
+fn coxeter_product_rosette_pair_has_infinite_order() {
     let pair = [v(&[(E1, 1)]), v(&[(E1, 1), (E2, 2)])];
     let p = coxeter_product(&pair, &[0, 1], true, &mut stroke()).expect("a product");
     assert_eq!(p.infinite, Some(BivectorKind::Elliptic), "a turn that never closes");
@@ -99,7 +99,7 @@ fn a_rosette_pair_reads_an_infinite_order_product() {
 /// A 1-CELL'S TETHER READS ITS PENCIL AS A MOTION: two intersecting spheres
 /// a turn, two disjoint a boost, two tangent a slip.
 #[test]
-fn a_tether_reads_turn_boost_or_slip_by_its_pair() {
+fn coxeter_product_reads_turn_boost_or_slip() {
     let sphere = |x: i64, r2: (i64, i64)| cga::sphere_at(&[q(x, 1), q(0, 1), q(0, 1)], &q(r2.0, r2.1));
     let kind = |a: Mv, b: Mv| {
         let p = coxeter_product(&[a, b], &[0, 1], true, &mut stroke()).expect("a product");
@@ -115,7 +115,7 @@ fn a_tether_reads_turn_boost_or_slip_by_its_pair() {
 /// three mirrors' product is the point reflection, odd, `det −1`; its grades
 /// are the meet alone, and its weight is the mirrors' own scalars.
 #[test]
-fn the_corner_products_are_of_order_two_and_the_whole_is_odd() {
+fn coxeter_product_corner_pairs_order_two_whole_odd() {
     let corner = [plane(E1, 0), plane(E2, 0), plane(E3, 0)];
     let pair = coxeter_product(&corner, &[0, 1], true, &mut stroke()).expect("a product");
     let Some(Ok(ms)) = &pair.modes else { panic!("modes") };
@@ -135,7 +135,7 @@ fn the_corner_products_are_of_order_two_and_the_whole_is_odd() {
 /// MR1b — ONE REFLECTION READS ONE MODE, `c = −1` ON ITS NORMAL, `det −1`,
 /// and it closes at two.
 #[test]
-fn one_reflection_reads_one_mode_on_its_normal() {
+fn motion_modes_reflection_reads_one_mode_on_normal() {
     let mirror = v(&[(E1, 1), (E2, 1)]);
     let Some(Ok(ms)) = cga::motion_modes(&mirror, &mut stroke()) else { panic!("modes") };
     let [m] = ms.as_slice() else { panic!("one mode: {ms:?}") };
@@ -147,7 +147,7 @@ fn one_reflection_reads_one_mode_on_its_normal() {
 /// SY1 — THE SEALING STEP SPLITS: what it adds is a blade of the next grade,
 /// and what it shares carries the pair's inversive product.
 #[test]
-fn the_sealing_step_splits_into_what_it_adds_and_what_it_shares() {
+fn coxeter_product_splits_seal_and_shared() {
     let (a, b) = (v(&[(E1, 1)]), v(&[(E1, 1), (E2, 1)]));
     let p = coxeter_product(&[a.clone(), b.clone()], &[0, 1], true, &mut stroke()).expect("a product");
     assert_eq!(p.seal, b.geo(&a).grade(2), "what the step adds: the meet");
@@ -157,7 +157,7 @@ fn the_sealing_step_splits_into_what_it_adds_and_what_it_shares() {
 /// DF1 — THE DUAL FRAME: `s^a · s_b = δ_ab`; contracting the meet by `s^a`
 /// gives the face opposite `a`, the wedge of the other two.
 #[test]
-fn a_2cells_dual_frame_contracts_its_meet_to_each_face() {
+fn dual_frame_contracts_meet_to_each_face() {
     let s = [v(&[(E1, 1)]), v(&[(E1, 1), (E2, 1)]), v(&[(E2, 1), (E3, 2)])];
     let DualFrame::Frame(dual) = cga::dual_frame(&s) else { panic!("a frame") };
     for (a, d) in dual.iter().enumerate() {
@@ -176,7 +176,7 @@ fn a_2cells_dual_frame_contracts_its_meet_to_each_face() {
 /// DF1 — A₂ NAMES ALL THREE ROOTS as its minimal dependent set, none chosen;
 /// the corner's polars are its own mirrors.
 #[test]
-fn a2_names_all_three_roots_and_the_corners_polars_are_its_mirrors() {
+fn dual_frame_names_a2_roots_and_corner_polars() {
     let (a, b) = (v(&[(E1, 1), (E2, -1)]), v(&[(E2, 1), (E3, -1)]));
     assert_eq!(cga::dual_frame(&[a.clone(), b.clone(), a.add(&b)]), DualFrame::Redundant(vec![0, 1, 2]));
     let corner = [plane(E1, 0), plane(E2, 0), plane(E3, 0)];

@@ -82,7 +82,7 @@ assert_ne!(spoken.magnitude(), [0; 4], "the sentence measures what it closed and
 /// court decodes leaves nothing undeclared, and the court's own replay
 /// admits what the mint admitted.
 #[test]
-fn the_mint_admits_exactly_what_the_court_replays_on_the_same_family() {
+fn mint_sentence_admits_what_court_replays() {
     let first = vec![(grid(&["1"]), grid(&["2"]))];
     let rule = extract_rule(&first, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("recolour");
     let family = vec![(grid(&["1"]), grid(&["2"])), (grid(&["100"]), grid(&["203"]))];
@@ -115,7 +115,7 @@ fn the_mint_admits_exactly_what_the_court_replays_on_the_same_family() {
 /// vertex demonstrably does not carry its body. The court's own reader is
 /// the one consulted, so the two cannot disagree.
 #[test]
-fn a_rule_that_does_not_carry_its_own_family_is_withheld() {
+fn mint_sentence_withholds_rule_not_carrying_family() {
 let learned = vec![(grid(&["11"]), grid(&["22"]))];
 let rule = extract_rule(&learned, &mut crate::physics::Physics::default().stroke_n(1 << 20))
     .expect("a recolour extracts");
@@ -151,7 +151,7 @@ assert!(
 /// lane reading zero) is metabolism, not price: the book's pressure on 𝒯 is
 /// the standing extent of its listings (`remeasure_pressure`), read there.
 #[test]
-fn a_minted_sentence_carries_no_span_on_the_temporal_lane() {
+fn mint_sentence_carries_no_span_on_temporal_lane() {
     let family = vec![(grid(&["11"]), grid(&["22"]))];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("a recolour extracts");
@@ -170,7 +170,7 @@ fn a_minted_sentence_carries_no_span_on_the_temporal_lane() {
 /// (50.5): the pair's own residual is the remainder, and the measure's
 /// refusal names its links.
 #[test]
-fn a_remainder_no_demand_declares_is_refused_at_the_measure() {
+fn sentence_measure_from_refuses_undeclared_remainder() {
     let (x, y) = (grid(&["1"]), grid(&["2"]));
     let rems = vec![residual_of(Some(&x), &y)];
     assert!(!rems[0].is_empty(), "the pair leaves a remainder");
@@ -184,7 +184,7 @@ fn a_remainder_no_demand_declares_is_refused_at_the_measure() {
 /// the court's own reader (50.5, 23.1 step 3): a demand declares links,
 /// not an exemption.
 #[test]
-fn a_remainder_the_demands_do_not_cover_is_refused_at_the_measure() {
+fn sentence_measure_from_refuses_uncovered_remainder() {
     let (x, y) = (grid(&["12"]), grid(&["34"]));
     let rems = vec![residual_of(Some(&x), &y)];
     let elsewhere: Vec<crate::transducer::sentence::Link> = vec![(5, 5, 0, 9)];
@@ -200,8 +200,9 @@ fn a_remainder_the_demands_do_not_cover_is_refused_at_the_measure() {
     );
 }
 
+/// Bundle pressure is additive and refuses a raise on one pair.
 #[test]
-fn bundle_pressure_is_additive_and_refuses_a_raise_on_one_pair() {
+fn bundle_pressure_adds_and_names_raised_pair() {
 let x = grid(&["1"]);
 let y = grid(&["2"]);
 let f = Form::default();
@@ -245,7 +246,7 @@ assert_eq!(
 /// A.17 — THE MINT'S REFUSAL IS NAMED, never a silent `None`: a form nothing
 /// in which acts is refused as that, with no question standing (78.9, N).
 #[test]
-fn a_form_nothing_in_which_acts_is_refused_by_name() {
+fn mint_sentence_why_refuses_form_where_nothing_acts() {
     use crate::transducer::sentence::{ObstructionKind, Refused};
     let rule = crate::transducer::sentence::rule_of_form(crate::transducer::sentence::Form::default());
     let refused = mint_sentence_why(&rule, &[], &NoCrystal, 0).err();
@@ -259,7 +260,7 @@ fn a_form_nothing_in_which_acts_is_refused_by_name() {
 /// vertex is a demand, refused as nothing acting — and each arm's line read
 /// on the same form, exactly.
 #[test]
-fn a_mint_refusal_names_its_arm_proof_kind_and_the_forms_demand_kinds() {
+fn mint_refusal_line_names_arm_proof_kind_demands() {
     use crate::transducer::sentence::{Demand, ObstructionKind, Refused};
     let elsewhere: Vec<crate::transducer::sentence::Link> = vec![(5, 5, 0, 9)];
     let chart = crate::transducer::stalk::invariant(&elsewhere);

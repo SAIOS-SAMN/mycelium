@@ -12,7 +12,7 @@ fn v(coords: &[(usize, i64)]) -> Mv {
 /// `e₁ − e₂`: the product of its three reflections in all six orders reads
 /// ONE class — the Coxeter element, of order four (A₃'s Coxeter number).
 #[test]
-fn cx1_a_trees_six_orders_give_one_coxeter_class() {
+fn coxeter_product_reads_one_class_over_six_orders() {
     let roots = [v(&[(E1, 1), (E2, -1)]), v(&[(E2, 1), (E3, -1)]), v(&[(E2, 1), (E3, 1)])];
     let mut stroke = crate::physics::Physics::default().stroke_n(1 << 16);
     assert!(matches!(read_coxeter(&roots, &[], &mut stroke).closure, Closure::Finite { by_theorem: true, .. }));

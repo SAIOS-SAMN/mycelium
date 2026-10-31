@@ -448,7 +448,7 @@ mod tests {
     /// task, later ones are counted again; a task this book does not hold has
     /// no closure.
     #[test]
-    fn the_first_closure_closes_the_task_and_later_ones_are_again() {
+    fn close_records_first_then_again() {
         let mut reg = TaskRegistry::new();
         let id = reg.register(toy_task()).expect("a grid pair's chain is A5's");
         assert_eq!(
@@ -469,7 +469,7 @@ mod tests {
     /// registry (corpus re-registered) → overlay → the replay still
     /// collapses to the floor.
     #[test]
-    fn settled_states_survive_the_restart_overlay() {
+    fn overlay_restores_settled_states_after_restart() {
         let mut reg = TaskRegistry::new();
         let id = reg.register(toy_task()).expect("a grid pair's chain is A5's");
         assert_eq!(reg.close(&id), Some(Closure::First));
@@ -494,7 +494,7 @@ mod tests {
     /// the whole book, so no court ever kept a settled task). Named by its
     /// citation, it snapshots, restores, and stays closed.
     #[test]
-    fn a_task_wider_than_the_wall_stays_settled_across_a_restart() {
+    fn overlay_restores_task_wider_than_u16_wall() {
         // Many pairs of busy frames: each pair's listing key is written
         // into the task's address, so the address grows with them.
         let busy = |s: u8| -> Grid { (0..30).map(|r| (0..30).map(|c| u8::try_from((r * 7 + c * 3 + usize::from(s)) % 9).expect("a residue mod 9") + 1).collect()).collect() };
@@ -529,7 +529,7 @@ mod tests {
     /// after the last one served, never the head. A record of another book is
     /// refused whole.
     #[test]
-    fn the_dispatch_cursor_survives_a_restart_with_nothing_closed() {
+    fn restore_cursor_resumes_dispatch_after_restart() {
         let other = Task {
             train: vec![(vec![vec![3, 0], vec![0, 0]], vec![vec![0, 3], vec![0, 0]])],
             test: vec![(vec![vec![0, 0], vec![3, 0]], vec![vec![0, 0], vec![0, 3]])],
@@ -579,7 +579,7 @@ mod tests {
     /// First-time intake walks the manifest once under a budget; further
     /// calls are empty. Cover-change batches still wrap.
     #[test]
-    fn intake_exhausts_the_manifest_once() {
+    fn next_intake_batch_walks_manifest_once() {
         let mut reg = TaskRegistry::new();
         let id = reg.register(toy_task()).expect("a grid pair's chain is A5's");
         let first = reg.next_intake_batch(8);

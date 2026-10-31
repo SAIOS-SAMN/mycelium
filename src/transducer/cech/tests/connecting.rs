@@ -29,7 +29,7 @@ fn arc(a: u8, mid: u8, b: u8, g: Rotor) -> Complex {
 /// the other carries the turn. With both arcs flat the loop is flat and
 /// makes nothing.
 #[test]
-fn two_exact_arcs_glued_at_their_ends_make_a_class_neither_held() {
+fn connecting_two_exact_arcs_makes_new_class() {
     let (u, w) = (arc(1, 2, 3, turn_90()), arc(1, 4, 3, Rotor::identity()));
     let g = connecting(&u, &w).expect("two exact parts glue");
     assert_eq!(g.components, 2, "the overlap is the two ends");
@@ -44,7 +44,7 @@ fn two_exact_arcs_glued_at_their_ends_make_a_class_neither_held() {
 /// turn, the stars glue along the two thoughts and the neighbour, and the
 /// loop round the three is a class neither star held.
 #[test]
-fn two_stars_glued_read_the_loop_through_a_shared_neighbour() {
+fn connecting_two_stars_reads_loop_through_neighbour() {
     let mut c = arc(1, 3, 2, turn_90());
     c.set_edge(key(1), key(2), Rotor::identity(), ident(), vol());
     let g = connecting(&c.star_of(&key(1)), &c.star_of(&key(2))).expect("two stars glue");
@@ -56,7 +56,7 @@ fn two_stars_glued_read_the_loop_through_a_shared_neighbour() {
 /// sharing a tether with one transition overlap in one component; sharing it
 /// with two transitions is the Mayer–Vietoris inexactness, refused by name.
 #[test]
-fn a_connected_overlap_makes_nothing_and_an_inexact_one_refuses() {
+fn connecting_connected_overlap_makes_nothing_inexact_refuses() {
     let u = arc(1, 2, 3, turn_90());
     let same = arc(5, 1, 2, Rotor::identity());
     let g = connecting(&u, &same).expect("glues");
@@ -71,7 +71,7 @@ fn a_connected_overlap_makes_nothing_and_an_inexact_one_refuses() {
 /// exact and the glue reads; a part carrying holonomy of its own refuses by
 /// name, below.)
 #[test]
-fn a_hole_one_part_holds_sealed_is_capped_by_the_glue() {
+fn connecting_caps_hole_other_part_holds_sealed() {
     let triangle = |third: Rotor| {
         let mut c = arc(1, 2, 3, Rotor::identity());
         c.set_edge(key(1), key(3), third, ident(), vol());

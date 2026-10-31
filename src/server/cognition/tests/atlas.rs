@@ -144,7 +144,7 @@ fn traverse(k: &mut Kernel, m: [u8; 32], at: u64, route: Vec<[u8; 32]>, carried:
 /// edge reads pending until the receiver applies the crossing in its next
 /// entry, then its residual.
 #[test]
-fn map_then_traverse_end_to_end() {
+fn traverse_pays_exact_gas_to_map_keeper() {
     let (mut k, m, keeper) = founded();
     assert!(matches!(map(&mut k, 4, 10, mouth(m, 0, 3)), Mapped::Sealed { .. }));
     assert!(matches!(map(&mut k, 5, 12, mouth(m, 1, 2)), Mapped::Sealed { .. }));
@@ -190,7 +190,7 @@ fn map_then_traverse_end_to_end() {
 /// alone; a route segment on no map; a throat's keeper not the mouth's; a
 /// side in another universe — each refused by name.
 #[test]
-fn an_unmapped_mouth_is_refused() {
+fn traverse_refuses_unmapped_mouth() {
     let (mut k, m, keeper) = founded();
     assert!(matches!(commit(&mut k, 4, 1, 10, 10, Vec::new()), Ledgered::Sealed { .. }));
     assert!(matches!(commit(&mut k, 5, 1, 10, 10, Vec::new()), Ledgered::Sealed { .. }));
@@ -212,7 +212,7 @@ fn an_unmapped_mouth_is_refused() {
 /// advances behind its N of 3; renewed at 18, A is fresh and B — N 2, its
 /// entry at 12 — is named; B commits at 20 and the crossing is admitted.
 #[test]
-fn a_stale_entry_is_not_yet_at_h() {
+fn traverse_refuses_stale_entry_per_side() {
     let (mut k, m, _) = founded();
     assert!(matches!(map(&mut k, 4, 10, mouth(m, 0, 3)), Mapped::Sealed { .. }));
     assert!(matches!(map(&mut k, 5, 10, mouth(m, 1, 2)), Mapped::Sealed { .. }));
@@ -232,7 +232,7 @@ fn a_stale_entry_is_not_yet_at_h() {
 /// side alone, a credit not B's reserve's, a credit differing on a lane —
 /// each refused; the court reads no book.
 #[test]
-fn matter_crosses_only_on_both_reserves_equal_word() {
+fn traverse_refuses_one_sided_or_unequal_declarations() {
     let (mut k, m, _) = founded();
     assert!(matches!(map(&mut k, 4, 10, mouth(m, 0, 3)), Mapped::Sealed { .. }));
     assert!(matches!(map(&mut k, 5, 10, mouth(m, 1, 3)), Mapped::Sealed { .. }));
@@ -279,7 +279,7 @@ fn matter_crosses_only_on_both_reserves_equal_word() {
 /// of the domain; an unknown domain. Read after `u`, with each segment's
 /// dilation `Δu/Δh` exact; carried across a restart.
 #[test]
-fn the_ledger_chains_refuses_forks_and_reads_its_dilation() {
+fn ledger_chains_refuses_forks_and_reads_dilation() {
     let (mut k, _, _) = founded();
     let entry = |u: u64, h: u64, parent: [u8; 32]| LedgerEntry { domain: domain(4), u, commitment: [1; 32], events: [2; 32], point: fp(h), parent, applied: Vec::new(), nonce: [0; 32] };
     assert_eq!(k.ledger(&entry(1, 10, [3; 32]).sign(&reserve(4)), Some(fp(10))), Ledgered::Refused(LedgerRefusal::Parent), "a first entry names no parent");
@@ -316,7 +316,7 @@ fn the_ledger_chains_refuses_forks_and_reads_its_dilation() {
 /// first and only the remainder minted. A source lane, a reserve short, a
 /// carried line declaring it — each refuses the fold whole.
 #[test]
-fn the_recycled_pool_pays_pouw_before_minting() {
+fn settle_solve_pays_from_recycled_pool_before_mint() {
     let (mut k, _, _) = founded();
     let tier = vk(&reserve(4));
     fund(&mut k, tier, [3, 0, 2, 0]);
@@ -352,7 +352,7 @@ fn the_recycled_pool_pays_pouw_before_minting() {
 /// retrieval each draw a claim; an unstake is refused while a claim stands,
 /// admitted once every claim drawn on it settled.
 #[test]
-fn a_stake_draws_claims_and_unstakes_only_once_they_settle() {
+fn stake_unstakes_only_after_claims_settle() {
     let (mut k, m, _) = founded();
     let payer = key(60);
     fund(&mut k, vk(&payer), [4, 4, 4, 4]);
@@ -410,7 +410,7 @@ fn local(keeper: [u8; 32], freshness: u64) -> MapRecord {
 /// throat between them kept by its keeper (another keeper refused), a road
 /// from one of them.
 #[test]
-fn a_local_throat_maps_and_reads_its_ends_exactly() {
+fn map_local_throat_reads_ends_exactly() {
     use crate::transducer::cga::{base_vector, dilator};
     let (mut k, m, _) = founded();
     let line = [77; 32];
@@ -453,7 +453,7 @@ fn a_local_throat_maps_and_reads_its_ends_exactly() {
 /// 3]` claimed and paid whole at the window, nothing minted; the edge
 /// pending, then applied in A's next entry at 101 against 100: residual 1.
 #[test]
-fn a_traverse_over_a_local_throat_end_to_end() {
+fn traverse_local_throat_pays_and_applies() {
     let (mut k, _, _) = founded();
     torus_for_4(&mut k);
     let line = [77; 32];

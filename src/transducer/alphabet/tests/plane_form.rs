@@ -9,7 +9,7 @@ use crate::transducer::alphabet::*;
 /// wrong handedness, or an orientation counted twice, breaks exactly here
 /// and nowhere visible until a conjugation comes out inverted.
 #[test]
-fn a_plane_form_rebuilds_the_rotor_it_was_read_from() {
+fn to_word_rebuilds_rotor_of_form() {
     let q = |p| Word::from_letters(&[(LetterId::turn_90(p).expect("a pair plane"), false)]);
     let cases: Vec<(&str, Word)> = vec![
         ("sensor 90° turn", q((0, 1))),
@@ -50,7 +50,7 @@ fn a_plane_form_rebuilds_the_rotor_it_was_read_from() {
 /// PlaneForm is the coefficient group: products and inverses are exact
 /// and O(1); a sheet conjugates exponents.
 #[test]
-fn plane_form_is_the_coefficient_group() {
+fn plane_form_composes_and_inverts_exactly() {
     let q = LetterId::turn_90((0, 1)).unwrap();
     let rot = Word::from_letters(&[(q, false)]).form().unwrap();
     let sheet = PlaneForm { orientation: true, rot: [0; CAYLEY_ALPHABET_LEN] };
@@ -69,7 +69,7 @@ fn plane_form_is_the_coefficient_group() {
 
 /// §52.1: conjugacy key is invariant on the four conjugation lines.
 #[test]
-fn plane_conjugacy_four_lines() {
+fn conjugacy_key_invariant_on_four_conjugation_lines() {
     let q = LetterId::turn_90((0, 1)).unwrap();
     let r = Word::from_letters(&[(q, false), (q, false)]).form().unwrap();
     let r2 = Word::from_letters(&[(q, false)]).form().unwrap();
@@ -82,8 +82,11 @@ fn plane_conjugacy_four_lines() {
     assert_eq!(conj(&sheet, &odd).conjugacy_key(), odd.conjugacy_key(), "(1,r'') odd");
 }
 
+/// The conjugacy key of two plane forms agrees exactly when they are
+/// conjugate: `r` and `−r` are one even class, the odd class is `r` mod 2,
+/// and the sheet splits the class.
 #[test]
-fn conjugacy_key_iff_conjugate() {
+fn conjugacy_key_agrees_iff_conjugate() {
     let q = LetterId::turn_90((0, 1)).unwrap();
     let r = Word::from_letters(&[(q, false)]).form().unwrap();
     let inv = r.inverse();

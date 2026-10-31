@@ -57,7 +57,7 @@ fn words_of(e: &Element) -> Vec<(crate::network::nerve::coord::VertexAt, crate::
 /// smaller), holds it with its certificate, and queues the contracted
 /// sentence citing the receipt.
 #[test]
-fn a_refusal_contracts_the_held_form_and_seals_the_address() {
+fn receive_adjudication_contracts_form_and_seals_address() {
     let (family, e) = two_bars();
     let words = words_of(&e);
     let (refused_addr, refused_chart) = words[0].clone();
@@ -110,7 +110,7 @@ fn a_refusal_contracts_the_held_form_and_seals_the_address() {
 /// speak returns without asking it), and the sentence is neither stood
 /// nor filed as uttered.
 #[test]
-fn a_sealed_tape_is_refused_by_the_mind_before_the_wire() {
+fn speak_refuses_sealed_tape_before_wire() {
     use crate::anastome::dialogue::SPEECH_REFUSED;
     let (family, e) = two_bars();
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("sealed"));
@@ -139,7 +139,7 @@ fn a_sealed_tape_is_refused_by_the_mind_before_the_wire() {
 /// stood there before it was uttered and did not stand at the court, so
 /// nothing glues it and nothing cites it again.
 #[test]
-fn a_refused_sentence_leaves_the_dialect() {
+fn receive_adjudication_drops_refused_sentence_from_dialect() {
     let (family, e) = two_bars();
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("refused-leaves"));
     entity.epigenome.stand_dialect_at(e.clone(), 1, 1);
@@ -164,7 +164,7 @@ fn a_refused_sentence_leaves_the_dialect() {
 /// its family; a citation this mind sealed is owed to no court; and a
 /// citer the court admits is owed afresh next time.
 #[test]
-fn a_citation_is_owed_once_per_court_and_a_sealed_one_to_none() {
+fn owe_citation_once_per_court_never_when_sealed() {
     let (family, cited) = two_bars();
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("owing"));
     entity.epigenome.stand_dialect_at(cited.clone(), 1, 1);
@@ -214,7 +214,7 @@ fn a_citation_is_owed_once_per_court_and_a_sealed_one_to_none() {
 /// so `certificate_for` reads it directly when the contracted sentence is
 /// uttered.
 #[test]
-fn contraction_certificate_is_readable_by_minted_address() {
+fn certificate_for_reads_contraction_by_minted_address() {
     let (family, e) = two_bars();
     let words = words_of(&e);
     let (refused_addr, refused_chart) = words[0].clone();

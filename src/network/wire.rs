@@ -201,8 +201,9 @@ pub fn demultiplex(mut bytes: &[u8]) -> Option<Vec<Frame>> {
 mod tests {
     use super::*;
 
+    /// A frame decodes to itself on the lane it was encoded on.
     #[test]
-    fn a_frame_roundtrips_on_its_lane() {
+    fn frame_round_trips_on_its_lane() {
         let f = Frame { lane: Stratum::Gauge, body: vec![1, 2, 3, 9] };
         let (g, n) = Frame::decode(&f.encode().unwrap()).unwrap();
         assert_eq!(f, g);
@@ -210,14 +211,16 @@ mod tests {
         assert_eq!(g.lane.as_u8(), 1);
     }
 
+    /// A body over the MTU budget is refused by the encoder, never truncated.
     #[test]
-    fn an_over_budget_body_is_refused() {
+    fn encode_refuses_body_over_budget() {
         let f = Frame { lane: Stratum::Spatial, body: vec![0u8; BODY_BUDGET + 1] };
         assert!(f.encode().is_none(), "over MTU — refused, never truncated");
     }
 
+    /// Frames on distinct lanes multiplex and demultiplex back in order.
     #[test]
-    fn lanes_multiplex_and_demultiplex_in_order() {
+    fn multiplex_demultiplexes_lanes_in_order() {
         let fs = vec![
             Frame { lane: Stratum::Spatial, body: vec![10] },
             Frame { lane: Stratum::Temporal, body: vec![20, 21] },
@@ -230,7 +233,7 @@ mod tests {
     /// 78.152 TU-7 — a frame carries its speaker's last final point behind
     /// its body, read back exactly; an older decoder's lane read refuses it.
     #[test]
-    fn a_frame_carries_the_last_final_point() {
+    fn encode_at_carries_last_final_point() {
         use crate::chronometry::tuniversal::{Origin, TPoint};
         let point = TPoint { origin: Origin { genesis: [7; 32], epoch: 146 }, h: 40_961, lanes: [3, 0, 9, 1], k: 812 };
         let f = Frame { lane: Stratum::Temporal, body: vec![0x53, 1, 2] };

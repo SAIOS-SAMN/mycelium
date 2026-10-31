@@ -16,7 +16,7 @@ fn grid(rows: &[&str]) -> crate::arc::Grid {
 /// forward pass, discovered by the sentence's own discoverer; a second pass
 /// finds nothing new.
 #[test]
-fn held_sentences_are_decomposed_forward_once() {
+fn decompose_held_sentences_adds_words_once() {
     let mut k = Kernel::new();
     let speaker = [3u8; 32];
     let family = vec![(grid(&["10", "11"]), grid(&["11", "10"]))];
@@ -41,7 +41,7 @@ fn held_sentences_are_decomposed_forward_once() {
 /// beside it — a word, never a sentence — discovered by the voice that spoke
 /// the sentence.
 #[test]
-fn an_installed_sentence_brings_the_words_it_teaches_into_the_language() {
+fn home_install_holds_sentence_words_in_language() {
     let mut k = Kernel::new();
     let speaker = [1u8; 32];
     for family in [vec![(grid(&["11"]), grid(&["22"]))], vec![(grid(&["10", "11"]), grid(&["11", "10"]))]] {

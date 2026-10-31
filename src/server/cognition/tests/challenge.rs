@@ -134,7 +134,7 @@ fn pass(k: &mut Kernel, h: u64) {
 /// ONLY THE ANCIENTS UPLINK (78.138): a line's fold put straight to the
 /// court is refused by name; carried in its reserve's, it stands.
 #[test]
-fn only_the_reserve_uplinks_and_a_line_is_carried() {
+fn admit_uplink_refuses_line_not_carried_by_reserve() {
     let (a, ..) = tiers();
     let mut k = founded();
     assert_eq!(k.admit_uplink(&a_fold().sign(&a)), Uplinked::NotReserve);
@@ -149,7 +149,7 @@ fn only_the_reserve_uplinks_and_a_line_is_carried() {
 /// final and UPHELD — not merely unchallenged. A line that does not chain, or
 /// rows not the fold's, are refused, nothing found.
 #[test]
-fn a_reconstruction_upholds_an_honest_fold_and_finality_says_upheld() {
+fn challenge_upholds_honest_fold_as_final_upheld() {
     let (a, ..) = tiers();
     let mut k = founded();
     let f = a_fold();
@@ -176,7 +176,7 @@ fn a_reconstruction_upholds_an_honest_fold_and_finality_says_upheld() {
 /// the reserve fold that carried it unwinds (it refiles without the line),
 /// and the LINE's bond is slashed, never the reserve's.
 #[test]
-fn a_reconstruction_falsifies_a_fold_its_own_line_does_not_sum_to() {
+fn challenge_falsifies_fold_its_line_does_not_sum_to() {
     let (a, ..) = tiers();
     let mut k = founded();
     let e = a_entries();
@@ -198,7 +198,7 @@ fn a_reconstruction_falsifies_a_fold_its_own_line_does_not_sum_to() {
 /// demand and an early default are refused; unanswered, the default
 /// falsifies. Answered in time, the default is refused — it was published.
 #[test]
-fn a_demanded_prefix_unpublished_by_its_deadline_falsifies_by_default() {
+fn challenge_default_falsifies_unpublished_demand() {
     let (a, ..) = tiers();
     let mut k = founded();
     let f = a_fold();
@@ -241,7 +241,7 @@ fn p_over(at: &FoldAt) -> (TierFold, Vec<Entry>) {
 /// is unwound — it must refile — and so are the reserve folds that carried
 /// `A` and `P`.
 #[test]
-fn finality_waits_on_every_fold_netted_and_a_reversed_child_unwinds_its_ancestors() {
+fn finality_waits_on_netted_folds_and_unwinds_ancestors() {
     let (a, p, _) = tiers();
     let mut k = founded();
     let a_at = sealed(&mut k, a_fold(), &a);
@@ -261,7 +261,7 @@ fn finality_waits_on_every_fold_netted_and_a_reversed_child_unwinds_its_ancestor
 /// reconstruction falsifies it, `A`'s parts come back, and `Q` refiles all
 /// of `A`.
 #[test]
-fn a_falsified_parent_returns_its_netting_and_the_child_is_netted_again() {
+fn challenge_falsified_parent_returns_child_netting() {
     let (a, p, q) = tiers();
     let mut k = founded();
     let a_at = sealed(&mut k, a_fold(), &a);
@@ -299,7 +299,7 @@ fn a_falsified_parent_returns_its_netting_and_the_child_is_netted_again() {
 /// not on the cycle is no obstruction; `Q`'s tier names the holder and the
 /// gain, the obstruction is discharged, and `Q` reads final after its window.
 #[test]
-fn an_arbitrage_is_booked_by_the_closing_tier_and_its_fold_reads_final() {
+fn challenge_correction_books_arbitrage_by_closing_tier() {
     let (_, _, q) = tiers();
     let book = |at: &FoldAt, child: Vec<u8>| Challenge::Correction { fold: at.clone(), child, holder: who(7), amount: 3 };
     // Left open past the window: blocked, and too late to book.
@@ -356,7 +356,7 @@ fn arbitrage(k: &mut Kernel) -> (FoldAt, Vec<u8>) {
 /// prefix, then judged once. A part never opened, or opened by another
 /// filer, is refused; a lying fold streamed is falsified as surely.
 #[test]
-fn a_publication_streams_in_parts_and_is_judged_when_its_head_reaches_the_prefix() {
+fn challenge_part_judges_stream_at_cited_prefix() {
     let (a, ..) = tiers();
     let line: Vec<Entry> = vec![
         Entry { rows: vec![(who(1), g(4))], declared: vec![(who(9), g(4))] },
@@ -390,7 +390,7 @@ fn a_publication_streams_in_parts_and_is_judged_when_its_head_reaches_the_prefix
 /// name before a byte is sent — stream through the court in parts that each
 /// fit it, and the reconstruction upholds the fold.
 #[test]
-fn a_span_past_one_frame_is_published_in_parts_each_within_the_budget() {
+fn challenge_part_streams_span_within_frame_budget() {
     use crate::anastome::dialogue::challenge::encode_challenge;
     use crate::network::wire::{Frame, Stratum, BODY_BUDGET};
     let (a, ..) = tiers();
@@ -420,7 +420,7 @@ fn a_span_past_one_frame_is_published_in_parts_each_within_the_budget() {
 /// across a restart; then `P`'s window closes and `P` reads final through
 /// it. A streamed reconstruction whose window closed is let go too.
 #[test]
-fn the_windows_settle_and_a_pruned_child_still_reads_final_for_its_parent() {
+fn orbit_prunes_final_child_and_parent_reads_final() {
     let (a, p, _) = tiers();
     let mut k = founded();
     let a_at = sealed(&mut k, a_fold(), &a);
@@ -461,7 +461,7 @@ fn the_windows_settle_and_a_pruned_child_still_reads_final_for_its_parent() {
 /// external challenger's demand is never withdrawn, and a default claimed
 /// closes the fold.
 #[test]
-fn a_self_demand_withdrawn_reopens_the_window_once() {
+fn challenge_withdraw_reopens_self_demand_once() {
     let (a, ..) = tiers();
     let mut k = founded();
     let f = a_fold();
@@ -498,7 +498,7 @@ fn a_self_demand_withdrawn_reopens_the_window_once() {
 /// recorded fold's prefix and where that fold stands after — inside its
 /// reserve's receipt — the same after a restart, re-derived from the records.
 #[test]
-fn a_tiers_line_head_is_read_back_with_the_fold_that_set_it() {
+fn line_head_reads_back_with_setting_fold() {
     let (a, ..) = tiers();
     let mut k = founded();
     assert_eq!(k.line_head(&vk(&a)), ([0; 32], None), "no fold: the zero head");
@@ -517,7 +517,7 @@ fn a_tiers_line_head_is_read_back_with_the_fold_that_set_it() {
 /// unrecorded. (Only a fold the court sealed itself can be pre-line — a
 /// reserve's: a carried line never was.)
 #[test]
-fn a_fold_sealed_before_the_line_law_is_grandfathered() {
+fn finality_grandfathers_pre_line_fold() {
     let (_, p, _) = tiers();
     let mut k = founded();
     let rf = TierFold { tier: vk(&reserve()), ..a_fold() };

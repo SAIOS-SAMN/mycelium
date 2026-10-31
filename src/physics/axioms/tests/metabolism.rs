@@ -14,7 +14,7 @@
 /// AND still register — otherwise a starved engine and an idle one
 /// produce the same ledger.
 #[test]
-fn d2_the_ledger_separates_a_lane_that_cycles_from_one_that_spends() {
+fn take_metabolism_separates_cycling_lane_from_spending() {
     use crate::physics::metabolism;
     let _ = metabolism::take_metabolism();
     let mut r = crate::physics::budget::Reserve::of([8, 8, 8, 8]);
@@ -35,7 +35,7 @@ fn d2_the_ledger_separates_a_lane_that_cycles_from_one_that_spends() {
 /// one that did the reverse, read their whole difference — never a value
 /// clipped to a narrower integer (rule 11).
 #[test]
-fn the_flux_is_exact_at_the_bound_of_a_lane() {
+fn flux_is_exact_at_lane_bound() {
     let m = crate::physics::metabolism::Metabolism {
         drawn: [u64::MAX, 0, u64::MAX, 7],
         restored: [0, u64::MAX, u64::MAX, 7],
@@ -58,7 +58,7 @@ fn the_flux_is_exact_at_the_bound_of_a_lane() {
 /// that never closes against an orbit with no period at all; and an
 /// unbound motion (PHY1) apart from both, by name.
 #[test]
-fn d2_entropy_and_orbit_are_counted_at_their_own_dimensions() {
+fn take_metabolism_counts_entropy_and_orbit_per_dimension() {
     use crate::physics::metabolism;
     use crate::transducer::cga::Period;
     let _ = metabolism::take_metabolism();
@@ -82,7 +82,7 @@ fn d2_entropy_and_orbit_are_counted_at_their_own_dimensions() {
 /// order four reads closed at four; the same turn carried by a translation
 /// reads unbound, which the rotation's order alone counted closed.
 #[test]
-fn a_motions_period_is_read_off_its_modes() {
+fn period_of_reads_motion_off_its_modes() {
     use crate::transducer::cga::{motion_modes, period_of, Period};
     use num_rational::BigRational;
     let quarter = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("a quarter turn");
@@ -118,7 +118,7 @@ fn a_motions_period_is_read_off_its_modes() {
 /// lane is gone, so an action with a zero projection on a depleted lane
 /// is still affordable. That is the whole content of the anisotropy.
 #[test]
-fn a_depleted_lane_does_not_preempt_the_others() {
+fn draw_on_depleted_lane_preempts_no_other() {
     use crate::physics::Reserve;
 
     // A mind spent on scale and rich on gauge and translation — the

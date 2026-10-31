@@ -74,7 +74,7 @@ fn out(g: i128, rate: (u64, u64), nonce: u8) -> ConvertOut {
 /// names; the first takes hold at once, a redesignation only from the
 /// current reserve's next fold — never mid-era — and both restore.
 #[test]
-fn a_domains_reserve_is_designated_by_its_key_and_redesignated_at_the_anchor() {
+fn designate_reserve_redesignates_at_reserve_fold() {
     let mut k = founded();
     assert_eq!(k.designate_reserve(&Reservation { domain: vk(&domain()), tier: vk(&x()), nonce: [0; 32] }.sign(&x())), Founded::Unsigned);
     assert_eq!(designate(&mut k, &key(99), 0), Founded::NotATier);
@@ -106,7 +106,7 @@ fn a_domains_reserve_is_designated_by_its_key_and_redesignated_at_the_anchor() {
 /// — each refused; a resend answers with its receipt. The G side leaves the
 /// player's game value in the reserve tier's fold, once.
 #[test]
-fn a_conversion_out_pays_from_the_reserve_and_never_mints() {
+fn convert_out_pays_from_reserve_never_mints() {
     let mut k = founded();
     assert!(matches!(designate(&mut k, &x(), 1), Founded::Reserved { .. }));
     fund(&mut k, vk(&x()), [8, 0, 0, 0]);
@@ -140,7 +140,7 @@ fn a_conversion_out_pays_from_the_reserve_and_never_mints() {
 /// the reserve tier's fold; refused, it is refunded whole and nothing
 /// arrives.
 #[test]
-fn a_conversion_in_is_held_until_the_reserve_answers() {
+fn convert_in_holds_escrow_until_reserve_answers() {
     let mut k = founded();
     assert!(matches!(designate(&mut k, &x(), 1), Founded::Reserved { .. }));
     basket(&mut k);

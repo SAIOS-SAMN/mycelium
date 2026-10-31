@@ -36,7 +36,7 @@ fn pair(g: Rotor) -> (Complex, Vec<u8>) {
 /// and its dissolution has no topological consequence, so nothing is filed
 /// and the cell leaves every carrier that named it.
 #[test]
-fn a_trivial_tether_drains_to_vacuum() {
+fn drain_trivial_tether_to_vacuum() {
     let (mut c, key) = pair(Rotor::identity());
     assert!(c.simplex(&key).is_some(), "the edge stands before the drain");
 
@@ -58,7 +58,7 @@ fn a_trivial_tether_drains_to_vacuum() {
 /// — the reading travels out so the caller can file it as torsion or carry
 /// it to the court as a demand (rule 11).
 #[test]
-fn a_strained_tether_is_cauterized_and_its_class_travels() {
+fn drain_cauterizes_strained_tether_with_class() {
     let (mut c, key) = pair(turn_90());
     let out = c.drain(&key);
     let fill = out.cauterized().expect("a turn is not nothing");
@@ -73,7 +73,7 @@ fn a_strained_tether_is_cauterized_and_its_class_travels() {
 /// 78.74 — EVERY SEAL IS BOOKED: a membrane sealed by the climb's own `fill`
 /// — not `ascend` — counts on the ledger, once.
 #[test]
-fn a_seal_by_the_climbs_fill_is_booked() {
+fn fill_seal_is_booked_once() {
     let mut c = Complex::new();
     let vs = [v(1), v(2), v(3)];
     for x in &vs {
@@ -158,7 +158,7 @@ fn face_over(m: &crate::transducer::cga::Mv) -> (Complex, Vec<u8>) {
 /// triangle holds no mode at all. Each reading is exact and is the face's
 /// own: the motion read back off the cell is the one its edge carried.
 #[test]
-fn the_census_reads_each_face_by_the_motion_it_holds() {
+fn census_reads_each_face_by_its_motion() {
     let (flat, _) = face_over(&ident());
     let census = flat.census(&mut wide());
     assert!(census.len() >= 3, "vertices, edges and a face: {census:?}");
@@ -188,7 +188,7 @@ fn the_census_reads_each_face_by_the_motion_it_holds() {
 /// while no owner listens; a vacuum tether holds no pressure and vents
 /// nothing.
 #[test]
-fn a_cauterized_tethers_motion_flows_out_to_its_owner() {
+fn take_outflow_vents_cauterized_motion_to_owner() {
     let edge_of = |m: &crate::transducer::cga::Mv| {
         let mut c = Complex::new();
         for n in [v(1), v(2)] {
@@ -228,7 +228,7 @@ fn a_cauterized_tethers_motion_flows_out_to_its_owner() {
 /// crosses and cauterizes its 3-cell before the faces below it: `descend` is
 /// gated at every degree from two up.
 #[test]
-fn releasing_a_vertex_vents_its_star_through_the_pivots() {
+fn release_vertex_vents_star_through_pivots() {
     let mut c = Complex::new();
     let vs = [v(1), v(2), v(3)];
     for x in &vs {
@@ -305,7 +305,7 @@ fn releasing_a_vertex_vents_its_star_through_the_pivots() {
 /// from geometry into algebra (62.4). The edge refuses, and it refuses by
 /// NAMING the reason rather than by answering absent.
 #[test]
-fn an_edge_beneath_a_reading_is_pinned() {
+fn drain_refuses_edge_beneath_reading_as_pinned() {
     let mut c = Complex::new();
     let vs = [v(1), v(2), v(3)];
     for x in &vs {
@@ -366,7 +366,7 @@ fn an_edge_beneath_a_reading_is_pinned() {
 /// the seal, the dipole's read-back, to the same chamber. No ghost incidence
 /// is left in any star at any step.
 #[test]
-fn a_cell_ascends_crosses_and_is_read_back_leaving_no_ghost() {
+fn descend_then_seal_reads_back_without_ghost() {
     let mut c = Complex::new();
     let vs = [v(1), v(2), v(3)];
     for x in &vs {
@@ -429,7 +429,7 @@ fn descend_answers_only_at_dimension_two() {
 /// successful descents are different facts and are kept apart, as
 /// `Vacuum` and `Cauterized` are at degree 1.
 #[test]
-fn an_unread_membrane_descends_without_a_class() {
+fn descend_unread_membrane_keeps_no_class() {
     let mut c = Complex::new();
     let vs = [v(1), v(2), v(3)];
     for x in &vs {
@@ -454,7 +454,7 @@ fn an_unread_membrane_descends_without_a_class() {
 /// different facts, and answering one for both is the defect
 /// `CoboundaryOutcome` was split to avoid.
 #[test]
-fn draining_nothing_is_absent_and_not_pinned() {
+fn drain_missing_cell_is_absent_not_pinned() {
     let mut c = Complex::new();
     let out = c.drain(&[9, 9, 9]);
     assert!(matches!(out, Drained::Absent), "no such 1-cell: {out:?}");
@@ -495,7 +495,7 @@ fn drain_answers_only_at_dimension_one() {
 /// complex drops every simplex on it, and the orbits filed under them leave
 /// too — they stood under every dropped ring for as long as the mind lived.
 #[test]
-fn a_dropped_vertex_takes_its_simplices_orbits() {
+fn drop_vertex_takes_simplex_orbits() {
     let (mut c, key) = pair(Rotor::identity());
     let orbit = crate::transducer::cech::orbit_key(&key, v(1).as_bytes(), v(2).as_bytes());
     c.orbits.insert(orbit, Fill::Open);

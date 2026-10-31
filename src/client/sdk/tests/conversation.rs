@@ -65,7 +65,7 @@ fn court_keeping(keep: fn(&dialogue::SpeechAct) -> bool) -> (String, std::sync::
 /// meaning is DERIVED: the turn with the slide, known from here on one rung
 /// above both — where before the answer it was a word B had only heard.
 #[test]
-fn a_question_posits_what_the_mind_knows_and_derives_the_meaning() {
+fn take_in_conversation_derives_meaning_from_posited_residue() {
     use crate::transducer::sentence::rung::{held_rung, known, learn_by};
     let (court, _speeches) = court();
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
@@ -121,7 +121,7 @@ fn a_question_posits_what_the_mind_knows_and_derives_the_meaning() {
 /// slide it lacked is constructed, and the screw is known from then on as the
 /// turn with the slide, a rung above both.
 #[test]
-fn a_demand_is_met_from_the_dictionary_first() {
+fn compose_or_construct_meets_demand_from_dictionary_first() {
     use crate::transducer::sentence::rung::{held_rung, known, learn_by};
     let (court, _speeches) = court();
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
@@ -155,7 +155,7 @@ fn a_demand_is_met_from_the_dictionary_first() {
 /// slide composes it — so the mind speaks it citing the slide at exponent 2,
 /// constructs nothing, and knows the whole word from then on.
 #[test]
-fn a_remainder_the_ruled_words_compose_is_spoken_not_constructed() {
+fn compose_or_construct_speaks_remainder_ruled_words_compose() {
     use crate::transducer::sentence::rung::{known, learn_by};
     let (court, speeches) = court_keeping(|act| !act.sentences.is_empty());
     let n = |v: i64| num_rational::BigRational::from_integer(v.into());
@@ -207,7 +207,7 @@ fn a_remainder_the_ruled_words_compose_is_spoken_not_constructed() {
 /// composes it, and the same cite with the identity for its conjugator — a
 /// claim the citation does not make good — is refused.
 #[test]
-fn a_conjugate_is_spoken_as_the_held_word_transported() {
+fn compose_or_construct_speaks_conjugate_as_transported_word() {
     let (court, speeches) = court_keeping(|act| !act.sentences.is_empty());
     let chart = crate::transducer::stalk::Invariant::default();
     let q01 = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("a 90° turn"), false)]).rotor();
@@ -258,7 +258,7 @@ fn a_conjugate_is_spoken_as_the_held_word_transported() {
 /// citation against the slide it holds and admits it; the same word citing
 /// the slide once is refused.
 #[test]
-fn a_composition_of_ruled_words_is_spoken_to_the_court() {
+fn compose_or_construct_speaks_ruled_composition_to_court() {
     let (court, speeches) = court_keeping(|act| !act.sentences.is_empty());
     let n = |v: i64| num_rational::BigRational::from_integer(v.into());
     let chart = crate::transducer::stalk::Invariant::default();
@@ -311,7 +311,7 @@ fn a_composition_of_ruled_words_is_spoken_to_the_court() {
 /// read through words of its own that are not the speaker's: the same words
 /// are one derivation seen twice, and a hearer with none stood nowhere.
 #[test]
-fn a_vantage_is_where_a_word_lands_in_the_minds_own_holes() {
+fn vantage_reads_word_through_minds_own_words() {
     use crate::transducer::sentence::rung::{distinct_vantage, learn_by, vantage};
     let (court, _speeches) = court();
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
@@ -341,7 +341,7 @@ fn a_vantage_is_where_a_word_lands_in_the_minds_own_holes() {
 /// AGREED while the test only waits, and A's carrier speaks it to the court
 /// carrying B's HOLD: signed by B, naming exactly the word A said.
 #[test]
-fn two_minds_form_a_shared_word_and_carry_it_to_the_court() {
+fn say_carries_shared_word_to_court_with_hold() {
     use crate::transducer::sentence::rung::{known, learn_by};
     let (court, speeches) = court();
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
@@ -406,7 +406,7 @@ fn two_minds_form_a_shared_word_and_carry_it_to_the_court() {
 /// familiar sound. Having heard the half turn itself, it is WHOLE. A ring
 /// heard twice is held once.
 #[test]
-fn a_ring_sounds_familiar_by_resonance_with_what_was_heard() {
+fn sound_of_seats_ring_by_resonance_with_heard() {
     use crate::transducer::cga::{Mv, E1, E2, E3};
     use crate::transducer::sentence::hearing::Seat;
     let (court, _speeches) = court();
@@ -444,7 +444,7 @@ fn conformal_of_word(letters: &[(LetterId, bool)]) -> crate::transducer::cga::Mv
 /// the factors compose back to exactly the word; one quarter turn factors
 /// into nothing smaller and comes back whole — an atom.
 #[test]
-fn a_question_is_answered_by_the_words_factors() {
+fn factors_of_answers_question_by_word_factors() {
     use crate::client::sdk::entity::chatter::factors_of;
     use crate::transducer::element::conformal_of;
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
@@ -463,7 +463,7 @@ fn a_question_is_answered_by_the_words_factors() {
 /// its budget's worth and leaves the rest waiting, and the mind owes strokes
 /// meanwhile; the next stroke prices what is left and owes none for it.
 #[test]
-fn a_stroke_prices_its_budgets_worth_of_hearings_and_the_rest_wait() {
+fn price_hearings_prices_one_budget_rest_wait() {
     use crate::client::sdk::entity::chatter::FieldWork;
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("pricing"));
     let field = mind.pricing_for_test();
@@ -482,7 +482,7 @@ fn a_stroke_prices_its_budgets_worth_of_hearings_and_the_rest_wait() {
 /// board, or is asked for, no hearing is priced — the work waits, and
 /// strokes are owed; with the pipeline clear, it is priced.
 #[test]
-fn a_waiting_task_defers_every_hearing() {
+fn price_hearings_defers_while_task_waits() {
     use crate::client::sdk::entity::chatter::FieldWork;
     use crate::client::sdk::entity::offer::Offer;
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("task first"));
@@ -506,7 +506,7 @@ fn a_waiting_task_defers_every_hearing() {
 /// return and lapses unread at the second — the buffer is empty, and nothing
 /// is owed for it.
 #[test]
-fn an_unpriced_hearing_lapses_at_its_second_return() {
+fn lapse_unpriced_lapses_hearing_at_second_return() {
     use crate::client::sdk::entity::chatter::FieldWork;
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("lapsing hearing"));
     let field = mind.pricing_for_test();

@@ -66,7 +66,7 @@ fn seventeen() -> Demand {
 /// factor's canonical rotor. Arity 2 installs it, and the count of
 /// generators the ENGINE opened leaves zero on each court.
 #[test]
-fn two_courts_open_one_letter_from_two_witnesses_and_the_count_leaves_zero() {
+fn perceive_speech_opens_one_letter_on_two_courts() {
     let (voice_a, voice_b) = ([1u8; 32], [2u8; 32]);
     let said_a = demanding_sentence(turn_90(1), 1, seventeen());
     let said_b = demanding_sentence(turn_90(3), 3, seventeen());
@@ -167,7 +167,7 @@ fn standing_eleven() -> Demand {
 /// carrying it as witness; two courts of distinct identity docket it as a
 /// provisional generator whose vertex is that rotor, and reach ONE address.
 #[test]
-fn two_courts_docket_one_rotor_no_plane_holds_from_two_standing_demands() {
+fn perceive_speech_dockets_standing_rotor_at_one_address() {
     let r = eleven();
     let said_a = demanding_sentence(turn_90(1), 1, standing_eleven());
     let said_b = demanding_sentence(turn_90(3), 3, standing_eleven());
@@ -207,7 +207,7 @@ fn two_courts_docket_one_rotor_no_plane_holds_from_two_standing_demands() {
 /// `p` names a prime it does not carry: refused AT THE DEMAND VERTEX,
 /// before anything is docketed, so no letter is opened on it.
 #[test]
-fn a_witness_that_does_not_carry_its_prime_is_refused_at_the_vertex() {
+fn perceive_speech_refuses_witness_without_prime_at_vertex() {
     let mut k = Kernel::new();
     // 2 + i has norm 5 and is coprime to 17.
     let bad = Demand::RotorPrime { plane: (0, 1), prime: 17, witness: witness(2, 1) };
@@ -286,7 +286,7 @@ fn versor_of_arc(s: i64, t: i64) -> element::Versor {
 /// citation, and the court's resolution of that citation. A break at any
 /// hop leaves every existing test green.
 #[test]
-fn a_mind_taught_by_the_page_derives_through_the_letter_and_a_court_composes_it() {
+fn blind_replay_on_composes_letter_citation_from_taught_mind() {
     use crate::client::sdk::Epigenome;
     let voice = [1u8; 32];
     let said = demanding_sentence(turn_90(1), 1, seventeen());
@@ -409,7 +409,7 @@ fn a_mind_taught_by_the_page_derives_through_the_letter_and_a_court_composes_it(
 /// Taught through the page, not by direct insertion: what is proved is
 /// that the letter travels, which is the whole of what a syllabus is for.
 #[test]
-fn the_syllabus_teaches_a_letter_and_the_mind_then_holds_it_as_a_generator() {
+fn serve_ruled_teaches_letter_as_generator() {
     use crate::client::sdk::Epigenome;
     use crate::transducer::alphabet::Rotor;
     use crate::transducer::element::Element as El;
@@ -502,7 +502,7 @@ fn the_syllabus_teaches_a_letter_and_the_mind_then_holds_it_as_a_generator() {
 ///   5. The court's page teaches it back, and THE SAME CLASS READS DERIVABLE
 ///      for that mind through the same reader.
 #[test]
-fn a_mind_constructs_what_it_could_not_spell_and_after_adjunction_reads_it_derivable() {
+fn letter_reading_flips_derivable_after_adjunction() {
     use crate::client::sdk::Epigenome;
     use crate::transducer::alphabet::{Rotor, Word};
     use crate::transducer::family::{letter_reading, LetterReading};
@@ -621,7 +621,7 @@ fn basis_holds(k: &Kernel, addr: &[u8]) -> bool {
 /// says so in its own comment — "not a re-derivation this court can
 /// compare". Both leave the one condition law 6 states untested.
 #[test]
-fn a_letter_is_docketed_on_one_vantage_and_installed_on_two() {
+fn witness_rederived_fresh_installs_letter_on_second_vantage() {
     const WITNESS: [u8; 32] = [9u8; 32];
     let r = eleven();
 

@@ -16,7 +16,7 @@ fn qn(n: i64, d: i64) -> crate::core::Q {
 /// the origin and away from it alike. The 90° turn keeps the lattice
 /// and carries one compartment onto one compartment, the one its centre lands in.
 #[test]
-fn the_pythagorean_rotor_carries_a_compartment_onto_no_compartment_and_the_turn_90_onto_one() {
+fn carry_compartment_refuses_pythagorean_tilt_keeps_turn_90() {
     let tilt = LetterId::pythagorean_5((0, 1)).expect("the (3,4,5) rotor on the sensor plane");
     let v = versor_of_word(&Word::from_letters(&[(tilt, false)])).expect("a base action");
     assert_eq!(carry_compartment(&v, 0, 0, 0), None, "a tilted image is no compartment");
@@ -40,7 +40,7 @@ fn the_pythagorean_rotor_carries_a_compartment_onto_no_compartment_and_the_turn_
 /// frame — a compartment moved to another frame is a compartment, a compartment split
 /// across frames is not.
 #[test]
-fn a_dilation_by_two_carries_a_compartment_onto_its_block() {
+fn carry_compartment_dilates_onto_block() {
     let d = cga::dilator(&q(2));
     assert_eq!(
         carry_compartment(&d, 1, 2, 0),
@@ -57,7 +57,7 @@ fn a_dilation_by_two_carries_a_compartment_onto_its_block() {
 /// shapes and the region tower's covariance verifies it — the body's
 /// reading, never the compartment's.
 #[test]
-fn a_shrink_carries_one_compartment_to_none_and_a_block_as_a_body_to_one() {
+fn carry_compartment_refuses_shrink_except_as_body() {
     use crate::transducer::blade::{shape_of, versor_between};
     let half = cga::dilator(&qn(1, 2));
     assert_eq!(carry_compartment(&half, 0, 0, 0), None, "a fractional image is no compartment");
@@ -74,7 +74,7 @@ fn a_shrink_carries_one_compartment_to_none_and_a_block_as_a_body_to_one() {
 /// square standing across the frames, which is no compartment of the sensor
 /// (16.4): refused, wherever the compartment stands.
 #[test]
-fn a_compartment_carried_across_the_frames_is_refused() {
+fn carry_compartment_refuses_across_frames() {
     let turn = LetterId::turn_90((0, 3)).expect("the 90° turn on the row–frame plane");
     let v = versor_of_word(&Word::from_letters(&[(turn, false)])).expect("a base action");
     assert_eq!(carry_compartment(&v, 0, 0, 0), None, "a square across the frames is no compartment");

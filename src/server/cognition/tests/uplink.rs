@@ -41,7 +41,7 @@ fn reserved() -> Kernel {
 /// 78.138 — ONLY THE ANCIENTS UPLINK: before its domain designates it the
 /// reserve, the tier's fold is refused by name; designated, it is admitted.
 #[test]
-fn only_the_reserve_uplinks() {
+fn admit_uplink_refuses_tier_not_reserve() {
     let key = tier_key();
     assert_eq!(founded().admit_uplink(&trade(&key).sign(&key)), Uplinked::NotReserve);
     assert!(matches!(reserved().admit_uplink(&trade(&key).sign(&key)), Uplinked::Admitted { .. }));
@@ -64,7 +64,7 @@ fn trade(key: &SigningKey) -> TierFold {
 /// head and the rows' commitment; the answer is the receipt's id; and the
 /// line written with it restores into a fresh court, the head the same.
 #[test]
-fn an_admitted_fold_is_sealed_by_its_coordinates_and_restores() {
+fn admit_uplink_seals_fold_coordinates_and_restores() {
     let key = tier_key();
     let fold = trade(&key);
     let rows = fold.rows_hash();
@@ -86,7 +86,7 @@ fn an_admitted_fold_is_sealed_by_its_coordinates_and_restores() {
 /// A FOLD THE TIER DID NOT SIGN IS REFUSED: a row changed after signing, or
 /// a fold signed by another key in the tier's name — nothing sealed.
 #[test]
-fn a_fold_the_tier_did_not_sign_is_refused() {
+fn admit_uplink_refuses_unsigned_fold() {
     let key = tier_key();
     let mut signed = trade(&key).sign(&key);
     signed.fold.rows[0].1[0] = 6;
@@ -102,7 +102,7 @@ fn a_fold_the_tier_did_not_sign_is_refused() {
 /// after the domain's genesis, exactly the head receipt's tick, frame, orbit
 /// and place, served and read back whole, written sixteen hex digits a field.
 #[test]
-fn the_core_clock_is_the_heads_stamp_served_and_written_wide() {
+fn core_stamp_is_head_stamp_written_wide() {
     use crate::physics::laws::codec::{decode_clock_reply, encode_clock_reply};
     assert_eq!(Kernel::new().core_stamp(), None, "no act, no head");
     let k = founded();
@@ -118,7 +118,7 @@ fn the_core_clock_is_the_heads_stamp_served_and_written_wide() {
 /// 78.120 — A TIER NO DOMAIN NAMES IS UNBOUND: its fold, signed and
 /// continuous, is refused until a domain's genesis names it.
 #[test]
-fn a_fold_from_a_tier_no_domain_names_is_unbound() {
+fn admit_uplink_refuses_unbound_tier() {
     let key = tier_key();
     let mut k = Kernel::new();
     assert_eq!(k.admit_uplink(&trade(&key).sign(&key)), Uplinked::Unbound);
@@ -129,7 +129,7 @@ fn a_fold_from_a_tier_no_domain_names_is_unbound() {
 /// genesis sealed by its keys; another key's signature, unordered tiers, a
 /// second founding and a tier another domain names are refused by name.
 #[test]
-fn a_domain_is_founded_once_by_its_own_key_its_tiers_its_own() {
+fn admit_domain_founds_once_by_own_key() {
     use crate::anastome::dialogue::domain::{Founded, DomainGenesis};
     let k = founded();
     let head = k.chain.head().expect("the genesis on the line");
@@ -153,7 +153,7 @@ fn a_domain_is_founded_once_by_its_own_key_its_tiers_its_own() {
 /// claiming nets — is a repeat, refused; a fold advancing the line is
 /// admitted.
 #[test]
-fn a_resent_fold_is_answered_with_its_original_receipt_and_a_repeat_refused() {
+fn admit_uplink_answers_resend_and_refuses_repeat() {
     let key = tier_key();
     let mut k = reserved();
     let fold = trade(&key);
@@ -173,7 +173,7 @@ fn a_resent_fold_is_answered_with_its_original_receipt_and_a_repeat_refused() {
 /// source declaring it admits the same rows; an unordered list and a lane
 /// passing its carrier are refused by name.
 #[test]
-fn a_fold_that_makes_value_undeclared_is_refused_and_a_declared_source_admits_it() {
+fn admit_uplink_refuses_undeclared_value() {
     let key = tier_key();
     let mut made = trade(&key);
     made.rows[1].1[0] = -4;

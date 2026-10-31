@@ -40,7 +40,7 @@ fn docketed(word: &Element, family: Vec<crate::transducer::family::TrainPair>) -
 /// exactly the whole replay's verdict. Every unread stroke kept the cursor;
 /// none slashed; the ruled replay leaves no cursor behind.
 #[test]
-fn the_court_resumes_an_unread_replay_and_rules_it_as_the_whole_one() {
+fn court_replay_resumes_unread_to_whole_verdict() {
     let (word, one, wider) = fixture();
     for family in [one, wider] {
         let whole = docketed(&word, family.clone()).court_replay(&word, &mut stroke(1 << 20));
@@ -69,7 +69,7 @@ fn the_court_resumes_an_unread_replay_and_rules_it_as_the_whole_one() {
 /// resumes it, and rules it; a word that leaves a remainder on its family is
 /// still slashed, once its replay is read.
 #[test]
-fn the_docket_rules_a_word_its_stroke_could_not_finish() {
+fn court_stroke_rules_word_across_unfinished_strokes() {
     let (word, one, wider) = fixture();
     let addr = word.address();
     let mut ruling = docketed(&word, one);
@@ -97,7 +97,7 @@ fn the_docket_rules_a_word_its_stroke_could_not_finish() {
 /// act's one stroke is `Unread` — not refused, not paid — and asked again it
 /// resumes, to the verdict the whole replay gives.
 #[test]
-fn a_solve_not_judged_on_its_stroke_is_unread_and_resumed() {
+fn judge_solve_on_stroke_resumes_unread_solve() {
     let (word, one, _) = fixture();
     // The act's stroke is the host's; asked again and again, the solve
     // resumes and is judged — never refused for a spent stroke — and each

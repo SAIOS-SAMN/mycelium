@@ -286,7 +286,7 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     // landed on the third, 2026-09-20).
     //
     // `from_address` is a faithful retract of the GEOMETRY:
-    // `the_decoded_form_agrees_with_the_extracted_on_every_reading_the_court_makes`
+    // `from_address_agrees_on_every_court_reading`
     // ran both decoders over 36 corpus forms and found no divergence on
     // face words, the rank audit, closure, citation depth or the orbits'
     // member paths. Four real defects were fixed getting there — a
@@ -297,7 +297,7 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     // WHAT WAS LEFT WAS NOT GEOMETRY, and the two attempts that failed both
     // failed on that. Three carriers rode the tape that the key deliberately
     // excludes, because each is EVIDENCE and not a coordinate (§1.5,
-    // `evidence_is_not_identity`):
+    // `form_vertex_key_ignores_citations_and_certificates`):
     //
     //   `Derivation.generators` — the citations a mind factored through.
     //   A decoded vertex is `spelled`, so the court could not verify a

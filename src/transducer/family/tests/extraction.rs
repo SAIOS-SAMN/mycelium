@@ -63,7 +63,7 @@ assert!(
 /// leaving frame by it and finds the body at the arriving frame, and it
 /// refuses a motor that does not — never solving for one.
 #[test]
-fn the_court_refuses_a_forged_frame_axis_motor() {
+fn edges_rederive_frames_refuses_forged_frame_axis_motor() {
     let l_in = ["100000", "100000", "110000", "000000", "000330", "000000"];
     let a = ["111000", "100000", "000000", "000000", "000550", "000000"];
     let b = ["001000", "111000", "000000", "000000", "000550", "000000"];
@@ -109,7 +109,7 @@ fn the_court_refuses_a_forged_frame_axis_motor() {
 /// union at the next frame: a chart with several bodies is verified, never
 /// passed unread, and a forged motor on it is refused.
 #[test]
-fn the_court_applies_a_motor_to_a_charts_whole_fibre() {
+fn edges_rederive_frames_applies_motor_to_whole_fibre() {
     let a_in = ["110000", "000000", "110000", "000000"];
     let a_out = ["220000", "000000", "220000", "000000"];
     let b_in = ["011000", "000000", "011000", "000000"];
@@ -143,8 +143,10 @@ fn the_court_applies_a_motor_to_a_charts_whole_fibre() {
     );
 }
 
+/// A face that varies across the pairs is kept as sections and holds an
+/// orbit.
 #[test]
-fn a_face_that_varies_across_the_pairs_is_kept_as_sections_and_holds_an_orbit() {
+fn extract_rule_with_keeps_varying_face_as_sections_with_orbit() {
 let l_in = ["100000", "100000", "110000", "000000", "000330", "000000"];
 let turned_minus_90 = ["111000", "100000", "000000", "000000", "000550", "000000"];
 let turned_90 = ["001000", "111000", "000000", "000000", "000550", "000000"];
@@ -235,7 +237,7 @@ assert!(!snaps.is_empty(), "the pivot orbit reads the held orbit and answers");
 /// no section, no demand, and no correspondence pass anywhere in it; it
 /// closes the family and speaks a fourth frame.
 #[test]
-fn a_family_translated_along_e3_is_one_vertex_on_every_frame_and_no_correspondence_runs() {
+fn extract_rule_reads_translation_as_one_vertex_on_every_frame() {
     let family = vec![
         (grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"])),
         (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),
@@ -267,7 +269,7 @@ fn a_family_translated_along_e3_is_one_vertex_on_every_frame_and_no_corresponden
 /// nothing after it returns — reach one form address, and a court replays
 /// each minted sentence on its own copy of the family.
 #[test]
-fn two_courts_reach_one_address_for_one_family() {
+fn extract_rule_reaches_one_address_on_two_courts() {
     let family = vec![
         (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
         (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
@@ -311,7 +313,7 @@ assert!(
 /// different shape from A and recolours differently, so speaking B
 /// through A's class or A's gauge would be visible.
 #[test]
-fn b_does_as_rotation_about_its_centre_is_rebased() {
+fn rebase_keeps_rebased_body_hues_and_placement() {
 let letter = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
 let rot = crate::transducer::alphabet::Word::from_letters(&[(letter, false)]);
 // A is the single hue-1 compartment; B is the hue-3 bar, another shape.
@@ -469,7 +471,7 @@ fn acts_at(f: &Form, act: &[u8]) -> bool {
 
 /// A held closed form glued as a vertex: depth 1, fewer Word vertices.
 #[test]
-fn extract_rule_glues_a_held_form() {
+fn extract_rule_with_glues_held_form() {
 let family = vec![
     (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
     (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
@@ -595,7 +597,7 @@ assert_eq!(
 /// of the three charts. Spoken per class it was charts × frames speeches
 /// of one reading, under one spend per class.
 #[test]
-fn the_glue_speaks_a_cited_form_once_per_placement_and_asks_once_per_chart() {
+fn glue_speaks_once_per_placement_asks_once_per_chart() {
     use std::cell::Cell;
     let family = vec![
         (
@@ -690,7 +692,7 @@ fn the_glue_speaks_a_cited_form_once_per_placement_and_asks_once_per_chart() {
 /// handed back: a `&Form` that IS the crystal's own field cannot have been
 /// cloned, and no timing can say that.
 #[test]
-fn a_glue_pass_retracts_once_and_a_citation_is_never_cloned() {
+fn by_address_returns_citation_without_cloning() {
     let family = vec![
         (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
         (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
@@ -759,7 +761,7 @@ fn a_glue_pass_retracts_once_and_a_citation_is_never_cloned() {
 /// A withheld remainder is a listing chain: from_residual reads it,
 /// so the residual path can mint against the book.
 #[test]
-fn withheld_remainder_chains_are_listing_shaped() {
+fn form_deflation_leaves_listing_shaped_remainders() {
 let family = vec![
     (grid(&["1"]), grid(&["2"])),
     (grid(&["10"]), grid(&["23"])),
@@ -782,6 +784,8 @@ for r in listings {
 }
 }
 
+/// A cached extraction spends once per atlas generation: a hit spends
+/// nothing and a new generation re-extracts.
 #[test]
 fn extract_rule_cached_spends_once_per_generation() {
 let family = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
@@ -821,7 +825,7 @@ assert!(budget.remaining() < left, "a new atlas generation re-extracts");
 /// stroke on a family the memo does not hold answers `None` rather than
 /// handing back another family's rule.
 #[test]
-fn the_extract_memo_holds_one_rule_and_a_second_family_replaces_it() {
+fn extract_memo_replaces_rule_on_second_family() {
     let one = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
     let two = vec![(grid(&["0011", "0000"]), grid(&["0033", "0000"]))];
     let atlas = crate::transducer::address::Address::from(vec![1]);
@@ -851,7 +855,7 @@ fn the_extract_memo_holds_one_rule_and_a_second_family_replaces_it() {
 /// A class present in one of two pairs keeps its star face: a missing
 /// end on the other pair is not a constancy violation.
 #[test]
-fn a_class_present_in_one_of_two_pairs_keeps_its_star_face() {
+fn extract_rule_keeps_star_face_of_some_pair_class() {
 let family = vec![
     (grid(&["1100", "1000", "0000"]), grid(&["0011", "0001", "0000"])),
     (grid(&["1100", "0000", "0000"]), grid(&["2200", "0000", "0000"])),
@@ -897,8 +901,9 @@ assert!(
 );
 }
 
+/// A class present in some pairs is a section.
 #[test]
-fn a_class_in_some_pairs_is_a_section() {
+fn extract_rule_reads_some_pair_class_as_section() {
 let family = vec![
     (grid(&["1100", "1000", "0000"]), grid(&["0011", "0001", "0000"])),
     (grid(&["1100", "0000", "0000"]), grid(&["2200", "0000", "0000"])),
@@ -916,7 +921,7 @@ assert!(
 /// not body moduli and not the hue map. A square and a bar recoloured
 /// 1→2 are one class; frames of different sizes match by kind.
 #[test]
-fn correspondence_is_transport_class_not_shape() {
+fn extract_rule_corresponds_by_transport_class_not_shape() {
 let family = vec![
     (grid(&["1100", "1100"]), grid(&["2200", "2200"])),
     (grid(&["1110", "0000"]), grid(&["2220", "0000"])),
@@ -944,7 +949,7 @@ assert!(
 /// Two pairs that recolour differently share one rule vertex; the hue
 /// maps are two sections, not two classes.
 #[test]
-fn two_pairs_that_recolour_differently_share_one_rule_vertex() {
+fn extract_rule_shares_one_vertex_across_recolours() {
 let family = vec![
     (grid(&["1100", "0000"]), grid(&["2200", "0000"])),
     (grid(&["1100", "0000"]), grid(&["3300", "0000"])),
@@ -1021,7 +1026,7 @@ assert_eq!(
 /// the number: 0 words, where the per-hue piece gave 1. H3 owes the same
 /// recovery it owed before.
 #[test]
-fn two_hues_that_meet_are_one_body_and_the_merge_is_the_percept() {
+fn cipher_form_reads_meeting_hues_as_one_body() {
 let family = vec![
     (grid(&["110022", "000000"]), grid(&["001122", "000000"])),
     (grid(&["000000", "110022"]), grid(&["000000", "001122"])),
@@ -1103,7 +1108,7 @@ assert!(rule.form.is_closed(), "and the rule, owing nothing, is closed");
 /// (`[1, 0]`); AT1 Q4 spells the frame by its length then its big-endian
 /// bytes, so the trie's walk IS the succession and nothing sorts.
 #[test]
-fn succession_reads_the_frames_a_member_occupies_in_coordinate_order() {
+fn occupied_frames_reads_member_frames_in_coordinate_order() {
     use crate::network::nerve::Keyed;
     use crate::transducer::family::{body_of, occupied_frames};
     let body = || body_of(vec![Compartment::from((0i64, 0i64, 0i64, 1u8))]).expect("one compartment is heard");
@@ -1170,7 +1175,7 @@ fn succession_reads_the_frames_a_member_occupies_in_coordinate_order() {
 /// read different motions has NO union quotient, and the per-frame reading
 /// stands instead rather than a union invented for it (rule 11).
 #[test]
-fn a_members_fiber_reads_as_one_union_body_or_not_at_all() {
+fn union_quotient_reads_one_motion_or_refuses() {
     use crate::transducer::family::union_quotient;
     // Three frames, each a bar translated by the same vector: one motion
     // over the whole fiber.
@@ -1225,7 +1230,7 @@ fn a_members_fiber_reads_as_one_union_body_or_not_at_all() {
 /// Its word vertices read DERIVABLE through the mind's own crystal — the
 /// reflection is read, never demanded or adjoined.
 #[test]
-fn a_mirrored_pair_mints_and_its_class_reads_derivable() {
+fn mint_sentence_why_mints_mirrored_pair_as_derivable() {
     let l = grid(&["1000", "1000", "1100", "0000"]);
     let j = grid(&["0100", "0100", "1100", "0000"]);
     let family = vec![(l, j)];

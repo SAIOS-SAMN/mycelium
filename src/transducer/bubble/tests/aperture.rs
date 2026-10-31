@@ -25,7 +25,7 @@ fn all_keys(c: &Contemplation) -> Vec<Vec<u8>> {
 /// and a lane with no room WITHHOLDS rather than evicting. So two bubbles
 /// nothing has lapsed or promoted both stand, however old either is.
 #[test]
-fn no_hold_is_retired_by_age_or_by_a_count() {
+fn lapse_with_retires_handed_set_never_by_age() {
     let mut c = Contemplation::new();
     c.set_now(10);
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
@@ -57,7 +57,7 @@ fn no_hold_is_retired_by_age_or_by_a_count() {
 /// at one chart stay two (law 7) and the entries a chart can re-hold are the
 /// subtree under it.
 #[test]
-fn a_cavity_entry_is_read_back_at_its_own_chart_and_two_at_one_chart_are_two() {
+fn cavity_keys_under_reads_entries_at_their_chart() {
     let mut c = Contemplation::new();
     c.set_now(10);
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
@@ -132,7 +132,7 @@ fn a_cavity_entry_is_read_back_at_its_own_chart_and_two_at_one_chart_are_two() {
 /// asserted here, is law 7: the retired remainder is kept as a cavity chart
 /// and never lost.
 #[test]
-fn a_retired_remainder_is_kept_as_a_cavity_chart() {
+fn lapse_with_keeps_remainder_as_cavity_chart() {
     let mut c = Contemplation::new();
     c.set_now(10);
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
@@ -149,7 +149,7 @@ fn a_retired_remainder_is_kept_as_a_cavity_chart() {
 /// idea regardless (25.1): a form with no remainder expands and files on
 /// the very stroke it is held.
 #[test]
-fn a_held_idea_expands_at_zero_extent_and_its_potential_reads_zero_on_t() {
+fn expand_with_reads_zero_t_potential_at_hold_stroke() {
     use crate::transducer::family::NoCrystal;
     let mut c = Contemplation::new();
     c.set_now(7);
@@ -186,7 +186,7 @@ fn a_held_idea_expands_at_zero_extent_and_its_potential_reads_zero_on_t() {
 /// on two charts is two sections and two vertices holding one section are
 /// one.
 #[test]
-fn a_form_speaking_two_rotors_carries_two_sections_and_no_single_rotor() {
+fn sections_reads_two_rotors_with_no_single_rotor() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
     use crate::transducer::sentence::{Form, Vertex};
     use crate::transducer::stalk::Invariant;
@@ -230,7 +230,7 @@ fn a_form_speaking_two_rotors_carries_two_sections_and_no_single_rotor() {
 /// one rotor on one chart with carriages `c` and `−c` hold one section; raw
 /// coefficients keyed them as two.
 #[test]
-fn two_vertices_whose_carriages_differ_by_sign_hold_one_section() {
+fn sections_keys_opposite_sign_carriages_as_one() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
     use crate::transducer::sentence::{Form, Vertex};
     use crate::transducer::stalk::Invariant;
@@ -267,7 +267,7 @@ fn two_vertices_whose_carriages_differ_by_sign_hold_one_section() {
 /// the after-class is not a coordinate the word has to know; read at the
 /// rotor's class it would find nothing.
 #[test]
-fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
+fn pivot_on_collapses_vortex_and_adjoins_symmetry() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
     use crate::transducer::sentence::{
         Axis, ClassVector, Form, Mu, PivotBy, PivotCertificate, RankMove, Side, Vertex,
@@ -392,7 +392,7 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
 /// must not enter the cover, because nothing of this idea is a section over
 /// it.
 #[test]
-fn an_idea_meets_its_own_charts_and_not_their_siblings() {
+fn expand_with_covers_own_charts_not_siblings() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
     use crate::transducer::family::NoCrystal;
     use crate::transducer::sentence::{Form, Vertex};
@@ -449,7 +449,7 @@ fn an_idea_meets_its_own_charts_and_not_their_siblings() {
 /// configuration space. The key IS the topology and the carriages (law 2),
 /// so a bubble found under it is that same form unchanged.
 #[test]
-fn a_form_re_held_unchanged_keeps_its_phase_change_stamp_and_ages() {
+fn hold_form_unchanged_keeps_moved_k_and_ages() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
     use crate::transducer::sentence::{Form, Vertex};
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane");
@@ -526,7 +526,7 @@ fn a_form_re_held_unchanged_keeps_its_phase_change_stamp_and_ages() {
 /// first is orphaned under a key nothing computes any more. A form with an
 /// open remainder speaks only once it closes, and closing mutates it.
 #[test]
-fn a_bubble_rekeyed_by_a_mutation_keeps_its_inception() {
+fn rekey_keeps_inception_stamp_across_mutation() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
     use crate::transducer::bubble::contemplation::Deliberation;
     use crate::transducer::sentence::{Form, Vertex};

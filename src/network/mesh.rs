@@ -518,8 +518,10 @@ fn migrate_genome(home: &Path, vk: &[u8; 32]) {
 mod tests {
     use super::*;
 
+    /// A signed mesh record opens under its node's key with its bind, peers,
+    /// bonds, genesis and epoch intact.
     #[test]
-    fn mesh_round_trips_and_verifies() {
+    fn mesh_record_round_trips_and_verifies() {
         let key = HyphaKey::load_or_mint("/tmp/mycelium-mesh-test.key");
         let rec = MeshRecord {
             kind: HYPHA,
@@ -547,7 +549,7 @@ mod tests {
     /// BYTE, so the tape says which it is rather than a reader inferring
     /// it, and 47.2's origin check can never meet the sentinel.
     #[test]
-    fn an_unwritten_genesis_reads_back_as_absent_not_as_zero() {
+    fn genesis_none_reads_back_absent_not_zero() {
         let key = HyphaKey::load_or_mint("/tmp/mycelium-mesh-nogen.key");
         let rec = MeshRecord {
             kind: HYPHA,
@@ -577,7 +579,7 @@ mod tests {
     /// A bind nothing has written is ABSENT, and an address that is the
     /// empty string is a bind of no characters. Two different records.
     #[test]
-    fn an_unbound_node_reads_back_as_unbound_not_as_the_empty_address() {
+    fn bind_none_reads_back_unbound_not_empty() {
         let key = HyphaKey::load_or_mint("/tmp/mycelium-mesh-nobind.key");
         let rec = MeshRecord {
             kind: HYPHA,
@@ -606,7 +608,7 @@ mod tests {
     /// `open_at` refused every one of them, and the nodes — including the
     /// one-shot `--recut` runs — exited 2 at boot.
     #[test]
-    fn a_record_provisioned_under_the_old_magic_still_opens() {
+    fn open_reads_msh1_record_under_its_rules() {
         let key = HyphaKey::load_or_mint("/tmp/mycelium-mesh-v1.key");
         // The MSH1 layout, written out: magic, kind, bind as a plain
         // length-prefixed string, peers, bootstrap, bonds, 32 genesis
@@ -668,7 +670,7 @@ mod tests {
     /// recut keeps — bind, peers, bootstrap, bonds, origin, epoch — intact
     /// across the rewrite, and the second call writes nothing new.
     #[test]
-    fn a_boot_that_reads_the_old_magic_writes_the_record_back_as_msh2() {
+    fn load_or_migrate_hypha_resaves_msh1_as_msh2_once() {
         let home = std::path::PathBuf::from("/tmp/mycelium-mesh-x7");
         let _ = std::fs::remove_dir_all(&home);
         std::fs::create_dir_all(&home).expect("a home to boot in");

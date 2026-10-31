@@ -40,7 +40,7 @@ fn court_and_lease(fund: [u64; 4], mu: [u64; 4], provider: [u8; 32], jobs: Vec<[
 /// second solve of the same job, and a solve by another voice, pay nothing
 /// from it; and the ledger's invariant holds throughout.
 #[test]
-fn a_lease_pays_its_provider_for_each_verified_job_once() {
+fn pay_lease_pays_each_job_once() {
     let (provider, other) = ([9u8; 32], [8u8; 32]);
     let (job_a, job_b) = ([7u8; 32], [6u8; 32]);
     let (mut k, payer, act) = court_and_lease([50, 40, 0, 30], [30, 20, 0, 10], provider, vec![job_a, job_b], 1_000);
@@ -66,7 +66,7 @@ fn a_lease_pays_its_provider_for_each_verified_job_once() {
 /// WHAT A LEASE HAS LEFT RETURNS TO ITS PAYER: on the payer's close, and on
 /// the window's passing at the court stroke.
 #[test]
-fn a_lease_returns_its_remainder_on_close_and_on_lapse() {
+fn close_lease_and_lapse_return_remainder() {
     let provider = [9u8; 32];
     let (mut k, payer, act) = court_and_lease([50, 40, 0, 30], [30, 20, 0, 10], provider, vec![[7; 32]], 1_000);
     let who = act.payer;
@@ -99,7 +99,7 @@ fn a_lease_returns_its_remainder_on_close_and_on_lapse() {
 /// naming a job already leased to that provider — and a refused lease holds
 /// nothing.
 #[test]
-fn a_lease_is_refused_by_name() {
+fn open_lease_refuses_by_name() {
     let provider = [9u8; 32];
     let (mut k, payer, act) = court_and_lease([10, 10, 10, 10], [5, 0, 0, 0], provider, vec![[7; 32]], 100);
     let who = act.payer;

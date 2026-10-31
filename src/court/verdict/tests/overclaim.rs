@@ -19,7 +19,7 @@ fn digits(rows: &[&str]) -> Grid {
 /// stood: "a lamina lands on the wrong hue". Now each claimed frame is one
 /// its gauge reproduces, and the court's body check finds nothing to refuse.
 #[test]
-fn a_member_claims_only_the_frames_its_gauge_reproduces() {
+fn extract_rule_claims_only_frames_gauge_reproduces() {
     let family = vec![
         (digits(&["000", "010", "000"]), digits(&["000", "002", "000"])),
         (digits(&["000", "030", "000"]), digits(&["000", "004", "000"])),

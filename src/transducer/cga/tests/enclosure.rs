@@ -31,7 +31,7 @@ fn at(c: &[num_rational::BigRational], n: usize) -> Vec<num_rational::BigRationa
 /// `(1,1,1)`, `ρ² = 3`. The bodies' radii do not enter: the join is of their
 /// centres.
 #[test]
-fn the_enclosure_is_the_carrier_of_the_round_the_centres_join() {
+fn enclosure_carries_round_centres_join() {
     for n in [3usize, 4] {
         let pad = |c: &[i64]| c.iter().copied().chain(std::iter::repeat(0)).take(n).collect::<Vec<i64>>();
         let three = bodies(&[pad(&[0, 0, 0]), pad(&[2, 0, 0]), pad(&[0, 2, 0])]);
@@ -51,7 +51,7 @@ fn the_enclosure_is_the_carrier_of_the_round_the_centres_join() {
 /// whose sphere crosses it stands on it; a volumeless body at its centre is
 /// inside.
 #[test]
-fn a_body_inside_a_three_body_enclosure_reads_inside_by_sign() {
+fn containment_reads_body_against_enclosure_by_sign() {
     for n in [3usize, 4] {
         let pad = |c: &[i64]| c.iter().copied().chain(std::iter::repeat(0)).take(n).collect::<Vec<i64>>();
         let cell = bodies(&[pad(&[0, 0, 0]), pad(&[2, 0, 0]), pad(&[0, 2, 0])]);
@@ -72,7 +72,7 @@ fn a_body_inside_a_three_body_enclosure_reads_inside_by_sign() {
 /// and one apart. Each is parsed under the wrapper closest to it, the one
 /// every other wrapper also wraps.
 #[test]
-fn a_nested_pair_of_enclosures_reads_its_nesting() {
+fn nesting_parses_each_under_closest_wrapper() {
     let small = enclosure(&bodies(&[vec![0, 0, 0], vec![1, 0, 0], vec![0, 1, 0]])).expect("small");
     let large = enclosure(&bodies(&[vec![-3, -3, 0], vec![3, -3, 0], vec![-3, 3, 0]])).expect("large");
     let apart = enclosure(&bodies(&[vec![20, 0, 0], vec![21, 0, 0], vec![20, 1, 0]])).expect("apart");

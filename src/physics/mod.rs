@@ -738,7 +738,7 @@ mod tests {
     /// COUNTED, never pinned at a ceiling: the lane stands where it was and
     /// the ledger's `overflowed` rises.
     #[test]
-    fn a_counter_past_its_carrier_is_refused_and_counted() {
+    fn bump_past_carrier_is_refused_and_counted() {
         let _ = metabolism::take_metabolism();
         let mut p = Physics::default();
         p.bump(&[u64::MAX, 0, 0, 0]);
@@ -752,7 +752,7 @@ mod tests {
     /// nothing keeps its pressure; a second relax with nothing settled since
     /// moves nothing.
     #[test]
-    fn a_lane_relaxes_by_what_it_settled() {
+    fn relax_lowers_each_lane_by_what_it_settled() {
         let mut p = Physics::default();
         p.bump(&[5, 5, 0, 0]);
         p.syntropy(&[3, 0, 0, 0]);
@@ -766,7 +766,7 @@ mod tests {
     /// on their lanes, refused ones press on their own lanes, and a second booking of
     /// the same totals moves nothing — the mark is what was already booked.
     #[test]
-    fn contacts_book_order_where_they_condensed_and_pressure_where_refused() {
+    fn book_contacts_books_condensed_and_refused_once() {
         let mut p = Physics::default();
         p.book_contacts(([0, 2, 0, 1], [3, 0, 0, 0]));
         assert_eq!((p.syntropic, p.pressure), ([0, 2, 0, 1], [3, 0, 0, 0]));
@@ -776,8 +776,9 @@ mod tests {
         assert_eq!((p.syntropic, p.pressure), ([0, 3, 0, 1], [3, 1, 0, 0]), "only what moved since");
     }
 
+    /// Pressure is held per lane, never summed, and is relieved per lane.
     #[test]
-    fn pressure_is_per_lane_and_relieves() {
+    fn relieve_lowers_pressure_per_lane() {
         let mut p = Physics::default();
         p.bump(&[1, 0, 0, 0]); // a spatial demand
         p.bump(&[0, 1, 0, 0]); // a gauge demand
@@ -791,7 +792,7 @@ mod tests {
     /// excision every perceived change is a pattern until the mesh consolidates
     /// richer structure; the gauge/spatial lanes fill as those axes germinate.)
     #[test]
-    fn a_germinated_pattern_charges_the_residual_lane() {
+    fn lanes_of_germinated_recolour_is_gauge() {
         use crate::transducer::element::from_canonical;
         use crate::transducer::germinate::germinate;
         // A two-site recolour: hue transitions on a standing support are
@@ -801,8 +802,9 @@ mod tests {
         assert_eq!(g.lanes(), [false, true, false, false], "a recolour is gauge content; temporal is empty until the listing stands");
     }
 
+    /// A pivot is a torsion charge; an unattributable pivot charges every lane.
     #[test]
-    fn a_pivot_is_a_torsion_charge() {
+    fn pivot_unattributed_charges_torsion_on_every_lane() {
         let mut p = Physics::default();
         p.pivot([false, false, false, false]); // unattributable
         assert_eq!(p.torsion, [1, 1, 1, 1], "an unresolved residual charges torsion");
@@ -813,7 +815,7 @@ mod tests {
     /// recovers LESS than one spend (REGEN < SPEND), so sustained expansion is
     /// paced by the recovery the optimization earns.
     #[test]
-    fn the_reserve_spends_depletes_and_regenerates_per_lane() {
+    fn spend_depletes_and_regenerate_restores_per_lane() {
         let t = [false, false, true, false];
         let mut p = Physics::default();
         assert_eq!(p.reserve_shortfall([true; 4]), [0; 4], "full at rest: no lane is short");
@@ -836,7 +838,7 @@ mod tests {
     /// the ceiling; held above a lowered ceiling — an idle window after a
     /// productive one — it contracts to it.
     #[test]
-    fn a_court_reserve_regenerates_within_bonds_and_verified_work() {
+    fn regenerate_within_bounds_reserve_by_bonds_and_work() {
         let mut p = Physics { reserve: Reserve::of([0; 4]), ..Default::default() };
         // A bond with nothing on 𝒯, as the fleet's courts hold: every lane
         // still stands within the whole bond (Σ = 9), never 𝒯's own 0.
@@ -858,7 +860,7 @@ mod tests {
     /// lane, and the work already done is charged what the lanes hold —
     /// never past empty.
     #[test]
-    fn a_stroke_draws_what_it_moved_and_names_the_lane_that_refuses() {
+    fn spend_draws_moved_lanes_and_names_refusing_lane() {
         let _ = metabolism::take_metabolism();
         let mut idle = Physics::default();
         assert_eq!(idle.spend([false; 4]), None, "a stroke that moved nothing draws nothing");
@@ -884,7 +886,7 @@ mod tests {
 
     /// The metabolism is per-lane syntropic minus entropic — the order flux.
     #[test]
-    fn the_metabolism_is_order_flux_per_lane() {
+    fn order_flux_is_syntropic_minus_entropic_per_lane() {
         let mut p = Physics::default();
         p.syntropy(&[1, 0, 0, 0]); // built order on 𝒮
         p.syntropy(&[1, 0, 0, 0]);
@@ -894,7 +896,7 @@ mod tests {
 
     /// Pressure on G dwells G and keeps expanding on S, T, H.
     #[test]
-    fn pressure_on_one_lane_dwells_that_lane_only() {
+    fn dwell_holds_only_wanted_pressured_lane() {
         let mut p = Physics::default();
         let g = [false, true, false, false];
         while crate::economy::lanes_short(&p.reserve_shortfall(g)).is_empty() {
@@ -927,7 +929,7 @@ mod tests {
     /// strokes, off the ring: three strokes to the first circuit, one to the
     /// next.
     #[test]
-    fn a_carriers_circuits_are_read_in_circuits_and_strokes() {
+    fn circuits_stroke_reads_circuits_and_period() {
         let mut o = Circuits::default();
         assert_eq!(o.stroke(0), None, "no circuit, no reading");
         assert_eq!(o.stroke(0), None);
@@ -942,7 +944,7 @@ mod tests {
     /// two-stroke ratio itself, a spend halves exactly, and the stroke floor
     /// is a positive measurement every park is at least one of.
     #[test]
-    fn the_ratio_is_exact_and_the_stroke_floor_is_the_hosts() {
+    fn spend_unit_ratio_exact_and_stroke_floor_positive() {
         assert_eq!(spend_unit() * STROKES_PER_RESERVE, reserve_max(), "a whole number of spends");
         assert_eq!(u64::from(aperture_cycle()), STROKES_PER_RESERVE, "the aperture is the ratio");
         assert!(spend_unit() >= 2, "the reserve's floor leaves a spend the regeneration can halve");
@@ -953,8 +955,10 @@ mod tests {
         assert_eq!(idle_park(Some(3)), floor * 3, "a measured wire parks its round trip");
     }
 
+    /// A measured round trip is counted in strokes, and a same-stroke reply
+    /// reads zero, not a floor.
     #[test]
-    fn rtt_is_counted_in_strokes() {
+    fn from_transport_counts_rtt_in_strokes() {
         assert_eq!(from_transport(3, 4), Lambda::Strokes(12), "measured rtt × strokes");
         assert_eq!(from_transport(3, 0), Lambda::Strokes(3), "zero strokes is still one transport");
         assert_eq!(
@@ -977,7 +981,7 @@ mod tests {
     /// counts. One `None` over both would put an arithmetic fact and a
     /// missing measurement on one branch of the eviction path.
     #[test]
-    fn a_horizon_wider_than_the_ledger_is_not_an_unmeasured_one() {
+    fn from_transport_overflow_is_beyond_ledger_not_unmeasured() {
         assert_eq!(
             from_transport(u64::MAX, 2),
             Lambda::BeyondTheLedger,

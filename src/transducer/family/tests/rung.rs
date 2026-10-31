@@ -29,7 +29,7 @@ fn turn(a: usize, b: usize) -> Mv {
 /// PARABOLIC and the ring is a nilpotent theorem (the next test), where the
 /// transvection of 54.7 R3 had read it a boost, unbound with no theorem.
 #[test]
-fn a_percepts_rings_are_composed_and_each_named() {
+fn compose_names_each_percept_ring_unbound() {
     let slides = vec![
         (grid(&["1100000", "0000000", "0002000", "0002200"]), grid(&["1100000", "0000000", "0000020", "0000022"])),
         (grid(&["0000110", "0000000", "0200000", "0220000"]), grid(&["0000110", "0000000", "0002000", "0002200"])),
@@ -63,7 +63,7 @@ fn a_percepts_rings_are_composed_and_each_named() {
 /// between two sections' pieces) as HEARD and composes the rest from their
 /// rays alone; no ring is both.
 #[test]
-fn a_ring_through_a_chord_is_heard_and_the_rest_are_rays() {
+fn sentences_of_hears_chord_rings_composes_rays() {
     use crate::transducer::sentence::compose::{is_chord, sentences_of, RingUnread};
     let slides = vec![
         (grid(&["1100000", "0000000", "0002000", "0002200"]), grid(&["1100000", "0000000", "0000020", "0000022"])),
@@ -95,7 +95,7 @@ fn a_ring_through_a_chord_is_heard_and_the_rest_are_rays() {
 /// where the boost left them unbound demands; and a nilpotent theorem teaches
 /// its open path as a word, spelled (the slide turns nothing).
 #[test]
-fn a_ring_of_seen_rays_is_a_nilpotent_theorem_and_teaches_a_word() {
+fn theorem_of_ray_ring_is_nilpotent() {
     use crate::transducer::sentence::compose::sentences_of;
     use crate::transducer::sentence::theorem::{Certificate, Theorem};
     let slides = vec![
@@ -121,7 +121,7 @@ fn a_ring_of_seen_rays_is_a_nilpotent_theorem_and_teaches_a_word() {
 /// NAMED AND HELD. A dilation by 2 is hyperbolic: its sentence is open, no
 /// certificate stands, and its holonomy is held as a word by name.
 #[test]
-fn a_hyperbolic_sentence_is_named_and_held() {
+fn hear_holds_hyperbolic_sentence_by_name() {
     let one = Mv::scalar(q(1, 1));
     let d = cga::dilator(&q(2, 1));
     let s = compose(&[Term { word: d, transport: one }], &mut stroke()).expect("a sentence");
@@ -139,7 +139,7 @@ fn a_hyperbolic_sentence_is_named_and_held() {
 /// thread holds none of it and was taught nothing. The first, thinking again,
 /// still holds the word, its teaching already taken, its cover still parked.
 #[test]
-fn two_minds_on_one_thread_keep_two_fields() {
+fn mind_field_keeps_two_fields_on_one_thread() {
     use crate::transducer::family::cursor;
     use crate::transducer::mind::MindField;
     use crate::transducer::sentence::rung::{held_rung, take_taught};
@@ -169,7 +169,7 @@ fn two_minds_on_one_thread_keep_two_fields() {
 /// the turn's square — a new key, but on the same hole at twice the winding —
 /// and it is recognized as the held word's power: counted, never held.
 #[test]
-fn a_held_words_power_is_recognized_by_its_coordinates() {
+fn hear_recognizes_held_word_power() {
     let w = Mv::scalar(q(1, 1)).add(&Mv::blade(E1 | E3, q(1, 1)));
     let w2 = w.geo(&w);
     let said = |x: &Mv| compose(&[Term { word: x.clone(), transport: x.reverse() }], &mut stroke()).expect("a sentence");
@@ -184,7 +184,7 @@ fn a_held_words_power_is_recognized_by_its_coordinates() {
 /// closes too, and its shortcut is held a rung higher. Heard again, the first
 /// sentence re-derives its shortcut — recognized, held once.
 #[test]
-fn the_rung_recurses_and_a_sentence_heard_again_is_recognized() {
+fn hear_recurses_rung_and_recognizes_reheard_sentence() {
     let w = turn(E1, E2);
     let v = turn(E2, E3);
     let one = Mv::scalar(q(1, 1));
@@ -220,7 +220,7 @@ fn the_rung_recurses_and_a_sentence_heard_again_is_recognized() {
 /// stands a rung above it. The fused product `slide · w` is no held word:
 /// read as one, the space hid the word.
 #[test]
-fn a_held_word_is_recognized_whatever_space_surrounds_it() {
+fn rung_in_lexicon_recognizes_word_whatever_space() {
     use crate::transducer::sentence::rung::rung_in_lexicon;
     let w = turn(E1, E3);
     let first = compose(&[Term { word: w.clone(), transport: w.reverse() }], &mut stroke()).expect("a sentence");
@@ -239,7 +239,7 @@ fn a_held_word_is_recognized_whatever_space_surrounds_it() {
 /// slide as its residue, so it is new and held — one rung above the turn it
 /// cites, though no word of its own sentence was held.
 #[test]
-fn a_word_stands_a_rung_above_the_words_it_cites() {
+fn held_rung_stands_above_cited_words() {
     use crate::transducer::sentence::rung::held_rung;
     let half = q(1, 2);
     let third = Mv::scalar(half.clone()).add(&Mv::blade(E2 | E3, q(1, 1)));

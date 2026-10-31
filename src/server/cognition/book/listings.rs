@@ -589,7 +589,7 @@ impl Kernel {
         // THE CITATIONS FROM THE ENVELOPE, THE ACTION FROM THE FORM (54.5
         // Road (d), B3). The two halves of the question are deliberately in
         // two carriers: the rotor is the vertex's key and the citations are
-        // its presentation, which the key excludes (`evidence_is_not_identity`).
+        // its presentation, which the key excludes (`form_vertex_key_ignores_citations_and_certificates`).
         let env = candidate.receipts();
         let mut any = false;
         for (_, v) in f.vertices.scoped() {

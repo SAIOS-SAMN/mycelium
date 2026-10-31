@@ -36,6 +36,11 @@ such change is named here.
   are renamed to name the chain's own line. MU-CHARTER Part I is written
   in the third person, and the chronometry "where am I" reading is the
   position reading.
+- Every test is named `<unit>_<behaviour>` (MU-STANDARDS 3.1): 1,792 of
+  the 1,824 tests renamed, 32 kept as already conforming. Each renamed
+  test that had no `///` doc comment gained one stating its claim; no
+  test body changed. Every citation of a renamed test in the
+  documentation and source comments names its current name.
 
 ### Documentation
 - Documentation audit (2026-10-30), every document checked against the

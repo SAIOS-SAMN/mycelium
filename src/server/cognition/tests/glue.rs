@@ -7,7 +7,7 @@ use crate::transducer::element::Element;
 
 /// A glued form's trajectory is measured through the court genome as Crystal.
 #[test]
-fn glued_form_replays_its_trajectory_through_the_court_genome() {
+fn perceive_speech_replays_glued_form_through_court_genome() {
 use crate::transducer::family::{
     apply_form, extract_rule_with, mint_sentence, cipher_form, Crystal, Grid, Speech,
 };
@@ -127,7 +127,7 @@ assert_eq!(
 /// for (26, 27) — measured here through the epigenome the fleet runs and
 /// not through a stub.
 #[test]
-fn a_cited_form_is_a_use_at_the_court() {
+fn cited_by_records_glued_citation_as_use() {
 use crate::client::sdk::Epigenome;
 use crate::transducer::family::{extract_rule_with, mint_sentence, cipher_form, sentence_measure, NoCrystal};
 use crate::transducer::sentence::{as_element_form, Vertex};
@@ -202,7 +202,7 @@ assert!(
 /// dropped on every confirm — and the suite stayed green, because the
 /// install path used the other two copies and this drop path had no test.
 #[test]
-fn a_heard_address_survives_a_confirm_that_agrees_with_it() {
+fn confirm_peer_holds_keeps_heard_on_agreeing_root() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
@@ -248,7 +248,7 @@ assert!(
 /// never match — it filtered nothing and cost wire, allocation and a read
 /// of a set that grows with peers × corpus.
 #[test]
-fn a_have_list_carries_this_charts_heard_addresses_and_not_every_chart() {
+fn fetch_have_carries_only_this_charts_heard() {
 use crate::transducer::stalk::Invariant;
 let mut k = Kernel::new();
 let here = Invariant::counts(&[1]);
@@ -278,7 +278,7 @@ assert!(have.contains(&heard_here), "the address heard under this chart is held:
 /// `cx.set_section` and `cx.set_edge` receive the carried rotor and versor
 /// from the spoken element and transition.
 #[test]
-fn glue_records_true_geometric_section_and_edge_carriage() {
+fn glue_fetched_records_true_section_geometry() {
     let own_vk = [0x0au8; 32];
     let peer_id = [0x0bu8; 32];
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
@@ -326,7 +326,7 @@ fn glue_records_true_geometric_section_and_edge_carriage() {
 /// is the same word; the same word refracted by a translation reads as a
 /// refraction (the instrument the court-triangle balance is read from).
 #[test]
-fn a_peers_sentence_is_read_against_this_courts_section() {
+fn glue_fetched_reads_peer_sentence_against_own_section() {
     use crate::observe::rep;
     use crate::transducer::sentence::{as_element_form, from_element_form, Transport};
     let own_vk = [0x1au8; 32];
@@ -376,7 +376,7 @@ fn a_peers_sentence_is_read_against_this_courts_section() {
 /// Now it is held — in the basis and the ruled cover, so the next fetch's
 /// have-list carries it and the same shear is not read again.
 #[test]
-fn an_attached_word_is_held_and_not_read_again() {
+fn glue_fetched_holds_attached_word() {
     let own_vk = [0x2au8; 32];
     let peer = [0x2bu8; 32];
     let word = |x: i64| {

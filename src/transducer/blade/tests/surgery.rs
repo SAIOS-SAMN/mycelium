@@ -2,8 +2,9 @@ use super::common::{at_frame_0, sites};
 use crate::transducer::blade::{body::*, surgery::*};
 use num_rational::BigRational;
 
+/// A fill-hole surgery, detected from a ring to a solid square, reduces the genus by one.
 #[test]
-fn fill_hole_surgery_reduces_genus() {
+fn detect_fills_hole_reducing_genus() {
     // 3x3 ring with center (1, 1) empty: beta_0 = 1, beta_1 = 1
     let ring = at_frame_0(&[
         (0, 0), (0, 1), (0, 2),
@@ -32,8 +33,9 @@ fn fill_hole_surgery_reduces_genus() {
     assert_eq!(topology(&applied), Some(vec![1, 0, 0]));
 }
 
+/// A puncture surgery, detected from a solid square to a ring, increases the genus by one.
 #[test]
-fn puncture_surgery_increases_genus() {
+fn detect_punctures_increasing_genus() {
     let solid = at_frame_0(&[
         (0, 0), (0, 1), (0, 2),
         (1, 0), (1, 1), (1, 2),
@@ -55,8 +57,9 @@ fn puncture_surgery_increases_genus() {
     assert_eq!(topology(&applied), Some(vec![1, 1, 0]));
 }
 
+/// A bridge-merge surgery connects two components into one.
 #[test]
-fn bridge_merge_connects_components() {
+fn detect_bridge_merge_connects_components() {
     // Two 1x2 blocks at rows 0 and 2
     let two_blocks = at_frame_0(&[
         (0, 0), (0, 1),
@@ -82,8 +85,9 @@ fn bridge_merge_connects_components() {
     assert_eq!(topology(&applied), Some(vec![1, 0, 0]));
 }
 
+/// A split-cut surgery disconnects one component into two.
 #[test]
-fn split_cut_disconnects_components() {
+fn detect_split_cut_disconnects_components() {
     let connected = at_frame_0(&[
         (0, 0), (0, 1),
         (1, 0),
@@ -104,8 +108,9 @@ fn split_cut_disconnects_components() {
     assert_eq!(topology(&applied), Some(vec![2, 0, 0]));
 }
 
+/// The surgery monoid's composition sums the Betti deltas and unions the supports.
 #[test]
-fn monoid_composition_sums_betti_deltas() {
+fn compose_sums_betti_deltas() {
     let s1 = Surgery::fill_hole(sites(&[(1, 1, 0)]));
     let s2 = Surgery::fill_hole(sites(&[(4, 4, 0)]));
     let comp = s1.compose(&s2);
@@ -113,8 +118,9 @@ fn monoid_composition_sums_betti_deltas() {
     assert_eq!(comp.support_delta, sites(&[(1, 1, 0), (4, 4, 0)]));
 }
 
+/// A composite deformation Phi factors as a versor composed with a surgery.
 #[test]
-fn factor_composite_deformation_phi_is_versor_circ_surgery() {
+fn factor_splits_deformation_into_versor_and_surgery() {
     let ring = at_frame_0(&[
         (0, 0), (0, 1), (0, 2),
         (1, 0),         (1, 2),

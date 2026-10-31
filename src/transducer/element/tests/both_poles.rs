@@ -25,7 +25,7 @@ fn transversor(b: &[Q]) -> Versor {
 /// The inversion is its own inverse and exchanges the origin with infinity:
 /// the two poles the two halves of the conformal pair fix.
 #[test]
-fn the_inversion_exchanges_the_two_poles_and_is_its_own_inverse() {
+fn inversion_exchanges_poles_and_squares_to_one() {
     let i = inversion();
     assert_eq!(cga::projective_ratio(&i.geo(&i), &identity_versor()), Some(Q::from_integer(BigInt::from(1))), "I² = 1 exactly");
     assert!(i.sandwich(&cga::point_at(&[])).projective_eq(&cga::e_inf()), "I(o) = ∞");
@@ -42,7 +42,7 @@ fn the_inversion_exchanges_the_two_poles_and_is_its_own_inverse() {
 /// `∞`-pole reader has no reading of it at all, and the rotor it carries is
 /// the rotation's own.
 #[test]
-fn every_factor_is_read_exactly_and_composes_back() {
+fn conformal_factors_reads_each_factor_and_composes_back() {
     let a = vec![q(3, 1), q(-2, 1), q(1, 2)];
     let b = vec![q(1, 5), q(0, 1), q(-1, 3)];
     let rho = q(3, 2);
@@ -63,7 +63,7 @@ fn every_factor_is_read_exactly_and_composes_back() {
 /// WHERE THE VERSOR FIXES INFINITY NOTHING MOVES: a similarity `D(ρ)·T(t)·R`
 /// reads `b = 0`, `a = ρt`, and the same rotor ray `(D·T)⁻¹ V` always read.
 #[test]
-fn a_similarity_reads_as_it_always_did() {
+fn conformal_factors_reads_similarity_unchanged() {
     let t = vec![q(2, 1), q(5, 1), q(-1, 1)];
     let rho = q(2, 1);
     let r = rotator(&q(1, 1), &q(1, 1));
@@ -80,7 +80,7 @@ fn a_similarity_reads_as_it_always_did() {
 /// the peel read nothing from it, so every such refusal was unclassified. It
 /// now reads its rotation and its transversion.
 #[test]
-fn a_transvection_holonomy_reads_its_rotation() {
+fn conformal_factors_reads_transvection_holonomy_rotation() {
     let placed = translator_at(&[q(1, 3), q(1, 4), q(0, 1)]);
     let boost = transvection_of(&placed).expect("a finite transvection");
     let h = boost.geo(&rotator(&q(3, 1), &q(4, 1)));
@@ -101,7 +101,7 @@ fn a_transvection_holonomy_reads_its_rotation() {
 /// `ε = 1` with the rest of it factored, composes back, has no base rotor,
 /// and its kind is D — a versor no rotor spells.
 #[test]
-fn the_inversions_cell_reads_and_its_kind_is_the_letter_demand() {
+fn conformal_factors_reads_inversion_cell_as_kind_d() {
     let v = translator_at(&[q(2, 1), q(0, 1), q(1, 1)]).geo(&inversion());
     let f = conformal_factors(&v).expect("read in the inversion's cell");
     assert!(f.inverted, "V(o) = ∞");
@@ -117,7 +117,7 @@ fn the_inversions_cell_reads_and_its_kind_is_the_letter_demand() {
 
 /// What is no conformal motion is refused by name.
 #[test]
-fn a_non_versor_is_refused_by_name() {
+fn conformal_factors_refuses_non_versor() {
     let not = identity_versor().add(&cga::e_inf());
     assert_eq!(conformal_factors(&not), Err(Unfactored::NotVersor));
 }

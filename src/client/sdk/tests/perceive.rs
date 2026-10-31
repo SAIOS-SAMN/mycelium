@@ -18,7 +18,7 @@ use crate::client::sdk::*;
 /// the language holds no word for it. The binding is a return of a thought of
 /// that scene: K moves by it.
 #[test]
-fn a_scene_perceived_off_the_field_lands_and_its_escaping_thought_is_bound() {
+fn perceive_scene_lands_and_take_demands_binds_escape() {
     let id = [9u8; 32];
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("perceiving"));
     let [first, second] = two_hours_of_a_slide();
@@ -43,7 +43,7 @@ fn a_scene_perceived_off_the_field_lands_and_its_escaping_thought_is_bound() {
 /// solve, read on the row of what it was taken as; the feed's family, which
 /// carries no test, never reaches a solve.
 #[test]
-fn every_scene_taken_in_stops_once_on_its_own_reading() {
+fn perceive_scene_stops_once_on_its_own_reading() {
     use crate::client::sdk::entity::perceive::{Stop, STOPS};
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("stopping"));
     let [first, second] = two_hours_of_a_slide();
@@ -69,7 +69,7 @@ fn every_scene_taken_in_stops_once_on_its_own_reading() {
 /// bodies do not stand on, so the slide is not read again; it moves when a
 /// word is filed on the slide's own chart.
 #[test]
-fn a_waiting_scene_rests_until_a_word_lands_where_it_stands() {
+fn scene_language_moves_only_for_word_on_own_chart() {
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
     let word_of = |x: &crate::arc::Grid, y: &crate::arc::Grid| {
         let mut b = budget();
@@ -96,7 +96,7 @@ fn a_waiting_scene_rests_until_a_word_lands_where_it_stands() {
 /// same thing said again by the same mind waits once, its latest saying in
 /// the place of the first, and a different thing waits beside it.
 #[test]
-fn a_hearing_said_again_waits_once() {
+fn perceive_hearing_said_again_waits_once() {
     use crate::client::sdk::entity::converge::Evident;
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("hearing"));
     let speaker = [3u8; 32];
@@ -116,7 +116,7 @@ fn a_hearing_said_again_waits_once() {
 /// left lapse unread and the two heard since cross in their place. The same
 /// thing said again is heard in the traversal it was said in.
 #[test]
-fn a_hearing_unread_across_a_return_lapses() {
+fn act_on_returns_lapses_hearing_unread_across_return() {
     use crate::client::sdk::entity::converge::Evident;
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("lapsing"));
     let speaker = [4u8; 32];
@@ -141,7 +141,7 @@ fn a_hearing_unread_across_a_return_lapses() {
 /// that chart, and lets one standing only on charts its language does not
 /// speak on wait, as an empty field couples to nothing else.
 #[test]
-fn a_mind_at_rest_hears_what_is_said_on_its_languages_charts() {
+fn perceive_hearing_on_hears_at_rest_on_language_charts() {
     use crate::client::sdk::entity::converge::Evident;
     use crate::client::sdk::entity::offer::Offer;
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};

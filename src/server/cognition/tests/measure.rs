@@ -36,7 +36,7 @@ fn slide() -> crate::transducer::element::Element {
 /// changed there — painted and vacated — and nothing of the second; on no
 /// scene it measures nothing.
 #[test]
-fn the_court_pays_a_word_its_changed_sites_and_nothing_where_it_spoke_falsely() {
+fn discharge_on_pays_changed_sites_not_false_pair() {
     let court = Kernel::new();
     let family = vec![
         (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),
@@ -57,7 +57,7 @@ fn the_court_pays_a_word_its_changed_sites_and_nothing_where_it_spoke_falsely() 
 /// discharge less W's, lane by lane — is zero on every lane, never a copy of
 /// W's own pay. A word that is no conjugate of a held word carries none.
 #[test]
-fn a_conjugate_that_adds_nothing_is_paid_nothing() {
+fn transport_on_pays_identity_conjugate_nothing() {
     let mut court = Kernel::new();
     let family = vec![(grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"]))];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the slide extracts");
@@ -98,7 +98,7 @@ fn a_conjugate_that_adds_nothing_is_paid_nothing() {
 /// gluing is what it closes beyond them, never more on any lane; bound to no
 /// family it glues nothing.
 #[test]
-fn a_sentence_glues_its_closure_beyond_its_words_whatever_its_rings_hold() {
+fn gluing_of_reads_closure_beyond_words() {
     let mut court = Kernel::new();
     let family = vec![
         (grid(&["1100", "0000"]), grid(&["0022", "0000"])),

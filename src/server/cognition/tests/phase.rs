@@ -27,7 +27,7 @@ fn reading(strata: &[(&[u8], usize)], sections: &[(&[u8], usize)]) -> CoverReadi
 /// opened and the strata split. Two readers of the same receipts and
 /// covers read the same phase (13.7).
 #[test]
-fn the_phase_is_read_off_the_kinds_and_the_cover_at_the_windows_ends() {
+fn phase_over_reads_kinds_and_cover_at_window_ends() {
     let mut c = ReceiptChain::with_vk([1; 32]);
     for kind in [
         ActKind::List,
@@ -91,7 +91,7 @@ fn the_phase_is_read_off_the_kinds_and_the_cover_at_the_windows_ends() {
 /// cover reading the next window starts from: the chain length and the
 /// strata, never a phase.
 #[test]
-fn the_court_reads_the_phase_once_per_circuit_and_stores_no_phase() {
+fn read_phase_on_keeps_only_window_mark() {
     let mut k = Kernel::new();
     assert!(k.phase_mark.is_none(), "nothing before the first circuit");
     let a = vec![(0, 0, 1u8), (0, 1, 1)];
@@ -144,7 +144,7 @@ fn the_court_reads_the_phase_once_per_circuit_and_stores_no_phase() {
 /// its window was one receipt or none; the court stroke takes the reading
 /// when the circuit count crosses a multiple of `aperture_cycle()`.
 #[test]
-fn the_phase_window_is_an_aperture_of_docket_circuits() {
+fn court_stroke_reads_phase_at_circuit_aperture() {
     let mut k = Kernel::new();
     let w = crate::transducer::element::from_connection(
         &crate::transducer::alphabet::Word::identity(),

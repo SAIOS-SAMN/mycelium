@@ -51,7 +51,7 @@ fn percept(seq: u64, local_time: Arg, records: Vec<Record>) -> Percept {
 /// oldest dropped and counted, and a series still reads its orbit on what it
 /// holds.
 #[test]
-fn a_seat_holds_one_frame_of_values_across_its_series() {
+fn perceive_bounds_seat_values_to_one_frame() {
     let mut m = SeatMind::new(vk(&domain()), 7);
     // Many series of wide quantities, each value some hundreds of bytes as it
     // writes: the seat's frame, shared among them, holds a few beats of each.
@@ -89,7 +89,7 @@ fn a_seat_holds_one_frame_of_values_across_its_series() {
 /// percept with no point locates nothing and the reading stands; two origins
 /// share no clock.
 #[test]
-fn a_seats_experienced_dilation_is_read_exactly() {
+fn dilation_reads_du_dh_exactly() {
     use crate::chronometry::tuniversal::{Origin, TPoint};
     let origin = Origin { genesis: [6; 32], epoch: 156 };
     let at = |h: u64| TPoint { origin, h, lanes: [1, 0, 0, 0], k: 1 };
@@ -121,7 +121,7 @@ fn a_seats_experienced_dilation_is_read_exactly() {
 /// one value's point onto the other's, and two of each compose as their
 /// flow does — slides by sum, scales by product.
 #[test]
-fn a_change_is_a_slide_and_a_scale_of_the_line() {
+fn change_between_is_slide_and_scale_of_line() {
     let c = Change::between(&q(3, 1), &q(7, 1)).expect("reads");
     assert_eq!(c.delta(), Some(q(4, 1)), "the slide stands at the difference");
     assert!(c.slide.versor().sandwich(&point_at(&[q(3, 1)])).projective_eq(&point_at(&[q(7, 1)])), "the slide carries 3 to 7");
@@ -144,7 +144,7 @@ fn a_change_is_a_slide_and_a_scale_of_the_line() {
 /// argument's position; its values read back as they were perceived, a
 /// multivector coefficient for coefficient.
 #[test]
-fn records_are_held_as_series_and_read_back() {
+fn perceive_holds_records_as_series_read_back() {
     let mut m = SeatMind::new(vk(&domain()), 7);
     let unit = [9u8; 32];
     let motion = translator_at(&[q(1, 2), q(0, 1), q(2, 1)]);
@@ -196,7 +196,7 @@ fn records_are_held_as_series_and_read_back() {
 /// record returns every lcm = six, and the period's span in the house's local
 /// time is read off the beats (local time ½ a beat: three beats are 3/2).
 #[test]
-fn a_periodic_record_is_an_orbit_with_its_exact_period() {
+fn orbit_reads_periodic_record_at_exact_period() {
     let mut m = SeatMind::new(vk(&domain()), 7);
     let cycle = [0i64, 1, 3];
     let mut last = Perceived::default();
@@ -310,7 +310,7 @@ fn play(counsel: [(u16, i64); 2], beats: u64) -> (Vec<Decision>, i64) {
 /// count `0x100 + 16·from + to`; a hue map alone is its hue counts; the
 /// outputs cross as the solve act writes grids.
 #[test]
-fn a_task_before_the_seat_is_read_as_its_steps() {
+fn grid_steps_reads_task_before_seat() {
     use crate::client::sdk::rule::{sentence, Step};
     use crate::client::sdk::seat_mind::task::*;
     use crate::transducer::family::NoCrystal;
@@ -375,7 +375,7 @@ fn called(d: &Decision) -> (u16, bool) {
 /// raise; tries function 1, untried; and from then on calls function 1, which
 /// dominates — against the counsel's first, and says why.
 #[test]
-fn the_mind_learns_to_call_what_raises_the_favoured_record() {
+fn decide_learns_call_raising_favoured_record() {
     let (decisions, x) = play([(2, -1), (1, 1)], 8);
     assert_eq!(decisions.len(), 8);
     assert_eq!(called(&decisions[0]), (2, true), "no experience: the counsel, followed");
@@ -396,7 +396,7 @@ fn the_mind_learns_to_call_what_raises_the_favoured_record() {
 /// record's falling is what matters, so the mind learns to call function 2 —
 /// the counsel's second.
 #[test]
-fn the_mind_follows_the_worth_not_the_counsels_order() {
+fn decide_follows_worth_not_counsel_order() {
     let (decisions, x) = play([(1, -1), (2, 1)], 6);
     assert_eq!(called(&decisions[0]), (1, true), "no experience: the counsel, followed");
     assert_eq!(called(&decisions[1]), (2, false));
@@ -496,7 +496,7 @@ fn play_own(beats: u64, counselled: u64) -> (Vec<Decision>, Vec<u64>, [i64; 3], 
 /// it never walks the Count upward to learn where the house refuses. It
 /// passes, and the records stand.
 #[test]
-fn with_nothing_read_and_no_counsel_the_mind_passes() {
+fn decide_passes_with_nothing_read_and_no_counsel() {
     let (decisions, values, x, m) = play_own(6, 0);
     assert!(values.is_empty(), "no value is ever probed: {values:?}");
     assert!(decisions.iter().all(|d| *d == Decision::NothingToCall), "every beat a pass");
@@ -512,7 +512,7 @@ fn with_nothing_read_and_no_counsel_the_mind_passes() {
 /// 12 at least as far as 0 and 1 on every one, further on one — and calls 2
 /// from then on, saying so. 3 is never called.
 #[test]
-fn the_mind_calls_the_dominant_of_what_it_read() {
+fn decide_calls_dominant_read_call() {
     let (decisions, values, x, m) = play_own(9, 3);
     assert_eq!(values, vec![0, 1, 2, 2, 2, 2, 2, 2, 2], "the counsel followed, then the dominant read call");
     assert!(m.call_experience(2, &[Arg::Count(3)]).is_none(), "no value past what was read is probed");
@@ -534,7 +534,7 @@ fn the_mind_calls_the_dominant_of_what_it_read() {
 /// listed functions passes. A call refused NO SUCH FUNCTION takes the
 /// function out; the listing read again restores it.
 #[test]
-fn the_listing_is_perceived_as_the_minds_repertoire() {
+fn perceive_listing_sets_repertoire() {
     let mut k = founded();
     list(&mut k, 3, vec![SeatFn { id: 1, tags: vec![6, 6] }, SeatFn { id: 2, tags: vec![TAG_COUNT] }, SeatFn { id: 5, tags: vec![TAG_FLAG] }]);
     let (epoch, fns) = listed_fns(&k, 7);
@@ -560,7 +560,7 @@ fn the_listing_is_perceived_as_the_minds_repertoire() {
 /// call refused NOT THE HOLDER lets it go, NO SUCH FUNCTION asks the
 /// listing; a take left unanswered waits for the next listing.
 #[test]
-fn the_seat_is_taken_by_the_houses_own_events() {
+fn seat_hold_takes_seat_on_house_events() {
     use crate::client::sdk::seat::SeatHold;
     let mut k = founded();
     let (d, mind_vk) = (vk(&domain()), vk(&mind()));
@@ -611,7 +611,7 @@ fn the_seat_is_taken_by_the_houses_own_events() {
 /// period 1 that is not standing still; a held versor is fixed; a null
 /// point is no versor and its carrier is refused. Exact, never numbers.
 #[test]
-fn a_versor_series_changes_by_its_exact_carrier() {
+fn carrier_reads_versor_series_change_exactly() {
     use crate::transducer::cga::{Mv, E1, E2};
     let e = |mask| Mv::blade(mask, q(1, 1)).widened(3);
     let (e1, e2) = (e(E1), e(E2));
@@ -654,7 +654,7 @@ fn a_versor_series_changes_by_its_exact_carrier() {
 /// called, on a later beat with no counsel the mind calls neither the
 /// counselled function nor any other: nothing is read, so it passes.
 #[test]
-fn no_function_is_probed_blind() {
+fn decide_probes_no_function_blind() {
     let mut m = SeatMind::new(vk(&domain()), 7);
     m.perceive_listing(&[SeatFn { id: 13, tags: vec![TAG_COUNT] }, SeatFn { id: 2, tags: vec![TAG_COUNT] }]);
     let counsel = Record::Counsel { fn_id: 13, args: vec![Arg::Count(1)], worth: Arg::Count(1), cost: Arg::Count(0) };

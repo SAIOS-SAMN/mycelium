@@ -22,7 +22,7 @@ fn product(ms: &[MotionMode]) -> Mv {
 /// elliptic, `c = 0`, closing at four; its slip parabolic and open; the two
 /// rays commute and multiply back to the screw.
 #[test]
-fn a_turn_90_screw_reads_its_turn_closing_at_four_and_its_slip_open() {
+fn motion_modes_read_turn_90_screw_closing_at_four() {
     let screw = rotator(&q(1, 1), &q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
     assert!(cayley_inverse(&screw).is_none(), "the chart has no point here: tan(π/8) ∉ ℚ");
     let ms = read(&screw);
@@ -39,7 +39,7 @@ fn a_turn_90_screw_reads_its_turn_closing_at_four_and_its_slip_open() {
 /// mode's versor `e₁₂` itself, and `−e₁₂` the same rotation — the held `ℤ₂`
 /// by construction.
 #[test]
-fn a_turn_180_reads_as_its_planes_blade() {
+fn motion_modes_read_turn_180_as_plane_blade() {
     let turn_180 = Mv::blade(E1 | E2, q(1, 1));
     let [m] = read(&turn_180).try_into().expect("one mode");
     assert_eq!((m.kind, m.planes, m.c.clone(), m.order), (BivectorKind::Elliptic, 1, q(-1, 1), Some(2)));
@@ -50,7 +50,7 @@ fn a_turn_180_reads_as_its_planes_blade() {
 /// THE (3,4,5) TURN READS `c = −7/25` — `cos θ` with `cos(θ/2) = 3/5` — a
 /// rosette that closes at no order; a boost reads hyperbolic at `cosh θ`.
 #[test]
-fn a_pythagorean_turn_is_a_rosette_and_a_boost_reads_its_cosh() {
+fn motion_modes_read_pythagorean_rosette_and_boost_cosh() {
     let turn = rotator(&q(3, 1), &q(4, 1));
     let [m] = read(&turn).try_into().expect("one mode");
     assert_eq!((m.kind, m.c.clone(), m.order), (BivectorKind::Elliptic, q(-7, 25), None));
@@ -64,7 +64,7 @@ fn a_pythagorean_turn_is_a_rosette_and_a_boost_reads_its_cosh() {
 /// A DISPIRATION: a 90° turn and a boost on orthogonal planes, two
 /// modes whose rays multiply back to the motion.
 #[test]
-fn a_dispiration_reads_a_turn_and_a_boost_that_multiply_back() {
+fn motion_modes_read_dispiration_multiplying_back() {
     let turn = rotator(&q(1, 1), &q(1, 1));
     let boost = Mv::scalar(q(5, 1)).add(&Mv::blade(E3 | EM, q(4, 1)));
     let motion = turn.geo(&boost);
@@ -78,7 +78,7 @@ fn a_dispiration_reads_a_turn_and_a_boost_that_multiply_back() {
 /// read one mode over two planes, its ray carrying the grade-four term the
 /// planes' product has, no split among them chosen.
 #[test]
-fn an_isoclinic_pair_is_one_mode_over_two_planes() {
+fn motion_modes_hold_isoclinic_pair_as_one_mode() {
     let e34 = ax(3) | ax(4);
     let motion = rotator(&q(1, 1), &q(1, 1)).geo(&rotator_on_blade(&q(1, 1), &q(1, 1), e34));
     let [m] = read(&motion).try_into().expect("one mode");
@@ -89,7 +89,7 @@ fn an_isoclinic_pair_is_one_mode_over_two_planes() {
 
 /// THE IDENTITY HAS NO MODE, AND A NON-VERSOR NO ACTION.
 #[test]
-fn the_identity_reads_none_and_a_non_versor_is_not_read() {
+fn motion_modes_read_none_for_identity_refuse_non_versor() {
     assert_eq!(read(&Mv::scalar(q(3, 1))), Vec::new());
     let not_a_motion = Mv::scalar(q(1, 1)).add(&Mv::blade(E1 | EM, q(1, 1)));
     assert!(motion_modes(&not_a_motion, &mut budget()).is_none(), "on the light cone: no inverse, no action");
@@ -99,7 +99,7 @@ fn the_identity_reads_none_and_a_non_versor_is_not_read() {
 /// itself (its `b̃ b` carries grade four, which the old reading refused);
 /// a multiple is the same ray; another ray is not.
 #[test]
-fn rays_are_equal_by_proportion() {
+fn mv_eq_holds_by_proportion() {
     let coupled = Mv::blade(E1 | E2, q(1, 1)).add(&Mv::blade(E3 | EM, q(1, 2)));
     assert!(!coupled.geo(&coupled.reverse()).grade(4).is_zero(), "the fixture is non-simple");
     assert_eq!(coupled, coupled.clone(), "a non-simple bivector equals itself");
@@ -116,7 +116,7 @@ fn rays_are_equal_by_proportion() {
 /// five spacelike directions, so two planes turn and the third boosts; at
 /// `n = 5` three turn.
 #[test]
-fn three_planes_read_three_modes_by_the_rational_root_theorem() {
+fn modes_read_three_planes_by_rational_roots() {
     let plane = |i: usize, j: usize| ax(i) | ax(j);
     let at_four = Mv::blade(plane(1, 2), q(1, 1))
         .add(&Mv::blade(plane(3, 4), q(2, 1)))
@@ -141,7 +141,7 @@ fn three_planes_read_three_modes_by_the_rational_root_theorem() {
 /// turn composed with a slide carries it, and an element with no action is
 /// unread.
 #[test]
-fn a_motion_is_charged_where_some_mode_turns_or_boosts() {
+fn charged_holds_where_mode_turns_or_boosts() {
     let turn = rotator(&q(2, 1), &q(1, 1));
     let slide = translator_at(&[q(3, 1), q(0, 1), q(0, 1)]);
     assert_eq!(charged(&turn), Some(true), "a turn");
@@ -157,7 +157,7 @@ fn a_motion_is_charged_where_some_mode_turns_or_boosts() {
 /// turning plane, so the plane's order is the motion's — the order MR1 reads
 /// off `c` is the order the motion's own powers close at.
 #[test]
-fn a_modes_order_is_read_off_its_rational_point() {
+fn motion_mode_order_read_off_rational_point() {
     use crate::transducer::alphabet::{LetterId, Word};
     let mut checked = 0;
     for l in LetterId::all() {

@@ -33,7 +33,7 @@ fn mesh(sk: &SigningKey) -> Mesh {
 /// its own key — the second court's as surely as the first's — with the
 /// verdicts it counted (a no-work and a door refusal) on their slots.
 #[test]
-fn every_court_serves_its_acts_from_its_first_stroke_unasked() {
+fn answer_standing_publishes_acts_at_first_stroke_unasked() {
     for seed in [0x41u8, 0x42] {
         let sk = SigningKey::from_bytes(&[seed; 32]);
         let m = mesh(&sk);

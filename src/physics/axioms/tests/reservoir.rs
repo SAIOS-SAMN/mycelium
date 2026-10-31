@@ -37,7 +37,7 @@ fn turn(mask: usize) -> Mv {
 /// closes it, and the 3 is relieved — converged, nothing opened; the
 /// reservoir holds none.
 #[test]
-fn a_beat_dissipates_what_never_returns_and_motion_reforms_it() {
+fn beat_dissipates_boost_and_inverse_reforms_it() {
     let mut field = Field::new();
     let gain = cga::dilator(&q(2, 1));
     let first = admit(&mut field, &[line(gain.clone(), 3), line(turn(E1 | E3), 1)]);
@@ -60,7 +60,7 @@ fn a_beat_dissipates_what_never_returns_and_motion_reforms_it() {
 /// the reservoir still holds the 2. Flux on the first ray re-forms it and
 /// closes on it, relieving the 2.
 #[test]
-fn a_tubes_open_flux_dissipates_on_a_beat_and_reforms_on_its_ray() {
+fn beat_dissipates_tube_flux_and_ray_reforms_it() {
     let mut field = Field::new();
     let slide = |x: i64, y: i64| cga::translator_at(&[q(x, 1), q(y, 1), q(0, 1)]);
     let first = admit(&mut field, &[line(slide(1, 0), 2)]);
@@ -83,7 +83,7 @@ fn wound(carriage: Mv, key: &[u8]) -> FieldLine {
 /// field again, and the beat after dissipates the gain into the reservoir
 /// and lets its line go, by that cause.
 #[test]
-fn a_boost_dissipates_at_the_beat_after_it_with_no_return_anywhere() {
+fn beat_dissipates_wound_boost_one_beat_later() {
     let mut field = Field::new();
     let _ = admit(&mut field, &[wound(cga::dilator(&q(2, 1)), b"the gain")]);
     assert_eq!(field.orbits.reserved()[LANE_SPATIAL], 0, "it stands through the beat it was admitted in");
@@ -100,7 +100,7 @@ fn a_boost_dissipates_at_the_beat_after_it_with_no_return_anywhere() {
 /// stands at 90°, not home. Its age complete, it seals: its line let go by
 /// that cause, its strain held in the reservoir at its coordinates.
 #[test]
-fn an_orbit_carried_its_period_without_returning_seals() {
+fn beat_seals_orbit_carried_its_period_unreturned() {
     let mut field = Field::new();
     let half = Mv::blade(E1 | E2, q(1, 1));
     for step in [turn(E1 | E2), turn(E1 | E2), turn(E1 | E2), half] {
@@ -118,7 +118,7 @@ fn an_orbit_carried_its_period_without_returning_seals() {
 /// carried it neither returns nor seals; it rings on, its winding content,
 /// its line held.
 #[test]
-fn a_rosette_rings_and_never_seals() {
+fn beat_never_seals_rosette() {
     let mut field = Field::new();
     let rosette = Mv::scalar(q(2, 1)).add(&Mv::blade(E1 | E2, q(1, 1)));
     for _ in 0..8 {
@@ -135,7 +135,7 @@ fn a_rosette_rings_and_never_seals() {
 /// lane the deficit does not press beats as before: the turn on another lane
 /// is untouched by a deficit on 𝒮 alone.
 #[test]
-fn the_courts_deficit_drags_a_ringing_orbit_in_on_its_lane() {
+fn beat_under_deficit_drags_ringing_orbit_on_its_lane() {
     let mut field = Field::new();
     let _ = admit(&mut field, &[wound(turn(E1 | E2), b"the thought")]);
     let _ = admit(&mut field, &[line(turn(E1 | E3), 1)]);
@@ -157,7 +157,7 @@ fn the_courts_deficit_drags_a_ringing_orbit_in_on_its_lane() {
 /// home; the orbit it awaited has left, its eon has closed, and at that beat
 /// the record condenses to nothing, counted.
 #[test]
-fn a_reservoir_record_condenses_when_its_eon_closes() {
+fn reserved_record_condenses_when_its_eon_closes() {
     let mut field = Field::new();
     let slide = |x: i64, y: i64| cga::translator_at(&[q(x, 1), q(y, 1), q(0, 1)]);
     let _ = admit(&mut field, &[line(turn(E1 | E3), 1), line(cga::dilator(&q(2, 1)), 1)]);
@@ -178,7 +178,7 @@ fn a_reservoir_record_condenses_when_its_eon_closes() {
 /// lands on the tube with nothing open and is let go the same way — never
 /// held by a tube that carries no open flux.
 #[test]
-fn a_tube_with_nothing_open_holds_no_line() {
+fn transport_order_lets_go_line_on_closed_tube() {
     let mut field = Field::new();
     let slide = cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)]);
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
@@ -197,7 +197,7 @@ fn a_tube_with_nothing_open_holds_no_line() {
 /// holds a line through the beat it was admitted in, and lets it go,
 /// dissipated, at the next; dissipated, it holds nothing to thread.
 #[test]
-fn a_line_threads_what_its_motion_stands_on_and_is_let_go_by_its_cause() {
+fn thread_holds_line_until_its_orbit_releases_it() {
     let mut field = Field::new();
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
     let _ = admit(&mut field, &[line(turn(E1 | E2), 1)]);

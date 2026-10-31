@@ -16,7 +16,7 @@ fn on_canvas(family: &[(Grid, Grid)], to: u8) -> Vec<(Grid, Grid)> {
 /// every grid of its pairs; two hues tied for it name no ground of their
 /// own, and the void is hue 0.
 #[test]
-fn the_ground_is_the_hue_the_family_is_drawn_on() {
+fn ground_of_reads_family_canvas_hue() {
     let bar = vec![(grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"]))];
     assert_eq!(crate::arc::ground_of(&bar), 0, "drawn on hue 0");
     assert_eq!(crate::arc::ground_of(&on_canvas(&bar, 7)), 7, "drawn on hue 7");
@@ -32,7 +32,7 @@ fn the_ground_is_the_hue_the_family_is_drawn_on() {
 /// on a fourth frame of the 7 canvas paints the bar onto the 7 canvas:
 /// hue 7 stays hue 7 on every grid.
 #[test]
-fn a_family_on_a_canvas_reads_its_bodies_and_speaks_on_its_canvas() {
+fn on_ground_of_reads_bodies_and_speaks_on_canvas() {
     let family = vec![
         (grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"])),
         (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),

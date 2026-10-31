@@ -95,7 +95,7 @@ mod tests {
     /// rigid motion of the body) germinates A5's chain, which reproduces A→B
     /// when it is placed back at the corner it was centered from.
     #[test]
-    fn a_residual_germ_reproduces_its_demand() {
+    fn germinate_chain_reproduces_demand_when_placed() {
         let a = [(0, 0, 1u8), (0, 1, 2), (1, 0, 3)];
         let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)]; // only (0,1): 2→9
         let g = germinate(&a, &b).expect("a change germinates");
@@ -111,7 +111,7 @@ mod tests {
 
     /// Creation/annihilation is carried too (hue 0 on the absent side).
     #[test]
-    fn creation_is_carried_as_a_residual() {
+    fn germinate_carries_creation_as_residual() {
         let a = [(0, 0, 1u8)];
         let b = [(0, 0, 1u8), (0, 1, 5)]; // a site is painted
         let g = germinate(&a, &b).expect("appearance germinates");
@@ -123,7 +123,7 @@ mod tests {
 
     /// No net change → no germ owed.
     #[test]
-    fn no_change_no_germ() {
+    fn germinate_refuses_unchanged_grids() {
         let a = [(0, 0, 1u8), (0, 1, 2)];
         assert!(germinate(&a, &a).is_none());
     }

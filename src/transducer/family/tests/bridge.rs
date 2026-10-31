@@ -10,7 +10,7 @@ use crate::transducer::family::bridge::bridge_pair;
 /// rigid motion recolouring nothing — conformal, its momentum carried, every
 /// pair's product kept, its height advanced, no hue relation — and admitted.
 #[test]
-fn a_shared_slide_is_one_transition_and_the_laws_admit_it() {
+fn bridge_pair_admits_shared_slide_as_one_transition() {
     let x = grid(&["220000", "000000", "000220"]);
     let y = grid(&["022000", "000000", "000022"]);
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
@@ -25,7 +25,7 @@ fn a_shared_slide_is_one_transition_and_the_laws_admit_it() {
 /// output body on its chart, no carriage, no transition — the bridge's count
 /// of what the register, as written, cannot be asked about.
 #[test]
-fn a_growth_is_no_transition() {
+fn bridge_pair_reads_growth_as_no_transition() {
     let x = grid(&["220000"]);
     let y = grid(&["222000"]);
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);

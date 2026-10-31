@@ -36,7 +36,7 @@ fn shift(dx: i64, dy: i64) -> crate::transducer::element::Versor {
 /// off it. Before this, they came back off `Element.description` — the tape
 /// — and that is the whole reason the tape could not be retired.
 #[test]
-fn an_envelope_rides_the_record_and_reads_back() {
+fn receipts_survive_element_record() {
     let a = leaf((0, 1));
     let a_at = addr_of(&a);
     let mut host = Form::default();
@@ -67,7 +67,7 @@ fn an_envelope_rides_the_record_and_reads_back() {
 /// pivots would rename its own utterance and orphan every citation of it,
 /// which is the argument that moved the filing at `df1eeaa`.
 #[test]
-fn evidence_does_not_rename_the_word() {
+fn set_receipts_keeps_address() {
     let a = leaf((0, 1));
     let a_at = addr_of(&a);
     let mut host = Form::default();
@@ -107,7 +107,7 @@ fn evidence_does_not_rename_the_word() {
 /// `ker(I − R)` as the twist — a pure dislocation, which is what a citation
 /// glued three units over IS.
 #[test]
-fn a_citation_carries_its_slip_and_not_only_its_bend() {
+fn nerve_edge_screw_carries_citation_slip() {
     use num_traits::Zero;
     let a = leaf((0, 1));
     let a_at = addr_of(&a);
@@ -152,7 +152,7 @@ fn a_citation_carries_its_slip_and_not_only_its_bend() {
 /// the cover has TWO edges at it, because two isomorphic local boundaries
 /// ARE one boundary and what distinguishes them is incidence in `N(𝒰)`.
 #[test]
-fn an_edge_stands_at_a_site_and_not_at_an_index() {
+fn nerve_edge_host_ignores_glue_order() {
     // Two leaves at two BASE planes: a 90° turn through e₂ has no base
     // action, so its star overlap has no place to derive (AT1: an overlap is
     // placed where its place derives, or not at all).
@@ -201,7 +201,7 @@ fn an_edge_stands_at_a_site_and_not_at_an_index() {
 /// 0` ends it — by exterior-algebra arithmetic, with no bound anywhere in
 /// the code to enforce.
 #[test]
-fn a_round_rises_by_wedging_and_ends_where_the_algebra_does() {
+fn nerve_round_grade_rises_until_sixth_chart() {
     use num_bigint::BigInt;
     use num_rational::BigRational;
     let q = |n: i64| BigRational::from(BigInt::from(n));
@@ -267,7 +267,7 @@ fn a_round_rises_by_wedging_and_ends_where_the_algebra_does() {
 /// to it. The flat embedding had no such condition to fail, which is part
 /// of why it was the wrong absolute.
 #[test]
-fn a_chart_off_the_hyperboloid_is_refused() {
+fn nerve_round_refuses_chart_off_hyperboloid() {
     use num_bigint::BigInt;
     use num_rational::BigRational;
     let q = |n: i64| BigRational::from(BigInt::from(n));
@@ -294,7 +294,7 @@ fn a_chart_off_the_hyperboloid_is_refused() {
 /// the block — so a reader can tell "this word attests nothing" from "this
 /// record was written before the envelope rode it".
 #[test]
-fn a_word_that_attests_nothing_says_so() {
+fn receipts_envelope_writes_empty_and_refuses_zero_length() {
     let f = leaf((0, 1));
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("mint");
     assert!(e.receipts().is_empty(), "a leaf cites nothing and pivots nothing");
@@ -326,7 +326,7 @@ fn a_word_that_attests_nothing_says_so() {
 /// TWO FORMS CITING TWO DIFFERENT FORMS ARE ONE FORM (B5, 54.7).
 ///
 /// This is the coordinate reading of the eviction, one level up from
-/// `an_edge_stands_at_a_site_and_not_at_an_index`: not just that the two
+/// `nerve_edge_host_ignores_glue_order`: not just that the two
 /// EDGES stand at one site, but that the two CITING FORMS reach one
 /// address. A host says "this host holds an open boundary that mates under φ at a
 /// chart of this rank and this depth". Two hosts saying that say the same
@@ -338,8 +338,8 @@ fn a_word_that_attests_nothing_says_so() {
 /// addresses and the difference between them was 29 490 bytes of another
 /// form's coordinates that neither host had any claim to.
 #[test]
-fn two_hosts_citing_two_forms_reach_one_coordinate() {
-    // Two BASE planes, for `an_edge_stands_at_a_site_and_not_at_an_index`'s
+fn form_vertex_key_joins_hosts_citing_two_forms() {
+    // Two BASE planes, for `nerve_edge_host_ignores_glue_order`'s
     // reason.
     let a = leaf((0, 1));
     let b = leaf((0, 3));
@@ -389,7 +389,7 @@ fn two_hosts_citing_two_forms_reach_one_coordinate() {
 /// order on lengths there is no well-ordering argument, and a cycle is
 /// expressible.
 #[test]
-fn a_citation_does_not_grow_with_what_it_cites() {
+fn form_vertex_key_citation_size_ignores_cited_form() {
     let a = leaf((0, 1));
     let a_at = addr_of(&a);
 
@@ -426,7 +426,7 @@ fn a_citation_does_not_grow_with_what_it_cites() {
 /// come back attesting nothing. The envelope uses the key-field embedding
 /// (u32) throughout.
 #[test]
-fn an_envelope_carries_an_address_wider_than_the_wire_prefix() {
+fn receipts_envelope_round_trips_wide_address() {
     let wide = crate::transducer::address::Address::new(vec![7u8; 70_000]);
     let env = ReceiptsEnvelope {
         derivations: vec![crate::transducer::element::DerivationCite {
@@ -452,7 +452,7 @@ fn an_envelope_carries_an_address_wider_than_the_wire_prefix() {
 /// bytes it always wrote (so every home written before reads as it did),
 /// and the section ends where the block ends.
 #[test]
-fn a_transported_cite_reads_back_and_an_untransported_record_is_unchanged() {
+fn receipts_envelope_round_trips_conjugator_keeping_old_bytes() {
     let addr = crate::transducer::address::Address::new(vec![5u8; 40]);
     let plain = ReceiptsEnvelope {
         derivations: vec![crate::transducer::element::DerivationCite {

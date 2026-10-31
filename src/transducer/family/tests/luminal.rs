@@ -15,7 +15,7 @@ fn budget() -> crate::physics::Budget {
 /// hue-2 body, which absorbs it. The four unsaid sites are explained by one
 /// waveform of period 1 in the source's own hue, stopped at the body.
 #[test]
-fn a_ray_explains_the_light_it_carries_and_names_its_stop() {
+fn read_pair_explains_ray_light_and_names_stop() {
     let x = grid(&["100002"]);
     let y = grid(&["111112"]);
     let rem = vec![(0, 1, 0, 1), (0, 2, 0, 1), (0, 3, 0, 1), (0, 4, 0, 1)];
@@ -34,7 +34,7 @@ fn a_ray_explains_the_light_it_carries_and_names_its_stop() {
 /// ways and fits; the rectangle's billiard — four wall reflections — is a
 /// translation, parabolic.
 #[test]
-fn an_enclosure_captures_a_standing_wave_and_its_billiard_reads() {
+fn read_pair_captures_standing_wave_in_enclosure() {
     let x = grid(&["3333", "3003", "3003", "3333"]);
     let y = grid(&["3333", "3443", "3443", "3333"]);
     let rem = vec![(1, 1, 0, 4), (1, 2, 0, 4), (2, 1, 0, 4), (2, 2, 0, 4)];

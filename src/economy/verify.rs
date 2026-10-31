@@ -56,7 +56,7 @@ mod tests {
     /// A COURT AT REST TAKES NOTHING: with no strain on any lane, the whole
     /// mint stays the closer's.
     #[test]
-    fn a_court_at_rest_takes_nothing() {
+    fn verification_share_is_zero_at_rest() {
         assert_eq!(verification_share(&[40, 12, 0, 9], &[0; 4], 100, 2), [0; 4]);
     }
 
@@ -65,7 +65,7 @@ mod tests {
     /// a lane at a quarter of it pays a fifth; a lane the closure did not
     /// move pays nothing whatever its strain.
     #[test]
-    fn the_share_is_the_strain_against_the_reserve_per_lane() {
+    fn verification_share_reads_strain_against_reserve_per_lane() {
         let share = verification_share(&[40, 50, 0, 8], &[100, 25, 100, 0], 100, 2);
         // Lane S: 40·100/200 = 20, two organs 10 each.
         // Lane G: 50·25/125 = 10, two organs 5 each.
@@ -78,7 +78,7 @@ mod tests {
     /// MINTED: the organs' take never exceeds the mint on any lane, and what
     /// does not divide stays with the closer.
     #[test]
-    fn the_organs_never_take_more_than_the_mint() {
+    fn verification_share_never_exceeds_mint() {
         let mint = [7, 1, 3, 5];
         let strain = [u64::MAX, 3, 1, 9];
         for n in 1..=3u64 {

@@ -21,7 +21,7 @@ fn one_cell_steps() -> Vec<(crate::arc::Grid, crate::arc::Grid)> {
 /// hours perceived, the relation between them never returns and stands on
 /// its plan: the mind now holds tension.
 #[test]
-fn a_settled_mind_asks_for_nothing_and_a_strained_one_holds_tension() {
+fn pull_task_asks_nothing_settled_and_strained_holds_tension() {
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("settled"));
     mind.place_question(b"a question placed", &[(0, 0, 1, 2)]);
     let [first, second] = two_hours_of_a_slide();
@@ -47,7 +47,7 @@ fn a_settled_mind_asks_for_nothing_and_a_strained_one_holds_tension() {
 /// charts the mind's thoughts stand on — and a family of one cell, whose body
 /// stands on no chart the mind holds, couples to nothing.
 #[test]
-fn an_offer_couples_only_to_what_the_mind_holds() {
+fn couples_only_to_what_mind_holds() {
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("coupling"));
     let train = two_hours_of_a_slide().to_vec();
     let (id, other) = ([9u8; 32], [8u8; 32]);
@@ -75,7 +75,7 @@ fn an_offer_couples_only_to_what_the_mind_holds() {
 /// family, it couples through its language and takes it in; offered the
 /// slide, on charts its language does not speak on, it couples to nothing.
 #[test]
-fn a_restored_mind_takes_an_offer_in_its_own_language_and_asks_for_nothing() {
+fn task_inflow_takes_offer_in_restored_language() {
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("restored"));
     mind.place_question(b"a question placed", &[(0, 0, 1, 2)]);
@@ -140,7 +140,7 @@ fn feed_of(name: &str, families: &[(&str, Vec<(crate::arc::Grid, crate::arc::Gri
 /// hue fibre moves those hues — at that orbit's own coordinate — and takes it
 /// in, its file retired; the other lies elsewhere and stays.
 #[test]
-fn the_corpus_is_met_where_the_minds_orbits_stand() {
+fn corpus_inflow_meets_corpus_at_field_orbits() {
     use crate::transducer::cech::Thread;
     let families = [("a-three.json", two_cells_swapped(3, 4)), ("b-one.json", two_cells_swapped(1, 2))];
     let still = feed_of("focus-still", &families);
@@ -179,7 +179,7 @@ fn the_corpus_is_met_where_the_minds_orbits_stand() {
 /// (a cycle, so its orbit does not seal at once), and the field's orbits —
 /// not the language — are the focus from then on.
 #[test]
-fn a_mind_at_rest_meets_what_its_language_speaks_on_and_the_admission_moves_its_field() {
+fn corpus_inflow_at_rest_meets_language_charts() {
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
     let [(x, y)] = <[_; 1]>::try_from(two_cells_swapped(1, 2)).expect("one pair");
     let home = feed_of("ground-state", &[("a-slide.json", two_hours_of_a_slide().to_vec()), ("b-cell.json", two_cells_swapped(1, 2))]);
@@ -217,7 +217,7 @@ fn a_mind_at_rest_meets_what_its_language_speaks_on_and_the_admission_moves_its_
 /// language speaks on, ties all held in key order; where none shares a leading
 /// axis, or the language speaks on no chart, the least corpus chart alone.
 #[test]
-fn the_ground_state_couples_to_the_nearest_stratum_when_its_language_meets_nothing() {
+fn curiosity_couples_to_nearest_stratum() {
     use crate::client::sdk::entity::focus::curiosity;
     use crate::transducer::stalk::Invariant;
     let coord = |ns: &[u64]| {
@@ -247,7 +247,7 @@ fn the_ground_state_couples_to_the_nearest_stratum_when_its_language_meets_nothi
 /// it is met where the mind's field rings on its hue fibre's support, taken
 /// into thought, and leaves the carrier.
 #[test]
-fn a_residual_taught_is_an_open_question_and_never_a_word() {
+fn absorb_taught_holds_residual_as_open_question() {
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("questioning"));
     let chain = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2), (1, 0, 1, 2), (2, 2, 3, 4)];
     let residual = crate::transducer::element::from_residual(&chain).expect("a residual chain");
@@ -282,7 +282,7 @@ fn a_residual_taught_is_an_open_question_and_never_a_word() {
 /// met at, and read as a question it stood open forever. Only an element
 /// that carries a chain is one.
 #[test]
-fn only_a_chain_under_the_residual_tag_is_an_open_question() {
+fn is_residual_only_for_chain_under_tag() {
     use crate::client::sdk::epigenome::is_residual;
     let bare = crate::transducer::element::Element::identity();
     assert!(
@@ -301,7 +301,7 @@ fn only_a_chain_under_the_residual_tag_is_an_open_question() {
 /// the second it still couples to nothing, and is let go — passed, said to
 /// the observer — with no refusal sent.
 #[test]
-fn an_uncoupled_task_is_not_taken_and_lapses_at_its_second_return() {
+fn task_inflow_leaves_uncoupled_task_to_lapse() {
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("passing"));
     let train = one_cell_steps();
     let offer = Offer::of(&train);
@@ -326,7 +326,7 @@ fn an_uncoupled_task_is_not_taken_and_lapses_at_its_second_return() {
 /// under; the next final past it lets it go — kept as lapsed by its citation,
 /// passed — with no return in between. Every stroke it waited is counted.
 #[test]
-fn an_uncoupled_task_lapses_at_the_courts_next_final_in_the_ground_state() {
+fn lapse_standing_task_at_next_final_in_ground_state() {
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("ground lapse"));
     lapses_at_the_next_final(&mut mind);
 }
@@ -334,7 +334,7 @@ fn an_uncoupled_task_lapses_at_the_courts_next_final_in_the_ground_state() {
 /// The same, a 𝒢 orbit standing on the field — its orbits in focus, no
 /// ground state — and the one-cell task on no chart the mind holds.
 #[test]
-fn an_uncoupled_task_lapses_at_the_courts_next_final_in_a_field_in_motion() {
+fn lapse_standing_task_at_next_final_in_moving_field() {
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("moving lapse"));
     let mut field = std::mem::take(&mut mind.field);
     let in_focus = field.think(|| {
@@ -386,7 +386,7 @@ fn lapses_at_the_next_final(mind: &mut Entity) {
 /// a task; with an item placed on its corpus, the same settled mind asks for
 /// nothing. A task standing on the board is never asked past.
 #[test]
-fn a_settled_mind_on_an_empty_corpus_asks_and_one_whose_corpus_holds_does_not() {
+fn pull_task_asks_only_on_empty_corpus() {
     let mut vacuum = Entity::open("127.0.0.1:1", Kernel::named("vacuum"));
     let mut field = std::mem::take(&mut vacuum.field);
     let (settled, asked) = field.think(|| {
@@ -416,7 +416,7 @@ fn a_settled_mind_on_an_empty_corpus_asks_and_one_whose_corpus_holds_does_not() 
 /// A MIND WITH A COURT'S TASK ON ITS BOARD OWES ITS OWN STROKES (ruled
 /// 2026-10-24); one that holds nothing owes none and may block.
 #[test]
-fn a_task_on_the_board_is_owed_strokes_and_a_quiet_mind_is_quiescent() {
+fn owes_strokes_only_with_task_on_board() {
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("quiescent"));
     assert!(!mind.owes_strokes(), "nothing held: quiescent");
     let train = one_cell_steps();

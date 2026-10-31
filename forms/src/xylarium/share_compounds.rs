@@ -138,7 +138,7 @@ mod tests {
     /// THE LAW'S OWN FIXED POINTS: nothing taken leaves the whole; no rings
     /// leave the whole; a share of nothing leaves the whole, however long.
     #[test]
-    fn nothing_taken_leaves_the_whole() {
+    fn whole_reads_one_when_nothing_taken() {
         assert_eq!(Remaining::whole().reading(), Q::one());
         assert_eq!(Remaining::whole().after(&q(1, 3), 0).map(|r| r.reading()), Ok(Q::one()));
         assert_eq!(Remaining::whole().after(&Q::zero(), 1_000_000).map(|r| r.reading()), Ok(Q::one()));
@@ -146,7 +146,7 @@ mod tests {
 
     /// `(1 − x)^n`, exactly: a quarter taken each of three rings leaves 27/64.
     #[test]
-    fn a_share_compounds_exactly() {
+    fn after_compounds_share_exactly() {
         assert_eq!(Remaining::whole().after(&q(1, 4), 3).map(|r| r.reading()), Ok(q(27, 64)));
     }
 
@@ -154,7 +154,7 @@ mod tests {
     /// at one share are one run of `a + b`, held and read alike, however the
     /// history was cut.
     #[test]
-    fn regrouping_the_rings_changes_nothing() {
+    fn after_and_then_ignore_ring_grouping() {
         let x = q(2, 7);
         let at_once = Remaining::whole().after(&x, 12).expect("a share");
         let in_runs = Remaining::whole().after(&x, 5).and_then(|r| r.after(&x, 4)).and_then(|r| r.after(&x, 3)).expect("a share");
@@ -168,7 +168,7 @@ mod tests {
     /// A SHARE READ AGAIN OPENS A NEW RUN, and the reading is the product of
     /// the runs: what changed is held as the body's history, never averaged.
     #[test]
-    fn a_changed_share_opens_a_new_run() {
+    fn after_changed_share_opens_new_run() {
         let r = Remaining::whole().after(&q(1, 2), 2).and_then(|r| r.after(&q(1, 3), 1)).expect("shares");
         assert_eq!(r.factors().len(), 2);
         assert_eq!(r.reading(), q(1, 4) * q(2, 3));
@@ -178,7 +178,7 @@ mod tests {
     /// carried into an observer's frame — contracted, twisted, bent — and
     /// back by the inverse frame returns bit for bit; no floor is taken.
     #[test]
-    fn what_remains_is_read_in_a_frame_and_back() {
+    fn read_in_round_trips_through_frame() {
         use crate::frame::{Frame, Move, ReadIn};
         let r = Remaining::whole().after(&q(1, 4), 3).and_then(|r| r.after(&q(2, 9), 5)).expect("shares");
         let frame = Frame::identity().then(Move::Contract(q(3, 1))).then(Move::Twist(vec![q(1, 1)])).then(Move::Bend(vec![q(2, 5)]));
@@ -190,7 +190,7 @@ mod tests {
     /// REFUSED BY NAME: a negative share, a share that would take all that
     /// remains or more, and a count past its carrier — never clamped.
     #[test]
-    fn what_is_no_share_is_refused_by_name() {
+    fn after_refuses_by_name() {
         assert_eq!(Remaining::whole().after(&q(-1, 5), 1), Err(Refused::Negative));
         assert_eq!(Remaining::whole().after(&Q::one(), 1), Err(Refused::Whole));
         assert_eq!(Remaining::whole().after(&q(3, 2), 1), Err(Refused::Whole));

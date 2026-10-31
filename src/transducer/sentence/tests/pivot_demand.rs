@@ -29,7 +29,7 @@ fn eleven() -> Rotor {
 /// class and a member of `eleven`'s; one overlap is one member pair, placed
 /// or not placed.
 #[test]
-fn a_face_whose_word_has_no_sensor_action_places_no_member_pair() {
+fn place_overlap_refuses_word_without_sensor_action() {
     let mut f = Form::default();
     let a = f
         .stand_member(&word_vertex_on(1, Word::identity(), stalk::Invariant::counts(&[1])), FRAME)
@@ -64,7 +64,7 @@ fn a_face_whose_word_has_no_sensor_action_places_no_member_pair() {
 /// rotation turning `e₂` into a base axis has no base action and seeds
 /// nothing — refused, never projected (checklist (m)).
 #[test]
-fn the_open_seed_is_the_holonomys_base_action_and_the_axis_is_keyed_by_the_rotor() {
+fn axis_seed_of_is_holonomy_base_action() {
     let q01 = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn (0,1)"), false)]);
     let q13 = Word::from_letters(&[(LetterId::turn_90((1, 3)).expect("90° turn (1,3)"), false)]);
     let double = q01.compose(&q13);
@@ -103,7 +103,7 @@ fn the_open_seed_is_the_holonomys_base_action_and_the_axis_is_keyed_by_the_rotor
 /// word with no sensor action places no member pair, so the orbit is judged
 /// by its edge composite.
 #[test]
-fn a_free_part_orbit_is_spoken_as_a_standing_demand_carrying_its_holonomy() {
+fn pivot_orbit_speaks_free_part_as_standing_demand() {
     let r = eleven();
     let w = Word::formed(r.clone());
     let mut f = edge_chord_form(std::slice::from_ref(&w));
@@ -173,7 +173,7 @@ fn a_free_part_orbit_is_spoken_as_a_standing_demand_carrying_its_holonomy() {
 /// key, carried as content — rather than by an entry in a side-table. The
 /// form is then VALID and not closed, which is 50.1's own distinction.
 #[test]
-fn a_free_part_orbit_files_at_period_zero_beside_its_demand() {
+fn pivot_orbit_files_free_part_open_beside_demand() {
     let r = eleven();
     let w = Word::formed(r.clone());
     let mut f = edge_chord_form(std::slice::from_ref(&w));

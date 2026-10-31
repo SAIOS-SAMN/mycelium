@@ -10,7 +10,7 @@ use crate::transducer::germinate::germinate;
 /// γ = (π, Δ): the anchor fiber survives serde exactly; pre-anchor bytes
 /// (no tail) parse to the ⊤ carrier — full backward compatibility.
 #[test]
-fn anchor_fiber_round_trips_and_top_is_default() {
+fn from_bytes_round_trips_anchor_and_defaults_top() {
     use crate::transducer::anchor::Sel;
     let g = crate::transducer::element::canonical_chain(&[(0, 0, 1, 2), (0, 1, 1, 2)])
         .expect("one entry per position is A5's chain");
@@ -43,7 +43,7 @@ fn anchor_fiber_round_trips_and_top_is_default() {
 /// address differs from the bare residual's. A non-bijective gauge
 /// leaves the hue rows the identity.
 #[test]
-fn a_connection_is_one_element_with_two_components() {
+fn from_connection_spells_group_and_remainder() {
     let id = crate::transducer::alphabet::Word::identity();
     let remainder = vec![(0, 0, 3u8, 4u8)];
     let w = from_connection(&id, &identity_versor(), &[(1, 2), (2, 1)], &remainder, [5, 2, 0, 0]).expect("the identity spells");
@@ -82,8 +82,10 @@ fn a_connection_is_one_element_with_two_components() {
     assert!(unit.sub().is_empty(), "nothing residual to hold as thought");
 }
 
+/// The element record round-trips from its magic, and records of an older
+/// generation (GEN2, pre-whole) are refused.
 #[test]
-fn the_record_round_trips_and_older_records_are_refused() {
+fn from_bytes_round_trips_and_refuses_older_records() {
     let w = from_connection(&crate::transducer::alphabet::Word::identity(), &identity_versor(), &[(1, 2), (2, 1)], &vec![(0, 0, 3u8, 4)], [5, 2, 0, 0]).expect("spells");
     let bytes = w.to_bytes().expect("the record writes");
     assert_eq!(
@@ -110,7 +112,7 @@ fn the_record_round_trips_and_older_records_are_refused() {
 /// same ray, whatever it is: the arm that wrote a letter tape wrote only
 /// the identity, because `tape_of_versor` answered the identity for all.
 #[test]
-fn a_transition_gauge_crosses_as_its_ray() {
+fn from_bytes_reads_transition_gauge_as_ray() {
     let mut w = from_connection(&crate::transducer::alphabet::Word::identity(), &identity_versor(), &[(1, 2), (2, 1)], &vec![(0, 0, 3u8, 4)], [5, 2, 0, 0]).expect("spells");
     let t = translator_versor(2, 3);
     let scaled = t.scale(&num_rational::BigRational::new(num_bigint::BigInt::from(-5), num_bigint::BigInt::from(3)));
@@ -129,7 +131,7 @@ fn a_transition_gauge_crosses_as_its_ray() {
 /// P7: a germ round-trips through bytes losslessly — chain, address, magnitude,
 /// and action all survive, so a persisted basis reloads identically.
 #[test]
-fn a_germ_round_trips_through_bytes() {
+fn from_bytes_round_trips_germ() {
     let residual = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap());
     let swap = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]).unwrap());
     for g in [&residual, &swap] {
@@ -146,7 +148,7 @@ fn a_germ_round_trips_through_bytes() {
 /// Torsion survives serde: the cycle (σ, ℓ) round-trips, and the reloaded
 /// thought still speaks the unwitnessed orbit member.
 #[test]
-fn torsion_round_trips_through_bytes() {
+fn from_bytes_round_trips_torsion() {
     let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
     let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
     let mut t = from_canonical(&germinate(&a, &b).unwrap());
@@ -167,7 +169,7 @@ fn torsion_round_trips_through_bytes() {
 /// take `ℓ − 1` whole, and no element reaches the basis whose address
 /// would be the form tag and nothing else.
 #[test]
-fn a_period_of_zero_and_a_chain_that_says_two_things_refuse_the_tape() {
+fn from_bytes_refuses_zero_period_and_clashing_chain() {
     let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
     let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
     let mut t = from_canonical(&germinate(&a, &b).expect("a germ"));
@@ -242,7 +244,7 @@ fn a_period_of_zero_and_a_chain_that_says_two_things_refuse_the_tape() {
 /// `holonomic_fits` — the magnitude set, the section punctured, the cycle
 /// filed — leaving the word as it was.
 #[test]
-fn a_lane_past_its_carrier_is_refused_where_it_arrives() {
+fn from_bytes_refuses_lane_past_carrier() {
     let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
     let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
     let mut t = from_canonical(&germinate(&a, &b).expect("a germ"));
@@ -277,7 +279,7 @@ fn a_lane_past_its_carrier_is_refused_where_it_arrives() {
 /// `None`, where the `as u32` they replaced wrote its low bits and a record
 /// no reader could frame. At the field's last value it writes whole.
 #[test]
-fn a_count_past_its_field_refuses_the_record() {
+fn put_u32_count_refuses_count_past_field() {
     use crate::transducer::address::put_u32_count;
     let mut out = vec![7u8];
     assert_eq!(put_u32_count(&mut out, usize::try_from(u64::from(u32::MAX) + 1).expect("a 64-bit host")), None);
@@ -286,8 +288,10 @@ fn a_count_past_its_field_refuses_the_record() {
     assert_eq!(out[1..], u32::MAX.to_le_bytes(), "the last value writes whole");
 }
 
+/// A rotated, dilated and translated connection survives the tape: the
+/// reloaded versor is projectively equal and moves points identically.
 #[test]
-fn rotated_connection_survives_the_tape() {
+fn from_bytes_round_trips_rotated_connection() {
     let qid = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let rot = crate::transducer::alphabet::Word::from_letters(&[(qid, false)]);
     let two = Q::from(BigInt::from(2));

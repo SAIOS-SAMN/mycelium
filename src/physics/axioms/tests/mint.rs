@@ -24,7 +24,7 @@ use crate::transducer::blade::sensor_plane as blade;
 /// that reason rather than through a classification that would be
 /// asserting a fixture into an arm the geometry does not put it in.
 #[test]
-fn d3_the_mint_produces_a_witness_the_court_can_open() {
+fn oblique_arc_mints_witness_court_can_open() {
     use crate::core::gaussian;
     use num_integer::Integer;
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
@@ -56,7 +56,7 @@ fn d3_the_mint_produces_a_witness_the_court_can_open() {
 /// rotor at any angle, so asking the court to adjoin a generator for
 /// it would poison the docket with a letter that can never close.
 #[test]
-fn d3_a_reflection_and_an_unlike_pair_mint_no_arc() {
+fn relative_rotor_keeps_reflection_off_demand_path() {
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let j = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
     assert_ne!(

@@ -32,7 +32,7 @@ fn slide(r: i64, c: i64) -> crate::transducer::element::Element {
 /// where it carried them: its section is each site it painted and each it
 /// vacated, and it is paid the pair's demand over them.
 #[test]
-fn a_words_section_is_every_site_its_speech_changed() {
+fn word_local_section_is_every_changed_site() {
     let family = vec![(
         grid(&["000000", "110000", "000000", "020000"]),
         grid(&["000000", "001100", "000000", "000200"]),
@@ -53,7 +53,7 @@ fn a_words_section_is_every_site_its_speech_changed() {
 /// answer holds it where it stood. Nothing of the pair is the word's — never a
 /// choice of the body it happened to fit.
 #[test]
-fn a_word_saying_something_false_on_a_pair_is_paid_nothing_there() {
+fn word_local_pays_nothing_on_false_pair() {
     let family = vec![(
         grid(&["000000", "110000", "000000", "020000"]),
         grid(&["000000", "001100", "000000", "020000"]),
@@ -67,7 +67,7 @@ fn a_word_saying_something_false_on_a_pair_is_paid_nothing_there() {
 /// on a pair whose body moved one column: its image is not the answer, and it
 /// closes nothing.
 #[test]
-fn a_word_carrying_a_body_wrong_closes_nothing() {
+fn word_local_closes_nothing_for_wrong_carriage() {
     let family = vec![(grid(&["1100", "0000"]), grid(&["0110", "0000"]))];
     let read = word_local(&slide(0, 2), &family);
     assert!(read.sites.iter().all(|s| s.is_empty()), "no site of a body carried wrong");
@@ -78,7 +78,7 @@ fn a_word_carrying_a_body_wrong_closes_nothing() {
 /// letter stands at no frame, and the local measure of anything else is the
 /// form's, never this reader's.
 #[test]
-fn a_letter_names_no_body() {
+fn word_local_pays_letter_nothing() {
     let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
     let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
     let chart = crate::transducer::stalk::invariant(&[(0, 0, 1, 1)]);
@@ -94,7 +94,7 @@ fn a_letter_names_no_body() {
 /// word. (The sentence's gluing, read off its rings, is guarded at the court:
 /// `server::cognition::tests::measure`.)
 #[test]
-fn a_form_and_its_word_read_one_section() {
+fn form_local_agrees_with_word_local_section() {
     let family = vec![
         (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),
         (grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"])),
@@ -112,7 +112,7 @@ fn a_form_and_its_word_read_one_section() {
 /// itself is empty, beyond nothing it is whole, and what it pays is the
 /// demand over the sites left.
 #[test]
-fn beyond_is_a_difference_of_sites() {
+fn beyond_is_difference_of_sites() {
     let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
     let all = sites(&[(0, 0), (0, 1), (0, 2), (0, 3)]);
     let half = sites(&[(0, 2), (0, 3)]);

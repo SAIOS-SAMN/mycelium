@@ -48,7 +48,7 @@ fn said(q: &crate::transducer::family::fibres::Quotient, a: &[u8], b: &[u8]) -> 
 /// point the lifted body reads (`Blade::vertex_point`). Sites of two bases,
 /// or none, give no pivot.
 #[test]
-fn a_pieces_pivot_is_its_sites_centroid_in_vertex_coordinates() {
+fn vertex_point_is_sites_centroid() {
     let sites = [Site::of([0, 0]), Site::of([0, 1])];
     let (point, n) = vertex_point(&sites).expect("two sites of one base");
     assert_eq!(n, 2);
@@ -70,7 +70,7 @@ fn a_pieces_pivot_is_its_sites_centroid_in_vertex_coordinates() {
 /// THE SELF-CHECK: a piece's own versor carries its input pivot onto its
 /// output pivot where the coordinates agree, and says so where they do not.
 #[test]
-fn a_pieces_versor_carries_its_input_pivot_onto_its_output() {
+fn aligned_checks_versor_carries_pivot_onto_output() {
     let domain = [Site::of([0, 0]), Site::of([0, 1])];
     let landed = [Site::of([2, 3]), Site::of([2, 4])];
     let elsewhere = [Site::of([5, 5]), Site::of([5, 6])];
@@ -98,7 +98,7 @@ fn a_pieces_versor_carries_its_input_pivot_onto_its_output() {
 /// the merge refused. Three algorithms from four classes; `d`, beyond `b`,
 /// turns free.
 #[test]
-fn torsion_is_eliminated_only_where_every_fibre_agreed() {
+fn read_pieces_merges_only_where_every_fibre_agreed() {
     let pieces = vec![
         piece(1, b"a", at(0, 0), one()),
         piece(1, b"b", at(3, 4), mirror()),
@@ -132,7 +132,7 @@ fn torsion_is_eliminated_only_where_every_fibre_agreed() {
 /// carried by two versors make no class pair; and a stroke that ends reads
 /// no cross pair, so nothing is merged and nothing is free.
 #[test]
-fn sections_are_not_pairs_and_an_ended_stroke_merges_nothing() {
+fn read_pieces_merges_nothing_for_sections_or_ended_stroke() {
     let sections = vec![piece(1, b"s", at(0, 0), one()), piece(1, b"s", at(3, 4), mirror())];
     let q = read_pieces(&sections, &mut wide());
     assert!(q.said.is_empty() && q.free.is_empty(), "one class: no pair");
@@ -147,7 +147,7 @@ fn sections_are_not_pairs_and_an_ended_stroke_merges_nothing() {
 /// body stands and another slides; two, joined by lifted fibres, where a
 /// body turns in place.
 #[test]
-fn on_a_real_percept_every_pieces_versor_carries_its_pivot() {
+fn extract_rule_quotient_reads_percept_algorithms() {
     use super::common::grid;
     let slides = vec![
         (grid(&["1100000", "0000000", "0002000", "0002200"]), grid(&["1100000", "0000000", "0000020", "0000022"])),
@@ -198,7 +198,7 @@ fn section(from: Mv, to: Mv, carriage: Mv) -> Piece {
 /// - standing — sections of different lengths whose relative motion lifts a
 ///   source; and a pair on one source reads no fibre, so it stands.
 #[test]
-fn two_sections_are_a_copy_one_motion_or_a_second_algorithm() {
+fn relate_sections_tells_copy_motion_or_second_algorithm() {
     use crate::transducer::family::fibres::{relate_sections, Sections};
     let t = |x: i64, y: i64| cga::translator_at(&[q(x, 1), q(y, 1)]);
     let first = section(at(0, 0), at(3, 4), t(3, 4));

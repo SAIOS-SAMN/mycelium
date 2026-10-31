@@ -34,7 +34,7 @@ fn held(motions: &[Mv]) -> Vec<Mv> {
 /// third plane — never itself held — is inside. A boost leaves so(3): it is
 /// outside, and its coset is read.
 #[test]
-fn a_motion_the_held_algebra_spans_is_inside_and_one_it_does_not_is_outside() {
+fn quotient_spanned_inside_unspanned_outside() {
     let h = held(&[turn(E1 | E2), turn(E2 | E3)]);
     assert_eq!(h.len(), 3, "[e₁₂, e₂₃] closes to so(3)");
     let third = quotient(&h, &turn(E1 | E3), &mut stroke()).expect("read");
@@ -49,7 +49,7 @@ fn a_motion_the_held_algebra_spans_is_inside_and_one_it_does_not_is_outside() {
 /// orders gives one residue, and two motions that differ by something held
 /// are one class — their residues agree.
 #[test]
-fn a_coset_is_read_whatever_the_order_and_up_to_what_is_held() {
+fn quotient_coset_independent_of_order_and_held() {
     let one = held(&[turn(E1 | E2), turn(E2 | E3)]);
     let other = held(&[turn(E2 | E3), turn(E1 | E2)]);
     let a = quotient(&one, &boost(), &mut stroke()).expect("read");
@@ -66,7 +66,7 @@ fn a_coset_is_read_whatever_the_order_and_up_to_what_is_held() {
 /// it). Against nothing held it is outside; once held, the same slide twice
 /// as far is inside, read with no metric.
 #[test]
-fn a_null_slide_is_read_with_no_metric() {
+fn quotient_reads_null_slide_without_metric() {
     let t = translator_at(&[q(1), q(0), q(0)]);
     assert!(!quotient(&[], &t, &mut stroke()).expect("read").spanned(), "nothing held: outside");
     let h = held(&[t]);
@@ -78,7 +78,7 @@ fn a_null_slide_is_read_with_no_metric() {
 
 /// The identity has no generators: nothing inside, nothing outside.
 #[test]
-fn the_identity_has_nothing_inside_or_outside() {
+fn quotient_identity_has_no_generators() {
     let r = quotient(&[], &Mv::scalar(q(1)), &mut stroke()).expect("read");
     assert!(r.inside.is_empty() && r.spanned());
 }

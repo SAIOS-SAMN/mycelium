@@ -270,7 +270,7 @@ mod tests {
     /// EVERY MOVE IS UNDONE EXACTLY: carried by a move and by its inverse, a
     /// reading returns bit for bit — stretch, twist, expand, contract, bend.
     #[test]
-    fn every_move_is_undone_exactly() {
+    fn move_inverse_undoes_every_move_exactly() {
         let x = v(&[(3, 7), (-2, 5), (1, 1)]);
         let moves = [
             Move::Stretch(v(&[(1, 2), (0, 1), (-4, 3)])),
@@ -289,7 +289,7 @@ mod tests {
     /// reading carried there and back returns exactly; the composite of a
     /// frame with its inverse carries every reading to itself.
     #[test]
-    fn a_frame_and_its_inverse_are_the_identity() {
+    fn frame_inverse_composes_to_identity() {
         let frame = Frame::identity()
             .then(Move::Bend(v(&[(1, 5), (1, 7)])))
             .then(Move::Twist(v(&[(0, 1), (4, 1)])))
@@ -310,7 +310,7 @@ mod tests {
     /// other slope is refused by name (ruled 2026-10-21):
     /// spatial frames are the square's symmetries.
     #[test]
-    fn two_twists_are_a_turn() {
+    fn twist_twice_is_turn_of_180_degrees() {
         let half_turn = Frame::identity().then(Move::Twist(v(&[(1, 1), (0, 1)]))).then(Move::Twist(v(&[(0, 1), (1, 1)])));
         let x = v(&[(3, 5), (-2, 7)]);
         assert_eq!(half_turn.carry(&x), Ok(v(&[(-3, 5), (2, 7)])), "the antipode");
@@ -325,7 +325,7 @@ mod tests {
     /// alone is refused by name — no cosine of it is rational — while three
     /// of them in one plane compose to 90° and carry exactly.
     #[test]
-    fn a_turn_is_held_in_degrees_and_carried_where_exact() {
+    fn turn_carries_exactly_and_refuses_inexact_degrees() {
         let x = v(&[(3, 5), (-2, 7), (1, 1)]);
         let quarter = Move::Turn { plane: (0, 1), degrees: q(90, 1) };
         assert_eq!(quarter.apply(&x), Ok(v(&[(2, 7), (3, 5), (1, 1)])), "a quarter turn from axis 0 toward axis 1");
@@ -340,7 +340,7 @@ mod tests {
     /// REFUSED BY NAME: a bend's pole carried to infinity, a mirror of zero, a
     /// ratio not above one, axes unmatched — never rounded.
     #[test]
-    fn what_no_frame_carries_is_refused_by_name() {
+    fn move_apply_refuses_by_name() {
         // The pole of a bend by b is x = −b/|b|².
         assert_eq!(Move::Bend(v(&[(1, 2), (0, 1)])).apply(&v(&[(-2, 1), (0, 1)])), Err(Refused::AtPole));
         assert_eq!(Move::Twist(v(&[(0, 1), (0, 1)])).apply(&v(&[(1, 1), (1, 1)])), Err(Refused::NoMirror));

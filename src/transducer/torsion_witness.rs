@@ -128,7 +128,7 @@ mod tests {
     /// A torse-extracted ℤ/3 cycle carries a CLOSED orbit witness of period 3 and
     /// valency 1/3 — ∮ dX = 0 exactly; an unrelated open family witnesses Open.
     #[test]
-    fn the_orbit_witness_closes_on_the_cycle_and_names_the_open() {
+    fn witness_thought_closes_on_cycle_and_names_open() {
         let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
         let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
         let mut t = from_canonical(&germinate(&a, &b).unwrap());

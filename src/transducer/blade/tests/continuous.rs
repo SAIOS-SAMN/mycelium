@@ -5,8 +5,10 @@ use crate::transducer::blade::*;
 use crate::transducer::element::versor_of_word;
 use crate::transducer::sentence::class::{orbit_row, OrbitRow, FREE_ROW};
 
+/// On a continuous support, a Pythagorean rotor carries no body the 90° turn
+/// does not, and its holonomy word reads a free orbit row.
 #[test]
-fn continuous_support_pythagorean_rotor_holonomy() {
+fn versor_carrying_refuses_pythagorean_rotor_reads_free_row() {
     // Word carrying pythagorean_5 on plane (0, 1)
     let p5 = LetterId::pythagorean_5((0, 1)).expect("pythagorean 5 on (0, 1)");
     let w = Word::from_letters(&[(p5, false)]);

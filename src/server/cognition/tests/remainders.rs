@@ -8,7 +8,7 @@ use super::super::*;
 /// turn in one: ℓ 2 once and ℓ 4 twice, two classes, the 90° turn's standing
 /// across two charts; nothing re-filled; no basis word carries a torsion.
 #[test]
-fn the_courts_remainders_are_read_over_its_complexes() {
+fn remainders_reads_congruent_fills_over_complexes() {
     use crate::transducer::alphabet::{LetterId, Word};
     let turn = |n: usize| {
         let q = LetterId::turn_90((0, 1)).expect("the sensor plane");
@@ -36,7 +36,7 @@ fn the_courts_remainders_are_read_over_its_complexes() {
 /// named door (refilled 1), the rewrite's remainder is answered at the act's
 /// stamp and its pressure reads zero. A second replay finds nothing open.
 #[test]
-fn the_court_replays_a_voices_refill_and_its_congruent_simplex_fills() {
+fn hear_refill_fills_congruent_simplex_once() {
     use crate::chronometry::{Cite, KStepReceipt, Place, Stamp};
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
     use crate::transducer::address::Address;
@@ -129,7 +129,7 @@ fn the_court_replays_a_voices_refill_and_its_congruent_simplex_fills() {
 /// at chart ‖ κ; snapshotted and restored, the record comes back with the
 /// element and the index is rebuilt from it.
 #[test]
-fn a_courts_torse_carries_its_remainder_through_a_restart() {
+fn mint_torse_at_keeps_remainder_through_restart() {
     use crate::transducer::alphabet::{LetterId, Word};
     use crate::transducer::address::Address;
     let g = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("the sensor plane"), false)]).rotor();

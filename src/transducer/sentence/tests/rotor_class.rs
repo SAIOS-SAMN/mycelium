@@ -17,7 +17,7 @@ use crate::transducer::stalk::{self, Standing};
 /// certificate replays on the court, which re-derives the seed from the
 /// orbit; a tape whose axis was struck out is refused on that orbit.
 #[test]
-fn an_infinite_class_no_word_discharges_opens_an_axis_and_is_never_filed() {
+fn pivot_orbit_opens_axis_for_undischarged_free_class() {
     // AT1: measured torsion rides the overlap's EDGE — a pivot factor
     // written without a certificate is refused at replay (REFUSE_PIVOT_INEXACT).
     let mut f = edge_chord_form(&[infinite()]);
@@ -81,8 +81,10 @@ fn an_infinite_class_no_word_discharges_opens_an_axis_and_is_never_filed() {
     );
 }
 
+/// Torsion is filed only when it is witnessed at its period; a claimed
+/// period the generator does not have is refused by name.
 #[test]
-fn torsion_filed_only_when_witnessed_at_period() {
+fn record_cycle_refuses_unwitnessed_period() {
     let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
     let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
     let mut t = element::from_canonical(&crate::transducer::germinate::germinate(&a, &b).unwrap());
@@ -108,8 +110,10 @@ fn torsion_filed_only_when_witnessed_at_period() {
     assert_eq!(t.torsion().len(), before, "and nothing was filed to walk");
 }
 
+/// The rank's off-plane count is its own lane, counted once per class and
+/// never folded into the free rank.
 #[test]
-fn rank_offplane_is_its_own_lane() {
+fn rank_counts_offplane_as_own_lane() {
     // A ROTOR WITH NO INVARIANT PAIR PLANE. It was a `(0, 2)` 90° turn,
     // which was off-plane only because the speller could not see its
     // plane; it turns plane one and reads as torsion now. Two 90° turns on
@@ -155,7 +159,7 @@ fn rank_offplane_is_its_own_lane() {
 /// not the holonomy refuses the face; a missing torsion entry refuses
 /// the orbit.
 #[test]
-fn filed_torsion_chord_replays_or_refuses() {
+fn blind_replay_replays_filed_torsion_chord() {
     // AT1: the measured torsion rides the chord's EDGE; an uncertified
     // pivot factor is refused at replay (REFUSE_PIVOT_INEXACT).
     let mut f0 = edge_chord_form(&[word_turn_90()]);
@@ -229,7 +233,7 @@ fn filed_torsion_chord_replays_or_refuses() {
         "a face's word is in the key, so moving it names another word"
     );
     // THE FORGERY IS NOT UNGUARDED, IT IS UNCONSTRUCTIBLE (54.5, as ruled
-    // 2026-09-20) — the same reading `rank_lost_refused` already carries
+    // 2026-09-20) — the same reading `replay_form_replays_filed_torsion_without_taped_forest` already carries
     // one carrier up.
     //
     // This stripped `Form.torsion` and expected `REFUSE_ORBIT`: a filed
@@ -258,8 +262,9 @@ fn filed_torsion_chord_replays_or_refuses() {
     );
 }
 
+/// An infinite class already held on the horizon is not demanded again.
 #[test]
-fn horizon_seeded_infinite_is_not_demanded() {
+fn pivot_orbit_skips_demand_for_horizon_class() {
     let mut f = chord_form(&[infinite()]);
     let r = infinite().rotor();
     let mut horizon = crate::network::nerve::Keyed::new();
@@ -278,8 +283,10 @@ fn horizon_seeded_infinite_is_not_demanded() {
     );
 }
 
+/// An off-plane word refuses to act on a translation, and refraction
+/// refuses it.
 #[test]
-fn offplane_word_refuses_to_act_on_a_translation() {
+fn apply_plane_block_refuses_offplane_word() {
     let w = Word::from_letters(&[(alphabet::LetterId::turn_90((0, 2)).unwrap(), false)]);
     assert!(w.plane_block().is_none(), "a (0,2) 90° turn leaves the sensor plane");
     let t = (q1(), q0());
@@ -306,7 +313,7 @@ fn offplane_word_refuses_to_act_on_a_translation() {
 /// closed to coheres, pivot_orbit, is_cauterized, and the court. The
 /// sensor-plane abelianisation does not see it.
 #[test]
-fn offplane_turn_90_to_the_fourth_is_closed_to_all_four_readers() {
+fn offplane_turn_90_fourth_power_closes_for_every_reader() {
     let q = alphabet::LetterId::turn_90((0, 2)).expect("90° turn");
     let w = Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
     assert!(w.is_identity(), "Φ⁴ is projectively 1");
@@ -364,8 +371,10 @@ fn offplane_turn_90_to_the_fourth_is_closed_to_all_four_readers() {
     );
 }
 
+/// The rotor class is read before the plane form: a word's class key is its
+/// rotor conjugacy and the class vector's leading stratum.
 #[test]
-fn rotor_class_is_read_before_the_plane_form() {
+fn class_key_reads_rotor_conjugacy_first() {
     let w = word_turn_90();
     let rk = w.rotor().class_key().expect("a 90° turn is a versor");
     assert_eq!(
@@ -401,7 +410,7 @@ fn rotor_class_is_read_before_the_plane_form() {
 /// invariant plane at all rather than one whose plane is simply not the
 /// sensor's.
 #[test]
-fn a_word_off_the_sensor_plane_occupies_its_own_plane() {
+fn of_word_occupies_own_plane_off_sensor() {
     let w = Word::from_letters(&[(alphabet::LetterId::turn_90((0, 2)).unwrap(), false)]);
     assert!(w.plane_block().is_none(), "it moves the sensor plane, as it always did");
     let f = w.form().expect("and it turns (0, 2), which the carrier has a seat for");
@@ -438,8 +447,10 @@ fn a_word_off_the_sensor_plane_occupies_its_own_plane() {
     );
 }
 
+/// Orientation is the axis of the 180° turn: the sheet word occupies
+/// Orientation(0), and conjugating a turn by it inverts the turn.
 #[test]
-fn orientation_is_the_third_axis_turn_180() {
+fn of_word_occupies_orientation_for_turn_180() {
     let s = alphabet::PlaneForm::sheet_word();
     assert_eq!(s.len(), 2, "the 1.2 relator is two 90° turns, S = q²");
     let f = s.form().expect("the 180°-turn keeps the sensor plane");
@@ -459,8 +470,9 @@ fn orientation_is_the_third_axis_turn_180() {
     );
 }
 
+/// An orbit's residue is the translator of its holonomy versor.
 #[test]
-fn an_orbit_residue_is_the_translator_of_its_holonomy_versor() {
+fn class_vector_reads_residue_as_translator() {
     let mut f = chord_form(&[Word::identity()]);
     let overlaps: Vec<_> = f.faces.entries().map(|(o, _)| o).collect();
     for o in &overlaps {
@@ -483,8 +495,9 @@ fn an_orbit_residue_is_the_translator_of_its_holonomy_versor() {
     assert!(!kappa.occupies(Axis::Dilation));
 }
 
+/// A non-versor holonomy is refused, never read as the zero class.
 #[test]
-fn a_non_versor_holonomy_is_refused_not_zero_class() {
+fn class_key_refuses_non_versor() {
     let w = Word::formed(alphabet::Rotor::zero());
     assert!(w.class_key().is_none(), "a non-versor is never a class");
     assert!(ClassVector::of_word(&w).is_none());

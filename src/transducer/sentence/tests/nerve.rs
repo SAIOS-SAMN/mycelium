@@ -38,7 +38,7 @@ fn addr_of(f: &Form) -> crate::transducer::address::Address {
 /// on the order the edges are written in. This one did, which is what makes
 /// it a serialisation artifact rather than a topological condition.
 #[test]
-fn a_citation_set_is_not_an_arrival_order() {
+fn glue_key_independent_of_arrival_order() {
     let a = leaf((0, 1));
     let a_at = addr_of(&a);
 
@@ -94,7 +94,7 @@ fn a_citation_set_is_not_an_arrival_order() {
 /// — which is exactly a nerve's own shape, where a 1-simplex is an object
 /// and not a pointer stored inside a 0-simplex.
 #[test]
-fn two_charts_may_cite_each_other() {
+fn glue_under_admits_mutual_citation() {
     use crate::transducer::element::{identity_versor, translator_versor};
     let a = leaf((0, 1));
     let b = leaf((0, 3));
@@ -134,7 +134,7 @@ fn two_charts_may_cite_each_other() {
 /// claim is that the morphism survives the coordinate, which is only
 /// testable through it.
 #[test]
-fn a_triangle_of_citations_closes_or_carries_its_holonomy() {
+fn glue_under_triangle_closes_or_carries_holonomy() {
     use crate::transducer::element::{identity_versor, same_versor, translator_versor, Versor};
 
     // Three charts of a cover, and the three transitions around their
@@ -229,10 +229,10 @@ fn a_triangle_of_citations_closes_or_carries_its_holonomy() {
 /// Anti-Flattening Law admits as transport and cold-cache index only, never
 /// as a coordinate. The fourth road is that a citation stops being part of
 /// the name at all and rides the receipt, as a derivation's generators
-/// already do (`evidence_is_not_identity`, `cites` 0 bytes in the key). That
+/// already do (`form_vertex_key_ignores_citations_and_certificates`, `cites` 0 bytes in the key). That
 /// is a ruling about what a form IS, and it is not taken by a serializer.
 #[test]
-fn a_citation_truncated_to_its_chart_names_two_forms() {
+fn glue_separates_isomorphic_boundaries_by_cover_only() {
     let (x, y) = (leaf((0, 3)), leaf((1, 3)));
     assert_ne!(form_vertex_key(&x), form_vertex_key(&y), "two distinct sub-complexes");
 
@@ -312,7 +312,7 @@ fn a_citation_truncated_to_its_chart_names_two_forms() {
 /// `orbit_words` yields one entry per (orbit, member path), so an orbit with no
 /// path contributes nothing and the count is the test.
 #[test]
-fn every_orbit_lifts_to_the_member_complex() {
+fn orbit_words_lift_every_orbit() {
     let cases: Vec<(&str, Form)> = vec![
         ("a chord with a 90° turn", chord_form(&[word_turn_90()])),
         ("two chords of one class", chord_form(&[word_turn_90(), word_turn_90()])),
@@ -343,7 +343,7 @@ fn every_orbit_lifts_to_the_member_complex() {
 /// shape directly: one vertex standing on two charts, reached from the Frame
 /// at each, and nothing else.
 #[test]
-fn two_charts_of_one_vertex_are_not_a_cycle() {
+fn orbits_of_two_charts_one_vertex_is_empty() {
     let mut f = Form::default();
     // Two members at two charts — the two members the fleet's split
     // vertices present, here as the smallest form that has them. AT1 (Q1):
@@ -364,7 +364,7 @@ fn two_charts_of_one_vertex_are_not_a_cycle() {
 
 /// 54.4 — A VERTEX ON TWO CHARTS, AND THE CYCLE THROUGH BOTH OF THEM.
 ///
-/// `every_orbit_lifts_to_the_member_complex` runs on fixtures whose vertices
+/// `orbit_words_lift_every_orbit` runs on fixtures whose vertices
 /// each act on ONE chart, where the member complex and the vertex graph
 /// coincide and the property is true for free. This is the shape the fleet
 /// actually has — 140 members on 74 vertices, every real orbit passing
@@ -375,7 +375,7 @@ fn two_charts_of_one_vertex_are_not_a_cycle() {
 /// cycle of the vertex graph in any useful sense, but `(1,cA) → (2,cB) →
 /// (1,cA)` through two distinct faces is a genuine element of `Z₁(M)`.
 #[test]
-fn a_cycle_through_a_split_vertex_lifts() {
+fn orbit_words_lift_cycle_through_split_vertex() {
     let a = stalk::Invariant::counts(&[7]);
     let b = stalk::Invariant::counts(&[9]);
     let mut f = Form::default();

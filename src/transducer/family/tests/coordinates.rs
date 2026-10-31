@@ -29,7 +29,7 @@ fn quarter() -> Mv {
 /// cube at three quarters — the side the other way — and each is the turn's
 /// power, read off the windings. Every reading rebuilds its word.
 #[test]
-fn a_turn_word_stands_on_its_hole_at_its_turn() {
+fn coordinates_of_turn_winds_one_hole() {
     let w = quarter();
     let one = read(&w);
     assert_eq!(one.holes.len(), 1, "one plane, one hole");
@@ -54,7 +54,7 @@ fn a_turn_word_stands_on_its_hole_at_its_turn() {
 /// slide by one counted twice; a slide along another axis stands on another
 /// hole and is no power of the first.
 #[test]
-fn a_slide_counts_along_its_hole() {
+fn coordinates_of_slide_counts_along_hole() {
     let t1 = cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)]);
     let t2 = cga::translator_at(&[q(2, 1), q(0, 1), q(0, 1)]);
     let ty = cga::translator_at(&[q(0, 1), q(1, 1), q(0, 1)]);
@@ -69,7 +69,7 @@ fn a_slide_counts_along_its_hole() {
 /// A DILATION IS NAMED: it never returns and does not condense (78.68), so
 /// its hole holds its rational point and side, and the word rebuilds.
 #[test]
-fn a_dilation_is_named_on_its_hole() {
+fn coordinates_of_names_dilation_on_hole() {
     let d = cga::dilator(&q(2, 1));
     let c = read(&d);
     assert!(c.holes.iter().any(|h| matches!(h.winding, Winding::Named { .. })), "named: {:?}", c.holes);
@@ -83,7 +83,7 @@ fn a_dilation_is_named_on_its_hole() {
 /// the planes are not among them. A power of the word sounds otherwise. The
 /// signature travels whole.
 #[test]
-fn inflection_moves_the_holes_and_the_signature_is_what_every_node_hears() {
+fn transported_moves_holes_keeps_signature() {
     use crate::transducer::sentence::coordinates::Signature;
     let w = quarter().geo(&cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)]));
     let c = read(&w);
@@ -119,7 +119,7 @@ fn index(held: &[(&[u8], &Coordinates)]) -> crate::transducer::sentence::coordin
 /// the cited mode and the residue multiply back to the screw exactly. A word
 /// on no held hole is all residue.
 #[test]
-fn a_word_is_deconstructed_by_its_motion_into_what_is_held_and_its_residue() {
+fn deconstruct_splits_word_into_cited_and_residue() {
     let turn = read(&quarter());
     let ix = index(&[(b"turn", &turn)]);
     let held = |k: &[u8]| (k == b"turn").then_some(&turn);

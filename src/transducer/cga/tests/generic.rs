@@ -20,7 +20,7 @@ fn ax(i: usize) -> usize {
 /// count of blades or slots past [`MAX_N`] is refused, where a shift past the
 /// machine word once wrapped into another axis's bit in a release build.
 #[test]
-fn past_the_algebras_masks_nothing_is_made_and_nothing_wraps() {
+fn base_axis_refuses_past_masks_never_wraps() {
     let last = usize::from(MAX_N);
     assert!(base_axis(last).is_some(), "the last axis the masks hold");
     assert_eq!(base_axis(last + 1), None, "one past it is refused");
@@ -39,7 +39,7 @@ fn past_the_algebras_masks_nothing_is_made_and_nothing_wraps() {
 /// one term, and the product reads the terms the two hold — `e₁e₄₀ · e₄₀ =
 /// e₁` exactly, at an `n` whose dense carrier would have held 2⁴² slots.
 #[test]
-fn a_blade_of_a_large_algebra_is_one_term_and_multiplies_exactly() {
+fn mv_blade_at_large_n_is_one_term_multiplying_exactly() {
     let e40 = Mv::blade(ax(40), q(1, 1));
     assert_eq!((e40.n(), e40.term_count()), (40, 1));
     let e1_40 = Mv::blade(ax(1) | ax(40), q(3, 2));
@@ -57,7 +57,7 @@ fn a_blade_of_a_large_algebra_is_one_term_and_multiplies_exactly() {
 /// sized by it, and an `n` past the masks is refused outright — one forged
 /// byte took a node's memory before. A value still round-trips whole.
 #[test]
-fn a_forged_n_on_the_wire_is_refused_before_anything_is_sized_by_it() {
+fn from_bytes_refuses_forged_n_before_sizing() {
     let forged = [60u8, 1, 1, 1, 1, 1];
     assert!(Mv::from_bytes(&forged, &mut 0usize).is_none(), "2^62 coefficients in six bytes: refused");
     let past = [MAX_N + 1, 0, 0, 0];
@@ -74,7 +74,7 @@ fn a_forged_n_on_the_wire_is_refused_before_anything_is_sized_by_it() {
 /// THE ALGEBRA AT n = 4: `2⁶` blades, fifteen planes, the signature's
 /// metric, the new axis at its own bit, and the n = 3 algebra inside it.
 #[test]
-fn the_algebra_at_n4_has_its_own_count_and_holds_n3_inside_it() {
+fn algebra_at_n4_counts_its_own_and_holds_n3() {
     assert_eq!(blades(4), Some(64), "Cl(5,1) has 2^6 blades");
     assert_eq!(bivector_planes(4).len(), 15, "C(5,2) + 5 = 15 planes");
     assert_eq!(bivector_planes(3).len(), 10, "and the n = 3 row of the family is ten");
@@ -127,7 +127,7 @@ fn the_algebra_at_n4_has_its_own_count_and_holds_n3_inside_it() {
 /// slip as a turn on `e1p`. A boost on `e1m` alone is still a boost, and a
 /// transversion `eᵢ ∧ e_o` is the other pole.
 #[test]
-fn a_translation_is_one_parabolic_plane_in_the_census() {
+fn occupancy_reads_translation_as_one_parabolic_plane() {
     use crate::transducer::cga::Pole;
     let slide = cga::translator_at(&[q(2, 1), q(0, 1), q(0, 1)]);
     let t = cga::occupancy(&slide, slide.n());
@@ -147,7 +147,7 @@ fn a_translation_is_one_parabolic_plane_in_the_census() {
 /// 51.2 — EVERY GRID AXIS HAS ITS SLOT IN THE LETTERS' CHART, and the
 /// orientation character `e2` stands for no base axis.
 #[test]
-fn the_alphabets_slots_stand_for_the_grids_axes() {
+fn slot_of_axis_stands_for_each_grid_axis() {
     use crate::transducer::alphabet::{axis_of_slot, slot_of_axis};
     for axis in 0..3 {
         let slot = slot_of_axis(axis).expect("the grid's three axes have slots");

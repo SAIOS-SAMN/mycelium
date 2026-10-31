@@ -8,7 +8,7 @@ use crate::economy::*;
 
 /// Supply after N installs equals the sum of their deflations per lane.
 #[test]
-fn supply_is_the_sum_of_minted_deflations() {
+fn supply_sums_minted_deflations() {
     let mut t = Treasury::new();
     t.enroll([1; 32], UNIT_BOND, at(0, [0; 32]));
     let d1 = [4u64, 2, 0, 2];
@@ -31,7 +31,7 @@ fn supply_is_the_sum_of_minted_deflations() {
 /// agreed with an empty bond, and the slash this test names was never
 /// exercised on anything.
 #[test]
-fn slash_debits_the_bond_and_mints_nothing() {
+fn slash_debits_bond_and_mints_nothing() {
     let mut t = Treasury::new();
     t.genesis([1; 32], [8, 0, 0, 0], at(0, [0; 32]));
     let bond = t.enroll([1; 32], [8, 0, 0, 0], at(0, [0; 32]));
@@ -50,7 +50,7 @@ fn slash_debits_the_bond_and_mints_nothing() {
 /// Pool + stakes survive the persisted form exactly (78.27: the stakes and
 /// balances as their own tries, the rows through the row codec).
 #[test]
-fn escrow_snapshot_round_trips() {
+fn treasury_round_trips_bonds_stakes_and_entries() {
     let mut t = Treasury::new();
     t.enroll([3; 32], UNIT_BOND, at(0, [4; 32]));
     t.settle_subsidy([3; 32], [0, 0, 5, 0], at(1, [4; 32]));
@@ -65,7 +65,7 @@ fn escrow_snapshot_round_trips() {
 /// The fold of LEDGER_EPOCH_DESIGN is admissible only where this holds
 /// at the prefix it folds, so this is the gate on 7.5.
 #[test]
-fn the_audit_holds_through_genesis_mint_and_burn() {
+fn audit_holds_through_genesis_mint_and_burn() {
     let mut t = Treasury::new();
     let a = at(1, [1; 32]);
     t.genesis([1; 32], [10, 10, 10, 10], a);
@@ -83,7 +83,7 @@ fn the_audit_holds_through_genesis_mint_and_burn() {
 /// minted, the journal and the supply stand, the audit still holds, and the
 /// refusal is counted on the economy reading.
 #[test]
-fn a_credit_past_its_carrier_refuses_the_mint_and_writes_no_row() {
+fn settle_subsidy_refuses_overflow_and_writes_no_row() {
     let mut t = Treasury::new();
     let a = at(1, [1; 32]);
     t.genesis([1; 32], [u64::MAX, 0, 0, 0], a);
@@ -101,7 +101,7 @@ fn a_credit_past_its_carrier_refuses_the_mint_and_writes_no_row() {
 /// the supply by one vector as one `Burn` row; the identity's balance stays;
 /// the live bond stands; nothing is written that moves no supply.
 #[test]
-fn a_stake_outside_the_live_genesis_is_burned_and_the_audit_holds() {
+fn bind_live_burns_stake_outside_live_genesis() {
     let mut t = Treasury::new();
     let a = at(1, [1; 32]);
     t.genesis([1; 32], [10, 10, 10, 10], a);
@@ -134,7 +134,7 @@ fn a_stake_outside_the_live_genesis_is_burned_and_the_audit_holds() {
 /// potential does no work: a claim released five heights after it was
 /// escrowed carries exactly what it was escrowed with, 𝒯 included.
 #[test]
-fn a_claim_released_later_carries_what_it_was_escrowed_with() {
+fn release_award_carries_escrowed_amount_unchanged() {
     let mut t = Treasury::new();
     t.escrow_award(&word([7u8; 32]), vec![[2; 32]], [4, 1, 0, 3], at(1, [1; 32]));
     let held = t.release_award(&[7u8; 32]).expect("the claim stood");
@@ -143,8 +143,9 @@ fn a_claim_released_later_carries_what_it_was_escrowed_with() {
     assert_eq!(t.balance_mu(&[2; 32]), [4, 1, 0, 3]);
 }
 
+/// A claim escrow is not supply until a ruling mints it.
 #[test]
-fn a_claim_escrow_is_not_supply_until_a_ruling_mints_it() {
+fn escrow_award_claim_is_not_supply_until_minted() {
     let mut t = Treasury::new();
     let a = at(1, [1; 32]);
     t.genesis([1; 32], [10, 0, 0, 0], a);
@@ -173,7 +174,7 @@ fn a_claim_escrow_is_not_supply_until_a_ruling_mints_it() {
 /// failure: `enroll` used to insert the bond and write its row without
 /// debiting anything, so bond existed that was never issued.
 #[test]
-fn a_stake_moves_value_and_never_creates_it() {
+fn enroll_moves_value_and_never_creates_it() {
     let mut t = Treasury::new();
     let a = at(1, [1; 32]);
     t.genesis([1; 32], [10, 0, 0, 0], a);
@@ -206,7 +207,7 @@ fn a_stake_moves_value_and_never_creates_it() {
 /// bond and escrow — there is no pool among them — so what these take
 /// leaves circulation.
 #[test]
-fn a_fee_and_a_slash_leave_the_supply_with_the_carrier() {
+fn fees_and_slash_leave_supply_with_carrier() {
     let mut t = Treasury::new();
     t.genesis([1; 32], [20, 20, 20, 20], at(0, [0; 32]));
     t.enroll([1; 32], [6, 6, 6, 6], at(1, [0; 32]));
@@ -272,7 +273,7 @@ fn a_fee_and_a_slash_leave_the_supply_with_the_carrier() {
 /// as long as the mesh runs (rule 10). The fold must agree with the whole
 /// read it replaces on every kind, and survive a restore.
 #[test]
-fn the_supply_folded_as_it_is_written_equals_the_journal_it_describes() {
+fn supply_fold_equals_whole_journal_read() {
     let (a, b) = ([0x11u8; 32], [0x22u8; 32]);
     let mut t = Treasury::new();
     assert_eq!(t.supply(), Some([0; 4]), "a fresh ledger has issued nothing, measured");
@@ -327,7 +328,7 @@ fn the_supply_folded_as_it_is_written_equals_the_journal_it_describes() {
 /// total on well-formed keys and refuses otherwise". The typed `Kind`
 /// leaves nothing for an undefined tag to decode into.
 #[test]
-fn an_undefined_entry_tag_refuses_the_tape() {
+fn entry_read_refuses_undefined_tag() {
     let mut t = Treasury::new();
     t.genesis([0x33; 32], [1, 0, 0, 0], at(0, [0; 32]));
     let [row] = t.entries() else { panic!("one row") };
@@ -351,7 +352,7 @@ fn an_undefined_entry_tag_refuses_the_tape() {
 /// "a tie-break by index, by size, by first found presented as a decision":
 /// a word two voices stood cost the second of them nothing at all.
 #[test]
-fn a_slash_debits_every_voice_the_escrow_names() {
+fn revoke_award_slashes_every_named_voice() {
     let (a, b) = ([0xa1u8; 32], [0xb2u8; 32]);
     let mut t = Treasury::new();
     t.genesis(a, [10, 10, 10, 10], at(0, [0; 32]));

@@ -22,7 +22,7 @@ fn family() -> Vec<TrainPair> {
 /// crosses the wire whole; an act the court does not hold is answered as
 /// none, never as an empty one.
 #[test]
-fn the_court_says_why_an_act_stands_with_the_speakers_reasons() {
+fn why_answers_act_with_speakers_reasons() {
     let fam = family();
     let [(x, y)] = fam.as_slice() else { panic!("one pair") };
     let f = cipher_form(x, y);
@@ -67,7 +67,7 @@ fn the_court_says_why_an_act_stands_with_the_speakers_reasons() {
 /// its chart with the refusal's kind — coordinates, which survive their
 /// bytes — and asked why that act stands, the court answers the refusal.
 #[test]
-fn a_refusal_is_an_act_on_the_ledger_and_says_why() {
+fn why_answers_refusal_act_on_ledger() {
     use crate::chronometry::{ActKind, Cite};
     let voice_fam = family();
     let court_fam: Vec<TrainPair> = vec![(digits(&["1100200"]), digits(&["0011003"]))];

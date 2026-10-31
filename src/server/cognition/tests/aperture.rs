@@ -11,7 +11,7 @@ use crate::cognition::*;
 /// A second vantage here is `glue_local`'s two fixture keys (§3.4's
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
-fn a_depleted_lane_defers_germination_until_the_reserve_recovers() {
+fn speak_pair_defers_germ_on_depleted_lane() {
 let mut k = Kernel::new();
 // A bar: a body the eyes pair with its image (20 as ruled, L7). An L that
 // lost a site is a body no versor carries — no sentence, no listing.
@@ -70,7 +70,7 @@ match speak_pair(&mut k, &a, &gb, [3; 32]) {
 /// Room is per-lane from bond and reserve; ticks on T do not steal
 /// S, G, or H. Eviction is by ACTION POTENTIAL, never FIFO.
 #[test]
-fn market_capacity_is_thermodynamic_and_eviction_is_by_tension() {
+fn lane_room_keeps_spatial_room_under_t_pressure() {
 let mut k = Kernel::new();
 k.bind_identity([1; 32]);
 k.enroll([1; 32], [8, 8, 1, 8]);
@@ -86,7 +86,7 @@ assert_eq!(tense[0], s0, "T pressure does not steal spatial room: {tense:?}");
 
 /// Extra court strokes of a fixed corpus do not grow the hot set.
 #[test]
-fn hot_set_does_not_grow_with_idle_strokes() {
+fn court_stroke_idle_keeps_hot_set_fixed() {
 let mut k = Kernel::new();
 k.set_height(5);
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
@@ -128,7 +128,7 @@ assert_eq!(
 /// fleet's footprint grew quadratically in what it had learned. This is the
 /// N vs 4N counter of the enumeration audit, applied to a write.
 #[test]
-fn admitting_a_word_costs_the_same_at_n_and_4n() {
+fn basis_insert_costs_same_at_n_and_4n() {
 use crate::network::nerve::work;
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
@@ -180,7 +180,7 @@ assert_eq!(
 /// unclosed orbit) are still unreached; the fixture that spells one under a
 /// depleted lane is owed as F2r1d.
 #[test]
-fn a_depleted_lane_lists_the_demand_instead_of_germinating_it() {
+fn speak_pair_lists_demand_on_depleted_lane() {
     let mut k = Kernel::new();
     // A bar kept and a site painted beside it (20 as ruled, L7): the
     // sentence is the bar's word with a creation demand riding it. H1b,
@@ -215,7 +215,7 @@ fn a_depleted_lane_lists_the_demand_instead_of_germinating_it() {
 /// The form is a triangle, so it has an orbit; a tree has none and charges
 /// nothing, which is correct and is why this fixture is three vertices.
 #[test]
-fn a_depleted_lane_charges_a_sentence_by_its_orbit_words() {
+fn list_sentence_charges_orbit_orders_on_depleted_lane() {
     use crate::transducer::alphabet::Word;
     use crate::transducer::sentence::{as_element_form, Form, Vertex};
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
@@ -300,7 +300,7 @@ fn a_depleted_lane_charges_a_sentence_by_its_orbit_words() {
 /// on the edge — and it asserts the reader reports the turn's period and not
 /// the identity's.
 #[test]
-fn the_metabolism_reads_the_orbits_true_holonomy_not_its_coboundary() {
+fn orbit_words_reads_true_holonomy_not_coboundary() {
     use crate::transducer::alphabet::{Derivation, LetterId, Order, Word};
     use crate::transducer::sentence::{FacePlace, Form, FormFace, Producer, Transport, Vertex};
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("plane"), false)]);
@@ -397,7 +397,7 @@ fn the_metabolism_reads_the_orbits_true_holonomy_not_its_coboundary() {
 
     // The charge is read on a DEPLETED lane (23.8): a court with reserve to
     // spare dockets the listing and charges nothing, so the reserve is spent
-    // first exactly as `a_depleted_lane_charges_a_sentence_by_its_orbit_words`
+    // first exactly as `list_sentence_charges_orbit_orders_on_depleted_lane`
     // spends it.
     let depleted = || {
         let mut k = Kernel::new();

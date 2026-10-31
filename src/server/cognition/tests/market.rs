@@ -15,7 +15,7 @@ use crate::transducer::germinate::germinate;
 /// wire-identifier exception): this test proves nothing about 47.3's
 /// witness.
 #[test]
-fn the_five_act_conversation_closes_with_settlement() {
+fn quote_clears_after_consilient_settlement() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
@@ -42,7 +42,7 @@ assert!(k.quote().1.is_empty(), "the market cleared");
 /// drawn, escrowed or sealed (23.8, S9.6). A second voice's bond is its
 /// own; the hypha's identity is not the drawer.
 #[test]
-fn a_short_lane_refuses_the_act_and_dockets_nothing() {
+fn speak_pair_short_lane_refuses_and_dockets_nothing() {
 let a = vec![(0, 0, 1u8)];
 let b = vec![(0, 0, 2u8)];
 let c = vec![(1, 0, 3u8)];
@@ -97,7 +97,7 @@ assert_eq!(
 /// occupancy returns, and nothing is slashed. Through the orbit it was
 /// listed in and the one after it, it stands.
 #[test]
-fn docket_draw_releases_on_lapse() {
+fn orbit_lapse_releases_docket_draw() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1u8)];
 let b = vec![(0, 0, 2u8)];
@@ -125,7 +125,7 @@ assert!(
 /// speaker who can pay nothing on a fully exhausted lane — spam costs
 /// exactly when strain is real, and paying members pass.
 #[test]
-fn the_door_charges_strain_and_defers_the_broke() {
+fn door_deferral_charges_strain_and_defers_broke() {
 let mut k = Kernel::new();
 // Calm: the door is free — a sentence is heard untouched.
 let a = vec![(0, 0, 1), (0, 1, 1)];
@@ -191,7 +191,7 @@ assert!(
 /// sentence that names nothing settles nothing. The replay is linear in
 /// the proof and the hypha runs no search.
 #[test]
-fn a_probe_settles_a_residual_then_closure_without_search() {
+fn settle_probe_settles_residual_then_closure() {
 use crate::anastome::dialogue::ProbeClosure;
 use crate::transducer::sentence::replay_at;
 let mut k = Kernel::new();
@@ -270,7 +270,7 @@ assert!(k.quote().1.is_empty(), "the listing cleared");
 /// here is that property: after a residual the listing still re-derives
 /// from its chain.
 #[test]
-fn a_residual_opens_a_face_and_drain_sheds_the_unmoved() {
+fn settle_probe_opens_face_and_drain_sheds_unmoved() {
 use crate::anastome::dialogue::ProbeClosure;
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
@@ -383,7 +383,7 @@ assert!(
 /// Two hyphas at different K relocate the same standing listing at the
 /// same TUniversal: T-room, never a stroke count.
 #[test]
-fn t_room_relocates_at_tuniversal_independent_of_k() {
+fn speak_pair_relocates_at_tuniversal_independent_of_k() {
 // The L recoloured whole to `hue` (20 as ruled, L7). Two hues are two
 // sentences — the sentence is the rule, and a body's shape is quotiented
 // from its key (1.5), so the same recolour of another shape would be the
@@ -432,7 +432,7 @@ assert!(
 /// listings written: the height moves with the ledger while the book
 /// generation stands, and the quote's market view carries that height.
 #[test]
-fn the_quote_reply_height_is_the_chain_head_height_not_the_book_generation() {
+fn book_height_is_chain_head_height() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1u8)];
 let b = vec![(0, 0, 2u8)];

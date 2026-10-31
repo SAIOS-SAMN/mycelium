@@ -46,7 +46,7 @@ fn factor_rotor_peels_commuting_blocks_in_order() {
 /// survives the normal form with its rotor, where read through the sensor's
 /// plane form it was the identity there and was erased.
 #[test]
-fn a_run_on_another_plane_survives_the_normal_form() {
+fn normal_form_keeps_run_on_other_plane() {
     let p23 = LetterId::pythagorean_5((2, 3)).expect("(3,4,5) on (2,3)");
     let q23 = LetterId::turn_90((2, 3)).expect("90° turn (2,3)");
     let w = word(&[(p23, false), (q23, false), (q23, false), (p23, false)]);
@@ -60,7 +60,7 @@ fn a_run_on_another_plane_survives_the_normal_form() {
 /// outside the alphabet on every plane — leaves `RotorPrime(plane, 17)`,
 /// and the plane it stood on is named.
 #[test]
-fn a_prime_outside_the_alphabet_is_a_rotor_prime_demand() {
+fn factor_rotor_demands_prime_outside_alphabet() {
     let q = |n: i64, d: i64| Q::new(BigInt::from(n), BigInt::from(d));
     // Φ = 8/17 + 15/17 e01: the rotor of the (8,15,17) rotation on the sensor plane.
     let r = Rotor::scalar(q(8, 17)).add(&Rotor::blade(0b0011, q(15, 17)));
@@ -94,7 +94,7 @@ fn a_prime_outside_the_alphabet_is_a_rotor_prime_demand() {
 /// `1 + e01 + e02`, a versor of weight 3 — has no rational plane rotors in
 /// any order and stands as a `Standing` demand, never a chain.
 #[test]
-fn a_block_the_order_does_not_decompose_is_a_standing_demand() {
+fn factor_rotor_demands_standing_for_irrational_block() {
     let q01 = LetterId::turn_90((0, 1)).expect("90° turn (0,1)");
     let q02 = LetterId::turn_90((0, 2)).expect("90° turn (0,2)");
     let r = word(&[(q02, false), (q01, false)]).rotor();
@@ -145,7 +145,7 @@ fn a_block_the_order_does_not_decompose_is_a_standing_demand() {
 /// sensor plane. The bound is the enumeration's own; this is a test
 /// fixture, not a search in the engine (rule 10).
 #[test]
-fn l13_the_ordered_peel_against_the_alphabets_own_primes() {
+fn spell_peel_on_closes_alphabet_prime_products() {
     use crate::core::gaussian::Gauss;
     use crate::transducer::alphabet::{rotor_block_on, spell_peel_on, PLANE_COL, PLANE_ROW};
     use crate::transducer::peel::PeelNest;

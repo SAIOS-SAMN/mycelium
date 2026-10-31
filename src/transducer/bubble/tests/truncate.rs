@@ -27,7 +27,7 @@ const RING: [(usize, usize); 4] = [(0, 1), (1, 2), (2, 3), (3, 0)];
 /// returns to the room, its remainder goes to the cavity; the ring stands
 /// and Ȟ¹ is 1 before and after.
 #[test]
-fn a_leaf_off_a_ring_is_truncated_and_the_ring_stands() {
+fn truncate_removes_leaf_and_keeps_ring() {
     let (mut c, vs) = nerve(5, &[RING.as_slice(), &[(0, 4)]].concat(), [1, 2, 3, 4]);
     assert_eq!(c.core_reading().h1, 1);
     c.truncate(std::slice::from_ref(&vs[4]));
@@ -44,7 +44,7 @@ fn a_leaf_off_a_ring_is_truncated_and_the_ring_stands() {
 /// A chain of two leaves hangs off a ring: the tip leaves first, then the
 /// thought it hung from, each round's degrees recounted.
 #[test]
-fn a_chain_of_leaves_is_truncated_round_by_round() {
+fn truncate_removes_leaf_chain_round_by_round() {
     let (mut c, vs) = nerve(6, &[RING.as_slice(), &[(0, 4), (4, 5)]].concat(), [0; 4]);
     c.truncate(std::slice::from_ref(&vs[0]));
     let r = c.core_reading();
@@ -56,7 +56,7 @@ fn a_chain_of_leaves_is_truncated_round_by_round() {
 /// Two rings joined by a path: the path is in the 2-core and stays, a leaf on
 /// it leaves; Ȟ¹ is 2 before and after.
 #[test]
-fn a_path_joining_two_rings_stays() {
+fn truncate_keeps_path_joining_two_rings() {
     let rings: Vec<(usize, usize)> = RING.iter().chain(&RING.map(|(a, b)| (a + 4, b + 4))).copied().collect();
     let (mut c, vs) = nerve(10, &[rings.as_slice(), &[(0, 8), (8, 4), (8, 9)]].concat(), [0; 4]);
     assert_eq!(c.core_reading().h1, 2);
@@ -70,7 +70,7 @@ fn a_path_joining_two_rings_stays() {
 /// counted; a leaf something glued stands, counted; an isolated thought is
 /// untouched.
 #[test]
-fn a_leaf_on_a_class_edge_or_glued_stands() {
+fn truncate_keeps_class_edge_and_glued_leaves() {
     use crate::transducer::alphabet::LetterId;
     let (mut c, vs) = nerve(7, &[RING.as_slice(), &[(0, 4), (1, 5)]].concat(), [0; 4]);
     let p = crate::transducer::alphabet::Word::from_letters(&[(LetterId::pythagorean_5((0, 1)).expect("a plane"), false)]).rotor();
@@ -94,7 +94,7 @@ fn a_leaf_on_a_class_edge_or_glued_stands() {
 /// nerve's 2-core: a leaf in another component stays until its own
 /// component changes, and per-component and whole-nerve readings agree.
 #[test]
-fn per_component_truncation_agrees_with_the_whole_nerve() {
+fn truncate_per_component_agrees_with_whole_nerve() {
     let other: Vec<(usize, usize)> = RING.iter().map(|&(a, b)| (a + 5, b + 5)).chain([(5, 9)]).collect();
     let (mut c, vs) = nerve(10, &[RING.as_slice(), &[(0, 4)], other.as_slice()].concat(), [0; 4]);
     let whole = c.two_core();

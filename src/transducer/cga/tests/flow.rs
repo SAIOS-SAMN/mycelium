@@ -31,7 +31,7 @@ fn planes() -> [(Mv, FlowKind); 3] {
 /// exactly, on every kind. On the null plane it is plain addition: 1/7 then
 /// 2/5 is 19/35, the white-hole slivers' own law.
 #[test]
-fn points_of_one_flow_compose_by_the_metrics_own_law() {
+fn flow_point_then_composes_by_metric_law() {
     let (t1, t2) = (q(1, 7), q(2, 5));
     for (b, kind) in planes() {
         let (p1, p2) = (FlowPoint::at(&b, &t1).expect("a plane"), FlowPoint::at(&b, &t2).expect("a plane"));
@@ -52,7 +52,7 @@ fn points_of_one_flow_compose_by_the_metrics_own_law() {
 /// back against MR1's `c` off the motion's own action — and `|1 − c|` falls
 /// as the flow nears its return.
 #[test]
-fn a_flow_returns_exactly_and_reads_how_near_it_stands() {
+fn flow_point_returns_exactly_and_reads_nearness() {
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
     for (b, kind) in planes() {
         let p = FlowPoint::at(&b, &q(3, 4)).expect("a plane");
@@ -79,7 +79,7 @@ fn a_flow_returns_exactly_and_reads_how_near_it_stands() {
 /// point composed with itself again and again stays exact and off its
 /// return, its numbers growing — content, never capped.
 #[test]
-fn the_pole_is_held_and_a_rosette_flows_on_exactly() {
+fn flow_point_holds_pole_and_rosette_never_returns() {
     let b = plane(E1, E2);
     let half = FlowPoint::of_motion(&b).expect("the plane's own blade");
     assert_eq!(half.parameter(), None, "the 180° turn: no finite parameter");
@@ -101,7 +101,7 @@ fn the_pole_is_held_and_a_rosette_flows_on_exactly() {
 /// lies on a flow — at the 180° pole of the plane the mirror's normal makes
 /// with the new axis. An even motion unfolds to itself.
 #[test]
-fn a_flip_unfolds_to_a_turn_one_dimension_up() {
+fn unfold_lifts_flip_to_turn_one_dimension_up() {
     let mirror = Mv::blade(E1, q(4, 1)).sub(&Mv::blade(E2, q(3, 1)));
     let turned = unfold(&mirror, 2).expect("a versor");
     assert_eq!(turned.n(), 3);

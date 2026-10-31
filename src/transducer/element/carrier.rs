@@ -716,7 +716,7 @@ impl Element {
     }
 
     /// Set the envelope. The address does not move: none of this is a
-    /// coordinate of the form (§1.5, `evidence_is_not_identity`), which is
+    /// coordinate of the form (§1.5, `form_vertex_key_ignores_citations_and_certificates`), which is
     /// the whole reason it rides here.
     pub fn set_receipts(&mut self, receipts: crate::transducer::element::ReceiptsEnvelope) {
         self.receipts = receipts;

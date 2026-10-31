@@ -11,7 +11,7 @@ use crate::anastome::dialogue::*;
 /// equivocation is 47.4's burn proof — the mesh's only bond-slashing
 /// evidence — and both read as "the sender's ruling did not land".
 #[test]
-fn a_ruling_is_answered_with_the_arm_it_reached() {
+fn ruled_round_trips_each_arm() {
     for r in [Ruled::Applied, Ruled::Inert] {
         let back = decode_ruled(&encode_ruled(&r).expect("frames")).expect("parses whole");
         assert_eq!(

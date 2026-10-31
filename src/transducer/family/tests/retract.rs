@@ -223,7 +223,7 @@ fn from_address_retracts_every_corpus_form() {
 /// and its codec are retired (54.7 B6, LD3-c), and the address is the one
 /// decoder the court holds.
 #[test]
-fn the_decoded_form_agrees_with_the_extracted_on_every_reading_the_court_makes() {
+fn from_address_agrees_on_every_court_reading() {
     let corpus = corpus();
     let Ok(dir) = std::fs::read_dir(&corpus) else {
         eprintln!("  predicate guard: {corpus} does not read");
@@ -343,7 +343,7 @@ fn the_decoded_form_agrees_with_the_extracted_on_every_reading_the_court_makes()
 /// fixture is a shape somebody chose and is where adjudication executes
 /// today, and a corpus form is whatever the scene turned out to be.
 #[test]
-fn the_carrier_holds_its_own_invariants_without_the_oracle() {
+fn form_vertex_key_holds_carrier_invariants() {
     use crate::transducer::sentence::as_element_form;
 
     let mut forms: Vec<Form> = Vec::new();

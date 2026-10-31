@@ -29,7 +29,7 @@ fn verifies(signer: &ed25519_dalek::SigningKey, bytes: &[u8], sig: &[u8; 64]) ->
 /// entry it was, its signature verifying; the applied list rides only
 /// where it is not empty; a count of zero written is no entry.
 #[test]
-fn a_ledger_entry_reads_back_and_verifies() {
+fn ledger_entry_round_trips_and_verifies() {
     for applied in [Vec::new(), vec![([3; 32], 41u64), ([4; 32], 42)]] {
         let e = LedgerEntry { domain: [6; 32], u: 40, commitment: [1; 32], events: [2; 32], point: at(7), parent: [5; 32], applied, nonce: [8; 32] };
         let signed = e.clone().sign(&key(30));
@@ -65,7 +65,7 @@ fn a_ledger_entry_reads_back_and_verifies() {
 /// were, its wire `[2][throat 32][keeper 32][frame_0][frame_1][N]`, and its
 /// id the one derived from its throat key.
 #[test]
-fn a_map_act_and_the_map_read_back() {
+fn map_act_and_reading_round_trip() {
     use crate::anastome::dialogue::atlas::{local_record_id, local_throat_id};
     use crate::transducer::cga::{base_vector, translator_at, Mv};
     let n = |v: i64| num_rational::BigRational::from_integer(v.into());
@@ -124,7 +124,7 @@ fn a_map_act_and_the_map_read_back() {
 /// A TRAVERSE, its declarations and its answer read back whole; both
 /// declarations are signed over the crossing, never over the payer's act.
 #[test]
-fn a_traverse_reads_back_whole() {
+fn traverse_round_trips_whole() {
     let mut t = Traverse {
         from: [6; 32],
         payer: key(40).verifying_key().to_bytes(),
@@ -167,7 +167,7 @@ fn a_traverse_reads_back_whole() {
 
 /// A STAKE ACT is a wallet frame no read decodes as; its answer reads back.
 #[test]
-fn a_stake_act_reads_back() {
+fn stake_act_round_trips_never_as_wallet() {
     let s = StakeAct { who: key(40).verifying_key().to_bytes(), unstake: true, mu: [1, 2, 3, 4], nonce: [7; 32] }.sign(&key(40));
     let frame = encode_stake(&s);
     assert_eq!(decode_stake(&frame), Some(s.clone()));

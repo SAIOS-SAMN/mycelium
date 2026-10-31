@@ -23,7 +23,7 @@ fn slide_sentence() -> Element {
 /// rings are re-derived all the same, each taught word read: the slides
 /// spelled by the alphabet, nothing offered that the alphabet says.
 #[test]
-fn every_sentence_heard_has_its_rings_read_whatever_its_adjudication() {
+fn hear_frame_on_reads_rings_of_unstood_sentence() {
     let e = slide_sentence();
     let mut court = Kernel::new();
     court.bind_identity([0x5a; 32]);

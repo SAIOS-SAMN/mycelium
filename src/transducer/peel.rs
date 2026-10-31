@@ -369,8 +369,9 @@ mod tests {
         }
     }
 
+    /// The peel closes or stands, and never forces a shell.
     #[test]
-    fn the_peel_closes_or_stands_never_forces() {
+    fn peel_nest_closes_or_stands_never_forces() {
         let closed = peel_nest(vec![1, 2, 3], &TakeHead, &mut Shorter(None));
         assert_eq!(closed, PeelNest::Closed { cores: vec![1, 2, 3] });
         let empty = peel_nest(Vec::new(), &TakeHead, &mut Shorter(None));
@@ -379,8 +380,9 @@ mod tests {
         assert_eq!(standing, PeelNest::Standing { cores: vec![1], arc: vec![0xff, 3] });
     }
 
+    /// A body peels into its whole, its outline and its core.
     #[test]
-    fn a_body_peels_into_outline_and_core() {
+    fn peel_body_yields_outline_and_core() {
         let mut compartments = Vec::new();
         for r in 0..3 {
             for c in 0..3 {
@@ -397,7 +399,7 @@ mod tests {
     /// are one outline shell of sixteen compartments and one core of two, each
     /// compartment in the frame it came from.
     #[test]
-    fn a_stack_peels_each_section_in_its_own_frame() {
+    fn peel_body_peels_each_section_in_own_frame() {
         let mut compartments = Vec::new();
         for k in 0..2 {
             for r in 0..3 {

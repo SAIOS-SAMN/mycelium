@@ -44,8 +44,10 @@ fn carried(motion: &Mv) -> Vec<(BodyState, BodyState)> {
         .collect()
 }
 
+/// The register holds every law, each at its own coordinate with a
+/// statement.
 #[test]
-fn the_register_holds_every_law_each_at_its_own_coordinate() {
+fn laws_hold_each_law_at_its_own_coordinate() {
     let addresses: Vec<_> = LAWS.iter().map(|l| l.address()).collect();
     for (law, a) in LAWS.iter().zip(&addresses) {
         assert_eq!(a.as_bytes(), [crate::transducer::address::TAG_LAW, law.index(), LAW_VERSION].as_slice());
@@ -56,8 +58,10 @@ fn the_register_holds_every_law_each_at_its_own_coordinate() {
     }
 }
 
+/// A turn that carries its bodies is admitted under every law, split into
+/// its modes and exchanging no torque.
 #[test]
-fn a_turn_that_carries_its_bodies_is_admitted_under_every_law() {
+fn verify_admits_turn_carrying_its_bodies() {
     let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
     let v = verify(&t, &mut budget());
     assert!(v.admitted(), "{:?}", v.breaches);
@@ -71,7 +75,7 @@ fn a_turn_that_carries_its_bodies_is_admitted_under_every_law() {
 /// modes unsplit for want of stroke; under the stroke its own modes need it
 /// is admitted, as it is under any stroke that suffices.
 #[test]
-fn a_lawful_turn_is_admitted_under_the_stroke_its_modes_need() {
+fn verify_sized_admits_turn_short_stroke_leaves_unread() {
     let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
     let short = verify(&t, &mut crate::physics::Physics::default().stroke_n(7));
     // 78.121 — a short stroke leaves the law UNREAD, never broken: no
@@ -85,8 +89,10 @@ fn a_lawful_turn_is_admitted_under_the_stroke_its_modes_need() {
     assert_eq!(sized, verify(&t, &mut budget()), "the verdict of the transition alone");
 }
 
+/// Each law refuses the transition that breaks it, and every breach is
+/// named beside the others, not only the first.
 #[test]
-fn each_law_refuses_what_breaks_it_and_every_breach_is_named() {
+fn verify_names_every_breach_by_its_law() {
     let laws_of = |v: &Verdict| v.breaches.iter().map(|(l, _)| *l).collect::<Vec<_>>();
     // TIME: the height stands still.
     let still = Transition { motion: turn(), heights: (8, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
@@ -117,7 +123,7 @@ fn each_law_refuses_what_breaks_it_and_every_breach_is_named() {
 /// as one ratio, the dilation lane; a drift of one body moves the pairs it
 /// touches, by no one ratio.
 #[test]
-fn points_are_read_at_unit_weight_and_a_dilation_is_a_similarity() {
+fn verify_admits_points_and_similarity_reads_dilation() {
     let mut bodies = carried(&turn());
     for (before, after) in bodies.iter_mut() {
         before.nucleus = point_at(&before.body.centre);
@@ -145,9 +151,9 @@ fn points_are_read_at_unit_weight_and_a_dilation_is_a_similarity() {
 /// lane, admitted. Two bodies whose momenta move by two ratios under one
 /// dilation stand to no one ratio: refused, as version 1 refused every
 /// dilation. A rigid motion is held to exact conservation as before
-/// (`each_law_refuses_what_breaks_it_and_every_breach_is_named`).
+/// (`verify_names_every_breach_by_its_law`).
 #[test]
-fn a_dilation_conserves_momentum_up_to_its_ratio() {
+fn verify_admits_dilation_momentum_up_to_one_ratio() {
     let d = crate::transducer::cga::dilator(&q(2));
     let at_origin = |mass: i64, radius: i64| {
         let mut b = body([0, 0, 0]);
@@ -179,9 +185,9 @@ fn a_dilation_conserves_momentum_up_to_its_ratio() {
 /// same gain admitted where a source at a finite place emits it; a loss
 /// admitted where a sink absorbs it; a flux of no mass, or at no finite
 /// place, refused by its index. A dilation's change of mass stays its
-/// expansion lane (`a_dilation_conserves_momentum_up_to_its_ratio`).
+/// expansion lane (`verify_admits_dilation_momentum_up_to_one_ratio`).
 #[test]
-fn mass_is_made_or_lost_only_at_a_recorded_source_or_sink() {
+fn verify_refuses_mass_change_without_source_or_sink() {
     let heavier = |m: i64| {
         let mut b = carried(&turn());
         if let [(_, after), ..] = b.as_mut_slice() {
@@ -228,7 +234,7 @@ fn mass_is_made_or_lost_only_at_a_recorded_source_or_sink() {
 /// lost sites'; a reshaping at constant mass is no flux; and the lone flux
 /// put to the laws is admitted where it stands at a finite place.
 #[test]
-fn a_change_that_is_no_motion_is_read_as_the_flux_its_links_carry() {
+fn flux_of_links_reads_creation_and_vanishing() {
     let half = Q::new(1.into(), 2.into());
     // Two sites gained on row 1, at columns 0 and 1; a site held throughout.
     let made = [(1, 0, 0, 3), (1, 1, 0, 3), (0, 0, 2, 2)];
@@ -254,7 +260,7 @@ fn a_change_that_is_no_motion_is_read_as_the_flux_its_links_carry() {
 /// breach, each law beside it, survives its bytes whole. A truncated payload
 /// decodes to nothing, never to a default.
 #[test]
-fn the_contracts_bytes_decode_to_the_objects_they_carry() {
+fn codec_round_trips_transition_and_verdict() {
     use super::codec::{law_at, put_transition, put_verdict, take_transition, take_verdict};
     for law in LAWS {
         assert_eq!(law_at(&law.address()), Some(law));
@@ -310,7 +316,7 @@ fn the_contracts_bytes_decode_to_the_objects_they_carry() {
 /// its coordinate with its statement, in the register's order, at the
 /// register's version.
 #[test]
-fn a_kernel_asks_the_register_and_puts_a_transition_to_it() {
+fn decode_laws_request_reads_register_and_verify() {
     use super::codec::{decode_laws_request, decode_register_reply, encode_register_reply, encode_register_request, encode_verify_request, LawsRequest};
     assert_eq!(decode_laws_request(&encode_register_request()), Some(LawsRequest::Register));
     let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
@@ -328,7 +334,7 @@ fn a_kernel_asks_the_register_and_puts_a_transition_to_it() {
 /// every served term and the version stand in `MU-LEXICON.md`, so the table
 /// and its exposition cannot drift.
 #[test]
-fn the_lexicon_is_served_as_it_is_written() {
+fn lexicon_reply_serves_terms_as_written() {
     use super::codec::{decode_laws_request, decode_lexicon_reply, encode_lexicon_reply, encode_lexicon_request, LawsRequest};
     use super::lexicon::{LEXICON_VERSION, TERMS};
     assert_eq!(decode_laws_request(&encode_lexicon_request()), Some(LawsRequest::Lexicon));
@@ -350,7 +356,7 @@ fn the_lexicon_is_served_as_it_is_written() {
 /// transition's own verdict, in the order sent — the lawful turn admitted,
 /// the still height refused on time alone.
 #[test]
-fn a_batch_is_answered_one_verdict_per_transition_in_order() {
+fn batch_reply_carries_one_verdict_per_transition_in_order() {
     use super::codec::{decode_batch_reply, decode_laws_request, encode_batch_reply, encode_batch_request, LawsRequest};
     let lawful = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
     let still = Transition { heights: (8, 8), ..lawful.clone() };

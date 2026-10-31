@@ -30,7 +30,7 @@ fn court() -> Kernel {
 /// the kernel answers at the publication; and a cover that did not move is
 /// shared with the last reading, not copied.
 #[test]
-fn the_courts_own_reads_off_the_shelf_are_the_kernels() {
+fn publish_own_reads_match_kernel() {
     let mut k = court();
     let voice = [0x7b; 32];
     k.court_voice = Some(voice);
@@ -56,7 +56,7 @@ fn the_courts_own_reads_off_the_shelf_are_the_kernels() {
 /// of bond as the kernel refuses it, and — bonded — standing or refused on
 /// the same prefix exactly as the kernel rules.
 #[test]
-fn a_fold_verified_off_the_shelf_is_the_kernels_verdict() {
+fn verify_fold_off_shelf_matches_kernel() {
     let home = [0x5d; 32];
     let mut h = Kernel::new();
     h.bind_identity(home);
@@ -83,7 +83,7 @@ fn a_fold_verified_off_the_shelf_is_the_kernels_verdict() {
 /// every place on the line and every cursor, the rows and their total equal
 /// those `rows_below` reads, so `ACT_ROWS` answers exactly as it did.
 #[test]
-fn a_page_of_the_rows_below_is_the_whole_prefix_paged() {
+fn rows_below_page_pages_whole_prefix() {
     let mut k = court();
     let own_vk = k.chain().vk();
     let line = k.chain().line_between(&own_vk, None, Place { k: u64::MAX, i: u64::MAX }, usize::MAX);
@@ -113,7 +113,7 @@ fn a_page_of_the_rows_below_is_the_whole_prefix_paged() {
 /// reads the next chart's complex round the nerve, and as many readings as
 /// the nerve holds charts carry every record the whole reading carries.
 #[test]
-fn the_class_records_resume_round_the_nerve_by_asker() {
+fn class_records_on_resumes_round_nerve_by_asker() {
     let mut k = court();
     let all = k.class_records(&crate::transducer::stalk::Invariant::default());
     let whole = k.class_records_on(&crate::transducer::stalk::Invariant::default(), &[1; 32], &mut budget());
@@ -136,7 +136,7 @@ fn the_class_records_resume_round_the_nerve_by_asker() {
 /// A TOUCHED WORD IS REPLACED IN PLACE: the snapshot after the touch holds,
 /// at every address, the word a whole rebuild gives it.
 #[test]
-fn a_touched_word_is_the_word_a_rebuild_gives() {
+fn touch_at_matches_language_rebuild() {
     let mut k = court();
     let _ = k.language();
     let addr = k.basis.scoped().next().map(|(a, _)| a).expect("a word held");

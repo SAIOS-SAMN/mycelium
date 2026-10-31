@@ -20,7 +20,7 @@ use super::common::*;
 /// sensor action — the second is the identity there — so the `Cl(3,1)`
 /// product cannot tell them apart, and the composed spelling can.
 #[test]
-fn a_composite_carries_its_rotor_and_a_transition_answers_one() {
+fn compose_carries_rotor_and_transition_answers_one() {
     use crate::transducer::alphabet::{LetterId, Word};
     let q01 = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("the sensor plane"), false)]);
     let q13 = Word::from_letters(&[(LetterId::turn_90((1, 3)).expect("the (1,3) base plane"), false)]);
@@ -75,7 +75,7 @@ fn a_composite_carries_its_rotor_and_a_transition_answers_one() {
 /// so the two are one address — the codec no longer writes the sign, and
 /// a differing address is a differing element.
 #[test]
-fn a_versor_and_its_negation_are_one_vertex_and_one_address() {
+fn address_identifies_versor_with_its_negation() {
     let q = |n: i64| num_rational::BigRational::from_integer(BigInt::from(n));
     let v = translator_versor(2, 3);
     let neg = v.scale(&q(-1));
@@ -93,6 +93,8 @@ fn a_versor_and_its_negation_are_one_vertex_and_one_address() {
     assert!(!a.same_vertex(&c));
 }
 
+/// Two elements have the same action exactly when their versors are
+/// projectively equal.
 #[test]
 fn same_action_is_projective_versor_equality() {
     let t = translator_versor(1, 0);
@@ -103,8 +105,11 @@ fn same_action_is_projective_versor_equality() {
     assert!(!a.same_action(&other), "distinct versors are distinct actions");
 }
 
+/// The substance of a germinated element is its centered chain: one
+/// deformation at any position is one address, while an equal tally with
+/// different geometry stays distinct.
 #[test]
-fn substance_is_the_centered_chain() {
+fn address_ignores_position_keeps_geometry() {
     let a = [(0, 0, 1u8), (0, 1, 2), (1, 0, 3)];
     let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)]; // (0,1): 2→9
     // The same deformation transposed +7 rows, +5 cols.
@@ -128,8 +133,10 @@ fn substance_is_the_centered_chain() {
     assert_ne!(g1.address(), g2.address(), "and distinct identity");
 }
 
+/// Vertex identity is the address together with ρ, σ and the shift: an
+/// element differing in any one of them is a different vertex.
 #[test]
-fn same_vertex_is_address_rho_sigma_and_shift() {
+fn same_vertex_distinguishes_rho_sigma_and_shift() {
     let id = crate::transducer::alphabet::Word::identity();
     let swap = from_connection(&id, &identity_versor(), &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).expect("swap");
     let cycle = from_connection(&id, &identity_versor(), &[(1, 2), (2, 3), (3, 1)], &Vec::new(), [1, 0, 0, 0]).expect("cycle");
@@ -152,8 +159,9 @@ fn same_vertex_is_address_rho_sigma_and_shift() {
     assert_ne!(swap.address(), place.address());
 }
 
+/// Two spellings of one connection (M2) give one address and one vertex.
 #[test]
-fn m2_two_spellings_one_address() {
+fn address_identifies_two_spellings() {
     let w = from_connection(&crate::transducer::alphabet::Word::identity(), &identity_versor(), &[(1, 2), (2, 1)], &Vec::new(), [5, 2, 0, 0]).expect("spells");
     let qid = crate::transducer::alphabet::LetterId::turn_90((0, 1)).unwrap();
     let long = crate::transducer::alphabet::Word::from_letters(&[(qid, false), (qid, false), (qid, false), (qid, false)]);
@@ -170,8 +178,9 @@ fn m2_two_spellings_one_address() {
     }
 }
 
+/// A connection's address keys the A4 carriage, not a coordinate pair.
 #[test]
-fn connection_address_keys_the_carriage_not_a_pair() {
+fn from_connection_address_keys_carriage_not_pair() {
     let car = translator_versor(3, 5);
     let w = from_connection(&crate::transducer::alphabet::Word::identity(), &car, &[], &Vec::new(), [1, 0, 0, 0]).expect("spells");
     let letters = w.letters().expect("letters");

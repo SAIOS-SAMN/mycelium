@@ -35,7 +35,7 @@ fn carrier() -> (Keyed<()>, Vec<Vec<u8>>) {
 /// keys between, beside, below and above them, the seek yields the keys a
 /// full walk filtered past `from` yields — no fewer, no more, no reorder.
 #[test]
-fn the_seek_yields_exactly_the_keys_after_from() {
+fn after_yields_exactly_keys_past_from() {
     let (k, keys) = carrier();
     let mut probes = keys.clone();
     probes.extend([vec![0x00, 0x00, 0x00], vec![0x3f], vec![0x40, 0x10, 0x00, 0x00], vec![0x41], vec![0xff, 0xff, 0xff]]);
@@ -50,7 +50,7 @@ fn the_seek_yields_exactly_the_keys_after_from() {
 /// key, the walk visits a trie path's worth of nodes — fewer than the keys
 /// before it, which the full walk visited one by one.
 #[test]
-fn the_seek_does_not_walk_the_prefix() {
+fn after_visits_fewer_nodes_than_full_walk() {
     let (k, keys) = carrier();
     // The keys are sorted: the slice's ends are the order's.
     let [first, .., last] = keys.as_slice() else { panic!("the carrier holds keys") };

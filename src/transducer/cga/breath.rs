@@ -149,7 +149,7 @@ mod tests {
     /// commutator, never assumed: its one plane is elliptic, a multiple of
     /// the wedge, commuting with `D`.
     #[test]
-    fn the_breath_splits_into_its_radial_axis_and_its_orthogonal_pinch() {
+    fn breath_splits_radial_axis_from_orthogonal_pinch() {
         let (a, b) = ([q(1), q(2), q(0)], [q(3), q(-1), q(2)]);
         let br = breath(&a, &b, &mut budget()).expect("the sensor's vectors breathe");
         let wedge = vector(&a).expect("a").geo(&vector(&b).expect("b")).grade(2);
@@ -164,7 +164,7 @@ mod tests {
 
     /// `a ∥ b` BREATHES WITH NO PINCH; `a ⊥ b` PINCHES WITH NO BREATH.
     #[test]
-    fn parallel_breathes_and_orthogonal_pinches() {
+    fn breath_parallel_breathes_orthogonal_pinches() {
         let along = breath(&[q(2), q(0), q(0)], &[q(3), q(0), q(0)], &mut budget()).expect("breathes");
         assert!(!along.radial.is_zero() && along.planes.is_empty() && along.twists().is_empty(), "parallel: radial only");
         let across = breath(&[q(1), q(0), q(0)], &[q(0), q(1), q(0)], &mut budget()).expect("breathes");
@@ -176,7 +176,7 @@ mod tests {
     /// BEYOND THREE AXES: a pair reaching a fifth axis breathes there, its
     /// pinch in the plane the two span — no axis is the sensor's privilege.
     #[test]
-    fn the_breath_reads_every_axis_the_algebra_carries() {
+    fn breath_reads_every_base_axis() {
         let (a, b) = ([q(1), q(0), q(0), q(0), q(0)], [q(0), q(0), q(0), q(0), q(1)]);
         let br = breath(&a, &b, &mut budget()).expect("five axes breathe");
         assert!(br.radial.is_zero() && br.by_kind() == [1, 0, 0], "a pinch in the plane e1 ∧ e5");
@@ -187,7 +187,7 @@ mod tests {
     /// plane — the commutator of two rotations is a rotation, a pinch, with no
     /// radial part; a turn with itself commutes and breathes nothing.
     #[test]
-    fn two_motions_breathe_against_each_other() {
+    fn breathe_two_turns_pinch_third_plane() {
         use crate::transducer::cga::{E1, E2, E3};
         let plane = |i: usize, j: usize| Mv::blade(i | j, q(1));
         let br = breathe(&plane(E1, E2), &plane(E2, E3), &mut budget()).expect("two turns breathe");
@@ -199,7 +199,7 @@ mod tests {
     /// THE RADIAL AXIS IS SIGNED: a pair turned against each other breathes
     /// the other way, its planes reversed with it.
     #[test]
-    fn the_radial_axis_reverses_with_its_pair() {
+    fn breath_radial_reverses_with_its_pair() {
         let (a, b) = ([q(1), q(1), q(0)], [q(2), q(0), q(1)]);
         let out = breath(&a, &b, &mut budget()).expect("breathes");
         let back = breath(&a, &[q(-2), q(0), q(-1)], &mut budget()).expect("breathes");

@@ -36,7 +36,7 @@ fn glosses(elements: &[crate::transducer::sentence::form::rule_element::Lowered]
 
 /// C1 — A VANISHED BODY: every body of one hue erased, the rest kept.
 #[test]
-fn a_family_erasing_one_hue_is_known() {
+fn extract_rule_reads_erasing_one_hue() {
     knows(
         &[
             (&["10000", "00000", "00200", "00000", "00001"], &["10000", "00000", "00000", "00000", "00001"]),
@@ -50,7 +50,7 @@ fn a_family_erasing_one_hue_is_known() {
 /// C3 — A LINE: from each cell of hue 3, a line of its hue to the border on
 /// its right.
 #[test]
-fn a_family_drawing_lines_to_the_border_is_known() {
+fn extract_rule_reads_lines_to_border() {
     knows(
         &[
             (&["0000", "3000", "0000", "0000"], &["0000", "3333", "0000", "0000"]),
@@ -66,7 +66,7 @@ fn a_family_drawing_lines_to_the_border_is_known() {
 /// measured off the effect — the displacement from the cell a run leaves —
 /// so two rays are two clauses, never two of eight rays tried.
 #[test]
-fn a_family_drawing_lines_along_two_rays_is_known() {
+fn extract_rule_reads_lines_along_two_rays() {
     knows(
         &[
             (&["0000", "0300", "0000", "0000"], &["0000", "0333", "0300", "0300"]),
@@ -83,7 +83,7 @@ fn a_family_drawing_lines_along_two_rays_is_known() {
 /// piece by piece, the fill's piece and the line's piece are each their own
 /// clause, and the composed sentence is proved once.
 #[test]
-fn a_family_filling_and_drawing_at_once_is_known() {
+fn extract_rule_reads_fill_and_line_at_once() {
     knows(
         &[
             (&["11100", "10100", "11100", "00000", "30000"], &["11100", "14100", "11100", "00000", "33333"]),
@@ -99,7 +99,7 @@ fn a_family_filling_and_drawing_at_once_is_known() {
 /// kept. The join is read off the straight pieces whose ends abut two bodies;
 /// no line says it (a line from the lone 1 would run to the border).
 #[test]
-fn a_family_joining_facing_bodies_is_known() {
+fn extract_rule_reads_join_of_facing_bodies() {
     knows(
         &[
             (&["10010", "00000", "00100"], &["13310", "00000", "00100"]),
@@ -114,7 +114,7 @@ fn a_family_joining_facing_bodies_is_known() {
 /// two rows below itself, the source kept. The offset is the one every
 /// echoed piece offers — read off them, no offset swept.
 #[test]
-fn a_family_echoing_its_bodies_is_known() {
+fn extract_rule_reads_echo_of_bodies() {
     knows(
         &[
             (&["120", "000", "000", "000"], &["120", "000", "120", "000"]),
@@ -130,7 +130,7 @@ fn a_family_echoing_its_bodies_is_known() {
 /// kept. The piece is the body's shape under the square's symmetry the group
 /// reaches first; no symmetry is tried against the output.
 #[test]
-fn a_family_echoing_its_bodies_mirrored_is_known() {
+fn extract_rule_reads_mirrored_echo() {
     use crate::transducer::sentence::form::clause::{About, Act};
     let clauses = knows(
         &[
@@ -148,7 +148,7 @@ fn a_family_echoing_its_bodies_mirrored_is_known() {
 /// offset is offered by every echoed piece, so the one-offset reading leaves
 /// them; each offset every pair shows is its own echo.
 #[test]
-fn a_family_echoing_its_bodies_at_two_offsets_is_known() {
+fn extract_rule_reads_echoes_at_two_offsets() {
     use crate::transducer::sentence::form::clause::Act;
     let clauses = knows(
         &[
@@ -168,7 +168,7 @@ fn a_family_echoing_its_bodies_at_two_offsets_is_known() {
 /// bend is read off the piece: a run on a row and a run on a column meeting
 /// at the corner, each abutting the body it leaves or reaches.
 #[test]
-fn a_family_joining_bodies_round_a_corner_is_known() {
+fn extract_rule_reads_bend_round_corner() {
     use crate::transducer::sentence::form::clause::Act;
     let clauses = knows(
         &[
@@ -191,7 +191,7 @@ fn a_family_joining_bodies_round_a_corner_is_known() {
 /// at two offsets and a bend, minted as the elements the court reads and
 /// decoded back, re-mint at one address.
 #[test]
-fn turned_echoes_and_bends_are_read_back_by_the_court() {
+fn from_element_form_reads_back_echoes_and_bends() {
     for family in [
         vec![(grid(&["1100000", "1000000", "0000000"]), grid(&["1101100", "1000100", "0000000"])), (grid(&["0000000", "0022000", "0020000"]), grid(&["0000000", "0022022", "0020002"]))],
         vec![(grid(&["1000", "0000", "0000", "0000"]), grid(&["1010", "0000", "1000", "0000"])), (grid(&["0000", "0200", "0000", "0000"]), grid(&["0000", "0202", "0000", "0200"]))],
@@ -215,7 +215,7 @@ fn turned_echoes_and_bends_are_read_back_by_the_court() {
 /// echo, minted as the elements the court reads and decoded back, carry the
 /// clauses they were read with — the court replays what the voice read.
 #[test]
-fn a_join_and_an_echo_are_read_back_by_the_court() {
+fn from_element_form_reads_back_join_and_echo() {
     for family in [
         vec![(grid(&["10010", "00000", "00100"]), grid(&["13310", "00000", "00100"])), (grid(&["00000", "10001", "00000", "01000"]), grid(&["00000", "13331", "00000", "01000"]))],
         vec![(grid(&["120", "000", "000", "000"]), grid(&["120", "000", "120", "000"])), (grid(&["000", "033", "000", "000", "000"]), grid(&["000", "033", "000", "033", "000"]))],
@@ -236,7 +236,7 @@ fn a_join_and_an_echo_are_read_back_by_the_court() {
 /// pane is painted (the table XOR names). The table is read cell by cell off
 /// the pairs, every entry seen.
 #[test]
-fn a_family_combining_two_panes_is_known() {
+fn extract_rule_reads_two_panes_by_truth_table() {
     knows(
         &[
             (&["10501", "01500"], &["22", "02"]),
@@ -252,7 +252,7 @@ fn a_family_combining_two_panes_is_known() {
 /// its rows, and turned 180°. Each block's symmetry is read by testing the
 /// group's elements against it; no tiling is tried.
 #[test]
-fn a_family_tiling_its_input_by_symmetries_is_known() {
+fn extract_rule_reads_tiles_by_symmetries() {
     knows(
         &[
             (&["12", "30"], &["1221", "3003", "3003", "1221"]),
@@ -266,7 +266,7 @@ fn a_family_tiling_its_input_by_symmetries_is_known() {
 /// minted as the elements the court reads and decoded back, re-mint at one
 /// address.
 #[test]
-fn panes_and_tiles_are_read_back_by_the_court() {
+fn from_element_form_reads_back_panes_and_tiles() {
     for family in [
         vec![(grid(&["10501", "01500"]), grid(&["22", "02"])), (grid(&["11500", "00501"]), grid(&["22", "02"])), (grid(&["00511", "10510"]), grid(&["22", "00"]))],
         vec![(grid(&["12", "30"]), grid(&["1221", "3003", "3003", "1221"])), (grid(&["40", "05"]), grid(&["4004", "0550", "0550", "4004"]))],
@@ -283,7 +283,7 @@ fn panes_and_tiles_are_read_back_by_the_court() {
 
 /// C4 — AN ENCLOSURE FILLED: what a ring's boundary encloses, painted 4.
 #[test]
-fn a_family_filling_enclosed_regions_is_known() {
+fn extract_rule_reads_enclosure_fill() {
     knows(
         &[
             (&["11100", "10100", "11100", "00000", "00000"], &["11100", "14100", "11100", "00000", "00000"]),
@@ -297,7 +297,7 @@ fn a_family_filling_enclosed_regions_is_known() {
 /// C2 — A TEMPLATE STAMPED: the one plus of hue 5 copied, centre onto
 /// centre, over each cell of hue 8, which it replaces.
 #[test]
-fn a_family_stamping_a_template_is_known() {
+fn extract_rule_reads_template_stamp() {
     knows(
         &[
             (
@@ -323,7 +323,7 @@ fn a_family_stamping_a_template_is_known() {
 /// C5 — THE FRAME CROPPED: the output is the extent of the one body of
 /// hue 2, whatever else the scene holds.
 #[test]
-fn a_family_cropping_to_a_body_is_known() {
+fn extract_rule_reads_crop_to_body() {
     knows(
         &[
             (&["00000", "02200", "02200", "00003", "00000"], &["22", "22"]),
@@ -340,7 +340,7 @@ fn a_family_cropping_to_a_body_is_known() {
 /// selected by the coordinate that separates it — never one map forced over
 /// all of them (refused as inseparable before).
 #[test]
-fn a_family_recolouring_bodies_by_where_they_stand_is_known() {
+fn extract_rule_reads_recolour_by_position() {
     knows(
         &[
             (&["5050", "0000", "0500"], &["1010", "0000", "0200"]),
@@ -358,7 +358,7 @@ fn a_family_recolouring_bodies_by_where_they_stand_is_known() {
 /// holds the 3). The meet of what the targets share — hue 5, touches a 2 —
 /// does, read off them.
 #[test]
-fn a_family_selecting_by_two_coordinates_at_once_is_known() {
+fn extract_rule_reads_selection_by_two_coordinates() {
     knows(
         &[
             (&["50000", "02003", "00020", "50000"], &["10000", "02003", "00020", "50000"]),
@@ -373,7 +373,7 @@ fn a_family_selecting_by_two_coordinates_at_once_is_known() {
 /// the same body is kept. Read on the scene's parts — each kept or
 /// recoloured whole — the recolour is one clause on parts.
 #[test]
-fn a_family_recolouring_part_of_a_body_is_known() {
+fn extract_rule_reads_recolour_of_body_part() {
     knows(
         &[(&["15511", "00000"], &["35511", "00000"]), (&["11551", "00000"], &["11553", "00000"])],
         (&["155111", "000000"], &["355111", "000000"]),
@@ -387,7 +387,7 @@ fn a_family_recolouring_part_of_a_body_is_known() {
 /// judging solves it on a pair the family never showed. This is the path a
 /// first closure takes.
 #[test]
-fn the_court_solves_what_the_act_reader_read() {
+fn judge_solve_solves_act_reader_clauses() {
     let cases: Vec<Case> = vec![
         (
             "tiles",
@@ -482,7 +482,7 @@ fn the_court_solves_what_the_act_reader_read() {
 /// each pair alone. The held-out pair — another distance, another hue — is
 /// re-derived, and the court, decoding the clauses, solves it.
 #[test]
-fn a_reaction_is_known_and_solved_on_a_pair_never_seen() {
+fn judge_solve_solves_reaction_on_unseen_pair() {
     use crate::transducer::sentence::form::clause::{Act, Paint};
     let cases: Vec<Case> = vec![
         (
@@ -529,7 +529,7 @@ fn a_reaction_is_known_and_solved_on_a_pair_never_seen() {
 /// bodies around it, together, as their joint interior; the held-out pair,
 /// another size, is re-derived, and the court solves it.
 #[test]
-fn a_hole_several_bodies_close_together_is_filled() {
+fn extract_rule_fills_hole_closed_jointly() {
     let family: Vec<(&[&str], &[&str])> = vec![
         (&["0110", "1001", "1001", "0110"], &["0110", "1441", "1441", "0110"]),
         (&["011110", "100001", "100001", "100001", "011110"], &["011110", "144441", "144441", "144441", "011110"]),
@@ -553,7 +553,7 @@ fn a_hole_several_bodies_close_together_is_filled() {
 /// slide with nothing to meet stops at the border; a ray of no step is
 /// refused by name.
 #[test]
-fn a_slide_settles_a_stack_and_stops_at_the_border() {
+fn speak_clauses_settles_stack_and_stops_at_border() {
     use crate::transducer::family::statement::{speak_clauses, Unstated};
     use crate::transducer::sentence::form::clause::{Act, Clause, Pred, Stop};
     let say = |clause: &Clause, x: &[&str]| -> Result<Grid, Unstated> {
@@ -575,7 +575,7 @@ fn a_slide_settles_a_stack_and_stops_at_the_border() {
 /// A PARTNER OF TWO HUES IS NO ONE PARTNER: a body touching a body of 3 and
 /// one of 4 takes neither, refused by name; one touching nothing likewise.
 #[test]
-fn a_partners_hue_is_refused_where_no_one_hue_is_touched() {
+fn speak_clauses_refuses_partner_hue_without_one_partner() {
     use crate::transducer::family::statement::{speak_clauses, Unstated};
     use crate::transducer::sentence::form::clause::{Act, Clause, Paint, Pred};
     let take = Clause { select: Pred::Hue(5), act: Act::Repaint { paint: Paint::Of(Pred::All) } };
@@ -589,7 +589,7 @@ fn a_partners_hue_is_refused_where_no_one_hue_is_touched() {
 /// repaint by a partner's hue and a line painted by one read back as written;
 /// a line painted its own hue or a named one writes the bytes it always did.
 #[test]
-fn reactions_read_back_and_old_lines_keep_their_bytes() {
+fn put_clauses_round_trips_reactions_keeps_old_bytes() {
     use crate::transducer::sentence::form::clause::{put_clauses, take_clauses, Act, Clause, Paint, Pred, Stop};
     let clauses = vec![
         Clause { select: Pred::Hue(1), act: Act::Slide { ray: (1, -1), stop: Stop::Contact } },

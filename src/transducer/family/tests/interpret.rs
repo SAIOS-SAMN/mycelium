@@ -14,7 +14,7 @@ use crate::transducer::family::interpret::interpret;
 /// none heavier, or none lighter — is shared across the pairs, predicts every
 /// recolour from the other pair, and the replay reproduces all four.
 #[test]
-fn rank_in_the_pair_decides_where_the_body_alone_does_not() {
+fn decide_ranks_by_pair_where_body_alone_cannot() {
     let family = vec![
         (grid(&["11100", "00000", "00001"]), grid(&["22200", "00000", "00005"])),
         (grid(&["11110", "00000", "00011"]), grid(&["22220", "00000", "00055"])),
@@ -50,7 +50,7 @@ fn rank_in_the_pair_decides_where_the_body_alone_does_not() {
 /// speech left, and an accepted inversion hands back the joined form with
 /// remainders summing to what it read after.
 #[test]
-fn the_interpreter_reads_the_remainder_the_speech_left() {
+fn interpret_reads_speech_remainder() {
     let family = vec![
         (grid(&["11100", "00000", "00001"]), grid(&["22200", "00000", "00005"])),
         (grid(&["11110", "00000", "00011"]), grid(&["22220", "00000", "00055"])),

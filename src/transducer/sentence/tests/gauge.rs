@@ -17,8 +17,10 @@ fn write_every_place(f: &mut Form, write: impl Fn(&mut FacePlace)) {
     }
 }
 
+/// The placement residue is the affine translation of the holonomy versor,
+/// and the pivot discharges it on Placement.
 #[test]
-fn placement_residue_is_the_affine_translation() {
+fn pivot_orbit_discharges_placement_residue() {
     let mut f = chord_form(&[Word::identity()]);
     write_every_place(&mut f, |p| p.gauge.clear());
     let chord = f.orbits[0].chord.clone();
@@ -59,8 +61,10 @@ fn placement_residue_is_the_affine_translation() {
     );
 }
 
+/// The hue cycle type composes around the orbit, occupies Hue, and the pivot
+/// discharges it.
 #[test]
-fn hue_cycle_type_composes_around_the_orbit() {
+fn pivot_orbit_discharges_composed_hue_cycle() {
     let mut f = chord_form(&[Word::identity()]);
     write_every_place(&mut f, |p| p.gauge.clear());
     let chord = f.orbits[0].chord.clone();
@@ -92,8 +96,9 @@ fn hue_cycle_type_composes_around_the_orbit() {
     assert!(!after.occupies(Axis::Hue), "Hue is identity after the pivot");
 }
 
+/// Conjugate hue permutations are one cycle type and one Hue coordinate.
 #[test]
-fn conjugate_hue_permutations_are_one_cycle_type() {
+fn cycle_type_of_conjugate_permutations_is_one() {
     let a = CycleType::of(&[(1, 2), (2, 1)]);
     let b = CycleType::of(&[(3, 4), (4, 3)]);
     assert_eq!(a, b, "cycle type is sorted lengths, not the listing");
@@ -116,13 +121,15 @@ fn conjugate_hue_permutations_are_one_cycle_type() {
 /// length it replaced stood pinned at 255, one short, the type of a
 /// 255-cycle.
 #[test]
-fn a_cycle_of_every_hue_is_read_exactly() {
+fn cycle_type_of_every_hue_cycle_is_exact() {
     let every: Vec<(u8, u8)> = (0..=255u8).map(|h| (h, h.wrapping_add(1))).collect();
     assert_eq!(CycleType::of(&every), CycleType::Type(vec![255]), "one 256-cycle");
     let short: Vec<(u8, u8)> = (0..=254u8).map(|h| (h, if h == 254 { 0 } else { h + 1 })).collect();
     assert_eq!(CycleType::of(&short), CycleType::Type(vec![254]), "one 255-cycle, apart from it");
 }
 
+/// The coboundary gauge matches by address: the same words in a different
+/// vertex order are one coboundary.
 #[test]
 fn coboundary_gauge_matches_by_address() {
     let q = Word::from_letters(&[(alphabet::LetterId::turn_90((0, 1)).unwrap(), false)]);
@@ -168,8 +175,10 @@ fn coboundary_gauge_matches_by_address() {
 // `regauge`'s refusal of a short gauge — and the tree gauge RETIRED with
 // both (AT1 step 2, ruled (a)); a test of a retired subject retires with it.
 
+/// Holonomy is oriented: a reversed chord stores the inverse word and reads
+/// the same class.
 #[test]
-fn holonomy_is_oriented() {
+fn orbit_word_on_reversed_chord_keeps_class() {
     let w = word_turn_90();
     // TWO ENDS ARE TWO SITES (§1.5), as in `chord_form`: two members of the
     // identity's class on charts `[1]` and `[2]`, each on the Frame's star.
@@ -196,8 +205,10 @@ fn holonomy_is_oriented() {
     );
 }
 
+/// A relative gauge composite fixes a hue that neither factor lists as
+/// fixed.
 #[test]
-fn relative_gauge_composite_fixes_what_neither_fixes() {
+fn compose_gauge_fixes_what_neither_fixes() {
     let t = vec![(1u8, 2), (2, 1)];
     assert!(
         compose_gauge(&t, &t).is_empty(),
@@ -225,7 +236,7 @@ fn relative_gauge_composite_fixes_what_neither_fixes() {
 /// would read different images of one compartment; the listing is refused at
 /// that hue instead.
 #[test]
-fn a_gauge_naming_two_images_for_one_hue_is_refused_not_resolved_by_order() {
+fn hue_of_refuses_two_images_for_one_hue() {
     // The unambiguous cases first: a listed hue, and one the listing fixes.
     assert_eq!(hue_of(&[(1, 2), (3, 4)], 1), Some(2));
     assert_eq!(hue_of(&[(1, 2), (3, 4)], 3), Some(4));
@@ -249,7 +260,7 @@ fn a_gauge_naming_two_images_for_one_hue_is_refused_not_resolved_by_order() {
 /// `(from, to)` it is that map's graph written out as points, and every
 /// question about it becomes a scan. The hue is the coordinate.
 #[test]
-fn a_gauge_is_a_map_on_the_hues_and_absence_is_the_identity() {
+fn hue_table_maps_hues_absence_is_identity() {
     let t = hue_table(&[(1, 4), (9, 9)]).expect("a listing that names each hue once is a map");
     assert_eq!(t[1], Some(4), "a hue the listing moves");
     assert_eq!(t[9], Some(9), "a hue it carries to itself is still named");
@@ -277,7 +288,7 @@ fn a_gauge_is_a_map_on_the_hues_and_absence_is_the_identity() {
 /// meet and DISAGREE they are two assignments and the class varies across
 /// the bundle, exactly as it does when the carriage differs.
 #[test]
-fn two_gauges_compose_or_name_the_hue_they_send_two_ways() {
+fn hue_agreement_composes_or_names_disagreeing_hue() {
     let disjoint_a = hue_table(&[(1, 4)]).expect("map");
     let disjoint_b = hue_table(&[(9, 9)]).expect("map");
     match hue_agreement(&disjoint_a, &disjoint_b) {

@@ -13,8 +13,10 @@ fn chain(sites: &[(i64, i64)]) -> element::CanonicalChain {
     element::canonical_chain(&raw).expect("one entry per site is A5's chain")
 }
 
+/// The chart's axes are read from the rotor, never from a matrix: a 90°
+/// turn and a 180° turn are different charts.
 #[test]
-fn chart_axes_read_from_the_rotor_not_a_matrix() {
+fn invariant_of_reads_rotor_not_matrix() {
     let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let rot = crate::transducer::alphabet::Word::from_letters(&[(q, false)]);
     let w = from_connection(&rot, &identity_versor(), &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0])
@@ -46,8 +48,10 @@ fn chart_axes_read_from_the_rotor_not_a_matrix() {
     );
 }
 
+/// A prefix of a chart's key is its coarser stratum, and the coarse key's
+/// fiber holds every finer chart under it.
 #[test]
-fn chart_prefix_is_its_coarser_stratum() {
+fn key_prefix_is_coarser_stratum() {
     let coarse = Invariant::counts(&[1]).key();
     let fine = Invariant::counts(&[1, 2]).key();
     let sib = Invariant::counts(&[1, 3]).key();
@@ -70,7 +74,7 @@ fn chart_prefix_is_its_coarser_stratum() {
 /// The chart is invariant under translation, rotation, reflection, and
 /// exact dilation, with no group enumeration.
 #[test]
-fn the_chart_is_invariant_under_the_conformal_group() {
+fn invariant_is_fixed_by_conformal_group() {
     let l = chain(&[(0, 0), (1, 0), (2, 0), (2, 1)]);
     let base = invariant(&l);
     let moved = chain(&[(7, -3), (7, -2), (7, -1), (6, -1)]); // rotated + translated
@@ -90,7 +94,7 @@ fn the_chart_is_invariant_under_the_conformal_group() {
 
 /// Distinct orbits separate on structure: a square, a bar, and a ring.
 #[test]
-fn structure_separates_equal_volumes() {
+fn invariant_separates_equal_volumes() {
     let square = chain(&[(0, 0), (0, 1), (1, 0), (1, 1)]);
     let bar = chain(&[(0, 0), (0, 1), (0, 2), (0, 3)]);
     let ring = chain(&[(0, 0), (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1), (2, 2)]);
@@ -106,7 +110,7 @@ fn structure_separates_equal_volumes() {
 /// returns the versor; an empty stratum is novelty; the atlas holds
 /// addresses, so a removal follows one path and nothing shifts.
 #[test]
-fn the_chart_finds_the_base_point_and_the_versor() {
+fn congruent_finds_base_point_and_versor() {
     let held: Vec<Element> = vec![
         from_canonical(&chain(&[(0, 0), (0, 1), (0, 2)])),         // a bar
         from_canonical(&chain(&[(0, 0), (0, 1), (1, 0)])),         // an L
@@ -136,7 +140,7 @@ fn the_chart_finds_the_base_point_and_the_versor() {
 /// gauge's cycle type, never a translation and never the empty chart;
 /// residual charts and connection charts are disjoint families.
 #[test]
-fn a_connection_is_charted_on_its_fibres_not_on_an_empty_chain() {
+fn invariant_of_charts_connection_on_fibres() {
     let a = from_connection(&crate::transducer::alphabet::Word::identity(), &element::translator_versor(0, 2), &[(1, 2), (2, 1)], &Vec::new(), [4, 2, 0, 0]).expect("spells");
     let b = from_connection(&crate::transducer::alphabet::Word::identity(), &element::translator_versor(5, -3), &[(1, 2), (2, 1)], &Vec::new(), [4, 2, 0, 0]).expect("spells");
     let c = from_connection(&crate::transducer::alphabet::Word::identity(), &element::translator_versor(0, 2), &[(1, 2), (2, 3), (3, 1)], &Vec::new(), [4, 2, 0, 0]).expect("spells");
@@ -159,7 +163,7 @@ fn a_connection_is_charted_on_its_fibres_not_on_an_empty_chain() {
 /// (assignment, V), a second observation adds nothing, and the whole
 /// bundle round-trips its bytes.
 #[test]
-fn the_sibling_attaches_as_a_transported_section() {
+fn attach_adds_sibling_as_transported_section_once() {
     let mut base = from_canonical(
         &germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap(),
     );
@@ -177,7 +181,7 @@ fn the_sibling_attaches_as_a_transported_section() {
 
 /// A class refines one axis; members re-home under the new prefix.
 #[test]
-fn refine_splits_the_stratum_by_the_new_coordinate() {
+fn split_stratum_rehomes_by_new_coordinate() {
     let a = from_canonical(&chain(&[(0, 0), (0, 1), (0, 2)]));
     let b = from_canonical(
         &element::canonical_chain(&[(0, 0, 2, 3), (0, 1, 2, 3), (0, 2, 2, 3)])
@@ -216,7 +220,7 @@ fn refine_splits_the_stratum_by_the_new_coordinate() {
 /// which is why the key carries none and each coordinate carries its own
 /// length instead.
 #[test]
-fn a_prefix_of_a_chart_is_a_byte_prefix_of_its_key() {
+fn key_of_prefix_is_byte_prefix() {
     use crate::transducer::stalk::ChartAxis;
     use num_bigint::BigInt;
     use num_rational::BigRational;
@@ -252,7 +256,7 @@ fn a_prefix_of_a_chart_is_a_byte_prefix_of_its_key() {
 /// invariants had no chart at all (rule 11 answered with a refusal where
 /// the value was perfectly exact).
 #[test]
-fn a_rotors_conjugacy_stratum_is_whole_coordinates() {
+fn rotor_axes_writes_whole_coordinates() {
     use crate::transducer::alphabet::{LetterId, Rotor, Word, PLANE_COL, PLANE_ROW};
     let turn_90 = {
         let id = LetterId::turn_90((PLANE_ROW, PLANE_COL)).expect("the sensor plane");

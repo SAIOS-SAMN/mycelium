@@ -21,7 +21,7 @@ fn chart() -> crate::transducer::stalk::Invariant {
 /// EVERY KIND OF VERTEX, every chart and an overlap between two, read
 /// back from its own bytes as itself: `x ≡ decode(encode(x))`.
 #[test]
-fn the_atlas_coordinates_decode_to_themselves() {
+fn vertex_at_chart_at_overlap_decode_to_themselves() {
     let vertices = [
         VertexAt::Frame,
         VertexAt::Word(class()),
@@ -52,7 +52,7 @@ fn the_atlas_coordinates_decode_to_themselves() {
 /// THE FRAME'S SPELLING is one spelling per frame, ordered as the frames
 /// are, with no wall below the value's own width.
 #[test]
-fn the_frame_reads_back_in_its_own_order() {
+fn put_frame_orders_bytes_as_frames_and_round_trips() {
     let frames = [0u64, 1, 255, 256, 65_536, u64::MAX];
     let spelled: Vec<Vec<u8>> = frames
         .iter()

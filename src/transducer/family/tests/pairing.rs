@@ -32,7 +32,7 @@ fn pose(before: &blade::Blade, after: &blade::Blade) -> crate::transducer::cga::
 /// rigidity of the two bodies' union, and never a congruence asked of two
 /// unlike pieces.
 #[test]
-fn a_contact_edge_is_refraction_never_rigidity() {
+fn contact_edge_carries_refraction_not_rigidity() {
     let a = body(&[(0, 0, 0), (1, 0, 0), (0, 1, 0)]);
     let a_after = body(&[(0, 0, 0), (0, 1, 0), (-1, 0, 0)]);
     let b = body(&[(2, 1, 0), (3, 1, 0), (2, 2, 0)]);
@@ -86,7 +86,7 @@ fn a_contact_edge_is_refraction_never_rigidity() {
 /// it, an S-tetromino against the image is a different shape, refused at
 /// its order, and raises nothing.
 #[test]
-fn an_oblique_member_refuses_the_edge_and_raises_the_rotor_prime() {
+fn oblique_rotor_prime_raises_demand_where_edge_refuses() {
     use crate::transducer::family::oblique_rotor_prime;
     use crate::transducer::sentence::Demand;
     let l = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
@@ -114,7 +114,7 @@ fn an_oblique_member_refuses_the_edge_and_raises_the_rotor_prime() {
 /// F5 — GATE 1 PASSES THE OBLIQUE ARM ALONE: a pair reading a turn of the
 /// base is no refusal, an unlike pair is P, an empty body is I; none mints.
 #[test]
-fn the_mints_first_gate_counts_each_answer_by_its_kind() {
+fn oblique_rotor_prime_passes_oblique_arm_alone() {
     use crate::transducer::family::oblique_rotor_prime;
     let l = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let turn_90 = body(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (-1, 2, 0)]);
@@ -131,7 +131,7 @@ fn the_mints_first_gate_counts_each_answer_by_its_kind() {
 /// coordinates to key it, and a rotor prime whose witness carries nothing,
 /// do not stand.
 #[test]
-fn the_poles_demands_stand_once_and_every_other_is_named() {
+fn stand_demands_stands_rotor_prime_once() {
     use crate::transducer::family::{oblique_rotor_prime, stand_demands};
     use crate::transducer::sentence::{Demand, Vertices};
     use crate::transducer::stalk::Invariant;
@@ -159,7 +159,7 @@ fn the_poles_demands_stand_once_and_every_other_is_named() {
 /// its contact carries BOTH candidates `θ·V` — two distinct transports,
 /// never a representative — and the tally names a coset formed.
 #[test]
-fn a_held_turn_180_rides_the_contact_edge_as_a_coset() {
+fn contact_edge_holds_turn_180_as_coset() {
     let s4 = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)];
     let s = body(&s4);
     let turned = body(&s4.map(|(r, c, k)| (-c, r, k)));
@@ -188,7 +188,7 @@ fn a_held_turn_180_rides_the_contact_edge_as_a_coset() {
 /// fibre can complete the refraction. No refraction is asked, and none
 /// refused.
 #[test]
-fn a_static_contact_carries_its_tether_and_the_pose_it_read() {
+fn contact_edge_static_carries_tether_and_pose() {
     let a = body(&[(0, 0, 0), (1, 0, 0), (0, 1, 0)]);
     let b = body(&[(2, 1, 0), (3, 1, 0), (2, 2, 0)]);
     let b_after = body(&[(2, 1, 0), (2, 2, 0), (1, 1, 0)]);
@@ -211,7 +211,7 @@ fn a_static_contact_carries_its_tether_and_the_pose_it_read() {
 /// closes two quanta of four on it, relieving the four — twelve transported.
 /// The turn, the dilation and the hue map each open their own orbit (78.73).
 #[test]
-fn every_lane_reads_its_transports_as_a_field() {
+fn transport_order_reads_every_lane_as_field() {
     use crate::transducer::cga::{self, Mv, E1, E2};
     use crate::transducer::family::pairing::transport_order;
     let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
@@ -261,7 +261,7 @@ fn every_lane_reads_its_transports_as_a_field() {
 /// displacement realises reads as a scale about another point, its
 /// displacement gone.
 #[test]
-fn a_carriage_is_read_on_the_lane_it_transports() {
+fn carriage_lanes_reads_lane_transported() {
     use crate::transducer::cga;
     use crate::transducer::family::pairing::carriage_lanes;
     let mut b = crate::physics::Physics::default().stroke_n(1 << 16);

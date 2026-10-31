@@ -7,7 +7,7 @@ use crate::transducer::element::{self, Element};
 
 /// Residual torsion without a readable class is not filed as identity.
 #[test]
-fn torsion_consilient_or_filed_or_refused() {
+fn court_torsion_files_nothing_without_class() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
@@ -108,7 +108,7 @@ let class = form_torsion(&e)
 /// Chapter 23.7 on a v2 form: the court reads Form.torsion by the
 /// filed orbit's class key, never the element's empty section.
 #[test]
-fn court_torsion_on_v2_form_is_consilient_or_filed_or_refused() {
+fn court_torsion_files_v2_form_by_orbit_class() {
 use crate::transducer::sentence::{carries_torsion, torsion_orbit_rotor};
 let (spoken, inv, class) = filed_v2_form();
 assert!(
@@ -194,7 +194,7 @@ assert_eq!(
 /// property of any corpus, so this separates the two readers on a fixture
 /// whether or not anything in the field has ever filed a cycle.
 #[test]
-fn a_filed_form_cycle_is_volume_the_basis_counts() {
+fn fibre_volume_total_counts_filed_form_cycle() {
     let (spoken, _, _) = filed_v2_form();
     assert_eq!(
         spoken.fibre_volume(),
@@ -247,7 +247,7 @@ fn a_filed_form_cycle_is_volume_the_basis_counts() {
 /// A second vantage here is `glue_local`'s two fixture keys (§3.4's
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
-fn the_torse_stroke_extracts_the_cycle_and_relieves_torsion() {
+fn optimize_extracts_swap_cycle_and_relieves_torsion() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 9)];
 let b = vec![(0, 0, 4), (0, 1, 9)]; // (0,0): 1→4
@@ -283,7 +283,7 @@ assert!(
 /// every node that holds the fiber in a different insertion order, and
 /// two nodes would breed two germs from identical mathematics.
 #[test]
-fn a_held_fiber_germinates_its_holonomy_not_a_member() {
+fn fiber_holonomy_is_composite_not_member() {
 use crate::transducer::alphabet::{LetterId, Word};
 let q = LetterId::turn_90((0, 1)).expect("90° turn");
 let one = rotor_versor(&Word::from_letters(&[(q, false)]).rotor()).expect("versor");

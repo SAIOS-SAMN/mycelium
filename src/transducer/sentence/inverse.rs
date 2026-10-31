@@ -339,7 +339,7 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
     //
     // What DID move is the filer itself: `file_orbit` no longer takes its
     // period as a parameter, so a screw is no longer filed at its rotor's
-    // order. See `the_filer_reaches_the_fixed_point_gate`.
+    // order. See `classify_files_turn_at_four_and_screw_at_zero`.
     Some(f)
 }
 

@@ -41,7 +41,7 @@ fn closed_form_and_body_chart() -> (Element, crate::transducer::stalk::Invariant
 /// the glue could ask, so no rule ever cited a held form and no citation
 /// was ever paid (26, 27): the deployment's reading "comprehending 0 of 2 listings".
 #[test]
-fn a_stood_form_is_found_at_the_chart_of_the_body_it_carries() {
+fn on_body_finds_stood_form_at_body_chart() {
     let (e, chart) = closed_form_and_body_chart();
     let f = crate::transducer::sentence::from_element_form(&e).expect("the tape reads back");
     assert!(
@@ -60,11 +60,11 @@ fn a_stood_form_is_found_at_the_chart_of_the_body_it_carries() {
 
 /// 21 step 3 END TO END on the live crystal: a mind that stood a closed
 /// form cites it when it extracts a rule over a family that form closes
-/// part of. The same claim `glued_form_replays_its_trajectory_through_the_court_genome`
+/// part of. The same claim `perceive_speech_replays_glued_form_through_court_genome`
 /// makes of a stub crystal whose `on_class` ignores the chart it is asked
 /// at — made here of the epigenome the fleet runs.
 #[test]
-fn a_mind_that_stood_a_form_cites_it_when_it_extracts_a_rule() {
+fn extract_rule_with_cites_stood_form() {
     let family = vec![
         (digits(&["1100", "0000"]), digits(&["0011", "0000"])),
         (digits(&["0000", "1100"]), digits(&["0000", "0011"])),
@@ -88,7 +88,7 @@ fn a_mind_that_stood_a_form_cites_it_when_it_extracts_a_rule() {
 /// on answers nothing, so the crystal never becomes a scan of everything
 /// held.
 #[test]
-fn a_chart_the_mind_holds_no_body_on_answers_nothing() {
+fn on_body_answers_nothing_off_held_chart() {
     let (e, chart) = closed_form_and_body_chart();
     let mut epi = Epigenome::new();
     epi.stand_dialect_at(e, 1, 1).expect("stood");
@@ -108,7 +108,7 @@ fn a_chart_the_mind_holds_no_body_on_answers_nothing() {
 /// client boots from its genome, so in deployment the glue answered nothing
 /// again after every start.
 #[test]
-fn a_restored_genome_answers_at_the_chart_of_the_bodies_it_carries() {
+fn on_body_answers_after_genome_restore() {
     let (e, chart) = closed_form_and_body_chart();
     let mut epi = Epigenome::new();
     epi.learn(&e.to_bytes().expect("the record writes"), &mut super::common::budget()).expect("the word enters the genome");
@@ -145,7 +145,7 @@ fn a_restored_genome_answers_at_the_chart_of_the_bodies_it_carries() {
 /// never bytes (rule 3, 1.5): what must survive is the generator — the
 /// vertex it reaches — and not the letters that spell it.
 #[test]
-fn a_restored_genome_factors_through_the_generators_it_was_taught() {
+fn generators_under_survive_genome_restore() {
     let (e, _) = closed_form_and_body_chart();
     let mut epi = Epigenome::new();
     epi.learn(&e.to_bytes().expect("the record writes"), &mut super::common::budget()).expect("the word enters the genome");

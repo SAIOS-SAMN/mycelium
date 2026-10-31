@@ -11,7 +11,7 @@ use num_traits::Signed;
 ///
 /// Every assertion here is a blade or a product, never a magnitude.
 #[test]
-fn a_compartment_lands_on_the_sheet_and_transports_along_a_geodesic() {
+fn hyperbolic_compartment_lands_on_sheet_and_transports() {
     let m = q(4, 1);
     let a = hyperbolic_compartment(&q(0, 1), &q(0, 1), &q(0, 1), &m).expect("the pole");
     let b = hyperbolic_compartment(&q(1, 1), &q(0, 1), &q(0, 1), &m).expect("one step");
@@ -66,7 +66,7 @@ fn a_compartment_lands_on_the_sheet_and_transports_along_a_geodesic() {
 /// A FRAME'S BASE POINT is its versor applied to the pole, back on the
 /// sheet — one exact division, no root.
 #[test]
-fn a_frames_base_point_returns_to_the_sheet() {
+fn frame_base_point_returns_to_sheet() {
     let m = q(4, 1);
     let a = hyperbolic_compartment(&q(1, 1), &q(0, 1), &q(0, 1), &m).expect("a compartment");
     let r = geodesic_transvection(&hyperboloid_pole(), &a).expect("a geodesic");

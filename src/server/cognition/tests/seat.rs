@@ -59,7 +59,7 @@ fn read(k: &mut Kernel, who: &SigningKey, after: u64) -> Vec<Mail> {
 /// and answers its outcome by the call's reference; what a reader
 /// acknowledges leaves.
 #[test]
-fn a_house_and_a_mind_speak_through_the_relay() {
+fn seat_post_relays_between_house_and_mind() {
     let mut k = founded();
     let d = vk(&domain());
     let m = vk(&mind());
@@ -128,7 +128,7 @@ fn a_house_and_a_mind_speak_through_the_relay() {
 /// rule answers it); new mail opens the window again; a forged read is
 /// refused; a reader with no box has nothing exempt.
 #[test]
-fn a_minds_read_is_exempt_once_per_window() {
+fn exempt_read_serves_once_per_window() {
     let mut k = founded();
     let d = vk(&domain());
     let m = vk(&mind());
@@ -158,7 +158,7 @@ fn a_minds_read_is_exempt_once_per_window() {
 /// read under another epoch acknowledges nothing, so anything filed is past
 /// it.
 #[test]
-fn a_read_with_nothing_filed_past_it_waits() {
+fn filed_past_holds_read_with_nothing_new() {
     let mut k = founded();
     let d = vk(&domain());
     let m = vk(&mind());
@@ -181,7 +181,7 @@ fn a_read_with_nothing_filed_past_it_waits() {
 /// under the reader — acknowledges nothing and the box is read from the
 /// start; two relays are two epochs.
 #[test]
-fn the_relay_keys_seats_by_sub_origin_and_tells_its_epoch() {
+fn seat_listing_keys_by_sub_origin_with_epoch() {
     let mut k = founded();
     let d = vk(&domain());
     let m = vk(&mind());
@@ -237,7 +237,7 @@ fn the_relay_keys_seats_by_sub_origin_and_tells_its_epoch() {
 /// boxes, pieces and their bytes — as the relay holds it; and the reading
 /// reads back whole through the observer's codec.
 #[test]
-fn the_relay_reading_counts_posts_filed_and_refused() {
+fn relay_reading_counts_filed_and_refused_posts() {
     use crate::observe::{Reading, RelayPosts};
     let mut k = founded();
     let d = vk(&domain());
@@ -273,7 +273,7 @@ fn the_relay_reading_counts_posts_filed_and_refused() {
 /// worth of it, the oldest dropped and counted, and one read carries the
 /// whole box.
 #[test]
-fn a_mailbox_keeps_its_bound() {
+fn seat_post_keeps_mailbox_bound() {
     let mut k = founded();
     let d = vk(&domain());
     let m = vk(&mind());

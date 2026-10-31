@@ -36,7 +36,7 @@ fn same(file: &[u8], c: &ReceiptChain) {
 /// otherwise carry as many that left as stand; the file read back at every
 /// step is the chain.
 #[test]
-fn the_line_appends_in_its_own_order_and_reads_back_as_the_chain() {
+fn line_write_appends_in_order_and_reads_back_as_chain() {
     let mut c = ReceiptChain::with_vk([1; 32]);
     let mut file = Vec::new();
     step(&mut c, Vec::new());
@@ -88,7 +88,7 @@ fn the_line_appends_in_its_own_order_and_reads_back_as_the_chain() {
 /// carries that no longer stand reach the nodes that do, the next write
 /// is the whole.
 #[test]
-fn the_line_is_written_whole_once_what_left_reaches_what_stands() {
+fn line_write_is_whole_once_left_nodes_reach_standing() {
     let mut c = ReceiptChain::with_vk([1; 32]);
     let mut file = Vec::new();
     for _ in 0..6 {
@@ -108,7 +108,7 @@ fn the_line_is_written_whole_once_what_left_reaches_what_stands() {
 /// A FRAME THAT RUNS PAST THE END DID NOT LAND: the line stands on the
 /// frames before it, says so, and its next write is the whole.
 #[test]
-fn a_torn_last_frame_leaves_the_line_on_the_frames_before_it() {
+fn from_line_names_torn_last_frame_and_keeps_earlier_frames() {
     let mut c = ReceiptChain::with_vk([1; 32]);
     let mut file = Vec::new();
     step(&mut c, Vec::new());

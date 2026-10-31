@@ -6,7 +6,7 @@ use crate::transducer::alphabet::*;
 /// Rebase is conjugation then the normal form. Contact is not a letter
 /// and is not in the M1 key.
 #[test]
-fn rebase_is_normal_form_and_contact_in_key() {
+fn rebase_conjugates_into_normal_form() {
     let q = LetterId::turn_90((0, 1)).expect("sensor 90° turn");
     let w = Word::from_letters(&[(q, false)]);
     let by = Word::from_letters(&[(q, false), (q, false)]);
@@ -22,7 +22,7 @@ fn rebase_is_normal_form_and_contact_in_key() {
 /// that is no versor has no order. A letter's spelling carries the same
 /// A1 key as the rotor itself, and the same order.
 #[test]
-fn spelled_word_is_none_when_the_rotor_does_not_spell() {
+fn spelled_word_refuses_unspellable_rotor() {
     assert!(Rotor::zero().spelled_word().is_none());
     assert!(Rotor::zero().order().is_none());
     let q = LetterId::turn_90((0, 1)).expect("sensor 90° turn");
@@ -32,8 +32,10 @@ fn spelled_word_is_none_when_the_rotor_does_not_spell() {
     assert_eq!(r.order().expect("the 90° turn has order"), w.order());
 }
 
+/// A rotor's class key is invariant under conjugation and under a positive
+/// scale, and `Word::class_key` is the rotor's conjugacy class.
 #[test]
-fn rotor_class_key_invariant() {
+fn class_key_invariant_under_conjugation_and_scale() {
     let q = LetterId::turn_90((0, 1)).unwrap();
     let w = Word::from_letters(&[(q, false)]);
     let r = w.rotor();
@@ -62,7 +64,7 @@ fn rotor_class_key_invariant() {
 /// `q⁴ = −1` in Spin(4), so `q·q·q` is `−q⁻¹`: the other lift of the same
 /// rotation, which a composition reaches without anyone choosing it.
 #[test]
-fn a_rotor_and_its_negative_are_one_class() {
+fn class_key_agrees_for_negated_rotor() {
     let q = LetterId::turn_90((0, 1)).unwrap();
     let r = Word::from_letters(&[(q, false)]).rotor();
     let neg = r.scale(&-qn(1, 1));
@@ -80,7 +82,7 @@ fn a_rotor_and_its_negative_are_one_class() {
 /// Two tapes of one vertex have one key; a tape and its geodesic
 /// replay to the same affine.
 #[test]
-fn two_tapes_of_one_vertex_have_one_key() {
+fn key_agrees_for_two_tapes_of_one_vertex() {
     let q = LetterId::turn_90((0, 1)).unwrap();
     let a = Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
     let b = Word::identity();
@@ -102,8 +104,11 @@ fn two_tapes_of_one_vertex_have_one_key() {
     assert!(g.iter().any(|r| r.kind == RelatorKind::Turn90OrderFour && r.word.geodesic().is_empty()));
 }
 
+/// The A1 canonical form is projective under either sign: `q⁴` and `1`
+/// share a key, a rotor and its negative normalise to one key, and `R` and
+/// `R·q` are distinct vertices.
 #[test]
-fn a1_canonical_is_projective_either_sign() {
+fn normalised_key_projective_either_sign() {
     let q = LetterId::turn_90((0, 1)).unwrap();
     let r = Word::from_letters(&[(q, false)]).rotor();
     let q4 = Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);

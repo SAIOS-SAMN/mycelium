@@ -12,7 +12,7 @@ use crate::transducer::blade::*;
 /// base's `n`, its `n` Betti numbers and the turns (BQ4), and it is read by
 /// peel, never by the whole chart.
 #[test]
-fn a_chart_prefix_is_the_topological_stratum() {
+fn moduli_prefix_is_topological_stratum() {
     use crate::transducer::stalk::{Invariant, Stalks};
     let bar_support = rect(0, 0, 2, 3);
     let plank_support = rect(0, 0, 2, 5);
@@ -70,7 +70,7 @@ fn a_chart_prefix_is_the_topological_stratum() {
 /// stratum" left behind is half a rational. The ratio is a whole
 /// `ChartAxis` instead, so its width is inside one coordinate.
 #[test]
-fn a_ratio_is_one_coordinate_whatever_its_width() {
+fn chart_axis_ratio_is_one_coordinate_at_any_width() {
     use crate::transducer::stalk::ChartAxis;
     let axis = |n: i64, d: i64| {
         ChartAxis::Ratio(BigRational::new(BigInt::from(n), BigInt::from(d)))
@@ -96,7 +96,7 @@ fn a_ratio_is_one_coordinate_whatever_its_width() {
 /// The same reading one level up: a body whose harmonics exceed ℤ₆₄ has a
 /// chart of its own, where it was charted at the root before N7.
 #[test]
-fn a_body_is_never_charted_at_the_root_for_the_width_of_its_moduli() {
+fn invariant_charts_wide_moduli_off_root() {
     use crate::transducer::stalk::invariant;
     let l: Vec<(i64, i64, u8, u8)> = vec![(0, 0, 1, 2), (1, 0, 1, 2), (2, 0, 1, 2), (2, 1, 1, 2)];
     let inv = invariant(&l);

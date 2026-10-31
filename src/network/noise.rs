@@ -531,7 +531,7 @@ mod tests {
     /// other's public key, and a pointed frame and its reply read back
     /// exactly, lane, body and point.
     #[test]
-    fn a_handshake_completes_and_a_frame_round_trips_exactly() {
+    fn initiate_completes_handshake_and_frames_round_trip() {
         let ((_da, a), (_db, b)) = (home(), home());
         let (ia, rb) = handshake(&a, &b, "127.0.0.1:7500", |s| s);
         let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
@@ -552,7 +552,7 @@ mod tests {
     /// A frame past one Noise message rides as ⌈bytes / CHUNK⌉ messages,
     /// none over the ceiling, and joins back to the same frame.
     #[test]
-    fn a_frame_past_one_message_is_chunked_and_joins_exactly() {
+    fn write_frame_chunks_past_one_message_and_rejoins() {
         let ((_da, a), (_db, b)) = (home(), home());
         let (ia, rb) = handshake(&a, &b, "peer", Tap::new);
         let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
@@ -576,7 +576,7 @@ mod tests {
     /// A body over the wire's budget is refused before a byte is sent: the
     /// next frame is the next thing the peer reads.
     #[test]
-    fn an_over_budget_frame_is_refused_before_a_byte_is_sent() {
+    fn write_frame_refuses_over_budget_before_sending() {
         let ((_da, a), (_db, b)) = (home(), home());
         let (ia, rb) = handshake(&a, &b, "peer", |s| s);
         let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
@@ -590,7 +590,7 @@ mod tests {
     /// A head that names a body past the budget is refused by its length,
     /// the body never allocated.
     #[test]
-    fn a_head_naming_a_body_past_the_budget_is_refused() {
+    fn read_frame_refuses_head_past_budget() {
         let ((_da, a), (_db, b)) = (home(), home());
         let (ia, rb) = handshake(&a, &b, "peer", |s| s);
         let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
@@ -603,7 +603,7 @@ mod tests {
 
     /// One flipped bit of a transport message's ciphertext fails its tag.
     #[test]
-    fn a_tampered_ciphertext_is_refused() {
+    fn read_frame_refuses_tampered_ciphertext() {
         let ((_da, a), (_db, b)) = (home(), home());
         let (ia, rb) = handshake(&a, &b, "peer", Tap::new);
         let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
@@ -617,7 +617,7 @@ mod tests {
     /// address presenting another key is refused by name, before the
     /// initiator's static key is sent, and the pin survives a reload.
     #[test]
-    fn a_pinned_peer_whose_key_changes_is_refused_by_name() {
+    fn pin_refuses_changed_peer_key_by_name() {
         let ((da, a), (_db, b), (_dc, c)) = (home(), home(), home());
         let (ia, rb) = handshake(&a, &b, "10.0.0.2:7500", |s| s);
         assert!(ia.is_ok() && rb.is_ok());
@@ -642,7 +642,7 @@ mod tests {
     /// The static key is minted once, `0600`, and reloads to the same key; a
     /// key file of another length is refused and left untouched.
     #[test]
-    fn the_static_key_persists_and_reloads() {
+    fn noise_home_key_persists_across_open() {
         use std::os::unix::fs::PermissionsExt;
         let (dir, a) = home();
         let again = NoiseHome::open(dir.path()).unwrap();

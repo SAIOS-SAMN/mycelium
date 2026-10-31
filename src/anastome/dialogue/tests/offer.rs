@@ -28,7 +28,7 @@ fn section_at(payload: &[u8], vk: [u8; 32]) -> ReceiptSection {
 /// all — the act carried `k: 0` and two all-zero signatures over a bespoke
 /// prefix that had no production signer and no verifier.
 #[test]
-fn an_offer_names_the_home_that_made_it_and_signs_its_own_position() {
+fn offer_round_trips_home_and_signed_position() {
     let addr = crate::transducer::address::Address::new(vec![0xA1u8, 0xB2, 0xC3]);
     let home = [3u8; 32];
     let attested = [9u8; 32];
@@ -74,7 +74,7 @@ fn an_offer_names_the_home_that_made_it_and_signs_its_own_position() {
 /// struct of two byte vectors whose LENGTHS the home tested to tell the
 /// arms apart, which is checklist (b) in a longer form.
 #[test]
-fn a_witness_answers_with_one_of_three_arms_and_names_the_key() {
+fn offer_reply_round_trips_three_arms_with_key() {
     let vk = [0x2fu8; 32];
 
     // REACHED: the second vantage, as a tape, never the offered form.

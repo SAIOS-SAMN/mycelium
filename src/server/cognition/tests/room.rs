@@ -12,7 +12,7 @@ use crate::transducer::germinate::germinate;
 /// lane is refused with `REFUSE_ROOM` — another voice's first claim on the
 /// same lane is not — and admitted once the first closed.
 #[test]
-fn an_unbonded_voice_has_room_for_one_claim_in_flight_per_lane() {
+fn speak_pair_gives_unbonded_voice_one_claim_per_lane() {
 let mut k = Kernel::new();
 let seeded = k.treasury().audit().expect("genesis conserves");
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
@@ -47,7 +47,7 @@ assert_eq!(speak_pair(&mut k, &e, &f, [7; 32]), Outcome::GermPending, "admitted 
 /// the lane reopens. Owed on a lane with nothing in flight, the record
 /// waits and refuses nothing.
 #[test]
-fn an_unpaid_recall_closes_the_lane_until_the_claim_in_flight_closes() {
+fn record_recall_short_closes_lane_until_claim_closes() {
 let mut k = Kernel::new();
 let cover = k.treasury().bond_of(&[0x11; 32]).expect("the fixture hypha is bonded");
 k.enroll([9; 32], cover);
@@ -86,7 +86,7 @@ assert_eq!(
 /// against (26), listed by the fixture as the book lists it, since no voice
 /// speaks a chain (law 8); the next draw is a sentence the voice speaks.
 #[test]
-fn the_book_relocates_the_unreachable_before_it_refuses_room() {
+fn speak_pair_relocates_unreachable_before_refusing_room() {
 use crate::anastome::dialogue::ProbeClosure;
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
@@ -135,7 +135,7 @@ assert_eq!(k.pending.len(), 1, "the new listing is on the page");
 /// no voice uttered them, so nothing is drawn from the hypha's own room,
 /// which stands where it stood; the listings still tension the book.
 #[test]
-fn the_corpus_intake_draws_no_room_from_the_hypha() {
+fn intake_draws_no_room_from_hypha() {
 let mut k = Kernel::new();
 let cover = crate::arc::family_cover(&[(vec![vec![1]], vec![vec![2]])])
     .expect("a one-site pair measures");
@@ -168,7 +168,7 @@ assert!(
 /// demands on two body charts; a second task of the same frame that shares
 /// one body lists only the body it adds, and the shared body is one listing.
 #[test]
-fn the_corpus_intake_lists_each_body_as_its_own_demand() {
+fn intake_lists_each_body_as_own_demand() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1u8), (5, 5, 3u8)];
 let b = vec![(0, 0, 2u8), (5, 5, 4u8)];
@@ -201,7 +201,7 @@ assert!(
 /// T=1` on a continuous loop, `book 0 listings`, and every client receiving
 /// `0 clusters` to quote.
 #[test]
-fn a_lane_with_no_cover_is_unmeasured_and_relocates_nothing() {
+fn relocate_t_exhausted_skips_uncovered_lane() {
     let mut k = Kernel::new();
     let t_lane = 2usize;
 
@@ -237,7 +237,7 @@ fn a_lane_with_no_cover_is_unmeasured_and_relocates_nothing() {
 /// rather than add the room back to what was drawn, or the two answers can
 /// disagree and nothing says which is the fact (law 12).
 #[test]
-fn the_cover_and_the_room_agree_by_construction() {
+fn lane_room_of_stays_under_lane_cover() {
     let mut k = Kernel::new();
     k.set_lane_cap([7, 5, 3, 2]);
     let court_vk = k.identity;
@@ -257,7 +257,7 @@ fn the_cover_and_the_room_agree_by_construction() {
 /// nothing and is counted as broken — never as a room of zero, and never
 /// under the count a cover past its carrier keeps.
 #[test]
-fn a_room_that_does_not_read_is_counted_by_its_reason() {
+fn lane_room_of_counts_broken_read_by_reason() {
     let mut k = Kernel::new();
     k.set_lane_cap([1, 1, 1, 1]);
     let court_vk = k.identity;
@@ -272,7 +272,7 @@ fn a_room_that_does_not_read_is_counted_by_its_reason() {
 /// `discoverers`: admissions insert, removals and clears evict, and
 /// empty voice tries are pruned rather than leaked.
 #[test]
-fn discovered_by_is_strictly_synchronized_with_discoverers() {
+fn discovered_by_stays_synchronized_with_discoverers() {
     let mut k = Kernel::new();
     let v1 = [1u8; 32];
     let v2 = [2u8; 32];

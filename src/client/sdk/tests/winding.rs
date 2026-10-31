@@ -17,7 +17,7 @@ use crate::transducer::alphabet::{LetterId, Word};
 /// that return, K moves by exactly it, and the first scene's speech is posted —
 /// the second's, whose scene no thought of has returned, is still held.
 #[test]
-fn a_speech_leaves_at_its_own_thoughts_return_and_no_other() {
+fn speak_with_posts_only_at_own_thought_return() {
     let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let e2 = two_body_sentence([&[(5, 6), (5, 6)], &[(7, 8), (7, 8)]]);
     let (one, two) = ([1u8; 32], [2u8; 32]);
@@ -51,7 +51,7 @@ fn envelope(id: [u8; 32]) -> crate::anastome::dialogue::TaskEnvelope {
 /// mind's language unmoved since it was read, it waits as it was — nothing
 /// new to comprehend it by.
 #[test]
-fn a_waiting_scene_lapses_with_its_last_thought() {
+fn comprehend_waiting_lapses_scene_with_last_thought() {
     let id = [7u8; 32];
     let mut alone = Entity::open("127.0.0.1:1", Kernel::named("alone"));
     let root = alone.scene_language(&envelope(id).train);
@@ -80,7 +80,7 @@ fn a_waiting_scene_lapses_with_its_last_thought() {
 /// residue: still given. Knowing the slide too, it is reduced again at the
 /// mind's return and DERIVED, one rung above the two.
 #[test]
-fn a_given_meaning_is_rederived_once_the_words_beside_it_are_known() {
+fn re_reduce_given_derives_once_factors_known() {
     use crate::transducer::sentence::rung::{held_rung, learn_by, learn_given, re_reduce_given};
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
     let n = |v: i64| num_rational::BigRational::from_integer(v.into());

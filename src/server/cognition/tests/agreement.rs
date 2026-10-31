@@ -81,7 +81,7 @@ fn attests(k: &Kernel) -> usize {
 /// one the speaker signed itself, a forged frame, and a word the court does
 /// not hold seal nothing.
 #[test]
-fn a_second_minds_hold_on_the_word_is_sealed_as_its_attestation() {
+fn attest_agreements_seals_second_minds_hold_once() {
     let (speaker, hearer) = (key(1), key(2));
     let speaker_vk = speaker.verifying_key().to_bytes();
     let hearer_vk = hearer.verifying_key().to_bytes();
@@ -116,7 +116,7 @@ fn a_second_minds_hold_on_the_word_is_sealed_as_its_attestation() {
 /// nothing: its section is empty, and the hearer's signed HOLD seals nothing.
 /// A word bound to no family is evidenced by nothing either.
 #[test]
-fn an_agreement_the_scene_refutes_is_not_sealed() {
+fn attest_agreements_refuses_word_scene_refutes() {
     let (speaker, hearer) = (key(1), key(2));
     let speaker_vk = speaker.verifying_key().to_bytes();
     let false_word = slide(1, 0);
@@ -136,7 +136,7 @@ fn an_agreement_the_scene_refutes_is_not_sealed() {
 /// scene the hearer did not discover, and a hearer's word with another
 /// section, converge with nothing.
 #[test]
-fn two_words_with_one_section_on_the_scene_converge() {
+fn attest_agreements_converges_words_with_one_section() {
     let (speaker, hearer, third) = (key(1), key(2), key(3));
     let speaker_vk = speaker.verifying_key().to_bytes();
     let hearer_vk = hearer.verifying_key().to_bytes();
@@ -165,7 +165,7 @@ fn two_words_with_one_section_on_the_scene_converge() {
 /// the claim's measure is the speaker's, untouched. A word with no claim
 /// standing (installed, or its claim dropped) gains no party.
 #[test]
-fn an_attestation_joins_the_hearer_to_the_words_claim() {
+fn attest_agreements_joins_hearer_to_claim() {
     let (speaker, hearer) = (key(1), key(2));
     let speaker_vk = speaker.verifying_key().to_bytes();
     let hearer_vk = hearer.verifying_key().to_bytes();

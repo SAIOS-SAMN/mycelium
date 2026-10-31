@@ -40,7 +40,7 @@ fn before_genesis() -> crate::economy::Anchor {
 /// 45.2 ON THE VOICE. An admitted receipt is CITED by the next step, and the
 /// height that step seals is above the peer's, not above this mind's head.
 #[test]
-fn an_admitted_receipt_is_cited_and_carries_height_above_the_peers() {
+fn admit_receipt_cites_and_climbs_above_peer_height() {
     use crate::court::admission::Admitted;
     let key = super::common::court_key("peer");
     let peer = peer_line(key.vk_bytes(), 3);
@@ -77,7 +77,7 @@ fn an_admitted_receipt_is_cited_and_carries_height_above_the_peers() {
 /// refused and the line still verifies. A node admitted from a peer keeps
 /// its own author.
 #[test]
-fn a_bound_mind_seals_under_its_key_and_a_sealed_ledger_keeps_its_own() {
+fn bind_identity_seals_under_key_and_refuses_rebind() {
     let mut k = Kernel::new();
     k.bind_identity([0xab; 32]);
     let a = vec![(0, 0, 1), (0, 1, 1)];
@@ -100,7 +100,7 @@ fn a_bound_mind_seals_under_its_key_and_a_sealed_ledger_keeps_its_own() {
 
 /// A receipt whose origin is not this node's touches nothing.
 #[test]
-fn a_foreign_origin_is_refused_before_the_mind_holds_anything() {
+fn admit_receipt_refuses_foreign_origin() {
     use crate::court::admission::{Admitted, REFUSE_ORIGIN};
     let key = super::common::court_key("peer");
     let r = peer_line(key.vk_bytes(), 1).remove(0);
@@ -116,7 +116,7 @@ fn a_foreign_origin_is_refused_before_the_mind_holds_anything() {
 /// signature that verified under ANOTHER, is two claims and is refused
 /// before the ledger is read.
 #[test]
-fn a_receipt_signed_by_another_key_than_it_names_is_refused() {
+fn admit_receipt_refuses_signature_by_other_key() {
     use crate::court::admission::{Admitted, REFUSE_RECEIPT};
     let victim = super::common::court_key("victim");
     let forger = super::common::court_key("forger");
@@ -146,7 +146,7 @@ fn two_roots(liar: [u8; 32]) -> (crate::chronometry::KStepReceipt, crate::chrono
 /// supply down by the same vector, §6 holding; a second frame at the same
 /// K burns nothing more.
 #[test]
-fn two_roots_at_one_k_burn_the_signers_bond() {
+fn admit_receipt_burns_bond_on_two_roots_at_one_k() {
     use crate::court::admission::Admitted;
     let key = super::common::court_key("liar");
     let liar = key.vk_bytes();
@@ -176,7 +176,7 @@ fn two_roots_at_one_k_burn_the_signers_bond() {
 /// 47.4 ON A THIRD PARTY'S PROOF (I21): the court burns on the proof
 /// presented to it, once.
 #[test]
-fn a_third_party_proof_burns_the_bond_once() {
+fn accept_equivocation_burns_bond_once() {
     use crate::court::admission::admit_equivocation;
     let key = super::common::court_key("liar");
     let liar = key.vk_bytes();
@@ -206,7 +206,7 @@ fn a_third_party_proof_burns_the_bond_once() {
 /// past a hole. The gap names the head held and the reported frame's
 /// predecessor: what the back-fill must reach.
 #[test]
-fn a_gap_closes_when_the_missing_receipts_arrive() {
+fn admit_backfill_closes_gap_as_receipts_arrive() {
     use crate::court::admission::Admitted;
     let key = super::common::court_key("peer");
     let vk = key.vk_bytes();

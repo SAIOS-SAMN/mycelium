@@ -11,7 +11,7 @@ use crate::transducer::sentence::*;
 /// asserted, so a change to the assignment has to change this test and the
 /// doctrine together.
 #[test]
-fn the_axis_to_lane_table_is_42_6s() {
+fn axis_lane_matches_amended_table() {
     for p in 0..6u8 {
         for axis in [Axis::Orientation(p), Axis::Unit(p), Axis::Prime5(p), Axis::Prime13(p)] {
             assert_eq!(axis.lane(), 3, "{} is holonomic on plane {p}", axis.label());
@@ -46,7 +46,7 @@ fn the_axis_to_lane_table_is_42_6s() {
 /// gauge and no other. The lanes are read as four flags and never summed
 /// (law 5).
 #[test]
-fn a_class_occupies_the_lanes_its_coordinates_name() {
+fn class_vector_lanes_name_occupied_covers() {
     let turn = ClassVector::of_word(&word_turn_90()).expect("a 90° turn is a versor");
     assert_eq!(
         turn.lanes(),
@@ -95,7 +95,7 @@ fn a_class_occupies_the_lanes_its_coordinates_name() {
 /// spaces are disjoint: a placement on 𝒯 (78.68) and a hue on 𝒢 never
 /// collide, and 𝒽 keeps the rotor chart it always had.
 #[test]
-fn a_lane_chart_is_that_lanes_axes_and_the_four_are_disjoint() {
+fn lane_chart_keys_lanes_disjointly() {
     let placed = ClassVector::read(
         &Word::identity(),
         element::translator_versor(0, 3),
@@ -143,7 +143,7 @@ fn a_lane_chart_is_that_lanes_axes_and_the_four_are_disjoint() {
 /// carriage and filed the orbit `Congruent` — two readers, one carriage,
 /// opposite answers (law 12).
 #[test]
-fn a_turns_base_point_occupies_no_placement_and_a_screw_does() {
+fn occupies_placement_for_screw_not_base_point() {
     use crate::transducer::sentence::Axis;
     let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
     // In the turning plane: `(I − R)p = t` solves, so the translation is

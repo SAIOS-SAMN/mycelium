@@ -6,8 +6,10 @@ use crate::transducer::germinate::germinate;
 use crate::verdict::*;
 use super::common::*;
 
+/// The selection key is stable under a change of debug representation: it
+/// is the tagged `Sel::to_bytes`, never a digest or the debug text.
 #[test]
-fn a9_sel_key_stable_under_debug_change() {
+fn sel_key_is_sel_bytes_never_debug_text() {
     let s = Sel::Hue(3);
     let mut buf = Vec::new();
     s.to_bytes(&mut buf);
@@ -21,7 +23,7 @@ fn a9_sel_key_stable_under_debug_change() {
 /// new geometry admits (the element rides the arm), same substance is
 /// consilient, a same-geometry sibling demotes.
 #[test]
-fn the_ruling_maps_the_federation_correctly() {
+fn rule_maps_federation_to_admit_consilient_attach() {
     let w = clean_word();
     let addr = w.address();
     // Empty federation: new geometry admits — the sealed element is

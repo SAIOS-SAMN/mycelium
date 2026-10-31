@@ -24,7 +24,7 @@ use crate::transducer::element::{identity_versor as ident, same_versor};
 /// neither sentence has a versor at all and `Cl(3, 1)` cannot separate
 /// them. The rotors can.
 #[test]
-fn a_transition_between_two_sentences_answers_the_rotor_its_vertices_agree_on() {
+fn transition_between_sentences_answers_agreed_rotor() {
     use crate::transducer::alphabet::{self, LetterId, Word};
     use crate::transducer::element::Element;
     use crate::transducer::sentence::{as_element_form, Form, Vertex};
@@ -104,23 +104,25 @@ fn a_transition_between_two_sentences_answers_the_rotor_its_vertices_agree_on() 
 
 /// A TRANSITION is antisymmetric: `g_XY ∘ g_YX = 1` (`g_YX = g_XY⁻¹`).
 #[test]
-fn a_transition_and_its_reverse_cancel() {
+fn transition_and_reverse_cancel() {
     let (gx, gy) = (motion(3), motion(6));
     let f = transition(&gx, &gy).unwrap();
     let r = transition(&gy, &gx).unwrap();
     assert!(f.compose(&r).expect("the composite forms").is_identity(), "g_XY ∘ g_YX = 1 — asymmetric coboundary");
 }
 
+/// Consilient charts glue: identical views form one sheaf.
 #[test]
-fn consilient_charts_glue() {
+fn glues_consilient_charts() {
     let g = motion(3);
     let id = transition(&g, &g).unwrap();
     assert!(id.is_identity());
     assert_eq!(glues(&id, &id, &id), Some(true), "identical views → one sheaf");
 }
 
+/// A global section always glues, since a coboundary satisfies δδ = 0.
 #[test]
-fn a_global_section_always_glues() {
+fn glues_global_section() {
     let (ga, gb, gc) = (motion(3), motion(6), motion(9));
     let g_ab = transition(&ga, &gb).unwrap();
     let g_bc = transition(&gb, &gc).unwrap();
@@ -128,8 +130,10 @@ fn a_global_section_always_glues() {
     assert_eq!(glues(&g_ab, &g_bc, &g_ca), Some(true), "a coboundary always satisfies δδ = 0");
 }
 
+/// An equivocation shows up as curvature: a lone disagreeing edge does not
+/// glue and its holonomy is not the identity.
 #[test]
-fn an_equivocation_shows_up_as_curvature() {
+fn glues_refuses_equivocation_as_curvature() {
     let g = motion(3);
     let id = transition(&g, &g).unwrap();
     let disagree = transition(&motion(3), &motion(6)).unwrap();
@@ -144,7 +148,7 @@ fn an_equivocation_shows_up_as_curvature() {
 /// The link of one vertex is only the incident simplices; a tetra not on
 /// the link is not formed. Volume-zero overlaps form nothing.
 #[test]
-fn the_link_is_the_star_and_volume_gates_simplices() {
+fn link_is_star_and_volume_gates_simplices() {
     let mut c = Complex::new();
     let (a, b, cc, d) = (v(1), v(2), v(3), v(4));
     for x in [&a, &b, &cc, &d] {
@@ -175,7 +179,7 @@ fn the_link_is_the_star_and_volume_gates_simplices() {
 /// a chord's gauge moves; a ring that never filled is reopened silently, not
 /// counted as a cut, since there was no coherence to lose.
 #[test]
-fn a_filled_ring_reopened_by_a_moved_gauge_is_named_by_the_link() {
+fn coboundary_on_link_names_filled_ring_cut_by_gauge() {
     let mut c = Complex::new();
     let (a, b, cc) = (v(1), v(2), v(3));
     for x in [&a, &b, &cc] {
@@ -273,7 +277,7 @@ fn fill_is_gauge_or_class() {
 /// rotor here is the identity, so the rotor half of the holonomy closes
 /// exactly and the obstruction lives entirely in the carriage.
 #[test]
-fn a_placement_that_does_not_close_is_a_class_carrying_it() {
+fn fill_unclosed_placement_is_class_carrying_it() {
     let mut c = Complex::new();
     let (a, b, cc) = (v(1), v(2), v(3));
     for x in [&a, &b, &cc] {
@@ -340,7 +344,7 @@ fn congruent_is_read_by_class_key() {
 /// value with no vertices is not one: it is not remembered, and every
 /// reader of `degree` takes `n − 1` whole rather than flooring it.
 #[test]
-fn a_simplex_on_no_vertices_is_not_a_simplex() {
+fn remember_refuses_simplex_without_vertices() {
     let mut c = Complex::new();
     c.remember(Simplex {
         vertices: Vec::new(),
@@ -353,6 +357,8 @@ fn a_simplex_on_no_vertices_is_not_a_simplex() {
     assert!(c.get(&[]).is_none(), "and none is there to read");
 }
 
+/// A fill is attempted once: a second fill answers `AlreadyFilled` and the
+/// stored fill stands.
 #[test]
 fn fill_is_attempted_once() {
     let mut c = Complex::new();

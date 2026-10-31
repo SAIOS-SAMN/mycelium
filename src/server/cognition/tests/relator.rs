@@ -77,7 +77,7 @@ fn three_courts() -> [Kernel; 3] {
 /// it the non-trivial fixture below would look like a fixture that chose
 /// its answer.
 #[test]
-fn transports_read_from_three_germs_of_one_object_always_glue() {
+fn glues_triangle_from_one_objects_germs() {
     use crate::transducer::cech::{glues, holonomy, transition};
     // Three germs of one object, deliberately unequal and deliberately
     // not related by any pattern: what is claimed holds for any three.
@@ -102,7 +102,7 @@ fn transports_read_from_three_germs_of_one_object_always_glue() {
 /// the three courts reads that independently and each one's count of
 /// generators the engine opened stays at zero.
 #[test]
-fn three_charts_whose_transports_close_are_one_proof_and_adjoin_nothing() {
+fn glues_closing_triangle_adjoins_nothing() {
     use crate::transducer::cech::{glues, holonomy};
     let (t_ab, t_bc, t_ca) = (
         transport(&turn_90(1)),
@@ -136,7 +136,7 @@ fn three_charts_whose_transports_close_are_one_proof_and_adjoin_nothing() {
 /// content (law 2) and not a vantage. That is what makes the relator
 /// citable by a later form on any of them.
 #[test]
-fn three_charts_that_do_not_close_leave_a_relator_of_order_two() {
+fn holonomy_unclosed_triangle_leaves_order_two_relator() {
     use crate::transducer::cech::{glues, holonomy};
     let (t_ab, t_bc, t_ca) = (
         transport(&turn_90(1)),
@@ -187,7 +187,7 @@ fn three_charts_that_do_not_close_leave_a_relator_of_order_two() {
 /// `adjoined()` stays zero. What is new is not a generator, it is a
 /// RELATION between generators the courts already had.
 #[test]
-fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
+fn court_torsion_files_relator_at_own_period() {
     use crate::transducer::cech::holonomy;
     use crate::transducer::sentence::{form_torsion, Form, Vertex};
     let (t_ab, t_bc, t_ca) = (
@@ -359,7 +359,7 @@ fn install(k: &mut Kernel, voice: [u8; 32], w: &Element) {
 /// speaks `q²`: the structure changed, the result did not, which is what
 /// makes this convergence and not a vote.
 #[test]
-fn the_rewrite_that_retires_the_relator_is_reached_by_two_courts_as_content() {
+fn mint_rewrite_retire_reaches_one_address_on_two_courts() {
     use crate::transducer::rewrite::{RewriteKind, RewritePayload};
     // The transport the triangle is built from, and the relator it left.
     let t = transport(&turn_90(1));
@@ -473,7 +473,7 @@ fn retirement_line(
 /// speaker WAITS on its stamp. Per arm, admitted = applied + awaiting +
 /// refused.
 #[test]
-fn a_peers_retirement_is_replayed_here_and_applied_refused_or_waiting() {
+fn admit_line_replays_peer_retirement() {
     use crate::chronometry::{ActKind, Cite, Ruled};
     let t = transport(&turn_90(1));
     let relator = transport(&turn_90(2));

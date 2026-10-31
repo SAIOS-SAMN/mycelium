@@ -72,7 +72,7 @@ fn one(cells: Vec<crate::transducer::sentence::FormCell>, what: &str) -> crate::
 /// three cubes share pairwise only an edge each, so no pairwise read sees the
 /// corner they share, and the base read does.
 #[test]
-fn three_bodies_meeting_at_a_corner_mint_one_two_cell_carrying_their_meet() {
+fn named_incidence_mints_corner_two_cell_with_meet() {
     let three = bodies(&[vec![0, 0, 0], vec![1, 1, 0], vec![1, 0, 1]]);
     let (_, cells) = named_incidence(None, &three);
     let c = one(by_grade(&cells, 2), "one 2-cell");
@@ -94,7 +94,7 @@ fn three_bodies_meeting_at_a_corner_mint_one_two_cell_carrying_their_meet() {
 /// member's two bodies collided (measured on the corpus); keyed by their
 /// pieces they stand apart (BD2).
 #[test]
-fn two_bodies_of_one_member_stand_in_one_cell_apart() {
+fn named_incidence_keeps_one_members_bodies_apart() {
     let mut k = crate::network::nerve::Keyed::new();
     k.insert(member(1), vec![Site::of([0, 0, 0]), Site::of([1, 1, 0])]);
     k.insert(member(2), vec![Site::of([1, 0, 1])]);
@@ -112,7 +112,7 @@ fn two_bodies_of_one_member_stand_in_one_cell_apart() {
 /// crossing a face with no body pair on the carrier, or a pair outside the
 /// cell, is not — whatever members it visits.
 #[test]
-fn a_circuit_crosses_a_cell_by_the_body_pair_of_the_face_it_steps_over() {
+fn cell_algebras_crosses_cell_by_face_body_pair() {
     use crate::transducer::cga::{self, Mv};
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
     let (p, r, s) = (vec![1u8], vec![2u8], vec![3u8]);
@@ -142,7 +142,7 @@ fn a_circuit_crosses_a_cell_by_the_body_pair_of_the_face_it_steps_over() {
 /// `V_ca V_bc V_ab = s_a s_c s_c s_b s_b s_a` is a scalar — the square the
 /// cell's meet does not take.
 #[test]
-fn a_pairwise_loop_of_the_same_three_reads_no_grade_three_content() {
+fn shape_of_pairwise_loop_telescopes_to_scalar() {
     let nucleus = |s: Vec<i64>| {
         crate::transducer::blade::shape_of(&[Site::new(s).expect("a fixture site within the algebra")]).blade.nucleus().expect("a nucleus")
     };
@@ -157,7 +157,7 @@ fn a_pairwise_loop_of_the_same_three_reads_no_grade_three_content() {
 /// NO ARITY WRITTEN IN: at `n = 4`, four bodies standing at one element
 /// mint a 3-cell with the same code.
 #[test]
-fn at_four_axes_four_bodies_at_one_element_mint_a_three_cell() {
+fn named_incidence_mints_three_cell_at_four_axes() {
     let four = bodies(&[vec![0, 0, 0, 0], vec![1, 1, 0, 0], vec![1, 0, 1, 0], vec![1, 0, 0, 1]]);
     let (_, cells) = named_incidence(None, &four);
     let c = one(by_grade(&cells, 3), "one 3-cell at n = 4");

@@ -6,7 +6,7 @@ use crate::transducer::cga::*;
 /// 54.7 — THE NIVEN TRAP: an open orbit has TWO causes, and reading
 /// only the first would report a dense winding as a closed circuit.
 #[test]
-fn a_period_is_crystallographic_or_it_is_infinite() {
+fn compact_period_is_crystallographic_or_open() {
     // A pure transvection has no compact part: open, and no pitch.
     let boost = transvection(&q(2, 1), &q(1, 1), transvection_planes(3)[0]).expect("a boost");
     assert_eq!(compact_period(&boost), Spectrum::Open, "a dislocation slips and never returns");

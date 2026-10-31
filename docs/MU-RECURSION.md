@@ -697,16 +697,16 @@ first (`physics/axioms/founding.rs`), each with a test that could fail
 
 | principle | the mode | what it says | test |
 |---|---|---|---|
-| **HARMONIC** | elliptic — a turn | it RETURNS at the order read off it (Niven: 1, 2, 3, 4, 6), or it never returns and its winding is content. Return is the elastic vent, the period, the class that comes back | `a_turn_returns_at_its_read_order_or_never` |
-| **LUMINAL** | parabolic — a null generator, `B² = 0` | it has no length, only its ray and its ratios on it; the flow keeps it null and its flux frozen in its tube. A boost is the luminal off the cone: two null rays and the expansion between them | `a_null_generator_has_no_length_and_stays_null_under_the_flow` |
-| **HOLONOMIC** | the closed loop | what a circuit composes to is its content: moving its base point conjugates it and changes none of its modes | `a_loops_holonomy_is_its_content_whatever_its_base` |
+| **HARMONIC** | elliptic — a turn | it RETURNS at the order read off it (Niven: 1, 2, 3, 4, 6), or it never returns and its winding is content. Return is the elastic vent, the period, the class that comes back | `motion_modes_turn_returns_at_read_order_or_never` |
+| **LUMINAL** | parabolic — a null generator, `B² = 0` | it has no length, only its ray and its ratios on it; the flow keeps it null and its flux frozen in its tube. A boost is the luminal off the cone: two null rays and the expansion between them | `null_fluxes_generator_stays_null_under_flow` |
+| **HOLONOMIC** | the closed loop | what a circuit composes to is its content: moving its base point conjugates it and changes none of its modes | `motion_modes_of_holonomy_independent_of_base` |
 
 **Corollaries, binding every reader:**
 - **Every dimension is an exponent.** A grade is the count of orthogonal
   factors in a product; a cell's degree is its vertices less one; a base of
   `n` axes has `2ⁿ` vertices in its unit cell. No degree is capped: the
   complex climbs as far as its faces stand (A.6). Cohomology is not fixed at
-  two (`every_dimension_is_an_exponent`).
+  two (`geo_of_k_generators_is_grade_k_blade`).
 - **No constant.** A number in the physics is read off the field or the
   geometry, or it is undefined physics, NAMED in the register's
   `OPEN_PHYSICS` with what will derive it until it is derived. The
@@ -3930,8 +3930,8 @@ class vector, chart invariants, listing keys, certificates and every
 `simplex_key`, `cocycle_key`, `sel_key`, the certificate key, and
 `Keyed<K>` keyed by `&[u8]` (variable length); `CLOSED_KEY` is deleted and
 closure is `ClassVector::is_zero`. Tests: `every_key_decodes_to_its_object`,
-`a_prefix_of_a_key_is_its_stratum`, `no_blake3_in_cognition` (the gate),
-`class_record_travels_as_coordinates`.
+`fiber_of_prefix_reads_its_stratum`, `no_blake3_in_cognition` (the gate),
+`put_class_record_round_trips_key_and_order`.
 
 ## 17. Master algorithms
 
@@ -6147,7 +6147,7 @@ the court's opening, P2–P3; `SYL1` in the genome;
 the two log lines in 34.2/34.3. The tape's escape byte is a breaking layout change.
 Tests: `a_prime_letter_is_read_off_the_witness_never_searched`,
 `one_voice_opens_no_letter`, `two_witnesses_of_one_prime_open_one_letter`,
-`a_witness_that_does_not_carry_the_prime_is_refused`,
+`prime_factor_refuses_witness_without_prime`,
 `a_tape_naming_an_untaught_letter_is_refused`,
 `an_opened_letter_spells_the_demand_that_opened_it`,
 `opened_primes_peel_in_increasing_order`. Traces: `court letter opened`
@@ -6245,28 +6245,28 @@ named.
 ## 39. Tests
 
 **Identity and algorithms (Part III).**
-`alphabet::tests::a1_canonical_is_projective_either_sign` (`q⁴`, `1`, `−R`,
+`alphabet::tests::normalised_key_projective_either_sign` (`q⁴`, `1`, `−R`,
 `λR` share a key; `R` and `R·q` do not);
 `a2_run_reduction_shortens_and_preserves_key`;
 `a2_descent_is_deterministic_under_budget`;
 `a3_form_is_reduced_and_eq_on_reduced`;
-`cga::tests::a4_projective_eq_either_sign_and_key`;
-`element::tests::a5_chain_canonical_idempotent_and_translation_free`;
+`cga::tests::projective_eq_holds_either_sign_and_key`;
+`element::tests::canonical_chain_is_idempotent_and_translation_free`;
 `blade::tests::a6_refuses_overflow_keeps_sign`;
 `stalk::tests::a7_class_axes_are_invariants_not_hash`;
 `cognition::tests::a8_migration_conserves_supply_and_resolves_all`;
-`verdict::tests::a9_sel_key_stable_under_debug_change`;
+`verdict::tests::sel_key_is_sel_bytes_never_debug_text`;
 `sdk::tests::a10_two_sockets_one_vk_one_peer`;
 `server::tests::a11_rendezvous_by_listing_key_not_bytes`;
-`sdk::tests::a12_plane_factorisation_by_hnf`, `a12_offplane_reached_or_novel`,
-`a12_plane_remainder_is_canonical`;
+`factor::tests::factor_on_plane_understands_span_by_hnf`, `factor_off_plane_reaches_or_refuses_unmeasured`,
+`factor_on_plane_remainder_is_canonical`;
 `nerve::tests::meet_is_intersection_and_costs_shared_prefixes` (meet
 equals set intersection; `count_get` grows with the shared structure, N vs
 4N on the larger trie with the smaller fixed);
 `cech::tests::solve_gauge_between_reduces_to_solve_gauge_when_a_is_identity`;
 `cech::tests::components_root_is_least_key`;
-`element::tests::m2_two_spellings_one_address`, `m2_rescaled_versor_one_address`;
-`sdk::tests::m6_held_under_other_spelling_is_understood`.
+`element::tests::address_identifies_two_spellings`, `m2_rescaled_versor_one_address`;
+`factor::tests::factor_on_plane_understands_held_word_respelled`.
 
 **Cohomology (Part II).**
 `alphabet::tests::plane_form_semidirect_product_and_inverse`;
@@ -6294,9 +6294,9 @@ class keys);
 `cech::tests::leray_artefact_disappears_when_cover_made_good`;
 `cech::tests::naturality_restriction_commutes_with_delta`;
 `cech::tests::naturality_mv_ladder_commutes`;
-`alphabet::tests::plane_conjugacy_four_lines`;
-`alphabet::tests::conjugacy_key_iff_conjugate`;
-`alphabet::tests::rotor_class_key_invariant`;
+`alphabet::tests::conjugacy_key_invariant_on_four_conjugation_lines`;
+`alphabet::tests::conjugacy_key_agrees_iff_conjugate`;
+`alphabet::tests::class_key_invariant_under_conjugation_and_scale`;
 `cognition::tests::refine_carries_or_discharges_every_class` (no complex
 cloned; children's simplex counts sum to the parent's minus straddling);
 `cognition::tests::refine_rolls_back_on_not_natural`;
@@ -6305,45 +6305,45 @@ cloned; children's simplex counts sum to the parent's minus straddling);
 
 **Forms (Part IV).**
 1. `sentence::tests::form_tape_v2_round_trips` (Frame, Word, Glued, Rebased, Unfolded, contact word, faces, orbits).
-2. `sentence::tests::depth_is_one_plus_max_glued` and refusal at equal depth.
-3. `alphabet::tests::rebase_is_normal_form_and_contact_in_key`.
+2. `sentence::tests::depth_of_is_one_plus_max_glued` and refusal at equal depth.
+3. `alphabet::tests::rebase_conjugates_into_normal_form`.
 4. `family::tests::pair_form_reads_laminae_once` (second call touches no lamina; work counter).
 4b. `family::tests::face_work_is_linear_in_occupied_sites` (occupancy + ring, not n²).
-4c. `sentence::tests::ratio_and_sections_are_on_the_form_key` (ratio, sections, torsion on the tape; zero denominator refused).
+4c. `sentence::tests::form_vertex_key_carries_ratio_and_sections` (ratio, sections, torsion on the tape; zero denominator refused).
 5. `family::tests::extract_rule_by_class_with_sections` (a class in some pairs is a section).
-6. `family::tests::extract_rule_glues_a_held_form` (depth 1, one `Glued`, fewer `Word` vertices than the flat rule).
-6b. `family::tests::empty_fiber_is_unspoken_not_every_body`.
-7. `family::tests::unfolding_grow_to_frame` (one form, `Unfolded{Occupied}`, no step count on the tape).
+6. `family::tests::extract_rule_with_glues_held_form` (depth 1, one `Glued`, fewer `Word` vertices than the flat rule).
+6b. `family::tests::apply_form_leaves_empty_fiber_unspoken`.
+7. `family::tests::extract_rule_with_unfolds_grow_to_frame` (one form, `Unfolded{Occupied}`, no step count on the tape).
 8. `family::tests::orbit_contact_and_no_orbit`.
 9. `verdict::tests::replay_form_refuses_unruled_glue`.
 10. `cognition::tests::witness_fetches_glued_form_before_install` and `replay_memo_reused`.
 11. `cognition::tests::slash_of_glued_redockets_citers`.
-12. `sdk::tests::comprehend_understands_through_held_class` (the cited address absent, the cited chart held under another address: `Understood` with one entry per held form and no re-gauge), `sdk::tests::foreign_class_is_withheld` (one outcome, `Withheld`), and `withheld_then_depth_order`.
+12. `sdk::tests::comprehend_understands_through_held_class` (the cited address absent, the cited chart held under another address: `Understood` with one entry per held form and no re-gauge), `sdk::tests::comprehend_withholds_foreign_class` (one outcome, `Withheld`), and `comprehend_withholds_sentence_citing_unheld_form`.
 13. `economy::tests::settle_recursive_pays_by_deflation`.
 14. `cognition::tests::shorter_form_retires_to_cavity_and_resolves`.
 
 **Torsion bridge, pivots, and rank (M9, A16–A20, chapter 42).**
 `sentence::tests::class_vector_is_canonical_and_occupied_axes_fixed_order` (12.6);
-`sentence::tests::pivot_candidates_are_read_from_occupied_axes_only` (A16 step 3: a zero coordinate is never visited);
-`sentence::tests::pivot_discharges_only_its_axis_and_raises_none` (12.6 discharge condition);
+`sentence::tests::coordinates_lists_occupied_axes_in_declaration_order` (A16 step 3: a zero coordinate is never visited);
+`sentence::tests::pivot_orbit_zeroes_own_axis_raising_none` (12.6 discharge condition);
 `sentence::tests::pivot_loop_terminates_in_occupied_coordinates` (T4);
-`sentence::tests::pivot_never_reopens_a_closed_chord` (T2);
-`sentence::tests::several_discharges_are_held_as_vortex` (A16 step 5: two discharging candidates, both kept, none applied);
+`sentence::tests::pivot_orbit_never_reopens_closed_chord` (T2);
+`sentence::tests::select_discharge_holds_several_as_vortex` (A16 step 5: two discharging candidates, both kept, none applied);
 `sentence::tests::vortex_collapses_by_perception_glue_or_ruling` (25.1);
-`sentence::tests::mu_neither_certifies_nor_selects` (T13: the applied pivot is a function of the class vector and the held words, unchanged when μ⃗ of the remainder is permuted across lanes);
+`sentence::tests::select_discharge_never_selects_by_mu` (T13: the applied pivot is a function of the class vector and the held words, unchanged when μ⃗ of the remainder is permuted across lanes);
 `sentence::tests::certificate_key_equal_across_two_minds` (A20 step 1);
 `verdict::tests::pivot_certificate_replays_or_refuses` (23.7, `REFUSE_PIVOT_INEXACT`);
-`sentence::tests::torsion_filed_only_when_witnessed_at_period` (T5);
+`sentence::tests::record_cycle_refuses_unwitnessed_period` (T5);
 `sentence::tests::infinite_class_is_never_filed` (T3);
 `sentence::tests::rank_invariant_under_regauge_and_pivot` (R1, R2);
 `sentence::tests::rank_invariant_under_gluing_closed_form` (R3);
 `cognition::tests::rank_conserved_under_refinement_carried_plus_discharged` (R4);
 `cech::tests::rank_of_union_is_sum_over_components` (R5);
 `physics::tests::stroke_terminates_on_zero_outcome` (T9, T25);
-`cognition::tests::torsion_consilient_or_filed_or_refused` (23.7);
-`bubble::tests::horizon_seeded_class_is_not_rederived` (A19);
-`bubble::tests::restart_refills_horizon_from_syllabus` (A19 step 4);
-`verdict::tests::rank_lost_refused` (A18).
+`cognition::tests::court_torsion_files_nothing_without_class` (23.7);
+`bubble::tests::seed_horizon_keeps_class_ruled_not_rederived` (A19);
+`bubble::tests::seed_horizon_refills_empty_mind_from_syllabus` (A19 step 4);
+`verdict::tests::replay_form_replays_filed_torsion_without_taped_forest` (A18).
 
 **Migration (Part V).**
 `element::tests::v1_and_v2_tapes_of_one_form_share_an_address`;
@@ -6368,19 +6368,19 @@ resolve after load);
 `cga::tests::cl41_sphere_blade_projective_canonical`.
 
 **Mesh under adversaries (Part IX).**
-`chronometry::tests::height_is_one_plus_max_of_prev_and_parents` (45.2);
-`chronometry::tests::precedes_implies_lower_height_and_concurrency_is_kept`
+`chronometry::tests::head_height_is_one_plus_max_of_prev_and_parents` (45.2);
+`chronometry::tests::precedes_implies_lower_height_and_keeps_concurrency`
 (T15: two chains with no citations are concurrent at every height; a
 receipt citing both orders both before it and neither before the other);
 `chronometry::tests::frontier_visits_each_receipt_once` (N vs 4N counter);
 `cognition::tests::extent_is_zero_without_admitted_receipts`,
-`extent_replays_from_the_home_chain` (T16);
-`cognition::tests::cocycle_supersedes_by_causal_order_and_keeps_concurrent`
+`t_extent_replays_from_home_chain` (T16);
+`cognition::tests::push_cocycle_at_supersedes_by_causal_order`
 (45.3);
-`dialogue::tests::prefix_refuses_foreign_genesis_or_epoch_before_carriers`
+`admission::tests::admit_refuses_foreign_genesis_or_epoch_first`
 (47.2 step 1, a carrier-touch counter at zero);
-`cognition::tests::receipt_gap_backfills_before_acting` (47.2 step 3);
-`cognition::tests::claimed_height_that_does_not_rederive_is_refused` (47.2
+`admission::tests::admit_dockets_gap_until_backfilled` (47.2 step 3);
+`admission::tests::admit_refuses_height_that_does_not_rederive` (47.2
 step 4, T18);
 `cognition::tests::install_requires_independent_witness_with_room` (47.3:
 a witness inside the home's closure refused, a witness short on an occupied
@@ -6393,7 +6393,7 @@ R9: bond zero on four lanes, one `burn` entry, `Treasury::audit` holds);
 `identity::tests::frost_group_signature_verifies_as_ed25519`,
 `frost_reshare_keeps_the_group_key` (46.1);
 `identity::tests::manifest_key_is_scoped_and_revoked_whole` (46.2);
-`server::tests::rtt_is_counted_in_strokes` (45.4);
+`physics::tests::from_transport_counts_rtt_in_strokes` (45.4);
 the clock gate of `MU-ENGINEERING.md` §7 as a build failure on
 `SystemTime`, `Instant`, `Duration` in the directories of 45.6.
 
@@ -6470,7 +6470,7 @@ equality. Code: `cech::solve_gauge`, `sentence::solve_coboundary`,
 `δ¹(δ⁰γ·g) = γ · δ¹g · γ⁻¹` (10.3, 10.5) and `order(w^a) = order(w)` (3.2).
 Code: `Rotor::conjugate`, `Word::order`, `Form::regauge`.
 Proof: `cochain_identities`, `plane_form_semidirect_product_and_inverse`,
-`pivot_never_reopens_a_closed_chord`. Consequence: a conjugating pivot
+`pivot_orbit_never_reopens_closed_chord`. Consequence: a conjugating pivot
 (re-gauge, rebase) can close a chord only if its class is trivial and can
 never open a closed one; only a pivot that adds a face, a word, or an axis
 can change a class vector, and it changes exactly the coordinate it acts
@@ -6501,7 +6501,7 @@ coordinates of its first class vectors in that stroke.
 A torsion cycle `(σ, ℓ)` is witnessed iff the fibre walk returns at step
 `ℓ` and not before (A17). Code: `Element::record_torsion`,
 `toroid::witness_stored`, `HolonomicLoopWitness`, in `blind_replay` and
-`replay_nerve`. Proof: `torsion_filed_only_when_witnessed_at_period`;
+`replay_nerve`. Proof: `record_cycle_refuses_unwitnessed_period`;
 refusal strings `"torsion cycle does not close"`, `"torsion period does not
 re-derive"`.
 
@@ -6552,7 +6552,7 @@ for one address on two hyphae.
 **T12 Promotion preserves the vertex.** A dialect entry promoted into the
 genome is the same word because M1 is injective on projective classes
 (17.1). Code: `Element::same_vertex`, `learn_one` (24.1). Proof:
-`m2_two_spellings_one_address`, trace `promoted {addr} dialect → genome`.
+`address_identifies_two_spellings`, trace `promoted {addr} dialect → genome`.
 
 **T13 μ⃗ neither certifies nor selects.** The candidate list of a held
 orbit is a function of its class vector and the held words on its charts
@@ -6565,7 +6565,7 @@ scaling all of them, changes neither the candidate list nor which
 candidate is applied, and two minds with the same vector and the same held
 words apply the same pivot or hold the same vortex. Code:
 `Form::pivot_loop`, `economy::lane_moves`. Proof:
-`mu_neither_certifies_nor_selects`, `certificate_key_equal_across_two_minds`;
+`select_discharge_never_selects_by_mu`, `certificate_key_equal_across_two_minds`;
 trace: identical `pivot … discharged` sequences for one orbit on two voices
 holding the same words.
 
@@ -6578,7 +6578,7 @@ other plane's coordinates and the placement fixed; a translation word acts
 on the placement residue alone; a glue of a closed form makes the orbit a
 boundary and zeroes the whole vector (T6); opening an axis removes the orbit
 (15.5). Code: `Form::class_vector` before and after each move. Proof:
-`pivot_discharges_only_its_axis_and_raises_none`; the debug assertion of
+`pivot_orbit_zeroes_own_axis_raising_none`; the debug assertion of
 A18 on every trial.
 
 **T15 Causal order is exact and never totalised.** `e ≺ e'` iff the frontier
@@ -6586,13 +6586,13 @@ of `e` is below that of `e'` componentwise and differs; heights strictly
 increase along `≺`; two receipts with incomparable frontiers are concurrent
 and no operation orders them (45.3). Code: `ReceiptChain::frontier`,
 `precedes`, `Height`. Proof:
-`precedes_implies_lower_height_and_concurrency_is_kept`; trace: no `court
+`precedes_implies_lower_height_and_keeps_concurrency`; trace: no `court
 concurrent … held` line is followed by a resolution by order.
 
 **T16 Extent re-derives.** A home's T-lane extent for any carrier or voice
 is a difference of heights on the home's own chain, and any node holding
 that chain computes the same number (45.4). Code: `standing_mag`, `Height`.
-Proof: `extent_replays_from_the_home_chain`,
+Proof: `t_extent_replays_from_home_chain`,
 `extent_is_zero_without_admitted_receipts`.
 
 **T17 Equivocation is decided by two signatures.** Two valid signatures
@@ -6605,7 +6605,7 @@ Proof: `equivocation_proof_burns_bond_and_supply`.
 claim about time enters the system except as a receipt whose height
 re-derives from signed parents; a false height is refused by re-derivation
 exactly as a false tape is (45.2, 47.2 step 4). Code: the clock gate,
-`REFUSE_RECEIPT`. Proof: `claimed_height_that_does_not_rederive_is_refused`
+`REFUSE_RECEIPT`. Proof: `admit_refuses_height_that_does_not_rederive`
 and the gate.
 
 ### 42.2 Rank theorems (dimensional capacity is never lost)
@@ -6659,8 +6659,8 @@ harmonics never share a chart (M4). Code: `blade::axes_of`,
 **R8 Keys never merge distinct vertices.** M1 (A1, A4) is injective on
 projective classes, so no two meanings share an address and no digest of a
 tape is a key (1.5, 17.1). Code: `Rotor::key`, `Mv::key`,
-`Element::address`. Proof: `a1_canonical_is_projective_either_sign`,
-`m2_two_spellings_one_address`, and chapter 35's keyed-carrier invariant.
+`Element::address`. Proof: `normalised_key_projective_either_sign`,
+`address_identifies_two_spellings`, and chapter 35's keyed-carrier invariant.
 
 **R9 Burn conserves supply.** Forfeiture on equivocation and the burn of a
 duplicate issuance reduce `bond` or `balance` and `supply` by one vector, so
@@ -6768,7 +6768,7 @@ closed: holonomy projectively identity, carriage identity, gauge identity.
 No direct sum of plane groups and no `Z^{|𝒢|}` appears; the coordinates are
 invariants, not group elements. Code: `ClassVector::read`, `key`,
 `is_zero`, `Word::class_key`. Proof: `class_vector_is_conjugation_invariant`,
-`rotor_class_is_read_before_the_plane_form`, `zero_class_vector_iff_closed`.
+`class_key_reads_rotor_conjugacy_first`, `zero_class_vector_iff_closed`.
 
 **T21 Discharge is certified exactly.** A trial on an occupied axis `x`
 is certified iff (i) `κ_x' = 0`; (ii) `κ_y' = κ_y` for every `y ≠ x`,
@@ -6780,8 +6780,8 @@ asked. Every clause is decided exactly and replays on the court from the
 certificate (A20). T14 is the corollary that a move changes exactly its
 axis. Code: `pivot_loop`, `Rank::moved`, `economy::lane_moves`,
 `PivotCertificate`. Proof:
-`pivot_discharges_only_its_axis_and_raises_none`,
-`pivot_certificate_replays_or_refuses`, `rank_lost_refused`.
+`pivot_orbit_zeroes_own_axis_raising_none`,
+`pivot_certificate_replays_or_refuses`, `replay_form_replays_filed_torsion_without_taped_forest`.
 
 **T22 The vortex is two certified discharges.** If two trials on one orbit
 are both certified by T21, the orbit is a vortex: both are held as candidates of
@@ -6793,7 +6793,7 @@ not a vortex; a remainder the mind did not reduce is a thought (24.3), not
 a vortex; nothing searches and nothing terminates a search. Code:
 `select_discharge`, `Discharge::Vortex`, `Contemplation` candidates. Proof:
 `pivot_loop_discharges_held_word_and_vortices_a_pair`,
-`vortex_collapses_by_glue_or_ruling`, `two_certified_discharges_are_a_vortex`.
+`seed_horizon_collapses_vortex_by_matching_certificate`, `two_certified_discharges_are_a_vortex`.
 
 **T23 The quotient carries the refraction.** For a trial transport `Γ` on
 a pair `(I, O)` with `R = residual_of(Γ·I, O)`, the element deposited in
@@ -6805,8 +6805,8 @@ exactly and reads their closure per lane. Without `Γ` the remainder
 re-enters at the identity frame as a new scene, the faces already walked
 are re-derived, and no partial closure can be replayed. Code:
 `Refraction`, `Transport::refract`, `hold_form`, `speak_form`,
-`replay_form_with`. Proof: `refraction_is_rebase_regauge_and_carriage`,
-`refraction_replays_as_its_three_moves`,
+`replay_form_with`. Proof: `refract_rebases_regauges_and_carries`,
+`refract_replays_as_three_moves`,
 `remainder_travels_with_its_transport`.
 
 **T24 Degree-2 obstructions are read from refractions.** For three
@@ -7955,15 +7955,15 @@ server/cognition/germinate/ingest.rs   commit_germ lists demand vertices, never 
 ```
 
 Tests (chapter 39): `a_sentence_reconstructs_every_body_or_is_refused`,
-`edge_transport_lies_in_the_stabilizer_or_the_exchange`,
+`edge_transport_reads_exchange_with_identity_word`,
 `a_rigid_scene_has_identity_edges_and_a_relative_motion_does_not`,
 `a_non_rigid_pair_is_a_remainder_edge_never_a_loop`,
 `loop_holonomy_in_the_stabilizer_does_not_telescope`,
 `factor_rotor_peels_commuting_blocks_in_order`,
-`a_prime_outside_the_alphabet_is_a_rotor_prime_demand`,
-`a_created_body_is_a_source_or_creation_demand`,
-`a_deformed_body_is_a_deformation_demand`,
-`demands_ride_the_sentence_one_per_chart`,
+`factor_rotor_demands_prime_outside_alphabet`,
+`cipher_form_demands_source_or_creation_for_created_body`,
+`cipher_form_demands_deformation_for_deformed_body`,
+`cipher_form_keys_one_demand_per_kind_and_chart`,
 `the_closed_subcomplex_is_ruled_while_the_demands_are_listed`,
 `a_bare_chain_is_refused_by_the_court`,
 `no_utterance_path_calls_from_residual` (a gate over `client/` and the
@@ -8201,15 +8201,15 @@ sealed set on the utterance index, the contraction certificate on the
 next utterance; `sentence/form/contract.rs`: the six moves on a held
 idea's form (`contract`) and the court's reader of each
 (`is_contraction_at`); `sentence/form/certificate.rs`: `Contraction`
-beside `PivotCertificate`; tests: `a_refusal_contracts_the_held_form_and_seals_the_address`,
-`a_sealed_tape_is_refused_by_the_mind_before_the_wire`,
-`the_court_verifies_a_contraction_before_it_replays_the_sentence`,
-`two_courts_of_distinct_identity_reach_one_standing_through_the_codec`,
-`a_still_orbit_contracts_its_contact_word_to_a_demand`,
-`a_face_that_does_not_rederive_is_dropped_by_its_contraction`,
-`a_refused_sentence_leaves_the_dialect`,
-`a_citation_is_owed_once_per_court_and_a_sealed_one_to_none`,
-`a_code_the_hypha_did_not_send_is_not_an_outcome` (a wait admits nothing).
+beside `PivotCertificate`; tests: `receive_adjudication_contracts_form_and_seals_address`,
+`speak_refuses_sealed_tape_before_wire`,
+`hear_speech_verifies_contraction_before_replay`,
+`hear_frame_on_reaches_one_standing_on_two_courts`,
+`contract_turns_still_contact_word_into_demand`,
+`contract_drops_face_that_does_not_rederive`,
+`receive_adjudication_drops_refused_sentence_from_dialect`,
+`owe_citation_once_per_court_never_when_sealed`,
+`read_speech_reply_admits_only_codes_sent` (a wait admits nothing).
 
 ### 50.10 The court adjudicates words; grammar is content (ruled 2026-09-22)
 
@@ -8660,8 +8660,8 @@ no shared runtime memory, each perceiving the same family as one body,
 reach the same form address and the same standing (50.9's intelligibility
 assertion on a three-axis body). Tests:
 `src/transducer/family/tests/extraction.rs`
-(`a_family_translated_along_e3_is_one_vertex_on_every_frame_and_no_correspondence_runs`,
-`two_courts_reach_one_address_for_one_family`).
+(`extract_rule_reads_translation_as_one_vertex_on_every_frame`,
+`extract_rule_reaches_one_address_on_two_courts`).
 
 ### 51.11 What is NOT in this draft
 
@@ -8955,18 +8955,18 @@ src/transducer/family/speak.rs, src/court/verdict/body.rs   the member section r
 src/transducer/sentence/form/contract.rs  a refused word contracted at the member the court named (D10 item 13); 50.9's moves 5 and 6, the still orbit and the face that does not re-derive
 ```
 
-Tests (39): `cayley::tests::a_versor_is_its_bivector_read_back_in_either_direction`,
-`the_dilation_by_two_is_the_rapidity_one_third_and_dilations_add_by_the_rational_law`,
-`a_turn_180_and_a_reflection_have_no_bivector`,
-`an_even_element_that_is_not_a_versor_is_refused_by_the_chart`,
-`bivectors_on_two_planes_do_not_add_and_the_product_is_the_reading`,
-`the_versor_between_two_shapes_has_a_bivector`;
-`sentence::tests::the_tape_carries_a_filed_zero_as_infinite_order`,
-`a_free_part_orbit_files_at_period_zero_beside_its_demand`;
-`verdict::tests::a_face_whose_edge_word_has_infinite_order_is_not_refused_for_its_order`,
-`a_filed_orbit_of_infinite_order_replays_and_a_wrong_period_does_not`;
-51.10's proofs 1 and 2 as `family::tests::a_family_translated_along_e3_is_one_vertex_on_every_frame_and_no_correspondence_runs`
-and `two_courts_reach_one_address_for_one_family`.
+Tests (39): `cayley::tests::bivector_of_round_trips_through_versor_of_bivector`,
+`bivector_of_dilators_adds_by_rational_law`,
+`bivector_of_refuses_turn_180_and_reflection`,
+`bivector_of_refuses_even_non_versor`,
+`bivector_of_product_adds_on_one_plane_only`,
+`bivector_of_reads_versor_between_shapes`;
+`sentence::tests::as_element_form_carries_filed_zero_as_open`,
+`pivot_orbit_files_free_part_open_beside_demand`;
+`verdict::tests::replay_form_accepts_edge_of_infinite_order`,
+`replay_form_refuses_free_orbit_and_wrong_period`;
+51.10's proofs 1 and 2 as `family::tests::extract_rule_reads_translation_as_one_vertex_on_every_frame`
+and `extract_rule_reaches_one_address_on_two_courts`.
 
 ## 53. The cut: a scene is covered before it is one form (ruled 2026-09-19)
 
@@ -9812,7 +9812,7 @@ nerve/image    245 forms  0 shared                     0 triples
 `0 certified triples` on 252 of 252, on BOTH halves. No cell of either base
 stands in three charts, so there is no 2-simplex to certify and none is
 invented (rule 11). The reading is not vacuous: `cech::tests::nerve`
-carries the positive case, `an_element_standing_in_three_charts_certifies_one_two_cell`.
+carries the positive case, `read_nerve_shared_element_certifies_one_two_cell`.
 
 ### 58.2 What that overturns, and what it leaves standing
 
@@ -11696,7 +11696,7 @@ knowledge; each client is a lean local mind holding only what its work
 touches, at its own hardware's pace. A local installation is its own
 epigenome plus the strata of the genome its tasks reach, fetched by
 prefix (A21) and never searched; the syllabus teaches only ruled words
-(`the_syllabus_never_teaches_a_provisional_word`).
+(`serve_ruled_never_teaches_provisional_word`).
 
 **The layers may hold different axioms, and the boundary is shared.**
 Mind and mesh can specialize above one core, or no court could re-derive
@@ -13350,7 +13350,7 @@ the word, words compose by composing functions and lifting
 (`compose_fibre`), and the inverse returns a recorded hue only with its
 record (`invert_fibre`). Code: `src/transducer/element/residual.rs`;
 test `src/server/cognition/tests/colour.rs`
-(`a_merge_rotates_its_distinction_into_the_reservoir`).
+(`fibre_relation_rotates_merge_into_reservoir`).
 
 ### 78.59 The ocean: the hyphae hold the laws, worlds build on them
 
@@ -13675,7 +13675,7 @@ cause. Consequences ruled with it:
   to a dilation mode.
 
 Code: `src/server/cognition/court/glue.rs` (`glue_fetched`; test
-`an_attached_word_is_held_and_not_read_again` in
+`glue_fetched_holds_attached_word` in
 `src/server/cognition/tests/glue.rs`); `src/transducer/sentence/pivot/lift.rs`
 (`Comparison::coherent`); `src/transducer/family/orbit.rs` (`moves`).
 
@@ -13751,7 +13751,7 @@ holds it back:
 Code: `src/server/cognition/court/era.rs` (`fold_head`);
 `src/server/cognition/court/fold.rs`; `src/economy/escrow.rs`
 (`Revocation`); `src/economy/fold.rs` (`nets_of`, `nets_read`); test
-`a_fold_passes_an_open_listing_word_and_escrow_and_each_closes_after_it` in
+`propose_fold_passes_open_listing_and_escrow` in
 `src/server/cognition/tests/era.rs`.
 
 ### 78.66 One reserve, drawn by what moved; the fold paced by least action
@@ -14435,7 +14435,7 @@ Code: `src/chronometry/chain.rs` (`ReceiptChain::fold_before`,
   sent the page; the back-fill asks for the proof, and an unproved citation
   waits for the next hearing. Code: `src/chronometry/chain.rs`
   (`ReceiptChain::prove_from_era`), `src/server/backfill.rs`; test
-  `a_citation_into_a_closed_era_is_proved_by_its_chain_and_the_head_is_cited`
+  `hear_proves_citation_into_closed_era`
   in `src/server/cognition/tests/backfill.rs`.
 
 ### 78.89 Continuity: the white hole and the black hole published as physics (law version 3)
@@ -14456,7 +14456,7 @@ breaks both laws, each named (`MassNotConserved { made }`). A grown frame or
 body is thereby mass from a source, a cut one mass into a sink, a tiling a
 source repeated along a translation orbit. Code: `src/physics/laws.rs`
 (`Law::Continuity`, `Flux`), `src/physics/laws/codec.rs`; test
-`mass_is_made_or_lost_only_at_a_recorded_source_or_sink` in
+`verify_refuses_mass_change_without_source_or_sink` in
 `src/physics/laws/tests.rs`.
 
 ### 78.90 The voice keeps one faculty on its remainder: the inversion
@@ -14490,7 +14490,7 @@ it.
   the sentence's, not the speaker's story about it, an account that cannot
   drift from what was done. Code: `src/transducer/sentence/reasons.rs`
   (`Reasons::of`, `Reasons::says`); test
-  `the_court_reads_the_reasons_the_speaker_read` in
+  `reasons_of_reads_same_reasons_after_decode` in
   `src/transducer/family/tests/reasons.rs`.
 - **(2) The court's side: why an act stands.** `ACT_WHY` asks a court about
   one act on its ledger, a place `K.i` on its own line or a stamp on any
@@ -14508,7 +14508,7 @@ it.
   (`word_admitted_at`), `src/server/cognition/court/era.rs`
   (`receipts_page`), `src/bin/mycelium-server/judge/why.rs`,
   `src/bin/mycelium-server/why.rs`, `src/bin/mycelium-server/ledger.rs`;
-  test `the_court_says_why_an_act_stands_with_the_speakers_reasons` in
+  test `why_answers_act_with_speakers_reasons` in
   `src/server/cognition/tests/why.rs`.
 
 The verdict's stamp and refusals on the ledger follow in 78.93 B0. The human
@@ -14569,9 +14569,9 @@ retire as it lands. B2 and B3 are owed. Code:
 `src/chronometry/receipt.rs` (`Cite::Refusal`), `src/anastome/dialogue/wallet.rs`,
 `src/server/cognition/wallet.rs` (`Kernel::wallet`),
 `src/economy/treasury.rs` (`Treasury::account`), `src/economy/settle.rs`;
-tests `a_refusal_is_an_act_on_the_ledger_and_says_why`
+tests `why_answers_refusal_act_on_ledger`
 (`src/server/cognition/tests/why.rs`) and
-`every_party_reads_its_wallet_and_the_wallets_are_the_supply`
+`wallet_reads_each_party_and_sums_to_supply`
 (`src/server/cognition/tests/wallet.rs`).
 
 ### 78.94 Every act is an ACTION of the physics
@@ -14610,9 +14610,9 @@ stands; until then the court bears and counts it. Code:
 `Action::of_tag`, `Action::laws`), `src/chronometry/receipt.rs` (`ActKind`),
 `src/anastome/dialogue/acts.rs`, `src/chronometry/chain.rs`,
 `src/bin/mycelium-server/judge/mod.rs`; tests in
-`src/physics/actions/tests.rs` (`every_action_holds_one_coordinate`,
-`an_observation_seals_nothing_and_a_transition_answers_to_every_law`,
-`the_wire_spells_the_table`).
+`src/physics/actions/tests.rs` (`action_of_reads_each_byte_back_once`,
+`sealed_excludes_observations_and_transitions_answer_every_law`,
+`of_tag_reads_each_wire_spelling_as_table_action`).
 
 ### 78.95 Words, not letters: the progenitor's board builds words, and advanced linguistics lives in the anastome
 
@@ -14701,8 +14701,8 @@ Code: `src/transducer/sentence/compose.rs` (`is_chord`, `sentences_of`,
 `src/transducer/element/letters.rs` (`translator_of`),
 `src/transducer/sentence/rung.rs` (`hear`),
 `src/server/cognition/court/winding.rs`; tests
-`a_ring_through_a_chord_is_heard_and_the_rest_are_rays` and
-`a_ring_of_seen_rays_is_a_nilpotent_theorem_and_teaches_a_word` in
+`sentences_of_hears_chord_rings_composes_rays` and
+`theorem_of_ray_ring_is_nilpotent` in
 `src/transducer/family/tests/rung.rs`.
 
 ### 78.98 The nonlinear language: every word on its own law
@@ -15161,12 +15161,12 @@ every connection uses the same terms.
   addition, not a persisted layout.
 - The served register and `MU-LEXICON.md` cannot drift: the register reads
   back whole, every name once, and every term and the version stand in the
-  document (`the_lexicon_is_served_as_it_is_written`).
+  document (`lexicon_reply_serves_terms_as_written`).
 
 Code: `src/physics/laws/lexicon.rs` (`TERMS`, `LEXICON_VERSION`),
 `src/physics/laws/codec.rs` (`encode_lexicon_reply`, `decode_lexicon_reply`),
 `src/anastome/dialogue/domain.rs` (`DomainGenesis`, `SignedDomain`),
-`src/physics/laws/tests.rs` (`the_lexicon_is_served_as_it_is_written`).
+`src/physics/laws/tests.rs` (`lexicon_reply_serves_terms_as_written`).
 
 ### 78.123 2(a): the ledger tree as a complex, the court's complex generalized over its coefficient group
 

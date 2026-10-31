@@ -9,7 +9,7 @@ use std::sync::Mutex;
 /// through `run` spends it and is counted on the holding thread; let go,
 /// the stroke goes on whole with what it still grants.
 #[test]
-fn a_metered_path_spends_the_holds_one_stroke() {
+fn run_spends_holds_one_stroke() {
     let kernel = Mutex::new(Kernel::new());
     let stroke = Kernel::new().stroke().remaining();
     let mut h = held!(kernel).expect("the kernel");
@@ -26,7 +26,7 @@ fn a_metered_path_spends_the_holds_one_stroke() {
 /// Every take through the guard is numbered in the book, the library's own
 /// as the binary's.
 #[test]
-fn every_take_is_counted_in_the_book() {
+fn holds_counts_every_take() {
     let kernel = Mutex::new(Kernel::new());
     let before = holds();
     drop(held!(kernel).expect("the kernel"));
@@ -38,7 +38,7 @@ fn every_take_is_counted_in_the_book() {
 /// helicity is `None`, the nerve census reads no complex, and the digest
 /// confirmation reaches no stratum and leaves no cursor.
 #[test]
-fn a_spent_stroke_ends_metered_work_unread() {
+fn run_on_spent_stroke_ends_work_unread() {
     let kernel = Mutex::new(Kernel::new());
     let mut h = held!(kernel).expect("the kernel");
     h.run(|k, reads| {
@@ -61,7 +61,7 @@ fn a_spent_stroke_ends_metered_work_unread() {
 /// digest takes the second, and a stroke that rounds the whole digest
 /// leaves no cursor.
 #[test]
-fn the_digest_confirmation_resumes_past_the_stratum_it_reached() {
+fn confirm_peer_holds_on_resumes_past_reached_stratum() {
     let mut k = Kernel::new();
     let mut remote: Vec<crate::transducer::sheaf::StratumDigest> = (1..4u64)
         .map(|n| crate::transducer::sheaf::StratumDigest { inv: crate::transducer::stalk::Invariant::counts(&[n]), count: 1, root: n.to_be_bytes().to_vec() })

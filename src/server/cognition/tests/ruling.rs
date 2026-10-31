@@ -30,7 +30,7 @@ fn docketed(own_vk: [u8; 32]) -> (Kernel, crate::transducer::address::Address) {
 /// word only ruled is INERT for this arm. On the clock, per arm,
 /// admitted = applied + awaiting + refused.
 #[test]
-fn a_peers_ruling_applies_here_through_its_receipt() {
+fn admit_line_applies_peer_ruling_through_receipt() {
     use crate::anastome::dialogue::RULING_UPHELD;
     let key = super::common::court_key("ruler");
     let (mut a, addr) = docketed(key.vk_bytes());
@@ -83,7 +83,7 @@ fn a_peers_ruling_applies_here_through_its_receipt() {
 /// applies at c. The alias is not persisted and comes back at restore,
 /// re-derived from the ledger's peer nodes.
 #[test]
-fn a_peers_stamp_aliases_the_one_word_on_its_fiber() {
+fn admit_line_aliases_peer_stamp_to_one_word() {
     use crate::anastome::dialogue::RULING_UPHELD;
     let key = super::common::court_key("aliased ruler");
     let (mut a, addr) = docketed(key.vk_bytes());
@@ -113,7 +113,7 @@ fn a_peers_stamp_aliases_the_one_word_on_its_fiber() {
 /// alias: the word waits for the syllabus to teach it with its home stamp
 /// (78.24 (2b)), and nothing is picked by arrival or order (rule 15).
 #[test]
-fn several_words_on_one_fiber_file_no_alias() {
+fn admit_line_files_no_alias_on_shared_fiber() {
     use crate::chronometry::{Cite, ReceiptChain, Stamp};
     let mut c = Kernel::new();
     c.bind_identity([0xc2; 32]);
@@ -142,7 +142,7 @@ fn several_words_on_one_fiber_file_no_alias() {
 /// the later alias replaces the earlier, which leaves with its depth, so a
 /// word's aliases are bounded by its signers and not by their acts.
 #[test]
-fn a_peers_later_admission_replaces_its_earlier_alias() {
+fn admit_line_later_admission_replaces_alias() {
     use crate::chronometry::{Cite, ReceiptChain, Stamp};
     let mut c = Kernel::new();
     c.bind_identity([0xc3; 32]);
@@ -173,7 +173,7 @@ fn a_peers_later_admission_replaces_its_earlier_alias() {
 /// on its own book mints its released claim at the Ruling node, never at
 /// the act that escrowed it, and the row carries the arm it pays (POUW).
 #[test]
-fn an_upheld_claim_is_minted_at_the_ruling_act() {
+fn apply_verdict_mints_upheld_claim_at_ruling() {
     use crate::anastome::dialogue::RULING_UPHELD;
     let (mut k, addr) = docketed([0x5a; 32]);
     let escrowed = k.treasury().escrow_of(addr.as_bytes()).map(|e| e.anchor.0);
@@ -198,7 +198,7 @@ fn an_upheld_claim_is_minted_at_the_ruling_act() {
 /// a provisional word left unstamped, every fold prefix open behind it
 /// (court a, epoch 99: unstamped provisional 0 → 4, folded never).
 #[test]
-fn a_refused_peer_stamp_never_erases_the_courts_own() {
+fn file_admitted_keeps_courts_own_stamp() {
     use crate::chronometry::Stamp;
     let (mut k, addr) = docketed([0x5a; 32]);
     let own = k.admitted_at(addr.as_bytes()).expect("the docket admitted it at an act");
@@ -228,7 +228,7 @@ fn a_refused_peer_stamp_never_erases_the_courts_own() {
 /// passed the check and spoke nothing at the citation. The two are one
 /// reader now: whatever the check admits, the speech speaks.
 #[test]
-fn a_cavity_word_resolves_for_replay_by_the_one_reader() {
+fn resolve_form_and_by_address_agree_on_cavity_word() {
     use crate::transducer::family::Crystal;
     let (mut k, addr) = docketed([0x5a; 32]);
     assert!(k.resolve_form(addr.as_bytes()).is_none(), "a provisional word resolves to nothing");

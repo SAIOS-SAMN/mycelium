@@ -400,7 +400,7 @@ mod tests {
     /// identical minds is proving the reading is a function of the mind
     /// and not of anything else in the walk.
     #[test]
-    fn the_reading_is_a_function_of_the_mind_it_is_given() {
+    fn task_walk_of_is_function_of_given_mind() {
         // A recolour: one body, one hue changed. The simplest family there
         // is, built through the instrument's OWN public path so the test
         // exercises what the walk exercises and nothing else.

@@ -29,7 +29,7 @@ fn section(lane: u64, sig: u8) -> ReceiptSection {
 /// framed by its length, and read back as the sections they were: prefix,
 /// signature and receipt, in the order the presenter put them.
 #[test]
-fn two_receipt_sections_parse_back_whole_in_the_order_presented() {
+fn equivocation_round_trips_sections_in_order() {
     let (a, b) = (section(1, 0x11), section(2, 0x22));
     let body = encode_equivocation(&a, &b).expect("two prefixes that fit frame");
     assert_eq!(body[0], ACT_EQUIVOCATION, "the act byte");
@@ -49,7 +49,7 @@ fn two_receipt_sections_parse_back_whole_in_the_order_presented() {
 /// or another act each refuse the frame rather than reading a partial one
 /// (rule 11).
 #[test]
-fn a_truncated_padded_or_misversioned_frame_refuses_whole() {
+fn decode_equivocation_refuses_truncated_padded_or_misversioned() {
     let (a, b) = (section(1, 0x11), section(2, 0x22));
     let body = encode_equivocation(&a, &b).expect("frames");
     assert!(

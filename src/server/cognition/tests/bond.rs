@@ -87,7 +87,7 @@ fn carry(k: &mut Kernel, f: TierFold, nonce: u8) -> Result<FoldAt, Uplinked> {
 /// reads bonded, an unbonded one not. 78.138 — an unbonded line is never
 /// carried.
 #[test]
-fn the_reserve_bonds_a_tier_and_a_fold_reads_bonded() {
+fn bond_posts_from_reserve_and_fold_reads_bonded() {
     let mut k = founded();
     let refused = carry(&mut k, lying_fold().0, 8);
     assert_eq!(refused, Err(Uplinked::ChildRefused { index: 0, why: crate::anastome::dialogue::uplink::ChildRefusal::Unbonded }), "each answers for its own work");
@@ -117,7 +117,7 @@ fn the_reserve_bonds_a_tier_and_a_fold_reads_bonded() {
 /// 2 retired, 4 still bonded; then, nothing outstanding, the bond withdraws
 /// to the reserve.
 #[test]
-fn a_falsified_fold_slashes_half_the_bond_and_withdrawal_waits_on_finality() {
+fn challenge_slashes_half_bond_and_withdrawal_waits() {
     let mut k = founded();
     assert!(matches!(k.bond(&bond(Some([7, 0, 0, 0]), 1).sign(&reserve())), Founded::Bonded { .. }));
     let (f, line) = lying_fold();

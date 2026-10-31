@@ -13,7 +13,7 @@ use crate::transducer::germinate::germinate;
 /// number of voices substitutes for it, and this asserted a two-voice
 /// quorum before convergence replaced consensus.
 #[test]
-fn one_vantage_dockets_escrows_and_mints_nothing_until_a_witness_rederives() {
+fn confirm_peer_holds_mints_only_after_witness_rederives() {
 let mut home = Kernel::new();
 let mut peer = Kernel::new();
 // The whole body recoloured: one hue, one body, one word that closes its
@@ -53,7 +53,7 @@ assert_eq!(home.treasury().bond_total(), bond, "mint does not debit the stake bo
 
 /// A stood sentence that closes no listing returns its escrow and mints nothing.
 #[test]
-fn speech_that_closes_nothing_mints_none() {
+fn confirm_peer_holds_addrs_mints_nothing_for_unclosing_speech() {
 let mut k = Kernel::new();
 // A restatement that MOVES (one column): motionless, a σ alone is a colour
 // word, which stands only by its family's evidence (78.53).
@@ -84,7 +84,7 @@ assert_eq!(
 
 /// Binding a listing to a task does not mint: the form must speak the trains.
 #[test]
-fn association_with_a_listing_does_not_mint() {
+fn bind_listing_task_mints_nothing_without_replay() {
 let mut k = Kernel::new();
 let family = vec![(
     digits(&["1100", "0000"]),
@@ -126,7 +126,7 @@ assert_eq!(
 
 /// A rule that speaks every train pair mints the coboundary it closed.
 #[test]
-fn a_rule_that_speaks_the_family_mints_what_it_measured() {
+fn mint_sentence_mints_measured_deflation() {
 let family = vec![
     (digits(&["1100", "0000"]), digits(&["0022", "0000"])),
     (digits(&["0000", "1100"]), digits(&["0000", "0022"])),
@@ -185,7 +185,7 @@ assert_eq!(
 /// A second vantage here is `glue_local`'s two fixture keys (§3.4's
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
-fn the_kernel_conserves_across_genesis_bond_and_a_settlement() {
+fn audit_conserves_across_genesis_bond_and_settlement() {
 use crate::transducer::element::from_canonical;
 let mut k = Kernel::new();
 // Kernel::new funds the hypha at genesis and stakes its bond from that.
@@ -237,7 +237,7 @@ assert!(
 /// mints on its closed sub-complex, and the amount is the deflation those
 /// three closed and nothing else; a sentence of zero word vertices mints nothing.
 #[test]
-fn a_sentence_of_three_word_vertices_and_seven_demands_mints_on_its_closed_subcomplex() {
+fn mint_sentence_mints_closed_subcomplex_deflation() {
     use crate::transducer::sentence::{Demand, Vertex};
     use crate::transducer::stalk;
     let mut x = vec![vec![0u8; 12]; 18];
@@ -385,7 +385,7 @@ fn a_sentence_of_three_word_vertices_and_seven_demands_mints_on_its_closed_subco
 /// stands where it stood, the voice pays the sentence's gluing step to the
 /// court, and a voice that cannot pay is deferred with its own shortfall.
 #[test]
-fn a_sentence_is_taught_at_its_learners_expense() {
+fn serve_syllabus_charges_learner_not_reserve() {
     let family = vec![
         (digits(&["1100", "0000"]), digits(&["0022", "0000"])),
         (digits(&["0000", "1100"]), digits(&["0000", "0022"])),
@@ -447,7 +447,7 @@ fn a_sentence_is_taught_at_its_learners_expense() {
 /// carriages, so the placement half of Γ is what is solved here. A form
 /// stands refracted from itself.
 #[test]
-fn a_refraction_is_solved_back_from_the_two_forms() {
+fn relation_solves_refraction_from_two_forms() {
     use crate::transducer::sentence::{as_element_form, from_element_form, relation, Relation, Transport};
     let family = vec![
         (digits(&["1100", "0000"]), digits(&["0022", "0000"])),
@@ -480,7 +480,7 @@ fn a_refraction_is_solved_back_from_the_two_forms() {
 /// residue on both sides. The lift reads real paths (never agrees on
 /// nothing).
 #[test]
-fn a_word_lifted_into_perception_is_the_same_in_any_atlas() {
+fn lift_compares_coherent_across_atlases() {
     use crate::transducer::sentence::{compare, from_element_form, lift, Transport};
     type Family = [(Vec<Vec<u8>>, Vec<Vec<u8>>)];
     let mint = |family: &Family| {

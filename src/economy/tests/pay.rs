@@ -21,7 +21,7 @@ fn funded() -> Treasury {
 /// which lanes; a payment to oneself or of nothing is no movement. The
 /// supply equals the carriers before and after.
 #[test]
-fn a_payment_moves_between_two_balances_and_conserves() {
+fn pay_moves_between_balances_or_refuses() {
     let mut t = funded();
     let supply = t.audit().expect("the genesis conserves");
     t.pay(A, B, [3, 1, 0, 2], at(2, [8; 32])).expect("A holds it");
@@ -41,7 +41,7 @@ fn a_payment_moves_between_two_balances_and_conserves() {
 /// already held refuses a second hold; a key with nothing held releases
 /// nothing.
 #[test]
-fn a_hold_is_released_to_a_payee_or_refunded_and_conserves_throughout() {
+fn hold_releases_to_payee_or_refunds_and_conserves() {
     let mut t = funded();
     let supply = t.audit().expect("the genesis conserves");
     t.hold(A, b"task", [5, 2, 0, 1], at(2, [8; 32])).expect("A holds it");
@@ -71,7 +71,7 @@ fn a_hold_is_released_to_a_payee_or_refunded_and_conserves_throughout() {
 /// a hold or refund nets within its payer, so the ledger's prefix folds to
 /// epoch rows that conserve — the payee's net is what it was paid.
 #[test]
-fn the_fold_nets_payments_and_holds_exactly() {
+fn nets_of_nets_payments_and_holds_exactly() {
     let mut t = funded();
     t.pay(A, B, [1, 1, 0, 1], at(2, [8; 32])).expect("paid");
     t.hold(A, b"k", [2, 0, 0, 0], at(3, [7; 32])).expect("held");
@@ -85,7 +85,7 @@ fn the_fold_nets_payments_and_holds_exactly() {
 /// written reads back whole — payer, amount and act — and the audit of the
 /// restored treasury holds.
 #[test]
-fn a_standing_hold_survives_the_persisted_form() {
+fn hold_survives_treasury_round_trip() {
     let mut t = funded();
     t.hold(A, b"open", [3, 1, 0, 2], at(2, [8; 32])).expect("held");
     let back = super::round_trip(&t).expect("the treasury reads back");

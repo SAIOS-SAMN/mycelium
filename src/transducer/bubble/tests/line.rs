@@ -59,7 +59,7 @@ const SLIDE_ON: [&str; 3] = ["00100010", "00100010", "00110011"];
 /// their scene counted for the stroke's returns, while the escaping motion
 /// between the hours stands on the docket under that scene.
 #[test]
-fn a_slide_perception_is_released_where_its_motion_is_let_go() {
+fn release_drops_slide_perception_where_motion_lets_go() {
     let mut field = crate::transducer::mind::MindField::default();
     field.think(|| {
         let mut c = Contemplation::new();
@@ -99,7 +99,7 @@ const HOURS: [([&str; 5], [&str; 5]); 4] = [
 /// orbit returns with its winding. The thought is not let go there: it
 /// stands, its first close made, and the line's return is read as a return.
 #[test]
-fn a_grounded_thought_winds_on_past_its_return() {
+fn thread_new_winds_grounded_thought_past_return() {
     let mut field = crate::transducer::mind::MindField::default();
     field.think(|| {
         let mut c = Contemplation::new();
@@ -117,7 +117,7 @@ fn a_grounded_thought_winds_on_past_its_return() {
 /// on its own escrow, merge into one thought, which holds exactly what the two
 /// held — nothing re-drawn, nothing lost, nothing returned undrawn.
 #[test]
-fn escrow_is_conserved_through_a_merge() {
+fn hold_perceived_conserves_escrow_through_merge() {
     let mut field = crate::transducer::mind::MindField::default();
     field.think(|| {
         let mut c = Contemplation::new();

@@ -542,10 +542,10 @@ mod tests {
     /// `Rotor::from_key`, `Mv::from_key` and `ClassVector::from_key` exist.
     /// THERE IS NO DECODER FOR `TAG_FORM`, so the property is not checkable
     /// here and is not claimed: what a form's address DOES hold is checked in
-    /// `a_form_address_is_a_function_of_its_content` below, and the tape is the
+    /// `form_vertex_key_is_function_of_content` below, and the tape is the
     /// only thing that reconstructs a form.
     #[test]
-    fn the_rotor_and_versor_keys_decode_to_their_objects() {
+    fn from_key_decodes_rotor_and_versor_keys() {
         for w in sample_words() {
             let r = w.rotor();
             let k = r.key();
@@ -572,10 +572,10 @@ mod tests {
     /// That is the half of A21 an undecodable key keeps. Chapter 1.7's argument
     /// against digests is that they keep equality and destroy every other
     /// operation; an address that cannot be decoded keeps equality AND keeps
-    /// the prefix stratum (`no_key_is_a_proper_prefix_of_a_sibling`) and loses
+    /// the prefix stratum (`is_proper_prefix_holds_for_no_sibling_keys`) and loses
     /// the object. Better than a digest, and not what A21 §4 specifies.
     #[test]
-    fn a_form_address_is_a_function_of_its_content() {
+    fn form_vertex_key_is_function_of_content() {
         use crate::transducer::alphabet::Derivation;
         use crate::transducer::sentence::tests::common::{stand_with_star, FRAME};
         use crate::transducer::sentence::{form_vertex_key, Form, Vertex};
@@ -619,8 +619,9 @@ mod tests {
         );
     }
 
+    /// No key is a proper prefix of a sibling key of the same tag.
     #[test]
-    fn no_key_is_a_proper_prefix_of_a_sibling() {
+    fn is_proper_prefix_holds_for_no_sibling_keys() {
         let mut keys: Vec<Address> = sample_words().into_iter().map(|w| w.rotor().key()).collect();
         for w in sample_words() {
             keys.push(w.rotor().class_key().expect("class"));
@@ -650,8 +651,9 @@ mod tests {
         }
     }
 
+    /// A class record travels as coordinates: its key and order read back whole.
     #[test]
-    fn class_record_travels_as_coordinates() {
+    fn put_class_record_round_trips_key_and_order() {
         let w = sample_words()[0].clone();
         let key = w.rotor().class_key().expect("class");
         let mut buf = Vec::new();
@@ -664,8 +666,10 @@ mod tests {
         assert_eq!(key.as_bytes()[0], TAG_CLASS);
     }
 
+    /// A coordinate path preserves its strata and exact boundaries, and its
+    /// prefix writes a prefix of its bytes.
     #[test]
-    fn coordinate_path_preserves_strata_and_exact_boundaries() {
+    fn coordinate_path_round_trips_with_exact_boundaries() {
         let a = Address::from_bytes([TAG_ROTOR, 1, 2, 3]);
         let b = Address::from_bytes([TAG_PLANE, 4, 5]);
         let path = CoordinatePath::new(a.clone(), CoordinatePath::new(b.clone(), Nil));
@@ -683,8 +687,10 @@ mod tests {
         assert!(bytes.starts_with(&pbytes));
     }
 
+    /// The canonical coordinate writers write a key's coordinates unnested,
+    /// under rule 6.
     #[test]
-    fn canonical_coordinate_writers_unnest_keys_under_rule_6() {
+    fn put_canonical_writes_key_coordinates_unnested() {
         let w = sample_words()[0].clone();
         let mut rotor_coords = Vec::new();
         w.rotor().put_canonical(&mut rotor_coords);

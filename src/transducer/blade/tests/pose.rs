@@ -26,8 +26,10 @@ const L4: [(i64, i64, i64); 4] = [(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)];
 /// moment vanishes and no column orients it.
 const S4: [(i64, i64, i64); 4] = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)];
 
+/// A body symmetric by a 180° turn reads an open 180° pose at one section
+/// and on the tube.
 #[test]
-fn fr1b_a_symmetric_body_reads_open_180_at_one_section_and_on_the_tube() {
+fn relative_pose_reads_symmetric_body_open_180() {
     let mut b = super::common::budget();
     let s = body(&S4);
     // At one section, against its own 90° turn: the planar reader.
@@ -59,8 +61,9 @@ fn fr1b_a_symmetric_body_reads_open_180_at_one_section_and_on_the_tube() {
     assert!(matches!(relative_pose(&standing, &standing, &mut b), Ok(Pose::Open180(_))));
 }
 
+/// A centrosymmetric solid is read as a determined turn, not held open.
 #[test]
-fn fr1b_a_centrosymmetric_solid_is_turned_not_held() {
+fn relative_pose_turns_centrosymmetric_solid() {
     // Symmetric by the point reflection `−1`, which at `n = 3` is improper:
     // the proper turn relating it to its turn is unique, so the even tower
     // determines it.
@@ -74,8 +77,9 @@ fn fr1b_a_centrosymmetric_solid_is_turned_not_held() {
     assert!(sends(&v, E2, E3) && sends(&v, E1, E1), "the turn is in e23: {v:?}");
 }
 
+/// At one section, the pose is the sensor plane's reading.
 #[test]
-fn at_one_section_the_pose_is_the_sensor_planes_reading() {
+fn relative_pose_at_one_section_matches_relative_rotor() {
     let l = body(&L4);
     let turned = body(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (-1, 2, 0)]);
     let j = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
@@ -91,8 +95,9 @@ fn at_one_section_the_pose_is_the_sensor_planes_reading() {
     }
 }
 
+/// Two flat bodies at two sections turn in the sensor's plane.
 #[test]
-fn two_flat_bodies_at_two_sections_turn_in_the_sensors_plane() {
+fn relative_pose_turns_flat_bodies_in_sensor_plane() {
     // A body carried from one section to the next: each is flat, and the
     // turn between them is the sensor plane's; the displacement along `e₃`
     // is the carriage's (A13), never the pose's.
@@ -102,8 +107,9 @@ fn two_flat_bodies_at_two_sections_turn_in_the_sensors_plane() {
     assert!(matches!(relative_pose(&a, &b, &mut super::common::budget()), Ok(Pose::Turn(_)) | Ok(Pose::Open180(_))));
 }
 
+/// A body turning between two sections reads a pose whose plane contains e3.
 #[test]
-fn a_body_turning_between_two_sections_reads_a_pose_with_a_plane_containing_e3() {
+fn relative_pose_across_sections_lights_plane_with_e3() {
     // L4 at one section, and L4 turned 90° in the plane of the row
     // and the succession axis, `(x₁, x₃) ↦ (−x₃, x₁)`: it now stands along
     // three sections. No turn of the sensor's plane relates them.
@@ -128,8 +134,9 @@ fn mapped(f: impl Fn((i64, i64, i64)) -> (i64, i64, i64)) -> Blade {
     body(&SOLID.map(f))
 }
 
+/// A solid on the tube reads its turn, its mirror and its irrational scale.
 #[test]
-fn a_solid_tube_reads_its_turn_its_mirror_and_its_irrational_scale() {
+fn relative_pose_reads_turn_mirror_and_irrational_scale() {
     let mut b = super::common::budget();
     let a = body(&SOLID);
     // Turned 90° in `e₂₃`: `(x₂, x₃) ↦ (−x₃, x₂)`.

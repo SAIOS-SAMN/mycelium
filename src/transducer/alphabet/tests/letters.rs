@@ -18,7 +18,7 @@ use crate::transducer::peel::PeelNest;
 /// what was there: a chart of rank four has six pair planes in lexicographic
 /// order, seventeen letters over them, and twelve relators.
 #[test]
-fn the_alphabet_layout_derives_to_what_was_written_out() {
+fn alphabet_layout_derives_tabulated_values() {
     assert_eq!(LETTER_RANK, 4, "the chart the letters occupy");
     assert_eq!(PAIR_PLANES, 6, "rank choose two");
     assert_eq!(
@@ -67,7 +67,7 @@ fn the_alphabet_layout_derives_to_what_was_written_out() {
 /// LAW VIII: seventeen letters, each a versor with its carried inverse
 /// exact — `Φ Φ⁻¹ = 1` for all of them, and no eighteenth slot.
 #[test]
-fn seventeen_letters_each_with_its_inverse() {
+fn letter_carries_exact_inverse_for_all_seventeen() {
     assert_eq!(LetterId::all().count(), 17);
     assert!(LetterId::try_new(17).is_none());
     for id in LetterId::all() {
@@ -87,7 +87,7 @@ fn seventeen_letters_each_with_its_inverse() {
 /// axis, and the transposition their product — every one spelled by
 /// the peel and re-derived exactly from its tape.
 #[test]
-fn the_dihedral_motions_are_words_in_the_alphabet() {
+fn spell_images_spells_dihedral_motions() {
     let rot90 = spell_images((0, -1), (1, 0)).expect("rot90 spells");
     assert_eq!(rot90.word.len(), 1);
     let rot180 = spell_images((-1, 0), (0, -1)).expect("rot180 spells");
@@ -114,7 +114,7 @@ fn the_dihedral_motions_are_words_in_the_alphabet() {
 /// prime outside the alphabet (17) stands as a remainder; a non-
 /// similarity refuses.
 #[test]
-fn pythagorean_words_dilations_and_honest_remainders() {
+fn spell_peels_dilation_and_refuses_outside_primes() {
     let l5 = spell(&[[qn(-7, 25), qn(-24, 25)], [qn(24, 25), qn(-7, 25)]]).expect("(3,4,5)² spells");
     assert_eq!(l5.word.len(), 1);
     let l5_inv = spell(&[[qn(-7, 25), qn(24, 25)], [qn(-24, 25), qn(-7, 25)]]).expect("inverse spells");

@@ -9,7 +9,7 @@ use num_traits::Zero;
 /// differ in the deviatoric. If the trace could orient, these would be
 /// distinguishable by it; they are not, which is the axiom's content.
 #[test]
-fn a11_the_trace_cannot_orient_and_the_deviatoric_can() {
+fn deviatoric_orients_what_trace_cannot() {
     // A domino lying along the rows, and the same domino along the
     // columns: congruent, one a 90° turn from the other.
     let along_r = blade::shape_of(&[(0, 0, 0), (1, 0, 0)]);
@@ -43,7 +43,7 @@ fn a11_the_trace_cannot_orient_and_the_deviatoric_can() {
 /// vanishes and `D` cannot orient it. The quartic must, or the axiom's
 /// second clause is empty.
 #[test]
-fn a11_the_quartic_orients_what_the_deviatoric_cannot() {
+fn quartic_harmonic_orients_what_deviatoric_cannot() {
     let square = blade::shape_of(&[(0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0)]);
     assert!(
         blade::deviatoric(&square.blade).is_none(),
@@ -59,7 +59,7 @@ fn a11_the_quartic_orients_what_the_deviatoric_cannot() {
 /// `1 + e₁₂`, whose projective order is 4 — the reading `ℓ = 1` on
 /// every word exists to be moved off.
 #[test]
-fn a11_a_turn_90_mints_an_order_four_rotor() {
+fn relative_rotor_mints_proper_turn_for_turn_90() {
     // An L-tromino and the same L turned 90°: chiral enough
     // that only one of the four turns can carry it.
     let upright = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0)]);
@@ -84,7 +84,7 @@ fn a11_a_turn_90_mints_an_order_four_rotor() {
 /// AND A BODY AGAINST ITSELF IS THE IDENTITY — the rotor is not
 /// invented where there is no turn.
 #[test]
-fn a11_a_body_against_itself_is_the_identity_turn() {
+fn relative_rotor_of_body_against_itself_is_identity() {
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0)]);
     let theta = blade::relative_rotor(&l.blade, &l.blade, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a body carries onto itself");
     assert!(
@@ -111,7 +111,7 @@ fn a11_a_body_against_itself_is_the_identity_turn() {
 /// the reader — and an L-tetromino at the same two scales is now
 /// DETERMINED, which this pair can never be.
 #[test]
-fn a11_a_dilated_body_keeps_its_frame() {
+fn relative_rotor_keeps_frame_across_dilation() {
     let domino = blade::shape_of(&[(0, 0, 0), (1, 0, 0)]);
     // The same domino at twice the scale: a 2×4 block.
     let doubled = blade::shape_of(&[
@@ -149,7 +149,7 @@ fn a11_a_dilated_body_keeps_its_frame() {
 /// the honest fixture — congruent as multisets, mirror images, and
 /// related by NO proper turn.
 #[test]
-fn a11_a_mirrored_body_is_read_as_its_odd_versor() {
+fn relative_rotor_reads_mirror_as_odd_versor() {
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let j = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
     // THIS READ `Oblique` UNTIL V1, AND THAT WAS THE FINDING THAT
@@ -179,7 +179,7 @@ fn a11_a_mirrored_body_is_read_as_its_odd_versor() {
 /// differ are not related by a rotation, and answering one anyway
 /// would be inventing a reading (rule 11).
 #[test]
-fn a11_non_congruent_bodies_have_no_rotation_between_them() {
+fn relative_double_angle_refuses_non_congruent_bodies() {
     let domino = blade::shape_of(&[(0, 0, 0), (1, 0, 0)]);
     let tromino = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0)]);
     let (ua, ub) = (
@@ -212,7 +212,7 @@ fn a11_non_congruent_bodies_have_no_rotation_between_them() {
 /// covers is asserted here: the 2nd orients everything the lattice can
 /// turn except the `C₄` bodies, and the 4th orients those.
 #[test]
-fn a11_the_even_suite_covers_the_square_lattices_whole_order_set() {
+fn deviatoric_covers_square_lattice_orders_except_c4() {
     // C₁ — an L-tromino. Anisotropic at the second harmonic.
     let c1 = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (0, 1, 0)]);
     assert!(
@@ -255,7 +255,7 @@ fn a11_the_even_suite_covers_the_square_lattices_whole_order_set() {
 /// (a square lattice forbids that) but that a generic body has a
 /// non-vanishing third moment which changes sign under `x -> -x`.
 #[test]
-fn a11_no_even_moment_separates_a_body_from_its_point_reflection() {
+fn even_harmonics_miss_point_reflection() {
     let body = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (0, 1, 0)]);
     // The same body reflected through the origin. Congruent to itself
     // under a 180° turn, and a 180° turn is what must be detected.
@@ -296,7 +296,7 @@ fn a11_no_even_moment_separates_a_body_from_its_point_reflection() {
 /// sensor plane, which is what a refraction between two non-parallel
 /// facets is.
 #[test]
-fn a_non_simple_bivector_requires_content_off_the_sensor_plane() {
+fn bivector_is_simple_fails_only_off_sensor_plane() {
     use crate::transducer::cga;
     let q = |n: i64| crate::core::Q::from_integer(n.into());
 
@@ -373,7 +373,7 @@ fn a_non_simple_bivector_requires_content_off_the_sensor_plane() {
 /// than cosmetic work. A second producer taking compartments as point masses
 /// would have collapsed the nucleus onto the cone.
 #[test]
-fn the_smallest_body_still_holds_its_nucleus_off_the_cone() {
+fn radius2_of_one_compartment_stays_off_cone() {
     use crate::transducer::blade::sensor_plane as blade;
     let q = |n: i64| crate::core::Q::from_integer(n.into());
     let sixth = q(1) / q(6);

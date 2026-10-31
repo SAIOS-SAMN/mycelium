@@ -142,7 +142,7 @@ fn face_rederives(
 /// of it. The rotor is the vertex's KEY — §1.5 makes the composed action the
 /// coordinate, so two minds with different presentations reach one address —
 /// and the citations are a presentation, which the key deliberately excludes
-/// (`evidence_is_not_identity`). A mind that lies about its citations is
+/// (`form_vertex_key_ignores_citations_and_certificates`). A mind that lies about its citations is
 /// caught here by composing them against a rotor it did not get to write;
 /// a mind that lies about the rotor has renamed its own word.
 ///

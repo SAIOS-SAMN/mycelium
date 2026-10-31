@@ -14,7 +14,7 @@ fn eleven() -> Rotor {
 /// A formed word is not the empty tape: composed with a letter on either
 /// side, inverted, and reduced, it is still the element it carries.
 #[test]
-fn a_formed_word_composes_inverts_and_reduces_as_its_rotor() {
+fn formed_composes_inverts_reduces_as_rotor() {
     let r = eleven();
     let w = Word::formed(r.clone());
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn (0,1)"), false)]);
@@ -47,7 +47,7 @@ fn a_formed_word_composes_inverts_and_reduces_as_its_rotor() {
 /// canonical: its coefficients do not grow, and sixteen full turns return
 /// the element.
 #[test]
-fn arithmetic_on_a_word_carries_no_scale_and_a_formed_word_stays_bounded() {
+fn compose_carries_no_scale_and_formed_stays_bounded() {
     let bytes = |r: &Rotor| {
         let mut b = Vec::new();
         r.to_bytes(&mut b);
@@ -87,7 +87,7 @@ fn arithmetic_on_a_word_carries_no_scale_and_a_formed_word_stays_bounded() {
 /// A letter word is unchanged by the same operations: its rotor is its
 /// tape's product before and after.
 #[test]
-fn a_letter_word_composes_as_its_tape_still() {
+fn compose_of_letters_is_tape_product() {
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn (0,1)"), false)]);
     let p = Word::from_letters(&[(LetterId::pythagorean_5((2, 3)).expect("(3,4,5) on (2,3)"), false)]);
     let both = q.compose(&p);

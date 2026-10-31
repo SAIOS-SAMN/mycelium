@@ -25,7 +25,7 @@ fn turn_90() -> Word {
 /// remembered: if either changes its framing, this fails here instead of
 /// silently emptying a fiber on a fleet.
 #[test]
-fn the_rotor_class_is_the_first_stratum_of_the_class_vector() {
+fn class_key_leads_with_rotor_class() {
     let w = turn_90();
     let cv = ClassVector::of_word(&w).expect("a 90° turn has a class vector");
     let vector_key = cv.class_key();
@@ -58,7 +58,7 @@ fn the_rotor_class_is_the_first_stratum_of_the_class_vector() {
 /// stratum and two entries. Read at depth one both answer; read whole, each
 /// answers itself.
 #[test]
-fn a_conjugacy_stratum_answers_every_class_vector_under_it() {
+fn fiber_at_depth_answers_every_class_vector_under_stratum() {
     let w = turn_90();
     let here = ClassVector::read(&w, element::identity_versor(), CycleType::Identity)
         .expect("a class vector at the origin");
@@ -94,7 +94,7 @@ fn a_conjugacy_stratum_answers_every_class_vector_under_it() {
 /// is not held". The schema fails at the coordinate it fails at and names
 /// the system.
 #[test]
-fn a_foreign_key_refuses_by_name_instead_of_reading_as_absent() {
+fn stratified_get_refuses_foreign_key_by_name() {
     let mut held: Stratified<u8> = Stratified::new(ClassVector::class_schema());
     let chart = crate::transducer::stalk::Invariant::counts(&[1, 3, 5]).key();
 
@@ -111,7 +111,7 @@ fn a_foreign_key_refuses_by_name_instead_of_reading_as_absent() {
 /// depth is an exact read. A site asking for a projection cannot receive
 /// either by accident.
 #[test]
-fn depth_zero_and_the_whole_path_are_not_fibers() {
+fn fiber_at_depth_refuses_depth_zero_and_whole_path() {
     let w = turn_90();
     let cv = ClassVector::of_word(&w).expect("a class vector");
     let key = cv.class_key();
@@ -134,7 +134,7 @@ fn depth_zero_and_the_whole_path_are_not_fibers() {
 /// side of the chord to compute these separately; this says the two
 /// branches name one coordinate.
 #[test]
-fn a_rotor_and_its_inverse_stand_at_one_stratum() {
+fn class_key_is_shared_by_rotor_and_inverse() {
     let w = turn_90();
     let r = w.rotor();
     let inv = r.reverse();

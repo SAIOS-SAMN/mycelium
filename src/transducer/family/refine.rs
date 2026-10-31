@@ -253,7 +253,7 @@ mod tests {
     /// the output one-for-one, so a site that changed hue contributes its
     /// whole block and one that did not contributes nothing.
     #[test]
-    fn a_doubled_grid_refines_without_rounding() {
+    fn common_refinement_embeds_doubled_grid_exactly() {
         let r = CommonRefinement::of(2, 2, 4, 4).expect("both extents stand");
         assert_eq!((r.lcm_h, r.lcm_w), (4, 4));
         assert_eq!(r.scale_in, (2, 2), "each input site is a 2×2 block of K_lcm");
@@ -272,7 +272,7 @@ mod tests {
     /// THE RATIO IS EXACT ℚ and never a float: 3 rows to 2 is three halves,
     /// which has no binary expansion and must not acquire one.
     #[test]
-    fn the_frame_ratio_is_an_exact_rational() {
+    fn ratio_is_exact_rational() {
         let (rh, rw) = CommonRefinement::ratio(2, 4, 3, 2).expect("extents stand");
         assert_eq!(rh, num_rational::BigRational::new(3.into(), 2.into()));
         assert_eq!(rw, num_rational::BigRational::new(2.into(), 4.into()));
@@ -282,7 +282,7 @@ mod tests {
     /// common multiple. Coprime extents are where that matters: 3 and 4 have
     /// `lcm` 12, and the pair changes at six places, not twelve.
     #[test]
-    fn the_runs_are_bounded_by_the_grids_and_not_by_their_lcm() {
+    fn runs_bounded_by_grids_not_lcm() {
         let r = CommonRefinement::of(3, 1, 4, 1).expect("extents stand");
         assert_eq!(r.lcm_h, 12);
         let runs = CommonRefinement::runs(12, r.scale_in.0, r.scale_out.0);
@@ -309,7 +309,7 @@ mod tests {
     /// An extent of zero embeds in nothing, and a refinement of it would be a
     /// complex invented for a scene that is not there (rule 11).
     #[test]
-    fn an_empty_extent_has_no_refinement() {
+    fn of_refuses_empty_extent() {
         assert!(CommonRefinement::of(0, 2, 2, 2).is_none());
         assert!(CommonRefinement::of(2, 0, 2, 2).is_none());
         assert!(CommonRefinement::of(2, 2, 0, 2).is_none());
@@ -320,7 +320,7 @@ mod tests {
     /// A ragged grid is not the extent it claims, and reading a hue past its
     /// end would be inventing one.
     #[test]
-    fn a_ragged_grid_is_refused_rather_than_padded() {
+    fn bipartite_cochain_refuses_ragged_grid() {
         let r = CommonRefinement::of(2, 2, 2, 2).expect("extents stand");
         let a: Grid = vec![vec![1, 1], vec![1]];
         let b: Grid = vec![vec![2, 2], vec![2, 2]];
@@ -331,7 +331,7 @@ mod tests {
     /// bound refuse (rules 10 and 11) rather than expanding hundreds of
     /// thousands of sites.
     #[test]
-    fn incommensurate_frames_refuse_refinement() {
+    fn of_refuses_incommensurate_frames() {
         assert!(CommonRefinement::of(29, 29, 30, 30).is_none());
         assert!(CommonRefinement::ratio(29, 29, 30, 30).is_none());
     }

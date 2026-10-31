@@ -99,7 +99,7 @@ fn cargo(a: u8, b: u8, nonce: u8) -> Offer {
 /// that is not its domain's reserve, to a tier that is not the other's,
 /// within one domain, kept by a stranger, or with a zero frame — refused.
 #[test]
-fn a_mouth_pair_is_built_by_two_reserves_on_real_frames() {
+fn handoff_mouth_refuses_bad_builders_and_frames() {
     let mut k = founded();
     let offer = |k: &mut Kernel, m: Mouth, by: &SigningKey| match k.handoff(&Handoff::Mouth(Box::new(m)).sign(by)) {
         Handed::Refused(r) => r,
@@ -124,7 +124,7 @@ fn a_mouth_pair_is_built_by_two_reserves_on_real_frames() {
 /// mouth either way, the toll escrowed from the sender and paid to the keeper
 /// on acceptance.
 #[test]
-fn a_traversal_crosses_through_an_open_mouth_and_pays_the_keeper() {
+fn handoff_traverse_pays_toll_to_keeper() {
     let mut k = founded();
     let anchor = k.anchor();
     k.treasury.genesis(vk(&reserve(5)), [10, 0, 0, 0], anchor);
@@ -145,7 +145,7 @@ fn a_traversal_crosses_through_an_open_mouth_and_pays_the_keeper() {
 /// and unanswered returns when the mouth closes, its toll refunded; a closed
 /// mouth carries nothing.
 #[test]
-fn a_mouth_closed_returns_what_is_in_flight() {
+fn handoff_close_returns_in_flight_crossing() {
     let mut k = founded();
     let anchor = k.anchor();
     k.treasury.genesis(vk(&reserve(4)), [5, 0, 0, 0], anchor);
@@ -165,7 +165,7 @@ fn a_mouth_closed_returns_what_is_in_flight() {
 /// whose transitions turn — the loop recorded at the mouth that closed it,
 /// with its exact holonomy, and traversal still open.
 #[test]
-fn a_loop_of_mouths_that_turns_is_recorded_as_curvature() {
+fn mouth_loops_records_turning_loop() {
     let mut k = founded();
     let r = turn();
     open(&mut k, mouth(4, 5, r.clone(), one(), [0; 4]), 4, 5);
@@ -204,7 +204,7 @@ fn legacy(k: &mut Kernel, a: u8, b: u8, from_frame: Mv) -> [u8; 32] {
 /// each mouth's place on the sheet and each end's horizon level from the
 /// throat's mass: equal where the curvatures are, apart where they are not.
 #[test]
-fn a_mouth_is_a_tube_between_places_on_curved_space() {
+fn tube_of_reads_places_and_levels_on_curved_space() {
     use crate::transducer::cga::{translator_at, E1};
     use num_rational::BigRational as Q;
     let mut k = founded();
@@ -241,7 +241,7 @@ fn a_mouth_is_a_tube_between_places_on_curved_space() {
 /// the domain along it; and a line offers a tube to another domain, kept by
 /// its own reserve. A plain offer within one domain is still no handoff.
 #[test]
-fn a_progenitor_line_builds_roads_its_ancients_keep() {
+fn handoff_mouth_line_builds_road_reserve_keeps() {
     let mut k = founded();
     let line = key(30);
     let anchor = k.anchor();
@@ -269,7 +269,7 @@ fn a_progenitor_line_builds_roads_its_ancients_keep() {
 /// returns to each face in proportion and never leaves it massless; closed,
 /// every face gets back what it holds, and no μ is lost.
 #[test]
-fn a_throat_is_banked_fed_drawn_and_returned_never_retired() {
+fn handoff_feed_and_draw_keep_throat_bank() {
     use crate::server::cognition::mouth::throat_key;
     let mut k = founded();
     let (offerer, keeper) = (vk(&reserve(4)), vk(&reserve(5)));
@@ -315,7 +315,7 @@ fn a_throat_is_banked_fed_drawn_and_returned_never_retired() {
 /// stays. A cycle through an untethered mouth reads as history, not tethered;
 /// a tube cannot supersede another tube or a closed mouth.
 #[test]
-fn a_tube_supersedes_an_untethered_mouth_and_its_record_stays() {
+fn handoff_mouth_tube_supersedes_untethered_mouth() {
     let mut k = founded();
     let old = legacy(&mut k, 4, 5, turn());
     open(&mut k, mouth(5, 6, one(), one(), [0; 4]), 5, 6);

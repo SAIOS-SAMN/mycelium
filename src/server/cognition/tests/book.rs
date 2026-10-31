@@ -9,7 +9,7 @@ use crate::transducer::element::{self, Element};
 /// An empty atlas is incident to the root prefix: the first quote
 /// reads the book at depth zero.
 #[test]
-fn empty_atlas_is_incident_to_the_root_prefix() {
+fn quote_reads_empty_atlas_at_depth_zero() {
 let k = std::sync::Mutex::new(Kernel::new());
 {
     let mut g = k.lock().unwrap();
@@ -34,7 +34,7 @@ assert!(!quoted.priced.is_empty(), "an empty atlas reads the book at depth zero"
 /// A second vantage here is `glue_local`'s two fixture keys (§3.4's
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
-fn reduction_is_transposition_invariant() {
+fn speak_pair_reads_transposed_rotation_as_held_word() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)]; // R180 of L at origin
@@ -52,7 +52,7 @@ assert_eq!(k.basis_len(), 1, "transposition mints nothing");
 /// derives (a stale duplicate — what an import or a pre-consolidation era
 /// leaves) is retired by the redundancy probe; an essential one survives it.
 #[test]
-fn the_syntropic_stroke_retires_a_redundant_generator() {
+fn optimize_retires_redundant_generator() {
 use crate::transducer::germinate::germinate;
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
@@ -71,7 +71,7 @@ assert_eq!(k.basis_len(), 1, "an essential generator survives the probe");
 /// The survivor of refine_stratum may sit at the last index. Removing an
 /// earlier derivable sibling used to leave that index equal to len.
 #[test]
-fn refine_stratum_does_not_panic_when_the_survivor_is_last() {
+fn refine_stratum_keeps_survivor_at_last_index() {
 use crate::transducer::element::{from_canonical, from_canonical_framed};
 use crate::transducer::germinate::germinate;
 let mut k = Kernel::new();
@@ -100,7 +100,7 @@ assert!(k.basis_len() < 3, "at least one earlier duplicate retired");
 /// A second vantage here is `glue_pair`'s two fixture keys (§3.4's
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
-fn prune_drops_the_leaked_basis_and_keeps_the_ruled_cover() {
+fn prune_basis_to_ruled_drops_leaked_card() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
@@ -129,7 +129,7 @@ assert_eq!(booted.basis_len(), kept, "restore skips the leaked basis and rebuild
 /// never given a discoverer the ledger does not name (observed on the development deployment,
 /// 2026-10-20: the same 9/12/13 words "refused" at every boot).
 #[test]
-fn a_federation_word_with_no_discoverer_is_restored_from_the_federation() {
+fn restore_adopts_federation_word_without_discoverer() {
 let mut k = Kernel::new();
 glue_pair(&mut k, &[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 1, 1), (1, 0, 1), (1, 1, 1)]);
 let kept = k.basis_len();
@@ -180,7 +180,7 @@ assert_eq!(
 /// word vertices struck out — a tape of the Frame and a demand, which the
 /// blind replay refuses as a chain (50.6, `REFUSE_NOT_A_SENTENCE`).
 #[test]
-fn heard_and_cocycles_do_not_re_row() {
+fn glue_fetched_does_not_rerow_heard_slash() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 // The bar recoloured, a site painted beside it (50.5). H1b, 70.4 —
@@ -205,7 +205,7 @@ assert_eq!(simplices(&k), n, "a heard slash is not re-rowed");
 /// Quotes are incidence on charts. Permuting the pending list does not
 /// change the quoted addresses; Rank carries no scalar order.
 #[test]
-fn the_book_has_no_order() {
+fn quote_incidence_ignores_pending_order() {
 let one = |links: &[(i64, i64, u8, u8)]| {
     element::from_canonical(
         &element::canonical_chain(links).expect("one entry per position is A5's chain"),
@@ -256,7 +256,7 @@ assert!(!pa.is_empty(), "the book is served");
 /// heard drops when the peer's stratum root moves. The forged word is a
 /// sentence with its word vertices struck out, as in the test above.
 #[test]
-fn heard_drops_when_stratum_root_moves() {
+fn confirm_peer_holds_drops_heard_on_moved_root() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 // Separated, as above (H1b, 70.4).
@@ -285,7 +285,7 @@ assert_eq!(k.heard_len(), 0, "a moved stratum root drops heard");
 /// index over the simplex's vertices, every hypha vertex measures zero and
 /// nothing fills although the chart holds two sections.
 #[test]
-fn listings_on_is_the_open_listings_on_the_chart() {
+fn listings_on_holds_open_listings_on_chart() {
 use crate::transducer::address::Address;
 let mut k = Kernel::new();
 let inv = crate::transducer::stalk::Invariant::counts(&[7]);
@@ -321,7 +321,7 @@ assert_eq!(k.listings_on(&crate::transducer::stalk::Invariant::counts(&[8])).len
 /// teaching path must not, or a voice is handed its own unratified dialect
 /// back as language and files it as crystallized intelligence.
 #[test]
-fn the_syllabus_never_teaches_a_provisional_word() {
+fn serve_ruled_never_teaches_provisional_word() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let mut k = Kernel::new();
@@ -363,7 +363,7 @@ assert_eq!(
 /// fund yet is DEFERRED, its lane named, sealing nothing for it, while the
 /// page goes on to the words behind it.
 #[test]
-fn a_syllabus_page_is_paid_by_the_magnitudes_it_serves() {
+fn serve_syllabus_pays_served_magnitudes() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let mut k = Kernel::new();
@@ -421,7 +421,7 @@ assert_eq!((funded.words.len(), funded.deferred.len()), (1, 0), "the deferred wo
 /// the carrier: whatever the book holds, the two readings agree — including
 /// after a listing is re-bound at a new closure, and across a restore.
 #[test]
-fn the_cohesion_counts_are_carried_and_agree_with_the_carrier() {
+fn closure_counts_agree_with_carrier() {
 let walk = |r: &Rank| {
     let mut c = 0usize;
     let mut i = 0usize;

@@ -117,7 +117,7 @@ fn part(of: &TierFold, at: &FoldAt, rows: Vec<Net>, declared: Vec<Net>, n: i128,
 /// open but `P` itself (carried whole, to be netted in its turn), and the
 /// consumed child, restored, cannot be netted again.
 #[test]
-fn a_child_netted_whole_is_sealed_and_its_consumption_restores() {
+fn admit_uplink_nets_child_whole_and_restores_consumption() {
     let (a, p, q) = tiers();
     let mut k = founded();
     let child = a_fold();
@@ -144,7 +144,7 @@ fn a_child_netted_whole_is_sealed_and_its_consumption_restores() {
 /// the wrong sign, is a double count refused by the lane it passes. (Each
 /// carried parent is itself open, to be netted in its turn.)
 #[test]
-fn parents_partition_a_child_and_a_double_count_is_refused() {
+fn admit_uplink_partitions_child_and_refuses_double_count() {
     let (a, p, q) = tiers();
     let mut k = founded();
     let child = a_fold();
@@ -164,7 +164,7 @@ fn parents_partition_a_child_and_a_double_count_is_refused() {
 /// commitment, one standing nowhere on this court, one folded in another
 /// domain — each refused by name, nothing sealed.
 #[test]
-fn a_child_not_proved_on_the_line_is_refused_by_name() {
+fn admit_uplink_refuses_unproved_child_by_name() {
     use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
     let (a, p, _) = tiers();
     let mut k = founded();
@@ -191,7 +191,7 @@ fn a_child_not_proved_on_the_line_is_refused_by_name() {
 /// THE RATES ARE STRICTLY POSITIVE AND ONLY G TRANSLATES (lexicon v2): a
 /// zero rate, and a rate other than one on S, are refused by the lane.
 #[test]
-fn a_rate_is_positive_and_only_value_translates() {
+fn admit_uplink_refuses_zero_or_matter_rate() {
     let (a, p, _) = tiers();
     let mut k = founded();
     let child = a_fold();
@@ -209,7 +209,7 @@ fn a_rate_is_positive_and_only_value_translates() {
 /// cycle. At 2 the cycle's holonomy is one and the seal is final; at 1 it is
 /// exactly ½ on G — arbitrage, docketed, and the seal PROVISIONAL.
 #[test]
-fn a_rates_cycle_closes_at_one_or_seals_provisional_on_its_exact_gain() {
+fn admit_uplink_seals_unclosed_rate_cycle_provisional() {
     for (rate, q_rows, provisional) in [(2, 12, false), (1, 9, true)] {
         let (a, p, q) = tiers();
         let mut k = founded();
@@ -244,7 +244,7 @@ fn a_rates_cycle_closes_at_one_or_seals_provisional_on_its_exact_gain() {
 /// next netted at 3 are two edges between four folds — no cycle, nothing
 /// docketed, both final.
 #[test]
-fn a_rate_that_moves_between_epochs_is_no_arbitrage() {
+fn admit_uplink_reads_rate_moving_between_epochs_as_final() {
     let (a, p, _) = tiers();
     let mut k = founded();
     for (epoch, rate) in [(1u8, 2i128), (5, 3)] {
@@ -264,7 +264,7 @@ fn a_rate_that_moves_between_epochs_is_no_arbitrage() {
 /// a fold of its own line. An unbonded line, or one whose signature is not
 /// its own, is refused at the top child's index.
 #[test]
-fn a_line_carries_a_line_inside_one_receipt() {
+fn admit_uplink_carries_nested_line_in_one_receipt() {
     let (a, p, q) = tiers();
     let mut k = founded();
     let child = a_fold();
@@ -315,7 +315,7 @@ fn co_sign(name: &str, root_hash: [u8; 32]) -> crate::anastome::dialogue::Receip
 /// nets it — from the coordinates the court held at its admission, which
 /// leave once it is netted whole, surviving a restart meanwhile.
 #[test]
-fn a_child_folded_off_the_hot_line_is_proved_by_its_sealed_coordinates() {
+fn admit_uplink_proves_cold_child_by_sealed_coordinates() {
     let (a, p, _) = tiers();
     let mut k = Kernel::new();
     k.bind_identity([0x5c; 32]);
@@ -344,7 +344,7 @@ fn a_child_folded_off_the_hot_line_is_proved_by_its_sealed_coordinates() {
 /// recorded fold, and the potential they re-derive is the one held; a leaf
 /// carrying a B′ obstruction is refused, never dropped.
 #[test]
-fn a_bprime_leaf_reads_its_gauge_steps_as_edges() {
+fn ledgers_take_reads_gauge_steps_as_edges() {
     use crate::server::cognition::ledger::{vertex, Ledgers};
     use crate::transducer::address::{put_key_bytes, put_key_count};
     use crate::transducer::cech::coefficient::{Coefficient, Rates};

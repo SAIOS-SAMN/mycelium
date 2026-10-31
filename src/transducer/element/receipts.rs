@@ -3,7 +3,7 @@
 //
 //! An address is a form's coordinates written out (law 2) and it carries
 //! nothing else. Three things a court reads are not coordinates of the
-//! geometry, and `evidence_is_not_identity` says so deliberately:
+//! geometry, and `form_vertex_key_ignores_citations_and_certificates` says so deliberately:
 //!
 //!   **The citations a vertex factored through.** Two minds reaching one
 //!   rotor by different derivations must reach ONE address (§1.5, 13.10),

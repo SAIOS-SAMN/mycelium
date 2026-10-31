@@ -37,8 +37,10 @@ fn pins(e: &Encl, reference: &str, name: &str) {
     assert!(e.width() <= Q::new(BigInt::one(), BigInt::one() << 60u32), "{name}: wider than 2^-60");
 }
 
+/// The constants (π, e, ln 2, √2, sin 1, cos 1, lnΓ(½), erf 1, P(1, 1)) are
+/// enclosed to 2^-60, each enclosure holding the reference value.
 #[test]
-fn the_constants_are_enclosed_to_two_to_the_minus_sixty() {
+fn constants_enclosed_within_two_pow_minus_sixty() {
     pins(&pi(W), "3.14159265358979323846264338327950288419716939937510", "π");
     pins(&exp(&point(Q::one()), W), "2.71828182845904523536028747135266249775724709369995", "e");
     pins(&ln2(W), "0.69314718055994530941723212145817656807550013436025", "ln 2");
@@ -50,8 +52,11 @@ fn the_constants_are_enclosed_to_two_to_the_minus_sixty() {
     pins(&gamma_p(&point(Q::one()), &point(Q::one()), W).expect("P(1,1)"), "0.63212055882855767840447622983853913255418886896823", "P(1, 1) = 1 − 1/e");
 }
 
+/// Inverse pairs close (`exp ∘ ln`, `ln ∘ exp`) and the identities hold:
+/// `Γ(1) = Γ(2) = 1`, `Γ(x+1) = xΓ(x)`, `sin² + cos² = 1`, `sin π = 0` and
+/// erf is odd.
 #[test]
-fn inverse_pairs_close_and_identities_hold() {
+fn exp_and_ln_invert_and_identities_hold() {
     let v = q(7, 3);
     assert!(exp(&ln(&point(v.clone()), W).expect("ln"), W).contains(&v), "exp ∘ ln");
     let u = q(-5, 2);
@@ -74,8 +79,10 @@ fn inverse_pairs_close_and_identities_hold() {
     assert_eq!(pi(W).lt(&pi(W)), None, "undecided where the bounds overlap");
 }
 
+/// The incomplete gamma `P` is monotone in `x` and tends to one, and is
+/// refused past its series cap rather than run unbounded.
 #[test]
-fn the_incomplete_gamma_is_monotone_and_tends_to_one() {
+fn gamma_p_monotone_tends_to_one_and_refuses_past_cap() {
     let a = point(q(2, 1));
     let low = gamma_p(&a, &point(Q::one()), W).expect("");
     let high = gamma_p(&a, &point(q(3, 1)), W).expect("");
@@ -91,8 +98,9 @@ fn the_incomplete_gamma_is_monotone_and_tends_to_one() {
     assert_eq!(erf(&point(q(-101, 1)), W).expect(""), big.neg());
 }
 
+/// The same inputs give the same enclosure on any thread.
 #[test]
-fn the_same_inputs_give_the_same_enclosure_on_any_thread() {
+fn enclosure_same_on_any_thread() {
     let here = (pi(W), erf(&point(q(5, 7)), W), lgamma(&point(q(3, 2)), W));
     let there = std::thread::spawn(|| (pi(W), erf(&point(q(5, 7)), W), lgamma(&point(q(3, 2)), W))).join().expect("thread");
     assert_eq!(here, there, "bit for bit");
@@ -103,8 +111,11 @@ fn within(e: &Encl, lo: Q, hi: Q) -> bool {
     e.lo > lo && e.hi < hi
 }
 
+/// The hyperbolic and inverse circular functions are enclosed: sinh, cosh
+/// and tan pin their references, atan and acos meet their exact multiples of
+/// π, and acos refuses outside [−1, 1].
 #[test]
-fn the_hyperbolic_and_inverse_circular_functions_are_enclosed() {
+fn hyperbolic_and_inverse_circular_enclose_references() {
     pins(&sinh(&point(Q::one()), W), "1.17520119364380145688238185059560081515571798133409", "sinh 1");
     pins(&cosh(&point(Q::one()), W), "1.54308063481524377847790562075706168260152911236586", "cosh 1");
     pins(&tan(&point(Q::one()), W).expect("tan 1"), "1.55740772465490223050697480745836017308725077238152", "tan 1");
@@ -125,8 +136,10 @@ fn the_hyperbolic_and_inverse_circular_functions_are_enclosed() {
     assert!(logistic(&point(Q::zero()), W).expect("").contains(&q(1, 2)), "logistic 0 = ½");
 }
 
+/// The Planck tail is one at zero exactly, and its near and far series
+/// meet at one.
 #[test]
-fn the_planck_tail_is_one_at_zero_and_its_two_series_meet() {
+fn planck_tail_is_one_at_zero_and_series_meet() {
     assert_eq!(planck_tail(&point(Q::zero()), W), Some(point(Q::one())), "F(0) = 1 exactly");
     // Small x: 1 − 15/π⁴·(x³/3 − x⁴/8 + …), at x = 1/10 ≈ 0.999953.
     let small = planck_tail(&point(q(1, 10)), W).expect("");
@@ -150,8 +163,9 @@ fn the_planck_tail_is_one_at_zero_and_its_two_series_meet() {
     assert!(order.lo < order.hi && order.lo > Q::zero(), "an interval of x");
 }
 
+/// The Poisson quantile reads the CDF's steps, and refuses `u = 1`.
 #[test]
-fn the_poisson_quantile_reads_the_cdf_steps() {
+fn poisson_quantile_reads_cdf_steps() {
     // λ = 3: CDF(0) ≈ 0.0498, CDF(1) ≈ 0.1991, CDF(2) ≈ 0.4232, CDF(3) ≈ 0.6472, CDF(5) ≈ 0.9161.
     let l = q(3, 1);
     assert_eq!(poisson_quantile(&l, &Q::zero(), W), Some(0));

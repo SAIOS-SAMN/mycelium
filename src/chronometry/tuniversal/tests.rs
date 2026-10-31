@@ -45,8 +45,9 @@ impl Mesh {
     }
 }
 
+/// A point prints in one lowercase writing and parses back exactly, and its wire form takes back whole.
 #[test]
-fn a_point_prints_and_parses_back_exactly() {
+fn tpoint_print_parses_back_exactly() {
     let p = TPoint { origin: ORIGIN, h: 40_961, lanes: [3, u64::MAX, 0, 17], k: 812 };
     let text = p.print();
     assert_eq!(
@@ -63,8 +64,9 @@ fn a_point_prints_and_parses_back_exactly() {
     assert_eq!((TPoint::take(&wire, &mut at), at), (Some(p), TPoint::LEN));
 }
 
+/// Three keepers exchange readings, and a point is final only once two keepers hold it.
 #[test]
-fn three_keepers_exchange_and_a_point_is_final_only_on_two() {
+fn final_point_needs_two_of_three_keepers() {
     let mut m = Mesh::new();
     assert!(m.read(0, tick(10, [4, 0, 0, 0], 1)));
     // a's reading alone: one keeper holds it.
@@ -92,8 +94,9 @@ fn three_keepers_exchange_and_a_point_is_final_only_on_two() {
     assert_eq!(m.courts[0].final_of(&vk(&m.keys[0])), Some(a10));
 }
 
+/// A forged signature, an altered lane, a broken parent and another universe's reading are refused, and the honest line still extends.
 #[test]
-fn a_forged_signature_and_a_broken_parent_are_refused() {
+fn admit_refuses_forged_signature_and_broken_parent() {
     let mut m = Mesh::new();
     m.read(0, tick(10, [1, 0, 0, 0], 1));
     m.read(0, tick(11, [2, 0, 0, 0], 1));
@@ -118,8 +121,9 @@ fn a_forged_signature_and_a_broken_parent_are_refused() {
     assert_eq!(m.hear(1, 0), Ok(Admitted::Extended(1)));
 }
 
+/// A disagreement between final points is held as an exact residual per lane and never averaged.
 #[test]
-fn a_disagreement_is_an_exact_residual_and_never_averaged() {
+fn residual_holds_disagreement_exactly_never_averaged() {
     let mut m = Mesh::new();
     // a and b read at one tick, differing on S and G.
     m.read(0, tick(20, [10, 4, 0, 0], 5));
@@ -148,8 +152,9 @@ fn a_disagreement_is_an_exact_residual_and_never_averaged() {
     assert_eq!(m.courts[1].final_point(), Some(TPoint { origin: ORIGIN, h: 23, lanes: [0, 0, 0, 2], k: 2 }));
 }
 
+/// With two keepers silent, the final point does not advance.
 #[test]
-fn with_two_keepers_silent_the_final_point_does_not_advance() {
+fn final_point_holds_while_two_keepers_silent() {
     let mut m = Mesh::new();
     m.read(0, tick(10, [1, 0, 0, 0], 1));
     m.hear(1, 0).expect("admits");
@@ -169,8 +174,9 @@ fn with_two_keepers_silent_the_final_point_does_not_advance() {
     assert!(!m.read(0, tick(41, [39, 0, 0, 0], 39)));
 }
 
+/// The shelf advances without the kernel and wakes a parked reader.
 #[test]
-fn the_shelf_advances_without_the_kernel_and_wakes_a_parked_reader() {
+fn tshelf_raise_final_wakes_parked_reader() {
     let shelf = std::sync::Arc::new(TShelf::new());
     let p = TPoint { origin: ORIGIN, h: 10, lanes: [1, 0, 0, 0], k: 1 };
     assert!(shelf.raise_final(p));
@@ -194,8 +200,9 @@ fn the_shelf_advances_without_the_kernel_and_wakes_a_parked_reader() {
     assert_eq!(woke.advances, 2);
 }
 
+/// Reset, branch and superpose cite the point they act on.
 #[test]
-fn reset_branch_and_superpose_cite_the_point() {
+fn ops_reset_branch_superpose_cite_point() {
     let p = TPoint { origin: ORIGIN, h: 30, lanes: [5, 1, 0, 2], k: 9 };
     let r = ops::Reset::at(p).expect("an epoch past");
     assert_eq!((r.epoch, r.cites), (147, ops::citation(&p)));
@@ -216,7 +223,7 @@ fn reset_branch_and_superpose_cite_the_point() {
 /// codec, read back whole, and admitted with the same outcome and the same
 /// final point as the digest's; a byte past the ring is no tick.
 #[test]
-fn a_ring_pushed_as_act_tick_is_admitted_as_from_a_digest() {
+fn decode_tick_admits_ring_as_digest_does() {
     use crate::anastome::dialogue as d;
     let mut m = Mesh::new();
     m.read(0, tick(10, [4, 0, 0, 0], 1));
@@ -255,7 +262,7 @@ fn a_ring_pushed_as_act_tick_is_admitted_as_from_a_digest() {
 /// peer (`Extended`, never `Anchored`). The record reads back by value; a
 /// record altered, cut short, or of another origin is no floor.
 #[test]
-fn a_keeper_restarted_from_its_record_never_signs_at_or_below_its_last() {
+fn resume_never_signs_at_or_below_last_height() {
     let mut m = Mesh::new();
     let a = vk(&m.keys[0]);
     let mut kept = None;
@@ -337,7 +344,7 @@ fn a_keeper_restarted_from_its_record_never_signs_at_or_below_its_last() {
 /// four keepers a point needs three — its own keeper and two others citing
 /// it. One citer, enough at three keepers, finalises nothing at four.
 #[test]
-fn with_four_keepers_a_point_needs_three() {
+fn final_of_needs_three_of_four_keepers() {
     let keys = [key(1), key(2), key(3), key(4)];
     let mut ks: Vec<Keepers> = keys.iter().map(|k| Keepers::new(ORIGIN, vk(k))).collect();
     let hear = |ks: &mut Vec<Keepers>, to: usize, from: usize| {

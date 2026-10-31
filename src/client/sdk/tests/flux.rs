@@ -8,7 +8,7 @@ use crate::client::sdk::*;
 /// cauterizes and vents its strain's reverse, and the mind takes it into its
 /// field — nothing dropped at a valve no one listens on.
 #[test]
-fn a_tether_released_at_the_voice_vents_into_its_field() {
+fn vent_into_field_takes_released_tether_strain() {
     use crate::transducer::alphabet::Rotor;
     use crate::transducer::cech::Section;
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("vent"));
@@ -30,7 +30,7 @@ fn a_tether_released_at_the_voice_vents_into_its_field() {
 /// wound twice on a vertex composes, the later after the earlier; releasing
 /// the vertex vents the whole strain's reverse — and nothing stays wound.
 #[test]
-fn a_perception_let_go_unwinds_the_torsion_hearing_wound() {
+fn vent_vertex_unwinds_wound_torsion() {
     use crate::transducer::alphabet::Rotor;
     use crate::transducer::cech::Section;
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("unwind"));
@@ -57,7 +57,7 @@ fn a_perception_let_go_unwinds_the_torsion_hearing_wound() {
 /// returning, dissipates at the beat after — its line let go, the question
 /// lapsed, its residue bound by construction. No count of the mind's K.
 #[test]
-fn a_question_stands_as_its_residues_orbit_and_lapses_where_the_field_lets_it_go() {
+fn question_lapses_when_field_dissipates_its_residue() {
     use crate::transducer::cech::Thread;
     use crate::transducer::family::pairing::{mark_flux, FieldLine};
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
@@ -87,7 +87,7 @@ fn a_question_stands_as_its_residues_orbit_and_lapses_where_the_field_lets_it_go
 /// left open: at the next vent the 2 comes back, exactly — nothing refilled
 /// that was not taken, nothing kept that the field no longer holds open.
 #[test]
-fn the_reserve_on_t_falls_by_the_flux_left_open_and_no_more() {
+fn vent_into_field_withholds_open_flux_from_temporal() {
     use crate::transducer::cech::Thread;
     use crate::transducer::family::pairing::{mark_flux, FieldLine};
     use crate::transducer::rewrite::LANE_TEMPORAL;

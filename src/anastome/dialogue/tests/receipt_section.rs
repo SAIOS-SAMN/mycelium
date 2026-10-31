@@ -17,7 +17,7 @@ use crate::anastome::dialogue::*;
 /// shape has one reading and decodes. 5.2c's tag is still owed for the
 /// general case; this is the shape narrowing, not the tag arriving.
 #[test]
-fn the_receipt_section_is_found_after_a_full_digest_frame() {
+fn decode_receipt_section_reads_past_cover_digest() {
     use crate::transducer::stalk::Invariant;
     let room = [11u64, 12, 13, 14];
     let cover_roots = [[1u8; 32], [2; 32], [3; 32], [4; 32]];
@@ -116,7 +116,7 @@ fn the_receipt_section_is_found_after_a_full_digest_frame() {
 /// arrive in; a budget that admits two rows says `more`, and resuming from
 /// the page's last cursor serves the rest exactly once.
 #[test]
-fn a_cover_is_read_by_page_from_the_last_cursor_held() {
+fn encode_cover_page_resumes_from_last_cursor() {
     use crate::transducer::stalk::Invariant;
     let vk = [6u8; 32];
     // Out of cursor order on purpose: lane 2 before lane 0, and the wide
@@ -196,7 +196,7 @@ fn a_cover_is_read_by_page_from_the_last_cursor_held() {
 /// `encode_receipt_section` refuses rather than wraps; a prefix of one
 /// chart frames and reads back.
 #[test]
-fn a_prefix_that_does_not_fit_the_wire_is_refused_not_wrapped() {
+fn encode_receipt_section_refuses_prefix_past_wire() {
     let mut chain = crate::chronometry::ReceiptChain::with_vk([6u8; 32]);
     let head = chain.append(crate::chronometry::ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
     let prefix = |chart: Vec<u8>| crate::court::admission::SignedPrefix {
@@ -230,7 +230,7 @@ fn a_prefix_that_does_not_fit_the_wire_is_refused_not_wrapped() {
 /// coordinate (STD1 3c-2): a `Count` is 10 bytes and a single-limb `Ratio`
 /// 21, so a body's chart passes 255 at eleven ratios.
 #[test]
-fn a_chart_wider_than_one_length_byte_is_served_not_dropped() {
+fn encode_cover_page_serves_chart_past_one_byte() {
     use crate::transducer::stalk::{ChartAxis, Invariant};
     use num_bigint::BigInt;
     use num_rational::BigRational;

@@ -10,7 +10,7 @@ use crate::transducer::cga::*;
 /// on every blade, the whole matrix of full rank, nothing contracted — and
 /// `is_versor` reads the same property.
 #[test]
-fn a_versor_is_read_off_its_action_unchanged() {
+fn motor_action_reads_versor_unchanged() {
     let rotor = Mv::scalar(q(1, 1)).add(&Mv::blade(E1 | E2, q(1, 1)));
     for m in [rotor, translator(&q(1, 1), &q(0, 1), &q(2, 1)), reflector()].map(|m| m.widened(3)) {
         let a = Motor::new(&m).action();
@@ -27,7 +27,7 @@ fn a_versor_is_read_off_its_action_unchanged() {
 /// the vectors and on the whole algebra — DEGENERATE, keyed by the rank it
 /// kept.
 #[test]
-fn a_contraction_is_named_by_rank_never_refused() {
+fn motor_action_names_contraction_by_rank() {
     let e_inf = e_inf().widened(3);
     let null = Motor::new(&e_inf).action();
     assert!(null.vectors.vectors_to_vectors);
@@ -47,7 +47,7 @@ fn a_contraction_is_named_by_rank_never_refused() {
 /// (1 − I²) x = 2x` — the identity's action up to scale. It ACTS AS a
 /// versor; it IS not one — two facts under two names (MT1, ruled).
 #[test]
-fn a_mixed_parity_element_acts_as_the_identity() {
+fn motor_action_of_mixed_parity_is_identity() {
     let one_plus_i = Mv::scalar(q(1, 1)).widened(3).add(&Mv::blade(pseudo(3).expect("the pseudoscalar at n = 3"), q(1, 1)).widened(3));
     let a = Motor::new(&one_plus_i).action();
     assert!(a.acts_as_versor() && a.grade_preserving && a.algebra_rank == a.dim());

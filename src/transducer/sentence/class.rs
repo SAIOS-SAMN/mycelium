@@ -350,7 +350,7 @@ impl ClassVector {
     /// conjugacy class is the depth-one projection of an orbit's state vector
     /// and not a second key that happens to agree: `class_schema` parses
     /// the boundary out of the bytes the writer wrote, and
-    /// `the_rotor_class_is_the_first_stratum_of_the_class_vector` asserts
+    /// `class_key_leads_with_rotor_class` asserts
     /// the two coincide rather than trusting it.
     pub fn class_schema() -> &'static crate::network::nerve::Schema {
         &CLASS_SCHEMA

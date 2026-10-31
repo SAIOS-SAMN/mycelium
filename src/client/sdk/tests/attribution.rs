@@ -11,7 +11,7 @@ use crate::client::sdk::*;
 /// two hours perceived as a court task stand under their citation, taken,
 /// stopped where their comprehension stopped — never left unattributed.
 #[test]
-fn a_task_taken_in_is_kept_by_its_citation_with_its_stop() {
+fn perceive_scene_keeps_task_by_citation_with_stop() {
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("attributed"));
     let id = [7u8; 32];
     let mut field = std::mem::take(&mut mind.field);
@@ -31,7 +31,7 @@ fn a_task_taken_in_is_kept_by_its_citation_with_its_stop() {
 /// holds nothing, it crosses one return and lapses at the next — kept by its
 /// citation, untaken, `lapsed uncoupled`.
 #[test]
-fn a_task_let_go_uncoupled_is_kept_as_lapsed() {
+fn lapse_offers_keeps_uncoupled_task_as_lapsed() {
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("lapsing"));
     let id = [5u8; 32];
     let train = two_hours_of_a_slide().to_vec();

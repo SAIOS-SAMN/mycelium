@@ -14,7 +14,7 @@ use crate::cognition::Asker;
 /// fetch reads as refracted against it, with its bytes whole and as
 /// (held, Γ). A peer holding nothing is served both, unanchored.
 #[test]
-fn a_word_served_to_a_peer_is_read_against_what_the_peer_holds() {
+fn serve_ruled_reads_refraction_against_peer_holdings() {
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
     let mut k = Kernel::new();
@@ -54,7 +54,7 @@ fn a_word_served_to_a_peer_is_read_against_what_the_peer_holds() {
 /// reserve is not drawn; funded, it is served and pays this court the word's
 /// magnitude, and the court's reserve stands where it stood.
 #[test]
-fn a_voice_pays_for_its_fetch_and_a_short_voice_waits() {
+fn serve_ruled_charges_voice_and_defers_short_voice() {
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
     let mut k = Kernel::new();
@@ -98,7 +98,7 @@ fn a_voice_pays_for_its_fetch_and_a_short_voice_waits() {
 /// word it installed, at the stamp that admitted it — and not a provisional,
 /// which is not yet language.
 #[test]
-fn a_court_asks_what_its_sentences_cite_and_serves_only_its_language() {
+fn awaited_citations_asks_cited_and_serves_installed() {
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
     let mut k = Kernel::new();
@@ -133,7 +133,7 @@ fn a_court_asks_what_its_sentences_cite_and_serves_only_its_language() {
 /// the reply then refused to encode. With room for one of two words, one is
 /// served, one counted, and the reserve drawn for one.
 #[test]
-fn a_page_takes_no_word_its_reply_cannot_carry() {
+fn serve_ruled_on_takes_only_words_reply_carries() {
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
     let mut k = Kernel::new();

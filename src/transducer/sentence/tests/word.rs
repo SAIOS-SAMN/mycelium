@@ -19,7 +19,7 @@ fn quarter() -> Mv {
 /// each read off the word's own hole, and each word of one mode reads as that
 /// one mode-word, itself.
 #[test]
-fn every_mode_stands_on_its_own_law() {
+fn read_files_each_mode_under_own_law() {
     let laws = |m: &Mv| read(m).expect("its coordinates read").modes.iter().map(|w| w.law).collect::<Vec<_>>();
     assert_eq!(laws(&quarter()), vec![Law::Periodic], "a 90° turn returns at 4");
     assert_eq!(laws(&cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)])), vec![Law::Nilpotent], "a slide: one null motion per traversal");
@@ -35,7 +35,7 @@ fn every_mode_stands_on_its_own_law() {
 /// turn and the slide the screw is made of are words of its dictionary from
 /// then on — in a mind it had never known them before.
 #[test]
-fn a_mind_taught_a_word_knows_its_mode_words() {
+fn hear_teaches_screw_and_its_mode_words() {
     use crate::transducer::sentence::compose::{compose, Term};
     use crate::transducer::sentence::rung::{hear, known};
     let along = cga::translator_at(&[q(0, 1), q(0, 1), q(1, 1)]);
@@ -56,7 +56,7 @@ fn a_mind_taught_a_word_knows_its_mode_words() {
 /// along the axis it turns about — reads as two, a periodic turn and a
 /// nilpotent slide, and their product, in either order, is the screw.
 #[test]
-fn a_word_is_the_product_of_its_mode_words() {
+fn read_splits_screw_into_commuting_mode_words() {
     let along = cga::translator_at(&[q(0, 1), q(0, 1), q(1, 1)]);
     let screw = along.geo(&quarter());
     let r = read(&screw).expect("the screw's coordinates read");

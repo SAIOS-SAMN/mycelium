@@ -51,7 +51,7 @@ fn signed(m: Manifest, by: u8) -> SignedManifest {
 /// endowment's reading likewise. A count that is no positive integer is no
 /// manifest.
 #[test]
-fn a_manifest_and_its_reading_travel_whole() {
+fn manifest_and_reading_round_trip_on_wire() {
     let s = signed(manifest(1), RESERVE);
     let bytes = encode_manifest(&s).expect("it writes");
     assert_eq!(decode_domain_request(&bytes), Some(DomainRequest::Manifest(Box::new(s.clone()))));
@@ -76,7 +76,7 @@ fn a_manifest_and_its_reading_travel_whole() {
 /// the first is not applied in the universe's ledger; the same manifest is
 /// never granted twice.
 #[test]
-fn a_founding_manifest_is_granted_from_what_the_court_earned() {
+fn manifest_grants_founding_from_court_balance() {
     let mut k = universe(true);
     let anchor = k.anchor();
     let court_vk = k.identity;
@@ -107,7 +107,7 @@ fn reserve_domain() -> [u8; 32] {
 /// reserve; a domain with no origin; nuclei unordered or of a zero count; and
 /// a court that has earned too little — nothing moved, nothing minted.
 #[test]
-fn a_grant_is_refused_by_name() {
+fn manifest_refuses_grant_by_name() {
     let mut unoriginated = universe(false);
     assert_eq!(unoriginated.manifest(&signed(manifest(1), RESERVE)), Granted::Refused(GrantRefusal::NotAUniverse));
     let mut k = universe(true);
@@ -124,7 +124,7 @@ fn a_grant_is_refused_by_name() {
 /// THE GRANTS SURVIVE A RESTART: written on the court's own node and read
 /// back whole, the reading the same after as before.
 #[test]
-fn the_grants_survive_a_restart() {
+fn endowment_reading_survives_restart() {
     let mut k = universe(true);
     let anchor = k.anchor();
     let court_vk = k.identity;
@@ -146,7 +146,7 @@ fn the_grants_survive_a_restart() {
 /// The size survives a restart, and a grant sealed takes it whole: the next
 /// growth grant counts only closures judged after it.
 #[test]
-fn a_growth_grant_is_sized_by_the_closures_judged_in_its_universe() {
+fn growth_size_sums_closures_in_universe() {
     let mut k = universe(true);
     let domain = reserve_domain();
     assert_eq!(k.growth_size(&domain), Err(GrantRefusal::NoNewClosures), "no closure judged: no growth grant");
@@ -176,7 +176,7 @@ fn a_growth_grant_is_sized_by_the_closures_judged_in_its_universe() {
 /// grant of the universe whose key was paid, by exactly what that key was
 /// paid; what a key no domain names was paid grows nothing.
 #[test]
-fn every_proof_of_work_paid_grows_the_grant() {
+fn grow_grants_by_paid_grows_universe_grant() {
     let mut k = universe(true);
     let domain = reserve_domain();
     let line = vk(&key(47));

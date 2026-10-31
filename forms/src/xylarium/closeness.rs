@@ -137,7 +137,7 @@ mod tests {
     /// antiphase 0; one plane alone the linear in-step measure `1 − 2|Δ|`;
     /// and the closeness is two-sided — the same read from either body.
     #[test]
-    fn the_closeness_keeps_its_fixed_points() {
+    fn closeness_keeps_fixed_points() {
         let a = Shares::of(&qs(&[(1, 3), (1, 2), (1, 6)])).expect("shares");
         assert_eq!(a.closeness(&a, &qs(&[(0, 1), (0, 1), (0, 1)])), Ok(Q::one()));
         let (p0, p1) = (Shares::of(&qs(&[(1, 1), (0, 1)])).expect("plane 0"), Shares::of(&qs(&[(0, 1), (1, 1)])).expect("plane 1"));
@@ -155,7 +155,7 @@ mod tests {
     /// REFUSED BY NAME: a negative share, shares not summing to one, planes
     /// unmatched.
     #[test]
-    fn what_is_no_share_is_refused_by_name() {
+    fn shares_of_and_closeness_refuse_by_name() {
         assert_eq!(Shares::of(&qs(&[(-1, 3), (4, 3)])), Err(Refused::Negative));
         assert_eq!(Shares::of(&qs(&[(1, 2), (1, 3)])), Err(Refused::Unsummed));
         let (a, b) = (Shares::of(&qs(&[(1, 1)])).expect("a"), Shares::of(&qs(&[(1, 2), (1, 2)])).expect("b"));
@@ -168,7 +168,7 @@ mod tests {
     /// bit. No grid is read: the floors it sent beside them are its own
     /// observer's, never a joint frame (ruled 2026-10-21).
     #[test]
-    fn xylariums_read_is_reproduced() {
+    fn closeness_reproduces_xylarium_vector() {
         type Row = (Vec<Q>, Vec<Q>, Vec<Q>, Q);
         let rows: Vec<Row> = vec![
             (qs(&[(1, 1), (0, 1)]), qs(&[(1, 1), (0, 1)]), qs(&[(0, 1), (1, 3)]), Q::one()),
@@ -190,7 +190,7 @@ mod tests {
     /// inverse, the closeness returns exactly; the identity frame reads it
     /// as it is.
     #[test]
-    fn the_closeness_is_read_in_a_frame_and_back() {
+    fn closeness_in_round_trips_through_frame() {
         use crate::frame::{Frame, Move};
         let (a, b) = (Shares::of(&qs(&[(3, 5), (2, 5)])).expect("a"), Shares::of(&qs(&[(1, 4), (3, 4)])).expect("b"));
         let delta = qs(&[(1, 8), (1, 3)]);

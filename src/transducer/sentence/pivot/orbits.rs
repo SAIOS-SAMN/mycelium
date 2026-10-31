@@ -175,7 +175,7 @@ impl Form {
     /// Takes the VERTICES and not a count: `orbit_is_trivial` reads the
     /// edge holonomies to decide, and `edge_holonomies_on` needs them. An
     /// orbit flat on its WORD can carry a real edge composite — that is
-    /// what `an_orbit_flat_on_the_word_files_under_its_edge_composite`
+    /// what `file_orbit_files_under_edge_composite`
     /// asserts — and a predicate blind to edges would prune the
     /// obstruction along with the noise.
     pub fn orbits_of(faces: &Faces, vertices: &Vertices) -> Vec<Orbit> {
@@ -240,7 +240,7 @@ impl Form {
         // `versor_of_word`, one plane by construction (51.2) — so every
         // off-plane orbit lives here, and `Rank.offplane` is a lane that
         // could never be non-zero if these faces were dropped
-        // (`rank_offplane_is_its_own_lane`).
+        // (`rank_counts_offplane_as_own_lane`).
         //
         // The unnamed node is DISTINCT from every named one, so the two
         // sectors do not chain: a path carrying a body cannot step across

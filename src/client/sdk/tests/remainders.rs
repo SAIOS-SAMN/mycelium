@@ -73,7 +73,7 @@ fn remainder_of(e: &Entity, w: &Element) -> (Remainder, bool) {
 /// constructors do not spell → unspelled, the class docketed as a Demand over
 /// both chains, no callus.
 #[test]
-fn the_receptor_raises_a_callus_only_for_one_twist_at_two_vantages() {
+fn stand_calluses_raises_callus_only_for_one_twist_two_vantages() {
     let (a, b, nested) = chains();
     let other_turn_90 = || {
         let q = crate::transducer::alphabet::LetterId::turn_90((0, 2)).expect("a plane");
@@ -151,7 +151,7 @@ fn the_receptor_raises_a_callus_only_for_one_twist_at_two_vantages() {
 /// constructors, the spelling stood as the mind's own word, and the word
 /// re-fills, its remainder marked answered by that spelling in the mind.
 #[test]
-fn a_demand_answered_by_class_key_refills_an_open_remainder() {
+fn stand_calluses_refills_remainder_answered_by_class_key() {
     let (a, _, _) = chains();
     let mut e = Entity::open("127.0.0.1:1", Kernel::named("answered"));
     let w = stand_with(&mut e, [&[(1, 2)], &[(3, 4)]], &a, turn_90());
@@ -178,7 +178,7 @@ fn cycle(r: Option<Remainder>) -> TorsionCycle {
 /// epigenome, the record comes back whole and the index is rebuilt from it.
 /// A second word whose remainder coincides is not filed over the first.
 #[test]
-fn a_remainder_rides_the_record_through_a_restart_and_the_index_is_rebuilt() {
+fn record_cycle_remainder_survives_restart_and_reindexes() {
     let r = remainder(&[b"", b"c"]);
     let mut e = super::common::two_body_sentence([&[(1, 2)], &[(3, 4)]]);
     let addr = e.address();

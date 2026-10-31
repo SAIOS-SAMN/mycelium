@@ -31,7 +31,7 @@ use crate::transducer::family::*;
 /// re-discarded on the next stroke — 3763 idle strokes in a row, zero
 /// generators held.
 #[test]
-fn an_extraction_cut_off_by_its_budget_keeps_what_it_reached() {
+fn extract_rule_with_keeps_partial_when_budget_cuts_off() {
     let family = vec![
         (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
         (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
@@ -74,7 +74,7 @@ fn an_extraction_cut_off_by_its_budget_keeps_what_it_reached() {
 /// budget 350,000× the fleet's, which is why the suite was green while
 /// the fleet extracted nothing.
 #[test]
-fn the_production_budget_reads_a_family_end_to_end() {
+fn extraction_spend_reads_family_end_to_end() {
     let family = vec![
         (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
         (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
@@ -105,7 +105,7 @@ fn the_production_budget_reads_a_family_end_to_end() {
 /// by the atlas root, so the extraction runs again the moment this mind's
 /// language moves, which is the only thing that could spell more of it.
 #[test]
-fn a_partial_extraction_is_cached_and_advances_when_the_language_moves() {
+fn extract_rule_cached_holds_partial_until_language_moves() {
     let family = vec![
         (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
         (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
@@ -157,7 +157,7 @@ fn a_partial_extraction_is_cached_and_advances_when_the_language_moves() {
 /// (the L8w test above) — so the spent-then-full shape 78.158 names has no
 /// fixture; the invariant it rests on is this one.
 #[test]
-fn an_extraction_that_answers_none_is_never_held_for_its_family() {
+fn extract_rule_cached_never_holds_none() {
     let root = crate::transducer::address::Address::new(vec![3u8]);
     let ph = &mut crate::physics::Physics::default();
     let one = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];

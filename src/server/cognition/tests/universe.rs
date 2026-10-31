@@ -110,7 +110,7 @@ fn root() -> Genesis {
 /// periods, and baskets empty, unordered or massless — malformed; stated, a
 /// second is never an edit. A conversion at the reserve waits on the basket.
 #[test]
-fn a_universe_states_its_geometry_and_basket_once_by_its_sitting_reserve() {
+fn state_records_geometry_and_basket_once() {
     let mut k = founded();
     let space = curved((3, 2));
     assert_eq!(state(&mut k, 4, Stated::Geometry(space.clone()), &domain(4)), Founded::Unsigned, "the founder's key no longer speaks");
@@ -149,7 +149,7 @@ fn a_universe_states_its_geometry_and_basket_once_by_its_sitting_reserve() {
 /// naming a tube that is no core into it, or disagreeing with its far
 /// space, is refused.
 #[test]
-fn a_child_universe_originates_through_its_parents_core_tube() {
+fn record_origin_child_through_core_tube() {
     let mut k = founded();
     assert_eq!(k.handoff(&Handoff::Mouth(Box::new(core_tube((2, 1)))).sign(&reserve(4))), Handed::Refused(HandoffRefusal::NotAUniverse), "the parent is no universe yet");
     assert_eq!(k.record_origin(&Origin { version: 1, ..origin(4, Some(root())) }.sign(&domain(4))), Founded::Malformed, "version and fields agree");
@@ -178,7 +178,7 @@ fn a_child_universe_originates_through_its_parents_core_tube() {
 /// once; before an origin it is no universe; a tube that is no core into it
 /// is refused.
 #[test]
-fn a_root_joins_its_parents_core_once() {
+fn state_join_binds_root_to_core_once() {
     let mut k = founded();
     assert!(matches!(k.record_origin(&origin(4, Some(root())).sign(&domain(4))), Founded::Originated { .. }));
     assert_eq!(state(&mut k, 5, Stated::Join([1; 32]), &reserve(5)), Founded::NotAUniverse, "originate first");
@@ -200,7 +200,7 @@ fn a_root_joins_its_parents_core_once() {
 /// is fed; the child originates on that torus; and across a restart the
 /// tube reads the same and its far reserve still keeps it.
 #[test]
-fn a_torus_face_reads_its_throat_flat_and_bounded_by_its_own_image() {
+fn tube_of_reads_torus_face_flat_and_bounded() {
     use crate::transducer::cga::{base_vector, dilator, geodesic_transvection, hyperbolic_compartment, hyperboloid_pole, translator_at};
     let mut k = founded();
     assert!(matches!(k.record_origin(&origin(4, Some(root())).sign(&domain(4))), Founded::Originated { .. }));
@@ -240,7 +240,7 @@ fn a_torus_face_reads_its_throat_flat_and_bounded_by_its_own_image() {
 /// names is no inner seat; the house is none; a line is one until it is the
 /// sitting reserve; a hand-on pending its anchor changes nothing yet.
 #[test]
-fn the_court_reads_a_founded_universes_inner_seats_and_refuses_none() {
+fn inner_seat_reads_domain_lines_refusing_none() {
     let mut k = founded();
     assert!(!k.inner_seat(&[0xab; 32]), "a key no domain names is no inner seat");
     assert!(!k.inner_seat(&vk(&reserve(4))) && k.is_ancients_house(&vk(&reserve(4))), "the ancients' house is none");
@@ -255,7 +255,7 @@ fn the_court_reads_a_founded_universes_inner_seats_and_refuses_none() {
 /// THE WIRE: an origin of version 2, every statement, the universe read and
 /// its reading, and a core tube read back whole; a byte left over is none.
 #[test]
-fn the_universe_acts_read_back_whole() {
+fn universe_acts_round_trip_on_wire() {
     use crate::anastome::dialogue::domain::{decode_domain_reply, decode_domain_request, encode_domain_reply, encode_origin, DomainRequest};
     use crate::anastome::dialogue::handoff::{decode_handoff_request, encode_handoff, HandoffRequest};
     use crate::anastome::dialogue::universe::{decode_universe_reading, encode_statement, encode_universe_read, encode_universe_reading, UniverseReading};

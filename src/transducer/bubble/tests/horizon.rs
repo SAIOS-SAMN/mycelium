@@ -3,8 +3,10 @@
 
 use crate::transducer::bubble::*;
 
+/// A class seeded into the horizon is recognised in a held bubble under the
+/// Ruled standing, never re-derived.
 #[test]
-fn horizon_seeded_class_is_not_rederived() {
+fn seed_horizon_keeps_class_ruled_not_rederived() {
     use crate::transducer::alphabet::{LetterId, Word};
     let mut c = Contemplation::new();
     let q = LetterId::turn_90((0, 1)).unwrap();
@@ -27,8 +29,10 @@ fn horizon_seeded_class_is_not_rederived() {
     assert_eq!(*st, Standing::Ruled);
 }
 
+/// The horizon is keyed by the class key: an entry put for a rotor is found
+/// under that rotor's class key with its order and standing.
 #[test]
-fn horizon_is_keyed_by_class_key() {
+fn horizon_put_keys_entry_by_class_key() {
     use crate::transducer::alphabet::{LetterId, Word};
     let mut c = Contemplation::new();
     c.hold(vec![(0, 0, 1, 2), (1, 0, 1, 2)]);

@@ -74,7 +74,7 @@ pub(super) fn coboundary_triangle_with_edge(q: &Word) -> (Form, crate::network::
 /// with the class published adjoins, and a crystal holding the word does
 /// not.
 #[test]
-fn a_published_residue_no_generator_reaches_is_adjoined() {
+fn pivot_orbit_adjoins_unreached_published_residue() {
     let q = word_turn_90();
 
     // PUBLISHED AND UNANSWERED, with nothing in the basis: adjoin.
@@ -139,7 +139,7 @@ fn a_published_residue_no_generator_reaches_is_adjoined() {
 /// cannot return is a word the mind holds and can never use — which is
 /// exactly the state the fleet was measured in, `held 0` on every read.
 #[test]
-fn a_minted_generator_is_filed_and_answerable_on_its_own_coordinates() {
+fn generator_form_mints_word_answerable_on_axis() {
     use crate::transducer::sentence::{
         admit_words_acting, from_element_form, generator_form, on_axis_of, AxisIndex,
     };
@@ -211,7 +211,7 @@ fn a_minted_generator_is_filed_and_answerable_on_its_own_coordinates() {
 /// and still discharges, and a word of a different class is refused without
 /// a write.
 #[test]
-fn the_eliminator_keeps_every_word_that_can_cancel_and_drops_the_rest() {
+fn pivot_orbit_eliminates_only_words_of_other_class() {
     let q = word_turn_90();
     let turn_180 = word_turn_180();
     assert_ne!(
@@ -273,7 +273,7 @@ fn the_eliminator_keeps_every_word_that_can_cancel_and_drops_the_rest() {
 /// case the old arm could not move: the 90° turn lives on the edge and
 /// the face words are identity.
 #[test]
-fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
+fn apply_by_moves_edge_composite() {
     use crate::transducer::sentence::pivot::moves::{apply_by, unapply_by};
     let q = word_turn_90();
     let (mut f, chord) = coboundary_triangle_with_edge(&q);
@@ -342,7 +342,7 @@ fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
 /// filed on its plane axes either way and the fixture would have passed
 /// without the change.
 #[test]
-fn a_word_is_filed_under_the_carriage_and_the_gauge_it_acts_by() {
+fn admit_words_acting_files_by_carriage_and_gauge() {
     use crate::transducer::alphabet::Derivation;
     use crate::transducer::sentence::{admit_words_acting, on_axis_of, retract_words_acting, AxisIndex};
     use crate::transducer::stalk::Invariant;
@@ -423,7 +423,7 @@ fn a_word_is_filed_under_the_carriage_and_the_gauge_it_acts_by() {
 /// applies and re-reads off the written faces, refusing unless every member
 /// path discharges the axis exactly.
 #[test]
-fn a_word_is_filed_where_it_acts_and_the_chart_coarsens_until_it_answers() {
+fn on_axis_of_coarsens_chart_until_answered() {
     use crate::transducer::alphabet::Derivation;
     use crate::transducer::sentence::{admit_words_acting, on_axis_of, retract_words_acting, AxisIndex};
     use crate::transducer::stalk::Invariant;
@@ -515,7 +515,7 @@ fn a_word_is_filed_where_it_acts_and_the_chart_coarsens_until_it_answers() {
 /// does not touch the Frame. Every site is asserted on that one orbit — the
 /// keying invariant is total or it is not an invariant.
 #[test]
-fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
+fn open_axis_on_keys_on_edge_composite() {
     use crate::transducer::sentence::{opened_axis_on, orbit_row_on};
     let q = word_turn_90();
     // The ends are two SITES: one chart each (54.2), one vertex of the
@@ -604,10 +604,10 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
 /// for those. This asserts the certificate against the form for both kinds.
 ///
 /// AND THE SAME HOLDS FOR EVERY MOVE, not only an opening — see
-/// `a_word_moves_certified_rank_counts_the_siblings_it_moved` below, which is
+/// `trial_certifies_word_move_rank_with_siblings` below, which is
 /// the `Word` arm of the identical reading.
 #[test]
-fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
+fn trial_certifies_opening_rank_form_makes() {
     let q = word_turn_90();
     let f = chord_form(&[q.clone(), q.clone()]);
     assert_eq!(f.orbits.len(), 2, "two chords of one class close two orbits");
@@ -726,7 +726,7 @@ fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
 /// Every arm of the sequence is asserted, because the gate is the CRYSTAL'S
 /// OWN ANSWER and the FORM'S OWN FILING, never a trial's failure.
 #[test]
-fn an_unanswered_irreducible_residual_is_widened_and_a_reducible_or_unasked_one_is_not() {
+fn candidates_for_widens_only_published_unanswered_residual() {
     let q = word_turn_90();
     let mut f = chord_form(std::slice::from_ref(&q));
     let kappa = f.class_vector(0).expect("the chord closes one orbit");
@@ -821,7 +821,7 @@ fn an_unanswered_irreducible_residual_is_widened_and_a_reducible_or_unasked_one_
 /// drive makes at `apply_pivot`: whatever the trial certifies, the form
 /// makes.
 #[test]
-fn a_word_moves_certified_rank_counts_the_siblings_it_moved() {
+fn trial_certifies_word_move_rank_with_siblings() {
     let q = word_turn_90();
     let f = chord_form(&[q.clone(), q.clone()]);
     assert_eq!(f.orbits.len(), 2, "two chords close two orbits");
@@ -882,7 +882,7 @@ fn a_word_moves_certified_rank_counts_the_siblings_it_moved() {
 /// the trial refuses what the unperturbed trial certifies. A form with no
 /// cells reads no agreement and the same move certifies.
 #[test]
-fn a_move_that_splits_two_agreeing_circuits_of_a_cell_is_unclosed() {
+fn trial_refuses_move_splitting_agreeing_circuits() {
     let q = word_turn_90();
     let mut f = chord_form(&[q.clone(), q.clone()]);
     let [lp0, lp1] = f.orbits.as_slice() else { panic!("two chords close two orbits") };
@@ -963,7 +963,7 @@ fn a_move_that_splits_two_agreeing_circuits_of_a_cell_is_unclosed() {
 /// With bidirectional admission, both A and B are indexed with the direct and
 /// inverse transports, and non-rotor carriages are filed on their proper axes.
 #[test]
-fn face_words_and_edge_transports_admit_bidirectionally_on_member_charts() {
+fn admit_words_acting_files_both_member_charts() {
     use crate::transducer::sentence::{
         admit_words_acting, on_axis_of, retract_words_acting, AxisIndex, FacePlace, FormFace,
     };

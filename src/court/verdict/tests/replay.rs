@@ -42,7 +42,7 @@ fn star_of(f: &Form, v: &coord::VertexAt) -> coord::Overlap {
 
 /// A clean word replays; an unparseable body is a named Slashed state.
 #[test]
-fn replay_accepts_clean_and_names_false_speech() {
+fn blind_replay_accepts_clean_rule_slashes_unparseable() {
     let w = clean_word();
     assert!(blind_replay(&w, &mut super::common::budget()).is_none(), "a clean derivation replays");
     let ruling = rule(&[], &Keyed::new(), &Stalks::default(),&w.address(), None, None, &mut super::common::budget());
@@ -59,7 +59,7 @@ fn replay_accepts_clean_and_names_false_speech() {
 /// against the word's base magnitude, and the section is counted on the
 /// word, never re-derived from the chain.
 #[test]
-fn deepened_word_replays_on_a_peer() {
+fn blind_replay_accepts_deepened_word_on_peer() {
     let mut w = clean_word();
     assert!(blind_replay(&w, &mut super::common::budget()).is_none());
     let base = w.base_magnitude();
@@ -269,7 +269,7 @@ fn replay_form_refuses_unruled_glue_and_replays_resolved() {
 /// 34.1: a sentence whose tape does not parse whole is refused by name,
 /// never partly read. This is `REFUSE_FORM_TAPE`'s producing test (3.5).
 #[test]
-fn a_form_whose_tape_does_not_parse_is_refused_by_name() {
+fn replay_form_refuses_unparsed_tape_by_name() {
     use crate::transducer::sentence::as_element_form;
     let e = as_element_form(&closed_turn_form(), [1, 0, 0, 0]).expect("tape");
     assert_eq!(replay_form(&e, &|_| None, &mut super::common::budget()), None, "the whole tape replays");
@@ -290,7 +290,7 @@ fn a_form_whose_tape_does_not_parse_is_refused_by_name() {
 /// the orbit does not replay. The fallback this refuses survived 0.12b under
 /// the name `class_or_rotor_key`.
 #[test]
-fn an_orbit_whose_holonomy_is_not_a_versor_is_refused_not_keyed() {
+fn form_orbits_replay_refuses_non_versor_holonomy_unkeyed() {
     use crate::transducer::alphabet::{Rotor, Word};
     let mut f = closed_turn_form();
     assert!(f.orbits.is_empty() && f.rank().is_some(), "a tree has a rank, and it is zero");
@@ -372,7 +372,7 @@ fn pivot_certificate_replays_or_refuses() {
 /// A18: the tape's stored orbits may not claim a rank below the forest
 /// the faces re-derive.
 #[test]
-fn rank_lost_refused() {
+fn replay_form_replays_filed_torsion_without_taped_forest() {
     use crate::transducer::alphabet::Word;
     use crate::transducer::sentence::as_element_form;
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
@@ -457,7 +457,7 @@ fn rank_lost_refused() {
     // not a versor has no class (15.3), `rank()` answers `None`, and the
     // court refuses rather than counting it under a key of the rotor's
     // bytes — which is
-    // `an_orbit_whose_holonomy_is_not_a_versor_is_refused_not_keyed`.
+    // `form_orbits_replay_refuses_non_versor_holonomy_unkeyed`.
     assert!(f.rank().is_some(), "this form's rank is measurable");
 }
 
@@ -466,7 +466,7 @@ fn rank_lost_refused() {
 /// an Unfolded Remainder with nothing left does not move; an identity
 /// orbit does not move.
 #[test]
-fn vertex_tape_and_moves_replay_or_refuse() {
+fn replay_form_refuses_vertex_tape_and_still_moves() {
     use crate::transducer::alphabet::Word;
     use crate::transducer::sentence::{as_element_form, Measure};
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
@@ -619,7 +619,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
 /// with a 90° turn there. What an edge carries is judged on the family
 /// (`edges_rederive_frames`), never by its order.
 #[test]
-fn a_face_whose_edge_word_has_infinite_order_is_not_refused_for_its_order() {
+fn replay_form_accepts_edge_of_infinite_order() {
     use crate::transducer::alphabet::{Order, Word};
     use crate::transducer::sentence::as_element_form;
     let mut edged = closed_turn_form();
@@ -649,7 +649,7 @@ fn a_face_whose_edge_word_has_infinite_order_is_not_refused_for_its_order() {
 /// order, it replays — through the tape, where the court reads the zero —
 /// and at a period the orbit does not have it is refused by name.
 #[test]
-fn a_filed_orbit_of_infinite_order_replays_and_a_wrong_period_does_not() {
+fn replay_form_refuses_free_orbit_and_wrong_period() {
     use crate::transducer::alphabet::{LetterId, Order, Word};
     use crate::transducer::sentence::{as_element_form, FiledOrbit, Transport};
     let p5 = LetterId::pythagorean_5((0, 1)).expect("(3,4,5)");
@@ -718,7 +718,7 @@ fn a_filed_orbit_of_infinite_order_replays_and_a_wrong_period_does_not() {
 /// replaces, `REFUSE_NO_DESCENT`, fired on a zero magnitude — a fact about
 /// price, ruled on by a court.
 #[test]
-fn a_form_that_leaves_a_remainder_is_refused_for_closure() {
+fn blind_replay_on_refuses_remainder_as_not_closed() {
     use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
     let grid = |rows: &[&str]| -> crate::arc::Grid {
         rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
@@ -791,7 +791,7 @@ fn citing_form(
 /// the vertex named is not in it — which is a claim about the tape and a
 /// refusal at the vertex that made it.
 #[test]
-fn a_court_composes_a_resolved_citation_and_refuses_one_naming_no_vertex() {
+fn replay_form_at_composes_citation_refuses_missing_vertex() {
     use crate::transducer::family::NoCrystal;
     use crate::transducer::sentence::as_element_form;
     let inner = closed_turn_form();
@@ -833,7 +833,7 @@ fn a_court_composes_a_resolved_citation_and_refuses_one_naming_no_vertex() {
 /// the citations, so a voice could carry citations that do not reach it;
 /// the court's own re-derivation is what refuses that, at the vertex.
 #[test]
-fn a_derivation_that_does_not_compose_to_its_word_is_refused_at_the_vertex() {
+fn replay_form_at_refuses_uncomposed_derivation_at_vertex() {
     use crate::transducer::family::NoCrystal;
     use crate::transducer::sentence::as_element_form;
     let inner = closed_turn_form();
@@ -890,7 +890,7 @@ fn a_derivation_that_does_not_compose_to_its_word_is_refused_at_the_vertex() {
 /// while the faces carry a 180°-turn edge: the orbit is flat on the reading
 /// the court had and curved on the one the voice made.
 #[test]
-fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
+fn form_orbits_replay_reads_edge_holonomy_on_flat_transport() {
     use crate::transducer::alphabet::{LetterId, Word};
     use crate::transducer::sentence::{FiledOrbit, Transport};
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane");

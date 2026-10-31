@@ -68,7 +68,7 @@ fn each_demand_carries(
 /// crystal holding nothing, leaves the form it takes back with a `Standing`
 /// vertex on the orbit's chart, in the holonomy's class.
 #[test]
-fn an_expanded_bubble_stands_its_orbits_demand_on_the_form_it_takes() {
+fn expand_with_stands_orbit_demand_on_held_form() {
     let form = edge_chord_form(&[Word::formed(eleven())]);
     let mut b = Bubble { form: Some(form), ..Default::default() };
     let atlas = Stalks::default();
@@ -91,7 +91,7 @@ fn an_expanded_bubble_stands_its_orbits_demand_on_the_form_it_takes() {
 /// by a word at its chart writes the same vertex, so the two paths are one
 /// reading (law 12).
 #[test]
-fn a_pivoted_on_bubble_stands_its_orbits_demand_on_the_form_it_takes() {
+fn pivot_on_stands_orbit_demand_on_held_form() {
     use crate::transducer::element::{canonical_chain, from_canonical};
     let form = edge_chord_form(&[Word::formed(eleven())]);
     let rem = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2)];

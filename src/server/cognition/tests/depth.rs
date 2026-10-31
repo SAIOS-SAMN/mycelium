@@ -40,7 +40,7 @@ fn sentence_with(w: Word, tag: u8) -> Element {
 /// `Standing` is untouched by any of it: the word is `Ruled` here at
 /// depth 1 and still `Ruled` at depth 2. Arity is depth, not standing.
 #[test]
-fn a_word_committed_by_two_organs_reads_depth_two() {
+fn depth_of_counts_two_signers_as_two() {
     let mut k = Kernel::new();
     let said = sentence_with(turn_90(1), 1);
     let addr = said.address();
@@ -89,7 +89,7 @@ fn cite(at: crate::chronometry::Stamp) -> crate::chronometry::Cite {
 /// distinct signers, not the receipts — an organ cannot deepen a word by
 /// acting on it again (47.3). Depth is read at the admitting stamp.
 #[test]
-fn one_signer_acting_twice_is_still_one_vantage() {
+fn depth_at_counts_repeat_signer_once() {
     let mut k = Kernel::new();
     let at = crate::chronometry::Stamp { h: 3, vk: [4; 32], k: 2, i: 0 };
     // A word stands at the stamp: depth is read only where one does.
@@ -106,7 +106,7 @@ fn one_signer_acting_twice_is_still_one_vantage() {
 /// word of this court stands at files nothing, so the index never holds a
 /// stamp nothing reads it at.
 #[test]
-fn depth_is_filed_only_where_a_word_stands() {
+fn note_attestor_files_only_where_word_stands() {
     let mut k = Kernel::new();
     let at = crate::chronometry::Stamp { h: 3, vk: [4; 32], k: 2, i: 0 };
     let mut peer = crate::chronometry::ReceiptChain::with_vk([7; 32]);
@@ -121,7 +121,7 @@ fn depth_is_filed_only_where_a_word_stands() {
 /// about a word a court seals; learning and uttering are sealed by nothing
 /// since the voices' chains retired.)
 #[test]
-fn an_act_about_a_word_is_not_a_vantage_behind_it() {
+fn depth_at_ignores_acts_about_word() {
     let mut k = Kernel::new();
     let at = crate::chronometry::Stamp { h: 5, vk: [4; 32], k: 4, i: 0 };
     // A word stands at the stamp: depth is read only where one does.
@@ -141,7 +141,7 @@ fn an_act_about_a_word_is_not_a_vantage_behind_it() {
 /// court holds, so a court that reads its own receipts back reads the
 /// same depths. Nothing about depth is written down (law 12).
 #[test]
-fn the_depth_index_rebuilds_from_the_chain_alone() {
+fn rebuild_attestors_rederives_depth_from_chain() {
     let mut k = Kernel::new();
     let said = sentence_with(turn_90(1), 1);
     let addr = said.address();
@@ -168,7 +168,7 @@ fn the_depth_index_rebuilds_from_the_chain_alone() {
 /// 45.9: the instrument's reading — the ruled cover by depth, as a Vec of
 /// relations. Never a total and never an average (law 5).
 #[test]
-fn the_generators_are_read_by_depth() {
+fn generators_by_depth_reads_ruled_cover() {
     let mut k = Kernel::new();
     assert!(k.generators_by_depth().is_empty(), "a court that ruled nothing has no rows");
     let said = sentence_with(turn_90(1), 1);

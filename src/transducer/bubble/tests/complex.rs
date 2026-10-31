@@ -4,8 +4,10 @@
 use crate::transducer::bubble::*;
 use crate::transducer::sentence::{RankAxis, RankMove};
 
+/// Two bubbles on one chart held from disjoint remainders share an edge,
+/// never a triangle: they stand as two bubbles with no 2-simplex.
 #[test]
-fn two_bubbles_on_one_chart_share_an_edge_not_a_triangle() {
+fn hold_disjoint_remainders_share_no_triangle() {
     let mut c = Contemplation::new();
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
     c.hold(vec![(5, 5, 3, 4), (5, 6, 3, 4)]);
@@ -23,8 +25,10 @@ fn two_bubbles_on_one_chart_share_an_edge_not_a_triangle() {
     );
 }
 
+/// Overlapping remainders merge by fill: a shared site is Extended, the
+/// bubbles merge into one, and the merge is counted by name.
 #[test]
-fn overlapping_remainders_merge_by_fill() {
+fn hold_merges_overlapping_remainders_by_fill() {
     let mut c = Contemplation::new();
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
     c.hold(vec![(0, 1, 3, 4), (0, 2, 3, 4)]);
@@ -45,7 +49,7 @@ fn overlapping_remainders_merge_by_fill() {
 /// one cut by a candidate that re-fills rejoined. Each counted by its
 /// adjunct, cumulative, never reset.
 #[test]
-fn a_decoherence_is_settled_as_a_class_left_or_a_rejoining() {
+fn note_decohered_settles_as_class_or_rejoining() {
     use crate::transducer::alphabet::Rotor;
     use crate::transducer::cech::Section;
     use crate::transducer::element::identity_versor;
@@ -129,7 +133,7 @@ fn letter(id: Option<crate::transducer::alphabet::LetterId>) -> crate::transduce
 /// through the one fill path. Sections that agree with the gauges classify
 /// nothing; a step at a K already stepped does nothing.
 #[test]
-fn a_front_collapses_a_ring_whose_arrivals_agree() {
+fn transport_collapses_ring_whose_arrivals_agree() {
     use crate::transducer::alphabet::{LetterId, Rotor};
     let q = letter(LetterId::turn_90((0, 1)));
     let (mut c, vs) = ring_of_three([Rotor::identity(), q.clone(), q.geo(&q)], [q.clone(), q.clone(), q.geo(&q)]);
@@ -150,7 +154,7 @@ fn a_front_collapses_a_ring_whose_arrivals_agree() {
 /// is held — its class written into both thoughts' horizons — and the front
 /// stops at the far thought; nothing is deleted.
 #[test]
-fn a_front_holds_a_ring_whose_arrivals_disagree_and_stops() {
+fn transport_holds_disagreeing_ring_and_stops() {
     use crate::transducer::alphabet::{LetterId, Rotor};
     let p = letter(LetterId::pythagorean_5((0, 1)));
     let (mut c, vs) =
@@ -173,7 +177,7 @@ fn a_front_holds_a_ring_whose_arrivals_disagree_and_stops() {
 /// is taken before it; an entry whose cover is owed wraps nothing and is
 /// wrapped by nothing, taken in key order among the outermost.
 #[test]
-fn a_held_ring_is_docketed_and_the_docket_is_taken_outermost_first() {
+fn docket_order_takes_outermost_entry_first() {
     use crate::chronometry::Cite;
     use crate::transducer::alphabet::{LetterId, Rotor};
     let p = letter(LetterId::pythagorean_5((0, 1)));
@@ -216,7 +220,7 @@ fn a_held_ring_is_docketed_and_the_docket_is_taken_outermost_first() {
 /// dirty with that rotor in their horizon, and a discharge of its class key
 /// answers it by name — it leaves the open docket, counted.
 #[test]
-fn a_held_class_is_taken_and_answered_by_its_class_key() {
+fn take_docket_answers_held_class_by_class_key() {
     use crate::chronometry::Cite;
     use crate::transducer::alphabet::LetterId;
     let p = letter(LetterId::pythagorean_5((0, 1)));
@@ -251,7 +255,7 @@ fn a_held_class_is_taken_and_answered_by_its_class_key() {
 /// punctured; the edge made consistent, the hole's cap fills, and the entry
 /// leaves by name.
 #[test]
-fn a_held_rings_entry_is_answered_where_its_hole_seals_flat() {
+fn answer_hole_answers_entry_where_hole_seals_flat() {
     use crate::transducer::alphabet::{LetterId, Rotor};
     use crate::transducer::cech::Capped;
     use crate::transducer::element::identity_versor;
@@ -278,7 +282,7 @@ fn a_held_rings_entry_is_answered_where_its_hole_seals_flat() {
 /// exactly. A filled triangle beside it reads three free edge faces and Ȟ¹ 0:
 /// every 2-simplex a cell whatever its fill.
 #[test]
-fn a_leaf_off_a_ring_released_by_its_orbit_carries_no_loop_and_a_corner_does() {
+fn release_thought_loses_rank_for_corner_not_leaf() {
     use crate::transducer::alphabet::Rotor;
     use crate::transducer::cech::Section;
     use crate::transducer::element::identity_versor;
@@ -309,7 +313,7 @@ fn a_leaf_off_a_ring_released_by_its_orbit_carries_no_loop_and_a_corner_does() {
 
 /// Two pivots on the same bubble with no new word leave fills unchanged.
 #[test]
-fn two_pivots_without_a_new_word_leave_fills() {
+fn pivot_on_twice_without_new_word_leaves_fills() {
     use crate::transducer::element::{canonical_chain, from_canonical};
     let mut c = Contemplation::new();
     let rem = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
@@ -347,7 +351,7 @@ fn two_pivots_without_a_new_word_leave_fills() {
 /// that is the coordinate a candidate hangs under; a placeholder there is
 /// only invisible until the coordinate is read.
 #[test]
-fn vortex_collapses_by_glue_or_ruling() {
+fn seed_horizon_collapses_vortex_by_matching_certificate() {
     use crate::transducer::alphabet::{LetterId, Word};
     use crate::transducer::sentence::{Axis, ClassVector, PivotBy, PivotCertificate, Side};
     let mut c = Contemplation::new();
@@ -418,7 +422,7 @@ fn vortex_collapses_by_glue_or_ruling() {
 /// or by two carriages on one, is that many simplices — never one key for the
 /// pair, which the last filing overwrote.
 #[test]
-fn an_ideas_nerve_vertices_are_its_sections() {
+fn section_vertex_keys_each_chart_and_carriage() {
     use crate::transducer::element::{identity_versor, translator_versor};
     use crate::transducer::stalk::Invariant;
     let (a, b) = (Invariant::counts(&[1]), Invariant::counts(&[2]));

@@ -69,7 +69,7 @@ fn resumed(e: &Element, family: &[(Grid, Grid)], n: usize) -> (Replayed, usize) 
 /// it rules EXACTLY as a full-budget replay does: the same verdict, the
 /// same refusal at the same coordinate, on every stroke size that moves it.
 #[test]
-fn a_replay_longer_than_a_stroke_is_unread_then_resumed_to_the_same_ruling() {
+fn replay_resume_rules_as_whole_replay_across_strokes() {
     for (family, e) in [good(), undeclared()] {
         let (full, need) = whole(&e, &family);
         assert!(need > 2, "the fixture needs more reads than a stroke of two: {need}");
@@ -95,7 +95,7 @@ fn a_replay_longer_than_a_stroke_is_unread_then_resumed_to_the_same_ruling() {
 /// stroke short of the whole need the good word's replay is `Unread` — never
 /// `Refused` — and on the whole need it is `Clean`.
 #[test]
-fn a_spent_stroke_never_refuses_a_good_word() {
+fn replay_resume_leaves_good_word_unread_on_short_stroke() {
     let (family, e) = good();
     let (full, need) = whole(&e, &family);
     assert_eq!(full, Replayed::Clean);
@@ -116,7 +116,7 @@ fn a_spent_stroke_never_refuses_a_good_word() {
 /// stroke short of what the edges need it is spent, and on the whole need
 /// it is refused, by application.
 #[test]
-fn an_edge_on_a_spent_stroke_is_spent_never_refused() {
+fn edges_rederive_frames_from_spends_short_stroke_never_refuses() {
     use crate::verdict::body::{edges_rederive_frames_from, perceive_family};
     let a_in = ["110000", "000000", "110000", "000000"];
     let a_out = ["220000", "000000", "220000", "000000"];
@@ -163,7 +163,7 @@ fn an_edge_on_a_spent_stroke_is_spent_never_refused() {
 /// name, kind N, no reading of the word — and read whole on a caller's
 /// stroke as wide as the unit, which is left as it stood.
 #[test]
-fn an_off_lock_reader_reads_each_round_on_the_callers_wider_stroke() {
+fn to_completion_reads_unit_only_on_callers_wider_stroke() {
     use crate::transducer::sentence::ObstructionKind;
     let (_, e) = good();
     let unit = usize::try_from(crate::physics::spend_unit()).expect("a stroke's reads fit a usize") + 1;
@@ -187,7 +187,7 @@ fn an_off_lock_reader_reads_each_round_on_the_callers_wider_stroke() {
 /// strokes, `blind_replay_at` on the caller's stroke of one read is the
 /// whole replay's verdict.
 #[test]
-fn an_off_lock_reader_runs_the_replay_to_its_end() {
+fn blind_replay_at_answers_whole_replay_verdict() {
     for (family, e) in [good(), undeclared()] {
         let (full, _) = whole(&e, &family);
         let off = blind_replay_at(&e, &|_| None, Some(&family), &NoCrystal, &mut stroke(1));

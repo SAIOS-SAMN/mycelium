@@ -18,7 +18,7 @@ fn returns(k: &Kernel) -> usize {
 /// returns at every traversal after its first close, and a ring of infinite
 /// order (period zero) never carries.
 #[test]
-fn a_traversed_ring_writes_one_return_per_age() {
+fn close_ring_writes_one_return_per_age() {
     let mut k = Kernel::new();
     k.bind_identity([0x5c; 32]);
     let chart = Invariant::counts(&[1, 2]);
@@ -72,7 +72,7 @@ fn q(n: i64, d: i64) -> num_rational::BigRational {
 /// relation of the grammar — so the court reads it as a proof and checks its
 /// theorem, as it does a returning one.
 #[test]
-fn a_nerve_face_that_condenses_is_a_proof_checked() {
+fn book_outflow_checks_condensing_face_as_proof() {
     let mut k = Kernel::new();
     k.bind_identity([0x7b; 32]);
     let chart = Invariant::counts(&[2, 4]);
@@ -91,8 +91,10 @@ fn a_nerve_face_that_condenses_is_a_proof_checked() {
     assert_eq!(after.theorems_checked, before.theorems_checked + 1, "and its theorem is checked");
 }
 
+/// A chart's outflow enters the court's field and steps the chart's holonomy
+/// algebra.
 #[test]
-fn a_charts_outflow_enters_the_field_and_steps_its_holonomy_algebra() {
+fn book_outflow_steps_chart_holonomy_algebra() {
     use crate::transducer::cga::{self, Mv, E1, E3};
     let charge = {
         let (pi, pj) = (cga::point_at(&[q(0, 1), q(0, 1), q(0, 1)]), cga::point_at(&[q(3, 1), q(4, 1), q(0, 1)]));
@@ -145,7 +147,7 @@ fn a_charts_outflow_enters_the_field_and_steps_its_holonomy_algebra() {
 /// again is held. A sentence of one pair is a tree, and is read ringless by
 /// why — acyclic — never as nothing.
 #[test]
-fn the_courts_rank_is_read_off_the_re_derived_sentences() {
+fn step_rank_reads_rederived_sentence_rings() {
     let g = |rows: &[&str]| super::common::digits(rows);
     let slides = vec![
         (g(&["1100000", "0000000", "0002000", "0002200"]), g(&["1100000", "0000000", "0000020", "0000022"])),
@@ -182,7 +184,7 @@ fn the_courts_rank_is_read_off_the_re_derived_sentences() {
 /// THE CARRIER READ BACK BY ITS OWN COORDINATES: period, winding, rewrite,
 /// accrued draws and torsion — the accrued pay is a claim, kept whole.
 #[test]
-fn a_winding_carrier_reads_back_whole() {
+fn winding_round_trips_whole() {
     let w = Winding {
         ell: 4,
         m: 3,
@@ -202,7 +204,7 @@ fn a_winding_carrier_reads_back_whole() {
 /// address, and released whole by `pending_take` — never raised `steps`
 /// times and relieved once, the ratchet that climbed 𝒯 on the courts.
 #[test]
-fn a_witnessed_charge_is_relieved_whole_when_the_word_leaves() {
+fn pending_take_relieves_witnessed_charge_whole() {
     let mut k = Kernel::new();
     let word = super::common::sentence_of(&[(0, 0, 1), (0, 1, 1)], &[(0, 0, 2), (0, 1, 2)]).expect("a sentence");
     let addr = word.address();

@@ -8,7 +8,7 @@ use crate::client::sdk::*;
 /// nothing references is shed at once — no window, no clock; the genome
 /// never sheds.
 #[test]
-fn a_dialect_word_stands_while_a_thought_glues_it_and_the_genome_never_sheds() {
+fn shed_keeps_glued_dialect_word_and_genome() {
     let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let e2 = two_body_sentence([&[(1, 3), (1, 3)], &[(3, 5), (3, 5)]]);
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("shed"));
@@ -29,7 +29,7 @@ fn a_dialect_word_stands_while_a_thought_glues_it_and_the_genome_never_sheds() {
 /// THE GENOME HOLDS IT: its receipt is what keeps it from being said twice,
 /// so it is referenced while it is unratified, whatever its thoughts did.
 #[test]
-fn a_taught_word_stands_until_it_is_ratified() {
+fn shed_keeps_taught_word_until_ratified() {
     let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("taught"));
     entity.remember_spoken(&e1);
@@ -49,7 +49,7 @@ fn a_taught_word_stands_until_it_is_ratified() {
 /// do ("what a test never does ... read the network"). Nothing about the
 /// claim needed the wire: standing is complete before anything is uttered.
 #[test]
-fn standing_a_form_is_an_act_at_the_minds_k_and_moves_no_clock() {
+fn stand_acts_at_mind_k_and_moves_no_clock() {
 let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
 let mut entity = Entity::open("127.0.0.1:1", Kernel::named("clock"));
 assert_eq!(entity.own_k(), 0, "a mind none of whose orbits returned seats at zero");
@@ -95,7 +95,7 @@ assert_eq!(
 /// measured a span of the wrong clock. A span in a mind's own K is not
 /// comparable across voices; TUniversal is the shared coordinate.
 #[test]
-fn the_contemplation_is_stamped_with_tuniversal_and_the_shed_with_the_voices_own_k() {
+fn expand_ideas_stamps_contemplation_with_tuniversal() {
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("clocks"));
     // Two clocks, driven apart: an orbit this mind acted in, and a height
     // read off the mesh.
@@ -138,7 +138,7 @@ fn the_contemplation_is_stamped_with_tuniversal_and_the_shed_with_the_voices_own
 /// demand standing on the court's docket, which `withhold_form` does
 /// whether or not there was room.
 #[test]
-fn a_thought_the_room_cannot_hold_is_withheld_not_evicted() {
+fn hold_form_withholds_without_room_never_evicts() {
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("room"));
     entity.hold_chain(vec![(9, 0, 1, 2)]);
     let held_now = entity.contemplation.len();
@@ -181,7 +181,7 @@ fn a_thought_the_room_cannot_hold_is_withheld_not_evicted() {
 /// RETURNS on the lapse, lane by lane, so the reserve is not a one-way
 /// ratchet: this is the exhale the breathing condition asked for.
 #[test]
-fn a_hold_draws_its_own_lanes_and_returns_them_on_the_lapse() {
+fn hold_form_draws_own_lanes_and_release_returns_them() {
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("escrow"));
     let before = entity.physics.reserve.lanes();
     assert_eq!(before[0], before[3], "the reserve begins as four copies of one number");
@@ -235,7 +235,7 @@ fn a_hold_draws_its_own_lanes_and_returns_them_on_the_lapse() {
 /// restored undrawn, so the reserve cannot inflate. A remainder held alone
 /// draws nothing and holds nothing in escrow; released, it returns nothing.
 #[test]
-fn a_release_returns_only_what_the_hold_drew() {
+fn release_thought_returns_only_what_hold_drew() {
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("drew"));
     let before = entity.physics.reserve.clone();
     entity.hold_chain(vec![(9, 0, 1, 2)]);
@@ -264,7 +264,7 @@ fn a_release_returns_only_what_the_hold_drew() {
 /// with it — which the ordinal could not express, because an ordinal
 /// already handed out cannot be withdrawn.
 #[test]
-fn the_pivots_pending_work_is_a_set_of_coordinates() {
+fn take_unpivoted_drains_set_of_coordinates() {
     let mut epi = Epigenome::new();
     let a = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let addr = a.address();

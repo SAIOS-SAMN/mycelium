@@ -69,7 +69,7 @@ fn concyclic(w: &Mv, x: &Mv, y: &Mv, z: &Mv) -> bool {
 /// masses curve it. Switches of fibres sharing a pivot compose: the
 /// multi-pivot carriage `S₂₃ S₁₂` takes `P₁` through `P₂` to `P₃`, exactly.
 #[test]
-fn each_fibre_is_its_own_polarity_switch_and_pivots_compose() {
+fn switch_swaps_fibre_ends_and_composes_across_pivots() {
     let pivots = [[q(0, 1), q(0, 1), q(0, 1)], [q(3, 1), q(4, 1), q(0, 1)], [q(-2, 1), q(7, 1), q(1, 1)]];
     let masses = [q(2, 1), q(1, 1), q(5, 1)];
     let pts: Vec<Mv> = pivots.iter().map(|p| cga::point_at(p)).collect();
@@ -97,7 +97,7 @@ fn each_fibre_is_its_own_polarity_switch_and_pivots_compose() {
 /// then 4/5 is 6/5, as rays and as flow points — and a charge and its
 /// reciprocal return to the identity. No two sampled levels, no step.
 #[test]
-fn a_fibres_charge_is_a_point_on_its_field_flow_composing_by_ratio() {
+fn charge_composes_by_ratio_on_field_flow() {
     let f = fibre(2, 1);
     let (pi, pj) = (f.pi.clone(), f.pj.clone());
     let level = |l: BigRational| f.level(&l);
@@ -136,7 +136,7 @@ fn a_fibres_charge_is_a_point_on_its_field_flow_composing_by_ratio() {
 /// pivots) composed with the field is a loxodrome: one boost mode, one turn
 /// mode, both pivots fixed, every level kept.
 #[test]
-fn torsion_splits_from_the_field_and_does_no_work_across_its_levels() {
+fn split_separates_torsion_doing_no_work_across_levels() {
     let f = fibre(2, 1);
     let (pi, pj) = (f.pi.clone(), f.pj.clone());
     let b = f.blade().clone();
@@ -186,7 +186,7 @@ fn torsion_splits_from_the_field_and_does_no_work_across_its_levels() {
 /// fix it (`P₁∧P₂∧P₃∧P₄`, its dual); a fifth off it leaves no common shape,
 /// read as the five points' outer product not vanishing.
 #[test]
-fn the_pivots_own_sphere_is_the_shape_every_switch_keeps() {
+fn shape_of_pivot_sphere_kept_by_every_switch() {
     let pivots = [[q(1, 1), q(0, 1), q(0, 1)], [q(0, 1), q(1, 1), q(0, 1)], [q(-1, 1), q(0, 1), q(0, 1)], [q(0, 1), q(0, 1), q(1, 1)]];
     let masses = [q(2, 1), q(1, 1), q(5, 1), q(3, 7)];
     let pts: Vec<Mv> = pivots.iter().map(|p| cga::point_at(p)).collect();
@@ -228,7 +228,7 @@ fn the_pivots_own_sphere_is_the_shape_every_switch_keeps() {
 /// twist about the tether's axis puts a positive squared torque on it, a
 /// level step (pure field) puts none.
 #[test]
-fn a_tethers_strength_capacity_and_torque_are_exact() {
+fn fibre_strength_capacity_and_torque_are_exact() {
     let c = cga::point_at(&[q(0, 1), q(0, 1), q(0, 1)]);
     let a = cga::point_at(&[q(3, 1), q(4, 1), q(0, 1)]);
     let b = cga::point_at(&[q(6, 1), q(8, 1), q(0, 1)]);
@@ -255,7 +255,7 @@ fn a_tethers_strength_capacity_and_torque_are_exact() {
 /// the 180° turn about that line through the fourth axis, which acts on every
 /// point of the base exactly as the mirror does, and that turn is torsion.
 #[test]
-fn a_motion_carries_a_fibre_by_the_flow_its_modes_lie_on() {
+fn fibre_reads_motion_by_flow_of_its_modes() {
     let f = fibre(2, 1);
     let read = |m: &Mv| {
         let modes = crate::physics::capacitor::modes_of(m, 3, &mut crate::physics::Physics::default().stroke_n(1 << 16));
@@ -289,7 +289,7 @@ fn a_motion_carries_a_fibre_by_the_flow_its_modes_lie_on() {
 /// from P and never leaves the manifold; its streamlines are circles through
 /// P (horocycles of the ball Σ bounds).
 #[test]
-fn a_source_on_the_manifolds_own_infinity_stays_inside_it() {
+fn fascicle_source_on_manifold_stays_inside_it() {
     let (sigma, p, u) = manifold();
     let f = Fascicle { first: sphere_through(&along(&p, &u, &q(1, 1)), &p), second: sphere_through(&along(&p, &u, &q(2, 1)), &p) };
     for s in [&f.first, &f.second] {
@@ -320,7 +320,7 @@ fn a_source_on_the_manifolds_own_infinity_stays_inside_it() {
 /// and the outward flow are one flow seen from either side of Σ, with P its
 /// source on both. Σ's own points stand.
 #[test]
-fn reflection_in_the_manifold_switches_polarity_and_keeps_the_source() {
+fn sandwich_in_manifold_switches_polarity_keeps_source() {
     let (sigma, p, u) = manifold();
     let f = Fascicle { first: sphere_through(&along(&p, &u, &q(1, 1)), &p), second: sphere_through(&along(&p, &u, &q(2, 1)), &p) };
     let v = f.versor();
@@ -338,7 +338,7 @@ fn reflection_in_the_manifold_switches_polarity_and_keeps_the_source() {
 /// `t·u`, carried back, is a source at P that keeps Σ. They compose by their
 /// rational parameter — 1/7 then 2/5 is 19/35 — and every one keeps Σ.
 #[test]
-fn slivers_in_the_manifolds_own_scale_compose_and_keep_it() {
+fn sliver_composes_by_parameter_and_keeps_manifold() {
     let (sigma, p, u) = manifold();
     let pt = cga::point_at(&p);
     // The sphere at P with Σ's radius: `−½ r² = C·P` read off Σ's centre.
@@ -367,7 +367,7 @@ fn slivers_in_the_manifolds_own_scale_compose_and_keep_it() {
 /// through (6, 8, 0) is the fibre's own line: (−3, −4, 0) stands on it, (0, 0,
 /// 5) does not.
 #[test]
-fn the_fibration_places_a_point_by_the_pivots_pulls() {
+fn project_places_point_by_pivot_pulls() {
     let point = |x: i64, y: i64, z: i64| cga::point_at(&[q(x, 1), q(y, 1), q(z, 1)]);
     let far = point(6, 8, 0);
     assert_eq!(fibre(1, 1).project(&far), Some(q(1, 4)), "Pⱼ pulls four times harder");

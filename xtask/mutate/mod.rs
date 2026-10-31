@@ -354,7 +354,7 @@ mod tests {
 
     /// A run's failing tests are named and its passing ones counted.
     #[test]
-    fn a_run_names_its_failures_and_counts_its_passes() {
+    fn read_run_names_failures_and_counts_passes() {
         let o = out(
             "running 3 tests\ntest a::b ... ok\ntest a::c ... FAILED\ntest a::d ... ok\n\nfailures:\n    a::c\n",
             101,
@@ -365,7 +365,7 @@ mod tests {
     /// The audit passes only where every mutant was killed; a survivor, a
     /// stale anchor or an unbuilt mutant each leave it red.
     #[test]
-    fn only_killed_mutants_prove_their_laws() {
+    fn summary_passes_only_when_every_mutant_killed() {
         let killed = Verdict::Killed(vec!["t".to_string()]);
         assert!(summary(&[killed.clone(), killed.clone()]).1);
         for gap in [Verdict::Survived, Verdict::Stale("moved".into()), Verdict::Error("e".into())] {
@@ -375,7 +375,7 @@ mod tests {
 
     /// Every catalogued mutant changes its span and names a file and a suite.
     #[test]
-    fn every_mutant_breaks_something_named() {
+    fn catalogue_mutant_changes_span_and_names_suite() {
         for m in CATALOGUE {
             assert_ne!(m.before, m.after, "{}", m.law);
             assert!(!m.before.is_empty() && !m.file.is_empty() && !m.filter.is_empty(), "{}", m.law);
@@ -384,7 +384,7 @@ mod tests {
 
     /// Every `before` span occurs exactly once in its file in this tree.
     #[test]
-    fn every_anchor_is_unique_in_this_tree() {
+    fn catalogue_anchor_occurs_once_in_file() {
         let repo = repo_root().expect("the xtask manifest sits in the repository");
         for m in CATALOGUE {
             let text = std::fs::read_to_string(repo.join(m.file)).unwrap_or_default();

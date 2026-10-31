@@ -28,7 +28,7 @@ fn edge(i: usize, j: usize, g: Rotor) -> (usize, usize, Rotor, Versor) {
 /// there is no class. The triangle `0–1–2` with the chord `0–2` carrying
 /// exactly what the two tree edges compose to.
 #[test]
-fn a_chord_that_agrees_leaves_no_class() {
+fn solve_gauge_agreeing_chord_leaves_no_class() {
     let r = turn_90_on((0, 1));
     let edges = [edge(0, 1, r.clone()), edge(1, 2, Rotor::identity()), edge(0, 2, r.clone())];
     let Some(Gauge { sections, holonomy }) = solve_gauge(3, &edges) else {
@@ -54,7 +54,7 @@ fn a_chord_that_agrees_leaves_no_class() {
 /// one orbit's class, and the caller fell through to a reading that never
 /// sees the orbit.
 #[test]
-fn a_chord_that_disagrees_returns_the_cocycle_it_measures() {
+fn solve_gauge_disagreeing_chord_returns_cocycle() {
     let tree = turn_90_on((0, 1));
     let edges =
         [edge(0, 1, tree.clone()), edge(1, 2, Rotor::identity()), edge(0, 2, Rotor::identity())];
@@ -82,7 +82,7 @@ fn a_chord_that_disagrees_returns_the_cocycle_it_measures() {
 /// and enumerated no occupied axis — 3.9 would have had no candidate move
 /// to instantiate. Each `Ω` is its own cocycle.
 #[test]
-fn two_chords_are_two_cocycles_and_not_their_product() {
+fn solve_gauge_two_chords_return_two_cocycles() {
     let r = turn_90_on((0, 1));
     // A path 0–1–2–3 carrying one 90° turn, closed by two chords. The
     // tree puts `r` on 1, 2 and 3, so the chord 0–2 (carrying nothing)
@@ -121,7 +121,7 @@ fn two_chords_are_two_cocycles_and_not_their_product() {
 /// on the simplex and `classes()` carries what it holds. The simplex's
 /// own fill is untouched: the orbits are filed BESIDE it.
 #[test]
-fn a_disagreeing_chord_files_its_orbit_on_the_complex() {
+fn fill_files_disagreeing_chord_orbit_on_complex() {
     use super::common::{turn_90, v, vol};
     use crate::transducer::cech::{Complex, Fill};
     use crate::transducer::element::identity_versor as ident;
@@ -168,7 +168,7 @@ fn a_disagreeing_chord_files_its_orbit_on_the_complex() {
 /// does not is still a class: the orbit returns to the same orientation at a
 /// different place. A reader of the rotor alone called this exact.
 #[test]
-fn an_orbit_that_returns_turned_right_and_placed_wrong_is_a_class() {
+fn solve_gauge_misplaced_return_is_class() {
     use crate::transducer::cga;
     let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
     let walk = cga::at_three::translator(&q(3), &q(0), &q(0));

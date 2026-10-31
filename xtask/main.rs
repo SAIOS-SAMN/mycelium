@@ -67,7 +67,7 @@ mod tests {
     /// I4 — A TREE RED ON THE BOUND STILL REPORTS CLIPPY, and each reading
     /// is refused on its own.
     #[test]
-    fn a_red_bound_still_reports_clippy() {
+    fn verdict_reports_clippy_under_red_bound() {
         let both = verdict(Err("bound: over".into()), Err("clippy: 67".into()));
         assert_eq!(both, Err("bound: over\nclippy: 67".into()), "both readings, the first not hiding the second");
         assert_eq!(verdict(Err("bound: over".into()), Ok(())), Err("bound: over".into()));

@@ -557,7 +557,7 @@ mod tests {
     /// envelope ratio is no rational square corresponds nowhere (78.45); and
     /// a point that lands between sites carries nothing.
     #[test]
-    fn a_change_of_extent_is_the_dilation_between_envelopes() {
+    fn envelope_dilation_carries_sites_between_extents() {
         let grid = |h: usize, w: usize| -> Grid { vec![vec![1; w]; h] };
         assert_eq!(envelope_dilation(&grid(3, 4), &grid(3, 4)), Some((1, 1)));
         assert_eq!(envelope_dilation(&grid(3, 3), &grid(9, 9)), Some((3, 1)));
@@ -573,8 +573,10 @@ mod tests {
     }
 
 
+    /// A task's JSON parses into its train pairs and test inputs, and a
+    /// withheld test output is empty.
     #[test]
-    fn a_task_parses_into_train_pairs() {
+    fn parse_task_reads_train_and_test_pairs() {
         let json = r#"{"train":[{"input":[[0,1],[2,0]],"output":[[1,0],[0,2]]}],"test":[{"input":[[3]]}]}"#;
         let t = parse_task(json).expect("parses");
         assert_eq!(t.train.len(), 1);
@@ -583,6 +585,8 @@ mod tests {
         assert!(t.test[0].1.is_empty(), "a withheld test output is empty");
     }
 
+    /// A grid's painted sites omit the background, each kept as row,
+    /// column and hue.
     #[test]
     fn painted_of_grid_omits_background() {
         // hue-0 sites are dropped; painted sites keep (row, col, hue).
@@ -596,7 +600,7 @@ mod tests {
     /// two-pair family as no larger than its wider pair, so a bond measured
     /// from it could not cover the family it was measured from.
     #[test]
-    fn family_cover_is_the_lane_wise_sum_of_its_pairs() {
+    fn family_cover_sums_pairs_lane_wise() {
         let small = (vec![vec![1, 1]], vec![vec![2, 2]]);
         let wide = (vec![vec![1, 1, 1]], vec![vec![2, 2, 2]]);
         let cover = family_cover(&[small.clone(), wide.clone()]).expect("measured");
@@ -619,8 +623,10 @@ mod tests {
         assert!(family_cover(&[]).is_none(), "an empty family is unmeasured, not a zero bond");
     }
 
+    /// The Euclidean gcd is exact and the frame ratio is total, an empty
+    /// frame reading `((0, 0), (0, 0))`.
     #[test]
-    fn exact_euclidean_gcd_and_frame_ratio_total() {
+    fn frame_ratio_total_over_exact_gcd() {
         assert_eq!(gcd(0, 0), 0);
         assert_eq!(gcd(12, 8), 4);
         assert_eq!(gcd(7, 0), 7);

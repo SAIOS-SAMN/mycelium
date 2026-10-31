@@ -7,7 +7,7 @@ use crate::network::nerve::{Keyed, Prefix};
 /// Keys bind, rebind, read, and unbind exactly; a branch left with one
 /// child collapses; the walk lists everything. Prefix reads a stratum.
 #[test]
-fn the_keyed_relation_is_exact() {
+fn keyed_binds_rebinds_and_unbinds_exactly() {
     let mut k: Keyed<u32> = Keyed::new();
     let a = b"a".as_slice();
     let b = b"b".as_slice();
@@ -33,8 +33,10 @@ fn the_keyed_relation_is_exact() {
     assert_eq!(k.get(c), Some(&3));
 }
 
+/// A prefix of a key is its stratum, and the empty prefix is not a
+/// coordinate.
 #[test]
-fn a_prefix_of_a_key_is_its_stratum() {
+fn fiber_of_prefix_reads_its_stratum() {
     let mut k: Keyed<u8> = Keyed::new();
     k.insert([1u8, 10, 0], 1);
     k.insert([1u8, 10, 1], 2);
@@ -79,7 +81,7 @@ fn a_prefix_of_a_key_is_its_stratum() {
 /// end of a key, so a short key sits among long ones as though padded, and
 /// a representative shorter than the prefix answers for nothing.
 #[test]
-fn the_prefix_read_answers_what_the_filter_answered_whatever_the_trie_shape() {
+fn fiber_matches_filter_for_every_trie_shape() {
     // A spread of keys: shared prefixes, one a proper prefix of another,
     // lengths from one byte to four, and a byte value that differs only in
     // its lowest bit (adjacent branch points).
@@ -166,7 +168,7 @@ fn the_prefix_read_answers_what_the_filter_answered_whatever_the_trie_shape() {
 /// the reading stays true whatever the trie's shape, since the assertion
 /// is against the carrier's own size and not a constant.
 #[test]
-fn a_fiber_read_visits_its_own_subtree_and_not_the_carrier() {
+fn fiber_visits_own_subtree_not_carrier() {
     use crate::network::nerve::keyed::work;
     let mut k: Keyed<u32> = Keyed::new();
     for i in 0u32..1000 {
@@ -207,8 +209,10 @@ fn a_fiber_read_visits_its_own_subtree_and_not_the_carrier() {
     assert_eq!(work::visits(), 0, "absence costs the prefix read and no walk");
 }
 
+/// A key and its proper prefix are bound side by side, in either insertion
+/// order.
 #[test]
-fn a_key_and_its_proper_prefix_coexist() {
+fn insert_keeps_key_and_its_proper_prefix() {
     let mut k: Keyed<u8> = Keyed::new();
     k.insert([1u8, 0], 1);
     k.insert([1u8], 2);
@@ -232,7 +236,7 @@ fn a_key_and_its_proper_prefix_coexist() {
 /// the resume point is reached on the next circuit, and a budget beyond
 /// the carrier yields every key once and ends where it began.
 #[test]
-fn the_cursor_is_a_circuit() {
+fn cursor_walks_carrier_as_circuit() {
     let mut k: Keyed<u8> = Keyed::new();
     for b in [2u8, 4, 6, 8, 10] {
         k.insert([b], b);
@@ -282,6 +286,8 @@ fn the_cursor_is_a_circuit() {
     assert!(!cur.circuit(), "no circuit on an empty carrier");
 }
 
+/// The meet is the intersection of two carriers, and its cost is the
+/// shared prefixes: disjoint bulk in the larger trie costs it nothing.
 #[test]
 fn meet_is_intersection_and_costs_shared_prefixes() {
     use crate::network::nerve::work;
@@ -325,8 +331,10 @@ fn meet_is_intersection_and_costs_shared_prefixes() {
     assert_eq!(w, w4, "4N of disjoint bulk costs the meet nothing: {w} then {w4}");
 }
 
+/// A declared coordinate system refuses a foreign key and truncates a key
+/// to its canonical depth.
 #[test]
-fn declared_coordinate_system_refuses_foreign_key_and_truncates_canonical_depth() {
+fn for_system_refuses_foreign_key_and_truncates_depth() {
     use crate::network::nerve::keyed::relation::{CoordinateSystem, SchemaRefusal};
     let mut k: Keyed<u64> = Keyed::for_system(CoordinateSystem::Class);
     assert_eq!(k.system(), CoordinateSystem::Class);

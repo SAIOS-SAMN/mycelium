@@ -14,7 +14,7 @@ fn axes() -> Vec<Mv> {
 /// A FLAT CELL'S ORBIT CLOSES AT ONCE: under the identity every constructor
 /// is its own orbit.
 #[test]
-fn a_flat_cells_orbit_closes_at_once() {
+fn constructor_orbit_closes_at_once_under_identity() {
     let flat = Mv::scalar(q(1, 1));
     assert_eq!(constructor_orbit(&axes(), &[flat], &mut budget()), ConstructorOrbit::Closed { rays: 3 });
 }
@@ -23,7 +23,7 @@ fn a_flat_cells_orbit_closes_at_once() {
 /// carried onto each other's rays and `e₃` stays — the orbit closes on the
 /// three rays it began with.
 #[test]
-fn three_constructors_under_a_turn_90_close_on_three_rays() {
+fn constructor_orbit_closes_on_three_rays_under_turn_90() {
     let turn_90 = rotator(&q(1, 1), &q(1, 1));
     assert_eq!(carry(&turn_90, &axes()[0]), Some(Mv::blade(E2, q(1, 1))), "e₁ is carried onto e₂'s ray");
     assert_eq!(constructor_orbit(&axes(), &[turn_90], &mut budget()), ConstructorOrbit::Closed { rays: 3 });
@@ -33,7 +33,7 @@ fn three_constructors_under_a_turn_90_close_on_three_rays() {
 /// a constructor off, named with the generator, the constructor and the
 /// mode's class.
 #[test]
-fn a_screws_orbit_is_open_by_its_parabolic_mode() {
+fn constructor_orbit_opens_on_screw_parabolic_mode() {
     let screw = rotator(&q(1, 1), &q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
     let orbit = constructor_orbit(&axes(), &[screw], &mut budget());
     assert!(
@@ -46,7 +46,7 @@ fn a_screws_orbit_is_open_by_its_parabolic_mode() {
 /// (78.26(4)): a null vector is no reflection, by its place; an element with
 /// no inverse is no versor, by its place.
 #[test]
-fn a_null_constructor_or_a_non_versor_is_unread() {
+fn constructor_orbit_refuses_null_constructor_or_non_versor() {
     use crate::transducer::cga::OrbitUnread;
     let null = Mv::blade(EP, q(1, 1)).add(&Mv::blade(EM, q(1, 1)));
     assert_eq!(
@@ -68,7 +68,7 @@ fn composed(c: &Constructed) -> Mv {
 /// seventeen letters do not spell, spelled back into two constructors that
 /// compose to it (T1) and meet on its axis; their Gram form reads.
 #[test]
-fn a_turn_is_spelled_as_two_constructors_meeting_on_its_axis() {
+fn construct_spells_turn_as_two_mirrors_on_axis() {
     let turn = rotator(&q(4, 1), &q(1, 1));
     let c = construct(&turn, &mut budget()).expect("a turn spells");
     assert_eq!(c.shapes.len(), 1, "one mode");
@@ -81,7 +81,7 @@ fn a_turn_is_spelled_as_two_constructors_meeting_on_its_axis() {
 /// A turn about a point off the origin, spelled mode by mode, the whole T1,
 /// within `n + 2` constructors.
 #[test]
-fn a_turn_about_a_point_off_the_origin_is_spelled_and_composes_back() {
+fn construct_spells_off_origin_turn_composing_back() {
     let t = translator(&q(2, 1), &q(1, 1), &q(0, 1));
     let turn = t.geo(&rotator(&q(3, 1), &q(4, 1))).geo(&t.reverse());
     let c = construct(&turn, &mut budget()).expect("a turn about a point spells");
@@ -95,7 +95,7 @@ fn a_turn_about_a_point_off_the_origin_is_spelled_and_composes_back() {
 /// "null step" on the live wire — are each spelled by the forced two-step,
 /// certified on their fixed loci, and compose back (T1).
 #[test]
-fn a_translation_and_a_dilation_about_a_point_construct_and_compose_back() {
+fn construct_spells_translation_and_dilation_composing_back() {
     let slide = translator(&q(2, 1), &q(1, 1), &q(0, 1));
     let c = construct(&slide, &mut budget()).expect("a translation spells");
     assert!(composed(&c).projective_eq(&slide), "T1: the slide");
@@ -107,7 +107,7 @@ fn a_translation_and_a_dilation_about_a_point_construct_and_compose_back() {
 
 /// No residue, nothing constructed; no versor, no action to spell.
 #[test]
-fn the_identity_and_a_non_versor_are_not_constructed_by_name() {
+fn construct_refuses_identity_and_non_versor_by_name() {
     assert!(matches!(construct(&Mv::scalar(q(1, 1)), &mut budget()), Err(NotConstructed::NoResidue)));
     let cone = Mv::scalar(q(1, 1)).add(&Mv::blade(E1 | EM, q(1, 1)));
     assert!(matches!(construct(&cone, &mut budget()), Err(NotConstructed::NotVersor)));

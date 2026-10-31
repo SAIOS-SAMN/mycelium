@@ -16,7 +16,7 @@ use crate::transducer::stalk::{self};
 /// form does not cohere on it, because a circuit that never returns is not
 /// closed by anyone writing down that it never returns.
 #[test]
-fn the_tape_carries_a_filed_zero_as_infinite_order() {
+fn as_element_form_carries_filed_zero_as_open() {
     let w = infinite();
     let mut f = edge_chord_form(std::slice::from_ref(&w));
     let orbits = f.orbits.clone();
@@ -61,7 +61,7 @@ fn the_tape_carries_a_filed_zero_as_infinite_order() {
 /// Rebased, Unfolded, Demand (50.5), faces with their edge transport
 /// (50.3), and orbits.
 #[test]
-fn form_tape_v6_round_trips() {
+fn from_element_form_round_trips_every_vertex_kind() {
     let q = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
     let inner = closed_word_form(w.clone(), None);
@@ -254,7 +254,7 @@ fn form_tape_v6_round_trips() {
 /// kinds on one chart are two demands, one kind on two charts is two, and
 /// every kind decodes to itself; a kind carrying nothing is not a demand.
 #[test]
-fn a_demand_keys_by_kind_and_coordinates_and_an_empty_one_is_untyped() {
+fn demand_key_separates_kind_and_chart_refuses_empty() {
     use crate::transducer::alphabet::{standing, Rotor};
     let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
     let chart = stalk::Invariant::counts(&[1, 4, 4]);
@@ -344,7 +344,7 @@ fn a_demand_keys_by_kind_and_coordinates_and_an_empty_one_is_untyped() {
 /// second standing of the same kind on the same chart gathers its bodies
 /// under the one vertex, and a different chart is a second vertex.
 #[test]
-fn a_form_stands_one_demand_per_kind_and_chart_and_gathers_the_bodies() {
+fn stand_demand_gathers_bodies_per_kind_and_chart() {
     let chart = stalk::Invariant::counts(&[1, 4, 4]);
     let other = stalk::Invariant::counts(&[1, 6, 2]);
     let mut f = Form::default();
@@ -377,7 +377,7 @@ fn a_form_stands_one_demand_per_kind_and_chart_and_gathers_the_bodies() {
 /// must yield no form rather than a form missing its tail. Same claim, one
 /// carrier over.
 #[test]
-fn a_truncated_key_refuses_rather_than_decoding_short() {
+fn from_address_refuses_truncated_key() {
     let f = closed_word_form(Word::identity(), None);
     let key = crate::transducer::sentence::form_vertex_key(&f);
     assert!(
@@ -395,8 +395,10 @@ fn a_truncated_key_refuses_rather_than_decoding_short() {
     }
 }
 
+/// A sentence round-trips its nerve: vertices, faces and orbits survive the
+/// element form.
 #[test]
-fn a_sentence_round_trips_its_nerve() {
+fn from_element_form_round_trips_nerve() {
     let f = star_form(2, Vec::new());
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("form element");
     assert!(e.is_sentence());
@@ -427,7 +429,7 @@ fn a_sentence_round_trips_its_nerve() {
 /// vertices — is real and is not the encoder's to shorten: 53.4's
 /// quantified citation removes it in kind, one citation per fiber (K2).
 #[test]
-fn a_citation_is_the_cited_address_and_it_re_derives() {
+fn glue_cites_whole_address_and_re_derives() {
     use crate::transducer::sentence::{as_element_form, from_element_form, Vertex};
     let q = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
@@ -533,7 +535,7 @@ fn a_citation_is_the_cited_address_and_it_re_derives() {
 /// byte. Two distinct components, or one split differently, never share a
 /// key; and an over-long spelling of a length is no key at all.
 #[test]
-fn a_key_component_of_any_length_round_trips_and_never_collides() {
+fn put_key_bytes_round_trips_any_length_without_collision() {
     use crate::transducer::address::{put_key_bytes, take_key_bytes};
     for n in [0usize, 1, 127, 128, 16_383, 16_384, 70_000] {
         let comp = vec![0xabu8; n];

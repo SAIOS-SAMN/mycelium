@@ -8,8 +8,10 @@ use crate::transducer::alphabet::{Order, Word};
 use crate::transducer::element;
 use crate::transducer::sentence::*;
 
+/// Pivot candidates are read from occupied axes only, and the occupied axes
+/// come in declaration order.
 #[test]
-fn pivot_candidates_are_read_from_occupied_axes_only() {
+fn coordinates_lists_occupied_axes_in_declaration_order() {
     let id = ClassVector::of_word(&Word::identity()).expect("identity");
     assert!(id.occupied().is_empty() && id.is_zero());
     let k2 = ClassVector::of_word(&word_turn_180()).expect("180° turn");
@@ -44,7 +46,7 @@ fn pivot_candidates_are_read_from_occupied_axes_only() {
 /// A16 step 5: SEVERAL discharges are a vortex. Not "several that cannot be
 /// ordered" — several, whatever their μ⃗ says, because nothing orders them.
 #[test]
-fn several_discharges_are_held_as_vortex() {
+fn select_discharge_holds_several_as_vortex() {
     let a = cert(Axis::Unit(0), [2, 0, 1, 0]);
     let b = cert(Axis::Hue, [0, 3, 0, 1]);
     assert!(
@@ -59,7 +61,7 @@ fn several_discharges_are_held_as_vortex() {
 /// score (law 1). μ⃗ enters a trial once, to refuse a candidate that RAISES
 /// a lane, and never enters the comparison between certified discharges.
 #[test]
-fn mu_neither_certifies_nor_selects() {
+fn select_discharge_never_selects_by_mu() {
     let loose = cert(Axis::Unit(0), [4, 4, 4, 4]);
     let tight = cert(Axis::Unit(0), [1, 1, 1, 1]);
     let Discharge::Vortex(candidates) = select_discharge(&[loose.clone(), tight.clone()]) else {
@@ -216,7 +218,7 @@ fn mu_neither_certifies_nor_selects() {
 /// infinite-order holonomy — a free generator, which never returns — does
 /// not. The free part is what a demand is for (52.3).
 #[test]
-fn cauterize_filed_torsion_crystallizes() {
+fn pivot_orbit_cauterizes_filed_finite_torsion() {
     let mut f = chord_form(&[word_turn_90()]);
     assert!(
         f.is_closed(),
@@ -243,8 +245,9 @@ fn cauterize_filed_torsion_crystallizes() {
     );
 }
 
+/// Two orbits of one class are both filed, or both discharged.
 #[test]
-fn two_orbits_of_one_class_are_both_filed_or_discharged() {
+fn pivot_orbit_treats_both_orbits_of_class_alike() {
     let w = word_turn_90();
     fn two_chords(w: &Word) -> Form {
         chord_form(&[w.clone(), w.clone()])
@@ -282,8 +285,9 @@ fn two_orbits_of_one_class_are_both_filed_or_discharged() {
     assert_eq!(disc, 2, "both orbits discharge: {snaps:?}");
 }
 
+/// The pivot never reopens a closed chord.
 #[test]
-fn pivot_never_reopens_a_closed_chord() {
+fn pivot_orbit_never_reopens_closed_chord() {
     let mut cob = coboundary_chord_form();
     // AT1 — THE TREE GAUGE RETIRED (ruled), and with it the `Closed` snap
     // this asserted ("a coboundary chord closes by the tree gauge"). A cycle
@@ -384,7 +388,7 @@ fn pivot_never_reopens_a_closed_chord() {
 /// step. That is not a pivot that went well; it is a different thing the
 /// audit could not name. This exercises the AUDIT and never runs a loop.
 #[test]
-fn a_rank_move_is_one_unit_or_none() {
+fn rank_moved_admits_one_unit_or_none() {
     let before = Rank { torsion: 3, free: 2, offplane: 1, axes: 0 };
 
     // A18's step, from each coordinate it can leave: one unit, whether or

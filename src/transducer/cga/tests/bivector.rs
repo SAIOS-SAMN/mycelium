@@ -19,7 +19,7 @@ static TRANSVECTION_PLANES: std::sync::LazyLock<Vec<usize>> =
 /// sign of `I₁ = ⟨B²⟩₀/w`, and the identity is distinguished from a
 /// null shear by `B` itself, which is the split the engine had collapsed.
 #[test]
-fn the_four_bivector_readings_are_distinct_and_exact() {
+fn class_invariants_reads_four_bivector_kinds_exactly() {
     use crate::network::nerve::coord::BivectorKind;
     let kind = |m: &Mv| m.class_invariants().map(|(_, _, k)| k);
 
@@ -66,7 +66,7 @@ fn the_four_bivector_readings_are_distinct_and_exact() {
 /// axis is open and sounds nothing. The split is what lets a period be
 /// asked of the part that can answer.
 #[test]
-fn a_screw_splits_into_commuting_compact_and_open_parts() {
+fn bivector_split_splits_screw_into_commuting_compact_and_open() {
     // A COUPLED generator: a rotation in e₁e₂ (a² = 1) and a boost on
     // e₃e₋ at half magnitude (b² = ¼). Worked by hand:
     //   ⟨B²⟩₀ = −1 + ¼ = −¾ ,  Q = e₁e₂e₃e₋ ,  κ = Q² = −1
@@ -114,7 +114,7 @@ fn a_screw_splits_into_commuting_compact_and_open_parts() {
 /// that Cayley loses neither: a SCREW generator evolves to a screw
 /// versor, `I₂ ≠ 0` on both sides.
 #[test]
-fn cayley_evolves_a_generator_to_a_finite_versor_and_keeps_the_coupling() {
+fn cayley_evolves_generator_to_versor_keeping_coupling() {
     use crate::network::nerve::coord::BivectorKind;
     // A SIMPLE hyperbolic generator evolves to a hyperbolic motion.
     let boost_gen = Mv::blade(TRANSVECTION_PLANES[0], q(1, 3));
@@ -162,7 +162,7 @@ fn cayley_evolves_a_generator_to_a_finite_versor_and_keeps_the_coupling() {
 /// factorization has no such ceiling, and this MEASURES the difference:
 /// a simple boost reads `I₂ = 0`, a coupled motion reads `I₂ ≠ 0`.
 #[test]
-fn a_coupled_screw_has_a_non_zero_second_casimir() {
+fn versor_of_reflections_screw_has_nonzero_second_casimir() {
     let z = q(0, 1);
     let v = |a: (i64, i64), b: (i64, i64), c: (i64, i64), p: (i64, i64), m: (i64, i64)| {
         reflector_vector(&q(a.0, a.1), &q(b.0, b.1), &q(c.0, c.1), &q(p.0, p.1), &q(m.0, m.1))
@@ -202,7 +202,7 @@ fn a_coupled_screw_has_a_non_zero_second_casimir() {
 /// translations is the identity; here it is a rotation, and that is
 /// read off the algebra rather than asserted as a value.
 #[test]
-fn two_boosts_do_not_commute_and_their_commutator_is_a_rotation() {
+fn transvection_commutator_of_two_boosts_is_rotation() {
     use crate::network::nerve::coord::BivectorKind;
     let a = transvection(&q(2, 1), &q(1, 1), TRANSVECTION_PLANES[0]).expect("boost on e₁e₋");
     let b = transvection(&q(3, 1), &q(1, 1), TRANSVECTION_PLANES[1]).expect("boost on e₂e₋");
@@ -226,7 +226,7 @@ fn two_boosts_do_not_commute_and_their_commutator_is_a_rotation() {
 /// EVERY ROTOR LIFTS ELLIPTIC, and that is the statement that `Cl(4,0)`
 /// has no transvection — not a defect of the lift (54.7 R4).
 #[test]
-fn a_lifted_rotor_is_always_elliptic_or_trivial() {
+fn rotor_lifts_elliptic_or_trivial() {
     use crate::network::nerve::coord::BivectorKind;
     use crate::transducer::alphabet::{LetterId, Word};
     for plane in [(0, 1), (0, 2), (1, 3), (2, 3)] {

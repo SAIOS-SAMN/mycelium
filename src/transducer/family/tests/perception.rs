@@ -8,7 +8,7 @@ use crate::transducer::family::*;
 /// A pair form has its frame and a word for the carried body, and nothing is
 /// held between readings: a second reading reads the same form.
 #[test]
-fn pair_form_reads_compartments_once() {
+fn cipher_form_holds_nothing_between_readings() {
 let a = grid(&["1100", "0000"]);
 let b = grid(&["0011", "0000"]);
 let f1 = cipher_form(&a, &b);
@@ -38,7 +38,7 @@ assert_eq!(f1.faces.len(), f2.faces.len());
 /// placement with the identity word — never a remainder edge (78.63 governs
 /// 50.3: a rigidity is a symptom).
 #[test]
-fn a_rigid_scene_has_identity_edges_and_a_relative_motion_is_its_own_edge() {
+fn edge_transport_reads_rigid_identity_or_relative_motion() {
 use crate::transducer::family::perceive::Carried;
 let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
 let (a1, a2) = (body(&["1100", "0000"]), body(&["0000", "2200"]));
@@ -73,7 +73,7 @@ assert!(
 /// motion not a versor) relates to nothing, and the edge is refused
 /// `NotRigid`, by name.
 #[test]
-fn a_tear_is_refused_by_name() {
+fn edge_transport_refuses_tear_as_not_rigid() {
 let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
 let (a1, a2) = (body(&["1100", "0000"]), body(&["0000", "2200"]));
 let (b1, b2) = (body(&["0110", "0000"]), body(&["0000", "2200"]));
@@ -95,7 +95,7 @@ assert!(
 /// placement with the identity word — and a motion that is no versor is a
 /// tear, refused by name.
 #[test]
-fn a_bodiless_pair_is_related_by_its_two_motions() {
+fn relative_edge_relates_two_motions_refuses_tear() {
 use crate::transducer::cga::{translator_at, Mv, E1, E2};
 use crate::transducer::family::perceive::{relative_edge, Carried};
 let q = |n: i64| num_rational::BigRational::from_integer(n.into());
@@ -112,7 +112,7 @@ assert!(matches!(relative_edge(&v1, &torn).err().as_deref(), Some([EdgeRefusal::
 /// pair-body by the identity, and the edge transport is the exchange —
 /// `V_i⁻¹`, a placement with the identity word, finite on the word.
 #[test]
-fn edge_transport_lies_in_the_stabilizer_or_the_exchange() {
+fn edge_transport_reads_exchange_with_identity_word() {
 let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
 let (a1, a2) = (body(&["100"]), body(&["002"]));
 let (b1, b2) = (body(&["001"]), body(&["200"]));
@@ -134,7 +134,7 @@ assert!(matches!(edge.word.order(), crate::transducer::alphabet::Order::Finite(_
 /// onto is a `Creation`. Both ride the pair form as demand vertices with
 /// the links they stand for, and the form is not closed.
 #[test]
-fn a_created_body_is_a_source_or_creation_demand() {
+fn cipher_form_demands_source_or_creation_for_created_body() {
 use crate::transducer::sentence::Demand;
 let f = cipher_form(&grid(&["1100", "0000", "0000"]), &grid(&["1100", "0000", "0220"]));
 let demands: Vec<_> = f.demand_vertices().collect();
@@ -162,7 +162,7 @@ assert_eq!(*demands[0].1, Demand::Creation, "no input chart carries onto a bar o
 /// is not a second demand, a creation; a body that vanished names the
 /// empty chart on every axis.
 #[test]
-fn a_deformed_body_is_a_deformation_demand() {
+fn cipher_form_demands_deformation_for_deformed_body() {
 use crate::transducer::sentence::Demand;
 let f = cipher_form(&grid(&["1100"]), &grid(&["1000"]));
 let kinds: Vec<&Demand> = f.demand_vertices().map(|(_, k, _, _)| k).collect();
@@ -183,7 +183,7 @@ for (_, kind, _, _) in f.demand_vertices() {
 /// 50.5 — DEMANDS RIDE THE SENTENCE ONE PER (KIND, CHART): two created bars
 /// of one chart are one demand vertex carrying both bodies' links.
 #[test]
-fn demands_ride_the_sentence_one_per_chart() {
+fn cipher_form_keys_one_demand_per_kind_and_chart() {
 use crate::transducer::sentence::Demand;
 let f = cipher_form(&grid(&["1100000", "0000000", "0000000"]), &grid(&["1100000", "0000000", "0220022"]));
 let demands: Vec<_> = f.demand_vertices().collect();
@@ -210,7 +210,7 @@ assert!(
 /// its measure the deflation its words closed and the links its demand
 /// asks for — where a form with a remainder and no demand mints nothing.
 #[test]
-fn demands_ride_the_rule_form_and_the_sentence_mints_whole() {
+fn mint_sentence_mints_rule_with_declared_demands() {
 use crate::transducer::sentence::Demand;
 // The bars land at two different offsets from the 1-bars, so no one echo
 // says them (78.167 Phase B, Step 3): they stay the demand's to declare.
@@ -396,7 +396,7 @@ fn named_pairs(
 /// T2 lands, these three bodies gain their faces back from geometry
 /// rather than from a raster, and this assertion is the one that changes.
 #[test]
-fn a_row_of_three_touching_bodies_has_no_adjacency_face_until_the_tether() {
+fn named_faces_names_no_adjacency_for_disjoint_row() {
 let supports = supports_at(&[
     vec![],
     vec![(0, 0), (0, 1)],
@@ -446,7 +446,7 @@ assert_eq!(faces.len() + 1 - 4, 0, "the 1-skeleton is the star tree: no independ
 /// a compartment away from the others touches nothing and is named by the Frame
 /// alone.
 #[test]
-fn two_bodies_meeting_at_a_corner_are_named_a_contact_face() {
+fn named_faces_names_corner_contact_once() {
 let supports = supports_at(&[
     vec![],
     // An L whose own support turns a corner at (0,1)–(1,0)…
@@ -486,7 +486,7 @@ assert!(
 /// contact carries is read where the face is built, each member against its
 /// own transition (`pairing::contact_edge`).
 #[test]
-fn a_pair_the_topology_names_is_one_face_carrying_its_refraction() {
+fn named_faces_names_two_corner_pair_as_one_face() {
 let supports = supports_at(&[
     vec![],
     vec![(1, 0), (2, 0), (3, 0), (3, 1), (3, 2)],
@@ -514,7 +514,7 @@ assert_eq!(c.grade, 1, "in-plane corners, edges along the frame axis");
 /// between the least member at each side. The site chain still joins each
 /// side's own occupants.
 #[test]
-fn a_corner_between_two_bodies_of_several_members_offers_one_face() {
+fn named_faces_offers_one_contact_per_body_pair() {
 let supports = supports_at(&[
     vec![],
     vec![(0, 0)],
@@ -545,7 +545,7 @@ assert_eq!(ends(Incidence::Site), vec![(1, 2), (3, 4)], "each side's occupants c
 /// axis relates them. The corner of one frame could not see it, and the
 /// twenty adjacencies do.
 #[test]
-fn a_body_moving_between_frames_touches_the_body_that_stood() {
+fn named_faces_names_contact_across_frames() {
 let mut supports = crate::network::nerve::Keyed::new();
 supports.insert(root_member(1), sites(&[(0i64, 0i64, 0i64)]));
 supports.insert(root_member(2), sites(&[(0i64, 2i64, 0i64), (0, 2, 1), (0, 1, 1)]));
@@ -576,7 +576,7 @@ assert!(in_frame.is_empty(), "no in-frame adjacency relates them: {in_frame:?}")
 /// one member pair as two interfaces, never merged into one set. Lifted,
 /// their towers differ.
 #[test]
-fn a_straight_seam_and_a_bent_one_are_two_interfaces() {
+fn named_faces_keeps_straight_and_bent_seams_apart() {
 let mut supports = crate::network::nerve::Keyed::new();
 supports.insert(
     root_member(1),
@@ -620,7 +620,7 @@ assert_ne!(a.inertia, b.inertia, "a straight seam and a bent one lift to two tow
 /// offset applied, exact (or its reverse, where the bodies' key order turns
 /// with the placement).
 #[test]
-fn a_contact_family_is_constant_on_whether_and_carries_the_interface_as_what() {
+fn interface_between_moves_with_placement_as_versor() {
     let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
     let read = |dx: i64, dy: i64| {
         let mut supports = crate::network::nerve::Keyed::new();
@@ -653,7 +653,7 @@ fn a_contact_family_is_constant_on_whether_and_carries_the_interface_as_what() {
 /// it reads back into exactly those two (A21): no position of the base
 /// stands for a body.
 #[test]
-fn a_body_pair_is_keyed_by_two_addresses_and_reads_back_as_them() {
+fn body_pair_key_round_trips_two_addresses() {
     use crate::transducer::family::pairing::{body_pair_key, read_body_pair_key};
     use crate::transducer::peel::ShellKind;
     let piece = |s: &[(i64, i64, i64)]| {
@@ -679,7 +679,7 @@ fn a_body_pair_is_keyed_by_two_addresses_and_reads_back_as_them() {
 /// (k−1) chords are cycles that bound by construction. The face count is
 /// asserted here, so it cannot go quadratic without a red test.
 #[test]
-fn one_site_chains_its_occupants_and_does_not_clique_them() {
+fn named_faces_chains_site_occupants_without_clique() {
 let run = |k: usize| -> (usize, usize) {
     let mut supports = vec![Vec::new()];
     for _ in 0..k {
@@ -744,7 +744,7 @@ named_pairs(Some(&root_member(0)), &supports_at(&supports))
 /// one rule vertex. Matching by moduli would split them and leave a
 /// frame-only form.
 #[test]
-fn different_shapes_with_one_carriage_are_one_vertex() {
+fn extract_rule_with_joins_shapes_of_one_carriage() {
 let family = vec![
     (grid(&["1100"]), grid(&["0011"])),
     (grid(&["111000"]), grid(&["000111"])),
@@ -768,7 +768,7 @@ assert!(
 
 /// Pairing is ∃V on the shapes, not a digest of the moduli axes.
 #[test]
-fn pairing_is_carriage_not_a_moduli_digest() {
+fn extract_rule_pairs_by_carriage_not_moduli() {
 let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a translated bar extracts");
 let bodies = rule
@@ -788,7 +788,7 @@ assert!(carriage(&a[0], &b[0], &mut super::common::budget()).is_some(), "a verso
 /// A scene of five bodies on three charts answers "the chart whose fiber holds one"
 /// without a count compared to a literal.
 #[test]
-fn a_scene_of_five_bodies_on_three_charts_answers_the_chart_whose_fiber_holds_one() {
+fn chart_holding_one_finds_singleton_fiber() {
     let g = grid(&[
         "110333",
         "000000",
@@ -811,7 +811,7 @@ fn a_scene_of_five_bodies_on_three_charts_answers_the_chart_whose_fiber_holds_on
 /// extracted a demand before. 78.167 Phase B: the act reader states it —
 /// the bodies not selected erased — and the rule is its clauses alone.
 #[test]
-fn a_family_whose_rule_selects_that_body_extracts_a_rule_vertex_where_it_extracted_a_demand_before() {
+fn extract_rule_states_selection_without_demand() {
     let family = vec![
         (
             grid(&[
@@ -857,7 +857,7 @@ fn a_family_whose_rule_selects_that_body_extracts_a_rule_vertex_where_it_extract
 /// perceived in frame 1 has its compartments at `k = 1`, its centroid there,
 /// and the same chart as the square in frame 0.
 #[test]
-fn perception_3d_coordinates_preserve_frame_and_moments() {
+fn body_of_keeps_frame_on_support() {
     let compartments: Vec<Compartment> =
         [(0i64, 0i64, 1i64, 1u8), (0, 1, 1, 1), (1, 0, 1, 1), (1, 1, 1, 1)].map(Compartment::from).to_vec();
     let b3d = body_of(compartments).expect("a square is heard at n = 3");
@@ -874,8 +874,9 @@ fn perception_3d_coordinates_preserve_frame_and_moments() {
     assert!(carriage(&at_zero, &b3d, &mut super::common::budget()).is_some(), "and the translation along e₃ carries one onto the other");
 }
 
+/// Six-adjacency connects bodies across frames into one streamline.
 #[test]
-fn six_adjacency_connects_bodies_across_frames_into_one_streamline() {
+fn perceive_frames_joins_bodies_across_frames() {
     let frame0 = grid(&["10", "00"]);
     let frame1 = grid(&["10", "00"]);
     let bodies = perceive_frames(&[frame0, frame1]);
@@ -889,7 +890,7 @@ fn six_adjacency_connects_bodies_across_frames_into_one_streamline() {
 /// Audit N-3 — A SITE OF A BASE WITH ONE AXIS HAS NO GRID PLANE, and its
 /// section is refused by name.
 #[test]
-fn a_sectionless_site_is_counted_at_the_one_producer() {
+fn on_grid_refuses_site_without_grid_plane() {
     use crate::transducer::family::perceive::on_grid;
     assert_eq!(on_grid(&Site::of([4, 5, 0])), Some((4, 5)), "a site of n = 3 has its section");
     assert_eq!(on_grid(&Site::of([4])), None, "a site of n = 1 has no grid plane");

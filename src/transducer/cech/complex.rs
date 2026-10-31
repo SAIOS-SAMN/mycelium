@@ -354,7 +354,7 @@ impl Complex {
 
     /// FILED AT ITS FULL COORDINATES (rule 6). `ClassVector::class_key`
     /// writes the rotor's conjugacy invariants FIRST — proven, not
-    /// assumed, by `the_rotor_class_is_the_first_stratum_of_the_class_vector`
+    /// assumed, by `class_key_leads_with_rotor_class`
     /// — so the rotor class a court asks by is this key's depth-one
     /// stratum and the ask is a fiber read under it.
     ///

@@ -14,7 +14,7 @@ use super::common::*;
 /// refuses; the pullback reads a sibling's assignment onto the base at
 /// any scale exactly.
 #[test]
-fn the_versor_identifies_conformal_images_and_pulls_back_sections() {
+fn transition_carries_conformal_images_for_pullback() {
     let l = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2), (1, 0, 1, 2)];
     let shifted: Vec<_> = l.iter().map(|(r, c, b, a)| (r + 7, c + 3, *b, *a)).collect();
     let rotated = vec![(0i64, 0i64, 1u8, 2u8), (1, 0, 1, 2), (0, -1, 1, 2)];
@@ -38,6 +38,8 @@ fn the_versor_identifies_conformal_images_and_pulls_back_sections() {
     assert_ne!(positions(&l), positions(&shifted), "the raw lens sees only coordinates");
 }
 
+/// Composition of elements is the geometric product of their versors, and
+/// it is associative.
 #[test]
 fn compose_is_the_geometric_product() {
     let a = elem_from_versor(translator_versor(1, 0));
@@ -55,24 +57,28 @@ fn compose_is_the_geometric_product() {
     assert!(same_versor(&ab, &want));
 }
 
+/// A description composed with its reverse, on either side, is the identity.
 #[test]
-fn description_composed_with_its_reverse_is_identity() {
+fn compose_with_reverse_is_identity() {
     let g = elem_from_versor(translator_versor(3, -2));
     let rev = g.reverse().expect("a versor description reads backward");
     assert!(g.compose(&rev).expect("forms").is_identity(), "g ∘ g̃ = e — the coboundary closes");
     assert!(rev.compose(&g).expect("forms").is_identity(), "g̃ ∘ g = e");
 }
 
+/// A non-versor has neither a reverse nor an inverse.
 #[test]
-fn inverse_refuses_a_non_versor() {
+fn inverse_refuses_non_versor() {
     let mut e = Element::identity();
     e.action.spatial = Some(Versor::zero());
     assert!(e.reverse().is_none(), "a non-versor has no reverse");
     assert!(e.inverse().is_none(), "a non-versor has no inverse");
 }
 
+/// The reverse carries the described motion back: a point moved by the
+/// versor returns to its origin under the reverse.
 #[test]
-fn the_reverse_carries_the_described_motion_back() {
+fn reverse_carries_motion_back() {
     let g = elem_from_versor(translator_versor(4, 4));
     let v = g.versor().expect("V");
     let inv = g.reverse().expect("reverse").versor().expect("Ṽ");
@@ -87,8 +93,10 @@ fn the_reverse_carries_the_described_motion_back() {
     );
 }
 
+/// The inverse of a germinated residual is its chain with before and after
+/// swapped, and inverting twice gives the chain back.
 #[test]
-fn reverse_germ_is_the_inverse_chain() {
+fn inverse_of_residual_swaps_chain() {
     let a = [(0, 0, 1u8), (0, 1, 2), (1, 0, 3)];
     let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)];
     let g = from_canonical(&germinate(&a, &b).unwrap());
@@ -100,8 +108,9 @@ fn reverse_germ_is_the_inverse_chain() {
     assert_eq!(again.sub(), g.sub(), "inverse ∘ inverse is the chain");
 }
 
+/// The A5 canonical chain is idempotent and free of translation.
 #[test]
-fn a5_chain_canonical_idempotent_and_translation_free() {
+fn canonical_chain_is_idempotent_and_translation_free() {
     let a = vec![(3, 4, 1u8, 2u8), (3, 5, 1, 2)];
     let b = vec![(0, 1, 1u8, 2u8), (0, 0, 1, 2)];
     let ca = canonical_chain(&a).unwrap();
@@ -111,6 +120,7 @@ fn a5_chain_canonical_idempotent_and_translation_free() {
     assert_eq!(from_canonical(&ca).address(), from_canonical(&cb).address());
 }
 
+/// The carriage holds ρ once, with no second ρ beside it in the address.
 #[test]
 fn carriage_holds_rho_once() {
     let two = Q::from(BigInt::from(2));
@@ -133,7 +143,7 @@ fn carriage_holds_rho_once() {
 /// it; the two recompose to the carriage, and a reflection does not change
 /// the scale it carries.
 #[test]
-fn a_carriage_decomposes_into_its_dilator_and_translator_at_every_rho() {
+fn carriage_decomposes_into_dilator_and_translator() {
     use crate::transducer::cga;
     let q = |n: i64, d: i64| Q::new(BigInt::from(n), BigInt::from(d));
     for (rho, t1, t2) in [(q(1, 1), q(3, 1), q(5, 1)), (q(2, 1), q(3, 1), q(5, 1)), (q(1, 3), q(-2, 1), q(7, 2))] {
@@ -170,7 +180,7 @@ fn a_carriage_decomposes_into_its_dilator_and_translator_at_every_rho() {
 /// turns `e₂` into a base axis has no base action and is refused, never
 /// projected.
 #[test]
-fn the_base_action_of_a_rotor_is_exact_and_its_inverse_reads_it_back() {
+fn base_rotor_of_reads_back_versor_of_word() {
     use crate::transducer::alphabet::{LetterId, Rotor, Word, SLOT_PLANES_SIX};
     use crate::transducer::cga;
     let q = |n: i64| Q::from(BigInt::from(n));

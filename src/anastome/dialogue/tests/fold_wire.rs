@@ -6,8 +6,10 @@ use crate::chronometry::{ActKind, Place, ReceiptChain, Root};
 use crate::court::admission::SignedPrefix;
 use crate::economy::{Entry, Kind};
 
+/// The fold proposal, the witness's three answers and the rows act
+/// round-trip, and a short frame refuses.
 #[test]
-fn the_fold_proposal_the_witness_answers_and_the_rows_round_trip() {
+fn fold_witness_and_rows_round_trip() {
     let mut c = ReceiptChain::with_vk([6; 32]);
     let head = c.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
     let root = Root { at: Place { k: 4, i: 2 }, hash: [5; 32], height: 9 };

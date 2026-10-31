@@ -11,7 +11,7 @@ use crate::cognition::*;
 /// speech, and the install measures what the sentence closes there and
 /// mints — nothing is bound by the test.
 #[test]
-fn a_spoken_sentence_is_bound_to_its_tasks_family_and_mints() {
+fn speak_pair_binds_sentence_to_task_family_and_mints() {
     let mut home = Kernel::new();
     let mut peer = Kernel::new();
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
@@ -39,7 +39,7 @@ fn a_spoken_sentence_is_bound_to_its_tasks_family_and_mints() {
 /// one `creation` demand under it, and the stroke rules the sentence: the
 /// painted site is the remainder its demand names, valid and not closed.
 #[test]
-fn the_court_lists_each_demand_vertex_and_rules_the_closed_sub_complex() {
+fn court_settle_lists_demands_and_rules_closed_subcomplex() {
     let mut k = Kernel::new();
     let a = vec![(0, 0, 1), (0, 1, 1)];
     let b = vec![(0, 0, 2), (0, 1, 2), (1, 2, 3)];
@@ -58,7 +58,7 @@ fn the_court_lists_each_demand_vertex_and_rules_the_closed_sub_complex() {
 /// body pair admitted — is a pair the voice has no sentence for: nothing
 /// is spoken, nothing listed.
 #[test]
-fn a_pair_the_eyes_cannot_open_is_spoken_as_nothing() {
+fn speak_pair_unopened_pair_speaks_nothing() {
     let mut k = Kernel::new();
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, 1)];

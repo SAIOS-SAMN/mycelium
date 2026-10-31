@@ -59,7 +59,7 @@ fn generator_and_citer() -> (Element, Element) {
 /// not refused, and it is also not installed, so no generator is paid
 /// and no balance moves anywhere.
 #[test]
-fn a_citer_that_does_not_install_pays_no_generator() {
+fn perceive_speech_waiting_citer_pays_no_generator() {
     let teacher = [1u8; 32];
     let speaker = [3u8; 32];
     let (g, citer) = generator_and_citer();
@@ -129,7 +129,7 @@ fn install_on(k: &mut Kernel, voice: [u8; 32], e: &Element, task: &[u8]) {
 /// speaker's balance, which paid zero whenever the citer's own draw had
 /// already occupied the lane.
 #[test]
-fn a_cited_generators_speaker_is_paid_a_share_of_the_citers_mint() {
+fn use_credit_raises_teacher_room_without_mint() {
     use crate::client::sdk::Epigenome;
     use crate::transducer::family::{
         extract_rule_with, mint_sentence, cipher_form, sentence_measure, NoCrystal,
@@ -226,7 +226,7 @@ fn bar_turn_270() -> Vec<crate::transducer::family::TrainPair> {
 /// speech act and decoded by the court, so what is proved is what the
 /// wire carries and not what one process happened to hold.
 #[test]
-fn two_minds_reach_one_address_by_two_derivations_and_both_teachers_earn_room() {
+fn hear_frame_on_credits_each_teacher_of_two_derivations() {
     use crate::anastome::dialogue;
     use crate::client::sdk::Epigenome;
     use crate::transducer::family::{

@@ -21,7 +21,7 @@ fn close(c: &mut ReceiptChain) -> KStepReceipt {
 /// no act since the last seals nothing; a close at any other frame is
 /// refused.
 #[test]
-fn k_moves_where_a_cycle_closes_and_nowhere_else() {
+fn append_moves_k_only_at_close() {
     assert!(!crate::physics::axioms::OK1_K_COUNTS_CLOSED_CYCLES.is_empty());
     let mut c = ReceiptChain::with_vk([1; 32]);
     assert!(c.open_orbit().is_none(), "nothing acted, nothing to close");
@@ -59,7 +59,7 @@ fn k_moves_where_a_cycle_closes_and_nowhere_else() {
 /// the ledger's integrity check and by a peer's admission, exactly as a
 /// height that does not re-derive is.
 #[test]
-fn a_close_whose_frame_is_not_its_orbits_is_refused_on_read() {
+fn from_receipts_refuses_close_with_forged_frame() {
     let mut b = ReceiptChain::with_vk([2; 32]);
     let a0 = act(&mut b, [1, 1, 0, 0]);
     let forged = KStepReceipt::seal(
@@ -106,7 +106,7 @@ fn a_close_whose_frame_is_not_its_orbits_is_refused_on_read() {
 /// signer's orbit closed at the same tick — no constant, no threshold. The
 /// withholding it decides is the court's (`server::cognition::tests::orbit`).
 #[test]
-fn a_close_is_decided_by_exact_equality_of_frames_at_one_tick() {
+fn collides_by_exact_frame_equality_at_one_tick() {
     let mut other = ReceiptChain::with_vk([4; 32]);
     act(&mut other, [2, 0, 0, 0]);
     let other_close = close(&mut other);

@@ -12,7 +12,7 @@ use crate::verdict::REFUSE_FOLD_INEXACT;
 /// a stake nets nothing; rows above the fold stay in order; the tape
 /// carries the epoch rows; a ledger that does not conserve folds nothing.
 #[test]
-fn a_fold_re_expresses_the_prefix_as_epoch_rows_and_conserves() {
+fn fold_replaces_prefix_with_epoch_rows_and_conserves() {
     let a = |k: u64| at(k, [u8::try_from(k).expect("the test's heights are small literals, each one byte"); 32]);
     let mut t = Treasury::new();
     t.genesis([1; 32], [10, 10, 10, 10], a(1));

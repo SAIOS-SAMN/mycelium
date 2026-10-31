@@ -108,7 +108,7 @@ const NO_GAUGE: &[(u8, u8)] = &[];
 /// nothing has no presentation to factor through, so the word is the
 /// residue A22 peeled from the identity and the derivation cites nobody.
 #[test]
-fn a_voice_that_holds_nothing_spells_from_the_identity() {
+fn factor_versor_spells_from_identity_without_crystal() {
     let v = element::versor_of_word(&turn_90(2)).expect("a plane versor");
     let d = factor_versor(&NoCrystal, &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
@@ -123,7 +123,7 @@ fn a_voice_that_holds_nothing_spells_from_the_identity() {
 /// alone; this is not, and that is the difference between a language and
 /// a cipher.
 #[test]
-fn a_voice_that_holds_a_generator_derives_through_it() {
+fn factor_versor_derives_through_held_generator() {
     let held = Holds::of(turn_90(1), 1);
     let v = element::versor_of_word(&turn_90(2)).expect("a plane versor");
     let d = factor_versor(&held, &mut budget(), &v, NO_GAUGE)
@@ -147,7 +147,7 @@ fn a_voice_that_holds_a_generator_derives_through_it() {
 /// one measured versor as two derivations and ONE vertex. The address
 /// cannot tell them apart and must not; the derivations can.
 #[test]
-fn two_presentations_read_one_versor_as_two_derivations_of_one_vertex() {
+fn factor_versor_reads_two_presentations_as_one_vertex() {
     let v = element::versor_of_word(&turn_90(2)).expect("a plane versor");
     let a = factor_versor(&Holds::of(turn_90(1), 1), &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
@@ -168,7 +168,7 @@ fn two_presentations_read_one_versor_as_two_derivations_of_one_vertex() {
 /// derivations with no cache root anywhere in it. A memo that keyed the
 /// presentation would let a digest decide whether F re-derives.
 #[test]
-fn one_memoised_percept_gives_each_mind_its_own_derivation() {
+fn factor_versor_derives_per_mind_without_cache() {
     let v = element::versor_of_word(&turn_90(2)).expect("a plane versor");
     let a = factor_versor(&Holds::of(turn_90(1), 1), &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
@@ -242,7 +242,7 @@ fn versor_of_arc(s: i64, t: i64) -> crate::transducer::element::Versor {
 /// `π_17²`: the generator divides it once and nothing is left, so the
 /// residue is the identity.
 #[test]
-fn a_mind_taught_an_adjoined_generator_derives_through_it() {
+fn factor_versor_derives_through_adjoined_generator() {
     let held = Holds::of_letter(4, 1, 7);
     let v = versor_of_arc(4, 1);
     let d = factor_versor(&held, &mut budget(), &v, NO_GAUGE)
@@ -257,7 +257,7 @@ fn a_mind_taught_an_adjoined_generator_derives_through_it() {
 /// The same generator at multiplicity two: `π_17²` as a rotor, whose
 /// block arc is `π_17⁴`. The ring divides twice and the exponent says so.
 #[test]
-fn the_ring_cites_a_generator_at_its_full_multiplicity() {
+fn factor_versor_cites_generator_at_full_multiplicity() {
     let held = Holds::of_letter(4, 1, 7);
     // (4 + i)² = 15 + 8i.
     let v = versor_of_arc(15, 8);
@@ -274,7 +274,7 @@ fn the_ring_cites_a_generator_at_its_full_multiplicity() {
 /// what makes the two tests above a fact about the LANGUAGE and not about
 /// the arithmetic.
 #[test]
-fn a_mind_without_the_letter_still_demands_it() {
+fn factor_versor_demands_unheld_prime_letter() {
     let v = versor_of_arc(4, 1);
     let demanded = factor_versor(&NoCrystal, &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
@@ -292,7 +292,7 @@ fn a_mind_without_the_letter_still_demands_it() {
 /// lexicon's, the mind's letter reading — answers at once, unspelled,
 /// without it.
 #[test]
-fn whether_a_word_spells_is_read_without_searching_for_its_prime() {
+fn spells_reads_unspelled_without_prime_search() {
     use crate::transducer::alphabet::Rotor;
     use crate::transducer::family::{derivation, letter_reading, LetterReading};
     let big = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1i64 << 45));
@@ -306,7 +306,7 @@ fn whether_a_word_spells_is_read_without_searching_for_its_prime() {
 /// answers the generator's action, so a citation of a word the alphabet
 /// cannot spell verifies exactly as one it can.
 #[test]
-fn a_court_holding_the_letter_composes_a_citation_of_it() {
+fn verify_with_composes_citation_of_held_letter() {
     use crate::transducer::alphabet::Verified;
     let held = Holds::of_letter(4, 1, 7);
     let (letter_addr, letter_form) = letter_of(4, 1, 7);
@@ -344,7 +344,7 @@ fn a_court_holding_the_letter_composes_a_citation_of_it() {
 /// peels prefixes and the two charts share one. Asserted, because the
 /// whole ring branch rests on the mind being ABLE to offer the letter.
 #[test]
-fn a_versor_carrying_the_prime_finds_the_letter_at_its_chart() {
+fn generators_under_finds_letter_at_prime_chart() {
     use crate::transducer::alphabet::Rotor;
     let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
     let held = Holds::of_letter(4, 1, 7);
@@ -357,8 +357,10 @@ fn a_versor_carrying_the_prime_finds_the_letter_at_its_chart() {
     );
 }
 
+/// A spelled off-plane generator is factored through the held generator,
+/// and the derivation reproduces its rotor.
 #[test]
-fn derivation_factors_offplane_generator_and_verifies_rotor() {
+fn derivation_of_spelled_cites_offplane_generator() {
     // A generator on an off-sensor plane (2, 3)
     let offplane_q = LetterId::turn_90((2, 3)).expect("offplane 90° turn");
     let gen_word = Word::from_letters(&[(offplane_q, false)]);
@@ -377,8 +379,9 @@ fn derivation_factors_offplane_generator_and_verifies_rotor() {
     assert!(d.rotor().projective_eq(&gen_word.rotor()), "the derivation projectively reproduces the Clifford rotor");
 }
 
+/// The adjoined basis discovers generators on off-plane channels.
 #[test]
-fn adjoined_basis_discovers_generators_on_offplane_channels() {
+fn adjoined_basis_finds_offplane_generator() {
     use crate::transducer::alphabet::{Derivation, Rotor};
     use crate::transducer::family::derivation::adjoined_basis;
     use crate::transducer::sentence::CycleType;
@@ -437,7 +440,7 @@ fn peels_agree(r: &crate::transducer::alphabet::Rotor) -> bool {
 /// three commuting pairs — so on every rotor the letters spell they close
 /// together and reach one vertex, across blocks that do not commute.
 #[test]
-fn the_peel_over_a_basis_and_the_alphabets_own_factorization_agree_on_the_letters() {
+fn peel_versor_with_target_agrees_with_factor_rotor() {
     let q01 = LetterId::turn_90((0, 1)).expect("90° turn (0,1)");
     let q02 = LetterId::turn_90((0, 2)).expect("90° turn (0,2)");
     let p23 = LetterId::pythagorean_5((2, 3)).expect("(3,4,5) on (2,3)");
@@ -458,7 +461,7 @@ fn the_peel_over_a_basis_and_the_alphabets_own_factorization_agree_on_the_letter
 /// coordinate plane holds, so both peels stand it as a demand and neither
 /// spells its sensor shadow for it.
 #[test]
-fn a_rotor_no_coordinate_plane_holds_stands_as_a_demand_on_both_peels() {
+fn peel_versor_with_target_stands_off_plane_rotor_as_demand() {
     use crate::transducer::alphabet::{factor_rotor, Rotor, Q};
     use crate::transducer::family::derivation::peel_versor_with_target;
     use crate::transducer::sentence::Demand;
@@ -479,6 +482,7 @@ fn a_rotor_no_coordinate_plane_holds_stands_as_a_demand_on_both_peels() {
     );
 }
 
+/// The peel closes the identity and a single 90° turn with no citations.
 #[test]
 fn peel_versor_with_peels_identity_and_turned_planes() {
     use crate::transducer::family::derivation::peel_versor_with;

@@ -12,7 +12,7 @@ fn v(coords: &[(usize, i64)]) -> Mv {
 /// order three — and NOT affine. The zero direction is dependence (three
 /// roots in a plane), not degeneracy; the group is dihedral of order six.
 #[test]
-fn a2s_three_roots_are_singular_by_dependence_not_affine() {
+fn read_gram_reads_a2_roots_dependent_not_affine() {
     let (a, b) = (v(&[(E1, 1), (E2, -1)]), v(&[(E2, 1), (E3, -1)]));
     let c = a.add(&b).scale(&q(-1, 1));
     let g = read_gram(&[a, b, c]);
@@ -26,7 +26,7 @@ fn a2s_three_roots_are_singular_by_dependence_not_affine() {
 /// and the pair's product is of order two — `ℤ₂ × ℤ₂`, finite. The pairwise
 /// regime, read in the algebra, not the signature, names open.
 #[test]
-fn an_indefinite_orthogonal_pair_is_finite() {
+fn read_gram_reads_indefinite_orthogonal_pair_finite() {
     let g = read_gram(&[Mv::blade(E1, q(1, 1)), Mv::blade(EM, q(1, 1))]);
     assert_eq!(g.signature, (1, 1, 0));
     assert_eq!(g.pairs[0].2, PairRegime::Finite(2));
@@ -36,7 +36,7 @@ fn an_indefinite_orthogonal_pair_is_finite() {
 /// two disjoint spheres (a boost), a real sphere against an imaginary one
 /// not orthogonal (a boost), and a non-crystallographic angle (a rosette).
 #[test]
-fn each_pair_reads_its_regime_in_the_algebra() {
+fn read_gram_reads_each_pair_regime() {
     let regime = |a: Mv, b: Mv| read_gram(&[a, b]).pairs[0].2;
     assert_eq!(regime(v(&[(E1, 1)]), v(&[(E1, 1), (E2, 1)])), PairRegime::Finite(4));
     let plane = |d: i64| v(&[(E1, 1)]).add(&e_inf().scale(&q(d, 1)));

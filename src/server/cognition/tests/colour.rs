@@ -24,7 +24,7 @@ fn json(a: u8, b: u8, c: u8) -> String {
 /// citation (the cited words do not compose to the word) and a citation of
 /// words the court never installed are refused.
 #[test]
-fn a_colour_theorem_stands_by_composing_what_it_cites() {
+fn perceive_speech_admits_colour_theorem_by_composition() {
     use crate::transducer::element::{colour_word, derived_colour_word};
     let mut k = Kernel::new();
     let install = |k: &mut Kernel, task: u8, from: u8, to: u8| {
@@ -77,7 +77,7 @@ fn a_colour_theorem_stands_by_composing_what_it_cites() {
 /// re-deriving the relation from its own copy — no task named, nothing
 /// searched — and a court that holds no such task holds it as dialect.
 #[test]
-fn a_peer_admits_a_colour_word_by_re_deriving_its_witness() {
+fn glue_fetched_admits_colour_word_by_rederived_witness() {
     use crate::transducer::element::colour_word;
     let family = vec![(vec![vec![1u8, 1]], vec![vec![2u8, 2]])];
     let tid = [30u8; 32];
@@ -103,8 +103,10 @@ fn a_peer_admits_a_colour_word_by_re_deriving_its_witness() {
     assert!(matches!(super::common::fetched(&mut stranger, &sent, [1; 32], [3; 32], &mut cover), Glue::Dialect), "unproven here");
 }
 
+/// A colour word is minted from the fibre relation, ruled by the court's
+/// evidence, taught by the syllabus and held by the mind that learns it.
 #[test]
-fn a_colour_word_is_minted_ruled_by_evidence_taught_and_held() {
+fn colour_word_mints_rules_teaches_and_holds() {
     let task = crate::arc::parse_task(&json(1, 2, 3)).expect("the task reads");
     let permuted = crate::arc::parse_task(&json(7, 4, 9)).expect("the permuted task reads");
     // THE MIND'S WORD: the fibre relation, as a colour word.
@@ -168,7 +170,7 @@ fn a_colour_word_is_minted_ruled_by_evidence_taught_and_held() {
 /// both recorded. The court stands the witnessed merge by its own copy of
 /// the family.
 #[test]
-fn a_merge_rotates_its_distinction_into_the_reservoir() {
+fn fibre_relation_rotates_merge_into_reservoir() {
     use crate::transducer::element::{colour_word, compose_fibre, fibre_function, invert_fibre, is_fibre_relation, RESERVOIR};
     let family = vec![(vec![vec![1u8, 2, 0]], vec![vec![1u8, 1, 0]])];
     let sigma = crate::transducer::family::fibre_relation(&family).expect("the fibre moved");

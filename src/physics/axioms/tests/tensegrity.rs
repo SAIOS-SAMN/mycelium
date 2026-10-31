@@ -46,7 +46,7 @@ fn at(c: [i64; 3]) -> Vec<num_rational::BigRational> {
 /// axis, the second posed by the slide along it: the coupling commutes with
 /// the generator, the torque vanishes term by term and opens no plane.
 #[test]
-fn t2_frames_on_the_axis_circulate_coaxially_in_equilibrium() {
+fn equilibrium_holds_for_frames_on_axis() {
     let (a, b) = (frame([0, 0, 0], one()), frame([0, 0, 2], translator_at(&at([0, 0, 2]))));
     let b_orbit = turn().grade(2);
     let v = coupling(&a, &b).grade(2);
@@ -61,7 +61,7 @@ fn t2_frames_on_the_axis_circulate_coaxially_in_equilibrium() {
 /// `V_ji = Ṽ_ij`, in one pose and posed apart; the pair reads the same from both
 /// frames.
 #[test]
-fn t1_at_equilibrium_the_inversive_distance_is_symmetric_and_the_coupling_transposes() {
+fn coupling_transposes_and_inversive_is_symmetric() {
     for pose in [one(), translator_at(&at([0, 0, 2]))] {
         let (a, b) = (frame([0, 0, 0], one()), frame([0, 0, 2], pose));
         let c = Constellation { frames: vec![a.clone(), b.clone()], generator: turn() };
@@ -76,7 +76,7 @@ fn t1_at_equilibrium_the_inversive_distance_is_symmetric_and_the_coupling_transp
 /// parabolic mode — a plane opened from no torque (78.62, no coefficient
 /// norm) — and law II refuses.
 #[test]
-fn law_ii_refuses_a_null_torque_and_its_parabolic_mode_reads_it() {
+fn equilibrium_refuses_null_torque_read_as_parabolic_mode() {
     let c = Constellation {
         frames: vec![frame([0, 0, 0], one()), frame([0, 0, 1], translator_at(&at([2, 0, 0])))],
         generator: turn(),
@@ -94,7 +94,7 @@ fn law_ii_refuses_a_null_torque_and_its_parabolic_mode_reads_it() {
 /// THE TORQUE (78.51(1)) is the commutator's half, `½ [B, G]`: zero along the
 /// generator's axis, the lift across it, antisymmetric.
 #[test]
-fn the_torque_is_the_commutator_zero_along_the_axis() {
+fn torque_is_antisymmetric_and_zero_along_axis() {
     assert!(torque(&translator_at(&at([0, 0, 2])), &turn()).is_zero(), "a slide along the axis exerts no torque");
     let across = translator_at(&at([2, 0, 0]));
     let tau = torque(&across, &turn());
@@ -107,7 +107,7 @@ fn the_torque_is_the_commutator_zero_along_the_axis() {
 /// closes after the turn's own period — four hours — and a body's four hours
 /// are four distinct nuclei, the fifth its first again. No ruler, no step.
 #[test]
-fn the_hours_wind_isoclinically_and_close_after_the_turn_s_period() {
+fn succession_hours_close_after_turn_period() {
     let (r12, r3p) = (rotator(&q(1, 1), &q(1, 1)), rotator_on_blade(&q(1, 1), &q(1, 1), E3 | crate::transducer::cga::EP));
     assert!(r12.geo(&r3p).sub(&r3p.geo(&r12)).is_zero(), "the two planes commute");
     let r = succession(&turn(), &at([0, 0, 0])).expect("the turn winds");
@@ -130,7 +130,7 @@ fn the_hours_wind_isoclinically_and_close_after_the_turn_s_period() {
 /// slide's hour rotor is the slide itself; the identity has no succession —
 /// it is reflexive, decided before any orbit is asked.
 #[test]
-fn a_slide_winds_on_its_own_parameter_and_the_identity_on_nothing() {
+fn succession_of_slide_is_slide_and_of_identity_none() {
     let slide = translator_at(&at([1, 0, 0]));
     assert!(succession(&slide, &at([0, 0, 0])).is_some_and(|r| r.projective_eq(&slide)), "the slide is its own hour");
     assert_eq!(succession(&one(), &at([0, 0, 0])), None, "the identity has no succession");
@@ -145,7 +145,7 @@ fn a_slide_winds_on_its_own_parameter_and_the_identity_on_nothing() {
 /// the torus's pole, `∝ e₊`; the half period (hour 2 of 4) carries it to
 /// `−e₊`, its own ray — a collapse the unit length of `e₃e₊` makes.
 #[test]
-fn tier_1_a_body_winding_about_its_own_centroid_balances_and_about_the_origin_does_not() {
+fn equilibrium_balances_about_own_centroid_not_origin() {
     let s = sphere_at(&at([1, 0, 0]), &q(2, 1));
     let r = succession(&turn(), &at([1, 0, 0])).expect("the turn winds");
     let unit = frame([1, 0, 0], one()).nucleus;
@@ -162,7 +162,7 @@ fn tier_1_a_body_winding_about_its_own_centroid_balances_and_about_the_origin_do
 /// hour 0 at rest and hour 1 on the succession centred there: balanced, and
 /// the turn keeps the pair's inversive distance.
 #[test]
-fn tier_2_a_synchronous_binary_about_its_barycentre_balances_and_is_rigid() {
+fn equilibrium_and_rigid_hold_for_synchronous_binary() {
     let star = barycentre(&[(at([1, 0, 0]), q(1, 1)), (at([-1, 0, 0]), q(1, 1))]).expect("the barycentre");
     assert_eq!(star.centre, at([0, 0, 0]));
     let r = succession(&turn(), &star.centre).expect("the turn winds");
@@ -177,7 +177,7 @@ fn tier_2_a_synchronous_binary_about_its_barycentre_balances_and_is_rigid() {
 /// TIER 2 · WHAT REFUSES. A body TUMBLING out of the plane at its second hour
 /// leaves an attitude torque; a pair DRIFTING APART is not rigid.
 #[test]
-fn tier_2_a_tumbling_body_is_unbalanced_and_a_drifting_pair_is_not_rigid() {
+fn equilibrium_refuses_tumble_and_rigid_refuses_drift() {
     let r = succession(&turn(), &at([0, 0, 0])).expect("the turn winds");
     let tumble = rotator_on_blade(&q(1, 1), &q(1, 1), E1 | E3);
     let frames = vec![frame([1, 0, 0], one()), frame([-1, 0, 0], one()), carried(&frame([1, 0, 0], one()), &tumble)];
@@ -195,7 +195,7 @@ fn tier_2_a_tumbling_body_is_unbalanced_and_a_drifting_pair_is_not_rigid() {
 /// told the mind one third of what is missing. The synchronous binary,
 /// turned rigidly with its momentum carried, closes: every component zero.
 #[test]
-fn the_coherence_form_files_every_defect_blade_and_closes_only_at_zero() {
+fn coherence_files_every_defect_and_closes_only_at_zero() {
     let r = succession(&turn(), &at([0, 0, 0])).expect("the turn winds");
     let tumble = rotator_on_blade(&q(1, 1), &q(1, 1), E1 | E3);
     let frames = vec![frame([1, 0, 0], one()), frame([-1, 0, 0], one()), carried(&frame([1, 0, 0], one()), &tumble)];
@@ -233,7 +233,7 @@ fn the_coherence_form_files_every_defect_blade_and_closes_only_at_zero() {
 /// external torque zero. The same body GROWN on the way — its moments
 /// `diag(3, 1)` — is not carried: the external torque stands.
 #[test]
-fn a13_an_unforced_orbit_carries_its_momentum_and_a_forced_one_leaves_a_torque() {
+fn external_torque_zero_only_on_unforced_orbit() {
     let d = |a: i64, b: i64| vec![vec![q(a, 1), zero()], vec![zero(), q(b, 1)]];
     let before = Body { centre: vec![q(1, 1), zero()], mass: q(4, 1), moments: d(2, 1) };
     let after = Body { centre: vec![zero(), q(-1, 1)], mass: q(4, 1), moments: d(1, 2) };
@@ -246,7 +246,7 @@ fn a13_an_unforced_orbit_carries_its_momentum_and_a_forced_one_leaves_a_torque()
 
 /// THE STAR SETS THE SPIN (78.51(2)).
 #[test]
-fn the_star_s_place_sets_the_spin_the_step_leaves() {
+fn spin_of_is_set_by_star_place() {
     let (before, after) = (at([1, 0, 0]), at([0, -1, 0]));
     let step = turn();
     let p = |x: &[num_rational::BigRational]| crate::transducer::cga::point_at(x);
@@ -263,7 +263,7 @@ fn the_star_s_place_sets_the_spin_the_step_leaves() {
 /// LAW IV · FORCE, PLANE BY PLANE (78.62). The turn about the axis moves no
 /// plane's torque; a slide across it opens one, and law II refuses it.
 #[test]
-fn law_iv_the_turn_is_conservative_and_the_slide_across_the_axis_opens_a_plane() {
+fn force_keeps_axial_turn_and_opens_plane_for_slide() {
     let c = Constellation {
         frames: vec![frame([0, 0, 0], one()), frame([0, 0, 2], translator_at(&at([0, 0, 2])))],
         generator: turn(),
@@ -287,7 +287,7 @@ fn law_iv_the_turn_is_conservative_and_the_slide_across_the_axis_opens_a_plane()
 
 /// THEOREM 3 · ANTI-MONOCULARITY, AND THE SINGULAR COLLAPSE.
 #[test]
-fn t3_a_contraction_to_one_frame_is_refused_never_coherent() {
+fn equilibrium_refuses_contraction_to_one_frame() {
     let a = frame([0, 0, 0], one());
     let alone = Constellation { frames: vec![a.clone()], generator: turn() };
     assert_eq!(equilibrium(&alone), Err(Refusal::MonocularOrbit));
@@ -304,7 +304,7 @@ fn t3_a_contraction_to_one_frame_is_refused_never_coherent() {
 /// other is lowered — a TILT, admitted with the raised plane docketed
 /// (ruling (b)). No norm is taken: each plane's projective ratio decides.
 #[test]
-fn law_iii_reads_the_torque_plane_by_plane_and_a_tilt_is_its_own_reading() {
+fn stability_reads_torque_plane_by_plane_and_tilt() {
     use crate::transducer::cga::{E2, EP};
     let p = |a: i64, b: i64| Mv::blade(E1 | E2, q(a, 1)).add(&Mv::blade(E3 | EP, q(b, 1)));
     let half = Mv::blade(E1 | E2, q(1, 2)).add(&Mv::blade(E3 | EP, q(3, 1)));

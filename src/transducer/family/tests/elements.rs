@@ -41,7 +41,7 @@ fn tape(clauses: &[Clause]) -> Vec<u8> {
 /// THE GLOSS INVERTS THE LOWERING: every act, lowered to its element and
 /// glossed back, is the clause it was — the same tape, byte for byte.
 #[test]
-fn every_act_lowered_and_glossed_is_the_clause_it_was() {
+fn gloss_inverts_lower_on_every_act() {
     let acts = vec![
         Act::Recolour(vec![(1, 2), (3, 0)]),
         Act::Repaint { paint: Paint::Of(Pred::Hue(3)) },
@@ -74,7 +74,7 @@ fn every_act_lowered_and_glossed_is_the_clause_it_was() {
 /// about the grid or about each body — speaks what the recolour speaks, and
 /// its element glosses as the recolour.
 #[test]
-fn the_identity_carriage_is_the_hue_map() {
+fn speak_clauses_identity_carriage_is_hue_map() {
     let x = grid(&["110", "000", "033"]);
     let bodies = crate::transducer::family::perceive(&x);
     let map = vec![(1, 2), (3, 0)];
@@ -93,7 +93,7 @@ fn the_identity_carriage_is_the_hue_map() {
 /// source — a slide that leaves itself behind — lands at the floor and
 /// stays where it stood; it has no gloss.
 #[test]
-fn a_carriage_no_act_names_is_spoken_and_has_no_gloss() {
+fn speak_elements_speaks_unnamed_carriage_without_gloss() {
     let x = grid(&["0100", "0000", "0000", "2222"]);
     let bodies = crate::transducer::family::perceive(&x);
     let echo_to_meet = Lowered {
@@ -108,7 +108,7 @@ fn a_carriage_no_act_names_is_spoken_and_has_no_gloss() {
 /// ITERATION READS A LATTICE TRANSLATION: a translator by `(2, −1)` is that
 /// step; a turn is no step, and a carriage iterating one is refused by name.
 #[test]
-fn a_carriage_iterates_a_translation_and_refuses_a_turn() {
+fn lattice_step_iterates_translation_refuses_turn() {
     assert_eq!(lattice_step(&shift(2, -1)), Some((2, -1)));
     let turn = rotator(&q(0), &q(1));
     assert_eq!(lattice_step(&turn), None, "a turn names no ray");
@@ -148,7 +148,7 @@ fn kept_slide() -> Lowered {
 /// NO FORM ALREADY MINTED MOVES: a run of clauses, written as its elements,
 /// is the tape the clauses always wrote, and reads back as those elements.
 #[test]
-fn elements_an_act_names_write_the_clauses_bytes() {
+fn put_elements_writes_named_elements_as_clauses() {
     let clauses = vec![
         Clause { select: Pred::Hue(1), act: Act::Slide { ray: (1, 0), stop: Stop::Contact } },
         Clause { select: Pred::Hue(5), act: Act::Repaint { paint: Paint::Of(Pred::Hue(3)) } },
@@ -167,7 +167,7 @@ fn elements_an_act_names_write_the_clauses_bytes() {
 /// spoken there as it was spoken here. A reader that knows only the acts
 /// refuses its tape.
 #[test]
-fn an_element_no_act_names_rides_the_address() {
+fn take_elements_carries_unnamed_element_on_address() {
     let bytes = written(&[kept_slide()]);
     let back = read(&bytes).expect("reads back");
     assert_eq!(written(&back), bytes, "one tape");
@@ -187,7 +187,7 @@ fn an_element_no_act_names_rides_the_address() {
 /// (an iterated translation read about each body, which conjugates to the
 /// grid's), is no element's tape.
 #[test]
-fn the_element_tag_refuses_a_named_or_uncanonical_carriage() {
+fn take_elements_refuses_named_or_uncanonical_carriage() {
     let base = written(&[kept_slide()]);
     // The tape's tail: about, reach (Meet), stop, trace, paint (Own: one
     // byte), the empty gauge's count.

@@ -5,7 +5,7 @@
 /// numeric order: 255 before 256 before 65 536, where u16 LE put 256 first
 /// and LEB128 orders by the low bits.
 #[test]
-fn the_frame_spelling_orders_as_the_frames_do() {
+fn frame_spelling_orders_as_frames() {
     use crate::transducer::sentence::form::atlas::frame_spelling;
     let frames = [0u64, 1, 2, 255, 256, 65_535, 65_536, u64::MAX];
     let spelled: Vec<Vec<u8>> = frames.iter().map(|&k| frame_spelling(k)).collect();

@@ -30,8 +30,10 @@ fn large() -> Task {
     Task { train: toy().train, test }
 }
 
+/// A task is asked and answered by its citation, and the envelope carries
+/// test inputs only, never the held answers.
 #[test]
-fn a_task_is_asked_and_answered_by_its_citation() {
+fn task_by_id_round_trips_citation_and_envelope() {
     let voice = [4u8; 32];
     let mut reg = TaskRegistry::new();
     let id = reg.register(toy()).expect("a grid pair's chain is A5's");
@@ -56,8 +58,10 @@ fn a_task_is_asked_and_answered_by_its_citation() {
     assert_eq!(env.tests, vec![toy().test[0].0.clone()], "the held answers never ride");
 }
 
+/// A task whose content address passes the u16 wall is still named by its
+/// 32-byte citation.
 #[test]
-fn a_task_past_the_u16_wall_is_still_named() {
+fn citation_names_task_past_u16_wall() {
     let mut reg = TaskRegistry::new();
     let id = reg.register(large()).expect("registers");
     assert!(id.as_bytes().len() > usize::from(u16::MAX), "the content address passes the wall: {}", id.as_bytes().len());

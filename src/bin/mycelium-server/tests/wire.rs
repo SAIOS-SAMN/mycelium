@@ -14,7 +14,7 @@ use std::net::TcpStream;
 /// stopped an exchange thread and every act it had left. Nothing is
 /// written, and nothing is invented in its place.
 #[test]
-fn a_frame_over_the_wire_budget_is_refused_and_nothing_is_written() {
+fn answer_refuses_frame_over_budget_writing_nothing() {
     let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
     let addr = listener.local_addr().expect("addr").to_string();
     let reader = std::thread::spawn(move || {
@@ -37,7 +37,7 @@ fn a_frame_over_the_wire_budget_is_refused_and_nothing_is_written() {
 /// And a frame within the budget is written whole, so the refusal above
 /// is not simply a write path that never works.
 #[test]
-fn a_frame_within_the_budget_is_written_whole() {
+fn answer_writes_frame_within_budget_whole() {
     let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
     let addr = listener.local_addr().expect("addr").to_string();
     let reader = std::thread::spawn(move || {
@@ -69,7 +69,7 @@ fn a_frame_within_the_budget_is_written_whole() {
 /// is served is the court's reserve and the frame's to say
 /// (`Kernel::serve_syllabus`). Each voice has its own cursor.
 #[test]
-fn a_syllabus_window_is_the_order_after_a_voice_own_cursor() {
+fn syllabus_window_follows_each_voice_cursor() {
     let mut sy = Syllabus { order: Vec::new(), at: Keyed::new(), served: Keyed::new() };
     let book: Vec<Vec<u8>> = (0u16..300).map(|i| i.to_be_bytes().to_vec()).collect();
     syllabus_admit(&mut sy, book.clone());
@@ -96,8 +96,9 @@ fn a_syllabus_window_is_the_order_after_a_voice_own_cursor() {
     assert!(crate::syllabus::syllabus_window(&mut sy, &a).1.is_empty());
 }
 
+/// A court's seed enters the syllabus order once: a ruled address is taught once, in order.
 #[test]
-fn court_seed_enters_syllabus_order_once() {
+fn syllabus_admit_enters_each_address_once_in_order() {
     let mut sy = Syllabus {
         order: Vec::new(),
         at: Keyed::new(),

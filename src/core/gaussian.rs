@@ -206,7 +206,7 @@ mod tests {
     /// and the witness `4 + i` carries the factor: the gcd is that factor
     /// itself, in canonical form, and its norm is the prime.
     #[test]
-    fn the_factor_is_read_off_the_witness_and_its_norm_is_the_prime() {
+    fn prime_factor_reads_factor_of_prime_norm() {
         let p = BigInt::from(17);
         let pi = prime_factor(&g(4, 1), &p).expect("the witness carries 17");
         assert_eq!(pi.norm(), p, "the factor's norm IS the prime it factors");
@@ -218,7 +218,7 @@ mod tests {
     /// representative, so two organs that each ran Euclid compare CONTENT
     /// and never "the same up to a unit" (law 2, P3).
     #[test]
-    fn every_associate_of_one_factor_canonicalises_to_one_representative() {
+    fn canonical_maps_associates_to_one_representative() {
         let want = g(4, 1);
         for w in [g(4, 1), g(-1, 4), g(-4, -1), g(1, -4), g(1, 4)] {
             assert_eq!(w.canonical(), want, "{w:?} is the same factor");
@@ -229,7 +229,7 @@ mod tests {
     /// the gcd is a unit and there is no letter to open
     /// (`REFUSE_LETTER_WITNESS`). `2 + i` has norm 5 and is coprime to 17.
     #[test]
-    fn a_witness_that_does_not_carry_the_prime_is_refused() {
+    fn prime_factor_refuses_witness_without_prime() {
         assert_eq!(prime_factor(&g(2, 1), &BigInt::from(17)), None, "a unit gcd is no factor");
         // gcd(0, p) is p, whose norm is p² and not p: the arithmetic is
         // right and the witness still carries nothing.
@@ -240,7 +240,7 @@ mod tests {
     /// The alphabet's own primes come back too — the arithmetic does not
     /// know which primes the seventeen already spell, and must not.
     #[test]
-    fn the_alphabets_own_primes_factor_by_the_same_arithmetic() {
+    fn prime_factor_factors_alphabet_primes() {
         assert_eq!(prime_factor(&g(2, 1), &BigInt::from(5)).expect("5"), g(2, 1));
         assert_eq!(prime_factor(&g(3, 2), &BigInt::from(13)).expect("13"), g(3, 2));
     }
@@ -250,7 +250,7 @@ mod tests {
     /// always smaller than the divisor and the loop is bounded by the
     /// witness's own size.
     #[test]
-    fn the_remainder_is_always_smaller_than_the_divisor() {
+    fn rem_smaller_than_divisor() {
         for (x, y) in [(g(17, 0), g(4, 1)), (g(100, 37), g(6, 5)), (g(-9, 14), g(3, 2))] {
             let r = x.rem(&y).expect("a nonzero divisor divides");
             assert!(r.norm() < y.norm(), "{r:?} is smaller than {y:?}");
@@ -260,7 +260,7 @@ mod tests {
     /// The witness travels as a plane block (50.5): `[[s, −t], [t, s]]`
     /// is `s + t·i`, and a block that is not a Gaussian arc refuses.
     #[test]
-    fn the_witness_block_reads_as_a_gaussian_integer() {
+    fn from_block_reads_gaussian_and_refuses_non_integer() {
         use num_rational::BigRational;
         let q = |n: i64| BigRational::from_integer(BigInt::from(n));
         let block = [[q(4), q(-1)], [q(1), q(4)]];

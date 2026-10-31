@@ -26,7 +26,7 @@ fn bit(p: &[u8; 32], depth: usize) -> bool {
 /// of the records give one root; changing one value changes it; a record
 /// deleted restores the root without it exactly.
 #[test]
-fn the_root_is_the_records_never_their_order() {
+fn commitment_ignores_record_order() {
     let all = records();
     let root = commitment(&all).expect("the records place");
     for r in 0..all.len() {
@@ -53,7 +53,7 @@ fn the_root_is_the_records_never_their_order() {
 /// refused; a key past its u16 wall is refused, never widened; one record's
 /// root is its leaf folded up its own path against zero siblings.
 #[test]
-fn empty_duplicate_wall_and_one_record() {
+fn commitment_reads_empty_and_one_refuses_duplicate_or_wide() {
     assert_eq!(commitment(&[]), Some(ZERO));
     assert_eq!(commitment(&[record("a", 1), record("a", 2)]), None, "a key twice is refused");
     let wide = (vec![0u8; usize::from(u16::MAX) + 1], vec![Arg::Count(1)]);
@@ -77,7 +77,7 @@ fn empty_duplicate_wall_and_one_record() {
 /// an absent key's proof folds zero to it; a wrong value, a tampered
 /// sibling, a short proof, or a held key read as absent all fail.
 #[test]
-fn inclusion_and_absence_proofs_verify_and_wrong_ones_fail() {
+fn prove_verifies_inclusion_and_absence_fails_wrong_proof() {
     let all = records();
     let root = commitment(&all).expect("places");
     for (k, v) in &all {
@@ -110,7 +110,7 @@ fn event(h: u64, u: u64, key: &str) -> Event {
 /// THE EVENTS DIGEST IS POSITIONAL: order matters; none is zero; one is its
 /// leaf; three are `node(node(l0, l1), l2)` — the odd one carried up.
 #[test]
-fn the_events_digest_keeps_its_order() {
+fn events_digest_keeps_order() {
     let (a, b, c) = (event(5, 10, "ship/1"), event(6, 11, "ship/2"), event(6, 12, "ship/1"));
     assert_eq!(events_digest(&[]), Some(ZERO));
     let la = event_leaf(&a).expect("a leaf");

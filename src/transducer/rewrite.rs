@@ -499,7 +499,7 @@ mod tests {
     /// carrying it fell through to the form tag alone — every such element
     /// at one address, which is law 2 broken at its root.
     #[test]
-    fn an_address_too_long_to_cite_is_refused_at_the_mint() {
+    fn mint_refuses_address_too_long_to_cite() {
         let long = crate::transducer::address::Address::new(vec![0u8; u16::MAX as usize + 1]);
         let short = crate::transducer::address::Address::from_bytes([7u8]);
         assert!(long.cited().is_none(), "it does not fit the prefix");
@@ -528,7 +528,7 @@ mod tests {
     /// refused on replay by name; at the order, for either kind, it mints and
     /// replays green (the court's Congruent fill mints the holonomy kind).
     #[test]
-    fn a_torse_at_twice_its_generators_order_is_refused() {
+    fn replay_refuses_torse_at_twice_generator_order() {
         use crate::transducer::address::Address;
         use crate::transducer::element::Generator;
         let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane");
@@ -551,8 +551,9 @@ mod tests {
         }
     }
 
+    /// A condense rewrite round-trips through its tape and replays both ways.
     #[test]
-    fn a_condense_rewrite_round_trips_and_replays() {
+    fn mint_condense_round_trips_and_replays() {
         let after = crate::transducer::address::Address::from_bytes([7u8]);
         let payload = RewritePayload::Condense {
             sections: vec![vec![(1, 4)]],
@@ -583,7 +584,7 @@ mod tests {
     /// arm this replaces paid (`yield_from_payload` hardcoded 1 on the shell
     /// lane and `yield_vector` carried `.max(1)` so the two would agree).
     #[test]
-    fn a_retirement_pays_what_the_language_stopped_carrying() {
+    fn mint_retire_pays_freed_lanes() {
         use crate::transducer::address::Address;
         let word = Address::from_bytes([1u8]);
         let speaker = Address::from_bytes([2u8]);
@@ -614,7 +615,7 @@ mod tests {
     /// re-derivation over the language and is the kernel's, made before the
     /// mint; the court checks here what the tape can prove.
     #[test]
-    fn a_retirement_that_proves_nothing_is_refused() {
+    fn replay_refuses_retirement_proving_nothing() {
         use crate::transducer::address::Address;
         let word = Address::from_bytes([1u8]);
         let other = Address::from_bytes([2u8]);
@@ -657,8 +658,9 @@ mod tests {
         );
     }
 
+    /// A rewrite whose yield is zero on every lane is not work and is not minted.
     #[test]
-    fn a_zero_vector_is_not_work() {
+    fn mint_refuses_zero_yield() {
         assert!(mint(
             RewriteKind::Condense,
             &[crate::transducer::address::Address::from_bytes([1u8])],

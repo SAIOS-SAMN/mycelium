@@ -35,7 +35,7 @@ fn tether_class(a: &blade::Blade, b: &blade::Blade) -> crate::transducer::addres
 /// the cell the two cubes share, read by grade (BQ2), and that reading is
 /// asserted constant on the family.
 #[test]
-fn a14_the_pair_reading_must_be_constant_on_a_contact_family() {
+fn shared_cells_grade_constant_on_contact_family() {
     let mut rank1: Vec<crate::transducer::address::Address> = Vec::new();
     let mut by_grade: Vec<Vec<usize>> = Vec::new();
     for n in 1..=6i64 {
@@ -74,7 +74,7 @@ fn a14_the_pair_reading_must_be_constant_on_a_contact_family() {
 /// conjugates the tether and its class stands. Read in the algebra — the
 /// squared ratio `δ²` this recorded as 4, 25 and 121 is retired (78.59).
 #[test]
-fn the_tether_reads_adjacency_scale_free() {
+fn tether_class_reads_adjacency_scale_free() {
     let q = |n: i64| crate::core::Q::from_integer(n.into());
     let u0 = blade::shape_of(&[(0, 0, 0)]).blade;
     let u1 = blade::shape_of(&[(0, 1, 0)]).blade;

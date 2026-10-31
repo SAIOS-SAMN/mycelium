@@ -9,7 +9,7 @@ use crate::transducer::sentence::Demand;
 /// A creation is perceived as a source, a vanishing as a sink, a deformation
 /// at constant mass as no flux; a demand of another kind is not read.
 #[test]
-fn creation_and_vanishing_are_perceived_as_lawful_source_and_sink() {
+fn perceive_fluxes_reads_creation_source_vanishing_sink() {
     let chart = crate::transducer::stalk::Invariant::default();
     let demands: Vec<Named> = vec![
         (Demand::Creation, chart.clone(), vec![(0, 0, 0, 3), (0, 2, 0, 3)]),

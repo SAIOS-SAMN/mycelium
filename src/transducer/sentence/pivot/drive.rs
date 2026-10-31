@@ -170,7 +170,7 @@ pub(crate) fn path_word(c: &PathCarried) -> Word {
 /// faces are all coboundaries, not a default standing in for one" — and an
 /// orbit with no path at all has no edge composite anywhere, so the same
 /// reading applies with nothing to read it over. Returning `None` there made
-/// the RANK unmeasured on every such form: `rank_offplane_is_its_own_lane`
+/// the RANK unmeasured on every such form: `rank_counts_offplane_as_own_lane`
 /// went from a measured `(offplane 1, free 0)` to no rank at all.
 pub(crate) fn orbit_holonomy_on(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> Option<Word> {
     let ws = holonomy_words_on(faces, vertices, lp);

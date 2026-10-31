@@ -13,7 +13,7 @@ use crate::cognition::*;
 /// supply the audit proves. The reading crosses the wire whole, and a wallet
 /// across two courts owns the per-lane sum of its accounts.
 #[test]
-fn every_party_reads_its_wallet_and_the_wallets_are_the_supply() {
+fn wallet_reads_each_party_and_sums_to_supply() {
     let mut k = Kernel::new();
     k.bind_identity([1; 32]);
     let anchor = (Stamp::default(), [0u8; 32]);

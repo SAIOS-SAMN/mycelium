@@ -8,8 +8,10 @@ use crate::anastome::dialogue::uplink::{
 };
 use crate::chronometry::Stamp;
 
+/// A signed fold and every answer of the court read back whole, and a byte
+/// left over is no fold.
 #[test]
-fn a_signed_fold_and_every_answer_read_back_whole() {
+fn uplink_fold_and_answers_round_trip_whole() {
     let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
     let fold = TierFold {
         tier: key.verifying_key().to_bytes(),

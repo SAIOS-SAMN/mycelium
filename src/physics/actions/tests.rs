@@ -9,7 +9,7 @@ use crate::anastome::dialogue as d;
 /// party's actions stand below the court's range and a court's own at or
 /// above it, and a byte no action holds names nothing.
 #[test]
-fn every_action_holds_one_coordinate() {
+fn action_of_reads_each_byte_back_once() {
     for (i, a) in ACTIONS.iter().enumerate() {
         assert_eq!(Action::of(a.byte()), Some(*a), "{} reads back", String::from_utf8_lossy(a.name()));
         for b in &ACTIONS[i + 1..] {
@@ -33,7 +33,7 @@ fn every_action_holds_one_coordinate() {
 /// fold — the kinds a receipt carries; an observation never seals, answers
 /// to no law, and cannot be a node; a transition answers to every law.
 #[test]
-fn an_observation_seals_nothing_and_a_transition_answers_to_every_law() {
+fn sealed_excludes_observations_and_transitions_answer_every_law() {
     let sealed: Vec<Action> = ACTIONS.iter().copied().filter(|a| a.sealed()).collect();
     assert_eq!(sealed.len(), 21, "{sealed:?}");
     for a in ACTIONS {
@@ -58,7 +58,7 @@ fn an_observation_seals_nothing_and_a_transition_answers_to_every_law() {
 /// THE WIRE'S SPELLINGS ARE THE TABLE'S COORDINATES: each `ACT_*` names the
 /// action the table holds at that byte, of the kind the table says.
 #[test]
-fn the_wire_spells_the_table() {
+fn of_tag_reads_each_wire_spelling_as_table_action() {
     let spelled = [
         (d::ACT_SPEECH, Action::Speech, Kind::Transition),
         (d::ACT_PROBE, Action::Probe, Kind::Transition),

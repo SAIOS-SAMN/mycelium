@@ -6,7 +6,7 @@ use crate::transducer::family::*;
 /// A WORD THAT MOVES THE BODY moves it; a still word does not; a contact
 /// word with a placement moves it — read by one exact application (78.62).
 #[test]
-fn a_vertex_moves_the_body_or_stands_still() {
+fn moves_reads_moving_or_still_vertex() {
 let zero = q(0);
 let one = q(1);
 let word = |carriage: element::Versor, contact| {

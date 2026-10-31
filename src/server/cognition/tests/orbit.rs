@@ -21,7 +21,7 @@ fn peer_orbit(vk: [u8; 32], mu: [u64; 4]) -> Vec<crate::chronometry::KStepReceip
 /// `K + 1`, and the clock names the per-lane distance to the peer's orbit
 /// closed at the court's closing tick, where there is one.
 #[test]
-fn a_court_close_that_would_collide_is_withheld_and_sealed_a_stroke_on() {
+fn orbit_withholds_colliding_close_then_seals() {
     let mut k = Kernel::new();
     assert_eq!(k.orbit(), Close::Nothing, "a cycle that acted on nothing closes nothing");
     k.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
@@ -52,7 +52,7 @@ fn a_court_close_that_would_collide_is_withheld_and_sealed_a_stroke_on() {
 /// `Ruling(Upheld)`, `Adopted`), the fold is proposed, cut at that close.
 /// Neither bytes nor the reserve enter.
 #[test]
-fn a_close_proposes_the_fold_only_where_a_return_or_rank_step_stands() {
+fn orbit_proposes_fold_only_after_transition() {
     use crate::chronometry::Ruled;
     for transition in [ActKind::Return, ActKind::RankStep, ActKind::Reconnect, ActKind::Install, ActKind::Ruling(Ruled::Upheld), ActKind::Adopted] {
         let mut k = Kernel::new();
@@ -75,7 +75,7 @@ fn a_close_proposes_the_fold_only_where_a_return_or_rank_step_stands() {
 /// court's closing tick at another frame is read at its distance, never a
 /// sum of lanes.
 #[test]
-fn the_clock_names_the_per_lane_distance_at_the_last_close() {
+fn clock_names_per_lane_distance_at_close() {
     let mut k = Kernel::new();
     k.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     let (_, own_frame) = k.chain.open_orbit().expect("open");

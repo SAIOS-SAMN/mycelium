@@ -123,7 +123,7 @@ fn lanes_of(v: &[(usize, Invariant)]) -> Vec<usize> {
 /// content on `𝒽`; the same turn carried with a hue swap is content on
 /// `𝒢` AND `𝒽`, two independent covers and never one.
 #[test]
-fn a_turn_occupies_one_lane_and_a_turn_that_recolours_occupies_two() {
+fn occupied_lanes_adds_gauge_lane_for_recolouring_turn() {
     use crate::transducer::sentence::CycleType;
     let turn = turn_90(2).rotor();
     let alone = occupied_lanes(&turn, &CycleType::Identity);
@@ -141,7 +141,7 @@ fn a_turn_occupies_one_lane_and_a_turn_that_recolours_occupies_two() {
 /// under one class vector and looked up under another is held and
 /// unreachable, which is indistinguishable from not held.
 #[test]
-fn a_generator_that_recolours_is_filed_on_the_gauge_cover_as_well() {
+fn admit_generators_by_lane_files_recolouring_on_gauge() {
     use crate::transducer::sentence::CycleType;
     let turn = turn_90(1).rotor();
     let holonomic = Lanes::holding(turn_90(1), Vec::new(), 1);
@@ -179,7 +179,7 @@ fn a_generator_that_recolours_is_filed_on_the_gauge_cover_as_well() {
 /// empty, because dividing out the turn would leave the recolouring
 /// underived and assert a bound the presentation does not give.
 #[test]
-fn the_meet_refuses_a_generator_that_only_one_occupied_lane_holds() {
+fn generators_at_meet_refuses_generator_one_lane_holds() {
     use crate::transducer::sentence::CycleType;
     let held = Lanes::holding(turn_90(1), Vec::new(), 1);
     let turn = turn_90(2).rotor();
@@ -203,7 +203,7 @@ fn the_meet_refuses_a_generator_that_only_one_occupied_lane_holds() {
 /// because the generator is addressed by `(form, vertex)` and not by which
 /// cover answered.
 #[test]
-fn the_meet_admits_a_generator_every_occupied_lane_holds() {
+fn generators_at_meet_admits_generator_every_lane_holds() {
     use crate::transducer::sentence::CycleType;
     let held = Lanes::holding(turn_90(1), swap(), 2);
     let with_hue = occupied_lanes(&turn_90(2).rotor(), &CycleType::of(&swap()));
@@ -224,7 +224,7 @@ fn the_meet_admits_a_generator_every_occupied_lane_holds() {
 /// L12 exists to refuse, and a target on no lane is the identity and has
 /// nothing to reduce.
 #[test]
-fn a_target_on_no_lane_is_given_no_basis() {
+fn generators_at_meet_gives_no_basis_on_no_lane() {
     let held = Lanes::holding(turn_90(1), swap(), 2);
     assert_eq!(
         held.generators_at_meet(&[], &mut budget()).len(),
@@ -245,7 +245,7 @@ fn a_target_on_no_lane_is_given_no_basis() {
 /// held on `𝒮`, and the citation in `generator_pay`'s 180° turn was lost —
 /// a refusal by bookkeeping of a claim the derivation never made.
 #[test]
-fn a_target_that_translates_still_derives_through_a_turning_generator() {
+fn factor_versor_derives_translating_target_through_turn() {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
     let held = Lanes::holding(turn_90(1), Vec::new(), 1);

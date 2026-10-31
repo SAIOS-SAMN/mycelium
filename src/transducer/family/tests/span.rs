@@ -13,8 +13,9 @@ fn frames(ks: &[u64]) -> Keyed<()> {
     s
 }
 
+/// A span is read from the cycle, and a reading at a shorter stratum holds.
 #[test]
-fn a_span_is_read_from_the_cycle_and_a_reading_at_a_shorter_stratum_holds() {
+fn span_of_members_meets_sections_and_holds_shorter_stratum() {
     // Three members around one cycle, standing on frames {0,1,2,5}, {1,2,5}
     // and {1,2,3,5}; a fourth claimed whole narrows nothing. The cycle's
     // transports all exist on {1,2,5} only — a set, with a gap, not a run.

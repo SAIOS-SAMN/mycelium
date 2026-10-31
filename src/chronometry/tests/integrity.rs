@@ -3,8 +3,9 @@
 
 use crate::chronometry::*;
 
+/// The ledger is the temporal authority and tamper-evident: K moves only at an orbit's close, and any changed byte of its line is refused or read as torn.
 #[test]
-fn the_ledger_is_temporal_authority_and_tamper_evident() {
+fn receipt_chain_clocks_k_and_refuses_changed_bytes() {
     let mut c = ReceiptChain::with_vk([1; 32]);
     assert_eq!(c.next_step_index(), 0, "genesis K = 0");
     c.append(ActKind::List, [1, 0, 0, 0], Vec::new(), [9; 32], Vec::new()).expect("genesis");
@@ -38,7 +39,7 @@ fn the_ledger_is_temporal_authority_and_tamper_evident() {
 /// its stamp, in the chain hash, read back as written; a kind changed no
 /// longer re-derives, and a byte that names no kind refuses the read.
 #[test]
-fn the_node_carries_its_kind_on_the_tape_and_in_the_hash() {
+fn act_kind_rides_tape_and_chain_hash() {
     let mut c = ReceiptChain::with_vk([1; 32]);
     c.append(ActKind::List, [0; 4], Vec::new(), [9; 32], Vec::new()).expect("genesis");
     let r = c.append(ActKind::Install, [0; 4], Vec::new(), [9; 32], Vec::new()).expect("second").clone();
@@ -101,7 +102,7 @@ fn the_node_carries_its_kind_on_the_tape_and_in_the_hash() {
 /// 78.24 — A NODE NAMES WHAT IT ACTS ON BY COORDINATES: a word's chart and
 /// admitting stamp, a fold's root; each rides the tape and the hash.
 #[test]
-fn a_nodes_citations_ride_the_tape_and_the_hash() {
+fn cites_ride_tape_and_chain_hash() {
     let at = Stamp { h: 4, vk: [3; 32], k: 9, i: 2 };
     let word = Cite::Word { chart: crate::transducer::stalk::Invariant::counts(&[1, 2]), class: None, at };
     let root = Cite::Root { at, hash: [5; 32] };

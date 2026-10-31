@@ -35,7 +35,7 @@ fn turn_90(mask: usize) -> Mv {
 /// comes back as itself — the echo is the identity. It seats whole inside,
 /// the 90° turn is on the outside, and the rings are in harmonic balance.
 #[test]
-fn an_overtone_in_one_plane_seats_whole_and_balances() {
+fn nest_seats_same_plane_overtone_whole() {
     let inner = ring(Mv::blade(E1 | E2, q(1)));
     let outer = ring(turn_90(E1 | E2));
     assert_eq!((inner.closure, outer.closure), (Closure::Closes(2), Closure::Closes(4)));
@@ -49,7 +49,7 @@ fn an_overtone_in_one_plane_seats_whole_and_balances() {
 /// another plane — its echo is a turn, a pitch shifted, and the rings are
 /// out of balance.
 #[test]
-fn an_overtone_across_planes_seats_with_a_tilt_its_echo_a_turn() {
+fn nest_seats_crossing_plane_overtone_tilted() {
     let inner = ring(Mv::blade(E2 | E3, q(1)));
     let outer = ring(turn_90(E1 | E2));
     assert_eq!(echo(&inner.omega, &outer.omega, &mut stroke()), Echo::Turn);
@@ -62,7 +62,7 @@ fn an_overtone_across_planes_seats_with_a_tilt_its_echo_a_turn() {
 /// `e₂e₃` inside a translation along `e₁` — the carrier — commutes with it
 /// and passes through whole.
 #[test]
-fn a_returning_ring_seats_whole_in_its_carrier() {
+fn nest_seats_returning_ring_whole_in_carrier() {
     let inner = ring(turn_90(E2 | E3));
     let carrier = compose(&[Term { word: one(), transport: cga::translator_at(&[q(1), q(0), q(0)]) }], &mut stroke())
         .expect("a carrier");
@@ -76,7 +76,7 @@ fn a_returning_ring_seats_whole_in_its_carrier() {
 /// diagonal, `(1 + e₁₂)(1 + e₂₃)`, returns at 3, which does not divide the
 /// 90° turn's 4 — it stands outside, leftover, and the rings do not balance.
 #[test]
-fn a_ring_dividing_no_larger_ring_is_left_over() {
+fn nest_leaves_non_dividing_ring_over() {
     let third = ring(turn_90(E1 | E2).geo(&turn_90(E2 | E3)));
     let outer = ring(turn_90(E1 | E2));
     assert_eq!((third.closure, outer.closure), (Closure::Closes(3), Closure::Closes(4)));
@@ -91,7 +91,7 @@ fn a_ring_dividing_no_larger_ring_is_left_over() {
 /// plane, and the pitch — the advance per elliptic return — is four times
 /// the ray.
 #[test]
-fn light_perpendicular_to_the_plane_is_a_twist_all_advance() {
+fn orbit_reads_perpendicular_light_as_pure_advance() {
     let t = cga::translator_at(&[q(0), q(0), q(1)]);
     let r = compose(&[Term { word: turn_90(E1 | E2), transport: t.clone() }], &mut stroke()).expect("a ring");
     let met = orbit(&[&r], &mut stroke());
@@ -111,7 +111,7 @@ fn light_perpendicular_to_the_plane_is_a_twist_all_advance() {
 /// light from a star at a point, not at infinity (read live 2026-10-06: every
 /// space of the stalled task's rings is hyperbolic or the identity).
 #[test]
-fn the_light_in_a_space_is_its_null_mode_and_a_dilated_carriage_has_none() {
+fn orbit_meets_null_mode_dilated_carriage_has_none() {
     let twist = cga::translator_at(&[q(0), q(0), q(1)]).geo(&turn_90(E1 | E2));
     let r = compose(&[Term { word: turn_90(E1 | E2), transport: twist }], &mut stroke()).expect("a ring");
     let met = orbit(&[&r], &mut stroke());
@@ -126,7 +126,7 @@ fn the_light_in_a_space_is_its_null_mode_and_a_dilated_carriage_has_none() {
 /// `e₁`, which lies in its plane. The ray anticommutes with the plane: none
 /// of it advances, all of it crosses — the impact.
 #[test]
-fn light_in_the_plane_crosses_it() {
+fn orbit_reads_in_plane_light_as_crossing() {
     let t = cga::translator_at(&[q(1), q(0), q(0)]);
     let r = compose(&[Term { word: turn_90(E1 | E2), transport: t }], &mut stroke()).expect("a ring");
     let met = orbit(&[&r], &mut stroke());
@@ -139,7 +139,7 @@ fn light_in_the_plane_crosses_it() {
 /// the ring the light crosses winds the versor its crossing derives; the
 /// pure twist, all advance, winds nothing.
 #[test]
-fn hearing_winds_the_crossing_and_a_pure_twist_winds_nothing() {
+fn hear_winds_crossing_not_pure_twist() {
     use crate::transducer::sentence::hearing::hear;
     let crossed = compose(&[Term { word: turn_90(E1 | E2), transport: cga::translator_at(&[q(1), q(0), q(0)]) }], &mut stroke())
         .expect("a ring");
@@ -173,7 +173,7 @@ fn heard_against(m: &Mv, heard: &Mv) -> crate::transducer::sentence::hearing::Ec
 /// Niven point never returns: a carrier, larger than every returning ring —
 /// the OUTER ring, understood as it is; so is a slide.
 #[test]
-fn a_word_heard_across_minds_is_seated_in_the_hearers_rings() {
+fn hear_across_seats_word_in_hearers_rings() {
     use crate::transducer::sentence::hearing::Seat;
     let quarter = turn_90(E1 | E2);
     let half = Mv::blade(E1 | E2, q(1));
@@ -201,7 +201,7 @@ fn a_word_heard_across_minds_is_seated_in_the_hearers_rings() {
 /// stands it seats there; and with no larger layer at all it is the outer
 /// ring.
 #[test]
-fn a_ring_dividing_no_larger_layer_is_leftover() {
+fn hear_across_leaves_word_dividing_no_layer() {
     use crate::transducer::sentence::hearing::{hear_across, Size};
     let word = Mv::blade(E1 | E2, q(1));
     let ring = turn_90(E1 | E2);
@@ -221,7 +221,7 @@ fn a_ring_dividing_no_larger_layer_is_leftover() {
 /// never a yes or a no, and on 𝒽 alone. A gain strains 𝒮 alone; a slide 𝒯
 /// alone, by its count.
 #[test]
-fn an_echos_deviation_is_exact_per_lane_and_graded() {
+fn strain_is_exact_per_lane_and_graded() {
     use crate::transducer::sentence::hearing::strain;
     use crate::transducer::sentence::presentation::{LANE_H, LANE_S, LANE_T};
     let r = |n: i64, d: i64| BigRational::new(n.into(), d.into());

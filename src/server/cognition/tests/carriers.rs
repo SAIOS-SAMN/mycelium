@@ -28,7 +28,7 @@ fn table(c: &crate::observe::Carriers) -> crate::network::nerve::Keyed<u64> {
 /// history. A carrier added to the court without its inverse is counted
 /// by the census (which names every field) and fails here.
 #[test]
-fn a_word_that_passes_through_the_court_leaves_no_carrier_grown() {
+fn lapse_word_leaves_no_carrier_grown() {
     let mut k = Kernel::new();
     let family = vec![(grid(&["11"]), grid(&["22"]))];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour extracts");

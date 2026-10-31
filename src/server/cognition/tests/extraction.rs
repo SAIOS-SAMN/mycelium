@@ -10,7 +10,7 @@ use crate::cognition::*;
 /// A second vantage here is `glue_local`'s two fixture keys (§3.4's
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
-fn a_novel_substance_germinates_then_decomposes() {
+fn speak_pair_germinates_novel_substance_then_decomposes() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)]; // L
 let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)]; // R180 of L — non-trivial substance
@@ -28,7 +28,7 @@ assert_eq!(speak_pair(&mut k, &a, &rot, [3; 32]), Outcome::Decomposed(vec![k.bas
 /// syntropic stroke — cardinality falls, sections rise, and the absorbed
 /// words' discoverers still earn.
 #[test]
-fn the_condense_stroke_absorbs_a_family_into_one_bundle() {
+fn optimize_condenses_family_into_one_bundle() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let mut k = Kernel::new();
@@ -63,7 +63,7 @@ assert!(
 /// chain era. The deformation is answered by the cover of 50.8 (L11), not
 /// by a listing of its links.
 #[test]
-fn a_shape_deformation_no_versor_carries_lists_nothing() {
+fn speak_pair_lists_nothing_for_unversored_deformation() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)]; // L
 let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, 1)]; // bar — no rigid motor
@@ -77,7 +77,7 @@ assert!(k.pending.is_empty(), "nothing on the book to await consilience");
 /// A second vantage here is `glue_local`'s two fixture keys (§3.4's
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
-fn independent_objects_fragment_and_resolve() {
+fn glue_local_installs_two_objects_as_one_word() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1), (5, 5, 2), (5, 6, 2), (6, 5, 2), (6, 6, 2)];
 let b = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1), (5, 5, 3), (5, 6, 3), (6, 5, 3), (6, 6, 3)];
@@ -90,7 +90,7 @@ assert_eq!(k.basis_len(), 1, "the pair form is one word");
 /// W2: the spoken pair is pair_form → extract_rule_with, minted by the
 /// voice. The court lists the minted sentence as spoken.
 #[test]
-fn the_spoken_scene_is_the_extracted_form() {
+fn speak_pair_lists_extracted_form() {
 use crate::transducer::family::{extract_rule_with, grid_of_painted, mint_sentence, NoCrystal};
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];

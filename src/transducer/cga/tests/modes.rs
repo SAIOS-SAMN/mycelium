@@ -18,7 +18,7 @@ fn kinds(b: &Mv) -> Vec<(BivectorKind, usize)> {
 /// parabolic — the pair the two-part closed form refused, since its open
 /// half is null.
 #[test]
-fn a_screw_reads_an_elliptic_and_a_parabolic_mode() {
+fn modes_split_screw_elliptic_and_parabolic() {
     let screw = rotator(&q(1, 1), &q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
     let ms = modes(&screw, &mut budget()).expect("the screw splits over ℚ");
     assert_eq!(
@@ -40,7 +40,7 @@ fn a_screw_reads_an_elliptic_and_a_parabolic_mode() {
 /// generator would need `tan(π/8) = √2 − 1`; the inverse chart refuses it by
 /// name (MD1's finding, for 78.11 link 2).
 #[test]
-fn a_screws_turn_closes_at_its_own_order_and_its_slip_is_open() {
+fn mode_order_closes_screw_turn_leaves_slip_open() {
     let turn_180 = Mv::blade(E1 | E2, q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
     let generator = cayley_inverse(&turn_180).expect("a 180°-turn screw has a rational chart point");
     let ms = modes(&generator, &mut budget()).expect("its modes split");
@@ -54,7 +54,7 @@ fn a_screws_turn_closes_at_its_own_order_and_its_slip_is_open() {
 
 /// A DISPIRATION READS TWO: a turn and a boost on orthogonal planes.
 #[test]
-fn a_dispiration_reads_an_elliptic_and_a_hyperbolic_mode() {
+fn modes_split_dispiration_elliptic_and_hyperbolic() {
     let b = Mv::blade(E1 | E2, q(1, 1)).add(&Mv::blade(E3 | EM, q(1, 2)));
     assert_eq!(kinds(&b), vec![(BivectorKind::Elliptic, 1), (BivectorKind::Hyperbolic, 1)]);
 }
@@ -63,7 +63,7 @@ fn a_dispiration_reads_an_elliptic_and_a_hyperbolic_mode() {
 /// read two elliptic modes; equal turns read ONE mode over two planes — an
 /// isoclinic pair, held whole, no split among its planes chosen.
 #[test]
-fn at_four_axes_two_turns_read_two_modes_and_an_isoclinic_pair_reads_one_over_two_planes() {
+fn modes_hold_isoclinic_pair_as_one_mode() {
     let e34 = ax(3) | ax(4);
     let unequal = Mv::blade(E1 | E2, q(1, 1)).add(&Mv::blade(e34, q(2, 1)));
     assert_eq!(kinds(&unequal), vec![(BivectorKind::Elliptic, 1), (BivectorKind::Elliptic, 1)]);
@@ -75,7 +75,7 @@ fn at_four_axes_two_turns_read_two_modes_and_an_isoclinic_pair_reads_one_over_tw
 /// which no rational split reaches — refused with the factor's degree, never
 /// rounded onto a nearby split.
 #[test]
-fn a_generator_whose_modes_lie_in_an_extension_is_undecomposed_by_name() {
+fn modes_refuse_irrational_split_by_degree() {
     let b = Mv::blade(E1 | E2, q(1, 1))
         .add(&Mv::blade(E2 | E3, q(1, 1)))
         .add(&Mv::blade(ax(3) | ax(4), q(1, 1)));
@@ -86,7 +86,7 @@ fn a_generator_whose_modes_lie_in_an_extension_is_undecomposed_by_name() {
 /// Cayley comes back as a generator of the same ray, and exactly where the
 /// ray's canonical writing is the one Cayley produced.
 #[test]
-fn the_inverse_cayley_chart_returns_the_generator_of_the_ray() {
+fn cayley_inverse_returns_generator_of_ray() {
     let b = Mv::blade(E1 | E2, q(1, 3)).add(&Mv::blade(E3 | EM, q(1, 5)));
     let omega = cayley(&b).expect("off the pole");
     let back = cayley_inverse(&omega).expect("the ray has a rational chart point");

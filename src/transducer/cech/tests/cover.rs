@@ -23,7 +23,7 @@ fn lanes(nets: &[([u8; 32], [i128; 4])]) -> Lanes {
 /// THE LANE GROUP: exact sums per identity per lane, zeros leaving the one
 /// writing, the inverse the negation — and four lanes never summed into one.
 #[test]
-fn the_lane_group_sums_exactly_per_identity_per_lane() {
+fn lanes_compose_sums_exactly_per_identity_per_lane() {
     let a = lanes(&[(who(1), [5, 0, 2, 0]), (who(2), [-5, 1, 0, 0])]);
     let b = lanes(&[(who(2), [5, -1, 0, 0]), (who(3), [0, 0, 0, 7])]);
     let sum = a.compose(&b).expect("within the carrier");
@@ -38,7 +38,7 @@ fn the_lane_group_sums_exactly_per_identity_per_lane() {
 /// obstructed by exactly that value, on exactly that lane, for exactly that
 /// identity.
 #[test]
-fn a_ledger_triangle_glues_and_an_obstruction_names_what_was_made() {
+fn fill_ledger_triangle_glues_or_names_obstruction() {
     let mut c: Cover<Lanes> = Cover::new();
     c.set_edge(&v(1), &v(2), lanes(&[(who(7), [5, 0, 0, 0])])).expect("set");
     c.set_edge(&v(2), &v(3), lanes(&[(who(7), [3, 0, 0, 0])])).expect("set");
@@ -55,7 +55,7 @@ fn a_ledger_triangle_glues_and_an_obstruction_names_what_was_made() {
 /// obstructs a triangle that holds it — and only a missing edge leaves a
 /// cycle unread, by name.
 #[test]
-fn a_tetrahedron_glues_on_all_its_triangles_and_one_edge_obstructs_it() {
+fn fill_tetrahedron_glues_and_changed_edge_obstructs() {
     // A potential on four ledgers: the edge a → b carries φ(b) − φ(a), so
     // every cycle closes.
     let phi = |b: u8| -> i128 { i128::from(b) * 10 };
@@ -77,7 +77,7 @@ fn a_tetrahedron_glues_on_all_its_triangles_and_one_edge_obstructs_it() {
 /// around a triangle compose to the identity ray — the cell glues; another
 /// third side obstructs it. One cover, two coefficient groups.
 #[test]
-fn the_versor_group_reads_the_same_cover_the_same_way() {
+fn fill_over_turned_reads_same_cover() {
     let q = |n: i64| BigRational::from_integer(n.into());
     let turned = |s: i64, b: i64| Turned { rotor: Rotor::scalar(q(s)).add(&Rotor::blade(0b0011, q(b))), carriage: crate::transducer::element::identity_versor() };
     let (r, s) = (turned(2, 1), turned(3, 4));
@@ -97,7 +97,7 @@ fn the_versor_group_reads_the_same_cover_the_same_way() {
 /// same element a `Cover<Turned>` holding those edges reads. One machinery,
 /// the minds' versors and the ledger's lanes and rates.
 #[test]
-fn the_minds_complex_reads_its_cycles_by_the_one_holonomy() {
+fn holonomy_agrees_between_complex_and_cover() {
     use crate::transducer::cech::Complex;
     let q = |n: i64| BigRational::from_integer(n.into());
     let turn = |s: i64, blade: usize, b: i64| Rotor::scalar(q(s)).add(&Rotor::blade(blade, q(b)));

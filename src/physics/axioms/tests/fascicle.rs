@@ -36,7 +36,7 @@ fn dist2(a: &Mv, b: &Mv) -> num_rational::BigRational {
 /// and `(1,0,1)` stand fixed. Two unit spheres a unit apart cut at 60°
 /// (order three): the turn is 120°, closing after three.
 #[test]
-fn an_elliptic_fascicle_turns_about_its_circle_and_closes_at_its_period() {
+fn fascicle_elliptic_turns_about_circle_closing_at_period() {
     let f = Fascicle { first: sphere([0, 0, 0], (2, 1)), second: sphere([2, 0, 0], (2, 1)) };
     assert_eq!(f.regime(), PairRegime::Finite(2), "orthogonal: a turn of order two");
     assert_eq!(f.streamline(), Some(Streamline::Elliptic));
@@ -59,7 +59,7 @@ fn an_elliptic_fascicle_turns_about_its_circle_and_closes_at_its_period() {
 /// another distance apart. The slide perception sees is the fascicle
 /// kissing at infinity.
 #[test]
-fn a_parabolic_fascicle_flows_about_its_contact_and_the_slide_is_the_fascicle_kissing_at_infinity() {
+fn fascicle_parabolic_fixes_contact_and_slide_kisses_at_infinity() {
     let d = [q(2, 1), q(0, 1), q(0, 1)];
     let planes = Fascicle::parallel(&d).expect("a slide");
     assert_eq!(planes.regime(), PairRegime::Parabolic, "parallel planes kiss at e_∞");
@@ -83,7 +83,7 @@ fn a_parabolic_fascicle_flows_about_its_contact_and_the_slide_is_the_fascicle_ki
 /// `r² = 1/4` about the centre to one of `r² = 4`, its extent — and so its
 /// second moments — scaled by `(r₂² / r₁²)² = 16`.
 #[test]
-fn a_hyperbolic_fascicle_dilates_by_the_ratio_of_its_squares() {
+fn fascicle_hyperbolic_dilates_by_ratio_of_squares() {
     let f = Fascicle { first: sphere([0, 0, 0], (1, 1)), second: sphere([0, 0, 0], (4, 1)) };
     assert_eq!(f.regime(), PairRegime::Boost, "apart: a boost");
     assert_eq!(f.streamline(), Some(Streamline::Hyperbolic));

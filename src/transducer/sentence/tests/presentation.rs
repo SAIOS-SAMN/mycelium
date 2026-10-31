@@ -18,8 +18,9 @@ fn motions(a: &[Vec<u8>], b: &[Vec<u8>]) -> Vec<crate::transducer::cga::Mv> {
         .collect()
 }
 
+/// A held slide cites a longer slide on its hole and composes to it.
 #[test]
-fn a_held_slide_cites_a_longer_slide_on_its_hole_and_composes_to_it() {
+fn deconstruct_cites_held_slide_by_count_ratio() {
     let one = (vec![vec![1u8, 0, 0, 0, 0, 0, 0]], vec![vec![0u8, 1, 0, 0, 0, 0, 0]]);
     let three = (vec![vec![1u8, 0, 0, 0, 0, 0, 0]], vec![vec![0u8, 0, 0, 1, 0, 0, 0]]);
     let held = crate::transducer::family::cipher_form(&one.0, &one.1);
@@ -45,8 +46,9 @@ fn a_held_slide_cites_a_longer_slide_on_its_hole_and_composes_to_it() {
     assert!(is_still(&motion_power(m, -1).geo(m)), "a motion's −1 power undoes it");
 }
 
+/// A slide is read on the null lane, and a held slide re-derives its cube.
 #[test]
-fn a_slide_is_read_on_the_null_lane_and_a_held_slide_re_derives_its_cube() {
+fn read_word_cites_slide_on_null_lane() {
     use crate::transducer::sentence::presentation::LANE_T;
     let one = (vec![vec![1u8, 0, 0, 0, 0, 0, 0]], vec![vec![0u8, 1, 0, 0, 0, 0, 0]]);
     let three = (vec![vec![1u8, 0, 0, 0, 0, 0, 0]], vec![vec![0u8, 0, 0, 1, 0, 0, 0]]);
@@ -67,8 +69,9 @@ fn a_slide_is_read_on_the_null_lane_and_a_held_slide_re_derives_its_cube() {
     assert!(ruled.residue[LANE_T] > 0);
 }
 
+/// A hue cycle and its powers stand on one mode, and its order returns it.
 #[test]
-fn a_hue_cycle_and_its_powers_stand_on_one_mode_and_its_order_returns_it() {
+fn gauge_modes_reads_cycle_powers_on_one_mode() {
     use crate::transducer::sentence::presentation::{gauge_modes, gauge_power, GaugeMode};
     let cycle = vec![(1u8, 2u8), (2, 3), (3, 1)];
     let modes = gauge_modes(&cycle).expect("a cycle is a map");
@@ -80,8 +83,9 @@ fn a_hue_cycle_and_its_powers_stand_on_one_mode_and_its_order_returns_it() {
     assert_eq!(gauge_modes(&[(4, 0)]).expect("a merge is a map"), vec![GaugeMode::Move(4, 0)]);
 }
 
+/// A motion on a hole nothing holds is residue and composes to nothing.
 #[test]
-fn a_motion_on_a_hole_nothing_holds_is_residue_and_composes_to_nothing() {
+fn deconstruct_leaves_unheld_hole_as_residue() {
     let across = (vec![vec![1u8, 0, 0, 0, 0]], vec![vec![0u8, 1, 0, 0, 0]]);
     let down = (vec![vec![1u8], vec![0], vec![0], vec![0]], vec![vec![0u8], vec![0], vec![1], vec![0]]);
     let held = crate::transducer::family::cipher_form(&across.0, &across.1);
@@ -116,8 +120,9 @@ fn scene_word(a: &[Vec<u8>], b: &[Vec<u8>]) -> (Vec<u8>, Vertex, Address) {
     (at, w, address)
 }
 
+/// A form whose every word reads is filed whole with no refusal.
 #[test]
-fn a_form_whose_every_word_reads_is_filed_whole_with_no_refusal() {
+fn learn_form_files_readable_form_whole() {
     use crate::transducer::sentence::generator_key;
     let one = (vec![vec![1u8, 0, 0, 0, 0, 0, 0]], vec![vec![0u8, 1, 0, 0, 0, 0, 0]]);
     let held = crate::transducer::family::cipher_form(&one.0, &one.1);
@@ -136,8 +141,10 @@ fn a_form_whose_every_word_reads_is_filed_whole_with_no_refusal() {
     assert!(g.ruled && !is_still(&g.motion), "the slide moves, as ruled");
 }
 
+/// An unreadable word is refused by name at its coordinate, and the rest of
+/// the form is filed.
 #[test]
-fn an_unreadable_word_is_refused_by_name_at_its_coordinate_and_the_rest_is_filed() {
+fn learn_form_refuses_unreadable_word_by_name() {
     use crate::transducer::sentence::generator_key;
     use crate::transducer::sentence::presentation::{Refused, Unlearned};
     let one = (vec![vec![1u8, 0, 0, 0, 0, 0, 0]], vec![vec![0u8, 1, 0, 0, 0, 0, 0]]);

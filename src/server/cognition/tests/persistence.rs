@@ -10,7 +10,7 @@ use crate::cognition::*;
 /// A second vantage here is `glue_local`'s two fixture keys (§3.4's
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
-fn the_basis_survives_a_restart() {
+fn restore_recalls_basis_without_regermination() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)]; // a rotation (group substance)
@@ -52,7 +52,7 @@ assert_eq!(booted.basis_len(), 2, "no re-germination");
 /// tick (LD3-b); a restore reads the same class and the same stamp, never a
 /// hash of the row.
 #[test]
-fn a_cocycle_row_round_trips_its_class_and_its_stamp() {
+fn restore_round_trips_cocycle_class_and_stamp() {
 let mut k = Kernel::new();
 let inv = crate::transducer::stalk::Invariant::counts(&[1]);
 let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).unwrap();
@@ -76,7 +76,7 @@ assert_eq!(booted.cocycle_receipt.get(key).copied(), Some(stood), "the stamp the
 /// A restart must not docket Δ⃗ = 0: deflation records survive the
 /// snapshot, so the court does not slash a live provisional as empty.
 #[test]
-fn deflation_survives_a_restart() {
+fn restore_keeps_docket_deflation() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
@@ -99,7 +99,7 @@ assert_eq!(after[0].deflation, before[0].deflation, "deflation survived; the cou
 /// positional tape (78.25) is refused by its name, MYC7, and a tape that
 /// is neither refuses as what it is.
 #[test]
-fn a_snapshot_cut_short_at_any_trie_is_refused() {
+fn restore_refuses_tape_cut_at_any_trie() {
 use crate::cognition::snapshot::{
     COCYCLES_TRIE, COMPLEXES_TRIE, COURT_TRIE, ERAS_TRIE, LEDGER_TRIE, MAGIC, PRE_TRIE_MAGIC, WORDS_TRIE,
 };
@@ -145,7 +145,7 @@ assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
 /// leaves out of kind order refuse, and a trie read under another name
 /// refuses. What reads back is keyed, whatever order the nodes were given.
 #[test]
-fn a_trie_reads_back_by_key_and_refuses_what_it_cannot_place() {
+fn take_trie_reads_by_key_and_refuses_unplaced() {
 use crate::network::nerve::Keyed;
 use crate::snapshot::{leaf, put_trie, take_trie, Leaves};
 let mut nodes: Keyed<Leaves> = Keyed::new();
@@ -193,7 +193,7 @@ assert!(take_trie(&dup, &mut 0, "t", &[1]).is_none(), "a key the trie already ho
 /// like from inside; the second is what a section that overruns its
 /// neighbour looks like — the failure that used to be silent.
 #[test]
-fn a_section_that_does_not_close_where_it_declared_is_refused() {
+fn restore_refuses_section_off_declared_length() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
@@ -237,7 +237,7 @@ for wrong in [declared.wrapping_sub(1), declared.wrapping_add(1)] {
 /// `snapshot::put_key` writes a `u64` length, as every other length on this
 /// tape has since MYC6, and is total.
 #[test]
-fn a_key_too_long_for_the_wire_prefix_still_round_trips_on_the_tape() {
+fn take_key_round_trips_key_past_wire_prefix() {
 let long = vec![0xABu8; (u16::MAX as usize) + 64];
 assert!(
     crate::transducer::address::Address::from(long.clone()).cited().is_none(),
@@ -266,7 +266,7 @@ assert!(
 /// transition at the receipt it stood at; a transition that stood at no act
 /// is refused by name and does not come back.
 #[test]
-fn the_ledgers_per_act_data_stands_at_its_nodes() {
+fn restore_returns_per_act_data_at_its_stamp() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
@@ -295,7 +295,7 @@ assert_eq!((key.as_slice(), *at), (b"stood".as_slice(), Some(head)), "the stampe
 /// ruled each word into it: a word is federated at the act that ruled it,
 /// that stamp is its RULED leaf, and the order comes back from the stamps.
 #[test]
-fn the_federation_comes_back_in_the_order_its_rulings_stood() {
+fn restore_rederives_federation_order_from_ruling_stamps() {
 use crate::anastome::dialogue::RULING_UPHELD;
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
@@ -328,7 +328,7 @@ assert_eq!(again, order, "the order re-derived from the ruling stamps");
 /// survives a restart on the listing's row; a field on a word no row holds
 /// is named and not written, and the tape does not grow by its address.
 #[test]
-fn a_field_rides_its_words_row() {
+fn snapshot_writes_field_only_on_its_words_row() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
@@ -366,7 +366,7 @@ assert_eq!(got.nonflat, 1);
 /// primitive a fixture uses — reads as held without a stamp, and the
 /// snapshot refuses it: it does not come back.
 #[test]
-fn a_word_no_act_admitted_is_not_written() {
+fn snapshot_refuses_word_no_act_admitted() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let mut k = Kernel::new();

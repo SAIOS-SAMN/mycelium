@@ -9,8 +9,10 @@ fn inv(axes: &[u64]) -> Invariant {
     Invariant::counts(axes)
 }
 
+/// The cover's longest common prefix is the plane both hyphae cover, and a
+/// miss at the first axis is novel.
 #[test]
-fn cover_lcp_is_the_plane_and_a_miss_at_the_first_axis_is_novel() {
+fn fiber_reads_plane_and_first_axis_miss_as_novel() {
     let mut c = Cover::new();
     let a = [1u8; 32];
     let b = [2u8; 32];
@@ -39,8 +41,10 @@ fn nearer(chart: &Invariant, a: [u8; 32], b: [u8; 32]) -> [u8; 32] {
     }
 }
 
+/// Home is chosen by room, then by the chart's nearness on the fiber, and by
+/// room when the chart is novel.
 #[test]
-fn home_is_room_then_the_charts_nearness_on_the_fiber_and_room_when_novel() {
+fn home_ranks_room_then_chart_nearness() {
     let mut c = Cover::new();
     let mut rooms = Keyed::new();
     let mut addrs = Keyed::new();
@@ -91,7 +95,7 @@ fn home_is_room_then_the_charts_nearness_on_the_fiber_and_room_when_novel() {
 /// all of it, which is what identity order made of every tie — and a chart
 /// homes at the same hypha however often it is asked.
 #[test]
-fn courts_bonded_alike_share_the_charts() {
+fn home_shares_charts_among_equal_rooms() {
     let mut c = Cover::new();
     let mut rooms = Keyed::new();
     let mut addrs = Keyed::new();
@@ -114,8 +118,9 @@ fn courts_bonded_alike_share_the_charts() {
     assert!(counts.iter().all(|&n| n > 0), "every court bonded alike homes some charts: {counts:?}");
 }
 
+/// Retracting a hypha leaves no stale chart on its fiber.
 #[test]
-fn retract_hypha_does_not_leave_stale_charts() {
+fn retract_hypha_leaves_no_stale_charts() {
     let mut c = Cover::new();
     let a = [1u8; 32];
     c.admit(0, &inv(&[1]), a);
@@ -126,7 +131,7 @@ fn retract_hypha_does_not_leave_stale_charts() {
 /// Three covers over one corpus: each listing homes at one hypha, and
 /// the home counts sum to the corpus.
 #[test]
-fn three_covers_home_counts_sum_to_the_corpus() {
+fn home_counts_over_three_covers_sum_to_corpus() {
     let mut c = Cover::new();
     let mut rooms = Keyed::new();
     let mut addrs = Keyed::new();
@@ -169,7 +174,7 @@ fn xor(a: &[u8; 32], b: &[u8; 32]) -> [u8; 32] {
     clippy::disallowed_methods,
     reason = "law 2, rule 4 — the fixture needs ids spread over the key space and a brute-force argmin to check the prefix read against; neither is cognition"
 )]
-fn trie_closest_matches_brute_force_without_scanning() {
+fn closest_matches_brute_force_xor_argmin() {
     let ids: Vec<[u8; 32]> = (0u8..40).map(|k| *blake3::hash(&[k]).as_bytes()).collect();
     let mut r = Router::new();
     for (i, id) in ids.iter().enumerate() {
@@ -189,7 +194,7 @@ fn trie_closest_matches_brute_force_without_scanning() {
 /// destination set indexed by the size of the mesh is the one shape that
 /// section forbids, and it is what the exchange did.
 #[test]
-fn a_form_is_offered_to_the_hyphae_covering_its_chart_and_not_to_every_peer() {
+fn witnesses_are_covering_hyphae_not_every_peer() {
     let home = [1u8; 32];
     let near = [2u8; 32];
     let far = [3u8; 32];
@@ -244,8 +249,9 @@ fn a_form_is_offered_to_the_hyphae_covering_its_chart_and_not_to_every_peer() {
     assert_eq!(got, vec![near.to_vec()], "lane 0's cover, by that fallback");
 }
 
+/// Lane cover room is exact arithmetic, with no invented floor.
 #[test]
-fn lane_cover_room_exact_arithmetic_without_invented_floor() {
+fn lane_cover_room_is_exact_without_invented_floor() {
     // spend == 0 returns None (cannot divide by zero)
     assert_eq!(lane_cover_room(10, 100, 0, 0), None);
     // reserve < spend gives quotient 0: bond * 0 - 0 = 0 (no invented .max(1) floor)

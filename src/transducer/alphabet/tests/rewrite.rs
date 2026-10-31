@@ -19,7 +19,7 @@ fn budget(n: usize) -> crate::physics::Budget {
 /// would rewrite one operator into another — not a simplification but a
 /// corruption — and the whole system rests on it.
 #[test]
-fn every_rule_from_the_relators_is_a_theorem() {
+fn rules_from_relators_holds_and_orients_downward() {
     let rules = rules_from_relators();
     assert!(!rules.is_empty(), "the stated relators orient into rules");
     for r in &rules {
@@ -40,7 +40,7 @@ fn every_rule_from_the_relators_is_a_theorem() {
 /// prime has infinite order — there is no relation to orient, and including
 /// one would assert a relation the alphabet denies.
 #[test]
-fn an_infinite_order_letter_states_no_relation() {
+fn rules_from_relators_omits_infinite_order_prime() {
     let rules = rules_from_relators();
     for r in &rules {
         for (id, _) in r.lhs.letters().iter().chain(r.rhs.letters()) {
@@ -57,7 +57,7 @@ fn an_infinite_order_letter_states_no_relation() {
 /// well-founded order; and the element it names is unchanged, which is
 /// re-derived from the rotor rather than assumed from the rules.
 #[test]
-fn reduction_descends_and_holds_the_operator() {
+fn reduce_descends_and_preserves_operator() {
     let rules = rules_from_relators();
     let q = LetterId::turn_90((0, 1)).expect("90° turn");
     // Five 90° turns are one 90° turn: q⁴ = 1 is a stated relator.
@@ -87,7 +87,7 @@ fn reduction_descends_and_holds_the_operator() {
 /// Every pair a rule makes with ITSELF by suffix-prefix overlap is the
 /// classic source, and it must be found or confluence cannot be checked.
 #[test]
-fn critical_pairs_are_found_between_rules_that_overlap() {
+fn critical_pairs_found_between_overlapping_rules() {
     let rules = rules_from_relators();
     let overlapping = rules
         .iter()
@@ -126,7 +126,7 @@ fn critical_pairs_are_found_between_rules_that_overlap() {
 /// spends its budget returns the rules found so far and `false`, and those
 /// rules are still sound — every one is a theorem — but not known confluent.
 #[test]
-fn completion_finishes_and_the_system_is_confluent() {
+fn complete_finishes_confluent() {
     let seed = rules_from_relators();
     let mut b = budget(1 << 20);
     let (rules, finished) = complete(&seed, &mut b);
@@ -151,7 +151,7 @@ fn completion_finishes_and_the_system_is_confluent() {
 /// the whole reason to complete it, and the property `Word::geodesic`'s
 /// plane-local reduction does not have.
 #[test]
-fn two_spellings_of_one_element_reduce_to_one_tape() {
+fn geodesic_under_reduces_two_spellings_to_one_tape() {
     let seed = rules_from_relators();
     let mut b = budget(1 << 20);
     let (rules, finished) = complete(&seed, &mut b);
@@ -182,7 +182,7 @@ fn two_spellings_of_one_element_reduce_to_one_tape() {
 /// what makes the rules above a question of SPELLING rather than of
 /// identity.
 #[test]
-fn the_operator_is_decided_without_rewriting() {
+fn operator_eq_decides_without_rewriting() {
     let q = LetterId::turn_90((0, 1)).expect("90° turn");
     let a = Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
     assert!(
@@ -199,7 +199,7 @@ fn the_operator_is_decided_without_rewriting() {
 /// A rule whose letters share one plane names it; a commutator spans two and
 /// names none. A reading for a caller that wants one plane's rules.
 #[test]
-fn a_rule_names_its_plane_only_when_it_has_one() {
+fn rule_plane_names_single_plane_only() {
     let rules = rules_from_relators();
     let spanning = rules.iter().filter(|r| rule_plane(r).is_none()).count();
     let single = rules.iter().filter(|r| rule_plane(r).is_some()).count();
@@ -221,7 +221,7 @@ fn a_rule_names_its_plane_only_when_it_has_one() {
 /// tape, so two minds spelling one rotor write one tape — and the
 /// factorisation writes that same tape.
 #[test]
-fn the_presentation_reduces_words_in_flight() {
+fn presentation_reduces_commuting_runs_to_one_geodesic() {
     use crate::transducer::alphabet::factor_rotor;
     use crate::transducer::alphabet::rewrite::{presentation, tape_key};
     let (rules, finished) = presentation();
@@ -261,7 +261,7 @@ fn the_presentation_reduces_words_in_flight() {
 /// An orientation of two identical tapes is no rule: there is nothing to
 /// rewrite, and a rule from it would rewrite a word to itself forever.
 #[test]
-fn a_relation_between_one_tape_and_itself_is_not_a_rule() {
+fn orient_refuses_identical_tapes() {
     let q = LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
     assert!(Rule::orient(&w, &w).is_none());

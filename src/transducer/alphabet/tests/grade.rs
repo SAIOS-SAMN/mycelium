@@ -20,7 +20,7 @@ fn q(v: i64) -> BigRational {
 /// re-summing is the identity — and it is what lets a caller read one grade
 /// without asking whether the rest were lost.
 #[test]
-fn the_grades_sum_to_the_element() {
+fn grade_sums_back_to_element() {
     let q4 = LetterId::turn_90((0, 1)).expect("90° turn on the sensor plane");
     let q23 = LetterId::turn_90((2, 3)).expect("90° turn on the complementary plane");
     // A DOUBLE ROTATION: `Spin(4) = SU(2) × SU(2)`, so two independent
@@ -43,7 +43,7 @@ fn the_grades_sum_to_the_element() {
 /// A ROTOR OCCUPIES EVEN GRADES ONLY, which is what `Cl⁺(4,0)` means, and
 /// the two readings of that agree because there is one reader.
 #[test]
-fn a_rotor_occupies_even_grades_and_a_double_turn_carries_the_pseudoscalar() {
+fn grades_even_and_double_turn_carries_pseudoscalar() {
     let q01 = LetterId::turn_90((0, 1)).expect("90° turn");
     let q23 = LetterId::turn_90((2, 3)).expect("90° turn");
 
@@ -80,7 +80,7 @@ fn a_rotor_occupies_even_grades_and_a_double_turn_carries_the_pseudoscalar() {
 /// projecting gives the same coefficients as the composite's own projection,
 /// on every grade, with no grade computed separately.
 #[test]
-fn one_product_composes_every_grade_at_once() {
+fn geo_composes_every_grade_at_once() {
     let q01 = LetterId::turn_90((0, 1)).expect("90° turn");
     let q23 = LetterId::turn_90((2, 3)).expect("90° turn");
     let a = Word::from_letters(&[(q01, false)]).rotor();
@@ -112,7 +112,7 @@ fn one_product_composes_every_grade_at_once() {
 /// has weight too) is refused at the gate rather than factored by the even
 /// grades it happens to carry.
 #[test]
-fn the_factorisation_spells_a_double_turn_whole_and_refuses_an_odd_element() {
+fn factor_rotor_spells_double_turn_and_refuses_odd() {
     use crate::transducer::alphabet::factor_rotor;
     let q01 = LetterId::turn_90((0, 1)).expect("90° turn");
     let q23 = LetterId::turn_90((2, 3)).expect("90° turn");
@@ -133,7 +133,7 @@ fn the_factorisation_spells_a_double_turn_whole_and_refuses_an_odd_element() {
 /// THE ZERO MULTIVECTOR OCCUPIES NO GRADE and is not a versor: it has no
 /// weight, so it carries nothing and is not an element of the group.
 #[test]
-fn the_zero_multivector_occupies_no_grade() {
+fn grades_of_zero_empty() {
     let z = Rotor::zero();
     assert!(z.grades().is_empty(), "zero occupies nothing, got {:?}", z.grades());
     assert!(z.weight().is_none(), "and it is not a versor");
@@ -148,7 +148,7 @@ fn the_zero_multivector_occupies_no_grade() {
 /// sandwich negated both — every image of an odd rotor came back as its
 /// own negative (d1's shape one algebra down).
 #[test]
-fn a_reflection_carries_a_vector_to_its_mirror_image() {
+fn carry_reflects_vector_through_mirror() {
     let reflection = Rotor::blade(1, q(1));
     let z = q(0);
     assert_eq!(
@@ -170,7 +170,7 @@ fn a_reflection_carries_a_vector_to_its_mirror_image() {
 /// reflections, the pseudoscalar, `1 + e₀₁ + e₂₃`, `1 + e₀₁₂₃`, a mixed
 /// parity and zero.
 #[test]
-fn the_rotor_reader_agrees_with_the_theorem_it_implies() {
+fn rotor_is_versor_agrees_with_scalar_norm_theorem() {
     let old = |r: &Rotor| {
         let p = r.geo(&r.reverse());
         !p.coeff(0).is_zero() && (1..16).all(|i| p.coeff(i).is_zero())

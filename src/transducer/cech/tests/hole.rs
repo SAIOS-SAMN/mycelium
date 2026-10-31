@@ -33,7 +33,7 @@ fn sealed_triangle(c: &mut Complex, n: u8, third: Rotor) -> (Vec<Vec<u8>>, Vec<u
 /// as a hole. A turn of finite order unrolls round its own orbit; nothing is
 /// stepped.
 #[test]
-fn a_membrane_winds_at_its_seal_and_unwinds_at_its_release() {
+fn descend_unwinds_what_seal_wound() {
     let mut c = Complex::new();
     c.arm_outflow();
     let (_, key) = sealed_triangle(&mut c, 1, turn_90());
@@ -59,7 +59,7 @@ fn edge_key(a: &[u8], b: &[u8]) -> Vec<u8> {
 /// refuse at it by name; `seal` caps it with the same fill, the class it kept
 /// killed, and the board is the sealed board again — inverse on content.
 #[test]
-fn puncture_keeps_the_class_in_and_only_seal_caps_the_hole() {
+fn puncture_keeps_class_and_only_seal_caps() {
     let mut c = Complex::new();
     let (vs, key) = sealed_triangle(&mut c, 1, turn_90());
     let sealed = c.board();
@@ -87,7 +87,7 @@ fn puncture_keeps_the_class_in_and_only_seal_caps_the_hole() {
 /// goes. A question standing on it is cauterized first. A vertex under a
 /// chamber that sealed nothing keeps nothing, and goes, with no scar.
 #[test]
-fn a_released_vertex_cauterizes_the_classes_it_cannot_read_back() {
+fn release_vertex_cauterizes_unreadable_classes() {
     let mut c = Complex::new();
     c.arm_outflow();
     let (vs, key) = sealed_triangle(&mut c, 1, turn_90());
@@ -128,7 +128,7 @@ fn a_released_vertex_cauterizes_the_classes_it_cannot_read_back() {
 /// the vacuum whole, the hole closed and its boundary unpinned. Nothing is
 /// burned: no scar.
 #[test]
-fn a_read_back_that_cannot_be_made_is_frozen() {
+fn ascend_freezes_class_it_cannot_read_back() {
     let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
     let (vs, key) = sealed_triangle(&mut mind.complex, 61, turn_90());
     assert!(matches!(mind.complex.descend(&key), Descended::Throat(_)), "the chamber crosses");
@@ -151,7 +151,7 @@ fn a_read_back_that_cannot_be_made_is_frozen() {
 /// thaw — and the boundary closes: the chamber returns with the same fill
 /// and the vacuum lets it go. The board is the sealed board again.
 #[test]
-fn a_frozen_class_thaws_where_its_boundary_closes_again() {
+fn freeze_thaws_when_boundary_closes_again() {
     let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
     let (vs, key) = sealed_triangle(&mut mind.complex, 71, turn_90());
     let sealed = mind.complex.board();
@@ -173,7 +173,7 @@ fn a_frozen_class_thaws_where_its_boundary_closes_again() {
 /// heat — cauterized, its scar counted, the vacuum letting it go — and the
 /// vertex goes.
 #[test]
-fn a_frozen_class_passes_to_heat_when_a_vertex_it_names_is_shed() {
+fn release_vertex_cauterizes_frozen_class_on_it() {
     let mut c = Complex::new();
     let (vs, key) = sealed_triangle(&mut c, 81, turn_90());
     let Descended::Throat(_) = c.descend(&key) else { panic!("the chamber crosses") };
@@ -191,7 +191,7 @@ fn a_frozen_class_passes_to_heat_when_a_vertex_it_names_is_shed() {
 /// vertices on a path: the third face does not stand and no cell is minted;
 /// with the face and no volume on any lane, none again; with volume, one.
 #[test]
-fn the_climb_mints_a_cell_only_over_standing_faces_with_volume() {
+fn coboundary_on_link_mints_only_standing_faces_with_volume() {
     let mut c = Complex::new();
     let vs: Vec<Vec<u8>> = [v(41), v(42), v(43)].iter().map(|a| a.as_bytes().to_vec()).collect();
     for x in &vs {
@@ -213,7 +213,7 @@ fn the_climb_mints_a_cell_only_over_standing_faces_with_volume() {
 /// vacuum and condenses back with its transition: the same board. A tether
 /// that stands is not condensed twice; a remainder pair refuses.
 #[test]
-fn condense_is_drains_inverse_on_content() {
+fn condense_inverts_drain_on_content() {
     let mut c = Complex::new();
     let vs: Vec<Vec<u8>> = [v(1), v(2)].iter().map(|a| a.as_bytes().to_vec()).collect();
     c.set_edge(&vs[0], &vs[1], Rotor::identity(), ident(), vol());
@@ -235,7 +235,7 @@ fn condense_is_drains_inverse_on_content() {
 /// the tether's own line. Under a sealed cell the fibre flexes and the cell
 /// re-reads; under a hole it is pinned and carries what it carried.
 #[test]
-fn a_tether_is_a_fibre_and_flexes() {
+fn tether_flexes_unless_pinned() {
     let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
     mind.complex.arm_outflow();
     let (a, b) = (v(1).as_bytes().to_vec(), v(2).as_bytes().to_vec());
@@ -262,7 +262,7 @@ fn a_tether_is_a_fibre_and_flexes() {
 /// cell pins nothing), and the cell no longer ascends — its boundary is not
 /// whole. Condensed back, the boundary stands and the cell seals.
 #[test]
-fn the_minds_cell_ascends_only_over_its_standing_boundary() {
+fn ascend_requires_standing_boundary() {
     let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
     let vs: Vec<Vec<u8>> = [v(21), v(22), v(23)].iter().map(|a| a.as_bytes().to_vec()).collect();
     for x in &vs {
@@ -288,7 +288,7 @@ fn the_minds_cell_ascends_only_over_its_standing_boundary() {
 /// under a question (a punctured cell over it) is released and stands: the
 /// hole pins it.
 #[test]
-fn the_field_releases_what_relaxed_and_the_mind_lets_it_go() {
+fn release_drains_returned_tethers_unless_pinned() {
     use crate::transducer::family::pairing::{mark_flux, FieldLine};
     let mut field = crate::transducer::mind::MindField::default();
     field.think(|| {
@@ -335,7 +335,7 @@ fn the_field_releases_what_relaxed_and_the_mind_lets_it_go() {
 /// there — is carried by exactly that turn: it now carries 180°. The fibre
 /// that moved the orbit is not carried by itself.
 #[test]
-fn a_fibre_moves_with_the_field() {
+fn carry_moves_fibre_with_field() {
     use crate::transducer::family::pairing::{mark_flux, FieldLine};
     let mut field = crate::transducer::mind::MindField::default();
     field.think(|| {
@@ -368,7 +368,7 @@ fn a_fibre_moves_with_the_field() {
 /// it leaves is the board `p` alone leaves: the descent IS the puncture,
 /// with the content handed down.
 #[test]
-fn the_walk_descend_ascend_seal_descend_reads_as_ruled() {
+fn apply_descend_ascend_seal_descend_equals_puncture() {
     let mut c = Complex::new();
     let (vs, key) = sealed_triangle(&mut c, 1, turn_90());
     let sealed = c.board();
@@ -392,7 +392,7 @@ fn the_walk_descend_ascend_seal_descend_reads_as_ruled() {
 /// first handed the content down, `p` first kept it, and the descend then
 /// refuses at the hole.
 #[test]
-fn pivots_sharing_no_vertex_commute_and_on_one_cell_the_order_is_content() {
+fn apply_independent_pivots_commute() {
     let build = || {
         let mut c = Complex::new();
         let (a, ka) = sealed_triangle(&mut c, 1, turn_90());

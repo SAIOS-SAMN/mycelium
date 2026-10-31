@@ -267,7 +267,7 @@ mod tests {
     /// Every hypha of the genesis is bonded on this court at the cover,
     /// beside the voices and the court itself; a bond already held stands.
     #[test]
-    fn the_genesis_bonds_every_hypha_and_every_voice_at_the_cover() {
+    fn bond_genesis_bonds_every_hypha_and_voice_once() {
         let mut k = Kernel::new();
         let (court, peer, other, voice) = ([1u8; 32], [2u8; 32], [3u8; 32], [9u8; 32]);
         let cover = [12u64, 3, 0, 20];

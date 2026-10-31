@@ -12,7 +12,7 @@ fn block() -> Vec<(i64, i64, u8)> {
 /// the center of a block derives to Minus(Hue, Delta(Hue)) and re-evaluates
 /// exactly on a larger scene of the same species.
 #[test]
-fn interior_is_a_derived_term_that_transfers() {
+fn derive_interior_transfers_to_larger_scene() {
     let scene = block();
     let t = derive(&[(1, 1)], &scene).expect("derivable");
     assert_eq!(t.eval(&scene), vec![(1, 1)], "exact on its own evidence");
@@ -28,7 +28,7 @@ fn interior_is_a_derived_term_that_transfers() {
 
 /// The boundary ring derives as δ of the hue support.
 #[test]
-fn coboundary_derives_as_delta() {
+fn derive_coboundary_as_delta() {
     let scene = block();
     let ring: Vec<(i64, i64)> =
         scene.iter().map(|(r, c, _)| (*r, *c)).filter(|&(r, c)| !(r == 1 && c == 1)).collect();
@@ -43,7 +43,7 @@ fn coboundary_derives_as_delta() {
 /// single exact evidence underdetermines; consensus across train pairs
 /// disambiguates in the pipeline.)
 #[test]
-fn hue_interface_term_transfers() {
+fn eval_hue_interface_transfers() {
     let t = Sel::Inter(Box::new(Sel::Hue(1)), Box::new(Sel::Star(Box::new(Sel::Hue(2)))));
     let scene = vec![(0, 0, 1u8), (0, 1, 1), (0, 2, 2), (0, 3, 2)];
     assert_eq!(t.eval(&scene), vec![(0, 1)], "the hue-1 site touching hue 2");
@@ -56,7 +56,7 @@ fn hue_interface_term_transfers() {
 
 /// Serde round-trips every operator exactly; hostile bytes refuse cleanly.
 #[test]
-fn sel_serde_round_trips() {
+fn from_bytes_round_trips_and_refuses_hostile_bytes() {
     let t = Sel::Minus(
         Box::new(Sel::ArgExt(Box::new(Sel::Hue(3)), 0)),
         Box::new(Sel::Flood(
@@ -79,7 +79,7 @@ fn sel_serde_round_trips() {
 /// The LARGEST component selects by order invariant — uniquely, with ties
 /// selecting nothing — and the same term transfers to a rearranged scene.
 #[test]
-fn argmax_component_selects_uniquely_and_transfers() {
+fn eval_arg_ext_selects_unique_extremum() {
     let scene = vec![(0, 0, 3u8), (0, 1, 3), (0, 2, 3), (5, 5, 3)];
     let t = Sel::ArgExt(Box::new(Sel::Hue(3)), 0);
     assert_eq!(t.eval(&scene), vec![(0, 0), (0, 1), (0, 2)], "the three-site body wins");
@@ -96,7 +96,7 @@ fn argmax_component_selects_uniquely_and_transfers() {
 /// included), the ring's hole is Hue(0) ∖ Flood(border∩Hue(0), Hue(0)) —
 /// and the derived term transfers to a different ring.
 #[test]
-fn enclosure_composes_and_transfers() {
+fn derive_enclosure_transfers_to_wider_ring() {
     // A 3×3 ring of hue 5 with a hue-0 hole, on a 5×5 full grid.
     let mut scene: Vec<(i64, i64, u8)> = Vec::new();
     for r in 0..5 {
@@ -123,7 +123,7 @@ fn enclosure_composes_and_transfers() {
 
 /// Extremal projection: the top row of a component derives via Ext.
 #[test]
-fn extremal_projection_derives() {
+fn derive_top_row_via_ext() {
     let scene = block();
     let top: Vec<(i64, i64)> = vec![(0, 0), (0, 1), (0, 2)];
     let t = derive(&top, &scene).expect("derivable");

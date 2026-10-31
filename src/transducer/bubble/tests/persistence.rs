@@ -4,8 +4,10 @@
 
 use crate::transducer::bubble::*;
 
+/// A restarted mind comes up with an empty horizon and refills it from the
+/// syllabus page, and a later idea inherits the seeded class.
 #[test]
-fn restart_refills_horizon_from_syllabus() {
+fn seed_horizon_refills_empty_mind_from_syllabus() {
     use crate::transducer::alphabet::{LetterId, Word};
     let mut c = Contemplation::new();
     assert_eq!(c.horizon_len(), 0);

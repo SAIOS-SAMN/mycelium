@@ -7,7 +7,7 @@ use crate::client::sdk::*;
 /// Z monotonically, the aperture derives Impeded then Occluded at the
 /// ratio-law boundary, and one successful exchange restores Open.
 #[test]
-fn impedance_is_measured_and_the_aperture_derives() {
+fn impedance_rises_per_failure_and_transport_occludes() {
 // A session pointed at a port nothing listens on: every exchange
 // fails, so resistance accumulates deterministically.
 let s = Session::open("127.0.0.1:1", Kernel::named("impedance-test"));
@@ -83,7 +83,7 @@ let _ = h.join();
 /// An empty cover routes by XOR-closest chart key over known hyphae,
 /// not the bootstrap seed.
 #[test]
-fn empty_cover_routes_by_chart_key_over_known_hyphae() {
+fn route_chart_on_empty_cover_routes_by_chart_key() {
 let mut s = Session::open("127.0.0.1:7500", Kernel::named("fan"));
 s.know_hypha("127.0.0.1:7501", Kernel::named("p1").voice());
 s.know_hypha("127.0.0.1:7502", Kernel::named("p2").voice());
@@ -104,7 +104,7 @@ assert!(saw_other, "chart keys fan out across the known hyphae, not only the see
 /// A kernel's identity is stable and name-derived; distinct names → distinct
 /// voices (so two named kernels can reach consilience, one cannot with itself).
 #[test]
-fn kernel_identity_is_stable_and_distinct() {
+fn kernel_named_voice_is_stable_and_distinct() {
 assert_eq!(Kernel::named("sod").voice(), Kernel::named("sod").voice(), "stable seat");
 assert_ne!(Kernel::named("sod").voice(), Kernel::named("net").voice(), "distinct kernels");
 }

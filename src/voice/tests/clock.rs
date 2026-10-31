@@ -8,7 +8,7 @@ use crate::voice::Voice;
 /// and each act it speaks is framed under that identity; it holds nothing
 /// else — no receipt, no K — so speaking moves nothing in it.
 #[test]
-fn a_voice_is_an_identity_that_speaks_and_holds_nothing_else() {
+fn named_frames_acts_under_its_identity() {
     let v = Voice::named("worker-a");
     assert_eq!(v.identity(), Voice::named("worker-a").identity());
     assert_ne!(v.identity(), Voice::named("worker-b").identity());

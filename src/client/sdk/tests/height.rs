@@ -6,8 +6,10 @@ use crate::client::sdk::*;
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 
+/// The height a mind reads only advances, and what the mind stands is
+/// stamped with the height it read.
 #[test]
-fn the_height_a_mind_reads_only_advances_and_stamps_what_it_stands() {
+fn advance_height_only_advances_and_stamps_dialect() {
     let mut e = Entity::open("127.0.0.1:1", Kernel::named("height"));
     assert_eq!(e.now_tu(), 0, "nothing read yet");
     e.advance_height(5);
@@ -35,7 +37,7 @@ fn the_height_a_mind_reads_only_advances_and_stamps_what_it_stands() {
 /// an act moves no clock. It is volatile — the genome holds crystallized
 /// knowledge, not a clock — so a mind booted from a genome starts at zero.
 #[test]
-fn the_minds_k_counts_its_returns_and_is_not_persisted() {
+fn close_cycle_counts_returns_and_k_is_not_persisted() {
     let mut e = Entity::open("127.0.0.1:1", Kernel::named("no-words"));
     e.act();
     assert!(!e.close_cycle(0), "an act with no return closes nothing");
@@ -56,7 +58,7 @@ fn the_minds_k_counts_its_returns_and_is_not_persisted() {
 /// language holds one, the genome writer leaves it out by name (observed on the
 /// development deployment, 2026-10-19: rewrites were 88% of a 48 MB genome).
 #[test]
-fn a_rewrite_taught_is_never_a_word_of_the_genome() {
+fn absorb_taught_never_admits_rewrite_to_genome() {
     let word = super::common::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let other = super::common::two_body_sentence([&[(5, 6), (5, 6)], &[(7, 8), (7, 8)]]);
     let payload = crate::transducer::rewrite::RewritePayload::Retire { cites: vec![other.address()], freed: word.magnitude() };
@@ -85,7 +87,7 @@ fn a_rewrite_taught_is_never_a_word_of_the_genome() {
 /// at the first stroke, though no word was gained — so the file is the genome
 /// and never more; a file holding only words is kept as it is.
 #[test]
-fn a_restore_that_left_something_out_writes_the_genome_again() {
+fn keep_genome_rewrites_file_restore_left_short() {
     let word = super::common::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let payload = crate::transducer::rewrite::RewritePayload::Retire { cites: vec![word.address()], freed: word.magnitude() };
     let rewrite = crate::transducer::rewrite::mint(crate::transducer::rewrite::RewriteKind::Retire, &[word.address()], word.address(), payload, word.magnitude())
@@ -117,7 +119,7 @@ fn a_restore_that_left_something_out_writes_the_genome_again() {
 /// refused by the writer by name — it is not crystallized knowledge until a
 /// court rules it. A genome that carried a voice's ledger is refused by name.
 #[test]
-fn a_word_is_crystallized_at_the_courts_stamp_and_only_there() {
+fn genome_bytes_crystallize_word_only_at_court_stamp() {
     // A sentence of the language: a residual chain is an open question, never
     // a word (MU-CLIENT §7.1), and never reaches the genome.
     let word = super::common::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);

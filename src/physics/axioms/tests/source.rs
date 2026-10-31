@@ -33,7 +33,7 @@ fn sigma() -> Mv {
 /// THE GEOID AS ONE VECTOR: every pivot lies on it by one scalar, `P·σ = 0`;
 /// a point off it does not.
 #[test]
-fn the_geoid_is_one_vector_its_pivots_lie_on() {
+fn geoid_vector_holds_every_pivot() {
     let s = sigma();
     for p in pivots() {
         assert!(p.geo(&s).scalar_part().is_zero(), "a pivot on the geoid");
@@ -48,7 +48,7 @@ fn the_geoid_is_one_vector_its_pivots_lie_on() {
 /// the geoid. A generator that does not move the pivot gives no source; a
 /// point off the geoid gives none.
 #[test]
-fn a_source_is_a_null_flow_out_of_a_pivot_kept_inside_its_geoid() {
+fn source_of_is_null_flow_kept_in_geoid() {
     let s = sigma();
     let turn = Mv::blade(E1, q(1, 1)).geo(&Mv::blade(E3, q(1, 1)));
     assert_eq!(keeping(&s, &turn), Some(turn.clone()), "a turn about the centre keeps the geoid whole");
@@ -81,7 +81,7 @@ fn a_source_is_a_null_flow_out_of_a_pivot_kept_inside_its_geoid() {
 /// and gives no source; the pivot on the equator flows along the geoid and is
 /// one.
 #[test]
-fn a_lifted_fibre_on_a_geoid_inverts_into_a_source() {
+fn keeping_inverts_fibre_lift_into_source() {
     let s = sigma();
     let (pi, pj) = (at(5, 0, 0), at(0, 5, 0));
     let fibre = Fibre::new(pi.clone(), pj.clone(), q(2, 1), q(3, 1)).expect("a fibre");

@@ -8,7 +8,7 @@ use crate::transducer::bubble::*;
 /// never a norm. No thought is `[0; 4]`; one held link measures as its
 /// chain does, lane by lane.
 #[test]
-fn an_open_thought_measures_on_four_lanes_never_a_sum() {
+fn boundary_measure_reads_four_lanes_never_sum() {
     let mut c = Contemplation::new();
     assert_eq!(c.boundary_measure(), [0; 4], "no thought is zero on every lane, not MAX");
     let link = (0, 0, 1, 2);
@@ -30,7 +30,7 @@ fn an_open_thought_measures_on_four_lanes_never_a_sum() {
 /// could meet it. Measured before this on the one-body deformation P8
 /// leaves standing: one bubble, cover 0.
 #[test]
-fn an_open_demand_is_held_as_an_idea_standing_on_its_chart() {
+fn hold_form_stands_demand_on_its_chart() {
     use crate::transducer::sentence::{Demand, Form, Vertex};
     let bodies = vec![(0i64, 0i64, 1u8, 0u8), (0, 1, 1, 0)];
     let chart = crate::transducer::stalk::invariant(&bodies);
@@ -88,7 +88,7 @@ fn an_open_demand_is_held_as_an_idea_standing_on_its_chart() {
 /// this carrier would find nothing to condense; the carrier's own key does
 /// it (rule 3, rule 6).
 #[test]
-fn a_candidate_and_its_negation_are_one_candidate() {
+fn rotor_key_merges_candidate_and_negation() {
     use crate::transducer::alphabet::{Rotor, Q};
     let q = |n: i64| Q::from_integer(num_bigint::BigInt::from(n));
     let v = Rotor::scalar(q(3)).add(&Rotor::blade(0b0011, q(1))).add(&Rotor::blade(0b0101, q(1)));
@@ -111,8 +111,10 @@ fn a_candidate_and_its_negation_are_one_candidate() {
     assert!(!other.projective_eq(&v), "and the two are not one ray");
 }
 
+/// A crystallized form pivoted on by a held idea is glued into the meeting
+/// idea.
 #[test]
-fn wrap_glues_crystallized_form() {
+fn pivot_on_glues_crystallized_form() {
     use crate::transducer::element::FIBER_SPATIAL;
     let mut c = Contemplation::new();
     let rem = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
@@ -145,7 +147,7 @@ fn wrap_glues_crystallized_form() {
 
 /// A form with Glued vertices and empty remainder is held as the form.
 #[test]
-fn hold_form_keeps_a_glued_open_orbit() {
+fn hold_form_keeps_glued_open_orbit() {
     use crate::transducer::alphabet::Word;
     use crate::transducer::sentence::{Form, Vertex};
     let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).unwrap();
@@ -297,6 +299,8 @@ fn hold_form_keeps_a_glued_open_orbit() {
     }
 }
 
+/// A held form carries its training bundle and its per-pair remainders,
+/// keyed by pair, with the volume their lane-wise measure.
 #[test]
 fn hold_form_carries_bundle_and_remainder() {
     use crate::transducer::alphabet::Word;
@@ -344,7 +348,7 @@ fn hold_form_carries_bundle_and_remainder() {
 /// same word `mint_sentence` mints), the tape reads back closed, the court
 /// replays it against the bundle, and the idea leaves the contemplation.
 #[test]
-fn a_closed_idea_crystallizes_with_its_trajectory_and_leaves_the_contemplation() {
+fn expand_all_crystallizes_closed_idea_and_releases_it() {
     use crate::transducer::family::{extract_rule, mint_sentence, Grid, NoCrystal};
     let grid = |rows: &[&str]| -> Grid {
         rows.iter()
@@ -388,7 +392,7 @@ fn a_closed_idea_crystallizes_with_its_trajectory_and_leaves_the_contemplation()
 /// Hold, expand, and the quote-chart peel of one thought do not grow
 /// with N unrelated atlas words.
 #[test]
-fn work_of_one_thought_is_independent_of_n() {
+fn expand_all_work_independent_of_atlas_size() {
     use crate::network::nerve::work;
     use crate::transducer::element::from_canonical;
     use crate::transducer::germinate::germinate;
@@ -438,7 +442,7 @@ fn work_of_one_thought_is_independent_of_n() {
 /// with a period of four strokes — where the cursor that stopped at the
 /// end of the ring left every later stroke expanding nothing.
 #[test]
-fn the_dirty_ring_circuits_and_reports_its_period() {
+fn expand_all_circuits_dirty_ring_and_reports_period() {
     use crate::transducer::bubble::drive::Expanded;
     use crate::transducer::family::NoCrystal;
     let mut c = Contemplation::new();
@@ -480,7 +484,7 @@ fn the_dirty_ring_circuits_and_reports_its_period() {
 /// and would be dissolved for closing. `Rotor::order` answers the three
 /// readings exactly over ℚ, and they are three different facts.
 #[test]
-fn a_candidate_closes_flat_closes_at_a_period_or_ruptures() {
+fn monodromy_order_reads_flat_period_or_rupture() {
     use crate::transducer::alphabet::{Order, Rotor, Q};
     use crate::transducer::bubble::idea::monodromy;
     let q = |n: i64| Q::from_integer(num_bigint::BigInt::from(n));
@@ -519,7 +523,7 @@ fn a_candidate_closes_flat_closes_at_a_period_or_ruptures() {
 /// byte order IS order in ℤ — negatives before zero before positives — so
 /// the carrier walks the coordinate and nothing is sorted into it (rule 4).
 #[test]
-fn the_frame_key_orders_by_coordinate_and_not_by_byte() {
+fn frame_key_orders_by_coordinate_not_byte() {
     let key = |k: i64| ((k as u64) ^ (1u64 << 63)).to_be_bytes();
     let mut at: Keyed<i64> = Keyed::new();
     for k in [256i64, 1, -3, 0, 2, -1] {
@@ -601,8 +605,11 @@ fn citing_form(hue: u8, cited: &crate::transducer::address::Address) -> crate::t
     f
 }
 
+/// A hold lapses with its docket: when a cited address lapses, the cited
+/// bubble and every citer of it lapse on the same call, transitively, and
+/// an unheld address retires nothing.
 #[test]
-fn a_hold_lapses_with_its_docket() {
+fn lapse_with_retires_citers_transitively() {
     use crate::transducer::bubble::contemplation::Contemplation;
     let mut c = Contemplation::new();
     // Three bubbles: `inner` stands alone, `mid` cites it, `outer` cites
@@ -647,7 +654,7 @@ fn a_hold_lapses_with_its_docket() {
 /// left the contemplation's keeping, so whatever CITED it is pinned to a
 /// bubble that no longer stands here and lapses on the same stroke.
 #[test]
-fn a_promoted_thought_is_not_held_twice() {
+fn lapse_with_retires_promoted_thought_and_citer() {
     use crate::transducer::bubble::contemplation::Contemplation;
     let mut c = Contemplation::new();
     let stood = standing_form(4);

@@ -29,7 +29,7 @@ fn rapidity_of(b: &Mv) -> Option<BigRational> {
 /// bivector by grade and is read back from it projectively; the bivector
 /// read back off the derived versor is coefficient-exact.
 #[test]
-fn a_versor_is_its_bivector_read_back_in_either_direction() {
+fn bivector_of_round_trips_through_versor_of_bivector() {
     let (z, o) = (q(0, 1), q(1, 1));
     let d = cga::dilator(&q(2, 1));
     let t = cga::at_three::translator(&o, &q(-2, 1), &q(3, 1));
@@ -64,7 +64,7 @@ fn outer_is_zero(b: &Mv) -> bool {
 /// third for the dilation by two — and two dilations compose by the
 /// rational addition law of that plane, read off the geometric product.
 #[test]
-fn the_dilation_by_two_is_the_rapidity_one_third_and_dilations_add_by_the_rational_law() {
+fn bivector_of_dilators_adds_by_rational_law() {
     let two = cga::dilator(&q(2, 1));
     let three = cga::dilator(&q(3, 1));
     let six = cga::dilator(&q(6, 1));
@@ -81,7 +81,7 @@ fn the_dilation_by_two_is_the_rapidity_one_third_and_dilations_add_by_the_ration
 /// The chart's boundary: a 180° turn has no scalar part, a reflection is
 /// odd and is its own derivation, and the zero element is nothing.
 #[test]
-fn a_turn_180_and_a_reflection_have_no_bivector() {
+fn bivector_of_refuses_turn_180_and_reflection() {
     let o = q(1, 1);
     let turn_90 =cga::rotator(&o, &o);
     let turn_180 = turn_90.geo(&turn_90);
@@ -96,7 +96,7 @@ fn a_turn_180_and_a_reflection_have_no_bivector() {
 /// a bivector on the light cone derives an element with no weight, which is
 /// refused the same way; a non-bivector is refused as a derivation.
 #[test]
-fn an_even_element_that_is_not_a_versor_is_refused_by_the_chart() {
+fn bivector_of_refuses_even_non_versor() {
     let o = q(1, 1);
     let b = Mv::blade(E1 | E2, o.clone()).add(&Mv::blade(E3 | EP, o.clone()));
     let quad = b.geo(&b).grade(4);
@@ -116,7 +116,7 @@ fn an_even_element_that_is_not_a_versor_is_refused_by_the_chart() {
 /// 1` — and across two planes that share an axis they do not: the product
 /// is the reading and the sum of the bivectors derives another versor.
 #[test]
-fn bivectors_on_two_planes_do_not_add_and_the_product_is_the_reading() {
+fn bivector_of_product_adds_on_one_plane_only() {
     let o = q(1, 1);
     let a = cga::rotator(&q(2, 1), &o);
     let b = cga::rotator(&q(3, 1), &o);
@@ -138,7 +138,7 @@ fn bivectors_on_two_planes_do_not_add_and_the_product_is_the_reading() {
 /// reads a nilpotent bivector and a body carried onto its dilated block
 /// reads one with a dilation component; each re-derives its versor.
 #[test]
-fn the_versor_between_two_shapes_has_a_bivector() {
+fn bivector_of_reads_versor_between_shapes() {
     let square = shape_of(&[(0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0)]);
     let moved = shape_of(&[(2, 3, 0), (2, 4, 0), (3, 3, 0), (3, 4, 0)]);
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);

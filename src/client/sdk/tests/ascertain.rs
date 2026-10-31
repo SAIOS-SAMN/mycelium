@@ -33,7 +33,7 @@ fn rule_of(train: &[(crate::arc::Grid, crate::arc::Grid)]) -> crate::transducer:
 /// yields no clause rule, its held-out pair fails — and the ascertainment
 /// reads undetermined, never a refutation.
 #[test]
-fn a_two_pair_clause_rule_is_undetermined_by_its_perspectives() {
+fn ascertain_on_two_pair_clause_rule_is_undetermined() {
     let train = mirrored(2);
     let rule = rule_of(&train);
     assert!(!rule.form.elements.is_empty(), "the act reader stated it as clauses");
@@ -45,7 +45,7 @@ fn a_two_pair_clause_rule_is_undetermined_by_its_perspectives() {
 /// GUARD 1 — A VERTEX FIT IS NEVER EXEMPT: the same family judged with its
 /// clauses struck from the rule stays unknown.
 #[test]
-fn a_vertex_fit_on_two_pairs_stays_unknown() {
+fn ascertain_on_vertex_fit_stays_unknown() {
     let train = mirrored(2);
     let mut rule = rule_of(&train);
     rule.form.elements.clear();
@@ -56,7 +56,7 @@ fn a_vertex_fit_on_two_pairs_stays_unknown() {
 /// GUARD 2 — THE RULE MUST CLOSE BOTH PAIRS: a clause rule read off another
 /// family, which does not re-derive these pairs, is not undetermined here.
 #[test]
-fn a_clause_rule_that_does_not_close_its_pairs_is_not_undetermined() {
+fn ascertain_on_unclosing_clause_rule_is_unproven() {
     let train = mirrored(2);
     let other = rule_of(&[
         (grid(&["0000", "3000", "0000", "0000"]), grid(&["0000", "3333", "0000", "0000"])),
@@ -71,7 +71,7 @@ fn a_clause_rule_that_does_not_close_its_pairs_is_not_undetermined() {
 /// each sibling set the act reader states the rule, and the family is known
 /// by its perspectives — the exemption is never reached past two pairs.
 #[test]
-fn three_pairs_are_read_by_their_perspectives() {
+fn ascertain_on_three_pairs_is_known() {
     let train = mirrored(3);
     let rule = rule_of(&train);
     let (outcome, _) = ascertain_on(&Epigenome::new(), &train, &rule);

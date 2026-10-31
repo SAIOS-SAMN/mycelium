@@ -50,7 +50,7 @@ fn form_of(carriages: &[crate::transducer::element::Versor]) -> Form {
 /// transversion breathes, its pinch the plane of the two, its twist an exact
 /// rotor — what the mind winds on the thought's vertex.
 #[test]
-fn a_held_motion_carrying_both_breathes_and_its_pinch_twists() {
+fn breaths_of_pinches_motion_with_translation_and_transversion() {
     let (a, b) = ([1, 2, 0], [0, 1, 1]);
     let held = crate::transducer::bubble::hold::breaths_of(&form_of(&[carriage(&a, &b)]), &mut budget());
     let [one] = held.as_slice() else { panic!("one breath held: {}", held.len()) };
@@ -64,7 +64,7 @@ fn a_held_motion_carrying_both_breathes_and_its_pinch_twists() {
 /// breathes alone — and the two breathe against each other, their
 /// generators' commutator pinching in the plane of the two.
 #[test]
-fn two_held_motions_breathe_against_each_other() {
+fn breaths_of_pinches_across_two_motions() {
     let form = form_of(&[carriage(&[1, 2, 0], &[0, 0, 0]), carriage(&[0, 0, 0], &[0, 1, 1])]);
     let held = crate::transducer::bubble::hold::breaths_of(&form, &mut budget());
     let [one] = held.as_slice() else { panic!("one breath, across the two: {}", held.len()) };
@@ -75,7 +75,7 @@ fn two_held_motions_breathe_against_each_other() {
 /// A FORM WHOSE MOTIONS COMMUTE BREATHES NOTHING: two translations carry
 /// nothing back through the inversion, and translations commute.
 #[test]
-fn commuting_motions_breathe_nothing() {
+fn breaths_of_holds_nothing_for_commuting_motions() {
     let form = form_of(&[carriage(&[1, 2, 0], &[0, 0, 0]), carriage(&[3, 0, 1], &[0, 0, 0])]);
     let held = crate::transducer::bubble::hold::breaths_of(&form, &mut budget());
     assert!(held.iter().all(|b| num_traits::Zero::is_zero(&b.radial) && b.planes.is_empty()), "nothing breathed: {}", held.len());

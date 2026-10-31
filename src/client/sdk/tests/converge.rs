@@ -32,7 +32,7 @@ fn turn_180(r: i64, c: i64) -> Element {
 /// own. The slide heard back is the same vertex — one object read twice, no
 /// convergence.
 #[test]
-fn two_different_words_with_one_section_converge() {
+fn scenes_read_converges_two_words_on_one_section() {
     let scene = [7u8; 32];
     let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
     let (held, heard) = (slide(0, 2), turn_180(1, 4));
@@ -50,7 +50,7 @@ fn two_different_words_with_one_section_converge() {
 /// The slide by one column is TRUE there on a smaller section — the two sites
 /// it changed are right — and converges with nothing either: another section.
 #[test]
-fn a_word_false_on_its_scene_is_refuted() {
+fn scenes_read_refutes_word_false_on_scene() {
     let scene = [7u8; 32];
     let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
     let mut s = Scenes::default();
@@ -63,7 +63,7 @@ fn a_word_false_on_its_scene_is_refuted() {
 /// A WORD LEAVING TAKES ITS PLACE ON ITS SCENE, and a scene with no word
 /// left leaves.
 #[test]
-fn a_word_leaving_takes_its_scene_with_it() {
+fn scenes_forget_drops_scene_with_last_word() {
     let scene = [7u8; 32];
     let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
     let word = slide(0, 2);
@@ -79,7 +79,7 @@ fn a_word_leaving_takes_its_scene_with_it() {
 /// a hearing on it is heard by are the charts its bodies stand on
 /// (`Offer::of`), held with the family where the first word was held.
 #[test]
-fn a_scene_held_carries_the_charts_its_bodies_stand_on() {
+fn scenes_evidence_carries_body_charts() {
     let scene = [8u8; 32];
     let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
     let mut s = Scenes::default();

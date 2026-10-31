@@ -17,7 +17,7 @@ use crate::client::sdk::*;
 /// The claim is the mirror, coordinate for coordinate: whatever the
 /// admission filed, the shed removes.
 #[test]
-fn a_shed_dialect_word_leaves_the_axis_index_it_was_filed_in() {
+fn drop_dialect_removes_word_from_axis_index() {
         use crate::transducer::alphabet::{Derivation, LetterId, Word};
     use crate::transducer::element;
     use crate::transducer::sentence::{as_element_form, on_axis_of, ClassVector, Form, Vertex};

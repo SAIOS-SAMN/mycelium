@@ -31,7 +31,7 @@ fn power(v: &Mv, m: u64) -> Mv {
 /// power mod four — read by the certificate and checked against the power
 /// computed the long way for three whole periods.
 #[test]
-fn a_periodic_theorem_reads_every_power_by_its_period() {
+fn theorem_at_reads_periodic_power_by_period() {
     let r = turn(E1 | E2);
     let proof = compose(&[Term { word: r.clone(), transport: one() }], &mut stroke()).expect("a sentence");
     let t = Theorem::of(&proof).expect("it closes");
@@ -45,7 +45,7 @@ fn a_periodic_theorem_reads_every_power_by_its_period() {
 /// NILPOTENT: a translation never returns but is null, so its family is a
 /// line — `Ω^m ∝ 1 + m·B` — read with no product at all.
 #[test]
-fn a_nilpotent_theorem_reads_every_power_as_a_line() {
+fn theorem_at_reads_nilpotent_power_as_line() {
     let t_motion = cga::translator_at(&[q(1), q(2), q(0)]);
     let proof = compose(&[Term { word: one(), transport: t_motion.clone() }], &mut stroke()).expect("a sentence");
     let t = Theorem::of(&proof).expect("a null motion extrapolates");
@@ -60,7 +60,7 @@ fn a_nilpotent_theorem_reads_every_power_as_a_line() {
 /// bracket of any depth lies in the three-dimensional span, and the
 /// certificate is that finite check.
 #[test]
-fn a_saturated_theorem_holds_every_nested_bracket() {
+fn saturated_holds_every_nested_bracket() {
     let t = Theorem::saturated(&[turn(E1 | E2), turn(E2 | E3)], &mut stroke()).expect("closes");
     assert!(matches!(&t.certificate, Certificate::Saturated { basis } if basis.len() == 3));
     assert!(t.check(&mut stroke()));
@@ -76,7 +76,7 @@ fn a_saturated_theorem_holds_every_nested_bracket() {
 /// keeps its certificate and still checks; a tampered certificate fails;
 /// a motion with no finite certificate is held open by name.
 #[test]
-fn a_theorem_carries_to_every_chart_and_a_false_one_fails() {
+fn conjugated_checks_and_forged_certificate_fails() {
     let r = turn(E1 | E2);
     let proof = compose(&[Term { word: r, transport: one() }], &mut stroke()).expect("a sentence");
     let t = Theorem::of(&proof).expect("closes");

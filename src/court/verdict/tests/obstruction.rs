@@ -14,7 +14,7 @@ fn q(n: i64) -> num_rational::BigRational {
 /// Gaussian prime `2 + i` — is D with its coset; a versor it spells whose
 /// closure still refused is C; a residue carried is C with its cocycle.
 #[test]
-fn the_one_reader_reads_the_kind_off_the_content() {
+fn read_obstruction_reads_kind_off_content() {
     let none = read_obstruction(Content::Holonomy { versor: None, chart: None, proof: "no versor" });
     assert_eq!(none, ClosureObstruction::Permanent { proof: "no versor" });
 
@@ -39,7 +39,7 @@ fn the_one_reader_reads_the_kind_off_the_content() {
 /// its own code and I. A closure code reaching the table without its
 /// content is UNCLASSIFIED, a defect count and never a home.
 #[test]
-fn the_codes_that_are_not_a_closures_carry_their_ruled_arm() {
+fn ruled_obstruction_carries_ruled_kind_per_code() {
     for code in [
         REFUSE_FORM_TAPE,
         REFUSE_SIGNATURE,
@@ -66,7 +66,7 @@ fn the_codes_that_are_not_a_closures_carry_their_ruled_arm() {
 /// isotropic and irrational poses are P on the refraction, oblique D,
 /// bodiless I, and an unoriented pair — a held stabilizer — no refusal.
 #[test]
-fn the_mint_and_the_pose_arms_carry_their_kind() {
+fn obstruction_kind_classifies_withheld_and_pose_arms() {
     use crate::transducer::blade::NoPose;
     use crate::transducer::family::Withheld;
     let chord = crate::transducer::sentence::tests::common::some_overlap();

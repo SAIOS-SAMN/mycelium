@@ -49,7 +49,7 @@ fn moved(a: crate::transducer::cech::flux::Admitted) -> (u64, u64, u64) {
 /// fixed angle, keyed by the angle, the three amounts stood on three orbits
 /// and none could ever return the others.
 #[test]
-fn turns_of_any_amount_flow_on_one_orbit_and_return_exactly() {
+fn admit_mode_composes_turns_of_any_amount_on_one_orbit() {
     let mode = |t: BigRational| -> cga::MotionMode {
         let [m] = modes(&turn_at(t)).try_into().expect("one mode: one plane");
         m
@@ -71,7 +71,7 @@ fn turns_of_any_amount_flow_on_one_orbit_and_return_exactly() {
 /// 78.73 (2) — A TURN AND ITS INVERSE RETURN AT ONCE: orientation is the
 /// winding's sign, read against the plane's reference.
 #[test]
-fn a_turn_and_its_inverse_return() {
+fn admit_mode_returns_turn_and_its_inverse() {
     let [there] = modes(&turn()).try_into().expect("one mode");
     let [back] = modes(&turn().reverse()).try_into().expect("one mode");
     let mut orbits = OrbitRegistry::new();
@@ -83,7 +83,7 @@ fn a_turn_and_its_inverse_return() {
 /// 78.73 (2), 78.75 — 𝒮'S VENT: dilations compose on one orbit by their
 /// ratios — by two, then by three, then by a sixth returns.
 #[test]
-fn dilations_compose_on_one_orbit_and_return_on_spatial() {
+fn admit_mode_composes_dilations_and_returns_on_spatial() {
     let one = |r: BigRational| -> cga::MotionMode {
         let [m] = modes(&cga::dilator(&r)).try_into().expect("one mode");
         m
@@ -100,7 +100,7 @@ fn dilations_compose_on_one_orbit_and_return_on_spatial() {
 /// sending one hue two places is no map and is not admitted; the identity
 /// carries no strain.
 #[test]
-fn a_hue_orbit_returns_when_its_composite_is_the_identity() {
+fn admit_hues_returns_at_identity_composite() {
     let mut orbits = OrbitRegistry::new();
     let swap = [(1u8, 2u8), (2, 1)];
     assert_eq!(orbits.admit_hues(&swap, 4, &FREE).map(moved), Some((4, 0, 0)));
@@ -116,7 +116,7 @@ fn a_hue_orbit_returns_when_its_composite_is_the_identity() {
 /// 78.73 (1) — STAGNATION: a refused draw presses each short lane by the
 /// flow it blocked, and nothing else; the reserve stands as it was.
 #[test]
-fn a_refused_draw_presses_the_lane_it_blocked() {
+fn draw_refused_presses_blocked_lane() {
     let mut p = crate::physics::Physics { reserve: crate::physics::Reserve::of([5, 0, 5, 1]), ..Default::default() };
     assert!(p.draw([1, 3, 0, 4]).is_err(), "𝒢 and 𝒽 cannot cover it");
     assert_eq!(p.pressure, [0, 3, 0, 3], "blocked: three on 𝒢, three past the one 𝒽 held");
@@ -127,7 +127,7 @@ fn a_refused_draw_presses_the_lane_it_blocked() {
 /// refused draw on 𝒢: 𝒮 took all its stress plastically, 𝒢 half; lanes no
 /// stress met are named unstressed, lanes nothing moved on unmoved.
 #[test]
-fn malleability_reads_exact_rationals_and_names_no_reading() {
+fn malleability_line_reads_exact_rationals_and_names_unread() {
     let mut p = crate::physics::Physics { reserve: crate::physics::Reserve::of([9, 0, 9, 9]), ..Default::default() };
     p.plastic([true, true, false, false]);
     let _ = p.draw([0, 1, 0, 0]);

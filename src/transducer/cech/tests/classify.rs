@@ -28,8 +28,9 @@ fn turn_90() -> Rotor {
     crate::transducer::alphabet::Word::from_letters(&[(id, false)]).rotor()
 }
 
+/// The identity is flat, and so is a scaled identity carriage.
 #[test]
-fn the_identity_is_flat_and_so_is_a_scaled_carriage() {
+fn classify_identity_and_scaled_carriage_are_flat() {
     assert!(
         matches!(classify(&Rotor::identity(), &ident(), CycleType::Identity), Fill::Filled(..)),
         "no rotation and no residue is flat"
@@ -48,7 +49,7 @@ fn the_identity_is_flat_and_so_is_a_scaled_carriage() {
 /// identity rotor and calls the seam flat; a family carrying one shape to
 /// two separated copies produces exactly this transition.
 #[test]
-fn a_translation_stands_with_its_placement_and_is_not_flat() {
+fn classify_translation_stands_with_placement() {
     let t = cga::at_three::translator(&q(3), &q(-2), &q(0));
     assert!(
         crate::transducer::element::base_rotor_of(&t).is_ok_and(|r| r.is_identity()),
@@ -68,7 +69,7 @@ fn a_translation_stands_with_its_placement_and_is_not_flat() {
 /// as the scalar a peel divides out, so the block reads a pure scale as a
 /// rotation by nothing.
 #[test]
-fn a_dilation_stands_with_its_scale() {
+fn classify_dilation_stands_with_scale() {
     let d = cga::dilator(&q(3));
     assert_eq!(rho_of(&d), Some(q(3)), "the dilation is read off the action");
     let Fill::Class(kappa, r) = classify(&Rotor::identity(), &d, CycleType::Identity) else {
@@ -81,7 +82,7 @@ fn a_dilation_stands_with_its_scale() {
 /// A 90° turn with NO residue is the one thing that files: a torsion
 /// class at its own period.
 #[test]
-fn a_residue_free_turn_90_files_at_its_period() {
+fn classify_residue_free_turn_90_files_at_period() {
     let Fill::Congruent(kappa, g, ell) = classify(&turn_90(), &ident(), CycleType::Identity) else {
         panic!("a residue-free finite rotation files");
     };
@@ -108,7 +109,7 @@ fn a_residue_free_turn_90_files_at_its_period() {
 /// `e₃` for every `p`, the system is inconsistent, and the seam's orbit
 /// really never closes.
 #[test]
-fn a_turn_about_a_point_files_and_a_screw_stands() {
+fn classify_files_point_turn_and_stands_screw() {
     use crate::transducer::element::turn_base_point;
     let about_a_point = cga::at_three::translator(&q(5), &q(0), &q(0));
     let p = turn_base_point(&turn_90(), &about_a_point).expect("a 90° turn has a base point");
@@ -247,7 +248,7 @@ fn a_turn_about_a_point_files_and_a_screw_stands() {
 /// member — the 90° turn, verified by the tower's covariance — with a
 /// placement, which could not file while `flat` was the gate.
 #[test]
-fn a_body_turned_about_itself_files_though_its_carriage_is_not_flat() {
+fn classify_files_self_turned_body_with_placement() {
     use crate::transducer::blade::{shape_of, versor_coset_ordered};
     use crate::transducer::element::{base_rotor_of, dilator_of, translator_of};
     // An L, and the same L under `(r, c) → (c, −r)` carried back onto the
@@ -292,7 +293,7 @@ fn a_body_turned_about_itself_files_though_its_carriage_is_not_flat() {
 /// the holonomy does not close: its residue is a 90° turn about a point,
 /// and it is CLASSIFIED — `Congruent`, filed at four — never dropped.
 #[test]
-fn three_turned_bodies_fill_their_cycle_and_a_twisted_cycle_files_its_residue() {
+fn classify_fills_turned_cycle_and_files_twisted_residue() {
     use crate::transducer::blade::{shape_of, versor_between};
     use crate::transducer::element::{base_rotor_of, dilator_of, translator_of};
     let a = shape_of(&[(0i64, 0i64, 0i64), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
@@ -332,7 +333,7 @@ fn three_turned_bodies_fill_their_cycle_and_a_twisted_cycle_files_its_residue() 
 /// the identity and not flat. `π₁₇` as a rotor: its arc is `15 + 8i`,
 /// whose norm is `17²`, and no product of the alphabet's primes reaches it.
 #[test]
-fn a_rotor_the_alphabet_cannot_spell_is_its_own_arm() {
+fn classify_unspellable_rotor_is_own_arm() {
     let pi17 = Rotor::scalar(q(4)).add(&Rotor::blade(0b0011, q(1)));
     assert!(
         crate::transducer::alphabet::word_of_rotor(&pi17).is_none(),
@@ -358,7 +359,7 @@ fn a_rotor_the_alphabet_cannot_spell_is_its_own_arm() {
 /// sections carries the placements the charts actually hold and stands; the
 /// other is the same pair through `Section::at` and fills.
 #[test]
-fn sections_at_different_placements_stand_where_the_identity_carriage_fills() {
+fn extend_placed_sections_stand_and_identity_sections_fill() {
     use crate::transducer::address::Address;
     use crate::transducer::cech::{extend, Section, Simplex};
     let addr_a = Address::from_bytes([1u8, 1]);

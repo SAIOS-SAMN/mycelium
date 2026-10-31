@@ -36,7 +36,7 @@ fn perceive_in(c: &mut Contemplation, input: &[&str], output: &[&str], family: &
 /// different families, the two perceptions never meet — no circuit, no
 /// edge — and what the families share stays for the genome to hold.
 #[test]
-fn perceptions_of_two_families_never_meet() {
+fn hold_perceived_never_meets_across_families() {
     let (input, output) = (["0000", "0110", "0000"], ["0000", "0011", "0000"]);
     let (other_in, other_out) = (["0000", "0000", "0110"], ["0000", "0000", "0011"]);
     let mut apart = Contemplation::new();
@@ -123,7 +123,7 @@ const L90_OUT: [&str; 4] = ["01110", "01000", "00000", "00000"];
 /// minted at the turn's period, and the thought standing on both bodies. No
 /// remainder volume was asked: a perfect match merges.
 #[test]
-fn two_perceptions_of_one_shape_turned_merge_into_one_thought() {
+fn hold_perceived_merges_turned_shape_into_one_thought() {
     let mut c = Contemplation::new();
     let a = perceive(&mut c, &L, &L_OUT);
     let b = perceive(&mut c, &L90, &L90_OUT);
@@ -142,7 +142,7 @@ fn two_perceptions_of_one_shape_turned_merge_into_one_thought() {
 /// CURVED and no one transition is chosen as the edge; each is kept by its
 /// class in BOTH horizons, which the pivot reads.
 #[test]
-fn a_third_perception_meets_the_thought_by_both_its_orbits() {
+fn hold_perceived_keeps_both_orbits_of_third_perception() {
     let mut c = Contemplation::new();
     perceive(&mut c, &L, &L_OUT);
     perceive(&mut c, &L90, &L90_OUT);
@@ -161,7 +161,7 @@ fn a_third_perception_meets_the_thought_by_both_its_orbits() {
 /// the identity, the edge fills FILLED, and the fill decides: a merge is
 /// asked of the two (the forms then merge or stand, as 13.12 reads them).
 #[test]
-fn the_same_body_in_two_scenes_is_a_filled_thought() {
+fn hold_perceived_fills_edge_for_unmoved_body() {
     let mut c = Contemplation::new();
     perceive(&mut c, &L, &L_OUT);
     perceive(&mut c, &L, &["20000", "20000", "22000", "00000"]);
@@ -176,7 +176,7 @@ fn the_same_body_in_two_scenes_is_a_filled_thought() {
 /// horizon), and the incoherence stands on the docket as a demand on the
 /// chart by its class; a held word spelling that class answers it.
 #[test]
-fn a_blow_up_is_a_luminal_thought_and_its_class_is_demanded() {
+fn hold_perceived_demands_class_of_blow_up() {
     let mut c = Contemplation::new();
     let blown = perceive(
         &mut c,
@@ -215,7 +215,7 @@ fn a_blow_up_is_a_luminal_thought_and_its_class_is_demanded() {
 /// chart, it has carried no flux for a whole orbit, and the fold lapses it,
 /// counted.
 #[test]
-fn a_question_nothing_can_carry_lapses_at_the_fold() {
+fn docket_fold_lapses_question_nothing_carries() {
     let mut c = Contemplation::new();
     perceive(
         &mut c,
@@ -263,7 +263,7 @@ fn the_thought_and_its_ground(c: &Contemplation) -> (crate::transducer::bubble::
 /// period 4, is handed to the voice to transcribe against its own letters.
 /// Nothing of it is on any wire.
 #[test]
-fn the_fourth_hour_closes_the_return_and_the_thought_waits_for_its_voice() {
+fn hold_perceived_closes_return_at_fourth_hour() {
     let mut c = Contemplation::new();
     perceive(&mut c, &O0, &O0_OUT);
     perceive(&mut c, &O1, &O1_OUT);
@@ -283,7 +283,7 @@ fn the_fourth_hour_closes_the_return_and_the_thought_waits_for_its_voice() {
 /// stand at eight, its winding back at hour 0. Each return hands the ground
 /// to the voice and names the thought that came round.
 #[test]
-fn the_winding_returns_again_past_its_first_close() {
+fn hold_perceived_counts_second_return_past_first_close() {
     let mut c = Contemplation::new();
     for _ in 0..2 {
         perceive(&mut c, &O0, &O0_OUT);
@@ -308,7 +308,7 @@ fn the_winding_returns_again_past_its_first_close() {
 /// thought — two bodies, filed at its coordinates, holding no form — stays in
 /// the mind.
 #[test]
-fn a_turned_binary_closes_its_return_and_transcribes_to_one_word() {
+fn hold_perceived_closes_turned_pair_on_two_bodies() {
     let mut c = Contemplation::new();
     let mut at = [&LA[..], &LB[..]].concat();
     for hour in 0..4 {
@@ -328,7 +328,7 @@ fn a_turned_binary_closes_its_return_and_transcribes_to_one_word() {
 /// next hour: predicted, it joins the thought by the orbit's step — a second
 /// torsion merge — and the thought stands on all three bodies.
 #[test]
-fn the_next_hour_of_an_orbit_is_predicted_and_joins_the_thought() {
+fn hold_perceived_joins_predicted_next_hour() {
     let mut c = Contemplation::new();
     perceive(&mut c, &O0, &O0_OUT);
     perceive(&mut c, &O1, &O1_OUT);
@@ -350,7 +350,7 @@ fn the_next_hour_of_an_orbit_is_predicted_and_joins_the_thought() {
 /// stands sheared where the orbit now is; the twist is kept as the thought's
 /// content — one step of the orbit, of period 4 — and nothing is demanded.
 #[test]
-fn an_hour_out_of_turn_is_the_orbit_twisted_by_its_pull() {
+fn hold_perceived_keeps_out_of_turn_hour_as_twist() {
     let mut c = Contemplation::new();
     perceive(&mut c, &O0, &O0_OUT);
     perceive(&mut c, &O1, &O1_OUT);
@@ -378,7 +378,7 @@ fn an_hour_out_of_turn_is_the_orbit_twisted_by_its_pull() {
 /// the field, and takes part in every later perception, so the scene does
 /// not bring the slipped-against thought round again.)
 #[test]
-fn a_body_off_the_orbit_slips_and_is_held_on_the_thought() {
+fn hold_perceived_holds_off_orbit_slip_on_thought() {
     let mut c = Contemplation::new();
     for (x, y) in [(&O0, &O0_OUT), (&O1, &O1_OUT), (&O2, &O2_OUT), (&O3, &O3_OUT)] {
         perceive(&mut c, x, y);
@@ -409,7 +409,7 @@ fn a_body_off_the_orbit_slips_and_is_held_on_the_thought() {
 /// related by two different transitions: none is chosen as their edge, and
 /// both congruences are kept at their period in both horizons.
 #[test]
-fn a_body_carried_onto_two_keeps_both_congruences_and_chooses_no_edge() {
+fn hold_perceived_keeps_both_congruences_without_edge() {
     let mut c = Contemplation::new();
     let one = perceive(&mut c, &["10000000", "10000000", "11000000", "00000000"], &["01000000", "01000000", "01100000", "00000000"]);
     let two = perceive(&mut c, &["11100000", "10000111", "00000100", "00000000"], &["01110000", "01000011", "00000010", "00000000"]);
@@ -428,7 +428,7 @@ fn a_body_carried_onto_two_keeps_both_congruences_and_chooses_no_edge() {
 /// rays — but ONE carries the whole configuration. It is the thought: the
 /// edge the complex fills, a standing class (a slide never returns).
 #[test]
-fn one_motion_carrying_every_body_is_the_scene_and_the_thought() {
+fn hold_perceived_fills_scene_motion_as_class() {
     let mut c = Contemplation::new();
     let a = scene(&mut c, &[&LA[..], &LB[..]].concat(), 7, 9);
     let b = scene(&mut c, &[slid(&LA, 1), slid(&LB, 1)].concat(), 7, 9);
@@ -444,7 +444,7 @@ fn one_motion_carrying_every_body_is_the_scene_and_the_thought() {
 /// hands it out under the scene its thoughts stand in. Never made to return
 /// (squaring), never let go.
 #[test]
-fn a_slides_thought_escapes_and_is_filed_for_the_drive() {
+fn take_demands_hands_out_escaping_slide_once() {
     let draw = |cells: &[(usize, usize)], shift: usize| -> Vec<String> {
         (0..7).map(|r| (0..9).map(|col| if col >= shift && cells.contains(&(r, col - shift)) { '1' } else { '0' }).collect()).collect()
     };
@@ -497,7 +497,7 @@ fn a_slides_thought_escapes_and_is_filed_for_the_drive() {
 /// consolidates it, and the thought is congruent at ℓ = 4 — the two
 /// perceptions merge on its torsion axis.
 #[test]
-fn a_scene_turned_whole_is_one_congruent_thought() {
+fn hold_perceived_consolidates_scene_turned_whole() {
     let mut c = Contemplation::new();
     scene(&mut c, &[&LA[..], &LB[..]].concat(), 7, 9);
     scene(&mut c, &turned(&[&LA[..], &LB[..]].concat()), 7, 9);
@@ -517,7 +517,7 @@ fn a_scene_turned_whole_is_one_congruent_thought() {
 /// keeps their distance: consolidated, the edge carries it, and the
 /// quotient, the configuration's own symmetry, stands filed at ℓ = 2.
 #[test]
-fn a_symmetric_scene_is_one_coset_and_its_symmetry_is_filed() {
+fn hold_perceived_files_symmetric_scene_coset_symmetry() {
     let lb: Vec<(usize, usize)> = LA.iter().map(|&(r, c)| (6 - r, 6 - c)).collect();
     let mut c = Contemplation::new();
     let before = [&LA[..], &lb[..]].concat();
@@ -537,7 +537,7 @@ fn a_symmetric_scene_is_one_coset_and_its_symmetry_is_filed() {
 /// no ray carries both, so no scene motion stands; the spectrum is kept, each
 /// ray by its class.
 #[test]
-fn bodies_moving_apart_keep_the_spectrum() {
+fn hold_perceived_keeps_spectrum_without_scene_motion() {
     let turned_b: Vec<(usize, usize)> = [(4, 4), (4, 5), (4, 6), (5, 4)].to_vec();
     let mut c = Contemplation::new();
     scene(&mut c, &[&LA[..], &LB[..]].concat(), 7, 9);
@@ -552,7 +552,7 @@ fn bodies_moving_apart_keep_the_spectrum() {
 /// carried along: the motion lands on the whole of what is there, and the
 /// third is what vanished.
 #[test]
-fn a_body_that_appears_or_vanishes_is_counted_and_the_scene_still_moves() {
+fn hold_perceived_counts_appeared_and_vanished_bodies() {
     let third = vec![(0, 5), (1, 5), (2, 5), (2, 6)];
     let mut c = Contemplation::new();
     scene(&mut c, &[&LA[..], &LB[..]].concat(), 7, 9);
@@ -569,7 +569,7 @@ fn a_body_that_appears_or_vanishes_is_counted_and_the_scene_still_moves() {
 /// predicted and joined; the L six columns on stands at the hour after —
 /// a phase slip; the L one column on stands at no hour — off the orbit.
 #[test]
-fn a_slides_next_hour_is_predicted_and_its_slips_are_read_exactly() {
+fn hold_perceived_reads_slide_hour_and_slips() {
     let l = [(0usize, 0usize), (1, 0), (2, 0), (2, 1)];
     let samples = [slid(&l, 0), slid(&l, 3), slid(&l, 6)].concat();
     for (at, expect) in [(9usize, (1u64, 0u64, 0u64)), (12, (0, 1, 0)), (7, (0, 0, 1))] {
@@ -587,7 +587,7 @@ fn a_slides_next_hour_is_predicted_and_its_slips_are_read_exactly() {
 /// the surgery that carries one onto the other factors, and the deformation
 /// stands as a demand on both charts, its residue the core's ray.
 #[test]
-fn a_hole_cut_is_a_deformation_read_at_the_stratum_where_the_charts_part() {
+fn hold_perceived_demands_hole_cut_on_both_charts() {
     let mut c = Contemplation::new();
     perceive(&mut c, &["11100", "11100", "11100", "00000"], &["01110", "01110", "01110", "00000"]);
     perceive(&mut c, &["11100", "10100", "11100", "00000"], &["01110", "01010", "01110", "00000"]);
@@ -604,7 +604,7 @@ fn a_hole_cut_is_a_deformation_read_at_the_stratum_where_the_charts_part() {
 /// under every versor, so no conformal motion carries one onto the other —
 /// counted apart, and nothing filed.
 #[test]
-fn bodies_parting_past_their_topology_are_apart() {
+fn hold_perceived_counts_topology_parting_apart() {
     let mut c = Contemplation::new();
     perceive(&mut c, &L, &L_OUT);
     perceive(&mut c, &["11100", "00000", "00000", "00000"], &["01110", "00000", "00000", "00000"]);

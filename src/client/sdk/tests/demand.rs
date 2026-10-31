@@ -11,7 +11,7 @@ use crate::client::sdk::*;
 /// part of; and on the chain arm a count of residual links is what no hypha
 /// can docket and no mind can reduce.
 #[test]
-fn a_mind_speaks_the_element_it_lacks_and_never_a_count() {
+fn comprehend_demands_missing_element_not_count() {
     use crate::transducer::alphabet::{LetterId, Word};
     use crate::transducer::element::{from_connection, identity_versor};
 
@@ -84,7 +84,7 @@ fn a_mind_speaks_the_element_it_lacks_and_never_a_count() {
 /// The stratum is coarsened by `peel` to the first fibre that holds anything
 /// and no further.
 #[test]
-fn the_factoring_basis_is_read_on_the_stratum_not_the_exact_chart() {
+fn stratum_reads_factoring_basis_coarser_than_chart() {
     use crate::transducer::alphabet::{LetterId, Word};
     use crate::transducer::element::{from_connection, identity_versor};
 

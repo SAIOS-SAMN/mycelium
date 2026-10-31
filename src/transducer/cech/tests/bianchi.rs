@@ -12,7 +12,7 @@ use crate::transducer::cech::*;
 /// Each half is asserted on its own: `class` reads `None` for every fill
 /// that is not `Class`, so a disjunction of the two could not fail.
 #[test]
-fn an_exact_cochain_on_k4_fills_at_every_degree() {
+fn fill_exact_k4_cochain_fills_every_degree() {
     let mut c = exact_k4();
     let tets = c.link(&vs()[0], 3);
     assert_eq!(tets.len(), 1, "the link of one vertex of K4 is one tetra");
@@ -44,7 +44,7 @@ fn an_exact_cochain_on_k4_fills_at_every_degree() {
 /// congruent and cannot be filled. The claim names the simplex, the class
 /// and the order; a congruence anywhere on the link is not it.
 #[test]
-fn an_infinite_order_edge_is_a_class_naming_its_rotor() {
+fn fill_infinite_order_edge_is_class_naming_rotor() {
     let mut c = exact_k4();
     let vs = vs();
     c.set_edge(&vs[0], &vs[1], pythag5(), ident(), vol());
@@ -81,7 +81,7 @@ fn an_infinite_order_edge_is_a_class_naming_its_rotor() {
 /// OFF the sensor plane, which is exactly the transition a versor-only
 /// section could not hold at all.
 #[test]
-fn a_finite_order_edge_off_the_sensor_plane_is_congruent_at_its_period() {
+fn fill_off_plane_finite_edge_is_congruent_at_period() {
     // `sheet()` is the DOUBLED 90° turn on `e₁∧e₂` — a 180° turn, which
     // sends `e₁ → −e₁` and so KEEPS the sensor plane and does have a block
     // there. The single 90° turn is the one that leaves it.
@@ -162,7 +162,7 @@ fn triangle(
 /// Work of filling the link of one vertex does not grow with N isolated
 /// sections on the same complex.
 #[test]
-fn work_of_one_fetched_vertex_is_independent_of_n() {
+fn coboundary_on_link_work_is_independent_of_n() {
     use crate::network::nerve::work;
     let run = |n: u64| -> u64 {
         let mut c = Complex::new();

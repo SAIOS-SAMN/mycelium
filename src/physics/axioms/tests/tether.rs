@@ -16,7 +16,7 @@ fn q(n: i64) -> crate::core::Q {
 /// band that decided whether a tether formed is retired (SQ1 items 2 and 3),
 /// and the regime is content.
 #[test]
-fn the_tether_reads_contact_exactly_and_scale_free() {
+fn contact_of_reads_tether_exactly_and_scale_free() {
     // A BODY AGAINST ITSELF is `δ = −1`: internal tangency, a contact
     // interface and not overlap (65).
     let a = blade::shape_of(&[(0, 0, 0), (1, 0, 0)]).blade;
@@ -46,7 +46,7 @@ fn the_tether_reads_contact_exactly_and_scale_free() {
 /// and `⟨VṼ⟩₀ = s_a² s_b² = r_a² r_b²`. Asserted so the linear form is a
 /// measured fact.
 #[test]
-fn the_tether_is_the_product_of_the_two_conformal_spheres() {
+fn tether_is_product_of_conformal_spheres() {
     let bodies = [
         blade::shape_of(&[(0, 0, 0), (1, 0, 0)]).blade,
         blade::shape_of(&[(0, 5, 0), (1, 5, 0), (0, 6, 0)]).blade,
@@ -70,7 +70,7 @@ fn the_tether_is_the_product_of_the_two_conformal_spheres() {
 /// position is gauge. Asserted on a motor with a turn AND a displacement, so
 /// the fixture is not a translation identity in disguise.
 #[test]
-fn the_tether_is_invariant_under_a_common_motor() {
+fn tether_regime_invariant_under_common_motor() {
     let bodies = [
         blade::shape_of(&[(0, 0, 0), (1, 0, 0)]).blade,
         blade::shape_of(&[(4, 7, 0), (5, 7, 0), (4, 8, 0)]).blade,
@@ -110,7 +110,7 @@ fn the_tether_is_invariant_under_a_common_motor() {
 /// is `λ` times an orthogonal map, the inner product picks up `λ² > 0`, and
 /// the sign the side is read from cannot invert.
 #[test]
-fn a_negative_norm_motor_scales_the_tether_and_never_flips_its_side() {
+fn sandwich_by_negative_norm_motor_keeps_contact_side() {
     use crate::transducer::cga::{Mv, E1, EM};
     let motor = Mv::blade(E1, q(1)).geo(&Mv::blade(EM, q(1)));
     let lambda = motor.geo(&motor.reverse()).scalar_part();
@@ -141,7 +141,7 @@ fn a_negative_norm_motor_scales_the_tether_and_never_flips_its_side() {
 /// carry DIFFERENT tethers: a relation read as its scalar could not tell
 /// them apart, which is why `V` is carried whole.
 #[test]
-fn the_tether_carries_what_the_scalar_throws_away() {
+fn tether_separates_pairs_of_equal_scalar_reading() {
     let a = blade::shape_of(&[(0, 0, 0)]).blade;
     let along_r = blade::shape_of(&[(4, 0, 0)]).blade;
     let along_c = blade::shape_of(&[(0, 4, 0)]).blade;
@@ -167,7 +167,7 @@ fn the_tether_carries_what_the_scalar_throws_away() {
 /// THE REGIME HAS FIVE ARMS, NOT THREE (65), and `Contact::of` agrees with
 /// `δ` computed independently from the centroids and radii.
 #[test]
-fn the_five_regimes_are_read_exactly() {
+fn contact_of_reads_five_regimes_exactly() {
     let small = blade::shape_of(&[(0, 0, 0)]).blade;
     let big = blade::shape_of(&[
         (0, 0, 0), (1, 0, 0), (2, 0, 0), (0, 1, 0), (1, 1, 0),
@@ -210,7 +210,7 @@ fn the_five_regimes_are_read_exactly() {
 /// THE ANTIPODAL INVOLUTION `σ: s ↦ −s` EXCHANGES THE CONTACT BOUNDARY AND
 /// SQUARES TO ONE (65).
 #[test]
-fn the_antipodal_map_exchanges_the_contact_boundary_and_squares_to_one() {
+fn antipodal_exchanges_contact_boundary_and_squares_to_identity() {
     let all = [
         Contact::Apart,
         Contact::TangentExternal,

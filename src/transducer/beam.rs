@@ -175,7 +175,7 @@ mod tests {
     /// One coherent domino vs. the same volume scattered: topology tells
     /// them apart (β₀, boundary), volume cannot.
     #[test]
-    fn topology_distinguishes_what_cardinality_cannot() {
+    fn signature_separates_equal_volumes_by_topology() {
         let scene = vec![(0, 0, 1), (0, 1, 1), (5, 5, 1), (7, 7, 2)];
         let coherent = signature(&[(0, 0), (0, 1)], &scene);
         let scattered = signature(&[(0, 0), (5, 5)], &scene);
@@ -191,7 +191,7 @@ mod tests {
     /// A candidate beaten on every lane is out; arrival order decides
     /// nothing. One survivor is a discharge.
     #[test]
-    fn a_candidate_beaten_on_every_lane_leaves_the_beam() {
+    fn beam_minima_drops_candidate_beaten_on_every_lane() {
         // Scene: a hue-1 domino and a lone hue-2 site.
         let scene = vec![(0, 0, 1), (0, 1, 1), (4, 4, 2)];
         let footprint = vec![(0i64, 0i64), (0, 1)];
@@ -218,7 +218,7 @@ mod tests {
     /// this replaced would have returned one of them and dropped the other,
     /// which is the vortex destroyed at the moment it forms.
     #[test]
-    fn incomparable_candidates_are_both_held() {
+    fn beam_minima_holds_incomparable_candidates() {
         // Two scenes. On the first, hue 1 is the exact footprint and hue 2
         // misses; on the second the footprint is hue 2 and hue 1 misses. The
         // worst pair governs each candidate, so each carries a mismatch the

@@ -4,8 +4,10 @@
 use crate::economy::yield_surface;
 use crate::physics::Physics;
 
+/// The yield surface is the reserve deficit and the entropic flux per lane,
+/// never the open-demand backlog.
 #[test]
-fn the_surface_is_the_deficit_and_the_entropic_flux_never_the_backlog() {
+fn yield_surface_reads_deficit_and_flux_not_backlog() {
     let mut p = Physics::default();
     assert_eq!(yield_surface(&p), Some([0; 4]), "a calm, full metabolism reads zero on every lane");
     p.bump(&[48_000, 28_000, 0, 53_000]);
@@ -25,7 +27,7 @@ fn the_surface_is_the_deficit_and_the_entropic_flux_never_the_backlog() {
 /// `as i64` the flux was read through; in `i128` it reads whole. A lane whose
 /// deficit plus that excess passes a `u64` has no surface, never a pinned one.
 #[test]
-fn the_flux_is_exact_and_a_surface_past_its_carrier_is_refused() {
+fn yield_surface_refuses_past_carrier_and_flux_is_exact() {
     let mut p = Physics::default();
     p.torsion[3] = u64::MAX;
     assert_eq!(p.order_flux()[3], -i128::from(u64::MAX), "the whole counter, never wrapped");

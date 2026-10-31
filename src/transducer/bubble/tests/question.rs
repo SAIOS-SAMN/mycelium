@@ -35,7 +35,7 @@ fn held_ring() -> (Contemplation, Vec<Vec<u8>>) {
 /// very class the hole kept — `seal ∘ puncture` is the identity on content —
 /// the class leaves the questions, and the cell stands sealed again.
 #[test]
-fn a_held_ring_is_punctured_and_a_discharge_of_its_class_seals_it() {
+fn docket_discharged_seals_punctured_held_ring() {
     let (mut c, vs) = held_ring();
     let board = c.complex.board();
     let [(cell, kept)] = board.holes.as_slice() else { panic!("the held ring is one hole: {board:?}") };
@@ -62,7 +62,7 @@ fn a_held_ring_is_punctured_and_a_discharge_of_its_class_seals_it() {
 /// A RING WHOSE ARRIVALS AGREE ASKS NOTHING: its cell fills flat through the
 /// one fill path and no hole is opened.
 #[test]
-fn a_ring_whose_arrivals_agree_punctures_nothing() {
+fn transport_punctures_nothing_on_agreeing_ring() {
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("the sensor plane"), false)]).rotor();
     let mut c = Contemplation::new();
     let vs: Vec<Vec<u8>> = (1u8..=3).map(|i| vec![i; 4]).collect();

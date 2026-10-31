@@ -44,7 +44,7 @@ fn frac(n: i64, d: i64) -> BigRational {
 /// the cone (X·X = 0); and distance is bilinear one level up (X(a)·X(b) =
 /// −½|a−b|²) — no roots, no epsilon — on all three coordinates.
 #[test]
-fn the_null_cone_is_exact() {
+fn point_at_lies_on_null_cone_exactly() {
     assert!(e_o().geo(&e_o()).scalar_part() == q(0), "e_o² = 0");
     assert!(e_inf().geo(&e_inf()).scalar_part() == q(0), "e_∞² = 0");
     assert!(e_o().geo(&e_inf()).scalar_part() == q(-1), "e_o·e_∞ = −1");
@@ -64,7 +64,7 @@ fn the_null_cone_is_exact() {
 /// the 0-skeleton needed 2·area independent point-diffs. `T(d) X(x) T̃ = X(x+d)`,
 /// exact, read straight back out of the homogeneous representative.
 #[test]
-fn a_translation_is_one_versor_sandwich() {
+fn translator_at_moves_point_in_one_sandwich() {
     let x = point(&q(2), &q(-3), &q(1));
     let t = translator(&q(5), &q(4), &q(-1));
     let moved = t.sandwich(&x);
@@ -79,7 +79,7 @@ fn a_translation_is_one_versor_sandwich() {
 
 /// A sphere is a volumetric body: a base point lies on it iff X(p)·S = 0, exact.
 #[test]
-fn a_sphere_carries_volume() {
+fn on_sphere_holds_exactly_on_surface() {
     let s = sphere(&q(0), &q(0), &q(0), &q(9)); // centre origin, r² = 9
     assert!(on_sphere(&point(&q(3), &q(0), &q(0)), &s), "(3,0,0) is on the r²=9 sphere");
     assert!(on_sphere(&point(&q(0), &q(3), &q(0)), &s), "(0,3,0) too");
@@ -93,7 +93,7 @@ fn a_sphere_carries_volume() {
 /// bodies. A null point has no inverse (X·X = 0); a SPHERE (S·S = r² ≠ 0) does.
 /// Volume is exactly what makes the coboundary demand factorable.
 #[test]
-fn volume_is_what_makes_the_quotient_exist() {
+fn is_versor_refuses_null_point_and_accepts_sphere() {
     let p_a = point(&q(1), &q(1), &q(0));
     let p_b = point(&q(4), &q(1), &q(0));
     // 78.32(1): no inverse is taken. A null point is no versor, so no
@@ -120,7 +120,7 @@ fn volume_is_what_makes_the_quotient_exist() {
 /// ↦ (0,−1,0) with its scale absorbed by homogeneity (read back through `base`);
 /// and the same turn on `e1e3` carries the row axis onto the frame axis (51.2).
 #[test]
-fn the_sandwich_rotates_the_whole_body() {
+fn rotator_sandwich_rotates_whole_body_exactly() {
     let pi = rotator(&q(0), &q(1)); // e1e2 — a π rotation
     let turned = pi.sandwich(&point(&q(3), &q(2), &q(5)));
     assert_eq!(base(&turned), Some((q(-3), q(-2), q(5))), "π rotation sends x ↦ −x on its plane, k untouched");
@@ -144,7 +144,7 @@ fn the_sandwich_rotates_the_whole_body() {
 /// The boundary projection ∂σ = σ ⌟ I⁻¹ is well-defined on a volumetric body —
 /// the bridge from the multivector body to its cellular boundary/2-chain.
 #[test]
-fn the_body_projects_to_a_boundary() {
+fn boundary_dual_projects_sphere_to_boundary() {
     let s = sphere(&q(2), &q(1), &q(0), &q(4));
     // Read in the corpus's space, n = 3, named.
     let d = boundary_dual(&s, 3).expect("the pseudoscalar is invertible");

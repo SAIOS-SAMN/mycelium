@@ -42,7 +42,7 @@ fn co_sign(name: &str, root_hash: [u8; 32]) -> ReceiptSection {
 /// receipt proposes nothing; a ledger that does not conserve proposes
 /// nothing.
 #[test]
-fn a_fold_is_proposed_witnessed_and_committed_on_two_signatures() {
+fn commit_fold_seals_on_two_signatures() {
 // Three strokes, each one act and its close (OK1): orbit `n` holds its act
 // at `(n, 0)` and its close at `(n, 1)`. A fold cuts only at a close.
 let act = |k: u64| Place { k, i: 0 };
@@ -173,7 +173,7 @@ assert!(broken.chain().root().is_none() && broken.fold_proposal().is_none());
 /// binds the segment again holds both eras from their descriptors alone,
 /// each answering its own range.
 #[test]
-fn each_filed_era_reads_back_its_own_receipts() {
+fn bind_eras_reads_each_era_own_range() {
     let close = |k: u64| Place { k, i: 1 };
     let home = [0x5c; 32];
     let path = std::env::temp_dir().join(format!("mycelium-eras-{}-{}", std::process::id(), line!()));
@@ -215,7 +215,7 @@ fn each_filed_era_reads_back_its_own_receipts() {
 /// it pages at most the one era that root closes, and every receipt it
 /// serves stands at or past that orbit.
 #[test]
-fn a_folded_line_read_from_its_fold_root_pages_no_earlier_era() {
+fn receipts_page_from_root_pages_no_earlier_era() {
     use crate::observe::{serves, ServeAxis};
     let home = [0x6d; 32];
     let mut k = Kernel::new();
@@ -254,7 +254,7 @@ fn a_folded_line_read_from_its_fold_root_pages_no_earlier_era() {
 /// still restores it; and a snapshot naming a stamp its line does not hold
 /// refuses.
 #[test]
-fn a_court_restores_from_its_line_and_the_snapshot_that_names_it() {
+fn restore_agrees_with_bound_line() {
     let home = [0x5c; 32];
     let dir = std::env::temp_dir().join(format!("mycelium-line-{}-{}", std::process::id(), line!()));
     let _ = std::fs::remove_dir_all(&dir);
@@ -308,7 +308,7 @@ fn a_court_restores_from_its_line_and_the_snapshot_that_names_it() {
 /// — before, admission read the folded receipt as missing for good, and
 /// every peer line citing it stopped at this court.
 #[test]
-fn a_peer_receipt_citing_a_folded_receipt_is_admitted() {
+fn admit_backfill_admits_citation_of_folded_receipt() {
     let home = [0x5c; 32];
     let path = std::env::temp_dir().join(format!("mycelium-eras-{}-{}", std::process::id(), line!()));
     let _ = std::fs::remove_file(&path);
@@ -343,7 +343,7 @@ fn a_peer_receipt_citing_a_folded_receipt_is_admitted() {
 /// court refused its peers' folds as not conserving (epoch 115, thousands
 /// an hour).
 #[test]
-fn a_second_fold_verifies_on_the_rows_a_witness_fetches() {
+fn verify_fold_second_fold_on_fetched_rows() {
     let home = [0x5c; 32];
     let mut k = Kernel::new();
     k.bind_identity(home);
@@ -371,7 +371,7 @@ fn a_second_fold_verifies_on_the_rows_a_witness_fetches() {
 /// nets the payer from what it held — at the fold node, above the payment,
 /// they were outside the cut and the payer read below zero.
 #[test]
-fn the_epoch_rows_stand_at_the_root_and_the_next_cut_counts_them() {
+fn commit_fold_stands_epoch_rows_at_root() {
     let home = [0x11; 32];
     let mut k = Kernel::new();
     k.bind_identity(home);
@@ -403,7 +403,7 @@ fn the_epoch_rows_stand_at_the_root_and_the_next_cut_counts_them() {
 /// The ledger conserves throughout, and the next fold re-derives on its
 /// witness's rows.
 #[test]
-fn a_fold_passes_an_open_listing_word_and_escrow_and_each_closes_after_it() {
+fn propose_fold_passes_open_listing_and_escrow() {
     // The fixture's bonded identity, which the escrow names.
     let home = [0x11; 32];
     let mut k = Kernel::new();
@@ -465,7 +465,7 @@ fn a_fold_passes_an_open_listing_word_and_escrow_and_each_closes_after_it() {
 /// now falls past the page: nothing is proposed while the long orbit is open
 /// (no fold feeds the next), and at its close the fold is proposed there.
 #[test]
-fn after_a_fold_an_orbit_longer_than_a_page_folds_at_its_close() {
+fn propose_fold_at_close_cuts_long_orbit_at_close() {
     let home = [0x5d; 32];
     let mut k = Kernel::new();
     k.bind_identity(home);

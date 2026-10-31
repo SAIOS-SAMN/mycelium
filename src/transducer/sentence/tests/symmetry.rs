@@ -25,7 +25,7 @@ fn cert(axis: Axis, word: Word, after: crate::transducer::address::Address) -> P
 /// leaves that class where the other does. It is a rotation the mind
 /// measured — 37.7's object — and it is what the collapse used to clear.
 #[test]
-fn two_discharges_of_one_orbit_name_the_symmetry_between_them() {
+fn symmetry_names_difference_of_two_discharges() {
     let closed = ClassVector::of_word(&Word::identity()).expect("identity").class_key();
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let s = PlaneForm::sheet_word();
@@ -47,7 +47,7 @@ fn two_discharges_of_one_orbit_name_the_symmetry_between_them() {
 /// fixes nothing, so there is nothing for it to be a symmetry OF, and the
 /// precondition is checked rather than assumed (rule 11).
 #[test]
-fn discharges_to_two_classes_name_no_symmetry() {
+fn symmetry_refuses_discharges_to_two_classes() {
     let closed = ClassVector::of_word(&Word::identity()).expect("identity").class_key();
     let other = ClassVector::of_word(&word_turn_90()).expect("90° turn").class_key();
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
@@ -65,7 +65,7 @@ fn discharges_to_two_classes_name_no_symmetry() {
 /// orbit admits nothing extra — a reading, not a failure — so it is refused
 /// rather than adjoined as a generator that turns by nothing.
 #[test]
-fn one_move_spelled_twice_admits_no_freedom() {
+fn symmetry_refuses_one_move_spelled_twice() {
     let closed = ClassVector::of_word(&Word::identity()).expect("identity").class_key();
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     // `q` and `q⁵` are one element and two tapes (1.5).
@@ -89,7 +89,7 @@ fn one_move_spelled_twice_admits_no_freedom() {
 /// nothing could collapse. Two different words on the same axis are still
 /// two.
 #[test]
-fn a_word_discharging_on_both_sides_is_one_discharge_and_two_words_are_a_vortex() {
+fn one_per_move_merges_both_sides_of_word() {
     let closed = ClassVector::of_word(&Word::identity()).expect("identity").class_key();
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let s = PlaneForm::sheet_word();
@@ -133,7 +133,7 @@ fn a_word_discharging_on_both_sides_is_one_discharge_and_two_words_are_a_vortex(
 /// A discharge that HAPPENED is real however the stroke ended, so only the
 /// empty set is ambiguous and only it consults the budget.
 #[test]
-fn a_starved_search_is_not_a_refusal_and_a_discharge_survives_one() {
+fn outcome_of_reads_empty_starved_search_as_starved() {
     let closed = ClassVector::of_word(&Word::identity()).expect("identity").class_key();
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let one = cert(Axis::Unit(0), q, closed);
@@ -158,7 +158,7 @@ fn a_starved_search_is_not_a_refusal_and_a_discharge_survives_one() {
 /// holds two symmetries against the winner, and they are two — summing them
 /// would be a count deciding (rule 2).
 #[test]
-fn each_losing_candidate_is_its_own_symmetry() {
+fn symmetries_holds_one_per_losing_candidate() {
     let closed = ClassVector::of_word(&Word::identity()).expect("identity").class_key();
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let s = PlaneForm::sheet_word();

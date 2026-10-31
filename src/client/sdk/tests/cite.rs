@@ -17,7 +17,7 @@ fn chain_word(links: &[(i64, i64, u8, u8)]) -> crate::transducer::element::Eleme
 /// Quote incidence is the working atlas: genome ∪ dialect ∪ the held
 /// forms' words, read at the chart (24.1).
 #[test]
-fn quote_incidence_is_the_working_atlas() {
+fn incident_chart_reads_working_atlas() {
 let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
 let mut entity = Entity::open("127.0.0.1:1", Kernel::named("atlas"));
 assert!(
@@ -98,7 +98,7 @@ assert!(
 /// exactly the body no word spoke; and no element for either chain exists
 /// anywhere on the working language, because none was minted to ask.
 #[test]
-fn a_held_forms_word_and_not_its_chain_cites_the_next_listing() {
+fn cite_names_held_word_vertex_not_listing_chain() {
 use crate::transducer::sentence::Vertex;
 let scene = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2)];
 let listing = vec![(4i64, 4i64, 1u8, 2u8), (4, 5, 1, 2), (9, 9, 3u8, 4u8)];
@@ -128,7 +128,7 @@ assert!(
 
 /// A listing is expressed only when a held word deflates it.
 #[test]
-fn listing_is_expressed_only_when_a_held_word_deflates_it() {
+fn conclude_listing_expresses_only_when_held_word_deflates() {
 let prefix = vec![(0i64, 0i64, 1u8, 2u8)];
 let listing = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 3, 4)];
 
@@ -168,7 +168,7 @@ assert!(
 /// what the form could not close is its demand vertices, spoken with the
 /// sentence (L5), or the idea's own work.
 #[test]
-fn withheld_form_stands_and_holds_the_idea_and_utters_nothing() {
+fn withhold_form_stands_holds_idea_utters_nothing() {
 use crate::transducer::family::{extract_rule, form_deflation, NoCrystal};
 let family = vec![
     (vec![vec![1u8]], vec![vec![2u8]]),

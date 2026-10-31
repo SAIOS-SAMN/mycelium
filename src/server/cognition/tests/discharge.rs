@@ -36,7 +36,7 @@ fn rule_over(family: &[TrainPair]) -> crate::transducer::element::Element {
 /// the held form measures over its family, `d`; and the court that hears it
 /// on that family escrows `price(d)` and nothing for the span.
 #[test]
-fn a_word_that_stood_a_span_mints_no_span_and_escrows_its_discharge() {
+fn mint_sentence_escrows_discharge_not_span() {
     let family = recoloured();
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extract");
     let at_once = mint_sentence(&rule, &family, &NoCrystal, 0).expect("it mints");
@@ -73,7 +73,7 @@ fn a_word_that_stood_a_span_mints_no_span_and_escrows_its_discharge() {
 /// exactly the discharge, the second exactly its escrow; the ledger mints
 /// those two vectors and nothing else.
 #[test]
-fn a_closure_pays_each_claim_the_closers_discharge_capped_by_its_escrow() {
+fn pay_solve_pays_discharge_capped_by_escrow() {
     let mut k = Kernel::new();
     let family = carried();
     let rule = rule_over(&family);
@@ -113,7 +113,7 @@ fn a_closure_pays_each_claim_the_closers_discharge_capped_by_its_escrow() {
 /// bodies: its magnitude measures them (its existence as a word), its escrow
 /// is the zero vector, and its ruling mints nothing.
 #[test]
-fn a_letter_escrows_and_is_paid_nothing() {
+fn open_unspellable_letter_escrows_and_pays_nothing() {
     use crate::transducer::alphabet::{LetterId, Word};
     let mut k = Kernel::new();
     let quarter = LetterId::turn_90((0, 1)).expect("the 90° turn");
@@ -139,7 +139,7 @@ fn a_letter_escrows_and_is_paid_nothing() {
 /// family it could be measured on: it stands at no frame, so its discharge
 /// there is the zero vector; its holonomic unit is its existence as a word.
 #[test]
-fn a_callus_escrows_and_is_paid_nothing() {
+fn list_sentence_callus_escrows_and_pays_nothing() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
     let mut k = Kernel::new();
     let quarter = LetterId::turn_90((0, 1)).expect("the 90° turn");

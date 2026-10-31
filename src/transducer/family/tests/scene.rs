@@ -9,7 +9,7 @@ use crate::transducer::family::*;
 /// the cover's key is the scene's own key — so the recursion stops there
 /// with nothing counted, no floor, and no constant (rules 2 and 5).
 #[test]
-fn the_cut_ends_where_the_covers_key_is_the_scenes_key() {
+fn is_identity_ends_cut_at_scene_key() {
     // No row and no column of this scene is one hue throughout, so Bands
     // deduces no separator and the cover is the whole.
     let solid = vec![grid(&["120", "201", "012"])];
@@ -52,7 +52,7 @@ fn the_cut_ends_where_the_covers_key_is_the_scenes_key() {
 /// input but not the other is not a separator: the cut is a fact of the
 /// FAMILY, not of one grid.
 #[test]
-fn a_banded_scene_is_covered_by_its_charts_and_recomposed_by_the_coboundary() {
+fn cover_bands_scene_into_restricted_charts() {
     let banded = vec![grid(&["12", "00", "21"])];
     let banded_cover = cover(&banded, Reading::Bands).expect("Bands deduces a cover");
     let keys: Vec<Vec<u8>> = banded_cover.scoped().map(|(k, _)| k).collect();

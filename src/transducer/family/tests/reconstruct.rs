@@ -11,7 +11,7 @@ use num_rational::BigRational;
 /// weight against the body's sphere over the sphere's square, `M·(P·C)/C²`:
 /// ½ at the barycentre and 5/4 at either end — read off the sums, never a root.
 #[test]
-fn centrality_is_the_weight_against_the_body_sphere() {
+fn field_reads_centrality_against_body_sphere() {
     let f = field(&grid(&["111"]));
     let half = BigRational::new(1.into(), 2.into());
     let end = BigRational::new(5.into(), 4.into());
@@ -28,7 +28,7 @@ fn centrality_is_the_weight_against_the_body_sphere() {
 /// has opposite signs on the two strokes: LOCAL DIRECTION closes, and each
 /// pair left out is rebuilt from the other two by it.
 #[test]
-fn the_axis_whose_loops_close_rebuilds_each_pair() {
+fn reconstruct_rebuilds_each_pair_on_closing_axis() {
     let family = vec![
         (
             grid(&["500000050", "050000500", "005005000", "000000000", "000000000"]),

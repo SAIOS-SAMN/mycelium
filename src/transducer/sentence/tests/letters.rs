@@ -11,7 +11,7 @@ use crate::transducer::stalk;
 /// whose rotor is the generator's; a form whose vertex cites still yields
 /// nothing for that vertex until the citation resolves.
 #[test]
-fn an_adjoined_generator_is_among_its_forms_words() {
+fn acting_of_element_lists_adjoined_generator() {
     let r = word_turn_90().rotor();
     let letter = generator_form(&r, &stalk::Invariant::counts(&[3, 5]), &[]).expect("a rotor mints a generator");
     let words = acting_of_element(&letter);

@@ -41,7 +41,7 @@ fn fills(cx: &Complex) -> Vec<String> {
 /// The empty complex first, so a failure above it is localised to the
 /// tries' frames rather than to a simplex's leaves.
 #[test]
-fn an_empty_complex_survives_its_own_tries() {
+fn take_tries_round_trips_empty_complex() {
     let cx = Complex::new();
     let back = round_trip(&cx);
     assert_eq!(back.degrees.len(), cx.degrees.len(), "the grading survives");
@@ -49,7 +49,7 @@ fn an_empty_complex_survives_its_own_tries() {
 
 /// ONE edge next, so a failure is localised to a single simplex's leaves.
 #[test]
-fn one_edge_survives_its_own_tries() {
+fn take_tries_round_trips_one_edge() {
     let mut cx = Complex::new();
     cx.set_edge(v(1), v(2), turn_90(), identity_versor(), vol());
     let before = fills(&cx);
@@ -61,7 +61,7 @@ fn one_edge_survives_its_own_tries() {
 /// states and their payloads both survive, and each simplex is filed under
 /// its own key.
 #[test]
-fn a_complex_survives_its_own_tries() {
+fn take_tries_round_trips_complex() {
     let mut cx = Complex::new();
     cx.set_edge(v(1), v(2), turn_90(), identity_versor(), vol());
     cx.set_edge(v(2), v(3), turn_90(), identity_versor(), vol());
@@ -81,7 +81,7 @@ fn a_complex_survives_its_own_tries() {
 /// 78.26(5) — AN UNMEASURED FILL RETURNS BY ITS REASON: never as an open
 /// cell, never as another reason.
 #[test]
-fn an_unread_fill_survives_its_own_tries_by_its_reason() {
+fn take_tries_round_trips_unread_fill_reason() {
     for why in crate::transducer::cech::FillUnread::ALL {
         let mut cx = Complex::new();
         cx.set_edge(v(1), v(2), turn_90(), identity_versor(), vol());
@@ -105,7 +105,7 @@ fn an_unread_fill_survives_its_own_tries_by_its_reason() {
 /// valid stream is flipped to an out-of-range tag in turn; not one of them
 /// may yield a complex that claims more open cells than the original wrote.
 #[test]
-fn a_corrupt_byte_never_fabricates_an_open_cell() {
+fn take_tries_corrupt_byte_fabricates_no_open_cell() {
     let mut cx = Complex::new();
     cx.set_edge(v(1), v(2), turn_90(), identity_versor(), vol());
     let mut bytes = Vec::new();

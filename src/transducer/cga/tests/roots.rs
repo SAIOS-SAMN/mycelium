@@ -9,7 +9,7 @@ use crate::transducer::cga::Undecomposed;
 /// `x (x − 1/2)(x + 3)` reads all three roots, zero among them, and a
 /// repeated factor is read once.
 #[test]
-fn every_rational_root_is_read_once_at_any_degree() {
+fn rational_roots_reads_each_root_once() {
     // x(x − 1/2)(x + 3) = x³ + 5/2 x² − 3/2 x, low to high.
     let p = [q(0, 1), q(-3, 2), q(5, 2), q(1, 1)];
     assert_eq!(rational_roots(&p, &mut budget()), Ok(vec![q(-3, 1), q(0, 1), q(1, 2)]));
@@ -21,7 +21,7 @@ fn every_rational_root_is_read_once_at_any_degree() {
 /// WHAT HAS NO RATIONAL ROOT IS REFUSED BY ITS DEGREE: `x³ − 2` whole, and
 /// `(x − 1)(x² − 2)` down to its quadratic after its rational root is read.
 #[test]
-fn a_factor_with_no_rational_root_is_refused_by_its_degree() {
+fn rational_roots_refuses_irrational_factor_by_degree() {
     let cubic = [q(-2, 1), q(0, 1), q(0, 1), q(1, 1)];
     assert_eq!(rational_roots(&cubic, &mut budget()), Err(Undecomposed::Irrational(3)));
     // (x − 1)(x² − 2) = x³ − x² − 2x + 2.
@@ -36,7 +36,7 @@ fn a_factor_with_no_rational_root_is_refused_by_its_degree() {
 /// A stroke that truly runs out still refuses by name and runs on no
 /// further.
 #[test]
-fn a_large_semiprime_is_read_exactly_within_the_stroke() {
+fn rational_roots_reads_large_semiprime_within_stroke() {
     let n = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1_000_003u64 * 1_000_033u64));
     let hard = [-n, q(0, 1), q(1, 1)];
     let mut stroke = crate::physics::Physics::default().stroke_n(1000);
@@ -54,7 +54,7 @@ fn a_large_semiprime_is_read_exactly_within_the_stroke() {
 /// whole within a stroke of a few hundred; a cubic with one rational root and
 /// an irreducible quadratic reads its root and refuses the rest by degree.
 #[test]
-fn roots_of_eighty_bit_coefficients_are_read_within_a_small_stroke() {
+fn rational_roots_reads_eighty_bit_roots_within_stroke() {
     use num_bigint::BigInt;
     let r = |n: BigInt, d: i64| num_rational::BigRational::new(n, BigInt::from(d));
     let mul = |p: &[num_rational::BigRational], root: &num_rational::BigRational| {
@@ -95,7 +95,7 @@ fn roots_of_eighty_bit_coefficients_are_read_within_a_small_stroke() {
 /// exactly `roots_need(p)` reads every polynomial above to its end — roots
 /// or a refusal by degree, never `Unbounded`, at degree two to six.
 #[test]
-fn the_stroke_a_polynomials_roots_need_is_read_off_it() {
+fn roots_need_suffices_to_read_every_polynomial() {
     use crate::transducer::cga::modes::roots_need;
     let n = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1_000_003u64 * 1_000_033u64));
     let polys: Vec<Vec<num_rational::BigRational>> = vec![

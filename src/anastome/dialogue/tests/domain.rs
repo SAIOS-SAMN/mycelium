@@ -4,8 +4,10 @@
 use crate::anastome::dialogue::domain::{decode_domain, decode_domain_reply, encode_domain, encode_domain_reply, Founded, DomainGenesis};
 use crate::chronometry::Stamp;
 
+/// A signed genesis and every answer read back whole, and a byte left over
+/// is none.
 #[test]
-fn a_signed_genesis_and_every_answer_read_back_whole() {
+fn domain_genesis_and_answers_round_trip_whole() {
     let key = ed25519_dalek::SigningKey::from_bytes(&[2u8; 32]);
     let g = DomainGenesis { domain: key.verifying_key().to_bytes(), tiers: vec![[1u8; 32], [3u8; 32]] };
     let signed = g.sign(&key);

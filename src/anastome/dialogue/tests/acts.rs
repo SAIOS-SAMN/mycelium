@@ -8,7 +8,7 @@ use crate::anastome::dialogue::*;
 /// so the reader took a frame that ended inside the next field and refused
 /// the whole act while the sender believed it spoke.
 #[test]
-fn a_count_past_its_field_refuses_the_frame() {
+fn encode_refuses_count_past_its_field() {
     let voice = [3u8; 32];
     let charts: Vec<crate::transducer::stalk::Invariant> =
         (0..256u64).map(|i| crate::transducer::stalk::Invariant::counts(&[i])).collect();
@@ -38,7 +38,7 @@ fn a_count_past_its_field_refuses_the_frame() {
 
 /// Every act round-trips exactly — the calculus is closed and lossless.
 #[test]
-fn the_five_acts_round_trip() {
+fn acts_round_trip_exactly() {
     let chain = vec![(0i64, 0i64, 1u8, 4u8), (2, 3, 0, 7)];
     let voice = [9u8; 32];
     let solver = [7u8; 32];
@@ -132,7 +132,7 @@ fn the_five_acts_round_trip() {
 /// inline as its canonical coordinates, read back as the rotor it was; a
 /// page cut inside a record is refused whole, never shortened.
 #[test]
-fn a_class_page_carries_its_representative_as_a_ray() {
+fn class_page_round_trips_rotor_refuses_cut_page() {
     let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane");
     let r = crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor();
     let page = ClassPage { key: r.class_key().expect("a class"), order: 4, rotor: r.clone() };
@@ -150,7 +150,7 @@ fn a_class_page_carries_its_representative_as_a_ray() {
 /// truncated address as though it were whole; an address past its u16 now
 /// refuses the reply, and one that fits round-trips exactly.
 #[test]
-fn a_peers_reply_past_its_wall_is_refused_never_clamped() {
+fn encode_peers_reply_refuses_address_past_wall() {
     let addrs = vec!["10.0.0.1:7000".to_string(), "10.0.0.2:7000".to_string()];
     let body = encode_peers_reply(&addrs).expect("two short addresses fit");
     assert_eq!(decode_peers_reply(&body), Some(addrs), "and read back whole");
@@ -164,7 +164,7 @@ fn a_peers_reply_past_its_wall_is_refused_never_clamped() {
 /// another's, reads unsigned; one with no signature reads unsigned; bytes
 /// after it that are no signature refuse it.
 #[test]
-fn a_solve_names_its_payee_by_its_voices_signature() {
+fn decode_solve_signs_payee_by_voice_key() {
     let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
     let outputs = vec![vec![vec![1u8, 2], vec![0, 3]]];
     for rule in [None, Some(&b"a rule's tape"[..])] {

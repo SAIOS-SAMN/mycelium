@@ -13,7 +13,7 @@ use crate::transducer::sentence::{as_element_form, Reasons, Vertex};
 /// the sentence's, not the speaker's story about it — and the reasons
 /// themselves travel whole.
 #[test]
-fn the_court_reads_the_reasons_the_speaker_read() {
+fn reasons_of_reads_same_reasons_after_decode() {
     let family = vec![
         (grid(&["11100", "00000", "00001"]), grid(&["22200", "00000", "00005"])),
         (grid(&["11110", "00000", "00011"]), grid(&["22220", "00000", "00055"])),
@@ -44,6 +44,6 @@ fn the_court_reads_the_reasons_the_speaker_read() {
 
 /// A word that is not a sentence carries no reasons: none are invented.
 #[test]
-fn a_word_that_is_not_a_sentence_has_no_reasons() {
+fn reasons_of_refuses_non_sentence() {
     assert_eq!(Reasons::of(&Element::identity()), None);
 }

@@ -10,7 +10,7 @@ use crate::client::sdk::*;
 /// recollection) — never re-cognized, never recalled. And comprehension never
 /// mutates the genome: the inherited record cannot drift locally.
 #[test]
-fn the_entity_comprehends_and_the_epigenome_expresses() {
+fn comprehend_raises_expression_and_never_mutates_genome() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let mut epi = Epigenome::new();
@@ -86,7 +86,7 @@ assert_eq!(crate::client::sdk::epigenome::genome_refused(&frozen), None, "this b
 /// Chapter 24.2: a sentence that cites a form this mind does not hold
 /// is Withheld; learn_one banks it in the dialect, never the genome.
 #[test]
-fn withheld_then_depth_order() {
+fn comprehend_withholds_sentence_citing_unheld_form() {
 use crate::transducer::alphabet::Word;
 use crate::transducer::sentence::{as_element_form, Form, Vertex};
 let missing_addr = crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 0xab]);
@@ -152,7 +152,7 @@ assert_eq!(mind.epigenome.genome_len(), 0, "and enters no genome");
 /// Waiting-on is keyed by the missing address; the overlap face of the
 /// glued vertex is the re-gauge site, never face 0.
 #[test]
-fn withheld_waiting_on_resolves_at_the_overlap_face() {
+fn learn_resolves_waiting_on_at_overlap_face() {
 use crate::transducer::alphabet::Word;
 use crate::transducer::sentence::{as_element_form, Form, Vertex};
 let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
@@ -261,7 +261,7 @@ match epi.comprehend(&e, &mut super::common::budget()) {
 
 /// A cited address whose chart is not held is Withheld, never Dialect.
 #[test]
-fn foreign_class_is_withheld() {
+fn comprehend_withholds_foreign_class() {
 use crate::transducer::alphabet::Word;
 use crate::transducer::sentence::{as_element_form, Form, Vertex};
 let inner_a = closed_turn(None);
@@ -348,7 +348,7 @@ match epi.comprehend(&e, &mut super::common::budget()) {
 /// Until A12 factors words through the held basis, a citation-free
 /// closed form is Admitted, not Understood by nothing.
 #[test]
-fn citation_free_closed_form_is_admitted() {
+fn comprehend_admits_citation_free_closed_form() {
 use crate::transducer::alphabet::Word;
 use crate::transducer::sentence::{as_element_form, Form, Vertex};
 let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
@@ -387,7 +387,7 @@ assert!(
 /// so the fuller reading and the truncated one compared EQUAL. They do not
 /// now, which is what makes the loss observable at all.
 #[test]
-fn a_dialect_cochain_is_not_equal_to_one_of_its_obstructions() {
+fn dialect_cochain_differs_from_one_obstruction() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let a = [(0, 0, 1u8), (0, 1, 2)];
@@ -463,7 +463,7 @@ assert_eq!(d.last_used_tu, 11, "tu is TUniversal");
 /// A vertex already spoken stands in the dialect and does not go on
 /// the wire, even when the second utterance is a translated embedding.
 #[test]
-fn the_same_vertex_is_spoken_once() {
+fn speak_stands_known_vertex_without_wire() {
 let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
 let e2 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
 assert!(e1.same_vertex(&e2), "two tapes of one form are one vertex");
@@ -482,7 +482,7 @@ assert_eq!(entity.dialect_len(), 1, "stood once in the dialect");
 /// The court promotes a dialect vertex into the genome, carrying uses,
 /// and never admits a second copy.
 #[test]
-fn learn_one_promotes_dialect_same_vertex() {
+fn learn_promotes_dialect_vertex_once() {
 use crate::transducer::family::Crystal;
 let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
 let mut epi = Epigenome::new();
@@ -526,7 +526,7 @@ assert!(
 /// (MU-CLIENT §7.1, ruled 2026-10-18) a residual chain, fat or honest,
 /// is never learned at all: it is an open question.
 #[test]
-fn taught_word_that_fails_replay_is_refused_not_learned() {
+fn learn_refuses_taught_word_failing_replay() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let honest = from_canonical(
@@ -550,7 +550,7 @@ assert_eq!(entity.board.open_residuals.len(), 1, "it is an open question");
 /// questions, never words (MU-CLIENT §7.1) — learns nothing and measures
 /// nothing.
 #[test]
-fn a_learned_page_is_measured_per_lane_and_a_refused_one_is_not() {
+fn take_learned_mu_measures_learned_page_per_lane() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let residual = from_canonical(
@@ -569,7 +569,7 @@ assert_eq!(entity.take_learned_mu(), [0; 4], "and takes it once");
 
 /// A stood dialect word closes a remainder without waiting for the court.
 #[test]
-fn a_stood_word_closes_todays_remainder() {
+fn comprehend_closes_remainder_by_stood_word() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let mut epi = Epigenome::new();
@@ -598,7 +598,7 @@ match located {
 /// Equal rotor, different ρ / σ / shift: three genome entries. Two
 /// spellings of one vertex still merge.
 #[test]
-fn rho_sigma_shift_are_three_vertices_two_spellings_merge() {
+fn learn_keeps_rho_sigma_shift_apart_and_merges_spellings() {
 use crate::transducer::element::{from_connection, identity_versor, translator_versor};
 let id = crate::transducer::alphabet::Word::identity();
 let swap = from_connection(&id, &identity_versor(), &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).expect("swap");

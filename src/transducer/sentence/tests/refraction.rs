@@ -7,8 +7,10 @@ use crate::transducer::alphabet::{self, Word};
 use crate::transducer::element::{self};
 use crate::transducer::sentence::*;
 
+/// Refraction is a rebase, a regauge and a carriage, and it is absent off
+/// the plane.
 #[test]
-fn refraction_is_rebase_regauge_and_carriage() {
+fn refract_rebases_regauges_and_carries() {
     let mut f = Form::default();
     stand_with_star(&mut f, &word_vertex(1, word_turn_90()));
     f.reindex();
@@ -41,8 +43,9 @@ fn refraction_is_rebase_regauge_and_carriage() {
     assert!(off.refract(&f).is_none(), "None off the plane");
 }
 
+/// Refraction replays as its three moves made by hand.
 #[test]
-fn refraction_replays_as_its_three_moves() {
+fn refract_replays_as_three_moves() {
     let mut f = Form::default();
     stand_with_star(&mut f, &word_vertex(1, word_turn_90()));
     f.reindex();
@@ -87,8 +90,9 @@ fn refraction_replays_as_its_three_moves() {
     }
 }
 
+/// A rebase conjugates by a versor and never subtracts.
 #[test]
-fn rebase_conjugates_by_a_versor_never_subtracts() {
+fn rebase_conjugates_by_versor_never_subtracts() {
     let mut f = Form::default();
     let mut v = word_vertex(1, word_turn_90());
     v.set_carriage(element::carriage(&q1(), &(q1(), q0())));

@@ -12,7 +12,7 @@ fn plane(a: usize, b: usize) -> Mv {
 /// The orbit turns on `e₁e₂`. A neighbour on the SAME plane is pure drag
 /// (aligned: it changes the rate, never the plane).
 #[test]
-fn a_neighbour_on_the_orbits_plane_is_pure_drag() {
+fn lift_drag_same_plane_is_pure_drag() {
     let b_o = plane(E1, E2);
     let b_n = plane(E1, E2).scale(&num_rational::BigRational::from_integer(3.into()));
     let split = lift_drag(&b_o, &b_n).expect("a blade with a non-zero square splits every bivector");
@@ -25,7 +25,7 @@ fn a_neighbour_on_the_orbits_plane_is_pure_drag() {
 /// anticommutes with it: pure lift (orthogonal), its commutator a rotation
 /// in `e₁e₃`, a plane neither generator is (60.4).
 #[test]
-fn a_neighbour_sharing_one_axis_is_pure_lift() {
+fn lift_drag_one_shared_axis_is_pure_lift() {
     let b_o = plane(E1, E2);
     let b_n = plane(E2, E3);
     let split = lift_drag(&b_o, &b_n).expect("splits");
@@ -40,7 +40,7 @@ fn a_neighbour_sharing_one_axis_is_pure_lift() {
 /// In general both parts: a neighbour mixing the orbit's plane with a
 /// tilted one splits into each, and they re-sum to it exactly.
 #[test]
-fn a_mixed_neighbour_splits_into_both_and_resums() {
+fn lift_drag_splits_mixed_neighbour_and_resums() {
     let b_o = plane(E1, E2);
     let b_n = plane(E1, E2).add(&plane(E1, E3));
     let split = lift_drag(&b_o, &b_n).expect("splits");
@@ -54,7 +54,7 @@ fn a_mixed_neighbour_splits_into_both_and_resums() {
 /// squares to a scalar plus a 4-vector, and it is refused, never
 /// approximated (rule 11).
 #[test]
-fn a_non_blade_orbit_mode_refuses() {
+fn lift_drag_refuses_non_blade_orbit_mode() {
     let not_a_blade = plane(E1, E2).add(&plane(E3, EP));
     assert!(lift_drag(&not_a_blade, &plane(E2, E3)).is_none());
 }

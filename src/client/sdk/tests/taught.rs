@@ -18,7 +18,7 @@ use crate::transducer::sentence::compose::{compose, Term};
 /// running every test at once drained this test's word into another's and
 /// handed it another's (2026-10-07, red once in 1 414).
 #[test]
-fn a_word_a_theorem_taught_is_transcribed_into_the_language() {
+fn transcribe_these_spells_taught_turn_as_word() {
     use crate::transducer::sentence::compose::teaches;
     use crate::transducer::sentence::rung::Taught;
     use crate::transducer::sentence::theorem::Theorem;
@@ -46,7 +46,7 @@ fn a_word_a_theorem_taught_is_transcribed_into_the_language() {
 /// voice half). The word is handed in, never drained from the process-wide
 /// queue other tests fill and drain at once.
 #[test]
-fn an_ineffable_taught_word_is_reported_for_its_sentence_to_be_spoken() {
+fn transcribe_these_reports_ineffable_word() {
     use crate::transducer::sentence::rung::Taught;
     let mut e = Entity::open("127.0.0.1:1", Kernel::named("ineffable"));
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
@@ -63,7 +63,7 @@ fn an_ineffable_taught_word_is_reported_for_its_sentence_to_be_spoken() {
 /// rotation in its local dialect; the same word taught again is said by the
 /// mind's own adjoined letter — no court asked, no ruling waited for.
 #[test]
-fn a_mind_adjoins_its_ineffable_word_and_says_it_at_once() {
+fn construct_and_adjoin_makes_ineffable_word_sayable() {
     use crate::transducer::sentence::rung::Taught;
     let mut e = Entity::open("127.0.0.1:1", Kernel::named("sovereign"));
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
@@ -86,7 +86,7 @@ fn a_mind_adjoins_its_ineffable_word_and_says_it_at_once() {
 /// its rotor the identity, its carriage the whole motion. The mind keeps it,
 /// so the cell that demanded it is answered by it from here on.
 #[test]
-fn a_dilation_about_a_point_becomes_the_minds_motion_letter() {
+fn construct_and_adjoin_keeps_dilation_as_motion_letter() {
     use crate::transducer::cga::{at_three::translator, dilator};
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
     let mut e = Entity::open("127.0.0.1:1", Kernel::named("star"));

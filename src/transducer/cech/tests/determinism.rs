@@ -98,7 +98,7 @@ fn reading(cx: &mut Complex) -> (String, Vec<String>) {
 /// same chord holonomies BYTE FOR BYTE, not merely the same conjugacy
 /// class.
 #[test]
-fn the_gauge_does_not_depend_on_the_order_the_edges_arrived_in() {
+fn fill_gauge_is_independent_of_edge_order() {
     let orders: [[usize; 3]; 6] =
         [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
     let mut first: Option<(String, Vec<String>)> = None;
@@ -128,7 +128,7 @@ fn the_gauge_does_not_depend_on_the_order_the_edges_arrived_in() {
 /// AND THE CHORD ITSELF IS NOT FLAT, so the assertion above is comparing a
 /// real holonomy rather than six identities.
 #[test]
-fn the_fixture_carries_a_chord_that_stands() {
+fn fill_disagreeing_legs_file_standing_chord() {
     let mut cx = triangle_in(&[0, 1, 2]);
     let (_, orbits) = reading(&mut cx);
     assert!(

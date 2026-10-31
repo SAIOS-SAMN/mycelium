@@ -30,7 +30,7 @@ fn fold(c: &mut ReceiptChain, at: Place) -> KStepReceipt {
 /// the chain's own hot line cites stays until the chain's own fold lets it
 /// go, and the signer's line keeps the head admission reads.
 #[test]
-fn a_peer_fold_sheds_its_line_but_what_the_chains_own_hot_line_cites() {
+fn shed_folded_keeps_peer_nodes_own_hot_line_cites() {
     let mut e = ReceiptChain::with_vk([4; 32]);
     let e0 = step(&mut e, Vec::new());
     let e1 = step(&mut e, Vec::new());
@@ -77,7 +77,7 @@ fn a_peer_fold_sheds_its_line_but_what_the_chains_own_hot_line_cites() {
 /// court's frame citing that receipt as its parent can never be crossed:
 /// the mesh's split on the development deployment, as the ledger reads it.
 #[test]
-fn a_shed_receipt_is_a_hole_below_the_head_that_backfill_cannot_cross() {
+fn shed_folded_leaves_hole_backfill_cannot_cross() {
     let mut e = ReceiptChain::with_vk([4; 32]);
     let e0 = step(&mut e, Vec::new());
     step(&mut e, Vec::new());

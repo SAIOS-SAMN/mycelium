@@ -18,7 +18,7 @@ fn sites<T: Copy + Into<Site>>(v: &[T]) -> Vec<Site> {
 /// is the gauge the body CARRIES — `Blade.gauge` holds it as sorted
 /// `(hue, count)` relations — and not the body's identity.
 #[test]
-fn h1_a_two_coloured_object_is_one_body() {
+fn components_holds_two_hued_object_as_one_body() {
     // A 2×2 block whose left column is hue 1 and right column hue 2.
     let scene = compartments(&[(0, 0, 0, 1u8), (1, 0, 0, 1), (0, 1, 0, 2), (1, 1, 0, 2)]);
     let comps = blade::components(&scene);
@@ -40,7 +40,7 @@ fn h1_a_two_coloured_object_is_one_body() {
 /// THE LOAD-BEARING HALF IS THE SEPARATION: if the diagonal entered
 /// the component relation it would swallow the contact it exposes.
 #[test]
-fn h2_two_bodies_meet_at_a_corner_without_becoming_one() {
+fn contact_cells_reads_corner_without_merging_bodies() {
     use crate::transducer::sentence::contact_cells;
     let scene = compartments(&[(0, 0, 0, 1u8), (1, 1, 0, 2)]);
     // Still two bodies: the diagonal is NOT in the component relation.
@@ -95,7 +95,7 @@ fn block(n: usize) -> Vec<Site> {
 /// [`face_incidence`]: crate::transducer::sentence::face_incidence
 /// [`contact_cells`]: crate::transducer::sentence::contact_cells
 #[test]
-fn a_cube_shares_a_cell_of_its_own_grade_with_every_neighbour() {
+fn shared_cells_reads_every_neighbour_once_by_grade() {
     use crate::transducer::base::FRAME_AXIS;
     use crate::transducer::sentence::{contact_cells, face_incidence, shared_cells};
     for n in [3usize, 4] {
@@ -131,7 +131,7 @@ fn a_cube_shares_a_cell_of_its_own_grade_with_every_neighbour() {
 /// one grade higher, since the cubes now also agree on the new axis. The
 /// grade is the contact's own, read off the pair, never a kind looked up.
 #[test]
-fn a_contact_is_the_grade_of_the_shared_cell() {
+fn contact_cells_grade_is_shared_cell_grade() {
     use crate::transducer::sentence::contact_cells;
     let grade = |a: Vec<i64>, b: Vec<i64>| -> Vec<usize> {
         let site = |a: Vec<i64>| Site::new(a).expect("a site within the algebra");

@@ -4,8 +4,10 @@
 use crate::anastome::dialogue::*;
 use crate::transducer::address::Address;
 
+/// A presentation ask and its answer read back whole, and the ask is never
+/// read as a fetch.
 #[test]
-fn a_presentation_ask_and_its_answer_read_back_whole_and_never_as_a_fetch() {
+fn presentation_round_trips_never_as_fetch() {
     let voice = [4u8; 32];
     let motion = crate::transducer::cga::translator_at(&[num_rational::BigRational::from_integer(3.into()), num_rational::BigRational::from_integer(0.into())]);
     let ask = encode_presentation_request(&voice, &motion);

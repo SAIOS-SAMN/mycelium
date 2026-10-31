@@ -8,7 +8,7 @@ use crate::transducer::blade::*;
 /// two apart bars two components, and a section no cavity; the moduli
 /// carry the numbers first, and a dilation keeps them.
 #[test]
-fn topology_counts_components_and_holes_exactly() {
+fn topology_counts_components_and_holes() {
     assert_eq!(topology(&rect(0, 0, 2, 2)), Some(vec![1, 0, 0]));
     let ring = at_frame_0(&[(0, 0), (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1), (2, 2)]);
     assert_eq!(topology(&ring), Some(vec![1, 1, 0]));
@@ -29,7 +29,7 @@ fn topology_counts_components_and_holes_exactly() {
 /// A 2×2 square lifts to a blade with the exact centroid (½,½,0), positive
 /// extent, and an invertible spatial sphere — the body HAS volume.
 #[test]
-fn a_square_lifts_to_an_invertible_body() {
+fn lift_square_is_invertible() {
     let b = lift(&compartments(&[(0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 1)]));
     assert_eq!(b.centroid(), Some(vec![qn(1, 2), qn(1, 2), q(0)]));
     assert!(b.radius2() > q(0), "the body has volume (off the null cone)");
@@ -40,7 +40,7 @@ fn a_square_lifts_to_an_invertible_body() {
 
 /// A lone compartment still HAS volume (r² = 1/6) — no body is a null point.
 #[test]
-fn a_lone_compartment_has_volume() {
+fn lift_lone_compartment_has_volume() {
     let b = lift(&compartments(&[(3, 5, 7)]));
     assert_eq!(b.radius2(), qn(1, 6));
     assert!(b.is_invertible());
@@ -64,7 +64,7 @@ fn a_lone_compartment_has_volume() {
 /// component count was exactly the region count — because it was the
 /// INTERNAL gauge structure of single objects, never contact at all.
 #[test]
-fn components_join_by_adjacency_whatever_the_hue() {
+fn components_join_by_adjacency_across_hues() {
     let one = components(&compartments(&[(0, 0, 1), (0, 1, 2)]));
     assert_eq!(one.len(), 1, "adjacent compartments of two hues are ONE body, in two colours");
     let same = components(&compartments(&[(0, 0, 1), (0, 1, 1)]));
@@ -88,7 +88,7 @@ fn components_join_by_adjacency_whatever_the_hue() {
 /// invariant signature (the correspond key), sites aside — and so is the
 /// same square in another frame.
 #[test]
-fn a_translate_shares_the_invariant() {
+fn invariant_shared_by_translate() {
     let a = lift(&compartments(&[(0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 1)]));
     let b = lift(&sites_with_hue(&[(4, 7, 1, 1), (4, 8, 1, 1), (5, 7, 1, 1), (5, 8, 1, 1)]));
     assert_eq!(a.invariant(), b.invariant(), "a translate is the same orbit");
@@ -98,7 +98,7 @@ fn a_translate_shares_the_invariant() {
 /// moments on {e₀, e₁, e₃}; the variance along e₃ is carried on Izz and
 /// the off-plane harmonic is readable.
 #[test]
-fn volumetric_blade_3d_lift_computes_six_moments_and_3d_centroid() {
+fn lift_across_frames_computes_six_moments() {
     let comp3 = sites_with_hue(&[(0, 0, 0, 1u8), (0, 2, 0, 1u8), (0, 0, 2, 1u8), (0, 2, 2, 1u8)]);
     let b = lift(&comp3);
     assert_eq!(b.shell, q(4));

@@ -63,7 +63,7 @@ fn held_court() -> (String, std::sync::mpsc::Receiver<dialogue::SpeechAct>, std:
 /// the mind. Released, the court refuses it; the mind takes the answer at its
 /// next admission and seals the word.
 #[test]
-fn a_slow_court_holds_only_its_carrier() {
+fn speak_word_goes_on_while_court_is_slow() {
     let (court, speeches, release) = held_court();
     let mut mind = Entity::open(&court, Kernel::named("unwaiting"));
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
@@ -89,7 +89,7 @@ fn a_slow_court_holds_only_its_carrier() {
 /// discovery down the wire, so the impedance is read again rather than
 /// standing forever on exchanges it no longer makes.
 #[test]
-fn an_occluded_wire_is_read_again() {
+fn wind_reads_occluded_wire_again() {
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("occluded"));
     // It holds language, so nothing else makes its language due again.
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
@@ -118,7 +118,7 @@ fn an_occluded_wire_is_read_again() {
 /// to its next event and so never stands in front of a take, solve or
 /// declination (2026-10-23) — and nothing of it rides the court's carrier.
 #[test]
-fn a_silent_house_holds_only_the_seats_carrier() {
+fn body_tick_holds_silent_house_on_seat_carriers() {
     let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("the house listens");
     let addr = listener.local_addr().expect("an address").to_string();
     std::thread::spawn(move || {

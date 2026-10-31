@@ -9,7 +9,7 @@ use crate::transducer::germinate::germinate;
 /// member that was never individually witnessed — capacity earned by exact
 /// structure, in O(1) storage where the list held O(n).
 #[test]
-fn a_closed_cycle_speaks_unwitnessed_members() {
+fn torse_speaks_unwitnessed_orbit_members() {
     // base: transitions 1→2, 2→3, 3→1 over three sites.
     let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
     let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
@@ -32,7 +32,7 @@ fn a_closed_cycle_speaks_unwitnessed_members() {
 /// period 2 and condenses. An orbit that neither closes nor spans two
 /// sections extracts NOTHING — no false structure from thin evidence.
 #[test]
-fn a_swap_torses_and_thin_evidence_does_not() {
+fn torse_closes_swap_and_refuses_thin_evidence() {
     let mut swap = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 9)], &[(0, 0, 2u8), (0, 1, 9)]).unwrap());
     assert!(swap.puncture(vec![(2, 1)]));
     assert_eq!(swap.torse(), 1, "sigma 1↦2, 2↦1 closes at period 2");
@@ -106,7 +106,7 @@ fn walked(sigma: &[(u8, u8)], base: &[(u8, u8)]) -> (u64, Vec<Vec<(u8, u8)>>) {
 /// (1) THE PERIOD READ OFF THE CYCLES is the walk's, on every one of the 42
 /// cycle types of the palette — and at most Landau's g(10) = 30.
 #[test]
-fn the_period_read_off_the_cycles_is_the_walks_on_every_cycle_type() {
+fn orbit_period_matches_walk_on_every_cycle_type() {
     let types = partitions(10, 10);
     assert_eq!(types.len(), 42, "the partitions of ten");
     let base = palette_base();
@@ -122,7 +122,7 @@ fn the_period_read_off_the_cycles_is_the_walks_on_every_cycle_type() {
 /// member of every orbit is on it, the base is not, and every other cycle
 /// type's image of the base is on it exactly when the walk met it.
 #[test]
-fn membership_decided_on_the_cycles_is_the_walks() {
+fn on_orbit_matches_walk_on_every_cycle_type() {
     let base = palette_base();
     let types = partitions(10, 10);
     let images: Vec<Vec<(u8, u8)>> = types
@@ -149,7 +149,7 @@ fn membership_decided_on_the_cycles_is_the_walks() {
 /// (3) A HUE PAST THE PALETTE IS REFUSED BY NAME, never walked: the sensor
 /// delivers none, and a map naming one has no period on any base.
 #[test]
-fn a_hue_past_the_palette_is_refused_by_name() {
+fn orbit_period_refuses_hue_past_palette() {
     let sigma = vec![(1, 10), (10, 1)];
     assert_eq!(orbit_period(&sigma, &[(1, 10)]), Err(PeriodRefused::NotAPermutation));
     assert!(!on_orbit(&sigma, &[(1, 10)], &[(10, 1)]), "and nothing is on its orbit");
@@ -163,7 +163,7 @@ fn a_hue_past_the_palette_is_refused_by_name() {
 /// read: nothing is walked to the claimed period, since neither writer
 /// walks and the cycle never stands for a reader that would.
 #[test]
-fn a_hue_record_at_twice_its_read_period_is_refused_by_name() {
+fn record_cycle_refuses_hue_at_twice_read_period() {
     let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
     let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
     let mut t = from_canonical(&germinate(&a, &b).unwrap());
@@ -188,7 +188,7 @@ fn a_hue_record_at_twice_its_read_period_is_refused_by_name() {
 /// the algebra; at twice that order the cycle is refused by name, filed or
 /// read, and at the order itself it stands.
 #[test]
-fn a_holonomy_record_at_twice_its_rays_order_is_refused_by_name() {
+fn record_cycle_refuses_holonomy_at_twice_order() {
     let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane");
     let turn_90 = crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor();
     let generator = Generator::Holonomy(Box::new(turn_90));
@@ -208,7 +208,7 @@ fn a_holonomy_record_at_twice_its_rays_order_is_refused_by_name() {
 /// position in the element (78.43(1)): every assignment the word speaks is
 /// held under its charge, and `holds_assignment` reads it there.
 #[test]
-fn the_profile_table_answers_every_assignment_by_its_charge() {
+fn assignments_by_profile_answers_each_assignment_by_charge() {
     let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
     let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
     let mut t = from_canonical(&germinate(&a, &b).unwrap());

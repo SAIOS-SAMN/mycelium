@@ -13,8 +13,9 @@ fn cite(r: &KStepReceipt) -> Parent {
     Parent { at: r.stamp, hash: r.chain_hash }
 }
 
+/// Precedence implies a lower height, and two geneses of two signers stay concurrent.
 #[test]
-fn precedes_implies_lower_height_and_concurrency_is_kept() {
+fn precedes_implies_lower_height_and_keeps_concurrency() {
     let mut c = ReceiptChain::with_vk([1; 32]);
     let r0 = step(&mut c, Vec::new());
     let r1 = step(&mut c, Vec::new());
@@ -48,7 +49,7 @@ fn precedes_implies_lower_height_and_concurrency_is_kept() {
 /// chain's own nodes are a line and `K` orders them — and a budget with
 /// nothing left refuses rather than answering short (rule 11).
 #[test]
-fn ordering_the_chains_own_nodes_is_one_read_at_any_depth_and_an_empty_budget_refuses() {
+fn precedes_orders_own_nodes_in_one_read_and_refuses_empty_budget() {
     let mut c = ReceiptChain::with_vk([1; 32]);
     let mut all = Vec::new();
     for _ in 0..64 {
@@ -69,7 +70,7 @@ fn ordering_the_chains_own_nodes_is_one_read_at_any_depth_and_an_empty_budget_re
 /// the greatest of the chain's own `K` it reaches, and the least of the
 /// chain's own nodes that reaches it.
 #[test]
-fn a_peer_node_is_placed_by_where_it_cuts_the_chains_own_line() {
+fn precedes_places_peer_node_by_its_cut_of_own_line() {
     let mut c = ReceiptChain::with_vk([1; 32]);
     let own0 = step(&mut c, Vec::new());
 
@@ -107,7 +108,7 @@ fn a_peer_node_is_placed_by_where_it_cuts_the_chains_own_line() {
 /// chain's own line is the chain's own place, which a fold does not move, so a peer node reached
 /// before the fold is reached by every node that survives it.
 #[test]
-fn a_fold_leaves_the_peer_placements_where_they_stood() {
+fn fold_before_keeps_peer_placements() {
     let mut c = ReceiptChain::with_vk([1; 32]);
     let mut e = ReceiptChain::with_vk([4; 32]);
     let peer = step(&mut e, Vec::new());

@@ -255,7 +255,7 @@ mod tests {
     /// holds — not merely a yes. Verified by re-derivation (step 4), since a
     /// mind recognises what it can re-derive and nothing else.
     #[test]
-    fn a12_plane_factorisation_by_hnf() {
+    fn factor_on_plane_understands_span_by_hnf() {
         let q01 = LetterId::turn_90((0, 1)).expect("plane");
         let p5 = LetterId::pythagorean_5((0, 1)).expect("plane");
         let held = [w(&[(q01, false)]), w(&[(p5, false)])];
@@ -281,7 +281,7 @@ mod tests {
     /// the same demand — and the part that did factor is kept, not thrown
     /// away with it.
     #[test]
-    fn a12_plane_remainder_is_canonical() {
+    fn factor_on_plane_remainder_is_canonical() {
         let q01 = LetterId::turn_90((0, 1)).expect("plane");
         let p5 = LetterId::pythagorean_5((0, 1)).expect("plane");
         let basis = [pf(&w(&[(q01, false)]))];
@@ -310,7 +310,7 @@ mod tests {
     /// vertex, not the tape (1.5). Four 90° turns are the identity
     /// projectively, so a mind holding the 90° turn speaks them.
     #[test]
-    fn m6_held_under_other_spelling_is_understood() {
+    fn factor_on_plane_understands_held_word_respelled() {
         let q01 = LetterId::turn_90((0, 1)).expect("plane");
         let held = [w(&[(q01, false)])];
         let basis: Vec<PlaneForm> = held.iter().map(pf).collect();
@@ -330,7 +330,7 @@ mod tests {
     /// exhausted budget is UNMEASURED, never Novel: a refusal is not a
     /// demand (rule 11).
     #[test]
-    fn a12_offplane_reached_or_novel() {
+    fn factor_off_plane_reaches_or_refuses_unmeasured() {
         let q01 = LetterId::turn_90((0, 1)).expect("plane");
         let q12 = LetterId::turn_90((1, 2)).expect("plane");
         let held = [w(&[(q01, false)]), w(&[(q12, false)])];
@@ -359,7 +359,7 @@ mod tests {
     /// The verification is real: a tape that does not re-derive is refused,
     /// so `Understood` cannot be claimed by an algebra that got it wrong.
     #[test]
-    fn a_factorisation_that_does_not_rederive_is_refused() {
+    fn replays_refuses_tape_that_does_not_rederive() {
         let q01 = LetterId::turn_90((0, 1)).expect("plane");
         let p5 = LetterId::pythagorean_5((0, 1)).expect("plane");
         let held = [w(&[(q01, false)]), w(&[(p5, false)])];

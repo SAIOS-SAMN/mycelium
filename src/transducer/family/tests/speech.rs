@@ -10,7 +10,7 @@ use crate::transducer::family::*;
 /// citation: the bodies are one fact of the grid, and the cited form is
 /// spoken onto them at its composed placement.
 #[test]
-fn a_glued_vertex_speaks_its_cited_form_on_the_one_perception_of_the_scene() {
+fn apply_form_speaks_glued_citation_on_one_perception() {
     let (x, y) = (grid(&["1100", "0000"]), grid(&["0011", "0000"]));
     let held_form = cipher_form(&x, &y);
     assert!(held_form.is_closed(), "the bar's shift is a closed form to cite");
@@ -64,7 +64,7 @@ fn a_glued_vertex_speaks_its_cited_form_on_the_one_perception_of_the_scene() {
 /// An unspellable vertex is unspoken: conformal_of None is not replaced
 /// by an invented identity versor.
 #[test]
-fn unspellable_vertex_is_unspoken() {
+fn apply_form_leaves_unspellable_vertex_unspoken() {
 let x = grid(&["1100", "0000"]);
 let bodies = perceive(&x);
 // The fixture is one body.
@@ -107,7 +107,7 @@ assert!(
 
 /// An empty class fiber speaks nothing for that vertex and lists it unspoken.
 #[test]
-fn empty_fiber_is_unspoken_not_every_body() {
+fn apply_form_leaves_empty_fiber_unspoken() {
 let x = grid(&["1100", "0000"]);
 let y = grid(&["0011", "0000"]);
 let mut f = cipher_form(&x, &y);
@@ -162,7 +162,7 @@ assert!(
 
 /// Grow-to-frame is Unfolded{{Occupied}}; the tape carries no step count.
 #[test]
-fn unfolding_grow_to_frame() {
+fn extract_rule_with_unfolds_grow_to_frame() {
 let family = vec![
     (grid(&["10", "00"]), grid(&["11", "11"])),
     (grid(&["100", "000", "000"]), grid(&["111", "111", "111"])),
@@ -190,7 +190,7 @@ assert!(
 /// 1→2, a body mirrored in place, and a family that dilates the scene
 /// twofold each extract a form and speak a new input exactly.
 #[test]
-fn a_shift_a_mirror_and_a_dilation_are_comprehended_and_spoken() {
+fn extract_rule_comprehends_shift_mirror_dilation() {
 let family = vec![
     (grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"])),
     (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),
@@ -235,7 +235,7 @@ assert_eq!(spoken.grid(), Some(family[0].1.clone()));
 /// is withheld: remainder on the extracted form, or no form when the
 /// pairs do not share a frame.
 #[test]
-fn an_uncomprehended_family_leaves_its_residual_as_the_demand() {
+fn extract_rule_withholds_uncomprehended_family() {
 let family = vec![
     (grid(&["100", "000"]), grid(&["001", "000"])),
     (grid(&["100", "000"]), grid(&["000", "001"])),
@@ -259,8 +259,9 @@ assert!(family_ratio(&disagree).is_none(), "frames that disagree are not one for
 assert!(extract_rule(&disagree, &mut crate::physics::Physics::default().stroke_n(1 << 20)).is_none(), "the form engine withholds a family it does not extract");
 }
 
+/// A shift family extracts a rule and speaks the test.
 #[test]
-fn a_shift_family_extracts_a_rule_and_speaks_the_test() {
+fn speak_rule_speaks_shift_family_test() {
 let family = vec![
     (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
     (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
@@ -322,7 +323,7 @@ assert_eq!(spoken.grid(), Some(grid(&["0022", "0000"])));
 /// Refused, not dropped: laying the rest of the sites down would produce a
 /// grid that silently is not what the form said.
 #[test]
-fn a_speech_whose_site_is_outside_its_frame_refuses_the_grid() {
+fn speech_grid_refuses_site_outside_frame() {
     use crate::transducer::family::Speech;
     let fits = Speech {
         unresolved: Vec::new(),
@@ -356,7 +357,7 @@ fn a_speech_whose_site_is_outside_its_frame_refuses_the_grid() {
 /// Three identical squares in one family are a section: the test
 /// recolours all three.
 #[test]
-fn three_identical_squares_recolour_all_three_on_the_test() {
+fn speak_rule_recolours_three_identical_squares() {
 let train_in = grid(&[
     "11011",
     "11011",
@@ -428,7 +429,7 @@ assert_eq!(
 /// REFUSES rather than rounds: a versor whose image does not land on the
 /// base emits no paint at all, and the body leaves as remainder.
 #[test]
-fn the_open_section_is_carried_at_its_own_frame_and_a_tilt_is_refused() {
+fn emit_carried_keeps_frame_and_refuses_tilt() {
     use crate::transducer::family::{body_of, emit_carried};
     let bar = |k: i64| {
         body_of(vec![Compartment::from((0i64, 0i64, k, 1u8)), Compartment::from((0i64, 1i64, k, 1u8))])

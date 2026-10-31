@@ -102,7 +102,7 @@ fn pass(k: &mut Kernel, h: u64) {
 /// out and in not summing to zero, a side running backward, an unordered
 /// list, another tier filing, both tiers of one domain — each refused.
 #[test]
-fn an_offer_conserves_across_the_boundary_on_matter_and_words_only() {
+fn handoff_refuses_unconserved_offer() {
     let mut k = founded();
     let refused = |k: &mut Kernel, o: Offer, by: &SigningKey| match k.handoff(&through(o).sign(by)) {
         Handed::Refused(r) => r,
@@ -141,7 +141,7 @@ fn an_offer_conserves_across_the_boundary_on_matter_and_words_only() {
 /// fold consumes IN; a second consumption is a double-spend, refused. The
 /// standing restores.
 #[test]
-fn a_handoff_accepted_is_consumed_once_on_each_side() {
+fn admit_uplink_consumes_accepted_handoff_once_per_side() {
     let mut k = founded();
     let id = offered(&mut k, cargo());
     let leaving = vec![(who(1), [-5, 0, 0, -1])];
@@ -174,7 +174,7 @@ fn a_handoff_accepted_is_consumed_once_on_each_side() {
 /// Unanswered, expiry is the sender's to claim, only past the window, and
 /// the receiver answers only within it.
 #[test]
-fn a_handoff_refused_or_expired_returns_to_the_sender() {
+fn handoff_refuse_or_expire_returns_to_sender() {
     let mut k = founded();
     let id = offered(&mut k, cargo());
     assert!(matches!(k.handoff(&Handoff::Refuse { id }.sign(&y())), Handed::Sealed { state: State::Returned, .. }));
@@ -201,7 +201,7 @@ fn a_handoff_refused_or_expired_returns_to_the_sender() {
 /// a replay reads); once both consuming folds read final and are pruned,
 /// the handoff is let go at the orbit's close.
 #[test]
-fn a_reversed_fold_unconsumes_its_side_and_final_folds_let_the_handoff_go() {
+fn challenge_unconsumes_side_and_orbit_releases_handoff() {
     let mut k = founded();
     let id = offered(&mut k, cargo());
     let leaving = vec![(who(1), [-5, 0, 0, -1])];

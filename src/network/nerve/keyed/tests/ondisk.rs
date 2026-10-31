@@ -31,7 +31,7 @@ fn sample() -> Keyed<Vec<u8>> {
 /// Two walks that agreed "in principle" would be two readers of one fact
 /// (law 12); the claim checked here is that they agree on every key.
 #[test]
-fn the_file_reaches_what_the_carrier_holds() {
+fn get_answers_as_in_memory_carrier() {
     let k = sample();
     let mut file = Vec::new();
     ondisk::write(&k, &mut file).expect("the trie writes out");
@@ -64,7 +64,7 @@ fn the_file_reaches_what_the_carrier_holds() {
 /// THE KEY SET IS WHAT A BOOT READS, and it is the carrier's own — the
 /// resident index under Z11 is exactly this, with no value loaded.
 #[test]
-fn the_files_key_set_is_the_carriers() {
+fn keys_equal_carrier_key_set() {
     let k = sample();
     let mut file = Vec::new();
     ondisk::write(&k, &mut file).expect("writes");
@@ -78,7 +78,7 @@ fn the_files_key_set_is_the_carriers() {
 /// AN EMPTY CARRIER SAYS SO. A file that holds nothing is a header and an
 /// absent root, not a zero length the reader has to interpret (rule 11).
 #[test]
-fn an_empty_carrier_writes_a_file_that_holds_nothing() {
+fn write_of_empty_carrier_holds_nothing() {
     let k: Keyed<Vec<u8>> = Keyed::new();
     let mut file = Vec::new();
     ondisk::write(&k, &mut file).expect("writes");
@@ -90,7 +90,7 @@ fn an_empty_carrier_writes_a_file_that_holds_nothing() {
 /// every step of the read moves to a node written before it, so a
 /// cycle cannot be followed (rule 10).
 #[test]
-fn a_file_that_is_not_a_trie_is_refused() {
+fn get_refuses_non_trie_and_truncated_file() {
     assert_eq!(ondisk::get(b"", b"k"), None);
     assert_eq!(ondisk::get(b"NOPE\0\0\0\0", b"k"), None);
     let k = sample();

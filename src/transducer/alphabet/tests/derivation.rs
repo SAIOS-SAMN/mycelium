@@ -17,7 +17,7 @@ fn addr(tag: u8) -> Address {
 /// word and there is nothing to compose. `is_spelled` names it, and the
 /// tape carries no product beside the residue.
 #[test]
-fn a_spelled_derivation_is_its_residue_and_carries_no_second_word() {
+fn spelled_writes_residue_only() {
     let d = Derivation::spelled(turn_90(2));
     assert!(d.is_spelled(), "no citation");
     assert_eq!(d.word_local(), Some(&turn_90(2)), "the word IS the residue");
@@ -44,7 +44,7 @@ fn a_spelled_derivation_is_its_residue_and_carries_no_second_word() {
 /// two, no residue left. The court re-derives the product from the
 /// citation and agrees.
 #[test]
-fn a_factored_derivation_travels_its_citations_and_re_derives_the_product() {
+fn compose_round_trips_citations_and_composes() {
     let d = Derivation::compose(&[(addr(1), addr(2), 2, turn_90(1))], Word::identity());
     assert!(!d.is_spelled(), "it cites a generator");
     assert_eq!(d.generators, vec![(addr(1), addr(2), 2)], "the form, the vertex, the exponent");
@@ -77,7 +77,7 @@ fn a_factored_derivation_travels_its_citations_and_re_derives_the_product() {
 /// A negative exponent is the generator's inverse applied that many
 /// times: three 90° turns are the 90° turn once backwards.
 #[test]
-fn a_negative_exponent_applies_the_generators_inverse() {
+fn compose_inverts_negative_exponent() {
     let d = Derivation::compose(&[(addr(1), addr(2), -1, turn_90(1))], Word::identity());
     assert!(
         d.rotor().projective_eq(&turn_90(3).rotor()),
@@ -90,7 +90,7 @@ fn a_negative_exponent_applies_the_generators_inverse() {
 /// re-derivation is what refuses that, and it is a refusal at the
 /// vertex, never a smaller answer.
 #[test]
-fn citations_that_do_not_compose_to_the_product_are_refused() {
+fn verify_with_refuses_citations_not_composing() {
     let honest = Derivation::compose(&[(addr(1), addr(2), 2, turn_90(1))], Word::identity());
     let lying = Derivation::factored(honest.generators.clone(), Word::identity(), turn_90(3).rotor());
     let holds = |_: &Address, _: &Address| Some(turn_90(1).rotor());
@@ -104,7 +104,7 @@ fn citations_that_do_not_compose_to_the_product_are_refused() {
 /// court that refused it here would refuse every voice ahead of its own
 /// cover.
 #[test]
-fn a_citation_the_reader_does_not_hold_is_named_apart_from_a_disagreement() {
+fn verify_with_names_unheld_citation_unresolved() {
     let d = Derivation::compose(&[(addr(1), addr(2), 2, turn_90(1))], Word::identity());
     assert_eq!(
         d.verify_with(&|_: &Address, _: &Address| None),
@@ -116,7 +116,7 @@ fn a_citation_the_reader_does_not_hold_is_named_apart_from_a_disagreement() {
 /// 1.5: two derivations reaching one vertex are one word. The citation
 /// list is content the court replays and is deliberately not identity.
 #[test]
-fn two_derivations_that_reach_one_vertex_carry_one_word() {
+fn rotor_agrees_across_two_presentations() {
     let a = Derivation::compose(&[(addr(1), addr(2), 2, turn_90(1))], Word::identity());
     let b = Derivation::compose(&[(addr(3), addr(4), -2, turn_90(3))], Word::identity());
     assert_ne!(a.generators, b.generators, "two presentations, two proofs");
@@ -129,7 +129,7 @@ fn two_derivations_that_reach_one_vertex_carry_one_word() {
 /// Rule 10 on a decoder: a citation count no remaining byte can satisfy
 /// refuses the read and reserves nothing.
 #[test]
-fn a_citation_count_the_tape_cannot_satisfy_is_refused() {
+fn from_bytes_refuses_unsatisfiable_count() {
     let mut b = (u16::MAX).to_le_bytes().to_vec();
     b.extend_from_slice(&[0u8; 4]);
     let mut pos = 0;
@@ -141,7 +141,7 @@ fn a_citation_count_the_tape_cannot_satisfy_is_refused() {
 /// rotor — never letters for the composite — and the rotor is what
 /// `Word::key()` already reduces to, so the address does not move.
 #[test]
-fn a_cited_vertex_carries_a_rotor_and_no_second_spelling() {
+fn to_bytes_writes_rotor_not_spelling() {
     let d = Derivation::compose(&[(addr(1), addr(2), 2, turn_90(1))], Word::identity());
     let mut b = Vec::new();
     d.to_bytes(&mut b).expect("writes");
@@ -174,7 +174,7 @@ fn a_cited_vertex_carries_a_rotor_and_no_second_spelling() {
 /// vertex spells nothing of its own, and `spelling()` re-derives one from
 /// the rotor by A22 that reaches the same vertex.
 #[test]
-fn a_cited_vertexs_spelling_is_recomputed_from_its_rotor() {
+fn spelling_recomputes_from_rotor() {
     let d = Derivation::compose(&[(addr(1), addr(2), 2, turn_90(1))], Word::identity());
     assert_eq!(d.word_local(), None, "it stores no spelling");
     let spelled = d.spelling().expect("the seventeen spell the 180° turn");

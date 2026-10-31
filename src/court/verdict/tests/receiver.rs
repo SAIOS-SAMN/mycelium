@@ -33,7 +33,7 @@ fn a_recolour_with_a_creation() -> (Vec<(Grid, Grid)>, Element) {
 /// vertex names, and the court replays the sentence on its pair without
 /// refusing it for that remainder.
 #[test]
-fn a_remainder_a_demand_names_is_valid_and_replays_on_the_family() {
+fn replay_form_with_accepts_remainder_demand_names() {
     let (family, e) = a_recolour_with_a_creation();
     assert_eq!(
         replay_form_with(&e, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
@@ -45,7 +45,7 @@ fn a_remainder_a_demand_names_is_valid_and_replays_on_the_family() {
 /// The same sentence with its demand vertex struck out claims to close a
 /// pair it leaves a compartment on: `REFUSE_NOT_CLOSED`.
 #[test]
-fn an_undeclared_remainder_refuses_the_sentence_as_not_closed() {
+fn replay_form_with_refuses_undeclared_remainder() {
     let (family, e) = a_recolour_with_a_creation();
     let mut f =
         crate::transducer::sentence::from_element_form(&e).expect("the tape reads back");
@@ -66,7 +66,7 @@ fn an_undeclared_remainder_refuses_the_sentence_as_not_closed() {
 /// not reconstruct its body there, and the sentence is refused before any
 /// remainder is read.
 #[test]
-fn a_vertex_that_does_not_carry_its_body_on_the_family_is_refused() {
+fn replay_form_with_refuses_vertex_missing_body() {
     let (_, e) = a_recolour_with_a_creation();
     let other = vec![(digits(&["110", "000"]), digits(&["330", "003"]))];
     assert_eq!(
@@ -79,7 +79,7 @@ fn a_vertex_that_does_not_carry_its_body_on_the_family_is_refused() {
 /// of the Frame and one deformation demand — nothing in it acts — and the
 /// court refuses the tape as a chain whatever it measures.
 #[test]
-fn a_tape_with_no_acting_vertex_is_a_chain() {
+fn replay_form_with_refuses_tape_without_acting_vertex() {
     let family = vec![(digits(&["110", "100"]), digits(&["111", "000"]))];
     let f = cipher_form(&family[0].0, &family[0].1);
     assert!(
@@ -121,7 +121,7 @@ fn a_tape_with_no_acting_vertex_is_a_chain() {
 /// is visible at this site: when body-to-body incidence returns from the
 /// tether, this fixture regains an edge and this test is restored.
 #[test]
-fn a_hue_seam_carries_no_edge_without_the_stencil() {
+fn cipher_form_carries_no_edge_across_hue_seam() {
     // H1, 70.4 — two bodies are two SEPARATED regions, not two touching
     // colours; the gap restores the intent of two bodies at `+2`.
     let family = vec![(digits(&["1100200"]), digits(&["0011002"]))];
@@ -208,7 +208,7 @@ fn a_hue_seam_carries_no_edge_without_the_stencil() {
 /// grid of the family, and so does the edge replay, whatever the number of
 /// vertices, faces and member pairs asked about that frame.
 #[test]
-fn the_court_perceives_each_frame_once_for_every_vertex_and_face() {
+fn vertices_carry_frames_perceives_each_frame_once() {
     // H1, 70.4 — the three objects are SEPARATED rather than abutting in
     // different hues. This read `"110000"/"033000"`, where the L's foot at
     // (2,1) is 4-adjacent to the bar at (3,1): under chapter 20 that was
@@ -264,7 +264,7 @@ fn the_court_perceives_each_frame_once_for_every_vertex_and_face() {
 /// chart to every pair would replay Member B on pair 0 against that body
 /// and refuse the sentence at a claim it never made.
 #[test]
-fn member_replay_is_scoped_to_active_chart_sections() {
+fn replay_form_with_scopes_members_to_active_sections() {
     let family = vec![
         (digits(&["1100", "1100", "3000"]), digits(&["2200", "2200", "3000"])),
         (digits(&["3000", "0000", "0000"]), digits(&["0000", "0000", "0040"])),

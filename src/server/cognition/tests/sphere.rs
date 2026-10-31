@@ -18,7 +18,7 @@ fn q(n: i64, d: i64) -> Q {
 /// itself, a positive radius holds and a zero one does not, and it is never
 /// the hyperbolic `Curved` of the same radius.
 #[test]
-fn a_sphere_is_its_own_kind_on_the_wire() {
+fn geometry_sphere_round_trips_as_own_kind() {
     let s = Geometry::Sphere((17, 2));
     let mut b = Vec::new();
     s.put(&mut b);
@@ -36,7 +36,7 @@ fn a_sphere_is_its_own_kind_on_the_wire() {
 /// plane by twice its angle, to `7/25 e₊ ± 24/25 e₁` — a rational point of
 /// `S³`, `v² = +1`. A rotation of `S³` is no motion of `ℍ³`.
 #[test]
-fn a_rotation_of_the_sphere_places_a_mouth_exactly() {
+fn place_in_sphere_places_rotation_exactly() {
     let space = Geometry::Sphere((17, 2));
     // `Mv`'s `==` is projective; a place is its own scale, read exactly.
     let unit = |v: &Mv| {
@@ -59,7 +59,7 @@ fn a_rotation_of_the_sphere_places_a_mouth_exactly() {
 /// flat space and a boost of `ℍ³` each move `e₋`, so neither is in
 /// `Spin(4)`, and neither places a mouth.
 #[test]
-fn a_motion_of_another_space_is_refused_on_the_sphere() {
+fn place_in_sphere_refuses_foreign_motion() {
     let space = Geometry::Sphere((17, 2));
     let translator = translator_at(&[q(1, 1), q(0, 1), q(0, 1)]);
     assert!(!is_spin_4(&translator) && place_in(&space, &translator).is_none(), "a translator is no rotation of S³");
@@ -73,7 +73,7 @@ fn a_motion_of_another_space_is_refused_on_the_sphere() {
 /// so it fits; a throat whose angular radius passes `π` would cover the
 /// sphere, and does not fit.
 #[test]
-fn a_throat_on_the_sphere_is_a_cap_short_of_the_antipode() {
+fn sphere_throat_fits_cap_short_of_antipode() {
     let r = q(17, 2);
     let (level, ratio) = sphere_throat(&q(1, 1), &r).expect("a positive mass and radius");
     assert!(level < q(1, 1) && level > q(9, 10), "cos(4/17), from below: {level}");
@@ -85,7 +85,7 @@ fn a_throat_on_the_sphere_is_a_cap_short_of_the_antipode() {
 
 /// A SPHERE'S LEVEL TRAVELS WHOLE in a tube's reading, its kind its own.
 #[test]
-fn a_sphere_level_reads_back_whole() {
+fn tube_reading_round_trips_sphere_level() {
     let (level, ratio) = sphere_throat(&q(1, 1), &q(17, 2)).expect("read");
     let reading = TubeReading {
         from_place: sphere_pole(),

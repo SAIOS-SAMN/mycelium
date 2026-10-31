@@ -53,7 +53,7 @@ fn door_answering(sk: SigningKey) -> (String, std::thread::JoinHandle<()>) {
 /// THE HOME IS LEARNED: a configured door the mesh holds no address for is
 /// asked for its digest, and its key is held at its door after.
 #[test]
-fn a_witness_learns_an_unknown_home_from_its_configured_doors() {
+fn learn_doors_learns_unknown_home_from_configured_doors() {
     let (a, b) = (SigningKey::from_bytes(&[1; 32]), SigningKey::from_bytes(&[2; 32]));
     let vb = b.verifying_key().to_bytes();
     let m = mesh(&a);
@@ -68,7 +68,7 @@ fn a_witness_learns_an_unknown_home_from_its_configured_doors() {
 /// A DOOR ALREADY HELD IS NEVER ASKED: the learning reaches only the doors
 /// the mesh lacks, so a witness that knows every door adds no traffic.
 #[test]
-fn a_door_already_held_is_not_asked() {
+fn learn_doors_skips_door_already_held() {
     let (a, b) = (SigningKey::from_bytes(&[3; 32]), SigningKey::from_bytes(&[4; 32]));
     let m = mesh(&a);
     let listener = TcpListener::bind("127.0.0.1:0").expect("bind");
