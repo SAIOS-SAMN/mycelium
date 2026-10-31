@@ -15873,9 +15873,10 @@ Build order: the `Modes` carrier, then the producers (discharge and measure
 as modes), the economy's internals, the physics, the wire and persisted
 layouts, and the observer. Built: `economy::modes::Modes` (exact
 composition, a draw refused naming the mode, canonical codec) and the
-discharge as modes behind a paid solve's receipt; every value carrier still
-carries μ as `[u64; 4]`, and moving the carriers to held modes is the open
-part (MU-ECONOMY §1). Code: `src/economy/modes.rs` (`Modes`, `Mode`),
+discharge as modes behind a paid solve's receipt; from v0.3.0 every value
+carrier carries μ as four exact rationals per lane (`economy::Mu`, phase
+T1), and moving the carriers to held modes is the open part (MU-ECONOMY
+§1). Code: `src/economy/modes.rs` (`Modes`, `Mode`),
 `src/transducer/family/deflation.rs`.
 
 ### 78.163 SAY is HEARD, the thought is ACKNOWLEDGED, by the loop's holonomy

@@ -230,7 +230,7 @@ sequenceDiagram
     Note over V: extract rule · mint element · speak on tests
     V->>H: ACT_SOLVE (outputs, rule tape, signature)
     Note over H: replay the rule on withheld pairs
-    H-->>V: verdict: BOUNTY + μ paid · FLOOR · NOTHING (named refusal) · UNREAD
+    H-->>V: verdict: BOUNTY + μ paid · AGAIN · NOTHING (named refusal) · UNREAD
     H->>W: offer (re-derive the vertex)
     W-->>H: same vertex: second vantage, install
     Note over H,W: POUW minted; shares to cited forms, taught words, voices
@@ -391,7 +391,7 @@ or glue the witness or peer court that re-derives it. Running a node
 ([Running a node](#running-a-node)) is how a participant earns it.
 
 A solve answers with a verdict code: `SOLVE_BOUNTY` for a first verified
-closure, paid; `SOLVE_FLOOR` for a verified re-solve; `SOLVE_NOTHING` with
+closure, paid; `SOLVE_AGAIN` for a verified re-solve, paid nothing; `SOLVE_NOTHING` with
 a named refusal; or `SOLVE_UNREAD`, where the replay resumes on the next
 send. An installed word keeps paying its discoverer: a use share each time
 a later sentence cites it (POUW), and a transfer each time another voice's
@@ -458,14 +458,23 @@ A payment moves value on exactly the lanes the verified work moved. A
 comparison of two μ vectors returns a reading per lane (each lane fell,
 held or rose; `economy::lane_moves`) and never a verdict. Value on a lane
 exists because work on that lane was verified, which is what keeps the
-audit meaningful lane by lane. A balance holds the exact *modes* the work
-moved:
-- on S, a boost or dilation;
-- on G, a hue cycle or move;
-- on T, a null flux;
-- on H, a turn.
+audit meaningful lane by lane.
 
-Each mode carries an exact rational amount.
+Every amount of μ is exact: four non-negative rationals, one per lane
+(`economy::Mu`). μ is measured as a share of a frame, and a share is a
+rational, so a balance, a bond, an escrow, a ledger row and every wire
+field holding μ carries rationals; a whole count `n` is `n/1`. Nothing is
+floored to fit a carrier: an addition always lands, and a draw past a
+holding is refused naming the lane. On the wire each lane is a sign byte
+and the numerator's and denominator's 64-bit limbs by count, refused where
+it is negative or not in lowest terms ([`docs/MU-EQUATIONS.md`](docs/MU-EQUATIONS.md)
+§6.15).
+
+The specification goes further: a balance holds the exact *modes* the work
+moved, each with an exact rational amount — on S a boost or dilation, on
+G a hue cycle or move, on T a null flux, on H a turn (MU-RECURSION
+78.162). The modes and the arithmetic on them are built (`economy::modes`);
+holdings still carry the four amounts.
 
 ### Holdings and the ledger
 
@@ -495,7 +504,7 @@ re-expresses the rows it replaces.
   remainder pays nothing: deflation short of closure is not closure.
 - **Verification is paid out of the release (POWV).** The courts whose
   replay verified a closure each take a share of its release, per lane:
-  `⌊M_l · y_l / (y_l + R)⌋`, split equally between them. Here `y_l` is the
+  `M_l · y_l / (y_l + R)`, exact, split equally between them. Here `y_l` is the
   court's strain on the lane (reserve deficit plus entropic excess) and `R`
   its calibrated reserve. A court at rest takes nothing, and a lane at full
   deficit pays verification half the lane. The closer is paid the rest, so
@@ -884,10 +893,10 @@ mycelium-sdk = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.3.0" 
 | `task` | Task request and envelope; `encode_solve_with_rule`; `decode_solve_verdict` and the `SOLVE_*` codes |
 | `rule` | The rule seam: `Step`, `Create`, `Symmetry`, `NoRule`, `sentence`, the clause types; `extract_rule`, `mint_sentence_why`, `speak_rule`; `Crystal`, `NoCrystal`, `Element`, `Grid` |
 | `seat` | `SeatName`, `MindMail`, `MindRead`, the seat posts; `Session::{list_seats, take, call, mail, read_mail, seat_post}` |
-| `wallet` | Wallet read; stake and unstake; lease open, reply and close |
+| `wallet` | `Mu`, an amount of μ exact per lane, and `MuRefusal`; wallet read; stake and unstake; lease open, reply and close |
 | `readings` | The typed readings a client may ask a hypha for: observer, why, law register, receipts, rows, reserve, probe |
 | `mind` | The reference mind, `Mind::open` and `Mind::open_persistent` |
-| `wire` | `WIRE_VERSION` (`0x0104`, wire v1.4) and `ACT_TABLE`, every act the SDK may send |
+| `wire` | `WIRE_VERSION` (`0x0200`, wire v2.0: every μ field four exact rational lanes) and `ACT_TABLE`, every act the SDK may send |
 | `laws` | The L0 law register (`Law`, `LAWS`, `LAW_VERSION` 4, `PARAMETERS`), its read (`encode_register_request`, `decode_register_reply`), and the `forms` law ids (`FORM_LAW_IDS`); every law shared is tabled in [`docs/MU-EQUATIONS.md`](docs/MU-EQUATIONS.md) §11 |
 | `house` | A kernel's uplink (its house): domain founding (`DomainGenesis`, `Founded`), the reserve and origin, the universe (`Genesis`, `Geometry`, `UniverseReading`), the endowment (`Manifest`, `Granted`, `EndowmentReading`), the house side of seats (`Post`, `Seats`, `HouseMail`, the listing and mail codecs), laws verify (`Transition`, `Verdict`, `verify_sized`, `encode_verify_request`, `decode_verify_reply`), the clock (`CoreStamp`, `TPoint`), the Concordance signature (`ConcordanceSignature`, `CONCORDANCE_HASH`), framing (`Frame`, `Stratum`) and `HyphaKey`; the wire modules `domain`, `universe`, `endowment`, `seat`, `atlas`, `uplink`, `challenge` whole |
 | `conformance` | The client conformance statement (`STATEMENT`: two profiles, `Profile::Mind` and `Profile::Kernel`, each with MUST and MAY acts, each reply's decoder and fields), `check_codecs` in process and `run` against a hypha, each for the profiles a client declares ([`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md)) |
@@ -928,8 +937,8 @@ The verdict codes are:
 
 | Code | Meaning |
 |---|---|
-| `SOLVE_BOUNTY` | The task's first verified closure; `paid` is the payment. |
-| `SOLVE_FLOOR` | A verified re-solve of a closed task. |
+| `SOLVE_BOUNTY` | The task's first verified closure; `paid` is the payment, an exact `Mu`. |
+| `SOLVE_AGAIN` | A verified re-solve of a closed task; it pays nothing. |
 | `SOLVE_NOTHING` | A final verdict; `refusal` names the reason (e.g. "form leaves a remainder on the family"). |
 | `SOLVE_UNREAD` | The replay is in progress; sending the same solve again resumes it. |
 
@@ -1005,7 +1014,7 @@ target/release/examples/conformance --endpoint 127.0.0.1:7610
 #   passed  MUST laws register: law version 4: 6 laws, each at its coordinate with its statement
 #   passed  MUST task: 4 train pairs, 1 test inputs
 #   passed  MUST solve: solved (bounty), paid μ [88, 0, 0, 92]
-#   conforms (profile mind): wire 0x0104, law version 4
+#   conforms (profile mind): wire 0x0200, law version 4
 target/release/examples/conformance --endpoint 127.0.0.1:7610 --profile kernel
 ```
 
@@ -1050,11 +1059,15 @@ manifest (`Cargo.toml`), and as a git tag (`v0.2.0`).
 [`CHANGELOG.md`](CHANGELOG.md) lists what each release contains. Releases
 follow semantic versioning. In the 0.x series, a minor version may change
 the wire and ledger layouts, and the changelog names each such change.
-v0.3.0 changes the wire additively only: `ACT_LAWS` gains mode 6 (the
-client conformance statement), mode 7 (the Concordance's hash) and mode 8
-(a kernel's signature over it, accepted and verified; an unsigned kernel
-is refused only from the following release), and `WIRE_VERSION` stays
-`0x0104` (MU-ENGINEERING §4).
+v0.3.0 changes the wire and the ledger layout. `ACT_LAWS` gains mode 6
+(the client conformance statement), mode 7 (the Concordance's hash) and
+mode 8 (a kernel's signature over it, accepted and verified; an unsigned
+kernel is refused only from the following release), each additive. Every
+act and reply carrying μ moves to the exact rational lane codec, which
+moves existing layouts: `WIRE_VERSION` is `0x0200` (wire v2.0), the
+snapshot's layout is `MYT3` and the line's `MYL3`, and a home written by
+an earlier release is refused by name — the recut is the road
+(MU-ENGINEERING §4).
 
 ---
 

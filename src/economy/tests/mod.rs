@@ -12,7 +12,7 @@ mod verify;
 
 /// AN AMOUNT READ AS COUNTS, for a claim whose values are whole: each lane
 /// must be the rational `n/1`, or the claim fails there. The claims written
-/// in counts keep their values exactly (`Mu::counts` is the inverse).
+/// in counts keep each value exactly (`Mu::counts` is the inverse).
 pub(crate) trait Counts {
     type Out;
     fn n(self) -> Self::Out;

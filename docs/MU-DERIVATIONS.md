@@ -536,7 +536,7 @@ Concordance amendment.
   `Court::throat_round(mouth, face) -> Result<Mv, ThroatRefusal>`);
   `src/anastome/dialogue/tube.rs` (`Level` → `Horizon::Round(Mv)` per
   face; `Tube.mass` → committed modes, or the seed under O2); the bank
-  holdings from `[u64; 4]` to held `Modes` (MU-ECONOMY §1, 78.162 open
+  holdings from `economy::Mu` to held `Modes` (MU-ECONOMY §1, 78.162 open
   part). Wire: `Tube` and `TubeReading` new writings under new handoff
   kinds (as 78.140 did); ledger: a `Throat` layout bump. Concordance 2.6
   amended ("taken as the upper bound … on a fixed grid" struck; size =

@@ -341,7 +341,7 @@ pub struct Bond {
     pub nonce: [u8; 32],
 }
 
-/// The bond's signed bytes name their layout: v2 writes μ as four exact
+/// The bond's signed bytes name the layout: v2 writes μ as four exact
 /// rational lanes (`Mu::put`).
 const BOND: &[u8] = b"mycelium bond v2";
 

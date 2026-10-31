@@ -100,7 +100,7 @@ pub struct StakeAct {
     pub nonce: [u8; 32],
 }
 
-/// The stake's signed bytes name their layout: v2 writes μ as four exact
+/// The stake's signed bytes name the layout: v2 writes μ as four exact
 /// rational lanes.
 const STAKE: &[u8] = b"mycelium stake v2";
 const KIND_STAKE: u8 = 1;

@@ -4,7 +4,8 @@
 >
 > **Components:** the court on each hypha (treasury, settlement, the POW++ arms); clients and kernels appear as payers and payees. In-universe economies are each kernel's own (§10).
 
-**Status:** specification, release 0.2.0. **Built** in `src/economy/` and the court's market:
+**Status:** specification, release 0.3.0. **Built** in `src/economy/` and the court's market:
+exact rational holdings per lane (`economy::Mu`, §1),
 balances, stake bonds for hyphae and voices, escrow, per-lane pricing,
 issuance by mint against measured work, transfer, the genesis allocation,
 settlement rows each carrying its POW++ arm, and the audit invariant
@@ -47,10 +48,23 @@ What is built today: the modes and the exact arithmetic on them are
 `economy::modes::Modes` (add, draw refused naming the mode, canonical
 codec). A closure's measured deflation reads its modes
 (`transducer/family/deflation.rs`), and a paid solve verdict carries them
-behind its receipt (`encode_solve_verdict`). Every holding of value —
-balance, bond, escrow, held value, ledger row — still holds μ as
-`[u64; 4]`, one exact count per lane, and the sections below speak of that
-holding. Moving the holdings to held modes is the open part of 78.162.
+behind its receipt (`encode_solve_verdict`).
+
+**Every holding of value is an exact rational per lane (v0.3.0).** μ is
+measured as a share of a frame, and a share is a rational, so every amount
+of μ — a balance, a bond, an escrow, held value, a lease, a grant, a
+ledger row, a wire field — is an `economy::Mu`: four exact non-negative
+rationals, one per lane. A count read off a measure enters as `n/1`, so a
+measurement keeps its value exactly. Arithmetic on `Mu` is exact and has
+no carrier to pass: an addition always lands, and a draw past a holding is
+refused naming the lane it lacks (`MuRefusal::Short`), never saturated and
+never floored. Every lane is at least zero; a negative amount is refused
+where it would be made or read. On the wire, in the ledger and in the
+snapshot each lane is written as `ChartAxis::Ratio` writes a rational — a
+sign byte, then the numerator's and the denominator's 64-bit limbs by
+count — and a lane not in lowest terms is refused (MU-EQUATIONS §6.15).
+The sections below speak of these holdings. Holding the modes themselves,
+rather than four amounts, is the open part of 78.162.
 
 μ is a vector on four lanes: spatial (S), gauge (G), temporal (T),
 holonomic (H). It is never summed and never converted across lanes. A
@@ -73,6 +87,11 @@ the mesh did.
 | bond | a voice or hypha | μ staked; sizes cover room; slashable |
 | escrow | a listing | μ held against a claim until the court rules |
 | supply | the mesh | genesis plus mint minus burn, per lane |
+
+Each holding is an exact rational per lane (`economy::Mu`, §1). Room reads
+a bond's whole part on each lane: a draw is a count, and a count fits under
+an exact amount `q` exactly where it fits under `⌊q⌋`, so the reading
+admits every draw the exact bond admits and no other.
 
 Every change to a holding is a ledger entry with a kind, the party, the
 lane vector, the K-step and height of the receipt that wrote it, and the
@@ -312,8 +331,11 @@ discharge, 78.149 (b). Each of the `n` distinct verifying courts is minted,
 on each lane `l`:
 
 ```
-v_l = ⌊ ⌊ M_l · y_l / (y_l + R) ⌋ / n ⌋
+v_l = M_l · y_l / ((y_l + R) · n)          exact over ℚ
 ```
+
+(Until v0.3.0 this was `⌊⌊M_l · y_l / (y_l + R)⌋ / n⌋`: a share smaller
+than a unit was paid as nothing.)
 
 Here:
 - `y_l` is the verifying court's strain on the lane, its yield surface
@@ -334,7 +356,8 @@ The share has these properties:
   verification half the lane, and more where torsion outruns syntropy.
   Verification is paid where verification capacity is scarce.
 - **Equal between organs.** Each court replayed the same closure, so the
-  courts take equal shares. What does not divide stays with the closer.
+  courts take equal shares, each an exact part; the closer takes exactly
+  the rest.
 - **Issuance-neutral.** POWV is taken out of the release and never added
   to it. Total issuance remains the measured discharge, and supply still
   tracks the language (§3.2).
@@ -385,8 +408,9 @@ the end, what the hold has left returns to the payer.
 - Every act is signed by the payer, with a nonce that is spent once.
 
 **Wire.** `ACT_WALLET` sub-kind 3 opens a lease and sub-kind 4 closes one,
-each signed under `"mycelium lease v1"` (`anastome/dialogue/lease.rs`).
-The reply is `[1][lease 32][μ]` or `[0][refusal]`. The refusals are:
+each signed under `"mycelium lease v2"` (`anastome/dialogue/lease.rs`; v2
+writes μ as four exact rational lanes). The reply is `[1][lease 32][μ⃗]` or
+`[0][refusal]`. The refusals are:
 - `Unsigned`
 - `Spent`
 - `Malformed`
@@ -579,21 +603,38 @@ ratios the physics already reads:
 
 They are studied off the wire and never tuned on it.
 
-## 9. Implementation (v0.2.0)
+## 9. Implementation (v0.3.0)
 
 **Built** in `src/economy/` and the court's market:
+
+**The amount**
+- `economy::Mu` (`src/economy/mu.rs`): four exact non-negative rationals,
+  one per lane, for every amount of μ. Exact add, a draw refused naming
+  the first short lane (`MuRefusal::Short`), the per-lane shortfall, cap,
+  division at an ask (`split_at`) and equal parts (`part`), the per-lane
+  reading `lane_moves`, and no order. A count is `Mu::counts` (`n/1`).
+- The canonical codec (`Mu::put`, `Mu::take`): per lane a sign byte and
+  the numerator's and denominator's limbs by count; a negative lane, a
+  lane not in lowest terms, and a second writing of one value are refused
+  by name. The ledger rows, the snapshot's tries and every wire field
+  carrying μ use it (wire v2.0, `WIRE_VERSION` `0x0200`).
 
 **Treasury and ledger**
 - `Treasury` holds balances, bonds (`enroll`, `unstake`) and claim
   escrows (`escrow_award`, `release_award`, `revoke_award`,
-  `draw_escrow`, `carry_escrow`, `credit_escrow`).
+  `draw_escrow`, `carry_escrow`, `credit_escrow`), each a `Mu`.
 - The eleven ledger entry kinds of §2. Each payment row carries its
   POW++ arm: POUW, POWC, POWR or POWV.
-- `supply()` is `genesis + mint − burn`, with checked arithmetic.
-  `minted()` reads the mint rows alone, so seeded and earned value stay
-  separable. `Treasury::audit` checks both equations of §6.
+- `supply()` is `genesis + mint − burn`, exact over ℚ (`None` only where
+  a burn exceeds what was issued). `minted()` reads the mint rows alone,
+  so seeded and earned value stay separable. `Treasury::audit` checks both
+  equations of §6 over ℚ.
 - The four-lane comparison `lane_moves`, and the per-lane shortfall
   reading.
+- Every formula that floored to fit a count is exact: the POWV share
+  (§5.1), the consilience, assembly and rewrite splits (`μ / n`), the tier
+  slash's halves, the map fee's span term, a tariff's charge and parts,
+  and a conversion's `rate · g` (MU-EQUATIONS §6.7, §6.9a, §6.12, §6.13).
 
 **Issuance and payment**
 - E1: claim escrow is outside the supply, and a ruling discharges it into
@@ -800,8 +841,8 @@ distribute across voices per lane.
   A reveal without a commitment is judged as today and ranks after every
   committed reveal of the same task. Concurrent commitments are held as a
   vortex (law 15) and resolve by content: two commitments to one rule are
-  one closure, paid to both voices in equal lane-wise shares, floored, the
-  remainder retired.
+  one closure, paid to both voices in equal lane-wise shares, each exactly
+  half.
 - A commitment lapses unrevealed at the end of its challenge window
   (MU-DERIVATIONS D1.1); a lapsed commitment holds no priority. A
   commitment draws room on the lane its task is listed on, so commitments
@@ -852,8 +893,9 @@ per-voice order derived from the voice key and the task citation (so two
 solvers start on different residue without any reservation), and a lease
 (§5.2) that reserves a task for its lessee for one window.
 
-**Defect to fix with this section.** The solve receipt's code `1` is named
-`SOLVE_FLOOR` and documented as "verification floor (replay)", and the
-registry's header says "every replay the floor"; a repeat pays nothing
-(78.149). The wire byte stays; the constant is renamed `SOLVE_AGAIN`, and
-both comments state that a repeat is verified and paid nothing.
+**Defect fixed with this section (v0.3.0).** The solve receipt's code `1`
+was named `SOLVE_FLOOR` and documented as "verification floor (replay)",
+and the registry's header said "every replay the floor"; a repeat pays
+nothing (78.149). The wire byte stays; the constant is renamed
+`SOLVE_AGAIN`, and both comments state that a repeat is verified and paid
+nothing.

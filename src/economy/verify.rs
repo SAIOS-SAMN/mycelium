@@ -21,7 +21,7 @@
 //! torsion outruns syntropy — the scarce resource is paid where it is
 //! scarce. No constant enters: the fraction is a ratio of two readings of
 //! the court's own physics, and the split among organs is equal because
-//! each replayed the same closure. The share is a rational part of the
+//! each reconstructed the same closure. The share is a rational part of the
 //! mint, never floored: the closer takes exactly `M − n · v`.
 
 use super::Mu;

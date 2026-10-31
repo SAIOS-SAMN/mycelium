@@ -121,10 +121,17 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
   parameters, and, from v0.3.0, 6 the client conformance statement
   ([MU-CONFORMANCE](MU-CONFORMANCE.md)), 7 the Concordance's hash and 8 a
   kernel's signature over it, answered accepted or refused by name
-  (Concordance §0 SIGNING). Modes 6–8 are an additive wire change for the
-  minor release: no layout of an existing mode moves and `WIRE_VERSION`
-  stays `0x0104`; a hypha that predates them answers nothing to them, as it
-  answers any `ACT_LAWS` request it does not read.
+  (Concordance §0 SIGNING). Modes 6–8 are an additive wire change: no
+  layout of an existing mode moves; a hypha that predates them answers
+  nothing to them, as it answers any `ACT_LAWS` request it does not read.
+
+  **The wire version rule.** `WIRE_VERSION` is `major << 8 | minor`. An
+  additive change (a new act, mode or trailing field an older reader
+  ignores) steps the minor; a change that moves the layout of an existing
+  act or reply steps the major. Either may ride a 0.x minor release. v0.3.0
+  writes every μ field as four exact rational lanes (`economy::Mu`), which
+  moves the layout of every act and reply carrying μ: `WIRE_VERSION` is
+  `0x0200` (wire v2.0).
 
 ## 5. Physics and time
 

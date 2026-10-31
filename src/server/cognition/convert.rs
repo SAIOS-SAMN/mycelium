@@ -568,7 +568,7 @@ impl Court {
 
     /// 78.129 — THE SLASH OF A FALSIFIED FOLD: half the tier's bond, on each
     /// lane, exactly — forfeited as ruled: half of the cut to the challenger
-    /// whose replay or default falsified it (the bounty: a challenge needs a
+    /// whose reconstruction or default falsified it (the bounty: a challenge needs a
     /// reason to be filed), half RETIRED from supply (POWR). Drawn from
     /// whoever posted the bond; nothing where the tier stands unbonded.
     /// (Over counts the halves were floored and the odd unit stayed bonded
