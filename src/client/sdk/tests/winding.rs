@@ -75,14 +75,14 @@ fn comprehend_waiting_lapses_scene_with_last_thought() {
 }
 
 /// 78.167 D1 — A MEANING GIVEN WHOLE IS DERIVED ONCE THE WORDS BESIDE IT ARE
-/// KNOWN. A screw — a quarter turn carried along its axis — answered as an
+/// KNOWN. A screw — a 90° turn carried along its axis — answered as an
 /// atom is known as GIVEN. Knowing the turn alone leaves the slide as its
 /// residue: still given. Knowing the slide too, it is reduced again at the
 /// mind's return and DERIVED, one rung above the two.
 #[test]
 fn re_reduce_given_derives_once_factors_known() {
     use crate::transducer::sentence::rung::{held_rung, learn_by, learn_given, re_reduce_given};
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
     let n = |v: i64| num_rational::BigRational::from_integer(v.into());
     let along = crate::transducer::cga::translator_at(&[n(0), n(0), n(1)]);
     let quarter = crate::transducer::element::conformal_of(&Word::from_letters(&[(q, false)]), &crate::transducer::element::identity_versor()).expect("a motion");

@@ -8,11 +8,11 @@
 //! Three readings, each a yes or a no on exact integers, taken on the task
 //! files the journal's family ids map to through `registry::task_id`.
 //!
-//! THIS READS THE CORPUS AND CLAIMS NOTHING ABOUT THE FLEET. As
-//! ruled, this binary does not reflect the live feed and no fleet
+//! THIS READS THE CORPUS AND CLAIMS NOTHING ABOUT THE MESH. As
+//! ruled, this binary does not reflect the live feed and no mesh
 //! number may be taken from it. Every number below is a property of the
 //! ARC files on disk, which is why this instrument could be built while the
-//! fleet was cut and soaking — it depends on no reading of it.
+//! mesh was cut and soaking — it depends on no reading of it.
 //!
 //! EXACT OR REFUSED (law 4, rule 11). A frame ratio is integer division
 //! with a zero remainder, never a float compared to a tolerance; a

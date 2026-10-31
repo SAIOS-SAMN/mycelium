@@ -1,6 +1,6 @@
 // 50.3, 54.5 — THE ONE CIRCUIT of an orbit's member path: what it carries on the
 // faces and on the edges, and every reader of it — the edge holonomies and
-// their classes, the face transport, coherence, and triviality.
+// the holonomies' classes, the face transport, coherence, and triviality.
 
 use super::*;
 
@@ -110,7 +110,7 @@ pub(crate) struct PathCarried {
     pub(crate) edge_lost_at: Option<usize>,
     /// BQ5a — THE EDGE HALF THROUGH A CONTACT THAT IS NOT ONE TRANSPORT
     /// (78.6): the composite before the first coset or static transition, and
-    /// every transition from it on, each as crossed — the factors, never their
+    /// every transition from it on, each as crossed — the factors, never the factors'
     /// product, so the `2ᵏ` candidates are formed only by a reader holding
     /// the stroke's budget ([`Refracted`], rule 10). `edge` is `None` then;
     /// this is the edge half, never a refusal of it.
@@ -151,7 +151,7 @@ pub(crate) enum Unread {
     // `NoPlace` STOOD HERE — a face holding no member pair at the members the
     // circuit names. An overlap IS its member pair (AT1), so it cannot hold.
     /// A face between two bodies that carries no edge, because no versor
-    /// carries their union (50.3's `NotRigid`).
+    /// carries the two bodies' union (50.3's `NotRigid`).
     NotRigid,
     /// BQ5a — A CONTACT FACE whose refraction `g = (θ_bθ_a⁻¹)·V` was refused:
     /// the pose or the peel said no, and the contact line names the arm. Not

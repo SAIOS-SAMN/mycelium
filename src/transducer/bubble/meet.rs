@@ -105,7 +105,7 @@ pub struct MeetGraph {
     pub thoughts: u64,
     /// The meet graph's own components over every edge, `C`.
     pub components: u64,
-    /// Its edges by fill arm; `E` is their sum.
+    /// Its edges by fill arm; `E` is the edges' sum.
     pub edges: [u64; 6],
     /// `E − V + C`, the cycle space's rank, counted and never read off a tree.
     /// Signed and never clamped: negative only where an edge names a vertex
@@ -131,10 +131,10 @@ pub struct MeetGraph {
     pub shed: super::core::ShedTally,
     /// TC1's fix — what the truncation removed, refused and deferred.
     pub truncation: super::core::Truncation,
-    /// RM1 — the mind's remainders: `Congruent` fills by `ℓ`, their classes
+    /// RM1 — the mind's remainders: `Congruent` fills by `ℓ`, the fills' classes
     /// and those standing across charts, the re-fills.
     pub remainders: crate::transducer::cech::RemainderReading,
-    /// STD1 — lane sums the contemplation refused past their carrier.
+    /// STD1 — lane sums the contemplation refused past the sums' carrier.
     pub overflowed: u64,
     /// N4 — perception across scenes: the circuits read, the cells they
     /// cross and how they cohere, and the thoughts and demands filed.
@@ -266,8 +266,8 @@ impl Contemplation {
         }
     }
 
-    /// THE CHART CHAIN THOUGHTS SHARE: the intersection of their covers, in
-    /// key order — the chart a residue on their simplex is perceived on.
+    /// THE CHART CHAIN THOUGHTS SHARE: the intersection of the thoughts' covers, in
+    /// key order — the chart a residue on the thoughts' simplex is perceived on.
     /// `None` where they share none.
     pub(crate) fn shared_chain(&self, verts: &[Vec<u8>]) -> Option<Vec<Vec<u8>>> {
         let mut shared: Option<Vec<Vec<u8>>> = None;

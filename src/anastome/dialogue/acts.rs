@@ -33,10 +33,10 @@ pub const ACT_SETTLE: u8 = Action::Settle.byte();
 pub const ACT_DOCKET: u8 = Action::Docket.byte();
 /// Step 7c: the court pulls the selection fiber's accumulated birth evidence.
 pub const ACT_EVIDENCE: u8 = Action::Evidence.byte();
-/// PoUW dispatch: a client pulls a SIGNED WORK ENVELOPE — the hypha's
+/// POUW dispatch: a client pulls a SIGNED WORK ENVELOPE — the hypha's
 /// authoritative registry chooses; clients never arbitrate raw corpus.
 pub const ACT_TASK: u8 = Action::Task.byte();
-/// PoUW settlement: a client submits predicted outputs for a dispatched
+/// POUW settlement: a client submits predicted outputs for a dispatched
 /// task_id; the hypha verifies against its held answers — first verified
 /// solve takes the bounty, replays collapse to the verification floor.
 pub const ACT_SOLVE: u8 = Action::Solve.byte();
@@ -161,7 +161,7 @@ pub const TICK_HEARD: u8 = 1;
 /// The frame did not read whole, its keeper is no known peer court, or a
 /// reading of the ring was refused (`tuniversal::Refused`).
 pub const TICK_REFUSED: u8 = 0;
-/// AN EQUIVOCATION PROOF (47.4, `XSEPTUM.md` §5.5): any node presents two
+/// AN EQUIVOCATION PROOF (47.4, `MU-XSEPTUM.md` §5.5): any node presents two
 /// receipt sections it holds under one key at one K with two chain
 /// hashes, and the court burns the signer's bond. The one xSEPTUM act
 /// landed; 0x30–0x34 stay reserved.
@@ -264,7 +264,7 @@ pub enum ProbeClosure {
 }
 
 impl PartialEq for ProbeClosure {
-    /// Residuals are equal where their versors write one ray.
+    /// Residuals are equal where the two versors write one ray.
     fn eq(&self, other: &ProbeClosure) -> bool {
         let ray = |v: &Option<crate::transducer::cga::Mv>| {
             v.as_ref().map(|m| {

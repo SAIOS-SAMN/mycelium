@@ -41,7 +41,7 @@ pub struct Complex {
     /// a simplex's orbits are the fiber under its key and a reader moves to
     /// them rather than reading a list through.
     ///
-    /// One `Ω` per chord and never their product. 11.3 holds each `H¹`
+    /// One `Ω` per chord and never the product of the `Ω`s. 11.3 holds each `H¹`
     /// orbit "with its class vector (12.6)", and composing the orbits of one
     /// simplex destroys that: two chords of opposite class multiply to the
     /// identity, so two real classes annihilate into "nothing curved" and
@@ -67,7 +67,7 @@ pub struct Complex {
     /// stars and pinning its boundary until `seal` caps it. Volatile: no
     /// persisted complex punctures yet (`hole.rs`).
     pub(crate) holes: Keyed<Simplex>,
-    /// THE SCARS: holes CAUTERIZED where their class could not be read back
+    /// THE SCARS: holes CAUTERIZED where the hole's class could not be read back
     /// (the eight-component cross, ruled 2026-10-20) — counted on the chart
     /// that bore them, the class itself handed to the caller that burned it,
     /// never held here, so the record keeps its bound. Volatile.
@@ -89,7 +89,7 @@ pub struct Complex {
     /// a vertex shed reads its frozen classes and nothing else (rule 1).
     pub(crate) frozen_on: Keyed<()>,
     /// 78.112 H7b — THE TORSION HEARING WOUND AT EACH VERTEX: the crossings of
-    /// the rings heard in that perception (the light crossing their planes,
+    /// the rings heard in that perception (the light crossing the rings' planes,
     /// the impact), composed as one strain and wound on at each hearing. It
     /// unwinds when the vertex is let go (`vent_wound`). Volatile.
     pub(crate) wound: Keyed<crate::transducer::cga::Mv>,
@@ -306,7 +306,7 @@ impl Complex {
     }
 
     /// THE ENTRIES THE COMPLEX HOLDS: its simplices at every degree and
-    /// their index, its sections, its stars, its remainder and its
+    /// the simplices' index, its sections, its stars, its remainder and its
     /// congruent fills.
     pub fn held(&self) -> usize {
         let simplices: usize = self.degrees.iter().map(|d| d.len()).sum();

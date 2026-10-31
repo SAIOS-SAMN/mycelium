@@ -1,4 +1,4 @@
-// 45.3, T15, 78.24 — the order two nodes stand in, read off their stamps,
+// 45.3, T15, 78.24 — the order two nodes stand in, read off the nodes' stamps,
 // and what an exhausted budget answers.
 
 use super::common::budget;
@@ -115,8 +115,8 @@ fn fold_before_keeps_peer_placements() {
     step(&mut c, Vec::new());
     c.admit(peer.clone());
     step(&mut c, vec![cite(&peer)]);
-    // A fold cuts only at an orbit's close (OK1): the two acts close their
-    // orbit, and the survivor opens the next.
+    // A fold cuts only at an orbit's close (OK1): the two acts close the
+    // orbit they share, and the survivor opens the next.
     assert!(c.fold_before(crate::chronometry::Place { k: 0, i: 1 }).is_none(), "an act that closes nothing is no cut");
     let (_, frame) = c.open_orbit().expect("open");
     let shut = c.append(ActKind::Orbit, frame, Vec::new(), [9; 32], Vec::new()).expect("the close").clone();

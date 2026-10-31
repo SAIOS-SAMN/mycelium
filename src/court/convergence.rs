@@ -9,16 +9,16 @@ use crate::transducer::address::Address;
 
 /// One organ's re-derivation of one object: the address it reached, and
 /// where it stood when it reached it. The address is the claim — two organs
-/// converge iff their addresses are equal — and K and height place it causally
+/// converge iff the two addresses are equal — and K and height place it causally
 /// (45.2, 45.4) so a witness's own chain can be checked against it.
 #[derive(Debug, Clone)]
 pub struct Rederivation {
-    /// What the organ RE-DERIVED. Two organs converge iff their objects are
+    /// What the organ RE-DERIVED. Two organs converge iff the two objects are
     /// the same vertex (M1, 17.1), which is a question about the algebra
     /// and not about the encoding: a carriage versor and its negation are
     /// one projective element and two byte strings, so two organs that
     /// derived carriages of opposite sign hold one vertex and comparing
-    /// their addresses would have called them different.
+    /// the two addresses would have called them different.
     pub object: crate::transducer::element::Element,
     pub k: u64,
     pub height: u64,

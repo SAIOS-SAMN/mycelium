@@ -15,7 +15,7 @@ pub const MAGIC: &[u8; 4] = b"MSH2";
 
 /// The magic a node's record was provisioned under before the presence
 /// bytes. `decode` reads it under its own rules and `save` writes MSH2, so
-/// a fleet keeps the wiring §10 says a recut keeps.
+/// a deployment keeps the wiring §10 says a recut keeps.
 pub const MAGIC_V1: &[u8; 4] = b"MSH1";
 pub const HYPHA: u8 = 0;
 pub const VOICE: u8 = 1;
@@ -160,7 +160,7 @@ impl MeshRecord {
     /// MSH2, or the MSH1 record a node provisioned before the presence
     /// bytes existed. THE PROVISIONING IS CONFIGURATION AND A RECUT KEEPS
     /// IT (§10): the bind, the peers and the bootstrap are how a node is
-    /// wired into the fleet, and a magic it cannot read would throw them
+    /// wired into the mesh, and a magic it cannot read would throw them
     /// away. MSH1 is read under its own rules — an empty bind IS "bound
     /// nowhere" there, and 32 zeros ARE "no genesis", which is exactly the
     /// conflation MSH2 exists to end — and the next `save` writes MSH2.
@@ -372,11 +372,11 @@ fn drop_loose(home: &Path, names: &[&str]) {
 
 /// X7 — A RECORD READ UNDER THE OLD MAGIC IS WRITTEN BACK ONCE, at the
 /// boot that read it, so the read arm for MSH1 has an END: when every node
-/// has booted once there is no MSH1 record left in the fleet and the arm
+/// has booted once there is no MSH1 record left in the mesh and the arm
 /// is deleted.
 ///
 /// Without this the arm is permanent. fc75a59 added it because the magic
-/// bump refused all eight provisioned records at once and the fleet could
+/// bump refused all eight provisioned records at once and the mesh could
 /// not boot, but a read arm that nothing retires is two layouts the tree
 /// carries forever, and MSH1's conflations (an empty bind for absence, 32
 /// zeros for no genesis) are exactly what MSH2 exists to end.
@@ -600,11 +600,11 @@ mod tests {
     }
 
     /// §10 — A RECUT KEEPS THE PROVISIONING. The bind, the peers and the
-    /// bootstrap are how a node is wired into the fleet, and they live in
+    /// bootstrap are how a node is wired into the mesh, and they live in
     /// the record a magic bump would make unreadable. MSH1 opens under its
     /// own rules and the next save writes MSH2.
     ///
-    /// Measured before this stood: all eight homes of the fleet held MSH1,
+    /// Measured before this stood: all eight homes of the mesh held MSH1,
     /// `open_at` refused every one of them, and the nodes — including the
     /// one-shot `--recut` runs — exited 2 at boot.
     #[test]
@@ -662,7 +662,7 @@ mod tests {
     }
 
     /// X7 — THE OLD ARM HAS AN END. A boot that reads an MSH1 record writes
-    /// it back as MSH2 there and then, so the fleet retires the layout by
+    /// it back as MSH2 there and then, so the mesh retires the layout by
     /// booting rather than by a flag, and the arm that reads MSH1 can be
     /// deleted once every node has. Read here on the migration door
     /// itself, since that is where the boot enters: the record on disk is

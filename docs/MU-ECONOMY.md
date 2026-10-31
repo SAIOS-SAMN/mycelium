@@ -1,15 +1,15 @@
-# Economy — μ, the four-lane currency
+# MU-ECONOMY — μ, the four-lane currency
 
 > **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** the court on each hypha (treasury, settlement, the POW++ arms); clients and kernels appear as payers and payees. In-universe economies are each kernel's own (§10).
 
-Status (v0.2.0): implemented in `src/economy/` and the court's market —
+**Status:** specification, release 0.2.0. **Built** in `src/economy/` and the court's market:
 balances, stake bonds for hyphae and voices, escrow, per-lane pricing,
 issuance by mint against measured work, transfer, the genesis allocation,
 settlement rows carrying their POW++ arm, and the audit invariant
 (`Treasury::audit`). Companion documents: `MU-PRODUCT.md`,
-`MU-ENGINEERING.md`, `XSEPTUM.md`.
+`MU-ENGINEERING.md`, `MU-XSEPTUM.md`.
 
 ## 0. The proofs of work, named apart (ruled 2026-09-24)
 
@@ -581,7 +581,7 @@ They are studied off the wire and never tuned on it.
 
 ## 9. Implementation (v0.2.0)
 
-Implemented in `src/economy/` and the court's market:
+**Built** in `src/economy/` and the court's market:
 
 **Treasury and ledger**
 - `Treasury` holds balances, bonds (`enroll`, `unstake`) and claim
@@ -626,7 +626,7 @@ Implemented in `src/economy/` and the court's market:
   (`economy::fold`).
 
 Specified and scheduled on the roadmap:
-- in [`XSEPTUM.md`](XSEPTUM.md): the Note (signed by payer and payee,
+- in [`MU-XSEPTUM.md`](MU-XSEPTUM.md): the Note (signed by payer and payee,
   escrowed at the home, released on two-court replay with two
   signatures), receipt-indexed Notes, and FROST voice groups;
 - in §4: delegation of bond.

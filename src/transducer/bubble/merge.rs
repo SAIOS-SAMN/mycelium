@@ -1,18 +1,18 @@
 // 13.12, 25 — THE MERGE: when two held thoughts are one, and what the
 // one that remains carries.
 //
-//! Two bubbles merge when their forms are one section of the same bundle:
+//! Two bubbles merge when the bubbles' forms are one section of the same bundle:
 //! congruent up to a re-gauge, or with a torsion axis. A merge absorbs the
 //! other's incidence, remainder and vortex; zero volume never merges.
 
 use super::*;
 
-/// 13.12: two forms are one section when their join coheres.
+/// 13.12: two forms are one section when the forms' join coheres.
 ///
 /// THE JOIN IS BY COORDINATES (AT1): a vertex both forms hold is one vertex
 /// — the same class, its members the union of both forms' — and every
 /// overlap of either stands at its own key, since it names its charts by
-/// their coordinates and never by a position that would have to be shifted.
+/// the charts' coordinates and never by a position that would have to be shifted.
 /// The tree gauge that re-solved the join's coboundary retired (AT1 step 2,
 /// ruled (a)); an overlap's word is derived from its ends, so the join
 /// coheres or it does not.
@@ -129,7 +129,7 @@ impl Contemplation {
                         }
                     }
                     // TC1 — the merge moves degrees: the changed components
-                    // truncate to their 2-core.
+                    // truncate to the 2-core.
                     let mut touched = self.touched_by(&vertices);
                     if let Some(m) = self.merge(&vertices) {
                         touched.push(m.as_bytes().to_vec());
@@ -143,7 +143,7 @@ impl Contemplation {
                     // the thoughts: where the remainder was perceived.
                     let at = self.shared_chain(&vertices);
                     // 78.52: does this merge close the thought's return? Read
-                    // before the merge takes the thoughts and their grounds.
+                    // before the merge takes the thoughts and the thoughts' grounds.
                     let closing = self.closing_ground(&vertices);
                     // KB1 (C) — THE CLASS BETWEEN TWO THOUGHTS LIVES ON THIS
                     // COMPLEX AND ON THE TORSE REWRITE IT MINTS. It was filed a
@@ -330,7 +330,7 @@ impl Contemplation {
             }
         }
         // 78.99 (4) — THE GLUE MAKES MEANING: the two thoughts' stars on the
-        // meet graph glued by the connecting map, read before their vertices
+        // meet graph glued by the connecting map, read before the thoughts' vertices
         // are vented. Each loop through a neighbour both thoughts meet is a
         // class neither star held alone, and it enters the merged thought's
         // horizon as a class the meet stands — every route kept, none

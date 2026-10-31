@@ -493,7 +493,7 @@ impl ClassVector {
     /// THE LANES THIS CLASS OCCUPIES (42.6 as amended, law 5): one flag
     /// per lane, read from the occupied coordinates through `Axis::lane`.
     ///
-    /// Four flags and never their sum. A class occupying S and 𝒽 is not
+    /// Four flags and never the flags' sum. A class occupying S and 𝒽 is not
     /// "two lanes of content": it is content on S and content on 𝒽, and
     /// the two are independent covers that a reduction must not mix.
     pub fn lanes(&self) -> [bool; 4] {
@@ -733,10 +733,10 @@ impl ClassVector {
 }
 
 // THE FOUR COORDINATES OF A CLASS KEY, each reading the framing
-// `class_key` wrote for it. Nothing below is a remembered width: a
-// rational's two integers carry their own lengths, the plane block is
-// present or absent by its own tag, the hue cycle carries its count, and a
-// versor's sixteen coefficients carry their own. So a key of another system
+// `class_key` wrote for it. Nothing below is a remembered width: each
+// of a rational's two integers carries its own length, the plane block is
+// present or absent by its own tag, the hue cycle carries its count, and
+// each of a versor's sixteen coefficients carries its own. So a key of another system
 // fails at the coordinate it fails at, and the depth-one boundary is the
 // rotor's conjugacy stratum by parsing rather than by agreement.
 

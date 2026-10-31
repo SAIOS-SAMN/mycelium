@@ -3,7 +3,7 @@
 // form speaks whole. Per task: the form's speech (spoken whole or not), the
 // reconstruction left one pair out at a time (`reconstruct::reconstruct`, the
 // voice's own reader through `interpret`), the axes whose loops close on the
-// whole family, and the body axis's single changes by their fascicle's
+// whole family, and the body axis's single changes by each change's fascicle's
 // regime. Data; nothing is decided.
 
 use mycelium::client::sdk::Epigenome;
@@ -95,7 +95,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         held.join(" | ")
     );
     println!(
-        "reconstruct body axis, single changes by their fascicle's regime: finite turn {} rosette {} kiss (light) {} apart (dilation) {} null {}",
+        "reconstruct body axis, single changes by the fascicle's regime: finite turn {} rosette {} kiss (light) {} apart (dilation) {} null {}",
         regimes[0], regimes[1], regimes[2], regimes[3], regimes[4]
     );
     println!(

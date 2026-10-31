@@ -19,7 +19,7 @@
 //! - no records: the root is 32 zero bytes; two records with one key (or one
 //!   path) are refused, so the root is never ambiguous.
 //!
-//! Computed as a SPARSE FOLD — the records split by their path's bit at each
+//! Computed as a SPARSE FOLD — the records split by each path's bit at each
 //! depth — so the cost is 256 nodes per record and nothing allocates the
 //! empty tree. A PROOF is the 256 siblings from the root down a key's path:
 //! folding the key's leaf up against them gives the root where the record is
@@ -69,7 +69,7 @@ pub fn leaf(key: &[u8], values: &[Arg]) -> Option<[u8; 32]> {
     Some(blake3::derive_key(LEAF, &m))
 }
 
-/// AN INNER NODE: zero over two empty children, else their derived key.
+/// AN INNER NODE: zero over two empty children, else the pair's derived key.
 pub fn node(left: &[u8; 32], right: &[u8; 32]) -> [u8; 32] {
     if *left == ZERO && *right == ZERO {
         return ZERO;
@@ -90,7 +90,7 @@ fn bit(path: &[u8; 32], depth: usize) -> bool {
     path.get(depth / 8).is_some_and(|b| (b >> (7 - depth % 8)) & 1 == 1)
 }
 
-/// The records as leaves on their paths, in path order, each path once;
+/// The records as leaves on the keys' paths, in path order, each path once;
 /// `None` where a key repeats (or two keys share a path), a key passes its
 /// wall, or a value does not write.
 fn placed(records: &[Record]) -> Option<Vec<([u8; 32], [u8; 32])>> {

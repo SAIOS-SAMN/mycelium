@@ -84,7 +84,7 @@ fn letter_carries_exact_inverse_for_all_seventeen() {
 
 /// The lattice isometries are WORDS, not letters: rot90 is one 90°
 /// letter, rot180 two, the column flip a 180° turn through the third
-/// axis, and the transposition their product — every one spelled by
+/// axis, and the transposition the product of the two — every one spelled by
 /// the peel and re-derived exactly from its tape.
 #[test]
 fn spell_images_spells_dihedral_motions() {
@@ -99,7 +99,7 @@ fn spell_images_spells_dihedral_motions() {
     assert_eq!(transpose.word.len(), 3);
     let id = spell_images((1, 0), (0, 1)).expect("identity spells");
     assert!(id.word.is_empty());
-    // The words re-derive their blocks and round-trip the wire.
+    // The words re-derive the words' blocks and round-trip the wire.
     for sp in [&rot90, &rot180, &flip_cols, &transpose] {
         let mut b = Vec::new();
         sp.to_bytes(&mut b);

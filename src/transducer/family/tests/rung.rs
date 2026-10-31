@@ -60,7 +60,7 @@ fn compose_names_each_percept_ring_unbound() {
 
 /// 78.97 — A CHORD IS HEARD, NOT TRAVERSED. On the same slide family's real
 /// percept, the composer leaves every ring that crosses a chord (an overlap
-/// between two sections' pieces) as HEARD and composes the rest from their
+/// between two sections' pieces) as HEARD and composes the rest from the rings'
 /// rays alone; no ring is both.
 #[test]
 fn sentences_of_hears_chord_rings_composes_rays() {

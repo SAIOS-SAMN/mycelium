@@ -1,4 +1,4 @@
-// 78.161 — CHATTER: minds speak their dialect to each other. A frame is a
+// 78.161 — CHATTER: each mind speaks its dialect to the others. A frame is a
 // voice's signed word, its agreement, or its divergence; the hypha carries
 // none of it and judges none of it.
 //
@@ -188,8 +188,8 @@ pub fn loop_of(said: &Spoken, heard: &HeardWord) -> AckWord {
     }
 }
 
-/// Two acknowledgements of one word name one loop: their motions
-/// projectively one (1.5), their hue holonomies one map.
+/// Two acknowledgements of one word name one loop: the two motions
+/// projectively one (1.5), the two hue holonomies one map.
 pub fn same_loop(a: &AckWord, b: &AckWord) -> bool {
     let motion = match (&a.motion, &b.motion) {
         (Some(x), Some(y)) => x.projective_eq(y),

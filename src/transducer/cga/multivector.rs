@@ -2,7 +2,7 @@
 //! conformal model of ℚⁿ, with `n` carried by the value and the geometric
 //! product written once for every `n`.
 //!
-//! THE GENERATORS KEEP THEIR BITS AS `n` GROWS. `e₊` is bit 3 and `e₋` is
+//! EACH GENERATOR KEEPS ITS BIT AS `n` GROWS. `e₊` is bit 3 and `e₋` is
 //! bit 4 at every `n`; the first three base axes are bits 0, 1, 2, and a
 //! fourth base axis onward takes bit 5 onward ([`base_axis`]). So at `n ≤ 3`
 //! every mask, the canonical order (the first non-zero coefficient in mask
@@ -288,7 +288,7 @@ impl Mv {
     /// THE CANONICAL WRITING (A4, 17.2): the coefficients after `canonical`.
     /// It CARRIES the value between minds; it identifies nothing — two
     /// derivations of one motion are one by the algebra (`projective_eq`,
-    /// their coordinates), never by these bytes. The zero element has no
+    /// the derivations' coordinates), never by these bytes. The zero element has no
     /// `canonical` and is written as it is.
     pub fn put_canonical(&self, out: &mut Vec<u8>) {
         match self.canonical() {

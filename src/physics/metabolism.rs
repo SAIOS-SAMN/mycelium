@@ -66,7 +66,7 @@ pub struct Metabolism {
     /// does not preempt the others, so a mind exhausts a degree of freedom
     /// and not its time, and the reading says which.
     pub depleted: [u64; 4],
-    /// Rotors whose orbit closes, and the sum of their periods — `Σℓ`,
+    /// Rotors whose orbit closes, and the sum of the rotors' periods — `Σℓ`,
     /// which with `orbit_finite` gives the mean period without storing a
     /// histogram.
     pub orbit_finite: u64,

@@ -129,7 +129,7 @@ impl PathCarried {
 
     /// 78.26(5), 78.32 — THE CIRCUIT'S HUE, the fibre's holonomy: the transitions'
     /// hue maps composed along the circuit the way [`PathCarried::composite`]
-    /// composes their carriages, `h_edge ∘ h_face`. `None` where the edge half
+    /// composes the steps' carriages, `h_edge ∘ h_face`. `None` where the edge half
     /// did not read, rides a held coset, or crossed a static contact, whose
     /// gauge half is not read — unread, never the identity by assumption.
     pub(crate) fn hue(&self) -> Option<Vec<(u8, u8)>> {

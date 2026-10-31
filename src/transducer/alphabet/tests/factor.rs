@@ -137,7 +137,7 @@ fn factor_rotor_demands_standing_for_irrational_block() {
 /// Pythagorean pair itself — the (3,4,5) letter is `3 + 4·e01`, not
 /// `2 + e01` — so as a Gaussian it is `(2+i)²`, and the rotors the
 /// seventeen reach on one plane are the products of `3+4i`, `5+12i`,
-/// `1+i` and their conjugates. A `π` of norm 5 taken as a rotor is the
+/// `1+i` and the conjugates of each. A `π` of norm 5 taken as a rotor is the
 /// HALF of the (3,4,5) rotation and the alphabet genuinely does not
 /// contain it; standing on that measures the enumeration, not the peel.
 ///

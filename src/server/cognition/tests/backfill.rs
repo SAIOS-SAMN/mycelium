@@ -200,7 +200,7 @@ fn admit_backfill_counts_missing_parent_under_cited_signer() {
 /// ERA'S OWN CHAIN, and the citing head is cited. Peer e closes an orbit and
 /// folds it; court c admits e's line and, on e's fold, sheds what lies at or
 /// below e's root. A third signer d's head cites e's first receipt — inside
-/// the closed era. That was the fleet's split: `MissingParent` forever, the
+/// the closed era. That was the mesh's split: `MissingParent` forever, the
 /// head past the place, back-fill reading the receipt stale. Now c asks e's
 /// line from the citation up to the root, walks it — each receipt
 /// re-deriving and naming the one before, ending at the root's stamp and

@@ -67,7 +67,7 @@ fn ascertain_on_unclosing_clause_rule_is_unproven() {
     assert!(matches!(outcome, Ascertained::Unknown(Unexempt::Unproven)), "unproven on these pairs — guard 2 named: {outcome:?}");
 }
 
-/// GUARD 3 — THREE PAIRS ARE READ BY THEIR PERSPECTIVES: with two pairs to
+/// GUARD 3 — THREE PAIRS ARE READ BY THE PAIRS' PERSPECTIVES: with two pairs to
 /// each sibling set the act reader states the rule, and the family is known
 /// by its perspectives — the exemption is never reached past two pairs.
 #[test]

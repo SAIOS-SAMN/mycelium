@@ -1,4 +1,4 @@
-# MU-LEXICON — the shared vocabulary (version 5)
+# MU-LEXICON — the shared vocabulary
 
 > **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
@@ -6,7 +6,9 @@
 >
 > Every term below (*universe*, *realm*, *planet*, *star*, *wormhole*, *black hole*, *white hole*) is a term of the hosted simulations and of the network's exact geometry, shared by the game kernels so their worlds can be compared.
 
-**Status: canonical** (78.122, 2026-10-07). Every connected system uses one terminology, defined by the
+**Status:** canonical, version 5 (78.122, 2026-10-07).
+
+Every connected system uses one terminology, defined by the
 server, for wormholes, black holes, white holes, universes, realms, planets and stars. The server (Mycelium) defines these terms; every
 kernel that connects aligns to this file, and its copies point here. Subordinate, as every document in this
 tree is, to `MU-RECURSION.md`.

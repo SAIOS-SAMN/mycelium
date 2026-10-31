@@ -145,7 +145,7 @@ fn nerve_edge_screw_carries_citation_slip() {
 /// The reading: glue two citations in one order and then the other. The
 /// vertices land at different POSITIONS, and the envelope's listing is the
 /// same either way, because `of_form` files edges through a `Keyed` on
-/// their sites and a PATRICIA trie IS the order of its keys.
+/// the edges' sites and a PATRICIA trie IS the order of its keys.
 ///
 /// AND TWO CITATIONS OF DIFFERENT FORMS STAND AT ONE SITE — gauge
 /// universality, asserted below: the host form has ONE `Glued` vertex and
@@ -195,7 +195,7 @@ fn nerve_edge_host_ignores_glue_order() {
 ///
 /// A round is the object the physics has. Charts on the hyperboloid
 /// `⟨x,x⟩_{3,1} = −R²` embed as strictly null `p = x₁e₁ + x₂e₂ + x₃e₃ +
-/// x₀e₋ + Re₊`, and the junction through them is their outer product, one
+/// x₀e₋ + Re₊`, and the junction through them is the points' outer product, one
 /// blade at grade `m` for `m` charts. The reading here is the ladder and
 /// its ceiling: grade rises by one per chart wedged on, and `⋀⁶(ℚ^{4,1}) ≡
 /// 0` ends it — by exterior-algebra arithmetic, with no bound anywhere in

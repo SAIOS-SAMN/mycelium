@@ -1,5 +1,5 @@
 // 50.8, A6, 16.4, 55.3, 78.38(C), A.12 — CONTINUOUS SUPPORT CORRESPONDENCE:
-// the transition between two shapes read on their exact moment towers, never
+// the transition between two shapes read on the shapes' exact moment towers, never
 // on where a carried compartment lands.
 //
 //! The crystallographic restriction of discrete raster grids (ℤ² admits C₄/D₄;
@@ -10,11 +10,11 @@
 //! prime angles π₅ with cos θ = 3/5, sin θ = 4/5, or π₁₃ with cos θ = 5/13, sin θ = 12/13)
 //! does not map integer coordinates to integers.
 //!
-//! Continuous support correspondence relates bodies by their exact algebraic
+//! Continuous support correspondence relates bodies by the bodies' exact algebraic
 //! moments in ℚ, on the tower whose similarity carries the pair (78.38(C)):
 //! the centre, the whole second moment on the body's `n` axes, and the odd
 //! and quartic harmonics on every plane. Under a versor they are TURNED by its
-//! action and compared, never reduced to their squared norms first (SQ1-b4,
+//! action and compared, never reduced to the moments' squared norms first (SQ1-b4,
 //! Axiom C as tightened), and the lattice is never consulted: the lattice is
 //! read at the sensor (70.7, 76.1, 78.30(4)).
 
@@ -86,7 +86,7 @@ pub enum NotCarried {
 /// order, and — named, never passed over — the planes of the base whose
 /// image is no plane of the base, whose orders three and four the tower
 /// holds no harmonic to compare with (A.11 on `n` axes carries no rank-3 or
-/// rank-4 tensor). Their order two is the tensor's, read whole above.
+/// rank-4 tensor). The planes' order two is the tensor's, read whole above.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Covariance {
     pub residue: Vec<Residue>,

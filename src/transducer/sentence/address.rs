@@ -5,7 +5,7 @@
 //! `sentence/tape.rs`). A sentence mints no tape (54.7 B6): the address IS
 //! the form (law 2), the evidence the key excludes rides `ReceiptsEnvelope`,
 //! and `from_element_form` reads the form back out of the address. The form
-//! tape's codec — `encode_form_v2` / `decode_form_v2` and their primitives
+//! tape's codec — `encode_form_v2` / `decode_form_v2` and the primitives of both
 //! in `sentence/codec.rs` — was read at runtime only by the contemplation's
 //! thoughts file, and retired with it (78.27, LD3-c): nothing in the tree
 //! holds a codec that nothing reads. `FORM_TAPE_VERSION`, the tape's version
@@ -192,7 +192,7 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     // (law 2) and is set below, the kind is the address's own `TAG_FORM`,
     // and the evidence the key excludes rides `ReceiptsEnvelope`.
     //
-    // WORDS, CONNECTIONS AND RESIDUAL CHAINS KEEP THEIRS. For those the
+    // WORDS, CONNECTIONS AND RESIDUAL CHAINS STILL MINT A TAPE. For those the
     // description is the content carrier and not a second copy of a
     // coordinate — `letters`, `rewrite` and `residual` read it as the
     // object itself. It is the SENTENCE tape that was redundant, because a
@@ -310,8 +310,8 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     //
     // `Tape ∖ Key` measured 2 parts in 10 000 IN BYTES, and that reading
     // missed all of it: certificates were 0 bytes and `cites` was 0 bytes on
-    // the fleet, so a carrier empty for an unrelated reason read as a
-    // carrier not needed. The fixtures, not the fleet, are where adjudication
+    // the deployment, so a carrier empty for an unrelated reason read as a
+    // carrier not needed. The fixtures, not the deployment, are where adjudication
     // executes today, and they are what refused.
     //
     // All three now ride `Element.receipts` — the graded nerve incidence and

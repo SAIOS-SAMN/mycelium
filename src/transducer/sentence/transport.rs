@@ -264,7 +264,7 @@ impl Form {
         // step, for every citation the form holds.
         //
         // It read 10 `REFUSE_ORPHAN_PORT` across the three courts in the
-        // first five minutes of the fleet on this layout — the defect was
+        // first five minutes of the deployment on this layout — the defect was
         // invisible before B5 because the target rode the vertex, so a
         // rebase moved the whole citation at once and there was no second
         // carrier to fall out of step.
@@ -293,7 +293,7 @@ impl Form {
             let Some(v) = self.vertices.at_mut(&k) else { continue };
             match v {
                 // EVERY MEMBER IS REGAUGED. A word vertex acting on several
-                // charts composes the map into each of their gauges: one
+                // charts composes the map into the gauge at each chart: one
                 // member is the single-chart case and reads as before.
                 Vertex::Word { acts, .. } => {
                     // The section keys are unchanged by a regauge, so they
@@ -519,7 +519,7 @@ pub fn hue_listing(t: &HueTable) -> Vec<(u8, u8)> {
 
 /// WHAT TWO MEMBERS' GAUGES AGREE ON, or the hue they send two ways.
 ///
-/// Two gauges COMPOSE where their hues do not meet, or where they meet and
+/// Two gauges COMPOSE where the two gauges' hues do not meet, or where they meet and
 /// agree: one member carrying both listings speaks for both, which is what
 /// 18.2's partial map means and what the union was written for. Where they
 /// meet and DISAGREE they are not one assignment at all — they are two, and
@@ -672,8 +672,8 @@ pub(crate) fn vertex_carriage_at(
 /// a map that moves no hue, not an absence standing in for one.
 pub(crate) fn vertex_gauge_at(v: &Vertex, chart: &crate::transducer::stalk::Invariant) -> Vec<(u8, u8)> {
     match v {
-        // A Rebased vertex keeps `of`'s hue map at each chart, so both kinds
-        // answer from their own fibre.
+        // A Rebased vertex keeps `of`'s hue map at each chart, so each kind
+        // answers from its own fibre.
         Vertex::Word { .. } | Vertex::Rebased { .. } => match v.acting_on(chart) {
             Some(a) => a.gauge.clone(),
             None => Vec::new(),

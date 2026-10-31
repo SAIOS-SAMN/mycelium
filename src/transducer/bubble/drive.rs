@@ -269,7 +269,7 @@ impl Contemplation {
         // word's chart: every bubble holding a vortex of a carried rotor's
         // class is asked, whatever chart it covers. The symmetries the
         // collapse kept join this path's adjunction candidates — an orbit that
-        // admitted two discharges admits their difference, a rotor the mind
+        // admitted two discharges admits the discharges' difference, a rotor the mind
         // measured (Expansion 4, 37.7).
         {
             let chart = stalk::invariant_of(word);
@@ -348,7 +348,7 @@ impl Contemplation {
                             }
                             // TC1 — the merge, and a spoken component's
                             // leaving, move degrees: the changed components
-                            // truncate to their 2-core.
+                            // truncate to the 2-core.
                             let mut touched = self.touched_by(&vertices);
                             if let Some(merged) = self.merge(&vertices) {
                                 touched.push(merged.as_bytes().to_vec());

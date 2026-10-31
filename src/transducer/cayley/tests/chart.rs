@@ -25,7 +25,7 @@ fn rapidity_of(b: &Mv) -> Option<BigRational> {
 
 /// Every versor the tree writes — a dilation, a translation with a frame
 /// component, the 90° turn, the (3,4,5) rotor, a turn onto the frame
-/// axis, and their composite, which carries a grade-4 part — reads its
+/// axis, and the composite of all of these, which carries a grade-4 part — reads its
 /// bivector by grade and is read back from it projectively; the bivector
 /// read back off the derived versor is coefficient-exact.
 #[test]

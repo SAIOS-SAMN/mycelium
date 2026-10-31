@@ -54,7 +54,7 @@ fn hear_teaches_screw_and_its_mode_words() {
 
 /// A WORD IS THE PRODUCT OF ITS MODE-WORDS: a screw — the 90° turn carried
 /// along the axis it turns about — reads as two, a periodic turn and a
-/// nilpotent slide, and their product, in either order, is the screw.
+/// nilpotent slide, and the two factors' product, in either order, is the screw.
 #[test]
 fn read_splits_screw_into_commuting_mode_words() {
     let along = cga::translator_at(&[q(0, 1), q(0, 1), q(1, 1)]);

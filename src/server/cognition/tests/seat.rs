@@ -234,7 +234,7 @@ fn seat_listing_keys_by_sub_origin_with_epoch() {
 /// THE RELAY'S READING COUNTS EVERY POST: per domain with a reserve, filed
 /// by kind and refused by reason; a domain with no reserve and a frame that
 /// names none each counted apart; the standing — epoch, sequence, listings,
-/// boxes, pieces and their bytes — as the relay holds it; and the reading
+/// boxes, pieces and the pieces' bytes — as the relay holds it; and the reading
 /// reads back whole through the observer's codec.
 #[test]
 fn relay_reading_counts_filed_and_refused_posts() {

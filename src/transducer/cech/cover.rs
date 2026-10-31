@@ -129,7 +129,7 @@ impl<C: Coefficient> Cover<C> {
     }
 
     /// A CELL READ BY THE COCYCLE CONDITION: every triangle among its
-    /// vertices, in their coordinates' order, closes — or the first that
+    /// vertices, in the vertices' coordinate order, closes — or the first that
     /// does not, with its holonomy. A cell of one edge is filled where the
     /// edge stands; a vertex alone, always.
     pub fn fill(&self, cell: &[Vec<u8>]) -> CellReading<C> {

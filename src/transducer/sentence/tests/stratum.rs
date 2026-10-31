@@ -23,7 +23,7 @@ fn turn_90() -> Word {
 /// The schema parses the boundary out of the bytes the writer wrote, so
 /// this is a fact about the two writers and not about a length anyone
 /// remembered: if either changes its framing, this fails here instead of
-/// silently emptying a fiber on a fleet.
+/// silently emptying a fiber on a deployment.
 #[test]
 fn class_key_leads_with_rotor_class() {
     let w = turn_90();

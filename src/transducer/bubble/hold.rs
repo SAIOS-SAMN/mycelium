@@ -19,7 +19,7 @@ use crate::transducer::stalk;
 /// - WITHIN EACH MOTION: where it carries both a translation and a
 ///   transversion — what is carried forward meeting what is carried back
 ///   through the inversion — the breath of the two (`cga::breath`);
-/// - ACROSS ITS MOTIONS: every pair of the motions' generators (their exact
+/// - ACROSS ITS MOTIONS: every pair of the motions' generators (the generators' exact
 ///   Cayley bivectors) breathed against each other (`cga::breathe`), each
 ///   pair once, in the form's own order.
 ///
@@ -149,7 +149,7 @@ impl Contemplation {
             // vertex beside its hearing, and unwound with it when the mind
             // lets the thought go: where a motion it holds carries what it
             // takes forward (a translation) and what it carries back through
-            // the inversion (a transversion), their commutator's orthogonal
+            // the inversion (a transversion), the two motions' commutator's orthogonal
             // part twists (`cga::breath`).
             for b in &breaths {
                 let [pinched, null, boost] = b.by_kind();

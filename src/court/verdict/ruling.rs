@@ -12,7 +12,7 @@ pub enum Ruling {
     /// false speech, the failed axis named.
     Slashed(&'static str),
     /// The federated view and the spoken view are one sheaf: the Čech
-    /// obstruction on their overlap has no axis and no chain — the identity
+    /// obstruction on the views' overlap has no axis and no chain — the identity
     /// element rides the arm. Cross-instance consilience, the strongest
     /// confluence witness.
     Consilient(Element),
@@ -132,7 +132,7 @@ pub fn rule(
             // ČECH ON THE OVERLAP: the federated view and the spoken view
             // of one object are two charts. When the held view is a group
             // element, the change of view g = spoken ∘ held⁻¹ is the
-            // transition on their overlap; a third germ on the same stalk
+            // transition on the charts' overlap; a third germ on the same stalk
             // fibre closes the triangle and the composite holonomy H is the
             // obstruction. Identity glues (one sheaf: the views are the
             // coboundary of one assignment); a non-identity element is the
@@ -150,7 +150,7 @@ pub fn rule(
                 [] => None,
                 _ => cech::transition(held, spoken),
             };
-            // STD1 — a closure whose counts pass their carrier is refused by
+            // STD1 — a closure whose counts pass the carrier is refused by
             // name, never read as the transition it could not close.
             let group_view = match group_view {
                 Some(g) => match unique_other_on_fiber(stalks, index, federation, spoken, addr) {
@@ -159,7 +159,7 @@ pub fn rule(
                         match (cech::transition(spoken, z), cech::transition(z, held)) {
                             (Some(g_sz), Some(g_zh)) => match cech::holonomy(&g, &g_sz, &g_zh) {
                                 Some(h) => Some(h),
-                                None => return Ruling::Slashed("the closing holonomy's counts pass their carrier"),
+                                None => return Ruling::Slashed("the closing holonomy's counts pass the carrier"),
                             },
                             _ => Some(g),
                         }

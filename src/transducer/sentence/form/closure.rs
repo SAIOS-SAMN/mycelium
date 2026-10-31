@@ -165,7 +165,7 @@ impl Form {
         self.coheres() && self.remainder.is_empty() && self.demand_vertices().next().is_none()
     }
 
-    /// The demand vertices of this sentence, with their coordinates (50.5):
+    /// The demand vertices of this sentence, each with its coordinates (50.5):
     /// the fibre at the Demand kind's own stratum ([`Form::demands`]), one
     /// per (kind, chart), never a whole-carrier read with a filter.
     pub fn demand_vertices(
@@ -180,7 +180,7 @@ impl Form {
     /// One more than the deepest glued vertex; zero where none is glued.
     ///
     /// READS THE GLUED KIND'S OWN STRATUM of the vertex carrier (AT1): the
-    /// vertices are keyed by their coordinates, and every citation opens
+    /// vertices are keyed by the vertices' coordinates, and every citation opens
     /// with the Glued tag.
     ///
     /// `None` where a glued vertex stands at the carrier's last depth, so one

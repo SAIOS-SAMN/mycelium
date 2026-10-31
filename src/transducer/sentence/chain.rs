@@ -1,6 +1,6 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 18.2, 6 — THE CHAIN: its links and their incidence, the citations and
+//! 18.2, 6 — THE CHAIN: its links and the links' incidence, the citations and
 //! punctures a deconstruction produces, the residual no word speaks, and the
 //! replay that measures what a proof leaves.
 
@@ -307,8 +307,8 @@ pub fn replay_at<'a>(word_at: &impl Fn(&[u8]) -> Option<&'a Element>, cites: &[C
     replay_operators(&ops, target)
 }
 
-/// The key of a section's site: a section's sites stand in frame `0`, their
-/// own (16.5), and the key is that site's own ([`Site::key`], `n` first). A
+/// The key of a section's site: a section's sites stand in frame `0`, the
+/// sites' own (16.5), and the key is that site's own ([`Site::key`], `n` first). A
 /// site of any other base is keyed by `Site::key` directly.
 pub(crate) fn section_site_key(r: i64, c: i64) -> Vec<u8> {
     crate::transducer::base::Site::from((r, c, 0)).key()
@@ -407,7 +407,7 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[Link]) -> Keyed<Vec<(u8, u
 }
 
 /// THE SEAM CONDITION — the cocycle on overlaps. Where two citations carry
-/// their words onto the same target site, they must speak the same
+/// the words they cite onto the same target site, they must speak the same
 /// transition; the links where they disagree are the seam defect, located
 /// exactly. A sentence with no overlap has no seam.
 pub fn seam_defect_at<'a>(
@@ -474,7 +474,7 @@ pub fn verify_at<'a>(
 }
 
 /// VERIFY AN UTTERANCE as spoken: the operators the citations carry are
-/// replayed against the target and checked on their seams, with no copy
+/// replayed against the target and checked on the seams, with no copy
 /// of any word fetched. The hearer's lexicon is consulted only afterward,
 /// to name what was verified.
 pub fn verify_utterance(cites: &[crate::anastome::dialogue::CiteWire], target: &[Link]) -> Vec<Link> {
@@ -487,7 +487,7 @@ pub fn verify_utterance(cites: &[crate::anastome::dialogue::CiteWire], target: &
     out
 }
 
-/// THE HOLONOMY of a cycle of transports: their product around the orbit.
+/// THE HOLONOMY of a cycle of transports: the transports' product around the orbit.
 /// WHAT LOCATING A BODY RETURNS: the citation if the atlas holds the word,
 /// the puncture if it holds the geometry under another assignment, and the
 /// stratum's multiplicity — the measurement, never a search width (A8).
@@ -524,7 +524,7 @@ pub fn is_flat(cycle: &[Versor]) -> bool {
 /// and becomes strictly interior, and contact needs its own primitive.
 ///
 /// It is the shared boundary that is not a face. Two maximal regions CAN
-/// meet at an edge or a corner of their cubes without merging, because
+/// meet at an edge or a corner of the regions' cubes without merging, because
 /// neither is in the relation that formed them, so this is exactly the
 /// relation the six face-adjacencies leave available.
 ///

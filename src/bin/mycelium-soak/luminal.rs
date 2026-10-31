@@ -1,6 +1,6 @@
 // 78.77 — INSTRUMENTATION ONLY (§8.1): L1–L6 over a corpus slice. Per task:
 // the rule extracted, spoken over its training pairs, and what it left unsaid
-// read as light (`family::luminal`) — rays with their phase, period and
+// read as light (`family::luminal`) — rays, each with its phase, period and
 // waveform, interfaces, captured standing waves, cavity billiards — and the
 // remainder scene's extraction read by the cover's own tally (L6) and its
 // demands by kind. Printed as data; nothing is decided.

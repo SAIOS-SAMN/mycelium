@@ -1,6 +1,6 @@
 // 78.160 P1 — THE PRESENTATION BY HOLES, proved by the algebra on real
 // percepts: a held slide cites a slide along its own hole by the integer
-// ratio of their counts, and their power composes to the motion exactly; a
+// ratio of the two slides' counts, and the held slide's power composes to the motion exactly; a
 // motion on a hole nothing holds stands as residue and composes to nothing.
 
 use crate::transducer::address::Address;

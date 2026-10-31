@@ -75,7 +75,7 @@ impl Entity {
             return;
         };
         // One cover for the act and the demand: both chains' charts, each
-        // once, in their own key order.
+        // once, in key order.
         let mut cover: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         for ch in &c.chains {
             for k in ch {

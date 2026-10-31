@@ -54,7 +54,7 @@ pub fn acting_of_form(f: &Form) -> Vec<Transport> {
     out
 }
 
-/// The same reading of a held element: a form's Word vertices with their
+/// The same reading of a held element: a form's Word vertices with the vertices'
 /// members, or a connection's letters with the carriage and sigma that
 /// connection was spelled at.
 pub fn acting_of_element(e: &Element) -> Vec<Transport> {
@@ -84,9 +84,9 @@ pub fn acting_of_element(e: &Element) -> Vec<Transport> {
 /// `by_moduli`: `[1, moduli]`, a statement about the BODY A WORD ACTS ON.
 /// Both charts are well formed and they answer different questions, so the
 /// index was filed under the answer to one and read under the answer to the
-/// other. Measured across the fleet: `crystal.on_axis` answered 0 on 123 of
+/// other. Measured across the deployment: `crystal.on_axis` answered 0 on 123 of
 /// 123 reads, and 75 of 76 admits filed on no axis at all because the forms
-/// admitted are closed — `[2, 0, 0, 0, 0]`, rank zero, no orbits — so their
+/// admitted are closed — `[2, 0, 0, 0, 0]`, rank zero, no orbits — so the forms'
 /// words occupy no coordinate.
 ///
 /// A word is filed where it ACTS. That is the question the pivot asks: not
@@ -195,7 +195,7 @@ fn acted_class(t: &Transport) -> Option<ClassVector> {
     ClassVector::read(&t.word, t.carriage.clone(), CycleType::of(&t.gauge))
 }
 
-/// Admit words to the axis index under every coordinate their class vector
+/// Admit words to the axis index under every coordinate the words' class vector
 /// occupies on `chart`.
 ///
 /// The class is read from the whole assignment. This read
@@ -341,7 +341,7 @@ pub fn versor_chart_of(
 /// read is the stratum, exactly as the rotor chart's is (rule 2, rule 6).
 ///
 /// The lane tag leads because the four covers are independent (law 5) and
-/// their keys must not collide: a class occupying placement on `𝒮` and a
+/// the covers' keys must not collide: a class occupying placement on `𝒮` and a
 /// class occupying hue on `𝒢` are two members of two covers, never one.
 /// `𝒽` keeps `versor_chart_of`'s leading 0 and its conjugacy axes
 /// unchanged, so nothing filed under it moves.
@@ -520,7 +520,7 @@ fn class_of_vertex(
 /// the class does not occupy is absent from the answer: a member of no
 /// basis, never a member of an empty one.
 ///
-/// ONE READER. Admission, retraction and the meet read each had their own
+/// ONE READER. Admission, retraction and the meet read each had its own
 /// copy of the `match lane { 3 => …, _ => … }`, which is three chances for
 /// a generator to be filed under one key and looked up under another.
 pub fn lane_charts_of(

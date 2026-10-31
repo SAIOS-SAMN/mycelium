@@ -138,7 +138,7 @@ pub(crate) fn tait_bryan(q: &Quat) -> Option<[HalfAngle; 3]> {
 
 /// The pair block `P_k` from the two factors' half-angles on axis `k`, as
 /// the two commuting plane rotors it is the product of. The factors' scales
-/// are matched by the square root of their norms' ratio; `None` when that
+/// are matched by the square root of the factors' norm ratio; `None` when that
 /// root is irrational — the block has no rational plane rotors.
 pub(crate) fn pair_rotors(k: usize, plus: &HalfAngle, minus: &HalfAngle) -> Option<(Rotor, Rotor)> {
     let (cp, sp) = (&plus.c, &plus.s);

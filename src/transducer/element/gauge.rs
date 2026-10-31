@@ -7,8 +7,8 @@
 
 use super::*;
 
-/// THE GAUGE PROFILE of an assignment: its transition classes with their
-/// counts reduced to proportions (the counts divided by their common
+/// THE GAUGE PROFILE of an assignment: its transition classes with the classes'
+/// counts reduced to proportions (the counts divided by the counts' common
 /// factor), so a dilation by ρ — which scales every count by ρ² — has the
 /// same profile. Sorted; one run-length pass over the sorted assignment.
 pub fn gauge_profile(asg: &[(u8, u8)]) -> Vec<((u8, u8), u32)> {
@@ -215,7 +215,7 @@ pub fn orbit_period(sigma: &[(u8, u8)], base: &[(u8, u8)]) -> Result<u64, Period
 /// (78.43(2)): the hue map carrying the base onto the section must be one
 /// power `σᵗ` on every hue the base carries, `t ≢ 0` modulo the period.
 /// Each moving hue gives `t` modulo its cycle's length (its offset along the
-/// cycle); the congruences must agree (their common solution, read one
+/// cycle); the congruences must agree (the congruences' common solution, read one
 /// cycle at a time over at most that cycle's length); a fixed hue must stay.
 /// `false` where σ has no period on the base.
 pub fn on_orbit(sigma: &[(u8, u8)], base: &[(u8, u8)], section: &[(u8, u8)]) -> bool {
@@ -409,7 +409,7 @@ impl Element {
     /// the charge's key: none is no such gauge, one is the citation, many is
     /// multiplicity on the fibre. One read; the axis is never read whole.
     ///
-    /// THE ASSIGNMENTS THEMSELVES, never their positions (78.43(1)): a
+    /// THE ASSIGNMENTS THEMSELVES, never the assignments' positions (78.43(1)): a
     /// position in `assignments()` is "the third thing seen", and a reader
     /// that held one had to look the assignment up after. The table holds
     /// each assignment under its charge, and no reader holds a position.

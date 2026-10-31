@@ -1,7 +1,7 @@
 // 78.152 TU-2..4 — THE KEEPERS AS ONE COURT HOLDS THEM: its own line of
 // readings and each other keeper's, verified on admission (signature, parent
 // chain, cites); the final point, on two keepers' verified readings (TU-3);
-// the residual their disagreement leaves on the keeper triangle (TU-4).
+// the residual the keepers' disagreement leaves on the keeper triangle (TU-4).
 
 use super::point::{Origin, TPoint};
 use super::reading::{Cited, Tick, TickReading};

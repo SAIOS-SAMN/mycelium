@@ -5,7 +5,7 @@
 //
 //! THE ORDER IS DERIVATION. The founding principles (`founding.rs`) are
 //! first: HARMONIC (a turn returns), LUMINAL (null flux has no length) and
-//! HOLONOMIC (a loop's composite is its content), with their corollaries
+//! HOLONOMIC (a loop's composite is its content), with the three's corollaries
 //! (every dimension is an exponent; no constant) and the physics still
 //! undefined, named. Every other entry is read from one of them:
 //!

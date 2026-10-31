@@ -64,7 +64,7 @@ pub struct TaskEnvelope {
     pub id: [u8; 32],
     /// The TRAIN pairs: the family the rule is extracted from.
     pub train: Vec<crate::transducer::family::TrainPair>,
-    /// The TEST inputs. Their outputs are what a solve claims; the registry
+    /// The TEST inputs. The outputs for these inputs are what a solve claims; the registry
     /// never sends them.
     pub tests: Vec<Vec<Vec<u8>>>,
 }
@@ -222,7 +222,7 @@ pub struct SolveRefusal {
 /// `[code][μ 4×u64]` then, for a refusal, `[kind u8][reason, length-prefixed]`.
 /// The tag a paid verdict's modes ride behind the receipt under: no
 /// obstruction kind (78.9's are below seven) is it, so a refusal and the
-/// modes are told apart by their first byte.
+/// modes are told apart by the first byte.
 pub const SOLVE_MODES_TAG: u8 = 0xFE;
 
 /// The receipt and, behind it, the refusal where one was refused, or — paid —

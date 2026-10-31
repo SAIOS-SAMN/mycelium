@@ -27,7 +27,7 @@ fn planes() -> [(Mv, FlowKind); 3] {
 }
 
 /// ONE LAW: two points `t₁`, `t₂` of one flow compose to `(t₁ + t₂)/(1 +
-/// k t₁t₂)`, `k = B²` — and that is the geometric product of their versors,
+/// k t₁t₂)`, `k = B²` — and that is the geometric product of the two points' versors,
 /// exactly, on every kind. On the null plane it is plain addition: 1/7 then
 /// 2/5 is 19/35, the white-hole slivers' own law.
 #[test]

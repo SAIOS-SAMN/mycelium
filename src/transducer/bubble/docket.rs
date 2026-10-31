@@ -5,7 +5,7 @@
 //
 //! An entry is a citation by coordinates, never a copy (78.22): a held class
 //! (`Cite::Class`) or a demand (`Cite::Demand`), each with its COVER — the
-//! charts its thoughts stand on. Entries are WRITTEN in their own key order
+//! charts its thoughts stand on. Entries are WRITTEN in the entries' own key order
 //! (rule 15, nothing chosen). The next orbit TAKES them by the partial order
 //! of containment: an entry whose cover contains another's wraps it, so its
 //! answer transports to every ring beneath; the outermost first, key order
@@ -216,7 +216,7 @@ impl Contemplation {
     }
 
     /// THE ORBIT CLOSED: this orbit's entries MERGE into the open questions,
-    /// by their coordinates, and nothing leaves by replacement (R1).
+    /// by the entries' coordinates, and nothing leaves by replacement (R1).
     pub fn docket_sealed(&mut self) {
         for (k, c) in std::mem::take(&mut self.docket).scoped() {
             self.docket_open.insert(&k, c.clone());
@@ -226,7 +226,7 @@ impl Contemplation {
 
     /// THE CLASS TAKER, at the first stroke after an orbit closed: in
     /// `docket_order()`, each held class's thoughts — those standing on its
-    /// cover's charts — are marked dirty with its rotor in their horizon, so
+    /// cover's charts — are marked dirty with its rotor in each thought's horizon, so
     /// the expand ring reaches them first. The horizon's own order is
     /// untouched and nothing reorders the pivot's reading. An entry whose
     /// cover did not read has no thoughts to mark (its enclosure owed). The
@@ -320,7 +320,7 @@ impl Contemplation {
     /// cover names no chart a held idea stands on has carried no flux for
     /// that orbit: nothing in the mind can answer it through a thought, a
     /// free face (TC1), and it lapses, counted. This orbit's new entries are
-    /// given their orbit; an entry whose cover did not read is kept, its
+    /// given the entries' orbit; an entry whose cover did not read is kept, its
     /// enclosure owed (its charts cannot be asked). The plan is then bounded
     /// by the charts the live ideas stand on, never by what was ever asked.
     pub fn docket_fold(&mut self) {

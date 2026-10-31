@@ -1,7 +1,7 @@
 // MU-CLIENT §4.3 — THE BREATH AND ITS PINCHES, APPLIED: a held form breathes
 // within each motion (what it takes forward, a translation, against what it
 // carries back through the inversion, a transversion) and across its motions
-// (every pair of their generators), and every pinch twists; a form whose
+// (every pair of the motions' generators), and every pinch twists; a form whose
 // motions commute breathes nothing.
 
 use crate::network::nerve::Keyed;
@@ -61,7 +61,7 @@ fn breaths_of_pinches_motion_with_translation_and_transversion() {
 }
 
 /// ACROSS MOTIONS: one act translates and another transverses — neither
-/// breathes alone — and the two breathe against each other, their
+/// breathes alone — and the two breathe against each other, the acts'
 /// generators' commutator pinching in the plane of the two.
 #[test]
 fn breaths_of_pinches_across_two_motions() {

@@ -1,7 +1,7 @@
-// §8.1, audit of Phase N — THE OBSERVER: what the live fleet reads about
+// §8.1, audit of Phase N — THE OBSERVER: what the live mesh reads about
 // itself, held as whole typed readings and served to a diagnostic console.
 //
-//! The fleet printed its instruments as prose and dropped the counters
+//! The mesh printed its instruments as prose and dropped the counters
 //! behind them; a question about a running voice was answered by reading
 //! its log. This module holds the readings themselves — the allocator over
 //! the source's own clock (what is held), and a court's standing — keyed

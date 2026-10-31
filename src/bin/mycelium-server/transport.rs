@@ -109,8 +109,8 @@ pub(crate) fn read_frame(s: &mut TcpStream) -> Option<Frame> {
     // A SPEAKER THAT CARRIED A POINT IS ANSWERED WITH ONE; one that carried
     // none is answered as it spoke. A kernel still on a mycelium before 78.152
     // refuses a pointed frame whole, so the door's point rides only to a
-    // speaker that showed it reads one (2026-10-09: the kernels re-vendor on
-    // their own time, and the hyphae must not cut them off meanwhile).
+    // speaker that showed it reads one (2026-10-09: each kernel re-vendors on
+    // its own time, and the hyphae must not cut them off meanwhile).
     note_pointed(s, point.is_some());
     crate::tshelf::heard_at_door(point);
     Some(frame)
@@ -262,7 +262,7 @@ pub(crate) fn read_budgeted(s: &mut TcpStream, buf: &mut [u8], stall: usize) -> 
                 // core is ready, so the whole poll budget passed in
                 // microseconds and a peer whose listener had merely not
                 // been scheduled was counted SILENT — which is what every
-                // court read of every peer on the epoch-10 fleet, while
+                // court read of every peer on the epoch-10 deployment, while
                 // each of them pinned a core in its own idle loop.
                 std::thread::sleep(mycelium::physics::stroke_floor());
             }

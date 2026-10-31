@@ -2,7 +2,7 @@
 //
 //! 13, 25 — THE CONTEMPLATION: the Čech complex over the thought bubbles a
 //! mind holds. Vertices are bubbles; a k-simplex is a (k+1)-fold overlap
-//! of their covers with shared remainder volume.
+//! of the bubbles' covers with shared remainder volume.
 
 
 pub mod contemplation;

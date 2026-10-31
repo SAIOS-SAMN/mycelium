@@ -4,7 +4,7 @@
 //! A citation that is coordinates is flat in the size of the form it
 //! cites; one that copies the form grows with it. This reading is the
 //! measurement that tells the two apart: for each carrier, by the kind it
-//! is filed under, how many records, their bytes, and the largest one.
+//! is filed under, how many records, the records' bytes, and the largest one.
 //! Awards and deltas are measured at the question from what the court or
 //! the voice holds now; frames are counted where the wire writes them.
 
@@ -157,7 +157,7 @@ impl Carriage {
     }
 }
 
-/// Per act tag: frames written, their bytes, the largest.
+/// Per act tag: frames written, the frames' bytes, the largest.
 static FRAMES: [[AtomicU64; 3]; 256] = [const { [const { AtomicU64::new(0) }; 3] }; 256];
 
 /// Count one frame the wire wrote, by the act tag its body opens with.

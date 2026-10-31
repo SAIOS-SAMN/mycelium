@@ -90,10 +90,10 @@ pub fn encode_docket_reply_paged(
             eprintln!("  docket word refused: its address cannot be framed");
             break;
         }
-        // STD1 3c — a word whose element or voices pass their fields ends the
+        // STD1 3c — a word whose element or voices pass the fields' bounds ends the
         // page here, as the budget does: nothing is skipped past.
         if put_bytes(&mut item, &d.elem).and_then(|()| put_u32_count(&mut item, d.voices.len())).is_none() {
-            eprintln!("  docket word refused: its element or voices pass their fields");
+            eprintln!("  docket word refused: its element or voices pass the fields' bounds");
             break;
         }
         for v in &d.voices {

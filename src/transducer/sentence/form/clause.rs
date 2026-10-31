@@ -3,10 +3,10 @@
 //! 78.143 — THE RULE LANGUAGE GROWS: SELECT, REGION, CREATE, COUNT, COMPARE.
 //!
 //! A word vertex says "every body of this exact chart moves by one motion and
-//! has its hues remapped" (COGNITION.md §2.2). A CLAUSE says it of the bodies
+//! has its hues remapped" (MU-COGNITION.md §2.2). A CLAUSE says it of the bodies
 //! a PREDICATE selects — a typed predicate over each perceived body's own
 //! exact coordinates — and its act may RECOLOUR or CARRY them, FILL a region
-//! their boundary encloses, CREATE cells relative to them (a line to the
+//! the selected bodies' boundary encloses, CREATE cells relative to them (a line to the
 //! border, a template stamped onto a seed), or CROP the output to one of
 //! them. Counts and comparisons are predicates over a measured exact
 //! coordinate, in the order the rule NAMES, ties included (Concordance 1.10):
@@ -189,7 +189,7 @@ pub enum Act {
     /// A hue map on the selected bodies' cells; a hue sent to 0 is erased.
     Recolour(Vec<(u8, u8)>),
     /// The selected bodies carried by a versor of `Cl(4,1)(ℚ)` — taken from
-    /// where they stand, painted where their compartments land — with a hue
+    /// where they stand, painted where the bodies' compartments land — with a hue
     /// map on what lands.
     Carry { motion: Mv, about: About, gauge: Vec<(u8, u8)> },
     /// CREATE: the region's cells painted.
@@ -237,7 +237,7 @@ pub enum Act {
     /// blocks of the input's frame, block `i` (in the lattice's order) the
     /// input under the square's symmetry `turns[i]`: 0 itself, 1 mirrored
     /// across its columns, 2 across its rows, 3 a turn of 180°, 4 a turn of
-    /// 90°, 5 of 270°, 6 the transpose, 7 the anti-transpose. A quarter turn,
+    /// 90°, 5 of 270°, 6 the transpose, 7 the anti-transpose. A 90° turn,
     /// a transpose of an input that is not square is no block of its frame.
     Tile { rows: u8, cols: u8, turns: Vec<u8> },
     /// CREATE, BETWEEN, ROUND A CORNER (ruled 2026-10-20:
@@ -251,7 +251,7 @@ pub enum Act {
     /// A REACTION — THE IMPULSE (ruled 2026-10-25): each selected body
     /// carried along the unit ray `ray` until its next step would leave the
     /// grid or, at `Stop::Contact`, meet a painted cell; the bodies nearest
-    /// their stop first, so a stack settles as it lands. Its extent is read
+    /// the stop first, so a stack settles as it lands. Its extent is read
     /// off the meet, so it holds where the distance differs pair to pair —
     /// a fixed carriage fits each pair and fails the held-out one.
     Slide { ray: (i8, i8), stop: Stop },

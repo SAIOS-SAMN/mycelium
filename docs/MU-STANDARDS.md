@@ -120,7 +120,7 @@ assigns that value at that point (the empty sum is 0, the empty product
 qualifies: a division by zero is never 0 or 1 unless the law names that
 value there. Everything else is a refusal by name. These rules bind every
 line a developer writes and never limit what a mind may count or rank
-([CONCORDANCE.md](CONCORDANCE.md) 1.10).
+([MU-CONCORDANCE.md](MU-CONCORDANCE.md) 1.10).
 
 2.5 **Lanes.** μ⃗ lanes are addressed by the named index constants
 (`LANE_S`, `LANE_G`, `LANE_T`, `LANE_H`), never a bare `[2]`.
@@ -151,7 +151,7 @@ stands only under an `#[expect]` naming where its bound comes from. A
 decimal approximation of an irrational is not served anywhere: in a value,
 a printed reading, a doc line or a test name. A turn is written in degrees
 where exact, otherwise as its rational point. No structure is projected to
-a scalar ([ANTI_FLATTENING_LAW.md](ANTI_FLATTENING_LAW.md)).
+a scalar ([MU-ANTI-FLATTENING.md](MU-ANTI-FLATTENING.md)).
 
 ## 3. Tests
 
@@ -356,7 +356,7 @@ the gate's exit in the message. "Lint clean" alone is not green.
 
 6.2 **A review reads the code.** A reviewer reads every changed file
 whole and checks the wiring (every new reader has a production caller and
-a producer feeding it, so nothing landed is a type, a line or a fixture
+a producer feeding it, so nothing built is a type, a line or a fixture
 standing in for a mechanism), the coding rules and the review checklist,
 and the carrier the change writes into and reads from: a write onto a
 retired carrier, or a positional read of a keyed one, is returned.
@@ -399,7 +399,7 @@ either.
 9.1 **Specifications govern behaviour.** The semantics of a chapter (what
 a move does, what a carrier holds, what the economy pays, what time is)
 change only by an amendment to the governing document (`MU-RECURSION.md`,
-`MU-CLIENT.md`, `MU-ECONOMY.md`, `XSEPTUM.md`), made before or with the
+`MU-CLIENT.md`, `MU-ECONOMY.md`, `MU-XSEPTUM.md`), made before or with the
 code. A commit that changes specified behaviour otherwise is returned,
 however green.
 

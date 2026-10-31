@@ -101,7 +101,7 @@ fn fixtures() -> Vec<(String, Mv)> {
 
 /// THE HARVEST: the distinct versors the corpus's own forms carry, on the
 /// faces (each member pair's carriage and 50.3 edge) and on the members.
-/// Read in key order of their canonical bytes, so the slice is the corpus's
+/// Read in key order of the versors' canonical bytes, so the slice is the corpus's
 /// content and not the order the extractor happened to meet them in.
 fn harvest() -> Vec<(String, Mv)> {
     let corpus = crate::arc::corpus("training");
@@ -147,7 +147,7 @@ fn harvest() -> Vec<(String, Mv)> {
     held.scoped().take(HARVEST).enumerate().map(|(i, (_, m))| (format!("corpus{i}"), m.clone())).collect()
 }
 
-/// EVERY READING, one line each, over the inputs and their consecutive
+/// EVERY READING, one line each, over the inputs and the inputs' consecutive
 /// pairs. The operations are the carrier's (sum, product, reverse, grade,
 /// wedge, inverse, sandwich, the canonical writing) and the ones written on
 /// it (class invariants, the two periods, the split, Cayley, the even

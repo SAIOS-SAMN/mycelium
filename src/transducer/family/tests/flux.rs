@@ -1,5 +1,5 @@
 // 78.91 — THE MIND PERCEIVES WHAT IS NO MOTION AS FLUX (`family/flux.rs`):
-// the percept's non-motion demands read as the fluxes their links carry and
+// the percept's non-motion demands read as the fluxes the demands' links carry and
 // put to the law register; motion demands are not its to read.
 
 use crate::physics::laws::Flow;

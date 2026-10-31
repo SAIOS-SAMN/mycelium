@@ -140,7 +140,7 @@ pub(crate) fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel
 
 /// EVERY term CARRYING the footprint on this scene (eval ⊇ footprint),
 /// ordered by the TERM — node count, then its own A21 key — and capped. Exact terms rank
-/// first automatically (their eval IS the footprint). A single pair
+/// first automatically (an exact term's eval IS the footprint). A single pair
 /// underdetermines its anchor; the train FAMILY determines it jointly: the
 /// binding term is the first member common to every pair's set — the tightest
 /// common carrier, exact when an exact one is shared (deduction by

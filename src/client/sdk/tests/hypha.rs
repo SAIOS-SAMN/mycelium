@@ -66,7 +66,7 @@ fn held_court() -> (String, std::sync::mpsc::Receiver<dialogue::SpeechAct>, std:
 fn speak_word_goes_on_while_court_is_slow() {
     let (court, speeches, release) = held_court();
     let mut mind = Entity::open(&court, Kernel::named("unwaiting"));
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
     let said = from_connection(&Word::from_letters(&[(q, false)]), &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0]).expect("a connection");
     assert!(matches!(mind.speak_word(&said), Ok(Utterance::Spoken)), "said, and the field goes on");
     // MU-CLIENT §4.4(4) — it leaves when the mind's own field comes round.
@@ -92,7 +92,7 @@ fn speak_word_goes_on_while_court_is_slow() {
 fn wind_reads_occluded_wire_again() {
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("occluded"));
     // It holds language, so nothing else makes its language due again.
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
     let taught = from_connection(&Word::from_letters(&[(q, false)]), &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0]).expect("a connection");
     assert!(mind.absorb_taught(&taught.to_bytes().expect("the record writes")).is_some(), "the word is learned");
     for _ in 0..64 {

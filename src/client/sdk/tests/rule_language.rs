@@ -71,8 +71,8 @@ fn sentence_fills_enclosed_regions_a5313dff() {
     solves("a5313dff", &[Step::Select(Pred::All), Step::Region(Region::Interior), Step::Hue(vec![(0, 1)])]);
 }
 
-/// 178fcbfb — red seeds extend to the border along their column; blue and
-/// green seeds along their row, over the red.
+/// 178fcbfb — red seeds extend to the border, each along its column; blue and
+/// green seeds, each along its row, over the red.
 #[test]
 fn sentence_extends_lines_to_border_178fcbfb() {
     let line = |dr: i8, dc: i8| Step::Create(Create::Extend { ray: (dr, dc), paint: Paint::Own, stop: Stop::Border });
@@ -190,7 +190,7 @@ fn sentence_recolours_by_count_and_complement_d2abd087() {
     );
 }
 
-/// 08ed6ac7 — the bars recoloured by the rank of their height, tallest first.
+/// 08ed6ac7 — the bars recoloured by height rank, tallest first.
 #[test]
 fn sentence_recolours_by_rank_08ed6ac7() {
     let mut steps = Vec::new();

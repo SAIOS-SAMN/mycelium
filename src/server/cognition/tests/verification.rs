@@ -1,5 +1,5 @@
 // POWV — PROOF OF WORK VERIFICATION (MU-ECONOMY §5.1): the courts whose
-// replay verified a closure take their share of the release, per lane, read
+// replay verified a closure each take a share of the release, per lane, read
 // off the verifying court's strain against its reserve; the closer the
 // rest; total issuance exactly the release.
 
@@ -33,7 +33,7 @@ fn release_verified_at_rest_pays_closer_whole() {
     assert_eq!(economy.paid[crate::economy::Arm::Powv.index()], [0; 4], "no POWV row");
 }
 
-/// A STRAINED COURT AND ITS WITNESS TAKE THEIR SHARE, AND ISSUANCE IS THE
+/// A STRAINED COURT AND ITS WITNESS EACH TAKE A SHARE, AND ISSUANCE IS THE
 /// RELEASE: with the reserve spent, each verifying court is minted its
 /// share per lane as POWV, the closer the rest as POUW, the two together
 /// exactly the base the claim released, and the ledger's invariant holds.

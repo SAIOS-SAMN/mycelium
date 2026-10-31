@@ -61,7 +61,7 @@ impl Treasury {
         self.transfer(from, to, mu, anchor)
     }
 
-    /// The debit, the credit and their two rows, both read before either
+    /// The debit, the credit and the two rows, both read before either
     /// moves: a short payer or a full payee moves nothing.
     fn transfer(&mut self, from: [u8; 32], to: [u8; 32], mu: [u64; 4], anchor: Anchor) -> Result<(), Unpaid> {
         self.transfer_paying(from, to, mu, anchor, None)

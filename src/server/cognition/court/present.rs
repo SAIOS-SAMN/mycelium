@@ -5,7 +5,7 @@
 //! The court verifies and teaches; it composes nothing for the mind (law 8).
 //! What it reads is the motion the mind sent, against the presentation it
 //! already holds (`Kernel::presentation`): the holes the motion names select
-//! the generators, and the exact product of their powers is the certificate.
+//! the generators, and the exact product of the generators' powers is the certificate.
 //! A generator the mind was already taught is drag — held, free, not sent
 //! again; one it lacks is lift, and the learner pays its magnitude, as the
 //! fetch and the syllabus charge it (78.60(d)).

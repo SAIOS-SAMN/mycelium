@@ -203,8 +203,8 @@ impl Epigenome {
         self.resident.scoped().map(|(_, w)| &w.held)
     }
 
-    /// THE WORDS THE PIVOT HAS NOT REACHED, taken and cleared. Their
-    /// coordinates, not their arrival: a word is here because its
+    /// THE WORDS THE PIVOT HAS NOT REACHED, taken and cleared. The words'
+    /// coordinates, not the words' arrival: a word is here because its
     /// obstruction is undischarged, and it leaves when the pivot takes it.
     ///
     /// This replaced `genome_since(seq)` — "every word admitted at or

@@ -1,16 +1,16 @@
-# Engineering — the system as built and as specified
+# MU-ENGINEERING — the system as built and as specified
 
 > **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** the hypha and client binaries as built. No game term.
 
-Status: §1, the wire description in §4, and §5–§8 are checked against
-the v0.2.0 code. §2, §3 and the rest of §4 describe the language, the
+**Status:** overview, release 0.2.0. §1, the wire description in §4, and
+§5–§8 are checked against the code. §2, §3 and the rest of §4 describe the language, the
 court organ and the mesh at the level of their modules;
 where a part is specified and not wired, the section says so. Later
 changes are recorded in [`CHANGELOG.md`](../CHANGELOG.md); plans are in
 [`ROADMAP.md`](../ROADMAP.md). Companion documents: `MU-ECONOMY.md`,
-`MU-PRODUCT.md`, `XSEPTUM.md`, `ALPHABET.md`.
+`MU-PRODUCT.md`, `MU-XSEPTUM.md`, `MU-ALPHABET.md`.
 
 ## 1. Two binaries
 
@@ -29,7 +29,7 @@ corpus manifests (configuration) and the ledger or genome it writes
 
 ## 2. The language
 
-- **Alphabet** (`transducer/alphabet/`, `ALPHABET.md`): seventeen
+- **Alphabet** (`transducer/alphabet/`, `MU-ALPHABET.md`): seventeen
   immutable Cayley letters as exact Cl(4,0) rotors. Words are oriented
   tapes; spelling is a peel; a motion the alphabet cannot spell is a
   remainder, never a word.
@@ -107,7 +107,7 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
   - domains and tiers: `ACT_UPLINK`, `ACT_DOMAIN`, `ACT_CHALLENGE`,
     `ACT_HANDOFF`;
   - the seat surface for hosted games: `ACT_SEAT`;
-  - xSEPTUM: `ACT_EQUIVOCATION` (`MU-RECURSION.md` 47.4) is landed and the
+  - xSEPTUM: `ACT_EQUIVOCATION` (`MU-RECURSION.md` 47.4) is built and the
     rest of its range is reserved;
   - retired acts (`ACT_PERCEPT`, `ACT_GOSSIP`, `ACT_DEMAND`, `ACT_QUOTE`,
     `ACT_TEACH`, `ACT_SETTLE`, `ACT_DOCKET`, `ACT_DEMAND_ROUTED`), whose

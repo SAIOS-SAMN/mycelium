@@ -9,14 +9,16 @@ part. [CONTRIBUTING.md](CONTRIBUTING.md) covers the workflow; open an issue
 on a track to coordinate before starting.
 
 This file is the project's one plan of work: where it and an older
-document differ, this file governs. Components brought over from
+document differ on the order of work, this file governs the order of
+work; what each piece is stays with its specification
+([README › Documentation](README.md#documentation)). Components brought over from
 precursor implementations are specified in
 [`docs/MU-PRECURSORS.md`](docs/MU-PRECURSORS.md) and listed below under
 the tracks they serve.
 
 ## 1. Settlement: the xSEPTUM Note
 
-**Specified** in [`docs/XSEPTUM.md`](docs/XSEPTUM.md). Lands in
+**Specified** in [`docs/MU-XSEPTUM.md`](docs/MU-XSEPTUM.md). Lands in
 `src/anastome/dialogue/` (acts), `src/economy/` (escrow and release) and
 `src/server/cognition/` (the home's admission).
 
@@ -103,7 +105,7 @@ replay.
 
 Components from precursor implementations
 ([MU-PRECURSORS](docs/MU-PRECURSORS.md) §3.3, §3.8, §3.9), each a court
-change landed with its codec, replay and claims:
+change built with its codec, replay and claims:
 - **Named refusals in `learn_form`** (**In progress**, a defect fix):
   every vertex of a learned form is filed, refused by name, or not a word.
 - **Act parameters measured per pair:** scale, tile and reduce by the
@@ -205,14 +207,14 @@ whose answers are not taken, and bounds it.
 
 ## 11. Specification reconciliation
 
-[`docs/EQUATIONS.md`](docs/EQUATIONS.md) records three places where the
+[`docs/MU-EQUATIONS.md`](docs/MU-EQUATIONS.md) records three places where the
 specification's wording and the code differ:
 - the Gram pair invariant;
 - MU-RECURSION 52.1's rotor example;
 - three function names in MU-RECURSION chapter 10.
 
 Each becomes one documentation commit that brings the specification to
-the code. A further documentation commit adds to `docs/EQUATIONS.md` the
+the code. A further documentation commit adds to `docs/MU-EQUATIONS.md` the
 table of refused functionals (squared-norm coherence, scored-argmin
 search, ratios of scalar residuals, ε-bands), so that no port brings them
 over ([MU-PRECURSORS §3.11](docs/MU-PRECURSORS.md#311-documentation)).
@@ -268,7 +270,7 @@ Phases:
 
 ## 13. Peer kernels on the public mesh
 
-**Specified** in [`docs/CONCORDANCE.md`](docs/CONCORDANCE.md) (1.14, 2.2,
+**Specified** in [`docs/MU-CONCORDANCE.md`](docs/MU-CONCORDANCE.md) (1.14, 2.2,
 2.10, A7).
 
 netstratum and xylarium were developed and run alongside Mycelium on its
@@ -470,7 +472,7 @@ against each other without a trusted bridge:
 ## 17. The charter of the hosted mind
 
 **Specified** in [`docs/MU-CHARTER.md`](docs/MU-CHARTER.md), with the
-kernels' duties in [`docs/CONCORDANCE.md`](docs/CONCORDANCE.md) §3a.
+kernels' duties in [`docs/MU-CONCORDANCE.md`](docs/MU-CONCORDANCE.md) §3a.
 
 Most of the charter's articles describe what the network already
 guarantees. The track builds the rest:
@@ -568,7 +570,7 @@ arithmetic: every value that crosses a boundary is exact.
 - Conformance with any kernel's implementation of the same algebra by
   decoded exact values, never by bytes (Concordance 1.4).
 
-**B. The pole state** (a named law form in `forms`, landed with the
+**B. The pole state** (a named law form in `forms`, built with the
 kernel that keeps it by the Concordance's landing rule; track 13). For a
 world whose matter is nuclides of `Z` protons and `Q` neutrons, a
 carrier's state is its pole point with its phase:
@@ -592,7 +594,7 @@ an exact object, never as a count or a ratio alone.
   state: every versor that carries `S` to itself. The throat `t = 1` is
   fixed by the vacuum inversion; a sealed kind's stabilizer is its
   symmetry. A stabilizer is held whole and never collapsed by choosing a
-  representative (ANTI_FLATTENING_LAW 11).
+  representative (MU-ANTI-FLATTENING 11).
 - **Bonds compose, and their residual is content.** A chain of bonds is
   the product of their versors. Where a closed chain composes to the
   identity the bonding is consistent; where it does not, the residual is
@@ -675,7 +677,7 @@ large galaxies:
    name above it; the format stays uncapped.
 2. **F2:** the firmament law: the counts per Z a core's firmament needs to
    hold N galaxies of a given size, derived by the kernels that keep
-   galactic cores and landed as a named form in `forms`.
+   galactic cores and built as a named form in `forms`.
 3. **F3:** the reference founding template: a named form producing counts
    per Z from hydrogen through the heavy firmament kinds, realistic across
    the light kinds and heavy enough at the core; selectable, never

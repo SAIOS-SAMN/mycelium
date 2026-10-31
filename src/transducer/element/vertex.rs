@@ -285,7 +285,7 @@ impl Element {
 
     /// THE REVERSE — the element read the other way (78.32(1)): the free
     /// involution on every factor it acts by, never an inversion. The
-    /// spatial versor and each germinated axis by their reverse (a ray, read
+    /// spatial versor and each germinated axis by its reverse (a ray, read
     /// by proportion wherever it is read); the gauge by its inverse
     /// permutation; the spelling by its inverse word. `None` where an
     /// action is no versor — a motion that does not act has no reverse
@@ -367,7 +367,7 @@ impl Element {
                 // W6: AN ADDRESS IS NEVER THE TAG ALONE, and never a tape.
                 // Both refusals this reader used to carry are gone by
                 // type: `sub` is A5's accepted chain, and a rewrite's
-                // names are citations proven to fit their prefix, refused
+                // names are citations proven to fit the rewrite's prefix, refused
                 // at `mint` where the element is built (47.1).
                 crate::transducer::address::put_key_bytes(&mut buf, &self.form_key_bytes());
                 crate::transducer::address::Address::new(buf)

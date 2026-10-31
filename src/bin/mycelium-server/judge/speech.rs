@@ -1,4 +1,4 @@
-// 26, 50.9 — ACT_SPEECH: a voice stands sentences at their home court and
+// 26, 50.9 — ACT_SPEECH: a voice stands sentences at the sentences' home court and
 // is answered an adjudication per sentence.
 //
 //! The speaker's frame is handed to the kernel whole (`hear_frame`): every
@@ -43,7 +43,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         eprintln!("  agreed: word {}… spoken by {}… attested by {}… deviation S:G:T:H {}", short(&a.word), short(&act.voice), short(&a.by), lanes.join(":"));
         // MU-CLIENT §5.5 — two constructions, one section, verified here.
         for w in &a.converged {
-            eprintln!("  converged: word {}… of {}… and word {}… of {}… close one section on their scene", short(&a.word), short(&act.voice), short(w), short(&a.by));
+            eprintln!("  converged: word {}… of {}… and word {}… of {}… close one section on the words' scene", short(&a.word), short(&act.voice), short(w), short(&a.by));
         }
     }
     let body = match heard {

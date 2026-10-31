@@ -46,7 +46,7 @@ pub struct ReceiptChain {
     /// proved. Kept where a peer's fold node is held, rebuilt at restore
     /// from the nodes.
     peer_roots: Keyed<Parent>,
-    /// FOLDED PEER RECEIPTS PROVED FROM THEIR ERA (78.65, 78.87 R2): `stamp
+    /// FOLDED PEER RECEIPTS PROVED FROM A CLOSED ERA (78.65, 78.87 R2): `stamp
     /// → chain hash`, each one a citation into a closed era whose chain was
     /// walked from it up to the peer's fold root (`prove_from_era`). A
     /// closed era returns nothing new, so a proof stands; it is not
@@ -274,7 +274,7 @@ impl ReceiptChain {
     }
 
     /// DOES A CLOSE RE-DERIVE (OK1): a node of kind `Orbit` stands after at
-    /// least one act of its orbit and carries the per-lane sum of their
+    /// least one act of its orbit and carries the per-lane sum of those acts'
     /// frames, re-derived here from the acts this ledger holds, exactly as
     /// a height is. Any other kind is not a close and passes.
     pub fn close_rederives(&self, r: &KStepReceipt) -> bool {
@@ -874,7 +874,7 @@ impl ReceiptChain {
         own_in
     }
 
-    /// OUR RECEIPT AT `k` REACHES EVERYTHING ITS PARENTS REACH: each peer
+    /// THIS CHAIN'S RECEIPT AT `k` REACHES EVERYTHING ITS PARENTS REACH: each peer
     /// node in that ancestry is first reached at `k` unless it was before.
     fn mark_reached(&mut self, k: Place, parents: &[Parent]) {
         let mut stack: Vec<Stamp> = parents.iter().map(|p| p.at).collect();

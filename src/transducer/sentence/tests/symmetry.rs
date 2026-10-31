@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! EXPANSION 4 — THE SYMMETRY A VORTEX HOLDS: two discharges of one orbit
-//! prove the orbit admits their difference, and that difference is a measured
+//! prove the orbit admits the discharges' difference, and that difference is a measured
 //! rotor rather than a losing candidate.
 
 use super::common::*;
@@ -84,7 +84,7 @@ fn symmetry_refuses_one_move_spelled_twice() {
 /// offers a held word on both sides of the chord; where both sides
 /// discharge, the two certificates name one move — the vortex would hold
 /// them as one candidate (`vortex_put` keys by the move) and `symmetry`
-/// reads their difference as the identity — so the orbit discharges on it
+/// reads the certificates' difference as the identity — so the orbit discharges on it
 /// rather than being held under a superposition of one hypothesis, which
 /// nothing could collapse. Two different words on the same axis are still
 /// two.

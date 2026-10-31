@@ -19,7 +19,7 @@ use crate::chronometry::Stamp;
 /// over others would not verify.
 const DOMAIN: &[u8] = b"mycelium world genesis v1";
 
-/// A DOMAIN'S GENESIS: its key, and its tier keys in their own ascending
+/// A DOMAIN'S GENESIS: its key, and its tier keys in ascending
 /// order, each once.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DomainGenesis {
@@ -34,7 +34,7 @@ pub struct SignedDomain {
     pub sig: [u8; 64],
 }
 
-/// Keys written canonically: their count, then each.
+/// Keys written canonically: the count, then each.
 pub(crate) fn put_keys(out: &mut Vec<u8>, keys: &[[u8; 32]]) {
     crate::transducer::address::put_key_count(out, keys.len());
     for k in keys {
@@ -55,7 +55,7 @@ pub(crate) fn take_keys(b: &[u8], p: &mut usize) -> Option<Vec<[u8; 32]>> {
 }
 
 impl DomainGenesis {
-    /// Whether the tier keys stand in their one writing: ascending, each once.
+    /// Whether the tier keys stand in the one writing: ascending, each once.
     pub fn ordered(&self) -> bool {
         self.tiers.windows(2).all(|w| matches!(w, [a, b] if a < b))
     }
@@ -548,7 +548,7 @@ pub fn decode_domain_request(b: &[u8]) -> Option<DomainRequest> {
             let bond = Bond { domain, reserve, tier, mu, nonce };
             return (p == rest.len()).then_some(DomainRequest::Bond(SignedBond { bond, sig }));
         }
-        // 78.154 — the ledger, the map and the traverse, and their reads.
+        // 78.154 — the ledger, the map and the traverse, and the reads of each.
         super::atlas::KIND_LEDGER => {
             p += 1;
             let s = super::atlas::take_ledger(domain, rest, &mut p)?;

@@ -80,7 +80,7 @@ fn admit_mode_returns_turn_and_its_inverse() {
     assert!(orbits.is_empty());
 }
 
-/// 78.73 (2), 78.75 — 𝒮'S VENT: dilations compose on one orbit by their
+/// 78.73 (2), 78.75 — 𝒮'S VENT: dilations compose on one orbit by the dilations'
 /// ratios — by two, then by three, then by a sixth returns.
 #[test]
 fn admit_mode_composes_dilations_and_returns_on_spatial() {

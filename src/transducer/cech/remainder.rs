@@ -53,8 +53,8 @@ pub struct RemainderReading {
     pub unminted: u64,
     pub unoffered: u64,
     pub unmerged: u64,
-    /// Remainders not indexed because one of their class already stands at
-    /// their chart for another word (one per class): the receptor's question.
+    /// Remainders not indexed because one of the same class already stands at
+    /// the same chart for another word (one per class): the receptor's question.
     pub coincident: u64,
     /// THE RECEPTOR (the mind): a remainder of a class standing at a nested
     /// chain (one vantage, finer), at an incomparable one with a differing

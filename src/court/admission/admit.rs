@@ -241,7 +241,7 @@ fn admit_chain(r: &KStepReceipt, ledger: &ReceiptChain) -> Admitted {
         (Some(head), _) if r.prev != Some(head) => {
             // At or below the head. The node held at that place tells a
             // duplicate from an equivocation; nothing held there is stale
-            // TO US.
+            // to this court.
             return match ledger.at(&vk, at) {
                 Some(held) if held.chain_hash == r.chain_hash => Admitted::Stale,
                 Some(held) => Admitted::Equivocation { at, held: held.chain_hash, claimed: r.chain_hash },

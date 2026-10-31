@@ -42,7 +42,7 @@
 //!
 //! HOLES ARE VOLATILE: no persisted complex punctures yet, so the tries
 //! (`persist.rs`) carry none; the first caller on a persisted complex brings
-//! their trie with it.
+//! its own trie with it.
 
 use super::*;
 
@@ -148,7 +148,7 @@ impl Complex {
     }
 
     /// The keys of the cells and holes holding every vertex of `verts` — the
-    /// meet of their stars, never a read of the degrees above (rule 1).
+    /// meet of the vertices' stars, never a read of the degrees above (rule 1).
     pub(crate) fn cofaces_of(&self, verts: &[Vec<u8>]) -> Option<Keyed<()>> {
         let mut stars = verts.iter().map(|v| self.star.get(v));
         let first = stars.next().flatten()?;

@@ -138,8 +138,8 @@ pub struct PointTower {
 /// WHAT THE LIFT READS OF A BODY BEYOND ITS INERTIA AND ITS QUARTIC (A.11:
 /// one producer, no consumer recomputes): the region's odd order on every
 /// plane (its rounds' own `(z + w)³`), and the site tower — the points
-/// centred ONCE, their harmonics of orders two, three and four and their
-/// spread on every plane, and the point tower on `n` axes. The region's
+/// centred ONCE, the points' harmonics of orders two, three and four and
+/// the points' spread on every plane, and the point tower on `n` axes. The region's
 /// orders two and four are NOT held here: they are the body's inertia and
 /// quartic, read off those fields where asked (law 12). Every relation
 /// between bodies reads these, so a body is read once however many pairs
@@ -188,7 +188,7 @@ fn order_index(m: Harmonic) -> usize {
 }
 
 /// A BODY'S EXTENT ON ONE TOWER (A.12's `r²`, the inversive extent): the
-/// region's `radius2` — its rounds' centres and their own extent — or the
+/// region's `radius2` — its rounds' centres and the rounds' own extent — or the
 /// sites' spread on the plane. `None` where the body has no points on the
 /// plane — the plane off its base, or no support — on either tower alike.
 pub fn extent(blade: &Blade, plane: (usize, usize), tower: Tower) -> Option<BigRational> {

@@ -38,7 +38,7 @@ fn transition_carries_conformal_images_for_pullback() {
     assert_ne!(positions(&l), positions(&shifted), "the raw lens sees only coordinates");
 }
 
-/// Composition of elements is the geometric product of their versors, and
+/// Composition of elements is the geometric product of the elements' versors, and
 /// it is associative.
 #[test]
 fn compose_is_the_geometric_product() {

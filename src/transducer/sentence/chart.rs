@@ -4,8 +4,8 @@
 //! atlas is written out as, the coboundary gauge between two forms, and the
 //! `SentenceRule` a form is spoken as.
 //!
-//! AT1 (ii) — THE ADDRESS IS THE ATLAS WRITTEN OUT: the vertices in their own
-//! coordinates' order, the overlaps in their own order, each by what it is and never
+//! AT1 (ii) — THE ADDRESS IS THE ATLAS WRITTEN OUT: the vertices in the order
+//! of the vertices' own coordinates, the overlaps in the overlaps' own order, each by what it is and never
 //! by a position in a list. What the key derives — the face words, the
 //! sections, the orbits — is not written.
 
@@ -16,7 +16,7 @@ use crate::transducer::alphabet::Word;
 use crate::transducer::element::{Element, Versor};
 
 impl Form {
-    /// DROP THE NAMED VERTICES, BY THEIR COORDINATES (AT1), and every overlap
+    /// DROP THE NAMED VERTICES, EACH BY ITS COORDINATES (AT1), and every overlap
     /// with an end at one of them; the cover loses the bonds whose ports went,
     /// a filed orbit or an opened axis whose chord went is dropped with it,
     /// and the orbits and fibres are re-read. The Frame is never dropped: a
@@ -134,18 +134,18 @@ pub fn rule_of_form(mut form: Form) -> SentenceRule {
 /// THE FORM'S ADDRESS: THE ATLAS WRITTEN OUT (AT1 (ii), 54.2, A21).
 ///
 /// `TAG_FORM`, the base's `n` (71.2(1)), then the vertices — each by its own
-/// record, in the order of their coordinates, which is the carrier's key
-/// order — then the overlaps in their own order, each its key, its measured place and
+/// record, in the order of the vertices' coordinates, which is the carrier's key
+/// order — then the overlaps in the overlaps' own order, each its key, its measured place and
 /// the pivot's factors where a pivot wrote one; the frame ratio; the opened
 /// axes' classes; and the remainder by its coordinates. Every count by its own
 /// spelling. Nothing the key derives is written: a face's word, the sections
-/// (the members' frames are in their records), the orbits.
+/// (the members' frames are in the members' records), the orbits.
 pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     let mut buf = vec![crate::transducer::address::TAG_FORM];
     buf.push(f.n);
     crate::transducer::address::put_key_count(&mut buf, f.vertices.len());
     // THE CARRIER'S OWN ORDER IS THE CANONICAL ORDER (law 2, rule 15): the
-    // trie walks its keys in their byte order and the key is the vertex's
+    // trie walks its keys in the keys' byte order and the key is the vertex's
     // coordinate. The Frame's key is its tag alone, `0`, so it leads.
     for (_, v) in f.vertices.scoped() {
         put_vertex(&mut buf, v);
@@ -373,7 +373,7 @@ pub(crate) fn vertex_bytes(v: &Vertex) -> Vec<u8> {
 /// THE MEMBERS AS THE KEY WRITES THEM, in the carrier's key order: each its
 /// chart, its carriage by its canonical coordinates (A4), the vertex's
 /// contact where it has one, its sorted gauge, and its frames (AT1, ruled —
-/// the charts are the members at their frames, held here and nowhere else).
+/// the charts are the members at the members' frames, held here and nowhere else).
 ///
 /// `frames` says whether each member's frames are written: in the FORM's key
 /// they are (AT1, ruled — a member holds its frames, written once with it);

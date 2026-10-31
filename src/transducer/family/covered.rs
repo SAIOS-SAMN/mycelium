@@ -1,4 +1,4 @@
-// 53.6 — THE COVER'S OWN FORM: its pieces, their meets, and the orbits it
+// 53.6 — THE COVER'S OWN FORM: its pieces, the pieces' meets, and the orbits it
 // stands, classified and discarded.
 //
 //! A piece is a reading inside a cover, not an idea the scene holds. Its
@@ -6,8 +6,8 @@
 //! scene builds on supports (item 3), and what its orbits carry is a
 //! torsion class the scene files by class (item 4).
 //!
-//! So the pieces get a form of their own, here, whose only purpose is to
-//! carry their orbits long enough to classify them. Placed into the scene's
+//! So the pieces get a separate form, here, whose only purpose is
+//! to carry the pieces' orbits long enough to classify them. Placed into the scene's
 //! form instead, a cover of two thousand pieces WAS a form of two thousand
 //! vertices — `484b58aa` read 2 055 vertices, 11 167 faces and 3 986 orbits
 //! — and every carrier the engine has is multiplied by that count.
@@ -85,7 +85,7 @@ pub(crate) fn piece_at(footprint: &[crate::transducer::base::Site]) -> Option<Pi
 /// The footprint is what distinguishes them: two disjoint bodies under the
 /// identical transformation have `φ_a = φ_b` and `D_a ≠ D_b`, so the
 /// relative carriage is `1` and the transport across the interface is the
-/// SOLDER FORM displacement between their basepoints — a hyperbolic
+/// SOLDER FORM displacement between the two basepoints — a hyperbolic
 /// transvection, `B = eᵢ∧e₋`, `I₁ > 0`, carrying a Burgers vector. A
 /// coordinate excluded from IDENTITY, correctly, and then excluded from
 /// INCIDENCE, which does not follow.
@@ -122,15 +122,15 @@ pub(crate) fn classify_cover(
 ) {
     // 53.6 items 3 and 4 — THE PIECES' OWN FORM, BUILT HERE AND DISCARDED.
     //
-    // The pieces were placed into the SCENE's form and their meets became
+    // The pieces were placed into the SCENE's form and the pieces' meets became
     // its faces, so a cover of two thousand pieces was a form of two
     // thousand vertices. A piece is a reading inside a cover, not an idea
     // the scene holds: its class is already a vertex (item 1), its meets
     // are already incidence the form builds on supports (item 3), and what
     // its orbits carry is a torsion class the form files by class (item 4).
     //
-    // So the pieces get a form of their own, here, whose only purpose is to
-    // carry their orbits long enough to classify them. Nothing downstream
+    // So the pieces get a separate form, here, whose only purpose
+    // is to carry the pieces' orbits long enough to classify them. Nothing downstream
     // ever sees it.
     let mut piece_form = Form::default();
     // EACH CARRIED PIECE AT ITS PIECE-CHART (AT1, ruled (a)): its class's
@@ -284,7 +284,7 @@ pub(crate) fn classify_cover(
                 // gate read them as one section meeting itself at zero
                 // distance.
                 //
-                // They are not one section. `D₁ ≠ D₂`, so their basepoints
+                // They are not one section. `D₁ ≠ D₂`, so the two basepoints
                 // on the absolute differ, and the transport across the
                 // interface is not the relative carriage but the SOLDER
                 // FORM displacement between them:
@@ -300,8 +300,8 @@ pub(crate) fn classify_cover(
                 //
                 // AT1, ruled (a): the footprint is named by the piece's
                 // fixed-size coordinates — nucleus and shape — on its chart,
-                // so the two ends are told apart by their PIECE-CHARTS and
-                // never by their sites.
+                // so the two ends are told apart by the PIECE-CHARTS and
+                // never by the sites.
                 let (ma, mb) = (pi.encode(), pj.encode());
                 // ONE SECTION MEETING ITSELF — one class, one chart, one
                 // carriage — has the identity for its transition and carries

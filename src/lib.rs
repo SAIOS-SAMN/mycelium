@@ -13,7 +13,7 @@ pub mod economy;
 pub mod arc;
 pub mod anastome;
 pub mod chronometry;
-/// §8.1 — the readings the live fleet holds about itself (the observer).
+/// §8.1 — the readings the live mesh holds about itself (the observer).
 pub mod observe;
 
 // Component roles.
@@ -23,7 +23,7 @@ pub mod court;
 
 // Path stability across the component split: the historical flat module
 // paths (`mycelium::cognition`, `::sdk`, `::registry`, `::synthesis`,
-// `::verdict`) resolve to their role homes.
+// `::verdict`) resolve to the role homes.
 pub use client::sdk;
 pub use court::verdict;
 pub use server::{cognition, registry, synthesis};

@@ -1,8 +1,8 @@
 // 78.11, 78.12(2), 78.14, CG1, CG1b, GR1 — COMPREHENSION IS THE ORBIT ALGEBRA
 // OF A CELL: every circuit through it kept, each read by its modes off its
-// own action; the ℚ-algebra of their actions, its rank the cell's capacity;
+// own action; the ℚ-algebra of the circuits' actions, its rank the cell's capacity;
 // per mode ray, whether it keeps the round and whether it keeps the
-// constructors; coherence jointly; the constructors' Gram form; and their
+// constructors; coherence jointly; the constructors' Gram form; and the constructors'
 // orbit under the circuits (CS1).
 //
 //! No sandwich and no equality with the boundary (78.11). A cell's RECORD is
@@ -27,7 +27,7 @@
 //! reading in its place.
 //!
 //! COHERENCE IS JOINT: the modes close together where every elliptic order
-//! is finite, at their least common multiple; a turn of no admitted order
+//! is finite, at the orders' least common multiple; a turn of no admitted order
 //! is the orbit's ELLIPTIC SHEAR — it comes round every return turned by
 //! its exact turn, precessing, its torsion its content — and leaves the cell
 //! HELD, never a refusal; a parabolic or hyperbolic mode ESCAPES (it leaves
@@ -83,7 +83,7 @@ pub enum Congruence {
     /// Circuits whose holonomy or modes did not read, and no read one failed.
     Unread { unread: usize },
     /// The cell has no round, and why (ZM1): its nuclei did not read, or
-    /// their meet is zero.
+    /// the nuclei's meet is zero.
     NoRound(NoRound),
     /// No circuit crosses the cell: nothing was asked.
     NoCircuit,
@@ -94,7 +94,7 @@ pub enum Congruence {
 pub enum NoRound {
     /// A body's nucleus did not read back: no constructors, no meet.
     NucleiUnread,
-    /// The nuclei read and their meet is zero: dependent spheres, or `n + 2`
+    /// The nuclei read and the nuclei's meet is zero: dependent spheres, or `n + 2`
     /// of them. Degeneration, never congruence.
     ZeroMeet,
 }
@@ -121,7 +121,7 @@ pub enum Permutes {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Coherence {
     /// Every ring resonant — every mode elliptic of finite order: the joint
-    /// period, their lcm. A delay, not a loss.
+    /// period, the orders' lcm. A delay, not a loss.
     Closes(u32),
     /// Every ring comes round, and some PRECESS: each SHEARED ring's live
     /// modes are elliptic, a turn of no finite order among them — it returns
@@ -311,7 +311,7 @@ pub struct ChamberRefusals {
     pub modes: Vec<ModesUnread>,
     /// Why the capacity did not read, where it did not.
     pub capacity: Option<CapacityRefused>,
-    /// ZM1 — the cell's nuclei read and their meet is zero: dependent
+    /// ZM1 — the cell's nuclei read and the nuclei's meet is zero: dependent
     /// spheres, or `n + 2` of them. No round, and not congruence.
     pub zero_meet: bool,
     /// The cell's nuclei did not read back: no round, no constructors, no
@@ -323,7 +323,7 @@ pub struct ChamberRefusals {
     pub orbit: Option<cga::OrbitUnread>,
 }
 
-/// 78.26(5) — THE RINGS THROUGH A CELL, READ BY THEIR RESIDUE: each circuit
+/// 78.26(5) — THE RINGS THROUGH A CELL, READ BY RESIDUE: each circuit
 /// crossing the cell is a ring, and its holonomy's modes say whether the ring
 /// is coherent and, where it is not, how. Three axes, each counted per ring
 /// and never collapsed into one another:
@@ -357,7 +357,7 @@ pub struct Rings {
     pub c: usize,
 }
 
-/// 78.26(5) — THE RINGS BY THEIR RESIDUE, read off each crossing circuit's
+/// 78.26(5) — THE RINGS BY RESIDUE, read off each crossing circuit's
 /// holonomy and modes and the mode readings against the round.
 fn read_rings(
     circuits: &[Result<Mv, CircuitUnread>],
@@ -482,7 +482,7 @@ pub struct ChamberAlgebra {
     /// percept's own, never persisted. `None` where an action did not read.
     pub actions: Option<Vec<cga::LinearFunction>>,
     pub basis: Option<crate::core::span::Span>,
-    /// 78.26(5) — the rings through the cell, by their residue.
+    /// 78.26(5) — the rings through the cell, by residue.
     pub rings: Rings,
 }
 
@@ -694,7 +694,7 @@ pub struct ChamberRank {
 pub fn read_rank(circuits: &[ChamberCircuit], budget: &mut crate::physics::Budget) -> ChamberRank {
     let read: Vec<&Mv> = circuits.iter().filter_map(|c| c.holonomy.as_ref().ok()).collect();
     // Every action in the one algebra the cell's circuits span — the join of
-    // their algebras, a value never narrowed — so the actions compose.
+    // the circuits' algebras, a value never narrowed — so the actions compose.
     let n = read.iter().fold(0u8, |n, h| n.max(h.n()));
     let actions: Result<Vec<cga::LinearFunction>, CapacityRefused> = read
         .iter()
@@ -740,7 +740,7 @@ pub fn read_chamber_after(
     let circuits_unread: Vec<CircuitUnread> = circuits.iter().filter_map(|h| h.as_ref().err().copied()).collect();
     let mut modes_unread: Vec<ModesUnread> = Vec::new();
     // WHY THERE IS NO ROUND, where there is none (ZM1, 78.26(4)): the nuclei
-    // did not read, or they read and their meet is zero — dependent spheres,
+    // did not read, or they read and the nuclei's meet is zero — dependent spheres,
     // or `n + 2` of them. A zero blade commutes with everything, which is
     // degeneration and not congruence.
     // The round's reading is ONE value, the round or why there is none, read

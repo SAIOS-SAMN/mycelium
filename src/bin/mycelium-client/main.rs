@@ -39,7 +39,7 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
     if let Ok(p) = std::env::var("MYCELIUM_HOME") {
         return Ok(PathBuf::from(p));
     }
-    // The fleet's homes are `var/<unit>` under the repository the binary
+    // The deployment's homes are `var/<unit>` under the repository the binary
     // runs from, never the operator's home directory.
     Ok(PathBuf::from("var").join("voice"))
 }
@@ -164,7 +164,7 @@ fn main() {
     mind.discover();
     mind.keep_genome(genome_path);
     // THE BOUNDARIES: the corpus the home holds, the other minds at the
-    // fleet's rendezvous beside the homes, the seats `--seat` names.
+    // deployment's rendezvous beside the homes, the seats `--seat` names.
     mind.open_feed(home.clone());
     let rendezvous = match home.parent() {
         Some(p) => p.join("chatter"),

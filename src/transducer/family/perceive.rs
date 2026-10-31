@@ -154,7 +154,7 @@ fn bodies_of(compartments: &[Compartment]) -> Vec<Body> {
 /// be one body — and the form carries that corner as a contact face with
 /// the edge transport of 50.3, so sliding and relative rotation are
 /// measured on the edge. The court reads the percept as one sentence with
-/// its body vertices and their edges, never as detached listings (50.1).
+/// its body vertices and the vertices' edges, never as detached listings (50.1).
 pub fn perceive(grid: &Grid) -> Vec<Body> {
     perceive_frames(std::slice::from_ref(grid))
 }
@@ -323,7 +323,7 @@ pub fn demand_vertex(kind: crate::transducer::sentence::Demand, chart: &Invarian
 /// them): a gap reached on the word path and at the pole stands once. A
 /// demand vertex carries no support and no face, so standing it after the
 /// faces is the vertex it would have been before them; the form's key is its
-/// vertices' coordinates, never their order.
+/// vertices' coordinates, never the vertices' order.
 pub(crate) fn stand_demands(vertices: &mut crate::transducer::sentence::Vertices, demanded: Vec<Demanded>) {
     use crate::transducer::sentence::Demand;
     let coords = |kind: &Demand| -> Option<Vec<u8>> {
@@ -392,7 +392,7 @@ fn oblique_demand(a: &Body, b: &Body, chart: &Invariant, budget: &mut crate::phy
     oblique_demanded(a, b, (&a.shape.blade, &b.shape.blade), chart, budget)
 }
 
-/// D3's DEMAND ON ONE PAIR OF BODIES, their blades given: the three gates
+/// D3's DEMAND ON ONE PAIR OF BODIES, the bodies' blades given: the three gates
 /// (`oblique_rotor_prime`), then the pair's own compartments as the demand's
 /// links. The word path and the contact's pole (CV1b F3) read it alike.
 pub(crate) fn oblique_demanded(
@@ -405,7 +405,7 @@ pub(crate) fn oblique_demanded(
     let demand = oblique_rotor_prime(blade_a, blade_b, budget)?;
     // THE LINKS STAND UNMOVED, because nothing moved them. A chain is
     // each compartment carried by the versor and read on the image; there IS
-    // no versor here, so the source's compartments keep their own hues and the
+    // no versor here, so the source's compartments each keeps its own hue and the
     // target's are read as they stand. Passing an identity versor instead
     // would write a carry the geometry just refused (checklist (m)).
     let mut bodies = chain_of(Some(a), None, &crate::transducer::element::identity_versor());
@@ -546,7 +546,7 @@ pub(crate) fn frame_of_body(b: &Body) -> Option<i64> {
     at
 }
 
-/// The same compartments read in their frame's own coordinates, at `k = 0`:
+/// The same compartments read in the frame's own coordinates, at `k = 0`:
 /// the frame rides on the pose (16.5, 52.5), so a quotient measured here
 /// is the one the vertex carries and the one a frame perceived alone reads.
 /// A compartment with no frame axis stands in no frame and is carried as it is.
@@ -608,8 +608,8 @@ pub(crate) enum EdgeRefusal {
 pub(crate) struct EdgeTally {
     pub(crate) measured: usize,
     /// 78.103 — of the measured, the edges that are a RELATIVE MOTION: two
-    /// bodies that moved differently, `Γ = ṽᵢ·vⱼ`, no versor carrying their
-    /// union.
+    /// bodies that moved differently, `Γ = ṽᵢ·vⱼ`, no versor carrying the
+    /// bodies' union.
     pub(crate) relative: usize,
     pub(crate) unspelled: usize,
     pub(crate) unread: usize,
@@ -729,7 +729,7 @@ pub(crate) fn edge_of(gamma: &Versor) -> Result<crate::transducer::sentence::Tra
 /// measured in; the geodesic's refusal is the one reported when none
 /// reads, because that is the member the naming uses.
 ///
-/// 78.103 — TWO BODIES THAT MOVED DIFFERENTIALLY ARE RELATED BY THEIR
+/// 78.103 — TWO BODIES THAT MOVED DIFFERENTIALLY ARE RELATED BY THE
 /// RELATIVE MOTION (78.63 governs 50.3). Where no versor carries the union,
 /// the pair did not move rigidly — a symptom, never a breach — and the edge
 /// is `Γ = ṽᵢ·vⱼ`, the one body's motion read from the other's, a bend like
@@ -787,7 +787,7 @@ pub(crate) fn relative_edge(
 }
 
 /// 78.103 — HOW AN EDGE'S PAIR WAS CARRIED: as one rigid pair-body, or each
-/// body by its own motion, the edge their relative motion.
+/// body by its own motion, the edge the bodies' relative motion.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Carried {
     Rigid,
@@ -832,7 +832,7 @@ pub fn painted_within_grid(painted: &[Painted], g: &Grid) -> bool {
     })
 }
 
-/// The scene's bodies indexed by their own chart (Y4, 24.4, 20).
+/// The scene's bodies, each indexed by its own chart (Y4, 24.4, 20).
 /// A chart whose fiber holds exactly one body is "the unique one", read as
 /// `fiber.iter().nth(1).is_none()` (W10), without a count compared to a literal.
 pub fn bodies_by_chart(bodies: &[Body]) -> crate::network::nerve::Keyed<Vec<&Body>> {

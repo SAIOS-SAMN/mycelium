@@ -31,7 +31,7 @@ fn mesh(sk: &SigningKey) -> Mesh {
 
 /// TWO COURTS, NEITHER ASKED: each first stroke publishes its own acts under
 /// its own key — the second court's as surely as the first's — with the
-/// verdicts it counted (a no-work and a door refusal) on their slots.
+/// verdicts it counted (a no-work and a door refusal) on the verdicts' slots.
 #[test]
 fn answer_standing_publishes_acts_at_first_stroke_unasked() {
     for seed in [0x41u8, 0x42] {
@@ -51,6 +51,6 @@ fn answer_standing_publishes_acts_at_first_stroke_unasked() {
         let mut want = [0u64; observe::JUDGED.len()];
         want[Judged::NoWork.slot()] = 1;
         want[Judged::Unsigned.slot()] = 1;
-        assert_eq!(acts.judged, want, "court {seed:02x}: its own verdicts, on their slots");
+        assert_eq!(acts.judged, want, "court {seed:02x}: its own verdicts, on the verdicts' slots");
     }
 }

@@ -15,7 +15,7 @@
 //! property it was checking has to hold on real data.
 //!
 //! WHAT IS COMPARED is the whole complex, not the bytes: the vertex kinds
-//! and count, the faces with their ends and member pairs, the member
+//! and count, the faces with the faces' ends and member pairs, the member
 //! cycles, and each orbit's holonomy word up to projective equality (§1.5 —
 //! byte-exactness is not identity). A decode that "succeeds" and returns a
 //! poorer complex is the failure this exists to catch.
@@ -76,7 +76,7 @@ fn same_complex(a: &Form, b: &Form) -> Result<(), String> {
         return Err(format!("faces {} vs {}", a.faces.len(), b.faces.len()));
     }
     // AT1 — ONE OVERLAP PER MEMBER PAIR PER FRAME: the member pairs are the
-    // overlaps themselves, so they are compared by their charts rather than
+    // overlaps themselves, so they are compared by charts rather than
     // summed per face (a face no longer holds several).
     let pairs = |f: &Form| -> Vec<crate::network::nerve::coord::Overlap> { f.faces.entries().map(|(o, _)| o).collect() };
     if pairs(a) != pairs(b) {

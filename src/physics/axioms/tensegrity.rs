@@ -17,7 +17,7 @@ pub const A10_1_I_CO_PRESENCE: &str = "an orbit of fewer than two co-present fra
 
 /// THE TORQUE (78.51(1)). A coupling's torque on a generator is `½[B, G]`,
 /// 78.46's lift: zero exactly where `B` turns about `G`'s own axis.
-pub const A10_1_TORQUE: &str = "a coupling's torque on a generator is half their commutator, zero along the generator's axis";
+pub const A10_1_TORQUE: &str = "a coupling's torque on a generator is half the pair's commutator, zero along the generator's axis";
 
 /// LAW II · TENSEGRITY BALANCE. Stationary equilibrium iff the net torque
 /// `τ = Σ_{i<j} ½[B_ij, B_orbit]` vanishes coefficient by coefficient over ℚ

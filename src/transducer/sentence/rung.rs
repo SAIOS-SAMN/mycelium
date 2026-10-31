@@ -60,7 +60,7 @@ struct Held {
     given: bool,
 }
 
-/// THE MIND'S LEXICON: the words held by their keys, and the holes they
+/// THE MIND'S LEXICON: the words held, each by its key, and the holes they
 /// stand on — the fibre a new word is comprehended by (78.99 (1)) — and the
 /// given atoms a newly known word stood beside, to be reduced again at the
 /// mind's next return.

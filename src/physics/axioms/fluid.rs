@@ -16,7 +16,7 @@ pub const F1_NULL_HAS_NO_LENGTH: &str =
 pub const F2_FLUX_BY_STOKES: &str = "𝒯 is the parabolic part of a closed cell's curvature, read by its modes";
 
 /// F3 · FROZEN IN. The flow carries a flux tube whole: conjugating every
-/// flux of a tube by one motion keeps them on one ray and keeps their
+/// flux of a tube by one motion keeps them on one ray and keeps the fluxes'
 /// ratios, so a tube's windings are invariants of the flow (Alfvén, exact).
 pub const F3_FROZEN_IN: &str = "conjugation carries a tube whole: one ray, the same ratios, the same windings";
 

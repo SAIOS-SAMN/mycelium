@@ -73,7 +73,7 @@ impl Kernel {
         (proof.root == *root && proof.witness.receipt.stamp.vk == *own_vk).then(|| proof.witness.clone())
     }
 
-    /// THE ROOTS' LEAF (`LEAF_ROOTS`): their count, then each proof; `None`
+    /// THE ROOTS' LEAF (`LEAF_ROOTS`): the proofs' count, then each proof; `None`
     /// where none is held. A proof that does not frame is named and left out
     /// of the count (LD0) — it is proved again at the next fold.
     pub(crate) fn put_root_proofs(&self) -> Option<Vec<u8>> {

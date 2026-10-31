@@ -53,7 +53,7 @@ pub(crate) type Departure = (Vec<u8>, Rotor, element::Versor, Vec<u8>);
 /// 78.37(1) — WHAT THE TRANSPORT DID, cumulative at its producer since the
 /// contemplation began: thoughts fixed (by fill, by class), rings collapsed
 /// at holonomy 1 (and of those, the ones a 2-simplex spans and filled),
-/// rings held with their class, candidates classified by disagreement; and
+/// rings held with the rings' class, candidates classified by disagreement; and
 /// fixes that could not start, by why — the thought held no section, or an
 /// edge of it has no oriented gauge.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]

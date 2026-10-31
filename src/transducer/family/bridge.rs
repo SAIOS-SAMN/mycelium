@@ -26,7 +26,7 @@ use crate::physics::tensegrity::body_of_shape;
 /// WHAT THE LAWS SAID OF ONE PAIR (or, summed, of a slice).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Bridge {
-    /// Input bodies; those some output body on their chart is carried onto;
+    /// Input bodies; those some output body on the input's chart is carried onto;
     /// those none is (no transition to ask the laws of).
     pub bodies: u64,
     pub carried: u64,

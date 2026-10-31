@@ -183,7 +183,7 @@ fn to_completion_reads_unit_only_on_callers_wider_stroke() {
     assert_eq!(wide.remaining(), unit, "and is left as it stood");
 }
 
-/// THE OFF-LOCK READERS keep their answer: run to the end over fresh
+/// THE OFF-LOCK READERS keep the same answer: run to the end over fresh
 /// strokes, `blind_replay_at` on the caller's stroke of one read is the
 /// whole replay's verdict.
 #[test]

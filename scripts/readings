@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# READINGS — what the fleet says about itself, taken from the artifacts and
+# READINGS — what the deployment says about itself, taken from the artifacts and
 # not from a model of them. Run by hand, owned by the repository.
 #
 # Usage: scripts/readings [SINCE] [HOME_ROOT]
@@ -31,7 +31,7 @@ hr() { printf -- '--- %s\n' "$*"; }
 # A STOPPED UNIT HAS NO SHARE. `CPUUsageNSec` survives the stop and
 # `ActiveEnterTimestampMonotonic` still names the last activation, so
 # dividing one by the other for a dead unit spreads the CPU it spent while
-# running across every second it has been dead — a fleet stopped overnight
+# running across every second it has been dead — a deployment stopped overnight
 # reads 1% and looks idle. The elapsed window is only a window while the
 # unit is in it: a stopped unit reports what it consumed and says so.
 share() {
@@ -61,7 +61,7 @@ share() {
 # ONE UNIT'S JOURNAL OVER THE WINDOW, THIS INVOCATION ONLY. A window that
 # reaches back past the unit's start read the previous run's last lines as
 # this run's — after the epoch-119 recut, "K 11293 → 12, eras 8086 → 0" was
-# the old fleet's tail and the new fleet's head in one row. The window is
+# the old deployment's tail and the new deployment's head in one row. The window is
 # bound to the unit's current invocation (`_SYSTEMD_INVOCATION_ID`), so a
 # stopped-and-started unit is read from its start; a unit with no
 # invocation reads nothing.
@@ -81,7 +81,7 @@ lines() {
   printf '%6s  %s\n' "$n" "${last:-—}"
 }
 
-say "readings over ${SINCE}, fleet at $(git -C "$REPO" rev-parse --short HEAD)"
+say "readings over ${SINCE}, deployment at $(git -C "$REPO" rev-parse --short HEAD)"
 say ""
 
 hr "the layouts on disk (X7's observable, X8's magic)"
@@ -129,10 +129,10 @@ for h in "${HYPHAE[@]}"; do
     | awk 'NF == 6 { printf "      over the window: K %d → %d, eras %d → %d (+%d), hot %d → %d\n", $1, $4, $2, $5, $5 - $2, $3, $6 }
            NF == 3 { printf "      one line in the window: K %d, eras %d, hot %d\n", $1, $2, $3 }'
   printf '    on disk           '; du -sh "$ROOT/$h" 2>/dev/null | awk '{print $1}'
-  # WHAT THE COURT REFUSED, BY REASON. The fleet's dominant fact after the
+  # WHAT THE COURT REFUSED, BY REASON. The deployment's dominant fact after the
   # recut of 649a4ac was that every speech is refused and nothing at all is
   # admitted, and this file had no line for it: the readings counted what
-  # the rows were about and were blind to what the fleet was doing.
+  # the rows were about and were blind to what the deployment was doing.
   printf '    refused speech    '; lines "$u" 'court refuse speech'
   journal "$u" \
     | grep -oE 'court (refuse speech|form refused) [0-9a-f]+…: .*' \
@@ -154,8 +154,8 @@ for v in "${VOICES[@]}"; do
   # THE FAMILIES THIS VOICE ACTUALLY EXTRACTED. This read `fed [0-9]`,
   # which matches nothing: the stroke line spells it `fed [0, 0, 0, 0]`
   # and the `[` is a literal. The instrument reported `fed 0` for voices
-  # that were extracting a thousand families in half an hour — my own
-  # reading lying in the same shape as the doc comment that started this,
+  # that were extracting a thousand families in half an hour — the
+  # instrument's own reading lying in the same shape as the doc comment that started this,
   # and it is the line X6's diagnosis was wrong about.
   printf '    families extracted'; lines "$u" 'family .* pairs'
   printf '    withheld on wire  '; lines "$u" 'sentence withheld'

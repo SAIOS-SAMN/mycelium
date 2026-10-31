@@ -1,7 +1,7 @@
 // 78.123 B — THE LEDGER TREE AS A COMPLEX: a parent fold nets children on the
 // court — aggregation by continuity, conservation at each child vertex, the
 // rates cocycle read on the domain's gauge. 78.138 — the lines `A`, `P`, `Q`
-// never touch the court: each of their folds is CARRIED INLINE in a fold of
+// never touch the court: each of the lines' folds is CARRIED INLINE in a fold of
 // the domain's reserve `R`, which includes none of it, so it stands to be
 // netted where it stands inside that receipt.
 

@@ -19,7 +19,7 @@ impl Treasury {
         magnitude(g).iter().any(|&m| m > 0)
     }
 
-    /// PoUW — a word was USED: a real later demand decomposed through it. THE
+    /// POUW — a word was USED: a real later demand decomposed through it. THE
     /// CIRCULATION LAW: the DEMANDER pays the word's DISCOVERER the per-lane
     /// structure exercised, from the demander's EARNED balance — a peer transfer,
     /// bounded by what the payer really holds. Knowledge is nonrival: a broke

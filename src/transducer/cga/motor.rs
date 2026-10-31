@@ -54,7 +54,7 @@ impl VectorReading {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MotorAction {
     pub n: u8,
-    /// The blades, as masks, in the order their images stand.
+    /// The blades, as masks, in the order the blades' images stand.
     pub blades: Vec<usize>,
     /// The image of each blade, `M̂ b M̃`.
     pub images: Vec<Mv>,
@@ -62,7 +62,7 @@ pub struct MotorAction {
     pub grade_preserving: bool,
     /// The vectors and the pseudoscalar, read as `is_versor` reads them.
     pub vectors: VectorReading,
-    /// The dimension the images span: the grade of their span.
+    /// The dimension the images span: the grade of the images' span.
     pub algebra_rank: usize,
 }
 
@@ -103,7 +103,7 @@ fn all_blades(n: u8) -> Vec<usize> {
     out
 }
 
-/// THE DIMENSION ELEMENTS OF THE ALGEBRA SPAN: the grade of their span
+/// THE DIMENSION ELEMENTS OF THE ALGEBRA SPAN: the grade of the elements' span
 /// (`core::span`), each element read as the ray it is.
 fn span_grade(elements: &[Mv]) -> usize {
     crate::core::span::grade_of(&elements.iter().map(super::linear::ray_of).collect::<Vec<_>>())

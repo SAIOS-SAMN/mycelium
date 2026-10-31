@@ -136,6 +136,6 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         "incongruence sharpness: resolution quantum 1 on {quantum_one}, finer than 1 on {quantum_more} | phase holonomic {holonomic} luminal {luminal} | moved: refined {refined} closed {closed} sharpened {sharpened} recognized {recognized}"
     );
     println!(
-        "incongruence judged by the plane: readings {judged} reproduced by their subject's core {reproduced} | subjects reproduced on every reading {subjects_whole} of {multi} | tasks whose every judged reading reproduces {tasks_whole} of {tasks_judged}"
+        "incongruence judged by the plane: readings {judged} reproduced by the subject's core {reproduced} | subjects reproduced on every reading {subjects_whole} of {multi} | tasks whose every judged reading reproduces {tasks_whole} of {tasks_judged}"
     );
 }

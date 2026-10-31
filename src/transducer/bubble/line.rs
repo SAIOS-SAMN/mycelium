@@ -87,7 +87,7 @@ impl Contemplation {
         true
     }
 
-    /// THE PERCEPTIONS NEWLY STANDING THREAD THEIR LINES (MU-CLIENT §4.13):
+    /// THE PERCEPTIONS NEWLY STANDING THREAD LINES (MU-CLIENT §4.13):
     /// each on the orbits and tubes its faces' motors and hue maps stand on,
     /// in the field as it stands. One the field holds nothing of — its motion
     /// closed or let go already — stands until the field next moves, as a

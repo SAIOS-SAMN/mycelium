@@ -4,8 +4,8 @@
 // `observe::live` leaves for the winding carrier, answered out of what the
 // mind holds at the law boundary the carrier passes.
 //
-//! Every answer READS: the carrier's standing, the thoughts and their
-//! winding (period ℓ, hours seen, winding m, returns, the next hour), the
+//! Every answer READS: the carrier's standing, the thoughts and the
+//! thoughts' winding (period ℓ, hours seen, winding m, returns, the next hour), the
 //! field's orbits and tubes, what is held for the return, the scenes and
 //! solves waiting, the questions open. None moves the mind, and nothing in
 //! cognition reads an answer back.

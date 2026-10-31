@@ -112,7 +112,7 @@ fn within(e: &Encl, lo: Q, hi: Q) -> bool {
 }
 
 /// The hyperbolic and inverse circular functions are enclosed: sinh, cosh
-/// and tan pin their references, atan and acos meet their exact multiples of
+/// and tan pin the reference values, atan and acos meet the exact multiples of
 /// π, and acos refuses outside [−1, 1].
 #[test]
 fn hyperbolic_and_inverse_circular_enclose_references() {

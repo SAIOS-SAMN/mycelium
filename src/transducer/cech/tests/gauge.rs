@@ -77,7 +77,7 @@ fn solve_gauge_disagreeing_chord_returns_cocycle() {
 }
 
 /// TWO CHORDS ARE TWO ORBITS, AND THE COMPOSITE IS NEITHER. Two chords
-/// carrying opposite classes have the identity as their product, so a
+/// carrying opposite classes have the identity as the chords' product, so a
 /// reader that composed them read "nothing curved" off two real classes
 /// and enumerated no occupied axis — 3.9 would have had no candidate move
 /// to instantiate. Each `Ω` is its own cocycle.
@@ -104,7 +104,7 @@ fn solve_gauge_two_chords_return_two_cocycles() {
         .fold(Rotor::identity(), |acc, (_, _, class, _)| acc.geo(class));
     assert!(
         composite.is_identity(),
-        "their product is the identity — which is why composing them erased both"
+        "the two classes' product is the identity — which is why composing them erased both"
     );
     for (_, _, class, _) in &holonomy {
         assert!(!class.is_identity(), "and neither orbit is flat on its own");
@@ -115,7 +115,7 @@ fn solve_gauge_two_chords_return_two_cocycles() {
     }
 }
 
-/// THE ORBITS REACH THE COMPLEX, AT THEIR OWN COORDINATE. A degree-2
+/// THE ORBITS REACH THE COMPLEX, EACH AT ITS OWN COORDINATE. A degree-2
 /// simplex whose chord disagrees files that chord's `Ω` under
 /// `simplex_key ++ vertex_i ++ vertex_j`, so `orbits_of` is a fiber read
 /// on the simplex and `classes()` carries what it holds. The simplex's

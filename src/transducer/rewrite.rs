@@ -362,7 +362,7 @@ pub fn yield_vector(kind: RewriteKind, before: &[Element], after: &Element) -> [
         }
         RewriteKind::Retire => {
             // The language shrank by exactly the descriptions it no longer
-            // carries. The retired words are disjoint carriers, so their
+            // carries. The retired words are disjoint carriers, so the words'
             // measures accumulate lane-wise (12.6) and never meet. An
             // overflow yields the zero vector, which `settle_rewrite` and
             // `replay` both refuse -- a compression too large to measure is

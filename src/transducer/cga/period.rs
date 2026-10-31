@@ -56,7 +56,7 @@ use super::multivector::{one, Mv};
 /// symmetry are therefore not forbidden; they live in `ℚ(√Δ)`.
 ///
 /// THE ORDER IS THE LCM OF THE EIGENVALUES' ORDERS (audit N-5). The minimal
-/// polynomial is a product of DISTINCT cyclotomics `Φ_ℓᵢ`, their degrees
+/// polynomial is a product of DISTINCT cyclotomics `Φ_ℓᵢ`, the cyclotomics' degrees
 /// summing to at most `d = n + 1`, and the motion closes at
 /// `lcm(ℓ₁, ℓ₂, …)` — not at an `ℓ` of its own with `φ(ℓ) ≤ d`. The two
 /// readings agree up to `d = 5`; at `d = 6` the eigenvalues of orders 3

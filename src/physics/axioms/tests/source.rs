@@ -44,7 +44,7 @@ fn geoid_vector_holds_every_pivot() {
 /// THE SOURCE, VERIFIED: a turn about the geoid's centre keeps the geoid
 /// (`keeping` returns it whole), and at a pivot it moves the source is
 /// `N = P ∧ (P·K)` — null, fixing the pivot, keeping the geoid. Its slivers
-/// compose by adding their parameters, and every sliver keeps the pivot and
+/// compose by adding the slivers' parameters, and every sliver keeps the pivot and
 /// the geoid. A generator that does not move the pivot gives no source; a
 /// point off the geoid gives none.
 #[test]

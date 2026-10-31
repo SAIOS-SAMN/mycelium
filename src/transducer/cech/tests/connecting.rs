@@ -23,7 +23,7 @@ fn arc(a: u8, mid: u8, b: u8, g: Rotor) -> Complex {
     c
 }
 
-/// TWO ARCS GLUED AT THEIR ENDS MAKE A RING, and its holonomy is a class
+/// TWO ARCS GLUED AT THE ENDS MAKE A RING, and its holonomy is a class
 /// neither arc held: each arc is a tree, exact on its own; the overlap is the
 /// two ends, two components; the loop out through one arc and back through
 /// the other carries the turn. With both arcs flat the loop is flat and

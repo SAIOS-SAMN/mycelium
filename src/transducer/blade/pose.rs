@@ -3,7 +3,7 @@
 // body's own `n` axes, over every plane the two tubes occupy.
 //
 //! A body is its tube, not its slice (72.1c(1)). Where both bodies stand in
-//! one section their relative orientation is a turn in the sensor's plane,
+//! one section the bodies' relative orientation is a turn in the sensor's plane,
 //! and [`relative_rotor`] reads it there with the square base's turns, as it
 //! did. Where either extends along an axis off that plane — the succession
 //! axis `e₃` — the pose is read here, on every axis the base has, and `θ` is
@@ -25,8 +25,8 @@
 //! principal axes in `ℚ(√Δ)` (55.3); the columns never need them.
 //!
 //! A FLAT BODY — one section, or one plane of the tube — has columns that
-//! span one dimension fewer than the base, and the last column is their
-//! dual: `c · x = det[w₀, …, w_{n−2}, x]`, which turns as `det R · R c`. So
+//! span one dimension fewer than the base, and the last column is the
+//! columns' dual: `c · x = det[w₀, …, w_{n−2}, x]`, which turns as `det R · R c`. So
 //! the dual completes the frame of columns with the orientation, and a flat
 //! body's mirror across its own plane is one of its turns, as it is in
 //! space.
@@ -190,8 +190,8 @@ fn on_frame(frame: &[Mv], v: &Mv) -> Mv {
     frame.iter().zip(axes(frame.len())).fold(Mv::zero(), |acc, (img, a)| acc.add(&img.scale(v.coeff(a))))
 }
 
-/// THE COVARIANT COLUMNS `t, Mt, M²t, …` while they stay independent — their
-/// wedge non-zero. The sequence is a Krylov sequence, so the first column
+/// THE COVARIANT COLUMNS `t, Mt, M²t, …` while they stay independent — the
+/// columns' wedge non-zero. The sequence is a Krylov sequence, so the first column
 /// that depends on those before it ends it: every later one depends too.
 fn columns(tw: &PointTower, n: usize) -> Vec<Mv> {
     let mut cols: Vec<Mv> = Vec::new();
@@ -334,7 +334,7 @@ fn tube_pose(a: &Blade, b: &Blade, n: usize, budget: &mut crate::physics::Budget
         return even_pose(a, b, ta, tb, &ca, &wb, &rho, n, budget);
     }
     let mut wa = ca.clone();
-    // A FLAT BODY'S FRAME OF COLUMNS IS COMPLETED BY THEIR DUAL, the proper
+    // A FLAT BODY'S FRAME OF COLUMNS IS COMPLETED BY THE COLUMNS' DUAL, the proper
     // completion first; its mirror — the same frame read orientation-reversed
     // — where the proper one does not carry.
     let flat = wa.len() + 1 == n;
@@ -395,7 +395,7 @@ fn tube_pose(a: &Blade, b: &Blade, n: usize, budget: &mut crate::physics::Budget
 /// a turn or a mirror — carries the one tube onto the other and every odd
 /// column there is lands. One carried is a [`Pose::Turn`]; several are the
 /// held coset, [`Pose::Open180`], in the quadratic's own root order.
-#[expect(clippy::too_many_arguments, reason = "the two bodies, their towers, the odd columns at one scale, the scale and the base's n: the pose's inputs, each read once")]
+#[expect(clippy::too_many_arguments, reason = "the two bodies, the bodies' towers, the odd columns at one scale, the scale and the base's n: the pose's inputs, each read once")]
 fn even_pose(
     a: &Blade,
     b: &Blade,
@@ -410,7 +410,7 @@ fn even_pose(
     let rho2 = rho * rho;
     let rho4 = &rho2 * &rho2;
     let (mb, nb) = (tb.m.scaled(&(Q::one() / &rho2)), tb.n4.scaled(&(Q::one() / &rho4)));
-    // THE INTERTWINERS, unknown by their image of each base axis: `X(e_r) =
+    // THE INTERTWINERS, unknown by each intertwiner's image of each base axis: `X(e_r) =
     // Σ_p X_{pr} e_p`, the unknown `X_{pr}` at `p·n + r`. `X ∘ A_a = A_b ∘ X`
     // read on `e_q` and then on `e_p`, one equation each, with the tower's
     // own value `⟨A(e_q)⟩_r` where the product needs it.

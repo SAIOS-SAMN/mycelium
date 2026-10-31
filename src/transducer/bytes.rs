@@ -4,7 +4,7 @@
 //! THE INSTRUMENT WAS COUNTING HALF THE OBJECT. `Keyed::key_bytes` summed
 //! the bytes a carrier's keys occupy and reported the genome at `0 bytes,
 //! +65 entries` — sixty-five decoded forms absorbed in six minutes, each
-//! the size of a fleet form, counted as nothing. A table that reads 3 MB a
+//! the size of a deployment form, counted as nothing. A table that reads 3 MB a
 //! minute against a process growing 157 MB a minute is not reading the
 //! process.
 //!
@@ -15,7 +15,7 @@
 //!
 //! WHAT IS EXACT AND WHAT IS NOT, stated rather than blurred. Byte buffers,
 //! slices and counts are exact. An exact rational is two arbitrary-precision
-//! integers whose heap footprint is their magnitude, and `bits()` is what
+//! integers whose heap footprint is the integers' magnitude, and `bits()` is what
 //! the library reports about it, so a `Q` is counted as the bytes its
 //! numerator and denominator need plus the two headers — close, and never
 //! claimed as the allocator's own figure. The reconciliation against
@@ -138,7 +138,7 @@ impl Bytes for Vertex {
 impl Bytes for Form {
     fn bytes(&self) -> usize {
         let mut n = std::mem::size_of::<Self>();
-        // THE ATLAS (AT1): the vertices and the overlaps by their keys, and
+        // THE ATLAS (AT1): the vertices and the overlaps by the overlaps' keys, and
         // what each holds.
         n += self.vertices.key_bytes() + self.faces.key_bytes();
         for (_, v) in self.vertices.scoped() {

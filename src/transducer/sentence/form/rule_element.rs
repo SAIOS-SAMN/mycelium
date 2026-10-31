@@ -7,7 +7,7 @@
 //! element is what is done, as geometry. Six of the acts are one element, a
 //! CARRIAGE: a versor of `Cl(4,1)(ℚ)` read about the grid or about each
 //! body, applied once or iterated to its meet, the source cleared or kept or
-//! the path swept, the landed cells painted their own hue, a named one, or a
+//! the path swept, the landed cells each painted its own hue, a named one, or a
 //! partner's, then mapped by a gauge. `Recolour` and `Repaint` are the
 //! identity carriage, `Carry` and `Echo` one application clearing or keeping
 //! its source, `Slide` a lattice translation iterated to the meet, `Extend`
@@ -16,7 +16,7 @@
 //! all the same and has no gloss ([`gloss`] is `None`): the English is a
 //! translation of what the language says, never the bound of it.
 //!
-//! The other acts are elements of their own: a 2-chain the selection bounds
+//! Each other act is an element of its own: a 2-chain the selection bounds
 //! (`Fill`), 1-chains between selected bodies straight or round one corner
 //! (`Connect`, `Bend`), a body carried centre onto centre (`Copy`), and the
 //! frame acts (`Crop`, `Scale`, `Panes`, `Tile`).

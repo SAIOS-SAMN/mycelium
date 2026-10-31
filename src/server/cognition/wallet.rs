@@ -6,7 +6,7 @@ use crate::anastome::dialogue::wallet::Account;
 
 impl Kernel {
     /// THE ACCOUNT `who` HOLDS HERE, at this court's head. `None` where its
-    /// holds would pass their carrier — unmeasured, never a smaller account.
+    /// holds would pass the holds' carrier — unmeasured, never a smaller account.
     pub fn wallet(&self, who: &[u8; 32]) -> Option<Account> {
         let (balance, bond, held) = self.treasury.account(who)?;
         Some(Account { court: self.chain.vk(), balance, bond, held, at: self.chain.head_stamp() })

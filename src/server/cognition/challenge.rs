@@ -105,7 +105,7 @@ fn replay_key(fold: &[u8], who: &[u8; 32]) -> Vec<u8> {
 /// it nets — on every identity and lane, `Σ own rows = rows − Σ rate ·
 /// included rows` exactly, and `Σ own declared = declared`: conservation,
 /// checked locally, nothing re-run. A parent never re-lists its children's
-/// transfers; they are proved by their own records.
+/// transfers; each child's are proved by its own records.
 fn reconstructs(rows: &[Net], declared: &[Net], children: &[ChildNet], own_rows: &Lanes, own_declared: &Lanes) -> bool {
     let Some(declared) = Lanes::of(declared) else { return false };
     if *own_declared != declared {
@@ -434,7 +434,7 @@ impl Kernel {
     ///   from the full — leaves once nothing names the fold and the hot line
     ///   no longer holds its receipt.
     ///
-    /// What stays is the folds within their windows and the open
+    /// What stays is the folds within the folds' windows and the open
     /// remainders: the bound 78.123 ruled. The count of entries it let go.
     pub(crate) fn settle_windows(&mut self) -> usize {
         let head = self.chain.head_height();

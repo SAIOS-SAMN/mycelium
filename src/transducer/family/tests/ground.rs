@@ -13,8 +13,8 @@ fn on_canvas(family: &[(Grid, Grid)], to: u8) -> Vec<(Grid, Grid)> {
 }
 
 /// THE GROUND IS READ OFF THE FAMILY: the hue of the greatest count over
-/// every grid of its pairs; two hues tied for it name no ground of their
-/// own, and the void is hue 0.
+/// every grid of its pairs; two hues tied for it make neither hue
+/// the ground, and the void is hue 0.
 #[test]
 fn ground_of_reads_family_canvas_hue() {
     let bar = vec![(grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"]))];

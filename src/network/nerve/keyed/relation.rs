@@ -143,7 +143,7 @@ impl<V, C: Coordinate> Default for Keyed<V, C> {
 }
 
 /// TWO KEYED RELATIONS ARE EQUAL WHEN THEY BIND THE SAME KEYS TO THE SAME
-/// VALUES, which is what a keyed relation IS — not when their tries have
+/// VALUES, which is what a keyed relation IS — not when the two tries have
 /// the same shape. A derived equality would compare `root`, and a reader
 /// would then be asserting something about branch bits rather than about
 /// content (law 2: identity is content). The two happen to agree for a
@@ -171,7 +171,7 @@ impl<V> Keyed<V, coord::Any> {
     /// AN UNDECLARED CARRIER WITH ITS SYSTEM SET AT RUNTIME.
     ///
     /// The weaker half of the gate, kept for the carriers that have not yet
-    /// named their coordinate in the type. A carrier that CAN name it does,
+    /// named a coordinate in the type. A carrier that CAN name it does,
     /// and then this constructor is not reachable for it.
     pub fn for_system(system: CoordinateSystem) -> Self {
         Keyed {
@@ -422,7 +422,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
     /// and the vector of them names the grower without any of them
     /// claiming the whole.
     ///
-    /// Values are not counted: their sizes differ by type and summing them
+    /// Values are not counted: value sizes differ by type and summing them
     /// with the keys would make one number out of two facts (law 5's habit,
     /// one level down). A carrier whose VALUES grow is named by its entry
     /// count beside this, never folded into it.
@@ -445,7 +445,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
         self.n == 0
     }
 
-    /// KEYS PRESENT IN BOTH CARRIERS — their meet, read along the
+    /// KEYS PRESENT IN BOTH CARRIERS — the carriers' meet, read along the
     /// trajectory the two keys' own coordinates trace together (A13). A key
     /// is its path, so where the two tries' paths part they share nothing
     /// below and that branch is not read; the cost is the structure the two

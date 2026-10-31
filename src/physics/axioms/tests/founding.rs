@@ -61,7 +61,7 @@ fn null_fluxes_generator_stays_null_under_flow() {
 
 /// HOLONOMIC — A LOOP'S COMPOSITE IS ITS CONTENT. A loop composing to a turn
 /// about one point and a slide, read again from another base point, is the
-/// same holonomy conjugated: its modes — their kinds and their invariants —
+/// same holonomy conjugated: its modes — the modes' kinds and invariants —
 /// are the loop's, never the frame's.
 #[test]
 fn motion_modes_of_holonomy_independent_of_base() {
@@ -69,7 +69,7 @@ fn motion_modes_of_holonomy_independent_of_base() {
     let holonomy = cga::translator_at(&[q(0, 1), q(2, 1), q(0, 1)]).geo(&turn);
     let base = cga::translator_at(&[q(3, 1), q(-1, 1), q(0, 1)]);
     let rebased = base.sandwich(&holonomy);
-    // The modes come in their own canonical order (parabolic first, then by
+    // The modes come in the modes' own canonical order (parabolic first, then by
     // `c`), so the two readings compare as read.
     let read = |m: &Mv| modes(m).into_iter().map(|x| (x.kind, x.c)).collect::<Vec<(BivectorKind, BigRational)>>();
     assert_eq!(read(&holonomy), read(&rebased), "the class is the loop's");

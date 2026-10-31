@@ -46,7 +46,7 @@ fn at(holonomies: Vec<Result<Mv, CircuitUnread>>) -> Vec<ChamberCircuit> {
 
 /// A CIRCUIT TURNING IN THE ROUND'S OWN PLANE KEEPS IT: every mode ray
 /// commutes with the round — congruent — and the 90° turn closes at
-/// four; the constructors close on their two rays.
+/// four; the constructors close on the constructors' two rays.
 #[test]
 fn read_chamber_in_plane_turn_congruent_and_closes() {
     let (m, nuclei) = round();
@@ -170,7 +170,7 @@ fn read_chamber_holds_shear_and_escape_opens() {
     assert_eq!(ring.class, Err(ClassUnread::HueUnread), "the hue unread, named on the class");
 }
 
-/// 78.26(5) — THE RINGS THROUGH A CELL, BY THEIR RESIDUE: the identity is
+/// 78.26(5) — THE RINGS THROUGH A CELL, BY RESIDUE: the identity is
 /// coherent; a 90° turn resonant (no kind: the alphabet spells it); a
 /// turn by `(3, 4, 5)` a rosette, harmonic (D); a screw parabolic, harmonic,
 /// its turn of finite order (C); a 90° turn across the round resonant and
@@ -310,7 +310,7 @@ fn grade_of_and_reduce_against_exact_at_any_size() {
 }
 
 /// 78.68 — THE LIE CLOSURE, EXACT: two turns on planes that share an axis,
-/// `e₁₂` and `e₂₃`, do not commute, and their bracket is `e₁₃` up to scale,
+/// `e₁₂` and `e₂₃`, do not commute, and the two turns' bracket is `e₁₃` up to scale,
 /// so they close to so(3), rank 3. Two turns on disjoint planes, `e₁₂` and
 /// `e₃₊`, commute and close to rank 2. A held algebra re-closed with a
 /// generator it already spans gains nothing.

@@ -56,7 +56,7 @@ fn difference(b: &[BigRational], a: &[BigRational]) -> Option<Vec<BigRational>> 
     }
 }
 
-/// THE TRANSPORT BETWEEN TWO BODIES, in closed form from their moments:
+/// THE TRANSPORT BETWEEN TWO BODIES, in closed form from the bodies' moments:
 /// the canonical representative (50.2 step 1 as ruled 2026-09-09) of the
 /// coset `versor_coset` measures. The refusal is the pose's, typed: no
 /// rational versor carries `a` onto `b` by its named cause, or
@@ -88,7 +88,7 @@ pub struct Transition {
     /// exactly, the residue above it.
     pub through: super::tower::Harmonic,
     pub residue: Vec<Residue>,
-    /// The base planes whose image is no base plane: their orders three and
+    /// The base planes whose image is no base plane: the planes' orders three and
     /// four are unread by the tower (`Covariance::unread`), named.
     pub unread: Vec<(usize, usize)>,
 }

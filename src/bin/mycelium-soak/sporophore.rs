@@ -2,7 +2,7 @@
 // SPOROPHORE — the enclosure its bodies' centres join (`cga::enclosure`), the
 // lexicon's "an enclosure, the join of centres, nested" — matter for
 // perception now? Per train pair: whether the frame's extent changes (and
-// in proportion); the input bodies some output body on their chart is
+// in proportion); the input bodies some output body on the same chart is
 // carried onto (`carriage`) and those none is, by whether the extent
 // changed; and of the carriages, those whose motion also carries the input
 // scene's sporophore onto the output's (the body moved WITH its scene).
@@ -54,7 +54,7 @@ struct Tally {
     spans_body: u64,
     neither: u64,
     /// THE CUT AS CONTENT CARRIED: of the cut pairs that are no section, the
-    /// output's bodies, and those some input body on their chart is carried
+    /// output's bodies, and those some input body on the same chart is carried
     /// onto; the pairs whose output is ONE body carried from the input, and
     /// those whose every output body is carried.
     cut_out_bodies: u64,
@@ -436,7 +436,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         t.carried_kept, t.uncarried_kept, t.carried_resized, t.uncarried_resized
     );
     println!(
-        "sporophore carriages moving WITH their scene: extent kept {} of {} | extent changed {} of {}",
+        "sporophore carriages moving WITH the scene: extent kept {} of {} | extent changed {} of {}",
         t.with_scene_kept, t.asked_kept, t.with_scene_resized, t.asked_resized
     );
 }

@@ -9,7 +9,7 @@ use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self};
 
 /// Every overlap's place, written by `write` — a keyed walk of the faces by
-/// their overlaps (AT1 Q2), each written at its own key.
+/// the faces' overlaps (AT1 Q2), each written at its own key.
 fn write_every_place(f: &mut Form, write: impl Fn(&mut FacePlace)) {
     let overlaps: Vec<coord::Overlap> = f.faces.entries().map(|(o, _)| o).collect();
     for o in overlaps {
@@ -283,7 +283,7 @@ fn hue_table_maps_hues_absence_is_identity() {
 /// be readable, because dropping the difference is what made the largest
 /// vertex-body fault on the development deployment.
 ///
-/// They compose where their hues do not meet, or meet and agree: one member
+/// They compose where the two gauges' hues do not meet, or meet and agree: one member
 /// speaks both listings, which is what 18.2's partial map means. Where they
 /// meet and DISAGREE they are two assignments and the class varies across
 /// the bundle, exactly as it does when the carriage differs.

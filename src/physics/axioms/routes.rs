@@ -32,10 +32,10 @@ pub const R5_BASING: &str = "every loop is based by the tree transport: ρ(ℓ) 
 
 /// T1 · TWO ROUTES. `H(r, s) = T(s)⁻¹ T(r)` is the holonomy of `s⁻¹ r`, and
 /// `T(r) ∼ T(s)` iff `H(r, s) ∼ 1`.
-pub const T1_TWO_ROUTES: &str = "two routes agree iff their loop's holonomy is the identity ray";
+pub const T1_TWO_ROUTES: &str = "two routes agree iff the holonomy of the loop the two form is the identity ray";
 
 /// T2 · DISCRETE NON-ABELIAN STOKES. Where `s⁻¹ r` bounds cells `σ₁ … σ_m`,
-/// `H(r, s)` is the product of their curvatures, each carried to the
+/// `H(r, s)` is the product of the cells' curvatures, each carried to the
 /// basepoint by its lasso, in the boundary's order; flat cells give
 /// agreeing routes. THE CONVERSE FAILS on a relator: non-trivial curvatures
 /// multiply to the identity, so agreeing routes never prove the cells flat.
@@ -52,7 +52,7 @@ pub const C1_RESOLUTION: &str =
      the rank of the actions' algebra is the capacity; the mode split is the same shape";
 
 /// C2 · n→1, CONVERGENCE. (a) Conjugation preserves `I₁`, `I₂` and the kind,
-/// so minds basing one circuit at their own points agree on its class;
+/// so minds basing one circuit each at its own point agree on its class;
 /// (b) many constructor chains compose to one versor — synonyms; (c) the
 /// convergence of replays on the factorization is open.
 pub const C2_CONVERGENCE: &str =

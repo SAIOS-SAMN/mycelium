@@ -1,10 +1,10 @@
-# The fold — eras of the ledger
+# MU-FOLD — eras of the ledger
 
 > **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** the hypha (its ledger, receipt chains and co-signed folds). No game term.
 
-Status: implemented. The fold is specified by `MU-RECURSION.md` 45.8,
+**Status:** specification, **Built**. The fold is specified by `MU-RECURSION.md` 45.8,
 45.9, 47.2, 47.3 and 78.65 (finality per item) and by `MU-ECONOMY.md` §2
 and §6; where this document and those sections differ, they govern. The
 code is `src/economy/fold.rs` (the net and its conservation),

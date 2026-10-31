@@ -66,7 +66,7 @@ struct Pair<'f> {
 }
 
 /// THE READING over the family: its pairs, the fixed list of predicates
-/// their bodies carry, and what each predicate selects on each pair.
+/// the pairs' bodies carry, and what each predicate selects on each pair.
 struct Reading<'f, 'b> {
     pairs: Vec<Pair<'f>>,
     preds: Vec<Pred>,
@@ -343,7 +343,7 @@ fn agrees(clause: &Clause, p: &Pair<'_>) -> bool {
     said.iter().zip(p.x).zip(p.y).all(|((s, x), y)| s.iter().zip(x).zip(y).all(|((s, x), y)| s == x || s == y))
 }
 
-/// The spoken clauses laid on their frame.
+/// The spoken clauses laid on the clauses' frame.
 fn grid_of(s: &statement::Spoken) -> Option<Grid> {
     let mut g: Grid = vec![vec![crate::arc::ground(); s.frame.1]; s.frame.0];
     for &(r, c, h) in &s.painted {
@@ -391,8 +391,8 @@ impl Reading<'_, '_> {
 /// THE FORM'S MOTIONS AS CARRIAGES: each word member's versor (its rotor
 /// composed with its carriage, as the vertex speaks it) on the bodies of its
 /// chart, with its hue map. A member that moves nothing is no motion: it
-/// leaves its bodies where the canvas holds them, and what became of their
-/// hues is read off the effect body by body (78.167 Phase A) — one member's
+/// leaves its bodies where the canvas holds them, and what became of the
+/// bodies' hues is read off the effect body by body (78.167 Phase A) — one member's
 /// one map over a chart whose bodies were recoloured two ways was an
 /// over-claim the effect refutes.
 fn carriages(form: &Form) -> Result<Vec<Clause>, Unread> {
@@ -465,7 +465,7 @@ fn slide_of(c: &Clause, pairs: &[Pair<'_>]) -> Option<Clause> {
     same.then_some(slide)
 }
 
-/// A REACTION READ OFF THE BODIES THAT LEFT THEIR PLACE (ruled 2026-10-25):
+/// A REACTION READ OFF THE BODIES THAT LEFT A PLACE (ruled 2026-10-25):
 /// each found again on the output — its own cells, its own hues — at an
 /// offset along a unit ray. The ONE ray every one of them is found along;
 /// `None` where none is shared, or more than one (no ray is chosen).
@@ -626,7 +626,7 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
         false => None,
     };
     // THE REACTIONS FIRST (ruled 2026-10-25): where the bodies that left
-    // their place slid along one ray to a meet, and where the recoloured took
+    // a place slid along one ray to a meet, and where the recoloured took
     // the hue of what they touch, the relations are stated — and stand where
     // they re-derive every pair. A fixed erasure and a fixed map fit each
     // pair too, and fail the held-out one; they are read after.
@@ -657,7 +657,7 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
                     Some(true)
                 }
                 _ => {
-                    // The recolours as their fixed maps, class by class.
+                    // The recolours as fixed maps, class by class.
                     let mut fixed = related;
                     for (key, at) in classes.scoped() {
                         match r.separate(at, &still) {
@@ -714,7 +714,7 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
 }
 
 /// 78.167 Phase B — CELLS CREATED: the cells the clauses so far leave unlike
-/// the output (the residue), and the acts their geometry is, read off it —
+/// the output (the residue), and the acts the cells' geometry is, read off it —
 /// never a candidate tried and re-derived (ruled
 /// 2026-10-19/20) — each reading composing its clauses and the next taking
 /// what is left:
@@ -797,11 +797,11 @@ fn created(r: &mut Reading<'_, '_>, base: Vec<Clause>, touched: &[Vec<usize>], e
 /// clears a cell — no creation says that.
 type Residue = (Vec<Grid>, PairCells);
 
-/// On each pair, a set of cells with their hues.
+/// On each pair, a set of cells, each with its hue.
 type PairCells = Vec<Vec<(usize, usize, u8)>>;
 
-/// One fill class: on each pair its holders, and the cells their fill
-/// explains.
+/// One fill class: on each pair its holders, and the cells the holders'
+/// fill explains.
 type FillClass = (Vec<Vec<usize>>, PairCells);
 
 fn residue_of(r: &mut Reading<'_, '_>, clauses: &[Clause]) -> Result<Option<Residue>, Unread> {
@@ -853,9 +853,9 @@ fn pieces_of(res: &[(usize, usize, u8)]) -> Vec<Vec<(usize, usize, u8)>> {
 }
 
 /// C4 — FILLS READ PIECE BY PIECE: a piece of one hue is a fill where the
-/// region of the bodies whose region holds it — their interior, halo or
+/// region of the bodies whose region holds it — the bodies' interior, halo or
 /// extent — covers it and lies within the created cells; the pieces of one
-/// region and hue are one clause, their bodies separated by the list. What
+/// region and hue are one clause, the pieces' bodies separated by the list. What
 /// no fill reads is left for the lines. A class whose bodies do not separate
 /// is left for them too.
 fn read_fills(r: &Reading<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
@@ -893,7 +893,7 @@ fn read_fills(r: &Reading<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &
                     // corpus 2026-10-26): a fill speaks the interior of its
                     // whole selection, and a hole only two bodies close was
                     // never read, each body's own interior measured alone. The
-                    // bodies around the piece, together, where their joint
+                    // bodies around the piece, together, where the bodies' joint
                     // interior covers it and lies within the created cells.
                     .or_else(|| {
                         let holders = statement::bodies_around(p.x, &p.bodies, &piece);
@@ -976,11 +976,11 @@ struct Rays {
     contact: bool,
 }
 
-/// C3 — LINES READ OFF THEIR EFFECT. Every residue cell beside a body cell
+/// C3 — LINES READ OFF THE EFFECT. Every residue cell beside a body cell
 /// measures a ray — its displacement from that cell — and the walk from the
 /// body cell along it must run through residue cells to a stop: the grid's
 /// border, or a cell painted before (contact). Each ray so measured is one
-/// clause: the bodies its runs leave (separated), painted their own hue or
+/// clause: the bodies its runs leave (separated), each painted its own hue or
 /// the one hue every run carried, stopping at contact where any run did.
 /// `None` where the runs do not cover the residue, or a ray's bodies do not
 /// separate, or its runs carry no one paint.
@@ -1082,7 +1082,7 @@ fn read_lines(r: &Reading<'_, '_>, canvas: &[Grid], residue: &[Vec<(usize, usize
         .collect()
 }
 
-/// C3′ — CONNECTORS READ OFF THEIR EFFECT (78.167 Phase B, Step 2): a piece
+/// C3′ — CONNECTORS READ OFF THE EFFECT (78.167 Phase B, Step 2): a piece
 /// that is a straight segment along a row or a column, of one hue, whose two
 /// ends abut — along its axis — cells of two different bodies, joins those
 /// bodies. The pieces of one hue are one clause, `Connect` painted that hue,
@@ -1177,7 +1177,7 @@ fn shape_of(cells: &[(usize, usize, u8)]) -> Option<Shape> {
     Some((r0, c0, s))
 }
 
-/// C2′ — ECHOES READ OFF THEIR EFFECT (78.167 Phase B, Step 3): a piece that
+/// C2′ — ECHOES READ OFF THE EFFECT (78.167 Phase B, Step 3): a piece that
 /// is an input body's own shape, its hues by one map, at an offset. Each such
 /// piece offers the offsets (and maps) at which some body lands on it
 /// exactly; the offset every echo-shaped piece offers, where exactly one is
@@ -1302,7 +1302,7 @@ fn turned(t: u8, (a, b): (usize, usize), (h, w): (usize, usize)) -> Option<(usiz
 /// THE SQUARE'S SYMMETRY `t` AS A VERSOR of `Cl(4,1)(ℚ)` about the origin of
 /// the sensor's plane (`e1` the rows, `e2` the columns): a mirror is one
 /// reflector, a turn the product of two — `e1 − e2` swaps the axes, and a
-/// quarter turn is that swap followed by one axis reversed.
+/// 90° turn is that swap followed by one axis reversed.
 fn symmetry(t: u8) -> Option<crate::transducer::cga::Mv> {
     use crate::transducer::cga::{Mv, E1, E2};
     let one = || crate::core::Q::from_integer(1.into());
@@ -1347,7 +1347,7 @@ fn echo_of(key: &[u8]) -> Option<Act> {
 /// input body's own shape under one of the square's symmetries — the
 /// group's first that gives it, itself before any turn — its hues by one
 /// map, offers that symmetry, the displacement of the centres and the map.
-/// Each body's eight shapes are filed by their bytes, so a piece's offers
+/// Each body's eight shapes are filed by the shapes' bytes, so a piece's offers
 /// are one keyed read. The echoes are the offers EVERY pair showing one
 /// makes — several where it shows several — each on the bodies offering
 /// it (separated by the list), and each standing only where, spoken alone,
@@ -1533,7 +1533,7 @@ fn bend_of(piece: &[(usize, usize, u8)], p: &Pair<'_>, owner: &[Vec<Option<usize
     None
 }
 
-/// C3″ — BENT CONNECTORS READ OFF THEIR EFFECT (ruled
+/// C3″ — BENT CONNECTORS READ OFF THE EFFECT (ruled
 /// 2026-10-20: Manhattan connectors round an empty corner): each piece that
 /// is a bend (`bend_of`) names its source and its target; the pieces of one
 /// hue are one clause, `Bend` painted that hue, on the sources they leave,

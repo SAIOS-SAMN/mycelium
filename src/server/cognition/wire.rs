@@ -3,7 +3,7 @@
 //
 //! The percept and the demand that were spelled here carried a voice's
 //! painted sites to the court (law 8, ruled 2026-09-10); both are deleted with
-//! their acts. A body that does not parse whole is refused; nothing here
+//! the acts that carried them. A body that does not parse whole is refused; nothing here
 //! guesses at a shape.
 
 use super::*;
@@ -15,7 +15,7 @@ pub fn germ_address(g: &Element) -> crate::transducer::address::Address {
     g.address()
 }
 
-/// The frame measured from two painted scenes (their site extents) — the
+/// The frame measured from two painted scenes (the scenes' site extents) — the
 /// identity frame when both share dims; used where no grid is at hand.
 #[expect(
     clippy::disallowed_methods,

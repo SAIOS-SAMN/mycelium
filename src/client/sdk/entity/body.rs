@@ -420,7 +420,7 @@ impl Entity {
         // its sequence counts every post, into any box — so a mind whose box
         // stayed empty kept a cursor below it, every read answered at once,
         // and five minds read ~2 400 times a second, the courts' doors taken
-        // and their keepers' rings and digests turned away. Nothing in this
+        // and the courts' keepers' rings and digests turned away. Nothing in this
         // box stands past the cursor up to the standing: the cursor moves
         // there, and the next read is held to the court's next event.
         if !more {
@@ -588,7 +588,7 @@ impl Entity {
             }
             Decision::Awaiting { .. } => return,
         };
-        // The house's petitions are answered by their own acts, never by a
+        // Each of the house's petitions is answered by its own act, never by a
         // beat: a solve, or its declination.
         if choice.fn_id == FN_SOLVE || choice.fn_id == FN_DECLINE {
             return;

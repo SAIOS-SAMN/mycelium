@@ -29,7 +29,7 @@ fn trace_of_composite_is_cyclic() {
     let (turn, shift) = motions();
     let (f, g) = (LinearFunction::of_versor(&turn).expect("acts"), LinearFunction::of_versor(&shift).expect("acts"));
     assert!(!f.after(&g).minus(&g.after(&f)).is_zero(), "the two do not commute");
-    assert_eq!(f.after(&g).trace(), g.after(&f).trace(), "and their traces agree");
+    assert_eq!(f.after(&g).trace(), g.after(&f).trace(), "and the two traces agree");
 }
 
 /// THE KERNEL OF `R − 1` IS WHAT THE MOTION HOLDS: a turn in `e₁e₂` holds
@@ -45,7 +45,7 @@ fn kernel_of_turn_less_one_is_fixed_flat() {
 }
 
 /// THE MOTION'S MODES FROM ITS OWN ACTION: the rays compose back to the
-/// motion (T1), their values the roots of the characteristic polynomial of
+/// motion (T1), the rays' values the roots of the characteristic polynomial of
 /// `(R + R⁻¹)/2`, and the (3, 4, 5) turn's value is `c = 3/5`, rational.
 #[test]
 fn motion_modes_read_off_action_compose_back() {

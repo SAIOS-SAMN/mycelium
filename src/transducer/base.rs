@@ -1,10 +1,10 @@
 // 71 — THE BASE IS ℚⁿ AND n IS DATA: a site of the base, with its
-// coordinates and their count carried together.
+// coordinates and the coordinates' count carried together.
 //
 //! A site is a point of ℤⁿ. Its length is the corpus's `n`, read at intake
 //! (71.2(1)), and nothing downstream names how many coordinates a site has:
 //! a reader asks the site. Two sites of different `n` are different kinds
-//! of thing, so every operation between two sites refuses where their
+//! of thing, so every operation between two sites refuses where the two
 //! lengths differ, rather than reading one as the other.
 //!
 //! The order is the coordinates' own, lexicographic. It is the order the
@@ -59,7 +59,7 @@ pub struct Site {
 }
 
 impl Site {
-    /// A site from its coordinates. Their count is its `n`. `None` past the
+    /// A site from its coordinates. The coordinates' count is its `n`. `None` past the
     /// algebra's [`MAX_N`](crate::transducer::cga::MAX_N): a base whose axes
     /// the conformal masks cannot hold is refused where it enters, so every
     /// point, sphere and translator built on a site stands in the algebra.

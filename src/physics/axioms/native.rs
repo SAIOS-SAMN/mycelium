@@ -26,7 +26,7 @@
 /// WHY AN AXIOM AND NOT A CONVENTION. `tr(M₂)` is an `SO(2)` invariant, so
 /// a chart read through its trace alone is an ISOTROPIC POINT MASS. Two
 /// point masses have no relative angle; the only relation left is the
-/// geodesic through their centres, whose bivector is a simple blade with
+/// geodesic through the masses' centres, whose bivector is a simple blade with
 /// `I₂ = 0` and `ℓ = 1`. The collapse does not lose precision — it loses a
 /// SECTOR, silently, and reports `ℓ = 1` as a fact about the scene rather
 /// than as an artefact of the reading.

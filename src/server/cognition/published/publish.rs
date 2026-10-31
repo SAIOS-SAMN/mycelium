@@ -53,7 +53,7 @@ pub(crate) struct EraRun {
 }
 
 /// WHAT ONE PUBLICATION COPIED, counted exactly (law 9: no clock): the
-/// receipts and the eras, with the bytes of their tapes (`bytes`); the
+/// receipts and the eras, with the bytes of the tapes (`bytes`); the
 /// accounts re-read and the accounts a moved shard copied, each a key and
 /// three lane vectors; and the per-signer entries re-made. A count past its
 /// carrier is named (`passed`).

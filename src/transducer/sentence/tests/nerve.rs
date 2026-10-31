@@ -119,7 +119,7 @@ fn glue_under_admits_mutual_citation() {
 /// This is what replaces the depth refusal. A cycle is not forbidden; it is
 /// MEASURED, and what it measures is the holonomy of the orbit it closes. A
 /// triangle whose composite transition is the identity versor GLUES — the
-/// three charts agree on their triple overlap and carry one section — and
+/// three charts agree on the triple overlap and carry one section — and
 /// one whose composite is not the identity carries that composite as its
 /// obstruction. That composite is the content of `H²`, and it is the thing
 /// a posetal height can never express: a height orders charts, and an
@@ -137,7 +137,7 @@ fn glue_under_admits_mutual_citation() {
 fn glue_under_triangle_closes_or_carries_holonomy() {
     use crate::transducer::element::{identity_versor, same_versor, translator_versor, Versor};
 
-    // Three charts of a cover, and the three transitions around their
+    // Three charts of a cover, and the three transitions around the charts'
     // triple overlap. Composed, the translations cancel exactly over ℚ:
     // `T(3,0) · T(0,5) · T(−3,−5) = 1`. Nothing is rounded and nothing is
     // near: the identity is the identity (rule 11).
@@ -257,9 +257,9 @@ fn glue_separates_isomorphic_boundaries_by_cover_only() {
 
     // EVERY BOUNDED COORDINATE OF THE CITATION AGREES.
     assert_eq!(c1.key(), c2.key(), "the cited forms' charts are one");
-    assert_eq!(m1, m2, "and their magnitudes");
-    assert_eq!(d1, d2, "and their depths");
-    assert_eq!(p1.rotor().class_key(), p2.rotor().class_key(), "and their placements");
+    assert_eq!(m1, m2, "and the cited forms' magnitudes");
+    assert_eq!(d1, d2, "and the cited forms' depths");
+    assert_eq!(p1.rotor().class_key(), p2.rotor().class_key(), "and the cited forms' placements");
     assert!(
         crate::transducer::element::same_versor(&phi1, &phi2),
         "and the morphisms they act under"
@@ -293,7 +293,7 @@ fn glue_separates_isomorphic_boundaries_by_cover_only() {
 /// 54.4 — EVERY ORBIT LIFTS, because the cycle basis is built where the
 /// transport is.
 ///
-/// This is the property that was false on the whole fleet: 281 real orbits
+/// This is the property that was false on the whole deployment: 281 real orbits
 /// across three voices, every face of every one carrying a member pair — no
 /// tears — and ZERO closed member paths. `orbits_of` built its spanning tree
 /// and fundamental cycles over the VERTEX graph, `adj` indexed by `f.i`,
@@ -345,7 +345,7 @@ fn orbit_words_lift_every_orbit() {
 #[test]
 fn orbits_of_two_charts_one_vertex_is_empty() {
     let mut f = Form::default();
-    // Two members at two charts — the two members the fleet's split
+    // Two members at two charts — the two members the deployment's split
     // vertices present, here as the smallest form that has them. AT1 (Q1):
     // one word class is ONE vertex, so this is literally one vertex on two
     // charts, each overlapped from the Frame's.
@@ -366,7 +366,7 @@ fn orbits_of_two_charts_one_vertex_is_empty() {
 ///
 /// `orbit_words_lift_every_orbit` runs on fixtures whose vertices
 /// each act on ONE chart, where the member complex and the vertex graph
-/// coincide and the property is true for free. This is the shape the fleet
+/// coincide and the property is true for free. This is the shape the deployment
 /// actually has — 140 members on 74 vertices, every real orbit passing
 /// through one that splits — and it is the shape that has to lift.
 ///

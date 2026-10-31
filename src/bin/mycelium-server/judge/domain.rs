@@ -1,8 +1,8 @@
 // 78.120 — ACT_DOMAIN: a domain founded on this court (`Kernel::admit_domain`),
 // answered by the genesis receipt's stamp and chain hash, or the refusal by
 // name; 78.127 — or its reserve tier designated (`Kernel::designate_reserve`).
-// 78.154 — or a universe's LEDGER entry, its MAP, a TRAVERSE, and their
-// reads: each act handed the door's quorum-final point (78.152 TU-7), read off
+// 78.154 — or a universe's LEDGER entry, its MAP, a TRAVERSE, and the
+// reads of each: each act handed the door's quorum-final point (78.152 TU-7), read off
 // the shelf outside the kernel; READ-LEDGER served off the published reading
 // (78.151), never the kernel.
 

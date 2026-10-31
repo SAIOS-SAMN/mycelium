@@ -43,7 +43,7 @@ pub const LEAF_CHALLENGES: u8 = 6;
 /// 78.126 — the handoffs: each offer held while a side is open, and the sides
 /// each fold consumed; absent where none is held.
 pub const LEAF_HANDOFFS: u8 = 7;
-/// 78.147 — the fold roots this court holds with their two signatures, by
+/// 78.147 — the fold roots this court holds, each with its two signatures, by
 /// signer; absent where none is held (and on every home written before it).
 pub const LEAF_ROOTS: u8 = 8;
 /// 78.154 — the atlas: each universe's ledger chain and map, the crossings'
@@ -91,7 +91,7 @@ pub const MEMBER_CAVITY: u8 = 4;
 pub const MEMBER_FEDERATION: u8 = 8;
 pub const MEMBER_SPOKEN: u8 = 16;
 
-/// T3 (LD3-b) — THE CARRIERS WITH THEIR OWN COORDINATES.
+/// T3 (LD3-b) — THE CARRIERS, EACH WITH ITS OWN COORDINATES.
 ///
 /// The eras held in hand — a kernel with no cold segment, a fixture — each
 /// keyed by its root's stamp `h‖signer‖K‖i`: the root's height and place

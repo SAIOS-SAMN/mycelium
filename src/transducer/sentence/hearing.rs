@@ -46,7 +46,7 @@ impl Size {
     }
 
     /// A HELD WORD'S SIZE, read off its coordinates: where every hole is a
-    /// turn of finite order, it returns at the lcm of their orders; where any
+    /// turn of finite order, it returns at the lcm of the holes' orders; where any
     /// hole does not return (a boost, a slide, a rosette), it is a carrier.
     /// `None` for a word with no hole — it moves nothing and is no ring.
     pub fn of_coordinates(c: &super::coordinates::Coordinates) -> Option<Size> {
@@ -64,7 +64,7 @@ impl Size {
     }
 
     /// THE SIZE'S COORDINATE, written so the byte order is the nesting order:
-    /// the returning sizes by their period, ascending, then the carrier.
+    /// the returning sizes by period, ascending, then the carrier.
     pub fn key(self) -> Vec<u8> {
         match self {
             Size::Returns(l) => [&[0u8][..], &l.to_be_bytes()].concat(),
@@ -228,12 +228,12 @@ pub struct Echoed {
     /// word itself where it is the outer ring; `None` where it is leftover
     /// or unheard — not understood.
     pub carried: Option<Mv>,
-    /// The rings of the layer it seated in, by their coordinates.
+    /// The rings of the layer it seated in, each by its coordinates.
     pub through: Vec<Vec<u8>>,
 }
 
 /// H5 — HEAR A WORD IN ANOTHER MIND'S RINGS: `rings` the hearer's held words
-/// by their size, in the order sizes nest (ascending periods, then the
+/// by size, in the order sizes nest (ascending periods, then the
 /// carrier), each with its coordinate and motion. The word of `size` seats in
 /// the NEXT LARGER layer — the least size above it it divides — read against
 /// every ring there: WHOLE where some echo is the identity (understood

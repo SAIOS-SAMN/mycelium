@@ -22,7 +22,7 @@ pub mod torsion_witness;
 pub mod cech;
 /// A9 — the selection term a family's evidence derives.
 pub mod anchor;
-/// A9 — candidate selections with their exact invariant signatures.
+/// A9 — candidate selections with the selections' exact invariant signatures.
 pub mod beam;
 /// A6, A7, 17.4 — the chart a word is filed under.
 pub mod stalk;

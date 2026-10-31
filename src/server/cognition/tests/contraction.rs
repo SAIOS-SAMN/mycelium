@@ -11,7 +11,7 @@ use crate::transducer::sentence::{
 };
 
 /// A bar and a lone painted site of another hue carried together (50.3's
-/// rigid pair): two word vertices and their edge — the voice's family, and
+/// rigid pair): two word vertices and the edge between them — the voice's family, and
 /// the sentence it mints over an empty genome.
 fn voice_family() -> Vec<TrainPair> {
     // H1, 70.4 — two bodies are two SEPARATED regions, not two touching

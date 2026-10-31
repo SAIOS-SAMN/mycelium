@@ -15,8 +15,8 @@ component is and how it is accepted. It builds on
 [`MU-RECURSION.md`](MU-RECURSION.md) (the language and its laws),
 [`MU-STANDARDS.md`](MU-STANDARDS.md) (tests as claims, the gate),
 [`MU-SCIENCE.md`](MU-SCIENCE.md) (verification classes),
-[`CONCORDANCE.md`](CONCORDANCE.md) (conformance by decoded exact values,
-1.4) and [`COGNITION.md`](COGNITION.md) (the rule language, §1.3).
+[`MU-CONCORDANCE.md`](MU-CONCORDANCE.md) (conformance by decoded exact values,
+1.4) and [`MU-COGNITION.md`](MU-COGNITION.md) (the rule language, §1.3).
 
 ---
 
@@ -76,7 +76,7 @@ Mycelium's current types, admission path and treasury.
 | Status | Meaning |
 |---|---|
 | **Built** | In the tree, with its acceptance claims. |
-| **In progress** | Being landed; part of its acceptance may remain. |
+| **In progress** | Being built; part of its acceptance may remain. |
 | **Specified** | Designed here; not yet in the tree. |
 
 ---
@@ -179,7 +179,7 @@ constructor that refuses instead.
 - `a_signed_act_is_admitted_through_the_tunnel_and_an_unsigned_one_is_not`:
   the tunnel adds nothing to identity.
 
-**Track** 5. **Effort** medium. **Status** in progress: being landed as
+**Track** 5. **Effort** medium. **Status** In progress: being built as
 `src/network/noise.rs`; wiring into the server door and the SDK session,
 and the pin store in the home, may remain after the first commit.
 
@@ -239,7 +239,7 @@ than read as a surviving law.
   equality (`same_vertex`) and a clause's tie rule, every entry `killed`.
 
 **Track** 14 (and MU-STANDARDS §4, the gate). **Effort** medium.
-**Status** in progress: the `mutate` subcommand is being added to `xtask`.
+**Status** In progress: the `mutate` subcommand is being added to `xtask`.
 
 ### 3.3 Named refusals in `learn_form`
 
@@ -281,8 +281,8 @@ named-refusal law to a site that predates it.
 - `every_vertex_of_a_form_is_filed_refused_or_no_word`: the three sets
   partition the form's vertices.
 
-**Track** 7. **Effort** small. **Status** in progress (the reasons above
-are those being landed; their final names are the code's).
+**Track** 7. **Effort** small. **Status** In progress (the reasons above
+are those being built; their final names are the code's).
 
 ### 3.4 Integer homology and invariant factors
 
@@ -374,7 +374,7 @@ factors; Mycelium keeps the factors as the class and acts on
   replacing the degree-only reading.
 - `a_reduction_past_its_budget_is_refused_unbounded`.
 
-**Track** 18, 19 and 12. **Effort** medium. **Status** specified.
+**Track** 18, 19 and 12. **Effort** medium. **Status** Specified.
 
 ### 3.5 Chain-complex checker as a V1 certificate kind
 
@@ -429,7 +429,7 @@ through the POW++ arms.
   coordinates.
 - `a_check_past_its_budget_is_unread_and_resumes`.
 
-**Track** 12 (S2). **Effort** medium. **Status** specified.
+**Track** 12 (S2). **Effort** medium. **Status** Specified.
 
 ### 3.6 Fault-injection campaign and invariant auditor
 
@@ -509,7 +509,7 @@ rules.
 - `a_lie_routed_through_the_accused_is_still_detected`: the auditor's
   independent view.
 
-**Track** 14. **Effort** large. **Status** specified.
+**Track** 14. **Effort** large. **Status** Specified.
 
 ### 3.7 Malformed-input corpus; refuse and wait
 
@@ -556,14 +556,14 @@ of acts, and `skip` is not adopted.
 - `a_truncated_act_waits_for_exactly_the_bytes_it_owes`.
 - `every_corpus_case_is_refused_with_its_named_reason`.
 
-**Track** 14 (codec hardening). **Effort** small. **Status** specified.
+**Track** 14 (codec hardening). **Effort** small. **Status** Specified.
 
 ### 3.8 Rule-language extensions
 
-**What it is.** Five additions to the clause vocabulary that COGNITION
+**What it is.** Five additions to the clause vocabulary that MU-COGNITION
 §1.3 names as the road, plus clauses learnable as vocabulary. Each changes
 the form language and the court's replay, so each is a court change,
-landed with its codec, its replay and its claims.
+built with its codec, its replay and its claims.
 
 **The current vocabulary** (`src/transducer/sentence/form/clause.rs`):
 predicates `Pred::{All, Hue, Chart, Cmp, Rank, Touches, Not, And, Any}`
@@ -670,7 +670,7 @@ Hermite form, not in fixed-width integers; and every addition is judged by
 closure on families it did not see, never by the task it closed.
 
 **Track** 7. **Effort** large (five court changes, each one phase).
-**Status** specified.
+**Status** Specified.
 
 ### 3.9 Body fate precondition; the representation functor
 
@@ -720,7 +720,7 @@ chart's linearization as a coordinate of the result, not as a constant.
 - `the_product_of_two_ideal_members_is_zero`: exact identity.
 
 **Track** 7 (fate precondition) and 18 (functor). **Effort** medium.
-**Status** specified.
+**Status** Specified.
 
 ### 3.10 SDK tiers and a file-feed door
 
@@ -764,14 +764,14 @@ remains the second vantage's (47.3).
 - `a_restarted_door_resumes_by_asking_the_court`: replay.
 
 **Track** 9 (tiers in the SDK documentation) and 15 (the door, on the
-operator's path, MU-HOSTING §2). **Effort** medium. **Status** specified.
+operator's path, MU-HOSTING §2). **Effort** medium. **Status** Specified.
 
 ### 3.11 Documentation
 
 Three documentation pieces, each a documentation commit.
 
 1. **A table of refused functionals** for
-   [`docs/EQUATIONS.md`](EQUATIONS.md): forms that a port must not bring
+   [`docs/MU-EQUATIONS.md`](MU-EQUATIONS.md): forms that a port must not bring
    over, each with the reason and Mycelium's replacement:
 
    | Refused form | Why refused | Mycelium's replacement |
@@ -794,8 +794,8 @@ Three documentation pieces, each a documentation commit.
    two levels of detail, readings rendered from decoded exact values (never
    from logs), and a protocol in which the explorer only reads.
 
-**Track** 11 (EQUATIONS), 17 (MU-CHARTER) and 15 (MU-HOSTING; explorer).
-**Effort** small. **Status** specified.
+**Track** 11 (MU-EQUATIONS), 17 (MU-CHARTER) and 15 (MU-HOSTING; explorer).
+**Effort** small. **Status** Specified.
 
 ### 3.12 World-model onboarding reference
 
@@ -821,7 +821,7 @@ mapping from the spaces world models already declare.
 | Episode reset with a seed | Founding from a seed recorded in the domain; reconstruction by rebuilding from it (MU-HOSTING §7) |
 | Step | One reported transition, checked by the profile's laws (track 15, H3) |
 
-**Track** 15 (H3). **Effort** small. **Status** specified.
+**Track** 15 (H3). **Effort** small. **Status** Specified.
 
 ---
 
@@ -921,7 +921,7 @@ the crate's public API. This section is the design of it.
 | **P7: bindings** | A first binding in another language, on the conformance read. | The binding passes the conformance suite with exact values only. |
 
 **Track** 9 (with 15 H1 for the conformance read). **Effort** large.
-**Status** specified.
+**Status** Specified.
 
 ---
 

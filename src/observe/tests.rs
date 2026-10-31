@@ -439,7 +439,7 @@ fn of_chain_measures_nodes_by_kind_flat_in_word() {
 /// 78.152 — A COURT'S TUNIVERSAL STANDING TRAVELS EXACTLY: three keepers
 /// exchange readings, the observer reads one court's keepers off them, and
 /// the Court reading carrying that standing — and a hand-built residual
-/// with signed lanes at their carrier's ends — reads back as itself.
+/// with signed lanes at the lane carrier's ends — reads back as itself.
 #[test]
 fn tstanding_reads_back_exactly_and_refuses_other_version() {
     use crate::chronometry::tuniversal::{Edge, Keepers, Origin, Residual, TPoint, Tick};
@@ -505,7 +505,7 @@ fn tstanding_reads_back_exactly_and_refuses_other_version() {
 }
 
 /// MU-CLIENT §5.3, §5.5 — A MIND'S READING AND A COURT'S AGREEMENTS travel
-/// whole, their deviations exact rationals lane by lane, and a mind's
+/// whole, the agreements' deviations exact rationals lane by lane, and a mind's
 /// reading stands under its own source.
 #[test]
 fn mind_and_agreements_read_back_exact() {
@@ -576,7 +576,7 @@ fn mind_and_agreements_read_back_exact() {
 /// left for the winding carrier, and is answered at the next law boundary
 /// the carrier passes — the asker reads the carrier's standing beside the
 /// answer; its lines travel whole, and lines past the frame are said by
-/// their count and where to ask from.
+/// count and where to ask from.
 #[test]
 fn live_call_is_answered_at_next_boundary() {
     let line = "observe-test: thoughts";

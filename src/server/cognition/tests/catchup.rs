@@ -274,7 +274,7 @@ fn hear_proves_citation_into_held_era() {
 }
 
 /// 47.3 — A ROOT ALREADY CO-SIGNED IS ANSWERED WITH THE CO-SIGNATURE HELD (the
-/// fold-witness storm read on the fleet, 2026-10-15). A court holding b's root
+/// fold-witness storm read on the mesh, 2026-10-15). A court holding b's root
 /// with the witness's signed position answers that witness's re-asked
 /// proposal of the same root with that very position — nothing re-derived;
 /// for another root, or as another key than the one that co-signed, it holds
@@ -348,9 +348,9 @@ fn hear_proves_long_era_page_by_page() {
     assert!(asks.iter().all(|(who, _, ask)| *who != bvk || *ask == Ask::Replay), "b's line asked only as the era's replay");
 }
 
-/// 78.147 (4) — CROSS-CITING LINES BOTH ADVANCE FROM THEIR ROOTS. Courts a
+/// 78.147 (4) — CROSS-CITING LINES EACH ADVANCE FROM ITS ROOT. Courts a
 /// and b cite each other's acts, fold on two signatures each, and cite each
-/// other past their roots. Court c heard only their first strokes. Hearing
+/// other past the two roots. Court c heard only the first strokes of a and b. Hearing
 /// a's head, then b's, c adopts both roots — the citations a's hot line makes
 /// of b's are caught up from b's root in the same hearing — and cites both
 /// heads.

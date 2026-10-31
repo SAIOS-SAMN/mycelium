@@ -102,7 +102,7 @@ fn note_decohered_settles_as_class_or_rejoining() {
     );
 }
 
-/// Three thoughts on one ring, their sections and edges as given, the ring's
+/// Three thoughts on one ring, the thoughts' sections and edges as given, the ring's
 /// 2-simplex formed.
 fn ring_of_three(
     sections: [crate::transducer::alphabet::Rotor; 3],
@@ -217,7 +217,7 @@ fn docket_order_takes_outermost_entry_first() {
 
 /// 78.37, R1 — A HELD CLASS IS A REAL ENTRY, END TO END: sealed into the
 /// plan with its rotor, the taker marks the thoughts standing on its cover
-/// dirty with that rotor in their horizon, and a discharge of its class key
+/// dirty with that rotor in each thought's horizon, and a discharge of its class key
 /// answers it by name — it leaves the open docket, counted.
 #[test]
 fn take_docket_answers_held_class_by_class_key() {
@@ -329,7 +329,7 @@ fn pivot_on_twice_without_new_word_leaves_fills() {
         }
         #[expect(
             clippy::disallowed_methods,
-            reason = "rule 4 — canonical key order: the simplices by their own keys, so two snapshots of one complex compare"
+            reason = "rule 4 — canonical key order: the simplices by the simplices' own keys, so two snapshots of one complex compare"
         )]
         out.sort_by(|a, b| a.0.cmp(&b.0));
         out

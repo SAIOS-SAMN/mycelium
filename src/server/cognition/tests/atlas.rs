@@ -42,7 +42,7 @@ fn fp(h: u64) -> TPoint {
 }
 
 /// Domains 4 and 5 founded, each its own reserve, and a tube open between
-/// their reserves (4 offers and keeps it).
+/// the two reserves (4 offers and keeps it).
 fn founded() -> (Kernel, [u8; 32], [u8; 32]) {
     let mut k = Kernel::new();
     for d in [4u8, 5] {

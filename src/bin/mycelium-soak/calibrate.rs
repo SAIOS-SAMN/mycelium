@@ -13,8 +13,8 @@
 //! carrier is missing and it can be named. If both agree, the residue is
 //! the allocator's and is a fact rather than something to chase.
 //!
-//! THIS IS NOT A FLEET READING and does not claim to be. It measures the
-//! arithmetic of `Bytes`, which is a property of the code; the fleet's own
+//! THIS IS NOT A MESH READING and does not claim to be. It measures the
+//! arithmetic of `Bytes`, which is a property of the code; the mesh's own
 //! numbers come from a recut and nowhere else.
 
 use mycelium::transducer::family::{extract_rule_on, extraction_spend, perceive_family};
@@ -41,7 +41,7 @@ fn ratio(walk: i128, alloc: i128) -> String {
 }
 
 /// The corpus file whose registry task id begins with `want` — the map the
-/// fleet's journal needs, since a voice names a family by its registry id
+/// mesh's journal needs, since a voice names a family by its registry id
 /// and the census must read that family's own file.
 pub(crate) fn find_id(dir: &str, names: &[String], want: &str) {
     for file in names {

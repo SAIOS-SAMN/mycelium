@@ -89,7 +89,7 @@ fn pivot_certificate_key_ignores_versor_scale() {
 }
 
 /// LD0 step 5 — A CERTIFICATE IS WRITTEN AS ITS RAYS. The translator and
-/// the seed go on the tape as their canonical rays, so `T` and `λT` write
+/// the seed each go on the tape as its canonical ray, so `T` and `λT` write
 /// the same bytes; and a FORMED word — an action no tape spells — keeps its
 /// action across the tape, where the letters alone wrote it as the
 /// identity.

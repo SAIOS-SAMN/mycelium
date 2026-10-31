@@ -477,7 +477,7 @@ impl Kernel {
         // escrow its cap; nothing above the discharge is minted.
         let discharge = self.discharge_of(addr.as_bytes(), spoken);
         // POWV: this court and the peer whose re-derivation glued it verified
-        // the closure, and take their share before the closer is paid.
+        // the closure, and each takes its share before the closer is paid.
         let organs = [self.identity, peer];
         let _ = self.release_verified(addr.as_bytes(), discharge, &organs, installed);
         self.unlist(&addr, false);
@@ -726,9 +726,9 @@ impl Kernel {
     /// 78.74 — THE NERVE'S ELASTIC VENT AT THE COURT: a word leaving the
     /// language voids every vantage whose section it was on its chart, and
     /// each such vantage releases its star (`Complex::release_vertex`) —
-    /// chambers cross (their classes kept as holes, which hold the vantage
+    /// chambers cross (the chambers' classes kept as holes, which hold the vantage
     /// until they return), tethers drain where no class stands over them
-    /// (vacuum, or cauterized with their record) — so the complex no longer
+    /// (vacuum, or cauterized with the tethers' record) — so the complex no longer
     /// only accretes, and never loses a class it sealed.
     pub(crate) fn release_vantages(&mut self, inv: &crate::transducer::stalk::Invariant, addr: &[u8]) {
         let Some(cx) = self.complexes.get_mut(&inv.key()) else { return };

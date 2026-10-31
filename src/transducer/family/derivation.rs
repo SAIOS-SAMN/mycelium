@@ -230,7 +230,7 @@ pub(crate) fn adjoined_basis_target(
         },
     };
     // THE LANES THE TARGET OCCUPIES (42.6 as amended, L12), and the basis
-    // at their MEET. `3` was written here as a literal, which asserted
+    // at the lanes' MEET. `3` was written here as a literal, which asserted
     // that every target is holonomic and nothing else: a target that
     // RECOLOURS while it turns occupies `𝒢` too, and reducing it against a
     // generator held only on `𝒽` divides out the turn and leaves the

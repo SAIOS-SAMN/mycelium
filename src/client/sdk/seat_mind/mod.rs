@@ -471,7 +471,7 @@ pub struct Located {
 
 /// 78.156 — THE SUB-INSTANCE'S EXPERIENCED DILATION between two located
 /// percepts of one origin: the world's advance `du`, the final point's tick
-/// advance `dh`, and their exact ratio `du/dh` — none where the final point
+/// advance `dh`, and the exact ratio `du/dh` — none where the final point
 /// stood still (`dh` zero: the world moved while TUniversal did not). A
 /// reading, never an error: the world keeps its own pace.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -654,7 +654,7 @@ impl SeatMind {
         let dilation = self.locate(p, at.as_ref());
         let mut reading = Perceived { beat: p.seq, records: p.records.len(), dilation, ..Perceived::default() };
         self.counsel.clear();
-        // Occurrences among records sharing a kind and keys, by their record
+        // Occurrences among records sharing a kind and keys, by the records'
         // prefix: the house's order within one percept is its statement.
         let mut occurrences: Keyed<u32> = Keyed::new();
         for r in &p.records {

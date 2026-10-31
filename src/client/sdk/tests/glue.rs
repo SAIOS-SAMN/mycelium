@@ -62,7 +62,7 @@ fn on_body_finds_stood_form_at_body_chart() {
 /// form cites it when it extracts a rule over a family that form closes
 /// part of. The same claim `perceive_speech_replays_glued_form_through_court_genome`
 /// makes of a stub crystal whose `on_class` ignores the chart it is asked
-/// at — made here of the epigenome the fleet runs.
+/// at — made here of the epigenome a deployed mind runs.
 #[test]
 fn extract_rule_with_cites_stood_form() {
     let family = vec![
@@ -137,7 +137,7 @@ fn on_body_answers_after_genome_restore() {
 /// index is derived from the genome like the atlas, the axis index and
 /// the moduli index, so a mind that boots from its genome factors through
 /// the same generators the mind that learned them did. Left out of
-/// `uncrystallize`, every fleet client would speak the cipher's language
+/// `uncrystallize`, every deployed client would speak the cipher's language
 /// after every start — A22 from the identity, a function of the versor
 /// alone — and the mind's own history would be invisible in what it said.
 ///

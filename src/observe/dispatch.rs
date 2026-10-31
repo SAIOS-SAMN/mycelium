@@ -19,7 +19,7 @@ pub struct Sent {
 }
 
 /// THE TASKS THIS COURT DISPATCHED since boot, one per citation, in citation
-/// order — the corpus their bound.
+/// order — the corpus the tasks' bound.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Dispatched {
     pub sent: Vec<Sent>,

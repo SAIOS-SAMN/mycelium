@@ -272,7 +272,7 @@ let ea = as_element_form(&inner_a, [1, 0, 0, 0]).expect("A");
 // closes an orbit and its rank reads `torsion 1` where the turn's star
 // tree reads zero on every coordinate.
 //
-// A star tree would not do it. Two star trees differing only in their
+// A star tree would not do it. Two star trees differing only in the
 // word are one object up to gauge — the single face is a coboundary and
 // the word transports away (T2) — so they sit on one chart, which is
 // what a chart is for. The old chart wrote a row per vertex and told

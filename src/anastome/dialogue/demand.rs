@@ -2,7 +2,7 @@
 //
 //! The demand and the routed demand that were spelled here carried a
 //! coboundary chain to a court (law 8, ruled 2026-09-10); both are deleted
-//! with their acts, and the door refuses their tags.
+//! with the acts that carried them, and the door refuses those acts' tags.
 
 use super::*;
 

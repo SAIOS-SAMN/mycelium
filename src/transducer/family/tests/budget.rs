@@ -71,8 +71,8 @@ fn extract_rule_with_keeps_partial_when_budget_cuts_off() {
 /// box's free memory at boot, three on an eight-core host — so whether a
 /// family could be spelled at all depended on what else the machine was
 /// doing. Every extraction test passed `stroke_n(1 << 20)` instead, a
-/// budget 350,000× the fleet's, which is why the suite was green while
-/// the fleet extracted nothing.
+/// budget 350,000× the deployment's, which is why the suite was green while
+/// the deployment extracted nothing.
 #[test]
 fn extraction_spend_reads_family_end_to_end() {
     let family = vec![

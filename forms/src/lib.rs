@@ -10,7 +10,7 @@
 //!
 //! WHERE A FORM STANDS (A7, A7a). The core shell — this crate's root — holds
 //! exactly the forms EVERY universe selects: L0's law is the intersection of
-//! the selections, never their union. A form that one universe alone selects
+//! the selections, never the selections' union. A form that one universe alone selects
 //! is that universe's shell even though this crate hosts it, and is named as
 //! that shell's (`forms::xylarium::…`, `forms::netstratum::…`). A divergence
 //! is two outer shells over one shared centre, never a second plane at the

@@ -4,7 +4,7 @@
 //! integer exponent each held generator is cited to, and the residue left.
 //!
 //! The rows are exponent vectors — how many times each letter a word is
-//! spelled with appears — so their combinations are integer by meaning: a
+//! spelled with appears — so the rows' combinations are integer by meaning: a
 //! word is not cited half a time. The Hermite form with its transform `U`
 //! factors a word through the held words, and the residue it leaves is the
 //! boundary demand, unique and with no choice in it. Exact over ℤ at any

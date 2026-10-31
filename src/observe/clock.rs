@@ -1,18 +1,18 @@
 // 78.21, 78.27(1), EC1 — ACT1's READING: THE CLOCK, per court and per voice.
 // Where each node stands on TUniversal, by height with its own `K` beside
-// it, and the three counts that say whether its acts stand at their nodes.
+// it, and the three counts that say whether its acts stand at the acts' nodes.
 //
 //! Three clocks, named apart (78.21(1)): TUniversal is the height, the one
 //! clock every node shares; a node's `K` is its own stroke count, which is
 //! how much it has done and never when it is. Disparity is read in HEIGHT
 //! only — per peer the gap from its last admitted height to this node's
-//! head, over the fleet the spread of heads — and never against a
+//! head, over the mesh the spread of heads — and never against a
 //! threshold (rule 5). No wall-clock value is carried (law 9).
 //!
 //! The three counts (78.27 Q1, EC1) are per node, since boot:
 //!
 //! - acts sealed WITHOUT A FRAME — own-line acts that named a word no row
-//!   of this court measures, so their μ⃗ was read as `[0; 4]`;
+//!   of this court measures, so the acts' μ⃗ was read as `[0; 4]`;
 //! - words held WITHOUT AN ADMITTING STAMP, by row — basis, provisional,
 //!   the listing book, the cavity, the court's federation;
 //! - Ruling receipts ADMITTED against rulings whose economy APPLIED here.

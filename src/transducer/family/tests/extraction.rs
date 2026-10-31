@@ -806,7 +806,7 @@ let _ = extract_rule_cached(&mut cache, fam, &family, atlas2, &mut budget, &NoCr
 assert!(budget.remaining() < left, "a new atlas generation re-extracts");
 }
 
-/// THE MEMO HOLDS ONE RULE, and that bound is the fleet's OOM.
+/// THE MEMO HOLDS ONE RULE, and that bound is the deployment's OOM.
 ///
 /// It was a `Keyed` with no eviction, one whole `SentenceRule` per task id
 /// the voice had ever pulled. Measured on voice 4 of the 2026-09-19 recut,
@@ -1113,7 +1113,7 @@ fn occupied_frames_reads_member_frames_in_coordinate_order() {
     use crate::transducer::family::{body_of, occupied_frames};
     let body = || body_of(vec![Compartment::from((0i64, 0i64, 0i64, 1u8))]).expect("one compartment is heard");
     let v = crate::transducer::element::identity_versor();
-    // TWO VERTICES BY THEIR COORDINATES (AT1): two classes, the identity's
+    // TWO VERTICES BY COORDINATES (AT1): two classes, the identity's
     // and the 90° turn's.
     let at_of = |w: crate::transducer::alphabet::Word| {
         Vertex::word_on(

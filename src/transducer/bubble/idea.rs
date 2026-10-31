@@ -247,7 +247,7 @@ pub struct Bubble {
     pub(crate) rotor: Option<Rotor>,
     /// Pairs the idea germinated from; trial speaks over them for μ⃗.
     pub bundle: Option<Vec<crate::transducer::family::TrainPair>>,
-    /// Per-pair remainder chains, keyed by pair index. `remainder` is their union.
+    /// Per-pair remainder chains, keyed by pair index. `remainder` is the chains' union.
     pub remainders: Keyed<Vec<Link>>,
     /// CS2 — THE CELLS THIS IDEA'S PIVOT READS AGAINST, memoised by the form's
     /// own address: read once per form per change, re-read where the form
@@ -368,7 +368,7 @@ pub(crate) fn bundle_connections(
         let mut rotors = Vec::new();
         // THE GAUGE COMPOSED AROUND THE CYCLE, not discarded and not filed
         // empty: each connection carries its own hue map and the orbit's is
-        // their composition, which is what a filed orbit's σ IS (52.3).
+        // the maps' composition, which is what a filed orbit's σ IS (52.3).
         #[expect(
             clippy::cast_possible_truncation,
             reason = "STD1 C1 — the sensor's: a hue slot of the [u8; 10] image, below PALETTE = 10 as the sensor delivers it"
@@ -586,7 +586,7 @@ impl Bubble {
             return Expansion::default();
         }
         let mut spent = 0usize;
-        // THE CHARTS THIS IDEA MEETS ARE ITS OWN SECTIONS' CHARTS, and their
+        // THE CHARTS THIS IDEA MEETS ARE ITS OWN SECTIONS' CHARTS, and the charts'
         // members are a keyed read at those coordinates. Nothing is traversed
         // and nothing is discovered.
         //
@@ -606,7 +606,7 @@ impl Bubble {
         // already holds. Both bounds are content: this idea's sections, and
         // one chart's own fibre (rule 10).
         //
-        // EVERY MEMBER AGAINST EVERY SECTION, and both sections carry their
+        // EVERY MEMBER AGAINST EVERY SECTION, and both sections carry the
         // real carriage — without which `extend`'s `flat` is true by
         // construction and `Fill::Class` is unreachable.
         let own_sections = self.sections();

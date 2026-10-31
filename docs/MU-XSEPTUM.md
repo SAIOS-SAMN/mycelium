@@ -1,10 +1,10 @@
-# xSEPTUM — settlement protocol for the Mycelium network
+# MU-XSEPTUM — the xSEPTUM settlement protocol for the Mycelium network
 
 > **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** the hypha's settlement of payments between voices (specified). No game term.
 
-Status: specification. Of its acts only 0x35 EQUIVOCATION is built
+**Status:** specification. Of its acts only 0x35 EQUIVOCATION is built
 (`anastome/dialogue/equivocation.rs`, `ACT_EQUIVOCATION` in
 `anastome/dialogue/acts.rs`); 0x30–0x34 are reserved, and the rest of the
 protocol is ROADMAP track 1.

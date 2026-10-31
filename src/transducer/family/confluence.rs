@@ -1,11 +1,11 @@
 // 78.78 — CONFLUENCE, READ (P1, an instrument, deciding nothing): the black
 // hole's polarity. An output body built where several input bodies stand is
-// read as their gathering, exactly, and the generator that would carry them
+// read as the input bodies' gathering, exactly, and the generator that would carry them
 // onto it is read off the two gathered spheres.
 //
 //! THE CONFLUENCE SPHERE. The points `Pₛ` of a set of compartments, summed,
-//! `C = Σ Pₛ`, is a sphere — imaginary, `C² ≤ 0` — centred on their
-//! barycentre, its square their spread: `C² = −Σ_{s<t} d²ₛₜ`, the moment
+//! `C = Σ Pₛ`, is a sphere — imaginary, `C² ≤ 0` — centred on the
+//! points' barycentre, its square the points' spread: `C² = −Σ_{s<t} d²ₛₜ`, the moment
 //! of inertia, read by the geometric product and never rooted. It is the
 //! opposing polarity of the fibre's switch `mⱼPᵢ − mᵢPⱼ` (real, `S² > 0`):
 //! a white hole emits, a black hole gathers.
@@ -18,8 +18,8 @@
 //! - THE INVERSE GENERATOR: the fascicle of the inputs' confluence sphere
 //!   and the output's, `V = C_B · C_in`, its regime read in the algebra
 //!   (`pair_regime`: a turn, a kiss, a boost); where the centres agree the
-//!   spheres are concentric and `V` dilates by the exact ratio of their
-//!   normalised squares;
+//!   spheres are concentric and `V` dilates by the exact ratio of the
+//!   spheres' normalised squares;
 //! - REPRODUCES: whether `V` carries the inputs' compartments onto the
 //!   output's, point for point;
 //! - CONTAINS: whether the inputs' compartments all stand in the output;

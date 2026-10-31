@@ -6,7 +6,7 @@ use super::common::q;
 use crate::transducer::cga::at_three::translator;
 use crate::transducer::cga::*;
 
-/// A rotor and a translator are versors by their action: grade-preserving
+/// A rotor and a translator are versors by the action of each: grade-preserving
 /// on every blade, the whole matrix of full rank, nothing contracted — and
 /// `is_versor` reads the same property.
 #[test]

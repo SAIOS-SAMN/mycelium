@@ -28,7 +28,7 @@
 //! ray degenerates and the mode's versor is `V_j`'s own blade, `B̂_j` and
 //! `−B̂_j` one rotation — the held `ℤ₂` by construction.
 //!
-//! VERIFIED, never assumed: the rays commute and their product is `Ω` as a
+//! VERIFIED, never assumed: the rays commute and the rays' product is `Ω` as a
 //! ray (EQ1), else `Defective` by name.
 
 use super::linear::LinearFunction;

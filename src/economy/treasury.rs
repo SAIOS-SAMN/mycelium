@@ -21,9 +21,6 @@ pub fn stands_at(anchor: &Anchor) -> Option<crate::chronometry::Place> {
     (anchor.1 != [0u8; 32]).then(|| anchor.0.place())
 }
 
-/// Economic tiers for a decentralized mesh running cryptographic semantic
-/// operations: yields scale by the participant's tier. A hypha/client's standing
-/// weights its reward, so the topology supports staked, tiered roles — never a
 /// §2's ENTRY KINDS, the closed vocabulary of what moves μ⃗: "Entry kinds:
 /// `genesis`, `mint`, `stake`, `unstake`, `transfer`, `escrow`, `release`,
 /// `revoke`, `slash`, `burn`, and `epoch`. Nothing else moves μ." An
@@ -184,7 +181,7 @@ pub struct Treasury {
     /// Sum of live identity bonds. Escrowed awards are `escrowed`, never this.
     /// `None` once it did not add up (STD1): unmeasured, like the supply.
     pub(crate) bond_total: Option<[u64; 4]>,
-    /// Enrolled identities and their staked μ⃗, keyed by identity.
+    /// Enrolled identities and the μ⃗ each staked, keyed by identity.
     pub(crate) stakes: crate::network::nerve::Keyed<[u64; 4]>,
     /// AWARDS IN ESCROW (Step 5): consilience settlements held unfinalized —
     /// keyed by germ address. Only the court's verdict releases or revokes.
@@ -230,7 +227,7 @@ pub enum Touched {
 }
 
 /// One party's account at its court: balance, bond and holds, per lane;
-/// `None` where its holds pass their carrier (rule 11).
+/// `None` where its holds pass the holds' carrier (rule 11).
 pub type Holdings = Option<([u64; 4], [u64; 4], [u64; 4])>;
 
 /// Written out rather than derived: `#[derive(Default)]` gives the folded
@@ -750,7 +747,7 @@ impl Treasury {
     /// payer HOLDS was issued and is one, E3.)
     ///
     /// The first is read off the journal, the second off the carriers, and
-    /// the fold of LEDGER_EPOCH_DESIGN is admissible only where this holds
+    /// the fold of MU-FOLD is admissible only where this holds
     /// at the prefix it folds — a compression whose conservation cannot be
     /// checked is not a compression, it is a loss.
     pub fn audit(&self) -> Result<[u64; 4], String> {
@@ -856,7 +853,7 @@ impl Treasury {
     /// themselves, as `economy` reads every account: its balance, its bond,
     /// and what it holds against keys, per lane. A party the ledger has never
     /// seen holds zero on every lane — the reading of absence. `None` where
-    /// its holds would pass their carrier (rule 11).
+    /// its holds would pass the holds' carrier (rule 11).
     pub fn account(&self, who: &[u8; 32]) -> Option<([u64; 4], [u64; 4], [u64; 4])> {
         let mut held = Some([0u64; 4]);
         crate::snapshot::persist(&self.held, |_, h| {

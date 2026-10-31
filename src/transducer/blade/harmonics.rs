@@ -150,7 +150,7 @@ mod tests {
     }
 
     /// 51.3 — THE STACK IS NOT ITS SHADOW. Three identical sections read
-    /// one component through their adjacency along `e₃`, a frame boundary
+    /// one component through the sections' adjacency along `e₃`, a frame boundary
     /// smaller than a section's, and a spread the shadow does not carry;
     /// the same three sections one frame apart read three components. A
     /// bar standing along `e₃` reads no chart a section reads.

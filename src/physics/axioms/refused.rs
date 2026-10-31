@@ -11,7 +11,7 @@ pub const A4_POSITIVE_DEFINITE_REFUSED: &str =
 
 /// A.7 — HOLONOMIC INVARIANT as written (REFUSED).
 ///
-/// "Closed paths always return to their topological starting class modulo
+/// "Closed paths always return to the topological starting class modulo
 /// torsion", valued in `H¹(X, ℤ)` — the abelian, torsion-only picture. The
 /// hyperbolic sector never returns: `cosh(kβ) > 1` for every `k ≥ 1`,
 /// which is the measured `closes 0`. A.7 holds for the compact half alone,
@@ -21,7 +21,7 @@ pub const A7_ABELIAN_RETURN_REFUSED: &str =
 
 /// A.6-bind-11 — `N = 11` EXACTLY (REFUSED).
 ///
-/// Sourced to an architecture document; their register is honest that it
+/// Sourced to an architecture document; the document's register is honest that it
 /// is a constitutional BINDING and not a theorem of the algebra. A
 /// hardcoded generator is refused whatever register it arrives in.
 pub const A6_BIND_11_REFUSED: &str =

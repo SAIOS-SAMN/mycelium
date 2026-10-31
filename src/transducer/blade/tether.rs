@@ -1,5 +1,5 @@
 // 59.3, 62, 72.1, 72.1b — THE TETHER between two bodies: the conformal motion
-// their two nuclei's inversions compose, `V = s_b s_a`, carried whole, and the
+// the inversions in the two nuclei compose, `V = s_b s_a`, carried whole, and the
 // contact regime read off its class.
 
 use super::*;
@@ -8,7 +8,7 @@ use super::*;
 ///
 /// Each nucleus is a dual sphere with `s² = r² ≠ 0`, an invertible vector,
 /// so it is a versor: the inversion in that sphere. Two nuclei are related by
-/// the motion their two inversions compose, and that motion is carried WHOLE
+/// the motion the two nuclei's inversions compose, and that motion is carried WHOLE
 /// and applied by the sandwich `V X Ṽ` to whatever crosses the interface. It
 /// turns about the spheres' common circle where they intersect, is parabolic
 /// where they touch, and is a boost or a dilation where they stand apart.
@@ -31,7 +31,7 @@ pub fn tether_of(sa: &Mv, sb: &Mv) -> Mv {
     sb.geo(sa)
 }
 
-/// WHERE TWO BODIES STAND RELATIVE TO CONTACT — the regime of their tether,
+/// WHERE TWO BODIES STAND RELATIVE TO CONTACT — the regime of the bodies' tether,
 /// read as a class of `V` where a side is asked, never carried and never a
 /// gate (Axiom C as tightened; SQ1 item 1).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

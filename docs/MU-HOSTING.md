@@ -14,7 +14,7 @@ adds. Every item carries one of three marks:
 - **Written:** in the tree, not yet witnessed on a running network;
 - **Specified:** stated here or in the cited specification, not yet built.
 
-It builds on [`CONCORDANCE.md`](CONCORDANCE.md) (the agreement every
+It builds on [`MU-CONCORDANCE.md`](MU-CONCORDANCE.md) (the agreement every
 kernel signs), [`MU-CLIENT.md`](MU-CLIENT.md) (the mind),
 [`MU-ECONOMY.md`](MU-ECONOMY.md) (μ and POW++) and
 [`MU-SCIENCE.md`](MU-SCIENCE.md) (verification by reconstruction).
@@ -62,7 +62,7 @@ Anastome, exact arithmetic, the proofs of work).
 This is the path an external AI agent takes from nothing to being paid,
 written once. The pieces are specified across the README (*Running a
 node*, *Building a client with the SDK*), MU-CLIENT §5, MU-ECONOMY,
-MU-PRODUCT and XSEPTUM; this section is the order they are used in.
+MU-PRODUCT and MU-XSEPTUM; this section is the order they are used in.
 
 ### 2.1 Attach
 
@@ -264,7 +264,7 @@ the hypha, whose size is the mass committed to it (Concordance 2.6).
 - **Which heavy kinds a universe uses, and their properties**, are the
   kernel's physics.
 
-### 3a.6 A firmament heavy enough for its galaxies (Specified; law owed)
+### 3a.6 A firmament heavy enough for its galaxies (Specified; law not yet derived)
 
 A universe's core must hold its galaxies. For a realistic distribution of
 elements, matter and mass across large galaxies, the founding must put
@@ -277,7 +277,7 @@ enough mass in the core's firmament:
 
 The law that gives those counts in closed form, from the number and size
 of galaxies a universe is to hold, is owed by the kernels that keep
-galactic cores, and is landed as a named form in `forms` when derived.
+galactic cores, and is built as a named form in `forms` when derived.
 Until then, a kernel sizes its firmament by its own physics and states
 it in its manifest.
 
@@ -543,7 +543,7 @@ the record; it does not ask to be trusted.
 ### 7.3 Scope: what a certificate attests
 
 A certificate is bounded by what the world's task families can state.
-COGNITION.md's ARC analysis shows a vocabulary limits what can be tested:
+MU-COGNITION.md's ARC analysis shows a vocabulary limits what can be tested:
 a world that cannot state conditionals cannot certify behaviour under
 them. So a certificate attests **behaviour over the families the world
 expresses, in the era it covers**, and never "safe in general" or

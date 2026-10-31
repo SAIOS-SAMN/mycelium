@@ -122,7 +122,7 @@ impl Kernel {
         self.word_fibers.insert(key, addr.clone());
     }
 
-    /// RM1 — FILE A WORD'S REMAINDERS at their index keys (the residue's
+    /// RM1 — FILE A WORD'S REMAINDERS at the remainders' index keys (the residue's
     /// chart ‖ κ, read off its torsion record). One remainder per class at a
     /// chart: a key already standing for another word is not filed over and
     /// is counted.
@@ -381,7 +381,7 @@ impl Kernel {
     }
 
     /// 78.120 — A DOMAIN FOUNDED (78.62's GENESIS act): the domain's signature
-    /// over its genesis, its tier keys in their one writing, a domain not
+    /// over its genesis, its tier keys in the keys' one writing, a domain not
     /// founded here already and no tier key another domain names — then the
     /// genesis sealed on this court's line by its keys (`Cite::Domain`), and
     /// the domain held: from here its tiers' folds are admitted.
@@ -447,7 +447,7 @@ impl Kernel {
         if let Some(answer) = self.repeat_of(&f.fold, &domain) {
             return answer;
         }
-        // 78.126 — the handoff sides it consumes, proved, and their nets: what
+        // 78.126 — the handoff sides it consumes, proved, and the sides' nets: what
         // crosses the domain's boundary stands with its declared emission.
         let crossing = match self.sides_of(&f.fold) {
             Ok(nets) => nets,

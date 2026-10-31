@@ -6,7 +6,7 @@ use super::{at, word};
 use crate::economy::escrow::Revocation;
 use crate::economy::*;
 
-/// Supply after N installs equals the sum of their deflations per lane.
+/// Supply after N installs equals the sum of the installs' deflations per lane.
 #[test]
 fn supply_sums_minted_deflations() {
     let mut t = Treasury::new();
@@ -48,7 +48,7 @@ fn slash_debits_bond_and_mints_nothing() {
 }
 
 /// Pool + stakes survive the persisted form exactly (78.27: the stakes and
-/// balances as their own tries, the rows through the row codec).
+/// balances each as its own trie, the rows through the row codec).
 #[test]
 fn treasury_round_trips_bonds_stakes_and_entries() {
     let mut t = Treasury::new();
@@ -62,7 +62,7 @@ fn treasury_round_trips_bonds_stakes_and_entries() {
 }
 
 /// §6, both equations, on a treasury that has actually moved value.
-/// The fold of LEDGER_EPOCH_DESIGN is admissible only where this holds
+/// The fold of MU-FOLD is admissible only where this holds
 /// at the prefix it folds, so this is the gate on 7.5.
 #[test]
 fn audit_holds_through_genesis_mint_and_burn() {

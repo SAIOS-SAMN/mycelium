@@ -7,7 +7,7 @@
 //! than the fiber it names (rule 1).
 //!
 //! ONE STORE PER PROCESS, beside the thread-local tallies it is fed from.
-//! Those are taken by their one reader where a stroke ends and folded in
+//! Those are taken by the tallies' one reader where a stroke ends and folded in
 //! here; nothing in cognition reads this store back (it is an instrument,
 //! §8.1).
 //!
@@ -287,7 +287,7 @@ pub fn serves() -> [u64; super::SERVE_AXES.len()] {
     std::array::from_fn(|i| SERVE[i].load(Ordering::Relaxed))
 }
 
-/// THE VERTEX-BODY REFUSALS by the fault their proof names, on
+/// THE VERTEX-BODY REFUSALS by the fault each refusal's proof names, on
 /// [`super::BODY_FAULTS`]'s axes, and by whether the vertex lifted a versor.
 static BODY_FAULTS: [AtomicU64; super::BODY_FAULTS.len()] = [const { AtomicU64::new(0) }; super::BODY_FAULTS.len()];
 static BODY_LIFTED: [AtomicU64; 2] = [const { AtomicU64::new(0) }; 2];

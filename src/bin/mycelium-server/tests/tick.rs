@@ -42,7 +42,7 @@ fn sign_tick_needs_no_digest_and_hear_tick_no_kernel() {
     let m = mesh(&a);
     let origin = Origin { genesis: GENESIS, epoch: EPOCH };
     // Read on this thread: the signing and the door run here, and the tests
-    // beside this one take kernels of their own on their own threads.
+    // beside this one each take a kernel of its own on a thread of its own.
     let holds = crate::held::holds_here();
 
     // THE COURT LOOP SIGNS: a tick read, a reading due, no digest built.

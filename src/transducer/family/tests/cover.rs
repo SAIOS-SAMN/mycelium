@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! 50.8, L11c, L23(c) — THE COVER ONTO THE FORM. The pieces a cover
-//! carries are vertices of the form, their meets are its faces, and the
+//! carries are vertices of the form, the pieces' meets are its faces, and the
 //! class of a cycle of those faces is the form's orbit holonomy.
 //!
 //! These are claims the cover could not make while it classified its own
@@ -26,14 +26,14 @@ fn notched() -> (Grid, Grid) {
 
 /// FOUR BODIES OF ONE HUE, THE FOURTH SLID ONE COLUMN. The cover's pieces
 /// are bodies (51.3 as ruled 2026-09-18), so a fixture that exercises the
-/// pullback, the meets and their orbits needs SEVERAL bodies. These tests
+/// pullback, the meets and the meets' orbits needs SEVERAL bodies. These tests
 /// stood on one body peeled into shells, which the peel no longer produces
 /// and which `notched` now demonstrates the absence of.
 ///
 /// The four blocks are one hue and one shape, so they share a chart and
 /// `extract_rule_with` unions them into one composite (extract.rs:281).
 /// They are separated by background, so they are four distinct components
-/// under 51.3's 6-adjacency while their rings still meet. Three stand in
+/// under 51.3's 6-adjacency while the components' rings still meet. Three stand in
 /// place and the fourth slides one column, so no versor carries the
 /// composite whole — that is what makes it a deformation — while the
 /// slide still overlaps its own source, so the pullback places all four.
@@ -346,7 +346,7 @@ fn scene_form_chords_name_live_faces() {
 // `(PLANE_ROW, PLANE_COL)` and nowhere else, so every word a pair form
 // composes is a sensor-plane word, and on this corpus they are rotations
 // in one plane, which commute. That is L22 §51.6's four-letter
-// sub-alphabet appearing as a consequence. Its observable is a fleet
+// sub-alphabet appearing as a consequence. Its observable is a deployment
 // number, not an assertion here (L25).
 
 /// 50.8 CASE 3 — WHERE A SIMPLEX IS FILLED it is filed on the form's own
@@ -405,7 +405,7 @@ fn scene_form_evaluates_every_orbit() {
     // It read NONE. The scene's faces were the Frame's star, a spanning
     // chain of each site's occupants and the ring pairs — a forest by
     // construction, `b₁ = E − V + C = 0` identically, `0 orbits` on all 36
-    // corpus forms and `pivoted [0,0,0,0]` on every voice of the fleet.
+    // corpus forms and `pivoted [0,0,0,0]` on every voice of the deployment.
     // This reading asserted `flat == f.orbits.len()` and passed because both
     // sides were zero.
     //
@@ -606,7 +606,7 @@ fn cover_deformation_propagates_only_from_placed_pieces() {
 
 /// 13.9 STEP 7, 50.3 — A PURE-COBOUNDARY FORM YIELDS NO EVALUATED ORBIT.
 /// A face whose two pieces the cover did not both carry has no transition
-/// between their frames to write, so it carries `edge: None`; a cycle
+/// between the pieces' frames to write, so it carries `edge: None`; a cycle
 /// through such a face has no edge holonomy, and `edge_holonomy` answers
 /// `None` rather than composing the identity.
 ///

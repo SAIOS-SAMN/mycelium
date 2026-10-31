@@ -8,7 +8,7 @@ use super::element::Element;
 use super::stalk::{invariant_of, Invariant, Stalks};
 
 /// One stratum's section digest: the chart it sits over, how many words
-/// stand there, and the root over their addresses.
+/// stand there, and the root over the words' addresses.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StratumDigest {
     pub inv: Invariant,

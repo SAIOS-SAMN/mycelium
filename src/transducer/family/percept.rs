@@ -38,7 +38,7 @@ pub(crate) struct Percept {
 
 /// WHAT ONE FRAME'S QUOTIENT OF ONE CHART MEASURED: the frame, the versor
 /// with its hue map, the two union bodies in the frame's own coordinates,
-/// and the same two bodies at their own `(r, c, k)` — the compartments the
+/// and the same two bodies, each at its own `(r, c, k)` — the compartments the
 /// fiber's union shape is built from (52.5).
 struct Quotient {
     /// The frame, by its own coordinate (AT1 Q4): no width walls it.
@@ -125,7 +125,7 @@ fn read_frame_axis(claimed: &mut [&Quotient], budget: &mut crate::physics::Budge
 
 /// ONE MEMBER FROM THE QUOTIENTS IT IS CLAIMED ON: its frames, the bodies at
 /// each, the output support over them, the union shape of its fibre (52.5) —
-/// the compartments gathered at their own frames, so a frame not claimed is not in
+/// the compartments, each gathered at its own frame, so a frame not claimed is not in
 /// it. Its frame-axis steps are the CHART's, read once over every frame the
 /// class holds on it ([`read_frame_axis`] at the caller), not the member's.
 /// WHETHER A GAUGE REPRODUCES A FRAME'S OWN HUE MAP on its bodies: every hue
@@ -235,7 +235,7 @@ pub(super) fn family_percept(
     let mut quotient_charts: Vec<Keyed<()>> = vec![Keyed::new(); n];
     let mut out_reached: Keyed<()> = Keyed::new();
     let mut cut = false;
-    // Z1b — THE MOVES OF THE PERCEPT ARE LINES OF THEIR OWN. `extract/1
+    // Z1b — THE MOVES OF THE PERCEPT ARE EACH A LINE OF ITS OWN. `extract/1
     // fibers` held one span over four moves and a reader of the timeline
     // could not tell which of them cost the seconds; a line that names four
     // moves at once is a reading of the instrument, not of the engine.
@@ -243,7 +243,7 @@ pub(super) fn family_percept(
     // EVERY LINE IS AT ITS MOVE'S ENTRY, because the timeline's `held` is
     // the gap to the NEXT line: a line at a move's exit reports the move
     // after it under the name of the move before it. The regions BETWEEN
-    // the four are named too — otherwise their cost lands on whichever of
+    // the four are named too — otherwise the regions' cost lands on whichever of
     // the four happens to precede them.
     trace::trace("percept/1 covers", trace::Wrote::Nothing, Some(budget));
     'charts: for (ck, c) in charts.scoped() {
@@ -278,7 +278,7 @@ pub(super) fn family_percept(
             ak.extend_from_slice(&fiber_key(k));
             attempted.insert(&ak, ());
             // The fiber's bodies were heard when they were perceived, and a
-            // union of heard sections at their `n` is heard; a union that is
+            // union of heard sections at the sections' `n` is heard; a union that is
             // not is no quotient to read (38.2, BQ4).
             let (Some(a_k), Some(b_k), Some(a0), Some(b0)) = (
                 body_of(compartments_of(ai)),
@@ -494,7 +494,7 @@ pub(super) fn family_percept(
             }
             // The chart's frame-axis steps (MT1), read once, filed with the
             // class's first member: the overlaps they make name the charts by
-            // their frames, and the frames name the member standing there.
+            // the charts' frames, and the frames name the member standing there.
             let steps = read_frame_axis(&mut on_chart, budget);
             if let [first, ..] = members.as_mut_slice() {
                 first.steps = steps;
@@ -543,7 +543,7 @@ pub(super) fn family_percept(
         unreached.dedup();
     }
 
-    // THE INPUT BODIES WITH NO CHART ON THE OUTPUT AT THEIR FRAME, and the
+    // THE INPUT BODIES WITH NO CHART ON THE OUTPUT AT THE BODY'S FRAME, and the
     // output bodies with none on the input (50.5, 50.8). An input body
     // standing under an output body of another chart is that body's
     // deformation and is covered; one standing under nothing vanished; an
@@ -720,7 +720,7 @@ pub(super) fn family_percept(
             acting.carriage.put_canonical(&mut carriage);
             match piece_seen.get(&mk) {
                 Some(held) if held != &carriage => {
-                    // 78.74 — THE TWO SECTIONS RELATED: a copy (their geoids
+                    // 78.74 — THE TWO SECTIONS RELATED: a copy (the sections' geoids
                     // overlay) or one motion up to torsion (they cohere) is
                     // one algorithm, and no second source is demanded; only
                     // a standing pair, or one whose sections do not read,
@@ -786,7 +786,7 @@ pub(super) fn family_percept(
         // EACH MEMBER HOLDS ITS FRAMES (AT1, ruled): the member's charts are
         // its chart at each of them. Two members of one section key — one
         // action placed twice, at two frames — are one member standing on
-        // the union of their frames.
+        // the union of both frames.
         let mut acts: Keyed<Acting, coord::Section> = Keyed::new();
         for m in &read.members {
             let key = m.acting.key();
@@ -810,7 +810,7 @@ pub(super) fn family_percept(
             let ck = m.chart.key();
             // TWO SECTIONS OF ONE CHART ARE TWO MEMBERS AT ONE MEMBER KEY
             // (AT1): the key is `(vertex, chart)` and the frames tell them
-            // apart. Their supports are one occupancy, the union of both; the
+            // apart. The sections' supports are one occupancy, the union of both; the
             // union shape is the first section's — the class's
             // representative, read first — and a later section's does not
             // replace it.
@@ -888,7 +888,7 @@ pub(super) fn family_percept(
         // consecutive frames of its class — one vertex standing on chart A at
         // `k` and on chart B at `k′` — was joined by nothing, and the cycles
         // through it were lost (the audit of 8309b6e1). The class's occupied
-        // frames in their own order, each with the charts the class stands on
+        // frames in the frames' own order, each with the charts the class stands on
         // there; a step where each of two consecutive frames holds ONE chart
         // and the two differ. A frame holding several charts pairs with no
         // one of them over another (rule 15: no representative): counted.
@@ -937,7 +937,7 @@ pub(super) fn family_percept(
     }
     let mut form = Form { vertices: scenery.vertices.clone(), ..Form::default() };
     trace::trace("percept/3 meets", trace::Wrote::Nothing, Some(budget));
-    // 53.6 items 3 and 4, in their own organ: the pieces' form is built,
+    // 53.6 items 3 and 4, in a separate organ: the pieces' form is built,
     // its orbits are classified, and it is discarded. What comes back is
     // what the SCENE keeps — the torsion each orbit filed, awaiting a chord
     // this form can name, and the classes standing per cover.
@@ -1163,7 +1163,7 @@ pub(super) fn family_percept(
         let (measured, pairs) =
             edge_between((&bodies_at, &unions, &motions), n_reached, (&i, &cik), (&j, &cjk), &mut edges, budget);
         // A CONTACT carries its refraction and nothing
-        // else — the rigidity of the two bodies' union is not what their
+        // else — the rigidity of the two bodies' union is not what the bodies'
         // contact is (BQ5a), so where the refraction was refused the face
         // stands with no edge and the contact line names why. Every other
         // face reads its edge off the bodies.
@@ -1295,7 +1295,7 @@ pub(super) fn family_percept(
             }
         }
     }
-    // CV1b F3 — the pole's demands stand once each, by their coordinates.
+    // CV1b F3 — the pole's demands stand once each, by coordinates.
     super::perceive::stand_demands(&mut form.vertices, pole_demanded);
     let cycles = Form::cycles_of(&form.faces, &form.vertices);
     form.orbits = cycles.kept.clone();

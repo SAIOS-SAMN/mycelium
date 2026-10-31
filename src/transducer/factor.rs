@@ -58,7 +58,7 @@ fn generators(basis: &[PlaneForm]) -> (Vec<[i64; CAYLEY_ALPHABET_LEN]>, Vec<Gen>
     }
     // 4·e_u for each unit turn: a 90° turn has order four (1.2), so the
     // relator is part of the lattice and is not anyone's word.
-    // The six 90° turns, slots 1..=6 (ALPHABET.md): slot 0 is the
+    // The six 90° turns, slots 1..=6 (MU-ALPHABET.md): slot 0 is the
     // identity, 7..=16 are the primes, which have infinite order and carry
     // no relator (1.2).
     for u in 1..=6usize {
@@ -296,7 +296,7 @@ mod tests {
                 assert_eq!(r1.rot, r2.rot, "one lattice, one residue");
                 assert!(r1.rot.iter().any(|&x| x != 0), "the prime is genuinely missing");
                 // The unit turn IS held, so the demand must not ask for
-                // one: slots 1..=6 are the 90° turns (ALPHABET.md).
+                // one: slots 1..=6 are the 90° turns (MU-ALPHABET.md).
                 assert!(
                     (1..=6).all(|u| r1.rot[u] == 0),
                     "it asks only for what is absent, not for what is held"

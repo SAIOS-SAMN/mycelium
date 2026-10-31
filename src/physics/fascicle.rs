@@ -13,8 +13,8 @@
 //! THE STREAMLINE a fascicle flows along is read off its two spheres' pair
 //! in the algebra (GR1, 78.59 — never the squared ratio `δ²`): the pair's
 //! blade `B = s₁ ∧ s₂` squared in the geometric product —
-//! - `B B < 0` ELLIPTIC — the spheres cut; the stream turns about their
-//!   circle `s₁ ∧ s₂`, by twice their dihedral angle.
+//! - `B B < 0` ELLIPTIC — the spheres cut; the stream turns about the spheres'
+//!   circle `s₁ ∧ s₂`, by twice the spheres' dihedral angle.
 //! - `B B = 0` PARABOLIC — the spheres kiss; the stream flows about the
 //!   contact, which it fixes.
 //! - `B B > 0` HYPERBOLIC — the spheres are apart; the stream breathes along
@@ -37,7 +37,7 @@ type Q = BigRational;
 /// THE STREAMLINE a fascicle flows along, read off its pair's regime.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Streamline {
-    /// The spheres cut; the stream turns about their circle.
+    /// The spheres cut; the stream turns about the spheres' circle.
     Elliptic,
     /// The spheres kiss; the stream flows about the contact.
     Parabolic,

@@ -35,7 +35,7 @@ type Chain = Vec<Vec<u8>>;
 fn chains() -> (Chain, Chain, Chain) {
     use crate::transducer::stalk::Invariant;
     let chain = |inv: &Invariant| inv.prefixes().iter().map(|p| p.key().into_vec()).collect::<Vec<_>>();
-    // Two charts that part at their second axis, and the first's parent.
+    // Two charts that part at the second axis, and the first's parent.
     let (ia, ib) = (Invariant::counts(&[1, 2, 3]), Invariant::counts(&[1, 5, 3]));
     let (a, b) = (chain(&ia), chain(&ib));
     assert!(!a.iter().all(|k| b.contains(k)) && !b.iter().all(|k| a.contains(k)), "the fixture's chains are incomparable");

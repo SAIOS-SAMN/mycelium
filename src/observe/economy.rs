@@ -13,7 +13,7 @@ pub struct Economy {
     pub paid: [[u64; 4]; crate::economy::Arm::ALL.len()],
     /// What each arm burned, per lane.
     pub burned: [[u64; 4]; crate::economy::Arm::ALL.len()],
-    /// STD1 — the treasury's operations refused past their carrier.
+    /// STD1 — the treasury's operations refused past the operations' carrier.
     pub overflowed: u64,
     /// E3 — every identity the ledger holds value for: what it can spend,
     /// what it has staked, and what it has set aside, in identity order.

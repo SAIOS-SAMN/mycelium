@@ -76,7 +76,7 @@ fn bivector_split_splits_screw_into_commuting_compact_and_open() {
     assert!(!bivector_is_simple(&screw), "the generator couples two planes");
     let (ell, hyp) = bivector_split(&screw, &mut budget()).expect("the split is exact over ℚ here");
 
-    // THE BLADES, not their magnitudes: each part carries its own PLANE
+    // THE BLADES, not the blades' magnitudes: each part carries its own PLANE
     // and that is the whole point. `e₁e₂` is the twist, `e₃e₋` the slip.
     assert_eq!(ell, Mv::blade(E1 | E2, q(1, 1)), "the compact part IS the rotation plane");
     assert_eq!(hyp, Mv::blade(E3 | EM, q(1, 2)), "the open part IS the boost plane");
@@ -169,7 +169,7 @@ fn versor_of_reflections_screw_has_nonzero_second_casimir() {
             .expect("a non-null vector reflects")
     };
     // Two reflection pairs on orthogonal planes: the first pair turns in
-    // e₁e₂, the second boosts along e₃e₋. Their product couples them.
+    // e₁e₂, the second boosts along e₃e₋. The pairs' product couples them.
     let screw = versor_of_reflections(&[
         v((1, 1), (0, 1), (0, 1), (0, 1), (0, 1)),
         v((1, 1), (1, 1), (0, 1), (0, 1), (0, 1)),

@@ -10,7 +10,7 @@
 Mycelium uses multi-dimensional topology to hold structure, and points to
 the specifications that rule each piece. Each structure is marked
 **Built** (in the tree, covered by its suites) or **Specified**. The
-equations are collected in [`EQUATIONS.md`](EQUATIONS.md).
+equations are collected in [`MU-EQUATIONS.md`](MU-EQUATIONS.md).
 
 ---
 
@@ -26,7 +26,7 @@ Mycelium holds structure as exact topology instead. Every object is a
 multivector of an exact algebra, every relation is a transport between
 objects, and every collection of relations is a complex whose cohomology
 the system reads. The rule is stated as a law
-([`ANTI_FLATTENING_LAW.md`](ANTI_FLATTENING_LAW.md)): an operation that
+([`MU-ANTI-FLATTENING.md`](MU-ANTI-FLATTENING.md)): an operation that
 collapses curvature into a scalar or a hash comparison is refused, and a
 hash is transport, never an operand.
 
@@ -45,14 +45,14 @@ What that buys:
 
 ## 1. The ambient algebra: Cl(4,1) over ℚ
 
-**Built** (`src/core/`, `src/transducer/cga/`; EQUATIONS §2).
+**Built** (`src/core/`, `src/transducer/cga/`; MU-EQUATIONS §2).
 
 Every geometric quantity is a multivector of Cl(4,1), the conformal
 geometric algebra of three-dimensional space, with exact rational
 coefficients. It has five generators and 32 basis blades across grades 0
 to 5:
 - **Points, spheres, planes, lines and circles** are blades of the
-  algebra, so a shape is an object, not a list of coordinates (EQUATIONS
+  algebra, so a shape is an object, not a list of coordinates (MU-EQUATIONS
   2.6, 2.7, 2.19).
 - **Motions are versors**, applied by the sandwich `V x Ṽ`: rotations,
   translations, dilations and reflections exactly, composed by the
@@ -61,7 +61,7 @@ to 5:
   base and also the isometry group of hyperbolic 4-space. In the second
   reading translations (transvections) do not commute, and their
   commutator is a rotation scaled by the curvature, so curvature is read
-  off motions rather than assumed (2.15–2.17; ANTI_FLATTENING_LAW 7).
+  off motions rather than assumed (2.15–2.17; MU-ANTI-FLATTENING 7).
 - **Periods are exact.** A rotation's order is read as a cyclotomic period
   under Niven's restriction, and a turn is a rational point or an exact
   fraction of 360°, never a decimal (2.21, 2.22).
@@ -72,7 +72,7 @@ versors and stabilizers (ROADMAP track 19).
 
 The alphabet of seventeen letters is a fixed set of versors of this
 algebra; a word is their product, one exact versor whose meaning is the
-motion it performs (EQUATIONS §3; [`ALPHABET.md`](ALPHABET.md)).
+motion it performs (MU-EQUATIONS §3; [`MU-ALPHABET.md`](MU-ALPHABET.md)).
 
 ---
 
@@ -92,7 +92,7 @@ never a verdict on the whole.
 
 ## 3. Complexes of any dimension
 
-**Built** (`src/transducer/cech/`; EQUATIONS §5; MU-CLIENT §4.5).
+**Built** (`src/transducer/cech/`; MU-EQUATIONS §5; MU-CLIENT §4.5).
 
 Relations are held as simplicial and Čech complexes over covers:
 - **Cochains and the coboundary.** Values on vertices, transports on
@@ -102,7 +102,7 @@ Relations are held as simplicial and Čech complexes over covers:
   consistency of curvature across cells (5.1–5.4).
 - **Every dimension is an exponent.** A chamber has an anastomotic degree
   `d`, for any `d`; a base of `n` axes has `2ⁿ` vertices in its unit cell
-  (EQUATIONS 10.3). Nothing fixes the dimension of what the mind or court
+  (MU-EQUATIONS 10.3). Nothing fixes the dimension of what the mind or court
   holds; only what is observed limits it.
 - **Pivots change dimension.** Six pivots in three conjugate pairs act on
   the complex: **ascend / descend** across degrees (seal a cycle into a
@@ -120,7 +120,7 @@ Relations are held as simplicial and Čech complexes over covers:
 
 ## 4. Holonomy is content
 
-**Built** (EQUATIONS 5.5; ANTI_FLATTENING_LAW 6).
+**Built** (MU-EQUATIONS 5.5; MU-ANTI-FLATTENING 6).
 
 A loop of transports composes to its holonomy. A flat loop composes to
 the identity; a curved loop does not, and **what it composes to is its
@@ -140,7 +140,7 @@ meaning**, never an error to be removed:
 
 ## 5. Orbits and their algebra
 
-**Built** (EQUATIONS 5.6–5.8, 5.15; MU-CLIENT §4).
+**Built** (MU-EQUATIONS 5.6–5.8, 5.15; MU-CLIENT §4).
 
 Motion that recurs is an orbit, and orbits carry structure flat
 iteration cannot:
@@ -190,7 +190,7 @@ same algebra:
   is (MU-RECURSION 78.123).
 - **Convergence is identity of an object.** Two courts agree when they
   reconstruct the same vertex: projective equality of versors, not equal
-  bytes (EQUATIONS 9.1–9.2).
+  bytes (MU-EQUATIONS 9.1–9.2).
 - **The physics atlas** records, per claim and per universe, where
   universes converge and where they diverge, with the breached laws named
   (MU-SCIENCE §6.2, **Specified**).
@@ -207,7 +207,7 @@ same algebra:
    floating point, root or decimal enters what is admitted.
 2. **No flattening.** No projection to a scalar, a planar slice or a hash
    comparison stands in for a geometric relation
-   ([`ANTI_FLATTENING_LAW.md`](ANTI_FLATTENING_LAW.md)).
+   ([`MU-ANTI-FLATTENING.md`](MU-ANTI-FLATTENING.md)).
 3. **Hashes are transport.** A hash compacts coordinates kept losslessly
    elsewhere; it locates, and is never identity.
 4. **Curvature is kept.** A loop's holonomy is content; nothing gauges it

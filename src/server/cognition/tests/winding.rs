@@ -63,9 +63,9 @@ fn q(n: i64, d: i64) -> num_rational::BigRational {
 /// its one door, and its generators close into the chart's holonomy
 /// algebra: the charge is a new dimension (a `RankStep` act); the same charge
 /// again is held, no act; the sliver, whose generator does not commute with
-/// the charge's, steps the rank again, and the closure holds their bracket —
+/// the charge's, steps the rank again, and the closure holds the two generators' bracket —
 /// more dimensions than the two generators. The boost stands on an 𝒮 orbit
-/// and the null flow in a tube. Every fleet reading had read zero rank steps:
+/// and the null flow in a tube. Every mesh reading had read zero rank steps:
 /// the faces' content never reached the algebra.
 /// 78.101 — A NILPOTENT FACE IS A PROOF. A face of the court's nerve whose
 /// holonomy is a slide never returns, but condenses — `Ωᵐ ∝ 1 + m·N`, a
@@ -132,7 +132,7 @@ fn book_outflow_steps_chart_holonomy_algebra() {
     k.book_outflow(&chart, b"face", &mut budget);
     assert_eq!(rank_steps(&k), 2, "the sliver steps it again");
     let basis = k.lie_basis.get(&chart.key()).expect("the chart's algebra").clone();
-    assert!(basis.len() > 2, "their bracket joined: more than the two generators ({})", basis.len());
+    assert!(basis.len() > 2, "the generators' bracket joined: more than the two generators ({})", basis.len());
     assert_eq!(k.winding_tally().outflow, 3, "three motions read");
     let (tubes, ..) = k.tube_reading();
     assert!(tubes >= 1, "the null flow stands in a tube");
@@ -142,7 +142,7 @@ fn book_outflow_steps_chart_holonomy_algebra() {
 /// 78.69, 78.75 — THE COURT'S RANK IS THE MASTER EQUATION'S OWN TERM. A ruled
 /// sentence's rings are re-derived from its address — the mint keeps them:
 /// the slide family's two rings stand in the minted form as in the percept —
-/// composed as sentences, and their carried words `W̄ᵢ` closed into the
+/// composed as sentences, and the sentences' carried words `W̄ᵢ` closed into the
 /// chart's holonomy algebra: a rank step, the first time; the same sentence
 /// again is held. A sentence of one pair is a tree, and is read ringless by
 /// why — acyclic — never as nothing.

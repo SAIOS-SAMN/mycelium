@@ -87,7 +87,7 @@ pub(crate) fn class_pair_key(a: &TransportClass, b: &TransportClass) -> Vec<u8> 
 ///
 /// Every overlap is read once and files its relative under both directions,
 /// keyed by the overlap read that way, so a caller holding two classes reads
-/// their stratum by key (rule 1). A pair whose words differ contributes
+/// the classes' stratum by key (rule 1). A pair whose words differ contributes
 /// nothing: the two ends do not speak one word there and there is no rebase
 /// to make. Each member is read AT THE OVERLAP'S FRAME — the section standing
 /// there (AT1).

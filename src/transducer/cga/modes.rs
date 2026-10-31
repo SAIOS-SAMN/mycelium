@@ -502,7 +502,7 @@ pub(super) fn order_on(motion: &Mv, plane: &[Mv]) -> Option<u32> {
 /// planes; the modes commute and re-sum to `B`, verified before they are
 /// returned. The generalised kernel's part is listed first where it is not
 /// zero (at most one parabolic mode), then the elliptic and hyperbolic modes
-/// by their value, ascending. An empty list is the zero generator.
+/// by the modes' value, ascending. An empty list is the zero generator.
 pub fn modes(b: &Mv, budget: &mut crate::physics::Budget) -> Result<Vec<Mode>, Undecomposed> {
     let bivector = b.grade(2);
     if bivector.is_zero() {

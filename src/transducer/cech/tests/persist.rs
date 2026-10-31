@@ -58,7 +58,7 @@ fn take_tries_round_trips_one_edge() {
 }
 
 /// `x ≡ take(put(x))` on a complex carrying real simplices — the stored
-/// states and their payloads both survive, and each simplex is filed under
+/// states and the states' payloads both survive, and each simplex is filed under
 /// its own key.
 #[test]
 fn take_tries_round_trips_complex() {

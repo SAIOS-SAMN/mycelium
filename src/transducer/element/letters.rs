@@ -11,7 +11,7 @@ use super::*;
 
 /// THE TRANSPORT of the bundle: a rational conformal versor V ∈ Spin(4,1)(ℚ)
 /// (translation, rotation by any rational rotor, reflection, exact dilation,
-/// and their products), acting by the sandwich V X Ṽ on the null points of
+/// and the products of these), acting by the sandwich V X Ṽ on the null points of
 /// a support. The lattice isometries are the special case; no table of
 /// images exists anywhere.
 pub type Versor = crate::transducer::cga::Mv;

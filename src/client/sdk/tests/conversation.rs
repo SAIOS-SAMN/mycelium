@@ -1,5 +1,5 @@
-// MU-CLIENT §5.1, §5.3, §5.5 — TWO MINDS FORM A SHARED WORD ON THEIR OWN
-// CARRIERS, and the speaker carries it to the court with the hearer's signed
+// MU-CLIENT §5.1, §5.3, §5.5 — TWO MINDS FORM A SHARED WORD, EACH ON ITS OWN
+// CARRIER, and the speaker carries it to the court with the hearer's signed
 // agreement.
 
 use crate::anastome::dialogue;
@@ -68,7 +68,7 @@ fn court_keeping(keep: fn(&dialogue::SpeechAct) -> bool) -> (String, std::sync::
 fn take_in_conversation_derives_meaning_from_posited_residue() {
     use crate::transducer::sentence::rung::{held_rung, known, learn_by};
     let (court, _speeches) = court();
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
     let n = |v: i64| num_rational::BigRational::from_integer(v.into());
     let dir = std::env::temp_dir().join(format!("mycelium-question-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
@@ -124,7 +124,7 @@ fn take_in_conversation_derives_meaning_from_posited_residue() {
 fn compose_or_construct_meets_demand_from_dictionary_first() {
     use crate::transducer::sentence::rung::{held_rung, known, learn_by};
     let (court, _speeches) = court();
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
     let n = |v: i64| num_rational::BigRational::from_integer(v.into());
     let quarter = conformal_of_word(&[(q, false)]);
     let half = conformal_of_word(&[(q, false), (q, false)]);
@@ -160,7 +160,7 @@ fn compose_or_construct_speaks_remainder_ruled_words_compose() {
     let (court, speeches) = court_keeping(|act| !act.sentences.is_empty());
     let n = |v: i64| num_rational::BigRational::from_integer(v.into());
     let chart = crate::transducer::stalk::Invariant::default();
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
     let along = crate::transducer::cga::translator_at(&[n(0), n(0), n(1)]);
     let twice = crate::transducer::cga::translator_at(&[n(0), n(0), n(2)]);
     let quarter = conformal_of_word(&[(q, false)]);
@@ -314,7 +314,7 @@ fn compose_or_construct_speaks_ruled_composition_to_court() {
 fn vantage_reads_word_through_minds_own_words() {
     use crate::transducer::sentence::rung::{distinct_vantage, learn_by, vantage};
     let (court, _speeches) = court();
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
     let quarter = conformal_of_word(&[(q, false)]);
     let half = conformal_of_word(&[(q, false), (q, false)]);
     let mut mind = Entity::open(&court, Kernel::named("observer"));
@@ -344,7 +344,7 @@ fn vantage_reads_word_through_minds_own_words() {
 fn say_carries_shared_word_to_court_with_hold() {
     use crate::transducer::sentence::rung::{known, learn_by};
     let (court, speeches) = court();
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
     let dir = std::env::temp_dir().join(format!("mycelium-conversation-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     let mut a = Entity::open(&court, Kernel::named("speaker"));
@@ -400,10 +400,10 @@ fn say_carries_shared_word_to_court_with_hold() {
 /// against what the mind remembers hearing, never a vocabulary. With nothing heard
 /// a 180° turn is a NEW sound, on the outside. Having heard a ring of order
 /// three (the turn carrying `e₁ → e₂ → e₃`, `½(1 + e₂e₃ + e₃e₁ + e₁e₂)`), the
-/// half turn's period divides nothing larger heard: LEFTOVER, still a new
+/// 180° turn's period divides nothing larger heard: LEFTOVER, still a new
 /// sound. Having heard a slide — the carrier every returning ring sounds
-/// inside — the half turn sounds inside it, its echo turned: TILTED, a
-/// familiar sound. Having heard the half turn itself, it is WHOLE. A ring
+/// inside — the 180° turn sounds inside it, its echo turned: TILTED, a
+/// familiar sound. Having heard the 180° turn itself, it is WHOLE. A ring
 /// heard twice is held once.
 #[test]
 fn sound_of_seats_ring_by_resonance_with_heard() {
@@ -411,7 +411,7 @@ fn sound_of_seats_ring_by_resonance_with_heard() {
     use crate::transducer::sentence::hearing::Seat;
     let (court, _speeches) = court();
     let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
-    let half = conformal_of_word(&[(LetterId::turn_90((0, 1)).expect("a quarter turn"), false); 2]);
+    let half = conformal_of_word(&[(LetterId::turn_90((0, 1)).expect("a 90° turn"), false); 2]);
     let third = Mv::scalar(q(1, 2))
         .add(&Mv::blade(E2 | E3, q(1, 2)))
         .add(&Mv::blade(E3 | E1, q(1, 2)))
@@ -440,14 +440,14 @@ fn conformal_of_word(letters: &[(LetterId, bool)]) -> crate::transducer::cga::Mv
 }
 
 /// MU-CLIENT §5.3 — A QUESTION IS ANSWERED BY WHAT THE WORD IS MADE OF. A
-/// word of two quarter turns, asked about, factors into its two letters, and
-/// the factors compose back to exactly the word; one quarter turn factors
+/// word of two 90° turns, asked about, factors into its two letters, and
+/// the factors compose back to exactly the word; one 90° turn factors
 /// into nothing smaller and comes back whole — an atom.
 #[test]
 fn factors_of_answers_question_by_word_factors() {
     use crate::client::sdk::entity::chatter::factors_of;
     use crate::transducer::element::conformal_of;
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's quarter turn");
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
     let two = conformal_of(&Word::from_letters(&[(q, false), (q, false)]), &identity_versor()).expect("a motion");
     let factors = factors_of(&two, &[], b"word");
     assert_eq!(factors.len(), 2, "two letters: {factors:?}");

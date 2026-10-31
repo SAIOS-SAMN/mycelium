@@ -214,7 +214,7 @@ impl Coordinates {
     }
 
     /// 78.99 (5) — INFLECTION: the coordinates carried by the chart transport
-    /// `Γ` between two minds, hole by hole, re-sorted by their new keys. The
+    /// `Γ` between two minds, hole by hole, re-sorted by the holes' new keys. The
     /// receiver's word is `Γ W Γ̃`, rebuilt from these. `None` where `Γ` is no
     /// versor.
     pub fn transported(&self, gamma: &Mv) -> Option<Coordinates> {
@@ -239,7 +239,7 @@ impl Coordinates {
     /// winding `k` times the held word's — `t/ℓ ≡ k·t₀/ℓ₀ (mod 1)` on a turn,
     /// `λ = k·λ₀` on a count, a named point equal only at `k = 1`. The `k` is
     /// read off the windings: a count fixes it; turns alone admit it modulo
-    /// the least common multiple of their orders (at most twelve), and the
+    /// the least common multiple of the turns' orders (at most twelve), and the
     /// least such `k ≥ 2` is returned. `None` where no `k ≥ 2` holds —
     /// the same word is recognized by its key, never here.
     pub fn power_of(&self, held: &Coordinates) -> Option<u64> {
@@ -308,7 +308,7 @@ pub struct Tone {
     pub order: Option<u32>,
 }
 
-/// 78.100 — A WORD'S HARMONIC SIGNATURE: its tones in their own content
+/// 78.100 — A WORD'S HARMONIC SIGNATURE: its tones in the tones' own content
 /// order. It LOCATES the word in a hearer's language — the stratum every
 /// node shares — and never identifies it (78.60): a slide by one and a
 /// slide by two sound alike, as two turns of one angle about different
@@ -329,7 +329,7 @@ fn kind_byte(k: BivectorKind) -> u8 {
 }
 
 impl Signature {
-    /// The tones in their content order: by class, planes, point, order —
+    /// The tones in the tones' content order: by class, planes, point, order —
     /// the reading's own coordinates, never an arrival.
     fn of_tones(mut tones: Vec<Tone>) -> Signature {
         #[expect(clippy::disallowed_methods, reason = "rule 4 — a sort by canonical coordinates: the tone's class, planes, point and order")]
@@ -381,7 +381,7 @@ impl Signature {
 }
 
 /// 78.99 (1) — THE HOLES A LEXICON HOLDS: per hole key, the words standing on
-/// it, by their own keys — the fibre a new word's comprehension reads.
+/// it, each by its own key — the fibre a new word's comprehension reads.
 #[derive(Default, Clone)]
 pub struct HoleIndex {
     on: Keyed<Keyed<()>>,

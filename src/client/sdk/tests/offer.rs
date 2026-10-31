@@ -42,7 +42,7 @@ fn pull_task_asks_nothing_settled_and_strained_holds_tension() {
 
 /// AN OFFER COUPLES ONLY TO WHAT THE MIND HOLDS. Before the mind has seen
 /// anything, the slide offered couples to nothing. Once its hours are held
-/// under their citation, the same scene couples by its citation, the same
+/// under the slide's citation, the same scene couples by its citation, the same
 /// family under another citation couples by the charts its bodies stand on —
 /// charts the mind's thoughts stand on — and a family of one cell, whose body
 /// stands on no chart the mind holds, couples to nothing.
@@ -62,7 +62,7 @@ fn couples_only_to_what_mind_holds() {
     });
     mind.field = field;
     assert!(mind.couples(&id, &[]), "the scene it holds thoughts of couples by its citation");
-    assert!(mind.couples(&other, &slide.charts), "the same bodies under another citation couple by their charts");
+    assert!(mind.couples(&other, &slide.charts), "the same bodies under another citation couple by the bodies' charts");
     assert!(!mind.couples(&other, &cell.charts), "a body on no chart the mind holds couples to nothing");
 }
 

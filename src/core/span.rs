@@ -136,7 +136,7 @@ pub fn grade_of(vectors: &[Vector]) -> usize {
 }
 
 /// `b·r − a·f`, merged by axis: `r`'s component along the factor `f` on
-/// their common leading axis cancels (`a` and `b` their leading values), and
+/// the common leading axis of `r` and `f` cancels (`a` and `b` the two leading values), and
 /// the ray's content is divided out, so the entries stay the integers they
 /// are.
 fn cancel(r: &Vector, a: BigInt, b: &BigInt, f: &Vector) -> Vector {
@@ -184,7 +184,7 @@ fn cancel(r: &Vector, a: BigInt, b: &BigInt, f: &Vector) -> Vector {
 /// THE SOLUTIONS OF A SYSTEM OF LINEAR EQUATIONS over ℚ in `cols` unknowns:
 /// every vector orthogonal to each equation's coefficient vector — the
 /// complement of the span of the equations. Returned as its reduced basis:
-/// the equations brought to reduced form by their own leading unknowns,
+/// the equations brought to reduced form by each one's own leading unknown,
 /// each unknown that leads no equation FREE, and one solution per free
 /// unknown, `1` there and `0` on every other free one. That basis is fixed
 /// by the solution space alone (the free unknowns are the complement of the

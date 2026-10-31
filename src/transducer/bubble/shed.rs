@@ -32,7 +32,7 @@ impl Contemplation {
     // `reserve_max 88`, and `reserve_max` is
     // `((cores × (1 + MemAvailable_GiB)).max(16) / 8) × 8` read at boot. So
     // the only live bound on the contemplation was the machine's memory,
-    // and the fleet's holds reached 47 against a bound of 88 — the trigger
+    // and the deployment's holds reached 47 against a bound of 88 — the trigger
     // never fired at all.
     //
     // Two faults, not one. A COUNT against a bound is rule 2's, and the
@@ -67,7 +67,7 @@ impl Contemplation {
     /// read of the fibration's own boundary (rule 1) and not a search.
     ///
     /// MEASURED before it was written (the 60-task slice): 21 of 51 held
-    /// bubbles cite, every one of their 21 pins is LIVE, and none is dead.
+    /// bubbles cite, every one of the 21 bubbles' pins is LIVE, and none is dead.
     /// So a dead-pin collector would retire nothing and this door is the
     /// only one that reaches them.
     ///

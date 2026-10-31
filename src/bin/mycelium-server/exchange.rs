@@ -437,7 +437,7 @@ impl Exchange {
                 crate::offer::offer(&kernel, &mesh, offers);
             }
             // THE LEDGER IS PERSISTED AT THE FEDERATION FLUSH, not on every
-            // marked change: hyphae b and c wrote their whole 27–33 MB
+            // marked change: hyphae b and c each wrote a whole 27–33 MB
             // ledger 223 and 347 times in six minutes, one per witnessed
             // fold, each snapshot taken under the kernel (2026-09-30). A
             // marked change waits an aperture of this court's own sealed
@@ -748,7 +748,7 @@ impl Exchange {
                         {
                             // 78.153b — the confirmation on the hold's stroke,
                             // resumed past the stratum the last digest reached;
-                            // the installed language's stalks taken by their
+                            // the installed language's stalks taken by the stalks'
                             // pointer in the same hold, its digests read off it
                             // with no kernel held.
                             let stalks = match crate::held::held!(kernel) {
@@ -976,8 +976,8 @@ impl Exchange {
                 }
             }
             // 34.2's missing trace. The second organ arrives only through
-            // this exchange, so a fleet where it never lands looks exactly
-            // like a fleet where the germ gate is wrong -- 379 `germ
+            // this exchange, so a mesh where it never lands looks exactly
+            // like a mesh where the germ gate is wrong -- 379 `germ
             // pending (one voice)` against `basis=0` reads as a quorum
             // fault and is a reachability fault. Silence here is the
             // difference and nothing said it. Written once per cycle,

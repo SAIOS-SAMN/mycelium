@@ -1,4 +1,4 @@
-// 78.17, PH5 — A COURT'S PHASE, the reading a live fleet's court publishes of
+// 78.17, PH5 — A COURT'S PHASE, the reading a live mesh's court publishes of
 // its last phase window: a typed reading, served on demand, never a grep.
 
 fn take_u64(b: &[u8], p: &mut usize) -> Option<u64> {

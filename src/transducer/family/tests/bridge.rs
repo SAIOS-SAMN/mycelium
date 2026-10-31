@@ -6,7 +6,7 @@ use crate::transducer::family::bridge::bridge_pair;
 
 /// ONE MOTION, ONE TRANSITION. Two bars slide one site right: the two
 /// carriages that are that slide are ONE transition holding both bodies, and
-/// the bars' cross carriages are transitions of their own. Every one is a
+/// the bars' cross carriages are each a transition of its own. Every one is a
 /// rigid motion recolouring nothing — conformal, its momentum carried, every
 /// pair's product kept, its height advanced, no hue relation — and admitted.
 #[test]

@@ -12,7 +12,7 @@ use super::*;
 /// construction — `g_YX = g_XY⁻¹`. `None` if X's germ is not invertible (a
 /// coboundary/residual chart has no group view-change; that overlap is handled by
 /// the additive coboundary, not this group transition), and `None` where the
-/// composite's counts would pass their carrier (STD1, `Element::compose`).
+/// composite's counts would pass the counts' carrier (STD1, `Element::compose`).
 pub fn transition(g_x: &Element, g_y: &Element) -> Option<Element> {
     g_y.compose(&g_x.reverse()?)
 }
@@ -20,7 +20,7 @@ pub fn transition(g_x: &Element, g_y: &Element) -> Option<Element> {
 /// The HOLONOMY around a triangle of charts — the composite transition
 /// `g_ab ∘ g_bc ∘ g_ca`. Identity ⇔ the charts GLUE (one sheaf); otherwise it is
 /// the exact obstruction (the equivocation) the charts must reconcile. `None`
-/// where the composite's counts would pass their carrier (STD1).
+/// where the composite's counts would pass the counts' carrier (STD1).
 pub fn holonomy(g_ab: &Element, g_bc: &Element, g_ca: &Element) -> Option<Element> {
     g_ab.compose(g_bc)?.compose(g_ca)
 }
@@ -203,7 +203,7 @@ pub enum Drained {
 }
 
 /// 78.74 — WHAT RELEASING ONE VERTEX DID, cell by cell: the chambers crossed
-/// (their classes kept as holes, `kept`) or unsealed, the holes on it
+/// (the chambers' classes kept as holes, `kept`) or unsealed, the holes on it
 /// cauterized (`scarred`: a vertex whose word left reads no class back),
 /// the edges drained to vacuum or cauterized, and what stood pinned, so the
 /// vertex stood.

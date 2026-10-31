@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# OBSERVER — the fleet's pane, read from the running binaries: every mind
+# OBSERVER — the deployment's pane, read from the running binaries: every mind
 # asked on its own post for its reading (its hearing, what it built, what it
 # holds), and every court for the agreements it attested, per speaker →
-# hearer, with their exact deviation. Typed readings only; no log is read.
+# hearer, with each pair's exact deviation. Typed readings only; no log is read.
 #
 # Usage: scripts/observer [SECONDS]     (a live pane, refreshed every SECONDS, default 5)
 #        scripts/observer once          (one frame, then exit)

@@ -204,7 +204,7 @@ impl PivotCertificate {
                     Side::Right => 1,
                 });
                 // LD0 step 5: the word, the translator and the seed are
-                // written as their canonical rays (A4, 17.2), the formed
+                // each written as its canonical ray (A4, 17.2), the formed
                 // word's action with them.
                 word.put_whole(out);
             }
@@ -335,7 +335,7 @@ pub enum RefusalKind {
     /// refusal returns at a fresh coordinate — a mint per cycle, bounded by
     /// nothing in the loop itself.
     ///
-    /// Split out, the two carry their own verdicts: this one contracts to
+    /// Split out, each of the two carries its own verdict: this one contracts to
     /// `Quiescent` and mints nothing.
     RemainderWrong,
 }

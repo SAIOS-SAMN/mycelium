@@ -10,7 +10,7 @@ use crate::transducer::alphabet::Rotor;
 use crate::transducer::cech::*;
 use crate::transducer::element::identity_versor as ident;
 
-/// Three sectioned vertices `n..n+3` and their edges, the third carrying
+/// Three sectioned vertices `n..n+3` and the edges among them, the third carrying
 /// `third`, its cell sealed: a turn leaves it carrying a class.
 fn sealed_triangle(c: &mut Complex, n: u8, third: Rotor) -> (Vec<Vec<u8>>, Vec<u8>) {
     let vs: Vec<Vec<u8>> = [v(n), v(n + 1), v(n + 2)].iter().map(|a| a.as_bytes().to_vec()).collect();

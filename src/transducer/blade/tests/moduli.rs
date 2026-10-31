@@ -6,7 +6,7 @@ use crate::transducer::blade::*;
 
 /// 24.4, A21 §2, Stage 12 S12.1a — A CHART'S PREFIX IS THE TOPOLOGICAL
 /// STRATUM. Two rectangles of different proportions have the same
-/// base, Betti numbers and turns and different moment ratios: their charts
+/// base, Betti numbers and turns and different moment ratios: the two charts
 /// differ, share the coarsest axes, and the atlas read at that depth holds
 /// both — the stratum a peel reaches. The shared stratum is the
 /// base's `n`, its `n` Betti numbers and the turns (BQ4), and it is read by
@@ -62,7 +62,7 @@ fn moduli_prefix_is_topological_stratum() {
 /// WHATEVER ITS WIDTH. `axes_of` packed a rational into two `u64` limbs and
 /// refused when either overflowed; `moduli` read the refusal as an empty
 /// axis list and `stalk::invariant` as the empty chart, the root of the
-/// trie, so bodies whose only fault was the width of their own moduli were
+/// trie, so bodies whose only fault was the width of the bodies' own moduli were
 /// filed together there and with every word that has no support at all.
 ///
 /// Widening the limbs alone would have moved the defect rather than closed

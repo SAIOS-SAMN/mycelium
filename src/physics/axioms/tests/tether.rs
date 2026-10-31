@@ -40,7 +40,7 @@ fn contact_of_reads_tether_exactly_and_scale_free() {
 }
 
 /// THE TETHER'S SCALAR PART IS THE NUCLEI'S INNER PRODUCT, AND ITS WEIGHT
-/// THEIR SQUARES (T3).
+/// THE NUCLEI'S SQUARES (T3).
 ///
 /// `⟨V⟩₀ = s_a · s_b = ½(r_a² + r_b² − ‖P_a − P_b‖²)`, linear in each sphere,
 /// and `⟨VṼ⟩₀ = s_a² s_b² = r_a² r_b²`. Asserted so the linear form is a

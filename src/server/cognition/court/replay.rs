@@ -277,7 +277,7 @@ impl Kernel {
     pub fn court_stroke_on(&mut self, budget: &mut crate::physics::Budget) {
         // E4 — what every other act paid since the last stroke, counted
         // toward the grants (an install, a solve and a demand closure count
-        // at their own act).
+        // each at its own act).
         self.grow_grants_by_paid();
         // PHY1: what the contacts this court perceived did, on any thread,
         // booked on its one reserve's physics — order built where they

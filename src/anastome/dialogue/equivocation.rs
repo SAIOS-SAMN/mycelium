@@ -1,4 +1,4 @@
-// 47.4, XSEPTUM 5.5 — ACT_EQUIVOCATION: two receipt sections a third party
+// 47.4, MU-XSEPTUM 5.5 — ACT_EQUIVOCATION: two receipt sections a third party
 // holds under one key at one K, presented to the court that burns.
 //
 //! Each section is 47.1's receipt section as a digest carries it, framed by

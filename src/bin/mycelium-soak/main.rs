@@ -2,7 +2,7 @@
 //
 //! MU-STANDARDS 8.1 — INSTRUMENTATION: one voice walks a corpus in
 //! process and writes what it read. Trace lines only; it changes no
-//! behaviour and it is not the fleet.
+//! behaviour and it is not the mesh.
 //!
 //! What it measures is the chain L8r opened: a mind extracts a rule over
 //! a family with its own epigenome as the crystal (21 step 3), stands
@@ -335,7 +335,7 @@ fn main() {
     }
     // 53.2's probe — `--census DIR [id,id,…]`: what each family READS as,
     // on the task files the journal's ids map to. It reads the corpus on
-    // disk and no fleet number is taken from it.
+    // disk and no mesh number is taken from it.
     if matches!(argv.split_first(), Some((flag, _)) if flag == "--census") {
         let Some(dir) = argv.get(1) else {
             eprintln!("  census refused: name the corpus directory");

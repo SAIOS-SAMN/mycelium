@@ -832,7 +832,7 @@ impl Kernel {
         self.stamp_key(addr).is_some_and(|at| self.flight.contains(&at))
     }
 
-    /// THE OFFERS THE TRANSITION JUST TAKEN EMITTED, with their records —
+    /// THE OFFERS THE TRANSITION JUST TAKEN EMITTED, each with its records —
     /// what a second organ needs in order to replay them. The caller that
     /// ran the transition sends them when it returns. A word that left the
     /// docket within the same transition is not offered, and a word whose
@@ -925,7 +925,7 @@ impl Kernel {
 
 }
 
-/// The root over the ruled cover's digests: their roots written in order,
+/// The root over the ruled cover's digests: the digests' roots written in order,
 /// hashed as one payload.
 fn root_over(digests: &[crate::transducer::sheaf::StratumDigest]) -> [u8; 32] {
     let mut buf = Vec::new();

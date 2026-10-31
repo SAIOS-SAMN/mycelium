@@ -65,7 +65,7 @@ impl Direction {
     }
 }
 
-/// WHAT ONE FUNCTION'S APPLIED CALLS DID TO ONE QUANTITY: their slides
+/// WHAT ONE FUNCTION'S APPLIED CALLS DID TO ONE QUANTITY: the calls' slides
 /// composed on its flow, and how many were read.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Effect {

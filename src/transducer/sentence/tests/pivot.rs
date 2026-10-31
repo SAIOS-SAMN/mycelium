@@ -44,7 +44,7 @@ fn coordinates_lists_occupied_axes_in_declaration_order() {
 }
 
 /// A16 step 5: SEVERAL discharges are a vortex. Not "several that cannot be
-/// ordered" — several, whatever their μ⃗ says, because nothing orders them.
+/// ordered" — several, whatever each one's μ⃗ says, because nothing orders them.
 #[test]
 fn select_discharge_holds_several_as_vortex() {
     let a = cert(Axis::Unit(0), [2, 0, 1, 0]);

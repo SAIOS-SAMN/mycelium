@@ -1,4 +1,4 @@
-// D1, §8.1 — THE FLEET REGIME ON ONE FAMILY: what a voice's own stroke
+// D1, §8.1 — THE DEPLOYMENT REGIME ON ONE FAMILY: what a voice's own stroke
 // buys on a named task, after the mind has stood on a slice.
 //
 //! EVERY LANDING'S READING (standing terms, 2026-09-19). A reading taken
@@ -131,7 +131,7 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
             epi.working_word(a).and_then(|h| mycelium::transducer::cech::section_of(h.element()))
         };
         // COLUMN 2 — THE VOICE'S OWN STROKE, not a million. `expand_ideas`
-        // passes `physics.stroke()`, so that is what the fleet's bubbles
+        // passes `physics.stroke()`, so that is what the deployment's bubbles
         // are expanded under; a reading at a million says nothing about
         // whether a voice finishes.
         let mut voiced = physics.stroke();

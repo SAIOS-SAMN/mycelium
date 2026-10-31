@@ -118,8 +118,8 @@ fn dilation_reads_du_dh_exactly() {
 }
 
 /// A SLIDE AND A SCALE ARE MOTIONS OF THE QUANTITY'S LINE: each carries the
-/// one value's point onto the other's, and two of each compose as their
-/// flow does — slides by sum, scales by product.
+/// one value's point onto the other's, and two of each compose as the
+/// line's flow does — slides by sum, scales by product.
 #[test]
 fn change_between_is_slide_and_scale_of_line() {
     let c = Change::between(&q(3, 1), &q(7, 1)).expect("reads");

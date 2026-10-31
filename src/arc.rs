@@ -92,7 +92,7 @@ pub fn ground() -> u8 {
 /// perception, speech and replay inside it — UNLESS a family is already
 /// open on this thread, whose ground stands (the siblings a perspective
 /// derives from, a test spoken through the family's rule, are read on the
-/// family's own ground, never on one their subset would name). The scope
+/// family's own ground, never on one a subset of the siblings would name). The scope
 /// closes as `f` returns.
 pub fn on_ground_of<T>(family: &[(Grid, Grid)], f: impl FnOnce() -> T) -> T {
     match GROUND.with(std::cell::Cell::get) {
@@ -177,7 +177,7 @@ pub fn parse_task(json: &str) -> Option<Task> {
 /// coordinates:
 /// - an axis is REVERSED where its first non-zero odd moment (orders 1, 3)
 ///   is negative — which is what a reflection along it changes;
-/// - the axes are ORDERED by their even moments (orders 2, 4) — which is
+/// - the axes are ORDERED by the axes' even moments (orders 2, 4) — which is
 ///   what a permutation of the axes changes.
 ///
 /// These are a gauge-fixing condition — the representative the geometry

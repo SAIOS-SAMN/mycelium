@@ -53,10 +53,10 @@ pub(crate) fn parse_manifest(path: &Path) -> Option<(PathBuf, [u8; 32], [u8; 64]
 /// A RECUT drops this node's origin so it takes the mesh's again (45.5).
 /// It is an operation, not a file edit: the mesh record is signed, so a
 /// genesis cannot be cleared from outside the process that holds the key,
-/// and a fleet that has diverged has no other way back to one mesh.
+/// and a mesh that has diverged has no other way back to one mesh.
 ///
 /// It DROPS AND EXITS. As a serving mode it would re-cut on every restart
-/// -- which is what a unit drop-in carrying it did to this fleet, walking
+/// -- which is what a unit drop-in carrying it did to this deployment, walking
 /// it to epoch 3 one restart at a time. Exiting makes that impossible: a
 /// unit that carries the flag flaps visibly instead of quietly
 /// re-originating the mesh under everyone. `scripts/recut` runs it once.
@@ -221,8 +221,8 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
 }
 }
 
-/// MU-PRODUCT §4 — "A GENESIS ALLOCATION FUNDS OUR CUSTOMER VOICE AND BONDS
-/// OUR HYPHAE." This court, every voice of the genesis, and EVERY HYPHA of
+/// MU-PRODUCT §4 — "A GENESIS ALLOCATION FUNDS THE PROJECT'S CUSTOMER VOICE
+/// AND BONDS THE PROJECT'S HYPHAE." This court, every voice of the genesis, and EVERY HYPHA of
 /// the genesis are bonded here at the cover the corpus measured.
 ///
 /// The hyphae were not. Each court enrolled itself and the voices and no
@@ -231,7 +231,7 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
 /// bonded … with room on every lane" (47.3) — refused every hypha that
 /// ever answered an offer: on 0fd41ca, 41 offers answered in five minutes,
 /// `Inexact` 0, `Witnessed` 0, every one `AwaitingWitness`. The only
-/// witnesses the fleet ever had were the voices, which are bonded, which
+/// witnesses the mesh ever had were the voices, which are bonded, which
 /// is the self-witnessing R46 removed. A hypha is bonded by the genesis,
 /// on every court that holds the genesis, and the same cover is the same
 /// bond on each — two courts reading one corpus stake one measurement.

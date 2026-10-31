@@ -3,7 +3,7 @@
 // (`ACT_LAWS` mode 3) so a connecting kernel checks its terms against the
 // server's, at a version — never silently mistranslated.
 //
-//! This table is the one carrier of the served terms; `MU-LEXICON.md` is their
+//! This table is the one carrier of the served terms; `MU-LEXICON.md` is the terms'
 //! exposition, and a test holds every term and the version to stand in it.
 //! No word belongs to two vocabularies.
 

@@ -86,7 +86,7 @@ impl Kernel {
                 let measured = self.verified_install_deflation(addr, &w);
                 // POWV: the base the install releases — the escrow capped at
                 // the measured deflation — pays this court and the witness
-                // whose re-derivation installed it their verification share
+                // whose re-derivation installed it each a verification share
                 // first; the cited forms, taught words and voices divide the
                 // rest.
                 let pay = match self.treasury.escrow_of(addr).map(|e| e.mu) {
@@ -112,7 +112,7 @@ impl Kernel {
                     // already occupied the lane (L8t).
                     //
                     // MU-CLIENT §5.4 (D2′) — and the WORDS it taught take
-                    // their shares after the words it cited: a held word's
+                    // the taught words' shares after the words it cited: a held word's
                     // discoverer its use, a new word's its base pay. What the
                     // escrow's voices take after both is the COMPOSITION
                     // PREMIUM — what the sentence discharged beyond its words.

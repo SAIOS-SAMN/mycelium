@@ -441,7 +441,7 @@ fn depth_of_is_one_plus_max_glued() {
 
 /// A language of a bar and a dot deconstructs a rotated, translated,
 /// and dilated bar through its moduli with a verified transport, speaks
-/// a chain of two bodies as two words with their relative transport,
+/// a chain of two bodies as two words with the words' relative transport,
 /// leaves the unknown body as the residual, and refuses to cite a word
 /// with itself.
 #[test]
@@ -495,8 +495,8 @@ fn deconstruct_at_cites_words_and_leaves_residual() {
     assert!(s.cites.is_empty() && !s.is_closed(), "no word but itself speaks it");
 }
 
-/// Deconstruction records its multiplicity per body: the chain and each
-/// cited body keep their own width.
+/// Deconstruction records its multiplicity per body: the chain and every
+/// cited body keeps its own width.
 #[test]
 fn deconstruct_at_records_multiplicity_per_body() {
     let bar = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
@@ -696,7 +696,7 @@ fn same_vertex_excludes_placement() {
     assert_eq!(e1.address(), e2.address());
 }
 
-/// Admitting words to an axis index costs work linear in their number, and
+/// Admitting words to an axis index costs work linear in the number of words, and
 /// an on-axis read costs the same whatever the index holds.
 #[test]
 fn admit_words_linear_and_on_axis_constant() {

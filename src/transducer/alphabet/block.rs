@@ -78,7 +78,7 @@ pub(crate) fn word_of_cores(cores: &[SpellCore]) -> Option<Word> {
 }
 
 /// THE CITATIONS AND THE RESIDUE a closed nest carries (50.2 step 2): the
-/// adjoined shells with their exponents summed per generator, and the
+/// adjoined shells with the shells' exponents summed per generator, and the
 /// letters that remain as a word. This is a `Derivation`'s two halves.
 pub(crate) fn cited_of_cores(cores: &[SpellCore]) -> Option<(Vec<super::Cited>, Word)> {
     use crate::network::nerve::Keyed;
@@ -97,7 +97,7 @@ pub(crate) fn cited_of_cores(cores: &[SpellCore]) -> Option<(Vec<super::Cited>, 
                 // order is the key's and not the peel's arrival (rule 15).
                 // Key components (ruled (d)): each length by its own
                 // coordinate. The u16 citation writer's refusal was dropped
-                // here, so two long addresses keyed as their bare bytes.
+                // here, so two long addresses keyed as the addresses' bare bytes.
                 let mut k = Vec::with_capacity(form.as_bytes().len() + vertex.as_bytes().len() + 8);
                 crate::transducer::address::put_key_bytes(&mut k, form.as_bytes());
                 crate::transducer::address::put_key_bytes(&mut k, vertex.as_bytes());

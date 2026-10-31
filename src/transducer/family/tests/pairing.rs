@@ -52,7 +52,7 @@ fn contact_edge_carries_refraction_not_rigidity() {
     );
 
     // Two unlike touching bodies — no turn carries the one onto the other —
-    // still carry their refraction: each is read against itself.
+    // still each carry a refraction: each is read against itself.
     // (An asymmetric one: a bar's own 180° turn would hold its pose open.)
     let bar = body(&[(3, 0, 0), (4, 0, 0), (5, 0, 0), (5, 1, 0)]);
     assert!(blade::relative_pose(&a, &bar, &mut super::common::budget()).is_err(), "an L-tromino and an L-tetromino are not one turn apart");
@@ -61,7 +61,7 @@ fn contact_edge_carries_refraction_not_rigidity() {
             contact_edge((&nucleus(&a), &nucleus(&bar)), Some((&a, &a)), Some((&bar, &bar)), &mut super::common::budget()),
             ContactEdge::Formed(_)
         ),
-        "yet their contact is read, never refused for unlikeness"
+        "yet the bodies' contact is read, never refused for unlikeness"
     );
 
     // A body whose own transition is a mirror is read orientation-reversed
@@ -209,7 +209,7 @@ fn contact_edge_static_carries_tether_and_pose() {
 /// never a chord's length and never twice. Two bodies translated along one
 /// ray, one and two units: the first opens the tube by its four, the second
 /// closes two quanta of four on it, relieving the four — twelve transported.
-/// The turn, the dilation and the hue map each open their own orbit (78.73).
+/// The turn, the dilation and the hue map each open a separate orbit (78.73).
 #[test]
 fn transport_order_reads_every_lane_as_field() {
     use crate::transducer::cga::{self, Mv, E1, E2};

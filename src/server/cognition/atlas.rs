@@ -266,7 +266,7 @@ impl Atlas {
         page
     }
 
-    /// THE ADVANCES between two final points: the ladder's points of their
+    /// THE ADVANCES between two final points: the ladder's points of the two points'
     /// one origin above `from`'s tick and at or below `to`'s. `None` where
     /// they stand at two origins (a re-originated clock is no distance).
     pub(crate) fn advances(&self, from: &TPoint, to: &TPoint) -> Option<u64> {

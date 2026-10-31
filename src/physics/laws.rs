@@ -53,7 +53,7 @@ pub enum Law {
 /// PARAMETER.
 pub const LAW_VERSION: u8 = 4;
 
-/// 78.125 — THE CHALLENGE WINDOW, in fleet heights (never a wall clock): how
+/// 78.125 — THE CHALLENGE WINDOW, in mesh heights (never a wall clock): how
 /// long after its seal a fold stands open to an availability demand, a
 /// replay or a correction. Every domain of a network universe shares this
 /// one finality clock; it is shorter than any anchoring cadence, so an era's
@@ -391,7 +391,7 @@ pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> Verdict {
     }
     // CONTINUITY (law version 3): every flux stands at a finite place with a
     // positive mass; and under a motion that does not dilate, the bodies'
-    // mass after is their mass before plus what the sources emitted, less
+    // mass after is the bodies' mass before plus what the sources emitted, less
     // what the sinks absorbed — exactly. A dilation's change of mass is its
     // expansion lane (LV2), not a flux.
     for (index, f) in t.fluxes.iter().enumerate() {

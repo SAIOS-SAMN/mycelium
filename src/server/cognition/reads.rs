@@ -255,8 +255,8 @@ impl Kernel {
         (self.room_broken.load(Relaxed), self.room_overflowed.load(Relaxed))
     }
 
-    /// STD1 — the court's own operations and readings refused past their
-    /// carrier.
+    /// STD1 — the court's own operations and readings refused past the
+    /// readings' carrier.
     pub fn overflowed(&self) -> u64 {
         self.overflowed
     }

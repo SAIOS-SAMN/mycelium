@@ -396,11 +396,11 @@ fn as_element_form_tags_sentence_without_tape() {
 /// measured at `63d6e40`, where this test asserted the defect with
 /// `assert_ne` and said it would flip.
 ///
-/// The key now writes the vertices in their OWN canonical order: the
+/// The key now writes the vertices in the vertices' OWN canonical order: the
 /// Frame first, because "a form opens at its frame" (18) and it is the
 /// basepoint rather than a member of the set, then every other vertex by
 /// its own coordinate bytes, read back from a `Keyed` whose trie order IS
-/// those coordinates' order. A face names its ends by their place in that
+/// those coordinates' order. A face names each end by its place in that
 /// ordering, so the incidence is read against the coordinates and not
 /// against the vector the vertices happen to sit in.
 ///
@@ -408,8 +408,8 @@ fn as_element_form_tags_sentence_without_tape() {
 /// form still HOLDS a `Vec` and the key still names a face's ends by a
 /// place in an order rather than by the ends' own addresses. The order is
 /// now content, which is the difference between this and arrival — but
-/// `Frame`, `Rebased` and `Unfolded` vertices have no derived address of
-/// their own yet, and until they do a face cannot be `(A_i, A_j)`.
+/// `Frame`, `Rebased` and `Unfolded` vertices have no derived address
+/// yet, and until they do a face cannot be `(A_i, A_j)`.
 #[test]
 fn form_vertex_key_ignores_append_order() {
     let q01 = alphabet::LetterId::turn_90((0, 1)).expect("q");
@@ -516,7 +516,7 @@ fn from_residual_and_from_address_refuse_each_other() {
 /// `pivot::drive` files in ONE of its four branches, `NoneDischarged`. An
 /// orbit the stroke DISCHARGED leaves no filing, because the obstruction is
 /// gone; an orbit that went to `Vortex`, and an orbit whose `Starved` budget ran
-/// out before its candidates were reached, stand UNFILED with their
+/// out before its candidates were reached, stand UNFILED with the
 /// holonomy intact. Two forms with the same vertices, faces and orbits
 /// therefore carry different filings depending on what a stroke could
 /// afford. A derivation from the incidence alone hands a starved form the
@@ -610,7 +610,7 @@ fn classify_files_turn_at_four_and_screw_at_zero() {
 }
 
 /// A.10 RESTATED ON `V` (72.1, BQ5b), TESTED BY APPLYING IT: two bodies
-/// co-occupy through `V = s_b s_a`, and the witness of their contact — the
+/// co-occupy through `V = s_b s_a`, and the witness of the bodies' contact — the
 /// points they share — lies on both spheres, so each reflection fixes it and
 /// `V p Ṽ ∝ p` for every witness point: WHAT read against WHETHER, exact
 /// over ℚ. Two unit spheres tangent at `(1,0,0)`; two of radius 5 crossing

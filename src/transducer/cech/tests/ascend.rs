@@ -7,7 +7,7 @@ use crate::transducer::alphabet::Rotor;
 use crate::transducer::cech::*;
 use crate::transducer::element::identity_versor as ident;
 
-/// Three sectioned vertices and their three edges, the third carrying
+/// Three sectioned vertices and the three edges among them, the third carrying
 /// `third`: the identity closes the boundary flat, a 90° turn leaves it
 /// carrying a class.
 fn triangle(third: Rotor) -> (Complex, Vec<Vec<u8>>) {

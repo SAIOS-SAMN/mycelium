@@ -471,7 +471,7 @@ impl Epigenome {
         self.atlas.admit(&crate::transducer::stalk::invariant_of(&held), at.clone());
         self.axis_admit(&held);
         self.moduli_admit(&held);
-        // 78.160 — THE VOCABULARY LEARNS IT: the word's motions filed by their
+        // 78.160 — THE VOCABULARY LEARNS IT: the word's motions filed by the motions'
         // holes and windings.
         match held.form() {
             Some(f) => {

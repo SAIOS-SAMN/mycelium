@@ -1,5 +1,5 @@
 // 78.2, EN1 — CONTAINMENT IS THE SIGN OF THE INVERSIVE PRODUCT: the
-// enclosure a cell's bodies share is the JOIN of their centres as null
+// enclosure a cell's bodies share is the JOIN of the bodies' centres as null
 // points — the round through them — and which body it wraps, and which
 // enclosure wraps which, is read off the pair's inversive product through
 // GR1's one pair reader, never off a Euclidean inside or outside.
@@ -7,7 +7,7 @@
 //! THE CENTRE of a nucleus is where its inversion sends infinity, `s e_∞ s`
 //! — read by the sandwich, never by a radius.
 //!
-//! THE ENCLOSURE of `k + 1` bodies is the round `R = X₀ ∧ … ∧ X_k` their
+//! THE ENCLOSURE of `k + 1` bodies is the round `R = X₀ ∧ … ∧ X_k` the bodies'
 //! centres join (a point pair, a circle, a sphere as `k` rises). Its
 //! CARRIER is the sphere the round is a great round of, centred in the
 //! round's own span: the contraction of `R` by its flat `F = R ∧ e_∞`,
@@ -72,7 +72,7 @@ pub fn centre_point(s: &Mv) -> Option<Mv> {
     weighted(&x)
 }
 
-/// THE ENCLOSURE OF A CELL'S BODIES: the carrier of the round their
+/// THE ENCLOSURE OF A CELL'S BODIES: the carrier of the round the bodies'
 /// centres join, at weight one. `None` where the centres span no round —
 /// they coincide, or stand on one flat.
 pub fn enclosure(nuclei: &[Mv]) -> Option<Mv> {

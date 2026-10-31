@@ -269,7 +269,7 @@ impl Complex {
     /// degree produces no volume. Simplices are read by key; rotors are
     /// not cloned.
     ///
-    /// Answers the closed rings it cut because their coefficient moved, each
+    /// Answers the closed rings it cut because the rings' coefficient moved, each
     /// by its key and what it cut (78.26(6)): the caller names the adjunct.
     pub fn coboundary_on_link(
         &mut self,
@@ -496,7 +496,7 @@ impl Complex {
     /// IT IS `drain` ONE DEGREE UP, and deliberately the same shape: the
     /// same dimensional gate, the same pinning-from-above by a keyed meet,
     /// the same `forget`, and the same refusal to write into a neighbour.
-    /// Two pivots of one ladder that did not share their mechanics would be
+    /// Two pivots of one ladder that did not share one mechanics would be
     /// two mechanics, and the pair would close only by coincidence.
     ///
     /// PINNED FROM ABOVE. A 2-cell enclosed by a 3-cell that has been read
@@ -547,7 +547,7 @@ impl Complex {
             return Descended::Absent;
         };
         // PINNED FROM ABOVE? The cofaces are the simplices (and holes)
-        // holding every vertex of this one — the meet of their stars, and
+        // holding every vertex of this one — the meet of the vertices' stars, and
         // never a read of the degree above (rule 1).
         if self.pinned_above(key, &simplex.vertices) {
             return Descended::Pinned;

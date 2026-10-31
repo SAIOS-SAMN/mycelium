@@ -3,7 +3,7 @@
 // its final point; every frame read at the door is heard on it; every reply
 // the door writes carries its final point.
 //
-//! THE KEEPERS (TU-1..4) are held here too, under their own lock, never
+//! THE KEEPERS (TU-1..4) are held here too, under the keepers' own lock, never
 //! nested with the kernel's: the court's tick is read under the kernel by the
 //! court loop (78.152b) and the digest's signer and handed in after; a peer's
 //! ring — on its digest or pushed as `ACT_TICK` — is admitted with no kernel
@@ -104,7 +104,7 @@ fn origin(mesh: &Mesh) -> Option<Origin> {
     Some(Origin { genesis, epoch })
 }
 
-/// The keepers at `origin`, under their lock: begun where none are held or
+/// The keepers at `origin`, under the keepers' lock: begun where none are held or
 /// they stand at another origin (a recut re-originates them).
 fn with_keepers<R>(mesh: &Mesh, origin: Origin, f: impl FnOnce(&mut Keepers, &mut Residual) -> R) -> Option<R> {
     let mut g = match KEEPERS.lock() {
@@ -157,7 +157,7 @@ pub(crate) fn own_ring(mesh: &Mesh, tick: Option<Tick>) -> Vec<TickReading> {
     with_keepers(mesh, origin, |k, _| {
         if let Some(t) = tick {
             if k.read_own_kept(&mesh.sk, t, keep).is_none() {
-                eprintln!("  court tuniversal reading refused: its cites pass their count");
+                eprintln!("  court tuniversal reading refused: its cites pass the cites' count");
             }
         }
         k.own_ring()
@@ -180,7 +180,7 @@ pub(crate) fn sign_tick(mesh: &Mesh, tick: Option<Tick>) -> Option<Vec<TickReadi
         Some(true) => Some(k.own_ring()),
         Some(false) => None,
         None => {
-            eprintln!("  court tuniversal reading refused: its cites pass their count");
+            eprintln!("  court tuniversal reading refused: its cites pass the cites' count");
             None
         }
     })

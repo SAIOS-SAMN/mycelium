@@ -10,7 +10,7 @@
 #
 # Usage: scripts/recut [HOME_ROOT]        (default <repository>/var)
 #
-# The fleet's homes live under the repository, `var/<unit>` (2026-09-09:
+# The deployment's homes live under the repository, `var/<unit>` (2026-09-09:
 # moved out of a user's home directory); keys, mesh records and corpus
 # manifests are configuration and stay, everything else is state and goes.
 #
@@ -23,7 +23,7 @@ REPO="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="${1:-$REPO/var}"
 VOICES=(1 2 3 4 5)
 # The seat minds' homes (transient units: barren's s1, xylarium's x0–x3,
-# netstratum's n1–n4): their genomes carry the old court's stamps too.
+# netstratum's n1–n4): the seat genomes carry the old court's stamps too.
 SEAT_HOMES=(s1 x0 x1 x2 x3 n1 n2 n3 n4)
 HYPHAE=(a b c)
 MINTER="${HYPHAE[0]}"
@@ -52,7 +52,7 @@ for v in "${VOICES[@]}"; do systemctl --user stop "mycelium-client@$v" 2>/dev/nu
 # Seat minds are transient units: stopped here so none rewrites its genome
 # after the wipe; they are NOT restarted by this script — each is relaunched
 # (systemd-run) once its house has re-founded and re-posted its seats.
-say "stopping seat minds (relaunch them after their houses re-post)"
+say "stopping seat minds (relaunch each once its house re-posts)"
 for u in $(systemctl --user list-units --no-legend --plain 'mycelium-seat-*' 'mycelium-xseat-*' 'mycelium-nseat-*' | awk '{print $1}'); do
   systemctl --user stop "$u" 2>/dev/null || true
 done
@@ -95,7 +95,7 @@ done
 # is spent. The unit then boots on the mesh record that run signed, which
 # is how the origin reaches every restart without a flag on the unit. It
 # started the unit and waited for a line the unit could never write: the
-# fleet came up with `genesis unwritten` on every node (2026-09-08).
+# deployment came up with `genesis unwritten` on every node (2026-09-08).
 say "minting on $MINTER"
 MINT_LOG="$ROOT/$MINTER/mint.log"
 timeout 180 "$BIN" --home "$ROOT/$MINTER" --mint-genesis >"$MINT_LOG" 2>&1 &
@@ -136,5 +136,5 @@ for v in "${VOICES[@]}"; do systemctl --user start "mycelium-client@$v"; done
 SOAK="${SOAK:-300}"
 say "soaking ${SOAK}s before the reading"
 sleep "$SOAK"
-say "reading the fleet"
+say "reading the deployment"
 "$REPO/scripts/readings" "-$((SOAK / 60 + 1))m" "$ROOT"

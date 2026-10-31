@@ -20,7 +20,7 @@ pub struct Folded {
 }
 
 /// The nets a fold writes: one (identity, net) per identity with a
-/// nonzero net, in identity order, and their total.
+/// nonzero net, in identity order, and the nets' total.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Nets {
     pub rows: Vec<([u8; 32], [u64; 4])>,

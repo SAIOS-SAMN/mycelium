@@ -1,5 +1,5 @@
 // 47.2 step 3, 45.2 — THE BACK-FILL: a gapped signer's receipts, fetched by
-// place range and admitted by their chain, page after page until the chain
+// place range and admitted by the receipts' chain, page after page until the chain
 // holds the reported frame's predecessor; and the heard head admitted again
 // once it does.
 //
@@ -126,7 +126,7 @@ fn adopt(kernel: &Mutex<Kernel>, origin: Origin, proof: &crate::anastome::dialog
 /// A BACK-FILL CONVERGES ACROSS EXCHANGES; IT DOES NOT FINISH IN ONE. Every
 /// page admitted is progress that is KEPT — `admit_backfill` writes it into
 /// the known set and `known_head` moves — so the next exchange starts
-/// further along (the epoch-11 lesson: a must-finish pass took the fleet's
+/// further along (the epoch-11 lesson: a must-finish pass took the deployment's
 /// load to 29).
 ///
 /// THE MESH IS A POSET: every signer a fetched receipt cites and this node
@@ -305,7 +305,7 @@ pub fn hear<E>(
     // (2026-09-30). Each hole is chased at most once per hearing, so a
     // hole the chase cannot close ends it.
     let mut chased: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    // The holes a proof by their era was asked for, once each per hearing.
+    // The holes a proof by each hole's era was asked for, once each per hearing.
     let mut proving: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     loop {
         let (vk, to) = match &admitted {

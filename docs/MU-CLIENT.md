@@ -202,14 +202,14 @@ It does NOT build:
    (h), (o)).
 3. **No boolean gates.** No `bool` is branched on in cognition, no count
    decides a branch, no threshold stands in a decision (MU-STANDARDS 2.3;
-   ANTI_FLATTENING_LAW I; rules 2, 4, 5). A decision is a typed reading with
+   MU-ANTI-FLATTENING I; rules 2, 4, 5). A decision is a typed reading with
    one arm per physical kind, and where two readings are consistent both
    are held (rule 15, the vortex).
 4. **No scalar collapse.** No score, weight, norm, distance number, count or
    sum across lanes stands for a geometric object (laws 1, 4, 5, 11; 78.45;
    78.162, the inverse-Sisyphus protocol). A reading is the exact object.
 5. **No hashmap, no BTree, no digest as identity** (law 2, rules 6, 9;
-   ANTI_FLATTENING_LAW 1, II): carriers are `Keyed` tries over canonical
+   MU-ANTI-FLATTENING 1, II): carriers are `Keyed` tries over canonical
    coordinates and `Vec`s of relations, and THE HEAP FITS THE MATHEMATICS —
    a multivector holds its non-zero terms (`Mv`, sparse), a carrier holds
    what the mathematics derived and lapses by the physics.
@@ -249,7 +249,7 @@ export reaches it at the carrier facing that hypha (§5.1):
 | its taught words: syllabus pages, class pages, the presentation | `ACT_SYLLABUS`, `ACT_TEACH` | a MINERAL in the genome, hardened into a CRYSTAL where the mind re-derives it by its own circuits (§5.5) |
 | its published reading: cover, room, ruled cover, head | the shelf (78.151), read without the kernel | the language's charts the mind's rings stand against |
 | a registry task | `ACT_TASK` | an OFFER (§4.13) and, where it couples, a family given to the mind's perception, its solve the mind's act (§5.4): its pairs are SCENES taken into the shells as any family is, perturbing the orbits they land on; a solve is emitted by comprehension where a rule its perspectives know binds the thought (§4.9) — never a pipeline from the task's arrival to the court (§2.4(8)). Every scene keeps the coordinates of the family it came from, so whatever the mind speaks of it names its evidence (§5.4) |
-| its acts — Return, RankStep, Reconnect | its ledger | OWED: no act reaches a mind as a perception yet; until one does, the mind reads the hypha's motion only through the rows above |
+| its acts — Return, RankStep, Reconnect | its ledger | SPECIFIED: no act reaches a mind as a perception yet; until one does, the mind reads the hypha's motion only through the rows above |
 
 Beside the hypha, the mind takes in:
 - **other minds' speech** — what a peer says it newly understands, and its
@@ -902,7 +902,7 @@ Across a multitude of knowledge comprehension runs four ways, each a reading
 of the plexus (78.31): across CLASSES — each class's algebra its own, so
 comprehension of one is never folded into another's span; across CHAMBERS —
 the cross-chamber bracket, where two chambers' generators fail to commute
-(CB1, owed); across GRADES — an enclosure, a sporophore, wrapping chambers
+(CB1, Specified); across GRADES — an enclosure, a sporophore, wrapping chambers
 whose bracket no one chamber can hold (EN1, NB1); across MINDS — another
 mind's re-derivation from its own constructors, the second vantage every
 admission needs (§5.3, §5.4), and its echo, which is what one mind's
@@ -957,7 +957,7 @@ algebra or of the flux, never a choice:
 So "amended until discarded" is a deduction, not a policy: held, separated
 by commutator, retired by derivability, renewed or lapsed by flux. 78.73's
 "plastic" — written for the admission of a new generator — reads, for the
-mind, as the amendment of a held constructor as well (owed into 78.73).
+mind, as the amendment of a held constructor as well (Specified, into 78.73).
 
 ### 4.11 Thoughts built differently
 
@@ -966,7 +966,7 @@ different frames, and the mind applies its mathematics to that without
 rewriting what any thought IS — the difference is always a coordinate:
 1. **The difference is holonomy, and holonomy is content.** The loop the two
    paths form has a holonomy — what the history did — kept, never gauged
-   away (ANTI_FLATTENING_LAW 6).
+   away (MU-ANTI-FLATTENING 6).
 2. **Identity is by class, not by construction.** A word in another frame is
    its conjugate `W′ = Γ W Γ⁻¹`, keeping its class κ and its period ℓ
    (78.95): where two differently built thoughts' classes agree they are one
@@ -1349,7 +1349,7 @@ nothing between minds.
    class were taken; a peer whose answers on a class were inexact is not
    asked that class again, refused by key and class. No posture, class
    label or score is ever made of it; it is detection only, and any
-   consequence is the game kernel's (78.165). Owed (§7.1).
+   consequence is the game kernel's (78.165). Specified (§7.1).
 
 ### 5.4 To the court
 
@@ -1489,7 +1489,7 @@ sections are the same pair by pair — neither closes a site beyond the other
 - **K2** — where the attesting mind discovered a word bound to the same
   scene, another vertex with the same section, the court seals the
   speaker's `Attest` on it, once: the convergence, on the ledger.
-- **K3 — owed, a ruling pending**: whether a verified convergence is the
+- **K3 — Specified, a ruling pending**: whether a verified convergence is the
   second vantage an install waits on (47.3), or is paid a share.
 
 ### 5.6 POW++: the proof of the work
@@ -1583,7 +1583,7 @@ or a constant:
   moved (S boosts, G hue modes, T null fluxes, H turns). The carrier exists
   (`economy::modes::Modes`, §7.1) and a solve's verdict carries the modes
   its closing form moved beside its pay; the ledger still pays a count per
-  lane, and paying in modes is owed (78.162).
+  lane, and paying in modes is Specified (78.162).
 - **A — agency without a gradient.** Word < conjugate < sentence is a slope
   in the minds' world. The mind never reads it: nothing in the client reads
   its pay, balance or ledger back into cognition (§2.4(8), §4.12, 78.49); a
@@ -1627,7 +1627,7 @@ read call under its own valuation, REACH (`SeatMind::reach`, in
 `seat_mind/own.rs`), or none, and the mind passes. The pass is silence on
 the wire and a typed reading to the observer.
 
-Owed: the seat's functions taken into the field as thoughts whose orbits
+Specified: the seat's functions taken into the field as thoughts whose orbits
 escape, so a seat is played by the drive rather than by `seat_mind`'s
 choice; the seat's act carried as the physics `Action` its move names.
 
@@ -1676,7 +1676,7 @@ is abbreviated `entity/`, and `transducer/` is abbreviated `t/`.
 The observer is an instrument permitted against §2.4(1): every call reads,
 none moves the mind, and nothing in cognition reads it back.
 
-**Owed, in order**
+**Specified, in order**
 
 1. **The algebra held per class** in the mind's field (§4.2, §3.2).
 2. **The hypha's acts as perception** — Return, RankStep and Reconnect
@@ -1778,7 +1778,7 @@ Posed under 78.168:
   bounds §4.13 lists as built.
 
 And what the hypha has not built, which the mind's side waits on: μ as
-modes on the ledger (78.162; §7.1 owed item 3); the hypha's acts reaching a
+modes on the ledger (78.162; §7.1 Specified item 3); the hypha's acts reaching a
 mind as perception (§3.1).
 
 ---

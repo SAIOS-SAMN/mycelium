@@ -32,7 +32,7 @@ fn take_metabolism_separates_cycling_lane_from_spending() {
 /// D2 — THE FLUX IS EXACT AT THE BOUND OF A LANE.
 ///
 /// A lane that drew everything its counter holds and restored nothing, and
-/// one that did the reverse, read their whole difference — never a value
+/// one that did the reverse, read the two lanes' whole difference — never a value
 /// clipped to a narrower integer (rule 11).
 #[test]
 fn flux_is_exact_at_lane_bound() {
@@ -85,12 +85,12 @@ fn take_metabolism_counts_entropy_and_orbit_per_dimension() {
 fn period_of_reads_motion_off_its_modes() {
     use crate::transducer::cga::{motion_modes, period_of, Period};
     use num_rational::BigRational;
-    let quarter = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("a quarter turn");
+    let quarter = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("a 90° turn");
     let word = crate::transducer::alphabet::Word::from_letters(&[(quarter, false)]);
     let turn = crate::transducer::element::versor_of_word(&word).expect("a word is a versor");
     let mut b = crate::physics::Physics::default().stroke_n(1 << 16);
     let modes = motion_modes(&turn, &mut b).expect("read").expect("decomposes");
-    assert_eq!(period_of(&modes), Some(Period::Closes(4)), "a quarter turn returns at four");
+    assert_eq!(period_of(&modes), Some(Period::Closes(4)), "a 90° turn returns at four");
     let one = BigRational::from_integer(1.into());
     let zero = BigRational::from_integer(0.into());
     // A shift in the turn's own plane is a turn about another centre: it

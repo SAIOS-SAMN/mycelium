@@ -29,7 +29,7 @@ pub struct Generator {
     pub ruled: bool,
 }
 
-/// THE HELD GENERATORS BY THE HOLES THEY STAND ON and by the modes of their
+/// THE HELD GENERATORS BY THE HOLES THEY STAND ON and by the modes of the generators'
 /// hue maps — keyed by [`super::generator_key`], the same key the lane covers
 /// file a generator under, so one generator is one entry whatever reaches it.
 /// A language's words, never what a mind has heard: whether a heard ring
@@ -40,7 +40,7 @@ pub struct Presentation {
     holes: HoleIndex,
     gauges: Keyed<Keyed<()>>,
     held: Keyed<Generator>,
-    /// 78.166 1c — the generators by the CLASS of their turn (`Rotor::class_key`,
+    /// 78.166 1c — the generators, each by the CLASS of its turn (`Rotor::class_key`,
     /// a conjugacy invariant): where a motion's class is a held word's, the
     /// motion may be that word transported, and the conjugator is solved
     /// exactly (`conjugate_of`). A generator that turns nothing has no class
@@ -271,7 +271,7 @@ pub struct Reading {
 }
 
 /// A MOTION DECONSTRUCTED OVER A PRESENTATION: the generators cited, each
-/// `(form, vertex, exponent)`; whether their product IS the motion, exactly
+/// `(form, vertex, exponent)`; whether the generators' product IS the motion, exactly
 /// (projectively, 1.5); how many of its holes no held generator reached; and
 /// how many holes it has.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -358,7 +358,7 @@ impl Presentation {
         self.held.is_empty()
     }
 
-    /// FILE A FORM'S WORD VERTICES under the holes their motions wind about,
+    /// FILE A FORM'S WORD VERTICES under the holes the vertices' motions wind about,
     /// each motion's coordinates read under the given stroke, as ruled. Each
     /// word vertex is filed or refused by name ([`Learned`]); a vertex that
     /// moves nothing and recolours nothing is [`Unlearned::Inert`], one whose

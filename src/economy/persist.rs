@@ -171,7 +171,7 @@ impl Treasury {
     /// that had used one of those failed its own audit. And a carrier
     /// derived from the journal agrees with it by construction, which
     /// destroys the cross-check §6's audit exists for: the carrier is
-    /// persisted and the supply re-derived, so their disagreement is what
+    /// persisted and the supply re-derived, so a disagreement between the two is what
     /// the audit catches.
     pub fn put_tries(&self, out: &mut Vec<u8>) {
         for (name, carrier) in [(STAKES_TRIE, &self.stakes), (BALANCES_TRIE, &self.balances)] {
@@ -246,9 +246,9 @@ impl Treasury {
     }
 
     /// A TREASURY REBUILT FROM ITS PARTS at restore: the stakes and
-    /// balances off their tries, the journal off the ledger's nodes in the
+    /// balances off the tries that hold them, the journal off the ledger's nodes in the
     /// order they stand. The bond total and the supply are re-derived; the
-    /// awards come back off their words' nodes (`restore_award`).
+    /// awards come back off the awarded words' nodes (`restore_award`).
     pub fn from_parts(
         stakes: crate::network::nerve::Keyed<[u64; 4]>,
         balances: crate::network::nerve::Keyed<[u64; 4]>,

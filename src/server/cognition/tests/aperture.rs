@@ -29,10 +29,10 @@ for n in 0..8u8 {
         o => panic!("germ {n}: {o:?}"),
     }
 }
-// Two fresh germs: their first voices each trigger a syntropic stroke (the
+// Two fresh germs: the germs' first voices each trigger a syntropic stroke (the
 // mesh is depleted), partially recovering the lane. The bar recoloured
 // whole, two ways: two sentences of one word each, differing in the hue
-// their gauge carries the bar to.
+// each sentence's gauge carries the bar to.
 let ga = vec![(0, 0, 4), (0, 1, 4)]; // 1→4
 let gb = vec![(0, 0, 5), (0, 1, 5)]; // 1→5
 let held: Vec<Vec<u8>> = k.provisional.scoped().map(|(key, _)| key).collect();
@@ -125,7 +125,7 @@ assert_eq!(
 /// Admitting a word rebuilt the whole language snapshot — the word vector
 /// copied, the index trie deep-cloned, N fresh `OnceLock`s allocated and
 /// every lifted shape thrown away — so the Nth admit cost O(N) and the
-/// fleet's footprint grew quadratically in what it had learned. This is the
+/// mesh's footprint grew quadratically in what it had learned. This is the
 /// N vs 4N counter of the enumeration audit, applied to a write.
 #[test]
 fn basis_insert_costs_same_at_n_and_4n() {

@@ -256,7 +256,7 @@ fn mint_sentence_why_refuses_form_where_nothing_acts() {
 
 /// 78.158a U1 — THE MINT'S REFUSAL NAMED WHOLE, on the solve paths as on
 /// speech: its arm, its proof, its kind and the kinds of the demands the
-/// refused form carries. The fixture is the fleet's 456: a form whose every
+/// refused form carries. The fixture is the deployment's 456: a form whose every
 /// vertex is a demand, refused as nothing acting — and each arm's line read
 /// on the same form, exactly.
 #[test]

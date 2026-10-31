@@ -285,7 +285,7 @@ pub(crate) struct Perceived {
     /// A rule its perspectives know, with the tests' outputs where it speaks
     /// them whole.
     known: Option<(SentenceRule, Option<Vec<crate::arc::Grid>>)>,
-    /// The chains the tests' speech left, as their scenes' forms.
+    /// The chains the tests' speech left, as the forms of the tests' scenes.
     chains: Vec<PairPercept>,
     /// Where the reading stopped, on the carrier; the winding reads on
     /// from a known rule with tests spoken (`admit_scene`).
@@ -295,7 +295,7 @@ pub(crate) struct Perceived {
 }
 
 /// RINGS ANOTHER MIND SAID, WAITING TO BE READ: the speaker, what was said,
-/// the words, and what their evidence read on their scene.
+/// the words, and what the rings' evidence read on the rings' scene.
 pub(crate) struct Hearing {
     speaker: [u8; 32],
     said: Vec<u8>,
@@ -552,7 +552,7 @@ impl Entity {
 
     /// RINGS ANOTHER MIND SAID, to be read on the perception carrier off the
     /// field (MU-CLIENT §4.9, §7.1 R1) and understood where the reading
-    /// lands, with what their evidence read on their scene (§5.5). MU-CLIENT
+    /// lands, with what the rings' evidence read on the rings' scene (§5.5). MU-CLIENT
     /// §4.13 — ONE AT A TIME, BY ITS COORDINATES: the hearing waits on the
     /// board under the speaker and what was said, the same thing said again
     /// by the same mind standing in the place of the one waiting; the next is

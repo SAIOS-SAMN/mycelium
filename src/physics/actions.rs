@@ -108,7 +108,7 @@ pub enum Action {
     Equivocation,
     Fold,
     /// 78.152b — A KEEPER'S RING PUSHED: court to court, the keeper's newest
-    /// TUniversal readings on their own act, heard at the door off the
+    /// TUniversal readings on a dedicated act, heard at the door off the
     /// kernel, so the mesh's clock never waits on a court's load. Its byte
     /// 0x23 stands beside the cover, offer and install (ruled
     /// 2026-10-09: a free byte, WIRE-CHANGE, court to court only). Seals

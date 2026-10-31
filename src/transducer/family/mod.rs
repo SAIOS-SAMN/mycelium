@@ -342,7 +342,7 @@ pub(crate) fn member_key(vertex: &crate::network::nerve::coord::VertexAt, chart:
 
 // `section_key` (member ‖ carriage, 54.7) STOOD HERE AND RETIRED WITH THE
 // SLOTS (AT1, ruled (a) on the chords): two pieces of one member are told
-// apart by their PIECE-CHARTS — nucleus and shape at the member's frame —
+// apart by the PIECE-CHARTS — nucleus and shape at the member's frame —
 // and two sections of one chart by the frames each holds, so no key widened
 // by the carriage names either.
 
@@ -446,7 +446,7 @@ pub struct Carriage {
 /// Carry `a` onto `b`: the versor from the moments, and the hue map read
 /// compartment by compartment on the base `(r, c, k)` — functional, or refused. One
 /// reading for a body in one frame and a body across frames: a frame-0
-/// body's compartments stand at `k = 0` (51.3), which is their coordinate and
+/// body's compartments stand at `k = 0` (51.3), which is the compartments' coordinate and
 /// not a second path.
 pub fn carriage(a: &Body, b: &Body, budget: &mut crate::physics::Budget) -> Option<Carriage> {
     let v = blade::versor_between(&a.shape, &b.shape, budget).ok()?;

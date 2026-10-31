@@ -168,7 +168,7 @@ impl Handoffs {
             v.extend_from_slice(&id);
             v.extend_from_slice(mouth);
         }
-        // 78.133 — the mouths' tariffs (beside their flat writing), then the
+        // 78.133 — the mouths' tariffs (beside the mouths' flat writing), then the
         // tolls held, after the traversals.
         let tariffed: Vec<(Vec<u8>, &crate::anastome::dialogue::handoff::Tariff)> =
             self.mouths.scoped().filter_map(|(id, m)| Some((id, m.mouth.tariff.as_ref()?))).collect();
@@ -182,7 +182,7 @@ impl Handoffs {
             v.extend_from_slice(&id);
             t.put(&mut v);
         }
-        // 78.134 — the mouths' curved tubes, beside their flat writing.
+        // 78.134 — the mouths' curved tubes, beside the mouths' flat writing.
         let tubes: Vec<(Vec<u8>, &crate::anastome::dialogue::handoff::Tube)> =
             self.mouths.scoped().filter_map(|(id, m)| Some((id, m.mouth.tube.as_ref()?))).collect();
         let (curved, spaced): (Vec<_>, Vec<_>) = tubes.iter().partition(|(_, t)| t.curved());
@@ -510,7 +510,7 @@ impl Kernel {
 
     /// THE SIDES A FOLD WOULD CONSUME, proved: each names a held handoff, is
     /// this fold's tier's, stands answerable, and is not consumed — once in
-    /// this fold. Their nets, or the first side refused and why.
+    /// this fold. The sides' nets, or the first side refused and why.
     pub(crate) fn sides_of(&self, fold: &TierFold) -> Result<Vec<Net>, (u32, SideRefusal)> {
         let mut nets = Vec::new();
         for (i, (id, side)) in fold.handoffs.iter().enumerate() {
@@ -522,7 +522,7 @@ impl Kernel {
             // paid out, IN for μ accepted in — never while an offer in stands.
             if let Some(c) = self.handoffs.conversions.get(id) {
                 if c.tier != fold.tier || c.side_kind() != *side {
-                    return Err((index, SideRefusal::NotYours));
+                    return Err((index, SideRefusal::NotThisTier));
                 }
                 if c.state != State::Accepted {
                     return Err((index, SideRefusal::NotYet));
@@ -541,7 +541,7 @@ impl Kernel {
                 (Side::In, State::Offered { .. }) => return Err((index, SideRefusal::NotYet)),
             };
             if owner != fold.tier {
-                return Err((index, SideRefusal::NotYours));
+                return Err((index, SideRefusal::NotThisTier));
             }
             if taken.is_some() {
                 return Err((index, SideRefusal::Consumed));

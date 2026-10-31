@@ -17,7 +17,7 @@
 //! WHY A LINT AND NOT A CLIPPY RULE. `disallowed-types` names items that
 //! exist — `HashMap`, `BTreeSet`, `Instant` — and those are already
 //! refused in `clippy.toml`. These are shapes a writer would introduce
-//! under their OWN names: a `fn morton_key`, a `struct Bbox`, a
+//! under the shapes' OWN names: a `fn morton_key`, a `struct Bbox`, a
 //! `fn interleave_bits`. Nothing in the compiler knows those names, so the
 //! refusal is on the vocabulary, read out of the source.
 //!

@@ -30,8 +30,8 @@ f
 
 /// TWO BODIES OF THE IDENTITY'S CLASS, each on its own gauge. AT1 (Q1): one
 /// class is ONE vertex, and a member is keyed by its chart and carriage, so
-/// two bodies with one chart and one carriage are one member whatever their
-/// gauges. TWO BODIES ARE TWO SITES, and the site is the chart (the sentence
+/// two bodies with one chart and one carriage are one member whatever the
+/// bodies' gauges. TWO BODIES ARE TWO SITES, and the site is the chart (the sentence
 /// fixtures' `star_form` convention): body `i` stands on chart `[i + 1]`,
 /// each overlapped from the Frame's chart.
 pub fn two_body_sentence(gauges: [&[(u8, u8)]; 2]) -> crate::transducer::element::Element {
@@ -96,7 +96,7 @@ pub fn bind_a_thought(mind: &mut crate::client::sdk::Entity, scene: &[u8]) -> u6
             let f = scene_form_on(&NoCrystal, &mut b, &x, &y, &frames).expect("the hour reads");
             mind.contemplation.hold_perceived(f, &frames, &Vec::new(), &[], [0; 4], scene, &mut b).expect("held");
         }
-        // The mind knows the motions its docket holds, so their binding is a
+        // The mind knows the motions its docket holds, so the motions' binding is a
         // word it knows and says nothing new.
         let docketed: Vec<crate::transducer::cga::Mv> = mind
             .contemplation

@@ -58,7 +58,7 @@ pub struct Now {
 
 struct Slot {
     now: Now,
-    /// Calls waiting for the carrier's next boundary, by their line.
+    /// Calls waiting for the carrier's next boundary, by the calls' line.
     wanted: Keyed<()>,
     /// Each call's last answer, with the boundary it was answered at.
     answers: Keyed<(u64, Vec<String>)>,

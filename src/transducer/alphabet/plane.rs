@@ -1,7 +1,7 @@
 // 16.3, 9.1 — THE PLANE FORM: the coefficient group of a word's planes,
 // and the conjugacy class it belongs to.
 //
-//! Two words are conjugate exactly when their plane forms are, and the
+//! Two words are conjugate exactly when the words' plane forms are, and the
 //! conjugacy key writes those coefficients out. The order of a form is read
 //! from the coefficients, never assumed and never capped.
 

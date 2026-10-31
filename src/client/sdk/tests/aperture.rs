@@ -125,7 +125,7 @@ fn expand_ideas_stamps_contemplation_with_tuniversal() {
 /// 25 DOOR 3 — A THOUGHT THE ROOM CANNOT HOLD IS WITHHELD, NEVER EVICTED.
 ///
 /// Room is `boundary_measure` against the voice's reserve, LANE BY LANE
-/// (law 5): the open thoughts' own four-lane measure, never their sum and
+/// (law 5): the open thoughts' own four-lane measure, never the thoughts' sum and
 /// never a count of bubbles. `retire_on_t` read a bubble count against
 /// `reserve_max`, which is the box's RAM at boot — probed at 88 on this
 /// machine — and it is deleted.

@@ -1,5 +1,5 @@
 // 78.74 (as amended) — THE FIBRES OF A FRAME, AND THE QUOTIENT BY TORSION:
-// every pair of pieces a frame carries is a fibre between their pivots;
+// every pair of pieces a frame carries is a fibre between the pieces' pivots;
 // torsion — the part of a relative motion that keeps both pivots and every
 // level — is ELIMINATED, and what survives is the signal, read as graded,
 // exact certainty, never as a verdict at a pole.
@@ -11,7 +11,7 @@
 //! hid every fibre between them (2026-10-03: 154 fibres, all rigid).
 //!
 //! TWO TRANSPORT CLASSES ARE ONE ALGORITHM UP TO TORSION where, on the
-//! fibres joining their pieces, the relative motion `R = ṽₐ v_b` keeps both
+//! fibres joining the classes' pieces, the relative motion `R = ṽₐ v_b` keeps both
 //! pivots and every level. The certainty of that is counted, never measured
 //! (the metric is indefinite, so no part of a motion has a size): the
 //! fibres that said torsion over the fibres observed, `t / n`, exact. Only
@@ -68,10 +68,10 @@ pub(crate) struct Piece {
 /// second piece on one chart by a second carriage (the multiplicity).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Sections {
-    /// Their geoids overlay — equal weighed length and masses: a copy.
+    /// The sections' geoids overlay — equal weighed length and masses: a copy.
     Congruent,
-    /// Their carriages are one motion up to torsion about the fibre joining
-    /// their sources.
+    /// The sections' carriages are one motion up to torsion about the fibre
+    /// joining the sections' sources.
     Coherent,
     /// Neither: a genuine second algorithm; its demand stands.
     Standing,
@@ -90,10 +90,10 @@ fn geoid(p: &Piece) -> Option<Mv> {
     Some(fibre.switch())
 }
 
-/// HOW TWO SECTIONS RELATE: congruent where their geoids overlay
+/// HOW TWO SECTIONS RELATE: congruent where the sections' geoids overlay
 /// (`S₁² = S₂²`, `S² = m_P m_Q d²`, with equal masses); else coherent where
 /// the relative motion `ṽ₁ v₂` flows by torsion alone on the fibre joining
-/// their sources — each of its modes' generators split against it (78.75), a
+/// the sections' sources — each of its modes' generators split against it (78.75), a
 /// flip read one dimension up; else standing. Exact.
 pub(crate) fn relate_sections(first: &Piece, second: &Piece, budget: &mut crate::physics::Budget) -> Sections {
     if let (Some(g1), Some(g2)) = (geoid(first), geoid(second)) {
@@ -164,7 +164,7 @@ pub(crate) fn piece_of(frame: u64, class: Vec<u8>, carriage: &Versor, domain: &[
 pub struct Said {
     pub observed: u64,
     pub agree: u64,
-    /// 78.74 — the same fibres WEIGHED BY THEIR BINDING (`m m / d²`, exact):
+    /// 78.74 — the same fibres WEIGHED BY BINDING (`m m / d²`, exact):
     /// what agreed and what was observed, so a pair joined by strong tethers
     /// is read apart from one joined by weak ones.
     pub bind_agree: BigRational,
@@ -201,7 +201,7 @@ impl Said {
 pub type PairSaid = ((Vec<u8>, Vec<u8>), Said);
 
 /// WHAT THE QUOTIENT READ: per class pair (ordered by key) its fibres'
-/// torsion over observed; the classes whose turns are torsion beyond their
+/// torsion over observed; the classes whose turns are torsion beyond the
 /// group's charged member; and the groups themselves.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Quotient {
@@ -395,7 +395,7 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
 /// certain; a merge a disagreeing pair would cross is refused.
 ///
 /// THE STRONGER HOLDS FIRST (78.74). The certain pairs merge in the order
-/// of their binding — the summed strength `m m / d²` of the fibres that
+/// of the pairs' binding — the summed strength `m m / d²` of the fibres that
 /// joined them — so where two merges conflict, the pair bound harder wins.
 /// They were taken in the order the frames happened to give them, which
 /// decided a conflict by an artifact of reading order.

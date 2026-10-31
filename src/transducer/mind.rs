@@ -45,7 +45,7 @@ pub struct MindField {
     recording: Option<Recorded>,
 }
 
-/// ONE ADMISSION OF FLUX: the circuits with their masses, and the lines.
+/// ONE ADMISSION OF FLUX: the circuits with the circuits' masses, and the lines.
 pub(crate) type Flux = (Vec<(crate::transducer::element::Versor, u64)>, Vec<crate::transducer::family::pairing::FieldLine>);
 
 /// WHAT A SCRATCH FIELD'S FLUX WAS: each admission's circuits and lines, in

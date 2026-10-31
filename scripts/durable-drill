@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # DURABLE-DRILL — 78.137: a court act answered is on the disk. A hypha on a
-# fresh temporary home at :7590 (clear of the fleet's 7500–7502 and of
+# fresh temporary home at :7590 (clear of the deployment's 7500–7502 and of
 # 7520–7529) is put court acts one round at a time and killed with SIGKILL
 # after each answered round — no persist on the way down — then started
 # again; after the last round every act is read back. Reports N, the acts

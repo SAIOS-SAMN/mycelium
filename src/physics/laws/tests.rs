@@ -118,7 +118,7 @@ fn verify_names_every_breach_by_its_law() {
 }
 
 /// 78.59 — A POINT IS READ, AT UNIT WEIGHT: two point nuclei carried by the
-/// turn keep their product (no squared ratio was ever needed). A uniform
+/// turn keep the nuclei's product (no squared ratio was ever needed). A uniform
 /// dilation with no motion moves every pair — rigidity is strict — and reads
 /// as one ratio, the dilation lane; a drift of one body moves the pairs it
 /// touches, by no one ratio.
@@ -229,7 +229,7 @@ fn verify_refuses_mass_change_without_source_or_sink() {
 }
 
 /// 78.91 — A CHANGE THAT IS NO MOTION READ AS THE FLUX ITS LINKS CARRY. A
-/// creation's gained sites are a source at their barycentre, its mass the
+/// creation's gained sites are a source at the sites' barycentre, its mass the
 /// count gained, exact over ℚ (here a half); a vanishing is a sink at the
 /// lost sites'; a reshaping at constant mass is no flux; and the lone flux
 /// put to the laws is admitted where it stands at a finite place.
@@ -345,7 +345,7 @@ fn lexicon_reply_serves_terms_as_written() {
         assert!(served[i + 1..].iter().all(|o| o.name != s.name), "{} in one vocabulary only", s.name);
     }
     let doc = include_str!("../../../docs/MU-LEXICON.md");
-    assert!(doc.contains(&format!("(version {LEXICON_VERSION})")), "the doc names the served version");
+    assert!(doc.contains(&format!("**Status:** canonical, version {LEXICON_VERSION} (")), "the doc names the served version");
     for term in TERMS {
         assert!(doc.contains(term.name), "{} stands in MU-LEXICON.md", term.name);
     }

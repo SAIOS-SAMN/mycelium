@@ -176,7 +176,7 @@ pub struct Admitted {
     pub transport: u64,
 }
 
-/// 78.71 (1) — THE TUBES HELD OVER TIME, keyed by their null ray: FROZEN IN.
+/// 78.71 (1) — THE TUBES HELD OVER TIME, keyed by each tube's null ray: FROZEN IN.
 /// A tube has an identity across readings — its ray — so the flux the flow
 /// carries along it is conserved and read, not re-derived each time.
 ///
@@ -330,7 +330,7 @@ impl TubeRegistry {
         entered
     }
 
-    /// The reservoir's records, by their rays.
+    /// The reservoir's records, by the records' rays.
     pub(crate) fn record_keys(&self) -> Vec<Vec<u8>> {
         self.reservoir.scoped().map(|(k, _)| k).collect()
     }
@@ -414,7 +414,7 @@ impl TubeRegistry {
 
     /// 78.71 (4) — THE HELICITY of the tubes held: `Σ_{a ≤ b} net_a · net_b ·
     /// ⟨G_a G_b⟩₀`, each tube's net flux in its quanta and `G` the generator
-    /// of the field line that opened it, paired by the scalar part of their
+    /// of the field line that opened it, paired by the scalar part of the generators'
     /// product (the algebra's own invariant form). Pure translations pair to
     /// zero — `e_∞² = 0`, parallel field lines do not link — and a screw's
     /// coupled turn does not. Exact, a rational; never a norm.

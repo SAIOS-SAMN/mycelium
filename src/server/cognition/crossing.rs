@@ -105,7 +105,7 @@ impl Kernel {
             1 => 0,
             _ => return refuse(R::NoMouth),
         };
-        // A mouth pair's sides stand in their tiers' universes; a local
+        // A mouth pair's sides each stand in its tier's universe; a local
         // throat's both stand in A's.
         let (Some(da), Some(to)) = (self.place_domain(&t.from, &(t.mouth, t.side)), self.place_domain(&t.from, &(t.mouth, other))) else { return refuse(R::NoMouth) };
         if da != t.from {
@@ -264,7 +264,7 @@ impl Kernel {
     }
 
     /// 78.154 (4) — A COORDINATE RETRIEVAL (TU-6 PINPOINT): the receipts this
-    /// court holds at a final point's tick, their read cost — one unit of
+    /// court holds at a final point's tick, the receipts' read cost — one unit of
     /// information per receipt, on H, at the read price — drawn from
     /// `staker`'s stake as a claim held to the window. `nonce` names the
     /// claim.

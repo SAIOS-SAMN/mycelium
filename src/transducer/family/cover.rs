@@ -44,7 +44,7 @@ use crate::network::nerve::coord;
 /// Both, because the nerve reads meets on both. A deformation is a map OUT
 /// OF the input, so the Čech nerve is the nerve of the cover of the
 /// SOURCE: two carriages sharing a domain overlap on the whole of it,
-/// however far apart their codomains land. That is the replication case,
+/// however far apart the carriages' codomains land. That is the replication case,
 /// and the only case in which the transition between two copies of one
 /// shape is visible at all. Meets on the codomain are the merge case.
 /// Reading only the codomain leaves the nerve discrete.
@@ -72,7 +72,7 @@ pub(crate) type CarriedPiece = (Vertex, Versor, Supports);
 /// WHAT THE COVER OF ONE DEFORMATION REACHED. Every field is content, and
 /// every carrier is keyed by a piece's own address.
 ///
-/// THE COVER CLASSIFIES NOTHING (L23c). It carried pieces, read their
+/// THE COVER CLASSIFIES NOTHING (L23c). It carried pieces, read the pieces'
 /// meets, and then classified each meet on its own — filing torsion and
 /// standing classes into carriers that `pair.rs` never read, so the whole
 /// reading died here and only a tally survived it. A transition between
@@ -121,7 +121,7 @@ pub(crate) struct Cover {
     /// compartments carry different lane weight — so the dissolution reads the
     /// zero vector and never a cardinality.
     pub(crate) uncarried: [u64; 4],
-    /// THE SITES A CARRIAGE REACHED, on either body, by their base key: the
+    /// THE SITES A CARRIAGE REACHED, on either body, each by its base key: the
     /// reading the demand for what was NOT reached is typed from (50.5),
     /// so the links a demand stands for are the compartments no piece carried
     /// and never a count of them.
@@ -241,7 +241,7 @@ pub(crate) fn cover_deformation(
         'piece: {
         let Some(op) = outs.at(ko) else { break 'piece };
         // The preimage: the input pieces named under this piece's own
-        // sites, deduped by their address and read in key order.
+        // sites, deduped by address and read in key order.
         let mut named: crate::network::nerve::Keyed<(), coord::Piece> =
             crate::network::nerve::Keyed::new();
         for l in &op.body.compartments {
@@ -330,7 +330,7 @@ pub(crate) fn cover_deformation(
             occ_out.insert(l.site.key(), k.clone());
         }
     }
-    // THE DISTINCT PLACED VERSORS, by their own address. Two carriages that
+    // THE DISTINCT PLACED VERSORS, each by its own address. Two carriages that
     // carry by one versor propagate once, and a versor this reader cannot
     // address is not propagated: it could not be told from another, so the
     // cover could not say it had already been applied (W6, rule 15).
@@ -470,7 +470,7 @@ pub(crate) fn cover_deformation(
     // EXTENDING THE RING UPWARD WOULD HAVE BEEN WORSE. `ring_of_support` is
     // an extrinsic Manhattan 4-neighbourhood dilation on ℤ², an ad-hoc grid
     // stencil simulating a systole the physics never performed — the same
-    // harness defect already purged from `extract.rs`. It also resurrects
+    // stand-in defect already purged from `extract.rs`. It also resurrects
     // the pore case this nerve exists to refuse: three mutual neighbours
     // around a void have overlapping RINGS inside the hole, so a thickened
     // cover would certify a 2-cell over empty space and kill a real `H₁`
@@ -479,7 +479,7 @@ pub(crate) fn cover_deformation(
     // WHAT CONTACT IS INSTEAD. Two adjacent bodies do touch, and that is
     // not a non-empty pixel intersection: under A.10 it is a co-dimensional
     // tether governed by the phase gradient `R = 1 − v_b v_a`. Contact
-    // between disjoint regions cannot be manufactured by pretending their
+    // between disjoint regions cannot be manufactured by pretending the regions'
     // coordinates overlap, and this reading now says so.
     let mut occ: crate::network::nerve::Keyed<Vec<coord::Carriage>> =
         crate::network::nerve::Keyed::new();

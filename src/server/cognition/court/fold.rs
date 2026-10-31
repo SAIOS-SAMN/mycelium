@@ -276,7 +276,7 @@ impl Kernel {
             receipts: cold,
         });
         // What this court's own folded line cited of its peers is no longer
-        // cited by its hot line, and their folded lines may leave.
+        // cited by its hot line, and the peers' folded lines may leave.
         self.shed_folded_lines();
         let done = FoldDone {
             at: self.chain.head_place(),

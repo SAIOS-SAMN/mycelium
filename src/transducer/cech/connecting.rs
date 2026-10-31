@@ -129,7 +129,7 @@ fn relative(x: &(usize, Rotor, Versor), y: &(usize, Rotor, Versor)) -> Option<(R
 
 impl Complex {
     /// THE CONSTRUCTION ONE VERTEX STANDS ON: its section, its tethers, and
-    /// the sections at their far ends — a star, a tree, exact by
+    /// the sections at the tethers' far ends — a star, a tree, exact by
     /// construction. Two vertices' stars glued by [`connecting`] read the
     /// loops through what the two share: each common neighbour a component of
     /// the overlap, each loop the holonomy round the two and that neighbour.

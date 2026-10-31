@@ -13,7 +13,7 @@ fn e_plane() -> Mv {
 
 /// THE DILATOR by an exact rational ρ > 0, as an UNNORMALIZED versor
 /// `(ρ+1) ± (ρ−1) E`: a positive scalar multiple of exp(±½ ln ρ E), so the
-/// sandwich carries points on the cone to their ρ-scaled images up to the
+/// sandwich carries points on the cone to the points' ρ-scaled images up to the
 /// homogeneous scale, with no logarithm and no root. The orientation of E is
 /// settled against the embedding itself (the form that carries X(1,0,0) to
 /// X(ρ,0,0)), never by a chosen sign.
@@ -40,7 +40,7 @@ pub fn reflector() -> Mv {
 /// IS `m` A VERSOR — READ BY ITS ACTION (78.28(1) as amended), never by a
 /// sum of squares. `m` is even or odd throughout; its twisted adjoint
 /// `m̂ eᵢ m̃` carries every generator `eᵢ` of `Cl(n+1, 1)` to a vector, the
-/// images independent (their span's grade is the generators' count,
+/// images independent (the images' span's grade is the generators' count,
 /// `core::span`); AND it carries the pseudoscalar `I` to its
 /// own line, `m̂ I m̃` a multiple of `I` read as a ray equality. `n + 3`
 /// actions, no norm formed as a value.

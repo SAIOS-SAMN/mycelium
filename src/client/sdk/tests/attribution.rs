@@ -8,8 +8,8 @@ use crate::client::sdk::entity::perceive::{Reading, Scene, Stop};
 use crate::client::sdk::*;
 
 /// A TASK TAKEN IN IS KEPT BY ITS CITATION, TAKEN, WITH ITS STOP: the slide's
-/// two hours perceived as a court task stand under their citation, taken,
-/// stopped where their comprehension stopped — never left unattributed.
+/// two hours perceived as a court task stand under the task's citation, taken,
+/// stopped where the task's comprehension stopped — never left unattributed.
 #[test]
 fn perceive_scene_keeps_task_by_citation_with_stop() {
     let mut mind = Entity::open("127.0.0.1:1", Kernel::named("attributed"));

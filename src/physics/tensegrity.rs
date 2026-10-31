@@ -1,6 +1,6 @@
 // A.10.1 — ORBITAL TENSEGRITY: coherence is the stationary equilibrium of a
 // constellation of at least two co-present congruent frames, circulating
-// under one generator, their attitudes balancing it and their mutual
+// under one generator, the frames' attitudes balancing it and the frames' mutual
 // inversive distances kept (ruled and amended 2026-09-28;
 // MU-RECURSION 78.51).
 //
@@ -27,7 +27,7 @@
 //!   ([`similarity`]).
 //! - THE NET TORQUE `τ = Σ_{i<j} ½ [B_ij, B_orbit]` — the lift terms of 78.46,
 //!   summed in the orbit algebra, order-free — and its STABILITY, read plane
-//!   by plane (78.62): the torque before and after split into their own
+//!   by plane (78.62): the torque before and after split into the torques' own
 //!   modes and compared by each plane's projective ratio ([`stability`]) —
 //!   never the strain `‖τ‖²/‖B‖²`, a positive-definite sum of squares. A null
 //!   torque (`⟨τ²⟩₀ = 0`, `τ ≠ 0`) reads as its parabolic mode.
@@ -143,7 +143,7 @@ impl Defect {
 /// fixed, no flat square). Each nucleus is read at unit weight
 /// `ŝ = s / w`, `w = −⟨s e_∞⟩₀`, and the pair's invariant is `ŝ_a · ŝ_b =
 /// ⟨s_a s_b⟩₀ / (w_a w_b)` — first degree in each body, exact: for two points
-/// it is `−½` their squared distance, for spheres the power of the pair. An
+/// it is `−½` the points' squared distance, for spheres the power of the pair. An
 /// isometry keeps it; a dilation scales every pair by one ratio. It replaces
 /// `δ² = ⟨s_a s_b⟩₀² / (s_a² s_b²)`, a scalar squared and divided by squares.
 /// `None` for a nucleus of no finite weight (a flat through `e_∞`).
@@ -431,7 +431,7 @@ impl Ground {
 }
 
 /// THE GROUND'S BARYCENTRE (78.52(6) Stage C): its bodies' centres weighed by
-/// their masses — derived, never carried. `None` for a ground with no body
+/// the bodies' masses — derived, never carried. `None` for a ground with no body
 /// or massless bodies.
 pub fn ground_centre(g: &Ground) -> Option<Vec<Q>> {
     let bodies: Vec<(Vec<Q>, Q)> = g.bodies.iter().map(|b| (b.body.centre.clone(), b.body.mass.clone())).collect();
@@ -498,8 +498,8 @@ pub fn external_torque(before: &Body, after: &Body, step: &Mv) -> Option<Mv> {
     Some(momentum(after, &b)?.sub(&carried))
 }
 
-/// TWO FRAMES' PAIR: their product at unit weight ([`unit_product`]) and
-/// their regime, read in the algebra (GR1, 78.59) — never a squared ratio.
+/// TWO FRAMES' PAIR: the frames' product at unit weight ([`unit_product`]) and
+/// the pair's regime, read in the algebra (GR1, 78.59) — never a squared ratio.
 pub fn inversive(i: &Frame, j: &Frame) -> (Option<Q>, PairRegime) {
     (unit_product(&i.nucleus, &j.nucleus), cga::pair_regime(&[i.nucleus.clone(), j.nucleus.clone()], 0, 1))
 }
@@ -628,7 +628,7 @@ pub fn spin_of(step: &Mv, star: &Star, before: &[Q], after: &[Q]) -> Option<Mv> 
 /// MU-CLIENT §4.4 — SPIN COUPLED TO ORBIT: one rigid step of a body about a
 /// star, split into its orbit and its spin (78.51(2)), each read by its
 /// period. Both of finite order: a LOCK `p:q` (orbit order, spin order) —
-/// the coupled motion returns at their lcm, congruence. Either of no finite
+/// the coupled motion returns at the two orders' lcm, congruence. Either of no finite
 /// order: a DRIFT — the spin slipping against the orbit, `S·Õ`, the torsion
 /// the body carries.
 #[derive(Clone, Debug, PartialEq, Eq)]

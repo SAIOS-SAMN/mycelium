@@ -60,7 +60,7 @@ pub(crate) struct Board {
     /// Scenes and solves on the perception carrier not yet admitted: one at
     /// a time.
     pub(crate) scenes_perceiving: usize,
-    /// MU-CLIENT §4.13 — HEARINGS WAITING FOR THE PERCEPTION CARRIER, by their
+    /// MU-CLIENT §4.13 — HEARINGS WAITING FOR THE PERCEPTION CARRIER, each by its
     /// coordinates (the speaker, then what was said: a thing said again by
     /// the same mind before it is read is one hearing, its latest saying in
     /// the place of the first), and whether one is on it: one at a time, as
@@ -95,7 +95,7 @@ pub(crate) struct Board {
     /// that needs agreement says its word again.
     pub(crate) unpriced: std::collections::VecDeque<super::chatter::FieldWork>,
     pub(crate) unpriced_crossed: std::collections::VecDeque<super::chatter::FieldWork>,
-    /// The scenes taken in off the feed, by citation: their speech leaves at
+    /// The scenes taken in off the feed, by citation: the speech on them leaves at
     /// the mind's own return, not the scenes' (`speak_with`). Bounded by the
     /// families the feed held.
     pub(crate) feed_scenes: crate::network::nerve::Keyed<()>,
@@ -106,7 +106,7 @@ pub(crate) struct Board {
     /// into thought where the focus meets it (`focus`); while any stands, the
     /// mind holds tension.
     pub(crate) open_residuals: crate::network::nerve::Keyed<Vec<(i64, i64, u8, u8)>>,
-    /// The strata residual chains and rewrites stand on, by their chart
+    /// The strata residual chains and rewrites stand on, by the chart
     /// invariant's key: the sheaf sync never fetches them, the mind holding
     /// residual chains as open questions and rewrites as the court's acts,
     /// never as words (`fetch_discordant`).

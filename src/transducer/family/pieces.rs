@@ -2,7 +2,7 @@
 //
 //! 50.8, 13.9 — THE PIECES OF A BODY AND THE ADDRESSES OF THE COVER: how a
 //! body decomposes, and how a piece, a preimage, a carriage and a meet are
-//! each named by their own content.
+//! each named by its own content.
 //!
 //! Nothing here is keyed by position. A piece is addressed by its shell
 //! kind and its support written out; a preimage by the pieces it
@@ -62,8 +62,8 @@ pub(crate) fn piece_at(
 
 /// THE PIECES OF A BODY ARE BODIES: its hue-blind connected components
 /// (`blade::components` on the three coordinates of the base, which is
-/// 51.3's 6-adjacency whatever hues the compartments carry, 70.4), filed by
-/// their own address.
+/// 51.3's 6-adjacency whatever hues the compartments carry, 70.4), each filed by
+/// its own address.
 ///
 /// THE COVER DOES NOT DESCEND BELOW A BODY (51.3, 50.8 as ruled
 /// 2026-09-18). This peeled the body into concentric shells first and took

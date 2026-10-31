@@ -12,7 +12,7 @@ fn digits(rows: &[&str]) -> Grid {
 }
 
 /// A bar and a lone painted site of another hue carried together (50.3's
-/// rigid pair): two word vertices and their edge — the voice's pair form,
+/// rigid pair): two word vertices and the edge between them — the voice's pair form,
 /// measured over its family and spoken as a sentence.
 fn two_bars() -> (Vec<TrainPair>, Element) {
     // H1, 70.4 — TWO BODIES ARE TWO SEPARATED REGIONS, NOT TWO COLOURS.
@@ -28,7 +28,7 @@ fn two_bars() -> (Vec<TrainPair>, Element) {
     (family, e)
 }
 
-/// The word vertices of a sentence, by their coordinates (AT1: a vertex is
+/// The word vertices of a sentence, each by its coordinates (AT1: a vertex is
 /// keyed by its class), with the charts they act on.
 fn words_of(e: &Element) -> Vec<(crate::network::nerve::coord::VertexAt, crate::transducer::stalk::Invariant)> {
     let f = crate::transducer::sentence::from_element_form(e)

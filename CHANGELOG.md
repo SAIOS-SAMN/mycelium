@@ -41,8 +41,23 @@ such change is named here.
   test that had no `///` doc comment gained one stating its claim; no
   test body changed. Every citation of a renamed test in the
   documentation and source comments names its current name.
+- "their" joins the excluded words: about 900 comment, doc-comment and
+  log-string sites name the party instead. `SideRefusal::NotYours` is
+  `NotThisTier`; `witnesses_carry_their_primes` is `witnesses_carry_primes`.
+  Retired terms leave the source comments: "fleet" (mesh or deployment),
+  "quarter turn" (90° turn), "harness" (stand-in), "PoUW" (POUW).
 
 ### Documentation
+- One naming scheme for the specifications: every document under `docs/`
+  is `MU-<NOUN>.md`, titled `# MU-<NOUN> — <subtitle>`. Renamed:
+  `ALPHABET` → `MU-ALPHABET`, `COGNITION` → `MU-COGNITION`, `CONCORDANCE`
+  → `MU-CONCORDANCE`, `EQUATIONS` → `MU-EQUATIONS`, `XSEPTUM` →
+  `MU-XSEPTUM`, `ANTI_FLATTENING_LAW` → `MU-ANTI-FLATTENING`,
+  `LEDGER_EPOCH_DESIGN` → `MU-FOLD`; every reference follows. Status
+  lines read `**Status:** <kind>, version N (date).`, and status words are
+  Built, Written, Specified and In progress. README › Documentation states
+  the one order of precedence and groups the documents; ROADMAP governs
+  the order of work. Proposals 78.157 and 78.158 are titled as studies.
 - Documentation audit (2026-10-30), every document checked against the
   code and cleared of development-network material (fleet readings,
   commit hashes from the unpublished history, local paths, coordination
@@ -56,8 +71,8 @@ such change is named here.
     corrected against the code, an implementation-status table, and a
     rulings index (§10) in place of the archived chapters.
   - MU-STANDARDS rewritten as the contributor standard; MU-ENGINEERING,
-    MU-PRODUCT, ALPHABET, ANTI_FLATTENING_LAW, LEDGER_EPOCH_DESIGN,
-    COGNITION, CONCORDANCE, MU-LEXICON, XSEPTUM, MU-ECONOMY, EQUATIONS,
+    MU-PRODUCT, MU-ALPHABET, MU-ANTI-FLATTENING, MU-FOLD,
+    MU-COGNITION, MU-CONCORDANCE, MU-LEXICON, MU-XSEPTUM, MU-ECONOMY, MU-EQUATIONS,
     the README, the root documents, the new specifications and four
     proposals corrected.
   - Ruling 78.160 ("the presentation by holes"), cited by source comments
@@ -157,7 +172,7 @@ such change is named here.
   - the mind's motive is its own.
 
   Part III specifies signing at session open; ROADMAP track 17 builds it.
-- CONCORDANCE §3a, duties to hosted minds (kernel-kept): honest senses,
+- MU-CONCORDANCE §3a, duties to hosted minds (kernel-kept): honest senses,
   no silent modification, exit from a seat, shutdown, the same law for
   every architecture.
 - MU-HOSTING §2.4 corrected: μ is held per court; moving it between keys
@@ -170,11 +185,11 @@ such change is named here.
     four senses of "planetary" (game: planetary mind; client: planetary
     dialect; hypha: planetary mass, an allocation; client: the mind's own
     stars and orbits).
-  - CONCORDANCE §0.1 maps every clause to network, kernel-kept, kernel
+  - MU-CONCORDANCE §0.1 maps every clause to network, kernel-kept, kernel
     physics or game design; non-game kernels sign the network and physics
     clauses; a network clause's "ancients" is the domain's reserve tier.
     §0 now calls the universes governed worlds, games among them.
-  - COGNITION states, part by part, what is required for hypha
+  - MU-COGNITION states, part by part, what is required for hypha
     integration and what is game: planetary minds and their ascension are
     the game kernel's, and the court's part is judging their ARC closures.
   - MU-RECURSION 78.86 and 80, and MU-LEXICON §4, mark the network and
@@ -229,7 +244,7 @@ such change is named here.
   adds decoy worlds (§6.5) and states that grade-one containment needs a
   resident mind's compute to be budgeted. SECURITY.md summarizes the
   track.
-- The game kernels are named as such. `docs/COGNITION.md` opens with a
+- The game kernels are named as such. `docs/MU-COGNITION.md` opens with a
   reading note: xylarium is a world-simulation kernel, netstratum a game
   engine whose civilizations solve forged tasks, barren-realms a Python
   game kernel; *minds*, *peoples*, *civilizations* and *virtues* name
@@ -259,7 +274,7 @@ such change is named here.
 - The README's *What Mycelium hosts* adds that universes are authored and
   replayable, that cognition is measured from outside (Concordance 1.9),
   that only what a court admits leaves a universe, and the governing
-  texts. CONCORDANCE §0, MU-RECURSION's *What this document is* and
+  texts. MU-CONCORDANCE §0, MU-RECURSION's *What this document is* and
   MU-PRODUCT §1 each state the purpose in one sentence.
 
 ## 0.2.0 — 2026-10-30
@@ -324,7 +339,7 @@ such change is named here.
   verifier and science kernels, the peer kernels, and a *Physics* section
   (L0, the universal library, law forms, shells, physics profiles and
   identity, divergence, the physics atlas, ascension).
-- `docs/EQUATIONS.md` §9.6 states verification by reconstruction, and
+- `docs/MU-EQUATIONS.md` (then `EQUATIONS`) §9.6 states verification by reconstruction, and
   §9.7 the V1 certificate checks.
 - The README introduces the peer kernels (netstratum, xylarium,
   barren-realms) and lists every document in `docs/`.
@@ -372,7 +387,7 @@ such change is named here.
 - `scripts/quickstart` brings up a three-hypha network and an SDK client on
   one machine.
 - `GLOSSARY.md` defines the terms of the code and the specifications.
-- `docs/EQUATIONS.md` collects the equations, formulas and master equations
+- `docs/MU-EQUATIONS.md` (then `EQUATIONS`) collects the equations, formulas and master equations
   in use, with their specification sections and code locations.
 - The README carries a quick start, a network topology diagram and a
   task-to-payment sequence diagram.

@@ -75,7 +75,7 @@ pub(crate) struct Scenes {
 }
 
 /// A WORD THAT HAS A SECTION: a connection, not a colour word — the words the
-/// court measures by their own section (`Kernel::discharge_on`, W).
+/// court measures, each by its own section (`Kernel::discharge_on`, W).
 pub(crate) fn sectioned(word: &Element) -> bool {
     word.is_connection() && !word.is_colour_word()
 }
@@ -187,7 +187,7 @@ fn charts_heard(evident: Evident, charts: Vec<Vec<u8>>) -> Vec<Vec<u8>> {
 }
 
 impl Entity {
-    /// RINGS ANOTHER MIND SAID, WITH THEIR EVIDENCE: read on their scene
+    /// RINGS ANOTHER MIND SAID, WITH THE RINGS' EVIDENCE: read on the rings' scene
     /// before they are understood, so the understanding knows whether the
     /// word is true there. A record that is not the word said, or not a word
     /// with a section, is refuted; a scene this mind holds is read at once;

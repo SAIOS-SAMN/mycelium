@@ -212,7 +212,7 @@ impl Form {
         // cycles that had no lift, and reported "no lift" and "no holonomy"
         // as the same empty answer.
         //
-        // MEASURED, before the change, on three voices of a live fleet:
+        // MEASURED, before the change, on three voices of a live deployment:
         // 281 real orbits (crossing a face between two bodies rather than
         // the Frame), every face of every one of them carrying a member
         // pair — 0 tears — and 0 closed member paths. 96 of 96, 97 of 97,

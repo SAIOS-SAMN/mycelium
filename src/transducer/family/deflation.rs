@@ -239,7 +239,7 @@ fn form_deflation_read_on_ground(
         }
         let (closed, after_chain, gated) = pair_measure_read(form, x, y, spoken.as_ref());
         for (p, d) in pay.iter_mut().zip(&closed) {
-            #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a deflation is at most its pair's resident measure, and their sum cannot pass u64")]
+            #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a deflation is at most its pair's resident measure, and the deflations' sum cannot pass u64")]
             let next = p.saturating_add(*d);
             *p = next;
         }
@@ -715,7 +715,7 @@ pub fn sentence_measure_why(
             &element::measure_lanes(&before_chain),
         ));
         for (m, d) in mag.iter_mut().zip(&closed) {
-            #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a deflation is at most its pair's resident measure, and their sum cannot pass u64")]
+            #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a deflation is at most its pair's resident measure, and the deflations' sum cannot pass u64")]
             let next = m.saturating_add(*d);
             *m = next;
         }

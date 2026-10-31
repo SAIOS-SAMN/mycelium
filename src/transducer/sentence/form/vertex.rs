@@ -297,7 +297,7 @@ impl Vertex {
     /// CARRIER OF ITS OWN (law 12). It exists for the one caller that
     /// genuinely asks a yes-or-no — "is this vertex a single 0-cell" — and
     /// every caller that wants to ACT on the answer takes the transitions
-    /// and their classes instead, because that is where the coordinate is.
+    /// and the transitions' classes instead, because that is where the coordinate is.
     ///
     /// Coherence is GRADED and the engine had it at one grade. `coheres`,
     /// `edge_coheres` and `is_cauterized` all read ORBITS — 1-cycles — and
@@ -316,7 +316,7 @@ impl Vertex {
     /// a 1-cell of the member complex `M` with BOTH ENDPOINTS OVER ONE
     /// VERTEX. For the vertex to be one 0-cell, τ must be pure carriage — a
     /// placement and a dilation, with no rotor. A τ that TURNS means the two
-    /// members rotate relative to one another in their own charts, and
+    /// members rotate relative to one another, each in its own chart, and
     /// calling them one vertex asserts an identity the geometry denies
     /// (§1.5: identity is never by fiat).
     ///

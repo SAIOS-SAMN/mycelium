@@ -3,7 +3,7 @@
 //! 78.153 — A REPLAY ON THE STROKE: what a court's replay answers when its
 //! one stroke runs out, and where the next stroke takes it up.
 //!
-//! The lock audit (docs/LOCK-AUDIT.md) found the replay unmetered — only
+//! The lock audit (MU-RECURSION 78.153) found the replay unmetered — only
 //! `versor_between` spent — and found that the one place that did spend
 //! slashed on it: `NoPose::Unbounded` became `REFUSE_EDGE`. A spent stroke
 //! is not a refusal. Every input-sized loop of the replay now spends one

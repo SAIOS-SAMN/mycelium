@@ -1,13 +1,13 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! EXPANSION 1, 1.2 — ALGEBRAIC REWRITING OVER THE PRESENTATION: the
-//! relators oriented as rules, the critical pairs their overlaps make, the
+//! relators oriented as rules, the critical pairs the rules' overlaps make, the
 //! completion that resolves them, and the geodesic normal form a word
 //! reduces to.
 //!
 //! WHY THIS IS NOT THE WORD PROBLEM. The word problem is already DECIDED
 //! here, and decided exactly: a word evaluates to a `Rotor` over ℚ and two
-//! words name one group element iff their rotors are projectively equal.
+//! words name one group element iff the words' rotors are projectively equal.
 //! That representation is faithful, so no completion is needed to answer
 //! "are these the same operator" — `Word::operator_eq` answers it in one
 //! product and one comparison, with no search and no rewriting at all.
@@ -276,7 +276,7 @@ pub fn critical_pairs(a: &Rule, b: &Rule) -> Vec<(Word, Word)> {
 
 /// KNUTH–BENDIX COMPLETION over the presentation's finite part.
 ///
-/// Repeatedly: take every pair of rules, form their critical pairs, reduce
+/// Repeatedly: take every pair of rules, form the pair's critical pairs, reduce
 /// both sides, and where the two normal forms DISAGREE add the rule that
 /// orients them. A system with no unresolved critical pair is confluent —
 /// every word then has one normal form whatever order the rules are applied
@@ -358,7 +358,7 @@ pub fn is_confluent(rules: &[Rule], budget: &mut crate::physics::Budget) -> Opti
 
 impl Word {
     /// EXPANSION 1 — THE DECIDED WORD PROBLEM. Two words name one group
-    /// element iff their rotors are projectively equal: the representation
+    /// element iff the words' rotors are projectively equal: the representation
     /// is faithful and exact over ℚ, so this is an answer and not a search.
     ///
     /// Projective, never coefficient-wise: `Φ` and `−Φ` are one vertex
@@ -411,7 +411,7 @@ pub fn rule_plane(r: &Rule) -> Option<(u8, u8)> {
 /// THE BUDGET IS THE SEED'S OWN EXTENT (rule 10): every round of the
 /// completion touches every pair of rules once, and a pair's critical
 /// pairs are bounded by the tapes' lengths, so the spend is sized by the
-/// rules and their letters and not by a number a caller chose. The finite
+/// rules and the rules' letters and not by a number a caller chose. The finite
 /// part of this presentation is a finite group, so the completion
 /// terminates and the bound is a cost cap; a completion that spent it
 /// keeps the rules found — each a theorem re-derived by `holds` — and

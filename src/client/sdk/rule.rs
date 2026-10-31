@@ -15,7 +15,7 @@
 //! act on by a typed predicate over each body's own exact coordinates (its
 //! class, hues, shell, extent, position, contact), COUNT and COMPARE them in
 //! an order it names, ties included (Concordance 1.10), address a REGION
-//! their boundary encloses or touches, CREATE cells relative to them (a line
+//! the bodies' boundary encloses or touches, CREATE cells relative to them (a line
 //! to the border, a template stamped on a seed), and crop the output to one
 //! of them. Such a rule is spoken as the form's CLAUSES
 //! (`sentence::form::clause`), which the court decodes, speaks and judges
@@ -377,7 +377,7 @@ fn clause_sentence(clauses: Vec<Clause>, family: &[(Grid, Grid)], crystal: &dyn 
 /// A rule that states a selection, a region, a creation or a crop is spoken
 /// as the form's clauses instead ([`clause_sentence`], 78.143).
 ///
-/// PUBLIC FOR A CLIENT THAT STATES ITS OWN PROGRAMS IN THE FLEET'S TONGUE
+/// PUBLIC FOR A CLIENT THAT STATES ITS OWN PROGRAMS IN THE MESH'S TONGUE
 /// (2026-10-22, reversing Strip 7 for this path): netstratum's `tongue`
 /// mints its solver programs as rule elements only through this
 /// constructor, never as forged bytes (its D10b).

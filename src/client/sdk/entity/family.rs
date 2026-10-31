@@ -470,7 +470,7 @@ impl Entity {
     }
 
     /// A PERSPECTIVE THE SIBLINGS DID NOT COVER, LIFTED INTO THE SENSORIUM:
-    /// what their rule said against what was true, perceived as one pair and
+    /// what the siblings' rule said against what was true, perceived as one pair and
     /// withheld under the task exactly as a pair no rule closed is. Its bodies
     /// enter perception's cells; what escapes there is demanded and
     /// constructed. The 2-D gap becomes the mind's own structure.

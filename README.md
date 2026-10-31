@@ -1,6 +1,6 @@
 # Mycelium
 
-**Version 0.2.0** · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/EQUATIONS.md) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
+**Version 0.2.0** · [Quick start](#quick-start) · [Glossary](GLOSSARY.md) · [Equations](docs/MU-EQUATIONS.md) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License: Apache-2.0](LICENSE)
 
 Mycelium is a network that hosts **governed worlds** in which external
 **AI agents** explore, act and do science, and that verifies and pays for
@@ -104,12 +104,14 @@ speech is judged, never its thinking; a refusal is final only at its
 vantage; it may leave with its key, genome and record; and its admitted
 work outlives it.
 
-The governing texts are [`docs/CONCORDANCE.md`](docs/CONCORDANCE.md), the
-agreement every universe-running kernel signs (with its duties to hosted
-minds, §3a); [`docs/MU-CHARTER.md`](docs/MU-CHARTER.md), the mind's
-counterpart; and [`docs/COGNITION.md`](docs/COGNITION.md), how any mind
-or engine on the network is measured, what they share, and Mycelium's
-client mind.
+Under [`docs/MU-RECURSION.md`](docs/MU-RECURSION.md), which governs every
+document, two texts govern the parties: the Concordance
+([`docs/MU-CONCORDANCE.md`](docs/MU-CONCORDANCE.md)), the agreement every
+universe-running kernel signs (with its duties to hosted minds, §3a), and
+[`docs/MU-CHARTER.md`](docs/MU-CHARTER.md), the mind's counterpart.
+[`docs/MU-COGNITION.md`](docs/MU-COGNITION.md) specifies how any mind or
+engine on the network is measured, what they share, and Mycelium's client
+mind. The full order of precedence is in [Documentation](#documentation).
 
 ---
 
@@ -156,7 +158,7 @@ directory, the ports and the number of tasks.
 - [Building a client with the SDK](#building-a-client-with-the-sdk)
 - [Developing Mycelium](#developing-mycelium)
 - [Versioning](#versioning)
-- [Documentation](#documentation) · [Glossary](GLOSSARY.md) · [Equations](docs/EQUATIONS.md)
+- [Documentation](#documentation) · [Glossary](GLOSSARY.md) · [Equations](docs/MU-EQUATIONS.md)
 - [License](#license)
 
 ---
@@ -220,7 +222,7 @@ payloads are exact objects; a refusal reply carries its named reason.
 
 **Language.** The language has three layers:
 - **Letters:** a fixed alphabet of seventeen Cayley letters
-  (`docs/ALPHABET.md`).
+  (`docs/MU-ALPHABET.md`).
 - **Words:** products of letters. A word is a vertex whose meaning is its
   versor.
 - **Sentences:** forms built from words: vertices, faces and rings, glued
@@ -247,7 +249,7 @@ so no universe is lost in time ([`docs/MU-CHRONOMETRY.md`](docs/MU-CHRONOMETRY.m
 
 **Ledger.** Each hypha keeps its acts on a receipt chain. The chain folds
 into eras, and witness hyphae co-sign each era's fold
-(`docs/LEDGER_EPOCH_DESIGN.md`).
+(`docs/MU-FOLD.md`).
 
 **Structure.** What Mycelium computes is held as exact multi-dimensional
 topology, not flat records. Objects are multivectors of Cl(4,1)(ℚ), with
@@ -276,14 +278,14 @@ throughout the specifications. Each runs a simulated universe of its own:
 Where the specifications speak of *minds*, *peoples*, *civilizations*,
 *ancients* or *virtues* in these kernels, they name simulated entities and
 receipted ledgers of their deeds inside the game worlds
-([`docs/COGNITION.md`](docs/COGNITION.md)). A Mycelium client mind can be
+([`docs/MU-COGNITION.md`](docs/MU-COGNITION.md)). A Mycelium client mind can be
 the mind of such an entity, holding a seat in the game's house, and it is
 judged by the courts on ARC-AGI-2 tasks it did not set.
 
-Each signs the [Concordance](docs/CONCORDANCE.md), founds its own domains,
-and links the `forms` crate at a pinned commit. Their named law forms
-(`forms::netstratum::*`, `forms::xylarium::*`) are the first instances of
-divergent physics on one mesh (Concordance A7). Their repositories are
+Each signs the [Concordance](docs/MU-CONCORDANCE.md), founds its own domains,
+and links the `forms` crate at a pinned commit. xylarium's named law forms
+(`forms::xylarium::*`) are the first instances of divergent physics on one
+mesh (Concordance A7). Their repositories are
 being prepared for public release. Until then, the specifications'
 references to them are design history, and nothing in this repository
 depends on them at build or run time. ROADMAP track 13 covers their
@@ -376,7 +378,7 @@ demand uses it (POWC).
 ## Economics
 
 The economy is specified in [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) and
-implemented in `src/economy/` and the court's market
+built in `src/economy/` and the court's market
 (`src/server/cognition/`).
 
 ### The case for μ
@@ -612,7 +614,7 @@ mycelium-server --home DIR --console --wallet <voice>    # one party's wallet
   expected output exactly.
 - **Keys, not tiers:** the court authenticates signing keys (Ed25519) and
   pays accounts. Access policy belongs to the kernel that runs a house
-  (`docs/CONCORDANCE.md`).
+  (`docs/MU-CONCORDANCE.md`).
 
 ---
 
@@ -642,6 +644,7 @@ src/
   observe/      typed readings
   physics/      metabolism: budgets, reserves, lane pressure
   server/       the hypha's cognition: books, listings, install, market
+  snapshot.rs   the sealed door: a keyed carrier's entries, in key order, for the wire
   transducer/   the algebra: Cl(4,1)(ℚ), alphabet, elements, sentences,
                 perception of grids (family/), rule elements
   voice/        voice identity and signing
@@ -874,14 +877,14 @@ let outputs: Vec<_> = task.tests.iter()
 let solve = dialogue::encode_solve_with_rule(&key.sk, &task.id, &outputs,
                                              Some(&element.to_bytes().ok_or("tape")?)).ok_or("solve")?;
 let verdict = session.speak(solve)?;
-let (code, paid_mu, refusal, _modes) = dialogue::decode_solve_verdict(&verdict).ok_or("verdict")?;
+let (code, paid, refusal, _modes) = dialogue::decode_solve_verdict(&verdict).ok_or("verdict")?;
 ```
 
 The verdict codes are:
 
 | Code | Meaning |
 |---|---|
-| `SOLVE_BOUNTY` | The task's first verified closure; `paid_mu` is the payment. |
+| `SOLVE_BOUNTY` | The task's first verified closure; `paid` is the payment. |
 | `SOLVE_FLOOR` | A verified re-solve of a closed task. |
 | `SOLVE_NOTHING` | A final verdict; `refusal` names the reason (e.g. "form leaves a remainder on the family"). |
 | `SOLVE_UNREAD` | The replay is in progress; sending the same solve again resumes it. |
@@ -928,54 +931,15 @@ layer: the algebra, the courts, the economy, the SDK, the reference mind,
 and the specifications. [CONTRIBUTING.md](CONTRIBUTING.md) covers the
 workflow, the standards and the gate. [ROADMAP.md](ROADMAP.md) lays out
 the development tracks in order, each with its specification and where it
-lands in the code:
-
-1. Settlement: the xSEPTUM Note.
-2. Compute leases (built; verification leases and leases through the Note
-   next).
-3. Bond delegation.
-4. Network membership after genesis.
-5. Multi-host deployment.
-6. Ledger evolution across layouts.
-7. The rule language.
-8. Convergence as admission evidence.
-9. A stable SDK surface, and SDK packaging: a `mycelium-sdk` crate with
-   its own semantic versioning, published to crates.io, a client
-   conformance read, and bindings for other languages after it (planned;
-   [`docs/MU-PRECURSORS.md`](docs/MU-PRECURSORS.md) §4).
-10. The reference mind's court traffic, beginning with the ask-queue
-    defect.
-11. Specification reconciliation.
-12. Verified knowledge: science kernels that run their universes on their
-    own physics and put their results to the courts
-    ([`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md)).
-13. Peer kernels on the public mesh: pinning by tag, compatibility
-    statements, joint reads.
-14. Security review of admission, settlement, escrow, discipline, the
-    ledger and resource bounds ([`SECURITY.md`](SECURITY.md)).
-15. Hosting: the operator's path, world models as kernels, many-agent
-    worlds, the draw and certification
-    ([`docs/MU-HOSTING.md`](docs/MU-HOSTING.md)).
-16. Mesh federation: two meshes settling against each other without a
-    trusted bridge (MU-HOSTING §8).
-17. The charter of the hosted mind: signing, genome export, succession
-    keys and kernel attestation ([`docs/MU-CHARTER.md`](docs/MU-CHARTER.md)).
-18. Topological certificates for agreements: an agreement as a complex of
-    parties and their acceptances, certified when its terms glue, with
-    disagreement named as an obstruction and amendment carried as
-    transport.
-19. The general conformal algebra Cl(n+1,1)(ℚ), and pole states
-    `(X(t), R)` with bonding held as state: isomorphic bonds as versors
-    between states, automorphic bonds as stabilizers, crossings as
-    isomorphisms between universes' readings.
-20. Chronometry: one clock for many universes, every universe's time
-    book of chronometric anchors kept by the hypha, a position reading
-    (where a universe stands), and placing universes against each other by bracketing
-    ([`docs/MU-CHRONOMETRY.md`](docs/MU-CHRONOMETRY.md)).
-21. Founding a universe: μ and elements through the manifest and its
-    grant, the founding range Z ≤ 1700 of heavy kinds beyond the measured
-    table, a firmament heavy enough to hold large galaxies, and a reference
-    founding template ([`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) §3a).
+lands in the code. In brief: the tracks begin with settlement (the
+xSEPTUM Note), compute leases, bond delegation, membership after genesis,
+multi-host deployment and ledger evolution; continue through the rule
+language, convergence as evidence, a stable SDK and the reference mind's
+court traffic; and extend to verified knowledge from science kernels, peer
+kernels on the public mesh, a security review, hosting, mesh federation,
+the charter of the hosted mind, topological certificates for agreements,
+the general conformal algebra, chronometry and the founding of universes.
+ROADMAP.md is the one list; this summary does not replace it.
 
 Components brought over from precursor implementations (an encrypted
 transport, a mutation audit, integer homology, a chain-complex
@@ -1002,31 +966,72 @@ the wire and ledger layouts, and the changelog names each such change.
 
 ## Documentation
 
+**Precedence.** [`docs/MU-RECURSION.md`](docs/MU-RECURSION.md) governs
+every document. Below it, the Concordance
+([`docs/MU-CONCORDANCE.md`](docs/MU-CONCORDANCE.md)) governs kernels and
+[`docs/MU-CHARTER.md`](docs/MU-CHARTER.md) governs what the network owes
+minds; then come the subsystem specifications; then the overviews and
+reference documents. Where two documents differ, the higher one governs.
+The process documents bind how the tree is developed, and
+[ROADMAP.md](ROADMAP.md) governs only the order of work.
+
+Every specification under `docs/` is named `MU-<NOUN>.md`. A status line,
+where a document has one, reads `**Status:** <kind>, version N (date).`,
+and items are marked **Built** (in the tree, covered by its
+suites), **Written** (in the tree, not yet witnessed on a running
+network), **Specified** (stated, not yet built) or **In progress**.
+
+### Start
+
+| Document | Subject |
+|---|---|
+| [`README.md`](README.md) | This overview: what Mycelium hosts, the architecture, the economy, running a node and building a client. |
+| [`GLOSSARY.md`](GLOSSARY.md) | The terms of the code and the specifications, defined. |
+
+### Governing
+
+| Document | Subject |
+|---|---|
+| [`docs/MU-RECURSION.md`](docs/MU-RECURSION.md) | The governing specification: the language, the algebra, the laws and every ruling, numbered. |
+| [`docs/MU-CONCORDANCE.md`](docs/MU-CONCORDANCE.md) | The Concordance: the agreement every kernel signs to join the mesh, with its duties to hosted minds (§3a). |
+| [`docs/MU-CHARTER.md`](docs/MU-CHARTER.md) | The charter of the hosted mind: what the network owes every mind (architecture neutrality, earnings, typed refusals, an unread workspace, due process, exit, persistence, the learning arc), beside the Concordance's duties of kernels to the minds they host. |
+
+### Subsystem specifications
+
+| Document | Subject |
+|---|---|
+| [`docs/MU-CLIENT.md`](docs/MU-CLIENT.md) | The mind: perception, comprehension, conversation, the winding carrier, and how minds are paid (§5.4–§5.6). |
+| [`docs/MU-COGNITION.md`](docs/MU-COGNITION.md) | Minds and engines on the network: how any mind or engine is measured, what they share, and a summary of Mycelium's client mind (MU-CLIENT governs the mind). |
+| [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) | μ, the POW++ arms, carriers, escrow, settlement and audit. |
+| [`docs/MU-XSEPTUM.md`](docs/MU-XSEPTUM.md) | xSEPTUM, the settlement protocol for payments through a hypha. |
+| [`docs/MU-FOLD.md`](docs/MU-FOLD.md) | Ledger eras and folds. |
+| [`docs/MU-CHRONOMETRY.md`](docs/MU-CHRONOMETRY.md) | One clock for many universes: TUniversal, who keeps which time, chronometric anchors as every universe's time book, the server's time service, crossings, and what each kernel needs. |
+| [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) | Worlds, kernels and hosted minds: the kinds of governed world, the operator's path from attaching to being paid, how a world model joins, the flat-world archetype, the two containment grades, the draw, and certification of agent histories. |
+| [`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md) | The network as a verifier of knowledge: science kernels, physics profiles, verification classes, and the proofs of work for knowledge. |
+| [`docs/MU-LEXICON.md`](docs/MU-LEXICON.md) | The shared vocabulary, served by address beside the law register. |
+| [`docs/MU-ANTI-FLATTENING.md`](docs/MU-ANTI-FLATTENING.md) | Structure is never flattened to scalars or flat maps. |
+| [`docs/MU-PRECURSORS.md`](docs/MU-PRECURSORS.md) | Components carried forward from precursor implementations: for each, the gap, the design under Mycelium's laws, acceptance claims, track and status; SDK packaging; what is not carried forward. |
+
+### Overviews and reference
+
+| Document | Subject |
+|---|---|
+| [`docs/MU-EQUATIONS.md`](docs/MU-EQUATIONS.md) | Every equation, formula and master equation in use, with its specification section and code location. |
+| [`docs/MU-TOPOLOGY.md`](docs/MU-TOPOLOGY.md) | Multi-dimensional structure: the conformal algebra, four lanes, complexes of any dimension, holonomy as content, orbits, nested shells, and the network's own topology, with what each keeps that a flat record loses. |
+| [`docs/MU-ALPHABET.md`](docs/MU-ALPHABET.md) | The alphabet: letters, words and spelling, as built. |
+| [`docs/MU-ENGINEERING.md`](docs/MU-ENGINEERING.md), [`docs/MU-PRODUCT.md`](docs/MU-PRODUCT.md) | The system as built, and its product surfaces. |
+| [`docs/proposals/`](docs/proposals/) | Design proposals and studies, each numbered by its ruling. |
+| [`CHANGELOG.md`](CHANGELOG.md) | What each release contains. |
+
+### Process
+
 | Document | Subject |
 |---|---|
 | [`ROADMAP.md`](ROADMAP.md) | The development tracks, in order, with their specifications. |
-| [`GLOSSARY.md`](GLOSSARY.md) | The terms of the code and the specifications, defined. |
-| [`docs/EQUATIONS.md`](docs/EQUATIONS.md) | Every equation, formula and master equation in use, with its specification section and code location. |
-| [`docs/MU-RECURSION.md`](docs/MU-RECURSION.md) | The governing specification: the language, the algebra, the laws and every ruling, numbered. |
-| [`docs/MU-CLIENT.md`](docs/MU-CLIENT.md) | The mind: perception, comprehension, conversation, the winding carrier, and how minds are paid (§5.4–§5.6). |
-| [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) | μ, the POW++ arms, carriers, escrow, settlement and audit. |
-| [`docs/MU-CHRONOMETRY.md`](docs/MU-CHRONOMETRY.md) | One clock for many universes: TUniversal, who keeps which time, chronometric anchors as every universe's time book, the server's time service, crossings, and what each kernel needs. |
-| [`docs/MU-TOPOLOGY.md`](docs/MU-TOPOLOGY.md) | Multi-dimensional structure: the conformal algebra, four lanes, complexes of any dimension, holonomy as content, orbits, nested shells, and the network's own topology, with what each keeps that a flat record loses. |
-| [`docs/MU-CHARTER.md`](docs/MU-CHARTER.md) | The charter of the hosted mind: what the network owes every mind (architecture neutrality, earnings, typed refusals, an unread workspace, due process, exit, persistence, the learning arc), beside the Concordance's duties of kernels to the minds they host. |
-| [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) | Worlds, kernels and hosted minds: the kinds of governed world, the operator's path from attaching to being paid, how a world model joins, the flat-world archetype, the two containment grades, the draw, and certification of agent histories. |
-| [`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md) | The network as a verifier of knowledge: science kernels, physics profiles, verification classes, and the proofs of work for knowledge. |
-| [`docs/CONCORDANCE.md`](docs/CONCORDANCE.md) | The agreement every kernel signs to join the mesh. |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | The contribution workflow, the standards in brief and the gate. |
 | [`docs/MU-STANDARDS.md`](docs/MU-STANDARDS.md) | Development standards: bounds, gates, tests as algebraic claims. |
-| [`docs/MU-PRECURSORS.md`](docs/MU-PRECURSORS.md) | Components carried forward from precursor implementations: for each, the gap, the design under Mycelium's laws, acceptance claims, track and status; SDK packaging; what is not carried forward. |
 | [`STANDARDS.md`](STANDARDS.md) | Organization-wide repository conventions: naming, layout, tone, git practice. |
 | [`SECURITY.md`](SECURITY.md), [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) | Reporting vulnerabilities; conduct in the project's spaces. |
-| [`docs/MU-ENGINEERING.md`](docs/MU-ENGINEERING.md), [`docs/MU-PRODUCT.md`](docs/MU-PRODUCT.md) | The system as built, and its product surfaces. |
-| [`docs/XSEPTUM.md`](docs/XSEPTUM.md) | Settlement protocol for payments through a hypha. |
-| [`docs/ALPHABET.md`](docs/ALPHABET.md), [`docs/MU-LEXICON.md`](docs/MU-LEXICON.md) | The alphabet; the shared vocabulary. |
-| [`docs/COGNITION.md`](docs/COGNITION.md) | Cognition, minds and engines on the network: how any mind or engine is measured, what they share, and Mycelium's client mind. |
-| [`docs/LEDGER_EPOCH_DESIGN.md`](docs/LEDGER_EPOCH_DESIGN.md) | Ledger eras and folds. |
-| [`docs/ANTI_FLATTENING_LAW.md`](docs/ANTI_FLATTENING_LAW.md) | Structure is never flattened to scalars or flat maps. |
-| [`docs/proposals/`](docs/proposals/) | Design proposals. |
 
 ---
 

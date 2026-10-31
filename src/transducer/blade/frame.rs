@@ -1,5 +1,5 @@
 // 55.3, 56.5, 66, 68 — THE FRAME READER: the relative turn between two
-// bodies read off their harmonic tower, the four proper turns of the square
+// bodies read off the bodies' harmonic tower, the four proper turns of the square
 // base, and the typed refusal where no turn carries one onto the other.
 
 use super::*;
@@ -171,7 +171,7 @@ impl Pose {
 /// tensor is invariant under a 180° turn, so `u` gives `φ` only mod `π`,
 /// and `1` against `e₁₂` are not projectively equal. The residue is a
 /// question about the SUPPORT, so the support answers it: each of the four
-/// proper turns is applied to `a`'s compartments about their centroid and
+/// proper turns is applied to `a`'s compartments about the compartments' centroid and
 /// compared with `b`'s. This is a finite group's four elements checked
 /// exactly, as `versor_coset_ordered` checks its coset — not a search.
 ///
@@ -193,7 +193,7 @@ pub enum NoPose {
     /// A body with no support. Nothing to orient.
     Bodiless,
     /// One body has a principal axis and the other does not, so no turn of
-    /// one is the other whatever their sizes.
+    /// one is the other whatever the two sizes.
     Isotropy,
     /// Neither body orients at any order this carrier holds — isotropic at
     /// the second harmonic AND at the fourth.
@@ -356,7 +356,7 @@ fn orientation_of(
             _ => Err(NoPose::Unoriented),
         },
         // One has a principal axis and the other does not: no turn of one
-        // is the other, whatever their sizes.
+        // is the other, whatever the two sizes.
         _ => Err(NoPose::Isotropy),
     }
 }
@@ -430,7 +430,7 @@ pub fn oblique_arc(a: &Blade, b: &Blade, plane: (usize, usize)) -> Option<(BigIn
 /// ON THE PLANE THE CALLER NAMES (BQ4, 71.2(3)). The turn, its harmonics,
 /// its odd invariant and its refusal are all read in that plane's own
 /// coordinates, and the rotor is that plane's bivector. Which planes a
-/// relation between two bodies turns across — the pose over their tubes —
+/// relation between two bodies turns across — the pose over the bodies' tubes —
 /// is [`super::relative_pose`]'s reading (FR1); this answers one plane, and
 /// is what the pose reads where both bodies stand in one section.
 pub fn relative_rotor(

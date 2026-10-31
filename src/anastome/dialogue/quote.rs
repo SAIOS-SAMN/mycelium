@@ -72,7 +72,7 @@ pub fn encode_quote_reply(
 }
 
 /// Demand/percept reply: `[code][height u64][pressure 4×u64][taught_len u16][taught…]`.
-/// `None` where the taught bytes pass their two-byte length (STD1 3c).
+/// `None` where the taught bytes pass the two-byte length (STD1 3c).
 pub fn encode_outcome_reply(code: u8, height: u64, pressure: &[u64; 4], taught: &[u8]) -> Option<Vec<u8>> {
     let mut body = outcome_head(code, height, pressure);
     crate::transducer::address::put_u16_count(&mut body, taught.len())?;

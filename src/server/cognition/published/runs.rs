@@ -15,7 +15,7 @@ pub(crate) struct Runs<T> {
     runs: Vec<Arc<[T]>>,
 }
 
-/// WHAT ONE EXTENSION COPIED: members, and their weight summed. A sum past
+/// WHAT ONE EXTENSION COPIED: members, and the members' weight summed. A sum past
 /// its carrier is not summed further and is named (`passed`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) struct Copied {
@@ -54,7 +54,7 @@ impl<T: Clone> Runs<T> {
     /// THE SEQUENCE EXTENDED by `next`, which stands wholly after every
     /// member held: one run joined, merged down while it is at least as long
     /// as the one before it. Answers the members copied — `next` itself, and
-    /// every member a merge copied again — and their `weight` summed.
+    /// every member a merge copied again — and the members' `weight` summed.
     pub(crate) fn extend(&mut self, next: Vec<T>, weight: impl Fn(&T) -> u64) -> Copied {
         let mut copied = Copied::default();
         if next.is_empty() {

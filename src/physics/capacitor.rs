@@ -13,7 +13,7 @@
 //!   continuum. The CHARGE `S(r)S(1)` is a point on the fibre's field flow
 //!   (78.75): an exact boost fixing both pivots (source and sink) that carries
 //!   level `μ` to `μ r²`. It depends on the ratio `r` alone, and charges
-//!   compose by multiplying their ratios — the flow's own law, never a step
+//!   compose by multiplying the charges' ratios — the flow's own law, never a step
 //!   between two sampled levels and never a logarithm.
 //! - **THE SPLIT.** `B = Pᵢ∧Pⱼ` squares to a rational `β² > 0`, so any
 //!   generator `G` splits exactly: the FIELD `cB` (`c = ⟨GB⟩₀/β²`, charge
@@ -22,7 +22,7 @@
 //!   (anticommutes with `B`, moves the pivots — the only part that reshapes
 //!   the capacitor).
 //! - **THE SHAPE** a set of pivots holds still: the round through them, read
-//!   as their outer product, which every fibre switch among them keeps
+//!   as the pivots' outer product, which every fibre switch among them keeps
 //!   whatever the masses. Where a further pivot leaves it, no round shape
 //!   stands and the shape is what the switches generate — emergent.
 
@@ -32,7 +32,7 @@ use num_traits::{Signed, Zero};
 
 type Q = BigRational;
 
-/// A FIBRE between two pivots with their masses.
+/// A FIBRE between two pivots with the pivots' masses.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Fibre {
     pub pi: Mv,
@@ -79,7 +79,7 @@ pub enum Carried {
 }
 
 impl Fibre {
-    /// The fibre between `pi` and `pj` with their masses. `None` where a mass
+    /// The fibre between `pi` and `pj` with the two masses. `None` where a mass
     /// is not positive or the pivots do not span a fibre (`β² ≤ 0`: one point,
     /// or not points).
     pub fn new(pi: Mv, pj: Mv, mi: Q, mj: Q) -> Option<Fibre> {
@@ -246,7 +246,7 @@ pub enum Shape {
     Emergent,
 }
 
-/// THE SHAPE OF `pivots` at base dimension `n`: their outer product built
+/// THE SHAPE OF `pivots` at base dimension `n`: the pivots' outer product built
 /// pivot by pivot to the round of grade `n + 1`, and every remaining pivot
 /// asked whether it lies on it (`round ∧ X = 0`). Exact, no search.
 pub fn shape_of(pivots: &[Mv], n: usize) -> Shape {

@@ -96,7 +96,7 @@ fn geo_composes_every_grade_at_once() {
     }
 
     // Grade 4 of the product is not carried by either factor: it is MADE by
-    // the product of their bivectors. That is the content a lane-wise sum
+    // the product of the factors' bivectors. That is the content a lane-wise sum
     // cannot produce, and it is why the grades are not four carriers.
     assert!(a.pseudoscalar().is_zero() && b.pseudoscalar().is_zero());
     assert!(

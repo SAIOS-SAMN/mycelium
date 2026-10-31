@@ -11,7 +11,7 @@
 already provides and what this specification adds. It builds on
 [`MU-RECURSION.md`](MU-RECURSION.md) (the language and its laws),
 [`MU-ECONOMY.md`](MU-ECONOMY.md) (μ and POW++),
-[`CONCORDANCE.md`](CONCORDANCE.md) (the agreement between kernels) and
+[`MU-CONCORDANCE.md`](MU-CONCORDANCE.md) (the agreement between kernels) and
 [`MU-CLIENT.md`](MU-CLIENT.md) (minds and convergence).
 
 ---
@@ -152,8 +152,8 @@ shell.
 |---|---|---|
 | **The universal law register L0** | The laws every transition touching the network satisfies (§3.1) | `src/physics/laws.rs`, `ACT_LAWS` |
 | **The universal law forms** | The forms each universe composes over its own constants (Concordance 2.10) | `forms/` |
-| **The Concordance** | The agreement every kernel signs: units, topology, the economy between universes, breaches and convergence, conduct | `docs/CONCORDANCE.md` |
-| **The alphabet** | Seventeen seed letters, exact rotations, which never change; letters for further primes are added only by court rulings (ALPHABET §6) | `docs/ALPHABET.md`, `src/transducer/alphabet/` |
+| **The Concordance** | The agreement every kernel signs: units, topology, the economy between universes, breaches and convergence, conduct | `docs/MU-CONCORDANCE.md` |
+| **The alphabet** | Seventeen seed letters, exact rotations, which never change; letters for further primes are added only by court rulings (MU-ALPHABET §6) | `docs/MU-ALPHABET.md`, `src/transducer/alphabet/` |
 | **Anastome** | The wire: signed speech acts whose payloads are exact geometric objects, each with one canonical encoding | `src/anastome/` |
 | **Exact arithmetic** | ℚ and Cl(4,1)(ℚ); no floating point in anything admitted | Throughout |
 | **The proofs of work** | POUW, POWC, POWR, POWV and their settlement | `docs/MU-ECONOMY.md` |

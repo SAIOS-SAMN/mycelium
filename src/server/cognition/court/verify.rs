@@ -5,8 +5,8 @@
 //
 //! Every POUW release passes through here: the claim's base is what the
 //! closer is owed — lane-wise the lesser of the escrow and the measured
-//! discharge (78.149 (b)) — and the courts whose replay verified it take
-//! their share of that base, per lane, read off this court's strain
+//! discharge (78.149 (b)) — and the courts whose replay verified it each take
+//! a share of that base, per lane, read off this court's strain
 //! against its reserve. The closer is minted the rest. Total issuance is
 //! the base, exactly as before.
 

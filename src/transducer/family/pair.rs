@@ -17,7 +17,7 @@ use super::*;
 /// absence is absence — nothing to encode, and no `usize::MAX` reachable as
 /// "no member here".
 pub(crate) struct Scenery {
-    /// The vertices BY THEIR COORDINATES (AT1): the atlas's own carrier.
+    /// The vertices BY COORDINATES (AT1): the atlas's own carrier.
     pub(crate) vertices: crate::transducer::sentence::Vertices,
     /// The support of each MEMBER — vertex and chart (D10) — because a
     /// face relates two BODIES and the support is a body's sites.

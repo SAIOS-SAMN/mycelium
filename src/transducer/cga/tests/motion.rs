@@ -170,5 +170,5 @@ fn motion_mode_order_read_off_rational_point() {
             checked += 1;
         }
     }
-    assert!(checked >= 32, "the turning letters and their powers were read: {checked}");
+    assert!(checked >= 32, "the turning letters and the letters' powers were read: {checked}");
 }

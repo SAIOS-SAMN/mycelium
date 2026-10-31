@@ -19,7 +19,7 @@ pub fn germinate(
     a: &[(i64, i64, u8)],
     b: &[(i64, i64, u8)],
 ) -> Option<crate::transducer::element::PlacedChain> {
-    // Collect the union of sites with their before/after hues.
+    // Collect the union of sites with the sites' before/after hues.
     let void = crate::arc::ground();
     let mut links: ResidualGerm = Vec::new();
     let upsert = |links: &mut ResidualGerm, r: i64, c: i64, before: u8, after: u8| {

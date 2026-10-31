@@ -215,7 +215,7 @@ pub fn peel_body(compartments: &[(i64, i64, i64, u8)]) -> Vec<Shell> {
 
 /// THE SHELLS OF A STACK are the shells of its sections (16.5): each frame
 /// of the body is peeled in its own plane, and the shells of one kind are
-/// one shell of the body, lifted back to their frames. `scale` is
+/// one shell of the body, lifted back to the shells' frames. `scale` is
 /// ((h_out, h_in), (w_out, w_in)).
 pub fn peel_body_scaled(
     compartments: &[(i64, i64, i64, u8)],

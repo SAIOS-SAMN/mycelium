@@ -99,7 +99,7 @@ impl Generator {
     }
 
     /// The generator written out, its kind first: `0` and σ's pairs behind
-    /// their count (by its own coordinate), or `1` and the ray's canonical
+    /// the pairs' count (by its own coordinate), or `1` and the ray's canonical
     /// coordinates. One writer for the record, the Torse tape and the
     /// canonical order two cycles are compared in.
     pub fn put(&self, out: &mut Vec<u8>) {
@@ -458,7 +458,7 @@ pub struct Element {
     >,
     /// THE RECEIPTS ENVELOPE (54.5 Road (d)): the graded nerve incidence
     /// this word stands in, and the evidence a court replays it with —
-    /// citations with their affine transitions, derivations, and pivot
+    /// citations with the citations' affine transitions, derivations, and pivot
     /// certificates.
     ///
     /// It is here for the same reason `filing` is here. A form is GEOMETRY,
@@ -491,7 +491,7 @@ pub struct Element {
     /// (its own, its sections, its torsion orbits) reached by the key of
     /// its gauge charge — one read names the 0 / 1 / many assignments a
     /// body could be spoken with. Memoized; cleared wherever the fibre
-    /// mutates. Never serialized. It holds the ASSIGNMENTS under their
+    /// mutates. Never serialized. It holds the ASSIGNMENTS under each one's
     /// charge, never positions into `assignments()` (78.43(1)).
     pub(crate) profiles: std::sync::OnceLock<Vec<super::gauge::ChargeRow>>,
 }
@@ -848,7 +848,7 @@ impl Element {
     }
 
     /// The fiber's total spoken span — base + the volume above it (cycles
-    /// count their full period). `None` past the carrier.
+    /// count each cycle's full period). `None` past the carrier.
     pub fn fiber_span(&self) -> Option<u64> {
         self.fibre_volume()?.checked_add(1)
     }
@@ -980,7 +980,7 @@ impl Element {
 /// site; 𝒯 is 0. So every lane is at most five times the chain's links. A
 /// link is 18 bytes and an address space is below 2⁴⁸, so a sum of measures
 /// over RESIDENT chains stays below 2⁵⁰ — as do a resident grid's frame
-/// dimensions, their sum and its cell count — and none can pass a `u64`, or
+/// dimensions, the dimensions' sum and its cell count — and none can pass a `u64`, or
 /// a 64-bit `usize`. A sum whose summands can arrive from outside a resident
 /// carrier (a wire magnitude, an escrow, a price) is not covered: it is
 /// checked and refused.

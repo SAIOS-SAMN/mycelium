@@ -234,7 +234,7 @@ impl Treasury {
             .collect()
     }
 
-    /// A VERIFIED SOLVE (PoUW): the registry confirmed a prediction against
+    /// A VERIFIED SOLVE (POUW): the registry confirmed a prediction against
     /// its held answers and named the task's tension. Occupied lanes pay at
     /// least 1. This is syntropic mining — the bounty is minted as the
     /// task's locked tension, never drawn from the stake bond.

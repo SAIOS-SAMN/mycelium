@@ -60,9 +60,9 @@ impl Kernel {
         self.anchor()
     }
 
-    /// SETTLE a verified SOLVE (PoUW: the registry confirmed the prediction
+    /// SETTLE a verified SOLVE (POUW: the registry confirmed the prediction
     /// against held answers). Pays the registered task tension, pool-funded
-    /// and float-law bounded; the anti-replay collapse happened upstream —
+    /// and law-bounded; the anti-replay collapse happened upstream —
     /// this pays whatever the registry ruled (bounty or floor).
     pub fn treasury_settle_solve(
         &mut self,

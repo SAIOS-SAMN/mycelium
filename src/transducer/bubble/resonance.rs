@@ -4,8 +4,8 @@
 // own cells are read by — and what closes is a thought, filed where the meet
 // graph reads thoughts.
 //
-//! A perception holds its input bodies by the chart each stands on (their
-//! moduli: every axis invariant under every versor, so only bodies on one
+//! A perception holds its input bodies by the chart each stands on (the
+//! bodies' moduli: every axis invariant under every versor, so only bodies on one
 //! chart can be carried onto each other). The chart's fibre in `by_chart` is
 //! every held perception with a body there. When a perception is held, each
 //! of its bodies is read against each body of that fibre: a versor carrying
@@ -40,7 +40,7 @@ use crate::transducer::blade::{self, NotReciprocal, Shape, Transition};
 use crate::transducer::cech::{ChamberCircuit, Coherence};
 use crate::transducer::cga::Mv;
 
-/// A perception's bodies by the chart each stands on (their moduli), in the
+/// A perception's bodies by the chart each stands on (the bodies' moduli), in the
 /// order its input frames hold them.
 pub type Spores = Keyed<Vec<Shape>>;
 
@@ -112,7 +112,7 @@ pub enum Unrelated {
 
 /// THE PERCEPTION READING, cumulative at its producer (§6.5): the body pairs
 /// read and why some are no circuit; the cells read and how they cohere; the
-/// circuits by the regime of their modes (78.26(5)); and what was filed.
+/// circuits by the regime of the circuits' modes (78.26(5)); and what was filed.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ResonanceTally {
     /// Circuits: body pairs a reciprocal transition carries.
@@ -128,7 +128,7 @@ pub struct ResonanceTally {
     pub held: u64,
     pub open: u64,
     pub chambers_unread: u64,
-    /// The circuits by their modes: resonant (harmonic, returns), rosette,
+    /// The circuits by mode: resonant (harmonic, returns), rosette,
     /// parabolic, boost (luminal); and those carrying the round off
     /// (holonomic).
     pub resonant: u64,
@@ -142,7 +142,7 @@ pub struct ResonanceTally {
     pub unperturbed: u64,
     pub flat: u64,
     pub curved: u64,
-    /// Thoughts: perception pairs joined by their one transition's edge; and
+    /// Thoughts: perception pairs joined by the pair's one transition's edge; and
     /// pairs holding several, none chosen, each orbit kept by its class —
     /// congruent (the congruence index) or a standing class (both horizons).
     pub edges: u64,
@@ -155,7 +155,7 @@ pub struct ResonanceTally {
     pub predicted: u64,
     pub phase_slips: u64,
     pub off_orbit: u64,
-    /// MU-CLIENT §4.4(1) — returns that came round TWISTED by their pull (a
+    /// MU-CLIENT §4.4(1) — returns that came round TWISTED by the returns' pull (a
     /// rotation about the attractor), and of those, the ones whose twist
     /// tilted the orbit's plane (LIFT).
     pub twisted: u64,
@@ -168,7 +168,7 @@ pub struct ResonanceTally {
     pub apart: u64,
     /// The spectrum (78.50): pairs one motion carries whole (scene motions),
     /// pairs whose several whole motions are one coset and the symmetries
-    /// their quotients are, this perception's bodies a scene motion does not
+    /// the motions' quotients are, this perception's bodies a scene motion does not
     /// carry (appeared) and the other's it lands nothing on (vanished), and
     /// lines whose ray did not read (unread).
     pub scene_motions: u64,
@@ -397,15 +397,15 @@ struct Row {
     /// (`lanes_of`); `None` where no transition carries the pair.
     lanes: Vec<Option<[u64; 4]>>,
     /// A.10.1 — this body's nucleus, and each of the other's bodies' on the
-    /// chart, in their order: the frames a constellation is read on.
+    /// chart, in the bodies' order: the frames a constellation is read on.
     nucleus: Option<Mv>,
     other_nuclei: Vec<Option<Mv>>,
     /// Each of the other's bodies' mass: its sites (78.51(3)).
-    their_mass: Vec<u64>,
+    other_mass: Vec<u64>,
     /// A.13 — this body and each of the other's as momentum reads them:
     /// centroid, mass, second moments (78.52 Row 1).
     body: Option<crate::physics::tensegrity::Body>,
-    their_bodies: Vec<Option<crate::physics::tensegrity::Body>>,
+    other_bodies: Vec<Option<crate::physics::tensegrity::Body>>,
 }
 
 /// ONE LINE OF A PAIR'S SPECTRUM (78.50): a ray, the bodies of this
@@ -489,7 +489,7 @@ fn land_key(chart: &[u8], j: usize) -> Vec<u8> {
     k
 }
 
-/// THE PAIR'S SPECTRUM (78.50, 78.44): its transitions filed by their
+/// THE PAIR'S SPECTRUM (78.50, 78.44): its transitions filed by the transitions'
 /// canonical rays — the coordinates a ray is — each with the bodies it
 /// carries and lands on and what it carries per lane. Transient: read, filed
 /// from, dropped. A ray with no canonical form is filed nowhere, counted by
@@ -521,7 +521,7 @@ fn spectrum_of(rows: &[Row]) -> (Keyed<Line>, u64) {
     (spectrum, unread)
 }
 
-/// Do two lines land on the same bodies — so their quotient carries the
+/// Do two lines land on the same bodies — so the lines' quotient carries the
 /// other's configuration onto itself, a symmetry of it?
 fn same_landing(a: &Line, b: &Line) -> bool {
     let (x, y): (Vec<Vec<u8>>, Vec<Vec<u8>>) = (a.lands.scoped().map(|(k, _)| k).collect(), b.lands.scoped().map(|(k, _)| k).collect());
@@ -558,7 +558,7 @@ fn lanes_of(x: &Shape, y: &Shape) -> Option<[u64; 4]> {
     Some(crate::transducer::element::measure_lanes(&links))
 }
 
-/// WHERE TWO CHARTS PART: the first axis at which their moduli differ, or
+/// WHERE TWO CHARTS PART: the first axis at which the charts' moduli differ, or
 /// where one ends — the deformation's coordinate (78.49(4)). The axes run
 /// `n`, then the Betti numbers, then the turns and the ratios.
 fn parting(a: &stalk::Invariant, b: &stalk::Invariant) -> usize {
@@ -704,10 +704,10 @@ impl Contemplation {
         // perceptions of its own family on a chart. Paired across families,
         // an orbit balanced across disjoint tasks that share no Hamiltonian
         // (τ_ext ≠ 0 by construction), and no thought ever grounded on the
-        // fleet; what tasks share lives in the genome, as words.
+        // deployment; what tasks share lives in the genome, as words.
         let family = this_bubble.family.clone();
         // Each other idea's rows: per body of this one, its transitions to
-        // the other's bodies in their arrival order, over every chart.
+        // the other's bodies in the bodies' arrival order, over every chart.
         let mut to: Keyed<Vec<Row>> = Keyed::new();
         for (chart, own_shapes) in &charts {
             let fibre: Vec<(u16, Vec<u8>)> = self
@@ -731,9 +731,9 @@ impl Contemplation {
                         lanes: Vec::with_capacity(other_shapes.len()),
                         nucleus: x.blade.vertex_nucleus(),
                         other_nuclei: other_shapes.iter().map(|y| y.blade.vertex_nucleus()).collect(),
-                        their_mass: other_shapes.iter().map(|y| y.blade.support.len() as u64).collect(),
+                        other_mass: other_shapes.iter().map(|y| y.blade.support.len() as u64).collect(),
                         body: crate::physics::tensegrity::body_of_shape(x),
-                        their_bodies: other_shapes.iter().map(crate::physics::tensegrity::body_of_shape).collect(),
+                        other_bodies: other_shapes.iter().map(crate::physics::tensegrity::body_of_shape).collect(),
                     };
                     for y in &other_shapes {
                         match transition(x, y, budget) {
@@ -778,8 +778,8 @@ impl Contemplation {
             // seen twice is not two bodies fused, so the cell has no
             // constructors and no round — the transitions carry each nucleus
             // into another scene, and an orbit of constructors under them
-            // would never close. What the cell reads is its circuits: their
-            // modes, their joint coherence, the capacity of their algebra.
+            // would never close. What the cell reads is its circuits: the circuits'
+            // modes, joint coherence, and algebra's capacity.
             let cell = crate::transducer::cech::read_chamber(grade, None, None, &circuits, &orders, budget);
             self.note_chamber(&cell, chart, key, budget);
             self.note_shear(&circuits);
@@ -798,7 +798,7 @@ impl Contemplation {
     /// perception stands on a different chart is the DEEPEST SHARED ONE: the
     /// chart's nearest neighbourhood, read as a keyed fibre (`fiber_at`), no
     /// index added. The root, every body, is never read (law 3). Each body
-    /// there is read against this perception's bodies where their charts
+    /// there is read against this perception's bodies where the two charts
     /// PART: at a Betti axis a surgery may carry one onto the other
     /// (`Surgery::factor`), and the deformation — its core's versor, by its
     /// class, on both charts — is a demand; at a finer axis no conformal
@@ -870,7 +870,7 @@ impl Contemplation {
 
     /// THE SHEAR ON THE CELL'S ORBITS (78.46(4′), 78.48(4)): the pair
     /// composite `ρ_n⁻¹ ρ_o` is the identity exactly where two orbits are one
-    /// ray (C1(a)), so the circuits keyed by their canonical rays hold every
+    /// ray (C1(a)), so the circuits keyed by the circuits' canonical rays hold every
     /// pair at once — under one key they agree (FLAT), under several each is
     /// sheared by the others (CURVED); one circuit alone is UNPERTURBED. A
     /// ray that does not read canonically is keyed by nothing and so agrees
@@ -1027,7 +1027,7 @@ impl Contemplation {
             // perception carried, or every body of the other landed on.
             let (spectrum, unread) = spectrum_of(rows);
             self.resonance.unread_lines += unread;
-            let other_lands = Self::their_bodies(rows);
+            let other_lands = Self::other_bodies_of(rows);
             let whole: Vec<&Line> = spectrum
                 .scoped()
                 .map(|(_, l)| l)
@@ -1167,7 +1167,7 @@ impl Contemplation {
             let [Some(t11), ..] = first.ts.as_slice() else { continue };
             // Each of the other's bodies at its first hour, with its mass.
             let mut other_frames: Vec<(Mv, Q)> = Vec::new();
-            for ((t, s), m) in first.ts.iter().zip(&first.other_nuclei).zip(&first.their_mass) {
+            for ((t, s), m) in first.ts.iter().zip(&first.other_nuclei).zip(&first.other_mass) {
                 let (Some(t), Some(s)) = (t, s) else { continue };
                 let m = Q::from_integer((*m).into());
                 other_frames.push(match orbit {
@@ -1221,7 +1221,7 @@ impl Contemplation {
             if orbit {
                 for r in &on {
                     let hours: Option<Vec<&crate::physics::tensegrity::Body>> =
-                        first.their_bodies.iter().chain(std::iter::once(&r.body)).map(Option::as_ref).collect();
+                        first.other_bodies.iter().chain(std::iter::once(&r.body)).map(Option::as_ref).collect();
                     let Some(hours) = hours else { continue };
                     for pair in hours.windows(2) {
                         if let [a, b] = pair {
@@ -1248,7 +1248,7 @@ impl Contemplation {
                     }
                     // A COLLISION OF BODIES (78.52 Row 2): this body, carried
                     // into the other's configuration, against each of the
-                    // other's bodies it does not land on — their spheres cut
+                    // other's bodies it does not land on — the two spheres cut
                     // (fused at a crystallographic angle, precessing at any
                     // other) or touch (contact). Disjoint spheres are two
                     // bodies of one system, never a collision; one sphere
@@ -1354,7 +1354,7 @@ impl Contemplation {
         let bodies: Option<Vec<crate::physics::tensegrity::GroundBody>> = match orbit {
             true => {
                 let ([], [Some(nucleus), ..], [Some(body), ..]) =
-                    (rest, first.other_nuclei.as_slice(), first.their_bodies.as_slice())
+                    (rest, first.other_nuclei.as_slice(), first.other_bodies.as_slice())
                 else {
                     return self.ungrounded(Ungrounded::Unplaced);
                 };
@@ -1363,7 +1363,7 @@ impl Contemplation {
             false => first
                 .other_nuclei
                 .iter()
-                .zip(&first.their_bodies)
+                .zip(&first.other_bodies)
                 .map(|(s, b)| match (s, b) {
                     (Some(nucleus), Some(body)) => {
                         Some(crate::physics::tensegrity::GroundBody { nucleus: nucleus.clone(), body: body.clone() })
@@ -1746,9 +1746,9 @@ impl Contemplation {
         }
     }
 
-    /// The other's bodies on the charts the pair shares, by their landing
+    /// The other's bodies on the charts the pair shares, by the bodies' landing
     /// keys.
-    fn their_bodies(rows: &[Row]) -> Keyed<()> {
+    fn other_bodies_of(rows: &[Row]) -> Keyed<()> {
         let mut lands: Keyed<()> = Keyed::new();
         for row in rows {
             for j in 0..row.ts.len() {

@@ -204,7 +204,7 @@ fn record_cycle_refuses_holonomy_at_twice_order() {
     assert_eq!(v.record_cycle(read), Filed::New, "at its order it stands");
 }
 
-/// (4) THE PROFILE TABLE ANSWERS ASSIGNMENTS BY THEIR CHARGE, with no
+/// (4) THE PROFILE TABLE ANSWERS ASSIGNMENTS BY EACH ONE'S CHARGE, with no
 /// position in the element (78.43(1)): every assignment the word speaks is
 /// held under its charge, and `holds_assignment` reads it there.
 #[test]

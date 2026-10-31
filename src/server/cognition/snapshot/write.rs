@@ -1,6 +1,6 @@
 // 28, 78.25, 78.27 — THE SNAPSHOT: the mind written as keyed tries by its
 // own coordinates — the court, the ledger with each act's data at its node,
-// the words at their citations, the treasury's own tries, and the carriers
+// the words at the words' citations, the treasury's own tries, and the carriers
 // LD3-b makes T3 — each trie its name, its byte length and its count, then
 // its nodes in key order with the key inline.
 //
@@ -102,7 +102,7 @@ impl Refused {
         let [b, p, l, c, f] = self.unstamped;
         let rest = [
             ("basis words with no discoverer", self.undiscovered),
-            ("rows away from their own address", self.misaddressed),
+            ("rows away from the row's own address", self.misaddressed),
             ("federated words ruled at no act", self.unruled),
             ("words whose citation cannot be written", self.unciteable),
             ("words coinciding at one citation", self.coincident),
@@ -187,7 +187,7 @@ impl Kernel {
             if !self.reserves.is_empty() || origins || universes {
                 super::super::convert::put_reserves(&mut v, &self.reserves);
             }
-            // 78.132 — the universes' origins, after the reserves (their count
+            // 78.132 — the universes' origins, after the reserves (the origins' count
             // written where statements follow).
             if origins || universes {
                 super::super::convert::put_origins(&mut v, &self.origins);
@@ -210,7 +210,7 @@ impl Kernel {
         if let Some(v) = self.handoffs.put() {
             leaves.push((LEAF_HANDOFFS, v));
         }
-        // 78.147 — the fold roots held with their two signatures, where any is.
+        // 78.147 — the fold roots held, each with its two signatures, where any is.
         if let Some(v) = self.put_root_proofs() {
             leaves.push((LEAF_ROOTS, v));
         }
@@ -516,7 +516,7 @@ impl Kernel {
         put_trie(out, WORDS_TRIE, &nodes);
     }
 
-    /// T3 — THE ERAS HELD IN HAND by their root's stamp: the root's height,
+    /// T3 — THE ERAS HELD IN HAND, each by its root's stamp: the root's height,
     /// signer and place are the key, and each other coordinate of the era
     /// and its payload are leaves. A filed era is its own frame in the cold
     /// segment, and is not written here.
@@ -552,7 +552,7 @@ impl Kernel {
         put_trie(out, ERAS_TRIE, &nodes);
     }
 
-    /// T3 — THE COMPLEXES by their keys, each node the complex's own tries.
+    /// T3 — THE COMPLEXES by the complexes' keys, each node the complex's own tries.
     fn put_complexes(&self, out: &mut Vec<u8>) {
         let mut nodes: Keyed<Leaves> = Keyed::new();
         crate::snapshot::persist(&self.complexes, |key, c| {
@@ -563,7 +563,7 @@ impl Kernel {
         put_trie(out, COMPLEXES_TRIE, &nodes);
     }
 
-    /// T3 — THE COCYCLE ROWS by their keys: the two voices, the class as its
+    /// T3 — THE COCYCLE ROWS by the rows' keys: the two voices, the class as its
     /// own coordinates INLINE (78.27 (7)) — never its key nested as a key —
     /// the gauge as its ray, and the stamp of the receipt the row stood at.
     /// A class key that is not a class's coordinates is refused by name.
@@ -592,7 +592,7 @@ impl Kernel {
         put_trie(out, COCYCLES_TRIE, &nodes);
     }
 
-    /// 78.68 — THE WINDING CARRIERS by their `chart ‖ simplex` keys, each its
+    /// 78.68 — THE WINDING CARRIERS by the carriers' `chart ‖ simplex` keys, each its
     /// carrier's own coordinates.
     fn put_windings(&self, out: &mut Vec<u8>) {
         let mut nodes: Keyed<Leaves> = Keyed::new();

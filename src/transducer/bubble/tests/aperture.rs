@@ -57,7 +57,7 @@ fn lapse_with_retires_handed_set_never_by_age() {
 /// at one chart stay two (law 7) and the entries a chart can re-hold are the
 /// subtree under it.
 #[test]
-fn cavity_keys_under_reads_entries_at_their_chart() {
+fn cavity_keys_under_reads_entries_at_own_chart() {
     let mut c = Contemplation::new();
     c.set_now(10);
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
@@ -66,7 +66,7 @@ fn cavity_keys_under_reads_entries_at_their_chart() {
     assert_eq!(c.len(), 2, "two bubbles held");
 
     // Both retire, and both are kept: law 7 loses no remainder, and two
-    // remainders are two entries however their charts compare.
+    // remainders are two entries however the remainders' charts compare.
     // The CLAIM here is the cavity's key shape and is unchanged; only the
     // trigger is, from `retire_on_t`'s age pick to the door's set.
     let keys = all_keys(&c);
@@ -299,7 +299,7 @@ fn pivot_on_collapses_vortex_and_adjoins_symmetry() {
     f.reindex();
 
     // The vortex: two candidates that discharge ONE orbit, so they share
-    // that orbit's class vector as their `before` and differ only in the
+    // that orbit's class vector as each one's `before` and differ only in the
     // move. Both closed it, so the class after is the zero class — which
     // is why filing under `after` put every closed vortex in the tree
     // under one key and left nothing for a deciding word to find.

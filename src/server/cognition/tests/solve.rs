@@ -172,7 +172,7 @@ fn pay_solve_mints_first_closure_only() {
 /// clean on a withheld pair it has nothing to do on discharges nothing, and
 /// the court's acts say so — the slot the table lacked, where every 78.149
 /// no-work verdict was dropped. A refusal and an unverifiable solve each
-/// land on their own slot beside it.
+/// land on its own slot beside it.
 #[test]
 fn judge_solve_counts_no_work_verdict() {
     use crate::observe::{Judged, JUDGED};

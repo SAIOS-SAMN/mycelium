@@ -147,7 +147,7 @@ fn admit_refuses_predecessor_receipt_does_not_follow() {
 }
 
 /// 47.2 step 4. The height on the frame is a CLAIM, re-derived from the
-/// predecessor and the parents the receipt names at their stamps. A parent
+/// predecessor and the parents the receipt names at the parents' stamps. A parent
 /// this ledger does not hold is the hole it names, never height 0.
 #[test]
 fn admit_refuses_height_that_does_not_rederive() {

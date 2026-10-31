@@ -7,7 +7,7 @@
 //! 1. THE CONSTRUCTOR DIFFERENCE (one change). An output body standing on
 //!    exactly one input body (78.78's single carriage, 62% / 91% of what is
 //!    left unsaid) overlaps it, so its core motion is the identity in place.
-//!    Its constructors are its compartments' rounds, matched exactly by their
+//!    Its constructors are its compartments' rounds, matched exactly by the rounds'
 //!    coordinates (keyed, never searched): SHARED (the core), ACCRETED (the
 //!    white hole's channel — growth, bridge), EXTINGUISHED (the black hole's —
 //!    carving, hollowing), and the shared ones RECOLOURED (the hue fibre). The
@@ -142,7 +142,7 @@ fn barycentre(cells: &[Cell]) -> Option<(Q, Q)> {
 
 /// A difference written relative to its input body's barycentre: each
 /// accreted and extinguished constructor by its exact offset and hue, the
-/// recolours by their hue pair — the reading a subject's readings compare by.
+/// recolours each by its hue pair — the reading a subject's readings compare by.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Relative {
     pub accreted: Vec<(Q, Q, u8)>,
@@ -302,7 +302,7 @@ pub fn reproduces(m: &Manifold, input: &[Cell], output: &[Cell]) -> Option<bool>
 pub struct Moments {
     pub mass: u64,
     pub spread: i128,
-    /// M²·the second central moment: rows, columns, and their product — all
+    /// M²·the second central moment: rows, columns, and the two's product — all
     /// integers; `spread` is the first two summed.
     pub inertia: [i128; 3],
     pub hues: Vec<(u8, u64)>,
@@ -316,7 +316,7 @@ impl Moments {
     }
 
     /// DIRECTION: the inertia form up to scale — its three integers divided
-    /// by their greatest common divisor. Two strokes of one direction and
+    /// by the three's greatest common divisor. Two strokes of one direction and
     /// different lengths read alike; a diagonal and its mirror differ in the
     /// product's sign. A point's form is zero, and reads as itself.
     pub fn direction(&self) -> [i128; 3] {
@@ -355,7 +355,7 @@ pub fn moments(cells: &[Cell]) -> Moments {
 pub type HueMap = Vec<(u8, u8)>;
 
 /// WHAT A KEY DECIDES, LEAVE ONE OUT: for each reading, the other readings
-/// under its key, their hue maps joined into one map. The join is refused
+/// under its key, the readings' hue maps joined into one map. The join is refused
 /// where two of them send one hue to two (the key does not decide) and
 /// absent where no other reading shares the key (nothing to decide by).
 pub fn decided<K: PartialEq>(readings: &[(K, HueMap)]) -> Vec<Option<Option<HueMap>>> {

@@ -80,8 +80,8 @@ fn extract_rule_reads_lines_along_two_rays() {
 /// 78.167 Phase B, Step 1 — TWO ACTS IN ONE SCENE: a ring's interior filled 4
 /// and, from each cell of hue 3, a line of its hue to the border on its right.
 /// Read as one act the created cells are neither a fill nor a line; read
-/// piece by piece, the fill's piece and the line's piece are each their own
-/// clause, and the composed sentence is proved once.
+/// piece by piece, the fill's piece and the line's piece are each a clause of
+/// its own, and the composed sentence is proved once.
 #[test]
 fn extract_rule_reads_fill_and_line_at_once() {
     knows(
@@ -523,10 +523,10 @@ fn judge_solve_solves_reaction_on_unseen_pair() {
 }
 
 /// AN INTERIOR SEVERAL BODIES WALL IN TOGETHER IS A FILL: four bars meeting
-/// only at their corners close a hole no one of them closes, whose extent
+/// only at the bars' corners close a hole no one of them closes, whose extent
 /// holds no ground, and whose halo reaches ground the truth leaves; it is
 /// filled with 4 in three pairs of three sizes. The fill is read off the
-/// bodies around it, together, as their joint interior; the held-out pair,
+/// bodies around it, together, as the bodies' joint interior; the held-out pair,
 /// another size, is re-derived, and the court solves it.
 #[test]
 fn extract_rule_fills_hole_closed_jointly() {

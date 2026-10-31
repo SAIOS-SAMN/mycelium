@@ -256,7 +256,7 @@ pub fn inverse_even(u: &Mv) -> Option<Mv> {
 /// sign of `⟨B²⟩₀`.
 pub fn bivector_split(m: &Mv, budget: &mut crate::physics::Budget) -> Option<(Mv, Mv)> {
     // MD1 — ONE PRODUCER OF THE SPLIT (law 12). The modes are read at every
-    // exponent by `modes`; this is their two-part reading, the compact half
+    // exponent by `modes`; this is the modes' two-part reading, the compact half
     // the elliptic modes summed and the open half the rest, as the closed
     // form below always filed a null generator.
     if let Ok(parts) = super::modes::modes(m, budget) {
@@ -406,8 +406,8 @@ pub fn transvection(a: &BigRational, b: &BigRational, plane: usize) -> Option<Mv
 /// the axes name: `n + 1` of them are the `n + 1` boosts of `Cl(n+1, 1)`.
 ///
 /// Unlike the conformal translators `eᵢ ∧ e_∞`, which commute because that
-/// reading is of a flat lattice base (51.2), these do NOT commute: their
-/// commutator is a rotation scaled by the sectional curvature. The failure
+/// reading is of a flat lattice base (51.2), these do NOT commute: the
+/// translators' commutator is a rotation scaled by the sectional curvature. The failure
 /// to commute IS the curvature, which is why the order is the algebra's and
 /// not a caller's, and why `K` is read off a remainder rather than carried
 /// as a constant (51.2, Anti-Flattening clause 7).

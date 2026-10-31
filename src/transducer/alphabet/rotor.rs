@@ -195,7 +195,7 @@ impl Rotor {
 
     /// THE WEIGHT `Φ Φ̃` OF A VERSOR, READ — never the test, never carried
     /// (78.28(2), (3)). `None` where the action says `Φ` is no versor. Its
-    /// readers are named at their sites: a scale-free class ratio read as a
+    /// readers are named at the readers' own sites: a scale-free class ratio read as a
     /// class (the half angle, the order, the class invariants), and the
     /// division VA1-inverse removes.
     pub fn weight(&self) -> Option<Q> {
@@ -703,7 +703,7 @@ impl Rotor {
     /// [`Rotor::order`] returns `lcm(ℓ₁, ℓ₂)` and that is an envelope, not a
     /// period: a planar rotation `[ℓ, 1]` and an isoclinic Clifford
     /// translation `[ℓ, ℓ]` give one `lcm` and land in one class though
-    /// their stabilisers and fixed-point sets differ; an incommensurate
+    /// the two stabilisers and fixed-point sets differ; an incommensurate
     /// pair never closes and an integer envelope reports it as closed; and
     /// the beat `|ℓ₁ − ℓ₂|⁻¹` is thrown away, so no reader can compare two
     /// orbits' harmonic ratio.

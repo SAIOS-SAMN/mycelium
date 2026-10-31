@@ -1,6 +1,5 @@
 // 45, 78.24 — THE RECEIPT: one act at its stamp, the parents it cites by
-// their stamps, the frame it measured, and the words it names by their
-// coordinates.
+// stamp, the frame it measured, and the words it names by coordinates.
 
 use crate::transducer::address::Address;
 use crate::transducer::stalk::Invariant;
@@ -328,7 +327,7 @@ pub enum Cite {
     Root { at: Stamp, hash: [u8; 32] },
     /// 78.37, TP1 — THE DOCKET'S HELD CLASS: a ring the orbit's transport
     /// closed at holonomy ≠ 1, by its class vector inline, and its COVER —
-    /// the charts its thoughts stand on, by their keys, ascending — whose
+    /// the charts its thoughts stand on, by key, ascending — whose
     /// containment orders the docket. `None` where the cover did not read:
     /// the entry's enclosure is owed.
     /// Its ROTOR rides beside κ as its ray (78.27(7): the class is the
@@ -363,7 +362,7 @@ pub enum Cite {
     /// holding the rows proves them against this receipt.
     Uplink { tier: [u8; 32], prefix: [u8; 32], rows: [u8; 32] },
     /// 78.123 B — A FOLD THAT NETS CHILDREN, by its coordinates as an
-    /// uplink's, and the commitment over the children it nets (their
+    /// uplink's, and the commitment over the children it nets (the children's
     /// receipts' stamps, rows, included parts and rates), which the tier
     /// signed: a dispute proves the netting against it.
     Chained { tier: [u8; 32], prefix: [u8; 32], rows: [u8; 32], children: [u8; 32] },
@@ -733,7 +732,7 @@ impl Cite {
 /// ONE NODE OF THE LEDGER (78.24): the act at its stamp. What it measured
 /// on the four lanes, the signer's previous receipt and the peers it
 /// cites, each by stamp and hash — the DAG's edges — and the words it
-/// names, by their coordinates.
+/// names, by coordinates.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KStepReceipt {
     pub stamp: Stamp,

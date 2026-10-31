@@ -443,7 +443,7 @@ fn serve_syllabus_charges_learner_not_reserve() {
 /// minted sentence is refracted by a translation of one column, and the
 /// relation read off the held form and the refracted one is a refraction
 /// whose Γ lands on the refracted form's address — it could travel as
-/// (held, Γ). The sentence's words are unit rotors that move by their
+/// (held, Γ). The sentence's words are unit rotors that move by the words'
 /// carriages, so the placement half of Γ is what is solved here. A form
 /// stands refracted from itself.
 #[test]

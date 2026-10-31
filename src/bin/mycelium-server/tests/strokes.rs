@@ -54,7 +54,7 @@ fn tell_peer_within_reads_reply_whole_and_counts_strokes() {
 
     // The deadline is this test's patience for the responder thread to be
     // scheduled, not the measure: a poll is a yield, and on a host running a
-    // whole fleet at full CPU one reserve of yields passed before the
+    // whole deployment at full CPU one reserve of yields passed before the
     // responder ran once (read on 2026-09-08 with eight processes live). The
     // patience is the host's own reserve squared — a measurement, never a
     // literal — and the rtt read back is whatever it took.

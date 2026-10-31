@@ -64,7 +64,7 @@ fn why_answers_act_with_speakers_reasons() {
 /// the lone site painted another hue, so the voice's sentence is refused at
 /// a vertex. The refusal is an act on the court's line: the verdict's
 /// receipt IS that act's chain hash, the act cites the refused sentence by
-/// its chart with the refusal's kind — coordinates, which survive their
+/// its chart with the refusal's kind — coordinates, which survive the sentence's
 /// bytes — and asked why that act stands, the court answers the refusal.
 #[test]
 fn why_answers_refusal_act_on_ledger() {

@@ -782,7 +782,7 @@ pub mod coord {
     /// §4.4 E8 — THE THREE COORDINATES OF A COVER (ruled 2026-09-22).
     ///
     /// `family::pieces` has always written these three addresses out of
-    /// their own content — a piece by its shell kind and its support written
+    /// the pieces' own content — a piece by its shell kind and its support written
     /// out; a carriage by its domain and codomain in that order; a meet by
     /// its two ends unordered — and every carrier
     /// holding one was `Keyed<V, Any>`. The bytes were a coordinate and the
@@ -944,8 +944,8 @@ pub mod coord {
         }
     }
 
-    /// A 1-SIMPLEX OF THE NERVE: two carriages that overlap, named by their
-    /// two ends and never by their positions.
+    /// A 1-SIMPLEX OF THE NERVE: two carriages that overlap, named by the
+    /// two ends and never by the carriages' positions.
     ///
     /// UNORDERED, because a seam has no direction. The pair is put in the
     /// canonical order at construction, so the two ends read back the way

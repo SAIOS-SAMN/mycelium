@@ -354,7 +354,7 @@ pub fn relators() -> [Relator; RELATOR_N] {
     // slot pairs were written out as `[(0, 5), (1, 4), (2, 3)]`, which is
     // the rank-4 answer tabulated; the complement is a reading of the
     // plane's own axes (`complement_plane`), and the read is over the
-    // planes themselves rather than over their product (rule 1). A pair is
+    // planes themselves rather than over the planes' product (rule 1). A pair is
     // emitted at its lesser slot, so each relation appears once.
     for (a, &plane) in SLOT_PLANES_SIX.iter().enumerate() {
         let Some(other) = complement_plane(plane) else {

@@ -24,7 +24,7 @@ fn difference_reads_constructors_and_light() {
 }
 
 /// THE MANIFOLD HOLDS ITS READINGS AND IS JUDGED BY THE PLANE. Two bodies,
-/// each growing one cell to its right: their relative differences are one,
+/// each growing one cell to its right: the bodies' relative differences are one,
 /// the core is that cell, nothing is an edge, and the core replayed on each
 /// input reproduces its output. A third reading growing left instead narrows
 /// the core and sharpens an edge — the contrast held, not dissolved.
@@ -55,7 +55,7 @@ fn manifold_holds_readings_core_judged_by_replay() {
 
 /// 78.80 — A BODY BY ITS MOMENTS. A bar of three and an L of three are not
 /// congruent but carry one volume; the bar's spread is 1+1+4 = 6 and the L's
-/// 1+1+2 = 4, so their densities 9/6 and 9/4 tell them apart without a
+/// 1+1+2 = 4, so the two densities 9/6 and 9/4 tell them apart without a
 /// boundary. A lone compartment's density is refused. Recolours decided by
 /// volume: two bodies of mass 3 go to hue 2, one of mass 1 to hue 5 — leave
 /// one out, the second mass-3 reading is predicted by the first and the

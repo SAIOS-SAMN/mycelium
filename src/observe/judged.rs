@@ -27,7 +27,7 @@ pub struct JudgedSolve {
 }
 
 /// THE SOLVES THIS COURT JUDGED since boot, one per citation and voice, in
-/// that order — the corpus and the voices their bound.
+/// that order — the corpus and the voices the solves' bound.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct JudgedSolves {
     pub solves: Vec<JudgedSolve>,

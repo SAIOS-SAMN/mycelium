@@ -28,7 +28,7 @@ fn at(c: &[num_rational::BigRational], n: usize) -> Vec<num_rational::BigRationa
 /// at `(0,0,0), (2,0,0), (0,2,0)` join a circle whose carrier is the sphere
 /// about `(1,1,0)` through them, `ρ² = 2`, at `n = 3` and at `n = 4`; four
 /// at the corners of the unit tetrahedron's frame join the sphere about
-/// `(1,1,1)`, `ρ² = 3`. The bodies' radii do not enter: the join is of their
+/// `(1,1,1)`, `ρ² = 3`. The bodies' radii do not enter: the join is of the bodies'
 /// centres.
 #[test]
 fn enclosure_carries_round_centres_join() {
@@ -39,7 +39,7 @@ fn enclosure_carries_round_centres_join() {
         assert_eq!(e, sphere_at(&at(&[z(1), z(1)], n), &z(2)), "n = {n}: the circle's carrier");
     }
     let four = bodies(&[vec![0, 0, 0], vec![2, 0, 0], vec![0, 2, 0], vec![0, 0, 2]]);
-    assert_eq!(enclosure(&four), Some(sphere_at(&[z(1), z(1), z(1)], &z(3))), "four centres join their sphere");
+    assert_eq!(enclosure(&four), Some(sphere_at(&[z(1), z(1), z(1)], &z(3))), "four centres join one sphere");
     let collinear = bodies(&[vec![0, 0, 0], vec![1, 0, 0], vec![2, 0, 0]]);
     assert_eq!(enclosure(&collinear), None, "centres on one line span no round: the enclosure is flat");
 }

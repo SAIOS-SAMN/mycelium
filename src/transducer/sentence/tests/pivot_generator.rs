@@ -137,7 +137,7 @@ fn pivot_orbit_adjoins_unreached_published_residue() {
 /// acts on the chart, `admit_words_acting` files it on the coordinates its
 /// class occupies, and `on_axis_of` answers it there. A generator the index
 /// cannot return is a word the mind holds and can never use — which is
-/// exactly the state the fleet was measured in, `held 0` on every read.
+/// exactly the state the deployment was measured in, `held 0` on every read.
 #[test]
 fn generator_form_mints_word_answerable_on_axis() {
     use crate::transducer::sentence::{
@@ -409,9 +409,9 @@ fn admit_words_acting_files_by_carriage_and_gauge() {
 /// an orbit's face vertices act on — `[1, moduli]`, a statement about the BODY
 /// A WORD ACTS ON. Both charts are well formed and answer different
 /// questions, so the index was filed under one answer and read under the
-/// other: measured across the fleet, `crystal.on_axis` returned 0 on 123 of
+/// other: measured across the deployment, `crystal.on_axis` returned 0 on 123 of
 /// 123 reads, and 75 of 76 admits filed on no axis at all because the forms
-/// admitted are closed and their words occupy nothing.
+/// admitted are closed and the forms' words occupy nothing.
 ///
 /// Two things are asserted, because either alone leaves the read empty. The
 /// word is filed where its vertex ACTS, which is the question the pivot
@@ -875,7 +875,7 @@ fn trial_certifies_word_move_rank_with_siblings() {
 ///
 /// Two chords carrying one 90° turn close two orbits, and both chords
 /// step between the same two bodies of one certified cell (BD2), so the cell
-/// holds two circuits. Based at the basepoint they are one ray: their pair
+/// holds two circuits. Based at the basepoint they are one ray: the circuits' pair
 /// composite is the identity and the cell reads FLAT. A move that discharges
 /// one of them leaves the other turning, so the pair composite is
 /// non-trivial after it — a coordinate the move did not act on rose — and
@@ -961,7 +961,7 @@ fn trial_refuses_move_splitting_agreeing_circuits() {
 /// A, leaving B without access to the transport, and was skipped entirely if its
 /// rotor was the identity — dropping all placement, dilation and hue transports.
 /// With bidirectional admission, both A and B are indexed with the direct and
-/// inverse transports, and non-rotor carriages are filed on their proper axes.
+/// inverse transports, and non-rotor carriages are each filed on its proper axis.
 #[test]
 fn admit_words_acting_files_both_member_charts() {
     use crate::transducer::sentence::{

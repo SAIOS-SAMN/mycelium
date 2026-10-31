@@ -448,7 +448,7 @@ pub struct ActsTally {
     pub fetch: [u64; FETCH.len()],
     pub judged: [u64; JUDGED.len()],
     pub paid: [u64; 4],
-    /// 78.55 — colour words this court admitted by their derivation from
+    /// 78.55 — colour words this court admitted by derivation from
     /// ruled colour words, no scene witnessing them.
     pub colours_derived: u64,
     pub provisional: [u64; PROVISIONAL.len()],

@@ -424,7 +424,7 @@ pub fn lift(comp: &[Compartment]) -> Blade {
 ///
 /// H1, 70.4 — A BODY IS A MAXIMAL HUE-BLIND CONNECTED REGION, and its hue
 /// is the gauge section it carries, not its identity. Two compartments join iff
-/// their cubes share a face — one coordinate differing by one (51.3) —
+/// the two compartments' cubes share a face — one coordinate differing by one (51.3) —
 /// WHATEVER HUES THEY CARRY.
 ///
 /// THIS SUPERSEDES CHAPTER 20 (ruled 2026-09-09), WHICH MADE PERCEPTION
@@ -500,7 +500,7 @@ fn on_grid(s: &Site) -> (i64, i64) {
 /// sites on the plane in row order.
 pub type Section = (Vec<i64>, Vec<(i64, i64)>);
 
-/// THE SECTIONS OF A SUPPORT: its sites grouped by their coordinates off
+/// THE SECTIONS OF A SUPPORT: its sites grouped by the sites' coordinates off
 /// the grid plane — the frame, and any further axis — each section's sites
 /// in row order: the compartments standing on one grid plane, the sections of
 /// the stack (16.5). The in-plane readings (a section's turns and

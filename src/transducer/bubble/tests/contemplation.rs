@@ -4,7 +4,7 @@
 use crate::transducer::bubble::*;
 
 /// Law 5, L7a: the boundary of the open thoughts is read on four lanes
-/// and is the measure of the held remainders themselves — never their sum,
+/// and is the measure of the held remainders themselves — never the remainders' sum,
 /// never a norm. No thought is `[0; 4]`; one held link measures as its
 /// chain does, lane by lane.
 #[test]
@@ -102,7 +102,7 @@ fn rotor_key_merges_candidate_and_negation() {
     // A TRANSPORT ON ANOTHER PLANE IS ANOTHER CANDIDATE. The second rotor
     // differs from the first ONLY in which bivector plane it turns in —
     // same scalar, same weight — because that is the coordinate that has to
-    // stay distinct. Separating them by their scalar instead would prove
+    // stay distinct. Separating them by the shared scalar instead would prove
     // nothing about the planes: `normalised` divides through by the leading
     // coefficient, so a scalar-led pair is told apart by a ratio and the
     // plane capacity the candidates exist to carry is never exercised.
@@ -300,7 +300,7 @@ fn hold_form_keeps_glued_open_orbit() {
 }
 
 /// A held form carries its training bundle and its per-pair remainders,
-/// keyed by pair, with the volume their lane-wise measure.
+/// keyed by pair, with the volume the remainders' lane-wise measure.
 #[test]
 fn hold_form_carries_bundle_and_remainder() {
     use crate::transducer::alphabet::Word;

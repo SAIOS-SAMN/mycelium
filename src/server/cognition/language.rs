@@ -1,7 +1,7 @@
 // 23.8, 26 — THE LANGUAGE the mind reasons over, and what it answers with.
 //
 //! `Language` is the snapshot a reduction runs against with no lock held:
-//! the ruled words, their stalks, the axis index and the dialect. `Outcome`,
+//! the ruled words, the words' stalks, the axis index and the dialect. `Outcome`,
 //! `Glue`, `Adoption` and `MarketView` are what it answers with.
 
 use super::*;
@@ -15,7 +15,7 @@ pub enum Outcome {
     /// replay closes it and never because an order on tapes says so. The
     /// algebra spans it, nothing minted. An empty word is a pure
     /// transposition (no substance). One reduction, not two search kinds.
-    /// The words the speech decomposed through, BY THEIR OWN COORDINATES.
+    /// The words the speech decomposed through, EACH BY ITS OWN COORDINATES.
     Decomposed(Vec<crate::transducer::address::Address>),
     /// A novel generator docketed on one vantage, awaiting a witness organ's
     /// independent re-derivation of the same address (47.3).
@@ -66,7 +66,7 @@ pub enum Glue {
 }
 
 /// The result of the redundancy probe over the language: the held words a
-/// word's substance decomposes through, BY THEIR OWN COORDINATES, or none.
+/// word's substance decomposes through, EACH BY ITS OWN COORDINATES, or none.
 /// `Irreducible` carries no element: what the language does not span is not
 /// composed by the court (law 8).
 ///
@@ -94,7 +94,7 @@ pub struct LanguageWord {
     pub seq: u64,
 }
 
-/// THE LANGUAGE SNAPSHOT: the held words and their atlas, immutable and
+/// THE LANGUAGE SNAPSHOT: the held words and the words' atlas, immutable and
 /// shared by pointer with every reflex worker. Reduction, congruence, and
 /// quoting run over it with no lock held.
 #[derive(Debug, Clone, Default)]

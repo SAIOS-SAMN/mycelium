@@ -1,6 +1,6 @@
 // 78.80 — INSTRUMENTATION ONLY (§8.1): volume and density against shape. Per
 // task, the single changes of the remainder (`incongruence::single_changes`)
-// read by their moments, and two questions asked of the slice.
+// read by the changes' moments, and two questions asked of the slice.
 // CONSERVATION: does a change keep its volume, per hue, its spread, its
 // density; where it gains, is the gain all light; where it loses, all
 // carving. DECISION: of the recolours in place, which key — none, volume,
@@ -71,7 +71,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
     );
     let n = total[0].predicted + total[0].refused + total[0].alone;
     println!(
-        "volume decision over {n} recolours in place on {tasks_recoloured} tasks (leave one out, judged by replay); replayed by their own hue map {own} — the ceiling of any body-level key:"
+        "volume decision over {n} recolours in place on {tasks_recoloured} tasks (leave one out, judged by replay); replayed by each task's own hue map {own} — the ceiling of any body-level key:"
     );
     for ((k, j), w) in KEYS.iter().zip(total).zip(whole) {
         println!(

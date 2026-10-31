@@ -640,7 +640,7 @@ pub(crate) fn list_task(
         let inv = mycelium::transducer::stalk::invariant_of(&residual);
         let addr = residual.address();
         let here = homes_here(mesh, shelf, &inv, &residual.magnitude());
-        // The pieces and their charts are read here, with no kernel held;
+        // The pieces and the pieces' charts are read here, with no kernel held;
         // the lock below only commits them (`Kernel::intake_prepared`).
         let prepared = match here {
             true => mycelium::cognition::prepare_intake(&chain, &frame),

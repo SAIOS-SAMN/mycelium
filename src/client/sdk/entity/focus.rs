@@ -14,7 +14,7 @@
 //! field (`OrbitRegistry::focus`): the orbits the admissions since the last
 //! beat carried, or — none in motion — the orbits that ring. A 𝒢 orbit's key
 //! IS a coordinate of the corpus; an orbit on a plane (𝒮, 𝒽) is met through
-//! the thoughts threading it, by the charts their covers hold. What stands on
+//! the thoughts threading it, by the charts the thoughts' covers hold. What stands on
 //! those coordinates is what the mind meets; the rest lies elsewhere on the
 //! manifold, undisturbed — never "passed".
 //!
@@ -293,7 +293,7 @@ impl Entity {
                 crate::physics::StrokeOutcome::add(&mut outcome.fed, &mag);
                 self.board.feed_scenes.insert(&key, ());
                 // MU-CLIENT §7.1 R1 — perceived on its own carrier, off the
-                // field. Its tests are their INPUTS alone (ruled
+                // field. Its tests are the tests' INPUTS alone (ruled
                 // 2026-10-18): what the court withholds never crosses
                 // the mind's boundary; a rule known on the family speaks them,
                 // and the court judges the solve on its own withheld pairs.

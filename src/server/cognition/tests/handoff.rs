@@ -34,7 +34,7 @@ fn y() -> SigningKey {
     key(31)
 }
 
-/// Two domains on one court: X names `x` and `x2`, Y names `y`; their
+/// Two domains on one court: X names `x` and `x2`, Y names `y`; the two
 /// reserves `x` and `y` (the ancients) have opened `the_mouth()` between them
 /// — 78.128: nothing crosses between domains but through an open mouth.
 fn founded() -> Kernel {
@@ -180,7 +180,7 @@ fn handoff_refuse_or_expire_returns_to_sender() {
     assert!(matches!(k.handoff(&Handoff::Refuse { id }.sign(&y())), Handed::Sealed { state: State::Returned, .. }));
     assert_eq!(
         k.admit_uplink(&fold(&y(), 1, vec![(who(8), [5, 0, 0, 1])], vec![(id, Side::In)]).sign(&y())),
-        Uplinked::HandoffRefused { index: 0, why: SideRefusal::NotYours }
+        Uplinked::HandoffRefused { index: 0, why: SideRefusal::NotThisTier }
     );
     let both = fold(&x(), 1, Vec::new(), vec![(id, Side::Out), (id, Side::In)]);
     assert!(matches!(k.admit_uplink(&both.sign(&x())), Uplinked::Admitted { .. }), "out and back: nothing moved");

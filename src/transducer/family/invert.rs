@@ -7,7 +7,7 @@
 //! reproduces the plane (`form_deflation`); the remainder is the noise,
 //! site by site. The pivot drive wrote its moves onto FACE carriers, and
 //! speech reads only VERTICES (`apply_form_on`), so no pivot move could
-//! change what was spoken and the remainder could not fall (fleet:
+//! change what was spoken and the remainder could not fall (deployment:
 //! `pivoted [0, 0, 0, 0]`). The inversion acts on what speech reads:
 //!
 //! 1. Speak the form over its family; the remainder per pair.

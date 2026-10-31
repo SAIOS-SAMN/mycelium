@@ -55,7 +55,7 @@ fn decode_receipt_section_reads_past_cover_digest() {
 
     // The shape `judge` sends: the stratum-digest reply, the cover
     // digest, and the receipt section on the end.
-    let mut body = encode_digests_reply(&digests).expect("the digests fit their fields");
+    let mut body = encode_digests_reply(&digests).expect("the digests fit the reply's fields");
     body.extend(
         encode_cover_digest(&room, &cover_roots, &ruled_root, &vk, "127.0.0.1:7500", &ring, &sig)
             .expect("the digest fits its lengths"),

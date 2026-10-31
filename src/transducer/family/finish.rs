@@ -39,7 +39,7 @@ pub(crate) fn germ_of_pair(a: &Grid, b: &Grid) -> Option<crate::transducer::elem
 /// read off the frames perceived ONCE ([`perceive_family`]).
 ///
 /// THE PAIRS ARE THE CONTACTS, NEVER THE PRODUCT (rule 1). The percept
-/// relates two bodies only where their supports meet or stand at ring
+/// relates two bodies only where the bodies' supports meet or stand at ring
 /// distance one (the keyed occupancy), and disjoint connected bodies of one
 /// plane touching that way form a planar graph: by Euler's formula a planar
 /// graph on `V` vertices has at most `3V − 6` edges. So `3V` bounds the

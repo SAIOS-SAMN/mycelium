@@ -199,7 +199,7 @@ pub fn rule_replays_family(
 /// `extract.rs`'s own `PERCEPT_MEMO` already has at the sensor boundary.
 ///
 /// IT WAS A `Keyed` WITH NO EVICTION, holding one whole `SentenceRule` per
-/// task id the voice had ever pulled, and that is the fleet's OOM.
+/// task id the voice had ever pulled, and that is the deployment's OOM.
 /// Measured on voice 4 of the 2026-09-19 recut, 18 minutes in: 89 pulls,
 /// 54 distinct families, task arm +522 MB net — **9.7 MB per stored rule**,
 /// which is a `Form`'s vertices, faces, orbits and carriers. The training

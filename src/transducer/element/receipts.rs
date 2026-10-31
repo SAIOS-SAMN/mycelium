@@ -127,7 +127,7 @@ pub struct NerveEdge {
 ///
 /// The site orders the listing and the target separates the edges standing
 /// at it. Both are coordinates the edge already holds, and the trie's walk
-/// IS their order — nothing compares anything, and no comparator decides.
+/// IS the edges' order — nothing compares anything, and no comparator decides.
 ///
 /// IT IS CALLED FROM BOTH DECODERS. The tape writes citations in the
 /// form's vertex order and the envelope files them here, so before this was
@@ -199,7 +199,7 @@ impl NerveEdge {
     }
 
     /// `g_ij = T(τ)·R` as the two halves a composite needs. The rotor and
-    /// the carriage compose in their own algebras and are never mixed.
+    /// the carriage compose in the two halves' own algebras and are never mixed.
     pub fn transition(&self) -> (Rotor, Versor) {
         (self.placement.rotor(), (*self.carriage).clone())
     }
@@ -308,7 +308,7 @@ impl NerveEdge {
 /// does not factor through the geometry.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NerveRound {
-    /// The charts this round passes through, by their own addresses — a
+    /// The charts this round passes through, by the charts' own addresses — a
     /// coordinate set, never indices into a list (rule 15).
     pub charts: Vec<Address>,
     /// Each chart's base point on the hyperboloid, in the same order:
@@ -575,7 +575,7 @@ impl DerivationCite {
 /// complex whatever mind holds it; none of this factors through it.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ReceiptsEnvelope {
-    /// 1-simplices: the citations, with their transitions.
+    /// 1-simplices: the citations, with the citations' transitions.
     pub nerve: Vec<NerveEdge>,
     /// 2-simplices: triple overlaps with a cell attached.
     pub rounds: Vec<NerveRound>,
@@ -589,7 +589,7 @@ pub struct ReceiptsEnvelope {
     pub demands: Vec<DemandEvidence>,
     /// The remainder's chain, which the key carries as its coordinates.
     pub remainder: Vec<(i64, i64, u8, u8)>,
-    /// 78.55 — THE TASKS WHOSE SCENES WITNESSED THIS WORD, by their
+    /// 78.55 — THE TASKS WHOSE SCENES WITNESSED THIS WORD, by the tasks'
     /// coordinates: where a colour word stood by evidence, the court that
     /// admitted it writes the task, so a peer court fetching it re-derives
     /// the relation from its own copy of that task — never searches for one.
@@ -604,7 +604,7 @@ impl ReceiptsEnvelope {
     /// than being read back off a tape at every court that hears it.
     ///
     /// EVERY LIST IS IN ITS OWN CONTENT ORDER (rule 15). The nerve is sorted
-    /// by each edge's site key and the derivations by their vertex address,
+    /// by each edge's site key and the derivations by each one's vertex address,
     /// so two minds that read a form's vertices in different orders emit
     /// the same envelope. `certificates` comes off a `Keyed`, which is
     /// already in key order.
@@ -616,7 +616,7 @@ impl ReceiptsEnvelope {
     pub fn of_form(f: &crate::transducer::sentence::Form) -> ReceiptsEnvelope {
         use crate::transducer::sentence::Vertex;
         // THE 1-SKELETON IS THE FORM'S COVER, taken whole (54.7 B5a). It
-        // was rebuilt here by reading the `Glued` vertices for their target
+        // was rebuilt here by reading the `Glued` vertices for the vertices' target
         // addresses, and a vertex no longer names the form it mates with:
         // the boundary is the chart's, the incidence is the cover's.
         let mut env = ReceiptsEnvelope { nerve: f.cover.clone(), ..ReceiptsEnvelope::default() };
@@ -648,7 +648,7 @@ impl ReceiptsEnvelope {
         }
         // THE ORDER IS THE TRIE'S, NOT A SORT'S (rule 15, law 2). A `sort_by`
         // asks a comparator to decide an order; a `Keyed` IS the order,
-        // because a PATRICIA trie walks its keys in their own byte order and
+        // because a PATRICIA trie walks its keys in the keys' own byte order and
         // the key is the object's coordinates written out. Two minds that
         // read a form's vertices differently reach one listing without
         // anyone choosing a comparison.

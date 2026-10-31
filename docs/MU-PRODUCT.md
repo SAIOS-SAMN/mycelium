@@ -1,14 +1,15 @@
-# Product — a market for comprehension
+# MU-PRODUCT — a market for comprehension
 
 > **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** the hypha's market, and the surfaces that expose it to clients. No game term.
 
-Status as of v0.2.0 (later changes in [`CHANGELOG.md`](../CHANGELOG.md)):
-the market for work exists on every hypha; the products
-below are the surfaces that expose it. What is landed and what is specified
-is marked in §7; plans are in [`ROADMAP.md`](../ROADMAP.md). Companion
-documents: `MU-ECONOMY.md`, `MU-ENGINEERING.md`, `XSEPTUM.md`.
+**Status:** specification, release 0.2.0 (later changes in
+[`CHANGELOG.md`](../CHANGELOG.md)). The market for work exists on every
+hypha; the products below are the surfaces that expose it. What is built
+and what is specified is marked in §7; plans are in
+[`ROADMAP.md`](../ROADMAP.md). Companion documents: `MU-ECONOMY.md`,
+`MU-ENGINEERING.md`, `MU-XSEPTUM.md`.
 
 ## 1. What is sold
 
@@ -53,7 +54,7 @@ to be comprehended, and external assets enter only over a bridge.
 
 1. **The gateway.** `mycelium-septum` speaks HTTP: a 402 challenge with a
    four-lane price, a note, a receipt, JSON bodies wrapping the frames in
-   `XSEPTUM.md`. Thin TypeScript and Python clients build a challenge,
+   `MU-XSEPTUM.md`. Thin TypeScript and Python clients build a challenge,
    sign a note with a voice key, and verify a receipt against a root.
 2. **The mind.** The client binary is the consumer product: a wallet
    (balance per lane, stake, unstake, notes) and a genome that learns.
@@ -108,9 +109,9 @@ certification on the replay's own magnitude; cover on the lane bonded;
 standing work on T. A buyer who lacks a lane pays by working on it, which
 is how new minds enter without a token purchase.
 
-## 7. What is landed and what is not
+## 7. What is built and what is not
 
-Landed:
+**Built:**
 
 - the work market on every hypha: task dispatch and solve verification at
   the home (`ACT_TASK`, `ACT_SOLVE`), listings, quote by incidence on the
@@ -129,8 +130,8 @@ Landed:
   compute leases opened and closed under it
   (`src/anastome/dialogue/lease.rs`).
 
-Specified: the `mycelium-septum` gateway and its SDK bindings
-(`XSEPTUM.md`), the uplink door for a customer's corpus, certification as
+**Specified:** the `mycelium-septum` gateway and its SDK bindings
+(`MU-XSEPTUM.md`), the uplink door for a customer's corpus, certification as
 a route, the explorer reads, the starter-genome export, and wallet verbs in
 the client binary (the wire act exists; the client does not yet send it).
 

@@ -82,7 +82,7 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
     if let Ok(p) = std::env::var("MYCELIUM_HOME") {
         return Ok(PathBuf::from(p));
     }
-    // The fleet's homes are `var/<unit>` under the repository the binary
+    // The deployment's homes are `var/<unit>` under the repository the binary
     // runs from (the units' working directory), never the operator's home
     // directory (moved 2026-09-09). A hypha started with no `--home` is the
     // one hypha of a single-node run.
@@ -101,7 +101,7 @@ fn refuse_boot(tag: &str, what: &str) -> ! {
 /// WHAT THIS HOME WILL DO AT THE NEXT BOOT, read and not started.
 ///
 /// A layout change is a recut (§10) and the reader for the retired layout
-/// is deleted with it, so a build can arrive at a fleet whose carriers it
+/// is deleted with it, so a build can arrive at a deployment whose carriers it
 /// refuses — which is exactly where this one stands: `MYC7` writes every key
 /// with a `u64` length and every ledger on disk is `MYC6`, which used the
 /// wire's `u16` citation prefix and could not write a large form's address at
@@ -345,18 +345,18 @@ fn main() {
     // 45.5: H_genesis is written ONCE, by the first hypha started on a fresh
     // state, and PROVISIONED to every other node the way the bootstrap peer
     // list is. Self-adoption from a node's own first receipt is not that:
-    // three hyphae started together each wrote their own, and by 45.5 that
-    // is three meshes -- measured on this fleet as `refused-origin 2` on
+    // three hyphae started together each wrote its own, and by 45.5 that
+    // is three meshes -- measured on this deployment as `refused-origin 2` on
     // every cycle, every node refusing both its peers. A node mints only
     // when told to; every other node adopts from a peer that has one.
     let mint_genesis = args.iter().any(|a| a == "--mint-genesis");
     // A RECUT drops this node's origin so it takes the mesh's again (45.5).
     // It is an operation, not a file edit: the mesh record is signed, so a
     // genesis cannot be cleared from outside the process that holds the key,
-    // and a fleet that has diverged has no other way back to one mesh.
+    // and a mesh that has diverged has no other way back to one mesh.
     //
     // It DROPS AND EXITS. As a serving mode it would re-cut on every restart
-    // -- which is what a unit drop-in carrying it did to this fleet, walking
+    // -- which is what a unit drop-in carrying it did to this deployment, walking
     // it to epoch 3 one restart at a time. Exiting makes that impossible: a
     // unit that carries the flag flaps visibly instead of quietly
     // re-originating the mesh under everyone. `scripts/recut` runs it once.
@@ -401,7 +401,7 @@ fn main() {
             reading: flag(&args, "--reading"),
         };
         // MU-CLIENT §5.3 — every mind at the rendezvous, asked on its post:
-        // `--minds` the fleet's (beside the homes), `--rendezvous DIR` another.
+        // `--minds` the deployment's (beside the homes), `--rendezvous DIR` another.
         if args.iter().any(|a| a == "--minds") {
             let dir = match (flag(&args, "--rendezvous"), home.parent()) {
                 (Some(d), _) => PathBuf::from(d),
@@ -800,7 +800,7 @@ fn main() {
     // ACTS SERVED, counted per kind. This wrote one line per act and one
     // wall-clock duration with it: 63,331 lines in five minutes on one
     // hypha, which is not a trace, it is a screen that hides every other
-    // line the fleet writes -- the exchange's own lines were read as absent
+    // line the mesh writes -- the exchange's own lines were read as absent
     // when they were merely outnumbered a thousand to one. It also read
     // `Instant::now()`, and a kernel reads no clock (law 9).
     //

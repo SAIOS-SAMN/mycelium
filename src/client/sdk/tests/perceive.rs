@@ -90,7 +90,7 @@ fn scene_language_moves_only_for_word_on_own_chart() {
     assert_ne!(mind.scene_language(&slide), before, "a word where the slide stands moves its language: it is read again");
 }
 
-/// MU-CLIENT §4.13, §7.1 — HEARINGS WAIT BY THEIR COORDINATES, AND ONE THAT
+/// MU-CLIENT §4.13, §7.1 — HEARINGS WAIT, EACH BY ITS COORDINATES, AND ONE THAT
 /// COUPLES TO NOTHING IS NOT READ. A hearing of no word the mind knows and
 /// none that lands on its field never goes to the perception carrier; the
 /// same thing said again by the same mind waits once, its latest saying in
@@ -113,7 +113,7 @@ fn perceive_hearing_said_again_waits_once() {
 /// being the event and no clock read. Three hearings, coupled to nothing,
 /// wait; the return that closes the traversal they were heard in carries them
 /// across; one more is heard, and one said again; at the next return the two
-/// left lapse unread and the two heard since cross in their place. The same
+/// left lapse unread and the two heard since cross in the lapsed two's place. The same
 /// thing said again is heard in the traversal it was said in.
 #[test]
 fn act_on_returns_lapses_hearing_unread_across_return() {
@@ -125,7 +125,7 @@ fn act_on_returns_lapses_hearing_unread_across_return() {
     }
     let mut b = budget();
     assert!(mind.act_on_returns(&mut b, vec![b"a scene".to_vec()], false) > 0, "a binding is a return");
-    assert_eq!(mind.board.hearings_crossed.len(), 3, "the return closing their traversal carries them across");
+    assert_eq!(mind.board.hearings_crossed.len(), 3, "the return closing the hearings' traversal carries them across");
     mind.perceive_hearing(speaker, b"since".to_vec(), Vec::new(), Evident::Unbound);
     mind.perceive_hearing(speaker, b"two".to_vec(), Vec::new(), Evident::Unbound);
     assert_eq!((mind.board.hearings.len(), mind.board.hearings_crossed.len()), (2, 2), "said again, it is heard in this traversal");

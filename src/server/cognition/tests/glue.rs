@@ -124,7 +124,7 @@ assert_eq!(
 /// court records the citation as a use of the cited address (`cited_by`).
 /// This is the chain the index fault of L8r held shut end to end — no
 /// `Glued` vertex, so no `cited_by`, so nothing a citation could ever pay
-/// for (26, 27) — measured here through the epigenome the fleet runs and
+/// for (26, 27) — measured here through the epigenome the mesh runs and
 /// not through a stub.
 #[test]
 fn cited_by_records_glued_citation_as_use() {

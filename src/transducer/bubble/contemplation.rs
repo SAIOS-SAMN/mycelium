@@ -1,7 +1,7 @@
 // 25 — THE CONTEMPLATION: every bubble a mind is holding at once, and the
 // incidence between them.
 //
-//! `Contemplation` is the complex of held thoughts: the bubbles, their
+//! `Contemplation` is the complex of held thoughts: the bubbles, the bubbles'
 //! remainders, the horizon of classes seeded from the syllabus, and the
 //! cavity. Holding a form admits a vertex and links it to what it meets.
 
@@ -155,7 +155,7 @@ pub struct Contemplation {
     /// (each a traversal past the first close).
     pub thought_returns: u64,
     /// MU-CLIENT §4.8 — the thoughts that came round since the voice's last
-    /// return, by key: their vortices are rolled out there, and the list is
+    /// return, by key: the thoughts' vortices are rolled out there, and the list is
     /// taken whole each time.
     pub(crate) came_round: Vec<Vec<u8>>,
     /// MU-CLIENT §4.4(1) — the twists thoughts that came round again carry,
@@ -169,7 +169,7 @@ pub struct Contemplation {
     pub(crate) now_k: u64,
     /// Mesh-seeded classes, keyed by class key, Standing::Held. Not persisted.
     pub(crate) seeded: Keyed<(Rotor, Order, Standing)>,
-    /// EXPANSION 4 — THE VORTICES BY THEIR CONJUGACY STRATUM: the
+    /// EXPANSION 4 — THE VORTICES BY CONJUGACY STRATUM: the
     /// depth-one coordinate of the class vector a vortex is filed under →
     /// the bubbles standing there. A vortex is decided by a ruled word
     /// whose rotor is conjugate to the orbit's holonomy, and a word knows
@@ -181,7 +181,7 @@ pub struct Contemplation {
     /// rewrote a form (`refile_vortex`); not persisted, rebuilt as the
     /// other indices are.
     pub(crate) by_vortex: Keyed<Keyed<()>>,
-    /// CS2 — the pivots' outcomes against the cells their orbits cross,
+    /// CS2 — the pivots' outcomes against the cells the pivots' orbits cross,
     /// counted since the contemplation began (78.32(c), note only).
     pub(crate) pivots: sentence::PivotTally,
     /// 13.12 — the merges' outcomes, merged / stayed two / unnamed, counted
@@ -210,7 +210,7 @@ pub struct Contemplation {
     /// (volatile).
     pub(crate) docket_answered: u64,
     pub(crate) docket_rings: Keyed<Vec<u8>>,
-    /// 78.109 C1 — the docketed demands the taker has handed out, by their
+    /// 78.109 C1 — the docketed demands the taker has handed out, by the
     /// entries' coordinates: each taken once (volatile).
     pub(crate) demands_taken: Keyed<()>,
     /// MU-CLIENT §5.4 (E1), §7.1 R2 — THE SCENE EACH DEMAND WAS PERCEIVED
@@ -221,7 +221,7 @@ pub struct Contemplation {
     /// whether or not the perceiving thought still stands. Volatile, as the
     /// docket.
     pub(crate) demand_scenes: Keyed<Keyed<()>>,
-    /// 78.68 ROW 8 — THE RESIDUES THIS MIND HAS MADE LETTERS OF, by their
+    /// 78.68 ROW 8 — THE RESIDUES THIS MIND HAS MADE LETTERS OF, by the residues'
     /// canonical rays: a cell's incoherence whose residue stands here is
     /// answered by the mind's own letter and never demanded again (volatile,
     /// as the dialect the letters stand in).
@@ -263,7 +263,7 @@ pub struct Contemplation {
     /// the entity's re-fill at the close (volatile).
     pub(crate) demands_answered: Vec<crate::transducer::sentence::ClassVector>,
     /// STD1 (rule 11) — lane sums the contemplation REFUSED because they
-    /// would pass their carrier (an escrow returned, a flux credited, an
+    /// would pass the sums' carrier (an escrow returned, a flux credited, an
     /// extent read): the sum stands where it was, never pinned at a ceiling.
     /// An admission refused because the bubble's ordinal would pass its u16
     /// is counted here too (STD1 3c-5; the slot itself is AT1's debt).
@@ -435,7 +435,7 @@ impl Contemplation {
     // idea re-held ten times added ten times, and the reading said a chart
     // was cohesive because the mind had said one thing on it often. That
     // is not what agreement between two ideas is. Two ideas agree when the
-    // transition between their transports is the identity, which is a
+    // transition between the two ideas' transports is the identity, which is a
     // reading of the two and not a count of them.
     //
     // NOTHING READ IT. Measured across the tree at this commit: no caller
@@ -597,7 +597,7 @@ impl Contemplation {
         }
     }
 
-    /// THE VORTICES A BUBBLE HOLDS, FILED AT THEIR CONJUGACY STRATA. A
+    /// THE VORTICES A BUBBLE HOLDS, FILED AT THE VORTICES' CONJUGACY STRATA. A
     /// pivot rewrites the form in place (`take_form`) and may leave a
     /// vortex on it that was not there when the bubble's incidence was
     /// admitted; the index is re-read off the bubble at every such site. An
@@ -970,15 +970,15 @@ impl Contemplation {
         let mut rems: Keyed<Vec<Link>> = Keyed::new();
         // Overlap is read in the SCENE: the chain carried through its own
         // translator (§2.1). Two bubbles holding one chain at two
-        // translators are one substance said at two places, and their
-        // canonical links coincide at the origin while their placed links
+        // translators are one substance said at two places, and the two
+        // canonical links coincide at the origin while the two placed links
         // do not.
         if let Some(b) = self.bubbles.get(&key) {
             rems.insert(&key, b.remainder.placed());
         }
-        // Two perceptions that both hold their bodies are related by their
+        // Two perceptions that both hold bodies are related by the
         // bodies' cells (`perceive_cells`, on the act's stroke), never by
-        // their words' rotors here.
+        // the perceptions' words' rotors here.
         let seen = |k: &[u8]| self.bubbles.get(k).is_some_and(|b| !b.spores.is_empty());
         let nbs: Vec<Vec<u8>> = match seen(&key) {
             true => nbs.into_iter().filter(|n| !seen(n)).collect(),
@@ -1018,7 +1018,7 @@ impl Contemplation {
     /// Z4's instrument (§8.1): the allocator bytes a hold ADDS, read
     /// between `hold_form`'s entry and its exit and totalled per stroke.
     ///
-    /// IT IS THE CLAIM AND NOT THE OUTCOME (rule 13). "The fleet grows at
+    /// IT IS THE CLAIM AND NOT THE OUTCOME (rule 13). "The deployment grows at
     /// 492 MB a minute" is an outcome and names nothing; "one hold of a
     /// 712-vertex form costs N bytes" is the claim, and a fix either moves
     /// N or it did not fix anything. The `grew` lane beside it is the

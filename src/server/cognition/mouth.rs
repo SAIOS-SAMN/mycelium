@@ -8,7 +8,7 @@
 //! domain's chart by an exact versor. Open, a TRAVERSAL — a 2(b) handoff
 //! citing it — carries matter or a word through it, either way, its flat toll
 //! escrowed from the sending tier and paid to the KEEPER on acceptance. Either
-//! reserve may CLOSE it: traversals in flight return, their tolls refunded.
+//! reserve may CLOSE it: traversals in flight return, the tolls refunded.
 //! The open mouths are edges between DOMAINS carrying each pair's chart
 //! transition `to_frame · from_frame⁻¹`; a cycle of them whose holonomy is not
 //! the identity is two routes disagreeing about how one universe lands in
@@ -745,7 +745,7 @@ impl Kernel {
     }
 
     /// A mouth pair CLOSED: returned, the traversals in flight through it
-    /// returned, their tolls back, and — 78.135 — its throat's bank back to
+    /// returned, the traversals' tolls back, and — 78.135 — its throat's bank back to
     /// the faces that fed it, never retired.
     fn close_mouth(&mut self, id: &[u8; 32], anchor: crate::economy::Anchor) {
         if let Some(held) = self.handoffs.mouths.get_mut(id) {

@@ -57,7 +57,7 @@ pub struct Chart {
     pub support: Vec<Site>,
 }
 
-/// THE CHARTS OF ONE READING, keyed by their own coordinates.
+/// THE CHARTS OF ONE READING, each keyed by its own coordinates.
 pub type Cover = Keyed<Chart>;
 
 /// A CHART'S KEY: the reading's tag, then the region written out as the

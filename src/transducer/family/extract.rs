@@ -63,7 +63,7 @@ fn extract_rule_on_ground(
         if family.len() < 2 {
             return None;
         }
-        // The clauses read are spoken as their elements, so a run that
+        // The clauses read are spoken as the clauses' elements, so a run that
         // re-derived the pairs lowers.
         return match super::acts::read_acts(&Form::default(), family, budget) {
             Ok(clauses) => {

@@ -40,7 +40,7 @@ fn of_motion_holds_turn_on_h_as_exact_fraction() {
     let half = modes(&quarter().geo(&quarter()));
     let both: Vec<_> = twice.modes().map(|(m, a)| (m.clone(), a.clone())).collect();
     assert_eq!(both.len(), 1, "one plane, one mode");
-    assert_eq!(half.amount_of(&both[0].0), Some(&q(1, 2)), "the turn's square is a half turn on the same plane");
+    assert_eq!(half.amount_of(&both[0].0), Some(&q(1, 2)), "the turn's square is a 180° turn on the same plane");
 }
 
 /// A slide is held on T by its count, and its reverse is another mode.

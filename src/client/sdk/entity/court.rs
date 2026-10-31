@@ -1,5 +1,5 @@
 // 78.164 — THE COURT, A BOUNDARY: what flows into the field from the hypha
-// (the open book's listings and their demands, the registry's tasks, the
+// (the open book's listings and the listings' demands, the registry's tasks, the
 // language it teaches) and what flows out to it (sentences, probes, solves,
 // colour words), paced by the surface the court itself returns.
 //
@@ -92,7 +92,7 @@ impl Entity {
     }
 
     /// THE OPEN BOOK FLOWS IN: a quote that landed is read — each listing's
-    /// demands are pressure at their charts, and a demand a held closed form
+    /// demands are pressure at the demands' charts, and a demand a held closed form
     /// reproduces is answered: the probe flows out, and where its closure
     /// lands it relieves the pressure it stood for and builds order. A demand
     /// on a lane the reserve cannot fund waits; a page beyond one tick is
@@ -272,7 +272,7 @@ impl Entity {
 
 /// DOES THIS HELD FORM ANSWER THE DEMAND (50.5, L8q) — THE COURT'S OWN
 /// READING (`Kernel::settle_demand`): the demand's bodies framed as a scene
-/// at their own corner, the form spoken on it at the identity placement
+/// at the bodies' own corner, the form spoken on it at the identity placement
 /// (L14), and every link's AFTER colour said at its own site.
 fn reproduces(epi: &Epigenome, f: &crate::transducer::sentence::Form, links: &[(i64, i64, u8, u8)]) -> bool {
     let Some(((r0, c0), scene, _)) = crate::transducer::family::scene_at_of_chain(links) else { return false };

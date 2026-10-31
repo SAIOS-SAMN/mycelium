@@ -37,7 +37,7 @@ pub struct Base(pub crate::transducer::address::Address);
 
 /// THE FIBRE COORDINATE: what a change of basepoint moved, lane by lane.
 ///
-/// Four independent covers and never their sum (law 5). A section that
+/// Four independent covers and never the covers' sum (law 5). A section that
 /// recolours AND translates is a coordinate on two of them, and a reduction
 /// on one is not entitled to the other.
 #[derive(Clone, Debug)]
@@ -103,7 +103,7 @@ pub fn project(w: &Word, carriage: &Versor, hue: &[(u8, u8)], base_rep: Option<&
 /// side).
 ///
 /// It is not a search over the group. The candidates are the seventeen
-/// letters and their inverses — the alphabet's own generators, which is a
+/// letters and the letters' inverses — the alphabet's own generators, which is a
 /// fixed reading of a stated table and not an enumeration of a carrier —
 /// and each is verified by the exact conjugation. A conjugator needing more
 /// than one letter is not found here and is refused, which is the honest
@@ -202,7 +202,7 @@ pub fn solve_conjugator_rotor(a: &Rotor, b: &Rotor) -> Option<Rotor> {
 ///
 /// The kernel can contain singular elements — `γ = 0` always lies in it —
 /// so a member is accepted only when `weight` says it is a versor. The
-/// basis vectors are tried, then their pairwise sums, which suffices to
+/// basis vectors are tried, then the vectors' pairwise sums, which suffices to
 /// avoid a degenerate choice: a kernel whose every basis vector is singular
 /// but which contains an invertible element has one in the span of two.
 ///

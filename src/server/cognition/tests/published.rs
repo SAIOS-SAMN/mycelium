@@ -120,7 +120,7 @@ fn publish_lags_until_next_and_copies_growth() {
         })
         .sum();
     let c = p2.cost();
-    assert_eq!((c.receipts, c.bytes, c.eras), (2, tapes, 0), "the two receipts that grew, and their tapes; the six held stay shared");
+    assert_eq!((c.receipts, c.bytes, c.eras), (2, tapes, 0), "the two receipts that grew, and the receipts' tapes; the six held stay shared");
 }
 
 /// A PEER'S LINE, admitted in two pieces, is published as the court holds

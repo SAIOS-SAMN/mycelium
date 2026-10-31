@@ -9,7 +9,7 @@ use super::*;
 
 /// Step 4 of chapter 21: along each named face (i, j) with `w_i` not the
 /// identity, `j` is `i` read in `j`'s frame when, on every pair of the
-/// bundle, the two bodies carry one linear word and differ only by their
+/// bundle, the two bodies carry one linear word and differ only by the bodies'
 /// relative placement `t = p_j − p_i`. Conjugation by a translation keeps
 /// the linear block and moves the centre, so `t · w_i · t⁻¹` is realised
 /// by `apply_form` as `w_i` at `p_i + t`; nothing is spelled for `t`.
@@ -114,9 +114,9 @@ pub(crate) fn rebase_named_faces(form: &mut Form) {
     rederive_star_faces(form);
 }
 
-/// THE STAR FACES RE-DERIVED FROM THEIR VERTICES after a move that moved a
+/// THE STAR FACES RE-DERIVED FROM THE FACES' VERTICES after a move that moved a
 /// vertex's placement — the rebase, the contact. The member pairs each face
-/// already carries are kept with their edges: WHICH pairs a face relates is
+/// already carries are kept with the pairs' edges: WHICH pairs a face relates is
 /// the scene's fact, and the placement at each is re-derived at its own
 /// coordinate; a face left as it was would carry a placement the vertex no
 /// longer has, which the court refuses as a face that does not re-derive.

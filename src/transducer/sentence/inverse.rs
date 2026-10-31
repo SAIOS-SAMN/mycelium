@@ -56,8 +56,8 @@ fn take_u64(k: &[u8], p: &mut usize) -> Option<u64> {
 /// left the tape carrying the key's content a second time. Measured, that
 /// duplication was 68% of every tape.
 ///
-/// WHAT THE KEY DETERMINES, THIS POPULATES. Vertex kinds and their
-/// coordinates, the members each acts through, the faces and their
+/// WHAT THE KEY DETERMINES, THIS POPULATES. Vertex kinds and the vertices'
+/// coordinates, the members each acts through, the faces and the faces'
 /// incidence, the sections along `e₃`, the opened axes and the frame
 /// ratio. Orbits and holonomies are DERIVED and never keyed (§1.5), so
 /// they are re-derived here by the form's own reader rather than read.
@@ -322,7 +322,7 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
     // `NoneDischarged`. An orbit the stroke DISCHARGED leaves no filing
     // because the obstruction is gone; an orbit that went to `Vortex`, and an
     // orbit whose `Starved` budget ran out before its candidates were
-    // reached, stand UNFILED with their holonomy intact. So two forms with
+    // reached, stand UNFILED with the holonomy intact. So two forms with
     // the same faces, the same vertices and the same orbits carry different
     // filings depending on what a stroke could afford, and a derivation
     // from the incidence alone would hand a starved form the filing its

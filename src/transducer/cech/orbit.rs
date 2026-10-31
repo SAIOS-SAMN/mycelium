@@ -93,7 +93,7 @@ pub struct Field {
     /// It condenses when the last of them has left — returned, sealed or
     /// dissipated — never by a count of beats.
     awaiting: Keyed<Vec<Vec<u8>>>,
-    /// The same, for the tubes' reservoir records, by their ray.
+    /// The same, for the tubes' reservoir records, by each tube's ray.
     awaiting_tubes: Keyed<Vec<Vec<u8>>>,
 }
 
@@ -134,7 +134,7 @@ impl Field {
     /// limit. A lane with no deficit beats as `beat` does.
     ///
     /// 78.43, MU-CLIENT §4.13 — AND THE RESERVOIRS CONDENSE AT THE CLOSE OF
-    /// THEIR EON: a record entered under the ringing orbits then standing
+    /// THE RESERVOIRS' EON: a record entered under the ringing orbits then standing
     /// (`awaiting`), and when the last of them has left the field — returned,
     /// sealed or dissipated — the record's eon has closed and it condenses to
     /// nothing, counted in `condensed`. A record entered while nothing rang
@@ -267,7 +267,7 @@ impl Field {
 
     /// 78.73 (4) — THE ELASTIC STRAIN'S TWO TERMS PER LANE, weighed by mass:
     /// what stands open and what has moved — 𝒯's off its tubes, the other
-    /// lanes' off their orbits. `ε = open / transport`, exact.
+    /// lanes' off the lanes' orbits. `ε = open / transport`, exact.
     pub fn elastic(&self) -> [(num_bigint::BigInt, num_bigint::BigInt); 4] {
         let (open, transport) = self.orbits.totals();
         let (_, tube_transport, tube_open) = self.tubes.totals();
@@ -405,7 +405,7 @@ pub struct OrbitRegistry {
     pub(crate) carried: Vec<(Vec<u8>, Mv)>,
     reservoir: Keyed<(State, u64)>,
     /// 78.43 — THE ORBITS THAT LEFT THE FIELD since the last beat — returned,
-    /// sealed or dissipated — by their keys: each closes the eons that
+    /// sealed or dissipated — by the orbits' keys: each closes the eons that
     /// awaited it (`Field::beat_under`).
     left: Vec<Vec<u8>>,
     /// Whether an admission moved an orbit since the field last beat.
@@ -413,7 +413,7 @@ pub struct OrbitRegistry {
     /// MU-CLIENT §4.4(4) — the orbits that returned since the field's owner
     /// last took them: where a mind's K moves, and its acts are spoken.
     returns: u64,
-    /// 78.43, §7.1 Phase 3 — the orbits that sealed at their period without
+    /// 78.43, §7.1 Phase 3 — the orbits that sealed, each at its period, without
     /// returning, since the field began.
     sealed: u64,
 }
@@ -526,7 +526,7 @@ impl OrbitRegistry {
         std::mem::take(&mut self.moved)
     }
 
-    /// The orbits that sealed at their period without returning.
+    /// The orbits that sealed, each at its period, without returning.
     pub fn sealed(&self) -> u64 {
         self.sealed
     }
@@ -581,7 +581,7 @@ impl OrbitRegistry {
         std::mem::take(&mut self.left)
     }
 
-    /// The orbits ringing in the field now, by their keys: the eon a record
+    /// The orbits ringing in the field now, by the orbits' keys: the eon a record
     /// entering the reservoir now waits on.
     fn ringing(&self) -> Vec<Vec<u8>> {
         self.orbits.scoped().filter(|(_, o)| o.state.rings()).map(|(k, _)| k).collect()
@@ -606,7 +606,7 @@ impl OrbitRegistry {
         }
     }
 
-    /// The reservoir's records, by their keys.
+    /// The reservoir's records, by the records' keys.
     fn record_keys(&self) -> Vec<Vec<u8>> {
         self.reservoir.scoped().map(|(k, _)| k).collect()
     }

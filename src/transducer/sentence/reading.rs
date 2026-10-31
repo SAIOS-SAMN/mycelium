@@ -307,7 +307,7 @@ fn place_located<'a, W, F, S, H>(
 
 /// DECONSTRUCT a chain over a language: the whole chain located first (a
 /// word of several bodies), then each body; the connection between
-/// consecutive cited bodies is their relative transport; the residual is
+/// consecutive cited bodies is the bodies' relative transport; the residual is
 /// what no word speaks. `exclude` keeps a word from citing itself.
 /// Deconstruct over a getter, so a language snapshot of `Arc<Element>`
 /// never flattens into a cloned slice.

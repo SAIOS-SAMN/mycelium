@@ -1,9 +1,6 @@
 // 54.5, grade 0 — THE VERTICAL TRANSITION: one 1-cell of the member
 // complex with both endpoints over a single vertex.
 //
-//! Split from `carrier.rs` at the §1.1 1200-line reading bound; the items
-//! are moved, not rewritten (§1.6).
-//!
 //! `π: M → V` sends a member `(v, c)` to its vertex, and a `Vertex::Word`
 //! is ONE derivation with MANY `Acting` — one action, several placements.
 //! What relates two of those placements is this: an automorphism of the

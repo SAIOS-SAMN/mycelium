@@ -1,7 +1,7 @@
 // N4, 78.11, 78.26(5), 78.48 — PERCEPTIONS ARE NOT THOUGHTS: a held
 // perception persists through the unglued door, and a THOUGHT is the
 // transition between two perceptions' bodies — its own orbit, a circuit of
-// the cell their chart is — filed as the edge the meet complex fills, and
+// the cell the bodies' chart is — filed as the edge the meet complex fills, and
 // decided by that fill.
 
 use crate::chronometry::Cite;
@@ -117,7 +117,7 @@ const L90: [&str; 4] = ["11100", "10000", "00000", "00000"];
 const L90_OUT: [&str; 4] = ["01110", "01000", "00000", "00000"];
 
 /// THE THOUGHT, DECIDED BY ITS FILL (78.48(5)). The L, and the L turned 90°:
-/// the transition between their bodies is harmonic — elliptic, returning at
+/// the transition between the two bodies is harmonic — elliptic, returning at
 /// ℓ = 4 — so the chart's cell closes, the edge fills CONGRUENT, and the two
 /// perceptions merge on the torsion axis into one thought: the torsion
 /// minted at the turn's period, and the thought standing on both bodies. No
@@ -301,7 +301,7 @@ fn hold_perceived_counts_second_return_past_first_close() {
 
 /// A SCENE'S THOUGHT TRANSCRIBES TO ONE WORD (78.52(6) Stage C). The two Ls
 /// of 78.50 turned whole about (3, 3), hour by hour: the first two scenes form
-/// one grounded thought (its two bodies, the turn about their barycentre); the
+/// one grounded thought (its two bodies, the turn about the bodies' barycentre); the
 /// third and fourth are met by that ground — each the configuration it
 /// predicts — and at the fourth the thought's return closes. Its generator
 /// spells ONE word, the scene's turn, which the court hears clean; the
@@ -406,8 +406,8 @@ fn hold_perceived_holds_off_orbit_slip_on_thought() {
 /// BRANCHING — one L, then two Ls each turned 90° about its own place: the
 /// one L's body is carried onto each by its own turn, two circuits of the
 /// chart's cell, both harmonic, so the cell closes. The two perceptions are
-/// related by two different transitions: none is chosen as their edge, and
-/// both congruences are kept at their period in both horizons.
+/// related by two different transitions: none is chosen as the pair's edge, and
+/// both congruences are kept at each one's period in both horizons.
 #[test]
 fn hold_perceived_keeps_both_congruences_without_edge() {
     let mut c = Contemplation::new();
@@ -492,8 +492,8 @@ fn take_demands_hands_out_escaping_slide_once() {
 
 /// A TURNED SCENE (78.50, 78.51 tier 2): the two Ls both turned 90° about one
 /// point — one motion carries the whole configuration, elliptic. The two
-/// bodies co-rotate about their barycentre in synchronous lock, their
-/// attitudes balanced, and the turn keeps their inversive distance: the gate
+/// bodies co-rotate about the pair's barycentre in synchronous lock, the
+/// attitudes balanced, and the turn keeps the pair's inversive distance: the gate
 /// consolidates it, and the thought is congruent at ℓ = 4 — the two
 /// perceptions merge on its torsion axis.
 #[test]
@@ -514,7 +514,7 @@ fn hold_perceived_consolidates_scene_turned_whole() {
 /// point form a configuration the 180° turn carries onto itself; turned 90°
 /// whole, TWO motions carry it — the 90° and the 270° — landing on the same
 /// bodies: one coset. Its representative co-rotates the pair in lock and
-/// keeps their distance: consolidated, the edge carries it, and the
+/// keeps the pair's distance: consolidated, the edge carries it, and the
 /// quotient, the configuration's own symmetry, stands filed at ℓ = 2.
 #[test]
 fn hold_perceived_files_symmetric_scene_coset_symmetry() {
@@ -583,7 +583,7 @@ fn hold_perceived_reads_slide_hour_and_slips() {
 
 /// THE STRATA ABOVE A CHART (78.49(4)): a solid block and the block with its
 /// middle cut out stand on charts that PART at the first Betti number the
-/// ring has and the block has not (β₁). Their deepest shared stratum is read,
+/// ring has and the block has not (β₁). The charts' deepest shared stratum is read,
 /// the surgery that carries one onto the other factors, and the deformation
 /// stands as a demand on both charts, its residue the core's ray.
 #[test]
@@ -600,7 +600,7 @@ fn hold_perceived_demands_hole_cut_on_both_charts() {
 }
 
 /// A PARTING NO MOTION CARRIES (78.49(4)): an L and a bar have one topology
-/// and part at their turns; every axis past the Betti numbers is invariant
+/// and part at the shapes' turns; every axis past the Betti numbers is invariant
 /// under every versor, so no conformal motion carries one onto the other —
 /// counted apart, and nothing filed.
 #[test]

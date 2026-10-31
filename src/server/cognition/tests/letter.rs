@@ -494,7 +494,7 @@ fn serve_ruled_teaches_letter_as_generator() {
 ///      it D (`letter_reading`, through the mind's crystal).
 ///   2. CONSTRUCT: the residue spelled mode by mode by constructive
 ///      Cartan–Dieudonné; the constructors compose back to it as one ray
-///      (T1), each mode's meeting on its fixed locus; their Gram form reads.
+///      (T1), each mode's meeting on its fixed locus; the modes' Gram form reads.
 ///   3. COMPOUND: admitted, for it strictly raises the rank of what the mind
 ///      holds (78.32(c)).
 ///   4. ADJOIN: the mind's letter demand is docketed on one court and

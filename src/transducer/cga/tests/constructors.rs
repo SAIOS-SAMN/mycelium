@@ -66,7 +66,7 @@ fn composed(c: &Constructed) -> Mv {
 
 /// 78.47 — THE INVERSE: a turn by the arc `4 + i`, whose prime 17 the
 /// seventeen letters do not spell, spelled back into two constructors that
-/// compose to it (T1) and meet on its axis; their Gram form reads.
+/// compose to it (T1) and meet on its axis; the constructors' Gram form reads.
 #[test]
 fn construct_spells_turn_as_two_mirrors_on_axis() {
     let turn = rotator(&q(4, 1), &q(1, 1));
@@ -93,7 +93,7 @@ fn construct_spells_off_origin_turn_composing_back() {
 /// its forced step null at once) and a dilation about a point off the origin
 /// (hyperbolic, the light from a star at a point) — 64–317 a voice refused
 /// "null step" on the live wire — are each spelled by the forced two-step,
-/// certified on their fixed loci, and compose back (T1).
+/// certified on the motions' fixed loci, and compose back (T1).
 #[test]
 fn construct_spells_translation_and_dilation_composing_back() {
     let slide = translator(&q(2, 1), &q(1, 1), &q(0, 1));

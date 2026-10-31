@@ -74,7 +74,7 @@ impl Published {
     /// `ACT_WALLET` answered off this reading, as `Kernel::wallet` answers
     /// it, standing at this reading's head: a party it holds no account of
     /// holds zero on every lane (the reading of absence); `None` where the
-    /// party's holds pass their carrier.
+    /// party's holds pass the holds' carrier.
     pub fn wallet(&self, who: &[u8; 32]) -> Option<Account> {
         let at = self.head;
         let court = self.court;

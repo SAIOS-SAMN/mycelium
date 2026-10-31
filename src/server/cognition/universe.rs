@@ -70,7 +70,7 @@ impl Kernel {
     /// version 2 exactly where it carries a geometry and a parent face; the
     /// geometry well formed and not stated already; a parent core an open
     /// core tube into this domain, its far end's space this geometry. The citations
-    /// it adds, by their coordinates.
+    /// it adds, each by its coordinates.
     pub(crate) fn origin_universe(&self, o: &Origin) -> Result<Vec<Cite>, Founded> {
         let Some(u) = &o.universe else {
             return match o.version {

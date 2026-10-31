@@ -5,8 +5,8 @@
 /// Every contradiction admits a higher-dimensional resolution. A.6 names
 /// a MECHANISM — escalation — and never a bound.
 ///
-/// Their register had to split this from the value `N = 11` after the two
-/// were conflated (their audit #126): a mechanism read as a constant. That
+/// The source's register had to split this from the value `N = 11` after the two
+/// were conflated (the source's audit #126): a mechanism read as a constant. That
 /// is the error class of `Fill::Open` standing for absence, and it is why
 /// `A.6-bind-11` is refused below while A.6 itself is kept.
 pub const A6_DIMENSIONAL_COMPLETENESS: &str =
@@ -48,7 +48,7 @@ pub const A9_METRIC_AUTONOMY: &str =
 /// A.10 — SYMBIOTIC CO-DIMENSIONALITY (imported, with a correction).
 ///
 /// Two manifolds of differing dimensionality may occupy the same spatial
-/// references without collapse IF AND ONLY IF their interface is governed
+/// references without collapse IF AND ONLY IF the manifolds' interface is governed
 /// by a luminal phase gradient. The tether is a shared boundary in the
 /// cohomological sense, not a pointer and not a channel.
 ///
@@ -59,5 +59,5 @@ pub const A9_METRIC_AUTONOMY: &str =
 /// gradient was an error (§55.7), and the corpus reads `parabolic 0`, so
 /// the medium A.10 requires is at present absent.
 pub const A10_CO_DIMENSIONALITY: &str =
-    "two manifolds co-occupy without collapse iff their interface is a \
+    "two manifolds co-occupy without collapse iff the interface is a \
      luminal (null) phase gradient";

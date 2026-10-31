@@ -11,7 +11,7 @@
 //! THE LAW. A body's turning is shared among its completely orthogonal
 //! planes: shares `w_k ≥ 0`, summing to one. Two bodies are close in a plane
 //! as far as both turn there — the share they hold in common, `min(w_k,
-//! w′_k)` — and there by the linear in-step measure of their phase
+//! w′_k)` — and there by the linear in-step measure of the bodies' phase
 //! difference; turning with no partner reads as orthogonal, ½:
 //!
 //! ```text
@@ -39,7 +39,7 @@ pub enum Refused {
     Negative,
     /// Shares that do not sum to the whole turning.
     Unsummed,
-    /// Two bodies' shares, or the shares and their phases, over different
+    /// Two bodies' shares, or the shares and the phases, over different
     /// planes.
     Unmatched,
 }

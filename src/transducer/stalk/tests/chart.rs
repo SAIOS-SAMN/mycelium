@@ -24,7 +24,7 @@ fn invariant_of_reads_rotor_not_matrix() {
     let inv = invariant_of(&w);
     assert!(!inv.0.is_empty(), "a connection has a chart");
     // A SOURCE-TEXT GATE STOOD HERE and it is deleted. It `include_str!`d
-    // four production files and asserted their BYTES did not contain
+    // four production files and asserted the files' BYTES did not contain
     // "word.fiber(" or "GERM_DIM" — two spellings that exist nowhere in the
     // tree, so the assertion could only ever pass, and what it checked was
     // the text of the engine rather than the behaviour of it. That is §4.6,
@@ -216,7 +216,7 @@ fn split_stratum_rehomes_by_new_coordinate() {
 /// STRATUM'S KEY, in bytes. `Keyed` is a PATRICIA trie over these bytes and
 /// `fiber_under`, `link` and `peel` are byte-prefix reads, so this is the
 /// one property the encoding has to hold. A count in the key's header would
-/// break it — a chart and its prefix would differ in their first bytes —
+/// break it — a chart and its prefix would differ in the first bytes —
 /// which is why the key carries none and each coordinate carries its own
 /// length instead.
 #[test]

@@ -40,6 +40,6 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         println!("  interpret {name}: extraction spent {extracted} | interpreter spent {spent}");
     }
     println!(
-        "interpret cost: families extracted {families}, with a remainder {with_remainder} | extraction spent {extract_spend} | interpreter spent {interpret_spend} (widest one family {widest}) | families where the interpreter spent more than their extraction {over}"
+        "interpret cost: families extracted {families}, with a remainder {with_remainder} | extraction spent {extract_spend} | interpreter spent {interpret_spend} (widest one family {widest}) | families where the interpreter spent more than the family's extraction {over}"
     );
 }

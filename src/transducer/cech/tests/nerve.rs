@@ -72,7 +72,7 @@ fn read_nerve_many_witnesses_certify_one_cell() {
     assert_eq!(c.witnesses.len(), 3, "three elements witness it");
 }
 
-/// KB1 — A CELL IS KEYED BY ITS MEMBERS' COORDINATES, NEVER THEIR ORDINALS.
+/// KB1 — A CELL IS KEYED BY ITS MEMBERS' COORDINATES, NEVER THE MEMBERS' ORDINALS.
 /// Two sections over one region with two carriages are two members; one
 /// section offered at two ordinals is one member, so its overlap with itself
 /// is no cell; a member whose coordinates do not read is counted by name and
@@ -83,7 +83,7 @@ fn read_nerve_keys_cells_by_member_coordinates() {
     let two_carriages = vec![(vec![1u8], region.clone()), (vec![2u8], region.clone())];
     let read = read_nerve(&two_carriages);
     let [c] = read.certified.as_slice() else { panic!("two sections, one cell: {:?}", read.certified) };
-    assert_eq!(c.coords, vec![vec![1u8], vec![2u8]], "keyed by the sections, in their own order");
+    assert_eq!(c.coords, vec![vec![1u8], vec![2u8]], "keyed by the sections, in the sections' own order");
     let one_section_twice = vec![(vec![1u8], region.clone()), (vec![1u8], region.clone())];
     let once = read_nerve(&one_section_twice);
     assert!(once.certified.is_empty(), "one section is one member, not a cell");

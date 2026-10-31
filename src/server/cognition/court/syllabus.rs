@@ -32,8 +32,8 @@ pub enum PageEnd {
     Count,
 }
 
-/// A SYLLABUS PAGE AS THE COURT SERVED IT: the words taught with their
-/// stamps; how many candidates the window consumed (served, missed and
+/// A SYLLABUS PAGE AS THE COURT SERVED IT: the words taught, each with its
+/// stamp; how many candidates the window consumed (served, missed and
 /// deferred); the candidates missed, to re-queue; the words this court's
 /// reserve could not fund yet, each with the lane that refused it, to
 /// re-queue behind the cursor; what the page drew from the reserve, per
@@ -723,7 +723,7 @@ impl Kernel {
     /// which this court has already served this voice, lane by lane — the
     /// gluing step. The syllabus measured on epoch 115 deferred about twenty
     /// sentences at every court, costing 25–540 against a reserve of 5–40 a
-    /// lane, charged their whole mass on every page, and taught nothing
+    /// lane, charged each sentence's whole mass on every page, and taught nothing
     /// composite. On a lane the held words already carry whole, the gluing
     /// adds nothing and is charged nothing.
     #[expect(
@@ -780,7 +780,7 @@ impl Kernel {
         self.deferred_words.insert(addr, crate::observe::Deferred { head, kind, mag, short, tries, learner });
     }
 
-    /// The deferred words in the order their addresses have — never ordered
+    /// The deferred words in the order the words' addresses have — never ordered
     /// by how often they were tried (rule 4) — as many as the reading's
     /// count carries; the record is bounded by the words installed.
     pub(crate) fn deferred_reading(&self) -> Vec<crate::observe::Deferred> {

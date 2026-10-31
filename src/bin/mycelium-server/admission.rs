@@ -163,7 +163,7 @@ pub(crate) enum NoDigest {
 
 /// Why one peer's digest carried no admission. A `None` return with no
 /// reason is the rule-11 fault itself: an admission path that cannot say
-/// whether it refused, or never ran, is UNMEASURED, and a fleet reading
+/// whether it refused, or never ran, is UNMEASURED, and a mesh reading
 /// zero admitted receipts cannot tell the two apart.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum NoAdmission {
@@ -252,7 +252,7 @@ impl AdmissionTally {
     /// line and, on the same arm, on the observer's replication reading
     /// under the signer the digest named (CV5) — one match, so the two
     /// cannot read the frame differently (law 12). The axes are named in
-    /// `observe::rep`, beside the one statement of their order.
+    /// `observe::rep`, beside the one statement of the axes' order.
     pub(crate) fn note(
         &mut self,
         signer: Option<[u8; 32]>,

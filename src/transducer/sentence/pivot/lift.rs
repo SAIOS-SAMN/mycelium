@@ -37,7 +37,7 @@
 use super::*;
 use crate::network::nerve::Coordinate;
 
-/// The TUniversal lanes, in their order {S, G, T, H}.
+/// The TUniversal lanes, in the lane order {S, G, T, H}.
 pub const LANES: [&str; 4] = ["S", "G", "T", "H"];
 
 /// A WORD AS PERCEIVED: per lane, each invariant (its grade leading) with how
@@ -113,7 +113,7 @@ pub fn lift(form: &Form, budget: &mut crate::physics::Budget) -> Perceived {
             file(&mut p, [None, Some(g), Some(order.clone()), Some(harmonic.clone())]);
         }
     }
-    // GRADE ONE: each orbit's member paths by their holonomy's invariants.
+    // GRADE ONE: each orbit's member paths by the paths' holonomy invariants.
     for lp in &form.orbits {
         let Some(hs) = form.edge_holonomies(lp) else {
             p.unread += 1;

@@ -9,11 +9,11 @@ use super::*;
 
 /// `blind_replay` with no cover behind it: a crystallized form that cites
 /// another refuses as unruled, because nothing here can resolve the
-/// citation. Hyphae replay through `blind_replay_with` and their ruled
+/// citation. Hyphae replay through `blind_replay_with` and each hypha's ruled
 /// cover.
 ///
 /// 78.153 — THE OFF-LOCK READERS. `blind_replay`, `blind_replay_with`,
-/// `blind_replay_on` and `blind_replay_at` keep their answer (`None` clean,
+/// `blind_replay_on` and `blind_replay_at` keep the same answer (`None` clean,
 /// a refusal otherwise) for the voice and every reader outside a court's
 /// lock: the replay is metered and resumable, and these run it to the end
 /// over as many strokes as it takes ([`to_completion`]). A court under its

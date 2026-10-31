@@ -34,7 +34,7 @@ pub struct Declaration {
 
 /// THE TRAVERSE: who pays; the mouth and A's side of it; the final point
 /// the crossing reads the map at; both mouths' mapped final points; both
-/// universes' latest entries and their `u`; the route (map segment ids,
+/// universes' latest entries and each entry's `u`; the route (map segment ids,
 /// either universe's); the two declarations where matter crosses; a nonce.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Traverse {

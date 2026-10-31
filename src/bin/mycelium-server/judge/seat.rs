@@ -38,7 +38,7 @@ pub(crate) fn serve_exempt(stream: &mut TcpStream, frame: &Frame, door: &Door) -
     // A wallet read and a seat listing are answered off the published
     // reading before this (`judge::serve_published`, 78.151).
     // A SEAT POST (TAKE, CALL) is a mind's one act at its seat: deferred
-    // after every restart, minds read their percepts and never held their
+    // after every restart, minds read the minds' percepts and never held the
     // seats again (2026-10-09). Served here the same way, in its turn.
     if let Some(Ok(SeatRequest::Post(_))) = decode_seat_request(&frame.body) {
         judge(stream, frame, door);

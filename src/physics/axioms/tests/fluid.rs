@@ -109,7 +109,7 @@ fn tube_registry_totals_net_zero_transport_both_ways() {
 }
 
 /// 78.71 (1), (4) — FROZEN IN, HELD: the registry carried by a unit flow
-/// keeps its tubes, their windings, and their helicity. Translations do not
+/// keeps its tubes, the tubes' windings, and the tubes' helicity. Translations do not
 /// link (helicity zero); a screw — a turn coupled to a slide along its axis —
 /// does.
 #[test]

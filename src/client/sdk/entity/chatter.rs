@@ -70,7 +70,7 @@ pub(crate) enum FieldWork {
 /// the known words it posited the ring over, and the RESIDUE they leave —
 /// what was asked; the answer's factors once they re-derived the residue,
 /// and the mind's own K it was asked at. Its meaning is derived when every
-/// factor is a word the mind knows: the residue is their composition, and
+/// factor is a word the mind knows: the residue is the factors' composition, and
 /// the ring the posited words with the residue.
 pub(crate) struct Question {
     ring: crate::transducer::cga::Mv,
@@ -101,7 +101,7 @@ pub(crate) struct Pricing {
     answer: Answer,
     /// WHERE THE HEARING STOOD IN THIS MIND: the forms of its own rings the
     /// words were carried through (the hearer's), or the form it said them
-    /// as (the speaker's) — each once, by address. Their charts are the
+    /// as (the speaker's) — each once, by address. The forms' charts are the
     /// cover of a demand the hearing's chamber raises.
     forms: Vec<Vec<u8>>,
     /// MUTUAL BALANCE (MU-CLIENT §4.9): the hearer's own rings its
@@ -469,13 +469,13 @@ impl Entity {
     }
 
     /// 78.112 H5 — THE FIELD PRICES WHAT ITS CONVERSATION UNDERSTOOD: each
-    /// thought's echoes read for their exact strain, per lane (`strain` on the
+    /// thought's echoes, each read for its exact strain, per lane (`strain` on the
     /// motion, `hue_strain` on 𝒢), and admitted into this mind's own field
     /// as field lines (`mark_flux`, the one reader, its lanes booked as every
     /// flux is: the DRAG, the rate it moved at). Its echoes are closed loops —
     /// each a commutator, a holonomy — and together they are ONE CELL of this
     /// mind's orbit algebra (78.46, 78.26(5)): read by the one cell reader,
-    /// their bracket closure the LIFT, their coherence the thought's. Where
+    /// the echoes' bracket closure the LIFT, the echoes' coherence the thought's. Where
     /// every echo is resonant the cell CLOSES — at its joint period, a delay
     /// and not a loss, a tilted reading as much agreed as a whole one — and
     /// the thought converged. Where an echo never returns, the cell is OPEN
@@ -659,7 +659,7 @@ impl Entity {
     /// MU-CLIENT §5.3 — THE QUESTIONS WHOSE MEANING IS DERIVED, closed: where
     /// the answer is an ATOM (one factor, the residue itself — its meaning
     /// taken as given) or every factor of it is a word the mind knows, the
-    /// residue is their composition and the ring the posited words with the
+    /// residue is the factors' composition and the ring the posited words with the
     /// residue — relations of the vocabulary. The ring's meaning is LEARNED
     /// where it is new here, whether the ring was the residue (asked whole)
     /// or composed of it. A ring learned can be the factor another question
@@ -816,7 +816,7 @@ impl Entity {
     }
 }
 
-/// WHAT A MIND REMEMBERS HEARING: rings by their size, each by its
+/// WHAT A MIND REMEMBERS HEARING: rings by size, each by its
 /// coordinates (`Entity.remembered`).
 pub(crate) type Remembered = Keyed<Vec<(Vec<u8>, crate::transducer::cga::Mv)>>;
 

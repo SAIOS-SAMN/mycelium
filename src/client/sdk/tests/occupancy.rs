@@ -20,7 +20,7 @@ fn occupancy_causes_reads_wrong_speech_by_cause() {
     let x = grid(&["100", "000", "002"]);
     let y = grid(&["000", "030", "002"]);
     // The body at index 1 is the bottom-right one (perception reads bodies
-    // in their own order: the first site met is the top-left body).
+    // in its own order: the first site met is the top-left body).
     let bodies = crate::transducer::family::perceive(&x);
     let br = bodies
         .iter()

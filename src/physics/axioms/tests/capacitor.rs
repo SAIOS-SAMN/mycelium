@@ -55,7 +55,7 @@ fn inside(x: &Mv, sigma: &Mv) -> bool {
     (x.geo(sigma).scalar_part() / w).is_positive()
 }
 
-/// Four conformal points lie on one circle iff their outer product vanishes.
+/// Four conformal points lie on one circle iff the four's outer product vanishes.
 fn concyclic(w: &Mv, x: &Mv, y: &Mv, z: &Mv) -> bool {
     w.wedge_vector(1, x).wedge_vector(2, y).wedge_vector(3, z).is_zero()
 }
@@ -93,7 +93,7 @@ fn switch_swaps_fibre_ends_and_composes_across_pivots() {
 /// (source and sink), is a boost (its plane squares positive — the field,
 /// never a turn), carries every level `μ` to `μ r²`, and moves each point
 /// along a circle through both pivots (a field line). It is a POINT on the
-/// field's one flow: two charges compose by multiplying their ratios — 3/2
+/// field's one flow: two charges compose by multiplying the charges' ratios — 3/2
 /// then 4/5 is 6/5, as rays and as flow points — and a charge and its
 /// reciprocal return to the identity. No two sampled levels, no step.
 #[test]
@@ -283,7 +283,7 @@ fn fibre_reads_motion_by_flow_of_its_modes() {
 }
 
 /// THE SOURCE AT P ON Σ, KEPT IN Σ. Two spheres through P with centres on
-/// Σ's tangent at P are orthogonal to Σ (`s·Σ = 0`) and kiss at P. Their
+/// Σ's tangent at P are orthogonal to Σ (`s·Σ = 0`) and kiss at P. The pair's
 /// fascicle is parabolic and exact; it fixes P and not the ambient infinity;
 /// it carries Σ onto itself and the inside of Σ inside — the flow emanates
 /// from P and never leaves the manifold; its streamlines are circles through
@@ -335,7 +335,7 @@ fn sandwich_in_manifold_switches_polarity_keeps_source() {
 
 /// THE SLIVERS, IN Σ's OWN SCALE: inversion in the sphere at P with Σ's own
 /// radius opens Σ into a plane (P to infinity); a slide along that plane by
-/// `t·u`, carried back, is a source at P that keeps Σ. They compose by their
+/// `t·u`, carried back, is a source at P that keeps Σ. The sources compose by the
 /// rational parameter — 1/7 then 2/5 is 19/35 — and every one keeps Σ.
 #[test]
 fn sliver_composes_by_parameter_and_keeps_manifold() {

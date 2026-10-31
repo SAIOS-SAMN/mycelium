@@ -1,5 +1,5 @@
 // 78.91 — THE MIND PERCEIVES WHAT IS NO MOTION AS FLUX (the progenitor's
-// build, 2026-10-04, deduced from the fleet's first reading after the recut:
+// build, 2026-10-04, deduced from the deployment's first reading after the recut:
 // tens of thousands of bodies parting "apart" per mind, refused as no
 // motion). The law register publishes continuity (law version 3): mass is
 // made only at a recorded source and lost only into a recorded sink. This is

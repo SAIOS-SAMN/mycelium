@@ -18,7 +18,7 @@ use crate::transducer::cga::Mv;
 const ASK: u32 = u32::MAX;
 
 /// WHAT THE COURT READ OF THE MOTION: whether its coordinates read at all;
-/// the generators cited, each `(form, vertex, exponent)`; whether their
+/// the generators cited, each `(form, vertex, exponent)`; whether the generators'
 /// product is the motion exactly; the holes no held generator reached; and
 /// the holes the motion has.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

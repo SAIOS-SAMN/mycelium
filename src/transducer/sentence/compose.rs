@@ -1,5 +1,5 @@
 // 78.69 — THE SENTENCE AS COMPOSITION: words and the spatial transports
-// between their charts, composed in order until the ring closes; the closed
+// between the words' charts, composed in order until the ring closes; the closed
 // sentence a relation, and its open path a word of the next rung.
 //
 //! THE MASTER SENTENCE EQUATION. A sentence of `k` words is the
@@ -76,8 +76,8 @@ pub struct Composition {
     /// (the transport to the next word, the non-verbal line), in the
     /// sentence's order: what a lexicon reads a term's rung by. They were
     /// one product, `gᵢ · Wᵢ`, and a held word fused with the space around
-    /// it was never recognized. The spaces are the terms' transports; their
-    /// readers fold into the encounter and production (N5, N6).
+    /// it was never recognized. The spaces are the terms' transports; the
+    /// transports' readers fold into the encounter and production (N5, N6).
     pub words: Vec<Mv>,
     /// 78.112 H6 — EACH TERM'S SPACE `gᵢ`, the transport to the next word, in
     /// the sentence's order: the rays the ring was carried on, which hearing

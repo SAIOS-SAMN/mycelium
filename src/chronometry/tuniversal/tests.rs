@@ -351,7 +351,7 @@ fn final_of_needs_three_of_four_keepers() {
         let ring = ks[from].own_ring();
         ks[to].admit(vk(&keys[from]), ring)
     };
-    // c and d read before hearing a: their readings cite nothing of a.
+    // c and d read before hearing a: the readings of c and d cite nothing of a.
     assert!(ks[2].read_own(&keys[2], tick(5, [1, 0, 0, 0], 1)).expect("writes"));
     assert!(ks[3].read_own(&keys[3], tick(6, [0, 1, 0, 0], 1)).expect("writes"));
     assert!(ks[0].read_own(&keys[0], tick(10, [4, 0, 0, 0], 1)).expect("writes"));

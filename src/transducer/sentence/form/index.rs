@@ -4,7 +4,7 @@
 //
 // AT1 — THE POSITION INDEXES ARE GONE. `by_address`, `by_rebased`,
 // `by_unfolded`, `demands`, `glued` and `star` mapped a coordinate to a
-// vertex's place in a list; the vertices are keyed by their coordinates now,
+// vertex's place in a list; the vertices are keyed by the vertices' coordinates now,
 // so each of those is the carrier's own stratum and a keyed read of it. What
 // stays is what the carrier's key does not order: a chart's vertices and a
 // class's, each holding the vertices' coordinates.

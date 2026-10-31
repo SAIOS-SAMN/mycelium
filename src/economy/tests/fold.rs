@@ -8,7 +8,7 @@ use crate::verdict::REFUSE_FOLD_INEXACT;
 /// The rows at or below the fold's K are replaced by one `epoch` row per
 /// identity with a nonzero net, anchored to the fold receipt; the audit
 /// holds before and after and the supply is unchanged; the net is what
-/// the rows moved — a transfer's two halves net to their two identities,
+/// the rows moved — a transfer's two halves net to the halves' two identities,
 /// a stake nets nothing; rows above the fold stay in order; the tape
 /// carries the epoch rows; a ledger that does not conserve folds nothing.
 #[test]

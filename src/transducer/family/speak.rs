@@ -635,7 +635,7 @@ pub struct Speech {
     pub frame: (usize, usize),
     pub painted: Vec<Painted>,
     pub remainder: Vec<Painted>,
-    /// The vertices, by their coordinates, whose class fiber was empty on
+    /// The vertices, by coordinates, whose class fiber was empty on
     /// this grid.
     pub unspoken: Vec<crate::network::nerve::coord::VertexAt>,
     /// The cited forms, by address, the speaking crystal does not hold: the

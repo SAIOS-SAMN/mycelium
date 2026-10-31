@@ -18,7 +18,7 @@
 //!   product: `B B > 0` — disjoint spheres, or a real sphere against an
 //!   imaginary one not orthogonal — a boost; `B B = 0` tangent or parallel,
 //!   parabolic; `B B < 0` the spheres cut, and the pair's rotor
-//!   `V = s_a s_b` turns by twice their dihedral angle: its double-angle
+//!   `V = s_a s_b` turns by twice the spheres' dihedral angle: its double-angle
 //!   point `⟨V V⟩₀ / ⟨V Ṽ⟩₀ = cos 2φ` is rational, and the product has finite
 //!   order `m` iff it is `−1, −½, 0, ½` (`m = 2, 3, 4, 6`); any other point a
 //!   rosette. Every open regime is CERTAIN and read with no iteration;
@@ -130,7 +130,7 @@ pub fn signature(form: &[Vec<Q>]) -> (usize, usize, usize) {
     (p, q, d - p - q)
 }
 
-/// The constructors' rank as vectors: the grade of their span, each read as
+/// The constructors' rank as vectors: the grade of the constructors' span, each read as
 /// the ray it is (`core::span`).
 pub fn vector_rank(constructors: &[Mv]) -> usize {
     crate::core::span::grade_of(&constructors.iter().map(super::linear::ray_of).collect::<Vec<_>>())

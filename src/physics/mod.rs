@@ -13,7 +13,7 @@
 /// of the hypha↔client exchange: syntropic events (settlements — order built,
 /// negentropy) and entropic events (pivots/backlog — disorder) net per lane into
 /// the order flux that paces serving and demand cadence.
-/// THE METABOLIC SCALE IS THE MACHINE'S, NOT OUR MYTHOLOGY (as ruled):
+/// THE METABOLIC SCALE IS THE MACHINE'S, NOT A NARRATIVE (as ruled):
 /// only the RATIOS are algebra, each read off the geometry — a full reserve
 /// holds one expansion stroke per vertex of the sensor base's unit cell
 /// (`2ⁿ`, every dimension an exponent); regeneration recovers half an
@@ -582,7 +582,7 @@ impl Physics {
         let mut excess = [0u64; 4];
         // Σ ACTIVE BONDS IS THE SUM OVER THE BOND, not each lane's own: a
         // court bonds nothing on 𝒯 ([142545, 29789, 0, 305223] on the
-        // fleet), and the per-lane reading capped the 𝒯 reserve at the 𝒯
+        // deployment), and the per-lane reading capped the 𝒯 reserve at the 𝒯
         // work verified in one orbit — near zero — so every word with any
         // 𝒯 in its magnitude was deferred for reserve (6 257 syllabus words
         // at hypha a, epoch 115). The ruling reads "Σ active bonds plus the
@@ -763,7 +763,7 @@ mod tests {
     }
 
     /// PHY1 — WHAT CONTACTS DID, BOOKED ONCE: condensed contacts build order
-    /// on their lanes, refused ones press on their own lanes, and a second booking of
+    /// on the contacts' lanes, refused ones press on the refused contacts' own lanes, and a second booking of
     /// the same totals moves nothing — the mark is what was already booked.
     #[test]
     fn book_contacts_books_condensed_and_refused_once() {
@@ -840,7 +840,7 @@ mod tests {
     #[test]
     fn regenerate_within_bounds_reserve_by_bonds_and_work() {
         let mut p = Physics { reserve: Reserve::of([0; 4]), ..Default::default() };
-        // A bond with nothing on 𝒯, as the fleet's courts hold: every lane
+        // A bond with nothing on 𝒯, as the deployment's courts hold: every lane
         // still stands within the whole bond (Σ = 9), never 𝒯's own 0.
         let bonds = [3, 3, 0, 3];
         for _ in 0..16 {
@@ -925,7 +925,7 @@ mod tests {
         assert_eq!(StrokeOutcome::default().moved(), [false; 4], "a stroke that moved nothing");
     }
 
-    /// 45.7 — a carrier's circuits are read in circuits and their period in
+    /// 45.7 — a carrier's circuits are read in circuits and the circuits' period in
     /// strokes, off the ring: three strokes to the first circuit, one to the
     /// next.
     #[test]

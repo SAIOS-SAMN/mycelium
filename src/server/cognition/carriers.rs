@@ -201,7 +201,7 @@ impl Kernel {
         c.count("seats.listings", listings);
         c.count("seats.boxes", boxes);
         c.count("seats.mail", pieces);
-        // 78.120 — the domains founded here and their tier index.
+        // 78.120 — the domains founded here and the domains' tier index.
         c.count("domains", domains.len());
         c.count("tier_domain", tier_domain.len());
         // 78.123 B — the ledger trees: children with value in flight, the
@@ -259,7 +259,7 @@ impl Kernel {
         c.count("pending", pending.len());
         chain.census(&mut c);
         c.count("archive", archive.len());
-        // 78.147 — the fold roots held with their two signatures, by signer.
+        // 78.147 — the fold roots held, each with its two signatures, by signer.
         c.count("root_proofs", root_proofs.len());
         c.count("era_tallies", era_tallies.len());
         c.count("pending_parents", pending_parents.len());

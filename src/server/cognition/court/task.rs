@@ -193,7 +193,7 @@ impl Kernel {
     /// A SOLVE PAID (POUW, the actions' physics). The rule, verdict clean, is
     /// docketed and offered. Every listing bound to the task that holds an
     /// escrow is RELEASED TO THE VOICES ITS ESCROW NAMES — the solve
-    /// confirmed their claim — at a Settled act citing that listing
+    /// confirmed the voices' claim — at a Settled act citing that listing
     /// (`mint_claim`, split as the escrow's consilience says), paid the
     /// solve's measured discharge capped lane-wise by the escrow (78.149
     /// (b), `release_discharged`); never to the

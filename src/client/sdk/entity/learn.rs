@@ -170,7 +170,7 @@ impl Entity {
     /// stratum. The hypha's section digests over the atlas arrive; the
     /// genome measures its own over the same cover; only the discordant
     /// strata are fetched, each with this genome's have-list, so only the
-    /// lacking words travel (their sections and connection riding along).
+    /// lacking words travel (the words' sections and connection riding along).
     /// Strata per contact follow the two-stroke ratio; a wide stratum
     /// converges over successive contacts. One sync is in flight at a time:
     /// the digest asked, the discordant strata fetched where it lands, the
@@ -267,7 +267,7 @@ impl Entity {
         });
     }
 
-    /// THE FETCHED STRATA LANDED: their words absorbed and glued on the
+    /// THE FETCHED STRATA LANDED: the strata's words absorbed and glued on the
     /// elements, and what this genome holds that the hypha lacks taught up.
     /// Answers the chart keys a fetched word stood on.
     fn absorb_fetched(&mut self, body: &[u8], charts: &[dialogue::Chart]) -> crate::network::nerve::Keyed<()> {
@@ -396,7 +396,7 @@ impl Entity {
         }
         // A RULING COLLAPSES A SUPERPOSITION AND THE OTHER HYPOTHESIS IS A
         // SYMMETRY (Expansion 4). Two candidates that both discharged one
-        // orbit proved it admits their difference; the ruling says which
+        // orbit proved it admits the candidates' difference; the ruling says which
         // discharge the mesh holds, and the difference remains a rotor this
         // mind measured. It is adjoined rather than cleared — the language
         // keeps what the collapse resolved.

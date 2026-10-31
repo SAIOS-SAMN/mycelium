@@ -2,7 +2,7 @@
 // how much of it there is.
 //
 //! The struct is the whole of a court's state: the basis of ruled words and
-//! their indices, the book of listings and its fields, the dockets, the
+//! the words' indices, the book of listings and its fields, the dockets, the
 //! dialect, the treasury, the receipt chain and the admissions it has made.
 
 use super::*;
@@ -149,7 +149,7 @@ pub struct Kernel {
     /// primary — recomputed when a probe lands.
     pub(crate) tension: crate::network::nerve::Keyed<[u64; 4]>,
     /// THE COHERENCE FIELD: per listing, the charts it has been probed
-    /// through and their closure. One entry per chart; a later probe on
+    /// through and each chart's closure. One entry per chart; a later probe on
     /// the same chart replaces its state. Never summed, never ordered.
     pub(crate) field: crate::network::nerve::Keyed<ListingField>,
     /// Listings still on the quote page (not relocated to the cavity atlas).
@@ -288,7 +288,7 @@ pub struct Kernel {
     /// Settlements the court has read; the SET2 section holds them.
     pub(crate) settlements_cold: Vec<crate::anastome::dialogue::Settlement>,
     /// Test height: when set, height() returns this instead of the chain head.
-    /// C6: a TEST knob, `None` on any live fleet. A kernel that can be told
+    /// C6: a TEST knob, `None` on any live mesh. A kernel that can be told
     /// its own height is a kernel whose time is an input (law 9), so the
     /// SETTER is behind `cfg(test)` and nothing in production can reach it.
     pub(crate) height_override: Option<u64>,
@@ -312,7 +312,7 @@ pub struct Kernel {
     /// Where the cold segment's last whole era ends: the next era is
     /// appended there.
     pub(crate) eras_end: u64,
-    /// C6: a TEST knob, `None` on any live fleet. Production reads
+    /// C6: a TEST knob, `None` on any live mesh. Production reads
     /// `dynamic_lane_capacity`, which is measured; a cap that can be set is
     /// a free constant (rule 5), so the SETTER is behind `cfg(test)`.
     pub(crate) lane_cap: Option<[u64; 4]>,
@@ -345,7 +345,7 @@ pub struct Kernel {
     /// the book. The court's proof of convergence rides with the word.
     pub(crate) deflations: crate::network::nerve::Keyed<[u64; 4]>,
     /// ACT1 — OWN-LINE ACTS SEALED WITHOUT A FRAME (78.27 Q1(a)): acts that
-    /// named a word no row of this court measures, so their μ⃗ was read as
+    /// named a word no row of this court measures, so each act's μ⃗ was read as
     /// `[0; 4]` because nothing measured it. Counted at seal, since boot.
     pub(crate) unframed: u64,
     /// OK1 — CLOSES WITHHELD FOR SEPARATION: strokes at whose boundary this
@@ -372,7 +372,7 @@ pub struct Kernel {
     pub(crate) remainder_keys: crate::network::nerve::Keyed<Vec<Vec<u8>>>,
     pub(crate) remainders_refused: u64,
     pub(crate) remainders_past_carrier: u64,
-    /// PD1 — cycles whose stored period was not the one read off their
+    /// PD1 — cycles whose stored period was not the one read off the cycle's
     /// generator, refused by `record_cycle` (`Filed::Misspoken`).
     pub(crate) remainders_misspoken: u64,
     pub(crate) remainders_unpriced: u64,
@@ -385,8 +385,8 @@ pub struct Kernel {
     /// `&self` on the request path; a count of this process, volatile.
     pub(crate) room_broken: std::sync::atomic::AtomicU64,
     pub(crate) room_overflowed: std::sync::atomic::AtomicU64,
-    /// STD1 — the court's own operations and readings refused past their
-    /// carrier: an occupy (its listing refused), a recall owed, the book's
+    /// STD1 — the court's own operations and readings refused past the
+    /// readings' carrier: an occupy (its listing refused), a recall owed, the book's
     /// T pressure, a relocation's total, a solve's paid sum. Volatile.
     pub(crate) overflowed: u64,
     /// RM1 (c) — voices' re-fill acts replayed here: applied (the Congruent
@@ -494,13 +494,13 @@ pub struct Kernel {
     /// Volatile: a restart hears each pair once more, then holds it.
     pub(crate) glued_from: crate::network::nerve::Keyed<()>,
     /// 78.71 (1), (4), 78.73 — THIS COURT'S FIELD: the tubes its admitted
-    /// words' flux opened and closed, keyed by their null rays, whose links
-    /// moving are `Reconnect` acts; and the orbits of their turns, boosts and
+    /// words' flux opened and closed, keyed by the tubes' null rays, whose links
+    /// moving are `Reconnect` acts; and the orbits of the words' turns, boosts and
     /// hue maps, each held until it returns. Volatile for now: a restart
     /// re-opens each on its next admission.
     pub(crate) flux_field: crate::transducer::cech::orbit::Field,
     /// 78.74 — THE NERVE'S ELASTIC VENT, counted: the cells released when a
-    /// word left and the vantages it stood as let their stars go.
+    /// word left and the vantages it stood as let the vantages' stars go.
     pub(crate) released_cells: crate::transducer::cech::Release,
     /// 78.74 — multiplicities condense settled by congruence: a word several
     /// held words related to, condensed with them into one bundle.
@@ -557,7 +557,7 @@ pub struct Kernel {
     /// became a form (L5). Filled beside the axis index in `ruled_admit`.
     pub(crate) generators: crate::transducer::sentence::GeneratorIndex,
     /// 78.160 P1 — THE PRESENTATION BY HOLES: the ruled forms' word vertices
-    /// filed under the holes their whole Cl(4,1) motions wind about, what a
+    /// filed under the holes the vertices' whole Cl(4,1) motions wind about, what a
     /// mind's residue is deconstructed over (`Kernel::present`). Filled beside
     /// `generators` in `ruled_admit`, emptied in `basis_remove`, re-derived at
     /// restore (law 12); never persisted.
@@ -1049,7 +1049,7 @@ impl Kernel {
     }
 
     /// 47.2 STEP 3'S BACK-FILL (S13.10): receipts fetched by place range
-    /// from the signer or a holder, admitted in order by their chain and
+    /// from the signer or a holder, admitted in order by the receipts' chain and
     /// held as known so later heights re-derive through them; one already
     /// held at its place is passed over. Nothing here is cited as a parent:
     /// the signed frame that closes the gap is, when it is admitted again.

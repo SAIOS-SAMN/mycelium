@@ -191,7 +191,7 @@ impl Genesis {
     }
 }
 
-/// THE ANCIENTS' SURVIVAL BASKET: one person-year of their survival at the
+/// THE ANCIENTS' SURVIVAL BASKET: one person-year of an ancient's survival at the
 /// core, by mass per element (`Z`, mass) — species-neutral, a molecule
 /// stated as its elements' masses — in ascending `Z`, each once.
 pub type Basket = Vec<(u16, (u64, u64))>;

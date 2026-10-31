@@ -89,7 +89,7 @@ impl LinearFunction {
     }
 
     /// `self ∘ inner`: `inner` first. Both act in one algebra — a caller
-    /// widens its versors to one `n` before it reads their actions, as every
+    /// widens its versors to one `n` before it reads the versors' actions, as every
     /// reader of a cell's algebra does; this, `plus` and `minus` compose
     /// images generator by generator.
     pub fn after(&self, inner: &LinearFunction) -> LinearFunction {

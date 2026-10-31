@@ -88,7 +88,7 @@ pub(crate) fn occupied_frames(bodies_at: &Keyed<(Body, Body, Versor)>, v: &coord
 /// other.
 type BodiesCarried = (Body, Body, Versor);
 
-/// THE EDGE BETWEEN TWO MEMBERS (50.3), MEASURED ON THEIR UNION SHAPES
+/// THE EDGE BETWEEN TWO MEMBERS (50.3), MEASURED ON THE MEMBERS' UNION SHAPES
 /// (52.5), and the frames on which the per-frame reading re-derives one
 /// edge — the face's section along `e₃`.
 ///

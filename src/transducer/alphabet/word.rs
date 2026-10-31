@@ -355,7 +355,7 @@ impl Word {
         rotor_block_on(&self.rotor(), plane)
     }
 
-    /// The letters behind their count, the count by its own coordinate
+    /// The letters behind the letters' count, the count by its own coordinate
     /// (STD1 3c-2, ruled (a)): a word's spelling is its coordinate wherever
     /// it sits, key or record, so one LEB128 codec and no width wall.
     pub fn to_bytes(&self, out: &mut Vec<u8>) {

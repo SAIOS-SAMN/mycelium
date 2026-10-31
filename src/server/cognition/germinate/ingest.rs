@@ -143,7 +143,7 @@ impl Kernel {
         let Some(gf) = g.letters().and_then(|l| l.spelling.word.form()) else {
             return NormalForm::Irreducible;
         };
-        // THE FACTORS CARRY THEIR OWN COORDINATES. `slots` held the live
+        // EACH FACTOR CARRIES ITS OWN COORDINATES. `slots` held the live
         // slot of each generator so the factorisation could report offsets;
         // the address is what the basis is keyed by and what `Decomposed`
         // now names.

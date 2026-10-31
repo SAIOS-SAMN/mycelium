@@ -6,7 +6,7 @@
 //! orthogonal axis, not the same one; and the split needs wider machinery —
 //! every plane of a motion, across motions, beyond three axes). Where two
 //! generators meet — what the mind carries forward and what it carries back
-//! through the inversion, or any two motions it holds — their commutator is
+//! through the inversion, or any two motions it holds — the generators' commutator is
 //! what they breathe (78.39(1)):
 //!
 //! ```text
@@ -103,7 +103,7 @@ fn dilation() -> Mv {
     e_inf().geo(&e_o()).grade(2)
 }
 
-/// WHAT TWO GENERATORS BREATHE: their commutator, split into its radial
+/// WHAT TWO GENERATORS BREATHE: the generators' commutator, split into its radial
 /// coefficient and its commuting planes by kind.
 pub fn breathe(x: &Mv, y: &Mv, budget: &mut crate::physics::Budget) -> Result<Breath, Unbreathed> {
     let c = x.geo(y).sub(&y.geo(x));

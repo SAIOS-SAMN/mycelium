@@ -206,7 +206,7 @@ impl Epigenome {
     /// a measurement with nothing to take it on.
     #[expect(
         clippy::disallowed_methods,
-        reason = "rule 4 — the peak of the expression readings is their extent, content"
+        reason = "rule 4 — the peak of the expression readings is the readings' extent, content"
     )]
     #[cfg(test)]
     pub(crate) fn peak_expression(&self) -> Option<u64> {

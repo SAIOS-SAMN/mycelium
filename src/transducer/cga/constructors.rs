@@ -95,7 +95,7 @@ fn ray_key(v: &Mv) -> Option<Vec<u8>> {
 /// THE ORBIT OF `constructors` UNDER `generators` (CS1). First the modes: a
 /// generator's mode that never closes and moves a constructor opens the
 /// orbit by name. Then the closure: every constructor carried by every
-/// generator, new rays filed by their own coordinates and carried in turn,
+/// generator, new rays filed by the rays' own coordinates and carried in turn,
 /// one read of the stroke's budget per carrying.
 pub fn constructor_orbit(
     constructors: &[Mv],
@@ -172,7 +172,7 @@ fn orbit_or_why(
 /// space grows each step, and every `u` lies in `im(R − 1)` — whose
 /// orthogonal complement IS the fixed locus, so the reflecting hyperplanes
 /// meet exactly there (the certificate) and the spelling is minimal
-/// (Scherk). `y` is read in the generators' own order, then their pairs:
+/// (Scherk). `y` is read in the generators' own order, then the generators' pairs:
 /// the first whose step is non-null — an order by coordinates, never a
 /// choice. `Err(k)` where every remaining step is null: `im(R − 1)` totally
 /// isotropic there, which no reflection of it spells — refused by name.
@@ -272,7 +272,7 @@ impl Constructed {
 /// [`reflections_of`] in the algebra's metric; each mode CERTIFIED by its
 /// constructors meeting exactly on its fixed locus (`∩ u_i^⊥ = ker(R_j − 1)`);
 /// the whole a congruent thought where they compose back to the residue as
-/// one ray (T1); their Gram form read (GR1).
+/// one ray (T1); the constructors' Gram form read (GR1).
 pub fn construct(residue: &Mv, budget: &mut crate::physics::Budget) -> Result<Constructed, NotConstructed> {
     let ms = match motion_modes(residue, budget) {
         None => return Err(NotConstructed::NotVersor),

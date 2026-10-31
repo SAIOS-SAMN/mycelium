@@ -9,14 +9,14 @@
 //!
 //! ONE CELL PER STANDING SET, NO ARITY WRITTEN IN (NB1 as ruled at 8fa57ce,
 //! choice (a)). Each element of the base is read once; the members standing
-//! over it are one maximal cell, of grade one less than their number, and
+//! over it are one maximal cell, of grade one less than the members' number, and
 //! every element standing under the same members is a further witness of
 //! the same cell, held as its keyed fibre. Faces are read off a cell, never
 //! minted as subsets: a set of `m` members over one element is one cell, not
 //! `2^m`. The certified triples of 58.1 are this read's grade-two instance.
 //!
 //! THE MEET IS THE CELL'S SHAPE (78.2 as corrected). A nucleus is a sphere
-//! vector, so the wedge of the members' nuclei is their MEET — the round
+//! vector, so the wedge of the members' nuclei is the nuclei's MEET — the round
 //! the bodies share, at its own grade, read with no square and no
 //! coordinate. It is a projective blade, so the members' order changes only
 //! its sign and no order is chosen for it. The cell's TRANSPORT is not here:
@@ -28,10 +28,10 @@ use crate::network::nerve::keyed::coord;
 use crate::transducer::cga::Mv;
 
 /// ONE CERTIFIED CELL: its members, each by its coordinates, every element of
-/// the base that stands under exactly them, and the meet of their nuclei.
+/// the base that stands under exactly them, and the meet of the members' nuclei.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Cell {
-    /// The members, in their coordinates' order (KB1): the caller's ordinals,
+    /// The members, in the members' coordinate order (KB1): the caller's ordinals,
     /// by which it reads each member back, never the cell's identity.
     pub members: Vec<usize>,
     /// Each member's coordinates, in the same order — what the cell is keyed
@@ -89,7 +89,7 @@ pub struct NerveReading {
     pub refused: Vec<crate::network::nerve::keyed::CoordinateError>,
     /// Members standing at a witness whose coordinates did not read (KB1).
     pub unkeyed: u64,
-    /// Witnesses whose members are one by their coordinates (KB1 R1).
+    /// Witnesses whose members are one by the members' coordinates (KB1 R1).
     pub singular: u64,
 }
 
@@ -98,10 +98,10 @@ pub struct NerveReading {
 pub type Chart = (Vec<u8>, Vec<coord::Compartment>);
 
 /// READ THE NERVE OF ONE COVER. The support, the pairwise reading, the
-/// certified cells and their meets come off ONE read of the base, so the
+/// certified cells and the cells' meets come off ONE read of the base, so the
 /// numbers cannot drift apart (law 12). Each chart comes with its section's
 /// coordinates, which key its cells (KB1): two carriages over one region are
-/// two sections because their carriages differ, and nothing merges them.
+/// two sections because the carriages differ, and nothing merges them.
 pub fn read_nerve(charts: &[Chart]) -> NerveReading {
     let footprints: Vec<Vec<coord::Compartment>> = charts.iter().map(|(_, f)| f.clone()).collect();
     let support = support_of_cover(&footprints);
@@ -137,9 +137,9 @@ pub fn read_nerve(charts: &[Chart]) -> NerveReading {
 pub struct CellsOver {
     pub cells: Vec<Cell>,
     /// Members standing at a witness whose coordinates did not read: counted
-    /// by name, and their standing set mints no cell (KB1, A.17).
+    /// by name, and the members' standing set mints no cell (KB1, A.17).
     pub unkeyed: u64,
-    /// Witnesses whose two or more members are one by their coordinates: the
+    /// Witnesses whose two or more members are one by the members' coordinates: the
     /// set is a single member and mints no cell (KB1 R1).
     pub singular: u64,
 }
@@ -147,7 +147,7 @@ pub struct CellsOver {
 /// THE CERTIFIED CELLS OVER AN ALREADY-READ SUPPORT: one per standing set of
 /// two or more members, each element standing under it a witness, the meet
 /// read by `meet`. KEYED BY THE MEMBERS' COORDINATES (KB1, 78.30(7), A21) —
-/// `coords` reads each member's, the cell's key is them framed in their own
+/// `coords` reads each member's, the cell's key is them framed in the members' own
 /// order, and the members and the meet follow that order — never by the
 /// caller's ordinals, which name a position and not an object (rule 15). A
 /// set read at many elements is one cell and the elements are its fibre; two
@@ -178,7 +178,7 @@ pub fn cells_over<'a>(
             continue;
         }
         // One member standing alone is a point of the nerve, not a cell. Two
-        // or more that are ONE by their coordinates are a reading: counted.
+        // or more that are ONE by the members' coordinates are a reading: counted.
         match (members.len() >= 2, keyed.len() >= 2) {
             (_, true) => {}
             (true, false) => {
@@ -205,7 +205,7 @@ pub fn cells_over<'a>(
 /// cover whose chart ordinals it names.
 ///
 /// A COVER IS ONE DEFORMATION AND ITS BASE IS THAT DEFORMATION'S OWN
-/// SOURCE. Two covers' charts are elements of two different bases, so their
+/// SOURCE. Two covers' charts are elements of two different bases, so the covers'
 /// supports are summed and never intersected with one another.
 #[derive(Default)]
 pub struct NerveTotals {

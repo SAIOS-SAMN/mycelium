@@ -8,7 +8,7 @@
 // at that moment. Exact counts, no clock (law 9): a site that blocks often
 // is a site that holds long or often.
 //
-//! 78.153b — THE HOLD'S ONE STROKE. The lock audit (docs/LOCK-AUDIT.md)
+//! 78.153b — THE HOLD'S ONE STROKE. The lock audit (MU-RECURSION 78.153)
 //! found no path under the kernel metered end to end: the guard dereferenced
 //! to `Kernel`, so any call under it was one keystroke from an unmetered
 //! walk. A [`Held`] no longer dereferences: `held!` mints the hold's ONE

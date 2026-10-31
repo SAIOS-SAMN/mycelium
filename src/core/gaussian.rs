@@ -61,7 +61,7 @@ impl Gauss {
 
     /// `a − b·i`. The conjugate of a prime is a prime, and the two are the
     /// two shells a rotation peels: `π` and `π̄` divide a rotor's arc
-    /// independently and their exponents need not agree.
+    /// independently and the two exponents need not agree.
     pub fn conj(&self) -> Gauss {
         Gauss::new(self.a.clone(), -&self.b)
     }

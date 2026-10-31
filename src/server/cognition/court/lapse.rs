@@ -66,7 +66,7 @@ impl Kernel {
     /// sweep takes one stroke and resumes where it stopped.
     pub(crate) fn lapse_silent(&mut self) {
         // MU-ECONOMY §5.2 — leases whose window has passed end on the same
-        // stroke, what they hold returning to their payers.
+        // stroke, what each holds returning to its payers.
         let _ = self.lapse_leases();
         // At the first orbit no word has seen a whole orbit pass: nothing is
         // silent.

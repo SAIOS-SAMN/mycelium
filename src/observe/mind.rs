@@ -10,7 +10,7 @@
 //! of its closed and of its open hearings — exact, lane by lane, never a count
 //! per lane — its vocabulary and what it remembers hearing, and what its
 //! conversation's carrier holds now. Written where the
-//! mind acts (`note_mind`), by the carrier and the field on their own
+//! mind acts (`note_mind`), by the carrier and the field, each on its own
 //! circuits; read only at a question, on the mind's post, so the observer
 //! never waits on cognition and nothing in cognition reads it back.
 //!
@@ -48,7 +48,7 @@ pub const CONSTRUCTED: [&str; 7] = ["refused", "letter", "motion letter", "no ch
 pub const FLEX: [&str; 9] = ["rigid", "torsion", "field", "lift", "pinned", "carried", "let go", "formed", "far side"];
 
 /// THE BREATH'S AXES (MU-CLIENT §4.3): the breaths that moved radially —
-/// contraction or dilation — and the planes their commutators split into
+/// contraction or dilation — and the planes the breaths' commutators split into
 /// by kind: pinches (elliptic, each twisted), null carries, boosts — in the
 /// order the counts are kept.
 pub const BREATH: [&str; 4] = ["radial", "pinched", "null", "boost"];
@@ -60,7 +60,7 @@ pub const BODIES: [&str; 3] = ["fused", "precessing", "contact"];
 /// WHAT ITS TASKS' PERSPECTIVES SAID (MU-CLIENT §4.4): tasks seen; rules
 /// known (every held-out pair re-derived), unknown (fitted, not re-derived),
 /// of one perspective, unread; held-out pairs lifted into the mind; solves
-/// sent; known by inversion; and undetermined by their perspectives (a
+/// sent; known by inversion; and undetermined by the tasks' perspectives (a
 /// two-pair clause rule, sent for the court to judge) — in the order the
 /// counts are kept.
 pub const PERSPECTIVE: [&str; 9] = ["tasks", "known", "unknown", "one perspective", "unread", "lifted", "sent", "by inversion", "undetermined"];
@@ -88,11 +88,11 @@ pub const BOOSTS: [&str; 3] = ["scaled", "transverse", "neither"];
 /// did not reach, or a creation, merge or reshape its form could not speak.
 pub const WITHHELD: [&str; 2] = ["a body unreached", "occupancy unspoken"];
 
-/// 78.167 C — A FAMILY'S ACTS READ OFF THEIR EFFECTS where its vertices did
+/// 78.167 C — A FAMILY'S ACTS READ OFF THE ACTS' EFFECTS where its vertices did
 /// not say it: stated as clauses, or refused by [`crate::transducer::family::acts::Unread`].
 pub const ACTS: [&str; 8] = ["stated", "cited", "unfolded", "overwritten", "inseparable", "uncreated", "unsized", "spent"];
 
-/// ITS QUESTIONS (MU-CLIENT §5.3): words it did not know and asked of their
+/// ITS QUESTIONS (MU-CLIENT §5.3): words it did not know and asked of the words'
 /// residue; questions of others it answered by factoring; rings whose meaning
 /// was DERIVED (from words it knew, or from factors it came to know); rings
 /// whose meaning was GIVEN (asked whole, answered as an atom); given meanings
@@ -100,7 +100,7 @@ pub const ACTS: [&str; 8] = ["stated", "cited", "unfolded", "overwritten", "inse
 /// order the counts are kept.
 pub const ASKS: [&str; 5] = ["asked", "clarified", "derived", "given", "re-derived"];
 
-/// WHAT BECAME OF THE ANSWERS IT HEARD (MU-CLIENT §5.3): taken (their factors
+/// WHAT BECAME OF THE ANSWERS IT HEARD (MU-CLIENT §5.3): taken (the answers' factors
 /// re-derived the residue exactly), inexact (they did not), or said under a
 /// question's coordinates it has no question open at.
 pub const ANSWERS: [&str; 3] = ["taken", "inexact", "no question"];
@@ -245,7 +245,7 @@ pub struct Mind {
     pub perspective: [u64; 9],
     /// What its failed perspectives disagreed about, by [`DISAGREE`].
     pub disagree: [u64; 9],
-    /// 78.167 A2 — what their rules' demands spoke nothing for, by
+    /// 78.167 A2 — what the demands of its failed perspectives' rules spoke nothing for, by
     /// [`DEMANDED`].
     pub demanded_kinds: [u64; 6],
     /// 78.167 A3 — the boost modes of its words, by [`BOOSTS`].
@@ -308,13 +308,13 @@ pub struct Mind {
     /// The holes standing on the mind's complex — classes the cross kept and
     /// questions carried — as the last vent left them.
     pub holes: u64,
-    /// The scars on it: holes cauterized where their class could not be read
+    /// The scars on it: holes cauterized where the hole's class could not be read
     /// back.
     pub scars: u64,
     /// The classes its vacuum holds, frozen in place.
     pub frozen: u64,
     /// Its breaths (MU-CLIENT §4.3): those that moved on the radial axis, and
-    /// their planes by kind, by [`BREATH`].
+    /// the breaths' planes by kind, by [`BREATH`].
     pub breath: [u64; 4],
     /// Every court task that landed on it, in citation order ([`TaskSeen`]):
     /// one entry per task, the corpus its bound.

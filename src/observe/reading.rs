@@ -2,7 +2,7 @@
 // typed object in its own coordinates and written out by its own codec.
 //
 //! The readings a court publishes about itself, one per question the live
-//! fleet is asked:
+//! mesh is asked:
 //!
 //! - [`Memory`] — WHAT IS HELD: the allocator's bytes at the first and the
 //!   latest sample, keyed by the source's own `K`, and the peak — so growth
@@ -205,7 +205,7 @@ pub struct Court {
     /// STD1 — the room reads that did not answer, each by its own name (a
     /// `None` never stands for two facts, 78.26(4)): a lane drawn past its
     /// cover (a broken count), a cover or a credit past its carrier; and
-    /// the court's own operations and readings refused past their carrier
+    /// the court's own operations and readings refused past the carrier
     /// (an occupy, a recall owed, the book's T pressure, a relocation's
     /// total, a solve's paid sum).
     pub room_broken: u64,
@@ -243,7 +243,7 @@ pub struct Court {
 /// answered hot alone ("unproved root").
 /// 78.151: the reading the court stroke publishes for the door — each
 /// publication, the receipts, eras, accounts and per-signer keys it copied
-/// and their bytes, the most entries one publication copied (a level), a
+/// and the bytes of each, the most entries one publication copied (a level), a
 /// publication whose count passed its carrier; the reads answered off it,
 /// and the pages it answered empty (a range it did not yet reach).
 pub const SERVE_AXES: [&str; 20] = [
@@ -460,7 +460,7 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     ("equivocation", "two hashes at one K on one chain (47.4)"),
     ("refused_origin", "receipts of another genesis"),
     ("refused_signature", "receipts whose signature did not verify"),
-    ("refused_receipt", "receipts refused on their chain"),
+    ("refused_receipt", "receipts refused on the receipts' chain"),
     ("no_section", "digests carrying no receipt section"),
     ("malformed", "receipt sections that did not parse whole"),
     ("no_origin", "frames heard before this court adopted an origin"),
@@ -468,12 +468,12 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     ("digest_signature", "digests whose cover signature did not verify"),
     // ACT1-hold-b (45.2, LD0's defect 3b): what the chase of a gap did.
     ("backfill_reached", "back-fill passes whose chain reached the reported K − 1"),
-    ("backfill_budget", "back-fill passes that ended on their budget or closed nothing, short of it"),
-    ("parent_after_backfill", "reported heads admitted as a parent once a back-fill closed their gap"),
+    ("backfill_budget", "back-fill passes that ended on the pass's budget or closed nothing, short of it"),
+    ("parent_after_backfill", "reported heads admitted as a parent once a back-fill closed the heads' gap"),
     ("lag", "the K lag at the last report: the reported K against the head held (a level, not a count)"),
     // Phase 1 — WHY A BACK-FILL PAGE STOPPED short of its range, each apart.
     ("backfill_unlinked", "back-filled receipts past the head held: the page did not open at it"),
-    ("backfill_refused", "back-filled receipts refused on their chain"),
+    ("backfill_refused", "back-filled receipts refused on the receipts' chain"),
     ("backfill_equivocation", "back-filled receipts at a held place with another hash"),
     // Phase 1 item 1 — AGREEMENT, per peer, at its last digest (levels).
     ("strata", "strata of ruled words the peer's last digest named (a level)"),
@@ -483,7 +483,7 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     // the one word, a refraction of it, its conjugate with the placement
     // apart, related by a conjugator the alphabet cannot spell, or a word no
     // one motion relates.
-    ("relation_same", "fetched sentences that are this court's own section on their chart"),
+    ("relation_same", "fetched sentences that are this court's own section on the sentences' chart"),
     ("relation_refracted", "fetched sentences this court's section refracts onto by one Γ"),
     ("relation_conjugate", "fetched sentences one spelled word conjugates onto, the placement apart"),
     ("relation_unspellable", "fetched sentences one rotor conjugates onto and the alphabet cannot spell"),
@@ -500,7 +500,7 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     ("residue_h", "fetched sentences diverging on the harmonic lane (the rotor classes)"),
     // 78.63 — WHICH PATH OF THE GLUE EACH FETCHED WORD LEFT BY, one per
     // word: the refusals held to the test (does it name a law?).
-    ("glue_heard", "fetched words already heard on their chart, held as dialect"),
+    ("glue_heard", "fetched words already heard on the words' chart, held as dialect"),
     ("glue_replay_refused", "fetched words this court's replay refused"),
     ("glue_colour_unproven", "fetched colour words whose proof does not stand here yet"),
     ("glue_citation_missing", "fetched words citing a word this court does not hold"),
@@ -528,7 +528,7 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     // 78.147 — CATCH-UP FROM A FOLD ROOT: the signer's root, answered for a
     // range opening below it, adopted on its two signatures and its line
     // continued hot from it; or refused, the proof not standing.
-    ("root_adopted", "fold roots of this signer adopted on their two signatures, its line continued hot from them"),
+    ("root_adopted", "fold roots of this signer adopted on each root's two signatures, its line continued hot from them"),
     ("root_refused", "fold roots of this signer answered and refused: a signature or the root's hash did not verify"),
     // 2026-10-14 — THE ONE GLUE PATH THAT WROTE NOTHING AND SAID NOTHING: a
     // fetched word whose replay the stroke could not finish (78.153) glues
@@ -681,7 +681,7 @@ pub struct Adjudication {
     /// CV1 — the same refusals by the kind of obstruction (78.9): P, D, C,
     /// I, N, unclassified.
     pub obstructed: [u64; 6],
-    /// The vertex-body refusals by the fault their proof names
+    /// The vertex-body refusals by the fault each refusal's proof names
     /// ([`BODY_FAULTS`]), and of them, those whose vertex lifted no versor
     /// on the chart and those that did — a rotor that does not lift apart
     /// from a transport that lands wrong.

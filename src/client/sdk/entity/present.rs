@@ -5,7 +5,7 @@
 //
 //! The ask carries the motion itself (Cl(4,1), `Mv`), never a chart or a
 //! cursor; the answer carries the words the mind lacked and the citations,
-//! and the mind absorbs the words as it absorbs a syllabus page, at their
+//! and the mind absorbs the words as it absorbs a syllabus page, at the words'
 //! admitting stamps. A citation whose powers the court read composing to the
 //! motion is kept as a mineral (`Epigenome::presented`) and becomes the
 //! mind's own only where its derivation re-derives it (`heard_citation`).

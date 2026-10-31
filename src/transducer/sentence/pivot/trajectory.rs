@@ -11,7 +11,7 @@ pub struct TraversedCircuit {
     pub steps: Vec<(coord::Overlap, bool)>,
     pub composite: Option<element::Versor>,
     /// 78.26(5) — the circuit's hue, its steps' hue maps composed as the
-    /// composite composes their carriages; `None` where it did not read.
+    /// composite composes the steps' carriages; `None` where it did not read.
     pub hue: Option<Vec<(u8, u8)>>,
     /// Where the composite did not read, why: OR3's reason (78.26(4)).
     pub unread: Option<crate::transducer::cech::CircuitUnread>,

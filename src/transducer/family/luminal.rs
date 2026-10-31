@@ -6,7 +6,7 @@
 //
 //! - L1 RAYS: from every site of an input body, along each of the scene's
 //!   eight null directions (a translation's generator `d ∧ e_∞` is null), the
-//!   ray's sites with their exact phase `t`, up to the frame's edge or the
+//!   ray's sites, each with its exact phase `t`, up to the frame's edge or the
 //!   first site an input body holds.
 //! - L2 WAVEFORM: the output's hues along the ray as a function of phase. A
 //!   ray is LIT where the output holds hue from `t = 1` on; a lit prefix is a
@@ -22,7 +22,7 @@
 //!   its periods along rows and columns.
 //! - L5 CAVITY: a rectangular enclosure's walls are four planes `n + δ e_∞`
 //!   between its cells and its wall; a diagonal ray's billiard round them
-//!   is their product, an exact versor read by its modes; whether the
+//!   is the planes' product, an exact versor read by its modes; whether the
 //!   standing wave's periods divide the cavity — the mode fits.
 //! - L6 is read by the instrument off the cover's own tally.
 //!

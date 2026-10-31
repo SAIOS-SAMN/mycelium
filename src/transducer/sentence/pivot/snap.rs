@@ -186,7 +186,7 @@ pub enum Discharge {
     ///
     /// Not to be confused with the eliminated candidates in the same line:
     /// `unreached` counts those too, and they are refused by exact
-    /// rational arithmetic rather than by exhaustion. On the same fleet
+    /// rational arithmetic rather than by exhaustion. On the same deployment
     /// every `unreached` equals its `eliminated`, so that gap is the
     /// eliminator working and not this.
     Starved,
@@ -279,11 +279,11 @@ pub(crate) fn one_per_move(certs: &[PivotCertificate]) -> Vec<PivotCertificate> 
 }
 
 /// NOTHING IS COMPARED HERE. One certified discharge is the discharge;
-/// several are a vortex, all of them held with their certificates. The μ⃗
+/// several are a vortex, each held with its certificate. The μ⃗
 /// of a candidate is not read in this function at all — it was read once,
 /// inside the trial, to refuse a candidate that RAISED a lane, and a
 /// candidate that survived that is certified. Choosing between two
-/// certified discharges by any function of their lanes is a score
+/// certified discharges by any function of the discharges' lanes is a score
 /// (12.6, 16.16 step 5, T13, T22; law 1).
 pub(crate) fn select_discharge(cands: &[PivotCertificate]) -> Discharge {
     match cands {

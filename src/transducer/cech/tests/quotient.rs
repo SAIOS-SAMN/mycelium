@@ -1,5 +1,5 @@
 // 78.104 — THE QUOTIENT READING: a motion's generators inside the held
-// algebra, or outside it by their coset, exactly and with no complement
+// algebra, or outside it by the generators' coset, exactly and with no complement
 // chosen.
 
 use crate::transducer::cech::quotient::{grow, quotient};
@@ -24,7 +24,7 @@ fn boost() -> Mv {
     Mv::scalar(q(5)).add(&Mv::blade(E1 | EM, q(3)))
 }
 
-/// A held algebra grown from the given motions, in their order.
+/// A held algebra grown from the given motions, in the given order.
 fn held(motions: &[Mv]) -> Vec<Mv> {
     motions.iter().fold(Vec::new(), |h, m| grow(&h, m, &mut stroke()).expect("grows"))
 }
@@ -47,7 +47,7 @@ fn quotient_spanned_inside_unspanned_outside() {
 
 /// THE COSET'S COORDINATE IS THE COSET'S ALONE: the same algebra grown in two
 /// orders gives one residue, and two motions that differ by something held
-/// are one class — their residues agree.
+/// are one class — the two residues agree.
 #[test]
 fn quotient_coset_independent_of_order_and_held() {
     let one = held(&[turn(E1 | E2), turn(E2 | E3)]);

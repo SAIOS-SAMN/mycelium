@@ -1,6 +1,6 @@
 // 78.74 (as amended) — THE FIBRES OF A FRAME AND THE QUOTIENT BY TORSION
-// (`family/fibres.rs`): pieces as pivots, their coordinates checked against
-// their own versors, relative motions read on fibres, classes merged only
+// (`family/fibres.rs`): pieces as pivots, each piece's coordinates checked against
+// its own versor, relative motions read on fibres, classes merged only
 // where every fibre agreed — never blindly transitive — and the certainty of
 // the moving algorithm held across percepts, exact.
 
@@ -111,7 +111,7 @@ fn read_pieces_merges_only_where_every_fibre_agreed() {
     ];
     let quo = read_pieces(&pieces, &mut wide());
     let s = |a: &[u8], b: &[u8]| said(&quo, a, b).map(|s| (s.agree, s.observed));
-    assert_eq!(s(b"a", b"b"), Some((2, 2)), "the flip across their line: torsion, twice");
+    assert_eq!(s(b"a", b"b"), Some((2, 2)), "the flip across the pieces' line: torsion, twice");
     assert_eq!(s(b"a", b"c"), Some((0, 2)), "the slide: lift, twice");
     assert_eq!(s(b"a", b"d"), Some((1, 2)), "torsion, then lift: partial");
     assert_eq!(s(b"b", b"d"), Some((2, 2)), "moving alike: rigid agrees");
@@ -206,7 +206,7 @@ fn relate_sections_tells_copy_motion_or_second_algorithm() {
     assert_eq!(relate_sections(&first, &section(at(10, 1), at(14, 4), t(4, 3)), b), Sections::Congruent, "a copy, pointing elsewhere");
     let standing = section(at(0, 0), at(0, 0), one());
     let flipped = section(at(3, 4), at(3, 4), mirror());
-    assert_eq!(relate_sections(&standing, &flipped, b), Sections::Coherent, "the flip across their line: the 180° turn it unfolds to twists the fibre");
+    assert_eq!(relate_sections(&standing, &flipped, b), Sections::Coherent, "the flip across the pieces' line: the 180° turn it unfolds to twists the fibre");
     assert_eq!(relate_sections(&first, &section(at(0, 5), at(0, 7), t(0, 2)), b), Sections::Standing, "a second algorithm");
     assert_eq!(relate_sections(&standing, &section(at(0, 0), at(0, 0), slide()), b), Sections::Standing, "one source: no fibre to read");
 }

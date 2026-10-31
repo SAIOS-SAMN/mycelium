@@ -172,7 +172,7 @@ impl Kernel {
             if let Some(v) = leaf(leaves, LEAF_HANDOFFS) {
                 kernel.handoffs = whole(v, super::super::handoff::Handoffs::take)?;
             }
-            // 78.147 — the fold roots with their proofs; a home written before
+            // 78.147 — the fold roots with the roots' proofs; a home written before
             // 78.147 carries none.
             if let Some(v) = leaf(leaves, LEAF_ROOTS) {
                 for proof in whole(v, Kernel::take_root_proofs)? {

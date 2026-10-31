@@ -19,7 +19,7 @@
 //!   `Ω = R₁(θ₁)·R₂(θ₂)·T(τ)`, so a cycle does not have "a period", it has
 //!   two, on orthogonal planes, plus the slip in `ker(I − R)`.
 //!   [`crate::transducer::alphabet::Rotor::plane_periods`] is where that
-//!   pair survives; `order()` is their lcm and is a reading of them.
+//!   pair survives; `order()` is the periods' lcm and is a reading of them.
 //!
 //!   **Lane** — `μ⃗ = ⟨S : G : T : H⟩`, and law 5 forbids summing them.
 //!   Grade 0's gauge permutations are `G`; grade 1's rotations and slips

@@ -80,7 +80,7 @@ fn verify_fold_off_shelf_matches_kernel() {
 }
 
 /// A PAGE OF THE ROWS BELOW A HEAD is the page the whole prefix gave: for
-/// every place on the line and every cursor, the rows and their total equal
+/// every place on the line and every cursor, the rows and the rows' total equal
 /// those `rows_below` reads, so `ACT_ROWS` answers exactly as it did.
 #[test]
 fn rows_below_page_pages_whole_prefix() {

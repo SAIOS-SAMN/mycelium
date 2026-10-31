@@ -13,10 +13,10 @@
 //! body: the flow runs until the scene stops it) or FREE (it ends in open
 //! space).
 //!
-//! CONGRUENT IN TIME. Two transports are one flow at two times where their
-//! gauges agree and their rays pair off on the SAME PLANE (`against` reads one
+//! CONGRUENT IN TIME. Two transports are one flow at two times where the
+//! transports' gauges agree and the transports' rays pair off on the SAME PLANE (`against` reads one
 //! on the other's reference), with the same hue and the same kind of end —
-//! whatever their parameters. A loop that closes so has no lift between its
+//! whatever the parameters. A loop that closes so has no lift between its
 //! axes: it is the field sliding along one orbit (hyperfluid). What a loop
 //! keeps open is read by where it lifts: the gauge (the colour differs) or
 //! the light (a generator differs).

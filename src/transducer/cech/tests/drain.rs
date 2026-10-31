@@ -149,7 +149,7 @@ fn face_over(m: &crate::transducer::cga::Mv) -> (Complex, Vec<u8>) {
     (c, face)
 }
 
-/// 78.75 — THE NERVE BY DEGREE, ITS FACES READ BY THEIR MOTION: a triangle of
+/// 78.75 — THE NERVE BY DEGREE, ITS FACES READ BY MOTION: a triangle of
 /// three vantages reads three vertices, three edges and one face, and the
 /// face's content is its holonomy as one `Cl(4,1)` motion, read by its modes
 /// — never by whether a rotor is the identity. A face holding a fibre's

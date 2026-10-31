@@ -43,7 +43,7 @@ fn coordinates_of_turn_winds_one_hole() {
     assert!(two.word().projective_eq(&w.geo(&w)));
     assert_eq!(two.power_of(&one), Some(2), "the square is the turn's power 2");
     let three = read(&w.geo(&w).geo(&w));
-    let Winding::Turn { t: t3, ell: 4 } = three.holes[0].winding.clone() else { panic!("a quarter turn") };
+    let Winding::Turn { t: t3, ell: 4 } = three.holes[0].winding.clone() else { panic!("a 90° turn") };
     assert_eq!(t3, 4 - t, "the cube stands on the other side");
     assert_eq!(three.power_of(&one), Some(3));
     assert_eq!(one.power_of(&one), None, "a word is not its own power: it is recognized by its key");

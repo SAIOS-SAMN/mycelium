@@ -14,7 +14,7 @@
 //! tension vented) or a tube's net flux CANCELS (luminal: it carries no
 //! field), the field releases every line threading it, and the mind lets
 //! those lines go (`release`): a released tether's read cells DESCEND first
-//! (holonomic: a boundary relaxing no longer closes), their fills handed out,
+//! (holonomic: a boundary relaxing no longer closes), the cells' fills handed out,
 //! and the tether DRAINS; each unwinds its strain back into the field. A hole
 //! over the tether — a question the mind still carries — pins it and it
 //! stands. Nothing is polled, stamped or windowed. A vertex the mind lets go
@@ -23,7 +23,7 @@
 //! CONDENSE. Two held thoughts the transport relates stand in tension, and
 //! the tension is a TETHER: condensed with its transition. A tether is a
 //! FIBRE: where one already stands on the pair, the arriving transport
-//! FLEXES it (`Complex::condense`) — their composite read by its modes
+//! FLEXES it (`Complex::condense`) — the two transitions' composite read by its modes
 //! against the tether's own axis as stretch, bend, twist, fold and slide —
 //! the fibre carries the new transport, the cells over it re-read, and the
 //! flex's strain winds into the field on the tether's line. The field
@@ -78,7 +78,7 @@ impl Contemplation {
     }
 
     /// 78.74 — THE TETHER AS A FIBRE between its two thoughts' pivots, read
-    /// off their coordinates whenever it is asked, never held. `None` where
+    /// off the pivots' coordinates whenever it is asked, never held. `None` where
     /// either thought has no pivot or the two stand at one point.
     pub(crate) fn fibre_of(&self, a: &[u8], b: &[u8]) -> Option<crate::physics::capacitor::Fibre> {
         let ((pa, ma), (pb, mb)) = (self.pivot_of(a)?, self.pivot_of(b)?);

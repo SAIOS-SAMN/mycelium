@@ -208,7 +208,7 @@ impl Kernel {
 
     /// C — WHAT A CONJUGATOR ADDED ON `family` (MU-CLIENT §5.6 C, as the spec
     /// reads): the conjugate's local discharge less the cited word's own, both
-    /// read by the one local reader in their own frames, LANE BY LANE AS THE
+    /// read by the one local reader, each in its own frame, LANE BY LANE AS THE
     /// SHORTFALL — a lane the transport did not raise pays nothing, never a
     /// negative. A conjugate that discharges no more than its word is paid
     /// nothing; W's discoverer keeps W's use (the D2′ share, read locally).

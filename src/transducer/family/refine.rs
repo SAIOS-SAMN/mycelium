@@ -18,7 +18,7 @@
 
 use crate::transducer::family::perceive::Grid;
 
-/// The embedding of two grids in their common refinement. All four scales
+/// The embedding of two grids in the grids' common refinement. All four scales
 /// are exact integers — `lcm(a, b) / a` divides by construction — so nothing
 /// here rounds, samples or interpolates.
 #[derive(Clone, Copy, Debug)]
@@ -94,7 +94,7 @@ impl CommonRefinement {
     /// sites are constant, as `(start, len, i_in, i_out)`.
     ///
     /// READ AS RUNS, NOT AS SITES, and this is the difference between an
-    /// organ that is bounded by its objects and one that is bounded by their
+    /// organ that is bounded by its objects and one that is bounded by the objects'
     /// least common multiple. `lcm(29, 30)` is 870 for two grids of thirty
     /// rows; over both axes that is three quarters of a million coordinates
     /// to visit to answer a question about at most sixty boundaries.
@@ -213,7 +213,7 @@ impl CommonRefinement {
     }
 }
 
-/// THE EXACT COBOUNDARY OF A PAIR: both grids embedded in their common
+/// THE EXACT COBOUNDARY OF A PAIR: both grids embedded in the grids' common
 /// refinement K_lcm without sampling, rounding or interpolation.
 pub fn refine_delta(grid_in: &Grid, grid_out: &Grid) -> Option<Vec<(i64, i64, u8, u8)>> {
     let (hi, wi) = extent(grid_in)?;
@@ -278,7 +278,7 @@ mod tests {
         assert_eq!(rw, num_rational::BigRational::new(2.into(), 4.into()));
     }
 
-    /// RUNS ARE THE BOUNDARIES OF THE TWO GRIDS, not the sites of their least
+    /// RUNS ARE THE BOUNDARIES OF THE TWO GRIDS, not the sites of the grids' least
     /// common multiple. Coprime extents are where that matters: 3 and 4 have
     /// `lcm` 12, and the pair changes at six places, not twelve.
     #[test]

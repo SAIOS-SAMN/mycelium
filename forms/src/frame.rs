@@ -24,7 +24,7 @@
 //! degrees, no half-angle tangents, no rational-cosine rotors): held as its
 //! plane and its angle, undone by its negation, composed in one plane by
 //! adding degrees; it carries a position only where its cosine and sine are
-//! both rational — a whole number of quarter turns — and is refused by name
+//! both rational — a whole number of 90° turns — and is refused by name
 //! everywhere else, never enclosed or rounded.
 //!
 //! Every move is exact over ℚ and has an exact inverse (a stretch by `−t`,
@@ -63,7 +63,7 @@ pub enum Refused {
     /// The reading stands at a bend's pole: it is carried to infinity.
     AtPole,
     /// A turn whose degrees carry a position only through an irrational
-    /// cosine or sine (every angle but a whole quarter turn): refused by
+    /// cosine or sine (every angle but a whole multiple of 90°): refused by
     /// name, never enclosed or rounded. The turn itself stands exact.
     Inexact,
     /// A turn's plane names an axis the reading does not have, or one axis
@@ -71,7 +71,7 @@ pub enum Refused {
     NoPlane,
     /// A twist whose mirror is not an axis's (ruled
     /// 2026-10-21): spatial frames turn and mirror only by the square's
-    /// symmetries, quarter turns and axial reflections; a mirror at another
+    /// symmetries, 90° turns and axial reflections; a mirror at another
     /// slope would turn by a rational-cosine angle and shatter the lattice.
     NotAxial,
 }
@@ -89,7 +89,7 @@ pub enum Move {
     /// netstratum's "laws as angles"): in the plane of axes `(i, j)`, from
     /// `i` toward `j`, by exactly `degrees` — held as the angle, never as a
     /// rational-cosine rotor or a half-angle tangent. Consecutive turns in
-    /// one plane compose by adding their degrees.
+    /// one plane compose by adding the degrees.
     Turn { plane: (usize, usize), degrees: Q },
 }
 
@@ -168,9 +168,9 @@ impl Move {
 }
 
 /// The cosine and sine of a turn by `degrees`, where both are rational: a
-/// whole number of quarter turns. `None` everywhere else (Niven: a
+/// whole number of 90° turns. `None` everywhere else (Niven: a
 /// rational-degree angle has rational cosine and sine together only at the
-/// quarter turns).
+/// multiples of 90°).
 fn quarter_turn(degrees: &Q) -> Option<(Q, Q)> {
     let quarters = degrees / Q::from_integer(90.into());
     if !quarters.is_integer() {
@@ -223,8 +223,8 @@ impl Frame {
     }
 
     /// A READING CARRIED INTO THIS FRAME, exactly, move by move —
-    /// consecutive turns in one plane composed first by adding their
-    /// degrees, so a run that sums to whole quarter turns carries exactly
+    /// consecutive turns in one plane composed first by adding the turns'
+    /// degrees, so a run that sums to whole 90° turns carries exactly
     /// even where its parts would not.
     pub fn carry(&self, x: &[Q]) -> Result<Vec<Q>, Refused> {
         self.composed().iter().try_fold(x.to_vec(), |p, m| m.apply(&p))
@@ -321,14 +321,14 @@ mod tests {
     }
 
     /// AN ORDERED TURN IN DEGREES: held exactly as its angle, undone by its
-    /// negation; a quarter turn carries a position exactly; a turn by 30°
+    /// negation; a 90° turn carries a position exactly; a turn by 30°
     /// alone is refused by name — no cosine of it is rational — while three
     /// of them in one plane compose to 90° and carry exactly.
     #[test]
     fn turn_carries_exactly_and_refuses_inexact_degrees() {
         let x = v(&[(3, 5), (-2, 7), (1, 1)]);
         let quarter = Move::Turn { plane: (0, 1), degrees: q(90, 1) };
-        assert_eq!(quarter.apply(&x), Ok(v(&[(2, 7), (3, 5), (1, 1)])), "a quarter turn from axis 0 toward axis 1");
+        assert_eq!(quarter.apply(&x), Ok(v(&[(2, 7), (3, 5), (1, 1)])), "a 90° turn from axis 0 toward axis 1");
         assert_eq!(quarter.inverse().apply(&quarter.apply(&x).expect("turned")), Ok(x.clone()), "undone by its negation");
         let thirty = Move::Turn { plane: (0, 1), degrees: q(30, 1) };
         assert_eq!(thirty.apply(&x), Err(Refused::Inexact), "30° alone: refused, never rounded");

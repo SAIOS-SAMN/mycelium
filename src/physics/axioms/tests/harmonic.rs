@@ -94,7 +94,7 @@ fn relative_rotor_of_body_against_itself_is_identity() {
 }
 
 /// SIMILARITY, NOT CONGRUENCE. A body and its 2× dilation are related
-/// by NO isometry — 8 cells against 2 — yet their rotation is
+/// by NO isometry — 8 cells against 2 — yet the pair's rotation is
 /// perfectly well defined and is the identity. Demanding equal cell
 /// counts and equal `‖u‖²` refused this, which modelled every
 /// transformation as rigid when the carriage carries a dilator `D(ρ)`.
@@ -345,7 +345,7 @@ fn bivector_is_simple_fails_only_off_sensor_plane() {
         "two turns through a common axis stay simple: e₁₂ ∧ e₁₃ = 0"
     );
 
-    // IT TAKES A FOURTH DIRECTION. Two turns couple only when their
+    // IT TAKES A FOURTH DIRECTION. Two turns couple only when the turns'
     // planes are COMPLETELY orthogonal — isoclinic — which `Cl(4,1)`
     // has room for and three spatial dimensions do not.
     let isoclinic = cga::rotator_on_blade(&q(1), &q(1), cga::E3 | cga::EP);

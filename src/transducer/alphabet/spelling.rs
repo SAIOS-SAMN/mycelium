@@ -57,7 +57,7 @@ pub(crate) struct AdjoinedShells {
 }
 
 /// WHAT ONE READING OF A RESIDUAL FOUND: the alphabet's own prime
-/// exponents, the adjoined generators that divide it with their signed
+/// exponents, the adjoined generators that divide it with the generators' signed
 /// exponents, and the unit that is left. Named fields rather than a tuple,
 /// because the tuple grew a fourth member and `(m5, m13, cited, unit)` at
 /// four call sites is a positional read of a carrier (rule 15).
@@ -537,7 +537,7 @@ pub fn spell_peel_on(
 /// column steps, read at the sensor boundary (§1.4) — a similarity with a
 /// real dilation and no versor behind it. Its two columns are VECTORS, so
 /// `ρ² = v·v`, `u·u = v·v` and `u·v = 0` are the metric on vectors
-/// (78.28(4)), and `ρ` is their rational root, refused otherwise. A block
+/// (78.28(4)), and `ρ` is the rational root of `v·v`, refused otherwise. A block
 /// read off a rotor's action is already at unit weight and takes
 /// [`spell_peel_rotor_with`], which reads none of this.
 pub fn spell_peel_with(

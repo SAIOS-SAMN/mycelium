@@ -15,7 +15,7 @@ use crate::transducer::sentence::{Form, Vertex};
 ///
 /// `class_frames` STOOD HERE — the frames each class's members were measured
 /// on, written into the sections at class depth when the class stayed
-/// sections. The members hold their frames (AT1, ruled) and the class's
+/// sections. Each member holds its frame (AT1, ruled) and the class's
 /// section is the union read off them ([`Form::sections`]), so the class
 /// frames had a second carrier that had to agree with the first (law 12).
 #[derive(Clone)]

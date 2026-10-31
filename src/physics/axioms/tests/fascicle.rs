@@ -31,7 +31,7 @@ fn dist2(a: &Mv, b: &Mv) -> num_rational::BigRational {
 }
 
 /// THE ELLIPTIC STREAMLINE. Two spheres of `r² = 2` at `0` and `(2,0,0)` cut
-/// orthogonally (a turn of order two): their fascicle turns 180° about their circle —
+/// orthogonally (a turn of order two): the pair's fascicle turns 180° about the pair's circle —
 /// the stream closes after two — and the circle's rational points `(1,1,0)`
 /// and `(1,0,1)` stand fixed. Two unit spheres a unit apart cut at 60°
 /// (order three): the turn is 120°, closing after three.
@@ -78,7 +78,7 @@ fn fascicle_parabolic_fixes_contact_and_slide_kisses_at_infinity() {
 }
 
 /// THE HYPERBOLIC STREAMLINE. Concentric spheres of `r² = 1` and `r² = 4`
-/// are apart (a boost): their fascicle breathes — a point at `(1,0,0)` is
+/// are apart (a boost): the pair's fascicle breathes — a point at `(1,0,0)` is
 /// carried to `(4,0,0)`, lengths scaled by `r₂² / r₁² = 4`, and a sphere of
 /// `r² = 1/4` about the centre to one of `r² = 4`, its extent — and so its
 /// second moments — scaled by `(r₂² / r₁²)² = 16`.

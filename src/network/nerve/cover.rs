@@ -420,9 +420,9 @@ fn xor_nearer(key: &[u8; 32], a: &[u8; 32], b: &[u8; 32]) -> bool {
 /// metric on the chart key's hash, so equal courts share the charts and each
 /// chart has one home on every node. It was identity order: the least key
 /// won every tie, and courts bonded alike tie on every chart, so every
-/// chart-routed act of the fleet went to one court (2026-10-14: hypha b,
+/// chart-routed act of the mesh went to one court (2026-10-14: hypha b,
 /// `244be…`, took every learner's tuition and every mint). The hash spreads
-/// what the structured chart keys would not: they share their leading bytes.
+/// what the structured chart keys would not: they share leading bytes.
 pub fn home(
     cover: &Cover,
     inv: &crate::transducer::stalk::Invariant,
@@ -434,7 +434,7 @@ pub fn home(
     let lanes = occupied_lanes(mag);
     #[expect(
         clippy::disallowed_methods,
-        reason = "law 2 — the chart's identity stays its key; this digest is no identity and locates nothing, it only spreads a tie of equal rooms over the hyphae the router's metric reads (raw structured keys share their leading bytes, and the tie would fall to one court again)"
+        reason = "law 2 — the chart's identity stays its key; this digest is no identity and locates nothing, it only spreads a tie of equal rooms over the hyphae the router's metric reads (raw structured keys share leading bytes, and the tie would fall to one court again)"
     )]
     let near: [u8; 32] = *blake3::hash(inv.key().as_bytes()).as_bytes();
     let fits =|room: &[u64; 4]| lanes.iter().all(|&l| mag[l as usize] == 0 || room[l as usize] > 0);

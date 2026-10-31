@@ -1,5 +1,5 @@
 // NB1, 72.1b, 78.2 — the contact complex's cells are read off the base's
-// elements, one per standing set, carrying the meet of their bodies' nuclei;
+// elements, one per standing set, carrying the meet of the set's bodies' nuclei;
 // no arity is written in.
 
 use crate::transducer::base::Site;
@@ -89,9 +89,9 @@ fn named_incidence_mints_corner_two_cell_with_meet() {
 }
 
 /// ONE MEMBER, TWO BODIES, ONE CELL: a member whose cubes touch only along
-/// an edge stands as two bodies, and with a third member's cube at their
+/// an edge stands as two bodies, and with a third member's cube at the two's
 /// shared corner the three bodies mint one 2-cell. Keyed by member keys the
-/// member's two bodies collided (measured on the corpus); keyed by their
+/// member's two bodies collided (measured on the corpus); keyed by the bodies'
 /// pieces they stand apart (BD2).
 #[test]
 fn named_incidence_keeps_one_members_bodies_apart() {
@@ -162,6 +162,6 @@ fn named_incidence_mints_three_cell_at_four_axes() {
     let (_, cells) = named_incidence(None, &four);
     let c = one(by_grade(&cells, 3), "one 3-cell at n = 4");
     assert_eq!(c.witnesses, vec![Site::of([2, 2, 2, 2])], "the corner of ℤ⁴ the four share");
-    assert!(!c.meet().expect("each nucleus reads").grade(4).is_zero(), "their meet is a grade-4 blade");
+    assert!(!c.meet().expect("each nucleus reads").grade(4).is_zero(), "the nuclei's meet is a grade-4 blade");
 }
 

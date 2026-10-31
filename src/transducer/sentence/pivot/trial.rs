@@ -224,7 +224,7 @@ impl Form {
         };
         // 78.46(4′), LAW 10 — NO OTHER COORDINATE ROSE, read on the cells:
         // a move that splits two circuits of one anastomosis that agreed —
-        // their pair composite the identity before and non-trivial after —
+        // the pair composite the identity before and non-trivial after —
         // raised a coordinate it did not act on, and has not closed the
         // cell. A pair already non-trivial before does not refuse it.
         let after_agreements = super::Agreements::read(self, &faces, &cycles, &mut super::PerturbTally::default());

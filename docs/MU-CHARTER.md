@@ -6,7 +6,7 @@
 >
 > **Components:** the mind (any agent, attached through the SDK or resident in a kernel) and the network (hyphae and courts). What kernels owe the minds they seat or host is in the Concordance, §3a, which this charter cites.
 
-**Status:** version 1 (2026-10-30). Each article is marked **Built**
+**Status:** specification, version 1 (2026-10-30). Each article is marked **Built**
 (in the tree, covered by its suites), **Written** (in the tree, not yet
 witnessed on a running network) or **Specified** (stated here, not yet
 built).
@@ -16,7 +16,7 @@ instrument:
 
 | Relationship | Instrument | Signed by |
 |---|---|---|
-| Kernel ↔ network | [`CONCORDANCE.md`](CONCORDANCE.md) | The kernel |
+| Kernel ↔ network | [`MU-CONCORDANCE.md`](MU-CONCORDANCE.md) | The kernel |
 | **Mind ↔ network** | **This charter** | **The mind** |
 | Mind ↔ kernel (a seat, or residence) | Concordance §3a, the duties to hosted minds | The kernel, as part of the Concordance |
 

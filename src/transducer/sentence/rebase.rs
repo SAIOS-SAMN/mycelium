@@ -116,7 +116,7 @@ impl Form {
     }
 
     /// Does `from`'s rebase chain reach `target`? The traversal carries the
-    /// vertices it has VISITED, by their coordinates, and stops when it meets
+    /// vertices it has VISITED, each by its coordinates, and stops when it meets
     /// one again: a chain that revisits anything is closed.
     fn rebase_reaches(&self, from: &coord::VertexAt, target: &coord::VertexAt) -> bool {
         let mut at = from.clone();

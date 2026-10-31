@@ -159,7 +159,7 @@ pub struct FiledOrbit {
     ///     Ω = exp(½θ₁B₁ + ½θ₂B₂) ,   B₁B₂ = B₂B₁ = I₄
     /// ```
     ///
-    /// acts on two orthogonal invariant planes with their own periods.
+    /// acts on two orthogonal invariant planes, each with its own period.
     /// `lcm` throws three things away at once:
     ///
     ///   EIGENSPACE — a simple planar rotation `[ℓ, 1]` and an isoclinic
@@ -174,7 +174,7 @@ pub struct FiledOrbit {
     ///   RESONANCE — commensurate periods beat at `|ℓ₁ − ℓ₂|⁻¹` under an
     ///   envelope of `lcm(ℓ₁, ℓ₂)`. Storing the envelope alone discards the
     ///   beat, and two orbits cannot resonate because no reader can compare
-    ///   their harmonic ratio.
+    ///   the orbits' harmonic ratio.
     ///
     /// `None` on a plane is infinite order — that factor turns forever —
     /// which A19 spelled as `0` on the class ledger and which is now said
@@ -283,7 +283,7 @@ impl Acting {
     /// with two carriages kept one. That collapses the covering space: 53.6
     /// item 1 quotients two pieces of one rotor class to one base vertex
     /// `V ∈ B⁽⁰⁾` — correctly, so shape correspondence survives a change of
-    /// frame — and 53.6 item 3 puts their meets in the TOTAL space, between
+    /// frame — and 53.6 item 3 puts the pieces' meets in the TOTAL space, between
     /// `σ₁ = (V,U,φ₁)` and `σ₂ = (V,U,φ₂)` of the fibre `π⁻¹(V)`. With one
     /// section per chart the fibre is a point, `E` is `B`, and 18.2's own
     /// sentence — two carriages on one class are two sections — is not
@@ -346,7 +346,7 @@ pub enum Vertex {
         /// Its two sentences are "two bodies of different shapes carried by
         /// one transport correspond", so they are ONE vertex, and "the
         /// vertex's class is the section coordinate", which is one
-        /// `Invariant` and holds one of their charts. Measured on
+        /// `Invariant` and holds one of the bodies' charts. Measured on
         /// `05f2a901`: two bodies, two charts, one transport class, and
         /// `speak_rule`'s `atlas.fiber(class)` reaching one of the two. A
         /// section coordinate that is single-valued cannot carry a section.
@@ -547,8 +547,8 @@ impl Interface {
     }
 }
 
-/// One interface and another are one where their rays write the same
-/// coordinates and their grades agree.
+/// One interface and another are one where the two rays write the same
+/// coordinates and the two grades agree.
 impl PartialEq for Interface {
     fn eq(&self, other: &Interface) -> bool {
         let (mut a, mut b) = (Vec::new(), Vec::new());
@@ -754,10 +754,10 @@ impl Orbit {
 /// support, canonical, the coordinate a body has (78.14, BD2; C3): a member
 /// key names a vertex on a chart, whose support can fall into several
 /// bodies, and a nucleus is the body's order-0 and order-1 reading, a
-/// projection — in their own coordinate order; every element standing
+/// projection — in the pieces' own coordinate order; every element standing
 /// under exactly them,
-/// its witnesses; and the MEET of their nuclei — the round the bodies
-/// share, at the grade their number gives (`k + 1` bodies, a `k`-cell).
+/// its witnesses; and the MEET of the bodies' nuclei — the round the bodies
+/// share, at the grade the count of bodies gives (`k + 1` bodies, a `k`-cell).
 ///
 /// Perception's reading, a fibre of the epigenome: held on the form in
 /// memory and never written to the tape; a cell a circuit seals is a tether
@@ -818,12 +818,12 @@ pub struct Form {
     /// the form, so it is written FIRST on its address and a reader takes
     /// every versor after it at this `n`.
     pub n: u8,
-    /// AT1 — THE VERTICES BY THEIR COORDINATES (Q1): a Word by its
+    /// AT1 — THE VERTICES BY THE VERTICES' COORDINATES (Q1): a Word by its
     /// transport class, the Frame by its tag alone, every other kind by the
     /// coordinate its kind names. Never a position: a vertex is reached by
     /// what it is, and two forms holding one vertex hold it at one key.
     pub vertices: Vertices,
-    /// AT1 — THE FACES BY THEIR OVERLAPS (Q2): one per member pair per
+    /// AT1 — THE FACES BY THE FACES' OVERLAPS (Q2): one per member pair per
     /// frame, keyed by the two charts, the order the orientation.
     pub faces: Faces,
     pub orbits: Vec<Orbit>,
@@ -897,7 +897,7 @@ pub struct Form {
     /// two citations of two forms under one φ at one chart rank stand at
     /// ONE site (gauge universality), so a keyed carrier would hold one and
     /// silently drop the other. The cover is a list of edges, ordered by
-    /// their own coordinates when the envelope is built.
+    /// the edges' own coordinates when the envelope is built.
     ///
     /// EMPTY IS HONEST. `from_address` reconstitutes a form from its key,
     /// and the key does not name the cover, so the form it returns has
@@ -921,7 +921,7 @@ pub struct Form {
     /// got nothing, `incident_chart` read every idea as standing on no
     /// chart, and the defect surfaced only when a cite broke. `coord::Chart`
     /// is that sentence where the compiler reads it (§4.4). It holds the
-    /// vertices' COORDINATES (AT1), never their positions.
+    /// vertices' COORDINATES (AT1), never the vertices' positions.
     pub by_class: Keyed<Vec<coord::VertexAt>, coord::Chart>,
     /// TRANSPORT CLASS KEY → the Word vertices of that class (21 step 1).
     /// Derived by `reindex`, never on the tape.
@@ -946,7 +946,7 @@ pub struct Form {
     pub by_transport: Keyed<Vec<coord::VertexAt>, coord::Transport>,
     /// Word vertex address → carriage, filled at construction.
     pub carriages: Keyed<Versor>,
-    /// NB1 — THE CONTACT COMPLEX'S CERTIFIED CELLS, keyed by their bodies'
+    /// NB1 — THE CONTACT COMPLEX'S CERTIFIED CELLS, keyed by the cells' bodies'
     /// pieces written inline, each framed: one per standing set, read by
     /// perception and held in memory only (see [`FormCell`]).
     pub cells: Keyed<FormCell>,

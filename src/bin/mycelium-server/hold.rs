@@ -8,7 +8,7 @@
 //
 //! ONE HELD READ PER READER, by its key: a reader that asks again while held
 //! has its earlier read answered at once, so the hold is bounded by the
-//! readers, never by asks. The held reads are answered on their own thread,
+//! readers, never by asks. The held reads are answered on a thread of the hold's own,
 //! through the relay's ordinary read (`judge::seat::judge`), never on a judge
 //! worker, so the judging pool is never held by a wait. No clock is read:
 //! the court's own events wake them.

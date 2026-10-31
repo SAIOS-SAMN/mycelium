@@ -22,11 +22,9 @@ take part and the standards the tree is held to.
    [README › Building a client with the SDK](README.md#building-a-client-with-the-sdk).
 3. Read the specification for the area of the intended contribution. Code comments
    cite its sections and rulings by number (for example *78.143* or
-   *MU-CLIENT §5.6*):
-   - [`docs/MU-RECURSION.md`](docs/MU-RECURSION.md): the language, the
-     algebra and the laws.
-   - [`docs/MU-CLIENT.md`](docs/MU-CLIENT.md): the mind.
-   - [`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md): μ and POW++.
+   *MU-CLIENT §5.6*). Every document, grouped and in the order in which
+   they govern, is listed in
+   [README › Documentation](README.md#documentation).
 
 ## How to contribute
 
@@ -50,7 +48,7 @@ essentials:
 - Every quantity is exact: ℚ, or the multivectors of Cl(4,1)(ℚ).
 - Float arithmetic and lossy casts are denied by lint.
 - No structure is projected to a scalar
-  ([`docs/ANTI_FLATTENING_LAW.md`](docs/ANTI_FLATTENING_LAW.md)).
+  ([`docs/MU-ANTI-FLATTENING.md`](docs/MU-ANTI-FLATTENING.md)).
 
 **Refusals**
 - A reader that cannot answer returns a named refusal.

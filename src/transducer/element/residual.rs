@@ -21,7 +21,7 @@ pub fn positions(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
 /// eye measured, and every "rotation"/"recolour" the mesh will ever speak is a
 /// germinated pattern, never a named solver.
 ///
-/// The chain is CENTERED — the changed sites framed with their min-corner at the
+/// The chain is CENTERED — the changed sites framed with the sites' min-corner at the
 /// origin (the substrate's transposition projection, hypha-side per the ruling) —
 /// so the same deformation at any position is ONE word, while geometry (the
 /// relative offsets between changed sites) is preserved exactly: equal-tally,
@@ -377,7 +377,7 @@ pub fn lift_fibre(function: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
     is_fibre_relation(&out).then_some(out)
 }
 
-/// 78.55 — COLOUR WORDS COMPOSE. `after ∘ first` is the composite of their
+/// 78.55 — COLOUR WORDS COMPOSE. `after ∘ first` is the composite of the two words'
 /// observed functions (`fibre_function`), defined on a hue exactly where
 /// `first` says what it becomes and `after` says what that becomes — never
 /// on a hue either word says nothing about, so nothing is guessed (78.45)
@@ -396,7 +396,7 @@ pub fn compose_fibre(after: &[(u8, u8)], first: &[(u8, u8)]) -> Option<Vec<(u8, 
 
 /// 78.55 — A DERIVED COLOUR WORD: the composite of two ruled colour words
 /// (`after ∘ first`), carrying HOW it was reached as a citation in its
-/// receipts envelope — the two words by their coordinates, in application
+/// receipts envelope — the two words by the words' coordinates, in application
 /// order. The envelope is outside the address: the word is its relation,
 /// and a derivation is a presentation of it (§1.5), so a word derived is
 /// the same word as the one a scene witnessed. `None` where either is not a

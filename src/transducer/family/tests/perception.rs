@@ -57,7 +57,7 @@ let b2_still = body(&["0000", "2200"]);
 let v2_still = carriage(&a2, &b2_still, &mut budget).expect("a still bar carries by the identity").v;
 let (relative, carried) =
     edge_transport((&v1, &v2_still), &a1, &a2, &b1, &b2_still, &mut budget).expect("a differential motion is an edge");
-assert_eq!(carried, Carried::Relative, "no versor carries the pair: the edge is their relative motion");
+assert_eq!(carried, Carried::Relative, "no versor carries the pair: the edge is the bodies' relative motion");
 assert!(relative.word.is_identity(), "two translations differ by a translation: no turn");
 assert!(
     !crate::transducer::element::same_versor(&relative.carriage, &crate::transducer::element::identity_versor()),
@@ -334,7 +334,7 @@ fn identity_at() -> crate::network::nerve::coord::VertexAt {
 /// The member key of fixture member `i`: `0` the Frame's, at the root
 /// stratum; every other a member of the identity's class on chart `[i]`
 /// (AT1: a vertex is keyed by its coordinate, so members of one class are
-/// told apart by their charts, never by a position). The chart's count is
+/// told apart by charts, never by a position). The chart's count is
 /// written little-endian, so for a fixture of a few members the key order
 /// is `i`'s order, as the vertex order was.
 fn root_member(i: u16) -> Vec<u8> {
@@ -386,14 +386,14 @@ fn named_pairs(
 ///
 /// The relation the test was reaching for is REAL. Three bodies in a row
 /// do relate, and the engine should carry that. But contact is not a
-/// shared coordinate: it is the conformal strain between their spheres
+/// shared coordinate: it is the conformal strain between the bodies' spheres
 /// (59.3), condensed where a mind can spell the interface (59.6). Until
 /// the tether lands (T2), the incidence is absent, and a test that
 /// manufactured it with a stencil was asserting the dilation.
 ///
 /// So what stands here is the star alone — `E − V + 1 = 0`, a tree, `b₁ =
 /// 0` — and this test is where the tether's arrival will be visible: when
-/// T2 lands, these three bodies gain their faces back from geometry
+/// T2 lands, these three bodies gain the faces back from geometry
 /// rather than from a raster, and this assertion is the one that changes.
 #[test]
 fn named_faces_names_no_adjacency_for_disjoint_row() {
@@ -534,14 +534,14 @@ let ends = |how: Incidence| -> Vec<(u16, u16)> {
         .collect()
 };
 assert_eq!(ends(Incidence::Contact), vec![(1, 3)], "one contact face for one body pair, not four");
-assert_eq!(ends(Incidence::Site), vec![(1, 2), (3, 4)], "each side's occupants chained on their site");
+assert_eq!(ends(Incidence::Site), vec![(1, 2), (3, 4)], "each side's occupants chained on the side's site");
 }
 
 /// C2, 70.6 — A BODY MOVING BETWEEN FRAMES TOUCHES THE BODY THAT STOOD.
 /// One body stood at `(0, 0)` in frame 0. The other stands at `(0, 2)` in
 /// frame 0 and reaches `(0, 1)` in frame 1, beside where the first stood.
 /// In no single frame do the two share an edge or a corner. Across frames,
-/// `(0, 1, 1)` and `(0, 0, 0)` share an edge of their cubes, so the frame
+/// `(0, 1, 1)` and `(0, 0, 0)` share an edge of the two cubes, so the frame
 /// axis relates them. The corner of one frame could not see it, and the
 /// twenty adjacencies do.
 #[test]
@@ -574,7 +574,7 @@ assert!(in_frame.is_empty(), "no in-frame adjacency relates them: {in_frame:?}")
 /// sharing a face with the first. A bar over a bar meets along a straight
 /// seam, and an L over an L along a seam that turns. Both are named on the
 /// one member pair as two interfaces, never merged into one set. Lifted,
-/// their towers differ.
+/// the two interfaces' towers differ.
 #[test]
 fn named_faces_keeps_straight_and_bent_seams_apart() {
 let mut supports = crate::network::nerve::Keyed::new();

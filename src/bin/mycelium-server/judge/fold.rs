@@ -65,7 +65,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // aperture of its witness's measured round trip, a prefix's re-derivation
     // outlasts it, and the home asked the same proposal again every round —
     // a and c re-derived one root of b's 3 470 times each, 11 830 pages
-    // fetched, the courts' doors and kernels taken by it and their offers
+    // fetched, the courts' doors and kernels taken by it and the courts' offers
     // left unanswered. The proof held for the home is this court's own
     // signed position over that root (`hold_era_proved`): what it said once,
     // it says again.

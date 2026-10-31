@@ -17,7 +17,7 @@
 //! - at a pivot `P` on `Σ`, the velocity `K` gives it, `v = P·K`;
 //! - the null generator `N = P ∧ v`: `N² = 0`, it fixes `P` (the source) and
 //!   it keeps `Σ` — a fascicle kissing at `P`, the white hole, whose slivers
-//!   `1 + tN` compose by ADDING their parameters (78.75's null flow).
+//!   `1 + tN` compose by ADDING the slivers' parameters (78.75's null flow).
 //!
 //! Every claim is VERIFIED on the value before it is returned — null, fixes
 //! `P`, keeps `σ` — and refused otherwise (rule 11): no source is asserted
@@ -84,7 +84,7 @@ impl Source {
     }
 
     /// THE SLIVER AT PARAMETER `t`: `1 + tN`, exact (`N² = 0`, so the flow is
-    /// its own first order). Slivers compose by adding their parameters.
+    /// its own first order). Slivers compose by adding the slivers' parameters.
     pub fn sliver(&self, t: &Q) -> Mv {
         Mv::scalar(Q::from_integer(1.into())).add(&self.generator.scale(t))
     }

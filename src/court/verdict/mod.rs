@@ -185,7 +185,7 @@ pub struct Refusal {
 /// the chain's own integrity) are I; a cited word the court has not ruled
 /// is D, held by the court (CV2); a class that does not survive
 /// restriction is C (15.5). The four closure codes — ORBIT, NOT_CLOSED,
-/// VERTEX_BODY, EDGE — are read by content at their sites
+/// VERTEX_BODY, EDGE — are each read by content at its site
 /// ([`Refusal::closure`]); reaching here with one is a refusal no reader
 /// placed, UNCLASSIFIED and counted as the defect it is.
 pub fn ruled_obstruction(reason: &'static str) -> sentence::ClosureObstruction {

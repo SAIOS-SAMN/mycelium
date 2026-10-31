@@ -161,7 +161,7 @@ mod tests {
         assert_eq!(in_runs, at_once, "one run, held alike");
         let first = Remaining::whole().after(&x, 7).expect("a share");
         let second = Remaining::whole().after(&x, 5).expect("a share");
-        assert_eq!(first.then(&second), Ok(at_once.clone()), "two histories composed fold at their seam");
+        assert_eq!(first.then(&second), Ok(at_once.clone()), "two histories composed fold at the seam");
         assert_eq!(at_once.reading(), at_once.factors().iter().fold(Q::one(), |a, (l, n)| a * power(l, *n)));
     }
 

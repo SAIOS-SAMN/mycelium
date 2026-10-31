@@ -789,7 +789,7 @@ pub(crate) fn spelled_word(motion: &crate::transducer::cga::Mv, period: u64) -> 
 }
 
 /// PR1 — THE VERSOR A RESIDUAL STANDS OFF THE LISTING BY: the tether between
-/// the listing's body and the residual's, `V = s_b s_a` over their nuclei
+/// the listing's body and the residual's, `V = s_b s_a` over the two nuclei
 /// (`blade::tether`, the one producer). `None` — the residual's versor unread
 /// by name — where either body does not lift or its nucleus does not read.
 pub(crate) fn residual_versor(listing: &[(i64, i64, u8, u8)], residual: &[(i64, i64, u8, u8)]) -> Option<crate::transducer::cga::Mv> {

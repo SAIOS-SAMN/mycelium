@@ -332,7 +332,7 @@ impl TierFold {
     }
 
     /// The bytes the tier signs: the domain, the tier, the prefix head and
-    /// the rows' commitment — and, where it nets children, their commitment
+    /// the rows' commitment — and, where it nets children, the children's commitment
     /// too (a fold with none signs exactly as 78.119's).
     pub fn signed_bytes(&self) -> Vec<u8> {
         let mut out = DOMAIN.to_vec();
@@ -381,7 +381,7 @@ impl TierFold {
         self.continuity_with(&[])
     }
 
-    /// 78.126 — CONTINUITY WITH THE HANDOFF SIDES THE FOLD CONSUMES: their
+    /// 78.126 — CONTINUITY WITH THE HANDOFF SIDES THE FOLD CONSUMES: the sides'
     /// nets — matter or words leaving (negative) or arriving (positive) across
     /// a domain's boundary — stand with its declared emission.
     pub fn continuity_with(&self, consumed: &[Net]) -> Result<(), Discontinuous> {
@@ -584,7 +584,7 @@ pub enum SideRefusal {
     Unknown,
     /// The side is not this fold's tier's: OUT is the sender's; IN the
     /// receiver's once accepted, the sender's once returned.
-    NotYours,
+    NotThisTier,
     /// IN while the handoff is still offered: neither accepted nor returned.
     NotYet,
     /// Consumed already — a double-spend.
@@ -594,12 +594,12 @@ pub enum SideRefusal {
 }
 
 impl SideRefusal {
-    const ALL: [SideRefusal; 5] = [SideRefusal::Unknown, SideRefusal::NotYours, SideRefusal::NotYet, SideRefusal::Consumed, SideRefusal::Repeated];
+    const ALL: [SideRefusal; 5] = [SideRefusal::Unknown, SideRefusal::NotThisTier, SideRefusal::NotYet, SideRefusal::Consumed, SideRefusal::Repeated];
 
     fn byte(self) -> u8 {
         match self {
             SideRefusal::Unknown => 0,
-            SideRefusal::NotYours => 1,
+            SideRefusal::NotThisTier => 1,
             SideRefusal::NotYet => 2,
             SideRefusal::Consumed => 3,
             SideRefusal::Repeated => 4,

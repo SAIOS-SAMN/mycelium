@@ -32,7 +32,7 @@ impl Entity {
 
     /// N4 — HOLD A PERCEPTION with the frames it was perceived from, so the
     /// thoughts it forms with the perceptions it meets are the transitions
-    /// between their bodies. The draw is `hold_form`'s, one reading of it.
+    /// between the perceptions' bodies. The draw is `hold_form`'s, one reading of it.
     /// `family` is the task the perception was seen in (78.56 III: its
     /// thoughts wind only within it); empty where none is named.
     pub(crate) fn hold_perceived(
@@ -124,7 +124,7 @@ impl Entity {
         // own letters now spell it, D3 cites it, words climb on it. Volatile,
         // the mind's own, lapsed on its own clock; said to other minds as
         // chatter, which they re-derive and agree or differ on (78.161), never
-        // taken into their genomes. What it offers the mesh is the sentence
+        // taken into the other minds' genomes. What it offers the mesh is the sentence
         // above; whether the mesh holds it too is the court's to verify.
         // 78.109 C1, 78.166 1a — THROUGH THE ONE ROAD A RESIDUE TAKES, and it
         // asks the dictionary first (`compose_or_construct`): spoken as a
@@ -147,7 +147,7 @@ impl Entity {
     /// complexes' outflow, so at the voice the released torsion was dropped.
     /// It enters the voice's field now by the door the court's outflow takes
     /// (`mark_flux`, the voices' one field reader, law 12): null flux into the
-    /// tubes, turns and boosts onto their orbits, each motion weighing one.
+    /// tubes, turns and boosts, each onto its orbit, each motion weighing one.
     /// Returns how many motions vented. The complex listens from here on —
     /// armed where it is taken, so a complex read back from disk listens too.
     ///
@@ -205,8 +205,8 @@ impl Entity {
             m.scars = scars;
             m.frozen = frozen;
         });
-        // MU-CLIENT §4.13, §7.1 Phase 3 — the thoughts newly standing thread
-        // their lines in the field as it now stands; and the escrow every door
+        // MU-CLIENT §4.13, §7.1 Phase 3 — each thought newly standing threads
+        // its lines in the field as it now stands; and the escrow every door
         // returned this stroke is credited to the reserve, lane by lane, once.
         self.contemplation.thread_new(budget, beat);
         self.physics.reserve.restore(self.contemplation.take_returned_escrow());
@@ -324,7 +324,7 @@ impl Entity {
     /// scene (§4.4(4)).
     ///
     /// DELIBERATION (§4.12) is the mutual shear of the orbits taken together:
-    /// for each pair on one chart, where their commutator is not the identity
+    /// for each pair on one chart, where the pair's commutator is not the identity
     /// — the lift between them (78.46: drag commutes) — the dimension that
     /// separates them is held as content (§4.10(3)), composed or constructed
     /// as any residue is. No vote, weight or argmin. And what a
@@ -670,8 +670,8 @@ impl Entity {
     /// DOOR 3 OF CHAPTER 25 — ROOM, PER LANE, AND NOTHING IS EVICTED.
     ///
     /// Room is `boundary_measure` against this voice's reserve, LANE BY
-    /// LANE (law 5): the open thoughts' own four-lane measure, never their
-    /// sum, never a count of bubbles, and never the box's memory — which is
+    /// LANE (law 5): the open thoughts' own four-lane measure, never the
+    /// thoughts' sum, never a count of bubbles, and never the box's memory — which is
     /// what `retire_on_t` read and why it is deleted.
     ///
     /// A LANE WITH NO ROOM WITHHOLDS THE NEW THOUGHT. It does not evict a

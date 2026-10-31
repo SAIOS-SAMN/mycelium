@@ -23,7 +23,7 @@ pub(crate) struct Prior<'a> {
     pub(crate) bundle: Option<&'a crate::transducer::family::Family>,
     pub(crate) t_extent: u64,
     pub(crate) mu_before: Option<(Vec<[u64; 4]>, [u64; 4])>,
-    /// 78.46(4′) — the certified cells' circuits by their based rays before
+    /// 78.46(4′) — the certified cells' circuits by the circuits' based rays before
     /// any candidate: which routes agree, so a trial can say whether its
     /// move split two of them.
     pub(crate) agreements: super::Agreements,
@@ -204,7 +204,7 @@ impl Form {
     /// Measured: reading the edge HERE instead zeroed the class of the one
     /// orbit in the tree the pivot actually fires on (a turned L across two
     /// pairs, occupying `Unit(0)`), because an extraction's faces carry an
-    /// edge whose composite is the identity while their transports carry
+    /// edge whose composite is the identity while the faces' transports carry
     /// the 180° turn. They are two objects and neither replaces the other.
     /// ONE PER MEMBER PATH (D10 item 7), keyed by the path.
     pub fn class_vectors(&self, idx: usize) -> crate::network::nerve::Keyed<ClassVector> {

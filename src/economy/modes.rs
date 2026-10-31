@@ -7,8 +7,8 @@
 //! (its ray, and the side it runs); on H a turn (its plane's ray). An AMOUNT
 //! is an exact positive rational: on T the count of the flux along its ray,
 //! on H the fraction of 360° turned (t/ℓ), on S and G the number of times
-//! the mode was moved. Two modes are one where their
-//! canonical coordinates are one (A21, law 2): their amounts add. A draw takes
+//! the mode was moved. Two modes are one where the modes'
+//! canonical coordinates are one (A21, law 2): the amounts add. A draw takes
 //! modes out, or is refused naming the mode it lacks and both amounts.
 
 use crate::network::nerve::Keyed;
@@ -19,7 +19,7 @@ use num_traits::{Signed, Zero};
 
 type Q = BigRational;
 
-/// THE LANES, by their place (law 5): S, G, T, H.
+/// THE LANES, by place (law 5): S, G, T, H.
 pub const S: u8 = 0;
 pub const G: u8 = 1;
 pub const T: u8 = 2;
@@ -37,8 +37,8 @@ pub enum Mode {
     /// T — a null flux: its canonical ray and the side it runs.
     Flux { ray: Mv, forward: bool },
     /// H — a turn: its plane's canonical ray. Its amount is the exact
-    /// fraction of 360° turned (t/ℓ per turn), so two quarter turns and one
-    /// half turn are one holding.
+    /// fraction of 360° turned (t/ℓ per turn), so two 90° turns and one
+    /// 180° turn are one holding.
     Turn { ray: Mv },
 }
 
@@ -324,7 +324,7 @@ impl Modes {
     }
 
     /// THE HOLDING AS A PERSON READS IT, mode by mode, never a count: each
-    /// lane's modes with their exact amounts — a turn as its t/ℓ of 360°.
+    /// lane's modes with the modes' exact amounts — a turn as its t/ℓ of 360°.
     pub fn print(&self) -> String {
         let name = |m: &Mode, a: &Q| match m {
             Mode::Boost { c, forward, .. } => format!("S boost c={c} {} ×{a}", if *forward { "+" } else { "−" }),

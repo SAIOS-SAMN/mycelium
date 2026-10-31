@@ -3,8 +3,8 @@
 // the theorem or refused with certainty, the worklist kept as the check; and
 // the product of the constructors in each circuit's order, read as a motion.
 //
-//! RECOGNITION (GR2). The constructors fall into components by their
-//! non-orthogonal pairs. A component is a COXETER SYSTEM where (i) its
+//! RECOGNITION (GR2). The constructors fall into components by the
+//! constructors' non-orthogonal pairs. A component is a COXETER SYSTEM where (i) its
 //! Gram form's off-diagonals can all be made `≤ 0` by signs on the
 //! constructors — an exact sign balance along the component's pairs,
 //! unique up to one global sign, no choice — (ii) its constructors are
@@ -130,8 +130,8 @@ fn rational_gcd(a: &Q, b: &Q) -> Q {
     Q::new(num, a.denom() * b.denom())
 }
 
-/// The components of the constructors under their non-orthogonal pairs, each
-/// ascending, in the order of their least member.
+/// The components of the constructors under the constructors' non-orthogonal pairs, each
+/// ascending, in the order of each component's least member.
 fn components(g: &[Vec<Q>]) -> Vec<Vec<usize>> {
     let d = g.len();
     let mut seen = vec![false; d];

@@ -35,7 +35,7 @@ pub enum Unstated {
     /// An act on parts names another act on parts: parts are read one level.
     Nested,
     /// The input has not the frame the act names: no two equal panes it
-    /// splits into, or a quarter turn of a tile that is not square.
+    /// splits into, or a 90° turn of a tile that is not square.
     Unframed,
     /// A hue read off a partner (`Paint::Of`) found no touched body the
     /// predicate selects, or bodies of more than one hue; or a join, which
@@ -46,7 +46,7 @@ pub enum Unstated {
 /// THE SQUARE'S SYMMETRY `t` ON A GRID (`Act::Tile`'s codes): 0 itself, 1
 /// mirrored across its columns, 2 across its rows, 3 a turn of 180°, 4 a turn
 /// of 90°, 5 of 270°, 6 the transpose, 7 the anti-transpose. `None` for a
-/// code past 7, or a quarter turn or transpose of a grid that is not square.
+/// code past 7, or a 90° turn or transpose of a grid that is not square.
 pub(crate) fn turn_of(g: &[Vec<u8>], t: u8) -> Option<Grid> {
     let h = g.len();
     let w = match g {
@@ -500,7 +500,7 @@ fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut [Vec<u8>]) ->
                     }
                 }
                 Trace::Clears | Trace::Keeps => {
-                    // THE NEAREST THEIR STOP FIRST: a body's reach is its
+                    // THE BODIES NEAREST A STOP FIRST: a body's reach is its
                     // leading cell's along the ray. Each reach lands on the
                     // canvas as the nearer ones left it, so a stack settles
                     // as it lands; bodies of ONE reach land together, against
@@ -841,7 +841,7 @@ pub(crate) fn select_each(preds: &[Pred], x: &Grid, bodies: &[Body]) -> Vec<Opti
 }
 
 /// THE REGION SEVERAL BODIES NAME TOGETHER, as a fill selecting them speaks
-/// it (`Seen::region` over the set): their joint interior is every ground
+/// it (`Seen::region` over the set): the set's joint interior is every ground
 /// cell the set walls in, which no one of them may.
 pub(crate) fn region_of_set(region: Region, x: &Grid, bodies: &[Body], set: &[usize]) -> Vec<(usize, usize)> {
     Seen::of(x, bodies).region(region, set)

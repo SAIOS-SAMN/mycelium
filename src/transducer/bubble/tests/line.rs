@@ -22,7 +22,7 @@ fn perceive(c: &mut Contemplation, input: &[&str], output: &[&str], family: &[u8
 }
 
 /// THE VENT, as a winding takes it: the field beats, what it let go is let
-/// go, and the thoughts newly standing thread their lines.
+/// go, and the thoughts newly standing thread lines.
 fn vent(c: &mut Contemplation) {
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let Ok((beat, released)) = crate::transducer::mind::with_field(|f| (f.beat(), f.take_released())) else {
@@ -55,8 +55,8 @@ const SLIDE_ON: [&str; 3] = ["00100010", "00100010", "00110011"];
 /// let go at the vent as that closure. The second finds nothing open to
 /// thread: it stands until the field next moves, to be met — a vent with
 /// nothing moved lets it go nowhere — and leaves at the beat of that motion.
-/// Both gone, their remainders are at the cavity, their escrow returned exactly,
-/// their scene counted for the stroke's returns, while the escaping motion
+/// Both gone, the thoughts' remainders are at the cavity, the escrow returned exactly,
+/// the scene counted for the stroke's returns, while the escaping motion
 /// between the hours stands on the docket under that scene.
 #[test]
 fn release_drops_slide_perception_where_motion_lets_go() {
@@ -75,10 +75,10 @@ fn release_drops_slide_perception_where_motion_lets_go() {
         move_field();
         vent(&mut c);
         assert!(c.bubbles.get(&second).is_none(), "the second, held by nothing, left at the field's next beat");
-        assert!(c.cavity_len() > cavity, "their remainders at the cavity");
-        assert_eq!(c.take_returned_escrow(), [2, 0, 0, 0], "their escrow returned, exactly");
+        assert!(c.cavity_len() > cavity, "the remainders at the cavity");
+        assert_eq!(c.take_returned_escrow(), [2, 0, 0, 0], "the escrow returned, exactly");
         let scenes = c.take_released_scenes();
-        assert!(!scenes.is_empty() && scenes.iter().all(|s| s == b"the scene"), "their scene counted: {scenes:?}");
+        assert!(!scenes.is_empty() && scenes.iter().all(|s| s == b"the scene"), "the scene counted: {scenes:?}");
         let demanded = c.docket_cites().into_iter().any(|cite| matches!(cite, Cite::Demand { residue: Some(_), .. }));
         assert!(demanded, "the escaping motion stands as a demand");
     });

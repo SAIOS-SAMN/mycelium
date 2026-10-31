@@ -1,5 +1,5 @@
 // 78.11, 78.14, CG1, CS2, BD2 — EACH CERTIFIED CELL OF A FORM READ AS ITS
-// ORBIT ALGEBRA: the circuits that cross it, their holonomies through the
+// ORBIT ALGEBRA: the circuits that cross it, the circuits' holonomies through the
 // one composite reader (OR3), the cell's round, constructors and Gram form —
 // the cells a held form's pivot reads against.
 //
@@ -15,7 +15,7 @@ use crate::network::nerve::Keyed;
 use crate::transducer::cech::ChamberAlgebra;
 use crate::transducer::sentence::Form;
 
-/// THE CIRCUITS CROSSING ONE CELL, by their place in the traversal, each with
+/// THE CIRCUITS CROSSING ONE CELL, each by its place in the traversal, each with
 /// its order of the cell's bodies (CX1): each body as the circuit's crossings
 /// first reach it. A step crosses where the face it crosses joins two
 /// different bodies of the cell, read off the face's oriented pair and the
@@ -88,7 +88,7 @@ pub(crate) fn cell_algebras(
     traversed: &[crate::transducer::sentence::TraversedCircuit],
     budget: &mut crate::physics::Budget,
 ) -> Vec<ChamberAlgebra> {
-    // Each cell's crossing circuits and their orders of its bodies.
+    // Each cell's crossing circuits and the circuits' orders of its bodies.
     type Crossing = (Vec<crate::transducer::cech::ChamberCircuit>, Vec<Option<Vec<usize>>>);
     let per_cell: Vec<Crossing> = form
         .cells

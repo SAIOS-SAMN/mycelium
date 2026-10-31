@@ -362,7 +362,7 @@ impl Kernel {
     // remainder is now recorded whole on the Torse rewrite the fill mints.
 
     /// RM1, 78.37(4) — A SIMPLEX CLOSED UP TO ITS CLASS. The court mints the
-    /// Torse rewrite carrying the simplex's words to their class: `before`
+    /// Torse rewrite carrying the simplex's words to the words' class: `before`
     /// the words, `after` the simplex's own key — its sections' coordinates
     /// (KB1), the coordinate of the object glued, never a word chosen from it
     /// — its payload σ and ℓ; and records the remainder (κ, g, the complex's

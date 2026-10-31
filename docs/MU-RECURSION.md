@@ -1,17 +1,15 @@
-# Recursion — the linguistics engine on crystallized forms
+# MU-RECURSION — the linguistics engine on crystallized forms
 
 > **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
 > **Components:** every Mycelium component: the algebra, client, hypha, court and wire. Each chapter names its code paths, which locate its component. Rulings agreed with the game kernels say so in their titles. Where a term reads two ways (*planetary*, *star*, *universe*), GLOSSARY *Components and scope* and MU-LEXICON §4 settle it.
 
-Status: the governing specification of Mycelium v0.2.0, with its rulings.
+**Status:** governing specification, release 0.2.0, with its rulings.
 Each chapter states its objects and names the code that carries them;
-chapter 78 lists the rulings in force. Companion documents:
-`ALPHABET.md`, `MU-ENGINEERING.md`, `MU-ECONOMY.md`, `XSEPTUM.md`, and
-`MU-CLIENT.md` — the mind: the counterpart of the hypha that perceives what
-the hypha exports, understands it in its own field and responds in anastome
-(its §1–§9); the mind's chapters moved there from this document, and each
-leaves a pointer here.
+chapter 78 lists the rulings in force. The mind's chapters moved to
+`MU-CLIENT.md` (its §1–§9), and each leaves a pointer here. The other
+documents, and the order in which they govern, are listed in
+[README › Documentation](../README.md#documentation).
 
 ## How to read this document
 
@@ -819,7 +817,7 @@ cold, citable by its coordinates — never discarded.
 Where they amend: 1 and 2 are the build order of the slice and its gate;
 3 → law 8 (with 37.7 for S2 and S3, MU-ECONOMY for S4, 1.9 for C3);
 4 → 50.2; 5 → 78.143 and 78.146's task paragraph; 6 → 78.148(4).
-"78.157" names the proposal
+"78.157" names the study
 [proposals/78.157-client-server-mathematics.md](proposals/78.157-client-server-mathematics.md);
 it has no chapter of its own, and its crossings are governed by law 8.
 Rulings 1, 2, 3 and 6 are given below with their build-sequencing
@@ -896,7 +894,7 @@ is decided here, and binds the slice (S1–S4):
    forward as punctures.
 6. **Rule 14 and checklist (k).** Amended in place by the override above:
    scoped tests on touched modules, the whole suite never the gate.
-   ALPHABET.md and the other mentions of "the seventeen" read through
+   MU-ALPHABET.md and the other mentions of "the seventeen" read through
    1.1 as amended.
 
 ### The ruling on refused solves as held questions, 2026-10-09
@@ -959,6 +957,10 @@ Read with law 8 (clients think, hyphae verify) and 78.157:
   every in-game host.
 
 ## 0.2 The master algorithms as stated (chapter 17), where applied, and what stands
+
+In the status columns of Part 0, *landed* reads as **Built** and *open* as
+**Specified** in the status words of the other documents; *governs* marks
+a text in force.
 
 Every path to a key passes through M1; the composition is chapter 17's
 diagram. "Site" is where the tree applies it; "physics" is what governs
@@ -1088,8 +1090,8 @@ By organ, from the sensor to the mesh; each line is the state of the tree.
 - **Refraction, tethers, routes (72.1, 78.6, 79).** Landed. Condense and drain at the family pole remain the Čech layer's (TH1).
 - **The court (5, 23, 13–15, 74, 78.9).** Glue, Mayer–Vietoris and the refusal reader landed; the court holds no questions across perspectives yet (CV2) and offers no other angle (CV4): POWC has no producer.
 - **The ledger and the economy (45, 78.21–78.24, MU-ECONOMY).** The ledger is a partial order carried as a trie with the stamp as its key; the clock reads, `K` counts a node's cycles closed by name as acts (OK1 — a ledger coordinate, never an orbit, §0.0), and a ruling's economy is applied at its node (ACT1 landed): a ruling pays POUW and POWR and slashes at its Ruling act (`rule_on`, live from the stroke's docket and from a peer's receipt), while POWC has no producer (`settle_refine`, `settle_condense` uncalled). The mind persists as keyed tries by coordinates (LD3 landed; the court writes `MYT2`, the genome `GEN7`); the escrow still lapses by extent alone (FX1).
-- **The mind (24, 25, 62, 78.7, 78.37, 80).** Pivot, certificates, viscosity landed; held superpositions are not collapsed by the 𝔽₂ kernel (T5); they fold back along the plexus in the tree (78.37: transport stopped by holonomy, truncation to the 2-core, flux read per lane, the remainder on the record with its receptor and re-fill — TP1, TC1, RM1); the six pivots live on the mind's own complex, drain and descend fired by the field's releases (MU-CLIENT §4.5; FX1's tables retired); minerals and crystals are not distinguished (DL1); a constructed residue's rotation is adjoined as the mind's own letter (`construct_and_adjoin`), but the odd constructor is not yet a letter and the peel is not mode-first (AL1, both closed by the slice's S1); hyperbolic Coxeter systems under Vinberg's criterion are not read (HX1); minds speaking to minds to harden language from their dialects is the client's objective (SP2; MU-CLIENT §1 item 6, §5.5) — the chatter frames run, hearing through the hearer's own shells, windings and pivots is owed (MU-CLIENT §5.3, §7.1).
-- **The readings (78.3, 78.16–78.19).** The typed readings landed; the first non-zero learning reading is owed (LC2).
+- **The mind (24, 25, 62, 78.7, 78.37, 80).** Pivot, certificates, viscosity landed; held superpositions are not collapsed by the 𝔽₂ kernel (T5); they fold back along the plexus in the tree (78.37: transport stopped by holonomy, truncation to the 2-core, flux read per lane, the remainder on the record with its receptor and re-fill — TP1, TC1, RM1); the six pivots live on the mind's own complex, drain and descend fired by the field's releases (MU-CLIENT §4.5; FX1's tables retired); minerals and crystals are not distinguished (DL1); a constructed residue's rotation is adjoined as the mind's own letter (`construct_and_adjoin`), but the odd constructor is not yet a letter and the peel is not mode-first (AL1, both closed by the slice's S1); hyperbolic Coxeter systems under Vinberg's criterion are not read (HX1); minds speaking to minds to harden language from their dialects is the client's objective (SP2; MU-CLIENT §1 item 6, §5.5) — the chatter frames run, hearing through the hearer's own shells, windings and pivots is Specified (MU-CLIENT §5.3, §7.1).
+- **The readings (78.3, 78.16–78.19).** The typed readings landed; the first non-zero learning reading is Specified (LC2).
 
 The four places the language loses content, and their carriers, are
 78.26.
@@ -1234,7 +1236,7 @@ Every noun below has ONE sense. Where a word held two, the second is named apart
 | **planet** | a hypha and the world it hosts, on which its entities reason (77.1(2), amending 74's "a mind's held complex") | orbits under its star |
 | **entity** | a mycelium-client kernel on a planet — as it speaks, a **voice** (one verifying key); as it holds and thinks, a **mind** (its held complex and contemplation) | perceives, thinks, utters; learns by the syllabus |
 | **court** | a hypha's verifier: it replays, rules, files the class ledger, serves the syllabus; it never thinks (law 8) | adjudicates submitted solutions; rules convergence |
-| **septum** | the settlement protocol between hyphae (XSEPTUM.md) | pays and settles |
+| **septum** | the settlement protocol between hyphae (MU-XSEPTUM.md) | pays and settles |
 
 **The language.** A **letter** is an axiom, a rotor of the alphabet; a **word** is a filament whose vertex a derivation re-derives; a **sentence** is words that cohere; **speech** is their transfer; a **dialect** is spoken and stood (the epigenome), a **language** replayed by two organs and taught (the genome); a **mineral** is a taught word not yet re-derived, a **crystal** one re-derived; a **shortcut** is a word's coordinate, its class key and winding vector (78.44(4)); a **callus** is a fibre hardened into a tether of the genome. **Cohesion** is the term (ruled 2026-09-26) for what fitting a congruent shape toward coherence is paid in; its reading on the ledger is POUW on the lanes the fit closes, until it is ruled a quantity of its own.
 
@@ -1264,7 +1266,7 @@ A perception persists at the perception layer under the physics — while someth
 
 ### 1.1 Generators
 
-Seventeen letters (`ALPHABET.md`): the identity, six quarter turns on the
+Seventeen letters (`MU-ALPHABET.md`): the identity, six quarter turns on the
 six pair planes of the Euclidean chart `e0..e3`, six (3,4,5) rotors on the
 same planes, four (5,12,13) rotors on four of them. Each is an exact rotor
 in Cl(4,0) over ℚ with its inverse carried. They never change.
@@ -7017,7 +7019,7 @@ part says what holds when a node is not honest, and it removes the one
 physical quantity a kernel once read, the wall clock. Nothing here changes what a
 word is. It changes what a receipt is, what a signature covers, how time is
 counted, and what the court does with a node that signs two truths.
-`XSEPTUM.md` is rewritten against this part; `MU-ECONOMY.md` §4 carries the
+`MU-XSEPTUM.md` is rewritten against this part; `MU-ECONOMY.md` §4 carries the
 burn rule of 47.4. Functions marked **new** were introduced by this part.
 
 ## 45. Time without clocks
@@ -7368,7 +7370,7 @@ without changing the key. Re-keying is a receipt of kind `rekey`, signed by
 the prior group key and naming the successor; carriers keyed by `vk` follow
 the successor as A8 follows an address remap, with the same conservation.
 Binding: `client::identity::VoiceGroup` **new** (the `frost-ed25519` crate),
-replacing the `VoiceKey` of `XSEPTUM.md` §8; `court::identity::HyphaKey`
+replacing the `VoiceKey` of `MU-XSEPTUM.md` §8; `court::identity::HyphaKey`
 becomes a group key when a hypha has more than one operator.
 
 ### 46.2 Manifests
@@ -7537,7 +7539,7 @@ Every fact the mesh is read by becomes a typed reading (CV5).
 
 An **equivocation proof** is two signed receipts under one key with equal
 `K` and different chain hashes; equal hashes are a duplicate, not a proof.
-Any node presents it (`ACT_EQUIVOCATION` **new**, 0x35 in `XSEPTUM.md`). The
+Any node presents it (`ACT_EQUIVOCATION` **new**, 0x35 in `MU-XSEPTUM.md`). The
 court verifies the two signatures and the equality of key and `K` and burns
 the signer's bond on all four lanes: one `burn` ledger entry naming the
 proof, supply reduced by the same vector, so `supply = Σ balance + Σ bond +
@@ -7588,7 +7590,7 @@ receipt.
 
 ## 49. Settlement bound to this part
 
-`XSEPTUM.md` is the binding document for settlement and is rewritten against
+`MU-XSEPTUM.md` is the binding document for settlement and is rewritten against
 chapters 45–47. The deltas, so the reviewer can check both texts against one
 list:
 
@@ -7602,7 +7604,7 @@ list:
 - `SEPTUM_EQUIVOCATION` (0x35) is the proof act of 47.4; `DUPLICATE` means
   an identical Note at a spent `K`, and a different one is `EQUIVOCATION`;
 - refusal codes `EQUIVOCATION`, `ORIGIN`, `WITNESS_DEPENDENT`,
-  `WITNESS_ROOM`, `MANIFEST`, `RECEIPT_GAP` are typed variants (XSEPTUM §9);
+  `WITNESS_ROOM`, `MANIFEST`, `RECEIPT_GAP` are typed variants (MU-XSEPTUM §9);
 - voice identity is a FROST group with manifests (46),
   `client::identity::VoiceGroup`.
 
@@ -12844,7 +12846,7 @@ Code: `src/transducer/alphabet/factor.rs` (AL1's residue), `src/transducer/cech/
 
 ### 78.30 The higher-order cell: centroids, geoids, toroids, and the Coxeter reading
 
-An analyst's draft is reconciled against the standing rulings; items 1, 5 and 7 are ruled, 2, 3, 4 and 6 restate standing rulings with the draft's departures corrected, and the draft's versions of 8 and 9 are refused. `ANTI_FLATTENING_LAW.md` clauses 9–11 state this section.
+An analyst's draft is reconciled against the standing rulings; items 1, 5 and 7 are ruled, 2, 3, 4 and 6 restate standing rulings with the draft's departures corrected, and the draft's versions of 8 and 9 are refused. `MU-ANTI-FLATTENING.md` clauses 9–11 state this section.
 
 1. The centroid is A4's null point `P(x) = x + ½|x|² e_∞ + e_o` and never a constructor (reflection in a null vector is degenerate); constructors are sphere vectors `s² = r² ≠ 0` and mirrors `eᵢ + k e_∞` (78.12); an enclosure is the join of centres `P₀ ∧ … ∧ Pₖ` (EN1), and a degenerate join is read as a flat at infinity, never a fabricated sphere.
 2. The geoid is HL1: a body's constructors are the pencil of spheres A.11's second and fourth harmonics lift to; a polynomial shell beside the harmonics is a second carrier and is refused (law 12).
@@ -14564,7 +14566,7 @@ treasury, whose audit is `supply = Σ balance + Σ bond + Σ held`. **B2** the
 settlement act, which a court replays under continuity. **B3** the financial
 mind, taking over the citation shares and escrow release the treasury now
 performs (`settle_use`, `settle_subsidy`); the court's direct payments
-retire as it lands. B2 and B3 are owed. Code:
+retire as it lands. B2 and B3 are Specified. Code:
 `src/server/cognition/book/speech.rs` (`refuse_sentence`),
 `src/chronometry/receipt.rs` (`Cite::Refusal`), `src/anastome/dialogue/wallet.rs`,
 `src/server/cognition/wallet.rs` (`Kernel::wallet`),
@@ -15024,7 +15026,7 @@ it, searching the prime, only for a caller that keeps the demand;
 `spells`, and the demand's own well-formedness reads `outside_the_alphabet`
 exactly, with no prime found. A caller that keeps a rotor prime searches
 under the stroke (BD1): one read a trial, a spent stroke leaving the demand
-`Standing` by name; that bound is still owed at
+`Standing` by name; that bound is still Specified at
 `prime_outside_the_alphabet`, whose trial loop spends no token. Code:
 `src/transducer/family/derivation.rs` (`Unspelled`, `spells`, `factor_core`,
 `letter_reading`), `src/transducer/sentence/rung.rs` (`hold_shortcut`),
@@ -15500,7 +15502,7 @@ A replay under the kernel lock is metered end to end and resumable across court 
 7. A cycle of citations is refused by name: a cited form reached again while it is spoken is `Speech::cycled`, the mint refuses it (`CitationsDoNotCompose`) and the court refuses it as `REFUSE_CITATION_CYCLE` (I), never a stack overflow.
 8. The phase reading is bounded: `read_phase` reads on a stroke of its own (one read per ruled stratum, counted by `Stalks::strata_counted`, per chart's complex, per receipt of the window); where the stroke runs out the reading is not taken and the mark stays.
 
-Owed: a unit larger than one stroke (`spend_unit` reads), such as one pair speaking many cited forms afresh, is passed over rather than resumed inside the pair's speech. Code: `src/court/verdict/resume.rs`, `src/server/cognition/court/replay.rs`, `src/server/cognition/court/task.rs` (`judge_solve_on_stroke`), `src/server/cognition/court/phase.rs` (`read_phase`), `src/transducer/family/speak.rs`, `src/network/nerve/keyed/`; tests `src/court/verdict/tests/resume.rs`, `src/server/cognition/tests/resume.rs`, `src/transducer/family/tests/cycle.rs`, `src/network/nerve/keyed/tests/seek.rs`.
+Specified: a unit larger than one stroke (`spend_unit` reads), such as one pair speaking many cited forms afresh, is passed over rather than resumed inside the pair's speech. Code: `src/court/verdict/resume.rs`, `src/server/cognition/court/replay.rs`, `src/server/cognition/court/task.rs` (`judge_solve_on_stroke`), `src/server/cognition/court/phase.rs` (`read_phase`), `src/transducer/family/speak.rs`, `src/network/nerve/keyed/`; tests `src/court/verdict/tests/resume.rs`, `src/server/cognition/tests/resume.rs`, `src/transducer/family/tests/cycle.rs`, `src/network/nerve/keyed/tests/seek.rs`.
 
 ### 78.153b The lock guard and the shelf reads
 
@@ -15729,7 +15731,7 @@ NOT YET AT h by side against each mouth's freshness `N`); its §7 is revised
 in [MU-CHRONOMETRY.md](MU-CHRONOMETRY.md), which governs where they differ.
 See [proposals/78.156-clock-binding.md](proposals/78.156-clock-binding.md).
 
-### 78.157 Client and server mathematics (proposal)
+### 78.157 Client and server mathematics (study)
 
 A read-only study comparing the client and server code module by module,
 against law 8 (clients think, hyphae verify), to place each piece of
@@ -15738,7 +15740,7 @@ enclosures moved into the shared core and court-word resolution was
 narrowed; several renames and moves it listed remain open. See
 [proposals/78.157-client-server-mathematics.md](proposals/78.157-client-server-mathematics.md).
 
-### 78.158 Governed loop wiring (proposal)
+### 78.158 Governed loop wiring (study)
 
 A read-only study of the governed loop (merged, verified, ranked) as wiring:
 convergence is coboundary reduction of asymmetric values by converging
@@ -15780,7 +15782,7 @@ has ruled, and learns from the answer. Three parts:
   whose whole motion no held word cites is a residue, and the mind asks
   its court (`client/sdk/entity/present.rs`). The answers are kept by the
   motion's canonical key (`presentation::motion_key`): volatile, never
-  persisted; their bound beside the genome's is owed.
+  persisted; their bound beside the genome's is Specified.
 - **P3 — the answer read.** What a court answered a mind for a motion is
   read back through the crystal (`Crystal::presented`;
   `transducer/family/mod.rs`): the generators and exponents, or `None`
@@ -16126,7 +16128,7 @@ The courts pay what a task asked for; the doctrine's arms for the rest are:
 - **Guards:** the discharge is measured by the court on evidence it holds;
   no self-pay (5.7(d)); a word is installed once; never the sum of words; an
   agreement needs two minds' keys (78.165).
-- **Ruling owed:** whether 78.149(c) stands (a composition paid only as the
+- **Ruling pending:** whether 78.149(c) stands (a composition paid only as the
   uses it credits), or a composition installed for no task is POUW on its
   words' families.
 
@@ -16153,7 +16155,7 @@ then containment and memory. The witness is the counterparties' acts
 (MU-CLIENT §7.2(3)): the courts' POUW and POWC mints and the union's pay for
 words and sentences no task named, peers' replays, questions sealed by
 another mind; the minds' own readings are diagnosis, never the witness.
-Rulings owed: 78.149(c) (§5), and whether an escaping orbit dissipated to the
+Rulings pending: 78.149(c) (§5), and whether an escaping orbit dissipated to the
 reservoir counts as bound for the drive (as scoped, yes: it is held at its
 coordinates and reforms).
 

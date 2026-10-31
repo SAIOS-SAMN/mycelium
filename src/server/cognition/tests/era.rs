@@ -169,8 +169,8 @@ assert!(broken.chain().root().is_none() && broken.fold_proposal().is_none());
 }
 
 /// THE COLD SEGMENT KEEPS EACH ERA IN ITS OWN SPAN. Two folds filed into a
-/// real segment are each read back as their own receipts, and a court that
-/// binds the segment again holds both eras from their descriptors alone,
+/// real segment are each read back as its own receipts, and a court that
+/// binds the segment again holds both eras from the eras' descriptors alone,
 /// each answering its own range.
 #[test]
 fn bind_eras_reads_each_era_own_range() {
@@ -202,7 +202,7 @@ fn bind_eras_reads_each_era_own_range() {
     assert!(back.restore(&k.snapshot()));
     assert!(back.archive().is_empty(), "no filed era in the snapshot");
     back.bind_eras(path.clone()).expect("the segment binds");
-    assert_eq!(back.archive(), k.archive(), "the eras held from their descriptors");
+    assert_eq!(back.archive(), k.archive(), "the eras held from the eras' descriptors");
     assert_eq!((read(&back, None, close(2)), read(&back, Some(close(2)), close(3))), (one, two), "each era answers its own range");
     let _ = std::fs::remove_file(&path);
 }

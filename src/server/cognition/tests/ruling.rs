@@ -75,7 +75,7 @@ fn admit_line_applies_peer_ruling_through_receipt() {
 }
 
 /// LD3-a — THE STAMP ALIAS CLOSES EC1'S GAP. Courts a and c each docketed
-/// the same word on their own stroke, so each holds it at its OWN admitting
+/// the same word on its own stroke, so each holds it at its OWN admitting
 /// stamp, and a's ruling cites a's. When c admits a's line, a's admitting
 /// act names the word by a stamp c never filed; c's fiber read yields
 /// exactly one word there, so a's stamp is filed as an alias — one word,
@@ -140,7 +140,7 @@ fn admit_line_files_no_alias_on_shared_fiber() {
 /// LD3-a, 78.64 H1 — ONE ALIAS PER SIGNER. A peer that admits the one word
 /// on a fiber twice, by two acts, cites it by the later stamp from then on:
 /// the later alias replaces the earlier, which leaves with its depth, so a
-/// word's aliases are bounded by its signers and not by their acts.
+/// word's aliases are bounded by its signers and not by the signers' acts.
 #[test]
 fn admit_line_later_admission_replaces_alias() {
     use crate::chronometry::{Cite, ReceiptChain, Stamp};

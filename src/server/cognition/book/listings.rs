@@ -340,7 +340,7 @@ impl Kernel {
                 None => Vec::new(),
             }
         } else {
-            // No tether is measured between held words: their chains are
+            // No tether is measured between held words: the words' chains are
             // centred, so a distance between them is the canonical form's
             // (see `condense_stroke`).
             crate::transducer::stalk::congruent_all(&self.stalks, |a| if a == addr { None } else { self.word_at(a) }, &word, budget)

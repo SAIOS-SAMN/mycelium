@@ -131,7 +131,7 @@ impl Entity {
     /// the MESH's height, and the book's k-step carried on a quote reply is
     /// a third quantity belonging to a hypha's chain; none of the three is
     /// interchangeable with another, and the stroke line prints this one
-    /// and the height under their own names.
+    /// and the height, each under its own name.
     pub(crate) fn own_k(&self) -> u64 {
         self.k
     }
@@ -173,7 +173,7 @@ impl Entity {
     }
 
     /// Open with CONTINUITY: restore the crystallized genome from `genome_path`
-    /// if present — the words a court admitted, at their citations. The
+    /// if present — the words a court admitted, each at its citation. The
     /// epigenome, the plan and the mind's K start empty: they are volatile,
     /// the mind's motion, never persisted (78.27, 78.49). An older file, or
     /// one that does not read whole, is refused whole.
@@ -195,7 +195,7 @@ impl Entity {
 
     /// RESTORE A GENOME'S BYTES into this freshly opened mind: the words a
     /// court admitted, each at its citation. Whole or not at all: the words
-    /// are read into an epigenome of their own and taken in only once they
+    /// are read into a separate epigenome and taken in only once they
     /// read whole, so a refusal leaves this mind as it was. `Err` names why
     /// the file was refused.
     pub(crate) fn restore_genome(&mut self, bytes: &[u8]) -> Result<(), String> {
@@ -221,7 +221,7 @@ impl Entity {
         Ok(())
     }
 
-    /// THE GENOME'S BYTES: the words a court admitted, at their citations. A
+    /// THE GENOME'S BYTES: the words a court admitted, each at its citation. A
     /// word the writer refused is named once with its count (LD0), and the
     /// counts are answered.
     pub(crate) fn genome_bytes(&self) -> (Vec<u8>, crate::client::sdk::epigenome::GenomeRefused) {

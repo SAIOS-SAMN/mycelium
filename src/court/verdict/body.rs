@@ -55,7 +55,7 @@ pub(crate) const FAIL_PART: &str = "an image body is reached in part";
 pub(crate) const FAIL_GAUGE_AMBIGUOUS: &str = "the gauge names two images for one hue";
 
 /// ONE FRAME OF THE FAMILY, PERCEIVED ONCE (law 12): the bodies of `x`
-/// filed by their chart, the images of `y`, and the image each base site
+/// filed by chart, the images of `y`, and the image each base site
 /// belongs to. Every reader of a frame — a vertex's replay, an edge's
 /// re-measurement, the coverage of a part-reached image — reads this and
 /// perceives nothing itself: the frame's bodies are one fact of the frame,
@@ -93,7 +93,7 @@ pub(crate) fn perceive_family(family: &[(Grid, Grid)]) -> Vec<Perceived> {
     family.iter().map(|(x, y)| Perceived::of(x, y)).collect()
 }
 
-/// The frames over pairs already perceived: their indexes, built from the
+/// The frames over pairs already perceived: the frames' indexes, built from the
 /// bodies (no sensor read).
 pub(crate) fn frames_over<'a>(family: &'a [(Grid, Grid)], perceived: &'a [Perceived]) -> Vec<Frame<'a>> {
     family.iter().zip(perceived).map(|((_, y), p)| Frame::over(p, y)).collect()

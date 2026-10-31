@@ -286,7 +286,7 @@ fn classify_files_self_turned_body_with_placement() {
 /// L's, each a 90° turn of the last, with the transitions between them
 /// read by `versor_between` alone: around the cycle `A → B → C → A` the
 /// holonomy is the identity, and `classify` fills it — the three are one
-/// shape, whose shape is their nuclei's Gram form, the same under every
+/// shape, whose shape is the members' nuclei's Gram form, the same under every
 /// motion of the configuration (the transition `A → B` applied to all three
 /// nuclei at once rescales the form by the versor's weight squared and no
 /// more). Close the cycle on the L turned once more instead of on `A`, and

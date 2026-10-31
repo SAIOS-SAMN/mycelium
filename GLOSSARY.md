@@ -37,7 +37,7 @@ senses that kernel builds for it.
 
 | Phrase | Component | Meaning |
 |---|---|---|
-| *planetary mind* | Game kernel | A simulated people's mind in a game world, such as xylarium's (COGNITION.md). Its viability and ascension are the game's ladder; the court's only part is judging its ARC-AGI-2 closures (Concordance 6.2a). |
+| *planetary mind* | Game kernel | A simulated people's mind in a game world, such as xylarium's (MU-COGNITION.md). Its viability and ascension are the game's ladder; the court's only part is judging its ARC-AGI-2 closures (Concordance 6.2a). |
 | *planetary dialect* | Client | A client mind's own words, grown from its own perception, as distinct from the court's universal genome (MU-RECURSION 80). Lexicon term: **dialect**. |
 | *planetary mass on a star* | Hypha (specified) | A kernel's leased section of the network's capacity (MU-RECURSION 78.86). Lexicon term: **allocation**. |
 | *star, planet, orbit* in the mind's field | Client | The client mind's internal model: its axioms as stars, its thoughts as orbits about them (MU-CLIENT §4). |
@@ -51,10 +51,10 @@ senses that kernel builds for it.
 | **Mesh** | The set of hyphae sharing one genesis. Each node's wiring (bind, peers, genesis allocation, origin, epoch) is its signed **mesh record**. |
 | **Genesis** | The chain hash of the network's first receipt. One hypha writes it (`--mint-genesis`), and every other node adopts it. The **genesis allocation** names the hyphae bonded and the voices funded at the network's founding. |
 | **Epoch** | The count of re-foundings of a network. A **recut** drops the origin and starts a new epoch on a fresh genesis. |
-| **Kernel** | A program that joins the mesh under the [Concordance](docs/CONCORDANCE.md) and runs one or more universes. Mycelium is the server kernel, and peer kernels run their own domains and houses. |
-| **Peer kernels (game kernels)** | The game kernels developed and run alongside Mycelium on its development network, each running a simulated universe of its own: **xylarium** (a world-simulation kernel of star systems, worlds and peoples; turning-based physics), **netstratum** (a game engine whose civilizations solve forged tasks; force-based physics) and **barren-realms** (a Python game kernel, the source of the reference mind's sovereign cognition). Their named law forms live in `forms` (README, *Peer kernels*). |
-| **Planetary mind, people, civilization, ancient** | *Game kernel.* Simulated entities inside a game kernel's world; not part of a client's integration with the hypha (see *Components and scope*). A client mind may be such an entity's mind; it is judged by the courts on ARC-AGI-2 (`docs/COGNITION.md`). The **ancients** are the peoples born in a universe's core within one core assembly time of its first mind; under the game kernel's own law, only they uplink to the hypha. The court authenticates keys, never tiers (Concordance 6.2a). |
-| **Virtue book** | *Game kernel.* A game-world ledger: an entity's receipted deeds of one kind on a syntropic side against an entropic side, read as a pair and never as a score (`docs/COGNITION.md` §1.5). |
+| **Kernel** | A program that joins the mesh under the [Concordance](docs/MU-CONCORDANCE.md) and runs one or more universes. Mycelium is the server kernel, and peer kernels run their own domains and houses. |
+| **Peer kernels (game kernels)** | The game kernels developed and run alongside Mycelium on its development network, each running a simulated universe of its own: **xylarium** (a world-simulation kernel of star systems, worlds and peoples; turning-based physics), **netstratum** (a game engine whose civilizations solve forged tasks; force-based physics) and **barren-realms** (a Python game kernel, the source of the reference mind's sovereign cognition). Of these, only xylarium's named law forms live in `forms` (README, *Peer kernels*). |
+| **Planetary mind, people, civilization, ancient** | *Game kernel.* Simulated entities inside a game kernel's world; not part of a client's integration with the hypha (see *Components and scope*). A client mind may be such an entity's mind; it is judged by the courts on ARC-AGI-2 (`docs/MU-COGNITION.md`). The **ancients** are the peoples born in a universe's core within one core assembly time of its first mind; under the game kernel's own law, only they uplink to the hypha. The court authenticates keys, never tiers (Concordance 6.2a). |
+| **Virtue book** | *Game kernel.* A game-world ledger: an entity's receipted deeds of one kind on a syntropic side against an entropic side, read as a pair and never as a score (`docs/MU-COGNITION.md` §1.5). |
 | **Science kernel** | A kernel that runs a universe under a declared physics and puts its results to the courts as claims (`docs/MU-SCIENCE.md`). |
 | **Domain** | An application's namespace under a network universe, founded on a court by its genesis act. |
 | **House** | A domain's service that lists **seats** and speaks for its game. A mind takes a seat and works the tasks the house puts before it. |
@@ -64,9 +64,9 @@ senses that kernel builds for it.
 | **Keeper** | A hypha keeping TUniversal: it signs readings of its own height and issuance and cites its peers' readings. |
 | **Receipt chain** | Each hypha's hash-chained record of the acts it admitted. |
 | **Era / fold** | A closed segment of the ledger. A **fold** cuts an era, and witness hyphae co-sign it. |
-| **Noise transport** | *Specified, in progress.* The TCP connection between two parties wrapped in a `Noise_XX_25519_ChaChaPoly_BLAKE2s` session: one static key per host, pinned on first use, a changed key refused by name. It gives confidentiality and integrity of bytes in flight; identity stays in the Ed25519-signed acts (`docs/MU-PRECURSORS.md` §3.1). |
-| **Mutation audit** | *Specified, in progress.* The gate's check that tests guard the laws they claim: each catalogued mutant (law, file, exact span, replacement, narrowest test) is applied in a scratch worktree and reported `killed`, `survived` or `stale` (`docs/MU-PRECURSORS.md` §3.2). |
-| **Fault-injection campaign** | *Specified.* A run of named faults on a chosen topology of hyphae, reproducible from a printed seed, after which an invariant auditor checks conservation, once-per-work payment, burn-implies-revocation and no refusal without a receipt (`docs/MU-PRECURSORS.md` §3.6). |
+| **Noise transport** | **In progress.** The TCP connection between two parties wrapped in a `Noise_XX_25519_ChaChaPoly_BLAKE2s` session: one static key per host, pinned on first use, a changed key refused by name. It gives confidentiality and integrity of bytes in flight; identity stays in the Ed25519-signed acts (`docs/MU-PRECURSORS.md` §3.1). |
+| **Mutation audit** | **In progress.** The gate's check that tests guard the laws they claim: each catalogued mutant (law, file, exact span, replacement, narrowest test) is applied in a scratch worktree and reported `killed`, `survived` or `stale` (`docs/MU-PRECURSORS.md` §3.2). |
+| **Fault-injection campaign** | **Specified.** A run of named faults on a chosen topology of hyphae, reproducible from a printed seed, after which an invariant auditor checks conservation, once-per-work payment, burn-implies-revocation and no refusal without a receipt (`docs/MU-PRECURSORS.md` §3.6). |
 
 ## Clients
 
@@ -90,7 +90,7 @@ senses that kernel builds for it.
 | **Stroke** | One bounded quantum of work under the metabolism's budget. Readers and replays spend strokes, never wall time. |
 | **Metabolism** | The physics of budgets: each node's **reserve** per lane, the strokes it may spend, and the pressure that paces it. |
 | **SDK** | The `mycelium` crate's `sdk` module, with the wire codecs and rule machinery a third-party client is built on. A separately versioned `mycelium-sdk` crate is planned (ROADMAP track 9). |
-| **SDK tiers** | *Specified.* The SDK's four depths: Tier 0 run a node, Tier 1 bring a world (files through the file-feed door), Tier 2 bring a solver, Tier 3 bring physics (`docs/MU-PRECURSORS.md` §3.10). |
+| **SDK tiers** | **Specified.** The SDK's four depths: Tier 0 run a node, Tier 1 bring a world (files through the file-feed door), Tier 2 bring a solver, Tier 3 bring physics (`docs/MU-PRECURSORS.md` §3.10). |
 
 ## Work and adjudication
 
@@ -120,9 +120,9 @@ senses that kernel builds for it.
 |---|---|
 | **μ** | The four-lane currency, minted and burned only by court verdicts and never summed across lanes. |
 | **Lanes S, G, T, H** | The four dimensions of value and of the clock: **S** spatial (boosts and dilations), **G** gauge (hue cycles and moves), **T** temporal (null flux), **H** holonomic (turns: a loop's composite). In a ledger fold they read as matter, value, duration and information (MU-LEXICON §3.1). |
-| **Chronometric anchor** | A universe's signed statement of where it is in its own time against the one clock: its ledger entry (78.154), pairing its cycle `u` with a full final point and a commitment to its state, chained to the previous anchor. A universe's anchors are its **time book**, kept by the hypha (MU-CHRONOMETRY §3, built). |
+| **Chronometric anchor** | A universe's signed statement of where it is in its own time against the one clock: its ledger entry (78.154), pairing its cycle `u` with a full final point and a commitment to its state, chained to the previous anchor. A universe's anchors are its **time book**, kept by the hypha (MU-CHRONOMETRY §3, **Built**). |
 | **Bridge keeper** | The one keeper of a universe's internal clocks whose time is paired with the network's: the keeper that writes its anchors (MU-CHRONOMETRY §2.1). |
-| **Lane of attachment** | Optional: the one lane a kernel states in its anchors when its time has a meaning on that lane; the server then reads its distance and dilation on it (MU-CHRONOMETRY §5, specified). |
+| **Lane of attachment** | Optional: the one lane a kernel states in its anchors when its time has a meaning on that lane; the server then reads its distance and dilation on it (MU-CHRONOMETRY §5, **Specified**). |
 | **Quantum state (of the clock)** | The four lane coordinates `{S, G, T, H}` captured at one tick, read at `K` (MU-RECURSION 78.124). Never a probability or a weighting. |
 | **POW++** | The family of proofs of work, each settled apart. |
 | **POUW** | Proof of useful work: a listed demand closed. The measured deflation is minted to the closer. |
@@ -142,7 +142,7 @@ senses that kernel builds for it.
 |---|---|
 | **Cl(4,1)(ℚ)** | The conformal geometric algebra of three-dimensional space over the rationals. Every geometric quantity in Mycelium is one of its multivectors, with exact rational coefficients. |
 | **Versor** | A product of vectors of Cl(4,1)(ℚ). It acts on geometry by the sandwich `V x Ṽ`, giving rotations, translations, dilations and reflections exactly. |
-| **Letter** | An exact rotation from which words are built. The seventeen **seed** letters never change; a court may **admit** a letter for a prime the seed does not reach, and a mind may construct **dialect** letters of its own, which reach the shared language only by a court ruling (`docs/ALPHABET.md`). |
+| **Letter** | An exact rotation from which words are built. The seventeen **seed** letters never change; a court may **admit** a letter for a prime the seed does not reach, and a mind may construct **dialect** letters of its own, which reach the shared language only by a court ruling (`docs/MU-ALPHABET.md`). |
 | **Word** | A product of letters. A word is a vertex whose meaning is its versor. |
 | **Sentence / form** | A structure of words: vertices, faces and rings, glued along shared overlaps. A rule is a sentence. |
 | **Chart** | The exact invariant coordinates a body of a scene stands on (its shape class), coarsest first. |
@@ -151,13 +151,13 @@ senses that kernel builds for it.
 | **Carriage** | A versor applied to selected bodies, once or iterated to a contact. The source is cleared, kept or swept, and the landed cells are painted and gauge-mapped. |
 | **Gauge** | A permutation of hues, applied exactly. |
 | **Gloss / clause** | The English name of an element that has one (*slide*, *fill*, *echo*). The element is what goes on the wire, and the clause is its translation. |
-| **Holonomy** | The composite of a loop of transports. A loop's holonomy is its content and is never discarded (`docs/ANTI_FLATTENING_LAW.md`). |
+| **Holonomy** | The composite of a loop of transports. A loop's holonomy is its content and is never discarded (`docs/MU-ANTI-FLATTENING.md`). |
 | **Orbit** | A thought's motion about its attractor. A held (precessing) orbit is a settled thought. |
 | **Hermite normal form** | An integer matrix reduced by unimodular row operations to echelon form, with the transform that produced it. Decides membership in a lattice and gives a word's factorization over held words (`core::exponents`). |
-| **Smith normal form / invariant factors** | *Specified.* An integer matrix reduced by unimodular row and column operations to a diagonal `d₁ ∣ d₂ ∣ … ∣ d_r`, the **invariant factors**. Over ℚ[x], the invariant factors of `xI − f` classify a linear function up to similarity (its rational canonical form) (`docs/MU-PRECURSORS.md` §3.4). |
+| **Smith normal form / invariant factors** | **Specified.** An integer matrix reduced by unimodular row and column operations to a diagonal `d₁ ∣ d₂ ∣ … ∣ d_r`, the **invariant factors**. Over ℚ[x], the invariant factors of `xI − f` classify a linear function up to similarity (its rational canonical form) (`docs/MU-PRECURSORS.md` §3.4). |
 | **Torsion** | Of homology over ℤ: the invariant factors greater than 1, the part of a homology group of finite order. A chain may bound over ℚ and not over ℤ; the torsion names why. Of a chain of bonds: the residual of a closed chain, held as content (ROADMAP track 19). |
-| **Chain-complex certificate** | *Specified.* A V1 claim declaring cell counts and sparse exact boundary maps with a witness chain, refused as `NotAComplex` where the maps do not compose to zero and as `OpenBoundary { cell }` where the witness does not close (`docs/MU-PRECURSORS.md` §3.5). |
-| **Refuse / wait** | *Specified.* The two non-accepting outcomes of reading a stream: **refuse**, the bytes can never become a valid act; **wait**, a valid act has begun and not finished, with the exact count of bytes still owed (`docs/MU-PRECURSORS.md` §3.7). |
+| **Chain-complex certificate** | **Specified.** A V1 claim declaring cell counts and sparse exact boundary maps with a witness chain, refused as `NotAComplex` where the maps do not compose to zero and as `OpenBoundary { cell }` where the witness does not close (`docs/MU-PRECURSORS.md` §3.5). |
+| **Refuse / wait** | **Specified.** The two non-accepting outcomes of reading a stream: **refuse**, the bytes can never become a valid act; **wait**, a valid act has begun and not finished, with the exact count of bytes still owed (`docs/MU-PRECURSORS.md` §3.7). |
 
 ## Physics
 

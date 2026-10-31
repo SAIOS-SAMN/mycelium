@@ -1,4 +1,4 @@
-// 47.4, XSEPTUM 5.5 — ACT_EQUIVOCATION on the wire: two receipt sections
+// 47.4, MU-XSEPTUM 5.5 — ACT_EQUIVOCATION on the wire: two receipt sections
 // parse back whole in the order presented, or the frame refuses whole.
 
 use crate::anastome::dialogue::*;

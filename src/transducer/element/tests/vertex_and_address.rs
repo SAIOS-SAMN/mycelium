@@ -93,7 +93,7 @@ fn address_identifies_versor_with_its_negation() {
     assert!(!a.same_vertex(&c));
 }
 
-/// Two elements have the same action exactly when their versors are
+/// Two elements have the same action exactly when the elements' versors are
 /// projectively equal.
 #[test]
 fn same_action_is_projective_versor_equality() {

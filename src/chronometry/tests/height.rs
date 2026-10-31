@@ -124,7 +124,7 @@ fn from_line_reads_line_image_back_whole() {
 /// ones it admitted alike — and a stamp it does not hold, or holds under
 /// another hash, is unmeasured.
 #[test]
-fn height_of_finds_held_nodes_at_their_stamps() {
+fn height_of_finds_held_nodes_at_stamps() {
     let mut peer = ReceiptChain::with_vk([2; 32]);
     let p0 = step(&mut peer, Vec::new());
     let mut c = ReceiptChain::with_vk([1; 32]);

@@ -267,7 +267,7 @@ pub(crate) fn derivations_compose<'r>(
 /// slide or dilation on its vertex, so a citation of it at any exponent
 /// composed — a check that checked nothing. Where a derivation cites such a
 /// letter it claims the whole motion, and the claim is replayed whole: the
-/// cited vertices' motions at their exponents, times the residue's letters at
+/// cited vertices' motions at the cited exponents, times the residue's letters at
 /// the identity carriage, against the citing vertex's motion, exact (1.5).
 /// A derivation citing only letters that turn claims its rotor, as before.
 ///
@@ -334,7 +334,7 @@ fn carriage_claim_holds<'r>(
 /// prime no witness of it carries and there is nothing to open. Refused
 /// at the demand vertex, addressed by the demand's own key — which is
 /// its coordinates written out (A21), so the coordinate is content.
-pub(crate) fn witnesses_carry_their_primes(f: &Form, meter: &mut Meter<'_>, from: usize) -> Step {
+pub(crate) fn witnesses_carry_primes(f: &Form, meter: &mut Meter<'_>, from: usize) -> Step {
     use crate::transducer::sentence::Demand;
     for (i, (vertex, kind, chart, _)) in f.demand_vertices().enumerate().skip(from) {
         let Demand::RotorPrime { prime, witness, .. } = kind else {
@@ -485,7 +485,7 @@ fn replay_on_ground<'r>(
     // that is where a received sentence carries it, and the site is the
     // vertex's own key contribution — a coordinate, never an index.
     let cover = &spoken.receipts().nerve;
-    // 78.153 — THE EDGES BY THEIR HOST, filed once per stroke (linear in the
+    // 78.153 — THE EDGES BY HOST, filed once per stroke (linear in the
     // cover, as the decode above is in the tape): each port below is then a
     // keyed read, where it walked the whole cover per Glued vertex.
     let mut by_host: Keyed<Vec<usize>> = Keyed::new();
@@ -498,7 +498,7 @@ fn replay_on_ground<'r>(
             }
         }
     }
-    // The Glued vertices are one fibre of the atlas, read at their tag.
+    // The Glued vertices are one fibre of the atlas, read at the Glued tag.
     phase!(Phase::Ports, |from| {
         let mut out: Step = Ok(());
         for (i, (vertex, v)) in f.glued_vertices().enumerate().skip(from) {
@@ -643,7 +643,7 @@ fn replay_on_ground<'r>(
     // 37.7 P2: a demand that names a prime must carry a witness that
     // carries it. Read before anything is docketed, so `list_demands`
     // never opens a letter on a witness the arithmetic refuses.
-    phase!(Phase::Witnesses, |from| witnesses_carry_their_primes(f, &mut Meter::Stroke(&mut *budget), from));
+    phase!(Phase::Witnesses, |from| witnesses_carry_primes(f, &mut Meter::Stroke(&mut *budget), from));
     // 23.1 step 3, 50.6 (L7): a tape whose only vertices are the Frame and
     // demands is a chain wearing a form's tape — nothing in it acts.
     phase!(Phase::Moves, |from| match (from, f.acts()) {
@@ -741,7 +741,7 @@ fn replay_after_perceiving(
     // (tree faces of that orbit are face_of). Filing of that class is
     // the orbit check; a missing torsion entry is REFUSE_ORBIT, a chord
     // that does not carry the holonomy is REFUSE_FACE.
-    // THE OVERLAPS A CERTIFICATE NAMES, by their coordinates: the only
+    // THE OVERLAPS A CERTIFICATE NAMES, by coordinates: the only
     // producers of a face's content the vertices do not derive (A20, AT1).
     let mut named: Keyed<(), crate::network::nerve::coord::Overlap> = Keyed::new();
     for cert in &spoken.receipts().certificates {
@@ -964,8 +964,8 @@ fn replay_after_perceiving(
     }
     // A FACTOR NO CERTIFICATE NAMES IS REFUSED (AT1, ruled): an overlap's
     // `left`/`right` are produced content, written only by the pivot's Word
-    // move, and the certificate whose chord names the overlap is their
-    // producer. A factor with none was written by nothing the court can
+    // move, and the certificate whose chord names the overlap is the
+    // producer of both. A factor with none was written by nothing the court can
     // replay.
     phase!(Phase::Pivots, |from| {
         let mut out: Step = Ok(());
@@ -995,7 +995,7 @@ fn replay_after_perceiving(
     Replayed::Clean
 }
 
-/// `REFUSE_FACE` at the overlap's two vertices, by their coordinates (50.9,
+/// `REFUSE_FACE` at the overlap's two vertices, by coordinates (50.9,
 /// AT1): every end of an overlap is a vertex coordinate — a citation's is its
 /// site (54.7 B5a) — so the refusal always has a coordinate to name. Its
 /// obstruction is the branch that refused (A.17), counted with the refusal.

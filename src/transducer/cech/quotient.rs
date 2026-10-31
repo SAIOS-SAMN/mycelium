@@ -1,5 +1,5 @@
 // 78.104 — THE QUOTIENT READING: a motion's generators read against the
-// algebra a mind holds — inside it, or outside it by their coset.
+// algebra a mind holds — inside it, or outside it by the generators' coset.
 //
 //! A static reading, one-way: what of a motion the held algebra `𝔥 ⊂
 //! so(n+1,1)` already spans (the span of every held generator, closed under
@@ -21,7 +21,7 @@
 //! complement is a choice (rule 4). The coset is the object, and its
 //! coordinate is the one vector of it that is zero on every axis the span
 //! leads on (`Span::residue`) — fixed by `𝔥` alone, exact, null-safe. Two
-//! outside parts are one class exactly where their residues agree: they
+//! outside parts are one class exactly where the parts' residues agree: they
 //! differ by something held.
 
 use crate::core::span::{Span, Vector};
@@ -36,7 +36,7 @@ pub struct Outside {
 }
 
 /// A MOTION READ AGAINST A HELD ALGEBRA: its generators inside it, and those
-/// outside it by their cosets. Both empty for the identity.
+/// outside it by the generators' cosets. Both empty for the identity.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Quotient {
     pub inside: Vec<Mv>,

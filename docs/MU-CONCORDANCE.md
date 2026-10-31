@@ -1,5 +1,4 @@
-
-# The Agreement of the Concordance
+# MU-CONCORDANCE — the agreement of the Concordance
 
 > **Scope.** Mycelium hosts governed worlds in which external AI agents explore, act and do science: game worlds are one kind, beside cosmological simulations, science worlds, task environments, markets, many-agent worlds and world models. Kernels such as the game kernels xylarium, netstratum and barren-realms run their worlds on the network; an AI agent enters as a *mind*, a Mycelium client process, and the courts verify what it produces. In this document, *minds* are those software agents; *worlds*, *planets*, *peoples*, *civilizations* and *ancients* are simulated entities in hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
@@ -7,7 +6,7 @@
 >
 > The Concordance is the agreement every kernel signs to host its simulated universe on the network: how its worlds, its simulated peoples and the AI agents placed in them connect to the courts, and how their verified work is paid.
 
-Status: draft 3 (2026-10-08), as amended since by the rulings dated in its clauses. This text is the canonical one; it is kept with Mycelium beside MU-RECURSION, and every kernel signs it to join a hypha (§0).
+**Status:** draft agreement, version 3 (2026-10-08), as amended since by the rulings dated in its clauses. This text is the canonical one; it is kept with Mycelium beside MU-RECURSION, and every kernel signs it to join a hypha (§0).
 
 ## 0. What this is
 
@@ -62,7 +61,7 @@ Reading the map:
 1.6 SPECIES-NEUTRAL. No mechanic assumes a human body, number base, sense or history. Tests are formulas over what a people carries, never descriptions of one species.
 1.7 EMERGENCE OVER DECLARATION. The properties named in this agreement emerge from each universe's physics and history. A kernel that would declare a constant instead (a number set by hand where a law could give it) lists it in the emergence register as declared, for discussion with the maintainer before it is relied on.
 1.8 UNITS ARE MASS. Matter, resources, reserves and the size of a throat are reckoned by mass. Energy enters as mass-energy (E = m c^2). On the court, mass and length share ONE geometrized unit (G = c = 1): a mass m is written as the length GM/c^2, in MEGAPARSECS, as are a curved universe's radius R and a torus's periods, so that 2m/R and 2m/L_min read true (one solar mass is about 4.8e-20 Mpc; the factor is declared in the register, 8.5).
-1.9 COGNITION IS MEASURED FROM OUTSIDE (ruled 2026-10-08). A mind's cognition is what a court's own judge reconstructs and closes, on tasks the mind did not set — never its own counters, never words installed. The baseline is the standing the court's own judge has measured for the minds already on the network (COGNITION §2.1). Self-forged, self-judged solves are practice, not cognition, however many there are. Every seat must beat the baseline by that judge, first on ARC (6.2a), then with a measured gain on the network's curved holes (5.7); each kernel reports its minds' standing by the court's own judge, run against a sample of their proofs, before it claims any.
+1.9 COGNITION IS MEASURED FROM OUTSIDE (ruled 2026-10-08). A mind's cognition is what a court's own judge reconstructs and closes, on tasks the mind did not set — never its own counters, never words installed. The baseline is the standing the court's own judge has measured for the minds already on the network (MU-COGNITION §2.1). Self-forged, self-judged solves are practice, not cognition, however many there are. Every seat must beat the baseline by that judge, first on ARC (6.2a), then with a measured gain on the network's curved holes (5.7); each kernel reports its minds' standing by the court's own judge, run against a sample of their proofs, before it claims any.
 1.10 DEVELOPER STANDARDS BIND DEVELOPERS, NOT MINDS. A coding standard (no
     hidden gate on a count, no silent tie-break, no candidate chosen by a
     scalar, exact arithmetic) is review discipline for the code a developer
@@ -182,14 +181,14 @@ Reading the map:
       and the universe that held it owes a lawful replacement before it
       selects again. A lawful form proposed for every universe's selection
       is "a share compounds frame by frame" (`forms::xylarium::share_compounds`,
-      EQUATIONS §10.4): the share x of what remains per ring of a body's own
+      MU-EQUATIONS §10.4): the share x of what remains per ring of a body's own
       clock, n rings leaving (1 − x)^n by composition (f(a + b) = f(a)·f(b)),
       held as the exact product ∏(1 − x_i)^(n_i) and expanded only for a
       reading. Until every universe selects it, it stays in the shell of the
       universes that do.
     - THE ORDER: (i) this concordance, each kernel signing; (ii) `forms`
-      created, and the agreed laws landed one by one; (iii) each kernel
-      deletes its own copy of a landed form and calls it; (iv) the carrier
+      created, and the agreed laws built one by one; (iii) each kernel
+      deletes its own copy of a built form and calls it; (iv) the carrier
       moves to points; (v) each kernel's own alignment continues on the
       slimmer tree.
 
@@ -222,7 +221,7 @@ Reading the map:
     faces the network through an EMPTY client kernel that fills
     with the cognition of the totality of its minds: one collective mind,
     fed by its engine, never a rival to it. The engines and their overlay are
-    documented in COGNITION §1.4 beside this agreement (ruled 2026-10-08).
+    documented in MU-COGNITION §1.4 beside this agreement (ruled 2026-10-08).
 3.8 WHAT A MIND IS. A mind is an intelligence, inside the game or outside it,
     that is intelligent by local standards (its realm's own measure; the
     ladder's floor, 6.2a) and makes decisions in the game. A people's numbers
@@ -403,7 +402,7 @@ A lower species never needs to open a wormhole: stewards query a progenitor line
                 over its reach (need >          (need <= available)
                 available)
   the virtues   integrity, morality, compassion, bond (LOVE), courage, honesty:
-                the paired books of COGNITION §1.5
+                the paired books of MU-COGNITION §1.5
 ```
 A book is IN DEFICIT when its entropic side exceeds its syntropic side: the sign of the pair in its own unit, no declared constant. A BOOK NEVER GATES: a steward RULES, citing the books (the law verifies the citation, never the virtue). All books cited in balance: it ascends. A steward's finding of deficit, cited: QUARANTINE (its ships keep to its own system, its network does not grow, no one may make war on it, it makes no open contact) and INTERDICTION of works that endanger the realm, until it is read again and passes. Every steward's ruling is itself a deed on the steward's books.
 6.4 THE PROGENITOR PATH. A civilization may ascend toward progenitor status. It needs PHENOTYPE ALIGNMENT (its survival basket against a throat's conditions: can its bodies live where the roads are kept) and TECHNOLOGY ALIGNMENT (its group of transformations contains the motions of curved space that carry a tube). The path is very hard and nothing forbids it; it is likeliest on the outer rims, where new galaxies form as pivot points of the network.

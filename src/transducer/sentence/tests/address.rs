@@ -58,7 +58,7 @@ fn as_element_form_carries_filed_zero_as_open() {
 }
 
 /// SENTENCE_TAG v6 round-trips Frame, Word (with contact), Glued,
-/// Rebased, Unfolded, Demand (50.5), faces with their edge transport
+/// Rebased, Unfolded, Demand (50.5), faces, each with its edge transport
 /// (50.3), and orbits.
 #[test]
 fn from_element_form_round_trips_every_vertex_kind() {

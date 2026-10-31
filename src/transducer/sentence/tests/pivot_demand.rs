@@ -20,7 +20,7 @@ fn eleven() -> Rotor {
 /// 51.2 — A FACE WHOSE WORD HAS NO SENSOR ACTION PLACES NO MEMBER PAIR: the
 /// pair's carriage is derived through `versor_of_word`, one plane by
 /// construction, so the incidence names a pair and the face carries none.
-/// The same two vertices under the identity word carry their one pair, and
+/// The same two vertices under the identity word carry the one pair, and
 /// the off-plane rotor stands on the edge transport instead, where every
 /// orbit through the face reads it (50.3).
 ///

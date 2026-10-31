@@ -177,7 +177,7 @@ fn orbit_based_at_preserves_both_casimirs() {
 
 /// 54.7 AXIOM A — RE-ROOTING IS A PURE GAUGE TRANSFORMATION.
 ///
-/// The sharp test. Two cycles of one form are based at their own nodes;
+/// The sharp test. Two cycles of one form are each based at its own node;
 /// carrying both to the basepoint must be conjugation by ONE versor per
 /// cycle, and the based operators must then live on one tangent space —
 /// which is what makes `ρ(γ₁)·ρ(γ₂)` mean anything at all.

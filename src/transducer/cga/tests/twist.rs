@@ -10,7 +10,7 @@ fn q(n: i64) -> BigRational {
     BigRational::from_integer(n.into())
 }
 
-/// A body a quarter turn about the attractor from where it was predicted: the
+/// A body a 90° turn about the attractor from where it was predicted: the
 /// twist carries it there, holds the attractor still, and returns after four.
 #[test]
 fn twist_about_turn_90_holds_attractor() {
@@ -21,7 +21,7 @@ fn twist_about_turn_90_holds_attractor() {
     let c = point_at(&centre);
     assert!(tau.sandwich(&c).projective_eq(&c), "and holds the attractor still");
     let fourth = tau.geo(&tau).geo(&tau).geo(&tau);
-    assert!(fourth.projective_eq(&Mv::scalar(q(1))), "a quarter turn: four of it are the identity");
+    assert!(fourth.projective_eq(&Mv::scalar(q(1))), "a 90° turn: four of it are the identity");
 }
 
 /// A body carried FARTHER from the attractor is no rotation of its pull: no

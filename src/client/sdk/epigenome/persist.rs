@@ -1,5 +1,5 @@
 // 28, 78.27, 78.49 — THE GENOME ON DISK: the words a court admitted, in T1's
-// shape, keyed by their citations — crystallized knowledge and nothing else —
+// shape, each keyed by its citation — crystallized knowledge and nothing else —
 // and a tape that does not read whole refused rather than partly restored.
 
 use crate::client::sdk::*;
@@ -33,7 +33,7 @@ const WORDS: &str = "words";
 const LEAF_HELD: u8 = 1;
 
 /// What a genome file's magic names where this reader refuses it: the
-/// positional and the pre-orbit genomes by their own names, anything else
+/// positional and the pre-orbit genomes, each by its own name, anything else
 /// as not a genome of this build. `None` for this build's magic.
 pub(crate) fn genome_refused(bytes: &[u8]) -> Option<&'static str> {
     match bytes.get(..4) {
@@ -265,7 +265,7 @@ impl Epigenome {
         // 21 step 3 (L8r): the body-chart index is derived from the genome
         // like the atlas and the axis index, and must be rebuilt with them.
         // Left empty, `on_body` answered nothing after every restart, so a
-        // fleet client — which boots from its genome — could not glue until
+        // deployed client — which boots from its genome — could not glue until
         // it learned something new, and the index was live only in a
         // process that had never restarted.
         self.by_moduli = crate::network::nerve::Keyed::new();
@@ -275,7 +275,7 @@ impl Epigenome {
         // This used to file at the sentence's own chart while `axis_admit`
         // files where each vertex ACTS, so every word restored from disk
         // was invisible to the pivot until it happened to be re-admitted
-        // live — and a fleet client boots from its genome.
+        // live — and a deployed client boots from its genome.
         //
         // A RESTORED WORD IS WORK THE PIVOT HAS NOT REACHED, exactly as a
         // learned one is: `admit_word` puts its coordinate in the pending

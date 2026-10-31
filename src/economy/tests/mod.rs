@@ -22,7 +22,7 @@ pub(super) fn at(n: u64, hash: [u8; 32]) -> crate::economy::Anchor {
 }
 
 /// A TREASURY THROUGH ITS PERSISTED FORM (78.27): its stakes and balances
-/// through their own tries, its rows each through the row codec the ledger
+/// each through its own trie, its rows each through the row codec the ledger
 /// nodes carry them in, rebuilt from those parts. `None` where any part
 /// refuses.
 pub(super) fn round_trip(t: &crate::economy::Treasury) -> Option<crate::economy::Treasury> {

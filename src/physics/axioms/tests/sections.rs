@@ -7,8 +7,8 @@
 // - CONGRUENCE — they overlay: the same weighed length and the same masses,
 //   `S₁² = S₂²` (`S² = m_P m_Q d²`, read as `−2 m_P m_Q P·Q`, never a sum of
 //   squares) — the second section is the first displaced: a copy.
-// - COHERENCE — their carriages are one motion up to torsion about the
-//   fibre joining their sources: the relative motion keeps both sources and
+// - COHERENCE — the sections' carriages are one motion up to torsion about the
+//   fibre joining the sections' sources: the relative motion keeps both sources and
 //   every level.
 // - COHESION — entangled: the fascicle of the two geoids, `S₂ S₁`, binds them
 //   when the geoids cut at an angle of finite order, so the bound pair
@@ -70,7 +70,7 @@ fn switch_square_equal_for_congruent_sections() {
     assert_eq!(s2(&a), q(4 * 25, 1), "S² = m_P m_Q d², exact: 2·2·25");
 }
 
-/// COHERENCE: a section and its mirror across the line joining their
+/// COHERENCE: a section and its mirror across the line joining the two
 /// sources are one motion up to torsion — the relative motion's flow, read
 /// one dimension up where it is a flip, twists about the fibre joining the
 /// sources and does no work; a section slid instead lifts a source.
@@ -85,11 +85,11 @@ fn fibre_reads_coherent_sections_as_torsion() {
         let modes = crate::physics::capacitor::modes_of(m, 2, &mut crate::physics::Physics::default().stroke_n(1 << 16));
         joining.reads(&modes.expect("the modes read"))
     };
-    assert_eq!(read(&v1.reverse().geo(&mirror)), Carried::Torsion, "coherent: the flip about their line");
+    assert_eq!(read(&v1.reverse().geo(&mirror)), Carried::Torsion, "coherent: the flip about the sources' line");
     assert_eq!(read(&v1.reverse().geo(&slid)), Carried::Lift, "not coherent: the slide moves a source");
 }
 
-/// THE CENTRE IS FORMULATED, NEVER ASSUMED: three pivots fix their round
+/// THE CENTRE IS FORMULATED, NEVER ASSUMED: three pivots fix the pivots' round
 /// (`P₁∧P₂∧P₃`), and its centre is read exactly as the round reflecting
 /// infinity (`C e_∞ C`). A 90° turn about that centre keeps the round — the
 /// mass orbits on its manifold and returns there; the SAME 90° turn about
@@ -145,7 +145,7 @@ fn tilted_quarter() -> Mv {
 }
 
 /// TILT AND AXIS (rotation on a 3D object is read about x, y and z).
-/// Three pivots in a TILTED plane fix their circle and its centre exactly;
+/// Three pivots in a TILTED plane fix the pivots' circle and its centre exactly;
 /// the turn that keeps the circle is the turn in the circle's own plane —
 /// about the axis the three points formulate, through the centre along
 /// u × w — and that axis is fixed pointwise. The same 90° in the x,y plane
@@ -252,7 +252,7 @@ fn sigma_points_stable_only_under_axial_turn() {
 }
 
 /// COHESION: two geoids that cut at 90° entangle into a 180° turn about
-/// their common round — period 2, bound; geoids that cut at another angle of
+/// the pair's common round — period 2, bound; geoids that cut at another angle of
 /// finite order bind at its period; two that stand apart breathe (a boost)
 /// and never bind.
 #[test]
@@ -266,7 +266,7 @@ fn fascicle_binds_geoids_cut_at_finite_angle() {
     let diagonal = geoid(at(0, 0), at(1, -1), 1, 1).switch();
     let bound = binds(&geoid(at(0, 0), at(2, 0), 1, 1).switch(), &diagonal);
     assert!(matches!(bound, Some(4)), "45°: a 90° turn, period 4: {bound:?}");
-    // Two concentric geoids stand apart: their fascicle breathes, unbound.
+    // Two concentric geoids stand apart: the pair's fascicle breathes, unbound.
     let inner = geoid(at(0, 0), at(1, 0), 1, 3).switch();
     let outer = geoid(at(0, 0), at(1, 0), 1, 5).switch();
     let apart = Fascicle { first: inner.clone(), second: outer.clone() }.streamline();

@@ -3,7 +3,7 @@
 
 /// CX1 · TREE CONJUGACY. Where a set of constructors is a recognised
 /// Coxeter system (GR2) and its diagram — the constructors, joined where
-/// their product is not of order two — is a TREE, the product of all the
+/// a pair's product is not of order two — is a TREE, the product of all the
 /// reflections in EVERY order is one conjugacy class: the Coxeter element,
 /// its exponents and Coxeter number the group's, whatever circuit ordered
 /// it. Where the diagram has a CYCLE the orders fall into several classes,

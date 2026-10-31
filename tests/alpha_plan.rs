@@ -36,7 +36,7 @@ fn moved(sigma: &[(u8, u8)], mag: [u64; 4]) -> Element {
         .unwrap()
 }
 
-/// Two tapes of one normal form have one key: four quarter-turn letters and the identity word share a key and a matrix.
+/// Two tapes of one normal form have one key: four 90°-turn letters and the identity word share a key and a matrix.
 #[test]
 fn word_key_is_one_for_two_spellings() {
     let q = LetterId::turn_90((0, 1)).unwrap();
@@ -254,7 +254,7 @@ fn snapshot_writes_myt2_and_refuses_older_layouts() {
 // function it called summed each idea's `volume` per chart and called the
 // total a chart's congruent mass, which counts how often the mind repeated
 // itself rather than whether two ideas agree; agreement is the transition
-// between their transports being the identity, a reading of the two.
+// between the two ideas' transports being the identity, a reading of the two.
 
 /// A sentence spoken once at its home is stood once, with one code back.
 #[test]

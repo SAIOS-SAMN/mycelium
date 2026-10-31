@@ -309,7 +309,7 @@ fn tuniversal(sources: &[(Source, Vec<Reading>)]) -> Vec<String> {
     }
     #[expect(
         clippy::disallowed_methods,
-        reason = "78.21(1) — the fleet's spread IS the range of heads, max − min: a reading of the range, and nothing is chosen by it"
+        reason = "78.21(1) — the mesh's spread IS the range of heads, max − min: a reading of the range, and nothing is chosen by it"
     )]
     let range = (heights.iter().min().copied(), heights.iter().max().copied());
     match range {
@@ -575,8 +575,8 @@ fn replication(r: &observe::Replication) -> Vec<String> {
     out
 }
 
-/// ADJUDICATION BY KIND (CV5): the verdicts, and the refusals by their own
-/// kind's name.
+/// ADJUDICATION BY KIND (CV5): the verdicts, and the refusals by each one's
+/// own kind's name.
 fn adjudication(a: &observe::Adjudication) -> Vec<String> {
     let refused: Vec<String> = a
         .refused
@@ -608,7 +608,7 @@ fn adjudication(a: &observe::Adjudication) -> Vec<String> {
                 .collect::<Vec<_>>()
                 .join("  ")
         ),
-        // MU-CLIENT §4.13 — the vertex-body refusals by the fault their proof
+        // MU-CLIENT §4.13 — the vertex-body refusals by the fault each proof
         // names, and by whether the vertex lifted a versor on the chart.
         format!(
             "    vertex body by fault  {}  · versor lifted {}  none {}",
@@ -638,7 +638,7 @@ fn phase(p: &observe::Phase) -> Vec<String> {
 }
 
 /// LD1 — THE BYTES A CARRIER CARRIES (78.22): per carrier and kind, the
-/// records, their bytes, the bytes per record, and the largest. A largest
+/// records, the records' bytes, the bytes per record, and the largest. A largest
 /// past the u16 wall is a form copied where a citation belongs, in red; the
 /// largest of each carrier is named.
 fn carriage(c: &observe::Carriage) -> Vec<String> {

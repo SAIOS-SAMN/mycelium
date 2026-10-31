@@ -1,6 +1,6 @@
 // 78.145 — ACT_SEAT's wire: every sub-kind reads back whole, a byte left over
 // is no frame, a BigQ past 64 bits crosses exactly, and the fixed acts
-// decode into the exact values meant with their signatures verifying —
+// decode into the exact values meant with the acts' signatures verifying —
 // conformance by decoded values and signature, never by bytes (Concordance
 // 1.4, law 2).
 

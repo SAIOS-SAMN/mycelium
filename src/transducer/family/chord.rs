@@ -1,5 +1,5 @@
 // 54.7 — the transport a chord carries: the dispiration between two
-// sections, and the Burgers vector between their footprints on the sheet.
+// sections, and the Burgers vector between the sections' footprints on the sheet.
 
 use crate::transducer::base::Site;
 
@@ -8,7 +8,7 @@ use crate::transducer::base::Site;
 /// beside its one reader, [`dispiration`] (BQ1, the file bound).
 ///
 /// `M` must be a property of the form, not of a chord: two edges of one
-/// cycle computing their own `M` would be transitions between DIFFERENT
+/// cycle each computing its own `M` would be transitions between DIFFERENT
 /// stereographic charts, and composing them around the orbit would be
 /// composing maps with no common domain — the holonomy would read as
 /// curvature that is only a change of ruler.
@@ -219,7 +219,7 @@ fn basepoint_transvection(
         // line — and not a coincidence, which would make a structural
         // fact sound contingent. Two footprints sharing a centre stand
         // over ONE base point, so they are two sections of one fibre
-        // and their difference is VERTICAL. There is no horizontal
+        // and the footprints' difference is VERTICAL. There is no horizontal
         // displacement for a 1-cell to carry, so none is invented
         // (rule 11); what differs between them is higher-moment shape,
         // which is a 2-cell's business.

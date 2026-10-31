@@ -58,7 +58,7 @@ impl TickReading {
 
     /// The bytes the keeper signs: the domain, the ORIGIN (a reading of one
     /// universe never verifies in another), the keeper, the tick, the parent
-    /// and the cites. `None` where the cites pass their count byte.
+    /// and the cites. `None` where the cites pass the count byte.
     pub fn signed_bytes(&self, origin: &Origin) -> Option<Vec<u8>> {
         let mut out = SIGNED.to_vec();
         out.extend_from_slice(&origin.genesis);

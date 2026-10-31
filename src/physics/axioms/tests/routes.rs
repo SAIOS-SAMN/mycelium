@@ -123,7 +123,7 @@ fn basing_conjugates_by_tree_transport() {
     assert_eq!(based(&g3).class_invariants(), loop_t.class_invariants(), "and its class does not");
 }
 
-/// T1 — TWO ROUTES AGREE IFF THEIR LOOP IS THE IDENTITY RAY: a route and the
+/// T1 — TWO ROUTES AGREE IFF THE LOOP THE TWO FORM IS THE IDENTITY RAY: a route and the
 /// same motion factored through an extra step agree; a different motion
 /// does not.
 #[test]
@@ -176,7 +176,7 @@ fn loop_of_is_lassoed_product_of_curvatures() {
 }
 
 /// T2's CONVERSE FAILS ON A RELATOR: every edge flat but the diagonal, which
-/// turns — both cells curved, their curvatures inverse, and the two routes
+/// turns — both cells curved, the cells' curvatures inverse, and the two routes
 /// agree. Agreement never proves the enclosed cells flat.
 #[test]
 fn loop_of_trivial_over_curved_relator_cells() {
@@ -186,7 +186,7 @@ fn loop_of_trivial_over_curved_relator_cells() {
     assert_ne!(sq.f1, one(), "while σ₁ is curved");
     assert_ne!(sq.f2_at_c, one(), "and σ₂ is curved");
     let f2 = inv(&sq.lasso).geo(&sq.f2_at_c).geo(&sq.lasso);
-    assert_eq!(f2.geo(&sq.f1), one(), "their curvatures cancel: a relator");
+    assert_eq!(f2.geo(&sq.f1), one(), "the two curvatures cancel: a relator");
 }
 
 /// C1 (a, b) — ONE REFERENCE GIVES EVERY PAIR, AND INDEPENDENCE IS EACH
@@ -236,7 +236,7 @@ fn read_chamber_capacity_is_rank_of_action_algebra() {
 }
 
 /// C1 (d) — THE SAME SHAPE INSIDE ONE GENERATOR: a motion's mode rays are
-/// routes of their own, and they compose back to the motion.
+/// routes each in its own right, and the rays compose back to the motion.
 #[test]
 fn motion_modes_rays_compose_to_motion() {
     let [g1, g2, ..] = steps();
@@ -246,8 +246,8 @@ fn motion_modes_rays_compose_to_motion() {
     let _ = g2;
 }
 
-/// C2 (a) — CONJUGATION PRESERVES THE CLASS: minds basing one circuit at
-/// their own points read one class.
+/// C2 (a) — CONJUGATION PRESERVES THE CLASS: minds basing one circuit each at
+/// its own point read one class.
 #[test]
 fn class_invariants_survive_basing() {
     let [g1, g2, g3, g4, g5] = steps();
@@ -284,7 +284,7 @@ fn constructor_orbit_refuses_closure_read_per_generator() {
         let Some(Ok(ms)) = cga::motion_modes(g, &mut stroke()) else { panic!("a 90° turn splits") };
         assert!(ms.iter().all(|m| m.kind == BivectorKind::Elliptic && m.order == Some(4)), "every mode elliptic of order four");
     }
-    // A small stroke: the orbit's rays grow in their coefficients at every
+    // A small stroke: the orbit's rays grow in the rays' coefficients at every
     // carrying, so the refusal is read early and cheaply.
     let orbit = cga::constructor_orbit(&[Mv::blade(E3, q(1, 1))], &[g1, g5], &mut crate::physics::Physics::default().stroke_n(256));
     assert!(matches!(orbit, cga::ConstructorOrbit::Unbounded { .. }), "the orbit does not close: {orbit:?}");

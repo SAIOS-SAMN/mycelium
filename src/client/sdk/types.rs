@@ -108,7 +108,7 @@ pub struct WorkingAtlas<'a> {
 }
 
 /// The members of one stratum split by lane (42.6 as amended): four
-/// independent lists and never their concatenation.
+/// independent lists and never the lists' concatenation.
 pub type LaneMembers = [Vec<(Vec<u8>, Standing)>; 4];
 
 impl<'a> WorkingAtlas<'a> {
@@ -507,7 +507,7 @@ pub struct Epigenome {
     /// deconstructed over with no court asked. Derived, never persisted: a
     /// restore learns each word again as it admits it.
     pub(crate) vocabulary: super::epigenome::Vocabulary,
-    /// 21 step 3 — CLOSED FORMS BY WHAT THEIR MEMBERS DO: `act_key` (chart,
+    /// 21 step 3 — CLOSED FORMS BY WHAT THE FORMS' MEMBERS DO: `act_key` (chart,
     /// whole motion, hue map) → each held word vertex with a member acting
     /// exactly so, by its `generator_key`, as (form, vertex); filled and
     /// emptied beside `by_moduli`.
@@ -582,7 +582,7 @@ pub struct Entity {
     /// once per stroke by `take_learned_mu`.
     pub(crate) learned_mu: [u64; 4],
     /// ČECH AFTER FETCH: the obstructions measured on the fibre when a
-    /// fetched word met the words already held there, by their coordinates
+    /// fetched word met the words already held there, each by its coordinates
     /// — the stratum, then the fetched word's address, to the address of the
     /// held word whose transition to it did not vanish. The digest only
     /// indexed the wire; this is the glue, on the elements. A stratum that
@@ -594,7 +594,7 @@ pub struct Entity {
     /// decides what is fetched.
     pub(crate) glued: crate::network::nerve::Keyed<()>,
     /// OPEN THOUGHTS: the contemplation over bubbles, the one carrier of
-    /// held forms (24.1 as ruled 2026-09-09); a cite reads their words at
+    /// held forms (24.1 as ruled 2026-09-09); a cite reads the forms' words at
     /// the listing body's chart. Remainders persist; residuals are never
     /// lost on restart.
     pub(crate) contemplation: crate::transducer::bubble::Contemplation,
@@ -619,7 +619,7 @@ pub struct Entity {
     pub(crate) at_return: crate::network::nerve::Keyed<Vec<(Vec<u8>, HeldSaying)>>,
     /// MU-CLIENT §3.1, §4.9 — THE SCENES NOT YET COMPREHENDED, by the task's
     /// citation, each with the language root it was last read at: read again
-    /// at the mind's returns, gone with their last thought.
+    /// at the mind's returns, gone with the last thought of each.
     pub(crate) comprehending: crate::network::nerve::Keyed<(crate::anastome::dialogue::TaskEnvelope, crate::transducer::address::Address)>,
     /// The citation last read again (`comprehend_waiting`): each waiting
     /// scene is read in turn.
@@ -690,7 +690,7 @@ pub struct Entity {
     /// thinks in it for the length of each tick.
     pub(crate) field: crate::transducer::mind::MindField,
     /// MU-CLIENT §4.9 — WHAT THIS MIND REMEMBERS HEARING: the rings it has
-    /// heard, by their size (their return), each by its coordinates — the
+    /// heard, by size (the ring's return), each by its coordinates — the
     /// mind's memory, harmonically resonant, never a vocabulary and never the
     /// ear's (the ear is a tuned resonator that lifts signal from noise and
     /// keeps nothing past the moment). What a heard ring is read against to

@@ -195,7 +195,7 @@ pub fn carry_compartment(v: &Versor, r: i64, c: i64, k: i64) -> Option<Vec<(i64,
 /// THE PULLBACK of a sibling's assignment onto a base support through the
 /// versor V carrying the sibling onto the base: each base site's center is
 /// carried back by V⁻¹ to the sibling's frame, and the sibling link whose
-/// square contains it speaks the transition. Both are sections in their
+/// square contains it speaks the transition. Both are sections in each one's
 /// own canonical frame (16.5), so a center carried out of that frame lands
 /// on no site. Exact at every scale (a dilated sibling's block, a shrunken
 /// sibling's shared site); None when a base site lands outside the sibling.

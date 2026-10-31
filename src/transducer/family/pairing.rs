@@ -226,7 +226,7 @@ pub struct FluxReading {
 ///   output, with the mass it carried. On a scene of one frame per grid
 ///   these are the only transports there are (no circuit, no measured face),
 ///   so without them a scene whose bodies all moved reads no flux at all.
-///   Its modes and its hue map are each held on their own orbit (78.73).
+///   Its modes and its hue map are each held on a separate orbit (78.73).
 /// - THE FLUX — every null mode, of the field lines and of the closed
 ///   circuits' curvature (Stokes), admitted to the tubes held over time
 ///   (78.71 (1)): a flux on a new ray OPENS a tube and presses 𝒯; one on a
@@ -263,7 +263,7 @@ pub(crate) fn transport_order(
             book(r, LANE_GAUGE, a);
         }
         // The line split into its modes once: its null modes to the tubes,
-        // its turns and boosts to their orbits.
+        // its turns and boosts to the orbits.
         let Some(Ok(modes)) = crate::transducer::cga::motion_modes(line, budget) else { return };
         // The generator of the field line, on §52's chart; a line off the
         // chart (a 180° turn) is paired by its flux alone.
@@ -347,9 +347,9 @@ struct Occupied {
 
 /// WHAT THE INCIDENCE NAMED BETWEEN TWO MEMBERS: every incidence that named
 /// the pair (N1), and each contact between them (C2, 70.6) — its body pair
-/// with their nuclei, its grade, and its WITNESS, the shared boundary
+/// with the bodies' nuclei, its grade, and its WITNESS, the shared boundary
 /// elements. Two different contacts between one pair are two, held apart,
-/// in their witnesses' order, and never merged.
+/// in the witnesses' order, and never merged.
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Named {
     pub(crate) hows: Vec<Incidence>,
@@ -428,7 +428,7 @@ pub(crate) fn body_pair_key(lo: &[u8], hi: &[u8]) -> Vec<u8> {
 ///
 /// It replaces `edge_between`'s test on the two bodies' UNION for a contact:
 /// whether the pair moved rigidly asks whether two touching puzzle pieces are
-/// one piece, and is not what their contact is.
+/// one piece, and is not what the pieces' contact is.
 ///
 /// TWO ARMS FORM WHAT ONE TRANSPORT CANNOT (78.6). A body whose pose is a
 /// HELD STABILIZER (`Open180`) rides the edge as its COSET: every candidate
@@ -444,7 +444,7 @@ pub(crate) fn body_pair_key(lo: &[u8], hi: &[u8]) -> Vec<u8> {
 /// then; the face still stands, because whether is topology.
 ///
 /// 78.18(c) — THE TETHER IS BETWEEN THE FACE'S TWO BODIES, `V = s_b s_a` of
-/// their nuclei (BD2's pieces), at every arm — never a member's union, whose
+/// the bodies' nuclei (BD2's pieces), at every arm — never a member's union, whose
 /// support can fall into several bodies (checklist (m)); each member's POSE is
 /// its own, read across its own transition. 78.18(a) — a static edge keeps
 /// each end's pose as far as it was read, the transited end's by name and the
@@ -622,7 +622,7 @@ pub(crate) enum ContactEdge {
     Refused { poses: [Option<blade::NoPose>; 2] },
 }
 
-/// The two bodies a pair key names, read back as their addresses (A21).
+/// The two bodies a pair key names, read back as the bodies' addresses (A21).
 /// `None` for bytes that are not two addresses exactly. The A21 property's
 /// reader: the builder needs no read-back, because the pair's two sides ride
 /// the gathered contact itself.
@@ -652,12 +652,12 @@ struct Gathered {
 }
 
 /// ONE CONTACT, AS THE FACE BUILT ALONG IT READS IT: the two bodies' pieces,
-/// the lesser first, their nuclei in the same order — the tether belongs to
+/// the lesser first, the bodies' nuclei in the same order — the tether belongs to
 /// the two BODIES (78.18(c)), never a member's union — the members standing on
 /// the lesser's side, so a face built between two members reads which body
 /// stands at each of its ends (CX1); the grade of the contact's largest
-/// shared cell; and the WITNESS, the shared boundary elements at their
-/// doubled centres — WHETHER the bodies touch, read by the topology and
+/// shared cell; and the WITNESS, the shared boundary elements at the
+/// elements' doubled centres — WHETHER the bodies touch, read by the topology and
 /// entering no address (BQ5b, A.14). The face carries the pair in hand; no
 /// key of the witness stands for it.
 #[derive(Clone, Debug)]
@@ -683,7 +683,7 @@ pub(crate) struct ContactPair {
 /// relates two BODIES, and a vertex covering several bodies on several charts is
 /// several occupants of the sites they sit on. Keyed by the vertex alone, the
 /// pairs this returns would name a relation between two vertices and leave
-/// which of their bodies met to be guessed by whatever built the face.
+/// which of the vertices' bodies met to be guessed by whatever built the face.
 ///
 /// The pairs are member pairs, so the face is created already carrying which
 /// member of `i` relates to which member of `j`. NO PRODUCT OF TWO FIBRES is
@@ -705,7 +705,7 @@ pub(crate) fn named_faces(
 /// BQ5b — THE INTERFACE A CONTACT FACE CARRIES, WHOLE: `V = s_b s_a` between
 /// the two bodies' nuclei, in the face's orientation, and the contact's
 /// grade (`Interface::between`, the one producer). A contact whose nuclei —
-/// or their tether's ray — did not read is a face still built on WHETHER
+/// or the nuclei's tether's ray — did not read is a face still built on WHETHER
 /// (A.14) with its WHAT unread: `(None, true)`, counted `unnucleated`. A face
 /// that is no contact carries none: `(None, false)`.
 pub(crate) fn interface_of(
@@ -788,7 +788,7 @@ pub(crate) fn named_incidence(
     }
     // C1, C2, 70.6 — CONTACT IS THE SHARED BOUNDARY OF TWO CUBE COMPLEXES.
     // Two hue-blind bodies never share a face of a cube, since sharing one
-    // they would be one body (70.4). Where two distinct bodies touch, their
+    // they would be one body (70.4). Where two distinct bodies touch, the bodies'
     // complexes share a cell of lower grade. `contact_cells` reads every
     // such cell off the distinct occupied sites, in its own canonical order
     // (BQ2: the grade is the contact). The frame axis is among them, and
@@ -836,7 +836,7 @@ pub(crate) fn named_incidence(
         }
     }
     // Each body's nucleus, read once from its support (NB1): the cells below
-    // carry the meet of their bodies' nuclei.
+    // carry the meet of the cells' bodies' nuclei.
     let nucleus_of: Vec<Option<crate::transducer::cga::Mv>> = support_of
         .iter()
         .map(|sup| match sup.is_empty() {
@@ -855,7 +855,7 @@ pub(crate) fn named_incidence(
     // each element with the BODIES standing in it (a body is its union-find
     // root here, read once per element), one certified cell per standing
     // set of two or more, every element under exactly those bodies a
-    // witness, and the meet of their nuclei as the cell's content. No pair
+    // witness, and the meet of the bodies' nuclei as the cell's content. No pair
     // is traversed and no subset minted; the faces of a cell are read off it.
     let standing: Vec<(Site, Vec<usize>)> = crate::transducer::sentence::elements_standing(&positions)
         .into_iter()
@@ -867,7 +867,7 @@ pub(crate) fn named_incidence(
         })
         .collect();
     // KB1 — each body by its piece, the coordinate a body has: the cells are
-    // keyed by their bodies' pieces, framed, in their own order.
+    // keyed by the cells' bodies' pieces, framed, in the pieces' own order.
     let over = crate::transducer::cech::cells_over(
         standing.iter().map(|(element, bodies)| {
             (crate::network::nerve::coord::Compartment { site: element.clone() }, bodies.as_slice())
@@ -996,7 +996,7 @@ pub(crate) fn named_incidence(
     // evaluated against two topologies, and a stencil is not one of them.
     // What this pass was reaching for is real — two adjacent bodies DO
     // relate — but contact is not a shared coordinate. It is the conformal
-    // strain between their spheres (59.3), condensed where the mind can
+    // strain between the bodies' spheres (59.3), condensed where the mind can
     // spell the interface (59.6), and it arrives through the tether and not
     // through a dilation. Until it does, this incidence is ABSENT and the
     // absence is the reading (rule 11).

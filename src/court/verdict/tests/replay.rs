@@ -100,7 +100,7 @@ fn closed_turn_form() -> Form {
     f
 }
 
-/// A TRIANGLE OF COBOUNDARIES: two bodies on their own charts ([1] and [2]),
+/// A TRIANGLE OF COBOUNDARIES: two bodies, each on its own chart ([1] and [2]),
 /// each overlapped from the Frame's chart with `star` as its edge, and the
 /// overlap between them carrying `chord` as its edge. Every transport is the
 /// coboundary of its ends. AT1: the two bodies are carried by one word — the

@@ -15,7 +15,7 @@
 //! agree. Several neighbours are never folded into one product — no order is
 //! given. The pairs are read by C1(a) without a pairwise walk: `H(o, n)` is
 //! the identity ray exactly when `ρ_o` and `ρ_n` are one ray, so a cell's
-//! circuits keyed by their based ray's canonical bytes hold every pair at
+//! circuits, each keyed by its based ray's canonical bytes, hold every pair at
 //! once — two circuits under one key agree, under two keys they do not.
 //!
 //! A cell's circuits read FLAT together where they all stand under one key
@@ -42,7 +42,7 @@ pub struct PerturbTally {
     /// Cells two of whose circuits disagree.
     pub curved: u64,
     /// Of the circuits crossing cells, the vacuum ones — trivial alone, kept
-    /// beside the orbits (79.3), read here against their neighbours.
+    /// beside the orbits (79.3), each read here against its neighbours.
     pub vacua: u64,
     /// Trial moves the unperturbed trial admitted — discharged, rank held,
     /// no lane risen — that reached the cells' reading.
@@ -74,9 +74,9 @@ impl PerturbTally {
     }
 }
 
-/// EVERY CERTIFIED CELL'S CIRCUITS BY THEIR BASED RAY: cell key → (circuit
+/// EVERY CERTIFIED CELL'S CIRCUITS, EACH BY ITS BASED RAY: cell key → (circuit
 /// chord → the canonical bytes of each of its based routes). Two circuits of
-/// one cell agree exactly where their rays' bytes are equal (C1(a)).
+/// one cell agree exactly where the two rays' bytes are equal (C1(a)).
 #[derive(Debug, Clone, Default)]
 pub(crate) struct Agreements {
     cells: Keyed<Keyed<Vec<Vec<u8>>, coord::Overlap>>,
@@ -216,7 +216,7 @@ fn based_rays(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> Option<Vec<Vec<
 }
 
 impl Form {
-    /// THE CELLS A CIRCUIT CROSSES (R3), by their keys: a step crosses a cell
+    /// THE CELLS A CIRCUIT CROSSES (R3), by the cells' keys: a step crosses a cell
     /// where the overlap it crosses joins two DIFFERENT bodies of the cell,
     /// read off the overlap's body pair (BD2) — the predicate
     /// `comprehend::crossings` reads a cell's circuits by.
@@ -236,7 +236,7 @@ impl Form {
         out.scoped().map(|(k, _)| k.to_vec()).collect()
     }
 
-    /// The form's cells read by their circuits' pair composites, on its own
+    /// The form's cells, each read by its circuits' pair composites, on its own
     /// faces and the cycles its reader already traversed (78.46(4′)).
     pub(crate) fn read_agreements(&self, cycles: &Cycles) -> Agreements {
         Agreements::read(self, &self.faces, cycles, &mut PerturbTally::default())

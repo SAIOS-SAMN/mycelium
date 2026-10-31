@@ -187,7 +187,7 @@ fn handoff_mouth_refuses_split_beyond_keeper_and_lines() {
 /// EVERY PASSAGE PAYS ON ITS OWN LANES, FLOORED: 7 of mass is ⌊10.5⌋ = 10
 /// μ-S; 3 of information is 15 μ-H; both, both; G and T never. A traveller
 /// short on a lane is refused and never debited. Accepted, the parts are
-/// HELD: the recipients' balances untouched, their line heads reading it.
+/// HELD: the recipients' balances untouched, the recipients' line heads reading it.
 #[test]
 fn handoff_traverse_charges_own_lanes_and_refuses_short() {
     let mut k = founded();

@@ -57,7 +57,7 @@ impl Local {
     }
 
     /// The union of several sections, pair by pair: every site any of them
-    /// closed (S: what the sentence's words close on their own).
+    /// closed (S: what the sentence's words close alone).
     pub fn union(sections: &[Local], pairs: usize) -> Local {
         let mut sites: Vec<Keyed<()>> = (0..pairs).map(|_| Keyed::new()).collect();
         for s in sections {
@@ -82,7 +82,7 @@ fn hue_at(g: &Grid, r: i64, c: i64) -> Option<u8> {
 /// THE DEMAND OF EACH PAIR OVER ITS SITES, priced: the pair's residual links
 /// (`residual_of`, the sites where before and after differ) standing at the
 /// section's sites, closed to nothing — `deflation_of` of the move from
-/// their measure to zero, the one deflation reader. Summed over the pairs,
+/// the sites' measure to zero, the one deflation reader. Summed over the pairs,
 /// a sum past its carrier refused lane by lane and left where it stood.
 pub fn measure_sites(family: &[(Grid, Grid)], sites: &[Keyed<()>]) -> [u64; 4] {
     let mut pay = [0u64; 4];

@@ -83,7 +83,7 @@ pub enum Challenge {
     Demand { fold: FoldAt },
     /// The prefix, and the fold's own rows, declared and children — proved
     /// against its commitments — put to RECONSTRUCTION (the Concordance,
-    /// 4.4): the line's entries stepped to the committed head, their nets
+    /// 4.4): the line's entries stepped to the committed head, the entries' nets
     /// conserved, each step checked against the one before.
     Evidence { fold: FoldAt, rows: Vec<Net>, declared: Vec<Net>, children: Vec<ChildNet>, entries: Vec<Entry> },
     /// A demand's deadline passed unanswered: the fold falsified by default.

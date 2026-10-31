@@ -89,7 +89,7 @@ impl Kernel {
         // The first citation is the word ruled; a ruling that names none
         // rules nothing here.
         let [ruled, rest @ ..] = r.cites.as_slice() else { return Heard::Inert };
-        // A ruling cites words by their stamps; a citation located by its
+        // A ruling cites words by the words' stamps; a citation located by its
         // coordinates alone (an orbit's docket) names no word to rule here.
         let Some(ruled_at) = ruled.at() else { return Heard::Inert };
         let Some(addr) = self.word_admitted_at(&ruled_at).cloned() else {
